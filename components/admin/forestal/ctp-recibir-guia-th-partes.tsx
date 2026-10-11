@@ -10,9 +10,9 @@ import { AlertTriangle, CheckCircle2 } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { MAX_TEXTO_RECIBIR, foliosEnTexto, type RecibidaTh } from "@/lib/forestal/guia-th-al-ctp";
 import type { ResumenConteo } from "@/lib/forestal/conteo-guia-th";
+import { DataTable } from "@buleje/design-system";
 
-const TH = "whitespace-nowrap px-2 py-2 text-left text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] sm:px-3";
-const TD = "px-2 py-2 text-sm text-[var(--text-primary)] sm:px-3";
+const TH = "whitespace-nowrap";
 const NUM = "text-right font-mono tabular-nums";
 
 /** «42/300»: cuánto queda, igual que el tope del servidor. */
@@ -44,9 +44,9 @@ export function ResumenPorEspecie({ resumen }: { resumen: ResumenConteo }) {
   const falta = Math.max(0, Math.round((resumen.m3Declarado - resumen.m3Recibido) * 10000) / 10000);
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-      <table className="w-full min-w-[18rem] border-collapse">
+      <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full min-w-[18rem]">
         <caption className="sr-only">Lo que entra al libro, por especie: guía, llegó y falta</caption>
-        <thead className="bg-[var(--surface-sunken)]">
+        <thead>
           <tr>
             <th scope="col" className={TH}>Especie</th>
             <th scope="col" className={`${TH} text-right`}>Guía m³</th>
@@ -56,16 +56,16 @@ export function ResumenPorEspecie({ resumen }: { resumen: ResumenConteo }) {
         </thead>
         <tbody>
           {resumen.porEspecie.map((e) => (
-            <tr key={e.especie} className="border-t border-[var(--rule-soft)]">
-              <th scope="row" className={`${TD} text-left`}>
+            <tr key={e.especie}>
+              <th scope="row" className="text-left">
                 <span className="block font-bold">{e.especie}</span>
                 <span className="block text-xs font-normal tabular-nums text-[var(--text-secondary)]">
                   llegaron {e.llegaron} de {e.trozas}
                 </span>
               </th>
-              <td className={`${TD} ${NUM}`}>{fmtM3(e.m3Guia)}</td>
-              <td className={`${TD} ${NUM} font-bold`}>{fmtM3(e.m3Llego)}</td>
-              <td className={`${TD} ${NUM} ${e.m3Falta > 0 ? "font-bold text-[var(--data-warning-ink)]" : "text-[var(--text-tertiary)]"}`}>
+              <td className={`${NUM}`}>{fmtM3(e.m3Guia)}</td>
+              <td className={`${NUM} font-bold`}>{fmtM3(e.m3Llego)}</td>
+              <td className={`${NUM} ${e.m3Falta > 0 ? "font-bold text-[var(--data-warning-ink)]" : "text-[var(--text-tertiary)]"}`}>
                 {e.m3Falta > 0 ? fmtM3(e.m3Falta) : "—"}
               </td>
             </tr>
@@ -74,19 +74,19 @@ export function ResumenPorEspecie({ resumen }: { resumen: ResumenConteo }) {
         {resumen.porEspecie.length > 1 && (
           <tfoot>
             <tr className="border-t-2 border-[var(--rule-base)]">
-              <th scope="row" className={`${TD} text-left`}>
+              <th scope="row" className="text-left">
                 <span className="block font-bold">Total</span>
                 <span className="block text-xs font-normal tabular-nums text-[var(--text-secondary)]">
                   llegaron {resumen.llegaron} de {resumen.total}
                 </span>
               </th>
-              <td className={`${TD} ${NUM} font-bold`}>{fmtM3(resumen.m3Declarado)}</td>
-              <td className={`${TD} ${NUM} font-bold`}>{fmtM3(resumen.m3Recibido)}</td>
-              <td className={`${TD} ${NUM} font-bold`}>{falta > 0 ? fmtM3(falta) : "—"}</td>
+              <td className={`${NUM} font-bold`}>{fmtM3(resumen.m3Declarado)}</td>
+              <td className={`${NUM} font-bold`}>{fmtM3(resumen.m3Recibido)}</td>
+              <td className={`${NUM} font-bold`}>{falta > 0 ? fmtM3(falta) : "—"}</td>
             </tr>
           </tfoot>
         )}
-      </table>
+      </DataTable>
     </div>
   );
 }

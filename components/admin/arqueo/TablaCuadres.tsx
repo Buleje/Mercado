@@ -108,11 +108,11 @@ export default function TablaCuadres({
               const tolerada = dentroDeTolerancia(a, tolerancia);
               return (
                 <tr key={a.id}>
-                  <td className="font-bold text-[var(--text-primary)]">{a.fecha}<span className="block text-sm font-normal text-[var(--text-secondary)]">{horaLima(a.openedAt)}</span></td>
-                  <td className="text-sm capitalize text-[var(--text-secondary)]">{a.turno}</td>
-                  <td className="font-semibold text-[var(--text-primary)]">{a.cajero}</td>
+                  <td className="font-bold">{a.fecha}<span className="block text-sm font-normal text-[var(--text-secondary)]">{horaLima(a.openedAt)}</span></td>
+                  <td className="capitalize text-[var(--text-secondary)]">{a.turno}</td>
+                  <td className="font-semibold">{a.cajero}</td>
                   <td className="text-right tabular-nums text-[var(--text-secondary)]">{fmt(a.expectedAmount)}</td>
-                  <td className="text-right font-bold tabular-nums text-[var(--text-primary)]">
+                  <td className="text-right font-bold tabular-nums">
                     {cerrada ? fmt(a.countedAmount) : conteo ? <span title={`Conteo express a las ${horaLima(conteo.creadoEn)}`}>{fmt(conteo.contado)}*</span> : "—"}
                   </td>
                   <td className={cn("text-right font-extrabold tabular-nums", !cerrada || a.difference === 0 ? "text-[var(--text-secondary)]" : tolerada || a.difference > 0 ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]")}>

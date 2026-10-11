@@ -263,25 +263,25 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                 <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Sin corridas atribuidas. Usa &quot;Editar atribución&quot; para declarar de dónde salió.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <DataTable className="w-full text-sm">
-                    <thead className="bg-[var(--surface-sunken)] text-left">
+                  <DataTable className="w-full">
+                    <thead>
                       <tr>
-                        <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Corrida</th>
-                        <th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Cantidad</th>
+                        <th>Corrida</th>
+                        <th className="text-right">Cantidad</th>
                         {/* El eslabón del patio: de qué pila salió (ADR-337). */}
-                        <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Lote de aserrío</th>
-                        <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Guías GTF de ingreso</th>
-                        <th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Costo</th>
+                        <th>Lote de aserrío</th>
+                        <th>Guías GTF de ingreso</th>
+                        <th className="text-right">Costo</th>
                       </tr>
                     </thead>
                     <tbody>
                       {traza.corridas.map((c) => {
                         const costo = costoPorLinea.get(c.lineNo);
                         return (
-                          <tr key={c.produccionEntryId} className="border-t border-[var(--rule-soft)]">
-                            <td className="px-3 py-2 font-mono text-xs font-bold text-[var(--text-primary)]">#{c.lineNo}</td>
-                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtCantidad(c.quantity, entry.unit)}</td>
-                            <td className="px-3 py-2">
+                          <tr key={c.produccionEntryId}>
+                            <td className="font-mono font-bold">#{c.lineNo}</td>
+                            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtCantidad(c.quantity, entry.unit)}</td>
+                            <td>
                               {c.loteAserrio ? (
                                 <span
                                   title={`La corrida #${c.lineNo} se hizo con el lote ${c.loteAserrio.code} (${c.loteAserrio.piezas} troza(s))`}
@@ -293,7 +293,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                                 <span className="text-xs text-[var(--text-tertiary)]">cargada a mano</span>
                               )}
                             </td>
-                            <td className="px-3 py-2">
+                            <td>
                               {c.sinOrigen ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
                                   <AlertCircle className="h-3 w-3" /> sin materia prima atribuida
@@ -304,7 +304,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                                 <span className="text-xs text-[var(--text-tertiary)]">—</span>
                               )}
                             </td>
-                            <td className="px-3 py-2 text-right">
+                            <td className="text-right">
                               {costo?.costo != null ? (
                                 <span className="inline-flex items-center gap-1 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
                                   {money(costo.costo, cogs?.moneda ?? "PEN")}

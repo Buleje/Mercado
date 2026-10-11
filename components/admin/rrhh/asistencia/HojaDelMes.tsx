@@ -96,7 +96,7 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
           <DataTable zebra stickyHeader wrapperClassName="max-h-[70vh] rounded-2xl">
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 bg-[var(--surface-sunken)]">
+                <th className="sticky left-0 z-10">
                   <span className="block w-48">Persona</span>
                 </th>
                 {dias.map((d) => {
@@ -108,7 +108,7 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
                       key={d}
                       title={etiquetaDia(d, hoy)}
                       className={cn(
-                        "px-1 text-center",
+                        "text-center",
                         esHoy && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
                         finde && !esHoy && "text-[var(--text-tertiary)]",
                       )}
@@ -127,7 +127,7 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
                 const { conteo, sinMarcar } = conteoDelMes(c, marcasDeLaPersona, dias, hoy);
                 return (
                   <tr key={c.id}>
-                    <td className="sticky left-0 z-10 bg-[var(--surface-raised)] font-semibold text-[var(--text-primary)]">
+                    <td className="sticky left-0 z-10 bg-[var(--surface-raised)] font-semibold">
                       <span className="block w-48 truncate" title={c.nombre}>
                         {c.nombre}
                       </span>
@@ -137,7 +137,7 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
                       const incluido = estaIncluidoEseDia(c, d) && d <= hoy;
                       const editable = dentroDeVentana(d, hoja.ventana);
                       return (
-                        <td key={d} className={cn("p-1 text-center", d === hoy && "bg-primary/5")}>
+                        <td key={d} className={cn("text-center", d === hoy && "bg-primary/5")}>
                           <CeldaMarcaPopover
                             colaborador={c}
                             fecha={d}
@@ -155,7 +155,7 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
                         </td>
                       );
                     })}
-                    <td className="whitespace-nowrap text-center text-sm">
+                    <td className="whitespace-nowrap text-center">
                       <span className="inline-flex flex-wrap justify-center gap-1">
                         {ORDEN_ESTADOS_ASISTENCIA.filter((e) => conteo[e] > 0).map((e) => (
                           <span key={e} title={ESTADO_ASISTENCIA_META[e].label} className={cn("rounded-md px-1.5 py-0.5 font-bold tabular-nums", ESTADO_ASISTENCIA_META[e].claseChip)}>

@@ -81,9 +81,9 @@ export function RepartidoresTabla({
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <DataTable className="w-full">
-              <thead ref={orden.refCabecera} className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
+              <thead ref={orden.refCabecera}>
                 <tr>
-                  <th className="text-left px-3 py-4 w-10">
+                  <th className="w-10">
                     <input
                       type="checkbox"
                       checked={selectedIds.size > 0 && selectedIds.size === filtered.length}
@@ -98,9 +98,9 @@ export function RepartidoresTabla({
                   <EnOrden
                     orden={orden.orden}
                     celdas={{
-                      repartidor: <th data-col="repartidor" className="text-left px-4 py-4 text-sm font-semibold text-[var(--text-secondary)]">Repartidor</th>,
+                      repartidor: <th data-col="repartidor">Repartidor</th>,
                       zona: (
-                        <th data-col="zona" className="text-left px-4 py-4 text-sm font-semibold text-[var(--text-secondary)] hidden sm:table-cell">
+                        <th data-col="zona" className="hidden sm:table-cell">
                           <span className="block">Zona / Vehículo</span>
                           <div className="mt-1.5 flex flex-col gap-1">
                             <FiltroColumnaMulti
@@ -121,10 +121,10 @@ export function RepartidoresTabla({
                           </div>
                         </th>
                       ),
-                      tarifa: <th data-col="tarifa" className="text-right px-4 py-4 text-sm font-semibold text-[var(--text-secondary)]">Tarifa</th>,
-                      rating: <th data-col="rating" className="text-center px-4 py-4 text-sm font-semibold text-[var(--text-secondary)]">Rating</th>,
+                      tarifa: <th data-col="tarifa" className="text-right">Tarifa</th>,
+                      rating: <th data-col="rating" className="text-center">Rating</th>,
                       estado: (
-                        <th data-col="estado" className="text-center px-4 py-4 text-sm font-semibold text-[var(--text-secondary)]">
+                        <th data-col="estado" className="text-center">
                           <span className="block">Estado</span>
                           <FiltroColumnaMulti
                             label="Estado"
@@ -141,7 +141,7 @@ export function RepartidoresTabla({
                       ),
                     }}
                   />
-                  <th className="text-right px-4 py-4 text-sm font-semibold text-[var(--text-secondary)]">Acciones</th>
+                  <th className="text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -153,11 +153,11 @@ export function RepartidoresTabla({
                   <tr
                     key={p.id}
                     className={cn(
-                      "transition-colors",
+                      "",
                       isSelected ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]",
                     )}
                   >
-                    <td className="px-3 py-4">
+                    <td>
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -170,7 +170,7 @@ export function RepartidoresTabla({
                       orden={orden.orden}
                       celdas={{
                         repartidor: (
-                          <td className="px-4 py-4">
+                          <td>
                             <div className="flex items-center gap-3">
                               <div
                                 className={cn(
@@ -195,7 +195,7 @@ export function RepartidoresTabla({
                           </td>
                         ),
                         zona: (
-                          <td className="px-4 py-4 hidden sm:table-cell">
+                          <td className="hidden sm:table-cell">
                             <p className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
                               <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
                               {p.zone}
@@ -207,12 +207,12 @@ export function RepartidoresTabla({
                           </td>
                         ),
                         tarifa: (
-                          <td className="px-4 py-4 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)]">
+                          <td className="text-right font-extrabold tabular-nums">
                             {formatCurrency(toNum(p.fee))}
                           </td>
                         ),
                         rating: (
-                          <td className="px-4 py-4 text-center">
+                          <td className="text-center">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-extrabold bg-[var(--data-warning-50)] text-[var(--data-warning-500)] tabular-nums">
                               <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)]" />
                               {toNum(p.rating).toFixed(1)}
@@ -220,7 +220,7 @@ export function RepartidoresTabla({
                           </td>
                         ),
                         estado: (
-                          <td className="px-4 py-4 text-center">
+                          <td className="text-center">
                             <span className={cn(
                               "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold",
                               p.isActive
@@ -234,7 +234,7 @@ export function RepartidoresTabla({
                         ),
                       }}
                     />
-                    <td className="px-4 py-4 text-right">
+                    <td className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         {wa && (
                           <a

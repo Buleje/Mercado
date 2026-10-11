@@ -37,7 +37,7 @@ export function TurnosPorCajero({ stats }: { stats: StatCajero[] }) {
   return (
     <DataTable>
       <thead>
-        <tr className="border-b border-[var(--rule-soft)]">
+        <tr>
           <th>Cajero</th>
           <th className="text-right">Turnos</th>
           <th className="text-right">Ventas</th>
@@ -49,7 +49,7 @@ export function TurnosPorCajero({ stats }: { stats: StatCajero[] }) {
       <tbody>
         {stats.map((c) => (
           <tr key={c.id} className={c.id === mejor && stats.length > 1 ? "bg-primary/10" : undefined}>
-            <td className="font-medium text-[var(--text-primary)]">
+            <td className="font-medium">
               <span className="flex items-center gap-2">
                 <Inicial nombre={c.name} />
                 <span className="truncate max-w-[160px]">{c.name}</span>
@@ -58,7 +58,7 @@ export function TurnosPorCajero({ stats }: { stats: StatCajero[] }) {
             </td>
             <td className="text-right text-[var(--text-secondary)] tabular-nums">{c.turnos}</td>
             <td className="text-right font-bold text-[var(--data-success-ink)] tabular-nums whitespace-nowrap">{formatCurrency(c.ventasTotal)}</td>
-            <td className="text-right font-bold text-[var(--text-primary)] tabular-nums whitespace-nowrap">{formatCurrency(c.ventasPorHora)}/h</td>
+            <td className="text-right font-bold tabular-nums whitespace-nowrap">{formatCurrency(c.ventasPorHora)}/h</td>
             <td className="text-right text-[var(--text-secondary)] tabular-nums whitespace-nowrap">{formatCurrency(c.ticketPromedio)}</td>
             <td className="text-right"><DifCaja valor={c.difCaja} /></td>
           </tr>

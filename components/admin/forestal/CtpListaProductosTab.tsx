@@ -103,22 +103,22 @@ export default function CtpListaProductosTab({
       <TablaCtp altoMax="max-h-[46vh]">
         <TheadCtp>
           <tr>
-            <th className="px-3 py-2 font-bold">Item</th>
-            <th className="px-3 py-2 font-bold">Nombre de especie</th>
-            <th className="px-3 py-2 font-bold">Producto</th>
-            <th className="px-3 py-2 font-bold">Código</th>
-            <th className="px-3 py-2 text-right font-bold">Cantidad</th>
-            <th className="px-3 py-2 font-bold">Presentación</th>
-            <th className="px-3 py-2 text-right font-bold">Espesor</th>
-            <th className="px-3 py-2 text-right font-bold">Ancho</th>
-            <th className="px-3 py-2 text-right font-bold">Largo</th>
-            <th className="px-3 py-2 text-right font-bold">Volumen</th>
-            <th className="px-3 py-2 font-bold">U. medida</th>
+            <th className="font-bold">Item</th>
+            <th className="font-bold">Nombre de especie</th>
+            <th className="font-bold">Producto</th>
+            <th className="font-bold">Código</th>
+            <th className="text-right font-bold">Cantidad</th>
+            <th className="font-bold">Presentación</th>
+            <th className="text-right font-bold">Espesor</th>
+            <th className="text-right font-bold">Ancho</th>
+            <th className="text-right font-bold">Largo</th>
+            <th className="text-right font-bold">Volumen</th>
+            <th className="font-bold">U. medida</th>
             {/* La venta se pide acá porque acá está el precio: quien arma la
                 guía lo tiene delante. Cargarlo después, despacho por despacho,
                 es lo que dejaba el margen sin calcular. */}
-            <th className="px-3 py-2 text-right font-bold">Venta S/</th>
-            <th className="px-3 py-2 text-right font-bold">Eliminar</th>
+            <th className="text-right font-bold">Venta S/</th>
+            <th className="text-right font-bold">Eliminar</th>
           </tr>
         </TheadCtp>
         <TbodyCtp>
@@ -128,13 +128,13 @@ export default function CtpListaProductosTab({
             </FilaVacia>
           )}
           {filas.map((f, i) => (
-            <tr key={f.uid} className="hover:bg-[var(--surface-sunken)]">
-              <td className="px-3 py-2 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{i + 1}</td>
-              <td className="px-3 py-2 text-[var(--text-secondary)]">
+            <tr key={f.uid}>
+              <td className="font-mono tabular-nums text-[var(--text-tertiary)]">{i + 1}</td>
+              <td className="text-[var(--text-secondary)]">
                 {f.especie ?? "—"}
                 {f.especieCientifica && <div className="text-xs italic text-[var(--text-tertiary)]">{f.especieCientifica}</div>}
               </td>
-              <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">
+              <td className="text-[var(--text-secondary)]">
                 {productLabel(f.producto ?? "")}
                 {/* De dónde salió: la corrida (producto transformado) o la guía
                     con la que entró (troza que sale sin aserrar, ADR-363). */}
@@ -144,8 +144,8 @@ export default function CtpListaProductosTab({
                     : `corrida #${f.lineNo ?? "—"}${f.lote ? ` · lote ${f.lote}` : ""}`}
                 </div>
               </td>
-              <td className="px-3 py-2 font-mono text-sm font-bold text-[var(--text-primary)]">{f.codigo ?? "—"}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="font-mono font-bold">{f.codigo ?? "—"}</td>
+              <td className="text-right">
                 {/* Una troza es UNA pieza: su cantidad no se tipea. */}
                 <input
                   type="number" min="0" step="1" value={f.cantidad}
@@ -155,11 +155,11 @@ export default function CtpListaProductosTab({
                   className={`${CELDA_NUM} disabled:cursor-not-allowed disabled:opacity-60`}
                 />
               </td>
-              <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{f.presentacion ?? "—"}</td>
-              <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.espesorCm ?? "—"}</td>
-              <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.anchoCm ?? "—"}</td>
-              <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.largoM ?? "—"}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="text-[var(--text-tertiary)]">{f.presentacion ?? "—"}</td>
+              <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.espesorCm ?? "—"}</td>
+              <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.anchoCm ?? "—"}</td>
+              <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.largoM ?? "—"}</td>
+              <td className="text-right">
                 <input
                   type="number" min="0" step="0.0001" value={f.volumen}
                   onChange={(e) => onCambiarFila(f.uid, "volumen", Number(e.target.value))}
@@ -170,8 +170,8 @@ export default function CtpListaProductosTab({
                   {f.trozaId ? "mide" : "saldo"} {Number(f.disponibleCorrida).toFixed(4)}
                 </div>
               </td>
-              <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{MEDIDA[f.unidad] ?? f.unidad}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="text-[var(--text-tertiary)]">{MEDIDA[f.unidad] ?? f.unidad}</td>
+              <td className="text-right">
                 <input
                   type="number" min="0" step="0.01"
                   value={f.valorVenta ?? ""}
@@ -196,7 +196,7 @@ export default function CtpListaProductosTab({
                   </div>
                 )}
               </td>
-              <td className="px-3 py-2 text-right">
+              <td className="text-right">
                 <button
                   type="button"
                   onClick={() => onQuitar(f.uid)}
@@ -210,14 +210,14 @@ export default function CtpListaProductosTab({
           ))}
           {filas.length > 0 && (
             <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
-              <td colSpan={4} className="px-3 py-2.5 text-[var(--text-primary)]">Total volumen movilizado</td>
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{formatNumber(piezas)}</td>
+              <td colSpan={4}>Total volumen movilizado</td>
+              <td className="text-right font-mono tabular-nums">{formatNumber(piezas)}</td>
               <td colSpan={4} />
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{total.toFixed(4)}</td>
-              <td className="px-3 py-2.5 text-xs font-normal text-[var(--text-tertiary)]">{MEDIDA[unidad] ?? unidad}</td>
+              <td className="text-right font-mono tabular-nums">{total.toFixed(4)}</td>
+              <td className="font-normal text-[var(--text-tertiary)]">{MEDIDA[unidad] ?? unidad}</td>
               {/* El total de la guía sólo si TODAS las líneas tienen precio:
                   sumar las que sí daría una cifra que parece el total y no lo es. */}
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+              <td className="text-right font-mono tabular-nums">
                 {ventaTotal == null
                   ? <span className="text-xs font-normal text-[var(--text-tertiary)]">—</span>
                   : formatNumber(ventaTotal, 2)}
@@ -241,19 +241,19 @@ export default function CtpListaProductosTab({
         <TablaCtp>
           <TheadCtp>
             <tr>
-              <th className="px-3 py-2 font-bold">Especie</th>
-              <th className="px-3 py-2 font-bold">Producto</th>
-              <th className="px-3 py-2 text-right font-bold">Cantidad</th>
-              <th className="px-3 py-2 text-right font-bold">Volumen</th>
+              <th className="font-bold">Especie</th>
+              <th className="font-bold">Producto</th>
+              <th className="text-right font-bold">Cantidad</th>
+              <th className="text-right font-bold">Volumen</th>
             </tr>
           </TheadCtp>
           <TbodyCtp>
             {resumen.map((r) => (
               <tr key={`${r.especie}|${r.producto}`}>
-                <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especie}</td>
-                <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">{productLabel(r.producto)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(r.cantidad)}</td>
-                <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{Number(r.volumen).toFixed(4)}</td>
+                <td className="text-[var(--text-secondary)]">{r.especie}</td>
+                <td className="text-[var(--text-secondary)]">{productLabel(r.producto)}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(r.cantidad)}</td>
+                <td className="text-right font-mono font-bold tabular-nums">{Number(r.volumen).toFixed(4)}</td>
               </tr>
             ))}
           </TbodyCtp>

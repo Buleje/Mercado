@@ -20,6 +20,7 @@ import {
   type Rango,
 } from "./index";
 import { columnasOcultasConFiltro } from "@/lib/admin/filtros-columna";
+import { DataTable } from "@buleje/design-system";
 
 export interface FilaDemo {
   id: string;
@@ -113,11 +114,11 @@ export function DemoTablaFiltrosColumna({ filas }: { filas: FilaDemo[] }) {
       )}
 
       <div className="overflow-x-auto rounded-lg border border-[var(--rule-base)]">
-        <table className="w-full text-sm text-[var(--text-primary)]">
-          <thead className="bg-[var(--surface-sunken)] align-top">
+        <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
+          <thead className="align-top">
             <tr>
               {columnas.map((c) => (
-                <th key={c.id} className="px-3 py-2.5 text-left font-semibold text-[var(--text-secondary)]">
+                <th key={c.id}>
                   {c.label}
                   {enCabecera[c.id] && c.tipo === "texto" && (
                     <FiltroColumna
@@ -157,15 +158,15 @@ export function DemoTablaFiltrosColumna({ filas }: { filas: FilaDemo[] }) {
           </thead>
           <tbody>
             {filtradas.map((f) => (
-              <tr key={f.id} className="border-t border-[var(--rule-soft)]">
-                <td className="px-3 py-2">{f.nombre}</td>
-                <td className="px-3 py-2">{f.categoria}</td>
-                <td className="px-3 py-2 tabular-nums">{f.cantidad ?? "—"}</td>
-                <td className="px-3 py-2 tabular-nums">{f.fecha ?? "—"}</td>
+              <tr key={f.id}>
+                <td>{f.nombre}</td>
+                <td>{f.categoria}</td>
+                <td className="tabular-nums">{f.cantidad ?? "—"}</td>
+                <td className="tabular-nums">{f.fecha ?? "—"}</td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
       <p data-testid="conteo" className="text-sm text-[var(--text-tertiary)]">
         {filtradas.length} de {filas.length}

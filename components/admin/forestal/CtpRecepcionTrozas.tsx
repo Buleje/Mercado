@@ -344,17 +344,17 @@ export default function CtpRecepcionTrozas({
       </ul>
 
       <div className="hidden overflow-x-auto @3xl:block">
-        <DataTable className="w-full text-sm hoja-grilla">
+        <DataTable className="w-full hoja-grilla">
           <thead>
-            <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              <th className="px-3 py-2 font-bold">Codificación</th>
-              <th className="px-3 py-2 font-bold">Especie</th>
-              <th className="px-3 py-2 text-right font-bold">Vol. m³</th>
-              <th className="px-3 py-2 font-bold">Código de planta</th>
-              <th className="px-3 py-2 font-bold" title="Cuándo bajó del camión">Recepción</th>
-              <th className="px-3 py-2 font-bold">Parcela de corta</th>
-              <th className="px-3 py-2 text-center font-bold">¿Llegó?</th>
-              <th className="px-3 py-2 font-bold">Observación</th>
+            <tr>
+              <th>Codificación</th>
+              <th>Especie</th>
+              <th className="text-right">Vol. m³</th>
+              <th>Código de planta</th>
+              <th title="Cuándo bajó del camión">Recepción</th>
+              <th>Parcela de corta</th>
+              <th className="text-center">¿Llegó?</th>
+              <th>Observación</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -362,14 +362,14 @@ export default function CtpRecepcionTrozas({
               const falta = Boolean(valor(t, "noRecepcionada"));
               return (
                 <tr key={t.id} className={falta ? "bg-[var(--data-error-50)]/40 dark:bg-[var(--data-error-500)]/10" : undefined}>
-                  <td className="whitespace-nowrap px-3 py-2 font-mono font-bold text-[var(--text-primary)]">
+                  <td className="whitespace-nowrap font-mono font-bold">
                     {t.codificacion ?? "—"}
                   </td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                  <td className="text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                     {t.volumenM3 != null ? fmtM3(Number(t.volumenM3)) : "—"}
                   </td>
-                  <td className="px-3 py-2">
+                  <td>
                     <input
                       value={valor(t, "codigoPlanta") ?? ""}
                       onChange={(e) => tocar(t.id, { codigoPlanta: e.target.value })}
@@ -385,7 +385,7 @@ export default function CtpRecepcionTrozas({
                       }
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td>
                     <input
                       type="date"
                       value={valor(t, "fechaRecepcion") ?? ""}
@@ -395,7 +395,7 @@ export default function CtpRecepcionTrozas({
                       className={CAMPO_TABLA + " w-[8.5rem]"}
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td>
                     <input
                       value={valor(t, "parcela") ?? ""}
                       onChange={(e) => tocar(t.id, { parcela: e.target.value })}
@@ -404,7 +404,7 @@ export default function CtpRecepcionTrozas({
                       className={CAMPO_TABLA + " w-28 font-mono"}
                     />
                   </td>
-                  <td className="px-3 py-2 text-center">
+                  <td className="text-center">
                     <button
                       type="button"
                       onClick={() => tocar(t.id, { noRecepcionada: !falta })}
@@ -418,7 +418,7 @@ export default function CtpRecepcionTrozas({
                       {falta ? <X className="h-4 w-4" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
                     </button>
                   </td>
-                  <td className="px-3 py-2">
+                  <td>
                     <input
                       value={valor(t, "recepcionObs") ?? ""}
                       onChange={(e) => tocar(t.id, { recepcionObs: e.target.value })}

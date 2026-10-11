@@ -199,34 +199,34 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
                 Sin registros. Anota el día 1 abajo (temperatura de la masa al voltear).
               </p>
             ) : (
-              <DataTable className="w-full text-sm">
-                <thead className="bg-[var(--surface-sunken)] text-left text-xs text-[var(--text-tertiary)]">
+              <DataTable className="w-full">
+                <thead>
                   <tr>
-                    <th className="px-3 py-2 font-bold">Día</th>
-                    <th className="px-3 py-2 font-bold">Fecha</th>
-                    <th className="px-3 py-2 text-right font-bold">Temp</th>
-                    <th className="px-3 py-2 text-center font-bold">Volteo</th>
-                    <th className="px-3 py-2 text-right font-bold">pH</th>
+                    <th>Día</th>
+                    <th>Fecha</th>
+                    <th className="text-right">Temp</th>
+                    <th className="text-center">Volteo</th>
+                    <th className="text-right">pH</th>
                   </tr>
                 </thead>
                 <tbody>
                   {registros.map((r) => (
-                    <tr key={r.id} className="border-t border-[var(--rule-soft)]">
-                      <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">
+                    <tr key={r.id}>
+                      <td className="font-mono font-bold">
                         {r.dia}
                       </td>
-                      <td className="px-3 py-2 text-[var(--text-tertiary)]">{fdate(r.fecha)}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                      <td className="text-[var(--text-tertiary)]">{fdate(r.fecha)}</td>
+                      <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                         {r.tempC != null ? `${Number(r.tempC).toFixed(0)}°C` : "—"}
                       </td>
-                      <td className="px-3 py-2 text-center">
+                      <td className="text-center">
                         {r.volteo ? (
                           <RotateCw className="mx-auto h-3.5 w-3.5 text-[var(--accent)]" />
                         ) : (
                           <span className="text-[var(--text-tertiary)]">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                      <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                         {r.phMasa != null ? Number(r.phMasa).toFixed(1) : "—"}
                       </td>
                     </tr>

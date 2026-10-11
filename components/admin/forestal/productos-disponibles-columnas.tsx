@@ -41,7 +41,7 @@ export const ORDEN_DISPONIBLES_DEFECTO = [
   "piezas", "volumen", "pieTablar", "valor", "lote", "edad", "saldo", "permiso",
 ] as const;
 
-const TH = "px-2! py-2 font-bold";
+const TH = "px-2! font-bold";
 
 /** Como `ThOrdenable`, con lugar para el autofiltro DEBAJO del botón que ordena. */
 function ThConFiltro({
@@ -73,7 +73,7 @@ function ThConFiltro({
       <button
         type="button"
         onClick={() => onOrdenar(campo)}
-        className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 font-bold uppercase tracking-[var(--ls-wider)] transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] ${
+        className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] ${
           activo ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""
         }`}
       >
@@ -199,7 +199,7 @@ export function PiePaquetes({
   edad: ResumenEdad;
   valor: { totalSoles: number; filasValorizadas: number; filasSinValor: number };
 }) {
-  const NUM = "px-2! py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]";
+  const NUM = "px-2! text-right font-mono font-bold tabular-nums";
   return (
     <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
       <tr>
@@ -208,7 +208,7 @@ export function PiePaquetes({
           orden={ordenCols}
           celdas={{
             codigo: (
-              <td className="px-2! py-2 text-sm font-bold text-[var(--text-secondary)]">
+              <td className="px-2! font-bold text-[var(--text-secondary)]">
                 {resumen.corridas} {resumen.corridas === 1 ? "corrida" : "corridas"} · {resumen.filas}{" "}
                 {resumen.filas === 1 ? "fila" : "filas"}
               </td>
@@ -237,7 +237,7 @@ export function PiePaquetes({
             ),
             lote: cols.lote && <td />,
             edad: cols.edad && (
-              <td className="px-2! py-2 text-right font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              <td className="px-2! text-right font-mono text-[var(--text-tertiary)]">
                 {edad.masViejoDias == null ? "—" : `el más viejo: ${fmtEdad(edad.masViejoDias)}`}
               </td>
             ),

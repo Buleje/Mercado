@@ -96,7 +96,7 @@ export default function LothPlantacionTabla({ species, cascada, acciones }: {
   return (
     <div className="space-y-2">
       <BarraFiltrosTabla f={fl} />
-      <DataTable className={`text-sm ${COMPACTA}`} wrapperClassName="rounded-xl" data-tabla-registro>
+      <DataTable className={`${COMPACTA}`} wrapperClassName="rounded-xl" data-tabla-registro>
         <thead className="align-top">
           <tr>
             <th scope="col">Especie<FiltroEnCabecera id="especie" f={fl} compacto /></th>
@@ -151,7 +151,7 @@ export default function LothPlantacionTabla({ species, cascada, acciones }: {
                 <td className={NUM}>
                   {fila ? <input type="number" min="0" step="0.01" value={fila.superficieHa} onChange={(e) => set("superficieHa", e.target.value)} aria-label={`Superficie en hectáreas de ${s.speciesCommon}`} className={`${EDIT_NUM} w-16`} /> : s.superficieHa ? formatNumber(Number(s.superficieHa), 2) : "—"}
                 </td>
-                <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                <td className={`${NUM} font-bold`}>
                   {fila ? <input type="number" min="0" step="0.001" value={fila.volumenM3} onChange={(e) => set("volumenM3", e.target.value)} aria-label={`m³ registrados de ${s.speciesCommon}`} className={`${EDIT_NUM} w-[4.5rem]`} /> : <>{m3(Number(s.volumenAutorizadoM3 ?? 0))}<Pt m3={Number(s.volumenAutorizadoM3 ?? 0)} /></>}
                 </td>
                 <Celda v={c?.taladoM3} conPt />

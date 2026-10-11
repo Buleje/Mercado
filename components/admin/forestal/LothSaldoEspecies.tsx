@@ -16,7 +16,7 @@
 
 import { useMemo, useState } from "react";
 import { ChevronDown } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3, fmtPct } from "@/lib/forestal/cubicacion-formato";
 import { pctCorto } from "@/lib/forestal/loth-cupo-vista";
@@ -53,8 +53,7 @@ export const AYUDA_SALDO = {
     "Tornillo: 320,000 autorizado − 9,537 talado = 310,463 por talar. Trozado 4,365: 2,850 despachado con la GTF 001-0045678 y 1,515 consumido.",
 } as const;
 
-const NUM = "whitespace-nowrap px-2 py-1.5 text-right font-mono text-xs tabular-nums";
-const TH = "px-2 py-1.5 font-bold";
+const NUM = "whitespace-nowrap text-right font-mono tabular-nums";
 
 /** El autofiltro de cada encabezado: la especie se elige de la lista, los m³ se acotan por rango. */
 const COLUMNAS_SALDO: ColumnaFiltro<SaldoEspecie>[] = [
@@ -106,9 +105,9 @@ function Fila({ f }: { f: SaldoEspecie }) {
   return (
     <tr
       data-veredicto={f.veredicto}
-      className={`border-b border-[var(--rule-soft)] ${f.veredicto === "excedido" ? "bg-[var(--data-error-500)]/6" : ""}`}
+      className={`${f.veredicto === "excedido" ? "bg-[var(--data-error-500)]/6" : ""}`}
     >
-      <th scope="row" className="px-2 py-1.5 text-left font-semibold text-[var(--text-primary)]">{f.especie}</th>
+      <th scope="row" className="text-left font-semibold">{f.especie}</th>
       <td className={`${NUM} text-[var(--text-secondary)]`}>
         {f.cupoM3 == null ? "—" : fmtM3(f.cupoM3)}
         {f.fuente && (
@@ -117,7 +116,7 @@ function Fila({ f }: { f: SaldoEspecie }) {
           </span>
         )}
       </td>
-      <td className={`${NUM} text-[var(--text-primary)]`}>{vol(f.taladoM3)}</td>
+      <td className={`${NUM}`}>{vol(f.taladoM3)}</td>
       <td className={`${NUM} text-[var(--text-secondary)]`}>
         {vol(f.trozadoM3)}
         {f.trozasSinVolumen > 0 && (
@@ -127,7 +126,7 @@ function Fila({ f }: { f: SaldoEspecie }) {
       <td className={`${NUM} text-[var(--text-secondary)]`}>{vol(f.despachadoM3)}</td>
       <td className={`${NUM} text-[var(--text-secondary)]`}>{vol(f.consumidoM3)}</td>
       <td className={`${NUM} ${f.enPatioM3 > 0 ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>{vol(f.enPatioM3)}</td>
-      <td className="px-2 py-1.5 text-right"><Saldo f={f} /></td>
+      <td className="text-right"><Saldo f={f} /></td>
     </tr>
   );
 }
@@ -173,17 +172,17 @@ export default function LothSaldoEspecies(props: LothSaldoEspeciesProps) {
         <>
           <BarraFiltrosTabla f={fl} className="mb-2" />
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
               <thead>
-                <tr className="border-b border-[var(--rule-base)] align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  <th scope="col" className={`${TH} text-left`}>Especie<FiltroEnCabecera id="especie" f={fl} compacto /></th>
-                  <th scope="col" className={`${TH} text-right`}>Cupo<FiltroEnCabecera id="cupo" f={fl} compacto /></th>
-                  <th scope="col" className={`${TH} text-right`}>Talado<FiltroEnCabecera id="talado" f={fl} compacto /></th>
-                  <th scope="col" className={`${TH} text-right`}>Trozado<FiltroEnCabecera id="trozado" f={fl} compacto /></th>
-                  <th scope="col" className={`${TH} text-right`}>Despachado<FiltroEnCabecera id="despachado" f={fl} compacto /></th>
-                  <th scope="col" className={`${TH} text-right`}>Consumido<FiltroEnCabecera id="consumido" f={fl} compacto /></th>
-                  <th scope="col" className={`${TH} text-right`}>En patio<FiltroEnCabecera id="enPatio" f={fl} compacto /></th>
-                  <th scope="col" className={`${TH} text-right text-[var(--text-secondary)]`}>Saldo por talar<FiltroEnCabecera id="saldo" f={fl} compacto /></th>
+                <tr className="align-top">
+                  <th scope="col">Especie<FiltroEnCabecera id="especie" f={fl} compacto /></th>
+                  <th scope="col" className="text-right">Cupo<FiltroEnCabecera id="cupo" f={fl} compacto /></th>
+                  <th scope="col" className="text-right">Talado<FiltroEnCabecera id="talado" f={fl} compacto /></th>
+                  <th scope="col" className="text-right">Trozado<FiltroEnCabecera id="trozado" f={fl} compacto /></th>
+                  <th scope="col" className="text-right">Despachado<FiltroEnCabecera id="despachado" f={fl} compacto /></th>
+                  <th scope="col" className="text-right">Consumido<FiltroEnCabecera id="consumido" f={fl} compacto /></th>
+                  <th scope="col" className="text-right">En patio<FiltroEnCabecera id="enPatio" f={fl} compacto /></th>
+                  <th scope="col" className="text-right">Saldo por talar<FiltroEnCabecera id="saldo" f={fl} compacto /></th>
                 </tr>
               </thead>
               <tbody>
@@ -194,18 +193,18 @@ export default function LothSaldoEspecies(props: LothSaldoEspeciesProps) {
               {tot && (
                 <tfoot>
                   <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold text-[var(--text-primary)]">
-                    <th scope="row" className="px-2 py-1.5 text-left">{fl.activos > 0 ? "Total del plan" : "Total"}</th>
+                    <th scope="row" className="text-left">{fl.activos > 0 ? "Total del plan" : "Total"}</th>
                     <td className={NUM}>{fmtM3(tot.cupoM3)}</td>
                     <td className={NUM}>{fmtM3(tot.taladoM3)}</td>
                     <td className={NUM}>{fmtM3(tot.trozadoM3)}</td>
                     <td className={NUM}>{fmtM3(tot.despachadoM3)}</td>
                     <td className={NUM}>{fmtM3(tot.consumidoM3)}</td>
                     <td className={NUM}>{fmtM3(tot.enPatioM3)}</td>
-                    <td className={`${NUM} text-sm`}>{fmtM3(tot.saldoPorTalarM3)}</td>
+                    <td className={`${NUM}`}>{fmtM3(tot.saldoPorTalarM3)}</td>
                   </tr>
                 </tfoot>
               )}
-            </table>
+            </DataTable>
           </div>
 
           {sinTalarTodas.length > 0 && tot && fl.activos === 0 && (

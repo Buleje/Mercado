@@ -146,9 +146,9 @@ function MetaRendimiento({ meta }: { meta: MetaEspecie[] }) {
         <span className="ml-auto text-xs text-[var(--text-tertiary)]">1 m³ ≈ {pt(PT_POR_M3)} pt</span>
       </div>
       <div className="overflow-x-auto">
-        <DataTable className="w-full text-sm hoja-grilla">
+        <DataTable className="w-full hoja-grilla">
           <thead>
-            <tr className="border-b border-[var(--rule-soft)]">
+            <tr>
               <ThMeta izq>Especie</ThMeta>
               <ThMeta>Trozas m³</ThMeta>
               <ThMeta>Meta m³</ThMeta>
@@ -162,7 +162,7 @@ function MetaRendimiento({ meta }: { meta: MetaEspecie[] }) {
           <tbody className="divide-y divide-[var(--rule-soft)]">
             {meta.map((m) => (
               <tr key={m.especie}>
-                <td className="px-3 py-2 font-bold text-[var(--text-primary)]">
+                <td className="font-bold">
                   {m.especie}
                   {m.unidadesMezcladas && (
                     <span className="ml-1.5 text-xs font-normal text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
@@ -189,7 +189,7 @@ function MetaRendimiento({ meta }: { meta: MetaEspecie[] }) {
 function ThMeta({ children, izq }: { children: React.ReactNode; izq?: boolean }) {
   return (
     <th
-      className={`whitespace-nowrap px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] ${
+      className={`whitespace-nowrap font-bold uppercase tracking-wide text-[var(--text-tertiary)] ${
         izq ? "text-left" : "text-right"
       }`}
     >
@@ -201,7 +201,7 @@ function ThMeta({ children, izq }: { children: React.ReactNode; izq?: boolean })
 function TdMeta({ children, fuerte }: { children: React.ReactNode; fuerte?: boolean }) {
   return (
     <td
-      className={`whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums ${
+      className={`whitespace-nowrap text-right font-mono tabular-nums ${
         fuerte ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
       }`}
     >

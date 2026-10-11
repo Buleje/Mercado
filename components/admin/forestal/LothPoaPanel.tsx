@@ -192,18 +192,18 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
       {/* Cuadro por especie */}
       <BarraFiltrosTabla f={filtros} className="px-4 pt-3" />
       <div className="overflow-x-auto">
-        <DataTable className="w-full border-collapse">
+        <DataTable className="w-full">
           <thead>
-            <tr className="bg-[var(--surface-canvas)] align-top text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
-              <th className={`${CELL} text-left font-bold`}>Especie<FiltroEnCabecera id="especie" f={filtros} compacto /></th>
-              <th className={`${CELL} text-right font-bold`}>DMC<FiltroEnCabecera id="dmc" f={filtros} compacto /></th>
-              <th className={`${CELL} text-right font-bold`}>Censados<FiltroEnCabecera id="censados" f={filtros} compacto /></th>
-              <th className={`${CELL} text-right font-bold`}>≥ DMC<FiltroEnCabecera id="sobreDmc" f={filtros} compacto /></th>
-              <th className={`${CELL} text-right font-bold`}>Bajo DMC<FiltroEnCabecera id="bajoDmc" f={filtros} compacto /></th>
-              <th className={`${CELL} text-right font-bold`}>Semilleros<FiltroEnCabecera id="semilleros" f={filtros} compacto /></th>
-              <th className={`${CELL} text-right font-bold`}>Aprovech.<FiltroEnCabecera id="aprovechables" f={filtros} compacto /></th>
-              <th className={`${CELL} text-right font-bold`}>Vol. aprov. (m³)<FiltroEnCabecera id="volumen" f={filtros} compacto /></th>
-              <th className={`${CELL} text-right font-bold`}>Autorizado (m³)<FiltroEnCabecera id="autorizado" f={filtros} compacto /></th>
+            <tr className="align-top">
+              <th className={`${CELL}`}>Especie<FiltroEnCabecera id="especie" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right`}>DMC<FiltroEnCabecera id="dmc" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right`}>Censados<FiltroEnCabecera id="censados" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right`}>≥ DMC<FiltroEnCabecera id="sobreDmc" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right`}>Bajo DMC<FiltroEnCabecera id="bajoDmc" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right`}>Semilleros<FiltroEnCabecera id="semilleros" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right`}>Aprovech.<FiltroEnCabecera id="aprovechables" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right`}>Vol. aprov. (m³)<FiltroEnCabecera id="volumen" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right`}>Autorizado (m³)<FiltroEnCabecera id="autorizado" f={filtros} compacto /></th>
             </tr>
           </thead>
           <tbody>
@@ -211,11 +211,11 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
             {filtros.filtradas.map((e) => (
               <tr
                 key={e.especie}
-                className={`border-t border-[var(--rule-subtle)] ${
+                className={`border-[var(--rule-subtle)] ${
                   e.fueraDelPlan ? "bg-[var(--data-error-500)]/10" : e.autorizadoSinRespaldo ? "bg-[var(--data-warning-500)]/10" : ""
                 }`}
               >
-                <td className={`${CELL} font-bold text-[var(--text-primary)]`}>
+                <td className={`${CELL} font-bold`}>
                   {e.especie}
                   {e.fueraDelPlan && (
                     <span className="ml-1.5 rounded bg-[var(--data-error-500)]/20 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-black text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
@@ -240,7 +240,7 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
             ))}
             {especies.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
+                <td colSpan={9} className="text-center text-[var(--text-tertiary)]">
                   <TreePine className="mx-auto mb-2 h-8 w-8 opacity-30" />
                   Sin censo cargado: el POA se calcula sobre los árboles censados.
                 </td>
@@ -249,7 +249,7 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
           </tbody>
           {especies.length > 0 && (
             <tfoot>
-              <tr className="border-t border-[var(--rule-base)] bg-[var(--surface-canvas)] font-bold">
+              <tr className="bg-[var(--surface-canvas)] font-bold">
                 <td className={CELL}>{filtros.activos > 0 ? "Total del plan" : "Total"}</td>
                 <td className={NUM}>—</td>
                 <td className={NUM}>{totales.censados}</td>

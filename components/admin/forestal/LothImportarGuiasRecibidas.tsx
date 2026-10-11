@@ -17,6 +17,7 @@ import type { GrupoCandidatas } from "@/lib/forestal/loth-importar-guia-tipos";
 import type { ImportarGuias } from "./hooks/use-importar-guias";
 import { ChipPermiso } from "./LothImportarGuiasPermiso";
 import { Btn } from "./ctp-shared";
+import { DataTable } from "@buleje/design-system";
 
 const CASILLA =
   "h-5 w-5 shrink-0 cursor-pointer accent-[var(--accent)] disabled:cursor-not-allowed";
@@ -127,27 +128,27 @@ function GrupoRecibidas({ g, s }: { g: GrupoCandidatas; s: ImportarGuias }) {
       </header>
       {/* A 400 px la tabla sigue siendo tabla, con su propio scroll. */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
           <thead>
-            <tr className="text-left text-xs font-semibold text-[var(--text-tertiary)]">
-              <th className="w-10 px-3 py-1.5" data-label="Elegir">
+            <tr>
+              <th className="w-10" data-label="Elegir">
                 <span className="sr-only">Elegir</span>
               </th>
-              <th className="whitespace-nowrap px-2 py-1.5">N° de GTF</th>
-              <th className="whitespace-nowrap px-2 py-1.5">N° de registro</th>
-              <th className="whitespace-nowrap px-2 py-1.5">Fecha</th>
-              <th className="px-2 py-1.5">Especies</th>
-              <th className="whitespace-nowrap px-2 py-1.5 text-right">Trozas</th>
-              <th className="whitespace-nowrap px-3 py-1.5 text-right">m³</th>
+              <th className="whitespace-nowrap">N° de GTF</th>
+              <th className="whitespace-nowrap">N° de registro</th>
+              <th className="whitespace-nowrap">Fecha</th>
+              <th>Especies</th>
+              <th className="whitespace-nowrap text-right">Trozas</th>
+              <th className="whitespace-nowrap text-right">m³</th>
             </tr>
           </thead>
           <tbody>
             {g.guias.map((x) => (
               <tr
                 key={x.woodEntryId}
-                className={`border-t border-[var(--rule-soft)] ${x.anulada ? "opacity-60" : ""}`}
+                className={`${x.anulada ? "opacity-60" : ""}`}
               >
-                <td className="px-3 py-1.5">
+                <td>
                   <input
                     type="checkbox"
                     className={CASILLA}
@@ -157,16 +158,16 @@ function GrupoRecibidas({ g, s }: { g: GrupoCandidatas; s: ImportarGuias }) {
                     aria-label={`Elegir la guía ${x.gtfNumber}`}
                   />
                 </td>
-                <td className="whitespace-nowrap px-2 py-1.5 font-mono font-semibold text-[var(--text-primary)]">
+                <td className="whitespace-nowrap font-mono font-semibold">
                   {x.gtfNumber}
                 </td>
-                <td className="whitespace-nowrap px-2 py-1.5 font-mono text-[var(--text-secondary)]">
+                <td className="whitespace-nowrap font-mono text-[var(--text-secondary)]">
                   {x.numeroRegistro ?? "—"}
                 </td>
-                <td className="whitespace-nowrap px-2 py-1.5 text-[var(--text-secondary)]">
+                <td className="whitespace-nowrap text-[var(--text-secondary)]">
                   {x.fecha ? fechaConDia(x.fecha) : "—"}
                 </td>
-                <td className="whitespace-nowrap px-2 py-1.5 text-[var(--text-primary)]">
+                <td className="whitespace-nowrap">
                   {x.especies.join(", ") || "—"}
                   {x.anulada && (
                     <span className="ml-2 font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
@@ -179,16 +180,16 @@ function GrupoRecibidas({ g, s }: { g: GrupoCandidatas; s: ImportarGuias }) {
                     </span>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums">
+                <td className="whitespace-nowrap text-right tabular-nums">
                   {x.piezas}
                 </td>
-                <td className="whitespace-nowrap px-3 py-1.5 text-right font-mono tabular-nums">
+                <td className="whitespace-nowrap text-right font-mono tabular-nums">
                   {x.volumenM3 != null ? fmtM3(x.volumenM3) : "—"}
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
     </section>
   );

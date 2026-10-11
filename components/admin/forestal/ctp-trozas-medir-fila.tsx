@@ -81,11 +81,11 @@ export default function CtpTrozasMedirFila({
 
   return (
     <tr className={error ? "bg-[var(--data-error-500)]/8" : undefined}>
-      <td className="whitespace-nowrap font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? t.codigoPlanta ?? "—"}</td>
+      <td className="whitespace-nowrap font-mono font-bold">{t.codificacion ?? t.codigoPlanta ?? "—"}</td>
       <td className="whitespace-nowrap text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
-      <td className="whitespace-nowrap font-mono text-xs text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</td>
+      <td className="whitespace-nowrap font-mono text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</td>
       <td className={`${NUM} text-[var(--text-secondary)]`}>{n(t.largoM)}</td>
-      <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{t.volumenM3 == null ? "—" : fmtM3(t.volumenM3)}</td>
+      <td className={`${NUM} font-bold`}>{t.volumenM3 == null ? "—" : fmtM3(t.volumenM3)}</td>
       {(["d1", "d2"] as const).map((k, j) => {
         const fijo = k === "d1" ? ya.d1 : ya.d2;
         const malo = k === "d1" ? malo1 : malo2;
@@ -117,7 +117,7 @@ export default function CtpTrozasMedirFila({
           </td>
         );
       })}
-      <td className={`${NUM} text-xs`}>
+      <td className={`${NUM}`}>
         {error ? (
           <span className="font-sans font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</span>
         ) : malo1 || malo2 ? (

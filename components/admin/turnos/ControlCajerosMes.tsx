@@ -70,7 +70,7 @@ export function ControlCajerosMes({ cajeros }: { cajeros: Cajero[] }) {
       ) : (
         <DataTable>
           <thead>
-            <tr className="border-b border-[var(--rule-soft)]">
+            <tr>
               <th>Cajero</th>
               <th className="text-right">Descuentos</th>
               <th className="text-right">Quitados del ticket</th>
@@ -82,7 +82,7 @@ export function ControlCajerosMes({ cajeros }: { cajeros: Cajero[] }) {
               const nombre = nombreDeClave(f.clave, cajeros);
               return (
                 <tr key={f.clave}>
-                  <td className="font-medium text-[var(--text-primary)]">
+                  <td className="font-medium">
                     <span className="flex items-center gap-2">
                       <Inicial nombre={nombre} />
                       <span className="truncate max-w-[160px]">{nombre}</span>

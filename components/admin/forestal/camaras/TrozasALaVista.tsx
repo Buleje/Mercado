@@ -11,7 +11,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { Flame, Loader2, MoreHorizontal, Printer } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -32,13 +32,12 @@ const ESTADO: Record<EstadoTrozaALaVista, { texto: string; tono: Tono }> = {
 };
 
 const sePuede = (t: TrozaALaVista) => t.estado === "libre" && t.motivo === null;
-const TH = "px-2 py-2 text-left text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-2 py-2 align-top text-sm text-[var(--text-primary)]";
+const TD = "align-top";
 
 function Fila({ t, elegida, onElegir }: { t: TrozaALaVista; elegida: boolean; onElegir: (v: boolean) => void }) {
   const e = ESTADO[t.estado];
   return (
-    <tr className="border-t border-[var(--rule-soft)]">
+    <tr>
       <td className={TD}>
         <input
           type="checkbox"
@@ -134,10 +133,10 @@ export default function TrozasALaVista({ fecha, esHoy, activo }: { fecha: string
       ) : (
         <>
           <div className={`overflow-x-auto ${cargando ? "opacity-60" : ""}`} aria-busy={cargando}>
-            <table className="w-full">
+            <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
               <thead>
                 <tr>
-                  <th className={`${TH} w-10`} data-label="Elegir">
+                  <th className="w-10" data-label="Elegir">
                     <input
                       type="checkbox"
                       checked={todas}
@@ -147,12 +146,12 @@ export default function TrozasALaVista({ fecha, esHoy, activo }: { fecha: string
                       className="h-5 w-5 accent-[var(--accent)]"
                     />
                   </th>
-                  <th className={TH}>Marcador</th>
-                  <th className={TH}>Troza</th>
-                  <th className={TH}>Especie</th>
-                  <th className={TH}>m³</th>
-                  <th className={TH}>Dónde está</th>
-                  <th className={TH}>Vista</th>
+                  <th >Marcador</th>
+                  <th >Troza</th>
+                  <th >Especie</th>
+                  <th >m³</th>
+                  <th >Dónde está</th>
+                  <th >Vista</th>
                 </tr>
               </thead>
               <tbody>
@@ -160,7 +159,7 @@ export default function TrozasALaVista({ fecha, esHoy, activo }: { fecha: string
                   <Fila key={t.marcador} t={t} elegida={elegidas.has(t.marcador)} onElegir={(v) => elegir(t.marcador, v)} />
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             {sel.length > 0 && (

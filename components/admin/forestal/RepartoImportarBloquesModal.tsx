@@ -203,13 +203,13 @@ export default function RepartoImportarBloquesModal({
                     <tbody>
                       {bloques.map((b, i) => (
                         <tr key={`${b.etiqueta}-${i}`}>
-                          <td className="text-[var(--text-primary)]">{b.etiqueta || <span className="text-[var(--text-tertiary)]">sin etiqueta</span>}</td>
+                          <td>{b.etiqueta || <span className="text-[var(--text-tertiary)]">sin etiqueta</span>}</td>
                           <td className={`font-bold ${b.tipo === "aserrada" ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)]"}`}>
                             {b.tipo === "aserrada" ? "Aserrada directa" : "Rolliza"}
                           </td>
                           <td className="text-[var(--text-secondary)]">{b.especie || <span className="text-[var(--text-tertiary)]">sin especie</span>}</td>
                           <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.piezasManual ?? "—"}</td>
-                          <td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(b.m3)}</td>
+                          <td className="text-right font-mono tabular-nums">{fmtM3(b.m3)}</td>
                           <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.aprovechablePct ?? "—"}</td>
                         </tr>
                       ))}

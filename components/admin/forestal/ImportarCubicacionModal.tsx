@@ -338,22 +338,22 @@ export default function ImportarCubicacionModal({
             {resultado.piezas.length > 0 ? (
               <>
                 <div className="max-h-56 overflow-auto rounded-xl border border-[var(--rule-base)]">
-                  <DataTable className="w-full min-w-[420px] text-sm">
-                    <thead className="sticky top-0 bg-[var(--surface-sunken)]">
-                      <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                        <th className="px-3 py-2">Cant.</th><th className="px-3 py-2">Medida</th><th className="px-3 py-2">Especie</th><th className="px-3 py-2 text-right">Pie tablar</th>
+                  <DataTable className="w-full min-w-[420px]">
+                    <thead className="sticky top-0">
+                      <tr>
+                        <th>Cant.</th><th>Medida</th><th>Especie</th><th className="text-right">Pie tablar</th>
                       </tr>
                     </thead>
                     <tbody>
                       {resultado.piezas.map((p) => (
-                        <tr key={p.id} className={`border-t border-[var(--rule-soft)] ${p.sospechosa ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : ""}`}>
-                          <td className="px-3 py-1.5 font-mono tabular-nums text-[var(--text-secondary)]">{p.cantidad}</td>
-                          <td className="px-3 py-1.5 font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                        <tr key={p.id} className={`${p.sospechosa ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : ""}`}>
+                          <td className="font-mono tabular-nums text-[var(--text-secondary)]">{p.cantidad}</td>
+                          <td className="font-mono font-bold tabular-nums">
                             {p.espesor}×{p.ancho}×{p.largo}
                             {p.sospechosa && <AlertTriangle className="ml-1 inline h-3 w-3 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />}
                           </td>
-                          <td className="px-3 py-1.5 text-[var(--text-secondary)]">{p.especie ?? "—"}</td>
-                          <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{fmtPt(p.pieTablar)}</td>
+                          <td className="text-[var(--text-secondary)]">{p.especie ?? "—"}</td>
+                          <td className="text-right font-mono tabular-nums">{fmtPt(p.pieTablar)}</td>
                         </tr>
                       ))}
                     </tbody>

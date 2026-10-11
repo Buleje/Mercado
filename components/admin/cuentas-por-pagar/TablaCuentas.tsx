@@ -9,6 +9,7 @@ import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import PagarCuentaForm, { METODOS } from "./PagarCuentaForm";
 import { diaDeVencimiento, estaPagada, fechaConDia, saldo, vencimiento, type CuentaPorPagar, type TonoVence } from "./resumen-cuentas";
 import type { MetodoPago, PagoCuenta, ResultadoPago } from "./use-cuentas-por-pagar";
+import { DataTable } from "@buleje/design-system";
 
 const CHIP: Record<TonoVence, string> = {
   vencida: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]",
@@ -37,13 +38,13 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <table className="w-full text-sm">
-        <thead className="bg-[var(--surface-sunken)] text-left text-sm font-semibold text-[var(--text-secondary)]">
+      <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
+        <thead>
           <tr>
-            <th className="px-4 py-2.5">Proveedor</th>
-            <th className="px-4 py-2.5 text-right">Te falta pagar</th>
-            <th className="px-4 py-2.5">Vence</th>
-            <th className="px-4 py-2.5 text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
+            <th>Proveedor</th>
+            <th className="text-right">Te falta pagar</th>
+            <th>Vence</th>
+            <th className="text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -59,7 +60,7 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
             return (
               <Fragment key={c.id}>
                 <tr className={cn(v.tono === "vencida" && "bg-[var(--data-error-50)]/40 dark:bg-[var(--data-error-500)]/5")}>
-                  <td className="px-4 py-3 align-top">
+                  <td className="align-top">
                     {/* Un solo hijo por celda: a 400 px la celda es «rótulo | contenido» y
                         dos hijos quedaban uno al lado del otro, montados. */}
                     <div className="min-w-0">
@@ -70,7 +71,7 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
                       {c.description && <p className="mt-0.5 line-clamp-2 text-sm text-[var(--text-secondary)]">{c.description}</p>}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right align-top tabular-nums">
+                  <td className="text-right align-top tabular-nums">
                     <div className="min-w-0">
                       <p className={cn("font-bold", pagada ? "text-[var(--text-secondary)]" : "text-[var(--text-primary)]")}>{formatCurrency(falta)}</p>
                       <p className="text-sm text-[var(--text-secondary)]">de {formatCurrency(c.amount)}</p>
@@ -79,13 +80,13 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 align-top">
+                  <td className="align-top">
                     <div className="min-w-0">
                       <p className="text-[var(--text-primary)]">{fechaConDia(diaDeVencimiento(c.dueDate))}</p>
                       <span className={cn("mt-1 inline-flex rounded-full px-2 py-0.5 text-sm font-semibold", CHIP[v.tono])}>{v.texto}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 align-top">
+                  <td className="align-top">
                     <div className="flex items-center justify-end gap-2">
                       {!pagada && (
                         <button
@@ -103,7 +104,7 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
                 </tr>
                 {abierto?.id === c.id && (
                   <tr>
-                    <td colSpan={4} className="p-0" data-label="">
+                    <td colSpan={4} data-label="">
                       {abierto.que === "pagar" ? (
                         <PagarCuentaForm
                           saldo={falta}
@@ -127,7 +128,7 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
             );
           })}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }

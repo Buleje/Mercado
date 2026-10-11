@@ -20,8 +20,8 @@ import { normalizarCodigo } from "@/lib/forestal/trozas-recepcion";
 import type { CodigoTomado } from "@/hooks/use-codigos-planta";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
-const TH = "px-2 py-2 text-left align-bottom text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-2 py-1.5 align-middle";
+const TH = "text-left align-bottom font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
+const TD = "align-middle";
 const CELDA =
   "h-9 rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-40";
 
@@ -96,11 +96,11 @@ export default function CtpPiezasTabla({
 }: Props) {
   return (
     <div className="max-h-[26rem] overflow-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-      <DataTable className="w-full min-w-[860px] text-sm">
+      <DataTable className="w-full min-w-[860px]">
         <caption className="sr-only">
           Piezas declaradas por la guía, con su recepción, código de planta y fecha de llegada
         </caption>
-        <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
+        <thead className="sticky top-0 z-10">
           <tr>
             <th scope="col" className={`${TH} w-9`} title="Elegir para las acciones en lote">
               <span className="sr-only">Elegir</span>
@@ -133,7 +133,7 @@ export default function CtpPiezasTabla({
             return (
               <tr
                 key={`${t.orden}-${t.codificacion ?? idx}`}
-                className={`border-t border-[var(--rule-soft)] transition-colors ${
+                className={`${
                   t.noRecepcionada
                     ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10"
                     : elegida
@@ -166,7 +166,7 @@ export default function CtpPiezasTabla({
                     className="h-4 w-4 accent-[var(--data-success-600)]"
                   />
                 </td>
-                <td className={`${TD} font-mono font-bold text-[var(--text-primary)]`}>{t.codificacion ?? "—"}</td>
+                <td className={`${TD} font-mono font-bold`}>{t.codificacion ?? "—"}</td>
                 <td className={TD}>
                   <input
                     value={t.codigoPlanta ?? ""}
@@ -202,7 +202,7 @@ export default function CtpPiezasTabla({
                 <td className={`${TD} text-right font-mono tabular-nums text-[var(--text-tertiary)]`}>{t.d1Cm ?? "—"}</td>
                 <td className={`${TD} text-right font-mono tabular-nums text-[var(--text-tertiary)]`}>{t.d2Cm ?? "—"}</td>
                 <td className={`${TD} text-right font-mono tabular-nums text-[var(--text-tertiary)]`}>{t.largoM ?? "—"}</td>
-                <td className={`${TD} text-right font-mono font-bold tabular-nums text-[var(--text-primary)]`}>
+                <td className={`${TD} text-right font-mono font-bold tabular-nums`}>
                   {t.volumenM3 != null ? fmtM3(t.volumenM3) : "—"}
                 </td>
               </tr>

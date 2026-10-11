@@ -42,13 +42,13 @@ export default function HistorialImportacionesModal({ onClose }: { onClose: () =
             <tbody>
               {filas.map((r) => (
                 <tr key={r.id}>
-                  <td className="max-w-48 truncate font-semibold text-[var(--text-primary)]">{r.filename}</td>
+                  <td className="max-w-48 truncate font-semibold">{r.filename}</td>
                   <td className="text-[var(--text-secondary)]">{r.module}</td>
-                  <td className="text-right font-bold tabular-nums text-[var(--text-primary)]">{r.records}</td>
-                  <td className={cn("text-sm font-semibold", ESTADO[r.status])}>
+                  <td className="text-right font-bold tabular-nums">{r.records}</td>
+                  <td className={cn("font-semibold", ESTADO[r.status])}>
                     {r.status === "success" ? "Exitoso" : r.status === "partial" ? `${r.errors} errores` : "Error"}
                   </td>
-                  <td className="text-sm text-[var(--text-secondary)]">{fmtDate(r.date)}</td>
+                  <td className="text-[var(--text-secondary)]">{fmtDate(r.date)}</td>
                 </tr>
               ))}
             </tbody>

@@ -7,12 +7,11 @@
  * usa ni cuánto suma cada uno: acá va hoja por hoja, bloque por bloque, con
  * el (3) VOLUMEN TOTAL de cada hoja. Mismo `Anexo04` que dibuja la hoja.
  */
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { FILAS_OFICIAL, fmtAnexo, type Anexo04 } from "@/lib/forestal/anexo04-serfor";
 
-const TH = "px-1.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-1.5 py-1 font-mono tabular-nums";
+const TD = "font-mono tabular-nums";
 
 export default function Anexo04BloquesPapel({ anexo }: { anexo: Anexo04 }) {
   const unidad = anexo.unidadV === "pt" ? "PT" : "m³";
@@ -40,30 +39,30 @@ export default function Anexo04BloquesPapel({ anexo }: { anexo: Anexo04 }) {
               <span>Hoja {h + 1} de {anexo.hojas.length}</span>
               <span className="font-mono tabular-nums text-[var(--text-primary)]">(3) {fmtAnexo(hoja.totalM3)} m³</span>
             </p>
-            <table className="w-full text-xs">
+            <DataTable className="w-full">
               <caption className="sr-only">Bloques de la hoja {h + 1}</caption>
               <thead>
                 <tr>
-                  <th scope="col" className={`${TH} text-left`}>Especie · tipo</th>
-                  <th scope="col" className={`${TH} text-right`}>Reng.</th>
-                  <th scope="col" className={`${TH} text-right`}>Pzas</th>
-                  <th scope="col" className={`${TH} text-right`}>{unidad}</th>
+                  <th scope="col">Especie · tipo</th>
+                  <th scope="col" className="text-right">Reng.</th>
+                  <th scope="col" className="text-right">Pzas</th>
+                  <th scope="col" className="text-right">{unidad}</th>
                 </tr>
               </thead>
               <tbody>
                 {hoja.bloques.map((b, i) => (
-                  <tr key={i} className="border-t border-[var(--rule-soft)]">
-                    <td className="px-1.5 py-1 text-left">
+                  <tr key={i}>
+                    <td className="text-left">
                       <span className="font-bold text-[var(--text-primary)]">{i + 1}. {b.tipo}</span>
                       <span className="block text-[var(--text-tertiary)]">{b.especie}{b.continuacion ? " · sigue" : ""}</span>
                     </td>
                     <td className={`${TD} text-right text-[var(--text-secondary)]`}>{b.filas.length}/{FILAS_OFICIAL}</td>
                     <td className={`${TD} text-right text-[var(--text-secondary)]`}>{b.filas.reduce((a, f) => a + f.cantidad, 0)}</td>
-                    <td className={`${TD} text-right font-bold text-[var(--text-primary)]`}>{fmtAnexo(b.subtotal)}</td>
+                    <td className={`${TD} text-right font-bold`}>{fmtAnexo(b.subtotal)}</td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         ))
       )}

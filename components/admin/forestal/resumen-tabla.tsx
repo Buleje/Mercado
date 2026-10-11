@@ -244,9 +244,9 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
       </div>
     )}
     <div className={`overflow-x-auto rounded-xl border border-[var(--rule-base)] ${larga ? "max-h-[70vh] overflow-y-auto" : ""}`}>
-      <DataTable className={`w-full text-sm ${compacta ? (conValor ? "min-w-[560px]" : "min-w-[400px]") : "min-w-[480px]"}`}>
+      <DataTable className={`w-full ${compacta ? (conValor ? "min-w-[560px]" : "min-w-[400px]") : "min-w-[480px]"}`}>
         {caption && <caption className="sr-only">{caption}</caption>}
-        <thead ref={orden.refCabecera} className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
+        <thead ref={orden.refCabecera} className="sticky top-0 z-10">
           <tr>
             {seleccion && (
               <th scope="col" className={`${TH} w-8 text-center`}>
@@ -325,7 +325,7 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
             <tr
               key={g.clave}
               onClick={marcas ? (e) => clicEnFila(e, () => marcas.alternar(g.clave)) : undefined}
-              className={`border-t transition-colors ${marcas ? "cursor-pointer" : ""} ${conMarca
+              className={`${marcas ? "cursor-pointer" : ""} ${conMarca
                 ? `border-[var(--data-success-500)]/40 ${FILA_MARCADA} underline decoration-[var(--data-success-500)]/40 underline-offset-4`
                 : marcada
                   ? "border-[var(--accent)]/40 bg-[var(--accent)]/8 hover:bg-primary/5"
@@ -348,12 +348,12 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                   /* El grupo que manda lleva la marca al costado: es el que define
                      el precio del lote y en una lista de doce se perdía. */
                   grupo: (
-                    <td className={`${TD} border-l-[3px] font-bold text-[var(--text-primary)] ${i === 0 && visibles.length > 1 ? "border-l-[var(--accent)]" : "border-l-transparent"}`}>
+                    <td className={`${TD} border-l-[3px] font-bold ${i === 0 && visibles.length > 1 ? "border-l-[var(--accent)]" : "border-l-transparent"}`}>
                       {esTipo ? <TipoBadge tipo={g.label as TipoComercial} /> : g.label}
                     </td>
                   ),
                   piezas: <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPiezas(g.cantidad)}</td>,
-                  m3: <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(g.m3)}</td>,
+                  m3: <td className={`${TD} ${NUM} font-bold`}>{fmtM3(g.m3)}</td>,
                   pt: <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPt(g.pieTablar)}</td>,
                   participacion: (
                     <td className={TD}>
@@ -419,7 +419,7 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                 piezas: <td className={`${TD} ${NUM}`}>{fmtPiezas(totalVisible.cantidad)}</td>,
                 m3: <td className={`${TD} ${NUM}`}>{fmtM3(totalVisible.m3)}</td>,
                 pt: <td className={`${TD} ${NUM}`}>{fmtPt(totalVisible.pieTablar)}</td>,
-                participacion: <td className={`${TD} text-[length:var(--ts-2xs)] uppercase tracking-wide`}>{fmtPct(totalVisible.pct)}%</td>,
+                participacion: <td className={`${TD} uppercase tracking-wide`}>{fmtPct(totalVisible.pct)}%</td>,
                 m3r: rolliza && <td className={`${TD} ${NUM}`}>{fmtM3(m3Rolliza(totalVisible.m3))}</td>,
                 precio: conRendimiento && (
                   <td className={`${TD} ${NUM}`}>

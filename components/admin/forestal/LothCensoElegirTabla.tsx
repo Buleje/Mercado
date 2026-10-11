@@ -27,7 +27,7 @@ export interface OrdenCenso {
   dir: "asc" | "desc";
 }
 
-const TH = "whitespace-nowrap px-2 py-2 text-left text-xs font-bold text-[var(--text-primary)]";
+const TH = "whitespace-nowrap text-left font-bold";
 const FIJA = "sticky right-0 z-[1] bg-[var(--surface-raised)] shadow-[-8px_0_8px_-8px_var(--rule-strong)]";
 
 const dec = (v: number | null, min: number, max: number) => (v == null ? "—" : formatNumber(v, { min, max }));
@@ -118,8 +118,8 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
   const todos = marcables.length > 0 && nMarcados === marcables.length;
   const columnas = 9 + (conDistancia ? 1 : 0);
   return (
-    <DataTable className="w-full text-sm" stickyHeader wrapperClassName="max-h-[min(58vh,34rem)]">
-      <thead className="bg-[var(--surface-sunken)]">
+    <DataTable className="w-full" stickyHeader wrapperClassName="max-h-[min(58vh,34rem)]">
+      <thead>
         <tr>
           <Cabecera
             col="codigo"
@@ -152,7 +152,7 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
           <Cabecera col="condicion" label="Condición" orden={orden} onOrdenar={onOrdenar} />
           <Cabecera col="categoria" label="Categoría POA" orden={orden} onOrdenar={onOrdenar} />
           <Cabecera col="estado" label="En el libro" orden={orden} onOrdenar={onOrdenar} />
-          <th scope="col" className={`${TH} ${FIJA} bg-[var(--surface-sunken)]`}><span className="sr-only">Elegir</span></th>
+          <th scope="col" className={`${TH} ${FIJA}`}><span className="sr-only">Elegir</span></th>
         </tr>
       </thead>
       <tbody>
@@ -173,9 +173,9 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
             <tr
               key={a.id}
               data-arbol={a.treeCode}
-              className={`border-t border-[var(--rule-soft)] align-top ${esElegido || marcado ? "bg-[var(--accent)]/10" : infraccion && para === "tala" ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : ""} ${!elegible ? "text-[var(--text-secondary)]" : ""}`}
+              className={`align-top ${esElegido || marcado ? "bg-[var(--accent)]/10" : infraccion && para === "tala" ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : ""} ${!elegible ? "text-[var(--text-secondary)]" : ""}`}
             >
-              <td className="px-2 py-2">
+              <td>
                 <span className="flex items-center whitespace-nowrap">
                   {conCasillas &&
                     (elegible ? (
@@ -192,8 +192,8 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
                   <Mono bold>{a.treeCode}</Mono>
                 </span>
               </td>
-              {conDistancia && <td className="px-2 py-2 text-right"><span className="whitespace-nowrap"><Mono>{d == null ? "—" : formatDistance(d)}</Mono></span></td>}
-              <td className="px-2 py-2">
+              {conDistancia && <td className="text-right"><span className="whitespace-nowrap"><Mono>{d == null ? "—" : formatDistance(d)}</Mono></span></td>}
+              <td>
                 <div className="min-w-[9rem]">
                   <span className="font-medium text-[var(--text-primary)]">{a.speciesCommon}</span>
                   {a.cites && <> <CitesPill /></>}
@@ -206,14 +206,14 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
                   )}
                 </div>
               </td>
-              <td className="px-2 py-2 text-right"><Mono>{dec(a.dapM, 2, 3)}</Mono></td>
-              <td className="px-2 py-2 text-right"><Mono>{dec(a.hcM, 0, 2)}</Mono></td>
-              <td className="px-2 py-2 text-right"><Mono bold>{a.volM3 == null ? "—" : fmtM3(a.volM3)}</Mono></td>
-              <td className="px-2 py-2">
+              <td className="text-right"><Mono>{dec(a.dapM, 2, 3)}</Mono></td>
+              <td className="text-right"><Mono>{dec(a.hcM, 0, 2)}</Mono></td>
+              <td className="text-right"><Mono bold>{a.volM3 == null ? "—" : fmtM3(a.volM3)}</Mono></td>
+              <td>
                 <span className="whitespace-nowrap text-[var(--text-primary)]">{a.condicion || "—"}</span>
                 {a.notes && <span className="block max-w-[9rem] truncate text-xs text-[var(--text-tertiary)]" title={a.notes}>{a.notes}</span>}
               </td>
-              <td className="px-2 py-2">
+              <td>
                 <CategoriaTag categoria={a.categoria ?? undefined} />
                 {a.reparo && (
                   <span className={`mt-0.5 block whitespace-nowrap text-xs font-semibold ${infraccion ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]"}`}>
@@ -221,8 +221,8 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
                   </span>
                 )}
               </td>
-              <td className="px-2 py-2"><EnElLibro a={a} /></td>
-              <td className={`px-2 py-1.5 text-right ${FIJA} ${esElegido || marcado ? "bg-[var(--surface-sunken)]" : ""}`}>
+              <td><EnElLibro a={a} /></td>
+              <td className={`text-right ${FIJA} ${esElegido || marcado ? "bg-[var(--surface-sunken)]" : ""}`}>
                 {elegible ? (
                   <button
                     type="button"
@@ -255,7 +255,7 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
         })}
         {arboles.length === 0 && (
           <tr>
-            <td colSpan={columnas} className="px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
+            <td colSpan={columnas} className="text-center text-[var(--text-tertiary)]">
               <TreePine className="mx-auto mb-2 h-8 w-8 opacity-30" aria-hidden="true" />
               {vacio}
             </td>

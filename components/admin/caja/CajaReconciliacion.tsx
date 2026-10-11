@@ -126,7 +126,7 @@ export function CajaReconciliacion({ cerradas, tolerancia }: { cerradas: CashReg
         {filas.length === 0 ? (
           <EmptyState icon={History} title="Sin cajas cerradas" description="No hay cierres en el rango seleccionado." className="p-6" />
         ) : (
-          <DataTable className="text-sm">
+          <DataTable>
             <thead>
               <tr>
                 <th>Fecha</th>
@@ -161,7 +161,7 @@ export function CajaReconciliacion({ cerradas, tolerancia }: { cerradas: CashReg
                     ) : (
                       <>
                         <td className="text-right text-[var(--text-secondary)] font-semibold tabular-nums">{fmt(row.totalExpected)}</td>
-                        <td className="text-right font-bold text-[var(--text-primary)] tabular-nums">{fmt(row.totalClosing)}</td>
+                        <td className="text-right font-bold tabular-nums">{fmt(row.totalClosing)}</td>
                         <td className={cn("text-right font-extrabold tabular-nums", ok ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : menor ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
                           {row.totalDiff > 0 ? "+" : ""}
                           {fmt(row.totalDiff)}

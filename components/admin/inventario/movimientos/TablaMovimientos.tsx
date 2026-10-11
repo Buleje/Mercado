@@ -30,7 +30,7 @@ export function rotuloDe(m: FilaMovimiento): string {
 
 export function TablaMovimientos({ filas, hoy, onVer }: { filas: readonly FilaMovimiento[]; hoy: string; onVer: (m: FilaMovimiento) => void }) {
   return (
-    <DataTable className="min-w-[640px] [&_thead_th]:text-sm! [&_tbody_td]:py-1.5! [&_tbody_td]:align-top">
+    <DataTable className="min-w-[640px] [&_tbody_td]:py-1.5! [&_tbody_td]:align-top">
       <thead>
         <tr>
           <th>Cuándo</th>

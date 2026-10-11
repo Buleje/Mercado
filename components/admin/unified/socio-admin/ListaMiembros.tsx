@@ -92,7 +92,7 @@ export function ListaMiembros({
         <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="overflow-x-auto">
             <DataTable className={CLASE_TABLA}>
-              <thead ref={orden.refCabecera} className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+              <thead ref={orden.refCabecera}>
                 <tr>
                   <EnOrden
                     orden={orden.orden}
@@ -110,12 +110,12 @@ export function ListaMiembros({
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
                 {filtrados.map((m) => (
-                  <tr key={m.id} className="transition-colors hover:bg-[var(--surface-alt)]">
+                  <tr key={m.id} className="hover:bg-[var(--surface-alt)]">
                     <EnOrden
                       orden={orden.orden}
                       celdas={{
                         miembro: (
-                          <td className="px-4 py-3">
+                          <td>
                             <div className="flex items-center gap-2">
                               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-sm font-bold text-white" aria-hidden>
                                 {m.name.charAt(0).toUpperCase()}
@@ -127,18 +127,18 @@ export function ListaMiembros({
                             </div>
                           </td>
                         ),
-                        plan: <td className="hidden px-4 py-3 text-[var(--text-primary)] sm:table-cell">{PLAN_LABELS[m.plan]}</td>,
-                        renovacion: <td className="hidden px-4 py-3 text-[var(--text-secondary)] md:table-cell">{m.status === "cancelado" ? "—" : fmtDate(m.renewsAt)}</td>,
-                        cashback: <td className="hidden px-4 py-3 text-right font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)] lg:table-cell">{fmtSoles(m.totalCashback)}</td>,
-                        pedidos: <td className="hidden px-4 py-3 text-right tabular-nums text-[var(--text-secondary)] lg:table-cell">{m.ordersCount}</td>,
+                        plan: <td className="hidden sm:table-cell">{PLAN_LABELS[m.plan]}</td>,
+                        renovacion: <td className="hidden text-[var(--text-secondary)] md:table-cell">{m.status === "cancelado" ? "—" : fmtDate(m.renewsAt)}</td>,
+                        cashback: <td className="hidden text-right font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)] lg:table-cell">{fmtSoles(m.totalCashback)}</td>,
+                        pedidos: <td className="hidden text-right tabular-nums text-[var(--text-secondary)] lg:table-cell">{m.ordersCount}</td>,
                         estado: (
-                          <td className="px-4 py-3 text-center">
+                          <td className="text-center">
                             <span className={cn("inline-flex rounded-full px-2.5 py-1 text-sm font-bold", STATUS_STYLES[m.status])}>{STATUS_LABELS[m.status]}</span>
                           </td>
                         ),
                       }}
                     />
-                    <td className="px-4 py-3 text-right">
+                    <td className="text-right">
                       <button type="button" onClick={() => onSelect(m)} className="inline-flex min-h-12 items-center rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]">
                         Ver perfil
                       </button>

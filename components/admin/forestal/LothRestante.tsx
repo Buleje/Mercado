@@ -11,6 +11,7 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
 import { formatNumber } from "@/lib/format";
 import { CAJA } from "./loth-ficha-ui";
+import { DataTable } from "@buleje/design-system";
 
 export interface FilaRestante {
   label: string;
@@ -40,15 +41,15 @@ function Fila({ f }: { f: FilaRestante }) {
   const pt = f.m3 == null ? null : ptAserrableDeRolliza(f.m3);
   return (
     <tr className={f.total ? "border-t border-[var(--rule-base)]" : ""}>
-      <th scope="row" className={`py-0.5 pr-2 text-left text-xs ${f.total ? "font-bold" : "font-medium"} ${tono}`}>
+      <th scope="row" className={`pr-2 text-left ${f.total ? "font-bold" : "font-medium"} ${tono}`}>
         {f.resta && <span aria-hidden="true">− </span>}
         {f.total && <span aria-hidden="true">= </span>}
         {f.label}
       </th>
-      <td className={`whitespace-nowrap py-0.5 text-right font-mono text-xs tabular-nums ${f.total ? "font-bold" : ""} ${tono}`}>
+      <td className={`whitespace-nowrap text-right font-mono tabular-nums ${f.total ? "font-bold" : ""} ${tono}`}>
         {f.m3 == null ? "—" : conSigno(f.m3, fmtM3(f.m3))}
       </td>
-      <td className={`whitespace-nowrap py-0.5 pl-2 text-right font-mono text-xs tabular-nums ${f.total ? `font-bold ${tono}` : "text-[var(--text-tertiary)]"}`}>
+      <td className={`whitespace-nowrap pl-2 text-right font-mono tabular-nums ${f.total ? `font-bold ${tono}` : "text-[var(--text-tertiary)]"}`}>
         {pt == null ? "" : `≈ ${conSigno(pt, formatNumber(pt, 0))}`}
       </td>
     </tr>
@@ -77,19 +78,19 @@ export default function LothRestante({
           example="10 m³ en troza ≈ 2 374 pt aserrables (10 × 0.56 × 424)."
         />
       </div>
-      <table className="mt-1 w-full">
+      <DataTable className="mt-1 w-full">
         <thead>
-          <tr className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            <th scope="col" className="text-left font-bold"><span className="sr-only">Concepto</span></th>
-            <th scope="col" className="text-right font-bold">m³</th>
-            <th scope="col" className="pl-2 text-right font-bold">≈ pt aserr.</th>
+          <tr>
+            <th scope="col"><span className="sr-only">Concepto</span></th>
+            <th scope="col" className="text-right">m³</th>
+            <th scope="col" className="pl-2 text-right">≈ pt aserr.</th>
           </tr>
         </thead>
         {grupos.map((g, i) => (
           <tbody key={g.titulo ?? i}>
             {g.titulo && (
               <tr>
-                <th scope="rowgroup" colSpan={3} className={`pb-0.5 text-left text-xs font-bold text-[var(--text-primary)] ${i > 0 ? "pt-2" : "pt-1"}`}>
+                <th scope="rowgroup" colSpan={3} className={`pb-0.5 text-left font-bold ${i > 0 ? "pt-2" : "pt-1"}`}>
                   {g.titulo}
                 </th>
               </tr>
@@ -99,7 +100,7 @@ export default function LothRestante({
             ))}
           </tbody>
         ))}
-      </table>
+      </DataTable>
     </div>
   );
 }

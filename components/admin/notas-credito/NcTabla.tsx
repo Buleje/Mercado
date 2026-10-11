@@ -48,7 +48,7 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
           </div>
         ) : (
           <>
-            <DataTable className="min-w-175 [&_thead_th]:text-sm!">
+            <DataTable className="min-w-175">
                 <thead>
                   <tr>
                     <th className="w-14">
@@ -109,18 +109,18 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
                             </span>
                           ) : <span className="text-[var(--text-tertiary)]">{"\u2014"}</span>}
                         </td>
-                        <td className="text-[var(--text-primary)] sm:truncate sm:max-w-45">
+                        <td className="sm:truncate sm:max-w-45">
                           <span className="text-sm text-[var(--text-tertiary)] mr-1">[{nc.motivoCodigo}]</span>
                           {nc.motivoDesc}
                         </td>
-                        <td className="text-right font-bold whitespace-nowrap text-[var(--text-primary)]">{formatCurrency(nc.total)}</td>
+                        <td className="text-right font-bold whitespace-nowrap">{formatCurrency(nc.total)}</td>
                         <td>
                           <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold", meta.bg, meta.color)}>
                             <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
                             {meta.label}
                           </span>
                         </td>
-                        <td className="text-[var(--text-secondary)] hidden md:table-cell text-sm whitespace-nowrap">{formatDate(nc.createdAt)}</td>
+                        <td className="text-[var(--text-secondary)] hidden md:table-cell whitespace-nowrap">{formatDate(nc.createdAt)}</td>
                         <td>
                           <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
                             {nc.status === "BORRADOR" && (

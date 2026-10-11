@@ -519,24 +519,24 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
             )}
 
             <div className="max-h-[46vh] overflow-y-auto rounded-2xl border border-[var(--rule-base)]">
-              <DataTable className="w-full text-sm">
-                <thead className="sticky top-0 bg-[var(--surface-sunken)] text-left">
+              <DataTable className="w-full">
+                <thead className="sticky top-0">
                   <tr>
-                    {isCombined && <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Registro</th>}
-                    <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Fila</th>
-                    <th className="px-3 py-2 font-bold text-[var(--text-primary)]">GTF</th>
-                    <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Estado</th>
-                    <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Detalle</th>
+                    {isCombined && <th>Registro</th>}
+                    <th>Fila</th>
+                    <th>GTF</th>
+                    <th>Estado</th>
+                    <th>Detalle</th>
                   </tr>
                 </thead>
                 <tbody>
                   {detalle.map((d, i) => (
-                    <tr key={i} className="border-t border-[var(--rule-soft)]">
-                      {isCombined && <td className="px-3 py-2 text-xs font-bold text-[var(--text-secondary)]">{d.seccion ?? "—"}</td>}
-                      <td className="px-3 py-2 font-mono text-xs text-[var(--text-tertiary)]">{d.row ?? "—"}</td>
-                      <td className="px-3 py-2 font-mono text-xs font-bold text-[var(--text-primary)]">{d.gtf ?? "—"}</td>
-                      <td className="px-3 py-2"><ActionBadge action={d.action} /></td>
-                      <td className="px-3 py-2 text-[var(--text-secondary)]">{d.message}</td>
+                    <tr key={i}>
+                      {isCombined && <td className="font-bold text-[var(--text-secondary)]">{d.seccion ?? "—"}</td>}
+                      <td className="font-mono text-[var(--text-tertiary)]">{d.row ?? "—"}</td>
+                      <td className="font-mono font-bold">{d.gtf ?? "—"}</td>
+                      <td><ActionBadge action={d.action} /></td>
+                      <td className="text-[var(--text-secondary)]">{d.message}</td>
                     </tr>
                   ))}
                 </tbody>

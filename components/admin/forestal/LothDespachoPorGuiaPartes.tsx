@@ -15,9 +15,10 @@ import { medidasDeLinea } from "@/lib/forestal/loth-despacho-medidas";
 import { filaAnulada, type FilaPorGuia } from "@/lib/forestal/loth-despacho-por-guia";
 import { imprimirHojaDespacho, type PermisoDeLaHoja } from "@/lib/forestal/loth-despacho-hoja";
 import { ingresarGtfAlCtp } from "./LothGtfCtp";
+import { DataTable } from "@buleje/design-system";
 
-export const TH = "px-3 py-2.5 font-bold text-[var(--text-primary)] whitespace-nowrap";
-export const TD = "px-3 py-2.5 align-top";
+export const TH = "whitespace-nowrap";
+export const TD = "align-top";
 export const DER = "text-right font-mono tabular-nums";
 const m = (v: string | null, dp: number) => (v == null ? "—" : Number(v).toFixed(dp));
 
@@ -58,9 +59,9 @@ export function EstadoGuia({ f, hayCtp }: { f: FilaPorGuia; hayCtp: boolean }) {
 export function Desglose({ f, onDetalle, hoja }: { f: FilaPorGuia; onDetalle: (e: LothEntryDTO) => void; hoja?: React.ReactNode }) {
   const anulada = filaAnulada(f);
   return (
-    <table className="w-full text-sm" aria-label={`Trozas de la guía ${f.gtfNumber ?? "sin número"}`}>
+    <DataTable className="w-full" aria-label={`Trozas de la guía ${f.gtfNumber ?? "sin número"}`}>
       <thead>
-        <tr className="text-xs text-[var(--text-secondary)]">
+        <tr>
           <th className={TH}>Cód. troza</th>
           <th className={TH}>Especie</th>
           <th className={`${TH} text-right`}>D1</th>
@@ -95,7 +96,7 @@ export function Desglose({ f, onDetalle, hoja }: { f: FilaPorGuia; onDetalle: (e
         })}
       </tbody>
       <tfoot>
-        <tr className="border-t border-[var(--rule-base)]">
+        <tr>
           <td className={TD} colSpan={5}>
             <span className="text-xs font-black uppercase tracking-widest text-[var(--text-secondary)]">
               Total · {anulada ? f.anuladas : f.trozas} troza{(anulada ? f.anuladas : f.trozas) === 1 ? "" : "s"}
@@ -106,7 +107,7 @@ export function Desglose({ f, onDetalle, hoja }: { f: FilaPorGuia; onDetalle: (e
           <td className={`${TD} ${DER} font-black`}>{anulada ? <span className="line-through">{fmtM3(f.m3Anuladas)}</span> : fmtM3(f.m3)}</td>
         </tr>
       </tfoot>
-    </table>
+    </DataTable>
   );
 }
 

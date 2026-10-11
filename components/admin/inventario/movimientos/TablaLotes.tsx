@@ -34,7 +34,7 @@ interface Props {
 
 export function TablaLotes({ lotes, revisados, confirmando, onConfirmar, onBaja, onRevisado }: Props) {
   return (
-    <DataTable className="min-w-[680px] [&_thead_th]:text-sm! [&_tbody_td]:py-1.5! [&_tbody_td]:align-middle">
+    <DataTable className="min-w-[680px] [&_tbody_td]:py-1.5! [&_tbody_td]:align-middle">
       <thead>
         <tr>
           <th>Producto</th>

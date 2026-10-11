@@ -30,7 +30,7 @@ import {
   RefreshCw,
   Scissors,
 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { StatCard, DataTable } from "@buleje/design-system";
 import { CtpKpisPlegables } from "./kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -53,8 +53,6 @@ import {
   type ColumnaFiltro,
 } from "./filtros-tabla-forestal";
 
-const TH =
-  "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = `${TD} text-right font-mono tabular-nums`;
 const CHIP =
@@ -217,19 +215,19 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
           </span>
         </div>
         <div className="overflow-x-auto px-3 pb-3">
-          <table className="w-full">
+          <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
             <thead>
-              <tr className="border-b border-[var(--rule-soft)]">
-                <th className={TH}>De</th>
-                <th className={TH}>Salió</th>
-                <th className={`${TH} text-right`}>Veces</th>
-                <th className={`${TH} text-right`}>m³ que entró</th>
-                <th className={TH}>Qué dice la regla</th>
+              <tr>
+                <th >De</th>
+                <th >Salió</th>
+                <th className="text-right">Veces</th>
+                <th className="text-right">m³ que entró</th>
+                <th >Qué dice la regla</th>
               </tr>
             </thead>
             <tbody>
               {pares.map((p) => (
-                <tr key={p.clave} className="border-b border-[var(--rule-soft)] last:border-0">
+                <tr key={p.clave} className="border-[var(--rule-soft)] last:border-0">
                   <td className={TD}>
                     <span className={`${CHIP} bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`}>
                       {p.desde}
@@ -247,8 +245,8 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
                     </span>
                   </td>
                   <td className={NUM}>{fmtPiezas(p.veces)}</td>
-                  <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(p.cantidad)}</td>
-                  <td className={`${TD} text-[length:var(--ts-2xs)] leading-snug`}>
+                  <td className={`${NUM} font-bold`}>{fmtM3(p.cantidad)}</td>
+                  <td className={`${TD} leading-snug`}>
                     {p.habitual ? (
                       <span className="text-[var(--text-tertiary)]">Es de las habituales.</span>
                     ) : (
@@ -260,7 +258,7 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </div>
 
@@ -283,16 +281,16 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
         </div>
         <BarraFiltrosTabla f={f} className="px-3 pt-2" />
         <div className="overflow-x-auto px-3 pb-3">
-          <table className="w-full">
+          <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
             <thead>
-              <tr className="border-b border-[var(--rule-soft)] align-top">
-                <th className={TH}>Fecha<FiltroEnCabecera id="fecha" f={f} /></th>
-                <th className={TH}>Corrida<FiltroEnCabecera id="corrida" f={f} /></th>
-                <th className={TH}>Salió<FiltroEnCabecera id="producto" f={f} /></th>
-                <th className={`${TH} text-right`}>Entró<FiltroEnCabecera id="entro" f={f} /></th>
-                <th className={`${TH} text-right`}>Salió<FiltroEnCabecera id="salio" f={f} /></th>
-                <th className={`${TH} text-right`}>Merma<FiltroEnCabecera id="merma" f={f} /></th>
-                <th className={TH}>De dónde<FiltroEnCabecera id="origen" f={f} /></th>
+              <tr className="align-top">
+                <th >Fecha<FiltroEnCabecera id="fecha" f={f} /></th>
+                <th >Corrida<FiltroEnCabecera id="corrida" f={f} /></th>
+                <th >Salió<FiltroEnCabecera id="producto" f={f} /></th>
+                <th className="text-right">Entró<FiltroEnCabecera id="entro" f={f} /></th>
+                <th className="text-right">Salió<FiltroEnCabecera id="salio" f={f} /></th>
+                <th className="text-right">Merma<FiltroEnCabecera id="merma" f={f} /></th>
+                <th >De dónde<FiltroEnCabecera id="origen" f={f} /></th>
               </tr>
             </thead>
             <tbody>
@@ -303,7 +301,7 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
                 return [
                   <tr
                     key={r.destinoEntryId}
-                    className={`border-b border-[var(--rule-soft)] ${marcado ? "bg-[var(--data-error-500)]/5" : ""}`}
+                    className={`${marcado ? "bg-[var(--data-error-500)]/5" : ""}`}
                   >
                     <td className={TD}>{fmtFecha(r.fecha)}</td>
                     <td className={TD}>
@@ -327,7 +325,7 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
                       </span>
                     </td>
                     <td className={NUM}>{fmtM3(r.entro)}</td>
-                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(r.salio)}</td>
+                    <td className={`${NUM} font-bold`}>{fmtM3(r.salio)}</td>
                     <td className={NUM}>
                       {r.sospechoso ? (
                         <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
@@ -344,7 +342,7 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
                         </>
                       )}
                     </td>
-                    <td className={`${TD} text-[length:var(--ts-2xs)]`}>
+                    <td className={`${TD}`}>
                       {r.conversiones.map((c) => (
                         <span
                           key={`${c.desde}-${c.hacia}`}
@@ -360,8 +358,8 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
                     </td>
                   </tr>,
                   abierta ? (
-                    <tr key={`${r.destinoEntryId}:detalle`} className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-                      <td colSpan={7} className="px-3 py-2">
+                    <tr key={`${r.destinoEntryId}:detalle`} className="bg-[var(--surface-sunken)]">
+                      <td colSpan={7}>
                         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                           Corridas que entraron
                         </p>
@@ -400,7 +398,7 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
                 ];
               })}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </div>
     </div>

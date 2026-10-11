@@ -17,8 +17,8 @@ import { compararLotes, lecturaComparacion } from "@/lib/forestal/cubicacion-com
 import { fmtPctSigno, fmtPt, fmtPtSigno, fmtSoles, fmtSolesSigno } from "@/lib/forestal/cubicacion-formato";
 
 /** Mismas medidas que `resumen-tabla`: las dos tablas se leen igual. */
-const TH = "px-3 py-2.5 text-left align-bottom text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-3 py-2.5 align-middle";
+const TH = "align-bottom";
+const TD = "align-middle";
 const NUM = "text-right font-mono tabular-nums";
 
 /** Verde si subió, ámbar si bajó, neutro si no se movió — con dark explícito. */
@@ -77,9 +77,9 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
             {lecturaComparacion(comp)}
           </p>
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <DataTable className="w-full min-w-[520px] text-sm">
+            <DataTable className="w-full min-w-[520px]">
               <caption className="sr-only">Este lote contra la cubicación guardada</caption>
-              <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
+              <thead className="sticky top-0 z-10">
                 <tr>
                   <th scope="col" className={TH}>Grupo</th>
                   <th scope="col" className={`${TH} text-right`}>PT antes</th>
@@ -91,10 +91,10 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
               </thead>
               <tbody>
                 {comp.filas.map((f) => (
-                  <tr key={f.label} className="border-t border-[var(--rule-soft)] transition-colors even:bg-[var(--surface-canvas)]/50 hover:bg-primary/5">
-                    <td className={`${TD} font-bold text-[var(--text-primary)]`}>{f.label}</td>
+                  <tr key={f.label} className="even:bg-[var(--surface-canvas)]/50 hover:bg-primary/5">
+                    <td className={`${TD} font-bold`}>{f.label}</td>
                     <td className={`${TD} ${NUM} text-[var(--text-tertiary)]`}>{fmtPt(f.ptA)}</td>
-                    <td className={`${TD} ${NUM} text-[var(--text-primary)]`}>{fmtPt(f.ptB)}</td>
+                    <td className={`${TD} ${NUM}`}>{fmtPt(f.ptB)}</td>
                     <td className={`${TD} ${NUM} font-bold ${tono(f.deltaPt)}`}>
                       <span className="inline-flex items-center gap-1">
                         {f.deltaPt > 0 ? <TrendingUp className="h-3.5 w-3.5" aria-hidden /> : f.deltaPt < 0 ? <TrendingDown className="h-3.5 w-3.5" aria-hidden /> : null}

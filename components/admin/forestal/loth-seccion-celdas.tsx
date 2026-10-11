@@ -30,8 +30,8 @@ export interface ColDef {
   ocultaPorDefecto?: boolean; // arranca oculta en «Columnas n/m»
 }
 
-export const TH = "px-4 py-2.5 text-left font-bold text-[var(--text-primary)]";
-export const TD = "px-4 py-2.5 align-top";
+export const TH = "text-left font-bold";
+export const TD = "align-top";
 
 const fmtFecha = (iso: string) => formatDate(iso, { soloFecha: true });
 

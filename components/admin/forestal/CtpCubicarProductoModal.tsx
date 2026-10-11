@@ -363,24 +363,24 @@ export default function CtpCubicarProductoModal({
           <TablaCtp>
             <TheadCtp>
               <tr>
-                <th className="px-3 py-2 font-bold">Especie</th>
-                <th className="px-3 py-2 text-right font-bold">Piezas medidas</th>
-                <th className="px-3 py-2 text-right font-bold">Piezas del libro</th>
-                <th className="px-3 py-2 text-right font-bold">m³ medidos</th>
-                <th className="px-3 py-2 text-right font-bold">m³ del libro</th>
-                <th className="px-3 py-2 text-right font-bold">Diferencia</th>
+                <th className="font-bold">Especie</th>
+                <th className="text-right font-bold">Piezas medidas</th>
+                <th className="text-right font-bold">Piezas del libro</th>
+                <th className="text-right font-bold">m³ medidos</th>
+                <th className="text-right font-bold">m³ del libro</th>
+                <th className="text-right font-bold">Diferencia</th>
               </tr>
             </TheadCtp>
             <TbodyCtp>
               {cuadre.porEspecie.map((f) => (
-                <tr key={f.especie} className="hover:bg-[var(--surface-sunken)]">
-                  <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{f.especie}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{f.piezasMedidas}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.piezasDeclaradas}</td>
-                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(f.m3Medido)}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(f.m3Declarado)}</td>
+                <tr key={f.especie}>
+                  <td className="font-bold">{f.especie}</td>
+                  <td className="text-right font-mono tabular-nums">{f.piezasMedidas}</td>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.piezasDeclaradas}</td>
+                  <td className="text-right font-mono font-bold tabular-nums">{fmtM3(f.m3Medido)}</td>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(f.m3Declarado)}</td>
                   <td
-                    className={`px-3 py-2 text-right font-mono font-bold tabular-nums ${
+                    className={`text-right font-mono font-bold tabular-nums ${
                       f.tono === "ok"
                         ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                         : f.tono === "error"
@@ -398,12 +398,12 @@ export default function CtpCubicarProductoModal({
                 </tr>
               ))}
               <tr className="bg-[var(--surface-sunken)] font-bold">
-                <td className="px-3 py-2">Total</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">{cuadre.total.piezasMedidas}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">{cuadre.total.piezasDeclaradas}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">{fmtM3(cuadre.total.m3Medido)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">{fmtM3(cuadre.total.m3Declarado)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">
+                <td>Total</td>
+                <td className="text-right font-mono tabular-nums">{cuadre.total.piezasMedidas}</td>
+                <td className="text-right font-mono tabular-nums">{cuadre.total.piezasDeclaradas}</td>
+                <td className="text-right font-mono tabular-nums">{fmtM3(cuadre.total.m3Medido)}</td>
+                <td className="text-right font-mono tabular-nums">{fmtM3(cuadre.total.m3Declarado)}</td>
+                <td className="text-right font-mono tabular-nums">
                   {cuadre.total.deltaM3 > 0 ? "+" : ""}{fmtM3(cuadre.total.deltaM3)} m³
                 </td>
               </tr>
@@ -477,15 +477,15 @@ export default function CtpCubicarProductoModal({
           <TablaCtp>
             <TheadCtp>
               <tr>
-                <th className="px-2 py-2 text-right font-bold">Cant.</th>
-                <th className="px-2 py-2 font-bold">Espesor</th>
-                <th className="px-2 py-2 font-bold">Ancho</th>
-                <th className="px-2 py-2 font-bold">Largo</th>
-                <th className="px-2 py-2 font-bold">Tipo</th>
-                <th className="px-2 py-2 font-bold">Especie</th>
-                <th className="px-2 py-2 text-right font-bold">Pie tablar</th>
-                <th className="px-2 py-2 text-right font-bold">m³</th>
-                <th className="px-2 py-2"><span className="sr-only">Quitar</span></th>
+                <th className="text-right font-bold">Cant.</th>
+                <th className="font-bold">Espesor</th>
+                <th className="font-bold">Ancho</th>
+                <th className="font-bold">Largo</th>
+                <th className="font-bold">Tipo</th>
+                <th className="font-bold">Especie</th>
+                <th className="text-right font-bold">Pie tablar</th>
+                <th className="text-right font-bold">m³</th>
+                <th><span className="sr-only">Quitar</span></th>
               </tr>
             </TheadCtp>
             <TbodyCtp>
@@ -494,12 +494,12 @@ export default function CtpCubicarProductoModal({
                 const p = cubicar(f);
                 const auto = p ? tipoDePieza({ ...p, tipo: undefined }) : "Otro";
                 return (
-                  <tr key={f.id} className="hover:bg-[var(--surface-sunken)]">
-                    <td className="px-2 py-1.5 text-right">
+                  <tr key={f.id}>
+                    <td className="text-right">
                       <CeldaNum valor={f.cantidad} onValor={(v) => set(f.id, { cantidad: v })} fila={i} col={0} onKeyDown={teclado} etiqueta={`Cantidad fila ${i + 1}`} ancho="w-16" placeholder="1" />
                     </td>
                     {(["espesor", "ancho", "largo"] as const).map((dim, k) => (
-                      <td key={dim} className="px-2 py-1.5">
+                      <td key={dim}>
                         <div className="flex items-center gap-1">
                           <CeldaNum
                             valor={f[dim]}
@@ -528,7 +528,7 @@ export default function CtpCubicarProductoModal({
                         </div>
                       </td>
                     ))}
-                    <td className="px-2 py-1.5">
+                    <td>
                       <TipoSelect
                         tipo={f.tipoManual || auto}
                         auto={auto}
@@ -538,7 +538,7 @@ export default function CtpCubicarProductoModal({
                         etiqueta={`Tipo fila ${i + 1}`}
                       />
                     </td>
-                    <td className="px-2 py-1.5">
+                    <td>
                       <CtpEspecieSelect
                         ariaLabel={`Especie fila ${i + 1}`}
                         value={f.especie}
@@ -549,13 +549,13 @@ export default function CtpCubicarProductoModal({
                         className="h-10 w-32 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-sm text-[var(--text-primary)]"
                       />
                     </td>
-                    <td className="px-2 py-1.5 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                    <td className="text-right font-mono font-bold tabular-nums">
                       {p ? fmtPt(p.pieTablar) : "—"}
                     </td>
-                    <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {p ? fmtM3(p.m3) : "—"}
                     </td>
-                    <td className="px-2 py-1.5 text-right">
+                    <td className="text-right">
                       <button
                         type="button"
                         onClick={() => quitar(f.id)}

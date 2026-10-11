@@ -123,8 +123,8 @@ export default function LothGuiaTrozas({
           </div>
         ) : (
           <div className={`${MARCO} max-h-[28rem] overflow-y-auto`}>
-            <DataTable className="w-full text-sm">
-              <thead className="sticky top-0 z-[1] bg-[var(--surface-sunken)]">
+            <DataTable className="w-full">
+              <thead className="sticky top-0 z-[1]">
                 <tr>
                   <th className={TH}>
                     <span className="sr-only">Elegir</span>
@@ -144,7 +144,7 @@ export default function LothGuiaTrozas({
                   const algunas = !todas && codigos.some((c) => g.elegidas.has(c));
                   return (
                     <Fragment key={gr.arbol}>
-                      <tr className="border-t border-[var(--rule-base)] bg-[var(--surface-canvas)]">
+                      <tr className="bg-[var(--surface-canvas)]">
                         <td className={TD}>
                           <input
                             type="checkbox"
@@ -168,7 +168,7 @@ export default function LothGuiaTrozas({
                       {gr.trozas.map((t) => {
                         const elegida = g.elegidas.has(t.codigo);
                         return (
-                          <tr key={t.id} className={`border-t border-[var(--rule-soft)] ${elegida ? "bg-[var(--surface-sunken)]" : ""}`}>
+                          <tr key={t.id} className={`${elegida ? "bg-[var(--surface-sunken)]" : ""}`}>
                             <td className={TD}>
                               <input
                                 id={`troza-${t.id}`}
@@ -209,8 +209,8 @@ export default function LothGuiaTrozas({
           hint="Casillero (37): una línea por especie, con cuántas trozas y cuántos metros cúbicos. Se arma solo con las trozas elegidas."
         >
           <div className={MARCO}>
-            <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)]">
+            <DataTable className="w-full">
+              <thead>
                 <tr>
                   <th className={TH}>N. científico</th>
                   <th className={TH}>N. común</th>
@@ -224,11 +224,11 @@ export default function LothGuiaTrozas({
               <tbody>
                 {detalle.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className={`${TD} py-4 text-center text-[var(--text-tertiary)]`}>Elige las trozas que salen.</td>
+                    <td colSpan={7} className={`${TD} text-center text-[var(--text-tertiary)]`}>Elige las trozas que salen.</td>
                   </tr>
                 ) : (
                   detalle.map((l) => (
-                    <tr key={l.comun} className="border-t border-[var(--rule-soft)]">
+                    <tr key={l.comun}>
                       <td className={`${TD} italic ${l.cientifico ? "" : "text-[var(--text-tertiary)]"}`}>{l.cientifico || "Falta"}</td>
                       <td className={`${TD} font-semibold`}>{l.comun || "—"}</td>
                       <td className={`${TD} whitespace-nowrap`}>{l.tipoProducto}</td>
@@ -243,7 +243,7 @@ export default function LothGuiaTrozas({
               {detalle.length > 0 && (
                 <tfoot>
                   <tr className="border-t-2 border-[var(--rule-base)]">
-                    <td colSpan={6} className={`${TD} text-right text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]`}>Volumen total</td>
+                    <td colSpan={6} className={`${TD} text-right font-bold uppercase tracking-wide text-[var(--text-secondary)]`}>Volumen total</td>
                     <td className={`${TDR} font-bold`}>{fmtM3(total)}</td>
                   </tr>
                 </tfoot>

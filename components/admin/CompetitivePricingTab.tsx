@@ -203,9 +203,9 @@ export default function CompetitivePricingTab() {
               const puede = (p.suggestion === "Subir" || p.suggestion === "Bajar") && p.avgPrice !== null;
               return (
                 <tr key={p.id}>
-                  <td data-label="Producto" className="max-w-[16rem] text-sm font-semibold text-[var(--text-primary)]">{p.name}</td>
-                  <td data-label="Tu precio" className="text-right text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(p.myPrice)}</td>
-                  <td data-label="Promedio" className="text-right text-sm tabular-nums text-[var(--text-secondary)]">
+                  <td data-label="Producto" className="max-w-[16rem] font-semibold">{p.name}</td>
+                  <td data-label="Tu precio" className="text-right font-extrabold tabular-nums">{formatCurrency(p.myPrice)}</td>
+                  <td data-label="Promedio" className="text-right tabular-nums text-[var(--text-secondary)]">
                     {/* Un div: en la tarjeta de 400 px la celda es flex y partía la cifra de su raya. */}
                     <div className="ml-auto w-32 max-w-full sm:w-auto">
                       {p.avgPrice !== null ? formatCurrency(p.avgPrice) : "—"}
@@ -214,10 +214,10 @@ export default function CompetitivePricingTab() {
                       )}
                     </div>
                   </td>
-                  <td data-label="Más barato – más caro" className="whitespace-nowrap text-right text-sm tabular-nums text-[var(--text-secondary)]">
+                  <td data-label="Más barato – más caro" className="whitespace-nowrap text-right tabular-nums text-[var(--text-secondary)]">
                     {p.minPrice !== null && p.maxPrice !== null ? `${formatCurrency(p.minPrice)} – ${formatCurrency(p.maxPrice)}` : "—"}
                   </td>
-                  <td data-label="Tiendas" className="text-right text-sm tabular-nums text-[var(--text-secondary)]">{p.competitorCount}</td>
+                  <td data-label="Tiendas" className="text-right tabular-nums text-[var(--text-secondary)]">{p.competitorCount}</td>
                   <td data-label="Sugerencia">
                     <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-sm font-semibold", s.clase)}>
                       <Icono className="h-3.5 w-3.5" aria-hidden />

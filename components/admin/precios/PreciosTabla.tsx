@@ -20,7 +20,7 @@ export default function PreciosTabla({ filas, nombres, conProducto }: Props) {
   const lista = verTodos ? filas : filas.slice(0, FILAS_VISIBLES);
   return (
     <div className="space-y-2">
-      <DataTable className="min-w-[600px] text-sm [&_td]:text-sm [&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+      <DataTable className="min-w-[600px]">
         <thead>
           <tr>
             <th>Fecha</th>
@@ -39,10 +39,10 @@ export default function PreciosTabla({ filas, nombres, conProducto }: Props) {
               <tr key={h.id}>
                 <td className="whitespace-nowrap text-[var(--text-secondary)]">{fmtFecha(h.changedAt)}</td>
                 {conProducto && (
-                  <td className="font-semibold text-[var(--text-primary)]">{nombres[h.productId] ?? `Producto #${h.productId}`}</td>
+                  <td className="font-semibold">{nombres[h.productId] ?? `Producto #${h.productId}`}</td>
                 )}
                 <td className="text-right tabular-nums text-[var(--text-secondary)] line-through">{formatCurrency(h.oldPrice)}</td>
-                <td className="text-right font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(h.newPrice)}</td>
+                <td className="text-right font-bold tabular-nums">{formatCurrency(h.newPrice)}</td>
                 <td className="text-right">
                   <span className={cn("inline-flex items-center gap-0.5 font-bold tabular-nums", sube ? "text-[var(--data-error-ink)]" : "text-[var(--data-success-ink)]")}>
                     {sube ? <ArrowUpRight className="h-4 w-4" aria-hidden /> : <ArrowDownRight className="h-4 w-4" aria-hidden />}

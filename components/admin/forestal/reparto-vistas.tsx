@@ -493,26 +493,26 @@ export function BloqueEspecie({
                 arriba: la de Cedro y la de Bolaina son DOS `<table>`
                 distintas — sin ancho fijo, sus columnas no calzan una
                 debajo de la otra al bajar la pantalla. */}
-            <DataTable aria-label={`Faltante por distribuir de ${e.especie}`} className="w-full min-w-[640px] table-fixed text-base">
+            <DataTable aria-label={`Faltante por distribuir de ${e.especie}`} className="w-full min-w-[640px] table-fixed">
               <thead>
-                <tr className="border-b-2 border-[var(--data-warning-500)]/40 text-left text-xs font-bold uppercase tracking-wide text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                  <th scope="col" className="px-3 py-3">{etiquetaCol}</th>
-                  <th scope="col" className="w-28 px-3 py-3 text-right">Piezas</th>
-                  <th scope="col" className="w-32 px-3 py-3 text-right">Pie tablar</th>
-                  <th scope="col" className="w-36 px-3 py-3 text-right">Sin amparar (m³)</th>
-                  <th scope="col" className="w-36 px-3 py-3 text-right">Rolliza que pide</th>
+                <tr className="border-[var(--data-warning-500)]/40 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                  <th scope="col">{etiquetaCol}</th>
+                  <th scope="col" className="w-28 text-right">Piezas</th>
+                  <th scope="col" className="w-32 text-right">Pie tablar</th>
+                  <th scope="col" className="w-36 text-right">Sin amparar (m³)</th>
+                  <th scope="col" className="w-36 text-right">Rolliza que pide</th>
                 </tr>
               </thead>
               <tbody>
                 {e.faltante.map((f) => <FilaFaltanteConMedidas key={f.clave} f={f} dim={dim} />)}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/15 text-base font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                  <th scope="row" className="px-3 py-3 text-left">Total sin distribuir</th>
-                  <td className="px-3 py-3 text-right font-mono tabular-nums">{fmtPiezas(e.faltante.reduce((a, f) => a + f.piezas, 0))}</td>
-                  <td className="px-3 py-3 text-right font-mono tabular-nums">{fmtPt(e.faltante.reduce((a, f) => a + f.pieTablar, 0))}</td>
-                  <td className="px-3 py-3 text-right font-mono tabular-nums">{fmtM3(e.faltanteM3)}</td>
-                  <td className="px-3 py-3 text-right font-mono tabular-nums">{fmtM3(e.rollizaFaltanteM3)}</td>
+                <tr className="border-t-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/15 font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                  <th scope="row" className="text-left">Total sin distribuir</th>
+                  <td className="text-right font-mono tabular-nums">{fmtPiezas(e.faltante.reduce((a, f) => a + f.piezas, 0))}</td>
+                  <td className="text-right font-mono tabular-nums">{fmtPt(e.faltante.reduce((a, f) => a + f.pieTablar, 0))}</td>
+                  <td className="text-right font-mono tabular-nums">{fmtM3(e.faltanteM3)}</td>
+                  <td className="text-right font-mono tabular-nums">{fmtM3(e.rollizaFaltanteM3)}</td>
                 </tr>
               </tfoot>
             </DataTable>
@@ -648,14 +648,14 @@ function JornadaBloque({
             tres tablas de esta sección (acá y en `BloqueEspecie` más abajo),
             las cifras SIEMPRE caen una debajo de la otra.
           */}
-          <DataTable className="w-full min-w-[620px] table-fixed text-base">
+          <DataTable className="w-full min-w-[620px] table-fixed">
             <thead>
-              <tr className="text-left text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                <th scope="col" className="w-24 px-3 py-3" title="Tilda la línea cuando ya la distribuiste y la pasaste al Libro de Operaciones">Distribuido</th>
-                <th scope="col" className="px-3 py-3">{etiquetaCol}</th>
-                <th scope="col" className="w-28 px-3 py-3 text-right">Piezas</th>
-                <th scope="col" className="w-32 px-3 py-3 text-right">Pie tablar</th>
-                <th scope="col" className="w-32 px-3 py-3 text-right">Ampara (m³)</th>
+              <tr>
+                <th scope="col" className="w-24" title="Tilda la línea cuando ya la distribuiste y la pasaste al Libro de Operaciones">Distribuido</th>
+                <th scope="col">{etiquetaCol}</th>
+                <th scope="col" className="w-28 text-right">Piezas</th>
+                <th scope="col" className="w-32 text-right">Pie tablar</th>
+                <th scope="col" className="w-32 text-right">Ampara (m³)</th>
               </tr>
             </thead>
             <tbody>
@@ -686,12 +686,12 @@ function JornadaBloque({
             {/* Cada tabla cierra con su suma: es el número que se copia al Libro
                 y el que se compara contra la pila. */}
             <tfoot>
-              <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                <td className="px-3 py-3" />
-                <th scope="row" className="px-3 py-3 text-left">Total del día {dia.dia}</th>
-                <td className="px-3 py-3 text-right font-mono tabular-nums">{fmtPiezas(dia.piezas)}</td>
-                <td className="px-3 py-3 text-right font-mono tabular-nums">{fmtPt(dia.pieTablar)}</td>
-                <td className="px-3 py-3 text-right font-mono tabular-nums">{fmtM3(dia.m3)}</td>
+              <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                <td />
+                <th scope="row" className="text-left">Total del día {dia.dia}</th>
+                <td className="text-right font-mono tabular-nums">{fmtPiezas(dia.piezas)}</td>
+                <td className="text-right font-mono tabular-nums">{fmtPt(dia.pieTablar)}</td>
+                <td className="text-right font-mono tabular-nums">{fmtM3(dia.m3)}</td>
               </tr>
             </tfoot>
           </DataTable>
@@ -860,11 +860,11 @@ function FilaConMedidas({
     <>
       <tr
         onClick={onMarcar}
-        className={`cursor-pointer border-t border-[var(--rule-soft)] transition-colors ${marcada
+        className={`cursor-pointer ${marcada
           ? "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/12"
           : "hover:bg-primary/5"}`}
       >
-        <td className="px-3 py-3">
+        <td>
           {/* El checkbox es el control de verdad (teclado, lectores); el click en
               la fila es el atajo para el operario con guantes. */}
           <input
@@ -876,7 +876,7 @@ function FilaConMedidas({
             className="h-5 w-5 accent-[var(--data-success-600)]"
           />
         </td>
-        <td className="px-3 py-3">
+        <td>
           <span className="inline-flex items-center gap-1.5">
             {hayDetalle && (
               <button
@@ -906,7 +906,7 @@ function FilaConMedidas({
             )}
           </span>
         </td>
-        <td className="px-3 py-3 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
           {editable ? (
             <input
               value={overrideActual?.piezas ?? ""}
@@ -920,8 +920,8 @@ function FilaConMedidas({
             />
           ) : fmtPiezas(a.piezas)}
         </td>
-        <td className="px-3 py-3 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(a.pieTablar)}</td>
-        <td className="px-3 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(a.pieTablar)}</td>
+        <td className="text-right font-mono font-bold tabular-nums">
           {editable ? (
             <input
               /*
@@ -953,10 +953,10 @@ function FilaConMedidas({
         a.medidas.map((m) => (
           <tr key={m.clave} className="border-l-2 border-[var(--accent)]/30 bg-[var(--surface-sunken)]">
             <td />
-            <td className="py-2 pl-9 pr-3 font-mono text-sm text-[var(--text-secondary)]">{m.medida}</td>
-            <td className="px-3 py-2 text-right font-mono text-sm tabular-nums text-[var(--text-secondary)]">{fmtPiezas(m.piezas)}</td>
-            <td className="px-3 py-2 text-right font-mono text-sm tabular-nums text-[var(--text-secondary)]">{fmtPt(m.pieTablar)}</td>
-            <td className="px-3 py-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)]">{fmtM3(m.m3)}</td>
+            <td className="pl-9 pr-3 font-mono text-[var(--text-secondary)]">{m.medida}</td>
+            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPiezas(m.piezas)}</td>
+            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(m.pieTablar)}</td>
+            <td className="text-right font-mono tabular-nums">{fmtM3(m.m3)}</td>
           </tr>
         ))}
     </>
@@ -984,8 +984,8 @@ function FilaFaltanteConMedidas({ f, dim }: { f: FaltanteGrupo; dim: DimensionRe
   const razonRolliza = f.m3 > 1e-6 ? f.rollizaNecesariaM3 / f.m3 : 0;
   return (
     <>
-      <tr className="border-t border-[var(--rule-soft)] transition-colors hover:bg-primary/5">
-        <td className="px-3 py-3">
+      <tr className="hover:bg-primary/5">
+        <td>
           <span className="inline-flex items-center gap-1.5">
             {hayDetalle && (
               <button
@@ -1007,19 +1007,19 @@ function FilaFaltanteConMedidas({ f, dim }: { f: FaltanteGrupo; dim: DimensionRe
             )}
           </span>
         </td>
-        <td className="px-3 py-3 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPiezas(f.piezas)}</td>
-        <td className="px-3 py-3 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(f.pieTablar)}</td>
-        <td className="px-3 py-3 text-right font-mono font-bold tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{fmtM3(f.m3)}</td>
-        <td className="px-3 py-3 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(f.rollizaNecesariaM3)}</td>
+        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPiezas(f.piezas)}</td>
+        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(f.pieTablar)}</td>
+        <td className="text-right font-mono font-bold tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{fmtM3(f.m3)}</td>
+        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(f.rollizaNecesariaM3)}</td>
       </tr>
       {abierto &&
         f.medidas.map((m) => (
           <tr key={m.clave} className="border-l-2 border-[var(--data-warning-500)]/40 bg-[var(--surface-sunken)]">
-            <td className="py-2 pl-9 pr-3 font-mono text-sm text-[var(--text-secondary)]">{m.medida}</td>
-            <td className="px-3 py-2 text-right font-mono text-sm tabular-nums text-[var(--text-secondary)]">{fmtPiezas(m.piezas)}</td>
-            <td className="px-3 py-2 text-right font-mono text-sm tabular-nums text-[var(--text-secondary)]">{fmtPt(m.pieTablar)}</td>
-            <td className="px-3 py-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)]">{fmtM3(m.m3)}</td>
-            <td className="px-3 py-2 text-right font-mono text-sm tabular-nums text-[var(--text-tertiary)]">{fmtM3(m.m3 * razonRolliza)}</td>
+            <td className="pl-9 pr-3 font-mono text-[var(--text-secondary)]">{m.medida}</td>
+            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPiezas(m.piezas)}</td>
+            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(m.pieTablar)}</td>
+            <td className="text-right font-mono tabular-nums">{fmtM3(m.m3)}</td>
+            <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(m.m3 * razonRolliza)}</td>
           </tr>
         ))}
     </>

@@ -25,8 +25,7 @@ import { formatNumber } from "@/lib/format";
 
 /* El padding y la cabecera los pone `DataTable` (sus variantes descendientes le
    ganan a una clase en la celda): acá sólo tamaño y alineación. */
-const TH = "text-left";
-const TD = "align-top text-sm";
+const TD = "align-top";
 
 export default function LothTraceEnPie({
   enPie,
@@ -76,34 +75,34 @@ export default function LothTraceEnPie({
       </CardTitle>
 
       <div id={`${id}-panel`} hidden={!visible} className="border-t border-[var(--rule-soft)] px-2 pb-2 sm:px-4 sm:pb-4">
-        <DataTable className="w-full border-collapse" wrapperClassName="rounded-xl bg-[var(--surface-raised)]">
+        <DataTable className="w-full" wrapperClassName="rounded-xl bg-[var(--surface-raised)]">
           <caption className="sr-only">Árboles del censo sin talar, por especie</caption>
           <thead>
-            <tr className="border-b border-[var(--rule-base)]">
-              <th scope="col" className={TH}>
+            <tr>
+              <th scope="col" >
                 Especie
               </th>
-              <th scope="col" className={`${TH} text-right`}>
+              <th scope="col" className="text-right">
                 Árboles
               </th>
-              <th scope="col" className={`${TH} text-right`}>
+              <th scope="col" className="text-right">
                 Censo m³
               </th>
               {cupo && (
-                <th scope="col" className={TH}>
+                <th scope="col" >
                   Cupo
                 </th>
               )}
-              <th scope="col" className={TH}>
+              <th scope="col" >
                 Códigos
               </th>
             </tr>
           </thead>
           <tbody>
             {enPie.especies.map((g) => (
-              <tr key={g.clave} className="border-b border-[var(--rule-soft)] last:border-0" data-especie={g.clave}>
-                <td className={`${TD} font-bold text-[var(--text-primary)]`}>{g.especie}</td>
-                <td className={`${TD} text-right tabular-nums text-[var(--text-primary)]`}>{formatNumber(g.arboles)}</td>
+              <tr key={g.clave} className="border-[var(--rule-soft)] last:border-0" data-especie={g.clave}>
+                <td className={`${TD} font-bold`}>{g.especie}</td>
+                <td className={`${TD} text-right tabular-nums`}>{formatNumber(g.arboles)}</td>
                 <td className={`${TD} text-right tabular-nums text-[var(--text-secondary)]`}>{g.m3 != null ? fmtM3(g.m3) : "—"}</td>
                 {cupo && <td className={TD}>{cupo(g)}</td>}
                 <td className={`${TD} text-[var(--text-secondary)]`}>{g.codigos.join(", ")}</td>
@@ -113,11 +112,11 @@ export default function LothTraceEnPie({
           {enPie.especies.length > 1 && (
             <tfoot>
               <tr className="border-t-2 border-[var(--rule-base)]">
-                <th scope="row" className={`${TD} text-left font-bold text-[var(--text-primary)]`}>
+                <th scope="row" className={`${TD} text-left font-bold`}>
                   Total
                 </th>
-                <td className={`${TD} text-right font-bold tabular-nums text-[var(--text-primary)]`}>{formatNumber(enPie.arboles)}</td>
-                <td className={`${TD} text-right font-bold tabular-nums text-[var(--text-primary)]`}>{fmtM3(enPie.m3)}</td>
+                <td className={`${TD} text-right font-bold tabular-nums`}>{formatNumber(enPie.arboles)}</td>
+                <td className={`${TD} text-right font-bold tabular-nums`}>{fmtM3(enPie.m3)}</td>
                 {cupo && <td className={TD} />}
                 <td className={TD} />
               </tr>

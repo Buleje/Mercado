@@ -105,26 +105,26 @@ export default function LothImportPlanPanel({
 
       {saldos.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-          <DataTable className="w-full text-xs">
+          <DataTable className="w-full">
             <caption className="sr-only">Saldo que dejaría la importación, por especie</caption>
-            <thead className="bg-[var(--surface-sunken)] text-left">
+            <thead>
               <tr>
-                <th scope="col" className="px-2 py-1.5 font-bold">Especie</th>
-                <th scope="col" className="px-2 py-1.5 text-right font-bold">{esPlantacion ? "Registrado" : "Autorizado"}</th>
-                <th scope="col" className="px-2 py-1.5 text-right font-bold">Ya talado</th>
-                <th scope="col" className="px-2 py-1.5 text-right font-bold">Esta importación</th>
-                <th scope="col" className="px-2 py-1.5 text-right font-bold">Quedaría</th>
+                <th scope="col">Especie</th>
+                <th scope="col" className="text-right">{esPlantacion ? "Registrado" : "Autorizado"}</th>
+                <th scope="col" className="text-right">Ya talado</th>
+                <th scope="col" className="text-right">Esta importación</th>
+                <th scope="col" className="text-right">Quedaría</th>
               </tr>
             </thead>
             <tbody>
               {saldos.map((s) => (
-                <tr key={s.species} className={`border-t border-[var(--rule-soft)] ${s.excede ? "bg-[var(--data-warning-500)]/10" : ""}`}>
-                  <th scope="row" className="px-2 py-1.5 text-left font-semibold text-[var(--text-primary)]">{s.species}</th>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(s.autorizadoM3)}</td>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(s.taladoM3)}</td>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(s.importadoM3)}</td>
+                <tr key={s.species} className={`${s.excede ? "bg-[var(--data-warning-500)]/10" : ""}`}>
+                  <th scope="row" className="text-left font-semibold">{s.species}</th>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(s.autorizadoM3)}</td>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(s.taladoM3)}</td>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(s.importadoM3)}</td>
                   <td
-                    className={`px-2 py-1.5 text-right font-mono font-bold tabular-nums ${
+                    className={`text-right font-mono font-bold tabular-nums ${
                       s.excede ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-primary)]"
                     }`}
                   >

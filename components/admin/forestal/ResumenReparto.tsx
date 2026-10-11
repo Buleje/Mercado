@@ -96,6 +96,7 @@ import { controlDe, estadoDeControles } from "@/lib/forestal/reparto-cuadre";
 import { paquetesVariado, useConfigVariado } from "./hooks/use-config-variado";
 import { agruparPiezasIguales, desglosarVariado, esVariado } from "@/lib/forestal/variado-desglose";
 import { distConVolumenOficial, repartoOficial } from "@/lib/forestal/reparto-oficial";
+import { DataTable } from "@buleje/design-system";
 
 
 /** Mismo botón que la cabecera de Resúmenes: un solo alto para toda la pestaña. */
@@ -116,7 +117,7 @@ const TONO = {
  */
 function ThAyuda({ children, ayuda, alinear = "right" }: { children: ReactNode; ayuda: ReactNode; alinear?: "left" | "right" }) {
   return (
-    <th scope="col" className={`group whitespace-nowrap px-3 py-3.5 ${alinear === "right" ? "text-right" : "text-left"}`}>
+    <th scope="col" className={`group whitespace-nowrap ${alinear === "right" ? "text-right" : "text-left"}`}>
       <span className={`inline-flex items-center gap-1 whitespace-nowrap ${alinear === "right" ? "flex-row-reverse" : ""}`}>
         {children}
         {/*
@@ -1393,7 +1394,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     {
       key: "anexo",
       node: (
-        <th scope="col" className="whitespace-nowrap px-3 py-3 text-center">
+        <th scope="col" className="whitespace-nowrap text-center">
           <span className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
             Anexo 4
             <AdminTooltip
@@ -1421,7 +1422,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       /* La columna m³ mezcla dos unidades (R y A), así que el total las lista
          por separado en vez de sumarlas: troza y tabla no se miden igual. */
       node: (
-        <td className="px-3 py-3 text-right font-mono tabular-nums">
+        <td className="text-right font-mono tabular-nums">
           {fmtM3(t.rollizaM3)}
           {t.aserradaDirectaM3 > 0 && (
             <span className="block whitespace-nowrap text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]" title="Cargados como madera ya aserrada — no son rolliza">
@@ -1434,20 +1435,20 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     {
       key: "dias",
       node: (
-        <td className="px-3 py-3 text-right font-mono tabular-nums">
+        <td className="text-right font-mono tabular-nums">
           {bloques.reduce((a, b) => a + (Number(b.dias) > 1 ? Number(b.dias) : 1), 0)}
         </td>
       ),
     },
-    { key: "fecha", node: <td className="px-3 py-3" /> },
-    { key: "aprovechable", node: <td className="px-3 py-3" /> },
+    { key: "fecha", node: <td /> },
+    { key: "aprovechable", node: <td /> },
     {
       key: "pctReal",
       /* % real total: amparado ÷ rolliza — el mismo cociente que ya muestra el
          rótulo "Rendimiento general" de más abajo, acá al lado de la columna
          que resume. */
       node: (
-        <td className="px-3 py-3 text-right font-mono tabular-nums" title="Lo amparado por bloques de rolliza ÷ la rolliza que entró — la aserrada directa no cuenta acá, no salió de ninguna troza">
+        <td className="text-right font-mono tabular-nums" title="Lo amparado por bloques de rolliza ÷ la rolliza que entró — la aserrada directa no cuenta acá, no salió de ninguna troza">
           {t.rollizaM3 > 0 ? `${fmtPct(((t.amparadaM3 - t.amparadaDirectaM3) / t.rollizaM3) * 100)} %` : "—"}
         </td>
       ),
@@ -1455,7 +1456,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     {
       key: "piezas",
       node: (
-        <td className="px-3 py-3 text-right font-mono tabular-nums" title="Las piezas que el reparto asignó de verdad a los bloques">
+        <td className="text-right font-mono tabular-nums" title="Las piezas que el reparto asignó de verdad a los bloques">
           <span className="block text-lg font-extrabold leading-none">
             {fmtPiezas(dist.especies.reduce((a, e) => a + e.bloques.reduce((x, b) => x + b.asignado.reduce((y, g) => y + g.piezas, 0), 0), 0))}
           </span>
@@ -1472,7 +1473,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
        * capacidad sigue a la vista, abajo, cuando sobra algo sin usar.
        */
       node: (
-        <td className="px-3 py-3 text-right font-mono tabular-nums" title="Los m³ de aserrada que el reparto asignó de verdad a los bloques. Es lo que respaldan las piezas de la columna siguiente.">
+        <td className="text-right font-mono tabular-nums" title="Los m³ de aserrada que el reparto asignó de verdad a los bloques. Es lo que respaldan las piezas de la columna siguiente.">
           <span className="block text-lg font-extrabold leading-none">{fmtM3(t.amparadaM3)}</span>
           {t.capacidadM3 - t.amparadaM3 > TOL_M3 && (
             <span className="mt-1 block whitespace-nowrap text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]" title="Capacidad total de los bloques: lo que PODRÍAN amparar si hubiera más aserrada cargada">
@@ -1485,7 +1486,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     {
       key: "pt",
       node: (
-        <td className="px-3 py-3 text-right font-mono tabular-nums" title="Pie tablar de lo distribuido: los m³ amparados × 424">
+        <td className="text-right font-mono tabular-nums" title="Pie tablar de lo distribuido: los m³ amparados × 424">
           <span className="block text-lg font-extrabold leading-none">{fmtPt(ptDesdeM3(t.amparadaM3))}</span>
         </td>
       ),
@@ -1493,14 +1494,14 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     {
       key: "costo",
       node: (
-        <td className="px-3 py-3 text-right font-mono tabular-nums">
+        <td className="text-right font-mono tabular-nums">
           {t.costoRolliza != null ? `S/ ${fmtSoles(t.costoRolliza)}` : "—"}
         </td>
       ),
     },
-    { key: "grupos", node: <td className="px-3 py-3" /> },
-    { key: "largo", node: <td className="px-3 py-3" /> },
-    { key: "anexo", node: <td className="px-3 py-3" /> },
+    { key: "grupos", node: <td /> },
+    { key: "largo", node: <td /> },
+    { key: "anexo", node: <td /> },
   ];
 
   return (
@@ -1978,9 +1979,10 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table
+            <DataTable
+              wrapperClassName="overflow-visible rounded-none border-0"
               aria-label="Bloques de rolliza y de madera ya aserrada"
-              className="w-full text-base"
+              className="w-full"
               /* El ancho mínimo se calcula con las columnas VISIBLES: con un
                  `min-w` fijo, esconder media tabla dejaba el mismo scroll
                  horizontal de antes y el ejercicio no servía de nada. */
@@ -1992,12 +1994,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     grandes»): venían en `--ts-2xs` = 9 px medidos y en el gris
                     más flojo de la escala, así que la fila que dice qué es
                     cada columna era la menos legible de la tabla. */}
-                <tr className="border-b border-[var(--rule-base)] text-left text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                <tr>
                   <ThAyuda alinear="left" ayuda="El número de guía (GTF) o el código del lote de la troza que entró. Sirve para rastrear de dónde salió este bloque. La franja de color de la izquierda es la de su tarjeta en el desglose de abajo.">
                     Etiqueta (GTF / lote)
                   </ThAyuda>
                   {cabeceras.filter((c) => cols[c.key]).map((c) => <Fragment key={c.key}>{c.node}</Fragment>)}
-                  <th className="px-3 py-3" />
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -2055,7 +2057,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                       /* Cambiar de forma acá reescribe la fila entera: el %
                          aprovechable y el «ampara a mano» dejan de aplicar. */
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           <select
                             value={directa ? "aserrada" : "rolliza"}
                             onChange={(e) => editar(b.id, "tipo", e.target.value)}
@@ -2078,7 +2080,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     {
                       key: "permiso",
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           <input value={b.permiso ?? ""} onChange={(e) => editar(b.id, "permiso", e.target.value)} placeholder="19-SEC/REG-…" aria-label="N° de permiso de origen del bloque" title="Título habilitante de origen — dos permisos de la misma especie nunca se combinan en el desglose de abajo" className="h-10 w-full min-w-[130px] rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 font-mono text-sm text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]" />
                         </td>
                       ),
@@ -2086,7 +2088,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     {
                       key: "especie",
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           <CtpEspecieSelect
                             value={b.especie}
                             onChange={(v) => editar(b.id, "especie", v)}
@@ -2102,7 +2104,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     {
                       key: "m3",
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           <input
                             value={valorTexto(b.id, "m3", b.m3, false)}
                             onChange={onCambioDecimal(b.id, "m3")}
@@ -2121,7 +2123,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                       /* Un día es lo normal; el placeholder lo dice sin
                          escribirlo, igual que el % aprovechable. */
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           <input value={b.dias ?? ""} onChange={(e) => editar(b.id, "dias", e.target.value)} inputMode="numeric" placeholder="1" aria-label="Días de aserrío del bloque" title="Se reparte lo amparado entre estas jornadas" className={`h-10 w-16 rounded-xl border bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.dias == null || b.dias <= 1 ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`} />
                         </td>
                       ),
@@ -2129,7 +2131,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     {
                       key: "fecha",
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           <input
                             type="date"
                             value={b.fecha ?? ""}
@@ -2149,7 +2151,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                          aprovechar: la madera ya salió de la sierra. Un input
                          editable ahí prometería una conversión que el reparto no hace. */
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           {directa ? (
                             <span className="block text-right font-mono text-sm tabular-nums text-[var(--text-tertiary)]" title="No aplica: la madera ya vino aserrada">—</span>
                           ) : (
@@ -2164,7 +2166,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                          no un dato que se tipee — tipearlo sería fabricar el
                          mismo número que ya calcula el reparto de abajo. */
                       node: (
-                        <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-[var(--text-secondary)]" title={directa ? "Qué parte del m³ (A) cargado alcanzó a cubrirse con piezas reales, después de repartir — derivado, no editable" : "Usado ÷ m³ de rolliza, después de repartir — derivado, no editable"}>
+                        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]" title={directa ? "Qué parte del m³ (A) cargado alcanzó a cubrirse con piezas reales, después de repartir — derivado, no editable" : "Usado ÷ m³ de rolliza, después de repartir — derivado, no editable"}>
                           {pctReal == null ? "—" : `${fmtPct(pctReal)} %`}
                         </td>
                       ),
@@ -2172,7 +2174,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     {
                       key: "piezas",
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           {/* Las piezas REALES son las que se van a imprimir,
                               una por una, en el Anexo 04: van grandes. */}
                           <RealDeBloque
@@ -2211,7 +2213,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                          edita — dos casillas para el mismo número son dos formas
                          de contradecirse. */
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           {/* Arriba, grande: lo que el reparto asignó de verdad
                               — el m³ que van a sumar las piezas del Anexo 04. */}
                           <RealDeBloque
@@ -2249,7 +2251,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                       /* Derivado del m³ REAL de la izquierda (× 424): la misma
                          madera dicha en la unidad con la que se vende. */
                       node: (
-                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                           {realM3 == null ? "—" : fmtPt(ptDesdeM3(realM3))}
                         </td>
                       ),
@@ -2257,7 +2259,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     {
                       key: "costo",
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           <input value={valorTexto(b.id, "costoM3", b.costoM3, true)} onChange={onCambioDecimal(b.id, "costoM3")} onBlur={onBlurDecimal(b.id, "costoM3")} inputMode="decimal" placeholder="opcional" aria-label="Costo por metro cúbico de rolliza" className="h-10 w-24 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
                         </td>
                       ),
@@ -2265,7 +2267,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     {
                       key: "grupos",
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           <FiltroGruposCelda
                             valor={b.gruposFiltro}
                             disponibles={gruposDisponibles}
@@ -2278,7 +2280,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     {
                       key: "largo",
                       node: (
-                        <td className="px-3 py-2.5">
+                        <td>
                           <FiltroLargoCelda
                             valor={b.largoFiltro}
                             onChange={(next) => setLargoFiltro(b.id, next)}
@@ -2289,7 +2291,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     {
                       key: "anexo",
                       node: (
-                        <td className="px-3 py-2.5 text-center">
+                        <td className="text-center">
                           <input
                             type="checkbox"
                             checked={seleccionAnexo.has(b.id)}
@@ -2306,15 +2308,15 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     /* Reglas finas y un hover apenas perceptible: con
                        `border-t-2` cada fila se leía como una tarjeta suelta y
                        la tabla parecía tres tablas. */
-                    <tr key={b.id} className="border-t border-[var(--rule-soft)] transition-colors hover:bg-[var(--surface-sunken)]/60">
+                    <tr key={b.id}>
                       {/* La franja de color es la MISMA que lleva la tarjeta de
                           este bloque en el desglose de abajo: aparear las dos
                           vistas dejó de exigir leer la etiqueta en las dos. */}
-                      <td className="border-l-[5px] py-2.5 pl-2 pr-3" style={{ borderLeftColor: colorDeBloque(indiceBloque.get(b.id)) }}>
+                      <td className="border-l-[5px] pl-2 pr-3" style={{ borderLeftColor: colorDeBloque(indiceBloque.get(b.id)) }}>
                         <input value={b.etiqueta} onChange={(e) => editar(b.id, "etiqueta", e.target.value)} placeholder={directa ? "Compra 12/08" : "GTF-0231"} aria-label="Etiqueta del bloque de rolliza" className="h-10 w-full min-w-[140px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
                       </td>
                       {celdas.filter((c) => cols[c.key]).map((c) => <Fragment key={c.key}>{c.node}</Fragment>)}
-                      <td className="px-3 py-2.5 text-right">
+                      <td className="text-right">
                         <button type="button" onClick={() => quitarBloque(b.id)} aria-label={`Quitar el bloque ${b.etiqueta || "sin etiqueta"}`} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-600)]">
                           <Trash2 className="h-5 w-5" />
                         </button>
@@ -2327,19 +2329,19 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                   total. Es la primera comparación que se hace y estaba sólo en
                   el rótulo de arriba. */}
               <tfoot>
-                <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   {/* La etiqueta más las columnas de identidad que sigan
                       visibles (cargado como · permiso · especie): con el
                       `colSpan={4}` fijo de antes, esconder una de las tres
                       corría el total medio ancho de columna. */}
-                  <th scope="row" colSpan={colSpanIdentidad} className="border-l-[5px] border-l-transparent py-3 pl-2 pr-3 text-left">
+                  <th scope="row" colSpan={colSpanIdentidad} className="border-l-[5px] border-l-transparent pl-2 pr-3 text-left">
                     Total · {bloques.length} bloque{bloques.length === 1 ? "" : "s"}
                   </th>
                   {pieCeldas.filter((c) => cols[c.key]).map((c) => <Fragment key={c.key}>{c.node}</Fragment>)}
-                  <td className="px-3 py-3" />
+                  <td />
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
             <datalist id="largos-disponibles">
               {largosDisponibles.map((l) => <option key={l} value={l} />)}
             </datalist>

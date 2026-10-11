@@ -116,7 +116,7 @@ export function ListaRecetas({ recetas, productos, loading, error, onReintentar,
           No hay recetas {textoFiltro ? `con «${textoFiltro}»` : estado}.
         </p>
       ) : (
-        <DataTable className="[&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+        <DataTable>
           <thead>
             <tr>
               <th>Receta</th>
@@ -140,11 +140,11 @@ export function ListaRecetas({ recetas, productos, loading, error, onReintentar,
                       </span>
                     </button>
                   </td>
-                  <td className={cn("text-sm font-semibold", total === 0 ? "text-[var(--text-tertiary)]" : faltan === 0 ? "text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]")}>
+                  <td className={cn("font-semibold", total === 0 ? "text-[var(--text-tertiary)]" : faltan === 0 ? "text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]")}>
                     {total === 0 ? "—" : faltan === 0 ? "Completos" : `Faltan ${faltan} de ${total}`}
                   </td>
-                  <td className="text-right text-sm font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(r.costoTotal)}</td>
-                  <td className={cn("text-right text-sm font-bold tabular-nums", margen === null ? "text-[var(--text-tertiary)]" : margen >= 20 ? "text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]")}>
+                  <td className="text-right font-bold tabular-nums">{formatCurrency(r.costoTotal)}</td>
+                  <td className={cn("text-right font-bold tabular-nums", margen === null ? "text-[var(--text-tertiary)]" : margen >= 20 ? "text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]")}>
                     {margen === null ? "—" : `${margen}%`}
                   </td>
                   <td>

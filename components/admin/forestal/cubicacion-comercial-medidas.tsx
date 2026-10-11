@@ -9,9 +9,9 @@
 import { formatNumber } from "@/lib/format";
 import { fmtVolumen } from "@/lib/forestal/cubicacion-cuenta";
 import type { DescuentoLote, FormulaComercial, LineaTotalCongelada, PiezaCongelada } from "@/lib/forestal/cubicacion-comercial-tipos";
+import { DataTable } from "@buleje/design-system";
 
-const TH = "px-2 py-2 text-left text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-2 py-1.5 tabular-nums";
+const TD = "tabular-nums";
 const UNI: Record<PiezaCongelada["uEspesor"], string> = { pulg: "″", cm: " cm", pies: "′", m: " m" };
 const medida = (v: number, u: PiezaCongelada["uEspesor"]) => `${formatNumber(v, { max: 2 })}${UNI[u]}`;
 
@@ -19,26 +19,26 @@ export function MedidasAserrada({ piezas, lineas }: { piezas?: readonly PiezaCon
   if (lineas?.length) {
     return (
       <div className="max-h-[22rem] overflow-auto rounded-2xl border border-[var(--rule-soft)]" data-vista="medidas-aserrada">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-[var(--surface-sunken)]">
+        <DataTable className="w-full">
+          <thead className="sticky top-0">
             <tr>
-              <th className={TH}>Especie</th>
-              <th className={`${TH} text-right`}>PT</th>
-              <th className={`${TH} text-right`}>m³ (libro)</th>
-              <th className={`${TH} text-right`}>Piezas</th>
+              <th >Especie</th>
+              <th className="text-right">PT</th>
+              <th className="text-right">m³ (libro)</th>
+              <th className="text-right">Piezas</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)] text-[var(--text-primary)]">
             {lineas.map((l) => (
               <tr key={l.n}>
-                <td className="px-2 py-1.5">{l.especie}</td>
+                <td>{l.especie}</td>
                 <td className={`${TD} text-right font-semibold`}>{formatNumber(l.pt, 2)}</td>
                 <td className={`${TD} text-right`}>{l.m3 != null ? formatNumber(l.m3, 3) : "—"}</td>
                 <td className={`${TD} text-right`}>{l.piezas ?? "—"}</td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
     );
   }
@@ -46,23 +46,23 @@ export function MedidasAserrada({ piezas, lineas }: { piezas?: readonly PiezaCon
   const conDescuento = piezas.some((p) => p.descuento && (p.descuento.descartadas || p.descuento.pct));
   return (
     <div className="max-h-[22rem] overflow-auto rounded-2xl border border-[var(--rule-soft)]" data-vista="medidas-aserrada">
-      <table className="w-full text-sm">
-        <thead className="sticky top-0 bg-[var(--surface-sunken)]">
+      <DataTable className="w-full">
+        <thead className="sticky top-0">
           <tr>
-            <th className={TH}>#</th>
-            <th className={TH}>Especie</th>
-            <th className={`${TH} text-right`}>Cant.</th>
-            <th className={`${TH} text-right`}>Esp. × ancho × largo</th>
-            {conDescuento && <th className={`${TH} text-right`}>PT bruto</th>}
-            {conDescuento && <th className={`${TH} text-right`}>Descuento</th>}
-            <th className={`${TH} text-right`}>PT</th>
+            <th >#</th>
+            <th >Especie</th>
+            <th className="text-right">Cant.</th>
+            <th className="text-right">Esp. × ancho × largo</th>
+            {conDescuento && <th className="text-right">PT bruto</th>}
+            {conDescuento && <th className="text-right">Descuento</th>}
+            <th className="text-right">PT</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--rule-soft)] text-[var(--text-primary)]">
           {piezas.map((p) => (
             <tr key={p.n}>
               <td className={`${TD} text-[var(--text-tertiary)]`}>{p.n}</td>
-              <td className="px-2 py-1.5">{p.especie}</td>
+              <td>{p.especie}</td>
               <td className={`${TD} text-right`}>{p.cantidad}</td>
               <td className={`${TD} text-right`}>{medida(p.espesor, p.uEspesor)} × {medida(p.ancho, p.uAncho)} × {medida(p.largo, p.uLargo)}</td>
               {conDescuento && <td className={`${TD} text-right`}>{formatNumber(p.bruto, 2)}</td>}
@@ -75,7 +75,7 @@ export function MedidasAserrada({ piezas, lineas }: { piezas?: readonly PiezaCon
             </tr>
           ))}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }

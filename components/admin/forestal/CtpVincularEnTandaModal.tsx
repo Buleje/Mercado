@@ -23,7 +23,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Check, Layers, Loader2, X } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
@@ -39,7 +39,6 @@ import {
 } from "@/components/admin/shared/modal-controles-ventana";
 import { Btn } from "./ctp-shared";
 
-const TH = "px-2 py-1.5 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = `${TD} text-right font-mono tabular-nums`;
 
@@ -364,17 +363,17 @@ export default function CtpVincularEnTandaModal({
           {lote && reparto && (
             <>
               <div className="overflow-x-auto rounded-xl border border-[var(--rule-soft)]">
-                <table className="w-full">
-                  <thead className="bg-[var(--surface-sunken)]">
+                <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
+                  <thead>
                     <tr>
-                      <th className={TH} scope="col">
+                      <th  scope="col">
                         <span className="sr-only">Incluir</span>
                       </th>
-                      <th className={TH} scope="col">Corrida</th>
-                      <th className={`${TH} text-right`} scope="col">Declarado</th>
-                      <th className={`${TH} text-right`} scope="col">Troza que le toca</th>
-                      <th className={`${TH} text-right`} scope="col">Rend.</th>
-                      <th className={TH} scope="col">Qué pasa</th>
+                      <th  scope="col">Corrida</th>
+                      <th className="text-right" scope="col">Declarado</th>
+                      <th className="text-right" scope="col">Troza que le toca</th>
+                      <th className="text-right" scope="col">Rend.</th>
+                      <th  scope="col">Qué pasa</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -455,7 +454,7 @@ export default function CtpVincularEnTandaModal({
                       );
                     })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
 
               {/* Lo que Brandon pidió ver: cuánto se usa y cuánto queda. */}

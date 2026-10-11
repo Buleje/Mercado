@@ -113,21 +113,21 @@ export default function ApartadosPanel({
         <p className="py-3 text-center text-sm text-[var(--text-tertiary)]">Todavía no cerraste ningún apartado.</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-[var(--accent)]/20 bg-[var(--surface-raised)]">
-          <DataTable className="w-full min-w-[460px] text-sm">
+          <DataTable className="w-full min-w-[460px]">
             <thead>
-              <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                <th className="px-3 py-2">Apartado</th>
-                <th className="px-3 py-2">Especie</th>
-                <th className="px-3 py-2 text-right">Piezas</th>
-                <th className="px-3 py-2 text-right">Pie tablar</th>
-                <th className="px-3 py-2 text-right">m³</th>
-                <th className="px-3 py-2" />
+              <tr>
+                <th>Apartado</th>
+                <th>Especie</th>
+                <th className="text-right">Piezas</th>
+                <th className="text-right">Pie tablar</th>
+                <th className="text-right">m³</th>
+                <th />
               </tr>
             </thead>
             <tbody>
               {resumen.map((r) => (
-                <tr key={r.numero} className="border-t border-[var(--accent)]/15">
-                  <td className="px-3 py-2">
+                <tr key={r.numero} className="border-[var(--accent)]/15">
+                  <td>
                     <div className={`font-bold ${colorClaseApartado(r.numero)}`}>Apartado {r.numero}</div>
                     <input
                       type="text"
@@ -139,11 +139,11 @@ export default function ApartadosPanel({
                       className="mt-0.5 w-full min-w-[120px] rounded border border-transparent bg-transparent px-1 py-0.5 text-xs font-semibold text-[var(--text-secondary)] outline-none placeholder:font-normal placeholder:text-[var(--text-tertiary)] hover:border-[var(--rule-base)] focus:border-[var(--accent)] focus:bg-[var(--surface-base)]"
                     />
                   </td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especies.join(" · ")}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.piezas}</td>
-                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtPt(r.pieTablar)}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(r.m3)}</td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="text-[var(--text-secondary)]">{r.especies.join(" · ")}</td>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.piezas}</td>
+                  <td className="text-right font-mono font-bold tabular-nums">{fmtPt(r.pieTablar)}</td>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(r.m3)}</td>
+                  <td className="text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         type="button"
@@ -176,10 +176,10 @@ export default function ApartadosPanel({
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-[var(--accent)]/40 font-bold text-[var(--text-primary)]">
-                <td className="px-3 py-2" colSpan={2}>Total · {resumen.length} {resumen.length === 1 ? "apartado" : "apartados"}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">{totalPiezas}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">{fmtPt(totalPt)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(totalM3)}</td>
+                <td colSpan={2}>Total · {resumen.length} {resumen.length === 1 ? "apartado" : "apartados"}</td>
+                <td className="text-right font-mono tabular-nums">{totalPiezas}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--accent)]">{fmtPt(totalPt)}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(totalM3)}</td>
                 <td />
               </tr>
             </tfoot>

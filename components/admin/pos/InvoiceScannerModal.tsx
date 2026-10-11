@@ -430,19 +430,19 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
 
               {/* Items table */}
               <div className="border border-[var(--rule-base)] rounded-xl overflow-hidden">
-                <DataTable className="w-full text-sm">
+                <DataTable className="w-full">
                   <thead>
-                    <tr className="bg-[var(--surface-sunken)]">
-                      <th className="text-left px-3 py-2 text-xs font-medium text-[var(--text-tertiary)]">
+                    <tr>
+                      <th>
                         Producto
                       </th>
-                      <th className="text-center px-2 py-2 text-xs font-medium text-[var(--text-tertiary)] w-16">
+                      <th className="text-center w-16">
                         Cant.
                       </th>
-                      <th className="text-right px-2 py-2 text-xs font-medium text-[var(--text-tertiary)] w-20">
+                      <th className="text-right w-20">
                         P.Unit
                       </th>
-                      <th className="text-right px-3 py-2 text-xs font-medium text-[var(--text-tertiary)] w-20">
+                      <th className="text-right w-20">
                         Subtotal
                       </th>
                       <th className="w-8" />
@@ -452,9 +452,9 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                     {editItems.map((item, idx) => (
                       <tr
                         key={idx}
-                        className="hover:bg-[var(--surface-sunken)]/50"
+                       
                       >
-                        <td className="px-3 py-1.5">
+                        <td>
                           <input
                             type="text"
                             value={item.nombre}
@@ -465,7 +465,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                             className="w-full bg-transparent text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 -mx-1"
                           />
                         </td>
-                        <td className="px-2 py-1.5">
+                        <td>
                           <input
                             type="number"
                             value={item.cantidad}
@@ -481,7 +481,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                             className="w-full bg-transparent text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary rounded"
                           />
                         </td>
-                        <td className="px-2 py-1.5">
+                        <td>
                           <input
                             type="number"
                             value={item.precioUnitario}
@@ -498,10 +498,10 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                             className="w-full bg-transparent text-sm text-right text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary rounded"
                           />
                         </td>
-                        <td className="px-3 py-1.5 text-right text-sm text-[var(--text-secondary)] tabular-nums">
+                        <td className="text-right text-[var(--text-secondary)] tabular-nums">
                           {formatCurrency(item.cantidad * item.precioUnitario)}
                         </td>
-                        <td className="pr-2 py-1.5">
+                        <td className="pr-2">
                           <button
                             type="button"
                             onClick={() => removeItem(idx)}

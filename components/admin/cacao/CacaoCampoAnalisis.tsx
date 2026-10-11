@@ -97,20 +97,20 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
       )}
 
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)]">
-        <DataTable className="w-full min-w-[820px] text-sm">
+        <DataTable className="w-full min-w-[820px]">
           <thead>
-            <tr className="border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] text-left text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
-              <th className="px-3 py-2 font-bold">Sección</th>
-              <th className="px-3 py-2 text-right font-bold">Área</th>
-              <th className="px-3 py-2 text-right font-bold">Cosecha</th>
-              <th className="px-3 py-2 text-right font-bold">kg/ha</th>
-              <th className="px-3 py-2 text-right font-bold">kg/planta</th>
-              <th className="px-3 py-2 text-right font-bold">Ingresos</th>
-              <th className="px-3 py-2 text-right font-bold">Costos</th>
-              <th className="px-3 py-2 text-right font-bold">Margen</th>
-              <th className="px-3 py-2 text-right font-bold">ROI</th>
-              <th className="px-3 py-2 text-center font-bold">Tendencia</th>
-              <th className="px-3 py-2 text-right font-bold">Próxima cosecha</th>
+            <tr>
+              <th>Sección</th>
+              <th className="text-right">Área</th>
+              <th className="text-right">Cosecha</th>
+              <th className="text-right">kg/ha</th>
+              <th className="text-right">kg/planta</th>
+              <th className="text-right">Ingresos</th>
+              <th className="text-right">Costos</th>
+              <th className="text-right">Margen</th>
+              <th className="text-right">ROI</th>
+              <th className="text-center">Tendencia</th>
+              <th className="text-right">Próxima cosecha</th>
             </tr>
           </thead>
           <tbody>
@@ -122,25 +122,25 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
                 role="button"
                 aria-label={`Ver sección ${s.codigo}`}
                 onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenParcela(s.id); } }}
-                className="cursor-pointer border-b border-[var(--rule-base)] last:border-0 hover:bg-[var(--surface-canvas)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]"
+                className="cursor-pointer border-[var(--rule-base)] last:border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]"
               >
-                <td className="px-3 py-2.5">
+                <td>
                   <span className="flex items-center gap-2">
                     {i === 0 && s.rendKgHa != null && <Trophy className="h-3.5 w-3.5 text-[var(--data-warning-600)]" />}
                     <span className="font-mono font-bold text-[var(--text-primary)]">{s.codigo}</span>
                     {s.variedad && <span className="text-xs text-[var(--text-tertiary)]">{s.variedad}</span>}
                   </span>
                 </td>
-                <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{s.areaHa != null ? `${n1(s.areaHa)} ha` : "—"}</td>
-                <td className="px-3 py-2.5 text-right font-bold text-[var(--text-primary)]">{s.cosechaKg > 0 ? `${kg(s.cosechaKg)} kg` : "—"}</td>
-                <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{n1(s.rendKgHa)}</td>
-                <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{n2(s.rendKgPlanta)}</td>
-                <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{s.ingresos > 0 ? `S/ ${soles(s.ingresos)}` : "—"}</td>
-                <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{s.costos > 0 ? `S/ ${soles(s.costos)}` : "—"}</td>
-                <td className={`px-3 py-2.5 text-right font-bold ${s.margen > 0 ? "text-[var(--data-success-700)]" : s.margen < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-secondary)]"}`}>{s.ingresos > 0 || s.costos > 0 ? `S/ ${soles(s.margen)}` : "—"}</td>
-                <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{s.roi != null ? `${n2(s.roi)}×` : "—"}</td>
-                <td className="px-3 py-2.5 text-center"><Sparkline data={s.tendencia} /></td>
-                <td className="px-3 py-2.5 text-right" title={s.metodoProyeccion}>
+                <td className="text-right text-[var(--text-secondary)]">{s.areaHa != null ? `${n1(s.areaHa)} ha` : "—"}</td>
+                <td className="text-right font-bold">{s.cosechaKg > 0 ? `${kg(s.cosechaKg)} kg` : "—"}</td>
+                <td className="text-right text-[var(--text-secondary)]">{n1(s.rendKgHa)}</td>
+                <td className="text-right text-[var(--text-secondary)]">{n2(s.rendKgPlanta)}</td>
+                <td className="text-right text-[var(--text-secondary)]">{s.ingresos > 0 ? `S/ ${soles(s.ingresos)}` : "—"}</td>
+                <td className="text-right text-[var(--text-secondary)]">{s.costos > 0 ? `S/ ${soles(s.costos)}` : "—"}</td>
+                <td className={`text-right font-bold ${s.margen > 0 ? "text-[var(--data-success-700)]" : s.margen < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-secondary)]"}`}>{s.ingresos > 0 || s.costos > 0 ? `S/ ${soles(s.margen)}` : "—"}</td>
+                <td className="text-right text-[var(--text-secondary)]">{s.roi != null ? `${n2(s.roi)}×` : "—"}</td>
+                <td className="text-center"><Sparkline data={s.tendencia} /></td>
+                <td className="text-right" title={s.metodoProyeccion}>
                   {s.proyeccionKg != null ? (
                     <span className="font-bold text-[var(--text-primary)]">
                       {kg(s.proyeccionKg)} kg

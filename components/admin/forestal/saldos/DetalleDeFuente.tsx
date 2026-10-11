@@ -240,7 +240,7 @@ export default function DetalleDeFuente({
                   <Fragment key={`${f.celdas[columnas[0]]}-${i}`}>
                     <tr>
                       {conHijas && (
-                        <td className="px-1">
+                        <td>
                           {f.hijas ? (
                             <button
                               type="button"
@@ -273,17 +273,14 @@ export default function DetalleDeFuente({
                     </tr>
                     {abierta && f.hijas && (
                       <tr>
-                        <td
-                          colSpan={columnas.length + 1}
-                          className="bg-[var(--surface-sunken)] px-4 py-2"
-                        >
-                          <table className="w-full text-xs">
+                        <td colSpan={columnas.length + 1} className="bg-[var(--surface-sunken)]">
+                          <DataTable className="w-full">
                             <thead>
-                              <tr className="text-[var(--text-tertiary)]">
+                              <tr>
                                 {f.hijas.columnas.map((c) => (
                                   <th
                                     key={c}
-                                    className={`py-1 font-bold ${esColumnaNumerica(c) ? "text-right" : "text-left"}`}
+                                    className={`${esColumnaNumerica(c) ? "text-right" : "text-left"}`}
                                   >
                                     {c}
                                   </th>
@@ -292,11 +289,11 @@ export default function DetalleDeFuente({
                             </thead>
                             <tbody>
                               {f.hijas.filas.map((h, j) => (
-                                <tr key={j} className="border-t border-[var(--rule-soft)]">
+                                <tr key={j}>
                                   {f.hijas!.columnas.map((c) => (
                                     <td
                                       key={c}
-                                      className={`py-1 ${typeof h[c] === "number" ? "text-right font-mono tabular-nums" : ""}`}
+                                      className={`${typeof h[c] === "number" ? "text-right font-mono tabular-nums" : ""}`}
                                     >
                                       <Valor col={c} v={h[c]} />
                                     </td>
@@ -304,7 +301,7 @@ export default function DetalleDeFuente({
                                 </tr>
                               ))}
                             </tbody>
-                          </table>
+                          </DataTable>
                         </td>
                       </tr>
                     )}

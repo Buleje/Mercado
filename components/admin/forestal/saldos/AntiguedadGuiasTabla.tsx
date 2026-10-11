@@ -72,7 +72,7 @@ export default function AntiguedadGuiasTabla({
     <>
     <BarraFiltrosTabla f={f} className="px-4 py-2" />
     <DataTable
-      className="w-full text-sm"
+      className="w-full"
       wrapperClassName="rounded-none border-0"
       aria-labelledby={idTitulo}
     >
@@ -88,8 +88,8 @@ export default function AntiguedadGuiasTabla({
       <tbody>
         {f.filtradas.length === 0 && filas.length > 0 && <SinCoincidenciasFila colSpan={5} />}
         {f.filtradas.map((f) => (
-          <tr key={f.id} className="border-t border-[var(--rule-soft)]">
-            <td className="px-4 py-3">
+          <tr key={f.id}>
+            <td>
               <span className="inline-flex flex-wrap items-center gap-2 font-medium text-[var(--text-primary)]">
                 {f.species ?? "—"}
                 {f.cites && (
@@ -99,16 +99,16 @@ export default function AntiguedadGuiasTabla({
                 )}
               </span>
             </td>
-            <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
+            <td className="font-mono text-[var(--text-secondary)]">
               {f.code ?? "—"}
             </td>
-            <td className="px-4 py-3 text-right tabular-nums text-[var(--text-secondary)]">
+            <td className="text-right tabular-nums text-[var(--text-secondary)]">
               {formatNumber(f.disponible, 3)}
             </td>
-            <td className="px-4 py-3 text-right">
+            <td className="text-right">
               <PastillaDias dias={f.dias} tramo={f.tramo} />
             </td>
-            <td className="px-4 py-3 text-right tabular-nums text-[var(--text-primary)]">
+            <td className="text-right tabular-nums">
               {f.valor != null ? (
                 dinero(f.valor, f.moneda)
               ) : (

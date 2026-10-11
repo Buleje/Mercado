@@ -285,8 +285,8 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
             guias.length > 12 ? "max-h-[75vh] overflow-y-auto" : ""
           }`}
         >
-          <DataTable className="w-full text-sm">
-            <thead ref={props.ordenCols?.refCabecera} className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top">
+          <DataTable className="w-full">
+            <thead ref={props.ordenCols?.refCabecera} className="sticky top-0 z-10 align-top">
               <tr>
                 <Th className="w-8">
                   <input
@@ -391,10 +391,10 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                       otra. La leyenda va a la izquierda si hay lugar; con
                       «Cantidad» pegada al borde, a su derecha — en la casilla
                       de marcar sola no entra. */}
-                  <td colSpan={1 + antesDeCantidad} className="px-2! py-2.5 text-sm font-bold text-[var(--text-secondary)]">
+                  <td colSpan={1 + antesDeCantidad} className="px-2! font-bold text-[var(--text-secondary)]">
                     {antesDeCantidad >= 2 && leyendaPie}
                   </td>
-                  <td className="px-2! py-2.5 text-right">
+                  <td className="px-2! text-right">
                     <div className="whitespace-nowrap font-bold tabular-nums text-[var(--text-primary)]">
                       {fmtM3(totalPagina.vol)}{" "}
                       <span className="text-xs font-medium text-[var(--text-tertiary)]">m³</span>
@@ -403,7 +403,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                       {totalPagina.pz} piezas
                     </div>
                   </td>
-                  <td colSpan={1 + despuesDeCantidad} className="px-2! py-2.5 text-sm font-bold text-[var(--text-secondary)]">
+                  <td colSpan={1 + despuesDeCantidad} className="px-2! font-bold text-[var(--text-secondary)]">
                     {antesDeCantidad < 2 && leyendaPie}
                   </td>
                 </tr>
@@ -484,7 +484,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
 // ─── Cabecera ──────────────────────────────────────────────────────────────
 
 /** `px-2!`: `DataTable` fuerza `px-3` en `thead th` (ver `Td` en `CtpGuiaFila`). */
-const TH_CLS = "px-2! py-2.5 font-bold text-[var(--text-primary)]";
+const TH_CLS = "px-2!";
 
 /**
  * Un título de columna. Con `col`, la columna se arrastra (`data-col`, lo

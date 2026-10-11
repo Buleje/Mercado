@@ -183,27 +183,27 @@ export default function CtpAnalisis() {
           {reorden.length === 0 ? (
             <div className="p-8 text-center text-sm text-[var(--text-tertiary)]">Sin materia prima ni consumo registrado.</div>
           ) : (
-            <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] text-left">
+            <DataTable className="w-full">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 font-bold text-[var(--text-primary)]">Especie</th>
-                  <th className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">Stock (m³)</th>
-                  <th className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">Consumo/mes</th>
-                  <th className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">Se agota en</th>
+                  <th>Especie</th>
+                  <th className="text-right">Stock (m³)</th>
+                  <th className="text-right">Consumo/mes</th>
+                  <th className="text-right">Se agota en</th>
                 </tr>
               </thead>
               <tbody>
                 {(reordenSorted ?? reorden).map((r) => {
                   const u = urgencia(r.diasHastaAgotar);
                   return (
-                    <tr key={r.especie} className="border-t border-[var(--rule-soft)]">
-                      <td className="px-4 py-3">
+                    <tr key={r.especie}>
+                      <td>
                         <span className="inline-flex items-center gap-2 font-medium text-[var(--text-primary)]">{r.especie}{r.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}</span>
                         {r.scientific && <div className="text-xs italic text-[var(--text-tertiary)]">{r.scientific}</div>}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(r.saldo)}</td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{r.ratePorDia > 0 ? n2(r.ratePorDia * 30) : "—"}</td>
-                      <td className="px-4 py-3 text-right"><span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${u.cls}`}>{u.label}</span></td>
+                      <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(r.saldo)}</td>
+                      <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{r.ratePorDia > 0 ? n2(r.ratePorDia * 30) : "—"}</td>
+                      <td className="text-right"><span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${u.cls}`}>{u.label}</span></td>
                     </tr>
                   );
                 })}

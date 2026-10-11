@@ -194,7 +194,7 @@ function GrupoDeCorrida({
         <FilaDePaquete key={p.id} paquete={p} onEditar={onEditarEscuadria ? () => onEditarEscuadria(c, p) : undefined} />
       ))}
       {x.sinPaqueteM3 > 0 && (
-        <tr className="border-t border-[var(--rule-soft)] text-[var(--text-tertiary)]">
+        <tr className="text-[var(--text-tertiary)]">
           <td className={`${CELDA} italic`}>
             {c.paquetes.length === 0 ? "Sin paquetes: lo declara el asiento" : "Sin paquete declarado"}
           </td>
@@ -231,8 +231,8 @@ function FilaDePaquete({ paquete: p, onEditar }: { paquete: PaqueteDelDia; onEdi
     <span className="font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">Sin escuadría</span>
   );
   return (
-    <tr className="border-t border-[var(--rule-soft)]">
-      <td className="whitespace-nowrap px-3 py-1 text-sm">
+    <tr>
+      <td className="whitespace-nowrap">
         {onEditar ? (
           <button
             type="button"
@@ -254,7 +254,7 @@ function FilaDePaquete({ paquete: p, onEditar }: { paquete: PaqueteDelDia; onEdi
       <td className={`${CELDA} whitespace-nowrap text-[var(--text-secondary)]`} title={p.producto ?? undefined}>
         {tipoDelPaquete(p)}
       </td>
-      <td className={`${CELDA} whitespace-nowrap font-mono text-xs text-[var(--text-secondary)]`}>{p.codigo}</td>
+      <td className={`${CELDA} whitespace-nowrap font-mono text-[var(--text-secondary)]`}>{p.codigo}</td>
     </tr>
   );
 }

@@ -224,21 +224,21 @@ export default function CtpPaqueteFicha({
           <TablaCtp>
             <TheadCtp>
               <tr>
-                <th className="px-3 py-2 font-bold">Código</th>
-                <th className="px-3 py-2 font-bold">Producto</th>
-                <th className="px-3 py-2 text-right font-bold">Volumen</th>
-                <th className="px-3 py-2 text-right font-bold">Corrida</th>
-                <th className="px-3 py-2 font-bold">Lote</th>
+                <th className="font-bold">Código</th>
+                <th className="font-bold">Producto</th>
+                <th className="text-right font-bold">Volumen</th>
+                <th className="text-right font-bold">Corrida</th>
+                <th className="font-bold">Lote</th>
               </tr>
             </TheadCtp>
             <TbodyCtp>
               {resultados.map((r) => (
-                <tr key={r.id} className="hover:bg-[var(--surface-sunken)]">
-                  <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{r.codigo}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{r.productType ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{n(r.volumenM3)}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">N° {r.corrida.lineNo}</td>
-                  <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{r.corrida.lote ?? "—"}</td>
+                <tr key={r.id}>
+                  <td className="font-mono font-bold">{r.codigo}</td>
+                  <td className="text-[var(--text-secondary)]">{r.productType ?? "—"}</td>
+                  <td className="text-right font-mono tabular-nums">{n(r.volumenM3)}</td>
+                  <td className="text-right font-mono tabular-nums">N° {r.corrida.lineNo}</td>
+                  <td className="font-mono text-[var(--text-secondary)]">{r.corrida.lote ?? "—"}</td>
                 </tr>
               ))}
             </TbodyCtp>
@@ -378,11 +378,11 @@ export default function CtpPaqueteFicha({
               <TablaCtp>
                 <TheadCtp>
                   <tr>
-                    <th className="px-3 py-2 font-bold">Cod. planta</th>
-                    <th className="px-3 py-2 font-bold">Codificación</th>
-                    <th className="px-3 py-2 font-bold">Especie</th>
-                    <th className="px-3 py-2 font-bold">GTF</th>
-                    <th className="px-3 py-2 text-right font-bold">Volumen (m³)</th>
+                    <th className="font-bold">Cod. planta</th>
+                    <th className="font-bold">Codificación</th>
+                    <th className="font-bold">Especie</th>
+                    <th className="font-bold">GTF</th>
+                    <th className="text-right font-bold">Volumen (m³)</th>
                   </tr>
                 </TheadCtp>
                 <TbodyCtp>
@@ -393,14 +393,14 @@ export default function CtpPaqueteFicha({
                     </FilaVacia>
                   )}
                   {trozas.map((t) => (
-                    <tr key={t.id} className="hover:bg-[var(--surface-sunken)]">
-                      <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{t.codigoPlanta ?? "—"}</td>
-                      <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{t.codificacion ?? "—"}</td>
-                      <td className="px-3 py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
+                    <tr key={t.id}>
+                      <td className="font-mono font-bold">{t.codigoPlanta ?? "—"}</td>
+                      <td className="font-mono text-[var(--text-secondary)]">{t.codificacion ?? "—"}</td>
+                      <td className="text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
+                      <td className="font-mono text-[var(--text-secondary)]">
                         {t.entry?.gtfNumber ?? "—"}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                      <td className="text-right font-mono tabular-nums">
                         {n(t.volumenM3)}
                       </td>
                     </tr>

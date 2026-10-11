@@ -214,15 +214,15 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                 Verificar cantidades recibidas
               </p>
               <div className="overflow-x-auto">
-                <DataTable className="w-full text-sm">
+                <DataTable className="w-full">
                   <thead>
-                    <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-secondary)] dark:text-muted">
-                      <th className="text-left py-2 px-2">Producto</th>
-                      <th className="text-center py-2 px-1">Pedido</th>
-                      <th className="text-center py-2 px-1">Recibido</th>
-                      <th className="text-center py-2 px-1">Dif.</th>
-                      <th className="text-center py-2 px-1">Cómo llegó</th>
-                      <th className="text-center py-2 px-1">No llego</th>
+                    <tr>
+                      <th>Producto</th>
+                      <th className="text-center">Pedido</th>
+                      <th className="text-center">Recibido</th>
+                      <th className="text-center">Dif.</th>
+                      <th className="text-center">Cómo llegó</th>
+                      <th className="text-center">No llego</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -231,13 +231,13 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                       return (
                         <Fragment key={item.productId}>
                         <tr className={cn(!item.noLlego && item.condition === "ok" && item.receivedQty > 0 ? "" : "border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50")}>
-                          <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                          <td className="font-semibold">
                             {item.name}
                           </td>
-                          <td className="py-2 px-1 text-center text-[var(--text-secondary)] dark:text-muted">
+                          <td className="text-center text-[var(--text-secondary)] dark:text-muted">
                             {item.orderedQty} {item.unit}
                           </td>
-                          <td className="py-2 px-1 text-center">
+                          <td className="text-center">
                             <input
                               type="number"
                               min={0}
@@ -257,7 +257,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                               disabled={item.noLlego}
                             />
                           </td>
-                          <td className="py-2 px-1 text-center">
+                          <td className="text-center">
                             {diff !== 0 && (
                               <span className={cn("text-sm font-bold", diff < 0 ? "text-[var(--data-error-ink)]" : "text-[var(--data-success-ink)]")}>
                                 {diff < 0 ? `Faltaron ${Math.abs(diff)}` : `+${diff}`}
@@ -267,7 +267,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                           {/* Lo dañado o vencido llegó, pero no se puede
                               vender: el backend lo registra como merma en vez
                               de sumarlo al stock. */}
-                          <td className="py-2 px-1 text-center">
+                          <td className="text-center">
                             <label className="sr-only" htmlFor={`cond-${item.productId}`}>
                               Cómo llegó {item.name}
                             </label>
@@ -283,7 +283,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                               ))}
                             </select>
                           </td>
-                          <td className="py-2 px-1 text-center">
+                          <td className="text-center">
                             <input
                               type="checkbox"
                               checked={item.noLlego}
@@ -294,8 +294,8 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                           </td>
                         </tr>
                         {!item.noLlego && item.condition === "ok" && item.receivedQty > 0 && (
-                          <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
-                            <td colSpan={6} className="px-2 pb-2">
+                          <tr>
+                            <td colSpan={6} className="pb-2">
                               <VenceLoteCampo
                                 id={`oc-vence-${item.productId}`}
                                 producto={item.name}
@@ -323,13 +323,13 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                 Ajustar precios segun factura
               </p>
               <div className="overflow-x-auto">
-                <DataTable className="w-full text-sm">
+                <DataTable className="w-full">
                   <thead>
-                    <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-secondary)] dark:text-muted">
-                      <th className="text-left py-2 px-2">Producto</th>
-                      <th className="text-right py-2 px-1">Precio anterior</th>
-                      <th className="text-center py-2 px-1">Precio factura</th>
-                      <th className="text-right py-2 px-1">Dif. %</th>
+                    <tr>
+                      <th>Producto</th>
+                      <th className="text-right">Precio anterior</th>
+                      <th className="text-center">Precio factura</th>
+                      <th className="text-right">Dif. %</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -344,14 +344,14 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                         const isSignificant = Math.abs(priceDiff) > 5;
 
                         return (
-                          <tr key={item.productId} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
-                            <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                          <tr key={item.productId}>
+                            <td className="font-semibold">
                               {item.name}
                             </td>
-                            <td className="py-2 px-1 text-right text-[var(--text-secondary)] dark:text-muted">
+                            <td className="text-right text-[var(--text-secondary)] dark:text-muted">
                               {formatCurrency(Number(item.originalPrice))}
                             </td>
-                            <td className="py-2 px-1 text-center">
+                            <td className="text-center">
                               <input
                                 type="number"
                                 min={0}
@@ -362,7 +362,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                                 className="w-24 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                               />
                             </td>
-                            <td className="py-2 px-1 text-right">
+                            <td className="text-right">
                               {priceDiff !== 0 && (
                                 <span
                                   className={cn(

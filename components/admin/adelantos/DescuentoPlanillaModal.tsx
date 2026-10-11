@@ -156,26 +156,26 @@ export default function DescuentoPlanillaModal({
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)]">
-            <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] text-left">
+            <DataTable className="w-full">
+              <thead>
                 <tr>
-                  <th className="px-3 py-2 font-bold text-[var(--text-secondary)]">Persona</th>
-                  <th className="px-3 py-2 text-right font-bold text-[var(--text-secondary)]">Debe</th>
-                  <th className="px-3 py-2 text-right font-bold text-[var(--text-secondary)]">Se descuenta</th>
-                  <th className="px-3 py-2 font-bold text-[var(--text-secondary)]">Queda</th>
+                  <th>Persona</th>
+                  <th className="text-right">Debe</th>
+                  <th className="text-right">Se descuenta</th>
+                  <th>Queda</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
                 {lineas.map((l) => (
                   <tr key={l.adelantoId}>
-                    <td className="px-3 py-2">
+                    <td>
                       <span className="block font-bold text-[var(--text-primary)]">{l.persona}</span>
                       {l.codigo && <span className="font-mono text-xs text-[var(--text-tertiary)]">{l.codigo}</span>}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)]">
+                    <td className="text-right tabular-nums text-[var(--text-secondary)]">
                       {formatCurrency(l.saldo)}
                     </td>
-                    <td className="px-3 py-2 text-right">
+                    <td className="text-right">
                       <input
                         type="number"
                         min={0}
@@ -186,7 +186,7 @@ export default function DescuentoPlanillaModal({
                         className="h-9 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary"
                       />
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       {l.descuento <= 0 ? (
                         <span className="text-sm text-[var(--text-tertiary)]">se saltea</span>
                       ) : l.liquida ? (

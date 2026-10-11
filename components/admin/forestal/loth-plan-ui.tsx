@@ -112,16 +112,16 @@ export function Table({ head, children, alto, filtroDe }: {
      y la cabecera queda arriba: un censo de miles de árboles no empuja el
      croquis tres pantallas más abajo. */
   return (
-    <DataTable className="w-full text-sm" stickyHeader={Boolean(alto)} wrapperClassName={alto}>
-      <thead className={`bg-[var(--surface-sunken)] text-left ${filtroDe ? "align-top" : ""}`}>
-        <tr>{head.map((h, i) => <th key={i} className={`px-4 py-2 font-bold text-[var(--text-primary)] ${i >= 2 ? "text-right" : ""}`}>{h}{filtroDe?.(i)}</th>)}</tr>
+    <DataTable className="w-full" stickyHeader={Boolean(alto)} wrapperClassName={alto}>
+      <thead className={`${filtroDe ? "align-top" : ""}`}>
+        <tr>{head.map((h, i) => <th key={i} className={`${i >= 2 ? "text-right" : ""}`}>{h}{filtroDe?.(i)}</th>)}</tr>
       </thead>
       <tbody>{children}</tbody>
     </DataTable>
   );
 }
 export function Cell({ children, right }: { children: ReactNode; right?: boolean }) {
-  return <td className={`px-4 py-2.5 ${right ? "text-right" : ""}`}>{children}</td>;
+  return <td className={`${right ? "text-right" : ""}`}>{children}</td>;
 }
 export function Mono({ children, bold }: { children: ReactNode; bold?: boolean }) {
   return <span className={`font-mono tabular-nums text-[var(--text-primary)] ${bold ? "font-bold" : ""}`}>{children}</span>;

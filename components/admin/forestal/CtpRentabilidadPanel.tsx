@@ -192,12 +192,12 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <Kicker as="h3" className="libro-kicker mb-2">Margen por producto</Kicker>
           <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
-              <thead className="text-left text-xs uppercase text-[var(--text-tertiary)]"><tr><th className="py-1.5 pr-2 font-bold">Producto</th><th className="py-1.5 px-2 text-right font-bold">Ventas</th><th className="py-1.5 px-2 text-right font-bold">COGS</th><th className="py-1.5 px-2 text-right font-bold">Margen</th><th className="py-1.5 pl-2 text-right font-bold">%</th></tr></thead>
+            <DataTable className="w-full">
+              <thead><tr><th className="pr-2">Producto</th><th className="text-right">Ventas</th><th className="text-right">COGS</th><th className="text-right">Margen</th><th className="pl-2 text-right">%</th></tr></thead>
               <tbody>
                 {ranked.map((p, i) => (
-                  <tr key={i} className="border-t border-[var(--rule-soft)]">
-                    <td className="py-1.5 pr-2 align-top">
+                  <tr key={i}>
+                    <td className="pr-2 align-top">
                       <div className="flex items-center gap-1.5">
                         {i === 0 && ranked.length > 1 && p.margen > 0 && <Award className="h-3.5 w-3.5 shrink-0 text-[var(--data-success-600)]" aria-label="más rentable" />}
                         <span className="text-[var(--text-primary)]">{p.producto}</span>
@@ -206,10 +206,10 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
                         <div className={`h-full rounded-full ${p.margen < 0 ? "bg-[var(--data-error-500)]" : "bg-[var(--data-success-500)]"}`} style={{ width: `${Math.max(4, (Math.abs(p.margen) / maxAbsMargen) * 100)}%` }} />
                       </div>
                     </td>
-                    <td className="py-1.5 px-2 text-right align-top text-[var(--text-secondary)]">{money(p.ventas, pnl.moneda)}</td>
-                    <td className="py-1.5 px-2 text-right align-top text-[var(--text-secondary)]">{money(p.cogs, pnl.moneda)}</td>
-                    <td className={`py-1.5 px-2 text-right align-top font-bold ${p.margen < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-primary)]"}`}>{money(p.margen, pnl.moneda)}</td>
-                    <td className="py-1.5 pl-2 text-right align-top text-[var(--text-secondary)]">{pct(p.margenPct)}</td>
+                    <td className="text-right align-top text-[var(--text-secondary)]">{money(p.ventas, pnl.moneda)}</td>
+                    <td className="text-right align-top text-[var(--text-secondary)]">{money(p.cogs, pnl.moneda)}</td>
+                    <td className={`text-right align-top font-bold ${p.margen < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-primary)]"}`}>{money(p.margen, pnl.moneda)}</td>
+                    <td className="pl-2 text-right align-top text-[var(--text-secondary)]">{pct(p.margenPct)}</td>
                   </tr>
                 ))}
               </tbody>

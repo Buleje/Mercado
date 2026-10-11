@@ -112,11 +112,11 @@ export function TablaDeTrozas({ trozas }: { trozas: HistoriaLote["armado"]["troz
       </button>
       {abierta && (
         <div className="overflow-x-auto border-t border-[var(--rule-base)]">
-          <DataTable className="w-full text-sm">
-            <thead className="bg-[var(--surface-sunken)] text-xs">
+          <DataTable className="w-full">
+            <thead>
               <tr>
                 {["Cód. planta", "Codificación", "GTF de ingreso", "Permiso", "D1 (cm)", "D2 (cm)", "Largo (m)", "Volumen (m³)"].map((h, i) => (
-                  <th key={h} className={`px-3 py-2 font-bold text-[var(--text-secondary)] ${i >= 4 ? "text-right" : "text-left"}`}>
+                  <th key={h} className={`${i >= 4 ? "text-right" : "text-left"}`}>
                     {h}
                   </th>
                 ))}
@@ -124,24 +124,24 @@ export function TablaDeTrozas({ trozas }: { trozas: HistoriaLote["armado"]["troz
             </thead>
             <tbody>
               {trozas.map((t) => (
-                <tr key={t.id} className="border-t border-[var(--rule-soft)]">
-                  <td className="px-3 py-1.5 font-mono text-[var(--text-primary)]">{t.codigoPlanta ?? "—"}</td>
-                  <td className="px-3 py-1.5 font-mono text-[var(--text-secondary)]">{t.codificacion ?? "—"}</td>
-                  <td className="px-3 py-1.5 font-mono text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</td>
-                  <td className="px-3 py-1.5 text-[var(--text-secondary)]">{t.permiso ?? "—"}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-[var(--text-secondary)]">{n2(t.d1Cm)}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-[var(--text-secondary)]">{n2(t.d2Cm)}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-[var(--text-secondary)]">{n2(t.largoM)}</td>
-                  <td className="px-3 py-1.5 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n4(t.volumenM3)}</td>
+                <tr key={t.id}>
+                  <td className="font-mono">{t.codigoPlanta ?? "—"}</td>
+                  <td className="font-mono text-[var(--text-secondary)]">{t.codificacion ?? "—"}</td>
+                  <td className="font-mono text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</td>
+                  <td className="text-[var(--text-secondary)]">{t.permiso ?? "—"}</td>
+                  <td className="text-right tabular-nums text-[var(--text-secondary)]">{n2(t.d1Cm)}</td>
+                  <td className="text-right tabular-nums text-[var(--text-secondary)]">{n2(t.d2Cm)}</td>
+                  <td className="text-right tabular-nums text-[var(--text-secondary)]">{n2(t.largoM)}</td>
+                  <td className="text-right font-mono font-bold tabular-nums">{n4(t.volumenM3)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
               <tr>
-                <td className="px-3 py-2 text-[var(--text-primary)]" colSpan={7}>
+                <td colSpan={7}>
                   Total · {nf(trozas.length)} piezas
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                <td className="text-right font-mono tabular-nums">
                   {n4(trozas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0))}
                 </td>
               </tr>
@@ -170,11 +170,11 @@ export function ProduccionDelLote({ produccion }: { produccion: HistoriaLote["pr
           </div>
           {c.paquetes.length > 0 ? (
             <div className="mt-2 overflow-x-auto">
-              <DataTable className="w-full text-sm">
-                <thead className="bg-[var(--surface-sunken)] text-xs">
+              <DataTable className="w-full">
+                <thead>
                   <tr>
                     {["Código", "Producto", "Presentación", "Piezas", "Volumen (m³)"].map((h, i) => (
-                      <th key={h} className={`px-3 py-1.5 font-bold text-[var(--text-secondary)] ${i >= 3 ? "text-right" : "text-left"}`}>
+                      <th key={h} className={`${i >= 3 ? "text-right" : "text-left"}`}>
                         {h}
                       </th>
                     ))}
@@ -182,12 +182,12 @@ export function ProduccionDelLote({ produccion }: { produccion: HistoriaLote["pr
                 </thead>
                 <tbody>
                   {c.paquetes.map((p) => (
-                    <tr key={p.id} className="border-t border-[var(--rule-soft)]">
-                      <td className="px-3 py-1.5 font-mono font-bold text-[var(--text-primary)]">{p.codigo ?? "—"}</td>
-                      <td className="px-3 py-1.5 text-[var(--text-secondary)]">{p.productType ?? "—"}</td>
-                      <td className="px-3 py-1.5 text-[var(--text-secondary)]">{p.presentacion ?? "—"}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums text-[var(--text-secondary)]">{nf(p.cantidad)}</td>
-                      <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n4(p.volumenM3)}</td>
+                    <tr key={p.id}>
+                      <td className="font-mono font-bold">{p.codigo ?? "—"}</td>
+                      <td className="text-[var(--text-secondary)]">{p.productType ?? "—"}</td>
+                      <td className="text-[var(--text-secondary)]">{p.presentacion ?? "—"}</td>
+                      <td className="text-right tabular-nums text-[var(--text-secondary)]">{nf(p.cantidad)}</td>
+                      <td className="text-right font-mono tabular-nums">{n4(p.volumenM3)}</td>
                     </tr>
                   ))}
                 </tbody>

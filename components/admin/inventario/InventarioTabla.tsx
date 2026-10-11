@@ -24,7 +24,7 @@ export default function InventarioTabla({ inv }: { inv: Inventario }) {
           {/* Encabezados a 14 px y sin versalitas (el DataTable los trae a 12). Sin
               selects adentro: repetían Categoría/Stock/Estado de la fila de
               filtros y de «Filtros» (10-10). */}
-          <DataTable stickyHeader className="min-w-[600px] [&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+          <DataTable stickyHeader className="min-w-[600px]">
             <thead ref={orden.refCabecera}>
               <tr>
                 <th className="w-10">

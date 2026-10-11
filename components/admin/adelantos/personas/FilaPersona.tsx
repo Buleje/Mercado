@@ -89,7 +89,7 @@ export default function FilaPersona({
           </span>
         </button>
       </td>
-      <td className="text-right text-base font-semibold tabular-nums text-[var(--text-primary)]">
+      <td className="text-right font-semibold tabular-nums">
         <MontosEnLineas map={b.totalAdelantado} />
       </td>
       <td className="text-right">

@@ -104,40 +104,40 @@ export default function RendimientoSimulador({ especies }: { especies: readonly 
           <Calculator className="h-4 w-4" aria-hidden /> Cubica trozas en «Cubicador de trozas» o pon los m³ arriba.
         </p>
       ) : (
-        <DataTable className="text-sm">
-          <thead className="border-b border-[var(--rule-base)]">
-            <tr className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-              <th scope="col" className="px-3 py-2 text-left">Especie</th>
-              <th scope="col" className="px-3 py-2 text-right">Rolliza (m³)</th>
-              <th scope="col" className="px-3 py-2 text-right">Rendimiento usado</th>
-              <th scope="col" className="px-3 py-2 text-right">PT aserrado esperado</th>
-              <th scope="col" className="px-3 py-2 text-right">Entre</th>
+        <DataTable>
+          <thead>
+            <tr>
+              <th scope="col">Especie</th>
+              <th scope="col" className="text-right">Rolliza (m³)</th>
+              <th scope="col" className="text-right">Rendimiento usado</th>
+              <th scope="col" className="text-right">PT aserrado esperado</th>
+              <th scope="col" className="text-right">Entre</th>
             </tr>
           </thead>
           <tbody>
             {filas.map((f) => (
               <tr key={f.especie}>
-                <th scope="row" className="px-3 py-2 text-left font-bold text-[var(--text-primary)]">
+                <th scope="row" className="text-left font-bold">
                   {f.especie}
                   {f.trozas > 0 && <span className="block text-xs font-normal text-[var(--text-tertiary)]">{f.trozas} trozas</span>}
                 </th>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">{ox ? "≈ " : ""}{fmtM3(f.m3)}</td>
-                <td className="px-3 py-2 text-right">
+                <td className="text-right font-mono tabular-nums">{ox ? "≈ " : ""}{fmtM3(f.m3)}</td>
+                <td className="text-right">
                   <span className="font-mono font-bold tabular-nums">{fmtPct(f.pct)}</span>
                   <span className={`block text-xs ${f.fuente === "referencia" ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`}>
                     {FUENTE[f.fuente]}{f.corridas > 0 ? ` · ${f.corridas} ${f.corridas === 1 ? "corrida" : "corridas"}` : ""}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-right font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">{formatNumber(f.ptEsperado, 0)} PT</td>
-                <td className="px-3 py-2 text-right font-mono text-xs tabular-nums text-[var(--text-secondary)]">{formatNumber(f.ptMin, 0)} – {formatNumber(f.ptMax, 0)}</td>
+                <td className="text-right font-mono font-extrabold tabular-nums">{formatNumber(f.ptEsperado, 0)} PT</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(f.ptMin, 0)} – {formatNumber(f.ptMax, 0)}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr className="font-bold">
-              <th scope="row" className="px-3 py-2 text-left">Total</th>
-              <td className="px-3 py-2 text-right font-mono tabular-nums">{ox ? "≈ " : ""}{fmtM3(total.m3)}</td>
-              <td className="px-3 py-2 text-right">
+              <th scope="row" className="text-left">Total</th>
+              <td className="text-right font-mono tabular-nums">{ox ? "≈ " : ""}{fmtM3(total.m3)}</td>
+              <td className="text-right">
                 <InfoTip
                   title="Cómo se simula"
                   what="PT aserrado = m³ de rolliza × rendimiento de la especie × 424. El rendimiento es el ponderado de tus corridas TERMINADAS de esa especie; sin ninguna, la referencia general del aserrío (56 %, entre 40 y 65 %)."
@@ -145,8 +145,8 @@ export default function RendimientoSimulador({ especies }: { especies: readonly 
                   example="10 m³ de tornillo con tus corridas al 51 % → ≈ 2 162 PT."
                 />
               </td>
-              <td className="px-3 py-2 text-right font-mono text-base tabular-nums">{formatNumber(total.pt, 0)} PT</td>
-              <td className="px-3 py-2 text-right font-mono text-xs tabular-nums">{formatNumber(total.min, 0)} – {formatNumber(total.max, 0)}</td>
+              <td className="text-right font-mono tabular-nums">{formatNumber(total.pt, 0)} PT</td>
+              <td className="text-right font-mono tabular-nums">{formatNumber(total.min, 0)} – {formatNumber(total.max, 0)}</td>
             </tr>
           </tfoot>
         </DataTable>

@@ -5,6 +5,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency } from "@/lib/currency";
 import { BOTON_PRIMARIO, BOTON_SECUNDARIO } from "../papel/formato";
 import { MARGEN_MINIMO, margen, type FilaDiferencia } from "@/lib/admin/comandos-ia/precios";
+import { DataTable } from "@buleje/design-system";
 
 /** Botones de la sección (mismo alto/radio que el Btn del panel). */
 // Botones: el canon de toda la pestaña (papel/formato.ts) + lo propio de precios.
@@ -147,7 +148,7 @@ export default function FilasDiferencia({ filas, marcadas, onMarcar, onMarcarTod
 
   return (
     <>
-      <table className="hidden w-full border-separate border-spacing-0 sm:table">
+      <DataTable wrapperClassName="hidden sm:block" className="w-full border-separate border-spacing-0">
         {/* Cabecera pegada arriba al bajar por una categoría larga. */}
         <thead className="sticky top-0 z-[1]">
           <tr>
@@ -179,7 +180,7 @@ export default function FilasDiferencia({ filas, marcadas, onMarcar, onMarcarTod
             </tr>
           ))}
         </tbody>
-      </table>
+      </DataTable>
 
       <label className="flex items-center gap-3 px-3 text-sm font-semibold text-[var(--text-secondary)] sm:hidden">
         <CasillaTodas {...todas} />

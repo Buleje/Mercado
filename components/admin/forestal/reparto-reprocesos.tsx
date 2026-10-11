@@ -54,6 +54,7 @@ import type {
   DestinoDeReproceso,
   GrupoDeReproceso,
 } from "@/lib/forestal/reproceso-sugerido";
+import { DataTable } from "@buleje/design-system";
 
 /**
  * Una fila de la tabla de salidas. `mismoTipo` marca la conversión del producto
@@ -120,8 +121,6 @@ const RUIDO_M3 = 0.01;
 
 const CHIP =
   "inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide";
-const TH =
-  "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = `${TD} text-right font-mono tabular-nums`;
 
@@ -209,22 +208,22 @@ function TablaSalidas({
           </button>
         </AdminTooltip>
       </p>
-      <table className="mt-1 w-full">
+      <DataTable className="mt-1 w-full">
         <thead>
-          <tr className="border-b border-[var(--rule-soft)]">
-            <th className={`${TH} w-8 text-center`} title="Marca lo que ya repasaste: la fila queda subrayada">
+          <tr>
+            <th className="w-8 text-center" title="Marca lo que ya repasaste: la fila queda subrayada">
               <Check className="inline h-4 w-4" aria-hidden />
               <span className="sr-only">Marcar como repasado</span>
             </th>
-            <th className={TH}>Reproceso · tipo</th>
+            <th >Reproceso · tipo</th>
             {/* Siempre en este orden (Brandon, 2026-09-09): PIEZAS · m³ · PT.
                 El pie tablar es como se compra y se vende la madera, así que
                 ninguna tabla de volumen puede no tenerlo. */}
-            <th className={`${TH} text-right`}>Piezas</th>
-            <th className={`${TH} text-right`}>Volumen m³</th>
-            <th className={`${TH} text-right`}>PT</th>
-            <th className={`${TH} text-right`}>Falta</th>
-            <th className={TH}>
+            <th className="text-right">Piezas</th>
+            <th className="text-right">Volumen m³</th>
+            <th className="text-right">PT</th>
+            <th className="text-right">Falta</th>
+            <th >
               <span className="sr-only">Declarar en el Libro</span>
             </th>
           </tr>
@@ -352,7 +351,7 @@ function TablaSalidas({
                   )}
                 </td>
                 <td className={NUM}>{fmtPiezas(d.piezas)}</td>
-                <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(d.m3)}</td>
+                <td className={`${NUM} font-bold`}>{fmtM3(d.m3)}</td>
                 <td className={NUM} title={`${fmtM3(d.m3)} m³ × 424`}>{fmtPt(ptDesdeM3(d.m3))}</td>
                 <td className={`${NUM} text-[var(--text-tertiary)]`}>
                   {d.motivo === "amparado"
@@ -385,28 +384,28 @@ function TablaSalidas({
                 </td>
               </tr>,
               abierto ? (
-                <tr key={`${clave}:medidas`} className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-                  <td colSpan={7} className="px-2 py-1.5">
-                    <table className="w-full">
+                <tr key={`${clave}:medidas`} className="bg-[var(--surface-sunken)]">
+                  <td colSpan={7}>
+                    <DataTable className="w-full">
                       <tbody>
                         {d.medidas.map((m) => (
                           <tr key={m.clave}>
-                            <td className="py-0.5 pl-6 text-xs text-[var(--text-secondary)]">{m.medida}</td>
-                            <td className="py-0.5 text-right font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                            <td className="pl-6 text-[var(--text-secondary)]">{m.medida}</td>
+                            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                               {fmtPiezas(m.piezas)} pzas
                             </td>
-                            <td className="py-0.5 text-right font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                               {fmtM3(m.m3)} m³
                             </td>
                             {/* Acá el PT es el MEDIDO de la escuadría, no el
                                 derivado: el m³ salió de él. */}
-                            <td className="py-0.5 pr-2 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+                            <td className="pr-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                               {fmtPt(m.pieTablar)} PT
                             </td>
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </DataTable>
                   </td>
                 </tr>
               ) : null,
@@ -417,18 +416,18 @@ function TablaSalidas({
           <tfoot>
             <tr className="border-t-2 border-[var(--rule-base)]">
               <td />
-              <td className={`${TD} font-bold text-[var(--text-primary)]`}>{totalLabel}</td>
-              <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+              <td className={`${TD} font-bold`}>{totalLabel}</td>
+              <td className={`${NUM} font-bold`}>
                 {totalPiezas != null ? fmtPiezas(totalPiezas) : "—"}
               </td>
-              <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(totalM3)}</td>
-              <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtPt(ptDesdeM3(totalM3))}</td>
+              <td className={`${NUM} font-bold`}>{fmtM3(totalM3)}</td>
+              <td className={`${NUM} font-bold`}>{fmtPt(ptDesdeM3(totalM3))}</td>
               <td />
               <td />
             </tr>
           </tfoot>
         )}
-      </table>
+      </DataTable>
     </div>
   );
 }

@@ -78,26 +78,26 @@ export function CronFallidosContenido({ c }: { c: CronFallidos }) {
             <CardTitle>Salud de los crons (24 h)</CardTitle>
           </header>
           <div className="overflow-x-auto">
-            <DataTable className="w-full text-left text-sm">
-              <thead className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 text-xs font-semibold uppercase text-[var(--text-tertiary)]">
+            <DataTable className="w-full text-left">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3">Trabajo</th>
-                  <th className="px-4 py-3 text-center">Éxitos</th>
-                  <th className="px-4 py-3 text-center">Fallos</th>
-                  <th className="px-4 py-3 text-center">Duración prom.</th>
-                  <th className="px-4 py-3 text-center">Atascados</th>
+                  <th>Trabajo</th>
+                  <th className="text-center">Éxitos</th>
+                  <th className="text-center">Fallos</th>
+                  <th className="text-center">Duración prom.</th>
+                  <th className="text-center">Atascados</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
                 {health.map((h) => (
-                  <tr key={h.jobName} className="hover:bg-[var(--surface-sunken)]/40">
-                    <td className="px-4 py-3 font-mono text-xs text-[var(--text-primary)]">{h.jobName}</td>
-                    <td className="px-4 py-3 text-center text-[var(--data-success-ink)]">{h.successCount24h}</td>
-                    <td className="px-4 py-3 text-center text-[var(--data-error-ink)]">{h.failureCount24h || "—"}</td>
-                    <td className="px-4 py-3 text-center text-[var(--text-secondary)]">
+                  <tr key={h.jobName}>
+                    <td className="font-mono">{h.jobName}</td>
+                    <td className="text-center text-[var(--data-success-ink)]">{h.successCount24h}</td>
+                    <td className="text-center text-[var(--data-error-ink)]">{h.failureCount24h || "—"}</td>
+                    <td className="text-center text-[var(--text-secondary)]">
                       {h.avgDurationMs ? `${h.avgDurationMs} ms` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="text-center">
                       {h.deadLetters > 0 ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--text-primary)]">
                           <AlertTriangle size={10} aria-hidden /> {h.deadLetters}
@@ -164,28 +164,28 @@ export function CronFallidosContenido({ c }: { c: CronFallidos }) {
         ) : (
           <div className={`overflow-hidden ${ADMIN_TOKENS.card}`}>
             <div className="overflow-x-auto">
-              <DataTable className="w-full text-left text-sm">
-                <thead className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 text-xs font-semibold uppercase text-[var(--text-tertiary)]">
+              <DataTable className="w-full text-left">
+                <thead>
                   <tr>
-                    <th className="px-4 py-3">Trabajo</th>
-                    <th className="px-4 py-3">Error</th>
-                    <th className="px-4 py-3 text-center">Intentos</th>
-                    <th className="px-4 py-3">Fecha</th>
-                    <th className="px-4 py-3 text-right">Acción</th>
+                    <th>Trabajo</th>
+                    <th>Error</th>
+                    <th className="text-center">Intentos</th>
+                    <th>Fecha</th>
+                    <th className="text-right">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--rule-soft)]">
                   {entries.map((entry) => (
-                    <tr key={entry.id} className="hover:bg-[var(--surface-sunken)]/40">
-                      <td className="px-4 py-3 font-mono text-xs text-[var(--text-primary)]">{entry.jobName}</td>
-                      <td className="max-w-xs px-4 py-3 text-xs text-[var(--data-error-ink)]">
+                    <tr key={entry.id}>
+                      <td className="font-mono">{entry.jobName}</td>
+                      <td className="max-w-xs text-[var(--data-error-ink)]">
                         <span title={entry.error}>{truncate(entry.error, 80)}</span>
                       </td>
-                      <td className="px-4 py-3 text-center text-xs text-[var(--text-secondary)]">{entry.attempts}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-xs text-[var(--text-secondary)]">
+                      <td className="text-center text-[var(--text-secondary)]">{entry.attempts}</td>
+                      <td className="whitespace-nowrap text-[var(--text-secondary)]">
                         {fmt(entry.createdAt)}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="text-right">
                         <IconAction
                           icon={Trash2}
                           label="Eliminar entrada"

@@ -76,15 +76,15 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
             {state.reorder.length > 0 && (
               /* Tabla responsive — scroll horizontal en mobile */
               <div className="overflow-x-auto -mx-1">
-                <DataTable className="w-full min-w-[540px] text-sm">
+                <DataTable className="w-full min-w-[540px]">
                   <thead>
-                    <tr className="border-b border-[var(--rule-soft)]">
-                      <th className="text-left py-2 px-2 font-semibold text-[var(--text-secondary)] ">Producto</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Stock actual</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Demanda LT</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Pedir</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Total est.</th>
-                      <th className="py-2 px-2"></th>
+                    <tr>
+                      <th>Producto</th>
+                      <th className="text-right">Stock actual</th>
+                      <th className="text-right">Demanda LT</th>
+                      <th className="text-right">Pedir</th>
+                      <th className="text-right">Total est.</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -94,14 +94,14 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
                         <tr
                           key={item.productId}
                           className={cn(
-                            "border-b border-[var(--rule-soft)]/60 transition-colors",
+                            "",
                             critico
                               ? "bg-[var(--data-error-50)]/60 dark:bg-red-950/20"
                               : "hover:bg-[var(--surface-sunken)]/40",
                           )}
                         >
                           {/* Nombre + proveedor */}
-                          <td className="py-2.5 px-2">
+                          <td>
                             <div className="flex flex-col gap-0.5">
                               <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                                 {item.productName}
@@ -113,7 +113,7 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
                           </td>
 
                           {/* Stock actual */}
-                          <td className="py-2.5 px-2 text-right">
+                          <td className="text-right">
                             <span className={cn(
                               "font-bold",
                               critico
@@ -125,24 +125,24 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
                           </td>
 
                           {/* Demanda durante lead time */}
-                          <td className="py-2.5 px-2 text-right font-medium text-[var(--text-secondary)]">
+                          <td className="text-right font-medium text-[var(--text-secondary)]">
                             {item.demandDuringLeadTime} {item.unit}
                           </td>
 
                           {/* Cantidad sugerida */}
-                          <td className="py-2.5 px-2 text-right">
+                          <td className="text-right">
                             <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                               {item.suggestedQuantity} {item.unit}
                             </span>
                           </td>
 
                           {/* Total estimado */}
-                          <td className="py-2.5 px-2 text-right font-semibold text-[var(--text-primary)]">
+                          <td className="text-right font-semibold">
                             {formatCurrency(item.estimatedTotal)}
                           </td>
 
                           {/* Badges */}
-                          <td className="py-2.5 px-2">
+                          <td>
                             <div className="flex items-center justify-end gap-1 flex-wrap">
                               {critico && (
                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/50 dark:text-[var(--data-error-500)]">

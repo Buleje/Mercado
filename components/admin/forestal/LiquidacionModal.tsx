@@ -112,34 +112,34 @@ export default function LiquidacionModal({
 
         {/* Preview del desglose por especie */}
         <div className="mt-4 overflow-x-auto rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10">
-          <DataTable className="w-full min-w-[420px] text-sm">
+          <DataTable className="w-full min-w-[420px]">
             <thead>
-              <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                <th className="px-3 py-2">Especie</th>
-                <th className="px-3 py-2 text-right">Piezas</th>
-                <th className="px-3 py-2 text-right">Pie tablar</th>
-                {conValor && <th className="px-3 py-2 text-right">S/ / PT</th>}
-                {conValor && <th className="px-3 py-2 text-right">Subtotal</th>}
+              <tr>
+                <th>Especie</th>
+                <th className="text-right">Piezas</th>
+                <th className="text-right">Pie tablar</th>
+                {conValor && <th className="text-right">S/ / PT</th>}
+                {conValor && <th className="text-right">Subtotal</th>}
               </tr>
             </thead>
             <tbody>
               {liq.lineas.map((l) => (
-                <tr key={l.especie} className="border-t border-[var(--accent)]/15">
-                  <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{l.especie}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{l.piezas}</td>
-                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{soles(l.pieTablar)}</td>
-                  {conValor && <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">S/ {soles(l.precioPt)}</td>}
-                  {conValor && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--accent)]">S/ {soles(l.subtotal)}</td>}
+                <tr key={l.especie} className="border-[var(--accent)]/15">
+                  <td className="font-bold">{l.especie}</td>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{l.piezas}</td>
+                  <td className="text-right font-mono font-bold tabular-nums">{soles(l.pieTablar)}</td>
+                  {conValor && <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">S/ {soles(l.precioPt)}</td>}
+                  {conValor && <td className="text-right font-mono font-bold tabular-nums text-[var(--accent)]">S/ {soles(l.subtotal)}</td>}
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-[var(--accent)]/40 font-bold text-[var(--text-primary)]">
-                <td className="px-3 py-2">Total · {liq.totalPiezas} piezas</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">{liq.totalPiezas}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">{soles(liq.totalPt)} PT</td>
+                <td>Total · {liq.totalPiezas} piezas</td>
+                <td className="text-right font-mono tabular-nums">{liq.totalPiezas}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--accent)]">{soles(liq.totalPt)} PT</td>
                 {conValor && <td />}
-                {conValor && <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">S/ {soles(liq.total)}</td>}
+                {conValor && <td className="text-right font-mono tabular-nums text-[var(--accent)]">S/ {soles(liq.total)}</td>}
               </tr>
             </tfoot>
           </DataTable>

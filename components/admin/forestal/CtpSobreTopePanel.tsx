@@ -96,31 +96,31 @@ export default function CtpSobreTopePanel({ onNavigate }: { onNavigate?: () => v
           <TablaCtp>
             <TheadCtp>
               <tr>
-                <th className="px-3 py-2 text-left font-bold">Corrida</th>
-                <th className="px-3 py-2 text-left font-bold">Producto</th>
-                <th className="px-3 py-2 text-left font-bold">Lote</th>
-                <th className="px-3 py-2 text-right font-bold">Entró</th>
-                <th className="px-3 py-2 text-right font-bold">Declaró</th>
-                <th className="px-3 py-2 text-right font-bold">Rend.</th>
-                <th className="px-3 py-2 text-right font-bold">De más</th>
+                <th className="text-left font-bold">Corrida</th>
+                <th className="text-left font-bold">Producto</th>
+                <th className="text-left font-bold">Lote</th>
+                <th className="text-right font-bold">Entró</th>
+                <th className="text-right font-bold">Declaró</th>
+                <th className="text-right font-bold">Rend.</th>
+                <th className="text-right font-bold">De más</th>
               </tr>
             </TheadCtp>
             <TbodyCtp>
               {filas.map((f) => (
                 <tr key={f.id}>
-                  <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">#{f.lineNo}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{f.producto}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-[var(--text-tertiary)]">{f.lote ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                  <td className="font-mono font-bold">#{f.lineNo}</td>
+                  <td className="text-[var(--text-secondary)]">{f.producto}</td>
+                  <td className="font-mono text-[var(--text-tertiary)]">{f.lote ?? "—"}</td>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                     {fmtM3(f.entradaM3)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                  <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                     {fmtM3(f.salidaM3)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                  <td className="text-right font-mono font-bold tabular-nums text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
                     {f.rendimientoPct} %
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                  <td className="text-right font-mono tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                     {fmtM3(f.excesoM3)} m³
                   </td>
                 </tr>

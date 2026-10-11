@@ -141,8 +141,8 @@ export default function CacaoProductores() {
 
       {/* Tabla */}
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <DataTable className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-left">
+        <DataTable className="w-full">
+          <thead>
             <tr>
               <Th>Productor</Th><Th>Sector</Th><Th className="text-right">Kg comprados</Th><Th className="text-right">A pagar</Th>
               <Th className="text-right">Lotes</Th><Th className="text-right">Calidad I</Th><Th className="text-right">Última</Th>
@@ -150,7 +150,7 @@ export default function CacaoProductores() {
           </thead>
           <tbody>
             {view.map((p) => (
-              <tr key={p.id} role="button" tabIndex={0} aria-label={`Ver ficha de ${p.nombre}`} onClick={() => setDrawerId(p.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrawerId(p.id); } }} className={`cursor-pointer border-t border-[var(--rule-soft)] transition hover:bg-[var(--surface-sunken)] focus:outline-none focus-visible:bg-[var(--surface-sunken)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${p.status === "inactivo" ? "opacity-50" : ""}`}>
+              <tr key={p.id} role="button" tabIndex={0} aria-label={`Ver ficha de ${p.nombre}`} onClick={() => setDrawerId(p.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrawerId(p.id); } }} className={`cursor-pointer transition focus:outline-none focus-visible:bg-[var(--surface-sunken)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${p.status === "inactivo" ? "opacity-50" : ""}`}>
                 <Td>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-[var(--text-primary)]">{p.nombre}</span>
@@ -190,5 +190,5 @@ export default function CacaoProductores() {
   );
 }
 
-function Th({ children, className }: { children: React.ReactNode; className?: string }) { return <th className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>{children}</th>; }
-function Td({ children, className }: { children: React.ReactNode; className?: string }) { return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>; }
+function Th({ children, className }: { children: React.ReactNode; className?: string }) { return <th className={`font-bold ${className ?? ""}`}>{children}</th>; }
+function Td({ children, className }: { children: React.ReactNode; className?: string }) { return <td className={`${className ?? ""}`}>{children}</td>; }

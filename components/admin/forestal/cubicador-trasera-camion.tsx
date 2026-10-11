@@ -22,8 +22,7 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 
 const fmtPt = (v: number) => formatNumber(v, 2);
-const TH = "px-2 py-1.5 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-2 py-1.5";
+const TD = "";
 
 export function TraseraCamionModal({
   piezas,
@@ -150,23 +149,23 @@ export function TraseraCamionModal({
 
             <section className="space-y-2">
               <BlockTitle>Formato</BlockTitle>
-              <DataTable className="w-full text-sm" wrapperClassName="rounded-xl">
+              <DataTable className="w-full" wrapperClassName="rounded-xl">
                   <thead>
                     <tr>
-                      <th className={`${TH} text-right`}>N°</th>
-                      <th className={TH}>Especie</th>
-                      <th className={TH}>Medida <span className="font-normal normal-case">(E×A×L)</span></th>
-                      <th className={TH}>Tipo</th>
-                      <th className={`${TH} text-right`}>Piezas</th>
-                      <th className={`${TH} text-right`}>Pie tablar</th>
-                      <th className={`${TH} text-right`}>m³</th>
-                      <th className={TH}><span className="sr-only">Quitar</span></th>
+                      <th className="text-right">N°</th>
+                      <th >Especie</th>
+                      <th >Medida <span className="font-normal normal-case">(E×A×L)</span></th>
+                      <th >Tipo</th>
+                      <th className="text-right">Piezas</th>
+                      <th className="text-right">Pie tablar</th>
+                      <th className="text-right">m³</th>
+                      <th ><span className="sr-only">Quitar</span></th>
                     </tr>
                   </thead>
                   <tbody>
                     {formato.filas.map((f) => (
-                      <tr key={f.id} className="border-t border-[var(--rule-soft)]">
-                        <td className={`${TD} text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]`}>{f.n}</td>
+                      <tr key={f.id}>
+                        <td className={`${TD} text-right font-mono tabular-nums text-[var(--text-tertiary)]`}>{f.n}</td>
                         <td className={TD}>
                           <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
                             <MuestraEspecie color={f.color} /> {f.especie}
@@ -176,7 +175,7 @@ export function TraseraCamionModal({
                         <td className={`${TD} text-[var(--text-secondary)]`}>{f.tipo}</td>
                         <td className={`${TD} text-right font-mono tabular-nums`}>{f.piezas}</td>
                         <td className={`${TD} text-right font-mono tabular-nums text-[var(--text-secondary)]`}>{fmtPt(f.pt)}</td>
-                        <td className={`${TD} text-right font-mono font-bold tabular-nums text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>
+                        <td className={`${TD} text-right font-mono font-bold tabular-nums`}>{fmtM3(f.m3)}</td>
                         <td className={`${TD} text-right`}>
                           <button
                             type="button"

@@ -2516,10 +2516,10 @@ export default function DocumentosModule() {
             </div>
           ) : (
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
-              <DataTable className="w-full text-sm">
-                <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
+              <DataTable className="w-full">
+                <thead>
                   <tr>
-                    <th className="text-left px-3 py-3 w-10">
+                    <th className="w-10">
                       <input
                         type="checkbox"
                         aria-label="Seleccionar todos"
@@ -2540,7 +2540,7 @@ export default function DocumentosModule() {
                         const { align = "left", extraClass } = opts;
                         const active = sortBy === value;
                         return (
-                          <th className={cn("px-4 py-3", align === "right" ? "text-right" : "text-left", extraClass)}>
+                          <th className={cn("", align === "right" ? "text-right" : "text-left", extraClass)}>
                             <button
                               type="button"
                               onClick={() => setSortBy(value)}
@@ -2560,23 +2560,23 @@ export default function DocumentosModule() {
                       return (
                         <>
                           {sortTh("Nombre", "name")}
-                          {colsVisibles.categoria && <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Categoría</th>}
-                          {colsVisibles.etiquetas && <th className="text-left px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden lg:table-cell">Etiquetas</th>}
+                          {colsVisibles.categoria && <th className="hidden sm:table-cell">Categoría</th>}
+                          {colsVisibles.etiquetas && <th className="hidden lg:table-cell">Etiquetas</th>}
                           {colsVisibles.vencimiento && sortTh("Vencimiento", "expiry", { extraClass: "hidden lg:table-cell" })}
                           {colsVisibles.tamano && sortTh("Tamaño", "size", { align: "right", extraClass: "hidden md:table-cell" })}
                           {colsVisibles.subido && sortTh("Subido", "recent", { align: "right", extraClass: "hidden md:table-cell" })}
                         </>
                       );
                     })()}
-                    <th className="text-center px-4 py-3 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acción</th>
+                    <th className="text-center">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--rule-soft,#f1f5f9)]">
                   {displayDocs.map((doc) => {
                     const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
                     return (
-                      <tr key={doc.id} onContextMenu={(e) => abrirMenuEn(e, doc.id)} className={cn("hover:bg-[var(--surface-sunken)] transition-colors", selectedIds.has(doc.id) && "bg-primary/5")}>
-                        <td className="px-3 py-3">
+                      <tr key={doc.id} onContextMenu={(e) => abrirMenuEn(e, doc.id)} className={cn("", selectedIds.has(doc.id) && "bg-primary/5")}>
+                        <td>
                           <input
                             type="checkbox"
                             aria-label={`Seleccionar ${doc.name}`}
@@ -2585,7 +2585,7 @@ export default function DocumentosModule() {
                             className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
                           />
                         </td>
-                        <td className="px-4 py-3">
+                        <td>
                           {renaming?.id === doc.id ? (
                             <input
                               type="text"
@@ -2617,7 +2617,7 @@ export default function DocumentosModule() {
                           )}
                         </td>
                         {colsVisibles.categoria && (
-                        <td className="px-4 py-3 hidden sm:table-cell">
+                        <td className="hidden sm:table-cell">
                           <div className="flex flex-col items-start gap-1">
                             <span className="text-xs text-[var(--text-secondary)] capitalize">{doc.category}</span>
                             <div className="flex flex-wrap items-center gap-1.5">
@@ -2633,7 +2633,7 @@ export default function DocumentosModule() {
                         </td>
                         )}
                         {colsVisibles.etiquetas && (
-                          <td className="px-4 py-3 hidden lg:table-cell">
+                          <td className="hidden lg:table-cell">
                             {tagsVisibles(doc.tags).length > 0 ? (
                               <div className="flex flex-wrap items-center gap-1">
                                 {tagsVisibles(doc.tags).slice(0, 3).map((t) => (
@@ -2649,19 +2649,19 @@ export default function DocumentosModule() {
                           </td>
                         )}
                         {colsVisibles.vencimiento && (
-                          <td className="px-4 py-3 hidden lg:table-cell">
+                          <td className="hidden lg:table-cell">
                             {doc.expiresAt ? <ExpiryBadge expiresAt={doc.expiresAt} /> : <span className="text-xs text-[var(--text-tertiary)]">—</span>}
                           </td>
                         )}
                         {colsVisibles.tamano && (
-                          <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-secondary)]">{formatBytes(doc.size)}</td>
+                          <td className="text-right hidden md:table-cell tabular-nums text-[var(--text-secondary)]">{formatBytes(doc.size)}</td>
                         )}
                         {colsVisibles.subido && (
-                          <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-tertiary)]">
+                          <td className="text-right hidden md:table-cell tabular-nums text-[var(--text-tertiary)]">
                             {formatDateShort(doc.uploadedAt)}
                           </td>
                         )}
-                        <td className="px-2 py-1 text-center">
+                        <td className="text-center">
                           {menuDe(doc)}
                         </td>
                       </tr>

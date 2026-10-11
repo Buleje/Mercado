@@ -30,7 +30,6 @@ export function resumenVertices(vertices: LatLng[]): string {
   return `${c.rows.length} vértices · ${Number(c.areaHa).toFixed(2)} ha · perímetro ${Number(c.perimKm).toFixed(2)} km · Zona ${c.zona} · WGS 84`;
 }
 
-const TH = "border-b border-[var(--rule-base)] px-3 py-2 font-bold";
 
 export default function LothVerticesPanel({
   vertices,
@@ -65,25 +64,25 @@ export default function LothVerticesPanel({
       </p>
       <BarraFiltrosTabla f={fl} className="px-4 pt-2" />
       <div className="max-h-[280px] overflow-auto">
-        <DataTable className="w-full border-collapse text-sm">
-          <thead className="sticky top-0 bg-[var(--surface-canvas)]">
-            <tr className="align-top text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
-              <th className={`${TH} text-left`}>Vértice<FiltroEnCabecera id="vertice" f={fl} compacto /></th>
-              <th className={`${TH} text-right`}>Este (m)<FiltroEnCabecera id="este" f={fl} compacto /></th>
-              <th className={`${TH} text-right`}>Norte (m)<FiltroEnCabecera id="norte" f={fl} compacto /></th>
-              <th className={`${TH} text-right`}>Lado (m)<FiltroEnCabecera id="lado" f={fl} compacto /></th>
-              <th className={`${TH} text-right`}>Azimut<FiltroEnCabecera id="azimut" f={fl} compacto /></th>
+        <DataTable className="w-full">
+          <thead className="sticky top-0">
+            <tr className="align-top">
+              <th>Vértice<FiltroEnCabecera id="vertice" f={fl} compacto /></th>
+              <th className="text-right">Este (m)<FiltroEnCabecera id="este" f={fl} compacto /></th>
+              <th className="text-right">Norte (m)<FiltroEnCabecera id="norte" f={fl} compacto /></th>
+              <th className="text-right">Lado (m)<FiltroEnCabecera id="lado" f={fl} compacto /></th>
+              <th className="text-right">Azimut<FiltroEnCabecera id="azimut" f={fl} compacto /></th>
             </tr>
           </thead>
           <tbody>
             {fl.filtradas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
             {fl.filtradas.map((r) => (
-              <tr key={r.code} className="border-b border-[var(--rule-subtle)] last:border-0">
-                <td className="px-3 py-1.5 font-mono text-sm font-bold text-[var(--text-primary)]">{r.code}</td>
-                <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatMeters(r.este)}</td>
-                <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatMeters(r.norte)}</td>
-                <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{Number(r.lado).toFixed(1)}</td>
-                <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{Number(r.azimut).toFixed(1)}°</td>
+              <tr key={r.code} className="border-[var(--rule-subtle)] last:border-0">
+                <td className="font-mono font-bold">{r.code}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatMeters(r.este)}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatMeters(r.norte)}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{Number(r.lado).toFixed(1)}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{Number(r.azimut).toFixed(1)}°</td>
               </tr>
             ))}
           </tbody>

@@ -83,22 +83,22 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
         /* Vista lista */
         <div className="overflow-x-auto -mx-1">
         <div className="border border-[var(--rule-base)] rounded-xl overflow-hidden">
-          <DataTable className="w-full text-sm">
-            <thead className="bg-[var(--surface-sunken)]">
+          <DataTable className="w-full">
+            <thead>
               <tr>
-                <th className="text-left p-3 font-medium text-[var(--text-secondary)]">
+                <th>
                   Producto
                 </th>
-                <th className="text-right p-3 font-medium text-[var(--text-secondary)]">
+                <th className="text-right">
                   Costo
                 </th>
-                <th className="text-right p-3 font-medium text-[var(--text-secondary)]">
+                <th className="text-right">
                   Stock
                 </th>
-                <th className="text-right p-3 font-medium text-[var(--text-secondary)]">
+                <th className="text-right">
                   Sugerido
                 </th>
-                <th className="p-3" aria-label="Acción" />
+                <th aria-label="Acción" />
               </tr>
             </thead>
             <tbody>
@@ -108,9 +108,9 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
                 return (
                   <tr
                     key={p.id}
-                    className="border-t border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]"
+                   
                   >
-                    <td className="p-3">
+                    <td>
                       <div className="flex items-center gap-2">
                         {needs && (
                           <span className="text-xs font-bold px-1 py-0.5 rounded bg-[var(--data-error-100)] text-[var(--data-error-500)]">
@@ -122,18 +122,18 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
                         </span>
                       </div>
                     </td>
-                    <td className="p-3 text-right font-mono text-[var(--text-primary)]">
+                    <td className="text-right font-mono">
                       <span title={`Costo: ${p.costPrice ? formatCurrency(p.costPrice) : "sin cargar"} | Venta: ${formatCurrency(Number(p.price))} | Margen: ${p.costPrice ? ((1 - p.costPrice / p.price) * 100).toFixed(0) : "—"}%`}>
                         {p.costPrice ? formatCurrency(p.costPrice) : <span className="font-sans text-xs text-[var(--text-tertiary)]">sin costo</span>}
                       </span>
                     </td>
-                    <td className="p-3 text-right text-[var(--text-secondary)]">
+                    <td className="text-right text-[var(--text-secondary)]">
                       {p.stock ?? "—"} {p.unit}
                     </td>
-                    <td className="p-3 text-right text-[var(--accent-ink)] dark:text-[var(--accent)] font-medium">
+                    <td className="text-right text-[var(--accent-ink)] dark:text-[var(--accent)] font-medium">
                       {sug}
                     </td>
-                    <td className="p-3 text-right">
+                    <td className="text-right">
                       <button
                         type="button"
                         onClick={() => addToCart(p, sug)}

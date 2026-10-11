@@ -41,10 +41,10 @@ export default function FichaHistorialPedidos({ ficha }: { ficha: Cliente360 }) 
                     const Icon = st.Icon;
                     return (
                       <tr key={o.id}>
-                        <td className="font-mono text-xs text-[var(--text-secondary)] dark:text-muted">#{o.id.slice(-6).toUpperCase()}</td>
-                        <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(o.createdAt)}</td>
-                        <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{o.items.length} prod.</td>
-                        <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{fmt(o.total)}</td>
+                        <td className="font-mono text-[var(--text-secondary)] dark:text-muted">#{o.id.slice(-6).toUpperCase()}</td>
+                        <td className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(o.createdAt)}</td>
+                        <td className="text-[var(--text-secondary)] dark:text-muted">{o.items.length} prod.</td>
+                        <td className="font-bold text-right">{fmt(o.total)}</td>
                         <td>
                           <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>
                             <Icon className="h-2.5 w-2.5" />{o.origen === "venta" ? "Venta en caja" : st.label}

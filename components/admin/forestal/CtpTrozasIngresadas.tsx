@@ -256,7 +256,7 @@ export default function CtpTrozasIngresadas({
                 return (
                   <Fragment key={g.clave}>
                     <tr className="bg-[var(--surface-sunken)]">
-                      <td colSpan={columnas} className="px-3 py-2">
+                      <td colSpan={columnas}>
                         <button
                           type="button"
                           onClick={() =>

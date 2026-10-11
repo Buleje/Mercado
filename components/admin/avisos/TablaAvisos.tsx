@@ -23,7 +23,7 @@ const alTeclado = (fn: () => void) => (e: React.KeyboardEvent) => {
  */
 export function TablaAvisos({ avisos, onVer }: Props) {
   return (
-    <DataTable className="table-fixed [&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+    <DataTable className="table-fixed">
       <colgroup className="max-sm:hidden">
         <col className="w-40" />
         <col className="w-40" />
@@ -50,20 +50,20 @@ export function TablaAvisos({ avisos, onVer }: Props) {
               onClick={() => onVer(a)}
               onKeyDown={alTeclado(() => onVer(a))}
               aria-label={`Ver aviso: ${rotuloTipo(a.type)} para ${paraQuien(a.recipient)}`}
-              className="cursor-pointer transition-colors hover:bg-[var(--surface-sunken)]"
+              className="cursor-pointer"
             >
-              <td className="whitespace-nowrap text-sm tabular-nums text-[var(--text-secondary)]">{cuando(a.createdAt)}</td>
-              <td className="whitespace-nowrap text-sm font-medium tabular-nums text-[var(--text-primary)]">{paraQuien(a.recipient)}</td>
-              <td className="text-sm text-[var(--text-primary)]">
+              <td className="whitespace-nowrap tabular-nums text-[var(--text-secondary)]">{cuando(a.createdAt)}</td>
+              <td className="whitespace-nowrap font-medium tabular-nums">{paraQuien(a.recipient)}</td>
+              <td>
                 <span className="block min-w-0 truncate">
                   {rotuloTipo(a.type)}
                   {a.orderId && <span className="text-[var(--text-secondary)]"> {numeroCorto(a.orderId)}</span>}
                 </span>
               </td>
-              <td className="text-sm text-[var(--text-secondary)]">
+              <td className="text-[var(--text-secondary)]">
                 <span className="block min-w-0 truncate" title={a.message}>{a.message}</span>
               </td>
-              <td className={cn("whitespace-nowrap text-sm font-semibold", estado.clase)}>{estado.rotulo}</td>
+              <td className={cn("whitespace-nowrap font-semibold", estado.clase)}>{estado.rotulo}</td>
             </tr>
           );
         })}

@@ -38,7 +38,7 @@ import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTa
 export { diasParaVencer } from "@/lib/forestal/saldos-reporte";
 
 const m3 = (v: number) => formatNumber(v, 3);
-const TOT = "px-4 py-2.5 text-right tabular-nums";
+const TOT = "text-right tabular-nums";
 const ID_TITULO = "saldos-lotes-titulo";
 
 /** Primero lo que apura: vencidos, después lo que menos plazo tiene, y a
@@ -181,11 +181,11 @@ export default function LotesConSaldo({
       )}
 
       <DataTable
-        className="w-full text-sm"
+        className="w-full"
         wrapperClassName="rounded-none border-0"
         aria-labelledby={ID_TITULO}
       >
-        <thead className="bg-[var(--surface-sunken)] align-top">
+        <thead className="align-top">
           <tr>
             {eligiendo && (
               <Th className="w-10">
@@ -232,24 +232,24 @@ export default function LotesConSaldo({
         <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
           <tr>
             {eligiendo && <td />}
-            <td className="px-4 py-2.5 text-[var(--text-primary)]">
+            <td>
               {filas.length} {filas.length === 1 ? "lote" : "lotes"}
             </td>
-            <td colSpan={3} className="px-4 py-2.5 text-xs font-normal text-[var(--text-tertiary)]">
+            <td colSpan={3} className="font-normal text-[var(--text-tertiary)]">
               {sinProduccion > 0
                 ? `${sinProduccion} sin producción sumable, fuera de los totales de producido y resta`
                 : ""}
             </td>
-            <td className={`${TOT} text-[var(--text-primary)]`}>
+            <td className={`${TOT}`}>
               {m3(suma(filas, (l) => l.consumidoM3))}
             </td>
             <td className={`${TOT} text-[var(--text-tertiary)]`}>
               {m3(suma(filas, (l) => l.esperado56M3))}
             </td>
-            <td className={`${TOT} text-[var(--text-primary)]`}>
+            <td className={`${TOT}`}>
               {m3(suma(conProduccion, (l) => l.producidoM3 ?? 0))}
             </td>
-            <td className={`${TOT} text-[var(--text-primary)]`}>
+            <td className={`${TOT}`}>
               {m3(suma(conProduccion, (l) => l.restaM3 ?? 0))}
             </td>
             <td className={`${TOT} text-[var(--text-secondary)]`}>

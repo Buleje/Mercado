@@ -120,7 +120,7 @@ export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, 
         </div>
       ) : (
         /* Encabezados a 14 px y sin versalitas: el DataTable los trae a 12. */
-        <DataTable className="[&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+        <DataTable>
           <thead>
             <tr>
               <th>N°</th>
@@ -138,9 +138,9 @@ export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, 
                 onClick={() => onAbrir(c)}
                 onKeyDown={alTeclado(() => onAbrir(c))}
                 aria-label={`Ver cotización ${c.numero} de ${c.clienteNombre}`}
-                className="cursor-pointer transition-colors hover:bg-[var(--surface-sunken)]"
+                className="cursor-pointer"
               >
-                <td className="text-sm tabular-nums text-[var(--text-secondary)]">
+                <td className="tabular-nums text-[var(--text-secondary)]">
                   <span className="group/num relative">{c.numero}<Vistazo c={c} /></span>
                 </td>
                 <td>
@@ -149,7 +149,7 @@ export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, 
                     {c.clienteRuc && <p className="truncate text-sm text-[var(--text-secondary)]">RUC {c.clienteRuc}</p>}
                   </div>
                 </td>
-                <td className="num font-bold text-[var(--text-primary)]">{formatCurrency(c.total)}</td>
+                <td className="num font-bold">{formatCurrency(c.total)}</td>
                 <td className="text-[var(--text-secondary)]">{formatDate(c.validoHasta)}</td>
                 <td><Estado c={c} /></td>
               </tr>

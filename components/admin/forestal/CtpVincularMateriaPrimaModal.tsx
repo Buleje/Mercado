@@ -28,7 +28,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Check, Layers, Loader2, Ruler, X } from "@buleje/design-system/icons";
-import { CardTitle, BlockTitle } from "@buleje/design-system";
+import { CardTitle, BlockTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
@@ -76,7 +76,6 @@ const num = (v: number | string | null | undefined): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-const TH = "px-2 py-1.5 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = `${TD} text-right font-mono tabular-nums`;
 
@@ -186,24 +185,24 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
           ) : (
             <>
               <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-                <table className="w-full">
+                <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
                   <caption className="sr-only">Paquetes declarados por la corrida</caption>
-                  <thead className="bg-[var(--surface-sunken)]">
+                  <thead>
                     <tr>
-                      <th scope="col" className={TH}>Paquete</th>
-                      <th scope="col" className={TH}>Producto</th>
-                      <th scope="col" className={TH}>Presentación</th>
-                      <th scope="col" className={TH}>Medida (E × A × L)</th>
+                      <th scope="col" >Paquete</th>
+                      <th scope="col" >Producto</th>
+                      <th scope="col" >Presentación</th>
+                      <th scope="col" >Medida (E × A × L)</th>
                       {/* Piezas · m³ · PT, la convención del módulo. */}
-                      <th scope="col" className={`${TH} text-right`}>Piezas</th>
-                      <th scope="col" className={`${TH} text-right`}>m³</th>
-                      <th scope="col" className={`${TH} text-right`}>PT</th>
+                      <th scope="col" className="text-right">Piezas</th>
+                      <th scope="col" className="text-right">m³</th>
+                      <th scope="col" className="text-right">PT</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filas.map((f, i) => (
-                      <tr key={`${f.codigo}-${i}`} className="border-t border-[var(--rule-soft)]">
-                        <td className={`${TD} font-mono font-bold text-[var(--text-primary)]`}>{f.codigo}</td>
+                      <tr key={`${f.codigo}-${i}`}>
+                        <td className={`${TD} font-mono font-bold`}>{f.codigo}</td>
                         <td className={TD}>{f.producto}</td>
                         <td className={TD}>{f.presentacion}</td>
                         <td className={`${TD} font-mono`}>
@@ -212,7 +211,7 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
                             : "—"}
                         </td>
                         <td className={NUM}>{fmtPiezas(f.cantidad)}</td>
-                        <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>
+                        <td className={`${NUM} font-bold`}>{fmtM3(f.m3)}</td>
                         <td className={NUM}>{fmtPt(ptDesdeM3(f.m3))}</td>
                       </tr>
                     ))}
@@ -225,7 +224,7 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
                       <td className={NUM}>{fmtPt(ptDesdeM3(total.m3))}</td>
                     </tr>
                   </tfoot>
-                </table>
+                </DataTable>
               </div>
 
               <div>
@@ -605,11 +604,11 @@ export default function CtpVincularMateriaPrimaModal({
           {lote && (
             <>
               <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-                <table className="w-full">
+                <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
                   <caption className="sr-only">Trozas del lote {lote.code}</caption>
-                  <thead className="bg-[var(--surface-sunken)]">
+                  <thead>
                     <tr>
-                      <th scope="col" className={`${TH} w-8 text-center`}>
+                      <th scope="col" className="w-8 text-center">
                         <input
                           type="checkbox"
                           checked={elegidas.size === libres.length && libres.length > 0}
@@ -620,15 +619,15 @@ export default function CtpVincularMateriaPrimaModal({
                           className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
                         />
                       </th>
-                      <th scope="col" className={TH}>Troza</th>
-                      <th scope="col" className={`${TH} text-right`}>m³</th>
-                      <th scope="col" className={`${TH} text-right`}>Largo (m)</th>
-                      <th scope="col" className={TH}>Guía</th>
+                      <th scope="col" >Troza</th>
+                      <th scope="col" className="text-right">m³</th>
+                      <th scope="col" className="text-right">Largo (m)</th>
+                      <th scope="col" >Guía</th>
                     </tr>
                   </thead>
                   <tbody>
                     {libres.map((t) => (
-                      <tr key={t.id} className="border-t border-[var(--rule-soft)]">
+                      <tr key={t.id}>
                         <td className={`${TD} text-center`}>
                           <input
                             type="checkbox"
@@ -645,12 +644,12 @@ export default function CtpVincularMateriaPrimaModal({
                             className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
                           />
                         </td>
-                        <td className={`${TD} font-mono text-[var(--text-primary)]`}>
+                        <td className={`${TD} font-mono`}>
                           {t.codigoPlanta ?? t.codificacion ?? "—"}
                         </td>
                         <td className={NUM}>{fmtM3(Number(t.volumenM3 ?? 0))}</td>
                         <td className={NUM}>{t.largoM == null ? "—" : Number(t.largoM).toFixed(2)}</td>
-                        <td className={`${TD} text-[length:var(--ts-2xs)]`}>{t.gtfNumber ?? "—"}</td>
+                        <td className={`${TD}`}>{t.gtfNumber ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -666,7 +665,7 @@ export default function CtpVincularMateriaPrimaModal({
                       </td>
                     </tr>
                   </tfoot>
-                </table>
+                </DataTable>
               </div>
 
               {/* La revisión: lo que impide firmar y lo que hay que poder explicar. */}

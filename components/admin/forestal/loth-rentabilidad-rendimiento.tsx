@@ -18,8 +18,8 @@ export default function LothRentabilidadRendimiento({ filas }: { filas: FilaRend
     <div className="space-y-3">
     <BarraFiltrosTabla f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-      <DataTable className="w-full text-sm">
-        <thead className="bg-[var(--surface-sunken)] text-left align-top">
+      <DataTable className="w-full">
+        <thead className="align-top">
           <tr>
             <Th>Especie<FiltroEnCabecera id="especie" f={f} compacto /></Th>
             <Th className="text-right">Rendimiento<FiltroEnCabecera id="rend" f={f} compacto /></Th>
@@ -30,7 +30,7 @@ export default function LothRentabilidadRendimiento({ filas }: { filas: FilaRend
         <tbody>
           {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={4} />}
           {f.filtradas.map((s) => (
-            <tr key={s.species} className="border-t border-[var(--rule-soft)]">
+            <tr key={s.species}>
               <Td>
                 <span className="font-medium text-[var(--text-primary)]">{s.species}</span>
                 {s.cites && <span className="ml-2 rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">CITES</span>}

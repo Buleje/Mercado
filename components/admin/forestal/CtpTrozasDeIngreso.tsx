@@ -434,18 +434,18 @@ export default function CtpTrozasDeIngreso({
           ingreso: en una tablet a 768px el modal deja ~700px y `sm:` (640px)
           mostraba igual la tabla, apretada. */}
       <div className="hidden overflow-x-auto @4xl:block">
-        <DataTable className="w-full text-sm">
+        <DataTable className="w-full">
           <thead>
-            <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              <th className="px-4 py-2 font-bold">Codificación</th>
-              <th className="px-4 py-2 font-bold">Cód. planta</th>
-              <th className="px-4 py-2 font-bold">Parcela</th>
-              <th className="px-4 py-2 font-bold">Especie</th>
-              <th className="px-4 py-2 font-bold">Dimensiones (guía)</th>
-              <th className="px-4 py-2 text-right font-bold">Largo</th>
-              <th className="px-4 py-2 text-right font-bold">Diám.</th>
-              <th className="px-4 py-2 text-right font-bold">Volumen</th>
-              <th className="px-2 py-2" />
+            <tr>
+              <th>Codificación</th>
+              <th>Cód. planta</th>
+              <th>Parcela</th>
+              <th>Especie</th>
+              <th>Dimensiones (guía)</th>
+              <th className="text-right">Largo</th>
+              <th className="text-right">Diám.</th>
+              <th className="text-right">Volumen</th>
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -455,8 +455,8 @@ export default function CtpTrozasDeIngreso({
               const libre = (t.volumenM3 ?? 0) - cortado;
               return (
                 <Fragment key={t.id}>
-                  <tr className="border-b border-[var(--rule-soft)]">
-                    <td className="px-4 py-2.5 font-mono font-bold text-[var(--text-primary)]">
+                  <tr>
+                    <td className="font-mono font-bold">
                       {t.codificacion ?? "—"}
                       {t.noRecepcionada && (
                         <span
@@ -467,20 +467,20 @@ export default function CtpTrozasDeIngreso({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-[var(--text-secondary)]">{t.codigoPlanta ?? "—"}</td>
-                    <td className="px-4 py-2.5 font-mono text-[var(--text-secondary)]">{t.parcela ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-[var(--text-tertiary)]">{t.dimensiones ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="font-mono text-[var(--text-secondary)]">{t.codigoPlanta ?? "—"}</td>
+                    <td className="font-mono text-[var(--text-secondary)]">{t.parcela ?? "—"}</td>
+                    <td className="text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
+                    <td className="font-mono text-[var(--text-tertiary)]">{t.dimensiones ?? "—"}</td>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {t.largoM != null ? `${Number(t.largoM).toFixed(2)} m` : "—"}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {t.diametroCm != null ? `${Number(t.diametroCm).toFixed(1)} cm` : "—"}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                    <td className="text-right font-mono font-bold tabular-nums">
                       {t.volumenM3 != null ? `${fmtM3(t.volumenM3)} m³` : "—"}
                     </td>
-                    <td className="px-2 py-2.5 text-right">
+                    <td className="text-right">
                       {/* Sólo se ofrece cortar si queda madera y la troza está en el
                           patio: con la troza ya repartida, sin llegar, aserrada,
                           despachada o de descarte el botón abriría un modal que
@@ -506,8 +506,8 @@ export default function CtpTrozasDeIngreso({
                   </tr>
 
                   {pedazos.map((r) => (
-                    <tr key={r.id} className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60">
-                      <td className="py-2 pl-8 pr-4 font-mono text-xs font-bold text-[var(--text-secondary)]">
+                    <tr key={r.id} className="bg-[var(--surface-sunken)]/60">
+                      <td className="pl-8 pr-4 font-mono font-bold text-[var(--text-secondary)]">
                         <ArrowDownRight className="mr-1 inline h-3 w-3 text-[var(--text-tertiary)]" aria-hidden />
                         {r.codificacion ?? "—"}
                         {r.descarte && (
@@ -516,15 +516,15 @@ export default function CtpTrozasDeIngreso({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2 text-xs text-[var(--text-tertiary)]">{r.observaciones ?? ""}</td>
-                      <td className="px-4 py-2 font-mono text-xs text-[var(--text-tertiary)]">{r.dimensiones ?? "—"}</td>
-                      <td className="px-4 py-2 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+                      <td className="text-[var(--text-tertiary)]">{r.observaciones ?? ""}</td>
+                      <td className="font-mono text-[var(--text-tertiary)]">{r.dimensiones ?? "—"}</td>
+                      <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                         {r.largoM != null ? `${Number(r.largoM).toFixed(2)} m` : "—"}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+                      <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                         {r.diametroCm != null ? `${Number(r.diametroCm).toFixed(1)} cm` : "—"}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-xs font-bold tabular-nums text-[var(--text-secondary)]">
+                      <td className="text-right font-mono font-bold tabular-nums text-[var(--text-secondary)]">
                         {r.volumenM3 != null ? `${fmtM3(r.volumenM3)} m³` : "—"}
                       </td>
                       <td />
@@ -532,8 +532,8 @@ export default function CtpTrozasDeIngreso({
                   ))}
 
                   {pedazos.length > 0 && (
-                    <tr className="border-b border-[var(--rule-soft)] last:border-0">
-                      <td colSpan={9} className="px-4 py-1.5 pl-8 text-xs text-[var(--text-tertiary)]">
+                    <tr className="border-[var(--rule-soft)] last:border-0">
+                      <td colSpan={9} className="pl-8 text-[var(--text-tertiary)]">
                         Cortado {fmtM3(cortado)} m³ · quedan {fmtM3(Math.max(0, libre))} m³ sin cortar
                       </td>
                     </tr>

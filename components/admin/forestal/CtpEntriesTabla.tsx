@@ -410,7 +410,7 @@ function SortTh({ label, by, sort, onSort, className, campoRango, rango, col }: 
   const right = className?.includes("text-right");
   const meta = campoRango ? CAMPO_RANGO_META[campoRango] : null;
   return (
-    <th data-col={col} className={`px-4 py-3 font-bold ${className ?? ""}`}>
+    <th data-col={col} className={`font-bold ${className ?? ""}`}>
       <button
         type="button"
         onClick={() => onSort(by)}
@@ -593,10 +593,10 @@ export default function CtpEntriesTabla({
       {/* ── Desktop: tabla (≥640px). El `hidden` a <640px gana sobre la
              auto-conversión genérica del shell, dejando lugar a las cards. ── */}
       <div className="hidden overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
-        <DataTable className="w-full text-sm">
+        <DataTable className="w-full">
           {/* `align-top`: con el autofiltro debajo del título, las cabeceras sin
               filtro tienen que quedar arriba y no centradas contra los selects. */}
-          <thead ref={orden.refCabecera} className="bg-[var(--surface-sunken)] text-left align-top">
+          <thead ref={orden.refCabecera} className="align-top">
             <tr>
               {mostrarCheckboxCobro && (
                 <Th className="w-10">
@@ -649,7 +649,7 @@ export default function CtpEntriesTabla({
           </thead>
           <tbody>
             {visible.map((e) => (
-              <tr key={e.id} className={`border-t border-[var(--rule-soft)] hover:bg-[var(--surface-canvas)]/40 ${e.status === "anulado" ? "opacity-50" : ""}`}>
+              <tr key={e.id} className={`${e.status === "anulado" ? "opacity-50" : ""}`}>
                 {mostrarCheckboxCobro && (
                   <Td>
                     {puedeMarcarseParaCobro(e) && (
@@ -826,7 +826,7 @@ export default function CtpEntriesTabla({
                   orden={orden.orden}
                   celdas={{
                     fecha: (
-                      <td className="px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
+                      <td className="font-bold text-[var(--text-secondary)]">
                         {totalesVista.lineas} {totalesVista.lineas === 1 ? "línea vigente" : "líneas vigentes"} en pantalla
                       </td>
                     ),
@@ -835,13 +835,13 @@ export default function CtpEntriesTabla({
                     ...(section === "produccion"
                       ? {
                           consumido: cv.consumido && (
-                            <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.consumido)}</td>
+                            <td className="text-right font-mono font-bold tabular-nums">{fmtM3(totalesVista.consumido)}</td>
                           ),
                           cantidad: (
-                            <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.cantidad)}</td>
+                            <td className="text-right font-mono font-bold tabular-nums">{fmtM3(totalesVista.cantidad)}</td>
                           ),
                           piezas: cv.piezas && (
-                            <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.piezas}</td>
+                            <td className="text-right font-mono font-bold tabular-nums">{totalesVista.piezas}</td>
                           ),
                           rend: cv.rend && <td />,
                           salida: cv.salida && <td />,
@@ -849,9 +849,9 @@ export default function CtpEntriesTabla({
                         }
                       : {
                           cantidad: (
-                            <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.cantidad)}</td>
+                            <td className="text-right font-mono font-bold tabular-nums">{fmtM3(totalesVista.cantidad)}</td>
                           ),
-                          piezas: <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.piezas}</td>,
+                          piezas: <td className="text-right font-mono font-bold tabular-nums">{totalesVista.piezas}</td>,
                           gtfSalida: <td />,
                           destino: <td />,
                         }),

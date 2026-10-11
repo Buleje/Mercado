@@ -40,7 +40,7 @@ export function TablaComprobantes({ docs, orden, onVer }: Props) {
               <EnOrden
                 orden={orden.orden}
                 celdas={{
-                  serieNro: <td className="font-mono font-bold text-[var(--text-primary)]">{d.serie}-{d.number}</td>,
+                  serieNro: <td className="font-mono font-bold">{d.serie}-{d.number}</td>,
                   fecha: <td className="text-[var(--text-secondary)]">{d.date}</td>,
                   tipo: (
                     <td>
@@ -50,12 +50,12 @@ export function TablaComprobantes({ docs, orden, onVer }: Props) {
                     </td>
                   ),
                   cliente: (
-                    <td className="text-[var(--text-primary)]">
+                    <td>
                       {d.clientName}<br />
                       <span className="text-sm text-[var(--text-tertiary)]">{d.clientRUC}</span>
                     </td>
                   ),
-                  total: <td className="font-bold text-[var(--text-primary)]">{fmt(d.total)}</td>,
+                  total: <td className="font-bold">{fmt(d.total)}</td>,
                   estado: (
                     <td>
                       <span className={cn("flex items-center gap-1 text-sm font-bold", STATUS_META[d.status].color)}>

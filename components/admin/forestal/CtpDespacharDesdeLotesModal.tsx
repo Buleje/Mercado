@@ -32,6 +32,7 @@ import {
   type ProductoDeLote,
   type ResumenDeLote,
 } from "@/lib/forestal/productos-de-lote";
+import { DataTable } from "@buleje/design-system";
 
 const CELDA = "px-3 py-2.5 text-sm";
 const CIFRA = `${CELDA} text-right font-mono tabular-nums`;
@@ -274,9 +275,9 @@ export default function CtpDespacharDesdeLotesModal({
                 </div>
               ) : (
                 <div className="max-h-[46vh] overflow-auto">
-                  <table className="w-full min-w-[34rem] border-collapse">
+                  <DataTable className="w-full min-w-[34rem]">
                     <thead className="sticky top-0 z-[1]">
-                      <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] [&>th]:border-b [&>th]:border-[var(--rule-base)]">
+                      <tr className="[&>th]:border-b [&>th]:border-[var(--rule-base)]">
                         <th className={`${CELDA} w-10`}>
                           <input
                             type="checkbox"
@@ -300,7 +301,7 @@ export default function CtpDespacharDesdeLotesModal({
                         return (
                           <tr
                             key={f.uid}
-                            className={`border-t border-[var(--rule-soft)] ${tildada ? "bg-primary/5" : ""}`}
+                            className={`${tildada ? "bg-primary/5" : ""}`}
                           >
                             <td className={CELDA}>
                               <input
@@ -340,7 +341,7 @@ export default function CtpDespacharDesdeLotesModal({
                         );
                       })}
                     </tbody>
-                  </table>
+                  </DataTable>
                 </div>
               )}
             </section>

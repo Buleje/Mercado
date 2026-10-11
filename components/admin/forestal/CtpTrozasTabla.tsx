@@ -81,7 +81,7 @@ export default function CtpTrozasTabla(props: CtpTrozasTablaProps) {
         wrapperClassName={`hidden rounded-none border-0 md:block ${altoClase}`}
         /* `px-2` en vez del `px-3` del DS: con D1 y D2 en columnas propias la
            tabla pasaba la caja por 86 px a 1280 y la guía quedaba cortada. */
-        className="w-full text-sm [&_tbody_td]:px-2! [&_thead_th]:px-2! [&_thead_th]:shadow-[inset_0_-1px_0_var(--rule-base)]"
+        className="w-full [&_tbody_td]:px-2! [&_thead_th]:px-2! [&_thead_th]:shadow-[inset_0_-1px_0_var(--rule-base)]"
       >
         <thead ref={orden.refCabecera}>
           <tr>
@@ -197,7 +197,7 @@ export default function CtpTrozasTabla(props: CtpTrozasTablaProps) {
                     </td>
                   ),
                   largo: <td className={`${NUM} text-[var(--text-secondary)]`}>{n(t.largoM)}</td>,
-                  volumen: <td className={`${NUM} whitespace-nowrap font-bold text-[var(--text-primary)]`}>{t.volumenM3 == null ? "—" : fmtM3(t.volumenM3)}</td>,
+                  volumen: <td className={`${NUM} whitespace-nowrap font-bold`}>{t.volumenM3 == null ? "—" : fmtM3(t.volumenM3)}</td>,
                   guia: (
                     <td>
                       <span className="block whitespace-nowrap font-mono text-xs leading-tight text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</span>

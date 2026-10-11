@@ -140,7 +140,7 @@ export default function CtpTrozasMedirModal({
             Todas las piezas de la lista tienen sus dos puntas.
           </p>
         ) : (
-          <DataTable stickyHeader wrapperClassName="max-h-[58vh]" className="w-full text-sm">
+          <DataTable stickyHeader wrapperClassName="max-h-[58vh]" className="w-full">
             <thead>
               <tr>
                 <th>Código</th>

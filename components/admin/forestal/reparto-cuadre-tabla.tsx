@@ -9,13 +9,13 @@
  * Lo que difiere va primero (ya viene ordenado de `reparto-cuadre.ts`).
  */
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { ControlCuadre, FilaCuadre, Trio } from "@/lib/forestal/reparto-cuadre";
 import EtiquetaCuadre, { ESTADO_CUADRE, IconoEstado, conSigno, fmtTrio } from "./reparto-cuadre-etiqueta";
 
-const TH = "px-1.5 py-1.5 align-bottom text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-1.5 py-1.5 text-right font-mono text-sm tabular-nums";
+const TH = "align-bottom font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
+const TD = "text-right font-mono tabular-nums";
 const GRUPO = "border-l-2 border-[var(--rule-base)]";
 const UNIDADES = [["piezas", "Pzas"], ["pt", "PT"], ["m3", "m³"]] as const;
 
@@ -84,30 +84,30 @@ export default function TablaControl({ control, soloDiferencias }: { control: Co
       <p className="mb-2 text-sm text-[var(--text-secondary)]">{control.comoCuadrar}</p>
       {/* Una lista vacía sin total (especies sin pareja) ya lo dijo arriba: sin tabla. */}
       {!(control.sinTotal && control.filas.length === 0) && <div className="overflow-x-auto">
-        <table className="w-full text-sm" aria-label={control.titulo}>
+        <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full" aria-label={control.titulo}>
           <thead>
-            <tr className="border-b border-[var(--rule-base)]">
-              <th scope="col" data-label="Dónde" className={`${TH} text-left`}>Dónde</th>
+            <tr>
+              <th scope="col" data-label="Dónde" className={`${TH}`}>Dónde</th>
               {UNIDADES.map(([k, l], i) => <Th key={`e${k}`} grupo={control.ladoEsperado} label={l} primera={i === 0} />)}
               {UNIDADES.map(([k, l], i) => <Th key={`o${k}`} grupo={control.ladoObtenido} label={l} primera={i === 0} />)}
               {UNIDADES.map(([k, l], i) => <Th key={`d${k}`} grupo="Diferencia" label={l} primera={i === 0} />)}
-              <th scope="col" data-label="Estado" className={`${TH} ${GRUPO} text-left`}>Estado</th>
-              {conComo && <th scope="col" data-label="Cómo cuadrarlo" className={`${TH} text-left`}>Cómo cuadrarlo</th>}
+              <th scope="col" data-label="Estado" className={`${TH} ${GRUPO}`}>Estado</th>
+              {conComo && <th scope="col" data-label="Cómo cuadrarlo" className={`${TH}`}>Cómo cuadrarlo</th>}
             </tr>
           </thead>
           <tbody>
             {filas.map((f) => (
-              <tr key={f.clave} className={`border-b border-[var(--rule-soft)] align-top ${f.estado === "difiere" ? "bg-[var(--data-error-500)]/6" : ""}`}>
-                <td className="px-1.5 py-1.5 text-left">
+              <tr key={f.clave} className={`align-top ${f.estado === "difiere" ? "bg-[var(--data-error-500)]/6" : ""}`}>
+                <td className="text-left">
                   <span className="block font-bold text-[var(--text-primary)]">{f.rotulo}</span>
                   {f.nota && <span className="block text-xs text-[var(--text-tertiary)]">{f.nota}</span>}
                 </td>
                 <Celdas t={f.esperado} omitir={f.omitir} />
                 <Celdas t={f.obtenido} />
                 <Celdas t={f.diferencia} omitir={f.omitir} dif estado={f.estado} />
-                <td className={`px-1.5 py-1.5 text-left ${GRUPO}`}><Estado f={f} /></td>
+                <td className={`text-left ${GRUPO}`}><Estado f={f} /></td>
                 {conComo && (
-                  <td className="px-1.5 py-1.5 text-left text-sm text-[var(--text-secondary)]" style={{ minWidth: "16rem" }}>
+                  <td className="text-left text-[var(--text-secondary)]" style={{ minWidth: "16rem" }}>
                     {f.comoCuadrar ?? ""}
                   </td>
                 )}
@@ -115,7 +115,7 @@ export default function TablaControl({ control, soloDiferencias }: { control: Co
             ))}
             {filas.length === 0 && ocultas > 0 && (
               <tr>
-                <td colSpan={conComo ? 12 : 11} className="px-1.5 py-2 text-left text-sm text-[var(--text-tertiary)]">
+                <td colSpan={conComo ? 12 : 11} className="text-left text-[var(--text-tertiary)]">
                   {ocultas === 1 ? "La única fila cuadra." : `Las ${ocultas} filas cuadran.`}
                 </td>
               </tr>
@@ -124,21 +124,21 @@ export default function TablaControl({ control, soloDiferencias }: { control: Co
           {!control.sinTotal && (
             <tfoot>
               <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
-                <td className="px-1.5 py-1.5 text-left text-[var(--text-primary)]">
+                <td className="text-left">
                   Total
                   {ocultas > 0 && filas.length > 0 && <span className="block text-xs font-normal text-[var(--text-tertiary)]">{ocultas} filas exactas ocultas</span>}
                 </td>
                 <Celdas t={control.esperado} omitir={control.omitir} />
                 <Celdas t={control.obtenido} />
                 <Celdas t={control.diferencia} omitir={control.omitir} dif estado={control.estadoTotal} />
-                <td className={`px-1.5 py-1.5 text-left ${GRUPO}`}>
+                <td className={`text-left ${GRUPO}`}>
                   {control.relacion === "tope" ? null : <Estado f={{ estado: control.estadoTotal, relacion: "igual" }} />}
                 </td>
                 {conComo && <td />}
               </tr>
             </tfoot>
           )}
-        </table>
+        </DataTable>
       </div>}
     </section>
   );

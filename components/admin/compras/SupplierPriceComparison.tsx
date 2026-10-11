@@ -84,14 +84,14 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
       )}
 
       <div className="overflow-x-auto">
-        <DataTable className="w-full text-sm">
+        <DataTable className="w-full">
           <thead>
-            <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-              <th className="text-left py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted">Proveedor</th>
-              <th className="text-right py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted">Último precio</th>
-              <th className="text-right py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
-              <th className="text-center py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted"># Compras</th>
-              <th className="text-right py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted">vs Mejor</th>
+            <tr>
+              <th>Proveedor</th>
+              <th className="text-right">Último precio</th>
+              <th className="text-right">Fecha</th>
+              <th className="text-center"># Compras</th>
+              <th className="text-right">vs Mejor</th>
             </tr>
           </thead>
           <tbody>
@@ -101,11 +101,11 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                 <tr
                   key={c.supplierId}
                   className={cn(
-                    "border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 transition-colors",
+                    "",
                     c.isCheapest && "bg-primary/10 dark:bg-primary/15",
                   )}
                 >
-                  <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                  <td className="font-semibold">
                     <EnlacePanel cosa="proveedor" id={c.supplierId} apariencia="heredada">{c.supplierName}</EnlacePanel>
                     {c.isCheapest && (
                       <span className="ml-2 inline-flex items-center gap-0.5 text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-1.5 py-0.5 rounded-full">
@@ -113,16 +113,16 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                       </span>
                     )}
                   </td>
-                  <td className="py-2 px-2 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                  <td className="text-right font-bold">
                     {formatCurrency(Number(c.lastPrice))}
                   </td>
-                  <td className="py-2 px-2 text-right text-[var(--text-secondary)] dark:text-muted text-sm">
+                  <td className="text-right text-[var(--text-secondary)] dark:text-muted">
                     {formatDate(c.lastDate)}
                   </td>
-                  <td className="py-2 px-2 text-center text-[var(--text-secondary)] dark:text-muted">
+                  <td className="text-center text-[var(--text-secondary)] dark:text-muted">
                     {c.purchaseCount}
                   </td>
-                  <td className="py-2 px-2 text-right">
+                  <td className="text-right">
                     {c.isCheapest ? (
                       <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold text-sm">Mejor</span>
                     ) : (

@@ -351,15 +351,15 @@ export default function CtpPegarSniffs({
             <TablaCtp altoMax="max-h-[30vh]">
               <TheadCtp>
                 <tr>
-                  <th className="w-10 px-2 py-2">
+                  <th className="w-10">
                     <span className="sr-only">Incluir</span>
                   </th>
-                  <th className="px-3 py-2 font-bold">Producto (catálogo LO-CTP)</th>
-                  <th className="w-36 px-3 py-2 text-right font-bold">Volumen (m³)</th>
-                  <th className="w-24 px-3 py-2 text-right font-bold" title="Como lo declara el SNIFFS">
+                  <th className="font-bold">Producto (catálogo LO-CTP)</th>
+                  <th className="w-36 text-right font-bold">Volumen (m³)</th>
+                  <th className="w-24 text-right font-bold" title="Como lo declara el SNIFFS">
                     % aprov.
                   </th>
-                  <th className="px-3 py-2 font-bold">Leído</th>
+                  <th className="font-bold">Leído</th>
                 </tr>
               </TheadCtp>
               <TbodyCtp>
@@ -374,7 +374,7 @@ export default function CtpPegarSniffs({
                           : "hover:bg-[var(--surface-sunken)]"
                     }
                   >
-                    <td className="px-2 py-1.5 text-center">
+                    <td className="text-center">
                       <input
                         type="checkbox"
                         checked={f.incluir}
@@ -383,7 +383,7 @@ export default function CtpPegarSniffs({
                         className="h-4 w-4 accent-[var(--accent)]"
                       />
                     </td>
-                    <td className="px-3 py-1.5">
+                    <td>
                       <select
                         value={f.productType ?? ""}
                         onChange={(e) => editarFila(f.id, { productType: e.target.value || null })}
@@ -398,7 +398,7 @@ export default function CtpPegarSniffs({
                         ))}
                       </select>
                     </td>
-                    <td className="px-3 py-1.5">
+                    <td>
                       <input
                         type="number"
                         min={0}
@@ -409,10 +409,10 @@ export default function CtpPegarSniffs({
                         className={`${CAMPO} text-right font-mono tabular-nums`}
                       />
                     </td>
-                    <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {f.leida.pctAprovechado != null ? `${f.leida.pctAprovechado} %` : "—"}
                     </td>
-                    <td className="max-w-[16rem] truncate px-3 py-1.5 font-mono text-xs text-[var(--text-tertiary)]" title={`${f.leida.productoCrudo} · ${f.leida.volumenLeido}`}>
+                    <td className="max-w-[16rem] truncate font-mono text-[var(--text-tertiary)]" title={`${f.leida.productoCrudo} · ${f.leida.volumenLeido}`}>
                       {f.leida.productoCrudo} · {f.leida.volumenLeido}
                       {f.leida.dudoso && <b className="ml-1 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">revisar</b>}
                     </td>

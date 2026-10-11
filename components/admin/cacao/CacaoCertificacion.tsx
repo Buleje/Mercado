@@ -145,15 +145,15 @@ export default function CacaoCertificacion() {
 
       {/* Tabla */}
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <DataTable className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-left">
+        <DataTable className="w-full">
+          <thead>
             <tr><Th>Productor</Th><Th>Certificación</Th><Th>Geolocalización</Th><Th className="text-right">Kg acopiado</Th><Th className="text-right">Estado export</Th></tr>
           </thead>
           <tbody>
             {view.map((p) => {
               const geo = hasGeo(p);
               return (
-                <tr key={p.id} className="border-t border-[var(--rule-soft)]">
+                <tr key={p.id}>
                   <Td>
                     <span className="font-medium text-[var(--text-primary)]">{p.nombre}</span>
                     <span className="block text-xs text-[var(--text-tertiary)]"><span className="font-mono">{p.codigo ?? "—"}</span>{p.sector ? ` · ${p.sector}` : ""}</span>
@@ -193,5 +193,5 @@ export default function CacaoCertificacion() {
   );
 }
 
-function Th({ children, className }: { children: React.ReactNode; className?: string }) { return <th className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>{children}</th>; }
-function Td({ children, className }: { children: React.ReactNode; className?: string }) { return <td className={`px-4 py-3 align-top ${className ?? ""}`}>{children}</td>; }
+function Th({ children, className }: { children: React.ReactNode; className?: string }) { return <th className={`font-bold ${className ?? ""}`}>{children}</th>; }
+function Td({ children, className }: { children: React.ReactNode; className?: string }) { return <td className={`align-top ${className ?? ""}`}>{children}</td>; }

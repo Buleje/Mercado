@@ -262,7 +262,7 @@ export default function CtpGuiaSerforHoja({
             <AvisoTipoGtf avisos={avisosTipo} />
             {productos.length > 0 && (
               <div className="overflow-x-auto rounded-lg border border-[var(--rule-base)]">
-                <DataTable className="w-full text-sm">
+                <DataTable planilla className="w-full text-sm">
                   <thead className="bg-[var(--surface-sunken)] text-left text-xs text-[var(--text-tertiary)]">
                     <tr>
                       <th rowSpan={2} className="px-3 py-2 font-semibold">(37a) Nombre científico</th>

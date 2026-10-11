@@ -206,22 +206,22 @@ export function AsignacionesTab() {
             {botonAsignar("Asignar pedido")}
           </div>
           <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
+            <DataTable className="w-full">
+              <thead>
                 <tr>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-[var(--text-secondary)]">
+                  <th>
                     Orden
                   </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-[var(--text-secondary)]">
+                  <th>
                     Repartidor
                   </th>
-                  <th className="text-right px-6 py-4 text-sm font-semibold text-[var(--text-secondary)]">
+                  <th className="text-right">
                     Tarifa
                   </th>
-                  <th className="text-center px-6 py-4 text-sm font-semibold text-[var(--text-secondary)]">
+                  <th className="text-center">
                     Estado
                   </th>
-                  <th className="text-right px-6 py-4 text-sm font-semibold text-[var(--text-secondary)] hidden sm:table-cell">
+                  <th className="text-right hidden sm:table-cell">
                     Asignado
                   </th>
                 </tr>
@@ -234,11 +234,11 @@ export function AsignacionesTab() {
                   };
                   const initial = (a.partnerName || "?").trim().charAt(0).toUpperCase();
                   return (
-                    <tr key={a.id} className="hover:bg-[var(--surface-sunken)]/50 transition-colors">
-                      <td className="px-6 py-4 font-mono text-sm font-extrabold text-[var(--text-primary)]">
+                    <tr key={a.id}>
+                      <td className="font-mono font-extrabold">
                         #{a.orderId.slice(-8).toUpperCase()}
                       </td>
-                      <td className="px-6 py-4">
+                      <td>
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-extrabold shrink-0">
                             {initial}
@@ -248,12 +248,12 @@ export function AsignacionesTab() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="text-right">
                         <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
                           {formatCurrency(toNum(a.fee))}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="text-center">
                         <span className={cn(
                           "inline-flex items-center px-3 py-1 rounded-full text-sm font-bold",
                           sc.className,
@@ -261,7 +261,7 @@ export function AsignacionesTab() {
                           {sc.label}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right text-sm text-[var(--text-secondary)] hidden sm:table-cell">
+                      <td className="text-right text-[var(--text-secondary)] hidden sm:table-cell">
                         <span className="inline-flex items-center justify-end gap-1.5 font-bold">
                           <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
                           {formatDateTimeShort(a.assignedAt)}

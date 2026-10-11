@@ -36,7 +36,7 @@ export default function CrmTabla({ crm }: { crm: Crm }) {
         <tbody>
           {paginated.length === 0 && (
             <tr>
-              <td colSpan={8} className="py-10 text-center text-sm text-[var(--text-secondary)]">
+              <td colSpan={8} className="text-center text-[var(--text-secondary)]">
                 {hayFiltros ? "Ningún cliente con estos filtros." : "Sin clientes."}
               </td>
             </tr>

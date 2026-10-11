@@ -287,26 +287,26 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                 <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Sin guías atribuidas. Usa &quot;Editar atribución&quot; para declarar de dónde salió.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <DataTable className="w-full text-sm">
-                    <thead className="bg-[var(--surface-sunken)] text-left">
+                  <DataTable className="w-full">
+                    <thead>
                       <tr>
-                        <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Guía GTF</th>
-                        <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Especie</th>
-                        <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Ingreso</th>
-                        <th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">m³</th>
-                        <th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Costo/m³</th>
+                        <th>Guía GTF</th>
+                        <th>Especie</th>
+                        <th>Ingreso</th>
+                        <th className="text-right">m³</th>
+                        <th className="text-right">Costo/m³</th>
                       </tr>
                     </thead>
                     <tbody>
                       {consumos.map((c) => {
                         const unit = costoUnitDe(c);
                         return (
-                          <tr key={c.id} className="border-t border-[var(--rule-soft)]">
-                            <td className="px-3 py-2 font-mono text-xs font-bold text-[var(--text-primary)]">{c.woodEntry.gtfNumber}</td>
-                            <td className="px-3 py-2 text-[var(--text-secondary)]">{c.woodEntry.speciesCommonName ?? "—"}</td>
-                            <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{fmtDate(c.woodEntry.entryDate)}</td>
-                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(Number(c.volumeM3))}</td>
-                            <td className="px-3 py-2 text-right">
+                          <tr key={c.id}>
+                            <td className="font-mono font-bold">{c.woodEntry.gtfNumber}</td>
+                            <td className="text-[var(--text-secondary)]">{c.woodEntry.speciesCommonName ?? "—"}</td>
+                            <td className="text-[var(--text-tertiary)]">{fmtDate(c.woodEntry.entryDate)}</td>
+                            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(Number(c.volumeM3))}</td>
+                            <td className="text-right">
                               {unit != null ? (
                                 <span className="inline-flex items-center gap-1 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
                                   {money(unit, c.woodEntry.moneda ?? "PEN")}

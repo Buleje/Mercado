@@ -25,7 +25,7 @@ interface Props {
 
 export function TablaPerdidas({ filas, hoy, orden, onVer }: Props) {
   return (
-    <DataTable className="min-w-[640px] [&_thead_th]:text-sm! [&_tbody_td]:py-1.5! [&_tbody_td]:align-top">
+    <DataTable className="min-w-[640px] [&_tbody_td]:py-1.5! [&_tbody_td]:align-top">
       <thead ref={orden.refCabecera}>
         <tr>
           <EnOrden

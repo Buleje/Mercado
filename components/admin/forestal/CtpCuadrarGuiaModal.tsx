@@ -324,38 +324,38 @@ export default function CtpCuadrarGuiaModal({
                     <TablaCtp>
                       <TheadCtp>
                         <tr>
-                          <th className="px-3 py-2 text-left font-bold">Pieza</th>
-                          <th className="px-3 py-2 text-left font-bold">D1 × D2 × largo</th>
-                          <th className="px-3 py-2 text-right font-bold">Cant.</th>
-                          <th className="px-3 py-2 text-right font-bold">Huber</th>
-                          <th className="px-3 py-2 text-right font-bold">Smalian</th>
-                          <th className="px-3 py-2 text-right font-bold">Guía</th>
-                          <th className="px-3 py-2 text-right font-bold">Desvío</th>
+                          <th className="text-left font-bold">Pieza</th>
+                          <th className="text-left font-bold">D1 × D2 × largo</th>
+                          <th className="text-right font-bold">Cant.</th>
+                          <th className="text-right font-bold">Huber</th>
+                          <th className="text-right font-bold">Smalian</th>
+                          <th className="text-right font-bold">Guía</th>
+                          <th className="text-right font-bold">Desvío</th>
                         </tr>
                       </TheadCtp>
                       <TbodyCtp>
                         {a.verificacion.filas.map((f) => (
                           <tr key={f.id ?? f.codificacion}>
-                            <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">
+                            <td className="font-mono font-bold">
                               {f.codificacion ?? "—"}
                             </td>
-                            <td className="px-3 py-2 font-mono text-xs text-[var(--text-tertiary)]">
+                            <td className="font-mono text-[var(--text-tertiary)]">
                               {f.huberM3 == null ? "sin medidas" : `${f.cantidad > 1 ? `${f.cantidad} × ` : ""}pieza`}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                               {f.cantidad}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                            <td className="text-right font-mono tabular-nums">
                               {f.huberM3 != null ? fmtM3(f.huberM3) : "—"}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                            <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                               {f.smalianM3 != null ? fmtM3(f.smalianM3) : "—"}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                               {f.declaradoM3 != null ? fmtM3(f.declaradoM3) : "—"}
                             </td>
                             <td
-                              className={`px-3 py-2 text-right font-mono font-bold tabular-nums ${
+                              className={`text-right font-mono font-bold tabular-nums ${
                                 f.estado === "ok"
                                   ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                                   : f.estado === "sin-medidas"

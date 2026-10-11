@@ -13,6 +13,7 @@ import {
   comprasPorMes, deudaDe, diasSinComprar, urlWhatsApp,
   type CompraDeProveedor, type CuentaDeProveedor,
 } from "./datos-proveedores";
+import { DataTable } from "@buleje/design-system";
 
 type Que = "evaluacion" | "historial" | "compras";
 
@@ -49,13 +50,13 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
 
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <table className="w-full text-sm">
-        <thead className="bg-[var(--surface-sunken)] text-left text-sm font-semibold text-[var(--text-secondary)]">
+      <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
+        <thead>
           <tr>
-            <th className="px-4 py-2.5">Proveedor</th>
-            <th className="px-4 py-2.5">Contacto</th>
-            <th className="px-4 py-2.5 text-right">Le debes</th>
-            <th className="px-4 py-2.5 text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
+            <th>Proveedor</th>
+            <th>Contacto</th>
+            <th className="text-right">Le debes</th>
+            <th className="text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -73,7 +74,7 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
             return (
               <Fragment key={s.id}>
                 <tr>
-                  <td className="px-4 py-3 align-top">
+                  <td className="align-top">
                     <div className="min-w-0">
                       <p className="font-bold text-[var(--text-primary)]">{s.name}</p>
                       {s.ruc && <p className="font-mono text-sm text-[var(--text-secondary)]">RUC {s.ruc}</p>}
@@ -85,7 +86,7 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 align-top">
+                  <td className="align-top">
                     <div className="min-w-0 space-y-0.5 text-[var(--text-secondary)]">
                       {s.phone && <p className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />{s.phone}</p>}
                       {s.email && <p className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 shrink-0" aria-hidden /><span className="truncate">{s.email}</span></p>}
@@ -93,7 +94,7 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
                       {sinContacto && <p>—</p>}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right align-top tabular-nums">
+                  <td className="text-right align-top tabular-nums">
                     <div className="min-w-0">
                       {deuda.n > 0 ? (
                         <>
@@ -105,7 +106,7 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 align-top">
+                  <td className="align-top">
                     <div className="flex items-center justify-end gap-2">
                       <button type="button" onClick={() => onFicha(s)} aria-haspopup="dialog" className={button({ variant: "secondary", className: "rounded-xl px-4" })}>Ficha</button>
                       <ActionMenu label={`Más de ${s.name}`} soloIcono icon={MoreHorizontal} size="md" actions={acciones} className="w-12 shrink-0" />
@@ -114,7 +115,7 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
                 </tr>
                 {abierto?.id === s.id && (
                   <tr>
-                    <td colSpan={4} className="p-0" data-label="">
+                    <td colSpan={4} data-label="">
                       <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 sm:p-4">
                         {abierto.que === "evaluacion" && <SupplierScorecard supplierId={s.id} />}
                         {abierto.que === "historial" && <SupplierTimeline supplierId={s.id} supplierName={s.name} />}
@@ -127,7 +128,7 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
             );
           })}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }

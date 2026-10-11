@@ -93,8 +93,8 @@ export function FilaTrozaDisponible({ t, ahora }: { t: TrozaConsumible; ahora: D
   const asiento = t.guiaRecepcionada === false ? diasDelAsiento(t, ahora) : null;
   const sinCodigo = esSinCodigo(t) && !t.codigoPlanta;
   return (
-    <tr className="hover:bg-[var(--surface-sunken)]">
-      <td className="px-2! py-2">
+    <tr>
+      <td className="px-2!">
         {sinCodigo ? (
           <span className="text-[var(--text-secondary)]">Sin código</span>
         ) : (
@@ -108,28 +108,28 @@ export function FilaTrozaDisponible({ t, ahora }: { t: TrozaConsumible; ahora: D
           </span>
         )}
       </td>
-      <td className="px-2! py-2 tabular-nums text-[var(--text-primary)]">
+      <td className="px-2! tabular-nums">
         <span className="block max-w-[8rem] break-all">{t.gtfNumber ?? "—"}</span>
       </td>
-      <td className="px-2! py-2">
+      <td className="px-2!">
         <span className="line-clamp-2 max-w-[11rem] break-all text-[var(--text-primary)]">
           {t.permiso ?? "Sin permiso"}
         </span>
       </td>
-      <td className="px-2! py-2 font-semibold text-[var(--text-primary)]">
+      <td className="px-2! font-semibold">
         {t.especieComun ?? "—"}
       </td>
-      <td className="px-2! py-2 text-[var(--text-primary)]">
+      <td className="px-2!">
         <Medidas t={t} />
       </td>
-      <td className="px-2! py-2 text-right tabular-nums text-[var(--text-primary)]">{fmtM3(m3)}</td>
-      <td className="px-2! py-2 text-right tabular-nums text-[var(--text-secondary)]">
+      <td className="px-2! text-right tabular-nums">{fmtM3(m3)}</td>
+      <td className="px-2! text-right tabular-nums text-[var(--text-secondary)]">
         ≈{nf(ptDe(m3))}
       </td>
-      <td className="px-2! py-2">
+      <td className="px-2!">
         <Estado t={t} />
       </td>
-      <td className="px-2! py-2">
+      <td className="px-2!">
         {dias != null ? (
           <Dias dias={dias} />
         ) : asiento != null ? (

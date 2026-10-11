@@ -23,7 +23,6 @@ import {
 
 const n3 = (v: number) => formatNumber(v, 3);
 const nf = (v: number) => formatNumber(v);
-const TH = "px-3 py-2 font-bold text-[var(--text-secondary)]";
 
 const COLUMNAS_DISPONIBLE: ColumnaFiltro<FilaDeSaldo>[] = [
   { id: "nombre", label: "Especie", tipo: "multi", valor: (f) => f.nombre },
@@ -83,37 +82,37 @@ export default function DetalleDisponible({
         </label>
       )}
       <BarraFiltrosTabla f={f} />
-      <DataTable className="w-full text-base" wrapperClassName="rounded-xl">
-        <thead className="bg-[var(--surface-sunken)] align-top text-sm">
+      <DataTable className="w-full" wrapperClassName="rounded-xl">
+        <thead className="align-top">
           <tr>
-            <th scope="col" className={`${TH} text-left`}>
+            <th scope="col">
               {rolliza ? "Especie" : "Producto"}
               <FiltroEnCabecera id="nombre" f={f} />
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Disponible (m³)
               <FiltroEnCabecera id="disponible" f={f} />
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Piezas
               <FiltroEnCabecera id="piezas" f={f} />
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               {rolliza ? "Ingresó" : "Se produjo"}
               <FiltroEnCabecera id="total" f={f} />
             </th>
             {rolliza && (
-              <th scope="col" className={`${TH} text-right`}>
+              <th scope="col" className="text-right">
                 Guías
                 <FiltroEnCabecera id="guias" f={f} />
               </th>
             )}
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Usado
               <FiltroEnCabecera id="usado" f={f} />
             </th>
             {conKardex && (
-              <th scope="col" className={TH}>
+              <th scope="col" >
                 <span className="sr-only">Acciones</span>
               </th>
             )}
@@ -122,8 +121,8 @@ export default function DetalleDisponible({
         <tbody>
           {visibles.length === 0 && <SinCoincidenciasFila colSpan={conKardex ? 7 : rolliza ? 6 : 5} />}
           {visibles.map((f) => (
-            <tr key={f.nombre} className="border-t border-[var(--rule-base)]">
-              <td className="px-3 py-2">
+            <tr key={f.nombre}>
+              <td>
                 <span className="font-semibold text-[var(--text-primary)]">{f.nombre}</span>
                 {f.cites && (
                   /* CITES es legal con permiso: recordatorio, nunca una falta. */
@@ -138,7 +137,7 @@ export default function DetalleDisponible({
                 )}
               </td>
               <td
-                className={`px-3 py-2 text-right font-extrabold tabular-nums ${
+                className={`text-right font-extrabold tabular-nums ${
                   f.negativo ? "text-[var(--data-error-ink)]" : "text-[var(--text-primary)]"
                 }`}
               >
@@ -152,14 +151,14 @@ export default function DetalleDisponible({
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)]">
+              <td className="text-right tabular-nums text-[var(--text-secondary)]">
                 {f.piezas > 0 ? nf(f.piezas) : "—"}
               </td>
-              <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)]">
+              <td className="text-right tabular-nums text-[var(--text-secondary)]">
                 {n3(f.total)}
               </td>
               {rolliza && (
-                <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)]">
+                <td className="text-right tabular-nums text-[var(--text-secondary)]">
                   {f.guias || "—"}
                   {/* El promedio da la escala: 15 m³ por guía es un camión; 1,5 son retazos. */}
                   {f.promedioPorGuia > 0 && (
@@ -169,11 +168,11 @@ export default function DetalleDisponible({
                   )}
                 </td>
               )}
-              <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)]">
+              <td className="text-right tabular-nums text-[var(--text-secondary)]">
                 {f.usadoPct} %
               </td>
               {conKardex && (
-                <td className="px-3 py-2 text-right">
+                <td className="text-right">
                   <button
                     type="button"
                     onClick={() => onKardex?.(f.nombre)}
@@ -191,7 +190,7 @@ export default function DetalleDisponible({
             tabla decía lo mismo que la tarjeta de arriba. */}
         <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
           <tr>
-            <td className="px-3 py-2.5 text-[var(--text-primary)]">
+            <td>
               Total · {r.conStock} con stock de {r.totalFilas}
               {f.activos > 0 && <span className="font-normal text-[var(--text-tertiary)]"> (de toda la lista, no de lo filtrado)</span>}
               {/* La suma es de lo POSITIVO, igual que la tarjeta de arriba. */}
@@ -202,19 +201,19 @@ export default function DetalleDisponible({
                 </span>
               )}
             </td>
-            <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-primary)]">
+            <td className="text-right tabular-nums">
               {n3(r.disponibleM3)}
             </td>
-            <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-primary)]">
+            <td className="text-right tabular-nums">
               {/* Las piezas se cuentan TODAS, también las de una fila en negativo:
                   una troza en el patio es física, no depende del signo del m³. */}
               {r.piezasTotales > 0 ? nf(r.piezasTotales) : "—"}
             </td>
-            <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-primary)]">
+            <td className="text-right tabular-nums">
               {n3(filas.reduce((a, f) => a + f.total, 0))}
             </td>
             {rolliza && (
-              <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-primary)]">
+              <td className="text-right tabular-nums">
                 {filas.reduce((a, f) => a + f.guias, 0) || "—"}
               </td>
             )}

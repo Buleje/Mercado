@@ -109,30 +109,30 @@ export function TablaTrozas({ filas, numero, filtradas, filtrando, ox, enOtraFil
             <th colSpan={2} />
             <th
               colSpan={4}
-              className="border-b border-[var(--rule-base)] px-2.5 pt-2 text-center font-bold"
+              className="pt-2 text-center font-bold"
             >
               La guía
             </th>
             <th
               colSpan={4}
-              className="border-b border-[var(--rule-base)] px-2.5 pt-2 text-center font-bold"
+              className="pt-2 text-center font-bold"
             >
               Oxapampa
             </th>
             <th />
           </tr>
           <tr>
-            <th className="whitespace-nowrap px-2.5 py-2 font-bold">N°</th>
-            <th className="whitespace-nowrap px-2.5 py-2 font-bold">Troza</th>
-            <th className="whitespace-nowrap px-2.5 py-2 text-right font-bold">D1 cm</th>
-            <th className="whitespace-nowrap px-2.5 py-2 text-right font-bold">D2 cm</th>
-            <th className="whitespace-nowrap px-2.5 py-2 text-right font-bold">Largo m</th>
-            <th className="whitespace-nowrap px-2.5 py-2 text-right font-bold">m³</th>
-            <th className="whitespace-nowrap px-2.5 py-2 text-right font-bold">D1″</th>
-            <th className="whitespace-nowrap px-2.5 py-2 text-right font-bold">D2″</th>
-            <th className="whitespace-nowrap px-2.5 py-2 text-right font-bold">L′</th>
-            <th className="whitespace-nowrap px-2.5 py-2 text-right font-bold">PT</th>
-            <th className="whitespace-nowrap px-2.5 py-2 font-bold">Estado · llegada</th>
+            <th className="whitespace-nowrap font-bold">N°</th>
+            <th className="whitespace-nowrap font-bold">Troza</th>
+            <th className="whitespace-nowrap text-right font-bold">D1 cm</th>
+            <th className="whitespace-nowrap text-right font-bold">D2 cm</th>
+            <th className="whitespace-nowrap text-right font-bold">Largo m</th>
+            <th className="whitespace-nowrap text-right font-bold">m³</th>
+            <th className="whitespace-nowrap text-right font-bold">D1″</th>
+            <th className="whitespace-nowrap text-right font-bold">D2″</th>
+            <th className="whitespace-nowrap text-right font-bold">L′</th>
+            <th className="whitespace-nowrap text-right font-bold">PT</th>
+            <th className="whitespace-nowrap font-bold">Estado · llegada</th>
           </tr>
         </TheadCtp>
         <TbodyCtp>
@@ -140,7 +140,7 @@ export function TablaTrozas({ filas, numero, filtradas, filtrando, ox, enOtraFil
           {filas.map((t, i) => {
             const pt = ptDeTroza(t);
             return (
-              <tr key={t.id} className="hover:bg-[var(--surface-sunken)]">
+              <tr key={t.id}>
                 <td className={`${TD} font-mono tabular-nums text-[var(--text-tertiary)]`}>
                   {numero(i)}
                 </td>
@@ -173,7 +173,7 @@ export function TablaTrozas({ filas, numero, filtradas, filtrando, ox, enOtraFil
                   {t.d1d2MedidoEnPlanta && t.d2Cm != null && <EnPlanta />}
                 </td>
                 <td className={`${TD_NUM} text-[var(--text-secondary)]`}>{med(t.largoM, 2)}</td>
-                <td className={`${TD_NUM} text-[var(--text-primary)]`}>{m3(t.volumenM3)}</td>
+                <td className={`${TD_NUM}`}>{m3(t.volumenM3)}</td>
                 <td className={`${TD_NUM} text-[var(--text-secondary)]`}>{med(t.oxD1Pulg, 2)}</td>
                 <td className={`${TD_NUM} text-[var(--text-secondary)]`}>{med(t.oxD2Pulg, 2)}</td>
                 <td className={`${TD_NUM} text-[var(--text-secondary)]`}>
@@ -214,12 +214,12 @@ export function TablaTrozas({ filas, numero, filtradas, filtrando, ox, enOtraFil
             <td className={TD_NUM}>{fmtM3(sumaM3(filtradas))}</td>
             <td
               colSpan={3}
-              className={`${TD} text-right text-xs font-semibold text-[var(--text-secondary)]`}
+              className={`${TD} text-right font-semibold text-[var(--text-secondary)]`}
             >
               {ox.cubicadas} de {filtradas.length} cubicadas
             </td>
             <td className={TD_NUM}>{fmtPt(ox.pt)}</td>
-            <td className={`${TD} text-xs font-semibold text-[var(--text-tertiary)]`}>
+            <td className={`${TD} font-semibold text-[var(--text-tertiary)]`}>
               PT Oxapampa
             </td>
           </tr>

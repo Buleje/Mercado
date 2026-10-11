@@ -116,13 +116,13 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
           {/* Sin caja propia alrededor: `DataTable` ya trae la suya con borde, y
               dos cajas anidadas dibujaban un doble filete. */}
             <BarraFiltrosTabla f={fl} className="mb-2" />
-            <DataTable className="w-full border-collapse text-sm">
-              <thead className="bg-[var(--surface-canvas)]">
-                <tr className="align-top text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
-                  <th className="px-3 py-2 text-left font-bold">Mes<FiltroEnCabecera id="mes" f={fl} compacto /></th>
-                  <th className="px-3 py-2 text-right font-bold">Meta del mes (m³)<FiltroEnCabecera id="metaMes" f={fl} compacto /></th>
-                  <th className="px-3 py-2 text-right font-bold">Meta acumulada (m³)<FiltroEnCabecera id="metaAcum" f={fl} compacto /></th>
-                  <th className="px-3 py-2 text-left font-bold">Estado<FiltroEnCabecera id="estado" f={fl} compacto /></th>
+            <DataTable className="w-full">
+              <thead>
+                <tr className="align-top">
+                  <th>Mes<FiltroEnCabecera id="mes" f={fl} compacto /></th>
+                  <th className="text-right">Meta del mes (m³)<FiltroEnCabecera id="metaMes" f={fl} compacto /></th>
+                  <th className="text-right">Meta acumulada (m³)<FiltroEnCabecera id="metaAcum" f={fl} compacto /></th>
+                  <th>Estado<FiltroEnCabecera id="estado" f={fl} compacto /></th>
                 </tr>
               </thead>
               <tbody>
@@ -130,12 +130,12 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
                 {filasMeses.map((m) => (
                   <tr
                     key={m.periodo}
-                    className={`border-t border-[var(--rule-subtle)] ${m.actual ? "bg-[var(--brand-ink)]/8 font-bold" : ""}`}
+                    className={`border-[var(--rule-subtle)] ${m.actual ? "bg-[var(--brand-ink)]/8 font-bold" : ""}`}
                   >
-                    <td className="px-3 py-1.5 capitalize text-[var(--text-primary)]">{m.label}</td>
-                    <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{Number(m.metaMesM3).toFixed(3)}</td>
-                    <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{Number(m.metaAcumuladaM3).toFixed(3)}</td>
-                    <td className="px-3 py-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
+                    <td className="capitalize">{m.label}</td>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{Number(m.metaMesM3).toFixed(3)}</td>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{Number(m.metaAcumuladaM3).toFixed(3)}</td>
+                    <td className="font-semibold text-[var(--text-tertiary)]">
                       {ESTADO_MES(m)}
                     </td>
                   </tr>

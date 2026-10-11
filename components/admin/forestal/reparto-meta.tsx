@@ -19,9 +19,8 @@
 import { useState } from "react";
 import { ChevronRight, Target } from "@buleje/design-system/icons";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { DataTable } from "@buleje/design-system";
 
-const TH =
-  "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = `${TD} text-right font-mono tabular-nums`;
 
@@ -91,19 +90,19 @@ export default function MetaConMedidas({ meta }: { meta: MetaConMedidasProps | n
               abajo no pueden contradecirse. */}
           {metaAbierta && meta.medidas.length > 0 && (
             <div className="overflow-x-auto border-t border-[var(--rule-soft)] px-3 pb-2">
-              <table className="w-full">
+              <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)]">
-                    <th className={TH}>Medida de {meta.tipo.toLowerCase()}</th>
-                    <th className={`${TH} text-right`}>Piezas</th>
-                    <th className={`${TH} text-right`}>m³</th>
-                    <th className={`${TH} text-right`}>Pie tablar</th>
-                    <th className={`${TH} text-right`}>% del tipo</th>
+                  <tr>
+                    <th >Medida de {meta.tipo.toLowerCase()}</th>
+                    <th className="text-right">Piezas</th>
+                    <th className="text-right">m³</th>
+                    <th className="text-right">Pie tablar</th>
+                    <th className="text-right">% del tipo</th>
                   </tr>
                 </thead>
                 <tbody>
                   {meta.medidas.map((m) => (
-                    <tr key={m.clave} className="border-b border-[var(--rule-soft)] last:border-0">
+                    <tr key={m.clave} className="border-[var(--rule-soft)] last:border-0">
                       <td className={`${TD} font-mono`}>{m.medida}</td>
                       <td className={NUM}>{fmtPiezas(m.piezas)}</td>
                       <td className={NUM}>{fmtM3(m.m3)}</td>
@@ -114,22 +113,22 @@ export default function MetaConMedidas({ meta }: { meta: MetaConMedidasProps | n
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-[var(--rule-base)]">
-                    <td className={`${TD} font-bold text-[var(--text-primary)]`}>
+                    <td className={`${TD} font-bold`}>
                       Total de {meta.tipo.toLowerCase()}
                     </td>
-                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                    <td className={`${NUM} font-bold`}>
                       {fmtPiezas(meta.medidasPiezas)}
                     </td>
-                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                    <td className={`${NUM} font-bold`}>
                       {fmtM3(meta.medidasM3)}
                     </td>
-                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                    <td className={`${NUM} font-bold`}>
                       {fmtPt(meta.medidasPt)}
                     </td>
                     <td className={NUM}>100 %</td>
                   </tr>
                 </tfoot>
-              </table>
+              </DataTable>
             </div>
           )}
         </div>

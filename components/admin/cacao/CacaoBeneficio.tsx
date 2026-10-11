@@ -426,8 +426,8 @@ export default function CacaoBeneficio() {
 
       {/* Tabla */}
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <DataTable className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-left">
+        <DataTable className="w-full">
+          <thead>
             <tr>
               <Th>Lote</Th>
               <Th>Estado</Th>
@@ -459,7 +459,7 @@ export default function CacaoBeneficio() {
                   role={b.loteId ? "button" : undefined}
                   aria-label={b.loteId ? `Ver lote ${b.loteCode ?? ""}` : undefined}
                   onKeyDown={b.loteId ? (e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLoteDrawerId(b.loteId!); } } : undefined}
-                  className={`border-t border-[var(--rule-soft)] transition ${b.loteId ? "cursor-pointer hover:bg-[var(--surface-sunken)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]" : ""}`}
+                  className={`transition ${b.loteId ? "cursor-pointer hover:bg-[var(--surface-sunken)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]" : ""}`}
                 >
                   <Td>
                     <span className="font-mono text-xs font-bold text-[var(--text-primary)]">
@@ -847,11 +847,11 @@ export default function CacaoBeneficio() {
 
 function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <th className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>
+    <th className={`font-bold ${className ?? ""}`}>
       {children}
     </th>
   );
 }
 function Td({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
+  return <td className={`${className ?? ""}`}>{children}</td>;
 }

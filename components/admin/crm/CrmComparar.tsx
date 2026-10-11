@@ -55,7 +55,7 @@ export default function CrmComparar({ crm }: { crm: Crm }) {
                       <tr>
                         <th>Metrica</th>
                         {compareCustomers.map(c => (
-                          <th key={c.phone} className="text-center text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</th>
+                          <th key={c.phone} className="text-center">{c.name}</th>
                         ))}
                       </tr>
                     </thead>
@@ -66,9 +66,9 @@ export default function CrmComparar({ crm }: { crm: Crm }) {
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Total gastado</td>
+                            <td className="text-[var(--text-secondary)] font-semibold">Total gastado</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 S/{(values[i]).toFixed(0)}
                               </td>
                             ))}
@@ -81,9 +81,9 @@ export default function CrmComparar({ crm }: { crm: Crm }) {
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Pedidos</td>
+                            <td className="text-[var(--text-secondary)] font-semibold">Pedidos</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 {values[i]}
                               </td>
                             ))}
@@ -100,9 +100,9 @@ export default function CrmComparar({ crm }: { crm: Crm }) {
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Ticket promedio</td>
+                            <td className="text-[var(--text-secondary)] font-semibold">Ticket promedio</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 S/{values[i].toFixed(0)}
                               </td>
                             ))}
@@ -115,9 +115,9 @@ export default function CrmComparar({ crm }: { crm: Crm }) {
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Última compra</td>
+                            <td className="text-[var(--text-secondary)] font-semibold">Última compra</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 {c._lastOrder ? fmtRelative(c._lastOrder) : "--"}
                               </td>
                             ))}
@@ -130,9 +130,9 @@ export default function CrmComparar({ crm }: { crm: Crm }) {
                         const best = Math.min(...values);
                         return (
                           <tr>
-                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Fiado pendiente</td>
+                            <td className="text-[var(--text-secondary)] font-semibold">Fiado pendiente</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center font-bold", values[i] === best ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 S/{values[i].toFixed(0)}
                               </td>
                             ))}
@@ -141,7 +141,7 @@ export default function CrmComparar({ crm }: { crm: Crm }) {
                       })()}
                       {/* Segmento */}
                       <tr>
-                        <td className="text-xs text-[var(--text-secondary)] font-semibold">Segmento</td>
+                        <td className="text-[var(--text-secondary)] font-semibold">Segmento</td>
                         {compareCustomers.map(c => (
                           <td key={c.phone} className="text-center">
                             <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{SEGMENT_CONFIG[c._segment ?? "nuevo"].label}</span>

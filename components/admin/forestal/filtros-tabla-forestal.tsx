@@ -233,7 +233,7 @@ export function BarraFiltrosTabla<T>({
 export function SinCoincidenciasFila({ colSpan }: { colSpan: number }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-3 py-6 text-center text-sm text-[var(--text-tertiary)]">
+      <td colSpan={colSpan} className="text-center text-[var(--text-tertiary)]">
         Ninguna fila coincide con los filtros de columna.
       </td>
     </tr>

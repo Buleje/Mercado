@@ -114,7 +114,7 @@ export function UnifiedSupportInbox() {
       ) : filas.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nada espera respuesta.</p>
       ) : (
-        <DataTable className="table-fixed [&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+        <DataTable className="table-fixed">
           <colgroup className="max-sm:hidden">
             <col className="w-28" />
             <col className="w-48" />
@@ -134,12 +134,12 @@ export function UnifiedSupportInbox() {
           <tbody>
             {filas.map((item) => (
               <tr key={item.id}>
-                <td className="text-sm font-semibold text-[var(--text-primary)]">{FUENTE[item.source]?.rotulo ?? item.source}</td>
-                <td className="text-sm text-[var(--text-primary)]"><span className="block min-w-0 truncate">{item.customer}</span></td>
-                <td className="text-sm text-[var(--text-secondary)]">
+                <td className="font-semibold">{FUENTE[item.source]?.rotulo ?? item.source}</td>
+                <td><span className="block min-w-0 truncate">{item.customer}</span></td>
+                <td className="text-[var(--text-secondary)]">
                   <span className="block min-w-0 truncate" title={item.message}>{item.message || "Sin mensaje"}</span>
                 </td>
-                <td className="whitespace-nowrap text-sm text-[var(--text-secondary)]">{formatRelative(item.receivedAt)}</td>
+                <td className="whitespace-nowrap text-[var(--text-secondary)]">{formatRelative(item.receivedAt)}</td>
                 <td className="text-right">
                   {item.status === "pending" ? (
                     <EnlacePanel href={FUENTE[item.source]?.href} apariencia="heredada" className={button({ variant: "secondary", className: "rounded-xl px-4" })}>{FUENTE[item.source]?.donde ?? "Abrir"}</EnlacePanel>

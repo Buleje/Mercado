@@ -77,7 +77,7 @@ function CabezaOrden({
         onClick={() => onOrdenar(columna)}
         className={cn(
           /* Mismo aspecto que las cabezas del DataTable (mayúsculas): el botón no hereda text-transform. */
-          "inline-flex h-12 items-center gap-1 rounded-lg uppercase tracking-[var(--ls-wider)] hover:text-[var(--text-primary)]",
+          "inline-flex h-12 items-center gap-1 rounded-lg hover:text-[var(--text-primary)]",
           derecha && "flex-row-reverse",
           activa && "text-[var(--text-primary)]",
         )}
@@ -135,10 +135,10 @@ export function ListaPedidos({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border">
-      <DataTable className="w-full text-sm">
-        <thead className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:border-card-border">
+      <DataTable className="w-full">
+        <thead className="dark:border-card-border">
           <tr>
-            <th className="w-12 px-0 py-0!" data-label="Elegir">
+            <th className="w-12 py-0!" data-label="Elegir">
               <label className="flex h-12 w-12 cursor-pointer items-center justify-center">
                 <input
                   type="checkbox"
@@ -185,7 +185,7 @@ export function ListaPedidos({
               <tr
                 key={o.id}
                 className={cn(
-                  "cursor-pointer hover:bg-[var(--surface-sunken)]",
+                  "cursor-pointer",
                   elegido && "bg-[var(--accent-soft)]",
                 )}
                 onClick={() => onSelectOrder(o)}
@@ -199,7 +199,7 @@ export function ListaPedidos({
                 }}
                 aria-label={`Ver pedido de ${o.customer.name}`}
               >
-                <td className="w-12 px-0 py-0!" onClick={(e) => e.stopPropagation()}>
+                <td className="w-12 py-0!" onClick={(e) => e.stopPropagation()}>
                   <label className="flex h-12 w-12 cursor-pointer items-center justify-center">
                     <input
                       type="checkbox"

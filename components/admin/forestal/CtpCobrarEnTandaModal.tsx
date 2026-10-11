@@ -47,6 +47,7 @@ import CtpCobroAserrio from "./CtpCobroAserrio";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import { UNIT_LABELS, type CtpEntry } from "./ctp-section-shared";
 import { formatCurrency } from "@/lib/format";
+import { DataTable } from "@buleje/design-system";
 
 interface PaqueteGuardado {
   codigo: string;
@@ -489,17 +490,17 @@ export default function CtpCobrarEnTandaModal({
               Vista previa por corrida
             </p>
             <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-              <table className="w-full text-sm">
-                <thead className="bg-[var(--surface-sunken)]">
+              <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
+                <thead>
                   <tr>
-                    <th className="px-3 py-2 text-left font-bold text-[var(--text-primary)]">Corrida</th>
-                    <th className="px-3 py-2 text-left font-bold text-[var(--text-primary)]">Especie</th>
-                    <th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Cantidad</th>
+                    <th>Corrida</th>
+                    <th>Especie</th>
+                    <th className="text-right">Cantidad</th>
                     {/* Lo que YA tiene hoy — para no reasignar a ciegas una corrida
                         que otra persona ya está pagando (MEDIO, revisión 2026-09-14). */}
-                    <th className="px-3 py-2 text-left font-bold text-[var(--text-primary)]">Dueño actual</th>
-                    <th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Importe actual</th>
-                    <th className="px-3 py-2 text-right font-bold text-[var(--text-primary)]">Importe nuevo</th>
+                    <th>Dueño actual</th>
+                    <th className="text-right">Importe actual</th>
+                    <th className="text-right">Importe nuevo</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -508,19 +509,19 @@ export default function CtpCobrarEnTandaModal({
                     const sinPaquetes = fallaronPaquetes.has(c.id);
                     const sinPt = sinPtIds.has(c.id);
                     return (
-                      <tr key={c.id} className="border-t border-[var(--rule-soft)]">
-                        <td className="px-3 py-2 font-mono text-xs text-[var(--text-tertiary)]">N° {c.lineNo}</td>
-                        <td className="px-3 py-2 text-[var(--text-secondary)]">{c.speciesCommon ?? "—"}</td>
-                        <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                      <tr key={c.id}>
+                        <td className="font-mono text-[var(--text-tertiary)]">N° {c.lineNo}</td>
+                        <td className="text-[var(--text-secondary)]">{c.speciesCommon ?? "—"}</td>
+                        <td className="text-right font-mono tabular-nums">
                           {Number(c.quantity ?? 0).toFixed(3)} {c.unit ? (UNIT_LABELS[c.unit] ?? c.unit) : ""}
                         </td>
-                        <td className="px-3 py-2 text-[var(--text-secondary)]">
+                        <td className="text-[var(--text-secondary)]">
                           {c.duenoParteId ? (c.titularNombre?.trim() || "Con dueño") : "Madera del centro"}
                         </td>
-                        <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                        <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                           {c.duenoParteId ? `${formatCurrency(Number(c.aserrioImporte ?? 0))}` : "—"}
                         </td>
-                        <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                        <td className="text-right font-mono font-bold tabular-nums">
                           {sinPt ? (
                             <span className="font-sans text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                               No se puede cobrar: no está en m³
@@ -544,14 +545,14 @@ export default function CtpCobrarEnTandaModal({
                 {valor.duenoParteId && (
                   <tfoot>
                     <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold text-[var(--text-primary)]">
-                      <td className="px-3 py-2" colSpan={5}>
+                      <td colSpan={5}>
                         Total{fallaronPaquetes.size > 0 || sinPtIds.size > 0 ? " (sin las que no se pueden cotizar acá)" : ""}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums">{calculando ? "—" : formatCurrency(totalPreview)}</td>
+                      <td className="text-right font-mono tabular-nums">{calculando ? "—" : formatCurrency(totalPreview)}</td>
                     </tr>
                   </tfoot>
                 )}
-              </table>
+              </DataTable>
             </div>
             {fallaronPaquetes.size > 0 && (
               <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">

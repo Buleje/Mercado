@@ -16,7 +16,7 @@ const TH = "px-3 py-3 text-sm font-semibold text-[var(--text-secondary)]";
 function Encabezado({ clave, rotulo, v, className }: { clave: ClaveProducto; rotulo: string; v: ProductosVista; className?: string }) {
   return (
     <th className={cn(TH, className)} data-label={rotulo}>
-      <button type="button" onClick={() => v.ordenarPor(clave)} className="inline-flex min-h-12 items-center gap-1 uppercase transition-colors hover:text-[var(--text-primary)]">
+      <button type="button" onClick={() => v.ordenarPor(clave)} className="inline-flex min-h-12 items-center gap-1 transition-colors hover:text-[var(--text-primary)]">
         {rotulo} <SortIcon k={clave} currentKey={v.sortKey} currentDir={v.sortDir} />
       </button>
     </th>
@@ -105,10 +105,10 @@ export function ProductosTabla({
   return (
     <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="max-h-[calc(100vh-20rem)] overflow-x-auto">
-        <DataTable className="w-full text-sm">
-          <thead className="sticky top-0 z-10 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+        <DataTable className="w-full">
+          <thead className="sticky top-0 z-10">
             <tr>
-              <th className="w-12 px-3 py-3" data-label="Elegir">
+              <th className="w-12" data-label="Elegir">
                 <input
                   type="checkbox"
                   checked={v.todos}
@@ -134,8 +134,8 @@ export function ProductosTabla({
               const tono = p.stock <= 0 ? "error" : p.stock <= STOCK_CRITICO ? "warning" : "success";
               const ocupado = pricingId === p.id;
               return (
-                <tr key={p.id} className={cn("transition-colors", elegido ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]/50")}>
-                  <td className="px-3 py-2">
+                <tr key={p.id} className={cn("", elegido ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]/50")}>
+                  <td>
                     <input
                       type="checkbox"
                       checked={elegido}
@@ -144,7 +144,7 @@ export function ProductosTabla({
                       className="h-5 w-5 cursor-pointer rounded border border-[var(--rule-base)] accent-[var(--accent)]"
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td>
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-[var(--surface-sunken)]">
                         {p.image ? (
@@ -165,14 +165,14 @@ export function ProductosTabla({
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="text-right">
                     <div className="flex flex-col items-end">
                       <PriceCell value={p.retailPrice} busy={ocupado} onStartEdit={() => precio.empezar(p.id, "retailPrice", p.retailPrice)} {...precio.celda(p.id, "retailPrice")} alwaysBold />
                       <CompetitionChip myPrice={p.retailPrice} avg={p.competitionAvgPrice ?? null} count={p.competitionStoreCount ?? 0} />
                     </div>
                   </td>
                   {/* El precio que se cobra sale de `precioVigente()`: una oferta vencida NO se aplica. */}
-                  <td className="px-3 py-2 text-right">
+                  <td className="text-right">
                     <OfertaCell
                       lista={p.retailPrice}
                       oferta={p.discountPrice ?? null}
@@ -183,10 +183,10 @@ export function ProductosTabla({
                       {...precio.celda(p.id, "discountPrice")}
                     />
                   </td>
-                  <td className="hidden px-3 py-2 text-right lg:table-cell">
+                  <td className="hidden text-right lg:table-cell">
                     <PriceCell value={p.wholesalePrice} busy={ocupado} onStartEdit={() => precio.empezar(p.id, "wholesalePrice", p.wholesalePrice)} {...precio.celda(p.id, "wholesalePrice")} />
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="text-right">
                     <span
                       title={p.stock <= 0 && p.isActive ? "Sin stock: los clientes no pueden comprarlo" : undefined}
                       className={cn(
@@ -199,7 +199,7 @@ export function ProductosTabla({
                       {p.stock}
                     </span>
                   </td>
-                  <td className="px-2 py-1.5">
+                  <td>
                     <AccionesProducto p={p} publicando={toggling === p.id} slug={slug} onPublicar={() => onPublicar(p)} onDestacar={() => onDestacar(p)}
                       onPrecio={(campo) => precio.empezar(p.id, campo, campo === "retailPrice" ? p.retailPrice : campo === "discountPrice" ? (p.discountPrice ?? null) : p.wholesalePrice)}
                       onQuitarOferta={() => onQuitarOferta(p.id)}

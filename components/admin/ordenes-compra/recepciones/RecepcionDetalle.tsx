@@ -73,7 +73,7 @@ export default function RecepcionDetalle({
             <tbody>
               {detail.items.map((it, i) => (
                 <tr key={i} className={cn(it.condition !== "ok" && "bg-[var(--data-error-50)]/30 dark:bg-[var(--data-error-500)]/10")}>
-                  <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                  <td className="font-bold">
                     <EnlacePanel cosa="producto" id={it.productId != null ? String(it.productId) : null} apariencia="heredada">{it.product}</EnlacePanel>
                   </td>
                   <td className="text-[var(--text-secondary)] text-center">{it.expectedQty}</td>
@@ -90,7 +90,7 @@ export default function RecepcionDetalle({
                       {COND_MAP[it.condition].label}
                     </span>
                   </td>
-                  <td className="text-sm text-[var(--text-tertiary)]">
+                  <td className="text-[var(--text-tertiary)]">
                     {it.notes || (it.expiryDate ? null : "—")}
                     {it.expiryDate && (
                       <span className="block font-semibold text-[var(--text-secondary)]">

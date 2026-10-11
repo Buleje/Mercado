@@ -20,11 +20,11 @@ export const n4 = (n: number) =>
 
 /** Un casillero sin dato se muestra vacío, nunca "0": el 0 afirma que no hubo. */
 export function Celda({ v, negativo }: { v: number | null; negativo?: boolean }) {
-  if (v == null) return <td className="px-3 py-2 text-center text-[var(--text-tertiary)]">—</td>;
+  if (v == null) return <td className="text-center text-[var(--text-tertiary)]">—</td>;
   return (
     <td
       className={cn(
-        "px-3 py-2 text-right font-mono tabular-nums",
+        "text-right font-mono tabular-nums",
         negativo && v < 0 && "font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
       )}
     >
@@ -34,15 +34,15 @@ export function Celda({ v, negativo }: { v: number | null; negativo?: boolean })
 }
 
 export function Entero({ v }: { v: number | null }) {
-  if (v == null) return <td className="px-3 py-2 text-center text-[var(--text-tertiary)]">—</td>;
-  return <td className="px-3 py-2 text-right font-mono tabular-nums">{formatNumber(v)}</td>;
+  if (v == null) return <td className="text-center text-[var(--text-tertiary)]">—</td>;
+  return <td className="text-right font-mono tabular-nums">{formatNumber(v)}</td>;
 }
 
 /** Texto de un casillero: vacío se dibuja como raya, no como celda en blanco. */
 export function Texto({ v, className }: { v: string | null | undefined; className?: string }) {
   const limpio = (v ?? "").trim();
-  if (!limpio) return <td className="px-3 py-2 text-center text-[var(--text-tertiary)]">—</td>;
-  return <td className={cn("px-3 py-2 text-[var(--text-secondary)]", className)}>{limpio}</td>;
+  if (!limpio) return <td className="text-center text-[var(--text-tertiary)]">—</td>;
+  return <td className={cn("text-[var(--text-secondary)]", className)}>{limpio}</td>;
 }
 
 /**
@@ -64,7 +64,7 @@ export function Th({
     <th
       scope={scope}
       className={cn(
-        "whitespace-nowrap px-3 py-2.5 text-left text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-secondary)]",
+        "whitespace-nowrap text-left font-bold uppercase tracking-wider text-[var(--text-secondary)]",
         ancho,
       )}
     >
@@ -135,7 +135,7 @@ export function Cuadro({
               `scrollable-region-focusable`). */}
           <DataTable
             aria-labelledby={idTitulo}
-            className="w-full text-sm hoja-grilla"
+            className="w-full hoja-grilla"
             wrapperProps={{ tabIndex: 0, role: "region", "aria-labelledby": idTitulo }}
             wrapperClassName="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
           >
@@ -156,7 +156,7 @@ export function Cuadro({
 export function SinDatos({ cols, children }: { cols: number; children: React.ReactNode }) {
   return (
     <tr>
-      <td colSpan={cols} className="px-3 py-8 text-center text-sm text-[var(--text-secondary)]">
+      <td colSpan={cols} className="text-center text-[var(--text-secondary)]">
         {children}
       </td>
     </tr>

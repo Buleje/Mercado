@@ -37,7 +37,7 @@ import {
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { claveTenant } from "@/hooks/use-anexo04-datos";
 import Anexo04GtfPropuesta from "./Anexo04GtfPropuesta";
-import { BlockTitle } from "@buleje/design-system";
+import { BlockTitle, DataTable } from "@buleje/design-system";
 
 /**
  * Junta los bloques de una MISMA especie·tipo aunque el lote haya pasado de
@@ -550,29 +550,29 @@ export default function Anexo04Campos({
           </p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full text-sm">
+            <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
               <caption className="sr-only">Resumen del anexo por especie y tipo</caption>
-              <thead className="bg-[var(--surface-sunken)]">
+              <thead>
                 <tr>
-                  <th scope="col" className={`${LABEL} px-2 py-1.5 text-left`}>Especie · tipo</th>
+                  <th scope="col" className={`${LABEL}`}>Especie · tipo</th>
                   {/* Piezas · m³ · PT, la convención del módulo. */}
-                  <th scope="col" className={`${LABEL} px-2 py-1.5 text-right`}>Pzas</th>
-                  <th scope="col" className={`${LABEL} px-2 py-1.5 text-right`}>m³</th>
-                  <th scope="col" className={`${LABEL} px-2 py-1.5 text-right`}>PT</th>
-                  <th scope="col" className={`${LABEL} px-2 py-1.5 text-right`}>%</th>
+                  <th scope="col" className={`${LABEL} text-right`}>Pzas</th>
+                  <th scope="col" className={`${LABEL} text-right`}>m³</th>
+                  <th scope="col" className={`${LABEL} text-right`}>PT</th>
+                  <th scope="col" className={`${LABEL} text-right`}>%</th>
                 </tr>
               </thead>
               <tbody>
                 {resumen.map((r) => (
-                  <tr key={`${r.especie}||${r.tipo}`} className="border-t border-[var(--rule-soft)]">
-                    <td className="px-2 py-1.5">
+                  <tr key={`${r.especie}||${r.tipo}`}>
+                    <td>
                       <span className="font-bold text-[var(--text-primary)]">{r.tipo}</span>
                       <span className="block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{r.especie}</span>
                     </td>
-                    <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.piezas}</td>
-                    <td className="px-2 py-1.5 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtAnexo(r.m3)}</td>
-                    <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtAnexo(r.pt, 0)}</td>
-                    <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.piezas}</td>
+                    <td className="text-right font-mono font-bold tabular-nums">{fmtAnexo(r.m3)}</td>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtAnexo(r.pt, 0)}</td>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                       {anexo.totalM3 > 0 ? Math.round((r.m3 / anexo.totalM3) * 1000) / 10 : "—"}
                     </td>
                   </tr>
@@ -580,16 +580,16 @@ export default function Anexo04Campos({
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                  <th scope="row" className="px-2 py-1.5 text-left">
+                  <th scope="row" className="text-left">
                     Todo el anexo · {resumen.length} {resumen.length === 1 ? "línea" : "líneas"}
                   </th>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">{anexo.totalPiezas}</td>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">{fmtAnexo(anexo.totalM3)}</td>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">{fmtAnexo(anexo.totalPt, 0)}</td>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">100</td>
+                  <td className="text-right font-mono tabular-nums">{anexo.totalPiezas}</td>
+                  <td className="text-right font-mono tabular-nums">{fmtAnexo(anexo.totalM3)}</td>
+                  <td className="text-right font-mono tabular-nums">{fmtAnexo(anexo.totalPt, 0)}</td>
+                  <td className="text-right font-mono tabular-nums">100</td>
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
           </div>
         )
       )}

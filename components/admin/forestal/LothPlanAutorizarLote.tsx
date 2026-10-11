@@ -29,6 +29,7 @@ import {
   type FilaAutorizar,
 } from "@/lib/forestal/loth-autorizar-lote";
 import type { Species } from "./loth-plan-shared";
+import { DataTable } from "@buleje/design-system";
 
 const CASILLA =
   "h-10 w-24 rounded-lg border bg-[var(--surface-raised)] px-2 text-right text-sm tabular-nums text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30 sm:w-28";
@@ -147,10 +148,10 @@ export default function LothPlanAutorizarLote({ open, onClose, planId, censo, sp
           <p className="py-4 text-sm text-[var(--text-secondary)]">El plan no tiene censo ni especies: agrega una con «Agregar».</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
               <thead>
-                <tr className="border-b border-[var(--rule-base)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  <th scope="col" className="px-2 py-2 font-bold">
+                <tr>
+                  <th scope="col">
                     <span className="inline-flex items-center gap-1">
                       Especie
                       <InfoTip
@@ -161,8 +162,8 @@ export default function LothPlanAutorizarLote({ open, onClose, planId, censo, sp
                       />
                     </span>
                   </th>
-                  <th scope="col" className="px-2 py-2 text-right font-bold">m³ autoriz.</th>
-                  <th scope="col" className="px-2 py-2 text-right font-bold">N° árb.</th>
+                  <th scope="col" className="text-right">m³ autoriz.</th>
+                  <th scope="col" className="text-right">N° árb.</th>
                 </tr>
               </thead>
               <tbody>
@@ -174,9 +175,9 @@ export default function LothPlanAutorizarLote({ open, onClose, planId, censo, sp
                       key={f.clave}
                       data-autorizar-fila={f.clave}
                       data-pedida={pedida || undefined}
-                      className={`border-b border-[var(--rule-soft)] last:border-0 ${pedida ? "bg-[var(--accent-soft)]" : ""}`}
+                      className={`last:border-0 ${pedida ? "bg-[var(--accent-soft)]" : ""}`}
                     >
-                      <th scope="row" className="px-2 py-2 text-left align-top font-normal">
+                      <th scope="row" className="text-left align-top font-normal">
                         <span className="font-semibold text-[var(--text-primary)]">{f.especie}</span>
                         {f.id && <span className="ml-1.5 text-xs text-[var(--data-success-ink)]">ya cargada</span>}
                         <span className="block text-xs tabular-nums text-[var(--text-tertiary)]">
@@ -186,7 +187,7 @@ export default function LothPlanAutorizarLote({ open, onClose, planId, censo, sp
                         </span>
                         {err && <span className="block text-xs font-semibold text-[var(--data-error-ink)]" role="alert">{err}</span>}
                       </th>
-                      <td className="px-2 py-2 text-right align-top">
+                      <td className="text-right align-top">
                         <input
                           ref={pedida ? foco : undefined}
                           inputMode="decimal"
@@ -198,7 +199,7 @@ export default function LothPlanAutorizarLote({ open, onClose, planId, censo, sp
                           className={`${CASILLA} ${err ? "border-[var(--data-error-500)]" : "border-[var(--rule-base)]"}`}
                         />
                       </td>
-                      <td className="px-2 py-2 text-right align-top">
+                      <td className="text-right align-top">
                         <input
                           inputMode="numeric"
                           value={f.arboles}
@@ -212,7 +213,7 @@ export default function LothPlanAutorizarLote({ open, onClose, planId, censo, sp
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         )}
       </div>

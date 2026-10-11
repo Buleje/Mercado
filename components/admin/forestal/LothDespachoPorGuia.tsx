@@ -78,8 +78,8 @@ export default function LothDespachoPorGuia({
           {guiasError} Las filas salen del libro; faltan destino y estado.
         </p>
       )}
-      <DataTable wrapperClassName="rounded-2xl bg-[var(--surface-raised)]" className="w-full text-sm">
-        <thead className="bg-[var(--surface-sunken)]">
+      <DataTable wrapperClassName="rounded-2xl bg-[var(--surface-raised)]" className="w-full">
+        <thead>
           <tr>
             <th className={`${TH} w-10`} aria-label="Desplegar" />
             <th className={TH}>N° GTF</th>
@@ -117,7 +117,7 @@ export default function LothDespachoPorGuia({
               )}
             </td>
             <td className={`${TD} ${DER} font-bold`}>{trozas}</td>
-            <td className={`${TD} ${DER} text-base font-black`}>{fmtM3(m3)}</td>
+            <td className={`${TD} ${DER} font-black`}>{fmtM3(m3)}</td>
             <td className={TD} colSpan={3} />
           </tr>
         </tfoot>
@@ -148,7 +148,7 @@ function FilaGuia({
   return (
     <>
       <tr
-        className={`cursor-pointer border-t border-[var(--rule-soft)] hover:bg-[var(--surface-canvas)]/40 ${anulada ? "opacity-60" : ""}`}
+        className={`cursor-pointer ${anulada ? "opacity-60" : ""}`}
         onClick={onAlternar}
       >
         <td className={TD}>

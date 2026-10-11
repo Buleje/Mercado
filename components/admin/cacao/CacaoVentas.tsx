@@ -308,8 +308,8 @@ export default function CacaoVentas() {
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <DataTable className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-left">
+        <DataTable className="w-full">
+          <thead>
             <tr>
               <Th>Venta</Th>
               <Th>Fecha</Th>
@@ -329,7 +329,7 @@ export default function CacaoVentas() {
                 v.montoCobrado == null ? null : Number(v.montoCobrado),
               );
               return (
-                <tr key={v.id} className="border-t border-[var(--rule-soft)]">
+                <tr key={v.id}>
                   <Td>
                     <span className="font-mono text-xs font-bold text-[var(--text-primary)]">
                       {v.ventaCode}
@@ -556,13 +556,13 @@ export default function CacaoVentas() {
 
 function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <th className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>
+    <th className={`font-bold ${className ?? ""}`}>
       {children}
     </th>
   );
 }
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
+  return <td className={`${className ?? ""}`}>{children}</td>;
 }
 function PagoBadge({ estado, saldo }: { estado: string; saldo: number }) {
   const cls =

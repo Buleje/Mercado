@@ -257,9 +257,9 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                   <BlockTitle className="mb-3 flex items-center gap-2">
                     <Banknote className="h-4 w-4 text-[var(--data-error-500)]" /> Fiados pendientes
                   </BlockTitle>
-                  <DataTable className="text-xs">
+                  <DataTable>
                     <thead>
-                      <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                      <tr>
                         <th>Descripción</th>
                         <th className="text-right">Total</th>
                         <th className="text-right">Saldo</th>
@@ -270,7 +270,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                     <tbody>
                       {data.fiados.map((f) => (
                         <tr key={f.id}>
-                          <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{f.descripcion || "Sin descripción"}</td>
+                          <td>{f.descripcion || "Sin descripción"}</td>
                           <td className="text-right text-[var(--text-secondary)] dark:text-muted">{fmt(f.total)}</td>
                           <td className="text-right font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(f.saldo)}</td>
                           <td className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(f.fechaCreacion)}</td>
@@ -280,7 +280,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                     </tbody>
                     <tfoot>
                       <tr className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] font-bold">
-                        <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total</td>
+                        <td>Total</td>
                         <td className="text-right text-[var(--text-secondary)] dark:text-muted">{fmt(data.fiados.reduce((s, f) => s + f.total, 0))}</td>
                         <td className="text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(data.resumen.totalFiados)}</td>
                         <td colSpan={2} />

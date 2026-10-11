@@ -102,7 +102,7 @@ export default function CtpApartadosSerfor({ period }: { period: CtpPeriod }) {
         titulo="Apartado 1 · Fuente de origen o procedencia de la madera"
         subtitulo="7 casilleros. El N° de esta tabla es el que la Sección 1 declara en su casillero (5): sin este registro, ese número no referencia nada."
       >
-        <thead className="border-b-2 border-[var(--rule-base)]">
+        <thead>
           <tr>
             <Th ancho="w-14">(1) N°</Th>
             <Th>(2) Fuente</Th>
@@ -123,10 +123,10 @@ export default function CtpApartadosSerfor({ period }: { period: CtpPeriod }) {
             </SinDatos>
           ) : (
             fuentes.map((f) => (
-              <tr key={f.nro} className="hover:bg-[var(--surface-sunken)]">
-                <td className="px-3 py-2 font-mono font-bold tabular-nums text-[var(--text-primary)]">{f.nro}</td>
+              <tr key={f.nro}>
+                <td className="font-mono font-bold tabular-nums">{f.nro}</td>
                 <Texto v={f.fuente} />
-                <td className="px-3 py-2 font-semibold text-[var(--text-primary)]">{f.titular || "—"}</td>
+                <td className="font-semibold">{f.titular || "—"}</td>
                 <Texto v={f.codigoTitulo} className="font-mono" />
                 <Texto v={f.resolucion} className="font-mono" />
                 <Texto v={f.ruc} className="font-mono" />
@@ -143,7 +143,7 @@ export default function CtpApartadosSerfor({ period }: { period: CtpPeriod }) {
         titulo="Apartado 2 · Retrozado"
         subtitulo="11 casilleros. El seccionado de trozas dentro de la planta: de qué troza salió cada pedazo, con qué volumen entró y con cuál quedó."
       >
-        <thead className="border-b-2 border-[var(--rule-base)]">
+        <thead>
           <tr>
             <Th ancho="w-14">(1) N°</Th>
             <Th>(2) Fecha</Th>
@@ -166,19 +166,19 @@ export default function CtpApartadosSerfor({ period }: { period: CtpPeriod }) {
             </SinDatos>
           ) : (
             retrozos.map((r) => (
-              <tr key={`${r.nro}-${r.codigoRetrozado}`} className="hover:bg-[var(--surface-sunken)]">
-                <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{r.nro}</td>
+              <tr key={`${r.nro}-${r.codigoRetrozado}`}>
+                <td className="font-mono tabular-nums text-[var(--text-tertiary)]">{r.nro}</td>
                 <Texto v={fmtFecha(r.fecha)} className="whitespace-nowrap" />
                 <Texto v={r.codigoOrigen} className="font-mono" />
                 <Celda v={r.volumenInicial} />
-                <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{r.codigoRetrozado}</td>
+                <td className="font-mono font-bold">{r.codigoRetrozado}</td>
                 <Texto v={r.nombreComun} />
                 <Texto v={r.nombreCientifico} className="italic" />
                 <Entero v={r.diametroMayorCm} />
                 <Entero v={r.diametroMenorCm} />
                 <Celda v={r.longitudM} />
                 <Celda v={r.volumenFinal} />
-                <td className="px-3 py-2 text-sm text-[var(--text-secondary)]">
+                <td className="text-[var(--text-secondary)]">
                   {r.descarte && (
                     <span className="mr-1 rounded-md bg-[var(--data-warning-100)] px-1.5 py-0.5 font-bold text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
                       DESCARTE

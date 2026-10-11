@@ -24,10 +24,9 @@ import {
   totalDePrecios,
   type PrecioDeEspecie,
 } from "./hooks/declarar-produccion-pantalla";
+import { DataTable } from "@buleje/design-system";
 
-const TH =
-  "px-3 py-2.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const NUM = "px-3 py-2 text-right font-mono tabular-nums";
+const NUM = "text-right font-mono tabular-nums";
 /*
  * En celular la tabla se desplaza de costado, y al tocar un precio el
  * navegador la corre hasta el campo: la columna de la especie se iba de la
@@ -110,31 +109,31 @@ export default function CtpResumenEspecieTipo({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-      <table className="w-full min-w-[38rem] text-sm">
+      <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full min-w-[38rem]">
         <caption className="sr-only">
           Resumen de lo que se declara, por especie y tipo, con su precio
         </caption>
-        <thead className="bg-[var(--surface-sunken)]">
+        <thead>
           <tr>
-            <th scope="col" className={`${TH} ${PEGADA} bg-[var(--surface-sunken)] text-left`}>
+            <th scope="col" className={`${PEGADA}`}>
               Especie · tipo
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               PT
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               m³
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Piezas
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               {servicio ? TITULO_PRECIO[servicio] : "Precio"}
               <span className="block font-normal normal-case tracking-normal">
                 {servicio ? "S/ por pie tablar" : "elige el servicio"}
               </span>
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               {servicio ? TITULO_IMPORTE[servicio] : "Importe"}
             </th>
           </tr>
@@ -145,10 +144,10 @@ export default function CtpResumenEspecieTipo({
             const linea = clave ? porClave.get(clave) : undefined;
             return (
               <Fragment key={clave || "sin-especie"}>
-                <tr className="border-t border-[var(--rule-base)] bg-[var(--surface-sunken)] align-top">
+                <tr className="bg-[var(--surface-sunken)] align-top">
                   <th
                     scope="row"
-                    className={`${PEGADA} bg-[var(--surface-sunken)] px-3 py-2.5 text-left font-bold text-[var(--text-primary)]`}
+                    className={`${PEGADA} bg-[var(--surface-sunken)] text-left font-bold`}
                   >
                     {e.especie || (
                       <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
@@ -156,12 +155,12 @@ export default function CtpResumenEspecieTipo({
                       </span>
                     )}
                   </th>
-                  <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                  <td className={`${NUM} font-bold`}>
                     {fmtPtExacto(e.pt)}
                   </td>
                   <td className={`${NUM} text-[var(--text-secondary)]`}>{fmtM3(e.m3)}</td>
                   <td className={`${NUM} text-[var(--text-secondary)]`}>{fmtPiezas(e.piezas)}</td>
-                  <td className="px-3 py-1.5 text-right">
+                  <td className="text-right">
                     {linea ? (
                       <div className="flex flex-col items-end gap-0.5">
                         <span className="inline-flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
@@ -202,7 +201,7 @@ export default function CtpResumenEspecieTipo({
                       <span className="text-xs text-[var(--text-tertiary)]">—</span>
                     )}
                   </td>
-                  <td className={`${NUM} py-2.5`}>
+                  <td className={`${NUM}`}>
                     {linea?.importe != null ? (
                       <>
                         <span className="font-bold text-[var(--text-primary)]">
@@ -224,10 +223,10 @@ export default function CtpResumenEspecieTipo({
                   </td>
                 </tr>
                 {e.filas.map((f) => (
-                  <tr key={f.tipo} className="border-t border-[var(--rule-soft)]">
+                  <tr key={f.tipo}>
                     <th
                       scope="row"
-                      className={`${PEGADA} bg-[var(--surface-raised)] py-2 pl-7 pr-3 text-left font-normal text-[var(--text-secondary)]`}
+                      className={`${PEGADA} bg-[var(--surface-raised)] pl-7 pr-3 text-left font-normal text-[var(--text-secondary)]`}
                     >
                       {f.tipo}
                     </th>
@@ -245,7 +244,7 @@ export default function CtpResumenEspecieTipo({
           <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--text-primary)]">
             <th
               scope="row"
-              className={`${PEGADA} max-sm:bg-[var(--surface-raised)] px-3 py-2.5 text-left`}
+              className={`${PEGADA} max-sm:bg-[var(--surface-raised)] text-left`}
             >
               Total · {conNombre} {conNombre === 1 ? "especie" : "especies"}
             </th>
@@ -270,7 +269,7 @@ export default function CtpResumenEspecieTipo({
             </td>
           </tr>
         </tfoot>
-      </table>
+      </DataTable>
     </div>
   );
 }

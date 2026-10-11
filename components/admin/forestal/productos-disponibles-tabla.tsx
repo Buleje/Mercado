@@ -194,7 +194,7 @@ export function TablaPaquetesDisponibles({ e, a }: { e: EstadoProductosDisponibl
         <caption className="sr-only">Productos disponibles, paquete por paquete</caption>
         <TheadCtp ref={ordenCols.refCabecera}>
           <tr>
-            <th aria-label="Elegir" className="w-10 px-2! py-2">
+            <th aria-label="Elegir" className="w-10 px-2!">
               <input
                 type="checkbox"
                 aria-label="Elegir todas las filas visibles"
@@ -204,7 +204,7 @@ export function TablaPaquetesDisponibles({ e, a }: { e: EstadoProductosDisponibl
               />
             </th>
             <CabeceraPaquetes e={e} orden={orden} onOrdenar={onOrdenar} cols={cols} ordenCols={ordenCols.orden} />
-            <th className={`px-2! py-2 text-right font-bold ${ACCIONES_FIJAS} bg-[var(--surface-sunken)]`}>Acciones</th>
+            <th className={`px-2! text-right ${ACCIONES_FIJAS}`}>Acciones</th>
           </tr>
         </TheadCtp>
         <TbodyCtp>

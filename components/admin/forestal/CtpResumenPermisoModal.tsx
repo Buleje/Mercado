@@ -706,7 +706,7 @@ export default function CtpResumenPermisoModal({
                 <tbody>
                   {especies.map((e) => (
                     <tr key={e.especie}>
-                      <td className="font-bold text-[var(--text-primary)]">{e.especie}</td>
+                      <td className="font-bold">{e.especie}</td>
                       <td className="text-right font-mono tabular-nums">{fmtPiezas(e.piezas)}</td>
                       <td className="text-right font-mono tabular-nums">{fmtM3(e.volumenM3)}</td>
                       <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">

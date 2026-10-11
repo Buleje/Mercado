@@ -95,18 +95,18 @@ function TablaCuenta({
               </td>
               <td className={NUM}>{f.documentos > 0 ? f.documentos : "—"}</td>
               {mostrarM3 && <td className={NUM}>{f.m3 != null && f.m3 > 0 ? fmtM3(f.m3) : "—"}</td>}
-              <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{soles(f.monto)}</td>
+              <td className={`${NUM} font-bold`}>{soles(f.monto)}</td>
             </tr>
           ))}
         </tbody>
         <tfoot>
           <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
-            <td className={`${TD} font-bold uppercase tracking-wide text-[var(--text-primary)]`}>
+            <td className={`${TD} font-bold uppercase tracking-wide`}>
               {totalLabel}
             </td>
             <td className={NUM} />
             {mostrarM3 && <td className={NUM} />}
-            <td className={`${NUM} text-base font-extrabold text-[var(--text-primary)]`}>
+            <td className={`${NUM} font-extrabold`}>
               {soles(total)}
             </td>
           </tr>

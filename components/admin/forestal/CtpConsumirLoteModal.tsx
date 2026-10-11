@@ -352,19 +352,19 @@ export default function CtpConsumirLoteModal({
           <div className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Consumo por guía · lo que va a la Sección 2 del libro
           </div>
-          <DataTable className="w-full text-sm">
+          <DataTable className="w-full">
             <tbody className="divide-y divide-[var(--rule-soft)]">
               {porGuia.map((g) => {
                 const cupo = cupos.find((c) => c.woodEntryId === g.woodEntryId);
                 const pasado = cupo ? frenaElActa(cupo) : false;
                 return (
                   <tr key={g.woodEntryId} className={pasado ? "bg-[var(--data-error-500)]/8" : undefined}>
-                    <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber ?? "—"}</td>
-                    <td className="px-3 py-2 text-[var(--text-secondary)]">{g.especie ?? "—"}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="font-mono font-bold">{g.gtfNumber ?? "—"}</td>
+                    <td className="text-[var(--text-secondary)]">{g.especie ?? "—"}</td>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {g.piezas} pza
                     </td>
-                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums">
+                    <td className="text-right font-mono font-bold tabular-nums">
                       <span className={pasado ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]"}>
                         {fmtM3(g.volumenM3)} m³
                       </span>
@@ -381,7 +381,7 @@ export default function CtpConsumirLoteModal({
               })}
               {porGuia.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">
+                  <td colSpan={4} className="text-center text-[var(--text-tertiary)]">
                     Sacaste todas las piezas: no hay nada que consumir.
                   </td>
                 </tr>
@@ -420,14 +420,14 @@ export default function CtpConsumirLoteModal({
         <TablaCtp>
           <TheadCtp>
             <tr>
-              <th className="px-3 py-2 font-bold">Cód. planta</th>
-              <th className="px-3 py-2 font-bold">Codificación</th>
-              <th className="px-3 py-2 font-bold">Especie</th>
-              <th className="px-3 py-2 font-bold">Guía</th>
-              <th className="px-3 py-2 text-right font-bold">Volumen</th>
+              <th className="font-bold">Cód. planta</th>
+              <th className="font-bold">Codificación</th>
+              <th className="font-bold">Especie</th>
+              <th className="font-bold">Guía</th>
+              <th className="text-right font-bold">Volumen</th>
               {/* El `sr-only` va en el texto, no en la celda: sobre un `th` lo
                   saca del flujo y la columna se desarma. */}
-              <th className="px-3 py-2"><span className="sr-only">Sacar del acta</span></th>
+              <th><span className="sr-only">Sacar del acta</span></th>
             </tr>
           </TheadCtp>
           <TbodyCtp>
@@ -439,15 +439,15 @@ export default function CtpConsumirLoteModal({
             {visibles.map((t) => {
               const fija = yaEnElLote.has(t.id);
               return (
-                <tr key={t.id} className="hover:bg-[var(--surface-sunken)]">
-                  <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{t.codigoPlanta ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{t.codificacion ?? "—"}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono text-[var(--text-tertiary)]">{t.gtfNumber ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                <tr key={t.id}>
+                  <td className="font-mono font-bold">{t.codigoPlanta ?? "—"}</td>
+                  <td className="font-mono text-[var(--text-secondary)]">{t.codificacion ?? "—"}</td>
+                  <td className="text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
+                  <td className="font-mono text-[var(--text-tertiary)]">{t.gtfNumber ?? "—"}</td>
+                  <td className="text-right font-mono tabular-nums">
                     {t.volumenM3 != null ? fmtM3(Number(t.volumenM3)) : "—"}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="text-right">
                     {fija ? (
                       /* Ya está apartada en el lote: el servidor la consume igual.
                          Un botón que no la sacara de verdad sería una mentira. */

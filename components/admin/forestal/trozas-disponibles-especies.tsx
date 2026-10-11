@@ -94,7 +94,7 @@ export function TablaEspecies({
       },
     };
   }, [filas]);
-  const celda = "px-3 py-2";
+  const celda = "";
 
   return (
     <TablaCtp>
@@ -171,7 +171,7 @@ export function TablaEspecies({
                 )}
               </td>
               <td
-                className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}
+                className={`${celda} text-right font-bold tabular-nums`}
               >
                 {nf(f.trozas)}
                 {f.enLote > 0 && (
@@ -180,7 +180,7 @@ export function TablaEspecies({
                   </span>
                 )}
               </td>
-              <td className={`${celda} text-right tabular-nums text-[var(--text-primary)]`}>
+              <td className={`${celda} text-right tabular-nums`}>
                 {fmtM3(f.m3)}
               </td>
               <td className={`${celda} text-right tabular-nums text-[var(--text-secondary)]`}>
@@ -209,13 +209,13 @@ export function TablaEspecies({
       {filas.length > 1 && (
         <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
           <tr>
-            <th scope="row" className={`${celda} text-left font-bold text-[var(--text-primary)]`}>
+            <th scope="row" className={`${celda} text-left font-bold`}>
               Total · {nf(filas.length)} especies
             </th>
-            <td className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}>
+            <td className={`${celda} text-right font-bold tabular-nums`}>
               {nf(total.trozas)}
             </td>
-            <td className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}>
+            <td className={`${celda} text-right font-bold tabular-nums`}>
               {fmtM3(total.m3)}
             </td>
             <td className={`${celda} text-right tabular-nums text-[var(--text-secondary)]`}>

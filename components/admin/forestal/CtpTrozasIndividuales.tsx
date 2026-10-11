@@ -30,8 +30,8 @@ import { formatDateNumeric } from "@/lib/format";
 export type { TrozaIndividual };
 
 const n = (v: number | null | undefined, dec = 2) => (v == null ? "—" : v.toFixed(dec));
-const TH = "px-3 py-2.5 text-left align-bottom text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-3 py-2.5 align-middle";
+const TH = "align-bottom";
+const TD = "align-middle";
 const NUM = "text-right font-mono tabular-nums";
 
 
@@ -166,9 +166,9 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
       {modalIds && <CtpEtiquetasTrozasModal ids={modalIds} onClose={cerrar} onListo={alImprimir} />}
 
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <DataTable className="w-full min-w-[1000px] text-sm">
+        <DataTable className="w-full min-w-[1000px]">
           <caption className="sr-only">Trozas del período, una fila por pieza</caption>
-          <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
+          <thead className="sticky top-0 z-10">
             <tr>
               <th scope="col" className={`${TH} w-8`}>
                 <input
@@ -198,7 +198,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
             {filtradas.map((t, i) => {
               const e = estado(t);
               return (
-                <tr key={t.id} className={`border-t border-[var(--rule-soft)] transition-colors even:bg-[var(--surface-canvas)]/50 hover:bg-primary/5 ${seleccion.has(t.id) ? "bg-primary/5" : ""}`}>
+                <tr key={t.id} className={`even:bg-[var(--surface-canvas)]/50 hover:bg-primary/5 ${seleccion.has(t.id) ? "bg-primary/5" : ""}`}>
                   <td className={TD}>
                     <input
                       type="checkbox"
@@ -210,7 +210,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
                     />
                   </td>
                   <td className={`${TD} ${NUM} text-[var(--text-tertiary)]`}>{i + 1}</td>
-                  <td className={`${TD} font-mono font-bold text-[var(--text-primary)]`}>
+                  <td className={`${TD} font-mono font-bold`}>
                     {t.codificacion ?? "—"}
                     {t.parcela && <span className="ml-1.5 text-xs font-normal text-[var(--text-tertiary)]">parcela {t.parcela}</span>}
                     {t.trozaOrigenId && <span className="ml-1.5 text-xs font-normal text-[var(--text-tertiary)]">retrozo</span>}
@@ -229,15 +229,15 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
                   <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{n(t.d2Cm, 0)}</td>
                   <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{n(t.largoM, 2)}</td>
                   <td className={`${TD} ${NUM} text-[var(--text-tertiary)]`}>{n(t.diametroCm, 1)}</td>
-                  <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{n(t.volumenM3, 4)}</td>
-                  <td className={`${TD} font-mono text-xs text-[var(--text-secondary)]`}>
+                  <td className={`${TD} ${NUM} font-bold`}>{n(t.volumenM3, 4)}</td>
+                  <td className={`${TD} font-mono text-[var(--text-secondary)]`}>
                     {t.ingreso.gtfNumber}
                     <span className="block text-[var(--text-tertiary)]">
                       {formatDateNumeric(t.ingreso.entryDate, { soloFecha: true })}
                     </span>
                   </td>
-                  <td className={`${TD} text-xs font-bold ${e.cls}`}>{e.label}</td>
-                  <td className={`${TD} ${NUM} text-xs text-[var(--text-secondary)]`} title={diaDeEtiqueta(etiquetadaEn(t)) || "Sin etiqueta"}>
+                  <td className={`${TD} font-bold ${e.cls}`}>{e.label}</td>
+                  <td className={`${TD} ${NUM} text-[var(--text-secondary)]`} title={diaDeEtiqueta(etiquetadaEn(t)) || "Sin etiqueta"}>
                     {diaCortoDeEtiqueta(etiquetadaEn(t)) || "—"}
                   </td>
                 </tr>

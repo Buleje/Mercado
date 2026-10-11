@@ -131,7 +131,7 @@ export default function WhatsAppTemplates() {
       {filas.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Ninguna plantilla dice «{texto.trim()}».</p>
       ) : (
-        <DataTable className="table-fixed [&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+        <DataTable className="table-fixed">
           <colgroup className="max-sm:hidden">
             <col className="w-56" />
             <col />
@@ -152,15 +152,15 @@ export default function WhatsAppTemplates() {
                 onClick={() => setModo({ tipo: "ver", plantilla: p })}
                 onKeyDown={alTeclado(() => setModo({ tipo: "ver", plantilla: p }))}
                 aria-label={`Ver la plantilla ${p.nombre}`}
-                className="cursor-pointer transition-colors hover:bg-[var(--surface-sunken)]"
+                className="cursor-pointer"
               >
-                <td className="text-sm font-semibold text-[var(--text-primary)]">
+                <td className="font-semibold">
                   <span className="block min-w-0 truncate">
                     {p.nombre}
                     {p.custom && <span className="font-normal text-[var(--text-secondary)]"> · tuya</span>}
                   </span>
                 </td>
-                <td className="text-sm text-[var(--text-secondary)]">
+                <td className="text-[var(--text-secondary)]">
                   <TextoConVariables texto={p.texto} className="block min-w-0 truncate" />
                 </td>
                 <td onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

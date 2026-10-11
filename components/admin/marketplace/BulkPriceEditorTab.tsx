@@ -346,10 +346,10 @@ export default function BulkPriceEditorTab() {
 
       {/* Tabla */}
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <DataTable className="min-w-full text-sm">
+        <DataTable className="min-w-full">
           <thead>
-            <tr className="bg-[var(--surface-canvas)] border-b border-[var(--rule-base)]">
-              <th className="px-4 py-3 text-left">
+            <tr>
+              <th>
                 <input
                   type="checkbox"
                   aria-label="Seleccionar todos"
@@ -358,20 +358,20 @@ export default function BulkPriceEditorTab() {
                   className="rounded border-[var(--rule-base)]"
                 />
               </th>
-              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">ID</th>
-              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Imagen</th>
-              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Nombre</th>
-              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Categoría</th>
-              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Precio actual</th>
-              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Nuevo precio</th>
-              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Stock</th>
-              <th className="px-4 py-3 text-left text-[var(--text-tertiary)] font-medium">Activo</th>
+              <th>ID</th>
+              <th>Imagen</th>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Precio actual</th>
+              <th>Nuevo precio</th>
+              <th>Stock</th>
+              <th>Activo</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)] ">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-[var(--text-tertiary)]">
+                <td colSpan={9} className="text-center text-[var(--text-tertiary)]">
                   No hay productos con esos filtros
                 </td>
               </tr>
@@ -383,12 +383,12 @@ export default function BulkPriceEditorTab() {
                   <tr
                     key={p.id}
                     className={cn(
-                      "hover:bg-[var(--surface-sunken)]/50 transition-colors",
+                      "",
                       isChanged && "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning)]/10",
                       selected.has(p.id) && "bg-teal-50/50 dark:bg-teal-900/10",
                     )}
                   >
-                    <td className="px-4 py-3">
+                    <td>
                       <input
                         type="checkbox"
                         aria-label={`Seleccionar ${p.name}`}
@@ -397,8 +397,8 @@ export default function BulkPriceEditorTab() {
                         className="rounded border-[var(--rule-base)]"
                       />
                     </td>
-                    <td className="px-4 py-3 text-[var(--text-tertiary)]">{p.id}</td>
-                    <td className="px-4 py-3">
+                    <td className="text-[var(--text-tertiary)]">{p.id}</td>
+                    <td>
                       {p.image ? (
                         <Image
                           src={p.image}
@@ -413,10 +413,10 @@ export default function BulkPriceEditorTab() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-medium text-[var(--text-primary)] max-w-[200px] truncate">{p.name}</td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)]">{p.category}</td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)]">{formatCurrency(p.price)}</td>
-                    <td className="px-4 py-3">
+                    <td className="font-medium max-w-[200px] truncate">{p.name}</td>
+                    <td className="text-[var(--text-secondary)]">{p.category}</td>
+                    <td className="text-[var(--text-secondary)]">{formatCurrency(p.price)}</td>
+                    <td>
                       <input
                         type="number"
                         step="0.01"
@@ -443,7 +443,7 @@ export default function BulkPriceEditorTab() {
                         className="w-24 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       <input
                         type="number"
                         min="0"
@@ -456,7 +456,7 @@ export default function BulkPriceEditorTab() {
                         className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       <button
                         onClick={() => applyChange(p.id, "active", !(ch.active ?? p.active))}
                         className="flex items-center"

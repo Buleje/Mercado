@@ -87,7 +87,7 @@ export default function LothCensoTabla({ arboles, filasTotal, filtros, vacio, si
   const cabeceras: Record<string, ReactNode> = {};
   for (const c of COLUMNAS) {
     cabeceras[c.id] = (
-      <th data-col={c.id} data-label={c.label} className={`whitespace-nowrap px-2.5 py-2 font-bold text-[var(--text-primary)] ${c.derecha ? "text-right" : ""}`}>
+      <th data-col={c.id} data-label={c.label} className={`whitespace-nowrap font-bold ${c.derecha ? "text-right" : ""}`}>
         {c.dosLineas ? (
           <>
             {c.dosLineas[0]}<FiltroEnCabecera id="este" f={filtros} compacto /><br />
@@ -107,10 +107,10 @@ export default function LothCensoTabla({ arboles, filasTotal, filtros, vacio, si
     );
   }
   return (
-    <DataTable className={`w-full text-sm ${TABLA_PIE_FIJO}`} stickyHeader wrapperClassName={`${CAJA_TABLA} max-h-[60vh]`}>
-      <thead ref={refCabecera} className="bg-[var(--surface-sunken)] text-left align-top">
+    <DataTable className={`w-full ${TABLA_PIE_FIJO}`} stickyHeader wrapperClassName={`${CAJA_TABLA} max-h-[60vh]`}>
+      <thead ref={refCabecera} className="align-top">
         <tr>
-          <th className="w-9 px-2.5 py-2">
+          <th className="w-9">
             <input
               type="checkbox"
               checked={todosVisibles}
@@ -122,12 +122,12 @@ export default function LothCensoTabla({ arboles, filasTotal, filtros, vacio, si
             />
           </th>
           <EnOrden orden={orden} celdas={soloEnOrden(orden, cabeceras)} />
-          <th className="px-2.5 py-2"><span className="sr-only">Acciones</span></th>
+          <th><span className="sr-only">Acciones</span></th>
         </tr>
       </thead>
       <tbody>
         {arboles.map((t) => (
-          <tr key={t.id} className={`border-t border-[var(--rule-soft)] align-top ${fueraDelPlan(t.speciesCommon) ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/12" : ""}`}>
+          <tr key={t.id} className={`align-top ${fueraDelPlan(t.speciesCommon) ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/12" : ""}`}>
             <Td>
               <input
                 type="checkbox"
@@ -146,10 +146,10 @@ export default function LothCensoTabla({ arboles, filasTotal, filtros, vacio, si
           </tr>
         ))}
         {vacio && (
-          <tr><td colSpan={total} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin árboles censados. Agrega uno o importa la hoja del regente.</td></tr>
+          <tr><td colSpan={total} className="text-center text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin árboles censados. Agrega uno o importa la hoja del regente.</td></tr>
         )}
         {sinCoincidencias && (
-          <tr><td colSpan={total} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Ningún árbol coincide con los filtros de columna.</td></tr>
+          <tr><td colSpan={total} className="text-center text-[var(--text-tertiary)]">Ningún árbol coincide con los filtros de columna.</td></tr>
         )}
       </tbody>
       {/* Pie: lo que deja el filtro, todo (no sólo las 200 filas pintadas). La misma cuenta que «Volumen estimado». */}
@@ -245,5 +245,5 @@ function celdasArbol(t: ArbolCenso, fuera: boolean, categoria: keyof typeof CATE
 }
 
 function Td({ children, derecha }: { children: ReactNode; derecha?: boolean }) {
-  return <td className={`px-2.5 py-2.5 ${derecha ? "text-right" : ""}`}>{children}</td>;
+  return <td className={`${derecha ? "text-right" : ""}`}>{children}</td>;
 }

@@ -31,24 +31,24 @@ export default function DetalleMovimientos({
       ) : (
         <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
           {/* minWidth inline: min-w-* es clase muerta acá (memoria min-width-utilities-muertas). */}
-          <DataTable className="w-full text-sm" style={{ minWidth: 480 }}>
-            <thead className="bg-[var(--surface-sunken)] text-xs text-[var(--text-tertiary)]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-bold">Fecha</th>
-                <th className="px-3 py-2 font-bold">Concepto</th>
-                <th className="px-3 py-2 font-bold">Referencia</th>
-                <th className="px-3 py-2 text-right font-bold">Monto</th>
-                <th className="px-3 py-2 text-right font-bold">Saldo</th>
+          <DataTable className="w-full" style={{ minWidth: 480 }}>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Concepto</th>
+                <th>Referencia</th>
+                <th className="text-right">Monto</th>
+                <th className="text-right">Saldo</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--rule-soft)]">
               {corrida.map((m) => (
                 <tr key={m.id}>
-                  <td className="whitespace-nowrap px-3 py-2 tabular-nums text-[var(--text-secondary)]">{diaUtc(m.fecha)}</td>
-                  <td className="px-3 py-2 text-[var(--text-primary)]">{CONCEPTO_LABEL[m.concepto] ?? m.concepto}</td>
-                  <td className="px-3 py-2 text-[var(--text-tertiary)]">{m.referencia ?? "—"}</td>
+                  <td className="whitespace-nowrap tabular-nums text-[var(--text-secondary)]">{diaUtc(m.fecha)}</td>
+                  <td>{CONCEPTO_LABEL[m.concepto] ?? m.concepto}</td>
+                  <td className="text-[var(--text-tertiary)]">{m.referencia ?? "—"}</td>
                   <td
-                    className={`whitespace-nowrap px-3 py-2 text-right font-bold tabular-nums ${
+                    className={`whitespace-nowrap text-right font-bold tabular-nums ${
                       // -700/-500: mismo patrón AA que CtpCuentaCorriente.tsx (el token base no pasa).
                       m.tipo === "cargo"
                         ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
@@ -58,7 +58,7 @@ export default function DetalleMovimientos({
                     {m.tipo === "cargo" ? "+" : "−"}
                     {fmtMon(m.monto, m.moneda)}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right font-bold tabular-nums text-[var(--text-primary)]">
+                  <td className="whitespace-nowrap text-right font-bold tabular-nums">
                     {fmtMon(m.acumulado, m.moneda)}
                   </td>
                 </tr>

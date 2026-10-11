@@ -61,7 +61,7 @@ function AdminTable({
                 <th
                   key={col.key}
                   className={cn(
-                    "px-4 py-3 text-xs text-[var(--text-secondary)] font-medium select-none",
+                    "select-none",
                     alignCls,
                     col.width,
                     col.sortable && onSort && "cursor-pointer hover:text-[var(--text-primary)] dark:hover:text-zinc-200 transition-colors",
@@ -103,7 +103,7 @@ function AdminTable({
         <tbody className="divide-y divide-gray-50 dark:divide-zinc-800">
           {isEmpty ? (
             <tr>
-              <td colSpan={columns.length} className="py-12">
+              <td colSpan={columns.length}>
                 {emptyState ?? (
                   <p className="text-center text-sm text-[var(--text-tertiary)] ">
                     Sin datos disponibles

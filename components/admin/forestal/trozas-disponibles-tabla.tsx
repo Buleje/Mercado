@@ -52,7 +52,7 @@ import {
 } from "./trozas-disponibles-filtros-movil";
 import type { EstadoTrozasDisponibles } from "./hooks/use-trozas-disponibles";
 
-const TH = "px-2! py-2 font-bold";
+const TH = "px-2!";
 const nf = (n: number) => formatNumber(n);
 
 function OrdenBoton({
@@ -71,7 +71,7 @@ function OrdenBoton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 font-bold uppercase tracking-[var(--ls-wider)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] ${
+      className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] ${
         activo ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""
       }`}
     >

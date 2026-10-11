@@ -35,6 +35,7 @@ import {
   type ResumenDeLote,
 } from "@/lib/forestal/productos-de-lote";
 import { formatDate } from "@/lib/format";
+import { DataTable } from "@buleje/design-system";
 
 const CELDA = "px-3 py-2.5 text-sm";
 const CIFRA = `${CELDA} text-right font-mono tabular-nums`;
@@ -185,9 +186,9 @@ export default function CtpLoteProductosModal({
 
             {/* Lo que Brandon pidió ver: producto por producto, con su destino. */}
             <div className="max-h-[46vh] overflow-auto rounded-xl border border-[var(--rule-base)]">
-              <table className="w-full min-w-[40rem] border-collapse">
+              <DataTable className="w-full min-w-[40rem]">
                 <thead className="sticky top-0 z-[1]">
-                  <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] [&>th]:border-b [&>th]:border-[var(--rule-base)]">
+                  <tr className="[&>th]:border-b [&>th]:border-[var(--rule-base)]">
                     <th className={CELDA}>Producto</th>
                     <th className={`${CELDA} whitespace-nowrap`}>Corrida</th>
                     <th className={`${CELDA} text-right`}>Produjo</th>
@@ -197,7 +198,7 @@ export default function CtpLoteProductosModal({
                 </thead>
                 <tbody>
                   {resumen.productos.map((p) => (
-                    <tr key={p.corrida.id} className="border-t border-[var(--rule-soft)]">
+                    <tr key={p.corrida.id}>
                       <td className={CELDA}>
                         <span className="font-medium text-[var(--text-primary)]">
                           {productoLegible(p.corrida.producto)}
@@ -241,7 +242,7 @@ export default function CtpLoteProductosModal({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
 
             {/* Un lote entero marcado como usado no está «vacío»: está gastado,

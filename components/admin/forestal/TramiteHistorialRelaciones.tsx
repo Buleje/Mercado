@@ -40,27 +40,27 @@ export default function TramiteHistorialRelaciones({
         </BlockTitle>
       </div>
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <DataTable className="w-full min-w-[420px] text-xs">
+        <DataTable className="w-full min-w-[420px]">
           <caption className="sr-only">Historial de relaciones de guías presentadas</caption>
           <thead>
-            <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-              <th scope="col" className="px-3 py-2">N°</th>
-              <th scope="col" className="px-3 py-2">Período</th>
-              <th scope="col" className="px-3 py-2">Estado</th>
-              <th scope="col" className="px-3 py-2">Presentado</th>
+            <tr>
+              <th scope="col">N°</th>
+              <th scope="col">Período</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Presentado</th>
             </tr>
           </thead>
           <tbody>
             {otras.map((t) => (
-              <tr key={t.id} className="border-t border-[var(--rule-soft)] even:bg-[var(--surface-raised)]/50">
-                <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{t.numeroDocumento ?? "—"}</td>
-                <td className="px-3 py-2 text-[var(--text-secondary)]">
+              <tr key={t.id} className="even:bg-[var(--surface-raised)]/50">
+                <td className="font-bold">{t.numeroDocumento ?? "—"}</td>
+                <td className="text-[var(--text-secondary)]">
                   {fmtFecha(t.datos.periodoDesde || null)} – {fmtFecha(t.datos.periodoHasta || null)}
                 </td>
-                <td className="px-3 py-2 text-[var(--text-secondary)]">
+                <td className="text-[var(--text-secondary)]">
                   {ESTADOS_TRAMITE.find((e) => e.key === t.estado)?.label ?? t.estado}
                 </td>
-                <td className="px-3 py-2 text-[var(--text-secondary)]">{fmtFecha(t.fechaPresentacion)}</td>
+                <td className="text-[var(--text-secondary)]">{fmtFecha(t.fechaPresentacion)}</td>
               </tr>
             ))}
           </tbody>

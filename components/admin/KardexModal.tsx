@@ -192,7 +192,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                   <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Sin movimientos en este período</p>
                 </div>
               ) : (
-                <DataTable className="min-w-[600px] text-xs">
+                <DataTable className="min-w-[600px]">
                     <thead>
                       <tr>
                         <th>Fecha</th>
@@ -222,14 +222,14 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                             <td className={cn("text-right font-bold", m.salida > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
                               {m.salida > 0 ? `-${m.salida}` : "—"}
                             </td>
-                            <td className="text-right font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.saldo}</td>
+                            <td className="text-right font-extrabold">{m.saldo}</td>
                           </tr>
                         );
                       })}
                     </tbody>
                     <tfoot>
                       <tr className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] font-bold">
-                        <td colSpan={3} className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Totales</td>
+                        <td colSpan={3}>Totales</td>
                         <td className="text-right text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">+{data.resumen.totalEntradas}</td>
                         <td className="text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">-{data.resumen.totalSalidas}</td>
                         <td className="text-right text-primary font-extrabold">{data.resumen.saldoFinal}</td>

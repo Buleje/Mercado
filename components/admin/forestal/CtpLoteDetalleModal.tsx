@@ -413,24 +413,24 @@ export default function CtpLoteDetalleModal({
               <TablaCtp>
                 <TheadCtp>
                   <tr>
-                    <th className="px-3 py-2 font-bold">N°</th>
-                    <th className="px-3 py-2 font-bold">Fecha</th>
-                    <th className="px-3 py-2 font-bold">Producto</th>
-                    <th className="px-3 py-2 text-right font-bold">Consumido</th>
-                    <th className="px-3 py-2 text-right font-bold">Producido</th>
-                    <th className="px-3 py-2 text-right font-bold">Despachado</th>
-                    <th className="px-3 py-2 text-right font-bold">Reprocesado</th>
-                    <th className="px-3 py-2 font-bold">Estado</th>
-                    <th className="px-3 py-2 font-bold sr-only">Acciones</th>
+                    <th className="font-bold">N°</th>
+                    <th className="font-bold">Fecha</th>
+                    <th className="font-bold">Producto</th>
+                    <th className="text-right font-bold">Consumido</th>
+                    <th className="text-right font-bold">Producido</th>
+                    <th className="text-right font-bold">Despachado</th>
+                    <th className="text-right font-bold">Reprocesado</th>
+                    <th className="font-bold">Estado</th>
+                    <th className="font-bold sr-only">Acciones</th>
                   </tr>
                 </TheadCtp>
                 <TbodyCtp>
                   {lote.corridas.map((c) => (
                     <Fragment key={c.id}>
-                      <tr className={`hover:bg-[var(--surface-sunken)] ${!c.viva ? "opacity-60" : ""}`}>
-                        <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">N° {c.lineNo}</td>
-                        <td className="px-3 py-2 text-[var(--text-secondary)]">{fmt(c.entryDate)}</td>
-                        <td className="px-3 py-2 text-[var(--text-secondary)]">
+                      <tr className={`${!c.viva ? "opacity-60" : ""}`}>
+                        <td className="font-mono font-bold">N° {c.lineNo}</td>
+                        <td className="text-[var(--text-secondary)]">{fmt(c.entryDate)}</td>
+                        <td className="text-[var(--text-secondary)]">
                           <div className="flex flex-wrap items-center gap-1">
                             {c.productType ?? "—"}
                             {c.usadoAt && (
@@ -443,26 +443,26 @@ export default function CtpLoteDetalleModal({
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                           {c.volumeInputM3 != null ? fmtCantidad(c.volumeInputM3, "m3") : "—"}
                         </td>
-                        <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                        <td className="text-right font-mono font-bold tabular-nums">
                           {c.quantity != null ? fmtCantidad(c.quantity, c.unit) : "sin declarar"}
                         </td>
-                        <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                           {c.despachadoQty ? fmtCantidad(c.despachadoQty, c.unit) : "—"}
                         </td>
-                        <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                           {c.reprocesadoQty ? fmtCantidad(c.reprocesadoQty, c.unit) : "—"}
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           {c.viva ? (
                             c.status === "registrado" ? "Registrado" : c.status
                           ) : (
                             <span className="font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">Anulado</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        <td className="text-right">
                           {/* Marcar/desmarcar "ya usada" (Brandon, 2026-09-01): la saca de
                               Productos disponibles sin fabricar un despacho que no ocurrió —
                               para lo que ya salió por fuera del libro (existencias de
@@ -493,7 +493,7 @@ export default function CtpLoteDetalleModal({
                           mostraba una sola fila (Brandon, 2026-09-01). */}
                       {(c.paquetes?.length ?? 0) > 0 && (
                         <tr className={!c.viva ? "opacity-60" : ""}>
-                          <td colSpan={9} className="border-t border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/60 px-3 py-2">
+                          <td colSpan={9} className="border-dashed bg-[var(--surface-sunken)]/60">
                             <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
                               {(c.paquetes ?? []).map((p) => (
                                 <li key={p.id} className="flex items-baseline gap-1.5">
@@ -587,13 +587,13 @@ export default function CtpLoteDetalleModal({
             <TablaCtp>
               <TheadCtp>
                 <tr>
-                  <th className="px-3 py-2 font-bold">Cód. planta</th>
-                  <th className="px-3 py-2 font-bold">Codificación</th>
-                  <th className="px-3 py-2 text-right font-bold">D1 × D2 (cm)</th>
-                  <th className="px-3 py-2 text-right font-bold">Largo (m)</th>
-                  <th className="px-3 py-2 text-right font-bold">Volumen</th>
-                  <th className="px-3 py-2 font-bold">Estado</th>
-                  {abierto && <th className="px-3 py-2 font-bold sr-only">Quitar</th>}
+                  <th className="font-bold">Cód. planta</th>
+                  <th className="font-bold">Codificación</th>
+                  <th className="text-right font-bold">D1 × D2 (cm)</th>
+                  <th className="text-right font-bold">Largo (m)</th>
+                  <th className="text-right font-bold">Volumen</th>
+                  <th className="font-bold">Estado</th>
+                  {abierto && <th className="font-bold sr-only">Quitar</th>}
                 </tr>
               </TheadCtp>
               <TbodyCtp>
@@ -603,21 +603,21 @@ export default function CtpLoteDetalleModal({
                   </FilaVacia>
                 )}
                 {piezasEnPagina.map((t) => (
-                  <tr key={t.id} className="hover:bg-[var(--surface-sunken)]">
-                    <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{t.codigoPlanta ?? "—"}</td>
-                    <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{t.codificacion ?? "—"}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                  <tr key={t.id}>
+                    <td className="font-mono font-bold">{t.codigoPlanta ?? "—"}</td>
+                    <td className="font-mono text-[var(--text-secondary)]">{t.codificacion ?? "—"}</td>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {t.d1Cm != null || t.d2Cm != null
                         ? `${t.d1Cm != null ? Number(t.d1Cm).toFixed(0) : "—"} × ${t.d2Cm != null ? Number(t.d2Cm).toFixed(0) : "—"}`
                         : "—"}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {t.largoM != null ? Number(t.largoM).toFixed(2) : "—"}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                    <td className="text-right font-mono font-bold tabular-nums">
                       {t.volumenM3 != null ? `${fmtM3(t.volumenM3)} m³` : "—"}
                     </td>
-                    <td className="px-3 py-2 text-[var(--text-secondary)]">
+                    <td className="text-[var(--text-secondary)]">
                       {t.consumidaEnId ? (
                         abierto ? (
                           <span className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
@@ -631,7 +631,7 @@ export default function CtpLoteDetalleModal({
                       )}
                     </td>
                     {abierto && (
-                      <td className="px-3 py-2 text-right">
+                      <td className="text-right">
                         <IconAction
                           icon={X}
                           tone="muted"
@@ -648,13 +648,13 @@ export default function CtpLoteDetalleModal({
               {lote.trozas.length > 0 && (
                 <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
                   <tr>
-                    <td colSpan={4} className="px-3 py-2 text-sm font-bold text-[var(--text-primary)]">
+                    <td colSpan={4} className="font-bold">
                       Total {abierto ? `· ${libres.length} libres de ${lote.piezas}` : ""}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                    <td className="text-right font-mono font-bold tabular-nums">
                       {fmtM3(abierto ? volumenLibre(lote) : lote.volumenM3)} m³
                     </td>
-                    <td colSpan={abierto ? 2 : 1} className="px-3 py-2 font-mono text-sm tabular-nums text-[var(--text-tertiary)]">
+                    <td colSpan={abierto ? 2 : 1} className="font-mono tabular-nums text-[var(--text-tertiary)]">
                       {pieTablarDe(abierto ? volumenLibre(lote) : lote.volumenM3).toLocaleString("es-PE")} pt
                     </td>
                   </tr>

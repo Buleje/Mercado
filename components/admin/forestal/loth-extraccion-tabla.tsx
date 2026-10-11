@@ -105,13 +105,13 @@ export default function LothExtraccionTabla({
   return (
     <DataTable
       filtrable
-      className={`hoja-grilla text-sm ${PIE_COMO_TABLA}`}
+      className={`hoja-grilla ${PIE_COMO_TABLA}`}
       wrapperClassName="rounded-2xl bg-[var(--surface-raised)]"
       aria-label="Extracción por permiso: lo aprobado según censo y el saldo de cada operación"
     >
       <thead>
         <tr>
-          <th rowSpan={2} scope="col" className={`${PRIMERA} bg-[var(--surface-sunken)]`}>
+          <th rowSpan={2} scope="col" className={`${PRIMERA}`}>
             <span className={ANCHO_PRIMERA}>
               {vista.modo === "permisos" ? "Permiso" : "Especie"}
               <FiltroColumna

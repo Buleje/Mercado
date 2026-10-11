@@ -416,31 +416,31 @@ export default function FiadoAnalyticsPanel() {
           Top deudores
         </h4>
         <div className="overflow-x-auto">
-          <DataTable className="w-full text-xs">
+          <DataTable className="w-full">
             <thead>
-              <tr className="border-b border-[var(--rule-base)]">
-                <th className="text-left py-2 text-[var(--text-tertiary)] font-medium">Cliente</th>
-                <th className="text-right py-2 text-[var(--text-tertiary)] font-medium">Saldo</th>
-                <th className="text-right py-2 text-[var(--text-tertiary)] font-medium">Dias</th>
-                <th className="text-right py-2 text-[var(--text-tertiary)] font-medium">Estado</th>
+              <tr>
+                <th>Cliente</th>
+                <th className="text-right">Saldo</th>
+                <th className="text-right">Dias</th>
+                <th className="text-right">Estado</th>
               </tr>
             </thead>
             <tbody>
               {(topDeudores ?? []).map((d, idx) => (
-                <tr key={d.nombre} className={cn("border-b border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]/50 transition-colors", idx % 2 === 1 && "bg-gray-50/50 dark:bg-gray-800/20")}>
-                  <td className="py-1.5 text-[var(--text-secondary)] truncate max-w-[150px]">
+                <tr key={d.nombre} className={cn("", idx % 2 === 1 && "bg-gray-50/50 dark:bg-gray-800/20")}>
+                  <td className="text-[var(--text-secondary)] truncate max-w-[150px]">
                     {d.nombre}
                   </td>
-                  <td className="py-1.5 text-right font-mono font-medium text-[var(--text-primary)]" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  <td className="text-right font-mono font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>
                     {formatCurrencyCompact(d.monto)}
                   </td>
                   <td className={cn(
-                    "py-1.5 text-right font-mono",
+                    "text-right font-mono",
                     d.dias > 30 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : d.dias > 15 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"
                   )} style={{ fontVariantNumeric: "tabular-nums" }}>
                     {d.dias}d
                   </td>
-                  <td className="py-1.5 text-right">
+                  <td className="text-right">
                     <span className={cn(
                       "text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full font-medium",
                       d.status === "vencido" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
@@ -454,7 +454,7 @@ export default function FiadoAnalyticsPanel() {
               ))}
               {(!topDeudores || topDeudores.length === 0) && (
                 <tr>
-                  <td colSpan={4} className="py-4 text-center text-[var(--text-tertiary)]">Sin deudores activos</td>
+                  <td colSpan={4} className="text-center text-[var(--text-tertiary)]">Sin deudores activos</td>
                 </tr>
               )}
             </tbody>

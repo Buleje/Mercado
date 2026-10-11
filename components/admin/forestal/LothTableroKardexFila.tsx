@@ -46,7 +46,7 @@ export default function LothTableroKardexFila({
   const chip = `inline-flex items-center rounded-lg border px-2 py-0.5 text-xs font-bold whitespace-nowrap ${f.anulada ? ANULADA_CHIP : TONO_MOV[f.movimiento]}`;
   return (
     <tr
-      className={`group border-t border-[var(--rule-soft)] ${f.anulada ? "bg-[var(--surface-sunken)]/40" : "hover:bg-[var(--surface-sunken)]"}`}
+      className={`group ${f.anulada ? "bg-[var(--surface-sunken)]/40" : "hover:bg-[var(--surface-sunken)]"}`}
       data-kardex-fila={f.movimiento}
       data-anulada={f.anulada || undefined}
     >
@@ -160,7 +160,7 @@ export default function LothTableroKardexFila({
           );
         })
       ) : (
-        <td colSpan={casilleros.length} className={`${NUM} text-xs text-[var(--text-tertiary)]`}>
+        <td colSpan={casilleros.length} className={`${NUM} text-[var(--text-tertiary)]`}>
           {f.anulada ? "no cuenta" : "no suma al permiso"}
         </td>
       )}

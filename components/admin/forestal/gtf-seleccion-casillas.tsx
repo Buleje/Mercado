@@ -65,7 +65,7 @@ export function CasillaGuia({ id, ids, numero, sel }: { id: string; ids?: readon
 
 export function CasillaTodasGtf({ ids, sel, etiqueta }: { ids: readonly string[]; sel: SeleccionGuias; etiqueta: string }) {
   return (
-    <th data-label="Elegir" className="w-px px-1 py-1.5">
+    <th data-label="Elegir" className="w-px">
       <CasillaTodasGuias ids={ids} sel={sel} etiqueta={etiqueta} />
     </th>
   );
@@ -73,7 +73,7 @@ export function CasillaTodasGtf({ ids, sel, etiqueta }: { ids: readonly string[]
 
 export function CasillaFilaGtf({ id, numero, sel }: { id: string; numero: string; sel: SeleccionGuias }) {
   return (
-    <td data-label="Elegir" className="w-px px-1 py-1.5">
+    <td data-label="Elegir" className="w-px">
       <CasillaGuia id={id} numero={numero} sel={sel} />
     </td>
   );

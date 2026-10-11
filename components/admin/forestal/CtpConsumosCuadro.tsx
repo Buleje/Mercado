@@ -35,11 +35,11 @@ const idDetalle = (clave: string, i: number) => `consumo-grupo-${clave.replace(/
 /** Una fila del cuadro. Fuera del render para no re-montarla en cada estado. */
 function filaConsumo(f: FilaConsumo, id?: string) {
   return (
-    <tr key={`${f.woodEntryId}-${f.corridaId}-${f.nro}`} id={id} className="hover:bg-[var(--surface-sunken)]">
-      <td className="px-3 py-2 tabular-nums text-[var(--text-secondary)]">{f.nro}</td>
+    <tr key={`${f.woodEntryId}-${f.corridaId}-${f.nro}`} id={id}>
+      <td className="tabular-nums text-[var(--text-secondary)]">{f.nro}</td>
       <Texto v={fmtFecha(f.fecha)} className="whitespace-nowrap" />
       <Texto v={f.tipoProducto} />
-      <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{f.especieComun}</td>
+      <td className="font-bold">{f.especieComun}</td>
       <Texto v={f.especieCientifica} className="italic" />
       <Texto v={f.codigoOrigen} />
       <Texto v={f.fuenteOrigen} />
@@ -50,7 +50,7 @@ function filaConsumo(f: FilaConsumo, id?: string) {
       <Texto v={f.lote || null} />
       {/* En una sola línea: apretada, la observación partía cada fila en cuatro
           renglones. El cuadro ya scrollea a lo ancho (es el formato oficial). */}
-      <td className="whitespace-nowrap px-3 py-2 text-sm text-[var(--text-secondary)]">
+      <td className="whitespace-nowrap text-[var(--text-secondary)]">
         <span className="font-bold text-[var(--text-primary)]">{f.gtf}</span> → {f.observaciones}
       </td>
     </tr>
@@ -120,7 +120,7 @@ export default function CtpConsumosCuadro({
         )
       }
     >
-      <thead className="border-b-2 border-[var(--rule-base)]">
+      <thead>
         <tr>
           <Th ancho="w-14">(1) N°</Th>
           <Th>(2) Fecha</Th>
@@ -161,7 +161,7 @@ export default function CtpConsumosCuadro({
             return (
               <Fragment key={g.clave}>
                 <tr className="bg-[var(--surface-sunken)]">
-                  <td colSpan={8} className="px-3 py-2">
+                  <td colSpan={8}>
                     {/* `w-full`: toda la celda es el botón, no sólo el texto. El
                         `aria-controls` apunta a las filas que existen: plegado
                         no se dibujan, así que no se nombran. */}
@@ -194,8 +194,8 @@ export default function CtpConsumosCuadro({
                   </td>
                   <Celda v={g.cantidad} />
                   {/* (10) no se totaliza: un grupo puede juntar varios lotes. */}
-                  <td className="px-3 py-2" />
-                  <td className="px-3 py-2 text-sm text-[var(--text-secondary)]">
+                  <td />
+                  <td className="text-[var(--text-secondary)]">
                     {total > 0 ? `${Math.round((g.cantidad / total) * 100)} % del filtro` : ""}
                   </td>
                 </tr>

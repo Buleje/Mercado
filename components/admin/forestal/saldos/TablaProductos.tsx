@@ -175,11 +175,11 @@ export default function TablaProductos({
         </div>
       ) : (
         <DataTable
-          className="w-full text-sm"
+          className="w-full"
           wrapperClassName="rounded-none border-0"
           aria-labelledby="saldos-productos-titulo"
         >
-          <thead className="bg-[var(--surface-sunken)] text-left align-top">
+          <thead className="align-top">
             <tr>
               <EncabezadoOrden
                 col="producto"
@@ -218,7 +218,7 @@ export default function TablaProductos({
           <tbody>
             {filas.length === 0 && <SinCoincidenciasFila colSpan={onDespachar ? 5 : 4} />}
             {filas.map((p) => (
-              <tr key={p.producto} className="border-t border-[var(--rule-soft)]">
+              <tr key={p.producto}>
                 <Td className="font-medium text-[var(--text-primary)]">{p.producto}</Td>
                 <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {n2(p.producido)}
@@ -259,7 +259,7 @@ export default function TablaProductos({
           </tbody>
           <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
             <tr>
-              <td className="px-4 py-2.5 text-[var(--text-primary)]">
+              <td>
                 Total
                 {enNegativo < 0 && (
                   <span className="block text-xs font-normal text-[var(--text-tertiary)]">
@@ -267,13 +267,13 @@ export default function TablaProductos({
                   </span>
                 )}
               </td>
-              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+              <td className="text-right font-mono tabular-nums">
                 {n2(total.producido)}
               </td>
-              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+              <td className="text-right font-mono tabular-nums">
                 {n2(total.despachado)}
               </td>
-              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+              <td className="text-right font-mono tabular-nums">
                 {n2(disponible)}
               </td>
               {onDespachar && <td />}

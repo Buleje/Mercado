@@ -91,11 +91,11 @@ export default function TablaConciliacion({
         </div>
       </div>
       <DataTable
-        className="w-full text-sm"
+        className="w-full"
         wrapperClassName="rounded-none border-0"
         aria-labelledby="saldos-conciliacion-titulo"
       >
-        <thead className="bg-[var(--surface-sunken)] text-left">
+        <thead>
           <tr>
             <Th>Especie</Th>
             <Th className="text-right">Apertura (m³)</Th>
@@ -118,11 +118,11 @@ export default function TablaConciliacion({
                  sin tener: físicamente imposible, y lo primero que mira un
                  fiscalizador. Pintar sólo el número en rojo lo deja perdido
                  entre cinco columnas; la fila entera lo señala. */
-              className={`border-t border-[var(--rule-soft)] ${
+              className={`${
                 s.negativa ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : ""
               }`}
             >
-              <td className="px-4 py-2 text-[var(--text-primary)]">
+              <td>
                 {s.especie}
                 {s.cites && (
                   <span className="ml-2 rounded-full border border-[var(--data-info-500)] px-2 py-0.5 text-xs font-bold text-[var(--text-primary)]">
@@ -130,24 +130,24 @@ export default function TablaConciliacion({
                   </span>
                 )}
               </td>
-              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+              <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                 {n2(s.apertura)}
               </td>
-              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--data-success-ink)]">
+              <td className="text-right font-mono tabular-nums text-[var(--data-success-ink)]">
                 {n2(s.ingreso)}
               </td>
-              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+              <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                 {n2(s.consumido)}
               </td>
               {hayDirecto && (
-                <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {n2(s.despachadoDirecto ?? 0)}
                 </td>
               )}
               {/* La columna del resultado se separa del resto con su propia
                   superficie: es la que se copia al formulario oficial. */}
               <td
-                className={`px-4 py-2 text-right font-mono font-bold tabular-nums ${
+                className={`text-right font-mono font-bold tabular-nums ${
                   s.negativa
                     ? "bg-[var(--data-error-500)]/10 text-[var(--data-error-600)] dark:text-[var(--data-error-500)]"
                     : "bg-[var(--surface-raised)] text-[var(--text-primary)]"
@@ -156,7 +156,7 @@ export default function TablaConciliacion({
                 {n2(s.final)}
               </td>
               {onKardex && (
-                <td className="px-4 py-2 text-right">
+                <td className="text-right">
                   <button
                     type="button"
                     onClick={() => onKardex(s.especie)}
@@ -174,26 +174,26 @@ export default function TablaConciliacion({
             sumar cinco columnas a mano para creerle a la tabla. */}
         <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
           <tr>
-            <td className="px-4 py-2.5 text-[var(--text-primary)]">
+            <td>
               {/* Con el recorte por especie del panel (ADR-400) esta fila dice
                   «1» a menudo: «1 especies» hace dudar de un cuadro que cierra. */}
               Total · {filas.length} {filas.length === 1 ? "especie" : "especies"}
             </td>
-            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+            <td className="text-right font-mono tabular-nums">
               {n2(total.apertura)}
             </td>
-            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--data-success-ink)]">
+            <td className="text-right font-mono tabular-nums text-[var(--data-success-ink)]">
               {n2(total.ingreso)}
             </td>
-            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+            <td className="text-right font-mono tabular-nums">
               {n2(total.consumido)}
             </td>
             {hayDirecto && (
-              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+              <td className="text-right font-mono tabular-nums">
                 {n2(total.directo)}
               </td>
             )}
-            <td className="bg-[var(--surface-raised)] px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+            <td className="bg-[var(--surface-raised)] text-right font-mono tabular-nums">
               {n2(total.final)}
             </td>
             {onKardex && <td />}

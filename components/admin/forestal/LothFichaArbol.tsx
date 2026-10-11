@@ -36,6 +36,7 @@ import type { GpsOrigen } from "./LothGpsField";
 import LothRestante, { type FilaRestante, type GrupoRestante } from "./LothRestante";
 import { AMBAR, CabeceraArbol, CAJA, Dato, dec as m, KICKER, ROJO } from "./loth-ficha-ui";
 import { CitesPill } from "./loth-plan-ui";
+import { DataTable } from "@buleje/design-system";
 
 interface Props {
   arbol: ArbolParaElegir | null;
@@ -119,11 +120,11 @@ function FichaEspecieRegistro({ especie, saldo, codigo }: { especie: EspecieDelR
 function FilaComparacion({ label, c, unidad, formato }: { label: string; c: Comparacion; unidad: string; formato: (v: number) => string }) {
   const lejos = c.difPct != null && Math.abs(c.difPct) >= DIFERENCIA_ALERTA_PCT;
   return (
-    <tr className="border-t border-[var(--rule-soft)] first:border-t-0">
-      <th scope="row" className="py-1 pr-2 text-left text-xs font-medium text-[var(--text-secondary)]">{label}</th>
-      <td className="py-1 text-right font-mono text-xs tabular-nums text-[var(--text-secondary)]">{c.censo == null ? "—" : formato(c.censo)}</td>
-      <td className="py-1 pl-2 text-right font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">{c.medido == null ? "—" : `${formato(c.medido)} ${unidad}`}</td>
-      <td className={`py-1 pl-2 text-right font-mono text-xs font-bold tabular-nums ${lejos ? "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`}>
+    <tr className="border-[var(--rule-soft)] first:border-t-0">
+      <th scope="row" className="pr-2 text-left font-medium text-[var(--text-secondary)]">{label}</th>
+      <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{c.censo == null ? "—" : formato(c.censo)}</td>
+      <td className="pl-2 text-right font-mono font-bold tabular-nums">{c.medido == null ? "—" : `${formato(c.medido)} ${unidad}`}</td>
+      <td className={`pl-2 text-right font-mono font-bold tabular-nums ${lejos ? "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`}>
         {c.difPct == null ? "" : `${c.difPct > 0 ? "+" : ""}${formatNumber(c.difPct, { min: 0, max: 1 })} %`}
       </td>
     </tr>
@@ -228,13 +229,13 @@ export default function LothFichaArbol({ arbol, cargando, codigo, medido, medida
           </p>
         ) : (
           <>
-            <table className="mt-1 w-full">
+            <DataTable className="mt-1 w-full">
               <thead>
-                <tr className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  <th scope="col" className="text-left font-bold"><span className="sr-only">Medida</span></th>
-                  <th scope="col" className="text-right font-bold">Censo</th>
-                  <th scope="col" className="text-right font-bold">Medido</th>
-                  <th scope="col" className="text-right font-bold">Dif.</th>
+                <tr>
+                  <th scope="col"><span className="sr-only">Medida</span></th>
+                  <th scope="col" className="text-right">Censo</th>
+                  <th scope="col" className="text-right">Medido</th>
+                  <th scope="col" className="text-right">Dif.</th>
                 </tr>
               </thead>
               <tbody>
@@ -242,7 +243,7 @@ export default function LothFichaArbol({ arbol, cargando, codigo, medido, medida
                 <FilaComparacion label="Largo / Hc" c={comp.largo} unidad="m" formato={(v) => m(v, 0, 2)} />
                 <FilaComparacion label="Volumen" c={comp.volumen} unidad="m³" formato={(v) => fmtM3(v)} />
               </tbody>
-            </table>
+            </DataTable>
             {comp.muyDistinto && (
               <p className={`mt-2 flex items-start gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-semibold ${AMBAR}`}>
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />

@@ -183,7 +183,7 @@ export function Th({
   return (
     <th
       scope={scope}
-      className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}
+      className={`font-bold ${className ?? ""}`}
       {...rest}
     >
       {children}
@@ -191,5 +191,5 @@ export function Th({
   );
 }
 export function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
+  return <td className={`${className ?? ""}`}>{children}</td>;
 }

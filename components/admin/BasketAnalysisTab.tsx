@@ -212,9 +212,9 @@ export default function BasketAnalysisTab() {
               <tbody>
                 {sorted.map((a, i) => (
                   <tr key={i}>
-                    <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.productA}</td>
+                    <td className="font-semibold">{a.productA}</td>
                     <td><ArrowRight className="h-3 w-3 text-[var(--text-tertiary)]" /></td>
-                    <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.productB}</td>
+                    <td className="font-semibold">{a.productB}</td>
                     <td>
                       <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted">{a.category}</span>
                     </td>
@@ -230,7 +230,7 @@ export default function BasketAnalysisTab() {
                     <td className="text-right">
                       <span className={cn("text-xs font-bold", a.lift >= 2 ? "text-[var(--text-secondary)]" : a.lift >= 1.5 ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]")}>{Number(a.lift).toFixed(1)}x</span>
                     </td>
-                    <td className="text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.count}</td>
+                    <td className="text-right font-bold">{a.count}</td>
                   </tr>
                 ))}
               </tbody>

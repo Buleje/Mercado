@@ -25,6 +25,7 @@ import { nombreCortoDeDueno } from "@/lib/forestal/dueno-de-la-madera";
 
 /* El corte vive en lib (lo usa también el Excel): uno solo para los dos. */
 import type { CorteDelResumen } from "@/lib/forestal/resumen-de-jornadas-excel";
+import { DataTable } from "@buleje/design-system";
 export type CorteResumen = CorteDelResumen;
 
 export const ETIQUETA_CORTE: Record<CorteResumen, string> = {
@@ -38,7 +39,7 @@ export const ETIQUETA_CORTE: Record<CorteResumen, string> = {
 export const CELDA = "px-3 py-2.5 text-sm";
 export const CIFRA = `${CELDA} text-right font-mono tabular-nums`;
 const CABECERA =
-  "bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] [&>th]:border-b [&>th]:border-[var(--rule-base)]";
+  "[&>th]:border-b [&>th]:border-[var(--rule-base)]";
 export const FILA_TOTAL = "border-t-2 border-[var(--rule-strong)] bg-primary/10 font-bold text-[var(--text-primary)]";
 
 /** PT por pieza: cuánto rinde cada pieza en promedio. Sin piezas, no hay promedio. */
@@ -59,13 +60,13 @@ export function Marco({
 }) {
   return (
     <div className="max-h-[52vh] overflow-auto rounded-xl border border-[var(--rule-base)]">
-      <table className={`${tablaClassName} border-collapse`}>
+      <DataTable className={`${tablaClassName}`}>
         <caption className="sr-only">{titulo}</caption>
         <thead className="sticky top-0 z-[1]">
           <tr className={CABECERA}>{cabecera}</tr>
         </thead>
         {children}
-      </table>
+      </DataTable>
     </div>
   );
 }
@@ -114,7 +115,7 @@ function EspecieYProductos({ especie }: { especie: ResumenDeJornadas["porEspecie
   return (
     <>
       <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/60">
-        <td className={`${CELDA} font-bold text-[var(--text-primary)]`}>
+        <td className={`${CELDA} font-bold`}>
           {especie.especie}{" "}
           <span className="font-normal text-[var(--text-tertiary)]">
             · {especie.corridas} corrida{especie.corridas === 1 ? "" : "s"}
@@ -125,7 +126,7 @@ function EspecieYProductos({ especie }: { especie: ResumenDeJornadas["porEspecie
         <td className={`${CIFRA} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>{fmtPt(especie.pt)}</td>
       </tr>
       {especie.productos.map((p) => (
-        <tr key={p.producto} className="border-t border-[var(--rule-soft)]">
+        <tr key={p.producto}>
           <td className={`${CELDA} pl-6 text-[var(--text-secondary)]`}>{p.producto}</td>
           <td className={CIFRA}>{fmtPiezas(p.piezas)}</td>
           <td className={CIFRA}>{fmtM3(p.m3)}</td>
@@ -157,8 +158,8 @@ export function TablaPorDia({ datos }: { datos: ResumenDeJornadas }) {
     >
       <tbody>
         {datos.porDia.map((d) => (
-          <tr key={d.dia} className="border-t border-[var(--rule-soft)]">
-            <td className={`${CELDA} font-bold text-[var(--text-primary)]`}>
+          <tr key={d.dia}>
+            <td className={`${CELDA} font-bold`}>
               <Dia iso={d.dia} />
               {/* De quién: con dos dueños el mismo día, lo que separa un registro del otro. */}
               <DuenosDelDia duenos={d.duenos} />
@@ -218,7 +219,7 @@ export function TablaPorDiaEspecieTipo({ datos }: { datos: ResumenDeJornadas }) 
            un lector de pantalla las lee como un grupo. */
         <tbody key={d.dia}>
           <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/60">
-            <th scope="colgroup" colSpan={2} className={`${CELDA} text-left font-bold text-[var(--text-primary)]`}>
+            <th scope="colgroup" colSpan={2} className={`${CELDA} text-left font-bold`}>
               <Dia iso={d.dia} />{" "}
               <span className="font-normal text-[var(--text-tertiary)]">
                 · {d.corridas} corrida{d.corridas === 1 ? "" : "s"}
@@ -232,8 +233,8 @@ export function TablaPorDiaEspecieTipo({ datos }: { datos: ResumenDeJornadas }) 
           </tr>
           {d.especies.flatMap((e) =>
             e.productos.map((p) => (
-              <tr key={`${e.especie}|${p.producto}`} className="border-t border-[var(--rule-soft)]">
-                <td className={`${CELDA} pl-6 text-[var(--text-primary)]`}>{e.especie}</td>
+              <tr key={`${e.especie}|${p.producto}`}>
+                <td className={`${CELDA} pl-6`}>{e.especie}</td>
                 <td className={`${CELDA} text-[var(--text-secondary)]`}>{p.producto}</td>
                 <td className={CIFRA}>{fmtPiezas(p.piezas)}</td>
                 <td className={CIFRA}>{fmtM3(p.m3)}</td>

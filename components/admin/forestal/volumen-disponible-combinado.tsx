@@ -181,7 +181,7 @@ function TablaVolumen({
   total: { m3: number; pt: number };
   cargando: boolean;
 }) {
-  const celda = "px-3 py-2";
+  const celda = "";
   const cols = fuentes.length + 4;
   const enPt = unidad === "pt";
   const celdaDe = (g: FilaVolumen, f: FuenteVolumen) => (enPt ? g.ptPorFuente[f] : g.porFuente[f]);
@@ -237,7 +237,7 @@ function TablaVolumen({
                   {g.porFuente[f] > 0 ? fmt(celdaDe(g, f)) : "—"}
                 </td>
               ))}
-              <td className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}>{enPt ? nf(g.pt) : fmtM3(g.m3)}</td>
+              <td className={`${celda} text-right font-bold tabular-nums`}>{enPt ? nf(g.pt) : fmtM3(g.m3)}</td>
               <td className={`${celda} text-right tabular-nums text-[var(--text-secondary)]`}>{enPt ? fmtM3(g.m3) : nf(g.pt)}</td>
               <td className={`${celda} max-sm:hidden! text-right tabular-nums text-[var(--text-secondary)]`}>{pctDe(g)}%</td>
             </tr>
@@ -245,12 +245,12 @@ function TablaVolumen({
         })}
         {filas.length > 1 && (
           <tr className="border-t-2 border-[var(--rule-base)] font-bold">
-            <th scope="row" className={`${celda} text-left text-[var(--text-primary)]`}>Total</th>
+            <th scope="row" className={`${celda} text-left`}>Total</th>
             {fuentes.map((f) => (
-              <td key={f} className={`${celda} text-right tabular-nums text-[var(--text-primary)]`}>{fmt(suma(f))}</td>
+              <td key={f} className={`${celda} text-right tabular-nums`}>{fmt(suma(f))}</td>
             ))}
             {/* En pt, el pie suma las filas que se ven (cada una ya redondeada). */}
-            <td className={`${celda} text-right tabular-nums text-[var(--text-primary)]`}>{enPt ? nf(filas.reduce((a, g) => a + g.pt, 0)) : fmtM3(total.m3)}</td>
+            <td className={`${celda} text-right tabular-nums`}>{enPt ? nf(filas.reduce((a, g) => a + g.pt, 0)) : fmtM3(total.m3)}</td>
             <td className={`${celda} text-right tabular-nums text-[var(--text-secondary)]`}>{enPt ? fmtM3(total.m3) : nf(filas.reduce((a, g) => a + g.pt, 0))}</td>
             <td className={`${celda} max-sm:hidden! text-right tabular-nums text-[var(--text-secondary)]`}>100%</td>
           </tr>

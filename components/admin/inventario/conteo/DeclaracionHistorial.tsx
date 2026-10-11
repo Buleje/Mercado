@@ -48,9 +48,9 @@ export function DeclaracionHistorial({ historial }: { historial: HistorialEntry[
                   return (
                     <tr key={h.savedAt + i}>
                       <td className="text-[var(--text-secondary)]">{formatDate(h.fecha + "T00:00:00")}</td>
-                      <td className="text-right font-medium text-[var(--text-primary)]">{h.totalProductos}</td>
-                      <td className="hidden text-right text-[var(--text-primary)] sm:table-cell">{h.totalUnidades}</td>
-                      <td className="text-right font-medium text-[var(--text-primary)]">
+                      <td className="text-right font-medium">{h.totalProductos}</td>
+                      <td className="hidden text-right sm:table-cell">{h.totalUnidades}</td>
+                      <td className="text-right font-medium">
                         {formatCurrency(h.valorCosto)}
                         {anterior && (
                           <span className={cn("ml-1 text-sm", dif > 0 ? "text-[var(--data-success-ink)]" : dif < 0 ? "text-[var(--data-error-ink)]" : "text-[var(--text-secondary)]")}>

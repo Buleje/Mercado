@@ -2848,6 +2848,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
              * de la ventana. Es requisito de toda lista virtualizada a mano.
              */}
             <DataTable
+              planilla
               className="w-full min-w-[960px] text-sm"
               wrapperClassName="rounded-xl"
               wrapperProps={propsTabla}

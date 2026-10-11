@@ -261,7 +261,7 @@ export default function GiftCardsAdminModule() {
         <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="overflow-x-auto">
             <DataTable className={CLASE_TABLA}>
-              <thead className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+              <thead>
                 <tr>
                   <th className={TH}>Código</th>
                   <th className={cn(TH, "hidden sm:table-cell")}>Destinatario</th>

@@ -95,12 +95,12 @@ export default function LothGtfTabla({
     <div className="space-y-3">
       <BarraFiltrosTabla f={f} />
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <DataTable filtrable className="w-full text-sm">
-          <thead ref={orden.refCabecera} className="bg-[var(--surface-sunken)] text-left align-top">
+        <DataTable filtrable className="w-full">
+          <thead ref={orden.refCabecera} className="align-top">
             <tr>
               {seleccion && <CasillaTodasGtf ids={idsFiltradas} sel={seleccion} etiqueta={`Elegir las ${idsFiltradas.length} guías filtradas`} />}
               <EnOrden orden={ordenVisible} celdas={soloVisibles(cabecerasGtf(f))} />
-              <th className="w-px px-3 py-2.5 text-right font-bold text-[var(--text-primary)]">Acciones</th>
+              <th className="w-px text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -110,13 +110,13 @@ export default function LothGtfTabla({
                 <tr
                   key={g.id}
                   ref={g.gtfNumber === focusGtf ? filaEnfocada : undefined}
-                  className={`border-t border-[var(--rule-soft)] ${g.status === "anulada" ? "opacity-50" : ""} ${
+                  className={`${g.status === "anulada" ? "opacity-50" : ""} ${
                     g.gtfNumber === focusGtf ? "bg-[var(--data-info-500)]/15 outline outline-2 -outline-offset-2 outline-[var(--data-info-500)]" : ""
                   }`}
                 >
                   {seleccion && <CasillaFilaGtf id={g.id} numero={g.gtfNumber} sel={seleccion} />}
                   <EnOrden orden={ordenVisible} celdas={soloVisibles(celdasGtf(fila))} />
-                  <td data-label="Acciones" className="w-px px-3 py-2.5">
+                  <td data-label="Acciones" className="w-px">
                     <AccionesGtf
                       g={g}
                       porIngresar={g.tipo !== "producto" && g.status !== "anulada" && sinIngresar.has(g.gtfNumber)}
@@ -133,7 +133,7 @@ export default function LothGtfTabla({
             {gtfs.length > 0 && filtradas.length === 0 && <SinCoincidenciasFila colSpan={columnasTotal} />}
             {gtfs.length === 0 && (
               <tr>
-                <td colSpan={columnasTotal} className="px-4 py-10 text-center text-[var(--text-tertiary)]">
+                <td colSpan={columnasTotal} className="text-center text-[var(--text-tertiary)]">
                   <FileText className="mx-auto mb-2 h-8 w-8 opacity-30" />
                   Sin GTF emitidas. Haz click en &quot;Emitir GTF&quot;.
                 </td>

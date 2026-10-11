@@ -152,36 +152,36 @@ export function QuotationComparator({ orders, suppliers, abierto, onCerrar }: {
           <p className="text-sm text-[var(--text-tertiary)] dark:text-muted text-center py-6">Necesitas al menos 2 OCs para comparar</p>
         ) : (
           <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
+            <DataTable className="w-full">
               <thead>
-                <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                  <th className="text-left py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
+                <tr>
+                  <th>Producto</th>
                   {selectedOCs.map(oc => (
-                    <th key={oc.id} className="text-right py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
+                    <th key={oc.id} className="text-right">
                       <EnlacePanel cosa="proveedor" id={oc.supplierId} apariencia="heredada">{oc.supplierName}</EnlacePanel>
                     </th>
                   ))}
-                  <th className="text-center py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted">Mejor</th>
+                  <th className="text-center">Mejor</th>
                 </tr>
               </thead>
               <tbody>
                 {productIds.map(pid => {
                   const best = bestPerProduct[pid];
                   return (
-                    <tr key={pid} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
-                      <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">
+                    <tr key={pid}>
+                      <td className="font-medium">
                         <EnlacePanel cosa="producto" id={String(pid)} apariencia="heredada">{productNames[pid]}</EnlacePanel>
                       </td>
                       {selectedOCs.map(oc => {
                         const item = oc.items.find(i => i.productId === pid);
                         const isBest = best && best.ocId === oc.id;
                         return (
-                          <td key={oc.id} className={cn("py-2 px-2 text-right font-semibold", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                          <td key={oc.id} className={cn("text-right font-semibold", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                             {item ? `${formatCurrency(Number(item.unitCost))}` : "—"}
                           </td>
                         );
                       })}
-                      <td className="py-2 px-2 text-center">
+                      <td className="text-center">
                         {best && (
                           <span className="inline-flex items-center gap-1 text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                             {selectedOCs.find(oc => oc.id === best.ocId)?.supplierName?.split(" ")[0] ?? ""} <Check className="h-3.5 w-3.5" aria-hidden />
@@ -193,17 +193,17 @@ export function QuotationComparator({ orders, suppliers, abierto, onCerrar }: {
                 })}
                 {/* TOTAL row */}
                 <tr className="border-t-2 border-[var(--rule-base)] font-bold">
-                  <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">TOTAL</td>
+                  <td>TOTAL</td>
                   {selectedOCs.map(oc => {
                     const total = ocTotals.find(t => t.id === oc.id)?.total ?? 0;
                     const isBest = oc.id === bestTotalOcId;
                     return (
-                      <td key={oc.id} className={cn("py-2 px-2 text-right", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                      <td key={oc.id} className={cn("text-right", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                         {formatCurrency(total)}
                       </td>
                     );
                   })}
-                  <td className="py-2 px-2 text-center">
+                  <td className="text-center">
                     <span className="inline-flex items-center gap-1 text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                       {selectedOCs.find(oc => oc.id === bestTotalOcId)?.supplierName?.split(" ")[0] ?? ""} <Check className="h-3.5 w-3.5" aria-hidden />
                     </span>

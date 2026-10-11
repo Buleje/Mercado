@@ -12,8 +12,7 @@ import { agregarRendimientoPlata } from "@/lib/forestal/rendimiento-plata";
 import { fechaConDia } from "@/lib/forestal/loth-plan-costeo";
 import { CeldaPlata, ReglaRendimiento, TendenciaCelda, fmtM3, fmtPct, textoRango } from "./rendimiento-compartido";
 
-const TH = "px-3 py-2 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-3 py-2 align-middle";
+const TD = "align-middle";
 /** Dato + aclaración apilados: a la derecha en la tarjeta del celular, a la izquierda en la tabla. */
 const PILA = "inline-flex flex-col items-end gap-0.5 sm:items-start";
 
@@ -33,14 +32,14 @@ export default function RendimientoPorEspecie({ datos }: { datos: RendimientoAse
 
   return (
     <div className="overflow-x-auto">
-      <DataTable className="text-sm">
-        <thead className="border-b border-[var(--rule-base)]">
+      <DataTable>
+        <thead>
           <tr>
-            <th scope="col" className={TH}>Especie</th>
-            <th scope="col" className={TH}>Corridas</th>
-            <th scope="col" className={`${TH} text-right`}>Troza → aserrado (m³)</th>
-            <th scope="col" className={`${TH} text-right`}>Rendimiento</th>
-            <th scope="col" className={TH}>
+            <th scope="col" >Especie</th>
+            <th scope="col" >Corridas</th>
+            <th scope="col" className="text-right">Troza → aserrado (m³)</th>
+            <th scope="col" className="text-right">Rendimiento</th>
+            <th scope="col" >
               <span className="inline-flex items-center gap-1">
                 Tu rango
                 <InfoTip
@@ -51,10 +50,10 @@ export default function RendimientoPorEspecie({ datos }: { datos: RendimientoAse
                 />
               </span>
             </th>
-            <th scope="col" className={TH}>Cada corrida, de 0 a 100 %</th>
-            <th scope="col" className={TH}>Tendencia</th>
-            {plataVisible && <th scope="col" className={`${TH} text-right`}>Comercial (PT)</th>}
-            {plataVisible && <th scope="col" className={`${TH} text-right`}>Costo por PT</th>}
+            <th scope="col" >Cada corrida, de 0 a 100 %</th>
+            <th scope="col" >Tendencia</th>
+            {plataVisible && <th scope="col" className="text-right">Comercial (PT)</th>}
+            {plataVisible && <th scope="col" className="text-right">Costo por PT</th>}
           </tr>
         </thead>
         <tbody>
@@ -62,7 +61,7 @@ export default function RendimientoPorEspecie({ datos }: { datos: RendimientoAse
             const plata = plataVisible ? plataDe(e.especie) : null;
             return (
               <tr key={e.especie}>
-                <th scope="row" className={`${TD} text-left font-bold text-[var(--text-primary)]`}>{e.especie}</th>
+                <th scope="row" className={`${TD} text-left font-bold`}>{e.especie}</th>
                 <td className={`${TD} text-[var(--text-secondary)]`}>
                   {/* Un solo hijo por celda: en el celular la celda es una fila flex de tarjeta. */}
                   <span className={PILA}>

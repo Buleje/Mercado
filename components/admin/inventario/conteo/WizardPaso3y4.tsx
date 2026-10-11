@@ -19,10 +19,10 @@ export function WizardPaso3({ w }: { w: ConteoWizard }) {
           <p className="py-8 text-center text-sm text-[var(--text-secondary)]">No hay diferencias: todo coincide con el sistema.</p>
         ) : (
           <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
+            <DataTable className="w-full">
               <thead>
                 <tr>
-                  <th className="text-left">Producto</th>
+                  <th>Producto</th>
                   <th className="text-center">Sistema</th>
                   <th className="text-center">Contado</th>
                   <th className="text-center">Diferencia</th>
@@ -34,9 +34,9 @@ export function WizardPaso3({ w }: { w: ConteoWizard }) {
                   const dif = item.diferencia ?? 0;
                   return (
                     <tr key={item.id}>
-                      <td className="text-[var(--text-primary)]">{item.product?.name ?? `#${item.productId}`}</td>
+                      <td>{item.product?.name ?? `#${item.productId}`}</td>
                       <td className="text-center text-[var(--text-secondary)]">{item.stockSistema}</td>
-                      <td className="text-center font-medium text-[var(--text-primary)]">{item.stockContado}</td>
+                      <td className="text-center font-medium">{item.stockContado}</td>
                       <td className={cn("text-center font-bold", dif > 0 ? "text-[var(--data-success-ink)]" : "text-[var(--data-error-ink)]")}>
                         {dif > 0 ? "+" : ""}{dif}
                       </td>

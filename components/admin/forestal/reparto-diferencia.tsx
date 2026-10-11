@@ -61,8 +61,8 @@ export function filasDeDiferencia(d: Distribucion): FilaDif[] {
   return [...mapa.values()].sort((a, b) => b.m3 + b.m3Falta - (a.m3 + a.m3Falta));
 }
 
-const TH = "px-3 py-3 text-left align-bottom text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]";
-const TD = "px-3 py-3 align-middle";
+const TH = "align-bottom";
+const TD = "align-middle";
 const NUM = "text-right font-mono tabular-nums";
 
 export function DiferenciaDistribucion({ dist, dim }: { dist: Distribucion; dim?: DimensionResumen }) {
@@ -96,9 +96,9 @@ export function DiferenciaDistribucion({ dist, dim }: { dist: Distribucion; dim?
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <DataTable className="w-full min-w-[680px] table-fixed text-base">
+        <DataTable className="w-full min-w-[680px] table-fixed">
           <caption className="sr-only">Lo distribuido contra lo que falta, por tipo</caption>
-          <thead className="border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+          <thead>
             <tr>
               <th scope="col" className={TH}>Tipo</th>
               {/* Piezas · m³ · PT en los dos tríos (2026-09-09). */}
@@ -114,12 +114,12 @@ export function DiferenciaDistribucion({ dist, dim }: { dist: Distribucion; dim?
             {filas.map((f) => {
               const falta = f.piezasFalta > 0 || f.m3Falta > 0.0001;
               return (
-                <tr key={f.tipo} className="border-t border-[var(--rule-soft)] even:bg-[var(--surface-canvas)]/50">
-                  <td className={`${TD} font-bold text-[var(--text-primary)]`}>
+                <tr key={f.tipo} className="even:bg-[var(--surface-canvas)]/50">
+                  <td className={`${TD} font-bold`}>
                     {dim === "tipo" ? <TipoBadge tipo={f.tipo as TipoComercial} /> : f.tipo}
                   </td>
                   <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPiezas(f.piezas)}</td>
-                  <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>
+                  <td className={`${TD} ${NUM} font-bold`}>{fmtM3(f.m3)}</td>
                   <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPt(f.pieTablar)}</td>
                   <td className={`${TD} ${NUM} ${falta ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`}>
                     {fmtPiezas(f.piezasFalta)}
@@ -135,7 +135,7 @@ export function DiferenciaDistribucion({ dist, dim }: { dist: Distribucion; dim?
             })}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+            <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <th scope="row" className={`${TD} text-left`}>Total</th>
               <td className={`${TD} ${NUM}`}>{fmtPiezas(tot.piezas)}</td>
               <td className={`${TD} ${NUM}`}>{fmtM3(tot.m3)}</td>

@@ -166,14 +166,14 @@ export default function CtpPatioPorPermiso({
         <TbodyCtp>
           {cargando && filas.length === 0 && (
             <tr>
-              <td colSpan={columnas} className="px-3 py-6 text-center text-sm text-[var(--text-secondary)]">
+              <td colSpan={columnas} className="text-center text-[var(--text-secondary)]">
                 Leyendo el patio…
               </td>
             </tr>
           )}
           {sinDatos && (
             <tr>
-              <td colSpan={columnas} className="px-3 py-6 text-center text-sm text-[var(--text-secondary)]">
+              <td colSpan={columnas} className="text-center text-[var(--text-secondary)]">
                 No queda madera viva en el patio ni por recepcionar.
               </td>
             </tr>
@@ -240,13 +240,13 @@ export default function CtpPatioPorPermiso({
                   )}
                   </div>
                 </td>
-                <td className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}>
+                <td className={`${celda} text-right font-bold tabular-nums`}>
                   {nf(f.enPatio.trozas)}
                   {f.enLote.trozas > 0 && (
                     <span className="block text-sm font-normal text-[var(--text-secondary)]">{nf(f.enLote.trozas)} en lote</span>
                   )}
                 </td>
-                <td className={`${celda} text-right tabular-nums text-[var(--text-primary)]`}>{fmtM3(f.enPatio.m3)}</td>
+                <td className={`${celda} text-right tabular-nums`}>{fmtM3(f.enPatio.m3)}</td>
                 {!compacto && (
                   <td className={`${celda} ${SOLO_ANCHO} text-right tabular-nums text-[var(--text-secondary)]`}>≈{nf(f.enPatio.ptAserrable)}</td>
                 )}
@@ -257,7 +257,7 @@ export default function CtpPatioPorPermiso({
               </tr>
               {abierto && (
                 <tr id={idDetalle} className="bg-[var(--surface-sunken)]/60">
-                  <td colSpan={columnas} className="px-3 pb-3 pt-1">{detalleDe(f.permiso)}</td>
+                  <td colSpan={columnas} className="pb-3 pt-1">{detalleDe(f.permiso)}</td>
                 </tr>
               )}
               </Fragment>
@@ -267,11 +267,11 @@ export default function CtpPatioPorPermiso({
         {filas.length > 1 && (
           <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
             <tr>
-              <th scope="row" className={`${celda} text-left font-bold text-[var(--text-primary)]`}>
+              <th scope="row" className={`${celda} text-left font-bold`}>
                 Total · {totales.permisos === 1 ? "1 permiso" : `${nf(totales.permisos)} permisos`}
               </th>
-              <td className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}>{nf(totales.enPatio.trozas)}</td>
-              <td className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}>{fmtM3(totales.enPatio.m3)}</td>
+              <td className={`${celda} text-right font-bold tabular-nums`}>{nf(totales.enPatio.trozas)}</td>
+              <td className={`${celda} text-right font-bold tabular-nums`}>{fmtM3(totales.enPatio.m3)}</td>
               {!compacto && (
                 <td className={`${celda} ${SOLO_ANCHO} text-right tabular-nums text-[var(--text-secondary)]`}>≈{nf(totales.enPatio.ptAserrable)}</td>
               )}

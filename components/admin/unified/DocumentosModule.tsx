@@ -446,22 +446,22 @@ export default function DocumentosModule() {
             </div>
           ) : (
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
-              <DataTable className="w-full text-sm">
-                <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
+              <DataTable className="w-full">
+                <thead>
                   <tr>
-                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Nombre</th>
-                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Carpeta</th>
-                    <th className="text-right px-4 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Tamaño</th>
-                    <th className="text-right px-4 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Subido</th>
-                    <th className="text-center px-4 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acción</th>
+                    <th>Nombre</th>
+                    <th className="hidden sm:table-cell">Carpeta</th>
+                    <th className="text-right hidden md:table-cell">Tamaño</th>
+                    <th className="text-right hidden md:table-cell">Subido</th>
+                    <th className="text-center">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--rule-soft)]">
                   {filtered.map((doc) => {
                     const { Icon, tint, bg } = getFileIcon(doc.type);
                     return (
-                      <tr key={doc.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
-                        <td className="px-4 py-3">
+                      <tr key={doc.id}>
+                        <td>
                           <button onClick={() => setPreview(doc)} className="flex items-center gap-3 text-left min-w-0 hover:text-primary transition-colors">
                             <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg shrink-0", bg)}>
                               <Icon className={cn("h-4 w-4", tint)} />
@@ -470,14 +470,14 @@ export default function DocumentosModule() {
                             {doc.favorite && <Star className="h-3.5 w-3.5 fill-[var(--data-warning)] text-[var(--data-warning)] shrink-0" />}
                           </button>
                         </td>
-                        <td className="px-4 py-3 hidden sm:table-cell">
+                        <td className="hidden sm:table-cell">
                           <span className="text-xs text-[var(--text-secondary)] capitalize">{doc.category}</span>
                         </td>
-                        <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-secondary)]">{formatBytes(doc.size)}</td>
-                        <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-tertiary)]">
+                        <td className="text-right hidden md:table-cell tabular-nums text-[var(--text-secondary)]">{formatBytes(doc.size)}</td>
+                        <td className="text-right hidden md:table-cell tabular-nums text-[var(--text-tertiary)]">
                           {formatDateShort(doc.uploadedAt)}
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="text-center">
                           <div className="inline-flex items-center gap-1">
                             <button onClick={() => setPreview(doc)} className="p-1.5 rounded-xl hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] text-[var(--text-tertiary)] transition-colors" title="Ver"><Eye className="h-4 w-4" /></button>
                             <button onClick={() => toggleFav(doc.id)} className="p-1.5 rounded-xl hover:bg-[var(--data-warning)]/10 hover:text-[var(--data-warning)] text-[var(--text-tertiary)] transition-colors" title="Favorito"><Star className={cn("h-4 w-4", doc.favorite && "fill-[var(--data-warning)] text-[var(--data-warning)]")} /></button>

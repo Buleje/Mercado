@@ -123,24 +123,24 @@ export default function CtpMaterialPanel({
           <TablaCtp>
             <TheadCtp>
               <tr>
-                <th className="px-3 py-2 font-bold">Guía (GTF)</th>
-                <th className="px-3 py-2 font-bold">Proveedor</th>
-                <th className="px-3 py-2 text-right font-bold">Piezas</th>
-                <th className="px-3 py-2 text-right font-bold">Volumen (m³)</th>
-                <th className="px-3 py-2 text-right font-bold">Pie tablar</th>
+                <th className="font-bold">Guía (GTF)</th>
+                <th className="font-bold">Proveedor</th>
+                <th className="text-right font-bold">Piezas</th>
+                <th className="text-right font-bold">Volumen (m³)</th>
+                <th className="text-right font-bold">Pie tablar</th>
               </tr>
             </TheadCtp>
             <TbodyCtp>
               {guias.length === 0 && <FilaVacia cols={5}>Esta corrida no tiene piezas cargadas.</FilaVacia>}
               {guias.map((g) => (
-                <tr key={g.woodEntryId} className="hover:bg-[var(--surface-sunken)]">
-                  <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber ?? "—"}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{g.proveedor ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{g.piezas}</td>
-                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                <tr key={g.woodEntryId}>
+                  <td className="font-mono font-bold">{g.gtfNumber ?? "—"}</td>
+                  <td className="text-[var(--text-secondary)]">{g.proveedor ?? "—"}</td>
+                  <td className="text-right font-mono tabular-nums">{g.piezas}</td>
+                  <td className="text-right font-mono font-bold tabular-nums">
                     {fmtM3(g.volumenM3)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                  <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                     {formatNumber(g.pieTablar)}
                   </td>
                 </tr>
@@ -174,27 +174,27 @@ export default function CtpMaterialPanel({
           <TablaCtp>
             <TheadCtp>
               <tr>
-                <th className="px-3 py-2 font-bold">Código</th>
-                <th className="px-3 py-2 font-bold">Producto</th>
-                <th className="px-3 py-2 font-bold">Presentación</th>
-                <th className="px-3 py-2 text-right font-bold">Cant.</th>
-                <th className="px-3 py-2 text-right font-bold">Esp. × Ancho × Largo</th>
-                <th className="px-3 py-2 text-right font-bold">Volumen</th>
+                <th className="font-bold">Código</th>
+                <th className="font-bold">Producto</th>
+                <th className="font-bold">Presentación</th>
+                <th className="text-right font-bold">Cant.</th>
+                <th className="text-right font-bold">Esp. × Ancho × Largo</th>
+                <th className="text-right font-bold">Volumen</th>
               </tr>
             </TheadCtp>
             <TbodyCtp>
               {(paquetesPrevios ?? []).map((p) => (
-                <tr key={p.id ?? p.codigo} className="hover:bg-[var(--surface-sunken)]">
-                  <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{p.codigo}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{p.productType ?? "—"}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{p.presentacion ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{p.cantidad ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                <tr key={p.id ?? p.codigo}>
+                  <td className="font-mono font-bold">{p.codigo}</td>
+                  <td className="text-[var(--text-secondary)]">{p.productType ?? "—"}</td>
+                  <td className="text-[var(--text-secondary)]">{p.presentacion ?? "—"}</td>
+                  <td className="text-right font-mono tabular-nums">{p.cantidad ?? "—"}</td>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                     {p.espesorCm == null || p.anchoCm == null || p.largoM == null
                       ? "—"
                       : `${n(p.espesorCm, 2)} × ${n(p.anchoCm, 2)} cm × ${n(p.largoM, 2)} m`}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                  <td className="text-right font-mono font-bold tabular-nums">
                     {p.volumenM3 == null || p.volumenM3 === "" ? "—" : fmtM3(Number(p.volumenM3))}
                   </td>
                 </tr>

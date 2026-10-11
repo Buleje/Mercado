@@ -68,7 +68,7 @@ export default function FilaGanado({
         aria-expanded={abierto}
         aria-label={`${persona.nombre}: ${abierto ? "ocultar" : "ver"} cómo sale el cálculo`}
       >
-        <td className="font-semibold text-[var(--text-primary)]">
+        <td className="font-semibold">
           <span className="inline-flex items-start gap-1.5">
             <ChevronDown aria-hidden="true" className={cn("mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] transition-transform", abierto && "rotate-180")} />
             <span>
@@ -80,7 +80,7 @@ export default function FilaGanado({
         <td className="text-right tabular-nums">{formatNumber(dias, { max: 2 })}</td>
         <td className="text-right tabular-nums">{horas > 0 ? horas.toFixed(1) : "—"}</td>
         <td className="whitespace-nowrap">{tarifaTexto}</td>
-        <td className="text-right font-bold tabular-nums text-[var(--text-primary)]">{formatearPEN(persona.total)}</td>
+        <td className="text-right font-bold tabular-nums">{formatearPEN(persona.total)}</td>
         <td className="text-right tabular-nums">
           {persona.adelantos ? formatearPEN(persona.adelantos.abiertosPen) : "—"}
           {(persona.adelantos?.descontadoPen ?? 0) > 0 && (
@@ -130,7 +130,7 @@ export default function FilaGanado({
       </tr>
       {abierto && (
         <tr>
-          <td colSpan={8} className="bg-[var(--surface-sunken)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+          <td colSpan={8} className="bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
             <ul className="list-inside list-disc space-y-1 leading-relaxed">
               {explicarGanado(persona).map((linea, i) => <li key={i}>{linea}</li>)}
               {queda != null && <li>{explicarQuedaPorPagar(queda)}</li>}

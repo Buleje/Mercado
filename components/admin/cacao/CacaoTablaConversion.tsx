@@ -139,9 +139,9 @@ export default function CacaoTablaConversion({
         <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">Sin datos de precio o tipo de cambio para este rango.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-          <DataTable className="w-full min-w-[760px] border-collapse text-sm">
+          <DataTable className="w-full min-w-[760px]">
             <thead>
-              <tr className="bg-[var(--accent)] text-left text-white">
+              <tr className="bg-[var(--accent)] text-white">
                 <Th>Fecha</Th>
                 <Th className="text-right">Cacao internacional</Th>
                 <Th className="text-right">Tipo de cambio</Th>
@@ -165,19 +165,19 @@ export default function CacaoTablaConversion({
                     role="button"
                     aria-label={`Fijar ${r.label} como fila base de comparación`}
                     onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setBaseKey(r.key); } }}
-                    className={`cursor-pointer border-t border-[var(--rule-soft)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${esUlt ? "bg-[var(--data-success-100)]/50" : esBase ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]"}`}
+                    className={`cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${esUlt ? "bg-[var(--data-success-100)]/50" : esBase ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]"}`}
                   >
-                    <td className="px-3 py-2.5 font-bold text-[var(--text-primary)]">
+                    <td className="font-bold">
                       {r.label}
                       {tag && <span className="ml-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wide text-[var(--accent)]">— {tag}</span>}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">US$ {fmt0(r.usd)}/t</td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.fx.toFixed(4)}</td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{formatCurrency(r.solKg)}/kg</td>
-                    <td className={`px-3 py-2.5 text-right font-mono font-bold tabular-nums ${esBase ? "text-[var(--text-secondary)]" : varPct > 0 ? "text-[var(--data-success-700)]" : varPct < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-secondary)]"}`}>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">US$ {fmt0(r.usd)}/t</td>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.fx.toFixed(4)}</td>
+                    <td className="text-right font-mono tabular-nums">{formatCurrency(r.solKg)}/kg</td>
+                    <td className={`text-right font-mono font-bold tabular-nums ${esBase ? "text-[var(--text-secondary)]" : varPct > 0 ? "text-[var(--data-success-700)]" : varPct < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-secondary)]"}`}>
                       {esBase ? "0%" : `${varPct > 0 ? "+" : ""}${varPct.toFixed(2)}%`}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono text-base font-extrabold tabular-nums text-[var(--data-success-700)]">{formatCurrency(r.compraKg)}/kg</td>
+                    <td className="text-right font-mono font-extrabold tabular-nums text-[var(--data-success-700)]">{formatCurrency(r.compraKg)}/kg</td>
                   </tr>
                 );
               })}
@@ -193,5 +193,5 @@ export default function CacaoTablaConversion({
 }
 
 function Th({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <th className={`px-3 py-2.5 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wide ${className}`}>{children}</th>;
+  return <th className={`font-extrabold uppercase tracking-wide ${className}`}>{children}</th>;
 }

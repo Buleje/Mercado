@@ -15,10 +15,9 @@ import {
 } from "@/lib/forestal/declarar-produccion";
 import { fmtM3, fmtPiezas } from "@/lib/forestal/cubicacion-formato";
 import { fmtPtExacto } from "./hooks/declarar-produccion-pantalla";
+import { DataTable } from "@buleje/design-system";
 
-const TH =
-  "px-3 py-2.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const NUM = "px-3 py-2 text-right font-mono tabular-nums";
+const NUM = "text-right font-mono tabular-nums";
 
 export default function CtpDetallePaquetes({
   paquetes,
@@ -43,37 +42,37 @@ export default function CtpDetallePaquetes({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-      <table className="w-full min-w-[40rem] text-sm">
+      <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full min-w-[40rem]">
         <caption className="sr-only">Paquetes que se van a declarar, por especie</caption>
-        <thead className="bg-[var(--surface-sunken)]">
+        <thead>
           <tr>
-            <th scope="col" className={`${TH} text-left`}>
+            <th scope="col">
               Paquete
             </th>
-            <th scope="col" className={`${TH} text-left`}>
+            <th scope="col">
               Tipo · producto
             </th>
-            <th scope="col" className={`${TH} text-left`}>
+            <th scope="col">
               Medida
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               PT
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               m³
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Piezas
             </th>
           </tr>
         </thead>
         {grupos.map((g) => (
           <tbody key={claveEspecie(g.especie) || "sin-especie"}>
-            <tr className="border-t border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
+            <tr className="bg-[var(--surface-sunken)]/50">
               <th
                 scope="rowgroup"
                 colSpan={6}
-                className="px-3 py-2 text-left text-sm font-bold text-[var(--text-primary)]"
+                className="text-left font-bold"
               >
                 {g.especie || (
                   <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
@@ -86,34 +85,34 @@ export default function CtpDetallePaquetes({
               </th>
             </tr>
             {g.paquetes.map((p) => (
-              <tr key={p.codigo} className="border-t border-[var(--rule-soft)]">
-                <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">
+              <tr key={p.codigo}>
+                <td className="font-mono font-bold">
                   {p.codigo}
                 </td>
-                <td className="px-3 py-2 text-[var(--text-secondary)]">
+                <td className="text-[var(--text-secondary)]">
                   {p.tipo}
                   <span className="block text-xs text-[var(--text-tertiary)]">
                     {p.productType ?? "MADERA ASERRADA"}
                   </span>
                 </td>
-                <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">
+                <td className="font-mono text-[var(--text-secondary)]">
                   {p.medida}
                   <span className="block text-xs text-[var(--text-tertiary)]">
                     {p.espesorCm} × {p.anchoCm} cm · {p.largoM} m
                   </span>
                 </td>
-                <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                <td className={`${NUM} font-bold`}>
                   {fmtPtExacto(p.pieTablar)}
                 </td>
                 <td className={`${NUM} text-[var(--text-secondary)]`}>{fmtM3(p.volumenM3)}</td>
                 <td className={`${NUM} text-[var(--text-secondary)]`}>{fmtPiezas(p.cantidad)}</td>
               </tr>
             ))}
-            <tr className="border-t border-[var(--rule-base)] font-semibold text-[var(--text-primary)]">
+            <tr className="font-semibold text-[var(--text-primary)]">
               <th
                 scope="row"
                 colSpan={3}
-                className="px-3 py-2 text-left text-xs uppercase tracking-wide text-[var(--text-tertiary)]"
+                className="text-left uppercase tracking-wide text-[var(--text-tertiary)]"
               >
                 Subtotal {g.especie || "sin especie"}
               </th>
@@ -125,7 +124,7 @@ export default function CtpDetallePaquetes({
         ))}
         <tfoot>
           <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--text-primary)]">
-            <th scope="row" colSpan={3} className="px-3 py-2.5 text-left">
+            <th scope="row" colSpan={3} className="text-left">
               {total.n} {total.n === 1 ? "paquete" : "paquetes"} · {grupos.length}{" "}
               {grupos.length === 1 ? "especie" : "especies"}
             </th>
@@ -134,7 +133,7 @@ export default function CtpDetallePaquetes({
             <td className={NUM}>{fmtPiezas(total.piezas)}</td>
           </tr>
         </tfoot>
-      </table>
+      </DataTable>
     </div>
   );
 }

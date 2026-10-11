@@ -102,7 +102,7 @@ export function FilaPaquete({ f, cols, ordenCols, tildada, ahora, a, desmarcando
 
   return (
     <tr className={tildada ? "bg-primary/5" : "hover:bg-[var(--surface-sunken)]"}>
-      <td className="px-2! py-2">
+      <td className="px-2!">
         <input
           type="checkbox"
           aria-label={`Elegir ${p?.codigo ?? `la corrida N° ${c.lineNo ?? "—"}`}`}
@@ -115,7 +115,7 @@ export function FilaPaquete({ f, cols, ordenCols, tildada, ahora, a, desmarcando
         orden={ordenCols}
         celdas={{
           codigo: (
-            <td className="px-2! py-2 font-mono font-bold text-[var(--text-primary)]">
+            <td className="px-2! font-mono font-bold">
               {p?.codigo ? (
                 <button
                   type="button"
@@ -131,7 +131,7 @@ export function FilaPaquete({ f, cols, ordenCols, tildada, ahora, a, desmarcando
             </td>
           ),
           producto: (
-            <td className="px-2! py-2 text-[var(--text-secondary)]">
+            <td className="px-2! text-[var(--text-secondary)]">
               <div className="flex flex-wrap items-center gap-1">
                 {productLabel(f.producto)}
                 {esInventarioDeApertura(c.observations) && (
@@ -163,30 +163,30 @@ export function FilaPaquete({ f, cols, ordenCols, tildada, ahora, a, desmarcando
               </div>
             </td>
           ),
-          especie: <td className="px-2! py-2 text-[var(--text-secondary)]">{c.especie ?? "—"}</td>,
+          especie: <td className="px-2! text-[var(--text-secondary)]">{c.especie ?? "—"}</td>,
           presentacion: cols.presentacion && (
-            <td className={`px-2! py-2 text-[var(--text-tertiary)] ${SOLO_ANCHO}`}>{p?.presentacion ?? c.presentacion ?? "—"}</td>
+            <td className={`px-2! text-[var(--text-tertiary)] ${SOLO_ANCHO}`}>{p?.presentacion ?? c.presentacion ?? "—"}</td>
           ),
           medidas: cols.medidas && (
-            <td className="px-2! py-2 font-mono text-xs text-[var(--text-secondary)]">
+            <td className="px-2! font-mono text-[var(--text-secondary)]">
               <CeldaEscuadria paquete={p} onEditar={() => p && a.abrirEscuadria(c, p)} />
             </td>
           ),
           piezas: (
-            <td className="px-2! py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+            <td className="px-2! text-right font-mono tabular-nums text-[var(--text-secondary)]">
               {p ? nf(p.cantidad) : "—"}
             </td>
           ),
           volumen: (
-            <td className="px-2! py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+            <td className="px-2! text-right font-mono font-bold tabular-nums">
               {fmtM3(f.volumenM3)}
             </td>
           ),
           pieTablar: cols.pieTablar && (
-            <td className="px-2! py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{nf(ptDe(f.volumenM3))}</td>
+            <td className="px-2! text-right font-mono tabular-nums text-[var(--text-secondary)]">{nf(ptDe(f.volumenM3))}</td>
           ),
           valor: cols.valor && (
-            <td className="px-2! py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+            <td className="px-2! text-right font-mono tabular-nums text-[var(--text-secondary)]">
               {valorSoles == null ? (
                 /* Un guion, nunca S/ 0: el costo de la guía todavía no se cargó. */
                 <span title="No se puede valorizar: falta el costo de la guía que trajo esta madera" className="text-[var(--text-tertiary)]">
@@ -198,7 +198,7 @@ export function FilaPaquete({ f, cols, ordenCols, tildada, ahora, a, desmarcando
             </td>
           ),
           lote: cols.lote && (
-            <td className={`px-2! py-2 text-xs text-[var(--text-tertiary)] ${SOLO_ANCHO}`}>
+            <td className={`px-2! text-[var(--text-tertiary)] ${SOLO_ANCHO}`}>
               <span className="font-mono">N° {c.lineNo ?? "—"}</span>
               {/* El lote es texto libre y a veces largo: en una línea, entero en el title.
                   Envuelto estiraba CADA fila a 165 px (medido 27-09). */}
@@ -211,7 +211,7 @@ export function FilaPaquete({ f, cols, ordenCols, tildada, ahora, a, desmarcando
             </td>
           ),
           edad: cols.edad && (
-            <td className="px-2! py-2 text-right">
+            <td className="px-2! text-right">
               {dias == null ? (
                 <span className="text-[var(--text-tertiary)]">—</span>
               ) : (
@@ -225,7 +225,7 @@ export function FilaPaquete({ f, cols, ordenCols, tildada, ahora, a, desmarcando
             </td>
           ),
           saldo: (
-            <td className={`px-2! py-2 text-right ${SOLO_ANCHO}`}>
+            <td className={`px-2! text-right ${SOLO_ANCHO}`}>
               <span className="font-mono font-bold tabular-nums text-[var(--data-success-ink)]">{fmtM3(c.disponible)}</span>
               {c.despachado > 0 && (
                 <div className="font-mono text-xs text-[var(--text-tertiary)]">
@@ -235,13 +235,13 @@ export function FilaPaquete({ f, cols, ordenCols, tildada, ahora, a, desmarcando
             </td>
           ),
           permiso: cols.permiso && (
-            <td className="px-2! py-2 font-mono text-xs text-[var(--text-secondary)]">
+            <td className="px-2! font-mono text-[var(--text-secondary)]">
               {c.titularOrigen?.length ? c.titularOrigen.join(" · ") : "—"}
             </td>
           ),
         }}
       />
-      <td className={`px-2! py-2 ${ACCIONES_FIJAS} bg-[var(--surface-raised)]`}>
+      <td className={`px-2! ${ACCIONES_FIJAS} bg-[var(--surface-raised)]`}>
         <div className="flex items-center justify-end gap-1">
           <IconAction
             icon={Ruler}

@@ -97,7 +97,7 @@ export function cabeceras(orden: TraceOrden, onOrden: (o: TraceOrden) => void, f
             <button
               type="button"
               onClick={() => onOrden(porEsta)}
-              className={`inline-flex items-center gap-1 rounded uppercase transition-colors hover:text-[var(--text-primary)] ${orden === porEsta ? "text-[var(--text-primary)]" : ""}`}
+              className={`inline-flex items-center gap-1 rounded transition-colors hover:text-[var(--text-primary)] ${orden === porEsta ? "text-[var(--text-primary)]" : ""}`}
               title={`Ordenar por ${HEAD[c.key].toLowerCase()} · arrastra el título para moverla`}
             >
               {HEAD[c.key]}
@@ -135,7 +135,7 @@ export function Fila({
   const desvio = f.precisionCensoPct != null ? Math.abs(f.precisionCensoPct - 100) : null;
   const celdas: Record<ColArbol, ReactNode> = {
     tree: (
-      <td className={`${CELL} font-bold text-[var(--text-primary)]`}>
+      <td className={`${CELL} font-bold`}>
         {f.op && onAbrir ? (
           <button
             type="button"
@@ -189,14 +189,14 @@ export function Fila({
       </td>
     ),
     obs: (
-      <td className={`${CELL} text-xs`}>
+      <td className={`${CELL}`}>
         <Observaciones f={f} />
       </td>
     ),
   };
 
   return (
-    <tr className={`border-t border-[var(--rule-soft)] ${fondo} ${seleccionada ? "outline outline-1 -outline-offset-1 outline-[var(--data-info-500)]" : ""}`}>
+    <tr className={`${fondo} ${seleccionada ? "outline outline-1 -outline-offset-1 outline-[var(--data-info-500)]" : ""}`}>
       <td className={CELL}>
         <input
           type="checkbox"

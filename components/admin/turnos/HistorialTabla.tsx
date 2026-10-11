@@ -49,9 +49,9 @@ export function HistorialTabla({ turnos, nombreDe, onVer, cargandoId, page, setP
   const pagina = turnos.slice((page - 1) * porPagina, page * porPagina);
   return (
     <>
-      <DataTable className="text-base">
+      <DataTable>
         <thead>
-          <tr className="border-b border-[var(--rule-soft)]">
+          <tr>
             <th>Atendió</th>
             <th>Apertura</th>
             <th className="hidden sm:table-cell">Cierre</th>
@@ -63,8 +63,8 @@ export function HistorialTabla({ turnos, nombreDe, onVer, cargandoId, page, setP
         </thead>
         <tbody>
           {pagina.map((t) => (
-            <tr key={t.id} className="cursor-pointer hover:bg-[var(--surface-sunken)]" onClick={() => onVer(t)}>
-              <td className="font-semibold text-[var(--text-primary)]">
+            <tr key={t.id} className="cursor-pointer" onClick={() => onVer(t)}>
+              <td className="font-semibold">
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onVer(t); }}
@@ -76,8 +76,8 @@ export function HistorialTabla({ turnos, nombreDe, onVer, cargandoId, page, setP
                 </button>
                 <Marca t={t} />
               </td>
-              <td className="text-sm text-[var(--text-secondary)] tabular-nums">{formatDateTime(t.abrioEn)}</td>
-              <td className="text-sm text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">{t.cerroEn ? formatDateTime(t.cerroEn) : "—"}</td>
+              <td className="text-[var(--text-secondary)] tabular-nums">{formatDateTime(t.abrioEn)}</td>
+              <td className="text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">{t.cerroEn ? formatDateTime(t.cerroEn) : "—"}</td>
               <td className="text-right text-[var(--text-secondary)] tabular-nums">{formatCurrency(t.inicioEfectivo)}</td>
               <td className="text-right font-bold text-[var(--data-success-ink)] tabular-nums">{formatCurrency(t.ventasTotal)}</td>
               <td className="text-right text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">{t.cierreEfectivo != null && !t.cerradoPorSistema ? formatCurrency(t.cierreEfectivo) : "—"}</td>

@@ -71,7 +71,7 @@ export default function CtpTrozasSinTituloTabla({
   const piezas = grupos.reduce((a, g) => a + g.piezas.length, 0);
   const m3 = grupos.reduce((a, g) => a + g.m3, 0);
   return (
-    <DataTable stickyHeader wrapperClassName="max-h-[56vh]" className="w-full text-sm [&_thead_th]:px-2!">
+    <DataTable stickyHeader wrapperClassName="max-h-[56vh]" className="w-full [&_thead_th]:px-2!">
       <thead>
         <tr>
           <ThTroza {...th} campo="codigo" filtro={<FiltroColumnaTexto label="Código" value={f.codigo} onChange={f.setCodigo} placeholder="Contiene…" />}>Código</ThTroza>
@@ -141,14 +141,14 @@ export default function CtpTrozasSinTituloTabla({
                 aria-label={`Ver ficha de ${t.codificacion ?? t.codigoPlanta ?? "la pieza"}`}
                 className="cursor-pointer"
               >
-                <td className="whitespace-nowrap font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? t.codigoPlanta ?? "—"}</td>
+                <td className="whitespace-nowrap font-mono font-bold">{t.codificacion ?? t.codigoPlanta ?? "—"}</td>
                 <td className="whitespace-nowrap text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
                 <td className={NUM}>
                   {falta && md.d1 == null ? <BotonAnotarMedidas onClick={() => onAnotar(t.id)} /> : <ValorMedida v={md.d1} fuente={md.fuente} />}
                 </td>
                 <td className={NUM}><ValorMedida v={md.d2} fuente={md.fuente} /></td>
                 <td className={`${NUM} text-[var(--text-secondary)]`}>{n(t.largoM)}</td>
-                <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{t.volumenM3 == null ? "—" : fmtM3(t.volumenM3)}</td>
+                <td className={`${NUM} font-bold`}>{t.volumenM3 == null ? "—" : fmtM3(t.volumenM3)}</td>
                 <td className="whitespace-nowrap">
                   <span className="inline-flex items-center gap-1.5" title={ESTADO_META[e].hint}>
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: puntoDeTono(ESTADO_META[e].tono) }} aria-hidden="true" />
@@ -165,10 +165,10 @@ export default function CtpTrozasSinTituloTabla({
       ))}
       <tfoot className="sticky bottom-0 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
         <tr>
-          <td colSpan={5} className="text-right text-sm font-bold text-[var(--text-primary)]">
+          <td colSpan={5} className="text-right font-bold">
             Total · {piezas} {piezas === 1 ? "pieza" : "piezas"} en {grupos.length} {grupos.length === 1 ? "guía" : "guías"}
           </td>
-          <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(m3)}</td>
+          <td className={`${NUM} font-bold`}>{fmtM3(m3)}</td>
           <td colSpan={2} />
         </tr>
       </tfoot>

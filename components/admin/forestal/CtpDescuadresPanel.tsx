@@ -162,34 +162,34 @@ export default function CtpDescuadresPanel() {
             <TablaCtp>
               <TheadCtp>
                 <tr>
-                  <th className="px-3 py-2 text-left font-bold">N° libro</th>
-                  <th className="px-3 py-2 text-left font-bold">Guía</th>
-                  <th className="px-3 py-2 text-left font-bold">Especie</th>
-                  <th className="px-3 py-2 text-right font-bold">Declara (37)</th>
-                  <th className="px-3 py-2 text-right font-bold">Lista (35)</th>
-                  <th className="px-3 py-2 text-right font-bold">Brecha</th>
-                  <th className="px-3 py-2 text-right font-bold">Acción</th>
+                  <th className="text-left font-bold">N° libro</th>
+                  <th className="text-left font-bold">Guía</th>
+                  <th className="text-left font-bold">Especie</th>
+                  <th className="text-right font-bold">Declara (37)</th>
+                  <th className="text-right font-bold">Lista (35)</th>
+                  <th className="text-right font-bold">Brecha</th>
+                  <th className="text-right font-bold">Acción</th>
                 </tr>
               </TheadCtp>
               <TbodyCtp>
                 {filas.map((f) => (
                   <tr key={f.id}>
-                    <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">
+                    <td className="font-mono tabular-nums text-[var(--text-tertiary)]">
                       {f.libroNro ?? "—"}
                     </td>
-                    <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{f.gtfNumber}</td>
-                    <td className="px-3 py-2 text-[var(--text-secondary)]">{f.especie}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="font-mono font-bold">{f.gtfNumber}</td>
+                    <td className="text-[var(--text-secondary)]">{f.especie}</td>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {fmtM3(f.declarado)}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {fmtM3(f.lista)}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                    <td className="text-right font-mono font-bold tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                       {f.brecha > 0 ? "+" : ""}
                       {fmtM3(f.brecha)}
                     </td>
-                    <td className="px-3 py-2 text-right">
+                    <td className="text-right">
                       <Btn
                         variant="secondary"
                         onClick={() => setCuadre({ gtfNumber: f.gtfNumber, ids: idsDe(f.gtfNumber) })}

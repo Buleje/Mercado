@@ -19,7 +19,7 @@ function Encabezado({ clave, rotulo, v, alinear = "left" }: { clave: ClaveOrden;
       <button
         type="button"
         onClick={() => v.ordenarPor(clave)}
-        className={cn("inline-flex min-h-12 items-center gap-1 uppercase transition-colors hover:text-[var(--text-primary)]", alinear === "right" && "ml-auto", alinear === "center" && "mx-auto")}
+        className={cn("inline-flex min-h-12 items-center gap-1 transition-colors hover:text-[var(--text-primary)]", alinear === "right" && "ml-auto", alinear === "center" && "mx-auto")}
       >
         {rotulo} <SortIcon k={clave} currentKey={v.sortKey} currentDir={v.sortDir} />
       </button>
@@ -50,10 +50,10 @@ export function OrdenesTabla({
   return (
     <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="max-h-[calc(100vh-20rem)] overflow-x-auto">
-        <DataTable className="w-full text-sm">
-          <thead className="sticky top-0 z-10 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+        <DataTable className="w-full">
+          <thead className="sticky top-0 z-10">
             <tr>
-              <th className="w-12 px-3 py-3 text-left" data-label="Elegir">
+              <th className="w-12" data-label="Elegir">
                 <input
                   type="checkbox"
                   checked={todas}
@@ -85,7 +85,7 @@ export function OrdenesTabla({
                   tabIndex={0}
                   aria-label={`Ver el pedido #${idCorto(o.id)} de ${o.customerName}`}
                   className={cn(
-                    "cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]",
+                    "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]",
                     elegida ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]/50",
                   )}
                   onClick={(e) => {
@@ -98,7 +98,7 @@ export function OrdenesTabla({
                     onDetalle(o.id);
                   }}
                 >
-                  <td className="px-3 py-2">
+                  <td>
                     <input
                       type="checkbox"
                       checked={elegida}
@@ -107,7 +107,7 @@ export function OrdenesTabla({
                       className="h-5 w-5 cursor-pointer rounded border border-[var(--rule-base)] accent-[var(--accent)]"
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td>
                     <div className="min-w-0">
                       <p className="font-mono text-sm font-bold text-[var(--text-primary)]">#{idCorto(o.id)}</p>
                       <p className="whitespace-nowrap text-sm text-[var(--text-tertiary)]">
@@ -115,28 +115,28 @@ export function OrdenesTabla({
                       </p>
                     </div>
                   </td>
-                  <td className="px-3 py-2">
+                  <td>
                     <div className="min-w-0">
                       <p className="max-w-[12rem] truncate font-semibold text-[var(--text-primary)]" title={o.customerName}>{o.customerName}</p>
                       {o.customerPhone && <p className="font-mono text-sm text-[var(--text-tertiary)]">{o.customerPhone}</p>}
                     </div>
                   </td>
-                  <td className="hidden px-3 py-2 2xl:table-cell">
+                  <td className="hidden 2xl:table-cell">
                     <p className="max-w-[15rem] truncate text-sm text-[var(--text-secondary)]" title={o.customerLocation ?? undefined}>
                       {o.customerLocation || <span className="italic text-[var(--text-tertiary)]">Sin dirección</span>}
                     </p>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(o.total)}</td>
-                  <td className="px-3 py-2 text-center">
+                  <td className="whitespace-nowrap text-right font-bold tabular-nums">{formatCurrency(o.total)}</td>
+                  <td className="text-center">
                     <span className={cn("inline-flex rounded-full px-2.5 py-1 text-sm font-semibold", estado.className)}>{estado.label}</span>
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="text-right">
                     <div className="min-w-0">
                       <p className="whitespace-nowrap text-sm font-semibold tabular-nums text-[var(--text-primary)]">{diaConNombre(limaDateKey(creada))}</p>
                       <p className="text-sm tabular-nums text-[var(--text-tertiary)]">{formatTime(creada)}</p>
                     </div>
                   </td>
-                  <td className="px-2 py-1.5">
+                  <td>
                     <OrdenesAccionesFila
                       orden={o}
                       actualizando={actualizandoId === o.id}

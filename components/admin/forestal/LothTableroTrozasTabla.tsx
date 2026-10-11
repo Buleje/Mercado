@@ -40,8 +40,7 @@ export type NavTablero = {
   onRegistrarDespacho?: (code: string) => void;
 };
 
-const TH = "px-3 py-2.5 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
-const TD = "px-3 py-2.5 align-middle";
+const TD = "align-middle";
 const DERECHA = new Set(["numero", "m3", "metros", "dias"]);
 
 const CASILLA = "h-5 w-5 shrink-0 cursor-pointer rounded accent-[var(--accent)]";
@@ -108,8 +107,8 @@ export default function LothTableroTrozasTabla({
   ) : null;
 
   return (
-    <DataTable className={`w-full text-sm ${HOJA_MOVIL}`} wrapperClassName="max-w-full rounded-2xl bg-[var(--surface-raised)]">
-      <thead className="bg-[var(--surface-sunken)]">
+    <DataTable className={`w-full ${HOJA_MOVIL}`} wrapperClassName="max-w-full rounded-2xl bg-[var(--surface-raised)]">
+      <thead>
         <tr>
           {cols.map((c, i) => (
             <Cabecera
@@ -122,7 +121,7 @@ export default function LothTableroTrozasTabla({
             />
           ))}
           {permisoDe && (
-            <th data-label="Permiso" className={TH}>
+            <th data-label="Permiso">
               <span className="whitespace-nowrap">
                 Permiso
                 {filtros && <FiltroEnCabecera id={FILTRO_PERMISO} f={filtros} compacto />}
@@ -134,7 +133,7 @@ export default function LothTableroTrozasTabla({
       <tbody>
         {filas.length === 0 && (
           <tr>
-            <td colSpan={nCols} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
+            <td colSpan={nCols} className="text-center text-[var(--text-tertiary)]">
               {hayTrozas ? "Ninguna troza coincide con el filtro." : vacio}
             </td>
           </tr>
@@ -146,7 +145,7 @@ export default function LothTableroTrozasTabla({
               key={f.code}
               data-troza={f.code}
               aria-selected={elegida || undefined}
-              className={`border-t border-[var(--rule-soft)] ${
+              className={`${
                 resaltada === f.code
                   ? "bg-[var(--accent-soft)] outline outline-2 -outline-offset-2 outline-[var(--accent)]"
                   : elegida
@@ -177,7 +176,7 @@ export default function LothTableroTrozasTabla({
                 </td>
               ))}
               {permisoDe && (
-                <td className={`${TD} whitespace-nowrap text-xs text-[var(--text-secondary)]`}>{permisoDe(f.planId)}</td>
+                <td className={`${TD} whitespace-nowrap text-[var(--text-secondary)]`}>{permisoDe(f.planId)}</td>
               )}
             </tr>
           );
@@ -209,7 +208,7 @@ function Cabecera({
       type="button"
       onClick={() => onOrdenar(col.key)}
       title={`Ordenar por ${col.label.toLowerCase()}`}
-      className={`inline-flex items-center gap-1 whitespace-nowrap uppercase hover:text-[var(--text-primary)] ${
+      className={`inline-flex items-center gap-1 whitespace-nowrap hover:text-[var(--text-primary)] ${
         activa ? "text-[var(--text-primary)]" : ""
       }`}
     >
@@ -221,7 +220,7 @@ function Cabecera({
     <th
       data-label={col.label}
       aria-sort={activa ? (orden.dir === "asc" ? "ascending" : "descending") : "none"}
-      className={`${TH} ${DERECHA.has(col.tipo) ? "text-right" : ""}`}
+      className={DERECHA.has(col.tipo) ? "text-right" : undefined}
     >
       {antes ? (
         <span className="inline-flex items-center gap-2">

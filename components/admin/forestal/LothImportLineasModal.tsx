@@ -381,16 +381,16 @@ export default function LothImportLineasModal({
                   </div>
 
                   <div className="max-h-[38vh] overflow-auto rounded-xl border border-[var(--rule-base)]">
-                    <DataTable className="w-full text-xs">
-                      <thead className="sticky top-0 bg-[var(--surface-sunken)]">
-                        <tr className="text-left">
-                          <th className="px-2 py-2 font-bold">Asentar</th>
-                          <th className="px-2 py-2 font-bold">Fila</th>
-                          <th className="px-2 py-2 font-bold">Árbol</th>
-                          <th className="px-2 py-2 font-bold">Troza</th>
-                          <th className="px-2 py-2 font-bold">Especie</th>
-                          <th className="px-2 py-2 text-right font-bold">Volumen</th>
-                          <th className="px-2 py-2 font-bold">Qué pasa con esta fila</th>
+                    <DataTable className="w-full">
+                      <thead className="sticky top-0">
+                        <tr>
+                          <th>Asentar</th>
+                          <th>Fila</th>
+                          <th>Árbol</th>
+                          <th>Troza</th>
+                          <th>Especie</th>
+                          <th className="text-right">Volumen</th>
+                          <th>Qué pasa con esta fila</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -469,11 +469,11 @@ function FilaPrevia({
   const textos = [...f.motivos, ...(avisos?.map((a) => a.texto) ?? [])];
   return (
     <tr
-      className={`border-t border-[var(--rule-soft)] ${
+      className={`${
         error || frena ? "bg-[var(--data-error-500)]/10" : omitida ? "opacity-50" : textos.length > 0 ? "bg-[var(--data-warning-500)]/10" : ""
       }`}
     >
-      <td className="px-2 py-1.5">
+      <td>
         <input
           type="checkbox"
           checked={!error && !omitida}
@@ -483,15 +483,15 @@ function FilaPrevia({
           className="h-4 w-4 cursor-pointer accent-[var(--data-info-600)] disabled:cursor-not-allowed"
         />
       </td>
-      <td className="px-2 py-1.5 font-mono tabular-nums text-[var(--text-tertiary)]">{f.fila}</td>
-      <td className="px-2 py-1.5 font-mono text-[var(--text-primary)]">{f.treeCode ?? "—"}</td>
-      <td className="px-2 py-1.5 font-mono text-[var(--text-primary)]">{f.trozaCode ?? "—"}</td>
-      <td className="px-2 py-1.5 text-[var(--text-secondary)]">{f.speciesCommon ?? "—"}</td>
-      <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+      <td className="font-mono tabular-nums text-[var(--text-tertiary)]">{f.fila}</td>
+      <td className="font-mono">{f.treeCode ?? "—"}</td>
+      <td className="font-mono">{f.trozaCode ?? "—"}</td>
+      <td className="text-[var(--text-secondary)]">{f.speciesCommon ?? "—"}</td>
+      <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
         {f.volumeM3 != null ? fmtM3(f.volumeM3) : f.quantity != null ? `${f.quantity} ${f.unit ?? ""}` : "—"}
         {f.volumenCalculado && <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">(Smalian)</span>}
       </td>
-      <td className="px-2 py-1.5">
+      <td>
         {textos.length === 0 ? (
           <span className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">se asienta</span>
         ) : (

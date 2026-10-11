@@ -45,13 +45,13 @@ export function DeclaracionComparativa({ data, prev }: { data: DeclaracionData; 
             const caidaFuerte = p < -20;
             return (
               <tr key={cat}>
-                <td className="font-medium text-[var(--text-primary)]">{cat}</td>
+                <td className="font-medium">{cat}</td>
                 <td className="text-right text-[var(--text-secondary)]">{antes.unidades} uds</td>
-                <td className="text-right font-medium text-[var(--text-primary)]">{ahora.unidades} uds</td>
+                <td className="text-right font-medium">{ahora.unidades} uds</td>
                 <td className={cn("text-right font-bold", caidaFuerte ? "text-[var(--data-error-ink)]" : sube ? "text-[var(--data-success-ink)]" : baja ? "text-[var(--data-warning-ink)]" : "text-[var(--text-secondary)]")}>
                   {sube ? "+" : ""}{d} ({p > 0 ? "+" : ""}{p.toFixed(0)}%)
                 </td>
-                <td className="text-center text-lg" aria-label={sube ? "Sube" : baja ? "Baja" : "Igual"}>
+                <td className="text-center" aria-label={sube ? "Sube" : baja ? "Baja" : "Igual"}>
                   {sube ? <span className="text-[var(--data-success-ink)]">&#8593;</span> : baja ? <span className={caidaFuerte ? "text-[var(--data-error-ink)]" : "text-[var(--data-warning-ink)]"}>&#8595;</span> : <span className="text-[var(--text-secondary)]">&#8594;</span>}
                 </td>
               </tr>

@@ -11,7 +11,7 @@
  */
 
 import { useMemo } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3, fmtPct } from "@/lib/forestal/cubicacion-formato";
 import {
@@ -47,7 +47,7 @@ export const TONO_CUPO: Record<VeredictoCupo, { texto: string; barra: string }> 
   sin_cupo: { texto: "text-[var(--text-tertiary)]", barra: "bg-[var(--rule-strong)]" },
 };
 
-const NUM = "whitespace-nowrap px-2 py-1.5 text-right font-mono text-xs tabular-nums";
+const NUM = "whitespace-nowrap text-right font-mono tabular-nums";
 
 /** El estado como categoría (sin el «+3,337 m³» de la etiqueta, que daría una opción por especie). */
 const ESTADO_CUPO: Record<VeredictoCupo, string> = { excedido: "Excedido", cerca: "Cerca del cupo", ok: "En regla", sin_cupo: "Sin cupo" };
@@ -118,14 +118,14 @@ export default function LothCupoEspecies(props: LothCupoEspeciesProps) {
         <>
         <BarraFiltrosTabla f={fl} className="mb-2" />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[36rem] text-sm">
+          <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full min-w-[36rem]">
             <thead>
-              <tr className="border-b border-[var(--rule-base)] align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                <th scope="col" className="px-2 py-1.5 text-left font-bold">Especie<FiltroEnCabecera id="especie" f={fl} compacto /></th>
-                <th scope="col" className="px-2 py-1.5 text-right font-bold">Árboles<FiltroEnCabecera id="arboles" f={fl} compacto /></th>
-                <th scope="col" className="px-2 py-1.5 text-right font-bold">m³ talado / cupo<FiltroEnCabecera id="talado" f={fl} compacto /></th>
-                <th scope="col" className="px-2 py-1.5 text-left font-bold">Uso<FiltroEnCabecera id="uso" f={fl} compacto /></th>
-                <th scope="col" className="px-2 py-1.5 text-left font-bold">Estado<FiltroEnCabecera id="estado" f={fl} compacto /></th>
+              <tr className="align-top">
+                <th scope="col">Especie<FiltroEnCabecera id="especie" f={fl} compacto /></th>
+                <th scope="col" className="text-right">Árboles<FiltroEnCabecera id="arboles" f={fl} compacto /></th>
+                <th scope="col" className="text-right">m³ talado / cupo<FiltroEnCabecera id="talado" f={fl} compacto /></th>
+                <th scope="col">Uso<FiltroEnCabecera id="uso" f={fl} compacto /></th>
+                <th scope="col">Estado<FiltroEnCabecera id="estado" f={fl} compacto /></th>
               </tr>
             </thead>
             <tbody>
@@ -134,9 +134,9 @@ export default function LothCupoEspecies(props: LothCupoEspeciesProps) {
                 <tr
                   key={f.clave}
                   data-veredicto={f.veredicto}
-                  className={`border-b border-[var(--rule-soft)] last:border-0 ${f.veredicto === "excedido" ? "bg-[var(--data-error-500)]/6" : ""}`}
+                  className={`last:border-0 ${f.veredicto === "excedido" ? "bg-[var(--data-error-500)]/6" : ""}`}
                 >
-                  <th scope="row" className="px-2 py-1.5 text-left font-semibold text-[var(--text-primary)]">{f.especie}</th>
+                  <th scope="row" className="text-left font-semibold">{f.especie}</th>
                   <td className={`${NUM} text-[var(--text-secondary)]`}>
                     {f.arbolesTalados} / {f.arbolesCensados}
                     {f.talasSinVolumen > 0 && (
@@ -164,12 +164,12 @@ export default function LothCupoEspecies(props: LothCupoEspeciesProps) {
                       </button>
                     )}
                   </td>
-                  <td className="px-2 py-1.5"><Barra f={f} /></td>
-                  <td className={`whitespace-nowrap px-2 py-1.5 text-xs font-semibold ${TONO_CUPO[f.veredicto].texto}`}>{etiqueta(f)}</td>
+                  <td><Barra f={f} /></td>
+                  <td className={`whitespace-nowrap font-semibold ${TONO_CUPO[f.veredicto].texto}`}>{etiqueta(f)}</td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </div>
         </>
       )}

@@ -158,9 +158,9 @@ export default function RecetarioAdminTab() {
           <button type="button" onClick={() => abrirForm(null)} className={button({ variant: "secondary", className: "rounded-xl" })}>Crear la primera receta</button>
         </div>
       ) : (
-        <DataTable className="w-full text-sm [&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+        <DataTable className="w-full">
           <thead ref={ordenRecetario.refCabecera}>
-            <tr className="border-b border-[var(--rule-soft)] text-left">
+            <tr>
               <EnOrden
                 orden={ordenRecetario.orden}
                 celdas={{
@@ -177,19 +177,19 @@ export default function RecetarioAdminTab() {
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center">
+                <td colSpan={6} className="text-center">
                   <p className="text-sm text-[var(--text-secondary)]">Ninguna receta coincide con el filtro.</p>
                   <button type="button" onClick={() => { setSearchTerm(""); setFilterCat(""); }} className={button({ variant: "secondary", className: "mt-2 rounded-xl" })}>Quitar filtros</button>
                 </td>
               </tr>
             )}
             {filtered.map(r => (
-              <tr key={r._noteId || r.id} className="border-b border-[var(--rule-soft)] transition-colors hover:bg-[var(--surface-sunken)]">
+              <tr key={r._noteId || r.id}>
                 <EnOrden
                   orden={ordenRecetario.orden}
                   celdas={{
                     receta: (
-                      <td className="px-4 py-3">
+                      <td>
                         <div className="flex items-center gap-2">
                           <span className="text-lg" aria-hidden>{r.emoji}</span>
                           <div>
@@ -202,17 +202,17 @@ export default function RecetarioAdminTab() {
                         </div>
                       </td>
                     ),
-                    categoria: <td className="hidden px-4 py-3 text-sm text-[var(--text-secondary)] sm:table-cell">{r.categoria}</td>,
-                    ingredientes: <td className="hidden px-4 py-3 text-center text-sm text-[var(--text-secondary)] md:table-cell">{r.ingredientes?.length || 0}</td>,
-                    costo: <td className="px-4 py-3 text-right text-sm font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(r.totalIngredientes || 0)}</td>,
+                    categoria: <td className="hidden text-[var(--text-secondary)] sm:table-cell">{r.categoria}</td>,
+                    ingredientes: <td className="hidden text-center text-[var(--text-secondary)] md:table-cell">{r.ingredientes?.length || 0}</td>,
+                    costo: <td className="text-right font-bold tabular-nums">{formatCurrency(r.totalIngredientes || 0)}</td>,
                     estado: (
-                      <td className={cn("px-4 py-3 text-center text-sm font-semibold", r.activa !== false ? "text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>
+                      <td className={cn("text-center font-semibold", r.activa !== false ? "text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>
                         {r.activa !== false ? "Publicada" : "Oculta"}
                       </td>
                     ),
                   }}
                 />
-                <td className="px-4 py-3">
+                <td>
                   <div className="flex items-center justify-end gap-2">
                     <button type="button" onClick={() => abrirForm(r)} className={button({ variant: "secondary", className: "rounded-xl" })}>Editar</button>
                     <ActionMenu label="Más" icon={MoreHorizontal} soloIcono size="md" className="w-12 shrink-0" title={`Más acciones de ${r.nombre}`} actions={accionesDe(r)} />

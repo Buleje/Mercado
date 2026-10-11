@@ -11,6 +11,7 @@ import { formatNumber } from "@/lib/format";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
 import type { TalaReferencial, TrozaImportada } from "@/lib/forestal/loth-importar-guia-tipos";
+import { DataTable } from "@buleje/design-system";
 
 export const TONO = {
   ok: "bg-[var(--data-success-500)]/12 text-[var(--data-success-ink)]",
@@ -22,8 +23,8 @@ export const TONO = {
 
 const m = (v: number | null, d = 2) => (v == null ? "—" : formatNumber(v, d));
 const TH =
-  "whitespace-nowrap px-2 py-1.5 text-left text-xs font-semibold text-[var(--text-tertiary)]";
-const TD = "whitespace-nowrap px-2 py-1.5";
+  "whitespace-nowrap";
+const TD = "whitespace-nowrap";
 
 function EstadoFila({
   estado,
@@ -66,7 +67,7 @@ function EstadoFila({
 export function TablaTrozas({ trozas }: { trozas: TrozaImportada[] }) {
   return (
     <div className="overflow-x-auto px-1 pb-2">
-      <table className="w-full text-sm">
+      <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>
           <tr>
             <th className={TH}>Código en la guía</th>
@@ -83,7 +84,7 @@ export function TablaTrozas({ trozas }: { trozas: TrozaImportada[] }) {
         </thead>
         <tbody>
           {trozas.map((t) => (
-            <tr key={t.indice} className="border-t border-[var(--rule-soft)]">
+            <tr key={t.indice}>
               <td className={`${TD} font-mono text-[var(--text-secondary)]`}>
                 {t.codificacionGuia ?? "—"}
               </td>
@@ -118,7 +119,7 @@ export function TablaTrozas({ trozas }: { trozas: TrozaImportada[] }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }
@@ -126,7 +127,7 @@ export function TablaTrozas({ trozas }: { trozas: TrozaImportada[] }) {
 export function TablaTalas({ talas }: { talas: TalaReferencial[] }) {
   return (
     <div className="overflow-x-auto px-1 pb-2">
-      <table className="w-full text-sm">
+      <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>
           <tr>
             <th className={TH}>Árbol</th>
@@ -141,8 +142,8 @@ export function TablaTalas({ talas }: { talas: TalaReferencial[] }) {
         </thead>
         <tbody>
           {talas.map((t) => (
-            <tr key={t.treeCode} className="border-t border-[var(--rule-soft)]">
-              <td className={`${TD} font-mono font-semibold text-[var(--text-primary)]`}>
+            <tr key={t.treeCode}>
+              <td className={`${TD} font-mono font-semibold`}>
                 {t.treeCode}
               </td>
               <td className={`${TD} font-mono text-[var(--text-secondary)]`}>
@@ -161,7 +162,7 @@ export function TablaTalas({ talas }: { talas: TalaReferencial[] }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }

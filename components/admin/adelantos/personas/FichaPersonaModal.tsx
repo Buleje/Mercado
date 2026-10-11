@@ -289,20 +289,20 @@ export default function FichaPersonaModal({
         ) : (
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
             {/* min-w-[560px] es clase muerta acá (memoria min-width-utilities-muertas). */}
-            <DataTable className="w-full text-base" style={{ minWidth: 560 }}>
-              <thead className="bg-[var(--surface-sunken)] text-sm text-[var(--text-tertiary)]">
-                <tr className="text-left">
-                  <th className="px-3 py-2 font-bold">Fecha</th>
-                  <th className="px-3 py-2 font-bold">Concepto</th>
-                  <th className="px-3 py-2 text-right font-bold">Monto</th>
-                  <th className="px-3 py-2 text-right font-bold">Saldo</th>
+            <DataTable className="w-full" style={{ minWidth: 560 }}>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Concepto</th>
+                  <th className="text-right">Monto</th>
+                  <th className="text-right">Saldo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
                 {movimientos.map((m, i) => (
                   <tr key={i}>
-                    <td className="whitespace-nowrap px-3 py-2 tabular-nums text-[var(--text-secondary)]">{dia(m.fecha)}</td>
-                    <td className="px-3 py-2">
+                    <td className="whitespace-nowrap tabular-nums text-[var(--text-secondary)]">{dia(m.fecha)}</td>
+                    <td>
                       <span className="flex items-center gap-2">
                         {m.monto >= 0 ? (
                           <TrendingDown className="h-4 w-4 shrink-0 text-[var(--data-warning)]" aria-hidden />
@@ -313,14 +313,14 @@ export default function FichaPersonaModal({
                       </span>
                     </td>
                     <td
-                      className={`whitespace-nowrap px-3 py-2 text-right font-bold tabular-nums ${
+                      className={`whitespace-nowrap text-right font-bold tabular-nums ${
                         m.monto >= 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"
                       }`}
                     >
                       {m.monto >= 0 ? "+" : "−"}
                       {fmtMon(Math.abs(m.monto), m.moneda)}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right font-bold tabular-nums text-[var(--text-primary)]">
+                    <td className="whitespace-nowrap text-right font-bold tabular-nums">
                       {/* Negativo = el negocio le debe (ADR-448): «S/ -30.00» no se lee como plata. */}
                       {m.saldo < -0.005 ? (
                         <span className="text-[var(--data-info-ink)]">le debes {fmtMon(-m.saldo, m.moneda)}</span>

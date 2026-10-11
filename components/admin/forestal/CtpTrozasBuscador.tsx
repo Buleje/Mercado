@@ -161,40 +161,40 @@ export default function CtpTrozasBuscador() {
           {/* Desktop: tabla. Mobile: tarjetas — la grilla de 6 columnas es
               ilegible en un teléfono, que es donde se usa en el patio. */}
           <div className="hidden overflow-x-auto sm:block">
-            <DataTable className="w-full text-sm">
+            <DataTable className="w-full">
               <thead>
-                <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  <th className="px-4 py-2 font-bold">Código troza</th>
+                <tr>
+                  <th>Código troza</th>
                   {/* El de planta al lado del del bosque: en el patio se busca por
                       el que está marcado en la pieza, no por el de SERFOR. */}
-                  <th className="px-4 py-2 font-bold">Código planta</th>
-                  <th className="px-4 py-2 font-bold">Especie</th>
+                  <th>Código planta</th>
+                  <th>Especie</th>
                   {/* Dónde está la pieza AHORA: apartada en un lote o suelta en
                       el patio. Es la mitad de la pregunta «¿esta troza entró
                       acá?» que antes no se podía contestar (ADR-334). */}
-                  <th className="px-4 py-2 font-bold">Lote</th>
-                  <th className="px-4 py-2 text-right font-bold" title="Diámetro del extremo mayor">D1 (cm)</th>
-                  <th className="px-4 py-2 text-right font-bold" title="Diámetro del extremo menor">D2 (cm)</th>
-                  <th className="px-4 py-2 text-right font-bold">Largo (m)</th>
-                  <th className="px-4 py-2 text-right font-bold" title="Promedio de D1 y D2 — el que se usa para cubicar">Diám. (cm)</th>
-                  <th className="px-4 py-2 text-right font-bold">Volumen</th>
+                  <th>Lote</th>
+                  <th className="text-right" title="Diámetro del extremo mayor">D1 (cm)</th>
+                  <th className="text-right" title="Diámetro del extremo menor">D2 (cm)</th>
+                  <th className="text-right">Largo (m)</th>
+                  <th className="text-right" title="Promedio de D1 y D2 — el que se usa para cubicar">Diám. (cm)</th>
+                  <th className="text-right">Volumen</th>
                 </tr>
               </thead>
               <tbody>
                 {g.trozas.map((t) => (
-                  <tr key={t.id} className="border-b border-[var(--rule-soft)] last:border-0">
-                    <td className="px-4 py-2.5 font-mono font-bold text-[var(--text-primary)]">
+                  <tr key={t.id} className="border-[var(--rule-soft)] last:border-0">
+                    <td className="font-mono font-bold">
                       {t.codificacion ?? "—"}
                       {t.parcela && <span className="ml-1.5 text-xs font-normal text-[var(--text-tertiary)]">parcela {t.parcela}</span>}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-[var(--text-secondary)]">{t.codigoPlanta ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-[var(--text-secondary)]">
+                    <td className="font-mono text-[var(--text-secondary)]">{t.codigoPlanta ?? "—"}</td>
+                    <td className="text-[var(--text-secondary)]">
                       <span className="flex items-center gap-2">
                         <EspecieFoto especie={t.especieComun} indice={fotosEspecie} size={24} />
                         {t.especieComun ?? "—"}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td>
                       {t.loteAserrioCode ? (
                         <span
                           title={
@@ -214,19 +214,19 @@ export default function CtpTrozasBuscador() {
                         <span className="text-[var(--text-tertiary)]">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {t.d1Cm != null ? t.d1Cm.toFixed(0) : "—"}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {t.d2Cm != null ? t.d2Cm.toFixed(0) : "—"}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {t.largoM != null ? t.largoM.toFixed(2) : "—"}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                       {t.diametroCm != null ? t.diametroCm.toFixed(1) : "—"}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                    <td className="text-right font-mono font-bold tabular-nums">
                       {t.volumenM3 != null ? `${fmtM3(t.volumenM3)} m³` : "—"}
                     </td>
                   </tr>

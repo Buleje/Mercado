@@ -153,7 +153,7 @@ export default function SupplierComparator({ onCreateOC, onSeleccion }: Supplier
                     onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedId(s.id); } }}
                     aria-label={`Ver detalle del proveedor ${s.name}`}
                     aria-selected={selectedId === s.id}
-                    className={cn("cursor-pointer transition-colors", selectedId === s.id ? "bg-primary/5 dark:bg-primary/10" : "hover:bg-[var(--surface-sunken)]")}
+                    className={cn("cursor-pointer", selectedId === s.id ? "bg-primary/5 dark:bg-primary/10" : "hover:bg-[var(--surface-sunken)]")}
                   >
                     <td>
                       <div className="flex items-center gap-2">
@@ -164,10 +164,10 @@ export default function SupplierComparator({ onCreateOC, onSeleccion }: Supplier
                         </div>
                       </div>
                     </td>
-                    <td className="hidden text-center text-sm text-[var(--text-secondary)] sm:table-cell">{s.productCount ?? "—"}</td>
-                    <td className="hidden text-right font-mono text-sm text-[var(--text-secondary)] md:table-cell">{s.averagePurchasePrice ? formatCurrency(s.averagePurchasePrice) : "—"}</td>
-                    <td className="hidden text-center text-sm text-[var(--text-secondary)] sm:table-cell">{diasDeEntrega(s) != null ? `${diasDeEntrega(s)} d` : "—"}</td>
-                    <td className="hidden text-sm text-[var(--text-secondary)] lg:table-cell">{s.condicionPago ?? "—"}{s.diasCredito ? ` (${s.diasCredito}d)` : ""}</td>
+                    <td className="hidden text-center text-[var(--text-secondary)] sm:table-cell">{s.productCount ?? "—"}</td>
+                    <td className="hidden text-right font-mono text-[var(--text-secondary)] md:table-cell">{s.averagePurchasePrice ? formatCurrency(s.averagePurchasePrice) : "—"}</td>
+                    <td className="hidden text-center text-[var(--text-secondary)] sm:table-cell">{diasDeEntrega(s) != null ? `${diasDeEntrega(s)} d` : "—"}</td>
+                    <td className="hidden text-[var(--text-secondary)] lg:table-cell">{s.condicionPago ?? "—"}{s.diasCredito ? ` (${s.diasCredito}d)` : ""}</td>
                     <td className="text-center">
                       <div className="flex flex-col items-center gap-1">
                         <ScoreBadge score={s.score} hasData={s.hasData} />

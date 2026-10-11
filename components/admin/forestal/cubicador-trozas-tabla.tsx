@@ -59,7 +59,7 @@ export default function TablaPatioTrozas({
   const TH = "px-3 py-2";
 
   return (
-    <DataTable className="w-full min-w-[640px] text-sm" wrapperProps={propsTabla}>
+    <DataTable planilla className="w-full min-w-[640px] text-sm" wrapperProps={propsTabla}>
       <thead>
         <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
           <th className={TH}>#</th>

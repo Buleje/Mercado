@@ -321,58 +321,58 @@ function TablaDeTrozas({
     <>
           {/* ── Escritorio: tabla con cabecera fija ───────────────────── */}
           <div className={`hidden overflow-auto rounded-xl border border-[var(--rule-base)] sm:block ${alto === "limitado" ? "max-h-[26rem]" : ""}`}>
-            <DataTable className="w-full text-sm">
-              <thead className="sticky top-0 z-[1] bg-[var(--surface-sunken)] text-left text-xs text-[var(--text-tertiary)]">
+            <DataTable className="w-full">
+              <thead className="sticky top-0 z-[1]">
                 <tr>
-                  <th className="w-12 px-3 py-2 text-right font-semibold">N°</th>
-                  <th className="px-3 py-2 font-semibold">Especie</th>
-                  <th className="px-3 py-2 font-semibold">Codificación</th>
+                  <th className="w-12 text-right">N°</th>
+                  <th>Especie</th>
+                  <th>Codificación</th>
                   {partirMedidas ? (
                     <>
-                      <th className="px-3 py-2 text-right font-semibold" title="Diámetro 1, como lo publica SERFOR">
+                      <th className="text-right" title="Diámetro 1, como lo publica SERFOR">
                         D1 (cm)
                       </th>
-                      <th className="px-3 py-2 text-right font-semibold" title="Diámetro 2, como lo publica SERFOR">
+                      <th className="text-right" title="Diámetro 2, como lo publica SERFOR">
                         D2 (cm)
                       </th>
-                      <th className="px-3 py-2 text-right font-semibold">Largo (m)</th>
+                      <th className="text-right">Largo (m)</th>
                     </>
                   ) : (
-                    <th className="px-3 py-2 font-semibold">Dimensiones</th>
+                    <th>Dimensiones</th>
                   )}
-                  <th className="px-3 py-2 text-right font-semibold">Cant.</th>
-                  <th className="px-3 py-2 text-right font-semibold">Volumen (m³)</th>
+                  <th className="text-right">Cant.</th>
+                  <th className="text-right">Volumen (m³)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
                 {visibles.map((f) => (
                   <tr key={f.n}>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.n}</td>
-                    <td className="px-3 py-2">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.n}</td>
+                    <td>
                       <span className="block font-medium text-[var(--text-primary)]">{f.especie}</span>
                       {f.cientifico && f.cientifico !== f.especie && (
                         <span className="block text-xs italic text-[var(--text-tertiary)]">{f.cientifico}</span>
                       )}
                     </td>
-                    <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{f.codificacion ?? "—"}</td>
+                    <td className="font-mono font-bold">{f.codificacion ?? "—"}</td>
                     {partirMedidas ? (
                       <>
-                        <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(f.d1, 1)}</td>
-                        <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(f.d2, 1)}</td>
-                        <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(f.largo, 2)}</td>
+                        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(f.d1, 1)}</td>
+                        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(f.d2, 1)}</td>
+                        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatNumber(f.largo, 2)}</td>
                       </>
                     ) : (
-                      <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{f.dimensiones ?? "—"}</td>
+                      <td className="font-mono text-[var(--text-secondary)]">{f.dimensiones ?? "—"}</td>
                     )}
-                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{f.cantidad ?? "—"}</td>
-                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{f.cantidad ?? "—"}</td>
+                    <td className="text-right font-mono font-bold tabular-nums">
                       {f.volumen == null ? "—" : fmtM3(f.volumen)}
                     </td>
                   </tr>
                 ))}
                 {visibles.length === 0 && (
                   <tr>
-                    <td colSpan={partirMedidas ? 8 : 6} className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">
+                    <td colSpan={partirMedidas ? 8 : 6} className="text-center text-[var(--text-tertiary)]">
                       Ninguna troza coincide con «{q.trim()}».
                     </td>
                   </tr>
@@ -380,10 +380,10 @@ function TablaDeTrozas({
               </tbody>
               <tfoot className="sticky bottom-0 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
                 <tr>
-                  <td colSpan={partirMedidas ? 7 : 5} className="px-3 py-2 text-right text-sm font-bold text-[var(--text-primary)]">
+                  <td colSpan={partirMedidas ? 7 : 5} className="text-right font-bold">
                     {filtrando ? `Total de lo mostrado (${visibles.length})` : "Total de la lista"}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                  <td className="text-right font-mono font-bold tabular-nums">
                     {fmtM3(volVisible)}
                   </td>
                 </tr>

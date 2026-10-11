@@ -19,6 +19,9 @@ const SIN_CAJA = ' wrapperClassName="overflow-visible rounded-none border-0"';
 
 export function transformar(texto, rel = "x.tsx") {
   if (!rel.endsWith(".tsx")) return { texto, cambios: 0, revisar: 0 };
+  /* La hoja del drive es una planilla editable (celdas, selección, columnas
+     propias): no es una tabla del panel (11-10, la había convertido). */
+  if (/documentos\/hoja\//.test(rel)) return { texto, cambios: 0, revisar: 0 };
   const jsx = (texto.match(/<table\s+className=/g) || []).length;
   if (!jsx) return { texto, cambios: 0, revisar: 0 };
   const todas = (texto.match(/<table\b/g) || []).length;

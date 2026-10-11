@@ -44,7 +44,7 @@ export default function CtpTrozasIngresadasThead({
     <TheadCtp ref={orden.refCabecera}>
       <tr>
         {seleccionable && (
-          <th scope="col" data-label="Elegir" className="px-3 py-2">
+          <th scope="col" data-label="Elegir">
             <input
               type="checkbox"
               checked={todasElegidas}
@@ -68,26 +68,26 @@ export default function CtpTrozasIngresadasThead({
           orden={orden.orden}
           celdas={{
             guia: (
-              <th scope="col" data-col="guia" data-label="Guía" className="px-2! py-2 font-bold">
+              <th scope="col" data-col="guia" data-label="Guía" className="px-2!">
                 <span className="block">Guía</span>
                 {fc.guia && <FiltroColumnaMulti label="Guía" {...fc.guia} placeholder="Todas" />}
               </th>
             ),
             permiso: (
-              <th scope="col" data-col="permiso" data-label="Permiso" className="px-2! py-2 font-bold">
+              <th scope="col" data-col="permiso" data-label="Permiso" className="px-2!">
                 <span className="block">Permiso</span>
                 {fc.permiso && <FiltroColumnaMulti label="Permiso" {...fc.permiso} placeholder="Todos" />}
               </th>
             ),
-            codigo: <th scope="col" data-col="codigo" data-label="Código" className="px-2! py-2 font-bold">Código</th>,
+            codigo: <th scope="col" data-col="codigo" data-label="Código" className="px-2!">Código</th>,
             especie: (
-              <th scope="col" data-col="especie" data-label="Especie" className="px-2! py-2 font-bold">
+              <th scope="col" data-col="especie" data-label="Especie" className="px-2!">
                 <span className="block">Especie</span>
                 {fc.especie && <FiltroColumnaMulti label="Especie" {...fc.especie} placeholder="Todas" />}
               </th>
             ),
             medidas: (
-              <th scope="col" data-col="medidas" data-label="Medidas" className="px-2! py-2 font-bold">
+              <th scope="col" data-col="medidas" data-label="Medidas" className="px-2!">
                 <span className="block">Ø cm · largo m</span>
                 {fc.largo && fc.largo.conDato > 0 && (
                   <FiltroColumnaRango label="Largo" unidad="m" valor={fc.largo.valor} placeholder="Largo"
@@ -99,16 +99,16 @@ export default function CtpTrozasIngresadasThead({
                 )}
               </th>
             ),
-            volumen: <th scope="col" data-col="volumen" className="px-2! py-2 text-right font-bold">m³</th>,
-            estado: <th scope="col" data-col="estado" className="px-2! py-2 font-bold">Estado</th>,
+            volumen: <th scope="col" data-col="volumen" className="px-2! text-right">m³</th>,
+            estado: <th scope="col" data-col="estado" className="px-2!">Estado</th>,
             patio: (
-              <th scope="col" data-col="patio" data-label="En el patio" className="px-2! py-2 font-bold">
+              <th scope="col" data-col="patio" data-label="En el patio" className="px-2!">
                 <span className="block">En el patio</span>
                 {fc.tramos && <FiltroColumnaMulti label="Días en el patio" {...fc.tramos} placeholder="Todos" />}
               </th>
             ),
             asiento: (
-              <th scope="col" data-col="asiento" data-label="Asiento de la guía" className="relative px-2! py-2 font-bold">
+              <th scope="col" data-col="asiento" data-label="Asiento de la guía" className="relative px-2!">
                 Asiento<span className="sr-only"> de la guía en el libro (no es la recepción)</span>
               </th>
             ),

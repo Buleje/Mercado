@@ -225,13 +225,13 @@ export default function LothGtfForm({ onClose, onSaved, guias = [] }: { onClose:
         </div>
         {items.length > 0 && (
           <div className="mt-3 overflow-x-auto">
-            <DataTable className="w-full text-sm">
-              <thead className="text-left text-xs text-[var(--text-tertiary)]"><tr><th className="py-1">Código en la guía</th><th>Código único</th><th>Especie</th><th className="text-right">Ø may</th><th className="text-right">Ø men</th><th className="text-right">Long.</th><th className="text-right">Vol. m³</th><th></th></tr></thead>
+            <DataTable className="w-full">
+              <thead><tr><th>Código en la guía</th><th>Código único</th><th>Especie</th><th className="text-right">Ø may</th><th className="text-right">Ø men</th><th className="text-right">Long.</th><th className="text-right">Vol. m³</th><th></th></tr></thead>
               <tbody>
                 {items.map((x, i) => (
-                  <tr key={i} className={`border-t border-[var(--rule-soft)] ${invalidCodes.has(i) ? "bg-[var(--data-error-50)]" : ""}`}>
-                    <td className="py-1.5 font-mono text-[var(--text-secondary)]">{x.codigoGuia || x.code || "—"}</td>
-                    <td className="py-1.5 font-mono font-bold text-[var(--text-primary)]">
+                  <tr key={i} className={`${invalidCodes.has(i) ? "bg-[var(--data-error-50)]" : ""}`}>
+                    <td className="font-mono text-[var(--text-secondary)]">{x.codigoGuia || x.code || "—"}</td>
+                    <td className="font-mono font-bold">
                       {x.code ?? "—"}
                       {invalidCodes.has(i) && (
                         <span className="ml-1.5 inline-flex items-center rounded-full bg-[var(--data-error-600)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-white leading-none">
@@ -247,7 +247,7 @@ export default function LothGtfForm({ onClose, onSaved, guias = [] }: { onClose:
                     <td className="text-right"><button aria-label="Eliminar" type="button" onClick={() => setItems((arr) => arr.filter((_, j) => j !== i))} className="text-[var(--data-error-600)]"><Trash2 className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 ))}
-                <tr className="border-t-2 border-[var(--rule-base)] font-bold"><td colSpan={6} className="py-1.5 text-right">Volumen total</td><td className="text-right font-mono tabular-nums text-[var(--data-success-700)]">{fmtM3(totalVol)}</td><td></td></tr>
+                <tr className="border-t-2 border-[var(--rule-base)] font-bold"><td colSpan={6} className="text-right">Volumen total</td><td className="text-right font-mono tabular-nums text-[var(--data-success-700)]">{fmtM3(totalVol)}</td><td></td></tr>
               </tbody>
             </DataTable>
           </div>

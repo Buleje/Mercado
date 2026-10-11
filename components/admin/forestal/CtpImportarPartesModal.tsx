@@ -195,28 +195,28 @@ export default function CtpImportarPartesModal({
 
         {datos && datos.listas.length > 0 && (
           <div className="col-span-12 max-h-72 overflow-y-auto rounded-xl border border-[var(--rule-soft)]">
-            <DataTable className="w-full text-sm">
+            <DataTable className="w-full">
               <caption className="sr-only">Qué va a pasar con cada fila del archivo</caption>
-              <thead className="sticky top-0 bg-[var(--surface-sunken)] text-left text-xs uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+              <thead className="sticky top-0">
                 <tr>
-                  <th scope="col" className="px-3 py-2 font-bold">Nombre</th>
-                  <th scope="col" className="px-3 py-2 font-bold">Documento</th>
-                  <th scope="col" className="px-3 py-2 font-bold">Papel</th>
-                  <th scope="col" className="px-3 py-2 font-bold">Qué va a pasar</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Documento</th>
+                  <th scope="col">Papel</th>
+                  <th scope="col">Qué va a pasar</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
                 {datos.listas.map((f) => (
                   <tr key={f.linea}>
-                    <td className="px-3 py-1.5 text-[var(--text-primary)]">
+                    <td>
                       {f.input.nombre}
                       {f.aviso && <span className="block text-xs text-[var(--data-warning-700)]">{f.aviso}</span>}
                     </td>
-                    <td className="px-3 py-1.5 font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                    <td className="font-mono tabular-nums text-[var(--text-secondary)]">
                       {f.input.docNumero ? `${f.input.docTipo ?? ""} ${f.input.docNumero}` : "—"}
                     </td>
-                    <td className="px-3 py-1.5 text-[var(--text-secondary)]">{f.input.roles.join(", ")}</td>
-                    <td className="px-3 py-1.5">
+                    <td className="text-[var(--text-secondary)]">{f.input.roles.join(", ")}</td>
+                    <td>
                       {f.accion === "actualizar" ? (
                         <span className="text-[var(--data-info-700)]">Actualiza «{f.coincide?.nombre}»</span>
                       ) : (

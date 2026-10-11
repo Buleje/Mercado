@@ -52,7 +52,7 @@ export function QuitadosModal({ usuario, nombre, onCerrar }: { usuario: string |
                       {cuandoLima(q.creadoEn)}
                       {q.detalle.motivo === "vaciar" && <span className="block text-sm font-semibold text-[var(--data-warning-ink)]">Vació el ticket</span>}
                     </td>
-                    <td className="text-[var(--text-primary)]">
+                    <td>
                       {q.detalle.lineas.map((l, i) => (
                         <span key={`${l.productoId}-${i}`} className="block">
                           <span className="tabular-nums">{l.cantidad}</span> × {l.nombre}
@@ -60,7 +60,7 @@ export function QuitadosModal({ usuario, nombre, onCerrar }: { usuario: string |
                         </span>
                       ))}
                     </td>
-                    <td className="text-right font-bold tabular-nums text-[var(--text-primary)] whitespace-nowrap">{formatCurrency(q.detalle.monto)}</td>
+                    <td className="text-right font-bold tabular-nums whitespace-nowrap">{formatCurrency(q.detalle.monto)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -106,7 +106,7 @@ export default function ContratosDelPersonalView() {
             const estado = estadoVisible(c);
             return (
               <tr key={c.id}>
-                <td className="font-semibold text-[var(--text-primary)]">{c.numero}</td>
+                <td className="font-semibold">{c.numero}</td>
                 <td>{TIPO_LABELS[c.tipo] ?? c.tipo}</td>
                 <td>{c.colaboradorId ? (nombrePorId.get(c.colaboradorId) ?? "Persona eliminada") : <span className="text-[var(--text-tertiary)]">Sin vincular</span>}</td>
                 <td>{c.fechaVencimiento ? formatearFecha(c.fechaVencimiento) : <span className="text-[var(--text-tertiary)]">Sin fecha</span>}</td>

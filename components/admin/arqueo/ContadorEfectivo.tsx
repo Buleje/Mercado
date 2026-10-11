@@ -109,8 +109,8 @@ export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDe
             const idx = desde + i;
             return (
               <tr key={key}>
-                <td className="py-1.5 font-semibold text-[var(--text-primary)]">{d.etiqueta}</td>
-                <td className="py-1.5 px-2 text-center">
+                <td className="font-semibold">{d.etiqueta}</td>
+                <td className="text-center">
                   <input
                     ref={(el) => { inputsRef.current[idx] = el; }}
                     type="text"
@@ -125,7 +125,7 @@ export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDe
                     className="h-10 w-16 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-center text-sm tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                   />
                 </td>
-                <td className="py-1.5 text-right font-bold tabular-nums text-[var(--text-primary)]">{qty > 0 ? fmt(qty * d.valor) : "—"}</td>
+                <td className="text-right font-bold tabular-nums">{qty > 0 ? fmt(qty * d.valor) : "—"}</td>
               </tr>
             );
           })}

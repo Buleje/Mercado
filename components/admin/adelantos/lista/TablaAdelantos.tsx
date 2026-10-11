@@ -132,7 +132,7 @@ export default function TablaAdelantos({
   }, [resaltadaEnPagina, resaltadoId]);
 
   const th = (columna: ColumnaOrden, label: string, alineado?: "right") => (
-    <th className={`px-2.5 py-2.5 ${alineado === "right" ? "text-right" : "text-left"}`} aria-sort={ariaSort(orden, columna)}>
+    <th className={`${alineado === "right" ? "text-right" : "text-left"}`} aria-sort={ariaSort(orden, columna)}>
       <button
         type="button"
         onClick={() => onOrden(siguienteOrden(orden, columna))}
@@ -165,7 +165,7 @@ export default function TablaAdelantos({
               ahí los `<col>` y el `table-fixed` metían el `tbody` en la
               primera columna y cada tarjeta medía 148 px de ancho en un
               teléfono de 400 (medido 08-10, ya pasaba antes). */}
-          <DataTable className="w-full text-base sm:table-fixed">
+          <DataTable className="w-full sm:table-fixed">
             <colgroup className="max-sm:hidden">
               <col style={{ width: 148 }} />
               <col />
@@ -177,17 +177,17 @@ export default function TablaAdelantos({
               <col style={{ width: 72 }} />
               <col style={{ width: 96 }} />
             </colgroup>
-            <thead className="bg-[var(--surface-sunken)] text-sm text-[var(--text-tertiary)]">
+            <thead>
               <tr>
                 {th("codigo", "Código")}
                 {th("persona", "Persona")}
                 {th("fecha", "Fecha")}
-                <th className="hidden px-2.5 py-2.5 text-left font-bold xl:table-cell">Motivo</th>
+                <th className="hidden xl:table-cell">Motivo</th>
                 {th("monto", "Adelantado", "right")}
                 {th("avance", "Avance", "right")}
                 {th("saldo", "Saldo", "right")}
                 {th("estado", "Estado")}
-                <th className="px-2.5 py-2.5" />
+                <th />
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -228,7 +228,7 @@ export default function TablaAdelantos({
                         hermanos que `.admin-mobile-cards` pone en fila, y forzar
                         nowrap en los dos a la vez los hacía superponerse en una
                         pantalla angosta. */}
-                    <td className="px-2.5 py-2.5">
+                    <td>
                       <span className="block truncate font-mono text-sm font-bold text-[var(--text-primary)]" title={a.codigoOperacion ?? undefined}>
                         {a.codigoOperacion ?? "—"}
                       </span>
@@ -266,7 +266,7 @@ export default function TablaAdelantos({
                         )}
                       </span>
                     </td>
-                    <td className="px-2.5 py-2.5">
+                    <td>
                       <span className="block truncate font-bold text-[var(--text-primary)]" title={a.beneficiario?.nombre ?? undefined}>
                         {a.beneficiario?.nombre ?? "—"}
                       </span>
@@ -274,7 +274,7 @@ export default function TablaAdelantos({
                         <span className="block truncate text-sm tabular-nums text-[var(--text-tertiary)]">{a.beneficiario.telefono}</span>
                       )}
                     </td>
-                    <td className="truncate px-2.5 py-2.5 text-sm tabular-nums text-[var(--text-secondary)]">
+                    <td className="truncate tabular-nums text-[var(--text-secondary)]">
                       {fechaCelda(a.fechaAdelanto)}
                     </td>
                     {/* El motivo con el que se dio la plata: sigue en el `title`
@@ -282,15 +282,15 @@ export default function TablaAdelantos({
                         (≥1280px) — es el dato menos urgente de la fila, y forzar
                         su ancho en pantallas normales era lo que empujaba a la
                         tabla entera al scroll horizontal. */}
-                    <td className="hidden max-w-[130px] px-2.5 py-2.5 xl:table-cell">
+                    <td className="hidden max-w-[130px] xl:table-cell">
                       <span className="block truncate text-sm text-[var(--text-secondary)]" title={a.notas ?? undefined}>
                         {a.notas || <span className="text-[var(--text-tertiary)]">—</span>}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-2.5 py-2.5 text-right tabular-nums text-[var(--text-secondary)]">
+                    <td className="whitespace-nowrap text-right tabular-nums text-[var(--text-secondary)]">
                       {fmtMon(a.montoAdelantado, a.moneda)}
                     </td>
-                    <td className="px-2.5 py-2.5">
+                    <td>
                       <div className="flex items-center justify-end gap-1.5">
                         <div className="h-2.5 w-10 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
                           <div className="h-full rounded-full bg-[var(--data-success)]" style={{ width: `${pct}%` }} />
@@ -298,18 +298,18 @@ export default function TablaAdelantos({
                         <span className="w-8 text-right text-sm font-semibold tabular-nums text-[var(--text-tertiary)]">{pct}%</span>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-2.5 py-2.5 text-right font-bold tabular-nums text-[var(--text-primary)]">
+                    <td className="whitespace-nowrap text-right font-bold tabular-nums">
                       {fmtMon(a.saldoPendiente, a.moneda)}
                       {debe === "le-debes" && (
                         <span className="block text-sm font-semibold text-[var(--data-info-ink)]">le debes</span>
                       )}
                     </td>
-                    <td className="px-2.5 py-2.5">
+                    <td>
                       <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-bold ${badge?.className ?? ""}`}>
                         {badge?.label ?? a.status}
                       </span>
                     </td>
-                    <td className="px-2.5 py-2.5 text-right">
+                    <td className="text-right">
                       <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                         {a.status === "ABIERTO" && (
                           /* Ícono + tooltip (ley de la vista, 6): la fila

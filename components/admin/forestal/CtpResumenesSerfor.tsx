@@ -278,7 +278,7 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
             titulo="Cuadro Resumen 1 · Saldos y movimientos de trozas"
             subtitulo="Por especie: 16 casilleros. El retrozado (7)-(10) sale del Apartado 2 y no mueve el saldo: cortar una troza no crea ni destruye madera. El N° de trozas consumidas va en «—» porque el consumo se atribuye en m³, no por troza."
           >
-            <thead className="bg-[var(--surface-sunken)]">
+            <thead>
               <tr>
                 <Th>(1) Especie</Th>
                 <Th>(2) Científico</Th>
@@ -298,15 +298,15 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
             </thead>
             <tbody>
               {datos.resumen1.length === 0 ? (
-                <tr><td colSpan={14} className="px-4 py-6 text-center text-sm text-[var(--text-secondary)]">Sin movimientos de trozas en el período.</td></tr>
+                <tr><td colSpan={14} className="text-center text-[var(--text-secondary)]">Sin movimientos de trozas en el período.</td></tr>
               ) : (
                 datos.resumen1.map((f) => (
-                  <tr key={f.especie} className="border-t border-[var(--rule-soft)]">
-                    <td className="px-3 py-2 font-bold text-[var(--text-primary)]">
+                  <tr key={f.especie}>
+                    <td className="font-bold">
                       {f.especie}
                       {f.cites && <span className="ml-1.5 rounded bg-[var(--data-error-50)] px-1 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">CITES</span>}
                     </td>
-                    <td className="px-3 py-2 text-xs italic text-[var(--text-secondary)]">{f.cientifico ?? "—"}</td>
+                    <td className="italic text-[var(--text-secondary)]">{f.cientifico ?? "—"}</td>
                     <Celda v={f.inicial.volumen} />
                     <Entero v={f.inicial.piezas} />
                     <Celda v={f.ingresado.volumen} />
@@ -329,7 +329,7 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
             titulo="Cuadro Resumen 2 · Saldos y movimientos de productos transformados"
             subtitulo="Por especie, tipo de producto y unidad: 10 casilleros."
           >
-            <thead className="bg-[var(--surface-sunken)]">
+            <thead>
               <tr>
                 <Th>(1) Especie</Th>
                 <Th>(3) Tipo de producto</Th>
@@ -344,13 +344,13 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
             </thead>
             <tbody>
               {datos.resumen2.length === 0 ? (
-                <tr><td colSpan={9} className="px-4 py-6 text-center text-sm text-[var(--text-secondary)]">Sin productos transformados en el período.</td></tr>
+                <tr><td colSpan={9} className="text-center text-[var(--text-secondary)]">Sin productos transformados en el período.</td></tr>
               ) : (
                 datos.resumen2.map((f) => (
-                  <tr key={`${f.especie}|${f.tipoProducto}|${f.unidad}`} className="border-t border-[var(--rule-soft)]">
-                    <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{f.especie}</td>
-                    <td className="px-3 py-2">{f.tipoProducto}</td>
-                    <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">{unidadOficial(f.unidad)}</td>
+                  <tr key={`${f.especie}|${f.tipoProducto}|${f.unidad}`}>
+                    <td className="font-bold">{f.especie}</td>
+                    <td>{f.tipoProducto}</td>
+                    <td className="text-[var(--text-secondary)]">{unidadOficial(f.unidad)}</td>
                     <Celda v={f.inicial} />
                     <Celda v={f.ingresado} />
                     <Celda v={f.consumido} />
@@ -367,7 +367,7 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
             titulo="Cuadro Resumen 3 · Balance de la transformación primaria"
             subtitulo="Por lote y línea de producción: 13 casilleros. Con unidades distintas el formato pide el factor de conversión, no un porcentaje."
           >
-            <thead className="bg-[var(--surface-sunken)]">
+            <thead>
               <tr>
                 <Th>(1) Lote</Th>
                 <Th>(2) Producto</Th>
@@ -382,15 +382,15 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
             </thead>
             <tbody>
               {datos.resumen3.length === 0 ? (
-                <tr><td colSpan={9} className="px-4 py-6 text-center text-sm text-[var(--text-secondary)]">Sin producción en el período.</td></tr>
+                <tr><td colSpan={9} className="text-center text-[var(--text-secondary)]">Sin producción en el período.</td></tr>
               ) : (
                 datos.resumen3.map((f) => (
-                  <tr key={`${f.lote}|${f.lineaProduccion}|${f.tipoProducto}|${f.especie}`} className="border-t border-[var(--rule-soft)]">
-                    <td className="px-3 py-2 font-mono text-sm font-bold text-[var(--text-primary)]">{f.lote}</td>
-                    <td className="px-3 py-2">{f.tipoProducto}</td>
-                    <td className="px-3 py-2">{f.especie}</td>
+                  <tr key={`${f.lote}|${f.lineaProduccion}|${f.tipoProducto}|${f.especie}`}>
+                    <td className="font-mono font-bold">{f.lote}</td>
+                    <td>{f.tipoProducto}</td>
+                    <td>{f.especie}</td>
                     <Celda v={f.cantidadConsumida} />
-                    <td className="px-3 py-2">
+                    <td>
                       <span className={cn(
                         "rounded px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold",
                         f.lineaProduccion === "LRE"
@@ -403,7 +403,7 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
                     <Celda v={f.cantidadProducida} />
                     <Celda v={f.salido} />
                     <Celda v={f.stock} negativo />
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">
+                    <td className="text-right font-mono tabular-nums">
                       {f.rendimientoPct != null ? `${f.rendimientoPct}%` : (f.factorConversion ?? "—")}
                     </td>
                   </tr>

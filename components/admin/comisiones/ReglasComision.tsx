@@ -79,7 +79,7 @@ export default function ReglasComision({ reglas, equipo, nombreDe, onAgregar, on
           <tbody>
             {ordenadas.map((r) => (
               <tr key={r.id}>
-                <td className="font-semibold text-[var(--text-primary)]">{nombreDe(r.cashierId)}</td>
+                <td className="font-semibold">{nombreDe(r.cashierId)}</td>
                 <td className="text-right tabular-nums">S/ {formatNumber(r.minSales)}</td>
                 <td className="text-right tabular-nums">{r.maxSales == null ? "sin tope" : `S/ ${formatNumber(r.maxSales)}`}</td>
                 <td className="text-right font-bold tabular-nums">{r.rate} %</td>

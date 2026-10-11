@@ -70,30 +70,30 @@ export function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: 
       {customers.length === 0 ? (
         <p className="text-sm text-[var(--text-tertiary)] text-center py-8">No hay datos de clientes disponibles</p>
       ) : (
-        <DataTable className="w-full text-sm">
+        <DataTable className="w-full">
           <thead>
-            <tr className="border-b border-[var(--rule-base)] text-left">
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs">#</th>
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs">Cliente</th>
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-right">Gasto total</th>
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-right hidden sm:table-cell">Compras</th>
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-right hidden md:table-cell">Ticket prom</th>
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-center">Tendencia</th>
+            <tr>
+              <th>#</th>
+              <th>Cliente</th>
+              <th className="text-right">Gasto total</th>
+              <th className="text-right hidden sm:table-cell">Compras</th>
+              <th className="text-right hidden md:table-cell">Ticket prom</th>
+              <th className="text-center">Tendencia</th>
             </tr>
           </thead>
           <tbody>
             {customers.map((c, i) => (
-              <tr key={c.id || `cust-${i}`} className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)] cursor-pointer transition-colors">
-                <td className="px-3 py-3 text-center">
+              <tr key={c.id || `cust-${i}`} className="cursor-pointer">
+                <td className="text-center">
                   {i < 3 ? <span className="text-lg">{medals[i]}</span> : <span className="text-xs font-bold text-[var(--text-tertiary)]">{i + 1}</span>}
                 </td>
-                <td className="px-3 py-3">
+                <td>
                   <p className="font-medium text-[var(--text-primary)] truncate max-w-50">{c.nombre}</p>
                 </td>
-                <td className="px-3 py-3 text-right font-bold text-primary">{formatCurrency(c.gastoTotal)}</td>
-                <td className="px-3 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{c.compras} compras</td>
-                <td className="px-3 py-3 text-right text-[var(--text-secondary)] hidden md:table-cell">{formatCurrency(c.ticketPromedio)}</td>
-                <td className="px-3 py-3 text-center">
+                <td className="text-right font-bold text-primary">{formatCurrency(c.gastoTotal)}</td>
+                <td className="text-right text-[var(--text-secondary)] hidden sm:table-cell">{c.compras} compras</td>
+                <td className="text-right text-[var(--text-secondary)] hidden md:table-cell">{formatCurrency(c.ticketPromedio)}</td>
+                <td className="text-center">
                   {c.tendencia > 5 ? (
                     <span className="text-[var(--data-success-500)] text-xs font-bold">&#8593; +{Number(c.tendencia).toFixed(0)}%</span>
                   ) : c.tendencia < -5 ? (

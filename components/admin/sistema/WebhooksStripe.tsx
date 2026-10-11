@@ -99,11 +99,11 @@ export function WebhooksStripeContenido({ w }: { w: WebhooksStripe }) {
       ) : (
         <div className={`overflow-hidden ${ADMIN_TOKENS.card}`}>
           <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)]/60">
+            <DataTable className="w-full">
+              <thead>
                 <tr>
                   {["Estado", "Tipo de evento", "Intentos", "Próximo intento", "Creado", "Último error", ""].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-tertiary)]">
+                    <th key={h}>
                       {h}
                     </th>
                   ))}
@@ -111,24 +111,24 @@ export function WebhooksStripeContenido({ w }: { w: WebhooksStripe }) {
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
                 {items.map((item) => (
-                  <tr key={item.id} className="hover:bg-[var(--surface-sunken)]/40">
-                    <td className="px-4 py-3">
+                  <tr key={item.id}>
+                    <td>
                       <StatusBadge item={item} />
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">{item.eventType}</td>
-                    <td className="px-4 py-3 text-center text-[var(--text-secondary)]">{item.attempts}</td>
-                    <td className="px-4 py-3 text-[var(--text-tertiary)]">
+                    <td className="font-mono text-[var(--text-secondary)]">{item.eventType}</td>
+                    <td className="text-center text-[var(--text-secondary)]">{item.attempts}</td>
+                    <td className="text-[var(--text-tertiary)]">
                       {item.processedAt ? (
                         <span className="text-[var(--data-success-ink)]">{fmt(item.processedAt)}</span>
                       ) : (
                         fmt(item.nextRetryAt)
                       )}
                     </td>
-                    <td className="px-4 py-3 text-[var(--text-tertiary)]">{fmt(item.createdAt)}</td>
-                    <td className="max-w-xs truncate px-4 py-3 text-xs text-[var(--data-error-ink)]">
+                    <td className="text-[var(--text-tertiary)]">{fmt(item.createdAt)}</td>
+                    <td className="max-w-xs truncate text-[var(--data-error-ink)]">
                       {item.lastError ?? "—"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       {!item.processedAt && (
                         <IconAction
                           icon={deletingId === item.id ? RefreshCw : Trash2}

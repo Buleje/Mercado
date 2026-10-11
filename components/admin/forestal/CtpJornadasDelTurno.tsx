@@ -89,30 +89,30 @@ export default function CtpJornadasDelTurno({
       {reparto.aviso && <p className="text-sm text-[var(--text-secondary)]">{reparto.aviso}</p>}
 
       <div className="overflow-x-auto">
-        <DataTable className="w-full min-w-[34rem] text-sm">
+        <DataTable className="w-full min-w-[34rem]">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
-              <th className="py-1 pr-2 font-bold">Día</th>
-              <th className="py-1 pr-2 font-bold">Fecha</th>
-              <th className="py-1 pr-2 font-bold">Trozas</th>
-              <th className="py-1 pr-2 text-right font-bold">Rolliza</th>
-              <th className="py-1 pr-2 text-right font-bold">Aserrada</th>
-              <th className="py-1 text-right font-bold">Piezas</th>
+            <tr>
+              <th className="pr-2">Día</th>
+              <th className="pr-2">Fecha</th>
+              <th className="pr-2">Trozas</th>
+              <th className="pr-2 text-right">Rolliza</th>
+              <th className="pr-2 text-right">Aserrada</th>
+              <th className="text-right">Piezas</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)]">
             {reparto.jornadas.map((j) => (
               <tr key={j.dia}>
-                <td className="py-1 pr-2 font-bold text-[var(--text-primary)]">{j.dia}</td>
-                <td className="py-1 pr-2 font-mono tabular-nums text-[var(--text-secondary)]">{j.fecha}</td>
-                <td className="py-1 pr-2 font-mono text-xs text-[var(--text-secondary)]">{j.etiquetas.join(", ")}</td>
-                <td className="py-1 pr-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                <td className="pr-2 font-bold">{j.dia}</td>
+                <td className="pr-2 font-mono tabular-nums text-[var(--text-secondary)]">{j.fecha}</td>
+                <td className="pr-2 font-mono text-[var(--text-secondary)]">{j.etiquetas.join(", ")}</td>
+                <td className="pr-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {fmtM3(Number(j.rollizaM3))}
                 </td>
-                <td className="py-1 pr-2 text-right font-mono tabular-nums font-bold text-[var(--text-primary)]">
+                <td className="pr-2 text-right font-mono tabular-nums font-bold">
                   {fmtM3(Number(j.m3))}
                 </td>
-                <td className="py-1 text-right font-mono tabular-nums text-[var(--text-secondary)]">{j.piezas}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{j.piezas}</td>
               </tr>
             ))}
           </tbody>

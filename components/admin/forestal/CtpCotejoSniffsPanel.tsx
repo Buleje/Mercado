@@ -173,19 +173,19 @@ export function PanelCotejoSniffs({
             <TablaCtp altoMax="max-h-[26vh]">
               <TheadCtp>
                 <tr>
-                  <th scope="col" className="px-3 py-2 font-bold">
+                  <th scope="col" className="font-bold">
                     Producto (catálogo LO-CTP)
                   </th>
-                  <th scope="col" className="w-28 px-3 py-2 text-right font-bold">
+                  <th scope="col" className="w-28 text-right font-bold">
                     SNIFFS m³
                   </th>
-                  <th scope="col" className="w-28 px-3 py-2 text-right font-bold">
+                  <th scope="col" className="w-28 text-right font-bold">
                     Cubicado m³
                   </th>
-                  <th scope="col" className="w-28 px-3 py-2 text-right font-bold">
+                  <th scope="col" className="w-28 text-right font-bold">
                     Diferencia
                   </th>
-                  <th scope="col" className="w-28 px-3 py-2 font-bold">
+                  <th scope="col" className="w-28 font-bold">
                     Cotejo
                   </th>
                 </tr>
@@ -196,7 +196,7 @@ export function PanelCotejoSniffs({
                     key={f.producto}
                     className={f.estado === "cuadra" ? "" : "bg-[var(--data-warning-500)]/10"}
                   >
-                    <td className="px-3 py-1.5 text-[var(--text-primary)]">
+                    <td>
                       {f.producto}
                       {f.crudo && (
                         <span className="block font-mono text-xs text-[var(--text-tertiary)]">
@@ -204,18 +204,18 @@ export function PanelCotejoSniffs({
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {f.sniffsM3 == null ? "—" : fmtM3(f.sniffsM3)}
                     </td>
-                    <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                       {f.cubicadoM3 == null ? "—" : fmtM3(f.cubicadoM3)}
                     </td>
-                    <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                    <td className="text-right font-mono tabular-nums">
                       {f.diferenciaM3 == null
                         ? "—"
                         : `${f.diferenciaM3 > 0 ? "+" : f.diferenciaM3 < 0 ? "−" : ""}${fmtM3(Math.abs(f.diferenciaM3))}`}
                     </td>
-                    <td className={`px-3 py-1.5 text-sm font-bold ${ESTADOS[f.estado].clase}`}>
+                    <td className={`font-bold ${ESTADOS[f.estado].clase}`}>
                       <span className="inline-flex items-center gap-1">
                         {f.estado === "cuadra" ? (
                           <Check className="h-3.5 w-3.5" aria-hidden />
@@ -230,16 +230,16 @@ export function PanelCotejoSniffs({
               </TbodyCtp>
               <tfoot>
                 <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                  <th scope="row" className="px-3 py-2 text-left">
+                  <th scope="row" className="text-left">
                     Total
                   </th>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">
+                  <td className="text-right font-mono tabular-nums">
                     {fmtM3(cotejo.totales.sniffsM3)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">
+                  <td className="text-right font-mono tabular-nums">
                     {fmtM3(cotejo.totales.cubicadoM3)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">
+                  <td className="text-right font-mono tabular-nums">
                     {cotejo.totales.diferenciaM3 > 0
                       ? "+"
                       : cotejo.totales.diferenciaM3 < 0
@@ -247,7 +247,7 @@ export function PanelCotejoSniffs({
                         : ""}
                     {fmtM3(Math.abs(cotejo.totales.diferenciaM3))}
                   </td>
-                  <td className="px-3 py-2">{cotejo.totales.cuadra ? "Cuadra" : ""}</td>
+                  <td>{cotejo.totales.cuadra ? "Cuadra" : ""}</td>
                 </tr>
               </tfoot>
             </TablaCtp>

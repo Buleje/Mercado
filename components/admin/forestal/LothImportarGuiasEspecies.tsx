@@ -18,10 +18,11 @@ import type { ResumenEspecies } from "@/lib/forestal/loth-importar-guia-resumen"
 import type { ProductoGtf } from "@/lib/forestal/serfor-gtf";
 import { Bloque } from "./ctp-guia-bloques";
 import { TONO } from "./LothImportarGuiasTablas";
+import { DataTable } from "@buleje/design-system";
 
 const TH =
-  "whitespace-nowrap px-2 py-1.5 text-left text-xs font-semibold text-[var(--text-tertiary)]";
-const TD = "whitespace-nowrap px-2 py-1.5 align-top";
+  "whitespace-nowrap";
+const TD = "whitespace-nowrap align-top";
 const NUM = "text-right font-mono tabular-nums";
 const signo = (v: number) => (v > 0 ? `+${fmtM3(v)}` : fmtM3(v));
 
@@ -59,7 +60,7 @@ export function BloqueEspecies({ r, className = "" }: { r: ResumenEspecies; clas
         </p>
       ) : (
         <div className="-mx-1 overflow-x-auto sm:col-span-12">
-          <table className="w-full text-sm">
+          <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
             <thead>
               <tr>
                 <th className={TH}>Especie</th>
@@ -72,12 +73,12 @@ export function BloqueEspecies({ r, className = "" }: { r: ResumenEspecies; clas
             </thead>
             <tbody>
               {r.filas.map((f) => (
-                <tr key={f.clave} className="border-t border-[var(--rule-soft)]">
+                <tr key={f.clave}>
                   <td className={TD}>
                     <Especie comun={f.comun} cientifico={f.cientifico} />
                   </td>
                   <td className={`${TD} ${NUM}`}>{f.trozas}</td>
-                  <td className={`${TD} ${NUM} font-semibold text-[var(--text-primary)]`}>
+                  <td className={`${TD} ${NUM} font-semibold`}>
                     {fmtM3(f.m3)}
                   </td>
                   <td className={TD}>
@@ -130,7 +131,7 @@ export function BloqueEspecies({ r, className = "" }: { r: ResumenEspecies; clas
                 {conCuadro && <td className={`${TD} ${NUM}`}>{fmtM3(r.declaradoM3 ?? 0)}</td>}
               </tr>
             </tfoot>
-          </table>
+          </DataTable>
         </div>
       )}
     </Bloque>
@@ -154,7 +155,7 @@ export function BloqueProductos({
       nota="No se recalcula: es lo que dice el documento. El total es el que publica SERFOR; si no lo publica, la suma de las filas."
     >
       <div className="-mx-1 overflow-x-auto sm:col-span-12">
-        <table className="w-full text-sm">
+        <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
           <thead>
             <tr>
               <th className={TH}>Especie (37a · 37b)</th>
@@ -168,7 +169,7 @@ export function BloqueProductos({
             {productos.map((p, i) => (
               <tr
                 key={`${p.comun ?? p.cientifico ?? "p"}-${i}`}
-                className="border-t border-[var(--rule-soft)]"
+               
               >
                 <td className={TD}>
                   <Especie
@@ -186,7 +187,7 @@ export function BloqueProductos({
                     </span>
                   )}
                 </td>
-                <td className={`${TD} ${NUM} font-semibold text-[var(--text-primary)]`}>
+                <td className={`${TD} ${NUM} font-semibold`}>
                   {p.volumen == null ? "—" : fmtM3(p.volumen)}
                 </td>
               </tr>
@@ -200,7 +201,7 @@ export function BloqueProductos({
               <td className={`${TD} ${NUM}`}>{fmtM3(total)}</td>
             </tr>
           </tfoot>
-        </table>
+        </DataTable>
       </div>
     </Bloque>
   );

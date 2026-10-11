@@ -12,7 +12,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, Check, Loader2, PackagePlus, X } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
@@ -31,7 +31,7 @@ import { crearLotesPorBloque, previsualizarLotesPorBloque } from "./reparto-lote
 
 const BTN = "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-50";
 const BTN_PRIMARIO = "inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50";
-const TD = "px-2 py-2 align-top";
+const TD = "align-top";
 
 type Props = {
   bloques: BloqueRolliza[];
@@ -169,16 +169,16 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, 
           {resultado ? (
             <Resultado resultado={resultado} etiquetaDe={etiquetaDe} />
           ) : (
-            <table className="w-full min-w-[40rem] text-sm">
-              <thead className="sticky top-0 bg-[var(--surface-raised)] text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+            <DataTable className="w-full min-w-[40rem]">
+              <thead className="sticky top-0">
                 <tr>
-                  <th className="w-8 px-2 py-1.5"><span className="sr-only">Elegir</span></th>
-                  <th className="px-2 py-1.5">Bloque</th>
-                  <th className="px-2 py-1.5">Especie</th>
-                  <th className="px-2 py-1.5">Permiso</th>
-                  <th className="px-2 py-1.5 text-right">Trozas</th>
-                  <th className="px-2 py-1.5 text-right">m³</th>
-                  <th className="px-2 py-1.5">Estado</th>
+                  <th className="w-8"><span className="sr-only">Elegir</span></th>
+                  <th>Bloque</th>
+                  <th>Especie</th>
+                  <th>Permiso</th>
+                  <th className="text-right">Trozas</th>
+                  <th className="text-right">m³</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -196,7 +196,7 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, 
                   />
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           )}
         </div>
 
@@ -269,11 +269,11 @@ function FilaBloque({ bloque: b, previa, elegido, onAlternar, codigoDeLote, lote
     );
   }
   return (
-    <tr className={`border-t border-[var(--rule-soft)] ${apagado ? "opacity-70" : ""}`}>
+    <tr className={`${apagado ? "opacity-70" : ""}`}>
       <td className={TD}>
         <input type="checkbox" checked={Boolean(lote) && elegido} disabled={!lote} onChange={onAlternar} aria-label={`Crear el lote del bloque ${b.etiqueta || "sin etiqueta"}`} className="h-4 w-4 accent-[var(--accent)]" />
       </td>
-      <td className={`${TD} font-semibold text-[var(--text-primary)]`}>{b.etiqueta || "Sin etiqueta"}</td>
+      <td className={`${TD} font-semibold`}>{b.etiqueta || "Sin etiqueta"}</td>
       <td className={TD}>{lote?.especie ?? (b.especie || "—")}</td>
       <td className={`${TD} break-all`}>{lote ? (lote.permiso ?? "—") : (b.permiso || "—")}</td>
       <td className={`${TD} text-right tabular-nums`}>{lote?.trozas ?? (b.trozaIds?.length || "—")}</td>

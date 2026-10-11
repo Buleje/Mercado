@@ -234,7 +234,7 @@ export default function CtpContratosLista({
         </thead>
         <tbody className="divide-y divide-[var(--rule-soft)]">
           {visibles.map((c) => (
-            <tr key={c.id} className="transition-colors hover:bg-[var(--surface-sunken)]">
+            <tr key={c.id}>
               <td className={TD}>
                 {/* El código ES el enlace al balance: en el libro se habla del
                       contrato por su código, no por una columna «acción». Es un

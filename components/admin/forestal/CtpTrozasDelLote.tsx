@@ -322,23 +322,23 @@ export default function CtpTrozasDelLote({
       <TablaCtp className="rounded-none border-0" altoMax="max-h-[52vh]">
         <TheadCtp>
           <tr>
-            <th className="px-3 py-2 font-bold">Fecha consumo</th>
+            <th className="font-bold">Fecha consumo</th>
             {/* Los autofiltros de columna sólo aparecen si la columna tiene más
                 de un valor: en un lote de una sola guía y una sola especie, un
                 desplegable con una opción es ruido. */}
-            <th className="px-3 py-2 font-bold">
+            <th className="font-bold">
               <span className="block">Nro GTF</span>
               {opcionesGtf.length > 0 && (
                 <FiltroColumnaMulti label="Nro GTF" value={gtf} options={opcionesGtf} onChange={setGtf} placeholder="Todas" />
               )}
             </th>
-            <th className="px-3 py-2 font-bold">
+            <th className="font-bold">
               <span className="block">Nombre científico / Nombre común</span>
               {opcionesEspecie.length > 0 && (
                 <FiltroColumnaMulti label="Especie" value={especie} options={opcionesEspecie} onChange={setEspecie} placeholder="Todas" />
               )}
             </th>
-            <th className="px-3 py-2 font-bold">
+            <th className="font-bold">
               <span className="block">Cod. planta</span>
               {/* El buscador vive en la cabecera de su columna, como el formato:
                   con sesenta piezas, encontrar «la 3037752» es lo primero. */}
@@ -353,11 +353,11 @@ export default function CtpTrozasDelLote({
                 />
               </span>
             </th>
-            {conArbol && <th className="px-3 py-2 font-bold">Árbol</th>}
-            <th className="px-3 py-2 text-right font-bold">D1 (cm)</th>
-            <th className="px-3 py-2 text-right font-bold">D2 (cm)</th>
-            <th className="px-3 py-2 text-right font-bold">Long. (m)</th>
-            <th className="px-3 py-2 text-right font-bold">
+            {conArbol && <th className="font-bold">Árbol</th>}
+            <th className="text-right font-bold">D1 (cm)</th>
+            <th className="text-right font-bold">D2 (cm)</th>
+            <th className="text-right font-bold">Long. (m)</th>
+            <th className="text-right font-bold">
               <span className="block">Volumen (m³)</span>
               <FiltroColumnaRango
                 label="Volumen"
@@ -369,7 +369,7 @@ export default function CtpTrozasDelLote({
                 onChange={(r) => setRangoVol(r as RangoNumerico)}
               />
             </th>
-            <th className="px-3 py-2 text-center font-bold">
+            <th className="text-center font-bold">
               {soloLectura ? (
                 <span className="block">Estado</span>
               ) : (
@@ -407,27 +407,27 @@ export default function CtpTrozasDelLote({
               >
                 {/* La fecha que se va a declarar: en blanco no dice nada, y el
                     operador tiene que ver con qué día va a quedar el consumo. */}
-                <td className="px-3 py-2 text-sm tabular-nums text-[var(--text-secondary)]">
+                <td className="tabular-nums text-[var(--text-secondary)]">
                   {elegida ? fmtDia(fechaConsumo) : <span className="text-[var(--text-tertiary)]">—</span>}
                 </td>
-                <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</td>
-                <td className="px-3 py-2 text-sm text-[var(--text-secondary)]">
+                <td className="font-mono text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</td>
+                <td className="text-[var(--text-secondary)]">
                   {t.especieCientifica && <i className="block text-[var(--text-tertiary)]">{t.especieCientifica}</i>}
                   {t.especieComun ?? "—"}
                 </td>
-                <td className="px-3 py-2 font-mono text-sm font-bold text-[var(--text-primary)]">
+                <td className="font-mono font-bold">
                   {t.codigoPlanta || t.codificacion || "—"}
                 </td>
                 {conArbol && (
-                  <td className="whitespace-nowrap px-3 py-2 font-mono text-sm text-[var(--text-secondary)]">{t.arbolCodigo?.trim() || "—"}</td>
+                  <td className="whitespace-nowrap font-mono text-[var(--text-secondary)]">{t.arbolCodigo?.trim() || "—"}</td>
                 )}
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{num(t.d1Cm, 2)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{num(t.d2Cm, 2)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{num(t.largoM, 2)}</td>
-                <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{num(t.d1Cm, 2)}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{num(t.d2Cm, 2)}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{num(t.largoM, 2)}</td>
+                <td className="text-right font-mono font-bold tabular-nums">
                   {num(t.volumenM3, 4)}
                 </td>
-                <td className="px-3 py-2 text-center">
+                <td className="text-center">
                   {soloLectura ? (
                     <span
                       className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"

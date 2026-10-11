@@ -74,7 +74,7 @@ export function VistaProduccion({ lotes, loading, onIrARecetas }: Props) {
         </div>
       </div>
 
-      <DataTable className="[&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+      <DataTable>
         <thead>
           <tr>
             <th>Receta</th>
@@ -86,10 +86,10 @@ export function VistaProduccion({ lotes, loading, onIrARecetas }: Props) {
         <tbody>
           {visibles.map((l) => (
             <tr key={l.id}>
-              <td className="text-sm font-medium text-[var(--text-primary)]">{l.recetaNombre ?? l.recetaId}</td>
-              <td className="text-right text-sm tabular-nums text-[var(--text-primary)]">{l.cantidad}</td>
-              <td className="text-right text-sm font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(l.costoReal)}</td>
-              <td className="text-sm text-[var(--text-secondary)]">{formatDate(l.producidoEn)}</td>
+              <td className="font-medium">{l.recetaNombre ?? l.recetaId}</td>
+              <td className="text-right tabular-nums">{l.cantidad}</td>
+              <td className="text-right font-bold tabular-nums">{formatCurrency(l.costoReal)}</td>
+              <td className="text-[var(--text-secondary)]">{formatDate(l.producidoEn)}</td>
             </tr>
           ))}
         </tbody>

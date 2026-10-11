@@ -279,7 +279,7 @@ export default function CubicadorPrecio({
               <tbody>
                 {precios.desglose.map((l) => (
                   <tr key={l.clave}>
-                    <th scope="row" className="px-3 py-2.5 text-left font-normal text-[var(--text-secondary)]">
+                    <th scope="row" className="text-left font-normal text-[var(--text-secondary)]">
                       {/* UN solo hijo con texto corrido: en celular la tabla se vuelve
                           tarjetas y la celda pasa a flex — cada hijo suelto sería
                           una columna (el ícono quedaba de 4 px y el «·» solo). */}
@@ -292,13 +292,13 @@ export default function CubicadorPrecio({
                       </span>
                     </th>
                     <td className="text-right tabular-nums text-[var(--text-secondary)]">{formatNumber(l.pt, 2)}</td>
-                    <td className="text-right font-bold tabular-nums text-[var(--text-primary)]">
+                    <td className="text-right font-bold tabular-nums">
                       {l.precio.desde ? precioTxt(l.precio.precioPt) : "—"}
                     </td>
-                    <td className={`text-xs ${l.precio.desde?.startsWith("cliente-") ? "font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}>
+                    <td className={`${l.precio.desde?.startsWith("cliente-") ? "font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}>
                       {l.explicacion}
                     </td>
-                    <td className="text-right tabular-nums text-[var(--text-primary)]">
+                    <td className="text-right tabular-nums">
                       {l.importe != null ? soles(l.importe) : "—"}
                     </td>
                   </tr>

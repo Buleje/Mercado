@@ -18,6 +18,7 @@ import { CambiarMedioMovimiento } from "../cash-register/CambiarMedioMovimiento"
 import { CajaLineaDeTiempo } from "./CajaLineaDeTiempo";
 import type { ItemLineaDeTiempo } from "./use-caja-registradora";
 import { COLOR_SIGNO, fmt, signoDe, type CashRegister, type MethodFilter } from "./tipos";
+import { DataTable } from "@buleje/design-system";
 
 const MEDIOS: MethodFilter[] = ["all", "efectivo", "yape", "plin", "tarjeta", "transferencia"];
 
@@ -109,30 +110,30 @@ export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMe
             <p className="py-8 text-center text-sm font-semibold text-[var(--text-tertiary)]">Sin movimientos con ese filtro.</p>
           ) : (
             <div className="max-h-[70vh] overflow-y-auto">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-[var(--surface-raised)] text-left text-sm text-[var(--text-secondary)]">
+              <DataTable className="w-full">
+                <thead className="sticky top-0">
                   <tr>
-                    <th className="px-4 sm:px-5 py-2 font-semibold">Hora</th>
-                    <th className="px-2 py-2 font-semibold">Origen</th>
-                    <th className="px-2 py-2 font-semibold">Detalle</th>
-                    <th className="px-2 py-2 font-semibold">Medio</th>
-                    <th className="px-4 sm:px-5 py-2 font-semibold text-right">Monto</th>
+                    <th>Hora</th>
+                    <th>Origen</th>
+                    <th>Detalle</th>
+                    <th>Medio</th>
+                    <th className="text-right">Monto</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--rule-soft)]">
                   {filas.map(({ m, origen: o }) => {
                     const signo = signoDe(m.type);
                     return (
-                      <tr key={m.id} className="hover:bg-[var(--surface-alt)] transition-colors">
-                        <td className="px-4 sm:px-5 py-2.5 font-mono text-sm text-[var(--text-secondary)] whitespace-nowrap">{formatTime(m.createdAt)}</td>
-                        <td className="px-2 py-2.5">
+                      <tr key={m.id} className="hover:bg-[var(--surface-alt)]">
+                        <td className="font-mono text-[var(--text-secondary)] whitespace-nowrap">{formatTime(m.createdAt)}</td>
+                        <td>
                           <span className={cn("inline-flex rounded-full px-2 py-0.5 text-sm font-semibold whitespace-nowrap", COLOR_ORIGEN[o.clave] ?? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>{o.etiqueta}</span>
                         </td>
-                        <td className="px-2 py-2.5 max-w-[18rem] truncate text-[var(--text-secondary)]" title={m.description}>
+                        <td className="max-w-[18rem] truncate text-[var(--text-secondary)]" title={m.description}>
                           {m.description}
                         </td>
-                        <td className="px-2 py-2.5 capitalize text-[var(--text-secondary)]">{medioDeMovimiento(m.method)}</td>
-                        <td className="px-4 sm:px-5 py-2.5 text-right">
+                        <td className="capitalize text-[var(--text-secondary)]">{medioDeMovimiento(m.method)}</td>
+                        <td className="text-right">
                           <span className={cn("font-bold tabular-nums whitespace-nowrap", COLOR_SIGNO[signo])}>
                             {signo === 1 ? "+" : signo === -1 ? "−" : ""}
                             {fmt(m.amount)}
@@ -148,7 +149,7 @@ export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMe
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           )}
         </>

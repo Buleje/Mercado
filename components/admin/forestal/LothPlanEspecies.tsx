@@ -262,7 +262,7 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido, ce
       >
         {fl.filtradas.length === 0 && <SinCoincidenciasFila colSpan={8} />}
         {fl.filtradas.map((s) => editingId === s.id ? (
-          <tr key={s.id} className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
+          <tr key={s.id}>
             <Cell><span className="font-medium text-[var(--text-primary)]">{s.speciesCommon}</span>{s.cites && <CitesPill />}</Cell>
             <Cell right><input type="number" step="0.0001" value={edit.volumenAutorizadoM3} onChange={(e) => setE("volumenAutorizadoM3", e.target.value)} aria-label={`Volumen autorizado de ${s.speciesCommon}`} className={editCls} /></Cell>
             <Cell right><input type="number" value={edit.arbolesAutorizados} onChange={(e) => setE("arbolesAutorizados", e.target.value)} aria-label={`Número de árboles autorizados de ${s.speciesCommon}`} className={editCls} /></Cell>
@@ -278,7 +278,7 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido, ce
             </Cell>
           </tr>
         ) : (
-          <tr key={s.id} className="border-t border-[var(--rule-soft)]">
+          <tr key={s.id}>
             <Cell><span className="font-medium text-[var(--text-primary)]">{s.speciesCommon}</span>{s.cites && <CitesPill />}{s.speciesScientific && <div className="text-xs italic text-[var(--text-tertiary)]">{s.speciesScientific}</div>}</Cell>
             <Cell right><Mono>{n(s.volumenAutorizadoM3)}</Mono></Cell>
             <Cell right>{s.arbolesAutorizados ?? "—"}</Cell>

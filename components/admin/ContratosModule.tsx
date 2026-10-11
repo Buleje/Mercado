@@ -893,7 +893,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       <tbody>
                         {filteredContratos.length === 0 && (
                           <tr>
-                            <td colSpan={7} className="px-4 py-10 text-center">
+                            <td colSpan={7} className="text-center">
                               <p className="text-sm font-semibold text-[var(--text-secondary)]">Ningún contrato coincide con el filtro.</p>
                               <button type="button" onClick={clearContratosFilters} className="mt-2 h-12 rounded-xl px-4 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]">Quitar filtros</button>
                             </td>
@@ -911,7 +911,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                               onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(c); } }}
                               className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                             >
-                              <td className="font-mono text-sm text-[var(--text-secondary)]">{c.numero}</td>
+                              <td className="font-mono text-[var(--text-secondary)]">{c.numero}</td>
                               <td>
                                 {/* Un div: en las tarjetas del celular la celda es flex y partía nombre y documento en dos columnas. */}
                                 <div className="min-w-0">
@@ -922,7 +922,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                               <td className="hidden sm:table-cell">
                                 <span className="text-sm text-[var(--text-secondary)]">{TIPO_LABELS[c.tipo] || c.tipo}</span>
                               </td>
-                              <td className="text-right font-bold text-[var(--text-primary)]">{formatMoney(c.monto, c.moneda)}</td>
+                              <td className="text-right font-bold">{formatMoney(c.monto, c.moneda)}</td>
                               <td className="text-[var(--text-secondary)] hidden md:table-cell">{formatDatePeru(c.fechaInicio || c.createdAt)}</td>
                               <td>
                                 <span className={cn("inline-flex whitespace-nowrap px-2.5 py-0.5 rounded-full text-sm font-bold", ESTADO_STYLES[estado])}>{ESTADO_VISIBLE_LABELS[estado]}</span>

@@ -166,30 +166,30 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
 
         {/* Table */}
         <div className="flex-1 overflow-auto">
-          <DataTable className="w-full text-sm">
-            <thead className="sticky top-0 bg-[var(--surface-sunken)] z-10">
-              <tr className="text-left">
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-12">#</th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("name")}>
+          <DataTable className="w-full">
+            <thead className="sticky top-0 z-10">
+              <tr>
+                <th className="w-12">#</th>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("name")}>
                   <span className="inline-flex items-center gap-1">Producto <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Categoría</th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("stock")}>
+                <th>Categoría</th>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("stock")}>
                   <span className="inline-flex items-center gap-1">Stock <SortIcon col="stock" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("cost")}>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("cost")}>
                   <span className="inline-flex items-center gap-1">Costo <SortIcon col="cost" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("price")}>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("price")}>
                   <span className="inline-flex items-center gap-1">Precio <SortIcon col="price" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("margin")}>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("margin")}>
                   <span className="inline-flex items-center gap-1">Margen <SortIcon col="margin" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("movement")}>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("movement")}>
                   <span className="inline-flex items-center gap-1">Movimiento <SortIcon col="movement" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Rotación</th>
+                <th>Rotación</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
@@ -200,11 +200,11 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 const recentMove = p.daysSinceMove !== null && p.daysSinceMove <= 7;
 
                 return (
-                  <tr key={p.id} className={cn("hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/50 transition-colors", noStock && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
-                    <td className="px-4 py-3 text-xs text-[var(--text-tertiary)] font-mono">{i + 1}</td>
+                  <tr key={p.id} className={cn("dark:hover:bg-surface/50", noStock && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
+                    <td className="text-[var(--text-tertiary)] font-mono">{i + 1}</td>
 
                     {/* Producto */}
-                    <td className="px-4 py-3">
+                    <td>
                       <div className="flex items-center gap-2">
                         <span className={cn("h-2.5 w-2.5 rounded-full shrink-0",
                           noStock ? "bg-[var(--data-error-500)]" : lowStock ? "bg-[var(--data-warning-500)]" : "bg-primary/10"
@@ -214,10 +214,10 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     </td>
 
                     {/* Categoría */}
-                    <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted capitalize text-xs">{p.category}</td>
+                    <td className="text-[var(--text-secondary)] dark:text-muted capitalize">{p.category}</td>
 
                     {/* Stock */}
-                    <td className="px-4 py-3">
+                    <td>
                       <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
                         noStock ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]" :
                         lowStock ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]" :
@@ -229,7 +229,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     </td>
 
                     {/* Costo */}
-                    <td className="px-4 py-3">
+                    <td>
                       {p.costPrice != null && p.costPrice > 0
                         ? <span className="font-mono text-xs text-[var(--text-secondary)]">{formatCurrency(Number(p.costPrice))}</span>
                         : <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>
@@ -237,10 +237,10 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     </td>
 
                     {/* Precio venta */}
-                    <td className="px-4 py-3 font-bold text-primary text-xs">{formatCurrency(Number(p.price))}</td>
+                    <td className="font-bold text-primary">{formatCurrency(Number(p.price))}</td>
 
                     {/* Margen */}
-                    <td className="px-4 py-3">
+                    <td>
                       {p.margin ? (
                         <div className="flex flex-col">
                           <span className={cn("text-xs font-bold",
@@ -260,7 +260,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     </td>
 
                     {/* Movimiento (sin movimiento / con movimiento) */}
-                    <td className="px-4 py-3">
+                    <td>
                       {p.daysSinceMove === null ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]">
                           Nunca vendido
@@ -281,7 +281,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     </td>
 
                     {/* Rotación */}
-                    <td className="px-4 py-3">
+                    <td>
                       {(() => {
                         const spw = p.salesWeek;
                         if (spw > 10) return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-orange-950/30 dark:text-[var(--data-warning-500)]">Rápido</span>;

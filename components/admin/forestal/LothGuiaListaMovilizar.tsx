@@ -49,8 +49,8 @@ export default function LothGuiaListaMovilizar({
       }
     >
       <div className={MARCO}>
-        <DataTable className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)]">
+        <DataTable className="w-full">
+          <thead>
             <tr>
               <th className={THR}>N°</th>
               <th className={TH}>N. científico</th>
@@ -67,7 +67,7 @@ export default function LothGuiaListaMovilizar({
           <tbody>
             {lista.length === 0 ? (
               <tr>
-                <td colSpan={10} className={`${TD} py-4 text-center text-[var(--text-tertiary)]`}>Todavía no hay trozas en la lista.</td>
+                <td colSpan={10} className={`${TD} text-center text-[var(--text-tertiary)]`}>Todavía no hay trozas en la lista.</td>
               </tr>
             ) : (
               lista.map((f, i) => (
@@ -82,7 +82,7 @@ export default function LothGuiaListaMovilizar({
                     </td>
                   </tr>
                 )}
-                <tr className="border-t border-[var(--rule-soft)]">
+                <tr>
                   <td className={`${TDR} text-[var(--text-tertiary)]`}>{(i % FILAS_POR_LISTA) + 1}</td>
                   <td className={`${TD} italic`}>{f.especieCientifica || "—"}</td>
                   <td className={TD}>{f.especieComun || "—"}</td>
@@ -101,7 +101,7 @@ export default function LothGuiaListaMovilizar({
           {lista.length > 0 && (
             <tfoot>
               <tr className="border-t-2 border-[var(--rule-base)]">
-                <td colSpan={8} className={`${TD} text-right text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]`}>Total movilizado</td>
+                <td colSpan={8} className={`${TD} text-right font-bold uppercase tracking-wide text-[var(--text-secondary)]`}>Total movilizado</td>
                 <td className={TDR}>{lista.length}</td>
                 <td className={`${TDR} font-bold`}>{fmtM3(total)}</td>
               </tr>

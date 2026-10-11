@@ -41,14 +41,13 @@ import { formatNumber } from "@/lib/format";
 import AnexoAlLibro from "./reparto-anexo-al-libro";
 import BotonResumenPapel from "./reparto-anexo-resumen-papel";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+import { DataTable } from "@buleje/design-system";
 
 /** Las columnas movibles del detalle por medida (Brandon, 2026-09-26). Precio
  *  e Importe están siempre (`conValor` es constante), así que van fijas acá. */
 const ORDEN_DETALLE_DEFECTO = ["especie", "tipo", "medida", "piezas", "m3", "pieTablar", "precio", "importe"] as const;
 const COLS_ETIQUETA = new Set(["especie", "tipo", "medida"]);
 
-const TH =
-  "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = `${TD} text-right font-mono tabular-nums`;
 
@@ -345,22 +344,22 @@ export default function AnexoPorPermiso({
                   · qué sale de este permiso
                 </span>
               </p>
-              <table className="mt-1 w-full">
+              <DataTable className="mt-1 w-full">
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)]">
-                    <th className={TH}>Especie</th>
-                    <th className={TH}>Tipo</th>
-                    <th className={`${TH} text-right`}>Piezas</th>
-                    <th className={`${TH} text-right`}>m³</th>
-                    <th className={`${TH} text-right`}>Pie tablar</th>
-                    {conValor && <th className={`${TH} text-right`} title="Precio unitario: importe ÷ pie tablar">Precio S/ PT</th>}
-                    {conValor && <th className={`${TH} text-right`} title="Pie tablar × precio unitario">Importe S/</th>}
-                    <th className={`${TH} text-right`}>% del anexo</th>
+                  <tr>
+                    <th >Especie</th>
+                    <th >Tipo</th>
+                    <th className="text-right">Piezas</th>
+                    <th className="text-right">m³</th>
+                    <th className="text-right">Pie tablar</th>
+                    {conValor && <th className="text-right" title="Precio unitario: importe ÷ pie tablar">Precio S/ PT</th>}
+                    {conValor && <th className="text-right" title="Pie tablar × precio unitario">Importe S/</th>}
+                    <th className="text-right">% del anexo</th>
                   </tr>
                 </thead>
                 <tbody>
                   {resumen.map((r) => (
-                    <tr key={r.clave} className="border-b border-[var(--rule-soft)] last:border-0">
+                    <tr key={r.clave} className="border-[var(--rule-soft)] last:border-0">
                       <td className={TD}>{r.especie}</td>
                       <td className={TD}>
                         <span className="font-bold text-[var(--text-primary)]">{r.tipo}</span>{" "}
@@ -369,7 +368,7 @@ export default function AnexoPorPermiso({
                         </span>
                       </td>
                       <td className={NUM}>{fmtPiezas(r.piezas)}</td>
-                      <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(r.m3)}</td>
+                      <td className={`${NUM} font-bold`}>{fmtM3(r.m3)}</td>
                       <td className={NUM}>{fmtPt(r.pieTablar)}</td>
                       {conValor && (
                         <td className={`${TD} text-right`}>
@@ -405,20 +404,20 @@ export default function AnexoPorPermiso({
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-[var(--rule-base)]">
-                    <td className={`${TD} font-bold text-[var(--text-primary)]`} colSpan={2}>
+                    <td className={`${TD} font-bold`} colSpan={2}>
                       Total del permiso
                     </td>
-                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                    <td className={`${NUM} font-bold`}>
                       {fmtPiezas(actual.totalPiezas)}
                     </td>
-                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                    <td className={`${NUM} font-bold`}>
                       {fmtM3(actual.totalM3)}
                     </td>
-                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                    <td className={`${NUM} font-bold`}>
                       {fmtPt(actual.totalPt)}
                     </td>
                     {conValor && (
-                      <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                      <td className={`${NUM} font-bold`}>
                         {actual.totalPt > 0 ? fmtSoles(importeTotal / actual.totalPt) : "—"}
                       </td>
                     )}
@@ -431,7 +430,7 @@ export default function AnexoPorPermiso({
                     <td className={`${NUM} text-[var(--text-tertiary)]`}>100 %</td>
                   </tr>
                 </tfoot>
-              </table>
+              </DataTable>
             </div>
           )}
 
@@ -440,14 +439,14 @@ export default function AnexoPorPermiso({
             <div className="mb-1 flex justify-end">
               <BotonRestablecerColumnas cambiado={ordenDetalle.cambiado} onRestablecer={ordenDetalle.restablecer} />
             </div>
-            <table className="w-full">
+            <DataTable className="w-full">
               <thead ref={ordenDetalle.refCabecera}>
-                <tr className="border-b border-[var(--rule-soft)]">
+                <tr>
                   <EnOrden
                     orden={ordenDetalle.orden}
                     celdas={{
                       especie: (
-                        <th data-col="especie" className={TH}>
+                        <th data-col="especie" >
                           <span className="block">Especie</span>
                           <FiltroColumnaMulti
                             label="Especie"
@@ -459,13 +458,13 @@ export default function AnexoPorPermiso({
                         </th>
                       ),
                       tipo: (
-                        <th data-col="tipo" className={TH}>
+                        <th data-col="tipo" >
                           <span className="block">Tipo</span>
                           <FiltroColumnaMulti label="Tipo" value={fTipo} options={opciones.tipos} onChange={setFTipo} />
                         </th>
                       ),
                       medida: (
-                        <th data-col="medida" className={TH}>
+                        <th data-col="medida" >
                           <span className="block">Medida</span>
                           <FiltroColumnaMulti
                             label="Medida"
@@ -476,18 +475,18 @@ export default function AnexoPorPermiso({
                           />
                         </th>
                       ),
-                      piezas: <th data-col="piezas" className={`${TH} text-right`}>Piezas</th>,
-                      m3: <th data-col="m3" className={`${TH} text-right`}>m³</th>,
-                      pieTablar: <th data-col="pieTablar" className={`${TH} text-right`}>Pie tablar</th>,
-                      precio: conValor && <th data-col="precio" className={`${TH} text-right`}>Precio S/ PT</th>,
-                      importe: conValor && <th data-col="importe" className={`${TH} text-right`}>Importe S/</th>,
+                      piezas: <th data-col="piezas" className="text-right">Piezas</th>,
+                      m3: <th data-col="m3" className="text-right">m³</th>,
+                      pieTablar: <th data-col="pieTablar" className="text-right">Pie tablar</th>,
+                      precio: conValor && <th data-col="precio" className="text-right">Precio S/ PT</th>,
+                      importe: conValor && <th data-col="importe" className="text-right">Importe S/</th>,
                     }}
                   />
                 </tr>
               </thead>
               <tbody>
                 {filasVisibles.map((f) => (
-                  <tr key={f.clave} className="border-b border-[var(--rule-soft)] last:border-0">
+                  <tr key={f.clave} className="border-[var(--rule-soft)] last:border-0">
                     <EnOrden
                       orden={ordenDetalle.orden}
                       celdas={{
@@ -495,7 +494,7 @@ export default function AnexoPorPermiso({
                         tipo: <td className={TD}>{f.tipo}</td>,
                         medida: <td className={`${TD} font-mono`}>{f.medida}</td>,
                         piezas: <td className={NUM}>{fmtPiezas(f.piezas)}</td>,
-                        m3: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>,
+                        m3: <td className={`${NUM} font-bold`}>{fmtM3(f.m3)}</td>,
                         pieTablar: <td className={NUM}>{fmtPt(f.pieTablar)}</td>,
                         /* Acá el precio NO se edita: es el de su especie·tipo, que
                            se pone arriba. Dos casillas para el mismo número son dos
@@ -525,7 +524,7 @@ export default function AnexoPorPermiso({
                     orden={ordenDetalle.orden}
                     celdas={{
                       especie: (
-                        <td className={`${TD} font-bold text-[var(--text-primary)]`}>
+                        <td className={`${TD} font-bold`}>
                           {primerLabel === "especie" && (
                             <>
                               Suma de las medidas
@@ -539,7 +538,7 @@ export default function AnexoPorPermiso({
                         </td>
                       ),
                       tipo: (
-                        <td className={`${TD} font-bold text-[var(--text-primary)]`}>
+                        <td className={`${TD} font-bold`}>
                           {primerLabel === "tipo" && (
                             <>
                               Suma de las medidas
@@ -553,7 +552,7 @@ export default function AnexoPorPermiso({
                         </td>
                       ),
                       medida: (
-                        <td className={`${TD} font-bold text-[var(--text-primary)]`}>
+                        <td className={`${TD} font-bold`}>
                           {primerLabel === "medida" && (
                             <>
                               Suma de las medidas
@@ -566,12 +565,12 @@ export default function AnexoPorPermiso({
                           )}
                         </td>
                       ),
-                      piezas: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtPiezas(actual.totalPiezas)}</td>,
+                      piezas: <td className={`${NUM} font-bold`}>{fmtPiezas(actual.totalPiezas)}</td>,
                       /* El pie del detalle suma lo que se VE: cada medida a 3 decimales. */
-                      m3: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(actual.totalMedidasM3)}</td>,
-                      pieTablar: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtPt(actual.totalPt)}</td>,
+                      m3: <td className={`${NUM} font-bold`}>{fmtM3(actual.totalMedidasM3)}</td>,
+                      pieTablar: <td className={`${NUM} font-bold`}>{fmtPt(actual.totalPt)}</td>,
                       precio: conValor && (
-                        <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                        <td className={`${NUM} font-bold`}>
                           {actual.totalPt > 0 ? fmtSoles(importeTotal / actual.totalPt) : "—"}
                         </td>
                       ),
@@ -584,7 +583,7 @@ export default function AnexoPorPermiso({
                   />
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
             {/* Cada medida se ve a 3 decimales y redondea por su lado: su suma puede
                 no ser el total oficial (filas especie × tipo, el que suma SERFOR al
                 copiar el resumen). Se dice, no se esconde (Brandon 2026-10-03). */}

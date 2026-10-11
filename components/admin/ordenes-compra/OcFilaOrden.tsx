@@ -46,7 +46,7 @@ export default function OcFilaOrden({ oc, o, supplier, isExpanded }: { oc: Orden
           if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternar(); }
         }}
         className={cn(
-          "scroll-mt-24 cursor-pointer transition-colors hover:bg-[var(--surface-sunken)]",
+          "scroll-mt-24 cursor-pointer",
           isExpanded && "bg-[var(--surface-sunken)]",
         )}
       >
@@ -58,8 +58,8 @@ export default function OcFilaOrden({ oc, o, supplier, isExpanded }: { oc: Orden
             <p className="max-w-[28rem] truncate text-sm text-[var(--text-secondary)]" title={o.notes ? `${linea}\n${o.notes}` : linea}>{linea}</p>
           </div>
         </td>
-        <td className="whitespace-nowrap text-sm text-[var(--text-secondary)]">{diaDeOrden(o.createdAt)}</td>
-        <td className="num whitespace-nowrap font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(Number(o.total))}</td>
+        <td className="whitespace-nowrap text-[var(--text-secondary)]">{diaDeOrden(o.createdAt)}</td>
+        <td className="num whitespace-nowrap font-bold tabular-nums">{formatCurrency(Number(o.total))}</td>
         <td>
           <span
             data-testid="estado-oc"

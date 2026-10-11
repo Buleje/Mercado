@@ -71,8 +71,7 @@ const FILTROS_BAJAS: readonly ColumnaFiltro<FilaBaja>[] = [
   { id: "baja", label: "Fecha de baja", tipo: "fecha", numero: (f) => (f.fechaBaja ? limaDateKey(f.fechaBaja) : null), formatearValor: ddmm },
 ];
 
-const TH = "px-3 py-2.5 font-bold text-[var(--text-primary)]";
-const TD = "px-3 py-2.5";
+const TH = "font-bold";
 
 function Th({ id, f, children, className = "", title }: { id: string; f: FiltrosTabla<FilaBaja>; children: ReactNode; className?: string; title?: string }) {
   return (
@@ -130,8 +129,8 @@ export default function LothGtfBajas({
     <div className="space-y-3">
       <BarraFiltrosTabla f={f} />
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <DataTable filtrable className="w-full text-sm" aria-label="Guías anuladas y eliminadas">
-          <thead className="bg-[var(--surface-sunken)] text-left align-top">
+        <DataTable filtrable className="w-full" aria-label="Guías anuladas y eliminadas">
+          <thead className="align-top">
             <tr>
               {seleccion && <CasillaTodasGtf ids={idsAnuladas} sel={seleccion} etiqueta={`Elegir las ${idsAnuladas.length} anuladas filtradas`} />}
               <Th id="gtf" f={f}>N° GTF</Th>
@@ -152,23 +151,23 @@ export default function LothGtfBajas({
               return (
                 <tr
                   key={g.id}
-                  className={`border-t border-[var(--rule-soft)] ${g.gtfNumber === focusGtf ? "bg-[var(--data-info-500)]/15 outline outline-2 -outline-offset-2 outline-[var(--data-info-500)]" : ""}`}
+                  className={`${g.gtfNumber === focusGtf ? "bg-[var(--data-info-500)]/15 outline outline-2 -outline-offset-2 outline-[var(--data-info-500)]" : ""}`}
                 >
                   {seleccion && (fila.situacion === "Anulada"
                     ? <CasillaFilaGtf id={g.id} numero={g.gtfNumber} sel={seleccion} />
-                    : <td data-label="Elegir" className="w-px px-1 py-1.5 text-center text-[var(--text-tertiary)]" title="Una guía eliminada no se declara">—</td>)}
-                  <td data-label="N° GTF" className={TD}><span className="font-mono font-bold text-[var(--text-primary)] line-through decoration-[var(--data-error-500)]/60">{g.gtfNumber}</span></td>
-                  <td data-label="Situación" className={TD}>
+                    : <td data-label="Elegir" className="w-px text-center text-[var(--text-tertiary)]" title="Una guía eliminada no se declara">—</td>)}
+                  <td data-label="N° GTF" ><span className="font-mono font-bold text-[var(--text-primary)] line-through decoration-[var(--data-error-500)]/60">{g.gtfNumber}</span></td>
+                  <td data-label="Situación" >
                     <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold ${ESTILO_SITUACION[fila.situacion]}`}>{fila.situacion}</span>
                   </td>
-                  <td data-label="Fecha" className={`${TD} whitespace-nowrap text-[var(--text-secondary)]`}>{g.gtfDate ? formatDateNumeric(g.gtfDate, { soloFecha: true }) : "—"}</td>
-                  <td data-label="Tipo" className={`${TD} text-[var(--text-secondary)]`}>{g.tipo === "producto" ? "Producto" : "Trozas"}</td>
-                  <td data-label="Titular" className={`${TD} text-[var(--text-primary)]`}>{g.titularName ?? "—"}</td>
-                  <td data-label="Destino" className={`${TD} text-[var(--text-secondary)]`}>{g.destino ?? "—"}</td>
-                  <td data-label="Vol. m³" className={`${TD} text-right font-mono tabular-nums text-[var(--text-secondary)]`}>{g.volumenTotalM3 ? fmtM3(Number(g.volumenTotalM3)) : "—"}</td>
-                  <td data-label="Motivo" className={`${TD} max-w-[22rem] text-[var(--text-secondary)]`}>{fila.motivo ?? "—"}</td>
-                  <td data-label="Fecha de baja" className={`${TD} whitespace-nowrap text-[var(--text-secondary)]`}>{fila.fechaBaja ? formatDateNumeric(fila.fechaBaja) : "—"}</td>
-                  <td data-label="Acciones" className={`${TD} w-px`}>
+                  <td data-label="Fecha" className="whitespace-nowrap text-[var(--text-secondary)]">{g.gtfDate ? formatDateNumeric(g.gtfDate, { soloFecha: true }) : "—"}</td>
+                  <td data-label="Tipo" className="text-[var(--text-secondary)]">{g.tipo === "producto" ? "Producto" : "Trozas"}</td>
+                  <td data-label="Titular">{g.titularName ?? "—"}</td>
+                  <td data-label="Destino" className="text-[var(--text-secondary)]">{g.destino ?? "—"}</td>
+                  <td data-label="Vol. m³" className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{g.volumenTotalM3 ? fmtM3(Number(g.volumenTotalM3)) : "—"}</td>
+                  <td data-label="Motivo" className="max-w-[22rem] text-[var(--text-secondary)]">{fila.motivo ?? "—"}</td>
+                  <td data-label="Fecha de baja" className="whitespace-nowrap text-[var(--text-secondary)]">{fila.fechaBaja ? formatDateNumeric(fila.fechaBaja) : "—"}</td>
+                  <td data-label="Acciones" className="w-px">
                     <AccionesGtf g={g} soloLectura onHoja={() => onHoja(conSello(fila))} onResumen={() => onResumen(conSello(fila))} />
                   </td>
                 </tr>
@@ -177,7 +176,7 @@ export default function LothGtfBajas({
             {filas.length > 0 && filtradas.length === 0 && <SinCoincidenciasFila colSpan={COLUMNAS} />}
             {filas.length === 0 && (
               <tr>
-                <td colSpan={COLUMNAS} className="px-4 py-10 text-center text-[var(--text-tertiary)]">
+                <td colSpan={COLUMNAS} className="text-center text-[var(--text-tertiary)]">
                   <Ban className="mx-auto mb-2 h-8 w-8 opacity-30" aria-hidden />
                   No hay guías anuladas ni eliminadas.
                 </td>

@@ -170,7 +170,7 @@ export default function RFMTab() {
                       {c.recencyDays === 0 ? "hoy" : c.recencyDays === 1 ? "ayer" : `hace ${c.recencyDays} días`}
                     </td>
                     <td className="text-right tabular-nums text-[var(--text-secondary)]">{c.frequency}</td>
-                    <td className="whitespace-nowrap text-right font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(c.monetary)}</td>
+                    <td className="whitespace-nowrap text-right font-bold tabular-nums">{formatCurrency(c.monetary)}</td>
                   </tr>
                 ))}
               </tbody>

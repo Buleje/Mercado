@@ -19,7 +19,7 @@ import { Dias } from "./ctp-patio-por-permiso-partes";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 
 const nf = (n: number) => formatNumber(n);
-const celda = "px-3 py-2";
+const celda = "";
 const SOLO_ANCHO = "max-sm:hidden!";
 
 function Encabezado({
@@ -112,7 +112,7 @@ export function PilaLotes({
           {cargando && filas.length === 0 && <FilaVacia cols={8}>Leyendo los lotes…</FilaVacia>}
           {!cargando && filas.length === 0 && <FilaVacia cols={8}>Ningún lote tiene volumen sobrante.</FilaVacia>}
           {filas.map((f) => (
-            <tr key={f.id} className="hover:bg-[var(--surface-sunken)]">
+            <tr key={f.id}>
               <td className={celda}>
                 {onAbrirLote && !f.esMixto ? (
                   <button
@@ -130,7 +130,7 @@ export function PilaLotes({
                 )}
                 {f.estado && <span className="block text-sm text-[var(--text-secondary)]">{f.estado}</span>}
               </td>
-              <td className={`${celda} text-[var(--text-primary)]`}>{f.especie}</td>
+              <td className={`${celda}`}>{f.especie}</td>
               <td className={`${celda} ${SOLO_ANCHO} text-[var(--text-secondary)]`}>{f.permisos.join(", ") || "Sin permiso"}</td>
               <td className={`${celda} text-right tabular-nums`}>
                 <span className="font-bold text-[var(--text-primary)]">{fmtM3(f.m3)}</span>
@@ -201,13 +201,13 @@ export function PilaPorRecepcionar({
           {cargando && filas.length === 0 && <FilaVacia cols={8}>Leyendo las guías…</FilaVacia>}
           {!cargando && filas.length === 0 && <FilaVacia cols={8}>No hay guías por recepcionar.</FilaVacia>}
           {filas.map((f) => (
-            <tr key={f.woodEntryId} className="hover:bg-[var(--surface-sunken)]">
-              <td className={`${celda} font-bold tabular-nums text-[var(--text-primary)]`}>{f.guia}</td>
-              <td className={`${celda} ${SOLO_ANCHO} text-[var(--text-primary)]`}>{f.proveedor || "—"}</td>
+            <tr key={f.woodEntryId}>
+              <td className={`${celda} font-bold tabular-nums`}>{f.guia}</td>
+              <td className={`${celda} ${SOLO_ANCHO}`}>{f.proveedor || "—"}</td>
               <td className={`${celda} ${SOLO_ANCHO} text-[var(--text-secondary)]`}>{f.permiso || "Sin permiso"}</td>
-              <td className={`${celda} text-[var(--text-primary)]`}>{f.especies.join(", ") || "Sin especie"}</td>
-              <td className={`${celda} text-right tabular-nums text-[var(--text-primary)]`}>{nf(f.trozas)}</td>
-              <td className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>
+              <td className={`${celda}`}>{f.especies.join(", ") || "Sin especie"}</td>
+              <td className={`${celda} text-right tabular-nums`}>{nf(f.trozas)}</td>
+              <td className={`${celda} text-right font-bold tabular-nums`}>{fmtM3(f.m3)}</td>
               <td className={`${celda} text-right tabular-nums text-[var(--text-secondary)]`}>{nf(f.pt)}</td>
               <td className={celda}>
                 {f.fechaIngreso && f.diasEsperando != null ? (

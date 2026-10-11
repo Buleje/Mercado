@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { LoadingState, SectionTitle, DataTable } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { BarChart2, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -91,34 +91,34 @@ export default function ABCAnalysisTab() {
       ) : (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] text-sm">
+            <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full min-w-[600px]">
               <thead>
-                <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left">
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 w-8 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">#</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">Categoría</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right">Ingresos</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right hidden md:table-cell">Unidades</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right hidden md:table-cell">Acum. %</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-center">Clase</th>
+                <tr>
+                  <th className="w-8">#</th>
+                  <th>Producto</th>
+                  <th className="hidden sm:table-cell">Categoría</th>
+                  <th className="text-right">Ingresos</th>
+                  <th className="text-right hidden md:table-cell">Unidades</th>
+                  <th className="text-right hidden md:table-cell">Acum. %</th>
+                  <th className="text-center">Clase</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((p) => (
-                  <tr key={p.productId} className={cn("hover:bg-[var(--surface-alt)] transition-colors", CLASS_STYLES[p.class].row)}>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-[var(--text-tertiary)] dark:text-muted text-xs">{data.indexOf(p) + 1}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-[var(--text-secondary)] dark:text-muted text-xs hidden sm:table-cell">{p.category}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(p.revenue)}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">{p.units}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">{p.cumulativePct}%</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-center">
+                  <tr key={p.productId} className={cn("hover:bg-[var(--surface-alt)]", CLASS_STYLES[p.class].row)}>
+                    <td className="text-[var(--text-tertiary)] dark:text-muted">{data.indexOf(p) + 1}</td>
+                    <td className="font-semibold">{p.name}</td>
+                    <td className="text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{p.category}</td>
+                    <td className="text-right font-bold">{fmt(p.revenue)}</td>
+                    <td className="text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">{p.units}</td>
+                    <td className="text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">{p.cumulativePct}%</td>
+                    <td className="text-center">
                       <StatusBadge variant={CLASS_STYLES[p.class].variant} label={p.class} />
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
           {filtered.length === 0 && (
             <div className="h-20 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted text-sm">No se encontraron productos</div>

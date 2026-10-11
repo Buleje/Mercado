@@ -227,7 +227,7 @@ export default function SubscriptionsModule() {
           <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
             <div className="overflow-x-auto">
               <DataTable className={CLASE_TABLA}>
-                <thead className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+                <thead>
                   <tr>
                     <th className={TH}>Cliente</th>
                     <th className={cn(TH, "hidden sm:table-cell")}>Producto</th>
@@ -240,19 +240,19 @@ export default function SubscriptionsModule() {
                 </thead>
                 <tbody className="divide-y divide-[var(--rule-soft)]">
                   {filtradas.map((s) => (
-                    <tr key={s.id} className="transition-colors hover:bg-[var(--surface-sunken)]">
-                      <td className="px-4 py-3">
+                    <tr key={s.id}>
+                      <td>
                         <p className="font-bold text-[var(--text-primary)]">{s.customerName}</p>
                         <p className="text-sm text-[var(--text-secondary)]">{s.customerPhone}</p>
                       </td>
-                      <td className="hidden px-4 py-3 text-[var(--text-primary)] sm:table-cell">{s.productName}</td>
-                      <td className="hidden px-4 py-3 text-[var(--text-secondary)] md:table-cell">{FREQUENCY_LABELS[s.frequency]}</td>
-                      <td className="px-4 py-3 text-right font-semibold tabular-nums text-[var(--text-primary)]">{fmt(s.monthlyAmount)}</td>
-                      <td className="hidden px-4 py-3 text-[var(--text-secondary)] md:table-cell">{s.status === "cancelled" ? "—" : fmtDate(s.nextBilling)}</td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="hidden sm:table-cell">{s.productName}</td>
+                      <td className="hidden text-[var(--text-secondary)] md:table-cell">{FREQUENCY_LABELS[s.frequency]}</td>
+                      <td className="text-right font-semibold tabular-nums">{fmt(s.monthlyAmount)}</td>
+                      <td className="hidden text-[var(--text-secondary)] md:table-cell">{s.status === "cancelled" ? "—" : fmtDate(s.nextBilling)}</td>
+                      <td className="text-center">
                         <span className={cn("inline-flex rounded-full px-2.5 py-1 text-sm font-bold", STATUS_STYLES[s.status])}>{STATUS_LABELS[s.status]}</span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td>
                         <FilaAcciones s={s} onAction={handleAction} />
                       </td>
                     </tr>

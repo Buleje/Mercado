@@ -243,7 +243,7 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
                       : { ...filaClicableProps(() => ficha.abrir(c.id)), "aria-label": `Abrir la ficha de ${c.nombre}` })}
                     className={cn("cursor-pointer", !NOMBRE_ES_ENLACE && CLASE_FOCUS_FILA)}
                   >
-                    <td className="font-semibold text-[var(--text-primary)]">
+                    <td className="font-semibold">
                       <EnlacePanel cosa="colaborador" id={c.id} apariencia="heredada">
                         {c.nombre}
                       </EnlacePanel>
@@ -251,7 +251,7 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
                     </td>
                     <td>{c.puesto?.nombre ?? <span className="text-[var(--text-tertiary)]">Sin puesto</span>}</td>
                     <td><span className={cn(CLASE_CHIP, meta.claseChip)}>{meta.label}</span></td>
-                    <td className="whitespace-nowrap font-mono text-sm">{c.documento ? `${c.tipoDocumento ?? ""} ${c.documento}`.trim() : <span className="font-sans text-[var(--text-tertiary)]">—</span>}</td>
+                    <td className="whitespace-nowrap font-mono">{c.documento ? `${c.tipoDocumento ?? ""} ${c.documento}`.trim() : <span className="font-sans text-[var(--text-tertiary)]">—</span>}</td>
                     <td>{c.celular ?? <span className="text-[var(--text-tertiary)]">—</span>}</td>
                     <td>{c.fechaIngreso ? formatearFecha(c.fechaIngreso) : <span className="text-[var(--text-tertiary)]">No se sabe</span>}</td>
                   </tr>

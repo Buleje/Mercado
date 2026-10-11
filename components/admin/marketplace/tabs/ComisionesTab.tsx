@@ -133,12 +133,12 @@ export function MarketplaceComisionesTab() {
               const sc = ESTADO_FILA[e.status] ?? ESTADO_FILA.pendiente;
               return (
                 <tr key={e.id}>
-                  <td data-label="Orden" className="font-mono text-sm font-bold text-[var(--text-primary)]">#{e.orderId.slice(-8).toUpperCase()}</td>
-                  <td data-label="Comisión" className="text-right text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(e.amount)}</td>
+                  <td data-label="Orden" className="font-mono font-bold">#{e.orderId.slice(-8).toUpperCase()}</td>
+                  <td data-label="Comisión" className="text-right font-extrabold tabular-nums">{formatCurrency(e.amount)}</td>
                   <td data-label="Estado">
                     <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-sm font-semibold", sc.clase)}>{sc.rotulo}</span>
                   </td>
-                  <td data-label="Fecha" className="text-sm text-[var(--text-secondary)]">{diaDe(e.createdAt)}</td>
+                  <td data-label="Fecha" className="text-[var(--text-secondary)]">{diaDe(e.createdAt)}</td>
                   <td className="w-12 text-right max-sm:empty:hidden">
                     {e.status === "pendiente" && (
                       <ActionMenu

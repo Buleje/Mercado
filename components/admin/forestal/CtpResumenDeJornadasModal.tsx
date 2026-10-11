@@ -42,10 +42,10 @@ import {
   TablaPorEspecie,
   type CorteResumen,
 } from "./ctp-resumen-jornadas-tablas";
+import { DataTable } from "@buleje/design-system";
 
 /* El tipo (y la cuenta) viven en `lib/forestal/resumen-de-jornadas.ts`. */
 export type { ResumenDeJornadas };
-
 
 /** Un paquete como lo devuelve el libro: medidas en cm/m, que es como se declaran. */
 interface PaqueteDelLibro {
@@ -81,7 +81,11 @@ export function piezasDesdePaquetes(
   return paquetes
     .map((p) => {
       /* La respuesta de `?entryId=` trae los Decimal como texto. */
-      const e = escuadriaEnPulgadas({ espesorCm: n(p.espesorCm), anchoCm: n(p.anchoCm), largoM: n(p.largoM) });
+      const e = escuadriaEnPulgadas({
+        espesorCm: n(p.espesorCm),
+        anchoCm: n(p.anchoCm),
+        largoM: n(p.largoM),
+      });
       const cantidad = Math.max(0, Math.round(n(p.cantidad)));
       if (!e || cantidad <= 0) return null;
       const { espesor, ancho, largo } = e;
@@ -149,9 +153,12 @@ export default function CtpResumenDeJornadasModal({
     setError(null);
     if (!clave) return;
     const conDuenos = filtro ? `&duenos=${encodeURIComponent(filtro)}` : "";
-    ctpGet<ResumenDeJornadas>(`/api/admin/forestal/ctp?resumenJornadas=1&dias=${clave}${conDuenos}`, {
-      ttlMs: 15_000,
-    })
+    ctpGet<ResumenDeJornadas>(
+      `/api/admin/forestal/ctp?resumenJornadas=1&dias=${clave}${conDuenos}`,
+      {
+        ttlMs: 15_000,
+      },
+    )
       .then((r) => {
         if (vivo) setDatos(r);
       })
@@ -196,7 +203,9 @@ export default function CtpResumenDeJornadasModal({
           `${piezas.length} fila${piezas.length === 1 ? "" : "s"} de la corrida N° ${corrida.lineNo} al lote cubicado. Es una copia: guardarla crea una corrida NUEVA.`,
         );
       } catch (e) {
-        setAvisoCopia(`No se pudieron traer las piezas: ${e instanceof Error ? e.message : String(e)}`);
+        setAvisoCopia(
+          `No se pudieron traer las piezas: ${e instanceof Error ? e.message : String(e)}`,
+        );
       } finally {
         setCopiando(null);
       }
@@ -233,7 +242,9 @@ export default function CtpResumenDeJornadasModal({
               Sólo lectura — para corregir una corrida, entra por ella en el libro.{" "}
               {/* El cierre del mes (revisar, cerrar, bajar el paquete oficial) ya
                   existe: este resumen es el paso previo natural, y nadie lo sabía. */}
-              <EnlacePanel apariencia="heredada" onClick={onClose}
+              <EnlacePanel
+                apariencia="heredada"
+                onClick={onClose}
                 href="/admin?tab=ctp-libro-operaciones&vista=cierre"
                 className="font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
               >
@@ -295,9 +306,14 @@ export default function CtpResumenDeJornadasModal({
                 onClick={async () => {
                   setBajando(true);
                   try {
-                    await exportSheetsToExcel(hojasDelResumen(datos, corte), nombreDelArchivo(datos, Boolean(filtro)));
+                    await exportSheetsToExcel(
+                      hojasDelResumen(datos, corte),
+                      nombreDelArchivo(datos, Boolean(filtro)),
+                    );
                   } catch (e) {
-                    setAvisoCopia(`No se pudo descargar el Excel: ${e instanceof Error ? e.message : String(e)}`);
+                    setAvisoCopia(
+                      `No se pudo descargar el Excel: ${e instanceof Error ? e.message : String(e)}`,
+                    );
                   } finally {
                     setBajando(false);
                   }
@@ -305,7 +321,11 @@ export default function CtpResumenDeJornadasModal({
                 title="Un archivo con el resumen por día, por día · especie · tipo, por especie y las corridas"
                 className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
               >
-                {bajando ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Download className="h-3.5 w-3.5" aria-hidden />}
+                {bajando ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                ) : (
+                  <Download className="h-3.5 w-3.5" aria-hidden />
+                )}
                 Descargar Excel
               </button>
             </div>
@@ -332,7 +352,10 @@ export default function CtpResumenDeJornadasModal({
               className="group rounded-xl border border-[var(--rule-base)] [&[open]>summary]:border-b [&[open]>summary]:border-[var(--rule-soft)]"
             >
               <summary className="cursor-pointer select-none rounded-xl px-3.5 py-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors marker:content-[''] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40">
-                <span className="mr-1.5 inline-block text-[var(--text-tertiary)] transition-transform group-open:rotate-90" aria-hidden>
+                <span
+                  className="mr-1.5 inline-block text-[var(--text-tertiary)] transition-transform group-open:rotate-90"
+                  aria-hidden
+                >
                   ▸
                 </span>
                 {datos.corridas.length === 1
@@ -340,9 +363,12 @@ export default function CtpResumenDeJornadasModal({
                   : `Las ${datos.corridas.length} corridas que lo componen`}
               </summary>
               <div className="overflow-x-auto px-1.5 pb-1.5">
-                <table className="w-full min-w-[34rem] border-collapse">
+                <DataTable
+                  wrapperClassName="overflow-visible rounded-none border-0"
+                  className="w-full min-w-[34rem]"
+                >
                   <thead>
-                    <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                    <tr>
                       <th className={`${CELDA} whitespace-nowrap`}>Día</th>
                       <th className={CELDA}>N°</th>
                       <th className={CELDA}>Especie</th>
@@ -355,7 +381,7 @@ export default function CtpResumenDeJornadasModal({
                   </thead>
                   <tbody>
                     {datos.corridas.map((c) => (
-                      <tr key={c.id} className="border-t border-[var(--rule-soft)]">
+                      <tr key={c.id}>
                         <td className={CELDA}>{etiquetaLarga(c.dia)}</td>
                         <td className={`${CELDA} font-mono tabular-nums`}>{c.lineNo}</td>
                         <td className={CELDA}>{c.especie ?? "—"}</td>
@@ -393,7 +419,7 @@ export default function CtpResumenDeJornadasModal({
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             </details>
           </>

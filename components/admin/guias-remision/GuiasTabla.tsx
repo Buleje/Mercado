@@ -22,7 +22,7 @@ export function GuiasTabla({ guias, total, page, totalPages, onPage, onAbrir }: 
   return (
     <>
       <div className="admin-mobile-cards">
-        <DataTable className="[&_thead_th]:text-[length:var(--ts-sm)]">
+        <DataTable>
           <thead>
             <tr>
               <th>N° GRR</th>
@@ -48,11 +48,11 @@ export function GuiasTabla({ guias, total, page, totalPages, onPage, onAbrir }: 
                   }}
                   className="cursor-pointer"
                 >
-                  <td data-label="N° GRR" className="font-mono text-sm text-[var(--text-secondary)]">
+                  <td data-label="N° GRR" className="font-mono text-[var(--text-secondary)]">
                     <GuiaHoverRow preview={<GuiaPreview guia={g} />}><span>{g.numero}</span></GuiaHoverRow>
                   </td>
-                  <td data-label="Fecha de traslado" className="text-sm text-[var(--text-secondary)]">{formatDate(g.fechaTraslado)}</td>
-                  <td data-label="Destinatario" className="text-sm">
+                  <td data-label="Fecha de traslado" className="text-[var(--text-secondary)]">{formatDate(g.fechaTraslado)}</td>
+                  <td data-label="Destinatario">
                     <div className="flex items-center gap-2">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] max-sm:hidden">
                         <Truck className="h-4 w-4" aria-hidden />
@@ -60,7 +60,7 @@ export function GuiasTabla({ guias, total, page, totalPages, onPage, onAbrir }: 
                       <p className="truncate font-medium text-[var(--text-primary)]">{g.destinatarioNombre}</p>
                     </div>
                   </td>
-                  <td data-label="Motivo" className="text-sm text-[var(--text-secondary)]">{g.motivoTraslado}</td>
+                  <td data-label="Motivo" className="text-[var(--text-secondary)]">{g.motivoTraslado}</td>
                   <td data-label="Estado">
                     <span className={cn("inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-bold", meta.bg, meta.color)}>
                       <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} aria-hidden />

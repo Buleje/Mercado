@@ -86,7 +86,7 @@ export default function LothTraceTabla({
   if (grupos.every((g) => g.filas.length === 0)) return null;
 
   return (
-    <DataTable stickyHeader wrapperClassName={CAJA_TABLA} className={`w-full border-collapse ${TABLA_PIE_FIJO}`} data-tabla-arbol>
+    <DataTable stickyHeader wrapperClassName={CAJA_TABLA} className={`w-full ${TABLA_PIE_FIJO}`} data-tabla-arbol>
       <thead ref={refCabecera}>
         <tr>
           <th className="w-10">
@@ -100,7 +100,7 @@ export default function LothTraceTabla({
         .map((g) => (
           <tbody key={g.grupo} data-grupo={g.grupo}>
             <tr>
-              <th colSpan={cols.length + 1} scope="colgroup" className="bg-[var(--surface-sunken)]/60 px-3 py-2 text-left text-sm">
+              <th colSpan={cols.length + 1} scope="colgroup" className="bg-[var(--surface-sunken)]/60 text-left">
                 <span className="font-bold text-[var(--text-primary)]">{GRUPO_META[g.grupo].titulo}</span>{" "}
                 <span className="font-normal tabular-nums text-[var(--text-tertiary)]">
                   {formatNumber(g.total)} · {GRUPO_META[g.grupo].nota}

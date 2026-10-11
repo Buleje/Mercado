@@ -76,7 +76,7 @@ export function TablaCtp({
 }) {
   return (
     <div className={`overflow-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] ${altoMax ?? ""} ${className}`}>
-      <DataTable className="w-full text-sm">{children}</DataTable>
+      <DataTable className="w-full">{children}</DataTable>
     </div>
   );
 }
@@ -100,7 +100,7 @@ export function TheadCtp({
        ellos, como si el título flotara. */
     <thead
       ref={ref}
-      className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
+      className="sticky top-0 z-10 align-top"
     >
       {children}
     </thead>
@@ -142,12 +142,12 @@ export function ThOrdenable<C extends string>({
     <th
       data-col={col}
       aria-sort={activo ? (orden.dir === "asc" ? "ascending" : "descending") : "none"}
-      className={`px-3 py-2 font-bold ${align === "right" ? "text-right" : ""} ${className ?? ""}`}
+      className={`font-bold ${align === "right" ? "text-right" : ""} ${className ?? ""}`}
     >
       <button
         type="button"
         onClick={() => onOrdenar(campo)}
-        className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 font-bold uppercase tracking-[var(--ls-wider)] transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] ${
+        className={`inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] ${
           align === "right" ? "flex-row-reverse" : ""
         } ${activo ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`}
       >
@@ -167,7 +167,7 @@ export function TbodyCtp({ children }: { children: React.ReactNode }) {
 export function FilaVacia({ cols, children }: { cols: number; children: React.ReactNode }) {
   return (
     <tr>
-      <td colSpan={cols} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
+      <td colSpan={cols} className="text-center text-[var(--text-tertiary)]">
         {children}
       </td>
     </tr>

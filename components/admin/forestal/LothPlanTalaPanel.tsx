@@ -134,27 +134,27 @@ export default function LothPlanTalaPanel({
         <>
         <BarraFiltrosTabla f={fl} className="mb-2" />
         <div className="overflow-x-auto">
-          <DataTable className="w-full text-sm">
+          <DataTable className="w-full">
             <thead className="align-top">
               <tr>
-                <th className="px-2 py-2 w-8">#</th>
-                <th className="px-2 py-2">Código<FiltroEnCabecera id="codigo" f={fl} compacto /></th>
-                <th className="px-2 py-2">Especie<FiltroEnCabecera id="especie" f={fl} compacto /></th>
-                <th className="px-2 py-2 text-right">Volumen<FiltroEnCabecera id="volumen" f={fl} compacto /></th>
-                <th className="px-2 py-2 text-right">Acumulado<FiltroEnCabecera id="acumulado" f={fl} compacto /></th>
-                <th className="px-2 py-2">Dónde<FiltroEnCabecera id="donde" f={fl} compacto /></th>
+                <th className="w-8">#</th>
+                <th>Código<FiltroEnCabecera id="codigo" f={fl} compacto /></th>
+                <th>Especie<FiltroEnCabecera id="especie" f={fl} compacto /></th>
+                <th className="text-right">Volumen<FiltroEnCabecera id="volumen" f={fl} compacto /></th>
+                <th className="text-right">Acumulado<FiltroEnCabecera id="acumulado" f={fl} compacto /></th>
+                <th>Dónde<FiltroEnCabecera id="donde" f={fl} compacto /></th>
               </tr>
             </thead>
             <tbody>
               {fl.filtradas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
               {fl.filtradas.map(({ l, n }) => (
-                <tr key={l.arbol.id} className="border-b border-[var(--rule-soft)] last:border-0">
-                  <td className="px-2 py-1.5 font-mono text-xs tabular-nums text-[var(--text-secondary)]">{n}</td>
-                  <td className="px-2 py-1.5 font-mono font-bold text-[var(--text-primary)]">{l.arbol.treeCode}</td>
-                  <td className="px-2 py-1.5 text-[var(--text-secondary)]">{l.arbol.especie}</td>
-                  <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n3(l.arbol.volumenM3)}</td>
-                  <td className="px-2 py-1.5 text-right font-mono font-bold tabular-nums text-[var(--text-secondary)]">{n3(l.acumuladoM3)}</td>
-                  <td className="px-2 py-1.5 font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                <tr key={l.arbol.id} className="border-[var(--rule-soft)] last:border-0">
+                  <td className="font-mono tabular-nums text-[var(--text-secondary)]">{n}</td>
+                  <td className="font-mono font-bold">{l.arbol.treeCode}</td>
+                  <td className="text-[var(--text-secondary)]">{l.arbol.especie}</td>
+                  <td className="text-right font-mono tabular-nums">{n3(l.arbol.volumenM3)}</td>
+                  <td className="text-right font-mono font-bold tabular-nums text-[var(--text-secondary)]">{n3(l.acumuladoM3)}</td>
+                  <td className="font-mono tabular-nums text-[var(--text-secondary)]">
                     {l.arbol.parcela && <span className="mr-1.5">{l.arbol.parcela}</span>}
                     {l.arbol.utmX != null && l.arbol.utmY != null
                       ? `${Math.round(l.arbol.utmX)} E · ${Math.round(l.arbol.utmY)} N`

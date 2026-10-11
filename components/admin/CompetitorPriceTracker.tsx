@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, DataTable } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Plus, Trash2, TrendingUp, TrendingDown, Minus, Search, BarChart3 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -373,22 +373,22 @@ export default function CompetitorPriceTracker({ embebido = false }: { embebido?
       {/* Price comparison table */}
       {filtered.length > 0 && data.competitors.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-          <table className="w-full text-sm">
+          <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
             <thead>
               <tr className="bg-[var(--surface-alt)] ">
-                <th className="text-left px-3 py-2.5 text-xs font-bold text-[var(--text-tertiary)]">Producto</th>
-                <th className="text-right px-3 py-2.5 text-xs font-bold text-primary">Mi precio</th>
+                <th>Producto</th>
+                <th className="text-right">Mi precio</th>
                 {data.competitors.map(c => (
-                  <th key={c.id} className="text-right px-3 py-2.5 text-xs font-bold text-[var(--text-tertiary)]">{c.name}</th>
+                  <th key={c.id} className="text-right">{c.name}</th>
                 ))}
-                <th className="text-center px-3 py-2.5 text-xs font-bold text-[var(--text-tertiary)] w-10"></th>
+                <th className="text-center w-10"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--rule-soft)] ">
               {filtered.map(product => (
-                <tr key={product.productId} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/50 transition-colors">
-                  <td className="px-3 py-2.5 font-medium text-[var(--text-primary)] text-xs">{product.productName}</td>
-                  <td className="px-3 py-2.5 text-right">
+                <tr key={product.productId} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/50">
+                  <td className="font-medium">{product.productName}</td>
+                  <td className="text-right">
                     {editingCell?.productId === product.productId && editingCell?.competitorId === "my" ? (
                       <input
                         type="number"
@@ -416,7 +416,7 @@ export default function CompetitorPriceTracker({ embebido = false }: { embebido?
                     const isEditing = editingCell?.productId === product.productId && editingCell?.competitorId === comp.id;
 
                     return (
-                      <td key={comp.id} className="px-3 py-2.5 text-right">
+                      <td key={comp.id} className="text-right">
                         {isEditing ? (
                           <input
                             type="number"
@@ -457,7 +457,7 @@ export default function CompetitorPriceTracker({ embebido = false }: { embebido?
                       </td>
                     );
                   })}
-                  <td className="px-2 py-2.5 text-center">
+                  <td className="text-center">
                     <button
                       onClick={() => removeProduct(product.productId)}
                       className="p-1 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
@@ -469,7 +469,7 @@ export default function CompetitorPriceTracker({ embebido = false }: { embebido?
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
 

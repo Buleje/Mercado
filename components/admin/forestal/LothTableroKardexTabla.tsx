@@ -99,14 +99,14 @@ export default function LothTableroKardexTabla({
         </p>
       )}
       <DataTable
-        className={`w-full text-sm ${HOJA_MOVIL} ${PIE_COMO_TABLA}`}
+        className={`w-full ${HOJA_MOVIL} ${PIE_COMO_TABLA}`}
         wrapperClassName="max-w-full rounded-2xl bg-[var(--surface-raised)]"
       >
-        <thead className="bg-[var(--surface-sunken)]">
+        <thead>
           <tr>
             {/* z-[2], no el z-[1] de FIJA: el popover del filtro tiene que pasar por
                 encima de la primera celda (también fija) de cada renglón. */}
-            <th className={`${TH} sticky left-0 z-[2] border-r border-[var(--rule-soft)] bg-[var(--surface-sunken)]`}>
+            <th className={`${TH} sticky left-0 z-[2] border-r`}>
               <Titulo>Fecha · N°{filtro("fecha")}{filtro("doc")}</Titulo>
             </th>
             <th className={`${TH} ${SOLO_ESCRITORIO}`}>
@@ -138,11 +138,11 @@ export default function LothTableroKardexTabla({
         <tbody>
           {ocultas === 0 && (
             <tr
-              className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60"
+              className="bg-[var(--surface-sunken)]/60"
               data-kardex-inicial
             >
               <td
-                className={`${TD} ${FIJA} bg-[var(--surface-sunken)] font-semibold whitespace-nowrap text-[var(--text-primary)]`}
+                className={`${TD} ${FIJA} bg-[var(--surface-sunken)] font-semibold whitespace-nowrap`}
               >
                 Saldo inicial
               </td>
@@ -166,7 +166,7 @@ export default function LothTableroKardexTabla({
             <tr>
               <td
                 colSpan={columnas}
-                className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]"
+                className="text-center text-[var(--text-tertiary)]"
               >
                 Todavía no hay movimientos {clave ? "de esta especie" : "en este permiso"}.
               </td>
@@ -191,19 +191,19 @@ export default function LothTableroKardexTabla({
               className="border-t-2 border-[var(--rule-strong)] bg-[var(--surface-sunken)] font-bold"
               data-kardex-cierre
             >
-              <td className={`${TD} ${FIJA} bg-[var(--surface-sunken)] text-[var(--text-primary)]`}>
+              <td className={`${TD} ${FIJA} bg-[var(--surface-sunken)]`}>
                 Cierre
               </td>
               <td
-                className={`${TD} ${SOLO_ESCRITORIO} text-[var(--text-primary)]`}
+                className={`${TD} ${SOLO_ESCRITORIO}`}
                 colSpan={2}
                 /* El pie vuelve a tabla con `table-cell!`, que le gana a `max-sm:hidden!`: esto lo esconde igual. */
                 data-solo-escritorio
               >
                 {clave ? cierre.especie : ""}
               </td>
-              <td className={`${NUM} text-[var(--text-primary)]`}>{fmtM3(resumen.entraM3)}</td>
-              <td className={`${NUM} text-[var(--text-primary)]`}>{fmtM3(resumen.saleM3)}</td>
+              <td className={`${NUM}`}>{fmtM3(resumen.entraM3)}</td>
+              <td className={`${NUM}`}>{fmtM3(resumen.saleM3)}</td>
               {casilleros.map((c) => (
                 <td
                   key={c}

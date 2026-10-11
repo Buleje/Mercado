@@ -252,22 +252,22 @@ export default function ImportarTrozasModal({
 
             {resultado.trozas.length > 0 ? (
               <div className="max-h-56 overflow-auto rounded-xl border border-[var(--rule-base)]">
-                <DataTable className="w-full min-w-[420px] text-sm">
-                  <thead className="sticky top-0 bg-[var(--surface-sunken)]">
-                    <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                      <th className="px-3 py-2">Ø menor/mayor</th><th className="px-3 py-2">Largo</th><th className="px-3 py-2">Especie</th><th className="px-3 py-2 text-right">{u.volumen}</th>
+                <DataTable className="w-full min-w-[420px]">
+                  <thead className="sticky top-0">
+                    <tr>
+                      <th>Ø menor/mayor</th><th>Largo</th><th>Especie</th><th className="text-right">{u.volumen}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {resultado.trozas.map((t) => (
-                      <tr key={t.id} className={`border-t border-[var(--rule-soft)] ${rara(t) ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : ""}`}>
-                        <td className="px-3 py-1.5 font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      <tr key={t.id} className={`${rara(t) ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : ""}`}>
+                        <td className="font-mono font-bold tabular-nums">
                           {t.d1}/{t.d2}{u.diametroCorto}
                           {rara(t) && <AlertTriangle className="ml-1 inline h-3 w-3 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />}
                         </td>
-                        <td className="px-3 py-1.5 font-mono tabular-nums text-[var(--text-secondary)]">{t.largo} {u.largo}</td>
-                        <td className="px-3 py-1.5 text-[var(--text-secondary)]">{t.especie ?? "—"}</td>
-                        <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{formatNumber(vol(t), u.decimales)}</td>
+                        <td className="font-mono tabular-nums text-[var(--text-secondary)]">{t.largo} {u.largo}</td>
+                        <td className="text-[var(--text-secondary)]">{t.especie ?? "—"}</td>
+                        <td className="text-right font-mono tabular-nums">{formatNumber(vol(t), u.decimales)}</td>
                       </tr>
                     ))}
                   </tbody>

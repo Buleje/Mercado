@@ -83,25 +83,25 @@ export default function ReporteDeImport({
           archivo. Con la sección al lado, se cuadra de un vistazo. */}
       {escrito && reporte.creados.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-[var(--data-success)]/30">
-          <DataTable className="w-full text-base">
-            <thead className="bg-[var(--data-success)]/10 text-sm">
+          <DataTable className="w-full">
+            <thead className="bg-[var(--data-success)]/10">
               <tr>
-                <th className="px-3 py-2 text-left font-bold text-[var(--text-secondary)]">Sección</th>
-                <th className="px-3 py-2 text-right font-bold text-[var(--text-secondary)]">Registros creados</th>
+                <th>Sección</th>
+                <th className="text-right">Registros creados</th>
               </tr>
             </thead>
             <tbody>
               {reporte.creados.map((c) => (
-                <tr key={c.formato} className="border-t border-[var(--rule-base)]">
-                  <td className="px-3 py-2 font-semibold text-[var(--text-primary)]">{TITULO_FORMATO[c.formato]}</td>
-                  <td className="px-3 py-2 text-right font-extrabold tabular-nums text-[var(--text-primary)]">
+                <tr key={c.formato}>
+                  <td className="font-semibold">{TITULO_FORMATO[c.formato]}</td>
+                  <td className="text-right font-extrabold tabular-nums">
                     {c.cantidad}
                   </td>
                 </tr>
               ))}
               <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
-                <td className="px-3 py-2 font-extrabold text-[var(--text-primary)]">Total</td>
-                <td className="px-3 py-2 text-right font-extrabold tabular-nums text-[var(--text-primary)]">
+                <td className="font-extrabold">Total</td>
+                <td className="text-right font-extrabold tabular-nums">
                   {reporte.totalCreados}
                 </td>
               </tr>

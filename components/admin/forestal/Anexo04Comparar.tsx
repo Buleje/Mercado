@@ -10,7 +10,7 @@
  * PT»): en el celular el panel convierte las tablas en tarjetas y una
  * cabecera de dos filas le corría los rótulos.
  */
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertTriangle, Check } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { ComparacionAnexo, EstadoComparado, FilaComparada, LadoComparado } from "@/lib/forestal/anexo04-comparar";
@@ -28,8 +28,8 @@ function conSigno(v: number, dec: number): string {
 
 /* Angosta hasta que el panel pasa de 56rem: a 1280 la tabla tiene ~800 px
    para 11 columnas y con text-sm + px-2 la columna Estado quedaba cortada. */
-const TH = "px-1.5 py-1.5 text-right align-bottom text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] @4xl:px-2";
-const TD = "px-1.5 py-1.5 text-right font-mono text-xs tabular-nums @4xl:px-2 @4xl:text-sm";
+const TH = "text-right align-bottom font-bold uppercase tracking-wide text-[var(--text-tertiary)] @4xl:px-2";
+const TD = "text-right font-mono tabular-nums @4xl:px-2 @4xl:text-sm";
 const GRUPO = "border-l-2 border-[var(--rule-base)]";
 const EXTRA = "hidden @5xl:table-cell";
 
@@ -118,11 +118,11 @@ function Fila({ f, unidadImpresa, total }: { f: FilaComparada; unidadImpresa: "p
       <td className={`${TD} ${GRUPO} ${tono(dPz)}`}>{dPz}</td>
       <td className={`${TD} ${tono(dPt)}`}>{dPt}</td>
       <td className={`${TD} ${tono(dM3)}`}>{dM3}</td>
-      <td className={`px-1.5 py-1.5 text-center @4xl:px-2 ${GRUPO}`}><Estado estado={f.estado} /></td>
+      <td className={`text-center @4xl:px-2 ${GRUPO}`}><Estado estado={f.estado} /></td>
       <td className={`${TD} ${EXTRA} ${GRUPO} text-[var(--text-secondary)]`}>
         {f.resumen?.filas ?? 0} → {f.anexo?.filas ?? 0}
       </td>
-      <td className={`${EXTRA} px-2 py-1.5 text-left text-xs text-[var(--text-secondary)]`}>
+      <td className={`${EXTRA} text-left text-[var(--text-secondary)]`}>
         {total ? "" : f.ubicacion.length > 0 ? f.ubicacion.join(" · ") : "—"}
       </td>
     </tr>
@@ -206,11 +206,11 @@ export default function Anexo04Comparar({
         <>
           <Veredicto c={c} />
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-            <table className="w-full text-sm">
+            <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
               <caption className="sr-only">Anexo N° 04 contra el resumen por especie y tipo</caption>
-              <thead className="bg-[var(--surface-sunken)]">
+              <thead>
                 <tr>
-                  <th scope="col" data-label="Especie · tipo" className={`${TH} text-left`}>Especie · tipo</th>
+                  <th scope="col" data-label="Especie · tipo" className={`${TH}`}>Especie · tipo</th>
                   <Th grupo="Resumen" label="Pzas" primera />
                   <Th grupo="Resumen" label="PT" />
                   <Th grupo="Resumen" label="m³" />
@@ -222,7 +222,7 @@ export default function Anexo04Comparar({
                   <Th grupo="Diferencia" label="m³" />
                   <th scope="col" data-label="Estado" className={`${TH} ${GRUPO} text-center`}>Estado</th>
                   <Th grupo="Medidas" label="resumen → hoja" primera extra />
-                  <th scope="col" data-label="En el papel" className={`${TH} ${EXTRA} text-left`}>En el papel</th>
+                  <th scope="col" data-label="En el papel" className={`${TH} ${EXTRA}`}>En el papel</th>
                 </tr>
               </thead>
               <tbody>
@@ -231,7 +231,7 @@ export default function Anexo04Comparar({
               <tfoot>
                 <Fila f={c.total} unidadImpresa={u} total />
               </tfoot>
-            </table>
+            </DataTable>
           </div>
           {c.totalDeclaradoM3 != null && c.total.resumen && (
             <p className="text-xs text-[var(--text-secondary)]">

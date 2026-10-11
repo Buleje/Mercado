@@ -9,7 +9,7 @@
  * No calcula nada: muestra `ParteDelDia` tal cual.
  */
 import { useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertTriangle, Check, ChevronDown, Loader2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { ParteDelDia } from "@/lib/caja/parte-del-dia";
@@ -174,42 +174,42 @@ export function CajaCuadreDelDia({ parte, cargando, error, onReintentar, compact
           />
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
             <thead>
-              <tr className="text-left text-sm text-[var(--text-secondary)]">
-                <th className="py-1.5 pr-2 font-semibold">Origen</th>
-                <th className="py-1.5 px-2 font-semibold text-right">Entró</th>
-                <th className="py-1.5 px-2 font-semibold text-right">Salió</th>
-                <th className="py-1.5 pl-2 font-semibold text-right">Otros medios</th>
+              <tr>
+                <th className="pr-2">Origen</th>
+                <th className="text-right">Entró</th>
+                <th className="text-right">Salió</th>
+                <th className="pl-2 text-right">Otros medios</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--rule-soft)]">
               {filas.map((l) => (
                 <tr key={l.clave}>
-                  <td className="py-1.5 pr-2 text-[var(--text-primary)]">
+                  <td className="pr-2">
                     {l.etiqueta}{" "}
                     <span className="text-sm text-[var(--text-secondary)]">· {l.n}</span>
                   </td>
-                  <td className="py-1.5 px-2 text-right tabular-nums whitespace-nowrap text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                  <td className="text-right tabular-nums whitespace-nowrap text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                     {l.entraEfectivo ? fmt(l.entraEfectivo) : "—"}
                   </td>
-                  <td className="py-1.5 px-2 text-right tabular-nums whitespace-nowrap text-[var(--data-error-500)]">
+                  <td className="text-right tabular-nums whitespace-nowrap text-[var(--data-error-500)]">
                     {l.saleEfectivo ? fmt(l.saleEfectivo) : "—"}
                   </td>
-                  <td className="py-1.5 pl-2 text-right tabular-nums whitespace-nowrap text-[var(--text-secondary)]">
+                  <td className="pl-2 text-right tabular-nums whitespace-nowrap text-[var(--text-secondary)]">
                     {l.otrosMedios ? fmt(l.otrosMedios) : "—"}
                   </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t border-[var(--rule-strong)]">
-                <td className="py-2 pr-2 font-bold text-[var(--text-primary)]">
+              <tr>
+                <td className="pr-2 font-bold">
                   Esperado en el cajón
                 </td>
                 <td
                   colSpan={3}
-                  className="py-2 pl-2 text-right font-extrabold tabular-nums text-primary"
+                  className="pl-2 text-right font-extrabold tabular-nums text-primary"
                 >
                   {sinEsperado ? <span className="text-sm font-semibold text-[var(--text-secondary)]">Al contar</span> : fmt(parte.esperado)}
                   {parte.contado != null && (
@@ -228,7 +228,7 @@ export function CajaCuadreDelDia({ parte, cargando, error, onReintentar, compact
                 </td>
               </tr>
             </tfoot>
-          </table>
+          </DataTable>
         </div>
       </div>
     </section>

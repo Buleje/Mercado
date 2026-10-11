@@ -15,10 +15,9 @@
 
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import type { SaldoDePermiso } from "@/lib/forestal/saldo-por-permiso";
+import { DataTable } from "@buleje/design-system";
 
-const TH =
-  "px-2.5 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-2.5 py-2 font-mono text-sm tabular-nums";
+const TD = "font-mono tabular-nums";
 /** El gris de las celdas que no dicen nada por su color. */
 const TD_GRIS = "text-[var(--text-secondary)]";
 
@@ -39,50 +38,50 @@ export default function SaldoPermisoTabla({ saldo }: { saldo: SaldoDePermiso }) 
   const filas = saldo.especies;
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-      <table className="w-full min-w-[46rem] text-sm">
+      <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full min-w-[46rem]">
         <caption className="sr-only">
           Especies del permiso {saldo.etiqueta}: rolliza, aserrable al 56 %, declarado sin lote y
           sobrante
         </caption>
-        <thead className="bg-[var(--surface-sunken)]">
+        <thead>
           <tr>
-            <th scope="col" className={`${TH} text-left`}>
+            <th scope="col">
               Especie
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Trozas
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Rolliza m³
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Aserrable 56 % (pt)
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Aserrable 56 % (m³)
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Sin lote (m³)
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Sobrante (m³)
             </th>
-            <th scope="col" className={`${TH} text-right`}>
+            <th scope="col" className="text-right">
               Sobrante (pt)
             </th>
           </tr>
         </thead>
         <tbody>
           {filas.map((f) => (
-            <tr key={f.clave || f.especie} className="border-t border-[var(--rule-soft)]">
+            <tr key={f.clave || f.especie}>
               <th
                 scope="row"
-                className="px-2.5 py-2 text-left text-sm font-bold text-[var(--text-primary)]"
+                className="text-left font-bold"
               >
                 {f.especie}
               </th>
               <td className={`${TD} ${TD_GRIS} text-right`}>{fmtPiezas(f.piezas)}</td>
-              <td className={`${TD} text-right font-bold text-[var(--text-primary)]`}>
+              <td className={`${TD} text-right font-bold`}>
                 {fmtM3(f.rollizaM3)}
               </td>
               <td className={`${TD} ${TD_GRIS} text-right`}>{fmtPt(f.aserrablePt)}</td>
@@ -104,7 +103,7 @@ export default function SaldoPermisoTabla({ saldo }: { saldo: SaldoDePermiso }) 
         </tbody>
         <tfoot>
           <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            <th scope="row" className="px-2.5 py-2 text-left">
+            <th scope="row" className="text-left">
               {filas.length} especie(s)
             </th>
             <td className={`${TD} text-right`}>{fmtPiezas(saldo.totales.piezas)}</td>
@@ -122,7 +121,7 @@ export default function SaldoPermisoTabla({ saldo }: { saldo: SaldoDePermiso }) 
             </td>
           </tr>
         </tfoot>
-      </table>
+      </DataTable>
     </div>
   );
 }

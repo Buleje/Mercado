@@ -83,7 +83,7 @@ function Acciones({ l, moviendo, onEstado }: { l: LeadRow; moviendo: string | nu
 export function TablaLeads({ filas, moviendo, onEstado }: Props) {
   return (
     /* Encabezados a 14 px y sin versalitas: el DataTable los trae a 12. */
-    <DataTable className="[&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+    <DataTable>
       <thead>
         <tr>
           <th>Interesado</th>
@@ -121,7 +121,7 @@ export function TablaLeads({ filas, moviendo, onEstado }: Props) {
                   </p>
                 </div>
               </td>
-              <td className="text-[var(--text-primary)]">{rotuloCanal(l.source)}</td>
+              <td>{rotuloCanal(l.source)}</td>
               <td>
                 <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-[var(--text-primary)]">
                   <span className={cn("h-2 w-2 shrink-0 rounded-full", e.punto)} aria-hidden />

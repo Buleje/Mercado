@@ -61,14 +61,14 @@ const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(
 function FilaGrupo({ g, destacada, formula }: { g: GrupoTrozas; destacada?: boolean; formula: FormulaTrozas }) {
   const ox = formula === "oxapampina";
   return (
-    <tr className="border-t border-[var(--rule-soft)] even:bg-[var(--surface-canvas)]/50">
-      <td className={`px-3 py-2 border-l-[3px] font-bold text-[var(--text-primary)] ${destacada ? "border-l-[var(--accent)]" : "border-l-transparent"}`}>
+    <tr className="even:bg-[var(--surface-canvas)]/50">
+      <td className={`border-l-[3px] font-bold ${destacada ? "border-l-[var(--accent)]" : "border-l-transparent"}`}>
         {g.label}
       </td>
-      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{g.trozas}</td>
-      {!ox && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(g.m3)}</td>}
-      <td className={`px-3 py-2 text-right font-mono tabular-nums ${ox ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>{fmtPtDe(formula)(g.pt)}</td>
-      <td className="px-3 py-2">
+      <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{g.trozas}</td>
+      {!ox && <td className="text-right font-mono font-bold tabular-nums">{fmtM3(g.m3)}</td>}
+      <td className={`text-right font-mono tabular-nums ${ox ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>{fmtPtDe(formula)(g.pt)}</td>
+      <td>
         <div className="flex items-center gap-2">
           <div className="hidden h-2 min-w-[2.5rem] flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)] sm:block">
             <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.min(100, g.pctM3)}%` }} />
@@ -93,10 +93,10 @@ function TablaTrozas({ primeraCol, grupos, total, caption, compacta, formula }: 
   const TH = `${compacta ? "px-2" : "px-3"} py-2 text-left align-bottom text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]`;
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-      <DataTable className={`w-full text-sm ${compacta ? "min-w-[380px]" : "min-w-[480px]"}`}>
+      <DataTable className={`w-full ${compacta ? "min-w-[380px]" : "min-w-[480px]"}`}>
         <caption className="sr-only">{caption}</caption>
         <thead>
-          <tr className="bg-[var(--surface-sunken)]">
+          <tr>
             <th scope="col" className={TH}>{primeraCol}</th>
             {/* Piezas · m³ · PT, la convención del módulo (2026-09-09). */}
             <th scope="col" className={`${TH} text-right`}>Piezas</th>
@@ -110,11 +110,11 @@ function TablaTrozas({ primeraCol, grupos, total, caption, compacta, formula }: 
         </tbody>
         <tfoot>
           <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            <th scope="row" className="px-3 py-2.5 text-left">Total · {grupos.length} {grupos.length === 1 ? "grupo" : "grupos"}</th>
-            <td className="px-3 py-2.5 text-right font-mono tabular-nums">{total.trozas}</td>
-            {!ox && <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(total.m3)}</td>}
-            <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtPtDe(formula)(total.pt)}</td>
-            <td className="px-3 py-2.5 text-[length:var(--ts-2xs)] uppercase tracking-wide">100%</td>
+            <th scope="row" className="text-left">Total · {grupos.length} {grupos.length === 1 ? "grupo" : "grupos"}</th>
+            <td className="text-right font-mono tabular-nums">{total.trozas}</td>
+            {!ox && <td className="text-right font-mono tabular-nums">{fmtM3(total.m3)}</td>}
+            <td className="text-right font-mono tabular-nums">{fmtPtDe(formula)(total.pt)}</td>
+            <td className="uppercase tracking-wide">100%</td>
           </tr>
         </tfoot>
       </DataTable>

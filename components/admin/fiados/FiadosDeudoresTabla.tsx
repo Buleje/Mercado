@@ -6,7 +6,7 @@
  * y paginado. Salió de FiadosModule; el recordatorio por WhatsApp ahora usa
  * las plantillas de Cobranza y queda anotado en la bitácora.
  */
-import { LoadingState } from "@buleje/design-system";
+import { LoadingState, DataTable } from "@buleje/design-system";
 import { AlertTriangle, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, MessageCircle, Search } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { cn } from "@/lib/utils";
@@ -38,7 +38,7 @@ function Cabecera({ col, label, estado, alinear = "left" }: { col: ColumnaOrden;
   const activa = estado.sortBy === col;
   return (
     <th aria-sort={activa ? (estado.sortDir === "asc" ? "ascending" : "descending") : undefined} onClick={() => estado.toggleSort(col)}
-      className={cn("cursor-pointer select-none px-4 py-3 font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]", alinear === "right" && "text-right")}>
+      className={cn("cursor-pointer select-none font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]", alinear === "right" && "text-right")}>
       <div className={cn("flex items-center gap-1", alinear === "right" && "justify-end")}>
         {label} {activa && (estado.sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
       </div>
@@ -93,18 +93,18 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
                   sort indicators, mobile-aware (hidden sm:table-cell),
                   sticky positioning, sr-only labels. DataTable del DS
                   no soporta esta combinación de features (ADR-075). */}
-              <table className="w-full min-w-[700px] sm:min-w-0 text-sm">
-                <thead className="sticky top-0 bg-[var(--surface-raised)] z-10 shadow-[var(--shadow-sm)]">
-                  <tr className="border-b border-[var(--rule-soft)] text-left">
-                    <th className="px-2 py-3 w-8">
+              <DataTable className="w-full min-w-[700px] sm:min-w-0">
+                <thead className="sticky top-0 z-10 shadow-[var(--shadow-sm)]">
+                  <tr>
+                    <th className="w-8">
                       <span className="sr-only">Seleccionar</span>
                     </th>
                     <Cabecera col="name" label="Cliente" estado={estado} />
                     <Cabecera col="total" label="Total" estado={estado} alinear="right" />
                     <Cabecera col="saldo" label="Saldo" estado={estado} alinear="right" />
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">Vencimiento</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Estado</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-center hidden sm:table-cell">Recordar</th>
+                    <th className="hidden sm:table-cell">Vencimiento</th>
+                    <th>Estado</th>
+                    <th className="text-center hidden sm:table-cell">Recordar</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -125,9 +125,9 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
                           e.preventDefault();
                           openDetail(f);
                         }}
-                        className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-alt)] cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                        className="hover:bg-[var(--surface-alt)] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                       >
-                        <td className="px-2 py-3" onClick={e => e.stopPropagation()}>
+                        <td onClick={e => e.stopPropagation()}>
                           {estaAbierto(f) && (
                             <input
                               type="checkbox"
@@ -138,7 +138,7 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
                             />
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td>
                           <div className="flex items-center gap-2">
                             <FiadoAvatar nombre={f.customerName || f.customerId} />
                             <div className="min-w-0">
@@ -157,18 +157,18 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right font-medium text-[var(--text-primary)]">{formatCurrency(f.total)}</td>
-                        <td className={cn("px-4 py-3 text-right font-bold font-mono", f.status === "PAGADO" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{formatCurrency(f.saldo)}</td>
-                        <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">
+                        <td className="text-right font-medium">{formatCurrency(f.total)}</td>
+                        <td className={cn("text-right font-bold font-mono", f.status === "PAGADO" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{formatCurrency(f.saldo)}</td>
+                        <td className="text-[var(--text-secondary)] hidden sm:table-cell">
                           {f.fechaVence ? diaLeido(f.fechaVence) : "—"}
                         </td>
-                        <td className="px-4 py-3">
+                        <td>
                           <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold", meta.bg, meta.color)}>
                             <StatusIcon className="h-4 w-4" />
                             {meta.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center hidden sm:table-cell">
+                        <td className="text-center hidden sm:table-cell">
                           {estaAbierto(f) && f.customerId && (
                             <button
                               type="button"
@@ -188,7 +188,7 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
             {/* Pagination */}
             {totalPages > 1 && (

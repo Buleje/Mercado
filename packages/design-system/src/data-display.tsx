@@ -421,6 +421,13 @@ export interface DataTableProps extends TableHTMLAttributes<HTMLTableElement> {
    */
   filtrable?: boolean;
   /**
+   * Planilla que imita el Excel o el papel (la grilla del cubicador): cabecera
+   * chica en MAYÚSCULAS y la letra de cada celda como la pida la celda. Es la
+   * ÚNICA excepción al estilo único del panel (ADR-489, Brandon 2026-10-11:
+   * «un solo estilo de tabla para todos»); el resto de las tablas no la usa.
+   */
+  planilla?: boolean;
+  /**
    * Clases del CONTENEDOR (el div que hace el scroll horizontal), no de la
    * tabla. Para el alto máximo, el redondeo o el borde de la caja.
    */
@@ -443,6 +450,14 @@ export interface DataTableProps extends TableHTMLAttributes<HTMLTableElement> {
 /**
  * Tabla canónica. Estiliza thead con surface-sunken y rows con hover.
  *
+ * UN solo estilo para todo el panel (Brandon 2026-10-11: «en varias pestañas
+ * las tablas son diferentes… quiero un solo estilo de tabla»): cabecera a 14 px
+ * (`--ts-sm`), seminegrita, sin mayúsculas, en `--text-secondary` sobre
+ * `--surface-sunken`; celdas a 14 px; mismo padding, raya y hover. Lo ponen
+ * selectores descendientes (especificidad 0,1,2), así que le ganan a una clase
+ * suelta en el `<th>`/`<td>`: las pantallas sólo ponen alineación, ancho,
+ * `whitespace-nowrap`, `sticky` y el color de estado de una celda puntual.
+ *
  * Importante: `<thead>`, `<tbody>`, `<tr>`, `<th>`, `<td>` se renderizan como
  * hijos — la tabla solo aplica clases base al `<table>` y a los descendientes
  * via CSS selectors (& .header, & tr, etc.).
@@ -451,6 +466,7 @@ export function DataTable({
   zebra,
   stickyHeader,
   filtrable,
+  planilla,
   className,
   wrapperClassName,
   wrapperProps,
@@ -479,13 +495,21 @@ export function DataTable({
           // soles: 84 archivos pedían text-right y ninguno lo conseguía.
           "[&_thead_th:not(.text-right):not(.text-center)]:text-left",
           "[&_thead_th]:px-3 [&_thead_th]:py-2.5",
+          // El fondo va también en cada <th>: una fila de cabecera con su propio
+          // fondo (o una columna sticky) dejaba la cabecera de dos tonos.
+          "[&_thead_th]:bg-[var(--surface-sunken)]",
           "[&_thead_th]:font-semibold [&_thead_th]:text-[var(--text-secondary)]",
-          "[&_thead_th]:text-[length:var(--ts-xs)] [&_thead_th]:uppercase [&_thead_th]:tracking-[var(--ls-wider)]",
+          planilla
+            ? "[&_thead_th]:text-[length:var(--ts-xs)] [&_thead_th]:uppercase [&_thead_th]:tracking-[var(--ls-wider)]"
+            : "[&_thead_th]:text-[length:var(--ts-sm)] [&_thead_th]:normal-case [&_thead_th]:tracking-normal",
           filtrable && "[&_thead_th]:align-top",
           stickyHeader && "[&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10",
           "[&_tbody_tr]:border-t [&_tbody_tr]:border-[var(--rule-soft)]",
           "[&_tbody_tr:hover]:bg-[var(--surface-sunken)]",
-          "[&_tbody_td]:px-3 [&_tbody_td]:py-2.5",
+          "[&_tbody_td]:px-3 [&_tbody_td]:py-2.5 [&_tbody_th]:px-3 [&_tbody_th]:py-2.5",
+          // Celdas a 14 px aunque la celda pida otra letra (`text-xs` en el <td>
+          // era la mitad de las variaciones medidas el 11-10).
+          !planilla && "[&_tbody_td]:text-[length:var(--ts-sm)] [&_tfoot_td]:text-[length:var(--ts-sm)]",
           // El pie llevaba el padding que le pusiera el consumidor (px-4 casi
           // siempre) mientras cuerpo y cabecera quedaban en px-3: la fila de
           // totales caía 4px corrida respecto a la columna que suma. En una

@@ -140,8 +140,7 @@ function EstadosGtf({ estados }: { estados: readonly EstadoGtf[] }) {
   );
 }
 
-const TH = "px-3 py-2.5 font-bold text-[var(--text-primary)]";
-const TD = "px-3 py-2.5";
+const TH = "font-bold";
 
 function Th({ id, f, children, className = "" }: { id: string; f: FiltrosTabla<FilaGtf>; children: ReactNode; className?: string }) {
   return (
@@ -174,37 +173,37 @@ export function cabecerasGtf(f: FiltrosTabla<FilaGtf>): Record<string, ReactNode
 /** Las celdas movibles de una fila (las `data-label` las lee la vista en tarjetas). */
 export function celdasGtf({ g, origen, tipoPlan, resolucion, estados }: FilaGtf): Record<string, ReactNode> {
   return {
-    gtf: <td data-label="N° GTF" className={TD}><span className="block font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber}</span><ChipPapelesGtf g={g} /></td>,
-    origen: <td data-label="Origen" className={TD}><GtfOrigenChip origen={origen.origen} registro={origen.registro} /></td>,
+    gtf: <td data-label="N° GTF" ><span className="block font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber}</span><ChipPapelesGtf g={g} /></td>,
+    origen: <td data-label="Origen" ><GtfOrigenChip origen={origen.origen} registro={origen.registro} /></td>,
     registro: (
-      <td data-label="N° de registro" className={`${TD} whitespace-nowrap font-mono text-[var(--text-secondary)]`}>
+      <td data-label="N° de registro" className="whitespace-nowrap font-mono text-[var(--text-secondary)]">
         {origen.registro ?? "—"}
       </td>
     ),
-    fecha: <td data-label="Fecha" className={`${TD} whitespace-nowrap text-[var(--text-secondary)]`}>{fmtDate(g.gtfDate)}</td>,
-    tipoPlan: <td data-label="Tipo de plan" className={`${TD} whitespace-nowrap font-semibold text-[var(--text-primary)]`}>{tipoPlan ?? "—"}</td>,
+    fecha: <td data-label="Fecha" className="whitespace-nowrap text-[var(--text-secondary)]">{fmtDate(g.gtfDate)}</td>,
+    tipoPlan: <td data-label="Tipo de plan" className="whitespace-nowrap font-semibold">{tipoPlan ?? "—"}</td>,
     permiso: (
-      <td data-label="N° de permiso / resolución" className={TD}>
+      <td data-label="N° de permiso / resolución" >
         <span className="block font-mono text-[var(--text-primary)]">{g.tituloHabilitante ?? "—"}</span>
         {resolucion && <span className="block font-mono text-xs text-[var(--text-tertiary)]">Res. {resolucion}</span>}
       </td>
     ),
     tipo: (
-      <td data-label="Tipo" className={TD}>
+      <td data-label="Tipo" >
         <span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">
           {g.tipo === "producto" ? "Producto" : "Trozas"}
         </span>
       </td>
     ),
-    titular: <td data-label="Titular" className={`${TD} text-[var(--text-primary)]`}>{g.titularName ?? "—"}</td>,
-    destino: <td data-label="Destino" className={`${TD} text-[var(--text-secondary)]`}>{g.destino ?? "—"}</td>,
+    titular: <td data-label="Titular">{g.titularName ?? "—"}</td>,
+    destino: <td data-label="Destino" className="text-[var(--text-secondary)]">{g.destino ?? "—"}</td>,
     volumen: (
-      <td data-label="Vol. m³" className={`${TD} text-right`}>
+      <td data-label="Vol. m³" className="text-right">
         <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
           {g.volumenTotalM3 ? fmtM3(Number(g.volumenTotalM3)) : "—"}
         </span>
       </td>
     ),
-    estado: <td data-label="Estado" className={TD}><EstadosGtf estados={estados} /></td>,
+    estado: <td data-label="Estado" ><EstadosGtf estados={estados} /></td>,
   };
 }

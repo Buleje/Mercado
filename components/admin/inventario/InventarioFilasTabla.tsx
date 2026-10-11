@@ -27,7 +27,7 @@ export default function InventarioFilasTabla({ inv }: { inv: Inventario }) {
         return (
           <tr
             key={p.id}
-            className={cn("hover:bg-[var(--surface-alt)] transition-colors", !p.active && "opacity-50 bg-[var(--surface-canvas)]/30", lowStock && "bg-[var(--data-warning-50)]/40", selectedIds.has(p.id) && "bg-primary/5")}
+            className={cn("hover:bg-[var(--surface-alt)]", !p.active && "opacity-50 bg-[var(--surface-canvas)]/30", lowStock && "bg-[var(--data-warning-50)]/40", selectedIds.has(p.id) && "bg-primary/5")}
             onContextMenu={(e) => {
               e.preventDefault();
               let x = e.clientX;

@@ -52,7 +52,7 @@ export default function LotesConSaldoFila({
 }) {
   return (
     <tr
-      className={`border-t border-[var(--rule-soft)] ${
+      className={`${
         l.vencido ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : ""
       }`}
     >
@@ -70,11 +70,11 @@ export default function LotesConSaldoFila({
           </label>
         </td>
       )}
-      <td className={`${TD} whitespace-nowrap font-mono font-bold text-[var(--text-primary)]`}>
+      <td className={`${TD} whitespace-nowrap font-mono font-bold`}>
         {l.code}
       </td>
       {/* Más de un permiso es madera de dos títulos mezclada: se dice. */}
-      <td className={`${TD} font-mono text-xs text-[var(--text-secondary)]`}>
+      <td className={`${TD} font-mono text-[var(--text-secondary)]`}>
         {l.permisos.length === 0 ? (
           <span className="text-[var(--text-tertiary)]">—</span>
         ) : l.permisos.length === 1 ? (
@@ -87,12 +87,12 @@ export default function LotesConSaldoFila({
         )}
       </td>
       <td className={`${TD} text-[var(--text-secondary)]`}>{l.especie}</td>
-      <td className={`${TD} text-xs text-[var(--text-secondary)]`}>{l.status}</td>
+      <td className={`${TD} text-[var(--text-secondary)]`}>{l.status}</td>
       <td className={`${NUM} text-[var(--text-secondary)]`}>{m3(l.consumidoM3)}</td>
       {/* La vara, no el resultado: lo que ese consumo debería rendir al 56 %. */}
       <td className={`${NUM} text-[var(--text-tertiary)]`}>{m3(l.esperado56M3)}</td>
       {/* `null` = no se puede sumar sin inventar: se dice, no se pone 0. */}
-      <td className={`${NUM} text-[var(--text-primary)]`}>
+      <td className={`${NUM}`}>
         {l.producidoM3 == null ? (
           <span className="text-xs text-[var(--text-tertiary)]">—</span>
         ) : (
@@ -117,10 +117,10 @@ export default function LotesConSaldoFila({
       <td className={`${NUM} text-[var(--text-secondary)]`}>
         {l.diasParado == null ? "—" : `${l.diasParado} d`}
       </td>
-      <td className={`${TD} font-mono text-xs text-[var(--text-secondary)]`}>
+      <td className={`${TD} font-mono text-[var(--text-secondary)]`}>
         {fecha(l.finProceso)}
       </td>
-      <td className={`${TD} text-xs`}>
+      <td className={`${TD}`}>
         <TextoPlazo dias={l.diasParaVencer} vencido={l.vencido} />
       </td>
     </tr>

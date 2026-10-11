@@ -41,21 +41,21 @@ export const STATUS_STYLES: Record<GiftCardDetails["status"], string> = {
 export function FilaTarjeta({ c, onVer, onCancelar }: { c: GiftCardDetails; onVer: () => void; onCancelar: () => void }) {
   const mas: MenuAccion[] = c.status === "pendiente" ? [{ id: "cancelar", label: "Cancelar y reembolsar", icon: Trash2, tone: "danger", onSelect: onCancelar }] : [];
   return (
-    <tr className="transition-colors hover:bg-[var(--surface-sunken)]">
-      <td className="px-4 py-3">
+    <tr>
+      <td>
         <p className="font-mono text-sm font-bold text-[var(--text-primary)]">{maskCode(c.code)}</p>
       </td>
-      <td className="hidden px-4 py-3 sm:table-cell">
+      <td className="hidden sm:table-cell">
         <p className="text-sm font-semibold text-[var(--text-primary)]">{c.recipientName}</p>
         {c.message && <p className="max-w-xs truncate text-sm italic text-[var(--text-secondary)]">{c.message}</p>}
       </td>
-      <td className="px-4 py-3 text-right font-semibold tabular-nums text-[var(--text-primary)]">{fmt(c.amount)}</td>
-      <td className="hidden px-4 py-3 text-right font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)] lg:table-cell">{fmt(c.balance)}</td>
-      <td className="hidden px-4 py-3 text-[var(--text-secondary)] md:table-cell">{fmtDate(c.expiresAt)}</td>
-      <td className="px-4 py-3 text-center">
+      <td className="text-right font-semibold tabular-nums">{fmt(c.amount)}</td>
+      <td className="hidden text-right font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)] lg:table-cell">{fmt(c.balance)}</td>
+      <td className="hidden text-[var(--text-secondary)] md:table-cell">{fmtDate(c.expiresAt)}</td>
+      <td className="text-center">
         <span className={cn("inline-flex rounded-full px-2.5 py-1 text-sm font-bold", STATUS_STYLES[c.status])}>{STATUS_LABELS[c.status]}</span>
       </td>
-      <td className="px-4 py-3">
+      <td>
         <div className="flex items-center justify-end gap-1">
           <button type="button" onClick={onVer} className="inline-flex min-h-12 items-center rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]">
             Ver

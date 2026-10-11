@@ -50,7 +50,6 @@ export interface FilaTrabajo {
 type Tocado = Partial<Record<"piezas" | "m3" | "pt" | "precio", string>>;
 
 const CLAVE = () => slugKey("-tabla-trabajo");
-const TH = "px-2 py-1.5 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 text-sm";
 const NUM = `${TD} text-right font-mono tabular-nums`;
 const CELDA =
@@ -154,17 +153,17 @@ export default function TablaDeTrabajo({ filas }: {
         )}
       </div>
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <DataTable className="w-full min-w-[600px] text-sm">
+        <DataTable className="w-full min-w-[600px]">
           <caption className="sr-only">Tabla de trabajo por especie y tipo (borrador, no afecta al lote)</caption>
-          <thead className="bg-[var(--surface-sunken)]">
+          <thead>
             <tr>
-              <th scope="col" className={TH}>Tipo</th>
-              <th scope="col" className={`${TH} text-right`}>Piezas</th>
-              <th scope="col" className={`${TH} text-right`}>Volumen m³</th>
-              <th scope="col" className={`${TH} text-right`}>Pie tablar</th>
+              <th scope="col" >Tipo</th>
+              <th scope="col" className="text-right">Piezas</th>
+              <th scope="col" className="text-right">Volumen m³</th>
+              <th scope="col" className="text-right">Pie tablar</th>
               {/* El precio se escribe a mano; el importe es PT × precio. */}
-              <th scope="col" className={`${TH} text-right`}>Precio S/ PT</th>
-              <th scope="col" className={`${TH} text-right`}>Importe S/</th>
+              <th scope="col" className="text-right">Precio S/ PT</th>
+              <th scope="col" className="text-right">Importe S/</th>
             </tr>
           </thead>
           <tbody>
@@ -182,8 +181,8 @@ export default function TablaDeTrabajo({ filas }: {
                 />
               );
               return (
-                <tr key={f.clave} className={`border-t border-[var(--rule-soft)] ${f.cambiada ? "bg-[var(--accent)]/8" : ""}`}>
-                  <td className={`${TD} font-bold text-[var(--text-primary)]`}>
+                <tr key={f.clave} className={`${f.cambiada ? "bg-[var(--accent)]/8" : ""}`}>
+                  <td className={`${TD} font-bold`}>
                     {f.tipo}
                     <span className="block text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">{f.especie}</span>
                   </td>
@@ -216,7 +215,7 @@ export default function TablaDeTrabajo({ filas }: {
             </tr>
             {cambiadas > 0 && (
               /* Contra lo REAL: sin esta fila, el borrador se lee como el lote. */
-              <tr className="border-t border-[var(--rule-soft)] text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              <tr className="text-[var(--text-tertiary)]">
                 <th scope="row" className={`${TD} text-left font-normal`}>Real del lote</th>
                 <td className={NUM}>{fmtPiezas(real.piezas)}</td>
                 <td className={NUM}>{fmtM3(real.m3)}</td>

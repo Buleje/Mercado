@@ -63,7 +63,7 @@ export default function CrmFilas({ crm }: { crm: Crm }) {
                   </td>
                 ),
                 telefono: (
-                  <td className="text-sm tabular-nums text-[var(--text-secondary)]">{c.phone}</td>
+                  <td className="tabular-nums text-[var(--text-secondary)]">{c.phone}</td>
                 ),
                 ultimaCompra: (
                   <td>

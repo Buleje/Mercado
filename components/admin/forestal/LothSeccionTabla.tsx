@@ -88,10 +88,10 @@ export default function LothSeccionTabla({
     <DataTable
       stickyHeader
       wrapperClassName={CAJA_TABLA}
-      className={`w-full text-sm ${TABLA_PIE_FIJO}`}
+      className={`w-full ${TABLA_PIE_FIJO}`}
       data-seccion-tabla={section}
     >
-      <thead ref={refCabecera} className="bg-[var(--surface-sunken)]">
+      <thead ref={refCabecera}>
         <tr>
           <th className={`${TH} w-10`}>
             <input
@@ -113,7 +113,7 @@ export default function LothSeccionTabla({
           return (
             <tr
               key={e.id}
-              className={`border-t border-[var(--rule-soft)] transition-colors hover:bg-[var(--surface-canvas)]/40 ${
+              className={`${
                 e.status === "anulado" ? "opacity-50" : ""
               } ${elegida ? "bg-[var(--data-info-500)]/10" : ""}`}
             >

@@ -137,9 +137,9 @@ export default function CtpTrozasIngresadasFila({
   const elegible = !bloqueo && (!enLote || delLote);
   const codigo = t.codigoPlanta ?? t.codificacion ?? "";
   return (
-    <tr className={`${elegida ? "bg-primary/5" : ""} hover:bg-[var(--surface-sunken)]`}>
+    <tr className={`${elegida ? "bg-primary/5" : ""}`}>
       {seleccionable && (
-        <td className="px-3 py-2">
+        <td>
           <input
             type="checkbox"
             checked={elegida}
@@ -159,31 +159,31 @@ export default function CtpTrozasIngresadasFila({
           /* La guía con de dónde salió su dato (SERFOR / a mano): era una
              columna propia que en el patio real decía lo mismo fila tras fila. */
           guia: (
-            <td className="whitespace-nowrap px-2! py-2 text-sm">
+            <td className="whitespace-nowrap px-2!">
               <span className="flex items-center gap-1.5">
                 <span className="font-bold text-[var(--text-primary)]">{t.gtfNumber ?? "—"}</span>
                 <OrigenDelDato origen={t.origenDato} />
               </span>
             </td>
           ),
-          permiso: <td className="px-2! py-2 text-sm text-[var(--text-secondary)]">{t.permiso ?? "—"}</td>,
+          permiso: <td className="px-2! text-[var(--text-secondary)]">{t.permiso ?? "—"}</td>,
           /* Codificación del bosque y, si la tiene, el código de planta: dos
              columnas casi siempre vacías una de las dos (medido en main). */
           codigo: (
-            <td className="whitespace-nowrap px-2! py-2 text-[var(--text-secondary)]">
+            <td className="whitespace-nowrap px-2! text-[var(--text-secondary)]">
               {t.codificacion ?? "—"}
               {t.codigoPlanta && <span className="text-sm"> · planta {t.codigoPlanta}</span>}
             </td>
           ),
-          especie: <td className="px-2! py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>,
-          medidas: <td className="px-2! py-2 text-sm text-[var(--text-secondary)]"><Medidas t={t} /></td>,
+          especie: <td className="px-2! text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>,
+          medidas: <td className="px-2! text-[var(--text-secondary)]"><Medidas t={t} /></td>,
           volumen: (
-            <td className="px-2! py-2 text-right font-bold tabular-nums text-[var(--text-primary)]">
+            <td className="px-2! text-right font-bold tabular-nums">
               {t.volumenM3 != null ? fmtM3(Number(t.volumenM3)) : "—"}
             </td>
           ),
           estado: (
-            <td className="px-2! py-2 text-sm">
+            <td className="px-2!">
               {delLote ? (
                 <span className="inline-flex items-center gap-1">
                   <span className="rounded-lg bg-primary/15 px-1.5 py-0.5 font-bold text-[var(--text-primary)]">en este lote</span>
@@ -209,9 +209,9 @@ export default function CtpTrozasIngresadasFila({
               )}
             </td>
           ),
-          patio: <td className="px-2! py-2 text-sm"><EnElPatio t={t} ahora={ahora} /></td>,
+          patio: <td className="px-2!"><EnElPatio t={t} ahora={ahora} /></td>,
           /* Fecha del ASIENTO de la guía en el libro. No es la recepción física. */
-          asiento: <td className="whitespace-nowrap px-2! py-2 text-sm text-[var(--text-secondary)]">{fmtDia(t.fechaIngreso)}</td>,
+          asiento: <td className="whitespace-nowrap px-2! text-[var(--text-secondary)]">{fmtDia(t.fechaIngreso)}</td>,
         }}
       />
     </tr>

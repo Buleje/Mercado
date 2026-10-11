@@ -176,35 +176,35 @@ export default function PlantacionListado({
         <BarraFiltrosTabla f={f} className="mb-3" />
         <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] admin-mobile-cards">
           <div className="max-h-[38rem] overflow-auto">
-            <DataTable className="w-full min-w-[960px] text-sm">
-              <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
-                <tr className="text-left align-top">
-                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Código interno<FiltroEnCabecera id="codigo" f={f} /></th>
+            <DataTable className="w-full min-w-[960px]">
+              <thead className="sticky top-0 z-10">
+                <tr className="align-top">
+                  <th scope="col">Código interno<FiltroEnCabecera id="codigo" f={f} /></th>
                   {/* Estado al lado del código (11-10): con 9 columnas la tabla pasa de 1.200 px y lo
                       que quedaba fuera de la vista era justo el estado. */}
-                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Estado</th>
-                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Titular<FiltroEnCabecera id="titular" f={f} /></th>
-                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Predio<FiltroEnCabecera id="predio" f={f} /></th>
-                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Distrito<FiltroEnCabecera id="distrito" f={f} /></th>
-                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Área<FiltroEnCabecera id="area" f={f} /></th>
-                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Bloques<FiltroEnCabecera id="bloques" f={f} /></th>
-                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Última modificación<FiltroEnCabecera id="modificada" f={f} /></th>
-                  <th scope="col" className="px-3 py-2.5 text-right text-sm font-bold text-[var(--text-secondary)] sm:sticky sm:right-0 sm:z-[1] sm:bg-[var(--surface-sunken)]"><span className="sr-only">Acciones</span></th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Titular<FiltroEnCabecera id="titular" f={f} /></th>
+                  <th scope="col">Predio<FiltroEnCabecera id="predio" f={f} /></th>
+                  <th scope="col">Distrito<FiltroEnCabecera id="distrito" f={f} /></th>
+                  <th scope="col">Área<FiltroEnCabecera id="area" f={f} /></th>
+                  <th scope="col">Bloques<FiltroEnCabecera id="bloques" f={f} /></th>
+                  <th scope="col">Última modificación<FiltroEnCabecera id="modificada" f={f} /></th>
+                  <th scope="col" className="text-right sm:sticky sm:right-0 sm:z-[1]"><span className="sr-only">Acciones</span></th>
                 </tr>
               </thead>
               <motion.tbody variants={staggerContainer} initial="hidden" animate="show">
                 {visibles.length === 0 && <SinCoincidenciasFila colSpan={9} />}
                 {visibles.map((p) => (
                   <motion.tr key={p.id} variants={staggerChild} className="border-t border-[var(--rule-soft)] hover:bg-[var(--surface-canvas)]">
-                    <td data-label="Código interno" className="px-3 py-3 font-mono text-sm font-bold text-[var(--text-primary)]">{p.codigoInterno}</td>
-                    <td data-label="Estado" className="px-3 py-3"><EstadoBadge estado={p.estado} /></td>
-                    <td data-label="Titular" className="px-3 py-3 text-[var(--text-primary)]">{p.titular ?? "—"}</td>
-                    <td data-label="Predio" className="px-3 py-3 text-[var(--text-secondary)]">{p.predioNombre ?? "—"}</td>
-                    <td data-label="Distrito" className="px-3 py-3 text-[var(--text-secondary)]">{p.predioDistrito ?? "—"}</td>
-                    <td data-label="Área" className="px-3 py-3 tabular-nums text-[var(--text-secondary)]">{fmtArea(p.predioAreaTotalHa)}</td>
-                    <td data-label="Bloques" className="px-3 py-3 tabular-nums text-[var(--text-secondary)]">{p.numBloques}</td>
-                    <td data-label="Última modificación" className="px-3 py-3 whitespace-nowrap text-sm text-[var(--text-secondary)]">{fmtFecha(p.updatedAt)}</td>
-                    <td data-label="Acciones" className="px-2 py-1.5 sm:sticky sm:right-0 sm:border-l sm:border-[var(--rule-soft)] sm:bg-[var(--surface-raised)]">
+                    <td data-label="Código interno" className="font-mono font-bold">{p.codigoInterno}</td>
+                    <td data-label="Estado"><EstadoBadge estado={p.estado} /></td>
+                    <td data-label="Titular">{p.titular ?? "—"}</td>
+                    <td data-label="Predio" className="text-[var(--text-secondary)]">{p.predioNombre ?? "—"}</td>
+                    <td data-label="Distrito" className="text-[var(--text-secondary)]">{p.predioDistrito ?? "—"}</td>
+                    <td data-label="Área" className="tabular-nums text-[var(--text-secondary)]">{fmtArea(p.predioAreaTotalHa)}</td>
+                    <td data-label="Bloques" className="tabular-nums text-[var(--text-secondary)]">{p.numBloques}</td>
+                    <td data-label="Última modificación" className="whitespace-nowrap text-[var(--text-secondary)]">{fmtFecha(p.updatedAt)}</td>
+                    <td data-label="Acciones" className="sm:sticky sm:right-0 sm:border-l sm:border-[var(--rule-soft)] sm:bg-[var(--surface-raised)]">
                       <PlantacionAccionesFila p={p} duplicando={duplicando === p.id} onAbrir={onAbrir} onDuplicar={(id) => void onDuplicar(id)} onBorrar={setABorrar} />
                     </td>
                   </motion.tr>

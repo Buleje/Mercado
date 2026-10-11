@@ -219,9 +219,9 @@ export function TablaGruposProductos({
                     </button>
                   </div>
                 </td>
-                <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{nf(g.disponible.pt)}</td>
-                <td className={`${NUM} text-[var(--text-primary)]`}>{fmtM3(g.disponible.m3)}</td>
-                <td className={`${NUM} text-[var(--text-primary)]`}>
+                <td className={`${NUM} font-bold`}>{nf(g.disponible.pt)}</td>
+                <td className={`${NUM}`}>{fmtM3(g.disponible.m3)}</td>
+                <td className={`${NUM}`}>
                   {g.disponible.paquetes > 0 ? nf(g.disponible.paquetes) : "—"}
                   {g.disponible.filas > g.disponible.paquetes && (
                     <span className="block text-sm text-[var(--text-secondary)]">
@@ -244,7 +244,7 @@ export function TablaGruposProductos({
               </tr>
               {abierto && (
                 <tr id={idDet} className="bg-[var(--surface-sunken)]/60">
-                  <td colSpan={cols} className="px-3 pb-3 pt-1">
+                  <td colSpan={cols} className="pb-3 pt-1">
                     <DetalleDeGrupo filas={detalleDe(g)} dim={SUB[dim]} onElegir={(v) => onElegirDetalle(SUB[dim], v)} />
                   </td>
                 </tr>
@@ -256,12 +256,12 @@ export function TablaGruposProductos({
       {filas.length > 1 && (
         <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
           <tr>
-            <th scope="row" className={`${CELDA} text-left font-bold text-[var(--text-primary)]`}>
+            <th scope="row" className={`${CELDA} text-left font-bold`}>
               {rotuloTotal(dim, filas)}
             </th>
-            <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{nf(total.disponible.pt)}</td>
-            <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(total.disponible.m3)}</td>
-            <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{nf(total.disponible.paquetes)}</td>
+            <td className={`${NUM} font-bold`}>{nf(total.disponible.pt)}</td>
+            <td className={`${NUM} font-bold`}>{fmtM3(total.disponible.m3)}</td>
+            <td className={`${NUM} font-bold`}>{nf(total.disponible.paquetes)}</td>
             <td className={`${NUM} ${SOLO_ANCHO} text-[var(--text-secondary)]`}>{nf(total.disponible.piezas)}</td>
             <td className={`${NUM} ${SOLO_ANCHO} text-[var(--text-secondary)]`}>100 %</td>
             {hayApartado && <td className={`${NUM} text-[var(--text-secondary)]`}>{fmtM3(total.apartado.m3)} m³</td>}

@@ -54,14 +54,14 @@ function Cabecera({
   return (
     <th
       scope="col"
-      className={cn("px-4 py-2.5", alinear === "right" && "text-right")}
+      className={cn("", alinear === "right" && "text-right")}
       aria-sort={activo ? (orden.dir === "asc" ? "ascending" : "descending") : "none"}
     >
       <button
         type="button"
         onClick={() => alternarOrden(campo)}
         className={cn(
-          "inline-flex items-center gap-1 text-sm font-bold uppercase tracking-wider transition-colors hover:text-[var(--text-primary)]",
+          "inline-flex items-center gap-1 transition-colors hover:text-[var(--text-primary)]",
           activo ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
           // La columna de montos alinea a la derecha, así que su cabecera
           // también: con el ícono suelto a la izquierda quedaba flotando en
@@ -92,7 +92,7 @@ export default function HistorialTabla({
         {/* Bajo 640 px la tabla son tarjetas: `<col>`, `table-fixed` y el min-w
             dejaban el tbody en la 1.ª columna (tarjeta de 136 px en un celular
             de 400, medido 08-10). Todo eso aplica solo desde `sm`. */}
-        <DataTable className="w-full text-sm sm:min-w-[880px] sm:table-fixed">
+        <DataTable className="w-full sm:min-w-[880px] sm:table-fixed">
           <colgroup className="max-sm:hidden">
             <col style={{ width: "8.5rem" }} />
             <col style={{ width: "11rem" }} />
@@ -102,17 +102,17 @@ export default function HistorialTabla({
             <col style={{ width: "9rem" }} />
             <col style={{ width: "5rem" }} />
           </colgroup>
-          <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
-            <tr className="text-left">
+          <thead className="sticky top-0 z-10">
+            <tr>
               <Cabecera campo="fecha" label="Fecha" orden={orden} alternarOrden={alternarOrden} />
               <Cabecera campo="source" label="Origen" orden={orden} alternarOrden={alternarOrden} />
               <Cabecera campo="category" label="Categoría" orden={orden} alternarOrden={alternarOrden} />
-              <th scope="col" className="px-4 py-2.5 text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              <th scope="col">
                 Descripción
               </th>
               <Cabecera campo="estadoPago" label="Pago" orden={orden} alternarOrden={alternarOrden} />
               <Cabecera campo="amount" label="Monto" orden={orden} alternarOrden={alternarOrden} alinear="right" />
-              <th scope="col" className="px-4 py-2.5 text-right text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              <th scope="col" className="text-right">
                 <span className="sr-only">Acciones</span>
               </th>
             </tr>
@@ -125,7 +125,6 @@ export default function HistorialTabla({
                   <th
                     scope="colgroup"
                     colSpan={5}
-                    className="px-4 py-2 text-left text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]"
                   >
                     {grupo.label}
                     <span className="ml-2 font-semibold normal-case tracking-normal text-[var(--text-secondary)]">
@@ -136,7 +135,7 @@ export default function HistorialTabla({
                       {grupo.gastos !== grupo.items.length && ` · ${grupo.gastos} ${grupo.gastos === 1 ? "es gasto" : "son gasto"}`}
                     </span>
                   </th>
-                  <td className="px-4 py-2 text-right text-sm font-bold tabular-nums text-[var(--text-secondary)]">
+                  <td className="text-right font-bold tabular-nums text-[var(--text-secondary)]">
                     {fmt(grupo.total)}
                   </td>
                   <td />
@@ -148,19 +147,19 @@ export default function HistorialTabla({
                 return (
                   <tr
                     key={item.id}
-                    className="border-t border-[var(--rule-soft)] transition-colors hover:bg-[var(--surface-sunken)]/50"
+                   
                   >
-                    <td className="whitespace-nowrap px-4 py-3 text-[var(--text-secondary)]">{formatDate(item.fecha)}</td>
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap text-[var(--text-secondary)]">{formatDate(item.fecha)}</td>
+                    <td>
                       <span className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: meta.tone }}>
                         <Icon className="h-4 w-4 shrink-0" />
                         <span className="truncate">{meta.label}</span>
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       <StatusBadge variant="neutral" label={item.category} />
                     </td>
-                    <td className="px-4 py-3 text-[var(--text-primary)]">
+                    <td>
                       <span className="block truncate">{item.description || "—"}</span>
                       {/* Quién está del otro lado y, en un adelanto, cuánto de
                           eso todavía no volvió. El saldo venía escrito dentro
@@ -186,7 +185,7 @@ export default function HistorialTabla({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       <StatusBadge
                         variant={ESTADO_VARIANTE[item.estadoPago]}
                         label={ESTADO_PAGO_LABELS[item.estadoPago]}
@@ -197,7 +196,7 @@ export default function HistorialTabla({
                         </span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                    <td className="whitespace-nowrap text-right">
                       {/* Un anticipo o un retiro de caja se listan pero no
                           suman al total: el monto va atenuado y dicho, para
                           que nadie lo sume mentalmente con los de arriba. */}
@@ -211,7 +210,7 @@ export default function HistorialTabla({
                         <span className="block text-sm text-[var(--text-secondary)]">no suma</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="text-right">
                       <button
                         type="button"
                         onClick={() => onAbrir(item)}
@@ -228,16 +227,16 @@ export default function HistorialTabla({
 
           <tfoot className="sticky bottom-0 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
             <tr>
-              <th scope="row" colSpan={4} className="px-4 py-3 text-left text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              <th scope="row" colSpan={4} className="text-left font-bold">
                 Total de lo que se ve
                 <span className="ml-2 font-semibold normal-case tracking-normal text-[var(--text-secondary)]">
                   {resumen.cantidad} {resumen.cantidad === 1 ? "movimiento" : "movimientos"}
                 </span>
               </th>
-              <td className="px-4 py-3 text-sm font-semibold tabular-nums text-[var(--text-secondary)]">
+              <td className="font-semibold tabular-nums text-[var(--text-secondary)]">
                 {fmt(resumen.pagado)} pagado
               </td>
-              <td className="px-4 py-3 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)]">
+              <td className="text-right font-extrabold tabular-nums">
                 {fmt(resumen.total)}
               </td>
               <td />

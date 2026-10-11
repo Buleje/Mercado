@@ -38,7 +38,7 @@ export default function CtpTrozasPlanTabla({
   return (
     <div className="space-y-3">
       {plan.total.piezas > 0 && (
-        <DataTable stickyHeader wrapperClassName="max-h-[52vh]" className="w-full text-sm [&_thead_th]:px-2!">
+        <DataTable stickyHeader wrapperClassName="max-h-[52vh]" className="w-full [&_thead_th]:px-2!">
           <thead>
             <tr>
               <th className="w-10">N°</th>
@@ -58,7 +58,7 @@ export default function CtpTrozasPlanTabla({
           {plan.grupos.map((g) => (
             <tbody key={g.especie}>
               <tr className="bg-[var(--surface-sunken)]">
-                <td colSpan={columnas} className="!py-1.5 text-sm font-bold text-[var(--text-primary)]">
+                <td colSpan={columnas} className="!py-1.5 font-bold">
                   {g.especie}
                   <span className="ml-2 font-mono text-xs font-bold tabular-nums text-[var(--text-secondary)]">
                     {g.piezas} {g.piezas === 1 ? "pieza" : "piezas"} · {fmtM3(g.m3)} m³{g.pt == null ? "" : ` · ${pt(g.pt)} pt`}
@@ -70,7 +70,7 @@ export default function CtpTrozasPlanTabla({
                 return (
                   <tr key={f.id}>
                     <td className={`${NUM} text-[var(--text-secondary)]`}>{i}</td>
-                    <td className="whitespace-nowrap font-mono font-bold text-[var(--text-primary)]">
+                    <td className="whitespace-nowrap font-mono font-bold">
                       {onVerFicha ? (
                         <button
                           type="button"
@@ -92,14 +92,14 @@ export default function CtpTrozasPlanTabla({
                     <td className={NUM}><ValorMedida v={f.d1} fuente={f.fuente} /></td>
                     <td className={NUM}><ValorMedida v={f.d2} fuente={f.fuente} /></td>
                     <td className={`${NUM} text-[var(--text-secondary)]`}>{n(f.largoM)}</td>
-                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{f.m3 == null ? "—" : fmtM3(f.m3)}</td>
+                    <td className={`${NUM} font-bold`}>{f.m3 == null ? "—" : fmtM3(f.m3)}</td>
                     <td className={NUM}>
                       <span className={`inline-block whitespace-nowrap font-bold ${claseDias(f.dias)}`} title={tituloDias(f.dias)}>
                         {f.dias == null ? "—" : `${f.dias} d`}
                       </span>
                     </td>
                     <td className="whitespace-nowrap text-[var(--text-secondary)]">{f.cancha ?? "—"}</td>
-                    {conPt && <td className={`${NUM} text-[var(--text-primary)]`}>{pt(f.pt)}</td>}
+                    {conPt && <td className={`${NUM}`}>{pt(f.pt)}</td>}
                     <td className="text-right">
                       <button
                         type="button"
@@ -118,12 +118,12 @@ export default function CtpTrozasPlanTabla({
           ))}
           <tfoot className="sticky bottom-0 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
             <tr>
-              <td colSpan={5} className="text-right text-sm font-bold text-[var(--text-primary)]">
+              <td colSpan={5} className="text-right font-bold">
                 Total del día · {plan.total.piezas} {plan.total.piezas === 1 ? "pieza" : "piezas"}
               </td>
-              <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(plan.total.m3)}</td>
+              <td className={`${NUM} font-bold`}>{fmtM3(plan.total.m3)}</td>
               <td colSpan={2} />
-              {conPt && <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{pt(plan.total.pt)}</td>}
+              {conPt && <td className={`${NUM} font-bold`}>{pt(plan.total.pt)}</td>}
               <td />
             </tr>
           </tfoot>

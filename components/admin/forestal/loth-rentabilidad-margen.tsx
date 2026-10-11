@@ -45,8 +45,8 @@ export default function LothRentabilidadMargen({ filas }: { filas: CosteoRow[] }
 
       <BarraFiltrosTabla f={f} />
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <DataTable className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-left align-top">
+        <DataTable className="w-full">
+          <thead className="align-top">
             <tr>
               <Th>Especie<FiltroEnCabecera id="especie" f={f} compacto /></Th>
               <Th className="text-right">Movilizado<FiltroEnCabecera id="movilizado" f={f} compacto /></Th>
@@ -59,7 +59,7 @@ export default function LothRentabilidadMargen({ filas }: { filas: CosteoRow[] }
           <tbody>
             {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
             {f.filtradas.map((r) => (
-              <tr key={r.species} className="border-t border-[var(--rule-soft)]">
+              <tr key={r.species}>
                 <Td>
                   <span className="inline-flex items-center gap-1.5">
                     {r === mejor && r.margen > 0 && <Award className="h-3.5 w-3.5 text-[var(--data-warning-600)]" aria-hidden />}

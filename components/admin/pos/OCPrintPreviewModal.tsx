@@ -186,26 +186,26 @@ export default function OCPrintPreviewModal({
           </div>
 
           {/* Tabla de items */}
-          <DataTable className="w-full text-sm">
+          <DataTable className="w-full">
             <thead>
-              <tr className="border-b-2 border-[var(--rule-base)]">
-                <th className="text-left py-2 font-semibold text-[var(--text-secondary)]">Producto</th>
-                <th className="text-right py-2 font-semibold text-[var(--text-secondary)]">Cant.</th>
-                <th className="text-right py-2 font-semibold text-[var(--text-secondary)]">P.Unit</th>
-                <th className="text-right py-2 font-semibold text-[var(--text-secondary)]">Total</th>
+              <tr>
+                <th>Producto</th>
+                <th className="text-right">Cant.</th>
+                <th className="text-right">P.Unit</th>
+                <th className="text-right">Total</th>
               </tr>
             </thead>
             <tbody>
               {cart.map((item, idx) => (
-                <tr key={idx} className="border-b border-[var(--rule-base)]">
-                  <td className="py-2 text-[var(--text-primary)]">{item.product.name}</td>
-                  <td className="py-2 text-right text-[var(--text-secondary)]">
+                <tr key={idx}>
+                  <td>{item.product.name}</td>
+                  <td className="text-right text-[var(--text-secondary)]">
                     {item.quantity} {item.product.unit}
                   </td>
-                  <td className="py-2 text-right font-mono text-[var(--text-secondary)]">
+                  <td className="text-right font-mono text-[var(--text-secondary)]">
                     {formatCurrency(item.product.costPrice ?? item.product.price)}
                   </td>
-                  <td className="py-2 text-right font-mono font-bold text-[var(--text-primary)]">
+                  <td className="text-right font-mono font-bold">
                     {formatCurrency((item.product.costPrice ?? item.product.price) * item.quantity)}
                   </td>
                 </tr>

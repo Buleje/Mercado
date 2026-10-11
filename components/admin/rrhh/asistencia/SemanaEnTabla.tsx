@@ -42,11 +42,11 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
       <DataTable zebra stickyHeader wrapperClassName="max-h-[70vh] rounded-2xl">
         <thead>
           <tr>
-            <th className="sticky left-0 z-10 bg-[var(--surface-sunken)]">
+            <th className="sticky left-0 z-10">
               <span className="block w-44">Persona</span>
             </th>
             {dias.map((d) => (
-              <th key={d} title={etiquetaDia(d, hoy)} className={cn("px-1 text-center", d === hoy && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]")}>
+              <th key={d} title={etiquetaDia(d, hoy)} className={cn("text-center", d === hoy && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]")}>
                 <span className="block text-sm font-semibold">{nombreCortoDelDia(d)}</span>
                 <span className="block tabular-nums">{d.slice(8, 10)}</span>
               </th>
@@ -68,7 +68,7 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
         <tbody>
           {filas.map(({ c, marcasDeLaPersona, conteo, sinMarcar, trabajados, plata }) => (
             <tr key={c.id}>
-              <td className="sticky left-0 z-10 bg-[var(--surface-raised)] font-semibold text-[var(--text-primary)]">
+              <td className="sticky left-0 z-10 bg-[var(--surface-raised)] font-semibold">
                 <span className="block w-44 truncate" title={c.nombre}>
                   {c.nombre}
                 </span>
@@ -79,7 +79,7 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
                 const importe = plata?.dias.find((x) => x.fecha === d)?.importe ?? null;
                 const marca = marcasDeLaPersona.find((m) => m.fecha === d);
                 return (
-                  <td key={d} className={cn("p-1 text-center", d === hoy && "bg-primary/5")}>
+                  <td key={d} className={cn("text-center", d === hoy && "bg-primary/5")}>
                     <div className="flex flex-col items-center gap-1">
                       <CeldaMarcaPopover
                         colaborador={c}
@@ -104,7 +104,7 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
                   </td>
                 );
               })}
-              <td className="text-center font-semibold tabular-nums text-[var(--text-primary)]">
+              <td className="text-center font-semibold tabular-nums">
                 {formatearDias(trabajados)}
                 {sinMarcar > 0 && <span className="block text-sm font-normal text-[var(--text-tertiary)]">{sinMarcar} sin marcar</span>}
               </td>
@@ -131,7 +131,7 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
         {conPlata && totales.ganado != null && (
           <tfoot>
             <tr>
-              <td className="sticky left-0 z-10 bg-[var(--surface-sunken)] font-bold text-[var(--text-primary)]">Total de la semana</td>
+              <td className="sticky left-0 z-10 bg-[var(--surface-sunken)] font-bold">Total de la semana</td>
               <td colSpan={7} />
               <td className="text-center font-bold tabular-nums">{formatearDias(totales.trabajados)}</td>
               <td className="text-center font-bold tabular-nums">{totales.faltas}</td>

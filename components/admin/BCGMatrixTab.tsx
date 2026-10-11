@@ -180,7 +180,7 @@ export default function BCGMatrixTab() {
                 const c = Q_CONFIG[p.quadrant];
                 return (
                   <tr key={p.id}>
-                    <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</td>
+                    <td className="font-bold">{p.name}</td>
                     <td className="text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
                     <td className="text-right font-bold">{fmt(p.revenue)}</td>
                     <td className={cn("text-right font-bold", p.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{p.growth > 0 && "+"}{p.growth}%</td>

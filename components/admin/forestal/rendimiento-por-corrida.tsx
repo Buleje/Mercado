@@ -17,8 +17,7 @@ import { fechaConDia } from "@/lib/forestal/loth-plan-costeo";
 import CtpCorridaConSuCompra from "./CtpCorridaConSuCompra";
 import { CeldaPlata, EstadoCorridaBadge, HREF_PRODUCCION, fmtM3, fmtPct } from "./rendimiento-compartido";
 
-const TH = "px-3 py-2 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-3 py-2 align-middle";
+const TD = "align-middle";
 
 /** Menos de medio litro sin guía no es madera: no ofrece ligar. */
 const sinCompra = (m3: number | undefined) => (m3 ?? 0) > 0.0005;
@@ -49,24 +48,24 @@ export default function RendimientoPorCorrida({ datos, onCambio }: { datos: Rend
         </p>
       )}
       <div className="overflow-x-auto">
-        <DataTable className="text-sm">
-          <thead className="border-b border-[var(--rule-base)]">
+        <DataTable>
+          <thead>
             <tr>
-              <th scope="col" className={TH}>N°</th>
-              <th scope="col" className={TH}>Fecha</th>
-              <th scope="col" className={TH}>Especie · lote</th>
-              <th scope="col" className={`${TH} text-right`}>Troza → aserrado (m³)</th>
-              <th scope="col" className={`${TH} text-right`}>Rendimiento</th>
-              <th scope="col" className={TH}>Estado</th>
-              {plataVisible && <th scope="col" className={`${TH} text-right`}>Comercial (PT)</th>}
-              {plataVisible && <th scope="col" className={`${TH} text-right`}>Costo por PT</th>}
-              <th scope="col" className={TH}><span className="sr-only">Abrir</span></th>
+              <th scope="col" >N°</th>
+              <th scope="col" >Fecha</th>
+              <th scope="col" >Especie · lote</th>
+              <th scope="col" className="text-right">Troza → aserrado (m³)</th>
+              <th scope="col" className="text-right">Rendimiento</th>
+              <th scope="col" >Estado</th>
+              {plataVisible && <th scope="col" className="text-right">Comercial (PT)</th>}
+              {plataVisible && <th scope="col" className="text-right">Costo por PT</th>}
+              <th scope="col" ><span className="sr-only">Abrir</span></th>
             </tr>
           </thead>
           <tbody>
             {corridas.map((c) => (
               <tr key={c.id}>
-                <th scope="row" className={`${TD} text-left font-mono font-bold text-[var(--text-primary)]`}>#{c.lineNo}</th>
+                <th scope="row" className={`${TD} text-left font-mono font-bold`}>#{c.lineNo}</th>
                 <td className={`${TD} whitespace-nowrap text-[var(--text-secondary)]`}>{fechaConDia(c.fecha, hoy)}</td>
                 <td className={TD}>
                   <span className="inline-flex flex-col items-end gap-0.5 sm:items-start">
@@ -77,7 +76,7 @@ export default function RendimientoPorCorrida({ datos, onCambio }: { datos: Rend
                 <td className={`${TD} whitespace-nowrap text-right font-mono tabular-nums text-[var(--text-secondary)]`}>
                   {fmtM3(c.m3Entrada)} → {c.unidad === "m3" ? fmtM3(c.m3Salida) : `— (${c.unidad})`}
                 </td>
-                <td className={`${TD} text-right font-mono font-bold tabular-nums text-[var(--text-primary)]`}>{fmtPct(c.rendimientoPct, 2)}</td>
+                <td className={`${TD} text-right font-mono font-bold tabular-nums`}>{fmtPct(c.rendimientoPct, 2)}</td>
                 <td className={TD}>
                   <EstadoCorridaBadge estado={c.estado} rango={c.rango} finProceso={c.finProceso} hoy={hoy} />
                 </td>

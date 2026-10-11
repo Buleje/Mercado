@@ -36,9 +36,9 @@ export function DeclaracionCategorias({ data }: { data: DeclaracionData }) {
             <tbody>
               {items.map((p) => (
                 <tr key={p.id}>
-                  <td className="font-mono text-sm text-[var(--text-secondary)]">{p.sku}</td>
-                  <td className="max-w-[200px] truncate text-[var(--text-primary)]">{p.name}</td>
-                  <td className="text-right font-medium text-[var(--text-primary)]">{p.stock}</td>
+                  <td className="font-mono text-[var(--text-secondary)]">{p.sku}</td>
+                  <td className="max-w-[200px] truncate">{p.name}</td>
+                  <td className="text-right font-medium">{p.stock}</td>
                   <td className="hidden text-right text-[var(--text-secondary)] sm:table-cell">{formatCurrency(p.costPrice)}</td>
                   <td className="hidden text-right font-medium text-[var(--text-secondary)] sm:table-cell">{formatCurrency(p.stock * p.costPrice)}</td>
                   <td className="hidden text-right text-[var(--text-secondary)] md:table-cell">{formatCurrency(p.price)}</td>

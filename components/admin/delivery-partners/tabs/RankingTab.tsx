@@ -107,18 +107,18 @@ export function RankingTab() {
             </p>
           </div>
           <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
-                <tr className="text-left text-sm font-semibold text-[var(--text-secondary)]">
-                  <th className="px-6 py-4 w-16">#</th>
-                  <th className="px-6 py-4">Repartidor</th>
-                  <th className="px-4 py-4 text-center">Rating</th>
-                  <th className="px-4 py-4 text-center">Aceptación</th>
-                  <th className="px-4 py-4 text-center">Entregas</th>
-                  <th className="px-4 py-4 text-center">Cancel.</th>
-                  <th className="px-4 py-4 text-center">Avg min</th>
-                  <th className="px-4 py-4 text-right">Ganado</th>
-                  <th className="px-6 py-4 text-center">Completion</th>
+            <DataTable className="w-full">
+              <thead>
+                <tr>
+                  <th className="w-16">#</th>
+                  <th>Repartidor</th>
+                  <th className="text-center">Rating</th>
+                  <th className="text-center">Aceptación</th>
+                  <th className="text-center">Entregas</th>
+                  <th className="text-center">Cancel.</th>
+                  <th className="text-center">Avg min</th>
+                  <th className="text-right">Ganado</th>
+                  <th className="text-center">Completion</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -135,11 +135,11 @@ export function RankingTab() {
                     <tr
                       key={entry.id}
                       className={cn(
-                        "transition-colors hover:bg-[var(--surface-sunken)]/50",
+                        "",
                         isPodium && "bg-[var(--data-warning-50)]/30",
                       )}
                     >
-                      <td className="px-6 py-4">
+                      <td>
                         <span className={cn(
                           "inline-flex items-center justify-center h-10 w-10 rounded-xl font-extrabold tabular-nums text-base",
                           medalBg,
@@ -147,7 +147,7 @@ export function RankingTab() {
                           {isPodium ? <Trophy className="h-5 w-5" /> : idx + 1}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td>
                         <div className="flex items-center gap-3">
                           <div className="h-11 w-11 rounded-2xl flex items-center justify-center text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 shrink-0">
                             {entry.name.charAt(0).toUpperCase()}
@@ -163,16 +163,16 @@ export function RankingTab() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-center">
+                      <td className="text-center">
                         <span className="inline-flex items-center justify-center gap-1 text-base font-extrabold text-[var(--data-warning-500)] tabular-nums">
                           <Star className="h-4 w-4 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
                           {toNum(entry.rating).toFixed(1)}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-center text-base font-bold text-[var(--text-secondary)] tabular-nums">
+                      <td className="text-center font-bold text-[var(--text-secondary)] tabular-nums">
                         {Math.round(entry.acceptanceRate * 100)}%
                       </td>
-                      <td className="px-4 py-4 text-center">
+                      <td className="text-center">
                         <span className="text-base font-extrabold text-[var(--data-success-500)] tabular-nums">
                           {entry.delivered}
                         </span>
@@ -182,19 +182,19 @@ export function RankingTab() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-4 text-center text-base text-[var(--text-tertiary)] tabular-nums font-bold">
+                      <td className="text-center text-[var(--text-tertiary)] tabular-nums font-bold">
                         {entry.cancelled || "—"}
                       </td>
-                      <td className="px-4 py-4 text-center">
+                      <td className="text-center">
                         <span className="inline-flex items-center justify-center gap-1 text-base text-[var(--text-secondary)] font-bold tabular-nums">
                           <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
                           {entry.avgDeliveryMin != null ? `${Math.round(entry.avgDeliveryMin)}` : "—"}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-right text-base font-extrabold text-[var(--text-primary)] tabular-nums">
+                      <td className="text-right font-extrabold tabular-nums">
                         {formatCurrency(toNum(entry.totalEarnings))}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="text-center">
                         <span className={cn(
                           "inline-flex items-center justify-center h-9 px-3 rounded-full text-sm font-extrabold tabular-nums",
                           entry.completionRate >= 0.85

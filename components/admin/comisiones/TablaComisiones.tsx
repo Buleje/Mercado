@@ -96,9 +96,9 @@ export default function TablaComisiones({ datos, pagando, onPagar, onVerRango, o
               </button>
             </td>
             <td className="text-right tabular-nums text-[var(--text-secondary)]">{f.ventas}</td>
-            <td className="text-right tabular-nums text-[var(--text-primary)]">{fmt(f.vendido)}</td>
+            <td className="text-right tabular-nums">{fmt(f.vendido)}</td>
             <td className="text-right tabular-nums text-[var(--text-secondary)]" title={f.tramo ?? undefined}><span>{f.tasa} % · {FUENTE[f.fuente]}</span></td>
-            <td className="text-right font-bold tabular-nums text-[var(--text-primary)]">{fmt(f.comision)}</td>
+            <td className="text-right font-bold tabular-nums">{fmt(f.comision)}</td>
             {/* Un solo hijo: en las tarjetas del celular la celda es flex y partía la cifra y el día en dos columnas. */}
             <td className="text-right tabular-nums text-[var(--text-secondary)]">
               <div className="min-w-0">
@@ -128,7 +128,7 @@ export default function TablaComisiones({ datos, pagando, onPagar, onVerRango, o
         ))}
         {datos && (
           <tr className="bg-[var(--surface-sunken)] font-bold">
-            <td className="whitespace-nowrap text-[var(--text-primary)]"><span>Total <span className="block text-sm font-normal text-[var(--text-secondary)]">{tramoDias(datos)}</span></span></td>
+            <td className="whitespace-nowrap"><span>Total <span className="block text-sm font-normal text-[var(--text-secondary)]">{tramoDias(datos)}</span></span></td>
             <td className="text-right tabular-nums">{datos.totales.ventas}</td>
             <td className="text-right tabular-nums">{fmt(datos.totales.vendido)}</td>
             <td />

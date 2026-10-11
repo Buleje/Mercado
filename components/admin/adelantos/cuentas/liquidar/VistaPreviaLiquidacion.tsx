@@ -12,6 +12,7 @@ import { AlertTriangle } from "@buleje/design-system/icons";
 import { leerNeto } from "@/lib/adelantos/cuenta-unificada";
 import type { ResultadoPlan } from "@/lib/cuentas/liquidacion";
 import { fmtMon } from "../../shared";
+import { DataTable } from "@buleje/design-system";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -100,31 +101,31 @@ export default function VistaPreviaLiquidacion({
         </p>
       )}
       <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] admin-mobile-cards">
-        <table className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-xs text-[var(--text-tertiary)]">
-            <tr className="text-left">
-              <th className="px-3 py-2 font-bold">Libreta</th>
-              <th className="px-3 py-2 font-bold">Qué se escribe</th>
-              <th className="px-3 py-2 font-bold">Referencia</th>
-              <th className="px-3 py-2 text-right font-bold">Monto</th>
+        <DataTable className="w-full">
+          <thead>
+            <tr>
+              <th>Libreta</th>
+              <th>Qué se escribe</th>
+              <th>Referencia</th>
+              <th className="text-right">Monto</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)]">
             {filas.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-3 py-4 text-center text-[var(--text-tertiary)]">
+                <td colSpan={4} className="text-center text-[var(--text-tertiary)]">
                   No se va a escribir nada todavía.
                 </td>
               </tr>
             ) : (
               filas.map((f, i) => (
                 <tr key={i}>
-                  <td data-label="Libreta" className="px-3 py-2 text-[var(--text-primary)]">{f.libreta}</td>
-                  <td data-label="Qué se escribe" className="px-3 py-2 text-[var(--text-secondary)]">{f.concepto}</td>
-                  <td data-label="Referencia" className="px-3 py-2 text-[var(--text-tertiary)]">{f.referencia ?? "—"}</td>
+                  <td data-label="Libreta">{f.libreta}</td>
+                  <td data-label="Qué se escribe" className="text-[var(--text-secondary)]">{f.concepto}</td>
+                  <td data-label="Referencia" className="text-[var(--text-tertiary)]">{f.referencia ?? "—"}</td>
                   <td
                     data-label="Monto"
-                    className={`whitespace-nowrap px-3 py-2 text-right font-bold tabular-nums ${
+                    className={`whitespace-nowrap text-right font-bold tabular-nums ${
                       f.monto >= 0 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                     }`}
                   >
@@ -135,7 +136,7 @@ export default function VistaPreviaLiquidacion({
               ))
             )}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div

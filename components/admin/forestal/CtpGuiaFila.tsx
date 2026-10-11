@@ -152,7 +152,7 @@ export default function FilaGuia({
   return (
     <>
       <tr
-        className={`border-t border-[var(--rule-soft)] align-top transition-colors hover:bg-[var(--surface-canvas)]/40 ${
+        className={`align-top ${
           marcada ? "bg-primary/5" : ""
         }`}
       >
@@ -517,7 +517,7 @@ export default function FilaGuia({
 
       {abierta &&
         guia.lineas.map((l) => (
-          <tr key={l.id} className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60">
+          <tr key={l.id} className="bg-[var(--surface-sunken)]/60">
             <Td />
             {/* El asiento pone lo suyo bajo SU columna, esté donde esté (las
                 columnas se arrastran, 2026-09-26): fecha, especie, m³ y estado.
@@ -725,7 +725,7 @@ function BotonGuia({
  */
 export function Td({ children, className, colSpan }: { children?: React.ReactNode; className?: string; colSpan?: number }) {
   return (
-    <td colSpan={colSpan} className={`px-2! py-2.5 ${className ?? ""}`}>
+    <td colSpan={colSpan} className={`px-2! ${className ?? ""}`}>
       {children}
     </td>
   );

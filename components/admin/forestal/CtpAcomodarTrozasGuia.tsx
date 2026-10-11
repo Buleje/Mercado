@@ -16,8 +16,8 @@ import {
   type LadoDelCuadre,
   type PlanDeGuia,
 } from "@/lib/forestal/acomodar-trozas";
+import { DataTable } from "@buleje/design-system";
 
-const TH = "px-2 py-1.5 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = `${TD} text-right font-mono tabular-nums`;
 
@@ -47,7 +47,7 @@ function FilaDeCuadre({ f, soloAhora }: { f: CuadreDeFila; soloAhora: boolean })
   const lado = soloAhora ? f.antes : f.despues;
   return (
     <tr>
-      <td className={`${TD} font-bold text-[var(--text-primary)]`}>{f.especie}</td>
+      <td className={`${TD} font-bold`}>{f.especie}</td>
       <td className={NUM}>
         <Celda antes={String(f.antes.trozas)} despues={String(lado.trozas)} declara={String(f.piezasDeclaradas)} soloAhora={soloAhora} />
       </td>
@@ -95,13 +95,13 @@ export default function CtpAcomodarTrozasGuia({
       </header>
       <div className="space-y-2 p-3">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[26rem]">
+          <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full min-w-[26rem]">
             <thead>
-              <tr className="border-b border-[var(--rule-base)]">
-                <th className={TH}>Especie</th>
-                <th className={`${TH} text-right`}>Trozas</th>
-                <th className={`${TH} text-right`}>m³ de trozas</th>
-                <th className={TH}>Cuadre</th>
+              <tr>
+                <th >Especie</th>
+                <th className="text-right">Trozas</th>
+                <th className="text-right">m³ de trozas</th>
+                <th >Cuadre</th>
               </tr>
             </thead>
             <tbody>
@@ -109,7 +109,7 @@ export default function CtpAcomodarTrozasGuia({
                 <FilaDeCuadre key={f.id} f={f} soloAhora={soloAhora} />
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         {!soloAhora && guia.mover.length > 0 && (

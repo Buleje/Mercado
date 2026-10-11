@@ -106,8 +106,8 @@ export default function LothRentabilidadArboles({
       <BarraFiltrosTabla f={f} />
 
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <DataTable className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-left align-top">
+        <DataTable className="w-full">
+          <thead className="align-top">
             <tr>
               <Th>Árbol<FiltroEnCabecera id="arbol" f={f} /></Th>
               <Th>Especie<FiltroEnCabecera id="especie" f={f} /></Th>
@@ -121,7 +121,7 @@ export default function LothRentabilidadArboles({
           <tbody>
             {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
             {f.filtradas.map((f) => (
-              <tr key={f.tree} className={`border-t border-[var(--rule-soft)] ${f.movilizadoM3 <= 0 ? "opacity-60" : ""}`}>
+              <tr key={f.tree} className={`${f.movilizadoM3 <= 0 ? "opacity-60" : ""}`}>
                 <Td>
                   <span className="font-mono font-bold text-[var(--text-primary)]">{f.tree}</span>
                 </Td>

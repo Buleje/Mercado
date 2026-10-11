@@ -49,26 +49,26 @@ function TablaCohortes({ cohort }: { cohort: ClientesAvanzado["cohort"] }) {
   const th = "pb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
   return (
     <div className="overflow-x-auto">
-      <DataTable className="min-w-full text-sm">
+      <DataTable className="min-w-full">
         <thead>
           <tr>
-            <th className={`${th} pr-3 text-left`}>Llegaron en</th>
+            <th className={`${th} pr-3`}>Llegaron en</th>
             <th className={`${th} pr-3 text-right`}>Clientes</th>
             {["Ese mes", "+1 mes", "+2 meses", "+3 meses"].map((m) => (
-              <th key={m} className={`${th} px-1 text-center`}>{m}</th>
+              <th key={m} className={`${th} text-center`}>{m}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {cohort.map((c) => (
-            <tr key={c.cohorte} className="border-t border-[var(--rule-soft)]">
-              <td className="py-2 pr-3 text-sm font-semibold text-[var(--text-primary)]">{c.cohorte}</td>
-              <td className="py-2 pr-3 text-right text-sm tabular-nums text-[var(--text-secondary)]">{c.size > 0 ? cantidad(c.size) : "—"}</td>
+            <tr key={c.cohorte}>
+              <td className="pr-3 font-semibold">{c.cohorte}</td>
+              <td className="pr-3 text-right tabular-nums text-[var(--text-secondary)]">{c.size > 0 ? cantidad(c.size) : "—"}</td>
               {[c.m0, c.m1, c.m2, c.m3].map((p, i) =>
                 p < 0 || c.size === 0 ? (
-                  <td key={i} className="px-1 py-1 text-center text-xs text-[var(--text-tertiary)]">—</td>
+                  <td key={i} className="text-center text-[var(--text-tertiary)]">—</td>
                 ) : (
-                  <td key={i} className="px-1 py-1">
+                  <td key={i}>
                     <div className="rounded-md py-1.5 text-center text-xs font-bold tabular-nums" style={celda(p / 100)}>
                       {porcentaje(p)}
                     </div>

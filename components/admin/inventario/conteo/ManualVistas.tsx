@@ -189,7 +189,7 @@ export function ManualReconciliar({ m }: { m: ConteoManual }) {
                     {row.sku && <p className="text-sm text-[var(--text-secondary)]">{row.sku}</p>}
                   </td>
                   <td className="text-right font-mono text-[var(--text-secondary)]">{row.systemStock}</td>
-                  <td className="text-right font-mono text-[var(--text-primary)]">{row.realStock}</td>
+                  <td className="text-right font-mono">{row.realStock}</td>
                   <td className={cn("text-right font-mono font-bold", colorDiferencia(d))}>{d > 0 ? `+${d}` : d}</td>
                   <td>
                     <select
@@ -262,7 +262,7 @@ export function ManualHistorial({ m }: { m: ConteoManual }) {
                             const d = diferenciaDe(r);
                             return (
                               <tr key={r.productId}>
-                                <td className="text-[var(--text-primary)]"><EnlacePanel cosa="producto" id={String(r.productId)} apariencia="heredada">{r.productName}</EnlacePanel></td>
+                                <td><EnlacePanel cosa="producto" id={String(r.productId)} apariencia="heredada">{r.productName}</EnlacePanel></td>
                                 <td className="text-right font-mono text-[var(--text-secondary)]">{r.systemStock}</td>
                                 <td className="text-right font-mono">{r.realStock}</td>
                                 <td className={cn("text-right font-mono font-bold", colorDiferencia(d))}>{d > 0 ? `+${d}` : d}</td>

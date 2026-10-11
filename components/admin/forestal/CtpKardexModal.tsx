@@ -116,30 +116,30 @@ export default function CtpKardexModal({
               </div>
 
               <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-                <DataTable className="w-full text-sm">
-                  <thead className="bg-[var(--surface-sunken)] text-left">
+                <DataTable className="w-full">
+                  <thead>
                     <tr>
-                      <th scope="col" className="px-3 py-2.5 font-bold text-[var(--text-primary)]">
+                      <th scope="col">
                         Fecha
                       </th>
-                      <th scope="col" className="px-3 py-2.5 font-bold text-[var(--text-primary)]">
+                      <th scope="col">
                         Documento
                       </th>
                       <th
                         scope="col"
-                        className="px-3 py-2.5 text-right font-bold text-[var(--text-primary)]"
+                        className="text-right"
                       >
                         Entra
                       </th>
                       <th
                         scope="col"
-                        className="px-3 py-2.5 text-right font-bold text-[var(--text-primary)]"
+                        className="text-right"
                       >
                         Sale
                       </th>
                       <th
                         scope="col"
-                        className="px-3 py-2.5 text-right font-bold text-[var(--text-primary)]"
+                        className="text-right"
                       >
                         Saldo
                       </th>
@@ -147,11 +147,11 @@ export default function CtpKardexModal({
                   </thead>
                   <tbody>
                     {k.movimientos.map((m, i) => (
-                      <tr key={i} className="border-t border-[var(--rule-soft)]">
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[var(--text-secondary)]">
+                      <tr key={i}>
+                        <td className="whitespace-nowrap text-[var(--text-secondary)]">
                           {fmtDate(m.fecha)}
                         </td>
-                        <td className="px-3 py-2.5">
+                        <td>
                           <span className="inline-flex items-center gap-1.5 text-[var(--text-primary)]">
                             {m.tipo === "ingreso" ? (
                               <ArrowUpRight
@@ -167,13 +167,13 @@ export default function CtpKardexModal({
                             {m.doc}
                           </span>
                         </td>
-                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--data-success-ink)]">
+                        <td className="text-right font-mono tabular-nums text-[var(--data-success-ink)]">
                           {m.entra > 0 ? n4(m.entra) : "—"}
                         </td>
-                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--data-warning-ink)]">
+                        <td className="text-right font-mono tabular-nums text-[var(--data-warning-ink)]">
                           {m.sale > 0 ? n4(m.sale) : "—"}
                         </td>
-                        <td className="px-3 py-2.5 text-right">
+                        <td className="text-right">
                           <span
                             className={`font-mono font-bold tabular-nums ${m.saldo < 0 ? "text-[var(--data-error-ink)]" : "text-[var(--text-primary)]"}`}
                           >
@@ -186,16 +186,16 @@ export default function CtpKardexModal({
                   {k.movimientos.length > 0 && (
                     <tfoot>
                       <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
-                        <td className="px-3 py-2.5 text-[var(--text-primary)]" colSpan={2}>
+                        <td colSpan={2}>
                           Totales
                         </td>
-                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--data-success-ink)]">
+                        <td className="text-right font-mono tabular-nums text-[var(--data-success-ink)]">
                           {n4(k.ingresoTotal)}
                         </td>
-                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--data-warning-ink)]">
+                        <td className="text-right font-mono tabular-nums text-[var(--data-warning-ink)]">
                           {n4(k.consumoTotal)}
                         </td>
-                        <td className="px-3 py-2.5 text-right">
+                        <td className="text-right">
                           <span
                             className={`font-mono tabular-nums ${k.saldo < 0 ? "text-[var(--data-error-ink)]" : "text-[var(--text-primary)]"}`}
                           >

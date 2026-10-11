@@ -56,21 +56,21 @@ export default function PlantacionVerticesTabla({
         <p className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">Sin vértices todavía.</p>
       ) : (
         <div className="overflow-x-auto">
-          <DataTable className="w-full border-collapse text-sm">
+          <DataTable className="w-full">
             <thead>
-              <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
-                <th className="border-b border-[var(--rule-base)] px-2 py-1.5 text-left font-bold">Punto</th>
-                <th className="border-b border-[var(--rule-base)] px-2 py-1.5 text-left font-bold">Zona UTM</th>
-                <th className="border-b border-[var(--rule-base)] px-2 py-1.5 text-right font-bold">Este</th>
-                <th className="border-b border-[var(--rule-base)] px-2 py-1.5 text-right font-bold">Norte</th>
-                {!soloLectura && <th className="border-b border-[var(--rule-base)] px-2 py-1.5" />}
+              <tr>
+                <th>Punto</th>
+                <th>Zona UTM</th>
+                <th className="text-right">Este</th>
+                <th className="text-right">Norte</th>
+                {!soloLectura && <th />}
               </tr>
             </thead>
             <tbody>
               {ordenados.map((v, i) => (
-                <tr key={i} className="border-b border-[var(--rule-subtle)] last:border-0">
-                  <td className="px-2 py-1.5 font-mono text-sm font-bold text-[var(--text-primary)]">{vertexCode(i)}</td>
-                  <td className="px-2 py-1.5">
+                <tr key={i} className="border-[var(--rule-subtle)] last:border-0">
+                  <td className="font-mono font-bold">{vertexCode(i)}</td>
+                  <td>
                     {soloLectura ? (
                       <span className="text-[var(--text-secondary)]">{v.zonaUtm || "—"}</span>
                     ) : (
@@ -83,7 +83,7 @@ export default function PlantacionVerticesTabla({
                       />
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right">
+                  <td className="text-right">
                     {soloLectura ? (
                       <span className="font-mono tabular-nums text-[var(--text-secondary)]">{v.este}</span>
                     ) : (
@@ -96,7 +96,7 @@ export default function PlantacionVerticesTabla({
                       />
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right">
+                  <td className="text-right">
                     {soloLectura ? (
                       <span className="font-mono tabular-nums text-[var(--text-secondary)]">{v.norte}</span>
                     ) : (
@@ -110,7 +110,7 @@ export default function PlantacionVerticesTabla({
                     )}
                   </td>
                   {!soloLectura && (
-                    <td className="px-2 py-1.5">
+                    <td>
                       <div className="flex items-center justify-end gap-0.5">
                         <button
                           type="button"

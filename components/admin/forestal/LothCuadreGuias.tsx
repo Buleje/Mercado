@@ -74,16 +74,16 @@ export function LothCuadreGuias({ filas, onVerGtf }: LothCuadreGuiasProps) {
     <div className="space-y-2">
     <BarraFiltrosTabla f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-      <DataTable className="w-full min-w-[720px] text-sm">
+      <DataTable className="w-full min-w-[720px]">
         <thead>
-          <tr className="text-left align-top text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-            <th className="px-3 py-2">Guía<FiltroEnCabecera id="guia" f={f} /></th>
-            <th className="px-3 py-2">Fecha<FiltroEnCabecera id="fecha" f={f} /></th>
-            <th className="px-3 py-2 text-right">Guía m³<FiltroEnCabecera id="guiaM3" f={f} /></th>
-            <th className="px-3 py-2 text-right">Libro m³<FiltroEnCabecera id="libroM3" f={f} /></th>
-            <th className="px-3 py-2 text-right">Dif. m³<FiltroEnCabecera id="dif" f={f} /></th>
-            <th className="px-3 py-2 text-right">Piezas guía / trozas</th>
-            <th className="px-3 py-2">Veredicto<FiltroEnCabecera id="veredicto" f={f} /></th>
+          <tr className="align-top">
+            <th>Guía<FiltroEnCabecera id="guia" f={f} /></th>
+            <th>Fecha<FiltroEnCabecera id="fecha" f={f} /></th>
+            <th className="text-right">Guía m³<FiltroEnCabecera id="guiaM3" f={f} /></th>
+            <th className="text-right">Libro m³<FiltroEnCabecera id="libroM3" f={f} /></th>
+            <th className="text-right">Dif. m³<FiltroEnCabecera id="dif" f={f} /></th>
+            <th className="text-right">Piezas guía / trozas</th>
+            <th>Veredicto<FiltroEnCabecera id="veredicto" f={f} /></th>
           </tr>
         </thead>
         <tbody>
@@ -91,8 +91,8 @@ export function LothCuadreGuias({ filas, onVerGtf }: LothCuadreGuiasProps) {
           {f.filtradas.map((f) => {
             const meta = VEREDICTOS_META[f.veredicto];
             return (
-              <tr key={f.gtf} className="border-t border-[var(--rule-base)]">
-                <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">
+              <tr key={f.gtf}>
+                <td className="font-mono font-bold">
                   {onVerGtf ? (
                     <button
                       type="button"
@@ -109,17 +109,17 @@ export function LothCuadreGuias({ filas, onVerGtf }: LothCuadreGuiasProps) {
                     <span className="ml-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">{f.placa}</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-[var(--text-secondary)]">{fechaCorta(f.fecha)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{m3(f.declaradoM3)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                <td className="text-[var(--text-secondary)]">{fechaCorta(f.fecha)}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{m3(f.declaradoM3)}</td>
+                <td className="text-right font-mono tabular-nums">
                   {f.libroTrozas > 0 ? m3(f.libroM3) : "—"}
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{diferencia(f)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{diferencia(f)}</td>
+                <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {f.declaradoPiezas ?? "—"} / {f.libroTrozas}
                   {f.piezasCuadran === false && <span className="ml-1 text-[var(--data-warning-ink)]">≠</span>}
                 </td>
-                <td className={`px-3 py-2 font-bold ${TONO[f.veredicto]}`} title={meta.ayuda}>
+                <td className={`font-bold ${TONO[f.veredicto]}`} title={meta.ayuda}>
                   {meta.label}
                 </td>
               </tr>

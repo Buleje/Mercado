@@ -612,8 +612,8 @@ export default function CacaoAcopio() {
               automática `.admin-mobile-cards` dejaba tarjetas de 120px de ancho
               con la fecha partida en tres líneas. */}
           <div className="hidden overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
-            <DataTable filtrable className="w-full text-sm">
-              <thead ref={ordenAcopio.refCabecera} className="bg-[var(--surface-sunken)] text-left">
+            <DataTable filtrable className="w-full">
+              <thead ref={ordenAcopio.refCabecera}>
                 <tr>
                   <EnOrden
                     orden={ordenAcopio.orden}
@@ -665,7 +665,7 @@ export default function CacaoAcopio() {
                       role="button"
                       aria-label={`Ver lote ${l.loteCode}`}
                       onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLoteDrawerId(l.id); } }}
-                      className={`cursor-pointer border-t border-[var(--rule-soft)] transition hover:bg-[var(--surface-sunken)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${annul ? "opacity-50" : ""}`}
+                      className={`cursor-pointer transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${annul ? "opacity-50" : ""}`}
                     >
                       <EnOrden
                         orden={ordenAcopio.orden}
@@ -1086,13 +1086,13 @@ export default function CacaoAcopio() {
 
 function Th({ children, className, col }: { children: React.ReactNode; className?: string; col?: string }) {
   return (
-    <th data-col={col} className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>
+    <th data-col={col} className={`font-bold ${className ?? ""}`}>
       {children}
     </th>
   );
 }
 function Td({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
+  return <td className={`${className ?? ""}`}>{children}</td>;
 }
 function SortTh({
   label,
@@ -1112,7 +1112,7 @@ function SortTh({
   const active = sort.key === col;
   const Icon = active ? (sort.dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
   return (
-    <th data-col={col} className={`px-4 py-3 ${align === "right" ? "text-right" : ""} ${className ?? ""}`}>
+    <th data-col={col} className={`${align === "right" ? "text-right" : ""} ${className ?? ""}`}>
       <button
         type="button"
         onClick={() => onSort(col)}

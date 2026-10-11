@@ -85,7 +85,7 @@ export default function OcLista({ oc }: { oc: OrdenesCompra }) {
   return (
     <div className="space-y-3">
       {/* Encabezados a 14 px y sin versalitas: el DataTable los trae a 12. */}
-      <DataTable className="[&_thead_th]:py-0 [&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+      <DataTable className="[&_thead_th]:py-0">
         <thead>
           <tr>
             <TituloOrdenable c="proveedor" rotulo="Proveedor" orden={f.orden} onOrdenar={ordenar} />

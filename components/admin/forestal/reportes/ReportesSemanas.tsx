@@ -74,10 +74,10 @@ export default function ReportesSemanas({ reporte }: { reporte: ReporteDeProducc
           affects="La variación compara con los mismos días de la semana anterior — a mitad de semana no se compara contra los 7 días completos."
         />
       </div>
-      <DataTable className="w-full text-sm" wrapperClassName="hidden sm:block">
+      <DataTable className="w-full" wrapperClassName="hidden sm:block">
         <thead>
           <tr>
-            <th className="text-left">Semana</th>
+            <th>Semana</th>
             <th className="text-right">Días con sierra</th>
             <th className="text-right">Corridas</th>
             <th className="text-right">Piezas</th>
@@ -110,7 +110,7 @@ export default function ReportesSemanas({ reporte }: { reporte: ReporteDeProducc
               <td className="text-right tabular-nums">{s.corridas}</td>
               <td className="text-right tabular-nums">{fmtPiezas(s.piezas)}</td>
               <td className="text-right tabular-nums">{fmtM3(s.m3)}</td>
-              <td className="text-right font-bold tabular-nums text-[var(--text-primary)]">{fmtPt(s.pt)}</td>
+              <td className="text-right font-bold tabular-nums">{fmtPt(s.pt)}</td>
               <td className="text-right">
                 <Variacion s={s} />
               </td>
