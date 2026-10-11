@@ -45,11 +45,11 @@ export function SeccionPanel({ reorderCategories, onSaveSidebarOrder }: {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("open-module-manager"))} className={LINK_A_OTRA_PANTALLA}>
         <Layers className="h-4 w-4 text-primary shrink-0" />
         <span className="flex-1 min-w-0 text-sm font-semibold text-[var(--text-primary)]">Activar u ocultar módulos</span>
-        <span className="text-xs text-[var(--text-secondary)]">también limpia datos de ejemplo</span>
+        <span className="hidden sm:inline text-sm text-[var(--text-secondary)]">también limpia datos de ejemplo</span>
         <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
       </button>
       <Plegable clave="pestana-defecto" titulo="Pestaña por defecto" resumen="Qué vista se abre al entrar a cada sección">

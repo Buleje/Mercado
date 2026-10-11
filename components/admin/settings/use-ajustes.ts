@@ -1,27 +1,46 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import type { StoreMode } from "@/lib/jsondb";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { FaltaItem } from "@/components/admin/settings/navegacion";
 import type { SeccionAjustes } from "@/components/admin/settings/secciones";
-import { TOPE_DESCUENTO_CAJERO_PCT, topeCajeroPct } from "@/lib/pos/descuento-cajero";
+import { TOPE_DESCUENTO_CAJERO_PCT, topeCajeroPct, topeCajeroParaGuardar } from "@/lib/pos/descuento-cajero";
+import { useCambiosAjustes, type SettingsData } from "@/components/admin/settings/use-cambios-ajustes";
 
 export type DeliveryZone = { name: string; fee: number; estimatedMin: number };
 export type SocialLinks = { facebook?: string; instagram?: string; tiktok?: string };
-export type SettingsData = Record<string, unknown>;
+export type { SettingsData };
+
+/** Pie del ticket (`Settings.invoiceFooterText`): lo que cabe en dos o tres líneas de una térmica de 58 mm. */
+export const PIE_TICKET_MAX = 200;
+
+/** ADR-491: el tope del cajero para adelantos, como se guarda. Vacío = `null` (el servidor usa S/ 500). */
+export function topeAdelantoParaGuardar(texto: string): number | null {
+  const t = texto.trim().replace(",", ".");
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? Math.min(1_000_000, Math.max(0, Math.round(n * 100) / 100)) : null;
+}
+
+const txt = (v: unknown) => (typeof v === "string" ? v : "");
+const num = (v: unknown, defecto: number) => (typeof v === "number" && Number.isFinite(v) ? v : defecto);
+const bool = (v: unknown, defecto: boolean) => (typeof v === "boolean" ? v : defecto);
+/** Coordenada guardada; 0 o vacío = sin ubicación (como antes). */
+const coord = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v !== 0 ? v : null);
 
 /**
  * Estado y guardado compartidos de Ajustes: carga de /api/settings, los campos
  * del formulario, «Te falta» por sección, el PUT (`patch`) y la subida de imágenes.
  * Cada sección (`Seccion*.tsx`) lee de aquí lo suyo.
  */
-export function useAjustes(storeMode: StoreMode, activeSection: SeccionAjustes) {
+export function useAjustes(storeMode: StoreMode) {
   const [loading, setLoading] = useState(true);
   // Si /api/settings no respondió, el formulario tiene valores vacíos: guardar
   // pisaría lo real con vacío. Las secciones que dependen de él se bloquean.
   const [cargaFallida, setCargaFallida] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [savedSection, setSavedSection] = useState<string | null>(null);
+  // Sube cada vez que el formulario se llena desde el servidor (foto de «lo guardado»).
+  const [versionCarga, setVersionCarga] = useState(0);
 
   // Store mode
   const [mode, setMode] = useState<StoreMode>(storeMode);
@@ -47,6 +66,8 @@ export function useAjustes(storeMode: StoreMode, activeSection: SeccionAjustes) 
   const [currency, setCurrency] = useState("PEN");
   const [businessType, setBusinessType] = useState("bodega");
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
+  // Texto al pie del ticket, la boleta y el recibo (Loyverse lo llama «pie del recibo»).
+  const [invoiceFooterText, setInvoiceFooterText] = useState("");
 
   // Payment
   const [yapeEnabled, setYapeEnabled] = useState(true);
@@ -91,61 +112,77 @@ export function useAjustes(storeMode: StoreMode, activeSection: SeccionAjustes) 
 
   // Respaldo
   const [lastBackupAt, setLastBackupAt] = useState<string | null>(null);
+  // El modo de la tienda cuando la base no lo trae (el que llegó al montar).
+  const modoInicial = useRef(storeMode);
+
+  /**
+   * Llena el formulario con datos en forma de `/api/settings`. Al cargar, todos
+   * los campos (lo que falta queda en su valor de fábrica); con `parcial`, sólo
+   * los que vienen — «Descartar» devuelve así lo que tiene el servidor.
+   */
+  const aplicar = useCallback((d: SettingsData, { parcial = false }: { parcial?: boolean } = {}) => {
+    const hay = (k: string) => !parcial || k in d;
+    if (hay("mode")) setMode(d.mode === "whatsapp" || d.mode === "checkout" ? d.mode : modoInicial.current);
+    if (hay("businessName")) setBusinessName(txt(d.businessName));
+    if (hay("businessPhone")) setBusinessPhone(txt(d.businessPhone));
+    if (hay("businessAddress")) setBusinessAddress(txt(d.businessAddress));
+    if (hay("logoUrl")) setLogoUrl(txt(d.logoUrl));
+    if (hay("coverUrl")) setCoverUrl(txt(d.coverUrl));
+    if (hay("bannerUrl")) setBannerUrl(txt(d.bannerUrl));
+    if (hay("description")) setDescription(txt(d.description));
+    if (hay("hours")) setHours(txt(d.hours));
+    if (hay("deliveryZone")) setDeliveryZone(txt(d.deliveryZone));
+    if (hay("businessLat")) { const lat = coord(d.businessLat); setBusinessLat(lat); if (lat != null) setPickerLat(lat); }
+    if (hay("businessLon")) { const lon = coord(d.businessLon); setBusinessLon(lon); if (lon != null) setPickerLon(lon); }
+    if (hay("razonSocial")) setRazonSocial(txt(d.razonSocial));
+    if (hay("ruc")) setRuc(txt(d.ruc));
+    if (hay("businessEmail")) setBusinessEmail(txt(d.businessEmail));
+    if (hay("currency")) setCurrency(txt(d.currency) || "PEN");
+    if (hay("businessType")) setBusinessType(txt(d.businessType) || "bodega");
+    if (hay("socialLinks")) setSocialLinks(d.socialLinks && typeof d.socialLinks === "object" ? { ...(d.socialLinks as SocialLinks) } : {});
+    if (hay("invoiceFooterText")) setInvoiceFooterText(txt(d.invoiceFooterText));
+    if (hay("yapeEnabled")) setYapeEnabled(bool(d.yapeEnabled, true));
+    if (hay("yapeImage")) setYapeImage(txt(d.yapeImage));
+    if (hay("yapeName")) setYapeName(txt(d.yapeName));
+    if (hay("yapePhone")) setYapePhone(txt(d.yapePhone));
+    if (hay("cashEnabled")) setCashEnabled(bool(d.cashEnabled, true));
+    if (hay("plinEnabled")) setPlinEnabled(bool(d.plinEnabled, false));
+    if (hay("plinImage")) setPlinImage(txt(d.plinImage));
+    if (hay("plinName")) setPlinName(txt(d.plinName));
+    if (hay("plinPhone")) setPlinPhone(txt(d.plinPhone));
+    if (hay("transferEnabled")) setTransferEnabled(bool(d.transferEnabled, false));
+    if (hay("transferBankName")) setTransferBankName(txt(d.transferBankName));
+    if (hay("transferAccountNum")) setTransferAccountNum(txt(d.transferAccountNum));
+    if (hay("transferAccountHolder")) setTransferAccountHolder(txt(d.transferAccountHolder));
+    if (hay("maintenanceMode")) setMaintenanceMode(bool(d.maintenanceMode, false));
+    if (hay("maintenanceMessage")) setMaintenanceMsg(txt(d.maintenanceMessage));
+    if (hay("adminBypassLogin")) setBypassLogin(bool(d.adminBypassLogin, false));
+    if (hay("primaryColor")) setPrimaryColor(txt(d.primaryColor) || "var(--accent)");
+    if (hay("secondaryColor")) setSecondaryColor(txt(d.secondaryColor) || "#ff6b5b");
+    if (hay("slogan")) setSlogan(txt(d.slogan));
+    if (hay("taxRate")) setTaxRate(num(d.taxRate, 18));
+    if (hay("sunatRuc")) setSunatRuc(txt(d.sunatRuc));
+    if (hay("sunatDenominacion")) setSunatDenominacion(txt(d.sunatDenominacion));
+    if (hay("cashAlertMax")) setCashAlertMax(num(d.cashAlertMax, 500));
+    if (hay("autoCloseTime")) setAutoCloseTime(txt(d.autoCloseTime));
+    // Misma regla que POST /api/sales: el 100 de fábrica de la columna se ve como 15.
+    if (hay("maxDiscountPercent")) setMaxDiscountPercent(topeCajeroPct(d.maxDiscountPercent));
+    if (hay("adelantoTopeCajero")) setAdelantoTopeCajero(typeof d.adelantoTopeCajero === "number" ? String(d.adelantoTopeCajero) : "");
+    if (hay("deliveryZones")) setDeliveryZones(Array.isArray(d.deliveryZones) ? (d.deliveryZones as DeliveryZone[]) : []);
+    if (hay("freeDeliveryMin")) setFreeDeliveryMin(num(d.freeDeliveryMin, 0));
+  }, []);
+
   const cargar = useCallback(() => {
     setLoading(true);
     setCargaFallida(false);
     fetch("/api/settings").then(r => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return r.json();
-    }).then((d) => {
+    }).then((d: SettingsData | null) => {
       if (d) {
-        if (d.mode) setMode(d.mode);
-        if (d.businessName) setBusinessName(d.businessName);
-        if (d.businessPhone) setBusinessPhone(d.businessPhone);
-        if (d.businessAddress) setBusinessAddress(d.businessAddress);
-        if (d.logoUrl) setLogoUrl(d.logoUrl);
-        if (d.coverUrl) setCoverUrl(d.coverUrl as string);
-        if (d.bannerUrl) setBannerUrl(d.bannerUrl as string);
-        if (d.description) setDescription(d.description);
-        if (d.hours) setHours(d.hours);
-        if (d.deliveryZone) setDeliveryZone(d.deliveryZone);
-        if (d.businessLat) { setBusinessLat(d.businessLat); setPickerLat(d.businessLat); }
-        if (d.businessLon) { setBusinessLon(d.businessLon); setPickerLon(d.businessLon); }
-        if (d.razonSocial) setRazonSocial(d.razonSocial);
-        if (d.ruc) setRuc(d.ruc);
-        if (d.businessEmail) setBusinessEmail(d.businessEmail);
-        if (d.currency) setCurrency(d.currency);
-        if (d.businessType) setBusinessType(d.businessType);
-        if (d.socialLinks) setSocialLinks(d.socialLinks);
-        if (d.yapeEnabled !== undefined) setYapeEnabled(d.yapeEnabled);
-        if (d.yapeImage) setYapeImage(d.yapeImage);
-        if (d.yapeName) setYapeName(d.yapeName);
-        if (d.yapePhone) setYapePhone(d.yapePhone);
-        if (d.cashEnabled !== undefined) setCashEnabled(d.cashEnabled);
-        if (d.plinEnabled !== undefined) setPlinEnabled(d.plinEnabled);
-        if (d.plinImage) setPlinImage(d.plinImage);
-        if (d.plinName) setPlinName(d.plinName);
-        if (d.plinPhone) setPlinPhone(d.plinPhone);
-        if (d.transferEnabled !== undefined) setTransferEnabled(d.transferEnabled);
-        if (d.transferBankName) setTransferBankName(d.transferBankName);
-        if (d.transferAccountNum) setTransferAccountNum(d.transferAccountNum);
-        if (d.transferAccountHolder) setTransferAccountHolder(d.transferAccountHolder);
-        if (d.maintenanceMode !== undefined) setMaintenanceMode(d.maintenanceMode);
-        if (d.maintenanceMessage) setMaintenanceMsg(d.maintenanceMessage);
-        if (d.adminBypassLogin !== undefined) setBypassLogin(d.adminBypassLogin);
-        if (d.primaryColor) setPrimaryColor(d.primaryColor);
-        if (d.secondaryColor) setSecondaryColor(d.secondaryColor);
-        if (d.slogan) setSlogan(d.slogan);
-        if (d.taxRate !== undefined) setTaxRate(d.taxRate);
-        if (d.sunatRuc) setSunatRuc(d.sunatRuc);
-        if (d.sunatDenominacion) setSunatDenominacion(d.sunatDenominacion);
-        if (d.cashAlertMax !== undefined) setCashAlertMax(d.cashAlertMax);
-        if (d.autoCloseTime) setAutoCloseTime(d.autoCloseTime);
-        setMaxDiscountPercent(topeCajeroPct(d.maxDiscountPercent));
-        setAdelantoTopeCajero(typeof d.adelantoTopeCajero === "number" ? String(d.adelantoTopeCajero) : "");
-        if (d.deliveryZones) setDeliveryZones(d.deliveryZones);
-        if (d.freeDeliveryMin !== undefined) setFreeDeliveryMin(d.freeDeliveryMin);
-        if (d.lastBackupAt) setLastBackupAt(d.lastBackupAt);
+        aplicar(d);
+        if (typeof d.lastBackupAt === "string" && d.lastBackupAt) setLastBackupAt(d.lastBackupAt);
+        setVersionCarga((v) => v + 1);
       }
       setLoading(false);
     }).catch((err) => {
@@ -153,7 +190,7 @@ export function useAjustes(storeMode: StoreMode, activeSection: SeccionAjustes) 
       setCargaFallida(true);
       setLoading(false);
     });
-  }, []);
+  }, [aplicar]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -238,9 +275,7 @@ export function useAjustes(storeMode: StoreMode, activeSection: SeccionAjustes) 
         const errBody = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(errBody.error ?? `HTTP ${res.status}`);
       }
-      toast.success("Cambios guardados", { id: t, description: "La configuración se actualizó correctamente." });
-      setSavedSection(activeSection);
-      setTimeout(() => setSavedSection(null), 2000);
+      toast.success("Cambios guardados", { id: t });
       return true;
     } catch (err) {
       toast.error("No se pudo guardar", {
@@ -251,7 +286,23 @@ export function useAjustes(storeMode: StoreMode, activeSection: SeccionAjustes) 
     } finally {
       setSaving(false);
     }
-  }, [activeSection, cargaFallida]);
+  }, [cargaFallida]);
+
+  // El formulario en forma de `/api/settings`: lo que guarda «Guardar cambios».
+  const formulario: SettingsData = {
+    mode, businessName, businessPhone, businessAddress, businessLat, businessLon,
+    logoUrl, coverUrl, bannerUrl, description, hours, deliveryZone, razonSocial, ruc, businessEmail,
+    currency, businessType, socialLinks, invoiceFooterText,
+    cashEnabled, yapeEnabled, yapeImage, yapeName, yapePhone,
+    plinEnabled, plinImage, plinName, plinPhone,
+    transferEnabled, transferBankName, transferAccountNum, transferAccountHolder,
+    cashAlertMax, autoCloseTime, sunatRuc, sunatDenominacion, taxRate,
+    maxDiscountPercent: topeCajeroParaGuardar(maxDiscountPercent),
+    adelantoTopeCajero: topeAdelantoParaGuardar(adelantoTopeCajero),
+    deliveryZones, freeDeliveryMin,
+    primaryColor, secondaryColor, slogan, maintenanceMessage: maintenanceMsg,
+  };
+  const cambios = useCambiosAjustes({ formulario, versionCarga, aplicar, patch });
 
   // Estados de upload por campo (logo, banner, yape, plin) — para mostrar
   // spinner mientras la imagen se sube a Supabase Storage.
@@ -289,7 +340,7 @@ export function useAjustes(storeMode: StoreMode, activeSection: SeccionAjustes) 
         setter(data.url);
         toast.success(`${fieldId.charAt(0).toUpperCase() + fieldId.slice(1)} subido`, {
           id: t,
-          description: "Click \"Guardar cambios\" para confirmar.",
+          description: "Toca «Guardar cambios» para que quede.",
         });
       } catch (err) {
         toast.error("No se pudo subir la imagen", {
@@ -302,7 +353,7 @@ export function useAjustes(storeMode: StoreMode, activeSection: SeccionAjustes) 
     };
 
   return {
-    mode, setMode, businessName, setBusinessName, businessPhone, setBusinessPhone, businessAddress, setBusinessAddress, logoUrl, setLogoUrl, coverUrl, setCoverUrl, bannerUrl, setBannerUrl, description, setDescription, hours, setHours, deliveryZone, setDeliveryZone, businessLat, setBusinessLat, businessLon, setBusinessLon, showMapPicker, setShowMapPicker, pickerLat, setPickerLat, pickerLon, setPickerLon, razonSocial, setRazonSocial, ruc, setRuc, businessEmail, setBusinessEmail, currency, setCurrency, businessType, setBusinessType, socialLinks, setSocialLinks, yapeEnabled, setYapeEnabled, yapeImage, setYapeImage, yapeName, setYapeName, yapePhone, setYapePhone, cashEnabled, setCashEnabled, plinEnabled, setPlinEnabled, plinImage, setPlinImage, plinName, setPlinName, plinPhone, setPlinPhone, transferEnabled, setTransferEnabled, transferBankName, setTransferBankName, transferAccountNum, setTransferAccountNum, transferAccountHolder, setTransferAccountHolder, maintenanceMode, setMaintenanceMode, maintenanceMsg, setMaintenanceMsg, bypassLogin, setBypassLogin, primaryColor, setPrimaryColor, secondaryColor, setSecondaryColor, slogan, setSlogan, taxRate, setTaxRate, sunatRuc, setSunatRuc, sunatDenominacion, setSunatDenominacion, cashAlertMax, setCashAlertMax, autoCloseTime, setAutoCloseTime, maxDiscountPercent, setMaxDiscountPercent, adelantoTopeCajero, setAdelantoTopeCajero, deliveryZones, setDeliveryZones, freeDeliveryMin, setFreeDeliveryMin, lastBackupAt, setLastBackupAt, uploadingField, setUploadingField, cargar, faltan, faltanCobros, faltanDelivery, faltanTienda, pendientes, irAFalta, faltanPorSeccion, patch, handleFileUpload, loading, cargaFallida, saving, savedSection,
+    mode, setMode, businessName, setBusinessName, businessPhone, setBusinessPhone, businessAddress, setBusinessAddress, logoUrl, setLogoUrl, coverUrl, setCoverUrl, bannerUrl, setBannerUrl, description, setDescription, hours, setHours, deliveryZone, setDeliveryZone, businessLat, setBusinessLat, businessLon, setBusinessLon, showMapPicker, setShowMapPicker, pickerLat, setPickerLat, pickerLon, setPickerLon, razonSocial, setRazonSocial, ruc, setRuc, businessEmail, setBusinessEmail, currency, setCurrency, businessType, setBusinessType, socialLinks, setSocialLinks, yapeEnabled, setYapeEnabled, yapeImage, setYapeImage, yapeName, setYapeName, yapePhone, setYapePhone, cashEnabled, setCashEnabled, plinEnabled, setPlinEnabled, plinImage, setPlinImage, plinName, setPlinName, plinPhone, setPlinPhone, transferEnabled, setTransferEnabled, transferBankName, setTransferBankName, transferAccountNum, setTransferAccountNum, transferAccountHolder, setTransferAccountHolder, maintenanceMode, setMaintenanceMode, maintenanceMsg, setMaintenanceMsg, bypassLogin, setBypassLogin, primaryColor, setPrimaryColor, secondaryColor, setSecondaryColor, slogan, setSlogan, taxRate, setTaxRate, sunatRuc, setSunatRuc, sunatDenominacion, setSunatDenominacion, cashAlertMax, setCashAlertMax, autoCloseTime, setAutoCloseTime, maxDiscountPercent, setMaxDiscountPercent, adelantoTopeCajero, setAdelantoTopeCajero, deliveryZones, setDeliveryZones, freeDeliveryMin, setFreeDeliveryMin, lastBackupAt, setLastBackupAt, uploadingField, setUploadingField, cargar, faltan, faltanCobros, faltanDelivery, faltanTienda, pendientes, irAFalta, faltanPorSeccion, patch, handleFileUpload, loading, cargaFallida, saving, invoiceFooterText, setInvoiceFooterText, ...cambios,
   };
 }
 

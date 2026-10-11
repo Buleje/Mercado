@@ -27,7 +27,7 @@ export interface SeccionMeta {
 }
 
 export const TABS: readonly SeccionMeta[] = [
-  { id: "negocio", label: "Datos del negocio", grupo: "Tu negocio", icon: Store, desc: "Nombre, RUC, contacto, ubicación, logo y redes", buscar: "modo tienda pedidos whatsapp checkout razon social ruc correo telefono direccion mapa ubicacion horario descripcion logo portada banner imagen facebook instagram tiktok redes moneda" },
+  { id: "negocio", label: "Datos del negocio", grupo: "Tu negocio", icon: Store, desc: "Nombre, RUC, contacto, ticket, logo y redes", buscar: "pie ticket recibo boleta comprobante texto final gracias modo tienda pedidos whatsapp checkout razon social ruc correo telefono direccion mapa ubicacion horario descripcion logo portada banner imagen facebook instagram tiktok redes moneda" },
   { id: "cobros", label: "Cobros y comprobantes", grupo: "Tu negocio", icon: DollarSign, desc: "Efectivo, Yape, Plin, transferencia, caja, IGV y conexión con SUNAT", buscar: "pago pagos yape plin transferencia banco cuenta efectivo qr caja alerta exceso cierre hora descuento maximo tope cajero igv impuesto sunat emisor ruc denominacion factura boleta series comprobante nubefact token conexion modo oficial produccion" },
   { id: "delivery", label: "Delivery", grupo: "Tu negocio", icon: Truck, desc: "Zonas, tarifas y envío gratis", buscar: "zona zonas tarifa envio envios gratis minutos reparto entrega" },
   { id: "tienda", label: "Tienda web", grupo: "Tu negocio", icon: Monitor, desc: "Colores, secciones del inicio, menú y modo vacaciones", buscar: "colores color slogan apariencia tema marca secciones inicio menu navegacion vacaciones mantenimiento cerrado tienda web pagina" },

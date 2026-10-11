@@ -26,12 +26,24 @@ interface MenuProps {
   activa: SeccionAjustes;
   pendientes: Pendientes;
   onIr: (id: SeccionAjustes) => void;
+  /** Secciones con cambios sin guardar: un punto al lado del nombre. */
+  conCambios?: readonly SeccionAjustes[];
+}
+
+/** Punto de «cambios sin guardar» (la barra de abajo dice cuáles). */
+function PuntoCambios() {
+  return (
+    <span className="shrink-0 inline-flex items-center" title="Cambios sin guardar">
+      <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" aria-hidden />
+      <span className="sr-only">(cambios sin guardar)</span>
+    </span>
+  );
 }
 
 function Contador({ n, className }: { n: number; className?: string }) {
   return (
     <span
-      className={cn("shrink-0 rounded-full border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]", className)}
+      className={cn("shrink-0 min-w-6 rounded-full border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-1.5 text-center text-sm font-bold leading-5 text-[var(--text-primary)]", className)}
       title={`Te faltan ${n} datos`}
     >
       {n}
@@ -76,7 +88,7 @@ export function BuscadorAjustes({ valor, onCambiar, onIrAPrimera }: {
 }
 
 /** Celular: las secciones en una fila que se desliza. */
-export function MenuSeccionesMovil({ secciones, activa, pendientes, onIr }: MenuProps) {
+export function MenuSeccionesMovil({ secciones, activa, pendientes, onIr, conCambios = [] }: MenuProps) {
   return (
     <nav aria-label="Secciones de configuración" className="lg:hidden flex gap-2 overflow-x-auto pb-1">
       {secciones.map((s) => {
@@ -96,6 +108,7 @@ export function MenuSeccionesMovil({ secciones, activa, pendientes, onIr }: Menu
             )}
           >
             <Icon className="h-4 w-4" /> {s.label}
+            {conCambios.includes(s.id) && <PuntoCambios />}
             {(pendientes[s.id] ?? 0) > 0 && <Contador n={pendientes[s.id] ?? 0} />}
           </button>
         );
@@ -105,7 +118,7 @@ export function MenuSeccionesMovil({ secciones, activa, pendientes, onIr }: Menu
 }
 
 /** Escritorio: el menú agrupado por lo que vienes a hacer. */
-export function MenuSeccionesEscritorio({ secciones, activa, pendientes, onIr }: MenuProps) {
+export function MenuSeccionesEscritorio({ secciones, activa, pendientes, onIr, conCambios = [] }: MenuProps) {
   return (
     <nav aria-label="Secciones de configuración" className="hidden lg:block space-y-4 lg:sticky lg:top-4">
       {GRUPOS_AJUSTES.map((g) => {
@@ -113,7 +126,7 @@ export function MenuSeccionesEscritorio({ secciones, activa, pendientes, onIr }:
         if (items.length === 0) return null;
         return (
           <div key={g}>
-            <span className="block px-3 mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{g}</span>
+            <span className="block px-3 mb-1 text-sm font-semibold text-[var(--text-tertiary)]">{g}</span>
             <div className="space-y-0.5">
               {items.map((s) => {
                 const Icon = s.icon;
@@ -134,6 +147,7 @@ export function MenuSeccionesEscritorio({ secciones, activa, pendientes, onIr }:
                   >
                     <Icon className="h-4 w-4 shrink-0" />
                     <span className="truncate">{s.label}</span>
+                    {conCambios.includes(s.id) && <PuntoCambios />}
                     {(pendientes[s.id] ?? 0) > 0 && <Contador n={pendientes[s.id] ?? 0} className="ml-auto" />}
                   </button>
                 );

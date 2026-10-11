@@ -78,6 +78,8 @@ const ADMIN_ONLY_SETTING_FIELDS = [
 const TOPE_CAJERO_SCHEMA = z.number().min(0).max(100).nullable();
 /** ADR-491: tope del adelanto que entrega el cajero, en soles. null = 500 de fábrica; 0 = el cajero no entrega. */
 const TOPE_ADELANTO_CAJERO_SCHEMA = z.number().min(0).max(1_000_000).nullable();
+/** El pie del ticket (Configuración › Datos del negocio): lo leen tickets, recibos y cotizaciones. */
+const PIE_TICKET_SCHEMA = z.string().max(200).nullable();
 
 export async function GET(req: NextRequest) {
   try {
@@ -189,6 +191,12 @@ export async function PUT(req: NextRequest) {
       const tope = TOPE_ADELANTO_CAJERO_SCHEMA.safeParse(body.adelantoTopeCajero);
       if (!tope.success) {
         return NextResponse.json({ error: "El tope del adelanto del cajero va de S/ 0 a S/ 1 000 000." }, { status: 400 });
+      }
+    }
+    if (body.invoiceFooterText !== undefined) {
+      const pie = PIE_TICKET_SCHEMA.safeParse(body.invoiceFooterText);
+      if (!pie.success) {
+        return NextResponse.json({ error: "El pie del ticket tiene hasta 200 letras." }, { status: 400 });
       }
     }
     const current = await SettingsDB.get(tenantId);

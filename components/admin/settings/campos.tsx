@@ -7,9 +7,7 @@
 import { cn } from "@/lib/utils";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { Check, Save } from "@buleje/design-system/icons";
-import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
-import { ALTURA_CONTROL, button } from "@/components/ui-system/button-variants";
+import { ALTURA_CONTROL } from "@/components/ui-system/button-variants";
 import PlegableDelPanel from "@/components/admin/shared/Plegable";
 
 /**
@@ -17,7 +15,7 @@ import PlegableDelPanel from "@/components/admin/shared/Plegable";
  * control del panel (`ALTURA_CONTROL`, 48 px, decisión de Brandon 09-10), borde
  * y foco con tokens. Antes eran 44 px y cada campo repetía sus clases.
  */
-const CLASE_CAMPO = cn(
+export const CLASE_CAMPO = cn(
   ALTURA_CONTROL.clase,
   "px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)]",
   "outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-[var(--dur-fast)]",
@@ -30,7 +28,7 @@ const CLASE_CAMPO = cn(
  */
 export function FieldLabel({ icon, children, htmlFor }: { icon?: React.ReactNode; children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1.5">
+    <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)] mb-1">
       {icon}{children}
     </label>
   );
@@ -65,7 +63,7 @@ export function NumberInput({ value, onChange, min, max, step, suffix, id }: {
         min={min} max={max} step={step}
         className={cn("flex-1 font-mono", CLASE_CAMPO)}
       />
-      {suffix && <span className="text-xs text-[var(--text-secondary)] font-medium shrink-0">{suffix}</span>}
+      {suffix && <span className="text-sm text-[var(--text-secondary)] font-medium shrink-0">{suffix}</span>}
     </div>
   );
 }
@@ -103,36 +101,30 @@ export function SectionCard({ title, desc, accion, children }: {
 }) {
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-      <div className="flex items-center gap-2 px-5 min-h-12 py-2.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+      <div className="flex items-center gap-2 px-4 sm:px-5 min-h-12 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
         <CardTitle className="text-sm font-bold">{title}</CardTitle>
         {desc && <InfoTip title={title} what={desc} />}
         {accion && <div className="ml-auto shrink-0">{accion}</div>}
       </div>
-      <div className="px-5 py-4 space-y-4">{children}</div>
+      <div className="px-4 sm:px-5 py-4 space-y-4">{children}</div>
     </div>
   );
 }
 
-/**
- * El botón de guardar de Ajustes = `button()` del DS (ADR-489): 48 px, primario
- * y, guardado, secundario con el tilde en turquesa. Antes el texto no se leía:
- * «Guardar cambios» en oscuro era casi blanco sobre blanco (1,11:1) y
- * «¡Guardado!» en claro, blanco sobre turquesa al 10 % (1,12:1).
- */
-export function SaveButton({ saving, saved, onClick, label = "Guardar cambios" }: {
-  saving: boolean; saved: boolean; onClick: () => void; label?: string;
+/** Texto largo de Ajustes (descripción, pie del ticket): mismo borde, foco y letra que los campos. */
+export function TextArea({ id, value, onChange, placeholder, rows = 2, maxLength }: {
+  id?: string; value: string; onChange: (v: string) => void; placeholder?: string; rows?: number; maxLength?: number;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={saving}
-      className={button({ variant: saved ? "secondary" : "primary", fullWidth: true })}
-    >
-      {saving && !saved ? <><LoadingSpinner size={16} /> Guardando...</> :
-       saved ? <><Check className="h-4 w-4 text-[var(--accent-ink)]" aria-hidden /> ¡Guardado!</> :
-       <><Save className="h-4 w-4" aria-hidden /> {label}</>}
-    </button>
+    <textarea
+      id={id}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={rows}
+      maxLength={maxLength}
+      className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+    />
   );
 }
 

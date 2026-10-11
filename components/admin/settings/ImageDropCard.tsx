@@ -49,22 +49,18 @@ export function ImageDropCard({
 }: ImageDropCardProps) {
   const safeUrl = value && !value.startsWith("data:") ? value : "";
   return (
-    <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col gap-3">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <BlockTitle className="truncate">{label}</BlockTitle>
-            <InfoTip title={`Dónde aparece: ${label}`} what={whereVisible} />
-          </div>
-          <p className="text-xs text-[var(--text-tertiary)]">{hint}</p>
-        </div>
+    <div className="min-w-0 flex flex-col gap-2">
+      {/* Cabecera en una línea: va dentro de la tarjeta «Logo e imágenes», sin marco propio. */}
+      <div className="flex min-w-0 items-center gap-1.5">
+        <BlockTitle className="truncate">{label}</BlockTitle>
+        <InfoTip title={`Dónde aparece: ${label}`} what={whereVisible} example={hint} />
+        <span className="ml-auto truncate text-sm text-[var(--text-tertiary)]">{hint.split(" · ")[0]}</span>
       </div>
 
       {/* Preview o dropzone */}
       <div className="space-y-2">
         {value ? (
-          <div className={`relative w-full max-h-36 overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] ${previewClass}`}>
+          <div className={`relative w-full max-h-28 overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] ${previewClass}`}>
             <Image src={value} alt={label} fill className="object-contain" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             <button
               onClick={() => onChange("")}
@@ -86,7 +82,7 @@ export function ImageDropCard({
             type="button"
             disabled={uploading}
             onClick={() => inputRef.current?.click()}
-            className={`w-full flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-primary text-[var(--text-secondary)] hover:text-primary bg-[var(--surface-sunken)] transition-all disabled:opacity-60 disabled:cursor-wait max-h-36 ${previewClass}`}
+            className={`w-full flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-primary text-[var(--text-secondary)] hover:text-primary bg-[var(--surface-sunken)] transition-all disabled:opacity-60 disabled:cursor-wait max-h-28 min-h-24 ${previewClass}`}
           >
             {uploading ? (
               <>
@@ -108,7 +104,7 @@ export function ImageDropCard({
           value={safeUrl}
           onChange={(e) => onChange(e.target.value)}
           placeholder="o pega URL: https://…"
-          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       </div>
 

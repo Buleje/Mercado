@@ -19,8 +19,15 @@
  * colas). La identidad va en la banda de `AdminTabBar` (contrato de diseño):
  * título, ⓘ y el buscador en una fila, sin pestañas —el menú de la izquierda
  * hace de primer nivel—.
+ *
+ * 11-10 (patrón del panel): sin «Guardar cambios» de ancho completo al final
+ * de cada sección; la `BarraCambios` aparece abajo sólo cuando hay cambios
+ * (sigue a la vista al cambiar de sección, con un punto en el menú) y manda
+ * sólo los campos que cambiaron. Datos del negocio suma «Tu ticket» (pie del
+ * ticket, `invoiceFooterText`). Antes se pedía `/api/settings` dos veces al
+ * montar (este módulo y `useAjustes`); ahora sólo el hook.
  */
-import { useEffect, useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { DURATION, EASE } from "@/components/ui-system/motion";
@@ -34,6 +41,7 @@ import { PermisoDe } from "@/components/admin/shared/PermisoDe";
 import { TABS, IDS_AJUSTES, filtrarSecciones, type SeccionAjustes } from "@/components/admin/settings/secciones";
 import { MenuSeccionesMovil, MenuSeccionesEscritorio, CabeceraSeccion, BuscadorAjustes } from "@/components/admin/settings/navegacion";
 import { useAjustes } from "@/components/admin/settings/use-ajustes";
+import { BarraCambios } from "@/components/admin/settings/BarraCambios";
 import { ModalUbicacion } from "@/components/admin/settings/ModalUbicacion";
 import { SeccionNegocio } from "@/components/admin/settings/SeccionNegocio";
 import { SeccionCobros } from "@/components/admin/settings/SeccionCobros";
@@ -77,14 +85,17 @@ export default function SettingsModule({
   onNavigateTab,
 }: SettingsModuleProps) {
   const { vista: activeSection, irA: irAVista } = useVistaModulo<SeccionAjustes>("config", IDS_AJUSTES, "negocio");
-  const aj = useAjustes(storeMode, activeSection);
+  const aj = useAjustes(storeMode);
   const { loading, cargaFallida, cargar, pendientes, faltanPorSeccion, irAFalta } = aj;
+  // «Guardar cambios» de la barra: manda sólo lo que cambió; si cambió el modo, el panel lo sigue.
+  const guardarCambios = useCallback(async () => {
+    const enviado = await aj.guardar();
+    if (enviado && (enviado.mode === "whatsapp" || enviado.mode === "checkout")) onModeChange(enviado.mode);
+  }, [aj, onModeChange]);
   const [searchQuery, setSearchQuery] = useState("");
   const encontradas = useMemo(() => filtrarSecciones(searchQuery), [searchQuery]);
   const irASeccion = useCallback((id: SeccionAjustes) => { irAVista(id); setSearchQuery(""); }, [irAVista]);
   const tituloSeccionId = useId();
-
-  useEffect(() => { cargar(); }, [cargar]);
 
   // ── Render loading state ────────────────────────────────────────────────────
 
@@ -104,14 +115,14 @@ export default function SettingsModule({
         <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-error-ink)]">
           <AlertTriangle className="h-4 w-4 shrink-0" /> No se pudo cargar tu configuración
         </p>
-        <p className="text-xs text-[var(--text-secondary)]">Para no guardar vacío encima de tus datos, esta sección queda bloqueada hasta que cargue.</p>
+        <p className="text-sm text-[var(--text-secondary)]">Para no guardar vacío encima de tus datos, esta sección queda bloqueada hasta que cargue.</p>
         <button type="button" onClick={cargar} className={button({ variant: "secondary", className: "rounded-xl" })}>
           Reintentar
         </button>
       </div>
     );
     switch (activeSection) {
-      case "negocio": return <SeccionNegocio aj={aj} onModeChange={onModeChange} />;
+      case "negocio": return <SeccionNegocio aj={aj} />;
       case "cobros": return <SeccionCobros aj={aj} onNavigateTab={onNavigateTab} />;
       case "delivery": return <SeccionDelivery aj={aj} />;
       case "tienda": return <SeccionTienda aj={aj} />;
@@ -172,14 +183,14 @@ export default function SettingsModule({
         />
       </div>
 
-      <MenuSeccionesMovil secciones={encontradas} activa={activeSection} pendientes={pendientes} onIr={irASeccion} />
+      <MenuSeccionesMovil secciones={encontradas} activa={activeSection} pendientes={pendientes} onIr={irASeccion} conCambios={aj.seccionesConCambios} />
 
       {encontradas.length === 0 && (
         <p className="text-sm text-[var(--text-secondary)]">Ningún ajuste coincide con «{searchQuery}».</p>
       )}
 
       <div className="lg:grid lg:grid-cols-[16.5rem_minmax(0,1fr)] lg:gap-6 lg:items-start">
-        <MenuSeccionesEscritorio secciones={encontradas} activa={activeSection} pendientes={pendientes} onIr={irASeccion} />
+        <MenuSeccionesEscritorio secciones={encontradas} activa={activeSection} pendientes={pendientes} onIr={irASeccion} conCambios={aj.seccionesConCambios} />
 
         <section aria-labelledby={tituloSeccionId} className="min-w-0 mt-4 lg:mt-0">
           <CabeceraSeccion
@@ -199,6 +210,7 @@ export default function SettingsModule({
               {renderSection()}
             </m.div>
           </AnimatePresence>
+          <BarraCambios secciones={aj.seccionesConCambios} guardando={aj.saving} onGuardar={guardarCambios} onDescartar={aj.descartar} />
         </section>
       </div>
 
