@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Building2, Loader2, KeyRound, ShoppingBag, Pencil, Check, Activity, StickyNote, MessageSquare, ShieldCheck, HeartPulse } from "@buleje/design-system/icons";
+import { X, Building2, Loader2, Pencil, Check, MessageSquare } from "@buleje/design-system/icons";
 import Link from "next/link";
 import { useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
@@ -11,6 +11,7 @@ import type { TabDetalle } from "@/components/superadmin/tenants/tenant-detalle-
 import { useTenantDetalle } from "@/components/superadmin/tenants/useTenantDetalle";
 import { TenantDetalleResumen } from "@/components/superadmin/tenants/TenantDetalleResumen";
 import { TenantDetalleSeguridad } from "@/components/superadmin/tenants/TenantDetalleSeguridad";
+import { TenantDetalleCredenciales } from "@/components/superadmin/tenants/TenantDetalleCredenciales";
 import { TenantDetalleUso, TenantDetalleFacturacion, TenantDetalleActividad, TenantDetalleNotas } from "@/components/superadmin/tenants/TenantDetallePestanas";
 
 interface TenantDetailModalProps {
@@ -18,11 +19,13 @@ interface TenantDetailModalProps {
   onClose: () => void;
   /** Refresca la lista del padre tras un inline edit / extend trial. */
   onUpdated?: () => void;
+  /** Pestaña con que abre (p. ej. «credenciales» al llegar por el candado cerrado). */
+  tabInicial?: TabDetalle;
 }
 
-export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailModalProps) {
+export function TenantDetailModal({ tenant, onClose, onUpdated, tabInicial }: TenantDetailModalProps) {
   const t = tenant;
-  const d = useTenantDetalle(t, onUpdated);
+  const d = useTenantDetalle(t, onUpdated, tabInicial);
   const { tab, setTab, editing, setEditing, nameInput, setNameInput, emailInput, setEmailInput, savingEdit, handleSaveEdit } = d;
   const cancelarEdicion = () => {
     setEditing(false);
@@ -35,14 +38,16 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: () => (editing ? cancelarEdicion() : onClose()) });
 
-  const TABS: { id: TabDetalle; label: string; icon: typeof Activity }[] = [
-    { id: "resumen", label: "Resumen", icon: Building2 },
-    { id: "salud", label: "Salud", icon: HeartPulse },
-    { id: "uso", label: "Uso", icon: KeyRound },
-    { id: "facturacion", label: "Facturación", icon: ShoppingBag },
-    { id: "seguridad", label: "Seguridad", icon: ShieldCheck },
-    { id: "actividad", label: "Actividad", icon: Activity },
-    { id: "notas", label: "Notas", icon: StickyNote },
+  // Ocho pestañas: sólo texto y la ficha a 768 px (con ícono, a 672 px, no entraban y el ícono se aplastaba a 0).
+  const TABS: { id: TabDetalle; label: string }[] = [
+    { id: "resumen", label: "Resumen" },
+    { id: "salud", label: "Salud" },
+    { id: "uso", label: "Uso" },
+    { id: "facturacion", label: "Facturación" },
+    { id: "seguridad", label: "Seguridad" },
+    { id: "credenciales", label: "Credenciales" },
+    { id: "actividad", label: "Actividad" },
+    { id: "notas", label: "Notas" },
   ];
 
   return (
@@ -58,7 +63,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
         aria-modal="true"
         aria-label={`Ficha de ${t.name}`}
         tabIndex={-1}
-        className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-[var(--shadow-xl)] outline-none"
+        className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-[var(--shadow-xl)] outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header con inline edit */}
@@ -157,14 +162,16 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
         </div>
 
         {/* Tab bar */}
-        <div className="flex gap-1 px-3 pt-3 border-b border-[var(--rule-base)] overflow-x-auto">
-          {TABS.map(({ id, label, icon: Icon }) => (
+        <div className="flex gap-0.5 px-3 pt-3 border-b border-[var(--rule-base)] overflow-x-auto">
+          {TABS.map(({ id, label }) => (
             <button
               key={id}
+              type="button"
               onClick={() => setTab(id)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-bold rounded-t-lg border-b-2 transition-colors whitespace-nowrap ${tab === id ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}
+              aria-current={tab === id ? "page" : undefined}
+              className={`shrink-0 px-2.5 py-2 text-sm font-bold rounded-t-lg border-b-2 transition-colors whitespace-nowrap ${tab === id ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}
             >
-              <Icon className="w-4 h-4" /> {label}
+              {label}
             </button>
           ))}
         </div>
@@ -180,6 +187,8 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
           {tab === "facturacion" && <TenantDetalleFacturacion t={t} />}
 
           {tab === "seguridad" && <TenantDetalleSeguridad d={d} />}
+
+          {tab === "credenciales" && <TenantDetalleCredenciales t={t} />}
 
           {tab === "actividad" && <TenantDetalleActividad activity={d.activity} />}
 

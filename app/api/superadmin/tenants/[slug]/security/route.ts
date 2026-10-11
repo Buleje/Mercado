@@ -12,6 +12,7 @@ import { notifyTenantOwnerSecurity } from "@/lib/auth/security-alerts";
 import { TrustedDevicesDB } from "@/lib/db/trusted-devices.db";
 import { logger } from "@/lib/logger";
 import { sinDato } from "@/lib/errores/sin-dato";
+import { respuestaSiCandadoCerrado } from "@/lib/superadmin/candado";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -64,6 +65,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const session = await requirePlatform(req);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Candado de credenciales: con candado configurado, resetear el 2FA, forzar el
+  // cambio de clave o cerrar sesiones de una tienda exige tenerlo abierto (423).
+  const candadoCerrado = await respuestaSiCandadoCerrado(req, session.username);
+  if (candadoCerrado) return candadoCerrado;
   const { slug } = await params;
   const body = await req.json().catch(() => ({}));
   const totpFail = await requireTotpStepUp(session.username, body);

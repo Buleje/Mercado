@@ -1,7 +1,7 @@
 
 
 // Tipos y formatos de la ficha rápida de una tienda (TenantDetailModal y sus pestañas).
-export type TabDetalle = "resumen" | "salud" | "uso" | "facturacion" | "seguridad" | "actividad" | "notas";
+export type TabDetalle = "resumen" | "salud" | "uso" | "facturacion" | "seguridad" | "credenciales" | "actividad" | "notas";
 export type ActivityRow = {
   id: string;
   action: string;

@@ -5,15 +5,10 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import type { TenantRow } from "@/lib/superadmin-types";
 import type { TabDetalle, ActivityRow, NoteRow, SecurityInfo } from "@/components/superadmin/tenants/tenant-detalle-shared";
 
-/** Estado y acciones de la ficha rápida de una tienda: edición, prueba, credenciales, seguridad, actividad y notas. */
-export function useTenantDetalle(t: TenantRow, onUpdated?: () => void) {
-  const [tab, setTab] = useState<TabDetalle>("resumen");
-  const [showPass, setShowPass] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false);
-  const [resetResult, setResetResult] = useState<string | null>(null);
-  const [resetUsername, setResetUsername] = useState<string | null>(null);
+/** Estado y acciones de la ficha rápida de una tienda: edición, prueba, seguridad, actividad y notas (las credenciales van en useCredencialesTienda, detrás del candado). */
+export function useTenantDetalle(t: TenantRow, onUpdated?: () => void, tabInicial: TabDetalle = "resumen") {
+  const [tab, setTab] = useState<TabDetalle>(tabInicial);
   const [credCopied, setCredCopied] = useState(false);
-  const [tempPasswordCopied, setTempPasswordCopied] = useState(false);
   const storeInfo = t.stores?.[0];
 
   // ── Inline edit (C3): nombre + email del dueño ──
@@ -72,6 +67,12 @@ export function useTenantDetalle(t: TenantRow, onUpdated?: () => void) {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action, totpCode }),
       });
+      if (res.status === 423) {
+        // Candado de credenciales configurado y cerrado: se abre en «Credenciales».
+        window.alert("Abre tu candado de credenciales y vuelve a intentarlo.");
+        setTab("credenciales");
+        return;
+      }
       if (res.ok) {
         if (action === "reset-2fa") setSecurity((s) => (s ? { ...s, twoFactorEnabled: false } : s));
         if (action === "logout-all")
@@ -158,39 +159,6 @@ export function useTenantDetalle(t: TenantRow, onUpdated?: () => void) {
     }
   }, [noteInput, savingNote, t.slug]);
 
-  const handleResetPassword = async () => {
-    const totpCode = window.prompt(
-      `Código TOTP (6 dígitos) para resetear contraseña de "${t.name}":`,
-    );
-    if (!totpCode || !/^\d{6}$/.test(totpCode)) {
-      setResetResult("Código TOTP inválido — operación cancelada");
-      return;
-    }
-    setResetLoading(true);
-    setResetResult(null);
-    try {
-      const res = await fetch(`/api/superadmin/tenants/${t.slug}/reset-password`, {
-        method: "POST",
-        credentials: "include",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ totpCode }),
-      });
-      const data = (await res.json()) as {
-        tempPassword?: string;
-        username?: string;
-        error?: string;
-      };
-      if (res.ok && data.tempPassword) {
-        setResetResult(data.tempPassword);
-        setResetUsername(data.username ?? null);
-      } else setResetResult(res.ok ? null : `Error: ${data.error ?? "No se pudo resetear"}`);
-    } catch {
-      setResetResult("Error de red.");
-    } finally {
-      setResetLoading(false);
-    }
-  };
-
   const handleCopyInfo = () => {
     void navigator.clipboard.writeText(
       [`Tenant: ${t.name} (${t.slug})`, `Email: ${t.ownerEmail ?? "—"}`, `Plan: ${t.plan}`].join(
@@ -200,19 +168,11 @@ export function useTenantDetalle(t: TenantRow, onUpdated?: () => void) {
     setCredCopied(true);
     setTimeout(() => setCredCopied(false), 2000);
   };
-  const handleCopyTempPassword = () => {
-    if (!resetResult || resetResult.startsWith("Error")) return;
-    void navigator.clipboard.writeText(resetResult);
-    setTempPasswordCopied(true);
-    setTimeout(() => setTempPasswordCopied(false), 2000);
-  };
-
   return {
     tab, setTab, storeInfo,
     editing, setEditing, nameInput, setNameInput, emailInput, setEmailInput, savingEdit, handleSaveEdit,
     trialBusy, handleExtendTrial,
-    showPass, setShowPass, resetLoading, resetResult, resetUsername, credCopied, tempPasswordCopied,
-    handleResetPassword, handleCopyInfo, handleCopyTempPassword,
+    credCopied, handleCopyInfo,
     security, secBusy, secAction,
     activity,
     notes, noteInput, setNoteInput, savingNote, addNote,

@@ -14,6 +14,7 @@ import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { suplantarTienda } from "@/components/superadmin/tenants/abrir-panel-tienda";
 
 type ErrRow = { id: string; tenantId: string; tenantName: string; tenantSlug: string | null; digest: string | null; message: string; source: string; count: number; firstSeenAt: string; lastSeenAt: string };
 type Stats = { groups: number; totalOccurrences: number; affectedTenants: number; lastHour: number };
@@ -63,13 +64,9 @@ export function TenantErrorsConsole() {
     if (!slug) { setToast("Negocio sin slug"); setTimeout(() => setToast(null), 3000); return; }
     setBusy(slug);
     try {
-      const res = await fetch("/api/superadmin/impersonate", {
-        method: "POST", credentials: "include",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ slug }),
-      });
-      if (res.ok) window.open(`/t/${encodeURIComponent(slug)}/admin`, "_blank");
-      else setToast("No se pudo impersonar");
+      // 423 (candado cerrado) → lleva a la ficha en Credenciales para abrirlo.
+      const r = await suplantarTienda(slug);
+      if (r === "error") setToast("No se pudo impersonar");
     } catch (err) { console.error("[sa-tenant-errors] impersonate failed", err); setToast("Error al impersonar"); } finally { setBusy(null); setTimeout(() => setToast(null), 3000); }
   }, []);
 

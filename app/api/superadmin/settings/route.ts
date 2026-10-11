@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
-import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
+import { PlatformSettingsDB, PREFIJO_INTERNO } from "@/lib/db/platform-settings.db";
 import { DEFAULT_PLAN_PRICES } from "@/lib/plans";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -83,10 +83,21 @@ export async function POST(req: NextRequest) {
 
   const updatedBy = session.username;
 
+  // Las claves `interno:*` son de trabajo de la plataforma (candado de credenciales
+  // con su hash, cachés, contadores): nunca se escriben desde Ajustes. Sin esto, un
+  // POST con `interno:candado-credenciales:<sa>` pisaba el candado ajeno (11-10).
+  const claveInterna = (k: string) => k.trim().toLowerCase().startsWith(PREFIJO_INTERNO);
+  const rechazoInterna = () =>
+    NextResponse.json(
+      { error: "clave_interna", message: `Las claves «${PREFIJO_INTERNO}…» no se escriben desde acá.` },
+      { status: 400 },
+    );
+
   // ── Shape 1: single setting ──
   const single = SingleSettingSchema.safeParse(body);
   if (single.success) {
     const { key, value } = single.data;
+    if (claveInterna(key)) return rechazoInterna();
 
     // Validación fuerte para "plan-prices" — nunca dejar que un payload
     // malformado rompa el cálculo del MRR en toda la plataforma.
@@ -110,6 +121,7 @@ export async function POST(req: NextRequest) {
   // ── Shape 2: batch settings ──
   const batch = BatchSettingsSchema.safeParse(body);
   if (batch.success) {
+    if (Object.keys(batch.data.settings).some(claveInterna)) return rechazoInterna();
     const sanitized: Record<string, unknown> = { ...batch.data.settings };
 
     // "plan-prices" ya no se guarda: un solo precio por plan (plan-tiers). Si

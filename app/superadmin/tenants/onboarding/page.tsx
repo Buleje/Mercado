@@ -20,9 +20,9 @@ import {
 import { AdminTabShell } from "../../_components/_shared";
 import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
-import { csrfHeaders } from "@/lib/csrf-client";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
+import { suplantarTienda } from "@/components/superadmin/tenants/abrir-panel-tienda";
 
 type Step = "logo" | "productos" | "pedido" | "venta";
 type Row = {
@@ -147,12 +147,8 @@ export default function TenantsOnboardingPage() {
   const impersonate = useCallback(async (slug: string) => {
     setImpersonating(slug);
     try {
-      const res = await fetch("/api/superadmin/impersonate", {
-        method: "POST", credentials: "include",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ slug }),
-      });
-      if (res.ok) window.open(`/t/${encodeURIComponent(slug)}/admin`, "_blank");
+      // 423 (candado cerrado) → lleva a la ficha en Credenciales para abrirlo.
+      await suplantarTienda(slug);
     } finally { setImpersonating(null); }
   }, []);
 

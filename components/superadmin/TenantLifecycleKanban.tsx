@@ -1,7 +1,6 @@
 "use client";
 
 import { LoadingState } from "@buleje/design-system";
-import { csrfHeaders } from "@/lib/csrf-client";
 /**
  * TenantLifecycleKanban.tsx — Roadmap item #40
  *
@@ -16,6 +15,7 @@ import {
   AlertTriangle, Clock, CheckCircle, XCircle, Users,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { suplantarTienda } from "@/components/superadmin/tenants/abrir-panel-tienda";
 
 // -- Tipos --
 
@@ -181,25 +181,9 @@ export default function TenantLifecycleKanban() {
       // el proxy slug-routing fuerce x-tenant-id correcto. Antes /admin
       // podía caer en "main" si las cookies sameSite=strict no llegaban
       // a la nueva pestaña.
-      try {
-        const res = await fetch("/api/superadmin/impersonate", {
-          method: "POST",
-          credentials: "include",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ slug: tenant.slug }),
-        });
-        if (!res.ok) {
-          setError("No se pudo impersonar el tenant.");
-          return;
-        }
-        try {
-          const { clearAllTenantCache } = await import("@/lib/tenant-cache");
-          clearAllTenantCache();
-        } catch { /* fallback gestionado por assertTenantOwnership */ }
-        window.open(`/t/${encodeURIComponent(tenant.slug)}/admin`, "_blank");
-      } catch {
-        setError("Error de red al impersonar.");
-      }
+      // 423 (candado cerrado) → lleva a la ficha en Credenciales para abrirlo.
+      const r = await suplantarTienda(tenant.slug);
+      if (r === "error") setError("No se pudo impersonar el tenant.");
     }
   }, []);
 

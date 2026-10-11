@@ -18,6 +18,7 @@ import SuperadminChartCard from "@/components/superadmin/_shared/SuperadminChart
 import { AdminTabShell } from "../_components/_shared";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { suplantarTienda } from "@/components/superadmin/tenants/abrir-panel-tienda";
 
 const RESCUE_INFO = {
   title: "Cola de rescate",
@@ -57,8 +58,8 @@ export function RescueQueue() {
   const impersonate = useCallback(async (slug: string) => {
     setBusy(slug);
     try {
-      const res = await fetch("/api/superadmin/impersonate", { method: "POST", credentials: "include", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ slug }) });
-      if (res.ok) window.open(`/t/${encodeURIComponent(slug)}/admin`, "_blank");
+      // 423 (candado cerrado) → lleva a la ficha en Credenciales para abrirlo.
+      await suplantarTienda(slug);
     } finally { setBusy(null); }
   }, []);
 

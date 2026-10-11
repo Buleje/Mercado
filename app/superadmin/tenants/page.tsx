@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Building2, CheckCircle2, XCircle } from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { AdminTabShell } from "../_components/_shared";
@@ -17,6 +17,7 @@ import { DeleteConfirmModal } from "@/components/superadmin/tenants/DeleteConfir
 import { NuclearResetModal } from "@/components/superadmin/tenants/NuclearResetModal";
 import { useTenantActions } from "@/components/superadmin/tenants/useTenantActions";
 import type { ViewMode } from "@/components/superadmin/tenants/types";
+import type { TabDetalle } from "@/components/superadmin/tenants/tenant-detalle-shared";
 import { AlertsBanner } from "@/components/superadmin/tenants/TenantsAlertsBanner";
 import { QuickFilters } from "@/components/superadmin/tenants/TenantsQuickFilters";
 import { TenantsToolbar } from "@/components/superadmin/tenants/TenantsToolbar";
@@ -54,6 +55,12 @@ export default function TenantsPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [inviteTarget, setInviteTarget] = useState<{ slug: string; name: string } | null>(null);
   const [detailTarget, setDetailTarget] = useState<TenantRow | null>(null);
+  // Pestaña con que se abre la ficha: «Credenciales» cuando se llega por el candado cerrado.
+  const [detailTab, setDetailTab] = useState<TabDetalle | undefined>(undefined);
+  const abrirFicha = useCallback((t: TenantRow, tab?: TabDetalle) => {
+    setDetailTab(tab);
+    setDetailTarget(t);
+  }, []);
   const [productsTarget, setProductsTarget] = useState<{ slug: string; name: string } | null>(null);
   const [addProductTarget, setAddProductTarget] = useState<{ slug: string; name: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ slug: string; name: string } | null>(null);
@@ -85,13 +92,31 @@ export default function TenantsPage() {
     setDeleteTarget,
     showToast,
     loadTenants,
+    onCandadoCerrado: (slug) => {
+      const t = tenants.find((x) => x.slug === slug);
+      if (t) abrirFicha(t, "credenciales");
+    },
   });
+
+  // `?ficha=<slug>&pestana=credenciales`: otra pantalla quiso entrar como una tienda con
+  // el candado cerrado y mandó acá. Se lee UNA vez (el sync de filtros limpia la URL).
+  const searchParams = useSearchParams();
+  const fichaPedida = useRef<{ slug: string; tab?: TabDetalle } | null>(
+    searchParams.get("ficha") ? { slug: searchParams.get("ficha") ?? "", tab: searchParams.get("pestana") === "credenciales" ? "credenciales" : undefined } : null,
+  );
+  useEffect(() => {
+    const pedida = fichaPedida.current;
+    if (!pedida || tenants.length === 0) return;
+    fichaPedida.current = null;
+    const t = tenants.find((x) => x.slug === pedida.slug);
+    if (t) abrirFicha(t, pedida.tab);
+  }, [tenants, abrirFicha]);
 
   const router = useRouter();
   const seleccion = useTenantsSeleccion({ tenants, showToast, handleExtendTrial, handleToggleActive, handlePlanChange });
   const { bulkMode, setBulkMode, selectedIds, setSelectedIds, toggleSelected, clearSelection, bulkMessageOpen, setBulkMessageOpen } = seleccion;
   const accionesCard: Omit<TenantCardProps, "tenant" | "health"> = {
-    onDetail: (t) => setDetailTarget(t),
+    onDetail: (t) => abrirFicha(t),
     onInvite: (slug, name) => setInviteTarget({ slug, name }),
     onToggleActive: (slug, active) => void handleToggleActive(slug, active),
     actionLoading,
@@ -184,7 +209,7 @@ export default function TenantsPage() {
           {viewMode === "table" && (
             <TenantTable tenants={sortedFinal} loading={loading} actionLoading={actionLoading}
               sortField={sortField} sortDir={sortDir} onSort={toggleSort}
-              onDetail={(t) => setDetailTarget(t)}
+              onDetail={(t) => abrirFicha(t)}
               onToggleActive={(slug, active) => void handleToggleActive(slug, active)}
               onImpersonate={(slug) => void handleImpersonate(slug)}
               onInvite={(slug, name) => setInviteTarget({ slug, name })}
@@ -221,7 +246,7 @@ export default function TenantsPage() {
           }}
         />
       )}
-      {detailTarget && <TenantDetailModal tenant={detailTarget} onClose={() => setDetailTarget(null)} onUpdated={() => void loadTenants()} />}
+      {detailTarget && <TenantDetailModal key={`${detailTarget.slug}-${detailTab ?? ""}`} tenant={detailTarget} tabInicial={detailTab} onClose={() => setDetailTarget(null)} onUpdated={() => void loadTenants()} />}
       {productsTarget && (
         <TenantProductsModal
           open={Boolean(productsTarget)}

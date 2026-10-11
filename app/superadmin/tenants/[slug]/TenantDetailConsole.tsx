@@ -18,6 +18,7 @@ import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { PiezasDelNegocio } from "@/components/superadmin/piezas/PiezasDelNegocio";
+import { suplantarTienda } from "@/components/superadmin/tenants/abrir-panel-tienda";
 
 type AiResult = { summary: string; action: string; draft: string; ai: boolean };
 type Health = { score: number; riskLevel: string; loginsLast7d: number; loginsLast30d: number; ordersLast7d: number; ordersLast30d: number; featuresUsed: number; daysSinceLastOrder: number; daysSinceLastLogin: number; trialDaysLeft: number | null; calculatedAt: string };
@@ -90,8 +91,8 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
   const impersonate = useCallback(async () => {
     setBusy(true);
     try {
-      const res = await fetch("/api/superadmin/impersonate", { method: "POST", credentials: "include", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ slug }) });
-      if (res.ok) window.open(`/t/${encodeURIComponent(slug)}/admin`, "_blank");
+      // 423 (candado cerrado) → lleva a la ficha en Credenciales para abrirlo.
+      await suplantarTienda(slug);
     } finally { setBusy(false); }
   }, [slug]);
 

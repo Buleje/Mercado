@@ -8,6 +8,7 @@ import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
+import { respuestaSiCandadoCerrado } from "@/lib/superadmin/candado";
 
 const ImpersonateSchema = z.object({
   slug: z.string().min(1).max(64),
@@ -49,6 +50,11 @@ export async function POST(req: NextRequest) {
   if (!platformSession) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
+
+  // 1.5. Candado de credenciales (11-10): si el superadmin lo configuró, entrar
+  // como una tienda exige tenerlo abierto (423 si no). Sin candado, como antes.
+  const candadoCerrado = await respuestaSiCandadoCerrado(req, platformSession.username);
+  if (candadoCerrado) return candadoCerrado;
 
   // 2. Validar body
   let body: unknown;
