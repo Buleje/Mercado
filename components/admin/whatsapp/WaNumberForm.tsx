@@ -4,6 +4,11 @@ import { useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ADMIN_TOKENS } from "@/app/admin/_components/_shared";
 import { CheckCircle2, AlertCircle, Loader2 } from "@buleje/design-system/icons";
+import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { button } from "@/components/ui-system/button-variants";
+
+/** Los campos a 48 px y 14 px, como el resto del panel. */
+const CAMPO = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
 export interface WaConfigView {
   id: string;
@@ -39,7 +44,7 @@ function Field({
     <div className="mb-4">
       <label className={`${ADMIN_TOKENS.label} mb-1.5 block`}>{label}</label>
       {children}
-      {hint && <p className={`${ADMIN_TOKENS.hint} mt-1`}>{hint}</p>}
+      {hint && <p className="mt-1 text-sm text-[var(--text-secondary)]">{hint}</p>}
     </div>
   );
 }
@@ -100,15 +105,13 @@ export default function WaNumberForm({ initial, onSaved, onCancel, onVerifyToken
   };
 
   return (
-    <div className={ADMIN_TOKENS.cardPadded}>
-      <p className="mb-4 text-sm font-bold text-[var(--text-primary)]">
-        {isNew ? "Conectar número nuevo" : `Editar ${initial?.label || initial?.phoneNumberId}`}
-      </p>
+    /* Vive dentro de la ventana «Conectar número» (WhatsAppBotConfig): el título lo pone ella. */
+    <div className={MODAL_BODY}>
 
       <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
         <Field label="Etiqueta" hint="Cómo lo ves en el inbox (ej. Ventas, Delivery). Opcional.">
           <input
-            className={ADMIN_TOKENS.input}
+            className={CAMPO}
             value={form.label}
             onChange={(e) => set("label")(e.target.value)}
             placeholder="Ventas"
@@ -117,7 +120,7 @@ export default function WaNumberForm({ initial, onSaved, onCancel, onVerifyToken
         </Field>
         <Field label="Phone Number ID" hint="Lo da Meta en WhatsApp > API Setup (solo dígitos).">
           <input
-            className={ADMIN_TOKENS.input}
+            className={CAMPO}
             value={form.phoneNumberId}
             onChange={(e) => set("phoneNumberId")(e.target.value)}
             placeholder="123456789012345"
@@ -132,7 +135,7 @@ export default function WaNumberForm({ initial, onSaved, onCancel, onVerifyToken
       >
         <input
           type="password"
-          className={ADMIN_TOKENS.input}
+          className={CAMPO}
           value={form.whatsappToken}
           onChange={(e) => set("whatsappToken")(e.target.value)}
           placeholder={isNew ? "EAAG..." : `Actual: ${initial?.whatsappTokenMasked ?? "configurado"}`}
@@ -143,7 +146,7 @@ export default function WaNumberForm({ initial, onSaved, onCancel, onVerifyToken
       <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
         <Field label="Verify Token del webhook" hint="El que pusiste al configurar el webhook en Meta (mín. 6 caracteres).">
           <input
-            className={ADMIN_TOKENS.input}
+            className={CAMPO}
             value={form.webhookVerifyToken}
             onChange={(e) => set("webhookVerifyToken")(e.target.value)}
             placeholder="mi-verify-token"
@@ -151,7 +154,7 @@ export default function WaNumberForm({ initial, onSaved, onCancel, onVerifyToken
         </Field>
         <Field label="WABA ID" hint="WhatsApp Business Account ID. Necesario para mandar plantillas fuera de la ventana de 24h. Opcional.">
           <input
-            className={ADMIN_TOKENS.input}
+            className={CAMPO}
             value={form.wabaId}
             onChange={(e) => set("wabaId")(e.target.value)}
             placeholder="102290129340398"
@@ -163,7 +166,7 @@ export default function WaNumberForm({ initial, onSaved, onCancel, onVerifyToken
       <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
         <Field label="Nombre del negocio" hint="Opcional. Aparece en los mensajes del bot.">
           <input
-            className={ADMIN_TOKENS.input}
+            className={CAMPO}
             value={form.businessName}
             onChange={(e) => set("businessName")(e.target.value)}
             placeholder="Bodega San Martín"
@@ -171,7 +174,7 @@ export default function WaNumberForm({ initial, onSaved, onCancel, onVerifyToken
         </Field>
         <Field label="Número Yape" hint="Opcional. 9 dígitos, para cobros del bot.">
           <input
-            className={ADMIN_TOKENS.input}
+            className={CAMPO}
             value={form.yapeNumber}
             onChange={(e) => set("yapeNumber")(e.target.value)}
             placeholder="999888777"
@@ -191,20 +194,20 @@ export default function WaNumberForm({ initial, onSaved, onCancel, onVerifyToken
       </label>
 
       {error && (
-        <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-[var(--data-error-500)]">
+        <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-[var(--data-error-ink)]">
           <AlertCircle className="h-4 w-4 shrink-0" /> {error}
         </p>
       )}
 
       <div className="flex flex-wrap justify-end gap-2 pt-3">
-        <button type="button" onClick={onCancel} className={ADMIN_TOKENS.btnSecondary}>
+        <button type="button" onClick={onCancel} className={button({ variant: "secondary", className: "rounded-xl" })}>
           Cancelar
         </button>
         <button
           type="button"
           onClick={save}
           disabled={saving || !form.phoneNumberId.trim() || !form.webhookVerifyToken.trim()}
-          className={ADMIN_TOKENS.btnPrimary}
+          className={button({ variant: "primary", className: "rounded-xl" })}
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
           {saving ? "Guardando…" : isNew ? "Conectar número" : "Guardar cambios"}

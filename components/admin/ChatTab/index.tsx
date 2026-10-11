@@ -1,8 +1,9 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useEffect, useMemo, useState } from "react";
-import { MessageCircle, AlertCircle, XCircle, ReceiptText } from "@buleje/design-system/icons";
+import { AlertCircle, XCircle, ReceiptText } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
@@ -114,39 +115,29 @@ export default function ChatTab() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--rule-base)] p-4 sm:p-5">
-        <div>
-          {/* SectionTitle, no PageTitle: este chat es un layout de altura
-              completa (como POS, que el test de estándares exime del
-              AdminModuleHeader) y su cabecera es una barra fija, no el
-              encabezado de una página. PageTitle pisado a `text-xl` era el
-              primitivo equivocado forzado al tamaño correcto. */}
-          <SectionTitle className="flex items-center gap-2">
-            <MessageCircle className="h-6 w-6 text-primary" />
-            Chat con clientes
-          </SectionTitle>
-          <p className="text-xs text-[var(--text-tertiary)]">
-            Mensajes de tus clientes desde la tienda. Cuando no estés en línea,
-            reciben respuesta automática por WhatsApp.
-          </p>
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[var(--rule-base)] px-4 py-3">
+        {/* SectionTitle, no PageTitle: este chat es un layout de altura
+            completa (como POS, que el test de estándares exime del
+            AdminModuleHeader) y su cabecera es una barra fija, no el
+            encabezado de una página. Una fila: título · ⓘ · cuántos hilos. */}
+        <div className="flex min-w-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Chat con clientes</SectionTitle>
+          <InfoTip
+            title="Chat con clientes"
+            what="Los mensajes que te escriben los compradores desde la tienda y el marketplace."
+            affects="Cuando no estás en línea, reciben una respuesta automática por WhatsApp."
+          />
         </div>
-        <div className="flex items-center gap-2 text-xs">
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            <MessageCircle className="h-3.5 w-3.5" />
-            {threads.length} hilos
-          </span>
-          {totalUnread > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-500)] px-3 py-1 font-semibold text-white">
-              {totalUnread} sin leer
-            </span>
-          )}
+        <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+          <span className="tabular-nums">{threads.length} {threads.length === 1 ? "hilo" : "hilos"}</span>
+          {totalUnread > 0 && <span className="font-semibold tabular-nums text-[var(--data-error-ink)]">· {totalUnread} sin leer</span>}
           {threadsError && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-100)] px-3 py-1 font-semibold text-[var(--data-error-500)]">
-              <AlertCircle className="h-3.5 w-3.5" />
-              error
+            <span className="inline-flex items-center gap-1 font-semibold text-[var(--data-error-ink)]">
+              <AlertCircle className="h-4 w-4" aria-hidden />
+              no se pudo actualizar
             </span>
           )}
-        </div>
+        </p>
       </header>
 
       {/* Main 2-column layout */}

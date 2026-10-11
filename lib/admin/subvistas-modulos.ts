@@ -228,9 +228,9 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "whatsapp", label: "WhatsApp", hint: "Conversaciones del número del negocio y respuesta desde el panel" },
     { key: "chat", label: "Chat con clientes", hint: "Mensajes de los compradores del marketplace" },
     { key: "soporte", label: "Soporte", hint: "Bandeja de pedidos de ayuda de tus clientes" },
-    { key: "avisos", label: "Avisos por pedido", hint: "Qué mensaje sale solo cuando un pedido cambia de estado" },
+    { key: "avisos", label: "Avisos por pedido", hint: "Avísale a un cliente cómo va su pedido, y el historial de avisos" },
     { key: "plantillas", label: "Plantillas WhatsApp", hint: "Mensajes guardados para mandar con un toque" },
-    { key: "bot", label: "Bot WhatsApp", hint: "Qué contesta solo el número del negocio" },
+    { key: "bot", label: "Números y bot", hint: "Qué contesta solo el número del negocio" },
   ],
   campanas: [
     { key: "campanas", label: "Campañas", hint: "Mensajes y ofertas a un grupo de clientes" },

@@ -118,13 +118,13 @@ export default function WaConnectionGuide({ verifyToken }: { verifyToken: string
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between p-4 text-left"
+        className="flex min-h-12 w-full items-center justify-between px-4 py-2 text-left"
         aria-expanded={open}
       >
         <span className="text-sm font-bold text-[var(--text-primary)]">
           ¿Cómo conecto mi número? — guía en 4 pasos
         </span>
-        <span className="text-[length:var(--ts-xs)] font-bold text-primary">
+        <span className="text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
           {open ? "Ocultar" : "Ver pasos"}
         </span>
       </button>

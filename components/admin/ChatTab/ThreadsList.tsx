@@ -59,7 +59,7 @@ export function ThreadsList({
             onClick={() => onStatusFilterChange(s)}
             aria-pressed={statusFilter === s}
             className={cn(
- "rounded-xl px-3 py-1.5 min-h-11 sm:min-h-0 sm:py-1 text-xs font-medium transition",
+ "h-12 rounded-xl px-3 text-sm font-semibold transition",
               statusFilter === s
                 ? "bg-primary text-white"
                 : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]  dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]",
@@ -78,9 +78,9 @@ export function ThreadsList({
             onClick={() => setLabelFilter(null)}
             aria-pressed={labelFilter === null}
             className={cn(
- "rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition",
+ "min-h-10 rounded-full px-3 text-sm font-semibold transition",
               labelFilter === null
-                ? "bg-[var(--surface-sunken)] text-white dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]"
+                ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
                 : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] ",
             )}
           >
@@ -93,7 +93,7 @@ export function ThreadsList({
               onClick={() => setLabelFilter((cur) => (cur === l ? null : l))}
               aria-pressed={labelFilter === l}
               className={cn(
- "rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition",
+ "min-h-10 rounded-full px-3 text-sm font-semibold transition",
                 labelChipClass(l),
                 labelFilter === l ? "ring-2 ring-primary/50" : "opacity-80 hover:opacity-100",
               )}

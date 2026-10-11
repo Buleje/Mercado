@@ -16,7 +16,7 @@ export const PREDEFINED_QUICK_REPLIES: QuickReply[] = [
   {
     id: "cobro-fiado",
     nombre: "Cobrar fiado",
-    texto: "Hola {nombre}, te recordamos que tienes un pendiente de S/{monto} en Buleje. ¿Cuándo puedes pasar? 😊",
+    texto: "Hola {nombre}, te recordamos que tienes un pendiente de S/{monto}. ¿Cuándo puedes pasar? 😊",
     variables: ["nombre", "monto"],
   },
   {
@@ -46,19 +46,19 @@ export const PREDEFINED_QUICK_REPLIES: QuickReply[] = [
   {
     id: "reactivacion",
     nombre: "Reactivar cliente",
-    texto: "Hola {nombre}, ¡te extrañamos! Tenemos ofertas especiales esperándote en Buleje. ¡Visítanos! 🛍",
+    texto: "Hola {nombre}, ¡te extrañamos! Tenemos ofertas especiales esperándote. ¡Visítanos! 🛍",
     variables: ["nombre"],
   },
   {
     id: "stock-disponible",
     nombre: "Producto disponible",
-    texto: "📦 Hola {nombre}, {producto} ya está disponible en Buleje. ¡No te quedes sin el tuyo! 🏃",
+    texto: "📦 Hola {nombre}, {producto} ya está disponible. ¡No te quedes sin el tuyo! 🏃",
     variables: ["nombre", "producto"],
   },
   {
     id: "agradecimiento",
     nombre: "Agradecimiento",
-    texto: "🙏 Hola {nombre}, gracias por tu compra de hoy (S/{monto}). ¡Vuelve pronto a Buleje! 😊",
+    texto: "🙏 Hola {nombre}, gracias por tu compra de hoy (S/{monto}). ¡Vuelve pronto! 😊",
     variables: ["nombre", "monto"],
   },
   {

@@ -13,9 +13,9 @@ function generateReferralCode(phone: string): string {
 }
 
 const STEPS = [
-  { n: "1", label: "Comparte tu cÃ³digo" },
+  { n: "1", label: "Comparte tu código" },
   { n: "2", label: "Tu amigo hace su primer pedido" },
-  { n: "3", label: "Â¡Ambos ganan 50 puntos!" },
+  { n: "3", label: "¡Ambos ganan 50 puntos!" },
 ];
 
 export default function ReferralBanner() {
@@ -36,7 +36,7 @@ export default function ReferralBanner() {
   const code = customer?.phone ? generateReferralCode(customer.phone) : "";
 
   const handleCopy = useCallback(() => {
-    const msg = `Â¡Compra en Buleje con mi cÃ³digo ${code} y ambos ganamos puntos extra! ðŸŽðŸ›’`;
+    const msg = `¡Compra en Buleje con mi código ${code} y ambos ganamos puntos extra! 🎁🛒`;
     navigator.clipboard.writeText(msg).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
@@ -44,7 +44,7 @@ export default function ReferralBanner() {
   }, [code]);
 
   const handleShare = useCallback(async () => {
-    const msg = `Â¡Compra en Buleje con mi cÃ³digo ${code} y ambos ganamos puntos extra! ðŸŽðŸ›’`;
+    const msg = `¡Compra en Buleje con mi código ${code} y ambos ganamos puntos extra! 🎁🛒`;
     if (navigator.share) {
       try { await navigator.share({ title: "Buleje - Referido", text: msg }); } catch {}
     } else { handleCopy(); }
@@ -67,7 +67,7 @@ export default function ReferralBanner() {
             <span className="text-primary">gana puntos</span>
           </h2>
           <p className="mt-3 text-muted text-base max-w-md leading-relaxed">
-            Comparte tu cÃ³digo y por cada amigo que haga su primer pedido,
+            Comparte tu código y por cada amigo que haga su primer pedido,
             ambos ganan <strong className="text-[var(--text-primary)]">50 puntos</strong> de lealtad.
           </p>
         </div>
@@ -124,7 +124,7 @@ export default function ReferralBanner() {
               {/* Star badge */}
               <div className="flex items-center gap-2 mb-1">
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                <span className="text-xs font-bold text-white/60 uppercase tracking-widest">Tu cÃ³digo personal</span>
+                <span className="text-xs font-bold text-white/60 uppercase tracking-widest">Tu código personal</span>
               </div>
 
               {/* Code display */}
@@ -150,7 +150,7 @@ export default function ReferralBanner() {
                   )}
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  {copied ? "Â¡Copiado!" : "Copiar cÃ³digo"}
+                  {copied ? "¡Copiado!" : "Copiar código"}
                 </button>
                 <button
                   onClick={handleShare}
@@ -163,7 +163,7 @@ export default function ReferralBanner() {
               </div>
 
               <p className="text-xs text-white/35 text-center">
-                Al compartir aceptas nuestros tÃ©rminos del programa de referidos.
+                Al compartir aceptas nuestros términos del programa de referidos.
               </p>
             </div>
           </div>

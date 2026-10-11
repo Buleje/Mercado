@@ -1,36 +1,39 @@
 "use client";
 
 /**
- * components/admin/support/UnifiedSupportInbox.tsx
+ * components/admin/support/UnifiedSupportInbox.tsx — Mensajes › Soporte.
  *
- * Tabla unificada de mensajes de soporte de múltiples fuentes:
- *  - WhatsApp bot logs (ActivityLog entity = "whatsapp.inbound")
- *  - Reviews pendientes de moderación (Review status = "pending")
+ * Lo que espera respuesta, de dos fuentes (`GET /api/admin/support/inbox`):
+ *  - WhatsApp: ActivityLog con entity = "whatsapp.inbound"
+ *  - Reseñas pendientes de moderación (Review status = "pending")
  *
- * Columnas: Fuente | Cliente | Mensaje | Recibido | Estado
- * Filtro por fuente. Botón "Marcar resuelto" (fire-and-forget, regla #7).
+ * Cada fila lleva a donde se atiende: la reseña a Marketplace › Reseñas (ahí se
+ * aprueba o se rechaza) y el WhatsApp a la bandeja de WhatsApp.
+ *
+ * Antes (medido 11-10): el botón «Resolver» llamaba a
+ * `PATCH /api/admin/support/inbox/<id>/resolve`, una ruta que no existe (404):
+ * la fila seguía «Pendiente» después del clic. Y el filtro por fuente pedía
+ * `?source=`, que la ruta no lee (filtraba igual el cliente, con un pedido de más).
  */
-
-import { useState, useCallback, useEffect } from "react";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { MessageCircle, Star, Inbox, CheckCircle2, Loader2, AlertCircle, RefreshCw } from "@buleje/design-system/icons";
-import { EmptyState } from "@/components/admin/EmptyState";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { DataTable, SectionTitle } from "@buleje/design-system";
+import { AlertCircle, Loader2, RefreshCw } from "@buleje/design-system/icons";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 import type { SupportInboxItem } from "@/app/api/admin/support/inbox/route";
 
 type SourceFilter = "all" | "whatsapp" | "review";
 
-const SOURCE_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  whatsapp: {
-    label: "WhatsApp",
-    icon: <MessageCircle className="w-3.5 h-3.5" />,
-    color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
-  },
-  review: {
-    label: "Reseña",
-    icon: <Star className="w-3.5 h-3.5" />,
-    color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
-  },
+const FUENTE: Record<SupportInboxItem["source"], { rotulo: string; donde: string; href: string }> = {
+  whatsapp: { rotulo: "WhatsApp", donde: "Responder", href: "/admin?tab=whatsapp-inbox&vista=whatsapp" },
+  review: { rotulo: "Reseña", donde: "Moderar", href: "/admin?tab=marketplace&vista=resenas" },
 };
+
+const CHIP = "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors";
+const CHIP_ON = "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
+const CHIP_OFF = "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -44,204 +47,110 @@ function formatRelative(iso: string): string {
 
 export function UnifiedSupportInbox() {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
-  const [resolving, setResolving] = useState<Set<string>>(new Set());
-  const [data, setData] = useState<{ items: SupportInboxItem[]; total: number }>({ items: [], total: 0 });
-  const [isLoading, setIsLoading] = useState(true);
+  const [items, setItems] = useState<SupportInboxItem[] | null>(null);
   const [error, setError] = useState(false);
-
-  const apiUrl =
-    sourceFilter === "all"
-      ? "/api/admin/support/inbox"
-      : `/api/admin/support/inbox?source=${sourceFilter}`;
+  const [cargando, setCargando] = useState(false);
 
   const loadInbox = useCallback(async () => {
-    setError(false);
+    setCargando(true);
     try {
-      const res = await fetch(apiUrl, { cache: "no-store" });
+      const res = await fetch("/api/admin/support/inbox", { cache: "no-store" });
       if (!res.ok) throw new Error("fetch_failed");
-      const json = (await res.json()) as { items?: SupportInboxItem[]; total?: number };
-      setData({
-        items: Array.isArray(json.items) ? json.items : [],
-        total: typeof json.total === "number" ? json.total : 0,
-      });
+      const json = (await res.json()) as { items?: SupportInboxItem[] };
+      setItems(Array.isArray(json.items) ? json.items : []);
+      setError(false);
     } catch {
       setError(true);
     } finally {
-      setIsLoading(false);
+      setCargando(false);
     }
-  }, [apiUrl]);
+  }, []);
 
   useEffect(() => {
-    setIsLoading(true);
     void loadInbox();
-
-    const id = setInterval(() => {
-      void loadInbox();
-    }, 30_000);
-
+    const id = setInterval(() => void loadInbox(), 30_000);
     return () => clearInterval(id);
   }, [loadInbox]);
 
-  const handleMarkResolved = useCallback(
-    (id: string) => {
-      setResolving((prev) => new Set(prev).add(id));
-      // Fire-and-forget (regla #7) — optimistic UI
-      fetch(`/api/admin/support/inbox/${id}/resolve`, { method: "PATCH", headers: csrfHeaders() })
-        .then(() => loadInbox())
-        .catch((err) => console.warn("[UnifiedSupportInbox] resolve failed:", err))
-        .finally(() => setResolving((prev) => { const s = new Set(prev); s.delete(id); return s; }));
-    },
-    [loadInbox],
-  );
-
-  const items = data.items;
-  const filtered =
-    sourceFilter === "all" ? items : items.filter((i) => i.source === sourceFilter);
-  const pending = filtered.filter((i) => i.status === "pending");
-
-  // ── Estados ──────────────────────────────────────────────────────────────
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20 text-[var(--text-tertiary)] dark:text-muted gap-2">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        <span className="text-sm">Cargando bandeja de soporte…</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <EmptyState
-        icon={<AlertCircle className="text-[var(--data-error-500)]" />}
-        title="Error al cargar la bandeja"
-        description="No se pudo conectar con el servidor. Intenta nuevamente."
-          actions={[{ label: "Reintentar", onClick: () => { void loadInbox(); }, variant: "primary" }]}
-      />
-    );
-  }
+  const cuentas = useMemo(() => {
+    const pend = (items ?? []).filter((i) => i.status === "pending");
+    return { all: pend.length, whatsapp: pend.filter((i) => i.source === "whatsapp").length, review: pend.filter((i) => i.source === "review").length };
+  }, [items]);
+  const filas = (items ?? []).filter((i) => sourceFilter === "all" || i.source === sourceFilter);
 
   return (
-    <div className="space-y-6">
-      {/* Filtros de fuente */}
+    <div className="space-y-3">
+      {/* Una fila: título · ⓘ · fuente (con lo pendiente de cada una) · actualizar. */}
       <div className="flex flex-wrap items-center gap-2">
-        {(["all", "whatsapp", "review"] as SourceFilter[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setSourceFilter(f)}
-            className={[
-              "min-h-[44px] px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors border",
-              sourceFilter === f
-                ? "bg-primary text-white border-primary"
-                : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-primary",
-            ].join(" ")}
-          >
-            {f === "all" ? "Todos" : SOURCE_LABELS[f]?.label}
-          </button>
-        ))}
-        <button
-          onClick={() => { void loadInbox(); }}
-          className="min-h-[44px] ml-auto p-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition"
-          aria-label="Actualizar bandeja"
-        >
-          <RefreshCw className="w-4 h-4 text-[var(--text-tertiary)]" />
+        <div className="flex min-w-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Soporte</SectionTitle>
+          <InfoTip
+            title="Soporte"
+            what="Lo que espera respuesta: mensajes de WhatsApp que el bot no resolvió y reseñas por moderar."
+            affects="Cada fila te lleva a donde se atiende: la reseña a Marketplace › Reseñas, el mensaje a la bandeja de WhatsApp."
+          />
+        </div>
+        <div role="group" aria-label="Fuente" className="flex min-w-0 max-w-full gap-1.5 overflow-x-auto scrollbar-none">
+          {(["all", "whatsapp", "review"] as const).map((f) => (
+            <button key={f} type="button" aria-pressed={sourceFilter === f} onClick={() => setSourceFilter(f)} className={cn(CHIP, sourceFilter === f ? CHIP_ON : CHIP_OFF)}>
+              {f === "all" ? "Todo" : FUENTE[f].rotulo}
+              {items && <span className="tabular-nums text-[var(--text-secondary)]">{cuentas[f]}</span>}
+            </button>
+          ))}
+        </div>
+        <button type="button" onClick={() => void loadInbox()} aria-label="Actualizar la bandeja" title="Actualizar" className={button({ variant: "secondary", className: "ml-auto w-12 rounded-xl px-0" })}>
+          <RefreshCw className={cn("h-4 w-4", cargando && "animate-spin")} aria-hidden />
         </button>
-        <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">
-          {pending.length} pendiente{pending.length !== 1 ? "s" : ""}
-        </span>
       </div>
 
-      {/* Empty state */}
-      {filtered.length === 0 && (
-        <EmptyState
-          icon={<Inbox />}
-          title="Bandeja vacía"
-          description="No hay mensajes de soporte en este momento."
-        />
-      )}
-
-      {/* Tabla */}
-      {filtered.length > 0 && (
-        <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)]">
-          {/* Header */}
-          <div className="hidden md:grid grid-cols-[120px_1fr_2fr_130px_110px_130px] gap-3 bg-[var(--surface-sunken)] px-4 py-2.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">
-            <span>Fuente</span>
-            <span>Cliente</span>
-            <span>Mensaje</span>
-            <span>Recibido</span>
-            <span>Estado</span>
-            <span>Acción</span>
-          </div>
-
-          <div className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
-            {filtered.map((item) => {
-              const src = SOURCE_LABELS[item.source];
-              const isResolving = resolving.has(item.id);
-
-              return (
-                <div
-                  key={item.id}
-                  className="grid grid-cols-1 md:grid-cols-[120px_1fr_2fr_130px_110px_130px] gap-2 md:gap-3 px-4 py-3 items-start md:items-center hover:bg-gray-50/50 dark:hover:bg-surface/50 transition"
-                >
-                  {/* Fuente */}
-                  <span
-                    className={[
-                      "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full w-fit",
-                      src?.color ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]",
-                    ].join(" ")}
-                  >
-                    {src?.icon}
-                    {src?.label ?? item.source}
-                  </span>
-
-                  {/* Cliente */}
-                  <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
-                    {item.customer}
-                  </span>
-
-                  {/* Mensaje */}
-                  <p className="text-sm text-[var(--text-secondary)] dark:text-muted line-clamp-2 break-words">
-                    {item.message || <span className="italic text-[var(--text-tertiary)]">Sin mensaje</span>}
-                  </p>
-
-                  {/* Recibido */}
-                  <span className="text-xs text-[var(--text-tertiary)] dark:text-muted whitespace-nowrap">
-                    {formatRelative(item.receivedAt)}
-                  </span>
-
-                  {/* Estado */}
-                  <span
-                    className={[
-                      "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full w-fit",
-                      item.status === "resolved"
-                        ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
-                        : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/25 dark:text-[var(--data-warning-500)]",
-                    ].join(" ")}
-                  >
-                    {item.status === "resolved" ? "Resuelto" : "Pendiente"}
-                  </span>
-
-                  {/* Acción */}
+      {error && !items ? (
+        <p className="flex items-center gap-2 text-sm text-[var(--data-error-ink)]">
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+          No se pudo traer la bandeja.
+          <button type="button" onClick={() => void loadInbox()} className="font-semibold underline underline-offset-2">Reintentar</button>
+        </p>
+      ) : !items ? (
+        <p className="flex items-center gap-2 py-8 text-sm text-[var(--text-secondary)]"><Loader2 className="h-4 w-4 animate-spin" aria-hidden />Cargando la bandeja…</p>
+      ) : filas.length === 0 ? (
+        <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nada espera respuesta.</p>
+      ) : (
+        <DataTable className="table-fixed [&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+          <colgroup className="max-sm:hidden">
+            <col className="w-28" />
+            <col className="w-48" />
+            <col />
+            <col className="w-32" />
+            <col className="w-32" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Fuente</th>
+              <th>Cliente</th>
+              <th>Mensaje</th>
+              <th>Recibido</th>
+              <th aria-label="Dónde se atiende" />
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map((item) => (
+              <tr key={item.id}>
+                <td className="text-sm font-semibold text-[var(--text-primary)]">{FUENTE[item.source]?.rotulo ?? item.source}</td>
+                <td className="text-sm text-[var(--text-primary)]"><span className="block min-w-0 truncate">{item.customer}</span></td>
+                <td className="text-sm text-[var(--text-secondary)]">
+                  <span className="block min-w-0 truncate" title={item.message}>{item.message || "Sin mensaje"}</span>
+                </td>
+                <td className="whitespace-nowrap text-sm text-[var(--text-secondary)]">{formatRelative(item.receivedAt)}</td>
+                <td className="text-right">
                   {item.status === "pending" ? (
-                    <button
-                      onClick={() => handleMarkResolved(item.id)}
-                      disabled={isResolving}
-                      className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isResolving ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                      )}
-                      Resolver
-                    </button>
+                    <EnlacePanel href={FUENTE[item.source]?.href} apariencia="heredada" className={button({ variant: "secondary", className: "rounded-xl px-4" })}>{FUENTE[item.source]?.donde ?? "Abrir"}</EnlacePanel>
                   ) : (
-                    <span className="text-xs text-[var(--text-tertiary)] dark:text-muted px-3 py-1.5">—</span>
+                    <span className="text-sm text-[var(--data-success-ink)]">Resuelto</span>
                   )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </DataTable>
       )}
     </div>
   );

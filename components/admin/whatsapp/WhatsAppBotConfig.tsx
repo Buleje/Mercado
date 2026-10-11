@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { ADMIN_TOKENS } from "@/app/admin/_components/_shared";
+import { SectionTitle } from "@buleje/design-system";
+import AdminModal, { MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 import {
   MessageCircle,
   CheckCircle2,
@@ -12,6 +17,7 @@ import {
   Plus,
   Pencil,
   PowerOff,
+  MoreHorizontal,
 } from "@buleje/design-system/icons";
 import WaConnectionGuide from "./WaConnectionGuide";
 import WaNumberForm, { type WaConfigView } from "./WaNumberForm";
@@ -94,154 +100,123 @@ export default function WhatsAppBotConfig() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 p-6 text-sm text-[var(--text-tertiary)]">
-        <Loader2 className="h-4 w-4 animate-spin" /> Cargando configuración…
+      <div className="flex items-center gap-2 p-6 text-sm text-[var(--text-secondary)]">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Cargando configuración…
       </div>
     );
   }
 
-  const anyActive = configs.some((c) => c.isActive);
+  const activos = configs.filter((c) => c.isActive).length;
+  const estado = activos > 0
+    ? `${activos} número${activos > 1 ? "s" : ""} conectado${activos > 1 ? "s" : ""}`
+    : configs.length > 0 ? "Números cargados pero inactivos" : "Sin números conectados";
+
+  /* El ⋯ no devuelve el foco a su botón: se enfoca antes de abrir la ventana para que vuelva ahí al cerrar. */
+  const editarDesdeMenu = (c: WaConfigView) => () => {
+    document.querySelector<HTMLElement>(`[data-menu-numero="${CSS.escape(c.id)}"] button`)?.focus({ preventScroll: true });
+    setEditing(c);
+    setGuideToken(c.webhookVerifyToken);
+  };
 
   return (
-    <div className="max-w-2xl space-y-4">
-      {/* Estado global */}
-      <div
-        className={[
-          "flex items-center gap-3 rounded-xl border p-4",
-          anyActive
-            ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5"
-            : "border-[var(--rule-base)] bg-[var(--surface-sunken)]",
-        ].join(" ")}
-      >
-        <div
-          className={[
-            "flex h-10 w-10 items-center justify-center rounded-xl shrink-0",
-            anyActive
-              ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
-              : "bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
-          ].join(" ")}
-        >
-          <MessageCircle className="h-5 w-5" />
+    <div className="space-y-3">
+      {/* Una fila: título · ⓘ · estado · Conectar número. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Bot WhatsApp</SectionTitle>
+          <InfoTip
+            title="Bot WhatsApp"
+            what="Los números de WhatsApp Business del negocio. El bot contesta y toma pedidos por cada número activo, 24/7."
+            affects="Lo que te escriben llega a la bandeja de WhatsApp, donde también puedes responder tú."
+            example="Pega las credenciales de Meta (Phone Number ID y token) y toca «Probar»."
+          />
         </div>
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-[var(--text-primary)]">
-            {anyActive
-              ? `${configs.filter((c) => c.isActive).length} número${configs.filter((c) => c.isActive).length > 1 ? "s" : ""} conectado${configs.filter((c) => c.isActive).length > 1 ? "s" : ""}`
-              : configs.length > 0
-                ? "Números configurados pero inactivos"
-                : "Sin números conectados"}
-          </p>
-          <p className="text-xs text-[var(--text-tertiary)]">
-            {configs.length > 0
-              ? "El bot responde por cada número activo. Las conversaciones llegan al inbox WhatsApp."
-              : "Pega las credenciales de Meta WhatsApp Business para que el bot tome pedidos 24/7."}
-          </p>
-        </div>
+        <span className={cn("flex items-center gap-1.5 text-sm font-semibold", activos > 0 ? "text-[var(--data-success-ink)]" : "text-[var(--text-secondary)]")}>
+          <MessageCircle className="h-4 w-4" aria-hidden />
+          {estado}
+        </span>
+        <button type="button" onClick={() => setEditing("new")} className={button({ variant: "primary", className: "ml-auto rounded-xl" })}>
+          <Plus className="h-4 w-4" aria-hidden />
+          <span className="max-sm:sr-only">{configs.length > 0 ? "Conectar otro número" : "Conectar mi número"}</span>
+        </button>
       </div>
 
-      {/* Guía de conexión paso a paso (webhook URL + verify token con copiar) */}
-      <WaConnectionGuide verifyToken={guideToken || configs[0]?.webhookVerifyToken || ""} />
+      {/* Sin números, la guía va a la vista: es lo primero que hay que hacer. Con números, vive en la ventana de conectar. */}
+      {configs.length === 0 && <WaConnectionGuide verifyToken={guideToken} />}
 
-      {/* Números conectados */}
-      {configs.map((c) => (
-        <div key={c.id} className={ADMIN_TOKENS.cardPadded}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-                {c.label || c.businessName || "Mi número"}
-                <span
-                  className={[
-                    "rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold",
-                    c.isActive
-                      ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
-                      : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                  ].join(" ")}
-                >
-                  {c.isActive ? "Activo" : "Inactivo"}
-                </span>
-              </p>
-              <p className="text-xs text-[var(--text-tertiary)]">
-                Phone Number ID {c.phoneNumberId} · token {c.whatsappTokenMasked ?? "—"}
-                {c.wabaId ? ` · WABA ${c.wabaId}` : ""}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => void testConnection(c.id)}
-                disabled={testing === c.id}
-                className={ADMIN_TOKENS.btnSecondary}
-              >
-                {testing === c.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Zap className="h-4 w-4" />
+      {configs.length > 0 && (
+        <ul className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          {configs.map((c) => (
+            <li key={c.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="flex flex-wrap items-center gap-x-2 text-sm font-bold text-[var(--text-primary)]">
+                  {c.label || c.businessName || "Mi número"}
+                  <span className={cn("font-semibold", c.isActive ? "text-[var(--data-success-ink)]" : "text-[var(--text-secondary)]")}>
+                    · {c.isActive ? "Activo" : "Inactivo"}
+                  </span>
+                </p>
+                <p className="truncate text-sm text-[var(--text-secondary)]">
+                  Phone Number ID {c.phoneNumberId} · token {c.whatsappTokenMasked ?? "—"}
+                  {c.wabaId ? ` · WABA ${c.wabaId}` : ""}
+                </p>
+                {testResult?.id === c.id && (
+                  <p className={cn("mt-1 flex items-center gap-1.5 text-sm font-medium", testResult.ok ? "text-[var(--data-success-ink)]" : "text-[var(--data-error-ink)]")}>
+                    {testResult.ok ? <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> : <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />}
+                    {testResult.text}
+                  </p>
                 )}
-                Probar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditing(c);
-                  setGuideToken(c.webhookVerifyToken);
-                }}
-                className={ADMIN_TOKENS.btnSecondary}
-              >
-                <Pencil className="h-4 w-4" />
-                Editar
-              </button>
-              {c.isActive && (
-                <button
-                  type="button"
-                  onClick={() => void deactivate(c.id)}
-                  className={ADMIN_TOKENS.btnSecondary}
-                  title="El número deja de recibir y responder"
-                >
-                  <PowerOff className="h-4 w-4" />
-                  Desactivar
+              </div>
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={() => void testConnection(c.id)} aria-disabled={testing === c.id} className={button({ variant: "secondary", className: "rounded-xl px-4" })}>
+                  {testing === c.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Zap className="h-4 w-4" aria-hidden />}
+                  Probar
                 </button>
-              )}
-            </div>
-          </div>
-          {testResult?.id === c.id && (
-            <p
-              className={[
-                "mt-3 flex items-center gap-1.5 text-sm font-medium",
-                testResult.ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
-              ].join(" ")}
-            >
-              {testResult.ok ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-              ) : (
-                <AlertCircle className="h-4 w-4 shrink-0" />
-              )}
-              {testResult.text}
-            </p>
-          )}
-        </div>
-      ))}
-
-      {/* Form crear/editar */}
-      {editing ? (
-        <WaNumberForm
-          initial={editing === "new" ? null : editing}
-          onSaved={() => {
-            setEditing(null);
-            void load();
-          }}
-          onCancel={() => setEditing(null)}
-          onVerifyTokenChange={setGuideToken}
-        />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setEditing("new")}
-          className={ADMIN_TOKENS.btnPrimary}
-        >
-          <Plus className="h-4 w-4" />
-          {configs.length > 0 ? "Conectar otro número" : "Conectar mi número"}
-        </button>
+                <div data-menu-numero={c.id} className="contents">
+                  <ActionMenu
+                    label={`Más de ${c.label || c.phoneNumberId}`}
+                    icon={MoreHorizontal}
+                    soloIcono
+                    size="md"
+                    className="w-12 shrink-0"
+                    title="Editar o desactivar"
+                    actions={[
+                      { id: "editar", label: "Editar", icon: Pencil, onSelect: editarDesdeMenu(c) },
+                      ...(c.isActive
+                        ? [{ id: "desactivar", label: "Desactivar", hint: "El número deja de recibir y responder", icon: PowerOff, tone: "danger" as const, onSelect: () => void deactivate(c.id) }]
+                        : []),
+                    ]}
+                  />
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
+
+      <AdminModal
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        variant="wide"
+        title={editing === "new" || editing === null ? "Conectar número" : `Editar ${editing.label || editing.phoneNumberId}`}
+      >
+        {configs.length > 0 && (
+          <div className={cn(MODAL_GUTTER, "pt-5")}>
+            <WaConnectionGuide verifyToken={guideToken || configs[0]?.webhookVerifyToken || ""} />
+          </div>
+        )}
+        {editing !== null && (
+          <WaNumberForm
+            key={editing === "new" ? "nuevo" : editing.id}
+            initial={editing === "new" ? null : editing}
+            onSaved={() => {
+              setEditing(null);
+              void load();
+            }}
+            onCancel={() => setEditing(null)}
+            onVerifyTokenChange={setGuideToken}
+          />
+        )}
+      </AdminModal>
     </div>
   );
 }

@@ -37,7 +37,7 @@ const TABS = [
   { id: "soporte", label: "Soporte",           icon: Inbox },
   { id: "avisos", label: "Avisos por pedido", icon: BellRing },
   { id: "plantillas", label: "Plantillas WhatsApp", icon: FileText },
-  { id: "bot", label: "Bot WhatsApp", icon: Settings },
+  { id: "bot", label: "Números y bot", icon: Settings },
 ];
 
 /** Los ids, estables: el hook los usa como dependencia. */
