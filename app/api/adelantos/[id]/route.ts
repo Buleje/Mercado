@@ -12,7 +12,7 @@ import { motivoSchema } from "@/lib/forestal/motivo";
 import { AdelantoNoControlableError, AdelantosControlDB } from "@/lib/db/adelantos-control.db";
 import { PATRON_DIA } from "@/lib/adelantos/control-edicion";
 import { randomBytes } from "crypto";
-import sharp from "sharp";
+import { esErrorImagen, leerMultipartFirma, normalizarImagen } from "@/lib/adelantos/imagen-firma.server";
 import { esReciboFirmado, PREFIJO_PRIVADO, rutaFirmaPrivada } from "@/lib/adelantos/recibo-firmado";
 import { borrarFirmaPrivada, subirFirmaPrivada } from "@/lib/adelantos/firma-storage";
 
@@ -257,47 +257,30 @@ const MAX_BYTES_HOJA = 4 * 1024 * 1024;
 /**
  * La hoja sale de un lienzo de 1000 px de ancho (`hoja-firma.ts`) con el voucher
  * arriba acotado: ~1-3 MP. 12 MP da aire y corta antes una bomba de
- * descompresión (un PNG chico que se abre en 40 MP de RAM).
+ * descompresión (un PNG chico que se abre en 40 MP de RAM). La lectura y el
+ * paso a WebP viven en `lib/adelantos/imagen-firma.server.ts` (ADR-491).
  */
 const MAX_PIXELES_HOJA = 12_000_000;
-/**
- * `warning` es lo más estricto de sharp (`none` < `truncated` < `error` <
- * `warning`) y su valor por defecto en 0.34: explícito para que un cambio de
- * versión no lo afloje. Un JPEG cortado o con datos corruptos → 422.
- */
-const OPCIONES_SHARP_HOJA = { limitInputPixels: MAX_PIXELES_HOJA, failOn: "warning" } as const;
-const TIPOS_HOJA = new Set(["image/jpeg", "image/png", "image/webp"]);
-const FORMATOS_HOJA = new Set(["jpeg", "png", "webp"]);
 
 async function adjuntarComprobante(
   req: NextRequest,
   auth: { tenantId: string; username: string; role: string },
   id: string,
 ): Promise<NextResponse> {
-  let form: FormData;
-  try {
-    form = await req.formData();
-  } catch {
-    return NextResponse.json({ error: "Manda la hoja firmada como multipart/form-data." }, { status: 400 });
+  const leido = await leerMultipartFirma(req, { archivos: ["file"], textos: ["action", "anterior"] });
+  if (!leido.ok) {
+    return NextResponse.json(
+      leido.issues ? { error: leido.error, issues: leido.issues } : { error: "Manda la hoja firmada como multipart/form-data." },
+      { status: leido.status },
+    );
   }
-  const campos: Record<string, string> = {};
-  let file: File | null = null;
-  for (const [k, v] of form.entries()) {
-    if (k === "file" && v instanceof File && !file) file = v;
-    else if (typeof v === "string" && !(k in campos)) campos[k] = v;
-    else return NextResponse.json({ error: "Datos inválidos", issues: [`Campo repetido o inesperado: ${k}`] }, { status: 400 });
-  }
+  const campos = leido.textos;
+  const file = leido.archivos.file ?? null;
   const parsed = AdjuntarSchema.safeParse(campos);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
   }
   if (!file) return NextResponse.json({ error: "No llegó la hoja firmada." }, { status: 400 });
-  if (!TIPOS_HOJA.has(file.type)) {
-    return NextResponse.json({ error: "La hoja firmada tiene que ser una imagen (JPG, PNG o WebP).", code: "no_es_imagen" }, { status: 422 });
-  }
-  if (file.size > MAX_BYTES_HOJA) {
-    return NextResponse.json({ error: "La hoja firmada pesa más de 4 MB.", code: "muy_grande" }, { status: 413 });
-  }
   const anterior = parsed.data.anterior.trim() || null;
 
   /* 1. El adelanto, antes de subir nada. */
@@ -329,22 +312,14 @@ async function adjuntarComprobante(
   const rechazo = rechazoDeFirma((actual.comprobanteUrl ?? null) !== anterior ? "cambio" : null);
   if (rechazo) return rechazo;
 
-  /* 2. La imagen: lo que ES, no lo que declara el navegador. */
-  let webp: Buffer;
-  try {
-    const buf = Buffer.from(await file.arrayBuffer());
-    const { format } = await sharp(buf, OPCIONES_SHARP_HOJA).metadata();
-    if (!format || !FORMATOS_HOJA.has(format)) {
-      return NextResponse.json({ error: "La hoja firmada tiene que ser una imagen (JPG, PNG o WebP).", code: "no_es_imagen" }, { status: 422 });
-    }
-    webp = await sharp(buf, OPCIONES_SHARP_HOJA)
-      .resize({ width: 1200, withoutEnlargement: true })
-      .webp({ quality: 85 })
-      .toBuffer();
-  } catch (e) {
-    logger.warn("[adelantos/id] la hoja firmada no es una imagen legible", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json({ error: "La hoja firmada no es una imagen que se pueda leer.", code: "no_es_imagen" }, { status: 422 });
+  /* 2. La imagen: lo que ES, no lo que declara el navegador (tipo y tamaño
+     también se miran acá: un 404/409 de arriba no deja nada subido). */
+  const imagen = await normalizarImagen(file, { maxBytes: MAX_BYTES_HOJA, maxPixeles: MAX_PIXELES_HOJA, ancho: 1200, nombre: "La hoja firmada" });
+  if (esErrorImagen(imagen)) {
+    if (imagen.code === "no_es_imagen") logger.warn("[adelantos/id] la hoja firmada no es una imagen legible");
+    return NextResponse.json({ error: imagen.error, code: imagen.code }, { status: imagen.status });
   }
+  const webp = imagen.webp;
 
   /* 3. A la carpeta privada del adelanto. */
   let ruta: string;

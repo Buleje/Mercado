@@ -243,6 +243,8 @@ export type DbSettings = {
   // ── Caja y pagos ──
   cashOpeningAmount?: number;
   cashAlertMax?: number;
+  /** ADR-491: hasta cuánto entrega el cajero un adelanto. null = 500 por defecto; 0 = no entrega. */
+  adelantoTopeCajero?: number | null;
   returnPolicyDays?: number;
   returnMaxNoAuth?: number;
   autoCloseTime?: string;

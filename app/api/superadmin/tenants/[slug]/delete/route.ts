@@ -8,6 +8,7 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { esTenantProtegido } from "@/lib/tenancy/negocio-por-defecto";
+import { permitirBorrarFirmas } from "@/lib/db/adelanto-firmas.db";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -158,7 +159,10 @@ export async function DELETE(
     }
 
     // ── Phase 3: Delete the tenant itself ──
-    await prisma.tenant.delete({ where: { slug } });
+    // ADR-491: el registro de firmas de adelantos es solo de agregar (trigger
+    // `AdelantoFirma_inmutable`); el cascade del tenant lo borra sólo con el
+    // permiso LOCAL de esta transacción (nunca un SET de sesión en el pooler).
+    await prisma.$transaction([permitirBorrarFirmas(), prisma.tenant.delete({ where: { slug } })]);
 
     logger.info("[SuperAdmin] Tenant deleted", {
       username: session.username,

@@ -26,15 +26,81 @@
  *   se aborta en vez de encolar escrituras detrás del ALTER. LOCAL vive sólo
  *   en esta transacción — nunca SET SESSION (el pooler lo pegaría en
  *   conexiones de producción, memoria pooler-set-session-se-pega).
- * · Parte por `;` de sentencia tras sacar las líneas `--` (memoria
- *   migracion-sql-script-parte-por-punto-y-coma): nada de `;` dentro de
- *   literales ni comentarios al final de una línea de SQL.
+ * · Parte por `;` de sentencia (memoria migracion-sql-script-parte-por-punto-y-coma)
+ *   con `partirSentencias`: respeta '…', $$…$$ / $tag$…$tag$ (cuerpos plpgsql,
+ *   ADR-491) y saca los comentarios `--` y `/* … *\/`. Exportada: el test de
+ *   la migración la usa para fijar cuántas sentencias salen.
+ * · `CREATE OR REPLACE FUNCTION|TRIGGER` no avisa nada: se compara la
+ *   definición antes y después (pg_get_functiondef / pg_get_triggerdef); si
+ *   quedó idéntica cuenta como «ya estaba», así la 2.ª corrida sigue en «0 nuevas».
  *
  * Usado por primera vez en 20260927_lote_mixto_adr441 (ADR-441).
  */
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import pg from "pg";
 
+/**
+ * Parte un .sql en sentencias por `;`, sin cortar dentro de literales '…',
+ * de cuerpos $$…$$ / $tag$…$tag$ ni de comentarios. Los comentarios no viajan.
+ * @param {string} texto
+ * @returns {string[]}
+ */
+export function partirSentencias(texto) {
+  const out = [];
+  let cur = "";
+  let i = 0;
+  while (i < texto.length) {
+    const ch = texto[i];
+    if (ch === "-" && texto[i + 1] === "-") {
+      const fin = texto.indexOf("\n", i);
+      i = fin === -1 ? texto.length : fin;
+      continue;
+    }
+    if (ch === "/" && texto[i + 1] === "*") {
+      const fin = texto.indexOf("*/", i + 2);
+      i = fin === -1 ? texto.length : fin + 2;
+      cur += " ";
+      continue;
+    }
+    if (ch === "'") {
+      let j = i + 1;
+      while (j < texto.length) {
+        if (texto[j] === "'" && texto[j + 1] === "'") j += 2;
+        else if (texto[j] === "'") break;
+        else j += 1;
+      }
+      cur += texto.slice(i, j + 1);
+      i = j + 1;
+      continue;
+    }
+    if (ch === "$") {
+      const m = /^\$(?:[A-Za-z_][A-Za-z_0-9]*)?\$/.exec(texto.slice(i, i + 64));
+      if (m) {
+        const fin = texto.indexOf(m[0], i + m[0].length);
+        if (fin === -1) throw new Error(`[aplicar] ${m[0]} sin cerrar`);
+        cur += texto.slice(i, fin + m[0].length);
+        i = fin + m[0].length;
+        continue;
+      }
+    }
+    if (ch === ";") {
+      out.push(cur);
+      cur = "";
+      i += 1;
+      continue;
+    }
+    cur += ch;
+    i += 1;
+  }
+  out.push(cur);
+  return out.map((x) => x.trim()).filter(Boolean);
+}
+
+const esCli = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (esCli) await main();
+
+async function main() {
 const archivo = process.argv.slice(2).find((a) => a.endsWith(".sql"));
 const ensayo = process.argv.includes("--ensayo");
 if (!archivo) {
@@ -54,25 +120,40 @@ url.port = "5432";
 url.searchParams.delete("pgbouncer");
 url.searchParams.delete("connection_limit");
 
-const sinComentarios = readFileSync(archivo, "utf8")
-  .split("\n")
-  .filter((l) => !l.trim().startsWith("--"))
-  .join("\n");
-const sentencias = sinComentarios
-  .split(";")
-  .map((s) => s.trim())
-  .filter(Boolean);
+const texto = readFileSync(archivo, "utf8");
+const sentencias = partirSentencias(texto);
+const sinComentarios = sentencias.join(";\n");
 
 /** Lo que el archivo dice crear: se verifica en el ensayo antes del ROLLBACK. */
 function declarado(sql) {
   const tablas = [...sql.matchAll(/CREATE TABLE IF NOT EXISTS "(\w+)"/gi)].map((m) => m[1]);
   const columnas = [...sql.matchAll(/ALTER TABLE "(\w+)" ADD COLUMN IF NOT EXISTS "(\w+)"/gi)].map((m) => [m[1], m[2]]);
   const indices = [...sql.matchAll(/CREATE (?:UNIQUE )?INDEX IF NOT EXISTS "(\w+)"/gi)].map((m) => m[1]);
-  return { tablas, columnas, indices };
+  const funciones = [...sql.matchAll(/CREATE OR REPLACE FUNCTION "(\w+)"/gi)].map((m) => m[1]);
+  const triggers = [...sql.matchAll(/CREATE OR REPLACE TRIGGER "(\w+)"/gi)].map((m) => m[1]);
+  return { tablas, columnas, indices, funciones, triggers };
+}
+
+/** Definición actual de lo que un CREATE OR REPLACE va a pisar (null = no existía). */
+async function definicionActual(c, s) {
+  const f = /^CREATE OR REPLACE FUNCTION "(\w+)"/i.exec(s);
+  if (f) {
+    const r = await c.query(
+      "SELECT pg_get_functiondef(p.oid) AS d FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname = $1",
+      [f[1]],
+    );
+    return r.rows[0]?.d ?? null;
+  }
+  const t = /^CREATE OR REPLACE TRIGGER "(\w+)"/i.exec(s);
+  if (t) {
+    const r = await c.query("SELECT pg_get_triggerdef(oid) AS d FROM pg_trigger WHERE tgname = $1 AND NOT tgisinternal", [t[1]]);
+    return r.rows[0]?.d ?? null;
+  }
+  return undefined;
 }
 
 async function verificar(c) {
-  const { tablas, columnas, indices } = declarado(sinComentarios);
+  const { tablas, columnas, indices, funciones, triggers } = declarado(sinComentarios);
   let faltan = 0;
   for (const t of tablas) {
     const r = await c.query(
@@ -95,6 +176,16 @@ async function verificar(c) {
     if (!r.rows.length) faltan += 1;
     console.log(`  ${r.rows.length ? "✓" : "✗"} índice ${i}`);
   }
+  for (const f of funciones) {
+    const r = await c.query("SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname = $1", [f]);
+    if (!r.rows.length) faltan += 1;
+    console.log(`  ${r.rows.length ? "✓" : "✗"} función ${f}`);
+  }
+  for (const t of triggers) {
+    const r = await c.query("SELECT tgenabled FROM pg_trigger WHERE tgname = $1 AND NOT tgisinternal", [t]);
+    if (!r.rows.length) faltan += 1;
+    console.log(`  ${r.rows.length ? "✓" : "✗"} trigger ${t}${r.rows[0] ? ` (enabled=${r.rows[0].tgenabled})` : ""}`);
+  }
   return faltan;
 }
 
@@ -115,11 +206,13 @@ try {
     await c.query(`SAVEPOINT s${i}`);
     avisos.length = 0;
     try {
+      const antes = await definicionActual(c, s);
       await c.query(s);
+      const igual = antes != null && antes === (await definicionActual(c, s));
       await c.query(`RELEASE SAVEPOINT s${i}`);
       // «does not exist, skipping» = un DROP … IF EXISTS que ya se había hecho
       // (K7: se suelta el CHECK viejo y se pone una v2 con otro nombre).
-      if (avisos.some((m) => m.includes("already exists, skipping") || m.includes("does not exist, skipping"))) {
+      if (igual || avisos.some((m) => m.includes("already exists, skipping") || m.includes("does not exist, skipping"))) {
         yaEstaban += 1;
         console.log(`  · ya estaba: ${cabeza}`);
       } else {
@@ -152,4 +245,5 @@ try {
   process.exitCode = 1;
 } finally {
   await c.end();
+}
 }

@@ -161,6 +161,12 @@ export function validateCsrfToken(request: NextRequest): boolean {
     // de protección: token unguessable e irrepetible por firmante, con
     // vencimiento propio, rate-limit STRICT y un único write (POST /firmar).
     "/api/public/contratos/",
+    // Firma pública de ADELANTOS (ADR-491): la persona que recibió la plata
+    // firma el recibo desde su celular con un enlace de WhatsApp, sin sesión.
+    // Mismo modelo que contratos, más estricto: token de 256 bits del que la
+    // base guarda sólo el sha256, un uso (CAS), 48 h, revocable, rate-limit
+    // STRICT y un único write (POST /firmar).
+    "/api/public/adelantos/",
     // Entradas de integración: n8n y el bot de Telegram, por donde llegan las
     // operaciones dictadas (un audio de WhatsApp, un mensaje de Telegram).
     //

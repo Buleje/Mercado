@@ -15,6 +15,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
 import { asegurarBucketFotosCarga, BUCKET_FOTOS_CARGA } from "@/lib/forestal/fotos-carga-storage";
 import { carpetaFirmasDelAdelanto, esRutaFirmaDelAdelanto } from "@/lib/adelantos/recibo-firmado";
+import { CARPETA_REGISTRO, esRutaRegistroDelAdelanto, sha256Hex } from "@/lib/adelantos/registro-firmas";
 
 const BUCKET = BUCKET_FOTOS_CARGA;
 /** Lo que Storage devuelve por página al listar y lo que se borra por llamada. */
@@ -35,6 +36,21 @@ export async function subirFirmaPrivada(ruta: string, cuerpo: Buffer): Promise<{
   return { ok: true };
 }
 
+/**
+ * ADR-491: sube una imagen del registro de firmas (`…/registro/<ms>-<firma|huella>-<azar>.webp`)
+ * y devuelve el sha256 y los bytes de lo que QUEDÓ en el bucket: es lo que la
+ * fila guarda y lo que la puerta recalcula al servirla (`X-Integridad`).
+ * `upsert: false`: una ruta nunca se pisa.
+ */
+export async function subirImagenRegistro(
+  ruta: string,
+  webp: Buffer,
+): Promise<{ ok: true; sha256: string; bytes: number } | { ok: false; error: string }> {
+  const r = await subirFirmaPrivada(ruta, webp).catch((e: unknown) => ({ ok: false as const, error: String(e) }));
+  if (!r.ok) return r;
+  return { ok: true, sha256: sha256Hex(webp), bytes: webp.length };
+}
+
 export async function bajarFirmaPrivada(ruta: string): Promise<Buffer | null> {
   const { data, error } = await getSupabaseAdmin().storage.from(BUCKET).download(ruta);
   if (error || !data) {
@@ -44,13 +60,15 @@ export async function bajarFirmaPrivada(ruta: string): Promise<Buffer | null> {
   return Buffer.from(await data.arrayBuffer());
 }
 
-/** Para no dejar huérfana una hoja que el compara-y-cambia rechazó. Nunca tira. */
-export async function borrarFirmaPrivada(ruta: string): Promise<void> {
+/** Para no dejar huérfana una hoja que el compara-y-cambia rechazó, o suprimir una huella. Nunca tira; `false` = no se borró. */
+export async function borrarFirmaPrivada(ruta: string): Promise<boolean> {
   try {
     const { error } = await getSupabaseAdmin().storage.from(BUCKET).remove([ruta]);
     if (error) logger.error("[adelantos-firma] no se pudo borrar la hoja huérfana", { ruta, error: error.message });
+    return !error;
   } catch (e) {
     logger.error("[adelantos-firma] no se pudo borrar la hoja huérfana", { ruta, error: String(e) });
+    return false;
   }
 }
 
@@ -67,7 +85,14 @@ export async function borrarFirmaPrivada(ruta: string): Promise<void> {
  * con la columna apuntando a nada).
  *
  * Sólo borra archivos con la forma EXACTA de una hoja de ESTE adelanto de ESTE
- * negocio (`esRutaFirmaDelAdelanto`); un id raro no lista nada. No tira: el
+ * negocio (`esRutaFirmaDelAdelanto`); un id raro no lista nada.
+ *
+ * ADR-491: también las imágenes del registro de firmas (subcarpeta `registro/`,
+ * firmas y huellas). Las FILAS de `AdelantoFirma` son solo de agregar: el
+ * trigger `AdelantoFirma_inmutable` rechaza su DELETE salvo dentro de una
+ * transacción con `SET LOCAL app.permitir_borrar_firmas = 'on'`
+ * (`permitirBorrarFirmasEnTx`). Quien suprima borra las filas así y después
+ * llama esto. No tira: el
  * error vuelve en el resultado, porque a quien pidió la supresión hay que
  * poder decirle que no se completó.
  */
@@ -86,14 +111,30 @@ export async function borrarFirmasDelAdelanto(
     /* Primero se junta todo y después se borra: borrar mientras se pagina por
        `offset` se salta archivos. */
     const rutas: string[] = [];
+    /* Storage lista una carpeta por vez: la subcarpeta `registro/` aparece como
+       una entrada más y se recorre sólo si existe. */
+    let conRegistro = false;
     for (let offset = 0; ; offset += PAGINA) {
       const { data, error } = await storage.list(carpeta, { limit: PAGINA, offset, sortBy: { column: "name", order: "asc" } });
       if (error) throw new Error(error.message);
       for (const o of data ?? []) {
+        if (o.name === CARPETA_REGISTRO) conRegistro = true;
         const ruta = `${carpeta}/${o.name}`;
         if (esRutaFirmaDelAdelanto(ruta, tenantId, adelantoId)) rutas.push(ruta);
       }
       if (!data || data.length < PAGINA) break;
+    }
+    if (conRegistro) {
+      const sub = `${carpeta}/${CARPETA_REGISTRO}`;
+      for (let offset = 0; ; offset += PAGINA) {
+        const { data, error } = await storage.list(sub, { limit: PAGINA, offset, sortBy: { column: "name", order: "asc" } });
+        if (error) throw new Error(error.message);
+        for (const o of data ?? []) {
+          const ruta = `${sub}/${o.name}`;
+          if (esRutaRegistroDelAdelanto(ruta, tenantId, adelantoId)) rutas.push(ruta);
+        }
+        if (!data || data.length < PAGINA) break;
+      }
     }
     for (let i = 0; i < rutas.length; i += PAGINA) {
       const { error } = await storage.remove(rutas.slice(i, i + PAGINA));

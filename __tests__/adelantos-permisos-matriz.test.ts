@@ -34,6 +34,9 @@ describe("permisoAdelantos = la matriz", () => {
     ["almacenero", "read", false],
     ["almacenero", "write", false],
     ["almacenero", "delete", false],
+    // ADR-491: el cajero ENTREGA (recurso aparte) pero sigue sin `adelantos`.
+    ["cajero", "delete", false],
+    ["owner", "read", true],
   ];
   it.each(casos)("%s · %s → %s", (role, accion, puede) => {
     expect(permisoAdelantos(role, accion) === null).toBe(puede);
@@ -57,6 +60,14 @@ describe("cada ruta de /api/adelantos pregunta a la matriz", () => {
   /** Las de liquidar ya exigen admin o dueño explícito (más estricto que la matriz). */
   const EXCEPCIONES = new Set(["cuentas/liquidaciones/route.ts", "cuentas/liquidaciones/[id]/route.ts", "cuentas/partidas/route.ts"]);
   const ACCION: Record<string, string> = { GET: "read", POST: "write", PATCH: "write", PUT: "write", DELETE: "delete" };
+  /**
+   * ADR-491: entregar lee el recurso `adelantos-entregar` (el cajero lo tiene;
+   * `adelantos`, no). Lista EXPLÍCITA: ninguna otra ruta puede usarlo en lugar
+   * de `permisoAdelantos`.
+   */
+  const DE_ENTREGAR = new Set(["entregar/route.ts", "entregar/personas/route.ts"]);
+  /** Revocar un enlace de firma no borra deuda ni firma: es `write`. */
+  const ACCION_PROPIA: Record<string, string> = { "[id]/enlace-firma/[enlaceId]/route.ts DELETE": "write" };
 
   const rutas = (dir: string): string[] =>
     readdirSync(dir).flatMap((n) => {
@@ -77,10 +88,25 @@ describe("cada ruta de /api/adelantos pregunta a la matriz", () => {
       const handlers = src.split(/(?=^export (?:async function|const) (?:GET|POST|PATCH|PUT|DELETE)\b)/m).slice(1);
       for (const h of handlers) {
         const metodo = /^export (?:async function|const) (\w+)/.exec(h)?.[1] ?? "?";
-        if (!h.includes(`permisoAdelantos(auth.role, "${ACCION[metodo]}")`)) faltan.push(`${archivo} ${metodo}`);
+        const esperado = DE_ENTREGAR.has(archivo)
+          ? "permisoEntregar(auth.role)"
+          : `permisoAdelantos(auth.role, "${ACCION_PROPIA[`${archivo} ${metodo}`] ?? ACCION[metodo]}")`;
+        if (!h.includes(esperado)) faltan.push(`${archivo} ${metodo}`);
       }
     }
     expect(faltan).toEqual([]);
+  });
+
+  it("`permisoEntregar` sólo en las rutas de entregar (y la puerta del cajero en …/firmas)", () => {
+    const usan = archivos.filter(([, src]) => src.includes("permisoEntregar(")).map(([a]) => a).sort();
+    expect(usan).toEqual(["[id]/firmas/route.ts", "entregar/personas/route.ts", "entregar/route.ts"]);
+    /* En …/firmas el cajero entra SÓLO con la clave de su alta: el permiso de
+       la matriz se pide primero y la puerta se abre sólo con `entregaKey`. */
+    const firmas = archivos.find(([a]) => a === "[id]/firmas/route.ts")?.[1] ?? "";
+    expect(firmas).toMatch(/if \(sinPermiso && permisoEntregar\(auth\.role\)\) return sinPermiso;/);
+    expect(firmas).toMatch(/if \(sinPermiso && !d\.entregaKey\) return sinPermiso;/);
+    /* El 403 va antes de leer el multipart. */
+    expect(firmas.indexOf("if (sinPermiso && permisoEntregar(auth.role)) return sinPermiso;")).toBeLessThan(firmas.indexOf("leerMultipartFirma(req"));
   });
 
   it("anular (PATCH cancelar) también es `delete`", () => {

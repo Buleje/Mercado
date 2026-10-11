@@ -142,6 +142,29 @@ export function esRutaFirmaDelAdelanto(ruta: string, tenantId: string, adelantoI
   return ruta.startsWith(base) && ARCHIVO_FIRMA.test(ruta.slice(base.length));
 }
 
+/** Marca del voucher del alta guardado en privado (V, ADR-491). */
+const MARCA_VOUCHER = "voucher";
+const ARCHIVO_VOUCHER = new RegExp(`^\\d{10,16}-${MARCA_VOUCHER}-[a-f0-9]{8,32}\\.webp$`);
+
+/**
+ * (V, ADR-491) El voucher del alta, PRIVADO: `<tenantId>/adelantos/<adelantoId>/<ms>-voucher-<azar>.webp`.
+ * Misma carpeta que la hoja firmada; `esReciboFirmado` NO lo reconoce como recibo.
+ */
+export function rutaVoucherPrivada(tenantId: string, adelantoId: string, ms: number, azar: string): string {
+  if (!ID_SEGURO.test(tenantId) || !ID_SEGURO.test(adelantoId)) throw new Error("id inválido para la ruta del voucher");
+  const az = azar.toLowerCase().replace(/[^a-f0-9]/g, "").slice(0, 32);
+  if (az.length < 8) throw new Error("azar corto para la ruta del voucher");
+  return `${tenantId}/${CARPETA}/${adelantoId}/${Math.trunc(ms)}-${MARCA_VOUCHER}-${az}.webp`;
+}
+
+/** Lo que la puerta `GET …/comprobante` sirve de la carpeta privada: la hoja firmada o el voucher privado. */
+export function esRutaComprobanteDelAdelanto(ruta: string, tenantId: string, adelantoId: string): boolean {
+  if (esRutaFirmaDelAdelanto(ruta, tenantId, adelantoId)) return true;
+  if (!ID_SEGURO.test(tenantId) || !ID_SEGURO.test(adelantoId)) return false;
+  const base = `${tenantId}/${CARPETA}/${adelantoId}/`;
+  return ruta.startsWith(base) && ARCHIVO_VOUCHER.test(ruta.slice(base.length));
+}
+
 export function esComprobantePrivado(url?: string | null): url is string {
   return !!url && url.startsWith(PREFIJO_PRIVADO);
 }

@@ -41,6 +41,8 @@ import { huellaDeAlta, huellaDeEntrega } from "@/lib/adelantos/idempotencia";
 import { CONCEPTO_PLANILLA } from "@/lib/adelantos/planilla-lote";
 import { invalidateByPrefix } from "@/lib/cache";
 import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
+import { enmascararDocumento, type PersonaEntregar } from "@/lib/adelantos/entregar-tipos";
+import type { CodigoMarcacion } from "@/lib/rrhh/kiosko";
 
 /** ADR-451: la caja y lo que viene del negocio leen los adelantos (alta, entrega, anulación). */
 function invalidarResultado(tenantId: string): void {
@@ -230,6 +232,8 @@ export type DbAdelanto = {
   conceptoRecibido: AdelantoConceptoRecibido | null;
   entregas: DbAdelantoEntrega[];
   entregasPactadas: DbEntregaPactada[];
+  /** ADR-491: si el registro tiene alguna firma / huella (badge en lista y ficha). */
+  firmas?: { firma: boolean; huella: boolean };
   createdAt: string;
   updatedAt: string;
 };
@@ -357,6 +361,46 @@ export class IdempotenciaDistintaError extends Error {
 }
 
 /**
+ * ADR-491: quien entrega sin gestionar adelantos (el cajero) saca la plata del
+ * cajón: sin caja abierta no hay entrega. Se tira DENTRO de la transacción del
+ * alta, así que no queda ni el adelanto ni el movimiento. La ruta responde 409
+ * `sin_caja` («Abre la caja primero»).
+ */
+/**
+ * Interna de `create`: dentro de la transacción, después del bloqueo por
+ * persona, la clave YA estaba (el 1.er pedido del mismo intento se guardó
+ * mientras éste esperaba). El catch la convierte en `repetido`.
+ */
+class ClaveYaGuardadaError extends Error {
+  constructor() {
+    super("La clave del alta ya se guardó en otro pedido.");
+    this.name = "ClaveYaGuardadaError";
+  }
+}
+
+export class TopeCajeroError extends Error {
+  readonly status = 403 as const;
+  readonly code = "supera_tope_cajero" as const;
+  constructor(readonly tope: number, readonly queda: number) {
+    super(
+      queda > 0
+        ? `El cajero entrega hasta S/ ${tope.toFixed(2)} por persona al día: a esta persona le queda S/ ${queda.toFixed(2)} hoy. Para más, pídeselo al dueño.`
+        : `El cajero ya entregó hoy el tope de S/ ${tope.toFixed(2)} a esta persona. Para más, pídeselo al dueño.`,
+    );
+    this.name = "TopeCajeroError";
+  }
+}
+
+export class SinCajaError extends Error {
+  readonly status = 409 as const;
+  readonly code = "sin_caja" as const;
+  constructor() {
+    super("Abre la caja primero: el adelanto sale de la caja abierta.");
+    this.name = "SinCajaError";
+  }
+}
+
+/**
  * El alta trajo un `contratoId` que no es de este negocio o está dado de baja.
  * Antes se guardaba el adelanto SIN contrato y se respondía 201: quien lo cargó
  * creía que quedaba imputado. La ruta responde 422 `contrato_invalido`; no se
@@ -386,6 +430,45 @@ export type PermisosDeRecibido = {
 const SOLO_ADMIN_RECIBIDO = "Solo el administrador o el dueño pueden sacar plata de la caja por una plata recibida.";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+/**
+ * ADR-491: el último monto DADO (no anulado) y, si se pide, el saldo abierto
+ * dado en soles de cada persona — la misma cuenta que el tope de crédito.
+ */
+async function armadorDePersonas(
+  tenantId: string,
+  ids: string[],
+  conSaldo: boolean,
+): Promise<(b: { id: string; nombre: string; documento: string | null; telefono: string | null }) => PersonaEntregar> {
+  const unicos = [...new Set(ids)];
+  const [ultimos, saldos] = unicos.length
+    ? await Promise.all([
+        prisma.adelanto.findMany({
+          where: { tenantId, beneficiarioId: { in: unicos }, ...SOLO_DADOS, status: { not: "CANCELADO" } },
+          orderBy: [{ fechaAdelanto: "desc" }, { createdAt: "desc" }],
+          distinct: ["beneficiarioId"],
+          select: { beneficiarioId: true, montoAdelantado: true },
+        }),
+        conSaldo
+          ? prisma.adelanto.groupBy({
+              by: ["beneficiarioId"],
+              where: { tenantId, beneficiarioId: { in: unicos }, ...SOLO_DADOS, status: "ABIERTO", moneda: "PEN" },
+              _sum: { saldoPendiente: true },
+            })
+          : Promise.resolve([]),
+      ])
+    : [[], []];
+  const ultimo = new Map(ultimos.map((u) => [u.beneficiarioId, toNum(u.montoAdelantado)]));
+  const saldo = new Map(saldos.map((g) => [g.beneficiarioId, toNum(g._sum.saldoPendiente)]));
+  return (b) => ({
+    id: b.id,
+    nombre: b.nombre,
+    documentoFinal: enmascararDocumento(b.documento),
+    tieneTelefono: !!b.telefono?.trim(),
+    ultimoMonto: ultimo.get(b.id) ?? null,
+    ...(conSaldo ? { saldo: Math.round((saldo.get(b.id) ?? 0) * 100) / 100 } : {}),
+  });
+}
+
 /** Violación de unique constraint de Prisma (P2002) — mismo detector que juntas.db.ts. */
 function isUniqueViolation(err: unknown): boolean {
   return typeof err === "object" && err !== null && (err as { code?: string }).code === "P2002";
@@ -401,6 +484,8 @@ const INCLUDE_FULL = {
      cubre a todos. */
   entregas: { where: { anuladaAt: null }, orderBy: { fecha: "desc" } },
   entregasPactadas: { orderBy: { numero: "asc" } },
+  /* ADR-491: a lo sumo una fila por tipo — sólo para saber si hay firma / huella. */
+  firmas: { select: { tipo: true }, distinct: ["tipo"] },
 } satisfies Prisma.AdelantoInclude;
 
 type AdelantoRow = Prisma.AdelantoGetPayload<{ include: typeof INCLUDE_FULL }>;
@@ -507,6 +592,10 @@ function mapAdelanto(row: AdelantoRow): DbAdelanto {
       valorEsperado: toNum(p.valorEsperado), fechaEsperada: iso(p.fechaEsperada),
       cumplidaEn: iso(p.cumplidaEn), entregaId: p.entregaId,
     })),
+    /* Una fila (o un mock) sin la relación no inventa el badge. */
+    ...(row.firmas
+      ? { firmas: { firma: row.firmas.some((f) => f.tipo === "FIRMA"), huella: row.firmas.some((f) => f.tipo === "HUELLA") } }
+      : {}),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -589,6 +678,21 @@ export type AdelantoCreateInput = {
   metodoCaja?: MetodoPago | null;
   /** El permiso bajo el que se entrega el adelanto (ADR-421). */
   contratoId?: string | null;
+  /**
+   * ADR-491 (cajero): sin caja abierta NO se guarda — `SinCajaError` dentro de
+   * la transacción, rollback del alta. Exige `metodoCaja`.
+   */
+  exigirCajaAbierta?: boolean;
+  /** ADR-491 (cajero): la persona tiene que estar ACTIVA (el cajero no da a una dada de baja). */
+  soloActivas?: boolean;
+  /**
+   * ADR-491 (cajero): tope DIARIO por persona. Dentro de la transacción del
+   * alta, con un lock por (negocio, persona): lo dado hoy (Lima) por cajeros
+   * —altas cuya clave empieza con `prefijoClave`— + este monto ≤ `tope`; si no,
+   * `TopeCajeroError` (rollback). Dos entregas a la vez a la misma persona
+   * esperan una a la otra: no pasan las dos.
+   */
+  topeCajero?: { tope: number; desde: Date; prefijoClave: string };
 };
 
 export type EntregaInput = {
@@ -932,6 +1036,140 @@ export const AdelantosDB = {
     return row ? mapAdelanto(row) : null;
   },
 
+  /**
+   * ADR-491: a quién entregar. `frecuentes` = las 3 personas ACTIVAS con más
+   * adelantos dados no anulados en 90 días (desempate: la más reciente);
+   * `resultados` = búsqueda por nombre o documento (vacía sin `q`). Sin banco,
+   * CCI ni dirección: el cajero la usa. `saldo` sólo con `conSaldo`.
+   */
+  async personasParaEntregar(
+    tenantId: string,
+    { q, conSaldo }: { q?: string; conSaldo: boolean },
+  ): Promise<{ frecuentes: PersonaEntregar[]; resultados: PersonaEntregar[] }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const desde = new Date(Date.now() - 90 * 86_400_000);
+    const grupos = await prisma.adelanto.groupBy({
+      by: ["beneficiarioId"],
+      where: { tenantId, ...SOLO_DADOS, status: { not: "CANCELADO" }, fechaAdelanto: { gte: desde } },
+      _count: { beneficiarioId: true },
+      _max: { fechaAdelanto: true },
+      orderBy: [{ _count: { beneficiarioId: "desc" } }, { _max: { fechaAdelanto: "desc" } }],
+      take: 12,
+    });
+    const texto = q?.trim() ?? "";
+    const [candidatos, encontrados] = await Promise.all([
+      grupos.length
+        ? prisma.adelantoBeneficiario.findMany({
+            where: { tenantId, activo: true, id: { in: grupos.map((g) => g.beneficiarioId) } },
+            select: { id: true, nombre: true, documento: true, telefono: true },
+          })
+        : Promise.resolve([]),
+      texto
+        ? prisma.adelantoBeneficiario.findMany({
+            where: {
+              tenantId,
+              activo: true,
+              OR: [{ nombre: { contains: texto, mode: "insensitive" } }, { documento: { contains: texto } }],
+            },
+            orderBy: { nombre: "asc" },
+            take: 20,
+            select: { id: true, nombre: true, documento: true, telefono: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const porId = new Map(candidatos.map((b) => [b.id, b]));
+    const frecuentesBase = grupos.map((g) => porId.get(g.beneficiarioId)).filter((b): b is NonNullable<typeof b> => !!b).slice(0, 3);
+    const todos = [...frecuentesBase, ...encontrados];
+    const armar = await armadorDePersonas(tenantId, todos.map((b) => b.id), conSaldo);
+    return { frecuentes: frecuentesBase.map(armar), resultados: encontrados.map(armar) };
+  },
+
+  /**
+   * ADR-491: el QR del fotocheck o el DNI tipeado → la persona de Adelantos.
+   * `{tipo:"id"}` = el colaborador del fotocheck (su `beneficiarioId`; si el id
+   * ya es de una persona de Adelantos, esa). `{tipo:"documento"}` = la persona
+   * con ese documento (o el colaborador con ese documento). Siempre ACTIVA y de
+   * ESTE negocio: un QR de otro negocio no encuentra a nadie.
+   */
+  async personaPorCodigo(tenantId: string, codigo: CodigoMarcacion, { conSaldo = false }: { conSaldo?: boolean } = {}): Promise<PersonaEntregar | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const sel = { id: true, nombre: true, documento: true, telefono: true } as const;
+    const activa = (id: string | null | undefined) =>
+      id ? prisma.adelantoBeneficiario.findFirst({ where: { tenantId, id, activo: true }, select: sel }) : Promise.resolve(null);
+    let b: { id: string; nombre: string; documento: string | null; telefono: string | null } | null = null;
+    if (codigo.tipo === "id") {
+      const col = await prisma.colaborador.findFirst({ where: { tenantId, id: codigo.id }, select: { beneficiarioId: true } });
+      b = col ? await activa(col.beneficiarioId) : await activa(codigo.id);
+    } else {
+      b = await prisma.adelantoBeneficiario.findFirst({ where: { tenantId, documento: codigo.documento, activo: true }, select: sel });
+      if (!b) {
+        const col = await prisma.colaborador.findFirst({ where: { tenantId, documento: codigo.documento }, select: { beneficiarioId: true } });
+        b = await activa(col?.beneficiarioId);
+      }
+    }
+    if (!b) return null;
+    const armar = await armadorDePersonas(tenantId, [b.id], conSaldo);
+    return armar(b);
+  },
+
+  /**
+   * ADR-491: lo que necesita guardar una firma del registro (monto y moneda que
+   * la persona ve, la clave del alta para el reintento del cajero). Sin
+   * filtro de dirección: la firma es del adelanto, sea DADO o RECIBIDO.
+   */
+  async datosParaFirmar(tenantId: string, id: string): Promise<{
+    id: string;
+    status: string;
+    idempotencyKey: string | null;
+    createdAt: Date;
+    montoAdelantado: number;
+    moneda: string;
+    codigoOperacion: string | null;
+    direccion: AdelantoDireccion;
+    beneficiario: { nombre: string; documento: string | null; telefono: string | null };
+  } | null> {
+    const r = await prisma.adelanto.findFirst({
+      where: { id, tenantId },
+      select: {
+        id: true, status: true, idempotencyKey: true, createdAt: true, montoAdelantado: true, moneda: true,
+        codigoOperacion: true, direccion: true, beneficiario: { select: { nombre: true, documento: true, telefono: true } },
+      },
+    });
+    if (!r) return null;
+    return { ...r, montoAdelantado: toNum(r.montoAdelantado), direccion: direccionDe(r.direccion) };
+  },
+
+  /** ADR-491: el adelanto que YA quedó con esa clave (422 `idempotencia_distinta`: la pantalla lo muestra). */
+  async resumenPorClave(
+    tenantId: string,
+    clave: string,
+  ): Promise<{ codigoOperacion: string | null; monto: number; moneda: string; persona: string } | null> {
+    const r = await prisma.adelanto.findFirst({
+      where: { tenantId, idempotencyKey: clave },
+      select: { codigoOperacion: true, montoAdelantado: true, moneda: true, beneficiario: { select: { nombre: true } } },
+    });
+    return r ? { codigoOperacion: r.codigoOperacion, monto: toNum(r.montoAdelantado), moneda: r.moneda, persona: r.beneficiario.nombre } : null;
+  },
+
+  /**
+   * ADR-491: el movimiento de caja que dejó el ALTA (el egreso con su código,
+   * anotado en la misma transacción). Para que un reintento (`repetido`) diga
+   * qué movió de verdad y la pantalla no muestre «No movió la caja».
+   */
+  async movimientoDeCajaDelAlta(
+    tenantId: string,
+    a: { codigoOperacion?: string | null; direccion: AdelantoDireccion; createdAt: string | Date },
+  ): Promise<{ id: string } | null> {
+    const codigo = a.codigoOperacion?.trim();
+    if (!codigo) return null;
+    const desde = new Date(new Date(a.createdAt).getTime() - 60_000);
+    return prisma.cashMovement.findFirst({
+      where: { cashRegister: { tenantId }, type: cajaAlCrear(a.direccion), description: { contains: codigo }, createdAt: { gte: desde } },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+  },
+
   async create(tenantId: string, data: AdelantoCreateInput): Promise<ConCaja<DbAdelanto> & { repetido?: true }> {
     if (!tenantId) throw new Error("tenantId is required");
     /* Idempotencia: el mismo intento (doble clic, reintento de la red) devuelve
@@ -994,7 +1232,9 @@ export const AdelantosDB = {
 
     // ADR-118: límite de crédito por persona (saldo abierto + nuevo monto ≤ límite)
     const benef = await prisma.adelantoBeneficiario.findFirst({
-      where: { id: data.beneficiarioId, tenantId },
+      /* ADR-491: el cajero sólo entrega a personas ACTIVAS (misma respuesta que
+         una que no existe: 400 `persona_inexistente`). */
+      where: { id: data.beneficiarioId, tenantId, ...(data.soloActivas ? { activo: true } : {}) },
       select: { nombre: true, limiteCredito: true },
     });
     /**
@@ -1096,10 +1336,51 @@ export const AdelantosDB = {
      */
     let row: Awaited<ReturnType<typeof crear>>;
     let caja: ResultadoMovimiento | null = null;
+    if ((data.exigirCajaAbierta || data.topeCajero) && !data.metodoCaja) throw new SinCajaError();
     try {
       const metodoCaja = data.metodoCaja;
       if (metodoCaja) {
         ({ row, caja } = await prisma.$transaction(async (tx) => {
+          const topeCajero = data.topeCajero;
+          if (topeCajero) {
+            /* Primer lock de la tx (la caja va última, F4): serializa las
+               entregas de cajero a la MISMA persona. */
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`adelanto-tope-cajero:${tenantId}:${data.beneficiarioId}`}))`;
+            /* El mismo intento que se guardó mientras éste esperaba el bloqueo:
+               es un reintento, no otra entrega (si no, sumaba sus S/ al tope
+               del día y respondía «tope» en vez de «repetido»). */
+            if (clave && (await tx.adelanto.findFirst({ where: { tenantId, idempotencyKey: clave }, select: { id: true } }))) {
+              throw new ClaveYaGuardadaError();
+            }
+            /* El límite de crédito de la persona, otra vez BAJO el bloqueo: dos
+               entregas de cajero a la vez no lo pasan juntas (sin forzar). */
+            if (benef.limiteCredito != null && monedaNueva === "PEN" && direccion === "DADO") {
+              const limite = Number(benef.limiteCredito);
+              const abiertos = await tx.adelanto.aggregate({
+                where: { tenantId, beneficiarioId: data.beneficiarioId, status: "ABIERTO", moneda: "PEN", ...SOLO_DADOS },
+                _sum: { saldoPendiente: true },
+              });
+              const actual = Number(abiertos._sum.saldoPendiente ?? 0);
+              if (actual + monto > limite) {
+                throw new Error(`Supera el límite de crédito de ${benef.nombre} (S/${limite.toFixed(2)}). Ya tiene S/${actual.toFixed(2)} sin liquidar.`);
+              }
+            }
+            const hoy = await tx.adelanto.aggregate({
+              where: {
+                tenantId,
+                beneficiarioId: data.beneficiarioId,
+                ...SOLO_DADOS,
+                status: { not: "CANCELADO" },
+                createdAt: { gte: topeCajero.desde },
+                idempotencyKey: { startsWith: topeCajero.prefijoClave },
+              },
+              _sum: { montoAdelantado: true },
+            });
+            const dado = toNum(hoy._sum.montoAdelantado);
+            if (dado + monto > topeCajero.tope + 0.001) {
+              throw new TopeCajeroError(topeCajero.tope, Math.max(0, Math.round((topeCajero.tope - dado) * 100) / 100));
+            }
+          }
           const creado = await crear(tx);
           const nombre = creado.beneficiario?.nombre ?? "—";
           const mov = await moverCajaEnTx(tx, tenantId, {
@@ -1111,6 +1392,8 @@ export const AdelantosDB = {
                 ? etiquetaRecibido("alta", creado.codigoOperacion, nombre)
                 : etiquetaEgreso(creado.codigoOperacion, nombre),
           });
+          /* ADR-491: el cajero no entrega sin caja — rollback del alta. */
+          if (data.exigirCajaAbierta && mov.sinCaja) throw new SinCajaError();
           return { row: creado, caja: mov };
         }));
       } else {
@@ -1119,7 +1402,7 @@ export const AdelantosDB = {
     } catch (e) {
       /* Dos pedidos con la misma clave a la vez: el índice único deja pasar uno.
          El otro devuelve el que quedó — y no mueve la caja. */
-      if (clave && isUniqueViolation(e)) {
+      if (clave && (isUniqueViolation(e) || e instanceof ClaveYaGuardadaError || e instanceof TopeCajeroError)) {
         const otro = await yaCreado();
         if (otro) return otro;
       }

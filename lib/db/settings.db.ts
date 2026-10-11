@@ -109,6 +109,8 @@ function mapSettings(s: PSettings): DbSettings {
     // ── Caja y pagos ──
     ...(r.cashOpeningAmount != null && { cashOpeningAmount: Number(r.cashOpeningAmount) }),
     ...(r.cashAlertMax != null && { cashAlertMax: Number(r.cashAlertMax) }),
+    // ADR-491: null = TOPE_CAJERO_POR_DEFECTO (500); 0 = el cajero no entrega.
+    ...(r.adelantoTopeCajero != null && { adelantoTopeCajero: Number(r.adelantoTopeCajero) }),
     ...(r.returnPolicyDays != null && { returnPolicyDays: r.returnPolicyDays as number }),
     ...(r.returnMaxNoAuth != null && { returnMaxNoAuth: Number(r.returnMaxNoAuth) }),
     ...(r.autoCloseTime != null && { autoCloseTime: r.autoCloseTime as string }),
@@ -306,6 +308,7 @@ export const SettingsDB = {
       // ── Caja y pagos ──
       ...(s.cashOpeningAmount !== undefined && { cashOpeningAmount: s.cashOpeningAmount }),
       ...(s.cashAlertMax !== undefined && { cashAlertMax: s.cashAlertMax }),
+      ...(s.adelantoTopeCajero !== undefined && { adelantoTopeCajero: s.adelantoTopeCajero }),
       ...(s.returnPolicyDays !== undefined && { returnPolicyDays: s.returnPolicyDays }),
       ...(s.returnMaxNoAuth !== undefined && { returnMaxNoAuth: s.returnMaxNoAuth }),
       ...(s.autoCloseTime !== undefined && { autoCloseTime: s.autoCloseTime }),

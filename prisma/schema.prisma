@@ -78,6 +78,9 @@ model Tenant {
   adelantos              Adelanto[]
   adelantoBeneficiarios  AdelantoBeneficiario[]
   adelantosRecurrentes   AdelantoRecurrente[]
+  /// ADR-491: registro de firmas/huellas (solo de agregar) y enlaces de firma.
+  adelantoFirmas         AdelantoFirma[]
+  adelantoEnlacesFirma   AdelantoEnlaceFirma[]
   stores                 Store[]
   featureFlags           TenantFeatureFlag[]
   piezas                 TenantPieza[]
@@ -702,6 +705,9 @@ model Settings {
   // ── Caja y pagos (Mejora M47-M54) ──
   cashOpeningAmount Decimal? @default(100) @db.Decimal(12, 2)
   cashAlertMax      Decimal? @default(500) @db.Decimal(12, 2)
+  /// ADR-491: hasta cuánto entrega un cajero sin `adelantos:write` (moneda del
+  /// adelanto). null = `TOPE_CAJERO_POR_DEFECTO` (S/ 500); 0 = el cajero no entrega.
+  adelantoTopeCajero Decimal? @db.Decimal(12, 2)
   returnPolicyDays  Int?     @default(7)
   returnMaxNoAuth   Decimal? @default(50) @db.Decimal(12, 2)
   autoCloseTime     String? // e.g. "22:00"
@@ -5512,6 +5518,9 @@ model Adelanto {
   beneficiario     AdelantoBeneficiario     @relation(fields: [beneficiarioId], references: [id], onDelete: Restrict)
   entregas         AdelantoEntrega[]
   entregasPactadas AdelantoEntregaPactada[]
+  /// ADR-491: registro de firmas y huellas (solo de agregar) y enlaces de firma.
+  firmas           AdelantoFirma[]
+  enlacesFirma     AdelantoEnlaceFirma[]
 
   /// El permiso bajo el que se trabajó esto (ADR-421). Nullable a propósito:
   /// nada de lo ya cargado se rompe, y un adelanto al personal de planta sigue siendo válido sin contrato.
@@ -5529,6 +5538,98 @@ model Adelanto {
   @@index([beneficiarioId])
   @@index([tenantId, contratoId])
   @@index([tenantId, direccion, status])
+  /// ADR-491: lo exigen las FK compuestas (tenantId, adelantoId) de
+  /// `AdelantoFirma` y `AdelantoEnlaceFirma` (una firma no puede apuntar a un
+  /// adelanto de otro negocio).
+  @@unique([tenantId, id])
+}
+
+/// ADR-491: firmas y huellas de un adelanto, SOLO DE AGREGAR. El trigger
+/// `AdelantoFirma_inmutable` rechaza UPDATE y DELETE (salvo supresión Ley 29733
+/// con `SET LOCAL app.permitir_borrar_firmas = 'on'`). La vigente de cada tipo
+/// es la última por `createdAt`. Nunca update/delete/upsert desde la app.
+/// ⚠️ La base tiene CHECKs que Prisma no muestra (`prisma/migrations/adr-491-registro-firmas-adelantos.sql`):
+/// sha256 hex de 64, bytes > 0, HUELLA ⇒ `consentimiento` no null,
+/// canal ENLACE ⇔ `enlaceId` no null, `ruta` empieza por `<tenantId>/adelantos/<adelantoId>/`.
+/// Borrar un adelanto (FK NO ACTION) o un tenant (el trigger frena la cascada)
+/// que tenga firmas falla a propósito.
+model AdelantoFirma {
+  id                String               @id @default(cuid())
+  tenantId          String
+  adelantoId        String
+  tipo              AdelantoFirmaTipo
+  canal             AdelantoFirmaCanal
+  /// Lo que escribió quien firmó (no lo que dice la ficha hoy).
+  firmanteNombre    String
+  /// `limpiarDocumento()`; "" si no dio documento.
+  firmanteDocumento String
+  /// Ruta en el bucket privado, sin `priv:`. `<tenantId>/adelantos/<adelantoId>/…`
+  ruta              String
+  /// sha256 hex del binario GUARDADO (el webp que quedó en el bucket).
+  sha256            String               @db.Char(64)
+  bytes             Int
+  /// Lo que la persona vio al firmar: si el adelanto se corrige después, la
+  /// firma no pasa a «firmar» otro monto.
+  montoFirmado      Decimal              @db.Decimal(12, 2)
+  monedaFirmada     String
+  codigoOperacion   String?
+  /// Usuario del panel que operó la pantalla o generó el enlace.
+  pedidoPor         String?
+  enlaceId          String?
+  ip                String?
+  userAgent         String?
+  /// Versión del texto aceptado (`VERSION_CONSENTIMIENTO_HUELLA`). Obligatorio en HUELLA (CHECK).
+  consentimiento    String?
+  /// Trazos normalizados de la firma (`Trazo[]`), solo en FIRMA.
+  trazos            Json?
+  idempotencyKey    String?
+  createdAt         DateTime             @default(now())
+  tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  adelanto          Adelanto             @relation(fields: [tenantId, adelantoId], references: [tenantId, id], onDelete: NoAction)
+  enlace            AdelantoEnlaceFirma? @relation(fields: [tenantId, enlaceId], references: [tenantId, id], onDelete: NoAction)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, idempotencyKey])
+  @@unique([tenantId, ruta])
+  @@index([tenantId, adelantoId, tipo, createdAt(sort: Desc)])
+}
+
+/// ADR-491: enlace de un solo uso para firmar en el celular de la persona.
+/// El token NUNCA se guarda: solo su sha256. Se muestra una vez al crearlo.
+/// ⚠️ CHECK en la base que Prisma no muestra: `tokenHash` hex de 64.
+model AdelantoEnlaceFirma {
+  id                String          @id @default(cuid())
+  tenantId          String
+  adelantoId        String
+  tokenHash         String          @unique @db.Char(64)
+  pideHuella        Boolean         @default(false)
+  /// Copia de la ficha al crear el enlace (lo que la página muestra).
+  firmanteNombre    String
+  firmanteDocumento String?
+  creadoPor         String
+  venceEn           DateTime
+  usadoEn           DateTime?
+  revocadoEn        DateTime?
+  /// DNI que no coincide; al llegar a `MAX_INTENTOS_DNI_ENLACE` se revoca solo.
+  intentosFallidos  Int             @default(0)
+  createdAt         DateTime        @default(now())
+  tenant            Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  adelanto          Adelanto        @relation(fields: [tenantId, adelantoId], references: [tenantId, id], onDelete: NoAction)
+  firmas            AdelantoFirma[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, adelantoId, createdAt(sort: Desc)])
+}
+
+enum AdelantoFirmaTipo {
+  FIRMA
+  HUELLA
+}
+
+enum AdelantoFirmaCanal {
+  PANTALLA
+  ENLACE
+  BACKFILL
 }
 
 /// (ADR-448) De qué lado está la plata de un adelanto. Mismos valores que

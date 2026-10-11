@@ -6,7 +6,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
-import { esComprobantePrivado, esFotoDelNegocio, esRutaFirmaDelAdelanto, PREFIJO_PRIVADO } from "@/lib/adelantos/recibo-firmado";
+import { esComprobantePrivado, esFotoDelNegocio, esRutaComprobanteDelAdelanto, PREFIJO_PRIVADO } from "@/lib/adelantos/recibo-firmado";
 import { bajarFirmaPrivada } from "@/lib/adelantos/firma-storage";
 
 /**
@@ -54,7 +54,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const ruta = url.slice(PREFIJO_PRIVADO.length);
-  if (!esRutaFirmaDelAdelanto(ruta, auth.tenantId, id)) return noEsta();
+  /* La hoja firmada o el voucher privado (V, ADR-491). */
+  if (!esRutaComprobanteDelAdelanto(ruta, auth.tenantId, id)) return noEsta();
   const binario = await bajarFirmaPrivada(ruta).catch((e: unknown) => {
     logger.error("[adelantos/comprobante] no se pudo bajar la hoja", { error: String(e) });
     return null;

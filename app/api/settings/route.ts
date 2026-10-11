@@ -64,7 +64,7 @@ const ADMIN_ONLY_SETTING_FIELDS = [
   "whatsappBusinessNum", "whatsappWebhookUrl",
   // Políticas POS / operaciones internas
   "maxDiscountPercent", "discountRequiresAuth", "returnPolicyDays", "returnMaxNoAuth",
-  "autoCloseTime", "cashOpeningAmount", "cashAlertMax", "globalMinStock",
+  "autoCloseTime", "cashOpeningAmount", "cashAlertMax", "adelantoTopeCajero", "globalMinStock",
   "stockAlertChannels", "adjustReasons", "fefoEnabled", "fefoAlertDays",
   "inventoryCountFreq", "reorderReminderDays", "notifChannels", "defaultUnit",
   // Compliance / infra (recon)
@@ -76,6 +76,8 @@ const ADMIN_ONLY_SETTING_FIELDS = [
 ] as const;
 
 const TOPE_CAJERO_SCHEMA = z.number().min(0).max(100).nullable();
+/** ADR-491: tope del adelanto que entrega el cajero, en soles. null = 500 de fábrica; 0 = el cajero no entrega. */
+const TOPE_ADELANTO_CAJERO_SCHEMA = z.number().min(0).max(1_000_000).nullable();
 
 export async function GET(req: NextRequest) {
   try {
@@ -183,6 +185,12 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: "El descuento máximo del cajero va de 0 a 100 %" }, { status: 400 });
       }
     }
+    if (body.adelantoTopeCajero !== undefined) {
+      const tope = TOPE_ADELANTO_CAJERO_SCHEMA.safeParse(body.adelantoTopeCajero);
+      if (!tope.success) {
+        return NextResponse.json({ error: "El tope del adelanto del cajero va de S/ 0 a S/ 1 000 000." }, { status: 400 });
+      }
+    }
     const current = await SettingsDB.get(tenantId);
 
     // Si SOLO viene storeTheme, guardar solo eso (no todo el objeto settings)
@@ -276,6 +284,7 @@ export async function PUT(req: NextRequest) {
       ...(body.inventoryCountFreq !== undefined && { inventoryCountFreq: body.inventoryCountFreq }),
       ...(body.cashOpeningAmount !== undefined && { cashOpeningAmount: body.cashOpeningAmount }),
       ...(body.cashAlertMax !== undefined && { cashAlertMax: body.cashAlertMax }),
+      ...(body.adelantoTopeCajero !== undefined && { adelantoTopeCajero: body.adelantoTopeCajero }),
       ...(body.returnPolicyDays !== undefined && { returnPolicyDays: body.returnPolicyDays }),
       ...(body.returnMaxNoAuth !== undefined && { returnMaxNoAuth: body.returnMaxNoAuth }),
       ...(body.autoCloseTime !== undefined && { autoCloseTime: body.autoCloseTime }),

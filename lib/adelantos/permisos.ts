@@ -35,3 +35,35 @@ export function permisoAdelantos(role: string, accion: Action): NextResponse | n
   const mensaje = `Tu rol no puede ${QUE[accion]}.`;
   return NextResponse.json({ error: mensaje, message: mensaje, code: "sin_permiso_adelantos" }, { status: 403 });
 }
+
+/**
+ * ADR-491: entregar un adelanto (pantalla Entregar, Caja › Caja de hoy). Lee el
+ * recurso `adelantos-entregar`, que tienen admin, dueño, encargado y el CAJERO;
+ * el cajero NO tiene `adelantos`, así que sigue con 403 en editar, entregas,
+ * anular, personas, cuentas y liquidar. Lo usan sólo `/api/adelantos/entregar/**`
+ * y `POST …/firmas` con `entregaKey` (la firma del adelanto que acaba de dar).
+ */
+export function permisoEntregar(role: string): NextResponse | null {
+  if (checkPermission(role as Role, "adelantos-entregar", "write")) return null;
+  const mensaje = "Tu rol no puede entregar adelantos.";
+  return NextResponse.json({ error: mensaje, message: mensaje, code: "sin_permiso_adelantos" }, { status: 403 });
+}
+
+/**
+ * Quien entrega sin gestionar adelantos (el cajero): sólo CREA, plata dada, en
+ * cuenta corriente, con fecha de hoy, hasta el tope de Ajustes, de la caja
+ * abierta y con la firma de la persona. Lo decide la matriz, no el nombre del rol.
+ */
+export function esModoCajero(role: string): boolean {
+  return !checkPermission(role as Role, "adelantos", "write");
+}
+
+/**
+ * La clave del alta que hace un cajero se guarda con este prefijo: sin columna
+ * nueva, así se sabe qué entregó un cajero (tope diario por persona) y la puerta
+ * del «Reintentar firma» compara contra `cajero:<entregaKey>`.
+ */
+export const PREFIJO_CLAVE_CAJERO = "cajero:";
+
+/** El cajero completa la firma del adelanto que acaba de dar, no de uno viejo. */
+export const VENTANA_FIRMA_CAJERO_MS = 2 * 60 * 60 * 1000;
