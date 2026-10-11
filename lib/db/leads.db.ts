@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { consolidarLeads } from "@/lib/leads/consolidar-leads";
 
 /**
  * lib/db/leads.db.ts — Lead capture funnel via ActivityLog.
@@ -93,6 +94,20 @@ function rowToLead(r: {
   };
 }
 
+/** Tope de filas leídas: los cambios de estado también son filas. */
+const MAX_FILAS_LEADS = 5000;
+
+/** Todas las filas de interesados del negocio (más nuevas primero), ya leídas. */
+async function filasDeLeads(tenantId: string): Promise<LeadRow[]> {
+  const rows = await prisma.activityLog.findMany({
+    where: { tenantId, entity: "lead" },
+    orderBy: { createdAt: "desc" },
+    take: MAX_FILAS_LEADS,
+    select: { id: true, entityId: true, detail: true, createdAt: true, ipAddress: true, userAgent: true },
+  });
+  return rows.map(rowToLead).filter((x): x is LeadRow => x !== null);
+}
+
 export interface CaptureLeadInput {
   name: string;
   whatsapp: string;
@@ -165,36 +180,21 @@ export const LeadsDB = {
     const limit = Math.min(opts.limit ?? 50, 200);
     const offset = Math.max(opts.offset ?? 0, 0);
 
-    const rows = await prisma.activityLog.findMany({
-      where: {
-        tenantId,
-        entity: "lead",
-        ...(opts.since ? { createdAt: { gte: opts.since } } : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      skip: offset,
-      select: {
-        id: true,
-        entityId: true,
-        detail: true,
-        createdAt: true,
-        ipAddress: true,
-        userAgent: true,
-      },
-    });
-
-    const parsed = rows
-      .map(rowToLead)
-      .filter((x): x is LeadRow => x !== null);
+    // Cada cambio de estado es otra fila del mismo `entityId`: se junta ANTES
+    // de paginar y de filtrar (consolidarLeads), si no el mismo interesado
+    // salía una vez por paso y «llegó» pasaba a ser el día del último cambio.
+    const leads = consolidarLeads(await filasDeLeads(tenantId));
 
     // Filtros post-parsing (JSON detail no es queryable nativo en Postgres
     // sin GIN index — para volúmenes <10k leads/mes es aceptable).
-    return parsed.filter((l) => {
-      if (opts.source && l.source !== opts.source) return false;
-      if (opts.businessType && l.businessType !== opts.businessType) return false;
-      return true;
-    });
+    return leads
+      .filter((l) => {
+        if (opts.since && l.createdAt < opts.since) return false;
+        if (opts.source && l.source !== opts.source) return false;
+        if (opts.businessType && l.businessType !== opts.businessType) return false;
+        return true;
+      })
+      .slice(offset, offset + limit);
   },
 
   /**
@@ -206,19 +206,12 @@ export const LeadsDB = {
     const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    const rows = await prisma.activityLog.findMany({
-      where: {
-        tenantId,
-        entity: "lead",
-        createdAt: { gte: since90d },
-      },
-      select: { detail: true, createdAt: true, entityId: true, id: true, ipAddress: true, userAgent: true },
-      orderBy: { createdAt: "desc" },
-    });
-
-    const leads = rows
-      .map(rowToLead)
-      .filter((x): x is LeadRow => x !== null);
+    // Un interesado por `entityId` (consolidarLeads) y la ventana sobre el día
+    // que LLEGÓ: filtrar las filas por fecha antes de juntarlas tomaba el
+    // último cambio de estado como llegada.
+    const leads = consolidarLeads(await filasDeLeads(tenantId)).filter(
+      (l) => l.createdAt >= since90d,
+    );
 
     const bySource: Record<string, number> = {};
     const byBusinessType: Record<string, number> = {};

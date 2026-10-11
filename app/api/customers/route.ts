@@ -64,7 +64,12 @@ export async function GET(req: NextRequest) {
     const search     = sp.get("q");
 
     // creditBalance = lo que debe de fiados ACTIVO+VENCIDO (la columna no los sigue).
-    let customers = await withDbRetry(() => CustomersDB.getAllConDeuda(auth.tenantId));
+    // `?compras=1` (CRM): + cuántas compras, cuánto gastó y la última, contadas en
+    // pedidos y ventas del POS (CustomersDB.comprasPorCliente). El POS y Cobrar no
+    // lo piden: dos consultas agregadas menos en cada carga.
+    let customers: Awaited<ReturnType<typeof CustomersDB.getAllConDeuda>> = await withDbRetry(() =>
+      sp.get("compras") === "1" ? CustomersDB.getAllConCompras(auth.tenantId) : CustomersDB.getAllConDeuda(auth.tenantId),
+    );
 
     if (search) {
       const q = search.toLowerCase();

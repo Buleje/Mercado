@@ -51,6 +51,8 @@ export type OrderItem = { name: string; quantity: number; unit: string; price: n
 
 export type Order = {
   id: string;
+  /** `venta` = venta del POS (llega con status «entregado»); `pedido` = pedido de la tienda. */
+  origen?: "pedido" | "venta";
   status: string;
   total: number;
   paymentMethod: string;
@@ -80,15 +82,8 @@ export function fmtDate(iso: string) {
   return formatDate(iso);
 }
 
-export function fmtRelative(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days === 0) return "hoy";
-  if (days === 1) return "ayer";
-  if (days < 30) return `hace ${days}d`;
-  if (days < 365) return `hace ${Math.floor(days / 30)}m`;
-  return `hace ${Math.floor(days / 365)}a`;
-}
+/** La misma fecha relativa que la lista de Mis clientes: «hace 5 meses», no «hace 5m» (se leía cinco minutos). */
+export { fmtRelative } from "@/components/admin/crm/crm-compartido";
 
 export function getSegment(orders: Order[]): Segment {
   if (orders.length === 0) return "nuevo";

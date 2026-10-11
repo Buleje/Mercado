@@ -47,7 +47,7 @@ export default function FichaHistorialPedidos({ ficha }: { ficha: Cliente360 }) 
                         <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{fmt(o.total)}</td>
                         <td>
                           <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>
-                            <Icon className="h-2.5 w-2.5" />{st.label}
+                            <Icon className="h-2.5 w-2.5" />{o.origen === "venta" ? "Venta en caja" : st.label}
                           </span>
                         </td>
                       </tr>

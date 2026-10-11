@@ -65,16 +65,21 @@ export default function Customer360Tab({ phone, onClose }: Props) {
 
   // ── Computed ──────────────────────────────────────────────────────────────
 
-  const segment      = getSegment(orders);
+  /* Las mismas cuentas que la lista de Mis clientes (CustomersDB.comprasPorCliente):
+     compras = no canceladas; gastado = entregadas + ventas del POS. Antes sumaba
+     todo, también lo cancelado y lo que todavía se podía cancelar. */
+  const compras      = orders.filter(o => o.status !== "cancelado");
+  const cerradas     = compras.filter(o => o.status === "entregado");
+  const segment      = getSegment(compras);
   const segCfg       = SEGMENT_CONFIG[segment];
-  const topProducts  = getTopProducts(orders);
-  const totalSpent   = orders.reduce((s, o) => s + o.total, 0);
-  const avgTicket    = orders.length > 0 ? totalSpent / orders.length : 0;
-  const lastOrder    = orders.length > 0
-    ? [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+  const topProducts  = getTopProducts(compras);
+  const totalSpent   = Math.round(cerradas.reduce((s, o) => s + o.total, 0) * 100) / 100;
+  const avgTicket    = cerradas.length > 0 ? totalSpent / cerradas.length : 0;
+  const lastOrder    = compras.length > 0
+    ? [...compras].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
     : null;
-  const firstOrder   = orders.length > 0
-    ? [...orders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]
+  const firstOrder   = compras.length > 0
+    ? [...compras].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]
     : null;
   const resumen: Resumen360 = { segment, segCfg, topProducts, totalSpent, avgTicket, lastOrder, firstOrder };
 
@@ -94,7 +99,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             <p className="flex flex-wrap items-center gap-x-2 text-sm tabular-nums text-[var(--text-secondary)]">
               <span>Gastado <strong className="text-[var(--text-primary)]">{fmt(totalSpent)}</strong></span>
               <span aria-hidden="true">·</span>
-              <span>{orders.length} pedidos</span>
+              <span>{compras.length === 1 ? "1 compra" : `${compras.length} compras`}</span>
               <span aria-hidden="true">·</span>
               <span>Ticket <strong className="text-[var(--text-primary)]">{fmt(avgTicket)}</strong></span>
             </p>

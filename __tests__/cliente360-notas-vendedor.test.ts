@@ -45,7 +45,7 @@ const PHONE = "982519788";
 function fetchFalso() {
   return vi.fn(async (url: string, init?: RequestInit) => {
     if (init?.method === "PATCH") return new Response("{}", { status: 200 });
-    if (url.endsWith("/orders") || url.endsWith("/timeline")) return Response.json([]);
+    if (url.endsWith("/compras") || url.endsWith("/timeline")) return Response.json([]);
     return Response.json({
       name: "Cliente QA",
       phone: PHONE,

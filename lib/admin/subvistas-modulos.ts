@@ -184,9 +184,8 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   ],
   clientes: [
     { key: "crm", label: "Mis clientes", hint: "Ficha de cada cliente" },
-    { key: "leads", label: "Leads", hint: "Interesados que todavía no compran" },
+    { key: "leads", label: "Interesados", hint: "Leads: negocios que pidieron probar Buleje y todavía no pagan" },
     { key: "resenas", label: "Opiniones", hint: "Qué dicen los clientes" },
-    { key: "segmentos", label: "Segmentos", hint: "Agrupar clientes por comportamiento" },
     { key: "mapa", label: "Mapa", hint: "Dónde viven los clientes" },
     { key: "mensajes", label: "Mensajes masivos", hint: "Conversaciones con clientes" },
   ],
@@ -405,7 +404,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
   // Compras › Órdenes y recepción y › Proveedores (Recepción y Comparador eran vistas).
   compras: [
     { vista: "ordenes-compra", key: "ordenes", label: "Órdenes de compra", hint: "Las órdenes emitidas a cada proveedor y su estado", origen: ["compras"] },
-    { vista: "ordenes-compra", key: "recibir", label: "Recibir mercadería", hint: "Recibir lo que llegó, con o sin orden de compra: cantidades, estado y fotos", origen: ["compras"] },
+    { vista: "ordenes-compra", key: "recibir", label: "Recepciones", hint: "Lo que llegó de cada proveedor y «Recibir» con o sin orden: cantidades, estado y fotos", origen: ["compras"] },
     { vista: "proveedores", key: "lista", label: "Lista de proveedores", hint: "Tus proveedores, sus datos, pagos y la ficha de cada uno", origen: ["compras"] },
     { vista: "proveedores", key: "comparar", label: "Comparar proveedores", hint: "Puntaje de cada proveedor, cómo te entrega, precio por producto y precios del mercado", origen: ["compras"] },
   ],

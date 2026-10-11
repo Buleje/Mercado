@@ -180,6 +180,24 @@ export const SalesDB = {
     }));
   },
 
+  /**
+   * Las ventas del POS de un cliente (ficha 360 del panel, 10-10). El celular
+   * se cruza por sus últimos 9 dígitos: la venta puede guardarlo con «51»
+   * adelante y el cliente sin él. Tope 1000, como los pedidos del cliente.
+   */
+  async getByCustomerPhone(tenantId: string, phone: string): Promise<DbSale[]> {
+    const clave = phone.replace(/\D/g, "").slice(-9);
+    /* 9 dígitos: con 6 un sufijo corto juntaba a dos clientes del mismo negocio (security 10-10). */
+    if (clave.length < 9) return [];
+    return (await withRlsTx(tenantId, (tx) => tx.sale.findMany({
+      where: { tenantId, customerPhone: { endsWith: clave } },
+      omit: { idempotencyKey: true },
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+      take: 1000,
+    }))).map(mapSale);
+  },
+
   async getAll(tenantId: string): Promise<DbSale[]> {
     // FIX 2026-05-07 (schema drift): omit idempotencyKey hasta que la
     // migration 20260507000000_add_sale_idempotency_key se aplique a la DB.

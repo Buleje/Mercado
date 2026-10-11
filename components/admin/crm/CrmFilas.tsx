@@ -1,27 +1,27 @@
 "use client";
 
-import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
-import { Phone, ShoppingCart, Plus } from "@buleje/design-system/icons";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { m } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
-import { fmt, fmtRelative, SEGMENT_CONFIG } from "@/components/admin/crm/crm-compartido";
+import {
+  fmt, fmtRelative, frecuenciaDe, FRECUENCIAS, SEGMENT_CONFIG, tonoDeUltimaCompra,
+} from "@/components/admin/crm/crm-compartido";
 import type { Crm } from "@/components/admin/crm/use-crm";
+import CrmAccionesCliente from "@/components/admin/crm/CrmAccionesCliente";
 
 /** Filas de la tabla de clientes. Pieza de CRMTab: recibe `useCrm` entero. */
 export default function CrmFilas({ crm }: { crm: Crm }) {
   const {
     setDetail, editingCreditLimit, setEditingCreditLimit, creditLimitInput, setCreditLimitInput,
-    creditLimitInputRef, compareMode, comparePhones, orden, rankingMap, getFreqLabel, paginated,
-    saveCreditLimit, toggleCompare,
+    creditLimitInputRef, compareMode, comparePhones, orden, paginated, saveCreditLimit, toggleCompare,
   } = crm;
   return (
     <>
       {paginated.map(c => {
-        const seg = c._segment ?? "nuevo";
-        const cfg = SEGMENT_CONFIG[seg];
-        const Icon = cfg.Icon;
+        const cfg = SEGMENT_CONFIG[c._segment ?? "nuevo"];
+        const frec = frecuenciaDe(c);
+        const compras = c._orderCount ?? 0;
         return (
           <m.tr
             key={c.phone}
@@ -29,75 +29,71 @@ export default function CrmFilas({ crm }: { crm: Crm }) {
             animate={{ opacity: 1 }}
             className={cn("hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors", compareMode && comparePhones.has(c.phone) && "bg-[var(--surface-sunken)]")}
           >
-            {/* Mejora 13: Checkbox para comparar */}
             {compareMode && (
-              <td onClick={e => e.stopPropagation()}>
+              <td>
                 <input
                   type="checkbox"
-                  aria-label={`Seleccionar ${c.name || c.phone} para comparar`}
+                  aria-label={`Comparar a ${c.name || c.phone}`}
                   checked={comparePhones.has(c.phone)}
                   onChange={() => toggleCompare(c.phone)}
                   disabled={!comparePhones.has(c.phone) && comparePhones.size >= 3}
-                  className="h-4 w-4 rounded border-[var(--rule-base)] text-[var(--text-secondary)] focus:ring-[var(--rule-base)]"
+                  className="h-5 w-5 rounded border-[var(--rule-base)] accent-[var(--accent)]"
                 />
               </td>
             )}
             <EnOrden
               orden={orden.orden}
               celdas={{
-                rank: (
-                  <td className="text-center">
-                    {(() => {
-                      const rank = rankingMap.get(c.phone) ?? 999;
-                      if (rank === 1) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-extrabold">1</span>;
-                      if (rank === 2) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)] text-xs font-extrabold">2</span>;
-                      if (rank === 3) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-extrabold">3</span>;
-                      if (rank <= 10) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted text-xs font-bold">#{rank}</span>;
-                      return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
-                    })()}
-                  </td>
-                ),
                 cliente: (
                   <td>
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0 select-none">
+                    {/* El nombre abre la ficha: antes sólo un carrito de 32 px al final de la fila. */}
+                    <button
+                      type="button"
+                      onClick={() => setDetail(c.phone)}
+                      className="group flex min-h-12 min-w-0 items-center gap-2.5 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                    >
+                      <span aria-hidden className="flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-lg bg-primary/10 text-sm font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                         {c.name.split(" ").slice(0, 2).map(n => n[0]?.toUpperCase() ?? "").join("")}
-                      </div>
-                      <div>
-                        <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</p>
-                        {c.location && <p className="text-xs text-[var(--text-tertiary)] truncate max-w-[120px]">{c.location}</p>}
-                        {/* Mejora 12: Resumen compacto del cliente */}
-                        <p className="hidden sm:block text-xs text-[var(--text-tertiary)] dark:text-muted truncate max-w-[220px]">
-                          {c._orderCount ?? 0} compras · S/{((c.totalSpent ?? 0)).toFixed(0)} · {getFreqLabel(c).label} · {c._lastOrder ? fmtRelative(c._lastOrder) : "sin compras"}
-                        </p>
-                      </div>
-                    </div>
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-bold text-[var(--text-primary)] group-hover:underline">{c.name}</span>
+                        {c.location && <span className="block max-w-[14rem] truncate text-sm text-[var(--text-secondary)]">{c.location}</span>}
+                      </span>
+                    </button>
                   </td>
                 ),
                 telefono: (
-                  <td>
-                    <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)] dark:text-muted">
-                      <Phone className="h-3 w-3" />{c.phone}
-                    </span>
-                  </td>
+                  <td className="text-sm tabular-nums text-[var(--text-secondary)]">{c.phone}</td>
                 ),
-                ultimoPedido: (
-                  <td className="text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
-                    {c._lastOrder ? fmtRelative(c._lastOrder) : "—"}
+                ultimaCompra: (
+                  <td>
+                    <div className="min-w-0">
+                      <span className={cn("block text-sm font-semibold", tonoDeUltimaCompra(c._lastOrder))}>
+                        {c._lastOrder ? fmtRelative(c._lastOrder) : "Sin compras"}
+                      </span>
+                      {/* La frecuencia de los últimos 30 días sólo si compró: «Sin compras en 30 días» ya lo dice la fecha. */}
+                      {frec !== "sin-compras" && (
+                        <span className="block text-sm text-[var(--text-secondary)]">
+                          {FRECUENCIAS.find(f => f.id === frec)?.label} · {c._compras30d} en 30 días
+                        </span>
+                      )}
+                    </div>
                   </td>
                 ),
                 totalGastado: (
-                  <td className="text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hidden md:table-cell">
-                    {fmt(c.totalSpent ?? 0)}
+                  <td className="text-right">
+                    <div className="min-w-0">
+                      <span className="block font-bold tabular-nums text-[var(--text-primary)]">{fmt(c.totalSpent ?? 0)}</span>
+                      <span className="block text-sm tabular-nums text-[var(--text-secondary)]">
+                        {compras === 1 ? "1 compra" : `${compras} compras`}
+                      </span>
+                    </div>
                   </td>
                 ),
                 credito: (
-                  <td className="hidden lg:table-cell">
+                  <td>
                     {editingCreditLimit === c.phone ? (
-                      <form
-                        onSubmit={e => { e.preventDefault(); saveCreditLimit(c.phone); }}
-                        className="flex items-center gap-1"
-                      >
+                      <form onSubmit={e => { e.preventDefault(); saveCreditLimit(c.phone); }} className="flex items-center gap-1">
                         <input
                           ref={creditLimitInputRef}
                           type="number"
@@ -105,68 +101,39 @@ export default function CrmFilas({ crm }: { crm: Crm }) {
                           step={0.01}
                           value={creditLimitInput}
                           onChange={e => setCreditLimitInput(e.target.value)}
-                          className="w-20 text-xs border border-primary/40 rounded-xl px-2 py-1 bg-[var(--surface-raised)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          onKeyDown={e => { if (e.key === "Escape") setEditingCreditLimit(null); }}
+                          aria-label={`Límite de crédito de ${c.name}`}
+                          className="h-12 w-24 rounded-xl border border-primary/40 bg-[var(--surface-raised)] px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                           placeholder="0.00"
                         />
-                        <button type="submit" className="text-xs px-1.5 py-1 bg-primary text-white rounded-lg font-bold">OK</button>
-                        <button type="button" onClick={() => setEditingCreditLimit(null)} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">×</button>
+                        <button type="submit" className="h-12 rounded-xl bg-primary px-3 text-sm font-bold text-white">Guardar</button>
                       </form>
+                    ) : c.creditLimit != null && c.creditLimit > 0 ? (
+                      <StatusBadge
+                        variant={(c.creditBalance ?? 0) >= c.creditLimit ? "error" : "success"}
+                        label={(c.creditBalance ?? 0) >= c.creditLimit ? "Límite alcanzado" : `${fmt(c.creditBalance ?? 0)} / ${fmt(c.creditLimit)}`}
+                        size="sm"
+                      />
+                    ) : (c.creditBalance ?? 0) > 0 ? (
+                      <span className="text-sm font-semibold text-[var(--data-warning-ink)]">Debe {fmt(c.creditBalance ?? 0)}</span>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => { setEditingCreditLimit(c.phone); setCreditLimitInput(String(c.creditLimit ?? 0)); }}
-                        className="group text-left"
-                        title={c.creditLimit != null && c.creditLimit > 0 ? "Click para editar límite de crédito" : "Añadir límite de crédito"}
-                      >
-                        {c.creditLimit != null && c.creditLimit > 0 ? (
-                          <StatusBadge
-                            variant={(c.creditBalance ?? 0) >= c.creditLimit ? "error" : "success"}
-                            label={(c.creditBalance ?? 0) >= c.creditLimit ? "LÍMITE ALCANZADO" : `${fmt(c.creditBalance ?? 0)} / ${fmt(c.creditLimit)}`}
-                            size="sm"
-                          />
-                        ) : (
-                          <span aria-label="Añadir límite de crédito" role="img" className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors group-hover:bg-primary/10 group-hover:text-primary"><Plus className="h-4 w-4" aria-hidden /></span>
-                        )}
-                      </button>
+                      <span className="text-sm text-[var(--text-tertiary)]">—</span>
                     )}
                   </td>
                 ),
                 segmento: (
                   <td>
-                    <StatusBadge variant={cfg.variant} label={cfg.label} icon={Icon} size="sm" />
-                  </td>
-                ),
-                contacto: (
-                  <td className="hidden md:table-cell">
-                    {(() => {
-                      const lastContact = c._lastOrder;
-                      if (!lastContact) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
-                      const days = Math.floor((Date.now() - new Date(lastContact).getTime()) / 86400000);
-                      let label: string;
-                      let colorClass: string;
-                      if (days === 0) { label = "Hoy"; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
-                      else if (days === 1) { label = "Ayer"; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
-                      else if (days < 7) { label = `Hace ${days}d`; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
-                      else if (days < 14) { label = "Hace 1 sem"; colorClass = "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"; }
-                      else if (days < 30) { label = `Hace ${Math.floor(days / 7)} sem`; colorClass = "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"; }
-                      else if (days < 90) { label = `Hace ${Math.floor(days / 30)} meses`; colorClass = "text-[var(--data-error-600)] dark:text-red-400"; }
-                      else { label = "Inactivo"; colorClass = "text-[var(--text-tertiary)] dark:text-muted"; }
-                      return <span className={cn("text-xs font-bold", colorClass)}>{label}</span>;
-                    })()}
+                    <StatusBadge variant={cfg.variant} label={cfg.label} icon={cfg.Icon} size="sm" />
                   </td>
                 ),
               }}
             />
-
-            {/* Acciones */}
-            <td className="text-center">
-              <BotonIconoTip
-                icon={ShoppingCart}
-                tono="acento"
-                tamano="sm"
-                onClick={() => setDetail(c.phone)}
-                label={`Ver la ficha 360° de ${c.name}`}
-                tip="Ficha 360°"
+            <td className="text-right">
+              <CrmAccionesCliente
+                c={c}
+                onFicha={() => setDetail(c.phone)}
+                onLimite={() => { setEditingCreditLimit(c.phone); setCreditLimitInput(String(c.creditLimit ?? 0)); }}
+                comparando={compareMode ? { marcado: comparePhones.has(c.phone), lleno: comparePhones.size >= 3, alternar: () => toggleCompare(c.phone) } : null}
               />
             </td>
           </m.tr>

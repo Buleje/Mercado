@@ -1,7 +1,5 @@
 "use client";
 
-import { useId } from "react";
-import { useLocalStorage } from "@/hooks/use-local-storage";
 import { LoadingState } from "@buleje/design-system";
 import { AlertCircle } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
@@ -9,8 +7,8 @@ import { m, AnimatePresence } from "@/components/admin/providers";
 import Customer360Tab from "@/components/admin/Customer360Tab";
 import ClienteFormModal from "@/components/admin/clientes/ClienteFormModal";
 import { useCrm } from "@/components/admin/crm/use-crm";
-import CrmIndicadores from "@/components/admin/crm/CrmIndicadores";
-import CrmBuscador from "@/components/admin/crm/CrmBuscador";
+import { useIndicadoresCrm } from "@/components/admin/crm/CrmIndicadores";
+import CrmCabecera from "@/components/admin/crm/CrmCabecera";
 import CrmFiltros from "@/components/admin/crm/CrmFiltros";
 import CrmTabla from "@/components/admin/crm/CrmTabla";
 import CrmComparar from "@/components/admin/crm/CrmComparar";
@@ -25,9 +23,8 @@ export default function CRMTab() {
   const {
     customers, loading, error, detail, setDetail, showNewClientModal, setShowNewClientModal, load,
   } = crm;
-  // Indicadores plegables y recordados (ley de Brandon): el botón va en la cabecera, el panel arriba.
-  const [indicadoresAbiertos, setIndicadoresAbiertos] = useLocalStorage<boolean>("crm:indicadores-abiertos", true);
-  const panelIndicadores = useId();
+  // Indicadores plegables (patrón del panel): cerrados por defecto, el botón en la cabecera, el panel debajo.
+  const indicadores = useIndicadoresCrm(crm);
 
   // ── Loading / Error ───────────────────────────────────────────────────────
 
@@ -92,18 +89,15 @@ export default function CRMTab() {
   // ── Main view ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      <CrmCabecera crm={crm} indicadores={indicadores.boton} />
 
-      <CrmIndicadores crm={crm} abierto={indicadoresAbiertos} panelId={panelIndicadores} />
+      {indicadores.panel}
 
-      <CrmBuscador
-        crm={crm}
-        indicadores={{ abierto: indicadoresAbiertos, alternar: () => setIndicadoresAbiertos(!indicadoresAbiertos), controla: panelIndicadores }}
-      />
-
-      <CrmFiltros crm={crm} />
-
-      <CrmTabla crm={crm} />
+      <div className="space-y-2">
+        <CrmFiltros crm={crm} />
+        <CrmTabla crm={crm} />
+      </div>
 
       <CrmComparar crm={crm} />
 

@@ -1,209 +1,123 @@
 "use client";
 
+import { CreditCard, Search, X } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
-import { rangoActivo, textoDeRango, type ChipFiltro } from "@/lib/admin/filtros-columna";
-import { ChipsDeFiltros } from "@/components/admin/shared/filtros-columna";
-import { SEGMENT_CONFIG, type QuickFilter, type Segment } from "@/components/admin/crm/crm-compartido";
+import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { FRECUENCIAS, SEGMENT_CONFIG, type Frecuencia, type Segment } from "@/components/admin/crm/crm-compartido";
 import type { Crm } from "@/components/admin/crm/use-crm";
 
-/** Filtros pegados a la tabla: segmento, estado, frecuencia, etiqueta y los chips de filtros puestos. Pieza de CRMTab: recibe `useCrm` entero. */
+/** El desplegable en la fila, a 48 px (mismo arreglo que Productos y stock y Facturas). */
+const FILTRO_EN_FILA = "mt-0! min-w-0 shrink-0 [&_summary]:h-12 [&_summary]:rounded-xl [&_summary]:px-3 [&_summary]:text-sm";
+
+/**
+ * La fila de filtros de Mis clientes, pegada a la tabla (10-10): buscar,
+ * Segmento, Últimos 30 días, Con deuda y Etiqueta. Antes eran tres filas de
+ * pastillas (Segmento · Estado · Frecuencia) y, otra vez, autofiltros dentro
+ * de las cabeceras de «Último pedido», «Crédito» y «Segmento» que escribían lo
+ * mismo. «Estado: Activos / Inactivos 30d» era la misma pregunta que la
+ * frecuencia (activo = compró en 30 días): queda un solo filtro.
+ */
 export default function CrmFiltros({ crm }: { crm: Crm }) {
   const {
-    customers, actividadFiltro, setActividadFiltro, creditoRango, setCreditoRango, filterSegment, setFilterSegment, filterTag, setFilterTag, freqFilter, setFreqFilter, allTags, quickFilterCounts, freqCounts, segmentCounts,
+    customers, search, setSearch, frecuencia, setFrecuencia, creditoRango, setCreditoRango, filterSegment,
+    setFilterSegment, filterTags, setFilterTags, segmentCounts, freqCounts, tagCounts, conDeuda, filtered,
+    hayFiltros, setPage,
   } = crm;
+  const soloConDeuda = creditoRango.min != null && creditoRango.min > 0;
+  /* Cambiar un filtro vuelve a la página 1: en la 3 con 4 resultados la tabla quedaba vacía. */
+  const conPagina1 = <T,>(fn: (v: T) => void) => (v: T) => { fn(v); setPage(1); };
+  const limpiar = () => {
+    setSearch("");
+    setFrecuencia([]);
+    setCreditoRango({ min: null, max: null });
+    setFilterSegment([]);
+    setFilterTags([]);
+    setPage(1);
+  };
   return (
-    <>
-      {/* Filtros secundarios: quick filter + frecuencia + tags */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Filtro segmento — chips estandar */}
-        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          Segmento
-        </span>
-        {([
-          { key: "todos" as const, label: "Todos", count: customers.length },
-          { key: "frecuente" as const, label: "Frecuente", count: segmentCounts.frecuente },
-          { key: "ocasional" as const, label: "Ocasional", count: segmentCounts.ocasional },
-          { key: "nuevo" as const, label: "Nuevo", count: segmentCounts.nuevo },
-          { key: "perdido" as const, label: "Perdido", count: segmentCounts.perdido },
-        ] as const).map(f => {
-          // "Todos" activo con la selección vacía; el resto se puede combinar
-          // (multi, 2026-09-22) — mismo estado que el autofiltro de la
-          // columna Segmento: clic para sumar, clic de nuevo para sacar.
-          const active = f.key === "todos" ? filterSegment.length === 0 : filterSegment.includes(f.key as Segment);
-          return (
+    <div className="flex flex-wrap items-center gap-2">
+      {/* En celular el buscador va en su propia fila; desde sm pide 16 rem y crece. */}
+      <div className="relative h-12 min-w-0 grow basis-full sm:basis-64">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+        <input
+          type="search"
+          value={search}
+          onChange={e => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Buscar por nombre o celular"
+          aria-label="Buscar cliente por nombre o celular"
+          className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-12 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-primary [&::-webkit-search-cancel-button]:hidden"
+        />
+        {search && (
           <button
-            key={f.key}
-            onClick={() => {
-              if (f.key === "todos") { setFilterSegment([]); return; }
-              const seg = f.key as Segment;
-              setFilterSegment(prev => prev.includes(seg) ? prev.filter(s => s !== seg) : [...prev, seg]);
-            }}
-            aria-pressed={active}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
-              active
-                ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
-            )}
+            type="button"
+            aria-label="Borrar la búsqueda"
+            onClick={() => setSearch("")}
+            className="absolute right-0.5 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
           >
-            {f.label}
-            {f.count > 0 && (
-              <span className={cn(
-                "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-                active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
-              )}>
-                {f.count > 99 ? "99+" : f.count}
-              </span>
-            )}
+            <X className="h-4 w-4" aria-hidden />
           </button>
-          );
-        })}
-
-        <span aria-hidden className="mx-1 h-5 w-px bg-[var(--rule-base)]" />
-        {/* Cada grupo lleva su etiqueta: había TRES chips "Todos" en la misma
-            fila (segmento, estado y frecuencia) y no se sabía cuál filtraba qué. */}
-        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          Estado
-        </span>
-        {/* Atajo excluyente de siempre (mismo look) — ahora escribe DOS
-            estados de columna en vez de ser la fuente de verdad: Activos/
-            Inactivos van a `actividadFiltro` ("Último pedido"), Con deuda va
-            a `creditoRango` ("Crédito"). Elegir uno limpia el otro, como
-            antes; el autofiltro de cada `<th>` puede combinarlos si hace
-            falta más precisión que el atajo. */}
-        {([
-          { key: "todos" as QuickFilter,     label: "Todos" },
-          { key: "activos" as QuickFilter,   label: "Activos" },
-          { key: "inactivos" as QuickFilter, label: "Inactivos 30d" },
-          { key: "con-deuda" as QuickFilter, label: "Con deuda" },
-        ]).map(f => {
-          const active =
-            f.key === "todos"
-              ? actividadFiltro.length === 0 && creditoRango.min == null && creditoRango.max == null
-              : f.key === "con-deuda"
-                ? creditoRango.min === 0.01 && creditoRango.max == null
-                : actividadFiltro.length === 1 && actividadFiltro[0] === (f.key === "activos" ? "Activo" : "Inactivo");
-          const aplicar = () => {
-            if (f.key === "todos") { setActividadFiltro([]); setCreditoRango({ min: null, max: null }); return; }
-            if (f.key === "con-deuda") { setActividadFiltro([]); setCreditoRango({ min: 0.01, max: null }); return; }
-            setActividadFiltro([f.key === "activos" ? "Activo" : "Inactivo"]);
-            setCreditoRango({ min: null, max: null });
-          };
-          return (
-          <button
-            key={f.key}
-            onClick={aplicar}
-            aria-pressed={active}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
-              active
-                ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
-            )}
-          >
-            {f.label}
-            <span className={cn(
-              "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
-            )}>
-              {quickFilterCounts[f.key] > 99 ? "99+" : quickFilterCounts[f.key]}
-            </span>
-          </button>
-          );
-        })}
-
-        <span aria-hidden className="mx-1 h-5 w-px bg-[var(--rule-base)]" />
-        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          Frecuencia
-        </span>
-
-        {/* Frecuencia de compra */}
-        {([
-          { key: "todos-freq" as const, label: "Todos" },
-          { key: "diario" as const, label: "Diario" },
-          { key: "semanal" as const, label: "Semanal" },
-          { key: "quincenal" as const, label: "Quincenal" },
-          { key: "mensual" as const, label: "Mensual" },
-          { key: "inactivo-freq" as const, label: "Inactivo" },
-        ]).map(f => (
-          <button
-            key={f.key}
-            onClick={() => setFreqFilter(f.key)}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
-              freqFilter === f.key
-                ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
-            )}
-          >
-            {f.label}
-            <span className={cn(
-              "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              freqFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
-            )}>
-              {freqCounts[f.key] > 99 ? "99+" : freqCounts[f.key]}
-            </span>
-          </button>
-        ))}
+        )}
       </div>
-
-      {/* Tag filter */}
-      {allTags.length > 0 && (
-        <div className="flex gap-2 flex-wrap items-center">
-          <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Etiqueta:</span>
-          <button
-            onClick={() => setFilterTag("todos")}
-            className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
-              filterTag === "todos"
-                ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
-            )}
-          >
-            Todas
-          </button>
-          {allTags.map(tag => {
-            const isActive = filterTag === tag;
-            return (
-              <button
-                key={tag}
-                onClick={() => setFilterTag(tag)}
-                className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
-                  isActive
-                    ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
-                )}
-              >
-                {tag}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Filtros de columna puestos, con su cruz — arriba de la tabla. Crédito
-          y Último pedido se ESCONDEN en pantallas chicas (`hidden lg/sm:
-          table-cell`): sin esto un rango puesto en desktop quedaría acotando
-          en el celular sin ningún control a la vista. */}
-      <ChipsDeFiltros
-        className="mb-2"
-        chips={[
-          ...(filterSegment.length > 0
-            ? [{ id: "segmento", label: "Segmento", texto: filterSegment.length === 1 ? SEGMENT_CONFIG[filterSegment[0]].label : `Segmento: ${filterSegment.length} elegidos` }]
-            : []),
-          ...(actividadFiltro.length > 0
-            ? [{ id: "actividad", label: "Último pedido", texto: actividadFiltro.length === 1 ? `${actividadFiltro[0]} (30 d)` : "Activos e inactivos" }]
-            : []),
-          ...(rangoActivo(creditoRango)
-            ? [{ id: "credito", label: "Crédito", texto: textoDeRango("Crédito", creditoRango, { unidad: "S/" }) }]
-            : []),
-        ] satisfies ChipFiltro[]}
-        onQuitar={(id) => {
-          if (id === "segmento") setFilterSegment([]);
-          else if (id === "actividad") setActividadFiltro([]);
-          else if (id === "credito") setCreditoRango({ min: null, max: null });
-        }}
-        onLimpiarTodo={() => { setFilterSegment([]); setActividadFiltro([]); setCreditoRango({ min: null, max: null }); }}
+      <FiltroColumnaMulti
+        label="Segmento"
+        value={filterSegment}
+        options={(Object.keys(SEGMENT_CONFIG) as Segment[]).map((s): FacetaOpcion => ({ value: s, count: segmentCounts[s] }))}
+        etiqueta={(v) => SEGMENT_CONFIG[v as Segment]?.label ?? v}
+        onChange={conPagina1((v: string[]) => setFilterSegment(v as Segment[]))}
+        placeholder="Segmento: todos"
+        className={FILTRO_EN_FILA}
       />
-    </>
+      <FiltroColumnaMulti
+        label="Compras en los últimos 30 días"
+        value={frecuencia}
+        options={FRECUENCIAS.map((f): FacetaOpcion => ({ value: f.id, count: freqCounts[f.id] }))}
+        etiqueta={(v) => FRECUENCIAS.find(f => f.id === v)?.label ?? v}
+        onChange={conPagina1((v: string[]) => setFrecuencia(v as Frecuencia[]))}
+        placeholder="Últimos 30 días: todos"
+        className={FILTRO_EN_FILA}
+      />
+      <button
+        type="button"
+        aria-pressed={soloConDeuda}
+        onClick={() => { setCreditoRango(soloConDeuda ? { min: null, max: null } : { min: 0.01, max: null }); setPage(1); }}
+        title="Sólo los que deben fiados (activos o vencidos)"
+        className={button({
+          variant: "secondary",
+          className: cn(
+            "shrink-0 gap-1.5 rounded-xl px-3 text-sm",
+            soloConDeuda ? "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 text-[var(--data-warning-ink)]" : "text-[var(--text-secondary)]",
+          ),
+        })}
+      >
+        <CreditCard className="h-4 w-4" aria-hidden /> Con deuda ({conDeuda})
+      </button>
+      {tagCounts.length > 0 && (
+        <FiltroColumnaMulti
+          label="Etiqueta"
+          value={filterTags}
+          options={tagCounts.map(([t, n]): FacetaOpcion => ({ value: t, count: n }))}
+          onChange={conPagina1(setFilterTags)}
+          placeholder="Etiqueta: todas"
+          className={FILTRO_EN_FILA}
+        />
+      )}
+      {/* Con un filtro puesto, cuántos quedan (antes «15 resultados» siempre a la vista). */}
+      {hayFiltros && (
+        <>
+          <span className="shrink-0 text-sm tabular-nums text-[var(--text-secondary)]" aria-live="polite">
+            {filtered.length} de {customers.length}
+          </span>
+          <button
+            type="button"
+            onClick={limpiar}
+            className={button({ variant: "ghost", className: "shrink-0 rounded-xl px-3 text-sm text-[var(--data-error-ink)] hover:bg-[var(--data-error-500)]/10" })}
+          >
+            <X className="h-4 w-4" aria-hidden /> Limpiar
+          </button>
+        </>
+      )}
+    </div>
   );
 }

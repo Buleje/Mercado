@@ -50,7 +50,9 @@ export function useCliente360(phone: string) {
     try {
       const [custRes, ordersRes, timelineRes] = await Promise.all([
         fetch(`/api/customers/${encodeURIComponent(phone)}`),
-        fetch(`/api/customers/${encodeURIComponent(phone)}/orders`),
+        /* La ruta del panel (pedidos + ventas del POS). La de antes, …/orders, es la
+           PÚBLICA del cliente: sin su sesión responde [] y la ficha salía vacía (10-10). */
+        fetch(`/api/customers/${encodeURIComponent(phone)}/compras`),
         fetch(`/api/customers/${encodeURIComponent(phone)}/timeline`),
       ]);
       if (!custRes.ok) throw new Error("customer not found");

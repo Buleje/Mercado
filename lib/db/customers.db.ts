@@ -141,6 +141,19 @@ function phoneMatchCandidates(phone: string): string[] {
 
 // ── CustomersDB ───────────────────────────────────────────────────────────────
 
+/** Lo que compró un cliente (ver `CustomersDB.comprasPorCliente`). */
+export interface ComprasDeCliente {
+  compras: number;
+  gastado: number;
+  /** Las compras que suman a `gastado` (pedidos entregados + ventas): el divisor del ticket promedio. */
+  cerradas: number;
+  ultimaCompra: string | null;
+  compras30d: number;
+}
+const SIN_COMPRAS: ComprasDeCliente = { compras: 0, gastado: 0, cerradas: 0, ultimaCompra: null, compras30d: 0 };
+/** El mismo celular escrito de tres formas: sus últimos 9 dígitos. */
+const claveDeTelefono = (t: string) => t.replace(/\D/g, "").slice(-9);
+
 export const CustomersDB = {
   async getAll(tenantId: string, limit = 2000): Promise<DbCustomer[]> {
     const where: Record<string, unknown> = { tenantId };
@@ -200,6 +213,77 @@ export const CustomersDB = {
       const d = deudas.get(c.phone);
       return { ...c, creditBalance: d?.deuda ?? 0, fiadoVencido: d?.vencido ?? 0 };
     });
+  },
+
+  /**
+   * Lo que compró cada cliente, contado desde los pedidos y las ventas del POS
+   * (10-10). `Customer.totalSpent` sólo lo mueve la venta del POS con teléfono
+   * (`LoyaltyDB.accruePoints`): los pedidos no lo tocan, así que «Total
+   * gastado» y el «CLV promedio» del CRM daban S/ 0,00 para un cliente con 9
+   * pedidos (main, QA Sec: S/ 229,70 en pedidos, columna 0). Y la lista sacaba
+   * cuántas compras y la última de /api/orders y /api/sales con tope de 500
+   * cada uno, en el navegador.
+   *
+   *  · `compras` y `ultimaCompra`: pedidos no cancelados + ventas del POS.
+   *  · `gastado`: pedidos ENTREGADOS + ventas del POS (`isSale`: un pedido en
+   *    curso todavía se puede cancelar; la misma regla que los tableros).
+   *  · `cerradas`: cuántas suman a `gastado` (el divisor del ticket promedio).
+   *  · `compras30d`: compras de los últimos 30 días (frecuencia y «activos»).
+   *
+   * La clave es el teléfono en sus últimos 9 dígitos: «+51 916 409 675» de una
+   * venta y «916409675» del cliente son el mismo. Céntimos al sumar.
+   */
+  async comprasPorCliente(tenantId: string, ahora: Date = new Date()): Promise<Map<string, ComprasDeCliente>> {
+    const hace30 = new Date(ahora.getTime() - 30 * 86_400_000);
+    const vivo = { tenantId, customerPhone: { not: null }, status: { not: "cancelado" as const } };
+    const conTelefono = { tenantId, customerPhone: { not: null } };
+    const [pedidos, entregados, pedidos30, ventas, ventas30] = await withRlsTx(tenantId, (tx) =>
+      Promise.all([
+        tx.order.groupBy({ by: ["customerPhone"], where: vivo, _count: { _all: true }, _max: { createdAt: true } }),
+        tx.order.groupBy({ by: ["customerPhone"], where: { ...conTelefono, status: "entregado" as const }, _count: { _all: true }, _sum: { total: true } }),
+        tx.order.groupBy({ by: ["customerPhone"], where: { ...vivo, createdAt: { gte: hace30 } }, _count: { _all: true } }),
+        tx.sale.groupBy({ by: ["customerPhone"], where: conTelefono, _count: { _all: true }, _sum: { total: true }, _max: { createdAt: true } }),
+        tx.sale.groupBy({ by: ["customerPhone"], where: { ...conTelefono, createdAt: { gte: hace30 } }, _count: { _all: true } }),
+      ]),
+    );
+    const acum = new Map<string, { compras: number; centimos: number; cerradas: number; ultima: Date | null; compras30d: number }>();
+    const de = (tel: string | null) => {
+      const k = claveDeTelefono(tel ?? "");
+      if (!k) return null;
+      let a = acum.get(k);
+      if (!a) acum.set(k, (a = { compras: 0, centimos: 0, cerradas: 0, ultima: null, compras30d: 0 }));
+      return a;
+    };
+    const masReciente = (a: Date | null, b: Date | null | undefined) => (!b ? a : !a || b > a ? b : a);
+    const centimos = (v: Parameters<typeof toNumOrZero>[0]) => Math.round(toNumOrZero(v) * 100);
+    for (const r of pedidos) {
+      const a = de(r.customerPhone);
+      if (a) { a.compras += r._count._all; a.ultima = masReciente(a.ultima, r._max.createdAt); }
+    }
+    for (const r of entregados) {
+      const a = de(r.customerPhone);
+      if (a) { a.centimos += centimos(r._sum.total); a.cerradas += r._count._all; }
+    }
+    for (const r of pedidos30) { const a = de(r.customerPhone); if (a) a.compras30d += r._count._all; }
+    for (const r of ventas) {
+      const a = de(r.customerPhone);
+      if (a) { a.compras += r._count._all; a.cerradas += r._count._all; a.centimos += centimos(r._sum.total); a.ultima = masReciente(a.ultima, r._max.createdAt); }
+    }
+    for (const r of ventas30) { const a = de(r.customerPhone); if (a) a.compras30d += r._count._all; }
+    const out = new Map<string, ComprasDeCliente>();
+    for (const [k, a] of acum) {
+      out.set(k, { compras: a.compras, gastado: a.centimos / 100, cerradas: a.cerradas, ultimaCompra: a.ultima ? a.ultima.toISOString() : null, compras30d: a.compras30d });
+    }
+    return out;
+  },
+
+  /** `getAllConDeuda` + lo que compró cada uno (`comprasPorCliente`): GET /api/customers?compras=1 (CRM). */
+  async getAllConCompras(tenantId: string, limit = 2000): Promise<(DbCustomer & { fiadoVencido: number } & ComprasDeCliente)[]> {
+    const [clientes, compras] = await Promise.all([
+      CustomersDB.getAllConDeuda(tenantId, limit),
+      CustomersDB.comprasPorCliente(tenantId),
+    ]);
+    return clientes.map((c) => ({ ...c, ...(compras.get(claveDeTelefono(c.phone)) ?? SIN_COMPRAS) }));
   },
 
   /**

@@ -1,12 +1,13 @@
 "use client";
 
-import { Fragment } from "react";
-import { Users, UserPlus, TrendingUp, UserCheck, Crown } from "@buleje/design-system/icons";
-import { m } from "@/components/admin/providers";
+import type { ReactNode } from "react";
+import { Users, TrendingUp, UserCheck, Crown } from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
-import { cn } from "@/lib/utils";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmt } from "@/components/admin/crm/crm-compartido";
 import type { Crm } from "@/components/admin/crm/use-crm";
+import { ResumenSegmentos } from "@/components/admin/segmentos/ResumenSegmentos";
 
 const CRMTabChart = dynamic(() => import("@/components/admin/CRMTabChart"), {
   ssr: false,
@@ -19,33 +20,33 @@ const CRMTabChart = dynamic(() => import("@/components/admin/CRMTabChart"), {
 const CHANNEL_COLORS = ["var(--accent)", "var(--data-warning-500)", "var(--data-2)", "var(--data-5)", "var(--text-secondary)"];
 const CHANNEL_LABELS: Record<string, string> = { local: "Local", whatsapp: "WhatsApp", web: "Web", referido: "Referido", redes: "Redes" };
 
-/**
- * Indicadores del CRM, el canal por el que llegaron y el cliente top. Plegables y recordados
- * (el botón vive en la barra del buscador); plegados, las cuatro cifras quedan en una línea.
- */
-export default function CrmIndicadores({ crm, abierto, panelId }: { crm: Crm; abierto: boolean; panelId: string }) {
-  const { customers, stats, topCustomer, avgSpent } = crm;
-  const kpis = [
-    { label: "Total clientes", value: String(stats.total),   icon: Users,      color: "text-[var(--data-success-500)]" },
-    { label: "Activos (30d)",  value: String(stats.activos), icon: UserCheck,  color: "text-[var(--data-success-500)]" },
-    { label: "Nuevos",         value: String(stats.nuevos),  icon: UserPlus,   color: "text-primary" },
-    { label: "CLV promedio",   value: fmt(stats.clvProm),    icon: TrendingUp, color: "text-[var(--text-secondary)]" },
-  ];
+function Tarjeta({ rotulo, valor, icono: Icono, ayuda, detalle }: {
+  rotulo: string; valor: string; icono: typeof Users; ayuda?: ReactNode; detalle?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+      <div className="mb-1 flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+          <Icono className="h-4 w-4" aria-hidden />
+        </span>
+        <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
+        {ayuda && <InfoTip what={ayuda} />}
+      </div>
+      <p className="truncate text-lg font-extrabold tabular-nums text-[var(--text-primary)]" title={valor}>{valor}</p>
+      {detalle && <p className="truncate text-sm text-[var(--text-secondary)]" title={detalle}>{detalle}</p>}
+    </div>
+  );
+}
 
-  if (!abierto) {
-    return (
-      <p id={panelId} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm tabular-nums text-[var(--text-secondary)]">
-        {kpis.map((k, i) => (
-          <Fragment key={k.label}>
-            {i > 0 && <span aria-hidden="true">·</span>}
-            <span>
-              {k.label} <strong className="text-[var(--text-primary)]">{k.value}</strong>
-            </span>
-          </Fragment>
-        ))}
-      </p>
-    );
-  }
+/**
+ * Indicadores de Mis clientes con el patrón del panel (`useKpisPlegables`):
+ * el botón va en la cabecera de la vista y arranca CERRADO, con el titular
+ * adentro; el panel, debajo. Antes eran cuatro tarjetas grandes siempre
+ * abiertas más una línea «Top · 15 clientes · Prom · Activos 30d» que repetía
+ * tres de ellas: el mejor cliente es ahora la quinta tarjeta y la línea se va.
+ */
+export function useIndicadoresCrm(crm: Crm) {
+  const { customers, stats } = crm;
 
   const channelCounts: Record<string, number> = {};
   for (const c of customers) {
@@ -58,54 +59,70 @@ export default function CrmIndicadores({ crm, abierto, panelId }: { crm: Crm; ab
   const totalWithChannel = entries.reduce((s, [, v]) => s + v, 0);
   const chartData = entries.map(([name, value]) => ({ name: CHANNEL_LABELS[name] ?? name, value }));
 
-  return (
-    <div id={panelId} className="space-y-4">
-      {/* ── KPIs neutros — bg unificado, color solo en el icono ──────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map(k => (
-          <m.div
-            key={k.label}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl p-4 border border-[var(--rule-soft)] bg-[var(--surface-raised)]"
-          >
-            <div className="flex items-center gap-1.5 mb-1">
-              <k.icon className={cn("h-4 w-4", k.color)} />
-              <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">{k.label}</p>
-            </div>
-            <p className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums">{k.value}</p>
-          </m.div>
+  /* Canal de adquisición: sólo con 5 o más clientes que dijeron cómo llegaron. */
+  const canal = totalWithChannel >= 5 ? (
+    <div className="flex items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+      <div style={{ width: 96, height: 96 }}>
+        <CRMTabChart data={chartData} colors={CHANNEL_COLORS} />
+      </div>
+      <div className="flex flex-col gap-1">
+        <p className="text-sm font-bold text-[var(--text-secondary)]">Cómo llegaron</p>
+        {chartData.map((d, i) => (
+          <div key={d.name} className="flex items-center gap-2 text-sm">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CHANNEL_COLORS[i % CHANNEL_COLORS.length] }} aria-hidden />
+            <span className="font-medium text-[var(--text-primary)]">{d.name}</span>
+            <span className="tabular-nums text-[var(--text-secondary)]">{d.value}</span>
+          </div>
         ))}
       </div>
-
-      {/* Mejora 13: Canal de adquisicion (sólo con 5 o más clientes que dijeron cómo llegaron) */}
-      {totalWithChannel >= 5 && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 flex items-center gap-4">
-          <div style={{ width: 100, height: 100 }}>
-            <CRMTabChart data={chartData} colors={CHANNEL_COLORS} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Canal de adquisición</p>
-            {chartData.map((d, i) => (
-              <div key={d.name} className="flex items-center gap-2 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CHANNEL_COLORS[i % CHANNEL_COLORS.length] }} />
-                <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{d.name}</span>
-                <span className="text-[var(--text-tertiary)] dark:text-muted">{d.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Mejora 10: Top customer summary — barra compacta (antes entre los filtros y la tabla) */}
-      {topCustomer && customers.length >= 3 && (
-        <div className="flex items-center justify-between bg-[var(--surface-sunken)]/50 rounded-xl px-4 py-2.5 text-xs flex-wrap gap-2">
-          <span className="flex items-center gap-1.5"><Crown className="h-3.5 w-3.5 text-[var(--data-warning-500)]" aria-hidden /> Top: <strong>{topCustomer.name}</strong> &middot; {fmt(topCustomer.totalSpent ?? 0)}</span>
-          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> {customers.length} clientes</span>
-          <span className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> Prom: {fmt(avgSpent)}</span>
-          <span className="flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-[var(--text-secondary)]" /> Activos 30d: {stats.activos}</span>
-        </div>
-      )}
     </div>
-  );
+  ) : undefined;
+
+  return useKpisPlegables({
+    claveMemoria: "crm-clientes",
+    alto: "md",
+    compactoEnMovil: true,
+    /* ≤ 22 caracteres: lo que entra en el botón md sin cortarse (memoria kpis-plegables-resumen). */
+    resumen: `${stats.activos} activos de ${stats.total}`,
+    /* Segmentos se fundió acá (10-10): repetía la faceta «Segmento» de Mis clientes con otra
+       regla. Tocar un segmento filtra la tabla por él. */
+    encabezado: (
+      <div className="space-y-3">
+        {canal}
+        <ResumenSegmentos clientes={customers} onElegir={(seg) => crm.setFilterSegment([seg])} />
+      </div>
+    ),
+    tarjetas: [
+      /* Los nuevos van debajo del total: cinco tarjetas partían la fila a 1280 (4 + 1). */
+      <Tarjeta
+        key="total"
+        rotulo="Clientes"
+        valor={String(stats.total)}
+        detalle={stats.nuevos === 1 ? "1 nuevo" : `${stats.nuevos} nuevos`}
+        icono={Users}
+        ayuda="Nuevos: todavía no compran o compraron una sola vez."
+      />,
+      <Tarjeta
+        key="activos"
+        rotulo="Activos (30 días)"
+        valor={String(stats.activos)}
+        icono={UserCheck}
+        ayuda="Compraron al menos una vez en los últimos 30 días: un pedido que no se canceló o una venta del POS con su celular."
+      />,
+      <Tarjeta
+        key="promedio"
+        rotulo="Gasto promedio"
+        valor={fmt(stats.gastoProm)}
+        icono={TrendingUp}
+        ayuda="Lo que gastó cada cliente, en promedio: ventas del POS con su celular + pedidos entregados. Un pedido en curso suma cuando se entrega."
+      />,
+      <Tarjeta
+        key="mejor"
+        rotulo="Mejor cliente"
+        valor={stats.mejor ? fmt(stats.mejor.totalSpent ?? 0) : "—"}
+        detalle={stats.mejor ? stats.mejor.name : "Nadie gastó todavía"}
+        icono={Crown}
+      />,
+    ],
+  });
 }

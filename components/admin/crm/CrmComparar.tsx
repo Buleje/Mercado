@@ -4,14 +4,14 @@ import { DataTable } from "@buleje/design-system";
 import { BarChart3 } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
-import { fmtRelative } from "@/components/admin/crm/crm-compartido";
+import { fmtRelative, SEGMENT_CONFIG } from "@/components/admin/crm/crm-compartido";
 import type { Crm } from "@/components/admin/crm/use-crm";
 
 /** Barra y ventana para comparar clientes lado a lado. Pieza de CRMTab: recibe `useCrm` entero. */
 export default function CrmComparar({ crm }: { crm: Crm }) {
   const {
     compareMode, comparePhones, setComparePhones, showCompareModal, setShowCompareModal,
-    compareCustomers, getSegmentLabel,
+    compareCustomers,
   } = crm;
   return (
     <>
@@ -93,8 +93,9 @@ export default function CrmComparar({ crm }: { crm: Crm }) {
                       {/* Ticket promedio */}
                       {(() => {
                         const values = compareCustomers.map(c => {
-                          const orders = c._orderCount ?? 0;
-                          return orders > 0 ? (c.totalSpent ?? 0) / orders : 0;
+                          // Lo gastado entre las compras que lo suman (entregadas + POS), no entre todas.
+                          const cerradas = c._cerradas ?? 0;
+                          return cerradas > 0 ? (c.totalSpent ?? 0) / cerradas : 0;
                         });
                         const best = Math.max(...values);
                         return (
@@ -143,7 +144,7 @@ export default function CrmComparar({ crm }: { crm: Crm }) {
                         <td className="text-xs text-[var(--text-secondary)] font-semibold">Segmento</td>
                         {compareCustomers.map(c => (
                           <td key={c.phone} className="text-center">
-                            <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{getSegmentLabel(c)}</span>
+                            <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{SEGMENT_CONFIG[c._segment ?? "nuevo"].label}</span>
                           </td>
                         ))}
                       </tr>

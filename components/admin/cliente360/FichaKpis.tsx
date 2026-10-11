@@ -18,7 +18,7 @@ export default function FichaKpis({ ficha, resumen, abierto, panelId }: { ficha:
       <div id={panelId} hidden={!abierto} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Total gastado",  value: fmt(totalSpent),        icon: CreditCard,   color: "text-[var(--data-success-500)]" },
-          { label: "Pedidos",        value: String(orders.length),  icon: ShoppingCart, color: "text-[var(--data-success-500)]" },
+          { label: "Compras",        value: String(orders.filter(o => o.status !== "cancelado").length),  icon: ShoppingCart, color: "text-[var(--data-success-500)]" },
           { label: "Ticket prom.",   value: fmt(avgTicket),         icon: TrendingUp,   color: "text-[var(--text-secondary)]" },
           { label: "Primera compra", value: firstOrder ? fmtDate(firstOrder.createdAt) : "—", icon: Calendar, color: "text-[var(--data-warning-500)]" },
         ].map(k => (

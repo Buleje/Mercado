@@ -1,10 +1,12 @@
 /**
- * CRMTab — Fase 2 de "Filtros en la cabecera tipo Excel" (2026-09-22).
+ * CRMTab — Mis clientes (10-10): filtros en UNA fila pegada a la tabla, sin
+ * autofiltros en las cabeceras, y las compras contadas en el servidor.
  *
- * Corto a propósito: sólo prueba el autofiltro de Segmento y que Crédito
- * (rango) + Actividad ("Último pedido") cierran en AND — antes eran las tres
- * ramas excluyentes de un solo `quickFilter`, ahora son dos columnas
- * independientes con el mismo atajo de pastillas por arriba.
+ * Antes eran tres filas de pastillas (Segmento · Estado · Frecuencia) y además
+ * selects dentro de «Último pedido», «Crédito» y «Segmento» que escribían lo
+ * mismo. «Total gastado» venía de `Customer.totalSpent`, que los pedidos no
+ * mueven: S/ 0,00 con 9 pedidos. Ahora GET /api/customers?compras=1 trae
+ * compras, gastado y las de 30 días; la lista ya no pide /api/orders ni /api/sales.
  */
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,16 +17,11 @@ import CRMTab from "@/components/admin/CRMTab";
 
 const hace = (dias: number) => new Date(Date.now() - dias * 86400000).toISOString();
 
-const FRECUENTE = { phone: "911111111", name: "Frecuente Feliz", creditBalance: 0 };
-const NUEVO_CON_DEUDA = { phone: "922222222", name: "Nuevo Nato", creditBalance: 50 };
-const OCASIONAL_ACTIVO_CON_DEUDA = { phone: "944444444", name: "Deudor Activo", creditBalance: 80 };
-
-// Órdenes: Frecuente compra 6 veces reciente (frecuente+activo); el deudor
-// activo compra 2 veces reciente (ocasional+activo); Nuevo Nato no compra.
-const ORDENES = [
-  ...Array.from({ length: 6 }, () => ({ customerPhone: FRECUENTE.phone, createdAt: hace(1) })),
-  ...Array.from({ length: 2 }, () => ({ customerPhone: OCASIONAL_ACTIVO_CON_DEUDA.phone, createdAt: hace(2) })),
-];
+// Frecuente: 6 compras recientes (Semanal), sin deuda. Nuevo Nato: no compra y
+// debe. Deudor Activo: 2 compras en 30 días (Quincenal) y debe.
+const FRECUENTE = { phone: "911111111", name: "Frecuente Feliz", creditBalance: 0, totalSpent: 0, compras: 6, gastado: 120, cerradas: 6, ultimaCompra: hace(1), compras30d: 6 };
+const NUEVO_CON_DEUDA = { phone: "922222222", name: "Nuevo Nato", creditBalance: 50, compras: 0, gastado: 0, cerradas: 0, ultimaCompra: null, compras30d: 0 };
+const OCASIONAL_ACTIVO_CON_DEUDA = { phone: "944444444", name: "Deudor Activo", creditBalance: 80, compras: 2, gastado: 35.5, cerradas: 2, ultimaCompra: hace(2), compras30d: 2 };
 
 type Pendiente = { url: string; resolver: (cuerpo: unknown) => void };
 let pendientes: Pendiente[] = [];
@@ -63,40 +60,51 @@ function tabla() {
 async function montar() {
   render(<CRMTab />);
   await waitFor(() => expect(pedido("/api/customers")).toBeTruthy());
-  await resolver("/api/customers", [FRECUENTE, NUEVO_CON_DEUDA, OCASIONAL_ACTIVO_CON_DEUDA]);
-  await resolver("/api/orders", ORDENES);
-  await resolver("/api/sales", []);
+  await resolver("/api/customers", [NUEVO_CON_DEUDA, FRECUENTE, OCASIONAL_ACTIVO_CON_DEUDA]);
   await waitFor(() => expect(tabla().getByText("Frecuente Feliz")).toBeTruthy());
 }
 
-describe("CRMTab — autofiltro de cabecera (Segmento, Crédito, Actividad)", () => {
-  it("filtra por Segmento desde el <th>", async () => {
+describe("CRMTab — Mis clientes", () => {
+  it("pide las compras al servidor y nada más (sin /api/orders ni /api/sales)", async () => {
     await montar();
-    expect(tabla().getByText("Nuevo Nato")).toBeTruthy();
+    expect(pendientes.map((p) => p.url)).toEqual(["/api/customers?limit=500&compras=1"]);
+  });
 
-    fireEvent.click(tabla().getByLabelText(/Filtrar por Segmento/));
-    const popover = tabla().getByRole("group", { name: "Valores de Segmento" });
+  it("Total gastado sale de lo que compró, y el que más gastó va primero", async () => {
+    await montar();
+    expect(tabla().getByText("S/ 120.00")).toBeTruthy();
+    expect(tabla().getByText("6 compras")).toBeTruthy();
+    const filas = tabla().getAllByRole("row").slice(1).map((r) => r.textContent ?? "");
+    expect(filas[0]).toContain("Frecuente Feliz");
+    expect(filas[2]).toContain("Nuevo Nato");
+  });
+
+  it("sin filtros dentro de las cabeceras", async () => {
+    await montar();
+    const cabecera = tabla().getAllByRole("rowgroup")[0];
+    expect(within(cabecera).queryAllByLabelText(/Filtrar/)).toHaveLength(0);
+  });
+
+  it("filtra por Segmento desde la fila de filtros", async () => {
+    await montar();
+    fireEvent.click(screen.getByLabelText(/Filtrar por Segmento/));
+    const popover = screen.getByRole("group", { name: "Valores de Segmento" });
     fireEvent.click(within(popover).getByLabelText("Segmento: Frecuente"));
-
     expect(tabla().getByText("Frecuente Feliz")).toBeTruthy();
     expect(tabla().queryByText("Nuevo Nato")).toBeNull();
     expect(tabla().queryByText("Deudor Activo")).toBeNull();
   });
 
-  it("combina Crédito (rango) + Actividad en AND — antes era un solo quickFilter excluyente", async () => {
+  it("Con deuda + compras de los últimos 30 días cierran en AND", async () => {
     await montar();
-
-    // Crédito >= 1: deja a los dos con deuda.
-    fireEvent.click(tabla().getByLabelText("Filtrar Crédito por rango"));
-    fireEvent.change(tabla().getByLabelText("Crédito desde"), { target: { value: "1" } });
+    fireEvent.click(screen.getByRole("button", { name: /Con deuda \(2\)/ }));
     await waitFor(() => expect(tabla().queryByText("Frecuente Feliz")).toBeNull());
     expect(tabla().getByText("Nuevo Nato")).toBeTruthy();
     expect(tabla().getByText("Deudor Activo")).toBeTruthy();
 
-    // + Actividad = Activo: sólo queda el que además compró en los últimos 30 días.
-    fireEvent.click(tabla().getByLabelText(/Filtrar por Último pedido/));
-    fireEvent.click(within(tabla().getByRole("group", { name: "Valores de Último pedido" })).getByLabelText("Último pedido: Activo"));
-
+    fireEvent.click(screen.getByLabelText(/Filtrar por Compras en los últimos 30 días/));
+    const popover = screen.getByRole("group", { name: "Valores de Compras en los últimos 30 días" });
+    fireEvent.click(within(popover).getByLabelText("Compras en los últimos 30 días: Quincenal"));
     expect(tabla().queryByText("Nuevo Nato")).toBeNull();
     expect(tabla().getByText("Deudor Activo")).toBeTruthy();
   });

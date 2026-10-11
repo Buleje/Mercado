@@ -1,11 +1,10 @@
-import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
 import { useAbrirFichaAlLlegar } from "@/hooks/use-abrir-ficha-al-llegar";
 import type { Rango } from "@/lib/admin/filtros-columna";
 import { useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
-import { COLS_CRM_CLIENTES, inferSegment, type Customer, type Segment, type FrequencyFilter } from "@/components/admin/crm/crm-compartido";
+import { COLS_CRM_CLIENTES, inferSegment, type Customer, type Frecuencia, type Segment } from "@/components/admin/crm/crm-compartido";
 
 /** Los últimos 9 dígitos: «+51 982 519 788», «51982519788» y «982519788» son el mismo celular. */
 const claveTelefono = (t: string) => t.replace(/\D/g, "").slice(-9);
@@ -23,21 +22,20 @@ export function useCrmClientes() {
   const [error, setError]         = useState(false);
 
   const [search, setSearch]           = useState("");
-  // Filtros en la cabecera, estilo Excel (Brandon, 2026-09-03/22): un solo
-  // estado por columna — las pastillas de abajo y el autofiltro del `<th>`
-  // escriben lo mismo, no dos filtros distintos.
-  //
-  // `quickFilter` era UN estado excluyente para tres preguntas de DOS columnas
-  // distintas (actividad de "Último pedido" y deuda de "Crédito"): se separa
-  // en dos, y las pastillas de abajo pasan a ser un atajo que escribe ambos a
-  // la vez (mismo look excluyente de siempre) en vez de la fuente de verdad.
-  const [actividadFiltro, setActividadFiltro] = useState<string[]>([]);
+  /*
+   * Filtros de la fila de arriba de la tabla (10-10: una sola fila, sin
+   * autofiltros en las cabeceras, que repetían lo mismo). Cada uno es multi:
+   * OR adentro, AND entre filtros.
+   *  · `frecuencia`: compras de los últimos 30 días. Absorbe a «Estado: Activos
+   *    / Inactivos 30d», que eran la misma pregunta (activo = compró en 30 días
+   *    = Diario + Semanal + Quincenal + Mensual).
+   *  · `creditoRango`: «Con deuda» escribe { min: 0,01 }.
+   */
+  const [frecuencia, setFrecuencia] = useState<Frecuencia[]>([]);
   const [creditoRango, setCreditoRango] = useState<Rango<number>>({ min: null, max: null });
-  // Segmento: multi (antes un solo valor a la vez).
   const [filterSegment, setFilterSegment] = useState<Segment[]>([]);
+  const [filterTags, setFilterTags] = useState<string[]>([]);
   const [page, setPage]               = useState(1);
-
-  const [filterTag, setFilterTag] = useState<string>("todos");
 
   const [detail, setDetalle] = useState<string | null>(null); // phone
   const [showNewClientModal, setShowNewClientModal] = useState(false);
@@ -48,9 +46,6 @@ export function useCrmClientes() {
   useEffect(() => {
     if (editingCreditLimit) creditLimitInputRef.current?.focus();
   }, [editingCreditLimit]);
-
-  // Mejora nueva 7: Frecuencia de compra
-  const [freqFilter, setFreqFilter] = useState<FrequencyFilter>("todos-freq");
 
   // Mejora 13: Comparativa de clientes
   const [compareMode, setCompareMode] = useState(false);
@@ -65,54 +60,16 @@ export function useCrmClientes() {
     setError(false);
     try {
       /*
-       * `_orderCount` y `_lastOrder` decían «Populated client-side from
-       * /orders» desde siempre, y NADIE los llenaba: sólo se pedía
-       * /api/customers. Con los dos en `undefined`, `inferSegment` corta en su
-       * primera línea —`_orderCount ?? 0 === 0` → «nuevo»— y toda la
-       * segmentación quedaba muerta: TODOS los clientes «nuevo», Frecuente /
-       * Ocasional / Perdido vacíos para siempre, «Activos (30d)» clavado en 0
-       * y la columna de última compra en blanco. No dependía de los datos: con
-       * cualquier tenant daba lo mismo.
-       *
-       * Cuenta también la venta de mostrador, no sólo el pedido: para el dueño
-       * el cliente que vino ayer a la bodega compró igual que el que pidió por
-       * la app. Las dos listas son secundarias — si fallan, se pierde la
-       * segmentación pero la lista de clientes se muestra igual.
+       * Las compras de cada cliente las cuenta el servidor (`?compras=1` →
+       * CustomersDB.comprasPorCliente): pedidos no cancelados + ventas del POS,
+       * lo gastado (entregados + ventas) y las de los últimos 30 días. Antes
+       * se pedían /api/orders y /api/sales (tope 500 cada uno) y se contaban
+       * acá; «Total gastado» venía de `Customer.totalSpent`, que los pedidos
+       * no mueven: S/ 0,00 para un cliente con 9 pedidos.
        */
-      const [res, resPedidos, resVentas] = await Promise.all([
-        fetch("/api/customers?limit=500"),
-        fetch("/api/orders?limit=500").catch(sinDato("CRM /api/orders")),
-        fetch("/api/sales?limit=500").catch(sinDato("CRM /api/sales")),
-      ]);
+      const res = await fetch("/api/customers?limit=500&compras=1");
       if (!res.ok) throw new Error("fetch failed");
-      const data: Customer[] = await res.json();
-
-      const compras = new Map<string, { n: number; ultima: string }>();
-      const anotarCompra = (telefono: unknown, fecha: unknown) => {
-        const tel = typeof telefono === "string" ? telefono.trim() : "";
-        const iso = typeof fecha === "string" ? fecha : "";
-        if (!tel || !iso) return;
-        const previo = compras.get(tel);
-        compras.set(tel, {
-          n: (previo?.n ?? 0) + 1,
-          ultima: !previo || iso > previo.ultima ? iso : previo.ultima,
-        });
-      };
-      const leerLista = async (r: Response | null): Promise<unknown[]> => {
-        if (!r?.ok) return [];
-        const j = await leerJson(r);
-        if (Array.isArray(j)) return j;
-        const cont = j as { orders?: unknown[]; sales?: unknown[]; items?: unknown[] } | null;
-        return cont?.orders ?? cont?.sales ?? cont?.items ?? [];
-      };
-      for (const o of await leerLista(resPedidos)) {
-        const p = o as { customer?: { phone?: string }; customerPhone?: string; createdAt?: string };
-        anotarCompra(p.customer?.phone ?? p.customerPhone, p.createdAt);
-      }
-      for (const v of await leerLista(resVentas)) {
-        const p = v as { customerPhone?: string; createdAt?: string; date?: string };
-        anotarCompra(p.customerPhone, p.createdAt ?? p.date);
-      }
+      const data: (Customer & { compras?: number; gastado?: number; cerradas?: number; ultimaCompra?: string | null; compras30d?: number })[] = await res.json();
 
       // Annotate with inferred segment and parsed tags
       const annotated = data.map(c => {
@@ -123,8 +80,14 @@ export function useCrmClientes() {
             if (Array.isArray(t)) parsedTags = t;
           } catch { /* ignore */ }
         }
-        const compra = compras.get((c.phone ?? "").trim());
-        const conCompras = { ...c, _orderCount: compra?.n ?? 0, _lastOrder: compra?.ultima ?? null };
+        const conCompras: Customer = {
+          ...c,
+          totalSpent: c.gastado ?? 0,
+          _orderCount: c.compras ?? 0,
+          _lastOrder: c.ultimaCompra ?? null,
+          _compras30d: c.compras30d ?? 0,
+          _cerradas: c.cerradas ?? 0,
+        };
         return { ...conCompras, _segment: inferSegment(conCompras), _tags: parsedTags };
       });
       setCustomers(annotated);
@@ -163,11 +126,11 @@ export function useCrmClientes() {
   });
 
   return {
-    customers, setCustomers, loading, setLoading, error, setError, search, setSearch, actividadFiltro,
-    setActividadFiltro, creditoRango, setCreditoRango, filterSegment, setFilterSegment, page, setPage,
-    filterTag, setFilterTag, detail, setDetail, showNewClientModal, setShowNewClientModal,
+    customers, setCustomers, loading, setLoading, error, setError, search, setSearch, frecuencia,
+    setFrecuencia, creditoRango, setCreditoRango, filterSegment, setFilterSegment, page, setPage,
+    filterTags, setFilterTags, detail, setDetail, showNewClientModal, setShowNewClientModal,
     editingCreditLimit, setEditingCreditLimit, creditLimitInput, setCreditLimitInput,
-    creditLimitInputRef, freqFilter, setFreqFilter, compareMode, setCompareMode, comparePhones,
+    creditLimitInputRef, compareMode, setCompareMode, comparePhones,
     setComparePhones, orden, showCompareModal, setShowCompareModal, load,
   };
 }

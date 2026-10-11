@@ -1,20 +1,15 @@
 "use client";
-import { CardTitle } from "@buleje/design-system";
-import { useState } from "react";
 import dynamic from "next/dynamic";
 import {
-  Users, Star, Layers, MapPin, MessageSquare,
-  Maximize2, Minimize2, UserPlus,
+  Users, Star, MapPin, MessageSquare,
+  UserPlus,
 } from "@buleje/design-system/icons";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import { cn } from "@/lib/utils";
-
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const CRMTab = dynamic(() => import("@/components/admin/CRMTab"), { loading: S });
 const NPSTab = dynamic(() => import("@/components/admin/NPSTab"), { loading: S });
-const AutoSegments = dynamic(() => import("@/components/admin/AutoSegments"), { loading: S });
 const CustomerGeoMap = dynamic(() => import("@/components/admin/CustomerGeoMap"), { ssr: false, loading: () => <div className="flex items-center justify-center h-96"><div className="h-6 w-6 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div> });
 const MassMessageSender = dynamic(() => import("@/components/admin/MassMessageSender"), { loading: S });
 // Funnel de leads consolidado como sub-tab (era entrada top-level "leads-funnel")
@@ -24,40 +19,14 @@ const MODULE_ID = "clientes";
 
 const TABS = [
   { id: "crm" as const, label: "Mis clientes", icon: Users },
-  { id: "leads" as const, label: "Leads", icon: UserPlus },
+  { id: "leads" as const, label: "Interesados", icon: UserPlus },
   { id: "resenas" as const, label: "Opiniones", icon: Star },
-  { id: "segmentos" as const, label: "Segmentos", icon: Layers },
   { id: "mapa" as const, label: "Mapa", icon: MapPin },
   { id: "mensajes" as const, label: "Mensajes masivos", icon: MessageSquare },
 ];
 
 /** Los ids, estables: el hook los usa como dependencia. */
 const TAB_IDS = TABS.map((t) => t.id);
-
-/* ─── Mapa expandible con GeoMap ─── */
-function ExpandableMapSection() {
-  const [maximized, setMaximized] = useState(false);
-
-  return (
-    <div className={cn("space-y-4", maximized && "fixed inset-0 z-modal bg-[var(--surface-raised)] p-4 overflow-auto")}>
-      <div className="flex items-center justify-between">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
-          <MapPin className="h-4 w-4 text-primary" /> Ubicación de clientes
-        </CardTitle>
-        <button
-          onClick={() => setMaximized(v => !v)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors"
-        >
-          {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-          {maximized ? "Minimizar" : "Maximizar mapa"}
-        </button>
-      </div>
-      <div style={{ height: maximized ? "calc(100vh - 120px)" : 520 }}>
-        <CustomerGeoMap />
-      </div>
-    </div>
-  );
-}
 
 export default function CRMClientesModule({ initialTab }: { initialTab?: string } = {}) {
   // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
@@ -79,7 +48,13 @@ export default function CRMClientesModule({ initialTab }: { initialTab?: string 
           («Abastecimiento · Compras» sobre un título «Compras») — el mismo
           dato tres veces contando el ítem marcado en el sidebar. */}
       <AdminTabBar
-        heading={{ title: "Mis Clientes", description: "Gestiona tu base de clientes, segmentación, fidelización y opiniones.", icon: Users }}
+        heading={{
+          /* «Clientes», como el hub en el menú (10-10): con «Mis Clientes» la banda
+             decía CLIENTES · Mis Clientes y la primera pestaña, otra vez, «Mis clientes». */
+          title: "Clientes",
+          description: "Tus clientes y lo que compran, los interesados que todavía no compran, sus opiniones, dónde viven y los mensajes masivos.",
+          icon: Users,
+        }}
         tabs={TABS}
         activeTab={sub}
         onTabChange={(id) => setSub(id as typeof sub)}
@@ -88,8 +63,7 @@ export default function CRMClientesModule({ initialTab }: { initialTab?: string 
         {sub === "crm" && <CRMTab />}
         {sub === "leads" && <LeadsFunnelModule />}
         {sub === "resenas" && <NPSTab />}
-        {sub === "segmentos" && <AutoSegments />}
-        {sub === "mapa" && <ExpandableMapSection />}
+        {sub === "mapa" && <CustomerGeoMap />}
         {sub === "mensajes" && <MassMessageSender />}
       </AdminTabBar>
     </div>

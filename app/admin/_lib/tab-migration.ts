@@ -203,6 +203,8 @@ export const TAB_MIGRATION: Record<string, Tab | DestinoTab> = {
  * integradores de cada ola (pedido `vistaMigracion` en `SP/panel/registro`).
  */
 export const VISTA_MIGRATION: Record<string, DestinoTab> = {
+  // Segmentos → los Indicadores de Mis clientes (10-10): repetía su faceta «Segmento».
+  "clientes:segmentos": { tab: "clientes", vista: "crm" },
   // Pérdidas → sección de Entradas y salidas (10-10).
   "inventario:mermas": { tab: "inventario", vista: "kardex", sub: "perdidas" },
   // ── Ola 2 (2026-10-10) ──
