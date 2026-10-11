@@ -82,7 +82,9 @@ const RedeemSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "loyalty-redeem"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  /* Sin roles, cualquier rol del panel (almacenero, analista, repartidor) descontaba
+     puntos de cualquier cliente por un «producto gratis» (security 11-10). */
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   let raw: unknown;

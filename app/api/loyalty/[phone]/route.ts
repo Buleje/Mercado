@@ -9,6 +9,7 @@ import { rateLimit, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { MENSAJE_SOLO_DUENO, puedeSumarPuntosAMano, ROLES_AJUSTE_PUNTOS } from "@/lib/loyalty/roles-ajuste";
 
 // Auto-discount tiers based on purchase count (from discount engine)
 const AUTO_DISCOUNT_TIERS = [
@@ -89,13 +90,15 @@ const AdjustSchema = z.object({
   reason: z.string().max(200).optional(),
 });
 
-// -- PATCH /api/loyalty/[phone] -- admin only, manual point adjustment --------
+// -- PATCH /api/loyalty/[phone] -- ajuste a mano: admin, dueño y encargado ----
+// Antes `requireAdmin(req)` sin roles: el cajero sumaba puntos a quien quisiera
+// y se cobraban como descuento (11-10). Quién: lib/loyalty/roles-ajuste.ts.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> }
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "loyalty-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES_AJUSTE_PUNTOS);
   if (auth instanceof NextResponse) return auth;
 
   const { phone } = await params;
@@ -115,6 +118,10 @@ export async function PATCH(
   try {
     const normalized = normalizePhone(phone);
     const { points } = parsed.data;
+    // Segundo candado por signo: si algún día se abre el canje a otro rol, sumar sigue cerrado.
+    if (points > 0 && !puedeSumarPuntosAMano(auth.role)) {
+      return NextResponse.json({ error: MENSAJE_SOLO_DUENO }, { status: 403 });
+    }
     if (points > 0) {
       /* Ajuste a mano: exactamente N puntos, con su asiento «manual». Antes iba
          por `accruePoints`, que es el camino de una COMPRA: sumaba S/ N a

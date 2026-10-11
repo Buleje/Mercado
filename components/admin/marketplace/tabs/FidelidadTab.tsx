@@ -89,6 +89,11 @@ export function MarketplaceFidelidadTab() {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "earn", phone: ficha.phone, points: puntos, description: "Puntos asignados manualmente" }),
       });
+      if (res.status === 403) {
+        // El cajero no suma puntos a mano (lib/loyalty/roles-ajuste.ts): decirlo, no «intenta de nuevo».
+        setAviso("Sólo el dueño o el encargado suman puntos a mano.");
+        return;
+      }
       if (!res.ok) throw new Error(`earn ${res.status}`);
       setSumar("");
       setAviso(`Listo: +${formatNumber(puntos)} puntos.`);

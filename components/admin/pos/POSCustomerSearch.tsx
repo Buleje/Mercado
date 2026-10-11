@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { formatCurrency } from "@/lib/format";
 import POSAbonoRapido from "./POSAbonoRapido";
+import { VALOR_PUNTO } from "@/components/admin/crecimiento/puntos/mensajes";
 
 const ClienteFormModal = dynamic(
   () => import("@/components/admin/clientes/ClienteFormModal"),
@@ -66,7 +67,9 @@ export default function POSCustomerSearch({
   const [loyaltyPoints, setLoyaltyPoints] = useState<number>(0);
   const [showRedeemSlider, setShowRedeemSlider] = useState(false);
   const [redeemAmount, setRedeemAmount] = useState(0);
-  const POINTS_RATE = 0.05; // 1 punto = S/0.05
+  /* El valor del punto es el del programa (Campañas › Puntos: S/ 0,10). Decía
+     S/ 0,05: el cajero ofrecía la mitad (11-10). */
+  const POINTS_RATE = VALOR_PUNTO;
 
   // Mejora 11: Score de confiabilidad del cliente
   const [reliabilityScore, setReliabilityScore] = useState<{ score: number } | null>(null);
