@@ -77,7 +77,12 @@ function JsonLd({ p, m, migas }: { p: ProductoSalon; m: DatosMarco; migas: Miga[
         brand: { "@type": "Brand", name: p.marca ?? m.nombre },
         offers: {
           ...oferta,
-          availability: p.stock !== null && p.stock <= 0 ? "https://schema.org/OutOfStock" : p.etiqueta ? "https://schema.org/PreOrder" : "https://schema.org/InStock",
+          availability:
+            p.stock !== null && p.stock <= 0
+              ? "https://schema.org/OutOfStock"
+              : p.etiqueta === "Por encargo" || p.etiqueta === "Preventa"
+                ? "https://schema.org/PreOrder"
+                : "https://schema.org/InStock",
           itemCondition: "https://schema.org/NewCondition",
           seller: { "@type": "Organization", name: m.nombre },
         },

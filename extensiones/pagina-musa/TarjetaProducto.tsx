@@ -101,16 +101,17 @@ export function Escenario({ categoria, className = "", children }: { categoria: 
   );
 }
 
-/** Preventa (acento sobre blanco) o Por encargo (achiote): la etiqueta que puso Drucila en el panel. */
+/** Por encargo (achiote), Preventa u otro badge (acento, punto oro) o En stock (punto verde): `estadoProducto`. */
 export function Insignia({ texto, grande = false }: { texto: string; grande?: boolean }) {
   const encargo = /encargo/i.test(texto);
+  const enStock = texto === "En stock";
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full font-semibold uppercase tracking-[0.14em] ${grande ? "px-3 py-1.5 text-[12px]" : "px-2.5 py-1 text-[11px]"} ${
         encargo ? "bg-[var(--mu-encargo-fondo)] text-[var(--mu-encargo)]" : "bg-[var(--surface-raised)] text-[var(--mu-acento-tinta)] ring-1 ring-[var(--rule-soft)]"
       }`}
     >
-      <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${encargo ? "bg-current" : "bg-[var(--mu-oro)]"}`} />
+      <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${encargo ? "bg-current" : enStock ? "bg-[var(--mu-exito)]" : "bg-[var(--mu-oro)]"}`} />
       {texto}
     </span>
   );

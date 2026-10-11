@@ -31,12 +31,16 @@ export const CATEGORIA_SERVICIOS = "Servicios";
  * Cada mensaje cabe en UNA línea a 400 px (≤ 48 letras): la franja mide lo del más
  * largo, y uno de 50 la subía a dos líneas en el celular.
  * La preventa va con las palabras del manual (Campaña 01: «preventa 10 % a las primeras
- * 20 clientas»), nada más; `{preventa}` vale "" mientras dura la campaña y null después.
+ * 20 clientas»; Navidad: «Preventa desde el 16 nov (se separa con S/ 20) · envíos a
+ * provincia hasta el 18 dic»), nada más. `{preventa}`, `{navidad}` y `{provincia}` valen ""
+ * mientras dura cada cosa y null después (`valoresCampana` en preventa.ts).
  */
 export const FRANJA = [
   "{preventa}Preventa: 10 % a las primeras 20 clientas",
+  "{navidad}Navidad: separa tu kit con S/ 20 desde el 16/11",
   "Envío gratis en Ciudad Constitución",
   "Fuera de Constitución, envío gratis desde S/ 99",
+  "{provincia}Envíos a provincia para Navidad: hasta el 18/12",
   "Asesoría gratis por WhatsApp: 921 585 006",
   "Diagnóstico gratis de piel y cabello los sábados",
   "Productos con hasta {descuento} % de descuento",

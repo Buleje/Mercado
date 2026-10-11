@@ -25,6 +25,7 @@ import { sinDato } from "@/lib/errores/sin-dato";
 import { CATEGORIA_SERVICIOS, CATEGORIAS } from "./anuncios";
 import type { CodigosProductos } from "./PedirPorWhatsapp";
 import { esPorEncargo, WHATSAPP_MUSA } from "./pedido-whatsapp";
+import { estadoProducto } from "./preventa";
 
 export interface ProductoSalon {
   id: number;
@@ -40,7 +41,7 @@ export interface ProductoSalon {
   descripcion: string | null;
   stock: number | null;
   unidad: string;
-  /** El badge que puso el dueño (Preventa, Por encargo…), sin los de descuento. */
+  /** «Por encargo», «Preventa» (kits en la preventa de Navidad), «En stock» u otro badge del dueño (`estadoProducto`). */
   etiqueta: string | null;
   /** El código del catálogo (`barcode`: MU001, KT02…); se pide por código. */
   codigo: string | null;
@@ -150,13 +151,9 @@ export function normalizarWhatsapp(crudo: unknown): string | null {
   return d.length >= 10 && d.length <= 15 ? d : null;
 }
 
-/** Badge del dueño que NO es un descuento (esos se calculan del historial). */
-const etiquetaDe = (badge: string | undefined) => (badge && !/%|dscto|oferta/i.test(badge) ? badge : null);
 const texto = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
 
 /** La lista de productos del negocio (la DB class ya la guarda en caché): la comparten marco y vitrina. */
-/** Preventa o por encargo: se vende sin existencias. */
-const bajoPedido = (badge: string | null | undefined) => esPorEncargo(badge) || /^preventa$/i.test((badge ?? "").trim());
 
 const leerProductos = cache((tenantId: string) => ProductsDB.getAll(tenantId).catch(sinDato("página salón · productos")));
 
@@ -233,6 +230,7 @@ export const cargarVitrina = cache(async (tenantId: string, slug: string): Promi
     // El historial viene del más nuevo al más viejo: el primero que dejó el precio de hoy.
     const cambio = historial?.[p.id]?.find((h) => Math.abs(h.newPrice - p.price) < 0.005);
     const antes = cambio && cambio.oldPrice > p.price ? cambio.oldPrice : null;
+    const etiqueta = estadoProducto({ badge: p.badge, stock: p.stock, codigo: p.barcode });
     return {
       id: p.id,
       nombre: p.name,
@@ -243,11 +241,12 @@ export const cargarVitrina = cache(async (tenantId: string, slug: string): Promi
       descuento: antes ? Math.round(((antes - p.price) / antes) * 100) : null,
       imagen: p.image || "",
       descripcion: p.description?.trim() || null,
-      // Preventa y «Por encargo» se piden aunque no haya existencias (Musa los trae al confirmar el pago):
-      // sin stock que mostrar, la tarjeta no dice «Agotado».
-      stock: typeof p.stock === "number" && !bajoPedido(p.badge) ? p.stock : null,
+      // «Por encargo» (sin stock propio: se pide cuando la clienta paga) y el kit en preventa de Navidad
+      // (se separa con S/ 20) nunca dicen «Agotado». El badge «Preventa» del panel ya no esconde las
+      // existencias: con stock cargado, la tarjeta dice «En stock».
+      stock: typeof p.stock === "number" && etiqueta !== "Por encargo" && etiqueta !== "Preventa" ? p.stock : null,
       unidad: p.unit || "und",
-      etiqueta: etiquetaDe(p.badge),
+      etiqueta,
       codigo: p.barcode?.trim() || null,
       duracion: p.durationLabel?.trim() || null,
       href: `${base}/${slugify(p.name)}`,

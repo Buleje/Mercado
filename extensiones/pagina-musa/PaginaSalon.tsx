@@ -27,7 +27,7 @@ import { Categorias } from "./Categorias";
 import { Favoritos, Lineas, Novedades } from "./Colecciones";
 import { cargarMarco, cargarVitrina, type DatosMarco, type DatosSalon } from "./datos";
 import { rellenar, rutas } from "./destinos";
-import { preventaVigente } from "./pedido-whatsapp";
+import { valoresCampana } from "./preventa";
 import { BarraSuperior, MenuCategorias } from "./Encabezado";
 import { FranjaAnuncio } from "./FranjaAnuncio";
 import { Beneficios, Pie } from "./Pie";
@@ -67,7 +67,7 @@ function datosEstructurados(d: DatosSalon) {
 
 /** Los textos de la franja; `{descuento}` sólo con la vitrina (sin ella, esos textos no salen). */
 function mensajesFranja(pagos: string | null, mayorDescuento: number | null): string[] {
-  const valores = { descuento: mayorDescuento ? String(mayorDescuento) : null, pagos, preventa: preventaVigente() ? "" : null };
+  const valores = { descuento: mayorDescuento ? String(mayorDescuento) : null, pagos, ...valoresCampana() };
   return FRANJA.map((m) => rellenar(m, valores)).filter((m): m is string => m !== null);
 }
 

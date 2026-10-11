@@ -12,6 +12,7 @@ import { Facebook, Instagram, MessageCircle, ShieldCheck, Truck, Wallet } from "
 import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 import { BENEFICIOS, CATEGORIAS, CONTACTO, DESPEDIDA, PAGOS } from "./anuncios";
 import { enlaceWhatsapp, rellenar, rutas } from "./destinos";
+import { avisoEnviosProvincia } from "./preventa";
 import { Sello } from "./Sello";
 import { Suscripcion } from "./Suscripcion";
 import { ANCHO, Script } from "./ui";
@@ -26,8 +27,13 @@ const COLUMNAS_LG: Record<number, string> = { 1: "lg:grid-cols-1", 2: "lg:grid-c
  * «Tu compra está protegida» (garantía + asesoría con el número), así que ahí no se repiten.
  */
 export function Beneficios({ pagos, nombre, sin = [] }: { pagos: string | null; nombre: string; sin?: readonly (typeof BENEFICIOS)[number]["icono"][] }) {
+  // Envíos: para Navidad, a provincia hasta el 18 dic (manual); después del 18, la línea se va sola.
+  const navidad = avisoEnviosProvincia();
   const items = BENEFICIOS.filter((b) => !sin.includes(b.icono))
-    .map((b) => ({ ...b, texto: rellenar(b.texto, { pagos }) }))
+    .map((b) => {
+      const texto = rellenar(b.texto, { pagos });
+      return { ...b, texto: texto && b.icono === "camion" && navidad ? `${texto} ${navidad}` : texto };
+    })
     .filter((b) => b.texto);
   return (
     <section aria-label={`Por qué comprar en ${nombre}`} className="border-y border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
@@ -42,7 +48,7 @@ export function Beneficios({ pagos, nombre, sin = [] }: { pagos: string | null; 
               </span>
               <span>
                 <span className="block text-base font-semibold leading-snug text-[var(--text-primary)]">{b.titulo}</span>
-                <span className="mt-1 block text-[length:var(--mu-t-chico)] leading-relaxed text-[var(--text-secondary)]">{b.texto}</span>
+                <span className="mt-1 block text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--text-secondary)]">{b.texto}</span>
               </span>
             </li>
           );

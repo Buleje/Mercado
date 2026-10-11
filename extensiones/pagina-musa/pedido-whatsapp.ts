@@ -63,7 +63,15 @@ export interface DatosPedido {
   nombre: string;
   pueblo: Pueblo;
   pago: Pago;
+  /** Mientras dura la Campaña 01 (`preventaVigente`): el mensaje pregunta por el 10 % de las primeras 20. */
+  preventa10?: boolean;
 }
+
+/**
+ * La tienda no puede contar a las primeras 20 clientas (el pedido va por WhatsApp):
+ * la clienta pregunta y Drucila lo verifica al confirmar. Nunca un «ya tienes tu 10 %».
+ */
+export const PREGUNTA_PREVENTA_10 = "¿Me toca el 10 % de preventa (primeras 20 clientas)?";
 
 export type ResultadoPedido =
   | { ok: true; mensaje: string; url: string; total: number }
@@ -103,6 +111,7 @@ export function armarMensajePedido(
     `Entrega: ${d.pueblo}`,
     `Pago: ${d.pago}`,
   );
+  if (d.preventa10) renglones.push(PREGUNTA_PREVENTA_10);
   const mensaje = renglones.join("\n");
   return {
     ok: true,

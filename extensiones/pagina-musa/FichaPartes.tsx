@@ -11,6 +11,7 @@ import { Check } from "@buleje/design-system/icons";
 import type { ProductoSalon } from "./datos";
 import { solesCortos } from "./destinos";
 import { imagenDe, NOMBRE_TEXTURA, TAMANOS_FICHA, texturaDe, type Textura } from "./imagenes";
+import { diaCorto, PREVENTA_NAVIDAD } from "./preventa";
 import type { PasoRutina } from "./rutina";
 import { Escenario, Ilustracion } from "./TarjetaProducto";
 import { ANCHO } from "./ui";
@@ -211,16 +212,22 @@ export function Precio({ p }: { p: ProductoSalon }) {
   );
 }
 
-/** Preventa o por encargo: qué significa para quien compra (sin prometer fechas que no están en la base). */
+/**
+ * Preventa o por encargo: qué significa para quien compra, con lo que dice el manual
+ * (preventa de Navidad: se separa con S/ 20, entregas hasta el 24 dic). «En stock» y los
+ * demás badges no llevan explicación (las existencias las cuenta `Existencias`).
+ */
 export function EstadoPedido({ etiqueta }: { etiqueta: string | null }) {
-  if (!etiqueta) return null;
-  const encargo = /encargo/i.test(etiqueta);
+  if (etiqueta !== "Por encargo" && etiqueta !== "Preventa") return null;
+  const encargo = etiqueta === "Por encargo";
   return (
-    <p className={`mt-4 flex items-start gap-2 rounded-[var(--mu-radio-control)] px-3 py-2.5 text-[length:var(--mu-t-chico)] leading-snug ${encargo ? "bg-[var(--mu-encargo-fondo)] text-[var(--mu-encargo)]" : "bg-[var(--mu-oro-claro)] text-[var(--mu-oro-tinta)]"}`}>
+    <p className={`mt-4 flex items-start gap-2 rounded-[var(--mu-radio-control)] px-3 py-2.5 text-[length:var(--mu-t-cuerpo)] leading-snug ${encargo ? "bg-[var(--mu-encargo-fondo)] text-[var(--mu-encargo)]" : "bg-[var(--mu-oro-claro)] text-[var(--mu-oro-tinta)]"}`}>
       <Check className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.4} aria-hidden="true" />
       <span>
-        <strong className="font-semibold">{encargo ? "Por encargo." : "Preventa."}</strong>{" "}
-        {encargo ? "Se pide al proveedor cuando confirmas tu pago (100 % adelantado)." : "Lo separas hoy y Drucila te confirma la entrega por WhatsApp."}
+        <strong className="font-semibold">{encargo ? "Por encargo." : "Preventa de Navidad."}</strong>{" "}
+        {encargo
+          ? "Se pide al proveedor cuando confirmas tu pago (100 % adelantado)."
+          : `Sepáralo con S/ ${PREVENTA_NAVIDAD.separaCon} por WhatsApp. Entregas hasta el ${diaCorto(PREVENTA_NAVIDAD.entregasHasta)}.`}
       </span>
     </p>
   );

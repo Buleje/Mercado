@@ -10,16 +10,20 @@
  *   sus componentes, en el servidor) y sólo se muestran con ahorro real. Nunca
  *   se tacha un precio.
  * · Navidad (manual, «Campaña 01»: 9 nov – 31 dic 2026): los dúos con su precio de
- *   la base y el regalo con compra. Antes del 9 dice «Preventa»; después del 31
- *   la franja ya no sale (hora de Lima).
+ *   la base y el regalo con compra; después del 31 la franja ya no sale (hora de Lima).
+ *   Adentro, la preventa con las fechas del manual vigente (`PREVENTA_NAVIDAD`): se
+ *   separa el kit con S/ 20 desde el 16 nov, envíos a provincia hasta el 18 dic,
+ *   entregas hasta el 24 dic. Lo que el manual no dice (hasta cuándo se separa, si los
+ *   S/ 20 van a cuenta, cuándo se paga el resto) no se escribe.
  */
-import { ArrowRight, Gift, MessageCircle } from "@buleje/design-system/icons";
+import { ArrowRight, CalendarDays, Gift, MessageCircle, PackageCheck, Truck, Wallet } from "@buleje/design-system/icons";
 import { BotonAgregar } from "./BotonAgregar";
 import type { ProductoSalon } from "./datos";
 import { enlaceWhatsapp, hoyEnLima, rutas, solesCortos } from "./destinos";
 import { EnlaceFicha } from "./EnlaceFicha";
 import { imagenDe } from "./imagenes";
 import { WHATSAPP_MUSA } from "./pedido-whatsapp";
+import { diaCorto, enviosProvinciaAbiertos, etapaPreventaNavidad, PREVENTA_NAVIDAD } from "./preventa";
 import { BOTON_NUDE, Cabecera, FOCO, FOCO_CLARO, KICKER, externo } from "./Salon";
 import { Escenario, Ilustracion, PildoraAhorro, TarjetaProducto } from "./TarjetaProducto";
 import { ANCHO } from "./ui";
@@ -34,9 +38,6 @@ const CAMPANA = {
   fin: "2026-12-31",
   /** «Regalo de 1 mascarilla desde S/ 150». */
   regaloDesde: 150,
-  /** «Preventa desde el 16 nov (se separa con S/ 20)». */
-  sena: 20,
-  entregaHasta: "el 23 de diciembre",
   duos: ["MU016-2", "MU013-2"],
 } as const;
 
@@ -127,21 +128,48 @@ function Navidad({ productos, whatsapp }: { productos: readonly ProductoSalon[];
   const hoy = hoyEnLima();
   if (hoy > CAMPANA.fin) return null;
   const antes = hoy < CAMPANA.inicio;
+  const preventa = etapaPreventaNavidad(hoy);
+  const pv = PREVENTA_NAVIDAD;
+  // Antes del 16 nov todavía no se separa: se pregunta. Después del 24 dic ya no hay preventa: se pide.
+  const cta =
+    preventa === "abierta"
+      ? { texto: "Separar por WhatsApp", mensaje: `Hola Drucila, quiero separar mi kit de Navidad con ${solesCortos(pv.separaCon)}.` }
+      : preventa === "antes"
+        ? { texto: "Preguntar por WhatsApp", mensaje: "Hola Drucila, quiero saber de la preventa de Navidad." }
+        : { texto: "Pedir por WhatsApp", mensaje: "Hola Drucila, quiero hacer mi pedido de Navidad." };
   const duos = CAMPANA.duos.map((c) => productos.find((p) => p.codigo === c)).filter((p): p is ProductoSalon => p !== undefined);
   const celda = "flex h-full flex-col rounded-2xl focus-visible:rounded-2xl! p-4 ring-1 ring-[var(--mu-sobre-cacao)]/15 sm:p-5";
   return (
     <aside aria-labelledby="mu-navidad" className="mu-grano relative mt-10 overflow-clip rounded-[var(--mu-radio-tarjeta)] bg-[var(--mu-cacao)] text-[var(--mu-sobre-cacao)] sm:mt-14 dark:ring-1 dark:ring-[var(--rule-base)]">
       <div className="relative z-[1] grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div>
-          <p className={`${KICKER} text-[var(--mu-oro)]`}>{antes ? "Preventa · desde el 9 de noviembre" : "Campaña 01 · hasta el 31 de diciembre"}</p>
+          <p className={`${KICKER} text-[var(--mu-oro)]`}>{antes ? `Campaña 01 · desde el ${diaCorto(CAMPANA.inicio)}` : `Campaña 01 · hasta el ${diaCorto(CAMPANA.fin)}`}</p>
           <h3 id="mu-navidad" className="mu-display mt-3 text-[length:var(--mu-t-titulo)] leading-none sm:text-[calc(var(--mu-t-seccion)*0.7)]">
             Ofertas de <span className="mu-cursiva normal-case tracking-normal">Navidad</span>
           </h3>
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-[var(--mu-sobre-cacao-2)]">
-            Del 9 de noviembre al 31 de diciembre de 2026. Separa tu kit con {solesCortos(CAMPANA.sena)} y recíbelo en caja de regalo hasta {CAMPANA.entregaHasta}.
-          </p>
-          <a href={enlaceWhatsapp(whatsapp, "Hola Drucila, quiero separar mi pedido de Navidad.")} {...externo} className={`${BOTON_NUDE} mt-6`}>
-            <MessageCircle className="h-5 w-5" aria-hidden="true" /> Separar por WhatsApp
+          <p className="mt-3 max-w-md text-base leading-relaxed text-[var(--mu-sobre-cacao-2)]">Del 9 de noviembre al 31 de diciembre de 2026.</p>
+          {preventa && (
+            <div data-mu-preventa={preventa} className="mt-5 max-w-md rounded-2xl p-4 ring-1 ring-[var(--mu-oro)]/40 sm:p-5">
+              <h4 id="mu-preventa" className="text-lg font-semibold leading-snug">
+                Preventa: separa tu kit en caja con <span className="whitespace-nowrap">{solesCortos(pv.separaCon)}</span>
+              </h4>
+              <ul aria-labelledby="mu-preventa" className="mt-3 grid gap-2.5 text-base leading-snug text-[var(--mu-sobre-cacao-2)]">
+                {[
+                  { Icono: CalendarDays, texto: preventa === "antes" ? `Desde el ${diaCorto(pv.desde)}` : `Abierta desde el ${diaCorto(pv.desde)}` },
+                  { Icono: Wallet, texto: "Separas con Yape, Plin o transferencia" },
+                  ...(enviosProvinciaAbiertos(hoy) ? [{ Icono: Truck, texto: `Envíos a provincia hasta el ${diaCorto(pv.enviosProvinciaHasta)}` }] : []),
+                  { Icono: PackageCheck, texto: `Entregas hasta el ${diaCorto(pv.entregasHasta)}` },
+                ].map(({ Icono, texto }) => (
+                  <li key={texto} className="flex items-start gap-2.5">
+                    <Icono className="mt-0.5 h-5 w-5 shrink-0 text-[var(--mu-oro)]" strokeWidth={1.6} aria-hidden="true" />
+                    {texto}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <a href={enlaceWhatsapp(whatsapp, cta.mensaje)} {...externo} className={`${BOTON_NUDE} mt-6`}>
+            <MessageCircle className="h-5 w-5" aria-hidden="true" /> {cta.texto}
           </a>
         </div>
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -149,17 +177,17 @@ function Navidad({ productos, whatsapp }: { productos: readonly ProductoSalon[];
             <li key={p.id}>
               <EnlaceFicha p={p} className={`${celda} group transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-sobre-cacao)]/[.06] ${FOCO_CLARO}`}>
                 {/* 2 líneas reservadas en el celular: los precios de las dos celdas quedan a la misma altura. */}
-                <span className="min-h-[2lh] text-sm font-semibold leading-snug sm:min-h-0">{p.nombre}</span>
+                <span className="min-h-[2lh] text-base font-semibold leading-snug sm:min-h-0">{p.nombre}</span>
                 <span className="mu-precio mt-2 text-[32px] leading-none text-[var(--mu-oro)] sm:text-[36px]">{solesCortos(p.precio)}</span>
                 {p.kit && p.kit.ahorro > 0 && (
                   <>
-                    <span className="mt-1.5 text-sm text-[var(--mu-sobre-cacao-2)]">
+                    <span className="mt-1.5 text-base text-[var(--mu-sobre-cacao-2)]">
                       Por separado <span className="whitespace-nowrap">{solesCortos(p.kit.porSeparado)}</span>
                     </span>
                     <span className="mt-2 self-start rounded-full bg-[var(--mu-oro)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--mu-cacao)]">Ahorras {solesCortos(p.kit.ahorro)}</span>
                   </>
                 )}
-                <span className="mt-auto inline-flex items-center gap-1.5 pt-3 text-sm font-semibold">
+                <span className="mt-auto inline-flex items-center gap-1.5 pt-3 text-base font-semibold">
                   Ver oferta <ArrowRight className="h-3.5 w-3.5 transition-transform duration-[var(--mu-dur-corto)] group-hover:translate-x-1" aria-hidden="true" />
                 </span>
               </EnlaceFicha>
@@ -167,8 +195,8 @@ function Navidad({ productos, whatsapp }: { productos: readonly ProductoSalon[];
           ))}
           <li className={`${celda} col-span-2 sm:col-span-1`}>
             <Gift className="h-6 w-6 text-[var(--mu-oro)]" strokeWidth={1.6} aria-hidden="true" />
-            <span className="mt-2 text-sm font-semibold">De regalo, 1 mascarilla en lámina</span>
-            <span className="mt-1 text-sm text-[var(--mu-sobre-cacao-2)]">
+            <span className="mt-2 text-base font-semibold">De regalo, 1 mascarilla en lámina</span>
+            <span className="mt-1 text-base text-[var(--mu-sobre-cacao-2)]">
               con tu compra desde <span className="whitespace-nowrap">{solesCortos(CAMPANA.regaloDesde)}</span>.
             </span>
           </li>

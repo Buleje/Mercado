@@ -41,6 +41,7 @@ Cormorant «falló» porque se cargó con `next/font` desde la pieza y su hoja s
 | Archivo | Qué es |
 |---|---|
 | `pedido-whatsapp.ts` | pueblos, pagos, `pagosPara`, `armarMensajePedido` (pura) |
+| `preventa.ts` | preventa de Navidad (16 nov, S/ 20, provincia 18 dic, entregas 24 dic), franja de campaña y `estadoProducto` (en stock / preventa / por encargo) — fechas del manual vigente, día de Lima |
 | `PedirPorWhatsapp.tsx` | los 3 campos + el enlace a WhatsApp + la nota de envío (cliente) |
 | `Sello.tsx` | el logo: aro doble, «MUSA» / «BELLEZA PROFESIONAL» en curva, «M» sobre nude |
 | `Salon.tsx` | `Mejorar`, `BannerOscuro` (diagnóstico) y `Protegida` |

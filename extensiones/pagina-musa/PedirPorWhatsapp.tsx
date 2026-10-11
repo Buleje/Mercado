@@ -30,11 +30,13 @@ import {
   esPorEncargo,
   pagosPara,
   PUEBLO_SIN_COSTO,
+  preventaVigente,
   PUEBLOS,
   solesPedido,
   type Pago,
   type Pueblo,
 } from "./pedido-whatsapp";
+import { avisoEnviosProvincia, NOTA_PREVENTA_10 } from "./preventa";
 import type { Pedido } from "./estado-bolsa";
 
 /**
@@ -108,9 +110,12 @@ const BOTON =
 function notaEnvio(pueblo: Pueblo, subtotal: number): string {
   if (pueblo === PUEBLO_SIN_COSTO)
     return "Te lo llevamos gratis. Drucila te confirma el pago por WhatsApp.";
+  // Fuera de Constitución va por agencia: para Navidad, hasta el 18 dic (manual, «Fechas que más venden»).
+  const navidad = avisoEnviosProvincia();
+  const fin = navidad ? ` ${navidad}` : "";
   if (avanceEnvio(subtotal, pueblo).logrado)
-    return "Envío gratis por agencia. Drucila te confirma el envío y el pago por WhatsApp.";
-  return `La agencia la pagas tú (gratis desde ${solesPedido(ENVIO_GRATIS_DESDE)}). Drucila te confirma el envío y el pago por WhatsApp.`;
+    return `Envío gratis por agencia. Drucila te confirma el envío y el pago por WhatsApp.${fin}`;
+  return `La agencia la pagas tú (gratis desde ${solesPedido(ENVIO_GRATIS_DESDE)}). Drucila te confirma el envío y el pago por WhatsApp.${fin}`;
 }
 
 export function PedirPorWhatsapp({
@@ -138,6 +143,7 @@ export function PedirPorWhatsapp({
     nombre,
     pueblo,
     pago,
+    preventa10: preventaVigente(),
   });
 
   return (
@@ -222,9 +228,14 @@ export function PedirPorWhatsapp({
       >
         {aviso}
       </p>
-      <p className="mt-2 text-center text-sm leading-snug text-[var(--text-tertiary)]">
+      <p className="mt-2 text-center text-base leading-snug text-[var(--text-secondary)]">
         {notaEnvio(pueblo, subtotal)}
       </p>
+      {preventaVigente() && (
+        <p data-mu-preventa-10 className="mt-2 text-center text-base leading-snug text-[var(--text-secondary)]">
+          {NOTA_PREVENTA_10}
+        </p>
+      )}
     </div>
   );
 }
