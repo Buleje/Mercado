@@ -211,7 +211,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
                 <th className="text-right">Monto</th>
                 <th>Desde</th>
                 <th>Vence</th>
-                <th><span className="sr-only">Acciones</span></th>
+                <th className="text-right">Acción</th>
               </tr>
             </thead>
             <tbody>

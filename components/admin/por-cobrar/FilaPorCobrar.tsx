@@ -9,12 +9,15 @@
 
 import { useRef } from "react";
 import { BadgeStatus } from "@buleje/design-system";
-import { ArrowRight, Gauge, HandCoins, MoreHorizontal, Scale } from "@buleje/design-system/icons";
+import { Gauge, HandCoins, MoreHorizontal, Scale } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import type { CrucePorCobrar, PorCobrarFila } from "@/lib/db/por-cobrar.db";
 import { BOTON_FILA, TIPOS, diasEntre, fechaCorta, leerCruce } from "./estilo";
+
+/** Sólo ícono en pantalla ancha (el título está en el tooltip); en el celular el rótulo vuelve por CSS. */
+const BOTON_ICONO = "max-sm:after:content-[attr(data-texto)]";
 
 export default function FilaPorCobrar({
   fila: f,
@@ -71,12 +74,12 @@ export default function FilaPorCobrar({
       <td className="text-right whitespace-nowrap">
         <div ref={ref} className="inline-flex items-center justify-end gap-1">
           {cruce ? (
-            <button type="button" onClick={() => onLiquidar(cruce.clave)} aria-label={`Liquidar la cuenta con ${f.quien}`} className={BOTON_FILA}>
-              <Scale className="h-4 w-4" aria-hidden="true" /> Liquidar
+            <button type="button" onClick={() => onLiquidar(cruce.clave)} aria-label={`Liquidar la cuenta con ${f.quien}`} title="Liquidar" data-texto="Liquidar" className={cn(BOTON_FILA, BOTON_ICONO)}>
+              <Scale className="h-4 w-4" aria-hidden="true" />
             </button>
           ) : (
-            <button type="button" onClick={onCobrar} aria-label={`Cobrarle a ${f.quien} en ${t.plural.toLowerCase()}`} className={BOTON_FILA}>
-              Cobrar <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            <button type="button" onClick={onCobrar} aria-label={`Cobrarle a ${f.quien} en ${t.plural.toLowerCase()}`} title="Cobrar" data-texto="Cobrar" className={cn(BOTON_FILA, BOTON_ICONO)}>
+              <HandCoins className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
           {acciones.length > 0 ? (

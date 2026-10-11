@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useState, useEffect, useCallback } from "react";
 import {
   TrendingUp, TrendingDown, AlertTriangle, Calendar,
@@ -55,11 +56,14 @@ function PredCard({
   icon: Icon,
   title,
   iconBg,
+  ayuda,
   children,
 }: {
   icon: typeof TrendingUp;
   title: string;
   iconBg: string;
+  /** Cómo se lee la cifra: va en un ⓘ junto al título, no a la vista. */
+  ayuda?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -69,6 +73,7 @@ function PredCard({
           <Icon className="h-4.5 w-4.5 text-white" />
         </div>
         <CardTitle className="text-sm font-bold text-[var(--text-primary)]">{title}</CardTitle>
+        {ayuda && <InfoTip title={title} body={ayuda} className="ml-auto" />}
       </div>
       {children}
     </div>
@@ -103,7 +108,6 @@ function ClockVisual({ hour }: { hour: number }) {
       </svg>
       <div>
         <p className="text-3xl font-extrabold text-[var(--text-primary)]">{h12}:00 {ampm}</p>
-        <p className="text-xs text-[var(--text-tertiary)]">Hora con más clientes</p>
       </div>
     </div>
   );
@@ -187,7 +191,10 @@ export default function PredictiveAnalyticsTab({ embebido = false, vuelta = 0 }:
       )}
 
       {/* Card 1: Ventas próxima semana */}
-      <PredCard icon={data.trendPct >= 0 ? TrendingUp : TrendingDown} title="Ventas próxima semana" iconBg={data.trendPct >= 0 ? "bg-primary/10" : "bg-[var(--data-error-500)]"}>
+      <PredCard icon={data.trendPct >= 0 ? TrendingUp : TrendingDown} title="Ventas próxima semana" iconBg={data.trendPct >= 0 ? "bg-primary/10" : "bg-[var(--data-error-500)]"}
+        ayuda={data.trendPct >= 0
+          ? "La tendencia está subiendo respecto al promedio de las 4 semanas anteriores."
+          : "La tendencia está bajando respecto al promedio de las 4 semanas anteriores."}>
         <div className="flex items-end gap-3">
           <p className="text-4xl font-extrabold text-[var(--text-primary)]">{formatCurrency(Number(data.salesForecast))}</p>
           <span className={cn(
@@ -199,15 +206,10 @@ export default function PredictiveAnalyticsTab({ embebido = false, vuelta = 0 }:
             {data.trendPct >= 0 ? "+" : ""}{data.trendPct}%
           </span>
         </div>
-        <p className="text-xs text-[var(--text-tertiary)]">
-          {data.trendPct >= 0
-            ? "La tendencia está subiendo respecto al promedio de las 4 semanas anteriores"
-            : "La tendencia está bajando respecto al promedio de las 4 semanas anteriores"}
-        </p>
       </PredCard>
 
       {/* Card 2: Productos en riesgo */}
-      <PredCard icon={AlertTriangle} title="Productos que se agotan pronto" iconBg="bg-[var(--data-warning-500)]">
+      <PredCard icon={AlertTriangle} title="Productos que se agotan pronto" iconBg="bg-[var(--data-warning-500)]" ayuda="Se calcula como el stock actual dividido entre el promedio de ventas diarias.">
         {data.stockRisk.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)]">No hay productos en riesgo esta semana</p>
         ) : (
@@ -233,24 +235,18 @@ export default function PredictiveAnalyticsTab({ embebido = false, vuelta = 0 }:
             ))}
           </div>
         )}
-        <p className="text-xs text-[var(--text-tertiary)]">
-          Calculado como: stock actual / promedio de ventas diarias
-        </p>
       </PredCard>
 
       {/* Card 3: Mejor día para comprar */}
-      <PredCard icon={Calendar} title="Mejor día para ir al proveedor" iconBg="bg-primary/10">
+      <PredCard icon={Calendar} title="Mejor día para ir al proveedor" iconBg="bg-primary/10" ayuda="Ir ese día significa menos clientes esperando mientras recibes mercadería.">
         <div>
           <p className="text-3xl font-extrabold text-[var(--text-primary)]">{data.bestPurchaseDay.day}</p>
           <p className="text-xs text-[var(--text-tertiary)] mt-1">{data.bestPurchaseDay.reason}</p>
         </div>
-        <p className="text-xs text-[var(--text-tertiary)]">
-          Ir ese día significa menos clientes esperando mientras recibes mercadería
-        </p>
       </PredCard>
 
       {/* Card 4: Clientes por recuperar */}
-      <PredCard icon={Users} title="Clientes que no regresan" iconBg="bg-[var(--text-primary)]">
+      <PredCard icon={Users} title="Clientes que no regresan" iconBg="bg-[var(--text-primary)]" ayuda="Los clientes que no compran hace más de 30 días tienen mayor riesgo de no volver.">
         {data.churnRisk.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)]">Todos los clientes compraron recientemente</p>
         ) : (
@@ -278,17 +274,12 @@ export default function PredictiveAnalyticsTab({ embebido = false, vuelta = 0 }:
             ))}
           </div>
         )}
-        <p className="text-xs text-[var(--text-tertiary)]">
-          Clientes que no compran hace más de 30 días tienen mayor riesgo de no volver
-        </p>
       </PredCard>
 
       {/* Card 5: Hora pico */}
-      <PredCard icon={Clock} title="Hora con más clientes" iconBg="bg-[var(--text-primary)]">
+      <PredCard icon={Clock} title="Hora con más clientes" iconBg="bg-[var(--text-primary)]"
+        ayuda={`En los últimos 28 días, la hora con más ventas fue a las ${data.peakHour.label} con ${data.peakHour.salesCount} transacciones.`}>
         <ClockVisual hour={data.peakHour.hour} />
-        <p className="text-xs text-[var(--text-tertiary)]">
-          En los últimos 28 días, la hora con más ventas fue a las {data.peakHour.label} con {data.peakHour.salesCount} transacciones
-        </p>
       </PredCard>
     </div>
   );

@@ -34,8 +34,8 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
             <div className="mx-auto mb-4 h-14 w-14 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] flex items-center justify-center">
               <FileText className="h-7 w-7 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
             </div>
-            <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Sin notas de crédito</CardTitle>
-            <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Las notas de crédito se crean al hacer devoluciones, anulaciones o ajustes a documentos existentes</p>
+            <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Todavía no emitiste ninguna</CardTitle>
+            <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Se crean al devolver, anular o ajustar un comprobante.</p>
             <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); }} className="bg-primary text-white px-6 min-h-12 rounded-xl font-medium hover:bg-primary-dark">Crear NC</button>
           </div>
         ) : viewMode === "cards" ? (

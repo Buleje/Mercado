@@ -134,7 +134,7 @@ export function ParaHoy({ dateRange }: { dateRange?: DateRange }) {
   return (
     <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="flex flex-wrap items-center gap-3 px-5 py-3">
-        <CardTitle className="min-w-0 flex-1 basis-56">
+        <CardTitle as="h2" className="min-w-0 flex-1 basis-56">
           <button
             type="button"
             aria-expanded={abierto}
