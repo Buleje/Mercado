@@ -13,11 +13,11 @@ import {
   ChevronLeft, ChevronRight, User, Landmark,
   Clock, CheckCircle2, XCircle, Ban, Calculator, FileText, Printer, TrendingUp, BarChart3,
   ArrowUpDown, ArrowDownToLine, ArrowUpFromLine, Building2,
-  RefreshCcw, Paperclip, Shield, Coins,
+  RefreshCcw, Paperclip, Coins,
   Filter, ChevronDown, ChevronUp, Trash2, AlertCircle, Bell,
   RotateCcw, History, Scale, FileDown } from "@buleje/design-system/icons";
-import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
-import { CardTitle, DataTable, LoadingState, SectionTitle, WarningAlert, BlockTitle } from "@buleje/design-system";
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
+import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
@@ -29,77 +29,12 @@ import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";
 import ClienteFormModal from "./clientes/ClienteFormModal";
-import { formatCurrency, formatDate, formatMonth, formatDateShort, formatDateNumeric, formatDateLong } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateShort, formatDateNumeric, formatDateLong } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type PrestamoStatus = "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO";
-type PrestamoTipo = "PERSONAL" | "BANCARIO" | "TERCERO" | "PROVEEDOR";
-type PrestamoDireccion = "DADO" | "RECIBIDO";
-type PrestamoEntidadTipo = "BANCO" | "PERSONA_NATURAL" | "EMPRESA" | "PROVEEDOR";
-type SistemaAmortizacion = "FRANCES" | "ALEMAN" | "AMERICANO";
-
-type PrestamoCuota = {
-  id: string;
-  prestamoId: string;
-  numeroCuota: number;
-  monto: number;
-  capital: number;
-  interes: number;
-  moraCalculada: number;
-  fechaVence: string;
-  pagadoEn?: string;
-  montoPagado?: number;
-};
-
-type PrestamoDocumento = {
-  id: string;
-  prestamoId: string;
-  nombre: string;
-  tipo: string;
-  url: string;
-  createdAt: string;
-};
-
-type Prestamo = {
-  id: string;
-  tenantId: string;
-  customerId?: string;
-  tipo: PrestamoTipo;
-  direccion: PrestamoDireccion;
-  entidadNombre?: string;
-  entidadTipo?: PrestamoEntidadTipo;
-  nroOperacion?: string;
-  monto: number;
-  moneda: string;
-  tasaInteres: number;
-  tea?: number;
-  moraInteres: number;
-  numeroCuotas: number;
-  sistemaAmortizacion: SistemaAmortizacion;
-  periodoGracia: number;
-  status: PrestamoStatus;
-  fechaDesembolso?: string;
-  fechaVencimiento?: string;
-  garantia?: string;
-  notas?: string;
-  cuotas: PrestamoCuota[];
-  documentos?: PrestamoDocumento[];
-  createdAt: string;
-  updatedAt: string;
-};
-
-type Resumen = {
-  totalDados: number;
-  totalRecibidos: number;
-  saldoDados: number;
-  saldoRecibidos: number;
-  cuotasVencidas: number;
-  moraAcumulada: number;
-  porTipo: Record<string, number>;
-  activosDados: number;
-  activosRecibidos: number;
-};
+import type { Prestamo, PrestamoDireccion, PrestamoEntidadTipo, PrestamoStatus, PrestamoTipo, Resumen, SistemaAmortizacion } from "@/components/admin/prestamos/tipos";
+import PrestamosDashboard from "@/components/admin/prestamos/PrestamosDashboard";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -136,71 +71,6 @@ const ENTIDAD_LABELS: Record<PrestamoEntidadTipo, string> = {
 };
 
 const PER_PAGE = 10;
-
-// ── Empty state for charts ───────────────────────────────────────────────────
-function EmptyChartPrestamos({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-        <BarChart3 className="h-6 w-6 text-primary" />
-      </div>
-      <p className="text-sm font-medium text-[var(--text-secondary)]">{message}</p>
-      <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos aparecerán cuando registres préstamos</p>
-    </div>
-  );
-}
-
-// ── Sparkline KPI Card (mejora #1) ───────────────────────────────────────────
-// El sparkline sólo se pinta cuando hay una serie mensual REAL detrás (ver
-// `areaData`/`spark1`/`spark2` más abajo) — mostrar ruido sintético como si
-// fuera tendencia real viola la regla de no presentar un derivado como dato
-// real. Sin `sparkData`, la tarjeta se ve igual pero sin el trazo decorativo.
-
-function SparklineKPICard({
-  title, value, sub, accentColor, iconColor, valueColor, icon: Icon, sparkData,
-}: {
-  title: string;
-  value: string;
-  sub?: string;
-  /** Trazo del sparkline. Usa `var(--accent)` o `var(--text-tertiary)`. */
-  accentColor: string;
-  /** Icono — default neutro gris. */
-  iconColor?: string;
-  /** Valor numérico — default neutro; usa warning/error sólo si es crítico. */
-  valueColor?: string;
-  icon: React.ElementType;
-  /** Serie mensual real (6 puntos). Omitir si no hay un histórico real disponible. */
-  sparkData?: { v: number }[];
-}) {
-  const gradId = `sp-${title.replace(/\W+/g, "")}`;
-  const resolvedIconColor = iconColor ?? "var(--text-secondary)";
-  const resolvedValueColor = valueColor ?? "var(--text-primary)";
-  return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 relative overflow-hidden">
-      <div className="flex items-center gap-1.5 mb-1">
-        <Icon className="h-4 w-4" style={{ color: resolvedIconColor }} />
-        <p className="text-xs uppercase font-bold text-[var(--text-tertiary)] truncate">{title}</p>
-      </div>
-      <p className="text-2xl font-extrabold font-mono leading-tight" style={{ color: resolvedValueColor }}>{value}</p>
-      {sub && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{sub}</p>}
-      {sparkData && sparkData.length > 0 && (
-        <div className="absolute bottom-0 right-0 w-20 h-10 opacity-40 pointer-events-none">
-          <ResponsiveContainer minWidth={0} width={80} height={40}>
-            <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
-              <defs>
-                <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={accentColor} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area type="monotone" dataKey="v" stroke={accentColor} strokeWidth={1.5} fill={`url(#${gradId})`} dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Amortization calculators (client-side) ───────────────────────────────────
 
@@ -249,273 +119,14 @@ function calcAmortizacion(monto: number, tasa: number, cuotas: number, sistema: 
   return tabla;
 }
 
-// ── Prestamos Dashboard ──────────────────────────────────────────────────────
-
-function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; resumen?: Resumen | null }) {
-  const now = new Date();
-  const activosAll = prestamos.filter(p => p.status !== "CANCELADO");
-  const totalPrestado = activosAll.reduce((s, p) => s + p.monto, 0);
-  const porCobrar = activosAll.reduce((s, p) => s + p.cuotas.filter(c => !c.pagadoEn).reduce((ss, c) => ss + c.monto, 0), 0);
-  const totalCobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
-  const tasaRecuperacion = totalPrestado > 0 ? (totalCobrado / totalPrestado) * 100 : 0;
-  const cuotasVencidas = resumen?.cuotasVencidas ?? activosAll.reduce((s, p) => s + p.cuotas.filter(c => !c.pagadoEn && new Date(c.fechaVence) < now).length, 0);
-  const moraAcumulada = resumen?.moraAcumulada ?? 0;
-  const totalDados = resumen?.totalDados ?? prestamos.filter(p => p.direccion === "DADO").reduce((s, p) => s + p.monto, 0);
-  const totalRecibidos = resumen?.totalRecibidos ?? prestamos.filter(p => p.direccion === "RECIBIDO").reduce((s, p) => s + p.monto, 0);
-  const maxDireccion = Math.max(totalDados, totalRecibidos, 1);
-
-  // Area chart: cobros vs nuevos prestamos (6 meses) + split por dirección
-  // para los sparklines de Dados/Recibidos (mismo dato, sin recalcular).
-  const areaData: { mes: string; cobrado: number; nuevos: number; nuevosDados: number; nuevosRecibidos: number }[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(); d.setMonth(d.getMonth() - i);
-    const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = formatMonth(d);
-    const cobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn && c.pagadoEn.startsWith(mesKey)).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
-    const prestamosDelMes = prestamos.filter(p => p.createdAt.startsWith(mesKey));
-    const nuevos = prestamosDelMes.reduce((s, p) => s + p.monto, 0);
-    const nuevosDados = prestamosDelMes.filter(p => p.direccion === "DADO").reduce((s, p) => s + p.monto, 0);
-    const nuevosRecibidos = prestamosDelMes.filter(p => p.direccion === "RECIBIDO").reduce((s, p) => s + p.monto, 0);
-    areaData.push({ mes: label, cobrado, nuevos, nuevosDados, nuevosRecibidos });
-  }
-
-  // Sparklines: sólo para las 2 métricas que son flujo mensual real (altas
-  // nuevas por dirección, ya agregadas arriba). El resto de las tarjetas
-  // (por cobrar/vencidas/mora/recuperación) son saldos o ratios puntuales
-  // sin una serie mensual fiel y barata de construir — se muestran sin
-  // sparkline en vez de fabricar una tendencia (antes: ruido seno/coseno).
-  const spark1 = areaData.map(m => ({ v: m.nuevosDados }));
-  const spark2 = areaData.map(m => ({ v: m.nuevosRecibidos }));
-
-  // Top 5 deudores (horizontal bar)
-  const deudorMap = new Map<string, number>();
-  for (const p of activosAll.filter(p => (p.status === "ACTIVO" || p.status === "VENCIDO") && p.direccion === "DADO")) {
-    const saldo = p.cuotas.filter(c => !c.pagadoEn).reduce((s, c) => s + c.monto, 0);
-    if (saldo > 0) {
-      const key = (p.customerId || p.entidadNombre || "Sin nombre").slice(0, 15);
-      deudorMap.set(key, (deudorMap.get(key) ?? 0) + saldo);
-    }
-  }
-  const topDeudores = Array.from(deudorMap.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([name, monto]) => ({ name, monto }));
-
-  // Mejora 4: Donut de riesgo con 4 estados (semáforo)
-  const statusCounts = {
-    ACTIVO: prestamos.filter(p => p.status === "ACTIVO").length,
-    PAGADO: prestamos.filter(p => p.status === "PAGADO").length,
-    VENCIDO: prestamos.filter(p => p.status === "VENCIDO").length,
-    CANCELADO: prestamos.filter(p => p.status === "CANCELADO").length,
-  };
-  const donutData = [
-    { name: "Activos", value: statusCounts.ACTIVO, color: "var(--data-warning)" },
-    { name: "Pagados", value: statusCounts.PAGADO, color: "var(--data-success)" },
-    { name: "Vencidos", value: statusCounts.VENCIDO, color: "var(--data-error)" },
-    { name: "Cancelados", value: statusCounts.CANCELADO, color: "var(--text-tertiary)" },
-  ].filter(d => d.value > 0);
-
-  // Salud de la cartera: prioriza cuotas vencidas; si no, al día con/ sin saldo.
-  const saldoPorCobrar = resumen?.saldoDados ?? porCobrar;
-  const health =
-    cuotasVencidas > 0
-      ? { cls: "text-[var(--data-warning-500)]", border: "border-l-[var(--data-warning)]", Icon: AlertTriangle, text: `Tienes ${cuotasVencidas} cuota${cuotasVencidas === 1 ? "" : "s"} vencida${cuotasVencidas === 1 ? "" : "s"} · ${formatCurrency(saldoPorCobrar)} por cobrar.` }
-      : saldoPorCobrar > 0
-        ? { cls: "text-[var(--text-primary)]", border: "border-l-[var(--accent)]", Icon: DollarSign, text: `Cartera al día · ${formatCurrency(saldoPorCobrar)} por cobrar, sin atrasos.` }
-        : { cls: "text-[var(--data-success-500)]", border: "border-l-[var(--data-success)]", Icon: TrendingUp, text: "Cartera al día — no tienes nada por cobrar." };
-
-  return (
-    <div className="space-y-6">
-      {/* Mejora 0: mensaje de salud de la cartera */}
-      <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-        <div className={cn("rounded-2xl border border-l-4 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center gap-3", health.border)}>
-          <health.Icon className={cn("h-6 w-6 shrink-0", health.cls)} />
-          <p className={cn("text-base font-semibold", health.cls)}>{health.text}</p>
-        </div>
-      </m.div>
-
-      {/* Mejora 1: KPI Cards con sparklines */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <SparklineKPICard title="Dados" value={formatCurrency(totalDados)} sub={`${resumen?.activosDados ?? prestamos.filter(p=>p.direccion==="DADO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={ArrowUpFromLine} sparkData={spark1} />
-          <SparklineKPICard title="Recibidos" value={formatCurrency(totalRecibidos)} sub={`${resumen?.activosRecibidos ?? prestamos.filter(p=>p.direccion==="RECIBIDO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={ArrowDownToLine} sparkData={spark2} />
-          <SparklineKPICard title="Por cobrar" value={formatCurrency(resumen?.saldoDados ?? porCobrar)} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={DollarSign} />
-          <SparklineKPICard title="Cuotas vencidas" value={String(cuotasVencidas)} valueColor={cuotasVencidas > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={cuotasVencidas > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={XCircle} />
-          <SparklineKPICard title="Mora acumulada" value={formatCurrency(moraAcumulada)} valueColor={moraAcumulada > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={moraAcumulada > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={AlertTriangle} />
-          <SparklineKPICard title="Recuperación" value={`${tasaRecuperacion.toFixed(1)}%`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={TrendingUp} />
-        </div>
-      </m.div>
-
-      {/* Mejora 5: Indicador de mora destacado */}
-      {moraAcumulada > 0 && (
-        <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}>
-          <WarningAlert
-            title="Mora Acumulada"
-            description={
-              <span>
-                <span className="block text-3xl font-extrabold font-mono text-[var(--data-warning-500)]">
-                  {formatCurrency(moraAcumulada)}
-                </span>
-                <span className="block text-xs mt-0.5">En prestamos con cuotas vencidas</span>
-              </span>
-            }
-            action={
-              <div className="text-right shrink-0">
-                <p className="text-xs text-[var(--text-secondary)]">{cuotasVencidas} cuots. vencidas</p>
-                <div className="mt-1 h-2 w-24 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[var(--data-warning-500)] rounded-full"
-                    style={{ width: `${Math.min(100, (cuotasVencidas / Math.max(1, prestamos.reduce((s,p)=>s+p.cuotas.length,0))) * 100 * 10)}%` }}
-                  />
-                </div>
-              </div>
-            }
-          />
-        </m.div>
-      )}
-
-      {/* AreaChart: cobros vs nuevos */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Cobros vs Nuevos préstamos (6 meses)</CardTitle>
-          {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
-            <ResponsiveContainer minWidth={0} width="100%" height={250}>
-              <AreaChart data={areaData}>
-                <defs>
-                  <linearGradient id="prestCobGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--data-success)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="var(--data-success)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="prestNuevGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--text-tertiary)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="var(--text-tertiary)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
-                <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={((v: number, name: string) => [formatCurrency(Number(v)), name === "cobrado" ? "Cobrado" : "Nuevos"]) as never} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
-                <Legend formatter={(v: string) => v === "cobrado" ? "Cobrado" : "Nuevos préstamos"} />
-                <Area type="monotone" dataKey="cobrado" stroke="var(--data-success)" fill="url(#prestCobGrad)" strokeWidth={2} />
-                <Area type="monotone" dataKey="nuevos" stroke="var(--text-tertiary)" fill="url(#prestNuevGrad)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChartPrestamos message="Sin movimiento en los últimos 6 meses" />
-          )}
-        </div>
-      </m.div>
-
-      {/* Mejoras 3, 4 y 6: Top deudores + Donut riesgo + Dirección */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Mejora 3: Top 5 deudores */}
-          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-              <User className="h-4 w-4 text-secondary" /> Top 5 deudores
-            </CardTitle>
-            {topDeudores.length > 0 ? (
-              <ResponsiveContainer minWidth={0} width="100%" height={220}>
-                <BarChart data={topDeudores} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.1)" horizontal={false} />
-                  <XAxis type="number" tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={((v: number) => [formatCurrency(Number(v)), "Saldo"]) as never} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
-                  <Bar dataKey="monto" radius={[0, 6, 6, 0]}>
-                    {topDeudores.map((_, i) => (
-                      <Cell key={i} fill={i === 0 ? "#ef4444" : i === 1 ? "#ff6b5b" : "#ff6b5b"} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyChartPrestamos message="Sin deudores activos" />
-            )}
-          </div>
-
-          {/* Mejora 4: Donut de riesgo con 4 estados semáforo */}
-          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
-              <Shield className="h-4 w-4 text-[var(--text-secondary)]" /> Distribución por estado
-            </CardTitle>
-            {donutData.length > 0 ? (
-              <>
-                <ResponsiveContainer minWidth={0} width="100%" height={160}>
-                  <PieChart>
-                    <Pie data={donutData} cx="50%" cy="50%" innerRadius={45} outerRadius={72} dataKey="value" stroke="none" paddingAngle={2}>
-                      {donutData.map((d, i) => <Cell key={i} fill={d.color} />)}
-                    </Pie>
-                    <Tooltip formatter={((v: number, name: string) => [v, name]) as never} contentStyle={{ borderRadius: "12px", fontSize: "12px" }} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="grid grid-cols-2 gap-1.5 mt-1">
-                  {donutData.map(d => (
-                    <div key={d.name} className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{d.name}: <strong>{d.value}</strong></span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <EmptyChartPrestamos message="Sin préstamos" />
-            )}
-          </div>
-
-          {/* Mejora 6: Resumen por dirección con barras comparativas */}
-          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-              <Scale className="h-4 w-4 text-[var(--data-success-500)]" /> Dado vs Recibido
-            </CardTitle>
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <ArrowUpFromLine className="h-3.5 w-3.5 text-[var(--data-error-500)]" />
-                    <span className="text-xs font-bold text-[var(--text-secondary)]">Dados</span>
-                  </div>
-                  <span className="text-xs font-bold font-mono text-[var(--data-error-500)]">{formatCurrency(totalDados)}</span>
-                </div>
-                <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                  <m.div className="h-full bg-[var(--data-error-500)] rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalDados / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.3 }} />
-                </div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{prestamos.filter(p=>p.direccion==="DADO").length} préstamos</p>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <ArrowDownToLine className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
-                    <span className="text-xs font-bold text-[var(--text-secondary)]">Recibidos</span>
-                  </div>
-                  <span className="text-xs font-bold font-mono text-[var(--data-success-500)]">{formatCurrency(totalRecibidos)}</span>
-                </div>
-                <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                  <m.div className="h-full bg-primary/10 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
-                </div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{prestamos.filter(p=>p.direccion==="RECIBIDO").length} préstamos</p>
-              </div>
-              <div className="pt-3 border-t border-[var(--rule-soft)]">
-                <p className="text-xs text-[var(--text-secondary)]">Balance neto</p>
-                <p className={cn("text-lg font-extrabold font-mono", totalDados > totalRecibidos ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
-                  {totalDados > totalRecibidos ? "− " : "+ "}{formatCurrency(Math.abs(totalDados - totalRecibidos))}
-                </p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{totalDados > totalRecibidos ? "Más dado que recibido" : "Más recibido que dado"}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </m.div>
-    </div>
-  );
-}
 
 // Sub-tabs coherentes con el resto del admin: AdminTabBar da reorden por drag,
 // persistencia del orden y registro en el sidebar. El badge de "Cobros" se
 // inyecta en el render (depende de cobrosData, no es estático).
 const PRESTAMOS_MODULE_ID = "prestamos";
 const PRESTAMOS_TAB_ITEMS: AdminTab[] = [
-  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-  { id: "activos", label: "Préstamos Activos" },
+  { id: "dashboard", label: "Tablero", icon: BarChart3 },
+  { id: "activos", label: "Activos" },
   { id: "cobros", label: "Cobros", icon: Bell },
   { id: "calculadora", label: "Calculadora" },
   { id: "historial", label: "Historial" },
@@ -1117,93 +728,24 @@ export default function PrestamosModule() {
       )}
 
       {/* ── Tab: Dashboard ────────────────────────────────────────────────── */}
-      {activeTab === "dashboard" && !loading && <PrestamosDashboard prestamos={prestamos} resumen={resumen} />}
+      {activeTab === "dashboard" && !loading && (
+        <PrestamosDashboard
+          prestamos={prestamos}
+          resumen={resumen}
+          onNuevo={() => { setShowCreate(true); setCreateError(null); }}
+          onActualizar={() => { fetchPrestamos(); fetchResumen(); }}
+          onIr={irAPestana}
+        />
+      )}
       {activeTab === "dashboard" && loading && (
         <LoadingState />
       )}
 
-      {/* ── Resumen Cartera de Préstamos ───────────────────────────────────── */}
-      {activeTab === "activos" && !loading && prestamos.length > 0 && (() => {
-        const activosAll = prestamos.filter(p => p.status !== "CANCELADO");
-        const totalPrestado = activosAll.reduce((s, p) => s + p.monto, 0);
-        const porCobrar = activosAll.reduce((s, p) => s + p.cuotas.filter(c => !c.pagadoEn).reduce((ss, c) => ss + c.monto, 0), 0);
-        const totalCobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
-        const tasaRecuperacion = totalPrestado > 0 ? (totalCobrado / totalPrestado) * 100 : 0;
-        const hoy = new Date();
-        const cuotasVencidas = activosAll.reduce((s, p) => s + p.cuotas.filter(c => !c.pagadoEn && new Date(c.fechaVence) < hoy).length, 0);
-
-        // Grafica mensual ultimos 6 meses
-        const monthData: { mes: string; cobrado: number; nuevos: number }[] = [];
-        for (let i = 5; i >= 0; i--) {
-          const d = new Date();
-          d.setMonth(d.getMonth() - i);
-          const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-          const label = formatMonth(d);
-          const cobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn && c.pagadoEn.startsWith(mesKey)).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
-          const nuevos = prestamos.filter(p => p.createdAt.startsWith(mesKey)).reduce((s, p) => s + p.monto, 0);
-          monthData.push({ mes: label, cobrado, nuevos });
-        }
-
-        return (
-          <div className="space-y-6">
-            {/* KPI Cards — mejorado con iconos prominentes */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl hover:shadow-[var(--shadow-sm)] transition-shadow p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Landmark className="h-4 w-4 text-[var(--data-info-500)]" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total prestado</p>
-                </div>
-                <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{formatCurrency(totalPrestado)}</p>
-              </div>
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl hover:shadow-[var(--shadow-sm)] transition-shadow p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <DollarSign className="h-4 w-4 text-secondary" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Por cobrar</p>
-                </div>
-                <p className={cn("text-2xl font-extrabold font-mono", porCobrar > totalPrestado * 0.5 ? "text-secondary" : "text-[var(--data-error-500)]")}>{formatCurrency(porCobrar)}</p>
-              </div>
-              <div className={cn("bg-[var(--surface-raised)] border rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3", cuotasVencidas > 3 ? "border-[var(--data-error-500)]" : "border-[var(--rule-base)]")}>
-                <div className="flex items-center gap-2 mb-1">
-                  <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Cuotas vencidas</p>
-                </div>
-                <p className={cn("text-2xl font-extrabold font-mono", cuotasVencidas > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
-                  {cuotasVencidas}
-                </p>
-              </div>
-              <div className={cn("bg-[var(--surface-raised)] border rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3", tasaRecuperacion > 80 ? "border-[var(--data-success-500)]/30" : "border-[var(--rule-base)]")}>
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="h-4 w-4 text-[var(--data-success-500)]" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Tasa recuperacion</p>
-                </div>
-                <p className={cn("text-2xl font-extrabold font-mono", tasaRecuperacion > 80 ? "text-[var(--data-success-500)]" : tasaRecuperacion > 50 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
-                  {tasaRecuperacion.toFixed(1)}%
-                </p>
-              </div>
-            </div>
-
-            {/* Grafica mensual */}
-            {monthData.some(d => d.cobrado > 0 || d.nuevos > 0) && (
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
-                <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 flex items-center gap-1.5">
-                  <TrendingUp className="h-3.5 w-3.5" /> Movimiento mensual (6 meses)
-                </h4>
-                <ResponsiveContainer minWidth={0} width="100%" height={180}>
-                  <BarChart data={monthData}>
-                    <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 10 }} width={50} tickFormatter={(v: number) => `S/${v}`} />
-                    <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="cobrado" name="Cobrado" fill="var(--data-success)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="nuevos" name="Nuevos" fill="var(--text-tertiary)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
+      {/* La «Cartera» que abría «Préstamos activos» (total prestado, por cobrar,
+          cuotas vencidas, recuperación y el gráfico de 6 meses) repetía el
+          Tablero con OTRA cuenta: su «por cobrar» sumaba también las cuotas de
+          los préstamos RECIBIDOS (plata que debes). Se fue el 11-10: esas
+          cifras viven en los Indicadores del Tablero, con la del servidor. */}
       {/* Mejora 25: Banner de vencimiento */}
       {(activeTab === "activos" || activeTab === "historial") && !loading && (() => {
         const hoy = new Date();

@@ -206,8 +206,11 @@ export const FiadosDB = {
    *
    * Reglas:
    *  1. Bloqueo si tiene >= 3 fiados con status VENCIDO.
-   *  2. Bloqueo si tiene >= 1 fiado ACTIVO con fechaVence > 60 dias.
-   *  3. Bloqueo si suma de saldos ACTIVOs + monto solicitado > creditLimit.
+   *  2. Bloqueo si tiene >= 1 fiado ACTIVO o VENCIDO con fechaVence > 60 dias.
+   *  3. Bloqueo si suma de saldos ACTIVOs y VENCIDOs + monto solicitado > creditLimit.
+   *
+   * 11-10: las reglas 2 y 3 miraban sólo ACTIVO, pero el cron diario pasa a VENCIDO lo que
+   * vence — justo la deuda más vieja dejaba de frenar el fiado nuevo y de contar para el límite.
    *
    * Centraliza el patron que estaba inlined en /api/fiados POST,
    * cumpliendo regla critica #1 (no prisma directo en routes).
@@ -228,13 +231,13 @@ export const FiadosDB = {
         where: {
           tenantId,
           customerId,
-          status: "ACTIVO",
+          status: { in: ["ACTIVO", "VENCIDO"] },
           fechaVence: { lt: sixtyDaysAgo },
         },
       }),
       creditLimit > 0
         ? prisma.fiado.aggregate({
-            where: { tenantId, customerId, status: "ACTIVO" },
+            where: { tenantId, customerId, status: { in: ["ACTIVO", "VENCIDO"] } },
             _sum: { saldo: true },
           })
         : Promise.resolve({ _sum: { saldo: null } }),

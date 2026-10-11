@@ -10,8 +10,8 @@ import type { FuentePorPagar, MontoEnMoneda, PersonaPorPagar } from "@/lib/finan
 
 /** Color e ícono de cada fuente: las mismas familias que «Por cobrar». */
 export const ESTILO: Record<FuentePorPagar, { icon: typeof Coins; chip: string }> = {
-  adelanto_recibido: { icon: Coins, chip: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" },
-  adelanto_excedido: { icon: Coins, chip: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" },
+  adelanto_recibido: { icon: Coins, chip: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-ink)]" },
+  adelanto_excedido: { icon: Coins, chip: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-ink)]" },
   cuenta_por_pagar: { icon: Truck, chip: "bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]" },
   prestamo_recibido: { icon: Landmark, chip: "bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]" },
   aserrio_recibido: { icon: Axe, chip: "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
@@ -21,12 +21,15 @@ export const ESTILO: Record<FuentePorPagar, { icon: typeof Coins; chip: string }
 /** El rótulo chico bajo el nombre. Una persona no lo lleva: es el caso común. */
 export const TIPO: Record<PersonaPorPagar["tipo"], string | null> = { persona: null, proveedor: "Proveedor", entidad: "Te prestó" };
 
-export const CHIP = "inline-flex h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-bold transition-colors";
+/* Filtros de las cuatro vistas de «Por cobrar y pagar»: 48 px, 14 px, en UNA fila con el buscador. */
+export const CHIP = "inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition-colors";
 export const CHIP_ON = "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
 export const CHIP_OFF = "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50";
-/* 44 px de alto en el celular (el dedo), 36 en la tabla del escritorio. */
-export const BOTON_FILA = "inline-flex h-11 items-center sm:h-9 justify-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
-export const PARTIDA = "group flex min-h-11 w-full items-center gap-2 rounded-lg px-1 py-1 text-left transition-colors hover:bg-[var(--surface-sunken)] sm:min-h-9";
+/** El buscador de la fila de filtros (crece; los chips quedan a su lado). */
+export const BUSCADOR = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-3 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
+/* La acción principal de cada fila (Cobrar, Pagar, Liquidar): 48 px, 14 px. */
+export const BOTON_FILA = "inline-flex h-12 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
+export const PARTIDA = "group flex min-h-12 w-full items-center gap-2 rounded-lg px-1 py-1 text-left transition-colors hover:bg-[var(--surface-sunken)]";
 
 /** Varias monedas en una línea, sin sumarlas entre sí. */
 export const enMonedas = (xs: readonly MontoEnMoneda[]) => xs.map((x) => montoEnMoneda(Math.abs(x.monto), x.moneda)).join(" · ");

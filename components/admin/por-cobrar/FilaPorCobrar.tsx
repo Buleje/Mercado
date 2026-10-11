@@ -1,19 +1,20 @@
 "use client";
 
 /**
- * Una fila de «Por cobrar»: el tipo, quién te debe (y, si también le debes,
- * el cruce con «Lo que debo»), el monto en SU moneda, desde cuándo, el plazo
- * y las acciones — Cobrar siempre; Liquidar si esa persona está en las dos
- * listas.
+ * Una fila de «Todo lo que me deben»: el tipo, quién te debe (y, si también le
+ * debes, el cruce con «Lo que debo»), el monto en SU moneda, desde cuándo, el
+ * plazo y la acción principal a 48 px — Liquidar si esa persona está en las dos
+ * listas, Cobrar si no— con «⋯» para lo demás.
  */
 
+import { useRef } from "react";
 import { BadgeStatus } from "@buleje/design-system";
-import { ArrowRight, Gauge, Scale } from "@buleje/design-system/icons";
-import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
+import { ArrowRight, Gauge, HandCoins, MoreHorizontal, Scale } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import type { CrucePorCobrar, PorCobrarFila } from "@/lib/db/por-cobrar.db";
-import { BOTON_ICONO, TIPOS, diasEntre, fechaCorta, leerCruce } from "./estilo";
+import { BOTON_FILA, TIPOS, diasEntre, fechaCorta, leerCruce } from "./estilo";
 
 export default function FilaPorCobrar({
   fila: f,
@@ -34,11 +35,19 @@ export default function FilaPorCobrar({
   const t = TIPOS[f.tipo];
   const Icon = t.icon;
   const atraso = f.vence ? diasEntre(f.vence, hoy) : 0;
+  const ref = useRef<HTMLDivElement>(null);
+  /* El menú cierra sin devolverle el foco a su botón: se enfoca el ⋯ antes de la acción. */
+  const enfocarMenu = () => ref.current?.querySelector<HTMLButtonElement>("button[aria-haspopup]")?.focus({ preventScroll: true });
+  const acciones: MenuAccion[] = [
+    ...(cruce ? [{ id: "cobrar", label: `Cobrar en ${t.plural.toLowerCase()}`, hint: "Sin cruzar con lo que le debes", icon: HandCoins, onSelect: onCobrar }] : []),
+    ...(f.tipo === "fiado" ? [{ id: "fiarle", label: "¿Fiarle de nuevo?", hint: "Su respuesta en A quién fiarle", icon: Gauge, onSelect: onScoring }] : []),
+  ];
+
   return (
     <tr>
       <td>
-        <span className={cn("inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[length:var(--ts-xs)] font-bold", t.chip)}>
-          <Icon className="h-3.5 w-3.5" aria-hidden="true" />{t.label}
+        <span className={cn("inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-bold", t.chip)}>
+          <Icon className="h-4 w-4" aria-hidden="true" />{t.label}
         </span>
       </td>
       <td>
@@ -46,49 +55,44 @@ export default function FilaPorCobrar({
             izquierda, valor a la derecha) y los hijos sueltos se pisaban. */}
         <div className="min-w-0">
           <span className="font-bold text-[var(--text-primary)]">{f.quien}</span>
-          {f.nota && <span className="block text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{f.nota}</span>}
-          {cruce && (
-            <span className="block text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)]">{leerCruce(cruce)}</span>
-          )}
+          {f.nota && <span className="block text-sm text-[var(--text-secondary)]">{f.nota}</span>}
+          {cruce && <span className="block text-sm font-semibold text-[var(--text-secondary)]">{leerCruce(cruce)}</span>}
         </div>
       </td>
       <td className="text-right font-extrabold tabular-nums whitespace-nowrap">{montoEnMoneda(f.monto, f.moneda)}</td>
       <td className="whitespace-nowrap text-[var(--text-secondary)]">{fechaCorta(f.desde)}</td>
       <td className="whitespace-nowrap">
         {f.vence === null
-          ? <span className="text-[var(--text-tertiary)]">Sin plazo</span>
+          ? <span className="text-[var(--text-secondary)]">Sin plazo</span>
           : atraso > 0
-            ? <BadgeStatus variant="error" size="sm" label={`Vencido hace ${atraso} d`} />
+            ? <BadgeStatus variant="error" size="md" label={`Vencido hace ${atraso} d`} />
             : <span className="text-[var(--text-secondary)]">{fechaCorta(f.vence)}</span>}
       </td>
       <td className="text-right whitespace-nowrap">
-        <div className="inline-flex items-center justify-end gap-1">
-          {f.tipo === "fiado" && (
-            <BotonIconoTip
-              icon={Gauge}
-              onClick={onScoring}
-              label={`Ver el scoring crediticio de ${f.quien}`}
-              tip="Ver scoring"
-              className={BOTON_ICONO}
-            />
+        <div ref={ref} className="inline-flex items-center justify-end gap-1">
+          {cruce ? (
+            <button type="button" onClick={() => onLiquidar(cruce.clave)} aria-label={`Liquidar la cuenta con ${f.quien}`} className={BOTON_FILA}>
+              <Scale className="h-4 w-4" aria-hidden="true" /> Liquidar
+            </button>
+          ) : (
+            <button type="button" onClick={onCobrar} aria-label={`Cobrarle a ${f.quien} en ${t.plural.toLowerCase()}`} className={BOTON_FILA}>
+              Cobrar <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
           )}
-          {cruce && (
-            <BotonIconoTip
-              icon={Scale}
-              onClick={() => onLiquidar(cruce.clave)}
-              label={`Liquidar la cuenta con ${f.quien}`}
-              tip="Liquidar"
-              className={BOTON_ICONO}
+          {acciones.length > 0 ? (
+            <ActionMenu
+              label={`Más acciones de ${f.quien}`}
+              title={acciones.map((a) => a.label).join(" · ")}
+              icon={MoreHorizontal}
+              actions={acciones.map((a) => ({ ...a, onSelect: () => { enfocarMenu(); a.onSelect(); } }))}
+              soloIcono
+              size="md"
+              className="w-12 shrink-0 border-transparent! bg-transparent! hover:bg-[var(--surface-sunken)]!"
             />
+          ) : (
+            /* Sin «⋯» la columna igual guarda su ancho: los «Cobrar» quedan alineados. */
+            <span className="hidden w-12 sm:inline-block" aria-hidden="true" />
           )}
-          <BotonIconoTip
-            icon={ArrowRight}
-            tono="acento"
-            onClick={onCobrar}
-            label={`Abrir ${t.plural.toLowerCase()} para cobrar a ${f.quien}`}
-            tip="Cobrar"
-            className={BOTON_ICONO}
-          />
         </div>
       </td>
     </tr>

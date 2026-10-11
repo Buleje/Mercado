@@ -11,7 +11,7 @@ import { CreditCard, Landmark, DollarSign, Trees } from "@buleje/design-system/i
 import type { CrucePorCobrar, PorCobrarTipo } from "@/lib/db/por-cobrar.db";
 import { enMonedas } from "@/components/admin/unified/finanzas/por-pagar/estilo";
 
-export { CHIP, CHIP_OFF, CHIP_ON, diasEntre, enMonedas } from "@/components/admin/unified/finanzas/por-pagar/estilo";
+export { BOTON_FILA, BUSCADOR, CHIP, CHIP_OFF, CHIP_ON, diasEntre, enMonedas } from "@/components/admin/unified/finanzas/por-pagar/estilo";
 
 /** Un tipo de deuda: cómo se dice, de qué color es y dónde se cobra. */
 export const TIPOS: Record<PorCobrarTipo, {
@@ -28,20 +28,14 @@ export const TIPOS: Record<PorCobrarTipo, {
   /* Los fiados se cobran en Ventas y caja › Me deben (su casa única desde la
      ola 3 del panel unificado, 2026-10-10): ya no son sección de Mi Plata. */
   fiado:    { label: "Fiado",    plural: "Fiados",    icon: CreditCard, chip: "bg-[var(--accent)]/15 text-[var(--accent-ink)] dark:text-[var(--accent)]", destino: "ventas-caja", externo: true, vista: "cuentas-cobrar" },
-  prestamo: { label: "Préstamo", plural: "Préstamos", icon: Landmark,   chip: "bg-[var(--data-info-500)]/15 text-[var(--data-info-500)]", destino: "prestamos" },
-  adelanto: { label: "Adelanto", plural: "Adelantos", icon: DollarSign, chip: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]", destino: "adelantos" },
+  prestamo: { label: "Préstamo", plural: "Préstamos", icon: Landmark,   chip: "bg-[var(--data-info-500)]/15 text-[var(--data-info-ink)]", destino: "prestamos" },
+  adelanto: { label: "Adelanto", plural: "Adelantos", icon: DollarSign, chip: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-ink)]", destino: "adelantos" },
   /* La madera NO es sección hermana de Mi Plata: su detalle vive en el Libro
      CTP y hay que recargar ese módulo entero. */
   madera:   { label: "Madera",   plural: "Madera",    icon: Trees,      chip: "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", destino: "ctp-libro-operaciones", externo: true },
 };
 
 export const ORDEN: readonly PorCobrarTipo[] = ["fiado", "prestamo", "adelanto", "madera"];
-
-/* 44 px de alto en el celular (el dedo), 36 en la tabla del escritorio. */
-export const BOTON_FILA = "inline-flex h-11 items-center sm:h-9 justify-center gap-1 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
-
-/** El mismo botón de fila, de sólo ícono (su texto sale al pasar el mouse). */
-export const BOTON_ICONO = "h-11 w-11 border border-[var(--rule-base)] hover:border-[var(--accent)]/50 sm:h-9 sm:w-9";
 
 const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
 

@@ -25,8 +25,8 @@ export default function FilaPorPagar({ persona: p, hoy, onAbrir }: { persona: Pe
             izquierda, valor a la derecha) y tres hijos sueltos se pisaban. */}
         <div className="min-w-0">
           <span className="font-bold text-[var(--text-primary)]">{p.nombre}</span>
-          {TIPO[p.tipo] && <span className="block text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{TIPO[p.tipo]}</span>}
-          {neto && <span className="block text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)]">{neto}</span>}
+          {TIPO[p.tipo] && <span className="block text-sm text-[var(--text-secondary)]">{TIPO[p.tipo]}</span>}
+          {neto && <span className="block text-sm font-semibold text-[var(--text-secondary)]">{neto}</span>}
         </div>
       </td>
       <td className="align-top">
@@ -40,12 +40,12 @@ export default function FilaPorPagar({ persona: p, hoy, onAbrir }: { persona: Pe
                   aria-label={`Abrir ${ETIQUETA_FUENTE[x.fuente].label.toLowerCase()} de ${p.nombre}: ${montoEnMoneda(x.monto, x.moneda)}`}
                   className={PARTIDA}
                 >
-                  <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-[length:var(--ts-xs)] font-bold", ESTILO[x.fuente].chip)}>
-                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />{ETIQUETA_FUENTE[x.fuente].label}
+                  <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-bold", ESTILO[x.fuente].chip)}>
+                    <Icon className="h-4 w-4" aria-hidden="true" />{ETIQUETA_FUENTE[x.fuente].label}
                   </span>
                   <span className="min-w-0">
                     <span className="font-bold tabular-nums text-[var(--text-primary)]">{montoEnMoneda(x.monto, x.moneda)}</span>
-                    {x.nota && <span className="block text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{x.nota}</span>}
+                    {x.nota && <span className="block text-sm text-[var(--text-secondary)]">{x.nota}</span>}
                   </span>
                   <ArrowRight className="ml-auto h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden="true" />
                 </button>
@@ -57,19 +57,19 @@ export default function FilaPorPagar({ persona: p, hoy, onAbrir }: { persona: Pe
       <td className="align-top text-right font-extrabold tabular-nums whitespace-nowrap">{enMonedas(p.debes)}</td>
       <td className="align-top whitespace-nowrap">
         {p.vence === null
-          ? <span className="text-[var(--text-tertiary)]">Sin plazo</span>
+          ? <span className="text-[var(--text-secondary)]">Sin plazo</span>
           : atraso > 0
-            ? <BadgeStatus variant="error" size="sm" label={`Vencido hace ${atraso} d`} />
+            ? <BadgeStatus variant="error" size="md" label={`Vencido hace ${atraso} d`} />
             : <span className="text-[var(--text-secondary)]">{formatDateShort(p.vence, { soloFecha: true })}</span>}
       </td>
       <td className="align-top text-right whitespace-nowrap">
         {p.liquidar ? (
           <button onClick={() => p.liquidar && onAbrir(p.liquidar)} aria-label={`Liquidar la cuenta con ${p.nombre}`} className={BOTON_FILA}>
-            <Scale className="h-3.5 w-3.5" aria-hidden="true" /> Liquidar
+            <Scale className="h-4 w-4" aria-hidden="true" /> Liquidar
           </button>
         ) : primera ? (
           <button onClick={() => onAbrir(primera.enlace)} aria-label={`Ir a pagarle a ${p.nombre}`} className={BOTON_FILA}>
-            Pagar <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            Pagar <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         ) : null}
       </td>
