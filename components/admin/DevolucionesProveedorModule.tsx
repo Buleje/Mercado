@@ -1,1090 +1,124 @@
 "use client";
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { RotateCcw, Plus, X, ChevronDown, ChevronUp, Package, Truck, AlertCircle, Loader2, RefreshCw, BarChart2, Download, Clock, CheckCircle2 } from "@buleje/design-system/icons";
-import dynamic from "next/dynamic";
+import { useState } from "react";
+import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { AlertCircle, CheckCircle2, Download, MoreHorizontal, Plus, RefreshCw, RotateCcw, X } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
-import ProductCombobox, { type ProductOption } from "@/components/admin/shared/ProductCombobox";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { Field } from "@/components/admin/shared/Field";
-import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import { formatCurrency, formatDate, formatDateNumeric, formatMonthYear } from "@/lib/format";
-import EnlacePanel from "@/components/admin/shared/EnlacePanel";
+import { FilaDevolucion } from "./devoluciones-proveedor/FilaDevolucion";
+import { FiltrosDevolucionesBarra } from "./devoluciones-proveedor/FiltrosDevoluciones";
+import { ReportesDevoluciones } from "./devoluciones-proveedor/ReportesDevoluciones";
+import { FormularioDevolucion } from "./devoluciones-proveedor/FormularioDevolucion";
+import { exportarDevolucionesCSV } from "./devoluciones-proveedor/exportar-csv";
+import { SIN_FILTROS, conteoPorEstado, filtrarDevoluciones, type FiltrosDevoluciones } from "./devoluciones-proveedor/tipos";
+import { useDevoluciones } from "./devoluciones-proveedor/use-devoluciones";
+import { useIndicadoresDevoluciones } from "./devoluciones-proveedor/use-indicadores-devoluciones";
 
-const DevolucionesChart = dynamic(() => import("./DevolucionesChart"), {
-  ssr: false,
-  loading: () => <div className="h-64 animate-pulse bg-[var(--color-muted)] rounded-xl" />,
-});
-
-// ── Tipos ────────────────────────────────────────────────────────────────────
-
-type DevolucionEstado = "PENDIENTE" | "ENVIADA" | "RESUELTA";
-
-interface ItemDevuelto {
-  nombre:   string;
-  cantidad: number;
-  unidad:   string;
-  // ADR-379. Sin `productId` el ítem no puede salir del stock: es un texto
-  // escrito a mano. Con él, la devolución mueve inventario al marcarse enviada.
-  productId?:     number;
-  precioUnitario?: number;
-}
-
-/** Lo que el proveedor debe por un ítem. Sin precio no se puede afirmar nada. */
-function valorItem(item: ItemDevuelto): number | null {
-  if (item.precioUnitario == null) return null;
-  return item.precioUnitario * item.cantidad;
-}
-
-/** Total de la devolución y cuántos ítems quedaron sin precio (que se avisa). */
-function valorDevolucion(items: ItemDevuelto[]): { total: number; sinPrecio: number } {
-  let total = 0;
-  let sinPrecio = 0;
-  for (const i of items) {
-    const v = valorItem(i);
-    if (v == null) sinPrecio++;
-    else total += v;
-  }
-  return { total, sinPrecio };
-}
-
-const soles = (n: number) => `${formatCurrency(n)}`;
-
-interface Devolucion {
-  id:              string;
-  createdAt:       string;
-  updatedAt?:      string;
-  proveedorNombre: string;
-  /** Lo guarda el alta (`proveedorId`); las viejas pueden no tenerlo → el nombre queda como texto. */
-  proveedorId?:    string | null;
-  items:           ItemDevuelto[];
-  motivo:          string;
-  estado:          DevolucionEstado;
-  notas?:          string | null;
-  /** Cuándo salió la mercadería del stock (ADR-379). Null = todavía no salió. */
-  stockAplicadoAt?: string | null;
-}
-
-interface Proveedor {
-  id:   string;
-  name: string;
-}
-
-// ── Constantes ───────────────────────────────────────────────────────────────
-
-const MOTIVOS = [
-  "Producto vencido",
-  "Producto dañado",
-  "Producto incorrecto",
-  "Exceso de stock",
-  "Precio incorrecto en factura",
-  "Calidad no aceptable",
-  "Otro",
-];
-
-const ESTADO_STYLES: Record<DevolucionEstado, string> = {
-  PENDIENTE: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
-  ENVIADA:   "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
-  RESUELTA:  "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+const AYUDA = {
+  what: "Lo que le devuelves a un proveedor (vencido, dañado, equivocado) y en qué va el reclamo: pendiente, enviada o resuelta.",
+  affects: "Al marcarla enviada, la mercadería sale del Inventario y queda en Movimientos como «devolución a proveedor». La nota de crédito de una recepción con faltantes baja la cuenta en Por pagar; aquí queda el reclamo hasta que el proveedor responda.",
+  example: "5 cajas vencidas de Ferretería Pasco: la registras, la marcas enviada (salen 5 del stock) y, cuando te mandan la nota de crédito, la marcas resuelta.",
 };
 
-// Etiquetas legibles (reporte QA Compras: "ENVIADA" = esperando respuesta del
-// proveedor). El valor persistido sigue siendo ENVIADA; solo cambia el display.
-const ESTADO_LABEL: Record<DevolucionEstado, string> = {
-  PENDIENTE: "Pendiente",
-  ENVIADA:   "Esperando respuesta",
-  RESUELTA:  "Resuelta",
-};
-
-// Días desde el envío tras los cuales una devolución "esperando respuesta" se
-// considera vencida (sin respuesta del proveedor) y se resalta para no perderla.
-const DIAS_LIMITE_RESPUESTA = 7;
-
-/** Días que una devolución lleva esperando respuesta (0 si no aplica). */
-function diasEsperando(dev: Devolucion): number {
-  if (dev.estado !== "ENVIADA") return 0;
-  const desde = new Date(dev.updatedAt ?? dev.createdAt).getTime();
-  if (Number.isNaN(desde)) return 0;
-  return Math.max(0, Math.floor((Date.now() - desde) / 86_400_000));
-}
-
-const ESTADO_SIGUIENTE: Record<DevolucionEstado, DevolucionEstado | null> = {
-  PENDIENTE: "ENVIADA",
-  ENVIADA:   "RESUELTA",
-  RESUELTA:  null,
-};
-
-const ESTADO_LABEL_SIGUIENTE: Record<DevolucionEstado, string> = {
-  PENDIENTE: "Marcar enviada",
-  ENVIADA:   "Marcar resuelta",
-  RESUELTA:  "",
-};
-
-const CACHE_KEY = "admin-devoluciones-cache";
-const CACHE_TTL = 60 * 1000;
-
-/**
- * Traduce una respuesta fallida a algo accionable para el encargado.
- *
- * Reporte QA Compras 2026-08-12: «"Marcar enviada" no cambió el estado ni tras
- * refrescar». Las tres mutaciones hacían `if (res.ok) { … }` y nada en el else,
- * con `catch {}` vacío al lado: un 404 (la fila vivía en otro tenant), un 403 de
- * CSRF y un click sin efecto se veían exactamente igual — nada.
- */
-async function mensajeDeError(res: Response, accion: string): Promise<string> {
-  // Un cuerpo ilegible no debe tapar el status, que es la parte útil.
-  const body = (await res.json().catch((err: unknown) => {
-    console.warn("[DevolucionesProveedorModule] respuesta de error sin JSON:", String(err));
-    return null;
-  })) as { error?: unknown; detail?: unknown } | null;
-  const detalle =
-    typeof body?.detail === "string" ? body.detail
-    : typeof body?.error === "string" ? body.error
-    : null;
-
-  switch (res.status) {
-    case 400: return detalle ?? "Faltan datos o son inválidos. Revisa el formulario.";
-    case 401:
-    case 403: return "Tu sesión venció. Recarga la página e intenta de nuevo.";
-    case 402: return detalle ?? "El plan de esta tienda no permite registrar cambios.";
-    case 404: return "Esa devolución ya no está disponible. Recarga la lista.";
-    case 429: return "Demasiados intentos seguidos. Espera unos segundos.";
-    default:  return detalle ?? `No se pudo ${accion} (error ${res.status}).`;
-  }
-}
-
-// ── Componente principal ──────────────────────────────────────────────────────
-
+/** Vive dentro de Compras (su barra ya es el título del módulo): acá va el título de la vista. */
 export default function DevolucionesProveedorModule() {
-  const [devoluciones, setDevoluciones] = useState<Devolucion[]>([]);
-  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingProveedores, setLoadingProveedores] = useState(true);
+  const d = useDevoluciones();
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [filtroEstado, setFiltroEstado] = useState<DevolucionEstado | "">("");
-  const [actionId, setActionId] = useState<string | null>(null);
-  const { confirm } = useConfirm();
+  const [filtros, setFiltros] = useState<FiltrosDevoluciones>(SIN_FILTROS);
+  const kpis = useIndicadoresDevoluciones(d.devoluciones, d.loading);
 
-  // Campos del formulario
-  const [proveedorId, setProveedorId] = useState("");
-  const [motivo, setMotivo] = useState(MOTIVOS[0]);
-  const [notas, setNotas] = useState("");
-  const [items, setItems] = useState<ItemDevuelto[]>([{ nombre: "", cantidad: 1, unidad: "und" }]);
-  const [guardando, setGuardando] = useState(false);
-  const [showReportes, setShowReportes] = useState(false);
-  // Productos reales del inventario → combobox de búsqueda (reporte QA: el
-  // producto era texto libre, propenso a typos y descuadres).
-  const [products, setProducts] = useState<ProductOption[]>([]);
-  // Aviso al operador: la causa real de un guardado que no entró.
-  const [aviso, setAviso] = useState<{ tipo: "error" | "ok"; texto: string } | null>(null);
-
-  /**
-   * Deja el estado y el cache de localStorage en la misma página.
-   *
-   * Sin esto, una mutación exitosa vivía sólo en memoria: al volver al tab
-   * dentro del TTL, `fetchDevoluciones` rehidrataba el cache viejo y revertía
-   * en pantalla lo que ya estaba guardado en la DB.
-   */
-  // Toma un updater (no una lista ya calculada) para que dos acciones seguidas
-  // sobre filas distintas no se pisen: la segunda parte SIEMPRE del estado más
-  // reciente, no del que capturó su closure.
-  const persistir = useCallback((actualizar: (prev: Devolucion[]) => Devolucion[]) => {
-    setDevoluciones(prev => {
-      const next = actualizar(prev);
-      try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: next, ts: Date.now() }));
-      } catch { /* quota */ }
-      return next;
-    });
-  }, []);
-
-  // Cargar devoluciones con cache localStorage SWR (TTL 60s).
-  // `forzar` = ignorar el TTL: lo usa el botón de recargar, que existe
-  // justamente para desconfiar de lo que hay en pantalla.
-  // Una carga que salió antes de un cambio trae la lista vieja (y la dejaba en el
-  // cache): el GET del doble montaje o el del botón recargar podía volver después
-  // de eliminar o guardar y la pantalla retrocedía (mismo bug que Tareas,
-  // 2026-09-14). Sólo aplica su lista la carga más nueva y sin cambios de por
-  // medio; cada cambio termina con una carga silenciosa que trae lo guardado.
-  const cargasRef = useRef({ ultima: 0, cambios: 0 });
-  const fetchDevoluciones = useCallback(async (forzar = false, opciones?: { silenciosa?: boolean }) => {
-    // Hidratar de cache primero
-    if (!forzar) {
-      try {
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-          const { data, ts } = JSON.parse(cached) as { data: Devolucion[]; ts: number };
-          if (Array.isArray(data)) {
-            setDevoluciones(data);
-            setLoading(false);
-            if (Date.now() - ts < CACHE_TTL) return;
-          }
-        }
-      } catch { /* ignore */ }
-    }
-    const esta = ++cargasRef.current.ultima;
-    const cambiosAlSalir = cargasRef.current.cambios;
-    if (!opciones?.silenciosa) setLoading(true);
-    try {
-      const res = await fetch("/api/supplier-returns");
-      if (res.ok) {
-        const data = await res.json();
-        if (esta === cargasRef.current.ultima && cambiosAlSalir === cargasRef.current.cambios) {
-          setDevoluciones(data);
-          try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
-          } catch { /* quota */ }
-        }
-      } else if (opciones?.silenciosa) {
-        // La silenciosa no pisa el aviso de la acción que la disparó.
-        console.warn("[DevolucionesProveedorModule] recarga silenciosa sin éxito:", res.status);
-      } else {
-        setAviso({ tipo: "error", texto: await mensajeDeError(res, "cargar las devoluciones") });
-      }
-    } catch (err) {
-      if (opciones?.silenciosa) console.warn("[DevolucionesProveedorModule] recarga silenciosa falló:", String(err));
-      else setAviso({ tipo: "error", texto: "Sin conexión con el servidor. Revisa tu internet." });
-    } finally {
-      if (esta === cargasRef.current.ultima) setLoading(false);
-    }
-  }, []);
-
-  // Cargar proveedores desde la API
-  const fetchProveedores = useCallback(async () => {
-    setLoadingProveedores(true);
-    try {
-      const res = await fetch("/api/suppliers");
-      if (res.ok) {
-        const data = await res.json();
-        setProveedores(data.suppliers ?? data ?? []);
-      }
-    } catch {}
-    setLoadingProveedores(false);
-  }, []);
-
-  useEffect(() => { fetchDevoluciones(); }, [fetchDevoluciones]);
-  useEffect(() => { fetchProveedores(); }, [fetchProveedores]);
-
-  // Cargar productos del inventario para el combobox (una vez).
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/products")
-      .then(r => (r.ok ? r.json() : []))
-      .then((data: unknown) => {
-        if (cancelled) return;
-        const arr = Array.isArray(data) ? data : (data as { products?: unknown[] })?.products ?? [];
-        const list = (arr as Array<{ id?: number | string; name?: string; stock?: number | null; unit?: string; barcode?: string; costPrice?: number | null }>)
-          .filter(p => !!p.name)
-          // `costPrice` se conserva (ADR-379): es lo que se le reclama al
-          // proveedor, y hasta ahora se descartaba junto con el resto.
-          .map(p => ({ id: p.id ?? p.name!, name: p.name!, stock: p.stock ?? null, unit: p.unit, barcode: p.barcode, costPrice: p.costPrice ?? null }));
-        setProducts(list);
-      })
-      .catch(err => console.warn("[DevolucionesProveedorModule] products load failed:", err));
-    return () => { cancelled = true; };
-  }, []);
-
-  // ── Acciones ─────────────────────────────────────────────────────────────
-
-  function agregarItem() {
-    setItems(prev => [...prev, { nombre: "", cantidad: 1, unidad: "und" }]);
-  }
-
-  function quitarItem(index: number) {
-    setItems(prev => prev.filter((_, i) => i !== index));
-  }
-
-  function actualizarItem(index: number, campo: keyof ItemDevuelto, valor: string | number) {
-    setItems(prev => prev.map((item, i) => i === index ? { ...item, [campo]: valor } : item));
-  }
-
-  /**
-   * Al elegir del inventario se guarda TODO lo que el buscador ya sabía: hasta
-   * ahora se quedaba sólo con el nombre y tiraba el id, que es justo lo que
-   * hace falta para mover stock y para saber cuánto vale lo devuelto (ADR-379).
-   */
-  function seleccionarProducto(index: number, p: ProductOption) {
-    setItems(prev => prev.map((item, i) => i === index ? {
-      ...item,
-      nombre: p.name,
-      productId: typeof p.id === "number" ? p.id : undefined,
-      precioUnitario: p.costPrice ?? undefined,
-      unidad: p.unit || item.unidad,
-    } : item));
-  }
-
-  /**
-   * Si el texto deja de coincidir con el producto elegido, el vínculo se corta.
-   * Mantenerlo sería peor que no tenerlo: descontaría stock de un producto que
-   * ya no es el que dice la pantalla.
-   */
-  function escribirNombreItem(index: number, texto: string) {
-    setItems(prev => prev.map((item, i) => {
-      if (i !== index) return item;
-      if (item.productId != null && texto !== item.nombre) {
-        return { ...item, nombre: texto, productId: undefined, precioUnitario: undefined };
-      }
-      return { ...item, nombre: texto };
-    }));
-  }
-
-  function resetFormulario() {
-    setProveedorId("");
-    setMotivo(MOTIVOS[0]);
-    setNotas("");
-    setItems([{ nombre: "", cantidad: 1, unidad: "und" }]);
-  }
-
-  // ── Datos para reportes ───────────────────────────────────────────────────
-
-  const reportesPorMes = useMemo(() => {
-    const counts: Record<string, number> = {};
-    devoluciones.forEach(d => {
-      const mes = formatMonthYear(d.createdAt);
-      counts[mes] = (counts[mes] ?? 0) + 1;
-    });
-    return Object.entries(counts)
-      .map(([mes, total]) => ({ mes, total }))
-      .slice(-6); // últimos 6 meses
-  }, [devoluciones]);
-
-  const reportesPorMotivo = useMemo(() => {
-    const counts: Record<string, number> = {};
-    devoluciones.forEach(d => { counts[d.motivo] = (counts[d.motivo] ?? 0) + 1; });
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([motivo, total]) => ({ motivo: motivo.length > 20 ? motivo.slice(0, 18) + "…" : motivo, total }));
-  }, [devoluciones]);
-
-  const reportesPorProveedor = useMemo(() => {
-    const counts: Record<string, number> = {};
-    devoluciones.forEach(d => { counts[d.proveedorNombre] = (counts[d.proveedorNombre] ?? 0) + 1; });
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-  }, [devoluciones]);
-
-  function exportarCSV() {
-    const header = ["ID", "Fecha", "Proveedor", "Motivo", "Estado", "Notas", "Items"];
-    const rows = devoluciones.map(d => [
-      d.id,
-      formatDateNumeric(d.createdAt),
-      d.proveedorNombre,
-      d.motivo,
-      d.estado,
-      d.notas ?? "",
-      d.items.map(i => `${i.cantidad} ${i.unidad} ${i.nombre}`).join("; "),
-    ]);
-    const csv = [header, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `devoluciones_proveedor_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  async function handleGuardar() {
-    const itemsValidos = items.filter(i => i.nombre.trim() !== "");
-    if (!proveedorId || itemsValidos.length === 0) return;
-
-    cargasRef.current.cambios += 1;
-    setGuardando(true);
-    setAviso(null);
-    try {
-      const proveedor = proveedores.find(p => p.id === proveedorId);
-      const res = await fetch("/api/supplier-returns", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          proveedorId,
-          proveedorNombre: proveedor?.name ?? proveedorId,
-          motivo,
-          notas: notas.trim() || undefined,
-          items: itemsValidos,
-        }),
-      });
-
-      if (res.ok) {
-        const nueva = await res.json();
-        persistir(prev => [nueva, ...prev]);
-        resetFormulario();
-        setMostrarFormulario(false);
-        setAviso({ tipo: "ok", texto: `Devolución registrada para ${proveedor?.name ?? "el proveedor"}.` });
-      } else {
-        setAviso({ tipo: "error", texto: await mensajeDeError(res, "registrar la devolución") });
-      }
-    } catch {
-      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. La devolución no se guardó." });
-    } finally {
-      setGuardando(false);
-      void fetchDevoluciones(true, { silenciosa: true });
-    }
-  }
-
-  async function avanzarEstado(id: string) {
-    const dev = devoluciones.find(d => d.id === id);
-    if (!dev) return;
-    const siguiente = ESTADO_SIGUIENTE[dev.estado];
-    if (!siguiente) return;
-
-    cargasRef.current.cambios += 1;
-    setActionId(id);
-    setAviso(null);
-    try {
-      const res = await fetch(`/api/supplier-returns/${id}`, {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ estado: siguiente }),
-      });
-      if (res.ok) {
-        const updated = await res.json() as Devolucion & { avisos?: string[] };
-        persistir(prev => prev.map(d => d.id === id ? updated : d));
-
-        // Al marcar enviada la mercadería sale del stock (ADR-379). Decirlo es
-        // parte del cambio: un descuento de inventario silencioso es
-        // exactamente lo que no queremos que vuelva a pasar en este módulo.
-        const salioDelStock = siguiente === "ENVIADA" && !!updated.stockAplicadoAt;
-        const pendientes = updated.avisos ?? [];
-        setAviso({
-          tipo: pendientes.length > 0 ? "error" : "ok",
-          texto: [
-            `${dev.proveedorNombre}: ${ESTADO_LABEL[siguiente].toLowerCase()}.`,
-            salioDelStock ? "La mercadería salió del inventario." : "",
-            ...pendientes,
-          ].filter(Boolean).join(" "),
-        });
-      } else {
-        setAviso({ tipo: "error", texto: await mensajeDeError(res, "cambiar el estado") });
-      }
-    } catch {
-      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. El estado no cambió." });
-    } finally {
-      setActionId(null);
-      void fetchDevoluciones(true, { silenciosa: true });
-    }
-  }
-
-  async function eliminar(id: string) {
-    // El borrado es definitivo y no había ninguna pregunta de por medio: un
-    // click en el ícono equivocado se llevaba el registro de una devolución
-    // que quizá ya se le reclamó al proveedor.
-    const dev = devoluciones.find(d => d.id === id);
-    const detalle = dev ? `la devolución a ${dev.proveedorNombre} (${dev.items.length} item${dev.items.length === 1 ? "" : "s"})` : "esta devolución";
-    if (!(await confirm({
-      title: `¿Eliminar ${detalle}?`,
-      description: "Es definitivo: no queda en la papelera ni se puede deshacer.",
-      intent: "danger",
-      confirmLabel: "Sí, eliminar",
-    }))) return;
-
-    cargasRef.current.cambios += 1;
-    setActionId(id);
-    setAviso(null);
-    try {
-      const res = await fetch(`/api/supplier-returns/${id}`, { method: "DELETE", headers: csrfHeaders() });
-      if (res.ok) {
-        persistir(prev => prev.filter(d => d.id !== id));
-        setAviso({ tipo: "ok", texto: "Devolución eliminada." });
-      } else {
-        setAviso({ tipo: "error", texto: await mensajeDeError(res, "eliminar la devolución") });
-      }
-    } catch {
-      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. No se eliminó nada." });
-    } finally {
-      setActionId(null);
-      void fetchDevoluciones(true, { silenciosa: true });
-    }
-  }
-
-  // ── Filtrado ──────────────────────────────────────────────────────────────
-
-  const devolucionesFiltradas = filtroEstado
-    ? devoluciones.filter(d => d.estado === filtroEstado)
-    : devoluciones;
-
-  const conteos: Record<DevolucionEstado, number> = {
-    PENDIENTE: devoluciones.filter(d => d.estado === "PENDIENTE").length,
-    ENVIADA:   devoluciones.filter(d => d.estado === "ENVIADA").length,
-    RESUELTA:  devoluciones.filter(d => d.estado === "RESUELTA").length,
-  };
-  // Devoluciones enviadas SIN respuesta pasado el límite — las que hay que
-  // reclamar al proveedor (reporte QA: "no perder de vista las pendientes").
-  const vencidas = devoluciones.filter(d => diasEsperando(d) > DIAS_LIMITE_RESPUESTA).length;
-
-  // ── Render ────────────────────────────────────────────────────────────────
+  const filtradas = filtrarDevoluciones(d.devoluciones, filtros);
+  const conteos = conteoPorEstado(d.devoluciones);
+  const acciones: MenuAccion[] = [
+    { id: "csv", label: "Descargar CSV", hint: "Todas las devoluciones, para Excel", icon: Download, onSelect: () => exportarDevolucionesCSV(d.devoluciones), disabled: d.devoluciones.length === 0 },
+    { id: "refrescar", label: "Actualizar", icon: RefreshCw, onSelect: d.recargar, busy: d.loading },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Vive dentro de Compras (su barra ya es el título del módulo): acá va el
-          título de la vista, no un segundo h1 (plan «panel unificado», ola 3). */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SectionTitle className="text-[var(--text-primary)]">Devoluciones a proveedores</SectionTitle>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => fetchDevoluciones(true)}
-            disabled={loading}
-            aria-label="Recargar devoluciones"
-            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={cn("h-4 w-4 text-[var(--text-secondary)]", loading && "animate-spin")} />
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Devoluciones</SectionTitle>
+          <InfoTip title="Devoluciones a proveedores" what={AYUDA.what} affects={AYUDA.affects} example={AYUDA.example} />
+        </div>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {kpis.boton}
+          <button type="button" onClick={() => setMostrarFormulario(true)} aria-haspopup="dialog" className={button({ variant: "primary", className: "shrink-0 gap-1.5 rounded-xl px-4 max-sm:w-12 max-sm:px-0" })}>
+            <Plus className="h-4 w-4" aria-hidden />
+            <span className="max-sm:sr-only">Nueva devolución</span>
           </button>
-          <button
-            onClick={() => { setMostrarFormulario(true); resetFormulario(); }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-medium transition-colors min-h-[44px]"
-          >
-            <Plus className="h-4 w-4" />
-            Nueva devolución
-          </button>
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Descargar CSV y actualizar" />
         </div>
       </div>
 
-      {/* Resultado de la última acción. Antes no había ninguno: una devolución
-          que no se guardaba y una que sí se veían igual (reporte QA Compras). */}
-      {aviso && (
+      {kpis.panel}
+      {kpis.abierto && <ReportesDevoluciones devoluciones={d.devoluciones} />}
+
+      {/* Resultado de la última acción: una guardada y una que no entró no se ven igual. */}
+      {d.aviso && (
         <div
-          role={aviso.tipo === "error" ? "alert" : "status"}
+          role={d.aviso.tipo === "error" ? "alert" : "status"}
           className={cn(
             "flex items-start gap-2 rounded-xl border px-3 py-2.5",
-            aviso.tipo === "error"
-              ? "border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10"
-              : "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10",
+            d.aviso.tipo === "error" ? "border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10" : "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10",
           )}
         >
-          {aviso.tipo === "error"
-            ? <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-error-500)]" />
-            : <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-success-500)]" />}
-          <p className={cn(
-            "text-sm font-medium flex-1",
-            aviso.tipo === "error"
-              ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
-              : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
-          )}>
-            {aviso.texto}
-          </p>
-          <button
-            type="button"
-            onClick={() => setAviso(null)}
-            aria-label="Cerrar aviso"
-            className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
-          >
+          {d.aviso.tipo === "error"
+            ? <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-error-ink)]" aria-hidden />
+            : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success-ink)]" aria-hidden />}
+          <p className={cn("flex-1 text-sm font-medium", d.aviso.tipo === "error" ? "text-[var(--data-error-ink)]" : "text-[var(--data-success-ink)]")}>{d.aviso.texto}</p>
+          <button type="button" onClick={() => d.setAviso(null)} aria-label="Cerrar aviso" className="-m-2 flex h-12 w-12 shrink-0 items-center justify-center text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]">
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* KPI summary 4 cards minimalistas */}
-      {!loading && devoluciones.length > 0 && (() => {
-        const totalItems = devoluciones.reduce((s, d) => s + d.items.reduce((a, i) => a + i.cantidad, 0), 0);
-        const mesActual = new Date().toISOString().slice(0, 7);
-        const totalMes = devoluciones.filter(d => d.createdAt.startsWith(mesActual)).length;
-        return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
-                <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{devoluciones.length}</p>
-                <p className="text-xs text-[var(--text-tertiary)] mt-1">devoluciones registradas</p>
-              </div>
-              <RotateCcw className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
-            </div>
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendientes</p>
-                <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", conteos.PENDIENTE > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{conteos.PENDIENTE}</p>
-                <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                  {conteos.ENVIADA} esperando respuesta
-                  {vencidas > 0 && (
-                    <span className="text-[var(--data-error-500)] font-bold"> · {vencidas} vencida{vencidas === 1 ? "" : "s"}</span>
-                  )}
-                </p>
-              </div>
-              <Clock className={cn("h-5 w-5 shrink-0", conteos.PENDIENTE > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")} />
-            </div>
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Resueltas</p>
-                <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-success-500)]">{conteos.RESUELTA}</p>
-                <p className="text-xs text-[var(--text-tertiary)] mt-1">{devoluciones.length > 0 ? Math.round((conteos.RESUELTA / devoluciones.length) * 100) : 0}% completadas</p>
-              </div>
-              <CheckCircle2 className="h-5 w-5 text-[var(--data-success-500)] shrink-0" />
-            </div>
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Items mes</p>
-                <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{totalItems}</p>
-                <p className="text-xs text-[var(--text-tertiary)] mt-1">{totalMes} devoluciones este mes</p>
-              </div>
-              <Package className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Filter pills uniformes */}
-      <div className="flex flex-wrap gap-2">
-        {([
-          { id: "",          label: "Todas",     count: devoluciones.length    },
-          { id: "PENDIENTE", label: "Pendientes", count: conteos.PENDIENTE      },
-          { id: "ENVIADA",   label: "Enviadas",   count: conteos.ENVIADA        },
-          { id: "RESUELTA",  label: "Resueltas",  count: conteos.RESUELTA       },
-        ] as const).map(p => (
-          <button
-            key={p.id}
-            onClick={() => setFiltroEstado(p.id as DevolucionEstado | "")}
-            className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
-              filtroEstado === p.id
-                ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            {p.label}
-            <span className={cn(
-              "rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums min-w-[20px] text-center",
-              filtroEstado === p.id ? "bg-white/25" : "bg-[var(--surface-sunken)]"
-            )}>
-              {p.count}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Formulario nueva devolución */}
       {mostrarFormulario && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Nueva devolución</CardTitle>
-            <button aria-label="Cerrar"
-              onClick={() => setMostrarFormulario(false)}
-              className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-            >
-              <X className="h-4 w-4 text-[var(--text-secondary)]" />
-            </button>
-          </div>
-
-          {/* Proveedor */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Proveedor *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
-              {(id) => (
-                loadingProveedores ? (
-                  <div className="h-10 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
-                ) : (
-                  <select
-                    id={id}
-                    value={proveedorId}
-                    onChange={e => setProveedorId(e.target.value)}
-                    className="w-full px-3 h-10 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
-                  >
-                    <option value="">Seleccionar proveedor...</option>
-                    {proveedores.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                )
-              )}
-            </Field>
-            <Field label="Motivo *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
-              <select
-                value={motivo}
-                onChange={e => setMotivo(e.target.value)}
-                className="w-full px-3 h-10 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
-              >
-                {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </Field>
-          </div>
-
-          {/* Items */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--text-secondary)]">Items a devolver *</span>
-              <button
-                onClick={agregarItem}
-                className="flex items-center gap-1 text-xs text-primary hover:text-primary-dark font-medium"
-              >
-                <Plus className="h-3.5 w-3.5" /> Agregar
-              </button>
-            </div>
-            {items.map((item, index) => (
-              <div key={index} className="flex gap-2 items-center">
-                <ProductCombobox
-                  id={`devol-prod-${index}`}
-                  products={products}
-                  value={item.nombre}
-                  placeholder="Nombre del producto"
-                  inputClassName="py-2 text-sm"
-                  onChange={(text) => escribirNombreItem(index, text)}
-                  onSelect={(p) => seleccionarProducto(index, p)}
-                />
-                <input
-                  type="number"
-                  min={1}
-                  aria-label={`Cantidad del ítem ${index + 1}`}
-                  value={item.cantidad}
-                  onChange={e => actualizarItem(index, "cantidad", Number(e.target.value))}
-                  className="w-16 px-2 h-10 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] text-center focus:outline-none focus:ring-2 focus:ring-secondary/40"
-                />
-                <select
-                  aria-label={`Unidad del ítem ${index + 1}`}
-                  value={item.unidad}
-                  onChange={e => actualizarItem(index, "unidad", e.target.value)}
-                  className="w-20 px-2 h-10 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
-                >
-                  <option value="und">und</option>
-                  <option value="kg">kg</option>
-                  <option value="caja">caja</option>
-                  <option value="paq">paq</option>
-                  <option value="bot">bot</option>
-                </select>
-                {/* Lo que vale este renglón. Sin producto elegido no hay costo
-                    que mostrar, y decirlo evita que el total parezca completo
-                    cuando no lo es. */}
-                <span className={cn(
-                  "w-24 shrink-0 text-right text-sm tabular-nums",
-                  valorItem(item) != null ? "font-semibold text-[var(--text-primary)]" : "text-[var(--text-tertiary)]",
-                )}>
-                  {valorItem(item) != null ? soles(valorItem(item)!) : "sin costo"}
-                </span>
-                {items.length > 1 && (
-                  <button aria-label="Quitar"
-                    onClick={() => quitarItem(index)}
-                    className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            ))}
-
-            {/* El número con el que se le reclama al proveedor. */}
-            {(() => {
-              const { total, sinPrecio } = valorDevolucion(items.filter(i => i.nombre.trim() !== ""));
-              if (total === 0 && sinPrecio === 0) return null;
-              return (
-                <div className="flex items-baseline justify-between gap-3 rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">El proveedor te debe</p>
-                    {sinPrecio > 0 && (
-                      <p className="text-xs text-[var(--text-tertiary)]">
-                        {sinPrecio === 1
-                          ? "Falta el costo de 1 ítem: elegilo del inventario para contarlo."
-                          : `Faltan los costos de ${sinPrecio} ítems: elegilos del inventario para contarlos.`}
-                      </p>
-                    )}
-                  </div>
-                  <span className="shrink-0 text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-                    {soles(total)}
-                  </span>
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Notas */}
-          <Field label="Notas adicionales" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
-            <textarea
-              value={notas}
-              onChange={e => setNotas(e.target.value)}
-              rows={2}
-              placeholder="Información adicional sobre la devolución..."
-              className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] resize-none focus:outline-none focus:ring-2 focus:ring-secondary/40"
-            />
-          </Field>
-
-          {/* Botones */}
-          <div className="flex justify-end gap-2 pt-1">
-            <button
-              onClick={() => setMostrarFormulario(false)}
-              className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] rounded-xl transition-colors min-h-[44px]"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleGuardar}
-              disabled={guardando || !proveedorId || items.every(i => !i.nombre.trim())}
-              className="px-4 py-2 bg-secondary hover:bg-secondary/90 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors min-h-[44px] flex items-center gap-2"
-            >
-              {guardando && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {guardando ? "Guardando..." : "Registrar devolución"}
-            </button>
-          </div>
-        </div>
+        <FormularioDevolucion
+          proveedores={d.proveedores}
+          loadingProveedores={d.loadingProveedores}
+          products={d.products}
+          guardando={d.guardando}
+          onGuardar={d.registrar}
+          onCerrar={() => setMostrarFormulario(false)}
+        />
       )}
 
-      {/* Lista de devoluciones */}
-      {loading ? (
-        <LoadingState />
-      ) : (
-        <div className="space-y-2">
-          {devolucionesFiltradas.length === 0 ? (
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 text-center">
-              <RotateCcw className="h-8 w-8 mx-auto mb-2 text-[var(--text-tertiary)]" />
-              <p className="text-sm text-[var(--text-tertiary)]">
-                {filtroEstado ? `No hay devoluciones con estado ${filtroEstado}` : "No hay devoluciones registradas"}
-              </p>
-              {!filtroEstado && (
-                <button
-                  onClick={() => { setMostrarFormulario(true); resetFormulario(); }}
-                  className="mt-3 text-sm text-primary font-medium hover:underline"
-                >
-                  Registrar la primera devolución
-                </button>
-              )}
-            </div>
-          ) : (
-            devolucionesFiltradas.map(dev => (
-              <div
-                key={dev.id}
-                className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden"
-              >
-                {/* Cabecera de la tarjeta */}
-                <div className="flex items-center gap-3 p-3">
-                  <div className="h-9 w-9 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
-                    <Truck className="h-4 w-4 text-secondary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                        <EnlacePanel cosa="proveedor" id={dev.proveedorId} apariencia="heredada">{dev.proveedorNombre}</EnlacePanel>
-                      </span>
-                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
-                        {ESTADO_LABEL[dev.estado]}
-                      </span>
-                      {/* Días esperando respuesta — resalta las vencidas
-                          (>{DIAS_LIMITE_RESPUESTA}d) para no perderlas de vista. */}
-                      {dev.estado === "ENVIADA" && (() => {
-                        const dias = diasEsperando(dev);
-                        const vencida = dias > DIAS_LIMITE_RESPUESTA;
-                        return (
-                          <span className={cn(
-                            "text-xs font-bold px-2 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1",
-                            vencida
-                              ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
-                              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-                          )}>
-                            {vencida && <AlertCircle className="h-3 w-3" />}
-                            {dias === 0 ? "enviada hoy" : `esperando hace ${dias} ${dias === 1 ? "día" : "días"}`}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-[var(--text-tertiary)]">
-                        {formatDate(dev.createdAt)}
-                      </span>
-                      <span className="text-xs text-[var(--text-tertiary)] flex items-center gap-1">
-                        <Package className="h-3 w-3" />
-                        {dev.items.length} {dev.items.length === 1 ? "item" : "items"}
-                      </span>
-                      {/* Cuánto debe el proveedor por esta devolución. Es el
-                          dato con el que se le reclama, y antes no existía. */}
-                      {(() => {
-                        const { total } = valorDevolucion(dev.items);
-                        if (total <= 0) return null;
-                        return (
-                          <span className="text-xs font-bold tabular-nums text-[var(--text-secondary)]">
-                            {soles(total)}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {ESTADO_SIGUIENTE[dev.estado] && (
-                      <button
-                        onClick={() => avanzarEstado(dev.id)}
-                        disabled={actionId === dev.id}
-                        className="text-xs px-2.5 py-1.5 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] rounded-lg hover:bg-primary/20 transition-colors font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 flex items-center gap-1"
-                      >
-                        {actionId === dev.id && <Loader2 className="h-3 w-3 animate-spin" />}
-                        {ESTADO_LABEL_SIGUIENTE[dev.estado]}
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setExpandedId(expandedId === dev.id ? null : dev.id)}
-                      className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    >
-                      {expandedId === dev.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
+      {d.devoluciones.length > 0 && (
+        <FiltrosDevolucionesBarra filtros={filtros} onCambiar={setFiltros} devoluciones={d.devoluciones} conteos={conteos} visibles={filtradas.length} />
+      )}
 
-                {/* Detalle expandido */}
-                {expandedId === dev.id && (
-                  <div className="border-t border-[var(--rule-soft)] px-4 py-3 space-y-3 bg-[var(--surface-alt)]/50">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-xs font-medium text-[var(--text-secondary)] mb-1">Motivo</p>
-                        <div className="flex items-start gap-1.5">
-                          <AlertCircle className="h-3.5 w-3.5 text-[var(--data-warning-500)] mt-0.5 shrink-0" />
-                          <span className="text-sm text-[var(--text-primary)]">{dev.motivo}</span>
-                        </div>
-                      </div>
-                      {dev.notas && (
-                        <div>
-                          <p className="text-xs font-medium text-[var(--text-secondary)] mb-1">Notas</p>
-                          <p className="text-sm text-[var(--text-secondary)]">{dev.notas}</p>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-[var(--text-secondary)] mb-2">Items devueltos</p>
-                      <div className="space-y-1">
-                        {dev.items.map((item, i) => (
-                          <div key={i} className="flex items-center gap-2 text-sm">
-                            <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
-                            <span className="flex-1 text-[var(--text-primary)]">
-                              {/* Sin productId el ítem es texto libre (ADR-379): no hay ficha a la que ir. */}
-                              <EnlacePanel cosa="producto" id={item.productId != null ? String(item.productId) : null} apariencia="heredada">{item.nombre}</EnlacePanel>
-                            </span>
-                            <span className="font-medium text-[var(--text-primary)] tabular-nums">
-                              {item.cantidad} {item.unidad}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex justify-end pt-1">
-                      <button
-                        onClick={() => eliminar(dev.id)}
-                        disabled={actionId === dev.id}
-                        className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)] font-medium transition-colors min-h-[36px] px-2 disabled:opacity-50 flex items-center gap-1"
-                      >
-                        {actionId === dev.id && <Loader2 className="h-3 w-3 animate-spin" />}
-                        Eliminar registro
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))
+      {d.loading ? (
+        <LoadingState />
+      ) : filtradas.length === 0 ? (
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">
+          <RotateCcw className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
+          <p className="text-sm text-[var(--text-secondary)]">
+            {d.devoluciones.length > 0 ? "Ninguna devolución coincide con los filtros." : "Todavía no devolviste nada a tus proveedores."}
+          </p>
+          {d.devoluciones.length === 0 && (
+            <button type="button" onClick={() => setMostrarFormulario(true)} className="mt-3 h-12 text-sm font-medium text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
+              Registrar la primera devolución
+            </button>
           )}
         </div>
-      )}
-
-      {/* ── Panel de Reportes ─────────────────────────────────────────── */}
-      <div className="mt-6 border border-[var(--rule-base)] rounded-xl overflow-hidden">
-        <div
-          role="button"
-          tabIndex={0}
-          aria-expanded={showReportes}
-          onClick={() => setShowReportes(v => !v)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              setShowReportes(v => !v);
-            }
-          }}
-          className="w-full flex items-center justify-between px-4 py-3 bg-[var(--surface-alt)] hover:bg-[var(--surface-sunken)] transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-2">
-            <BarChart2 className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold text-[var(--text-primary)]">
-              Reportes de Devoluciones
-            </span>
-            <span className="text-xs bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2 py-0.5 rounded-full">
-              {devoluciones.length} registros
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={e => { e.stopPropagation(); exportarCSV(); }}
-              className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white text-xs rounded-lg hover:bg-primary-dark transition-colors"
-              title="Exportar CSV"
-            >
-              <Download className="h-3.5 w-3.5" /> CSV
-            </button>
-            {showReportes ? <ChevronUp className="h-4 w-4 text-[var(--text-tertiary)]" /> : <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />}
-          </div>
+      ) : (
+        <div className="space-y-2">
+          {filtradas.map((dev) => (
+            <FilaDevolucion
+              key={dev.id}
+              dev={dev}
+              abierta={expandedId === dev.id}
+              ocupada={d.actionId === dev.id}
+              onAlternar={() => setExpandedId(expandedId === dev.id ? null : dev.id)}
+              onAvanzar={() => d.avanzarEstado(dev.id)}
+              onEliminar={() => d.eliminar(dev.id)}
+            />
+          ))}
         </div>
-
-        {showReportes && (
-          <div className="p-4 space-y-6">
-            {/* Tarjetas resumen */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-              {[
-                { label: "Total", value: devoluciones.length, color: "text-[var(--text-primary)]" },
-                { label: "Pendientes", value: devoluciones.filter(d => d.estado === "PENDIENTE").length, color: "text-[var(--data-warning-500)]" },
-                { label: "Enviadas", value: devoluciones.filter(d => d.estado === "ENVIADA").length, color: "text-[var(--data-success-500)]" },
-                { label: "Resueltas", value: devoluciones.filter(d => d.estado === "RESUELTA").length, color: "text-[var(--data-success-500)]" },
-              ].map(({ label, value, color }) => (
-                <div key={label} className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-xl p-3 text-center">
-                  <p className={`text-2xl font-bold ${color}`}>{value}</p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">{label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Gráfico mensual */}
-            <DevolucionesChart data={reportesPorMes} />
-
-            {/* Top motivos + proveedores */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">
-                  Top motivos
-                </p>
-                <div className="space-y-1.5">
-                  {reportesPorMotivo.map(({ motivo, total }) => {
-                    const max = reportesPorMotivo[0]?.total ?? 1;
-                    return (
-                      <div key={motivo} className="flex items-center gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-xs text-[var(--text-primary)] truncate">{motivo}</span>
-                            <span className="text-xs font-bold text-[var(--text-primary)] ml-2">{total}</span>
-                          </div>
-                          <div className="h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-secondary rounded-full transition-all"
-                              style={{ width: `${(total / max) * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">
-                  Top proveedores
-                </p>
-                <div className="space-y-1.5">
-                  {reportesPorProveedor.map(([proveedor, total]) => {
-                    const max = reportesPorProveedor[0]?.[1] ?? 1;
-                    return (
-                      <div key={proveedor} className="flex items-center gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-xs text-[var(--text-primary)] truncate">{proveedor}</span>
-                            <span className="text-xs font-bold text-[var(--text-primary)] ml-2">{total}</span>
-                          </div>
-                          <div className="h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary rounded-full transition-all"
-                              style={{ width: `${(total / max) * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {devoluciones.length === 0 && (
-              <p className="text-center text-sm text-[var(--text-tertiary)] py-4">Sin datos para mostrar aún</p>
-            )}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

@@ -95,11 +95,11 @@ describe("DevolucionesProveedorModule — una carga vieja no pisa lo que ya camb
     await waitFor(() => expect(gets()).toHaveLength(2));
 
     await resolver(gets()[1], [MADERERA]);
-    expect(await screen.findByText("Maderera Ucayali")).toBeTruthy();
+    expect(await screen.findByText("Maderera Ucayali", { selector: "span" })).toBeTruthy();
 
-    // «Eliminar registro» vive en el detalle: el botón de abrirlo va al lado de «Marcar enviada».
-    await clic(screen.getByRole("button", { name: "Marcar enviada" }).nextElementSibling as HTMLElement);
-    await clic(screen.getByRole("button", { name: "Eliminar registro" }));
+    // «Eliminar registro» vive en el «⋯» de la fila.
+    await clic(screen.getByRole("button", { name: "Más acciones" }));
+    await clic(screen.getByRole("menuitem", { name: /Eliminar registro/ }));
     await resolver(pedido("DELETE", `${URL_DEVOLUCIONES}/d1`), { ok: true });
     expect(nombresEnLista("Maderera Ucayali")).toHaveLength(0);
 
@@ -122,9 +122,10 @@ describe("DevolucionesProveedorModule — una carga vieja no pisa lo que ya camb
     for (const p of pendientes.filter((x) => x.url === "/api/suppliers")) {
       await resolver(p, { suppliers: [{ id: "p9", name: "Ferretería Pasco" }] });
     }
-    expect(await screen.findByText("Maderera Ucayali")).toBeTruthy();
+    expect(await screen.findByText("Maderera Ucayali", { selector: "span" })).toBeTruthy();
 
-    await clic(screen.getByRole("button", { name: "Recargar devoluciones" }));
+    await clic(screen.getByRole("button", { name: "Más" }));
+    await clic(screen.getByRole("menuitem", { name: /Actualizar/ }));
     expect(gets()).toHaveLength(3);
 
     await clic(screen.getByRole("button", { name: "Nueva devolución" }));
@@ -148,9 +149,9 @@ describe("DevolucionesProveedorModule — una carga vieja no pisa lo que ya camb
     await waitFor(() => expect(gets()).toHaveLength(2));
 
     await resolver(gets()[1], [MADERERA]);
-    expect(await screen.findByText("Maderera Ucayali")).toBeTruthy();
+    expect(await screen.findByText("Maderera Ucayali", { selector: "span" })).toBeTruthy();
 
     await resolver(gets()[0], []);
-    expect(screen.getByText("Maderera Ucayali")).toBeTruthy();
+    expect(screen.getByText("Maderera Ucayali", { selector: "span" })).toBeTruthy();
   });
 });

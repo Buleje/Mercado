@@ -11,17 +11,17 @@ export default function DevolucionesChart({ data }: DevolucionesChartProps) {
 
   return (
     <div>
-      <p className="text-xs font-semibold text-[var(--text-secondary)] mb-3">
+      <p className="text-sm font-semibold text-[var(--text-secondary)] mb-3">
         Devoluciones por mes
       </p>
       <ResponsiveContainer minWidth={0} width="100%" height={180}>
         <BarChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-          <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-base)" />
+          <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
           <Tooltip
             formatter={(val) => { const n = Number(val); return [`${n} devoluci${n === 1 ? "ón" : "ones"}`, ""] as [string, string]; }}
-            contentStyle={{ fontSize: 12, borderRadius: 8 }}
+            contentStyle={{ fontSize: 14, borderRadius: 8 }}
           />
           <Bar dataKey="total" fill="var(--accent)" radius={[4, 4, 0, 0]} />
         </BarChart>
