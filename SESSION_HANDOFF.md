@@ -1,8 +1,8 @@
-# SESSION HANDOFF — 2026-10-11 (noche autónoma 00:25-07:00): panel compactado en 7 tandas + mejoras de otros sistemas — 36+ commits
+# SESSION HANDOFF — 2026-10-11 (noche autónoma 00:25-07:00): panel compactado en 8 tandas + mejoras de otros sistemas — 38 commits
 
 **Estado:** commits `da2440089` → HEAD (más los de la tarde 10-10 desde `e9e3e748d`), **sin subir** (no se pidió push; el deploy sigue bloqueado: memoria `deploy-produccion-bloqueos-2026-10-09`). Typecheck y guardianes verdes en cada tanda. Árbol limpio salvo `.claude/autonomo/`, capturas VRT sin versionar y `components/admin/forestal/.claude/` (del 02-10).
 
-**Hecho:** ver memoria `noche-autonoma-2026-10-11-resultados` y el PDF `C:\Users\Usuario\Desktop\Mejoras-de-la-noche-2026-10-11.pdf` (30 mejoras por área, antes/después medido, «Lo que decides tú»). Bitácora por tanda en `.claude/autonomo/plan-2026-10-11-noche.md`. Medición final: `reports/orden-admin/noche-11-10-tabs.json` (59 pestañas; pantallas promedio 1,28 → 1,13 vs el 09-10).
+**Hecho:** ver memoria `noche-autonoma-2026-10-11-resultados` y el PDF `C:\Users\Usuario\Desktop\Mejoras-de-la-noche-2026-10-11.pdf` (34 mejoras por área, antes/después medido, «Lo que decides tú»). Bitácora por tanda en `.claude/autonomo/plan-2026-10-11-noche.md`. Medición final: `reports/orden-admin/noche-11-10-tabs.json` (59 pestañas; pantallas promedio 1,28 → 1,13 vs el 09-10).
 
 **Decide Brandon:** fundir Reportes comparativos en Comparar períodos · prender el aviso «estamos cerrados» · construir el canje de puntos REAL en el POS (hoy «Aplicar −S/» sólo cierra el control) · `/puntos` del cliente no canjea (necesita ruta de cliente) · logo duplicado Mi Tienda (marketplace) vs Contenido · Fidelidad del marketplace → Campañas › Puntos · 2 bajos de comisiones (PATCH sin filtro del cron; cancelar no revierte liquidadas) · plantilla global esconde Compras/Clientes/Plata · túnel Cloudflare abierto.
 
