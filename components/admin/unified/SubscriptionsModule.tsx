@@ -1,335 +1,109 @@
 "use client";
 
-import { DataTable, LoadingState, StatCard } from "@buleje/design-system";
 /**
  * SubscriptionsModule — Bodega al Mes (suscripciones recurrentes).
  *
- * Admin bridge para ENRICH-5 / ADR-076: expone las suscripciones "Bodega al
- * Mes" que los clientes contratan desde el marketplace. KPIs (backend
- * `/api/admin/subscriptions/stats`) + lista real (`/api/admin/subscriptions`,
- * enriquecida por `SubscriptionsDB.listForTenantAdmin`) + acciones que
- * escriben de verdad contra `/api/admin/subscriptions/[id]`.
+ * Expone las suscripciones «Bodega al Mes» que los clientes contratan desde el
+ * marketplace: KPIs (`/api/admin/subscriptions/stats`), lista real
+ * (`/api/admin/subscriptions`) y acciones que escriben de verdad contra
+ * `/api/admin/subscriptions/[id]`.
  *
- * Tabs:
- *   - Activas   → suscripciones vigentes
- *   - Pausadas  → suspendidas temporalmente
- *   - Canceladas → histórico
+ * Patrón del panel: una fila de cabecera (título · secciones Activas/Pausadas/
+ * Canceladas con su cuenta · Indicadores plegables · «⋯»), filtros en una fila
+ * y, por suscripción, la acción principal visible y «Cancelar» en el «⋯».
  *
- * No hay tab "Planes": el modelo real (`Subscription`) es por producto +
- * frecuencia + descuento, no por tiers fijos (básico/estándar/premium) — esa
- * idea no tiene backend. Mostrarla habría sido inventar datos.
+ * No hay sección «Planes»: el modelo real es por producto + frecuencia +
+ * descuento, no por tiers fijos; mostrarla habría sido inventar datos.
  */
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { DataTable, LoadingState } from "@buleje/design-system";
+import { Download, RefreshCw } from "@buleje/design-system/icons";
+import { toast } from "sonner";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { leerJson } from "@/lib/errores/sin-dato";
-import { toast } from "sonner";
-import {
-  Repeat,
-  DollarSign,
-  Users,
-  TrendingUp,
-  Calendar,
-  Pause,
-  Play,
-  X,
-  Download,
-  Search,
-  CheckCircle,
-} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { formatDate, formatNumber } from "@/lib/format";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
+import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { CabeceraVista, CLASE_SELECT, CLASE_TABLA, descargarCsv, FilaFiltros, tarjetasDe, TH, Vacio } from "@/components/admin/campanas/comun";
 
-// ── Types ───────────────────────────────────────────────────────────────────
+import { FilaAcciones } from "./subscriptions-admin/FilaAcciones";
+import { FREQUENCY_LABELS, STATUS_LABELS, STATUS_STYLES, type Accion, type SubFrequency, type SubStatus, type Subscription, type SubscriptionStats } from "./subscriptions-admin/tipos";
 
-type SubStatus = "active" | "paused" | "cancelled";
-type SubFrequency = "weekly" | "biweekly" | "monthly" | "bimonthly";
+const MODULE_ID = "subscriptions";
+const ID_PANEL = "panel-bodega-al-mes";
+const TAB_IDS = ["activas", "pausadas", "canceladas"] as const;
+type Seccion = (typeof TAB_IDS)[number];
+const DE_SECCION: Record<Seccion, SubStatus> = { activas: "active", pausadas: "paused", canceladas: "cancelled" };
 
-interface Subscription {
-  id: string;
-  customerName: string;
-  customerPhone: string;
-  productName: string;
-  frequency: SubFrequency;
-  status: SubStatus;
-  startDate: string;
-  nextBilling: string;
-  monthlyAmount: number;
-}
+const ACTION_TO_STATUS: Record<Accion, SubStatus> = { pausar: "paused", reanudar: "active", cancelar: "cancelled" };
 
-interface SubscriptionStats {
-  active: number;
-  paused: number;
-  cancelled: number;
-  mrrEstimated: number;
-}
-
-// ── Constants ─────────────────────────────────────────────────────────────
-
-const FREQUENCY_LABELS: Record<SubFrequency, string> = {
-  weekly: "Semanal",
-  biweekly: "Quincenal",
-  monthly: "Mensual",
-  bimonthly: "Bimestral",
-};
-
-const STATUS_STYLES: Record<SubStatus, string> = {
-  active: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
-  paused: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
-  cancelled: "bg-[var(--rule-soft)] text-[var(--text-secondary)]",
-};
-
-const STATUS_LABELS: Record<SubStatus, string> = {
-  active: "Activa",
-  paused: "Pausada",
-  cancelled: "Cancelada",
-};
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function fmt(n: number) {
-  return `S/ ${formatNumber(n, 2)}`;
-}
-
-function fmtDate(iso: string) {
+const fmt = (n: number) => `S/ ${formatNumber(n, 2)}`;
+const fmtDate = (iso: string) => {
   try {
     return formatDate(iso);
   } catch {
     return iso;
   }
-}
-
-function exportCSV(rows: Subscription[]) {
-  const headers = ["ID", "Cliente", "Teléfono", "Producto", "Frecuencia", "Estado", "Inicio", "Próximo cobro", "Monto mensual"];
-  const csvRows = rows.map((r) => [
-    r.id,
-    r.customerName,
-    r.customerPhone,
-    r.productName,
-    FREQUENCY_LABELS[r.frequency],
-    STATUS_LABELS[r.status],
-    r.startDate,
-    r.nextBilling,
-    Number(r.monthlyAmount).toFixed(2),
-  ]);
-  const csv = [headers, ...csvRows].map((r) => r.join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `suscripciones_${Date.now()}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// ── Sub-tab: Lista ──────────────────────────────────────────────────────────
-
-function SubscriptionList({
-  subs,
-  onAction,
-}: {
-  subs: Subscription[];
-  onAction: (id: string, action: "pausar" | "reanudar" | "cancelar") => void;
-}) {
-  const [search, setSearch] = useState("");
-  const [freqFilter, setFreqFilter] = useState<SubFrequency | "all">("all");
-
-  const filtered = useMemo(() => {
-    return subs.filter((s) => {
-      if (freqFilter !== "all" && s.frequency !== freqFilter) return false;
-      if (!search.trim()) return true;
-      const q = search.toLowerCase();
-      return (
-        s.customerName.toLowerCase().includes(q) ||
-        s.customerPhone.includes(q) ||
-        s.productName.toLowerCase().includes(q) ||
-        s.id.toLowerCase().includes(q)
-      );
-    });
-  }, [subs, search, freqFilter]);
-
-  return (
-    <div className="space-y-4">
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input
-            type="search"
-            placeholder="Buscar por cliente, teléfono, producto o ID..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-          />
-        </div>
-        <select
-          value={freqFilter}
-          onChange={(e) => setFreqFilter(e.target.value as SubFrequency | "all")}
-          aria-label="Filtrar por frecuencia"
-          className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
-        >
-          <option value="all">Todas las frecuencias</option>
-          <option value="weekly">Semanal</option>
-          <option value="biweekly">Quincenal</option>
-          <option value="monthly">Mensual</option>
-          <option value="bimonthly">Bimestral</option>
-        </select>
-        <button
-          onClick={() => exportCSV(filtered)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
-        >
-          <Download className="h-4 w-4" />
-          Exportar
-        </button>
-      </div>
-
-      {/* Tabla */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16 text-[var(--text-tertiary)]">
-          <Repeat className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-semibold">Sin suscripciones registradas</p>
-          <p className="text-xs mt-1">Los clientes que contraten Bodega al Mes aparecerán aquí.</p>
-        </div>
-      ) : (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
-                <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Cliente</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">Producto</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Frecuencia</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Monto/mes</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Próximo cobro</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--rule-soft)]">
-                {filtered.map((s) => (
-                  <tr key={s.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="font-bold text-[var(--text-primary)]">{s.customerName}</p>
-                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{s.customerPhone}</p>
-                    </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--rule-soft)] text-[var(--text-primary)]">
-                        {s.productName}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">
-                      {FREQUENCY_LABELS[s.frequency]}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)]">
-                      {fmt(s.monthlyAmount)}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">
-                      {fmtDate(s.nextBilling)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold", STATUS_STYLES[s.status])}>
-                        {STATUS_LABELS[s.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {s.status === "active" && (
-                          <button
-                            onClick={() => onAction(s.id, "pausar")}
-                            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] transition-colors"
-                            title="Pausar"
-                          >
-                            <Pause className="h-4 w-4" />
-                          </button>
-                        )}
-                        {s.status === "paused" && (
-                          <button
-                            onClick={() => onAction(s.id, "reanudar")}
-                            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] transition-colors"
-                            title="Reanudar"
-                          >
-                            <Play className="h-4 w-4" />
-                          </button>
-                        )}
-                        {s.status !== "cancelled" && (
-                          <button
-                            onClick={() => onAction(s.id, "cancelar")}
-                            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
-                            title="Cancelar"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </DataTable>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Main Component ──────────────────────────────────────────────────────────
-
-const MODULE_ID = "subscriptions";
-
-const TABS = [
-  { id: "activas", label: "Activas", icon: CheckCircle },
-  { id: "pausadas", label: "Pausadas", icon: Pause },
-  { id: "canceladas", label: "Canceladas", icon: X },
-];
-const TAB_IDS = TABS.map((t) => t.id);
-
-const ACTION_TO_STATUS: Record<"pausar" | "reanudar" | "cancelar", SubStatus> = {
-  pausar: "paused",
-  reanudar: "active",
-  cancelar: "cancelled",
 };
 
 export default function SubscriptionsModule() {
-  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
-  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
-  const { vista: tab, irA: setTab } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
+  const { confirm } = useConfirm();
+  // La sección vive en `?sub=` (el hub ya usa `?vista=`): link compartible y «atrás» del navegador.
+  const { vista: seccion, irA } = useSubvistaModulo<Seccion>(MODULE_ID, TAB_IDS, TAB_IDS[0]);
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [stats, setStats] = useState<SubscriptionStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [recarga, setRecarga] = useState(0);
+  const [search, setSearch] = useState("");
+  const [freq, setFreq] = useState<SubFrequency | "all">("all");
 
   useEffect(() => {
     const ac = new AbortController();
+    setLoading(true);
+    setError(null);
     Promise.all([
-      fetch("/api/admin/subscriptions", { credentials: "include", signal: ac.signal }).then((r) => (r.ok ? r.json() : null)),
-      fetch("/api/admin/subscriptions/stats", { credentials: "include", signal: ac.signal }).then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/admin/subscriptions", { credentials: "include", signal: ac.signal }),
+      fetch("/api/admin/subscriptions/stats", { credentials: "include", signal: ac.signal }),
     ])
-      .then(([list, statsRes]) => {
-        if (list?.items) setSubs(list.items as Subscription[]);
-        if (statsRes) {
-          setStats({
-            active: statsRes.active,
-            paused: statsRes.paused,
-            cancelled: statsRes.cancelled,
-            mrrEstimated: statsRes.mrrEstimated,
-          });
+      .then(async ([listRes, statsRes]) => {
+        if (!listRes.ok) throw new Error(`HTTP ${listRes.status}`);
+        const list = (await listRes.json()) as { items?: Subscription[] };
+        setSubs(list.items ?? []);
+        if (statsRes.ok) {
+          const s = (await statsRes.json()) as SubscriptionStats;
+          setStats({ active: s.active, paused: s.paused, cancelled: s.cancelled, mrrEstimated: s.mrrEstimated });
         }
       })
-      .catch((e) => { if ((e as Error).name !== "AbortError") toast.error("No se pudieron cargar las suscripciones"); })
-      .finally(() => { if (!ac.signal.aborted) setLoading(false); });
+      .catch((e) => {
+        if ((e as Error).name !== "AbortError") setError("No se pudieron cargar las suscripciones.");
+      })
+      .finally(() => {
+        if (!ac.signal.aborted) setLoading(false);
+      });
     return () => ac.abort();
-  }, []);
+  }, [recarga]);
 
-  const handleAction = async (id: string, action: "pausar" | "reanudar" | "cancelar") => {
+  const handleAction = async (s: Subscription, action: Accion) => {
+    if (action === "cancelar") {
+      const ok = await confirm({
+        title: `¿Cancelar la suscripción de ${s.customerName}?`,
+        description: "Ya no se le cobrará ni se le enviará la canasta. Para volver tendría que contratar de nuevo.",
+        intent: "danger",
+        confirmLabel: "Sí, cancelar",
+      });
+      if (!ok) return;
+    }
     const newStatus = ACTION_TO_STATUS[action];
     const prev = subs;
-    setSubs((cur) => cur.map((s) => (s.id === id ? { ...s, status: newStatus } : s)));
-
+    setSubs((cur) => cur.map((x) => (x.id === s.id ? { ...x, status: newStatus } : x)));
     try {
-      const res = await fetch(`/api/admin/subscriptions/${id}`, {
+      const res = await fetch(`/api/admin/subscriptions/${s.id}`, {
         method: "PATCH",
         credentials: "include",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
@@ -339,84 +113,156 @@ export default function SubscriptionsModule() {
         const body = await leerJson<{ message?: string; error?: string }>(res);
         throw new Error(body?.message ?? body?.error ?? `HTTP ${res.status}`);
       }
-      toast.success(
-        action === "pausar" ? "Suscripción pausada" : action === "reanudar" ? "Suscripción reanudada" : "Suscripción cancelada",
-      );
+      toast.success(action === "pausar" ? "Suscripción pausada" : action === "reanudar" ? "Suscripción reanudada" : "Suscripción cancelada");
     } catch (err) {
       setSubs(prev);
       toast.error(err instanceof Error ? err.message : "No se pudo actualizar la suscripción");
     }
   };
 
-  if (loading) return <LoadingState />;
-
-  // KPIs
-  const activas = subs.filter((s) => s.status === "active");
-  const pausadas = subs.filter((s) => s.status === "paused");
-  const canceladas = subs.filter((s) => s.status === "cancelled");
-  const nuevosEsteMes = subs.filter((s) => {
-    const start = new Date(s.startDate);
+  const porEstado = useMemo(
+    () => ({
+      active: subs.filter((s) => s.status === "active"),
+      paused: subs.filter((s) => s.status === "paused"),
+      cancelled: subs.filter((s) => s.status === "cancelled"),
+    }),
+    [subs],
+  );
+  const nuevosEsteMes = useMemo(() => {
     const now = new Date();
-    return start.getMonth() === now.getMonth() && start.getFullYear() === now.getFullYear();
-  }).length;
+    return subs.filter((s) => {
+      const d = new Date(s.startDate);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+  }, [subs]);
+  const activas = stats?.active ?? porEstado.active.length;
+  const mrr = stats?.mrrEstimated ?? 0;
 
-  const filteredByTab =
-    tab === "activas"
-      ? activas
-      : tab === "pausadas"
-        ? pausadas
-        : tab === "canceladas"
-          ? canceladas
-          : [];
+  const kpis = useKpisPlegables({
+    claveMemoria: "bodega-al-mes",
+    alto: "md",
+    compactoEnMovil: true,
+    sinDatosAun: loading,
+    resumen: `${activas} activas`,
+    tarjetas: tarjetasDe([
+      { rotulo: "Suscripciones activas", valor: String(activas), detalle: "Vigentes hoy" },
+      { rotulo: "Ingreso mensual estimado", valor: fmt(mrr), detalle: "Lo que entra cada mes si nadie se va" },
+      { rotulo: "Nuevas este mes", valor: String(nuevosEsteMes), detalle: "Altas del mes en curso" },
+    ]),
+  });
+
+  const secciones = TAB_IDS.map((clave) => ({
+    clave,
+    rotulo: clave === "activas" ? "Activas" : clave === "pausadas" ? "Pausadas" : "Canceladas",
+    cuenta: porEstado[DE_SECCION[clave]].length,
+  }));
+
+  const delTab = porEstado[DE_SECCION[seccion]];
+  const filtradas = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return delTab.filter((s) => {
+      if (freq !== "all" && s.frequency !== freq) return false;
+      if (!q) return true;
+      return [s.customerName, s.customerPhone, s.productName, s.id].some((x) => x.toLowerCase().includes(q));
+    });
+  }, [delTab, search, freq]);
+
+  const exportar = () =>
+    descargarCsv(
+      "suscripciones",
+      ["ID", "Cliente", "Teléfono", "Producto", "Frecuencia", "Estado", "Inicio", "Próximo cobro", "Monto mensual"],
+      filtradas.map((r) => [r.id, r.customerName, r.customerPhone, r.productName, FREQUENCY_LABELS[r.frequency], STATUS_LABELS[r.status], r.startDate, r.nextBilling, Number(r.monthlyAmount).toFixed(2)]),
+    );
+
+  const menu: MenuAccion[] = [
+    { id: "csv", label: "Descargar CSV", hint: `${filtradas.length} suscripciones, con los filtros de ahora`, icon: Download, onSelect: exportar, disabled: filtradas.length === 0 },
+    { id: "recargar", label: "Actualizar", icon: RefreshCw, onSelect: () => setRecarga((n) => n + 1) },
+  ];
+
+  const cabecera = (
+    <CabeceraVista
+      titulo="Bodega al Mes"
+      ayuda={{
+        title: "Bodega al Mes",
+        what: "Los clientes que reciben una canasta que se repite: cada cuánto, de qué producto y cuánto pagan.",
+        affects: "Pausar o cancelar corta los próximos cobros de esa persona.",
+        example: "Rosa tiene la canasta básica cada 15 días; la pausas dos semanas y vuelve sola al reanudar.",
+      }}
+      secciones={<BarraDeSecciones secciones={secciones} activa={seccion} onCambiar={irA} etiqueta="Secciones de Bodega al Mes" idPanel={ID_PANEL} />}
+      indicadores={kpis.boton}
+      menu={menu}
+      tituloMenu="Descargar CSV y actualizar"
+    />
+  );
+
+  if (loading) return <LoadingState />;
+  if (error) {
+    return (
+      <div role="alert" className="flex flex-col items-center gap-2 rounded-xl border border-[var(--rule-base)] py-10 text-center">
+        <p className="text-sm text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]">{error}</p>
+        <button type="button" onClick={() => setRecarga((n) => n + 1)} className="min-h-12 rounded-xl px-4 text-sm font-semibold text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]">
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="Bodega al Mes"
-        description="Suscripciones recurrentes de canastas mensuales"
-        icon={Repeat}
-      />
+      {cabecera}
+      {kpis.panel}
+      <div role="tabpanel" id={ID_PANEL} aria-labelledby={idPestanaDeSeccion(ID_PANEL, seccion)} className="space-y-3">
+        <FilaFiltros valor={search} onCambio={setSearch} placeholder="Buscar cliente, teléfono o producto" etiqueta="Buscar suscripciones">
+          <select value={freq} onChange={(e) => setFreq(e.target.value as SubFrequency | "all")} aria-label="Filtrar por frecuencia" className={CLASE_SELECT}>
+            <option value="all">Todas las frecuencias</option>
+            {(Object.keys(FREQUENCY_LABELS) as SubFrequency[]).map((f) => (
+              <option key={f} value={f}>{FREQUENCY_LABELS[f]}</option>
+            ))}
+          </select>
+        </FilaFiltros>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          label="Suscripciones activas"
-          value={stats?.active ?? activas.length}
-          icon={Users}
-          subValue="Vigentes hoy"
-        />
-        <StatCard
-          label="MRR estimado"
-          value={fmt(stats?.mrrEstimated ?? 0)}
-          icon={DollarSign}
-          emphasis="success"
-          subValue="Ingreso recurrente mensual"
-        />
-        <StatCard
-          label="Nuevas este mes"
-          value={nuevosEsteMes}
-          icon={TrendingUp}
-          subValue="Altas del periodo actual"
-        />
-        <StatCard
-          label="Pausadas / canceladas"
-          value={(stats?.paused ?? pausadas.length) + (stats?.cancelled ?? canceladas.length)}
-          icon={Calendar}
-          emphasis="warning"
-          subValue="Requieren seguimiento"
-        />
+        {filtradas.length === 0 ? (
+          <Vacio>{subs.length === 0 ? "Aún no hay suscripciones: aparecerán cuando un cliente contrate Bodega al Mes." : "Ninguna suscripción coincide con los filtros."}</Vacio>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+            <div className="overflow-x-auto">
+              <DataTable className={CLASE_TABLA}>
+                <thead className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+                  <tr>
+                    <th className={TH}>Cliente</th>
+                    <th className={cn(TH, "hidden sm:table-cell")}>Producto</th>
+                    <th className={cn(TH, "hidden md:table-cell")}>Frecuencia</th>
+                    <th className={cn(TH, "text-right")}>Monto al mes</th>
+                    <th className={cn(TH, "hidden md:table-cell")}>Próximo cobro</th>
+                    <th className={cn(TH, "text-center")}>Estado</th>
+                    <th className={cn(TH, "text-right")}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--rule-soft)]">
+                  {filtradas.map((s) => (
+                    <tr key={s.id} className="transition-colors hover:bg-[var(--surface-sunken)]">
+                      <td className="px-4 py-3">
+                        <p className="font-bold text-[var(--text-primary)]">{s.customerName}</p>
+                        <p className="text-sm text-[var(--text-secondary)]">{s.customerPhone}</p>
+                      </td>
+                      <td className="hidden px-4 py-3 text-[var(--text-primary)] sm:table-cell">{s.productName}</td>
+                      <td className="hidden px-4 py-3 text-[var(--text-secondary)] md:table-cell">{FREQUENCY_LABELS[s.frequency]}</td>
+                      <td className="px-4 py-3 text-right font-semibold tabular-nums text-[var(--text-primary)]">{fmt(s.monthlyAmount)}</td>
+                      <td className="hidden px-4 py-3 text-[var(--text-secondary)] md:table-cell">{s.status === "cancelled" ? "—" : fmtDate(s.nextBilling)}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={cn("inline-flex rounded-full px-2.5 py-1 text-sm font-bold", STATUS_STYLES[s.status])}>{STATUS_LABELS[s.status]}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <FilaAcciones s={s} onAction={handleAction} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </DataTable>
+            </div>
+          </div>
+        )}
       </div>
-
-      <AdminTabBar
-        tabs={TABS}
-        activeTab={tab}
-        onTabChange={(id) => setTab(id)}
-        moduleId={MODULE_ID}
-      >
-        {tab === "activas" && <SubscriptionList subs={filteredByTab} onAction={handleAction} />}
-        {tab === "pausadas" && <SubscriptionList subs={filteredByTab} onAction={handleAction} />}
-        {tab === "canceladas" && <SubscriptionList subs={filteredByTab} onAction={handleAction} />}
-      </AdminTabBar>
     </div>
   );
 }

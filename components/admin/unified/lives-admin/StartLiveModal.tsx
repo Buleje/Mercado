@@ -31,10 +31,12 @@ interface CheckItem {
 interface Props {
   onClose: () => void;
   onStart: () => void;
+  /** Título de la transmisión que se va a empezar (si ya está programada). */
+  titulo?: string;
 }
 
-export function StartLiveModal({ onClose, onStart }: Props) {
-  const [title, setTitle] = useState("");
+export function StartLiveModal({ onClose, onStart, titulo = "" }: Props) {
+  const [title, setTitle] = useState(titulo);
   const [checks, setChecks] = useState<CheckItem[]>([
     {
       id: "camera",
@@ -94,20 +96,20 @@ export function StartLiveModal({ onClose, onStart }: Props) {
     >
       <div className="space-y-4 px-5 py-5 sm:px-6">
         {/* Título */}
-        <Field label="Título de la transmisión *" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+        <Field label="Título de la transmisión *" labelClassName="text-sm font-bold text-[var(--text-secondary)]">
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Ej: Ofertas del día"
-            className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             autoFocus
           />
         </Field>
 
         {/* Checklist */}
         <div className="space-y-2">
-          <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Checklist pre-transmisión</p>
+          <p className="text-sm font-bold text-[var(--text-secondary)]">Checklist pre-transmisión</p>
           <div className="space-y-2">
             {checks.map((c) => (
               <button
@@ -130,10 +132,10 @@ export function StartLiveModal({ onClose, onStart }: Props) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-[var(--text-primary)] text-sm">{c.label}</p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">{c.description}</p>
+                  <p className="text-sm text-[var(--text-secondary)] mt-0.5">{c.description}</p>
                 </div>
                 <span className={cn(
-                  "text-xs font-bold shrink-0",
+                  "text-sm font-bold shrink-0",
                   c.status === "ok" ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]"
                 )}>
                   {c.status === "ok" ? "Listo" : "Verificar"}
@@ -145,7 +147,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
 
         {/* Warning */}
         {!allChecksOk && (
-          <div className="flex items-start gap-2 p-3 bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl text-xs text-[var(--data-warning-500)]">
+          <div className="flex items-start gap-2 p-3 bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl text-sm text-[var(--data-warning-500)]">
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
             <p>Marca cada item del checklist cuando esté listo antes de iniciar la transmisión.</p>
           </div>
@@ -155,7 +157,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
         <div className="flex gap-3 pt-2">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
+            className="flex-1 min-h-12 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
           >
             Cancelar
           </button>
@@ -163,7 +165,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
             onClick={handleStart}
             disabled={!canStart}
             className={cn(
-              "flex-1 inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-semibold text-white transition-colors",
+              "flex-1 inline-flex items-center justify-center gap-2 min-h-12 rounded-xl text-sm font-semibold text-white transition-colors",
               canStart ? "bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]" : "bg-gray-300 cursor-not-allowed"
             )}
           >

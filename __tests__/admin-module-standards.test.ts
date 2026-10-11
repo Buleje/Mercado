@@ -36,6 +36,10 @@ const NO_TABS_MODULES = [
   // GiftCards y Lives son single-view — no tienen sub-tabs, no necesitan AdminTabBar
   "GiftCardsAdminModule.tsx",
   "LivesAdminModule.tsx",
+  // Crecimiento › Socio Buleje y Bodega al Mes (2026-10-11): las secciones van en
+  // `BarraDeSecciones` (`?sub=`) y la cabecera en `CabeceraVista`; sin AdminTabBar.
+  "SocioMembersAdminModule.tsx",
+  "SubscriptionsModule.tsx",
   // Brandon 2026-05-17: drive de archivos (DocumentosModule) y funnel de leads
   // dashboard (LeadsFunnelModule) son single-view sin sub-tabs internos.
   // Añadidos en commits posteriores al estándar — opt-out documentado.
@@ -77,6 +81,13 @@ const NESTED_SIN_TITULO = [
 ];
 // Módulos con header custom (no usan AdminModuleHeader, patrón legítimo documentado)
 const CUSTOM_HEADER_MODULES = [
+  // Crecimiento › Tarjetas de regalo, Socio Buleje, Bodega al Mes y En Vivo
+  // (2026-10-11): una sola fila con `CabeceraVista` (SectionTitle + ⓘ + secciones +
+  // Indicadores + acción + «⋯»), como Turnos y Cotizaciones; sin AdminModuleHeader.
+  "GiftCardsAdminModule.tsx",
+  "LivesAdminModule.tsx",
+  "SocioMembersAdminModule.tsx",
+  "SubscriptionsModule.tsx",
   // FinanzasModule usa PageTitle + AdminTabBar como estructura alternativa (ADR-074 Phase 3)
   "FinanzasModule.tsx",
   // POSCajaModule usa layout custom con CardTitle + AdminTabBar — es el modulo
@@ -241,10 +252,7 @@ const TAB_ROUTER = "app/admin/_components/TabRouter.tsx";
 
 type ReglaPestana = "identidad" | "sinApilar" | "moduleId";
 
-const DEUDA_TABROUTER: Record<string, ReglaPestana[]> = {
-  // Dibuja AdminTabBar (con título) pero no tiene MODULE_ID: su pestaña no se recuerda.
-  "components/admin/RecetasModule.tsx": ["moduleId"],
-};
+const DEUDA_TABROUTER: Record<string, ReglaPestana[]> = {};
 
 const leerRepo = (rel: string) => fs.readFileSync(path.join(RAIZ_REPO, rel), "utf-8");
 

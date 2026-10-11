@@ -116,12 +116,12 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
         {/* Header */}
         <div className="sticky top-0 bg-[var(--surface-raised)] z-10 flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white flex items-center justify-center font-bold">
+            <div className="h-12 w-10 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white flex items-center justify-center font-bold">
               {member.name.charAt(0).toUpperCase()}
             </div>
             <div>
               <CardTitle id={tituloId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">{member.name}</CardTitle>
-              <p className="text-xs text-[var(--text-secondary)]">Socio Buleje · {PLAN_LABELS[member.plan]}</p>
+              <p className="text-sm text-[var(--text-secondary)]">Socio Buleje · {PLAN_LABELS[member.plan]}</p>
             </div>
           </div>
           <button aria-label="Cerrar"
@@ -136,21 +136,21 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
         <div className="p-5 space-y-4">
           <div className="flex items-center justify-between p-3 bg-[var(--surface-sunken)] rounded-xl">
             <span className="text-sm font-semibold text-[var(--text-secondary)]">Estado</span>
-            <span className={cn("inline-flex px-3 py-1 rounded-full text-xs font-bold", STATUS_STYLES[member.status])}>
+            <span className={cn("inline-flex px-3 py-1 rounded-full text-sm font-bold", STATUS_STYLES[member.status])}>
               {STATUS_LABELS[member.status]}
             </span>
           </div>
 
           {/* Contacto */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Contacto</p>
+            <p className="text-sm font-bold text-[var(--text-secondary)]">Contacto</p>
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 space-y-1.5">
               <div className="flex items-center gap-2 text-sm">
                 <User className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <span className="font-semibold text-[var(--text-primary)]">{member.phone}</span>
               </div>
               {member.email && (
-                <p className="text-xs text-[var(--text-secondary)] ml-6">{member.email}</p>
+                <p className="text-sm text-[var(--text-secondary)] ml-6">{member.email}</p>
               )}
             </div>
           </div>
@@ -160,28 +160,28 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Wallet className="h-4 w-4 text-primary" />
-                <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Cashback</p>
+                <p className="text-sm font-bold text-[var(--text-secondary)]">Cashback</p>
               </div>
               <p className="text-xl font-extrabold text-primary">{fmt(member.totalCashback)}</p>
             </div>
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
                 <ShoppingBag className="h-4 w-4 text-[var(--data-info-500)]" />
-                <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Gastado</p>
+                <p className="text-sm font-bold text-[var(--text-secondary)]">Gastado</p>
               </div>
               <p className="text-xl font-extrabold text-[var(--text-primary)]">{fmt(member.totalSpent)}</p>
             </div>
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Award className="h-4 w-4 text-[var(--data-warning-500)]" />
-                <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Ofertas usadas</p>
+                <p className="text-sm font-bold text-[var(--text-secondary)]">Ofertas usadas</p>
               </div>
               <p className="text-xl font-extrabold text-[var(--text-primary)]">{member.offersUsed}</p>
             </div>
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
                 <ShoppingBag className="h-4 w-4 text-[var(--data-info-500)]" />
-                <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Pedidos</p>
+                <p className="text-sm font-bold text-[var(--text-secondary)]">Pedidos</p>
               </div>
               <p className="text-xl font-extrabold text-[var(--text-primary)]">{member.ordersCount}</p>
             </div>
@@ -189,29 +189,29 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
 
           {/* Suscripción */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Suscripción</p>
+            <p className="text-sm font-bold text-[var(--text-secondary)]">Suscripción</p>
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl divide-y divide-[var(--rule-soft)]">
               <div className="flex items-center justify-between px-3 py-2.5">
-                <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5">
+                <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
                   Inicio
                 </span>
                 <span className="text-sm font-semibold text-[var(--text-primary)]">{fmtDate(member.startDate)}</span>
               </div>
               <div className="flex items-center justify-between px-3 py-2.5">
-                <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5">
+                <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
                   Próxima renovación
                 </span>
                 <span className="text-sm font-semibold text-[var(--text-primary)]">{fmtDate(member.renewsAt)}</span>
               </div>
               <div className="flex items-center justify-between px-3 py-2.5">
-                <span className="text-xs text-[var(--text-secondary)]">Cuota mensual</span>
+                <span className="text-sm text-[var(--text-secondary)]">Cuota mensual</span>
                 <span className="text-sm font-semibold text-[var(--text-primary)]">{fmt(member.monthlyFee)}</span>
               </div>
               {member.lastOrder && (
                 <div className="flex items-center justify-between px-3 py-2.5">
-                  <span className="text-xs text-[var(--text-secondary)]">Último pedido</span>
+                  <span className="text-sm text-[var(--text-secondary)]">Último pedido</span>
                   <span className="text-sm font-semibold text-[var(--text-primary)]">{fmtDate(member.lastOrder)}</span>
                 </div>
               )}
@@ -221,11 +221,11 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
           {/* Extend form */}
           {extending && (
             <div className="space-y-2 p-3 bg-[var(--data-success-50)] border border-[var(--data-success-500)] rounded-xl">
-              <Field label="Extender membresía gratis" labelClassName="text-xs font-bold text-[var(--text-primary)]">
+              <Field label="Extender membresía gratis" labelClassName="text-sm font-bold text-[var(--text-primary)]">
               <select
                 value={months}
                 onChange={(e) => setMonths(parseInt(e.target.value))}
-                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm"
+                className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] text-sm"
               >
                 <option value={1}>1 mes adicional</option>
                 <option value={3}>3 meses adicionales</option>
@@ -236,13 +236,13 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
               <div className="flex gap-2">
                 <button
                   onClick={() => setExtending(false)}
-                  className="flex-1 py-2 rounded-xl text-xs font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)]"
+                  className="flex-1 min-h-12 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)]"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleExtend}
-                  className="flex-1 py-2 rounded-xl text-xs font-semibold text-white bg-[var(--accent-dark)] hover:brightness-110"
+                  className="flex-1 min-h-12 rounded-xl text-sm font-semibold text-white bg-[var(--accent-dark)] hover:brightness-110"
                 >
                   Confirmar
                 </button>
@@ -253,30 +253,30 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
           {/* Cancel form */}
           {cancelling && (
             <div className="space-y-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl">
-              <div className="flex items-start gap-2 text-xs text-[var(--data-error-500)]">
+              <div className="flex items-start gap-2 text-sm text-[var(--data-error-500)]">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <p>La cancelación es definitiva. El cliente pierde acceso a precios Socio inmediatamente.</p>
               </div>
-              <Field label="Motivo de cancelación" labelClassName="text-xs font-bold text-[var(--text-primary)]">
+              <Field label="Motivo de cancelación" labelClassName="text-sm font-bold text-[var(--text-primary)]">
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={2}
                 placeholder="Ej: Solicitud del cliente, impago..."
-                className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm resize-none"
+                className="w-full px-3 min-h-12 rounded-xl border border-[var(--rule-base)] text-sm resize-none"
               />
               </Field>
               <div className="flex gap-2">
                 <button
                   onClick={() => setCancelling(false)}
-                  className="flex-1 py-2 rounded-xl text-xs font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)]"
+                  className="flex-1 min-h-12 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)]"
                 >
                   Volver
                 </button>
                 <button
                   onClick={handleCancel}
                   disabled={!reason.trim()}
-                  className="flex-1 py-2 rounded-xl text-xs font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50"
+                  className="flex-1 min-h-12 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50"
                 >
                   Confirmar cancelación
                 </button>
@@ -289,14 +289,14 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
             <div className="space-y-2 pt-2">
               <button
                 onClick={() => setExtending(true)}
-                className="w-full inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-semibold text-[var(--data-success-500)] bg-[var(--data-success-50)] hover:bg-[var(--data-success-100)] transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 min-h-12 rounded-xl text-sm font-semibold text-[var(--data-success-500)] bg-[var(--data-success-50)] hover:bg-[var(--data-success-100)] transition-colors"
               >
                 <Gift className="h-4 w-4" />
                 Extender membresía gratis
               </button>
               <button
                 onClick={() => setCancelling(true)}
-                className="w-full min-h-11 rounded-xl text-sm font-semibold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
+                className="w-full min-h-12 rounded-xl text-sm font-semibold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
               >
                 Cancelar membresía
               </button>

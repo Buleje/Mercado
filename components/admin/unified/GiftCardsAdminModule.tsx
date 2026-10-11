@@ -1,216 +1,33 @@
 "use client";
 
 /**
- * GiftCardsAdminModule — Gestión admin de gift cards.
+ * GiftCardsAdminModule — Tarjetas de regalo (admin).
  *
- * Bridge ENRICH-5 para las gift cards que los clientes compran desde
- * marketplace. Admin puede validar códigos, cancelar con reembolso,
- * extender vencimientos y emitir cards manuales por compensación.
+ * Las que los clientes compran desde el marketplace: validar códigos, cancelar
+ * con reembolso, extender el vencimiento y emitir tarjetas manuales por
+ * compensación. Patrón del panel: cabecera en una fila (título · Indicadores
+ * plegables · «Emitir tarjeta» · «⋯»), filtros en una fila y, por tarjeta,
+ * «Ver» a la vista y «Cancelar y reembolsar» en el «⋯».
  */
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { toast } from "sonner";
+import { DataTable } from "@buleje/design-system";
+import { Download, Plus, RefreshCw } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { cn } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import {
-  Gift,
-  DollarSign,
-  CheckCircle,
-  Wallet,
-  Download,
-  Plus,
-  Search,
-  Eye,
-  Calendar,
-  Trash2,
-} from "@buleje/design-system/icons";
-import { DataTable, StatCard } from "@buleje/design-system";
-import { cn } from "@/lib/utils";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import {
-  GiftCardDetailsModal,
-  type GiftCardDetails,
-} from "./gift-cards-admin/GiftCardDetailsModal";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { CabeceraVista, CLASE_SELECT, CLASE_TABLA, descargarCsv, FilaFiltros, tarjetasDe, TH, Vacio } from "@/components/admin/campanas/comun";
+import { GiftCardDetailsModal, type GiftCardDetails } from "./gift-cards-admin/GiftCardDetailsModal";
 import { CreateManualGiftCardModal } from "./gift-cards-admin/CreateManualGiftCardModal";
-import { formatDate, formatNumber } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
+import { type AdminStats, type ApiGiftCard, toGiftCardDetails } from "./gift-cards-admin/tipos";
+import { FilaTarjeta, fmt, STATUS_LABELS } from "./gift-cards-admin/FilaTarjeta";
 
-// ADR-077: cargar data real desde el backend.
-type AdminStats = {
-  vendidas30d: number;
-  ingreso30d: number;
-  canjeadas30d: number;
-  saldoPendiente: number;
-  totalActivas: number;
-  totalCanceladas: number;
-};
-
-type ApiGiftCard = {
-  id: string;
-  code: string; // masked "****-****-****-XXXX"
-  amount: number;
-  balance: number;
-  recipientName: string;
-  recipientContact?: string;
-  senderName?: string;
-  message?: string;
-  status: "activa" | "canjeada" | "expirada";
-  createdAt: string;
-  expiresAt?: string | null;
-  redeemedAt?: string | null;
-};
-
-function toGiftCardDetails(card: ApiGiftCard): GiftCardDetails {
-  const statusMap: Record<string, GiftCardDetails["status"]> = {
-    activa: "pendiente",
-    canjeada: "canjeada",
-    expirada: "expirada",
-  };
-  return {
-    id: card.id,
-    code: card.code,
-    amount: card.amount,
-    balance: card.balance,
-    recipientName: card.recipientName,
-    recipientPhone: card.recipientContact,
-    senderName: card.senderName ?? "",
-    message: card.message ?? "",
-    status: statusMap[card.status] ?? "pendiente",
-    createdAt: card.createdAt,
-    expiresAt: card.expiresAt ?? "",
-    redeemedAt: card.redeemedAt ?? undefined,
-  };
-}
-
-// ── Mock data ───────────────────────────────────────────────────────────────
-
-const MOCK_CARDS: GiftCardDetails[] = [
-  {
-    id: "GC-001",
-    code: "GIFT-ABCD1234",
-    amount: 100,
-    balance: 100,
-    recipientName: "Ana Torres",
-    recipientPhone: "987654321",
-    senderName: "Juan Pérez",
-    message: "Feliz cumpleaños, que disfrutes!",
-    status: "pendiente",
-    createdAt: "2026-04-10",
-    expiresAt: "2027-04-10",
-  },
-  {
-    id: "GC-002",
-    code: "GIFT-XYZ5678Q",
-    amount: 50,
-    balance: 0,
-    recipientName: "Carlos Mendoza",
-    recipientPhone: "912345678",
-    senderName: "María López",
-    message: "",
-    status: "canjeada",
-    createdAt: "2026-03-15",
-    expiresAt: "2027-03-15",
-    redeemedAt: "2026-04-02",
-    redeemedBy: "Pedido #ORD-5812",
-  },
-  {
-    id: "GC-003",
-    code: "GIFT-PQRS9012",
-    amount: 200,
-    balance: 200,
-    recipientName: "Rosa Quispe",
-    senderName: "Empresa XYZ",
-    message: "Por tu colaboración este año.",
-    status: "pendiente",
-    createdAt: "2026-04-01",
-    expiresAt: "2026-12-31",
-  },
-  {
-    id: "GC-004",
-    code: "GIFT-TUVW3456",
-    amount: 75,
-    balance: 75,
-    recipientName: "Luis Ramos",
-    message: "",
-    status: "expirada",
-    createdAt: "2024-10-01",
-    expiresAt: "2025-10-01",
-  },
-  {
-    id: "GC-005",
-    code: "GIFT-HJKL7890",
-    amount: 150,
-    balance: 50,
-    recipientName: "Sofía Mendez",
-    recipientPhone: "998877665",
-    senderName: "Cortesía bodega",
-    message: "Compensación por demora en pedido",
-    status: "canjeada",
-    createdAt: "2026-04-05",
-    expiresAt: "2027-04-05",
-    redeemedAt: "2026-04-12",
-    redeemedBy: "Pedido #ORD-5901",
-  },
-];
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function fmt(n: number) {
-  return `S/ ${formatNumber(n, 2)}`;
-}
-
-function fmtDate(iso: string) {
-  try {
-    return formatDate(iso);
-  } catch {
-    return iso;
-  }
-}
-
-function maskCode(code: string) {
-  if (code.length < 8) return code;
-  const prefix = code.substring(0, 5);
-  const suffix = code.substring(code.length - 4);
-  return `${prefix}•••••${suffix}`;
-}
-
-function exportCSV(rows: GiftCardDetails[]) {
-  const headers = ["ID", "Codigo", "Monto", "Saldo", "Destinatario", "Estado", "Emitida", "Vence", "Canjeada"];
-  const csvRows = rows.map((r) => [
-    r.id,
-    r.code,
-    Number(r.amount).toFixed(2),
-    Number(r.balance).toFixed(2),
-    r.recipientName,
-    r.status,
-    r.createdAt,
-    r.expiresAt,
-    r.redeemedAt ?? "",
-  ]);
-  const csv = [headers, ...csvRows].map((r) => r.join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `gift_cards_${Date.now()}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// ── Styles ──────────────────────────────────────────────────────────────────
-
-const STATUS_LABELS: Record<GiftCardDetails["status"], string> = {
-  pendiente: "Pendiente",
-  canjeada: "Canjeada",
-  expirada: "Expirada",
-  cancelada: "Cancelada",
-};
-
-const STATUS_STYLES: Record<GiftCardDetails["status"], string> = {
-  pendiente: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
-  canjeada: "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
-  expirada: "bg-[var(--rule-soft)] text-[var(--text-secondary)]",
-  cancelada: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
-};
 
 // ── Main Component ──────────────────────────────────────────────────────────
 
@@ -219,6 +36,7 @@ export default function GiftCardsAdminModule() {
   const [cards, setCards] = useState<GiftCardDetails[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<GiftCardDetails["status"] | "all">("all");
   const [selected, setSelected] = useState<GiftCardDetails | null>(null);
@@ -227,6 +45,7 @@ export default function GiftCardsAdminModule() {
 
   const refetch = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [listRes, statsRes] = await Promise.all([
         fetch("/api/admin/gift-cards", { cache: "no-store" }),
@@ -236,8 +55,8 @@ export default function GiftCardsAdminModule() {
         const data = (await listRes.json()) as { cards: ApiGiftCard[] };
         setCards(data.cards.map(toGiftCardDetails));
       } else {
-        // Dev fallback: si no hay auth admin, dejamos el array vacio
         setCards([]);
+        setError("No se pudieron cargar las tarjetas.");
       }
       if (statsRes.ok) {
         const data = (await statsRes.json()) as { stats: AdminStats };
@@ -245,6 +64,7 @@ export default function GiftCardsAdminModule() {
       }
     } catch {
       setCards([]);
+      setError("No se pudieron cargar las tarjetas.");
     } finally {
       setLoading(false);
     }
@@ -254,33 +74,34 @@ export default function GiftCardsAdminModule() {
     void refetch();
   }, [refetch]);
 
-  // Suprimir referencias no usadas al mock (se deja para referencia rápida en dev).
-  void MOCK_CARDS;
-
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return cards.filter((c) => {
       if (statusFilter !== "all" && c.status !== statusFilter) return false;
-      if (!search.trim()) return true;
-      const q = search.toLowerCase();
-      return (
-        c.recipientName.toLowerCase().includes(q) ||
-        c.code.toLowerCase().includes(q) ||
-        c.id.toLowerCase().includes(q)
-      );
+      if (!q) return true;
+      return c.recipientName.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
     });
   }, [cards, search, statusFilter]);
 
-  // KPIs: prioriza stats reales del backend; fallback calculo local sobre las
-  // cards cargadas si stats aun no esta disponible.
-  const vendidasEsteMes = stats?.vendidas30d ?? cards.length;
-  const canjeadasEsteMes = stats?.canjeadas30d ?? cards.filter((c) => c.redeemedAt).length;
-  const ingresoEsteMes =
-    stats?.ingreso30d ?? cards.reduce((sum, c) => sum + c.amount, 0);
-  const saldoPendiente =
-    stats?.saldoPendiente ??
-    cards
-      .filter((c) => c.status === "pendiente")
-      .reduce((sum, c) => sum + c.balance, 0);
+  // Cifras: las del backend; el cálculo local sólo cubre los segundos hasta que lleguen.
+  const vendidas = stats?.vendidas30d ?? cards.length;
+  const canjeadas = stats?.canjeadas30d ?? cards.filter((c) => c.redeemedAt).length;
+  const ingreso = stats?.ingreso30d ?? cards.reduce((sum, c) => sum + c.amount, 0);
+  const saldoPendiente = stats?.saldoPendiente ?? cards.filter((c) => c.status === "pendiente").reduce((sum, c) => sum + c.balance, 0);
+
+  const kpis = useKpisPlegables({
+    claveMemoria: "tarjetas-de-regalo",
+    alto: "md",
+    compactoEnMovil: true,
+    sinDatosAun: loading && !stats,
+    resumen: `S/ ${formatNumber(saldoPendiente, 0)} por canjear`,
+    tarjetas: tarjetasDe([
+      { rotulo: "Vendidas (30 días)", valor: String(vendidas), detalle: "Tarjetas emitidas" },
+      { rotulo: "Ingreso (30 días)", valor: fmt(ingreso), detalle: "Monto vendido" },
+      { rotulo: "Canjeadas (30 días)", valor: String(canjeadas), detalle: "Tarjetas usadas en una compra" },
+      { rotulo: "Saldo por canjear", valor: fmt(saldoPendiente), detalle: "Lo que aún pueden gastar", tono: saldoPendiente > 2000 ? "aviso" : undefined },
+    ]),
+  });
 
   const handleCancel = async (id: string) => {
     const reason = await prompt({
@@ -290,22 +111,19 @@ export default function GiftCardsAdminModule() {
       inputType: "text",
     });
     if (!reason || reason.trim().length < 3) return;
-
     try {
       const res = await fetch(`/api/admin/gift-cards/${id}/cancel`, {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ reason: reason.trim() }),
       });
-      if (res.ok) {
-        setCards((prev) =>
-          prev.map((c) => (c.id === id ? { ...c, status: "cancelada", balance: 0 } : c)),
-        );
-        setSelected(null);
-        void refetch();
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setCards((prev) => prev.map((c) => (c.id === id ? { ...c, status: "cancelada", balance: 0 } : c)));
+      setSelected(null);
+      toast.success("Tarjeta cancelada");
+      void refetch();
     } catch {
-      /* noop */
+      toast.error("No se pudo cancelar la tarjeta. Revisa y vuelve a intentar.");
     }
   };
 
@@ -316,15 +134,14 @@ export default function GiftCardsAdminModule() {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ expiresAt: newExpiry }),
       });
-      if (!res.ok) return;
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const iso = new Date(newExpiry).toISOString();
-      setCards((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, expiresAt: iso } : c)),
-      );
+      setCards((prev) => prev.map((c) => (c.id === id ? { ...c, expiresAt: iso } : c)));
       setSelected((s) => (s?.id === id ? { ...s, expiresAt: iso } : s));
+      toast.success("Vencimiento extendido");
       void refetch();
     } catch {
-      /* noop: la UI no cambia si falla la persistencia */
+      toast.error("No se pudo extender el vencimiento.");
     }
   };
 
@@ -349,215 +166,115 @@ export default function GiftCardsAdminModule() {
           reason: data.reason,
         }),
       });
-      if (!res.ok) {
-        throw new Error("No se pudo emitir la gift card");
-      }
-      const payload = (await res.json()) as {
-        plainCode?: string;
-        giftCard?: ApiGiftCard;
-      };
+      if (!res.ok) throw new Error("No se pudo emitir la tarjeta");
+      const payload = (await res.json()) as { plainCode?: string; giftCard?: ApiGiftCard };
       if (payload.plainCode) setIssuedCode(payload.plainCode);
-      if (payload.giftCard) {
-        setCards((prev) => [toGiftCardDetails(payload.giftCard!), ...prev]);
-      }
+      if (payload.giftCard) setCards((prev) => [toGiftCardDetails(payload.giftCard!), ...prev]);
       void refetch();
     } catch {
-      throw new Error("No se pudo emitir la gift card. Intenta nuevamente.");
+      throw new Error("No se pudo emitir la tarjeta. Intenta de nuevo.");
     }
   };
 
+  const exportar = () =>
+    descargarCsv(
+      "tarjetas_de_regalo",
+      ["ID", "Código", "Monto", "Saldo", "Destinatario", "Estado", "Emitida", "Vence", "Canjeada"],
+      filtered.map((r) => [r.id, r.code, Number(r.amount).toFixed(2), Number(r.balance).toFixed(2), r.recipientName, STATUS_LABELS[r.status], r.createdAt, r.expiresAt, r.redeemedAt ?? ""]),
+    );
+
+  const menu: MenuAccion[] = [
+    { id: "csv", label: "Descargar CSV", hint: `${filtered.length} tarjetas, con los filtros de ahora`, icon: Download, onSelect: exportar, disabled: filtered.length === 0 },
+    { id: "recargar", label: "Actualizar", icon: RefreshCw, onSelect: () => void refetch() },
+  ];
+
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="Gift Cards"
-        description="Gestiona tarjetas regalo vendidas y emite cards manuales"
-        icon={Gift}
-      >
-        <button
-          onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-2 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Emitir manual
-        </button>
-      </AdminModuleHeader>
+      <CabeceraVista
+        titulo="Tarjetas de regalo"
+        ayuda={{
+          title: "Tarjetas de regalo",
+          what: "Las tarjetas con saldo que tus clientes compran para regalar, y las que tú emites a mano.",
+          affects: "El saldo por canjear es plata que ya cobraste y todavía te falta entregar en productos.",
+          example: "Emites una de S/ 50 para compensar un pedido tardío; el código se muestra una sola vez.",
+        }}
+        indicadores={kpis.boton}
+        principal={
+          <button type="button" onClick={() => setShowCreate(true)} aria-haspopup="dialog" className={button({ variant: "primary", className: "shrink-0 gap-1.5 rounded-xl px-4 max-sm:w-12 max-sm:px-0" })}>
+            <Plus className="h-4 w-4" aria-hidden />
+            <span className="max-sm:sr-only">Emitir tarjeta</span>
+          </button>
+        }
+        menu={menu}
+        tituloMenu="Descargar CSV y actualizar"
+      />
+      {kpis.panel}
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          label="Vendidas (30d)"
-          value={vendidasEsteMes}
-          icon={Gift}
-          subValue="Tarjetas emitidas"
-        />
-        <StatCard
-          label="Ingreso (30d)"
-          value={fmt(ingresoEsteMes)}
-          icon={DollarSign}
-          emphasis="success"
-          subValue="Monto vendido"
-        />
-        <StatCard
-          label="Canjeadas (30d)"
-          value={canjeadasEsteMes}
-          icon={CheckCircle}
-          subValue="Tarjetas redimidas"
-        />
-        <StatCard
-          label="Saldo pendiente"
-          value={fmt(saldoPendiente)}
-          icon={Wallet}
-          emphasis={saldoPendiente > 2000 ? "error" : "warning"}
-          subValue="Pasivo por canjear"
-        />
-      </div>
-
-      {loading && (
-        <div className="text-xs text-[var(--text-tertiary)]">Cargando datos...</div>
-      )}
-
-      {/* Modal cuando un admin emite gift card manual — muestra el plainCode UNA vez */}
+      {/* El código se muestra UNA vez: el admin lo copia y se lo entrega. */}
       <AdminModal open={!!issuedCode} onClose={() => setIssuedCode(null)} title="Código generado" variant="default" aboveModals>
         <div className="p-5">
-          <p className="text-sm text-[var(--text-secondary)]">
-            Este codigo solo se muestra UNA vez. Copialo y entregalo al destinatario
-            (WhatsApp, email, impreso). No lo podemos recuperar despues.
-          </p>
+          <p className="text-sm text-[var(--text-secondary)]">Este código se muestra una sola vez. Cópialo y entrégalo al destinatario (WhatsApp, correo o impreso): no lo podemos recuperar después.</p>
           {issuedCode && (
             <div className="mt-4 flex items-center justify-between gap-2 rounded-xl bg-[var(--rule-soft)] px-3 py-3">
-              <code className="font-mono text-base font-bold tracking-wider text-[var(--text-primary)]">
-                {issuedCode}
-              </code>
+              <code className="font-mono text-base font-bold tracking-wider text-[var(--text-primary)]">{issuedCode}</code>
               <button
                 type="button"
                 onClick={() => {
-                  // Clipboard best-effort — falla por permisos del browser.
-                  navigator.clipboard.writeText(issuedCode).catch(() => { /* clipboard best-effort */ });
+                  navigator.clipboard.writeText(issuedCode).then(() => toast.success("Código copiado")).catch(() => toast.error("No se pudo copiar: selecciónalo y cópialo a mano"));
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                className="min-h-12 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary-dark"
               >
                 Copiar
               </button>
             </div>
           )}
           <div className="mt-5 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setIssuedCode(null)}
-              className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
-            >
+            <button type="button" onClick={() => setIssuedCode(null)} className="min-h-12 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary/90">
               Listo
             </button>
           </div>
         </div>
       </AdminModal>
 
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input
-            type="search"
-            placeholder="Buscar por destinatario, código o ID..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-          />
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as GiftCardDetails["status"] | "all")}
-          aria-label="Filtrar por estado"
-          className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
-        >
+      <FilaFiltros valor={search} onCambio={setSearch} placeholder="Buscar destinatario o código" etiqueta="Buscar tarjetas">
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as GiftCardDetails["status"] | "all")} aria-label="Filtrar por estado" className={CLASE_SELECT}>
           <option value="all">Todos los estados</option>
           <option value="pendiente">Pendientes</option>
           <option value="canjeada">Canjeadas</option>
           <option value="expirada">Expiradas</option>
           <option value="cancelada">Canceladas</option>
         </select>
-        <button
-          onClick={() => exportCSV(filtered)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
-        >
-          <Download className="h-4 w-4" />
-          CSV
-        </button>
-      </div>
+      </FilaFiltros>
 
-      {/* Tabla */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16 text-[var(--text-tertiary)] bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl">
-          <Gift className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-semibold">Sin gift cards para mostrar</p>
-          <p className="text-xs mt-1">Ajusta los filtros o emite una gift card manual.</p>
+      {loading && cards.length === 0 ? (
+        <p className="text-sm text-[var(--text-secondary)]">Cargando tarjetas…</p>
+      ) : error ? (
+        <div role="alert" className="flex flex-col items-center gap-2 rounded-xl border border-[var(--rule-base)] py-10 text-center">
+          <p className="text-sm text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]">{error}</p>
+          <button type="button" onClick={() => void refetch()} className="min-h-12 rounded-xl px-4 text-sm font-semibold text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]">
+            Reintentar
+          </button>
         </div>
+      ) : filtered.length === 0 ? (
+        <Vacio>{cards.length === 0 ? "Aún no hay tarjetas: aparecerán cuando un cliente compre una o emitas una." : "Ninguna tarjeta coincide con los filtros."}</Vacio>
       ) : (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
+            <DataTable className={CLASE_TABLA}>
+              <thead className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Código</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">Destinatario</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Monto</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Saldo</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Vence</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Acciones</th>
+                  <th className={TH}>Código</th>
+                  <th className={cn(TH, "hidden sm:table-cell")}>Destinatario</th>
+                  <th className={cn(TH, "text-right")}>Monto</th>
+                  <th className={cn(TH, "hidden text-right lg:table-cell")}>Saldo</th>
+                  <th className={cn(TH, "hidden md:table-cell")}>Vence</th>
+                  <th className={cn(TH, "text-center")}>Estado</th>
+                  <th className={cn(TH, "text-right")}>Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
                 {filtered.map((c) => (
-                  <tr key={c.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="font-mono text-xs font-bold text-[var(--text-primary)]">{maskCode(c.code)}</p>
-                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{c.id}</p>
-                    </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <p className="font-semibold text-[var(--text-primary)] text-sm">{c.recipientName}</p>
-                      {c.message && (
-                        <p className="text-xs text-[var(--text-tertiary)] italic truncate max-w-xs">{c.message}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)]">
-                      {fmt(c.amount)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-primary font-bold hidden lg:table-cell">
-                      {fmt(c.balance)}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">
-                      <span className="flex items-center gap-1 text-xs">
-                        <Calendar className="h-3 w-3" />
-                        {fmtDate(c.expiresAt)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold", STATUS_STYLES[c.status])}>
-                        {STATUS_LABELS[c.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => setSelected(c)}
-                          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
-                          title="Ver detalles"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        {c.status === "pendiente" && (
-                          <button
-                            onClick={() => handleCancel(c.id)}
-                            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
-                            title="Cancelar y reembolsar"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                  <FilaTarjeta key={c.id} c={c} onVer={() => setSelected(c)} onCancelar={() => void handleCancel(c.id)} />
                 ))}
               </tbody>
             </DataTable>
@@ -565,21 +282,8 @@ export default function GiftCardsAdminModule() {
         </div>
       )}
 
-      {selected && (
-        <GiftCardDetailsModal
-          card={selected}
-          onClose={() => setSelected(null)}
-          onCancel={handleCancel}
-          onExtend={handleExtend}
-        />
-      )}
-
-      {showCreate && (
-        <CreateManualGiftCardModal
-          onClose={() => setShowCreate(false)}
-          onCreate={handleCreate}
-        />
-      )}
+      {selected && <GiftCardDetailsModal card={selected} onClose={() => setSelected(null)} onCancel={handleCancel} onExtend={handleExtend} />}
+      {showCreate && <CreateManualGiftCardModal onClose={() => setShowCreate(false)} onCreate={handleCreate} />}
     </div>
   );
 }
