@@ -118,6 +118,12 @@ interface AdminModalProps {
    * Tornillo»), o cada fila tendrá su propia ventana recordada.
    */
   claveVentana?: string;
+  /**
+   * El ⓘ del título (un `InfoTip`). Va AL LADO del título, nunca adentro
+   * (guardián `infotip-no-anidado`): las ventanas forestales que pasaron a
+   * `AdminModal` el 2026-10-11 lo traían en su cabecera a mano.
+   */
+  ayuda?: React.ReactNode;
 }
 
 /**
@@ -297,6 +303,7 @@ export default function AdminModal({
   footerBare = false,
   ventana: configVentana,
   claveVentana,
+  ayuda,
 }: AdminModalProps) {
   /* Portal a <body>: sin esto el modal hereda los tokens de la tienda. */
   const panelTokens = usePanelTokens(open);
@@ -458,6 +465,7 @@ export default function AdminModal({
             const primero = [...caja.querySelectorAll<HTMLElement>(ENFOCABLES)].find(
               (el) =>
                 el !== asa &&
+                !el.closest("[data-ayuda-titulo]") &&
                 !el.hasAttribute("data-ventana-asa") &&
                 !el.hasAttribute("data-ventana-control"),
             );
@@ -499,16 +507,21 @@ export default function AdminModal({
                 )}
                 <div className="min-w-0">
                   {title && (
+                    <div className="flex min-w-0 items-center gap-1.5">
                     <Dialog.Title
                       /* Los controles de ventana le quitan ~64 px al título, y
                          con `truncate` eso se come el final de los títulos
                          largos. El tooltip nativo devuelve lo cortado sin
                          sacar ninguna función del header. */
                       title={title}
-                      className="font-display text-base sm:text-lg font-semibold text-[var(--text-primary)] tracking-tight truncate"
+                      className="min-w-0 font-display text-base sm:text-lg font-semibold text-[var(--text-primary)] tracking-tight truncate"
                     >
                       {title}
                     </Dialog.Title>
+                    {/* Fuera del foco inicial (ver `onOpenAutoFocus`): abrir la
+                        ventana no tiene que desplegar su ayuda. */}
+                    {ayuda && <span data-ayuda-titulo="" className="contents">{ayuda}</span>}
+                    </div>
                   )}
                   {description && (
                     <Dialog.Description className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">

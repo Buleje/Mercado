@@ -19,14 +19,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
-import { AlertTriangle, CheckCircle, Download, FileText, Upload, X } from "@buleje/design-system/icons";
-import { SectionTitle } from "@buleje/design-system";
+import { AlertTriangle, CheckCircle, Download, FileText, Upload } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { logger } from "@/lib/logger";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -55,6 +48,9 @@ import CajasPorSeccion, { type ArchivoDeSeccion } from "./serfor-import/CajasPor
 import ReporteDeImport from "./serfor-import/ReporteDeImport";
 import { armarReporte } from "@/lib/forestal/ctp-reporte-import";
 import { formatNumber } from "@/lib/format";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 type ResultadoFila = { fila?: number; codigo: string; accion: string; mensaje: string };
 type Respuesta = {
@@ -109,16 +105,6 @@ function atribuirSiEsSalida(
 }
 
 export default function CtpSerforImportModal({ onClose, onImportado }: { onClose: () => void; onImportado?: () => void }) {
-  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
-     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onClose });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventana = useVentanaDeModal(true, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "ctp-importar-libro",
-  });
   const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
   const [secciones, setSecciones] = useState<SeccionDelLibro[]>([]);
   const [faltantes, setFaltantes] = useState<{ formato: FormatoCtp; labels: string[] }[]>([]);
@@ -390,44 +376,94 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
   };
 
   return (
-    <div
-      className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
-    >
-      <div ref={cajaRef} tabIndex={-1}
-        onKeyDown={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Importar el libro"
-        className="relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-      >
-        <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
-          <div className="flex items-center gap-1.5">
-            <SectionTitle as="h2" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              Importar el libro
-            </SectionTitle>
-            <InfoTip
-              title="Importar el libro"
-              what="El Excel que baja del SNIFFS, o la plantilla."
-              example="Reconozco las cinco secciones por sus columnas — no hace falta elegirlas de una lista ni acertar el orden."
-            />
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Importar el libro"
+      icon={Upload}
+      ayuda={
+        <InfoTip
+          title="Importar el libro"
+          what="El Excel que baja del SNIFFS, o la plantilla."
+          example="Reconozco las cinco secciones por sus columnas — no hace falta elegirlas de una lista ni acertar el orden."
+        />
+      }
+      size="xl"
+      claveVentana="ctp-importar-libro"
+      footer={
+        <ModalFooter>
+          {/* La plantilla vive acá y no en el menú: es lo que se busca cuando
+              uno abre esta pantalla y no tiene el archivo. */}
+          {/* Las dos formas de trabajar: el libro entero en un Excel de cinco
+              hojas, o una sección suelta. Es el MISMO formato —lo escribe la
+              misma función— así que las dos entran por esta misma pantalla. */}
+          <div className="mr-auto flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => void bajarPlantilla(null)}
+              disabled={bajandoPlantilla}
+              className={button({ variant: "secondary" })}
+            >
+              <Download className="h-5 w-5" /> {bajandoPlantilla ? "Generando…" : "Libro completo"}
+            </button>
+            <label className="sr-only" htmlFor="plantilla-seccion">
+              Descargar una sección suelta
+            </label>
+            <select
+              id="plantilla-seccion"
+              value=""
+              disabled={bajandoPlantilla}
+              onChange={(e) => {
+                const v = e.target.value as FormatoLibro | "";
+                if (v) void bajarPlantilla(v);
+                e.target.value = "";
+              }}
+              className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base font-bold text-[var(--text-secondary)] disabled:opacity-50"
+            >
+              <option value="">…o una sección suelta</option>
+              {FORMATOS_LIBRO.map((f) => (
+                <option key={f} value={f}>
+                  {TITULO_FORMATO[f]}
+                </option>
+              ))}
+            </select>
           </div>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <X className="h-5 w-5" />
+          <button type="button" onClick={onClose} className={button({ variant: "secondary" })}>
+            Cerrar
           </button>
-        </div>
+          {orden.length > 0 && (
+            <>
+              {/* Revisar quedó como opción, no como peaje: el estado del libro
+                  y los avisos de la cadena ya se ven arriba SIN pedirle nada al
+                  servidor, y el reporte final dice exactamente qué pasó. Hacer
+                  esperar dos rondas completas para lo mismo era cobrar el doble
+                  de tiempo por la misma información. */}
+              <button
+                onClick={() => void enviar("preview")}
+                disabled={cargando || totalListas === 0}
+                className="inline-flex h-12 items-center gap-2 rounded-xl px-4 text-base font-semibold text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
+              >
+                <FileText className="h-5 w-5" />
+                {cargando && modoEnvio === "preview" ? (paso ? `Revisando ${paso}…` : "Revisando…") : "Sólo revisar"}
+              </button>
+              <button
+                onClick={() => void enviar("commit")}
+                disabled={cargando || totalListas === 0}
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+              >
+                <Upload className="h-5 w-5" />
+                {cargando && modoEnvio === "commit"
+                  ? paso
+                    ? `Importando ${paso}…`
+                    : "Importando…"
+                  : `Importar ${totalListas} filas`}
+              </button>
+            </>
+          )}
+        </ModalFooter>
+      }
+    >
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 pb-5">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           {/* ── Cómo viene el libro ─────────────────────────────────── */}
           <div className="flex flex-wrap gap-2" role="group" aria-label="Cómo viene el libro">
             {([
@@ -767,81 +803,6 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 bg-[var(--surface-sunken)] px-6 py-4">
-          {/* La plantilla vive acá y no en el menú: es lo que se busca cuando
-              uno abre esta pantalla y no tiene el archivo. */}
-          {/* Las dos formas de trabajar: el libro entero en un Excel de cinco
-              hojas, o una sección suelta. Es el MISMO formato —lo escribe la
-              misma función— así que las dos entran por esta misma pantalla. */}
-          <div className="mr-auto flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => void bajarPlantilla(null)}
-              disabled={bajandoPlantilla}
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--surface-raised)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
-            >
-              <Download className="h-5 w-5" /> {bajandoPlantilla ? "Generando…" : "Libro completo"}
-            </button>
-            <label className="sr-only" htmlFor="plantilla-seccion">
-              Descargar una sección suelta
-            </label>
-            <select
-              id="plantilla-seccion"
-              value=""
-              disabled={bajandoPlantilla}
-              onChange={(e) => {
-                const v = e.target.value as FormatoLibro | "";
-                if (v) void bajarPlantilla(v);
-                e.target.value = "";
-              }}
-              className="h-12 rounded-xl bg-[var(--surface-raised)] px-3 text-base font-bold text-[var(--text-secondary)] disabled:opacity-50"
-            >
-              <option value="">…o una sección suelta</option>
-              {FORMATOS_LIBRO.map((f) => (
-                <option key={f} value={f}>
-                  {TITULO_FORMATO[f]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button
-            onClick={onClose}
-            className="h-12 rounded-xl px-5 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
-          >
-            Cerrar
-          </button>
-          {orden.length > 0 && (
-            <>
-              {/* Revisar quedó como opción, no como peaje: el estado del libro
-                  y los avisos de la cadena ya se ven arriba SIN pedirle nada al
-                  servidor, y el reporte final dice exactamente qué pasó. Hacer
-                  esperar dos rondas completas para lo mismo era cobrar el doble
-                  de tiempo por la misma información. */}
-              <button
-                onClick={() => void enviar("preview")}
-                disabled={cargando || totalListas === 0}
-                className="inline-flex h-12 items-center gap-2 rounded-xl px-4 text-base font-semibold text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
-              >
-                <FileText className="h-5 w-5" />
-                {cargando && modoEnvio === "preview" ? (paso ? `Revisando ${paso}…` : "Revisando…") : "Sólo revisar"}
-              </button>
-              <button
-                onClick={() => void enviar("commit")}
-                disabled={cargando || totalListas === 0}
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
-              >
-                <Upload className="h-5 w-5" />
-                {cargando && modoEnvio === "commit"
-                  ? paso
-                    ? `Importando ${paso}…`
-                    : "Importando…"
-                  : `Importar ${totalListas} filas`}
-              </button>
-            </>
-          )}
-        </div>
-
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }

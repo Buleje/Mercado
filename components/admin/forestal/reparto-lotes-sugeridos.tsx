@@ -10,13 +10,10 @@
  * cargado a mano dice «Tráelo del Libro», uno que ya tiene lote lo dice.
  */
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, Check, Loader2, PackagePlus, X } from "@buleje/design-system/icons";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { AlertTriangle, Check, Loader2, PackagePlus } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import {
@@ -29,6 +26,8 @@ import {
 } from "@/lib/forestal/lotes-por-bloque";
 import { crearLotesPorBloque, previsualizarLotesPorBloque } from "./reparto-lotes-sugeridos-api";
 import { button } from "@/components/ui-system/button-variants";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 
 const BTN = button({ variant: "secondary", className: "rounded-xl" });
 const BTN_PRIMARIO = button({ variant: "accent", className: "rounded-xl" });
@@ -69,9 +68,6 @@ export default function RepartoLotesSugeridos({ bloques, codigoDeLote, onCreados
 }
 
 function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, onQuitarLote, onCerrar }: Props & { onCerrar: () => void }) {
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar });
-  const ventana = useVentanaDeModal(true, { ref: cajaRef, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "reparto-lotes-sugeridos" });
 
   /* La foto de los bloques al abrir: si la tabla cambia detrás, la lista que
      se confirma es la que se vio. */
@@ -138,27 +134,40 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, 
   const etiquetaDe = (id: string) => foto.find((b) => b.id === id)?.etiqueta || "Sin etiqueta";
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onCerrar(); }}>
-      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Crear lotes sugeridos" className="relative flex max-h-[94vh] w-full max-w-4xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
-        <div className="flex shrink-0 items-start justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <CardTitle as="h3" className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              <PackagePlus className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Crear lotes sugeridos
-            </CardTitle>
-            <InfoTip
-              title="Un lote por bloque"
-              what="Cada bloque traído del Libro (guía + especie + permiso) se vuelve un lote de aserrío con exactamente sus trozas. Es lo que después se produce, jornada por jornada."
-              affects="Un bloque cargado a mano no sabe de qué trozas sale: no crea lote (tráelo del Libro). Uno que ya tiene lote no se repite. Si una sola troza ya no puede, el bloque no se arma y se dice por qué."
-              example="Guía 019-001-0000011 · Tornillo · 12 trozas · 8,412 m³ → lote LA-2026-014 con esas 12 trozas."
-            />
-          </div>
-          <div className="flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-            <button type="button" onClick={onCerrar} aria-label="Cerrar" className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]">
-              <X className="h-5 w-5" aria-hidden />
-            </button>
-          </div>
-        </div>
+    <AdminModal
+      open
+      onClose={onCerrar}
+      title="Crear lotes sugeridos"
+      icon={PackagePlus}
+      ayuda={
+        <InfoTip
+          title="Un lote por bloque"
+          what="Cada bloque traído del Libro (guía + especie + permiso) se vuelve un lote de aserrío con exactamente sus trozas. Es lo que después se produce, jornada por jornada."
+          affects="Un bloque cargado a mano no sabe de qué trozas sale: no crea lote (tráelo del Libro). Uno que ya tiene lote no se repite. Si una sola troza ya no puede, el bloque no se arma y se dice por qué."
+          example="Guía 019-001-0000011 · Tornillo · 12 trozas · 8,412 m³ → lote LA-2026-014 con esas 12 trozas."
+        />
+      }
+      size="xl"
+      /* Se abre desde el cubicador, que vive dentro de «Producir sin lote» (z-70). */
+      aboveModals
+      claveVentana="reparto-lotes-sugeridos"
+      footer={
+        <ModalFooter>
+          {resultado ? (
+            <button type="button" onClick={onCerrar} className={BTN_PRIMARIO}><Check className="h-4 w-4" aria-hidden /> Listo</button>
+          ) : (
+            <>
+              <button type="button" onClick={onCerrar} className={BTN}>Cancelar</button>
+              <button type="button" onClick={crear} disabled={elegidos.size === 0 || creando || !previa} className={BTN_PRIMARIO}>
+                {creando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <PackagePlus className="h-4 w-4" aria-hidden />}
+                {creando ? "Creando…" : elegidos.size === 0 ? "Nada para crear" : `Crear ${elegidos.size} ${elegidos.size === 1 ? "lote" : "lotes"}`}
+              </button>
+            </>
+          )}
+        </ModalFooter>
+      }
+    >
+      <div className="px-5 py-4 sm:px-6">
 
         {error && (
           <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
@@ -166,7 +175,7 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, 
           </p>
         )}
 
-        <div className="mt-3 min-h-0 flex-1 overflow-auto">
+        <div className="mt-3 overflow-x-auto">
           {resultado ? (
             <Resultado resultado={resultado} etiquetaDe={etiquetaDe} />
           ) : (
@@ -201,22 +210,8 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, 
           )}
         </div>
 
-        <div className="mt-3 flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--rule-soft)] pt-3">
-          {resultado ? (
-            <button type="button" onClick={onCerrar} className={BTN_PRIMARIO}><Check className="h-4 w-4" aria-hidden /> Listo</button>
-          ) : (
-            <>
-              <button type="button" onClick={onCerrar} className={BTN}>Cancelar</button>
-              <button type="button" onClick={crear} disabled={elegidos.size === 0 || creando || !previa} className={BTN_PRIMARIO}>
-                {creando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <PackagePlus className="h-4 w-4" aria-hidden />}
-                {creando ? "Creando…" : elegidos.size === 0 ? "Nada para crear" : `Crear ${elegidos.size} ${elegidos.size === 1 ? "lote" : "lotes"}`}
-              </button>
-            </>
-          )}
-        </div>
-        <TiradorDeVentana ventana={ventana} />
       </div>
-    </div>
+    </AdminModal>
   );
 }
 

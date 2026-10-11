@@ -39,6 +39,9 @@ import { CardTitle } from "@buleje/design-system";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
 import { Field } from "@/components/admin/shared/Field";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 // ── Tipos compartidos con el endpoint ─────────────────────────────────────
 
@@ -246,28 +249,41 @@ function CustomCategoryEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-modal-3 flex items-center justify-center px-4 py-6">
-      <button
-        type="button"
-        aria-label="Cerrar"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/55 backdrop-blur-sm"
-      />
-      <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)]">
-        <header className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-base)] sticky top-0 bg-[var(--surface-canvas)] z-dropdown">
-          <CardTitle as="h3" className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
-            {initial ? "Editar categoría propia" : "Nueva categoría propia"}
-          </CardTitle>
+    <AdminModal
+      open
+      onClose={onClose}
+      title={initial ? "Editar categoría propia" : "Nueva categoría propia"}
+      size="md"
+      aboveModals
+      claveVentana="marketplace-categoria-propia"
+      footer={<ModalFooter>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
-            className="h-9 w-9 rounded-xl border border-[var(--rule-base)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className={button({ variant: "secondary" })}
           >
-            <X className="h-4 w-4" />
+            Cancelar
           </button>
-        </header>
-        <div className="p-6 space-y-4">
+          <button
+            type="button"
+            disabled={!canSave}
+            onClick={() => {
+              onSave({
+                id: initial?.id ?? randomId("cat"),
+                label: label.trim(),
+                imageUrl: imageUrl || null,
+                subcategories: subs,
+              });
+              onClose();
+            }}
+            className={button({ variant: "primary" })}
+          >
+            <Check className="h-4 w-4" strokeWidth={3} />
+            Guardar categoría
+          </button>
+        </ModalFooter>}
+    >
+      <div className={`space-y-4 ${MODAL_BODY}`}>
           <Field label="Nombre de la categoría" labelClassName="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]" className="space-y-2">
             <input
               type="text"
@@ -342,34 +358,7 @@ function CustomCategoryEditor({
             </div>
           </div>
         </div>
-        <footer className="px-6 py-4 border-t-2 border-[var(--rule-base)] flex justify-end gap-3 sticky bottom-0 bg-[var(--surface-canvas)]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-12 px-5 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            disabled={!canSave}
-            onClick={() => {
-              onSave({
-                id: initial?.id ?? randomId("cat"),
-                label: label.trim(),
-                imageUrl: imageUrl || null,
-                subcategories: subs,
-              });
-              onClose();
-            }}
-            className="h-12 px-6 rounded-2xl bg-[var(--accent)] text-white text-base font-semibold inline-flex items-center gap-2 disabled:opacity-50"
-          >
-            <Check className="h-4 w-4" strokeWidth={3} />
-            Guardar categoría
-          </button>
-        </footer>
-      </div>
-    </div>
+    </AdminModal>
   );
 }
 

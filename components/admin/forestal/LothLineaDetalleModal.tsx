@@ -9,14 +9,7 @@
  * corrige —o fue corregida por— otra.
  */
 
-import { Camera, Clock, Link2, MapPin, QrCode, User, X } from "@buleje/design-system/icons";
-import { useRef } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
+import { Camera, Clock, Link2, MapPin, QrCode, User } from "@buleje/design-system/icons";
 import {
   diasDeRegistro,
   estaFueraDePlazo,
@@ -26,6 +19,8 @@ import {
 import { medidasDeLinea } from "@/lib/forestal/loth-despacho-medidas";
 import { guiaDeLineas, type GuiaDelDespacho } from "@/lib/forestal/loth-despacho-por-guia";
 import { DespachoAcciones, DespachoDatos, LineaDatos } from "./LothLineaDatos";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 
 const fFecha = (iso: string | null | undefined, conHora = false) => {
   if (!iso) return "—";
@@ -58,24 +53,6 @@ export default function LothLineaDetalleModal({
   /** Despacho de trozas (08-10): las guías del permiso (destino, placa, CTP) y a dónde llevan sus acciones. */
   despacho?: { guias: readonly GuiaDelDespacho[]; hayCtp: boolean; onVerGuia: (gtf: string) => void };
 }) {
-  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
-     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  // `activo`: el libro lo monta siempre, con `linea` en null hasta abrir una.
-  useModalAccesible(cajaRef, { onCerrar: onClose, activo: !!linea });
-  /**
-   * Ventana: se mueve, se achica y se fija (ADR-420).
-   *
-   * Este modal se abre para COMPARAR: si la línea corrige a otra, o si el árbol
-   * tiene más trozas asentadas, el dato contra el que se lee está en la tabla
-   * que quedó tapada. Movido a un costado se leen las dos, y fijado se puede
-   * abrir otra fila sin que el detalle se cierre de golpe.
-   */
-  const ventana = useVentanaDeModal(!!linea, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "loth-linea-detalle",
-  });
   if (!linea) return null;
 
   const dias = diasDeRegistro(linea.entryDate, linea.createdAt);
@@ -87,58 +64,61 @@ export default function LothLineaDetalleModal({
   const guia = esDespacho ? guiaDeLineas(linea.gtfNumber, linea.planId, despacho.guias) : null;
 
   return (
-    <div
-      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      onClick={(e) => {
-        /* Fijado quiere decir «lo dejo abierto para leer la tabla de atrás»:
-           el clic afuera deja de cerrar. La X y Escape siguen cerrando. */
-        if (e.target === e.currentTarget && !ventana.fijado) onClose();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
-    >
-      {/* El diálogo en sí: acá viven el foco, el arrastre y el tamaño —
-          el velo de atrás no se mueve. */}
-      <div
-        ref={cajaRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Detalle de la línea ${linea.lineNo}`}
-        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
-        className="relative flex max-h-[88vh] w-full max-w-[42rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-      >
-        {/* Cabecera — y asa para arrastrar la ventana. */}
-        <header
-          {...ventana.asaProps}
-          className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
-        >
-          <div>
-            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              Línea N° {linea.lineNo}
-            </p>
-            <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-              {fFecha(linea.entryDate)} · {medidasDeLinea(linea).especie ?? "sin especie"}
-              {medidasDeLinea(linea).cites ? " · CITES" : ""}
-            </p>
-          </div>
-          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
-              esto los controles quedarían flotando en el medio. */}
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
+    <AdminModal
+      open
+      onClose={onClose}
+      title={`Línea N° ${linea.lineNo}`}
+      description={`${fFecha(linea.entryDate)} · ${medidasDeLinea(linea).especie ?? "sin especie"}${medidasDeLinea(linea).cites ? " · CITES" : ""}`}
+      icon={QrCode}
+      size="lg"
+      aboveModals
+      claveVentana="loth-linea-detalle"
+      footer={(
+        <ModalFooter>
+          {esDespacho && (
+            <DespachoAcciones
+              linea={linea}
+              guia={guia}
+              hayCtp={despacho.hayCtp}
+              onVerGuia={despacho.onVerGuia}
+              onVerCadena={onVerCadena}
+              onImprimirEtiqueta={onImprimirEtiqueta}
+              onClose={onClose}
+            />
+          )}
+          {linea.section === "trozado" && codigo && onImprimirEtiqueta && (
+            <button
+              type="button"
+              onClick={() => onImprimirEtiqueta(linea)}
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            >
+              <QrCode className="h-4 w-4" /> Imprimir etiqueta
+            </button>
+          )}
+          {!esDespacho && codigo && onVerCadena && (
+            <button
+              type="button"
+              onClick={() => {
+                onVerCadena(codigo);
+                onClose();
+              }}
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            >
+              <Link2 className="h-4 w-4" /> Cadena de custodia
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-12 items-center rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90"
           >
-            <X className="h-4 w-4" />
+            Cerrar
           </button>
-        </header>
+        </ModalFooter>
+      )}
+    >
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-auto px-5 py-4">
+        <div className="space-y-3 px-5 py-4">
           {/* Estado del asiento: lo que decide una fiscalización */}
           <div
             className={`rounded-xl border-2 p-3 ${
@@ -239,50 +219,7 @@ export default function LothLineaDetalleModal({
           )}
         </div>
 
-        <footer className="flex flex-wrap items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] px-5 py-3">
-          {esDespacho && (
-            <DespachoAcciones
-              linea={linea}
-              guia={guia}
-              hayCtp={despacho.hayCtp}
-              onVerGuia={despacho.onVerGuia}
-              onVerCadena={onVerCadena}
-              onImprimirEtiqueta={onImprimirEtiqueta}
-              onClose={onClose}
-            />
-          )}
-          {linea.section === "trozado" && codigo && onImprimirEtiqueta && (
-            <button
-              type="button"
-              onClick={() => onImprimirEtiqueta(linea)}
-              className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-            >
-              <QrCode className="h-4 w-4" /> Imprimir etiqueta
-            </button>
-          )}
-          {!esDespacho && codigo && onVerCadena && (
-            <button
-              type="button"
-              onClick={() => {
-                onVerCadena(codigo);
-                onClose();
-              }}
-              className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-            >
-              <Link2 className="h-4 w-4" /> Cadena de custodia
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-12 items-center rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90"
-          >
-            Cerrar
-          </button>
-        </footer>
 
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }

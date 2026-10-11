@@ -4,7 +4,7 @@
  * sin avanzar» a un pedido de 177 días; ahora se dice y se ordena el real.
  */
 import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { nombreDelPago } from "@/components/admin/OrdersTab/types";
 import { OrdersPrintPreview } from "@/components/admin/OrdersTab/OrdersPrintPreview";
@@ -152,7 +152,9 @@ describe("nombre del medio de pago", () => {
 
   it("la vista de impresión imprime «Plin» para un pedido Plin", () => {
     const o = pedido("P1", { paymentMethod: "plin" } as Partial<DbOrder>);
-    const html = renderToStaticMarkup(
+    // La vista previa es un AdminModal (portal de Radix): el HTML estático del
+    // servidor no lo pinta, así que se monta en el DOM y se lee el <body>.
+    const { unmount } = render(
       createElement(OrdersPrintPreview, {
         orders: [o],
         selectedOrderIds: new Set(["P1"]),
@@ -161,7 +163,9 @@ describe("nombre del medio de pago", () => {
         onClose: () => {},
       }),
     );
-    expect(html).toContain("Plin");
-    expect(html).not.toContain("Efectivo");
+    const texto = document.body.textContent ?? "";
+    unmount();
+    expect(texto).toContain("Plin");
+    expect(texto).not.toContain("Efectivo");
   });
 });

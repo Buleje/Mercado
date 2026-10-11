@@ -127,7 +127,8 @@ const campo = (label: string) => screen.getByLabelText(label) as HTMLInputElemen
 const tipear = (label: string, v: string) => fireEvent.change(campo(label), { target: { value: v } });
 /** El pie: lo que se ve y lo que le llega al lector (sólo el aviso). */
 const pie = () => {
-  const f = document.querySelector('[role="dialog"][aria-label="Trozar un árbol"] footer') as HTMLElement;
+  /* El pie de la ventana (AdminModal + ModalFooter): el que tiene el aviso para el lector. */
+  const f = screen.getByRole("dialog", { name: "Trozar un árbol" }).querySelector('[aria-live="polite"]')!.parentElement as HTMLElement;
   return { visible: f.querySelector("p")?.textContent ?? "", lector: f.querySelector('[aria-live="polite"]')?.textContent ?? "" };
 };
 

@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { Trash2, X, FolderX, FileWarning, Loader2, Undo2 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { useCallback, useState } from "react";
+import { Trash2, FolderX, FileWarning, Loader2, Undo2 } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
+
+/** Botones de texto largo: parten la línea en vez de salirse del pie a 400 px. */
+const LARGO = "h-auto min-h-12 whitespace-normal py-2 text-center";
 
 export interface BorradoCarpetas {
   /** Llevarse los documentos de adentro a la papelera. */
@@ -47,10 +49,9 @@ export function ConfirmarBorrarCarpetas({
 }) {
   const [incluirSubcarpetas, setIncluirSubcarpetas] = useState(true);
   const [ocupado, setOcupado] = useState<"papelera" | "sueltos" | null>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const cerrar = useCallback(() => { if (!ocupado) onCancelar(); }, [ocupado, onCancelar]);
-  useModalAccesible(modalRef, { onCerrar: cerrar });
-  const ventana = useVentanaDeModal(true, { ref: modalRef, aplicarTranslate: true, claveMemoria: "confirmar-borrar-carpetas" });
+  const cerrar = useCallback(() => {
+    if (!ocupado) onCancelar();
+  }, [ocupado, onCancelar]);
 
   const conSub = subcarpetas > 0 && incluirSubcarpetas;
   const documentos = documentosDirectos + (conSub ? documentosEnSubcarpetas : 0);
@@ -70,116 +71,108 @@ export function ConfirmarBorrarCarpetas({
   const resto = nombres.length - visibles.length;
 
   return (
-    <div
-      className="fixed inset-0 z-modal-3 flex items-center justify-center bg-black/50 p-4"
-      onClick={() => { if (!ventana.fijado) cerrar(); }}
-      role="presentation"
-    >
-      <div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Eliminar ${nombres.length} carpeta(s)`}
-        tabIndex={-1}
-        className="relative w-full max-w-[34rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div {...ventana.asaProps} className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error)]">
-            <FolderX className="h-5 w-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              ¿Eliminar {nombres.length} carpeta{nombres.length === 1 ? "" : "s"}?
-            </p>
-            <p className="truncate text-xs text-[var(--text-tertiary)]">
-              {visibles.join(", ")}{resto > 0 ? ` y ${resto} más` : ""}
-            </p>
-          </div>
-          <ControlesDeVentana ventana={ventana} />
+    <AdminModal
+      open
+      onClose={cerrar}
+      title={`¿Eliminar ${nombres.length} carpeta${nombres.length === 1 ? "" : "s"}?`}
+      description={`${visibles.join(", ")}${resto > 0 ? ` y ${resto} más` : ""}`}
+      icon={FolderX}
+      size="md"
+      aboveModals
+      claveVentana="confirmar-borrar-carpetas"
+      footer={
+        <ModalFooter
+          nota={
+            documentos > 0
+              ? "Lo que va a la papelera se puede recuperar durante 30 días."
+              : undefined
+          }
+        >
           <button
             onClick={onCancelar}
             disabled={!!ocupado}
-            className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
-            aria-label="Cerrar"
+            className={button({ variant: "secondary" })}
           >
-            <X className="h-4 w-4" />
+            Cancelar
           </button>
-        </div>
-
-        <div className="space-y-3 px-5 py-4">
-          {subcarpetas > 0 && (
-            <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[var(--rule-base)] p-3 hover:bg-[var(--surface-sunken)]">
-              <input
-                type="checkbox"
-                checked={incluirSubcarpetas}
-                onChange={(e) => setIncluirSubcarpetas(e.target.checked)}
-                disabled={!!ocupado}
-                className="mt-0.5 h-4 w-4 accent-[var(--data-error-500)]"
-              />
-              <span className="text-sm text-[var(--text-secondary)]">
-                Borrar también las <strong className="font-bold text-[var(--text-primary)]">{subcarpetas} subcarpeta{subcarpetas === 1 ? "" : "s"}</strong> que cuelgan.
-                {!incluirSubcarpetas && <em className="block text-xs not-italic text-[var(--text-tertiary)]">Si no, quedan sueltas en el drive con lo que tengan adentro.</em>}
-              </span>
-            </label>
-          )}
-
-          {documentos > 0 ? (
-            <div className="flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-3">
-              <FileWarning className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning)]" />
-              <p className="text-sm text-[var(--text-secondary)]">
-                Adentro hay <strong className="font-bold text-[var(--text-primary)]">{documentos} documento{documentos === 1 ? "" : "s"}</strong>. Decide qué hacer con ellos:
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-[var(--text-secondary)]">
-              Sin documentos adentro: se {carpetasQueSeVan === 1 ? "va la carpeta vacía" : `van las ${carpetasQueSeVan} carpetas vacías`}.
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2 border-t border-[var(--rule-base)] px-5 py-4">
-          <button
-            onClick={() => correr(documentos > 0)}
-            disabled={!!ocupado}
-            className={cn(
-              "inline-flex items-center justify-center gap-2 rounded-xl px-4 min-h-11 text-sm font-semibold text-white transition-[filter]",
-              "bg-[var(--data-error-500)] hover:brightness-110 disabled:opacity-60",
-            )}
-          >
-            {ocupado === "papelera" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-            {documentos > 0
-              ? `Eliminar y mandar los ${documentos} documentos a la papelera`
-              : `Eliminar ${carpetasQueSeVan === 1 ? "la carpeta" : `las ${carpetasQueSeVan} carpetas`}`}
-          </button>
-
           {documentos > 0 && (
             <button
               onClick={() => correr(false)}
               disabled={!!ocupado}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-60"
+              className={button({ variant: "secondary", className: LARGO })}
             >
-              {ocupado === "sueltos" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
-              Sólo {carpetasQueSeVan === 1 ? "la carpeta" : "las carpetas"} — dejar los documentos sueltos en el drive
+              {ocupado === "sueltos" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Undo2 className="h-4 w-4" />
+              )}
+              Sólo {carpetasQueSeVan === 1 ? "la carpeta" : "las carpetas"} — dejar los documentos
+              sueltos en el drive
             </button>
           )}
-
           <button
-            onClick={onCancelar}
+            onClick={() => correr(documentos > 0)}
             disabled={!!ocupado}
-            className="mt-1 text-center text-xs font-bold text-[var(--text-tertiary)] underline hover:text-[var(--text-secondary)] disabled:opacity-60"
+            className={button({ variant: "danger", className: LARGO })}
           >
-            Cancelar
+            {ocupado === "papelera" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            {documentos > 0
+              ? `Eliminar y mandar los ${documentos} documentos a la papelera`
+              : `Eliminar ${carpetasQueSeVan === 1 ? "la carpeta" : `las ${carpetasQueSeVan} carpetas`}`}
           </button>
+        </ModalFooter>
+      }
+    >
+      <div className={`space-y-3 ${MODAL_BODY}`}>
+        {subcarpetas > 0 && (
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[var(--rule-base)] p-3 hover:bg-[var(--surface-sunken)]">
+            <input
+              type="checkbox"
+              checked={incluirSubcarpetas}
+              onChange={(e) => setIncluirSubcarpetas(e.target.checked)}
+              disabled={!!ocupado}
+              className="mt-0.5 h-4 w-4 accent-[var(--data-error-500)]"
+            />
+            <span className="text-sm text-[var(--text-secondary)]">
+              Borrar también las{" "}
+              <strong className="font-bold text-[var(--text-primary)]">
+                {subcarpetas} subcarpeta{subcarpetas === 1 ? "" : "s"}
+              </strong>{" "}
+              que cuelgan.
+              {!incluirSubcarpetas && (
+                <em className="block text-xs not-italic text-[var(--text-tertiary)]">
+                  Si no, quedan sueltas en el drive con lo que tengan adentro.
+                </em>
+              )}
+            </span>
+          </label>
+        )}
 
-          {documentos > 0 && (
-            <p className="text-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-              Lo que va a la papelera se puede recuperar durante 30 días.
+        {documentos > 0 ? (
+          <div className="flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-3">
+            <FileWarning className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning)]" />
+            <p className="text-sm text-[var(--text-secondary)]">
+              Adentro hay{" "}
+              <strong className="font-bold text-[var(--text-primary)]">
+                {documentos} documento{documentos === 1 ? "" : "s"}
+              </strong>
+              . Decide qué hacer con ellos:
             </p>
-          )}
-        </div>
-        <TiradorDeVentana ventana={ventana} />
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--text-secondary)]">
+            Sin documentos adentro: se{" "}
+            {carpetasQueSeVan === 1
+              ? "va la carpeta vacía"
+              : `van las ${carpetasQueSeVan} carpetas vacías`}
+            .
+          </p>
+        )}
       </div>
-    </div>
+    </AdminModal>
   );
 }

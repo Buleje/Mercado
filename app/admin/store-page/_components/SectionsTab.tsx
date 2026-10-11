@@ -16,10 +16,7 @@
  * Persistencia: PUT /api/store-page/sections — guarda en TenantStorePage.
  */
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { useEffect, useState, useCallback } from "react";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   Plus,
@@ -39,6 +36,7 @@ import {
   Loader2,
   Sparkles,
   Layers,
+  LayoutGrid,
 } from "@buleje/design-system/icons";
 import AdminTabShell from "../../_components/_shared/AdminTabShell";
 import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
@@ -51,7 +49,8 @@ import {
   type SectionTemplate,
 } from "@/lib/store-sections-types";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 const TYPE_EMOJI: Record<SectionType, string> = {
   about: "📖",
   hours: "🕐",
@@ -463,49 +462,17 @@ function TemplatesModal({
   onClose: () => void;
   onPick: (tpl: SectionTemplate) => void;
 }) {
-  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onClose });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventana = useVentanaDeModal(true, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "store-templates",
-  });
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Elige una sección para agregar"
+      description="Galería de plantillas"
+      icon={LayoutGrid}
+      size="lg"
+      claveVentana="store-templates"
     >
-      <div ref={cajaRef} tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Elige una plantilla"
-        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
-      >
-        <header {...ventana.asaProps} className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] px-5 py-4 sm:px-6">
-          <div>
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
-              Galería de plantillas
-            </p>
-            <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              Elige una sección para agregar
-            </SectionTitle>
-          </div>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </header>
-        <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3 px-5 py-6 sm:px-6">
+        <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${MODAL_BODY}`}>
           {SECTION_TEMPLATES.map((tpl) => (
             <button
               key={tpl.type}
@@ -531,9 +498,7 @@ function TemplatesModal({
             </button>
           ))}
         </div>
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }
 

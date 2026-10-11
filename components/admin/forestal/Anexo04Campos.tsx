@@ -22,14 +22,8 @@
  * de la columna y se escriben en su propio modal, con el detalle por especie al
  * lado para poder copiarlo.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
-import { ArrowRight, Check, ImageIcon, List, MessageSquare, Trash2, UserPlus, X } from "@buleje/design-system/icons";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Check, ImageIcon, List, MessageSquare, Trash2, UserPlus } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   fmtAnexo, siguienteCorrelativo, type Anexo04, type DatosAnexo04, type EmisorGuardado,
@@ -37,7 +31,10 @@ import {
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { claveTenant } from "@/hooks/use-anexo04-datos";
 import Anexo04GtfPropuesta from "./Anexo04GtfPropuesta";
-import { BlockTitle, DataTable } from "@buleje/design-system";
+import { DataTable } from "@buleje/design-system";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 /**
  * Junta los bloques de una MISMA especie·tipo aunque el lote haya pasado de
@@ -155,76 +152,37 @@ function ObservacionesModal({
   unidadPt: boolean;
   onCerrar: () => void;
 }) {
-  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
-     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onCerrar });
-  /**
-   * Ventana: se mueve, se achica y se fija (ADR-420).
-   *
-   * Las observaciones son una declaración jurada que se escribe MIRANDO el
-   * anexo: la GTF, el N° de guía y los recuadros por especie están en la
-   * pantalla de atrás, tapada por este modal. Fijado se puede tocar el anexo
-   * —cambiar de pestaña, releer un casillero— sin perder el texto a medio
-   * escribir, que hasta ahora se iba con un clic afuera.
-   */
-  const ventana = useVentanaDeModal(true, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "anexo04-observaciones",
-  });
   /* Foco al abrir, con ref: `autoFocus` en un textarea lo marca la regla de
      a11y (y en un modal es exactamente lo que se quiere). */
-  const areaRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => { areaRef.current?.focus(); }, []);
+  /* El cuerpo de un `AdminModal` se monta en la pasada SIGUIENTE (el portal de
+     Radix espera a su propio efecto): un efecto de este componente vería el ref
+     en null. Por eso se engancha con un ref de función. */
+  const areaRef = useCallback((el: HTMLTextAreaElement | null) => el?.focus(), []);
   const detalle = resumen
     .map((r) => `${r.especie} · ${r.tipo}: ${r.piezas} pzas · ${fmtAnexo(r.pt)} PT · ${fmtAnexo(r.m3)} m³`)
     .join("\n");
   return (
-    <div
-      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/60 p-4"
-      /* Fijado = «lo dejo abierto para trabajar sobre el anexo»: el clic afuera
-         deja de cerrar. La X, el botón Listo y Escape siguen cerrando. */
-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onCerrar(); }}
-      onKeyDown={(e) => {
-        e.stopPropagation();
-        if (e.key === "Escape") onCerrar();
-      }}
-    >
-      <div ref={cajaRef} tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Observaciones del anexo"
-        /* `relative`: el tirador de redimensión se ancla a esta esquina.
-           `overflow-auto`: sin alto fijo no hace nada, pero cuando la ventana
-           se achica a mano el texto se scrollea en vez de derramarse. */
-        className="relative w-full max-w-2xl overflow-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]"
-      >
-        {/* Cabecera — y asa para arrastrar la ventana. */}
-        <div
-          {...ventana.asaProps}
-          className="flex items-start justify-between gap-3"
-        >
-          <div className="flex items-center gap-2">
-            <BlockTitle className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              <MessageSquare className="h-4 w-4 text-[var(--accent)]" /> (12) Observaciones
-            </BlockTitle>
-            <InfoTip icono="ayuda" title="(12) Observaciones" what="Es una declaración jurada: lo que dice acá lo escribe quien firma." example="Vacío no imprime nada." />
-          </div>
-          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
-              esto los controles quedarían flotando en el medio. */}
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button
-            type="button"
-            onClick={onCerrar}
-            aria-label="Cerrar observaciones"
-            className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          >
-            <X className="h-5 w-5" />
+    <AdminModal
+      open
+      onClose={onCerrar}
+      title="(12) Observaciones"
+      icon={MessageSquare}
+      ayuda={<InfoTip icono="ayuda" title="(12) Observaciones" what="Es una declaración jurada: lo que dice acá lo escribe quien firma." example="Vacío no imprime nada." />}
+      size="lg"
+      aboveModals
+      claveVentana="anexo04-observaciones"
+      footer={
+        <ModalFooter>
+          <button type="button" onClick={() => onChange("")} disabled={!valor} className={button({ variant: "secondary" })}>
+            Borrar
           </button>
-        </div>
+          <button type="button" onClick={onCerrar} className={button({ variant: "accent" })}>
+            Listo
+          </button>
+        </ModalFooter>
+      }
+    >
+      <div className="px-5 py-4 sm:px-6">
 
         <textarea
           ref={areaRef}
@@ -232,7 +190,7 @@ function ObservacionesModal({
           onChange={(e) => onChange(e.target.value)}
           rows={7}
           placeholder="Ej.: procede íntegro de la GTF, sin discrepancias con lo aserrado. Fecha de aserrío, destino, o cualquier aclaración del lote."
-          className="mt-3 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-semibold leading-relaxed text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-semibold leading-relaxed text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
         />
 
         {/* El detalle por especie · tipo NO se imprime solo: es un texto que el
@@ -263,27 +221,8 @@ function ObservacionesModal({
           </div>
         )}
 
-        <div className="mt-3 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => onChange("")}
-            disabled={!valor}
-            className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-40"
-          >
-            Borrar
-          </button>
-          <button
-            type="button"
-            onClick={onCerrar}
-            className="inline-flex h-12 items-center rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95"
-          >
-            Listo
-          </button>
-        </div>
-
-        <TiradorDeVentana ventana={ventana} />
       </div>
-    </div>
+    </AdminModal>
   );
 }
 

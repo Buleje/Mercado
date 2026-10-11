@@ -47,9 +47,7 @@ export function useNcEstado() {
   const esDevolucion = form.codigoMotivo === "06" || form.codigoMotivo === "07";
   const searchRef = useRef<HTMLInputElement>(null);
   const { confirm, prompt } = useConfirm();
-  const wizardTitleId = useId();
   const detailTitleId = useId();
-  const wizardPanelRef = useRef<HTMLDivElement>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
   return {
     notas, setNotas, loading, setLoading, error, setError, search, setSearch, debouncedSearch,
@@ -61,6 +59,6 @@ export function useNcEstado() {
     creating, setCreating, createError, setCreateError, form, setForm, pickerDocs, setPickerDocs,
     pickerLoading, setPickerLoading, pickerSearch, setPickerSearch, pickerDocType, setPickerDocType,
     selectedVenta, setSelectedVenta, devolverStock, setDevolverStock, esDevolucion, searchRef, confirm,
-    prompt, wizardTitleId, detailTitleId, wizardPanelRef, detailPanelRef,
+    prompt, detailTitleId, detailPanelRef,
   };
 }

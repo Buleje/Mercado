@@ -16,22 +16,14 @@
  * listados que las vistas, con `search`.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import {
-  ArrowRight,
-  Boxes,
-  Loader2,
-  PackageOpen,
-  Search,
-  Truck,
-  X as XIcon,
-} from "@buleje/design-system/icons";
+import { useCallback, useState } from "react";
+import { ArrowRight, Boxes, Loader2, PackageOpen, Search, Truck } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { formatDate, productLabel, StatusBadge, type WoodEntry } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 interface DespachoHit {
   id: string;
@@ -74,10 +66,6 @@ export default function CtpBuscarGtf({
   /** Salta a una vista del libro (para ver el despacho en su registro). */
   onIrA: (vista: string) => void;
 }) {
-  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
-     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onCerrar });
   const [q, setQ] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,14 +74,10 @@ export default function CtpBuscarGtf({
   /** Paquetes cuyo cartel dice eso (ADR-366). */
   const [paquetes, setPaquetes] = useState<PaqueteHit[]>([]);
   const [buscado, setBuscado] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCerrar();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCerrar]);
+  /* El cuerpo de un `AdminModal` se monta en la pasada SIGUIENTE (el portal de
+     Radix espera a su propio efecto): un efecto de este componente vería el ref
+     en null. Por eso se engancha con un ref de función. */
+  const inputRef = useCallback((el: HTMLInputElement | null) => el?.focus(), []);
 
   /**
    * Busca SIN el filtro de período: quien tiene una guía en la mano no sabe (ni
@@ -140,23 +124,10 @@ export default function CtpBuscarGtf({
   const sinResultados = buscado && ingresos.length === 0 && despachos.length === 0 && paquetes.length === 0;
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
-      className="modal-backdrop fixed inset-0 z-modal flex items-start justify-center bg-black/45 p-4 backdrop-blur-sm sm:pt-[12vh]"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Buscar en el libro"
-      onClick={onCerrar}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onCerrar();
-      }}
-    >
-      <div
-        className="w-full max-w-[42rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        {/* Barra de búsqueda: el foco entra acá y Enter busca. */}
-        <div className="flex items-center gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-4 sm:px-6">
+    <AdminModal open onClose={onCerrar} title="Buscar en el libro" icon={Search} size="lg" claveVentana="ctp-buscar-gtf">
+        {/* Barra de búsqueda: el foco entra acá y Enter busca. Pegada arriba
+            mientras se recorren los resultados. */}
+        <div className="sticky top-0 z-10 flex items-center gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-4 sm:px-6">
           <Search className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
           <input
             ref={inputRef}
@@ -171,17 +142,9 @@ export default function CtpBuscarGtf({
             className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
           />
           {buscando && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--text-tertiary)]" />}
-          <button
-            type="button"
-            onClick={onCerrar}
-            aria-label="Cerrar"
-            className="shrink-0 rounded-xl p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          >
-            <XIcon className="h-4 w-4" />
-          </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto p-5 sm:px-6">
+        <div className="px-5 py-5 sm:px-6">
           {error && (
             <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
               {error}
@@ -339,7 +302,6 @@ export default function CtpBuscarGtf({
             </section>
           )}
         </div>
-      </div>
-    </div>
+    </AdminModal>
   );
 }

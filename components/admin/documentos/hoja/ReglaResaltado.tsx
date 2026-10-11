@@ -11,16 +11,20 @@
  * Excel, que se recalcula solo): promete lo que hace y se deshace con Ctrl+Z.
  */
 
-import { useId, useMemo, useRef, useState } from "react";
-import { Check, Paintbrush, X } from "@buleje/design-system/icons";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { useMemo, useState } from "react";
+import { Check, Paintbrush } from "@buleje/design-system/icons";
 import {
-  celdasQueCumplen, COLORES_REGLA, describirRegla, type Comparador, type Regla,
+  celdasQueCumplen,
+  COLORES_REGLA,
+  describirRegla,
+  type Comparador,
+  type Regla,
 } from "@/lib/documentos/hoja-reglas";
 import type { CeldaHoja } from "@/lib/documentos/xlsx-formato";
 import type { RangoNormal } from "@/lib/documentos/hoja-rango";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 const COMPARADORES: { valor: Comparador; etiqueta: string; pideValor: boolean }[] = [
   { valor: "menor", etiqueta: "es menor que", pideValor: true },
@@ -31,7 +35,11 @@ const COMPARADORES: { valor: Comparador; etiqueta: string; pideValor: boolean }[
 ];
 
 export default function ReglaResaltado({
-  filas, rango, etiquetaRango, onAplicar, onCerrar,
+  filas,
+  rango,
+  etiquetaRango,
+  onAplicar,
+  onCerrar,
 }: {
   filas: CeldaHoja[][];
   rango: RangoNormal;
@@ -49,97 +57,97 @@ export default function ReglaResaltado({
   const pideValor = COMPARADORES.find((c) => c.valor === comparador)?.pideValor ?? true;
   const listo = coincidencias.length > 0 && (!pideValor || valor.trim() !== "");
 
-  const titleId = useId();
-  const modalRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(modalRef, { onCerrar });
-  const ventana = useVentanaDeModal(true, { ref: modalRef, aplicarTranslate: true, claveMemoria: "hoja-regla-resaltado" });
-
   return (
-    <div className="fixed inset-0 z-modal-3 flex items-center justify-center bg-black/50 p-4" onClick={() => { if (!ventana.fijado) onCerrar(); }}>
-      <div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-[26rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-      >
-        <div {...ventana.asaProps} className="flex items-center gap-2 border-b border-[var(--rule-base)] px-4 py-3">
-          <Paintbrush className="h-4 w-4 text-[var(--accent)]" />
-          <p id={titleId} className="flex-1 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Resaltar por regla</p>
-          <ControlesDeVentana ventana={ventana} />
-          <button onClick={onCerrar} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
-            <X className="h-4 w-4" />
+    <AdminModal
+      open
+      onClose={onCerrar}
+      title="Resaltar por regla"
+      icon={Paintbrush}
+      size="sm"
+      claveVentana="hoja-regla-resaltado"
+      footer={
+        <ModalFooter>
+          <button onClick={onCerrar} className={button({ variant: "secondary" })}>
+            Cancelar
           </button>
-        </div>
-
-        <div className="space-y-3 p-4">
-          <p className="text-xs text-[var(--text-tertiary)]">
-            En <strong className="text-[var(--text-secondary)]">{etiquetaRango}</strong>, pintar la celda si…
-          </p>
-
-          <div className="flex gap-2">
-            <select
-              value={comparador}
-              onChange={(e) => setComparador(e.target.value as Comparador)}
-              aria-label="Condición de la regla"
-              className="h-11 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary"
-            >
-              {COMPARADORES.map((c) => <option key={c.valor} value={c.valor}>{c.etiqueta}</option>)}
-            </select>
-            {pideValor && (
-              <input
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-                placeholder={comparador === "contiene" ? "texto" : "5"}
-                aria-label="Valor de la regla"
-                className="h-11 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
-              />
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {COLORES_REGLA.map((c) => (
-              <button
-                key={c.hex}
-                type="button"
-                onClick={() => setColor(c.hex)}
-                title={c.nombre}
-                aria-label={`Color ${c.nombre}`}
-                style={{ backgroundColor: c.hex }}
-                className={`h-9 w-9 rounded-lg border-2 transition-transform ${
-                  color === c.hex ? "scale-110 border-[var(--accent)]" : "border-[var(--rule-base)]"
-                }`}
-              >
-                {color === c.hex && <Check className="mx-auto h-4 w-4 text-[#111827]" />}
-              </button>
-            ))}
-          </div>
-
-          <p className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-xs text-[var(--text-secondary)]">
-            {coincidencias.length === 0
-              ? <>Ninguna celda {describirRegla(regla)} en la selección.</>
-              : <><strong className="text-[var(--text-primary)]">{coincidencias.length}</strong> celda{coincidencias.length === 1 ? "" : "s"} {describirRegla(regla)}.</>}
-          </p>
-
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            El color queda guardado en el archivo (se deshace con Ctrl+Z). Si después cambian los datos, vuelve a aplicar la regla.
-          </p>
-        </div>
-
-        <div className="flex justify-end gap-2 border-t border-[var(--rule-base)] px-4 py-3">
-          <button onClick={onCerrar} className="rounded-xl px-3 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
           <button
-            onClick={() => { onAplicar(coincidencias, color); onCerrar(); }}
+            onClick={() => {
+              onAplicar(coincidencias, color);
+              onCerrar();
+            }}
             disabled={!listo}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 min-h-10 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-45"
+            className={button({ variant: "primary" })}
           >
-            <Paintbrush className="h-4 w-4" /> Resaltar {coincidencias.length > 0 ? coincidencias.length : ""}
+            <Paintbrush className="h-4 w-4" /> Resaltar{" "}
+            {coincidencias.length > 0 ? coincidencias.length : ""}
           </button>
+        </ModalFooter>
+      }
+    >
+      <div className={`space-y-3 ${MODAL_BODY}`}>
+        <p className="text-xs text-[var(--text-tertiary)]">
+          En <strong className="text-[var(--text-secondary)]">{etiquetaRango}</strong>, pintar la
+          celda si…
+        </p>
+
+        <div className="flex gap-2">
+          <select
+            value={comparador}
+            onChange={(e) => setComparador(e.target.value as Comparador)}
+            aria-label="Condición de la regla"
+            className="h-11 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary"
+          >
+            {COMPARADORES.map((c) => (
+              <option key={c.valor} value={c.valor}>
+                {c.etiqueta}
+              </option>
+            ))}
+          </select>
+          {pideValor && (
+            <input
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              placeholder={comparador === "contiene" ? "texto" : "5"}
+              aria-label="Valor de la regla"
+              className="h-11 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            />
+          )}
         </div>
-        <TiradorDeVentana ventana={ventana} />
+
+        <div className="flex items-center gap-2">
+          {COLORES_REGLA.map((c) => (
+            <button
+              key={c.hex}
+              type="button"
+              onClick={() => setColor(c.hex)}
+              title={c.nombre}
+              aria-label={`Color ${c.nombre}`}
+              style={{ backgroundColor: c.hex }}
+              className={`h-9 w-9 rounded-lg border-2 transition-transform ${
+                color === c.hex ? "scale-110 border-[var(--accent)]" : "border-[var(--rule-base)]"
+              }`}
+            >
+              {color === c.hex && <Check className="mx-auto h-4 w-4 text-[#111827]" />}
+            </button>
+          ))}
+        </div>
+
+        <p className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+          {coincidencias.length === 0 ? (
+            <>Ninguna celda {describirRegla(regla)} en la selección.</>
+          ) : (
+            <>
+              <strong className="text-[var(--text-primary)]">{coincidencias.length}</strong> celda
+              {coincidencias.length === 1 ? "" : "s"} {describirRegla(regla)}.
+            </>
+          )}
+        </p>
+
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+          El color queda guardado en el archivo (se deshace con Ctrl+Z). Si después cambian los
+          datos, vuelve a aplicar la regla.
+        </p>
       </div>
-    </div>
+    </AdminModal>
   );
 }

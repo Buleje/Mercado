@@ -498,6 +498,19 @@ function HerramientasDelLibro({ children }: { children: ReactNode }) {
     };
   }, [open, ubicar]);
 
+  /* Una herramienta que abre una ventana («Buscar guía», 2026-10-11): el panel
+     (z-61) quedaba flotando ENCIMA de la ventana nueva, y como Radix apaga los
+     clics fuera de ella, ni se podía cerrar. Al aparecer un `AdminModal` en el
+     body, el panel se cierra solo. */
+  useEffect(() => {
+    if (!open) return;
+    const mo = new MutationObserver(() => {
+      if (document.querySelector("[data-modal-variante]")) setOpen(false);
+    });
+    mo.observe(document.body, { childList: true });
+    return () => mo.disconnect();
+  }, [open]);
+
   const panel = open && pos && (
     <>
       <div className="fixed inset-0 z-modal-2" onClick={() => setOpen(false)} aria-hidden="true" />

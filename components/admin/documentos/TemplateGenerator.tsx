@@ -1,16 +1,22 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { X, Sparkles, ChevronRight, FileText, Check, User, Search, MessageCircle } from "@buleje/design-system/icons";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Sparkles,
+  ChevronRight,
+  FileText,
+  Check,
+  User,
+  Search,
+  MessageCircle,
+} from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { fetchTemplates, generateFromTemplate } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentTemplate } from "@/lib/types/documents";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 interface Props {
   onClose: () => void;
@@ -28,18 +34,19 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
   const [generado, setGenerado] = useState<DbDocument | null>(null);
   const [enviando, setEnviando] = useState(false);
   /** Clientes del negocio, para no tipear el nombre y el DNI a mano. */
-  const [clientes, setClientes] = useState<{ nombre: string; telefono: string; documento?: string; direccion?: string }[]>([]);
+  const [clientes, setClientes] = useState<
+    { nombre: string; telefono: string; documento?: string; direccion?: string }[]
+  >([]);
   const [buscaCliente, setBuscaCliente] = useState("");
   const [telefonoCliente, setTelefonoCliente] = useState("");
-  const panelRef = useRef<HTMLDivElement>(null);
-  const tituloId = useId();
-  // Escape lo maneja el hook (y cede si hay una confirmación encima). El
-  // listener propio en `window` que convivía con éste se quitó: cerraba igual.
-  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
-  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "template-generator" });
 
   useEffect(() => {
-    fetchTemplates().then((t) => { setTemplates(t); setLoading(false); }).catch(() => setLoading(false));
+    fetchTemplates()
+      .then((t) => {
+        setTemplates(t);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   // Los datos del cliente ya están en el sistema: escribirlos otra vez es donde
@@ -47,18 +54,38 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
   useEffect(() => {
     fetch("/api/customers?limit=200", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : { customers: [] }))
-      .then((data: { customers?: Array<{ name?: string; phone?: string; documentNumber?: string; address?: string }> }) => {
-        const arr = Array.isArray(data) ? data : data?.customers ?? [];
-        setClientes(arr
-          .filter((c) => c.phone)
-          .map((c) => ({ nombre: c.name || c.phone || "Cliente", telefono: c.phone ?? "", documento: c.documentNumber, direccion: c.address })));
-      })
-      .catch((err) => logger.error("[template-generator] fetch customers failed", { error: String(err) }));
+      .then(
+        (data: {
+          customers?: Array<{
+            name?: string;
+            phone?: string;
+            documentNumber?: string;
+            address?: string;
+          }>;
+        }) => {
+          const arr = Array.isArray(data) ? data : (data?.customers ?? []);
+          setClientes(
+            arr
+              .filter((c) => c.phone)
+              .map((c) => ({
+                nombre: c.name || c.phone || "Cliente",
+                telefono: c.phone ?? "",
+                documento: c.documentNumber,
+                direccion: c.address,
+              })),
+          );
+        },
+      )
+      .catch((err) =>
+        logger.error("[template-generator] fetch customers failed", { error: String(err) }),
+      );
   }, []);
 
   const clientesFiltrados = useMemo(() => {
     const q = buscaCliente.trim().toLowerCase();
-    const base = q ? clientes.filter((c) => c.nombre.toLowerCase().includes(q) || c.telefono.includes(q)) : clientes;
+    const base = q
+      ? clientes.filter((c) => c.nombre.toLowerCase().includes(q) || c.telefono.includes(q))
+      : clientes;
     return base.slice(0, 8);
   }, [buscaCliente, clientes]);
 
@@ -69,12 +96,18 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
    * ruc, dni…): así sirve para las tres plantillas sin una tabla de mapeo por
    * cada una.
    */
-  function usarCliente(c: { nombre: string; telefono: string; documento?: string; direccion?: string }) {
+  function usarCliente(c: {
+    nombre: string;
+    telefono: string;
+    documento?: string;
+    direccion?: string;
+  }) {
     if (!selected) return;
     const next: Record<string, string> = { ...values };
     for (const f of selected.fields) {
       const n = f.name.toLowerCase();
-      if (/(cliente|arrendatario|pagador|destinatario)/.test(n) && !/dni|ruc/.test(n)) next[f.name] = c.nombre;
+      if (/(cliente|arrendatario|pagador|destinatario)/.test(n) && !/dni|ruc/.test(n))
+        next[f.name] = c.nombre;
       else if (/(ruc|dni)/.test(n) && c.documento) next[f.name] = c.documento;
       else if (/direccion/.test(n) && c.direccion) next[f.name] = c.direccion;
       else if (/(telefono|celular)/.test(n)) next[f.name] = c.telefono;
@@ -125,62 +158,56 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={() => { if (!ventana.fijado) onClose(); }}
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
-    >
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={tituloId}
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-        className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
+    <>
+      <AdminModal
+        open
+        onClose={onClose}
+        title="Generador de plantillas"
+        description="Contratos, recibos, cotizaciones y acuerdos listos en 1 minuto."
+        icon={Sparkles}
+        size="xl"
+        claveVentana="template-generator"
       >
-        <header {...ventana.asaProps} className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100">
-              <Sparkles className="h-5 w-5 text-[var(--accent)]" />
-            </span>
-            <div>
-              <p id={tituloId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Generador de plantillas</p>
-              <p className="text-xs text-[var(--text-secondary)]">Contratos, recibos, cotizaciones y acuerdos listos en 1 minuto.</p>
-            </div>
-          </div>
-          <span className="flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-            <button aria-label="Cerrar" onClick={onClose} className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--rule-soft)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-slate-900">
-              <X className="h-4 w-4" />
-            </button>
-          </span>
-        </header>
-
-        <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-[280px_1fr] min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr]">
           {/* Sidebar plantillas */}
           <aside className="border-r border-[var(--rule-base)] overflow-y-auto p-3">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 py-2">Plantillas del sistema</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 py-2">
+              Plantillas del sistema
+            </p>
             {loading ? (
               <p className="text-sm text-[var(--text-secondary)] px-3 py-2">Cargando…</p>
             ) : templates.length === 0 ? (
-              <p className="text-sm text-[var(--text-secondary)] px-3 py-2">Sin plantillas. Reabre el módulo.</p>
+              <p className="text-sm text-[var(--text-secondary)] px-3 py-2">
+                Sin plantillas. Reabre el módulo.
+              </p>
             ) : (
               <ul className="space-y-1">
                 {templates.map((t) => (
                   <li key={t.id}>
                     <button
-                      onClick={() => { elegirPlantilla(t); setSuccess(null); setGenerado(null); }}
+                      onClick={() => {
+                        elegirPlantilla(t);
+                        setSuccess(null);
+                        setGenerado(null);
+                      }}
                       className={cn(
                         "w-full text-left px-3 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center gap-2",
-                        selected?.id === t.id ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                        selected?.id === t.id
+                          ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                          : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
                       )}
                     >
-                      <FileText className={cn("h-4 w-4 shrink-0", selected?.id === t.id ? "text-primary" : "text-[var(--text-tertiary)]")} />
+                      <FileText
+                        className={cn(
+                          "h-4 w-4 shrink-0",
+                          selected?.id === t.id ? "text-primary" : "text-[var(--text-tertiary)]",
+                        )}
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="truncate">{t.name}</p>
-                        <p className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)] truncate">{t.description}</p>
+                        <p className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)] truncate">
+                          {t.description}
+                        </p>
                       </div>
                       <ChevronRight className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
                     </button>
@@ -204,9 +231,13 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                 <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--data-success)] text-white mb-3">
                   <Check className="h-7 w-7" />
                 </span>
-                <p className="text-lg font-extrabold text-[var(--data-success)]">¡Documento generado!</p>
+                <p className="text-lg font-extrabold text-[var(--data-success)]">
+                  ¡Documento generado!
+                </p>
                 <p className="text-sm text-[var(--data-success)] mt-1">{success}</p>
-                <p className="text-xs text-[var(--data-success)] mt-2">Ya aparece en tu lista de documentos.</p>
+                <p className="text-xs text-[var(--data-success)] mt-2">
+                  Ya aparece en tu lista de documentos.
+                </p>
                 {/* Generar y mandar es el mismo trámite: la cotización se hace
                     PARA mandarla. Va el PDF, no un enlace. */}
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -228,14 +259,22 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
               </div>
             ) : (
               <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-5">
-                <p className="text-base font-extrabold text-[var(--text-primary)]">{selected.name}</p>
-                {selected.description && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{selected.description}</p>}
+                <p className="text-base font-extrabold text-[var(--text-primary)]">
+                  {selected.name}
+                </p>
+                {selected.description && (
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                    {selected.description}
+                  </p>
+                )}
 
                 {/* Traer al cliente del sistema en vez de tipearlo: menos errores
                     en el DNI y el teléfono queda listo para mandarlo. */}
                 {clientes.length > 0 && (
                   <div className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-                    <p className="mb-1.5 text-xs font-bold text-[var(--text-primary)]">Traer datos de un cliente</p>
+                    <p className="mb-1.5 text-xs font-bold text-[var(--text-primary)]">
+                      Traer datos de un cliente
+                    </p>
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
                       <input
@@ -252,17 +291,26 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                           <li key={c.telefono}>
                             <button
                               type="button"
-                              onClick={() => { usarCliente(c); setBuscaCliente(""); }}
+                              onClick={() => {
+                                usarCliente(c);
+                                setBuscaCliente("");
+                              }}
                               className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-white"
                             >
                               <User className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
-                              <span className="min-w-0 flex-1 truncate font-bold text-[var(--text-primary)]">{c.nombre}</span>
-                              <span className="shrink-0 text-xs tabular-nums text-[var(--text-secondary)]">{c.telefono}</span>
+                              <span className="min-w-0 flex-1 truncate font-bold text-[var(--text-primary)]">
+                                {c.nombre}
+                              </span>
+                              <span className="shrink-0 text-xs tabular-nums text-[var(--text-secondary)]">
+                                {c.telefono}
+                              </span>
                             </button>
                           </li>
                         ))}
                         {clientesFiltrados.length === 0 && (
-                          <li className="px-2 py-2 text-center text-xs italic text-[var(--text-secondary)]">Sin coincidencias.</li>
+                          <li className="px-2 py-2 text-center text-xs italic text-[var(--text-secondary)]">
+                            Sin coincidencias.
+                          </li>
                         )}
                       </ul>
                     )}
@@ -286,7 +334,13 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                         />
                       ) : (
                         <input
-                          type={f.type === "date" ? "date" : f.type === "number" || f.type === "currency" ? "number" : "text"}
+                          type={
+                            f.type === "date"
+                              ? "date"
+                              : f.type === "number" || f.type === "currency"
+                                ? "number"
+                                : "text"
+                          }
                           step={f.type === "currency" ? "0.01" : undefined}
                           value={values[f.name] ?? ""}
                           onChange={(e) => setField(f.name, e.target.value)}
@@ -318,13 +372,15 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
             )}
           </div>
         </div>
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-
+      </AdminModal>
       {/* El envío se monta encima: al cerrarlo se vuelve al generador. */}
       {enviando && generado && (
-        <SendWhatsAppModal docs={[generado]} telefono={telefonoCliente} onClose={() => setEnviando(false)} />
+        <SendWhatsAppModal
+          docs={[generado]}
+          telefono={telefonoCliente}
+          onClose={() => setEnviando(false)}
+        />
       )}
-    </div>
+    </>
   );
 }

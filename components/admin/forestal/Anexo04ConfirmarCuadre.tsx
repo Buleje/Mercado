@@ -9,17 +9,15 @@
  *    imprimir o guardar con la distribución descuadrada. Lista la diferencia
  *    y ofrece «Revisar el cuadre» o seguir igual.
  *
- * El diálogo se monta FUERA de la caja del modal que lo abre (hermano, dentro
- * de su fondo): la caja se mueve con `transform` y un `fixed` adentro quedaría
- * atado a ella. `useModalAccesible` atrapa el foco y su Escape corta el
- * evento antes de que el Escape del modal de atrás lo cierre entero.
+ * Es un `AdminModal` con `aboveModals` (2026-10-11): portal propio, foco
+ * atrapado, y Escape cierra sólo esta capa, no el anexo de atrás.
  */
-import { useId, useRef } from "react";
-import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, Scale } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { CuadreDelPapel } from "@/lib/forestal/cuadre-del-papel";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 const TONO_ERROR =
   "border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]";
@@ -63,48 +61,40 @@ export default function Anexo04ConfirmarCuadre({
   /** Sin él no hay «Revisar el cuadre» (quien abre el diálogo no tiene el modal del cuadre). */
   onVerCuadre?: () => void;
 }) {
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onCancelar });
-  const idTitulo = useId();
-  const idTexto = useId();
   return (
-    <div
-      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onCancelar(); }}
+    <AdminModal
+      open
+      onClose={onCancelar}
+      title="La distribución no cuadra"
+      icon={AlertTriangle}
+      size="md"
+      aboveModals
+      claveVentana="anexo04-confirmar-cuadre"
+      footer={
+        <ModalFooter>
+          {onVerCuadre && (
+            <button type="button" onClick={onVerCuadre} className={`${BTN} mr-auto border-2 border-[var(--accent)] text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]`}>
+              <Scale className="h-4 w-4" aria-hidden /> Revisar el cuadre
+            </button>
+          )}
+          <button type="button" onClick={onCancelar} className={button({ variant: "secondary" })}>
+            Cancelar
+          </button>
+          <button type="button" onClick={onConfirmar} className={button({ variant: "danger" })}>
+            {accion}
+          </button>
+        </ModalFooter>
+      }
     >
-      <div
-        ref={cajaRef}
-        tabIndex={-1}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby={idTitulo}
-        aria-describedby={idTexto}
-        className="w-full max-w-[34rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]"
-      >
-        <CardTitle as="h3" id={idTitulo} className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-          <AlertTriangle className="h-5 w-5 shrink-0" aria-hidden /> La distribución no cuadra
-        </CardTitle>
-        <p id={idTexto} className="mt-2 text-sm font-semibold text-[var(--text-primary)]">{cuadre.frase}</p>
+      <div className="px-5 py-4 sm:px-6">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">{cuadre.frase}</p>
         {cuadre.lineas && cuadre.lineas.length > 0 && (
           <ul className={`mt-2 max-h-48 space-y-1 overflow-y-auto rounded-xl border p-3 text-xs font-semibold ${TONO_ERROR}`}>
             {cuadre.lineas.map((l) => <li key={l}>· {l}</li>)}
           </ul>
         )}
         <p className="mt-3 text-sm text-[var(--text-secondary)]">{pregunta}</p>
-        <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-          {onVerCuadre && (
-            <button type="button" onClick={onVerCuadre} className={`${BTN} mr-auto border-2 border-[var(--accent)] text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]`}>
-              <Scale className="h-4 w-4" aria-hidden /> Revisar el cuadre
-            </button>
-          )}
-          <button type="button" onClick={onCancelar} className={`${BTN} border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]`}>
-            Cancelar
-          </button>
-          <button type="button" onClick={onConfirmar} className={`${BTN} bg-[var(--data-error-700)] text-white hover:brightness-110`}>
-            {accion}
-          </button>
-        </div>
       </div>
-    </div>
+    </AdminModal>
   );
 }

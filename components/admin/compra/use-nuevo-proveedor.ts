@@ -1,8 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { PurchaseSupplier as Supplier } from "@/lib/types/purchases";
 
@@ -27,9 +25,6 @@ export function useNuevoProveedor({ alCrear, setToastMsg }: Opciones) {
   const cerrarNuevoProveedor = useCallback(() => {
     if (!creatingSupplier) setShowNewSupplier(false);
   }, [creatingSupplier]);
-  const nuevoProveedorModalRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(nuevoProveedorModalRef, { onCerrar: cerrarNuevoProveedor, activo: showNewSupplier });
-  const ventanaNuevoProveedor = useVentanaDeModal(showNewSupplier, { ref: nuevoProveedorModalRef, aplicarTranslate: true, claveMemoria: "pos-nuevo-proveedor" });
 
   // ── Lookup RUC en SUNAT (auto-completar datos) ───────────────────────────────
   const handleRucLookup = useCallback(async (ruc: string) => {
@@ -119,7 +114,7 @@ export function useNuevoProveedor({ alCrear, setToastMsg }: Opciones) {
 
   return {
     showNewSupplier, setShowNewSupplier, abrir, newSupplier, setNewSupplier, creatingSupplier, rucLookup, setRucLookup,
-    cerrarNuevoProveedor, nuevoProveedorModalRef, ventanaNuevoProveedor, handleRucLookup, handleCreateSupplier,
+    cerrarNuevoProveedor, handleRucLookup, handleCreateSupplier,
   };
 }
 

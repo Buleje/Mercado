@@ -4,21 +4,29 @@
  * `EncimaDeRadix` lo apila como capa de Radix.
  */
 import { act, render } from "@testing-library/react";
+import { useRef } from "react";
 import { createPortal } from "react-dom";
 import { describe, expect, it } from "vitest";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import EncimaDeRadix from "@/components/admin/shared/encima-de-radix";
-import CtpEditarLineaModal from "@/components/admin/forestal/CtpEditarLineaModal";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
-const linea = {
-  id: "c1", lineNo: 1, fecha: "2026-09-22T00:00:00.000Z", observations: null, presentacion: null,
-  materiaPrimaRef: null, speciesCommon: "Tornillo", speciesScientific: null, productType: "MADERA ASERRADA",
-  duenoMadera: null, titularNombre: null, unit: "m3", quantity: 1, volumeInputM3: 2, atadaPorque: null,
-  permisos: [], gtfOrigen: [],
-};
+/* Un modal hecho a mano mínimo. Hasta el 2026-10-11 el ejemplo era
+   `CtpEditarLineaModal`, que ese día pasó a `AdminModal` (ya no lo necesita). */
+function ModalAMano() {
+  const caja = useRef<HTMLDivElement>(null);
+  useModalAccesible(caja, { onCerrar: () => {} });
+  return (
+    <div className="fixed inset-0 z-modal-2">
+      <div ref={caja} role="dialog" aria-modal="true" aria-label="Editar corrida" tabIndex={-1}>
+        <input aria-label="Cantidad" />
+      </div>
+    </div>
+  );
+}
 
 async function montar(conCapa: boolean) {
-  const editor = <CtpEditarLineaModal linea={linea as never} onCerrar={() => {}} onListo={() => {}} />;
+  const editor = <ModalAMano />;
   render(
     <AdminModal open onClose={() => {}} title="Registrar producción">
       <button type="button">adentro</button>

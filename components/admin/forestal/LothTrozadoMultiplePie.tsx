@@ -15,6 +15,7 @@
 import { AlertTriangle, Loader2, Scissors } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { RestanteDeLote } from "@/lib/forestal/loth-trozado-multiple";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 
 const TONO_AVISO = "font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]";
 
@@ -53,7 +54,7 @@ export default function LothTrozadoMultiplePie({
   const puede = hayArbol && libro.leido && listas > 0 && !guardando;
 
   return (
-    <footer className="flex flex-wrap items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] px-4 py-3 sm:px-5">
+    <ModalFooter>
       <span className="sr-only" aria-live="polite">
         {hayResultado ? "" : (aviso ?? "")}
       </span>
@@ -94,6 +95,6 @@ export default function LothTrozadoMultiplePie({
           {guardando ? "Asentando…" : `Asentar ${listas} troza${listas === 1 ? "" : "s"}`}
         </button>
       )}
-    </footer>
+    </ModalFooter>
   );
 }

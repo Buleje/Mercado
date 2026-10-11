@@ -11,17 +11,13 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
-import { AlertTriangle, Check, Upload, X } from "@buleje/design-system/icons";
+import { AlertTriangle, Check, MapPin, Upload } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { polygonAreaHa, type LatLng } from "@/lib/forestal/loth-geo";
 import { parseCoordText, parseGeometryFile, type ParseResult } from "@/lib/forestal/loth-coords-io";
 import { perimeterM, formatDistance } from "@/lib/forestal/loth-utm";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 
 const FORMATO_LABEL: Record<ParseResult["formato"], string> = {
   utm: "Coordenadas UTM",
@@ -43,26 +39,6 @@ interface Props {
 }
 
 export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }: Props) {
-  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
-     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
-  /* `activo: open` no es decorativo: el componente NO se desmonta al
-     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
-     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onClose, activo: open });
-  /**
-   * Ventana: se mueve, se achica y se fija (ADR-420).
-   *
-   * Lo que se pega acá hay que cotejarlo contra el mapa que quedó detrás: si el
-   * polígono del plan cae donde está dibujado el borrador. Con el modal en el
-   * medio no se ve nada del mapa, y cerrarlo para mirar pierde el cuadro
-   * pegado. Corrido a un costado —y fijado— se comparan los dos a la vez.
-   */
-  const ventana = useVentanaDeModal(open, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "loth-coords",
-  });
   const [text, setText] = useState("");
   const [zona, setZona] = useState(zonaDefault);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -101,57 +77,46 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
   if (!open) return null;
 
   return (
-    <div
-      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      /* El velo es decorativo: el diálogo es la caja de adentro. Cerrar tocando
-         afuera es un atajo —Escape y la X hacen lo mismo con teclado. */
-      role="presentation"
-      onClick={(e) => {
-        /* Fijado quiere decir «lo dejo abierto para trabajar atrás»: el clic
-           afuera deja de cerrar. La X y Escape siguen cerrando siempre. */
-        if (e.target === e.currentTarget && !ventana.fijado) onClose();
-      }}
-    >
-      {/* El diálogo en sí: acá viven el foco, el arrastre y el tamaño —
-          el velo de atrás no se mueve. */}
-      <div
-        ref={cajaRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Importar coordenadas del área de aprovechamiento"
-        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
-        className="relative flex max-h-[88vh] w-full max-w-[44rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-      >
-        {/* Cabecera — y asa para arrastrar la ventana. */}
-        <header
-          {...ventana.asaProps}
-          className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
-        >
-          <div className="flex items-center gap-1.5">
-            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Importar coordenadas</p>
-            <InfoTip
-              title="Importar coordenadas"
-              what="Pega el cuadro del plan de manejo o sube el KML / GeoJSON del expediente."
-              example="El cuadro con columnas Vértice · Este · Norte que trae el plano oficial de la ARFFS."
-            />
-          </div>
-          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
-              esto los controles quedarían flotando en el medio. */}
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Importar coordenadas"
+      icon={MapPin}
+      size="lg"
+      aboveModals
+      claveVentana="loth-coords"
+      ayuda={
+        <InfoTip
+          title="Importar coordenadas"
+          what="Pega el cuadro del plan de manejo o sube el KML / GeoJSON del expediente."
+          example="El cuadro con columnas Vértice · Este · Norte que trae el plano oficial de la ARFFS."
+        />
+      }
+      footer={(
+        <ModalFooter>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
-            <X className="h-4 w-4" />
+            Cancelar
           </button>
-        </header>
+          <button
+            type="button"
+            disabled={!listo}
+            onClick={() => {
+              onApply(result.vertices);
+              onClose();
+            }}
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
+          >
+            <Check className="h-4 w-4" /> Usar este polígono
+          </button>
+        </ModalFooter>
+      )}
+    >
 
-        <div className="flex-1 space-y-3 overflow-auto px-5 py-4">
+        <div className="space-y-3 px-5 py-4 sm:px-6">
           <div className="flex flex-wrap items-end gap-3">
             <label className="text-xs font-bold text-[var(--text-secondary)]">
               Zona UTM
@@ -243,29 +208,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
           </div>
         </div>
 
-        <footer className="flex items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] px-5 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            disabled={!listo}
-            onClick={() => {
-              onApply(result.vertices);
-              onClose();
-            }}
-            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
-          >
-            <Check className="h-4 w-4" /> Usar este polígono
-          </button>
-        </footer>
 
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }

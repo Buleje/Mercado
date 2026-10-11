@@ -21,12 +21,8 @@
  * — qué pasa con lo que cuelga de un lote: `lib/forestal/ctp-purga-plan.ts`.
  */
 
-import { useEffect, useRef, useState } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { AlertTriangle, Trash2, X } from "@buleje/design-system/icons";
-import { SectionTitle } from "@buleje/design-system";
+import { useEffect, useState } from "react";
+import { AlertTriangle, Trash2 } from "@buleje/design-system/icons";
 import { useVaciarLibro } from "./hooks/use-vaciar-libro";
 import {
   AlcancesVaciado,
@@ -35,18 +31,11 @@ import {
   LotesQueNoSeBorran,
   TodoConMesCerrado,
 } from "./vaciar-libro-partes";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () => void; onVaciado?: () => void }) {
-  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
-     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onClose });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventana = useVentanaDeModal(true, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "ctp-vaciar-libro",
-  });
   const v = useVaciarLibro(onVaciado);
   const [escrito, setEscrito] = useState("");
 
@@ -71,31 +60,33 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
   const puedeBorrar = !hecho && !nada && !vacio && !bloqueado && resumen != null && !v.cargando;
 
   return (
-    <div
-      className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
-    >
-      <div ref={cajaRef} tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Vaciar el Libro de Operaciones"
-        className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-      >
-        <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
-          <SectionTitle as="h2" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Vaciar el Libro de Operaciones</SectionTitle>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <X className="h-5 w-5" />
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Vaciar el Libro de Operaciones"
+      icon={Trash2}
+      size="lg"
+      claveVentana="ctp-vaciar-libro"
+      footer={
+        <ModalFooter>
+          <button type="button" onClick={onClose} className={button({ variant: "secondary" })}>
+            {hecho ? "Cerrar" : "Cancelar"}
           </button>
-        </div>
+          {puedeBorrar && (
+            <button
+              type="button"
+              onClick={() => void v.vaciar(escrito)}
+              disabled={v.borrando || escrito.trim().toUpperCase() !== v.palabra}
+              className={button({ variant: "danger" })}
+            >
+              <Trash2 className="h-5 w-5" /> {v.borrando ? "Vaciando…" : esTodo ? "Vaciar el libro" : "Borrar lo marcado"}
+            </button>
+          )}
+        </ModalFooter>
+      }
+    >
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-5 px-5 sm:px-6">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           {hecho ? (
             <div className="space-y-3">
               <div className="rounded-xl bg-[var(--data-success)]/10 p-4">
@@ -172,26 +163,6 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 bg-[var(--surface-sunken)] px-6 py-4">
-          <button
-            onClick={onClose}
-            className="h-12 rounded-xl px-5 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
-          >
-            {hecho ? "Cerrar" : "Mejor no"}
-          </button>
-          {puedeBorrar && (
-            <button
-              onClick={() => void v.vaciar(escrito)}
-              disabled={v.borrando || escrito.trim().toUpperCase() !== v.palabra}
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--data-error)] px-5 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-            >
-              <Trash2 className="h-5 w-5" /> {v.borrando ? "Vaciando…" : esTodo ? "Vaciar el libro" : "Borrar lo marcado"}
-            </button>
-          )}
-        </div>
-
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }

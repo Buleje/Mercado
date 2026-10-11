@@ -10,19 +10,35 @@
  * banco era lento; aca asignas N en segundos.
  */
 
-import { useState, useEffect, useCallback, useId, useMemo, useRef } from "react";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
-import { X, Search, Image as ImageIcon, Check, Loader2, Package, Sparkles } from "@buleje/design-system/icons";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { CardTitle } from "@buleje/design-system";
+import {
+  Search,
+  Image as ImageIcon,
+  Check,
+  Loader2,
+  Package,
+  Sparkles,
+} from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { DbProduct } from "@/lib/jsondb";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
-interface BankItem { id: string; name: string; imageUrl: string }
-interface BankCategory { id: string; name: string; description?: string; items: BankItem[] }
+interface BankItem {
+  id: string;
+  name: string;
+  imageUrl: string;
+}
+interface BankCategory {
+  id: string;
+  name: string;
+  description?: string;
+  items: BankItem[];
+}
 
 interface Props {
   open: boolean;
@@ -46,10 +62,6 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
   const [recentlyAssigned, setRecentlyAssigned] = useState<Map<number, string>>(new Map());
   const [dragOverProductId, setDragOverProductId] = useState<number | null>(null);
   const [draggingItem, setDraggingItem] = useState<BankItem | null>(null);
-  const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(panelRef, { onCerrar: () => onOpenChange(false), activo: open });
-  const ventana = useVentanaDeModal(open, { ref: panelRef, aplicarTranslate: true, claveMemoria: "inventario-asignar-imagenes" });
 
   const reloadBank = useCallback(async () => {
     setLoadingBank(true);
@@ -222,308 +234,308 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-system bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4"
-      onClick={(e) => e.target === e.currentTarget && !ventana.fijado && onOpenChange(false)}
-    >
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-[var(--shadow-xl)]">
-        {/* Header */}
-        <div {...ventana.asaProps} className="shrink-0 px-4 sm:px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
-          <div className="h-11 w-11 rounded-xl bg-linear-to-br from-primary to-[var(--data-success-500)] text-white flex items-center justify-center shrink-0">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <SectionTitle id={titleId} as="h2" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Asignar imágenes en bloque</SectionTitle>
-            <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
-              Arrastra una imagen del banco al producto sin foto. Se guarda automático.
-            </p>
-          </div>
-          <div className="hidden sm:flex items-center gap-3 shrink-0">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] text-sm font-bold">
-              <Check className="h-4 w-4" /> {totalAssigned} asignadas
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-sm font-bold">
-              <Package className="h-4 w-4" /> {totalPending} pendientes
-            </div>
-          </div>
-          <span className="ml-auto flex items-center gap-1 shrink-0">
-            <ControlesDeVentana ventana={ventana} />
-            <button
-              onClick={() => onOpenChange(false)}
-              className="p-2 rounded-xl hover:bg-[var(--surface-sunken)]"
-              aria-label="Cerrar"
-              title="Cerrar"
-            >
-              <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-            </button>
-          </span>
-        </div>
-
-        {/* Body — split view */}
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 overflow-hidden">
-          {/* Izquierda — banco de imágenes */}
-          <section className="flex flex-col overflow-hidden border-b sm:border-b-0 sm:border-r border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-            <header className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-primary" />
-                  Banco de Imágenes
-                  <span className="text-xs font-medium text-[var(--text-tertiary)]">({totalBankItems})</span>
-                </CardTitle>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                <input
-                  value={bankSearch}
-                  onChange={(e) => setBankSearch(e.target.value)}
-                  placeholder="Buscar en el banco..."
-                  className="w-full pl-10 pr-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
-                />
-              </div>
-              {categories.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => setActiveCatId(null)}
-                    className={cn(
-                      "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors",
-                      !activeCatId
-                        ? "border-primary bg-primary text-white"
-                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
-                    )}
-                  >
-                    Todas
-                  </button>
-                  {categories.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => setActiveCatId(c.id)}
-                      className={cn(
-                        "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors",
-                        activeCatId === c.id
-                          ? "border-primary bg-primary text-white"
-                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
-                      )}
-                    >
-                      {c.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </header>
-            <div className="flex-1 overflow-y-auto p-4">
-              {loadingBank && (
-                <div className="flex items-center justify-center py-10 gap-2 text-[var(--text-tertiary)]">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span className="text-sm">Cargando banco…</span>
-                </div>
-              )}
-              {bankError && (
-                <div className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-3 text-sm text-[var(--data-error-500)]">
-                  {bankError}
-                </div>
-              )}
-              {!loadingBank && totalBankItems === 0 && (
-                <div className="text-center py-10">
-                  <ImageIcon className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-3" />
-                  <p className="text-sm font-bold text-[var(--text-primary)]">
-                    {bankSearch ? `Sin resultados para "${bankSearch}"` : "El banco está vacío"}
-                  </p>
-                </div>
-              )}
-              {!loadingBank &&
-                visibleCats.map((cat) => (
-                  <section key={cat.id} className="mb-6 last:mb-0">
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 px-1">
-                      {cat.name} <span className="font-medium">· {cat.items.length}</span>
-                    </h4>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {cat.items.map((item) => {
-                        const isDragging = draggingItem?.id === item.id;
-                        return (
-                          <button
-                            key={item.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, item)}
-                            onDragEnd={handleDragEnd}
-                            onClick={() => handleBankItemClick(item)}
-                            title={`${item.name} — arrastra al producto`}
-                            className={cn(
-                              "group relative rounded-xl border-2 bg-[var(--surface-raised)] overflow-hidden transition-all text-left cursor-grab active:cursor-grabbing",
-                              isDragging
-                                ? "border-primary ring-2 ring-primary/30 opacity-60 scale-95"
-                                : "border-[var(--rule-soft)] hover:border-primary hover:shadow-md",
-                            )}
-                          >
-                            <div className="aspect-square bg-[var(--surface-sunken)] relative pointer-events-none">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={item.imageUrl}
-                                alt={item.name}
-                                className="w-full h-full object-contain p-1.5"
-                                draggable={false}
-                              />
-                            </div>
-                            <p className="px-1.5 py-1 text-[length:var(--ts-2xs)] sm:text-xs font-bold text-[var(--text-primary)] truncate" title={item.name}>
-                              {item.name}
-                            </p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </section>
-                ))}
-            </div>
-          </section>
-
-          {/* Derecha — productos sin imagen */}
-          <section className="flex flex-col overflow-hidden bg-[var(--surface-raised)]">
-            <header className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
-                  <Package className="h-4 w-4 text-[var(--data-warning-500)]" />
-                  Productos sin imagen
-                  <span className="text-xs font-medium text-[var(--text-tertiary)]">({totalPending})</span>
-                </CardTitle>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                <input
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  placeholder="Buscar producto por nombre o código..."
-                  className="w-full pl-10 pr-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
-                />
-              </div>
-              {productCategories.length > 1 && (
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => setActiveProductCat(null)}
-                    className={cn(
-                      "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors",
-                      !activeProductCat
-                        ? "border-primary bg-primary text-white"
-                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
-                    )}
-                  >
-                    Todas <span className="ml-1 opacity-80">· {baseWithoutImage.length}</span>
-                  </button>
-                  {productCategories.map((c) => (
-                    <button
-                      key={c.name}
-                      onClick={() => setActiveProductCat(c.name)}
-                      className={cn(
-                        "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors flex items-center gap-1",
-                        activeProductCat === c.name
-                          ? "border-primary bg-primary text-white"
-                          : c.pending === 0
-                          ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
-                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
-                      )}
-                      title={`${c.name}: ${c.pending} pendientes / ${c.total} totales`}
-                    >
-                      {c.name}
-                      <span className="opacity-80">· {c.pending}</span>
-                      {c.pending === 0 && c.total > 0 && <Check className="h-3 w-3" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </header>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {productsWithoutImage.length === 0 && (
-                <div className="text-center py-10">
-                  <Check className="h-12 w-12 text-[var(--data-success-500)] mx-auto mb-3" />
-                  <p className="text-base font-extrabold text-[var(--text-primary)]">
-                    {productSearch || activeProductCat ? "Sin resultados" : "¡Todos tus productos tienen imagen!"}
-                  </p>
-                  <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                    {productSearch ? "Prueba otra búsqueda." : activeProductCat ? "Prueba quitar el filtro de categoría." : "Buen trabajo."}
-                  </p>
-                </div>
-              )}
-              {productsWithoutImage.map((p) => {
-                const assigned = recentlyAssigned.get(p.id);
-                const saving = savingProductIds.has(p.id);
-                const isDragOver = dragOverProductId === p.id;
-                return (
-                  <div
-                    key={p.id}
-                    onDragOver={(e) => handleDragOver(e, p.id)}
-                    onDragLeave={() => handleDragLeave(p.id)}
-                    onDrop={(e) => handleDrop(e, p.id)}
-                    className={cn(
-                      "flex items-center gap-3 p-3 rounded-xl border-2 transition-all",
-                      assigned
-                        ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/5"
-                        : isDragOver
-                        ? "border-primary bg-primary/10 ring-2 ring-primary/30 scale-[1.01]"
-                        : "border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-primary/50",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "h-14 w-14 sm:h-16 sm:w-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center",
-                        assigned ? "bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30" : "bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)]",
-                      )}
-                    >
-                      {assigned ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={assigned} alt={p.name} className="w-full h-full object-contain p-1" />
-                      ) : (
-                        <Package className="h-6 w-6 text-[var(--text-tertiary)]" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-extrabold text-[var(--text-primary)] truncate" title={p.name}>
-                        {p.name}
-                      </p>
-                      <p className="text-xs text-[var(--text-secondary)]">
-                        {p.category} · {p.unit}
-                      </p>
-                      {p.barcode && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono truncate">#{p.barcode}</p>}
-                    </div>
-                    <div className="shrink-0">
-                      {saving ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                      ) : assigned ? (
-                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] text-xs font-extrabold">
-                          <Check className="h-3.5 w-3.5" /> Asignada
-                        </div>
-                      ) : isDragOver ? (
-                        <div className="text-xs font-bold text-primary">Suelta acá</div>
-                      ) : (
-                        <div className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Drop</div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-
-        {/* Footer */}
-        <footer className="shrink-0 px-4 sm:px-6 py-3 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center justify-between gap-3">
-          <div className="flex sm:hidden items-center gap-2 text-xs">
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] font-bold">
-              {totalAssigned} <Check className="h-3.5 w-3.5" aria-hidden />
+    <AdminModal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Asignar imágenes en bloque"
+      description="Arrastra una imagen del banco al producto sin foto. Cada una se guarda sola."
+      icon={Sparkles}
+      size="xl"
+      claveVentana="inventario-asignar-imagenes"
+      footer={
+        <ModalFooter
+          nota={
+            <span className="inline-flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)]/10 px-2.5 py-1 font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                <Check className="h-4 w-4" aria-hidden /> {totalAssigned} asignadas
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 font-bold text-[var(--text-secondary)]">
+                <Package className="h-4 w-4" aria-hidden /> {totalPending} pendientes
+              </span>
             </span>
-            <span className="px-2 py-1 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] font-bold">
-              {totalPending} pendientes
-            </span>
-          </div>
-          <p className="hidden sm:block text-xs text-[var(--text-tertiary)]">
-            Tip: arrastra la imagen sobre el producto. Cada drop guarda automático.
-          </p>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
-          >
+          }
+        >
+          <button onClick={() => onOpenChange(false)} className={button({ variant: "primary" })}>
             {totalAssigned > 0 ? `Listo (${totalAssigned} asignadas)` : "Cerrar"}
           </button>
-        </footer>
-        <TiradorDeVentana ventana={ventana} />
+        </ModalFooter>
+      }
+    >
+      <div className="grid h-[min(70vh,48rem)] grid-cols-1 overflow-hidden sm:grid-cols-2">
+        {/* Izquierda — banco de imágenes */}
+        <section className="flex flex-col overflow-hidden border-b sm:border-b-0 sm:border-r border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+          <header className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle
+                as="h3"
+                className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2"
+              >
+                <ImageIcon className="h-4 w-4 text-primary" />
+                Banco de Imágenes
+                <span className="text-xs font-medium text-[var(--text-tertiary)]">
+                  ({totalBankItems})
+                </span>
+              </CardTitle>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+              <input
+                value={bankSearch}
+                onChange={(e) => setBankSearch(e.target.value)}
+                placeholder="Buscar en el banco..."
+                className="w-full pl-10 pr-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
+              />
+            </div>
+            {categories.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setActiveCatId(null)}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors",
+                    !activeCatId
+                      ? "border-primary bg-primary text-white"
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
+                  )}
+                >
+                  Todas
+                </button>
+                {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setActiveCatId(c.id)}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors",
+                      activeCatId === c.id
+                        ? "border-primary bg-primary text-white"
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
+                    )}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </header>
+          <div className="flex-1 overflow-y-auto p-4">
+            {loadingBank && (
+              <div className="flex items-center justify-center py-10 gap-2 text-[var(--text-tertiary)]">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-sm">Cargando banco…</span>
+              </div>
+            )}
+            {bankError && (
+              <div className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-3 text-sm text-[var(--data-error-500)]">
+                {bankError}
+              </div>
+            )}
+            {!loadingBank && totalBankItems === 0 && (
+              <div className="text-center py-10">
+                <ImageIcon className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-3" />
+                <p className="text-sm font-bold text-[var(--text-primary)]">
+                  {bankSearch ? `Sin resultados para "${bankSearch}"` : "El banco está vacío"}
+                </p>
+              </div>
+            )}
+            {!loadingBank &&
+              visibleCats.map((cat) => (
+                <section key={cat.id} className="mb-6 last:mb-0">
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 px-1">
+                    {cat.name} <span className="font-medium">· {cat.items.length}</span>
+                  </h4>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {cat.items.map((item) => {
+                      const isDragging = draggingItem?.id === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, item)}
+                          onDragEnd={handleDragEnd}
+                          onClick={() => handleBankItemClick(item)}
+                          title={`${item.name} — arrastra al producto`}
+                          className={cn(
+                            "group relative rounded-xl border-2 bg-[var(--surface-raised)] overflow-hidden transition-all text-left cursor-grab active:cursor-grabbing",
+                            isDragging
+                              ? "border-primary ring-2 ring-primary/30 opacity-60 scale-95"
+                              : "border-[var(--rule-soft)] hover:border-primary hover:shadow-md",
+                          )}
+                        >
+                          <div className="aspect-square bg-[var(--surface-sunken)] relative pointer-events-none">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={item.imageUrl}
+                              alt={item.name}
+                              className="w-full h-full object-contain p-1.5"
+                              draggable={false}
+                            />
+                          </div>
+                          <p
+                            className="px-1.5 py-1 text-[length:var(--ts-2xs)] sm:text-xs font-bold text-[var(--text-primary)] truncate"
+                            title={item.name}
+                          >
+                            {item.name}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+          </div>
+        </section>
+
+        {/* Derecha — productos sin imagen */}
+        <section className="flex flex-col overflow-hidden bg-[var(--surface-raised)]">
+          <header className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle
+                as="h3"
+                className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2"
+              >
+                <Package className="h-4 w-4 text-[var(--data-warning-500)]" />
+                Productos sin imagen
+                <span className="text-xs font-medium text-[var(--text-tertiary)]">
+                  ({totalPending})
+                </span>
+              </CardTitle>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+              <input
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                placeholder="Buscar producto por nombre o código..."
+                className="w-full pl-10 pr-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
+              />
+            </div>
+            {productCategories.length > 1 && (
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setActiveProductCat(null)}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors",
+                    !activeProductCat
+                      ? "border-primary bg-primary text-white"
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
+                  )}
+                >
+                  Todas <span className="ml-1 opacity-80">· {baseWithoutImage.length}</span>
+                </button>
+                {productCategories.map((c) => (
+                  <button
+                    key={c.name}
+                    onClick={() => setActiveProductCat(c.name)}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors flex items-center gap-1",
+                      activeProductCat === c.name
+                        ? "border-primary bg-primary text-white"
+                        : c.pending === 0
+                          ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
+                    )}
+                    title={`${c.name}: ${c.pending} pendientes / ${c.total} totales`}
+                  >
+                    {c.name}
+                    <span className="opacity-80">· {c.pending}</span>
+                    {c.pending === 0 && c.total > 0 && <Check className="h-3 w-3" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </header>
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            {productsWithoutImage.length === 0 && (
+              <div className="text-center py-10">
+                <Check className="h-12 w-12 text-[var(--data-success-500)] mx-auto mb-3" />
+                <p className="text-base font-extrabold text-[var(--text-primary)]">
+                  {productSearch || activeProductCat
+                    ? "Sin resultados"
+                    : "¡Todos tus productos tienen imagen!"}
+                </p>
+                <p className="text-sm text-[var(--text-tertiary)] mt-1">
+                  {productSearch
+                    ? "Prueba otra búsqueda."
+                    : activeProductCat
+                      ? "Prueba quitar el filtro de categoría."
+                      : "Buen trabajo."}
+                </p>
+              </div>
+            )}
+            {productsWithoutImage.map((p) => {
+              const assigned = recentlyAssigned.get(p.id);
+              const saving = savingProductIds.has(p.id);
+              const isDragOver = dragOverProductId === p.id;
+              return (
+                <div
+                  key={p.id}
+                  onDragOver={(e) => handleDragOver(e, p.id)}
+                  onDragLeave={() => handleDragLeave(p.id)}
+                  onDrop={(e) => handleDrop(e, p.id)}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl border-2 transition-all",
+                    assigned
+                      ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/5"
+                      : isDragOver
+                        ? "border-primary bg-primary/10 ring-2 ring-primary/30 scale-[1.01]"
+                        : "border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-primary/50",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "h-14 w-14 sm:h-16 sm:w-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center",
+                      assigned
+                        ? "bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30"
+                        : "bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)]",
+                    )}
+                  >
+                    {assigned ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={assigned}
+                        alt={p.name}
+                        className="w-full h-full object-contain p-1"
+                      />
+                    ) : (
+                      <Package className="h-6 w-6 text-[var(--text-tertiary)]" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-sm font-extrabold text-[var(--text-primary)] truncate"
+                      title={p.name}
+                    >
+                      {p.name}
+                    </p>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      {p.category} · {p.unit}
+                    </p>
+                    {p.barcode && (
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono truncate">
+                        #{p.barcode}
+                      </p>
+                    )}
+                  </div>
+                  <div className="shrink-0">
+                    {saving ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    ) : assigned ? (
+                      <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] text-xs font-extrabold">
+                        <Check className="h-3.5 w-3.5" /> Asignada
+                      </div>
+                    ) : isDragOver ? (
+                      <div className="text-xs font-bold text-primary">Suelta acá</div>
+                    ) : (
+                      <div className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+                        Drop
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       </div>
-    </div>
+    </AdminModal>
   );
 }

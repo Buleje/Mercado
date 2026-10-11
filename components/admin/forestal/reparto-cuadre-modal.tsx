@@ -12,16 +12,12 @@
  * `lib/forestal/reparto-cuadre.ts`, que lee las MISMAS fuentes que la
  * pantalla, el PDF y los Anexos 04.
  *
- * Modal a mano como el del Anexo 04 (mismo ancho, mismo backdrop): click
- * afuera y Escape cierran (`useModalAccesible`).
+ * `AdminModal` tamaño planilla, como el Anexo 04: clic afuera y Escape
+ * cierran; se mueve, se achica y se fija.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { AlertTriangle, FileSpreadsheet, Scale, ShieldCheck, X } from "@buleje/design-system/icons";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { AlertTriangle, FileSpreadsheet, Scale, ShieldCheck } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { logger } from "@/lib/logger";
 import { hoyISO } from "@/lib/forestal/distribucion-registro";
@@ -29,6 +25,7 @@ import type { CuadreReparto, EstadoCuadre, IdControl, PestanaCuadre, Trio } from
 import EtiquetaCuadre, { ESTADO_CUADRE, fmtTrio } from "./reparto-cuadre-etiqueta";
 import TablaControl from "./reparto-cuadre-tabla";
 import { button } from "@/components/ui-system/button-variants";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 const PESTANAS: { id: PestanaCuadre; label: string }[] = [
   { id: "bloque", label: "Por bloque" },
@@ -101,10 +98,7 @@ export default function RepartoCuadreModal({ cuadre, inicial, onCerrar }: {
   inicial: IdControl | "todo";
   onCerrar: () => void;
 }) {
-  const cajaRef = useRef<HTMLDivElement>(null);
   const cuerpoRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar });
-  const ventana = useVentanaDeModal(true, { ref: cajaRef, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "reparto-cuadre" });
 
   const pestanaDe = (id: IdControl) => cuadre.controles.find((x) => x.id === id)?.pestana ?? "bloque";
   const [pestana, setPestana] = useState<PestanaCuadre>(() =>
@@ -144,49 +138,35 @@ export default function RepartoCuadreModal({ cuadre, inicial, onCerrar }: {
   };
 
   return (
-    <div
-      className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3"
-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onCerrar(); }}
+    <AdminModal
+      open
+      onClose={onCerrar}
+      title="Cuadre de la distribución"
+      icon={Scale}
+      ayuda={
+        <InfoTip
+          title="Qué se cuadra"
+          what="La misma madera se cuenta en varias vistas: el lote, las tarjetas Distribuido y Falta, cada bloque, las medidas que imprime el PDF, los Anexos 04 por permiso y el resumen por especie. Acá se cruzan todas."
+          affects="Exacto = hasta 0,01 PT y 0,001 m³. Redondeo = el arrastre de redondear cada fila. Difiere = cualquier pieza de diferencia o un volumen que no explica el redondeo."
+          example="Tornillo 2×4×10: 21 en el lote, 20 distribuidas y 0 en falta → Difiere 1 pieza."
+        />
+      }
+      size="planilla"
+      /* Se abre desde el cubicador, que vive dentro de «Producir sin lote» (z-70). */
+      aboveModals
+      claveVentana="reparto-cuadre"
     >
-      <div
-        ref={cajaRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Cuadre de la distribución"
-        className="relative flex max-h-[94vh] w-full max-w-[min(96vw,110rem)] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]"
-      >
-        <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-            <CardTitle as="h3" className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              <Scale className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Cuadre de la distribución
-            </CardTitle>
-              <InfoTip
-                title="Qué se cuadra"
-                what="La misma madera se cuenta en varias vistas: el lote, las tarjetas Distribuido y Falta, cada bloque, las medidas que imprime el PDF, los Anexos 04 por permiso y el resumen por especie. Acá se cruzan todas."
-                affects="Exacto = hasta 0,01 PT y 0,001 m³. Redondeo = el arrastre de redondear cada fila. Difiere = cualquier pieza de diferencia o un volumen que no explica el redondeo."
-                example="Tornillo 2×4×10: 21 en el lote, 20 distribuidas y 0 en falta → Difiere 1 pieza."
-              />
-            </div>
-            <div className="mt-1"><Veredicto c={cuadre} /></div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)]">
-              <input type="checkbox" checked={soloDif} onChange={(e) => setSoloDif(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
-              Solo lo que no cuadra
-            </label>
-            <button type="button" onClick={bajar} disabled={bajando} className={BTN}>
-              <FileSpreadsheet className="h-4 w-4" aria-hidden /> {bajando ? "Generando…" : "Excel"}
-            </button>
-            <ControlesDeVentana ventana={ventana} />
-            <button type="button" onClick={onCerrar} aria-label="Cerrar el cuadre" className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]">
-              <X className="h-5 w-5" aria-hidden />
-            </button>
-          </div>
+      <div ref={cuerpoRef} className="px-5 py-4 sm:px-6">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="mr-auto min-w-0"><Veredicto c={cuadre} /></div>
+          <label className="flex h-12 cursor-pointer items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)]">
+            <input type="checkbox" checked={soloDif} onChange={(e) => setSoloDif(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
+            Solo lo que no cuadra
+          </label>
+          <button type="button" onClick={bajar} disabled={bajando} className={BTN}>
+            <FileSpreadsheet className="h-4 w-4" aria-hidden /> {bajando ? "Generando…" : "Excel"}
+          </button>
         </div>
-
-        <div ref={cuerpoRef} className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
           {/* Los controles: cada uno con su etiqueta. Clic = salta a su tabla. */}
           <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" aria-label="Controles del cuadre">
             {cuadre.controles.map((x) => (
@@ -235,9 +215,7 @@ export default function RepartoCuadreModal({ cuadre, inicial, onCerrar }: {
               <TablaControl key={x.id} control={x} soloDiferencias={soloDif} />
             ))}
           </div>
-        </div>
-        <TiradorDeVentana ventana={ventana} />
       </div>
-    </div>
+    </AdminModal>
   );
 }

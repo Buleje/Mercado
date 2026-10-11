@@ -22,16 +22,9 @@
  *    bloqueado sin explicación se lee como un error de la pantalla.
  */
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 import { leerJson } from "@/lib/errores/sin-dato";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
-import { AlertTriangle, Check, Loader2, Lock, X } from "@buleje/design-system/icons";
-import { SectionTitle } from "@buleje/design-system";
+import { AlertTriangle, Check, Loader2, Lock } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { esCampoSinDato, marcadorDeAusencia } from "@/lib/forestal/campo-sin-dato";
@@ -47,6 +40,9 @@ import {
   type ValoresLinea,
 } from "@/lib/forestal/ctp-linea-editable";
 import { formatDateNumeric } from "@/lib/format";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 /** Lo que el modal necesita saber de la fila. */
 export interface LineaEditable {
@@ -105,9 +101,6 @@ export default function CtpEditarLineaModal({
   onCerrar: () => void;
   onListo: (resumen: string) => void;
 }) {
-  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
-     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
-  const cajaRef = useRef<HTMLDivElement>(null);
   /** Lo que dice hoy el asiento — la referencia contra la que se mide el cambio. */
   const actual = useMemo<ValoresLinea>(
     () => ({
@@ -150,13 +143,6 @@ export default function CtpEditarLineaModal({
   const [permiso, setPermiso] = useState(permisoActual);
 
   const [guardando, setGuardando] = useState(false);
-  useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onCerrar });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventana = useVentanaDeModal(true, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "ctp-editar-linea",
-  });
   const [error, setError] = useState<string | null>(null);
   /** Lo que el servidor NO aplicó, con su motivo. Se muestra y no se cierra. */
   const [sinAplicar, setSinAplicar] = useState<string[]>([]);
@@ -346,45 +332,42 @@ export default function CtpEditarLineaModal({
   };
 
   return (
-    <div
-      className="modal-backdrop fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4"
-      onMouseDown={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onCerrar(); }}
-    >
-      <div ref={cajaRef} tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Editar la corrida N° ${linea.lineNo ?? ""}`}
-        className="relative max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)]"
-      >
-        <div {...ventana.asaProps} className="mb-1 flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-1.5">
-              <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-                Editar la corrida N° {linea.lineNo ?? "—"}
-              </SectionTitle>
-              {/* La explicación general del modal pasó al ⓘ (2026-09-24). */}
-              <InfoTip
-                title="Editar la corrida"
-                what="Corrige o completa los campos con lo que hoy dice el asiento. Queda registrado qué decía antes de cada cambio."
-                affects="El N° de permiso se hereda de la madera: su formulario escribe en la guía, no en la corrida. La fecha no se toca desde acá."
-              />
-            </div>
-            <p className="text-sm text-[var(--text-tertiary)]">
-              {formatDateNumeric(linea.fecha, { soloFecha: true })}
-            </p>
-          </div>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
+    <AdminModal
+      open
+      onClose={() => {
+        if (!guardando) onCerrar();
+      }}
+      title={`Editar la corrida N° ${linea.lineNo ?? "—"}`}
+      description={formatDateNumeric(linea.fecha, { soloFecha: true })}
+      ayuda={
+        /* La explicación general del modal pasó al ⓘ (2026-09-24). */
+        <InfoTip
+          title="Editar la corrida"
+          what="Corrige o completa los campos con lo que hoy dice el asiento. Queda registrado qué decía antes de cada cambio."
+          affects="El N° de permiso se hereda de la madera: su formulario escribe en la guía, no en la corrida. La fecha no se toca desde acá."
+        />
+      }
+      size="lg"
+      aboveModals
+      claveVentana="ctp-editar-linea"
+      footer={
+        <ModalFooter>
+          <button type="button" onClick={onCerrar} className={button({ variant: "secondary" })}>
+            Cancelar
+          </button>
           <button
             type="button"
-            onClick={onCerrar}
-            aria-label="Cerrar"
-            className="rounded-lg p-1 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            onClick={() => void guardar()}
+            disabled={!algoQueGuardar || guardando}
+            className={button({ variant: "accent" })}
           >
-            <X className="h-5 w-5" />
+            {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            Guardar cambios
           </button>
-        </div>
+        </ModalFooter>
+      }
+    >
+      <div className="px-5 py-5 sm:px-6">
 
         {linea.atadaPorque && (
           <p className="mt-3 flex items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-2 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
@@ -506,27 +489,7 @@ export default function CtpEditarLineaModal({
           </p>
         )}
 
-        <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCerrar}
-            className="h-12 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={() => void guardar()}
-            disabled={!algoQueGuardar || guardando}
-            className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--accent)] bg-primary/10 px-4 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40 dark:text-[var(--accent)]"
-          >
-            {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-            Guardar cambios
-          </button>
-        </div>
-
-        <TiradorDeVentana ventana={ventana} />
       </div>
-    </div>
+    </AdminModal>
   );
 }

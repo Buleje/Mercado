@@ -22,7 +22,6 @@ import {
   Table,
   X,
 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useDiagnosticoSinOrigen } from "@/hooks/use-vincular-trozas";
 import type { DiagnosticoCorrida } from "@/lib/forestal/vincular-trozas";
@@ -110,6 +109,8 @@ import {
 import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 /* Totales de período: dos decimales, como el resumen y las tarjetas que viven
    al lado. Los tres de `fmtM3` son para medir una troza. */
@@ -2262,37 +2263,20 @@ export function CtpEntriesView({
       )}
 
       {annulId && (
-        <div
-          className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setAnnulId(null)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") setAnnulId(null);
-          }}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-          >
-            <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-              Anular línea
-            </CardTitle>
-            <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-              Indica el motivo (queda en el historial, no se borra).
-            </p>
-            <input
-              // eslint-disable-next-line jsx-a11y/no-autofocus -- único campo del modal de anular, foco intencional
-              autoFocus
-              value={annulReason}
-              onChange={(e) => setAnnulReason(e.target.value)}
-              placeholder="Motivo (min 3 caracteres)"
-              className="mt-3 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm outline-none focus:border-[var(--data-error-500)]"
-            />
-            <div className="mt-4 flex justify-end gap-2">
+        <AdminModal
+          open
+          onClose={() => setAnnulId(null)}
+          title="Anular línea"
+          description="Indica el motivo (queda en el historial, no se borra)."
+          size="md"
+          aboveModals
+          claveVentana="ctp-anular-linea"
+          footer={
+            <ModalFooter>
               <button
                 type="button"
                 onClick={() => setAnnulId(null)}
-                className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
+                className={button({ variant: "secondary" })}
               >
                 Cancelar
               </button>
@@ -2300,13 +2284,25 @@ export function CtpEntriesView({
                 type="button"
                 disabled={annulReason.trim().length < 3 || pending}
                 onClick={annul}
-                className="inline-flex h-12 items-center rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                className={button({ variant: "danger" })}
               >
                 Confirmar anulación
               </button>
-            </div>
+            </ModalFooter>
+          }
+        >
+          <div className="px-5 py-5 sm:px-6">
+            <input
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- único campo del modal de anular, foco intencional
+              autoFocus
+              value={annulReason}
+              onChange={(e) => setAnnulReason(e.target.value)}
+              placeholder="Motivo (min 3 caracteres)"
+              aria-label="Motivo de la anulación"
+              className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base outline-none focus:border-[var(--data-error-500)]"
+            />
           </div>
-        </div>
+        </AdminModal>
       )}
     </div>
   );

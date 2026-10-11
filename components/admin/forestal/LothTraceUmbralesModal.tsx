@@ -12,14 +12,8 @@
  * un dato del libro.
  */
 
-import { useEffect, useState, useRef } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
-import { RotateCcw, Save, X } from "@buleje/design-system/icons";
+import { useEffect, useState } from "react";
+import { RotateCcw, Save, SlidersHorizontal } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
@@ -29,6 +23,8 @@ import {
   UMBRALES_DEFAULT,
   type UmbralesMerma,
 } from "@/lib/forestal/loth-trace-umbrales";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 
 const INPUT =
   "h-11 w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-center font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]";
@@ -47,26 +43,6 @@ export default function LothTraceUmbralesModal({
   onClose: () => void;
   onGuardar: (u: UmbralesMerma) => void;
 }) {
-  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
-     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
-  /* `activo: open` no es decorativo: el componente NO se desmonta al
-     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
-     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onClose, activo: open });
-  /**
-   * Ventana: se mueve, se achica y se fija (ADR-420).
-   *
-   * Un umbral no se elige en el aire: se elige mirando qué árboles quedan
-   * marcados con él. Corriendo el modal a un lado queda a la vista la columna
-   * de merma de la tabla de atrás, y se sube o baja el porcentaje viendo
-   * cuántos rojos deja —en vez de guardar, mirar y volver a abrir.
-   */
-  const ventana = useVentanaDeModal(open, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "loth-umbrales-merma",
-  });
   const [draft, setDraft] = useState<UmbralesMerma>(umbrales);
 
   useEffect(() => {
@@ -108,57 +84,42 @@ export default function LothTraceUmbralesModal({
   };
 
   return (
-    <div
-      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      /* El velo es decorativo: el diálogo es la caja de adentro. Cerrar tocando
-         afuera es un atajo —Escape y la X hacen lo mismo con teclado. */
-      role="presentation"
-      onClick={(e) => {
-        /* Fijado quiere decir «lo dejo abierto para mirar la tabla de atrás»:
-           el clic afuera deja de cerrar. La X y Escape siguen cerrando. */
-        if (e.target === e.currentTarget && !ventana.fijado) onClose();
-      }}
-    >
-      {/* El diálogo en sí: acá viven el foco, el arrastre y el tamaño —
-          el velo de atrás no se mueve. */}
-      <div
-        ref={cajaRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Umbrales de merma por especie"
-        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
-        className="relative flex max-h-[88vh] w-full max-w-[38rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-      >
-        {/* Cabecera — y asa para arrastrar la ventana. */}
-        <header
-          {...ventana.asaProps}
-          className="flex items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-3"
-        >
-          <div className="flex items-center gap-1.5">
-            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Umbrales de merma</p>
-            <InfoTip
-              title="Umbrales de merma"
-              what="Cuánta madera puede perderse entre el tocón y las trozas antes de que la pantalla marque la fila."
-              example="Una especie de copa ancha pierde legítimamente más volumen que una de fuste recto: por eso se ajusta por especie."
-            />
-          </div>
-          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
-              esto los controles quedarían flotando en el medio. */}
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Umbrales de merma"
+      icon={SlidersHorizontal}
+      size="lg"
+      aboveModals
+      claveVentana="loth-umbrales-merma"
+      ayuda={
+        <InfoTip
+          title="Umbrales de merma"
+          what="Cuánta madera puede perderse entre el tocón y las trozas antes de que la pantalla marque la fila."
+          example="Una especie de copa ancha pierde legítimamente más volumen que una de fuste recto: por eso se ajusta por especie."
+        />
+      }
+      footer={(
+        <ModalFooter>
           <button
             type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            onClick={() => setDraft(UMBRALES_DEFAULT)}
+            className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
-            <X className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4" /> Volver al default
           </button>
-        </header>
+          <button
+            type="button"
+            onClick={guardar}
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90"
+          >
+            <Save className="h-4 w-4" /> Guardar
+          </button>
+        </ModalFooter>
+      )}
+    >
 
-        <div className="min-h-0 flex-1 overflow-auto px-5 py-4">
+        <div className="px-5 py-4 sm:px-6">
           <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -213,26 +174,8 @@ export default function LothTraceUmbralesModal({
           )}
         </div>
 
-        <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--rule-base)] px-5 py-3">
-          <button
-            type="button"
-            onClick={() => setDraft(UMBRALES_DEFAULT)}
-            className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
-          >
-            <RotateCcw className="h-4 w-4" /> Volver al default
-          </button>
-          <button
-            type="button"
-            onClick={guardar}
-            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90"
-          >
-            <Save className="h-4 w-4" /> Guardar
-          </button>
-        </footer>
 
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }
 

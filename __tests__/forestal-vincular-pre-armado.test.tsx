@@ -142,7 +142,8 @@ describe("vincular con la propuesta pre-armada", () => {
     recordarCodigosDeCorrida(CORRIDA_ID, [{ codigo: "115-A" }]);
     abrir();
     /* 2,5 m³ declarados sobre 2,808 de troza = 89 %: entra, pero pasa el tope. */
-    await waitFor(() => expect(screen.getByText(/por encima del 56 %/i)).toBeInTheDocument());
+    /* Lo dicen la propuesta y la revisión de abajo: basta con que se vea. */
+    await waitFor(() => expect(screen.getAllByText(/por encima del 56 %/i).length).toBeGreaterThan(0));
     expect(screen.getByText(/Faltan 1[.,]6[0-9]* m³ de troza/i)).toBeInTheDocument();
     /* Y nada se escribió: vincular sigue siendo un acto aparte. */
     expect(vi.mocked(fetch).mock.calls.every(([, init]) => (init as RequestInit)?.method !== "PATCH")).toBe(true);

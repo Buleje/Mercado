@@ -12,12 +12,6 @@
  */
 
 import { useMemo, useRef, useState } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
 import { DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
@@ -39,6 +33,8 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { filasQueFrenan, revisarContraPlan, type AvisoPlan } from "@/lib/forestal/loth-import-plan";
 import { useLothImportPlan } from "@/hooks/use-loth-import-plan";
 import LothImportPlanPanel from "./LothImportPlanPanel";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 
 const EJEMPLO: Record<string, string> = {
   tala: "Cód. árbol,Especie,Fecha,Ø mayor,Ø menor,Longitud\n001-TOR,Tornillo,21/07/2026,0.65,0.65,18",
@@ -64,12 +60,6 @@ export default function LothImportLineasModal({
    */
   onImportar: (filas: FilaImport[], planId: string | null) => Promise<{ creadas: number; errores: string[] }>;
 }) {
-  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
-     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
-  /* `activo: open` no es decorativo: el componente NO se desmonta al
-     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
-     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
-  const cajaRef = useRef<HTMLDivElement>(null);
   const [texto, setTexto] = useState("");
   /** El .xlsx subido, ya leído a celdas. Mientras está, manda sobre el texto. */
   const [archivo, setArchivo] = useState<{ nombre: string; celdas: CeldaLinea[][] } | null>(null);
@@ -80,20 +70,6 @@ export default function LothImportLineasModal({
   /** Filas que frenan (T7) y la persona volvió a tildar a mano. */
   const [reincluidas, setReincluidas] = useState<Set<number>>(new Set());
   const [importando, setImportando] = useState(false);
-  useModalAccesible(cajaRef, { onCerrar: importando ? undefined : onClose, activo: open });
-  /**
-   * Ventana: se mueve, se achica y se fija (ADR-420).
-   *
-   * Acá la vista previa es una tabla larga de filas con su veredicto: estirarla
-   * a lo ancho —o a toda la pantalla— es la diferencia entre revisar fila por
-   * fila y aceptar a ciegas. Y al decidir si una fila rechazada es un duplicado
-   * de verdad hay que mirar el libro de atrás, que este modal tapa entero.
-   */
-  const ventana = useVentanaDeModal(open, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "loth-import-lineas",
-  });
   const [resultado, setResultado] = useState<{ creadas: number; errores: string[]; plan: string | null } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -179,61 +155,49 @@ export default function LothImportLineasModal({
   };
 
   return (
-    <div
-      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      /* El velo es decorativo: el diálogo es la caja de adentro. Cerrar tocando
-         afuera es un atajo —Escape y la X hacen lo mismo con teclado. */
-      role="presentation"
-      onClick={(e) => {
-        /* Fijado quiere decir «lo dejo abierto mientras reviso»: el clic afuera
-           deja de cerrar —y con una previa de 60 filas pegadas, cerrarla sin
-           querer duele. La X y Escape siguen cerrando. */
-        if (e.target === e.currentTarget && !ventana.fijado) onClose();
+    <AdminModal
+      open
+      onClose={() => {
+        if (!importando) onClose();
       }}
-    >
-      {/* El diálogo en sí: acá viven el foco, el arrastre y el tamaño —
-          el velo de atrás no se mueve. */}
-      <div
-        ref={cajaRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Importar líneas de ${SECTION_META[section].label}`}
-        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
-        className="relative flex max-h-[90vh] w-full max-w-[60rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-      >
-        {/* Cabecera — y asa para arrastrar la ventana. */}
-        <header
-          {...ventana.asaProps}
-          className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
-        >
-          <div className="flex items-center gap-1.5">
-            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              Importar · {SECTION_META[section].label}
-            </p>
-            <InfoTip
-              title="Cómo importar"
-              what="Pega el cuadro de Excel o sube un CSV."
-              affects="Nada se escribe en el libro hasta que confirmes en «Asentar»."
-              example="Vas a poder destildar filas de la vista previa antes de asentar."
-            />
-          </div>
-          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
-              esto los controles quedarían flotando en el medio. */}
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
+      title={`Importar · ${SECTION_META[section].label}`}
+      icon={Upload}
+      size="xl"
+      aboveModals
+      claveVentana="loth-import-lineas"
+      ayuda={
+        <InfoTip
+          title="Cómo importar"
+          what="Pega el cuadro de Excel o sube un CSV."
+          affects="Nada se escribe en el libro hasta que confirmes en «Asentar»."
+          example="Vas a poder destildar filas de la vista previa antes de asentar."
+        />
+      }
+      footer={(
+        <ModalFooter>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
           >
-            <X className="h-4 w-4" />
+            {resultado ? "Cerrar" : "Cancelar"}
           </button>
-        </header>
+          {!resultado && (
+            <button
+              type="button"
+              onClick={importar}
+              disabled={aImportar.length === 0 || importando || faltaPermiso}
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {importando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {importando ? "Asentando…" : `Asentar ${aImportar.length} línea${aImportar.length === 1 ? "" : "s"}`}
+            </button>
+          )}
+        </ModalFooter>
+      )}
+    >
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-auto px-5 py-4">
+        <div className="space-y-3 px-5 py-4">
           {resultado ? (
             <div className="space-y-3">
               <div
@@ -425,30 +389,8 @@ export default function LothImportLineasModal({
           )}
         </div>
 
-        <footer className="flex flex-wrap items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] px-5 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
-          >
-            {resultado ? "Cerrar" : "Cancelar"}
-          </button>
-          {!resultado && (
-            <button
-              type="button"
-              onClick={importar}
-              disabled={aImportar.length === 0 || importando || faltaPermiso}
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-            >
-              {importando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              {importando ? "Asentando…" : `Asentar ${aImportar.length} línea${aImportar.length === 1 ? "" : "s"}`}
-            </button>
-          )}
-        </footer>
 
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }
 

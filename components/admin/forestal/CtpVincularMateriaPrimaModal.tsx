@@ -26,9 +26,9 @@
  * lote elegido y las trozas tildadas, y la firma sigue siendo de quien registra.
  * Los códigos que no se encontraron se dicen arriba, no se ignoran.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Check, Layers, Loader2, Ruler, X } from "@buleje/design-system/icons";
-import { CardTitle, BlockTitle, DataTable } from "@buleje/design-system";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Check, Layers, Loader2, Ruler } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
@@ -41,12 +41,6 @@ import {
   type CorridaAVincular,
   type TrozaAVincular,
 } from "@/lib/forestal/vincular-produccion";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
 import { olvidarCodigosDeCorrida } from "@/lib/forestal/codigos-de-corrida";
 import { usePropuestaDeVinculacion } from "./hooks/use-propuesta-de-vinculacion";
 import { useArmarLoteDePropuesta } from "./hooks/use-armar-lote-de-propuesta";
@@ -54,6 +48,8 @@ import { planearLoteDesdePropuesta } from "@/lib/forestal/lote-desde-propuesta";
 import CtpPropuestaDeVinculacion from "./CtpPropuestaDeVinculacion";
 import CtpArmarLoteDesdePropuesta from "./CtpArmarLoteDesdePropuesta";
 import { Btn } from "./ctp-shared";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 
 /** Un paquete declarado por la corrida, como lo devuelve el detalle. */
 interface PaqueteDeclarado {
@@ -95,21 +91,6 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
   paquetes: PaqueteDeclarado[];
   onCerrar: () => void;
 }) {
-  const caja = useRef<HTMLDivElement>(null);
-  useModalAccesible(caja, { onCerrar });
-  /**
-   * Ventana: se mueve, se achica y se fija (ADR-420).
-   *
-   * Este detalle se abre justamente para compararlo con lo de atrás: las
-   * escuadrías que salieron contra las trozas tildadas del lote. Encimado tapa
-   * la lista que hay que mirar; corrido a un costado se leen las dos columnas
-   * de m³ a la vez, que es la pregunta entera («¿pudo salir de esas trozas?»).
-   */
-  const ventana = useVentanaDeModal(true, {
-    ref: caja,
-    aplicarTranslate: true,
-    claveMemoria: "ctp-medidas-declaradas",
-  });
 
   const filas = paquetes.map((p) => ({
     codigo: p.codigo ?? "—",
@@ -138,46 +119,18 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
     .sort((a, b) => b.m3 - a.m3);
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/60 p-3">
-      <div
-        ref={caja}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Medidas declaradas"
-        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
-        className="relative flex max-h-[90vh] w-full max-w-4xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
-      >
-        {/* Cabecera — y asa para arrastrar la ventana. */}
-        <div
-          {...ventana.asaProps}
-          className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
-        >
-          <div>
-            <BlockTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
-              <Ruler className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Medidas declaradas
-            </BlockTitle>
-            <p className="text-xs text-[var(--text-tertiary)]">
-              {filas.length} {filas.length === 1 ? "paquete" : "paquetes"} ·{" "}
-              {fmtPiezas(total.cantidad)} piezas · {fmtM3(total.m3)} m³ · {fmtPt(ptDesdeM3(total.m3))} PT
-            </p>
-          </div>
-          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
-              esto los controles quedarían flotando en el medio. */}
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button
-            type="button"
-            onClick={onCerrar}
-            aria-label="Cerrar el detalle"
-            className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    <AdminModal
+      open
+      onClose={onCerrar}
+      title="Medidas declaradas"
+      description={`${filas.length} ${filas.length === 1 ? "paquete" : "paquetes"} · ${fmtPiezas(total.cantidad)} piezas · ${fmtM3(total.m3)} m³ · ${fmtPt(ptDesdeM3(total.m3))} PT`}
+      icon={Ruler}
+      size="xl"
+      aboveModals
+      claveVentana="ctp-medidas-declaradas"
+    >
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5 sm:px-6">
+        <div className="space-y-3 px-5 py-5 sm:px-6">
           {filas.length === 0 ? (
             <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-6 text-center text-sm text-[var(--text-tertiary)]">
               Esta corrida declaró su volumen sin detallar paquetes.
@@ -255,10 +208,7 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
             </>
           )}
         </div>
-
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }
 
@@ -380,21 +330,6 @@ export default function CtpVincularMateriaPrimaModal({
 
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onCerrar });
-  /**
-   * Ventana: se mueve, se achica y se fija (ADR-420).
-   *
-   * Firmar el origen de una corrida es un careo con la pantalla de atrás: qué
-   * guía, qué permiso y qué saldo quedaba en el patio. Con la lista de trozas
-   * tildadas ocupando el alto entero, cerrar para mirar borra lo elegido —y
-   * estirado a lo ancho entran las piezas sin scrollear de a una.
-   */
-  const ventana = useVentanaDeModal(true, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "ctp-vincular-materia-prima",
-  });
 
   /**
    * El largo de la pieza más larga sale de los PAQUETES de la corrida, que el
@@ -501,60 +436,55 @@ export default function CtpVincularMateriaPrimaModal({
   const avisos = revision?.hallazgos.filter((h) => h.severidad === "aviso") ?? [];
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3">
+    <AdminModal
+      open
+      onClose={() => {
+        if (!guardando) onCerrar();
+      }}
+      title="Vincular materia prima"
+      icon={Layers}
+      size="lg"
+      claveVentana="ctp-vincular-materia-prima"
+      footer={(
+        <ModalFooter>
+            <Btn onClick={onCerrar} disabled={guardando}>Cancelar</Btn>
+            <button
+              type="button"
+              onClick={() => void vincular()}
+              disabled={guardando || !revision?.puedeVincular || elegidas.size === 0}
+              title={
+                revision?.puedeVincular
+                  ? "Escribe los consumos, marca las trozas y deja la corrida con su origen"
+                  : "Hay algo que no cuadra: mira los avisos rojos"
+              }
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
+            >
+              {guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Layers className="h-4 w-4" aria-hidden />}
+              {guardando ? "Vinculando…" : "Vincular al lote"}
+            </button>
+        </ModalFooter>
+      )}
+    >
       {verMedidas && <MedidasDeclaradas paquetes={paquetes} onCerrar={() => setVerMedidas(false)} />}
-      <div
-        ref={cajaRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Vincular materia prima"
-        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
-        className="relative flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
-      >
-        {/* Cabecera — y asa para arrastrar la ventana. */}
-        <div
-          {...ventana.asaProps}
-          className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
-        >
-          <div className="min-w-0">
-            <CardTitle as="h3" className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              <Layers className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Vincular materia prima
-            </CardTitle>
-            <p className="flex flex-wrap items-center gap-x-2 text-xs text-[var(--text-tertiary)]">
-              <span>
-                Corrida N° {corrida.lineNo ?? "—"} · {corrida.especie ?? "sin especie"} ·{" "}
-                <span className="font-mono">{fmtM3(corrida.producidoM3)} m³</span> declarados el {corrida.fecha.slice(0, 10)}
-              </span>
-              {/* Contra qué se está vinculando: las medidas que salieron. */}
-              <button
-                type="button"
-                onClick={() => setVerMedidas(true)}
-                className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-0.5 font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-              >
-                <Ruler className="h-3.5 w-3.5" aria-hidden /> Ver las medidas
-                {paquetes.length > 0 && (
-                  <span className="font-mono font-normal opacity-80">({paquetes.length})</span>
-                )}
-              </button>
-            </p>
-          </div>
-          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
-              esto los controles quedarían flotando en el medio. */}
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button
-            type="button"
-            onClick={onCerrar}
-            aria-label="Cerrar"
-            className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5 sm:px-6">
+        <div className="space-y-3 px-5 py-5 sm:px-6">
+        <p className="flex flex-wrap items-center gap-x-2 text-sm text-[var(--text-secondary)]">
+            <span>
+              Corrida N° {corrida.lineNo ?? "—"} · {corrida.especie ?? "sin especie"} ·{" "}
+              <span className="font-mono">{fmtM3(corrida.producidoM3)} m³</span> declarados el {corrida.fecha.slice(0, 10)}
+            </span>
+            {/* Contra qué se está vinculando: las medidas que salieron. */}
+            <button
+              type="button"
+              onClick={() => setVerMedidas(true)}
+              className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-0.5 font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            >
+              <Ruler className="h-3.5 w-3.5" aria-hidden /> Ver las medidas
+              {paquetes.length > 0 && (
+                <span className="font-mono font-normal opacity-80">({paquetes.length})</span>
+              )}
+            </button>
+          </p>
           {/* La propuesta primero: los números que se van a confirmar. */}
           <CtpPropuestaDeVinculacion
             propuesta={propuesta}
@@ -705,26 +635,6 @@ export default function CtpVincularMateriaPrimaModal({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-3.5 sm:px-6">
-          <Btn onClick={onCerrar} disabled={guardando}>Cancelar</Btn>
-          <button
-            type="button"
-            onClick={() => void vincular()}
-            disabled={guardando || !revision?.puedeVincular || elegidas.size === 0}
-            title={
-              revision?.puedeVincular
-                ? "Escribe los consumos, marca las trozas y deja la corrida con su origen"
-                : "Hay algo que no cuadra: mira los avisos rojos"
-            }
-            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
-          >
-            {guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Layers className="h-4 w-4" aria-hidden />}
-            {guardando ? "Vinculando…" : "Vincular al lote"}
-          </button>
-        </div>
-
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }

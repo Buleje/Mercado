@@ -19,9 +19,9 @@ import {
 } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import type { MarketplaceOrderDetail } from "./hooks/use-marketplace-orders";
-import { cn } from "@/lib/utils";
 import { button } from "@/components/ui-system/button-variants";
 import { formatDateTime } from "@/lib/format";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 
 const PEN_FMT = new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" });
 export const fmtCurrency = (v: number) => PEN_FMT.format(v);
@@ -214,45 +214,31 @@ export function PieDelPedido({
   acciones: AccionDelPedido[];
 }) {
   return (
-    <footer className="shrink-0 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-3 flex flex-wrap items-center justify-between gap-2">
-      <button
-        type="button"
-        onClick={onClose}
-        className="h-12 px-4 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] transition-colors"
-      >
+    <ModalFooter>
+      <button type="button" onClick={onClose} className={button({ variant: "secondary" })}>
         Cerrar
       </button>
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {onWhatsApp && order.customerPhone && (
-          <button
-            type="button"
-            onClick={() => onWhatsApp(order)}
-            className="h-12 px-4 rounded-xl inline-flex items-center gap-2 border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-          >
-            <MessageCircle className="h-4 w-4" aria-hidden />
-            WhatsApp
-          </button>
-        )}
-        {/* Antes: «Cambiar estado» cerraba esto y abría un menú en la fila. Ahora el cambio va aquí mismo. */}
-        {acciones.map((a, i) => (
-          <button
-            key={a.id}
-            type="button"
-            onClick={a.onSelect}
-            className={cn(
-              "h-12 px-4 rounded-xl inline-flex items-center gap-1.5 text-sm font-semibold transition-colors",
-              a.peligro
-                ? "text-[var(--data-error-ink)] hover:bg-[var(--data-error-500)]/10"
-                : i === 0
-                  ? button({ variant: "primary", className: "rounded-xl h-12" })
-                  : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
-            )}
-          >
-            {a.label}
-            {!a.peligro && i === 0 && <ChevronRight className="h-4 w-4" aria-hidden />}
-          </button>
-        ))}
-      </div>
-    </footer>
+      {onWhatsApp && order.customerPhone && (
+        <button type="button" onClick={() => onWhatsApp(order)} className={button({ variant: "secondary" })}>
+          <MessageCircle className="h-4 w-4" aria-hidden />
+          WhatsApp
+        </button>
+      )}
+      {/* Antes: «Cambiar estado» cerraba esto y abría un menú en la fila. Ahora el cambio va aquí mismo. */}
+      {acciones.map((a, i) => (
+        <button
+          key={a.id}
+          type="button"
+          onClick={a.onSelect}
+          className={button({
+            variant: a.peligro ? "ghost" : i === 0 ? "primary" : "secondary",
+            className: a.peligro ? "text-[var(--data-error-ink)] hover:bg-[var(--data-error-500)]/10" : undefined,
+          })}
+        >
+          {a.label}
+          {!a.peligro && i === 0 && <ChevronRight className="h-4 w-4" aria-hidden />}
+        </button>
+      ))}
+    </ModalFooter>
   );
 }

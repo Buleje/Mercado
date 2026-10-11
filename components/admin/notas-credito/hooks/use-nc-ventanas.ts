@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { escapeDeLaPaginaConFijado, useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { escapeDeLaPaginaConFijado } from "@/hooks/use-ventana-de-modal";
 import { useKeyboardShortcuts } from "@/components/admin/notas-credito/use-atajos-teclado";
 import { useNcEstado } from "@/components/admin/notas-credito/hooks/use-nc-estado";
 import { useNcSelector } from "@/components/admin/notas-credito/hooks/use-nc-selector";
@@ -12,17 +12,9 @@ import { useNcIndicadores } from "@/components/admin/notas-credito/hooks/use-nc-
 export function useNcVentanas(previo: ReturnType<typeof useNcEstado> & ReturnType<typeof useNcSelector> & ReturnType<typeof useNcLista> & ReturnType<typeof useNcAcciones> & ReturnType<typeof useNcIndicadores>) {
   const {
     selected, setSelected, showShortcuts, setShowShortcuts, showNew, setShowNew, setWizardStep,
-    setCreateError, setPickerSearch, setPickerDocType, searchRef, wizardPanelRef, detailPanelRef,
-    resetWizard,
+    setCreateError, setPickerSearch, setPickerDocType, searchRef, detailPanelRef,
   } = previo;
-  // Escape ya lo maneja el efecto de más abajo (centraliza showNew/selected/showShortcuts).
-  useModalAccesible(wizardPanelRef, { onCerrar: () => resetWizard(), activo: showNew, cerrarConEscape: false });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventanaWizard = useVentanaDeModal(showNew, {
-    ref: wizardPanelRef,
-    aplicarTranslate: true,
-    claveMemoria: "notas-credito-nueva",
-  });
+  // La ventana «Nueva nota de crédito» es un AdminModal: foco, Escape y clic afuera los pone él.
   useModalAccesible(detailPanelRef, { onCerrar: () => setSelected(null), activo: !!selected, cerrarConEscape: false });
 
   // ── Keyboard Shortcuts ────────────────────────────────────────────────────
@@ -43,7 +35,5 @@ export function useNcVentanas(previo: ReturnType<typeof useNcEstado> & ReturnTyp
     return () => document.removeEventListener("keydown", handleEsc);
   }, [showNew, selected, showShortcuts, setSelected, setShowNew, setShowShortcuts]);
 
-  return {
-    ventanaWizard,
-  };
+  return {};
 }

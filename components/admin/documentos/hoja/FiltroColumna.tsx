@@ -9,17 +9,22 @@
  * un problema clásico de las planillas.
  */
 
-import { useMemo, useRef, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { Check, Search, X } from "@buleje/design-system/icons";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { useMemo, useState } from "react";
+import { Check, Search } from "@buleje/design-system/icons";
 import { valoresDeColumna } from "@/lib/documentos/hoja-analisis";
 import type { CeldaHoja } from "@/lib/documentos/xlsx-formato";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 export default function FiltroColumna({
-  filas, columna, etiqueta, desdeFila, seleccionados, onAplicar, onCerrar,
+  filas,
+  columna,
+  etiqueta,
+  desdeFila,
+  seleccionados,
+  onAplicar,
+  onCerrar,
 }: {
   filas: CeldaHoja[][];
   columna: number;
@@ -32,10 +37,13 @@ export default function FiltroColumna({
   onAplicar: (valores: Set<string> | null) => void;
   onCerrar: () => void;
 }) {
-  const valores = useMemo(() => valoresDeColumna(filas, columna, desdeFila), [filas, columna, desdeFila]);
+  const valores = useMemo(
+    () => valoresDeColumna(filas, columna, desdeFila),
+    [filas, columna, desdeFila],
+  );
   const [busqueda, setBusqueda] = useState("");
-  const [elegidos, setElegidos] = useState<Set<string>>(
-    () => seleccionados ? new Set(seleccionados) : new Set(valores.map((v) => v.valor)),
+  const [elegidos, setElegidos] = useState<Set<string>>(() =>
+    seleccionados ? new Set(seleccionados) : new Set(valores.map((v) => v.valor)),
   );
 
   const visibles = useMemo(() => {
@@ -54,107 +62,100 @@ export default function FiltroColumna({
 
   const todosElegidos = elegidos.size === valores.length;
 
-  // Se monta/desmonta desde el padre (no hay prop `open`): el hook está
-  // siempre activo mientras el componente vive.
-  const panelRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(panelRef, { onCerrar });
-  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "hoja-filtro-columna" });
-
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/40 p-4" onMouseDown={() => { if (!ventana.fijado) onCerrar(); }}>
-      <div
-        ref={panelRef}
-        onMouseDown={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-label={`Filtrar la columna ${etiqueta}`}
-        tabIndex={-1}
-        className="relative flex max-h-[80vh] w-full max-w-[24rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)] outline-none"
-      >
-        <div {...ventana.asaProps} className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-4 py-3">
-          <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]" as="h2">Filtrar por la columna {etiqueta}</CardTitle>
-          <span className="flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-            <button type="button" onClick={onCerrar} title="Cerrar"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
-              <X className="h-4 w-4" aria-hidden /><span className="sr-only">Cerrar</span>
-            </button>
-          </span>
-        </div>
-
-        <div className="border-b border-[var(--rule-base)] p-3">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
-            <input
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar un valor…"
-              aria-label="Buscar un valor de la columna"
-              className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-8 pr-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-            />
-          </div>
+    <AdminModal
+      open
+      onClose={onCerrar}
+      title={`Filtrar por la columna ${etiqueta}`}
+      size="sm"
+      claveVentana="hoja-filtro-columna"
+      footer={
+        <ModalFooter>
           <button
             type="button"
-            onClick={() => setElegidos(todosElegidos ? new Set() : new Set(valores.map((v) => v.valor)))}
-            className="mt-2 text-xs font-bold text-[var(--accent)] hover:underline"
-          >
-            {todosElegidos ? "Quitar todos" : "Seleccionar todos"}
-          </button>
-        </div>
-
-        <ul className="min-h-0 flex-1 overflow-y-auto p-2">
-          {visibles.length === 0 && (
-            <li className="px-2 py-6 text-center text-sm text-[var(--text-tertiary)]">
-              Ningún valor coincide con “{busqueda}”.
-            </li>
-          )}
-          {visibles.map(({ valor, cantidad }) => {
-            const marcado = elegidos.has(valor);
-            return (
-              <li key={valor || "(vacías)"}>
-                <button
-                  type="button"
-                  onClick={() => alternar(valor)}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-[var(--surface-sunken)]"
-                >
-                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${
-                    marcado ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--rule-strong)]"
-                  }`}>
-                    {marcado && <Check className="h-3.5 w-3.5" aria-hidden />}
-                  </span>
-                  <span className={`flex-1 truncate ${valor === "" ? "italic text-[var(--text-tertiary)]" : "text-[var(--text-primary)]"}`}>
-                    {valor === "" ? "(vacías)" : valor}
-                  </span>
-                  <span className="shrink-0 text-xs text-[var(--text-tertiary)]">{cantidad}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-
-        <div className="flex items-center justify-between gap-2 border-t-2 border-[var(--rule-base)] px-4 py-3">
-          <button
-            type="button"
-            onClick={() => { onAplicar(null); onCerrar(); }}
-            className="text-xs font-bold text-[var(--text-secondary)] hover:underline"
+            onClick={() => {
+              onAplicar(null);
+              onCerrar();
+            }}
+            className={button({ variant: "ghost", className: "mr-auto" })}
           >
             Quitar el filtro
           </button>
-          <div className="flex gap-2">
-            <button type="button" onClick={onCerrar}
-              className="h-10 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={() => { onAplicar(todosElegidos ? null : elegidos); onCerrar(); }}
-              className="h-10 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--accent-600)]"
-            >
-              Aplicar
-            </button>
-          </div>
+          <button type="button" onClick={onCerrar} className={button({ variant: "secondary" })}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onAplicar(todosElegidos ? null : elegidos);
+              onCerrar();
+            }}
+            className={button({ variant: "primary" })}
+          >
+            Aplicar
+          </button>
+        </ModalFooter>
+      }
+    >
+      <div className="border-b border-[var(--rule-base)] px-5 py-3 sm:px-6">
+        <div className="relative">
+          <Search
+            className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
+            aria-hidden
+          />
+          <input
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar un valor…"
+            aria-label="Buscar un valor de la columna"
+            className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-8 pr-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          />
         </div>
-        <TiradorDeVentana ventana={ventana} />
+        <button
+          type="button"
+          onClick={() =>
+            setElegidos(todosElegidos ? new Set() : new Set(valores.map((v) => v.valor)))
+          }
+          className="mt-2 text-xs font-bold text-[var(--accent)] hover:underline"
+        >
+          {todosElegidos ? "Quitar todos" : "Seleccionar todos"}
+        </button>
       </div>
-    </div>
+      <ul className="px-3 py-2 sm:px-4">
+        {visibles.length === 0 && (
+          <li className="px-2 py-6 text-center text-sm text-[var(--text-tertiary)]">
+            Ningún valor coincide con “{busqueda}”.
+          </li>
+        )}
+        {visibles.map(({ valor, cantidad }) => {
+          const marcado = elegidos.has(valor);
+          return (
+            <li key={valor || "(vacías)"}>
+              <button
+                type="button"
+                onClick={() => alternar(valor)}
+                className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-[var(--surface-sunken)]"
+              >
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${
+                    marcado
+                      ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                      : "border-[var(--rule-strong)]"
+                  }`}
+                >
+                  {marcado && <Check className="h-3.5 w-3.5" aria-hidden />}
+                </span>
+                <span
+                  className={`flex-1 truncate ${valor === "" ? "italic text-[var(--text-tertiary)]" : "text-[var(--text-primary)]"}`}
+                >
+                  {valor === "" ? "(vacías)" : valor}
+                </span>
+                <span className="shrink-0 text-xs text-[var(--text-tertiary)]">{cantidad}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </AdminModal>
   );
 }

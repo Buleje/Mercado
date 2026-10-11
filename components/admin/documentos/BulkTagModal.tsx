@@ -1,11 +1,9 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
-import { Tag, X, Loader2, Check } from "@buleje/design-system/icons";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { useState } from "react";
+import { Tag, Loader2, Check } from "@buleje/design-system/icons";
 import { EtiquetaAutocomplete } from "./EtiquetaAutocomplete";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
 /**
  * Etiquetar EN LOTE: a diferencia de TagEditModal (un documento, con su
@@ -16,7 +14,10 @@ import { EtiquetaAutocomplete } from "./EtiquetaAutocomplete";
  * en esta sesión del modal.
  */
 export function BulkTagModal({
-  count, todasLasTags, onApply, onClose,
+  count,
+  todasLasTags,
+  onApply,
+  onClose,
 }: {
   count: number;
   todasLasTags: string[];
@@ -28,10 +29,6 @@ export function BulkTagModal({
   // sin que la segunda quede bloqueada esperando a que termine la primera.
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [aplicadas, setAplicadas] = useState<string[]>([]);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const titleId = useId();
-  useModalAccesible(modalRef, { onCerrar: onClose });
-  const ventana = useVentanaDeModal(true, { ref: modalRef, aplicarTranslate: true, claveMemoria: "bulk-tag" });
 
   const apply = async (tag: string) => {
     // Sin lowercase: un chip existente ("GTF") se aplica TAL CUAL aparece en
@@ -44,77 +41,74 @@ export function BulkTagModal({
       await onApply(t);
       setAplicadas((prev) => (prev.includes(t) ? prev : [...prev, t]));
     } finally {
-      setBusy((prev) => { const next = new Set(prev); next.delete(t); return next; });
+      setBusy((prev) => {
+        const next = new Set(prev);
+        next.delete(t);
+        return next;
+      });
     }
   };
 
   return (
-    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={() => { if (!ventana.fijado) onClose(); }}>
-      <div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="relative flex max-h-[85vh] w-full max-w-[26rem] flex-col overflow-visible rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div {...ventana.asaProps} className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Tag className="h-5 w-5" /></span>
-          <div className="min-w-0 flex-1">
-            <p id={titleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Etiquetar {count} documento{count === 1 ? "" : "s"}</p>
-            <p className="text-xs text-[var(--text-tertiary)]">Elige una etiqueta existente o crea una nueva</p>
+    <AdminModal
+      open
+      onClose={onClose}
+      title={`Etiquetar ${count} documento${count === 1 ? "" : "s"}`}
+      description="Elige una etiqueta existente o crea una nueva"
+      icon={Tag}
+      size="md"
+      claveVentana="bulk-tag"
+    >
+      <div className={`flex flex-col gap-3 ${MODAL_BODY}`}>
+        {todasLasTags.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+            {todasLasTags.map((t) => {
+              const aplicada = aplicadas.includes(t);
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => apply(t)}
+                  disabled={busy.has(t) || aplicada}
+                  className={
+                    aplicada
+                      ? "inline-flex items-center gap-1 rounded-lg bg-[var(--data-success-500)]/15 px-2 py-1 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                      : "inline-flex items-center gap-1 rounded-lg bg-[var(--surface-sunken)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] hover:bg-primary/10 hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
+                  }
+                >
+                  {busy.has(t) ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : aplicada ? (
+                    <Check className="h-3 w-3" />
+                  ) : null}
+                  #{t}
+                </button>
+              );
+            })}
           </div>
-          <ControlesDeVentana ventana={ventana} />
-          <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
-        </div>
+        ) : (
+          <p className="text-sm italic text-[var(--text-tertiary)]">
+            Todavía no tienes etiquetas — crea la primera abajo.
+          </p>
+        )}
 
-        <div className="flex flex-col gap-3 p-5">
-          {todasLasTags.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
-              {todasLasTags.map((t) => {
-                const aplicada = aplicadas.includes(t);
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => apply(t)}
-                    disabled={busy.has(t) || aplicada}
-                    className={
-                      aplicada
-                        ? "inline-flex items-center gap-1 rounded-lg bg-[var(--data-success-500)]/15 px-2 py-1 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                        : "inline-flex items-center gap-1 rounded-lg bg-[var(--surface-sunken)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] hover:bg-primary/10 hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
-                    }
-                  >
-                    {busy.has(t) ? <Loader2 className="h-3 w-3 animate-spin" /> : aplicada ? <Check className="h-3 w-3" /> : null}
-                    #{t}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm italic text-[var(--text-tertiary)]">Todavía no tienes etiquetas — crea la primera abajo.</p>
-          )}
+        <EtiquetaAutocomplete
+          value={value}
+          onChange={setValue}
+          onSubmit={apply}
+          todasLasTags={todasLasTags}
+          excluir={aplicadas}
+          placeholder="Crear etiqueta nueva…"
+          ariaLabel="Crear y aplicar etiqueta nueva a la selección"
+          inputClassName="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+        />
 
-          <EtiquetaAutocomplete
-            value={value}
-            onChange={setValue}
-            onSubmit={apply}
-            todasLasTags={todasLasTags}
-            excluir={aplicadas}
-            placeholder="Crear etiqueta nueva…"
-            ariaLabel="Crear y aplicar etiqueta nueva a la selección"
-            inputClassName="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
-          />
-
-          {aplicadas.length > 0 && (
-            <p className="text-xs font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-              Aplicadas: {aplicadas.map((t) => `#${t}`).join(", ")}
-            </p>
-          )}
-        </div>
-        <TiradorDeVentana ventana={ventana} />
+        {aplicadas.length > 0 && (
+          <p className="text-xs font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+            Aplicadas: {aplicadas.map((t) => `#${t}`).join(", ")}
+          </p>
+        )}
       </div>
-    </div>
+    </AdminModal>
   );
 }

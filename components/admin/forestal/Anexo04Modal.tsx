@@ -12,18 +12,11 @@
  * quiere re-tipear la razón social ni el DNI del responsable.
  */
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
 import { FileText, Truck, X } from "@buleje/design-system/icons";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04, fmtAnexo } from "@/lib/forestal/anexo04-serfor";
 import { validarAnexo04, avisosDeProcedencia, anexoPresentable, type AvisoAnexo04, type DeclaradoEnLibro, type ProcedenciaBloques } from "@/lib/forestal/anexo04-validacion";
 import { useAnexo04Datos } from "@/hooks/use-anexo04-datos";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
 import Anexo04Campos from "./Anexo04Campos";
 import Anexo04Origen, { ORIGEN_ACTUAL } from "./Anexo04Origen";
 import Anexo04Historial, { ICONO_HISTORIAL } from "./Anexo04Historial";
@@ -54,6 +47,7 @@ import { cuadreFrena, type CuadreDelPapel } from "@/lib/forestal/cuadre-del-pape
 import { traseraDelEmitido } from "@/lib/forestal/anexo04-registro";
 import type { TraseraParaPdf } from "@/lib/forestal/anexo04-pdf";
 import { formatNumber } from "@/lib/format";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 const A4_PX = 794; // ancho de una hoja A4 a 96 dpi
 /**
@@ -177,18 +171,15 @@ export default function Anexo04Modal({
   }, [totalBuffer]);
 
   const areaRef = useRef<HTMLDivElement>(null);
+  /* El cuerpo de un `AdminModal` se monta en la pasada SIGUIENTE (el portal de
+     Radix espera a su propio efecto): un efecto de este componente vería el ref
+     en null. Por eso se engancha con un ref de función. */
+  const [areaEl, setAreaEl] = useState<HTMLDivElement | null>(null);
+  const refArea = useCallback((el: HTMLDivElement | null) => {
+    areaRef.current = el;
+    setAreaEl(el);
+  }, []);
   const hojasRef = useRef<HTMLDivElement>(null);
-  /* Accesibilidad del diálogo: foco adentro, Tab atrapado y foco devuelto. El
-     Escape ya lo maneja el efecto de abajo (hay un modal hijo que lo intercepta
-     para no cerrar el anexo entero mientras se escriben las observaciones). */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { cerrarConEscape: false });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventana = useVentanaDeModal(true, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "ctp-anexo04",
-  });
 
   /**
    * El anexo abre EN BLANCO (Brandon, 2026-08). Nada se rellena solo: ni el N°
@@ -215,22 +206,17 @@ export default function Anexo04Modal({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- una sola vez, con la bandeja ya cargada
   }, [cargandoEmitidos]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCerrar(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCerrar]);
 
   // La hoja entra siempre a lo ancho del panel; el ± sólo la agranda desde ahí.
   useLayoutEffect(() => {
-    const el = areaRef.current;
+    const el = areaEl;
     if (!el) return;
     const medir = () => setFit(Math.min(ESCALA_AUTO_MAX, (el.clientWidth - 24) / A4_PX));
     medir();
     const ro = new ResizeObserver(medir);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [areaEl]);
 
   // Ojo con las deps: sólo lo ESTRUCTURAL. Si dependiera de `datos` entero, cada
   // tecla en la razón social devolvería hojas nuevas y tiraría abajo el memo de
@@ -393,34 +379,42 @@ export default function Anexo04Modal({
   };
 
   return (
-    <div
-      className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3"
-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onCerrar(); }}
+    <AdminModal
+      open
+      onClose={onCerrar}
+      title="Vista previa · ANEXO N° 04"
+      description={duenoFiltro !== "todos" ? `Cubicación de ${duenoFiltro}` : undefined}
+      icon={FileText}
+      size="planilla"
+      /* Alto fijo en escritorio: cada columna scrollea por su lado y el pie con
+         «Descargar PDF» queda siempre a la vista (Brandon 2026-09-09). */
+      className="sm:h-[95vh]"
+      /* Se abre desde el cubicador, que vive dentro de «Producir sin lote» (z-70). */
+      aboveModals
+      claveVentana="ctp-anexo04"
+      footer={(
+      <Anexo04Acciones
+        presentable={presentable}
+        generando={generando}
+        onPdfDetallado={onPdfDetallado}
+        onExcel={descargarExcel}
+        onResumenPapel={descargarResumenPapel}
+        onImprimir={candado.conCandado(imprimir)}
+        onDescargar={candado.conCandado(descargarPdf)}
+        extra={
+          <Anexo04PorTipo
+            filas={filasPapel} especieGlobal={especie} datos={datos} trasera={traseraPapel}
+            totalManual={totalManual} conCandado={candado.conCandado} onAviso={onAviso}
+          />
+        }
+      />
+      )}
     >
-      {/* Alto ACOTADO y scroll adentro (Brandon 2026-09-09: «está muy
-          alargado»): antes el modal crecía con su contenido y el backdrop
-          scrolleaba la página entera, así que el pie con «Descargar PDF»
-          quedaba a dos pantallas del título. Ahora el marco entra siempre en la
-          ventana, el pie está fijo y lo que scrollea es cada columna.
-          Casi a pantalla completa (2026-10-03, «más ancho para que se vea»):
-          con 76rem fijos, en 1920 sobraban 700 px a los costados. 110rem y no
-          más: en 1920 el borde derecho queda en x=1840, justo donde empieza el
-          botón flotante de acciones rápidas (z-50, igual que el modal). */}
-      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="relative flex max-h-[94vh] w-full max-w-[min(96vw,110rem)] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
-        <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle as="h3" className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              <FileText className="h-5 w-5 text-[var(--accent)]" /> Vista previa · ANEXO N° 04
-              {duenoFiltro !== "todos" && (
-                <span className="rounded-full bg-primary/12 px-2.5 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                  Cubicación de {duenoFiltro}
-                </span>
-              )}
-            </CardTitle>
+      <div className="flex h-full flex-col px-5 py-4 sm:px-6">
             {/* La cabecera, en tiras: hojas · piezas · el volumen editable · lo
                 que dice la guía. Era un párrafo corrido donde el input del
                 volumen —lo único que se toca— se perdía entre el texto. */}
-            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+            <p className="flex shrink-0 flex-wrap items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
               <span className={CHIP_HEAD}>
                 {anexo.hojas.length} hoja{anexo.hojas.length === 1 ? "" : "s"}
               </span>
@@ -477,14 +471,6 @@ export default function Anexo04Modal({
                 </span>
               )}
             </p>
-          </div>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
 
         {cuadre && cuadreFrena(cuadre) && (
           <div className="mt-3 shrink-0"><LineaCuadre cuadre={cuadre} onVerCuadre={onVerCuadre} /></div>
@@ -536,7 +522,7 @@ export default function Anexo04Modal({
           </div>
 
           {/* Preview del papel */}
-          <div ref={areaRef} className="min-w-0 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+          <div ref={refArea} className="min-w-0 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             {/* El anexo, su comparación con el resumen (Brandon, 2026-10-03) y
                 la guía con que sale el camión. La guía sólo se ofrece si el
                 despacho ya tiene número: sin GTF emitida no hay guía que mirar,
@@ -629,25 +615,6 @@ export default function Anexo04Modal({
           )}
         </div>
 
-        <div className="shrink-0">
-          <Anexo04Acciones
-            presentable={presentable}
-            generando={generando}
-            onPdfDetallado={onPdfDetallado}
-            onExcel={descargarExcel}
-            onResumenPapel={descargarResumenPapel}
-            onImprimir={candado.conCandado(imprimir)}
-            onDescargar={candado.conCandado(descargarPdf)}
-            extra={
-              <Anexo04PorTipo
-                filas={filasPapel} especieGlobal={especie} datos={datos} trasera={traseraPapel}
-                totalManual={totalManual} conCandado={candado.conCandado} onAviso={onAviso}
-              />
-            }
-          />
-        </div>
-
-        <TiradorDeVentana ventana={ventana} />
       </div>
       {/* Hermano de la caja, no hijo: la caja se mueve con transform. */}
       {candado.pidiendo && cuadre && (
@@ -658,6 +625,6 @@ export default function Anexo04Modal({
           onVerCuadre={onVerCuadre ? () => { candado.cancelar(); onVerCuadre(); } : undefined}
         />
       )}
-    </div>
+    </AdminModal>
   );
 }

@@ -22,13 +22,22 @@
  *     puede adjuntar (archivos enormes) y para pedir una firma, que ES un link.
  */
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  MessageCircle, X, Search, User, Link2, Copy, Check, Send, Loader2, PenLine, FileWarning,
-  Paperclip, Share2, AlertCircle, Lock,
+  MessageCircle,
+  Search,
+  User,
+  Link2,
+  Copy,
+  Check,
+  Send,
+  Loader2,
+  PenLine,
+  FileWarning,
+  Paperclip,
+  Share2,
+  AlertCircle,
+  Lock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
@@ -36,6 +45,9 @@ import type { DbDocument } from "@/lib/types/documents";
 import { createShare } from "@/hooks/use-documents";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { pedirArchivo } from "@/lib/documentos/archivo-remoto";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 type Contact = { name: string; phone: string };
 type Via = "archivo" | "dispositivo" | "enlace";
@@ -76,13 +88,19 @@ async function crearEnlaces(
       if (!d) return;
       for (let intento = 0; intento < 2; intento++) {
         try {
-          const share = await createShare(d.id, { expiresInDays: 30, password: clave || undefined });
+          const share = await createShare(d.id, {
+            expiresInDays: 30,
+            password: clave || undefined,
+          });
           ok.set(d.id, `${window.location.origin}/${ruta}/${share.token}`);
           break;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           const limitado = msg.includes("429");
-          if (limitado && intento === 0) { await dormir(1500); continue; }
+          if (limitado && intento === 0) {
+            await dormir(1500);
+            continue;
+          }
           mal.set(d.id, limitado ? "límite de enlaces alcanzado" : "no se pudo compartir");
           break;
         }
@@ -122,7 +140,12 @@ function noEntraComoArchivo(doc: DbDocument): string | null {
   return null;
 }
 
-export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
+export function SendWhatsAppModal({
+  docs,
+  mode = "share",
+  telefono,
+  onClose,
+}: {
   docs: DbDocument[];
   mode?: "share" | "sign";
   /** Número precargado (ej. el cliente de la cotización recién generada). */
@@ -144,7 +167,10 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
   const [contactQuery, setContactQuery] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
-  const [resultado, setResultado] = useState<{ enviados: { nombre: string }[]; fallidos: { nombre: string; error: string }[] } | null>(null);
+  const [resultado, setResultado] = useState<{
+    enviados: { nombre: string }[];
+    fallidos: { nombre: string; error: string }[];
+  } | null>(null);
 
   /** id → enlace público (sólo se generan si se elige la vía "enlace"). */
   const [links, setLinks] = useState<Map<string, string>>(new Map());
@@ -159,13 +185,8 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
   const [message, setMessage] = useState(
     isSign
       ? `Hola, te pido que firmes este documento "${doc?.name ?? ""}". Puedes firmarlo desde este enlace:`
-      : ""
+      : "",
   );
-  const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
-  // Escape ya lo maneja el efecto de más abajo (window keydown).
-  useModalAccesible(panelRef, { onCerrar: onClose, activo: true, cerrarConEscape: false });
-  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "send-whatsapp" });
 
   const problemas = useMemo(
     () => docs.map((d) => ({ doc: d, motivo: noEntraComoArchivo(d) })).filter((x) => x.motivo),
@@ -181,11 +202,20 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
     let vivo = true;
     setCreating(true);
     crearEnlaces(docs, isSign ? "firmar" : "d")
-      .then(({ ok, mal }) => { if (vivo) { setLinks(ok); setFallos(mal); } })
-      .finally(() => { if (vivo) setCreating(false); });
-    return () => { vivo = false; };
-  // Los ids son lo que define el lote; `docs` es un array nuevo en cada render.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      .then(({ ok, mal }) => {
+        if (vivo) {
+          setLinks(ok);
+          setFallos(mal);
+        }
+      })
+      .finally(() => {
+        if (vivo) setCreating(false);
+      });
+    return () => {
+      vivo = false;
+    };
+    // Los ids son lo que define el lote; `docs` es un array nuevo en cada render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [via, docs.map((d) => d.id).join(","), isSign, blocked, conClave]);
 
   /** Rehace los enlaces del lote pidiendo clave. El anterior (si lo hubo) queda vivo. */
@@ -201,13 +231,6 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
       setCreating(false);
     }
   };
-
-  // Escape para cerrar.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   // Contactos desde el inbox de WhatsApp (dedupe por número).
   useEffect(() => {
@@ -226,8 +249,12 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
         }
         setContacts(list);
       })
-      .catch((err) => logger.error("[send-whatsapp] fetch contacts failed", { error: String(err) }));
-    return () => { alive = false; };
+      .catch((err) =>
+        logger.error("[send-whatsapp] fetch contacts failed", { error: String(err) }),
+      );
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const filteredContacts = useMemo(() => {
@@ -249,12 +276,17 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
       await navigator.clipboard.writeText(link);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
-    } catch { /* clipboard bloqueado */ }
+    } catch {
+      /* clipboard bloqueado */
+    }
   };
 
   /** Vía 1 — el servidor sube el archivo a Meta y lo manda al número. */
   const enviarArchivo = useCallback(async () => {
-    if (!normalized) { setErrorEnvio("Pon el número de WhatsApp del destinatario."); return; }
+    if (!normalized) {
+      setErrorEnvio("Pon el número de WhatsApp del destinatario.");
+      return;
+    }
     setEnviando(true);
     setErrorEnvio(null);
     try {
@@ -304,10 +336,15 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
         archivos.push(new File([blob], d.name, { type: d.mimeType || blob.type }));
       }
       if (!navigator.canShare?.({ files: archivos })) {
-        setErrorEnvio("Este equipo no puede compartir estos archivos. Prueba con «Mandar el archivo» o con el enlace.");
+        setErrorEnvio(
+          "Este equipo no puede compartir estos archivos. Prueba con «Mandar el archivo» o con el enlace.",
+        );
         return;
       }
-      await navigator.share({ files: archivos, ...(message.trim() ? { text: message.trim() } : {}) });
+      await navigator.share({
+        files: archivos,
+        ...(message.trim() ? { text: message.trim() } : {}),
+      });
       setResultado({ enviados: docs.map((d) => ({ nombre: d.name })), fallidos: [] });
     } catch (e) {
       // Cancelar el menú de compartir tira AbortError: no es un error que
@@ -322,310 +359,432 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
   /** Vía 3 — wa.me con el mensaje y los enlaces (lo de siempre). */
   const abrirWhatsAppConEnlace = () => {
     if (listos === 0) return;
-    const cuerpo = docs.length === 1
-      ? links.get(docs[0].id) ?? ""
-      : docs.filter((d) => links.has(d.id)).map((d) => `• ${d.name}\n${links.get(d.id)}`).join("\n\n");
+    const cuerpo =
+      docs.length === 1
+        ? (links.get(docs[0].id) ?? "")
+        : docs
+            .filter((d) => links.has(d.id))
+            .map((d) => `• ${d.name}\n${links.get(d.id)}`)
+            .join("\n\n");
     const text = encodeURIComponent(`${message}\n\n${cuerpo}`.trim());
     const base = normalized ? `https://wa.me/${normalized}` : "https://wa.me/";
     window.open(`${base}?text=${text}`, "_blank", "noopener");
   };
 
-  const accion = via === "archivo" ? enviarArchivo : via === "dispositivo" ? compartirDesdeEquipo : abrirWhatsAppConEnlace;
-  const textoBoton = via === "archivo"
-    ? (multi ? `Mandar ${docs.length} archivos` : "Mandar el archivo")
-    : via === "dispositivo" ? "Compartir" : (multi ? `Abrir WhatsApp con ${listos}` : "Abrir WhatsApp");
+  const accion =
+    via === "archivo"
+      ? enviarArchivo
+      : via === "dispositivo"
+        ? compartirDesdeEquipo
+        : abrirWhatsAppConEnlace;
+  const textoBoton =
+    via === "archivo"
+      ? multi
+        ? `Mandar ${docs.length} archivos`
+        : "Mandar el archivo"
+      : via === "dispositivo"
+        ? "Compartir"
+        : multi
+          ? `Abrir WhatsApp con ${listos}`
+          : "Abrir WhatsApp";
   const deshabilitado = enviando || (via === "enlace" ? creating || listos === 0 : false);
 
   return (
-    <div
-      className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4"
-      onClick={() => { if (!ventana.fijado) onClose(); }}
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
-    >
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="relative flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div {...ventana.asaProps} className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]">
-            {isSign ? <PenLine className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p id={titleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">{isSign ? "Solicitar firma" : multi ? `Enviar ${docs.length} documentos por WhatsApp` : "Enviar por WhatsApp"}</p>
-            <p className="truncate text-xs text-[var(--text-tertiary)]">{multi ? docs.map((d) => d.name).join(" · ") : doc?.name}</p>
-          </div>
-          <ControlesDeVentana ventana={ventana} />
-          <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
-        </div>
-
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
-          {blocked ? (
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]"><FileWarning className="h-6 w-6" /></span>
-              <p className="text-sm font-bold text-[var(--text-primary)]">Solo se pueden firmar PDFs</p>
-              <p className="max-w-xs text-xs text-[var(--text-secondary)]">Este documento no es un PDF, así que no se puede solicitar la firma. Sube una versión en PDF y vuelve a intentarlo.</p>
-            </div>
-          ) : resultado ? (
-            <ResultadoEnvio resultado={resultado} />
-          ) : (
-          <>
-          {/* Cómo se manda */}
-          {!isSign && (
-            <div>
-              <p className="mb-1.5 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Cómo se manda</p>
-              <div className="grid gap-1.5 sm:grid-cols-3">
-                <OpcionVia activa={via === "archivo"} onClick={() => setVia("archivo")} Icon={Paperclip} titulo="El archivo" detalle="Llega como adjunto" />
-                <OpcionVia activa={via === "dispositivo"} onClick={() => setVia("dispositivo")} Icon={Share2} titulo="Desde este equipo" detalle={comparteEquipo ? "Menú de compartir" : "No disponible acá"} deshabilitada={!comparteEquipo} />
-                <OpcionVia activa={via === "enlace"} onClick={() => setVia("enlace")} Icon={Link2} titulo="Un enlace" detalle="Si no se puede adjuntar" />
-              </div>
-              {via === "archivo" && (
-                <p className="mt-1.5 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
-                  Sale del WhatsApp del negocio y queda en el inbox del panel. Necesita el número conectado.
-                </p>
-              )}
-              {via === "dispositivo" && (
-                <p className="mt-1.5 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
-                  Abre el menú de compartir de este equipo con los archivos adjuntos: eliges el chat y listo.
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Lo que no entra como adjunto */}
-          {via !== "enlace" && problemas.length > 0 && (
-            <div className="rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-100)] p-3 dark:bg-[var(--data-warning-500)]/12">
-              <p className="flex items-center gap-1.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                <AlertCircle className="h-3.5 w-3.5" /> No se pueden adjuntar
-              </p>
-              <ul className="mt-1 space-y-0.5 text-xs text-[var(--text-secondary)]">
-                {problemas.map(({ doc: d, motivo }) => <li key={d.id}>{d.name} — {motivo}</li>)}
-              </ul>
-              <p className="mt-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">Para esos, manda un enlace.</p>
-            </div>
-          )}
-
-          {/* Enlaces (sólo en la vía enlace) */}
-          {via === "enlace" && !isSign && (
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-              <div className="flex items-start gap-2.5">
-                <input
-                  id="enlace-con-clave"
-                  type="checkbox"
-                  checked={conClave}
-                  onChange={(e) => { setConClave(e.target.checked); if (!e.target.checked) setClave(""); }}
-                  className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--accent)]"
-                />
-                <div className="min-w-0">
-                  <label htmlFor="enlace-con-clave" className="flex cursor-pointer items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
-                    <Lock className="h-3.5 w-3.5" /> Pedir una clave para abrirlo
-                  </label>
-                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-                    Sin clave, cualquiera que reciba el enlace ve el archivo. Pasale la clave por otro lado (una llamada, otro chat).
-                  </p>
-                </div>
-              </div>
-
-              {conClave && (
-                <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  <input
-                    type="text"
-                    value={clave}
-                    onChange={(e) => setClave(e.target.value)}
-                    placeholder="Clave (mínimo 4 caracteres)"
-                    className="h-11 min-w-[190px] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
-                  />
-                  <button
-                    onClick={generarConClave}
-                    disabled={creating || clave.trim().length < 4}
-                    className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-40"
-                  >
-                    {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-                    {links.size > 0 ? "Rehacer con clave" : "Generar el enlace"}
-                  </button>
-                  {links.size > 0 && (
-                    <p className="w-full text-[length:var(--ts-2xs,11px)] text-[var(--data-warning)]">
-                      El enlace anterior sigue activo: cortalo desde la vista <span className="font-bold">Enlaces</span> del drive.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {via === "enlace" && multi && (
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-              <div className="mb-2 flex items-center justify-between gap-2 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                <span className="inline-flex items-center gap-1.5"><Link2 className="h-3.5 w-3.5" /> Enlaces (30 días)</span>
-                <span className="font-mono tabular-nums">{creating ? "generando…" : `${listos}/${docs.length} listos`}</span>
-              </div>
-              <ul className="max-h-44 space-y-1 overflow-y-auto">
-                {docs.map((d) => {
-                  const ok = links.has(d.id);
-                  const err = fallos.get(d.id);
-                  return (
-                    <li key={d.id} className="flex items-center gap-2 rounded-lg bg-[var(--surface-raised)] px-2.5 py-1.5 text-xs">
-                      {creating && !ok && !err ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[var(--text-tertiary)]" />
-                        : ok ? <Check className="h-3.5 w-3.5 shrink-0 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" />
-                        : <FileWarning className="h-3.5 w-3.5 shrink-0 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" />}
-                      <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">{d.name}</span>
-                      {err && <span className="shrink-0 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">no se pudo compartir</span>}
-                    </li>
-                  );
-                })}
-              </ul>
-              {fallos.size > 0 && (
-                <p className="mt-2 text-[length:var(--ts-2xs,11px)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                  {[...fallos.values()].some((m) => m.includes("límite"))
-                    ? `El servidor permite ${LIMITE_LOTE} enlaces cada 15 minutos. Manda los que sí se generaron y prueba con el resto más tarde.`
-                    : "Los documentos marcados no se pudieron compartir. El mensaje lleva sólo los que sí."}
-                </p>
-              )}
-            </div>
-          )}
-
-          {via === "enlace" && !multi && (
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-              <div className="mb-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                <Link2 className="h-3.5 w-3.5" /> {isSign ? "Enlace de firma (30 días)" : "Enlace de acceso (30 días)"}
-              </div>
-              {creating ? (
-                <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"><Loader2 className="h-4 w-4 animate-spin" /> Generando enlace…</p>
-              ) : linkError ? (
-                <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">No se pudo generar el enlace: {linkError}</p>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <code className="min-w-0 flex-1 truncate rounded-md bg-[var(--surface-raised)] px-2 py-1.5 text-xs text-[var(--text-secondary)]">{link}</code>
-                  <button onClick={copyLink} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary">
-                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {copied ? "Copiado" : "Copiar"}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Número — obligatorio para mandar el archivo desde el negocio */}
-          {via !== "dispositivo" && (
-            <div>
-              <label className="mb-1.5 block text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Número de WhatsApp {via === "archivo" && <span className="text-[var(--data-error-600)]">*</span>}
-              </label>
-              <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 focus-within:border-primary">
-                <span className="shrink-0 text-sm font-bold text-[var(--text-tertiary)]">+51</span>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  inputMode="tel"
-                  placeholder="929 340 532"
-                  className="min-w-0 flex-1 bg-transparent h-11 text-sm text-[var(--text-primary)] outline-none"
-                />
-                {normalized && <span className="shrink-0 text-xs tabular-nums text-[var(--text-tertiary)]">→ {normalized}</span>}
-              </div>
-              <p className="mt-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
-                {via === "archivo"
-                  ? "El archivo se manda a este número desde el WhatsApp del negocio."
-                  : "Perú (+51) por defecto. Dejalo vacío para elegir el contacto dentro de WhatsApp."}
-              </p>
-            </div>
-          )}
-
-          {/* Contactos */}
-          {via !== "dispositivo" && contacts.length > 0 && (
-            <div>
-              <label className="mb-1.5 block text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Contactos ({contacts.length})</label>
-              <div className="relative mb-2">
-                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
-                <input
-                  value={contactQuery}
-                  onChange={(e) => setContactQuery(e.target.value)}
-                  placeholder="Buscar contacto…"
-                  className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] h-10 pl-8 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
-                />
-              </div>
-              <ul className="max-h-40 space-y-0.5 overflow-y-auto">
-                {filteredContacts.map((c) => {
-                  const active = normalizePhone(phone) === normalizePhone(c.phone);
-                  return (
-                    <li key={c.phone}>
-                      <button
-                        onClick={() => setPhone(c.phone)}
-                        className={cn(
-                          "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors",
-                          active ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]"
-                        )}
-                      >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><User className="h-3.5 w-3.5" /></span>
-                        <span className="min-w-0 flex-1">
-                          <span className={cn("block truncate text-sm font-bold", active ? "text-primary" : "text-[var(--text-primary)]")}>{c.name}</span>
-                          <span className="block truncate text-xs tabular-nums text-[var(--text-tertiary)]">{c.phone}</span>
-                        </span>
-                        {active && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                      </button>
-                    </li>
-                  );
-                })}
-                {filteredContacts.length === 0 && (
-                  <li className="px-2.5 py-3 text-center text-xs italic text-[var(--text-tertiary)]">Sin coincidencias.</li>
-                )}
-              </ul>
-            </div>
-          )}
-
-          {/* Mensaje — opcional cuando va el archivo: el pedido es que llegue el
-              documento, no un texto. */}
-          <div>
-            <label className="mb-1.5 block text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Mensaje {via !== "enlace" && <span className="normal-case text-[var(--text-tertiary)]">(opcional)</span>}
-            </label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={via === "enlace" ? 3 : 2}
-              placeholder={via === "enlace" ? "" : "Sin texto: llega sólo el archivo"}
-              className="w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
-            />
-            <p className="mt-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
-              {via === "enlace" ? "El enlace se agrega automáticamente al final del mensaje." : "Si lo dejas vacío, el archivo va solo."}
-            </p>
-          </div>
-
-          {errorEnvio && (
-            <p className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] px-3 py-2.5 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
-              {errorEnvio}
-            </p>
-          )}
-          </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-4">
-          <button onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">{blocked || resultado ? "Cerrar" : "Cancelar"}</button>
+    <AdminModal
+      open
+      onClose={onClose}
+      title={
+        isSign
+          ? "Solicitar firma"
+          : multi
+            ? `Enviar ${docs.length} documentos por WhatsApp`
+            : "Enviar por WhatsApp"
+      }
+      description={multi ? docs.map((d) => d.name).join(" · ") : doc?.name}
+      icon={isSign ? PenLine : MessageCircle}
+      size="md"
+      aboveModals
+      claveVentana="send-whatsapp"
+      footer={
+        <ModalFooter>
+          <button onClick={onClose} className={button({ variant: "secondary" })}>
+            {blocked || resultado ? "Cerrar" : "Cancelar"}
+          </button>
           {!blocked && !resultado && (
             <button
               onClick={accion}
               disabled={deshabilitado}
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 min-h-11 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--accent)]"
+              className={button({ variant: "primary" })}
             >
-              {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : via === "enlace" ? <Send className="h-4 w-4" /> : <Paperclip className="h-4 w-4" />}
+              {enviando ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : via === "enlace" ? (
+                <Send className="h-4 w-4" />
+              ) : (
+                <Paperclip className="h-4 w-4" />
+              )}
               {enviando ? "Mandando…" : textoBoton}
             </button>
           )}
-        </div>
-        <TiradorDeVentana ventana={ventana} />
+        </ModalFooter>
+      }
+    >
+      <div className={`space-y-4 ${MODAL_BODY}`}>
+        {blocked ? (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
+              <FileWarning className="h-6 w-6" />
+            </span>
+            <p className="text-sm font-bold text-[var(--text-primary)]">
+              Solo se pueden firmar PDFs
+            </p>
+            <p className="max-w-xs text-xs text-[var(--text-secondary)]">
+              Este documento no es un PDF, así que no se puede solicitar la firma. Sube una versión
+              en PDF y vuelve a intentarlo.
+            </p>
+          </div>
+        ) : resultado ? (
+          <ResultadoEnvio resultado={resultado} />
+        ) : (
+          <>
+            {/* Cómo se manda */}
+            {!isSign && (
+              <div>
+                <p className="mb-1.5 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Cómo se manda
+                </p>
+                <div className="grid gap-1.5 sm:grid-cols-3">
+                  <OpcionVia
+                    activa={via === "archivo"}
+                    onClick={() => setVia("archivo")}
+                    Icon={Paperclip}
+                    titulo="El archivo"
+                    detalle="Llega como adjunto"
+                  />
+                  <OpcionVia
+                    activa={via === "dispositivo"}
+                    onClick={() => setVia("dispositivo")}
+                    Icon={Share2}
+                    titulo="Desde este equipo"
+                    detalle={comparteEquipo ? "Menú de compartir" : "No disponible acá"}
+                    deshabilitada={!comparteEquipo}
+                  />
+                  <OpcionVia
+                    activa={via === "enlace"}
+                    onClick={() => setVia("enlace")}
+                    Icon={Link2}
+                    titulo="Un enlace"
+                    detalle="Si no se puede adjuntar"
+                  />
+                </div>
+                {via === "archivo" && (
+                  <p className="mt-1.5 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
+                    Sale del WhatsApp del negocio y queda en el inbox del panel. Necesita el número
+                    conectado.
+                  </p>
+                )}
+                {via === "dispositivo" && (
+                  <p className="mt-1.5 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
+                    Abre el menú de compartir de este equipo con los archivos adjuntos: eliges el
+                    chat y listo.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Lo que no entra como adjunto */}
+            {via !== "enlace" && problemas.length > 0 && (
+              <div className="rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-100)] p-3 dark:bg-[var(--data-warning-500)]/12">
+                <p className="flex items-center gap-1.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                  <AlertCircle className="h-3.5 w-3.5" /> No se pueden adjuntar
+                </p>
+                <ul className="mt-1 space-y-0.5 text-xs text-[var(--text-secondary)]">
+                  {problemas.map(({ doc: d, motivo }) => (
+                    <li key={d.id}>
+                      {d.name} — {motivo}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
+                  Para esos, manda un enlace.
+                </p>
+              </div>
+            )}
+
+            {/* Enlaces (sólo en la vía enlace) */}
+            {via === "enlace" && !isSign && (
+              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+                <div className="flex items-start gap-2.5">
+                  <input
+                    id="enlace-con-clave"
+                    type="checkbox"
+                    checked={conClave}
+                    onChange={(e) => {
+                      setConClave(e.target.checked);
+                      if (!e.target.checked) setClave("");
+                    }}
+                    className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--accent)]"
+                  />
+                  <div className="min-w-0">
+                    <label
+                      htmlFor="enlace-con-clave"
+                      className="flex cursor-pointer items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]"
+                    >
+                      <Lock className="h-3.5 w-3.5" /> Pedir una clave para abrirlo
+                    </label>
+                    <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                      Sin clave, cualquiera que reciba el enlace ve el archivo. Pasale la clave por
+                      otro lado (una llamada, otro chat).
+                    </p>
+                  </div>
+                </div>
+
+                {conClave && (
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    <input
+                      type="text"
+                      value={clave}
+                      onChange={(e) => setClave(e.target.value)}
+                      placeholder="Clave (mínimo 4 caracteres)"
+                      className="h-11 min-w-[190px] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
+                    />
+                    <button
+                      onClick={generarConClave}
+                      disabled={creating || clave.trim().length < 4}
+                      className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-40"
+                    >
+                      {creating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Lock className="h-4 w-4" />
+                      )}
+                      {links.size > 0 ? "Rehacer con clave" : "Generar el enlace"}
+                    </button>
+                    {links.size > 0 && (
+                      <p className="w-full text-[length:var(--ts-2xs,11px)] text-[var(--data-warning)]">
+                        El enlace anterior sigue activo: cortalo desde la vista{" "}
+                        <span className="font-bold">Enlaces</span> del drive.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {via === "enlace" && multi && (
+              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+                <div className="mb-2 flex items-center justify-between gap-2 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Link2 className="h-3.5 w-3.5" /> Enlaces (30 días)
+                  </span>
+                  <span className="font-mono tabular-nums">
+                    {creating ? "generando…" : `${listos}/${docs.length} listos`}
+                  </span>
+                </div>
+                <ul className="max-h-44 space-y-1 overflow-y-auto">
+                  {docs.map((d) => {
+                    const ok = links.has(d.id);
+                    const err = fallos.get(d.id);
+                    return (
+                      <li
+                        key={d.id}
+                        className="flex items-center gap-2 rounded-lg bg-[var(--surface-raised)] px-2.5 py-1.5 text-xs"
+                      >
+                        {creating && !ok && !err ? (
+                          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[var(--text-tertiary)]" />
+                        ) : ok ? (
+                          <Check className="h-3.5 w-3.5 shrink-0 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" />
+                        ) : (
+                          <FileWarning className="h-3.5 w-3.5 shrink-0 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" />
+                        )}
+                        <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">
+                          {d.name}
+                        </span>
+                        {err && (
+                          <span className="shrink-0 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                            no se pudo compartir
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+                {fallos.size > 0 && (
+                  <p className="mt-2 text-[length:var(--ts-2xs,11px)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                    {[...fallos.values()].some((m) => m.includes("límite"))
+                      ? `El servidor permite ${LIMITE_LOTE} enlaces cada 15 minutos. Manda los que sí se generaron y prueba con el resto más tarde.`
+                      : "Los documentos marcados no se pudieron compartir. El mensaje lleva sólo los que sí."}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {via === "enlace" && !multi && (
+              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+                <div className="mb-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <Link2 className="h-3.5 w-3.5" />{" "}
+                  {isSign ? "Enlace de firma (30 días)" : "Enlace de acceso (30 días)"}
+                </div>
+                {creating ? (
+                  <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Generando enlace…
+                  </p>
+                ) : linkError ? (
+                  <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                    No se pudo generar el enlace: {linkError}
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <code className="min-w-0 flex-1 truncate rounded-md bg-[var(--surface-raised)] px-2 py-1.5 text-xs text-[var(--text-secondary)]">
+                      {link}
+                    </code>
+                    <button
+                      onClick={copyLink}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary"
+                    >
+                      {copied ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}{" "}
+                      {copied ? "Copiado" : "Copiar"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Número — obligatorio para mandar el archivo desde el negocio */}
+            {via !== "dispositivo" && (
+              <div>
+                <label className="mb-1.5 block text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Número de WhatsApp{" "}
+                  {via === "archivo" && <span className="text-[var(--data-error-600)]">*</span>}
+                </label>
+                <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 focus-within:border-primary">
+                  <span className="shrink-0 text-sm font-bold text-[var(--text-tertiary)]">
+                    +51
+                  </span>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    inputMode="tel"
+                    placeholder="929 340 532"
+                    className="min-w-0 flex-1 bg-transparent h-11 text-sm text-[var(--text-primary)] outline-none"
+                  />
+                  {normalized && (
+                    <span className="shrink-0 text-xs tabular-nums text-[var(--text-tertiary)]">
+                      → {normalized}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
+                  {via === "archivo"
+                    ? "El archivo se manda a este número desde el WhatsApp del negocio."
+                    : "Perú (+51) por defecto. Dejalo vacío para elegir el contacto dentro de WhatsApp."}
+                </p>
+              </div>
+            )}
+
+            {/* Contactos */}
+            {via !== "dispositivo" && contacts.length > 0 && (
+              <div>
+                <label className="mb-1.5 block text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Contactos ({contacts.length})
+                </label>
+                <div className="relative mb-2">
+                  <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
+                  <input
+                    value={contactQuery}
+                    onChange={(e) => setContactQuery(e.target.value)}
+                    placeholder="Buscar contacto…"
+                    className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] h-10 pl-8 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+                  />
+                </div>
+                <ul className="max-h-40 space-y-0.5 overflow-y-auto">
+                  {filteredContacts.map((c) => {
+                    const active = normalizePhone(phone) === normalizePhone(c.phone);
+                    return (
+                      <li key={c.phone}>
+                        <button
+                          onClick={() => setPhone(c.phone)}
+                          className={cn(
+                            "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors",
+                            active ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]",
+                          )}
+                        >
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                            <User className="h-3.5 w-3.5" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span
+                              className={cn(
+                                "block truncate text-sm font-bold",
+                                active ? "text-primary" : "text-[var(--text-primary)]",
+                              )}
+                            >
+                              {c.name}
+                            </span>
+                            <span className="block truncate text-xs tabular-nums text-[var(--text-tertiary)]">
+                              {c.phone}
+                            </span>
+                          </span>
+                          {active && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                        </button>
+                      </li>
+                    );
+                  })}
+                  {filteredContacts.length === 0 && (
+                    <li className="px-2.5 py-3 text-center text-xs italic text-[var(--text-tertiary)]">
+                      Sin coincidencias.
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
+
+            {/* Mensaje — opcional cuando va el archivo: el pedido es que llegue el
+              documento, no un texto. */}
+            <div>
+              <label className="mb-1.5 block text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Mensaje{" "}
+                {via !== "enlace" && (
+                  <span className="normal-case text-[var(--text-tertiary)]">(opcional)</span>
+                )}
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={via === "enlace" ? 3 : 2}
+                placeholder={via === "enlace" ? "" : "Sin texto: llega sólo el archivo"}
+                className="w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+              />
+              <p className="mt-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
+                {via === "enlace"
+                  ? "El enlace se agrega automáticamente al final del mensaje."
+                  : "Si lo dejas vacío, el archivo va solo."}
+              </p>
+            </div>
+
+            {errorEnvio && (
+              <p className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] px-3 py-2.5 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+                {errorEnvio}
+              </p>
+            )}
+          </>
+        )}
       </div>
-    </div>
+    </AdminModal>
   );
 }
 
 function OpcionVia({
-  activa, onClick, Icon, titulo, detalle, deshabilitada,
+  activa,
+  onClick,
+  Icon,
+  titulo,
+  detalle,
+  deshabilitada,
 }: {
   activa: boolean;
   onClick: () => void;
@@ -649,12 +808,18 @@ function OpcionVia({
       <span className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
         <Icon className="h-4 w-4" /> {titulo}
       </span>
-      <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">{detalle}</span>
+      <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
+        {detalle}
+      </span>
     </button>
   );
 }
 
-function ResultadoEnvio({ resultado }: { resultado: { enviados: { nombre: string }[]; fallidos: { nombre: string; error: string }[] } }) {
+function ResultadoEnvio({
+  resultado,
+}: {
+  resultado: { enviados: { nombre: string }[]; fallidos: { nombre: string; error: string }[] };
+}) {
   return (
     <div className="space-y-3 py-4">
       {resultado.enviados.length > 0 && (
@@ -663,18 +828,28 @@ function ResultadoEnvio({ resultado }: { resultado: { enviados: { nombre: string
             <Check className="h-6 w-6" />
           </span>
           <p className="text-sm font-bold text-[var(--text-primary)]">
-            {resultado.enviados.length === 1 ? "Archivo enviado" : `${resultado.enviados.length} archivos enviados`}
+            {resultado.enviados.length === 1
+              ? "Archivo enviado"
+              : `${resultado.enviados.length} archivos enviados`}
           </p>
           <ul className="text-xs text-[var(--text-secondary)]">
-            {resultado.enviados.map((e) => <li key={e.nombre}>{e.nombre}</li>)}
+            {resultado.enviados.map((e) => (
+              <li key={e.nombre}>{e.nombre}</li>
+            ))}
           </ul>
         </div>
       )}
       {resultado.fallidos.length > 0 && (
         <div className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] p-3 dark:bg-[var(--data-error-500)]/12">
-          <p className="text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">No salieron</p>
+          <p className="text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+            No salieron
+          </p>
           <ul className="mt-1 space-y-0.5 text-xs text-[var(--text-secondary)]">
-            {resultado.fallidos.map((f) => <li key={f.nombre}>{f.nombre} — {f.error}</li>)}
+            {resultado.fallidos.map((f) => (
+              <li key={f.nombre}>
+                {f.nombre} — {f.error}
+              </li>
+            ))}
           </ul>
         </div>
       )}

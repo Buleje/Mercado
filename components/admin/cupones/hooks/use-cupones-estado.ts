@@ -1,6 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useUndoToast } from "@/components/admin/shared/UndoToast";
@@ -54,15 +52,6 @@ export function useCuponesEstado() {
   const [templatePattern, setTemplatePattern] = useState("BDAY{MMDD}{RND3}");
   const [whatsappCoupon, setWhatsappCoupon] = useState<Coupon | null>(null);
   const [whatsappPhone, setWhatsappPhone] = useState("");
-  const cajaRegla = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRegla, { onCerrar: () => setShowRuleConfig(false), activo: showRuleConfig && !!editingRule });
-  const ventanaRegla = useVentanaDeModal(showRuleConfig && !!editingRule, { ref: cajaRegla, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "cupones-regla" });
-  const cajaWhatsapp = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaWhatsapp, { onCerrar: () => setWhatsappCoupon(null), activo: !!whatsappCoupon });
-  const ventanaWhatsapp = useVentanaDeModal(!!whatsappCoupon, { ref: cajaWhatsapp, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "cupones-whatsapp" });
-  const cajaPlantilla = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaPlantilla, { onCerrar: () => setShowTemplateBuilder(false), activo: showTemplateBuilder });
-  const ventanaPlantilla = useVentanaDeModal(showTemplateBuilder, { ref: cajaPlantilla, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "cupones-plantilla" });
 
   const load = useCallback(() => {
     // Un 403/500 ya no se disfraza de «Aún no tienes cupones»: la lista dice por qué no cargó.
@@ -209,8 +198,7 @@ export function useCuponesEstado() {
     form, setForm, autoRules, setAutoRules, editingRule, setEditingRule,
     showRuleConfig, setShowRuleConfig, generatedLogs, _setGeneratedLogs, showTemplateBuilder,
     setShowTemplateBuilder, templatePattern, setTemplatePattern, whatsappCoupon, setWhatsappCoupon,
-    whatsappPhone, setWhatsappPhone, cajaRegla, ventanaRegla, cajaWhatsapp, ventanaWhatsapp,
-    cajaPlantilla, ventanaPlantilla, load, handleCreate, toggleActive, handleDelete, toggleRule,
+    whatsappPhone, setWhatsappPhone, load, handleCreate, toggleActive, handleDelete, toggleRule,
     openRuleConfig, saveRuleConfig, generateTestCoupon, buildWhatsappMsg, sendWhatsapp,
     copyWhatsappMsg,
   };

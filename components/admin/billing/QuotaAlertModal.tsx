@@ -1,6 +1,5 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
 /**
  * QuotaAlertModal — Modal detallado de uso de cuotas
  *
@@ -17,10 +16,6 @@ import { SectionTitle } from "@buleje/design-system";
  *  - Contraste garantizado por clases Tailwind verificadas
  */
 
-import { useRef, useId } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import type { MeteringSnapshot } from "@/components/admin/unified/MeteringCard/types";
 import {
   computeTrafficLight,
@@ -31,6 +26,9 @@ import {
 import { METERED_EVENTS } from "@/lib/billing/metering";
 import type { MeteredEvent } from "@/lib/billing/metering";
 import { formatDate, formatDateShort, formatNumber } from "@/lib/format";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -141,122 +139,44 @@ function MetricRow({ event, snapshot }: MetricRowProps) {
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
 export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billing/upgrade" }: QuotaAlertModalProps) {
-  const titleId = useId();
-  const descId = useId();
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  // Foco al abrir + trampa de Tab + Escape + scroll bloqueado, todo en uno
-  // (reemplaza los tres useEffect manuales que hacían lo mismo por separado).
-  useModalAccesible(dialogRef, { onCerrar: onClose });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventana = useVentanaDeModal(true, {
-    ref: dialogRef,
-    aplicarTranslate: true,
-    claveMemoria: "cuota-detalle",
-  });
-
   const showUpgrade = snapshot.plan === "free" || snapshot.plan === "starter";
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-modal bg-black/50 dark:bg-black/70 backdrop-blur-sm"
-        aria-hidden="true"
-        onClick={() => { if (!ventana.fijado) onClose(); }}
-      />
-
-      {/* Dialog */}
-      <div
-        role="presentation"
-        className="fixed inset-0 z-modal flex items-end sm:items-center justify-center p-4"
-      >
-        <div
-          ref={dialogRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          aria-describedby={descId}
-          tabIndex={-1}
-          className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)]"
-        >
-
-          {/* Header */}
-          <div {...ventana.asaProps} className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--rule-base)] flex-shrink-0">
-            <div>
-              <SectionTitle
-                id={titleId}
-                className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]"
-              >
-                Uso de cuota — detalles
-              </SectionTitle>
-              <p
-                id={descId}
-                className="text-sm text-[var(--text-tertiary)] mt-0.5"
-              >
-                Plan {PLAN_LABELS[snapshot.plan]} · Período:{" "}
-                {formatDateShort(snapshot.period.from)}
-                {" – "}
-                {formatDate(snapshot.period.to)}
-              </p>
-            </div>
-
-            <span className="ml-auto flex items-center gap-1">
-              <ControlesDeVentana ventana={ventana} />
-            </span>
-            <button
-              ref={closeRef}
-              onClick={onClose}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              aria-label="Cerrar modal de detalles de cuota"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5" aria-hidden="true">
-                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Body scrollable */}
-          <div className="flex-1 overflow-y-auto px-6 py-2">
-            <ul className="divide-y divide-[var(--rule-soft)] " aria-label="Lista de métricas de uso">
-              {METERED_EVENTS.map((event) => (
-                <MetricRow key={event} event={event} snapshot={snapshot} />
-              ))}
-            </ul>
-          </div>
-
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-[var(--rule-base)] flex flex-col sm:flex-row items-center gap-3 flex-shrink-0">
-            <div className="flex-1 text-sm text-[var(--text-tertiary)]">
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Uso de cuota — detalles"
+      description={`Plan ${PLAN_LABELS[snapshot.plan]} · Período: ${formatDateShort(snapshot.period.from)} – ${formatDate(snapshot.period.to)}`}
+      size="md"
+      claveVentana="cuota-detalle"
+      footer={
+        <ModalFooter
+          nota={
+            <>
               Costo estimado del período:{" "}
-              <strong className="text-[var(--text-primary)]">
-                USD {Number(snapshot.estimatedCostUsd).toFixed(2)}
-              </strong>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={onClose}
-                className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              >
-                Cerrar
-              </button>
-
-              {showUpgrade && (
-                <a
-                  href={upgradeHref}
-                  className="min-h-[44px] inline-flex items-center px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                  aria-label="Mejorar plan de facturación"
-                >
-                  Mejorar plan
-                </a>
-              )}
-            </div>
-          </div>
-          <TiradorDeVentana ventana={ventana} />
-        </div>
+              <strong className="text-[var(--text-primary)]">USD {Number(snapshot.estimatedCostUsd).toFixed(2)}</strong>
+            </>
+          }
+        >
+          <button type="button" onClick={onClose} className={button({ variant: "secondary" })}>
+            Cerrar
+          </button>
+          {showUpgrade && (
+            <a href={upgradeHref} className={button({ variant: "primary" })} aria-label="Mejorar plan de facturación">
+              Mejorar plan
+            </a>
+          )}
+        </ModalFooter>
+      }
+    >
+      <div className="px-5 py-2 sm:px-6">
+        <ul className="divide-y divide-[var(--rule-soft)]" aria-label="Lista de métricas de uso">
+          {METERED_EVENTS.map((event) => (
+            <MetricRow key={event} event={event} snapshot={snapshot} />
+          ))}
+        </ul>
       </div>
-    </>
+    </AdminModal>
   );
 }
 

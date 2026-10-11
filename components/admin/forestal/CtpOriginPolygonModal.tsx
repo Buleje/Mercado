@@ -10,18 +10,13 @@
  * Gotcha aplicado: el className del contenedor Leaflet va ESTÁTICO.
  */
 import "leaflet/dist/leaflet.css";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapPin, Undo2, Check, X, Trash2, Loader2, Layers } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
 import { BRAND_GEO } from "@/lib/geo";
 import { polygonAreaHa, ringToGeoJsonPolygon, geoJsonPolygonToRing, type LatLng } from "@/lib/forestal/loth-geo";
 import { ATRIBUCION_ESRI_IMAGERY } from "@/lib/esri-imagery";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -63,6 +58,7 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
   // Init una sola vez.
   useEffect(() => {
     let destroyed = false;
+    let ro: ResizeObserver | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     import("leaflet").then((L: any) => {
       if (destroyed || !containerRef.current || mapRef.current) return;
@@ -71,6 +67,10 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
       const start = geoJsonPolygonToRing(initialPolygonJson);
       const map = L.map(containerRef.current, { center: [c.lat, c.lng], zoom: start.length ? 14 : 13, maxZoom: 22 });
       mapRef.current = map;
+      /* Si la ventana se estira o se achica a mano, el mapa recalcula su
+         tamaño (Leaflet lo cachea al iniciar: quedaban tiles a medio pintar). */
+      ro = new ResizeObserver(() => map.invalidateSize());
+      ro.observe(containerRef.current);
       satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: SAT_MAX_NATIVE, attribution: ATRIBUCION_ESRI_IMAGERY }).addTo(map);
       streetRef.current = L.tileLayer(STREET, { maxZoom: 22, maxNativeZoom: 19, attribution: "© OpenStreetMap" });
       groupRef.current = L.layerGroup().addTo(map);
@@ -89,6 +89,7 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
     });
     return () => {
       destroyed = true;
+      ro?.disconnect();
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -136,37 +137,27 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
     onSave(ringToGeoJsonPolygon(draft), areaHa);
   }
 
-  const titleId = useId();
-  const modalRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(modalRef, { onCerrar: onClose });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventana = useVentanaDeModal(true, {
-    ref: modalRef,
-    aplicarTranslate: true,
-    claveMemoria: "ctp-origen-poligono",
-  });
-  // El mapa Leaflet cachea su tamaño al iniciar: si la ventana se achica o
-  // agranda a mano, sin esto quedaba con tiles a medio pintar y los clics ya
-  // no correspondían al punto que se ve.
-  useEffect(() => {
-    mapRef.current?.invalidateSize();
-  }, [ventana.estilo.width, ventana.estilo.height]);
 
   return (
-    <div role="presentation" className="fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4" onClick={(e) => e.target === e.currentTarget && !ventana.fijado && onClose()}>
-      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative flex max-h-[92vh] w-[min(94vw,900px)] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl">
-        <div {...ventana.asaProps} className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-5 py-3">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />
-            <CardTitle id={titleId} as="h3" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Dibujar parcela · {originCode}</CardTitle>
-          </div>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
-            <X className="h-4 w-4" />
+    <AdminModal
+      open
+      onClose={onClose}
+      title={`Dibujar parcela · ${originCode}`}
+      icon={MapPin}
+      size="xl"
+      aboveModals
+      claveVentana="ctp-origen-poligono"
+      footer={(
+        <ModalFooter>
+          <button type="button" onClick={onClose} className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+            <X className="h-4 w-4" /> Cancelar
           </button>
-        </div>
+          <button type="button" onClick={save} disabled={draft.length < 3 || saving} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Guardar polígono
+          </button>
+        </ModalFooter>
+      )}
+    >
 
         <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-2.5">
           <span className="text-xs font-bold text-[var(--text-secondary)]">
@@ -189,17 +180,6 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
         {/* className ESTÁTICO (gotcha Leaflet). Cursor por style en el init. */}
         <div ref={containerRef} className="h-[440px] w-full bg-[var(--surface-sunken)]" />
 
-        <div className="flex items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] px-5 py-3">
-          <button type="button" onClick={onClose} className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
-            <X className="h-4 w-4" /> Cancelar
-          </button>
-          <button type="button" onClick={save} disabled={draft.length < 3 || saving} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Guardar polígono
-          </button>
-        </div>
-
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }

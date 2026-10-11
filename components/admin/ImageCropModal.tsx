@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { X, Check, RotateCcw } from "@buleje/design-system/icons";
+import { Check, RotateCcw, Crop } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 /**
  * ImageCropModal — recorte + ajuste de imagen sin salir del editor (Brandon
@@ -29,11 +29,8 @@ export default function ImageCropModal({
   onApply: (blob: Blob) => void;
 }) {
   /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
-  const cajaRef = useRef<HTMLDivElement>(null);
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
-  useModalAccesible(cajaRef, { onCerrar: onCancel, cerrarConEscape: false });
-  const ventana = useVentanaDeModal(true, { ref: cajaRef, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "image-crop" });
   const ratio = ASPECT[aspectRatio] ?? 16 / 9;
   const frameH = Math.round(FRAME_W / ratio);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -74,11 +71,21 @@ export default function ImageCropModal({
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (!drag.current) return;
-    setPan({ x: drag.current.px + (e.clientX - drag.current.x), y: drag.current.py + (e.clientY - drag.current.y) });
+    setPan({
+      x: drag.current.px + (e.clientX - drag.current.x),
+      y: drag.current.py + (e.clientY - drag.current.y),
+    });
   };
-  const onPointerUp = () => { drag.current = null; };
+  const onPointerUp = () => {
+    drag.current = null;
+  };
 
-  const reset = () => { setZoom(1); setPan({ x: 0, y: 0 }); setBrightness(100); setContrast(100); };
+  const reset = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+    setBrightness(100);
+    setContrast(100);
+  };
 
   const apply = useCallback(async () => {
     const img = imgRef.current;
@@ -100,32 +107,45 @@ export default function ImageCropModal({
       if (!blob) throw new Error("toBlob falló (¿imagen sin CORS?)");
       onApply(blob);
     } catch (e) {
-      setErr(e instanceof Error && e.message.includes("CORS") ? "La imagen no permite edición (CORS)." : "No se pudo recortar la imagen.");
+      setErr(
+        e instanceof Error && e.message.includes("CORS")
+          ? "La imagen no permite edición (CORS)."
+          : "No se pudo recortar la imagen.",
+      );
       setBusy(false);
     }
   }, [dispX, dispY, dispW, dispH, filter, frameH, onApply]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCancel(); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onCancel]);
-
   return (
-    <div className="fixed inset-0 z-modal-3 flex items-center justify-center p-4 dark">
-      <button type="button" aria-label="Cerrar" onClick={() => { if (!ventana.fijado) onCancel(); }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Ajustar imagen" className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-xl)]">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-bold text-white">Ajustar imagen</p>
-          <div className="flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          <button type="button" onClick={onCancel} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] transition-colors hover:bg-white/10 hover:text-white">
-            <X className="h-4 w-4" />
+    <AdminModal
+      open
+      onClose={onCancel}
+      title="Ajustar imagen"
+      icon={Crop}
+      size="md"
+      aboveModals
+      /* Se abre también desde el modo creativo de la tienda, un editor a pantalla
+         completa en `z-system`: sin esto la ventana (portal a <body>, z-modal-3)
+         quedaba DETRÁS del editor. El velo sigue en z-modal-3. */
+      className="z-system"
+      claveVentana="image-crop"
+      footer={
+        <ModalFooter>
+          <button type="button" onClick={reset} className={button({ variant: "secondary" })}>
+            <RotateCcw className="h-3.5 w-3.5" /> Reiniciar
           </button>
-          </div>
-        </div>
-
-        {/* Marco de recorte */}
+          <button
+            type="button"
+            onClick={apply}
+            disabled={!loaded || busy}
+            className={button({ variant: "primary" })}
+          >
+            <Check className="h-3.5 w-3.5" /> {busy ? "Aplicando…" : "Aplicar recorte"}
+          </button>
+        </ModalFooter>
+      }
+    >
+      <div className={MODAL_BODY}>
         <div
           className="relative mx-auto overflow-hidden rounded-lg bg-black/40 ring-1 ring-white/10 touch-none select-none"
           style={{ width: FRAME_W, height: frameH, cursor: drag.current ? "grabbing" : "grab" }}
@@ -141,43 +161,77 @@ export default function ImageCropModal({
               alt=""
               crossOrigin="anonymous"
               draggable={false}
-              style={{ position: "absolute", left: dispX, top: dispY, width: dispW, height: dispH, filter, maxWidth: "none" }}
+              style={{
+                position: "absolute",
+                left: dispX,
+                top: dispY,
+                width: dispW,
+                height: dispH,
+                filter,
+                maxWidth: "none",
+              }}
             />
           )}
           {/* Guías */}
           <div className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3">
-            {Array.from({ length: 9 }).map((_, i) => <div key={i} className="border border-white/10" />)}
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="border border-white/10" />
+            ))}
           </div>
         </div>
-
-        {/* Controles */}
         <div className="mt-4 space-y-3">
           {[
-            { label: "Zoom", value: zoom, min: 1, max: 3, step: 0.01, set: setZoom, fmt: `${zoom.toFixed(2)}×` },
-            { label: "Brillo", value: brightness, min: 50, max: 150, step: 1, set: setBrightness, fmt: `${brightness}%` },
-            { label: "Contraste", value: contrast, min: 50, max: 150, step: 1, set: setContrast, fmt: `${contrast}%` },
+            {
+              label: "Zoom",
+              value: zoom,
+              min: 1,
+              max: 3,
+              step: 0.01,
+              set: setZoom,
+              fmt: `${zoom.toFixed(2)}×`,
+            },
+            {
+              label: "Brillo",
+              value: brightness,
+              min: 50,
+              max: 150,
+              step: 1,
+              set: setBrightness,
+              fmt: `${brightness}%`,
+            },
+            {
+              label: "Contraste",
+              value: contrast,
+              min: 50,
+              max: 150,
+              step: 1,
+              set: setContrast,
+              fmt: `${contrast}%`,
+            },
           ].map((c) => (
             <label key={c.label} className="block">
-              <span className="mb-1 flex items-center justify-between text-[length:var(--ts-2xs)] font-bold text-gray-300">
-                {c.label}<span className="text-[var(--accent-soft)]">{c.fmt}</span>
+              <span className="mb-1 flex items-center justify-between text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
+                {c.label}
+                <span className="text-[var(--accent-ink)] dark:text-[var(--accent)]">{c.fmt}</span>
               </span>
-              <input type="range" min={c.min} max={c.max} step={c.step} value={c.value} onChange={(e) => c.set(Number(e.target.value))} className="w-full accent-[var(--accent-soft)]" />
+              <input
+                type="range"
+                min={c.min}
+                max={c.max}
+                step={c.step}
+                value={c.value}
+                onChange={(e) => c.set(Number(e.target.value))}
+                className="w-full accent-[var(--accent)]"
+              />
             </label>
           ))}
         </div>
-
-        {err && <p className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-error-500)]">{err}</p>}
-
-        <div className="mt-4 flex items-center gap-2">
-          <button type="button" onClick={reset} className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:bg-white/5">
-            <RotateCcw className="h-3.5 w-3.5" /> Reiniciar
-          </button>
-          <button type="button" onClick={apply} disabled={!loaded || busy} className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
-            <Check className="h-3.5 w-3.5" /> {busy ? "Aplicando…" : "Aplicar recorte"}
-          </button>
-        </div>
-        <TiradorDeVentana ventana={ventana} />
+        {err && (
+          <p className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-error-500)]">
+            {err}
+          </p>
+        )}
       </div>
-    </div>
+    </AdminModal>
   );
 }

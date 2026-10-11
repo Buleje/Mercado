@@ -22,8 +22,8 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Check, Layers, Loader2, X } from "@buleje/design-system/icons";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { AlertTriangle, Check, Layers, Loader2 } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
@@ -31,13 +31,9 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { piezasLibres, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { largoMaxEnMetros, type TrozaAVincular } from "@/lib/forestal/vincular-produccion";
 import { repartirEnTanda, resumenDeTanda, type CorridaEnTanda } from "@/lib/forestal/vincular-en-tanda";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
 import { Btn } from "./ctp-shared";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = `${TD} text-right font-mono tabular-nums`;
@@ -218,14 +214,6 @@ export default function CtpVincularEnTandaModal({
   const [guardando, setGuardando] = useState(false);
   const [hechas, setHechas] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onCerrar });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventana = useVentanaDeModal(true, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "ctp-vincular-en-tanda",
-  });
 
   const vincular = async () => {
     if (!lote || !reparto || reparto.vinculables === 0) return;
@@ -282,45 +270,43 @@ export default function CtpVincularEnTandaModal({
   const volLibre = lote ? volumenLibre(lote) : 0;
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3">
-      <div
-        ref={cajaRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Ponerle el lote a varias producciones"
-        className="relative flex max-h-[92vh] w-full max-w-4xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
-      >
-        <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <CardTitle as="h3" className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-                <Layers className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Ponerles el lote
-              </CardTitle>
-              <InfoTip
-                title="Ponerles el lote"
-                what="Las corridas no cambian: siguen siendo las mismas, sólo pasan a decir de qué madera salieron."
-                affects="Se escribe de a una y en orden. Si una falla, se para ahí y se dice cuántas alcanzaron a quedar."
-              />
-            </div>
-            <p className="text-xs text-[var(--text-tertiary)]">
-              {corridas.length} producci{corridas.length === 1 ? "ón marcada" : "ones marcadas"} sin materia prima.
-            </p>
-          </div>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button
-            type="button"
-            onClick={onCerrar}
-            aria-label="Cerrar"
-            className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    <AdminModal
+      open
+      onClose={() => {
+        if (!guardando) onCerrar();
+      }}
+      title="Ponerles el lote"
+      description={`${corridas.length} producci${corridas.length === 1 ? "ón marcada" : "ones marcadas"} sin materia prima.`}
+      icon={Layers}
+      ayuda={
+        <InfoTip
+          title="Ponerles el lote"
+          what="Las corridas no cambian: siguen siendo las mismas, sólo pasan a decir de qué madera salieron."
+          affects="Se escribe de a una y en orden. Si una falla, se para ahí y se dice cuántas alcanzaron a quedar."
+        />
+      }
+      size="xl"
+      claveVentana="ctp-vincular-en-tanda"
+      footer={
+        <ModalFooter nota={reparto ? resumenDeTanda(reparto, fmtM3) : "Elige el lote para ver qué le toca a cada una."}>
+          <Btn onClick={onCerrar} disabled={guardando}>
+            Cancelar
+          </Btn>
+          <Btn variant="primary" onClick={vincular} disabled={guardando || !reparto || reparto.vinculables === 0}>
+            {guardando ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Vinculando {hechas + 1} de{" "}
+                {reparto?.vinculables ?? 0}…
+              </>
+            ) : (
+              `Ponerle el lote a ${reparto?.vinculables ?? 0}`
+            )}
+          </Btn>
+        </ModalFooter>
+      }
+    >
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-5 sm:px-6">
+        <div className="space-y-3 px-5 py-5 sm:px-6">
           {especies.length > 1 && (
             <p className="flex items-center gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--text-secondary)]">
               <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
@@ -483,31 +469,6 @@ export default function CtpVincularEnTandaModal({
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[var(--rule-base)] px-5 py-3.5 sm:px-6">
-          {/* `max-sm:basis-full`: con `flex-1` (base 0 %) la frase no pedía renglón
-              y a 400 px quedaba en una columna de 90 px al lado de los botones. */}
-          <p className="min-w-0 flex-1 text-xs text-[var(--text-secondary)] max-sm:basis-full">
-            {reparto ? resumenDeTanda(reparto, fmtM3) : "Elige el lote para ver qué le toca a cada una."}
-          </p>
-          <div className="flex items-center gap-2">
-            <Btn onClick={onCerrar} disabled={guardando}>
-              Cancelar
-            </Btn>
-            <Btn variant="primary" onClick={vincular} disabled={guardando || !reparto || reparto.vinculables === 0}>
-              {guardando ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Vinculando {hechas + 1} de{" "}
-                  {reparto?.vinculables ?? 0}…
-                </>
-              ) : (
-                `Ponerle el lote a ${reparto?.vinculables ?? 0}`
-              )}
-            </Btn>
-          </div>
-        </div>
-
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }

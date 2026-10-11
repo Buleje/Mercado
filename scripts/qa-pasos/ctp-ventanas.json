@@ -1,0 +1,65 @@
+[
+ {
+  "esperar": 9000
+ },
+ {
+  "click": "button[aria-label=\"Herramientas del libro\"]"
+ },
+ {
+  "esperar": 600
+ },
+ {
+  "click": "button:has-text(\"Buscar guía\")"
+ },
+ {
+  "esperar": "[role=dialog][data-modal-tamano]"
+ },
+ {
+  "esperar": 800
+ },
+ {
+  "eval": "(() => { const ds=[...document.querySelectorAll('[role=dialog]')]; const d=ds.pop(); if(!d) return 'sin dialogo'; const r=d.getBoundingClientRect(); const pie=[...d.querySelectorAll('button')].filter(b=>b.closest('.border-t')&&!b.closest('[role=tabpanel]')).map(b=>b.textContent.trim().slice(0,22)+':'+Math.round(b.getBoundingClientRect().height)); return JSON.stringify({n:ds.length+1,titulo:d.querySelector('h2')?.textContent,w:Math.round(r.width),h:Math.round(r.height),tam:d.dataset.modalTamano||null,ventana:d.dataset.ventana||null,z:getComputedStyle(d).zIndex,bg:getComputedStyle(d).backgroundColor,foco:document.activeElement?.tagName+':'+(document.activeElement?.getAttribute('aria-label')||document.activeElement?.getAttribute('placeholder')||'').slice(0,30),pie:pie.slice(-4)}); })()"
+ },
+ {
+  "captura": "buscar-guia"
+ },
+ {
+  "tecla": "Escape"
+ },
+ {
+  "esperar": 500
+ },
+ {
+  "eval": "document.querySelectorAll('[role=dialog][data-modal-tamano]').length"
+ },
+ {
+  "eval": "(() => { const h=document.querySelector('button[aria-label=\"Herramientas del libro\"]'); const sib=[...h.parentElement.querySelectorAll('button')]; const i=sib.indexOf(h); const b=sib[i+1]; if(!b) return 'sin hermano'; b.click(); return 'click '+(b.getAttribute('aria-label')||b.textContent).trim().slice(0,30); })()"
+ },
+ {
+  "esperar": 700
+ },
+ {
+  "click": "[role=menuitem]:has-text(\"Importar libro\"), button:has-text(\"Importar libro\")"
+ },
+ {
+  "esperar": "[role=dialog][data-modal-tamano]"
+ },
+ {
+  "esperar": 800
+ },
+ {
+  "eval": "(() => { const ds=[...document.querySelectorAll('[role=dialog]')]; const d=ds.pop(); if(!d) return 'sin dialogo'; const r=d.getBoundingClientRect(); const pie=[...d.querySelectorAll('button')].filter(b=>b.closest('.border-t')&&!b.closest('[role=tabpanel]')).map(b=>b.textContent.trim().slice(0,22)+':'+Math.round(b.getBoundingClientRect().height)); return JSON.stringify({n:ds.length+1,titulo:d.querySelector('h2')?.textContent,w:Math.round(r.width),h:Math.round(r.height),tam:d.dataset.modalTamano||null,ventana:d.dataset.ventana||null,z:getComputedStyle(d).zIndex,bg:getComputedStyle(d).backgroundColor,foco:document.activeElement?.tagName+':'+(document.activeElement?.getAttribute('aria-label')||document.activeElement?.getAttribute('placeholder')||'').slice(0,30),pie:pie.slice(-4)}); })()"
+ },
+ {
+  "captura": "importar-libro"
+ },
+ {
+  "tecla": "Escape"
+ },
+ {
+  "esperar": 500
+ },
+ {
+  "eval": "document.querySelectorAll('[role=dialog][data-modal-tamano]').length"
+ }
+]

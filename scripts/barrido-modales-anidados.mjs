@@ -60,8 +60,12 @@ const yaArreglado = (f) => /aboveModals/.test(src.get(f) ?? "");
    (`z-modal-2` = 60, `z-modal-3` = 70). Con sólo el número, el codemod de capas
    del 22-09 dejó este barrido MUDO: 0 modales a mano, 0 hallazgos, «verde». */
 const manualAlto = (f) =>
-  /role="dialog"/.test(src.get(f) ?? "") &&
-  /z-\[(5[1-9]|[6-9]\d)\]|\bz-modal-[23]\b/.test(src.get(f) ?? "");
+  (/role="dialog"/.test(src.get(f) ?? "") &&
+    /z-\[(5[1-9]|[6-9]\d)\]|\bz-modal-[23]\b/.test(src.get(f) ?? "")) ||
+  /* Un componente cuya raíz es `<AdminModal aboveModals>` también vive en z-70 (2026-10-11: 22 ventanas
+     del forestal pasaron de a mano a AdminModal): lo que se abre desde él sin
+     `aboveModals` queda en z-50, detrás. */
+  [...(src.get(f) ?? "").matchAll(/return \(\s*<AdminModal\b([\s\S]*?)\n\s*>\n/g)].some((m) => /^\s+aboveModals$/m.test(m[1]));
 
 const hallazgos = [];
 for (const alto of archivos.filter(manualAlto)) {
@@ -80,7 +84,7 @@ for (const alto of archivos.filter(manualAlto)) {
 }
 const altos = archivos.filter(manualAlto).length;
 /* Un barrido sin salida no se distingue de uno que no miró nada: se cuenta. */
-console.log(`${altos} modales a mano por encima de z-modal · ${new Set(hallazgos.map((h) => h.alto + h.abre)).size} aperturas de AdminModal desde ellos`);
+console.log(`${altos} modales por encima de z-modal (a mano o AdminModal aboveModals) · ${new Set(hallazgos.map((h) => h.alto + h.abre)).size} aperturas de AdminModal desde ellos`);
 const vistos = new Set();
 for (const h of hallazgos.sort((a,b)=>Number(a.ok)-Number(b.ok))) {
   const k = h.alto + h.abre; if (vistos.has(k)) continue; vistos.add(k);

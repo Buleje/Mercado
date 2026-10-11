@@ -20,15 +20,8 @@
  * papel de respaldo, no un movimiento del Libro.
  */
 
-import { useMemo, useState, useRef } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
-import { ArrowRight, Loader2, X } from "@buleje/design-system/icons";
-import { SectionTitle } from "@buleje/design-system";
+import { useMemo, useState } from "react";
+import { ArrowRight, Loader2 } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import {
@@ -41,6 +34,9 @@ import { abrirResumenesDelCubicador, sembrarBloques } from "@/lib/forestal/sembr
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import FilaCandidato, { ChipEspecie } from "./llevar-al-cubicador-fila";
 import ResumenLlevarAlCubicador from "./resumen-llevar-al-cubicador";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 export default function LlevarAlCubicadorModal({
   candidatos,
@@ -52,16 +48,6 @@ export default function LlevarAlCubicadorModal({
   recorte: string;
   onCerrar: () => void;
 }) {
-  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
-     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onCerrar });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventana = useVentanaDeModal(true, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "ctp-llevar-al-cubicador",
-  });
   const [elegidos, setElegidos] = useState<Set<string>>(
     () => new Set(candidatos.map((c) => c.clave)),
   );
@@ -101,40 +87,33 @@ export default function LlevarAlCubicadorModal({
   };
 
   return (
-    <div
-      className="modal-backdrop fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget && !ventana.fijado) onCerrar();
-      }}
-    >
-      <div ref={cajaRef} tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Llevar la madera filtrada al cubicador"
-        className="relative max-h-[90vh] w-full max-w-[60rem] overflow-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)]"
-      >
-        <div {...ventana.asaProps} className="mb-1 flex items-start justify-between gap-3">
-          <div>
-            <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              Llevar esta madera al cubicador
-            </SectionTitle>
-            <p className="text-sm text-[var(--text-tertiary)]">
-              {recorte ? `Sólo ${recorte}` : "Toda la planta"} · se cargan como bloques en la
-              distribución de rolliza sobre lo aserrado, cada uno con su especie
-            </p>
-          </div>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
+    <AdminModal
+      open
+      onClose={onCerrar}
+      title="Llevar esta madera al cubicador"
+      description={`${recorte ? `Sólo ${recorte}` : "Toda la planta"} · se cargan como bloques en la distribución de rolliza sobre lo aserrado, cada uno con su especie`}
+      icon={ArrowRight}
+      size="xl"
+      aboveModals
+      claveVentana="ctp-llevar-al-cubicador"
+      footer={
+        <ModalFooter>
+          <button type="button" onClick={onCerrar} className={button({ variant: "secondary" })}>
+            Cancelar
+          </button>
           <button
             type="button"
-            onClick={onCerrar}
-            aria-label="Cerrar"
-            className="rounded-lg p-1 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            onClick={llevar}
+            disabled={seleccion.length === 0 || yendo}
+            className={button({ variant: "accent" })}
           >
-            <X className="h-5 w-5" />
+            {yendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+            Llevar {seleccion.length} {seleccion.length === 1 ? "bloque" : "bloques"} al cubicador
           </button>
-        </div>
+        </ModalFooter>
+      }
+    >
+      <div className="px-5 py-4 sm:px-6">
 
         {candidatos.length === 0 ? (
           <p className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-6 text-center text-sm text-[var(--text-secondary)]">
@@ -201,32 +180,7 @@ export default function LlevarAlCubicadorModal({
           </div>
         )}
 
-        <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCerrar}
-            className="h-12 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={llevar}
-            disabled={seleccion.length === 0 || yendo}
-            className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--accent)] bg-primary/10 px-4 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40 dark:text-[var(--accent)]"
-          >
-            {yendo ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ArrowRight className="h-4 w-4" />
-            )}
-            Llevar {seleccion.length}{" "}
-            {seleccion.length === 1 ? "bloque" : "bloques"} al cubicador
-          </button>
-        </div>
-
-        <TiradorDeVentana ventana={ventana} />
       </div>
-    </div>
+    </AdminModal>
   );
 }

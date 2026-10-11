@@ -18,13 +18,8 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { usePanelTokens } from "@/components/admin/shared/use-panel-tokens";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { Scissors, X } from "@buleje/design-system/icons";
+import { Scissors } from "@buleje/design-system/icons";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { FormaMedicion } from "@/lib/forestal/loth-forma-medicion";
@@ -45,6 +40,7 @@ import LothFichaTrozado from "./LothFichaTrozado";
 import { SelectorFormaMedicion } from "./LothMedicionPartes";
 import LothTrozadoMultiplePie from "./LothTrozadoMultiplePie";
 import LothTrozasRenglones from "./LothTrozasRenglones";
+import AdminModal from "@/components/admin/shared/AdminModal";
 
 const RENGLONES_INICIALES = () => [renglonVacio(0), renglonVacio(1)];
 
@@ -60,37 +56,12 @@ export default function LothTrozadoMultipleModal({
   onClose: () => void;
   onGuardar: (arbol: LothEntryDTO, trozas: TrozaParaAsentar[]) => Promise<{ creadas: number; errores: string[] }>;
 }) {
-  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
-     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
-  /* `activo: open` no es decorativo: el componente NO se desmonta al
-     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
-     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
-  const cajaRef = useRef<HTMLDivElement>(null);
   const [arbolId, setArbolId] = useState<string>("");
   const [renglones, setRenglones] = useState<RenglonTroza[]>(RENGLONES_INICIALES);
   const sigId = useRef(2);
   const [guardando, setGuardando] = useState(false);
   const [resultado, setResultado] = useState<{ creadas: number; errores: string[]; intentadas: number } | null>(null);
   const [forma, setForma] = useFormaMedicion();
-  /* En portal, como AdminModal: dentro del panel, `.admin-mobile-cards`
-     volvía tarjetas a 400 px la tablita de «Lo que queda» de la ficha
-     (medido 28-09). Fuera del panel hay que traer sus tokens. */
-  const tokens = usePanelTokens(open);
-  useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onClose, activo: open });
-  /**
-   * Ventana: se mueve, se achica y se fija (ADR-420).
-   *
-   * Los renglones se copian de la libreta de campo, pero el árbol y su volumen
-   * talado están en la tabla del libro, detrás. Con seis trozas cargadas el
-   * modal tapa justo la fila contra la que hay que cotejar; corrido a un lado
-   * se tipea mirando el dato, sin cerrar y perder los renglones a medio llenar.
-   * Clave nueva con la ficha: una ventana recordada a 52rem apretaba la columna.
-   */
-  const ventana = useVentanaDeModal(open, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "loth-trozado-multiple-ficha",
-  });
 
   /* Asentado lo anterior, abrir de nuevo arranca limpio (antes volvía el
      «Entraron 3 de 3» de la vez pasada). A medio llenar, no se pierde nada. */
@@ -140,59 +111,42 @@ export default function LothTrozadoMultipleModal({
     }
   };
 
-  return createPortal(
-    <div
-      style={tokens}
-      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-2 backdrop-blur-sm sm:p-4"
-      /* El velo es decorativo: el diálogo es la caja de adentro. Cerrar tocando
-         afuera es un atajo —Escape y la X hacen lo mismo con teclado. */
-      role="presentation"
-      onClick={(e) => {
-        /* Fijado quiere decir «lo dejo abierto para mirar el libro de atrás»:
-           el clic afuera deja de cerrar. La X y Escape siguen cerrando. */
-        if (e.target === e.currentTarget && !ventana.fijado) onClose();
+  return (
+    <AdminModal
+      open
+      onClose={() => {
+        if (!guardando) onClose();
       }}
+      title="Trozar un árbol"
+      icon={Scissors}
+      size="lg"
+      aboveModals
+      claveVentana="loth-trozado-multiple-ficha"
+      ayuda={
+        <InfoTip
+          title="Trozar un árbol"
+          what="Todas las trozas del mismo fuste, de una vez."
+          affects="El código sigue a lo que el libro ya trozó de ese árbol (A-D asentadas → E) y el volumen (Smalian) sale solo por renglón."
+          example="Eliges el árbol 85-TOR y cargas sus trozas sin volver a tipear especie ni fecha. Flechas y Enter te llevan de medida en medida."
+        />
+      }
+      footer={(
+      <LothTrozadoMultiplePie
+        hayResultado={resultado != null}
+        hayArbol={arbol != null}
+        libro={{ leido: libro.datos != null, error: libro.error }}
+        resto={resto}
+        aMedias={aMedias.map((r) => r.codigo)}
+        listas={listas.length}
+        totalM3={totalM3}
+        guardando={guardando}
+        onCerrar={onClose}
+        onAsentar={guardar}
+      />
+      )}
     >
-      {/* El diálogo en sí: acá viven el foco, el arrastre y el tamaño —
-          el velo de atrás no se mueve. Mismo ancho que «Nueva línea · Trozado». */}
-      <div
-        ref={cajaRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Trozar un árbol"
-        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
-        className="relative flex max-h-[92vh] w-full max-w-[44rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] lg:max-w-[62rem]"
-      >
-        {/* Cabecera — y asa para arrastrar la ventana. */}
-        <header {...ventana.asaProps} className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-4 py-3 sm:px-5">
-          <div className="flex items-center gap-1.5">
-            <p className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              <Scissors className="h-4 w-4" /> Trozar un árbol
-            </p>
-            <InfoTip
-              title="Trozar un árbol"
-              what="Todas las trozas del mismo fuste, de una vez."
-              affects="El código sigue a lo que el libro ya trozó de ese árbol (A-D asentadas → E) y el volumen (Smalian) sale solo por renglón."
-              example="Eliges el árbol 85-TOR y cargas sus trozas sin volver a tipear especie ni fecha. Flechas y Enter te llevan de medida en medida."
-            />
-          </div>
-          {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
-              esto los controles quedarían flotando en el medio. */}
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </header>
 
-        <div className="min-h-0 flex-1 overflow-auto px-4 py-4 sm:px-5">
+        <div className="px-4 py-4 sm:px-5">
           {resultado ? (
             <div className="rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-500)]/10 p-4">
               <p className="text-base font-bold text-[var(--text-primary)]">
@@ -253,22 +207,7 @@ export default function LothTrozadoMultipleModal({
           )}
         </div>
 
-        <LothTrozadoMultiplePie
-          hayResultado={resultado != null}
-          hayArbol={arbol != null}
-          libro={{ leido: libro.datos != null, error: libro.error }}
-          resto={resto}
-          aMedias={aMedias.map((r) => r.codigo)}
-          listas={listas.length}
-          totalM3={totalM3}
-          guardando={guardando}
-          onCerrar={onClose}
-          onAsentar={guardar}
-        />
 
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>,
-    document.body,
+    </AdminModal>
   );
 }

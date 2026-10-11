@@ -34,17 +34,10 @@
  * trazabilidad.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Boxes, Calculator, Ruler, X } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { Boxes, Calculator, Ruler } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { fmtPiezas } from "@/lib/forestal/cubicacion-formato";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { motivoNoDeclarable, paquetesDeLoCubicado } from "@/lib/forestal/declarar-produccion";
 import { gruposPorDueno } from "@/lib/forestal/declarar-por-dueno";
@@ -58,6 +51,9 @@ import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
 import { useTrozasParaCodigo } from "./hooks/use-trozas-para-codigo";
 import { ESPACIO_PRODUCCION } from "./hooks/libreta-produccion";
 import { esIsoValido, hoyEnLima } from "@/lib/forestal/semana-de-registro";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 
 /** El espacio propio de este cubicador — vive en `libreta-produccion`, que es quien lo vacía. */
 export { ESPACIO_PRODUCCION };
@@ -123,23 +119,6 @@ export default function CtpProducirSinLoteModal({
   /* Estable: el cubicador está memorizado y una función nueva en cada render lo
      redibujaría entero al abrir «Declarar» (medido 23-09). */
   const alImportar = useCallback(() => setAImportar(null), []);
-  /* Foco adentro, Tab que no se escapa, Escape que cierra y foco devuelto. Con
-     «Declarar» abierto encima, se calla solo (hay otro diálogo arriba). */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar });
-  /**
-   * Ventana: se mueve, se achica y se fija (ADR-420).
-   *
-   * Acá pesa más que en ningún otro modal del libro. Ocupa el 96 % del alto y
-   * mientras se cubica hay que mirar la tabla de producción que quedó detrás —
-   * qué corrida se declaró ayer, qué permiso toca. Hasta ahora había que
-   * cerrar, mirar y volver a abrir, perdiendo lo cargado a medio dictar.
-   */
-  const ventana = useVentanaDeModal(true, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    claveMemoria: "ctp-producir-sin-lote",
-  });
 
   /* La serie de códigos que ya usa la planta: sin ella el sugerido puede caer
      en uno tomado y el servidor rechaza la declaración entera. */
@@ -186,91 +165,29 @@ export default function CtpProducirSinLoteModal({
   };
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/60 p-2">
-      <div
-        ref={cajaRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Producir sin lote"
-        /* `relative`: el tirador de redimensión se ancla a esta esquina. */
-        className="relative flex h-[96vh] w-full max-w-[98vw] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
-      >
-        {/* Cabecera — y asa para arrastrar la ventana. En UNA fila: sin las
-            pastillas de PT · m³ · piezas (Brandon, 2026-09-23: «quítalo porque
-            ya tengo KPIs» — son los indicadores del cubicador, justo abajo). */}
-        <div
-          {...ventana.asaProps}
-          className="flex shrink-0 items-center gap-2.5 border-b border-[var(--rule-base)] px-4 py-2 sm:px-5"
-        >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-[var(--accent-ink)] max-sm:hidden dark:text-[var(--accent)]">
-            <Calculator className="h-4 w-4" aria-hidden />
-          </span>
-          <div className="flex min-w-0 flex-1 items-center gap-1.5">
-            <CardTitle as="h3" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] leading-tight">
-              Producir sin lote
-            </CardTitle>
-            <InfoTip
-              title="Producir sin lote"
-              what="Cubica acá y decláralo en el Libro."
-              affects="Al declarar eliges de qué trozas salió. No toca el lote del cubicador."
-              example="La sierra cortó el sábado, el parte llega el lunes y el lote con sus trozas se arma después."
-            />
-          </div>
-          <ControlesDeVentana ventana={ventana} />
-          <button
-            type="button"
-            onClick={onCerrar}
-            aria-label="Cerrar"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          >
-            <X className="h-5 w-5" aria-hidden />
+    <AdminModal
+      open
+      onClose={onCerrar}
+      title="Producir sin lote"
+      icon={Calculator}
+      ayuda={
+        <InfoTip
+          title="Producir sin lote"
+          what="Cubica acá y decláralo en el Libro."
+          affects="Al declarar eliges de qué trozas salió. No toca el lote del cubicador."
+          example="La sierra cortó el sábado, el parte llega el lunes y el lote con sus trozas se arma después."
+        />
+      }
+      size="planilla"
+      aboveModals
+      claveVentana="ctp-producir-sin-lote"
+      footer={
+        <ModalFooter>
+          <button type="button" onClick={onCerrar} className={button({ variant: "secondary" })}>
+            Cancelar
           </button>
-        </div>
-
-        {/* El día al que va este registro (Brandon, 2026-09-11). Va acá arriba,
-            fuera del cuerpo que scrollea, porque es una decisión del ASIENTO y
-            no de lo cubicado: se ve y se cambia igual mientras se miden las
-            piezas, y cada casillero dice lo que ese día ya tiene anotado. */}
-        <div className="shrink-0 border-b border-[var(--rule-base)] px-2 py-2 sm:px-5">
-          {/* Con «Anular el día» (2026-09-23): la papelera del casillero o el
-              detalle del día anulan lo declarado; se relee la tira y el libro. */}
-          <CtpSemanaDeProduccion
-            valor={fecha}
-            onElegir={(iso) => {
-              setFecha(iso);
-              setSemana(iso);
-            }}
-            semana={semana}
-            onSemana={setSemana}
-            porDia={jornadas.porDia}
-            cargando={jornadas.cargando}
-            error={jornadas.error}
-            /* Traer una corrida al cubicado: acá SÍ hay dónde ponerla. */
-            onCopiarAlCubicado={(copiadas) => setAImportar(copiadas)}
-            onReleer={() => void jornadas.recargar()}
-            onCambioEnElLibro={onCambioEnElLibro}
-          />
-        </div>
-
-        {/* Cuerpo: el cubicador ENTERO, en su propia libreta */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3 sm:px-5 sm:py-4">
-          <CubicadorMadera
-            key={libreta}
-            espacio={ESPACIO_PRODUCCION}
-            onLote={alLote}
-            piezasAImportar={aImportar}
-            onImportado={alImportar}
-            /* El código de la troza es interno (Brandon, 2026-09-14): no
-               entra a `paquetesDeLoCubicado` ni a lo que se registra. */
-            codigoDeTroza={trozasParaCodigo}
-          />
-        </div>
-
-        {/* Pie */}
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 border-t border-[var(--rule-base)] px-4 py-2.5 sm:px-5">
           <span
-            className={`mr-auto text-xs ${
+            className={`min-w-0 flex-1 text-sm max-sm:basis-full ${
               piezasSinEspecie > 0 || motivoVariado
                 ? "font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                 : "text-[var(--text-tertiary)]"
@@ -307,10 +224,49 @@ export default function CtpProducirSinLoteModal({
           >
             <Boxes className="h-4 w-4" aria-hidden /> Declarar esta producción
           </button>
+        </ModalFooter>
+      }
+    >
+
+        {/* El día al que va este registro (Brandon, 2026-09-11). Va acá arriba,
+            fuera del cuerpo que scrollea, porque es una decisión del ASIENTO y
+            no de lo cubicado: se ve y se cambia igual mientras se miden las
+            piezas, y cada casillero dice lo que ese día ya tiene anotado. */}
+        <div className="sticky top-0 z-10 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-2 sm:px-5">
+          {/* Con «Anular el día» (2026-09-23): la papelera del casillero o el
+              detalle del día anulan lo declarado; se relee la tira y el libro. */}
+          <CtpSemanaDeProduccion
+            valor={fecha}
+            onElegir={(iso) => {
+              setFecha(iso);
+              setSemana(iso);
+            }}
+            semana={semana}
+            onSemana={setSemana}
+            porDia={jornadas.porDia}
+            cargando={jornadas.cargando}
+            error={jornadas.error}
+            /* Traer una corrida al cubicado: acá SÍ hay dónde ponerla. */
+            onCopiarAlCubicado={(copiadas) => setAImportar(copiadas)}
+            onReleer={() => void jornadas.recargar()}
+            onCambioEnElLibro={onCambioEnElLibro}
+          />
         </div>
 
-        <TiradorDeVentana ventana={ventana} />
-      </div>
+        {/* Cuerpo: el cubicador ENTERO, en su propia libreta */}
+        <div className="px-2 py-3 sm:px-5 sm:py-4">
+          <CubicadorMadera
+            key={libreta}
+            espacio={ESPACIO_PRODUCCION}
+            onLote={alLote}
+            piezasAImportar={aImportar}
+            onImportado={alImportar}
+            /* El código de la troza es interno (Brandon, 2026-09-14): no
+               entra a `paquetesDeLoCubicado` ni a lo que se registra. */
+            codigoDeTroza={trozasParaCodigo}
+          />
+        </div>
+
 
       {/* El modal APARTE (ADR-429): se monta encima y guarda su borrador aunque
           se cierre para volver a cubicar. */}
@@ -374,6 +330,6 @@ export default function CtpProducirSinLoteModal({
           }}
         />
       )}
-    </div>
+    </AdminModal>
   );
 }

@@ -11,16 +11,19 @@
  * (--surface-raised, --rule-base, --accent, --text-primary). Hero con
  * número de orden + estado + total grande. Footer con acciones rápidas.
  */
-import { useEffect, useRef } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { X, Calendar, Copy } from "@buleje/design-system/icons";
-import { SectionTitle } from "@buleje/design-system";
+import { Copy } from "@buleje/design-system/icons";
 import type { MarketplaceOrderDetail } from "./hooks/use-marketplace-orders";
 import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/format";
-import { fmtCurrency, SeccionCliente, SeccionProductos, SeccionCancelacion, PieDelPedido, type AccionDelPedido } from "./OrderDetailPartes";
+import {
+  fmtCurrency,
+  SeccionCliente,
+  SeccionProductos,
+  SeccionCancelacion,
+  PieDelPedido,
+  type AccionDelPedido,
+} from "./OrderDetailPartes";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
 interface Props {
   order: MarketplaceOrderDetail | null;
@@ -31,39 +34,49 @@ interface Props {
   acciones?: AccionDelPedido[];
 }
 
-const STATUS_META: Record<
-  string,
-  { label: string; dot: string; chip: string; text: string }
-> = {
-  pendiente:  { label: "Pendiente",  dot: "bg-[var(--data-warning)]", chip: "bg-[var(--data-warning)]/15 border-[var(--data-warning)]/30", text: "text-[var(--data-warning)]" },
-  confirmado: { label: "Confirmado", dot: "bg-[var(--data-success)]", chip: "bg-[var(--data-success)]/15 border-[var(--data-success)]/30", text: "text-[var(--data-success)]" },
-  preparando: { label: "Preparando", dot: "bg-[var(--data-info)]",    chip: "bg-[var(--data-info)]/15 border-[var(--data-info)]/30",       text: "text-[var(--data-info)]" },
-  en_camino:  { label: "En camino",  dot: "bg-[var(--data-info)]",    chip: "bg-[var(--data-info)]/15 border-[var(--data-info)]/30",       text: "text-[var(--data-info)]" },
-  entregado:  { label: "Entregado",  dot: "bg-[var(--data-success)]", chip: "bg-[var(--data-success)]/15 border-[var(--data-success)]/30", text: "text-[var(--data-success)]" },
-  cancelado:  { label: "Cancelado",  dot: "bg-[var(--data-error)]",   chip: "bg-[var(--data-error)]/15 border-[var(--data-error)]/30",     text: "text-[var(--data-error)]" },
+const STATUS_META: Record<string, { label: string; dot: string; chip: string; text: string }> = {
+  pendiente: {
+    label: "Pendiente",
+    dot: "bg-[var(--data-warning)]",
+    chip: "bg-[var(--data-warning)]/15 border-[var(--data-warning)]/30",
+    text: "text-[var(--data-warning)]",
+  },
+  confirmado: {
+    label: "Confirmado",
+    dot: "bg-[var(--data-success)]",
+    chip: "bg-[var(--data-success)]/15 border-[var(--data-success)]/30",
+    text: "text-[var(--data-success)]",
+  },
+  preparando: {
+    label: "Preparando",
+    dot: "bg-[var(--data-info)]",
+    chip: "bg-[var(--data-info)]/15 border-[var(--data-info)]/30",
+    text: "text-[var(--data-info)]",
+  },
+  en_camino: {
+    label: "En camino",
+    dot: "bg-[var(--data-info)]",
+    chip: "bg-[var(--data-info)]/15 border-[var(--data-info)]/30",
+    text: "text-[var(--data-info)]",
+  },
+  entregado: {
+    label: "Entregado",
+    dot: "bg-[var(--data-success)]",
+    chip: "bg-[var(--data-success)]/15 border-[var(--data-success)]/30",
+    text: "text-[var(--data-success)]",
+  },
+  cancelado: {
+    label: "Cancelado",
+    dot: "bg-[var(--data-error)]",
+    chip: "bg-[var(--data-error)]/15 border-[var(--data-error)]/30",
+    text: "text-[var(--data-error)]",
+  },
 };
 
 export function OrderDetailModal({ order, loading, onClose, onWhatsApp, acciones = [] }: Props) {
-  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
-       el foco, la trampa de Tab y el scroll, no una segunda salida. */
-  // `activo`: si el detalle vuelve vacío el componente devuelve null con el
-  // modal «abierto»; sin esto la trampa de foco quedaba sobre un nodo ido.
-  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: !!order || !!loading });
-  // Se queda montado y devuelve null sin orden: la ventana va con lo que se ve.
-  const ventana = useVentanaDeModal(Boolean(order) || Boolean(loading), { ref: cajaRef, aplicarTranslate: true, claveMemoria: "marketplace-orden-detalle" });
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   if (!order && !loading) return null;
 
-  const statusMeta = order ? STATUS_META[order.status] ?? STATUS_META.pendiente : null;
+  const statusMeta = order ? (STATUS_META[order.status] ?? STATUS_META.pendiente) : null;
   const orderShortId = order?.id.slice(-8).toUpperCase() ?? "—";
 
   function copyId() {
@@ -72,69 +85,28 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, acciones
   }
 
   return (
-    <div
-      className="fixed inset-0 z-system flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md p-0 sm:p-4"
-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
+    <AdminModal
+      open
+      onClose={onClose}
+      title={`Pedido marketplace #${orderShortId}`}
+      description={order ? formatDateTime(order.createdAt) : undefined}
+      size="lg"
+      claveVentana="marketplace-orden-detalle"
+      footer={
+        order ? (
+          <PieDelPedido
+            order={order}
+            onClose={onClose}
+            onWhatsApp={onWhatsApp}
+            acciones={acciones}
+          />
+        ) : undefined
+      }
     >
-      <div
-        ref={cajaRef} tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        className={cn(
-          "relative w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh]",
-          "flex flex-col overflow-hidden",
-          "bg-[var(--surface-raised)] text-[var(--text-primary)]",
-          "rounded-t-3xl sm:rounded-3xl",
-          "border border-[var(--rule-base)] shadow-[var(--shadow-xl)]",
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* ── Header (sticky, hero) ─────────────────────── */}
-        <header {...ventana.asaProps} className="relative shrink-0 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 pt-5 pb-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Pedido marketplace
-              </p>
-              <div className="mt-1 flex items-center gap-2">
-                <SectionTitle as="h2" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-                  #{orderShortId}
-                </SectionTitle>
-                {order && (
-                  <button
-                    type="button"
-                    onClick={copyId}
-                    aria-label="Copiar ID"
-                    title="Copiar ID"
-                    className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] transition-colors"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-              {order && (
-                <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)]">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {formatDateTime(order.createdAt)}
-                </p>
-              )}
-            </div>
-
-            <span className="ml-auto flex items-center gap-1 shrink-0">
-              <ControlesDeVentana ventana={ventana} />
-              <button
-                onClick={onClose}
-                className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] border-2 border-transparent hover:border-[var(--rule-base)] transition-colors"
-                aria-label="Cerrar"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </span>
-          </div>
-
-          {/* Status + total row */}
-          {order && statusMeta && (
-            <div className="mt-4 flex items-center justify-between gap-3">
+      <div className={`space-y-4 ${MODAL_BODY}`}>
+        {order && statusMeta && (
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
               <span
                 className={cn(
                   "inline-flex items-center gap-2 px-3 py-1.5 rounded-full border-2 text-xs font-extrabold uppercase tracking-wide",
@@ -145,38 +117,41 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, acciones
                 <span className={cn("h-2 w-2 rounded-full", statusMeta.dot)} />
                 {statusMeta.label}
               </span>
-              <div className="text-right">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Total</p>
-                <p className="text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">
-                  {fmtCurrency(order.total)}
-                </p>
-              </div>
+              {order && (
+                <button
+                  type="button"
+                  onClick={copyId}
+                  aria-label="Copiar ID"
+                  title="Copiar ID"
+                  className="h-7 w-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
-          )}
-        </header>
-
-        {/* ── Body (scrollable) ──────────────────────────── */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 bg-[var(--surface-raised)]">
-          {loading ? (
-            <div className="py-12 text-center">
-              <div className="inline-block h-8 w-8 border-4 border-[var(--rule-base)] border-t-[var(--accent)] rounded-full animate-spin" />
-              <p className="mt-3 text-sm font-bold text-[var(--text-secondary)]">
-                Cargando detalle…
+            <div className="text-right">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                Total
+              </p>
+              <p className="text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">
+                {fmtCurrency(order.total)}
               </p>
             </div>
-          ) : order ? (
-            <>
-              <SeccionCliente order={order} />
-              <SeccionProductos order={order} />
-              <SeccionCancelacion order={order} />
-            </>
-          ) : null}
-        </div>
-
-        {/* ── Footer (acciones, sticky bottom) ──────────── */}
-        {order && <PieDelPedido order={order} onClose={onClose} onWhatsApp={onWhatsApp} acciones={acciones} />}
-        <TiradorDeVentana ventana={ventana} />
+          </div>
+        )}
+        {loading ? (
+          <div className="py-12 text-center">
+            <div className="inline-block h-8 w-8 border-4 border-[var(--rule-base)] border-t-[var(--accent)] rounded-full animate-spin" />
+            <p className="mt-3 text-sm font-bold text-[var(--text-secondary)]">Cargando detalle…</p>
+          </div>
+        ) : order ? (
+          <>
+            <SeccionCliente order={order} />
+            <SeccionProductos order={order} />
+            <SeccionCancelacion order={order} />
+          </>
+        ) : null}
       </div>
-    </div>
+    </AdminModal>
   );
 }
