@@ -11,6 +11,8 @@ import { useSettings } from "@/contexts/settings-context";
 import { usePromotions } from "@/contexts/promotions-context";
 import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
 import { sendOrder, type SendResult } from "@/lib/order-utils";
+import { PedidoCarritoWhatsapp } from "@/components/checkout/parts/PedidoCarritoWhatsapp";
+import { usePedidosTienda } from "@/components/checkout/hooks/usePedidosTienda";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import CartUpsellSection from "@/components/CartUpsellSection";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -42,6 +44,8 @@ export default function CartSidebar() {
     useCart();
   const { customer } = useCustomer();
   const { mode } = useSettings();
+  // WhatsApp del negocio: con él, la vista previa usa el kit (imagen antes del clic).
+  const { numeroWhatsapp } = usePedidosTienda();
   const { getBestPromotion, promotions } = usePromotions();
   const { products: allProducts } = useStoreProducts();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -221,7 +225,7 @@ export default function CartSidebar() {
       savedLocations: [],
     };
     setSending(true);
-    const result = await sendOrder(sender, items, total);
+    const result = await sendOrder(sender, items, total, numeroWhatsapp);
     setSending(false);
     setSendResult(result);
     markOrderPending();
@@ -735,8 +739,20 @@ export default function CartSidebar() {
 
                 {/* Y4: WhatsApp message preview */}
                 <AnimatePresence>
-                  {showPreview && !sending && (
+                  {showPreview && !sending && numeroWhatsapp && (
                     <m.div
+                      key="vista-kit"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <PedidoCarritoWhatsapp items={items} total={finalTotal} onEditar={() => setShowPreview(false)} />
+                    </m.div>
+                  )}
+                  {showPreview && !sending && !numeroWhatsapp && (
+                    <m.div
+                      key="vista-texto"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}

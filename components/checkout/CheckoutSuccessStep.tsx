@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "@buleje/design-system/icons";
 import { fireTenantPurchase } from "@/lib/tenant-pixels";
+import { useGuardarPedidoConfirmado } from "./parts/PedidoConfirmadoWhatsapp";
 
 export interface CheckoutSuccessStepProps {
   orderId: string;
@@ -38,6 +39,8 @@ export function CheckoutSuccessStep({
   useEffect(() => {
     if (orderId) fireTenantPurchase({ orderId, value: value ?? 0 });
   }, [orderId, value]);
+  // «Enviar mi pedido por WhatsApp» (OrderStatusModal) sobrevive a una recarga.
+  useGuardarPedidoConfirmado(orderId);
 
   return (
     <m.div

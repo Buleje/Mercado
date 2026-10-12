@@ -1,8 +1,10 @@
 /**
- * El pedido YA confirmado como mensaje e imagen de WhatsApp para el negocio
- * (2026-10-11, `pedidosCliente.pedidoComoImagen`). Funciones puras.
+ * El pedido como mensaje e imagen de WhatsApp para el negocio (2026-10-11,
+ * `pedidosCliente.pedidoComoImagen`). Funciones puras. Dos usos:
+ *   · pedido YA confirmado (con `numero`): `total` = el que devolvió el servidor;
+ *   · carrito en modo WhatsApp (sin `numero`): no hay pedido en el sistema y el
+ *     total es la vista previa del carrito.
  *
- * - `total` es el que devolvió el servidor al crear el pedido (`buleje-last-order`).
  * - El descuento es UNO solo: subtotal de los renglones − total final (promo,
  *   cupón, primera compra y puntos juntos); así siempre cuadra con el total.
  * - El total dice «(lo confirma el negocio)»: el negocio lo revisa en su panel.
@@ -35,15 +37,17 @@ export interface ClientePedidoCheckout {
   ubicacion: string;
 }
 
-export interface PedidoConfirmado {
+export interface PedidoWhatsapp {
   negocio: string;
-  /** Id del pedido que devolvió `POST /api/orders`. */
-  numero: string;
+  /** Id del pedido que devolvió `POST /api/orders`; sin él = pedido del carrito. */
+  numero?: string;
   items: readonly LineaPedidoCheckout[];
-  /** Total que cobró el servidor. */
+  /** Total del servidor (confirmado) o de la vista previa del carrito. */
   total: number;
   cliente: ClientePedidoCheckout;
 }
+/** @deprecated nombre anterior; usa `PedidoWhatsapp`. */
+export type PedidoConfirmado = PedidoWhatsapp;
 
 const PAGO: Record<PaymentMethod, string> = {
   yape: "Yape",
@@ -65,16 +69,19 @@ function recortar(texto: string, max: number): string {
 }
 
 /** Subtotal de los renglones − total del servidor, en céntimos para no arrastrar decimales. */
-export function descuentoTotal(p: Pick<PedidoConfirmado, "items" | "total">): number {
+export function descuentoTotal(p: Pick<PedidoWhatsapp, "items" | "total">): number {
   const subtotal = p.items.reduce((s, i) => s + Math.round(i.price * 100) * i.quantity, 0);
   const diferencia = subtotal - Math.round(p.total * 100);
   return diferencia > 0 ? diferencia / 100 : 0;
 }
 
 /** El mensaje que va siempre (respaldo de la imagen y lo que se lee en el chat). */
-export function textoPedidoWhatsapp(p: PedidoConfirmado): string {
+export function textoPedidoWhatsapp(p: PedidoWhatsapp): string {
   const c = p.cliente;
-  const renglones: string[] = [`Hola ${p.negocio}, acabo de hacer el pedido #${p.numero} en la tienda en línea:`, ""];
+  const saludo = p.numero
+    ? `Hola ${p.negocio}, acabo de hacer el pedido #${p.numero} en la tienda en línea:`
+    : `Hola ${p.negocio}, te envío mi pedido de la tienda en línea:`;
+  const renglones: string[] = [saludo, ""];
   for (const i of p.items) {
     renglones.push(`• ${i.name} x${i.quantity} — ${formatCurrency(i.price * i.quantity)}`);
     if (i.note) renglones.push(`  Nota: ${i.note}`);
@@ -97,13 +104,13 @@ export function textoPedidoWhatsapp(p: PedidoConfirmado): string {
 
 /** Los datos para `dibujarImagenPedido` (productos con foto, precios, cliente). */
 export function datosImagenCheckout(
-  p: PedidoConfirmado,
+  p: PedidoWhatsapp,
   marca: { colorAcento: string; logo: string | null },
 ): DatosImagenPedido {
   const c = p.cliente;
   const nota = c.notas.trim();
   const descuento = descuentoTotal(p);
-  const notas: string[] = [`Pedido #${p.numero}`];
+  const notas: string[] = p.numero ? [`Pedido #${p.numero}`] : [];
   if (descuento > 0) notas.push(`Descuentos: −${formatCurrency(descuento)}`);
   if (nota) notas.push(`Nota: ${recortar(nota.replace(/\s+/g, " "), LARGO_NOTA)}`);
   return {

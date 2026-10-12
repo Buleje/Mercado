@@ -12,6 +12,7 @@ import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
 import { cn } from "@/lib/utils";
 import { sendOrder } from "@/lib/order-utils";
+import { usePedidosTienda } from "@/components/checkout/hooks/usePedidosTienda";
 import type { SavedLocation } from "@/contexts/customer-context";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), {});
@@ -261,6 +262,7 @@ function LocationForm({
 export default function CustomerModal() {
   const { showModal, closeModal, register, customer, openMode, findByPhone } = useCustomer();
   const { items, total, close: closeCart } = useCart();
+  const { numeroWhatsapp } = usePedidosTienda();
   const idPrefix = useId();
 
   type View = "profile" | "phone-lookup" | "edit-info" | "edit-loc" | "add-loc";
@@ -347,7 +349,7 @@ export default function CustomerModal() {
       const saved = { name: name.trim(), phone: phone.trim() || undefined, location: loc, reference: ref, locations: [{ id, location: loc, reference: ref }], activeLocationId: id };
       register(saved);
       if (openMode === "order" && items.length > 0) {
-        sendOrder(saved, items, total);
+        sendOrder(saved, items, total, numeroWhatsapp);
         closeCart();
       }
       closeModal();
@@ -376,7 +378,7 @@ export default function CustomerModal() {
   const handleOrderSubmit = () => {
     if (!customer) return;
     if (openMode === "order" && items.length > 0) {
-      sendOrder(customer, items, total);
+      sendOrder(customer, items, total, numeroWhatsapp);
       closeCart();
     }
     closeModal();
