@@ -183,6 +183,14 @@ const nextConfig: NextConfig = {
     // lo vuelve a leer de la caché de disco de arriba, mucho más rápido que del swap.
     turbopackMemoryLimit: 5 * 1024 ** 3,
 
+    // Recarga en caliente del SERVIDOR apagada (12-10). Next la prendió por defecto en 16.2.2 y
+    // tiene un bug: con el panel abierto y sin tocar un archivo, Turbopack ocupaba 10 núcleos sin
+    // parar y la memoria de JS subía 15 MB/s hasta que Next reiniciaba el server cada ~20 min
+    // («approaching the used memory threshold»), cortando lo que el panel estaba cargando.
+    // Medido: el tope de 5 → 10 GB de arriba no cambiaba nada. Issues vercel/next.js #91396 y
+    // #94915. Sin esto, editar código del servidor recarga el módulo entero, como antes de 16.2.2.
+    turbopackServerFastRefresh: false,
+
     // Round 28 Sprint 1 (Quick Win 1.4): inline + minify critical CSS para LCP.
     // Reduce el FOUC en /marketplace y /tienda; ahorro ~20-50ms LCP en 4G.
     // Requiere `critters` instalado (ya viene con Next 16).

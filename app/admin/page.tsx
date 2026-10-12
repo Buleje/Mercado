@@ -22,7 +22,7 @@ import { DEMO_DATA_MODULES, MODULE_INFO, TAB_CATEGORIES } from "./_lib/tab-categ
 import {
   useAdminTabs, useAdminModals, useKeyboardShortcuts, useAdminLayout,
   useFavoritesAndRecent, useImpersonation, useDemoCleanup, useAdminAuth,
-  useWebhookPendingCount, useChangelogBadge, useHiddenTabs, useCategoryOrder,
+  useChangelogBadge, useHiddenTabs, useCategoryOrder,
   useOnboardingTrigger, useAdminAlerts, useNewOrderNotification, useNewWaMessageNotification,
   useNotificationPermissionPrompt, useMobileTableCards, useOnboardingTourTrigger,
   useDocumentTitle, useSwipeNavigation, useAdminNavigateEvent, useSidebarShortcuts,
@@ -173,8 +173,6 @@ function AdminPage() {
 
   const { toggle: toggleTheme, resolved: resolvedTheme, theme: themeMode, setTheme } = useTheme();
   const { permission, requestPermission, sendNotification, hasAsked } = useNotifications();
-  const _webhookPendingCount = useWebhookPendingCount(userRole, authReady);
-  void _webhookPendingCount;
 
   useAdminNavigateEvent(navigateTab);
   useDocumentTitle(tab, activeTenantName);

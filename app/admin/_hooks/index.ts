@@ -17,7 +17,6 @@ export { useFavoritesAndRecent } from "./useFavoritesAndRecent";
 export { useImpersonation } from "./useImpersonation";
 export { useDemoCleanup } from "./useDemoCleanup";
 export { useAdminAuth } from "./useAdminAuth";
-export { useWebhookPendingCount } from "./useWebhookPendingCount";
 export { useChangelogBadge } from "./useChangelogBadge";
 export { useHiddenTabs } from "./useHiddenTabs";
 export { useCategoryOrder } from "./useCategoryOrder";
