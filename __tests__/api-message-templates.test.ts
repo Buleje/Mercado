@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
+import { invalidateAll } from "@/lib/cache";
 
 vi.mock("server-only", () => ({}));
 
@@ -54,6 +55,7 @@ vi.mock("@/lib/prisma", () => ({
 
 vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: vi.fn(() => null),
+  getClientIp: vi.fn(() => "127.0.0.1"),
 }));
 
 import { GET, POST, PATCH, DELETE } from "@/app/api/message-templates/route";
@@ -81,7 +83,10 @@ const VALID_BODY = { name: "Bienvenida", channel: "whatsapp", category: "ventas"
 // ── GET ──────────────────────────────────────────────────────────────────────
 
 describe("GET /api/message-templates", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    invalidateAll();
+  });
 
   it("returns 401 when unauthenticated", async () => {
     mockRequireAdmin.mockResolvedValue(UNAUTH);
@@ -110,7 +115,10 @@ describe("GET /api/message-templates", () => {
 // ── POST ─────────────────────────────────────────────────────────────────────
 
 describe("POST /api/message-templates", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    invalidateAll();
+  });
 
   it("returns 401 when unauthenticated", async () => {
     mockRequireAdmin.mockResolvedValue(UNAUTH);
@@ -150,7 +158,10 @@ describe("POST /api/message-templates", () => {
 // ── PATCH ────────────────────────────────────────────────────────────────────
 
 describe("PATCH /api/message-templates", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    invalidateAll();
+  });
 
   it("returns 400 when id is missing", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
@@ -180,7 +191,10 @@ describe("PATCH /api/message-templates", () => {
 // ── DELETE ───────────────────────────────────────────────────────────────────
 
 describe("DELETE /api/message-templates", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    invalidateAll();
+  });
 
   it("returns 400 when id is missing", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);

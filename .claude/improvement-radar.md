@@ -178,3 +178,15 @@ Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
 - **Sugerencia:** Files [components/superadmin/banners/BannerImageAdjuster.tsx, components/superadmin/banners/BannerPreviewStudio.tsx] are always edited together. Consider creating a skill that pre-loads all 2 files.
 - **Last seen:** 2026-04-27T01:43:48.118Z
 
+
+---
+
+## Weekly health 2026-10-12
+- tsc: green (0 errors)
+- tests: 52 failed / 3952 passed / 47 skipped (18 files red; 9 in api-message-templates fixed this run → 43 left, mostly stale mocks: warehouse-transfers 11, checkout/* 9, product-variants 4, product-seo 3, others)
+- lint: `npm run lint` aborts on config error ("react-hooks" plugin not defined) — no counts available [pending]
+- outdated: 30+ packages behind; `npm audit`: 1 critical, 47 high (not addressed; Tier 1 test fix chosen first)
+- action: Tier 1 — fixed stale mocks in __tests__/api-message-templates.test.ts (getClientIp mock + cache reset)
+
+### [pending] remaining red tests (Tier 1 for next weekly run)
+- api-warehouse-transfers (prisma.transfer/warehouse mocks), api-product-variants, api-product-seo, cart-route-auth, api-purchases-create, whatsapp/{approve-reject,payment-approval,yape-capture}, checkout/* (danger zone tests — human review)
