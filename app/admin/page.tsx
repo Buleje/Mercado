@@ -32,6 +32,8 @@ import {
 
 import { LastLoginToast } from "@/components/admin/LastLoginToast";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
+import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
+import { useSuplantacionActiva } from "./_hooks/useSuplantacionActiva";
 // TrialExpiredGuard se mantiene estático: es un gate de negocio que bloquea el
 // panel cuando el trial expiró; lazy-loadear introduciría flash sin guard.
 import { TrialExpiredGuard } from "@/components/admin/billing/TrialExpiredGuard";
@@ -165,6 +167,9 @@ function AdminPage() {
     isSuperAdminImpersonating, activeTenantName, activeTenantSlug,
     activeTenantLogo,
   } = useImpersonation();
+  // Vista de tienda del superadmin (11-10): la franja con «Salir» y los minutos
+  // que quedan. La confirma /api/auth/me, no la marca de localStorage.
+  const suplantacion = useSuplantacionActiva();
 
   const { toggle: toggleTheme, resolved: resolvedTheme, theme: themeMode, setTheme } = useTheme();
   const { permission, requestPermission, sendNotification, hasAsked } = useNotifications();
@@ -392,9 +397,9 @@ function AdminPage() {
           (más abajo) para que respete el ancho del contenido y no quede
           tapado por el sidebar fixed de 260px. */}
 
-      {/* AdminImpersonationBanner removido — el chip tenant del topbar
-          ya indica el negocio administrado. Salir de impersonation se
-          hace desde el menu de usuario. */}
+      {/* AdminImpersonationBanner: volvió el 11-10 como franja con «Salir»
+          (no había forma de salir desde el panel), dentro del shell, arriba
+          del AdminTopHeader. */}
 
       {/* AdminTenantBar removido — el chip tenant ahora vive dentro del
           AdminTopHeader al lado de la busqueda global (mas compacto). */}
@@ -429,13 +434,21 @@ function AdminPage() {
             ocultamos porque MorningBriefingCard + "Alertas accionables" del
             dashboard ya muestran lo mismo (eran 3 zonas de alertas en la
             misma vista). En otras tabs / desktop se mantiene. */}
+        {suplantacion.activa && !presentationMode && (
+          <AdminImpersonationBanner
+            negocio={activeTenantName ?? activeTenantSlug ?? "esta tienda"}
+            minutos={suplantacion.minutos}
+            saliendo={suplantacion.saliendo}
+            onSalir={suplantacion.salir}
+          />
+        )}
         <div className={tab === "vendor-dashboard" ? "hidden sm:block" : ""}>
           <AdminAlertsBanner userRole={userRole} authReady={authReady} />
         </div>
 
         <AdminTopHeader
           presentationMode={presentationMode}
-          isSuperAdminImpersonating={isSuperAdminImpersonating}
+          isSuperAdminImpersonating={suplantacion.activa && !presentationMode}
           focusMode={focusMode}
           resolvedTheme={resolvedTheme}
           themeMode={themeMode}

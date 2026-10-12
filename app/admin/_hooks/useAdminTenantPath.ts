@@ -17,6 +17,8 @@ import type { useRouter } from "next/navigation";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { setKeepAlive } from "@/lib/session-keepalive";
 import { logger } from "@/lib/logger";
+import { MARCA_SUPLANTACION, destinoSesionTerminada } from "@/lib/auth/suplantacion-vista";
+import { salirDeVistaDeTienda } from "./useSuplantacionActiva";
 
 type AppRouter = ReturnType<typeof useRouter>;
 
@@ -40,6 +42,12 @@ export function useAdminTenantPath(router: AppRouter): UseAdminTenantPathResult 
   );
 
   const handleLogout = useCallback(async () => {
+    // Vista de tienda del superadmin: «Cerrar sesión» es salir de la vista (audita
+    // la salida y vuelve al superadmin). Si el servidor dice que no era una
+    // suplantación (marca vieja), sigue el logout de siempre.
+    let marca: string | null = null;
+    try { marca = localStorage.getItem(MARCA_SUPLANTACION); } catch { /* modo privado */ }
+    if (marca && (await salirDeVistaDeTienda())) return;
     // Si el logout del servidor falla igual se sale de la sesión del cliente,
     // pero se deja rastro: un logout que no cerró la cookie es un incidente.
     const res = await fetch("/api/auth/logout", { method: "POST", headers: csrfHeaders() }).catch((err) => {
@@ -58,7 +66,10 @@ export function useAdminTenantPath(router: AppRouter): UseAdminTenantPathResult 
   }, [router, adminPath]);
 
   const onUnauth = useCallback(() => {
-    router.push(adminPath("/admin/login"));
+    // Recargar el panel con la vista de tienda ya vencida → al superadmin con el aviso.
+    const destino = destinoSesionTerminada(adminPath("/admin/login"));
+    if (destino.startsWith("/superadmin")) window.location.href = destino;
+    else router.push(destino);
   }, [router, adminPath]);
 
   return { tenantPrefix, adminPath, handleLogout, onUnauth };

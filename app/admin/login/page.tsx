@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getKeepAlive, motivoDeCierre, setKeepAlive, tomarUltimoCierre } from "@/lib/session-keepalive";
 import { formatCurrency } from "@/lib/format";
+import { limpiarVistaSuplantada } from "@/lib/auth/suplantacion-vista";
 
 // Brandon mayo 14 2026 v3: layout editorial con dashboard preview.
 //   - Lado izquierdo: form de login dentro de una card flotante, brand
@@ -251,6 +252,11 @@ export default function AdminLoginPage() {
           lastLoginAt?: string | null;
           lastLoginIp?: string | null;
         };
+        // Un login de verdad reemplaza cualquier «Entrar como esta tienda» del
+        // superadmin en este navegador: sin borrar la marca, el panel del dueño
+        // se seguiría creyendo suplantado (sin asistente de primeros pasos). Va
+        // ANTES de las salidas tempranas (2FA, elegir tienda) — security 11-10.
+        limpiarVistaSuplantada();
 
         // ── Credencial en varias tiendas: mostrar selector ──────────────
         if (data.requiresTenantChoice && data.options && data.options.length > 0) {
@@ -360,6 +366,7 @@ export default function AdminLoginPage() {
     try {
       const res = await fetch("/api/auth/bypass", { method: "POST" });
       if (res.ok) {
+        limpiarVistaSuplantada();
         hardRedirect(safeRedirectPath(fromRef.current, adminPath("/admin")));
         return;
       }

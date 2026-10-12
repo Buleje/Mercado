@@ -35,7 +35,12 @@ vi.mock("@/lib/prisma", () => ({
     $executeRawUnsafe: vi.fn(async () => 1),
   },
 }));
-vi.mock("@/lib/session", () => ({ createSessionToken: m.token, SESSION: { COOKIE_NAME: "buleje-admin-sess" } }));
+vi.mock("@/lib/session", () => ({
+  createSessionToken: m.token,
+  SESSION: { COOKIE_NAME: "buleje-admin-sess" },
+  REFRESH: { COOKIE_NAME: "buleje-admin-refresh" },
+  getRefreshPayload: vi.fn(async () => null),
+}));
 vi.mock("@/lib/audit/superadmin-audit", () => ({ logSuperadminAction: m.audit }));
 vi.mock("@/lib/auth/totp-step-up", () => ({ requireTotpStepUp: m.totp }));
 vi.mock("@/lib/auth/session-revocation", () => ({ revokeSessionsBefore: vi.fn() }));
@@ -84,6 +89,11 @@ describe("ALTO-1: suplantar exige el candado si está configurado", () => {
     expect(res.status).toBe(200);
     expect(m.audit).toHaveBeenCalledWith("impersonate", expect.any(String), expect.objectContaining({ targetTenantSlug: "musa" }), "sa");
     expect(res.headers.get("set-cookie")).toMatch(/buleje-admin-sess=token-admin/);
+    // El refresh de la sesión anterior (otro negocio) se borra: si no, el panel lo
+    // rotaba al montar y la pestaña de la tienda quedaba con la sesión de main.
+    expect(res.headers.getSetCookie().find((c) => c.startsWith("buleje-admin-refresh="))).toMatch(/Max-Age=0/);
+    // El token vive 10 min, igual que su cookie (security 11-10).
+    expect(m.token).toHaveBeenCalledWith("admin", "impersonated-by:sa", "t-musa", "SuperAdmin→musa", 600_000);
   });
 });
 

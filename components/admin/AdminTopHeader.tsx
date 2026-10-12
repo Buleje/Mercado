@@ -13,8 +13,8 @@
  *  - Toggle presentation mode (desktop only)
  *  - AdminUserDropdown (avatar + menú de usuario)
  *
- * Se oculta cuando `presentationMode === true` y se desplaza 10 px hacia
- * abajo si hay impersonation banner activo.
+ * Se oculta cuando `presentationMode === true` y se pega 56 px más abajo
+ * (`top-14`) si está la franja de la vista de tienda del superadmin.
  *
  * Extraído de app/admin/page.tsx (Paso 5 del refactor — JSX components).
  */
@@ -80,6 +80,7 @@ export interface AdminTopHeaderProps {
 // AdminSidebar. Sólo sirve si AdminPage le pasa callbacks estables.
 export const AdminTopHeader = memo(function AdminTopHeader({
   presentationMode,
+  isSuperAdminImpersonating,
   focusMode,
   resolvedTheme,
   themeMode,
@@ -141,6 +142,9 @@ export const AdminTopHeader = memo(function AdminTopHeader({
         "max-sm:bg-[var(--surface-raised)]! max-sm:bg-none! max-sm:text-[var(--text-primary)]! max-sm:border-[var(--rule-base)]!",
         "@container border-b px-4 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-40 transition-colors duration-[var(--dur-base)]",
         headerThemeClasses,
+        // Franja de la vista de tienda (AdminImpersonationBanner, h-14) arriba: el
+        // header se pega debajo de ella para que las dos queden fijas al bajar.
+        isSuperAdminImpersonating && "top-14",
         presentationMode && "hidden!"
       )}
     >

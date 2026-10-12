@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getRefreshPayload,
+  getSessionPayload,
   createSessionToken,
   createRefreshToken,
   SESSION,
@@ -12,7 +13,8 @@ import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
 import { isSessionRevoked } from "@/lib/auth/session-revocation";
-import { anotarSucesor, anularSucesores, decidirReuso } from "@/lib/auth/refresh-sucesor";
+import { anotarSucesor, anularSucesores, cerrarRefresh, decidirReuso } from "@/lib/auth/refresh-sucesor";
+import { esSuplantacion } from "@/lib/auth/suplantacion";
 
 /**
  * POST /api/auth/refresh
@@ -24,6 +26,48 @@ import { anotarSucesor, anularSucesores, decidirReuso } from "@/lib/auth/refresh
 export async function POST(req: NextRequest) {
   const rateLimitResponse = applyRateLimit(req, "MODERATE", "auth:refresh");
   if (rateLimitResponse) return rateLimitResponse;
+
+  // Suplantación del superadmin («Entrar como esta tienda», 11-10): su sesión no
+  // tiene refresh y vive sólo sus 10 min. El panel pide refresh al montar; antes
+  // eso daba 401 «no refresh token» → el cliente mandaba a /admin/login. Y si el
+  // navegador guardaba el refresh de OTRA sesión (el dueño logueado en su bodega),
+  // lo rotaba y la pestaña de Musa quedaba con la sesión de main. Mientras la
+  // suplantación siga viva manda ella: se confirma sin rotar y se borra cualquier
+  // refresh ajeno. Cuando su cookie vence, cae al 401 de siempre.
+  // Una suplantación ya cerrada (logout, «Salir» o «cerrar todas las sesiones»)
+  // no se confirma: cae al 401 de abajo (security 11-10).
+  const accesoActual = req.cookies.get(SESSION.COOKIE_NAME)?.value;
+  const sesionActual = accesoActual ? await getSessionPayload(accesoActual) : null;
+  const suplantacionAnulada =
+    !!sesionActual &&
+    ((!!sesionActual.jti && !!cacheStore.get(`revoked-access:${sesionActual.jti}`)) ||
+      isSessionRevoked(sesionActual.jti, sesionActual.tenantId, sesionActual.username));
+  if (sesionActual && esSuplantacion(sesionActual.username) && suplantacionAnulada) {
+    // Ni se confirma ni se rota un refresh que haya quedado: la vista terminó.
+    const res = NextResponse.json({ error: "session revoked" }, { status: 401 });
+    res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+    return res;
+  }
+  if (sesionActual && esSuplantacion(sesionActual.username)) {
+    const res = NextResponse.json(
+      {
+        ok: true,
+        suplantacion: true,
+        role: sesionActual.role,
+        username: sesionActual.username,
+        tenantId: sesionActual.tenantId,
+      },
+      { headers: { "Cache-Control": "no-store, max-age=0" } },
+    );
+    const refreshAjeno = req.cookies.get(REFRESH.COOKIE_NAME)?.value;
+    if (refreshAjeno) {
+      // Borrar la cookie no basta: se anula en el servidor como en el logout.
+      const ajeno = await getRefreshPayload(refreshAjeno);
+      if (ajeno?.jti) cerrarRefresh(cacheStore, ajeno.jti);
+      res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+    }
+    return res;
+  }
 
   const refreshToken = req.cookies.get(REFRESH.COOKIE_NAME)?.value;
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { csrfHeaders } from "@/lib/csrf-client";
+import { MARCA_SUPLANTACION } from "@/lib/auth/suplantacion-vista";
 
 /**
  * Tras una suplantación aceptada por el servidor (la cookie de sesión de la
@@ -23,6 +24,16 @@ export async function abrirPanelDeTienda(slug: string): Promise<void> {
       bc.close();
     } catch { /* BroadcastChannel no disponible */ }
   } catch { /* fallback: assertTenantOwnership en /admin lo cubrirá */ }
+  // El panel saca el negocio activo de localStorage (nombre y logo del menú,
+  // onboarding, vistas forestales) y lo escribía `app/t/[slug]/admin/page.tsx`,
+  // que nunca se dibuja (el proxy reescribe /t/<slug>/admin a /admin): entrando
+  // como Musa el menú decía «Mi Bodega» y saltaba el asistente de primeros pasos
+  // de la dueña. Se marca acá, en la pestaña del superadmin (localStorage es del
+  // origen: la pestaña nueva lo ve). El login normal borra la marca de suplantación.
+  try {
+    localStorage.setItem("active-tenant-slug", slug);
+    localStorage.setItem(MARCA_SUPLANTACION, slug);
+  } catch { /* modo privado: el panel cae a sus valores por defecto */ }
   // Cache-busting query (_fresh) garantiza que Next no sirva HTML cacheado
   // de un tenant previo y que assertTenantOwnership detecte el switch.
   // /t/{slug}/admin fuerza al proxy a setear x-tenant-id por URL.

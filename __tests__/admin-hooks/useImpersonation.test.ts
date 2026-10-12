@@ -152,7 +152,7 @@ describe("useImpersonation", () => {
     expect(result.current.activeTenantType).toBe("tienda");
   });
 
-  it("handleExit limpia localStorage y redirige a /superadmin", () => {
+  it("handleExit limpia localStorage, cierra la suplantación en el servidor y redirige a /superadmin", async () => {
     localStorageMock.setItem("superadmin-impersonate-tenant", "x");
     localStorageMock.setItem("active-tenant-slug", "y");
 
@@ -165,7 +165,18 @@ describe("useImpersonation", () => {
     expect(localStorageMock.getItem("superadmin-impersonate-tenant")).toBe(null);
     expect(localStorageMock.getItem("active-tenant-slug")).toBe(null);
     expect(result.current.isSuperAdminImpersonating).toBe(false);
-    expect(window.location.href).toBe("/superadmin");
+    // Salir de verdad (security 11-10): POST a la salida, que anula el token.
+    expect(fetchMock).toHaveBeenCalledWith("/api/superadmin/impersonate/exit", expect.objectContaining({ method: "POST" }));
+    await waitFor(() => expect(window.location.href).toBe("/superadmin"));
+  });
+
+  it("handleExit vuelve a /superadmin aunque la salida falle en el servidor", async () => {
+    fetchMock.mockResolvedValue(new Response("{}", { status: 500 }));
+    const { result } = renderHook(() => useImpersonation());
+    act(() => {
+      result.current.handleExit();
+    });
+    await waitFor(() => expect(window.location.href).toBe("/superadmin"));
   });
 
   it("ignora errores del fetch silenciosamente", async () => {

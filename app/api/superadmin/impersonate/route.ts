@@ -2,7 +2,10 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
-import { createSessionToken, SESSION } from "@/lib/session";
+import { createSessionToken, getRefreshPayload, SESSION, REFRESH } from "@/lib/session";
+import { DURACION_SUPLANTACION_S, usuarioDeSuplantacion } from "@/lib/auth/suplantacion";
+import { cerrarRefresh } from "@/lib/auth/refresh-sucesor";
+import { cacheStore } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -128,9 +131,11 @@ export async function POST(req: NextRequest) {
   // en audit y para que /api/superadmin/impersonate/exit valide que es sesion impersonada.
   const token = await createSessionToken(
     "admin",
-    `impersonated-by:${platformSession.username}`,
+    usuarioDeSuplantacion(platformSession.username),
     tenant.id,
     `SuperAdmin→${tenant.slug}`,
+    // El token muere con su cookie (10 min): antes vivía 15 (security 11-10).
+    DURACION_SUPLANTACION_S * 1000,
   );
 
   // 5. Escribir la misma cookie que usa /api/auth/login
@@ -156,7 +161,7 @@ export async function POST(req: NextRequest) {
   // superadmin se compromete. 10min cubre operaciones típicas (revisar,
   // ajustar, salir) y fuerza re-impersonate para sesiones largas, que
   // queda logueado en audit trail dando trazabilidad fina.
-  const IMPERSONATE_MAX_AGE = 10 * 60; // 10 min en segundos
+  const IMPERSONATE_MAX_AGE = DURACION_SUPLANTACION_S; // 10 min en segundos
   response.cookies.set(SESSION.COOKIE_NAME, token, {
     httpOnly: true,
     secure: isProd,
@@ -164,6 +169,19 @@ export async function POST(req: NextRequest) {
     path: "/",
     maxAge: IMPERSONATE_MAX_AGE,
   });
+
+  // «Entrar como esta tienda» (11-10): la suplantación no lleva refresh. Si el
+  // navegador guardaba el refresh de otra sesión (el superadmin logueado en su
+  // propia bodega), el panel lo rotaba al montar y la pestaña de esta tienda
+  // quedaba con la sesión de OTRO negocio. La sesión anterior ya se reemplazó
+  // arriba: su refresh se borra con ella, y se anula en el servidor como en el
+  // logout (si no, una copia seguía rotando 7 días — security 11-10).
+  const refreshViejo = req.cookies.get(REFRESH.COOKIE_NAME)?.value;
+  if (refreshViejo) {
+    const viejo = await getRefreshPayload(refreshViejo);
+    if (viejo?.jti) cerrarRefresh(cacheStore, viejo.jti);
+  }
+  response.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
 
   // Set active-tenant cookie with canonical Tenant.id for proxy.ts resolution
   response.cookies.set("active-tenant", tenant.id, {

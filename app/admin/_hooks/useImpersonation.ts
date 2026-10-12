@@ -19,6 +19,8 @@
 import { useEffect, useState } from "react";
 import { clearAllTenantCache } from "@/lib/tenant-cache";
 import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
+import { limpiarVistaSuplantada } from "@/lib/auth/suplantacion-vista";
+import { salirDeVistaDeTienda } from "./useSuplantacionActiva";
 
 export type TenantType = "tienda" | "proveedor" | "delivery";
 
@@ -78,10 +80,15 @@ export function useImpersonation(): UseImpersonationResult {
     // [SEGURIDAD MULTI-TENANT] Antes de salir, borrar TODO el cache cliente
     // para que el próximo tenant no herede datos del actual.
     clearAllTenantCache();
-    localStorage.removeItem("superadmin-impersonate-tenant");
+    limpiarVistaSuplantada();
     localStorage.removeItem("active-tenant-slug");
     setIsSuperAdminImpersonating(false);
-    window.location.href = "/superadmin";
+    // Salir de verdad (security 11-10): el servidor borra la cookie y ANULA el
+    // token; antes sólo se volvía a /superadmin con la sesión de la tienda viva.
+    // Si el servidor no confirma, se vuelve igual (la cookie vence sola a los 10 min).
+    void salirDeVistaDeTienda().then((ok) => {
+      if (!ok) window.location.href = "/superadmin";
+    });
   };
 
   return {

@@ -28,6 +28,7 @@ import { useTenantsCarga } from "@/components/superadmin/tenants/useTenantsCarga
 import { useTenantsFiltros } from "@/components/superadmin/tenants/useTenantsFiltros";
 import { useTenantsSeleccion } from "@/components/superadmin/tenants/useTenantsSeleccion";
 import type { TenantCardProps } from "@/components/superadmin/tenants/TenantCard";
+import { PARAM_VISTA_VENCIDA } from "@/lib/auth/suplantacion-vista";
 
 export default function TenantsPage() {
   const { tenants, setTenants, loading, error, loadTenants, moduleOverrideCounts, setModuleOverrideCounts } = useTenantsCarga();
@@ -69,9 +70,9 @@ export default function TenantsPage() {
   const [nuclearResetOpen, setNuclearResetOpen] = useState(false);
   const [nuclearResetLoading, setNuclearResetLoading] = useState(false);
 
-  const showToast = (msg: string, ok = true) => {
+  const showToast = (msg: string, ok = true, ms = 3000) => {
     setToast({ msg, ok });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), ms);
   };
 
   const {
@@ -111,6 +112,18 @@ export default function TenantsPage() {
     const t = tenants.find((x) => x.slug === pedida.slug);
     if (t) abrirFicha(t, pedida.tab);
   }, [tenants, abrirFicha]);
+
+  // `?vista-vencida=<slug>`: la vista de tienda (suplantación de 10 min) venció y
+  // el panel mandó acá en vez de al login de la tienda (11-10). Aviso con el nombre.
+  const vistaVencida = useRef<string | null>(searchParams.get(PARAM_VISTA_VENCIDA));
+  useEffect(() => {
+    const slug = vistaVencida.current;
+    if (!slug || tenants.length === 0) return;
+    vistaVencida.current = null;
+    const nombre = tenants.find((x) => x.slug === slug)?.name ?? slug;
+    showToast(`La vista de ${nombre} venció. Vuelve a entrar si necesitas seguir.`, false, 8000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- showToast se recrea en cada render; se avisa una sola vez
+  }, [tenants]);
 
   const router = useRouter();
   const seleccion = useTenantsSeleccion({ tenants, showToast, handleExtendTrial, handleToggleActive, handlePlanChange });

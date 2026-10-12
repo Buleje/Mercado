@@ -259,4 +259,45 @@ describe("POST /api/auth/refresh", () => {
       );
     });
   });
+
+  // ── «Entrar como esta tienda» (11-10): la suplantación no se rota ─────────
+  // Antes: sin refresh → 401 → el panel mandaba a /admin/login; y con el refresh
+  // de OTRA sesión en el navegador lo rotaba y la pestaña de la tienda quedaba
+  // con la sesión del otro negocio.
+  describe("suplantación del superadmin", () => {
+    it("acceso de suplantación sin refresh → 200 sin rotar ni tocar la cookie de acceso", async () => {
+      const acceso = await createSessionToken("admin", "impersonated-by:superadmin", "t-musa", "SuperAdmin→musa");
+      const res = await POST(makeReq({ [SESSION.COOKIE_NAME]: acceso }));
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toMatchObject({ ok: true, suplantacion: true, tenantId: "t-musa", username: "impersonated-by:superadmin" });
+      expect(res.headers.getSetCookie().some((c: string) => c.includes(SESSION.COOKIE_NAME))).toBe(false);
+    });
+
+    it("con el refresh de otro negocio en el navegador: NO lo rota (la tienda no pasa a ser main) y lo borra", async () => {
+      const acceso = await createSessionToken("admin", "impersonated-by:superadmin", "t-musa", "SuperAdmin→musa");
+      const refreshDeMain = await createRefreshToken("admin", "qaadmin", "main", "QA Admin");
+      const res = await POST(makeReq({ [SESSION.COOKIE_NAME]: acceso, [REFRESH.COOKIE_NAME]: refreshDeMain }));
+
+      expect(res.status).toBe(200);
+      expect((await res.json()).tenantId).toBe("t-musa");
+      const setCookies = res.headers.getSetCookie();
+      expect(setCookies.some((c: string) => c.includes(SESSION.COOKIE_NAME))).toBe(false);
+      const refreshCookie = setCookies.find((c: string) => c.includes(REFRESH.COOKIE_NAME));
+      expect(refreshCookie).toMatch(/Max-Age=0/);
+    });
+
+    it("una sesión normal con sólo la cookie de acceso sigue en 401 (no se cuela por el atajo)", async () => {
+      const acceso = await createSessionToken("admin", "duena", "t-musa", "Dueña");
+      const res = await POST(makeReq({ [SESSION.COOKIE_NAME]: acceso }));
+      expect(res.status).toBe(401);
+    });
+
+    it("cookie de suplantación adulterada → 401 (la firma manda)", async () => {
+      const acceso = await createSessionToken("admin", "impersonated-by:superadmin", "t-musa", "SuperAdmin→musa");
+      const res = await POST(makeReq({ [SESSION.COOKIE_NAME]: acceso.slice(0, -4) + "AAAA" }));
+      expect(res.status).toBe(401);
+    });
+  });
 });
