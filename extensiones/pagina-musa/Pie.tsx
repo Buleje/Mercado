@@ -15,7 +15,7 @@ import { enlaceWhatsapp, rellenar, rutas } from "./destinos";
 import { avisoEnviosProvincia } from "./preventa";
 import { Sello } from "./Sello";
 import { Suscripcion } from "./Suscripcion";
-import { ANCHO, Script } from "./ui";
+import { ANCHO } from "./ui";
 
 const ICONOS = { camion: Truck, pago: Wallet, escudo: ShieldCheck, chat: MessageCircle } as const;
 
@@ -127,9 +127,8 @@ export function Pie({
     <footer className="mu-grano bg-[linear-gradient(180deg,var(--mu-cacao)_0%,var(--mu-cacao-hondo)_100%)] text-[var(--mu-sobre-cacao)]">
       <div className={`${ANCHO} grid gap-8 border-b border-[var(--mu-sobre-cacao)]/15 pb-10 pt-12 sm:pt-16 lg:grid-cols-[1.25fr_1fr] lg:items-end lg:gap-16`}>
         <div>
-          <Script claro grande>
-            {DESPEDIDA.script}
-          </Script>
+          {/* Cursiva de la serif y no la script: así la portada no baja Great Vibes (43 KB) sólo para el pie. */}
+          <p className="mu-titulo text-[length:var(--mu-t-bloque)] italic text-[var(--mu-oro)]">{DESPEDIDA.script}</p>
           <p className="mt-3 text-[length:var(--mu-t-cuerpo)] text-[var(--mu-sobre-cacao-2)]">{DESPEDIDA.firma}</p>
         </div>
         <div>

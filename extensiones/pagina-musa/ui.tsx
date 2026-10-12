@@ -146,3 +146,43 @@ export function Seccion({ id, etiqueta, fondo, children }: { id?: string; etique
     </section>
   );
 }
+
+/**
+ * Título de un bloque de la portada (letras de `letras.ts`): serif 600 en
+ * minúsculas, con las últimas palabras (`acento`) en cursiva y el acento de la
+ * marca, como «Kits que *ahorran*». Sin kicker ni script: una idea por bloque.
+ * `accion` (un «Ver todo») va a la derecha desde 640 px y abajo en el celular.
+ */
+export function TituloBloque({ id, titulo, acento, texto, accion }: { id: string; titulo: string; acento?: string; texto?: string; accion?: ReactNode }) {
+  return (
+    <div className="mb-6 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
+      <div className="max-w-2xl">
+        <h2 id={id} className="mu-titulo text-[length:var(--mu-t-bloque)] text-[var(--text-primary)]">
+          {titulo}
+          {acento && (
+            <>
+              {" "}
+              <span className="italic text-[var(--mu-acento-tinta)]">{acento}</span>
+            </>
+          )}
+        </h2>
+        {texto && <p className="mt-2 text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--text-secondary)]">{texto}</p>}
+      </div>
+      {accion}
+    </div>
+  );
+}
+
+/** «Ver todo →»: enlace de texto con filete que crece (48 px de alto para el dedo). */
+export function EnlaceVer({ href, children, describe }: { href: string; children: ReactNode; describe?: string }) {
+  return (
+    <a
+      href={href}
+      {...(describe ? { "aria-describedby": describe } : {})}
+      className="mu-subrayado mu-foco group inline-flex h-12 shrink-0 items-center gap-2 self-start text-[length:var(--mu-t-boton)] font-semibold text-[var(--text-primary)] [--mu-subrayado-abajo:.45rem] sm:self-end"
+    >
+      {children}
+      <ArrowRight className="h-4 w-4 transition-transform duration-[var(--mu-dur-corto)] group-hover:translate-x-1" aria-hidden="true" />
+    </a>
+  );
+}

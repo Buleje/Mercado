@@ -7,7 +7,7 @@
  * al servidor, y cada cambio se escribe en la URL (`replaceState`, sin sumar
  * pasos al «atrás») para poder compartirla o recargar y ver lo mismo.
  *
- * Arriba, el título en versalitas con su línea script y una vitrina de tres
+ * Arriba, el título en la serif del par de letras (como la portada) y una vitrina de tres
  * envases; las píldoras de categoría a la izquierda y el orden a la derecha;
  * la grilla de 2 / 3 / 4 columnas, con una tarjeta de asesoría a lo ancho
  * después de la 8.ª. Las tarjetas entran escalonadas una sola vez (`mu-entrar`).
@@ -43,14 +43,6 @@ export interface PropsCatalogo {
 /** La tarjeta de asesoría va después de esta tarjeta (la 8.ª). */
 const ASESORIA_TRAS = 8;
 
-/** La línea script de cada vista (≤3 palabras): la mano de Drucila. */
-const SCRIPT_DE: Readonly<Record<string, string>> = {
-  Cabello: "para tu cabello",
-  Rostro: "para tu piel",
-  Cuerpo: "para tu cuerpo",
-  "Kits y ofertas": "y ahorras",
-};
-
 /**
  * Los tres envases de la vitrina del título: productos sueltos de categorías
  * DISTINTAS (tres tintes, tres formas), en el orden de la lista; si no alcanzan
@@ -74,11 +66,11 @@ function urlCon(f: Filtros, base: string, actual?: string): string {
   return `${base}${q ? `?${q}` : ""}`;
 }
 
-function encabezadoDe(f: Filtros, categorias: PropsCatalogo["categorias"], nombre: string): { titulo: string; script: string | null; texto: string | null } {
-  if (f.q) return { titulo: `Resultados para “${f.q}”`, script: null, texto: null };
-  if (f.categoria) return { titulo: f.categoria, script: SCRIPT_DE[f.categoria] ?? null, texto: categorias.find((c) => c.nombre === f.categoria)?.texto ?? null };
-  if (f.oferta) return { titulo: "Ofertas", script: "de la semana", texto: "Los precios rebajados de esta semana, con el precio de antes a la vista." };
-  return { titulo: `Todo ${nombre}`, script: "para ti", texto: "Belleza profesional para tu cabello, rostro y cuerpo, con asesoría gratis de Drucila por WhatsApp." };
+function encabezadoDe(f: Filtros, categorias: PropsCatalogo["categorias"], nombre: string): { titulo: string; texto: string | null } {
+  if (f.q) return { titulo: `Resultados para “${f.q}”`, texto: null };
+  if (f.categoria) return { titulo: f.categoria, texto: categorias.find((c) => c.nombre === f.categoria)?.texto ?? null };
+  if (f.oferta) return { titulo: "Ofertas", texto: "Los precios rebajados de esta semana, con el precio de antes a la vista." };
+  return { titulo: `Todo ${nombre}`, texto: "Belleza profesional para tu cabello, rostro y cuerpo, con asesoría gratis de Drucila por WhatsApp." };
 }
 
 export function CatalogoCliente(p: PropsCatalogo) {
@@ -99,7 +91,7 @@ export function CatalogoCliente(p: PropsCatalogo) {
   const lista = useMemo(() => aplicar(p.productos, f), [p.productos, f]);
   const cuentas = useMemo(() => contar(p.productos, f), [p.productos, f]);
   const opciones = useMemo(() => ({ existencias: p.productos.some((x) => x.stock !== null), descuentos: p.productos.some((x) => x.descuento) }), [p.productos]);
-  const { titulo, script, texto } = encabezadoDe(f, p.categorias, p.nombre);
+  const { titulo, texto } = encabezadoDe(f, p.categorias, p.nombre);
   const href = (cambio: Partial<Filtros>) => urlCon({ ...f, ...cambio }, r.catalogo);
   const vitrina = useMemo(() => vitrinaDe(lista), [lista]);
   const asesoriaTras = lista.length > ASESORIA_TRAS ? ASESORIA_TRAS : lista.length >= 4 ? lista.length : 0;
@@ -127,14 +119,9 @@ export function CatalogoCliente(p: PropsCatalogo) {
             <Kicker className="mt-6 flex items-center gap-2">
               <Destello className="h-3 w-3 text-[var(--mu-oro)]" /> Catálogo {p.nombre}
             </Kicker>
-            <h1 className="mu-display mt-3 text-[length:var(--mu-t-seccion)] leading-[1] text-[var(--text-primary)]">
+            {/* Como los títulos de la portada (11-10): serif del par de letras, minúsculas y la última palabra en cursiva; sin la script. */}
+            <h1 className="mu-titulo mt-3 text-[length:var(--mu-t-heroe)] text-[var(--text-primary)]">
               <ConAcento texto={titulo} />
-              {script && (
-                <>
-                  {" "}
-                  <Script className="relative mt-[-0.1em] pl-[0.6em] sm:pl-[1.4em]">{script}</Script>
-                </>
-              )}
             </h1>
             {texto && <p className="mt-4 max-w-2xl text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--text-secondary)]">{texto}</p>}
             <p className="mt-4 inline-flex items-center gap-2 text-[length:var(--mu-t-chico)] font-semibold text-[var(--text-primary)]" role="status">

@@ -1,9 +1,9 @@
 /**
  * «Musa» — la página propia de este negocio (enchufe `tienda.pagina`, ADR-458).
  *
- * Belleza profesional en Ciudad Constitución, hecha como su catálogo impreso
- * (Campaña 01): héroe comprable, «Hola, linda» + «¿Qué quieres mejorar?»,
- * kits con su ahorro real, la bolsa con contador y el pedido por WhatsApp.
+ * Belleza profesional en Ciudad Constitución: héroe con la vitrina de envases,
+ * círculos de categoría, rutina coreana, kits con su ahorro real, atajos por
+ * precio, «¿Qué quieres mejorar?», la bolsa con contador y el pedido por WhatsApp.
  * Colores, letras y tiempos: `tema.ts`. Qué es cada archivo: LEEME.md.
  *
  * `Pagina` devuelve AL INSTANTE (no espera datos): así el tope de 2 s del
@@ -23,15 +23,17 @@ import type { PiezaPagina } from "../_contrato";
 import { Catalogo } from "./Catalogo";
 import { metadatosPagina } from "./compartir";
 import { Ficha, metadatosFicha } from "./Ficha";
+import { leerLetras } from "./letras";
 import type { Opciones } from "./manifest";
 import { marco } from "./Marco";
 import { EsqueletoSalon, PaginaSalon } from "./PaginaSalon";
 
 export const pagina: PiezaPagina<Opciones> = {
-  Pagina({ ctx }) {
+  Pagina({ ctx, searchParams }) {
     return (
       <Suspense fallback={<EsqueletoSalon />}>
-        <PaginaSalon tenantId={ctx.tenantId} slug={ctx.slug} />
+        {/* `?letras=b|c`: comparar los pares de letras en el navegador (letras.ts). */}
+        <PaginaSalon tenantId={ctx.tenantId} slug={ctx.slug} letras={leerLetras(searchParams.letras)} />
       </Suspense>
     );
   },

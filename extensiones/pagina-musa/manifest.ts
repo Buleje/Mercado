@@ -19,8 +19,8 @@ export const manifiesto = {
   nombre: "Musa — belleza profesional",
   descripcion:
     "Página pública propia de UN negocio (/t/<negocio>): tienda de belleza profesional (cabello, rostro, cuerpo y kits) " +
-    "hecha como el catálogo impreso de Musa: arcos, envases ilustrados, versalitas con script, «Hola, linda», «¿Qué quieres mejorar?», " +
-    "kits con su ahorro real, garantía y asesoría gratis por WhatsApp. Al agregar, el botón pasa a contador y la bolsa cuenta las unidades. " +
+    "con un héroe único (la vitrina con envases de las tres líneas), círculos de categoría, la rutina coreana en 3 pasos, " +
+    "kits con su ahorro real, atajos por precio, «¿Qué quieres mejorar?» y asesoría gratis por WhatsApp. Al agregar, el botón pasa a contador. " +
     "La bolsa no usa el checkout: arma el pedido y lo manda por WhatsApp. Viste también el resto de su tienda (catálogo y ficha propios). " +
     "Si falla, se ve la general.",
   version: "2.0.0",

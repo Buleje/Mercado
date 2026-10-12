@@ -43,19 +43,14 @@ describe("franja: cada mensaje de campaña sale sólo mientras vale y cabe en un
   const franja = (hoy: string) =>
     FRANJA.map((t) => rellenar(t, { descuento: null, pagos: null, ...valoresCampana(hoy) })).filter((t): t is string => t !== null);
 
-  it("en noviembre salen el 10 %, la preventa de Navidad y los envíos a provincia", () => {
-    const hoy = franja("2026-11-20");
-    expect(hoy).toContain("Preventa: 10 % a las primeras 20 clientas");
-    expect(hoy).toContain("Navidad: separa tu kit con S/ 20 desde el 16/11");
-    expect(hoy).toContain("Envíos a provincia para Navidad: hasta el 18/12");
+  // La barra es fija (11-10): se ven los 2 primeros vigentes (el 1.º en el celular).
+  it("hasta el 31 dic: primero el 10 % de preventa y después el envío gratis en Constitución", () => {
+    expect(franja("2026-10-11").slice(0, 2)).toEqual(["Preventa: 10 % a las primeras 20 clientas", "Envío gratis en Ciudad Constitución"]);
+    expect(franja("2026-12-31")[0]).toBe("Preventa: 10 % a las primeras 20 clientas");
   });
 
-  it("el 19 dic se va la de provincia; el 25 la de Navidad; el 1 ene la del 10 %", () => {
-    expect(franja("2026-12-19").some((t) => t.includes("provincia"))).toBe(false);
-    expect(franja("2026-12-19").some((t) => t.startsWith("Navidad:"))).toBe(true);
-    expect(franja("2026-12-25").some((t) => t.startsWith("Navidad:"))).toBe(false);
-    expect(franja("2026-12-31").some((t) => t.includes("10 %"))).toBe(true);
-    expect(franja("2027-01-01").some((t) => t.includes("10 %"))).toBe(false);
+  it("el 1 ene se va el 10 % y quedan los dos de envío", () => {
+    expect(franja("2027-01-01")).toEqual(["Envío gratis en Ciudad Constitución", "Fuera de Constitución, envío gratis desde S/ 99"]);
   });
 
   it("ningún mensaje pasa de 48 letras (a 400 px la franja sube a dos líneas)", () => {

@@ -25,42 +25,24 @@
  * · Contador en oscuro: cacao sobre la tarjeta oscura daría 1,11, por eso va nude + número negro.
  * · Decorativos sin texto: oro (2,11) y selva (2,80) sobre hueso sólo en ✦, aros y filetes.
  */
+import { carasDe, FAMILIA_SCRIPT, familiaDisplay, familiaTexto, PARES, type ParLetras } from "./letras";
+
 export const ID_PAGINA = "pagina-musa";
 
 /*
- * Fuentes: Cormorant Garamond (display, recta y cursiva), Great Vibes (la
- * script de los empaques impresos) y Poppins (lectura). Las mismas 3 del
- * catálogo y de las cajas: que la web y lo impreso se vean igual.
- *
+ * Letras: el par de títulos + textos vive en `letras.ts` (A por defecto:
+ * Cormorant Garamond 600 + Jost; `?letras=b|c` en la portada para comparar).
  * ¿Por qué no `next/font`? En «Buleje Beauty» su hoja de @font-face (7 KB,
  * bloqueante) se colaba en TODAS las tiendas (medido 01-10 en /t/mi-pollo).
- * Acá van auto-alojadas (`public/fonts/musa/`, subconjunto latín de Google
- * Fonts) y el @font-face vive DENTRO de este `<style>`, que sólo sale en las
- * páginas de Musa: el navegador baja cada archivo recién cuando lo pinta.
- * Great Vibes va con `font-display:block`: una cursiva de respaldo se ve rota
- * (la portada la precarga con `preload()`).
+ * Acá el @font-face vive DENTRO de este `<style>`, que sólo sale en las páginas
+ * de Musa: el navegador baja cada archivo recién cuando lo pinta.
  */
-const FUENTES = `
-@font-face{font-family:"Musa Cormorant";src:url(/fonts/musa/CormorantGaramond.woff2) format("woff2");font-weight:500 600;font-style:normal;font-display:swap}
-@font-face{font-family:"Musa Cormorant";src:url(/fonts/musa/CormorantGaramond-Italic.woff2) format("woff2");font-weight:500 600;font-style:italic;font-display:swap}
-@font-face{font-family:"Musa Great Vibes";src:url(/fonts/musa/GreatVibes-400.woff2) format("woff2");font-weight:400;font-style:normal;font-display:block}
-@font-face{font-family:"Musa Poppins";src:url(/fonts/musa/Poppins-400.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:"Musa Poppins";src:url(/fonts/musa/Poppins-500.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap}
-@font-face{font-family:"Musa Poppins";src:url(/fonts/musa/Poppins-600.woff2) format("woff2");font-weight:600 700;font-style:normal;font-display:swap}
-`;
-
-/** La script se precarga sólo en la portada (`PaginaSalon`): es la única que bloquea. */
-export const FUENTE_SCRIPT = "/fonts/musa/GreatVibes-400.woff2";
-
-const SERIF = `"Musa Cormorant","Cormorant Garamond",Georgia,serif`;
-const SCRIPT = `"Musa Great Vibes","Great Vibes","Segoe Script",cursive`;
-const SANS = `"Musa Poppins",Poppins,var(--font-geist-sans),system-ui,sans-serif`;
+const SERIF = familiaDisplay("a");
 
 const sel = `[data-pagina="${ID_PAGINA}"]`;
 
 /** Lo que NO cambia entre claro y oscuro: fuentes, escala, forma, tiempos y los envases (son objetos). */
 const FIJOS = `
---mu-fuente-display:${SERIF};--mu-fuente-script:${SCRIPT};--mu-fuente-texto:${SANS};
 --mu-t-heroe:clamp(2.75rem,1.5rem + 5vw,5.5rem);
 --mu-t-seccion:clamp(2.125rem,1.386rem + 2.955vw,3.75rem);
 --mu-t-titulo:clamp(1.625rem,1.341rem + 1.136vw,2.25rem);
@@ -159,14 +141,15 @@ const RUIDO = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
  *   Con «reducir movimiento» todo queda quieto y nada depende de animarse.
  */
 const CLASES = `
-${sel} .mu-serif{font-family:${SERIF};font-weight:600;letter-spacing:-0.005em}
-${sel} .mu-display{font-family:${SERIF};font-weight:500;letter-spacing:0.02em;text-transform:uppercase}
-${sel} .mu-num{font-family:${SERIF};font-weight:600;font-variant-numeric:lining-nums proportional-nums;letter-spacing:0}
-${sel} .mu-script{font-family:${SCRIPT};font-weight:400;font-style:normal;letter-spacing:0;text-transform:none;line-height:1}
-${sel} .mu-cursiva{font-family:${SERIF};font-style:italic;font-weight:500;letter-spacing:0;text-transform:none}
-${sel} .mu-kicker{font-family:${SANS};font-size:var(--mu-t-kicker);font-weight:600;line-height:1.4;letter-spacing:var(--mu-tracking-kicker);text-transform:uppercase}
-${sel} .mu-precio{font-family:${SERIF};font-weight:600;line-height:1;letter-spacing:0;font-variant-numeric:lining-nums tabular-nums}
-${sel} .mu-precio-chico{font-family:${SANS};font-weight:600;font-variant-numeric:tabular-nums}
+${sel} .mu-serif{font-family:var(--mu-fuente-display);font-weight:600;letter-spacing:-0.005em}
+${sel} .mu-titulo{font-family:var(--mu-fuente-display);font-weight:600;letter-spacing:-0.01em;line-height:1.04;text-wrap:balance}
+${sel} .mu-display{font-family:var(--mu-fuente-display);font-weight:500;letter-spacing:0.02em;text-transform:uppercase}
+${sel} .mu-num{font-family:var(--mu-fuente-display);font-weight:600;font-variant-numeric:lining-nums proportional-nums;letter-spacing:0}
+${sel} .mu-script{font-family:var(--mu-fuente-script);font-weight:400;font-style:normal;letter-spacing:0;text-transform:none;line-height:1}
+${sel} .mu-cursiva{font-family:var(--mu-fuente-display);font-style:italic;font-weight:500;letter-spacing:0;text-transform:none}
+${sel} .mu-kicker{font-family:var(--mu-fuente-texto);font-size:var(--mu-t-kicker);font-weight:600;line-height:1.4;letter-spacing:var(--mu-tracking-kicker);text-transform:uppercase}
+${sel} .mu-precio{font-family:var(--mu-fuente-display);font-weight:600;line-height:1;letter-spacing:0;font-variant-numeric:lining-nums tabular-nums}
+${sel} .mu-precio-chico{font-family:var(--mu-fuente-texto);font-weight:600;font-variant-numeric:tabular-nums}
 ${sel} .mu-sombra-tarjeta{box-shadow:var(--mu-sombra-tarjeta)}
 ${sel} .mu-sombra-flotante{box-shadow:var(--mu-sombra-flotante)}
 ${sel} .mu-arco{border-radius:var(--mu-radio-arco)}
@@ -185,7 +168,7 @@ ${sel} .mu-barra{background:var(--surface-canvas);border-bottom:1px solid transp
 ${sel} .mu-barra[data-desplazado="si"]{background:color-mix(in srgb,var(--surface-canvas) 92%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom-color:var(--rule-soft)}
 ${sel} .mu-buscador-movil{transition:transform var(--mu-dur-medio) var(--mu-ease),opacity var(--mu-dur-corto) var(--mu-ease)}
 ${sel} .mu-buscador-movil[data-oculto="si"]{transform:translateY(-100%);opacity:0;pointer-events:none}
-${sel} .mu-sello-contador{position:relative;display:inline-grid;place-items:center;width:var(--mu-lado,22px);height:var(--mu-lado,22px);border-radius:999px;overflow:hidden;background:var(--mu-contador-fondo);color:var(--mu-contador-texto);font:600 calc(var(--mu-lado,22px) * .5)/1 ${SANS};font-variant-numeric:tabular-nums;letter-spacing:-.02em;outline:1.5px solid var(--mu-contador-aro);outline-offset:2px}
+${sel} .mu-sello-contador{position:relative;display:inline-grid;place-items:center;width:var(--mu-lado,22px);height:var(--mu-lado,22px);border-radius:999px;overflow:hidden;background:var(--mu-contador-fondo);color:var(--mu-contador-texto);font:600 calc(var(--mu-lado,22px) * .5)/1 var(--mu-fuente-texto);font-variant-numeric:tabular-nums;letter-spacing:-.02em;outline:1.5px solid var(--mu-contador-aro);outline-offset:2px}
 ${sel} .mu-sello-contador>*{grid-area:1/1}
 ${sel} .mu-contador-num{animation:mu-contador-sube var(--mu-dur-corto) var(--mu-ease-rebote) both}
 ${sel} .mu-contador-num-sale{animation:mu-contador-sale var(--mu-dur-corto) var(--mu-ease) both}
@@ -228,10 +211,16 @@ ${sel} .mu-entrar,${sel} .mu-destello{opacity:1;transform:none}
 }
 `;
 
-export const CSS_TEMA = `${FUENTES}
-${sel}{${FIJOS}${CLARO}--font-sans:${SANS};background:var(--surface-canvas);color:var(--text-primary);font-family:${SANS};}
+/** La hoja de la marca con el par de letras `par` (A, el de la tienda, si no se pide otro). */
+export function cssTema(par: ParLetras = "a"): string {
+  const letras = `--mu-fuente-display:${familiaDisplay(par)};--mu-fuente-script:${FAMILIA_SCRIPT};--mu-fuente-texto:${familiaTexto(par)};${PARES[par].tamanos}`;
+  return `${carasDe(par)}
+${sel}{${FIJOS}${letras}${CLARO}--font-sans:var(--mu-fuente-texto);background:var(--surface-canvas);color:var(--text-primary);font-family:var(--mu-fuente-texto);}
 .dark ${sel}{${OSCURO}}
 ${CLASES}${KEYFRAMES}`;
+}
+
+export const CSS_TEMA = cssTema("a");
 
 /*
  * Nivel global (ADR-460), igual que «Buleje Beauty»: `:root:root` (0,2,0) le

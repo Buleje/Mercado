@@ -6,8 +6,8 @@
  * categorías, sin precios), así el héroe y el primer texto llegan
  * sin esperar la vitrina; las secciones con precios (`cargarVitrina`: visibilidad
  * e historial de precios) llegan después, bajo su propio <Suspense> con
- * `EsqueletoVitrina`. La franja sale primero sin «hasta X %» y se completa con
- * la vitrina; el menú muestra «Ofertas» como en el marco (sin esperar precios).
+ * `EsqueletoVitrina`. La barra de bienvenida es fija (sin esperar precios); el
+ * menú muestra «Regalos» como en el marco.
  * La bolsa de acá trae su propio carrito (la portada vive fuera del layout de
  * la tienda) y su pie es «Pedir por WhatsApp» (sin checkout); el resto de la
  * tienda la monta con el marco (`Marco.tsx`).
@@ -23,27 +23,29 @@ import { sinDato } from "@/lib/errores/sin-dato";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { FRANJA } from "./anuncios";
 import { ProveedorBolsa } from "./Bolsa";
-import { Categorias } from "./Categorias";
-import { Favoritos, Lineas, Novedades } from "./Colecciones";
+import { Circulos } from "./Circulos";
 import { cargarMarco, cargarVitrina, type DatosMarco, type DatosSalon } from "./datos";
 import { rellenar, rutas } from "./destinos";
-import { valoresCampana } from "./preventa";
 import { BarraSuperior, MenuCategorias } from "./Encabezado";
 import { FranjaAnuncio } from "./FranjaAnuncio";
-import { Beneficios, Pie } from "./Pie";
+import { Kits } from "./Kits";
+import { precargasDe, type ParLetras } from "./letras";
+import { Pie } from "./Pie";
+import { PorPrecio } from "./PorPrecio";
 import { Portada } from "./Portada";
-import { Promos } from "./Promos";
-import { BannerOscuro, Mejorar, Protegida } from "./Salon";
-import { CSS_TEMA, FUENTE_SCRIPT, ID_PAGINA } from "./tema";
+import { valoresCampana } from "./preventa";
+import { RutinaCoreana } from "./RutinaCoreana";
+import { Confianza, Mejorar } from "./Salon";
+import { cssTema, ID_PAGINA } from "./tema";
 import { ANCHO, BOTON } from "./ui";
 
 /** El envoltorio con la paleta y la fuente: lo comparten la página y su esqueleto. */
-function Lienzo({ children }: { children: ReactNode }) {
+function Lienzo({ letras = "a", children }: { letras?: ParLetras; children: ReactNode }) {
   return (
     // `overflow-x-clip` (no `hidden`): recorta lo que asoma de los carriles sin
     // volverse contenedor de scroll, así la barra pegajosa sigue pegando.
     <div data-pagina={ID_PAGINA} className="min-h-screen overflow-x-clip">
-      <style dangerouslySetInnerHTML={{ __html: CSS_TEMA }} />
+      <style dangerouslySetInnerHTML={{ __html: cssTema(letras) }} />
       {children}
     </div>
   );
@@ -65,32 +67,24 @@ function datosEstructurados(d: DatosSalon) {
   };
 }
 
-/** Los textos de la franja; `{descuento}` sólo con la vitrina (sin ella, esos textos no salen). */
-function mensajesFranja(pagos: string | null, mayorDescuento: number | null): string[] {
-  const valores = { descuento: mayorDescuento ? String(mayorDescuento) : null, pagos, ...valoresCampana() };
+/** Los textos de la barra de bienvenida que valen hoy (la de campaña se va sola al terminar). */
+function mensajesFranja(pagos: string | null): string[] {
+  const valores = { descuento: null, pagos, ...valoresCampana() };
   return FRANJA.map((m) => rellenar(m, valores)).filter((m): m is string => m !== null);
 }
 
-/** La franja completa («hasta X % de descuento»): espera la vitrina, que ya está en camino. */
-async function FranjaConDescuento({ tenantId, slug, pagos }: { tenantId: string; slug: string; pagos: string | null }) {
-  const v = await cargarVitrina(tenantId, slug);
-  return <FranjaAnuncio mensajes={mensajesFranja(pagos, v.mayorDescuento)} />;
-}
-
-export async function PaginaSalon({ tenantId, slug }: { tenantId: string; slug: string }) {
-  // La vitrina arranca YA, en paralelo (la comparten la franja y las secciones: `cache`).
+export async function PaginaSalon({ tenantId, slug, letras = "a" }: { tenantId: string; slug: string; letras?: ParLetras }) {
+  // La vitrina arranca YA, en paralelo (la comparten el héroe y las secciones: `cache`).
   void cargarVitrina(tenantId, slug).catch(sinDato("página salón · vitrina por adelantado"));
-  // La script del héroe («esta Navidad») bloquea su texto hasta llegar: que salga junto con el HTML.
-  preload(FUENTE_SCRIPT, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
+  // El título del héroe es el LCP: sus dos caras (recta y cursiva) salen junto con el HTML.
+  for (const url of precargasDe(letras)) preload(url, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   const m = await cargarMarco(tenantId);
 
   return (
-    <Lienzo>
+    <Lienzo letras={letras}>
       <TenantPageTracker tenantSlug={slug} />
       <ProveedorBolsa slug={slug} codigos={m.codigos} pedidos={m.pedidos} negocio={m.nombre}>
-        <Suspense fallback={<FranjaAnuncio mensajes={mensajesFranja(m.pagos, null)} />}>
-          <FranjaConDescuento tenantId={tenantId} slug={slug} pagos={m.pagos} />
-        </Suspense>
+        <FranjaAnuncio mensajes={mensajesFranja(m.pagos)} />
         <BarraSuperior nombre={m.nombre} slug={slug} categorias={m.categorias} hayOfertas />
         <MenuCategorias slug={slug} categorias={m.categorias} hayOfertas />
         <main id="main-content">
@@ -106,10 +100,10 @@ export async function PaginaSalon({ tenantId, slug }: { tenantId: string; slug: 
 }
 
 /**
- * Las secciones con precios (y el JSON-LD): llegan con `cargarVitrina`. El
- * orden es el del catálogo impreso (contrato §e): «Hola, linda» junto a
- * «¿Qué quieres mejorar?», los kits, lo nuevo y lo favorito, las categorías,
- * el diagnóstico de los sábados y la compra protegida.
+ * Las secciones con precios (y el JSON-LD): llegan con `cargarVitrina`. El orden
+ * de las tiendas de belleza que más venden (Natura, Sephora, Ésika; 11-10):
+ * héroe → categorías → rutina → kits → atajos → necesidades → confianza → pie
+ * (con el boletín). La tienda entera de un vistazo en ~5 pantallas (antes ~10).
  */
 async function Vitrina({ tenantId, slug, marco: m }: { tenantId: string; slug: string; marco: DatosMarco }) {
   const v = await cargarVitrina(tenantId, slug);
@@ -118,10 +112,9 @@ async function Vitrina({ tenantId, slug, marco: m }: { tenantId: string; slug: s
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(datosEstructurados(d)) }} />
-      <Mejorar slug={slug} productos={d.productos} whatsapp={d.whatsapp} />
       {d.productos.length === 0 ? (
         <section className={`${ANCHO} py-20 text-center`}>
-          <p className="mu-serif text-[length:var(--mu-t-titulo)] text-[var(--text-primary)]">Estamos preparando la vitrina</p>
+          <p className="mu-titulo text-[length:var(--mu-t-bloque)] text-[var(--text-primary)]">Estamos preparando la vitrina</p>
           <p className="mt-3 text-[length:var(--mu-t-cuerpo)] text-[var(--text-secondary)]">Vuelve en un rato o mira el catálogo completo.</p>
           <a href={r.catalogo} className={`${BOTON} mt-6`}>
             Ver el catálogo
@@ -129,40 +122,41 @@ async function Vitrina({ tenantId, slug, marco: m }: { tenantId: string; slug: s
         </section>
       ) : (
         <>
-          <Promos productos={d.productos} slug={slug} />
-          <Novedades productos={d.productos} slug={slug} />
-          <Favoritos productos={d.productos} />
-          <Lineas productos={d.productos} slug={slug} nombre={d.nombre} />
+          <Circulos productos={d.productos} slug={slug} whatsapp={d.whatsapp} />
+          <RutinaCoreana productos={d.productos} slug={slug} />
+          <Kits productos={d.productos} slug={slug} whatsapp={d.whatsapp} />
+          <PorPrecio productos={d.productos} slug={slug} />
         </>
       )}
-      <Categorias productos={d.productos} servicios={d.servicios} slug={slug} />
-      <BannerOscuro whatsapp={d.whatsapp} />
-      <Protegida whatsapp={d.whatsapp} />
-      <Beneficios pagos={d.pagos} nombre={d.nombre} sin={["escudo", "chat"]} />
+      <Mejorar slug={slug} productos={d.productos} whatsapp={d.whatsapp} />
+      <Confianza whatsapp={d.whatsapp} />
     </>
   );
 }
 
-const BLOQUE = "animate-pulse rounded-2xl bg-[var(--mu-nude-claro)]";
-
-/** Lo que ocupa la vitrina mientras llegan los precios: un título y una fila de tarjetas. */
-function EsqueletoVitrina() {
+/** Lo que ocupa la vitrina mientras llegan los precios: la fila de círculos (mismo alto que `Circulos`). */
+function FilaCirculos() {
   return (
-    <div className={`${ANCHO} py-14`} aria-busy="true" aria-label="Cargando los productos">
-      <div className="h-10 w-56 animate-pulse rounded bg-[var(--mu-nude-claro)]" />
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {Array.from({ length: 5 }, (_, i) => (
-          <div key={i} className={`${BLOQUE} aspect-[3/4] ${i < 2 ? "" : i === 2 ? "hidden sm:block" : "hidden lg:block"}`} />
-        ))}
-      </div>
+    <div className={`${ANCHO} grid grid-cols-5 gap-2 border-y border-[var(--rule-soft)] py-6 sm:gap-6 sm:py-10 lg:max-w-[64rem]`}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <div key={i} className="mx-auto h-16 w-16 animate-pulse rounded-full bg-[var(--mu-nude-claro)] sm:h-24 sm:w-24 lg:h-28 lg:w-28" />
+      ))}
     </div>
   );
 }
 
-/** Lo que se ve mientras llegan los datos: franja, barra, el héroe en cacao y una fila de tarjetas (mismas alturas). */
+function EsqueletoVitrina() {
+  return (
+    <div aria-busy="true" aria-label="Cargando los productos">
+      <FilaCirculos />
+    </div>
+  );
+}
+
+/** Lo que se ve mientras llegan los datos: franja, barra, el héroe (texto + vitrina nude) y la fila de círculos (mismas alturas). */
 export function EsqueletoSalon() {
   const bloque = "animate-pulse rounded-full bg-[var(--mu-nude-claro)]";
-  const enCacao = "animate-pulse rounded bg-[var(--mu-sobre-cacao)]/10";
+  const linea = "animate-pulse rounded bg-[var(--mu-nude-claro)]";
   return (
     <Lienzo>
       <div className="h-9 bg-[var(--mu-cacao)]" />
@@ -172,20 +166,17 @@ export function EsqueletoSalon() {
       </div>
       <div className="h-[3.625rem] md:hidden" />
       <div className="hidden h-[2.8125rem] border-b border-[var(--rule-soft)] md:block" />
-      <div className="grid min-h-[36rem] bg-[var(--mu-cacao)] lg:grid-cols-[7fr_5fr]" aria-busy="true" aria-label="Cargando la tienda">
-        <div className="order-2 flex flex-col justify-center gap-4 px-5 py-10 sm:px-10 lg:order-1 lg:px-16">
-          <div className={`${enCacao} h-3 w-48`} />
-          <div className={`${enCacao} h-14 w-4/5`} />
-          <div className={`${enCacao} h-14 w-3/5`} />
-          <div className={`${enCacao} h-14 w-4/5`} />
+      <div className={`${ANCHO} grid items-center gap-6 pb-8 pt-6 md:grid-cols-2 md:gap-10 md:pb-14 md:pt-10 lg:gap-16`} aria-busy="true" aria-label="Cargando la tienda">
+        <div className="flex flex-col gap-4">
+          <div className={`${linea} h-3 w-56`} />
+          <div className={`${linea} h-12 w-4/5`} />
+          <div className={`${linea} h-12 w-3/5`} />
+          <div className={`${linea} h-4 w-full max-w-md`} />
+          <div className={`${bloque} mt-2 h-12 w-44`} />
         </div>
-        <div className="order-1 mx-auto mt-8 h-[300px] w-[240px] animate-pulse rounded-t-full bg-[var(--mu-nude)]/20 lg:order-2 lg:my-auto lg:h-[460px] lg:w-[360px]" />
+        <div className="mx-auto aspect-[16/10] w-full max-w-[34rem] animate-pulse rounded-t-[999px] bg-[var(--mu-nude)]/40 md:aspect-[6/5]" />
       </div>
-      <div className={`${ANCHO} grid grid-cols-2 gap-4 py-14 sm:grid-cols-3 lg:grid-cols-5`}>
-        {Array.from({ length: 5 }, (_, i) => (
-          <div key={i} className={`${BLOQUE} aspect-[3/4] ${i < 2 ? "" : i === 2 ? "hidden sm:block" : "hidden lg:block"}`} />
-        ))}
-      </div>
+      <FilaCirculos />
     </Lienzo>
   );
 }

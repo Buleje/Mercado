@@ -27,41 +27,20 @@ export const BUSQUEDAS_SUGERIDAS = ["Shampoo sin sal", "Vitamina C", "FPS 50", "
 export const CATEGORIA_SERVICIOS = "Servicios";
 
 /**
- * La franja de arriba: rota de a uno (el S/ 99 es la regla de envío, no un precio).
- * Cada mensaje cabe en UNA línea a 400 px (≤ 48 letras): la franja mide lo del más
- * largo, y uno de 50 la subía a dos líneas en el celular.
- * La preventa va con las palabras del manual (Campaña 01: «preventa 10 % a las primeras
- * 20 clientas»; Navidad: «Preventa desde el 16 nov (se separa con S/ 20) · envíos a
- * provincia hasta el 18 dic»), nada más. `{preventa}`, `{navidad}` y `{provincia}` valen ""
- * mientras dura cada cosa y null después (`valoresCampana` en preventa.ts).
+ * La barra de bienvenida (`FranjaAnuncio`): UNA línea fija, sin rotar. En el
+ * celular sale el primer mensaje vigente; desde 640 px, los dos primeros. Cada
+ * mensaje cabe en UNA línea a 400 px (≤ 48 letras). Lo de campaña va primero
+ * mientras dura y desaparece solo: `{preventa}` vale "" hasta el 31-12 y null
+ * después (`valoresCampana` en preventa.ts). La preventa de Navidad y los envíos
+ * a provincia van en la franja de la campaña, bajo los kits (`Kits.tsx`).
+ * La preventa va con las palabras del manual (Campaña 01: «preventa 10 % a las
+ * primeras 20 clientas»). El S/ 99 es la regla de envío, no un precio.
  */
 export const FRANJA = [
   "{preventa}Preventa: 10 % a las primeras 20 clientas",
-  "{navidad}Navidad: separa tu kit con S/ 20 desde el 16/11",
   "Envío gratis en Ciudad Constitución",
   "Fuera de Constitución, envío gratis desde S/ 99",
-  "{provincia}Envíos a provincia para Navidad: hasta el 18/12",
-  "Asesoría gratis por WhatsApp: 921 585 006",
-  "Diagnóstico gratis de piel y cabello los sábados",
-  "Productos con hasta {descuento} % de descuento",
 ];
-
-const u = (id: string, w: number) => `https://images.unsplash.com/photo-${id}?w=${w}&q=70&auto=format&fit=crop`;
-
-export interface Diapositiva {
-  kicker: string;
-  titulo: string;
-  /** La línea script (Great Vibes, ≤3 palabras) encimada bajo el titular, como «esta Navidad» en la tapa del catálogo. */
-  script?: string;
-  texto: string;
-  cta: { texto: string; destino: Destino };
-  cta2?: { texto: string; destino: Destino };
-  foto: string;
-  alt: string;
-  /** Hacia dónde se recorta la foto en pantallas angostas. */
-  enfoque: string;
-  tono: "rubor" | "salvia" | "tinta";
-}
 
 export type Destino =
   | { categoria: string }
@@ -70,24 +49,58 @@ export type Destino =
   | { whatsapp: string };
 
 /**
- * El héroe de la portada: UNO solo, comprable (contrato §e), como la tapa del
- * catálogo de la Campaña 01. Sin precios escritos: «Kits desde S/ X» sale de
- * la base. La asesoría (antes 2.ª diapositiva) pasó a «Hola, linda» (`CARTA`).
+ * El héroe de la portada: UNO solo y general (toda la tienda, no sólo la
+ * campaña), 1 título y 1 botón; con la franja y el menú, ≤ 60 palabras en la
+ * primera pantalla. «Cuidado de salón, cerca de casa» sale del manual («¿Por
+ * qué nos eligen? … productos de salón cerca de casa»). Los envases de la
+ * repisa y «Kits desde S/ X» salen de la base (`Portada.tsx`).
  */
-export const PORTADA: Diapositiva[] = [
-  {
-    kicker: "Campaña 01 · Nov–Dic 2026",
-    titulo: "Regala belleza profesional",
-    script: "esta Navidad",
-    texto: "Cuidado profesional para tu cabello, rostro y piel, con asesoría de verdad y entrega en tu puerta.",
-    cta: { texto: "Ver kits de regalo", destino: { categoria: "Kits y ofertas" } },
-    cta2: { texto: "¿Qué quieres mejorar?", destino: { ancla: "mejorar" } },
-    foto: u("1519699047748-de8e457a634e", 1400),
-    alt: "Mujer de cabello rizado y voluminoso sobre fondo nude",
-    enfoque: "50% 35%",
-    tono: "tinta",
-  },
-];
+export const HEROE = {
+  titulo: "Cuidado de salón,",
+  acento: "cerca de casa",
+  texto: "Originales, con registro sanitario. Drucila te asesora gratis.",
+  boton: "Comprar ahora",
+} as const;
+
+/**
+ * Los círculos bajo el héroe: las 4 categorías del panel (con el envase que
+ * mejor las dice) y la asesoría. «Ofertas» no va solo: hoy ningún precio está
+ * rebajado (la lista saldría vacía) y los dúos de campaña viven en «Kits y ofertas».
+ */
+export const CIRCULOS = [
+  { texto: "Rostro coreano", categoria: "Rostro", codigo: "MU010" },
+  { texto: "Cabello", categoria: "Cabello", codigo: "MU001" },
+  { texto: "Cuerpo", categoria: "Cuerpo", codigo: "MU017" },
+  { texto: "Kits", categoria: "Kits y ofertas", codigo: "KT04" },
+] as const;
+
+/**
+ * «Tu rutina coreana en 3 pasos» (la del Kit Rutina facial, KT02: limpiador +
+ * niacinamida + FPS 50; la vitamina C, como otra opción del paso 2). «Para qué»
+ * con las palabras de «¿Qué quieres mejorar?»: «ayuda a», nunca «cura».
+ */
+export const RUTINA_COREANA = {
+  kit: "KT02",
+  pasos: [
+    { verbo: "Limpia", cuando: "Mañana y noche", productos: [{ codigo: "MU009", para: "Limpia sin resecar tu piel." }] },
+    {
+      verbo: "Trata",
+      cuando: "El sérum que tu piel pide",
+      productos: [
+        { codigo: "MU011", para: "Ayuda con granitos y brillo." },
+        { codigo: "MU010", para: "Ayuda a emparejar las manchas." },
+      ],
+    },
+    { verbo: "Protege", cuando: "De día, siempre", productos: [{ codigo: "MU013", para: "Te cuida del sol de la selva." }] },
+  ],
+} as const;
+
+/** Las 3 señales de confianza, con las palabras del manual («Musa en pocas palabras», «Envío», «Pagos»). */
+export const CONFIANZA = [
+  { icono: "original", titulo: "Originales, con registro sanitario", texto: "Cada producto con su NSO. Si llega dañado, vencido o equivocado, te lo cambiamos sin costo." },
+  { icono: "asesoria", titulo: "Asesoría gratis con Drucila", texto: "Te pregunta por tu piel o tu cabello y te recomienda solo lo que te sirve. Sábados: diagnóstico gratis." },
+  { icono: "entrega", titulo: "Entrega en Constitución", texto: "Envío gratis en Ciudad Constitución. Fuera, gratis desde S/ 99 (Villa Rica, Oxapampa, Puerto Bermúdez)." },
+] as const;
 
 /** «Hola, linda»: la carta de Drucila de la página 2 del catálogo (firma en script, como lo impreso). */
 export const CARTA = {
@@ -121,35 +134,6 @@ export const PAGOS = [
 /** La despedida del pie: script + la firma del manual. */
 export const DESPEDIDA = { script: "gracias, linda", firma: "— Drucila, tu asesora de belleza" } as const;
 
-export interface Promo {
-  kicker: string;
-  titulo: string;
-  /** Con `{descuento}`: se llena con el mayor % real del grupo; sin rebajas, no se muestra. */
-  oferta: string;
-  cta: string;
-  grupo: { categoria: string } | { marca: string };
-  /** Slugs de imágenes de `public/demo/salon/` para el banner (Musa no usa: sin imágenes de terceros). */
-  imagenes: string[];
-  tono: "tinta" | "rubor" | "salvia";
-}
-
-export const PROMOS: Promo[] = [
-  { kicker: "Kits en caja", titulo: "Regalos que se usan de verdad", oferta: "Hasta {descuento} % dscto.", cta: "Ver kits", grupo: { categoria: "Kits y ofertas" }, imagenes: [], tono: "tinta" },
-  { kicker: "Rostro", titulo: "Tu rutina de tres pasos", oferta: "Hasta {descuento} % dscto.", cta: "Ver rostro", grupo: { categoria: "Rostro" }, imagenes: [], tono: "rubor" },
-  { kicker: "Cabello", titulo: "Adiós al frizz de la selva", oferta: "Hasta {descuento} % dscto.", cta: "Ver cabello", grupo: { categoria: "Cabello" }, imagenes: [], tono: "salvia" },
-];
-
-/** Líneas propias por marca: Musa vende por necesidad, no por marca (sin líneas, la sección no sale). */
-export const LINEAS: readonly { marca: string; kicker: string; titulo: string; texto: string; foto: string; alt: string }[] = [];
-
-export const BANNER_OSCURO = {
-  kicker: "Todos los sábados",
-  titulo: "Diagnóstico gratis de piel y cabello",
-  texto: "Ven o escríbenos: Drucila revisa tu piel o tu cabello, te dice qué necesita y te arma la rutina. Sin compromiso de compra.",
-  mensaje: "Hola Drucila, quiero separar mi diagnóstico gratis del sábado.",
-  foto: u("1500917293891-ef795e70e1f6", 1200),
-  alt: "Mujer con cabello largo y ondulado sobre una pared rosa",
-};
 
 /** «¿Qué quieres mejorar?» (como el índice del catálogo): cada tarjeta lleva a su categoría o búsqueda. */
 export const MEJORAR = [
