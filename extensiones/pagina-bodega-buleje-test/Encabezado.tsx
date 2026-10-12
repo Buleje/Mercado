@@ -12,7 +12,8 @@
  * Fuera de la portada el logo NO es el <h1> (`logoEsTitulo={false}`): el
  * título de la página es el suyo (p. ej. la categoría del catálogo).
  */
-import { ArrowRight, Scissors, Search, User } from "@buleje/design-system/icons";
+import { ArrowRight, Scissors, Search } from "@buleje/design-system/icons";
+import { MenuCuenta } from "@/components/store/cuenta/MenuCuenta";
 import { BotonBolsa } from "./Bolsa";
 import { CampoBuscar } from "./CampoBuscar";
 import { rutas } from "./destinos";
@@ -72,9 +73,7 @@ export function BarraSuperior({ nombre, slug, logoEsTitulo = true }: { nombre: s
             <span className="hidden text-base font-semibold lg:inline">Reservar cita</span>
             <span className="sr-only lg:hidden">Reservar cita</span>
           </a>
-          <a href={`${r.base}/cuenta`} className={ICONO} aria-label="Mi cuenta">
-            <User className="h-6 w-6" strokeWidth={1.6} aria-hidden="true" />
-          </a>
+          <MenuCuenta variante="icono" claseBoton={ICONO} />
           <BotonBolsa />
         </nav>
       </div>

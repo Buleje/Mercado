@@ -11,6 +11,8 @@
  * Does NOT import "server-only" — must remain edge-compatible (middleware).
  */
 
+import { cacheStore } from "@/lib/cache";
+
 const CUSTOMER_COOKIE = "buleje-customer-sess";
 // Audit 2026-05-17 05-P2-6: TTL reducido de 365d → 60d.
 // Antes: cookie filtrada = 1 año de acceso sin recourse (sin jti, sin
@@ -207,6 +209,53 @@ function b64Decode(str: string): string {
   return decodeURIComponent(escape(atob(str)));
 }
 
+// ── Revocación al «Salir» (2026-10-11) ──
+//
+// El token no lleva jti: se anula por su huella (sha256 del token entero), con
+// el mismo alcance que la lista negra de jti del logout del panel
+// (`revoked-access:<jti>` en `cacheStore`): memoria del proceso + Redis si hay
+// REDIS_URL. Sin esto, «Salir» sólo borraba la cookie de ESTE navegador y una
+// copia seguía abriendo la cuenta hasta 60 días.
+
+const PREFIJO_REVOCADO = "revoked-customer:";
+
+async function huellaDeToken(token: string): Promise<string> {
+  const raw = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  return Array.from(new Uint8Array(raw), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** ¿Este token se anuló con «Salir»? Ante cualquier falla del almacén, no bloquea. */
+async function tokenRevocado(token: string): Promise<boolean> {
+  try {
+    return cacheStore.get<boolean>(PREFIJO_REVOCADO + (await huellaDeToken(token))) === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Anula este token (verificado o de seguimiento) hasta que habría vencido.
+ * Sólo tokens con firma válida y vigentes: un token inventado no ocupa lugar.
+ * Devuelve true si quedó anulado.
+ */
+export async function revocarTokenCliente(token: string): Promise<boolean> {
+  if (!(await leerToken(token))) return false;
+  try {
+    const encoded = token.slice(0, token.lastIndexOf("."));
+    const { exp } = JSON.parse(b64Decode(encoded)) as { exp: number };
+    const restanSeg = Math.ceil((exp - Date.now()) / 1000);
+    if (!(restanSeg > 0)) return false;
+    cacheStore.set(
+      PREFIJO_REVOCADO + (await huellaDeToken(token)),
+      true,
+      Math.min(restanSeg, Math.floor(CUSTOMER_SESSION_MS / 1000)),
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ── Public API ──
 
 /**
@@ -251,6 +300,7 @@ async function leerToken(token: string): Promise<CustomerPayload | null> {
 
     if (raw.exp < Date.now()) return null;
     if (!raw.email || !raw.tenantId || !raw.provider) return null;
+    if (await tokenRevocado(token)) return null;
 
     const pedidos = Array.isArray(raw.pedidos)
       ? raw.pedidos

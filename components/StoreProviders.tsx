@@ -14,7 +14,6 @@ import { PromotionsProvider } from "@/contexts/promotions-context";
 import { FavoritesProvider } from "@/contexts/favorites-context";
 import { CompareProvider } from "@/contexts/compare-context";
 import { TenantSlugProvider } from "@/contexts/tenant-context";
-import { WishlistProvider } from "@/contexts/wishlist-context";
 import { SocioBulejeProvider } from "@/contexts/socio-buleje-context";
 import { SubscriptionProvider } from "@/contexts/subscription-context";
 import { LastOrderProvider } from "@/contexts/last-order-context";
@@ -51,27 +50,25 @@ export default function StoreProviders({
             <PromotionsProvider>
               <ConCarrito activo={!sinCarrito} tenantSlug={tenantSlug}>
                 <FavoritesProvider>
-                  <WishlistProvider>
-                    <CompareProvider>
-                      <SocioBulejeProvider>
-                        <SubscriptionProvider>
-                          <CustomerProvider initialCustomer={initialCustomer}>
-                            {/* LastOrderProvider — tracking de "tu último
-                                pedido" (badge en nav + OrderSuccessModal).
-                                Añadido al superset 2026-06-07 al unificar
-                                marketplace/tiendas bajo el (store) layout:
-                                MarketplaceStoresView y OrderTrackerNavBadge lo
-                                consumen y sin él quedaban en NOOP silencioso. */}
-                            <LastOrderProvider>
-                              {/* CheckoutFlowProvider — estado del checkout
-                                  elevado (Paso 1 refactor modal→páginas). */}
-                              <CheckoutFlowProvider>{children}</CheckoutFlowProvider>
-                            </LastOrderProvider>
-                          </CustomerProvider>
-                        </SubscriptionProvider>
-                      </SocioBulejeProvider>
-                    </CompareProvider>
-                  </WishlistProvider>
+                  <CompareProvider>
+                    <SocioBulejeProvider>
+                      <SubscriptionProvider>
+                        <CustomerProvider initialCustomer={initialCustomer}>
+                          {/* LastOrderProvider — tracking de "tu último
+                              pedido" (badge en nav + OrderSuccessModal).
+                              Añadido al superset 2026-06-07 al unificar
+                              marketplace/tiendas bajo el (store) layout:
+                              MarketplaceStoresView y OrderTrackerNavBadge lo
+                              consumen y sin él quedaban en NOOP silencioso. */}
+                          <LastOrderProvider>
+                            {/* CheckoutFlowProvider — estado del checkout
+                                elevado (Paso 1 refactor modal→páginas). */}
+                            <CheckoutFlowProvider>{children}</CheckoutFlowProvider>
+                          </LastOrderProvider>
+                        </CustomerProvider>
+                      </SubscriptionProvider>
+                    </SocioBulejeProvider>
+                  </CompareProvider>
                 </FavoritesProvider>
               </ConCarrito>
             </PromotionsProvider>

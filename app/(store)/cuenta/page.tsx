@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import CuentaLayoutShell from "./CuentaLayoutShell";
 import CuentaDashboardClient from "./CuentaDashboardClient";
@@ -5,12 +6,10 @@ import CuentaDashboardClient from "./CuentaDashboardClient";
 /**
  * /cuenta — Dashboard unificado del cliente.
  *
- * Server component ligero. Wrappea el dashboard en <CuentaLayoutShell> que
- * aporta Header + AnnouncementBar + CuentaSidebar + CuentaMobileTabs.
- *
- * Toda la UI del dashboard vive en <CuentaDashboardClient>, que consume datos
- * reales: contexto customer (useCustomer), inteligencia de cliente
- * (useCustomerIntelligence → /api/customer/intelligence) y pedidos (/api/orders).
+ * Server component ligero: <CuentaLayoutShell> (una columna, fondo del
+ * negocio) + <CuentaDashboardClient> (saludo + último pedido + secciones
+ * `?sub=`). Datos reales: contexto del cliente, `/api/orders` y, al abrir
+ * Puntos, `/api/customer/intelligence`. El Suspense es por `useSearchParams`.
  */
 
 export default function CuentaPage() {
@@ -23,7 +22,9 @@ export default function CuentaPage() {
         ]}
       />
       <CuentaLayoutShell>
-        <CuentaDashboardClient />
+        <Suspense fallback={null}>
+          <CuentaDashboardClient />
+        </Suspense>
       </CuentaLayoutShell>
     </>
   );

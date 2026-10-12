@@ -26,7 +26,6 @@ import { SettingsProvider } from "@/contexts/settings-context";
 import { FavoritesProvider } from "@/contexts/favorites-context";
 import { CompareProvider } from "@/contexts/compare-context";
 import { TenantSlugProvider } from "@/contexts/tenant-context";
-import { WishlistProvider } from "@/contexts/wishlist-context";
 import { SocioBulejeProvider } from "@/contexts/socio-buleje-context";
 import { SubscriptionProvider } from "@/contexts/subscription-context";
 import { LastOrderProvider } from "@/contexts/last-order-context";
@@ -61,27 +60,25 @@ export default function MarketplaceStoreProviders({
           </Suspense>
           <CartProvider tenantSlug={tenantSlug}>
             <FavoritesProvider>
-              <WishlistProvider>
-                <CompareProvider>
-                  <SocioBulejeProvider>
-                    <SubscriptionProvider>
-                      <CustomerProvider>
-                        <LastOrderProvider>
-                          {children}
-                          {/* Modal global de éxito post-pedido. Se monta una
-                              sola vez aquí (raíz del marketplace + tiendas +
-                              checkout) para que sobreviva a navegaciones.
-                              Brandon 2026-05-18 perf P1 #9: Suspense fallback
-                              null para no bloquear hidratación inicial. */}
-                          <Suspense fallback={null}>
-                            <OrderSuccessModal />
-                          </Suspense>
-                        </LastOrderProvider>
-                      </CustomerProvider>
-                    </SubscriptionProvider>
-                  </SocioBulejeProvider>
-                </CompareProvider>
-              </WishlistProvider>
+              <CompareProvider>
+                <SocioBulejeProvider>
+                  <SubscriptionProvider>
+                    <CustomerProvider>
+                      <LastOrderProvider>
+                        {children}
+                        {/* Modal global de éxito post-pedido. Se monta una
+                            sola vez aquí (raíz del marketplace + tiendas +
+                            checkout) para que sobreviva a navegaciones.
+                            Brandon 2026-05-18 perf P1 #9: Suspense fallback
+                            null para no bloquear hidratación inicial. */}
+                        <Suspense fallback={null}>
+                          <OrderSuccessModal />
+                        </Suspense>
+                      </LastOrderProvider>
+                    </CustomerProvider>
+                  </SubscriptionProvider>
+                </SocioBulejeProvider>
+              </CompareProvider>
             </FavoritesProvider>
           </CartProvider>
         </SettingsProvider>

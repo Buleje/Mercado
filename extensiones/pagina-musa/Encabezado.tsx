@@ -14,7 +14,8 @@
  * Fuera de la portada el logo NO es el <h1> (`logoEsTitulo={false}`): el
  * título de la página es el suyo (p. ej. la categoría del catálogo).
  */
-import { ArrowRight, MessageCircle, Search, User } from "@buleje/design-system/icons";
+import { ArrowRight, MessageCircle, Search } from "@buleje/design-system/icons";
+import { MenuCuenta } from "@/components/store/cuenta/MenuCuenta";
 import { CampoBuscar } from "./CampoBuscar";
 import { enlaceWhatsapp, rutas } from "./destinos";
 import { CONTACTO } from "./anuncios";
@@ -118,9 +119,8 @@ export function BarraSuperior({
           <MessageCircle className="h-5 w-5 text-[var(--mu-selva-tinta)]" strokeWidth={1.8} aria-hidden="true" />
           <span className="hidden text-base font-semibold lg:inline">Asesoría</span>
         </a>
-        <a href={`${r.base}/cuenta`} className={`${ICONO} hidden md:inline-flex`} aria-label="Mi cuenta">
-          <User className="h-6 w-6" strokeWidth={1.6} aria-hidden="true" />
-        </a>
+        {/* Cuenta: abre el menú de cuenta de las tiendas (pedidos, puntos, datos, ayuda por WhatsApp). */}
+        <MenuCuenta variante="icono" className="hidden md:block" claseBoton={`${ICONO} inline-flex`} whatsapp={WHATSAPP_MUSA} />
         <BolsaEncabezado />
       </nav>
     </div>

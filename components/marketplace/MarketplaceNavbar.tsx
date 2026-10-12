@@ -419,7 +419,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const { count: wishlistCount } = useWishlist();
-  const { customer, hydrated: authHydrated, clear } = useCustomer();
+  const { customer, hydrated: authHydrated, salir } = useCustomer();
   // Carrito — usado en mobile para mostrar conteo encima del icono.
   const { itemCount: cartItemCount } = useMarketplaceCart();
   const { resolved: themeResolved, toggle: toggleTheme } = useTheme();
@@ -891,9 +891,8 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                         <div className="mx-3 my-1 border-t border-[var(--rule-soft)]" />
                         <button
                           onClick={() => {
-                            clear();
                             setUserMenuOpen(false);
-                            window.location.reload();
+                            void salir().then(() => window.location.reload());
                           }}
                           role="menuitem"
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors text-left"

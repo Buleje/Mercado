@@ -11,6 +11,7 @@ import {
 } from "react";
 import { tenantKey } from "@/contexts/tenant-context";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { cerrarSesionCliente } from "@/lib/auth/salir-cliente";
 
 export type SavedLocation = {
   id: string;
@@ -77,7 +78,14 @@ type CustomerCtx = {
   closeAccountModal: () => void;
   openOrderStatusModal: () => void;
   closeOrderStatusModal: () => void;
+  /** Olvida al cliente SÓLO en este navegador (no cierra la sesión del servidor). */
   clear: () => void;
+  /**
+   * «Salir»: cierra la sesión del cliente en el servidor (cookie verificada o de
+   * seguimiento + Google) y después lo olvida en este navegador. Quien llama
+   * recarga si quiere que el layout del servidor también lo vea fuera.
+   */
+  salir: () => Promise<void>;
   findByPhone: (phone: string) => Promise<Customer | null>;
 };
 
@@ -226,12 +234,6 @@ export function CustomerProvider({
   const register = useCallback((data: Customer) => {
     setCustomer(data);
     localStorage.setItem(getStorageKey(), JSON.stringify(data));
-    // FIX 2026-05-07: limpiar flag de session expirada al hacer login fresco.
-    // Header.tsx setea sessionStorage["customer-notifs-401:${phone}"] cuando
-    // recibe 401, para evitar spam de polling. Al re-loguearse hay cookie nueva.
-    if (data.phone) {
-      try { sessionStorage.removeItem(`customer-notifs-401:${data.phone}`); } catch { /* ignore */ }
-    }
     // Upsert en la lista de accounts (multi-account support)
     setAccounts((prev) => {
       const next = upsertAccount(prev, data);
@@ -302,6 +304,14 @@ export function CustomerProvider({
     setCustomer(null);
     localStorage.removeItem(getStorageKey());
   }, []);
+  const salir = useCallback(async () => {
+    await cerrarSesionCliente();
+    try {
+      clear();
+    } catch {
+      /* almacenamiento bloqueado: la cookie ya se venció en el servidor */
+    }
+  }, [clear]);
 
   const switchAccount = useCallback(
     (phone: string) => {
@@ -341,7 +351,7 @@ export function CustomerProvider({
         customer, hydrated, accounts, showModal, openMode, accountModalOpen, orderStatusModalOpen,
         register, switchAccount, removeAccount,
         openModal, closeModal, openAccountModal, closeAccountModal,
-        openOrderStatusModal, closeOrderStatusModal, clear, findByPhone,
+        openOrderStatusModal, closeOrderStatusModal, clear, salir, findByPhone,
       }}
     >
       {children}

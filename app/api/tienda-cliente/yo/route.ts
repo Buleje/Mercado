@@ -16,16 +16,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServer, isSupabaseAuthConfiguredServer } from "@/lib/supabase/server";
 import { clienteDesdeUsuario } from "@/lib/tienda-cliente/cliente";
+import { cerrarSesionGoogle, traeSesionSupabase } from "@/lib/tienda-cliente/sesion-google";
 import { logger } from "@/lib/logger";
 
 const SIN_CACHE = { "Cache-Control": "private, no-store" };
-
-/** ¿Trae la cookie de sesión de Supabase? (no cuenta el code-verifier del PKCE). */
-function traeSesionSupabase(req: NextRequest): boolean {
-  return req.cookies
-    .getAll()
-    .some((c) => /^sb-.+-auth-token(\.\d+)?$/.test(c.name) && c.value.length > 0);
-}
 
 export async function GET(req: NextRequest) {
   if (!isSupabaseAuthConfiguredServer() || !traeSesionSupabase(req)) {
@@ -43,19 +37,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  if (!isSupabaseAuthConfiguredServer() || !traeSesionSupabase(req)) {
-    return NextResponse.json({ ok: true }, { headers: SIN_CACHE });
-  }
-  try {
-    const supabase = await getSupabaseServer();
-    await supabase.auth.signOut({ scope: "local" });
-  } catch (err) {
-    logger.warn("[tienda-cliente/yo] signOut falló", { error: String(err) });
-  }
-  // Por si el SDK no alcanzó a limpiarlas: se vencen aquí también.
   const res = NextResponse.json({ ok: true }, { headers: SIN_CACHE });
-  for (const c of req.cookies.getAll()) {
-    if (/^sb-.+-auth-token(\.\d+)?$/.test(c.name)) res.cookies.set(c.name, "", { maxAge: 0, path: "/" });
-  }
+  await cerrarSesionGoogle(req, res);
   return res;
 }
