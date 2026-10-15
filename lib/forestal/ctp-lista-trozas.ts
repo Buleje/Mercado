@@ -114,22 +114,28 @@ export function piezasListadas(trozas: ReadonlyArray<TrozaListada>): number {
   return trozas.reduce((a, t) => a + (Number(t.cantidad) || 1), 0);
 }
 
+/** Las celdas numéricas de una troza como las imprime la lista. Single source de `htmlListaTrozas` y del talonario de la matricial. */
+export function celdasTroza(t: TrozaListada): { d1: string; d2: string; largo: string; cant: string; vol: string } {
+  return { d1: num(t.d1Cm, 1), d2: num(t.d2Cm, 1), largo: num(t.largoM, 2), cant: String(t.cantidad ?? 1), vol: num(t.volumenM3, 3) };
+}
+
 export function htmlListaTrozas(i: ListaTrozasInput): string {
   const filas = i.trozas
-    .map(
-      (t, n) => `<tr>
+    .map((t, n) => {
+      const c = celdasTroza(t);
+      return `<tr>
       <td class="c n">${n + 1}</td>
       <td class="sci">${esc(t.especieCientifica)}</td>
       <td>${esc(t.especieComun)}</td>
       <td class="prod">${esc(t.producto)}</td>
       <td class="c cod">${esc(t.codificacion)}</td>
-      <td class="c">${num(t.d1Cm, 1)}</td>
-      <td class="c">${num(t.d2Cm, 1)}</td>
-      <td class="c">${num(t.largoM, 2)}</td>
-      <td class="c">${t.cantidad ?? 1}</td>
-      <td class="r vol">${num(t.volumenM3, 3)}</td>
-    </tr>`,
-    )
+      <td class="c">${c.d1}</td>
+      <td class="c">${c.d2}</td>
+      <td class="c">${c.largo}</td>
+      <td class="c">${c.cant}</td>
+      <td class="r vol">${c.vol}</td>
+    </tr>`;
+    })
     .join("");
 
   const total = totalListado(i.trozas);

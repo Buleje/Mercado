@@ -12,6 +12,8 @@
  *   · Datos           → sólo si la guía guardó su ficha de SERFOR (importada)
  *   · Hoja SERFOR     → siempre (anulada: con su sello)
  *   · Resumen interno → siempre (R1-R4, `gtf-resumen-interno`)
+ *   · Imprimir en talonario → viva: sólo los valores, en su lugar, sobre el
+ *     talonario preimpreso de la matricial (15-10, `GtfMatricialModal`)
  *   · Documentos del permiso → siempre; sin permiso sólo los papeles de la guía (ADR-482)
  *     (ADR-467: las carpetas del plan, por `planId`; ver, descargar,
  *     imprimir y enviar por WhatsApp — 08-10)
@@ -28,7 +30,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Ban, Eye, FileText, FolderOpen, Link2, LogIn, Printer, Ruler, Undo2 } from "@buleje/design-system/icons";
+import { Ban, Eye, FileText, FolderOpen, Link2, LogIn, Printer, ReceiptText, Ruler, Undo2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
 import { fichaDeGuiaImportada } from "@/lib/forestal/loth-importar-guia-ficha";
@@ -40,6 +42,7 @@ import { verIngresosDelCtp } from "./LothGtfCtp";
 import GtfDocumentosModal from "./GtfDocumentosModal";
 import LothGtfCubicarModal from "./LothGtfCubicarModal";
 import LothGtfAsignarPermiso from "./LothGtfAsignarPermiso";
+import GtfMatricialModal from "./GtfMatricialModal";
 
 /** La guía salió sin permiso y todavía se le puede asignar uno (viva y de trozas). */
 export const pideAsignarPermiso = (g: Pick<Gtf, "planId" | "status" | "deletedAt" | "tipo">): boolean =>
@@ -72,6 +75,7 @@ export function opcionesGtf(
     abrirDocumentos,
     abrirCubicar,
     abrirPermiso,
+    abrirTalonario,
     onHoja,
     onResumen,
     onAnular,
@@ -82,6 +86,7 @@ export function opcionesGtf(
     abrirDocumentos?: () => void;
     abrirCubicar?: () => void;
     abrirPermiso?: () => void;
+    abrirTalonario?: () => void;
     onHoja: (g: Gtf) => void;
     onResumen: (g: Gtf) => void;
     onAnular?: (id: string) => void;
@@ -107,6 +112,15 @@ export function opcionesGtf(
     icon: FileText,
     onSelect: () => onResumen(g),
   });
+  if (viva && abrirTalonario) {
+    a.push({
+      id: "talonario",
+      label: "Imprimir en talonario",
+      hint: "Sólo los valores, cada uno en su casillero del talonario de la matricial",
+      icon: ReceiptText,
+      onSelect: abrirTalonario,
+    });
+  }
   if (abrirDocumentos) {
     /* Una anulada no recibe papeles (el servidor responde 404): sólo quedan las carpetas del plan. */
     const baja = g.status === "anulada" || !!g.deletedAt;
@@ -156,7 +170,7 @@ export function opcionesGtf(
 export default function AccionesGtf({
   g, porIngresar = false, soloLectura = false, onIngresarCtp, onHoja, onResumen, onAnular, onRecargar,
 }: AccionesGtfProps) {
-  const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | "cubicar" | "permiso" | null>(null);
+  const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | "cubicar" | "permiso" | "talonario" | null>(null);
   const acciones = useMemo(
     () =>
       opcionesGtf(g, {
@@ -166,6 +180,7 @@ export default function AccionesGtf({
         abrirDocumentos: () => setAbierto("documentos"),
         abrirCubicar: () => setAbierto("cubicar"),
         abrirPermiso: () => setAbierto("permiso"),
+        abrirTalonario: () => setAbierto("talonario"),
         onHoja,
         onResumen,
         onAnular,
@@ -202,6 +217,7 @@ export default function AccionesGtf({
         <GtfDocumentosModal planId={g.planId ?? null} permiso={permisoDeLaGuiaGtf(g)} gtfNumber={g.gtfNumber} sinPapeles={g.status === "anulada" || !!g.deletedAt} onClose={() => setAbierto(null)} />
       )}
       {abierto === "cubicar" && <LothGtfCubicarModal g={g} onClose={() => setAbierto(null)} />}
+      {abierto === "talonario" && <GtfMatricialModal g={g} onClose={() => setAbierto(null)} />}
       {abierto === "permiso" && (
         <LothGtfAsignarPermiso
           gtf={g}

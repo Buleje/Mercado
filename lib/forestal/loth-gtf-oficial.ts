@@ -13,7 +13,7 @@
  * cambia para los dos libros a la vez.
  */
 
-import { CSS_GTF_OFICIAL, cuerpoGtfOficial, type LineaProducto } from "./ctp-gtf-formato";
+import { CSS_GTF_OFICIAL, cuerpoGtfOficial, type CuerpoGtfInput, type LineaProducto } from "./ctp-gtf-formato";
 import { gtfDatosVacio, leerGtfDatos, type GtfDatos } from "./ctp-gtf-datos";
 import type { CtpFicha } from "./ctp-ficha-types";
 import { codigoImpreso, guiaEsDePlantacion } from "./loth-guia-despacho";
@@ -191,8 +191,9 @@ export interface DocumentoGtfLoth {
  * muestra en el visor o lo manda a imprimir (misma decisión que tomó el CTP
  * cuando el pop-up disparaba el diálogo del sistema antes de poder mirar nada).
  */
-export function documentoGtfLoth(doc: LothGtfDoc, caratula: LothGtfCaratula | null): DocumentoGtfLoth {
-  const cuerpo = cuerpoGtfOficial({
+/** La entrada del formato de casilleros de una guía del TH: la leen la hoja (`documentoGtfLoth`) y el talonario de la matricial. */
+export function entradaGtfLoth(doc: LothGtfDoc, caratula: LothGtfCaratula | null): CuerpoGtfInput {
+  return {
     ficha: fichaDesdeCaratula(caratula, doc),
     datos: datosDesdeGtf(doc),
     lineas: lineasDeGtf(doc),
@@ -203,7 +204,11 @@ export function documentoGtfLoth(doc: LothGtfDoc, caratula: LothGtfCaratula | nu
     // guía de origen previa que citar, a diferencia de la del CTP.
     gtfOrigen: "",
     registroSerfor: "",
-  });
+  };
+}
+
+export function documentoGtfLoth(doc: LothGtfDoc, caratula: LothGtfCaratula | null): DocumentoGtfLoth {
+  const cuerpo = cuerpoGtfOficial(entradaGtfLoth(doc, caratula));
   return {
     cuerpo,
     css: CSS_GTF_OFICIAL,

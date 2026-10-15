@@ -27,11 +27,11 @@ import {
 } from "./ctp-documento-print";
 import type { CtpFicha } from "./ctp-ficha-types";
 import { COPIAS_GTF, type GtfDatos } from "./ctp-gtf-datos";
-import { CSS_GTF_OFICIAL, cuerpoGtfOficial, fechaGtf } from "./ctp-gtf-formato";
+import { CSS_GTF_OFICIAL, cuerpoGtfOficial, fechaGtf, type CuerpoGtfInput } from "./ctp-gtf-formato";
 import { CSS_GTF_SALIDA } from "./ctp-gtf-print";
-import { CSS_LISTA_TROZAS, htmlListaTrozas } from "./ctp-lista-trozas";
+import { CSS_LISTA_TROZAS, htmlListaTrozas, type ListaTrozasInput } from "./ctp-lista-trozas";
 import { fmtM3 } from "./cubicacion-formato";
-import { detallePorEspecie, guiaEsDePlantacion, leyendaDeConstancia, leyendaDelTitulo, listaDeTrozas, totalM3, type PiezaGuia } from "./loth-guia-despacho";
+import { detallePorEspecie, guiaEsDePlantacion, leyendaDeConstancia, leyendaDelTitulo, listaDeTrozas, totalM3, type FilaListaTrozas, type PiezaGuia } from "./loth-guia-despacho";
 import { listasEfectivas, partirEnHojas } from "./loth-lista-numero";
 
 /** Un documento listo para `CtpDocumentoVisor` (mismo shape que `DocumentoImprimible`). */
@@ -118,17 +118,70 @@ export function fichaDeGuiaLoth(titular: string, datos: GtfDatos): CtpFicha {
   } as unknown as CtpFicha;
 }
 
+/**
+ * Lo que la hoja SERFOR imprime de la guía, ANTES de volverse HTML: la entrada
+ * del formato de casilleros, las filas de la lista y el encabezado de cada hoja
+ * de la lista. Lo leen `papelesGuiaLoth` (el papel A4) y el talonario de la
+ * matricial (`gtf-matricial-valores`): los dos imprimen los mismos valores.
+ */
+export interface EntradasGuiaLoth {
+  cuerpo: CuerpoGtfInput;
+  /** Las filas de la lista, en el orden del papel. */
+  filas: FilaListaTrozas[];
+  /** Cuántas hojas sale la lista y el N° de cada una. */
+  listas: { hojas: number; numeros: string[]; casillero35: string };
+  /** El encabezado de cada hoja de la lista (sin su N° ni sus trozas). */
+  lista: Omit<ListaTrozasInput, "numero" | "trozas">;
+}
+
+export function entradasGuiaLoth(g: GuiaLothParaImprimir): EntradasGuiaLoth {
+  const d = g.datos;
+  const numero = t(g.gtfNumber);
+  const filas = listaDeTrozas(g.piezas, g.cientificoDe);
+  const listas = hojasDeLaLista(d, numero, filas.length);
+  const ubicacion = [t(d.guia.distrito), t(d.guia.provincia), t(d.guia.departamento)].filter(Boolean).join(" · ");
+  const plantacion = guiaEsDePlantacion(d);
+  const leyenda = leyendaDelTitulo(t(d.titulos[0]), plantacion);
+  const constancia = plantacion ? leyendaDeConstancia(d.guia.resolucion) : "";
+  return {
+    cuerpo: {
+      ficha: fichaDeGuiaLoth(g.titular, d),
+      datos: d,
+      lineas: detallePorEspecie(g.piezas, g.cientificoDe),
+      numeroGtf: numero,
+      fechaExpedicion: g.gtfDate,
+      // (35) los N° de la lista que viaja con la guía, uno por hoja; (36) NO
+      // APLICA: madera del bosque, no la ampara ninguna guía anterior.
+      listasTrozas: listas.casillero35,
+      gtfOrigen: t(d.guia.gtfOrigenNro) || ORIGEN_NO_APLICA,
+      origenRecurso: t(d.guia.origenRecurso),
+      registroSerfor: "",
+    },
+    filas,
+    listas,
+    lista: {
+      titular: t(g.titular) || (plantacion ? "Titular de la plantación" : "Titular del título habilitante"),
+      subtitulo: [leyenda, constancia].filter(Boolean).join(" · ") || undefined,
+      ubicacion,
+      ruc: d.propietario.esElCtp && d.propietario.docTipo === "RUC" ? t(d.propietario.docNumero) : undefined,
+      guia: numero,
+      fecha: fechaGtf(g.gtfDate),
+      observaciones: t(d.observaciones),
+    },
+  };
+}
+
 /** Los dos papeles de la guía, listos para el visor. */
 export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; lista: HojaGuiaLoth } {
   const d = g.datos;
-  const numero = t(g.gtfNumber);
-  const lineas = detallePorEspecie(g.piezas, g.cientificoDe);
-  const filas = listaDeTrozas(g.piezas, g.cientificoDe);
+  const entradas = entradasGuiaLoth(g);
+  const numero = entradas.cuerpo.numeroGtf;
+  const lineas = entradas.cuerpo.lineas;
+  const filas = entradas.filas;
   const total = totalM3(g.piezas);
-  const listas = hojasDeLaLista(d, numero, filas.length);
+  const listas = entradas.listas;
   const nroLista = listas.casillero35;
-  const ficha = fichaDeGuiaLoth(g.titular, d);
-  const ubicacion = [t(d.guia.distrito), t(d.guia.provincia), t(d.guia.departamento)].filter(Boolean).join(" · ");
+  const ubicacion = entradas.lista.ubicacion ?? "";
   const titulo = t(d.titulos[0]);
   /* Una plantación se ampara con su REGISTRO (y su constancia), no con un
      título habilitante: el papel lo dice como se llama (ADR-459). */
@@ -167,19 +220,7 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
       <div><span>Sello del puesto de control</span><i></i></div>
     </div>`;
 
-  const cuerpo = cuerpoGtfOficial({
-    ficha,
-    datos: d,
-    lineas,
-    numeroGtf: numero,
-    fechaExpedicion: g.gtfDate,
-    // (35) los N° de la lista que viaja con la guía, uno por hoja; (36) NO
-    // APLICA: madera del bosque, no la ampara ninguna guía anterior.
-    listasTrozas: nroLista,
-    gtfOrigen: t(d.guia.gtfOrigenNro) || ORIGEN_NO_APLICA,
-    origenRecurso: t(d.guia.origenRecurso),
-    registroSerfor: "",
-  });
+  const cuerpo = cuerpoGtfOficial(entradas.cuerpo);
 
   /* Una sola copia, la ORIGINAL (Brandon 07-10: «en el modal de la GTF solo
      pon 1 copia»): las tres iguales seguidas eran tres páginas del mismo papel
@@ -221,17 +262,7 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
      cuántos N° lleva el (35). */
   const trozos = partirEnHojas(filas);
   const hojasLista = (trozos.length ? trozos : [[]]).map((trozo, i, todas) => {
-    const html = htmlListaTrozas({
-      titular: t(g.titular) || (plantacion ? "Titular de la plantación" : "Titular del título habilitante"),
-      subtitulo: [leyenda, constancia].filter(Boolean).join(" · ") || undefined,
-      ubicacion,
-      ruc: d.propietario.esElCtp && d.propietario.docTipo === "RUC" ? t(d.propietario.docNumero) : undefined,
-      numero: listas.numeros[i] ?? nroLista,
-      guia: numero,
-      fecha: fechaGtf(g.gtfDate),
-      trozas: trozo,
-      observaciones: t(d.observaciones),
-    });
+    const html = htmlListaTrozas({ ...entradas.lista, numero: listas.numeros[i] ?? nroLista, trozas: trozo });
     const nota = todas.length > 1 ? `<div class="pie">Hoja ${i + 1} de ${todas.length} · anexo del (35)</div>` : NOTA_LISTA;
     return `${sello}${html.replace(NOTA_LISTA, nota)}`;
   });

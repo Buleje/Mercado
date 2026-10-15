@@ -63,6 +63,9 @@ function dniDe(p: { docTipo?: string; docNumero?: string; dniExtra?: string } | 
   return p.docTipo === "DNI" ? (p.docNumero ?? "") : (p.dniExtra ?? "");
 }
 
+/** Un valor del papel en texto: `null`/`undefined` → "" (lo mismo que imprime `esc`). */
+const txt = (v: unknown): string => (v == null ? "" : String(v));
+
 /**
  * Un casillero: número, rótulo y valor. El valor vacío queda en blanco.
  *
@@ -146,21 +149,40 @@ export function filasDeLaGuia(lineas: ReadonlyArray<LineaProducto>): LineaProduc
 export const volumenTotalDeLaGuia = (lineas: ReadonlyArray<LineaProducto>): number =>
   totalizarGTF(filasDeLaGuia(lineas).map((l) => ({ m3: l.total }))).m3;
 
-/** El detalle (37a–37g) con su fila de Volumen Total, como el formato oficial. */
-export function tablaProductos(lineasDeEntrada: ReadonlyArray<LineaProducto>): string {
+/** Una fila del detalle (37) como se imprime: ya formateada, columna por columna. */
+export type FilaDetalleGtf = Record<"37a" | "37b" | "37c" | "37d" | "37e" | "37f" | "37g", string>;
+
+/**
+ * El detalle (37a–37g) y su Volumen Total, en texto. Single source de la tabla
+ * del papel A4 (`tablaProductos`) y del talonario de la matricial
+ * (`gtf-matricial-valores`): los dos imprimen ESTO.
+ */
+export function detalleGtf(lineasDeEntrada: ReadonlyArray<LineaProducto>): { filas: FilaDetalleGtf[]; total: string } {
   const lineas = filasDeLaGuia(lineasDeEntrada);
-  const filas = lineas
-    .map(
-      (l) => `<tr>
-        <td>${esc(l.cientifico)}</td><td>${esc(l.comun)}</td><td>${esc(l.tipoProducto)}</td>
-        <td>${esc(l.presentacion)}</td><td class="num">${esc(l.cantidad)}</td>
-        <td>${esc(l.unidad)}</td><td class="num">${textoGTF(l.total)}</td>
-      </tr>`,
-    )
-    .join("");
   // Se suman SOLO las filas, ya redondeadas: el total es de lo que se está
   // moviendo y cierra EXACTO con el detalle impreso (31,188 y no 31,185).
   const total = totalizarGTF(lineas.map((l) => ({ m3: l.total }))).m3;
+  return {
+    filas: lineas.map((l) => ({
+      "37a": txt(l.cientifico), "37b": txt(l.comun), "37c": txt(l.tipoProducto), "37d": txt(l.presentacion),
+      "37e": txt(l.cantidad), "37f": txt(l.unidad), "37g": textoGTF(l.total),
+    })),
+    total: textoGTF(total),
+  };
+}
+
+/** El detalle (37a–37g) con su fila de Volumen Total, como el formato oficial. */
+export function tablaProductos(lineasDeEntrada: ReadonlyArray<LineaProducto>): string {
+  const det = detalleGtf(lineasDeEntrada);
+  const filas = det.filas
+    .map(
+      (l) => `<tr>
+        <td>${esc(l["37a"])}</td><td>${esc(l["37b"])}</td><td>${esc(l["37c"])}</td>
+        <td>${esc(l["37d"])}</td><td class="num">${esc(l["37e"])}</td>
+        <td>${esc(l["37f"])}</td><td class="num">${l["37g"]}</td>
+      </tr>`,
+    )
+    .join("");
   return `<table class="det">
     <thead><tr>
       <th rowspan="2">(37a) N. Científico</th><th rowspan="2">(37b) N. Común</th>
@@ -170,8 +192,51 @@ export function tablaProductos(lineasDeEntrada: ReadonlyArray<LineaProducto>): s
       <th>(37d) Descripción</th><th>(37e) Cant.</th><th>(37f) Unidad</th><th>(37g) Total</th>
     </tr></thead>
     <tbody>${filas || `<tr><td colspan="7" class="vacio">Sin líneas declaradas</td></tr>`}</tbody>
-    <tfoot><tr><td colspan="6" class="tot">Volumen Total:</td><td class="num tot">${textoGTF(total)}</td></tr></tfoot>
+    <tfoot><tr><td colspan="6" class="tot">Volumen Total:</td><td class="num tot">${det.total}</td></tr></tfoot>
   </table>`;
+}
+
+/** Lo que recibe la identidad (2)–(12) además de la Ficha. */
+export interface ExtraIdentidadGtf {
+  fechaExpedicion?: string;
+  fechaVencimiento?: string;
+  origenRecurso?: string;
+  /** Código del título elegido EN LA GUÍA (`GtfDatos.titulos[0]`). Manda sobre
+   *  el predeterminado de la Ficha: esa madera salió de ese permiso. */
+  tituloElegido?: string;
+  /**
+   * Los permisos cargados (`ForestContrato`, ADR-421/425). Desde que el
+   * select de la guía ofrece las dos listas, el elegido puede ser uno que la
+   * Ficha no tiene: sin esto sus casilleros (5)(8)(9) salían en blanco
+   * teniendo el dato cargado. La Ficha sigue mandando cuando está en las dos.
+   */
+  permisos?: readonly PermisoDeGuia[];
+}
+
+/** Los casilleros de la identidad, en texto. `rep` = el Representante Legal (sin número en el papel). */
+export type CasillerosIdentidadGtf = Record<"2" | "3" | "4" | "5" | "6" | "7" | "rep" | "8" | "9" | "10" | "11" | "12", string>;
+
+/**
+ * El VALOR de (2)–(12), ya formateado. El (5) es la CLAVE del origen marcado
+ * (`ORIGENES`), en minúsculas; "" si ninguno. Lo leen `bloqueIdentidadGtf` y
+ * `casillerosGtf`.
+ */
+export function casillerosIdentidad(f: CtpFicha, extra: ExtraIdentidadGtf = {}): CasillerosIdentidadGtf {
+  const titulo = tituloDeGuia(f, extra.tituloElegido, extra.permisos);
+  return {
+    "2": txt(f.arffs),
+    "3": fechaGtf(extra.fechaExpedicion),
+    "4": fechaGtf(extra.fechaVencimiento),
+    "5": txt(extra.origenRecurso ?? titulo?.tipo).trim().toLowerCase(),
+    "6": txt(titulo?.codigo),
+    "7": txt(f.razonSocial),
+    rep: txt(f.representante),
+    "8": txt(titulo?.resolucion),
+    "9": txt(titulo?.planManejo),
+    "10": txt(f.region),
+    "11": txt(f.provincia),
+    "12": txt(f.distrito),
+  };
 }
 
 /**
@@ -183,33 +248,16 @@ export function tablaProductos(lineasDeEntrada: ReadonlyArray<LineaProducto>): s
  * de verdad, así que lo que se ve acá es exactamente lo que va a salir. Si se
  * duplicara el HTML, la vista previa mentiría en cuanto cambie el formato.
  */
-export function bloqueIdentidadGtf(
-  f: CtpFicha,
-  extra: {
-    fechaExpedicion?: string;
-    fechaVencimiento?: string;
-    origenRecurso?: string;
-    /** Código del título elegido EN LA GUÍA (`GtfDatos.titulos[0]`). Manda sobre
-     *  el predeterminado de la Ficha: esa madera salió de ese permiso. */
-    tituloElegido?: string;
-    /**
-     * Los permisos cargados (`ForestContrato`, ADR-421/425). Desde que el
-     * select de la guía ofrece las dos listas, el elegido puede ser uno que la
-     * Ficha no tiene: sin esto sus casilleros (5)(8)(9) salían en blanco
-     * teniendo el dato cargado. La Ficha sigue mandando cuando está en las dos.
-     */
-    permisos?: readonly PermisoDeGuia[];
-  } = {},
-): string {
-  const titulo = tituloDeGuia(f, extra.tituloElegido, extra.permisos);
+export function bloqueIdentidadGtf(f: CtpFicha, extra: ExtraIdentidadGtf = {}): string {
+  const v = casillerosIdentidad(f, extra);
   return `${seccionDoc("Título habilitante y titular del recurso", "casilleros (2) a (12)")}
   <table class="cas">
-    <tr>${box2("2", "Autoridad Regional Forestal (ARFFS)", f.arffs)}${box("3", "F. Expedición", fechaGtf(extra.fechaExpedicion))}${box("4", "F. Vencimiento", fechaGtf(extra.fechaVencimiento))}</tr>
-    <tr><td class="c" colspan="4"><span class="n">(5)</span> <span class="l">Origen del Recurso:</span>${casillasOrigen(extra.origenRecurso ?? titulo?.tipo)}</td></tr>
-    <tr>${box2("6", "N° del título habilitante", titulo?.codigo)}${box2("7", "Nombre del Titular", f.razonSocial)}</tr>
-    <tr>${box2("", "Representante Legal", f.representante)}${box2("8", "N° de Resolución", titulo?.resolucion)}</tr>
-    <tr>${box2("9", "Plan de Manejo (Tipo)", titulo?.planManejo)}${box("10", "Depto.", f.region)}${box("11", "Prov.", f.provincia)}</tr>
-    <tr>${box4("12", "Distrito", f.distrito)}</tr>
+    <tr>${box2("2", "Autoridad Regional Forestal (ARFFS)", v["2"])}${box("3", "F. Expedición", v["3"])}${box("4", "F. Vencimiento", v["4"])}</tr>
+    <tr><td class="c" colspan="4"><span class="n">(5)</span> <span class="l">Origen del Recurso:</span>${casillasOrigen(v["5"])}</td></tr>
+    <tr>${box2("6", "N° del título habilitante", v["6"])}${box2("7", "Nombre del Titular", v["7"])}</tr>
+    <tr>${box2("", "Representante Legal", v.rep)}${box2("8", "N° de Resolución", v["8"])}</tr>
+    <tr>${box2("9", "Plan de Manejo (Tipo)", v["9"])}${box("10", "Depto.", v["10"])}${box("11", "Prov.", v["11"])}</tr>
+    <tr>${box4("12", "Distrito", v["12"])}</tr>
   </table>`;
 }
 
@@ -245,60 +293,117 @@ export interface CuerpoGtfInput {
   permisos?: readonly PermisoDeGuia[];
 }
 
-/** El bloque central del documento, de (2) a (40). */
-export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
+/** Todos los casilleros con valor de la guía. `31p` = la placa (el papel la numera (31), igual que el vehículo). */
+export type CasillerosGtf = CasillerosIdentidadGtf &
+  Record<
+    | "13" | "14" | "15" | "16" | "17" | "18" | "19" | "20" | "21"
+    | "22" | "23" | "24" | "25" | "26" | "27" | "28"
+    | "29" | "30" | "31" | "31p" | "32" | "33" | "34" | "35" | "36" | "38",
+    string
+  >;
+
+/** El (20) se lee en el papel: "guia_remision" es el valor del enum, no algo que un puesto de control deba descifrar. */
+const COMPROBANTE_LABEL: Record<string, string> = {
+  factura: "Factura", boleta: "Boleta de venta",
+  guia_remision: "Guía de remisión", otro: "Otro",
+};
+
+/**
+ * El VALOR de cada casillero de la guía, ya formateado como lo imprime la hoja
+ * (fechas `DD.MM.YYYY`, enums leídos, el DNI que corresponde a cada parte).
+ * Single source del papel A4 (`cuerpoGtfOficial`) y del talonario de la
+ * matricial (`gtf-matricial-valores`): un casillero no puede decir una cosa
+ * en la hoja y otra en el talonario.
+ */
+export function casillerosGtf(i: CuerpoGtfInput): CasillerosGtf {
   const { ficha: f, datos: d } = i;
-  // El (20) se lee en el papel: "guia_remision" es el valor del enum, no algo
-  // que un puesto de control deba descifrar.
-  const COMPROBANTE_LABEL: Record<string, string> = {
-    factura: "Factura", boleta: "Boleta de venta",
-    guia_remision: "Guía de remisión", otro: "Otro",
-  };
   const comprobante =
     d.comprobante?.tipo && d.comprobante.tipo !== "ninguno"
       ? (COMPROBANTE_LABEL[d.comprobante.tipo] ?? d.comprobante.tipo)
       : "";
+  return {
+    ...casillerosIdentidad(f, {
+      fechaExpedicion: i.fechaExpedicion,
+      fechaVencimiento: d.traslado?.fechaFin,
+      origenRecurso: i.origenRecurso,
+      // El que eligió el operador en el formulario de la guía. Antes se guardaba
+      // y NO se imprimía: el papel declaraba siempre el primero de la Ficha.
+      tituloElegido: d.titulos?.[0],
+      permisos: i.permisos,
+    }),
+    "13": txt(d.propietario?.nombre),
+    "14": dniDe(d.propietario),
+    "15": d.propietario?.docTipo === "RUC" ? txt(d.propietario?.docNumero) : "",
+    "16": txt(d.propietario?.direccion),
+    "17": txt(d.propietario?.departamento),
+    "18": txt(d.propietario?.provincia),
+    "19": txt(d.propietario?.distrito),
+    "20": comprobante,
+    "21": txt(d.comprobante?.numero),
+    "22": txt(d.destinatario?.nombre),
+    "23": dniDe(d.destinatario),
+    "24": d.destinatario?.docTipo === "RUC" ? txt(d.destinatario?.docNumero) : "",
+    "25": txt(d.destinatario?.direccion),
+    "26": txt(d.destinatario?.departamento),
+    "27": txt(d.destinatario?.provincia),
+    "28": txt(d.destinatario?.distrito),
+    "29": d.comprobante?.tipo === "guia_remision" ? txt(d.comprobante?.numero) : "",
+    "30": txt(MODO_LABEL[d.vehiculo?.modo ?? ""] ?? d.vehiculo?.modo),
+    "31": txt(d.vehiculo?.tipo),
+    "31p": txt(d.vehiculo?.placa),
+    "32": txt(d.vehiculo?.conductor),
+    "33": txt(d.vehiculo?.conductorDni),
+    "34": txt(d.vehiculo?.licencia),
+    "35": txt(i.listasTrozas),
+    "36": txt(i.gtfOrigen),
+    "38": txt(d.observaciones),
+  };
+}
+
+/** El bloque central del documento, de (2) a (40). */
+export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
+  const { ficha: f, datos: d } = i;
+  const v = casillerosGtf(i);
+  const fluvial = d.vehiculo?.modo === "fluvial";
 
   return `
   ${bloqueIdentidadGtf(f, {
     fechaExpedicion: i.fechaExpedicion,
     fechaVencimiento: d.traslado?.fechaFin,
     origenRecurso: i.origenRecurso,
-    // El que eligió el operador en el formulario de la guía. Antes se guardaba
-    // y NO se imprimía: el papel declaraba siempre el primero de la Ficha.
     tituloElegido: d.titulos?.[0],
     permisos: i.permisos,
   })}
 
   ${seccionDoc("Propietario del producto", "casilleros (13) a (21)")}
   <table class="cas">
-    <tr>${box2("13", "Nombre o razón social", d.propietario?.nombre)}${box("14", "D.N.I.", dniDe(d.propietario))}${box("15", "R.U.C.", d.propietario?.docTipo === "RUC" ? d.propietario?.docNumero : "")}</tr>
-    <tr>${box2("16", "Dirección", d.propietario?.direccion)}${box("17", "Depto.", d.propietario?.departamento)}${box("18", "Prov.", d.propietario?.provincia)}</tr>
-    <tr>${box("19", "Distrito", d.propietario?.distrito)}${box("20", "Comprobante", comprobante)}${box2("21", "N° Comprobante", d.comprobante?.numero)}</tr>
+    <tr>${box2("13", "Nombre o razón social", v["13"])}${box("14", "D.N.I.", v["14"])}${box("15", "R.U.C.", v["15"])}</tr>
+    <tr>${box2("16", "Dirección", v["16"])}${box("17", "Depto.", v["17"])}${box("18", "Prov.", v["18"])}</tr>
+    <tr>${box("19", "Distrito", v["19"])}${box("20", "Comprobante", v["20"])}${box2("21", "N° Comprobante", v["21"])}</tr>
   </table>
 
   ${seccionDoc("Destinatario", "casilleros (22) a (28)")}
   <table class="cas">
-    <tr>${box2("22", "Nombre o razón social", d.destinatario?.nombre)}${box("23", "D.N.I.", dniDe(d.destinatario))}${box("24", "R.U.C.", d.destinatario?.docTipo === "RUC" ? d.destinatario?.docNumero : "")}</tr>
-    <tr>${box2("25", "Dirección", d.destinatario?.direccion)}${box("26", "Depto.", d.destinatario?.departamento)}${box("27", "Prov.", d.destinatario?.provincia)}</tr>
-    <tr>${box4("28", "Distrito", d.destinatario?.distrito)}</tr>
+    <tr>${box2("22", "Nombre o razón social", v["22"])}${box("23", "D.N.I.", v["23"])}${box("24", "R.U.C.", v["24"])}</tr>
+    <tr>${box2("25", "Dirección", v["25"])}${box("26", "Depto.", v["26"])}${box("27", "Prov.", v["27"])}</tr>
+    <tr>${box4("28", "Distrito", v["28"])}</tr>
   </table>
 
   ${seccionDoc("Transportista, vehículo y conductor", "casilleros (29) a (34)")}
   <table class="cas">
-    <tr>${box("29", "N° G. Remisión", d.comprobante?.tipo === "guia_remision" ? d.comprobante?.numero : "")}${box("30", "Transporte", MODO_LABEL[d.vehiculo?.modo ?? ""] ?? d.vehiculo?.modo)}${box("31", "Vehículo", d.vehiculo?.tipo)}${box("31", d.vehiculo?.modo === "fluvial" ? "Matrícula N°" : "Placa(s) N°", d.vehiculo?.placa)}</tr>
-    <tr>${box2("32", d.vehiculo?.modo === "fluvial" ? "Patrón" : "Conductor", d.vehiculo?.conductor)}${box("33", "D.N.I.", d.vehiculo?.conductorDni)}${box("34", "Licencia", d.vehiculo?.licencia)}</tr>
+    <tr>${box("29", "N° G. Remisión", v["29"])}${box("30", "Transporte", v["30"])}${box("31", "Vehículo", v["31"])}${box("31", fluvial ? "Matrícula N°" : "Placa(s) N°", v["31p"])}</tr>
+    <tr>${box2("32", fluvial ? "Patrón" : "Conductor", v["32"])}${box("33", "D.N.I.", v["33"])}${box("34", "Licencia", v["34"])}</tr>
   </table>
 
   ${seccionDoc("Detalle del producto que se moviliza", "casilleros (35) a (38)")}
   <table class="cas">
-    <tr>${box2("35", "Lista(s) de Troza(s)", i.listasTrozas)}${box2("36", "N° GTF de Origen", i.gtfOrigen)}</tr>
+    <tr>${box2("35", "Lista(s) de Troza(s)", v["35"])}${box2("36", "N° GTF de Origen", v["36"])}</tr>
   </table>
 
   ${tablaProductos(i.lineas)}
 
   <table class="cas">
-    <tr>${box4("38", "Observaciones", d.observaciones)}</tr>
+    <tr>${box4("38", "Observaciones", v["38"])}</tr>
   </table>
 
   <table class="pie">
