@@ -80,9 +80,9 @@ export default function LothDespachoGuiaModal({
     });
     onRegistrada();
   }, [directorio, onRegistrada]);
-  const g = useDespachoGuiaLoth({ onRegistrada: alRegistrar });
-  const avisoDeAntes = useTrozasDeAntes(g, trozasIniciales); // después del hook: su siembra corre antes
   const catalogo = useEspeciesConCatalogo();
+  const g = useDespachoGuiaLoth({ onRegistrada: alRegistrar, catalogo });
+  const avisoDeAntes = useTrozasDeAntes(g, trozasIniciales); // después del hook: su siembra corre antes
   const cientificoDe = useCallback((comun: string) => catalogo.cientificoDe(comun), [catalogo]);
   const [tab, setTab] = useState<Pestana>("trozas");
   const [borrador, setBorrador] = useState<{ docs: DocumentoImprimible[]; activo: number } | null>(
@@ -318,13 +318,14 @@ export default function LothDespachoGuiaModal({
                     onGuardarEnLibreta={guardarEnLibreta}
                   />
                 ) : (
-                  <LothGuiaTrozas g={g} cientificoDe={cientificoDe} />
+                  <LothGuiaTrozas g={g} cientificoDe={cientificoDe} catalogo={catalogo} />
                 )}
               </>
             )}
           </>
         )}
       </div>
+      {catalogo.modal}
       {borrador && (
         <CtpDocumentoVisor
           documentos={borrador.docs}

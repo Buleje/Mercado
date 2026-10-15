@@ -176,15 +176,18 @@ function Dialogo({
   const conEspecie = useMemo(() => corridas.filter((c) => claveEspecie(c.especie)), [corridas]);
   const sinEspecie = corridas.find((c) => !claveEspecie(c.especie)) ?? null;
   const resumen = useMemo(() => resumenEspecieTipo(paquetes), [paquetes]);
+  /* Las especies del catálogo del aserradero (sus agregadas y sin las que
+     ocultó); la lista de fábrica sólo mientras el catálogo carga. */
+  const catalogo = useEspeciesCatalogo();
   const especiesConocidas = useMemo(
     () => [
       ...new Set([
         ...conEspecie.map((c) => c.especie),
         ...trozas.map((t) => t.especie).filter((e): e is string => Boolean(e)),
-        ...ESPECIES_MADERA,
+        ...(catalogo.nombres.length > 0 ? catalogo.nombres : ESPECIES_MADERA),
       ]),
     ],
-    [conEspecie, trozas],
+    [conEspecie, trozas, catalogo.nombres],
   );
 
   /* La tarifa sugiere el precio del aserrío y dice cuánto cobra lo que quede sin trato. */
@@ -195,7 +198,6 @@ function Dialogo({
      del servidor los usa, la vista previa también. */
   const clienteId = servicio === "tercero" ? parteId : servicio === "propia" ? compradorId : null;
   const trato = useTratoDelCliente(clienteId);
-  const catalogo = useEspeciesCatalogo();
   const [recordados] = useState(preciosDeVentaRecordados);
   const lineas = useMemo(
     () =>

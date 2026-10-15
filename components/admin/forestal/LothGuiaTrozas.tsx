@@ -25,6 +25,7 @@ import { Bloque } from "./ctp-guia-bloques";
 import { I } from "./ctp-shared";
 import LothGuiaListaMovilizar, { MARCO, TD, TDR, TH, THR, dec } from "./LothGuiaListaMovilizar";
 import LothGuiaTrozaAMano from "./LothGuiaTrozaAMano";
+import type { CatalogoUI } from "./ctp-especie-campo";
 
 const cm = (m: number | null) => (m == null ? null : Math.round(m * 1000) / 10);
 
@@ -51,9 +52,12 @@ function agrupar(trozas: readonly TrozaDelLibro[]): Grupo[] {
 export default function LothGuiaTrozas({
   g,
   cientificoDe,
+  catalogo,
 }: {
   g: DespachoGuiaLoth;
   cientificoDe?: (comun: string) => string | null | undefined;
+  /** El catálogo de especies del aserradero: lo ofrece «Anotar a mano». */
+  catalogo: CatalogoUI;
 }) {
   const [q, setQ] = useState("");
   const grupos = useMemo(() => {
@@ -205,7 +209,7 @@ export default function LothGuiaTrozas({
             </DataTable>
           </div>
         )}
-        <LothGuiaTrozaAMano g={g} />
+        <LothGuiaTrozaAMano g={g} catalogo={catalogo} />
       </Bloque>
 
       <div className="grid gap-3">

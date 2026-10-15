@@ -21,7 +21,7 @@ import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import { ForestLothDespachoDB } from "@/lib/db/forest-loth-despacho.db";
 import { dmcParaEspecie, esPlanDePlantacion } from "@/lib/forestal/loth-poa";
-import { especieEnRegistro, mensajeEspecieFueraDelRegistro } from "@/lib/forestal/loth-plan-especie";
+import { rechazoT7 } from "@/lib/forestal/loth-plan-especie";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { resumirUsoDelCenso, type UsoArbolCenso } from "@/lib/forestal/loth-censo-uso";
 import { estadoDeArboles as estadoDeArbolesDelLibro, type EstadoDeArbolesPlan } from "@/lib/forestal/loth-etapa-arbol";
@@ -57,12 +57,14 @@ import {
   type ResultadoBorrarLineas,
 } from "@/lib/forestal/loth-borrar-del-plan";
 import {
+  especiesDeLasFilas,
   observacionAMano,
   piezasAMano,
   trozadoIdsDeItems,
   trozadosNacidosDeLaGuia,
   type TrozaAMano,
 } from "@/lib/forestal/loth-trozas-a-mano";
+import { ForestEspeciesDB } from "@/lib/db/forest-especies.db";
 import { candidatosCodigoUnico } from "@/lib/forestal/codigo-unico-troza";
 
 export { LOTH_SECTIONS };
@@ -99,6 +101,9 @@ export const LOTH_TX_OPTS = { timeout: 20_000, maxWait: 10_000 } as const;
  *        motivo escrito (el libro refleja lo que pasó en el monte). Sin autorizado,
  *        el cupo es el censo y pasarlo sólo se avisa y se audita.
  */
+/** Una fila a mano con su especie ya cruzada con el catálogo del aserradero. */
+export type FilaAManoConEspecie = TrozaAMano & { especie: string | null; cientifico: string | null };
+
 export class LothInvariantError extends Error {
   constructor(
     message: string,
@@ -123,6 +128,8 @@ export class LothInvariantError extends Error {
       // Asignar el permiso a una guía que salió sin él (15-10): anulada, ya con
       // permiso, de producto o cambiada mientras tanto.
       | "GUIA_PERMISO_NO_APLICA"
+      // …o una troza suya (Trozado o línea de despacho) ya es de OTRO permiso: asignarle éste la cruzaría.
+      | "TROZA_DE_OTRO_PERMISO"
       // El planId de la línea no es un plan vivo de ESTE negocio (sin FK: se valida
       // acá). Un solo código para el alta, el importador y «atar sin plan» (→ 400 en el alta).
       | "PLAN_NO_EXISTE"
@@ -130,7 +137,9 @@ export class LothInvariantError extends Error {
       // La tala de un árbol del censo va con el plan y la especie del censo.
       | "TALA_PLAN_DISTINTO_AL_CENSO"
       | "TALA_ARBOL_EN_VARIOS_PLANES"
-      | "TALA_ESPECIE_DISTINTA_AL_CENSO",
+      | "TALA_ESPECIE_DISTINTA_AL_CENSO"
+      // La especie de una troza anotada a mano no está en el catálogo del aserradero.
+      | "ESPECIE_FUERA_DEL_CATALOGO",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
@@ -731,6 +740,7 @@ export class ForestLothDB {
         { periodKey: cerrado.periodKey },
       );
     }
+    const filasAMano = aMano ? await ForestLothDB.especiesAManoDelCatalogo(tenantId, aMano.filas) : [];
     const caratula = await ForestLothDB.getActiveCaratula(tenantId);
     const caratulaId = caratula?.id ?? null;
 
@@ -738,7 +748,7 @@ export class ForestLothDB {
       async (tx) => {
         const manual = aMano
           ? await ForestLothDB.asentarTrozasAManoEnTx(tx, tenantId, {
-              filas: aMano.filas,
+              filas: filasAMano,
               planId: aMano.planId,
               ocupados: codes,
               gtfNumber: num,
@@ -813,11 +823,29 @@ export class ForestLothDB {
    * —N° antes que el correlativo del Trozado— y no se abraza con el importador.
    * T3 (código único en Trozado) sigue siendo la última palabra.
    */
+  /**
+   * La especie de cada fila a mano, contra el catálogo del aserradero (15-10):
+   * la grafía del catálogo y su científico, que va a la línea de Trozado y de
+   * ahí a la guía (casillero 37). Una especie que la planta no tiene → 422
+   * `ESPECIE_FUERA_DEL_CATALOGO`. Una fila sin especie se asienta sin ella.
+   */
+  static async especiesAManoDelCatalogo(
+    tenantId: string,
+    filas: readonly TrozaAMano[],
+  ): Promise<FilaAManoConEspecie[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!filas.some((f) => f.especie?.trim())) return filas.map((f) => ({ ...f, especie: null, cientifico: null }));
+    const r = especiesDeLasFilas(filas, await ForestEspeciesDB.get(tenantId));
+    if (!r.ok) throw new LothInvariantError(r.motivo, "ESPECIE_FUERA_DEL_CATALOGO", { especie: r.especie });
+    return filas.map((f, i) => ({ ...f, especie: r.especies[i]?.nombre ?? null, cientifico: r.especies[i]?.cientifico ?? null }));
+  }
+
   static async asentarTrozasAManoEnTx(
     tx: Prisma.TransactionClient,
     tenantId: string,
     x: {
-      filas: readonly TrozaAMano[];
+      /** Con la especie ya cruzada con el catálogo (`especiesAManoDelCatalogo`). */
+      filas: readonly FilaAManoConEspecie[];
       planId: string | null;
       /** Códigos que ya imprime la guía (sus trozas del libro): la numeración los salta. */
       ocupados: readonly string[];
@@ -830,6 +858,8 @@ export class ForestLothDB {
     if (!tenantId) throw new Error("tenantId is required");
     await GtfNumeroDB.bloquear(tx, tenantId, x.gtfNumber);
     const piezas = piezasAMano(x.filas, x.ocupados);
+    /* El científico va con la especie (la grafía ya es la del catálogo): una por nombre. */
+    const cientificoDe = new Map(x.filas.flatMap((f) => (f.especie ? [[f.especie, f.cientifico] as const] : [])));
     const candidatos = piezas.map((p) => candidatosCodigoUnico(p.codigo, x.gtfNumber));
     /* Sólo las vivas ocupan un código: las de una guía anulada (que anuló sus
        trozas a mano) lo dejan libre y la reanotada vuelve a ser «1-0001». */
@@ -861,6 +891,8 @@ export class ForestLothDB {
             planId: x.planId,
             section: "trozado",
             trozaCode: code,
+            speciesCommon: p.especie,
+            speciesScientific: p.especie ? (cientificoDe.get(p.especie) ?? null) : null,
             diamMayorM: p.diamMayorM,
             diamMenorM: p.diamMenorM,
             lengthM: p.lengthM,
@@ -1851,18 +1883,10 @@ export class ForestLothDB {
       where: { tenantId, planId, deletedAt: null },
       select: { speciesCommon: true, speciesScientific: true },
     });
-    if (registro.length === 0) return; // plan sin especies cargadas → no se puede juzgar
-    if (especieEnRegistro(registro, species, speciesScientific)) return;
-
-    throw new LothInvariantError(
-      plantacion
-        ? mensajeEspecieFueraDelRegistro(species)
-        : `La especie "${species}" no está autorizada en el plan de manejo (POA). ` +
-            `Movilizar una especie fuera del título habilitante es infracción — agrégala a las especies ` +
-            `autorizadas del plan o corrige el registro antes de emitir la GTF.`,
-      "T7_ESPECIE_NO_AUTORIZADA",
-      { species, planId, momento },
-    );
+    /* Sin especies cargadas no se juzga; el mensaje depende de si es plantación (`rechazoT7`, el mismo de «Asignar permiso»). */
+    const rechazo = rechazoT7(registro, species, speciesScientific, plantacion);
+    if (!rechazo) return;
+    throw new LothInvariantError(rechazo, "T7_ESPECIE_NO_AUTORIZADA", { species, planId, momento });
   }
 
   static async list(tenantId: string, filters: LothListFilters = {}) {
@@ -2725,7 +2749,7 @@ export class ForestLothDB {
         // La tala sólo se juzga en una plantación (como T7); el despacho, en todo plan.
         if (r.section === "tala" && !esPlanDePlantacion(plan ?? null)) continue;
         const registro = registros.filter((x) => x.planId === r.planId);
-        if (registro.length === 0 || especieEnRegistro(registro, comun, r.cientifico)) continue;
+        if (!rechazoT7(registro, comun, r.cientifico, esPlanDePlantacion(plan ?? null))) continue;
         fuera += 1;
         especiesFuera.add(comun);
       }

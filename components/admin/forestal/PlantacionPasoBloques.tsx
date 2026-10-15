@@ -14,6 +14,9 @@ import { CardTitle } from "@buleje/design-system";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { validarPlantacion, type BloqueInput, type PlantacionInput } from "@/lib/forestal/plantacion-tramite";
 import PlantacionBloqueCard from "./PlantacionBloqueCard";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
+import { cientificoDeEspecie, especiesDisponibles } from "@/lib/forestal/especies-catalogo";
+import { catalogoConLaBase } from "@/lib/forestal/plantacion-catalogo";
 import PlantacionTraerDelLibro from "./PlantacionTraerDelLibro";
 import { formatNumber } from "@/lib/format";
 
@@ -33,6 +36,18 @@ export default function PlantacionPasoBloques({
   soloLectura?: boolean;
   onChange: (bloques: BloqueInput[]) => void;
 }) {
+  /* Las especies de la base primero (Brandon 15-10); la lista de plantación de respaldo. */
+  const catEspecies = useEspeciesCatalogo();
+  const especiesCatalogo = useMemo(
+    () =>
+      catalogoConLaBase(
+        especiesDisponibles(catEspecies.catalogo).map((e) => ({
+          nombre: e.nombre,
+          cientifico: cientificoDeEspecie(e.nombre, catEspecies.catalogo),
+        })),
+      ),
+    [catEspecies.catalogo],
+  );
   const superficieBloques = useMemo(
     () => Math.round(bloques.reduce((a, b) => a + (b.superficieHa ?? 0), 0) * 10_000) / 10_000,
     [bloques],
@@ -154,6 +169,7 @@ export default function PlantacionPasoBloques({
               onChange={(b) => editarBloque(i, b)}
               onEliminar={() => eliminarBloque(i)}
               onDuplicar={() => duplicarBloque(i)}
+              especiesCatalogo={especiesCatalogo}
             />
           ))}
         </div>

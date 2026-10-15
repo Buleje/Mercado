@@ -5,11 +5,14 @@
  * «poner D1, D2, largo, cantidad y que el volumen salga solo; crear y agregar
  * esas trozas sin vincularlas todavía a un permiso»).
  *
- * Una fila de alta (D1, D2, largo, cantidad; el volumen se calcula solo) y la
- * lista de lo anotado. Teclado: Enter pasa al campo siguiente y, en Cantidad,
- * agrega; el foco vuelve a D1 para la próxima troza. Las medidas se revisan con
- * los límites del Cubicador (`revisarTrozaAMano`); el volumen es una vista
- * previa: el servidor lo vuelve a calcular con la misma fórmula al registrar.
+ * Una fila de alta (especie, D1, D2, largo, cantidad; el volumen se calcula
+ * solo) y la lista de lo anotado. La especie sale del catálogo del aserradero y
+ * se puede FIJAR (15-10): fijada, cada troza nueva la toma y el foco empieza en
+ * D1; suelta, se vuelve a pedir. Teclado: Enter pasa al campo siguiente y, en
+ * Cantidad, agrega. Las medidas se revisan con los límites del Cubicador
+ * (`revisarTrozaAMano`); el volumen es una vista previa: el servidor lo vuelve
+ * a calcular con la misma fórmula al registrar, y valida la especie contra el
+ * catálogo.
  */
 
 import { useMemo, useRef, useState, type KeyboardEvent } from "react";
@@ -24,20 +27,33 @@ import {
   volumenPorTroza,
   type CampoAMano,
   type CrudoAMano,
+  type ProblemaEspecieAMano,
 } from "@/lib/forestal/loth-trozas-a-mano";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import { Btn, I } from "./ctp-shared";
 import { MARCO, TD, TDR, TH, THR, dec } from "./LothGuiaListaMovilizar";
+import type { CatalogoUI } from "./ctp-especie-campo";
+import { EspecieFijable } from "./especie-fijable";
+import { useEspecieFijada } from "./hooks/use-especie-fijada";
 
-const VACIO: CrudoAMano = { d1: "", d2: "", largo: "", cantidad: "1" };
-const ORDEN: readonly CampoAMano[] = ["d1", "d2", "largo", "cantidad"];
-const CAMPOS: Record<CampoAMano, { label: string; placeholder: string }> = {
+type Medida = Exclude<CampoAMano, "especie">;
+const VACIO: CrudoAMano = { especie: "", d1: "", d2: "", largo: "", cantidad: "1" };
+const MEDIDAS: readonly Medida[] = ["d1", "d2", "largo", "cantidad"];
+const ORDEN: readonly CampoAMano[] = ["especie", ...MEDIDAS];
+const CAMPOS: Record<Medida, { label: string; placeholder: string }> = {
   d1: { label: "D1 (cm)", placeholder: "45" },
   d2: { label: "D2 (cm)", placeholder: "40" },
   largo: { label: "Largo (m)", placeholder: "3,20" },
   cantidad: { label: "Cantidad", placeholder: "1" },
 };
 const cm = (m: number) => Math.round(m * 1000) / 10;
+const PASTILLA: Record<ProblemaEspecieAMano["tipo"], string> = {
+  catalogo: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]",
+  permiso: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]",
+};
+/** Al pie del campo, corto; el motivo entero (el de T7) va en la pastilla de la fila y en «Falta». */
+const textoDelProblema = (p: ProblemaEspecieAMano, especie: string) =>
+  p.tipo === "catalogo" ? p.motivo : `${especie.trim()} no está en el permiso de esta guía: elige una «Del permiso».`;
 
 /** Los códigos que imprime la guía para una fila: «4», «4 y 5», «4 a 9». */
 function codigosDeFila(codigos: readonly string[]): string {
@@ -46,22 +62,34 @@ function codigosDeFila(codigos: readonly string[]): string {
   return `${codigos[0]} a ${codigos[codigos.length - 1]}`;
 }
 
-export default function LothGuiaTrozaAMano({ g }: { g: DespachoGuiaLoth }) {
-  const [crudo, setCrudo] = useState<CrudoAMano>(VACIO);
+export default function LothGuiaTrozaAMano({ g, catalogo }: { g: DespachoGuiaLoth; catalogo: CatalogoUI }) {
+  const fijacion = useEspecieFijada("loth-guia-a-mano");
+  const [crudo, setCrudo] = useState<CrudoAMano>(() => ({ ...VACIO, especie: fijacion.fijada ?? "" }));
   /* Los errores se muestran recién al intentar agregar: mientras se tipea, no se grita. */
   const [intentado, setIntentado] = useState(false);
+  const refEspecie = useRef<HTMLSelectElement>(null);
   const refD1 = useRef<HTMLInputElement>(null);
   const refD2 = useRef<HTMLInputElement>(null);
   const refLargo = useRef<HTMLInputElement>(null);
   const refCantidad = useRef<HTMLInputElement>(null);
-  const refs: Record<CampoAMano, typeof refD1> = { d1: refD1, d2: refD2, largo: refLargo, cantidad: refCantidad };
+  const refs: Record<Medida, typeof refD1> = { d1: refD1, d2: refD2, largo: refLargo, cantidad: refCantidad };
+  const enfocar = (c: CampoAMano) => {
+    if (c === "especie") return refEspecie.current?.focus();
+    refs[c].current?.focus();
+    refs[c].current?.select();
+  };
   const revision = useMemo(() => revisarTrozaAMano(crudo), [crudo]);
   const restantes = TROZAS_POR_GUIA_MAX - g.piezas.length;
   const excede = revision.ok && revision.troza.cantidad > restantes;
-  const errores = intentado && !revision.ok ? revision.errores : {};
+  /* Lo que el servidor rechazaría (catálogo, T7), dicho al agregar y no al registrar. */
+  const problema = g.especiesAMano.problemaDe(crudo.especie);
+  const errores: Partial<Record<CampoAMano, string>> = intentado
+    ? { ...(problema ? { especie: textoDelProblema(problema, crudo.especie) } : {}), ...(revision.ok ? {} : revision.errores) }
+    : {};
   const mensaje = excede
     ? `La guía lleva hasta ${TROZAS_POR_GUIA_MAX} trozas: quedan ${Math.max(0, restantes)}.`
     : ORDEN.map((c) => errores[c]).find(Boolean);
+  const delPermiso = g.especiesAMano.delPermiso;
 
   /* Qué código imprime cada fila: `piezasManuales` sale en el orden de las filas. */
   const filas = useMemo(() => {
@@ -77,28 +105,26 @@ export default function LothGuiaTrozaAMano({ g }: { g: DespachoGuiaLoth }) {
 
   function agregar() {
     setIntentado(true);
-    if (!revision.ok) {
-      const primero = ORDEN.find((c) => revision.errores[c]);
-      if (primero) refs[primero].current?.focus();
+    if (!revision.ok || problema) {
+      const primero = revision.ok ? "especie" : ORDEN.find((c) => revision.errores[c]);
+      if (primero) enfocar(primero);
       return;
     }
     if (excede) return refs.cantidad.current?.focus();
     g.aMano.agregar(revision.troza);
-    setCrudo(VACIO);
+    /* Fijada, la especie se queda y se sigue por D1; si no, se vuelve a pedir. */
+    setCrudo({ ...VACIO, especie: fijacion.fijada ?? "" });
     setIntentado(false);
-    refs.d1.current?.focus();
+    enfocar(fijacion.fijada ? "d1" : "especie");
   }
 
   function alPresionar(campo: CampoAMano) {
-    return (e: KeyboardEvent<HTMLInputElement>) => {
+    return (e: KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => {
       if (e.key !== "Enter") return;
       e.preventDefault();
-      const i = ORDEN.indexOf(campo);
-      const sig = ORDEN[i + 1];
-      if (sig) {
-        refs[sig].current?.focus();
-        refs[sig].current?.select();
-      } else agregar();
+      const sig = ORDEN[ORDEN.indexOf(campo) + 1];
+      if (sig) enfocar(sig);
+      else agregar();
     };
   }
 
@@ -111,13 +137,13 @@ export default function LothGuiaTrozaAMano({ g }: { g: DespachoGuiaLoth }) {
         <span className="text-sm font-bold text-[var(--text-primary)]">Anotar a mano</span>
         <InfoTip
           title="Trozas anotadas a mano"
-          what="Para las trozas que no están en el Trozado: anota D1, D2, largo y cantidad; el volumen se calcula solo con la fórmula SERFOR (Smalian). Al registrar, cada troza queda en el Trozado del libro y sale en la guía con un número (1, 2, 3…)."
+          what="Para las trozas que no están en el Trozado: elige la especie del catálogo (fíjala si todas son de la misma) y anota D1, D2, largo y cantidad; el volumen se calcula solo con la fórmula SERFOR (Smalian). Al registrar, cada troza queda en el Trozado del libro y sale en la guía con un número (1, 2, 3…)."
           affects={
             g.planId
               ? "Van con el permiso de esta guía."
               : "Sin permiso por ahora: después de registrar, lo eliges en la tabla de guías (Asignar permiso)."
           }
-          example="D1 45 · D2 40 · largo 3,20 · cantidad 1 → 0,454 m³"
+          example="Tornillo (fijada) · D1 45 · D2 40 · largo 3,20 · cantidad 1 → 0,454 m³"
           ariaLabel="Qué es: anotar trozas a mano"
         />
         {!g.planId && (
@@ -149,10 +175,17 @@ export default function LothGuiaTrozaAMano({ g }: { g: DespachoGuiaLoth }) {
               {filas.map(({ f, piezas, volumen }) => {
                 const p = piezas[0];
                 const codigos = codigosDeFila(piezas.map((x) => x.codigo));
+                const malEspecie = g.especiesAMano.problemaDe(f.especie);
                 return (
                   <tr key={f.key}>
                     <td className={TD}>
                       <span className="whitespace-nowrap font-mono font-bold">{codigos}</span>
+                      {f.especie && <span className="block text-xs font-semibold text-[var(--text-secondary)]">{f.especie}</span>}
+                      {malEspecie && (
+                        <span title={malEspecie.motivo} data-qa="especie-con-problema" className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-xs font-bold ${PASTILLA[malEspecie.tipo]}`}>
+                          {malEspecie.tipo === "catalogo" ? "Ya no está en el catálogo" : "Fuera del permiso"}
+                        </span>
+                      )}
                       {p && (
                         <span className="block font-mono text-xs tabular-nums text-[var(--text-secondary)] sm:hidden">
                           {dec(cm(p.diamMayorM ?? 0), 1)} · {dec(cm(p.diamMenorM ?? 0), 1)} cm · {dec(p.lengthM, 2)} m
@@ -197,9 +230,25 @@ export default function LothGuiaTrozaAMano({ g }: { g: DespachoGuiaLoth }) {
         </div>
       )}
 
-      {/* La fila de alta: cuatro medidas, el volumen calculado y «Agregar». */}
+      {/* La fila de alta: la especie (fijable), cuatro medidas, el volumen calculado y «Agregar». */}
       <div className="grid grid-cols-2 items-end gap-2 sm:grid-cols-[repeat(4,minmax(0,1fr))_minmax(0,1.3fr)_auto]">
-        {ORDEN.map((c) => (
+        <div className="col-span-2 grid gap-1 sm:col-span-full sm:max-w-xl">
+          <span className="text-xs font-semibold text-[var(--text-secondary)]">Especie</span>
+          <EspecieFijable
+            value={crudo.especie}
+            onChange={(especie) => setCrudo((prev) => ({ ...prev, especie }))}
+            catalogo={catalogo}
+            fijacion={fijacion}
+            selectRef={refEspecie}
+            onKeyDown={alPresionar("especie")}
+            invalido={Boolean(errores.especie)}
+            ariaLabel="Especie de las trozas a mano"
+            opciones={delPermiso?.map((nombre) => ({ nombre }))}
+            etiquetaOpciones="Del permiso"
+            etiquetaCatalogo="Otras (no están en el permiso)"
+          />
+        </div>
+        {MEDIDAS.map((c) => (
           <label key={c} className="grid gap-1">
             <span className="text-xs font-semibold text-[var(--text-secondary)]">{CAMPOS[c].label}</span>
             <input

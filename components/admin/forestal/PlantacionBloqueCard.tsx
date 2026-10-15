@@ -12,6 +12,7 @@ import type { AdvertenciaPlantacion, BloqueInput, EspecieBloqueInput } from "@/l
 import { geometriaBloque, type VerticeBloque } from "@/lib/forestal/plantacion-cartografia";
 import PlantacionVerticesTabla from "./PlantacionVerticesTabla";
 import PlantacionEspecieForm from "./PlantacionEspecieForm";
+import type { EspecieCatalogo } from "@/lib/forestal/plantacion-catalogo";
 import { formatNumber } from "@/lib/format";
 
 const inputCls =
@@ -27,6 +28,7 @@ export default function PlantacionBloqueCard({
   onChange,
   onEliminar,
   onDuplicar,
+  especiesCatalogo,
 }: {
   bloque: BloqueInput;
   index: number;
@@ -36,6 +38,8 @@ export default function PlantacionBloqueCard({
   onChange: (bloque: BloqueInput) => void;
   onEliminar: () => void;
   onDuplicar: () => void;
+  /** Las especies a sugerir (base primero), una sola lista para todos los bloques. */
+  especiesCatalogo?: readonly EspecieCatalogo[];
 }) {
   const geometria = useMemo(() => geometriaBloque(bloque.vertices), [bloque.vertices]);
   const idNumero = useId();
@@ -176,6 +180,7 @@ export default function PlantacionBloqueCard({
                     onChange={(e) => editarEspecie(i, e)}
                     onEliminar={() => eliminarEspecie(i)}
                     onDuplicar={() => duplicarEspecie(i)}
+                    catalogo={especiesCatalogo}
                   />
                   {aviso && (
                     <p className="mt-1 text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{aviso.mensaje}</p>

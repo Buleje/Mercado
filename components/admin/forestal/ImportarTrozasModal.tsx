@@ -33,7 +33,7 @@ function leerComoDataUrl(file: File): Promise<string> {
 }
 
 export default function ImportarTrozasModal({
-  onAgregar, onCerrar, filasActuales = 0, especiesActuales = [], formula = "smalian",
+  onAgregar, onCerrar, filasActuales = 0, especiesActuales = [], especiesCatalogo = [], formula = "smalian",
 }: {
   /** La fórmula del lote abierto: Oxapampina lee pulgadas y pies, y cubica en PT. */
   formula?: FormulaTrozas;
@@ -44,6 +44,8 @@ export default function ImportarTrozasModal({
   filasActuales?: number;
   /** Especies ya cubicadas en el patio — se suman al catálogo de la plantilla. */
   especiesActuales?: string[];
+  /** El catálogo de especies de la base: arma el resumen de la plantilla. */
+  especiesCatalogo?: readonly string[];
 }) {
   const [modo, setModo] = useState<"excel" | "foto">("excel");
   const [resultado, setResultado] = useState<ResultadoImportTrozas | null>(null);
@@ -98,7 +100,7 @@ export default function ImportarTrozasModal({
   const [bajando, setBajando] = useState(false);
   const descargarPlantilla = () => {
     setBajando(true);
-    descargarPlantillaTrozas(especiesActuales, formula)
+    descargarPlantillaTrozas(especiesActuales, formula, especiesCatalogo)
       .catch(() => setErrorGeneral("No se pudo generar la plantilla. Prueba de nuevo."))
       .finally(() => setBajando(false));
   };

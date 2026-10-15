@@ -8,6 +8,10 @@
  *
  * Los permisos salen del contexto del libro (`useLothPermiso`); fuera del libro,
  * de la lista de planes. Sólo admin/dueño (el servidor lo exige igual).
+ *
+ * Al elegir uno, muestra por especie lo que trae la guía contra lo autorizado
+ * (T7 + T6, `LothGtfSaldoDelPermiso`); si no entra, el botón se apaga con el
+ * mismo «no» del despacho. El servidor vuelve a medir al confirmar.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -20,6 +24,8 @@ import { logger } from "@/lib/logger";
 import { nombreDelPlan, planDesdeJson, type PlanTablero } from "@/lib/forestal/loth-tablero-permiso";
 import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
 import { leerPlanesDelLibro } from "./hooks/planes-del-libro";
+import { useSaldoDelPermiso } from "./hooks/use-guia-permiso-avisos";
+import LothGtfSaldoDelPermiso from "./LothGtfSaldoDelPermiso";
 import { Btn, I } from "./ctp-shared";
 
 /** El rótulo de los selectores de permiso del libro: plan · título habilitante. */
@@ -42,6 +48,8 @@ export default function LothGtfAsignarPermiso({
   const [planId, setPlanId] = useState(delLibro?.plan?.id ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const medida = useSaldoDelPermiso(gtf.id, planId);
+  const bloqueada = !!medida.saldo?.bloqueo;
 
   /* Fuera del libro (o con la lista todavía vacía), se piden los planes. */
   useEffect(() => {
@@ -63,7 +71,7 @@ export default function LothGtfAsignarPermiso({
   }, [planes]);
 
   const asignar = useCallback(async () => {
-    if (!planId) return;
+    if (!planId || bloqueada) return;
     setBusy(true);
     setError(null);
     try {
@@ -81,11 +89,11 @@ export default function LothGtfAsignarPermiso({
     } finally {
       setBusy(false);
     }
-  }, [planId, gtf.id, onHecho]);
+  }, [planId, bloqueada, gtf.id, onHecho]);
 
   return (
     <AdminModal
-      size="md"
+      size="lg"
       open
       onClose={onClose}
       title={`Asignar permiso a la GTF ${gtf.gtfNumber}`}
@@ -96,7 +104,12 @@ export default function LothGtfAsignarPermiso({
           <Btn variant="ghost" onClick={onClose} disabled={busy}>
             Cancelar
           </Btn>
-          <Btn variant="primary" onClick={() => void asignar()} disabled={busy || !planId}>
+          <Btn
+            variant="primary"
+            onClick={() => void asignar()}
+            disabled={busy || !planId || medida.cargando || bloqueada}
+            title={bloqueada ? "No entra en lo autorizado de este permiso: elige otro o corrige las trozas" : undefined}
+          >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Link2 className="h-4 w-4" aria-hidden="true" />}
             Asignar permiso
           </Btn>
@@ -123,6 +136,7 @@ export default function LothGtfAsignarPermiso({
             ))}
           </select>
         )}
+        {planId && <LothGtfSaldoDelPermiso saldo={medida.saldo} cargando={medida.cargando} error={medida.error} />}
         <p className="text-sm text-[var(--text-secondary)]">
           Se atan la guía{gtf.piezasTotal ? `, sus ${gtf.piezasTotal} ${gtf.piezasTotal === 1 ? "troza" : "trozas"}` : ""} y sus líneas de despacho. La hoja ya emitida no cambia.
         </p>

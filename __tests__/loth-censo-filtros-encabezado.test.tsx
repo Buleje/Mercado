@@ -11,6 +11,11 @@ import LothPlanCenso from "@/components/admin/forestal/LothPlanCenso";
 import type { Tree } from "@/components/admin/forestal/loth-plan-shared";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+// El formulario del árbol lee el catálogo de especies de la base (15-10): fuera de esta prueba,
+// que cuenta sólo los pedidos de borrar.
+vi.mock("@/components/admin/forestal/hooks/use-especies-catalogo", () => ({
+  useEspeciesCatalogo: () => ({ catalogo: [], nombres: [], cargando: false, error: null }),
+}));
 
 const arbol = (id: string, treeCode: string, speciesCommon: string, estado = "en_pie", dapM = "0.6"): Tree => ({
   id, treeCode, speciesCommon, speciesScientific: null, cites: false, dapM, alturaComercialM: "12",

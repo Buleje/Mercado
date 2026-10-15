@@ -13,6 +13,7 @@ import { motivoLegible } from "@/lib/forestal/motivo";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { verIngresosDelCtp } from "./LothGtfCtp";
 import { useLineasDeLaGuia } from "./hooks/use-lineas-de-la-guia";
+import { useTrozasAManoQueAnula } from "./hooks/use-guia-permiso-avisos";
 import type { Gtf } from "./gtf-tabla-columnas";
 
 /**
@@ -65,6 +66,8 @@ export default function AnularGtfForm({
 }) {
   /* Sólo las líneas de ESTA guía (el servidor): otro titular puede tener el mismo N°. */
   const despachos = useLineasDeLaGuia(gtf.id, porNumero);
+  /* Las trozas que nacieron con la guía (anotadas a mano): el servidor las anula con sus despachos (15-10). */
+  const aMano = useTrozasAManoQueAnula(gtf.id);
   const [r, setR] = useState("");
   const [conDespachos, setConDespachos] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -108,6 +111,9 @@ export default function AnularGtfForm({
           {gtf.destino ? <> con destino <strong>{gtf.destino}</strong></> : null}. La guía sigue apareciendo en el libro, marcada como anulada.
         </p>
       </div>
+      {aMano && aMano.trozas > 0 && (
+        <AvisoTrozasAMano trozas={aMano.trozas} codigos={aMano.codigos} seAnulan={despachos > 0 && conDespachos} />
+      )}
       <label className="block">
         <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Motivo de la anulación *</span>
         <textarea
@@ -135,5 +141,47 @@ export default function AnularGtfForm({
         </button>
       </div>
     </form>
+  );
+}
+
+/**
+ * «Se anulan también N trozas anotadas a mano (códigos …)»: las que anular la
+ * guía con sus despachos anula en el Trozado (`anularGuiaConDespachos`). Sin
+ * los despachos (sólo el papel), quedan vivas: se dice eso.
+ */
+function AvisoTrozasAMano({ trozas, codigos, seAnulan }: { trozas: number; codigos: readonly string[]; seAnulan: boolean }) {
+  const vistos = codigos.slice(0, 8);
+  const una = trozas === 1;
+  return (
+    <p
+      data-testid="anular-guia-trozas-a-mano"
+      className="flex items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-sm text-[var(--text-primary)]"
+    >
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden="true" />
+      <span>
+        {seAnulan ? (
+          <>
+            Se anula{una ? "" : "n"} también <strong>{una ? "1 troza anotada" : `${trozas} trozas anotadas`} a mano</strong>
+          </>
+        ) : (
+          <>
+            Sin sus despachos, <strong>{una ? "la troza anotada" : `las ${trozas} trozas anotadas`} a mano</strong> queda{una ? "" : "n"} viva{una ? "" : "s"} en el Trozado
+          </>
+        )}
+        {vistos.length > 0 && (
+          <>
+            {" "}({codigos.length === 1 ? "código" : "códigos"}{" "}
+            {vistos.map((c, i) => (
+              <span key={c}>
+                {i > 0 && ", "}
+                <span className="whitespace-nowrap font-mono">{c}</span>
+              </span>
+            ))}
+            {codigos.length > vistos.length && ` y ${codigos.length - vistos.length} más`})
+          </>
+        )}
+        .
+      </span>
+    </p>
   );
 }

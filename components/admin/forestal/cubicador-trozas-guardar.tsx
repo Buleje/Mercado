@@ -27,6 +27,8 @@ import { cubicarTrozasComercial, DescuentoInvalidoError } from "@/lib/forestal/c
 import { etiquetaPersonaCubicacion } from "@/lib/forestal/cubicacion-a-cuenta";
 import type { DescuentoLote, DescuentoTroza } from "@/lib/forestal/cubicacion-comercial-tipos";
 import { limaDateKey } from "@/lib/utils";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { UNIDADES_FORMULA, totalesSegun, type DiametrosPorTroza, type FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
 import { BOTON_PRIMARIO, BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
 import type { FilaTroza } from "./cubicador-trozas-tabla";
@@ -129,7 +131,15 @@ export default function GuardarEnLaCuentaModal({
   }, [rows, formula, diametros, vinculo]);
   const volumen = cubicado.volumen;
   const sinEspecie = rows.filter((r) => !r.especie?.trim()).length;
-  const especies = useMemo(() => [...new Set(rows.map((r) => r.especie?.trim()).filter((e): e is string => !!e))], [rows]);
+  /* Para completar las sin especie: las de estas filas y detrás el catálogo de la base (Brandon 15-10). */
+  const catEspecies = useEspeciesCatalogo();
+  const especies = useMemo(() => {
+    const vistas = new Map<string, string>();
+    for (const e of [...rows.map((r) => r.especie?.trim() ?? ""), ...catEspecies.nombres]) {
+      if (e && !vistas.has(claveEspecie(e))) vistas.set(claveEspecie(e), e);
+    }
+    return [...vistas.values()];
+  }, [rows, catEspecies.nombres]);
   const sospechosas = rows.filter((r) => r.sospechosa).length;
   const actualiza = !!previa && previa.estado === "borrador" && !comoNueva;
   const yaSeDescontoEste = !!previa && previa.estado === "aplicada";

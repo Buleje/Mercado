@@ -94,3 +94,27 @@ export function especieEnRegistro(
 export function mensajeEspecieFueraDelRegistro(especie: string): string {
   return `La especie ${especie} no está en el registro de la plantación: agrégala en Plan de manejo → Registro.`;
 }
+
+/**
+ * T7 en una línea: el rechazo `T7_ESPECIE_NO_AUTORIZADA`, palabra por palabra,
+ * o `null` si no se juzga o pasa. UNA decisión para el despacho
+ * (`ForestLothDB.enforceT7`) y para «Asignar permiso» (`compararGuiaConPermiso`):
+ *  - sin especie en la línea, o el permiso sin especies cargadas → no se juzga;
+ *  - la especie en el registro (`especieEnRegistro`) → pasa;
+ *  - si no: en una plantación, el mensaje del registro; en un POA, la infracción.
+ */
+export function rechazoT7(
+  registro: readonly EspecieRegistrada[],
+  especie: string | null | undefined,
+  cientifico: string | null | undefined,
+  plantacion: boolean,
+): string | null {
+  const species = especie?.trim() || null;
+  if (!species || registro.length === 0) return null;
+  if (especieEnRegistro(registro, species, cientifico)) return null;
+  return plantacion
+    ? mensajeEspecieFueraDelRegistro(species)
+    : `La especie "${species}" no está autorizada en el plan de manejo (POA). ` +
+        `Movilizar una especie fuera del título habilitante es infracción — agrégala a las especies ` +
+        `autorizadas del plan o corrige el registro antes de emitir la GTF.`;
+}

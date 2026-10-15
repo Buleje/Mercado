@@ -32,7 +32,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Settings2, Trees } from "@buleje/design-system/icons";
 import { ESPECIES_MADERA } from "@/lib/forestal/cubicacion";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
-import { especiesDisponibles, type EspecieEnElLibro } from "@/lib/forestal/especies-catalogo";
+import { especiesDisponibles, type CatalogoEspecies, type EspecieEnElLibro } from "@/lib/forestal/especies-catalogo";
 import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { I } from "./ctp-shared";
@@ -56,6 +56,10 @@ export interface CatalogoUI {
   /** El modal, para que quien monta lo dibuje una sola vez. */
   modal: React.ReactNode;
   recargar: () => Promise<void>;
+  /** El catálogo se leyó bien (no mientras carga ni si falló): recién ahí se puede decir «no está». */
+  listo: boolean;
+  /** El catálogo crudo, para juzgar con la misma regla que el servidor (`especieDelCatalogo`). */
+  catalogo: CatalogoEspecies;
 }
 
 /**
@@ -95,6 +99,8 @@ export function useEspeciesConCatalogo({ conLibro = false }: { conLibro?: boolea
     cientificoDe,
     abrir: useCallback(() => setAbierto(true), []),
     recargar: cat.recargar,
+    listo: !cat.cargando && !cat.errorLectura,
+    catalogo: cat.catalogo,
     modal: abierto ? (
       <CtpEspeciesCatalogoModal
         open
@@ -198,6 +204,9 @@ export function CtpEspecieSelect({
   disabled = false,
   conBoton = true,
   altoBoton,
+  selectRef,
+  onKeyDown,
+  invalido = false,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -211,6 +220,11 @@ export function CtpEspecieSelect({
   disabled?: boolean;
   conBoton?: boolean;
   altoBoton?: string;
+  /** Para mover el foco desde afuera (filas de carga con Enter). */
+  selectRef?: React.Ref<HTMLSelectElement>;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLSelectElement>) => void;
+  /** Marca el campo en rojo (`aria-invalid`). */
+  invalido?: boolean;
 }) {
   /* `opciones` llega con default `[]`, que es un array NUEVO en cada render: el
      memo nunca acertaba. Se compara por su contenido (son pocas y cortas). */
@@ -233,11 +247,14 @@ export function CtpEspecieSelect({
   return (
     <div className="flex items-center gap-1.5">
       <select
+        ref={selectRef}
         aria-label={ariaLabel}
+        aria-invalid={invalido || undefined}
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className={`${className} min-w-0 flex-1`}
+        onKeyDown={onKeyDown}
+        className={`${className} min-w-0 flex-1 ${invalido ? "border-[var(--data-error-500)]" : ""}`}
       >
         <option value="">{vacio}</option>
         {agrupar ? (

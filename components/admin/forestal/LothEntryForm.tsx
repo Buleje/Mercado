@@ -95,7 +95,7 @@ import LothAvisoTransformacion from "./LothAvisoTransformacion";
 import LothAvisoPlazo from "./LothAvisoPlazo";
 import LothAvisoCupo from "./LothAvisoCupo";
 import { useCupoAlTalar } from "./hooks/use-cupo-al-talar";
-import { cientificoDeEspecie } from "@/lib/forestal/especies-catalogo";
+import { cientificoDeEspecie, opcionesDeEspecie } from "@/lib/forestal/especies-catalogo";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { logger } from "@/lib/logger";
 import { Casilla, CitesPill, cls, etiquetaPlan, Field } from "./loth-entry-form-ui";
@@ -258,18 +258,22 @@ export default function LothEntryForm({
   /**
    * Qué especies ofrece este libro.
    *
-   * **NO el catálogo del aserradero** (ADR-410): ahí manda lo que el CTP
-   * trabaja, y acá manda lo que la resolución AUTORIZA. Ofrecer una especie que
-   * el plan no aprobó es ofrecer una infracción — para eso está el aviso de
-   * «fuera del plan» y el guard T7 al despachar.
+   * Primero las del PROPIO plan: acá manda lo que la resolución AUTORIZA. Si
+   * autoriza «Panguana» y la lista no la trae, había que elegir «Otro» y
+   * tipearla cada vez — con su nombre científico de memoria. Una especie que el
+   * plan no aprobó se puede elegir, pero con el aviso de «fuera del plan» y el
+   * guard T7 al despachar.
    *
-   * Lo que sí faltaba: las del PROPIO plan. Si la resolución autoriza
-   * «Panguana» y el catálogo del código no la trae, había que elegir «Otro» y
-   * tipearla cada vez — con su nombre científico de memoria.
+   * Después, las de la base (Brandon 15-10: «las especies que se saquen de la
+   * base de datos»): la lista del código con su CITES intacto más las que el
+   * aserradero agregó a su catálogo (`opcionesDeEspecie`, ADR-410). Mientras el
+   * catálogo carga, es la del código sola.
    */
+  /* El catálogo también completa el científico de una especie tipeada a mano. */
+  const catalogoEspecies = useEspeciesCatalogo();
   const [especiesDelPlanState, setEspeciesDelPlanState] = useState<EspecieDelPlanConCupo[]>([]);
   const speciesOptions = useMemo(() => {
-    const base = listSpecies({ includeOther: false });
+    const base = opcionesDeEspecie(catalogoEspecies.catalogo).filter((s) => s.slug !== "otro");
     const vistas = new Set(base.map((s) => claveEspecie(s.commonName)));
     const delPlan: typeof base = [];
     for (const e of especiesDelPlanState) {
@@ -289,7 +293,7 @@ export default function LothEntryForm({
     /* Las del plan primero: son las autorizadas, y el que carga busca ésas. */
     const otro = listSpecies({ includeOther: true }).find((s) => s.slug === "otro");
     return [...delPlan, ...base, ...(otro ? [otro] : [])];
-  }, [especiesDelPlanState]);
+  }, [especiesDelPlanState, catalogoEspecies.catalogo]);
   /** Slug de la especie de la plantilla; «otro» si no está en el catálogo. */
   const slugDePlantilla = useMemo(() => {
     if (!plantilla?.speciesCommon) return null;
@@ -395,8 +399,6 @@ export default function LothEntryForm({
   const faltaConfirmarTh = esTransformacion && !transformeEnTh;
 
   const [speciesQuery, setSpeciesQuery] = useState("");
-  /* Sólo para completar el nombre científico de una especie tipeada a mano. */
-  const catalogoEspecies = useEspeciesCatalogo();
   const [showPicker, setShowPicker] = useState(false);
 
   // ── GPS + foto de evidencia ───────────────────────────────────────────

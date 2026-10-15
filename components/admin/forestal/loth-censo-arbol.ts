@@ -117,10 +117,15 @@ export function masRepetido(valores: readonly (string | null | undefined)[]): st
   return mejor?.valor ?? null;
 }
 
-/** Nombres para el desplegable de especie: los del plan primero, después los del censo. */
-export function especiesParaElegir(especiesPlan: readonly EspeciePlanCenso[], arboles: readonly ArbolCenso[]): string[] {
+/** Nombres para el desplegable de especie: los del plan primero, después los del censo
+ *  y al final el catálogo de la base (Brandon 15-10); fuera del plan, la ficha avisa. */
+export function especiesParaElegir(
+  especiesPlan: readonly EspeciePlanCenso[],
+  arboles: readonly ArbolCenso[],
+  catalogo: readonly string[] = [],
+): string[] {
   const vistas = new Map<string, string>();
-  for (const n of [...especiesPlan.map((s) => s.speciesCommon), ...arboles.map((a) => a.speciesCommon)]) {
+  for (const n of [...especiesPlan.map((s) => s.speciesCommon), ...arboles.map((a) => a.speciesCommon), ...catalogo]) {
     const k = claveEspecie(n);
     if (k && !vistas.has(k)) vistas.set(k, n.trim());
   }

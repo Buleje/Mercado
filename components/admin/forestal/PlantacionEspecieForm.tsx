@@ -12,10 +12,12 @@ import { AlertTriangle, Copy, Search, Trash2 } from "@buleje/design-system/icons
 import type { EspecieBloqueInput } from "@/lib/forestal/plantacion-tramite";
 import {
   buscarEnCatalogo,
+  CATALOGO_ESPECIES,
   FINALIDADES_PLANTACION,
   sugerirEspecies,
   TIPOS_SISTEMA_AGROFORESTAL,
   TIPOS_VEGETATIVOS,
+  type EspecieCatalogo,
 } from "@/lib/forestal/plantacion-catalogo";
 
 const inputCls =
@@ -54,6 +56,7 @@ export default function PlantacionEspecieForm({
   onChange,
   onEliminar,
   onDuplicar,
+  catalogo = CATALOGO_ESPECIES,
 }: {
   especie: EspecieBloqueInput;
   index: number;
@@ -62,12 +65,14 @@ export default function PlantacionEspecieForm({
   onChange: (especie: EspecieBloqueInput) => void;
   onEliminar: () => void;
   onDuplicar: () => void;
+  /** Las especies a sugerir: la base primero (`catalogoConLaBase`); sin ella, la lista fija. */
+  catalogo?: readonly EspecieCatalogo[];
 }) {
   const [buscando, setBuscando] = useState(false);
 
   const sugerencias = useMemo(
-    () => (especie.nombreComun.trim() ? sugerirEspecies(especie.nombreComun) : sugerirEspecies("")),
-    [especie.nombreComun],
+    () => sugerirEspecies(especie.nombreComun, 8, catalogo),
+    [especie.nombreComun, catalogo],
   );
 
   function set<K extends keyof EspecieBloqueInput>(campo: K, valor: EspecieBloqueInput[K]) {
@@ -75,17 +80,18 @@ export default function PlantacionEspecieForm({
   }
 
   function elegirDelCatalogo(nombreComun: string) {
-    const hit = buscarEnCatalogo(nombreComun);
+    const hit = buscarEnCatalogo(nombreComun, catalogo);
     onChange({
       ...especie,
       nombreComun,
-      nombreCientifico: hit?.cientifico ?? especie.nombreCientifico,
+      /* Una de la base sin científico no borra el que ya estaba escrito. */
+      nombreCientifico: hit?.cientifico || especie.nombreCientifico,
       cites: hit?.cites ? true : especie.cites,
     });
     setBuscando(false);
   }
 
-  const catalogoCites = buscarEnCatalogo(especie.nombreComun)?.cites === true;
+  const catalogoCites = buscarEnCatalogo(especie.nombreComun, catalogo)?.cites === true;
   const mostrarAvisoCites = Boolean(especie.cites);
   const tipoAgroforestal = tipoAgroforestalDeObservaciones(especie.observaciones);
   const observacionesResto = restoDeObservaciones(especie.observaciones);

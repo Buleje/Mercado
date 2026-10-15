@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   ID_A_MANO,
+  especieDelCatalogo,
+  especiesDeLasFilas,
+  especiesDelPermiso,
+  problemaDeEspecieAMano,
   medidasDelLibro,
   observacionAMano,
   piezasAMano,
@@ -14,6 +18,7 @@ import {
 } from "@/lib/forestal/loth-trozas-a-mano";
 import { smalianVolume } from "@/lib/forestal/loth-constants";
 import { listaDeTrozas, totalM3 } from "@/lib/forestal/loth-guia-despacho";
+import { CATALOGO_VACIO, type CatalogoEspecies } from "@/lib/forestal/especies-catalogo";
 
 describe("trozas a mano del despacho con guía", () => {
   it("el volumen es Smalian SERFOR por troza × la cantidad", () => {
@@ -39,22 +44,25 @@ describe("trozas a mano del despacho con guía", () => {
   });
 
   it("revisa lo tipeado: coma decimal, cantidad vacía = 1 y los límites del Cubicador", () => {
-    expect(revisarTrozaAMano({ d1: "45,5", d2: "50", largo: "3.2", cantidad: "" })).toEqual({
+    expect(revisarTrozaAMano({ especie: " Tornillo ", d1: "45,5", d2: "50", largo: "3.2", cantidad: "" })).toEqual({
       ok: true,
-      troza: { d1Cm: 45.5, d2Cm: 50, largoM: 3.2, cantidad: 1 },
+      troza: { especie: "Tornillo", d1Cm: 45.5, d2Cm: 50, largoM: 3.2, cantidad: 1 },
     });
-    const vacio = revisarTrozaAMano({ d1: "", d2: "x", largo: "", cantidad: "1" });
+    const vacio = revisarTrozaAMano({ especie: "", d1: "", d2: "x", largo: "", cantidad: "1" });
     expect(vacio.ok).toBe(false);
-    if (!vacio.ok) expect(Object.keys(vacio.errores).sort()).toEqual(["d1", "d2", "largo"]);
+    if (!vacio.ok) {
+      expect(Object.keys(vacio.errores).sort()).toEqual(["d1", "d2", "especie", "largo"]);
+      expect(vacio.errores.especie).toBe("Falta la especie");
+    }
     // Lo tipeado fuera de rango se dice aunque falte otro campo.
-    const aMedias = revisarTrozaAMano({ d1: "300", d2: "", largo: "", cantidad: "1" });
+    const aMedias = revisarTrozaAMano({ especie: "Tornillo", d1: "300", d2: "", largo: "", cantidad: "1" });
     expect(aMedias.ok).toBe(false);
     if (!aMedias.ok) {
       expect(aMedias.errores.d1).toMatch(/10 a 200 cm/);
       expect(aMedias.errores.d2).toBe("Falta D2");
     }
 
-    const fuera = revisarTrozaAMano({ d1: "5", d2: "250", largo: "16", cantidad: "1,5" });
+    const fuera = revisarTrozaAMano({ especie: "Tornillo", d1: "5", d2: "250", largo: "16", cantidad: "1,5" });
     expect(fuera.ok).toBe(false);
     if (!fuera.ok) {
       expect(fuera.errores.d1).toMatch(/10 a 200 cm/);
@@ -79,7 +87,7 @@ describe("trozas a mano del despacho con guía", () => {
     // En la guía cada troza es una fila con cantidad 1, y el total cierra con las filas de alta.
     const comoLibro = trozasDelLibroAMano(piezas, null);
     expect(comoLibro[0].id).toBe(`${ID_A_MANO}1`);
-    expect(comoLibro.every((t) => t.planId === null && t.arbol === null)).toBe(true);
+    expect(comoLibro.every((t) => t.planId === null && t.arbol === null && t.comun === null)).toBe(true);
     const lista = listaDeTrozas(comoLibro);
     expect(lista.map((f) => [f.codificacion, f.d1Cm, f.d2Cm, f.cantidad])).toEqual([
       ["1", 40, 30, 1],
@@ -96,9 +104,72 @@ describe("trozas a mano del despacho con guía", () => {
     // 0,005 se guarda 0,01 m: es la troza más corta que el libro sabe escribir, y da volumen.
     expect(trozaAManoSchema.safeParse({ d1Cm: 45, d2Cm: 40, largoM: 0.005, cantidad: 1 }).success).toBe(true);
     expect(volumenPorTroza({ d1Cm: 10, d2Cm: 10, largoM: 0.01 })).toBeGreaterThan(0);
-    const corta = revisarTrozaAMano({ d1: "45", d2: "40", largo: "0,001", cantidad: "1" });
+    const corta = revisarTrozaAMano({ especie: "Tornillo", d1: "45", d2: "40", largo: "0,001", cantidad: "1" });
     expect(corta.ok).toBe(false);
     if (!corta.ok) expect(corta.errores.largo).toMatch(/0,01 a 15 m/);
+  });
+
+  it("la especie de la fila viaja a cada troza y la guía la publica (casillero 37)", () => {
+    const piezas = piezasAMano([{ d1Cm: 40, d2Cm: 30, largoM: 4, cantidad: 2, especie: " Cumala " }, { d1Cm: 50, d2Cm: 45, largoM: 3, cantidad: 1 }]);
+    expect(piezas.map((p) => p.especie)).toEqual(["Cumala", "Cumala", null]);
+    const comoLibro = trozasDelLibroAMano(piezas, "plan-1");
+    expect(comoLibro.map((t) => t.comun)).toEqual(["Cumala", "Cumala", null]);
+    expect(comoLibro.every((t) => !("especie" in t))).toBe(true);
+  });
+
+  it("la especie se valida contra el catálogo del aserradero: grafía del catálogo, su científico, y las ajenas no pasan", () => {
+    const catalogo: CatalogoEspecies = {
+      agregadas: [{ nombre: "Ana Caspi", clave: "ana caspi", cientifico: "Apuleia leiocarpa" }],
+      ocultas: ["capirona"],
+    };
+    const tornillo = especieDelCatalogo("TORNILLO", catalogo);
+    expect(tornillo).toEqual({ ok: true, especie: { nombre: "Tornillo", cientifico: "Cedrelinga cateniformis" } });
+    expect(especieDelCatalogo("ana caspi", catalogo)).toEqual({ ok: true, especie: { nombre: "Ana Caspi", cientifico: "Apuleia leiocarpa" } });
+    // Una de fábrica que la planta ocultó ya no está en su catálogo.
+    const oculta = especieDelCatalogo("Capirona", catalogo);
+    expect(oculta.ok).toBe(false);
+    if (!oculta.ok) expect(oculta.motivo).toMatch(/no está en el catálogo/);
+    expect(especieDelCatalogo("Ana Caspi", CATALOGO_VACIO).ok).toBe(false);
+    expect(especieDelCatalogo("  ", catalogo)).toEqual({ ok: false, motivo: "Falta la especie" });
+
+    const filas = [
+      { d1Cm: 40, d2Cm: 30, largoM: 4, cantidad: 1, especie: "tornillo" },
+      { d1Cm: 40, d2Cm: 30, largoM: 4, cantidad: 1, especie: null },
+    ];
+    expect(especiesDeLasFilas(filas, catalogo)).toEqual({
+      ok: true,
+      especies: [{ nombre: "Tornillo", cientifico: "Cedrelinga cateniformis" }, null],
+    });
+    const ajena = especiesDeLasFilas([...filas, { d1Cm: 40, d2Cm: 30, largoM: 4, cantidad: 1, especie: "Pino" }], catalogo);
+    expect(ajena.ok).toBe(false);
+    if (!ajena.ok) expect(ajena.especie).toBe("Pino");
+  });
+
+  it("la especie se juzga en pantalla como al registrar: catálogo (422) y permiso (T7)", () => {
+    const catalogo: CatalogoEspecies = { agregadas: [], ocultas: ["tornillo"] };
+    // La fijada que quitaron del catálogo: se dice antes del 422.
+    expect(problemaDeEspecieAMano("Tornillo", { catalogo, permiso: null })).toEqual({
+      tipo: "catalogo",
+      motivo: "Tornillo ya no está en el catálogo: elige otra especie.",
+    });
+    // Catálogo sin leer (cargando o falló): no se juzga, lo decide el servidor.
+    expect(problemaDeEspecieAMano("Tornillo", { catalogo: null, permiso: null })).toBeNull();
+    expect(problemaDeEspecieAMano("  ", { catalogo, permiso: null })).toBeNull();
+
+    const registro = [{ speciesCommon: "Cedro rojo", speciesScientific: "Cedrela odorata" }, { speciesCommon: "Cumala", speciesScientific: null }];
+    const permiso = { registro, plantacion: false };
+    // «Cedro» del catálogo es el «Cedro rojo» del permiso por el científico (resolverEspecie).
+    expect(problemaDeEspecieAMano("cedro", { catalogo: CATALOGO_VACIO, permiso })).toBeNull();
+    const fuera = problemaDeEspecieAMano("Capirona", { catalogo: CATALOGO_VACIO, permiso });
+    expect(fuera?.tipo).toBe("permiso");
+    expect(fuera?.motivo).toMatch(/no está autorizada en el plan de manejo/);
+    // Permiso sin especies cargadas: T7 no juzga.
+    expect(problemaDeEspecieAMano("Capirona", { catalogo: CATALOGO_VACIO, permiso: { registro: [], plantacion: false } })).toBeNull();
+
+    const cientificos: Record<string, string> = { Cedro: "Cedrela odorata" };
+    const delPermiso = especiesDelPermiso(["Tornillo", "Cedro", "Cumala"], (n) => cientificos[n] ?? null, registro);
+    expect(delPermiso).toEqual(["Cedro", "Cumala"]);
+    expect(especiesDelPermiso(["Tornillo"], () => null, [])).toEqual([]);
   });
 
   it("anular la guía: se anulan las trozas que nacieron con ella y no queda ninguna viva con su código", () => {

@@ -27,6 +27,7 @@ import {
   sugerenciaDapM,
 } from "@/lib/forestal/loth-constants";
 import { dmcParaEspecie } from "@/lib/forestal/loth-poa";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   BORRADOR_VACIO,
@@ -99,9 +100,10 @@ export default function LothCensoArbolForm({
     () => new Set(arboles.map((a) => a.treeCode.trim().toLowerCase())),
     [arboles],
   );
+  const catEspecies = useEspeciesCatalogo();
   const especies = useMemo(
-    () => especiesParaElegir(especiesPlan, arboles),
-    [especiesPlan, arboles],
+    () => especiesParaElegir(especiesPlan, arboles, catEspecies.nombres),
+    [especiesPlan, arboles, catEspecies.nombres],
   );
   const condiciones = useMemo(() => condicionesParaElegir(arboles), [arboles]);
   const r = revisarArbol(b, { codigos });

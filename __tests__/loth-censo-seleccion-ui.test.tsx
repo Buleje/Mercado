@@ -11,6 +11,11 @@ import type { Tree } from "@/components/admin/forestal/loth-plan-shared";
 
 const { toastOk } = vi.hoisted(() => ({ toastOk: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: toastOk } }));
+// El formulario del árbol lee el catálogo de especies de la base (15-10): fuera de esta prueba,
+// que cuenta sólo los pedidos de borrar.
+vi.mock("@/components/admin/forestal/hooks/use-especies-catalogo", () => ({
+  useEspeciesCatalogo: () => ({ catalogo: [], nombres: [], cargando: false, error: null }),
+}));
 
 const arbol = (id: string, treeCode: string, estado = "en_pie"): Tree => ({
   id, treeCode, speciesCommon: "Tornillo", speciesScientific: null, cites: false, dapM: "0.6", alturaComercialM: "12",

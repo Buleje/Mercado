@@ -19,6 +19,9 @@ import { z } from "zod";
 import { smalianVolume } from "./loth-constants";
 import { RANGO_FORMULA } from "./cubicacion-trozas-formula";
 import { r4, type TrozaDelLibro } from "./loth-guia-despacho";
+import { claveEspecie } from "./loth-constants";
+import { cientificoDeEspecie, especiesDisponibles, type CatalogoEspecies } from "./especies-catalogo";
+import { especieEnRegistro, rechazoT7, type EspecieRegistrada } from "./loth-plan-especie";
 
 const R = RANGO_FORMULA.smalian;
 
@@ -31,6 +34,13 @@ export interface TrozaAMano {
   d2Cm: number;
   largoM: number;
   cantidad: number;
+  /**
+   * La especie (nombre común) de las trozas de la fila (15-10: «poner una
+   * especie y fijarla»). Sale en el casillero (37) de la guía y es la que mide
+   * T6/T7. Opcional en el servidor: el libro admite el hueco y la guía dice
+   * «Falta»; el modal la pide siempre.
+   */
+  especie?: string | null;
 }
 
 /** Lo que el libro guarda: Ø en METROS a 3 decimales (Decimal 8,3), largo a 2 (Decimal 8,2). */
@@ -61,6 +71,7 @@ export const trozaAManoSchema = z
       .int("La cantidad es un número entero")
       .min(1, "Al menos 1 troza")
       .max(TROZAS_POR_GUIA_MAX, `Hasta ${TROZAS_POR_GUIA_MAX} trozas`),
+    especie: z.string().trim().max(120, "La especie es muy larga").nullish(),
   })
   .superRefine((t, ctx) => {
     if (!(volumenPorTroza(t) > 0)) {
@@ -90,7 +101,7 @@ export const volumenDeFila = (t: TrozaAMano): number => r4(volumenPorTroza(t) * 
 /** Cuántas trozas suman las filas. */
 export const trozasDeFilas = (filas: readonly TrozaAMano[]): number => filas.reduce((a, f) => a + f.cantidad, 0);
 
-export type CampoAMano = "d1" | "d2" | "largo" | "cantidad";
+export type CampoAMano = "especie" | "d1" | "d2" | "largo" | "cantidad";
 export type CrudoAMano = Record<CampoAMano, string>;
 
 /** «45,5» y «45.5» valen lo mismo; vacío o letras → `null`. */
@@ -101,16 +112,19 @@ function leer(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-const CAMPO_DE: Record<keyof TrozaAMano, CampoAMano> = { d1Cm: "d1", d2Cm: "d2", largoM: "largo", cantidad: "cantidad" };
+const CAMPO_DE: Record<keyof TrozaAMano, CampoAMano> = { especie: "especie", d1Cm: "d1", d2Cm: "d2", largoM: "largo", cantidad: "cantidad" };
 
 /**
  * Revisa lo tipeado en la fila de alta. Cantidad vacía = 1 (lo de siempre).
+ * La especie se pide: sin ella la guía imprime «Falta» en el casillero (37).
  * Devuelve la troza lista para agregar o, por campo, qué está mal.
  */
 export function revisarTrozaAMano(
   crudo: CrudoAMano,
 ): { ok: true; troza: TrozaAMano } | { ok: false; errores: Partial<Record<CampoAMano, string>> } {
   const errores: Partial<Record<CampoAMano, string>> = {};
+  const especie = crudo.especie.trim();
+  if (!especie) errores.especie = "Falta la especie";
   const d1 = leer(crudo.d1);
   const d2 = leer(crudo.d2);
   const largo = leer(crudo.largo);
@@ -129,7 +143,7 @@ export function revisarTrozaAMano(
     }
     return { ok: false, errores };
   }
-  const r = trozaAManoSchema.safeParse({ d1Cm: d1, d2Cm: d2, largoM: largo, cantidad });
+  const r = trozaAManoSchema.safeParse({ d1Cm: d1, d2Cm: d2, largoM: largo, cantidad, especie });
   if (!r.success) {
     for (const issue of r.error.issues) {
       const campo = CAMPO_DE[issue.path[0] as keyof TrozaAMano];
@@ -148,6 +162,8 @@ export interface PiezaAMano {
   diamMenorM: number;
   lengthM: number;
   volumeM3: number;
+  /** La especie de su fila (`null` = sin especie). */
+  especie: string | null;
 }
 
 /**
@@ -161,10 +177,11 @@ export function piezasAMano(filas: readonly TrozaAMano[], ocupados: Iterable<str
   let n = 0;
   for (const f of filas) {
     const medidas = medidasDelLibro(f);
+    const especie = f.especie?.trim() || null;
     for (let i = 0; i < f.cantidad; i++) {
       do n += 1;
       while (usados.has(String(n)));
-      piezas.push({ codigo: String(n), ...medidas });
+      piezas.push({ codigo: String(n), ...medidas, especie });
     }
   }
   return piezas;
@@ -173,19 +190,88 @@ export function piezasAMano(filas: readonly TrozaAMano[], ocupados: Iterable<str
 /** Prefijo del `id` de una troza a mano en el modal (no es una línea del libro). */
 export const ID_A_MANO = "a-mano:";
 
-/** Las trozas a mano con la forma de las del libro, para que la guía las trate igual (detalle, lista, papeles). */
+/**
+ * Las trozas a mano con la forma de las del libro, para que la guía las trate
+ * igual (detalle, lista, papeles). El científico lo completa la vista previa
+ * con el catálogo (`cientificoDe`), como hace con las del libro sin binomio.
+ */
 export function trozasDelLibroAMano(piezas: readonly PiezaAMano[], planId: string | null): TrozaDelLibro[] {
-  return piezas.map((p) => ({
+  return piezas.map(({ especie, ...p }) => ({
     ...p,
     id: `${ID_A_MANO}${p.codigo}`,
     lineNo: 0,
     planId,
     fecha: null,
     arbol: null,
-    comun: null,
+    comun: especie,
     cientifico: null,
     cites: false,
   }));
+}
+
+/** Una especie ya cruzada con el catálogo: la grafía del aserradero y su binomio. */
+export interface EspecieResuelta {
+  nombre: string;
+  cientifico: string | null;
+}
+
+/**
+ * La especie de una troza a mano contra el catálogo del aserradero (el mismo
+ * que ofrece el desplegable): devuelve la grafía del catálogo («TORNILLO» →
+ * «Tornillo») y su científico, o el motivo si no está. El servidor no asienta
+ * una especie que la planta no tiene: el desplegable sólo ofrece las suyas, así
+ * que una ajena es un pedido armado a mano o un catálogo que cambió mientras
+ * tanto.
+ */
+export function especieDelCatalogo(
+  nombre: string,
+  catalogo: CatalogoEspecies,
+): { ok: true; especie: EspecieResuelta } | { ok: false; motivo: string } {
+  const disponibles = especiesDisponibles(catalogo);
+  const esquema = z
+    .string()
+    .trim()
+    .min(1, "Falta la especie")
+    .refine(
+      (n) => disponibles.some((e) => e.clave === claveEspecie(n)),
+      `«${nombre.trim()}» no está en el catálogo de especies del aserradero: agrégala ahí o elige otra.`,
+    );
+  const r = esquema.safeParse(nombre);
+  if (!r.success) return { ok: false, motivo: r.error.issues[0]?.message ?? "Especie no válida" };
+  const clave = claveEspecie(r.data);
+  const enLista = disponibles.find((e) => e.clave === clave);
+  const grafia = enLista?.nombre ?? r.data;
+  return { ok: true, especie: { nombre: grafia, cientifico: cientificoDeEspecie(grafia, catalogo) } };
+}
+
+/**
+ * Las especies de todas las filas contra el catálogo, de una vez: la primera
+ * que no esté corta (con su motivo). Sin especie se deja `null` (el libro
+ * admite el hueco). Devuelve una resolución por fila, en el mismo orden.
+ */
+export function especiesDeLasFilas(
+  filas: readonly TrozaAMano[],
+  catalogo: CatalogoEspecies,
+): { ok: true; especies: (EspecieResuelta | null)[] } | { ok: false; motivo: string; especie: string } {
+  const memo = new Map<string, EspecieResuelta>();
+  const especies: (EspecieResuelta | null)[] = [];
+  for (const f of filas) {
+    const nombre = f.especie?.trim();
+    if (!nombre) {
+      especies.push(null);
+      continue;
+    }
+    const clave = claveEspecie(nombre);
+    let resuelta = memo.get(clave);
+    if (!resuelta) {
+      const r = especieDelCatalogo(nombre, catalogo);
+      if (!r.ok) return { ok: false, motivo: r.motivo, especie: nombre };
+      resuelta = r.especie;
+      memo.set(clave, resuelta);
+    }
+    especies.push(resuelta);
+  }
+  return { ok: true, especies };
 }
 
 /** Lo que la cita de una guía tiene siempre igual: hasta el «(» que cierra el N° (así «…0001» no agarra «…00012»). */
@@ -239,4 +325,58 @@ export function trozadoIdsDeItems(items: unknown): string[] {
       }),
     ),
   ];
+}
+
+/**
+ * Lo que la pantalla sabe para juzgar la especie de una troza a mano ANTES de
+ * registrar (revisión 15-10: el 422 llegaba recién al Registrar, con N filas ya
+ * cargadas).
+ */
+export interface ContextoEspecieAMano {
+  /** El catálogo leído; `null` mientras carga o si no se pudo leer: no se juzga (lo hace el servidor). */
+  catalogo: CatalogoEspecies | null;
+  /** Las especies del permiso de la guía; `null` = sin permiso o sin leer. */
+  permiso: { registro: readonly EspecieRegistrada[]; plantacion: boolean } | null;
+}
+
+export interface ProblemaEspecieAMano {
+  tipo: "catalogo" | "permiso";
+  motivo: string;
+}
+
+/**
+ * Lo que el servidor rechazaría, dicho antes: fuera del catálogo
+ * (`especieDelCatalogo`, el 422 de `especiesDeLasFilas`) o fuera del permiso
+ * (`rechazoT7`, el juicio de T7 al despachar). Con el nombre y el científico
+ * DEL CATÁLOGO, que son los que el servidor guarda y juzga.
+ */
+export function problemaDeEspecieAMano(
+  especie: string | null | undefined,
+  ctx: ContextoEspecieAMano,
+): ProblemaEspecieAMano | null {
+  const nombre = especie?.trim();
+  if (!nombre) return null;
+  let comun = nombre;
+  let cientifico: string | null = null;
+  if (ctx.catalogo) {
+    const r = especieDelCatalogo(nombre, ctx.catalogo);
+    if (!r.ok) return { tipo: "catalogo", motivo: `${nombre} ya no está en el catálogo: elige otra especie.` };
+    comun = r.especie.nombre;
+    cientifico = r.especie.cientifico;
+  }
+  const rechazo = ctx.permiso ? rechazoT7(ctx.permiso.registro, comun, cientifico, ctx.permiso.plantacion) : null;
+  return rechazo ? { tipo: "permiso", motivo: rechazo } : null;
+}
+
+/**
+ * Las del catálogo que el permiso autoriza (`especieEnRegistro`, la regla de
+ * T7), en el orden del catálogo. Permiso sin especies cargadas = T7 no juzga = `[]`.
+ */
+export function especiesDelPermiso(
+  nombres: readonly string[],
+  cientificoDe: (nombre: string) => string | null,
+  registro: readonly EspecieRegistrada[],
+): string[] {
+  if (registro.length === 0) return [];
+  return nombres.filter((n) => especieEnRegistro(registro, n, cientificoDe(n)));
 }

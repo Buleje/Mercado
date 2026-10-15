@@ -8,7 +8,7 @@
  * son de Excel 365+ y en un Excel más viejo (o algún LibreOffice) devuelven
  * #NAME? y todo el panel queda en blanco — se probó en la práctica y no
  * anduvo. En su lugar, el listado se arma ACÁ, en JS, antes de escribir el
- * archivo: catálogo (`ESPECIES_MADERA`) unido con lo que ya haya cubicado el
+ * archivo: catálogo de la base (o `ESPECIES_MADERA` si no llegó) unido con lo que ya haya cubicado el
  * patio (`especiesDelPatio`, opcional) — y de ahí en más son fórmulas
  * COUNTIF/SUMIF planas, compatibles con cualquier versión de Excel.
  *
@@ -42,10 +42,11 @@ function descargar(blob: Blob, nombre: string) {
 
 const colLetra = (i: number) => String.fromCharCode(65 + i);
 
-/** Catálogo + lo que ya esté en el patio, sin duplicados (case-insensitive, conserva la primera forma vista). */
-function especiesParaResumen(especiesDelPatio: readonly string[]): string[] {
+/** Catálogo (el de la base; sin él, el de fábrica) + lo que ya esté en el patio, sin
+ *  duplicados (case-insensitive, conserva la primera forma vista). */
+function especiesParaResumen(especiesDelPatio: readonly string[], catalogo: readonly string[]): string[] {
   const vistas = new Map<string, string>();
-  for (const e of [...ESPECIES_MADERA, ...especiesDelPatio]) {
+  for (const e of [...(catalogo.length > 0 ? catalogo : ESPECIES_MADERA), ...especiesDelPatio]) {
     const limpio = e.trim();
     if (!limpio) continue;
     const clave = limpio.toLowerCase();
@@ -158,6 +159,8 @@ function agregarResumenPorEspecie(ws: Worksheet, especies: string[], unidadVol =
 export async function descargarPlantillaTrozas(
   especiesDelPatio: readonly string[] = [],
   formula: "smalian" | "oxapampina" = "smalian",
+  /** El catálogo de especies de la base (Brandon 15-10); vacío = el de fábrica. */
+  catalogo: readonly string[] = [],
 ): Promise<void> {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
@@ -191,7 +194,7 @@ export async function descargarPlantillaTrozas(
     c.numFmt = ox ? "#,##0.00" : NUMFMT_M3;
   }
 
-  agregarResumenPorEspecie(ws, especiesParaResumen(especiesDelPatio), ox ? "PT" : "m³");
+  agregarResumenPorEspecie(ws, especiesParaResumen(especiesDelPatio, catalogo), ox ? "PT" : "m³");
 
   const buf = await wb.xlsx.writeBuffer();
   descargar(new Blob([buf], { type: MIME_XLSX }), ox ? "plantilla-trozas-oxapampina.xlsx" : "plantilla-trozas.xlsx");

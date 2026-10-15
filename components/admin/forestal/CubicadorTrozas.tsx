@@ -355,6 +355,7 @@ export default function CubicadorTrozas() {
           formula={formula}
           filasActuales={rows.length}
           especiesActuales={especiesActuales}
+          especiesCatalogo={catalogoEspecies.nombres}
           onAgregar={agregarImportadas}
           onCerrar={() => setImportando(false)}
         />

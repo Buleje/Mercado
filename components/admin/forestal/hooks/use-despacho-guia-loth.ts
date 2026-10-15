@@ -41,6 +41,7 @@ import { useNumeroGuiaLoth } from "./use-numero-guia-loth";
 import { useTrasladoGuiaLoth } from "./use-traslado-guia-loth";
 import { usePreparadoGuiaLoth } from "./use-preparado-guia-loth";
 import { useTrozasAMano } from "./use-trozas-a-mano";
+import { useEspeciesAMano, type CatalogoParaJuzgar } from "./use-especies-a-mano";
 import { piezasAMano, trozasDelLibroAMano } from "@/lib/forestal/loth-trozas-a-mano";
 
 export interface RegistradaLoth {
@@ -68,7 +69,7 @@ export interface PreguntaNumero {
   mensaje: string;
 }
 
-export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
+export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?: CatalogoParaJuzgar } = {}) {
   const { onRegistrada } = opts;
   const { prep, cargando, errorCarga, cargar } = usePreparadoGuiaLoth();
 
@@ -125,6 +126,8 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
   const delLibro = useMemo(() => trozasDelPlan.filter((t) => elegidas.has(t.codigo)), [trozasDelPlan, elegidas]);
   const aMano = useTrozasAMano();
+  /* La especie de cada troza a mano, juzgada como al registrar (catálogo + T7). */
+  const especiesAMano = useEspeciesAMano({ catalogo: opts.catalogo, planId: planId ?? null, plan, filas: aMano.filas });
   const piezasManuales = useMemo(
     () => trozasDelLibroAMano(piezasAMano(aMano.filas, delLibro.map((t) => t.codigo)), planId ?? null),
     [aMano.filas, delLibro, planId],
@@ -156,8 +159,9 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
     () => [
       ...faltantesDespachoLoth(datos, { gtfNumber, emision, trozas: piezas.length }),
       ...(repetida ? [{ seccion: "documento" as const, campo: "N° de GTF sin usar", motivo: `Ya va en la guía ${repetida.numero} de este titular` }] : []),
+      ...especiesAMano.faltan,
     ],
-    [datos, gtfNumber, emision, piezas.length, repetida],
+    [datos, gtfNumber, emision, piezas.length, repetida, especiesAMano.faltan],
   );
   const guiasOrigen = useMemo(() => guiasParaOrigen(prep?.talonario.usadas ?? [], gtfNumber), [prep, gtfNumber]);
 
@@ -194,7 +198,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
             gtfDate: emision,
             trozas: delLibro.map((p) => p.codigo),
             /* Sólo las medidas: el volumen lo calcula el servidor. */
-            aMano: aMano.filas.map(({ d1Cm, d2Cm, largoM, cantidad }) => ({ d1Cm, d2Cm, largoM, cantidad })),
+            aMano: aMano.filas.map(({ d1Cm, d2Cm, largoM, cantidad, especie }) => ({ d1Cm, d2Cm, largoM, cantidad, especie: especie ?? null })),
             planId: planId ?? null,
             titularName: identidad.titular || null,
             gtfDatos: enviados,
@@ -257,6 +261,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
     setElegidas,
     /** Las filas anotadas a mano (agregar / quitar) y sus trozas ya numeradas. */
     aMano,
+    especiesAMano,
     piezasManuales,
     piezas,
     emision,

@@ -156,29 +156,67 @@ export const CATALOGO_ESPECIES: EspecieCatalogo[] = [
 ];
 
 /** Busca por nombre común (case/tilde-insensitive) — la misma clave que ya usa
- *  el LO-TH para cruzar especies (`claveEspecie`, `loth-constants.ts`). */
-export function buscarEnCatalogo(nombreComun: string): EspecieCatalogo | undefined {
+ *  el LO-TH para cruzar especies (`claveEspecie`, `loth-constants.ts`).
+ *  `lista` = la de `catalogoConLaBase` (la base primero); sin ella, la fija. */
+export function buscarEnCatalogo(
+  nombreComun: string,
+  lista: readonly EspecieCatalogo[] = CATALOGO_ESPECIES,
+): EspecieCatalogo | undefined {
   const q = nombreComun
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .trim()
     .toLowerCase();
   if (!q) return undefined;
-  return CATALOGO_ESPECIES.find((e) => {
+  return lista.find((e) => {
     const k = e.comun.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
     return k === q;
   });
 }
 
 /** Sugerencias para el combobox — coincidencia parcial, tope razonable. */
-export function sugerirEspecies(query: string, limit = 8): EspecieCatalogo[] {
+export function sugerirEspecies(
+  query: string,
+  limit = 8,
+  lista: readonly EspecieCatalogo[] = CATALOGO_ESPECIES,
+): EspecieCatalogo[] {
   const q = query
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .trim()
     .toLowerCase();
-  if (!q) return CATALOGO_ESPECIES.slice(0, limit);
-  return CATALOGO_ESPECIES.filter((e) =>
-    e.comun.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes(q),
-  ).slice(0, limit);
+  if (!q) return lista.slice(0, limit);
+  return lista
+    .filter((e) => e.comun.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes(q))
+    .slice(0, limit);
+}
+
+/**
+ * Las especies de la BASE (el catálogo del aserradero, Brandon 15-10: «que se
+ * saquen de la base de datos») primero, y detrás las de plantación de esta
+ * lista que la base no trae (Bolaina, Teca, Pijuayo…). El científico: el de la
+ * base o, si no lo sabe, el de esta lista. CITES sólo de esta lista, que está
+ * verificado: la base no lo declara y suponerlo desinformaría.
+ */
+export function catalogoConLaBase(
+  base: readonly { nombre: string; cientifico?: string | null }[],
+): EspecieCatalogo[] {
+  const clave = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+  const vistas = new Set<string>();
+  const salida: EspecieCatalogo[] = [];
+  for (const b of base) {
+    const k = clave(b.nombre);
+    if (!k || vistas.has(k)) continue;
+    vistas.add(k);
+    const fija = buscarEnCatalogo(b.nombre);
+    salida.push({
+      comun: b.nombre.trim(),
+      cientifico: b.cientifico?.trim() || fija?.cientifico || "",
+      ...(fija?.cites ? { cites: true } : {}),
+    });
+  }
+  for (const f of CATALOGO_ESPECIES) {
+    if (!vistas.has(clave(f.comun))) salida.push(f);
+  }
+  return salida;
 }
