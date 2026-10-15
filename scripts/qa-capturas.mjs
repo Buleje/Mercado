@@ -13,7 +13,9 @@
  *   node scripts/qa-capturas.mjs --tenant <slug> --ruta "/admin?tab=x" \
  *     [--pasos '<json>' | --pasos-archivo pasos.json] [--salida <dir>] \
  *     [--nombre base] [--anchos 1280,400] [--temas claro,oscuro] [--completa] \
- *     [--preset cubicador-lote,resumenes-rolliza]   (recorridos de scripts/qa-pasos/, van antes) \
+ *     [--preset cubicador-lote,resumenes-rolliza]   (recorridos de scripts/qa-pasos/, van antes; `despacho-guia-a-mano` =
+ *       guía entera en QA-ui con 1 troza a mano, registrada y ANULADA al final: escribe → --anchos 1280 --temas claro) \
+ *       un preset puede ser {"tenant","ruta","pasos"} (sus --tenant/--ruta por defecto) y un paso {"preset":"otro"} lo incluye entero \
  *     [--evals-todos]   (cada {"eval"} corre en todos los anchos y temas; el reporte trae {tema, ancho, valor})
  *     [--resumen]   (stdout sólo con lo esencial —los evals recortados a 400 caracteres—; el JSON completo igual queda en <salida>/reporte.json) \
  *     [--ls '{"clave":"valor"}']   (siembra localStorage antes de cargar: estados recordados sin recargar) \
@@ -46,7 +48,8 @@
  *                                   con {"fallar": null}. Si va AL PRINCIPIO de los pasos rige desde la primera carga;
  *                                   más abajo, desde la próxima ({"eval": "location.reload()"}).
  *   {"espiar": "/api/x"}          → anota método, ruta y cuerpo de cada pedido a esa ruta (sale en el reporte y en
- *                                   el resumen). {"espiar": ["/api/x", "POST", true]}: sólo ese método y lo FRENA con
+ *                                   el resumen; un cuerpo de más de 2.000 caracteres va ENTERO a
+ *                                   <salida>/espiado-N-MÉTODO.txt y el reporte trae `cuerpoArchivo`). {"espiar": ["/api/x", "POST", true]}: sólo ese método y lo FRENA con
  *                                   200 {} — probar un botón que escribe sin tocar la base. Al principio rige desde la carga.
  *   {"clicTexto": "Rolliza"}      → clic por el DOM en el botón/pestaña/opción cuyo texto
  *                                   EMPIEZA con eso (dentro de main o de un diálogo). Para
@@ -176,8 +179,22 @@ function arg(nombre, porDefecto) {
 }
 const bandera = (nombre) => process.argv.includes(`--${nombre}`);
 
-const tenant = arg("tenant", "main");
-const ruta = arg("ruta", "/admin");
+/* Un preset puede ser `{ "tenant", "ruta", "pasos": [...] }` (15-10: sin --tenant/--ruta el preset
+   de despacho no llegaba a su pantalla) y un paso `{"preset": "otro"}` incluye otro preset entero
+   (los de asignar y anular copiaban el registro de `despacho-guia-a-mano`). */
+const DIR_PASOS = path.join(path.dirname(new URL(import.meta.url).pathname), "qa-pasos");
+function leerPreset(n, vistos = new Set()) {
+  if (vistos.has(n)) throw new Error(`el preset ${n} se incluye a sí mismo`);
+  const crudo = JSON.parse(readFileSync(path.join(DIR_PASOS, `${n}.json`), "utf8"));
+  const lista = Array.isArray(crudo) ? crudo : crudo?.pasos;
+  if (!Array.isArray(lista)) throw new Error(`el preset ${n} no es un array ni trae "pasos"`);
+  const pasos = lista.flatMap((p) => (p && typeof p === "object" && typeof p.preset === "string" ? leerPreset(p.preset, new Set([...vistos, n])).pasos : [p]));
+  return { tenant: Array.isArray(crudo) ? undefined : crudo.tenant, ruta: Array.isArray(crudo) ? undefined : crudo.ruta, pasos };
+}
+const presetsPedidos = (arg("preset", "") || "").split(",").map((x) => x.trim()).filter(Boolean);
+const primerPreset = presetsPedidos.length ? leerPreset(presetsPedidos[0]) : null;
+const tenant = arg("tenant", primerPreset?.tenant ?? "main");
+const ruta = arg("ruta", primerPreset?.ruta ?? "/admin");
 const nombreBase = arg("nombre", "estado");
 const sinNombre = !process.argv.includes("--nombre");
 const prefijoHora = sinNombre ? new Date().toTimeString().slice(0, 8).replaceAll(":", "") + "-" : "";
@@ -212,12 +229,7 @@ let pasos = [];
 try {
   /* `--preset a,b` antepone recorridos guardados en `scripts/qa-pasos/<nombre>.json`
      (sembrar el cubicador se tipeó a mano 6 veces el 03-10: ahora es un preset). */
-  const presets = (arg("preset", "") || "").split(",").map((x) => x.trim()).filter(Boolean);
-  const dePresets = presets.flatMap((n) => {
-    const lista = JSON.parse(readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), "qa-pasos", `${n}.json`), "utf8"));
-    if (!Array.isArray(lista)) throw new Error(`el preset ${n} no es un array`);
-    return lista;
-  });
+  const dePresets = presetsPedidos.flatMap((n) => leerPreset(n).pasos);
   const crudo = arg("pasos-archivo") ? readFileSync(arg("pasos-archivo"), "utf8") : arg("pasos", "[]");
   pasos = [...dePresets, ...JSON.parse(crudo)];
   if (!Array.isArray(pasos)) throw new Error("los pasos van en un array");
@@ -438,7 +450,17 @@ async function rutear(page, tipo, valor) {
       const req = r.request();
       if (metodo && req.method() !== metodo) return r.fallback();
       const u = new URL(req.url());
-      espiados.push({ metodo: req.method(), ruta: u.pathname + u.search, cuerpo: (req.postData() ?? "").slice(0, 2000) });
+      /* El reporte guarda hasta 2.000 caracteres (se lee entero en cada turno); el
+         cuerpo COMPLETO va a un archivo y el reporte dice cuál (15-10: un POST de guía
+         de 6 K salió cortado y hubo que rearmarlo por SQL para repetirlo). */
+      const cuerpo = req.postData() ?? "";
+      const espiado = { metodo: req.method(), ruta: u.pathname + u.search, cuerpo: cuerpo.slice(0, 2000) };
+      if (cuerpo.length > 2000) {
+        const archivo = path.join(salida, `espiado-${espiados.length + 1}-${req.method()}.txt`);
+        writeFileSync(archivo, cuerpo);
+        Object.assign(espiado, { cuerpoArchivo: archivo, cuerpoLargo: cuerpo.length });
+      }
+      espiados.push(espiado);
       return frenar ? r.fulfill({ status: 200, contentType: "application/json", body: "{}" }) : r.fallback();
     });
   }
