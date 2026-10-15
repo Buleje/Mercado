@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  conicidadPct,
   propuestaDeCorreccion,
   verificarLista,
   verificarTroza,
   volumenHuber,
-  volumenSmalian,
 } from "@/lib/forestal/cubicacion-verificacion";
+import * as verificacion from "@/lib/forestal/cubicacion-verificacion";
+import { smalianVolume } from "@/lib/forestal/loth-constants";
 
 /** Las seis piezas reales medidas contra SERFOR (2026-08-06). */
 const REALES = [
@@ -19,39 +19,34 @@ const REALES = [
 ];
 
 describe("qué fórmula usa la guía", () => {
-  it("HUBER reproduce el volumen declarado en las seis piezas (≤0.05 %)", () => {
+  it("SMALIAN SERFOR (0.7854 × Ø medio² × L) reproduce el volumen declarado en las seis piezas (≤0.05 %)", () => {
     for (const p of REALES) {
       const h = volumenHuber({ d1Cm: p.d1, d2Cm: p.d2, largoM: p.l })!;
       expect(Math.abs((h - p.guia) / p.guia) * 100).toBeLessThan(0.05);
     }
   });
 
-  it("SMALIAN se desvía, y más cuanto más cónica es la troza", () => {
-    // 117/B es 62→50 cm: el caso que un umbral fino marcaría en rojo estando bien.
+  it("es smalianVolume del Libro TH, no una copia: 117/B (62→50 cm × 8.6 m) = 2.1182, no los 2.1425 de la pura", () => {
     const cónica = { d1Cm: 62, d2Cm: 50, largoM: 8.6 };
-    expect(volumenSmalian(cónica)).toBeCloseTo(2.1425, 3);
-    expect(conicidadPct(cónica)).toBeCloseTo(1.1, 1);
-    // Con los dos diámetros iguales, las dos fórmulas coinciden.
-    expect(conicidadPct({ d1Cm: 70, d2Cm: 70, largoM: 5 })).toBe(0);
+    expect(volumenHuber(cónica)).toBe(smalianVolume(0.62, 0.5, 8.6));
+    expect(volumenHuber(cónica)).toBe(2.1182);
   });
 
-  it("Smalian siempre da ≥ que Huber: el promedio de áreas ≥ área del promedio", () => {
-    for (const p of REALES) {
-      const h = volumenHuber({ d1Cm: p.d1, d2Cm: p.d2, largoM: p.l })!;
-      const s = volumenSmalian({ d1Cm: p.d1, d2Cm: p.d2, largoM: p.l })!;
-      expect(s).toBeGreaterThanOrEqual(h);
-    }
+  it("la Smalian pura ya no existe (ADR-492): ni volumenSmalian ni conicidadPct ni smalianM3", () => {
+    expect("volumenSmalian" in verificacion).toBe(false);
+    expect("conicidadPct" in verificacion).toBe(false);
+    const r = verificarTroza({ codificacion: "117/B", d1Cm: 62, d2Cm: 50, largoM: 8.6, cantidad: 1, volumenM3: 2.118 });
+    expect("smalianM3" in r).toBe(false);
+    expect(r.estado).toBe("ok");
   });
 
   it("sin largo o sin diámetros no inventa un volumen", () => {
     expect(volumenHuber({ d1Cm: 60, d2Cm: 60, largoM: null })).toBeNull();
     expect(volumenHuber({ d1Cm: null, d2Cm: null, largoM: 5 })).toBeNull();
-    expect(volumenSmalian({ d1Cm: 0, d2Cm: 60, largoM: 5 })).toBeNull();
   });
 
-  it("con un solo diámetro, Smalian cae en Huber: no hay cono que promediar", () => {
-    const m = { d1Cm: 60, d2Cm: null, largoM: 5 };
-    expect(volumenSmalian(m)).toBe(volumenHuber(m));
+  it("con un solo diámetro, ése es el medio", () => {
+    expect(volumenHuber({ d1Cm: 60, d2Cm: null, largoM: 5 })).toBe(smalianVolume(0.6, 0.6, 5));
   });
 });
 

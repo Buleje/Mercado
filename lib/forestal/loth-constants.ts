@@ -191,11 +191,32 @@ export function cruzarEspecies(delLibro: string[], delPlan: string[]): CruceEspe
 
 // ─── Fórmulas SERFOR (puras, testeables, sin deps) ─────────────────────────
 
-/** Cubicación de troza (Smalian/SERFOR): 0.7854 × ((Ø mayor + Ø menor)/2)² × Longitud (m³). */
+/**
+ * Cubicación de troza — **Smalian SERFOR** (ADR-492): 0.7854 × ((Ø mayor + Ø menor)/2)² × Longitud (m³).
+ *
+ * ÚNICA fórmula de volumen de troza por dos diámetros + largo en toda la app
+ * (Libro TH, CTP, cubicadores, cuenta, retrozado, controles contra la guía).
+ * Es la que SERFOR acepta y la que reproduce la GTF con ≤0,01 % (ADR-360). La
+ * «Smalian pura» (promedio de las ÁREAS de las dos puntas) se retiró: da hasta
+ * hasta +4,44 % por troza cónica (medido en Blas, ADR-492) y SERFOR no la admite. Constante 0.7854 exacta,
+ * nunca π/4.
+ */
 export function smalianVolume(diamMayorM: number, diamMenorM: number, lengthM: number): number {
   if (!(diamMayorM > 0) || !(diamMenorM > 0) || !(lengthM > 0)) return 0;
   const dProm = (diamMayorM + diamMenorM) / 2;
   return Math.round(0.7854 * dProm * dProm * lengthM * 10000) / 10000;
+}
+
+/**
+ * `smalianVolume` con los diámetros en CENTÍMETROS (como se miden en patio y
+ * como los publica la GTF) y el largo en metros. Sin segundo diámetro (o en 0)
+ * la troza se toma pareja: D2 = D1. 0 si falta D1 o el largo.
+ *
+ * 62 y 50 cm × 4 m → 0.7854 × 0.56² × 4 = 0.9852 m³.
+ */
+export function volumenSerforCm(d1Cm: number, d2Cm: number | null | undefined, largoM: number): number {
+  const d2 = d2Cm != null && d2Cm > 0 ? d2Cm : d1Cm;
+  return smalianVolume(d1Cm / 100, d2 / 100, largoM);
 }
 
 /** Volumen comercial del árbol en pie (SERFOR): 0.7854 × DAP² × Hc × ff. */

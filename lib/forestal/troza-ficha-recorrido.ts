@@ -203,7 +203,7 @@ export function diasDeLaPieza(f: FichaTroza, estado: EstadoTroza, hoy: Date): Di
   return dias == null ? null : { dias, texto: `Estuvo ${plural(dias, "día", "días")} en el patio`, desdeElAsiento };
 }
 
-/* ── Medidas y control de Huber ───────────────────────────────────────── */
+/* ── Medidas y control Smalian SERFOR (nombres «Huber» por historia, ADR-492) ───────────────────────────────────────── */
 
 /** Las puntas con su fuente (guía / P planta / R recibida / Ox), como la tabla. */
 export function medidasDeFicha(t: FichaTroza["troza"]): MedidasPieza {
@@ -222,7 +222,7 @@ export function medidasDeFicha(t: FichaTroza["troza"]): MedidasPieza {
 export { UMBRAL_HUBER };
 
 export interface ControlHuber {
-  /** Huber con esas puntas y el largo de la guía. DERIVADO. */
+  /** Smalian SERFOR con esas puntas y el largo de la guía. DERIVADO. */
   huberM3: number;
   declaradoM3: number;
   /** (Huber − declarado) / declarado. */

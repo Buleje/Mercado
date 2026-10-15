@@ -299,7 +299,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   // Herramientas no lo esté.
   "forestal-herramientas": [
     { key: "cubicador", label: "Cubicador de madera", hint: "Aserrada: pie tablar + m³ por voz", origen: ["forestal-herramientas"] },
-    { key: "trozas", label: "Cubicador de trozas", hint: "Rolliza en patio: Smalian (m³, contra la GTF) u Oxapampina (PT)", origen: ["forestal-herramientas"] },
+    { key: "trozas", label: "Cubicador de trozas", hint: "Rolliza en patio: Smalian SERFOR (m³, contra la GTF) u Oxapampina (PT)", origen: ["forestal-herramientas"] },
     { key: "resumenes", label: "Resúmenes", hint: "Tablas por especie y tipo del lote cubicado", origen: ["forestal-herramientas"] },
     { key: "especies", label: "Fotos de especies", hint: "Referencia visual para no confundir dos maderas parecidas", origen: ["forestal-herramientas"] },
     { key: "catalogo", label: "Formatos", hint: "Elige el trámite y llénalo", origen: ["forestal-tramites"] },

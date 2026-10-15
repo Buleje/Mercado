@@ -79,15 +79,15 @@ export default function CotejoGtfBloque({ cotejo, oxapampina, onUsarSmalian }: {
         <span>Sin cotejo con la GTF en Oxapampina</span>
         <InfoTip
           title="¿Por qué no se compara con la guía?"
-          what={<span>La GTF declara m³ por Smalian (Ø en cm, largo en m). Este lote está en pie tablar Oxapampa, con otras medidas: no hay cuenta honesta que pase uno al otro.</span>}
-          affects={<span>Para saber si el camión llegó corto, cubícalo en Smalian: es otro lote, éste no se pierde.</span>}
+          what={<span>La GTF declara m³ por Smalian SERFOR (Ø en cm, largo en m). Este lote está en pie tablar Oxapampa, con otras medidas: no hay cuenta honesta que pase uno al otro.</span>}
+          affects={<span>Para saber si el camión llegó corto, cubícalo en Smalian SERFOR: es otro lote, éste no se pierde.</span>}
         />
         <button
           type="button"
           onClick={onUsarSmalian}
           className="ml-auto rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
         >
-          Cotejar en Smalian
+          Cotejar en Smalian SERFOR
         </button>
       </div>
     );

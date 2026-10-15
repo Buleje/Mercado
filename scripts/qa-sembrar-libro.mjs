@@ -148,7 +148,7 @@ const FECHA_DESPACHO = "2026-10-02";
 
 const r3 = (n) => Math.round(n * 1000) / 1000;
 const r4 = (n) => Math.round(n * 10000) / 10000;
-const volTroza = (d, l) => r3((Math.PI / 4) * (d / 100) ** 2 * l);
+const volTroza = (d, l) => r3(0.7854 * (d / 100) ** 2 * l) // Smalian SERFOR (ADR-492);
 const isoMediodia = (dia) => `${dia}T12:00:00.000Z`;
 
 /** Paquetes con `cantidad` entera y volumen exacto de sus medidas (que sumen lo declarado). */

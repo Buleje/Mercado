@@ -313,13 +313,12 @@ export default function CtpCuadrarGuiaModal({
                   </div>
 
                   {/* El recalculo pieza por pieza (ADR-360): es lo que dice
-                      CUÁL de los dos números del papel está mal. Medido contra
-                      seis piezas reales, la guía se publica con HUBER — Smalian
-                      va al lado porque es la fórmula del operador y su
-                      diferencia mide lo cónica que es la troza. */}
+                      CUÁL de los dos números del papel está mal. La guía se
+                      publica con Smalian SERFOR (0.7854 × Ø medio² × L); la
+                      Smalian pura que iba al lado se retiró (ADR-492). */}
                   <div className="overflow-hidden rounded-xl border border-[var(--rule-base)]">
                     <div className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                      Recalculado desde las medidas · la guía publica con Huber
+                      Recalculado desde las medidas · Smalian SERFOR
                     </div>
                     <TablaCtp>
                       <TheadCtp>
@@ -327,8 +326,7 @@ export default function CtpCuadrarGuiaModal({
                           <th className="text-left font-bold">Pieza</th>
                           <th className="text-left font-bold">D1 × D2 × largo</th>
                           <th className="text-right font-bold">Cant.</th>
-                          <th className="text-right font-bold">Huber</th>
-                          <th className="text-right font-bold">Smalian</th>
+                          <th className="text-right font-bold">Smalian SERFOR</th>
                           <th className="text-right font-bold">Guía</th>
                           <th className="text-right font-bold">Desvío</th>
                         </tr>
@@ -347,9 +345,6 @@ export default function CtpCuadrarGuiaModal({
                             </td>
                             <td className="text-right font-mono tabular-nums">
                               {f.huberM3 != null ? fmtM3(f.huberM3) : "—"}
-                            </td>
-                            <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
-                              {f.smalianM3 != null ? fmtM3(f.smalianM3) : "—"}
                             </td>
                             <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                               {f.declaradoM3 != null ? fmtM3(f.declaradoM3) : "—"}

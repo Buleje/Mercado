@@ -2,7 +2,8 @@
  * cubicacion-trozas-formula — las DOS maneras de cubicar el patio en el
  * Cubicador de trozas (Herramientas), Brandon 2026-10-08:
  *
- *   - **Smalian (m³)**: Ø en cm, largo en m. Es lo que declara la GTF.
+ *   - **Smalian SERFOR (m³)**: Ø en cm, largo en m, 0.7854 × Ø medio² × L
+ *     (ADR-492; la Smalian pura se retiró). Es lo que declara la GTF.
  *   - **Oxapampina (PT)**: Ø en PULGADAS, largo en PIES, PT = Ø × Ø × L ÷ 24,5
  *     (ADR-440). Con eso se compra, se vende y se paga el flete. Sin m³.
  *
@@ -53,8 +54,8 @@ export interface UnidadesFormula {
 
 export const UNIDADES_FORMULA: Readonly<Record<FormulaTrozas, UnidadesFormula>> = {
   smalian: {
-    nombre: "Smalian", etiqueta: "Smalian (m³)", diametro: "cm", diametroCorto: " cm", largo: "m",
-    volumen: "m³", decimales: 3, cuenta: "promedio de áreas × largo",
+    nombre: "Smalian SERFOR", etiqueta: "Smalian SERFOR (m³)", diametro: "cm", diametroCorto: " cm", largo: "m",
+    volumen: "m³", decimales: 3, cuenta: "0,7854 × Ø medio² × largo",
   },
   oxapampina: {
     nombre: "Oxapampina", etiqueta: "Oxapampina (PT)", diametro: "pulg", diametroCorto: "″", largo: "pies",
@@ -88,7 +89,22 @@ export function cubicarSegun(formula: FormulaTrozas, d1: number, largo: number, 
 
 type Medidas = Omit<TrozaCubicada, "m3" | "pt">;
 
-/** La fila con su volumen recalculado: m³ en Smalian; PT (y m³ en 0) en Oxapampina. */
+/**
+ * El lote Smalian guardado en el navegador con el m³ de HOY (ADR-492). Las filas
+ * cubicadas antes del cambio traen el `m3` de la Smalian pura (hasta +4,44 % por troza medido en Blas, ADR-492);
+ * el m³ es un derivado de D1/D2/largo, así que se recalcula al LEER en vez de
+ * confiar en el guardado. Una fila sin medidas válidas conserva lo que traía.
+ * Sólo el lote Smalian: la Oxapampina no cambió.
+ */
+export function recubicarLoteSmalian<T extends object>(rows: readonly T[]): T[] {
+  return rows.map((r) => {
+    const t = r as { d1?: unknown; d2?: unknown; largo?: unknown };
+    const m3 = cubicarTroza(Number(t.d1), Number(t.largo), Number(t.d2));
+    return m3 > 0 ? { ...r, m3 } : r;
+  });
+}
+
+/** La fila con su volumen recalculado: m³ en Smalian SERFOR; PT (y m³ en 0) en Oxapampina. */
 export function conVolumen<T extends Medidas>(formula: FormulaTrozas, t: T): T & { m3: number; pt?: number } {
   const v = cubicarSegun(formula, t.d1, t.largo, t.d2);
   if (formula === "smalian") {

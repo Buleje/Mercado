@@ -1,20 +1,26 @@
 /**
- * Cubicación de trozas (rolliza) por Smalian — la herramienta con la que se
- * verifica en patio lo que declara la GTF antes de firmar el ingreso.
+ * Cubicación de trozas (rolliza) por Smalian SERFOR — la herramienta con la que
+ * se verifica en patio lo que declara la GTF antes de firmar el ingreso.
  */
 import { describe, expect, it } from "vitest";
 import {
   clasificarTrozaPorDiametro, compararConGtf, cubicarTroza, partirEnTrozas, tipoDeTroza, totalesTrozas,
 } from "@/lib/forestal/cubicacion-trozas";
+import { smalianVolume, volumenSerforCm } from "@/lib/forestal/loth-constants";
 
-describe("cubicarTroza (Smalian)", () => {
-  it("promedia las áreas de las dos caras", () => {
-    // D1=40cm, D2=50cm, L=3m → ((π/4·0.4² + π/4·0.5²)/2)·3 = (π/4)·0.205·3 = 0.483 m³
-    expect(cubicarTroza(40, 3, 50)).toBeCloseTo(0.483, 4);
+describe("cubicarTroza (Smalian SERFOR, ADR-492)", () => {
+  it("0.7854 × Ø medio² × largo — no el promedio de las áreas (la pura daba 0.4830)", () => {
+    // D1=40cm, D2=50cm, L=3m → 0.7854 · 0.45² · 3 = 0.4771 m³
+    expect(cubicarTroza(40, 3, 50)).toBe(0.4771);
+  });
+
+  it("es la misma cuenta que smalianVolume del Libro TH (una sola fuente)", () => {
+    expect(cubicarTroza(62, 4, 50)).toBe(smalianVolume(0.62, 0.5, 4));
+    expect(volumenSerforCm(62, 50, 4)).toBe(smalianVolume(0.62, 0.5, 4));
   });
 
   it("con un solo diámetro colapsa al cilindro", () => {
-    // D=40cm, L=3m → π/4·0.4²·3 = 0.377 m³
+    // D=40cm, L=3m → 0.7854·0.4²·3 = 0.377 m³
     expect(cubicarTroza(40, 3)).toBeCloseTo(0.377, 3);
     expect(cubicarTroza(40, 3, 0)).toBeCloseTo(cubicarTroza(40, 3), 6);
   });
@@ -25,8 +31,26 @@ describe("cubicarTroza (Smalian)", () => {
   });
 
   it("una troza grande de la selva: 80/90 cm × 8 m", () => {
-    // ((π/4·0.8² + π/4·0.9²)/2)·8 = 4.5553 m³
-    expect(cubicarTroza(80, 8, 90)).toBeCloseTo(4.5553, 3);
+    // 0.7854 · 0.85² · 8 = 4.5396 m³ (la pura daba 4.5553)
+    expect(cubicarTroza(80, 8, 90)).toBe(4.5396);
+  });
+});
+
+describe("Smalian SERFOR: la constante es 0.7854 exacta (ADR-492)", () => {
+  it("62 y 50 cm × 4 m = 0.7854 × 0.56² × 4 = 0.9852 m³", () => {
+    expect(volumenSerforCm(62, 50, 4)).toBe(0.9852);
+    expect(smalianVolume(0.62, 0.5, 4)).toBe(Math.round(0.7854 * 0.56 * 0.56 * 4 * 10000) / 10000);
+  });
+
+  it("no usa π/4: con 100 cm × 100 m la diferencia se ve en el 4.º decimal", () => {
+    // 0.7854 · 1² · 100 = 78.54 exacto; π/4 daría 78.5398.
+    expect(volumenSerforCm(100, 100, 100)).toBe(78.54);
+  });
+
+  it("sin D2 (o en 0) la troza es pareja: D2 = D1", () => {
+    expect(volumenSerforCm(60, null, 5)).toBe(volumenSerforCm(60, 60, 5));
+    expect(volumenSerforCm(60, 0, 5)).toBe(volumenSerforCm(60, 60, 5));
+    expect(volumenSerforCm(0, 60, 5)).toBe(0);
   });
 });
 

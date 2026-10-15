@@ -129,7 +129,7 @@ export default function CtpTrozasMedirModal({
           <InfoTip
             title="Cómo se guarda"
             what="Sólo llena lo vacío: nunca pisa un D1/D2 que declaró la guía de SERFOR. El volumen del libro no cambia."
-            affects="La casilla gris (≈) es el diámetro medio que haría cuadrar el volumen declarado con el largo (Huber): una pista para tipear, no se guarda. La última columna compara el volumen con tus puntas contra el declarado; más de 10 % pide revisar."
+            affects="La casilla gris (≈) es el diámetro medio que haría cuadrar el volumen declarado con el largo (Smalian SERFOR): una pista para tipear, no se guarda. La última columna compara el volumen con tus puntas contra el declarado; más de 10 % pide revisar."
             example="Troza 62B, 7,75 m y 3,424 m³: la pista dice ≈75. Si anotas 76 y 74, la diferencia es +0 %."
           />
         </p>
@@ -150,7 +150,7 @@ export default function CtpTrozasMedirModal({
                 <th className="text-right">Vol. (m³)</th>
                 <th className="text-right">D1 (cm)</th>
                 <th className="text-right">D2 (cm)</th>
-                <th className="text-right" title="Volumen de Huber con esas puntas contra el declarado">Cuadra</th>
+                <th className="text-right" title="Volumen Smalian SERFOR con esas puntas contra el declarado">Cuadra</th>
               </tr>
             </thead>
             <tbody>

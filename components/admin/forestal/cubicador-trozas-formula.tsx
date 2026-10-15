@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Selector de fórmula del Cubicador de trozas — «Smalian (m³) | Oxapampina
+ * Selector de fórmula del Cubicador de trozas — «Smalian SERFOR (m³) | Oxapampina
  * (PT)» — y el interruptor «2 diámetros». Cada fórmula es su propio lote
  * (`cubicacion-trozas-formula.ts`): cambiar acá cambia de lote, no convierte.
  */
@@ -35,7 +35,7 @@ export default function FormulaTrozasControl({
       />
       <InfoTip
         title="Dos fórmulas, dos lotes"
-        what={<span>Smalian: Ø en cm y largo en m, da m³ (lo que declara la GTF). Oxapampina: Ø en pulgadas y largo en pies, da pie tablar: {UNIDADES_FORMULA.oxapampina.cuenta}.</span>}
+        what={<span>Smalian SERFOR: Ø en cm y largo en m, {UNIDADES_FORMULA.smalian.cuenta}, da m³ (lo que declara la GTF). Oxapampina: Ø en pulgadas y largo en pies, da pie tablar: {UNIDADES_FORMULA.oxapampina.cuenta}.</span>}
         affects={<span>Cada fórmula guarda su propio patio: cambiar de fórmula no convierte las medidas, abre el otro lote.</span>}
         example={<span>20″ × 12′ = 195.92 PT. Con 18″ y 22″ el Ø es 20″: también 195.92 PT.</span>}
         side="bottom"

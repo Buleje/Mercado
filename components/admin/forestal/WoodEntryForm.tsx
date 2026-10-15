@@ -58,6 +58,7 @@ import type { DocTipo } from "@/lib/forestal/directorio";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { printGtfSerfor } from "@/lib/forestal/serfor-gtf-print";
+import { volumenSerforCm } from "@/lib/forestal/loth-constants";
 import CtpGuiaSerforHoja from "./CtpGuiaSerforHoja";
 import CtpGuiaSerforTrozas from "./CtpGuiaSerforTrozas";
 import CtpPrecioDeLaMadera, {
@@ -243,10 +244,11 @@ const MODO_CARGA_KEY = "buleje:ctp-wood-entry-modo";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
+/** Smalian SERFOR (ADR-492) con el Ø medio: las `pieces` iguales van como un largo
+ *  total (el volumen es lineal en L), así el redondeo a 4 decimales es uno solo. */
 function cubicate(pieces: number, lengthM: number, diameterCm: number): number {
   if (!pieces || !lengthM || !diameterCm) return 0;
-  const r = diameterCm / 200;
-  return Math.round(Math.PI * r * r * lengthM * pieces * 10000) / 10000;
+  return volumenSerforCm(diameterCm, diameterCm, lengthM * pieces);
 }
 
 const productLabel = (v: string) => PRODUCT_TYPES.find((p) => p.value === v)?.label ?? v;

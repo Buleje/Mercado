@@ -851,8 +851,8 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
 
   // ── Apartado 2: Retrozado (11 casilleros) ──
   // El seccionado de trozas dentro del CTP (ADR-313). Los diámetros van en cm,
-  // que es como los publica SERFOR en la guía; el volumen se calcula por Huber
-  // sobre el diámetro medio —la fórmula que reproduce lo que declara el
+  // que es como los publica SERFOR en la guía; el volumen se calcula por Smalian
+  // SERFOR sobre el diámetro medio (ADR-492) —la fórmula que reproduce lo que declara el
   // documento—, salvo que el operador haya medido y escrito el suyo.
   const wa2 = wb.addWorksheet("Apartado 2 · Retrozado");
   wa2.columns = [

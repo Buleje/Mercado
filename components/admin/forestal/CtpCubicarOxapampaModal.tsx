@@ -230,7 +230,7 @@ export default function CtpCubicarOxapampaModal({
           )}
           <InfoTip
             title="Fórmula Oxapampa"
-            what="Mide las dos puntas en pulgadas y el largo en pies: PT = (promedio de las puntas)² × largo ÷ 24.5. Es la medida con que trabajas con dueños, compras, ventas y flete; la de la guía (Smalian, m³) queda para el libro."
+            what="Mide las dos puntas en pulgadas y el largo en pies: PT = (promedio de las puntas)² × largo ÷ 24.5. Es la medida con que trabajas con dueños, compras, ventas y flete; la de la guía (Smalian SERFOR, m³) queda para el libro."
             affects="El PT queda guardado en cada troza; si corriges una medida, se recalcula. Enter o Tab pasan a la celda siguiente, ↑ ↓ cambian de fila. Vaciar las tres celdas borra la cubicación."
             example="18″ y 22″, 12′ → promedio 20″ → 20² × 12 ÷ 24.5 = 196 PT"
           />

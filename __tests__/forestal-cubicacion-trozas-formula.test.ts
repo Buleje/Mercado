@@ -7,7 +7,7 @@ import { ptOxapampa, ptOxapampaDelCubicador } from "@/lib/forestal/cubicacion-ox
 import { cubicarTroza, partirEnTrozas } from "@/lib/forestal/cubicacion-trozas";
 import {
   claveLoteTrozas, conVolumen, cubicarSegun, diametroUnico, medidasEnVoz, partirEnMedidas, patioACsv,
-  resumenDelPatio, tipoDeTrozaSegun, totalesSegun,
+  recubicarLoteSmalian, resumenDelPatio, tipoDeTrozaSegun, totalesSegun,
 } from "@/lib/forestal/cubicacion-trozas-formula";
 import { agruparTrozasPor, resumenTrozasACsv, resumenTrozasPorEspecie } from "@/lib/forestal/cubicacion-trozas-resumen";
 
@@ -117,5 +117,16 @@ describe("totales, resúmenes y CSV en PT", () => {
     expect(csv[0]).toBe("﻿D1cm,D2cm,LargoM,Especie,m3");
     expect(csv[1]).toBe(`40,45,3.5,Cedro,${s[0].m3}`);
     expect(csv[2]).toBe(`TOTAL,,,,${s[0].m3.toFixed(4)}`);
+  });
+});
+
+describe("recubicarLoteSmalian (ADR-492)", () => {
+  it("el lote viejo del navegador pasa a Smalian SERFOR; sin largo conserva su m³", () => {
+    const [nueva, sinLargo] = recubicarLoteSmalian([
+      { d1: 62, d2: 50, largo: 4, m3: 0.999 },
+      { d1: 40, d2: 45, largo: 0, m3: 0.5 },
+    ]);
+    expect(nueva.m3).toBe(0.9852);
+    expect(sinLargo.m3).toBe(0.5);
   });
 });

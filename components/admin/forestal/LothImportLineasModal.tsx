@@ -431,7 +431,7 @@ function FilaPrevia({
       <td className="text-[var(--text-secondary)]">{f.speciesCommon ?? "—"}</td>
       <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
         {f.volumeM3 != null ? fmtM3(f.volumeM3) : f.quantity != null ? `${f.quantity} ${f.unit ?? ""}` : "—"}
-        {f.volumenCalculado && <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">(Smalian)</span>}
+        {f.volumenCalculado && <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">(Smalian SERFOR)</span>}
       </td>
       <td>
         {textos.length === 0 ? (

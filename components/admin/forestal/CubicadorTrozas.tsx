@@ -18,8 +18,8 @@ import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import type { TrozaImportada } from "@/lib/forestal/cubicacion-trozas-import";
 import {
   claveDiametrosTrozas, claveFormulaTrozas, claveLoteTrozas, conVolumen, diametroUnico, DIAMETROS_POR_DEFECTO,
-  esDiametrosPorTroza, esFormulaTrozas, fueraDeRango, medidasEnVoz, patioACsv, RANGO_FORMULA, resumenDelPatio, totalesSegun,
-  UNIDADES_FORMULA, type DiametrosPorTroza, type FormulaTrozas,
+  esDiametrosPorTroza, esFormulaTrozas, fueraDeRango, medidasEnVoz, patioACsv, RANGO_FORMULA, recubicarLoteSmalian, resumenDelPatio,
+  totalesSegun, UNIDADES_FORMULA, type DiametrosPorTroza, type FormulaTrozas,
 } from "@/lib/forestal/cubicacion-trozas-formula";
 import { loadConfig } from "@/lib/forestal/cubicador-config";
 import { useLecturaEnVoz, type ContextoLectura } from "@/hooks/use-lectura-en-voz";
@@ -49,7 +49,8 @@ const storageKey = () => claveLoteTrozas(tenantSlug(), "smalian");
 const leerLote = (f: FormulaTrozas): Fila[] => {
   try {
     const v: unknown = JSON.parse(localStorage.getItem(claveLoteTrozas(tenantSlug(), f)) ?? "[]");
-    return Array.isArray(v) ? (v as Fila[]) : [];
+    if (!Array.isArray(v)) return [];
+    return f === "smalian" ? recubicarLoteSmalian(v as Fila[]) : (v as Fila[]);
   } catch { return []; }
 };
 const guardarLote = (f: FormulaTrozas, rows: Fila[]) => {

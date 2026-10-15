@@ -86,7 +86,7 @@ export function MedidasDeLaTroza({ ficha, onAnotar }: { ficha: FichaTroza; onAno
           )}
           <span className="font-bold text-[var(--text-primary)]">{huber.revisar ? "No cuadra: revísala" : "Cuadra con el volumen"}</span>
           <span className="text-[var(--text-secondary)]">
-            Huber con esas puntas da <span className="font-mono tabular-nums text-[var(--text-primary)]">{m3(huber.huberM3)} m³</span>{" "}
+            Smalian SERFOR con esas puntas da <span className="font-mono tabular-nums text-[var(--text-primary)]">{m3(huber.huberM3)} m³</span>{" "}
             contra {m3(huber.declaradoM3)} m³ declarados ·{" "}
             <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{pct > 0 ? "+" : ""}{pct} %</span>
           </span>

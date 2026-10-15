@@ -18,6 +18,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { smalianVolume } from "@/lib/forestal/loth-constants";
 import { listaEnFrase } from "@/lib/forestal/loth-guia-anterior";
 import { leerPlaca } from "@/lib/forestal/placa-peru";
 import VerificarGtfSerfor from "./VerificarGtfSerfor";
@@ -26,8 +27,8 @@ import { useGuiaCortaInicial } from "./hooks/use-guia-corta-inicial";
 import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
 import type { Gtf, GtfItem } from "./gtf-tabla-columnas";
 
-const smalian = (dM: number, dm: number, L: number) =>
-  dM > 0 && dm > 0 && L > 0 ? Math.round(0.7854 * Math.pow((dM + dm) / 2, 2) * L * 10000) / 10000 : 0;
+/** Smalian SERFOR (ADR-492): la misma cuenta del libro, sin copia propia. */
+const smalian = smalianVolume;
 
 /** `guias`: la lista de la vista (la más nueva primero): de ahí sale la última guía del permiso. */
 export default function LothGtfForm({ onClose, onSaved, guias = [] }: { onClose: () => void; onSaved: () => void; guias?: readonly Gtf[] }) {

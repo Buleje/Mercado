@@ -307,7 +307,7 @@ export function aCuerpoDelLibro(
                 : null,
               largoM: t.datos.largoM != null ? num(t.datos.largoM) : null,
               /* El promedio de los dos extremos: es el diámetro que se muestra y
-                 con el que se cubica por Huber. Sin él la ficha de la troza sale
+                 con el que se cubica por Smalian SERFOR. Sin él la ficha de la troza sale
                  sin diámetro teniendo D1 y D2 al lado. */
               diametroCm: d1 != null && d2 != null ? Math.round(((d1 + d2) / 2) * 100) / 100 : (d1 ?? d2),
               d1Cm: d1,

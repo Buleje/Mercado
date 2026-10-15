@@ -122,7 +122,7 @@ export default function LothMedicionFuste({
             what={oblig.razon}
             affects={`${forma === "promedio" ? "D1 y D2 ya promediados van tal cual al libro." : "Dos medidas cruzadas por sección: el libro consigna el promedio."} ${esTala ? "La longitud aprovechable es la total menos los descuentos." : ""}`.trim()}
             body={AYUDA_TECLADO}
-            example="Volumen (Smalian) = 0.7854 × ((Ø mayor + Ø menor)/2)² × longitud aprovechable"
+            example="Volumen (Smalian SERFOR) = 0.7854 × ((Ø mayor + Ø menor)/2)² × longitud aprovechable"
           />
         </div>
         {esTala && (
@@ -205,7 +205,7 @@ export default function LothMedicionFuste({
         )}
         {oblig.volumen && (
           <Resultado
-            rotulo="Volumen (Smalian)"
+            rotulo="Volumen (Smalian SERFOR)"
             valor={volumenTexto}
             destacado
             className={esTala ? "col-span-2 sm:col-span-1" : ""}

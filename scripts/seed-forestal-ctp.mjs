@@ -68,7 +68,7 @@ const d = (dia) => new Date(Date.UTC(2026, 6, dia)).toISOString();
 /** Huber sobre el diámetro medio, que es como cubica SERFOR la troza. */
 const vol = (largo, d1, d2) => {
   const dm = (d1 + d2) / 2 / 100;
-  return Math.round((Math.PI / 4) * dm * dm * largo * 10000) / 10000;
+  return Math.round(0.7854 * dm * dm * largo * 10000) / 10000; // Smalian SERFOR (ADR-492)
 };
 const r4 = (n) => Math.round(n * 10000) / 10000;
 

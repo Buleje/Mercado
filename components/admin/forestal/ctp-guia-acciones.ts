@@ -126,7 +126,7 @@ export function accionesDeGuia(guia: Guia, h: ManejadoresDeGuia): MenuAccion[] {
         } satisfies MenuAccion]
       : []),
     /* La medida propia, con la cinta en pulgadas y pies: la de SERFOR (m³,
-       Smalian) queda para el libro. Sólo con trozas cargadas: sin piezas no
+       Smalian SERFOR) queda para el libro. Sólo con trozas cargadas: sin piezas no
        hay filas que medir. */
     ...(h.onCubicarOxapampa && guia.trozasCount > 0
       ? [{

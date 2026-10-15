@@ -25,7 +25,7 @@ import {
 } from "@/lib/forestal/cubicacion-trozas-resumen";
 import { fmtM3, fmtPct, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import {
-  claveFormulaTrozas, claveLoteTrozas, esFormulaTrozas, FORMULAS_TROZAS, UNIDADES_FORMULA, type FormulaTrozas,
+  claveFormulaTrozas, claveLoteTrozas, esFormulaTrozas, FORMULAS_TROZAS, recubicarLoteSmalian, UNIDADES_FORMULA, type FormulaTrozas,
 } from "@/lib/forestal/cubicacion-trozas-formula";
 import { formatNumber } from "@/lib/format";
 import { SeccionResumen } from "./resumen-tabla";
@@ -41,7 +41,8 @@ function leerTrozas(f: FormulaTrozas): TrozaCubicada[] {
   try {
     const raw = localStorage.getItem(claveTrozas(f));
     const v = raw ? JSON.parse(raw) : [];
-    return Array.isArray(v) ? (v as TrozaCubicada[]) : [];
+    if (!Array.isArray(v)) return [];
+    return f === "smalian" ? recubicarLoteSmalian(v as TrozaCubicada[]) : (v as TrozaCubicada[]);
   } catch {
     return [];
   }

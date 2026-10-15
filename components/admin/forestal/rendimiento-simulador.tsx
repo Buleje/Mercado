@@ -15,7 +15,7 @@ import { Calculator, RefreshCw } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
-import { claveLoteTrozas, type FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
+import { claveLoteTrozas, recubicarLoteSmalian, type FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
 import { FACTOR_OXAPAMPA_GEOMETRICO } from "@/lib/forestal/rendimiento-plata";
 import { simularAserrado, type FuenteSimulacion, type ResumenEspecie } from "@/lib/forestal/rendimiento-especie";
 import { fmtM3, fmtPct } from "./rendimiento-compartido";
@@ -29,7 +29,8 @@ function leerLote(formula: FormulaTrozas): Entrada[] {
     const slug = localStorage.getItem("active-tenant-slug") ?? "main";
     const v: unknown = JSON.parse(localStorage.getItem(claveLoteTrozas(slug, formula)) ?? "[]");
     if (!Array.isArray(v)) return [];
-    return (v as { especie?: string; m3?: number; pt?: number }[]).map((t) => ({
+    const filas = v as { especie?: string; m3?: number; pt?: number }[];
+    return (formula === "smalian" ? recubicarLoteSmalian(filas) : filas).map((t) => ({
       especie: t.especie?.trim() || "Sin especie",
       m3: formula === "smalian" ? Number(t.m3) || 0 : (Number(t.pt) || 0) / (PT_POR_M3 * FACTOR_OXAPAMPA_GEOMETRICO),
       trozas: 1,
@@ -80,7 +81,7 @@ export default function RendimientoSimulador({ especies }: { especies: readonly 
             .map((f) => (
               <button key={f} type="button" aria-pressed={formula === f} onClick={() => setFormula(f)}
                 className={cn(BTN, `${formula === f ? "border-[var(--accent)] bg-[var(--accent-soft)]" : ""}`)}>
-                Lote {f === "smalian" ? "Smalian" : "Oxapampina"} · {lotes[f].length} trozas
+                Lote {f === "smalian" ? "Smalian SERFOR" : "Oxapampina"} · {lotes[f].length} trozas
               </button>
             ))
         ) : (

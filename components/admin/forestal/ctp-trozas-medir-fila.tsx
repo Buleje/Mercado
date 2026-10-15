@@ -76,7 +76,7 @@ export default function CtpTrozasMedirFila({
   };
   const pista = equivalente != null ? `≈${equivalente}` : "cm";
   const titPista = equivalente != null
-    ? `Con ${fmtM3(t.volumenM3 ?? 0)} m³ y ${n(t.largoM)} m, el diámetro medio ronda ${equivalente} cm (Huber). Es una pista, no se guarda.`
+    ? `Con ${fmtM3(t.volumenM3 ?? 0)} m³ y ${n(t.largoM)} m, el diámetro medio ronda ${equivalente} cm (Smalian SERFOR). Es una pista, no se guarda.`
     : undefined;
 
   return (
@@ -124,7 +124,7 @@ export default function CtpTrozasMedirFila({
           <span className="font-sans font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">entre 0 y {MAX_DIAMETRO_CM} cm</span>
         ) : desvio != null ? (
           <span
-            title={`Huber con esas puntas da ${fmtM3(volumenHuberM3(d1, d2, t.largoM) ?? 0)} m³ contra ${fmtM3(t.volumenM3 ?? 0)} m³ declarados`}
+            title={`Smalian SERFOR con esas puntas da ${fmtM3(volumenHuberM3(d1, d2, t.largoM) ?? 0)} m³ contra ${fmtM3(t.volumenM3 ?? 0)} m³ declarados`}
             className={lejos ? "rounded-md bg-[var(--data-warning-500)]/18 px-1.5 font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}
           >
             {desvio > 0 ? "+" : ""}{Math.round(desvio * 100)} %{lejos ? " · revisa" : ""}

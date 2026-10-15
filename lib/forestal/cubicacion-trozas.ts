@@ -1,17 +1,20 @@
 /**
- * cubicacion-trozas.ts — cubicación de madera ROLLIZA (trozas) por Smalian.
+ * cubicacion-trozas.ts — cubicación de madera ROLLIZA (trozas) por Smalian SERFOR.
  * PURO y client-safe, hermano de `cubicacion.ts` (aserrada).
  *
  * Convención de campo peruana (y lo que espera SERFOR en el ingreso al CTP):
  *   - Diámetros en CENTÍMETROS, medidos en las dos caras de la troza
  *     (menor y mayor); largo en METROS.
- *   - Volumen en m³ por SMALIAN: V = ((A1 + A2) / 2) × L, con A = π/4 × (D/100)².
- *     Es la fórmula de los cubicadores oficiales; con un solo diámetro
- *     (D2 = D1) colapsa al cilindro.
+ *   - Volumen en m³ por SMALIAN SERFOR (ADR-492): V = 0.7854 × ((D1 + D2)/2 /100)² × L,
+ *     la de `smalianVolume` (`loth-constants.ts`), única fuente. Con un solo
+ *     diámetro (D2 = D1) es el cilindro. La «Smalian pura» (promedio de las
+ *     áreas) se retiró: SERFOR no la admite.
  *
  * El ingreso al Libro CTP registra rolliza EN m³ (`WoodEntry.volumeM3`): esta
  * herramienta sirve para verificar en patio lo que dice la GTF antes de firmar.
  */
+
+import { volumenSerforCm } from "./loth-constants";
 
 export interface TrozaCubicada {
   id: string;
@@ -22,7 +25,7 @@ export interface TrozaCubicada {
   /** Largo (m). */
   largo: number;
   especie?: string;
-  /** m³ Smalian de ESTA troza. En el lote Oxapampina va en 0: ahí no hay m³ (ver `pt`). */
+  /** m³ Smalian SERFOR de ESTA troza. En el lote Oxapampina va en 0: ahí no hay m³ (ver `pt`). */
   m3: number;
   /** PT Oxapampa de ESTA troza — sólo en el lote Oxapampina del cubicador
    *  (`cubicacion-trozas-formula.ts`), donde `d1`/`d2` van en pulgadas y `largo` en pies. */
@@ -62,17 +65,12 @@ export function tipoDeTroza(t: Pick<TrozaCubicada, "d1" | "tipo">): TipoTroza {
 
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
-/** Área de la sección circular en m², con el diámetro en cm. */
-const areaM2 = (dCm: number) => (Math.PI / 4) * (dCm / 100) ** 2;
-
 /**
- * Volumen Smalian de una troza en m³. `d2` opcional: sin segunda medida se
- * asume troza pareja (cilindro con d1).
+ * Volumen Smalian SERFOR de una troza en m³ (`volumenSerforCm`, ADR-492). `d2`
+ * opcional: sin segunda medida se asume troza pareja (cilindro con d1).
  */
 export function cubicarTroza(d1Cm: number, largoM: number, d2Cm?: number): number {
-  const d2 = d2Cm && d2Cm > 0 ? d2Cm : d1Cm;
-  if (!(d1Cm > 0 && largoM > 0)) return 0;
-  return r4(((areaM2(d1Cm) + areaM2(d2)) / 2) * largoM);
+  return volumenSerforCm(d1Cm, d2Cm, largoM);
 }
 
 /**

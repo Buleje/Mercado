@@ -10,13 +10,14 @@
  * Las reglas vienen de un ERP forestal que ya operaba (AppForestal, feb 2026);
  * la **fórmula de volumen NO**: la de ellos (Smalian) se aparta de lo que
  * declara SERFOR —3.3113 m³ donde la guía dice 3.268— y acá el volumen tiene que
- * cuadrar con el documento. Se usa Huber sobre el diámetro medio, la misma de
- * `serfor-gtf-a-ingresos.ts`, que reproduce los cuatro volúmenes de la guía real.
+ * cuadrar con el documento. Se usa Smalian SERFOR (0.7854 × diámetro medio² × L,
+ * `smalianVolume`, ADR-492), que reproduce los cuatro volúmenes de la guía real.
  *
  * Puro y sin red: se testea contra los números de esa guía.
  */
 
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { volumenSerforCm } from "@/lib/forestal/loth-constants";
 
 /** Un pedazo a crear, tal como lo carga el operador. */
 export type RetrozoNuevo = {
@@ -64,14 +65,14 @@ export type RetrozoCalculado = RetrozoNuevo & {
 };
 
 /**
- * Volumen de una troza por Huber (diámetro medio), en m³.
+ * Volumen de una troza por Smalian SERFOR (0.7854 × diámetro medio² × largo), en
+ * m³ — `volumenSerforCm` (ADR-492); el nombre «Huber» queda por los importadores.
  *
  * Diámetros en cm, largo en m — el mismo orden en que lo publica SERFOR.
  */
 export function volumenHuber(d1Cm: number, d2Cm: number, largoM: number): number {
   if (!(d1Cm > 0) || !(d2Cm > 0) || !(largoM > 0)) return 0;
-  const radioM = (d1Cm + d2Cm) / 2 / 200;
-  return Number((Math.PI * radioM * radioM * largoM).toFixed(4));
+  return volumenSerforCm(d1Cm, d2Cm, largoM);
 }
 
 /** Tolerancia del redondeo de SERFOR (3 decimales), no un margen de cortesía. */

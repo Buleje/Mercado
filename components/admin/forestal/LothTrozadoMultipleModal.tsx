@@ -126,7 +126,7 @@ export default function LothTrozadoMultipleModal({
         <InfoTip
           title="Trozar un árbol"
           what="Todas las trozas del mismo fuste, de una vez."
-          affects="El código sigue a lo que el libro ya trozó de ese árbol (A-D asentadas → E) y el volumen (Smalian) sale solo por renglón."
+          affects="El código sigue a lo que el libro ya trozó de ese árbol (A-D asentadas → E) y el volumen (Smalian SERFOR) sale solo por renglón."
           example="Eliges el árbol 85-TOR y cargas sus trozas sin volver a tipear especie ni fecha. Flechas y Enter te llevan de medida en medida."
         />
       }

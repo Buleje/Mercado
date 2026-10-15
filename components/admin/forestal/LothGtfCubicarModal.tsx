@@ -182,7 +182,7 @@ export default function LothGtfCubicarModal({
                 className={`${CIFRA} border-[var(--rule-base)] bg-[var(--surface-sunken)]`}
                 data-cifra="serfor"
               >
-                <span className={ROTULO}>SERFOR (Smalian) · lo que declara la guía</span>
+                <span className={ROTULO}>Smalian SERFOR · lo que declara la guía</span>
                 <span className="font-mono text-xl font-bold tabular-nums text-[var(--text-primary)]">
                   {declarado != null ? fmtVolumen(declarado, "smalian") : "sin volumen declarado"}
                 </span>
@@ -219,7 +219,7 @@ export default function LothGtfCubicarModal({
                 </b>
                 <InfoTip
                   title="Es un derivado"
-                  what="La guía declara m³ Smalian (la cifra de SERFOR). La Oxapampina se mide en pie tablar con otra fórmula: para compararlas se pasa lo declarado a PT con el factor de la plaza (1 m³ = 424 PT)."
+                  what="La guía declara m³ Smalian SERFOR (la cifra de SERFOR). La Oxapampina se mide en pie tablar con otra fórmula: para compararlas se pasa lo declarado a PT con el factor de la plaza (1 m³ = 424 PT)."
                   affects="Sólo orienta: lo que se paga es la Oxapampina neta, no esta comparación."
                   example="20,303 m³ × 424 ≈ 8 608 PT; la Oxapampina bruta de las mismas trozas da 5 364 PT."
                 />

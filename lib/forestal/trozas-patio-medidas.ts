@@ -19,6 +19,7 @@
  */
 
 import { estaEnPatio, estadoDeTroza, type TrozaPatio } from "./trozas-patio";
+import { volumenSerforCm } from "./loth-constants";
 
 export const CM_POR_PULGADA = 2.54;
 
@@ -95,7 +96,8 @@ export const faltanMedidas = (t: PiezaConMedidas): boolean => {
 };
 
 /**
- * Volumen por Huber sobre el diámetro medio: π/4 · Dm² · L (D en cm, L en m).
+ * Volumen por Smalian SERFOR sobre el diámetro medio: 0.7854 · Dm² · L (D en cm,
+ * L en m) — `volumenSerforCm`, ADR-492. El nombre «Huber» queda por los importadores.
  *
  * Es la fórmula con la que la guía de SERFOR reproduce sus volúmenes al
  * milésimo (ADR-312), así que sirve para avisar un D1/D2 mal tipeado.
@@ -106,17 +108,16 @@ export const UMBRAL_HUBER = 0.1;
 
 export function volumenHuberM3(d1: number | null, d2: number | null, largoM: number | null | undefined): number | null {
   if (!valida(d1) || !valida(d2) || !valida(largoM)) return null;
-  const dm = (d1 + d2) / 2 / 100;
-  return Math.round((Math.PI / 4) * dm * dm * largoM * 10_000) / 10_000;
+  return volumenSerforCm(d1, d2, largoM);
 }
 
 /**
  * El diámetro medio que haría cuadrar el volumen declarado con el largo
- * (Huber al revés). DERIVADO: es una pista para anotar, no una medida.
+ * (Smalian SERFOR al revés). DERIVADO: es una pista para anotar, no una medida.
  */
 export function diametroEquivalenteCm(volumenM3: number | null | undefined, largoM: number | null | undefined): number | null {
   if (!valida(volumenM3) || !valida(largoM)) return null;
-  return Math.round(Math.sqrt((4 * volumenM3) / (Math.PI * largoM)) * 100);
+  return Math.round(Math.sqrt(volumenM3 / (0.7854 * largoM)) * 100);
 }
 
 /** Las piezas con su chapa y su cubicación comercial. */

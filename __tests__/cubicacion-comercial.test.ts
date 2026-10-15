@@ -61,9 +61,10 @@ describe("trozaNeta", () => {
     expect(descuentoTrozaSchema.safeParse({ pct: 90 }).success).toBe(true);
   });
 
-  it("5 · Smalian con hueco en cm: resta π/4 · h² · L′", () => {
+  it("5 · Smalian SERFOR con hueco en cm: resta 0.7854 · h² · L′ (ADR-492)", () => {
     const bruto = cubicarSegun("smalian", 60, 3, 50);
-    const hueco = Math.round((Math.PI / 4) * 0.2 ** 2 * 3 * 10_000) / 10_000;
+    expect(bruto).toBe(Math.round(0.7854 * 0.55 ** 2 * 3 * 10_000) / 10_000);
+    const hueco = Math.round(0.7854 * 0.2 ** 2 * 3 * 10_000) / 10_000;
     expect(trozaNeta("smalian", 60, 50, 3, { hueco: 20 })).toEqual({ bruto, neto: Math.round((bruto - hueco) * 10_000) / 10_000 });
   });
 });

@@ -1,6 +1,7 @@
 import type { GtfSerfor, TrozaGtf } from "./serfor-gtf";
 import { descuadreDeEspecie, explicarDescuadre, type DescuadreDeGuia } from "./guia-descuadre";
 import { filaDeEspecie } from "./acomodar-trozas";
+import { volumenSerforCm } from "./loth-constants";
 
 /**
  * Convierte una GTF de SERFOR en los ingresos que le corresponden en el libro
@@ -55,7 +56,7 @@ export type ReparteGtf =
  * metros de largo y 51 metros de diámetro.
  *
  * No es una suposición: el volumen que declara la guía se reproduce exacto con
- * la fórmula de Huber sobre el diámetro medio —4.903 m³ para esa troza, 4.162,
+ * Smalian SERFOR sobre el diámetro medio (ADR-492) —4.903 m³ para esa troza, 4.162,
  * 1.606 y 3.268 para las otras tres de la guía real—, y no se acerca con
  * ninguna otra lectura. `volumenSegunDimensiones` deja esa comprobación
  * disponible para los tests.
@@ -89,7 +90,8 @@ export function medidasDeTroza(dimensiones: string | null | undefined): {
 }
 
 /**
- * Volumen de una troza por Huber (diámetro medio), en m³. Es la fórmula con la
+ * Volumen de una troza por Smalian SERFOR (0.7854 × diámetro medio² × largo,
+ * `volumenSerforCm`, ADR-492), en m³. Es la fórmula con la
  * que SERFOR publica el volumen de cada troza: sirve para CONTROLAR que se
  * leyeron bien las dimensiones, no para reemplazar el dato del documento —el
  * volumen que vale es el que declara la guía.
@@ -97,8 +99,7 @@ export function medidasDeTroza(dimensiones: string | null | undefined): {
 export function volumenSegunDimensiones(dimensiones: string | null | undefined): number | null {
   const { largoM, diametroCm } = medidasDeTroza(dimensiones);
   if (largoM == null || diametroCm == null) return null;
-  const radioM = diametroCm / 200;
-  return Number((Math.PI * radioM * radioM * largoM).toFixed(4));
+  return volumenSerforCm(diametroCm, diametroCm, largoM);
 }
 
 function aTroza(t: TrozaGtf, orden: number): TrozaDeIngreso {

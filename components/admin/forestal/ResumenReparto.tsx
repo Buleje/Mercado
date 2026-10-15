@@ -99,6 +99,7 @@ import { distConVolumenOficial, repartoOficial } from "@/lib/forestal/reparto-of
 import { DataTable } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
+import { recubicarLoteSmalian } from "@/lib/forestal/cubicacion-trozas-formula";
 
 
 /** Mismo botón que la cabecera de Resúmenes: un solo alto para toda la pestaña. */
@@ -160,7 +161,7 @@ function leerTrozas(): { especie?: string; m3: number }[] {
   try {
     const raw = localStorage.getItem(claveTrozas());
     const v = raw ? JSON.parse(raw) : [];
-    return Array.isArray(v) ? (v as { especie?: string; m3: number }[]) : [];
+    return Array.isArray(v) ? recubicarLoteSmalian(v as { especie?: string; m3: number }[]) : [];
   } catch {
     return [];
   }

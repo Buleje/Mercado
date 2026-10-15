@@ -30,7 +30,7 @@ export const GRUPO_HERRAMIENTAS: LibroGroup = {
   label: "Herramientas",
   views: [
     { key: "cubicador", label: "Cubicador de madera", icon: Calculator, hint: "Aserrada: pie tablar + m³ por voz" },
-    { key: "trozas", label: "Cubicador de trozas", icon: Ruler, hint: "Rolliza en patio: Smalian (m³, contra la GTF) u Oxapampina (PT)" },
+    { key: "trozas", label: "Cubicador de trozas", icon: Ruler, hint: "Rolliza en patio: Smalian SERFOR (m³, contra la GTF) u Oxapampina (PT)" },
     { key: "resumenes", label: "Resúmenes", icon: BarChart3, hint: "Tablas por especie y tipo del lote cubicado" },
     { key: "especies", label: "Fotos de especies", icon: Trees, hint: "Referencia visual para no confundir dos maderas parecidas" },
   ],

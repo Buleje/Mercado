@@ -18,22 +18,22 @@
  *   99/B     2.7200    2.7201   +0.00%    2.7202    +0.01%
  *   25/A     1.7000    1.7001   +0.00%    1.7063    +0.37%
  *
- * **SERFOR publica con Huber** (área del diámetro medio), no con Smalian. Por eso
- * el que juzga si una pieza está mal cargada es Huber: usar Smalian marcaría en
+ * **SERFOR publica con el área del diámetro medio** — 0.7854 × ((D1+D2)/2)² × L,
+ * lo que SERFOR llama Smalian y la tabla de arriba llama «Huber». La columna
+ * «Smalian» de la tabla es la *Smalian pura* (promedio de las áreas): marcaría en
  * rojo la `117/B`, que está perfecta, y siete rojos falsos enseñan a ignorar la
  * lista entera.
  *
- * Smalian se calcula igual y se muestra al lado, porque es la fórmula que pide
- * el operador y la diferencia entre ambas **es información**: cuanto más cónica
- * la troza, más se separan.
+ * ADR-492 (Brandon 15-10: «esa es la pura y no me admiten»): la pura se retiró
+ * de toda la app — ni se calcula ni se muestra al lado. La única fórmula es
+ * `smalianVolume` (`loth-constants.ts`), «Smalian SERFOR» en pantalla. En este
+ * módulo conserva el nombre `volumenHuber`/`huberM3` para no ensuciar el diff.
  *
  * PURO y client-safe.
  */
 
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-
-/** Área de un círculo en m², a partir de un diámetro en cm. */
-const areaM2 = (diamCm: number) => (Math.PI / 4) * (diamCm / 100) ** 2;
+import { volumenSerforCm } from "@/lib/forestal/loth-constants";
 
 const r4 = (n: number) => Number(n.toFixed(4));
 
@@ -44,43 +44,17 @@ export interface MedidasTroza {
 }
 
 /**
- * **Huber** — área del diámetro MEDIO × largo.
+ * **Smalian SERFOR** — 0.7854 × (diámetro MEDIO)² × largo (`smalianVolume`, ADR-492).
  *
- * Es la que reproduce el volumen que declara la GTF. Trata el rollo como un
- * cilindro del grosor de su punto medio.
+ * Es la que reproduce el volumen que declara la GTF. Con un solo diámetro, ése
+ * es el medio. `null` = falta el largo o un diámetro válido.
  */
 export function volumenHuber(m: MedidasTroza): number | null {
   const { d1Cm: d1, d2Cm: d2, largoM: l } = m;
   if (!(l != null && l > 0)) return null;
   const dm = d1 != null && d2 != null ? (d1 + d2) / 2 : (d1 ?? d2);
   if (!(dm != null && dm > 0)) return null;
-  return r4(areaM2(dm) * l);
-}
-
-/**
- * **Smalian** — promedio de las áreas de los DOS extremos × largo.
- *
- * Más fiel a un tronco cónico que Huber, y por eso siempre da un poco más: el
- * promedio de las áreas es mayor que el área del promedio salvo que los dos
- * diámetros sean iguales. Con 62→50 cm la diferencia llega al 1.16 %.
- */
-export function volumenSmalian(m: MedidasTroza): number | null {
-  const { d1Cm: d1, d2Cm: d2, largoM: l } = m;
-  if (!(l != null && l > 0)) return null;
-  if (d1 == null || d2 == null) {
-    // Con un solo diámetro, Smalian degenera en Huber: no hay cono que promediar.
-    return volumenHuber(m);
-  }
-  if (!(d1 > 0) || !(d2 > 0)) return null;
-  return r4(((areaM2(d1) + areaM2(d2)) / 2) * l);
-}
-
-/** Cuánto se separan las dos fórmulas, en %. Mide lo cónica que es la troza. */
-export function conicidadPct(m: MedidasTroza): number | null {
-  const h = volumenHuber(m);
-  const s = volumenSmalian(m);
-  if (h == null || s == null || !(h > 0)) return null;
-  return Math.round(((s - h) / h) * 1000) / 10;
+  return volumenSerforCm(dm, dm, l);
 }
 
 // ── El cruce contra la guía ─────────────────────────────────────────────────
@@ -88,7 +62,7 @@ export function conicidadPct(m: MedidasTroza): number | null {
 /**
  * Tolerancia por defecto: **2 %**.
  *
- * No sale del float sino de la medición: Huber reproduce la guía con ≤0.01 % de
+ * No sale del float sino de la medición: Smalian SERFOR reproduce la guía con ≤0.01 % de
  * error, así que 2 % deja pasar cualquier redondeo del emisor y sigue atrapando
  * un `×3` como el de `20/A` (+200 %). Bajarla a décimas llenaría la lista de
  * rojos por el último decimal.
@@ -109,11 +83,9 @@ export interface VerificacionTroza {
   cantidad: number;
   /** Lo que dice la guía para la fila completa. */
   declaradoM3: number | null;
-  /** Lo que dan las medidas de UNA pieza, por Huber (la fórmula de la guía). */
+  /** Lo que dan las medidas de UNA pieza, por Smalian SERFOR (la fórmula de la guía). */
   huberM3: number | null;
-  /** Lo mismo por Smalian. */
-  smalianM3: number | null;
-  /** Huber × cantidad: con qué se compara la fila entera. */
+  /** Smalian SERFOR × cantidad: con qué se compara la fila entera. */
   esperadoM3: number | null;
   /** `declarado − esperado`, en % del esperado. */
   desvioPct: number | null;
@@ -135,7 +107,6 @@ export function verificarTroza(t: TrozaAVerificar, tolerancePct = TOLERANCIA_PCT
   const cantidad = Math.max(1, Math.round(t.cantidad ?? 1));
   const declarado = t.volumenM3 == null ? null : Number(t.volumenM3);
   const huber = volumenHuber(t);
-  const smalian = volumenSmalian(t);
   const esperado = huber == null ? null : r4(huber * cantidad);
 
   const base: Omit<VerificacionTroza, "estado" | "piezasQueExplican" | "desvioPct"> = {
@@ -144,7 +115,6 @@ export function verificarTroza(t: TrozaAVerificar, tolerancePct = TOLERANCIA_PCT
     cantidad,
     declaradoM3: declarado == null || !Number.isFinite(declarado) ? null : r4(declarado),
     huberM3: huber,
-    smalianM3: smalian,
     esperadoM3: esperado,
   };
 

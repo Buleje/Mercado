@@ -62,7 +62,7 @@ const AYUDA: Record<CampoLinea, string> = {
   diamMayorM: "Diámetro mayor de la troza, en metros (0,65).",
   diamMenorM: "Diámetro menor de la troza, en metros (0,60).",
   lengthM: "Longitud aprovechable, en metros.",
-  volumeM3: "En m³. Si la dejas vacía y pusiste los dos diámetros y la longitud, se calcula sola (Smalian).",
+  volumeM3: "En m³. Si la dejas vacía y pusiste los dos diámetros y la longitud, se calcula sola (Smalian SERFOR).",
   productType: "Madera aserrada, tablones, listones, durmientes…",
   quantity: "Cantidad del producto de esta línea.",
   unit: "Unidad de la cantidad: m3, pt, pza…",

@@ -17,6 +17,7 @@ import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { recubicarLoteSmalian } from "@/lib/forestal/cubicacion-trozas-formula";
 import { formatNumber } from "@/lib/format";
 
 /** Totales de lo que ya está cubicado en las otras herramientas (localStorage). */
@@ -25,7 +26,7 @@ function totalesCubicador(): { aserradoPt: number; trozasM3: number } {
   try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
   const read = (k: string): unknown[] => { try { const v = JSON.parse(localStorage.getItem(k) || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } };
   const madera = read(`buleje-cubicacion-${slug}`) as { pieTablar?: number }[];
-  const trozas = read(`buleje-cubicacion-trozas-${slug}`) as { m3?: number }[];
+  const trozas = recubicarLoteSmalian(read(`buleje-cubicacion-trozas-${slug}`) as { m3?: number }[]);
   return {
     aserradoPt: madera.reduce((a, r) => a + (Number(r.pieTablar) || 0), 0),
     trozasM3: trozas.reduce((a, r) => a + (Number(r.m3) || 0), 0),

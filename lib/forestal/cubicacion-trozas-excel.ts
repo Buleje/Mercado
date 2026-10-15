@@ -1,6 +1,6 @@
 /**
  * cubicacion-trozas-excel — plantilla .xlsx para cargar trozas fuera de
- * línea: Especie · D1 · D2 · Largo, con el volumen por FÓRMULA (Smalian) y,
+ * línea: Especie · D1 · D2 · Largo, con el volumen por FÓRMULA (Smalian SERFOR) y,
  * al costado, un resumen por especie que también se calcula solo — mismo
  * patrón que `agregarResumenEnVivo` de la aserrada (`cubicador-export.ts`).
  *
@@ -147,9 +147,9 @@ function agregarResumenPorEspecie(ws: Worksheet, especies: string[], unidadVol =
 
 /**
  * Plantilla .xlsx: Especie · D1 (cm) · D2 (cm) · Largo (m) · Volumen (m³, por
- * FÓRMULA Smalian — recalcula solo al tipear D1/D2/Largo). Se MUESTRA a tres
- * decimales pero el valor real no se trunca: "Aumentar decimales" en Excel
- * revela la precisión completa, no ceros de relleno. Sin D2, la fórmula
+ * FÓRMULA Smalian SERFOR 0.7854 × Ø medio² × L, ADR-492 — recalcula solo al tipear D1/D2/Largo). Se MUESTRA a tres
+ * decimales y guarda 4, redondeado como el sistema (ROUND(…,4)), así la planilla
+ * y la pantalla dan la misma cifra. Sin D2, la fórmula
  * asume troza pareja (cilindro con D1), igual que `cubicarTroza`.
  * `especiesDelPatio` (opcional): las especies que ya tenga cargadas el
  * cubicador al momento de descargar — se suman al catálogo para que el
@@ -185,7 +185,7 @@ export async function descargarPlantillaTrozas(
     c.value = {
       formula: ox
         ? `IF(OR(B${r}="",D${r}=""),"",((B${r}+IF(C${r}="",B${r},C${r}))/2)^2*D${r}/24.5)`
-        : `IF(OR(B${r}="",D${r}=""),"",((PI()/4*(B${r}/100)^2)+(PI()/4*(IF(C${r}="",B${r},C${r})/100)^2))/2*D${r})`,
+        : `IF(OR(B${r}="",D${r}=""),"",ROUND(0.7854*((B${r}+IF(OR(C${r}="",C${r}<=0),B${r},C${r}))/200)^2*D${r},4))`,
       result: "",
     };
     c.numFmt = ox ? "#,##0.00" : NUMFMT_M3;
