@@ -5,6 +5,7 @@ description: >
   con tokens del DS, dark mode, responsive 400 px, accesibilidad y Capacitor. Usar para toda
   UI visible. Verifica en navegador real con qa-capturas (1 llamada) y lee solo la captura que importa.
 model: inherit
+autoCompactWindow: 200000
 tools: Read, Edit, Write, Grep, Glob, Bash, LSP
 memory: project
 skills:

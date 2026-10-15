@@ -93,7 +93,7 @@
 import { chromium } from "playwright";
 import { mkdirSync, readFileSync, existsSync, writeFileSync, unlinkSync, readdirSync, readlinkSync } from "node:fs";
 import path from "node:path";
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import { resolverChromium } from "./dev-helpers/chromium-path.mjs";
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
@@ -147,6 +147,15 @@ if (process.env.QA_CANDADO_MARCA) {
    (no toca la base, a diferencia de `/api/health`, que se colgaba con la conexión caída). */
 async function baseQueResponde() {
   const candidatos = ["http://localhost:3000", "http://localhost:3001"];
+  // 15-10: con el dev apagado esperaba 260 s; en este WSL un puerto cerrado no rechaza, tarda 10,5 s
+  // en «timeout». Se pregunta a `ss` si alguien escucha y, si nadie, se corta ya.
+  try {
+    const escuchando = execSync("ss -ltnH", { encoding: "utf8" });
+    if (!/:300[01]\s/.test(escuchando)) {
+      console.error("[qa-capturas] no hay servidor en :3000 ni :3001 — levantalo con `npm run dev` (log en /tmp/dev-server.log)");
+      process.exit(2);
+    }
+  } catch { /* sin `ss`: sigue la prueba por fetch */ }
   const vivos = await Promise.all(candidatos.map(async (b) => {
     try { await fetch(`${b}/login`, { signal: AbortSignal.timeout(20_000), redirect: "manual" }); return true; }
     catch { return false; }

@@ -5,6 +5,7 @@ description: >
   servidor, integraciones (WhatsApp, Stripe, Mercado Pago, SUNAT) y features de IA
   (claude-router). Usar para cualquier endpoint, cálculo en backend o cambio de datos.
 model: inherit
+autoCompactWindow: 200000
 tools: Read, Edit, Write, Grep, Glob, Bash, LSP
 memory: project
 color: blue

@@ -5,6 +5,7 @@ description: >
   Fix mínimo, máximo 3 intentos, después escala con el error completo. Usar cuando un gate
   falla y el arreglo es local y obvio; no para bugs de lógica (eso es reviewer/diagnose).
 model: sonnet
+autoCompactWindow: 200000
 effort: medium
 tools: Read, Edit, Write, Grep, Glob, Bash, LSP
 maxTurns: 20
