@@ -10,7 +10,7 @@ Medido en 40 sesiones y 592 subagentes: un subagente promedia **136 turnos** y c
 |---|---|---|
 | `npm run typecheck` | 1 vez al cerrar un lote de edits TS (los errores del archivo editado ya llegan solos tras el Edit: plugin `buleje-ts7-lsp`, 0,4 s) | tras cada edit · antes de `git commit` (el pre-commit lo corre) |
 | `npm run lint` | nunca a mano: falló 2 % de 1.079 veces | lint-staged lo corre en el commit |
-| `vitest run <archivo>` | tocaste lógica que tiene test, o escribiste el test | copy, estilos, config · antes del commit (corre `vitest related`) |
+| `vitest run <archivo>` | tocaste lógica que tiene test, o escribiste el test · si un componente ahora pide algo al montar (un hook con `fetch`), `npx vitest related <archivos> --run`: los tests que cuentan `fetch` de sus padres se rompen (15-10, catálogo de especies → 4 del censo, commit caído) | copy, estilos, config · antes del commit (corre `vitest related`) |
 | Capturas UI | `qa-capturas` en 1 llamada; leer 1 imagen (claro 1280) | leer las 4 sin haber tocado color/layout · MCP para un recorrido conocido |
 | `reviewer` | zona de peligro, dinero/stock/estado, lógica nueva >150 líneas, bug que Brandon reportó | copy, estilos, config, hotfix <20 líneas → autorrevisión del diff |
 | `security` | zona de peligro, RBAC, datos cruzados entre tenants | el resto |
