@@ -81,10 +81,16 @@ export interface KpisPlantacion {
 
 const PANEL_ID = "loth-plan-indicadores";
 
-export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, kpisPlantacion, aprovechamiento, opciones }: {
+/** El valor de «Varios» en el selector: no es un id de plan. */
+const OPCION_VARIOS = "__varios__";
+
+export default function LothPlanCabecera({ plans, planId, onPlan, varios = false, onVarios, plan, kpis, kpisPlantacion, aprovechamiento, opciones }: {
   plans: Plan[];
   planId: string | null;
   onPlan: (id: string | null) => void;
+  /** «Varios»: la grilla de todos los planes en vez de uno (la dibuja la vista). */
+  varios?: boolean;
+  onVarios?: (v: boolean) => void;
   plan: Plan | null;
   kpis: KpisPlan | null;
   /** Con esto, la cabecera es la de una plantación: estas cuatro cifras y sin carátula. */
@@ -102,12 +108,18 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, kp
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <SectionTitle id="loth-plan-titulo">Plan de manejo</SectionTitle>
         <select
-          value={planId ?? ""}
-          onChange={(e) => onPlan(e.target.value || null)}
+          value={varios ? OPCION_VARIOS : planId ?? ""}
+          onChange={(e) => {
+            if (e.target.value === OPCION_VARIOS) return onVarios?.(true);
+            onVarios?.(false);
+            onPlan(e.target.value || null);
+          }}
           aria-label="Elegir plan de manejo"
           className="h-10 min-w-0 max-w-full truncate rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 max-sm:basis-full sm:max-w-[26rem]"
         >
           {plans.length === 0 && <option value="">Sin planes</option>}
+          {/* Brandon 15-10: «escoger Varios y aparecen recuadros… de todos». */}
+          {onVarios && plans.length > 1 && <option value={OPCION_VARIOS}>Varios — ver los {plans.length} planes</option>}
           {/* Agrupados por titular: los permisos de una misma comunidad nativa,
               juntos. El titular va en el rótulo del grupo Y en la opción,
               porque el select cerrado sólo muestra el texto de la opción. */}
@@ -135,9 +147,9 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, kp
 
       {/* Los mismos datos, agrupados por la pregunta que contestan. Sueltos en
           una línea había que leerla entera para encontrar uno. */}
-      {plan && !kpisPlantacion && <LothPlanIdentidad plan={plan} />}
+      {!varios && plan && !kpisPlantacion && <LothPlanIdentidad plan={plan} />}
 
-      {(kpis || kpisPlantacion) && (
+      {!varios && (kpis || kpisPlantacion) && (
         <div className="space-y-2">
           <ControlIndicadores pref={pref} onPref={setPref} panel={PANEL_ID} />
           {/* Oculto sigue existiendo en el DOM —`hidden`, no desmontado—: así

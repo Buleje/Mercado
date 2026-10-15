@@ -29,12 +29,14 @@
  * derecho (son de bosque natural), y la zafra sólo si el registro trae período.
  */
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { AlertCircle, FileText, Loader2, Plus } from "@buleje/design-system/icons";
 import { analizarAprovechamiento } from "@/lib/forestal/loth-aprovechamiento";
 import LothPlanCabecera from "./LothPlanCabecera";
 import LothPlanModales from "./LothPlanModales";
 import LothPlanPaneles from "./LothPlanPaneles";
+import LothPlanesVarios from "./LothPlanesVarios";
+import { usePlanesVarios } from "./hooks/use-loth-planes-varios";
 import { useLothPlanView } from "./hooks/use-loth-plan-view";
 import { useLothAprovechamientoHechos } from "./hooks/use-loth-aprovechamiento-hechos";
 
@@ -51,6 +53,21 @@ export default function LothPlanView({
 } = {}) {
   const v = useLothPlanView(reloadSignal, onCambioDelLibro);
   const { d, trees, plan, cargando, esPlantacion, errorPlan, opciones } = v;
+  /* «Varios» (Brandon 15-10): la grilla de todos los planes. Las opciones que
+     actúan sobre UN plan (informe, editar, eliminar…) no aplican a la grilla:
+     queda «Nuevo plan». Elegir una tarjeta = elegir el plan en el selector. */
+  const [varios, setVarios] = usePlanesVarios();
+  const verVarios = varios && d.plans.length > 0;
+  const { setPlanId } = d;
+  const elegirDeVarios = useCallback(
+    (id: string) => {
+      setPlanId(id);
+      setVarios(false);
+      const vista = document.querySelector("[data-vista-plan]");
+      if (vista && vista.getBoundingClientRect().top < 0) vista.scrollIntoView({ block: "start" });
+    },
+    [setPlanId, setVarios],
+  );
   /* Lo recibido en el CTP, la edad del patio y las semanas (Extracción del plan):
      sólo se pregunta si el libro ya movió algo de este plan. */
   const tc = d.cascada.total;
@@ -88,8 +105,10 @@ export default function LothPlanView({
         plans={d.plans}
         planId={d.planId}
         onPlan={d.setPlanId}
+        varios={verVarios}
+        onVarios={setVarios}
         plan={plan}
-        opciones={opciones}
+        opciones={verVarios ? opciones.filter((o) => o.id === "nuevo-plan") : opciones}
         aprovechamiento={aprovechamiento}
         kpis={
           plan
@@ -134,13 +153,15 @@ export default function LothPlanView({
 
       <LothPlanModales v={v} />
 
-      {cargando && (
+      {verVarios && <LothPlanesVarios plans={d.plans} planId={d.planId} onElegir={elegirDeVarios} reloadSignal={reloadSignal} />}
+
+      {!verVarios && cargando && (
         <div className="p-6 text-center text-[var(--text-tertiary)]" role="status" aria-label="Cargando el plan de manejo">
           <Loader2 className="mx-auto h-5 w-5 animate-spin" aria-hidden="true" />
         </div>
       )}
 
-      {!cargando && plan && <LothPlanPaneles v={v} plan={plan} />}
+      {!verVarios && !cargando && plan && <LothPlanPaneles v={v} plan={plan} />}
 
       {!cargando && d.plans.length === 0 && !d.showPlanForm && (
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
