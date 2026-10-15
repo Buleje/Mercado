@@ -56,6 +56,14 @@ import {
   type ResultadoBorrarDelPlan,
   type ResultadoBorrarLineas,
 } from "@/lib/forestal/loth-borrar-del-plan";
+import {
+  observacionAMano,
+  piezasAMano,
+  trozadoIdsDeItems,
+  trozadosNacidosDeLaGuia,
+  type TrozaAMano,
+} from "@/lib/forestal/loth-trozas-a-mano";
+import { candidatosCodigoUnico } from "@/lib/forestal/codigo-unico-troza";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -112,6 +120,9 @@ export class LothInvariantError extends Error {
       // Una guía ampara UN título: trozas de dos planes son dos guías.
       | "GUIA_VARIOS_PLANES"
       | "GUIA_VARIOS_PLANES"
+      // Asignar el permiso a una guía que salió sin él (15-10): anulada, ya con
+      // permiso, de producto o cambiada mientras tanto.
+      | "GUIA_PERMISO_NO_APLICA"
       // El planId de la línea no es un plan vivo de ESTE negocio (sin FK: se valida
       // acá). Un solo código para el alta, el importador y «atar sin plan» (→ 400 en el alta).
       | "PLAN_NO_EXISTE"
@@ -686,6 +697,11 @@ export class ForestLothDB {
    *
    * Lo que viaja lo decide la BASE: el cliente manda los códigos y las medidas,
    * la especie y el volumen salen de la línea de Trozado de cada troza.
+   *
+   * `aMano` (15-10): trozas anotadas a mano en el modal (D1, D2, largo,
+   * cantidad). Se asientan en el Trozado DENTRO de la misma transacción, con el
+   * plan de la guía (`null` = sin permiso: se asigna después desde la tabla de
+   * guías) y el volumen recalculado acá (`piezasAMano`), y viajan con el resto.
    */
   static async despacharConGuia(
     tenantId: string,
@@ -693,6 +709,7 @@ export class ForestLothDB {
       gtfNumber: string;
       gtfDate: Date;
       trozaCodes: string[];
+      aMano?: { filas: readonly TrozaAMano[]; planId: string | null };
       gtfDatos: GtfDatos;
       titularName: string | null;
       observations?: string | null;
@@ -703,7 +720,8 @@ export class ForestLothDB {
     const num = input.gtfNumber.trim();
     if (!num) throw new Error("gtfNumber is required");
     const codes = [...new Set(input.trozaCodes.map((c) => c.trim()).filter(Boolean))].sort();
-    if (codes.length === 0) throw new Error("trozaCodes is required");
+    const aMano = input.aMano?.filas.length ? input.aMano : null;
+    if (codes.length === 0 && !aMano) throw new Error("trozaCodes is required");
 
     const cerrado = await ForestLothCierreDB.closedPeriodOf(tenantId, input.gtfDate);
     if (cerrado) {
@@ -716,11 +734,38 @@ export class ForestLothDB {
     const caratula = await ForestLothDB.getActiveCaratula(tenantId);
     const caratulaId = caratula?.id ?? null;
 
-    const resultado = await prisma.$transaction(
-      (tx) => ForestLothDB.despacharConGuiaEnTx(tx, tenantId, { ...input, gtfNumber: num, trozaCodes: codes }, caratulaId),
+    const { trozados, ...resultado } = await prisma.$transaction(
+      async (tx) => {
+        const manual = aMano
+          ? await ForestLothDB.asentarTrozasAManoEnTx(tx, tenantId, {
+              filas: aMano.filas,
+              planId: aMano.planId,
+              ocupados: codes,
+              gtfNumber: num,
+              gtfDate: input.gtfDate,
+              caratulaId,
+              createdBy: input.createdBy,
+            })
+          : null;
+        const r = await ForestLothDB.despacharConGuiaEnTx(
+          tx,
+          tenantId,
+          {
+            ...input,
+            gtfNumber: num,
+            trozaCodes: [...codes, ...(manual?.codigos ?? [])],
+            ...(manual ? { codigosGuia: manual.codigosGuia } : {}),
+          },
+          caratulaId,
+        );
+        return { ...r, trozados: manual?.lineas ?? [] };
+      },
       { timeout: 60_000, maxWait: 10_000 },
     );
 
+    for (const l of trozados) {
+      auditLoth({ tenantId, action: "loth_linea_create", entity: "ForestLothEntry", entityId: l.id, detail: describeEntry(l), user: input.createdBy });
+    }
     ForestLothDB.auditarDespachoConGuia(tenantId, num, resultado, input.createdBy);
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
@@ -754,6 +799,83 @@ export class ForestLothDB {
         user,
       });
     }
+  }
+
+  /**
+   * Las trozas anotadas a mano en el despacho (15-10), al Trozado: una línea
+   * por troza (cantidad N = N líneas), sin árbol, con el plan de la guía y las
+   * medidas y el volumen que calcula `piezasAMano` (el volumen del navegador no
+   * se cree). Cada una lleva el código único de ADR-477 armado con el N° de la
+   * guía («3» de la GTF …-0000123 → «3-0123»); la guía imprime «3».
+   *
+   * Toma primero el candado del N° (el mismo que `despacharConGuiaEnTx` vuelve
+   * a pedir: es reentrante en la tx), así el orden de candados es el de siempre
+   * —N° antes que el correlativo del Trozado— y no se abraza con el importador.
+   * T3 (código único en Trozado) sigue siendo la última palabra.
+   */
+  static async asentarTrozasAManoEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    x: {
+      filas: readonly TrozaAMano[];
+      planId: string | null;
+      /** Códigos que ya imprime la guía (sus trozas del libro): la numeración los salta. */
+      ocupados: readonly string[];
+      gtfNumber: string;
+      gtfDate: Date;
+      caratulaId: string | null;
+      createdBy: string;
+    },
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    await GtfNumeroDB.bloquear(tx, tenantId, x.gtfNumber);
+    const piezas = piezasAMano(x.filas, x.ocupados);
+    const candidatos = piezas.map((p) => candidatosCodigoUnico(p.codigo, x.gtfNumber));
+    /* Sólo las vivas ocupan un código: las de una guía anulada (que anuló sus
+       trozas a mano) lo dejan libre y la reanotada vuelve a ser «1-0001». */
+    const usados = await tx.forestLothEntry.findMany({
+      where: { tenantId, deletedAt: null, status: "registrado", trozaCode: { in: candidatos.flat() } },
+      select: { trozaCode: true },
+    });
+    const tomados = new Set(usados.map((u) => u.trozaCode));
+    const correlativos = new Map<string, number>();
+    const codigos: string[] = [];
+    const codigosGuia = new Map<string, string>();
+    const lineas: Awaited<ReturnType<typeof ForestLothDB.registrarLineaEnTx>>[] = [];
+    for (const [i, p] of piezas.entries()) {
+      const code = candidatos[i].find((c) => !tomados.has(c));
+      if (!code) {
+        throw new LothInvariantError(
+          `La troza ${p.codigo} de la guía ${x.gtfNumber} no tiene un código libre en el libro: ya se usaron ${candidatos[i].join(", ") || "todos"}. Revisa el N° de la guía.`,
+          "T3_TROZA_DUPLICADA",
+          { codigo: p.codigo, gtfNumber: x.gtfNumber },
+        );
+      }
+      tomados.add(code);
+      lineas.push(
+        await ForestLothDB.registrarLineaEnTx(
+          tx,
+          tenantId,
+          {
+            caratulaId: x.caratulaId,
+            planId: x.planId,
+            section: "trozado",
+            trozaCode: code,
+            diamMayorM: p.diamMayorM,
+            diamMenorM: p.diamMenorM,
+            lengthM: p.lengthM,
+            volumeM3: p.volumeM3,
+            observations: observacionAMano(x.gtfNumber, p.codigo),
+            createdBy: x.createdBy,
+          },
+          x.gtfDate,
+          correlativos,
+        ),
+      );
+      codigos.push(code);
+      codigosGuia.set(code, p.codigo);
+    }
+    return { codigos, codigosGuia, lineas };
   }
 
   /**
@@ -973,8 +1095,22 @@ export class ForestLothDB {
     /* Las líneas de ESTA guía (`lineasDeLaGuia`): dos titulares pueden tener
        el mismo N° (29-09-2026) y sólo por el N° se anulaban los despachos del
        otro — también en una guía hecha a mano sin códigos de troza. */
-    const lineasVivas = await ForestLothDB.lineasDeLaGuia(tenantId, gtf);
-    for (const l of lineasVivas) {
+    /* Y las trozas que NACIERON con ella (anotadas a mano al despacharla):
+       vivas, la guía reanotada crearía otras y el Trozado sumaría doble
+       (revisión 15-10). Se anulan, no se borran: quedan con su motivo. */
+    const idsEnLaGuia = trozadoIdsDeItems(gtf.items);
+    const [lineasVivas, trozadosDeLaGuia] = await Promise.all([
+      ForestLothDB.lineasDeLaGuia(tenantId, gtf),
+      idsEnLaGuia.length === 0
+        ? Promise.resolve([])
+        : prisma.forestLothEntry.findMany({
+            where: { tenantId, id: { in: idsEnLaGuia }, section: "trozado", status: "registrado", deletedAt: null, treeCode: null },
+            select: { id: true, treeCode: true, observations: true, entryDate: true },
+          }),
+    ]);
+    const nacidos = new Set(trozadosNacidosDeLaGuia(gtf, trozadosDeLaGuia));
+    const trozadosAMano = trozadosDeLaGuia.filter((l) => nacidos.has(l.id));
+    for (const l of [...lineasVivas, ...trozadosAMano]) {
       const cerrado = await ForestLothCierreDB.closedPeriodOf(tenantId, l.entryDate);
       if (cerrado) {
         throw new LothInvariantError(
@@ -984,7 +1120,7 @@ export class ForestLothDB {
         );
       }
     }
-    const [anulada, lineas] = await prisma.$transaction(async (tx) => {
+    const [anulada, lineas, trozasAnuladas] = await prisma.$transaction(async (tx) => {
       /* Si la madera ya entró al Libro CTP del negocio, anular acá liberaría
          trozas que allá siguen en el libro: 409 hasta que el CTP anule sus
          ingresos. Con el MISMO candado del N° que «Recibir» (28-09-2026). */
@@ -996,25 +1132,35 @@ export class ForestLothDB {
         where: { id: gtf.id, tenantId } satisfies Prisma.ForestGtfWhereUniqueInput,
         data: { status: "anulada", annulledReason: motivo },
       });
+      const annulledReason = `Se anuló la GTF ${gtf.gtfNumber}: ${motivo}`.slice(0, 500);
       const r = await tx.forestLothEntry.updateMany({
         where: { tenantId, id: { in: lineasVivas.map((l) => l.id) } },
-        data: { status: "anulado", annulledReason: `Se anuló la GTF ${gtf.gtfNumber}: ${motivo}`.slice(0, 500) },
+        data: { status: "anulado", annulledReason },
       });
-      return [g, r.count] as const;
+      /* Después de sus despachos (T1 ya no las ve salir) y en la MISMA tx:
+         o se anula la guía con sus trozas a mano, o nada. */
+      const t =
+        trozadosAMano.length === 0
+          ? { count: 0 }
+          : await tx.forestLothEntry.updateMany({
+              where: { tenantId, id: { in: trozadosAMano.map((l) => l.id) }, section: "trozado", status: "registrado", deletedAt: null },
+              data: { status: "anulado", annulledReason },
+            });
+      return [g, r.count, t.count] as const;
     }, LOTH_TX_OPTS);
     auditLoth({
       tenantId,
       action: "loth_gtf_annul",
       entity: "ForestGtf",
       entityId: gtf.id,
-      detail: `Anuló la GTF ${gtf.gtfNumber} y ${lineas} línea(s) de despacho. Motivo: ${motivo}`,
+      detail: `Anuló la GTF ${gtf.gtfNumber} y ${lineas} línea(s) de despacho${trozasAnuladas ? `, y ${trozasAnuladas} troza(s) anotada(s) a mano con ella` : ""}. Motivo: ${motivo}`,
       user,
     });
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
       invalidateByPrefix(`forest-gtf:${tenantId}`);
     } catch { /* cache best-effort */ }
-    return { gtf: anulada, lineasAnuladas: lineas };
+    return { gtf: anulada, lineasAnuladas: lineas, trozasAnuladas };
   }
 
   /**

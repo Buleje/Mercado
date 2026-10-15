@@ -13,6 +13,11 @@
  * sembrar, la selección se limpia y el talonario se recalcula (29-09-2026:
  * serie por región, `talonarioDelPlan`; N° de lista y llegada, en
  * `use-traslado-guia-loth`).
+ *
+ * Trozas a mano (15-10, `use-trozas-a-mano`): D1, D2, largo y cantidad. Van en
+ * `piezas` con las del libro (detalle, lista y papeles las tratan igual), numeradas
+ * con `piezasAMano` —la misma función del servidor—, y viajan con el plan de la guía
+ * (sin plan = sin permiso: se asigna después en la tabla de guías).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -35,6 +40,8 @@ import type { PaseAlCtp } from "@/lib/forestal/guia-th-al-ctp";
 import { useNumeroGuiaLoth } from "./use-numero-guia-loth";
 import { useTrasladoGuiaLoth } from "./use-traslado-guia-loth";
 import { usePreparadoGuiaLoth } from "./use-preparado-guia-loth";
+import { useTrozasAMano } from "./use-trozas-a-mano";
+import { piezasAMano, trozasDelLibroAMano } from "@/lib/forestal/loth-trozas-a-mano";
 
 export interface RegistradaLoth {
   gtfNumber: string;
@@ -116,7 +123,13 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
   /** Qué trajo de verdad la guía anterior al sembrar (la línea «Copiado de…»). */
   const [copiados, setCopiados] = useState<string[]>([]);
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
-  const piezas = useMemo(() => trozasDelPlan.filter((t) => elegidas.has(t.codigo)), [trozasDelPlan, elegidas]);
+  const delLibro = useMemo(() => trozasDelPlan.filter((t) => elegidas.has(t.codigo)), [trozasDelPlan, elegidas]);
+  const aMano = useTrozasAMano();
+  const piezasManuales = useMemo(
+    () => trozasDelLibroAMano(piezasAMano(aMano.filas, delLibro.map((t) => t.codigo)), planId ?? null),
+    [aMano.filas, delLibro, planId],
+  );
+  const piezas = useMemo(() => [...delLibro, ...piezasManuales], [delLibro, piezasManuales]);
   /** El N° de lista y la llegada que se llenan solos (`use-traslado-guia-loth`). */
   const traslado = useTrasladoGuiaLoth({ datos, setDatos, talonario, trozas: piezas.length });
 
@@ -179,7 +192,10 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
           body: JSON.stringify({
             gtfNumber: gtfNumber.trim(),
             gtfDate: emision,
-            trozas: piezas.map((p) => p.codigo),
+            trozas: delLibro.map((p) => p.codigo),
+            /* Sólo las medidas: el volumen lo calcula el servidor. */
+            aMano: aMano.filas.map(({ d1Cm, d2Cm, largoM, cantidad }) => ({ d1Cm, d2Cm, largoM, cantidad })),
+            planId: planId ?? null,
             titularName: identidad.titular || null,
             gtfDatos: enviados,
             confirmarSalto: confirmados.current.salto,
@@ -216,7 +232,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
         setEnviando(false);
       }
     },
-    [enviando, faltan.length, identidad, gtfNumber, emision, piezas, datos, traslado.listas.texto, onRegistrada],
+    [enviando, faltan.length, identidad, gtfNumber, emision, piezas, delLibro, aMano.filas, planId, datos, traslado.listas.texto, onRegistrada],
   );
 
   /* Cambiar el N° invalida lo que se confirmó del anterior. */
@@ -239,6 +255,9 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
     trozasDelPlan,
     elegidas,
     setElegidas,
+    /** Las filas anotadas a mano (agregar / quitar) y sus trozas ya numeradas. */
+    aMano,
+    piezasManuales,
     piezas,
     emision,
     setEmision,

@@ -17,6 +17,8 @@
  *     imprimir y enviar por WhatsApp — 08-10)
  *   · Cubicar en Oxapampina → viva y de trozas (K7 · ADR-483: con descuentos, a la cuenta de una persona)
  *   · Ver ingresos    → la guía ya entró al Libro CTP
+ *   · Asignar permiso → viva, de trozas y sin permiso (15-10: las trozas a mano
+ *     nacen sin él); además va a la vista como botón, igual que «Ingresar al CTP»
  *   · Deshacer la importación → viva e importada
  *   · Anular          → viva
  * `soloLectura` (la pestaña «Anuladas y otras»): sólo Datos, Hoja, Resumen y
@@ -26,7 +28,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Ban, Eye, FileText, FolderOpen, LogIn, Printer, Ruler, Undo2 } from "@buleje/design-system/icons";
+import { Ban, Eye, FileText, FolderOpen, Link2, LogIn, Printer, Ruler, Undo2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
 import { fichaDeGuiaImportada } from "@/lib/forestal/loth-importar-guia-ficha";
@@ -37,6 +39,11 @@ import { ModalDeshacer } from "./LothImportarGuiasDeshacer";
 import { verIngresosDelCtp } from "./LothGtfCtp";
 import GtfDocumentosModal from "./GtfDocumentosModal";
 import LothGtfCubicarModal from "./LothGtfCubicarModal";
+import LothGtfAsignarPermiso from "./LothGtfAsignarPermiso";
+
+/** La guía salió sin permiso y todavía se le puede asignar uno (viva y de trozas). */
+export const pideAsignarPermiso = (g: Pick<Gtf, "planId" | "status" | "deletedAt" | "tipo">): boolean =>
+  !g.planId && g.status !== "anulada" && !g.deletedAt && g.tipo === "trozas";
 
 /** El código del permiso de la guía: el título que guardó o, en una plantación, el (5) de sus casilleros. */
 export const permisoDeLaGuiaGtf = (g: Pick<Gtf, "tituloHabilitante" | "gtfDatos">): string | null =>
@@ -64,6 +71,7 @@ export function opcionesGtf(
     abrirDeshacer,
     abrirDocumentos,
     abrirCubicar,
+    abrirPermiso,
     onHoja,
     onResumen,
     onAnular,
@@ -73,6 +81,7 @@ export function opcionesGtf(
     abrirDeshacer: () => void;
     abrirDocumentos?: () => void;
     abrirCubicar?: () => void;
+    abrirPermiso?: () => void;
     onHoja: (g: Gtf) => void;
     onResumen: (g: Gtf) => void;
     onAnular?: (id: string) => void;
@@ -122,6 +131,9 @@ export function opcionesGtf(
       onSelect: abrirCubicar,
     });
   }
+  if (viva && abrirPermiso && pideAsignarPermiso(g)) {
+    a.push({ id: "permiso", label: "Asignar permiso", hint: "Salió sin permiso: ata la guía, sus trozas y sus despachos al permiso que elijas", icon: Link2, onSelect: abrirPermiso });
+  }
   if (viva && g.ctp === "ingresada") {
     a.push({ id: "ingresos", label: "Ver sus ingresos en el CTP", hint: "Abre Ingresos del Libro CTP", icon: LogIn, onSelect: verIngresosDelCtp });
   }
@@ -144,7 +156,7 @@ export function opcionesGtf(
 export default function AccionesGtf({
   g, porIngresar = false, soloLectura = false, onIngresarCtp, onHoja, onResumen, onAnular, onRecargar,
 }: AccionesGtfProps) {
-  const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | "cubicar" | null>(null);
+  const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | "cubicar" | "permiso" | null>(null);
   const acciones = useMemo(
     () =>
       opcionesGtf(g, {
@@ -153,6 +165,7 @@ export default function AccionesGtf({
         abrirDeshacer: () => setAbierto("deshacer"),
         abrirDocumentos: () => setAbierto("documentos"),
         abrirCubicar: () => setAbierto("cubicar"),
+        abrirPermiso: () => setAbierto("permiso"),
         onHoja,
         onResumen,
         onAnular,
@@ -171,6 +184,16 @@ export default function AccionesGtf({
           <LogIn className="h-3.5 w-3.5" aria-hidden /> Ingresar al CTP
         </button>
       )}
+      {!soloLectura && pideAsignarPermiso(g) && (
+        <button
+          type="button"
+          onClick={() => setAbierto("permiso")}
+          title="Esta guía salió sin permiso: elige a cuál pertenecen sus trozas"
+          className="inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-lg border-2 border-[var(--data-warning-500)] px-2.5 text-xs font-bold text-[var(--data-warning-700)] hover:bg-[var(--data-warning-50)] dark:text-[var(--data-warning-500)] dark:hover:bg-[var(--data-warning-500)]/10"
+        >
+          <Link2 className="h-3.5 w-3.5" aria-hidden /> Asignar permiso
+        </button>
+      )}
       <ActionMenu label={`Acciones de la GTF ${g.gtfNumber}`} title="Más acciones" actions={acciones} soloIcono size="xs" />
       {abierto === "datos" && (
         <ModalFichaImportada gtfDatos={g.gtfDatos} gtfNumber={g.gtfNumber} items={g.items} onClose={() => setAbierto(null)} />
@@ -179,6 +202,16 @@ export default function AccionesGtf({
         <GtfDocumentosModal planId={g.planId ?? null} permiso={permisoDeLaGuiaGtf(g)} gtfNumber={g.gtfNumber} sinPapeles={g.status === "anulada" || !!g.deletedAt} onClose={() => setAbierto(null)} />
       )}
       {abierto === "cubicar" && <LothGtfCubicarModal g={g} onClose={() => setAbierto(null)} />}
+      {abierto === "permiso" && (
+        <LothGtfAsignarPermiso
+          gtf={g}
+          onClose={() => setAbierto(null)}
+          onHecho={() => {
+            setAbierto(null);
+            onRecargar?.();
+          }}
+        />
+      )}
       {abierto === "deshacer" && (
         <ModalDeshacer
           gtfId={g.id}

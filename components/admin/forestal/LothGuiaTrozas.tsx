@@ -9,6 +9,9 @@
  * despacho ni consumo: T1), agrupadas por árbol como se trozaron. Las medidas y
  * el volumen son los del Trozado: la guía no los recalcula, así el libro y el
  * papel dicen lo mismo de la misma pieza.
+ *
+ * Debajo, «Anotar a mano» (15-10, `LothGuiaTrozaAMano`): las trozas que no
+ * están en el Trozado, con D1, D2, largo y cantidad; se asientan al registrar.
  */
 
 import { Fragment, useMemo, useState } from "react";
@@ -21,6 +24,7 @@ import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import { Bloque } from "./ctp-guia-bloques";
 import { I } from "./ctp-shared";
 import LothGuiaListaMovilizar, { MARCO, TD, TDR, TH, THR, dec } from "./LothGuiaListaMovilizar";
+import LothGuiaTrozaAMano from "./LothGuiaTrozaAMano";
 
 const cm = (m: number | null) => (m == null ? null : Math.round(m * 1000) / 10);
 
@@ -80,7 +84,7 @@ export default function LothGuiaTrozas({
     <div className="grid gap-3 2xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] 2xl:items-start">
       <Bloque
         titulo="Trozas sin despachar"
-        hint="Las trozas del Trozado que todavía no salieron ni se consumieron. Elige las que van en este camión: se asienta una línea de Despacho por cada una."
+        hint="Las trozas del Trozado que todavía no salieron ni se consumieron. Elige las que van en este camión: se asienta una línea de Despacho por cada una. Las que no están en el Trozado, anótalas a mano abajo."
         nota="Una guía ampara un solo título habilitante: si hay trozas de dos planes, se hace una guía por plan."
         faltan={g.piezas.length === 0 ? ["Trozas que salen"] : []}
         acciones={
@@ -117,9 +121,9 @@ export default function LothGuiaTrozas({
           </label>
         )}
         {g.trozasDelPlan.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-secondary)] sm:col-span-12">
-            <TreePine className="mx-auto mb-2 h-7 w-7 opacity-40" aria-hidden="true" />
-            No hay trozas sin despachar en el Trozado de este plan.
+          <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] p-3 text-center text-sm text-[var(--text-secondary)] sm:col-span-12">
+            <TreePine className="h-5 w-5 shrink-0 opacity-40" aria-hidden="true" />
+            No hay trozas sin despachar en el Trozado de este plan: anótalas a mano.
           </div>
         ) : (
           <div className={`${MARCO} max-h-[28rem] overflow-y-auto`}>
@@ -201,6 +205,7 @@ export default function LothGuiaTrozas({
             </DataTable>
           </div>
         )}
+        <LothGuiaTrozaAMano g={g} />
       </Bloque>
 
       <div className="grid gap-3">

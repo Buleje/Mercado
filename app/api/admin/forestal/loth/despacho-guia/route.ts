@@ -26,6 +26,7 @@ import {
 import { hojasDeLista, listasEfectivas } from "@/lib/forestal/loth-lista-numero";
 import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-api-errors";
 import { motivoSchema } from "@/lib/forestal/motivo";
+import { TROZAS_POR_GUIA_MAX, trozaAManoSchema, trozasDeFilas } from "@/lib/forestal/loth-trozas-a-mano";
 import type { Contrato } from "@/lib/forestal/contratos";
 
 /**
@@ -40,7 +41,11 @@ import type { Contrato } from "@/lib/forestal/contratos";
  * POST  — registra la guía y una línea de Despacho por troza, atómico. Vuelve
  *         a calcular el talonario del plan de las trozas con la MISMA función
  *         y pregunta (409) si el N° es de otra región (`confirmarSerie`) o se
- *         adelanta más de 20 (`confirmarSalto`).
+ *         adelanta más de 20 (`confirmarSalto`). `aMano` (15-10): trozas
+ *         anotadas a mano (D1, D2, largo, cantidad) que se asientan en el
+ *         Trozado en la misma transacción; su volumen se recalcula acá. Van con
+ *         el plan de las trozas del libro o, si no hay, con `planId` (o sin
+ *         permiso: se asigna después en la tabla de guías).
  * PATCH — `{ id, action: "anular", reason, conDespachos }`: anula la guía y,
  *         si se pide, sus líneas de despacho (las trozas vuelven a estar libres).
  *
@@ -69,13 +74,21 @@ const fecha = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha va como A
 const postSchema = z.object({
   gtfNumber: z.string().trim().min(1, "Falta el N° de la guía").max(60),
   gtfDate: fecha,
-  trozas: z.array(z.string().trim().min(1).max(60)).min(1, "Elige al menos una troza").max(150, "Una guía lleva hasta 150 trozas"),
+  trozas: z.array(z.string().trim().min(1).max(60)).max(TROZAS_POR_GUIA_MAX, "Una guía lleva hasta 150 trozas").default([]),
+  /** Trozas anotadas a mano: medidas y cantidad. El volumen NO viaja: lo calcula el servidor. */
+  aMano: z.array(trozaAManoSchema).max(TROZAS_POR_GUIA_MAX).optional(),
+  /** El plan de la guía cuando sólo lleva trozas a mano (`null` = sin permiso todavía). */
+  planId: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/, "El permiso no es válido.").nullable().optional(),
   titularName: z.string().trim().max(200).nullable().optional(),
   gtfDatos: z.unknown(),
   /** El operador confirmó un N° que se adelanta más de 20 al que sigue. */
   confirmarSalto: z.boolean().optional(),
   /** El operador confirmó un N° de OTRA región que la del plan (p. ej. 010 con un plan en Pasco). */
   confirmarSerie: z.boolean().optional(),
+}).superRefine((b, ctx) => {
+  const total = b.trozas.length + trozasDeFilas(b.aMano ?? []);
+  if (total === 0) ctx.addIssue({ code: "custom", path: ["trozas"], message: "Elige al menos una troza o anótala a mano" });
+  if (total > TROZAS_POR_GUIA_MAX) ctx.addIssue({ code: "custom", path: ["trozas"], message: "Una guía lleva hasta 150 trozas" });
 });
 
 /**
@@ -212,10 +225,13 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
   if (!datosParsed.success) return lothValidationResponse(datosParsed.error);
 
   const { gtfNumber, gtfDate, trozas } = parsed.data;
+  const aMano = parsed.data.aMano ?? [];
+  /* Lo que viaja: las trozas del libro + las anotadas a mano (cada unidad, una troza). */
+  const totalTrozas = trozas.length + trozasDeFilas(aMano);
   /* La fecha de inicio del traslado es la de emisión si no se dijo otra (igual
      que el CTP). El (35) se guarda como se imprime: un N° por hoja («9» con
      dos hojas es «9, 10»), para que reimprimir diga lo mismo. */
-  const hojas = hojasDeLista(trozas.length);
+  const hojas = hojasDeLista(totalTrozas);
   /* La partida y la llegada impresas se rearman acá con `componerPunto` desde
      sus casilleros: el texto que manda el cliente no se cree (29-09-2026). */
   const traslado = puntosCompuestos(datosParsed.data.traslado);
@@ -227,7 +243,7 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
 
   /* El despacho y la guía son el mismo acto y la guía no se edita después:
      se exige lo que pide un puesto de control, con la misma regla del CTP. */
-  const faltan = faltantesDespachoLoth(datos, { gtfNumber, emision: gtfDate, trozas: trozas.length });
+  const faltan = faltantesDespachoLoth(datos, { gtfNumber, emision: gtfDate, trozas: totalTrozas });
   if (faltan.length > 0) {
     return NextResponse.json(
       { error: "guia_incompleta", message: `Falta completar la guía: ${faltan.map((f) => f.campo).join(", ")}.`, faltan },
@@ -253,12 +269,22 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
        región sale del plan (no de lo que diga el cliente). Trozas de dos planes
        las rechaza `despacharConGuia` más abajo. */
     const elegidas = new Set(trozas);
-    const planes = [...new Set(libres.filter((t) => elegidas.has(t.codigo)).map((t) => t.planId ?? null))];
+    const delLibro = [...new Set(libres.filter((t) => elegidas.has(t.codigo)).map((t) => t.planId ?? null))];
+    /* Sólo trozas a mano: la guía es del plan que dice el modal (o sin permiso).
+       El plan tiene que ser de este negocio y estar vivo. */
+    const planAMano = trozas.length === 0 && parsed.data.planId ? await ForestPlanDB.getPlan(auth.tenantId, parsed.data.planId) : null;
+    if (trozas.length === 0 && parsed.data.planId && !planAMano) {
+      return NextResponse.json(
+        { error: "PLAN_NO_EXISTE", message: "Ese plan de manejo no existe en este negocio o está dado de baja: elige otro permiso." },
+        { status: 422 },
+      );
+    }
+    const planes = trozas.length === 0 ? [planAMano?.id ?? null] : delLibro;
     /* Sin trozas libres, o de dos planes: no hay UN talonario que revisar;
        `despacharConGuia` dice qué pasa con esas trozas. */
     const unPlan = planes.length === 1;
     const planId = unPlan ? planes[0] : null;
-    const plan = planId ? await ForestPlanDB.getPlan(auth.tenantId, planId) : null;
+    const plan = planId ? (planAMano?.id === planId ? planAMano : await ForestPlanDB.getPlan(auth.tenantId, planId)) : null;
     const permiso = plan ? await permisoDelPlan(auth.tenantId, plan) : null;
     const id = identidadDelTitulo({ caratula, plan, permiso });
     const dueno = { titular: id.titular, permiso: id.tituloHabilitante, planId };
@@ -309,6 +335,8 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
       gtfNumber,
       gtfDate: new Date(`${gtfDate}T00:00:00.000Z`),
       trozaCodes: trozas,
+      /* Las a mano van con el plan de la guía (el de sus trozas del libro, si las hay). */
+      ...(aMano.length ? { aMano: { filas: aMano, planId: unPlan ? planId : null } } : {}),
       gtfDatos: datos,
       titularName: titular.titular,
       createdBy: auth.username ?? "unknown",
