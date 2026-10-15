@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { generateText } from "ai";
-import { chatModel, getActiveProvider } from "@/lib/ai/provider";
+import { chatModel, chatModelId, getActiveProvider } from "@/lib/ai/provider";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
@@ -111,7 +111,7 @@ Reglas de diseño:
 - NO inventes datos del negocio que no estén en la descripción.`;
 
     const result = await trackAiUsage(
-      { tenantId: auth.tenantId, feature: "store-theme", model: "claude-haiku-4-5" },
+      { tenantId: auth.tenantId, feature: "store-theme", model: chatModelId },
       () =>
         generateText({
           model: chatModel,

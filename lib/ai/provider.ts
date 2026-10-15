@@ -3,12 +3,57 @@ import { createOpenAI } from "@ai-sdk/openai";
 // Single source de los nombres de modelo de Groq: es el archivo que se toca
 // cuando Groq da de baja alguno (pasó en 2026-09 y dejó mudo medio sistema).
 import { groqProvider as groqRegistry } from "@/lib/llm-providers/groq";
+import { MODEL_IDS, rejectsSamplingParams } from "@/lib/claude-router";
 
 // AI providers — uses env vars (never hardcoded secrets)
 // Priority: ANTHROPIC > GROQ (free tier) > OPENAI
 
+/** Lo que Claude puede razonar además de la respuesta (cuenta dentro de `max_tokens`). */
+const MARGEN_RAZONAMIENTO = 1_024;
+
+/**
+ * Los Claude vigentes (Haiku 5.5, Sonnet 5.5, Opus 5.5) cambian dos cosas que
+ * el `@ai-sdk/anthropic` instalado todavía no conoce, porque no tiene esos IDs
+ * en su tabla de modelos:
+ *
+ * 1. `temperature` / `top_p` / `top_k` distintos del default son un **400**. Los
+ *    consumidores de `chatModel` mandan 0,7-0,8 porque el mismo modelo puede ser
+ *    Groq u OpenAI, donde sí sirve. Acá se quitan sólo para Claude.
+ * 2. Razonan por defecto (adaptativo, effort `medium` en Haiku 5.5 y `high` en
+ *    Sonnet 5.5) y ese razonamiento cuenta dentro de `max_tokens`: una
+ *    descripción con tope de 200 puede gastarlo pensando y volver vacía. Sin
+ *    `effort` ni `thinking` explícitos se pide `effort: "low"` —lo que la skill
+ *    `claude-api` indica para chat y rutas cortas, y lo más parecido a Haiku 4.5,
+ *    que no razonaba— y se suma un margen al tope.
+ *
+ * Mismo patrón que `fetchConRazonamientoBajo` de Groq: una sola puerta, para no
+ * depender de que cada llamada se acuerde.
+ */
+const fetchClaudeVigente: typeof fetch = async (input, init) => {
+  if (init?.body && typeof init.body === "string") {
+    try {
+      const payload = JSON.parse(init.body) as Record<string, unknown>;
+      if (typeof payload.model === "string" && rejectsSamplingParams(payload.model)) {
+        delete payload.temperature;
+        delete payload.top_p;
+        delete payload.top_k;
+        const outputConfig = (payload.output_config ?? {}) as Record<string, unknown>;
+        if (payload.thinking === undefined && outputConfig.effort === undefined) {
+          payload.output_config = { ...outputConfig, effort: "low" };
+          if (typeof payload.max_tokens === "number") payload.max_tokens += MARGEN_RAZONAMIENTO;
+        }
+        init = { ...init, body: JSON.stringify(payload) };
+      }
+    } catch {
+      // Body que no es JSON: no es una llamada a Messages, se deja intacta.
+    }
+  }
+  return fetch(input, init);
+};
+
 export const anthropicProvider = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+  fetch: fetchClaudeVigente,
 });
 
 export const openaiProvider = createOpenAI({
@@ -69,7 +114,7 @@ export function getActiveProvider(): AIProviderName {
 }
 
 // Auto-selects the best available chat model.
-// Anthropic Haiku 4.5 is preferred (fast + cheap + Spanish-native).
+// Anthropic Haiku 5.5 is preferred (fast + cheap + Spanish-native).
 // Falls back to Groq (free tier) when no Anthropic key.
 // Last resort: OpenAI gpt-4o-mini.
 //
@@ -89,40 +134,50 @@ export function getActiveProvider(): AIProviderName {
 // bot», que es por qué pasó desapercibido. Los nombres se toman del registro
 // de `lib/llm-providers/groq.ts` en vez de repetirse acá: ese es el archivo
 // que se actualiza cuando Groq vuelve a mover el catálogo.
+//
+// Cada elección devuelve también el ID, para que el registro de costo
+// (`trackAiUsage`) cobre el modelo que de verdad contestó y no uno re-tipeado.
 function pickChatModel() {
   if (process.env.ANTHROPIC_API_KEY) {
-    return anthropicProvider("claude-haiku-4-5-20251001");
+    return { id: MODEL_IDS.haiku, model: anthropicProvider(MODEL_IDS.haiku) };
   }
   if (process.env.GROQ_API_KEY) {
-    return groqProvider.chat(groqModels.cheap);
+    return { id: groqModels.cheap, model: groqProvider.chat(groqModels.cheap) };
   }
   if (process.env.XAI_API_KEY) {
-    return xaiProvider("grok-4-fast-non-reasoning");
+    return { id: "grok-4-fast-non-reasoning", model: xaiProvider("grok-4-fast-non-reasoning") };
   }
   if (process.env.OPENAI_API_KEY) {
-    return openaiProvider("gpt-4o-mini");
+    return { id: "gpt-4o-mini", model: openaiProvider("gpt-4o-mini") };
   }
   // No key configured — return Anthropic stub. Calls will fail at runtime
   // and the caller (generateText try/catch) returns the safe fallback.
-  return anthropicProvider("claude-haiku-4-5-20251001");
+  return { id: MODEL_IDS.haiku, model: anthropicProvider(MODEL_IDS.haiku) };
 }
 
 function pickSmartModel() {
   if (process.env.ANTHROPIC_API_KEY) {
-    return anthropicProvider("claude-sonnet-5");
+    return { id: MODEL_IDS.sonnet, model: anthropicProvider(MODEL_IDS.sonnet) };
   }
   if (process.env.GROQ_API_KEY) {
-    return groqProvider.chat(groqModels.balanced);
+    return { id: groqModels.balanced, model: groqProvider.chat(groqModels.balanced) };
   }
   if (process.env.XAI_API_KEY) {
-    return xaiProvider("grok-4");
+    return { id: "grok-4", model: xaiProvider("grok-4") };
   }
   if (process.env.OPENAI_API_KEY) {
-    return openaiProvider("gpt-4o");
+    return { id: "gpt-4o", model: openaiProvider("gpt-4o") };
   }
-  return anthropicProvider("claude-sonnet-5");
+  return { id: MODEL_IDS.sonnet, model: anthropicProvider(MODEL_IDS.sonnet) };
 }
 
-export const chatModel = pickChatModel();
-export const smartModel = pickSmartModel();
+const chat = pickChatModel();
+const smart = pickSmartModel();
+
+export const chatModel = chat.model;
+/** ID del modelo detrás de `chatModel` — el que va a `trackAiUsage`. */
+export const chatModelId = chat.id;
+export const smartModel = smart.model;
+/** ID del modelo detrás de `smartModel` — el que va a `trackAiUsage`. */
+export const smartModelId = smart.id;
 export const fallbackChatModel = openaiProvider("gpt-4o-mini");

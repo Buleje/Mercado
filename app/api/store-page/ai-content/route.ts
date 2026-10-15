@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { generateText } from "ai";
-import { chatModel, getActiveProvider } from "@/lib/ai/provider";
+import { chatModel, chatModelId, getActiveProvider } from "@/lib/ai/provider";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await trackAiUsage(
-      { tenantId: auth.tenantId, feature: "section-content", model: "claude-haiku-4-5" },
+      { tenantId: auth.tenantId, feature: "section-content", model: chatModelId },
       () => generateText({ model: chatModel, prompt, maxOutputTokens: 700, temperature: 0.7 }),
     );
     const raw = result.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();

@@ -21,6 +21,7 @@
  */
 
 import type { LLMCallOptions, LLMProvider, LLMResponse, ChatMessage, ToolCallResult } from "./types";
+import { MODEL_IDS, rejectsSamplingParams } from "@/lib/claude-router";
 
 const API_URL = "https://api.anthropic.com/v1/messages";
 const API_VERSION = "2023-06-01";
@@ -28,14 +29,13 @@ const API_VERSION = "2023-06-01";
 export const anthropicProvider: LLMProvider = {
   name: "anthropic",
 
-  // Familia Claude 5 (verificado 2026-09-22 en platform.claude.com): Opus 5.5
-  // ($4/$20, salió el 22-09) es el premium — 20 % más barato que Opus 5 ($5/$25),
-  // que queda legacy. Sonnet 5 ($2/$10) balanceado, Haiku 4.5 ($1/$5) el económico.
-  // IDs sin fecha = snapshot fijo.
+  // Los IDs salen de `lib/claude-router.ts` (única fuente; precios y fecha de
+  // verificación están ahí): Haiku 5.5 el económico, Sonnet 5.5 balanceado,
+  // Opus 5.5 el premium.
   models: {
-    cheap: "claude-haiku-4-5-20251001",
-    balanced: "claude-sonnet-5",
-    premium: "claude-opus-5-5",
+    cheap: MODEL_IDS.haiku,
+    balanced: MODEL_IDS.sonnet,
+    premium: MODEL_IDS.opus,
   },
 
   isAvailable() {
@@ -65,9 +65,11 @@ export const anthropicProvider: LLMProvider = {
     const body: Record<string, unknown> = {
       model,
       max_tokens: opts.maxTokens ?? 1500,
-      temperature: opts.temperature,
       messages,
     };
+    // Haiku 5.5 / Sonnet 5.5 / Opus 5.5 devuelven 400 con `temperature` distinto
+    // del default: se manda sólo a los modelos que todavía la aceptan.
+    if (!rejectsSamplingParams(model)) body.temperature = opts.temperature;
     if (system) body.system = system;
     if (opts.tools && opts.tools.length > 0) {
       body.tools = translateToolsToAnthropic(opts.tools);

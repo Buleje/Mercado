@@ -1,26 +1,22 @@
 import { NextRequest } from "next/server";
 import { streamText } from "ai";
 import { z } from "zod";
-import { chatModel } from "@/lib/ai/provider";
+import { chatModel, chatModelId } from "@/lib/ai/provider";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { tryAdmin } from "@/lib/require-admin";
 import { CUSTOMER_SESSION, getCustomerPayload } from "@/lib/auth/customer-session";
 import { aiCostGuard } from "@/lib/ai/cost-control";
 import { makeStreamUsageHandler } from "@/lib/ai/track-usage";
 import { logger } from "@/lib/logger";
-import { groqProvider } from "@/lib/llm-providers/groq";
 import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 // El slug del modelo que realmente se está usando, para reportarlo en la
 // respuesta. Antes se re-tipeaba acá con un comentario que pedía «sincronizar
 // a mano» — y no se sincronizó: quedó anunciando un modelo de Groq dado de baja
-// mientras la llamada real usaba otro. Ahora se deriva de la MISMA fuente que
-// `pickChatModel`, así no puede volver a divergir.
-const CHAT_MODEL_SLUG = process.env.ANTHROPIC_API_KEY
-  ? "claude-haiku-4-5-20251001"
-  : process.env.GROQ_API_KEY
-    ? groqProvider.models.cheap
-    : "gpt-4o-mini";
+// mientras la llamada real usaba otro. Después se derivaba repitiendo la lógica
+// de `pickChatModel` (y siguió anunciando Haiku 4.5 al pasar a 5.5). Ahora es
+// el ID que devuelve la propia elección.
+const CHAT_MODEL_SLUG = chatModelId;
 
 const ChatInput = z.object({
   messages: z.array(

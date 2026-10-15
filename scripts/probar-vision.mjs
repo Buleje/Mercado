@@ -45,7 +45,7 @@ if (urlManual) {
   });
   if (process.env.AI_GATEWAY_API_KEY) candidatos.push({
     nombre: "Vercel AI Gateway", url: "https://ai-gateway.vercel.sh/v1", key: process.env.AI_GATEWAY_API_KEY,
-    modelos: ["openai/gpt-4o-mini", "anthropic/claude-haiku-4.5", "google/gemini-2.0-flash"],
+    modelos: ["openai/gpt-4o-mini", "anthropic/claude-haiku-5.5" /* = GATEWAY_MODEL_IDS.haiku de lib/claude-router.ts */, "google/gemini-2.0-flash"],
   });
   if (process.env.OPENAI_API_KEY) candidatos.push({
     nombre: "OpenAI", url: "https://api.openai.com/v1", key: process.env.OPENAI_API_KEY,
@@ -90,8 +90,8 @@ async function probar(url, key, modelo) {
           { type: "text", text: "Transcribí TODO el texto que se ve en esta imagen. Sólo el texto." },
           { type: "image_url", image_url: { url: dataUrl } },
         ] }],
-        max_tokens: 300,
-        temperature: 0,
+        // Claude 5.x: `temperature` ≠ default es un 400 y razona dentro de `max_tokens`.
+        ...(modelo.startsWith("anthropic/") ? { max_tokens: 2000 } : { max_tokens: 300, temperature: 0 }),
       }),
     });
     const cuerpo = await r.text();

@@ -13,13 +13,13 @@
  *
  * Uso (generateText / no-stream):
  *   const result = await trackAiUsage(
- *     { tenantId, feature: "recommender", model: "claude-haiku-4-5" },
+ *     { tenantId, feature: "recommender", model: smartModelId },
  *     () => generateText({ model: smartModel, prompt: "..." }),
  *   );
  *
  * Uso (streamText / stream):
  *   const onFinish = makeStreamUsageHandler({
- *     tenantId, feature: "chat", model: "claude-haiku-4-5",
+ *     tenantId, feature: "chat", model: chatModelId,
  *   });
  *   const result = streamText({ model, messages, onFinish });
  *
@@ -45,18 +45,31 @@ interface AiUsageInfo {
 
 /**
  * Pricing por 1M tokens (USD) — actualizar con cambios upstream.
- * Ref: platform.claude.com/docs/en/models/overview (familia 5 verificada
- * 2026-09-22: Opus 5.5 $4/$20), openai.com/pricing, console.groq.com.
+ * Ref: platform.claude.com/docs/en/about-claude/models/overview (familia 5
+ * verificada 2026-10-15: Haiku 5.5 $0,10/$0,50, Sonnet 5.5 $2/$10, Opus 5.5
+ * $4/$20), openai.com/pricing, console.groq.com.
  *
- * Las filas de la familia 4.x se quedan: el historial de uso ya grabado las
- * cita, y un modelo sin fila cae al `default`, que lo cobraría de más.
+ * `largo`: tarifa que rige cuando el prompt pasa de `largo.desde` tokens de
+ * entrada (Haiku 5.5 cobra 5× desde 100K). Sin ella se cobraría de menos.
+ *
+ * Las filas legacy (Haiku 4.5, Sonnet 5, familia 4.x) se quedan: el historial
+ * de uso ya grabado las cita, y un modelo sin fila cae al `default`, que lo
+ * cobraría de más.
  */
-const PRICING_PER_1M: Record<string, { input: number; output: number }> = {
+interface Tarifa {
+  input: number;
+  output: number;
+  largo?: { desde: number; input: number; output: number };
+}
+
+const PRICING_PER_1M: Record<string, Tarifa> = {
   "claude-fable-5-1":  { input: 10.0, output: 50.0 },
   "claude-opus-5-5":   { input: 4.0,  output: 20.0 },  // 2026-09-22
   "claude-opus-5":     { input: 5.0,  output: 25.0 },  // legacy desde 2026-09-22
-  "claude-sonnet-5":   { input: 2.0,  output: 10.0 },
-  "claude-haiku-4-5":  { input: 1.0,  output: 5.0 },
+  "claude-sonnet-5-5": { input: 2.0,  output: 10.0 },  // 2026-10-15
+  "claude-sonnet-5":   { input: 2.0,  output: 10.0 },  // legacy desde 2026-10-15
+  "claude-haiku-5-5":  { input: 0.1,  output: 0.5, largo: { desde: 100_000, input: 0.5, output: 2.5 } }, // 2026-10-15
+  "claude-haiku-4-5":  { input: 1.0,  output: 5.0 },   // legacy desde 2026-10-15
   "claude-haiku-4-5-20251001": { input: 1.0, output: 5.0 },
   "claude-sonnet-4-6": { input: 3.0,  output: 15.0 },
   "claude-opus-4-6":   { input: 15.0, output: 75.0 },
@@ -75,9 +88,10 @@ const PRICING_PER_1M: Record<string, { input: number; output: number }> = {
 };
 
 export function calculateCostUsd(model: string, usage: AiUsageInfo): number {
-  const pricing = PRICING_PER_1M[model] ?? PRICING_PER_1M.default;
+  const tarifa = PRICING_PER_1M[model] ?? PRICING_PER_1M.default;
   const inputTok = usage.promptTokens ?? 0;
   const outputTok = usage.completionTokens ?? 0;
+  const pricing = tarifa.largo && inputTok > tarifa.largo.desde ? tarifa.largo : tarifa;
   return (inputTok * pricing.input + outputTok * pricing.output) / 1_000_000;
 }
 
@@ -247,7 +261,7 @@ export function makeStreamUsageHandler(opts: MakeStreamUsageHandlerOptions) {
  *
  * Uso:
  *   const result = await trackAiStream(
- *     { tenantId, feature: "chat", model: "claude-haiku-4-5" },
+ *     { tenantId, feature: "chat", model: chatModelId },
  *     (onFinish) => streamText({ model: chatModel, messages, onFinish }),
  *   );
  */

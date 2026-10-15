@@ -3,6 +3,7 @@ import { z } from "zod";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { safeParseJSON } from "@/lib/ai-json-parser";
 import { logger } from "@/lib/logger";
+import { MODEL_IDS } from "@/lib/claude-router";
 import {
   AVISO_IA_NO_DISPONIBLE,
   AVISO_SIN_CLAVE_IA,
@@ -62,8 +63,8 @@ import {
  *    sólo el largo y el motivo. La clave y la imagen tampoco van al log.
  */
 
-/** Modelo de Claude para leer fotos y PDF (skill `claude-api`, 2026-10-02). */
-export const MODELO_CLAUDE_VISION = "claude-sonnet-5-5";
+/** Modelo de Claude para leer fotos y PDF: el Sonnet vigente de `lib/claude-router.ts` (Sonnet 5.5). */
+export const MODELO_CLAUDE_VISION = MODEL_IDS.sonnet;
 /** El respaldo cuando no está la clave de Claude (también lo usa el asistente de texto, `pregunta-ia.ts`). */
 export const MODELO_OPENAI_VISION = "gpt-4o-mini";
 
