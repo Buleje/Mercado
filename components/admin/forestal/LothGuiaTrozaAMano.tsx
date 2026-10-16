@@ -42,6 +42,7 @@ import { ArbolDeTrozaAMano } from "./arbol-de-troza-a-mano";
 import TrozaAManoTabla from "./troza-a-mano-tabla";
 import { useTecladoGrilla } from "./celdas-excel";
 import { COLUMNAS_A_MANO, GRILLA_A_MANO } from "./troza-a-mano-celda";
+import { AvisoExcelDeTrozas, BotonExcelDeTrozas, useExcelDeTrozas } from "./troza-a-mano-excel";
 
 /* «Medir por foto» (16-10): su ventana y el medidor se bajan recién al tocar el botón. */
 const LothTrozasPorFoto = dynamic(() => import("./LothTrozasPorFoto"), { ssr: false });
@@ -68,6 +69,7 @@ export default function LothGuiaTrozaAMano({ g, catalogo }: { g: DespachoGuiaLot
   /* Los errores se muestran recién al intentar agregar: mientras se tipea, no se grita. */
   const [intentado, setIntentado] = useState(false);
   const [porFoto, setPorFoto] = useState(false);
+  const excel = useExcelDeTrozas(g, catalogo);
   const refEspecie = useRef<HTMLSelectElement>(null);
   const refD1 = useRef<HTMLInputElement>(null);
   const refD2 = useRef<HTMLInputElement>(null);
@@ -157,7 +159,9 @@ export default function LothGuiaTrozaAMano({ g, catalogo }: { g: DespachoGuiaLot
         <Btn onClick={() => setPorFoto(true)} disabled={restantes <= 0} className="ml-auto" data-qa="medir-por-foto">
           <Camera className="h-4 w-4" aria-hidden="true" /> Medir por foto
         </Btn>
+        <BotonExcelDeTrozas x={excel} />
       </div>
+      <AvisoExcelDeTrozas x={excel} />
       {porFoto && <LothTrozasPorFoto g={g} catalogo={catalogo} onClose={() => setPorFoto(false)} />}
 
       <TrozaAManoTabla g={g} />

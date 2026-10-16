@@ -3,7 +3,8 @@
 /**
  * Lo que es del papel y de la impresora, no de un campo: la medida de la hoja
  * del talonario, el corrimiento de la matricial (con su hoja de prueba), cómo
- * se escriben las fechas y la foto del talonario vacío de fondo. Plegados
+ * se escriben las fechas, la letra de toda la hoja (`gtf-matricial-letra`),
+ * las filas de la tabla con regla (cm y mm, `gtf-matricial-filas`) y la foto del talonario vacío de fondo. Plegados
  * (15-10): se tocan una vez por talonario, y plegados siguen mostrando su dato
  * en el renglón del título.
  */
@@ -15,6 +16,8 @@ import type { SeparadorFecha } from "@/lib/forestal/gtf-matricial-disposicion";
 import { PERFIL_OFICINA_ID } from "@/lib/forestal/gtf-salida-tipos";
 import { Btn } from "./ctp-shared";
 import { Casilla, fmtMm, NumeroMm, Opciones } from "./gtf-matricial-controles";
+import FilasDeLaTabla, { datoDeLasFilas } from "./gtf-matricial-filas";
+import LetraDeLaHoja, { datoDeLaLetra } from "./gtf-matricial-letra";
 import ImpresoraTalonario, { type TipoPrueba } from "./gtf-matricial-impresora";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
 import type { useFondoTalonario } from "./hooks/use-gtf-matricial-fondo";
@@ -73,6 +76,14 @@ export default function AjustesTalonario({
     <div className="flex min-w-0 flex-col gap-2">
       <Plegable titulo="Calibrar" dato={`${p?.nombre ?? "Oficina"} · X ${fmtMm(dx)} · Y ${fmtMm(dy)} mm`}>
         <ImpresoraTalonario t={t} imp={imp} salida={salida} conValores={conValores} setConValores={setConValores} onPrueba={onPrueba} />
+      </Plegable>
+
+      <Plegable titulo="Letra" dato={datoDeLaLetra(t)}>
+        <LetraDeLaHoja t={t} />
+      </Plegable>
+
+      <Plegable titulo={t.formato === "lista" ? "Filas de la lista" : "Filas del cuadro (34)"} dato={datoDeLasFilas(t)}>
+        <FilasDeLaTabla t={t} />
       </Plegable>
 
       <Plegable titulo="Medida" dato={`${fmtMm(hoja.anchoMm)} × ${fmtMm(hoja.altoMm)} mm`}>

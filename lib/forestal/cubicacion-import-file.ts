@@ -108,6 +108,10 @@ function celdaExcel(v: unknown): Celda {
     if (Array.isArray(o.richText)) return o.richText.map((r) => r.text ?? "").join("");
     if (o.result !== undefined && o.result !== null) return o.result as Celda;
     if (o.text !== undefined && o.text !== null) return String(o.text);
+    /* Una fórmula sin resultado guardado (el archivo no se recalculó: exceljs
+       no guarda un `result` vacío) no tiene valor; antes llegaba como
+       «[object Object]» y la fila vacía de un formato se leía como llena. */
+    if ("formula" in o || "sharedFormula" in o) return null;
   }
   return String(v);
 }
