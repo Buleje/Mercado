@@ -18,6 +18,7 @@
 
 import { pieTablarAserrableDe } from "./cubicacion";
 import { RENDIMIENTO_META } from "./loctp-catalogos";
+import { codigoDeLaGuia, partirCodigoUnico } from "./codigo-unico-troza";
 import { arbolDeTroza, type ArbolParaElegir } from "./loth-censo-uso";
 import { claveEspecie } from "./loth-constants";
 
@@ -214,7 +215,7 @@ export function restanteTrozado(
   enCurso: { trozaCode: string; volumeM3: number | null } | null,
 ): RestanteTrozado {
   const codigo = enCurso?.trozaCode.trim() ?? "";
-  const repetida = codigo ? (arbol.trozas.find((t) => t.trozaCode === codigo) ?? null) : null;
+  const repetida = codigo ? (arbol.trozas.find((t) => repitePlaca(codigo, t.trozaCode)) ?? null) : null;
   const vol = enCurso?.volumeM3 != null && enCurso.volumeM3 > 0 ? enCurso.volumeM3 : null;
   const asentado = arbol.trozas.reduce((s, t) => s + (t.volumeM3 ?? 0), 0);
   const trozado = r4(asentado + (vol ?? 0));
@@ -231,14 +232,37 @@ export function restanteTrozado(
 }
 
 /**
+ * ¿La troza `nueva` repite la placa de una `asentada`? (T3, 15-10.) Sin
+ * distinguir mayúsculas: exacto, o —si UNA de las dos trae el sufijo de una
+ * guía (ADR-477) y la otra no— por lo impreso: «001-TOR-A» repite
+ * «001-TOR-A-0123» (la troza a mano con árbol se guarda así y la guía imprime
+ * «001-TOR-A»), y al revés. Dos CON sufijo distinto no chocan: dos guías
+ * pueden traer el mismo impreso del mismo árbol (el importador: «977A-0771» y
+ * «977A-0772», medido en main 15-10).
+ */
+export function repitePlaca(nueva: string, asentada: string): boolean {
+  const n = nueva.trim().toUpperCase();
+  const a = asentada.trim().toUpperCase();
+  if (!n || !a) return false;
+  if (n === a) return true;
+  const sufijoN = partirCodigoUnico(n) != null;
+  const sufijoA = partirCodigoUnico(a) != null;
+  if (sufijoN === sufijoA) return false;
+  return sufijoN ? codigoDeLaGuia(n) === a : codigoDeLaGuia(a) === n;
+}
+
+/**
  * El código que sigue para la troza de un árbol: la primera letra libre
  * («85-TOR-A»…«85-TOR-D» asentadas → «85-TOR-E»). Si el árbol se troza con
- * números («111-1», «111-2»), el número que sigue. Sin trozas, «-A».
+ * números («111-1», «111-2»), el número que sigue. Sin trozas, «-A». Las
+ * asentadas cuentan por lo IMPRESO (`codigoDeLaGuia`): con «001-TOR-A-0123» en
+ * el libro, la «A» está tomada aunque el código guardado lleve el N° de la guía.
  */
 export function siguienteCodigoDeTroza(treeCode: string, trozas: readonly TrozaDelArbol[]): string {
   const code = treeCode.trim();
-  const usados = new Set(trozas.map((t) => t.trozaCode.toUpperCase()));
-  const sufijos = trozas.map((t) => t.trozaCode.slice(code.length + 1)).filter((x) => x !== "");
+  const impresos = trozas.map((t) => codigoDeLaGuia(t.trozaCode));
+  const usados = new Set(impresos.map((c) => c.toUpperCase()));
+  const sufijos = impresos.map((c) => c.slice(code.length + 1)).filter((x) => x !== "");
   if (sufijos.length > 0 && sufijos.every((x) => /^\d+$/.test(x))) {
     return `${code}-${Math.max(...sufijos.map(Number)) + 1}`;
   }

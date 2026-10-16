@@ -6,6 +6,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
+import { ForestLothArbolesAManoDB } from "@/lib/db/forest-loth-arboles-a-mano.db";
 import { ForestGtfDB, GtfDuplicateError } from "@/lib/db/forest-gtf.db";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
@@ -45,7 +46,11 @@ import type { Contrato } from "@/lib/forestal/contratos";
  *         anotadas a mano (D1, D2, largo, cantidad) que se asientan en el
  *         Trozado en la misma transacción; su volumen se recalcula acá. Van con
  *         el plan de las trozas del libro o, si no hay, con `planId` (o sin
- *         permiso: se asigna después en la tabla de guías).
+ *         permiso: se asigna después en la tabla de guías). Cada fila puede
+ *         llevar `arbolId` (árbol del censo, del permiso y la especie de la
+ *         guía); responde `codigosAMano`, lo que imprime la guía de cada una.
+ * GET ?arboles=1 — los árboles del censo para elegir el de una troza a mano
+ *         (permisos vivos, sin descartados, con su tala y sus trozas).
  * PATCH — `{ id, action: "anular", reason, conDespachos }`: anula la guía y,
  *         si se pide, sus líneas de despacho (las trozas vuelven a estar libres).
  *
@@ -134,7 +139,18 @@ export const GET = withApiHandler("forestal-loth-despacho-guia-get", async (req:
   /* `?lineasDeGuia=<id>`: cuántas líneas de despacho anula anular ESA guía —
      la misma regla que la anulación (`ForestLothDB.lineasDeLaGuia`), para que
      el modal no cuente las de otro titular con el mismo N° (29-09-2026). */
-  const lineasDe = new URL(req.url).searchParams.get("lineasDeGuia");
+  const params = new URL(req.url).searchParams;
+  /* `?arboles=1`: los árboles del censo para la troza a mano (se pide al abrir
+     el selector, no al montar el modal). */
+  if (params.get("arboles") === "1") {
+    try {
+      return NextResponse.json({ arboles: await ForestLothArbolesAManoDB.paraElegir(auth.tenantId) });
+    } catch (err) {
+      logger.error("[loth-despacho-guia.GET arboles] failed", { error: String(err), tenantId: auth.tenantId });
+      return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    }
+  }
+  const lineasDe = params.get("lineasDeGuia");
   if (lineasDe) {
     try {
       const gtf = await ForestGtfDB.getById(auth.tenantId, lineasDe);
@@ -158,23 +174,25 @@ export const GET = withApiHandler("forestal-loth-despacho-guia-get", async (req:
     ]);
     /* La planta propia: si el destinatario lleva este RUC, la guía pasa al
        Libro CTP para recibirla. Sin Libro CTP no se ofrece nada. */
-    const conTrozas = new Set(trozas.map((t) => t.planId));
-    /* La última guía de CADA plan con trozas (FOR-2, 09-10): la nueva hereda de
-       la de su permiso; la del negocio queda sólo para el plan sin guías. */
+    /* Los planes que pueden ir en la guía: los que tienen trozas para despachar
+       y, desde el árbol de la troza a mano (15-10), cualquier plan vivo — la
+       guía sólo de trozas a mano toma el permiso de su árbol («Usar el
+       permiso»). Son pocos por negocio. */
+    const paraLaGuia = planes.map((p) => p.id);
+    /* La última guía de CADA plan (FOR-2, 09-10): la nueva hereda de la de su
+       permiso; la del negocio queda sólo para el plan sin guías. */
     const [ctpPropio, ultimasPorPlan] = await Promise.all([
       libroCtp ? GuiaThAlCtpDB.rucPropio(auth.tenantId) : Promise.resolve(null),
-      ForestGtfDB.ultimasConDatosPorPlan(auth.tenantId, [...conTrozas].filter((id): id is string => Boolean(id))),
+      ForestGtfDB.ultimasConDatosPorPlan(auth.tenantId, paraLaGuia),
     ]);
 
     /* El permiso de cada plan: por el vínculo del plan o, si no lo tiene, por el
-       código del título. Sólo de los planes que tienen trozas para despachar. */
+       código del título. */
     const permisos: Record<string, Contrato | null> = {};
     await Promise.all(
-      planes
-        .filter((p) => conTrozas.has(p.id))
-        .map(async (p) => {
-          permisos[p.id] = await permisoDelPlan(auth.tenantId, p);
-        }),
+      planes.map(async (p) => {
+        permisos[p.id] = await permisoDelPlan(auth.tenantId, p);
+      }),
     );
 
     return NextResponse.json({
@@ -344,7 +362,7 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
     /* La guía ya quedó emitida: pasarla al Libro CTP no la frena (no tira) y
        lo que pasó vuelve en `ctp` para decírselo a la persona. */
     const ctp = await GuiaThAlCtpDB.pasarAlCtp(auth.tenantId, r.gtf.id, auth.username ?? "unknown");
-    return NextResponse.json({ gtf: r.gtf, lineas: r.lineas.length, volumenM3: r.volumen, ctp }, { status: 201 });
+    return NextResponse.json({ gtf: r.gtf, lineas: r.lineas.length, volumenM3: r.volumen, codigosAMano: r.codigosAMano, ctp }, { status: 201 });
   } catch (err) {
     if (err instanceof GtfDuplicateError) {
       return NextResponse.json({ error: "duplicate", message: err.message }, { status: 409 });

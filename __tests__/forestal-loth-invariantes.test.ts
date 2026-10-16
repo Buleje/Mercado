@@ -30,6 +30,9 @@ process.env.AUDIT_CHAIN_ENABLED ??= "false";
 
 import { prisma } from "@/lib/prisma";
 import { ForestLothDB, LothInvariantError, type LothEntryCreateInput } from "@/lib/db/forest-loth.db";
+import { codigoDeLaGuia } from "@/lib/forestal/codigo-unico-troza";
+import { gtfDatosVacio } from "@/lib/forestal/ctp-gtf-datos";
+import { limaDateKey } from "@/lib/utils";
 
 const TENANT = "main";
 const runId = Math.random().toString(36).slice(2, 8);
@@ -50,6 +53,9 @@ function crear(input: Omit<LothEntryCreateInput, "createdBy">) {
 
 /** Limpieza por PATRÓN (barre basura de corridas muertas anteriores también). */
 async function purgar() {
+  // Las guías de los despachos con troza a mano (carrera de T3), antes que sus líneas.
+  await prisma.forestGuiaGuardada.deleteMany({ where: { tenantId: TENANT, createdBy: { startsWith: "TEST-LOTH-" } } });
+  await prisma.forestGtf.deleteMany({ where: { tenantId: TENANT, createdBy: { startsWith: "TEST-LOTH-" } } });
   await prisma.forestLothEntry.deleteMany({ where: { tenantId: TENANT, createdBy: { startsWith: "TEST-LOTH-" } } });
   // ForestPlanSpecies no tiene relación Prisma (solo FK planId) → borrar por los ids.
   const testPlans = await prisma.forestPlan.findMany({
@@ -103,6 +109,71 @@ describe.skipIf(!HAS_DB)("LO-TH · invariantes de cadena de custodia (ADR-305)",
     await expect(crear({ section: "trozado", treeCode: `${P}-B1`, trozaCode: troza, speciesCommon: SP, volumeM3: 1 }))
       .rejects.toMatchObject({ code: "T3_TROZA_DUPLICADA" });
   });
+
+  it("T3 — la placa impresa: «X-A» no entra si el libro ya tiene «X-A-0123» (15-10)", async () => {
+    const tree = `${P}-B2`;
+    await crear({ section: "trozado", treeCode: tree, trozaCode: `${tree}-A-0123`, speciesCommon: SP, volumeM3: 1 });
+    await expect(crear({ section: "trozado", treeCode: tree, trozaCode: `${tree}-A`, speciesCommon: SP, volumeM3: 1 }))
+      .rejects.toMatchObject({ code: "T3_TROZA_DUPLICADA" });
+    // La que sigue sí, y otra guía con el mismo impreso también (importador, ADR-477).
+    await expect(crear({ section: "trozado", treeCode: tree, trozaCode: `${tree}-B`, speciesCommon: SP, volumeM3: 1 })).resolves.toBeTruthy();
+    await expect(crear({ section: "trozado", treeCode: tree, trozaCode: `${tree}-A-0124`, speciesCommon: SP, volumeM3: 1 })).resolves.toBeTruthy();
+  });
+
+  it("T3 — la placa en las dos direcciones, sin mayúsculas, contra la guardada CON árbol (15-10)", async () => {
+    const tree = `${P}-B3`;
+    const t = (trozaCode: string, treeCode: string | null = tree) =>
+      crear({ section: "trozado", treeCode, trozaCode, speciesCommon: SP, volumeM3: 1 });
+    // Nueva CON sufijo contra una guardada sin sufijo.
+    await t(`${tree}-A`);
+    await expect(t(`${tree}-A-0123`)).rejects.toMatchObject({ code: "T3_TROZA_DUPLICADA" });
+    // Nueva SIN árbol y en minúsculas contra una guardada con sufijo y árbol.
+    await t(`${tree}-B-0123`);
+    await expect(t(`${tree}-b`.toLowerCase(), null)).rejects.toMatchObject({ code: "T3_TROZA_DUPLICADA" });
+    // Una guardada SIN árbol no es placa de un árbol: no frena.
+    await t(`${tree}-C-0123`, null);
+    await expect(t(`${tree}-C`)).resolves.toBeTruthy();
+  });
+
+  it("T3 carrera — el alta de «X-A» y una guía con troza a mano de X a la vez: queda UNA placa «X-A» (15-10)", async () => {
+    const plan = await prisma.forestPlan.create({
+      data: { tenantId: TENANT, titularName: `${P} titular RX`, createdBy: P, estado: "vigente" },
+    });
+    const hoy = limaDateKey();
+    const serie = `9${Math.floor(10000 + Math.random() * 89999)}-001`;
+    const datos = gtfDatosVacio();
+    datos.destinatario = { ...datos.destinatario, nombre: `${P} Destino`, docTipo: "RUC", docNumero: "20100000998" };
+    datos.propietario = { ...datos.propietario, nombre: `${P} Titular`, docTipo: "RUC", docNumero: "20100000999" };
+    datos.titulos = [`${P}-PERM`];
+    // Varias vueltas: la carrera sólo se ve cuando los dos se solapan. Árbol SIN filas en el libro.
+    for (let i = 0; i < 4; i++) {
+      const X = `${P}-RX${i}`;
+      const arbol = await prisma.forestCensusTree.create({
+        data: { tenantId: TENANT, planId: plan.id, treeCode: X, speciesCommon: SP, volumenEstimadoM3: 5, estado: "en_pie", createdBy: P },
+      });
+      const r = await Promise.allSettled([
+        crear({ section: "trozado", treeCode: X, trozaCode: `${X}-A`, speciesCommon: SP, volumeM3: 0.5, planId: plan.id }),
+        ForestLothDB.despacharConGuia(TENANT, {
+          gtfNumber: `${serie}-${String(i + 1).padStart(7, "0")}`,
+          gtfDate: new Date(`${hoy}T00:00:00.000Z`),
+          trozaCodes: [],
+          aMano: { filas: [{ d1Cm: 45, d2Cm: 40, largoM: 3.2, cantidad: 1, especie: null, arbolId: arbol.id }], planId: plan.id },
+          gtfDatos: datos,
+          titularName: `${P} Titular`,
+          createdBy: P,
+        }),
+      ]);
+      const vivas = await prisma.forestLothEntry.findMany({
+        where: { tenantId: TENANT, section: "trozado", status: "registrado", deletedAt: null, trozaCode: { startsWith: `${X}-` } },
+        select: { trozaCode: true },
+      });
+      const placaA = vivas.filter((v) => codigoDeLaGuia(v.trozaCode ?? "").toUpperCase() === `${X}-A`.toUpperCase());
+      const como = { vuelta: i, r: r.map((x) => (x.status === "fulfilled" ? "ok" : String((x.reason as { code?: string })?.code ?? x.reason))), vivas };
+      expect(placaA, JSON.stringify(como)).toHaveLength(1);
+      // Lo rechazado, sólo por T3 (no por un abrazo de candados ni por tiempo).
+      for (const x of r) if (x.status === "rejected") expect(x.reason, JSON.stringify(como)).toMatchObject({ code: "T3_TROZA_DUPLICADA" });
+    }
+  }, 120_000);
 
   it("T4 — no se troza más de lo tumbado", async () => {
     const tree = `${P}-C1`;

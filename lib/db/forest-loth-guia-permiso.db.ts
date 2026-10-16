@@ -187,7 +187,8 @@ export class ForestLothGuiaPermisoDB {
   /**
    * Las trozas anotadas a mano que anular la guía anula con ella: la MISMA
    * regla que `ForestLothDB.anularGuiaConDespachos` (el `trozadoId` de los
-   * items + sin árbol + la cita exacta de la GTF, `trozadosNacidosDeLaGuia`).
+   * items con la marca `aMano`, o —guías de antes— sin árbol + la cita exacta
+   * de la GTF: `trozadosNacidosDeLaGuia`).
    * `null` = la guía no existe en este negocio.
    */
   static async trozasAManoQueAnula(tenantId: string, gtfId: string): Promise<TrozasAManoDeLaGuia | null> {
@@ -197,7 +198,7 @@ export class ForestLothGuiaPermisoDB {
     const ids = trozadoIdsDeItems(gtf.items);
     if (ids.length === 0) return { trozas: 0, codigos: [] };
     const lineas = await prisma.forestLothEntry.findMany({
-      where: { tenantId, id: { in: ids }, section: "trozado", status: "registrado", deletedAt: null, treeCode: null },
+      where: { tenantId, id: { in: ids }, section: "trozado", status: "registrado", deletedAt: null },
       select: { id: true, treeCode: true, observations: true, trozaCode: true },
     });
     const nacidos = new Set(trozadosNacidosDeLaGuia(gtf, lineas));

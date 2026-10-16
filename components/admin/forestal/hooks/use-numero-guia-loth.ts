@@ -20,6 +20,8 @@ const ultimoTramo = (n: string): string => n.trim().split(/\s*-\s*/).pop() ?? ""
 export function useNumeroGuiaLoth(talonario: TalonarioDelPlan | null, dueno: DuenoDelTalonario | null) {
   const [texto, setTexto] = useState("");
   const [otraSerie, setOtraSerie] = useState(false);
+  /** Lo que puso la última siembra: distinto de `texto` = la persona escribió otro N°. */
+  const [sembrado, setSembrado] = useState("");
   const serie = talonario?.serie ?? null;
   const digitos = talonario?.digitos ?? 7;
   const libre = !serie || otraSerie;
@@ -74,12 +76,15 @@ export function useNumeroGuiaLoth(talonario: TalonarioDelPlan | null, dueno: Due
   /**
    * Al abrir y al cambiar de plan: el que sigue en SU talonario. Se pisa lo
    * escrito a propósito: otro plan es otro titular (u otra región), y un N°
-   * tipeado para el talonario de uno no es del otro.
+   * tipeado para el talonario de uno no es del otro. Con el MISMO talonario
+   * (`mismoTalonario`) el hook ni lo llama: lo escrito sigue valiendo.
    */
   const sembrar = useCallback((t: TalonarioDelPlan) => {
     const p = t.propuesta;
+    const nuevo = p ? (t.serie ? ultimoTramo(p.gtf) : p.gtf) : "";
     setOtraSerie(false);
-    setTexto(p ? (t.serie ? ultimoTramo(p.gtf) : p.gtf) : "");
+    setTexto(nuevo);
+    setSembrado(nuevo);
   }, []);
 
   const revision = useMemo(
@@ -100,6 +105,8 @@ export function useNumeroGuiaLoth(talonario: TalonarioDelPlan | null, dueno: Due
     gtfNumber,
     /** Hay algo escrito que no es un correlativo válido. */
     invalido: texto.trim() !== "" && gtfNumber === "",
+    /** La persona escribió un N° distinto del que se propuso al sembrar. */
+    escritoAMano: texto.trim() !== "" && texto !== sembrado,
     revision,
   };
 }

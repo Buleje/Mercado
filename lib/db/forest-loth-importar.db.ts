@@ -24,6 +24,7 @@ import { fichaGtfSchema } from "@/lib/forestal/loth-importar-guia-esquemas";
 import { ForestLothDB, LothInvariantError, LothPermisoError, describeEntry } from "@/lib/db/forest-loth.db";
 import { ContratoAjenoError, ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
+import { ForestLothArbolesAManoDB } from "@/lib/db/forest-loth-arboles-a-mano.db";
 import { ESTADOS_SIN_INGRESO, GtfNumeroDB } from "@/lib/db/gtf-numero.db";
 import { auditLoth, type LothAuditAction, type LothAuditEntity, type SesionDeAuditoria } from "@/lib/forestal/loth-audit";
 import { colaDeGtf } from "@/lib/forestal/gtf-talonario";
@@ -269,6 +270,12 @@ export class ForestLothImportarDB {
     const vivas = { tenantId, deletedAt: null, status: "registrado" } as const;
 
     if (opts.bloquearTalas && arboles.length) {
+      /* Primero los candados de los árboles (los mismos del alta y de la troza
+         a mano), ordenados y ANTES de las filas: cada trozado de la guía los
+         vuelve a pedir en `enforceInvariants` y, tomados acá, no espera ninguno
+         con filas ya bloqueadas (un árbol B pedido después de las filas de A
+         se abrazaba con el alta de B). */
+      await ForestLothArbolesAManoDB.candadosDeArboles(db, tenantId, arboles);
       await db.$queryRaw`
         SELECT "id" FROM "ForestLothEntry"
         WHERE "tenantId" = ${tenantId} AND "section" = 'tala' AND "deletedAt" IS NULL

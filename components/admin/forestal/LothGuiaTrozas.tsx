@@ -69,7 +69,10 @@ export default function LothGuiaTrozas({
   }, [g.trozasDelPlan, q]);
   const detalle = useMemo(() => detallePorEspecie(g.piezas, cientificoDe), [g.piezas, cientificoDe]);
   const total = totalM3(g.piezas);
-  const variosPlanes = g.planesConTrozas.length + (g.hayTrozasSinPlan ? 1 : 0) > 1;
+  /* El permiso que tomó la guía desde el árbol de una troza a mano («Usar el
+     permiso»), aunque no tenga trozas del libro: tiene que verse para volver. */
+  const planSinTrozas = g.plan && !g.planesConTrozas.some((p) => p.id === g.plan?.id) ? g.plan : null;
+  const variosPlanes = g.planesConTrozas.length + (g.hayTrozasSinPlan ? 1 : 0) > 1 || Boolean(planSinTrozas);
 
   function alternar(codigos: string[], marcar: boolean) {
     g.setElegidas((prev) => {
@@ -100,12 +103,12 @@ export default function LothGuiaTrozas({
                 value={g.planId ?? ""}
                 onChange={(e) => g.setPlanId(e.target.value || null)}
               >
-                {g.planesConTrozas.map((p) => (
+                {[...g.planesConTrozas, ...(planSinTrozas ? [planSinTrozas] : [])].map((p) => (
                   <option key={p.id} value={p.id}>
                     {[p.planNumber || p.planType, p.titularName].filter(Boolean).join(" · ")}
                   </option>
                 ))}
-                {g.hayTrozasSinPlan && <option value="">Trozas sin plan</option>}
+                {(g.hayTrozasSinPlan || planSinTrozas) && <option value="">{g.hayTrozasSinPlan ? "Trozas sin plan" : "Sin permiso"}</option>}
               </select>
             </label>
           ) : null

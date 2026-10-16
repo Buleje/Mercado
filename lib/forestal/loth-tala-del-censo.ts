@@ -77,7 +77,7 @@ export function resolverTalaContraCenso(tala: TalaPedida, arboles: readonly Arbo
     return {
       ok: false,
       code: "TALA_ESPECIE_DISTINTA_AL_CENSO",
-      mensaje: `El árbol ${treeCode} es ${arbol.speciesCommon} en el censo, no ${pedida}. La tala se registra con la especie del censo; si el censo está mal, corrígelo primero.`,
+      mensaje: `El árbol ${treeCode} es ${arbol.speciesCommon} en el censo, no ${pedida}. Se registra con la especie del censo; si el censo está mal, corrígelo primero.`,
       detail: { treeCode, especieCenso: arbol.speciesCommon, especieEnviada: pedida },
     };
   }

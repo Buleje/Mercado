@@ -22,6 +22,7 @@ import { r4, type TrozaDelLibro } from "./loth-guia-despacho";
 import { claveEspecie } from "./loth-constants";
 import { cientificoDeEspecie, especiesDisponibles, type CatalogoEspecies } from "./especies-catalogo";
 import { especieEnRegistro, rechazoT7, type EspecieRegistrada } from "./loth-plan-especie";
+import { siguienteCodigoDelArbol } from "./loth-arbol-a-mano";
 
 const R = RANGO_FORMULA.smalian;
 
@@ -41,6 +42,14 @@ export interface TrozaAMano {
    * «Falta»; el modal la pide siempre.
    */
   especie?: string | null;
+  /**
+   * El árbol del censo de donde salieron (id de `ForestCensusTree`; 15-10:
+   * «¿de qué árbol salió?»). Opcional: sin árbol la troza nace como antes. Con
+   * árbol, el código es el del trozado de siempre («001-TOR-A») y el servidor
+   * exige que el árbol sea del permiso de la guía y de su especie
+   * (`revisarArbolDeTroza`).
+   */
+  arbolId?: string | null;
 }
 
 /** Lo que el libro guarda: Ø en METROS a 3 decimales (Decimal 8,3), largo a 2 (Decimal 8,2). */
@@ -72,6 +81,13 @@ export const trozaAManoSchema = z
       .min(1, "Al menos 1 troza")
       .max(TROZAS_POR_GUIA_MAX, `Hasta ${TROZAS_POR_GUIA_MAX} trozas`),
     especie: z.string().trim().max(120, "La especie es muy larga").nullish(),
+    arbolId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(64)
+      .regex(/^[A-Za-z0-9_-]+$/, "Árbol no válido")
+      .nullish(),
   })
   .superRefine((t, ctx) => {
     if (!(volumenPorTroza(t) > 0)) {
@@ -112,7 +128,7 @@ function leer(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-const CAMPO_DE: Record<keyof TrozaAMano, CampoAMano> = { especie: "especie", d1Cm: "d1", d2Cm: "d2", largoM: "largo", cantidad: "cantidad" };
+const CAMPO_DE: Partial<Record<keyof TrozaAMano, CampoAMano>> = { especie: "especie", d1Cm: "d1", d2Cm: "d2", largoM: "largo", cantidad: "cantidad" };
 
 /**
  * Revisa lo tipeado en la fila de alta. Cantidad vacía = 1 (lo de siempre).
@@ -164,24 +180,51 @@ export interface PiezaAMano {
   volumeM3: number;
   /** La especie de su fila (`null` = sin especie). */
   especie: string | null;
+  /** El árbol de su fila (`null` = sin árbol): `treeCode` del censo y su id. */
+  treeCode: string | null;
+  arbolId: string | null;
+}
+
+/** Lo que hace falta de un árbol para numerar sus trozas: su código y los de las que ya tiene. */
+export interface ArbolParaNumerar {
+  treeCode: string;
+  trozas: readonly string[];
 }
 
 /**
  * Las trozas de las filas, una por unidad, numeradas 1, 2, 3… en el orden en
  * que se anotaron, saltando los códigos que ya imprimen las trozas del libro
  * de la misma guía (`ocupados`): en el papel no puede haber dos «3».
+ *
+ * Una fila con árbol (y el árbol en `arboles`) numera como el trozado de
+ * siempre: el árbol + la letra que sigue a las que ya tiene en el libro, en la
+ * guía o en esta misma lista («001-TOR-A», «001-TOR-B»). Si el árbol no está
+ * (todavía cargando en la pantalla), la troza va con número y sin árbol: el
+ * servidor rechaza un árbol que no existe antes de numerar.
  */
-export function piezasAMano(filas: readonly TrozaAMano[], ocupados: Iterable<string> = []): PiezaAMano[] {
+export function piezasAMano(
+  filas: readonly TrozaAMano[],
+  ocupados: Iterable<string> = [],
+  arboles: ReadonlyMap<string, ArbolParaNumerar> = new Map(),
+): PiezaAMano[] {
   const usados = new Set([...ocupados].map((c) => c.trim()));
   const piezas: PiezaAMano[] = [];
   let n = 0;
   for (const f of filas) {
     const medidas = medidasDelLibro(f);
     const especie = f.especie?.trim() || null;
+    const arbolId = f.arbolId?.trim() || null;
+    const arbol = arbolId ? arboles.get(arbolId) : undefined;
     for (let i = 0; i < f.cantidad; i++) {
+      if (arbol && arbolId) {
+        const codigo = siguienteCodigoDelArbol(arbol.treeCode, [...arbol.trozas, ...usados]);
+        usados.add(codigo);
+        piezas.push({ codigo, ...medidas, especie, treeCode: arbol.treeCode, arbolId });
+        continue;
+      }
       do n += 1;
       while (usados.has(String(n)));
-      piezas.push({ codigo: String(n), ...medidas, especie });
+      piezas.push({ codigo: String(n), ...medidas, especie, treeCode: null, arbolId: null });
     }
   }
   return piezas;
@@ -196,17 +239,29 @@ export const ID_A_MANO = "a-mano:";
  * con el catálogo (`cientificoDe`), como hace con las del libro sin binomio.
  */
 export function trozasDelLibroAMano(piezas: readonly PiezaAMano[], planId: string | null): TrozaDelLibro[] {
-  return piezas.map(({ especie, ...p }) => ({
+  return piezas.map(({ especie, treeCode, arbolId: _arbolId, ...p }) => ({
     ...p,
     id: `${ID_A_MANO}${p.codigo}`,
     lineNo: 0,
     planId,
     fecha: null,
-    arbol: null,
+    arbol: treeCode,
     comun: especie,
     cientifico: null,
     cites: false,
   }));
+}
+
+/**
+ * Las trozas a mano con el código que les dio el servidor al registrar
+ * (`codigosAMano`, en el mismo orden). La vista previa numera con lo que vio;
+ * el servidor, bajo candado: si otra guía se llevó la letra en el medio, el
+ * papel que se imprime tiene que decir lo que quedó en el libro. Si no viene
+ * la lista (o no cuadra), quedan las de la vista previa.
+ */
+export function conCodigosDelServidor(piezas: readonly TrozaDelLibro[], codigos?: readonly string[] | null): TrozaDelLibro[] {
+  if (!codigos || codigos.length !== piezas.length) return [...piezas];
+  return piezas.map((p, i) => (p.codigo === codigos[i] ? p : { ...p, codigo: codigos[i], id: `${ID_A_MANO}${codigos[i]}` }));
 }
 
 /** Una especie ya cruzada con el catálogo: la grafía del aserradero y su binomio. */
@@ -298,30 +353,40 @@ export interface TrozadoDeLaGuia {
  * guía reanotada crearía otras («1-0123» y «1-019/0123») y el Trozado sumaría
  * la misma madera dos veces; con N° corto el 2.º intento daba T3 (revisión 15-10).
  *
- * El lazo firme es el `trozadoId` que la guía guarda en sus items (ADR-450 L4).
- * Además: sin árbol y con la cita EXACTA de esta GTF. Una troza del libro que
- * ya existía (con árbol o sin él) también va en los items, pero no nació con la
- * guía: anularla solo la libera, no la borra del Trozado.
+ * El lazo es el `trozadoId` que la guía guarda en sus items (ADR-450 L4) y,
+ * desde el 15-10, la marca `aMano: true` que el registro pone en el item de
+ * cada troza que nació con ella: firme, no depende del texto ni del árbol (una
+ * troza a mano puede llevar árbol). Las guías registradas antes no tienen la
+ * marca: para ellas vale lo de antes, sin árbol y con la cita EXACTA de esta
+ * GTF. Una troza del libro que ya existía (con árbol o sin él) también va en
+ * los items, pero no nació con la guía: anularla solo la libera, no la borra
+ * del Trozado.
  */
 export function trozadosNacidosDeLaGuia(
   gtf: { gtfNumber: string; items: unknown },
   trozados: readonly TrozadoDeLaGuia[],
 ): string[] {
   const enLaGuia = new Set(trozadoIdsDeItems(gtf.items));
+  const marcados = new Set(trozadoIdsDeItems(gtf.items, { soloAMano: true }));
   const cita = citaDeLaGuia(gtf.gtfNumber.trim());
   return trozados
-    .filter((l) => enLaGuia.has(l.id) && !l.treeCode && (l.observations ?? "").startsWith(cita))
+    .filter((l) => enLaGuia.has(l.id) && (marcados.has(l.id) || (!l.treeCode && (l.observations ?? "").startsWith(cita))))
     .map((l) => l.id);
 }
 
-/** Los `trozadoId` que la guía guarda en sus items (para buscar sus líneas). */
-export function trozadoIdsDeItems(items: unknown): string[] {
+/**
+ * Los `trozadoId` que la guía guarda en sus items (para buscar sus líneas).
+ * `soloAMano`: sólo los de las trozas que nacieron con la guía (marca `aMano`).
+ */
+export function trozadoIdsDeItems(items: unknown, opciones: { soloAMano?: boolean } = {}): string[] {
   if (!Array.isArray(items)) return [];
   return [
     ...new Set(
       items.flatMap((it: unknown) => {
-        const id = it && typeof it === "object" ? (it as { trozadoId?: unknown }).trozadoId : null;
-        return typeof id === "string" && id ? [id] : [];
+        if (!it || typeof it !== "object") return [];
+        const item = it as { trozadoId?: unknown; aMano?: unknown };
+        if (opciones.soloAMano && item.aMano !== true) return [];
+        return typeof item.trozadoId === "string" && item.trozadoId ? [item.trozadoId] : [];
       }),
     ),
   ];

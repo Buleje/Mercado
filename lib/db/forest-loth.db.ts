@@ -65,7 +65,10 @@ import {
   type TrozaAMano,
 } from "@/lib/forestal/loth-trozas-a-mano";
 import { ForestEspeciesDB } from "@/lib/db/forest-especies.db";
-import { candidatosCodigoUnico } from "@/lib/forestal/codigo-unico-troza";
+import { candidatosCodigoUnico, partirCodigoUnico } from "@/lib/forestal/codigo-unico-troza";
+import { repitePlaca } from "@/lib/forestal/loth-restante";
+import { ForestLothArbolesAManoDB } from "@/lib/db/forest-loth-arboles-a-mano.db";
+import { revisarArbolDeTroza } from "@/lib/forestal/loth-arbol-a-mano";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -139,7 +142,11 @@ export class LothInvariantError extends Error {
       | "TALA_ARBOL_EN_VARIOS_PLANES"
       | "TALA_ESPECIE_DISTINTA_AL_CENSO"
       // La especie de una troza anotada a mano no está en el catálogo del aserradero.
-      | "ESPECIE_FUERA_DEL_CATALOGO",
+      | "ESPECIE_FUERA_DEL_CATALOGO"
+      // El árbol elegido para una troza a mano (15-10): no está en el censo vivo
+      // del negocio, o la guía va sin permiso (el árbol es de uno: se elige ése).
+      | "ARBOL_NO_EXISTE"
+      | "GUIA_SIN_PERMISO_CON_ARBOL",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
@@ -711,6 +718,8 @@ export class ForestLothDB {
    * cantidad). Se asientan en el Trozado DENTRO de la misma transacción, con el
    * plan de la guía (`null` = sin permiso: se asigna después desde la tabla de
    * guías) y el volumen recalculado acá (`piezasAMano`), y viajan con el resto.
+   * Devuelve además `codigosAMano`: el código que imprime la guía de cada troza
+   * a mano, en el orden de las filas (con árbol, la letra la decide la base).
    */
   static async despacharConGuia(
     tenantId: string,
@@ -764,11 +773,11 @@ export class ForestLothDB {
             ...input,
             gtfNumber: num,
             trozaCodes: [...codes, ...(manual?.codigos ?? [])],
-            ...(manual ? { codigosGuia: manual.codigosGuia } : {}),
+            ...(manual ? { codigosGuia: manual.codigosGuia, nacidas: new Set(manual.codigos) } : {}),
           },
           caratulaId,
         );
-        return { ...r, trozados: manual?.lineas ?? [] };
+        return { ...r, trozados: manual?.lineas ?? [], codigosAMano: manual?.codigosAMano ?? [] };
       },
       { timeout: 60_000, maxWait: 10_000 },
     );
@@ -813,10 +822,12 @@ export class ForestLothDB {
 
   /**
    * Las trozas anotadas a mano en el despacho (15-10), al Trozado: una línea
-   * por troza (cantidad N = N líneas), sin árbol, con el plan de la guía y las
-   * medidas y el volumen que calcula `piezasAMano` (el volumen del navegador no
-   * se cree). Cada una lleva el código único de ADR-477 armado con el N° de la
-   * guía («3» de la GTF …-0000123 → «3-0123»); la guía imprime «3».
+   * por troza (cantidad N = N líneas), con el plan de la guía y las medidas y
+   * el volumen que calcula `piezasAMano` (el volumen del navegador no se cree).
+   * Cada una lleva el código único de ADR-477 armado con el N° de la guía («3»
+   * de la GTF …-0000123 → «3-0123»); la guía imprime «3». Con árbol (opcional,
+   * `arbolesDeLasFilasEnTx`) va con su `treeCode` y el código del trozado de
+   * siempre: la guía imprime «001-TOR-A» y el libro guarda «001-TOR-A-0123».
    *
    * Toma primero el candado del N° (el mismo que `despacharConGuiaEnTx` vuelve
    * a pedir: es reentrante en la tx), así el orden de candados es el de siempre
@@ -857,9 +868,10 @@ export class ForestLothDB {
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     await GtfNumeroDB.bloquear(tx, tenantId, x.gtfNumber);
-    const piezas = piezasAMano(x.filas, x.ocupados);
+    const { filas, arboles } = await ForestLothDB.arbolesDeLasFilasEnTx(tx, tenantId, x.filas, x.planId);
+    const piezas = piezasAMano(filas, x.ocupados, arboles);
     /* El científico va con la especie (la grafía ya es la del catálogo): una por nombre. */
-    const cientificoDe = new Map(x.filas.flatMap((f) => (f.especie ? [[f.especie, f.cientifico] as const] : [])));
+    const cientificoDe = new Map(filas.flatMap((f) => (f.especie ? [[f.especie, f.cientifico] as const] : [])));
     const candidatos = piezas.map((p) => candidatosCodigoUnico(p.codigo, x.gtfNumber));
     /* Sólo las vivas ocupan un código: las de una guía anulada (que anuló sus
        trozas a mano) lo dejan libre y la reanotada vuelve a ser «1-0001». */
@@ -891,6 +903,7 @@ export class ForestLothDB {
             planId: x.planId,
             section: "trozado",
             trozaCode: code,
+            treeCode: p.treeCode,
             speciesCommon: p.especie,
             speciesScientific: p.especie ? (cientificoDe.get(p.especie) ?? null) : null,
             diamMayorM: p.diamMayorM,
@@ -907,7 +920,36 @@ export class ForestLothDB {
       codigos.push(code);
       codigosGuia.set(code, p.codigo);
     }
-    return { codigos, codigosGuia, lineas };
+    return { codigos, codigosGuia, codigosAMano: piezas.map((p) => p.codigo), lineas };
+  }
+
+  /**
+   * El árbol de cada fila a mano (15-10), bajo el candado de cada árbol
+   * (`ForestLothArbolesAManoDB.bloquearEnTx`): tiene que estar en el censo vivo,
+   * ser del permiso de la guía y de la especie de la fila — la regla de la tala
+   * contra el censo (`revisarArbolDeTroza` → `resolverTalaContraCenso`). Una
+   * fila sin especie toma la del censo. La tala NO se exige: T4 la mide al
+   * asentar si existe (`enforceInvariants`, rama trozado), como en el trozado
+   * de siempre.
+   */
+  private static async arbolesDeLasFilasEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    filas: readonly FilaAManoConEspecie[],
+    planId: string | null,
+  ) {
+    const ids = filas.flatMap((f) => (f.arbolId?.trim() ? [f.arbolId.trim()] : []));
+    if (ids.length === 0) return { filas, arboles: new Map<string, { treeCode: string; trozas: readonly string[] }>() };
+    const arboles = await ForestLothArbolesAManoDB.bloquearEnTx(tx, tenantId, ids);
+    const conArbol = filas.map((f) => {
+      const id = f.arbolId?.trim();
+      if (!id) return f;
+      const r = revisarArbolDeTroza(arboles.get(id), { planDeLaGuia: planId, especie: f.especie });
+      if (!r.ok) throw new LothInvariantError(r.mensaje, r.code, { ...r.detail, arbolId: id });
+      /* Misma especie (misma clave): queda la grafía del catálogo si la fila la trae. */
+      return { ...f, arbolId: id, especie: f.especie ?? r.especie, cientifico: f.cientifico ?? r.cientifico };
+    });
+    return { filas: conArbol, arboles };
   }
 
   /**
@@ -940,6 +982,12 @@ export class ForestLothDB {
        * coincida con SNIFFS. El despacho desde el libro no lo manda.
        */
       codigosGuia?: ReadonlyMap<string, string>;
+      /**
+       * Las trozas que NACEN con esta guía (anotadas a mano, 15-10): su item
+       * lleva `aMano: true`, la marca firme con que anular la guía las anula
+       * también (`trozadosNacidosDeLaGuia`), tengan árbol o no.
+       */
+      nacidas?: ReadonlySet<string>;
       gtfDatos: GtfDatos;
       titularName: string | null;
       observations?: string | null;
@@ -1042,6 +1090,7 @@ export class ForestLothDB {
            la guarda en la troza: así recuerda su árbol sin adivinar por el
            texto del código. */
         trozadoId: t?.id ?? null,
+        ...(input.nacidas?.has(code) ? { aMano: true } : {}),
       };
     });
     const volumen = r4(items.reduce((a, it) => a + (it.volumeM3 ?? 0), 0));
@@ -1136,7 +1185,7 @@ export class ForestLothDB {
       idsEnLaGuia.length === 0
         ? Promise.resolve([])
         : prisma.forestLothEntry.findMany({
-            where: { tenantId, id: { in: idsEnLaGuia }, section: "trozado", status: "registrado", deletedAt: null, treeCode: null },
+            where: { tenantId, id: { in: idsEnLaGuia }, section: "trozado", status: "registrado", deletedAt: null },
             select: { id: true, treeCode: true, observations: true, entryDate: true },
           }),
     ]);
@@ -1545,6 +1594,11 @@ export class ForestLothDB {
     }
 
     if (section === "trozado") {
+      // Candado del árbol, el MISMO de la troza a mano y del importador, antes
+      // de las filas: en un árbol sin filas el FOR UPDATE de abajo no bloquea
+      // nada (y `trozaCode` no tiene índice único). Reentrante: esos caminos
+      // ya lo tomaron, ordenado, antes de sus filas.
+      if (treeCode) await ForestLothArbolesAManoDB.candadosDeArboles(tx, tenantId, [treeCode]);
       // Lock del árbol (para T4) + la troza (para T3).
       await tx.$queryRaw`
         SELECT "id" FROM "ForestLothEntry"
@@ -1563,6 +1617,42 @@ export class ForestLothDB {
             "T3_TROZA_DUPLICADA",
             { trozaCode, lineNo: dup.lineNo },
           );
+        }
+        // T3 — la placa impresa (15-10), sin distinguir mayúsculas y en las
+        //      dos direcciones (`repitePlaca`): «001-TOR-A» repite la
+        //      «001-TOR-A-0123» que dejó una troza a mano o una guía (ADR-477
+        //      guarda el N° de la guía como sufijo), y «001-TOR-A-0123» repite
+        //      una «001-TOR-A» asentada. Contra trozas GUARDADAS con árbol (la
+        //      placa es de un árbol), tenga árbol o no la nueva. Dos con sufijo
+        //      distinto no chocan: dos guías pueden traer el mismo impreso.
+        //      Va bajo el candado del árbol de arriba.
+        const partes = partirCodigoUnico(trozaCode);
+        const parecidas = await tx.forestLothEntry.findMany({
+          where: {
+            tenantId,
+            section: "trozado",
+            status: "registrado",
+            deletedAt: null,
+            treeCode: { not: null },
+            OR: partes
+              ? [{ trozaCode: { equals: partes.codigoGuia, mode: "insensitive" } }]
+              : [
+                  { trozaCode: { equals: trozaCode, mode: "insensitive" } },
+                  { trozaCode: { startsWith: `${trozaCode}-`, mode: "insensitive" } },
+                ],
+          },
+          select: { lineNo: true, trozaCode: true, treeCode: true },
+          orderBy: { lineNo: "asc" },
+        });
+        const misma = parecidas.find((x) => !!x.treeCode?.trim() && x.trozaCode != null && repitePlaca(trozaCode, x.trozaCode));
+        if (misma?.trozaCode) {
+          const guardada = misma.trozaCode;
+          const mensaje = partes
+            ? `La troza ${trozaCode} lleva la placa ${partes.codigoGuia}, que ya está en Trozado (línea #${misma.lineNo}, árbol ${misma.treeCode}). Una placa no se repite: revisa el código.`
+            : partirCodigoUnico(guardada)
+              ? `La troza ${trozaCode} ya está en Trozado como ${guardada} (línea #${misma.lineNo}): es la misma placa con el N° de su guía. Usa la letra que sigue.`
+              : `La troza ${trozaCode} ya está en Trozado como ${guardada} (línea #${misma.lineNo}): es la misma placa con otras mayúsculas. Usa un código de troza único.`;
+          throw new LothInvariantError(mensaje, "T3_TROZA_DUPLICADA", { trozaCode, lineNo: misma.lineNo, codigoGuardado: guardada });
         }
       }
       // T4 — Σ trozado(árbol) + esta ≤ volumen de la tala del árbol (merma normal

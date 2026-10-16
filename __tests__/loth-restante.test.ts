@@ -12,7 +12,9 @@ import {
   restanteDeEspecie,
   restanteDelArbol,
   restanteTrozado,
+  repitePlaca,
   siguienteCodigoDeTroza,
+  type ArbolEnElLibro,
   type LineaDelLibro,
 } from "@/lib/forestal/loth-restante";
 import { prepararArboles, type ArbolCensoTala, type UsoArbolCenso } from "@/lib/forestal/loth-censo-uso";
@@ -107,6 +109,40 @@ describe("siguienteCodigoDeTroza", () => {
   });
   it("trozado con números sigue con números", () => {
     expect(siguienteCodigoDeTroza("111", [{ id: "a", lineNo: 1, trozaCode: "111-1", volumeM3: 1 }, { id: "b", lineNo: 2, trozaCode: "111-2", volumeM3: 1 }])).toBe("111-3");
+  });
+  it("la letra impresa en una guía cuenta aunque el libro guarde el N° (15-10)", () => {
+    expect(siguienteCodigoDeTroza("001-TOR", [{ id: "1", lineNo: 1, trozaCode: "001-TOR-A-0123", volumeM3: 1 }])).toBe("001-TOR-B");
+  });
+});
+
+describe("repitePlaca (T3 por lo impreso, 15-10)", () => {
+  it("«001-TOR-A» repite la «001-TOR-A-0123» del libro", () => {
+    expect(repitePlaca("001-TOR-A", "001-TOR-A-0123")).toBe(true);
+    expect(repitePlaca("001-TOR-A", "001-TOR-A-019/0123")).toBe(true);
+    expect(repitePlaca("001-TOR-A", "001-TOR-A")).toBe(true);
+  });
+  it("otra letra, o un pedazo retrozado, no", () => {
+    expect(repitePlaca("001-TOR-B", "001-TOR-A-0123")).toBe(false);
+    expect(repitePlaca("001-TOR-A", "001-TOR-A-1")).toBe(false);
+  });
+  it("dos CON sufijo distinto no chocan: dos guías pueden traer el mismo impreso", () => {
+    expect(repitePlaca("977A-0772", "977A-0771")).toBe(false);
+    expect(repitePlaca("977A-0771", "977A-0771")).toBe(true);
+  });
+  it("al revés: una nueva CON sufijo repite la placa asentada sin sufijo", () => {
+    expect(repitePlaca("001-TOR-A-0123", "001-TOR-A")).toBe(true);
+    expect(repitePlaca("001-TOR-A-019/0123", "001-TOR-A")).toBe(true);
+    expect(repitePlaca("001-TOR-B-0123", "001-TOR-A")).toBe(false);
+  });
+  it("sin distinguir mayúsculas", () => {
+    expect(repitePlaca("001-tor-a", "001-TOR-A-0123")).toBe(true);
+    expect(repitePlaca("001-tor-a-0123", "001-TOR-A")).toBe(true);
+    expect(repitePlaca(" 001-tor-a ", "001-TOR-A")).toBe(true);
+    expect(repitePlaca("977a-0772", "977A-0771")).toBe(false);
+  });
+  it("restanteTrozado marca repetida la placa impresa", () => {
+    const arbol: ArbolEnElLibro = { treeCode: "001-TOR", tala: null, trozas: [{ id: "1", lineNo: 7, trozaCode: "001-TOR-A-0123", volumeM3: 1 }] };
+    expect(restanteTrozado(arbol, { trozaCode: "001-TOR-A", volumeM3: 0.5 }).repetida?.lineNo).toBe(7);
   });
 });
 
