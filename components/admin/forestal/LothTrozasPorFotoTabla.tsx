@@ -3,9 +3,9 @@
 /**
  * Lo de toda la carga (especie, largo, primer N°) y la tabla de «Medir por
  * foto» (16-10): una fila por testa con el N° que imprimirá la guía, D1 de la
- * foto (corregible), D2 a mano (vacío = pareja, ADR-492), el largo, el
- * volumen del libro y de dónde salió la medida. Tocar una fila elige su testa
- * en la foto.
+ * foto de atrás y D2 de la de adelante (F2; los dos con corteza y
+ * corregibles; vacío = pareja, ADR-492), el largo, el volumen del libro y de
+ * dónde salió cada medida. Tocar una fila elige su testa en la foto que se ve.
  */
 import { useState, type KeyboardEvent } from "react";
 import { DataTable } from "@buleje/design-system";
@@ -24,6 +24,14 @@ const coma = (n: number | null): string => (n == null ? "" : String(n).replace("
 const PILDORA = "inline-block rounded-full px-2 py-0.5 text-xs font-bold whitespace-nowrap";
 const FOTO = "bg-[var(--accent-soft)] text-[var(--accent-ink)]";
 const MANO = "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
+const AVISO = "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]";
+/** Cabecera de una medida con la cara de la que sale. */
+const cabecera = (medida: string, cara: string) => (
+  <>
+    {medida}
+    <span className="block text-xs font-normal">{cara}</span>
+  </>
+);
 const CAMPO_DE: Record<CampoCorregible, CampoQueFalta> = { d1Cm: "d1", d2Cm: "d2", largoM: "largo" };
 
 /** Una medida de la fila: se tipea libre y se toma al salir (vacío = vuelve a lo de la foto o de la carga). */
@@ -82,11 +90,31 @@ export default function LothTrozasPorFotoTabla({ p, catalogo, fijacion, delPermi
     />
   );
   const origen = (f: FilaPorFoto) => {
-    const t = p.testas.find((x) => x.id === f.testaAtras);
+    const t = p.atras.testas.find((x) => x.id === f.testaAtras);
     const foto = f.origenD1 === "foto";
     const texto = !foto ? "A mano" : t?.origen === "auto" ? "Foto" : "Foto ajustada";
-    return <span className={`${PILDORA} ${foto ? FOTO : MANO}`}>{texto}</span>;
+    /* D2: de la foto de adelante, tipeado, o pareja (= D1); la pareja dudosa pide revisar. */
+    const d2 =
+      f.origenD2 === "mano" ? (
+        <span className={`${PILDORA} ${MANO}`}>D2 a mano</span>
+      ) : f.parejaDudosa ? (
+        <span className={`${PILDORA} ${AVISO}`} data-qa="pareja-dudosa">
+          {f.testaAdelante ? "Revisar D2" : "Sin D2"}
+        </span>
+      ) : f.origenD2 === "foto" ? (
+        <span className={`${PILDORA} ${FOTO}`}>D2 foto</span>
+      ) : (
+        <span className={`${PILDORA} ${AVISO}`}>D2 = D1</span>
+      );
+    return (
+      <>
+        <span className={`${PILDORA} ${foto ? FOTO : MANO}`}>{texto}</span>
+        {d2}
+      </>
+    );
   };
+  /** La testa de la fila en la foto que se está viendo (adelante puede no tener). */
+  const testaDe = (f: FilaPorFoto) => (p.vista === "adelante" ? f.testaAdelante : f.testaAtras);
 
   return (
     <div className="space-y-2">
@@ -151,8 +179,8 @@ export default function LothTrozasPorFotoTabla({ p, catalogo, fijacion, delPermi
           <thead>
             <tr>
               <th className={TH}>N° guía</th>
-              <th className={`${THR} hidden sm:table-cell`}>D1 cm</th>
-              <th className={`${THR} hidden sm:table-cell`}>D2 cm</th>
+              <th className={`${THR} hidden sm:table-cell`}>{cabecera("D1 cm", "atrás")}</th>
+              <th className={`${THR} hidden sm:table-cell`}>{cabecera("D2 cm", "adelante")}</th>
               <th className={`${THR} hidden sm:table-cell`}>L m</th>
               <th className={`${THR} hidden sm:table-cell`}>m³</th>
               <th className={`${TH} hidden sm:table-cell`}>Medida</th>
@@ -160,12 +188,12 @@ export default function LothTrozasPorFotoTabla({ p, catalogo, fijacion, delPermi
           </thead>
           <tbody>
             {p.filas.map((f) => {
-              const sel = f.testaAtras === p.seleccion;
+              const sel = testaDe(f) != null && testaDe(f) === p.seleccion;
               const v = f.d1Cm != null && f.largoM != null ? fmtM3(volumenPorTroza({ d1Cm: f.d1Cm, d2Cm: f.d2Cm ?? f.d1Cm, largoM: f.largoM })) : "—";
               return (
                 <tr
                   key={f.testaAtras ?? f.codigo}
-                  onClick={() => p.setSeleccion(f.testaAtras)}
+                  onClick={() => p.setSeleccion(testaDe(f) ?? null)}
                   aria-current={sel ? "true" : undefined}
                   data-qa="fila-por-foto"
                   className={`cursor-pointer ${sel ? "bg-[var(--accent-soft)]!" : ""}`}
@@ -175,12 +203,12 @@ export default function LothTrozasPorFotoTabla({ p, catalogo, fijacion, delPermi
                       <span className="font-mono font-bold">{f.codigo}</span>
                       <span className="whitespace-nowrap font-mono font-bold sm:hidden">{v} m³</span>
                     </span>
-                    <span className="mt-0.5 flex gap-1 sm:hidden">{origen(f)}</span>
+                    <span className="mt-0.5 flex flex-wrap gap-1 sm:hidden">{origen(f)}</span>
                     {/* A 400 px las tres medidas van debajo del N° (como «Anotar a mano»). */}
                     <span className="mt-1 grid grid-cols-3 gap-1 sm:hidden">
                       {(["d1Cm", "d2Cm", "largoM"] as const).map((c, j) => (
                         <span key={c} className="grid gap-0.5">
-                          <span className="text-xs font-semibold text-[var(--text-tertiary)]">{["D1 cm", "D2 cm", "L m"][j]}</span>
+                          <span className="text-xs font-semibold text-[var(--text-tertiary)]">{["D1 atrás", "D2 adelante", "L m"][j]}</span>
                           {celda(f, c, ["D1", "D2", "Largo"][j])}
                         </span>
                       ))}
@@ -190,7 +218,9 @@ export default function LothTrozasPorFotoTabla({ p, catalogo, fijacion, delPermi
                   <td className={`${TDR} hidden w-24 sm:table-cell`}>{celda(f, "d2Cm", "D2")}</td>
                   <td className={`${TDR} hidden w-24 sm:table-cell`}>{celda(f, "largoM", "Largo")}</td>
                   <td className={`${TDR} hidden font-bold sm:table-cell`}>{v}</td>
-                  <td className={`${TD} hidden sm:table-cell`}>{origen(f)}</td>
+                  <td className={`${TD} hidden sm:table-cell`}>
+                    <span className="flex flex-wrap gap-1">{origen(f)}</span>
+                  </td>
                 </tr>
               );
             })}

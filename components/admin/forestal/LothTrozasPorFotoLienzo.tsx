@@ -3,8 +3,10 @@
 /**
  * La cara de la carga, enderezada, con una elipse y el N° de la guía por troza
  * («Medir por foto», 16-10). Tocar una testa la elige (y su fila en la tabla);
- * con «Agregar troza», el próximo toque busca el borde ahí. Debajo, lo de la
- * elegida: −1 / +1 cm y Quitar.
+ * tocar la que faltó la recorta desde el toque, con corteza (F4); con «Agregar
+ * troza», el próximo toque la pone aunque no se vea el borde. La elegida se
+ * agranda o achica arrastrando su borde (un aro de 44 px de la pantalla) o con
+ * −1 / +1 cm; también se quita.
  *
  * Amarillo = lo que midió la foto; turquesa = la elegida; punteada = la que
  * agregó o ajustó el operador. El trazo no escala con la foto
@@ -16,6 +18,10 @@ import type { CaraMedida } from "@/lib/forestal/testas-medicion";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn } from "./ctp-shared";
 import type { TrozasPorFoto } from "./hooks/use-trozas-por-foto";
+import { useArrastrarBorde } from "./hooks/use-arrastrar-borde";
+
+/** El dedo: 44 px de la pantalla (medio dedo a cada lado del borde). */
+const DEDO_PX = 44;
 
 const coma1 = (n: number): string => n.toFixed(1).replace(".", ",");
 
@@ -24,12 +30,14 @@ const coma1 = (n: number): string => n.toFixed(1).replace(".", ",");
  * medio de margen (abajo suele quedar medio metro de piso). Sale de lo que
  * midió la foto, no de lo corregido: no salta al quitar o agregar. Una troza
  * que faltó en la orilla queda adentro (su centro está a ~2 radios de la vecina).
+ * Si la foto vio menos de 5, el margen es de 3 radios: con poco contraste vio 2
+ * de 11 y una de las que faltaron quedaba afuera, sin poder tocarla (banco F4).
  */
 function recorte(cara: CaraMedida): { x: number; y: number; w: number; h: number } {
   const ts = cara.testas;
   if (!ts.length) return { x: 0, y: 0, w: cara.ancho, h: cara.alto };
   const radios = ts.map((t) => Math.max(t.aPx, t.bPx)).sort((a, b) => a - b);
-  const margen = 1.5 * (radios[Math.floor(radios.length / 2)] ?? 0);
+  const margen = (ts.length < 5 ? 3 : 1.5) * (radios[Math.floor(radios.length / 2)] ?? 0);
   const x0 = Math.max(0, Math.min(...ts.map((t) => t.cx - Math.max(t.aPx, t.bPx))) - margen);
   const y0 = Math.max(0, Math.min(...ts.map((t) => t.cy - Math.max(t.aPx, t.bPx))) - margen);
   const x1 = Math.min(cara.ancho, Math.max(...ts.map((t) => t.cx + Math.max(t.aPx, t.bPx))) + margen);
@@ -38,6 +46,7 @@ function recorte(cara: CaraMedida): { x: number; y: number; w: number; h: number
 }
 
 export default function LothTrozasPorFotoLienzo({ p }: { p: TrozasPorFoto }) {
+  const borde = useArrastrarBorde(p.ajustar);
   const m = p.medida;
   if (!m) return null;
   const { ancho, alto } = m.cara;
@@ -49,10 +58,11 @@ export default function LothTrozasPorFotoLienzo({ p }: { p: TrozasPorFoto }) {
   const letra = Math.max(ancho / 70, r * 0.7);
 
   function alTocar(e: MouseEvent<SVGSVGElement>) {
+    if (borde.fueArrastre()) return;
     const ctm = e.currentTarget.getScreenCTM();
     if (!ctm) return;
     const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
-    void p.tocar(pt.x, pt.y);
+    void p.tocar(pt.x, pt.y, DEDO_PX / 2 / Math.abs(ctm.a || 1));
   }
   const alTeclear = (id: string) => (e: KeyboardEvent<SVGGElement>) => {
     if (e.key !== "Enter" && e.key !== " ") return;
@@ -113,6 +123,35 @@ export default function LothTrozasPorFotoLienzo({ p }: { p: TrozasPorFoto }) {
               </g>
             );
           })}
+          {elegida && (
+            <g data-qa="borde-elegida">
+              {/* El aro que se arrastra: invisible, 44 px de ancho en la pantalla sobre el borde. */}
+              <ellipse
+                cx={elegida.cx}
+                cy={elegida.cy}
+                rx={elegida.aPx}
+                ry={elegida.bPx}
+                transform={`rotate(${elegida.anguloGrados} ${elegida.cx} ${elegida.cy})`}
+                vectorEffect="non-scaling-stroke"
+                strokeWidth={DEDO_PX}
+                pointerEvents="stroke"
+                className="cursor-nwse-resize touch-none fill-none stroke-transparent"
+                onPointerDown={(e) => borde.empezar(elegida, e)}
+                onPointerMove={borde.mover}
+                onPointerUp={borde.soltar}
+                onPointerCancel={borde.soltar}
+              />
+              {/* La manija: dónde se agarra (a la derecha del eje mayor). */}
+              <circle
+                cx={elegida.cx + elegida.aPx * Math.cos((elegida.anguloGrados * Math.PI) / 180)}
+                cy={elegida.cy + elegida.aPx * Math.sin((elegida.anguloGrados * Math.PI) / 180)}
+                r={letra * 0.28}
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
+                className="pointer-events-none fill-[var(--accent)] stroke-white"
+              />
+            </g>
+          )}
         </svg>
       </div>
 
@@ -134,11 +173,11 @@ export default function LothTrozasPorFotoLienzo({ p }: { p: TrozasPorFoto }) {
           </>
         ) : (
           <span className="mr-auto flex items-center gap-1 text-sm text-[var(--text-secondary)]">
-            {p.buscando ? "Buscando el borde…" : p.agregando ? "Toca la troza que faltó." : "Toca una troza para corregirla."}
+            {p.buscando ? "Buscando el borde…" : p.agregando ? "Toca la troza que faltó." : "Toca una troza para corregirla o la que faltó para agregarla."}
             <InfoTip
               title="Corregir la foto"
-              what="Cada elipse es una troza que vio la foto, con el N° que llevará en la guía (se leen por filas, de arriba abajo y de izquierda a derecha). Tócala para achicarla o agrandarla de a 1 cm, o para quitarla si no es una troza. Si faltó una, toca «Agregar troza» y después la troza."
-              affects="El Ø de la tabla es el promedio de los dos ejes de la elipse, a 1 decimal como el libro."
+              what="Cada elipse es una troza medida con corteza, con el N° que llevará en la guía (se leen por filas, de arriba abajo y de izquierda a derecha). Tócala y arrastra su borde, o usa − y +, para agrandarla o achicarla; quítala si no es una troza. Si faltó una (barro, sombra, tapada), tócala: se recorta sola con su corteza."
+              affects="El Ø de la tabla es el promedio de los dos ejes de la elipse, con corteza, a 1 decimal como el libro. Si no ve el borde, «Agregar troza» la pone del tamaño de las otras."
               example="Amarillo = medida por la foto · punteada = la agregaste o ajustaste tú"
               ariaLabel="Cómo corregir la foto"
             />

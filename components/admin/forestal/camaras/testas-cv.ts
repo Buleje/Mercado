@@ -9,15 +9,18 @@
  * 2. Propone círculos (Hough ALT) del tamaño que puede tener una troza.
  * 3. En cada uno, 144 rayos buscan el borde de la madera (los escalones de
  *    claro a oscuro) y una elipse se ajusta a esos puntos, en 3 pasadas que
- *    descartan los que se alejan (grietas, la correa, la corteza). Compiten la
- *    de los escalones más fuertes y la guiada por el círculo: gana la que más
- *    rayos sostienen (`elipseDeCirculo`).
- * 4. Ø = promedio de los dos ejes, en mm por la escala de la hoja.
+ *    descartan los que se alejan (grietas, la correa). Compiten la de los
+ *    escalones más fuertes y la guiada por el círculo: gana la que más rayos
+ *    sostienen (`elipseDeCirculo`).
+ * 4. Desde ese borde, los mismos rayos buscan el de AFUERA de la corteza
+ *    (`gruesoDeCorteza`): el Ø va CON corteza (Brandon 16-10). Si no la ven,
+ *    la troza está descortezada y vale el borde de la madera.
+ * 5. Ø = promedio de los dos ejes, en mm por la escala de la hoja.
  *
  * La máquina PROPONE: cada Ø lo confirma el operador en la tabla (regla
- * forestal). Banco 16-10 (7 escenas sintéticas, 87 trozas): 86 vistas, 0 falsas,
- * error abs. medio 0,01-0,03 cm (máx 0,1) con la elipse guiada; la que faltó
- * se agrega tocándola (48,1 vs 48,2).
+ * forestal). Banco 16-10 con corteza (`scripts/testas-banco.ts`, 40 caras
+ * sintéticas, 460 trozas, corteza de 1 a 3 cm y 18 % descortezadas): ver la
+ * cabecera del banco para las cifras de antes y después.
  */
 import {
   escalaDeLasHojas,
@@ -86,6 +89,15 @@ const PUNTOS_MIN = 30;
 const ALARGADA_MAX = 1.5;
 /** Alrededor de la hoja no se buscan testas (el papel blanco y el marcador engañan). */
 const MARGEN_HOJA_MM = 120;
+/**
+ * La corteza (Brandon 16-10: el Ø va CON corteza, de 1 a 3 cm de grueso): se
+ * busca su borde de afuera entre 4 y 45 mm más allá del de la madera, con un
+ * escalón más suave que el de la madera (de corteza a sombra hay menos
+ * contraste), y cuenta si la ve al menos esta parte de los rayos.
+ */
+const CORTEZA_MM = { min: 4, max: 45 } as const;
+const ESCALON_CORTEZA = 10;
+const CORTEZA_RAYOS_MIN = 0.3;
 
 export function crearDetectorHojas(cv: OpenCvTestas): DetectorHojas {
   const params = new cv.aruco_DetectorParameters();
@@ -139,7 +151,7 @@ export interface Muestreable {
   rows: number;
 }
 
-function muestreador({ data, cols: W, rows: H }: Muestreable) {
+export function muestreador({ data, cols: W, rows: H }: Muestreable) {
   return (x: number, y: number): number => {
     const xi = Math.floor(x);
     const yi = Math.floor(y);
@@ -154,7 +166,7 @@ function muestreador({ data, cols: W, rows: H }: Muestreable) {
 }
 
 /** Un rayo desde el centro propuesto: su dirección y sus escalones de claro a oscuro (distancia en px), del más fuerte al más débil. */
-interface Rayo {
+export interface Rayo {
   co: number;
   si: number;
   ts: number[];
@@ -188,11 +200,9 @@ function rayosConEscalones(img: Muestreable, cx: number, cy: number, desde: numb
 const masFuertes = (rayos: readonly Rayo[], cx: number, cy: number): [number, number][] =>
   rayos.flatMap((r) => (r.ts.length ? [[cx + r.ts[0]! * r.co, cy + r.ts[0]! * r.si] as [number, number]] : []));
 
-const bordeEnRayos = (img: Muestreable, cx: number, cy: number, desde: number, hasta: number): [number, number][] =>
-  masFuertes(rayosConEscalones(img, cx, cy, desde, hasta), cx, cy);
 
 /** Cuánto anda el rayo desde (ox, oy) hasta el borde de la elipse (`null` = no la cruza). */
-function hastaLaElipse(e: ElipseCruda, ox: number, oy: number, co: number, si: number): number | null {
+export function hastaLaElipse(e: ElipseCruda, ox: number, oy: number, co: number, si: number): number | null {
   const f = (e.angulo * Math.PI) / 180;
   const [cf, sf] = [Math.cos(f), Math.sin(f)];
   const [a2, b2] = [(e.ancho / 2) ** 2, (e.alto / 2) ** 2];
@@ -208,7 +218,7 @@ function hastaLaElipse(e: ElipseCruda, ox: number, oy: number, co: number, si: n
 }
 
 /** En cada rayo, el escalón más cerca de donde la elipse dice que está el borde (si está a menos de `tol` px). */
-function bordeGuiado(rayos: readonly Rayo[], ox: number, oy: number, e: ElipseCruda, tol: number): [number, number][] {
+export function bordeGuiado(rayos: readonly Rayo[], ox: number, oy: number, e: ElipseCruda, tol: number): [number, number][] {
   const pts: [number, number][] = [];
   for (const r of rayos) {
     const esperado = hastaLaElipse(e, ox, oy, r.co, r.si);
@@ -250,7 +260,7 @@ function elipseDeCirculo(cv: OpenCvTestas, suave: Muestreable, c: { x: number; y
 }
 
 /** La elipse de esos puntos, en 3 pasadas que sueltan los que quedan lejos (> 3× la mediana). */
-function elipseRobusta(cv: OpenCvTestas, puntos: [number, number][]): ElipseCruda | null {
+export function elipseRobusta(cv: OpenCvTestas, puntos: [number, number][]): ElipseCruda | null {
   let pts = puntos;
   let el: ReturnType<OpenCvTestas["fitEllipse"]> | null = null;
   for (let vuelta = 0; vuelta < 3 && pts.length >= 12; vuelta++) {
@@ -278,7 +288,58 @@ function elipseRobusta(cv: OpenCvTestas, puntos: [number, number][]): ElipseCrud
   return { cx: el.center.x, cy: el.center.y, ancho: el.size.width, alto: el.size.height, angulo: el.angle, puntos: pts.length };
 }
 
-const alargada = (e: ElipseCruda): boolean => Math.max(e.ancho, e.alto) / Math.min(e.ancho, e.alto) > ALARGADA_MAX;
+export const alargada = (e: ElipseCruda): boolean => Math.max(e.ancho, e.alto) / Math.min(e.ancho, e.alto) > ALARGADA_MAX;
+
+/**
+ * El grueso medio de la corteza (px) alrededor de la elipse de la MADERA; 0 =
+ * descortezada. En cada rayo, desde el borde de la madera hacia afuera, el
+ * escalón de claro a oscuro más fuerte entre 4 y 45 mm es el borde de afuera
+ * de la corteza (más oscura que la madera, más clara que la sombra entre
+ * trozas). El perfil arranca ANTES del borde de la madera: así su cola no pasa
+ * por un escalón. La corteza no es pareja (±50 %): se sueltan los gruesos
+ * lejos de la mediana (el borde de la vecina, una mancha) y queda el promedio
+ * del resto. (Ajustar una elipse a esos puntos salió peor en el banco: peor
+ * troza 4,8 cm contra 2,4.)
+ */
+export function gruesoDeCorteza(img: Muestreable, e: ElipseCruda, mmPorPx: number): number {
+  const at = muestreador(img);
+  const [desde, hasta] = [CORTEZA_MM.min / mmPorPx, CORTEZA_MM.max / mmPorPx];
+  const gruesos: number[] = [];
+  let rayos = 0;
+  for (let k = 0; k < RAYOS; k++) {
+    const th = (k * 2 * Math.PI) / RAYOS;
+    const [co, si] = [Math.cos(th), Math.sin(th)];
+    const t0 = hastaLaElipse(e, e.cx, e.cy, co, si);
+    if (t0 == null) continue;
+    rayos++;
+    const perfil: { g: number; dv: number }[] = [];
+    for (let g = -3; g <= hasta + 1; g += 0.5) {
+      const t = t0 + g;
+      perfil.push({ g, dv: at(e.cx + (t + 1.5) * co, e.cy + (t + 1.5) * si) - at(e.cx + (t - 1.5) * co, e.cy + (t - 1.5) * si) });
+    }
+    let mejor: { g: number; dv: number } | null = null;
+    for (let i = 1; i < perfil.length - 1; i++) {
+      const p = perfil[i]!;
+      if (p.g < desde || p.g > hasta || p.dv >= -ESCALON_CORTEZA) continue;
+      if (p.dv > perfil[i - 1]!.dv || p.dv > perfil[i + 1]!.dv) continue;
+      if (!mejor || p.dv < mejor.dv) mejor = p;
+    }
+    if (mejor) gruesos.push(mejor.g);
+  }
+  const minimo = CORTEZA_RAYOS_MIN * rayos;
+  if (!rayos || gruesos.length < minimo) return 0;
+  const orden = [...gruesos].sort((p, q) => p - q);
+  const med = orden[Math.floor(orden.length / 2)]!;
+  const cerca = gruesos.filter((g) => g >= 0.4 * med && g <= 1.8 * med);
+  return cerca.length < minimo ? 0 : cerca.reduce((a, g) => a + g, 0) / cerca.length;
+}
+
+/** La testa de la elipse de la madera, con su corteza sumada (el Ø del libro es con corteza). */
+export function testaConCorteza(img: Muestreable, e: ElipseCruda, mmPorPx: number, id: string, origen: TestaPropuesta["origen"]): TestaPropuesta {
+  const g = gruesoDeCorteza(img, e, mmPorPx);
+  const t = testaDeElipse({ ...e, ancho: e.ancho + 2 * g, alto: e.alto + 2 * g }, mmPorPx, id, origen);
+  return g > 0 ? { ...t, cortezaCm: Math.round(g * mmPorPx) / 10 } : t;
+}
 
 export type ResultadoCara =
   | { ok: true; cara: CaraMedida; marco: MarcoEnderezado; enderezada: MatCv; suave: MatCv; otrosIds: number[]; ms: number }
@@ -346,7 +407,9 @@ export function medirCara(
     for (const e of [...sinContenedoras].sort((p, q) => q.puntos - p.puntos)) {
       if (!elipses.some((k) => Math.hypot(k.cx - e.cx, k.cy - e.cy) < 0.5 * Math.min(rMedio(k), rMedio(e)))) elipses.push(e);
     }
-    const testas = ordenDeLectura(elipses.map((e, i) => testaDeElipse(e, mm, `t${i}`, "auto"))).map((t, i) => ({ ...t, id: `t${i + 1}` }));
+    /* Las de adelante con otra letra: las dos caras conviven en la misma carga (F2). */
+    const letra = cara === "adelante" ? "a" : "t";
+    const testas = ordenDeLectura(elipses.map((e, i) => testaConCorteza(suave, e, mm, `${letra}${i}`, "auto"))).map((t, i) => ({ ...t, id: `${letra}${i + 1}` }));
     return {
       ok: true,
       cara: {
@@ -374,17 +437,3 @@ export function medirCara(
   }
 }
 
-/**
- * La testa donde tocó el operador (px de la enderezada). Primero busca el
- * borde lejos (hasta 1,8 radios típicos), después lo afina alrededor de lo
- * que encontró. `null` = no hay borde claro: la pantalla pone un círculo a ojo.
- */
-export function testaEn(cv: OpenCvTestas, suave: Muestreable, x: number, y: number, rRef: number, mmPorPx: number, id: string): TestaPropuesta | null {
-  const primera = elipseRobusta(cv, bordeEnRayos(suave, x, y, 0.15 * rRef, 1.8 * rRef));
-  if (!primera || primera.puntos < 12) return null;
-  const r1 = (primera.ancho + primera.alto) / 4;
-  const fina = elipseDeCirculo(cv, suave, { x: primera.cx, y: primera.cy, r: r1 });
-  const e = fina && fina.puntos >= 12 && !alargada(fina) ? fina : primera;
-  if (alargada(e)) return null;
-  return testaDeElipse(e, mmPorPx, id, "agregada");
-}

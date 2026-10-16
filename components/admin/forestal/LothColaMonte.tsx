@@ -5,6 +5,7 @@
  * `?tab=loth-libro-operaciones&vista=monte`). La abre el celular del
  * campamento desde el enlace del WhatsApp: arriba lo que falta imprimir, luego
  * lo impreso por confirmar y lo observado; lo terminado, plegado al final.
+ * Arriba, «Cargas medidas» (F3): medir una carga por foto y guardarla para la oficina.
  * `&trabajo=<id>` (el enlace del WhatsApp) lleva a esa guía y la resalta.
  */
 
@@ -19,6 +20,7 @@ import TarjetaTrabajoMonte from "./gtf-cola-monte-tarjeta";
 import { PastillaEstadoMonte, cuandoLima, srcFotoHoja } from "./gtf-cola-monte-ui";
 import { AvisoImpresionDirecta, BotonProbarImpresora, QueNecesitasEnElMonte } from "./gtf-impresion-directa";
 import { useImprimirDirecto } from "./hooks/use-imprimir-directo";
+import LothMedirCargaMonte from "./LothMedirCargaMonte";
 
 /** Primero lo que hay que imprimir, después lo que hay que confirmar, después lo observado. */
 const ORDEN: Partial<Record<EstadoTrabajo, number>> = { pendiente: 0, impresa: 1, observada: 2 };
@@ -63,6 +65,7 @@ export default function LothColaMonte() {
         </Btn>
       </VistaHeader>
       <AvisoImpresionDirecta d={prueba} />
+      <LothMedirCargaMonte />
 
       {error && (
         <p role="alert" className="rounded-xl bg-[var(--data-error-50)] px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">

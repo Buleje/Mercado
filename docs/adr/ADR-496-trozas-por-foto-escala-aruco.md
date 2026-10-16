@@ -1,6 +1,6 @@
 # ADR-496 — Trozas por foto: escala con hoja ArUco, medición en el navegador y correlativo que sigue por permiso
 
-- **Estado:** aceptado (2026-10-16). Fase 1 construida; F2-F4 pendientes.
+- **Estado:** aceptado (2026-10-16). F1-F4 construidas el mismo día; falta la prueba con fotos reales del monte (F0).
 - **Pedido por:** Brandon (16-10): «tomar foto a los laterales del camión o a la cara de los troncos, sacar de cada tronco su diámetro, asignar código según el correlativo que siga, hacer la tabla y pasarla a la realización de la GTF».
 - **Contrato y medición:** `.claude/autonomo/contratos-2026-10-16/fotos-trozas.md`.
 - **Schema:** ninguno.
@@ -34,15 +34,34 @@ Es una cota superior. Falta probar con fotos del monte.
 4. **Correlativo**: el GET del despacho devuelve el N° que sigue por permiso (`siguientesCorrelativos`), que es el último código de la guía entre las trozas vivas + 1. El POST acepta `desde`, que es opcional: sin él la numeración arranca en 1 como antes. El código único de ADR-474 no cambia.
 5. **Fotos**: al registrar, la foto va a los papeles de la guía.
 
+## Ampliación del 16-10 (Brandon: d1/d2 = las dos puntas; se mide CON corteza)
+
+- **Con corteza.** La elipse se ajusta al borde de afuera de la corteza (`gruesoDeCorteza` en `testas-cv.ts`). Una troza descortezada se mide hasta la madera.
+  - Banco de 40 caras: el error medio de las trozas con corteza bajó de 3,6 cm (siempre de menos) a 0,18 cm.
+  - Las descortezadas siguen en 0,07 cm.
+- **D2 por la otra cara (F2).** «Medir la otra cara» saca la foto de adelante y `emparejarCaras` la empareja con la de atrás.
+  - El emparejado es un húngaro propio que tiene en cuenta el espejo.
+  - Banco: 225 de 225 trozas bien emparejadas. Las 14 dudosas salen marcadas «Revisar D2», y «Esta de adelante es la N°» las corrige.
+  - Al pasar a la guía, D1 es la punta mayor y D2 la menor.
+- **Medir en el monte (F3).** La carga medida se guarda en el KV `medicion-carga` del tenant.
+  - Topes: 25 cargas y 0,87 MB por fila.
+  - Las fotos van a los Documentos al guardar. Si una no sube, se avisa y se puede reintentar.
+  - La oficina la recoge en «Cargas medidas» → «Usar en esta guía».
+  - El POST del despacho recibe `cargas` y las marca `usada` con el N° de la guía ANTES de escribir el libro. Si una ya es de otra guía o está descartada, responde 409 y no escribe nada. Si el libro falla, la carga vuelve a «medida».
+  - Marcar `usada` a mano: sólo admin y dueño. Todo se audita (`ctp-audit`). La revisión de seguridad levantó su veto.
+- **Tocar la troza que no ve (F4).** Va por el camino clásico, sin descargar nada: semilla en el toque, borde guiado y elipse con corteza (`segmentar-toque.ts`).
+  - Banco difícil (barro, sombra, testa tapada, poco contraste): recorta el 100 %, con 0,48 cm de error medio. En sombra dura llega a 1,28 cm.
+  - SlimSAM (Apache-2.0) se midió y se descartó: recorta el 93,7 %, tarda 7,5 s por foto y mide sin la corteza.
+
 ## Consecuencias
 
-- D1 y D2 son las dos puntas (ADR-492). Una foto da una punta y D2 se escribe a mano o queda igual a D1 («troza pareja», marcado).
-- Pendiente, F2: emparejar la cara de adelante para tener D2 por foto.
-- Pendiente, F3: llevar la carga medida del monte a la oficina sin perder fotos. Hoy, si no se registra, la foto se pierde.
-- Pendiente, F4: segmentar al tocar (SAM/EfficientSAM, Apache-2.0) y medir el largo por foto lateral con una vara de 1 m.
+- **Pendiente: carrera de mismo N°.** Si dos registros simultáneos usan el mismo N° de guía y la misma carga, el que pierde por `GtfDuplicateError` suelta la carga que usó el que ganó.
+  - Severidad medio-baja.
+  - Arreglo limpio: reservar y escribir el libro en una sola transacción (`PlatformSettingsDB.actualizar(…, tx)` + `despacharConGuiaEnTx`).
+- D1 y D2 son las dos puntas (ADR-492). D2 sale de la foto de la otra cara. Sin esa foto, D2 se escribe a mano o queda igual a D1, marcado como «troza pareja».
+- Pendiente: medir el largo con una foto lateral y una vara de 1 m.
 - Riesgos medidos en el contrato:
   - **Testas escalonadas:** −2 % de diámetro por cada 6 cm de profundidad a 3 m.
-  - **Corteza:** no está definido si se mide con o sin ella.
   - **Monte sin señal:** OpenCV pesa 3,75 MB comprimido y tiene que quedar en caché antes de salir.
 
 ## Alternativas descartadas

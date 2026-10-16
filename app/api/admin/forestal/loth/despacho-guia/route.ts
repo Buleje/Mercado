@@ -29,6 +29,9 @@ import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-a
 import { motivoSchema } from "@/lib/forestal/motivo";
 import { TROZAS_POR_GUIA_MAX, trozaAManoSchema, trozasDeFilas } from "@/lib/forestal/loth-trozas-a-mano";
 import { CORRELATIVO_MAX } from "@/lib/forestal/testas-medicion";
+import { ClaveOcupadaError } from "@/lib/db/platform-settings.db";
+import { MAX_CARGAS_POR_GUIA } from "@/lib/forestal/medicion-carga";
+import { cerrarCargasDeGuia, reservarCargasDeGuia, soltarCargasDeGuia, type ReservaCargas } from "@/lib/forestal/medicion-carga-server";
 import type { Contrato } from "@/lib/forestal/contratos";
 
 /**
@@ -54,6 +57,13 @@ import type { Contrato } from "@/lib/forestal/contratos";
  *         (permisos vivos, sin descartados, con su tala y sus trozas).
  * PATCH — `{ id, action: "anular", reason, conDespachos }`: anula la guía y,
  *         si se pide, sus líneas de despacho (las trozas vuelven a estar libres).
+ *
+ * `cargas` (16-10, security F3): los ids de las cargas medidas en el monte que
+ * van en esta guía. Se marcan `usada` con el N° bajo el candado de su clave
+ * ANTES de escribir el libro; si una ya va en otra guía o está descartada,
+ * 409 y no se escribe nada. Si el registro falla, vuelven a `medida`. Con la
+ * guía registrada, sus fotos pasan a los papeles de la guía (`cargas` en la
+ * respuesta dice cuántas).
  *
  * Con el Libro CTP del mismo negocio (28-09-2026): el POST deja la guía
  * guardada en el CTP para recibirla si su destinatario es este negocio (RUC =
@@ -93,6 +103,8 @@ const postSchema = z.object({
   confirmarSalto: z.boolean().optional(),
   /** El operador confirmó un N° de OTRA región que la del plan (p. ej. 010 con un plan en Pasco). */
   confirmarSerie: z.boolean().optional(),
+  /** Las cargas del monte que van en esta guía (se marcan usadas al registrar). */
+  cargas: z.array(z.string().trim().min(1).max(64)).max(MAX_CARGAS_POR_GUIA, `Una guía lleva hasta ${MAX_CARGAS_POR_GUIA} cargas del monte`).optional(),
 }).superRefine((b, ctx) => {
   const total = b.trozas.length + trozasDeFilas(b.aMano ?? []);
   if (total === 0) ctx.addIssue({ code: "custom", path: ["trozas"], message: "Elige al menos una troza o anótala a mano" });
@@ -283,6 +295,9 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
     );
   }
 
+  let reserva: ReservaCargas | null = null;
+  let registrada = false;
+  const user = auth.username ?? "unknown";
   try {
     /* El talonario: el N° no puede repetirse en el MISMO talonario escrito
        distinto (`019-0000001` ≡ `19-0000001`) ni adelantarse más de 20 sin
@@ -363,6 +378,13 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
         gtfNumber,
       });
     }
+    /* Las cargas del monte se marcan ANTES de escribir el libro, bajo su
+       candado: la misma carga no sale en dos guías (security 16-10). */
+    const cargas = [...new Set(parsed.data.cargas ?? [])];
+    const reservada = await reservarCargasDeGuia(auth.tenantId, cargas, gtfNumber, user);
+    if (!reservada.ok) return NextResponse.json({ error: reservada.error, message: reservada.message }, { status: reservada.status });
+    reserva = reservada.reserva;
+
     const r = await ForestLothDB.despacharConGuia(auth.tenantId, {
       gtfNumber,
       gtfDate: new Date(`${gtfDate}T00:00:00.000Z`),
@@ -371,13 +393,30 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
       ...(aMano.length ? { aMano: { filas: aMano, planId: unPlan ? planId : null, desde: parsed.data.desde } } : {}),
       gtfDatos: datos,
       titularName: titular.titular,
-      createdBy: auth.username ?? "unknown",
+      createdBy: user,
     });
+    registrada = true;
     /* La guía ya quedó emitida: pasarla al Libro CTP no la frena (no tira) y
-       lo que pasó vuelve en `ctp` para decírselo a la persona. */
-    const ctp = await GuiaThAlCtpDB.pasarAlCtp(auth.tenantId, r.gtf.id, auth.username ?? "unknown");
-    return NextResponse.json({ gtf: r.gtf, lineas: r.lineas.length, volumenM3: r.volumen, codigosAMano: r.codigosAMano, ctp }, { status: 201 });
+       lo que pasó vuelve en `ctp` para decírselo a la persona. Igual las
+       fotos de las cargas del monte. */
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
+    const [ctp, cierre] = await Promise.all([
+      GuiaThAlCtpDB.pasarAlCtp(auth.tenantId, r.gtf.id, user),
+      cerrarCargasDeGuia(auth.tenantId, reserva, r.gtf.gtfNumber, user, ip),
+    ]);
+    return NextResponse.json(
+      { gtf: r.gtf, lineas: r.lineas.length, volumenM3: r.volumen, codigosAMano: r.codigosAMano, ctp, ...(cierre ? { cargas: cierre } : {}) },
+      { status: 201 },
+    );
   } catch (err) {
+    /* La guía no quedó: las cargas que este registro marcó vuelven a «medida». */
+    if (!registrada) await soltarCargasDeGuia(auth.tenantId, reserva, user);
+    if (err instanceof ClaveOcupadaError) {
+      return NextResponse.json(
+        { error: "ocupado", message: "Otra PC está usando las cargas del monte en este momento. Vuelve a registrar en unos segundos." },
+        { status: 409 },
+      );
+    }
     if (err instanceof GtfDuplicateError) {
       return NextResponse.json({ error: "duplicate", message: err.message }, { status: 409 });
     }

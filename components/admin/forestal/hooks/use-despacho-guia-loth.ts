@@ -52,7 +52,7 @@ import { useTrozasAMano } from "./use-trozas-a-mano";
 import { useEspeciesAMano, type CatalogoParaJuzgar } from "./use-especies-a-mano";
 import { useArbolesAMano } from "./use-arboles-a-mano";
 import { useBorradorTrozasAMano } from "./use-borrador-trozas-a-mano";
-import { useFotosDeLaCarga } from "./use-fotos-de-la-carga";
+import { useFotosDeLaCarga, type CierreCargasDelRegistro } from "./use-fotos-de-la-carga";
 import { conCodigosDelServidor, piezasAMano, trozasDelLibroAMano } from "@/lib/forestal/loth-trozas-a-mano";
 
 export interface RegistradaLoth {
@@ -210,11 +210,20 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
   const [pregunta, setPregunta] = useState<PreguntaNumero | null>(null);
   const confirmados = useRef({ salto: false, serie: false });
   const [registrada, setRegistrada] = useState<RegistradaLoth | null>(null);
-  /* Las filas a mano, a salvo de un remonte (recarga, pestaña descartada al girar el celular). */
-  const borradorAMano = useBorradorTrozasAMano({ prep, planId, setPlanId: setPlanElegido, aMano, registrada: registrada != null });
   /* «Medir por foto»: las fotos esperan a la guía registrada para ir a sus papeles. */
   const fotosCarga = useFotosDeLaCarga();
   const subirFotos = fotosCarga.subir;
+  const cargasEnUso = fotosCarga.cargas;
+  /* Las filas a mano (y las cargas del monte en uso), a salvo de un remonte
+     (recarga, pestaña descartada al girar el celular). */
+  const borradorAMano = useBorradorTrozasAMano({
+    prep,
+    planId,
+    setPlanId: setPlanElegido,
+    aMano,
+    registrada: registrada != null,
+    cargas: { enUso: cargasEnUso, usar: fotosCarga.usarCarga },
+  });
 
   const registrar = useCallback(
     async (confirmar?: PreguntaNumero["tipo"]) => {
@@ -251,6 +260,8 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
             gtfDatos: enviados,
             confirmarSalto: confirmados.current.salto,
             confirmarSerie: confirmados.current.serie,
+            /* Las cargas del monte: el servidor las marca usadas ANTES de escribir el libro (o 409). */
+            ...(cargasEnUso.length ? { cargas: cargasEnUso } : {}),
           }),
         });
         const j = (await r.json().catch(() => ({}))) as {
@@ -261,6 +272,8 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
           ctp?: PaseAlCtp;
           /** El código que quedó en la guía para cada troza a mano, en orden. */
           codigosAMano?: string[];
+          /** Las cargas del monte que quedaron usadas y cuántas de sus fotos pasaron a la guía. */
+          cargas?: CierreCargasDelRegistro;
         };
         if (r.status === 409 && (j.error === "salto" || j.error === "serie_de_otra_region")) {
           setPregunta({ tipo: j.error === "salto" ? "salto" : "serie", mensaje: j.message ?? "Revisa el N° de la guía." });
@@ -278,7 +291,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
           titular: identidad.titular,
           ctp: j.ctp ?? null,
         });
-        void subirFotos(gtfNumber.trim());
+        void subirFotos(gtfNumber.trim(), j.cargas ?? null);
         onRegistrada?.();
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -286,7 +299,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
         setEnviando(false);
       }
     },
-    [enviando, faltan.length, identidad, gtfNumber, emision, piezas, delLibro, piezasManuales, aMano.filas, aMano.desde, planId, datos, traslado.listas.texto, onRegistrada, subirFotos],
+    [enviando, faltan.length, identidad, gtfNumber, emision, piezas, delLibro, piezasManuales, aMano.filas, aMano.desde, planId, datos, traslado.listas.texto, onRegistrada, subirFotos, cargasEnUso],
   );
 
   /* Cambiar el N° invalida lo que se confirmó del anterior. */

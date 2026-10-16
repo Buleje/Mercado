@@ -115,6 +115,8 @@ export type CtpAuditEntity =
   | "ForestPatioConteo"
   /** Una cubicación de trozas guardada con dueño y, al aplicarla, plata en sus adelantos (ADR-478). */
   | "ForestCubicacionTrozas"
+  /** Una carga medida por foto en el monte (KV `interno:medicion-carga:`, 16-10). */
+  | "ForestMedicionCarga"
   | "Tenant";
 
 /**
@@ -459,7 +461,15 @@ export type CtpAuditAction =
   | "ctp_cubicacion_trozas_guardar"
   | "ctp_cubicacion_trozas_aplicar"
   | "ctp_cubicacion_trozas_anular"
-  | "ctp_cubicacion_trozas_borrar";
+  | "ctp_cubicacion_trozas_borrar"
+  // Cargas medidas por foto en el monte (16-10, F3): guardar, sumar una foto,
+  // usarla en una guía y descartarla.
+  | "loth_medicion_carga_guardar"
+  | "loth_medicion_carga_foto"
+  | "loth_medicion_carga_usar"
+  | "loth_medicion_carga_descartar"
+  // Security 16-10: una guía quiso llevar una carga que ya va en otra (o descartada): 409.
+  | "loth_medicion_carga_doble_uso";
 
 /** Lo que describe un evento del libro. */
 export interface CtpAuditParams {

@@ -1,46 +1,42 @@
 "use client";
 
 /**
- * «Medir por foto» (16-10, F1): la foto de la cara de la carga → una testa
- * por troza con su Ø → la tabla con el N° que imprimirá la guía → «Anotar a
- * mano». Nada se escribe en la base: lo que se pasa queda en el borrador del
- * despacho y recién se guarda al registrar la guía.
+ * «Medir por foto» (16-10): la foto de la cara de la carga → una testa por
+ * troza con su Ø CON corteza → la tabla con el N° que imprimirá la guía →
+ * «Anotar a mano». Nada se escribe en la base: lo que se pasa queda en el
+ * borrador del despacho y recién se guarda al registrar la guía.
  *
- * El operador confirma todo (regla forestal: lo declarado lo confirma él):
- * toca una testa para elegirla, la ajusta de a 1 cm, la quita o agrega la que
- * faltó, y corrige D1, D2 y el largo en la tabla. D2 vacío = troza pareja
- * (ADR-492) y queda marcada en la guía.
+ * F2 (Brandon 16-10: «D2 por la otra cara»): la foto de atrás da D1 y,
+ * si se toma, la de adelante da D2. `emparejarCaras` junta cada punta de
+ * adelante con su troza de atrás; las dudosas se marcan y el operador las
+ * corrige tocando («esta de adelante es la N° 7» → `fijarPareja`). Sin la
+ * segunda foto, D2 vacío = pareja (ADR-492) y queda marcada en la guía.
+ *
+ * El operador confirma todo (regla forestal: lo declarado lo confirma él).
+ * Lo que se dibuja y se toca (`medida`, `testas`, `codigos`, `tocar`…) es
+ * de la cara que se está viendo (`vista`): el lienzo no sabe de caras.
  *
  * El medidor (OpenCV, 13 MB) se carga al abrir la ventana y se suelta un
  * minuto después de cerrarla (`motor-testas`).
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { logger } from "@/lib/logger";
 import { leerMedida, type ArbolParaNumerar, type TrozaAMano } from "@/lib/forestal/loth-trozas-a-mano";
 import {
   aTrozasAMano,
   codigosDeLaCarga,
-  conDiametro,
+  emparejarCaras,
   filasDeLaCarga,
-  ordenDeLectura,
-  radiosBuscados,
   resumenDeLaCarga,
-  testaDeElipse,
   type CaraMedida,
   type CorreccionesDeLaCarga,
-  type TestaPropuesta,
 } from "@/lib/forestal/testas-medicion";
-import { cargarMotorTestas, medirTestasDe, retenerMotorTestas, testaDondeToco } from "../camaras/motor-testas";
+import { cargarMotorTestas, retenerMotorTestas } from "../camaras/motor-testas";
+import { useCaraPorFoto } from "./use-cara-por-foto";
 
-export type FasePorFoto = "inicio" | "midiendo" | "listo" | "sin_hoja" | "error";
+export type { FasePorFoto } from "./use-cara-por-foto";
 export type CampoCorregible = keyof CorreccionesDeLaCarga;
-
-interface MedidaVista {
-  cara: CaraMedida;
-  enderezada: Blob;
-  url: string;
-  ms: number;
-}
+type LadoDeLaCarga = CaraMedida["cara"];
 
 export interface OpcionesPorFoto {
   /** Lo ya anotado a mano: las de la foto numeran DETRÁS. */
@@ -52,39 +48,26 @@ export interface OpcionesPorFoto {
   especieInicial: string;
 }
 
-/** ¿Tocó dentro de esta testa? (con un 15 % de holgura: el dedo no es un puntero). */
-function dentroDe(t: TestaPropuesta, x: number, y: number): number {
-  const a = (t.anguloGrados * Math.PI) / 180;
-  const dx = x - t.cx;
-  const dy = y - t.cy;
-  const u = dx * Math.cos(a) + dy * Math.sin(a);
-  const v = -dx * Math.sin(a) + dy * Math.cos(a);
-  return (u / (t.aPx * 1.15)) ** 2 + (v / (t.bPx * 1.15)) ** 2;
+/** Saca la corrección de un campo de una troza (lo que se ve en la foto vuelve a mandar). */
+function sinCorreccion(c: CorreccionesDeLaCarga, campo: CampoCorregible, id: string): CorreccionesDeLaCarga {
+  if (c[campo]?.[id] === undefined) return c;
+  const resto = { ...c[campo] };
+  delete resto[id];
+  return { ...c, [campo]: resto };
 }
-
-const mediana = (v: number[]): number => {
-  const o = [...v].sort((p, q) => p - q);
-  return o[Math.floor(o.length / 2)] ?? 0;
-};
 
 export function useTrozasPorFoto(o: OpcionesPorFoto) {
   const [motor, setMotor] = useState<"cargando" | "listo" | "error">("cargando");
-  const [fase, setFase] = useState<FasePorFoto>("inicio");
-  const [error, setError] = useState<string | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
-  const [foto, setFoto] = useState<File | null>(null);
-  const [medida, setMedida] = useState<MedidaVista | null>(null);
-  const [testas, setTestas] = useState<TestaPropuesta[]>([]);
-  const [seleccion, setSeleccion] = useState<string | null>(null);
-  const [agregando, setAgregando] = useState(false);
-  const [buscando, setBuscando] = useState(false);
+  const marcarMotorListo = useCallback(() => setMotor("listo"), []);
+  const atras = useCaraPorFoto("atras", marcarMotorListo);
+  const adelante = useCaraPorFoto("adelante", marcarMotorListo);
+  const [vistaElegida, setVista] = useState<LadoDeLaCarga>("atras");
   const [especie, setEspecie] = useState(o.especieInicial);
   const [largo, setLargo] = useState("");
   const [correcciones, setCorrecciones] = useState<CorreccionesDeLaCarga>({});
+  /** Lo que fijó el operador: id de atrás → id de adelante. */
+  const [fijas, setFijas] = useState<Record<string, string | null>>({});
   const [desde, setDesde] = useState(o.desdeInicial);
-  /* La foto que se está midiendo: si eligió otra mientras tanto, la vieja no pisa. */
-  const pedido = useRef(0);
-  const nuevas = useRef(1);
 
   useEffect(() => {
     const soltar = retenerMotorTestas();
@@ -101,99 +84,82 @@ export function useTrozasPorFoto(o: OpcionesPorFoto) {
       soltar();
     };
   }, []);
-  useEffect(() => (medida ? () => URL.revokeObjectURL(medida.url) : undefined), [medida]);
 
-  const elegir = useCallback(async (file: File) => {
-    const n = ++pedido.current;
-    setFoto(file);
-    setFase("midiendo");
-    setError(null);
-    setAviso(null);
-    setSeleccion(null);
-    setAgregando(false);
-    setCorrecciones({});
-    try {
-      const r = await medirTestasDe(file, "atras");
-      if (n !== pedido.current) return;
-      setMotor("listo");
-      if (!r.ok) {
-        setMedida(null);
-        setTestas([]);
-        setFase("sin_hoja");
-        return;
-      }
-      setMedida({ cara: r.cara, enderezada: r.enderezada, url: URL.createObjectURL(r.enderezada), ms: r.ms });
-      setTestas(r.cara.testas);
-      nuevas.current = 1;
-      setFase("listo");
-    } catch (err) {
-      if (n !== pedido.current) return;
-      logger.warn("[trozas-por-foto] no se pudo medir la foto", { error: String(err) });
-      setError(err instanceof Error ? err.message : "No se pudo medir la foto.");
-      setFase("error");
-    }
-  }, []);
-
-  const mmPorPx = medida?.cara.mmPorPx ?? 1;
-  /** El radio con el que se busca una testa nueva: el de las otras o el medio del rango. */
-  const radioTipico = useMemo(() => {
-    if (testas.length) return mediana(testas.map((t) => (t.aPx + t.bPx) / 2));
-    const r = radiosBuscados(mmPorPx);
-    return (r.min + r.max) / 2;
-  }, [testas, mmPorPx]);
-
-  const tocar = useCallback(
-    async (x: number, y: number) => {
-      if (buscando) return;
-      const cerca = testas
-        .map((t) => ({ t, d: dentroDe(t, x, y) }))
-        .filter((c) => c.d <= 1)
-        .sort((p, q) => p.d - q.d)[0]?.t;
-      if (cerca || !agregando) {
-        setSeleccion(cerca?.id ?? null);
-        setAgregando(false);
-        return;
-      }
-      const id = `m${nuevas.current++}`;
-      setBuscando(true);
-      let nueva: TestaPropuesta | null = null;
-      try {
-        nueva = await testaDondeToco(x, y, radioTipico, id);
-      } catch (err) {
-        logger.warn("[trozas-por-foto] no se pudo buscar el borde", { error: String(err) });
-      }
-      /* Sin borde claro, va del tamaño de las otras y el operador la ajusta. */
-      setAviso(nueva ? null : "No encontré el borde: la puse del tamaño de las otras. Ajústala con − y +.");
-      const t =
-        nueva ?? testaDeElipse({ cx: x, cy: y, ancho: radioTipico * 2, alto: radioTipico * 2, angulo: 0, puntos: 0 }, mmPorPx, id, "agregada");
-      setTestas((prev) => ordenDeLectura([...prev, t]));
-      setSeleccion(id);
-      setAgregando(false);
-      setBuscando(false);
+  const { elegir: medirAtras, otraFoto: otraAtras } = atras;
+  const { elegir: medirAdelante, otraFoto: otraAdelante } = adelante;
+  /* Otra foto atrás = otras testas: lo corregido y lo fijado eran de la anterior. */
+  const elegir = useCallback(
+    (file: File) => {
+      setCorrecciones({});
+      setFijas({});
+      setVista("atras");
+      return medirAtras(file);
     },
-    [agregando, buscando, testas, radioTipico, mmPorPx],
+    [medirAtras],
   );
+  const elegirAdelante = useCallback(
+    (file: File) => {
+      setFijas({});
+      setVista("adelante");
+      return medirAdelante(file);
+    },
+    [medirAdelante],
+  );
+  const conAdelante = adelante.fase === "listo" && adelante.medida != null;
+  const vista: LadoDeLaCarga = conAdelante ? vistaElegida : "atras";
+  const cara = vista === "adelante" ? adelante : atras;
 
-  const quitar = useCallback((id: string) => {
-    setTestas((prev) => prev.filter((t) => t.id !== id));
-    setSeleccion(null);
-  }, []);
+  const emparejado = useMemo(
+    () =>
+      conAdelante && atras.medida && adelante.medida
+        ? emparejarCaras({ mmPorPx: atras.medida.cara.mmPorPx, testas: atras.testas }, { mmPorPx: adelante.medida.cara.mmPorPx, testas: adelante.testas }, fijas)
+        : null,
+    [conAdelante, atras.medida, atras.testas, adelante.medida, adelante.testas, fijas],
+  );
+  /** Id de adelante → su pareja de atrás. */
+  const atrasDe = useMemo(() => new Map((emparejado?.parejas ?? []).flatMap((p) => (p.adelante ? [[p.adelante, p] as const] : []))), [emparejado]);
 
-  /** ± cm sobre la elipse: lo tipeado en D1 se suelta (manda lo que se ve). */
+  const { previas, ocupados, arboles } = o;
+  const codigosAtras = useMemo(
+    () => codigosDeLaCarga(previas, atras.testas.length, { ocupados, arboles, desde }),
+    [previas, atras.testas.length, ocupados, arboles, desde],
+  );
+  /** Adelante, cada punta lleva el N° de su troza de atrás («7?» si la pareja es dudosa, «—» si no tiene). */
+  const codigosAdelante = useMemo(() => {
+    const codigoDe = new Map(atras.testas.map((t, k) => [t.id, codigosAtras[k] ?? "—"]));
+    return adelante.testas.map((t) => {
+      const p = atrasDe.get(t.id);
+      return p ? `${codigoDe.get(p.atras) ?? "—"}${p.dudosa ? "?" : ""}` : "—";
+    });
+  }, [atras.testas, codigosAtras, adelante.testas, atrasDe]);
+
+  const largoM = leerMedida(largo);
+  const filas = useMemo(
+    () =>
+      filasDeLaCarga(
+        atras.testas,
+        codigosAtras,
+        { largoM, especie },
+        correcciones,
+        emparejado ? { testas: adelante.testas, parejas: emparejado.parejas } : undefined,
+      ),
+    [atras.testas, codigosAtras, largoM, especie, correcciones, emparejado, adelante.testas],
+  );
+  const resumen = useMemo(() => resumenDeLaCarga(filas), [filas]);
+  const paraLaGuia = useMemo(() => aTrozasAMano(filas), [filas]);
+
+  /** ± cm sobre la elipse: lo tipeado en ese D se suelta (manda lo que se ve). */
+  const { ajustar: ajustarElipse } = cara;
   const ajustar = useCallback(
     (id: string, deltaCm: number) => {
-      setTestas((prev) => prev.map((t) => (t.id === id ? conDiametro(t, t.dCm + deltaCm, mmPorPx) : t)));
-      setCorrecciones((c) => {
-        if (c.d1Cm?.[id] === undefined) return c;
-        const resto = { ...c.d1Cm };
-        delete resto[id];
-        return { ...c, d1Cm: resto };
-      });
+      ajustarElipse(id, deltaCm);
+      const deAtras = vista === "atras" ? id : atrasDe.get(id)?.atras;
+      if (deAtras) setCorrecciones((c) => sinCorreccion(c, vista === "atras" ? "d1Cm" : "d2Cm", deAtras));
     },
-    [mmPorPx],
+    [ajustarElipse, vista, atrasDe],
   );
 
-  /** Lo que se tipea en la tabla: texto vacío vuelve a lo de la foto (D1, largo) o a «pareja» (D2). */
+  /** Lo que se tipea en la tabla: texto vacío vuelve a lo de la foto (D1, D2, largo) o a «pareja» (D2). */
   const corregir = useCallback((campo: CampoCorregible, id: string, texto: string) => {
     const n = leerMedida(texto);
     setCorrecciones((c) => {
@@ -204,57 +170,68 @@ export function useTrozasPorFoto(o: OpcionesPorFoto) {
     });
   }, []);
 
-  const otraFoto = useCallback(() => {
-    pedido.current++;
-    setFase("inicio");
-    setFoto(null);
-    setMedida(null);
-    setTestas([]);
-    setSeleccion(null);
-    setError(null);
-    setAviso(null);
+  /** «Esta de adelante es la N° 7»: una punta de adelante va a una sola troza de atrás. `null` = que decida el emparejado. */
+  const fijarPareja = useCallback((idAdelante: string, idAtras: string | null) => {
+    setFijas((prev) => {
+      const sig = Object.fromEntries(Object.entries(prev).filter(([a, b]) => b !== idAdelante && a !== idAtras));
+      if (idAtras) sig[idAtras] = idAdelante;
+      return sig;
+    });
   }, []);
 
-  const { previas, ocupados, arboles } = o;
-  const codigos = useMemo(
-    () => codigosDeLaCarga(previas, testas.length, { ocupados, arboles, desde }),
-    [previas, testas.length, ocupados, arboles, desde],
-  );
-  const largoM = leerMedida(largo);
-  const filas = useMemo(
-    () => filasDeLaCarga(testas, codigos, { largoM, especie }, correcciones),
-    [testas, codigos, largoM, especie, correcciones],
-  );
-  const resumen = useMemo(() => resumenDeLaCarga(filas), [filas]);
-  const paraLaGuia = useMemo(() => aTrozasAMano(filas), [filas]);
+  /** «Otra foto» de la cara que se ve; la de adelante vuelve a «D2 = D1» hasta tomar otra. */
+  const otraFoto = useCallback(() => {
+    if (vista === "adelante") {
+      otraAdelante();
+      setFijas({});
+      setVista("atras");
+      return;
+    }
+    otraAtras();
+  }, [vista, otraAdelante, otraAtras]);
+
+  const dudosas = (emparejado?.parejas.filter((p) => p.dudosa).length ?? 0) + (emparejado?.sueltas.length ?? 0);
 
   return {
     motor,
-    fase,
-    error,
-    aviso,
-    foto,
-    medida,
-    testas,
-    seleccion,
-    setSeleccion,
-    agregando,
-    setAgregando,
-    buscando,
+    /** La fase de la foto de atrás: sin ella no hay tabla. */
+    fase: atras.fase,
+    error: atras.error,
+    foto: atras.foto,
+    atras,
+    adelante,
+    vista,
+    setVista,
+    codigosAtras,
+    codigosAdelante,
+    emparejado,
+    atrasDe,
+    dudosas,
+    fijarPareja,
+    elegirAdelante,
+    /* Lo de la cara que se ve (el lienzo). */
+    medida: cara.medida,
+    testas: cara.testas,
+    codigos: vista === "adelante" ? codigosAdelante : codigosAtras,
+    seleccion: cara.seleccion,
+    setSeleccion: cara.setSeleccion,
+    agregando: cara.agregando,
+    setAgregando: cara.setAgregando,
+    buscando: cara.buscando,
+    aviso: cara.aviso,
+    tocar: cara.tocar,
+    quitar: cara.quitar,
+    ajustar,
     especie,
     setEspecie,
     largo,
     setLargo,
     desde,
     setDesde,
-    codigos,
     filas,
     resumen,
     paraLaGuia,
     elegir,
-    tocar,
-    quitar,
-    ajustar,
     corregir,
     otraFoto,
   };

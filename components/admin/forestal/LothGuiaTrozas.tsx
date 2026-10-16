@@ -26,6 +26,7 @@ import { I } from "./ctp-shared";
 import { cn } from "@/lib/utils";
 import LothGuiaListaMovilizar, { MARCO, TD, TDR, TH, THR, dec } from "./LothGuiaListaMovilizar";
 import LothGuiaTrozaAMano from "./LothGuiaTrozaAMano";
+import LothCargasMedidas from "./LothCargasMedidas";
 import type { CatalogoUI } from "./ctp-especie-campo";
 
 const cm = (m: number | null) => (m == null ? null : Math.round(m * 1000) / 10);
@@ -213,6 +214,7 @@ export default function LothGuiaTrozas({
             </DataTable>
           </div>
         )}
+        <LothCargasMedidas g={g} />
         <LothGuiaTrozaAMano g={g} catalogo={catalogo} />
       </Bloque>
 

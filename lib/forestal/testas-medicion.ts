@@ -4,7 +4,9 @@
  * troncos, sacar de cada tronco su diámetro, asignar código según el
  * correlativo y hacer tabla; luego pasar eso a la GTF»). Contrato:
  * `.claude/autonomo/contratos-2026-10-16/fotos-trozas.md` §3.3 — F1: la cara
- * de atrás da D1; D2 se tipea (vacío = troza pareja, ADR-492, y se marca).
+ * de atrás da D1; F2 (Brandon 16-10): la de adelante da D2 (`emparejarCaras`).
+ * Sin la otra cara D2 se tipea (vacío = troza pareja, ADR-492, y se marca).
+ * El Ø es CON corteza (Brandon 16-10); la descortezada, el de la madera.
  *
  * Cómo mide: una hoja A4 con un marcador ArUco de 180 mm (id 248 o 249,
  * `IDS_HOJA_ESCALA`) pegada en una testa del centro da la escala y la
@@ -372,6 +374,8 @@ export interface TestaPropuesta {
   origen: "auto" | "agregada" | "ajustada";
   /** Cuántos puntos del borde sostienen la elipse (0 = puesta a ojo). */
   puntosBorde: number;
+  /** El grueso de la corteza que se sumó al Ø (cm; ausente o 0 = troza descortezada: el Ø es el de la madera). */
+  cortezaCm?: number;
 }
 
 /** Lo que devuelve OpenCV de una elipse (`fitEllipse`): ejes COMPLETOS en px. */
@@ -469,6 +473,8 @@ export interface FilaPorFoto {
   origenD2: "foto" | "mano" | null;
   testaAtras: string | null;
   testaAdelante: string | null;
+  /** La punta de adelante que le tocó está para revisar (`emparejarCaras`: se corre mucho, otro Ø o le faltó pareja). */
+  parejaDudosa?: boolean;
 }
 
 /** Lo que el operador corrigió en la tabla, por testa. */
@@ -478,31 +484,45 @@ export interface CorreccionesDeLaCarga {
   largoM?: Readonly<Record<string, number | null>>;
 }
 
+/** La cara de adelante ya emparejada con la de atrás (F2): sus testas y la pareja de cada troza. */
+export interface CaraDeAdelante {
+  testas: readonly TestaPropuesta[];
+  parejas: readonly ParejaDeCaras[];
+}
+
 /**
- * Las filas de la tabla, una por testa en orden de lectura, con el código que
- * imprimirá la guía (`codigos`, en el mismo orden: `codigosDeLaCarga`). El
- * largo y la especie son de toda la carga, y cada fila puede corregirlos.
+ * Las filas de la tabla, una por testa de ATRÁS en orden de lectura, con el
+ * código que imprimirá la guía (`codigos`, en el mismo orden:
+ * `codigosDeLaCarga`). El largo y la especie son de toda la carga, y cada fila
+ * puede corregirlos. Con la cara de adelante, D2 es el Ø de su punta
+ * (`emparejarCaras`); sin ella o sin pareja, D2 queda vacío (pareja, D2 = D1).
  */
 export function filasDeLaCarga(
   testas: readonly TestaPropuesta[],
   codigos: readonly string[],
   carga: { largoM: number | null; especie: string | null },
   correcciones: CorreccionesDeLaCarga = {},
+  adelante?: CaraDeAdelante,
 ): FilaPorFoto[] {
+  const punta = new Map(adelante?.testas.map((t) => [t.id, t]));
+  const pareja = new Map(adelante?.parejas.map((p) => [p.atras, p]));
   return testas.map((t, i) => {
     const d1 = correcciones.d1Cm?.[t.id];
     const d2 = correcciones.d2Cm?.[t.id];
     const largo = correcciones.largoM?.[t.id];
+    const p = pareja.get(t.id);
+    const frente = p?.adelante != null ? punta.get(p.adelante) : undefined;
     return {
       codigo: codigos[i] ?? String(i + 1),
       especie: carga.especie?.trim() || null,
       d1Cm: d1 !== undefined ? d1 : t.dCm,
-      d2Cm: d2 ?? null,
+      d2Cm: d2 !== undefined ? d2 : (frente?.dCm ?? null),
       largoM: largo !== undefined ? largo : carga.largoM,
       origenD1: d1 !== undefined ? "mano" : "foto",
-      origenD2: d2 != null ? "mano" : null,
+      origenD2: d2 != null ? "mano" : d2 === undefined && frente ? "foto" : null,
       testaAtras: t.id,
-      testaAdelante: null,
+      testaAdelante: frente?.id ?? null,
+      ...(adelante ? { parejaDudosa: !p || p.dudosa } : {}),
     };
   });
 }
@@ -535,7 +555,9 @@ export function aTrozasAMano(filas: readonly FilaPorFoto[]): { listas: TrozaPorF
       for (const campo of campos) faltan.push({ codigo: f.codigo, campo });
       continue;
     }
-    listas.push({ ...r.data, medidoPorFoto: true, ...(d2Supuesto ? { d2Supuesto: true } : {}) });
+    /* El libro guarda D1 = la punta mayor y D2 = la menor (`medidasDelLibro`): la de atrás puede ser la fina. */
+    const [mayor, menor] = r.data.d1Cm >= r.data.d2Cm ? [r.data.d1Cm, r.data.d2Cm] : [r.data.d2Cm, r.data.d1Cm];
+    listas.push({ ...r.data, d1Cm: mayor, d2Cm: menor, medidoPorFoto: true, ...(d2Supuesto ? { d2Supuesto: true } : {}) });
   }
   return { listas, faltan };
 }
@@ -586,4 +608,238 @@ export function siguientesCorrelativos(trozas: readonly { planId: string | null;
     if (n >= 1 && n <= CORRELATIVO_MAX && n > (mayor[clave] ?? 0)) mayor[clave] = n;
   }
   return Object.fromEntries(Object.entries(mayor).map(([k, n]) => [k, Math.min(CORRELATIVO_MAX, n + 1)]));
+}
+
+/* ─────────── Las dos caras de la carga (F2, Brandon 16-10: «D2 por la otra cara») ─────────── */
+
+/** Una troza de la cara de atrás y su punta en la cara de adelante. */
+export interface ParejaDeCaras {
+  atras: string;
+  /** `null` = su punta no salió en la foto de adelante (la fila queda pareja, D2 = D1). */
+  adelante: string | null;
+  /** Cuánto se aparta su punta de donde la espera la de atrás, tras alinear las dos caras (mm). */
+  corridoMm: number | null;
+  /** Para revisar: se aparta mucho, los Ø no se parecen o le faltó pareja. */
+  dudosa: boolean;
+  /** La puso el operador («esta de adelante es la N° 7»). */
+  fija: boolean;
+}
+
+export interface CarasEmparejadas {
+  /** Una por testa de atrás, en su orden. */
+  parejas: ParejaDeCaras[];
+  /** Testas de adelante sin troza de atrás (sobran o faltó una atrás). */
+  sueltas: string[];
+}
+
+type CaraParaEmparejar = Pick<CaraMedida, "mmPorPx" | "testas">;
+interface PuntaEnMm {
+  id: string;
+  x: number;
+  y: number;
+  /** Radio medio (mm) y Ø (cm). */
+  r: number;
+  d: number;
+}
+/** Giro + traslado que lleva la cara de adelante (espejada) sobre la de atrás. */
+interface Rigida {
+  c: number;
+  s: number;
+  tx: number;
+  ty: number;
+}
+
+const mover = (T: Rigida, b: PuntaEnMm): [number, number] => [T.c * b.x - T.s * b.y + T.tx, T.s * b.x + T.c * b.y + T.ty];
+const diferencia = (a: PuntaEnMm, [x, y]: [number, number]): [number, number] => [a.x - x, a.y - y];
+
+/**
+ * La asignación de menor costo de una matriz cuadrada (método húngaro, O(n³),
+ * con potenciales): `fila → columna`. Propio: 40 líneas no justifican un paquete.
+ */
+export function asignacionMinima(costo: readonly (readonly number[])[]): number[] {
+  const n = costo.length;
+  const u = new Array<number>(n + 1).fill(0);
+  const v = new Array<number>(n + 1).fill(0);
+  const fila = new Array<number>(n + 1).fill(0);
+  const via = new Array<number>(n + 1).fill(0);
+  for (let i = 1; i <= n; i++) {
+    fila[0] = i;
+    let j0 = 0;
+    const minv = new Array<number>(n + 1).fill(Infinity);
+    const usada = new Array<boolean>(n + 1).fill(false);
+    do {
+      usada[j0] = true;
+      const i0 = fila[j0]!;
+      let delta = Infinity;
+      let j1 = 0;
+      for (let j = 1; j <= n; j++) {
+        if (usada[j]) continue;
+        const c = costo[i0 - 1]![j - 1]! - u[i0]! - v[j]!;
+        if (c < minv[j]!) {
+          minv[j] = c;
+          via[j] = j0;
+        }
+        if (minv[j]! < delta) {
+          delta = minv[j]!;
+          j1 = j;
+        }
+      }
+      for (let j = 0; j <= n; j++) {
+        if (usada[j]) {
+          u[fila[j]!]! += delta;
+          v[j]! -= delta;
+        } else minv[j]! -= delta;
+      }
+      j0 = j1;
+    } while (fila[j0] !== 0);
+    do {
+      const j1 = via[j0]!;
+      fila[j0] = fila[j1]!;
+      j0 = j1;
+    } while (j0);
+  }
+  const out = new Array<number>(n).fill(-1);
+  for (let j = 1; j <= n; j++) if (fila[j]! > 0) out[fila[j]! - 1] = j - 1;
+  return out;
+}
+
+/** El giro + traslado que mejor lleva `b` sobre `a` (mínimos cuadrados, Kabsch en 2D). Con una sola pareja, sólo traslado. */
+function alinear(pares: readonly { a: PuntaEnMm; b: PuntaEnMm }[], giro: Rigida): Rigida {
+  const n = pares.length;
+  const ax = pares.reduce((t, p) => t + p.a.x, 0) / n;
+  const ay = pares.reduce((t, p) => t + p.a.y, 0) / n;
+  const bx = pares.reduce((t, p) => t + p.b.x, 0) / n;
+  const by = pares.reduce((t, p) => t + p.b.y, 0) / n;
+  let { c, s } = giro;
+  if (n >= 3) {
+    let sxx = 0;
+    let sxy = 0;
+    for (const { a, b } of pares) {
+      const [qx, qy, px, py] = [b.x - bx, b.y - by, a.x - ax, a.y - ay];
+      sxx += qx * px + qy * py;
+      sxy += qx * py - qy * px;
+    }
+    const th = Math.atan2(sxy, sxx);
+    /* Las hojas se pegan derechas a ojo: un giro de más de 25° es un mal emparejado, no la carga. */
+    if (Math.abs(th) <= (25 * Math.PI) / 180) [c, s] = [Math.cos(th), Math.sin(th)];
+  }
+  return { c, s, tx: ax - (c * bx - s * by), ty: ay - (s * bx + c * by) };
+}
+
+/** Ø de las dos puntas: hasta un 20 % de diferencia es la conicidad; más allá, cuesta (2 mm por mm de más). */
+const DIFERENCIA_D = 0.2;
+/** Más corrida que esto (× el radio) la pareja queda para revisar. */
+const CORRIDO_DUDOSO = 0.45;
+
+/**
+ * Empareja cada troza de la cara de ATRÁS con su punta en la de ADELANTE. La
+ * foto de adelante se toma del otro lado: es la carga ESPEJADA (izquierda ↔
+ * derecha). Las dos están en mm por sus hojas de escala, así que basta
+ * espejar adelante, girarla un poco (cada hoja se pega a ojo) y correrla: se
+ * prueban 5 giros de partida y en cada uno se alterna la asignación de menor
+ * costo (distancia + Ø muy distinto, `asignacionMinima`) con el giro que mejor
+ * calza las parejas buenas (`alinear`), hasta que no cambie.
+ *
+ * Distinta cantidad de testas: las que sobran quedan sin pareja (costo fijo de
+ * casi un radio cada una) y se marcan. Las que fijó el operador (`fijas`: atrás → adelante)
+ * no se tocan; cada giro se prueba alineando con ellas y sin ellas y gana el de
+ * menor costo: una bien fijada endereza las demás y una fijada por error no
+ * las desarma (sólo quedan sueltas las dos que tocó).
+ */
+export function emparejarCaras(
+  atras: CaraParaEmparejar,
+  adelante: CaraParaEmparejar,
+  fijas: Readonly<Record<string, string | null>> = {},
+): CarasEmparejadas {
+  const enMm = (cara: CaraParaEmparejar, espejo: 1 | -1): PuntaEnMm[] =>
+    cara.testas.map((t) => ({ id: t.id, x: espejo * t.cx * cara.mmPorPx, y: t.cy * cara.mmPorPx, r: ((t.aPx + t.bPx) / 2) * cara.mmPorPx, d: t.dCm }));
+  const A = enMm(atras, 1);
+  const B = enMm(adelante, -1);
+  const porIdB = new Map(B.map((b) => [b.id, b]));
+  /* Lo fijado por el operador: cada punta de adelante, a una sola de atrás. */
+  const fija = new Map<string, string | null>();
+  const tomadas = new Set<string>();
+  for (const a of A) {
+    if (!(a.id in fijas)) continue;
+    const b = fijas[a.id] ?? null;
+    if (b != null && (!porIdB.has(b) || tomadas.has(b))) continue;
+    fija.set(a.id, b);
+    if (b != null) tomadas.add(b);
+  }
+  const anclas = A.flatMap((a) => {
+    const b = fija.get(a.id);
+    return b ? [{ a, b: porIdB.get(b)! }] : [];
+  });
+  const libresA = A.filter((a) => !fija.has(a.id));
+  const libresB = B.filter((b) => !tomadas.has(b.id));
+  const radios = [...A, ...B].map((p) => p.r).sort((p, q) => p - q);
+  const rTipico = radios[Math.floor(radios.length / 2)] ?? 150;
+  const sinPareja = 0.9 * rTipico;
+  const costo = (a: PuntaEnMm, b: PuntaEnMm, T: Rigida): number => {
+    const [x, y] = mover(T, b);
+    const exceso = Math.max(0, Math.abs(a.d - b.d) - DIFERENCIA_D * Math.max(a.d, b.d));
+    return Math.hypot(a.x - x, a.y - y) + 20 * exceso;
+  };
+  const centro = (ps: readonly PuntaEnMm[]): [number, number] =>
+    ps.length ? [ps.reduce((t, p) => t + p.x, 0) / ps.length, ps.reduce((t, p) => t + p.y, 0) / ps.length] : [0, 0];
+
+  let mejor: { total: number; asig: (number | null)[]; T: Rigida } | null = null;
+  /* Cuadrada de (atrás + adelante): cada una puede quedar sin pareja por `sinPareja`; dos sueltas cuestan
+     lo mismo que una pareja a 1,8 radios (con igual cantidad, una troza muy corrida igual se empareja). */
+  const [nA, nB] = [libresA.length, libresB.length];
+  const n = nA + nB;
+  const arranques = (nA && nB ? [0, -8, 8, -16, 16] : []).flatMap((grados) => (anclas.length ? [{ grados, ayudan: anclas }, { grados, ayudan: [] }] : [{ grados, ayudan: [] }]));
+  for (const { grados, ayudan } of arranques) {
+    const th = (grados * Math.PI) / 180;
+    const giro = { c: Math.cos(th), s: Math.sin(th), tx: 0, ty: 0 };
+    let T: Rigida;
+    if (ayudan.length) T = alinear(ayudan, giro);
+    else {
+      const [ax, ay] = centro(A);
+      const [bx, by] = centro(B);
+      T = { ...giro, tx: ax - (giro.c * bx - giro.s * by), ty: ay - (giro.s * bx + giro.c * by) };
+    }
+    let asig: (number | null)[] = [];
+    let total = Infinity;
+    for (let vuelta = 0; vuelta < 10; vuelta++) {
+      const M = Array.from({ length: n }, (_, i) =>
+        Array.from({ length: n }, (_, j) => (i < nA && j < nB ? costo(libresA[i]!, libresB[j]!, T) : i >= nA && j >= nB ? 0 : sinPareja)),
+      );
+      const cols = asignacionMinima(M);
+      const nueva = libresA.map((_, i) => (cols[i]! < nB ? cols[i]! : null));
+      total = cols.reduce((t, j, i) => t + M[i]![j]!, 0);
+      const igual = nueva.every((j, i) => j === asig[i]);
+      asig = nueva;
+      if (igual) break;
+      /* Se alinea con las parejas que ya calzan (menos de medio radio) y las del operador. */
+      const buenas = [
+        ...ayudan,
+        ...libresA.flatMap((a, i) => {
+          const j = asig[i];
+          return j != null && M[i]![j]! < 0.5 * Math.min(a.r, libresB[j]!.r) ? [{ a, b: libresB[j]! }] : [];
+        }),
+      ];
+      if (!buenas.length) break;
+      T = alinear(buenas, T);
+    }
+    if (!mejor || total < mejor.total) mejor = { total, asig, T };
+  }
+
+  const usadas = new Set(tomadas);
+  const libre = new Map(libresA.map((a, i) => [a.id, mejor?.asig[i] ?? null]));
+  const parejas = A.map((a): ParejaDeCaras => {
+    if (fija.has(a.id)) {
+      const b = fija.get(a.id) ?? null;
+      const corrido = b && mejor ? Math.round(Math.hypot(...diferencia(a, mover(mejor.T, porIdB.get(b)!)))) : null;
+      return { atras: a.id, adelante: b, corridoMm: corrido, dudosa: false, fija: true };
+    }
+    const j = libre.get(a.id);
+    if (j == null || !mejor) return { atras: a.id, adelante: null, corridoMm: null, dudosa: true, fija: false };
+    const b = libresB[j]!;
+    usadas.add(b.id);
+    const corrido = Math.hypot(...diferencia(a, mover(mejor.T, b)));
+    const otroD = Math.abs(a.d - b.d) > DIFERENCIA_D * Math.max(a.d, b.d);
+    return { atras: a.id, adelante: b.id, corridoMm: Math.round(corrido), dudosa: corrido > CORRIDO_DUDOSO * Math.min(a.r, b.r) || otroD, fija: false };
+  });
+  return { parejas, sueltas: B.filter((b) => !usadas.has(b.id)).map((b) => b.id) };
 }

@@ -145,9 +145,15 @@ export async function medirTestasDe(foto: Blob, cara: CaraMedida["cara"] = "atra
   return { ok: true, cara: r.cara, enderezada: r.enderezada, otrosIds: r.otrosIds, ms: r.ms };
 }
 
-/** La testa donde tocó el operador (px de la enderezada); `null` = no hay borde claro. */
-export async function testaDondeToco(x: number, y: number, rRef: number, testaId: string): Promise<TestaPropuesta | null> {
-  const r = await pedir({ tipo: "agregar", id: siguienteId++, x, y, rRef, testaId });
+/** La testa donde tocó el operador (px de la enderezada de esa cara); `null` = no hay borde claro. */
+export async function testaDondeToco(
+  x: number,
+  y: number,
+  rRef: number,
+  testaId: string,
+  cara: CaraMedida["cara"] = "atras",
+): Promise<TestaPropuesta | null> {
+  const r = await pedir({ tipo: "agregar", id: siguienteId++, x, y, rRef, testaId, cara });
   if (r.tipo !== "agregada") throw new Error("respuesta inesperada del medidor");
   return r.testa;
 }

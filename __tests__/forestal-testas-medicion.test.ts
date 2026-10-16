@@ -1,7 +1,8 @@
 /**
  * «Medir por foto» (16-10, F1): la escala por las hojas 248/249, el Ø de cada
  * testa como lo guarda el libro, el N° que imprimirá la guía (ADR-474) y lo
- * que pasa a «Anotar a mano» (D2 vacío = pareja, ADR-492, marcada).
+ * que pasa a «Anotar a mano» (D2 vacío = pareja, ADR-492, marcada). F2: la
+ * cara de adelante (espejada) se empareja con la de atrás y da D2.
  */
 import { describe, expect, it } from "vitest";
 import { htmlHojasDeEscala } from "@/lib/camaras/marcador-a4";
@@ -10,6 +11,8 @@ import {
   IDS_HOJA_ESCALA,
   LADO_HOJA_ESCALA_MM,
   aTrozasAMano,
+  asignacionMinima,
+  emparejarCaras,
   aplicar,
   codigosDeLaCarga,
   conDiametro,
@@ -26,7 +29,9 @@ import {
   resumenDeLaCarga,
   siguientesCorrelativos,
   testaDeElipse,
+  type CaraMedida,
   type Matriz3,
+  type ParejaDeCaras,
   type Punto,
   type TestaPropuesta,
 } from "@/lib/forestal/testas-medicion";
@@ -169,6 +174,129 @@ describe("tabla de la carga → Anotar a mano", () => {
     const r = resumenDeLaCarga(filas);
     expect(r.trozas).toBe(2);
     expect(r.volumenM3).toBeCloseTo(esperado, 4);
+  });
+});
+
+/** Azar con semilla: la prueba no depende de la suerte. */
+function azar(semilla: number) {
+  let s = semilla >>> 0;
+  const rnd = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
+  return { rnd, gauss };
+}
+
+/**
+ * Una carga apilada en 3 filas (mm) vista de atrás y de adelante: adelante es
+ * la misma carga ESPEJADA, con otra escala (mm por px), girada como una hoja
+ * pegada a ojo, corrida, con cada punta movida y otro Ø (conicidad), y sus
+ * testas en otro orden. `verdad`: id de atrás → id de adelante.
+ */
+function cargaDePrueba(semilla: number, o: { giroGrados: number; puntaMm: number }) {
+  const { rnd, gauss } = azar(semilla);
+  const trozas: { x: number; y: number; d: number }[] = [];
+  for (let fila = 0; fila < 3; fila++) {
+    let x = fila % 2 ? 250 : 0;
+    for (let k = 0; k < 5 - (fila === 2 ? 1 : 0); k++) {
+      const d = 30 + 40 * rnd();
+      x += d * 5;
+      trozas.push({ x, y: 1600 - fila * 420 + 40 * gauss(), d });
+      x += d * 5 + 15;
+    }
+  }
+  const atras: CaraMedida = { cara: "atras", mmPorPx: 2, ancho: 1500, alto: 1000, hojasLeidas: 2, ladoHojaPx: [90, 90], testas: [] };
+  atras.testas = trozas.map((t, i) => testaDeElipse({ cx: t.x / 2, cy: t.y / 2, ancho: t.d * 5, alto: t.d * 5, angulo: 0, puntos: 100 }, 2, `t${i + 1}`, "auto"));
+  const g = (o.giroGrados * Math.PI) / 180;
+  const orden = trozas.map((_, i) => i).sort(() => rnd() - 0.5);
+  const verdad: Record<string, string> = {};
+  const adelante: CaraMedida = { ...atras, cara: "adelante", mmPorPx: 1.8, testas: [] };
+  adelante.testas = orden.map((i, k) => {
+    const t = trozas[i]!;
+    const [x, y] = [3000 - t.x + o.puntaMm * gauss(), t.y + o.puntaMm * gauss()];
+    const [xg, yg] = [Math.cos(g) * x - Math.sin(g) * y + 300, Math.sin(g) * x + Math.cos(g) * y - 120];
+    const d = t.d * (0.85 + 0.27 * rnd());
+    verdad[`t${i + 1}`] = `a${k + 1}`;
+    return testaDeElipse({ cx: xg / 1.8, cy: yg / 1.8, ancho: (d * 10) / 1.8, alto: (d * 10) / 1.8, angulo: 0, puntos: 100 }, 1.8, `a${k + 1}`, "auto");
+  });
+  return { atras, adelante, verdad };
+}
+
+describe("las dos caras de la carga (F2): D1 atrás, D2 adelante", () => {
+  it("asignación de menor costo (húngaro)", () => {
+    expect(asignacionMinima([[4, 1, 3], [2, 0, 5], [3, 2, 2]])).toEqual([1, 0, 2]);
+    expect(asignacionMinima([])).toEqual([]);
+  });
+
+  it("espejada, girada ±6° y con cada punta corrida 5 cm: ≥ 97 % bien emparejadas en 80 cargas", () => {
+    let bien = 0;
+    let total = 0;
+    for (let s = 1; s <= 80; s++) {
+      const { atras, adelante, verdad } = cargaDePrueba(s, { giroGrados: ((s % 13) - 6) * 1, puntaMm: 50 });
+      for (const p of emparejarCaras(atras, adelante).parejas) {
+        total++;
+        if (p.adelante === verdad[p.atras]) bien++;
+      }
+    }
+    expect(bien / total).toBeGreaterThanOrEqual(0.97);
+  });
+
+  it("sin corrimiento las empareja todas y ninguna queda para revisar", () => {
+    const { atras, adelante, verdad } = cargaDePrueba(7, { giroGrados: 4, puntaMm: 0 });
+    const r = emparejarCaras(atras, adelante);
+    expect(r.parejas.every((p) => p.adelante === verdad[p.atras] && !p.dudosa)).toBe(true);
+    expect(r.sueltas).toEqual([]);
+  });
+
+  it("una troza que no salió adelante queda sin pareja y marcada; las demás siguen bien", () => {
+    const { atras, adelante, verdad } = cargaDePrueba(3, { giroGrados: -3, puntaMm: 20 });
+    const falta = verdad.t5!;
+    const r = emparejarCaras(atras, { ...adelante, testas: adelante.testas.filter((t) => t.id !== falta) });
+    expect(r.parejas.find((p) => p.atras === "t5")).toMatchObject({ adelante: null, dudosa: true });
+    expect(r.parejas.filter((p) => p.atras !== "t5").every((p) => p.adelante === verdad[p.atras])).toBe(true);
+  });
+
+  it("una de más adelante queda suelta", () => {
+    const { atras, adelante, verdad } = cargaDePrueba(4, { giroGrados: 2, puntaMm: 20 });
+    const r = emparejarCaras({ ...atras, testas: atras.testas.filter((t) => t.id !== "t2") }, adelante);
+    expect(r.sueltas).toEqual([verdad.t2]);
+  });
+
+  it("lo que fija el operador manda («esta de adelante es la N° 7») y no se marca", () => {
+    const { atras, adelante, verdad } = cargaDePrueba(5, { giroGrados: 0, puntaMm: 20 });
+    const r = emparejarCaras(atras, adelante, { t1: verdad.t2!, t2: verdad.t1! });
+    expect(r.parejas[0]).toMatchObject({ atras: "t1", adelante: verdad.t2, fija: true, dudosa: false });
+    expect(r.parejas[1]).toMatchObject({ atras: "t2", adelante: verdad.t1, fija: true });
+    expect(r.parejas.slice(2).every((p) => p.adelante === verdad[p.atras])).toBe(true);
+    /* Una punta de adelante no va a dos de atrás: la segunda fijación se ignora. */
+    const doble = emparejarCaras(atras, adelante, { t1: verdad.t3!, t2: verdad.t3! });
+    expect(doble.parejas.filter((p) => p.adelante === verdad.t3)).toHaveLength(1);
+  });
+
+  it("una fijada por error no desarma las demás (sólo quedan mal las dos que tocó)", () => {
+    const { atras, adelante, verdad } = cargaDePrueba(10, { giroGrados: 4, puntaMm: 20 });
+    const r = emparejarCaras(atras, adelante, { t1: verdad.t4! });
+    const resto = r.parejas.filter((p) => p.atras !== "t1" && p.atras !== "t4");
+    expect(resto.length).toBeGreaterThan(5);
+    expect(resto.every((p) => p.adelante === verdad[p.atras] && !p.dudosa)).toBe(true);
+  });
+
+  it("la tabla toma D2 de la punta de adelante; lo tipeado gana; sin pareja queda pareja y marcada", () => {
+    const atras = [testa("t1", 100, 100, 100), testa("t2", 300, 100, 110)];
+    const parejas: ParejaDeCaras[] = [
+      { atras: "t1", adelante: "a1", corridoMm: 12, dudosa: false, fija: false },
+      { atras: "t2", adelante: null, corridoMm: null, dudosa: true, fija: false },
+    ];
+    const adelante = { testas: [testa("a1", 200, 100, 90)], parejas };
+    const filas = filasDeLaCarga(atras, ["1", "2"], { largoM: 3.2, especie: "Tornillo" }, {}, adelante);
+    expect(filas[0]).toMatchObject({ d1Cm: 40, d2Cm: 36, origenD2: "foto", testaAdelante: "a1", parejaDudosa: false });
+    expect(filas[1]).toMatchObject({ d2Cm: null, origenD2: null, testaAdelante: null, parejaDudosa: true });
+    const tipeado = filasDeLaCarga(atras, ["1", "2"], { largoM: 3.2, especie: "Tornillo" }, { d2Cm: { t1: 38 } }, adelante);
+    expect(tipeado[0]).toMatchObject({ d2Cm: 38, origenD2: "mano" });
+  });
+
+  it("al pasar a la guía D1 es la punta mayor y D2 la menor (las columnas del libro)", () => {
+    const filas = filasDeLaCarga([testa("t1", 100, 100, 90)], ["1"], { largoM: 3.2, especie: "Tornillo" }, { d2Cm: { t1: 41 } });
+    expect(filas[0]).toMatchObject({ d1Cm: 36, d2Cm: 41 });
+    expect(aTrozasAMano(filas).listas[0]).toMatchObject({ d1Cm: 41, d2Cm: 36 });
   });
 });
 

@@ -9,9 +9,10 @@
  * Se abre desde «Anotar a mano» del despacho con guía (ventana encima de otra:
  * `aboveModals`). Foto → medidor (worker con OpenCV) → foto con las testas +
  * tabla → «Pasar a la guía» agrega las filas a «Anotar a mano» por el mismo
- * camino que el alta a mano (`agregarVarias`) y deja las dos fotos (original y
- * anotada) para subir a los papeles de la guía AL REGISTRAR. Antes de
- * registrar no se escribe nada en la base.
+ * camino que el alta a mano (`agregarVarias`) y deja las fotos (original y
+ * anotada, de cada cara) para subir a los papeles de la guía AL REGISTRAR.
+ * Antes de registrar no se escribe nada en la base. F2: la foto de la otra
+ * cara da D2 (`LothTrozasPorFotoCaras`).
  */
 import { useMemo, useState, type ChangeEvent } from "react";
 import { Camera, ImagePlus, Printer, RotateCcw } from "@buleje/design-system/icons";
@@ -26,10 +27,11 @@ import { logger } from "@/lib/logger";
 import { fotoAnotada } from "./camaras/anotar-carga";
 import type { CatalogoUI } from "./ctp-especie-campo";
 import { Btn } from "./ctp-shared";
-import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
+import type { DespachoParaMedir } from "./LothMedirCargaMonteModal";
 import { useEspecieFijada } from "./hooks/use-especie-fijada";
 import { fotoEnJpeg } from "./hooks/use-placa-foto";
-import { useTrozasPorFoto } from "./hooks/use-trozas-por-foto";
+import { useTrozasPorFoto, type TrozasPorFoto } from "./hooks/use-trozas-por-foto";
+import LothTrozasPorFotoCaras, { ParejaDeLaElegida } from "./LothTrozasPorFotoCaras";
 import LothTrozasPorFotoLienzo from "./LothTrozasPorFotoLienzo";
 import LothTrozasPorFotoTabla from "./LothTrozasPorFotoTabla";
 
@@ -37,7 +39,17 @@ const ELEGIR = "inline-flex h-12 cursor-pointer items-center justify-center gap-
 const ALERTA = "text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
 const CUAL: Record<CampoQueFalta, string> = { d1: "el D1", d2: "el D2", largo: "el largo", especie: "la especie" };
 
-export default function LothTrozasPorFoto({ g, catalogo, onClose }: { g: DespachoGuiaLoth; catalogo: CatalogoUI; onClose: () => void }) {
+/** Original + anotada de una cara, para los papeles de la guía. */
+async function fotosDe(cara: TrozasPorFoto["atras"], codigos: readonly string[]) {
+  if (!cara.foto || !cara.medida) return null;
+  const [original, anotada] = await Promise.all([fotoEnJpeg(cara.foto, 2560), fotoAnotada(cara.medida.enderezada, cara.testas, codigos)]);
+  return { original: original.blob, anotada };
+}
+
+/** `destino`: «guia» (despacho: pasa a «Anotar a mano») o «carga» (monte: se guarda la carga medida para la oficina). */
+export default function LothTrozasPorFoto({
+  g, catalogo, onClose, destino = "guia",
+}: { g: DespachoParaMedir; catalogo: CatalogoUI; onClose: () => void; destino?: "guia" | "carga" }) {
   const fijacion = useEspecieFijada("loth-guia-a-mano");
   const delPermiso = g.especiesAMano.delPermiso;
   const nDelLibro = g.piezas.length - g.piezasManuales.length;
@@ -58,9 +70,9 @@ export default function LothTrozasPorFoto({ g, catalogo, onClose }: { g: Despach
   const sinLargo = p.largo.trim() === "" && faltan.some((f) => f.campo === "largo");
   const primera = faltan.find((f) => f.campo !== "especie");
   const motivo =
-    p.testas.length === 0
+    p.atras.testas.length === 0
       ? "No hay trozas marcadas en la foto."
-      : p.testas.length > restantes
+      : p.atras.testas.length > restantes
         ? `La guía lleva hasta ${TROZAS_POR_GUIA_MAX} trozas: quedan ${Math.max(0, restantes)}.`
         : !p.especie.trim()
           ? "Elige la especie de la carga."
@@ -83,11 +95,12 @@ export default function LothTrozasPorFoto({ g, catalogo, onClose }: { g: Despach
 
   async function pasar() {
     setIntentado(true);
-    if (motivo || !p.medida || !p.foto || listas.length === 0) return;
+    if (motivo || !p.atras.medida || !p.foto || listas.length === 0) return;
     setPasando(true);
     try {
-      const [original, anotada] = await Promise.all([fotoEnJpeg(p.foto, 2560), fotoAnotada(p.medida.enderezada, p.testas, p.codigos)]);
-      g.fotosCarga.agregar({ original: original.blob, anotada, trozas: listas.length });
+      /* Adelante, cada punta con el N° de su troza de atrás: las dos fotos dicen lo mismo. */
+      const caras = await Promise.all([fotosDe(p.atras, p.codigosAtras), p.adelante.fase === "listo" ? fotosDe(p.adelante, p.codigosAdelante) : null]);
+      for (const f of caras) if (f) g.fotosCarga.agregar({ ...f, trozas: listas.length });
     } catch (err) {
       /* Las trozas pasan igual: la foto es respaldo, no el dato. */
       logger.warn("[trozas-por-foto] la foto no se preparó para la guía", { error: String(err) });
@@ -121,8 +134,12 @@ export default function LothTrozasPorFoto({ g, catalogo, onClose }: { g: Despach
       ayuda={
         <InfoTip
           title="Medir las trozas por foto"
-          what="Pega la hoja de escala en la cara de la carga y toma la foto de frente. El sistema marca cada testa, saca su Ø (promedio de los dos ejes) y le pone el N° que llevará en la guía. Tú revisas: corriges, quitas o agregas y anotas D2 si lo mediste."
-          affects="Al pasar a la guía, las trozas quedan en «Anotar a mano» marcadas «Foto». Nada se guarda hasta registrar el despacho; ahí la foto va a los papeles de la guía."
+          what="Pega la hoja de escala en la cara de la carga y toma la foto de frente. El sistema marca cada testa, saca su Ø con corteza (promedio de los dos ejes, hasta el borde de afuera de la corteza; la troza descortezada, hasta la madera) y le pone el N° que llevará en la guía. Con la foto de la otra cara saca también el D2. Tú revisas: corriges, quitas o agregas."
+          affects={
+            destino === "carga"
+              ? "Al guardar, la carga queda con sus fotos para que la oficina la use al armar la guía («Cargas medidas»), con D1 la punta mayor y D2 la menor."
+              : "Al pasar a la guía, las trozas quedan en «Anotar a mano» marcadas «Foto», con D1 la punta mayor y D2 la menor. Nada se guarda hasta registrar el despacho; ahí las fotos van a los papeles de la guía."
+          }
           example="14 testas · Tornillo · largo 3,20 → N° 24 a 37, 3,412 m³"
           ariaLabel="Cómo se mide por foto"
         />
@@ -136,7 +153,9 @@ export default function LothTrozasPorFoto({ g, catalogo, onClose }: { g: Despach
           )}
           <Btn onClick={onClose}>Cancelar</Btn>
           <Btn variant="primary" onClick={pasar} disabled={p.fase !== "listo" || pasando} data-qa="pasar-a-la-guia">
-            {pasando ? "Pasando…" : listas.length ? `Pasar ${listas.length} ${listas.length === 1 ? "troza" : "trozas"} a la guía` : "Pasar a la guía"}
+            {destino === "carga"
+              ? pasando ? "Guardando…" : `Guardar ${listas.length || ""} ${listas.length === 1 ? "troza" : "trozas"} en la carga`.replace(/\s+/g, " ")
+              : pasando ? "Pasando…" : listas.length ? `Pasar ${listas.length} ${listas.length === 1 ? "troza" : "trozas"} a la guía` : "Pasar a la guía"}
           </Btn>
         </div>
       }
@@ -195,7 +214,9 @@ export default function LothTrozasPorFoto({ g, catalogo, onClose }: { g: Despach
                 La hoja salió chica en la foto: el Ø puede salir ~1 cm corto. Revisa o acércate.
               </p>
             )}
+            <LothTrozasPorFotoCaras p={p} />
             <LothTrozasPorFotoLienzo p={p} />
+            <ParejaDeLaElegida p={p} />
             <LothTrozasPorFotoTabla
               p={p}
               catalogo={catalogo}

@@ -4,14 +4,16 @@
  * carga con OpenCV.js. Propio y no el de los marcadores de troza: aquél lee
  * cuadros de video seguidos; éste endereza UNA foto de 12 MP, guarda la
  * imagen suavizada para «agregar al tocar» y devuelve la foto enderezada en
- * color (la que ve el operador, con los círculos encima).
+ * color (la que ve el operador, con los círculos encima). F2: guarda una
+ * suavizada por cara (atrás y adelante): se agrega en la que se está viendo.
  *
  * Carga el MISMO `/opencv/opencv.js` (13 MB, mismo origen) y sólo cuando
- * alguien elige «Medir por foto». El algoritmo vive en `testas-cv.ts` (sin
- * DOM: también corre en el banco de Node).
+ * alguien elige «Medir por foto». El algoritmo vive en `testas-cv.ts` y el
+ * del toque en `segmentar-toque.ts` (sin DOM: también corren en el banco de Node).
  */
 import type { CaraMedida, TestaPropuesta } from "@/lib/forestal/testas-medicion";
-import { crearDetectorHojas, enderezar, medirCara, testaEn, type DetectorHojas, type MatCv, type OpenCvTestas } from "./testas-cv";
+import { crearDetectorHojas, enderezar, medirCara, type DetectorHojas, type MatCv, type OpenCvTestas } from "./testas-cv";
+import { testaEn } from "./segmentar-toque";
 
 type OpenCvWorker = OpenCvTestas & {
   matFromImageData(d: ImageData): MatCv;
@@ -22,7 +24,7 @@ type OpenCvWorker = OpenCvTestas & {
 export type PedidoTestas =
   | { tipo: "cargar"; ruta: string }
   | { tipo: "medir"; id: number; imagen: ImageBitmap; cara: CaraMedida["cara"] }
-  | { tipo: "agregar"; id: number; x: number; y: number; rRef: number; testaId: string }
+  | { tipo: "agregar"; id: number; x: number; y: number; rRef: number; testaId: string; cara: CaraMedida["cara"] }
   | { tipo: "soltar" };
 
 export type RespuestaTestas =
@@ -36,16 +38,16 @@ export type RespuestaTestas =
 const yo = self as unknown as DedicatedWorkerGlobalScope;
 let cv: OpenCvWorker | null = null;
 let detector: DetectorHojas | null = null;
-/** La suavizada de la última foto medida: «agregar al tocar» busca el borde ahí. */
-let ultima: { suave: MatCv; mmPorPx: number } | null = null;
+/** La suavizada de la última foto de cada cara: «agregar al tocar» busca el borde en la de esa cara. */
+const ultimas = new Map<CaraMedida["cara"], { suave: MatCv; mmPorPx: number }>();
 
 function enviar(r: RespuestaTestas): void {
   yo.postMessage(r);
 }
 
-function soltarUltima(): void {
-  ultima?.suave.delete();
-  ultima = null;
+function soltarCara(cara: CaraMedida["cara"]): void {
+  ultimas.get(cara)?.suave.delete();
+  ultimas.delete(cara);
 }
 
 /** Igual que el worker de marcadores: módulo fuera del bundler y, si no se deja, el texto evaluado. */
@@ -88,11 +90,11 @@ async function medir(imagen: ImageBitmap, cara: CaraMedida["cara"]): Promise<Ext
   const gris = new o.Mat();
   try {
     o.cvtColor(rgba, gris, o.COLOR_RGBA2GRAY);
-    soltarUltima();
+    soltarCara(cara);
     const r = medirCara(o, gris, detector, cara);
     if (!r.ok) return { tipo: "sin-hoja", id: 0, otrosIds: r.otrosIds };
     r.enderezada.delete();
-    ultima = { suave: r.suave, mmPorPx: r.cara.mmPorPx };
+    ultimas.set(cara, { suave: r.suave, mmPorPx: r.cara.mmPorPx });
     const color = enderezar(o, rgba, r.marco, 40);
     try {
       return { tipo: "medida", id: 0, cara: r.cara, enderezada: await jpegDe(color), otrosIds: r.otrosIds, ms: r.ms };
@@ -119,7 +121,7 @@ yo.onmessage = async (ev: MessageEvent<PedidoTestas>) => {
     return;
   }
   if (p.tipo === "soltar") {
-    soltarUltima();
+    for (const cara of [...ultimas.keys()]) soltarCara(cara);
     return;
   }
   try {
@@ -128,7 +130,8 @@ yo.onmessage = async (ev: MessageEvent<PedidoTestas>) => {
       enviar({ ...r, id: p.id });
       return;
     }
-    if (!cv || !ultima) throw new Error("no hay foto medida");
+    const ultima = ultimas.get(p.cara);
+    if (!cv || !ultima) throw new Error("no hay foto medida de esa cara");
     const testa = testaEn(cv, ultima.suave, p.x, p.y, p.rRef, ultima.mmPorPx, p.testaId);
     enviar({ tipo: "agregada", id: p.id, testa });
   } catch (err) {

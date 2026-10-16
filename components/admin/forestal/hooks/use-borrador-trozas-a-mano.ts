@@ -17,6 +17,10 @@
  * Guarda el plan de la guía. Todo acceso va con try/catch: modo privado o cupo
  * lleno no rompen el modal, sólo no hay borrador. Se borra al registrar la guía,
  * al quitar todas las filas y con «Descartar borrador».
+ *
+ * Guarda también las cargas del monte en uso (16-10, security F3): tras una
+ * recarga, «Cargas medidas» no ofrece de nuevo la que ya está en las filas, y
+ * el registro la manda para marcarla usada (el servidor frena el doble uso).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -32,8 +36,13 @@ export interface BorradorTrozasAMano {
   filas: TrozaAMano[];
   /** El primer N° de las trozas sin árbol (16-10, «Medir por foto»); sin él, 1. */
   desde?: number;
+  /** Las cargas del monte que ya están en las filas (16-10, F3). */
+  cargas?: string[];
   guardadoAt: number;
 }
+
+/** Tope de ids de cargas en el borrador (el mismo que acepta el registro). */
+const CARGAS_MAX = 10;
 
 /** Lo recuperado que sigue en la lista (las filas que el usuario no quitó). */
 export interface BorradorRecuperado {
@@ -59,7 +68,17 @@ export function leerBorrador(clave: string): BorradorTrozasAMano | null {
     });
     if (filas.length === 0) return null;
     const desde = Number.isInteger(j.desde) && Number(j.desde) > 1 ? Number(j.desde) : undefined;
-    return { v: 1, planId: typeof j.planId === "string" ? j.planId : null, filas, ...(desde ? { desde } : {}), guardadoAt: Number(j.guardadoAt) || 0 };
+    const cargas = Array.isArray(j.cargas)
+      ? [...new Set(j.cargas.filter((c): c is string => typeof c === "string" && c.length > 0 && c.length <= 64))].slice(0, CARGAS_MAX)
+      : [];
+    return {
+      v: 1,
+      planId: typeof j.planId === "string" ? j.planId : null,
+      filas,
+      ...(desde ? { desde } : {}),
+      ...(cargas.length ? { cargas } : {}),
+      guardadoAt: Number(j.guardadoAt) || 0,
+    };
   } catch {
     return null; // sin almacenamiento o JSON roto: no hay borrador
   }
@@ -89,8 +108,12 @@ export function useBorradorTrozasAMano(opts: {
   setPlanId: (id: string | null) => void;
   aMano: TrozasAMano;
   registrada: boolean;
+  /** Las cargas del monte en uso (`useFotosDeLaCarga`): se guardan y se recuperan con las filas. */
+  cargas?: { enUso: readonly string[]; usar: (id: string) => void };
 }) {
   const { prep, planId, setPlanId, aMano, registrada } = opts;
+  const enUso = opts.cargas?.enUso;
+  const usarCarga = opts.cargas?.usar;
   const { filas, agregar, quitar, desde, setDesde } = aMano;
   const clave = useMemo(() => (prep ? claveDelBorrador(prep) : null), [prep]);
   const intentado = useRef(false);
@@ -109,11 +132,12 @@ export function useBorradorTrozasAMano(opts: {
       if (b.planId !== planId && planVive) setPlanId(b.planId);
       for (const f of b.filas) agregar(f);
       if (b.desde) setDesde(b.desde);
+      if (usarCarga) for (const id of b.cargas ?? []) usarCarga(id);
       porMarcar.current = true;
       setRecuperado({ guardadoAt: b.guardadoAt, claves: null });
     }
     setListo(true);
-  }, [clave, prep, planId, filas.length, agregar, setPlanId, setDesde]);
+  }, [clave, prep, planId, filas.length, agregar, setPlanId, setDesde, usarCarga]);
 
   /* Las claves que recibieron las filas recuperadas (las pone `agregar`, en el render siguiente). */
   useEffect(() => {
@@ -135,9 +159,10 @@ export function useBorradorTrozasAMano(opts: {
       planId: planId ?? null,
       filas: filas.map(({ key: _key, ...t }) => t),
       ...(desde > 1 ? { desde } : {}),
+      ...(enUso?.length ? { cargas: [...enUso] } : {}),
       guardadoAt: Date.now(),
     });
-  }, [listo, clave, registrada, filas, planId, desde]);
+  }, [listo, clave, registrada, filas, planId, desde, enUso]);
 
   const vivas = useMemo(
     () => (recuperado?.claves ? filas.filter((f) => recuperado.claves?.has(f.key)) : []),
