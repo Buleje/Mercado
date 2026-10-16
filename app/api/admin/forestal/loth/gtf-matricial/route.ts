@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ClaveOcupadaError } from "@/lib/db/platform-settings.db";
+import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import type { AdminRole } from "@/lib/session";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestGtfMatricialDB } from "@/lib/db/forest-gtf-matricial.db";
-import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
-import type { DuenoTalonario } from "@/lib/forestal/gtf-matricial-titulares";
 import { hojaSchema } from "@/lib/forestal/gtf-matricial-disposicion";
+import { formaIdSchema, MENSAJE_ERROR_FORMA, type ErrorForma } from "@/lib/forestal/gtf-matricial-formas";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -15,15 +16,18 @@ import { withApiHandler } from "@/lib/api-handler";
  * /api/admin/forestal/loth/gtf-matricial — dónde cae cada valor de la GTF y de
  * su lista en el talonario preimpreso de la matricial («Imprimir en talonario»).
  *
- * Una disposición POR TITULAR (15-10): el titular lo pone el SERVIDOR desde
- * la guía (`ForestGtf.titularName` / `tituloHabilitante` / `planId`, los
- * mismos datos con que se numera), nunca el cliente.
+ * En «formas» con nombre (16-10): la de la guía se elige SOLA con su dueño
+ * (permiso + titular), que pone el SERVIDOR desde la guía (`ForestGtf.titularName`
+ * / `tituloHabilitante` / `planId`, los mismos datos con que se numera), nunca
+ * el cliente. Crear, renombrar y borrar formas: `./formas`.
  *
- * GET `?gtf=<id>` — la del titular de esa guía (o la de la empresa que copia
- *   mientras no tenga la suya), de dónde salió y qué titulares ya tienen la suya.
- *   Sin `gtf`: la de la empresa.
- * GET `?de=<clave|empresa>` — la de otro titular, para «Copiar de otro titular».
- * PUT — guarda UNA hoja: `{ gtfId?, formato: "guia" | "lista", hoja }`.
+ * GET `?gtf=<id>[&forma=<id>]` — la forma de esa guía (o la elegida a mano),
+ *   por qué se eligió, todas las formas (las del dueño arriba) y las impresoras.
+ *   Sin forma propia: la de la empresa (o la de fábrica) y el nombre con que se
+ *   creará. 404 si la forma pedida no existe.
+ * GET `?de=<id|empresa>` — las dos hojas de otra forma, para «Copiar de otra forma».
+ * PUT — guarda UNA hoja: `{ gtfId?, formaId?, formato: "guia" | "lista", hoja }`.
+ *   Sin `formaId`: en la del dueño; si no tiene, la crea (409 al tope).
  *
  * Quien imprime las guías (almacenero) también acomoda su talonario: es la
  * medida de un papel, no un dato del libro.
@@ -34,25 +38,20 @@ const ROLES: readonly AdminRole[] = ["admin", "almacenero", "owner"];
 const getSchema = z.object({
   gtf: z.string().trim().min(1).max(64).optional(),
   de: z.string().trim().min(1).max(300).optional(),
+  forma: formaIdSchema.optional(),
 });
 
 const putSchema = z.object({
   gtfId: z.string().trim().min(1).max(64).optional(),
+  formaId: formaIdSchema.optional(),
   formato: z.enum(["guia", "lista"]),
   hoja: hojaSchema,
 });
 
-const SIN_DUENO: DuenoTalonario = { titular: null, permiso: null, planId: null };
-
-/** El dueño del talonario sale de la guía guardada. null = la guía no existe en este tenant. */
-async function duenoDeLaGuia(tenantId: string, gtfId: string | undefined): Promise<DuenoTalonario | null> {
-  if (!gtfId) return SIN_DUENO;
-  const g = await ForestGtfDB.getById(tenantId, gtfId);
-  if (!g) return null;
-  return { titular: g.titularName ?? null, permiso: g.tituloHabilitante ?? null, planId: g.planId ?? null };
-}
-
 const NO_HAY_GUIA = { error: "not_found", message: "No encontramos esa guía." } as const;
+
+const ESTADO: Record<ErrorForma, number> = { no_existe: 404, tope: 409, nombre_repetido: 409 };
+const errorForma = (e: ErrorForma) => NextResponse.json({ error: e, message: MENSAJE_ERROR_FORMA[e] }, { status: ESTADO[e] });
 
 async function ensureSpec(tenantId: string) {
   const enabled = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
@@ -69,17 +68,19 @@ export const GET = withApiHandler("forestal-loth-gtf-matricial-get", async (req:
   const q = getSchema.safeParse({
     gtf: req.nextUrl.searchParams.get("gtf") ?? undefined,
     de: req.nextUrl.searchParams.get("de") ?? undefined,
+    forma: req.nextUrl.searchParams.get("forma") ?? undefined,
   });
   if (!q.success) return NextResponse.json({ error: "validation_error", issues: q.error.issues.slice(0, 5) }, { status: 400 });
   try {
     if (q.data.de) {
       const disposicion = await ForestGtfMatricialDB.de(auth.tenantId, q.data.de);
-      if (!disposicion) return NextResponse.json({ error: "not_found", message: "Ese titular no tiene su talonario guardado." }, { status: 404 });
+      if (!disposicion) return errorForma("no_existe");
       return NextResponse.json({ disposicion });
     }
-    const dueno = await duenoDeLaGuia(auth.tenantId, q.data.gtf);
+    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, q.data.gtf);
     if (!dueno) return NextResponse.json(NO_HAY_GUIA, { status: 404 });
-    return NextResponse.json(await ForestGtfMatricialDB.paraDueno(auth.tenantId, dueno));
+    const r = await ForestGtfMatricialDB.paraDueno(auth.tenantId, dueno, q.data.forma);
+    return r ? NextResponse.json(r) : errorForma("no_existe");
   } catch (err) {
     logger.error("[loth.gtf-matricial.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -103,23 +104,25 @@ export const PUT = withApiHandler("forestal-loth-gtf-matricial-put", async (req:
     );
   }
   try {
-    const dueno = await duenoDeLaGuia(auth.tenantId, parsed.data.gtfId);
+    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, parsed.data.gtfId);
     if (!dueno) return NextResponse.json(NO_HAY_GUIA, { status: 404 });
-    const disposicion = await ForestGtfMatricialDB.guardar(
+    const r = await ForestGtfMatricialDB.guardar(
       auth.tenantId,
       dueno,
+      parsed.data.formaId ?? null,
       parsed.data.formato,
       parsed.data.hoja,
       auth.username ?? "unknown",
     );
-    if (!disposicion) {
-      return NextResponse.json(
-        { error: "too_many", message: "Ya hay demasiados talonarios guardados; usa el de otro titular." },
-        { status: 409 },
-      );
+    if (!r.ok) return errorForma(r.error);
+    if (r.creada) {
+      auditCtp({ tenantId: auth.tenantId, action: "gtf_talonario_forma_crear", entity: "ForestGtfTalonario", entityId: r.forma.id, detail: `Forma del talonario «${r.forma.nombre}» creada al guardar`, user: auth.username ?? "unknown" });
     }
-    return NextResponse.json({ disposicion });
+    return NextResponse.json({ disposicion: r.disposicion, forma: r.forma, creada: r.creada });
   } catch (err) {
+    if (err instanceof ClaveOcupadaError) {
+      return NextResponse.json({ error: "ocupada", message: "Otra PC está guardando el talonario. Prueba de nuevo en unos segundos." }, { status: 409 });
+    }
     logger.error("[loth.gtf-matricial.PUT] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

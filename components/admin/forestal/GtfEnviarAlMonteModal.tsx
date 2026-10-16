@@ -214,7 +214,7 @@ function PieListo({ g, trabajo, celular, onClose }: { g: Gtf; trabajo: TrabajoCo
     let vivo = true;
     Promise.all(
       trabajo.hojas.map(async (h) => {
-        const r = await bajarSalida(rutaSalida({ gtfId: trabajo.gtfId, formato: "pdf", perfilId: trabajo.perfilId, hoja: h }), `guia-${trabajo.numeroGuia}-${h}.pdf`);
+        const r = await bajarSalida(rutaSalida({ gtfId: trabajo.gtfId, formato: "pdf", perfilId: trabajo.perfilId, hoja: h, formaId: trabajo.formaId }), `guia-${trabajo.numeroGuia}-${h}.pdf`);
         return r.ok ? new File([r.blob], r.nombre, { type: "application/pdf" }) : null;
       }),
     ).then((fs) => {

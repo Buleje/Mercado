@@ -128,12 +128,18 @@ export function Opciones<T extends string>({
   );
 }
 
-export function Casilla({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+export function Casilla({
+  label, checked, onChange, disabled = false, ayuda,
+}: { label: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; ayuda?: string }) {
   return (
-    <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-1 text-sm font-semibold text-[var(--text-primary)]">
+    <label
+      title={ayuda}
+      className={`flex min-h-12 items-center gap-3 rounded-xl px-1 text-sm font-semibold text-[var(--text-primary)] ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+    >
       <input
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
         className="h-5 w-5 shrink-0 accent-[var(--accent-dark)]"
       />

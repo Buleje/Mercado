@@ -3,7 +3,7 @@
  * lo más posible a esos formatos»): la plantilla se DIBUJA en pantalla con los
  * datos de la guía y nunca viaja al papel; una disposición acomodada sobre la
  * grilla vieja vuelve a la de fábrica sin perder la medida ni el corrimiento;
- * lo amarillo es exactamente lo que no entra en su renglón.
+ * lo amarillo es exactamente lo que no entra en su renglón ni achicado.
  */
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
@@ -15,9 +15,10 @@ import { CATALOGO, entraEnUnaLinea, hojaDeFabrica, normalizarHoja } from "@/lib/
 import { PLANTILLA_FABRICA, plantillaTalonario } from "@/lib/forestal/gtf-talonario-plantilla";
 import { entradasDeLaGuia, paginasGuia, paginasLista } from "@/lib/forestal/gtf-matricial-valores";
 import { htmlTalonario } from "@/lib/forestal/gtf-matricial-print";
-import { camposQueNoEntran, encabezadoDelTalonario, serieYNumero } from "@/lib/forestal/gtf-matricial-pantalla";
+import { camposQueNoEntran, encabezadoDelTalonario, revisarEncaje, serieYNumero } from "@/lib/forestal/gtf-matricial-pantalla";
 import type { LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 import PlantillaTalonario from "@/components/admin/forestal/gtf-matricial-plantilla";
+import CampoTalonario from "@/components/admin/forestal/gtf-matricial-campo";
 
 const FICHA = (fichasJson as unknown as Record<string, GtfSerfor>)["1-10-0473187"];
 const DATOS = JSON.parse(JSON.stringify(gtfDatosConFicha(FICHA, true))) as unknown;
@@ -97,7 +98,7 @@ describe("el formato impreso es sólo de pantalla", () => {
 });
 
 describe("lo amarillo", () => {
-  it("son exactamente los valores que no entran en una línea; de la tabla, la columna con su fila más larga", () => {
+  it("son exactamente los valores que no entran en una línea ni a 6 pt; de la tabla, la columna con su fila más larga", () => {
     const hoja = hojaDeFabrica("guia");
     const cat = CATALOGO.guia;
     const largo = "X".repeat(400);
@@ -107,5 +108,36 @@ describe("lo amarillo", () => {
     expect(entraEnUnaLinea("corto", hoja.campos["6"].anchoMm, hoja.campos["6"].letraPt)).toBe(true);
     const oculto = { ...hoja, campos: { ...hoja.campos, "7": { ...hoja.campos["7"], visible: false } } };
     expect(camposQueNoEntran(oculto, cat, { campos: { "7": largo }, filas: [] })).toEqual([]);
+  });
+
+  it("lo que entra achicado no es amarillo: va aparte, con la letra a la que sale", () => {
+    const hoja = hojaDeFabrica("guia");
+    const r = revisarEncaje(hoja, CATALOGO.guia, { campos: { "7": "X".repeat(40) }, filas: [] });
+    expect(r.noEntran).toEqual([]);
+    expect(r.achicados).toMatchObject([{ clave: "campo:7", letraPt: 8.6 }]);
+  });
+});
+
+describe("el valor en la hoja de pantalla", () => {
+  const base = {
+    etiqueta: "(7) Nombre del titular", x: 10, y: 20, anchoMm: 73.6, letraPt: 9, alinea: "izq" as const, escala: 4, seleccionado: false,
+    onPresionar: () => undefined, onFocoTeclado: () => undefined, onFlecha: () => undefined,
+  };
+
+  it("achicado: el texto en su letra dentro de la caja con la del campo (la base no se mueve) y el aviso al pasar el mouse", () => {
+    const { container } = render(<CampoTalonario {...base} texto={"X".repeat(40)} letraValorPt={8.6} />);
+    const caja = container.querySelector<HTMLElement>("[data-campo]");
+    expect(caja?.title).toBe("(7) Nombre del titular · letra 8,6 pt para que entre");
+    expect(caja?.style.whiteSpace).toBe("nowrap");
+    expect(caja?.style.fontSize).toBe(`${(9 * 25.4) / 72 * 4}px`);
+    expect(caja?.querySelector("span")?.style.fontSize).toBe(`${(8.6 * 25.4) / 72 * 4}px`);
+  });
+
+  it("«Sólo valores»: el vacío no se dibuja y no hay nombre encima", () => {
+    const vacio = render(<CampoTalonario {...base} texto="" nombre="(7) Titular" soloValores />);
+    expect(vacio.container.innerHTML).toBe("");
+    const lleno = render(<CampoTalonario {...base} texto="PEREZ" nombre="(7) Titular" soloValores />);
+    expect(lleno.container.querySelector("[data-nombre-campo]")).toBeNull();
+    expect(lleno.container.textContent).toBe("PEREZ");
   });
 });

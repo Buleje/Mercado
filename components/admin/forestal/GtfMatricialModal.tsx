@@ -77,7 +77,7 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
   const cat = CATALOGO[t.formato];
   const total = t.paginas.length;
   const nombre = `GTF ${g.gtfNumber} · ${cat.nombre}`;
-  const deQuien = t.info ? (t.info.titular?.nombre ?? "la empresa") : g.titularName;
+  const deQuien = t.info ? (t.info.forma?.nombre ?? t.info.nueva?.nombre ?? t.info.titular?.nombre ?? "la empresa") : g.titularName;
 
   const imprimir = async () => {
     if (!hoja) return;
@@ -166,7 +166,7 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
         >
           {/* Centro: la barra y la hoja. Primero en el DOM: a 400 px va arriba. */}
           <div className="flex min-w-0 flex-col gap-2 lg:col-start-2 lg:row-start-1 lg:min-h-0">
-            <BarraTalonario t={t} s={s} z={z} p={p} />
+            <BarraTalonario t={t} s={s} z={z} p={p} v={{ soloValores: f.fondo.soloValores, alternar: f.alternarSoloValores }} />
             <HojaTalonario t={t} s={s} z={z} fondo={f.fondo} nombres={p.nombres} />
           </div>
 

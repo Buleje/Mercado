@@ -11,8 +11,8 @@ import { useState } from "react";
 import { FileDown, Printer, CheckCircle2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
-import { ETIQUETA_HOJA, correlativoDeGuia, rutaSalida } from "@/lib/forestal/gtf-cola-monte";
-import type { HojaSalida, TrabajoImpresion } from "@/lib/forestal/gtf-salida-tipos";
+import { ETIQUETA_HOJA, correlativoDeGuia, rutaSalida, type TrabajoCola } from "@/lib/forestal/gtf-cola-monte";
+import type { HojaSalida } from "@/lib/forestal/gtf-salida-tipos";
 import { avisoRecortados, bajarSalida, descargarBlob } from "@/lib/forestal/gtf-cola-monte-imprimir";
 import { useFotoHojaMonte } from "./hooks/use-foto-hoja-monte";
 import { useImprimirDirecto } from "./hooks/use-imprimir-directo";
@@ -28,7 +28,7 @@ export default function TarjetaTrabajoMonte({
   cambiar,
   resaltado = false,
 }: {
-  t: TrabajoImpresion;
+  t: TrabajoCola;
   cambiar: (id: string, c: CambioTrabajo) => Promise<Respuesta<unknown>>;
   resaltado?: boolean;
 }) {
@@ -48,7 +48,7 @@ export default function TarjetaTrabajoMonte({
     setAviso(null);
     setRecortesPdf(null);
     directo.limpiar();
-    const url = rutaSalida({ gtfId: t.gtfId, formato, perfilId: t.perfilId, hoja: h });
+    const url = rutaSalida({ gtfId: t.gtfId, formato, perfilId: t.perfilId, hoja: h, formaId: t.formaId });
     const nombre = `guia-${t.numeroGuia}-${h}.${formato === "pdf" ? "pdf" : "prn"}`;
     /* ESC/P por el cable USB: el permiso se pide dentro del toque, antes de bajar la hoja. */
     if (formato === "escp") {

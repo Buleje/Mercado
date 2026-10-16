@@ -67,6 +67,9 @@ export type CtpAuditEntity =
   | "ForestEspecieFoto"
   // KV (como ForestEspecieFoto): el catálogo de especies propio del aserradero.
   | "ForestEspecieCatalogo"
+  // KV `gtf-talonario:<tenantId>`: las formas del talonario de la matricial
+  // (ADR-495). Una forma borrada no se recupera: queda quién y cuándo.
+  | "ForestGtfTalonario"
   // No es modelo Prisma (como ForestCtpFicha): un evento de importación LO-CTP es
   // un lote, no una fila. Se audita porque un fiscalizador quiere saber CÓMO
   // entraron los datos al libro (qué archivo, cuántas filas, quién) — ADR-138.
@@ -198,6 +201,10 @@ export type CtpAuditAction =
    *  (2026-09-25). Un renglón por tanda —cuántas, cuántos m³, cuánta plata y
    *  qué se saltó—, además del `ctp_ingreso_costo` de cada guía. */
   | "ctp_ingreso_costo_tanda"
+  // Formas del talonario de la matricial (16-10): dónde cae cada valor en el papel.
+  | "gtf_talonario_forma_crear"
+  | "gtf_talonario_forma_renombrar"
+  | "gtf_talonario_forma_borrar"
   // Piezas agregadas a la lista de trozas de un ingreso ya registrado (ADR-320).
   // Va aparte de `update` porque no corrige un campo: suma madera al detalle que
   // ampara el ingreso, y el fiscalizador pregunta cuándo apareció cada pieza.

@@ -11,7 +11,9 @@
  *   · el corrimiento X/Y se suma a TODO (la matricial corre la hoja entera).
  *
  * La pantalla del diseñador usa la misma geometría (`estiloCaja`), así que lo
- * que se ve es lo que cae en el papel. PURO salvo `imprimirEnMarco`.
+ * que se ve es lo que cae en el papel. Renglones y letra de cada valor:
+ * `encajarValor` (`gtf-salida-geometria`), el mismo del PDF y del ESC/P.
+ * PURO salvo `imprimirEnMarco`.
  */
 
 import { esc } from "./ctp-documento-print";
@@ -19,6 +21,7 @@ import { CRUZ_MM, type Alineacion, type CatalogoFormato, type DisposicionHoja } 
 import type { PaginaTalonario } from "./gtf-matricial-valores";
 import { INTERLINEA } from "./gtf-matricial-edicion";
 import { aplicarX, aplicarY, escalaPct, transformacionDe, type Transformacion } from "./gtf-matricial-perfiles";
+import { encajarValor, type Encaje, type ModoValor } from "./gtf-salida-geometria";
 
 /** Interlineado de los valores: el mismo en pantalla y en papel (vive con las cajas de `gtf-matricial-edicion`). */
 export { INTERLINEA };
@@ -29,19 +32,24 @@ export const alineaCss = (a: Alineacion): string => ALINEA_CSS[a];
 /** mm con 2 decimales y sin ceros de más (el CSS no necesita 12,500000001). */
 const n = (v: number): string => String(Math.round(v * 100) / 100);
 
-interface Caja {
+interface Caja extends ModoValor {
   x: number;
   y: number;
   anchoMm: number;
   letraPt: number;
   alinea: Alineacion;
-  /** Las celdas de la tabla no parten renglón: invadirían la fila de abajo. */
-  unaLinea?: boolean;
 }
 
-function caja(c: Caja, texto: string): string {
-  const ws = c.unaLinea ? "white-space:nowrap" : "white-space:pre-wrap;overflow-wrap:anywhere";
-  return `<div class="v" style="left:${n(c.x)}mm;top:${n(c.y)}mm;width:${n(c.anchoMm)}mm;font-size:${n(c.letraPt)}pt;text-align:${ALINEA_CSS[c.alinea]};${ws}">${esc(texto)}</div>`;
+/**
+ * Una caja con la letra de su renglón; el valor achicado va en un `<span>` con
+ * su letra: el renglón lo sigue dando la de la caja (el «strut» de CSS), así
+ * la base queda donde estaba y el texto no sube (la misma base que el PDF).
+ */
+function caja(c: Caja, e: Encaje): string {
+  const ws = c.varias ? "white-space:pre-wrap;overflow-wrap:anywhere" : "white-space:nowrap";
+  const texto = esc(c.varias ? e.lineas.join("\n") : e.lineas[0]);
+  const valor = e.achicado ? `<span style="font-size:${n(e.letraPt)}pt">${texto}</span>` : texto;
+  return `<div class="v" style="left:${n(c.x)}mm;top:${n(c.y)}mm;width:${n(c.anchoMm)}mm;font-size:${n(c.letraPt)}pt;text-align:${ALINEA_CSS[c.alinea]};${ws}">${valor}</div>`;
 }
 
 /**
@@ -49,16 +57,18 @@ function caja(c: Caja, texto: string): string {
  * Sin `tr`: Oficina = el X/Y de la hoja. Lo vacío y lo oculto no salen. La
  * escala corre cada caja y su ancho; dentro de una caja de varios renglones el
  * interlineado es el de la letra (con 1 % de escala, 0,04 mm de diferencia
- * contra el PDF / ESC/P, que escalan cada renglón).
+ * contra el PDF / ESC/P, que escalan cada renglón). La letra de cada valor se
+ * decide sobre la caja SIN escala, como el PDF y el ESC/P: la misma en los tres.
  */
 export function cajasDeLaPagina(hoja: DisposicionHoja, cat: CatalogoFormato, p: PaginaTalonario, tr: Transformacion = transformacionDe(hoja, null)): string[] {
   const out: string[] = [];
-  const en = (c: Caja): Caja => ({ ...c, x: aplicarX(tr, c.x), y: aplicarY(tr, c.y), anchoMm: c.anchoMm * tr.sx });
+  const poner = (c: Caja, valor: string) =>
+    out.push(caja({ ...c, x: aplicarX(tr, c.x), y: aplicarY(tr, c.y), anchoMm: c.anchoMm * tr.sx }, encajarValor(valor, c.anchoMm, c.letraPt, c)));
   for (const def of cat.campos) {
     const pos = hoja.campos[def.id];
     const valor = (p.campos[def.id] ?? "").trim();
     if (!pos?.visible || !valor) continue;
-    out.push(caja(en(pos), valor));
+    poner(pos, valor);
   }
   const t = hoja.tabla;
   p.filas.slice(0, t.maxFilas).forEach((fila, i) => {
@@ -66,7 +76,7 @@ export function cajasDeLaPagina(hoja: DisposicionHoja, cat: CatalogoFormato, p: 
       const pos = t.columnas[col.id];
       const valor = (fila[col.id] ?? "").trim();
       if (!pos?.visible || !valor) continue;
-      out.push(caja(en({ x: pos.x, y: t.y + i * t.altoFilaMm, anchoMm: pos.anchoMm, letraPt: t.letraPt, alinea: pos.alinea, unaLinea: true }), valor));
+      poner({ x: pos.x, y: t.y + i * t.altoFilaMm, anchoMm: pos.anchoMm, letraPt: t.letraPt, alinea: pos.alinea, encajar: pos.encajar }, valor);
     }
   });
   return out;

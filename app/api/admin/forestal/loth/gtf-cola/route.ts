@@ -11,6 +11,7 @@ import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
 import { ForestGtfColaMonteDB } from "@/lib/db/forest-gtf-cola-monte.db";
 import { ForestGtfMatricialDB } from "@/lib/db/forest-gtf-matricial.db";
 import { CtpGuiaDocumentosDB } from "@/lib/db/ctp-guia-documentos.db";
+import { formaIdSchema } from "@/lib/forestal/gtf-matricial-formas";
 import { correlativoDeGuia, normalizarCelular, type AccionTrabajo, type TrabajoCola } from "@/lib/forestal/gtf-cola-monte";
 
 /**
@@ -18,7 +19,7 @@ import { correlativoDeGuia, normalizarCelular, type AccionTrabajo, type TrabajoC
  *
  * GET   → `{ trabajos, contacto }` (la cola entera: a lo sumo 300 trabajos). Al
  *       leer cierra los envíos de guías anuladas o borradas después de mandarlas.
- * POST  `{ gtfId, hojas, perfilId, contacto?, reimprimir?: { motivo } }` → mete
+ * POST  `{ gtfId, hojas, perfilId, formaId?, contacto?, reimprimir?: { motivo } }` → mete
  *       la guía en la cola (o actualiza su envío pendiente). El N° y el titular
  *       los pone el SERVIDOR desde la guía viva de este tenant, nunca el
  *       cliente. 422 si la impresora no existe. 409 `ya_impresa` si ya salió
@@ -42,6 +43,8 @@ const postSchema = z.object({
   gtfId: idSchema,
   hojas: z.array(z.enum(["guia", "lista"])).min(1).max(2),
   perfilId: z.string().trim().min(1).max(64),
+  /** La forma del talonario (16-10); sin ella, la salida usa la que se elige sola con la guía. */
+  formaId: formaIdSchema.optional(),
   contacto: celularSchema.optional(),
   /** «Reimprimir en otra hoja» (la hoja se dañó): el motivo queda escrito en el envío. */
   reimprimir: z.object({ motivo: z.string().trim().min(3, "Escribe por qué se reimprime").max(200) }).optional(),
@@ -108,7 +111,7 @@ export const POST = withApiHandler("forestal-loth-gtf-cola-post", async (req: Ne
     const message = parsed.error.issues.find((i) => i.message && !i.message.startsWith("Invalid"))?.message;
     return NextResponse.json({ error: "validation_error", ...(message ? { message } : {}), issues: parsed.error.issues.slice(0, 5) }, { status: 400 });
   }
-  const { gtfId, hojas, perfilId, contacto, reimprimir } = parsed.data;
+  const { gtfId, hojas, perfilId, formaId, contacto, reimprimir } = parsed.data;
   const celular = contacto ? normalizarCelular(contacto) : null;
   if (contacto && !celular) return celularInvalido();
   try {
@@ -120,9 +123,12 @@ export const POST = withApiHandler("forestal-loth-gtf-cola-post", async (req: Ne
     if (!perfiles.some((p) => p.id === perfilId)) {
       return NextResponse.json({ error: "perfil_no_existe", message: "Esa impresora ya no está: elige otra." }, { status: 422 });
     }
+    if (formaId && !(await ForestGtfMatricialDB.existeForma(auth.tenantId, formaId))) {
+      return NextResponse.json({ error: "forma_no_existe", message: "Esa forma del talonario ya no está: elige otra." }, { status: 422 });
+    }
     const r = await ForestGtfColaMonteDB.crear(
       auth.tenantId,
-      { gtfId: g.id, numeroGuia: g.gtfNumber, titular: g.titularName ?? "", hojas, perfilId, ...(reimprimir ? { reimprimir } : {}) },
+      { gtfId: g.id, numeroGuia: g.gtfNumber, titular: g.titularName ?? "", hojas, perfilId, ...(formaId ? { formaId } : {}), ...(reimprimir ? { reimprimir } : {}) },
       celular,
       auth.username ?? "unknown",
     );

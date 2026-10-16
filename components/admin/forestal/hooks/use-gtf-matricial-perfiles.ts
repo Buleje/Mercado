@@ -160,6 +160,8 @@ export function useSalidaTalonario(gtfId: string, t: EstadoGtfMatricial, imp: Es
       if (t.sucio && !(await t.guardar())) return;
       await imp.guardar();
       const q = new URLSearchParams({ gtfId, formato, perfil: imp.elegido?.id ?? PERFIL_OFICINA_ID, hoja: t.formato });
+      /* La forma que se ve; sin ella (la creó este Guardar), el servidor elige la de la guía: es ésa. */
+      if (t.formaId) q.set("forma", t.formaId);
       if (prueba) {
         q.set("prueba", "1");
         q.set("valores", prueba.valores ? "1" : "0");

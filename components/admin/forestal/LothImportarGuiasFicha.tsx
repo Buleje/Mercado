@@ -22,20 +22,32 @@
  * pestañas tienen la cara del talonario — la GTF en el orden del Anexo I y la
  * lista como la hoja «Lista de trozas»; el «Código único» va en la última
  * columna, en gris (`gtf-datos-papel-*.tsx`).
+ *
+ * 16-10 (Brandon: «que la guía tenga tipo lupa y otros para poder ver la guía
+ * más en una hoja más amplia y completa»): cada pestaña dibuja su hoja dentro
+ * de la lupa (`gtf-datos-lupa.tsx`: −/%/+, ajustar al ancho, hoja completa;
+ * el % se recuerda por pestaña) y «Ver en hoja grande» la abre a pantalla
+ * completa, en papel A4, encima de este modal.
  */
 
 import { useId, useMemo, useState } from "react";
-import { FileText } from "@buleje/design-system/icons";
+import { FileText, Fullscreen } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { button } from "@/components/ui-system/button-variants";
 import { piezasDeItems } from "@/lib/forestal/loth-guia-despacho";
 import { fichaDeGuiaImportada } from "@/lib/forestal/loth-importar-guia-ficha";
 import { listaTrozasDeLaGuia } from "@/lib/forestal/gtf-resumen-interno-datos";
 import GtfDatosPapelLista from "./gtf-datos-papel-lista";
+import GtfDatosLupa, { GtfHojaGrande } from "./gtf-datos-lupa";
 import LothImportarGuiasBloques from "./LothImportarGuiasBloques";
 import CtpApartados, { CtpApartadoPanel, type Apartado } from "./ctp-apartados";
 
-/** El ancho es el de `planilla`; lo propio de este modal es el alto fijo al 90 %. */
-const MODAL_AMPLIO = "sm:h-[90vh] sm:max-h-[90vh]";
+/**
+ * El ancho es el de `planilla`; lo propio de este modal es el alto FIJO (92 %
+ * en el celular, 90 % desde 640 px): la lupa llena lo que sobra y su scroll
+ * queda adentro de la hoja.
+ */
+const MODAL_AMPLIO = "h-[92dvh] max-h-[92dvh] sm:h-[90vh] sm:max-h-[90vh]";
 
 /**
  * El modal «Datos» de una guía importada, en dos pestañas: «GTF» (los casilleros
@@ -62,8 +74,20 @@ export default function ModalFichaImportada({
   /* El (35) que guardó la guía al importarla (`gtfDatos.guia.listaTrozasNro`). */
   const nroLista = useMemo(() => listaTrozasDeLaGuia(gtfDatos), [gtfDatos]);
   const [pestana, setPestana] = useState<"gtf" | "trozas">("gtf");
+  const [grande, setGrande] = useState(false);
   const idBase = useId();
   if (!leida) return null;
+  /* Lo mismo se dibuja en la pestaña y en la hoja grande. */
+  const hoja =
+    pestana === "gtf" ? (
+      <LothImportarGuiasBloques ficha={leida.ficha} piezas={paraResumen} partes="datos" />
+    ) : (
+      <>
+        <GtfDatosPapelLista ficha={leida.ficha} gtfNumber={gtfNumber} nroLista={nroLista} piezas={piezas} />
+        <LothImportarGuiasBloques ficha={leida.ficha} piezas={paraResumen} partes="resumen" />
+      </>
+    );
+  const nombreHoja = pestana === "gtf" ? `GTF ${gtfNumber}` : `Lista de trozas de la GTF ${gtfNumber}`;
   const apartados: Apartado[] = [
     {
       id: "gtf",
@@ -91,7 +115,7 @@ export default function ModalFichaImportada({
           : "Leída de una foto o PDF al importarla: sin verificar en SERFOR"
       }
     >
-      <div className="space-y-3 px-5 py-4 sm:px-6">
+      <div className="flex h-full flex-col gap-3 px-5 py-4 sm:px-6">
         <CtpApartados
           apartados={apartados}
           activo={pestana}
@@ -99,17 +123,34 @@ export default function ModalFichaImportada({
           idBase={idBase}
           etiqueta={`Secciones de la GTF ${gtfNumber}`}
         />
-        {pestana === "gtf" ? (
-          <CtpApartadoPanel idBase={idBase} id="gtf">
-            <LothImportarGuiasBloques ficha={leida.ficha} piezas={paraResumen} partes="datos" />
-          </CtpApartadoPanel>
-        ) : (
-          <CtpApartadoPanel idBase={idBase} id="trozas" className="space-y-3">
-            <GtfDatosPapelLista ficha={leida.ficha} gtfNumber={gtfNumber} nroLista={nroLista} piezas={piezas} />
-            <LothImportarGuiasBloques ficha={leida.ficha} piezas={paraResumen} partes="resumen" />
-          </CtpApartadoPanel>
-        )}
+        <CtpApartadoPanel idBase={idBase} id={pestana} className="flex min-h-0 flex-1 flex-col">
+          {/* `key`: cada pestaña con su lupa y su % recordado. */}
+          <GtfDatosLupa
+            key={pestana}
+            clave={`gtf-datos-lupa:${pestana}`}
+            etiqueta={nombreHoja}
+            extra={
+              <button
+                type="button"
+                onClick={() => setGrande(true)}
+                aria-label="Ver en hoja grande"
+                title="La hoja a pantalla completa, en papel A4"
+                className={`${button({ variant: "secondary" })} max-sm:w-12 max-sm:px-0`}
+              >
+                <Fullscreen className="h-5 w-5" aria-hidden />
+                <span className="max-sm:hidden">Ver en hoja grande</span>
+              </button>
+            }
+          >
+            {hoja}
+          </GtfDatosLupa>
+        </CtpApartadoPanel>
       </div>
+      {grande && (
+        <GtfHojaGrande titulo={nombreHoja} clave={`gtf-datos-lupa:grande:${pestana}`} onClose={() => setGrande(false)}>
+          {hoja}
+        </GtfHojaGrande>
+      )}
     </AdminModal>
   );
 }

@@ -27,6 +27,8 @@ import type { EstadoTrabajo, HojaSalida, TrabajoImpresion } from "./gtf-salida-t
 export interface TrabajoCola extends TrabajoImpresion {
   revisadaEn?: string;
   revisadaPor?: string;
+  /** La forma del talonario elegida al mandarla (16-10). Sin ella, la salida usa la que se elige sola con la guía. */
+  formaId?: string;
 }
 
 /** El celular del monte al que va el WhatsApp (editable desde «Enviar al monte»). */
@@ -103,6 +105,7 @@ export function normalizarAlmacen(v: unknown): AlmacenCola {
       ...opcional("revisadaPor", texto(r.revisadaPor, 120)),
       ...opcional("reimpresion", texto(r.reimpresion, 200)),
       ...opcional("reimpresionDe", texto(r.reimpresionDe, 64)),
+      ...opcional("formaId", texto(r.formaId, 24)),
     });
   }
   return { contacto, trabajos };
@@ -158,6 +161,8 @@ export interface DatosNuevoTrabajo {
   titular: string;
   hojas: readonly HojaSalida[];
   perfilId: string;
+  /** La forma del talonario; sin ella, la que se elige sola con la guía. */
+  formaId?: string;
   /** «Reimprimir en otra hoja» (la hoja se dañó): sin motivo no se gasta otra hoja del talonario. */
   reimprimir?: { motivo: string };
 }
@@ -198,6 +203,9 @@ export function crearTrabajo(alm: AlmacenCola, datos: DatosNuevoTrabajo, firma: 
   const vivo = vivoDeGuia(alm, datos.gtfId);
   if (vivo?.estado === "pendiente") {
     const trabajo: TrabajoCola = { ...vivo, hojas: hojas.length ? hojas : vivo.hojas, perfilId: datos.perfilId, numeroGuia: datos.numeroGuia, titular: datos.titular };
+    /* El reenvío manda la forma de ahora: sin ella, vuelve a la que se elige sola con la guía. */
+    if (datos.formaId) trabajo.formaId = datos.formaId;
+    else delete trabajo.formaId;
     return { ok: true, almacen: reemplazar(alm, trabajo), trabajo, reenviado: true };
   }
   const impresa = impresaDeGuia(alm.trabajos, datos.gtfId);
@@ -214,6 +222,7 @@ export function crearTrabajo(alm: AlmacenCola, datos: DatosNuevoTrabajo, firma: 
     titular: datos.titular,
     hojas: hojas.length ? hojas : ["guia"],
     perfilId: datos.perfilId,
+    ...opcional("formaId", datos.formaId),
     estado: "pendiente",
     creadoEn: firma.en,
     creadoPor: firma.por,
@@ -357,8 +366,10 @@ export function enlaceCola(origen: string, trabajoId: string): string {
 }
 
 /** La ruta de la salida (carril salida, ver `gtf-salida-tipos.ts`). */
-export function rutaSalida(o: { gtfId: string; formato: "pdf" | "escp"; perfilId: string; hoja: HojaSalida; prueba?: boolean }): string {
+export function rutaSalida(o: { gtfId: string; formato: "pdf" | "escp"; perfilId: string; hoja: HojaSalida; prueba?: boolean; formaId?: string | null }): string {
   const q = new URLSearchParams({ gtfId: o.gtfId, formato: o.formato, perfil: o.perfilId, hoja: o.hoja });
+  /* La forma del talonario elegida al mandarla; sin ella, el servidor usa la de la guía. */
+  if (o.formaId) q.set("forma", o.formaId);
   /* La hoja de prueba (cruces a 10 mm del borde, sin valores) para calibrar esa impresora. */
   if (o.prueba) q.set("prueba", "1");
   return `/api/admin/forestal/loth/gtf-matricial/salida?${q.toString()}`;

@@ -9,9 +9,12 @@
  * SERFOR»). Una guía anotada a mano necesita la carátula del libro para su
  * identidad (casilleros 6 y 7): se pide sólo en ese caso.
  *
- * Una disposición POR TITULAR (15-10): el servidor la elige con el titular de
- * la guía (`?gtf=`), y guarda en el de esa guía. `info` dice de quién es la
- * que se ve y si todavía es la copia de la empresa.
+ * Las «formas» del talonario (16-10): cada encaje con su nombre y la referencia
+ * del permiso y titular para el que se calibró. El servidor elige sola la de
+ * la guía (`?gtf=`); `cargar(formaId)` abre otra a mano. «Guardar» guarda en
+ * la que se ve (`info.forma`); si el dueño todavía no tiene la suya, el primer
+ * Guardar la crea con el nombre «<permiso> · <titular>» y desde ahí es ésa.
+ * Las acciones de la lista (nueva, renombrar, borrar): `use-gtf-matricial-formas`.
  *
  * Todo cambio de la hoja pasa por `editar`, que guarda el paso anterior para
  * deshacer (uno por hoja, hasta `HISTORIAL_MAX`). Los cambios con la misma
@@ -31,25 +34,19 @@ import {
   type TablaPos,
 } from "@/lib/forestal/gtf-matricial-disposicion";
 import { deshacer as deshacerH, empujar, historialVacio, rehacer as rehacerH, type Historial } from "@/lib/forestal/gtf-matricial-edicion";
-import type { OrigenDisposicion, ResumenTitular } from "@/lib/forestal/gtf-matricial-titulares";
+import type { FormaResuelta, ResumenForma } from "@/lib/forestal/gtf-matricial-formas";
 import { entradasDeLaGuia, paginasDe, type PaginaTalonario } from "@/lib/forestal/gtf-matricial-valores";
 import type { LothGtfCaratula, LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 import type { Gtf } from "../gtf-tabla-columnas";
+import { conForma, ordenarFormas, RUTA_TALONARIO, type InfoTalonario } from "./use-gtf-matricial-formas";
 
-export const RUTA_TALONARIO = "/api/admin/forestal/loth/gtf-matricial";
+export type { InfoTalonario };
+
 const RUTA = RUTA_TALONARIO;
 
-/** De quién es el talonario que se edita (lo decide el servidor con la guía). */
-export interface InfoTalonario {
-  origen: OrigenDisposicion;
-  /** null = guía sin titular: se edita la de la empresa. */
-  titular: { clave: string; nombre: string } | null;
-  titulares: ResumenTitular[];
-  hayEmpresa: boolean;
-}
-
-interface RespuestaGet extends Partial<InfoTalonario> {
+interface RespuestaGet extends Partial<Omit<FormaResuelta, "disposicion">> {
   disposicion?: DisposicionTalonario;
+  formas?: ResumenForma[];
   message?: string;
   error?: string;
 }
@@ -86,24 +83,79 @@ export function useGtfMatricial(g: Gtf) {
   const [pagina, setPagina] = useState(0);
   const [caratula, setCaratula] = useState<LothGtfCaratula | null>(null);
   const [info, setInfo] = useState<InfoTalonario | null>(null);
+  const [cargando, setCargando] = useState(true);
+  /* Sólo vale la respuesta del último pedido: elegir dos formas seguidas no deja la primera encima. */
+  const pedido = useRef(0);
   const necesitaCaratula = !g.gtfDatos;
 
-  useEffect(() => {
-    let vivo = true;
-    fetch(`${RUTA}?gtf=${encodeURIComponent(g.id)}`, { credentials: "include" })
-      .then(async (r) => {
+  /** Pone una forma entera como la que se ve: guardada, sin pasos para deshacer (eran de otra forma). */
+  const reiniciar = useCallback(
+    (d: DisposicionTalonario) => {
+      historial.current = { guia: historialVacio(), lista: historialVacio() };
+      ultimo.current = { clave: null, t: 0 };
+      setDisp(d);
+      setGuardado({ guia: foto(d.guia), lista: foto(d.lista) });
+      setPasos((n) => n + 1);
+    },
+    [setDisp],
+  );
+
+  /** Abre la forma de la guía (la elige el servidor) o, con `formaId`, otra elegida a mano. */
+  const cargar = useCallback(
+    async (formaId?: string | null): Promise<boolean> => {
+      const n = ++pedido.current;
+      setCargando(true);
+      try {
+        const q = new URLSearchParams({ gtf: g.id });
+        if (formaId) q.set("forma", formaId);
+        const r = await fetch(`${RUTA}?${q.toString()}`, { credentials: "include" });
         const j = await leerJson<RespuestaGet>(r);
-        if (!r.ok || !j?.disposicion) throw new Error(j?.message ?? j?.error ?? `No se pudo leer la disposición (${r.status})`);
-        if (!vivo) return;
-        setDisp(j.disposicion);
-        setGuardado({ guia: foto(j.disposicion.guia), lista: foto(j.disposicion.lista) });
-        setInfo({ origen: j.origen ?? "fabrica", titular: j.titular ?? null, titulares: j.titulares ?? [], hayEmpresa: !!j.hayEmpresa });
-      })
-      .catch((err) => vivo && setError(err instanceof Error ? err.message : String(err)));
+        if (!r.ok || !j?.disposicion) throw new Error(j?.message ?? j?.error ?? `No se pudo leer el talonario (${r.status})`);
+        if (n !== pedido.current) return false;
+        reiniciar(j.disposicion);
+        setInfo({
+          titular: j.titular ?? null,
+          forma: j.forma ?? null,
+          coincide: j.coincide ?? null,
+          nueva: j.nueva ?? null,
+          origen: j.origen ?? "fabrica",
+          formas: j.formas ?? [],
+        });
+        setError(null);
+        return true;
+      } catch (err) {
+        if (n === pedido.current) setError(err instanceof Error ? err.message : String(err));
+        return false;
+      } finally {
+        if (n === pedido.current) setCargando(false);
+      }
+    },
+    [g.id, reiniciar],
+  );
+
+  useEffect(() => {
+    void cargar();
     return () => {
-      vivo = false;
+      pedido.current++;
     };
-  }, [g.id, setDisp]);
+  }, [cargar]);
+
+  /** Otra forma pasa a ser la que se ve (la recién creada como copia): ya guardada. */
+  const adoptar = useCallback(
+    (forma: ResumenForma, d: DisposicionTalonario) => {
+      pedido.current++;
+      reiniciar(d);
+      setInfo((i) => (i ? conForma(i, forma) : i));
+    },
+    [reiniciar],
+  );
+
+  /** Un nombre nuevo (renombrar): sólo la lista y el encabezado. */
+  const renombrada = useCallback((forma: ResumenForma) => {
+    setInfo((i) =>
+      i ? { ...i, forma: i.forma?.id === forma.id ? forma : i.forma, formas: ordenarFormas(i.formas.map((x) => (x.id === forma.id ? forma : x))) } : i,
+    );
+  }, []);
 
   useEffect(() => {
     if (!necesitaCaratula) return;
@@ -119,6 +171,8 @@ export function useGtfMatricial(g: Gtf) {
   const paginaActual = Math.min(pagina, Math.max(0, paginas.length - 1));
 
   const sucio = !!disp && (foto(disp.guia) !== guardado.guia || foto(disp.lista) !== guardado.lista);
+  /** La forma que se imprime y donde guarda «Guardar». null = todavía no tiene la suya. */
+  const formaActual = info?.forma?.id ?? null;
 
   /** Cambia la hoja abierta y guarda el paso anterior para deshacer. */
   const editar = useCallback(
@@ -191,7 +245,7 @@ export function useGtfMatricial(g: Gtf) {
     [editar, formato],
   );
 
-  /** Pone las dos hojas de otro talonario («Copiar de otro titular»). Queda sin guardar y se deshace hoja por hoja. */
+  /** Pone las dos hojas de otra forma («Copiar de otra forma»). Queda sin guardar y se deshace hoja por hoja. */
   const reemplazarTodo = useCallback(
     (otra: DisposicionTalonario) => {
       const d = dispRef.current;
@@ -213,6 +267,8 @@ export function useGtfMatricial(g: Gtf) {
     if (pendientes.length === 0) return true;
     setGuardando(true);
     setError(null);
+    /* La que se ve; sin ella, la primera hoja crea la del dueño y la segunda va a ÉSA. */
+    let formaId = formaActual;
     try {
       for (const f of pendientes) {
         const enviado = foto(disp[f]);
@@ -220,26 +276,19 @@ export function useGtfMatricial(g: Gtf) {
           method: "PUT",
           credentials: "include",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ gtfId: g.id, formato: f, hoja: disp[f] }),
+          body: JSON.stringify({ gtfId: g.id, formato: f, hoja: disp[f], ...(formaId && { formaId }) }),
         });
-        const j = await leerJson<{ disposicion?: DisposicionTalonario; message?: string; error?: string }>(r);
-        if (!r.ok || !j?.disposicion) throw new Error(j?.message ?? j?.error ?? `No se pudo guardar (${r.status})`);
+        const j = await leerJson<{ disposicion?: DisposicionTalonario; forma?: ResumenForma; message?: string; error?: string }>(r);
+        if (!r.ok || !j?.disposicion || !j.forma) throw new Error(j?.message ?? j?.error ?? `No se pudo guardar (${r.status})`);
         const servidor = j.disposicion;
+        const forma = j.forma;
+        formaId = forma.id;
+        setInfo((i) => (i ? conForma(i, forma) : i));
         setGuardado((prev) => ({ ...prev, [f]: foto(servidor[f]) }));
         /* Lo que se movió MIENTRAS se guardaba se queda (y sigue «sin guardar»): sólo se adopta la del servidor si nada cambió. */
         const d = dispRef.current;
         if (d) setDisp({ ...d, ...(foto(d[f]) === enviado && { [f]: servidor[f] }), actualizado: servidor.actualizado });
       }
-      /* Desde ahora el titular tiene SU talonario (ya no es la copia de la empresa). */
-      setInfo((i) => {
-        if (!i) return i;
-        const t = i.titular;
-        if (!t) return { ...i, origen: "empresa", hayEmpresa: true };
-        const titulares = i.titulares.some((x) => x.clave === t.clave)
-          ? i.titulares
-          : [...i.titulares, { clave: t.clave, nombre: t.nombre, actualizado: new Date().toISOString() }];
-        return { ...i, origen: "titular", titulares };
-      });
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -247,7 +296,7 @@ export function useGtfMatricial(g: Gtf) {
     } finally {
       setGuardando(false);
     }
-  }, [disp, g.id, guardado, setDisp]);
+  }, [disp, formaActual, g.id, guardado, setDisp]);
 
   const elegirFormato = useCallback((f: FormatoTalonario) => {
     setFormato(f);
@@ -258,6 +307,7 @@ export function useGtfMatricial(g: Gtf) {
     disp, hoja, formato, elegirFormato, entradas, paginas, pagina: paginaActual, setPagina,
     sucio, guardando, error, guardar, restaurar, cambiarHoja, cambiarCampo, cambiarTabla, cambiarColumna,
     editar, deshacer, rehacer, puedeDeshacer, puedeRehacer, info, reemplazarTodo,
+    gtfId: g.id, formaId: formaActual, cargando, cargar, adoptar, renombrada,
   };
 }
 

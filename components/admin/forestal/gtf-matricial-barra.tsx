@@ -2,7 +2,8 @@
 
 /**
  * La barra de herramientas encima de la hoja del talonario, en UN renglón:
- * qué hoja (guía o lista), la lupa, deshacer, los nombres de los campos y, en
+ * qué hoja (guía o lista), la lupa, deshacer, los nombres de los campos,
+ * «Sólo valores» (la hoja como sale el papel, Brandon 16-10) y, en
  * el «⋯», lo menos usado (igualar ancho y letra, elegir todos, el imán).
  * Alinear y repartir viven con el campo elegido (bloque de la derecha). Cada
  * botón dice qué hace y un ejemplo al pasar el mouse; el ⓘ junta los atajos.
@@ -12,7 +13,7 @@
  */
 
 import { useEffect } from "react";
-import { ArrowLeftRight, Fullscreen, Magnet, Redo2, Rows3, Tags, Type, Undo2, X, ZoomIn, ZoomOut } from "@buleje/design-system/icons";
+import { ArrowLeftRight, Fullscreen, Magnet, Redo2, Rows3, ScanText, Tags, Type, Undo2, X, ZoomIn, ZoomOut } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { PASOS_IMAN } from "@/lib/forestal/gtf-matricial-edicion";
@@ -56,7 +57,15 @@ function QueHoja({ t }: { t: EstadoGtfMatricial }) {
   );
 }
 
-export default function BarraTalonario({ t, s, z, p }: { t: EstadoGtfMatricial; s: SeleccionTalonario; z: ZoomTalonario; p: PanelesTalonario }) {
+/** «Sólo valores»: vive con el fondo (`useFondoTalonario`), recordado por hoja. */
+export interface VistaSoloValores {
+  soloValores: boolean;
+  alternar: () => void;
+}
+
+export default function BarraTalonario({
+  t, s, z, p, v,
+}: { t: EstadoGtfMatricial; s: SeleccionTalonario; z: ZoomTalonario; p: PanelesTalonario; v: VistaSoloValores }) {
   const n = s.elegidos.length;
   const { deshacer, rehacer } = t;
 
@@ -119,7 +128,15 @@ export default function BarraTalonario({ t, s, z, p }: { t: EstadoGtfMatricial; 
         label="Ver nombres de los campos"
         ayuda="El nombre de cada campo encima de su valor, sólo en pantalla: nunca se imprime. Con el formato impreso, al pasar el mouse."
         onClick={p.alternarNombres}
-        activo={p.nombres}
+        activo={p.nombres && !v.soloValores}
+        disabled={v.soloValores}
+      />
+      <Boton
+        icon={ScanText}
+        label="Sólo valores"
+        ayuda="La hoja como sale de la matricial: sólo los valores, sin el formato dibujado, la foto, la cuadrícula, los casilleros vacíos ni los nombres. Otro clic y vuelve todo."
+        onClick={v.alternar}
+        activo={v.soloValores}
       />
       <ActionMenu label="Más herramientas" title="Más herramientas" actions={mas} soloIcono size="md" className="w-12!" />
       <span className="ml-auto flex shrink-0 items-center px-1">

@@ -56,6 +56,10 @@ export interface CampoPos {
   letraPt: number;
   alinea: Alineacion;
   visible: boolean;
+  /** Partir el valor en varios renglones. Falta = `false`: una sola línea (Brandon 16-10: «en línea recta por defecto»). */
+  varias?: boolean;
+  /** Achicar la letra de ESE valor si no entra en su ancho (`encajarValor`). Falta = `true`. */
+  encajar?: boolean;
 }
 
 export interface ColumnaPos {
@@ -63,6 +67,8 @@ export interface ColumnaPos {
   anchoMm: number;
   alinea: Alineacion;
   visible: boolean;
+  /** Achicar la letra de cada celda que no entra (`encajarValor`). Falta = `true`. Las celdas nunca parten renglón. */
+  encajar?: boolean;
 }
 
 export interface TablaPos {
@@ -314,8 +320,11 @@ const POS = mm(POS_MIN_MM, POS_MAX_MM);
 const ANCHO = mm(1, 1000);
 const LETRA = mm(5, 24);
 
-export const campoPosSchema = z.object({ x: POS, y: POS, anchoMm: ANCHO, letraPt: LETRA, alinea: alineaSchema, visible: z.boolean() });
-export const columnaPosSchema = z.object({ x: POS, anchoMm: ANCHO, alinea: alineaSchema, visible: z.boolean() });
+/* `varias` y `encajar` opcionales: lo guardado antes del 16-10 no los trae y queda con los defectos (una línea + encajar). */
+export const campoPosSchema = z.object({
+  x: POS, y: POS, anchoMm: ANCHO, letraPt: LETRA, alinea: alineaSchema, visible: z.boolean(), varias: z.boolean().optional(), encajar: z.boolean().optional(),
+});
+export const columnaPosSchema = z.object({ x: POS, anchoMm: ANCHO, alinea: alineaSchema, visible: z.boolean(), encajar: z.boolean().optional() });
 const MAX_CLAVES = 120;
 const claves = <T extends z.ZodTypeAny>(v: T) =>
   z.record(z.string().min(1).max(24), v).refine((r) => Object.keys(r).length <= MAX_CLAVES, "Demasiados campos");

@@ -21,16 +21,24 @@
  * «Formato impreso» (prendido de entrada, 16-10) dibuja debajo el talonario
  * de la imprenta con los datos de ESTA guía (`gtf-matricial-plantilla`): con
  * él, el contorno punteado y el nombre de cada campo sobran (el rótulo impreso
- * ya lo dice) y sólo aparecen al pasar el mouse o al elegirlo. Lo que no entra en su renglón sigue en amarillo, y
- * debajo de la hoja una línea dice cuántos son y cómo se arregla.
+ * ya lo dice) y sólo aparecen al pasar el mouse o al elegirlo.
+ *
+ * Cada valor va en un renglón y, si no entra, con la letra achicada lo justo
+ * (`encajarValor`, la misma cuenta del papel, Brandon 16-10); lo que ni a la
+ * letra más chica entra sigue en amarillo, y debajo de la hoja una línea dice
+ * cuántos son, cuántos salen achicados y cómo se arregla.
+ *
+ * «Sólo valores» (la barra): la hoja como sale de la matricial — sin el
+ * formato dibujado, la foto, la cuadrícula, los vacíos, contornos ni nombres.
  */
 
 import { useMemo } from "react";
 import { CATALOGO } from "@/lib/forestal/gtf-matricial-disposicion";
 import { claveElemento, INTERLINEA, ptAMm } from "@/lib/forestal/gtf-matricial-edicion";
 import { nombreCorto } from "@/lib/forestal/gtf-matricial-nombres";
-import { camposQueNoEntran, encabezadoDelTalonario, type NoEntra } from "@/lib/forestal/gtf-matricial-pantalla";
+import { encabezadoDelTalonario, revisarEncaje, type RevisionEncaje } from "@/lib/forestal/gtf-matricial-pantalla";
 import { alineaCss } from "@/lib/forestal/gtf-matricial-print";
+import { encajarValor } from "@/lib/forestal/gtf-salida-geometria";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
 import type { SeleccionTalonario } from "./hooks/use-gtf-matricial-seleccion";
 import { AIRE_LIENZO, type ZoomTalonario } from "./hooks/use-gtf-matricial-zoom";
@@ -44,6 +52,8 @@ export interface FondoHoja {
   cuadricula: boolean;
   /** El talonario de la imprenta dibujado debajo de los valores (sólo pantalla). */
   impreso: boolean;
+  /** «Sólo valores»: la hoja como el papel, sin nada de lo que es sólo de pantalla. */
+  soloValores: boolean;
 }
 
 const MONO = '"Courier New", Courier, monospace';
@@ -52,8 +62,8 @@ export default function HojaTalonario({
   t, s, z, fondo, nombres,
 }: { t: EstadoGtfMatricial; s: SeleccionTalonario; z: ZoomTalonario; fondo: FondoHoja; nombres: boolean }) {
   const { hoja, formato, paginas, pagina } = t;
-  const noEntran = useMemo(
-    () => (hoja ? camposQueNoEntran(hoja, CATALOGO[formato], paginas[pagina]) : []),
+  const revision = useMemo(
+    () => (hoja ? revisarEncaje(hoja, CATALOGO[formato], paginas[pagina]) : { noEntran: [], achicados: [] }),
     [hoja, formato, paginas, pagina],
   );
   return (
@@ -64,24 +74,25 @@ export default function HojaTalonario({
       className="relative h-[min(62dvh,34rem)] min-w-0 overflow-auto overscroll-contain rounded-xl bg-[var(--surface-sunken)] lg:h-auto lg:min-h-0 lg:flex-1"
       style={{ padding: AIRE_LIENZO }}
     >
-      {t.hoja ? <Lienzo t={t} s={s} escala={z.escala} fondo={fondo} nombres={nombres} noEntran={noEntran} /> : <div className="min-h-64" />}
+      {t.hoja ? <Lienzo t={t} s={s} escala={z.escala} fondo={fondo} nombres={nombres} revision={revision} /> : <div className="min-h-64" />}
     </div>
-    <AvisoNoEntran lista={noEntran} onElegir={(claves) => claves.forEach((k, i) => s.elegir(k, i > 0))} />
+    <AvisoNoEntran lista={revision.noEntran} achicados={revision.achicados} onElegir={(claves) => claves.forEach((k, i) => s.elegir(k, i > 0))} />
     </>
   );
 }
 
 function Lienzo({
-  t, s, escala, fondo, nombres, noEntran,
-}: { t: EstadoGtfMatricial; s: SeleccionTalonario; escala: number; fondo: FondoHoja; nombres: boolean; noEntran: NoEntra[] }) {
+  t, s, escala, fondo, nombres, revision,
+}: { t: EstadoGtfMatricial; s: SeleccionTalonario; escala: number; fondo: FondoHoja; nombres: boolean; revision: RevisionEncaje }) {
   const hoja = t.hoja;
   const pagina = t.paginas[t.pagina] ?? { campos: {}, filas: [] };
   const titular = t.info?.titular?.nombre;
   const encabezado = useMemo(() => encabezadoDelTalonario(t.formato, t.entradas, t.paginas[t.pagina], titular), [t.formato, t.entradas, t.paginas, t.pagina, titular]);
   if (!hoja) return null;
   const cat = CATALOGO[t.formato];
-  const amarillos = new Set(noEntran.map((n) => n.clave));
-  const impreso = fondo.impreso;
+  const amarillos = new Set(revision.noEntran.map((n) => n.clave));
+  const solo = fondo.soloValores;
+  const impreso = fondo.impreso && !solo;
   const tabla = hoja.tabla;
   const cols = cat.columnas.filter((c) => tabla.columnas[c.id]?.visible);
   const izq = Math.min(...cols.map((c) => tabla.columnas[c.id].x));
@@ -89,12 +100,13 @@ function Lienzo({
   const letraTabla = ptAMm(tabla.letraPt) * escala;
   const ref = s.elegidos[0];
   const props = (k: string, tipo: "campo" | "columna", id: string) => ({
-    nombre: nombres ? nombreCorto(t.formato, tipo, id) : null,
+    nombre: nombres && !solo ? nombreCorto(t.formato, tipo, id) : null,
     escala,
     seleccionado: s.elegidos.includes(k),
     referencia: ref === k,
     noEntra: amarillos.has(k),
     discreto: impreso,
+    soloValores: solo,
     onPresionar: (e: React.PointerEvent) => s.presionarElemento(e, k, escala),
     onFocoTeclado: () => !s.elegidos.includes(k) && s.elegir(k),
     onFlecha: s.moverConFlechas,
@@ -109,7 +121,7 @@ function Lienzo({
       style={{
         width: hoja.anchoMm * escala,
         height: hoja.altoMm * escala,
-        ...(fondo.cuadricula
+        ...(fondo.cuadricula && !solo
           ? {
               backgroundImage:
                 "linear-gradient(to right, var(--rule-soft) 1px, transparent 1px), linear-gradient(to bottom, var(--rule-soft) 1px, transparent 1px)",
@@ -118,7 +130,7 @@ function Lienzo({
           : {}),
       }}
     >
-      {fondo.src && (
+      {fondo.src && !solo && (
         // eslint-disable-next-line @next/next/no-img-element -- data: URL local, sólo para alinear a ojo
         <img
           src={fondo.src}
@@ -132,7 +144,7 @@ function Lienzo({
       {impreso && <PlantillaTalonario formato={t.formato} encabezado={encabezado} anchoMm={hoja.anchoMm} altoMm={hoja.altoMm} />}
 
       {/* Hasta dónde llegan las filas: con el formato dibujado ya se ve la tabla, sólo cuando se acomoda una columna. */}
-      {cols.length > 0 && (!impreso || cols.some((c) => s.elegidos.includes(claveElemento({ tipo: "columna", id: c.id })))) && (
+      {cols.length > 0 && !solo && (!impreso || cols.some((c) => s.elegidos.includes(claveElemento({ tipo: "columna", id: c.id })))) && (
         <div
           aria-hidden
           className="pointer-events-none absolute rounded-[2px] border border-dashed border-[var(--rule-strong)]"
@@ -144,8 +156,9 @@ function Lienzo({
       {pagina.filas.slice(1, tabla.maxFilas).map((fila, i) =>
         cols.map((c) => {
           const pos = tabla.columnas[c.id];
-          const valor = fila[c.id] ?? "";
+          const valor = (fila[c.id] ?? "").trim();
           if (!valor) return null;
+          const e = encajarValor(valor, pos.anchoMm, tabla.letraPt, { encajar: pos.encajar });
           return (
             <span
               key={`${i}-${c.id}`}
@@ -162,7 +175,8 @@ function Lienzo({
                 fontWeight: 700,
               }}
             >
-              {valor}
+              {/* Achicada en un span: el renglón lo da la letra de la tabla y la base no se mueve. */}
+              {e.achicado ? <span style={{ fontSize: ptAMm(e.letraPt) * escala }}>{e.lineas[0]}</span> : e.lineas[0]}
             </span>
           );
         }),
@@ -171,17 +185,18 @@ function Lienzo({
       {cols.map((c) => {
         const pos = tabla.columnas[c.id];
         const k = claveElemento({ tipo: "columna", id: c.id });
+        const texto = (pagina.filas[0]?.[c.id] ?? "").trim();
         return (
           <CampoTalonario
             key={k}
             etiqueta={c.label}
-            texto={pagina.filas[0]?.[c.id] ?? ""}
+            texto={texto}
             x={pos.x}
             y={tabla.y}
             anchoMm={pos.anchoMm}
             letraPt={tabla.letraPt}
             alinea={pos.alinea}
-            unaLinea
+            letraValorPt={encajarValor(texto, pos.anchoMm, tabla.letraPt, { encajar: pos.encajar }).letraPt}
             {...props(k, "columna", c.id)}
           />
         );
@@ -191,16 +206,19 @@ function Lienzo({
         const pos = hoja.campos[c.id];
         if (!pos?.visible) return null;
         const k = claveElemento({ tipo: "campo", id: c.id });
+        const texto = (pagina.campos[c.id] ?? "").trim();
         return (
           <CampoTalonario
             key={k}
             etiqueta={c.label}
-            texto={pagina.campos[c.id] ?? ""}
+            texto={texto}
             x={pos.x}
             y={pos.y}
             anchoMm={pos.anchoMm}
             letraPt={pos.letraPt}
             alinea={pos.alinea}
+            varias={pos.varias}
+            letraValorPt={encajarValor(texto, pos.anchoMm, pos.letraPt, pos).letraPt}
             {...props(k, "campo", c.id)}
           />
         );

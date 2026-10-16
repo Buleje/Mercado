@@ -10,6 +10,9 @@
  * (el talonario de la imprenta dibujado debajo, 16-10). Con el formato
  * prendido la cuadrícula arranca apagada: los renglones ya dicen dónde va cada
  * valor. Lo guardado antes de que existiera el formato lo trae prendido.
+ *
+ * Y «Sólo valores» (16-10): la hoja como sale el papel, sin nada de lo que es
+ * sólo de pantalla. Arranca apagado.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -24,9 +27,10 @@ interface Guardado {
   opacidad: number;
   cuadricula: boolean;
   impreso: boolean;
+  soloValores: boolean;
 }
 
-const VACIO: Guardado = { src: null, opacidad: 0.5, cuadricula: false, impreso: true };
+const VACIO: Guardado = { src: null, opacidad: 0.5, cuadricula: false, impreso: true, soloValores: false };
 
 function leer(f: FormatoTalonario): Guardado {
   try {
@@ -40,6 +44,7 @@ function leer(f: FormatoTalonario): Guardado {
       /* Guardado sin el formato (antes del 16-10): el formato llega prendido, y con él la cuadrícula se apaga. */
       cuadricula: typeof j.cuadricula === "boolean" && typeof j.impreso === "boolean" ? j.cuadricula : VACIO.cuadricula,
       impreso,
+      soloValores: typeof j.soloValores === "boolean" ? j.soloValores : VACIO.soloValores,
     };
   } catch {
     return VACIO;
@@ -107,5 +112,6 @@ export function useFondoTalonario(formato: FormatoTalonario) {
     setOpacidad: (opacidad: number) => guardar({ ...fondo, opacidad }),
     setCuadricula: (cuadricula: boolean) => guardar({ ...fondo, cuadricula }),
     setImpreso: (impreso: boolean) => guardar({ ...fondo, impreso }),
+    alternarSoloValores: () => guardar({ ...fondo, soloValores: !fondo.soloValores }),
   };
 }

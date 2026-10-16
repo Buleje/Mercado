@@ -5,13 +5,13 @@
  * alineación, si se imprime, y con varios elegidos alinear y repartir (antes
  * en la barra: se mudaron acá para que la barra entre en un renglón y la hoja
  * gane alto). Con varios elegidos, lo que se cambia acá vale para todos.
+ * Cómo entra el valor en su renglón (encajar / partir): `gtf-matricial-renglon`.
  *
  * La lista de todos los campos vive en el bloque de la izquierda
  * (`gtf-matricial-campos.tsx`).
  */
 
 import {
-  AlertTriangle,
   AlignCenterHorizontal,
   AlignCenterVertical,
   AlignEndHorizontal,
@@ -25,11 +25,12 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { CATALOGO, entraEnUnaLinea, type Alineacion, type DisposicionHoja } from "@/lib/forestal/gtf-matricial-disposicion";
+import { CATALOGO, type Alineacion, type DisposicionHoja } from "@/lib/forestal/gtf-matricial-disposicion";
 import { elementoDeClave, type ModoAlinear } from "@/lib/forestal/gtf-matricial-edicion";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
 import type { SeleccionTalonario } from "./hooks/use-gtf-matricial-seleccion";
 import { BotonIcono, Casilla, NumeroMm, Opciones } from "./gtf-matricial-controles";
+import { EncajeDelValor, OpcionesRenglon } from "./gtf-matricial-renglon";
 
 const ALINEAS: ReadonlyArray<{ value: Alineacion; label: string; title: string }> = [
   { value: "izq", label: "Izq.", title: "Texto a la izquierda" },
@@ -65,8 +66,10 @@ function SumarFilaColumna({ s }: { s: SeleccionTalonario }) {
   );
 }
 
-/** Lo mismo a todos los elegidos: campos y columnas (la letra de una columna es la de su tabla). */
-function aTodos(h: DisposicionHoja, claves: readonly string[], p: { anchoMm?: number; letraPt?: number; alinea?: Alineacion; visible?: boolean }): DisposicionHoja {
+type Comun = { anchoMm?: number; letraPt?: number; alinea?: Alineacion; visible?: boolean; encajar?: boolean; varias?: boolean };
+
+/** Lo mismo a todos los elegidos: campos y columnas (la letra de una columna es la de su tabla; una celda es siempre un renglón). */
+function aTodos(h: DisposicionHoja, claves: readonly string[], p: Comun): DisposicionHoja {
   const campos = { ...h.campos };
   const columnas = { ...h.tabla.columnas };
   let letraTabla = h.tabla.letraPt;
@@ -75,6 +78,7 @@ function aTodos(h: DisposicionHoja, claves: readonly string[], p: { anchoMm?: nu
     if (e.tipo === "campo" && campos[e.id]) campos[e.id] = { ...campos[e.id], ...p };
     if (e.tipo === "columna" && columnas[e.id]) {
       const { letraPt, ...resto } = p;
+      delete resto.varias;
       columnas[e.id] = { ...columnas[e.id], ...resto };
       if (letraPt != null) letraTabla = letraPt;
     }
@@ -90,6 +94,8 @@ function GrupoElegido({ t, s }: { t: EstadoGtfMatricial; s: SeleccionTalonario }
   if (!pos) return null;
   const n = s.elegidos.length;
   const letra = ref.tipo === "campo" ? hoja.campos[ref.id].letraPt : hoja.tabla.letraPt;
+  const hayCampos = s.elegidos.some((k) => elementoDeClave(k).tipo === "campo");
+  const varias = ref.tipo === "campo" && !!hoja.campos[ref.id].varias;
   /* Una clave por dato: las flechas del número seguidas son un solo paso de deshacer. */
   const fijar = (p: Parameters<typeof aTodos>[2]) => t.editar((h) => aTodos(h, s.elegidos, p), `panel:${Object.keys(p).join(",")}`);
   return (
@@ -109,6 +115,13 @@ function GrupoElegido({ t, s }: { t: EstadoGtfMatricial; s: SeleccionTalonario }
       </div>
       <Opciones label="Texto" value={pos.alinea} opciones={ALINEAS} onChange={(alinea) => fijar({ alinea })} />
       <Casilla label="Se imprimen" checked={pos.visible} onChange={(visible) => fijar({ visible })} />
+      {/* De fábrica = la clave ausente: así lo guardado antes de esto y lo de ahora comparan igual. */}
+      <OpcionesRenglon
+        encajar={pos.encajar !== false}
+        varias={varias}
+        onEncajar={(v) => fijar({ encajar: v ? undefined : false })}
+        onVarias={hayCampos ? (v) => fijar({ varias: v ? true : undefined }) : undefined}
+      />
     </div>
   );
 }
@@ -120,6 +133,11 @@ function ColumnaElegida({ t, s, id }: { t: EstadoGtfMatricial; s: SeleccionTalon
   const pos = hoja?.tabla.columnas[id];
   if (!hoja || !def || !pos) return null;
   const tabla = hoja.tabla;
+  /* El más largo de la columna en esta hoja: si ése entra, entran todos. */
+  const largo = (t.paginas[t.pagina]?.filas ?? [])
+    .slice(0, tabla.maxFilas)
+    .map((f) => (f[id] ?? "").trim())
+    .reduce((a, b) => (b.length > a.length ? b : a), "");
   return (
     <div className={CAJA}>
       <div className="flex items-center gap-1">
@@ -134,6 +152,16 @@ function ColumnaElegida({ t, s, id }: { t: EstadoGtfMatricial; s: SeleccionTalon
       </div>
       <Opciones label="Texto" value={pos.alinea} opciones={ALINEAS} onChange={(alinea) => t.cambiarColumna(id, { alinea })} />
       <Casilla label="Se imprime" checked={pos.visible} onChange={(visible) => t.cambiarColumna(id, { visible })} />
+      <OpcionesRenglon encajar={pos.encajar !== false} onEncajar={(v) => t.cambiarColumna(id, { encajar: v ? undefined : false })} />
+      <EncajeDelValor
+        texto={largo}
+        x={pos.x}
+        anchoMm={pos.anchoMm}
+        letraPt={tabla.letraPt}
+        alinea={pos.alinea}
+        modo={{ encajar: pos.encajar }}
+        onEnsanchar={(p) => t.cambiarColumna(id, p)}
+      />
       <span className={`${SUBTITULO} border-t border-[var(--rule-base)] pt-2`}>Toda la tabla</span>
       <div className="grid grid-cols-2 gap-2">
         <NumeroMm label="Y 1.ª fila" value={tabla.y} onChange={(y) => t.cambiarTabla({ y })} />
@@ -171,8 +199,7 @@ export default function PanelTalonario({ t, s }: { t: EstadoGtfMatricial; s: Sel
   const pos = hoja.campos[sel.id];
   if (!def || !pos) return null;
   const id = def.id;
-  const valor = t.paginas[t.pagina]?.campos[id] ?? "";
-  const noEntra = !!valor && !entraEnUnaLinea(valor, pos.anchoMm, pos.letraPt);
+  const valor = (t.paginas[t.pagina]?.campos[id] ?? "").trim();
   return (
     <div className={CAJA}>
       <div className="flex items-center gap-1">
@@ -184,13 +211,15 @@ export default function PanelTalonario({ t, s }: { t: EstadoGtfMatricial; s: Sel
       <span className="line-clamp-2 break-words font-mono text-sm text-[var(--text-secondary)]" title={valor || undefined}>
         {valor || "Vacío en esta guía: no se imprime."}
       </span>
-      {noEntra && (
-        <span className="flex items-start gap-1.5 text-sm font-semibold text-[var(--data-warning-ink)]">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          No entra en un renglón.
-          <InfoTip title="No entra en un renglón" what="El valor es más largo que el ancho máximo del campo." affects="Ensancha el campo o baja la letra." />
-        </span>
-      )}
+      <EncajeDelValor
+        texto={valor}
+        x={pos.x}
+        anchoMm={pos.anchoMm}
+        letraPt={pos.letraPt}
+        alinea={pos.alinea}
+        modo={pos}
+        onEnsanchar={(p) => t.cambiarCampo(id, p)}
+      />
       <div className="grid grid-cols-2 gap-2">
         <NumeroMm label="X" value={pos.x} onChange={(x) => t.cambiarCampo(id, { x })} />
         <NumeroMm label="Y" value={pos.y} onChange={(y) => t.cambiarCampo(id, { y })} />
@@ -199,6 +228,12 @@ export default function PanelTalonario({ t, s }: { t: EstadoGtfMatricial; s: Sel
       </div>
       <Opciones label="Texto" value={pos.alinea} opciones={ALINEAS} onChange={(alinea) => t.cambiarCampo(id, { alinea })} />
       <Casilla label="Se imprime" checked={pos.visible} onChange={(visible) => t.cambiarCampo(id, { visible })} />
+      <OpcionesRenglon
+        encajar={pos.encajar !== false}
+        varias={!!pos.varias}
+        onEncajar={(v) => t.cambiarCampo(id, { encajar: v ? undefined : false })}
+        onVarias={(v) => t.cambiarCampo(id, { varias: v ? true : undefined })}
+      />
     </div>
   );
 }

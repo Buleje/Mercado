@@ -7,6 +7,7 @@ import { ForestGtfMatricialDB } from "@/lib/db/forest-gtf-matricial.db";
 import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
 import { CATALOGO } from "@/lib/forestal/gtf-matricial-disposicion";
+import { formaIdSchema, MENSAJE_ERROR_FORMA } from "@/lib/forestal/gtf-matricial-formas";
 import { MENSAJE_ERROR_PERFIL, transformacionDe } from "@/lib/forestal/gtf-matricial-perfiles";
 import { entradasDeLaGuia, paginasDe } from "@/lib/forestal/gtf-matricial-valores";
 import { escpTalonario, renglonesPruebaEscp, type Agujas } from "@/lib/forestal/gtf-salida-escp";
@@ -30,10 +31,13 @@ import { withApiHandler } from "@/lib/api-handler";
  *   · `prueba=1` → la hoja de prueba con el perfil (para calibrar esa impresora);
  *     `valores=1` le suma encima los valores de la guía.
  *   · `agujas=9|24` (ESC/P): la unidad del avance fino cambia (1/216″ o 1/180″).
+ *   · `forma=<id>` (16-10): imprime con esa forma del talonario; sin ella, con
+ *     la que se elige sola para la guía (permiso + titular). Una forma pedida que
+ *     ya no existe es 404: nunca se cae a otra (gastaría una hoja numerada).
  *   · Header `X-Recortados`: renglones que no entran en el papel/carro.
  *
- * Disposición = la GUARDADA del titular de la guía (la misma que abre el
- * modal); perfil = la calibración guardada de esa impresora. Todo sale del
+ * Disposición = la forma GUARDADA de la guía (la misma que abre el modal);
+ * perfil = la calibración guardada de esa impresora. Todo sale del
  * servidor: el cliente no manda valores ni medidas.
  */
 
@@ -47,6 +51,7 @@ const querySchema = z.object({
   prueba: z.enum(["0", "1"]).default("0"),
   valores: z.enum(["0", "1"]).default("0"),
   agujas: z.enum(["9", "24"]).default("9"),
+  forma: formaIdSchema.optional(),
 });
 
 async function ensureSpec(tenantId: string) {
@@ -67,7 +72,7 @@ export const GET = withApiHandler("forestal-loth-gtf-matricial-salida", async (r
   if (guard) return guard;
 
   const sp = req.nextUrl.searchParams;
-  const q = querySchema.safeParse(Object.fromEntries(["gtfId", "formato", "perfil", "hoja", "prueba", "valores", "agujas"].map((k) => [k, sp.get(k) ?? undefined])));
+  const q = querySchema.safeParse(Object.fromEntries(["gtfId", "formato", "perfil", "hoja", "prueba", "valores", "agujas", "forma"].map((k) => [k, sp.get(k) ?? undefined])));
   if (!q.success) return NextResponse.json({ error: "validation_error", issues: q.error.issues.slice(0, 5) }, { status: 400 });
   const { gtfId, formato, perfil: perfilId, hoja: formatoHoja } = q.data;
   const prueba = q.data.prueba === "1";
@@ -80,7 +85,8 @@ export const GET = withApiHandler("forestal-loth-gtf-matricial-salida", async (r
       return NextResponse.json({ error: "anulada", message: "Esa guía está anulada: no se imprime en el talonario." }, { status: 409 });
     }
     const dueno = { titular: g.titularName ?? null, permiso: g.tituloHabilitante ?? null, planId: g.planId ?? null };
-    const { disposicion, perfil } = await ForestGtfMatricialDB.paraSalida(auth.tenantId, dueno, perfilId);
+    const { disposicion, perfil } = await ForestGtfMatricialDB.paraSalida(auth.tenantId, dueno, perfilId, q.data.forma);
+    if (!disposicion) return NextResponse.json({ error: "forma_no_existe", message: MENSAJE_ERROR_FORMA.no_existe }, { status: 404 });
     if (!perfil) return NextResponse.json({ error: "perfil_no_existe", message: MENSAJE_ERROR_PERFIL["no-existe"] }, { status: 404 });
 
     const hoja = disposicion[formatoHoja];

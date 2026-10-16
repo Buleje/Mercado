@@ -1,5 +1,7 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
+import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
 import type { DisposicionTalonario, FormatoTalonario } from "@/lib/forestal/gtf-matricial-disposicion";
 import {
   agregarPerfil,
@@ -13,22 +15,28 @@ import {
 } from "@/lib/forestal/gtf-matricial-perfiles";
 import type { PerfilImpresora } from "@/lib/forestal/gtf-salida-tipos";
 import {
+  borrarForma,
+  crearForma,
   disposicionDe,
-  guardarHojaEnAlmacen,
-  normalizarAlmacen,
-  resolverDisposicion,
-  resumenTitulares,
-  type AlmacenTalonario,
-  type DisposicionResuelta,
-  type DuenoTalonario,
-  type ResumenTitular,
-} from "@/lib/forestal/gtf-matricial-titulares";
+  formaDe,
+  guardarHoja,
+  renombrarForma,
+  resolverForma,
+  resumen,
+  resumenFormas,
+  type ErrorForma,
+  type FormaResuelta,
+  type ResultadoForma,
+  type ResumenForma,
+} from "@/lib/forestal/gtf-matricial-formas";
+import { normalizarAlmacen, type AlmacenTalonario, type DuenoTalonario } from "@/lib/forestal/gtf-matricial-titulares";
 
 /**
  * ForestGtfMatricialDB — dónde cae cada valor de la guía en el talonario
- * preimpreso de la matricial, por tenant, POR TITULAR (15-10) y por hoja
- * («guía» / «lista»). La identidad del titular y la compatibilidad con lo
- * guardado antes viven en `gtf-matricial-titulares.ts`.
+ * preimpreso de la matricial, por tenant, en «formas» con nombre (16-10: una
+ * por permiso y titular, elegida sola con la guía) y por hoja («guía» /
+ * «lista»). El modelo y lo guardado antes: `gtf-matricial-titulares.ts`; elegir
+ * y cambiar formas: `gtf-matricial-formas.ts`.
  *
  * POR QUÉ KV: es la medida de un papel y una impresora, no un movimiento del
  * libro. Se guarda en un `PlatformSetting` por tenant, como los Anexos 04
@@ -49,24 +57,107 @@ async function leer(tenantId: string): Promise<AlmacenTalonario> {
   return normalizarAlmacen(await PlatformSettingsDB.getFresco<unknown>(claveTalonario(tenantId)));
 }
 
+/** Id corto de una forma nueva («f-» + 10 hex): entra en `ID_FORMA_RE`. */
+const idNuevo = (): string => `f-${randomUUID().replace(/-/g, "").slice(0, 10)}`;
+
+const firma = (user: string) => ({ en: new Date().toISOString(), por: user });
+
+export type ResultadoFormaDB =
+  | { ok: true; disposicion: DisposicionTalonario; forma: ResumenForma; creada: boolean }
+  | { ok: false; error: ErrorForma };
+
+/** Corre el cambio con el bloqueo de la clave y devuelve la forma vista desde el dueño de la guía. */
+async function cambiarFormas(
+  tenantId: string,
+  dueno: DuenoTalonario,
+  cambio: (alm: AlmacenTalonario) => ResultadoForma,
+  user: string,
+): Promise<ResultadoFormaDB> {
+  if (!tenantId) throw new Error("tenantId is required");
+  return PlatformSettingsDB.actualizar<unknown, ResultadoFormaDB>(
+    claveTalonario(tenantId),
+    (actual) => {
+      const r = cambio(normalizarAlmacen(actual));
+      if (!r.ok) return { resultado: r };
+      const f = r.forma;
+      return { valor: r.almacen, resultado: { ok: true, disposicion: { guia: f.guia, lista: f.lista, actualizado: f.actualizado }, forma: resumen(f, dueno), creada: r.creada } };
+    },
+    user,
+    /* Varias PC guardando a la vez: esperar la clave 3 s y, si sigue tomada,
+       `ClaveOcupadaError` (la ruta responde 409), no el 500 del timeout de
+       Prisma (revisión de seguridad 16-10: 5 de 8 escrituras simultáneas). */
+    { esperaMaxMs: 3000, timeout: 8000 },
+  );
+}
+
 export const ForestGtfMatricialDB = {
-  /** La que abre el modal para la guía de este dueño, y los titulares que ya tienen la suya. */
+  /**
+   * El dueño del talonario sale de la guía GUARDADA de este tenant (los mismos
+   * datos con que se numera), nunca del cliente. Sin guía = sin dueño (la de la
+   * empresa). null = la guía no existe en este tenant.
+   */
+  async duenoDeLaGuia(tenantId: string, gtfId: string | null | undefined): Promise<DuenoTalonario | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!gtfId) return { titular: null, permiso: null, planId: null };
+    const g = await ForestGtfDB.getById(tenantId, gtfId);
+    return g ? { titular: g.titularName ?? null, permiso: g.tituloHabilitante ?? null, planId: g.planId ?? null } : null;
+  },
+
+  /**
+   * La que abre el modal para la guía de este dueño (o la elegida a mano,
+   * `formaId`), todas las formas (las del dueño arriba) y las impresoras.
+   * null = `formaId` no existe en este tenant.
+   */
   async paraDueno(
     tenantId: string,
     dueno: DuenoTalonario,
-  ): Promise<DisposicionResuelta & { titulares: ResumenTitular[]; hayEmpresa: boolean; perfiles: PerfilImpresora[] }> {
+    formaId?: string | null,
+  ): Promise<(FormaResuelta & { formas: ResumenForma[]; perfiles: PerfilImpresora[] }) | null> {
     const alm = await leer(tenantId);
-    return { ...resolverDisposicion(alm, dueno), titulares: resumenTitulares(alm), hayEmpresa: !!alm.empresa, perfiles: listaPerfiles(alm.perfiles) };
+    const r = resolverForma(alm, dueno, formaId);
+    return r ? { ...r, formas: resumenFormas(alm, dueno), perfiles: listaPerfiles(alm.perfiles) } : null;
   },
 
-  /** Lo que necesita la salida (PDF / ESC/P) en UNA lectura: la disposición del dueño y la impresora. */
+  /**
+   * Lo que necesita la salida (PDF / ESC/P) en UNA lectura: la forma pedida
+   * (`formaId`) o la del dueño de la guía, y la impresora. `disposicion` null =
+   * la forma pedida ya no existe (nunca se cae a otra: gastaría una hoja numerada).
+   */
   async paraSalida(
     tenantId: string,
     dueno: DuenoTalonario,
     perfilId: string,
-  ): Promise<{ disposicion: DisposicionTalonario; perfil: PerfilImpresora | null }> {
+    formaId?: string | null,
+  ): Promise<{ disposicion: DisposicionTalonario | null; perfil: PerfilImpresora | null }> {
     const alm = await leer(tenantId);
-    return { disposicion: resolverDisposicion(alm, dueno).disposicion, perfil: buscarPerfil(alm.perfiles, perfilId) };
+    return { disposicion: resolverForma(alm, dueno, formaId)?.disposicion ?? null, perfil: buscarPerfil(alm.perfiles, perfilId) };
+  },
+
+  /** ¿Existe esa forma en este tenant? (la cola del monte la guarda con el envío). */
+  async existeForma(tenantId: string, formaId: string): Promise<boolean> {
+    return !!formaDe(await leer(tenantId), formaId);
+  },
+
+  /**
+   * La primera guía por imprimir en el monte que saldría con esa forma: la
+   * mandada con ella o la que la elige sola (su dueño). Borrarla cambiaría en
+   * silencio el encaje de una hoja ya numerada. null = ninguna.
+   */
+  async guiaQueUsaLaForma(
+    tenantId: string,
+    formaId: string,
+    pendientes: readonly { gtfId: string; numeroGuia: string; formaId?: string }[],
+  ): Promise<string | null> {
+    const directa = pendientes.find((t) => t.formaId === formaId);
+    if (directa) return directa.numeroGuia;
+    const sueltas = pendientes.filter((t) => !t.formaId);
+    if (!sueltas.length) return null;
+    const alm = await leer(tenantId);
+    for (const t of sueltas) {
+      const dueno = await this.duenoDeLaGuia(tenantId, t.gtfId);
+      if (dueno && resolverForma(alm, dueno)?.forma?.id === formaId) return t.numeroGuia;
+    }
+    return null;
   },
 
   /** Las impresoras calibradas: Oficina primero. */
@@ -85,7 +176,7 @@ export const ForestGtfMatricialDB = {
       claveTalonario(tenantId),
       (actual) => {
         const alm = normalizarAlmacen(actual);
-        const cuando = { en: new Date().toISOString(), por: user };
+        const cuando = firma(user);
         const r =
           op.tipo === "alta"
             ? agregarPerfil(alm.perfiles, op.datos, cuando)
@@ -98,28 +189,40 @@ export const ForestGtfMatricialDB = {
     );
   },
 
-  /** La de otro titular (`clave`) o la de la empresa («empresa»), para copiarla. */
+  /** Las dos hojas de otra forma (id, «empresa» o la clave de un titular de antes), para copiarlas. */
   async de(tenantId: string, de: string): Promise<DisposicionTalonario | null> {
     return disposicionDe(await leer(tenantId), de);
   },
 
-  /** Guarda UNA hoja del talonario del dueño; la otra queda como estaba. null = tope de titulares. */
+  /** Guarda UNA hoja en la forma elegida (o en la del dueño; si no tiene, la crea con su nombre automático). */
   async guardar(
     tenantId: string,
     dueno: DuenoTalonario,
+    formaId: string | null,
     formato: FormatoTalonario,
     hoja: unknown,
     user = "unknown",
-  ): Promise<DisposicionTalonario | null> {
-    if (!tenantId) throw new Error("tenantId is required");
-    return PlatformSettingsDB.actualizar<unknown, DisposicionTalonario | null>(
-      claveTalonario(tenantId),
-      (actual) => {
-        const alm = normalizarAlmacen(actual);
-        const r = guardarHojaEnAlmacen(alm, dueno, formato, hoja, { en: new Date().toISOString(), por: user });
-        return r ? { valor: r.almacen, resultado: r.disposicion } : { resultado: null };
-      },
-      user,
-    );
+  ): Promise<ResultadoFormaDB> {
+    const id = idNuevo();
+    return cambiarFormas(tenantId, dueno, (alm) => guardarHoja(alm, dueno, formaId, formato, hoja, firma(user), id), user);
+  },
+
+  /** «Nueva forma (copia de esta)»: las dos hojas que se ven, con la referencia de la guía. */
+  async crearForma(
+    tenantId: string,
+    dueno: DuenoTalonario,
+    datos: { nombre?: string | null; guia: unknown; lista: unknown },
+    user = "unknown",
+  ): Promise<ResultadoFormaDB> {
+    const id = idNuevo();
+    return cambiarFormas(tenantId, dueno, (alm) => crearForma(alm, dueno, datos, firma(user), id), user);
+  },
+
+  async renombrarForma(tenantId: string, dueno: DuenoTalonario, formaId: string, nombre: string, user = "unknown"): Promise<ResultadoFormaDB> {
+    return cambiarFormas(tenantId, dueno, (alm) => renombrarForma(alm, formaId, nombre), user);
+  },
+
+  async borrarForma(tenantId: string, dueno: DuenoTalonario, formaId: string, user = "unknown"): Promise<ResultadoFormaDB> {
+    return cambiarFormas(tenantId, dueno, (alm) => borrarForma(alm, formaId), user);
   },
 };

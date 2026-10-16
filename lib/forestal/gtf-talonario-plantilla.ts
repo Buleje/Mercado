@@ -23,7 +23,7 @@
  */
 
 /** Cambia cuando cambian las ranuras: una disposición guardada sobre otra plantilla vuelve a la de fábrica. */
-export const PLANTILLA_FABRICA = "imprenta-2024-v1";
+export const PLANTILLA_FABRICA = "imprenta-2024-v2";
 
 export type TintaPlantilla = "forma" | "folio" | "dato";
 
@@ -198,7 +198,7 @@ const COLS_GUIA: Array<[string, number, number, Ranura["alinea"]]> = [
   ["37g", 173.9, X1, "der"],
 ];
 const TABLA_GUIA = { arriba: 188.8, sub: 194.9, filas: 200.3, alto: 4.84, n: 7 } as const;
-/** 7 pt = 17 cpi (condensado): «Madera en rollo» (22,23 mm) entra en la columna (34c) de 22,7 mm con 0,2 mm de aire por lado. */
+/** 7 pt = 17 cpi (condensado): «Madera en rollo» (22,23 mm) entra en la columna (34c) de 22,7 mm con 0,1 mm de aire por lado; «Metros cúbicos» (17,78 mm a 6 pt, el mínimo del encaje) entra en la (34f) de 18 mm. */
 const LETRA_TABLA_GUIA = 7;
 
 // ── La lista ────────────────────────────────────────────────────────────────
@@ -283,7 +283,7 @@ function tablaDe(cols: Array<[string, number, number, Ranura["alinea"], ...unkno
 }
 
 export const RANURAS = {
-  guia: { campos: ranurasGuia(), tabla: tablaDe(COLS_GUIA, { filas: TABLA_GUIA.filas, alto: TABLA_GUIA.alto, n: TABLA_GUIA.n }, LETRA_TABLA_GUIA, 0.2) },
+  guia: { campos: ranurasGuia(), tabla: tablaDe(COLS_GUIA, { filas: TABLA_GUIA.filas, alto: TABLA_GUIA.alto, n: TABLA_GUIA.n }, LETRA_TABLA_GUIA, 0.1) },
   lista: { campos: ranurasLista(), tabla: tablaDe(COLS_LISTA, { filas: TABLA_LISTA.filas, alto: TABLA_LISTA.alto, n: TABLA_LISTA.n }, LETRA_TABLA_LISTA, 0.6) },
 } as const;
 

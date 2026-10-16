@@ -16,15 +16,21 @@
  * tenue, del lado al que se alinea el texto. Es de la pantalla: el papel sale
  * de `gtf-matricial-print`, que no lo dibuja.
  *
- * `noEntra` (lo decide la hoja con `camposQueNoEntran`): contorno amarillo, el
- * valor es más ancho que su renglón. `discreto` (con el formato impreso
- * dibujado debajo): sin contorno punteado ni nombre hasta pasar el mouse o
- * elegirlo — el rótulo impreso ya dice qué es, y los dos encimados se tapaban.
+ * `noEntra` (lo decide la hoja con `revisarEncaje`): contorno amarillo, el
+ * valor no entra en su renglón ni achicado. `letraValorPt` menor que la del
+ * campo: el valor sale achicado para entrar (Brandon 16-10), en un `<span>`
+ * con su letra; el renglón lo sigue marcando la del campo, así la base de la
+ * letra no se mueve (igual que en el papel). `discreto` (con el formato
+ * impreso dibujado debajo): sin contorno punteado ni nombre hasta pasar el
+ * mouse o elegirlo — el rótulo impreso ya dice qué es, y los dos encimados se
+ * tapaban. `soloValores`: la hoja como sale el papel — sin vacíos, contornos
+ * ni nombres (lo elegido y el foco del teclado sí se ven).
  */
 
 import { PASO_GRANDE_MM, PASO_MM, type Alineacion } from "@/lib/forestal/gtf-matricial-disposicion";
 import { INTERLINEA, ptAMm } from "@/lib/forestal/gtf-matricial-edicion";
 import { alineaCss } from "@/lib/forestal/gtf-matricial-print";
+import { enUnaLinea } from "@/lib/forestal/gtf-salida-geometria";
 import { fmtMm } from "./gtf-matricial-controles";
 
 export { ptAMm };
@@ -56,8 +62,12 @@ export interface CampoTalonarioProps {
   seleccionado: boolean;
   /** El primero elegido: alinear e igualar toman su medida. Lleva la etiqueta con X/Y. */
   referencia?: boolean;
-  /** Celda de tabla: un renglón, como en el papel. */
-  unaLinea?: boolean;
+  /** Campo de «Partir en varios renglones»; sin esto, un renglón (como sale en el papel). */
+  varias?: boolean;
+  /** La letra con la que sale el valor (`encajarValor`); menor que `letraPt` = achicado para entrar. */
+  letraValorPt?: number;
+  /** «Sólo valores»: el vacío no se dibuja y no hay contornos ni nombres. */
+  soloValores?: boolean;
   /** Nombre corto encima del valor («(7) Titular», «D1»); null = «Ver nombres» apagado. */
   nombre?: string | null;
   /** Más ancho que su renglón (o, en una columna, alguna de sus filas): contorno amarillo. */
@@ -71,10 +81,18 @@ export interface CampoTalonarioProps {
 }
 
 export default function CampoTalonario({
-  etiqueta, texto, x, y, anchoMm, letraPt, alinea, escala, seleccionado, referencia = false, unaLinea = false, nombre = null,
-  noEntra = false, discreto = false, onPresionar, onFocoTeclado, onFlecha,
+  etiqueta, texto, x, y, anchoMm, letraPt, alinea, escala, seleccionado, referencia = false, varias = false, letraValorPt = letraPt, nombre: nombreCampo = null,
+  noEntra = false, discreto = false, soloValores = false, onPresionar, onFocoTeclado, onFlecha,
 }: CampoTalonarioProps) {
   const vacio = !texto.trim();
+  if (soloValores && vacio && !seleccionado) return null;
+  const nombre = soloValores ? null : nombreCampo;
+  const achicado = !vacio && letraValorPt < letraPt;
+  const ayuda = noEntra
+    ? `${etiqueta} · no entra en su renglón ni a la letra más chica: ensánchalo`
+    : achicado
+      ? `${etiqueta} · letra ${fmtMm(letraValorPt)} pt para que entre`
+      : etiqueta;
   /* Con el nombre encima, el vacío queda en blanco (el recuadro punteado ya lo ubica): repetir «vacío» en cada casillero era ruido. */
   const relleno = nombre ? "" : etiqueta;
 
@@ -86,7 +104,8 @@ export default function CampoTalonario({
       aria-label={`${etiqueta}${vacio ? " (vacío: no se imprime)" : `: ${texto}`}. X ${fmtMm(x)} mm, Y ${fmtMm(y)} mm`}
       data-campo={etiqueta}
       data-no-entra={noEntra || undefined}
-      title={noEntra ? `${etiqueta} · no entra en su renglón: achica la letra o ensánchalo` : etiqueta}
+      data-letra-valor={achicado ? letraValorPt : undefined}
+      title={ayuda}
       onPointerDown={onPresionar}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => {
@@ -103,7 +122,9 @@ export default function CampoTalonario({
       className={`group absolute cursor-grab touch-none select-none rounded-[2px] active:cursor-grabbing ${
         seleccionado
           ? `z-20 bg-[var(--accent-muted)] outline-solid outline-[var(--accent)] ${referencia ? "outline-[3px]" : "outline-2"}`
-          : noEntra
+          : soloValores
+            ? "z-10 outline-1 outline-solid outline-transparent focus-visible:outline-[var(--accent)]"
+            : noEntra
             ? "z-10 outline-2 outline-dashed outline-[var(--data-warning-500)]"
             : discreto
               ? "z-10 outline-1 outline-dashed outline-transparent hover:outline-[var(--accent)] focus-visible:outline-[var(--accent)]"
@@ -119,13 +140,16 @@ export default function CampoTalonario({
         textAlign: alineaCss(alinea) as React.CSSProperties["textAlign"],
         fontFamily: '"Courier New", Courier, monospace',
         fontWeight: 700,
-        whiteSpace: unaLinea ? "nowrap" : "pre-wrap",
-        overflowWrap: unaLinea ? undefined : "anywhere",
+        whiteSpace: varias ? "pre-wrap" : "nowrap",
+        overflowWrap: varias ? "anywhere" : undefined,
       }}
     >
       {/* El nombre de un campo vacío va en un renglón con «…»: partido en una casilla de 6 mm tapaba a los vecinos. */}
-      <span className={vacio ? "block truncate italic text-[var(--text-tertiary)] opacity-70" : "text-[var(--text-primary)]"}>
-        {vacio ? relleno : texto}
+      <span
+        className={vacio ? "block truncate italic text-[var(--text-tertiary)] opacity-70" : "text-[var(--text-primary)]"}
+        style={achicado ? { fontSize: ptAMm(letraValorPt) * escala } : undefined}
+      >
+        {vacio ? relleno : varias ? texto : enUnaLinea(texto)}
       </span>
       {nombre && !referencia && (
         <span

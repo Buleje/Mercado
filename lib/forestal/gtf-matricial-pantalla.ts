@@ -7,9 +7,10 @@
  *     el formato dibujado debajo de los valores sea el talonario de ESA guía.
  *     Lo que no se sabe queda vacío: el dibujo pone su texto por defecto, no
  *     se inventa nada.
- *   · `camposQueNoEntran`: los valores más anchos que su renglón (en la hoja
- *     salen marcados en amarillo): en el papel se parten en dos renglones o
- *     pisan al vecino.
+ *   · `revisarEncaje`: los valores que no entran en su renglón ni achicando
+ *     la letra hasta 6 pt (en la hoja salen en amarillo: en el papel pisan al
+ *     vecino) y los que entran achicados (`encajarValor`, la misma cuenta del
+ *     papel). `camposQueNoEntran` = sólo los amarillos.
  *
  * PURO y client-safe. Nada de esto viaja al papel (`gtf-matricial-print`).
  */
@@ -17,9 +18,10 @@
 import { casillerosGtf } from "./ctp-gtf-formato";
 import type { EntradasGuiaLoth } from "./loth-guia-print";
 import type { EncabezadoTalonario } from "./gtf-talonario-plantilla";
-import { entraEnUnaLinea, type CatalogoFormato, type DisposicionHoja, type FormatoTalonario } from "./gtf-matricial-disposicion";
+import { type CatalogoFormato, type DisposicionHoja, type FormatoTalonario } from "./gtf-matricial-disposicion";
 import type { PaginaTalonario } from "./gtf-matricial-valores";
 import { claveElemento } from "./gtf-matricial-edicion";
+import { anchoParaEntrar, encajarValor } from "./gtf-salida-geometria";
 
 const limpio = (s: string | null | undefined): string => (s ?? "").replace(/\s+/g, " ").trim();
 
@@ -69,38 +71,55 @@ export function encabezadoDelTalonario(
   };
 }
 
-/** Un valor que no entra en su renglón: la clave del elemento en la hoja, su rótulo y lo que dice. */
+/** Un valor que no entra en su renglón (o que entra achicado): la clave del elemento en la hoja, su rótulo y lo que dice. */
 export interface NoEntra {
   clave: string;
   etiqueta: string;
   texto: string;
+  /** La letra con la que sale (achicado: menor que la del renglón). */
+  letraPt: number;
+  /** El ancho que le haría falta para entrar a la letra más chica (6 pt). */
+  necesitaMm: number;
+}
+
+export interface RevisionEncaje {
+  /** No entran ni achicados (o «Encajar» apagado): amarillo, pisan al vecino. */
+  noEntran: NoEntra[];
+  /** Entran porque se les achicó la letra. */
+  achicados: NoEntra[];
 }
 
 /**
- * Los valores más anchos que su renglón en la hoja que se ve: los campos
- * visibles y, de la tabla, cada columna con alguna fila que no entra (se
- * marca su primera fila, la que se acomoda: las demás comparten su ancho).
- * La hoja pinta de amarillo exactamente estos.
+ * Cómo sale cada valor de la hoja que se ve: los campos visibles y, de la
+ * tabla, cada columna por su fila más larga (se marca su primera fila, la que
+ * se acomoda: las demás comparten su ancho y, en monoespaciada, si la más
+ * larga entra, entran todas). Un campo de varios renglones nunca es amarillo:
+ * se parte a propósito. La hoja pinta exactamente estos.
  */
-export function camposQueNoEntran(hoja: DisposicionHoja, cat: CatalogoFormato, pagina: PaginaTalonario | undefined): NoEntra[] {
-  if (!pagina) return [];
-  const out: NoEntra[] = [];
+export function revisarEncaje(hoja: DisposicionHoja, cat: CatalogoFormato, pagina: PaginaTalonario | undefined): RevisionEncaje {
+  const r: RevisionEncaje = { noEntran: [], achicados: [] };
+  if (!pagina) return r;
+  const anotar = (clave: string, etiqueta: string, texto: string, ancho: number, letra: number, modo: { varias?: boolean; encajar?: boolean }) => {
+    const e = encajarValor(texto, ancho, letra, modo);
+    const item = { clave, etiqueta, texto, letraPt: e.letraPt, necesitaMm: anchoParaEntrar(texto) };
+    if (e.noEntra) r.noEntran.push(item);
+    else if (e.achicado) r.achicados.push(item);
+  };
   for (const c of cat.campos) {
     const pos = hoja.campos[c.id];
     const texto = (pagina.campos[c.id] ?? "").trim();
-    if (pos?.visible && texto && !entraEnUnaLinea(texto, pos.anchoMm, pos.letraPt)) {
-      out.push({ clave: claveElemento({ tipo: "campo", id: c.id }), etiqueta: c.label, texto });
-    }
+    if (pos?.visible && texto) anotar(claveElemento({ tipo: "campo", id: c.id }), c.label, texto, pos.anchoMm, pos.letraPt, pos);
   }
   const filas = pagina.filas.slice(0, hoja.tabla.maxFilas);
   for (const c of cat.columnas) {
     const pos = hoja.tabla.columnas[c.id];
     if (!pos?.visible) continue;
-    /* El más largo de la columna: si ése entra, entran todos. */
     const texto = filas.map((f) => (f[c.id] ?? "").trim()).reduce((a, b) => (b.length > a.length ? b : a), "");
-    if (texto && !entraEnUnaLinea(texto, pos.anchoMm, hoja.tabla.letraPt)) {
-      out.push({ clave: claveElemento({ tipo: "columna", id: c.id }), etiqueta: c.label, texto });
-    }
+    if (texto) anotar(claveElemento({ tipo: "columna", id: c.id }), c.label, texto, pos.anchoMm, hoja.tabla.letraPt, { encajar: pos.encajar });
   }
-  return out;
+  return r;
 }
+
+/** Sólo los amarillos: lo que ni achicado entra en su renglón. */
+export const camposQueNoEntran = (hoja: DisposicionHoja, cat: CatalogoFormato, pagina: PaginaTalonario | undefined): NoEntra[] =>
+  revisarEncaje(hoja, cat, pagina).noEntran;
