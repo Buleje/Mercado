@@ -7391,6 +7391,11 @@ model ForestParty {
   /// Código de CTP de la parte, cuando ELLA es otro aserradero/CTP (no el
   /// propio — el nuestro vive en `ForestCtpFicha.codigoRegistro`).
   codigoCtp         String?
+  /// Tipo de establecimiento — casillero (19) de la guía 2024 cuando la carga
+  /// sale de este local (depósito, centro de comercialización…). Lista cerrada
+  /// en `TIPOS_ESTABLECIMIENTO`; `null` = no se cargó (ADR-493). Sin esto el
+  /// (19) se volvía a elegir en cada guía.
+  tipoEstablecimiento String?
   /// Título habilitante con el que el proveedor extrae (permiso, concesión…).
   tituloHabilitante String?
   /// Resolución que aprueba el plan de manejo — casillero (8) de la GTF.

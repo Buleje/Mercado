@@ -32,7 +32,7 @@ const DOC = {
 const BASE = entradasDeLaGuia(DOC, null).cuerpo;
 
 type Bloque = "destinatario" | "propietario" | "partida" | "conductor";
-type Clave = "nombre" | "documento" | "direccion" | "ubigeo" | "autorizacion" | "licencia";
+type Clave = "nombre" | "documento" | "direccion" | "ubigeo" | "autorizacion" | "tipoEstablecimiento" | "licencia";
 type Fila = { poner: (d: GtfDatos) => void; casilleros: (keyof CasillerosGtf)[]; valor: string };
 
 const UBI = { departamento: "UCAYALI", provincia: "CORONEL PORTILLO", distrito: "YARINACOCHA" };
@@ -72,6 +72,8 @@ function filasDe(bloque: Bloque, cas: Partial<Record<Clave, (keyof CasillerosGtf
   if (cas.direccion) out.direccion = fila(cas.direccion, "JR. TACNA 123", (b) => (b.direccion = "JR. TACNA 123"));
   if (cas.ubigeo) out.ubigeo = fila(cas.ubigeo, "", (b) => Object.assign(b, UBI));
   if (cas.autorizacion) out.autorizacion = fila(cas.autorizacion, "25-UCA/DEP-0042", (b) => (b.autorizacion = "25-UCA/DEP-0042"));
+  if (cas.tipoEstablecimiento)
+    out.tipoEstablecimiento = fila(cas.tipoEstablecimiento, "Depósito", (b) => (b.tipoEstablecimiento = "Depósito"));
   if (cas.licencia) out.licencia = fila(cas.licencia, "Q45871236", (b) => (b.licencia = "Q45871236"));
   return out;
 }
@@ -81,7 +83,7 @@ const MAPA: Record<RolParte, Partial<Record<Clave, Fila>>> = {
   destinatario: DESTINATARIO,
   cliente: DESTINATARIO,
   proveedor: filasDe("propietario", { nombre: ["13"], documento: ["15"], direccion: ["16"], ubigeo: ["17", "18", "19"] }),
-  establecimiento: filasDe("partida", { nombre: ["p17"], direccion: ["p20a"], ubigeo: ["p20b", "p20c", "p20d"], autorizacion: ["p18"] }),
+  establecimiento: filasDe("partida", { nombre: ["p17"], direccion: ["p20a"], ubigeo: ["p20b", "p20c", "p20d"], autorizacion: ["p18"], tipoEstablecimiento: ["p19"] }),
   conductor: filasDe("conductor", { nombre: ["32"], documento: ["33"], licencia: ["34"] }),
   transportista: {},
 };
@@ -117,7 +119,7 @@ describe("cada dato «Guía» de la ficha tiene casillero en la hoja", () => {
     });
   }
 
-  it("el (22) del destinatario sale en la hoja sólo con el formato 2024 (punto de partida elegido), como avisa la ficha", () => {
+  it("el (22) del destinatario sale siempre en la hoja (formato 2024, ADR-494), como avisa la ficha", () => {
     const aut = fichaDeParte(LLENA, "destinatario").grupos.flatMap((g) => g.campos).find((c) => c.clave === "autorizacion");
     expect(aut?.condicion).toBe("solo si recibe un establecimiento");
     const con = conDatos((d) => {
@@ -129,7 +131,8 @@ describe("cada dato «Guía» de la ficha tiene casillero en la hoja", () => {
       d.destinatario.autorizacion = "25-UCA/C-OPE-777";
       d.traslado.partida = { ...d.traslado.partida, modo: "" };
     });
-    expect(cuerpoGtfOficial(sin)).not.toContain("25-UCA/C-OPE-777");
+    // Formato 2024 (ADR-494): el (22) sale siempre, con o sin punto de partida.
+    expect(cuerpoGtfOficial(sin)).toContain("25-UCA/C-OPE-777");
   });
 });
 

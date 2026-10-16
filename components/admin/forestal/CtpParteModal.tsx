@@ -34,6 +34,7 @@ import {
   ROL_LABEL,
   CONDICIONES_PAGO,
   categoriaEfectiva,
+  esTipoEstablecimiento,
   claveBusqueda,
   parteAInput,
   textoCondicionPago,
@@ -50,6 +51,7 @@ import {
   type RolParte,
   type Vehiculo,
 } from "@/lib/forestal/directorio";
+import { TIPOS_ESTABLECIMIENTO } from "@/lib/forestal/ctp-gtf-datos";
 import { consultarDocumento } from "@/hooks/use-directorio-forestal";
 import { Btn, CampoGrid, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
 import CamposPersonalizados, {
@@ -795,6 +797,22 @@ export default function CtpParteModal({
                 }
               >
                 <input type="text" className={`${I} font-mono`} value={b.codigoCtp ?? ""} onChange={(e) => set({ codigoCtp: e.target.value })} />
+              </Field>
+            )}
+            {esEstablecimiento && (
+              <Field label="Tipo de establecimiento" span={6} hint="Formato 2024, casillero (19). Guardado acá, la guía lo llena sola al elegir este local (ADR-493)">
+                <select
+                  className={I}
+                  value={b.tipoEstablecimiento ?? ""}
+                  onChange={(e) => set({ tipoEstablecimiento: esTipoEstablecimiento(e.target.value) ? e.target.value : "" })}
+                >
+                  <option value="">Elige el tipo</option>
+                  {TIPOS_ESTABLECIMIENTO.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
               </Field>
             )}
             {esConductor && (

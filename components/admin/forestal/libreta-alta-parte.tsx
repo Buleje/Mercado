@@ -24,6 +24,7 @@ import { Download, Loader2 } from "@buleje/design-system/icons";
 import { consultarDocumento } from "@/hooks/use-directorio-forestal";
 import {
   DOC_TIPOS,
+  esTipoEstablecimiento,
   fuenteAutocompletado,
   motivoDocInvalido,
   normalizarDocumento,
@@ -68,6 +69,7 @@ function inicial(rol: RolParte, b: ValorParte, editando: Parte | undefined): For
      licencia del conductor…) también arranca escrito. */
   const delBloque: Partial<Record<ClaveExtra, string | undefined>> = {
     codigoCtp: b.autorizacion,
+    tipoEstablecimiento: b.tipoEstablecimiento,
     registroMtc: b.registroMtc,
     licencia: b.licencia,
     telefono: b.telefono,
@@ -156,6 +158,10 @@ export default function AltaDeParte({
     onError(null);
     const docNumero = normalizarDocumento(f.docNumero);
     const ubigeo = ubigeoDeNombres(f.region, f.provincia, f.distrito);
+    const x = (k: ClaveExtra) => f.extras[k]?.trim() ?? "";
+    /* El (19) es lista cerrada (ADR-493): otra cosa no viaja al Directorio. */
+    const tipoEscrito = x("tipoEstablecimiento");
+    const tipo = esTipoEstablecimiento(tipoEscrito) ? tipoEscrito : undefined;
     const input: ParteInput & { id?: string } = editando
       ? {
           ...parteAInput(editando),
@@ -168,6 +174,7 @@ export default function AltaDeParte({
           distrito: f.distrito,
           ...(ubigeo ? { ubigeo } : {}),
           ...Object.fromEntries(Object.entries(f.extras).map(([k, v]) => [k, v?.trim() ?? ""])),
+          tipoEstablecimiento: tipo ?? "",
         }
       : {
           roles: [rol],
@@ -176,8 +183,8 @@ export default function AltaDeParte({
           ...sinVacios({ direccion: f.direccion, region: f.region, provincia: f.provincia, distrito: f.distrito }),
           ...(ubigeo ? { ubigeo } : {}),
           ...sinVacios(f.extras),
+          tipoEstablecimiento: tipo,
         };
-    const x = (k: ClaveExtra) => f.extras[k]?.trim() ?? "";
     onGuardar(input, {
       nombre: input.nombre,
       docTipo: f.docTipo,
@@ -189,6 +196,7 @@ export default function AltaDeParte({
       registroMtc: x("registroMtc"),
       licencia: x("licencia"),
       autorizacion: x("codigoCtp"),
+      tipoEstablecimiento: tipo ?? "",
       encargado: x("contactoNombre"),
       telefono: x("telefono"),
       referencia: x("acopioReferencia"),
@@ -268,12 +276,23 @@ export default function AltaDeParte({
       />
       {extras.map((x) => (
         <Field key={x.clave} span={x.span} label={x.label} hint={x.hint}>
-          <input
-            type="text"
-            className={`${I} ${x.mono ? "font-mono" : ""}`}
-            value={f.extras[x.clave] ?? ""}
-            onChange={(e) => setExtra(x.clave, e.target.value)}
-          />
+          {x.opciones ? (
+            <select className={I} value={f.extras[x.clave] ?? ""} onChange={(e) => setExtra(x.clave, e.target.value)}>
+              <option value="">Elige el tipo</option>
+              {x.opciones.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              className={`${I} ${x.mono ? "font-mono" : ""}`}
+              value={f.extras[x.clave] ?? ""}
+              onChange={(e) => setExtra(x.clave, e.target.value)}
+            />
+          )}
         </Field>
       ))}
     </form>

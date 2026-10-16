@@ -18,6 +18,7 @@
  */
 
 import { z } from "zod";
+import { TIPOS_ESTABLECIMIENTO } from "./ctp-gtf-datos";
 import { leerPlaca } from "./placa-peru";
 
 // ── Roles ───────────────────────────────────────────────────────────────────
@@ -97,6 +98,18 @@ export function esCategoriaValida(v: string): v is CategoriaParte {
 /** Sin categoría guardada (partes de antes de este campo) se trata como CCNN: es el comportamiento histórico, todos los campos visibles. */
 export function categoriaEfectiva(c: CategoriaParte | null | undefined): CategoriaParte {
   return c ?? "ccnn";
+}
+
+// ── Tipo de establecimiento (ADR-493) ───────────────────────────────────────
+
+/**
+ * Casillero (19) de la guía 2024: la MISMA lista del selector de la partida.
+ * Guardado en la ficha, elegir el establecimiento en la libreta llena el (19).
+ */
+export type TipoEstablecimiento = (typeof TIPOS_ESTABLECIMIENTO)[number];
+
+export function esTipoEstablecimiento(v: string | null | undefined): v is TipoEstablecimiento {
+  return (TIPOS_ESTABLECIMIENTO as readonly string[]).includes(v ?? "");
 }
 
 // ── Documentos ──────────────────────────────────────────────────────────────
@@ -596,6 +609,8 @@ export const parteInputSchema = z.object({
   categoria: z.enum(CATEGORIAS_PARTE).optional().nullable(),
   /** Código de CTP de la parte, cuando ella misma es otro aserradero/CTP. */
   codigoCtp: texto(60).optional(),
+  /** (19) de la guía 2024 (ADR-493). `""`/`null` lo vacían sólo en la edición con `id`. */
+  tipoEstablecimiento: z.enum(TIPOS_ESTABLECIMIENTO).or(z.literal("")).optional().nullable(),
   docTipo: z.enum(DOC_TIPOS).optional(),
   docNumero: texto(20).optional(),
   direccion: texto(250).optional(),
@@ -683,6 +698,8 @@ export interface Parte {
   categoria: CategoriaParte | null;
   /** Código de CTP de la parte, cuando ella misma es otro aserradero/CTP. */
   codigoCtp: string | null;
+  /** (19) de la guía 2024 cuando la carga sale de este local (ADR-493). Opcional: las partes sintéticas no lo tienen. */
+  tipoEstablecimiento?: TipoEstablecimiento | null;
   docTipo: DocTipo | null;
   docNumero: string | null;
   direccion: string | null;
@@ -836,6 +853,7 @@ export function parteAInput(p: Parte): ParteInput & { id: string } {
     nombre: p.nombre,
     categoria: p.categoria,
     codigoCtp: p.codigoCtp ?? "",
+    tipoEstablecimiento: p.tipoEstablecimiento ?? "",
     ...(p.docTipo ? { docTipo: p.docTipo } : {}),
     docNumero: p.docNumero ?? "",
     direccion: p.direccion ?? "",

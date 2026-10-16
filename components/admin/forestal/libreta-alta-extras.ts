@@ -6,16 +6,19 @@
  * queda en la ficha.
  */
 
+import { TIPOS_ESTABLECIMIENTO } from "@/lib/forestal/ctp-gtf-datos";
 import type { RolParte } from "@/lib/forestal/directorio";
 
 /** Los campos de la ficha que el alta sabe pedir además de los de siempre. */
-export type ClaveExtra = "codigoCtp" | "registroMtc" | "licencia" | "telefono" | "contactoNombre" | "acopioReferencia";
+export type ClaveExtra = "codigoCtp" | "tipoEstablecimiento" | "registroMtc" | "licencia" | "telefono" | "contactoNombre" | "acopioReferencia";
 
 export interface Extra {
   clave: ClaveExtra;
   label: string;
   hint?: string;
   mono?: boolean;
+  /** Lista cerrada: se elige en un selector en vez de escribirse. */
+  opciones?: readonly string[];
   span: 4 | 6 | 12;
 }
 
@@ -43,13 +46,20 @@ export const EXTRAS: Record<RolParte, readonly Extra[]> = {
       mono: true,
       span: 6,
     },
+    {
+      clave: "tipoEstablecimiento",
+      label: "Tipo de establecimiento",
+      hint: "Formato 2024, casillero (19). Guardado acá, la guía lo llena sola al elegir este local.",
+      opciones: TIPOS_ESTABLECIMIENTO,
+      span: 6,
+    },
     { clave: "acopioReferencia", label: "Referencia", hint: "Interno: cómo llegar («frente al grifo»). No sale en la guía.", span: 6 },
     { clave: "contactoNombre", label: "Encargado", hint: "Interno: a quién llamar. No sale en la guía.", span: 6 },
     TELEFONO,
   ],
 };
 
-export const CLAVES_EXTRA: readonly ClaveExtra[] = ["codigoCtp", "registroMtc", "licencia", "telefono", "contactoNombre", "acopioReferencia"];
+export const CLAVES_EXTRA: readonly ClaveExtra[] = ["codigoCtp", "tipoEstablecimiento", "registroMtc", "licencia", "telefono", "contactoNombre", "acopioReferencia"];
 
 /** Los extras de varios papeles, sin repetir (el teléfono lo piden todos). */
 export function extrasDe(roles: readonly RolParte[]): Extra[] {

@@ -16,6 +16,7 @@ import {
   ROL_LABEL,
   claveBusqueda,
   direccionCompleta,
+  esTipoEstablecimiento,
   faltantesParaGuia,
   formatearPlaca,
   motivoPlacaVehiculo,
@@ -29,6 +30,7 @@ import {
   type RolParte,
   type Vehiculo,
 } from "./directorio";
+import type { PartidaTraslado } from "./ctp-gtf-datos";
 import { limaDateKey } from "@/lib/utils";
 
 // ── Lo que la guía tiene escrito de una parte ──────────────────────────────
@@ -49,6 +51,8 @@ export interface ValorParte {
   licencia?: string;
   /** (18) del establecimiento de partida / (22) del destinatario → `codigoCtp` de la ficha. */
   autorizacion?: string;
+  /** (19) del establecimiento de partida → `tipoEstablecimiento` de la ficha (ADR-493). */
+  tipoEstablecimiento?: string;
   /** Internos del establecimiento de partida: no salen en la guía. */
   encargado?: string;
   telefono?: string;
@@ -69,6 +73,7 @@ export function parteInputDesdeValor(v: ValorParte, rol: RolParte): ParteInput {
     return v && !/^no aplica$/i.test(v) ? v : undefined;
   };
   const docNumero = normalizarDocumento(v.docNumero ?? "");
+  const tipo = t(v.tipoEstablecimiento);
   const campos: Record<string, string | undefined> = {
     docNumero: docNumero || undefined,
     direccion: t(v.direccion),
@@ -78,6 +83,9 @@ export function parteInputDesdeValor(v: ValorParte, rol: RolParte): ParteInput {
     registroMtc: t(v.registroMtc),
     licencia: t(v.licencia),
     codigoCtp: t(v.autorizacion),
+    /* Sólo un tipo de la lista: uno escrito a mano en una guía vieja haría que
+       el Zod del Directorio rechazara el guardado entero. */
+    tipoEstablecimiento: esTipoEstablecimiento(tipo) ? tipo : undefined,
     contactoNombre: t(v.encargado),
     telefono: t(v.telefono),
     acopioReferencia: t(v.referencia),
@@ -89,12 +97,35 @@ export function parteInputDesdeValor(v: ValorParte, rol: RolParte): ParteInput {
 /**
  * Lo que la libreta copia al bloque: nombre, documento, dirección y el ubigeo
  * en sus columnas (aplanado en `direccion` salía dos veces impreso y dejaba los
- * casilleros vacíos), más el registro MTC al transportista. Los extras
- * (autorización, encargado…) no: la partida los lee de la ficha en `onElegir`.
+ * casilleros vacíos), más el registro MTC al transportista y el (18)/(19) del
+ * establecimiento. Los internos (encargado, teléfono…) no: la partida los lee
+ * de la ficha en `onElegir`.
  */
 export function aLaGuia(v: ValorParte, rol: RolParte): Partial<ValorParte> {
   const { nombre, docTipo, docNumero, direccion, departamento = "", provincia = "", distrito = "", registroMtc = "" } = v;
-  return { nombre, docTipo, docNumero, direccion, departamento, provincia, distrito, ...(rol === "transportista" ? { registroMtc } : {}) };
+  /* Un establecimiento recién dado de alta no pasa por `onElegir`: el (18) y el
+     (19) elegidos en el alta van directo a la partida (sólo si traen valor). */
+  const partida =
+    rol === "establecimiento"
+      ? { ...(v.autorizacion?.trim() ? { autorizacion: v.autorizacion.trim() } : {}), ...(v.tipoEstablecimiento?.trim() ? { tipoEstablecimiento: v.tipoEstablecimiento.trim() } : {}) }
+      : {};
+  return { nombre, docTipo, docNumero, direccion, departamento, provincia, distrito, ...(rol === "transportista" ? { registroMtc } : {}), ...partida };
+}
+
+/**
+ * Lo que la ficha elegida trae a la partida además de nombre y dirección: el
+ * (18) sale del código guardado y el (19) del tipo guardado (ADR-493). Sin tipo
+ * en la ficha el (19) se limpia: el del establecimiento anterior no es el de éste.
+ */
+export function internosDePartida(p: Parte): Partial<PartidaTraslado> {
+  return {
+    modo: "establecimiento",
+    tipoEstablecimiento: p.tipoEstablecimiento ?? "",
+    autorizacion: p.codigoCtp ?? "",
+    referencia: p.acopioReferencia ?? "",
+    encargado: p.contactoNombre ?? "",
+    telefono: p.contactoTelefono || p.telefono || "",
+  };
 }
 
 /** Lo que le falta para ir en la guía con este papel, dicho al elegirla y no al imprimir. */
@@ -345,7 +376,7 @@ export interface FichaLibreta {
 }
 
 type ReglaCampo = { sello: Sello; casillero?: string; pide?: boolean; noAplica?: boolean; condicion?: string };
-type Reglas = Partial<Record<"nombre" | "documento" | "direccion" | "ubigeo" | "autorizacion" | "licencia" | "registroMtc", ReglaCampo>>;
+type Reglas = Partial<Record<"nombre" | "documento" | "direccion" | "ubigeo" | "autorizacion" | "tipoEstablecimiento" | "licencia" | "registroMtc", ReglaCampo>>;
 
 const G = (casillero?: string, pide = true): ReglaCampo => ({ sello: "guia", casillero, pide });
 const INTERNO: ReglaCampo = { sello: "interno" };
@@ -357,7 +388,7 @@ function reglasDe(rol: RolParte): Reglas {
     case "cliente":
       /* (22), instructivo 2024: «En caso corresponda, consignar el número de
          autorización del establecimiento, de lo contrario colocar "No aplica"».
-         La hoja lo imprime sólo con el formato 2024 (punto de partida elegido). */
+         La hoja lo imprime siempre (formato 2024, ADR-494). */
       return {
         nombre: G("(21)"),
         autorizacion: { sello: "guia", casillero: "(22)", noAplica: true, condicion: "solo si recibe un establecimiento" },
@@ -366,7 +397,7 @@ function reglasDe(rol: RolParte): Reglas {
         ubigeo: G("(24)"),
       };
     case "establecimiento":
-      return { nombre: G("(17)"), autorizacion: G("(18)"), documento: INTERNO, direccion: G("(20)"), ubigeo: G("(20)") };
+      return { nombre: G("(17)"), autorizacion: G("(18)"), tipoEstablecimiento: G("(19)"), documento: INTERNO, direccion: G("(20)"), ubigeo: G("(20)") };
     case "proveedor":
       return { nombre: G(), documento: G(), direccion: G(), ubigeo: G() };
     case "conductor":
@@ -384,6 +415,7 @@ const FALTA_TEXTO: Record<string, string> = {
   direccion: "la dirección",
   ubigeo: "el ubigeo (departamento, provincia y distrito)",
   autorizacion: "el N° de autorización",
+  tipoEstablecimiento: "el tipo de establecimiento",
   licencia: "la licencia",
 };
 
@@ -437,6 +469,7 @@ export function fichaDeParte(p: Parte, rol: RolParte): FichaLibreta {
       titulo: "Autorización y registros",
       campos: lista(
         campo("autorizacion", etiquetaAut, p.codigoCtp, r.autorizacion, true),
+        campo("tipoEstablecimiento", "Tipo de establecimiento", p.tipoEstablecimiento, r.tipoEstablecimiento),
         campo("licencia", "Licencia de conducir", p.licencia, r.licencia, true),
         campo("registroMtc", "Registro MTC", p.registroMtc, r.registroMtc, true),
         campo("titulo", "Título habilitante", p.tituloHabilitante, undefined, true),

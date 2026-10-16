@@ -21,7 +21,7 @@
  */
 
 import { partidaImpresa, TIPOS_ESTABLECIMIENTO, type ModoPartida, type PartidaTraslado } from "@/lib/forestal/ctp-gtf-datos";
-import type { Parte } from "@/lib/forestal/directorio";
+import { internosDePartida } from "@/lib/forestal/libreta";
 import CtpParteBarra, { type ValorParte } from "./CtpParteBarra";
 import CtpUbigeoSelects from "./CtpUbigeoSelects";
 import { Bloque } from "./ctp-guia-bloques";
@@ -49,23 +49,10 @@ function aPartida(v: Partial<ValorParte>): Partial<PartidaTraslado> {
   if (v.departamento !== undefined) c.departamento = v.departamento;
   if (v.provincia !== undefined) c.provincia = v.provincia;
   if (v.distrito !== undefined) c.distrito = v.distrito;
+  /* (18) y (19) del alta de un establecimiento nuevo (ADR-493). */
+  if (v.autorizacion !== undefined) c.autorizacion = v.autorizacion;
+  if (v.tipoEstablecimiento !== undefined) c.tipoEstablecimiento = v.tipoEstablecimiento;
   return c;
-}
-
-/**
- * Los internos de la ficha elegida: el (18) sale del código guardado. El (19)
- * se limpia: el tipo del establecimiento anterior no es el de éste (la ficha
- * no lo guarda, se vuelve a elegir).
- */
-function internosDe(p: Parte): Partial<PartidaTraslado> {
-  return {
-    modo: "establecimiento",
-    tipoEstablecimiento: "",
-    autorizacion: p.codigoCtp ?? "",
-    referencia: p.acopioReferencia ?? "",
-    encargado: p.contactoNombre ?? "",
-    telefono: p.contactoTelefono || p.telefono || "",
-  };
 }
 
 /** La línea de lo que sale en el papel, para no tener que imprimir para verlo. */
@@ -94,6 +81,7 @@ export function BloquePartidaLoth({ g, directorio, onAnotarParte, onGuardarEnLib
     /* «Guardar en la libreta» se lleva también el (18) y los internos: sin
        esto, al volver a elegirla la partida quedaba con esos campos en blanco. */
     autorizacion: p.autorizacion,
+    tipoEstablecimiento: p.tipoEstablecimiento,
     encargado: p.encargado,
     telefono: p.telefono,
     referencia: p.referencia,
@@ -113,7 +101,8 @@ export function BloquePartidaLoth({ g, directorio, onAnotarParte, onGuardarEnLib
           onAplicar={(v) => g.setPartida(aPartida(v))}
           onElegir={(parte) => {
             onAnotarParte(parte);
-            g.setPartida(internosDe(parte));
+            /* El (18) y el (19) salen de la ficha (ADR-493). */
+            g.setPartida(internosDePartida(parte));
           }}
           onGuardar={onGuardarEnLibreta}
         />

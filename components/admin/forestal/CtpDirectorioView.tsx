@@ -379,7 +379,7 @@ function ListaPartes({
                 {!p.activo && <span className="text-xs font-bold text-[var(--text-tertiary)]">dado de baja</span>}
               </div>
               <span className="block truncate text-xs text-[var(--text-tertiary)]">
-                {[direccionCompleta(p) || null, p.codigoCtp ? `CTP ${p.codigoCtp}` : null, p.tituloHabilitante, p.licencia ? `Lic. ${p.licencia}` : null]
+                {[direccionCompleta(p) || null, p.codigoCtp ? `CTP ${p.codigoCtp}` : null, p.tipoEstablecimiento, p.tituloHabilitante, p.licencia ? `Lic. ${p.licencia}` : null]
                   .filter(Boolean)
                   .join(" · ") || "Sin dirección cargada"}
               </span>

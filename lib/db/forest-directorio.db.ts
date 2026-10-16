@@ -13,6 +13,7 @@ import type {
 } from "@/lib/forestal/proveedor-trazabilidad";
 import {
   agregarNota,
+  esTipoEstablecimiento,
   leerBitacora,
   motivoPlacaVehiculo,
   nombresDelLibroQueCoinciden,
@@ -109,6 +110,8 @@ function aParte(r: ParteRow): Parte {
     nombre: r.nombre,
     categoria: (r.categoria as CategoriaParte | null) ?? null,
     codigoCtp: r.codigoCtp,
+    // Lista cerrada (ADR-493): un valor fuera de ella no se le ofrece a la guía.
+    tipoEstablecimiento: esTipoEstablecimiento(r.tipoEstablecimiento) ? r.tipoEstablecimiento : null,
     docTipo: (r.docTipo as DocTipo | null) ?? null,
     docNumero: r.docNumero,
     direccion: r.direccion,
@@ -310,6 +313,11 @@ export const ForestDirectorioDB = {
       // edición de datos no tiene por qué tocar la imagen).
       ...(input.logo === undefined ? {} : { logo: input.logo || null }),
       ...(input.adjuntos === undefined ? {} : { adjuntos: input.adjuntos }),
+      // El (19) de la guía (ADR-493): `undefined` no lo toca, así una pantalla
+      // que no muestra el campo (importador, alta de otro papel) no lo borra. En
+      // el alta por documento `soloConValor` descarta el `null`; sólo la edición
+      // con `id` lo vacía.
+      ...(input.tipoEstablecimiento === undefined ? {} : { tipoEstablecimiento: input.tipoEstablecimiento || null }),
     };
 
     const vivo = input.id
