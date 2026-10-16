@@ -14,12 +14,11 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle } from "@buleje/design-system/icons";
-import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import type { TrozaImportada } from "@/lib/forestal/cubicacion-trozas-import";
 import {
   claveDiametrosTrozas, claveFormulaTrozas, claveLoteTrozas, conVolumen, diametroUnico, DIAMETROS_POR_DEFECTO,
-  esDiametrosPorTroza, esFormulaTrozas, fueraDeRango, medidasEnVoz, patioACsv, RANGO_FORMULA, recubicarLoteSmalian, resumenDelPatio,
-  totalesSegun, UNIDADES_FORMULA, type DiametrosPorTroza, type FormulaTrozas,
+  esDiametrosPorTroza, esFormulaTrozas, fueraDeRango, medidasEnVoz, OTRA_FORMULA, patioACsv, RANGO_FORMULA, recubicarLoteSmalian,
+  resumenDelPatio, totalEquivalente, totalesSegun, UNIDADES_FORMULA, type DiametrosPorTroza, type FormulaTrozas,
 } from "@/lib/forestal/cubicacion-trozas-formula";
 import { loadConfig } from "@/lib/forestal/cubicador-config";
 import { useLecturaEnVoz, type ContextoLectura } from "@/hooks/use-lectura-en-voz";
@@ -27,7 +26,6 @@ import {
   acomodarAlOrden, enOrdenDelPapel, esOrdenFilas, ordenarFilas, textoPorTramos, ultimaAnotada,
   unidadDeLargoEnVoz, type LargoEnLectura, type OrdenFilas,
 } from "@/lib/forestal/cubicador-bloques-especie";
-import { formatNumber } from "@/lib/format";
 import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 import ImportarTrozasModal from "./ImportarTrozasModal";
 import { useEspeciesConCatalogo } from "./ctp-especie-campo";
@@ -36,7 +34,8 @@ import CotejoGtfBloque, { useCotejoGtf } from "./cubicador-trozas-gtf";
 import TablaPatioTrozas, { type CampoTroza, type FilaTroza } from "./cubicador-trozas-tabla";
 import BarraPatioTrozas, { COLS_DEFAULT_TROZA, type ColOpcionalTroza } from "./cubicador-trozas-barra";
 import PanelVozTrozas from "./cubicador-trozas-voz";
-import CuentaDelPatio from "./cubicador-trozas-guardadas";
+import { useCuentaDelPatio } from "./cubicador-trozas-guardadas";
+import ReferenciasPatio from "./cubicador-trozas-referencias";
 import { useDictadoTrozas } from "./hooks/use-dictado-trozas";
 
 type Fila = FilaTroza;
@@ -170,6 +169,8 @@ export default function CubicadorTrozas() {
   };
 
   const totales = useMemo(() => totalesSegun(rows, formula), [rows, formula]);
+  const totalEq = useMemo(() => totalEquivalente(rows, formula), [rows, formula]);
+  const cuenta = useCuentaDelPatio({ rows, formula, diametros, claveLote: claveLoteTrozas(tenantSlug(), formula) });
   const resumen = useMemo(() => resumenDelPatio(rows, formula), [rows, formula]);
   const cotejo = useCotejoGtf(storageKey(), formula === "smalian" ? totales.volumen : 0);
   const u = UNIDADES_FORMULA[formula];
@@ -243,7 +244,6 @@ export default function CubicadorTrozas() {
     a.href = url; a.download = `trozas-${ox ? "oxapampina-" : ""}${new Date().toISOString().slice(0, 10)}.csv`;
     a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
-  const fmtVol = (v: number) => formatNumber(v, u.decimales);
 
   return (
     <div className="space-y-4">
@@ -272,6 +272,8 @@ export default function CubicadorTrozas() {
         <BarraPatioTrozas
           total={rows.length}
           etiquetaVolumen={u.volumen}
+          etiquetaEquivalente={`≈ ${UNIDADES_FORMULA[OTRA_FORMULA[formula]].volumen} ${UNIDADES_FORMULA[OTRA_FORMULA[formula]].nombre}`}
+          cuenta={cuenta}
           onImportar={() => setImportando(true)}
           onEspecies={catalogoEspecies.abrir}
           ordenFilas={ordenFilas}
@@ -304,8 +306,10 @@ export default function CubicadorTrozas() {
             diametros={diametros}
             verEspecie={colsVisibles.especie}
             verVolumen={colsVisibles.m3}
+            verEquivalente={colsVisibles.equiv}
             ordenFilas={ordenFilas}
             total={totales.volumen}
+            totalEquivalente={totalEq}
             lastAddedId={lastAdded?.id}
             leyendoId={lectura.leyendoId}
             onEditar={editar}
@@ -317,22 +321,8 @@ export default function CubicadorTrozas() {
         {/* Contra la guía: ¿lo que llegó coincide con lo declarado? Sólo en m³. */}
         <CotejoGtfBloque cotejo={cotejo} oxapampina={ox} onUsarSmalian={() => cambiarFormula("smalian")} />
 
-        {/* Referencias */}
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {ox ? (
-            <>
-              <Ref label="Total" value={`${fmtVol(totales.volumen)} PT`} />
-              <Ref label="Por troza" value={`${fmtVol(totales.trozas > 0 ? totales.volumen / totales.trozas : 0)} PT`} hint="promedio del patio" />
-            </>
-          ) : (
-            <>
-              <Ref label="Total rolliza" value={`${fmtVol(totales.volumen)} m³`} />
-              <Ref label="Equivalente volumétrico" value={`${formatNumber(totales.volumen * PT_POR_M3, { max: 0 })} PT`} hint={`1 m³ = ${PT_POR_M3} PT — el factor con el que se compra y se vende`} />
-            </>
-          )}
-          <Ref label="Fórmula" value={u.nombre} hint={u.cuenta} />
-        </div>
-        <CuentaDelPatio rows={rows} formula={formula} diametros={diametros} claveLote={claveLoteTrozas(tenantSlug(), formula)} />
+        {/* Referencias: el total, su lectura de compra-venta y el equivalente en la otra fórmula. */}
+        <ReferenciasPatio formula={formula} totales={totales} totalEquivalente={totalEq} />
       </div>
 
       {/* Mientras lee, el control va con los ojos. */}
@@ -349,6 +339,7 @@ export default function CubicadorTrozas() {
       />
 
       {catalogoEspecies.modal}
+      {cuenta.ventanas}
 
       {importando && (
         <ImportarTrozasModal
@@ -360,16 +351,6 @@ export default function CubicadorTrozas() {
           onCerrar={() => setImportando(false)}
         />
       )}
-    </div>
-  );
-}
-
-function Ref({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-center">
-      <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</div>
-      <div className="mt-0.5 font-mono text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{value}</div>
-      {hint && <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{hint}</div>}
     </div>
   );
 }

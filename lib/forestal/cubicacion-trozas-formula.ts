@@ -118,6 +118,42 @@ export function conVolumen<T extends Medidas>(formula: FormulaTrozas, t: T): T &
 export const volumenDe = (t: Pick<TrozaCubicada, "m3" | "pt">, formula: FormulaTrozas): number =>
   formula === "oxapampina" ? (t.pt ?? 0) : t.m3;
 
+/** La otra fórmula del cubicador: con Smalian se muestra la Oxapampina y al revés. */
+export const OTRA_FORMULA: Readonly<Record<FormulaTrozas, FormulaTrozas>> = { smalian: "oxapampina", oxapampina: "smalian" };
+
+type MedidasTroza = Pick<TrozaCubicada, "d1" | "d2" | "largo">;
+
+/**
+ * Las medidas de una troza pasadas a las unidades de la OTRA fórmula (Brandon
+ * 15-10): Smalian → Oxapampina = cm ÷ 2,54 y m ÷ 0,3048 (× 3,2808); al revés,
+ * pulgadas × 2,54 y pies × 0,3048. Cada Ø se convierte por separado: las dos
+ * fórmulas promedian las puntas (Ø medio), así que da lo mismo que promediar
+ * antes de convertir. Con un Ø al medio (d1 = d2) la otra usa ese mismo Ø.
+ */
+export function medidasEnLaOtra(formula: FormulaTrozas, t: MedidasTroza): MedidasTroza {
+  if (formula === "smalian") {
+    return { d1: t.d1 / CM_POR_PULGADA, d2: t.d2 / CM_POR_PULGADA, largo: t.largo / M_POR_PIE };
+  }
+  return { d1: t.d1 * CM_POR_PULGADA, d2: t.d2 * CM_POR_PULGADA, largo: t.largo * M_POR_PIE };
+}
+
+/**
+ * El volumen EQUIVALENTE de una troza en la otra fórmula: PT Oxapampina de un
+ * lote Smalian (con `ptOxapampa`, vía `cubicarSegun`) o m³ Smalian SERFOR de un
+ * lote Oxapampina (`smalianVolume`, vía `cubicarTroza`). Es un DERIVADO de las
+ * medidas convertidas, no lo medido: la pantalla lo rotula «equivalente».
+ * 62/50 cm × 4 m → 24,41″/19,69″ × 13,12′ → 260,37 PT.
+ */
+export function equivalenteEnLaOtra(formula: FormulaTrozas, t: MedidasTroza): number {
+  const m = medidasEnLaOtra(formula, t);
+  return cubicarSegun(OTRA_FORMULA[formula], m.d1, m.largo, m.d2);
+}
+
+/** El total equivalente del patio, con el redondeo de la otra unidad (PT a 2, m³ a 4). */
+export function totalEquivalente(rows: readonly MedidasTroza[], formula: FormulaTrozas): number {
+  return redondearVolumen(rows.reduce((a, r) => a + equivalenteEnLaOtra(formula, r), 0), OTRA_FORMULA[formula]);
+}
+
 const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 /** Redondeo del total según la unidad: m³ a 4 decimales (como `totalesTrozas`), PT a 2. */
@@ -201,8 +237,8 @@ export const claveFormulaTrozas = (slug: string): string => `${claveLoteTrozas(s
 export const claveDiametrosTrozas = (slug: string): string => `${claveLoteTrozas(slug, "smalian")}-diametros`;
 
 /**
- * CSV del patio en la unidad del lote (BOM para que Excel lea las tildes).
- * Smalian con dos Ø = el mismo archivo de siempre.
+ * CSV del patio en la unidad del lote (BOM para que Excel lea las tildes), con
+ * una última columna aparte: el equivalente en la otra fórmula (derivado).
  */
 export function patioACsv(rows: readonly TrozaCubicada[], formula: FormulaTrozas, diametros: DiametrosPorTroza): string {
   const ox = formula === "oxapampina";
@@ -210,11 +246,14 @@ export function patioACsv(rows: readonly TrozaCubicada[], formula: FormulaTrozas
   const head = [
     ...(diametros === 1 ? [`D${ud}`] : [`D1${ud}`, `D2${ud}`]),
     ox ? "LargoPies" : "LargoM", "Especie", ox ? "PT" : "m3",
+    ox ? "m3 Smalian SERFOR (equivalente)" : "PT Oxapampina (equivalente)",
   ];
   const lines = rows.map((r) => [
     ...(diametros === 1 ? [diametroUnico(r)] : [r.d1, r.d2]), r.largo, r.especie ?? "", volumenDe(r, formula),
+    equivalenteEnLaOtra(formula, r),
   ].join(","));
   const total = totalesSegun(rows, formula).volumen.toFixed(ox ? 2 : 4);
-  const vacias = head.length - 2;
-  return "﻿" + [head.join(","), ...lines, ["TOTAL", ...Array<string>(vacias).fill(""), total].join(",")].join("\n");
+  const totalEq = totalEquivalente(rows, formula).toFixed(ox ? 4 : 2);
+  const vacias = head.length - 3;
+  return "﻿" + [head.join(","), ...lines, ["TOTAL", ...Array<string>(vacias).fill(""), total, totalEq].join(",")].join("\n");
 }

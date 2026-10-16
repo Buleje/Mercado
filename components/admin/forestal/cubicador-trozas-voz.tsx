@@ -4,21 +4,29 @@
  * Panel de carga del Cubicador de trozas: fórmula, micrófono, especie, el
  * caption en vivo agrupado en PARES (un Ø) o TRÍOS (dos Ø), la última troza
  * con «Deshacer» y la carga a mano. Las unidades salen de la fórmula del lote.
+ *
+ * La carga a mano es una fila de planilla (`useTecladoGrilla`): → y ← pasan
+ * entre menor · mayor · largo con el cursor en el borde, y Enter agrega la
+ * troza si están las medidas (si falta una, salta a la que falta).
  */
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Check, Mic, MicOff, Plus, RotateCcw, Ruler, Settings2 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { numerosDeTroza } from "@/lib/forestal/cubicacion";
 import { prepararPitido } from "@/lib/forestal/pitido";
 import {
-  diametroUnico, UNIDADES_FORMULA, volumenDe, type DiametrosPorTroza, type FormulaTrozas,
+  diametroUnico, equivalenteEnLaOtra, OTRA_FORMULA, UNIDADES_FORMULA, volumenDe, type DiametrosPorTroza, type FormulaTrozas,
 } from "@/lib/forestal/cubicacion-trozas-formula";
 import type { VozContinua } from "@/hooks/use-voz-continua";
 import { formatNumber } from "@/lib/format";
+import { CeldaNum, enfocarCelda, useTecladoGrilla } from "./celdas-excel";
 import FormulaTrozasControl from "./cubicador-trozas-formula";
 import type { FilaTroza } from "./cubicador-trozas-tabla";
 
 /** Cómo se dicta, con un ejemplo en palabras — por fórmula y por cantidad de Ø. */
+/** Columnas de la fila a mano: Ø (o Ø menor) · Ø mayor · largo. */
+const COLUMNAS_A_MANO: Record<DiametrosPorTroza, readonly number[]> = { 1: [0, 2], 2: [0, 1, 2] };
+
 const EJEMPLO: Record<FormulaTrozas, Record<DiametrosPorTroza, { dicho: string; quiere: string }>> = {
   smalian: {
     1: { dicho: "cuarenta tres punto cinco", quiere: "Ø 40 cm al medio · largo 3.5 m" },
@@ -64,13 +72,20 @@ export default function PanelVozTrozas({
   const faltan = liveGroups ? paso - liveGroups.resto.length : 0;
 
   const [manual, setManual] = useState({ d1: "", d2: "", largo: "" });
+  const grilla = `trozas-a-mano-${useId()}`;
   const addManual = () => {
     const d1 = Number(manual.d1), l = Number(manual.largo);
     const d2 = diametros === 1 ? d1 : Number(manual.d2) || d1;
-    if (!(d1 > 0 && l > 0)) return;
+    /* Enter con una medida vacía no se pierde: va a la que falta. */
+    if (!(d1 > 0)) return void enfocarCelda(grilla, 0, 0);
+    if (!(l > 0)) return void enfocarCelda(grilla, 0, 2);
     onAgregar(d1, d2, l);
     setManual({ d1: "", d2: "", largo: "" });
+    enfocarCelda(grilla, 0, 0);
   };
+  const teclas = useTecladoGrilla({
+    grilla, onConfirmar: addManual, enterSiempreConfirma: true, totalFilas: 1, columnas: COLUMNAS_A_MANO[diametros], envolver: true,
+  });
 
   const medidasUltima = lastAdded
     ? diametros === 1
@@ -162,6 +177,9 @@ export default function PanelVozTrozas({
             <Check className="h-4 w-4" />
             Agregada: {medidasUltima} × {lastAdded.largo} {u.largo}{lastAdded.especie ? ` · ${lastAdded.especie}` : ""}
             <span className="font-mono">= {formatNumber(volumenDe(lastAdded, formula), u.decimales)} {u.volumen}</span>
+            <span className="font-mono font-semibold opacity-75" title={`Equivalente en ${UNIDADES_FORMULA[OTRA_FORMULA[formula]].nombre} (derivado)`}>
+              ≈ {formatNumber(equivalenteEnLaOtra(formula, lastAdded), UNIDADES_FORMULA[OTRA_FORMULA[formula]].decimales)} {UNIDADES_FORMULA[OTRA_FORMULA[formula]].volumen}
+            </span>
           </span>
           <button type="button" onClick={onDeshacer} className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95 dark:text-[var(--data-success-500)]">
             <RotateCcw className="h-3.5 w-3.5" /> Deshacer
@@ -170,16 +188,16 @@ export default function PanelVozTrozas({
       )}
 
       {/* Carga manual */}
-      <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-[var(--rule-soft)] pt-3">
+      <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-[var(--rule-soft)] pt-3" data-grilla={grilla}>
         {diametros === 1 ? (
-          <CampoNum label={`Ø al medio (${u.diametro})`} value={manual.d1} onChange={(v) => setManual({ ...manual, d1: v })} />
+          <CampoNum label={`Ø al medio (${u.diametro})`} col={0} teclas={teclas} value={manual.d1} onChange={(v) => setManual({ ...manual, d1: v })} />
         ) : (
           <>
-            <CampoNum label={`Ø menor (${u.diametro})`} value={manual.d1} onChange={(v) => setManual({ ...manual, d1: v })} />
-            <CampoNum label={`Ø mayor (${u.diametro})`} value={manual.d2} onChange={(v) => setManual({ ...manual, d2: v })} placeholder="= menor" />
+            <CampoNum label={`Ø menor (${u.diametro})`} col={0} teclas={teclas} value={manual.d1} onChange={(v) => setManual({ ...manual, d1: v })} />
+            <CampoNum label={`Ø mayor (${u.diametro})`} col={1} teclas={teclas} value={manual.d2} onChange={(v) => setManual({ ...manual, d2: v })} placeholder="= menor" />
           </>
         )}
-        <CampoNum label={`Largo (${u.largo})`} value={manual.largo} onChange={(v) => setManual({ ...manual, largo: v })} />
+        <CampoNum label={`Largo (${u.largo})`} col={2} teclas={teclas} value={manual.largo} onChange={(v) => setManual({ ...manual, largo: v })} />
         <button type="button" onClick={addManual} className="inline-flex h-12 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
           <Plus className="h-4 w-4" /> Agregar a mano
         </button>
@@ -188,11 +206,15 @@ export default function PanelVozTrozas({
   );
 }
 
-function CampoNum({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+/** Texto (no `type=number`): con número el navegador no dice dónde está el cursor y → saltaría en medio de «12». */
+function CampoNum({ label, col, teclas, value, onChange, placeholder }: {
+  label: string; col: number; teclas: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
   return (
     <label className="flex flex-col gap-0.5">
       <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
-      <input type="number" inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-10 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+      <CeldaNum valor={value} onValor={onChange} fila={0} col={col} onKeyDown={teclas} etiqueta={label} placeholder={placeholder} ancho="w-28" alto="h-12" />
     </label>
   );
 }

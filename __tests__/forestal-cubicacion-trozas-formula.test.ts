@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 import { ptOxapampa, ptOxapampaDelCubicador } from "@/lib/forestal/cubicacion-oxapampa";
 import { cubicarTroza, partirEnTrozas } from "@/lib/forestal/cubicacion-trozas";
 import {
-  claveLoteTrozas, conVolumen, cubicarSegun, diametroUnico, medidasEnVoz, partirEnMedidas, patioACsv,
-  recubicarLoteSmalian, resumenDelPatio, tipoDeTrozaSegun, totalesSegun,
+  claveLoteTrozas, conVolumen, cubicarSegun, diametroUnico, equivalenteEnLaOtra, medidasEnLaOtra, medidasEnVoz, partirEnMedidas,
+  patioACsv, recubicarLoteSmalian, resumenDelPatio, tipoDeTrozaSegun, totalEquivalente, totalesSegun,
 } from "@/lib/forestal/cubicacion-trozas-formula";
 import { agruparTrozasPor, resumenTrozasACsv, resumenTrozasPorEspecie } from "@/lib/forestal/cubicacion-trozas-resumen";
 
@@ -107,16 +107,16 @@ describe("totales, resúmenes y CSV en PT", () => {
     expect(csv.split("\n")[0]).toBe("﻿especie,Trozas,PT,%PT");
     expect(csv.split("\n").at(-1)).toBe("TOTAL,3,432.66,100.0");
     const patio = patioACsv(lote, "oxapampina", 1).split("\n");
-    expect(patio[0]).toBe("﻿Dpulg,LargoPies,Especie,PT");
-    expect(patio[2]).toBe("20,12,Tornillo,195.92");
-    expect(patio.at(-1)).toBe("TOTAL,,,432.66");
+    expect(patio[0]).toBe("﻿Dpulg,LargoPies,Especie,PT,m3 Smalian SERFOR (equivalente)");
+    expect(patio[2]).toBe("20,12,Tornillo,195.92,0.7413");
+    expect(patio.at(-1)).toMatch(/^TOTAL,,,432\.66,\d+\.\d{4}$/);
   });
-  it("el CSV Smalian con dos Ø sigue igual", () => {
-    const s = [conVolumen("smalian", { id: "x", d1: 40, d2: 45, largo: 3.5, especie: "Cedro" })];
+  it("el CSV Smalian con dos Ø lleva el PT Oxapampina equivalente en una columna aparte, al final", () => {
+    const s = [conVolumen("smalian", { id: "x", d1: 62, d2: 50, largo: 4, especie: "Cedro" })];
     const csv = patioACsv(s, "smalian", 2).split("\n");
-    expect(csv[0]).toBe("﻿D1cm,D2cm,LargoM,Especie,m3");
-    expect(csv[1]).toBe(`40,45,3.5,Cedro,${s[0].m3}`);
-    expect(csv[2]).toBe(`TOTAL,,,,${s[0].m3.toFixed(4)}`);
+    expect(csv[0]).toBe("﻿D1cm,D2cm,LargoM,Especie,m3,PT Oxapampina (equivalente)");
+    expect(csv[1]).toBe("62,50,4,Cedro,0.9852,260.37");
+    expect(csv[2]).toBe("TOTAL,,,,0.9852,260.37");
   });
 });
 
@@ -128,5 +128,38 @@ describe("recubicarLoteSmalian (ADR-492)", () => {
     ]);
     expect(nueva.m3).toBe(0.9852);
     expect(sinLargo.m3).toBe(0.5);
+  });
+});
+
+describe("equivalente en la otra fórmula (Brandon 15-10): derivado, nunca lo medido", () => {
+  it("cm ↔ pulgadas (÷/× 2,54) y m ↔ pies (÷/× 0,3048)", () => {
+    const ox = medidasEnLaOtra("smalian", { d1: 62, d2: 50, largo: 4 });
+    expect(ox.d1).toBeCloseTo(24.4094, 4);
+    expect(ox.d2).toBeCloseTo(19.685, 4);
+    expect(ox.largo).toBeCloseTo(13.1234, 4); // 4 × 3,2808
+    const cm = medidasEnLaOtra("oxapampina", { d1: 20, d2: 20, largo: 12 });
+    expect(cm).toEqual({ d1: 50.8, d2: 50.8, largo: expect.closeTo(3.6576, 6) as number });
+    /* Ida y vuelta: vuelven las mismas medidas. */
+    const vuelta = medidasEnLaOtra("oxapampina", ox);
+    expect(vuelta.d1).toBeCloseTo(62, 9);
+    expect(vuelta.largo).toBeCloseTo(4, 9);
+  });
+  it("62/50 cm × 4 m = 0,9852 m³ Smalian SERFOR ≈ 260,37 PT Oxapampina (24,41″/19,69″ × 13,12′, con ptOxapampa)", () => {
+    expect(cubicarSegun("smalian", 62, 4, 50)).toBe(0.9852);
+    expect(equivalenteEnLaOtra("smalian", { d1: 62, d2: 50, largo: 4 })).toBe(260.37);
+    expect(ptOxapampa({ d1Pulg: 24.41, d2Pulg: 19.69, largoPies: 13.12 })).toBe(260.37);
+  });
+  it("y al revés: 24,41″/19,69″ × 13,12′ → 0,9852 m³; 20″ × 12′ (195,92 PT) → 0,7413 m³", () => {
+    expect(equivalenteEnLaOtra("oxapampina", { d1: 24.41, d2: 19.69, largo: 13.12 })).toBe(0.9852);
+    expect(equivalenteEnLaOtra("oxapampina", { d1: 20, d2: 20, largo: 12 })).toBe(cubicarTroza(50.8, 3.6576, 50.8));
+    expect(equivalenteEnLaOtra("oxapampina", { d1: 20, d2: 20, largo: 12 })).toBe(0.7413);
+  });
+  it("un Ø al medio = dos puntas iguales; dos puntas se promedian igual en las dos fórmulas", () => {
+    expect(equivalenteEnLaOtra("oxapampina", { d1: 18, d2: 22, largo: 12 })).toBe(equivalenteEnLaOtra("oxapampina", { d1: 20, d2: 20, largo: 12 }));
+  });
+  it("el total suma troza por troza con el redondeo de la otra unidad", () => {
+    const lote = [conVolumen("smalian", { id: "a", d1: 62, d2: 50, largo: 4 }), conVolumen("smalian", { id: "b", d1: 40, d2: 45, largo: 3.5 })];
+    expect(totalEquivalente(lote, "smalian")).toBe(391.6);
+    expect(totalEquivalente([], "oxapampina")).toBe(0);
   });
 });

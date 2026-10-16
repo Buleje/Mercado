@@ -1709,6 +1709,8 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     grilla: GRILLA_TABLA,
     totalFilas: filasVisibles.length,
     columnas: tablaColumnasVisibles,
+    /* → al final de la fila sigue en la primera medida de la siguiente (15-10). */
+    envolver: true,
     onEliminarFila: onEliminarFilaVisible,
     onDuplicarFila: onDuplicarFilaVisible,
   });

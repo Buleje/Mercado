@@ -104,6 +104,12 @@ export type OpcionesGrilla = {
    */
   totalFilas?: number;
   columnas?: readonly number[];
+  /**
+   * `→` en la última columna pasa a la PRIMERA de la fila siguiente y `←` en la
+   * primera, a la última de la anterior (Brandon 15-10: cargar menor · mayor ·
+   * largo de corrido sin soltar la flecha). Sigue mirando el borde del cursor.
+   */
+  envolver?: boolean;
 };
 
 /** Teclas que de verdad navegan — el resto (dígitos, backspace…) no necesita
@@ -121,7 +127,7 @@ const TECLAS_NAV = new Set(["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "
  * - `Escape` suelta el foco.
  */
 export function useTecladoGrilla(op: OpcionesGrilla) {
-  const { grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila, totalFilas, columnas } = op;
+  const { grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila, totalFilas, columnas, envolver } = op;
 
   return useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -163,17 +169,33 @@ export function useTecladoGrilla(op: OpcionesGrilla) {
         case "ArrowRight": {
           if (!cursorAlFinal(el)) return;
           const sig = cols[iCol + 1];
-          if (sig === undefined) return;
+          if (sig !== undefined) {
+            e.preventDefault();
+            enfocarCelda(grilla, fila, sig);
+            break;
+          }
+          const filaSig = envolver ? filas[iFila + 1] : undefined;
+          if (filaSig === undefined) return;
+          const primera = (columnas ? cols : columnasDe(grilla, filaSig))[0];
+          if (primera === undefined) return;
           e.preventDefault();
-          enfocarCelda(grilla, fila, sig);
+          enfocarCelda(grilla, filaSig, primera);
           break;
         }
         case "ArrowLeft": {
           if (!cursorAlInicio(el)) return;
           const ant = cols[iCol - 1];
-          if (ant === undefined) return;
+          if (ant !== undefined) {
+            e.preventDefault();
+            enfocarCelda(grilla, fila, ant);
+            break;
+          }
+          const filaAnt = envolver ? filas[iFila - 1] : undefined;
+          if (filaAnt === undefined) return;
+          const ultima = (columnas ? cols : columnasDe(grilla, filaAnt)).at(-1);
+          if (ultima === undefined) return;
           e.preventDefault();
-          enfocarCelda(grilla, fila, ant);
+          enfocarCelda(grilla, filaAnt, ultima);
           break;
         }
         case "ArrowDown": {
@@ -207,7 +229,7 @@ export function useTecladoGrilla(op: OpcionesGrilla) {
         }
       }
     },
-    [grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila, totalFilas, columnas]
+    [grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila, totalFilas, columnas, envolver]
   );
 }
 

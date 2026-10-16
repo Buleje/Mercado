@@ -1,9 +1,11 @@
 "use client";
 
 /**
- * La cuenta del patio (ADR-478): la fila de botones que el cubicador de trozas
- * monta debajo de la tabla — «Guardar en la cuenta» y «Guardadas» — y la lista
- * de las cubicaciones ya subidas, para reabrirlas, valorizarlas o anularlas.
+ * La cuenta del patio (ADR-478): `useCuentaDelPatio` (guardar, ver guardadas,
+ * la CUB de este lote y sus ventanas) y `BotonGuardarEnLaCuenta`, que va en la
+ * cabecera de la tabla —el mismo lugar y el mismo botón (`AccionLote`) que el
+ * «Guardar» del cubicador de aserrada; hasta el 15-10 vivía al fondo, debajo de
+ * las referencias, y no se veía—. «Guardadas» va en el menú «Patio».
  *
  * Un modal a la vez: abrir una guardada CIERRA la lista (no se apilan).
  */
@@ -17,6 +19,7 @@ import { formatCurrency } from "@/lib/currency";
 import { fmtVolumen } from "@/lib/forestal/cubicacion-cuenta";
 import { fechaConDia } from "@/lib/forestal/loth-tablero-reporte";
 import type { DiametrosPorTroza, FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
+import { AccionLote } from "./cubicador-acciones";
 import { ActionToasts, useActionToasts } from "./cubicador-toasts";
 import { BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
 import { cerrarAlNavegar } from "./enlace-cierra-ventana";
@@ -24,9 +27,6 @@ import type { FilaTroza } from "./cubicador-trozas-tabla";
 import GuardarEnLaCuentaModal from "./cubicador-trozas-guardar";
 import ValorizarCubicacionModal from "./cubicador-trozas-valorizar";
 import { ESTADO_CUB, useCubicacionesTrozas, type CubicacionTrozas, type EstadoCubicacion } from "./hooks/use-cubicaciones-trozas";
-
-const BOTON_CHICO =
-  "inline-flex h-12 items-center gap-2 rounded-xl px-3.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
 
 
 interface Recuerdo { id: string; codigo: string }
@@ -57,7 +57,18 @@ function useRecuerdoDelLote(clave: string, filas: number) {
   return { recuerdo, recordar };
 }
 
-export default function CuentaDelPatio({
+/** Lo que la cabecera del patio necesita de la cuenta: acciones + sus ventanas. */
+export interface CuentaDelPatio {
+  guardar: () => void;
+  verGuardadas: () => void;
+  /** La CUB que salió de ESTE lote (si sigue viva), para reabrirla. */
+  esteLote: { codigo: string; abrir: () => void } | null;
+  hayFilas: boolean;
+  /** Ventanas y avisos: se montan una vez, donde sea (van en portal). */
+  ventanas: React.ReactNode;
+}
+
+export function useCuentaDelPatio({
   rows, formula, diametros, claveLote,
 }: {
   rows: FilaTroza[];
@@ -65,7 +76,7 @@ export default function CuentaDelPatio({
   diametros: DiametrosPorTroza;
   /** La clave del lote abierto en localStorage (`claveLoteTrozas`). */
   claveLote: string;
-}) {
+}): CuentaDelPatio {
   const rol = useMiRol();
   const puedeAplicar = rol === "admin" || rol === "owner" || rol === "superadmin";
   const { toasts, push, dismiss } = useActionToasts();
@@ -85,27 +96,8 @@ export default function CuentaDelPatio({
     });
   };
 
-  return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--rule-soft)] pt-3" data-vista="cuenta-del-patio">
-      <button type="button" disabled={!rows.length} onClick={() => setGuardando(true)}
-        className={`${BOTON_CHICO} bg-[var(--accent-dark)] text-white shadow-sm hover:brightness-110`}>
-        <Save className="h-4 w-4" /> Guardar en la cuenta
-      </button>
-      <button type="button" onClick={() => setViendoLista(true)}
-        className={`${BOTON_CHICO} border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]`}>
-        <FolderOpen className="h-4 w-4" /> Guardadas
-      </button>
-      {recuerdo && rows.length > 0 && (
-        <button type="button" onClick={() => setAbierta(recuerdo.id)} className="text-sm text-[var(--text-tertiary)] hover:text-[var(--accent-dark)]">
-          Este patio: <b className="font-mono text-[var(--text-primary)]">{recuerdo.codigo}</b>
-        </button>
-      )}
-      <InfoTip
-        what="Sube el patio con dueño: la persona de «Cuenta por persona», la fecha y la guía si vino con una."
-        affects="Después el dueño o el admin le pone precio por especie y lo descuenta de su adelanto, el más antiguo primero."
-        example="34 trozas de Wasaco · 2 140 PT × S/ 1,20 = S/ 2 568 menos en lo que te debe."
-      />
-
+  const ventanas = (
+    <>
       {guardando && (
         <GuardarEnLaCuentaModal
           rows={rows}
@@ -128,7 +120,30 @@ export default function CuentaDelPatio({
         />
       )}
       <ActionToasts toasts={toasts} onDismiss={dismiss} />
-    </div>
+    </>
+  );
+
+  return {
+    guardar: () => setGuardando(true),
+    verGuardadas: () => setViendoLista(true),
+    esteLote: recuerdo && rows.length > 0 ? { codigo: recuerdo.codigo, abrir: () => setAbierta(recuerdo.id) } : null,
+    hayFilas: rows.length > 0,
+    ventanas,
+  };
+}
+
+/** El botón de la cabecera: el mismo `AccionLote` destacado que el «Guardar» de la aserrada, con su ⓘ. */
+export function BotonGuardarEnLaCuenta({ cuenta }: { cuenta: CuentaDelPatio }) {
+  return (
+    <span className="inline-flex items-center gap-1" data-vista="cuenta-del-patio">
+      <AccionLote label="Guardar en la cuenta" Icono={Save} destacado disabled={!cuenta.hayFilas}
+        hint="Guardar el patio a la cuenta de una persona, con fecha y guía" onClick={cuenta.guardar} />
+      <InfoTip
+        what="Sube el patio con dueño: la persona de «Cuenta por persona», la fecha y la guía si vino con una. Las ya guardadas están en «Patio ▾ › Guardadas»."
+        affects="Después el dueño o el admin le pone precio por especie y lo descuenta de su adelanto, el más antiguo primero."
+        example="34 trozas de Wasaco · 2 140 PT × S/ 1,20 = S/ 2 568 menos en lo que te debe."
+      />
+    </span>
   );
 }
 

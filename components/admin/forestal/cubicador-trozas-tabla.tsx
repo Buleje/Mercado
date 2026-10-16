@@ -8,17 +8,25 @@
  * Ventaneo (`use-tabla-ventaneada`): el patio de un camión grande son cientos
  * de trozas, y montarlas todas de una es el mismo cuelgue que sufrió el
  * cubicador de aserrada con 683 filas. Debajo del umbral no cambia nada.
+ *
+ * Teclado de planilla (`useTecladoGrilla`, el del cubicador de aserrada): → y ←
+ * pasan entre menor · mayor · largo con el cursor en el borde del número, y al
+ * final de la fila siguen en la primera medida de la siguiente; ↑ ↓ y Enter
+ * cambian de fila. La columna «≈» es el equivalente en la OTRA fórmula
+ * (derivado de las medidas convertidas, no medido).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Trash2, Volume2 } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import { empiezaBloque, numeroDeFila, type OrdenFilas } from "@/lib/forestal/cubicador-bloques-especie";
 import {
-  diametroUnico, UNIDADES_FORMULA, volumenDe, type DiametrosPorTroza, type FormulaTrozas,
+  diametroUnico, equivalenteEnLaOtra, OTRA_FORMULA, UNIDADES_FORMULA, volumenDe, type DiametrosPorTroza, type FormulaTrozas,
 } from "@/lib/forestal/cubicacion-trozas-formula";
 import type { TrozaCubicada } from "@/lib/forestal/cubicacion-trozas";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 import { formatNumber } from "@/lib/format";
+import { useTecladoGrilla } from "./celdas-excel";
 
 export interface FilaTroza extends TrozaCubicada {
   sospechosa?: boolean;
@@ -28,17 +36,28 @@ export type CampoTroza = "d" | "d1" | "d2" | "largo";
 
 /** Alto del visor de la tabla del patio, en px. Constante mientras se scrollea. */
 const ALTO_VISOR_PATIO = 600;
+/** `data-grilla` del patio: las flechas buscan sus celdas por `data-fila`/`data-col`. */
+const GRILLA_PATIO = "cubicador-trozas-patio";
+/** Columnas de teclado: Ø (o Ø menor) · Ø mayor · largo. Con un Ø no hay la 1. */
+const COL_D1 = 0;
+const COL_D2 = 1;
+const COL_LARGO = 2;
+const COLUMNAS_TECLADO: Record<DiametrosPorTroza, readonly number[]> = { 1: [COL_D1, COL_LARGO], 2: [COL_D1, COL_D2, COL_LARGO] };
 
 export default function TablaPatioTrozas({
-  rows, formula, diametros, verEspecie, verVolumen, ordenFilas, total, lastAddedId, leyendoId, onEditar, onBorrar, onLeerDesde,
+  rows, formula, diametros, verEspecie, verVolumen, verEquivalente, ordenFilas, total, totalEquivalente, lastAddedId, leyendoId,
+  onEditar, onBorrar, onLeerDesde,
 }: {
   rows: FilaTroza[];
   formula: FormulaTrozas;
   diametros: DiametrosPorTroza;
   verEspecie: boolean;
   verVolumen: boolean;
+  /** La columna «≈» con el volumen en la otra fórmula. */
+  verEquivalente: boolean;
   ordenFilas: OrdenFilas;
   total: number;
+  totalEquivalente: number;
   lastAddedId?: string;
   leyendoId?: string | null;
   onEditar: (id: string, campo: CampoTroza, valor: number) => void;
@@ -46,16 +65,20 @@ export default function TablaPatioTrozas({
   onLeerDesde: (id: string) => void;
 }) {
   const u = UNIDADES_FORMULA[formula];
+  const uOtra = UNIDADES_FORMULA[OTRA_FORMULA[formula]];
   const ventana = useTablaVentaneada(rows, { altoVisor: ALTO_VISOR_PATIO });
   const propsTabla = useMemo(() => {
     const q: Record<string, unknown> = { ...ventana.propsContenedor };
     q.className = "rounded-xl";
+    q["data-grilla"] = GRILLA_PATIO;
     return q as React.HTMLAttributes<HTMLDivElement>;
   }, [ventana.propsContenedor]);
+  /* Sin `totalFilas`: con el ventaneo, las filas que hay son las montadas (las busca en el DOM). */
+  const teclas = useTecladoGrilla({ grilla: GRILLA_PATIO, columnas: COLUMNAS_TECLADO[diametros], envolver: true });
   /** Columnas antes del total — el pie las abarca todas; con Especie oculta un colSpan fijo quedaba corto o largo. */
   const colSpanTotales = 2 /* # + Largo */ + diametros + (verEspecie ? 1 : 0);
   /** Columnas vivas — para el colSpan de los `<tr>` colchón. */
-  const colsTotales = colSpanTotales + (verVolumen ? 1 : 0) + 1;
+  const colsTotales = colSpanTotales + (verVolumen ? 1 : 0) + (verEquivalente ? 1 : 0) + 1;
   const TH = "px-3 py-2";
 
   return (
@@ -71,6 +94,18 @@ export default function TablaPatioTrozas({
           <th className={TH}>Largo ({u.largo})</th>
           {verEspecie && <th className={TH}>Especie</th>}
           {verVolumen && <th className={`${TH} text-right`}>{u.volumen}</th>}
+          {verEquivalente && (
+            <th className={`${TH} text-right`}>
+              <span className="inline-flex items-center gap-1">
+                ≈ {uOtra.volumen} {uOtra.nombre}
+                <InfoTip
+                  what={`Equivalente en ${uOtra.nombre}: las mismas medidas pasadas a ${uOtra.diametro === "pulg" ? "pulgadas (cm ÷ 2,54) y pies (m × 3,2808)" : "centímetros (pulg × 2,54) y metros (pies × 0,3048)"} y cubicadas con ${uOtra.cuenta}.`}
+                  affects="Es una conversión, no lo medido. Con un Ø al medio, la otra fórmula usa ese Ø en las dos puntas; con dos, cada punta se convierte (las dos promedian igual)."
+                  example={formula === "smalian" ? "62 y 50 cm × 4 m = 0,985 m³ ≈ 24,41″ y 19,69″ × 13,12′ = 260,37 PT" : "20″ × 12′ = 195,92 PT ≈ 50,8 cm × 3,66 m = 0,741 m³"}
+                />
+              </span>
+            </th>
+          )}
           <th className={TH} />
         </tr>
       </thead>
@@ -109,18 +144,23 @@ export default function TablaPatioTrozas({
             >
               <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{n}</td>
               {diametros === 1 ? (
-                <td className="px-3 py-2"><CeldaNum value={diametroUnico(r)} onChange={(v) => onEditar(r.id, "d", v)} etiqueta={`Diámetro de la troza ${n}`} /></td>
+                <td className="px-3 py-2"><CeldaNum value={diametroUnico(r)} onChange={(v) => onEditar(r.id, "d", v)} etiqueta={`Diámetro de la troza ${n}`} fila={i} col={COL_D1} onKeyDown={teclas} /></td>
               ) : (
                 <>
-                  <td className="px-3 py-2"><CeldaNum value={r.d1} onChange={(v) => onEditar(r.id, "d1", v)} etiqueta={`Diámetro 1 de la troza ${n}`} /></td>
-                  <td className="px-3 py-2"><CeldaNum value={r.d2} onChange={(v) => onEditar(r.id, "d2", v)} etiqueta={`Diámetro 2 de la troza ${n}`} /></td>
+                  <td className="px-3 py-2"><CeldaNum value={r.d1} onChange={(v) => onEditar(r.id, "d1", v)} etiqueta={`Diámetro 1 de la troza ${n}`} fila={i} col={COL_D1} onKeyDown={teclas} /></td>
+                  <td className="px-3 py-2"><CeldaNum value={r.d2} onChange={(v) => onEditar(r.id, "d2", v)} etiqueta={`Diámetro 2 de la troza ${n}`} fila={i} col={COL_D2} onKeyDown={teclas} /></td>
                 </>
               )}
-              <td className="px-3 py-2"><CeldaNum value={r.largo} onChange={(v) => onEditar(r.id, "largo", v)} etiqueta={`Largo de la troza ${n}`} /></td>
+              <td className="px-3 py-2"><CeldaNum value={r.largo} onChange={(v) => onEditar(r.id, "largo", v)} etiqueta={`Largo de la troza ${n}`} fila={i} col={COL_LARGO} onKeyDown={teclas} /></td>
               {verEspecie && <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especie ?? "—"}</td>}
               {verVolumen && (
                 <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                   {formatNumber(volumenDe(r, formula), u.decimales)}
+                </td>
+              )}
+              {verEquivalente && (
+                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]" data-dato="equivalente">
+                  ≈ {formatNumber(equivalenteEnLaOtra(formula, r), uOtra.decimales)}
                 </td>
               )}
               <td className="px-3 py-2">
@@ -154,6 +194,11 @@ export default function TablaPatioTrozas({
         <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <td className="px-3 py-2.5" colSpan={colSpanTotales}>Total · {rows.length} {rows.length === 1 ? "troza" : "trozas"}</td>
           {verVolumen && <td className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]">{formatNumber(total, u.decimales)} {u.volumen}</td>}
+          {verEquivalente && (
+            <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]" data-dato="total-equivalente">
+              ≈ {formatNumber(totalEquivalente, uOtra.decimales)} {uOtra.volumen}
+            </td>
+          )}
           <td />
         </tr>
       </tfoot>
@@ -168,7 +213,11 @@ export default function TablaPatioTrozas({
  * la celda tiene el foco; se sincroniza con el valor de afuera al perderlo
  * (mismo arreglo que `Num` en CubicadorMadera.tsx).
  */
-function CeldaNum({ value, onChange, etiqueta }: { value: number; onChange: (v: number) => void; etiqueta?: string }) {
+function CeldaNum({ value, onChange, etiqueta, fila, col, onKeyDown }: {
+  value: number; onChange: (v: number) => void; etiqueta?: string;
+  /** Posición en la grilla de teclado (`data-fila`/`data-col`). */
+  fila: number; col: number; onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}) {
   const [texto, setTexto] = useState(String(value));
   const enfocado = useRef(false);
   useEffect(() => { if (!enfocado.current) setTexto(String(value)); }, [value]);
@@ -180,6 +229,9 @@ function CeldaNum({ value, onChange, etiqueta }: { value: number; onChange: (v: 
       autoComplete="off"
       aria-label={etiqueta}
       value={texto}
+      data-fila={fila}
+      data-col={col}
+      onKeyDown={onKeyDown}
       onFocus={(e) => { enfocado.current = true; e.currentTarget.select(); }}
       onBlur={() => { enfocado.current = false; setTexto(String(value)); }}
       onChange={(e) => {

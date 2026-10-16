@@ -1,30 +1,40 @@
 "use client";
 
 /**
- * Cabecera de la tabla del patio: título + Importar, especies, orden,
- * columnas, leer, CSV y vaciar. Las columnas opcionales (Especie y el volumen
- * de la fórmula) quedan guardadas por tenant hasta que se vuelvan a tocar.
+ * Cabecera de la tabla del patio, en UNA fila a 1280 (como la del cubicador de
+ * aserrada, `cubicador-acciones`): título · «Guardar en la cuenta» destacado ·
+ * orden · columnas · leer en voz alta · menú «Patio» (Guardadas, la CUB de este
+ * lote, Importar, Especies, CSV y Vaciar al fondo, en rojo). Hasta el 15-10 la
+ * cuenta vivía al fondo de la tarjeta y la cabecera ocupaba 3 renglones (132 px)
+ * con botones de 30 y 48 px mezclados. Las columnas opcionales (Especie, el
+ * volumen de la fórmula y su equivalente en la otra) quedan guardadas por tenant.
  */
 import { useEffect, useState } from "react";
-import { Columns3, Square, Table, Upload, Volume2 } from "@buleje/design-system/icons";
+import { Columns3, FileSpreadsheet, FolderOpen, MoreHorizontal, Square, Table, Trash2, Trees, Upload, Volume2 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { esOrdenFilas, type OrdenFilas } from "@/lib/forestal/cubicador-bloques-especie";
-import { CtpEspeciesBoton } from "./ctp-especie-campo";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
+import { MenuAcciones, type AccionMenu } from "./cubicador-acciones";
+import { BotonGuardarEnLaCuenta, type CuentaDelPatio } from "./cubicador-trozas-guardadas";
 
-export type ColOpcionalTroza = "especie" | "m3";
-export const COLS_DEFAULT_TROZA: Record<ColOpcionalTroza, boolean> = { especie: true, m3: true };
+export type ColOpcionalTroza = "especie" | "m3" | "equiv";
+export const COLS_DEFAULT_TROZA: Record<ColOpcionalTroza, boolean> = { especie: true, m3: true, equiv: true };
 
-const BTN = button({ variant: "secondary", className: "rounded-xl" });
+const ICONO = button({ variant: "secondary", size: "icon", className: "rounded-xl" });
+const ACTIVO = "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
 
 export default function BarraPatioTrozas({
-  total, etiquetaVolumen, onImportar, onEspecies, ordenFilas, hayQueOrdenar, hayQueAgrupar, onOrden,
+  total, etiquetaVolumen, etiquetaEquivalente, cuenta, onImportar, onEspecies, ordenFilas, hayQueOrdenar, hayQueAgrupar, onOrden,
   colsVisibles, onCols, leyendo, onLeer, onCsv, onVaciar,
 }: {
   total: number;
   /** «m³» o «PT»: la columna de volumen se llama como la unidad del lote. */
   etiquetaVolumen: string;
+  /** «≈ PT Oxapampina» o «≈ m³ Smalian»: la columna del equivalente en la otra fórmula. */
+  etiquetaEquivalente: string;
+  /** La cuenta del patio (`useCuentaDelPatio`): su botón va primero, sus guardadas al menú. */
+  cuenta: CuentaDelPatio;
   /** Sin `onImportar` no se ofrece (el Excel de la plantilla viene en cm). */
   onImportar?: () => void;
   onEspecies: () => void;
@@ -49,6 +59,18 @@ export default function BarraPatioTrozas({
   const opcionales: { key: ColOpcionalTroza; label: string }[] = [
     { key: "especie", label: "Especie" },
     { key: "m3", label: etiquetaVolumen },
+    { key: "equiv", label: etiquetaEquivalente },
+  ];
+
+  const menu: AccionMenu[] = [
+    { key: "guardadas", label: "Guardadas", Icono: FolderOpen, hint: "Las cubicaciones ya guardadas: abrirlas, valorizarlas o anularlas", onClick: cuenta.verGuardadas },
+    ...(cuenta.esteLote ? [{ key: "este", label: `Este patio: ${cuenta.esteLote.codigo}`, Icono: FolderOpen, hint: "La cubicación que se guardó de este patio", onClick: cuenta.esteLote.abrir }] : []),
+    ...(onImportar ? [{ key: "importar", label: "Importar del Excel", Icono: Upload, onClick: onImportar }] : []),
+    { key: "especies", label: "Especies del aserradero", Icono: Trees, hint: "Crear, renombrar o quitar especies", onClick: onEspecies },
+    ...(total > 0 ? [
+      { key: "csv", label: `Descargar CSV (${etiquetaVolumen})`, Icono: FileSpreadsheet, hint: "Se abre en Excel; trae el equivalente en la otra fórmula", onClick: onCsv },
+      { key: "vaciar", label: "Vaciar el patio", Icono: Trash2, peligro: true, onClick: onVaciar },
+    ] : []),
   ];
 
   return (
@@ -56,20 +78,15 @@ export default function BarraPatioTrozas({
       <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
         <Table className="h-4 w-4 text-[var(--accent)]" /> Trozas del patio ({total})
       </CardTitle>
-      <div className="flex flex-wrap gap-2">
-        {onImportar && (
-          <button type="button" onClick={onImportar} className={cn(BTN, `hover:border-[var(--accent)]`)}>
-            <Upload className="h-3.5 w-3.5" /> Importar
-          </button>
-        )}
-        <CtpEspeciesBoton onClick={onEspecies} />
+      <div className="flex flex-wrap items-center gap-2">
+        <BotonGuardarEnLaCuenta cuenta={cuenta} />
         {hayQueOrdenar && (
           <select
             value={ordenFilas}
             onChange={(e) => { if (esOrdenFilas(e.target.value)) onOrden(e.target.value); }}
             aria-label="Orden de las trozas"
             title="Como se dictó: en el orden en que entraron. Más nuevas primero: la última que dictaste arriba, y cada troza conserva su número. Por especie: el patio en bloques, y lo que dictes después cae al final de su bloque."
-            className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] outline-none hover:border-[var(--accent)] focus:border-[var(--accent)]"
+            className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-secondary)] outline-none hover:border-[var(--accent)] focus:border-[var(--accent)]"
           >
             <option value="dictado">Orden: como se dictó</option>
             <option value="recientes">Orden: más nuevas primero</option>
@@ -83,9 +100,9 @@ export default function BarraPatioTrozas({
             title="Elegir columnas visibles de la tabla"
             aria-label="Elegir columnas visibles"
             aria-expanded={colsMenuOpen}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${colsMenuOpen ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"}`}
+            className={cn(ICONO, colsMenuOpen && ACTIVO)}
           >
-            <Columns3 className="h-3.5 w-3.5" /> Columnas
+            <Columns3 className="h-4 w-4" />
           </button>
           {colsMenuOpen && (
             <div
@@ -117,19 +134,18 @@ export default function BarraPatioTrozas({
           )}
         </div>
         {total > 0 && (
-          <>
-            <button
-              type="button"
-              onClick={onLeer}
-              title="Leer las trozas en voz alta, una por una"
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${leyendo ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
-            >
-              {leyendo ? <><Square className="h-3.5 w-3.5" /> Detener</> : <><Volume2 className="h-3.5 w-3.5" /> Leer el patio</>}
-            </button>
-            <button type="button" onClick={onCsv} title={`Descarga el patio en ${etiquetaVolumen} (se abre en Excel)`} className={BTN}>CSV</button>
-            <button type="button" onClick={onVaciar} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/12">Vaciar</button>
-          </>
+          <button
+            type="button"
+            onClick={onLeer}
+            title={leyendo ? "Detener la lectura" : "Leer las trozas en voz alta, una por una"}
+            aria-label={leyendo ? "Detener la lectura" : "Leer el patio en voz alta"}
+            aria-pressed={leyendo}
+            className={cn(ICONO, leyendo && ACTIVO)}
+          >
+            {leyendo ? <Square className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </button>
         )}
+        <MenuAcciones etiqueta="Patio" Icono={MoreHorizontal} items={menu} alineacion="derecha" />
       </div>
     </div>
   );
