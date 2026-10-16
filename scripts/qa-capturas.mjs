@@ -50,7 +50,7 @@
  *   {"espiar": "/api/x"}          → anota método, ruta y cuerpo de cada pedido a esa ruta (sale en el reporte y en
  *                                   el resumen; un cuerpo de más de 2.000 caracteres va ENTERO a
  *                                   <salida>/espiado-N-MÉTODO.txt y el reporte trae `cuerpoArchivo`). {"espiar": ["/api/x", "POST", true]}: sólo ese método y lo FRENA con
- *                                   200 {} — probar un botón que escribe sin tocar la base. Al principio rige desde la carga.
+ *                                   200 {} — probar un botón que escribe sin tocar la base. Al principio rige desde la carga. `"/api/x/*"` = todo lo que cuelga de /api/x.
  *   {"clicTexto": "Rolliza"}      → clic por el DOM en el botón/pestaña/opción cuyo texto
  *                                   EMPIEZA con eso (dentro de main o de un diálogo). Para
  *                                   lo que `click` no alcanza: radios segmentados, botones
@@ -448,7 +448,9 @@ async function rutear(page, tipo, valor) {
        {"espiar": ["/api/x", "POST", true]} además lo FRENA con 200 {} — probar un botón que
        escribe sin tocar la base (11-10: dos carriles parchearon `window.fetch` a mano). */
     const [ruta, metodo = null, frenar = false] = Array.isArray(valor) ? valor : [valor, null, false];
-    return page.route((u) => u.pathname === ruta, (r) => {
+    // «/api/x/*» espía todo lo que cuelga de /api/x (15-10: el POST de aplicar iba a /api/x/<id>/aplicar y no se vio).
+    const coincide = ruta.endsWith("/*") ? (p) => p.startsWith(ruta.slice(0, -1)) : (p) => p === ruta;
+    return page.route((u) => coincide(u.pathname), (r) => {
       const req = r.request();
       if (metodo && req.method() !== metodo) return r.fallback();
       const u = new URL(req.url());

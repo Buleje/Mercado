@@ -99,7 +99,7 @@ lanzar tsc node scripts/tsc7.mjs --noEmit
 
 if [ "${SKIP_VITEST_GATE:-0}" != "1" ]; then
   if [ -n "$VITEST_TODO" ]; then
-    lanzar vitest npx vitest run --changed HEAD --passWithNoTests
+    lanzar vitest npx vitest run --changed HEAD --project unit --passWithNoTests
   else
     # Tests que leen el FUENTE con readFileSync (no lo importan): `related` no
     # los ve. 04-10: `loth-cupo-t9-reglas` quedó rojo con un commit verde. Se
@@ -120,7 +120,7 @@ if [ "${SKIP_VITEST_GATE:-0}" != "1" ]; then
     # shell las toma como comodines al expandir la lista.
     set -f
     # shellcheck disable=SC2086
-    lanzar vitest npx vitest related $STAGED_CODE $EXTRA_TESTS $GUARDIAS --run --passWithNoTests
+    lanzar vitest npx vitest related $STAGED_CODE $EXTRA_TESTS $GUARDIAS --project unit --run --passWithNoTests
     set +f
   fi
 fi
