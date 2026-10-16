@@ -76,6 +76,13 @@ const H = vi.hoisted(() => {
         estado.lineas.push(fila);
         return fila;
       },
+      // El despacho con guía asienta sus líneas de una (16-10).
+      createManyAndReturn: async ({ data }: { data: Fila[] }) =>
+        data.map((d) => {
+          const fila = { ...d, id: `l${estado.lineas.length + 1}` };
+          estado.lineas.push(fila);
+          return fila;
+        }),
     },
     forestGtf: {
       // El control de repetidos del despacho a mano (`exigirSinRepetir`): no hay otra guía con ese N°.
@@ -255,7 +262,8 @@ describe("T6 con motivo en la importación (ADR-468)", () => {
   it("verificada SIN motivo → T6_EXCESO_AUTORIZADO, el mismo rechazo de siempre, sin evento", async () => {
     const r = await importar({ puedeExcederDespacho: true });
     expect(r).toMatchObject({ estado: "rechazada", codigo: "T6_EXCESO_AUTORIZADO" });
-    expect(r.mensaje).toContain(`El POA autoriza 45 m³ de ${AZ.comun} y ya se movilizaron 30 m³; este despacho de 20 m³ excede lo autorizado.`);
+    // T6 mide la guía entera por especie (16-10): 10 ya salieron + 40 de la guía = 50 de 45.
+    expect(r.mensaje).toContain(`El POA autoriza 45 m³ de ${AZ.comun} y ya se movilizaron 10 m³; este despacho de 40 m³ excede lo autorizado en 5 m³.`);
     expect(H.estado.audit).toHaveLength(0);
   });
 
@@ -317,8 +325,8 @@ describe("T6 con motivo en la importación (ADR-468)", () => {
   });
 });
 
-describe("El despacho a mano (fuera del importador): T6 igual que antes", () => {
-  it("despacharConGuiaEnTx sin excepción → T6_EXCESO_AUTORIZADO con el mismo detalle (30 movilizado + 20 > 45)", async () => {
+describe("El despacho a mano (fuera del importador): T6 con la suma de la guía", () => {
+  it("despacharConGuiaEnTx sin excepción → T6_EXCESO_AUTORIZADO con la suma de la guía (10 movilizado + 40 > 45, exceso 5)", async () => {
     const err = await ForestLothDB.despacharConGuiaEnTx(
       H.tx as never,
       T,
@@ -333,7 +341,7 @@ describe("El despacho a mano (fuera del importador): T6 igual que antes", () => 
       null,
     ).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(LothInvariantError);
-    expect(err).toMatchObject({ code: "T6_EXCESO_AUTORIZADO", detail: { species: AZ.comun, autorizado: 45, movilizado: 30, pedido: 20 } });
+    expect(err).toMatchObject({ code: "T6_EXCESO_AUTORIZADO", detail: { species: AZ.comun, autorizado: 45, movilizado: 10, pedido: 40, excesoM3: 5 } });
     expect(H.estado.gtfs).toHaveLength(0);
   });
 });

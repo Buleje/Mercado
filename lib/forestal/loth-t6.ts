@@ -43,14 +43,19 @@ export interface MedidaT6 {
 export const excedeT6 = (m: MedidaT6, nuevo: number): boolean =>
   m.autorizado != null && r4(m.movilizado + nuevo) > r4(m.autorizado);
 
-/** El rechazo `T6_EXCESO_AUTORIZADO` del servidor, palabra por palabra. */
+/** Cuánto pasa el techo `movilizado + nuevo` (a 4 decimales, como `excedeT6`); ≤ 0 = no pasa. */
+export const excesoT6 = (m: { autorizado: number; movilizado: number }, nuevo: number): number =>
+  r4(r4(m.movilizado + nuevo) - r4(m.autorizado));
+
+/** El rechazo `T6_EXCESO_AUTORIZADO` del servidor, palabra por palabra (16-10: con cuánto se pasa). */
 export function mensajeT6(species: string, m: { autorizado: number; movilizado: number }, nuevo: number, plantacion: boolean): string {
   const [techo, exceso] = plantacion
     ? [`El registro de la plantación tiene ${r4(m.autorizado)} m³ de ${species}`, "excede lo registrado"]
     : [`El POA autoriza ${r4(m.autorizado)} m³ de ${species}`, "excede lo autorizado"];
+  const pasa = excesoT6(m, nuevo);
   return (
     `${techo} y ya se movilizaron ${r4(m.movilizado)} m³; ` +
-    `este despacho de ${r4(nuevo)} m³ ${exceso}. Es la infracción que sanciona OSINFOR.`
+    `este despacho de ${r4(nuevo)} m³ ${exceso}${pasa > 0 ? ` en ${pasa} m³` : ""}. Es la infracción que sanciona OSINFOR.`
   );
 }
 

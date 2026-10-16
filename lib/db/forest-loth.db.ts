@@ -42,7 +42,7 @@ import { closedPeriodOf } from "@/lib/forestal/loth-cierre-types";
 import type { AtarSinPlanConteo, AtarSinPlanResultado, AtarSeccion } from "@/lib/forestal/loth-atar-sin-plan";
 import { avisoCupoAlTalar, entradaDelPlan, motivoCupoValido, notaSobreCupo, MOTIVO_CUPO_MIN, type AvisoCupo, type EntradaCupo } from "@/lib/forestal/loth-cupo-especie";
 import { resolverTalaContraCenso } from "@/lib/forestal/loth-tala-del-censo";
-import { anotarDespachoT6, claveT6, excedeT6, mensajeT6, type DespachoT6DeLaEspecie, type MedidaT6 } from "@/lib/forestal/loth-t6";
+import { anotarDespachoT6, claveT6, excedeT6, excesoT6, mensajeT6, type DespachoT6DeLaEspecie, type MedidaT6 } from "@/lib/forestal/loth-t6";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { logger } from "@/lib/logger";
 import {
@@ -108,6 +108,20 @@ export const LOTH_TX_OPTS = { timeout: 20_000, maxWait: 10_000 } as const;
  */
 /** Una fila a mano con su especie ya cruzada con el catálogo del aserradero. */
 export type FilaAManoConEspecie = TrozaAMano & { especie: string | null; cientifico: string | null };
+
+/** T7 de varias trozas: lo que se lee del plan una sola vez (el registro, sólo si hace falta). */
+type PlanT7 = {
+  plantacion: boolean;
+  registro: { speciesCommon: string; speciesScientific: string | null }[] | null;
+};
+
+/** Una troza que T6 mide en lote: el plan de la línea y la especie y el volumen de su Trozado. */
+type DespachoParaT6 = {
+  planId: string | null;
+  speciesCommon: string | null;
+  speciesScientific: string | null;
+  volumen: number;
+};
 
 export class LothInvariantError extends Error {
   constructor(
@@ -656,6 +670,48 @@ export class ForestLothDB {
     return creada;
   }
 
+  /**
+   * Varias líneas de Trozado en UNA pasada (las trozas a mano de una guía,
+   * 16-10): las invariantes de `asentarEnTx` línea por línea —T3 y T4 con sus
+   * candados (`enforceTrozados`), mirando también las anteriores del lote—, el
+   * correlativo bajo lock UNA vez y un solo INSERT. El Trozado no tiene censo
+   * que resolver ni cupo que medir (`especieDelCensoEnTx` y
+   * `enforceCupoEspecie` son de la tala): es lo que hacía `registrarLineaEnTx`
+   * troza por troza, con 5 idas por guía en vez de ~16 por troza.
+   */
+  private static async asentarTrozadosEnLoteEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    lineas: readonly LothEntryCreateInput[],
+    entryDate: Date,
+    caratulaId: string | null,
+    /** Árboles que quien llama ya bloqueó (`bloquearEnTx`), en mayúsculas. */
+    arbolesBloqueados?: ReadonlySet<string>,
+  ) {
+    if (lineas.length === 0) return [];
+    if (lineas.some((l) => l.section !== "trozado")) throw new Error("asentarTrozadosEnLoteEnTx: sólo líneas de Trozado");
+    // 1. T3 + T4 con sus candados (árboles, después las filas).
+    await ForestLothDB.enforceTrozados(tx, tenantId, lineas, arbolesBloqueados);
+    // 2. El correlativo del Trozado, bajo LOCK (como `asentarEnTx`), una vez.
+    await tx.$queryRaw`
+      SELECT "id" FROM "ForestLothEntry"
+      WHERE "tenantId" = ${tenantId} AND "section" = 'trozado'
+        AND "caratulaId" IS NOT DISTINCT FROM ${caratulaId} AND "deletedAt" IS NULL
+      ORDER BY "id"
+      FOR UPDATE
+    `;
+    const max = await tx.forestLothEntry.aggregate({
+      where: { tenantId, caratulaId, section: "trozado" },
+      _max: { lineNo: true },
+    });
+    const desde = max._max.lineNo ?? 0;
+    // 3. Las filas, de una (en el orden del lote: el N° sigue el de las piezas).
+    const creadas = await tx.forestLothEntry.createManyAndReturn({
+      data: lineas.map((l, i) => ForestLothDB.datosDeLinea(tenantId, l, entryDate, caratulaId, desde + i + 1)),
+    });
+    return creadas.sort((a, b) => a.lineNo - b.lineNo);
+  }
+
   // ─── Despacho con guía (28-09-2026) ────────────────────────────────────
 
   /**
@@ -783,7 +839,14 @@ export class ForestLothDB {
         );
         return { ...r, trozados: manual?.lineas ?? [], codigosAMano: manual?.codigosAMano ?? [] };
       },
-      { timeout: 60_000, maxWait: 10_000 },
+      /* 16-10 (Blas): 60 s fijos cortaban con 500 una guía de ~25 trozas a
+         mano: eran ~16 idas por troza, a 119 ms cada una (localhost →
+         Supabase). Desde que las invariantes y las filas van en lote
+         (`enforceTrozados`, `enforceSalidaDeTrozas`, `createManyAndReturn`)
+         la guía hace ~30 idas, tenga 10 trozas o 50; el tope que crece con la
+         guía queda de red, hasta 90 s: mientras dura tiene tomados los
+         candados del libro (revisión 16-10: 280 s colgaba el libro entero). */
+      { timeout: Math.min(90_000, 30_000 + 600 * (codes.length + (aMano?.filas.reduce((s, f) => s + Math.max(1, f.cantidad ?? 1), 0) ?? 0))), maxWait: 10_000 },
     );
 
     for (const l of trozados) {
@@ -886,10 +949,9 @@ export class ForestLothDB {
       select: { trozaCode: true },
     });
     const tomados = new Set(usados.map((u) => u.trozaCode));
-    const correlativos = new Map<string, number>();
     const codigos: string[] = [];
     const codigosGuia = new Map<string, string>();
-    const lineas: Awaited<ReturnType<typeof ForestLothDB.registrarLineaEnTx>>[] = [];
+    const nuevas: LothEntryCreateInput[] = [];
     for (const [i, p] of piezas.entries()) {
       const code = candidatos[i].find((c) => !tomados.has(c));
       if (!code) {
@@ -900,32 +962,28 @@ export class ForestLothDB {
         );
       }
       tomados.add(code);
-      lineas.push(
-        await ForestLothDB.registrarLineaEnTx(
-          tx,
-          tenantId,
-          {
-            caratulaId: x.caratulaId,
-            planId: x.planId,
-            section: "trozado",
-            trozaCode: code,
-            treeCode: p.treeCode,
-            speciesCommon: p.especie,
-            speciesScientific: p.especie ? (cientificoDe.get(p.especie) ?? null) : null,
-            diamMayorM: p.diamMayorM,
-            diamMenorM: p.diamMenorM,
-            lengthM: p.lengthM,
-            volumeM3: p.volumeM3,
-            observations: observacionAMano(x.gtfNumber, p.codigo, notaPorFoto(p.porFoto, x.createdBy)),
-            createdBy: x.createdBy,
-          },
-          x.gtfDate,
-          correlativos,
-        ),
-      );
+      nuevas.push({
+        caratulaId: x.caratulaId,
+        planId: x.planId,
+        section: "trozado",
+        trozaCode: code,
+        treeCode: p.treeCode,
+        speciesCommon: p.especie,
+        speciesScientific: p.especie ? (cientificoDe.get(p.especie) ?? null) : null,
+        diamMayorM: p.diamMayorM,
+        diamMenorM: p.diamMenorM,
+        lengthM: p.lengthM,
+        volumeM3: p.volumeM3,
+        observations: observacionAMano(x.gtfNumber, p.codigo, notaPorFoto(p.porFoto, x.createdBy)),
+        createdBy: x.createdBy,
+      });
       codigos.push(code);
       codigosGuia.set(code, p.codigo);
     }
+    /* Todas juntas (16-10): de a una eran ~16 idas por troza y 25 trozas
+       vencían la transacción. Los árboles ya están bloqueados (arriba). */
+    const bloqueados = new Set([...arboles.values()].map((a) => a.treeCode.trim().toUpperCase()));
+    const lineas = await ForestLothDB.asentarTrozadosEnLoteEnTx(tx, tenantId, nuevas, x.gtfDate, x.caratulaId, bloqueados);
     return { codigos, codigosGuia, codigosAMano: piezas.map((p) => p.codigo), lineas };
   }
 
@@ -1056,10 +1114,9 @@ export class ForestLothDB {
       where: { tenantId, caratulaId, section: "despacho_troza" },
       _max: { lineNo: true },
     });
-    let lineNo = max._max.lineNo ?? 0;
-    const lineas = [];
-    for (const trozaCode of codes) {
-      const linea: LothEntryCreateInput = {
+    const lineNo = max._max.lineNo ?? 0;
+    const nuevas = codes.map(
+      (trozaCode): LothEntryCreateInput => ({
         caratulaId,
         planId: porCodigo.get(trozaCode)?.planId ?? planId,
         section: "despacho_troza",
@@ -1067,12 +1124,16 @@ export class ForestLothDB {
         trozaCode,
         gtfNumber: num,
         createdBy: input.createdBy,
-      };
-      // T2 (sin trozado) y T1 (ya salió) salen de acá con su mensaje.
-      await ForestLothDB.enforceInvariants(tx, tenantId, linea, opts.excepcionT6);
-      lineNo += 1;
-      lineas.push(await tx.forestLothEntry.create({ data: ForestLothDB.datosDeLinea(tenantId, linea, input.gtfDate, caratulaId, lineNo) }));
-    }
+      }),
+    );
+    // T2 (sin trozado), T1 (ya salió), T7 y T6 de TODAS las trozas con una
+    // lectura (`enforceSalidaDeTrozas`): de a una eran ~12 idas por troza.
+    await ForestLothDB.enforceSalidaDeTrozas(tx, tenantId, nuevas, opts.excepcionT6);
+    const lineas = (
+      await tx.forestLothEntry.createManyAndReturn({
+        data: nuevas.map((l, i) => ForestLothDB.datosDeLinea(tenantId, l, input.gtfDate, caratulaId, lineNo + i + 1)),
+      })
+    ).sort((a, b) => a.lineNo - b.lineNo);
 
     // 4. La guía, con la foto de lo que viaja.
     const n = (v: Prisma.Decimal | null) => (v == null ? null : Number(v));
@@ -1572,7 +1633,6 @@ export class ForestLothDB {
   ): Promise<void> {
     const section = input.section;
     const treeCode = input.treeCode?.trim() || null;
-    const trozaCode = input.trozaCode?.trim() || null;
 
     if (section === "tala") {
       // T7 — en una plantación, sólo se tala lo que está en su registro (ADR-459).
@@ -1600,146 +1660,16 @@ export class ForestLothDB {
     }
 
     if (section === "trozado") {
-      // Candado del árbol, el MISMO de la troza a mano y del importador, antes
-      // de las filas: en un árbol sin filas el FOR UPDATE de abajo no bloquea
-      // nada (y `trozaCode` no tiene índice único). Reentrante: esos caminos
-      // ya lo tomaron, ordenado, antes de sus filas.
-      if (treeCode) await ForestLothArbolesAManoDB.candadosDeArboles(tx, tenantId, [treeCode]);
-      // Lock del árbol (para T4) + la troza (para T3).
-      await tx.$queryRaw`
-        SELECT "id" FROM "ForestLothEntry"
-        WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
-          AND ("treeCode" = ${treeCode} OR "trozaCode" = ${trozaCode})
-        ORDER BY "id" FOR UPDATE`;
-      // T3 — trozaCode único en Trozado.
-      if (trozaCode) {
-        const dup = await tx.forestLothEntry.findFirst({
-          where: { tenantId, section: "trozado", trozaCode, status: "registrado", deletedAt: null },
-          select: { lineNo: true },
-        });
-        if (dup) {
-          throw new LothInvariantError(
-            `La troza ${trozaCode} ya está registrada en Trozado (línea #${dup.lineNo}). Usa un código de troza único.`,
-            "T3_TROZA_DUPLICADA",
-            { trozaCode, lineNo: dup.lineNo },
-          );
-        }
-        // T3 — la placa impresa (15-10), sin distinguir mayúsculas y en las
-        //      dos direcciones (`repitePlaca`): «001-TOR-A» repite la
-        //      «001-TOR-A-0123» que dejó una troza a mano o una guía (ADR-477
-        //      guarda el N° de la guía como sufijo), y «001-TOR-A-0123» repite
-        //      una «001-TOR-A» asentada. Contra trozas GUARDADAS con árbol (la
-        //      placa es de un árbol), tenga árbol o no la nueva. Dos con sufijo
-        //      distinto no chocan: dos guías pueden traer el mismo impreso.
-        //      Va bajo el candado del árbol de arriba.
-        const partes = partirCodigoUnico(trozaCode);
-        const parecidas = await tx.forestLothEntry.findMany({
-          where: {
-            tenantId,
-            section: "trozado",
-            status: "registrado",
-            deletedAt: null,
-            treeCode: { not: null },
-            OR: partes
-              ? [{ trozaCode: { equals: partes.codigoGuia, mode: "insensitive" } }]
-              : [
-                  { trozaCode: { equals: trozaCode, mode: "insensitive" } },
-                  { trozaCode: { startsWith: `${trozaCode}-`, mode: "insensitive" } },
-                ],
-          },
-          select: { lineNo: true, trozaCode: true, treeCode: true },
-          orderBy: { lineNo: "asc" },
-        });
-        const misma = parecidas.find((x) => !!x.treeCode?.trim() && x.trozaCode != null && repitePlaca(trozaCode, x.trozaCode));
-        if (misma?.trozaCode) {
-          const guardada = misma.trozaCode;
-          const mensaje = partes
-            ? `La troza ${trozaCode} lleva la placa ${partes.codigoGuia}, que ya está en Trozado (línea #${misma.lineNo}, árbol ${misma.treeCode}). Una placa no se repite: revisa el código.`
-            : partirCodigoUnico(guardada)
-              ? `La troza ${trozaCode} ya está en Trozado como ${guardada} (línea #${misma.lineNo}): es la misma placa con el N° de su guía. Usa la letra que sigue.`
-              : `La troza ${trozaCode} ya está en Trozado como ${guardada} (línea #${misma.lineNo}): es la misma placa con otras mayúsculas. Usa un código de troza único.`;
-          throw new LothInvariantError(mensaje, "T3_TROZA_DUPLICADA", { trozaCode, lineNo: misma.lineNo, codigoGuardado: guardada });
-        }
-      }
-      // T4 — Σ trozado(árbol) + esta ≤ volumen de la tala del árbol (merma normal
-      //      hace que trozado sea < tala; nunca puede superarlo). Solo si la tala
-      //      existe con volumen: si no, se registra como código libre.
-      if (treeCode && input.volumeM3 != null) {
-        const tala = await tx.forestLothEntry.findFirst({
-          where: { tenantId, section: "tala", treeCode, status: "registrado", deletedAt: null },
-          select: { volumeM3: true },
-        });
-        if (tala?.volumeM3 != null) {
-          const talaVol = Number(tala.volumeM3);
-          const prev = await tx.forestLothEntry.aggregate({
-            where: { tenantId, section: "trozado", treeCode, status: "registrado", deletedAt: null },
-            _sum: { volumeM3: true },
-          });
-          const yaTrozado = Number(prev._sum.volumeM3 ?? 0);
-          const nuevo = Number(input.volumeM3);
-          if (r4(yaTrozado + nuevo) > r4(talaVol)) {
-            throw new LothInvariantError(
-              `El árbol ${treeCode} se taló con ${r4(talaVol)} m³ y ya tiene ${r4(yaTrozado)} m³ trozados; ` +
-                `estás agregando ${r4(nuevo)} m³, que supera lo tumbado.`,
-              "T4_TROZADO_SUPERA_TALA",
-              { treeCode, talaVol: r4(talaVol), yaTrozado: r4(yaTrozado), nuevo: r4(nuevo) },
-            );
-          }
-        }
-      }
+      // T3 + T4, con sus candados (`enforceTrozados`: la misma regla para una
+      // línea que para las trozas a mano de una guía).
+      await ForestLothDB.enforceTrozados(tx, tenantId, [input]);
       return;
     }
 
     if (section === "despacho_troza" || section === "consumo_troza") {
-      if (!trozaCode) return; // el form exige trozaCode acá; sin él no hay qué atar
-      await tx.$queryRaw`
-        SELECT "id" FROM "ForestLothEntry"
-        WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL AND "trozaCode" = ${trozaCode}
-        ORDER BY "id" FOR UPDATE`;
-      // T2 — la troza debe existir en Trozado (origen legal de la salida).
-      const trozada = await tx.forestLothEntry.findFirst({
-        where: { tenantId, section: "trozado", trozaCode, status: "registrado", deletedAt: null },
-        select: { id: true, speciesCommon: true, speciesScientific: true, volumeM3: true },
-      });
-      if (!trozada) {
-        throw new LothInvariantError(
-          `La troza ${trozaCode} no está registrada en Trozado. Registra el trozado antes de despacharla o consumirla.`,
-          "T2_TROZA_SIN_TROZADO",
-          { trozaCode },
-        );
-      }
-      // T1 — una troza sale del bosque UNA vez (despacho O consumo, no ambos ni
-      //      dos veces). Es el killer anti-blanqueo: la misma troza en 2 GTF.
-      const usada = await tx.forestLothEntry.findFirst({
-        where: {
-          tenantId,
-          section: { in: ["despacho_troza", "consumo_troza"] },
-          trozaCode,
-          status: "registrado",
-          deletedAt: null,
-        },
-        select: { lineNo: true, section: true },
-      });
-      if (usada) {
-        const queHizo = usada.section === "despacho_troza" ? "despachada" : "consumida";
-        throw new LothInvariantError(
-          `La troza ${trozaCode} ya fue ${queHizo} (línea #${usada.lineNo}). Una troza sale del bosque una sola vez.`,
-          "T1_TROZA_YA_MOVILIZADA",
-          { trozaCode, lineNo: usada.lineNo, section: usada.section },
-        );
-      }
-      // T7 + T6 — sólo el despacho MOVILIZA (consumo interno no sale al exterior).
-      if (section === "despacho_troza") {
-        // T7 — la especie de la troza debe estar autorizada en el plan de manejo.
-        await ForestLothDB.enforceT7(tx, tenantId, input.planId ?? null, trozada.speciesCommon, trozada.speciesScientific, "despacho");
-        // T6 — despachar la troza no puede exceder el volumen autorizado del POA
-        //      para su especie. El volumen es el de la troza según su Trozado.
-        await ForestLothDB.enforceT6(
-          tx, tenantId, input.planId ?? null,
-          trozada.speciesCommon, trozada.speciesScientific, trozada.volumeM3 != null ? Number(trozada.volumeM3) : 0,
-          excepcionT6,
-        );
-      }
+      // T2 + T1 (+ T7 y T6 si es despacho), con sus candados
+      // (`enforceSalidaDeTrozas`: la misma regla para una troza que para una guía).
+      await ForestLothDB.enforceSalidaDeTrozas(tx, tenantId, [input], excepcionT6);
       return;
     }
 
@@ -1785,6 +1715,254 @@ export class ForestLothDB {
   }
 
   /**
+   * T3 (código único y placa) y T4 (lo trozado no pasa lo talado) de UNA o
+   * VARIAS líneas de Trozado con UNA lectura del libro para todas. Antes eran
+   * ~4 idas por troza: una guía de 50 trozas a mano vencía la transacción en
+   * Blas (16-10, 119 ms por ida). Cada línea se juzga en orden contra el libro
+   * Y contra las anteriores del mismo lote, que todavía no están escritas: el
+   * mismo resultado que asentarlas de a una.
+   *
+   * Candados, en el orden de siempre: el de cada árbol (`candadosDeArboles`,
+   * el MISMO de la troza a mano y del importador; sin él, en un árbol sin
+   * filas el FOR UPDATE no bloquea nada y `trozaCode` no tiene índice único)
+   * y después UN `FOR UPDATE` de las filas de esos árboles (T4) y esas trozas
+   * (T3), ordenado por id. Quien asienta toma el correlativo DESPUÉS.
+   * `arbolesBloqueados`: los que quien llama ya bloqueó (`bloquearEnTx`, en
+   * mayúsculas): reentrante igual, pero sin la ida.
+   */
+  private static async enforceTrozados(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    lineas: readonly LothEntryCreateInput[],
+    arbolesBloqueados?: ReadonlySet<string>,
+  ): Promise<void> {
+    const items = lineas.map((l) => ({ treeCode: l.treeCode?.trim() || null, trozaCode: l.trozaCode?.trim() || null, volumeM3: l.volumeM3 }));
+    const arboles = [...new Set(items.flatMap((i) => (i.treeCode ? [i.treeCode] : [])))].sort();
+    const codes = [...new Set(items.flatMap((i) => (i.trozaCode ? [i.trozaCode] : [])))].sort();
+    const sinCandado = arboles.filter((a) => !arbolesBloqueados?.has(a.toUpperCase()));
+    if (sinCandado.length > 0) await ForestLothArbolesAManoDB.candadosDeArboles(tx, tenantId, sinCandado);
+    const cuales = [
+      ...(arboles.length > 0 ? [Prisma.sql`"treeCode" IN (${Prisma.join(arboles)})`] : []),
+      ...(codes.length > 0 ? [Prisma.sql`"trozaCode" IN (${Prisma.join(codes)})`] : []),
+    ];
+    if (cuales.length === 0) return; // sin árbol ni troza no hay qué juzgar
+    await tx.$queryRaw`
+      SELECT "id" FROM "ForestLothEntry"
+      WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL AND (${Prisma.join(cuales, " OR ")})
+      ORDER BY "id" FOR UPDATE`;
+
+    // T3 — el código exacto y las placas parecidas de TODAS las trozas, de una.
+    //      Parecida (15-10): «001-TOR-A» repite la «001-TOR-A-0123» que dejó
+    //      una troza a mano o una guía (ADR-477 guarda el N° de la guía como
+    //      sufijo), y «001-TOR-A-0123» repite una «001-TOR-A» asentada; sin
+    //      distinguir mayúsculas y sólo contra trozas GUARDADAS con árbol (la
+    //      placa es de un árbol). Dos con sufijo distinto no chocan: dos guías
+    //      pueden traer el mismo impreso. Abajo, cada troza mira SU patrón.
+    const patron = (code: string) => {
+      const partes = partirCodigoUnico(code);
+      const u = code.toUpperCase();
+      return {
+        partes,
+        where: partes
+          ? [{ trozaCode: { equals: partes.codigoGuia, mode: "insensitive" as const } }]
+          : [{ trozaCode: { equals: code, mode: "insensitive" as const } }, { trozaCode: { startsWith: `${code}-`, mode: "insensitive" as const } }],
+        cumple: (otro: string) => {
+          const o = otro.toUpperCase();
+          return partes ? o === partes.codigoGuia.toUpperCase() : o === u || o.startsWith(`${u}-`);
+        },
+      };
+    };
+    const patrones = new Map(codes.map((c) => [c, patron(c)]));
+    const enTrozado =
+      codes.length === 0
+        ? []
+        : await tx.forestLothEntry.findMany({
+            where: {
+              tenantId,
+              section: "trozado",
+              status: "registrado",
+              deletedAt: null,
+              OR: [{ trozaCode: { in: codes } }, { treeCode: { not: null }, OR: [...patrones.values()].flatMap((p) => p.where) }],
+            },
+            select: { lineNo: true, trozaCode: true, treeCode: true },
+            orderBy: { lineNo: "asc" },
+          });
+
+    // T4 — la tala de cada árbol y lo ya trozado de él (dos lecturas para todos).
+    const arbolesT4 = [...new Set(items.flatMap((i) => (i.treeCode && i.volumeM3 != null ? [i.treeCode] : [])))].sort();
+    const talaDe = new Map<string, number | null>();
+    if (arbolesT4.length > 0) {
+      const talas = await tx.forestLothEntry.findMany({
+        where: { tenantId, section: "tala", treeCode: { in: arbolesT4 }, status: "registrado", deletedAt: null },
+        select: { treeCode: true, volumeM3: true },
+        orderBy: { id: "asc" },
+      });
+      for (const t of talas) if (t.treeCode && !talaDe.has(t.treeCode)) talaDe.set(t.treeCode, t.volumeM3 == null ? null : Number(t.volumeM3));
+    }
+    const conTala = arbolesT4.filter((a) => talaDe.get(a) != null);
+    const trozadoDe = new Map<string, number>();
+    if (conTala.length > 0) {
+      const sumas = await tx.forestLothEntry.groupBy({
+        by: ["treeCode"],
+        where: { tenantId, section: "trozado", treeCode: { in: conTala }, status: "registrado", deletedAt: null },
+        _sum: { volumeM3: true },
+      });
+      for (const s of sumas) if (s.treeCode) trozadoDe.set(s.treeCode, Number(s._sum.volumeM3 ?? 0));
+    }
+
+    /** Las anteriores del lote, como quedarán en el libro (para las que siguen). */
+    const previas: { trozaCode: string | null; treeCode: string | null }[] = [];
+    for (const { treeCode, trozaCode, volumeM3 } of items) {
+      if (trozaCode) {
+        const dup = enTrozado.find((x) => x.trozaCode === trozaCode);
+        if (dup || previas.some((p) => p.trozaCode === trozaCode)) {
+          throw new LothInvariantError(
+            dup
+              ? `La troza ${trozaCode} ya está registrada en Trozado (línea #${dup.lineNo}). Usa un código de troza único.`
+              : `La troza ${trozaCode} va dos veces en estas trozas. Usa un código de troza único.`,
+            "T3_TROZA_DUPLICADA",
+            { trozaCode, lineNo: dup?.lineNo ?? null },
+          );
+        }
+        const p = patrones.get(trozaCode);
+        const parecida = (x: { trozaCode: string | null; treeCode: string | null }) =>
+          !!x.treeCode?.trim() && x.trozaCode != null && !!p?.cumple(x.trozaCode) && repitePlaca(trozaCode, x.trozaCode);
+        const misma = enTrozado.find(parecida) ?? previas.find(parecida);
+        if (misma?.trozaCode) {
+          const guardada = misma.trozaCode;
+          const lineNo = "lineNo" in misma ? misma.lineNo : null;
+          /* La repetida puede estar en el libro (con su línea) o más arriba en ESTA carga (todavía sin línea). */
+          const enLibro = lineNo != null;
+          const yaComo = enLibro ? `ya está en Trozado como ${guardada} (línea #${lineNo})` : `ya va en esta misma carga como ${guardada}`;
+          const mensaje = p?.partes
+            ? `La troza ${trozaCode} lleva la placa ${p.partes.codigoGuia}, que ${enLibro ? `ya está en Trozado (línea #${lineNo}, ` : "ya va en esta misma carga ("}árbol ${misma.treeCode}). Una placa no se repite: revisa el código.`
+            : partirCodigoUnico(guardada)
+              ? `La troza ${trozaCode} ${yaComo}: es la misma placa con el N° de su guía. Usa la letra que sigue.`
+              : `La troza ${trozaCode} ${yaComo}: es la misma placa con otras mayúsculas. Usa un código de troza único.`;
+          throw new LothInvariantError(mensaje, "T3_TROZA_DUPLICADA", { trozaCode, lineNo, codigoGuardado: guardada });
+        }
+      }
+      // T4 — Σ trozado(árbol) + esta ≤ volumen de la tala del árbol (la merma
+      //      hace que trozado sea < tala; nunca puede superarlo). Sólo si la
+      //      tala existe con volumen: si no, se registra como código libre.
+      const talaVol = treeCode && volumeM3 != null ? talaDe.get(treeCode) : null;
+      if (treeCode && talaVol != null) {
+        const yaTrozado = trozadoDe.get(treeCode) ?? 0;
+        const nuevo = Number(volumeM3);
+        if (r4(yaTrozado + nuevo) > r4(talaVol)) {
+          throw new LothInvariantError(
+            `El árbol ${treeCode} se taló con ${r4(talaVol)} m³ y ya tiene ${r4(yaTrozado)} m³ trozados; ` +
+              `estás agregando ${r4(nuevo)} m³, que supera lo tumbado.`,
+            "T4_TROZADO_SUPERA_TALA",
+            { treeCode, talaVol: r4(talaVol), yaTrozado: r4(yaTrozado), nuevo: r4(nuevo) },
+          );
+        }
+        // La que sigue del mismo árbol la ve como la guarda la base (Decimal 12,4).
+        if (Number.isFinite(nuevo)) trozadoDe.set(treeCode, yaTrozado + r4(nuevo));
+      }
+      previas.push({ trozaCode, treeCode });
+    }
+  }
+
+  /**
+   * T2 (la troza está en Trozado), T1 (sale una sola vez) y, en el despacho,
+   * T7 (especie del plan) y T6 (no pasa lo autorizado) de UNA o VARIAS
+   * salidas de trozas, con UNA lectura para todas: antes eran ~12 idas por
+   * troza y una guía de 50 trozas vencía la transacción (Blas, 16-10).
+   *
+   * Candados: UN `FOR UPDATE` de las filas de todas las trozas, ordenado por
+   * id (dos guías con trozas en común no se abrazan), y el de las especies del
+   * plan en T6. T2/T1/T7 se juzgan troza por troza, en orden; T6 al final, por
+   * especie con la SUMA de lo que sale de ella (`enforceT6EnLote`): pasa el
+   * techo sii lo pasaría alguna troza de a una, y el rechazo es el de la vista
+   * previa (`compararGuiaConPermiso`), con la especie y el exceso.
+   */
+  private static async enforceSalidaDeTrozas(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    lineas: readonly LothEntryCreateInput[],
+    /** Sólo el importador (ADR-468): T6 del despacho de trozas anota en vez de rechazar. */
+    excepcionT6?: Map<string, DespachoT6DeLaEspecie>,
+  ): Promise<void> {
+    // El form exige trozaCode acá; sin él no hay qué atar.
+    const salidas = lineas.flatMap((l) => {
+      const trozaCode = l.trozaCode?.trim() || null;
+      return trozaCode ? [{ linea: l, trozaCode }] : [];
+    });
+    if (salidas.length === 0) return;
+    const codes = [...new Set(salidas.map((s) => s.trozaCode))].sort();
+    await tx.$queryRaw`
+      SELECT "id" FROM "ForestLothEntry"
+      WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL AND "trozaCode" IN (${Prisma.join(codes)})
+      ORDER BY "id" FOR UPDATE`;
+    // El Trozado de cada troza (T2) y sus salidas vivas (T1), en una lectura.
+    const filas = await tx.forestLothEntry.findMany({
+      where: {
+        tenantId,
+        section: { in: ["trozado", "despacho_troza", "consumo_troza"] },
+        trozaCode: { in: codes },
+        status: "registrado",
+        deletedAt: null,
+      },
+      select: { section: true, lineNo: true, trozaCode: true, speciesCommon: true, speciesScientific: true, volumeM3: true },
+      orderBy: { id: "asc" },
+    });
+    const trozadoDe = new Map<string, (typeof filas)[number]>();
+    const salidaDe = new Map<string, (typeof filas)[number]>();
+    for (const f of filas) {
+      const de = f.section === "trozado" ? trozadoDe : salidaDe;
+      if (f.trozaCode && !de.has(f.trozaCode)) de.set(f.trozaCode, f);
+    }
+
+    const planesT7 = new Map<string, PlanT7>();
+    const despachos: DespachoParaT6[] = [];
+    const saliendo = new Set<string>();
+    for (const { linea, trozaCode } of salidas) {
+      // T2 — la troza debe existir en Trozado (origen legal de la salida).
+      const trozada = trozadoDe.get(trozaCode);
+      if (!trozada) {
+        throw new LothInvariantError(
+          `La troza ${trozaCode} no está registrada en Trozado. Registra el trozado antes de despacharla o consumirla.`,
+          "T2_TROZA_SIN_TROZADO",
+          { trozaCode },
+        );
+      }
+      // T1 — una troza sale del bosque UNA vez (despacho O consumo, no ambos ni
+      //      dos veces). Es el killer anti-blanqueo: la misma troza en 2 GTF.
+      const usada = salidaDe.get(trozaCode);
+      if (usada) {
+        const queHizo = usada.section === "despacho_troza" ? "despachada" : "consumida";
+        throw new LothInvariantError(
+          `La troza ${trozaCode} ya fue ${queHizo} (línea #${usada.lineNo}). Una troza sale del bosque una sola vez.`,
+          "T1_TROZA_YA_MOVILIZADA",
+          { trozaCode, lineNo: usada.lineNo, section: usada.section },
+        );
+      }
+      if (saliendo.has(trozaCode)) {
+        throw new LothInvariantError(
+          `La troza ${trozaCode} va dos veces en esta salida. Una troza sale del bosque una sola vez.`,
+          "T1_TROZA_YA_MOVILIZADA",
+          { trozaCode, lineNo: null, section: linea.section },
+        );
+      }
+      saliendo.add(trozaCode);
+      // T7 + T6 — sólo el despacho MOVILIZA (consumo interno no sale al exterior).
+      if (linea.section !== "despacho_troza") continue;
+      // T7 — la especie de la troza debe estar autorizada en el plan de manejo
+      //      (el plan y sus especies se leen una vez por plan).
+      await ForestLothDB.enforceT7(tx, tenantId, linea.planId ?? null, trozada.speciesCommon, trozada.speciesScientific, "despacho", planesT7);
+      // T6 — el volumen es el de la troza según su Trozado.
+      despachos.push({
+        planId: linea.planId ?? null,
+        speciesCommon: trozada.speciesCommon,
+        speciesScientific: trozada.speciesScientific,
+        volumen: trozada.volumeM3 != null ? Number(trozada.volumeM3) : 0,
+      });
+    }
+    await ForestLothDB.enforceT6EnLote(tx, tenantId, despachos, excepcionT6);
+  }
+
+  /**
    * T6 — el volumen MOVILIZADO de una especie no puede superar el volumen
    * AUTORIZADO por el título habilitante (POA) — o el REGISTRADO de una
    * plantación (ADR-459) — : el exceso de aprovechamiento es la infracción que
@@ -1824,49 +2002,135 @@ export class ForestLothDB {
     nuevoVolumen: number,
     excepcion?: Map<string, DespachoT6DeLaEspecie>,
   ): Promise<void> {
-    const species = speciesCommon?.trim() || null;
-    if (!species || !(nuevoVolumen > 0)) return;
+    await ForestLothDB.enforceT6EnLote(
+      tx, tenantId,
+      [{ planId: planIdInput, speciesCommon, speciesScientific, volumen: nuevoVolumen }],
+      excepcion,
+    );
+  }
 
-    // Plan de referencia: el de la línea, o el vigente del tenant.
-    const planId =
-      planIdInput ??
-      (await tx.forestPlan.findFirst({
-        where: { tenantId, deletedAt: null, estado: "vigente" },
-        orderBy: { createdAt: "desc" },
-        select: { id: true },
-      }))?.id ??
-      null;
-    if (!planId) return;
+  /**
+   * `enforceT6` de VARIOS despachos juntos (las trozas de una guía, 16-10): se
+   * agrupan por (plan, especie del plan) y cada especie se mide UNA vez con la
+   * SUMA de lo que despacha. Con volúmenes positivos, la suma pasa el techo
+   * sii lo pasaría alguna troza asentada de a una (cada una veía las
+   * anteriores ya escritas); el rechazo nombra la especie, lo que despacha y
+   * cuánto se pasa — el mismo de la vista previa (`compararGuiaConPermiso`).
+   * Con `excepcion`, anota la suma de la especie (`anotarDespachoT6`): lo
+   * mismo que anotar troza por troza.
+   *
+   * Lock: UNA sentencia sobre las filas de autorización de TODAS las especies
+   * en juego, ordenada por id; después se mide bajo el lock.
+   *
+   * Un solo plan por llamada en la práctica: la guía rechaza trozas de dos
+   * planes (o de un plan y sin plan) antes de llegar acá. Si algún día no, una
+   * troza SIN plan también cuenta en el movilizado del otro plan (`medidasT6`)
+   * y habría que sumarla a ese grupo.
+   */
+  private static async enforceT6EnLote(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    despachos: readonly DespachoParaT6[],
+    excepcion?: Map<string, DespachoT6DeLaEspecie>,
+  ): Promise<void> {
+    const medibles = despachos.flatMap((d) => {
+      const species = d.speciesCommon?.trim() || null;
+      return species && d.volumen > 0 ? [{ ...d, species }] : [];
+    });
+    if (medibles.length === 0) return;
 
-    // La especie del plan que le corresponde (común o científico) y, sobre sus filas, el lock.
-    const delPlan = await ForestLothDB.especiesT6DelPlan(tx, tenantId, planId);
-    const clave = claveT6(delPlan, species, speciesScientific);
-    if (!clave) return; // sin techo declarado → no se bloquea
-    const ids = delPlan.filter((f) => claveEspecie(f.speciesCommon) === clave).map((f) => f.id).sort();
+    // Plan de referencia: el de la línea, o el vigente del tenant (leído una vez).
+    let vigente: string | null | undefined;
+    const delPlanDe = new Map<string, Awaited<ReturnType<typeof ForestLothDB.especiesT6DelPlan>>>();
+    const grupos = new Map<string, { planId: string; clave: string; species: string; total: number }>();
+    for (const d of medibles) {
+      let planId = d.planId;
+      if (!planId) {
+        if (vigente === undefined) {
+          vigente =
+            (await tx.forestPlan.findFirst({
+              where: { tenantId, deletedAt: null, estado: "vigente" },
+              orderBy: { createdAt: "desc" },
+              select: { id: true },
+            }))?.id ?? null;
+        }
+        planId = vigente;
+      }
+      if (!planId) continue;
+      // La especie del plan que le corresponde (común o científico).
+      let delPlan = delPlanDe.get(planId);
+      if (!delPlan) {
+        delPlan = await ForestLothDB.especiesT6DelPlan(tx, tenantId, planId);
+        delPlanDe.set(planId, delPlan);
+      }
+      const clave = claveT6(delPlan, d.species, d.speciesScientific);
+      if (!clave) continue; // sin techo declarado → no se bloquea
+      const k = `${planId}\u0000${clave}`;
+      const g = grupos.get(k) ?? { planId, clave, species: d.species, total: 0 };
+      grupos.set(k, { ...g, total: r4(g.total + d.volumen) });
+    }
+    if (grupos.size === 0) return;
+
+    const ids = [
+      ...new Set(
+        [...grupos.values()].flatMap((g) =>
+          (delPlanDe.get(g.planId) ?? []).filter((f) => claveEspecie(f.speciesCommon) === g.clave).map((f) => f.id),
+        ),
+      ),
+    ].sort();
     await tx.$queryRaw`
       SELECT "id" FROM "ForestPlanSpecies"
       WHERE "tenantId" = ${tenantId} AND "id" IN (${Prisma.join(ids)}) AND "deletedAt" IS NULL
       ORDER BY "id" FOR UPDATE`;
     // Releída bajo el lock: lo que vale es lo autorizado DESPUÉS de esperar.
-    const medida = await ForestLothDB.medidaT6(tx, tenantId, planId, delPlan, clave);
-    if (excepcion && medida.autorizado != null) {
-      anotarDespachoT6(excepcion, clave, species, { autorizado: medida.autorizado, movilizado: medida.movilizado }, nuevoVolumen);
-      return;
+    const medidas = new Map<string, MedidaT6>();
+    for (const planId of new Set([...grupos.values()].map((g) => g.planId))) {
+      const claves = [...grupos.values()].filter((g) => g.planId === planId).map((g) => g.clave);
+      const delPlan = delPlanDe.get(planId) ?? [];
+      for (const [clave, m] of await ForestLothDB.medidasT6(tx, tenantId, planId, delPlan, claves)) medidas.set(`${planId}\u0000${clave}`, m);
     }
-    if (medida.autorizado == null || !excedeT6(medida, nuevoVolumen)) return;
+
+    /* Todas las especies que se pasan van en UN rechazo (revisión 16-10: con
+       dos que se pasaban, se corregía una y recién ahí aparecía la otra). */
+    type Grupo = typeof grupos extends Map<string, infer G> ? G : never;
+    const excesos: Array<{ g: Grupo; m: { autorizado: number; movilizado: number } }> = [];
+    for (const [k, g] of grupos) {
+      const medida = medidas.get(k) ?? { autorizado: null, movilizado: 0 };
+      if (excepcion && medida.autorizado != null) {
+        anotarDespachoT6(excepcion, g.clave, g.species, { autorizado: medida.autorizado, movilizado: medida.movilizado }, g.total);
+        continue;
+      }
+      if (medida.autorizado == null || !excedeT6(medida, g.total)) continue;
+      excesos.push({ g, m: { autorizado: medida.autorizado, movilizado: medida.movilizado } });
+    }
+    if (excesos.length === 0) return;
 
     // En una plantación no hay POA que autorice: el techo es lo REGISTRADO (ADR-459).
-    const plan = await tx.forestPlan.findFirst({
-      where: { tenantId, id: planId },
-      select: { planType: true, planNumber: true, tituloHabilitante: true },
-    });
-    const m = { autorizado: medida.autorizado, movilizado: medida.movilizado };
-    throw new LothInvariantError(mensajeT6(species, m, nuevoVolumen, esPlanDePlantacion(plan)), "T6_EXCESO_AUTORIZADO", {
-      species,
-      autorizado: r4(m.autorizado),
-      movilizado: r4(m.movilizado),
-      pedido: r4(nuevoVolumen),
-    });
+    const esPlantacion = new Map<string | null, boolean>();
+    for (const { g } of excesos) {
+      if (esPlantacion.has(g.planId)) continue;
+      const plan = await tx.forestPlan.findFirst({
+        where: { tenantId, id: g.planId },
+        select: { planType: true, planNumber: true, tituloHabilitante: true },
+      });
+      esPlantacion.set(g.planId, esPlanDePlantacion(plan));
+    }
+    const mensajes = excesos.map(({ g, m }) => mensajeT6(g.species, m, g.total, esPlantacion.get(g.planId) ?? false));
+    const [primero] = excesos;
+    throw new LothInvariantError(
+      mensajes.length === 1 ? mensajes[0] : `${mensajes.length} especies se pasan de lo autorizado. ${mensajes.join(" ")}`,
+      "T6_EXCESO_AUTORIZADO",
+      {
+        species: primero.g.species,
+        autorizado: r4(primero.m.autorizado),
+        movilizado: r4(primero.m.movilizado),
+        pedido: r4(primero.g.total),
+        excesoM3: excesoT6(primero.m, primero.g.total),
+        ...(excesos.length > 1
+          ? { especies: excesos.map(({ g, m }) => ({ species: g.species, pedido: r4(g.total), excesoM3: excesoT6(m, g.total) })) }
+          : {}),
+      },
+    );
   }
 
   /** Las especies del plan con su id: de ellas sale la clave que pone el techo de T6. */
@@ -1896,33 +2160,64 @@ export class ForestLothDB {
     delPlan: readonly { id: string; speciesCommon: string; speciesScientific: string | null }[],
     clave: string,
   ): Promise<MedidaT6> {
+    const medidas = await ForestLothDB.medidasT6(db, tenantId, planId, delPlan, [clave]);
+    return medidas.get(clave) ?? { autorizado: null, movilizado: 0 };
+  }
+
+  /**
+   * `medidaT6` de VARIAS especies del mismo plan con las mismas lecturas: lo
+   * autorizado, una por especie; lo movilizado (despachos, su Trozado y el
+   * producto en m³), UNA vez para todas. Mismo resultado que llamar
+   * `medidaT6` por clave.
+   */
+  static async medidasT6(
+    db: Prisma.TransactionClient | typeof prisma,
+    tenantId: string,
+    planId: string,
+    delPlan: readonly { id: string; speciesCommon: string; speciesScientific: string | null }[],
+    claves: readonly string[],
+  ): Promise<Map<string, MedidaT6>> {
     if (!tenantId) throw new Error("tenantId is required");
-    const ids = delPlan.filter((f) => claveEspecie(f.speciesCommon) === clave).map((f) => f.id).sort();
-    if (ids.length === 0) return { autorizado: null, movilizado: 0 };
-    const auth = await db.forestPlanSpecies.aggregate({
-      where: { tenantId, id: { in: ids }, deletedAt: null },
-      _sum: { volumenAutorizadoM3: true },
-    });
-    if (auth._sum.volumenAutorizadoM3 == null) return { autorizado: null, movilizado: 0 };
-    const autorizado = Number(auth._sum.volumenAutorizadoM3);
+    const out = new Map<string, MedidaT6>();
+    const autorizadoDe = new Map<string, number>();
+    for (const clave of new Set(claves)) {
+      const ids = delPlan.filter((f) => claveEspecie(f.speciesCommon) === clave).map((f) => f.id).sort();
+      if (ids.length === 0) {
+        out.set(clave, { autorizado: null, movilizado: 0 });
+        continue;
+      }
+      const auth = await db.forestPlanSpecies.aggregate({
+        where: { tenantId, id: { in: ids }, deletedAt: null },
+        _sum: { volumenAutorizadoM3: true },
+      });
+      if (auth._sum.volumenAutorizadoM3 == null) out.set(clave, { autorizado: null, movilizado: 0 });
+      else autorizadoDe.set(clave, Number(auth._sum.volumenAutorizadoM3));
+    }
+    if (autorizadoDe.size === 0) return out;
 
     const delAlcance = { tenantId, status: "registrado" as const, deletedAt: null, OR: [{ planId }, { planId: null }] };
+    const sumarPorClave = (filas: { speciesCommon: string | null; speciesScientific: string | null; cuanto: number }[]) => {
+      const acc = new Map<string, number>();
+      for (const f of filas) {
+        const c = claveEnElPlan(delPlan, f.speciesCommon, f.speciesScientific);
+        if (c && autorizadoDe.has(c)) acc.set(c, (acc.get(c) ?? 0) + f.cuanto);
+      }
+      return acc;
+    };
     //  (a) trozas ya despachadas → su volumen según Trozado, de la especie
     const despachadas = await db.forestLothEntry.findMany({
       where: { ...delAlcance, section: "despacho_troza" },
       select: { trozaCode: true },
     });
     const codes = [...new Set(despachadas.map((d) => d.trozaCode).filter((c): c is string => !!c))];
-    let movTrozas = 0;
+    let movTrozas = new Map<string, number>();
     if (codes.length > 0) {
       const trozados = await db.forestLothEntry.groupBy({
         by: ["speciesCommon", "speciesScientific"],
         where: { ...delAlcance, section: "trozado", trozaCode: { in: codes } },
         _sum: { volumeM3: true },
       });
-      movTrozas = trozados
-        .filter((t) => claveEnElPlan(delPlan, t.speciesCommon, t.speciesScientific) === clave)
-        .reduce((acc, t) => acc + Number(t._sum.volumeM3 ?? 0), 0);
+      movTrozas = sumarPorClave(trozados.map((t) => ({ ...t, cuanto: Number(t._sum.volumeM3 ?? 0) })));
     }
     //  (b) producto terminado despachado en m³ de la especie
     const prodDesp = await db.forestLothEntry.groupBy({
@@ -1930,10 +2225,11 @@ export class ForestLothDB {
       where: { ...delAlcance, section: "despacho_producto", unit: "m3" },
       _sum: { quantity: true },
     });
-    const movProducto = prodDesp
-      .filter((p) => claveEnElPlan(delPlan, p.speciesCommon, p.speciesScientific) === clave)
-      .reduce((acc, p) => acc + Number(p._sum.quantity ?? 0), 0);
-    return { autorizado, movilizado: movTrozas + movProducto };
+    const movProducto = sumarPorClave(prodDesp.map((p) => ({ ...p, cuanto: Number(p._sum.quantity ?? 0) })));
+    for (const [clave, autorizado] of autorizadoDe) {
+      out.set(clave, { autorizado, movilizado: (movTrozas.get(clave) ?? 0) + (movProducto.get(clave) ?? 0) });
+    }
+    return out;
   }
 
   /**
@@ -1964,21 +2260,28 @@ export class ForestLothDB {
     speciesCommon: string | null,
     speciesScientific: string | null,
     momento: "tala" | "despacho",
+    /** Las trozas de una guía (16-10): el plan y su registro se leen UNA vez por plan. */
+    memo?: Map<string, PlanT7>,
   ): Promise<void> {
     const species = speciesCommon?.trim() || null;
     if (!planId || !species) return;
 
     // En serie: la tx es UNA conexión (un Promise.all acá es el aviso de pg@9).
-    const plan = await tx.forestPlan.findFirst({
-      where: { tenantId, id: planId, deletedAt: null },
-      select: { planType: true, planNumber: true, tituloHabilitante: true },
-    });
-    const plantacion = esPlanDePlantacion(plan);
+    let leido = memo?.get(planId);
+    if (!leido) {
+      const plan = await tx.forestPlan.findFirst({
+        where: { tenantId, id: planId, deletedAt: null },
+        select: { planType: true, planNumber: true, tituloHabilitante: true },
+      });
+      leido = { plantacion: esPlanDePlantacion(plan), registro: null };
+      memo?.set(planId, leido);
+    }
+    const plantacion = leido.plantacion;
     if (momento === "tala" && !plantacion) return;
-    const registro = await tx.forestPlanSpecies.findMany({
+    const registro = (leido.registro ??= await tx.forestPlanSpecies.findMany({
       where: { tenantId, planId, deletedAt: null },
       select: { speciesCommon: true, speciesScientific: true },
-    });
+    }));
     /* Sin especies cargadas no se juzga; el mensaje depende de si es plantación (`rechazoT7`, el mismo de «Asignar permiso»). */
     const rechazo = rechazoT7(registro, species, speciesScientific, plantacion);
     if (!rechazo) return;

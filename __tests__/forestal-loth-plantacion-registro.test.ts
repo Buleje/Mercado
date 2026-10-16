@@ -41,7 +41,11 @@ const H = vi.hoisted(() => {
     },
     forestLothEntry: {
       findFirst: async ({ where }: { where: { section?: unknown } }) => (where.section === "trozado" ? estado.trozado : null),
-      findMany: async () => [],
+      // T2/T1 de la salida leen las trozas de una (`enforceSalidaDeTrozas`, 16-10): su Trozado, sin salidas previas.
+      findMany: async ({ where }: { where: { section?: { in?: string[] }; trozaCode?: { in?: string[] } } }) =>
+        where.section?.in?.includes("trozado") && estado.trozado
+          ? (where.trozaCode?.in ?? []).map((trozaCode) => ({ ...estado.trozado, section: "trozado", lineNo: 1, trozaCode }))
+          : [],
       groupBy: async () => [],
       aggregate: async () => ({ _max: { lineNo: 0 }, _sum: { volumeM3: null, quantity: null } }),
       create: async ({ data }: { data: Record<string, unknown> }) => {
