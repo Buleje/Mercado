@@ -388,10 +388,25 @@ export const I =
  * Es opt-in a propósito: `Field` y `Seccion` los usan 46 formularios. Los
  * demás siguen iguales hasta que se decida llevarlo a cada uno.
  */
-const EstiloFormulario = createContext<"clasico" | "claro">("clasico");
+const EstiloFormulario = createContext<"clasico" | "claro" | "papel">("clasico");
 
 export function FormularioClaro({ children }: { children: React.ReactNode }) {
   return <EstiloFormulario.Provider value="claro">{children}</EstiloFormulario.Provider>;
+}
+
+/**
+ * Estilo «papel» (guía del Libro TH, Brandon 16-10: «que se parezca lo más
+ * posible a esos formatos»): lo de «claro» más el rótulo «(n) Rótulo» en la
+ * tinta del talonario y el `Bloque` como franja de sección. Opt-in: el CTP no
+ * lo usa y sigue igual.
+ */
+export function FormularioPapel({ children }: { children: React.ReactNode }) {
+  return <EstiloFormulario.Provider value="papel">{children}</EstiloFormulario.Provider>;
+}
+
+/** Para que las piezas compartidas (`Bloque`, `DocsDeParte`…) sepan si van en papel. */
+export function useEstiloFormulario() {
+  return useContext(EstiloFormulario);
 }
 
 export type CampoSpan = 2 | 3 | 4 | 6 | 8 | 12;
@@ -446,7 +461,9 @@ export function Field({
   children: React.ReactNode;
 }) {
   const base = useId();
-  const claro = useContext(EstiloFormulario) === "claro";
+  const estilo = useContext(EstiloFormulario);
+  const claro = estilo !== "clasico";
+  const papel = estilo === "papel";
   // En estilo claro la ayuda vive en un ⓘ (portal): no hay nodo al que apuntar
   // con `aria-describedby`, así que no se declara un id que no existe.
   const ayudaEnIcono = claro && Boolean(hint) && !noAplica;
@@ -503,11 +520,17 @@ export function Field({
     <label
       id={`${base}-rotulo`}
       {...(esControl ? { htmlFor: idCampo } : {})}
-      className={`${ayudaEnIcono ? "min-w-0" : "mb-1"} flex items-center gap-1.5 text-sm font-medium text-[var(--text-primary)]`}
+      className={`${ayudaEnIcono ? "min-w-0" : "mb-1"} flex items-center gap-1.5 text-sm ${
+        papel ? "font-semibold text-[var(--gtf-tinta)]" : "font-medium text-[var(--text-primary)]"
+      }`}
     >
-      <span className="truncate">{label}</span>
+      <span className="truncate" title={papel ? label : undefined}>
+        {/* En papel el número va DELANTE, como en el talonario: «(21) Destinatario». */}
+        {papel && casillero != null && <span aria-hidden="true" className="tabular-nums">({casillero}) </span>}
+        {label}
+      </span>
       {required && <span className="text-[var(--data-error-600)]" aria-hidden="true">*</span>}
-      {casillero != null && (
+      {casillero != null && !papel && (
         <span
           title={`Casillero (${casillero}) del formato oficial ${typeof casillero === "string" ? "de la GTF (SERFOR 2024)" : "LO-CTP"}`}
           // Fuera del nombre accesible: el número es una ayuda visual para

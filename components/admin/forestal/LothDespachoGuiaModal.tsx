@@ -303,6 +303,7 @@ export default function LothDespachoGuiaModal({
                     onAnotarParte={anotarParte}
                     onAnotarVehiculo={anotarVehiculo}
                     onGuardarEnLibreta={guardarEnLibreta}
+                    cientificoDe={cientificoDe}
                   />
                 ) : (
                   <LothGuiaTrozas g={g} cientificoDe={cientificoDe} catalogo={catalogo} />

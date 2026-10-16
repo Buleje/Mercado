@@ -18,20 +18,27 @@
  *   · continúa un transporte → (17) una referencia, (18)(19) «No aplica», (20).
  * El formato no tiene RUC en este bloque: va como dato interno, con la
  * referencia, el encargado y el teléfono (libreta con papel «establecimiento»).
+ *
+ * 16-10-2026: con la cara del talonario — «DATOS DEL PUNTO DE PARTIDA» y los
+ * rótulos y números del papel en (17)–(20d). El «De dónde sale la carga» va
+ * primero porque decide qué casilleros aplican.
  */
 
+import { casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
 import { partidaImpresa, TIPOS_ESTABLECIMIENTO, type ModoPartida, type PartidaTraslado } from "@/lib/forestal/ctp-gtf-datos";
 import { internosDePartida } from "@/lib/forestal/libreta";
 import CtpParteBarra, { type ValorParte } from "./CtpParteBarra";
 import CtpUbigeoSelects from "./CtpUbigeoSelects";
 import { Bloque } from "./ctp-guia-bloques";
-import { libretaDe } from "./ctp-guia-bloques-partes";
-import { CLASE_FALTA, SubBloque } from "./ctp-guia-piezas";
+import { SubBloque } from "./ctp-guia-piezas";
+import { falta, libretaDe } from "./ctp-guia-partes-comun";
 import { Field, I } from "./ctp-shared";
 import type { PropsGuiaLoth } from "./LothGuiaBloques";
+import { rotuloGtf2024 } from "./loth-guia-papel-piezas";
 
-const vacio = (v: string | null | undefined) => !v?.trim();
-const falta = (v: string | null | undefined) => (vacio(v) ? CLASE_FALTA : "");
+/** El número y el rótulo del papel 2024 del campo de clave interna `clave`. */
+const n = (clave: string) => casilleroGtf2024(clave);
+const R = (clave: string) => rotuloGtf2024(n(clave) ?? "");
 
 const MODOS: { valor: ModoPartida; label: string }[] = [
   { valor: "inicio", label: "Del área del título o de un CTP — el bloque va «No aplica»" },
@@ -90,6 +97,7 @@ export function BloquePartidaLoth({ g, directorio, onAnotarParte, onGuardarEnLib
   return (
     <Bloque
       titulo="Punto de partida"
+      tituloPapel="Datos del punto de partida"
       hint="Formato 2024, casilleros (17) a (20) (RDE D000014-2024-MIDAGRI-SERFOR-DE). Si la carga sale del área del título o de un CTP, el bloque va «No aplica»; si sale de un depósito o centro, van su nombre, su autorización, el tipo y la dirección."
       nota="El RUC, la referencia, el encargado y el teléfono son internos: quedan en la guía del sistema y en la libreta, no en el papel."
       faltan={faltan}
@@ -122,12 +130,13 @@ export function BloquePartidaLoth({ g, directorio, onAnotarParte, onGuardarEnLib
       {!inicio && modo !== "" && (
         <Field
           span={establecimiento ? 8 : 12}
-          label={establecimiento ? "Nombre o razón social del establecimiento" : "Referencia del lugar"}
+          label={R("p17")}
+          casillero={n("p17")}
           required
           hint={
             establecimiento
-              ? "Formato 2024, casillero (17): de qué depósito o centro de comercialización sale la carga."
-              : "Formato 2024, casillero (17): dónde continúa el transporte, p. ej. «Km 15 Carretera Central»."
+              ? "El nombre o la razón social del depósito o centro de comercialización del que sale la carga."
+              : "Dónde continúa el transporte, p. ej. «Km 15 Carretera Central»."
           }
         >
           <input type="text" className={`${I} ${falta(p.nombre)}`} value={p.nombre} onChange={(e) => g.setPartida({ nombre: e.target.value })} />
@@ -135,10 +144,10 @@ export function BloquePartidaLoth({ g, directorio, onAnotarParte, onGuardarEnLib
       )}
       {establecimiento && (
         <>
-          <Field span={4} label="N° de autorización" hint="Formato 2024, casillero (18): el N° que la ARFFS le dio al establecimiento.">
+          <Field span={4} label={R("p18")} casillero={n("p18")} hint="El N° que la ARFFS le dio al establecimiento.">
             <input type="text" className={`${I} font-mono`} value={p.autorizacion} onChange={(e) => g.setPartida({ autorizacion: e.target.value })} />
           </Field>
-          <Field span={6} label="Tipo de establecimiento" required hint="Formato 2024, casillero (19).">
+          <Field span={6} label={R("p19")} casillero={n("p19")} required>
             <select className={`${I} ${falta(p.tipoEstablecimiento)}`} value={p.tipoEstablecimiento} onChange={(e) => g.setPartida({ tipoEstablecimiento: e.target.value })}>
               <option value="">Elige el tipo</option>
               {TIPOS_ESTABLECIMIENTO.map((t) => (
@@ -153,12 +162,13 @@ export function BloquePartidaLoth({ g, directorio, onAnotarParte, onGuardarEnLib
 
       <Field
         span={establecimiento ? 6 : 12}
-        label={inicio ? "Lugar de salida (arma la ruta)" : "Dirección"}
+        label={inicio ? "Lugar de salida (arma la ruta)" : R("p20a")}
+        casillero={inicio ? undefined : n("p20a")}
         required={!inicio}
         hint={
           inicio
             ? "La parcela de corta y el sector del plan. En el bloque oficial va «No aplica»: este lugar sólo arma la ruta y el punto de partida de la hoja."
-            : "Formato 2024, casillero (20a): la dirección, o UTM + zona + datum si no hay una exacta."
+            : "La dirección, o UTM + zona + datum si no hay una exacta."
         }
       >
         <input type="text" className={`${I} ${inicio ? "" : falta(p.direccion)}`} value={p.direccion} onChange={(e) => g.setPartida({ direccion: e.target.value })} />
@@ -166,6 +176,7 @@ export function BloquePartidaLoth({ g, directorio, onAnotarParte, onGuardarEnLib
       <CtpUbigeoSelects
         span={4}
         marcarFaltas={Boolean(p.direccion.trim())}
+        casilleros={inicio ? undefined : [n("p20b"), n("p20c"), n("p20d")]}
         valor={{ departamento: p.departamento, provincia: p.provincia, distrito: p.distrito }}
         onChange={(v) => g.setPartida(v)}
       />

@@ -24,6 +24,7 @@ import {
   ORIGENES_TALONARIO,
   entraEnUnaLinea,
 } from "@/lib/forestal/gtf-matricial-disposicion";
+import { PLANTILLA_FABRICA } from "@/lib/forestal/gtf-talonario-plantilla";
 import { entradasDeLaGuia, paginasGuia, paginasLista } from "@/lib/forestal/gtf-matricial-valores";
 import { cajasDeLaPagina, htmlPruebaTalonario, htmlTalonario } from "@/lib/forestal/gtf-matricial-print";
 import type { LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
@@ -122,6 +123,7 @@ describe("disposición guardada", () => {
   it("lo inválido o desconocido no entra; lo que falta se completa con la de fábrica", () => {
     const fab = hojaDeFabrica("guia");
     const h = normalizarHoja("guia", {
+      plantilla: PLANTILLA_FABRICA,
       anchoMm: 240,
       offsetXMm: 999,
       campos: { "7": { ...fab.campos["7"], x: 30.5 }, inventado: { x: 1 }, "13": { x: "mal" } },
@@ -181,7 +183,8 @@ describe("el papel", () => {
     const cajas = cajasDeLaPagina(sinTitular, CATALOGO.guia, { ...p, campos: { ...p.campos, "38": "" } }).join("");
     expect(cajas).not.toContain(">PEREZ MUÑOZ JUAN CARLOS<");
     expect(cajas).toContain(">JUAN CARLOS PEREZ MUÑOZ<"); // el representante sí
-    const yFila2 = hoja.tabla.y + hoja.tabla.altoFilaMm - 2;
+    /* El papel redondea a centésimas de mm (`n()` de gtf-matricial-print). */
+    const yFila2 = Math.round((hoja.tabla.y + hoja.tabla.altoFilaMm - 2) * 100) / 100;
     if (p.filas.length > 1) expect(cajas).toContain(`top:${yFila2}mm`);
   });
 

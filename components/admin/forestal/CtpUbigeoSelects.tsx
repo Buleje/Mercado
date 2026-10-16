@@ -73,10 +73,13 @@ export default function CtpUbigeoSelects({
   onChange,
   span = 2,
   marcarFaltas = false,
+  casilleros,
 }: {
   valor: UbigeoValor;
   onChange: (v: UbigeoValor) => void;
   span?: 2 | 3 | 4 | 6;
+  /** Números del formato 2024 (`casilleroGtf2024`) de departamento, provincia y distrito; sin la prop, sin número. */
+  casilleros?: readonly [string | undefined, string | undefined, string | undefined];
   /** Los que están vacíos se pintan como «falta» (una guía que pide el ubigeo completo). */
   marcarFaltas?: boolean;
 }) {
@@ -104,7 +107,7 @@ export default function CtpUbigeoSelects({
 
   return (
     <>
-      <Field span={span} label="Departamento">
+      <Field span={span} label="Departamento" casillero={casilleros?.[0]}>
         <select
           className={clase(valor.departamento)}
           value={opcionElegida(opDep, valor.departamento)}
@@ -121,6 +124,7 @@ export default function CtpUbigeoSelects({
       <Field
         span={span}
         label="Provincia"
+        casillero={casilleros?.[1]}
         hint={valor.departamento ? undefined : "Elige primero el departamento"}
       >
         <select
@@ -138,6 +142,7 @@ export default function CtpUbigeoSelects({
       <Field
         span={span}
         label="Distrito"
+        casillero={casilleros?.[2]}
         hint={valor.provincia ? undefined : "Elige primero la provincia"}
       >
         <select

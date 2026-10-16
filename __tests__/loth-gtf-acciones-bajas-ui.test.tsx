@@ -102,9 +102,9 @@ describe("Modal «Datos»", () => {
     expect(screen.queryByText(/Trozas de la guía \(2\)/)).toBeNull();
     fireEvent.click(tabs[1]);
     expect(screen.getByText(/Trozas de la guía \(2\)/)).toBeTruthy();
-    /* Los dos códigos SIEMPRE (08-10): «Código en la guía» y «Código único» (acá coinciden). */
+    /* Los dos códigos SIEMPRE (08-10): el de la guía en el (5) Codificación, como el papel (16-10), y «Código único» (acá coinciden). */
     expect(screen.getAllByText("A-2")).toHaveLength(2);
-    expect(screen.getByRole("columnheader", { name: "Código en la guía" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "(5) Codificación" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Código único" })).toBeTruthy();
     // El ancho es el tamaño con nombre `planilla` (ADR-489: sin anchos sueltos); el alto fijo es lo propio.
     expect(screen.getByRole("dialog").getAttribute("data-modal-tamano")).toBe("planilla");

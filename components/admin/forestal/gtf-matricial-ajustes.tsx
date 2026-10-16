@@ -90,7 +90,20 @@ export default function AjustesTalonario({
         <Opciones label="Fechas" value={hoja.separadorFecha} opciones={SEPARADORES} onChange={(separadorFecha) => t.cambiarHoja({ separadorFecha })} />
       </Plegable>
 
-      <Plegable titulo="Foto de fondo" dato={f.fondo.src ? "con foto" : "sin foto"}>
+      <Plegable
+        titulo="Fondo"
+        dato={[f.fondo.impreso ? "formato impreso" : "sin formato", f.fondo.src ? "con foto" : "sin foto"].join(" · ")}
+      >
+        <div className="flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <Casilla label="Formato impreso del talonario" checked={f.fondo.impreso} onChange={f.setImpreso} />
+          </div>
+          <InfoTip
+            title="Sólo en pantalla"
+            what="Dibuja debajo de los valores el talonario de la imprenta (rayas, rótulos, N°) con el titular, el RUC y el N° de esta guía, para ver dónde cae cada valor."
+            affects="No se imprime: el papel ya lo trae. Apágalo para acomodar sobre la foto o la cuadrícula."
+          />
+        </div>
         <input
           ref={archivo}
           type="file"

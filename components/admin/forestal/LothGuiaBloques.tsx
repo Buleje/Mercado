@@ -9,6 +9,10 @@
  *   · Traslado (35)(36)(38): vive en `LothGuiaTraslado.tsx` (la ruta, la
  *     lista numerada y el origen). La partida, en `LothGuiaPartida.tsx`
  *     (15-10-2026, formato 2024); la llegada es el destinatario.
+ *
+ * 16-10-2026: con la cara del talonario — «DATOS DEL PROPIETARIO DEL
+ * PRODUCTO» y las filas del papel: (12); (13) + (14a); (14b)(14c)(14d); (15) +
+ * (16). El resumen del titular se lee sobre el renglón punteado.
  */
 
 import { casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
@@ -22,9 +26,9 @@ import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import CtpParteBarra from "./CtpParteBarra";
 import type { GuardarEnLibreta } from "@/lib/forestal/libreta";
 import { Bloque, DocsDeParte, UbicacionDeParte } from "./ctp-guia-bloques";
-import { CLASE_FALTA, ResumenDatos } from "./ctp-guia-piezas";
-import { libretaDe, type SeccionObjeto } from "./ctp-guia-bloques-partes";
+import { falta, libretaDe, type SeccionObjeto } from "./ctp-guia-partes-comun";
 import { Btn, Field, I } from "./ctp-shared";
+import { DatoDelPapel, rotuloGtf2024 } from "./loth-guia-papel-piezas";
 
 type Directorio = ReturnType<typeof useDirectorioForestal>;
 
@@ -41,8 +45,9 @@ export function parcheDe(setDatos: Dispatch<SetStateAction<GtfDatos>>) {
   return <K extends SeccionObjeto>(k: K, v: Partial<GtfDatos[K]>) => setDatos((p) => ({ ...p, [k]: { ...p[k], ...v } }));
 }
 
-const vacio = (v: string | null | undefined) => !v?.trim();
-const falta = (v: string | null | undefined) => (vacio(v) ? CLASE_FALTA : "");
+/** El número y el rótulo del papel 2024 del campo de clave interna `clave`. */
+const n = (clave: string) => casilleroGtf2024(clave);
+const R = (clave: string) => rotuloGtf2024(n(clave) ?? "");
 
 /** (12)–(16) El dueño de la madera que viaja. */
 export function BloquePropietarioLoth({ g, directorio, onAnotarParte, onGuardarEnLibreta, faltan }: PropsGuiaLoth & { faltan: string[] }) {
@@ -51,8 +56,6 @@ export function BloquePropietarioLoth({ g, directorio, onAnotarParte, onGuardarE
   const prop = datos.propietario;
   const [editar, setEditar] = useState(false);
   const resumido = prop.esElCtp && !editar;
-  const ubic = [prop.distrito, prop.provincia, prop.departamento].filter((x) => x?.trim()).join(", ");
-  const domicilio = [prop.direccion, ubic].filter((x) => x.trim()).join(" · ");
 
   function esElTitular(si: boolean) {
     setEditar(false);
@@ -63,11 +66,12 @@ export function BloquePropietarioLoth({ g, directorio, onAnotarParte, onGuardarE
   return (
     <Bloque
       titulo="Propietario del producto"
+      tituloPapel="Datos del propietario del producto"
       hint="Casilleros (12) a (16). Es el dueño de la madera que viaja: casi siempre el titular del permiso. Si ya se la vendió a alguien, destilda y elígelo del Directorio."
       faltan={faltan}
       acciones={
         <>
-          <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-medium text-[var(--text-primary)]">
+          <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-[var(--gtf-linea)] bg-[var(--surface-raised)] px-2.5 text-sm font-medium text-[var(--text-primary)]">
             <input type="checkbox" checked={prop.esElCtp} onChange={(e) => esElTitular(e.target.checked)} className="h-4 w-4 accent-[var(--brand-ink)]" />
             Es el titular
           </label>
@@ -88,27 +92,30 @@ export function BloquePropietarioLoth({ g, directorio, onAnotarParte, onGuardarE
         </>
       }
     >
+      {/* «Es el titular»: los datos salen del plan y la carátula, sobre el
+          renglón del papel; «Editar» los abre en cajas. */}
       {resumido ? (
-        <ResumenDatos
-          datos={[
-            { etiqueta: "Nombre o razón social", valor: prop.nombre, ancho: 3, falta: "en el plan de manejo" },
-            { etiqueta: prop.docTipo === "RUC" ? "RUC" : prop.docTipo, valor: prop.docNumero, mono: true, falta: "en la carátula" },
-            { etiqueta: "Domicilio", valor: domicilio, ancho: 4, falta: "en la carátula del libro" },
-          ]}
-        />
+        <>
+          <DatoDelPapel span={12} label={R("13")} casillero={n("13")} valor={prop.nombre} falta="en el plan de manejo" />
+          <DatoDelPapel span={4} label={R("14")} casillero={n("14")} valor={prop.docNumero} mono falta="en la carátula" />
+          <DatoDelPapel span={8} label={R("16")} casillero={n("16")} valor={prop.direccion} falta="en la carátula del libro" />
+          <DatoDelPapel span={4} label={R("17")} casillero={n("17")} valor={prop.departamento} falta="en la carátula" />
+          <DatoDelPapel span={4} label={R("18")} casillero={n("18")} valor={prop.provincia} falta="en la carátula" />
+          <DatoDelPapel span={4} label={R("19")} casillero={n("19")} valor={prop.distrito} falta="en la carátula" />
+        </>
       ) : (
         <>
-          <Field span={6} label="Nombre o razón social" required>
+          <Field span={12} label={R("13")} casillero={n("13")} required>
             <input type="text" className={`${I} ${falta(prop.nombre)}`} value={prop.nombre} onChange={(e) => set("propietario", { nombre: e.target.value })} />
           </Field>
-          <DocsDeParte parte={prop} onChange={(v) => set("propietario", v)} />
-          <Field span={12} label="Domicilio">
+          <DocsDeParte parte={prop} onChange={(v) => set("propietario", v)} casillero={n("14")} />
+          <Field span={6} label={R("16")} casillero={n("16")}>
             <input type="text" className={I} value={prop.direccion} onChange={(e) => set("propietario", { direccion: e.target.value })} />
           </Field>
-          <UbicacionDeParte parte={prop} onChange={(v) => set("propietario", v)} />
+          <UbicacionDeParte parte={prop} onChange={(v) => set("propietario", v)} casilleros={[n("17"), n("18"), n("19")]} />
         </>
       )}
-      <Field span={6} label="Tipo de comprobante" casillero={casilleroGtf2024("20")} hint="Comprobante de la venta: la guía ampara el traslado y el comprobante, la operación.">
+      <Field span={6} label={R("20")} casillero={n("20")} hint="Comprobante de la venta: la guía ampara el traslado y el comprobante, la operación.">
         <select
           className={I}
           value={datos.comprobante.tipo}
@@ -121,7 +128,7 @@ export function BloquePropietarioLoth({ g, directorio, onAnotarParte, onGuardarE
           <option value="otro">Otro</option>
         </select>
       </Field>
-      <Field span={6} label="N° de comprobante" casillero={casilleroGtf2024("21")}>
+      <Field span={6} label={R("21")} casillero={n("21")}>
         <input
           type="text"
           className={`${I} font-mono`}

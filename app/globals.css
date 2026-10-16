@@ -2362,6 +2362,15 @@ button,
   --data-error-ink:   color-mix(in oklab, var(--data-error-500) 65%, black);
   --data-info-ink:    color-mix(in oklab, var(--data-info-500) 60%, black);
 
+  /* ── Papel de la GTF (16-10-2026): la tinta celeste del talonario preimpreso
+     (Imprenta Nueva Imagen), medida en la foto de la guía de Brandon. La usan
+     la hoja del talonario, «Datos de la GTF» y el formulario de la guía. ── */
+  --gtf-tinta: #16759f;          /* rótulos, rayas y títulos (5,2:1 sobre blanco) */
+  --gtf-linea: #8cc7de;          /* punteados y rayas finas de la tabla */
+  --gtf-franja: #dcf0f7;         /* franjas de sección y cabeceras de tabla */
+  --gtf-folio: #c2272d;          /* el N° prenumerado en rojo */
+  --gtf-papel: #fbfdfe;
+
   /* ─── Badges semánticos para contraste visual ───────────────────────────────
      Tokens centralizados para badges/chips de descuento, novedad, urgencia,
      etc. Evitan colores hardcoded en componentes. */
@@ -2605,6 +2614,13 @@ button,
   --data-warning-ink: color-mix(in oklab, var(--data-warning-500) 80%, white);
   --data-error-ink:   color-mix(in oklab, var(--data-error-500) 80%, white);
   --data-info-ink:    color-mix(in oklab, var(--data-info-500) 80%, white);
+
+  /* Papel de la GTF en oscuro: la tinta se aclara, el papel es la superficie. */
+  --gtf-tinta: #5cc6ec;
+  --gtf-linea: rgba(92, 198, 236, 0.42);
+  --gtf-franja: rgba(92, 198, 236, 0.14);
+  --gtf-folio: #ff8a8a;
+  --gtf-papel: var(--surface-raised);
 
   /* ── Badges semánticos dark — soft bg + bright text (legibilidad AA) ── */
   --badge-discount-bg: rgba(248, 113, 113, 0.16);

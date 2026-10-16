@@ -13,15 +13,19 @@
  * el tab no las re-escriba tres veces con tres criterios distintos.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, Check, Loader2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useDocumentoLookup } from "@/hooks/use-documento-lookup";
 import { avisoDeSunat, normalizarNumero, type DocumentoEncontrado } from "@/lib/documento/tipos";
-import { Field, I, type CampoSpan } from "./ctp-shared";
-import CtpUbigeoSelects from "./CtpUbigeoSelects";
+import { Field, I, useEstiloFormulario } from "./ctp-shared";
+import { FranjaGtf } from "./gtf-papel";
 import { CLASE_NO_APLICA, CLASE_SIN_CAJA, EstadoBloque } from "./ctp-guia-piezas";
+
+/* Los casilleros de ubicación viven en su archivo (16-10-2026, tamaño); se
+   re-exportan para los que ya los importaban de acá. */
+export { UbicacionDeParte } from "./ctp-guia-ubicacion-parte";
 
 /** Identidad de una parte tal como la guarda `gtfDatosSchema`. */
 export interface ParteEditable {
@@ -47,6 +51,7 @@ export interface ParteEditable {
  */
 export function Bloque({
   titulo,
+  tituloPapel,
   hint,
   nota,
   faltan,
@@ -55,6 +60,8 @@ export function Bloque({
   className = "",
 }: {
   titulo: string;
+  /** Con `FormularioPapel`: el título de la franja tal como lo imprime el talonario («Datos del destinatario»). */
+  tituloPapel?: string;
   /** Qué es el bloque: va en el ⓘ del título. */
   hint?: string;
   /** Un dato de más para el ⓘ (norma, cuándo se completa). */
@@ -66,6 +73,30 @@ export function Bloque({
   children: React.ReactNode;
   className?: string;
 }) {
+  const papel = useEstiloFormulario() === "papel";
+  const idTitulo = useId();
+  if (papel) {
+    /* La cara del talonario: sin tarjeta, una franja de sección en mayúsculas
+       sobre la hoja; el ⓘ, el estado y la libreta van en la franja.
+       `flex-auto`, no `flex-1`: con base 0 nunca bajaba de renglón y a 400 px
+       el título largo la apretaba hasta cortar «Libreta» y «Es el titular». */
+    return (
+      <section aria-labelledby={idTitulo} className={className}>
+        <FranjaGtf
+          id={idTitulo}
+          titulo={tituloPapel ?? titulo}
+          extra={
+            <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2">
+              {hint && <InfoTip title={titulo} what={hint} affects={nota} ariaLabel={`Qué es: ${titulo}`} />}
+              {faltan && <EstadoBloque faltan={faltan} />}
+              {acciones && <div className={`ml-auto flex flex-wrap items-center gap-2 ${CLASE_SIN_CAJA}`}>{acciones}</div>}
+            </div>
+          }
+        />
+        <div className="grid grid-cols-1 gap-x-3 gap-y-2.5 px-3 py-3 sm:grid-cols-12 sm:[&_label]:min-h-6">{children}</div>
+      </section>
+    );
+  }
   return (
     <section className={`overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] ${className}`}>
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
@@ -99,13 +130,20 @@ export function DocsDeParte({
   parte,
   onChange,
   span = 3,
+  casillero,
 }: {
   parte: ParteEditable;
   onChange: (v: Partial<ParteEditable>) => void;
   span?: 3 | 4 | 6;
+  /** El «DNI/RUC N.º» del formato 2024 (`casilleroGtf2024`): sin la prop, las casillas no llevan número. */
+  casillero?: string;
 }) {
   const esRuc = parte.docTipo === "RUC";
+  const papel = useEstiloFormulario() === "papel";
   const etiquetaIzq = parte.docTipo === "CE" ? "Nro CE" : parte.docTipo === "PASAPORTE" ? "Nro pasaporte" : "Nro DNI";
+  /* En papel, como el talonario: «DNI N.º», «RUC N.º». */
+  const rotuloIzq = papel ? `${etiquetaIzq.replace(/^Nro /, "").replace(/^pasaporte$/, "Pasaporte")} N.º` : etiquetaIzq;
+  const rotuloRuc = papel ? "RUC N.º" : "Nro RUC";
   /* Sin documento cargado todavía, NINGUNA de las dos casillas «no aplica»:
      las dos siguen siendo el camino para declarar de qué tipo es. */
   const tieneDoc = Boolean(parte.docNumero?.trim());
@@ -160,7 +198,7 @@ export function DocsDeParte({
 
   return (
     <>
-      <Field span={span} label={etiquetaIzq} hint={izqNoAplica && `No aplica: ${izqNoAplica}`}>
+      <Field span={span} label={rotuloIzq} casillero={casillero} hint={izqNoAplica && `No aplica: ${izqNoAplica}`}>
         <input
           type="text"
           inputMode="numeric"
@@ -170,14 +208,14 @@ export function DocsDeParte({
           onChange={(e) => { tocado.current = true; onChange({ docTipo: esRuc ? "DNI" : parte.docTipo, docNumero: e.target.value }); }}
         />
       </Field>
-      <Field span={span} label="Nro RUC" hint={rucNoAplica && `No aplica: ${rucNoAplica}`}>
+      <Field span={span} label={rotuloRuc} casillero={casillero} hint={rucNoAplica && `No aplica: ${rucNoAplica}`}>
         <div className="relative">
           <input
             type="text"
             inputMode="numeric"
             /* Con el ícono de carga al lado el `Field` rotula el grupo, no el
                campo: el nombre va explícito para no quedar mudo. */
-            aria-label="Nro RUC"
+            aria-label={rotuloRuc}
             className={`${I} font-mono ${consultando ? "pr-10" : ""} ${rucNoAplica ? CLASE_NO_APLICA : ""}`}
             placeholder={rucNoAplica ? "no aplica" : undefined}
             value={esRuc ? parte.docNumero : ""}
@@ -220,53 +258,6 @@ export function DocsDeParte({
           )}
         </p>
       )}
-    </>
-  );
-}
-
-/**
- * Casilleros de ubicación: departamento (17)(26), provincia (18)(27), distrito
- * (19)(28) y —sólo el destinatario— la zona. Van sueltos y no dentro de la
- * dirección porque el control pide uno por uno.
- */
-export function UbicacionDeParte({
-  parte,
-  onChange,
-  conZona,
-  span = 4,
-  spanZona = 4,
-}: {
-  parte: ParteEditable;
-  onChange: (v: Partial<ParteEditable>) => void;
-  /** El destinatario tiene «Zona» en el formato; el propietario no. */
-  conZona?: boolean;
-  /** Ancho de cada lista. A 2 de 12 («Departame…», «Elige el») no se leían. */
-  span?: 2 | 3 | 4 | 6;
-  spanZona?: CampoSpan;
-}) {
-  const zonaNoAplica = !parte.zona?.trim();
-  return (
-    <>
-      {conZona && (
-        <Field
-          span={spanZona}
-          label="Zona"
-          hint={zonaNoAplica ? "No aplica: sólo si la dirección usa sector o caserío" : "Sector o caserío"}
-        >
-          <input
-            type="text"
-            className={`${I} ${zonaNoAplica ? CLASE_NO_APLICA : ""}`}
-            placeholder={zonaNoAplica ? "no aplica" : undefined}
-            value={parte.zona ?? ""}
-            onChange={(e) => onChange({ zona: e.target.value })}
-          />
-        </Field>
-      )}
-      <CtpUbigeoSelects
-        span={span}
-        valor={{ departamento: parte.departamento, provincia: parte.provincia, distrito: parte.distrito }}
-        onChange={onChange}
-      />
     </>
   );
 }

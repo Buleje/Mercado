@@ -24,6 +24,7 @@ describe("rótulos de casilleros GTF en el panel (2024)", () => {
     const archivos = [
       "CtpGuiaOficialForm", "CtpIngresoPartesForm", "LothGuiaDatos", "LothGuiaBloques", "LothGuiaTraslado",
       "LothGuiaDocumento", "ctp-guia-bloques-partes", "CtpGuiaDatosTab", "CtpListaProductosTab",
+      "LothGuiaPartida", "ctp-guia-bloque-transporte", "loth-guia-papel-origen", "LothGuiaListaMovilizar",
     ];
     for (const a of archivos) {
       const src = readFileSync(`components/admin/forestal/${a}.tsx`, "utf8");

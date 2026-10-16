@@ -86,13 +86,18 @@ describe("igualar, mover y acotar", () => {
   it("mover un grupo lo corre junto y nunca sale de lo que el servidor acepta", () => {
     const h = hojaDeFabrica("guia");
     const cajas = cajasDeLaHoja(h, CATALOGO.guia);
-    const inicio = new Map([["campo:13", cajas.get("campo:13") as CajaMm], ["campo:14", cajas.get("campo:14") as CajaMm]]);
+    const c13 = cajas.get("campo:13") as CajaMm;
+    const c14 = cajas.get("campo:14") as CajaMm;
+    const inicio = new Map([["campo:13", c13], ["campo:14", c14]]);
     const m = aplicarMovimientos(h, moverDesde(inicio, 2.5, -1));
-    expect([m.campos["13"].x, m.campos["13"].y, m.campos["14"].x]).toEqual([14.5, 93, 106.5]);
+    /* Las posiciones de fábrica salen de la plantilla de la imprenta (`RANURAS`): se comparan contra ellas, no contra números copiados. */
+    expect(m.campos["13"].x).toBeCloseTo(c13.x + 2.5, 5);
+    expect(m.campos["13"].y).toBeCloseTo(c13.y - 1, 5);
+    expect(m.campos["14"].x).toBeCloseTo(c14.x + 2.5, 5);
     const fuera = aplicarMovimientos(h, moverDesde(inicio, -500, 5000));
     expect(fuera.campos["13"].x).toBe(-50);
-    /* El grupo se frena entero: el (14) sigue a 92 mm del (13), no se aplasta contra el borde. */
-    expect(fuera.campos["14"].x - fuera.campos["13"].x).toBe(92);
+    /* El grupo se frena entero: el (14) sigue a la misma distancia del (13), no se aplasta contra el borde. */
+    expect(fuera.campos["14"].x - fuera.campos["13"].x).toBeCloseTo(c14.x - c13.x, 5);
     expect(hojaSchema.safeParse(fuera).success).toBe(true);
   });
 });
@@ -101,16 +106,27 @@ describe("elegir", () => {
   const h = hojaDeFabrica("guia");
   const cajas = cajasDeLaHoja(h, CATALOGO.guia);
 
-  it("la fila del (13) son los de su Y a ±2 mm; la columna del (13), los de su X", () => {
-    expect(elegirAlineados(cajas, "campo:13", "fila")).toEqual(["campo:13", "campo:14", "campo:15"]);
-    const col = elegirAlineados(cajas, "campo:13", "columna");
-    expect(col[0]).toBe("campo:13");
-    expect(col).toContain("campo:22");
-    expect(col).not.toContain("campo:14");
+  it("la fila del (15) son los de su Y a ±2 mm; la columna del (14b), los de su X", () => {
+    /* En el papel 2024 el RUC (15), el DNI (14) y el domicilio (16) van en un renglón. */
+    const y15 = (cajas.get("campo:15") as CajaMm).y;
+    const fila = elegirAlineados(cajas, "campo:15", "fila");
+    expect(fila[0]).toBe("campo:15");
+    expect(fila).toEqual(expect.arrayContaining(["campo:14", "campo:16"]));
+    expect(fila).not.toContain("campo:13");
+    for (const k of fila) expect(Math.abs((cajas.get(k) as CajaMm).y - y15)).toBeLessThanOrEqual(2);
+    /* La columna de los valores que arrancan después de su rótulo: (11a), (14b), (20b), (26). */
+    const x17 = (cajas.get("campo:17") as CajaMm).x;
+    const col = elegirAlineados(cajas, "campo:17", "columna");
+    expect(col[0]).toBe("campo:17");
+    expect(col).toEqual(expect.arrayContaining(["campo:10", "campo:p20b", "campo:26"]));
+    expect(col).not.toContain("campo:18");
+    for (const k of col) expect(Math.abs((cajas.get(k) as CajaMm).x - x17)).toBeLessThanOrEqual(2);
   });
 
   it("el recuadro elige lo que toca", () => {
-    expect(enRecuadro(cajas, { x: 103, y: 92, ancho: 100, alto: 4 })).toEqual(["campo:14", "campo:15"]);
+    const c15 = cajas.get("campo:15") as CajaMm;
+    const c14 = cajas.get("campo:14") as CajaMm;
+    expect(enRecuadro(cajas, { x: c15.x, y: c15.y, ancho: c14.x + c14.ancho - c15.x, alto: 1 })).toEqual(["campo:14", "campo:15"]);
   });
 });
 

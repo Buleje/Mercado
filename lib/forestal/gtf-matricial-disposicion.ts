@@ -16,18 +16,16 @@
  */
 
 import { z } from "zod";
+import { PLANTILLA_FABRICA, RANURAS, type Ranura, type TablaPlantilla } from "./gtf-talonario-plantilla";
 
 /**
  * Las casillas del (5). Copia de `ORIGENES` + `ORIGENES_SIN_CASILLA_2024` de
  * `ctp-gtf-formato` (ese módulo es "use client" y esto lo lee también la ruta
  * del servidor): el test `forestal-gtf-matricial` falla si se separan.
  *
- * El ORDEN no es el del papel 2024 sino el del alta de cada campo: la posición
- * de fábrica de los nueve primeros sale de su índice (`C1 + i·21`, la hoja
- * 2015) y reordenarlos movería las «X» de quien nunca acomodó su talonario.
- * Los tres que trajo el formato 2024 van al final, en su propio renglón;
- * «Plan de Manejo Consolidado» y «Otros» ya no existen en 2024 pero se quedan
- * (ADR-494): borrar un campo borra el acomodo guardado de ese campo.
+ * Cada casilla cae en su lugar del papel 2024 (`RANURAS` de la plantilla).
+ * «Plan de Manejo Consolidado» y «Otros» ya no existen en 2024 pero se quedan,
+ * ocultos (ADR-494): borrar un campo borra el acomodo guardado de ese campo.
  */
 export const ORIGENES_TALONARIO: ReadonlyArray<{ clave: string; label: string }> = [
   { clave: "concesion", label: "Concesión" },
@@ -46,8 +44,6 @@ export const ORIGENES_TALONARIO: ReadonlyArray<{ clave: string; label: string }>
 
 /** Las casillas del (5) que el formato 2024 ya no tiene: su campo se queda, con la marca «2015». */
 const ORIGENES_SOLO_2015 = new Set(["plan_consolidado", "otros"]);
-/** Las que trajo el formato 2024: arrancan ocultas, en un segundo renglón. */
-const ORIGENES_SOLO_2024 = ["varios_origenes", "ctp", "cesion_uso"];
 
 export type FormatoTalonario = "guia" | "lista";
 export type Alineacion = "izq" | "centro" | "der";
@@ -79,6 +75,8 @@ export interface TablaPos {
 }
 
 export interface DisposicionHoja {
+  /** Sobre qué plantilla se acomodó (`PLANTILLA_FABRICA`): una de otra plantilla vuelve a la de fábrica. */
+  plantilla?: string;
   anchoMm: number;
   altoMm: number;
   /** Corrimiento de la impresora: se suma a TODO al imprimir (la matricial corre todo junto). */
@@ -115,6 +113,8 @@ export interface DefColumna {
   x: number;
   ancho: number;
   alinea?: Alineacion;
+  /** Arranca oculta: el talonario no tiene esa columna o ya la trae impresa. */
+  oculta?: boolean;
 }
 
 export interface CatalogoFormato {
@@ -133,130 +133,147 @@ export const LETRA_FABRICA_PT = 9;
 export const PASO_MM = 0.5;
 export const PASO_GRANDE_MM = 5;
 
-/** 4 columnas como la hoja SERFOR: x 12 · 58 · 104 · 150. */
-const C1 = 12, C2 = 58, C3 = 104, C4 = 150;
-const MEDIA = 90, CUARTO = 44, ULTIMO = 48, ENTERA = 186, MEDIA_DER = 94;
+/*
+ * El lugar de fábrica de cada valor sale de la plantilla del talonario
+ * preimpreso (`gtf-talonario-plantilla`, medida sobre el talonario de Brandon
+ * el 16-10): el renglón punteado que sigue a su rótulo. Antes era una grilla
+ * de 4 columnas que no correspondía a ningún papel.
+ */
+const G = RANURAS.guia.campos;
+const L = RANURAS.lista.campos;
 
-const fecha = (n: "3" | "4", nombre: string, x: number, y: number): DefCampo[] => [
-  { id: n, label: `(${n}) ${nombre}`, grupo: "La guía", x, y, ancho: n === "3" ? CUARTO : ULTIMO },
-  { id: `${n}d`, label: `(${n}) Día`, grupo: "La guía", x, y: y + 4, ancho: 7, alinea: "centro", oculto: true },
-  { id: `${n}m`, label: `(${n}) Mes`, grupo: "La guía", x: x + 9, y: y + 4, ancho: 7, alinea: "centro", oculto: true },
-  { id: `${n}a`, label: `(${n}) Año`, grupo: "La guía", x: x + 18, y: y + 4, ancho: 12, alinea: "centro", oculto: true },
+/** Un campo en su ranura de la plantilla. */
+const en = (r: Ranura, id: string, label: string, grupo: string, oculto = false): DefCampo => ({
+  id, label, grupo, x: r.x, y: r.y, ancho: r.ancho, ...(r.alinea ? { alinea: r.alinea } : {}), ...(oculto ? { oculto } : {}),
+});
+
+const fecha = (n: "3" | "4", nombre: string): DefCampo[] => [
+  en(G[n], n, `(${n}) ${nombre}`, "La guía"),
+  en(G[`${n}d`], `${n}d`, `(${n}) Día`, "La guía", true),
+  en(G[`${n}m`], `${n}m`, `(${n}) Mes`, "La guía", true),
+  en(G[`${n}a`], `${n}a`, `(${n}) Año`, "La guía", true),
 ];
 
+/* Rótulos con la numeración del formato 2024 (ADR-494). El id es la clave de
+   `casillerosGtf` y no cambia: el acomodo guardado de cada campo va por id. */
 const CAMPOS_GUIA: DefCampo[] = [
-  { id: "numero", label: "N° de la GTF", grupo: "La guía", x: C4, y: 14, ancho: ULTIMO, oculto: true },
-  { id: "2", label: "(2) Autoridad Regional Forestal (ARFFS)", grupo: "La guía", x: C1, y: 40, ancho: MEDIA },
-  ...fecha("3", "Fecha de expedición", C3, 40),
-  ...fecha("4", "Fecha de vencimiento", C4, 40),
-  /* (5) son casillas: cada origen es su campo y sólo el marcado imprime su «X». */
-  ...ORIGENES_TALONARIO.filter((o) => !ORIGENES_SOLO_2024.includes(o.clave)).map((o, i): DefCampo => ({
-    id: `5:${o.clave}`, label: `(5) ${o.label}${ORIGENES_SOLO_2015.has(o.clave) ? " (2015)" : ""}`,
-    grupo: "Origen del recurso (5)", x: C1 + i * 21, y: 48, ancho: 6, alinea: "centro",
-  })),
-  ...ORIGENES_TALONARIO.filter((o) => ORIGENES_SOLO_2024.includes(o.clave)).map((o, i): DefCampo => ({
-    id: `5:${o.clave}`, label: `(5) ${o.label}`, grupo: "Origen del recurso (5)", x: C1 + i * 21, y: 52, ancho: 6, alinea: "centro",
-    oculto: true,
-  })),
-  /* Rótulos con la numeración del formato 2024 (ADR-494). El id es la clave de
-     `casillerosGtf` y no cambia: el acomodo guardado de cada campo va por id. */
-  { id: "6", label: "(6) N° del título habilitante", grupo: "La guía", x: C1, y: 56, ancho: MEDIA },
-  { id: "7", label: "(7) Nombre del titular", grupo: "La guía", x: C3, y: 56, ancho: MEDIA_DER },
-  { id: "rep", label: "(8) Rep. legal", grupo: "La guía", x: C1, y: 64, ancho: MEDIA },
-  { id: "8", label: "(9) N° de resolución", grupo: "La guía", x: C3, y: 64, ancho: MEDIA_DER },
-  { id: "9", label: "(10) Plan de manejo (tipo)", grupo: "La guía", x: C1, y: 72, ancho: MEDIA },
-  { id: "10", label: "(11a) Departamento", grupo: "La guía", x: C3, y: 72, ancho: CUARTO },
-  { id: "11", label: "(11b) Provincia", grupo: "La guía", x: C4, y: 72, ancho: ULTIMO },
-  { id: "12", label: "(11c) Distrito", grupo: "La guía", x: C1, y: 80, ancho: ENTERA },
-  { id: "13", label: "(12) Propietario del producto", grupo: "Propietario", x: C1, y: 94, ancho: MEDIA },
-  { id: "14", label: "(13) DNI/RUC · el DNI", grupo: "Propietario", x: C3, y: 94, ancho: CUARTO },
-  { id: "15", label: "(13) DNI/RUC · el RUC", grupo: "Propietario", x: C4, y: 94, ancho: ULTIMO },
-  { id: "16", label: "(14a) Dirección", grupo: "Propietario", x: C1, y: 102, ancho: MEDIA },
-  { id: "17", label: "(14b) Departamento", grupo: "Propietario", x: C3, y: 102, ancho: CUARTO },
-  { id: "18", label: "(14c) Provincia", grupo: "Propietario", x: C4, y: 102, ancho: ULTIMO },
-  { id: "19", label: "(14d) Distrito", grupo: "Propietario", x: C1, y: 110, ancho: CUARTO },
-  { id: "20", label: "(15) Tipo de comprobante", grupo: "Propietario", x: C2, y: 110, ancho: CUARTO },
-  { id: "21", label: "(16) N° de comprobante", grupo: "Propietario", x: C3, y: 110, ancho: MEDIA_DER },
-  /* «Datos del punto de partida» (17)-(20d) y el (22) del destino nacieron con
-     el formato 2024. Arrancan ocultos: el talonario 2015 no los tiene; quien
-     tenga el de 2024 los prende y los ubica. */
-  { id: "p17", label: "(17) Punto de partida", grupo: "Punto de partida", x: C1, y: 116, ancho: MEDIA, oculto: true },
-  { id: "p18", label: "(18) N° de autorización", grupo: "Punto de partida", x: C3, y: 116, ancho: CUARTO, oculto: true },
-  { id: "p19", label: "(19) Tipo de establecimiento", grupo: "Punto de partida", x: C4, y: 116, ancho: ULTIMO, oculto: true },
-  { id: "p20a", label: "(20a) Dirección", grupo: "Punto de partida", x: C1, y: 119, ancho: MEDIA, oculto: true },
-  { id: "p20b", label: "(20b) Departamento", grupo: "Punto de partida", x: C3, y: 119, ancho: CUARTO, oculto: true },
-  { id: "p20c", label: "(20c) Provincia", grupo: "Punto de partida", x: C4, y: 119, ancho: ULTIMO, oculto: true },
-  { id: "p20d", label: "(20d) Distrito", grupo: "Punto de partida", x: C1, y: 122, ancho: ENTERA, oculto: true },
-  { id: "22", label: "(21) Destinatario", grupo: "Destinatario", x: C1, y: 124, ancho: MEDIA },
-  { id: "23", label: "(23) DNI/RUC · el DNI", grupo: "Destinatario", x: C3, y: 124, ancho: CUARTO },
-  { id: "24", label: "(23) DNI/RUC · el RUC", grupo: "Destinatario", x: C4, y: 124, ancho: ULTIMO },
-  { id: "25", label: "(24a) Dirección", grupo: "Destinatario", x: C1, y: 132, ancho: MEDIA },
-  { id: "26", label: "(24b) Departamento", grupo: "Destinatario", x: C3, y: 132, ancho: CUARTO },
-  { id: "27", label: "(24c) Provincia", grupo: "Destinatario", x: C4, y: 132, ancho: ULTIMO },
-  { id: "28", label: "(24d) Distrito", grupo: "Destinatario", x: C1, y: 140, ancho: ENTERA },
-  { id: "d22", label: "(22) N° de autorización del destinatario", grupo: "Destinatario", x: C3, y: 144, ancho: MEDIA_DER, oculto: true },
-  { id: "29", label: "(25) N° guía de remisión del transportista", grupo: "Transporte", x: C1, y: 154, ancho: CUARTO },
-  { id: "30", label: "(26) Tipo de transporte", grupo: "Transporte", x: C2, y: 154, ancho: CUARTO },
-  { id: "31", label: "(27) Tipo de vehículo", grupo: "Transporte", x: C3, y: 154, ancho: CUARTO },
-  { id: "31p", label: "(28) Placa(s) / matrícula", grupo: "Transporte", x: C4, y: 154, ancho: ULTIMO },
-  { id: "32", label: "(29) Nombre del conductor", grupo: "Transporte", x: C1, y: 162, ancho: MEDIA },
-  { id: "33", label: "(30) DNI del conductor", grupo: "Transporte", x: C3, y: 162, ancho: CUARTO },
-  { id: "34", label: "(31) Licencia de conducir", grupo: "Transporte", x: C4, y: 162, ancho: ULTIMO },
-  { id: "35", label: "(33) Lista de trozas / productos transformados", grupo: "Producto", x: C1, y: 176, ancho: MEDIA },
-  { id: "36", label: "(32) N° GTF de origen", grupo: "Producto", x: C3, y: 176, ancho: MEDIA_DER },
-  { id: "37t", label: "(34h) Total movilizado", grupo: "Producto", x: 174, y: 242, ancho: 24, alinea: "der" },
-  { id: "38", label: "(35) Observaciones", grupo: "Producto", x: C1, y: 252, ancho: ENTERA },
+  /* El N° viene prenumerado en rojo por la imprenta. */
+  en(G.numero, "numero", "N° de la GTF", "La guía", true),
+  en(G["2"], "2", "(2) Autoridad Regional Forestal (ARFFS)", "La guía"),
+  ...fecha("3", "Fecha de expedición"),
+  ...fecha("4", "Fecha de vencimiento"),
+  /* (5) son casillas: cada origen es su campo y sólo el marcado imprime su «X».
+     Las dos que el formato 2024 retiró arrancan ocultas (rótulo «2015»). */
+  ...ORIGENES_TALONARIO.map((o) =>
+    en(G[`5:${o.clave}`], `5:${o.clave}`, `(5) ${o.label}${ORIGENES_SOLO_2015.has(o.clave) ? " (2015)" : ""}`, "Origen del recurso (5)", ORIGENES_SOLO_2015.has(o.clave)),
+  ),
+  en(G["6"], "6", "(6) N° del título habilitante", "La guía"),
+  en(G["7"], "7", "(7) Nombre del titular", "La guía"),
+  en(G.rep, "rep", "(8) Rep. legal", "La guía"),
+  en(G["8"], "8", "(9) N° de resolución", "La guía"),
+  en(G["9"], "9", "(10) Plan de manejo (tipo)", "La guía"),
+  en(G["10"], "10", "(11a) Departamento", "La guía"),
+  en(G["11"], "11", "(11b) Provincia", "La guía"),
+  en(G["12"], "12", "(11c) Distrito", "La guía"),
+  en(G["13"], "13", "(12) Propietario del producto", "Propietario"),
+  en(G["14"], "14", "(13) DNI/RUC · el DNI", "Propietario"),
+  en(G["15"], "15", "(13) DNI/RUC · el RUC", "Propietario"),
+  en(G["16"], "16", "(14a) Dirección", "Propietario"),
+  en(G["17"], "17", "(14b) Departamento", "Propietario"),
+  en(G["18"], "18", "(14c) Provincia", "Propietario"),
+  en(G["19"], "19", "(14d) Distrito", "Propietario"),
+  en(G["20"], "20", "(15) Tipo de comprobante", "Propietario"),
+  en(G["21"], "21", "(16) N° de comprobante", "Propietario"),
+  /* «Datos del punto de partida» (17)-(20d) y el (22) del destino: el talonario 2024 los trae impresos. */
+  en(G.p17, "p17", "(17) Punto de partida", "Punto de partida"),
+  en(G.p18, "p18", "(18) N° de autorización", "Punto de partida"),
+  en(G.p19, "p19", "(19) Tipo de establecimiento", "Punto de partida"),
+  en(G.p20a, "p20a", "(20a) Dirección", "Punto de partida"),
+  en(G.p20b, "p20b", "(20b) Departamento", "Punto de partida"),
+  en(G.p20c, "p20c", "(20c) Provincia", "Punto de partida"),
+  en(G.p20d, "p20d", "(20d) Distrito", "Punto de partida"),
+  en(G["22"], "22", "(21) Destinatario", "Destinatario"),
+  en(G.d22, "d22", "(22) N° de autorización del destinatario", "Destinatario"),
+  en(G["23"], "23", "(23) DNI/RUC · el DNI", "Destinatario"),
+  en(G["24"], "24", "(23) DNI/RUC · el RUC", "Destinatario"),
+  en(G["25"], "25", "(24a) Dirección", "Destinatario"),
+  en(G["26"], "26", "(24b) Departamento", "Destinatario"),
+  en(G["27"], "27", "(24c) Provincia", "Destinatario"),
+  en(G["28"], "28", "(24d) Distrito", "Destinatario"),
+  en(G["29"], "29", "(25) N° guía de remisión del transportista", "Transporte"),
+  en(G["30"], "30", "(26) Tipo de transporte", "Transporte"),
+  en(G["31"], "31", "(27) Tipo de vehículo", "Transporte"),
+  en(G["31p"], "31p", "(28) Placa(s) / matrícula", "Transporte"),
+  en(G["32"], "32", "(29) Nombre del conductor", "Transporte"),
+  en(G["33"], "33", "(30) DNI del conductor", "Transporte"),
+  en(G["34"], "34", "(31) Licencia de conducir", "Transporte"),
+  en(G["36"], "36", "(32) N° GTF de origen", "Producto"),
+  en(G["35"], "35", "(33) Lista de trozas / productos transformados", "Producto"),
+  en(G["37t"], "37t", "(34h) Total movilizado", "Producto"),
+  en(G["38"], "38", "(35) Observaciones", "Producto"),
 ];
 
+/* El encabezado de la lista (titular, RUC, título, ubicación), su N° y la
+   fecha: la imprenta imprime los cuatro primeros y el N°; la lista del
+   talonario no tiene fecha. Arrancan ocultos en su lugar. */
 const CAMPOS_LISTA: DefCampo[] = [
-  { id: "titular", label: "Titular", grupo: "Encabezado", x: C1, y: 14, ancho: 120 },
-  { id: "subtitulo", label: "Título habilitante", grupo: "Encabezado", x: C1, y: 21, ancho: 120 },
-  { id: "ubicacion", label: "Ubicación", grupo: "Encabezado", x: C1, y: 28, ancho: 120 },
-  { id: "ruc", label: "R.U.C.", grupo: "Encabezado", x: C1, y: 35, ancho: 60 },
-  { id: "numero", label: "N° de lista", grupo: "Encabezado", x: 160, y: 14, ancho: 38 },
-  { id: "guia", label: "N° de la GTF", grupo: "Encabezado", x: 160, y: 21, ancho: 38 },
-  { id: "fecha", label: "Fecha de expedición", grupo: "Encabezado", x: 160, y: 28, ancho: 38 },
-  { id: "fechad", label: "Fecha · día", grupo: "Encabezado", x: 160, y: 35, ancho: 7, alinea: "centro", oculto: true },
-  { id: "fecham", label: "Fecha · mes", grupo: "Encabezado", x: 169, y: 35, ancho: 7, alinea: "centro", oculto: true },
-  { id: "fechaa", label: "Fecha · año", grupo: "Encabezado", x: 178, y: 35, ancho: 12, alinea: "centro", oculto: true },
-  { id: "totPiezas", label: "Total de piezas", grupo: "Totales", x: 169, y: 218, ancho: 9, alinea: "centro" },
-  { id: "totVol", label: "Volumen total", grupo: "Totales", x: 179, y: 218, ancho: 19, alinea: "der" },
-  { id: "obs", label: "(7) Observaciones", grupo: "Totales", x: C1, y: 232, ancho: 120 },
+  en(L.titular, "titular", "Titular", "Encabezado", true),
+  en(L.subtitulo, "subtitulo", "Título habilitante", "Encabezado", true),
+  en(L.ubicacion, "ubicacion", "Ubicación", "Encabezado", true),
+  en(L.ruc, "ruc", "R.U.C.", "Encabezado", true),
+  en(L.numero, "numero", "(1) N° de lista", "Encabezado", true),
+  en(L.guia, "guia", "(2) GTF N°", "Encabezado"),
+  en(L.fecha, "fecha", "Fecha de expedición", "Encabezado", true),
+  en(L.fechad, "fechad", "Fecha · día", "Encabezado", true),
+  en(L.fecham, "fecham", "Fecha · mes", "Encabezado", true),
+  en(L.fechaa, "fechaa", "Fecha · año", "Encabezado", true),
+  en(L.totPiezas, "totPiezas", "(11) Total · cantidad", "Totales"),
+  en(L.totVol, "totVol", "(11) Total · volumen", "Totales"),
+  en(L.obs, "obs", "(12) Observaciones", "Totales"),
 ];
+
+const col = (t: TablaPlantilla, id: string, label: string, oculta = false): DefColumna => {
+  const c = t.columnas[id];
+  return { id, label, x: c.x, ancho: c.ancho, ...(c.alinea && c.alinea !== "izq" ? { alinea: c.alinea } : {}), ...(oculta ? { oculta } : {}) };
+};
+const TG = RANURAS.guia.tabla;
+const TL = RANURAS.lista.tabla;
+const tablaDe = (t: TablaPlantilla) => ({ y: t.y, altoFilaMm: t.altoFilaMm, maxFilas: t.maxFilas, letraPt: t.letraPt });
 
 export const CATALOGO: Record<FormatoTalonario, CatalogoFormato> = {
   guia: {
     nombre: "Guía",
     campos: CAMPOS_GUIA,
     tablaLabel: "Cuadro detalle de productos (34)",
-    tabla: { y: 192, altoFilaMm: 6, maxFilas: 8, letraPt: 8 },
+    tabla: tablaDe(TG),
     columnas: [
-      { id: "37a", label: "(34a) N. científico", x: 12, ancho: 40 },
-      { id: "37b", label: "(34b) N. común o comercial", x: 53, ancho: 30 },
-      { id: "37c", label: "(34c) Tipo de producto", x: 84, ancho: 26 },
-      { id: "37d", label: "(34d) Descripción", x: 111, ancho: 30 },
-      { id: "37e", label: "(34e) Cantidad", x: 142, ancho: 14, alinea: "der" },
-      { id: "37f", label: "(34f) Unidad de medida", x: 157, ancho: 16 },
-      { id: "37g", label: "(34g) Total", x: 174, ancho: 24, alinea: "der" },
+      col(TG, "37a", "(34a) N. científico"),
+      col(TG, "37b", "(34b) N. común o comercial"),
+      col(TG, "37c", "(34c) Tipo de producto"),
+      col(TG, "37d", "(34d) Descripción"),
+      col(TG, "37e", "(34e) Cantidad"),
+      col(TG, "37f", "(34f) Unidad de medida"),
+      col(TG, "37g", "(34g) Total"),
     ],
   },
   lista: {
     nombre: "Lista",
     campos: CAMPOS_LISTA,
     tablaLabel: "Trozas de la lista",
-    /* 20 filas: las de cada lista de SERFOR (`FILAS_POR_LISTA`). */
-    tabla: { y: 56, altoFilaMm: 8, maxFilas: 20, letraPt: 8 },
+    /* 30 filas: las del talonario. Cada lista de SERFOR (`FILAS_POR_LISTA`, 20) va en su hoja. */
+    tabla: tablaDe(TL),
     columnas: [
-      { id: "n", label: "N°", x: 12, ancho: 7, alinea: "centro" },
-      { id: "cientifico", label: "N. científico", x: 20, ancho: 36 },
-      { id: "comun", label: "N. común", x: 57, ancho: 28 },
-      { id: "producto", label: "Producto", x: 86, ancho: 22 },
-      { id: "codigo", label: "(2) Codificación", x: 109, ancho: 20, alinea: "centro" },
-      { id: "d1", label: "(4) D1 cm", x: 130, ancho: 12, alinea: "der" },
-      { id: "d2", label: "(5) D2 cm", x: 143, ancho: 12, alinea: "der" },
-      { id: "largo", label: "(6) Largo m", x: 156, ancho: 12, alinea: "der" },
-      { id: "cant", label: "Cantidad", x: 169, ancho: 9, alinea: "centro" },
-      { id: "vol", label: "Volumen m³", x: 179, ancho: 19, alinea: "der" },
+      /* El talonario trae los N° de fila impresos y no tiene columna de producto: arrancan ocultas. */
+      col(TL, "n", "N°", true),
+      col(TL, "cientifico", "(3) N. científico"),
+      col(TL, "comun", "(4) N. común o comercial"),
+      { id: "producto", label: "Producto", x: TL.columnas.codigo.x, ancho: TL.columnas.codigo.ancho, oculta: true },
+      col(TL, "codigo", "(5) Codificación"),
+      col(TL, "d1", "(6) d1"),
+      col(TL, "d2", "(7) d2"),
+      col(TL, "largo", "(8) L"),
+      col(TL, "cant", "(9) Cantidad"),
+      col(TL, "vol", "(10) Volumen m³"),
     ],
   },
 };
@@ -267,6 +284,7 @@ export const CAMPOS_FECHA: Record<FormatoTalonario, readonly string[]> = { guia:
 export function hojaDeFabrica(formato: FormatoTalonario): DisposicionHoja {
   const cat = CATALOGO[formato];
   return {
+    plantilla: PLANTILLA_FABRICA,
     ...HOJA_FABRICA,
     offsetXMm: 0,
     offsetYMm: 0,
@@ -279,7 +297,7 @@ export function hojaDeFabrica(formato: FormatoTalonario): DisposicionHoja {
     ),
     tabla: {
       ...cat.tabla,
-      columnas: Object.fromEntries(cat.columnas.map((c) => [c.id, { x: c.x, anchoMm: c.ancho, alinea: c.alinea ?? "izq", visible: true }])),
+      columnas: Object.fromEntries(cat.columnas.map((c) => [c.id, { x: c.x, anchoMm: c.ancho, alinea: c.alinea ?? "izq", visible: !c.oculta }])),
     },
   };
 }
@@ -303,6 +321,7 @@ const claves = <T extends z.ZodTypeAny>(v: T) =>
   z.record(z.string().min(1).max(24), v).refine((r) => Object.keys(r).length <= MAX_CLAVES, "Demasiados campos");
 
 export const hojaSchema = z.object({
+  plantilla: z.string().max(40).optional(),
   anchoMm: mm(50, 1000),
   altoMm: mm(50, 1000),
   offsetXMm: mm(-50, 50),
@@ -324,13 +343,17 @@ const esObjeto = (v: unknown): v is Record<string, unknown> => typeof v === "obj
 export function normalizarHoja(formato: FormatoTalonario, raw: unknown): DisposicionHoja {
   const base = hojaDeFabrica(formato);
   if (!esObjeto(raw)) return base;
+  /* Acomodada sobre otra plantilla (la grilla de 4 columnas de antes del 16-10,
+     que no era ningún papel): se conservan la medida, el corrimiento y el
+     separador; los campos y la tabla vuelven a su renglón de la plantilla. */
+  const otraPlantilla = raw.plantilla !== PLANTILLA_FABRICA;
   const numero = <K extends "anchoMm" | "altoMm" | "offsetXMm" | "offsetYMm">(k: K) => {
     const r = hojaSchema.shape[k].safeParse(raw[k]);
     return r.success ? r.data : base[k];
   };
   const sep = hojaSchema.shape.separadorFecha.safeParse(raw.separadorFecha);
-  const campos = esObjeto(raw.campos) ? raw.campos : {};
-  const tablaRaw = esObjeto(raw.tabla) ? raw.tabla : {};
+  const campos = !otraPlantilla && esObjeto(raw.campos) ? raw.campos : {};
+  const tablaRaw = !otraPlantilla && esObjeto(raw.tabla) ? raw.tabla : {};
   const cols = esObjeto(tablaRaw.columnas) ? tablaRaw.columnas : {};
   const tablaShape = hojaSchema.shape.tabla.shape;
   const deTabla = <K extends "y" | "altoFilaMm" | "maxFilas" | "letraPt">(k: K) => {
@@ -338,6 +361,7 @@ export function normalizarHoja(formato: FormatoTalonario, raw: unknown): Disposi
     return r.success ? r.data : base.tabla[k];
   };
   return {
+    plantilla: PLANTILLA_FABRICA,
     anchoMm: numero("anchoMm"),
     altoMm: numero("altoMm"),
     offsetXMm: numero("offsetXMm"),

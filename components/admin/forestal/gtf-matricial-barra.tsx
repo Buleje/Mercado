@@ -117,7 +117,7 @@ export default function BarraTalonario({ t, s, z, p }: { t: EstadoGtfMatricial; 
       <Boton
         icon={Tags}
         label="Ver nombres de los campos"
-        ayuda="El nombre de cada campo encima de su valor, sólo en pantalla: nunca se imprime."
+        ayuda="El nombre de cada campo encima de su valor, sólo en pantalla: nunca se imprime. Con el formato impreso, al pasar el mouse."
         onClick={p.alternarNombres}
         activo={p.nombres}
       />

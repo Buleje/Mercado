@@ -95,21 +95,22 @@ describe("pestañas de la guía en la vista previa", () => {
     ]);
     expect(tabs[0].getAttribute("aria-selected")).toBe("true");
     const panel = screen.getByRole("tabpanel");
-    expect(within(panel).getAllByText("Destinatario").length).toBeGreaterThan(0);
-    expect(within(panel).getAllByText("Propietario del producto").length).toBeGreaterThan(0);
+    /* Como el papel (16-10): las franjas del Anexo I, con el cuadro de productos dentro de la guía. */
+    expect(within(panel).getByText("Datos del destinatario")).toBeTruthy();
+    expect(within(panel).getByText("Datos del propietario del producto")).toBeTruthy();
+    expect(within(panel).getByText("Detalle del producto")).toBeTruthy();
     expect(within(panel).queryByText("Resumen por especie")).toBeNull();
-    expect(within(panel).queryByText("Detalle del producto (37)")).toBeNull();
   });
 
-  it("«Trozas y resumen» trae la lista, el resumen por especie y el (37); clic otra vez la pliega", () => {
+  it("«Trozas y resumen» trae la lista y el resumen por especie (el cuadro de productos va en la guía); clic otra vez la pliega", () => {
     montar(guia(), true);
     const trozas = screen.getAllByRole("tab")[1];
     fireEvent.click(trozas);
     const panel = screen.getByRole("tabpanel");
     expect(within(panel).getByText(/Lista de trozas \(2\)/)).toBeTruthy();
     expect(within(panel).getByText("Resumen por especie")).toBeTruthy();
-    expect(within(panel).getByText("Detalle del producto (37)")).toBeTruthy();
-    expect(within(panel).queryByText("Destinatario")).toBeNull();
+    expect(within(panel).queryByText("Detalle del producto")).toBeNull();
+    expect(within(panel).queryByText("Datos del destinatario")).toBeNull();
     fireEvent.click(trozas);
     expect(screen.queryByRole("tabpanel")).toBeNull();
   });

@@ -135,7 +135,18 @@ export function LineaDeBusqueda({ estado, aplicados }: { estado: EstadoBusquedaP
  * Placa del vehículo + «Buscar». Devuelve DOS celdas de la grilla: el campo
  * (`span`) y, debajo y a lo ancho, la línea con lo que se encontró.
  */
-export function PlacaDelVehiculo({ datos, set, span }: { datos: GtfDatos; set: PonerSeccion; span: CampoSpan }) {
+export function PlacaDelVehiculo({
+  datos,
+  set,
+  span,
+  casillero,
+}: {
+  datos: GtfDatos;
+  set: PonerSeccion;
+  span: CampoSpan;
+  /** El «Placa (s)» del formato 2024 (`casilleroGtf2024`); sin la prop, sin número. */
+  casillero?: string;
+}) {
   const { estado, buscar } = useBuscarPlaca();
   const [aplicados, setAplicados] = useState<{ placa: string; lista: DatoAplicado[] }>({ placa: "", lista: [] });
   /* La respuesta vuelve después de hasta 8 s: se aplica sobre la guía de ESE
@@ -166,6 +177,7 @@ export function PlacaDelVehiculo({ datos, set, span }: { datos: GtfDatos; set: P
     <>
       <CampoPlaca
         label="Placa"
+        casillero={casillero}
         required
         span={span}
         valor={datos.vehiculo.placa}

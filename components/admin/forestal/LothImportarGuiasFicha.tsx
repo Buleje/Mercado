@@ -17,23 +17,22 @@
  * su «Código en la guía» — las DOS columnas siempre (Brandon 08-10), aunque
  * coincidan: así se ve de un vistazo cuál se renombró al importar. El N° de la
  * Lista de trozas (33) que trajo la guía va en el título de la lista.
+ *
+ * 16-10 (Brandon: «que se parezca lo más posible a esos formatos»): las dos
+ * pestañas tienen la cara del talonario — la GTF en el orden del Anexo I y la
+ * lista como la hoja «Lista de trozas»; el «Código único» va en la última
+ * columna, en gris (`gtf-datos-papel-*.tsx`).
  */
 
 import { useId, useMemo, useState } from "react";
-import { DataTable } from "@buleje/design-system";
 import { FileText } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { formatNumber } from "@/lib/format";
-import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { piezasDeItems } from "@/lib/forestal/loth-guia-despacho";
 import { fichaDeGuiaImportada } from "@/lib/forestal/loth-importar-guia-ficha";
 import { listaTrozasDeLaGuia } from "@/lib/forestal/gtf-resumen-interno-datos";
+import GtfDatosPapelLista from "./gtf-datos-papel-lista";
 import LothImportarGuiasBloques from "./LothImportarGuiasBloques";
 import CtpApartados, { CtpApartadoPanel, type Apartado } from "./ctp-apartados";
-
-const m = (v: number | null) => (v == null ? "—" : formatNumber(v, 2));
-const TH = "whitespace-nowrap";
-const TD = "whitespace-nowrap";
 
 /** El ancho es el de `planilla`; lo propio de este modal es el alto fijo al 90 %. */
 const MODAL_AMPLIO = "sm:h-[90vh] sm:max-h-[90vh]";
@@ -65,12 +64,11 @@ export default function ModalFichaImportada({
   const [pestana, setPestana] = useState<"gtf" | "trozas">("gtf");
   const idBase = useId();
   if (!leida) return null;
-  const volumen = piezas.reduce((a, p) => a + (p.volumeM3 ?? 0), 0);
   const apartados: Apartado[] = [
     {
       id: "gtf",
       label: "GTF",
-      hint: "Los casilleros de la guía: titular, propietario, destinatario, transporte y traslado",
+      hint: "La guía como el papel: origen, propietario, partida, destinatario, transportista y detalle del producto",
     },
     {
       id: "trozas",
@@ -107,65 +105,8 @@ export default function ModalFichaImportada({
           </CtpApartadoPanel>
         ) : (
           <CtpApartadoPanel idBase={idBase} id="trozas" className="space-y-3">
+            <GtfDatosPapelLista ficha={leida.ficha} gtfNumber={gtfNumber} nroLista={nroLista} piezas={piezas} />
             <LothImportarGuiasBloques ficha={leida.ficha} piezas={paraResumen} partes="resumen" />
-            {piezas.length === 0 ? (
-              <p className="rounded-lg border border-[var(--rule-base)] px-3 py-6 text-center text-sm text-[var(--text-tertiary)]">
-                La guía no trajo su lista de trozas.
-              </p>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border border-[var(--rule-base)]">
-                <DataTable className="w-full">
-                  <caption className="px-3 py-2 text-left text-sm font-bold text-[var(--text-primary)]">
-                    Trozas de la guía ({piezas.length}) ·{" "}
-                    <span className="font-mono tabular-nums">{fmtM3(volumen)} m³</span>
-                    {" · "}
-                    {nroLista ? (
-                      <span>
-                        Lista de trozas N° <span className="font-mono">{nroLista}</span>
-                      </span>
-                    ) : (
-                      <span className="font-normal text-[var(--text-tertiary)]">
-                        sin N° de lista de trozas
-                      </span>
-                    )}
-                  </caption>
-                  <thead>
-                    <tr>
-                      <th className={TH}>Código en la guía</th>
-                      <th className={TH}>Código único</th>
-                      <th className={TH}>Especie</th>
-                      <th className={`${TH} text-right`}>D1 (m)</th>
-                      <th className={`${TH} text-right`}>D2 (m)</th>
-                      <th className={`${TH} text-right`}>Largo (m)</th>
-                      <th className={`${TH} text-right`}>m³</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--rule-soft)]">
-                    {piezas.map((p, i) => (
-                      <tr key={`${p.codigo}-${i}`}>
-                        <td className={`${TD} font-mono text-[var(--text-secondary)]`}>
-                          {p.codigoGuia || p.codigo || "—"}
-                        </td>
-                        <td className={`${TD} font-mono font-semibold`}>{p.codigo || "—"}</td>
-                        <td className={`${TD} text-[var(--text-secondary)]`}>{p.comun ?? "—"}</td>
-                        <td className={`${TD} text-right font-mono tabular-nums`}>
-                          {m(p.diamMayorM)}
-                        </td>
-                        <td className={`${TD} text-right font-mono tabular-nums`}>
-                          {m(p.diamMenorM)}
-                        </td>
-                        <td className={`${TD} text-right font-mono tabular-nums`}>
-                          {m(p.lengthM)}
-                        </td>
-                        <td className={`${TD} text-right font-mono tabular-nums`}>
-                          {p.volumeM3 == null ? "—" : fmtM3(p.volumeM3)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </DataTable>
-              </div>
-            )}
           </CtpApartadoPanel>
         )}
       </div>

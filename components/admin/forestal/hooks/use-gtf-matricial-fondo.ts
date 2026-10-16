@@ -5,6 +5,11 @@
  * una ayuda para alinear a ojo: no se imprime y no viaja al servidor. Se
  * guarda en ESTE navegador (achicada a 1600 px en JPEG para que entre en el
  * almacenamiento local), una por hoja («guía» / «lista»).
+ *
+ * También recuerda, por hoja, la cuadrícula de 10 mm y el «Formato impreso»
+ * (el talonario de la imprenta dibujado debajo, 16-10). Con el formato
+ * prendido la cuadrícula arranca apagada: los renglones ya dicen dónde va cada
+ * valor. Lo guardado antes de que existiera el formato lo trae prendido.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -18,19 +23,23 @@ interface Guardado {
   src: string | null;
   opacidad: number;
   cuadricula: boolean;
+  impreso: boolean;
 }
 
-const VACIO: Guardado = { src: null, opacidad: 0.5, cuadricula: true };
+const VACIO: Guardado = { src: null, opacidad: 0.5, cuadricula: false, impreso: true };
 
 function leer(f: FormatoTalonario): Guardado {
   try {
     const raw = localStorage.getItem(clave(f));
     if (!raw) return VACIO;
     const j = JSON.parse(raw) as Partial<Guardado>;
+    const impreso = typeof j.impreso === "boolean" ? j.impreso : VACIO.impreso;
     return {
       src: typeof j.src === "string" && j.src.startsWith("data:image/") ? j.src : null,
       opacidad: typeof j.opacidad === "number" ? Math.min(1, Math.max(0.05, j.opacidad)) : VACIO.opacidad,
-      cuadricula: typeof j.cuadricula === "boolean" ? j.cuadricula : VACIO.cuadricula,
+      /* Guardado sin el formato (antes del 16-10): el formato llega prendido, y con él la cuadrícula se apaga. */
+      cuadricula: typeof j.cuadricula === "boolean" && typeof j.impreso === "boolean" ? j.cuadricula : VACIO.cuadricula,
+      impreso,
     };
   } catch {
     return VACIO;
@@ -97,5 +106,6 @@ export function useFondoTalonario(formato: FormatoTalonario) {
     quitar: () => guardar({ ...fondo, src: null }),
     setOpacidad: (opacidad: number) => guardar({ ...fondo, opacidad }),
     setCuadricula: (cuadricula: boolean) => guardar({ ...fondo, cuadricula }),
+    setImpreso: (impreso: boolean) => guardar({ ...fondo, impreso }),
   };
 }

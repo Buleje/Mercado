@@ -17,21 +17,33 @@
  * «Ver nombres» (prendido de entrada) pone el nombre corto de cada campo
  * encima de su valor, y el de cada columna encima de la primera fila: sólo
  * en pantalla, para no perderse (Brandon 15-10). El papel no lo lleva.
+ *
+ * «Formato impreso» (prendido de entrada, 16-10) dibuja debajo el talonario
+ * de la imprenta con los datos de ESTA guía (`gtf-matricial-plantilla`): con
+ * él, el contorno punteado y el nombre de cada campo sobran (el rótulo impreso
+ * ya lo dice) y sólo aparecen al pasar el mouse o al elegirlo. Lo que no entra en su renglón sigue en amarillo, y
+ * debajo de la hoja una línea dice cuántos son y cómo se arregla.
  */
 
+import { useMemo } from "react";
 import { CATALOGO } from "@/lib/forestal/gtf-matricial-disposicion";
 import { claveElemento, INTERLINEA, ptAMm } from "@/lib/forestal/gtf-matricial-edicion";
 import { nombreCorto } from "@/lib/forestal/gtf-matricial-nombres";
+import { camposQueNoEntran, encabezadoDelTalonario, type NoEntra } from "@/lib/forestal/gtf-matricial-pantalla";
 import { alineaCss } from "@/lib/forestal/gtf-matricial-print";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
 import type { SeleccionTalonario } from "./hooks/use-gtf-matricial-seleccion";
 import { AIRE_LIENZO, type ZoomTalonario } from "./hooks/use-gtf-matricial-zoom";
 import CampoTalonario from "./gtf-matricial-campo";
+import PlantillaTalonario from "./gtf-matricial-plantilla";
+import AvisoNoEntran from "./gtf-matricial-no-entran";
 
 export interface FondoHoja {
   src: string | null;
   opacidad: number;
   cuadricula: boolean;
+  /** El talonario de la imprenta dibujado debajo de los valores (sólo pantalla). */
+  impreso: boolean;
 }
 
 const MONO = '"Courier New", Courier, monospace';
@@ -39,25 +51,37 @@ const MONO = '"Courier New", Courier, monospace';
 export default function HojaTalonario({
   t, s, z, fondo, nombres,
 }: { t: EstadoGtfMatricial; s: SeleccionTalonario; z: ZoomTalonario; fondo: FondoHoja; nombres: boolean }) {
+  const { hoja, formato, paginas, pagina } = t;
+  const noEntran = useMemo(
+    () => (hoja ? camposQueNoEntran(hoja, CATALOGO[formato], paginas[pagina]) : []),
+    [hoja, formato, paginas, pagina],
+  );
   return (
+    <>
     <div
       ref={z.caja}
       /* En escritorio llena el alto del bloque del medio; a 400 px, un alto fijo y los bloques debajo. */
       className="relative h-[min(62dvh,34rem)] min-w-0 overflow-auto overscroll-contain rounded-xl bg-[var(--surface-sunken)] lg:h-auto lg:min-h-0 lg:flex-1"
       style={{ padding: AIRE_LIENZO }}
     >
-      {t.hoja ? <Lienzo t={t} s={s} escala={z.escala} fondo={fondo} nombres={nombres} /> : <div className="min-h-64" />}
+      {t.hoja ? <Lienzo t={t} s={s} escala={z.escala} fondo={fondo} nombres={nombres} noEntran={noEntran} /> : <div className="min-h-64" />}
     </div>
+    <AvisoNoEntran lista={noEntran} onElegir={(claves) => claves.forEach((k, i) => s.elegir(k, i > 0))} />
+    </>
   );
 }
 
 function Lienzo({
-  t, s, escala, fondo, nombres,
-}: { t: EstadoGtfMatricial; s: SeleccionTalonario; escala: number; fondo: FondoHoja; nombres: boolean }) {
+  t, s, escala, fondo, nombres, noEntran,
+}: { t: EstadoGtfMatricial; s: SeleccionTalonario; escala: number; fondo: FondoHoja; nombres: boolean; noEntran: NoEntra[] }) {
   const hoja = t.hoja;
+  const pagina = t.paginas[t.pagina] ?? { campos: {}, filas: [] };
+  const titular = t.info?.titular?.nombre;
+  const encabezado = useMemo(() => encabezadoDelTalonario(t.formato, t.entradas, t.paginas[t.pagina], titular), [t.formato, t.entradas, t.paginas, t.pagina, titular]);
   if (!hoja) return null;
   const cat = CATALOGO[t.formato];
-  const pagina = t.paginas[t.pagina] ?? { campos: {}, filas: [] };
+  const amarillos = new Set(noEntran.map((n) => n.clave));
+  const impreso = fondo.impreso;
   const tabla = hoja.tabla;
   const cols = cat.columnas.filter((c) => tabla.columnas[c.id]?.visible);
   const izq = Math.min(...cols.map((c) => tabla.columnas[c.id].x));
@@ -69,6 +93,8 @@ function Lienzo({
     escala,
     seleccionado: s.elegidos.includes(k),
     referencia: ref === k,
+    noEntra: amarillos.has(k),
+    discreto: impreso,
     onPresionar: (e: React.PointerEvent) => s.presionarElemento(e, k, escala),
     onFocoTeclado: () => !s.elegidos.includes(k) && s.elegir(k),
     onFlecha: s.moverConFlechas,
@@ -79,7 +105,7 @@ function Lienzo({
       role="application"
       aria-label={`Hoja de ${cat.nombre.toLowerCase()} del talonario, ${hoja.anchoMm} × ${hoja.altoMm} mm`}
       onPointerDown={(e) => s.presionarHoja(e, escala)}
-      className="relative mx-auto select-none overflow-hidden border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
+      className={`relative mx-auto select-none overflow-hidden border border-[var(--rule-base)] shadow-[var(--shadow-sm)] ${impreso ? "bg-[var(--gtf-papel)]" : "bg-[var(--surface-raised)]"}`}
       style={{
         width: hoja.anchoMm * escala,
         height: hoja.altoMm * escala,
@@ -103,7 +129,10 @@ function Lienzo({
         />
       )}
 
-      {cols.length > 0 && (
+      {impreso && <PlantillaTalonario formato={t.formato} encabezado={encabezado} anchoMm={hoja.anchoMm} altoMm={hoja.altoMm} />}
+
+      {/* Hasta dónde llegan las filas: con el formato dibujado ya se ve la tabla, sólo cuando se acomoda una columna. */}
+      {cols.length > 0 && (!impreso || cols.some((c) => s.elegidos.includes(claveElemento({ tipo: "columna", id: c.id })))) && (
         <div
           aria-hidden
           className="pointer-events-none absolute rounded-[2px] border border-dashed border-[var(--rule-strong)]"

@@ -4,14 +4,17 @@
  * (1)(2)(3)(4) de la GTF del despacho del Libro TH: el N° del talonario del
  * titular, las fechas y la autoridad. Sale de `LothGuiaDatos` (16-10-2026) para
  * que la cabecera de plantillas entre sin pasar las 300 líneas.
+ *
+ * Con la cara del talonario (16-10-2026): sin franja, como en el papel —el
+ * (2), el (3) y el (4) van entre la cabecera de la imprenta y «DATOS DEL
+ * ORIGEN»—; el estado y «Usar el que sigue» quedan en una línea fina arriba.
  */
 
 import { casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
 import { avisoDeOtroTitular, type TalonarioDelPlan } from "@/lib/forestal/loth-guia-despacho";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
-import { Bloque } from "./ctp-guia-bloques";
-import { CLASE_FALTA } from "./ctp-guia-piezas";
+import { CLASE_FALTA, EstadoBloque } from "./ctp-guia-piezas";
 import { Btn, Field, I } from "./ctp-shared";
 
 const vacio = (v: string | null | undefined) => !v?.trim();
@@ -45,19 +48,37 @@ export default function LothGuiaDocumento({ g }: { g: DespachoGuiaLoth }) {
     vacio(g.emision) ? "Fecha de expedición" : "",
   ].filter(Boolean);
   return (
-    <Bloque
-      titulo="Documento"
-      hint="El número del talonario del titular, las fechas y la autoridad que ampara la guía."
-      faltan={faltan}
-      acciones={
-        propuesta && propuesta !== g.gtfNumber.trim() ? (
-          <Btn size="sm" variant="ghost" onClick={() => g.setGtfNumber(propuesta)}>
+    <section aria-label="Documento: autoridad, fechas y N°" className="border-b border-[var(--gtf-tinta)]">
+      <div className="flex min-h-9 flex-wrap items-center gap-2 px-3 pt-2">
+        <EstadoBloque faltan={faltan} />
+        {propuesta && propuesta !== g.gtfNumber.trim() && (
+          <Btn size="sm" variant="ghost" className="ml-auto" onClick={() => g.setGtfNumber(propuesta)}>
             Usar el que sigue: <b className="font-mono tabular-nums">{propuesta}</b>
           </Btn>
-        ) : null
-      }
-    >
-      <Field span={6} label="N° de GTF" required hint={ayudaDelNumero(t)}>
+        )}
+      </div>
+      <div className="grid grid-cols-1 gap-x-3 gap-y-2.5 px-3 pb-3 pt-1 sm:grid-cols-12 sm:[&_label]:min-h-6">
+      <Field span={12} label="Autoridad Regional Forestal y de Fauna Silvestre (ARFFS)" casillero={casilleroGtf2024("2")} hint="La ARFFS competente. Sale del plan de manejo de las trozas.">
+        <input
+          type="text"
+          className={`${I} ${falta(datos.guia.autoridad)}`}
+          value={datos.guia.autoridad}
+          onChange={(e) => setDatos((p) => ({ ...p, guia: { ...p.guia, autoridad: e.target.value } }))}
+          placeholder="ATFFS Selva Central"
+        />
+      </Field>
+      <Field span={4} label="Fecha de Expedición" casillero={casilleroGtf2024("3")} required>
+        <input type="date" className={`${I} ${falta(g.emision)}`} value={g.emision} onChange={(e) => g.setEmision(e.target.value)} />
+      </Field>
+      <Field span={4} label="Fecha de Vencimiento" casillero={casilleroGtf2024("4")} hint="La fija la ARFFS por ruta y distancia. Se propone la de siempre y se corrige acá.">
+        <input
+          type="date"
+          className={I}
+          value={datos.traslado.fechaFin}
+          onChange={(e) => setDatos((p) => ({ ...p, traslado: { ...p.traslado, fechaFin: e.target.value } }))}
+        />
+      </Field>
+      <Field span={4} label="N° de GTF" casillero={casilleroGtf2024("numeroGtf")} required hint={ayudaDelNumero(t)}>
         <div className="grid gap-1">
           {n.libre ? (
             <input
@@ -70,11 +91,11 @@ export default function LothGuiaDocumento({ g }: { g: DespachoGuiaLoth }) {
             />
           ) : (
             <div
-              className={`flex h-11 items-stretch overflow-hidden rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)] ${falta(g.gtfNumber)}`}
+              className={`flex h-11 items-stretch overflow-hidden rounded-xl border-[1.5px] border-[var(--gtf-linea)] bg-[var(--surface-raised)] focus-within:border-[var(--gtf-tinta)] focus-within:ring-2 focus-within:ring-[var(--gtf-franja)] ${falta(g.gtfNumber)}`}
             >
               <span
                 title={t?.region ? `Serie de ${t.region.departamento} (${t.region.codigo})` : undefined}
-                className="flex items-center border-r border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]"
+                className="flex items-center border-r border-[var(--gtf-linea)] bg-[var(--gtf-franja)] px-2.5 font-mono text-sm font-bold tabular-nums text-[var(--gtf-tinta)]"
               >
                 {n.serie}-
               </span>
@@ -125,26 +146,7 @@ export default function LothGuiaDocumento({ g }: { g: DespachoGuiaLoth }) {
           )}
         </div>
       </Field>
-      <Field span={6} label="Fecha de expedición" casillero={casilleroGtf2024("3")} required>
-        <input type="date" className={`${I} ${falta(g.emision)}`} value={g.emision} onChange={(e) => g.setEmision(e.target.value)} />
-      </Field>
-      <Field span={6} label="Vencimiento" casillero={casilleroGtf2024("4")} hint="La fija la ARFFS por ruta y distancia. Se propone la de siempre y se corrige acá.">
-        <input
-          type="date"
-          className={I}
-          value={datos.traslado.fechaFin}
-          onChange={(e) => setDatos((p) => ({ ...p, traslado: { ...p.traslado, fechaFin: e.target.value } }))}
-        />
-      </Field>
-      <Field span={6} label="Autoridad forestal" casillero={casilleroGtf2024("2")} hint="La ARFFS competente. Sale del plan de manejo de las trozas.">
-        <input
-          type="text"
-          className={`${I} ${falta(datos.guia.autoridad)}`}
-          value={datos.guia.autoridad}
-          onChange={(e) => setDatos((p) => ({ ...p, guia: { ...p.guia, autoridad: e.target.value } }))}
-          placeholder="ATFFS Selva Central"
-        />
-      </Field>
-    </Bloque>
+      </div>
+    </section>
   );
 }
