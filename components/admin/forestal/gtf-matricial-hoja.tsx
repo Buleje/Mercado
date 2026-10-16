@@ -13,10 +13,15 @@
  * punto y «Ver hoja completa» puede hacer entrar el alto. Con el mouse, un
  * recuadro sobre la hoja vacía elige lo que toca; al arrastrar, las guías
  * (líneas de la marca) avisan que un borde o un centro coincide con otro.
+ *
+ * «Ver nombres» (prendido de entrada) pone el nombre corto de cada campo
+ * encima de su valor, y el de cada columna encima de la primera fila: sólo
+ * en pantalla, para no perderse (Brandon 15-10). El papel no lo lleva.
  */
 
 import { CATALOGO } from "@/lib/forestal/gtf-matricial-disposicion";
 import { claveElemento, INTERLINEA, ptAMm } from "@/lib/forestal/gtf-matricial-edicion";
+import { nombreCorto } from "@/lib/forestal/gtf-matricial-nombres";
 import { alineaCss } from "@/lib/forestal/gtf-matricial-print";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
 import type { SeleccionTalonario } from "./hooks/use-gtf-matricial-seleccion";
@@ -31,20 +36,24 @@ export interface FondoHoja {
 
 const MONO = '"Courier New", Courier, monospace';
 
-export default function HojaTalonario({ t, s, z, fondo }: { t: EstadoGtfMatricial; s: SeleccionTalonario; z: ZoomTalonario; fondo: FondoHoja }) {
+export default function HojaTalonario({
+  t, s, z, fondo, nombres,
+}: { t: EstadoGtfMatricial; s: SeleccionTalonario; z: ZoomTalonario; fondo: FondoHoja; nombres: boolean }) {
   return (
     <div
       ref={z.caja}
-      /* Alto = lo que queda visible bajo la cabecera, las pestañas, la barra y el pie (1280 × 900: ~556 px). */
-      className="relative h-[clamp(22rem,calc(100dvh-21.5rem),64rem)] min-w-0 overflow-auto overscroll-contain rounded-xl bg-[var(--surface-sunken)]"
+      /* En escritorio llena el alto del bloque del medio; a 400 px, un alto fijo y los bloques debajo. */
+      className="relative h-[min(62dvh,34rem)] min-w-0 overflow-auto overscroll-contain rounded-xl bg-[var(--surface-sunken)] lg:h-auto lg:min-h-0 lg:flex-1"
       style={{ padding: AIRE_LIENZO }}
     >
-      {t.hoja ? <Lienzo t={t} s={s} escala={z.escala} fondo={fondo} /> : <div className="min-h-64" />}
+      {t.hoja ? <Lienzo t={t} s={s} escala={z.escala} fondo={fondo} nombres={nombres} /> : <div className="min-h-64" />}
     </div>
   );
 }
 
-function Lienzo({ t, s, escala, fondo }: { t: EstadoGtfMatricial; s: SeleccionTalonario; escala: number; fondo: FondoHoja }) {
+function Lienzo({
+  t, s, escala, fondo, nombres,
+}: { t: EstadoGtfMatricial; s: SeleccionTalonario; escala: number; fondo: FondoHoja; nombres: boolean }) {
   const hoja = t.hoja;
   if (!hoja) return null;
   const cat = CATALOGO[t.formato];
@@ -55,7 +64,8 @@ function Lienzo({ t, s, escala, fondo }: { t: EstadoGtfMatricial; s: SeleccionTa
   const der = Math.max(...cols.map((c) => tabla.columnas[c.id].x + tabla.columnas[c.id].anchoMm));
   const letraTabla = ptAMm(tabla.letraPt) * escala;
   const ref = s.elegidos[0];
-  const props = (k: string) => ({
+  const props = (k: string, tipo: "campo" | "columna", id: string) => ({
+    nombre: nombres ? nombreCorto(t.formato, tipo, id) : null,
     escala,
     seleccionado: s.elegidos.includes(k),
     referencia: ref === k,
@@ -143,7 +153,7 @@ function Lienzo({ t, s, escala, fondo }: { t: EstadoGtfMatricial; s: SeleccionTa
             letraPt={tabla.letraPt}
             alinea={pos.alinea}
             unaLinea
-            {...props(k)}
+            {...props(k, "columna", c.id)}
           />
         );
       })}
@@ -162,7 +172,7 @@ function Lienzo({ t, s, escala, fondo }: { t: EstadoGtfMatricial; s: SeleccionTa
             anchoMm={pos.anchoMm}
             letraPt={pos.letraPt}
             alinea={pos.alinea}
-            {...props(k)}
+            {...props(k, "campo", c.id)}
           />
         );
       })}

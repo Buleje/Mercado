@@ -9,6 +9,10 @@
  * SERFOR»). Una guía anotada a mano necesita la carátula del libro para su
  * identidad (casilleros 6 y 7): se pide sólo en ese caso.
  *
+ * Una disposición POR TITULAR (15-10): el servidor la elige con el titular de
+ * la guía (`?gtf=`), y guarda en el de esa guía. `info` dice de quién es la
+ * que se ve y si todavía es la copia de la empresa.
+ *
  * Todo cambio de la hoja pasa por `editar`, que guarda el paso anterior para
  * deshacer (uno por hoja, hasta `HISTORIAL_MAX`). Los cambios con la misma
  * `clave` seguidos (un arrastre) son UN paso.
@@ -27,11 +31,28 @@ import {
   type TablaPos,
 } from "@/lib/forestal/gtf-matricial-disposicion";
 import { deshacer as deshacerH, empujar, historialVacio, rehacer as rehacerH, type Historial } from "@/lib/forestal/gtf-matricial-edicion";
+import type { OrigenDisposicion, ResumenTitular } from "@/lib/forestal/gtf-matricial-titulares";
 import { entradasDeLaGuia, paginasDe, type PaginaTalonario } from "@/lib/forestal/gtf-matricial-valores";
 import type { LothGtfCaratula, LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 import type { Gtf } from "../gtf-tabla-columnas";
 
-const RUTA = "/api/admin/forestal/loth/gtf-matricial";
+export const RUTA_TALONARIO = "/api/admin/forestal/loth/gtf-matricial";
+const RUTA = RUTA_TALONARIO;
+
+/** De quién es el talonario que se edita (lo decide el servidor con la guía). */
+export interface InfoTalonario {
+  origen: OrigenDisposicion;
+  /** null = guía sin titular: se edita la de la empresa. */
+  titular: { clave: string; nombre: string } | null;
+  titulares: ResumenTitular[];
+  hayEmpresa: boolean;
+}
+
+interface RespuestaGet extends Partial<InfoTalonario> {
+  disposicion?: DisposicionTalonario;
+  message?: string;
+  error?: string;
+}
 
 /** Dos cambios con la misma clave a menos de esto son un solo paso de deshacer. */
 const JUNTAR_MS = 1200;
@@ -64,23 +85,25 @@ export function useGtfMatricial(g: Gtf) {
   const [formato, setFormato] = useState<FormatoTalonario>("guia");
   const [pagina, setPagina] = useState(0);
   const [caratula, setCaratula] = useState<LothGtfCaratula | null>(null);
+  const [info, setInfo] = useState<InfoTalonario | null>(null);
   const necesitaCaratula = !g.gtfDatos;
 
   useEffect(() => {
     let vivo = true;
-    fetch(RUTA, { credentials: "include" })
+    fetch(`${RUTA}?gtf=${encodeURIComponent(g.id)}`, { credentials: "include" })
       .then(async (r) => {
-        const j = await leerJson<{ disposicion?: DisposicionTalonario; message?: string; error?: string }>(r);
+        const j = await leerJson<RespuestaGet>(r);
         if (!r.ok || !j?.disposicion) throw new Error(j?.message ?? j?.error ?? `No se pudo leer la disposición (${r.status})`);
         if (!vivo) return;
         setDisp(j.disposicion);
         setGuardado({ guia: foto(j.disposicion.guia), lista: foto(j.disposicion.lista) });
+        setInfo({ origen: j.origen ?? "fabrica", titular: j.titular ?? null, titulares: j.titulares ?? [], hayEmpresa: !!j.hayEmpresa });
       })
       .catch((err) => vivo && setError(err instanceof Error ? err.message : String(err)));
     return () => {
       vivo = false;
     };
-  }, [setDisp]);
+  }, [g.id, setDisp]);
 
   useEffect(() => {
     if (!necesitaCaratula) return;
@@ -168,6 +191,21 @@ export function useGtfMatricial(g: Gtf) {
     [editar, formato],
   );
 
+  /** Pone las dos hojas de otro talonario («Copiar de otro titular»). Queda sin guardar y se deshace hoja por hoja. */
+  const reemplazarTodo = useCallback(
+    (otra: DisposicionTalonario) => {
+      const d = dispRef.current;
+      if (!d) return;
+      for (const f of ["guia", "lista"] as const) {
+        if (foto(otra[f]) !== foto(d[f])) historial.current[f] = empujar(historial.current[f], d[f]);
+      }
+      ultimo.current = { clave: null, t: 0 };
+      setDisp({ ...d, guia: otra.guia, lista: otra.lista });
+      setPasos((n) => n + 1);
+    },
+    [setDisp],
+  );
+
   /** Guarda las hojas que cambiaron. `true` si quedó todo guardado. */
   const guardar = useCallback(async (): Promise<boolean> => {
     if (!disp) return false;
@@ -182,7 +220,7 @@ export function useGtfMatricial(g: Gtf) {
           method: "PUT",
           credentials: "include",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ formato: f, hoja: disp[f] }),
+          body: JSON.stringify({ gtfId: g.id, formato: f, hoja: disp[f] }),
         });
         const j = await leerJson<{ disposicion?: DisposicionTalonario; message?: string; error?: string }>(r);
         if (!r.ok || !j?.disposicion) throw new Error(j?.message ?? j?.error ?? `No se pudo guardar (${r.status})`);
@@ -192,6 +230,16 @@ export function useGtfMatricial(g: Gtf) {
         const d = dispRef.current;
         if (d) setDisp({ ...d, ...(foto(d[f]) === enviado && { [f]: servidor[f] }), actualizado: servidor.actualizado });
       }
+      /* Desde ahora el titular tiene SU talonario (ya no es la copia de la empresa). */
+      setInfo((i) => {
+        if (!i) return i;
+        const t = i.titular;
+        if (!t) return { ...i, origen: "empresa", hayEmpresa: true };
+        const titulares = i.titulares.some((x) => x.clave === t.clave)
+          ? i.titulares
+          : [...i.titulares, { clave: t.clave, nombre: t.nombre, actualizado: new Date().toISOString() }];
+        return { ...i, origen: "titular", titulares };
+      });
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -199,7 +247,7 @@ export function useGtfMatricial(g: Gtf) {
     } finally {
       setGuardando(false);
     }
-  }, [disp, guardado, setDisp]);
+  }, [disp, g.id, guardado, setDisp]);
 
   const elegirFormato = useCallback((f: FormatoTalonario) => {
     setFormato(f);
@@ -209,7 +257,7 @@ export function useGtfMatricial(g: Gtf) {
   return {
     disp, hoja, formato, elegirFormato, entradas, paginas, pagina: paginaActual, setPagina,
     sucio, guardando, error, guardar, restaurar, cambiarHoja, cambiarCampo, cambiarTabla, cambiarColumna,
-    editar, deshacer, rehacer, puedeDeshacer, puedeRehacer,
+    editar, deshacer, rehacer, puedeDeshacer, puedeRehacer, info, reemplazarTodo,
   };
 }
 

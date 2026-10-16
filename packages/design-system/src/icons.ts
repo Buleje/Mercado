@@ -42,6 +42,8 @@ export {
   PanelLeftOpen,
   PanelLeft,
   PanelRight,
+  PanelRightClose,
+  PanelRightOpen,
   MoreVertical,
   MoreHorizontal,
   ExternalLink,

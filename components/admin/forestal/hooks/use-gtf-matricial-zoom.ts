@@ -15,7 +15,8 @@ import { PX_POR_MM, ZOOM_MAX, ZOOM_MIN, zoomQueEntra, zoomSiguiente } from "@/li
 
 /** Aire alrededor de la hoja dentro del lienzo, en px (el padding del contenedor). */
 export const AIRE_LIENZO = 16;
-const CLAVE = "gtf-matricial-zoom";
+/** v2 (15-10): la hoja entera es la vista por omisión; la clave nueva hace que valga una vez para todos. */
+const CLAVE = "gtf-matricial-zoom-v2";
 /** La rueda de un mouse da ~100 por muesca; un trackpad, de a poquito: se junta antes de saltar 25 %. */
 const RUEDA_POR_PASO = 60;
 
@@ -28,11 +29,11 @@ interface EstadoZoom {
 function leer(): EstadoZoom {
   try {
     const j = JSON.parse(localStorage.getItem(CLAVE) ?? "null") as Partial<EstadoZoom> | null;
-    const modo: ModoZoom = j?.modo === "hoja" || j?.modo === "libre" ? j.modo : "ancho";
+    const modo: ModoZoom = j?.modo === "ancho" || j?.modo === "libre" ? j.modo : "hoja";
     const valor = typeof j?.valor === "number" && j.valor >= ZOOM_MIN && j.valor <= ZOOM_MAX ? j.valor : 1;
     return { modo, valor };
   } catch {
-    return { modo: "ancho", valor: 1 };
+    return { modo: "hoja", valor: 1 };
   }
 }
 
@@ -40,7 +41,7 @@ export function useZoomTalonario(hoja: { anchoMm: number; altoMm: number } | nul
   /* Nodo en estado (no ref): el lienzo se monta recién cuando llega la disposición. */
   const [nodo, setNodo] = useState<HTMLDivElement | null>(null);
   const [tam, setTam] = useState({ ancho: 0, alto: 0 });
-  const [estado, setEstado] = useState<EstadoZoom>({ modo: "ancho", valor: 1 });
+  const [estado, setEstado] = useState<EstadoZoom>({ modo: "hoja", valor: 1 });
   /** El punto (en mm) que tiene que quedar en el mismo lugar de la pantalla después de cambiar el zoom. */
   const ancla = useRef<{ mmX: number; mmY: number; px: number; py: number } | null>(null);
   const rueda = useRef(0);

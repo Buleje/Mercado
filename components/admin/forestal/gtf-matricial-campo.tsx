@@ -11,6 +11,10 @@
  *
  * Vacío: muestra el nombre del campo en gris para poder ubicarlo, pero al
  * imprimir no sale nada.
+ *
+ * `nombre` (con «Ver nombres»): el nombre corto encima del valor, chico y
+ * tenue, del lado al que se alinea el texto. Es de la pantalla: el papel sale
+ * de `gtf-matricial-print`, que no lo dibuja.
  */
 
 import { entraEnUnaLinea, PASO_GRANDE_MM, PASO_MM, type Alineacion } from "@/lib/forestal/gtf-matricial-disposicion";
@@ -25,6 +29,13 @@ const FLECHAS: Record<string, [number, number]> = {
   ArrowRight: [1, 0],
   ArrowUp: [0, -1],
   ArrowDown: [0, 1],
+};
+
+/** El nombre va del lado al que se alinea el valor: así queda encima de la letra, no del aire. */
+const LADO_NOMBRE: Record<Alineacion, React.CSSProperties> = {
+  izq: { left: 0 },
+  der: { right: 0 },
+  centro: { left: "50%", transform: "translateX(-50%)" },
 };
 
 export interface CampoTalonarioProps {
@@ -42,6 +53,8 @@ export interface CampoTalonarioProps {
   referencia?: boolean;
   /** Celda de tabla: un renglón, como en el papel. */
   unaLinea?: boolean;
+  /** Nombre corto encima del valor («(7) Titular», «D1»); null = «Ver nombres» apagado. */
+  nombre?: string | null;
   onPresionar: (e: React.PointerEvent) => void;
   /** Llega por Tab (no por clic): si no estaba elegido, queda elegido solo. */
   onFocoTeclado: () => void;
@@ -49,10 +62,12 @@ export interface CampoTalonarioProps {
 }
 
 export default function CampoTalonario({
-  etiqueta, texto, x, y, anchoMm, letraPt, alinea, escala, seleccionado, referencia = false, unaLinea = false,
+  etiqueta, texto, x, y, anchoMm, letraPt, alinea, escala, seleccionado, referencia = false, unaLinea = false, nombre = null,
   onPresionar, onFocoTeclado, onFlecha,
 }: CampoTalonarioProps) {
   const vacio = !texto.trim();
+  /* Con el nombre encima, el vacío queda en blanco (el recuadro punteado ya lo ubica): repetir «vacío» en cada casillero era ruido. */
+  const relleno = nombre ? "" : etiqueta;
   const noEntra = !vacio && !entraEnUnaLinea(texto, anchoMm, letraPt);
 
   return (
@@ -99,11 +114,25 @@ export default function CampoTalonario({
     >
       {/* El nombre de un campo vacío va en un renglón con «…»: partido en una casilla de 6 mm tapaba a los vecinos. */}
       <span className={vacio ? "block truncate italic text-[var(--text-tertiary)] opacity-70" : "text-[var(--text-primary)]"}>
-        {vacio ? etiqueta : texto}
+        {vacio ? relleno : texto}
       </span>
+      {nombre && !referencia && (
+        <span
+          aria-hidden
+          data-nombre-campo=""
+          className="pointer-events-none absolute bottom-full mb-px overflow-hidden text-ellipsis whitespace-nowrap font-sans font-semibold not-italic leading-none text-[var(--text-tertiary)]"
+          style={{
+            fontSize: Math.min(12, Math.max(8, 2.4 * escala)),
+            maxWidth: Math.max(anchoMm, 20) * escala,
+            ...LADO_NOMBRE[alinea],
+          }}
+        >
+          {nombre}
+        </span>
+      )}
       {referencia && (
         <span className="pointer-events-none absolute -top-6 left-0 whitespace-nowrap rounded-md bg-[var(--brand-ink)] px-1.5 py-0.5 font-sans text-xs font-bold not-italic text-white">
-          X {fmtMm(x)} · Y {fmtMm(y)} mm
+          {nombre ? `${nombre} · ` : ""}X {fmtMm(x)} · Y {fmtMm(y)} mm
         </span>
       )}
     </div>

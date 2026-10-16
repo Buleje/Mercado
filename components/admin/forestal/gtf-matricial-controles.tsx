@@ -2,11 +2,13 @@
 
 /**
  * Los controles del panel del talonario: un número en mm que se tipea con
- * coma o punto y se mueve con las flechas, unas opciones de 48 px y una casilla.
+ * coma o punto y se mueve con las flechas, unas opciones de 48 px, una casilla
+ * y el botón de ícono de 48 px (la barra, alinear, plegar los costados).
  * Separados del panel para que éste no pase de 300 líneas.
  */
 
 import { useEffect, useId, useState } from "react";
+import type { LucideIcon } from "@buleje/design-system/icons";
 import { POS_MAX_MM, POS_MIN_MM } from "@/lib/forestal/gtf-matricial-disposicion";
 import { I } from "./ctp-shared";
 
@@ -139,3 +141,38 @@ export function Casilla({ label, checked, onChange }: { label: string; checked: 
     </label>
   );
 }
+
+/** Botón de ícono de 48 px: dice qué hace y un ejemplo al pasar el mouse. */
+export function BotonIcono({
+  icon: Icono,
+  label,
+  ayuda,
+  onClick,
+  disabled,
+  activo,
+}: {
+  icon: LucideIcon;
+  label: string;
+  ayuda?: string;
+  onClick: () => void;
+  disabled?: boolean;
+  activo?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={ayuda ? `${label}\n${ayuda}` : label}
+      aria-pressed={activo}
+      disabled={disabled}
+      onClick={onClick}
+      className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:cursor-not-allowed disabled:opacity-35 ${
+        activo ? "bg-[var(--accent-muted)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+      }`}
+    >
+      <Icono className="h-5 w-5" aria-hidden />
+    </button>
+  );
+}
+
+export const Separador = () => <span aria-hidden className="mx-0.5 h-8 w-px shrink-0 bg-[var(--rule-base)]" />;
