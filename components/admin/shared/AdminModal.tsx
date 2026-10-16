@@ -458,7 +458,10 @@ export default function AdminModal({
              primer control del cuerpo si el modal no la tiene). Al asa se llega
              con Shift+Tab. */
           onOpenAutoFocus={(e) => {
-            if (!ventana.activa) return;
+            /* Con ⓘ y sin ventana, Radix le daba el foco al ⓘ (lo primero
+               tabulable) y la ayuda se abría sola al abrir; el 1.er Escape sólo
+               la cerraba (medido 15-10 en «Sonido y avisos» de Cámaras). */
+            if (!ventana.activa && !ayuda) return;
             const caja = contentRef.current;
             if (!caja) return;
             const asa = caja.firstElementChild;

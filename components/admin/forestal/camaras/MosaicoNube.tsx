@@ -30,7 +30,9 @@ import { createPortal } from "react-dom";
 import { Play } from "@buleje/design-system/icons";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { usePanelTokens } from "@/components/admin/shared/use-panel-tokens";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { CLAVE_VIGILAR_SIN_PAUSA } from "@/lib/camaras/sonido-avisos";
 import { cn } from "@/lib/utils";
 import { useApiCamaras } from "./api-camaras";
 import { BTN } from "./camaras-ui";
@@ -91,7 +93,8 @@ export default function MosaicoNube({
   const { soloMirar } = useApiCamaras(baseApi);
   const [detectar, setDetectar] = useState(!soloMirar);
   const [verMovimiento, setVerMovimiento] = useVerMovimiento();
-  const [sinPausa, setSinPausa] = useState(false);
+  /* Recordado y el mismo de Cámaras › Sonido y avisos (2026-10-15). */
+  const [sinPausa, setSinPausa] = useLocalStorage<boolean>(CLAVE_VIGILAR_SIN_PAUSA, false);
   const m = useMosaicoNube({ sinPausa });
   const p = usePersonasMosaico({ minimizado, conCarpeta: !soloMirar });
   const [estados, setEstados] = useState<Record<string, EstadoVisor>>({});
@@ -184,6 +187,8 @@ export default function MosaicoNube({
               minimizado && "pointer-events-none opacity-0",
             )}
             data-mosaico-panel={minimizado ? "minimizado" : acoplado ? "acoplado" : "abierto"}
+            /* La cabecera mira esto (abierto, acoplado o en la burbuja) para avisar «dejaron de vigilar». */
+            data-mosaico-pausa={m.cortado ? "pausado" : "en-vivo"}
             data-capa-libre={acoplado || undefined}
           >
             <AsaAcople acople={acople} panel={panel} />
@@ -221,7 +226,7 @@ export default function MosaicoNube({
                   <span className="min-w-0 flex-1">
                     Se pausaron tras {MINUTOS_SIN_TOCAR} min sin tocar, para cuidar la batería.
                   </span>
-                  <button type="button" onClick={m.seguir} className={BTN}>
+                  <button type="button" onClick={m.seguir} className={BTN} data-mosaico-seguir>
                     <Play className="h-4 w-4" aria-hidden /> Seguir viendo
                   </button>
                 </div>

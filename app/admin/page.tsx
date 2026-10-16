@@ -444,6 +444,11 @@ function AdminPage() {
           <AdminAlertsBanner userRole={userRole} authReady={authReady} />
         </div>
 
+        {/* «Ver todas en vivo» de Cámaras, a nivel del panel (2026-10-07): se
+            minimiza a una burbuja y sigue al cambiar de pestaña. No pide nada
+            hasta que alguien lo abre (el mosaico se baja recién ahí). Envuelve
+            también la cabecera (2026-10-15): su menú de Cámaras lo abre directo. */}
+        <MosaicoGlobalProvider>
         <AdminTopHeader
           presentationMode={presentationMode}
           isSuperAdminImpersonating={suplantacion.activa && !presentationMode}
@@ -498,10 +503,6 @@ function AdminPage() {
             components/admin/AdminKPIBanner.tsx si se quiere usar en un tab
             específico (p. ej. solo en "Inicio"), no globalmente. */}
 
-        {/* «Ver todas en vivo» de Cámaras, a nivel del panel (2026-10-07): se
-            minimiza a una burbuja y sigue al cambiar de pestaña. No pide nada
-            hasta que alguien lo abre (el mosaico se baja recién ahí). */}
-        <MosaicoGlobalProvider>
         <AdminMainContent
           tab={tab}
           navigateTab={navigateTab}

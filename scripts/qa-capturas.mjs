@@ -25,7 +25,7 @@
  *
  * Pasos (array JSON, una clave por paso; los selectores son de Playwright,
  * p. ej. `text=Guardar`, `role=button[name="Dueños"]`, `#id`):
- *   {"click": "<sel>"}            {"llenar": ["<sel>", "texto"]}
+ *   {"click": "<sel>"} {"hover": "<sel>"} {"llenar": ["<sel>", "texto"]}
  *   {"abrir": "<sel>"}            → click sólo si su aria-expanded no es "true" (plegables recordados)
  *   {"tecla": "Enter"}            {"elegir": ["<sel>", "valor o etiqueta"]}
  *   {"rueda": [x, y, dy]}         → rueda REAL del mouse en (x, y): prueba scroll bloqueado/libre detrás de un modal
@@ -513,6 +513,8 @@ async function recorrido(t, primero) {
       const [tipo, valor] = Object.entries(p)[0] ?? [];
       try {
         if (tipo === "click") await visible(page, valor).click({ timeout: 15_000 });
+        // {"hover": "<selector>"} (15-10: el menú de Cámaras se abre al pasar el mouse; antes, pointerover a mano en un eval).
+        else if (tipo === "hover") await visible(page, valor).hover({ timeout: 15_000 });
         else if (tipo === "abrir") {
           /* Como click, pero sólo si está cerrado (aria-expanded ≠ true): un plegable que se
              recuerda abierto se cerraba con el click del segundo tema (05-10, indicadores). */

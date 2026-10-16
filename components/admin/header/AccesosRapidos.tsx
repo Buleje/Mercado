@@ -18,6 +18,9 @@
  * - Cámaras lleva un contador de avisos de movimiento sin ver (la burbuja que
  *   mira en segundo plano, `use-avisos-camaras.ts`); abrir Cámaras los da por
  *   vistos. Si Cámaras no está a la vista, el contador va sobre «Accesos».
+ * - En la barra, Cámaras es un menú que se abre al pasar el mouse
+ *   (`MenuCamaras`: ver todas en vivo, visitantes de hoy, sonido…); sin la
+ *   barra, esas mismas opciones van debajo de la grilla del panel.
  */
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,10 +29,14 @@ import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { cn } from "@/lib/utils";
 import type { AccesoRapido } from "./accesos-rapidos";
 import { useAccesosRapidos } from "./use-accesos-rapidos";
-import { ContadorAvisos, FilaSilencioAvisos, TONO_CONTADOR } from "./AvisosCamarasUI";
-import { marcarVistosAvisosCamaras, useAvisosCamaras } from "./use-avisos-camaras";
+import { ContadorAvisos, FilasCamarasAccesos, TONO_CONTADOR } from "./AvisosCamarasUI";
+import MenuCamaras from "./MenuCamaras";
+import type { OpcionCamaras } from "./opciones-camaras";
+import { marcarVistosAvisosCamaras } from "./use-avisos-camaras";
+import { useCamarasCabecera } from "./use-camaras-cabecera";
 
 const AccesoEnModal = dynamic(() => import("./AccesoEnModal"), { ssr: false });
+const AjustesSonidoCamaras = dynamic(() => import("./AjustesSonidoCamaras"), { ssr: false });
 
 interface Props {
   /** Cabecera oscura propia (temas Buleje/Ejecutivo del sidebar), como la campana. */
@@ -55,10 +62,7 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
     setEnModalCrudo(a);
   }, []);
   const camaras = permitidos.find((a) => a.id === "camaras") ?? null;
-  const abrirCamaras = useCallback(() => {
-    if (camaras) setEnModal(camaras);
-  }, [camaras, setEnModal]);
-  const avisos = useAvisosCamaras(camaras !== null, abrirCamaras);
+  const cam = useCamarasCabecera(camaras, setEnModal);
   /* El contador va sobre «Accesos» si Cámaras no está en la barra, o la barra no entra (< 56 rem). */
   const camarasEnBarra = enLaBarra.some((a) => a.id === "camaras");
   const raizRef = useRef<HTMLDivElement>(null);
@@ -93,34 +97,35 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
     botonRef.current?.focus();
     setEnModal(a);
   };
+  const elegirDeCamaras = (o: OpcionCamaras) => {
+    setAbierto(false);
+    botonRef.current?.focus();
+    o.accion();
+  };
 
   return (
     <div className="flex shrink-0 items-center gap-1">
       {enLaBarra.length > 0 && (
         <ul className="hidden items-center gap-1 @min-[56rem]:flex" aria-label="Accesos anclados">
-          {enLaBarra.map((a) => {
-            const n = a.id === "camaras" ? avisos.sinVer : 0;
-            return (
-              <li key={a.id}>
-                <AdminTooltip
-                  content={`${a.label} · ${n > 0 && avisos.resumen ? avisos.resumen : a.hint}`}
-                  side="bottom"
-                  className="text-sm"
-                >
+          {enLaBarra.map((a) => (
+            <li key={a.id}>
+              {a.id === "camaras" ? (
+                <MenuCamaras acceso={a} cam={cam} className={BOTON} tono={tono} />
+              ) : (
+                <AdminTooltip content={`${a.label} · ${a.hint}`} side="bottom" className="text-sm">
                   <button
                     type="button"
                     onClick={() => setEnModal(a)}
-                    aria-label={n > 0 ? `${a.label}, ${n} ${n === 1 ? "aviso" : "avisos"} sin ver` : a.label}
+                    aria-label={a.label}
                     aria-haspopup="dialog"
-                    className={cn(BOTON, tono, "relative")}
+                    className={cn(BOTON, tono)}
                   >
                     <a.icon className="h-5 w-5" aria-hidden />
-                    <ContadorAvisos n={n} />
                   </button>
                 </AdminTooltip>
-              </li>
-            );
-          })}
+              )}
+            </li>
+          ))}
         </ul>
       )}
 
@@ -137,8 +142,8 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
             aria-haspopup="menu"
             aria-expanded={abierto}
             aria-label={
-              avisos.sinVer > 0
-                ? `Accesos rápidos, ${avisos.sinVer} ${avisos.sinVer === 1 ? "aviso" : "avisos"} de cámaras sin ver`
+              cam.sinVer > 0
+                ? `Accesos rápidos, ${cam.sinVer} ${cam.sinVer === 1 ? "aviso" : "avisos"} de cámaras sin ver`
                 : "Accesos rápidos"
             }
             className={cn(
@@ -150,7 +155,7 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
             )}
           >
             <LayoutGrid className="h-5 w-5" aria-hidden />
-            <ContadorAvisos n={avisos.sinVer} className={cn(camarasEnBarra && "@min-[56rem]:hidden")} />
+            <ContadorAvisos n={cam.sinVer} className={cn(camarasEnBarra && "@min-[56rem]:hidden")} />
           </button>
         </AdminTooltip>
 
@@ -190,9 +195,9 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
                       aria-hidden
                     />
                     <span className="min-w-0 flex-1 leading-tight">{a.label}</span>
-                    {a.id === "camaras" && !eligiendo && avisos.sinVer > 0 && (
+                    {a.id === "camaras" && !eligiendo && cam.sinVer > 0 && (
                       <span className={cn("shrink-0 rounded-full px-1.5 text-sm font-bold tabular-nums", TONO_CONTADOR)}>
-                        {avisos.sinVer > 9 ? "9+" : avisos.sinVer}
+                        {cam.sinVer > 9 ? "9+" : cam.sinVer}
                         <span className="sr-only"> sin ver</span>
                       </span>
                     )}
@@ -220,7 +225,13 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
                 );
               })}
             </div>
-            {camaras && !eligiendo && <FilaSilencioAvisos silencioHasta={avisos.silencioHasta} />}
+            {camaras && !eligiendo && (
+              <FilasCamarasAccesos
+                cam={cam}
+                alElegir={elegirDeCamaras}
+                className={cn(camarasEnBarra && "@min-[56rem]:hidden")}
+              />
+            )}
             <button
               type="button"
               role="menuitem"
@@ -238,6 +249,14 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
         )}
       </div>
       {enModal && <AccesoEnModal acceso={enModal} onCerrar={cerrarModal} />}
+      {cam.ajustesAbiertos && (
+        <AjustesSonidoCamaras
+          open
+          onClose={cam.cerrarAjustes}
+          silencioHasta={cam.silencioHasta}
+          silencioMovimientoHasta={cam.silencioMovimientoHasta}
+        />
+      )}
     </div>
   );
 }

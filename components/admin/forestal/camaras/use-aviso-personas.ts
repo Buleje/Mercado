@@ -19,7 +19,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { PERSONA_NUEVA_MS, type AparicionPersona } from "@/lib/camaras/vigia";
-import { pitidoAviso, prepararPitido } from "@/lib/forestal/pitido";
+import { CLAVE_ALARMA_CON_SONIDO } from "@/lib/camaras/sonido-avisos";
+import { desbloquearAudio, instalarDesbloqueo, sonarAlarma } from "@/lib/camaras/sonido-avisos-audio";
+import { logger } from "@/lib/logger";
 
 export const AVISO_POR_CAMARA_CADA_MS = 20_000;
 
@@ -45,16 +47,17 @@ export interface AvisoPersonas {
  *   la secundaria.
  */
 export function useAvisoPersonas(onVer?: () => void, onAsistencia?: () => void): AvisoPersonas {
-  const [sonido, setSonido] = useLocalStorage<boolean>("camaras-mosaico:aviso-sonido", true);
+  const [sonido, setSonido] = useLocalStorage<boolean>(CLAVE_ALARMA_CON_SONIDO, true);
   const ultimo = useRef(new Map<string, number>());
-  const sonidoRef = useRef(sonido);
   const verRef = useRef(onVer);
   const asistenciaRef = useRef(onAsistencia);
   useEffect(() => {
-    sonidoRef.current = sonido;
     verRef.current = onVer;
     asistenciaRef.current = onAsistencia;
   });
+  /* Un visor o mosaico con video puede sonar: mientras esté, los gestos
+     despiertan el audio (también el visor suelto de Cámaras, sin mosaico). */
+  useEffect(() => instalarDesbloqueo(), []);
 
   const avisar = useCallback((a: AparicionPersona) => {
     const antes = ultimo.current.get(a.camaraId);
@@ -70,7 +73,11 @@ export function useAvisoPersonas(onVer?: () => void, onAsistencia?: () => void):
       action: asistencia ? { label: "Marcar asistencia", onClick: asistencia } : accionVer,
       cancel: asistencia ? accionVer : undefined,
     });
-    if (sonidoRef.current) pitidoAviso();
+    /* Volumen, tono, silencio, «Alarma con sonido» y una sola pestaña: lo
+       decide `sonarAlarma` (Cámaras › Sonido y avisos, 2026-10-15). */
+    sonarAlarma({ tipo: "persona" }).catch((err: unknown) =>
+      logger.warn("[camaras] la alarma de persona falló", { error: String(err) }),
+    );
   }, []);
 
   const cambiarSonido = useCallback(
@@ -78,8 +85,9 @@ export function useAvisoPersonas(onVer?: () => void, onAsistencia?: () => void):
       setSonido(v);
       /* Es un toque (gesto): despierta el audio y suena una vez de muestra. */
       if (v) {
-        prepararPitido();
-        pitidoAviso();
+        desbloquearAudio()
+          .then(() => sonarAlarma({ tipo: "persona", probar: true }))
+          .catch((err: unknown) => logger.warn("[camaras] probar la alarma falló", { error: String(err) }));
       }
     },
     [setSonido],
