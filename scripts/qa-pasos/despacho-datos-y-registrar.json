@@ -44,7 +44,7 @@
    "eval": "[...document.querySelectorAll(\"[role=dialog] section\")].map(s=>s.querySelector(\"header\")?.innerText.replace(/\\s+/g,\" \")).filter(t=>/Falta/.test(t||\"\"))"
   },
   {
-   "eval": "(() => { const sec=[...document.querySelectorAll(\"[role=dialog] section\")].find(s=>/Traslado y detalle/.test(s.querySelector(\"header\")?.textContent||\"\")); const ss=[...sec.querySelectorAll(\"select\")].slice(0,3); ss.forEach((s,k)=>s.setAttribute(\"data-qa\",\"par-\"+k)); return ss.map(s=>s.value); })()"
+   "eval": "(() => { /* 15-10: el ubigeo de la partida vive en su bloque «Punto de partida» (formato 2024, casilleros 17-20): son sus 3 últimos select. */ const sec=[...document.querySelectorAll(\"[role=dialog] section\")].find(s=>/Punto de partida/.test(s.querySelector(\"header\")?.textContent||\"\")); if(!sec) return \"sin bloque Punto de partida\"; const ss=[...sec.querySelectorAll(\"select\")].slice(-3); ss.forEach((s,k)=>s.setAttribute(\"data-qa\",\"par-\"+k)); return ss.map(s=>s.value); })()"
   },
   {
    "elegir": [

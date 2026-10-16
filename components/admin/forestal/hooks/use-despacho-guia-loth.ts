@@ -40,7 +40,6 @@ import { guiaAnteriorDelDespacho, loCopiadoDelDespacho } from "@/lib/forestal/lo
 import {
   conservarLoEscrito,
   mismoTalonario,
-  sembradaParaElTraslado,
   talonarioDeOtroPlan,
   type TalonarioDeLaGuia,
 } from "@/lib/forestal/loth-guia-cambio-de-plan";
@@ -52,6 +51,7 @@ import { usePreparadoGuiaLoth } from "./use-preparado-guia-loth";
 import { useTrozasAMano } from "./use-trozas-a-mano";
 import { useEspeciesAMano, type CatalogoParaJuzgar } from "./use-especies-a-mano";
 import { useArbolesAMano } from "./use-arboles-a-mano";
+import { useBorradorTrozasAMano } from "./use-borrador-trozas-a-mano";
 import { conCodigosDelServidor, piezasAMano, trozasDelLibroAMano } from "@/lib/forestal/loth-trozas-a-mano";
 
 export interface RegistradaLoth {
@@ -145,7 +145,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
     [aMano.filas, delLibro, planId, arbolesAMano.porId],
   );
   const piezas = useMemo(() => [...delLibro, ...piezasManuales], [delLibro, piezasManuales]);
-  /** El N° de lista y la llegada que se llenan solos (`use-traslado-guia-loth`). */
+  /** El N° de lista y la llegada (= el destinatario) que se llenan solos (`use-traslado-guia-loth`). */
   const traslado = useTrasladoGuiaLoth({ datos, setDatos, talonario, trozas: piezas.length });
 
   /* Sembrar al llegar la identidad y cada vez que cambia el plan. La herencia
@@ -166,7 +166,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
     ultimaSiembra.current = ahora;
     const final = antes ? conservarLoEscrito(d, datos, antes.datos) : d;
     setCopiados(previa ? loCopiadoDelDespacho(rellenarGuiaLoth(base, { ultimaGuia: null, emision }), d) : []);
-    alSembrar(sembradaParaElTraslado(final, d));
+    alSembrar();
     setDatos(final);
     setElegidas(new Set());
     if (!antes || !mismoTalonario(antes, ahora)) sembrarNumero(talonario);
@@ -209,6 +209,8 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
   const [pregunta, setPregunta] = useState<PreguntaNumero | null>(null);
   const confirmados = useRef({ salto: false, serie: false });
   const [registrada, setRegistrada] = useState<RegistradaLoth | null>(null);
+  /* Las filas a mano, a salvo de un remonte (recarga, pestaña descartada al girar el celular). */
+  const borradorAMano = useBorradorTrozasAMano({ prep, planId, setPlanId: setPlanElegido, aMano, registrada: registrada != null });
 
   const registrar = useCallback(
     async (confirmar?: PreguntaNumero["tipo"]) => {
@@ -285,7 +287,9 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
   }, [gtfNumber]);
 
   return {
-    cargando,
+    /* Sólo la PRIMERA carga tapa el modal: si el plan se vuelve a pedir (la recarga en
+       caliente re-corre el efecto), lo anotado y la pestaña siguen montados. */
+    cargando: cargando && !prep,
     errorCarga,
     recargar: cargar,
     prep,
@@ -301,6 +305,8 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
     setElegidas,
     /** Las filas anotadas a mano (agregar / quitar) y sus trozas ya numeradas. */
     aMano,
+    /** Lo que se recuperó del borrador de la pestaña y cómo descartarlo (`use-borrador-trozas-a-mano`). */
+    borradorAMano,
     especiesAMano,
     arbolesAMano,
     piezasManuales,
@@ -313,8 +319,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
     setGtfNumber: numero.usarNumero,
     datos,
     setDatos,
-    setPunto: traslado.setPunto,
-    usarLlegadaDelDestinatario: traslado.usarLlegadaDelDestinatario,
+    setPartida: traslado.setPartida,
     listas: traslado.listas,
     hojas: traslado.hojas,
     propuestaListas: traslado.propuestaListas,

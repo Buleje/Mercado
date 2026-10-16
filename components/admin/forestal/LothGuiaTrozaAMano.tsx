@@ -9,7 +9,9 @@
  * solo) y la lista de lo anotado. La especie sale del catálogo del aserradero y
  * se puede FIJAR (15-10): fijada, cada troza nueva la toma y el foco empieza en
  * D1; suelta, se vuelve a pedir. Teclado: Enter pasa al campo siguiente y, en
- * Cantidad, agrega. Las medidas se revisan con los límites del Cubicador
+ * Cantidad, agrega; → y ← pasan entre las medidas como en el cubicador
+ * (`useTecladoGrilla`) y ↑ sube a la lista de lo anotado: las dos son UNA
+ * grilla (`GRILLA_A_MANO`), con la fila de alta como la última. Las medidas se revisan con los límites del Cubicador
  * (`revisarTrozaAMano`); el volumen es una vista previa: el servidor lo vuelve
  * a calcular con la misma fórmula al registrar, y valida la especie contra el
  * catálogo. Al lado, el ÁRBOL del censo de donde salió (opcional,
@@ -37,6 +39,8 @@ import { EspecieFijable } from "./especie-fijable";
 import { useEspecieFijada } from "./hooks/use-especie-fijada";
 import { ArbolDeTrozaAMano } from "./arbol-de-troza-a-mano";
 import TrozaAManoTabla from "./troza-a-mano-tabla";
+import { useTecladoGrilla } from "./celdas-excel";
+import { COLUMNAS_A_MANO, GRILLA_A_MANO } from "./troza-a-mano-celda";
 
 type Medida = Exclude<CampoAMano, "especie">;
 const VACIO: CrudoAMano = { especie: "", d1: "", d2: "", largo: "", cantidad: "1" };
@@ -116,11 +120,17 @@ export default function LothGuiaTrozaAMano({ g, catalogo }: { g: DespachoGuiaLot
     };
   }
 
+  /* La fila de alta es la última de la grilla: ↑ sube a lo anotado, ← desde D1 va a la Cantidad de arriba. */
+  const filaAlta = g.aMano.filas.length;
+  const teclas = useTecladoGrilla({ grilla: GRILLA_A_MANO, columnas: COLUMNAS_A_MANO, totalFilas: filaAlta + 1, envolver: true });
+  const alTeclear = (c: Medida) => (e: KeyboardEvent<HTMLInputElement>) =>
+    e.key === "Enter" ? alPresionar(c)(e) : teclas(e);
+
   const vista = revision.ok ? volumenDeFila(revision.troza) : null;
   const cadaUna = revision.ok && revision.troza.cantidad > 1 ? volumenPorTroza(revision.troza) : null;
 
   return (
-    <div className="space-y-2 sm:col-span-12" data-testid="trozas-a-mano">
+    <div className="space-y-2 sm:col-span-12" data-testid="trozas-a-mano" data-grilla={GRILLA_A_MANO}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-sm font-bold text-[var(--text-primary)]">Anotar a mano</span>
         <InfoTip
@@ -172,7 +182,7 @@ export default function LothGuiaTrozaAMano({ g, catalogo }: { g: DespachoGuiaLot
             nombres={nombresDeEspecie}
           />
         </div>
-        {MEDIDAS.map((c) => (
+        {MEDIDAS.map((c, j) => (
           <label key={c} className="grid gap-1">
             <span className="text-xs font-semibold text-[var(--text-secondary)]">{CAMPOS[c].label}</span>
             <input
@@ -182,7 +192,10 @@ export default function LothGuiaTrozaAMano({ g, catalogo }: { g: DespachoGuiaLot
               value={crudo[c]}
               placeholder={CAMPOS[c].placeholder}
               onChange={(e) => setCrudo((prev) => ({ ...prev, [c]: e.target.value }))}
-              onKeyDown={alPresionar(c)}
+              onKeyDown={alTeclear(c)}
+              data-fila={filaAlta}
+              data-col={COLUMNAS_A_MANO[j]}
+              data-qa={`alta-${c}`}
               aria-invalid={errores[c] || (c === "cantidad" && excede) ? true : undefined}
               className={`${I} font-mono tabular-nums ${
                 errores[c] || (c === "cantidad" && excede) ? "border-[var(--data-error-500)]" : ""

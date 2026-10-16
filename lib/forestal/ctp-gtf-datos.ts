@@ -82,6 +82,91 @@ export type UbicacionTraslado = z.infer<typeof ubicacionSchema>;
 const UBICACION_VACIA = { direccion: "", departamento: "", provincia: "", distrito: "" };
 
 /**
+ * Cómo arranca el transporte: decide qué casilleros de «Datos del punto de
+ * partida» aplican. RDE D000014-2024-MIDAGRI-SERFOR-DE, Anexo I (instructivo):
+ *
+ * · `inicio` — el producto sale del área del título habilitante o de un
+ *   centro de transformación primaria: el bloque entero «No aplica».
+ * · `establecimiento` — sale de un depósito, lugar de acopio, centro de
+ *   comercialización o almacén de la ARFFS: (17) su nombre, (18) su N° de
+ *   autorización, (19) el tipo, (20a-d) dirección y ubigeo.
+ * · `continua` — continúa un transporte: (17) una referencia («Km 15
+ *   Carretera Central»), (18)(19) «No aplica», (20a-d) dónde.
+ *
+ * `""` = guía anterior a estos casilleros: se imprime como siempre.
+ */
+export const MODOS_PARTIDA = ["inicio", "establecimiento", "continua"] as const;
+export type ModoPartida = (typeof MODOS_PARTIDA)[number];
+
+/** Tipos de establecimiento del casillero (19) y los que nombra el (17). */
+export const TIPOS_ESTABLECIMIENTO = ["Depósito", "Centro de comercialización", "Lugar de acopio", "Almacén de la ARFFS"] as const;
+
+/**
+ * El punto de partida: la ubicación de siempre + los casilleros (17)(18)(19)
+ * del formato 2024 + datos INTERNOS que no salen en la guía (el formato no
+ * tiene RUC en este bloque: va como dato propio, para la libreta).
+ */
+const partidaSchema = ubicacionSchema.extend({
+  modo: z.enum(["", ...MODOS_PARTIDA]).default(""),
+  /** (17) Nombre del establecimiento, o la referencia si continúa un transporte. */
+  nombre: texto(200).default(""),
+  /** (18) N° de autorización otorgado por la ARFFS. */
+  autorizacion: texto(80).default(""),
+  /** (19) Tipo de establecimiento. */
+  tipoEstablecimiento: texto(60).default(""),
+  /** Internos: no se imprimen. */
+  ruc: texto(15).default(""),
+  referencia: texto(200).default(""),
+  encargado: texto(120).default(""),
+  telefono: texto(30).default(""),
+});
+
+export type PartidaTraslado = z.infer<typeof partidaSchema>;
+
+export const PARTIDA_VACIA: PartidaTraslado = {
+  ...UBICACION_VACIA, modo: "", nombre: "", autorizacion: "", tipoEstablecimiento: "",
+  ruc: "", referencia: "", encargado: "", telefono: "",
+};
+
+const NO_APLICA = "NO APLICA";
+
+/** Los casilleros de la partida como salen en el papel; `null` = guía sin el bloque (se imprime como antes). */
+export interface PartidaImpresa {
+  modo: ModoPartida;
+  nombre: string;
+  autorizacion: string;
+  tipo: string;
+  direccion: string;
+  departamento: string;
+  provincia: string;
+  distrito: string;
+}
+
+/**
+ * Lo que imprime el bloque de la partida según el modo. «No aplica» lo dice el
+ * instructivo, no se inventa: es la elección del modo hecha en el formulario.
+ * Lo vacío de un modo que sí aplica queda vacío (se llena a mano o falta).
+ */
+export function partidaImpresa(p: Partial<PartidaTraslado> | null | undefined): PartidaImpresa | null {
+  const modo = p?.modo;
+  if (!p || !modo) return null;
+  if (modo === "inicio") {
+    return { modo, nombre: NO_APLICA, autorizacion: NO_APLICA, tipo: NO_APLICA, direccion: NO_APLICA, departamento: NO_APLICA, provincia: NO_APLICA, distrito: NO_APLICA };
+  }
+  const continua = modo === "continua";
+  return {
+    modo,
+    nombre: recorte(p.nombre),
+    autorizacion: continua ? NO_APLICA : recorte(p.autorizacion),
+    tipo: continua ? NO_APLICA : recorte(p.tipoEstablecimiento),
+    direccion: recorte(p.direccion),
+    departamento: recorte(p.departamento),
+    provincia: recorte(p.provincia),
+    distrito: recorte(p.distrito),
+  };
+}
+
+/**
  * El punto como se imprime y como lo publica SERFOR: «JR. X MZA. 24, Constitución,
  * OXAPAMPA, PASCO» — dirección, distrito, provincia, departamento, sin huecos.
  */
@@ -112,13 +197,18 @@ export function mismaUbicacion(a: Partial<UbicacionTraslado> | null | undefined,
 export function conPunto(
   traslado: GtfDatos["traslado"],
   cual: "partida" | "llegada",
-  cambio: Partial<UbicacionTraslado>,
+  cambio: Partial<PartidaTraslado>,
 ): GtfDatos["traslado"] {
-  const u = { ...traslado[cual], ...cambio };
-  const nuevo =
-    cual === "partida"
-      ? { ...traslado, partida: u, puntoPartida: componerPunto(u) }
-      : { ...traslado, llegada: u, puntoLlegada: componerPunto(u) };
+  let nuevo: GtfDatos["traslado"];
+  if (cual === "partida") {
+    const u = { ...traslado.partida, ...cambio };
+    nuevo = { ...traslado, partida: u, puntoPartida: componerPunto(u) };
+  } else {
+    /* La llegada es sólo dirección y ubigeo: lo demás de una parte no entra. */
+    const { direccion, departamento, provincia, distrito } = { ...traslado.llegada, ...cambio };
+    const u = { direccion, departamento, provincia, distrito };
+    nuevo = { ...traslado, llegada: u, puntoLlegada: componerPunto(u) };
+  }
   /* La ruta que se armó sola («partida → llegada», o sólo la partida si la
      llegada todavía no estaba) sigue a los puntos; una escrita a mano no se
      toca. Se compara también con los casilleros: otro bloque pudo tocar el
@@ -168,8 +258,15 @@ export const gtfDatosSchema = z.object({
     esElCtp: z.boolean().default(true),
   }).default({ ...PARTE_VACIA, esElCtp: true }),
 
-  /** A quién se le entrega el producto en destino. */
-  destinatario: parteSchema.default({ ...PARTE_VACIA }),
+  /**
+   * A quién se le entrega el producto en destino. Su dirección ES el punto de
+   * llegada: el formato 2024 no tiene un bloque de llegada aparte (el (24a)
+   * dice «dirección hacia donde se dirige la carga»).
+   */
+  destinatario: parteSchema.extend({
+    /** (22) N° de autorización del establecimiento de destino (un CTP: su código). */
+    autorizacion: texto(80).default(""),
+  }).default({ ...PARTE_VACIA, autorizacion: "" }),
 
   /** Empresa o persona que transporta. */
   transportista: parteSchema.extend({
@@ -225,12 +322,12 @@ export const gtfDatosSchema = z.object({
      * esto trae algo, `puntoPartida` se arma con `componerPunto` (mismo orden
      * que publica SERFOR: «dirección, distrito, provincia, departamento»).
      */
-    partida: ubicacionSchema.default({ ...UBICACION_VACIA }),
+    partida: partidaSchema.default({ ...PARTIDA_VACIA }),
     /** Ídem para el punto de llegada. */
     llegada: ubicacionSchema.default({ ...UBICACION_VACIA }),
   }).default({
     puntoPartida: "", puntoLlegada: "", ruta: "", fechaInicio: "", fechaFin: "",
-    partida: { ...UBICACION_VACIA }, llegada: { ...UBICACION_VACIA },
+    partida: { ...PARTIDA_VACIA }, llegada: { ...UBICACION_VACIA },
   }),
 
   /**
@@ -424,6 +521,7 @@ export function faltantesGtf(d: GtfDatos): FaltanteGtf[] {
       if (!recorte(valor)) faltan.push({ seccion: "traslado", campo: `Partida: ${nombre}`, motivo: "El punto de partida va con su ubigeo completo" });
     }
   }
+  faltan.push(...faltantesDelModoPartida(p));
   if (!d.traslado.fechaInicio.trim()) {
     faltan.push({
       seccion: "traslado",
@@ -437,6 +535,26 @@ export function faltantesGtf(d: GtfDatos): FaltanteGtf[] {
       campo: "Título habilitante",
       motivo: "Es lo que acredita el origen legal de la madera",
     });
+  }
+  return faltan;
+}
+
+/**
+ * Lo que pide el formato 2024 según cómo arranca el transporte. Sale del área
+ * del título (`inicio`) o una guía vieja (`""`): nada extra.
+ */
+function faltantesDelModoPartida(p: PartidaTraslado): FaltanteGtf[] {
+  const faltan: FaltanteGtf[] = [];
+  const pedir = (valor: string, campo: string, motivo: string) => {
+    if (!recorte(valor)) faltan.push({ seccion: "traslado", campo, motivo });
+  };
+  if (p.modo === "establecimiento") {
+    pedir(p.nombre, "Partida: nombre del establecimiento", "Casillero (17): de qué depósito o centro sale la carga");
+    pedir(p.tipoEstablecimiento, "Partida: tipo de establecimiento", "Casillero (19): depósito o centro de comercialización");
+  }
+  if (p.modo === "continua") pedir(p.nombre, "Partida: referencia", "Casillero (17): dónde continúa el transporte, p. ej. «Km 15 Carretera Central»");
+  if (p.modo === "establecimiento" || p.modo === "continua") {
+    pedir(p.direccion, "Partida: dirección", "Casillero (20a): dirección, o UTM + zona + datum si no hay una exacta");
   }
   return faltan;
 }

@@ -139,7 +139,9 @@ describe("partida desarmada y faltantes por casillero", () => {
 
   it("la partida sale del plan con el ubigeo del padrón y el texto de SERFOR", () => {
     const d = datosInicialesLoth(id, "2026-09-29");
-    expect(d.traslado.partida).toEqual({ direccion: "PC 3, Alto Chinchihuani", departamento: "Pasco", provincia: "Oxapampa", distrito: "Constitución" });
+    expect(d.traslado.partida).toMatchObject({ direccion: "PC 3, Alto Chinchihuani", departamento: "Pasco", provincia: "Oxapampa", distrito: "Constitución" });
+    // Formato 2024: sale del área del título → el bloque del punto de partida «No aplica».
+    expect(d.traslado.partida.modo).toBe("inicio");
     expect(d.traslado.puntoPartida).toBe("PC 3, Alto Chinchihuani, Constitución, Oxapampa, Pasco");
     // (10)(11)(12): el plan no decía un departamento; el padrón sí.
     expect(d.guia).toMatchObject({ departamento: "Pasco", provincia: "Oxapampa", distrito: "Constitución" });
@@ -208,7 +210,8 @@ describe("el papel: la lista se parte en hojas numeradas y el (36) dice NO APLIC
     expect(lista.html).toContain("LISTA ID: 9");
     expect(lista.html).toContain("LISTA ID: 10");
     expect(gtf.html).toMatch(/\(35\)<\/span> <span class="l">Lista\(s\) de Troza\(s\):<\/span> <b>9, 10<\/b>/);
-    expect(gtf.html).toContain(ORIGEN_NO_APLICA);
+    // El (36) mismo: el bloque «punto de partida» del formato 2024 también dice NO APLICA.
+    expect(gtf.html).toMatch(new RegExp(`\\(36\\)</span> <span class="l">N° GTF de Origen:</span> <b>${ORIGEN_NO_APLICA}</b>`));
   });
 
   it("una guía vieja sin N° de lista sigue imprimiendo el de la guía (reimprimir no cambia lo que viajó)", () => {
@@ -218,11 +221,48 @@ describe("el papel: la lista se parte en hojas numeradas y el (36) dice NO APLIC
     expect(lista.html.match(/class="doc-parte"/g)).toBeNull();
   });
 
+  it("formato 2024: la partida de un depósito imprime sus casilleros y el destinatario su N° de autorización", () => {
+    const deDeposito = {
+      ...datos,
+      traslado: {
+        ...datos.traslado,
+        partida: {
+          ...datos.traslado.partida,
+          modo: "establecimiento" as const,
+          nombre: "Depósito El Ucayalino SAC",
+          autorizacion: "DEP-UCA-0123-2025",
+          tipoEstablecimiento: "Depósito",
+          direccion: "Jr. Las Palmeras 245",
+          ruc: "20601234567",
+          encargado: "Rosa Díaz",
+        },
+      },
+      destinatario: { ...datos.destinatario, nombre: "Maderera San Martín SAC", autorizacion: "CTP-UCA-0456-2024" },
+    };
+    const { gtf } = papelesGuiaLoth({ gtfNumber: "019-001-0000006", gtfDate: "2026-10-15", titular: SANTA_ROSA, datos: deDeposito, piezas: piezas.slice(0, 2) });
+    expect(gtf.html).toContain("Datos del punto de partida");
+    expect(gtf.html).toContain('<span class="l">Punto de partida:</span> <b>Depósito El Ucayalino SAC</b>');
+    expect(gtf.html).toContain('<span class="l">N° Autorización:</span> <b>DEP-UCA-0123-2025</b>');
+    expect(gtf.html).toContain('<span class="l">Tipo de establecimiento:</span> <b>Depósito</b>');
+    expect(gtf.html).toContain('<span class="l">N° Autorización:</span> <b>CTP-UCA-0456-2024</b>');
+    // Los internos no salen en el papel.
+    expect(gtf.html).not.toContain("20601234567");
+    expect(gtf.html).not.toContain("Rosa Díaz");
+  });
+
+  it("una guía anterior al formato 2024 (partida sin modo) sale igual que antes: sin bloque de partida ni (22)", () => {
+    const vieja = { ...datos, traslado: { ...datos.traslado, partida: { ...datos.traslado.partida, modo: "" as const } } };
+    const { gtf } = papelesGuiaLoth({ gtfNumber: "019-001-0000003", gtfDate: "2026-09-01", titular: SANTA_ROSA, datos: vieja, piezas: piezas.slice(0, 2) });
+    expect(gtf.html).not.toContain("Datos del punto de partida");
+    expect(gtf.html).toContain('<td class="c" colspan="4"><span class="n">(28)</span> <span class="l">Distrito:</span>');
+  });
+
   it("con GTF de origen elegida, se imprime ese N° (no NO APLICA)", () => {
     const conOrigen = { ...datos, guia: { ...datos.guia, gtfOrigenNro: "019-001-0000004" } };
     const { gtf } = papelesGuiaLoth({ gtfNumber: "019-001-0000005", gtfDate: "2026-09-29", titular: SANTA_ROSA, datos: conOrigen, piezas: piezas.slice(0, 2) });
     expect(gtf.html).toContain("019-001-0000004");
-    expect(gtf.html).not.toContain(ORIGEN_NO_APLICA);
+    expect(gtf.html).toMatch(/\(36\)<\/span> <span class="l">N° GTF de Origen:<\/span> <b>019-001-0000004<\/b>/);
+    expect(gtf.html).not.toMatch(new RegExp(`N° GTF de Origen:</span> <b>${ORIGEN_NO_APLICA}`));
   });
 });
 
@@ -311,7 +351,7 @@ describe("el servidor rearma la partida y la llegada impresas (hallazgo #8)", ()
       ...gtfDatosVacio().traslado,
       puntoPartida: "lo que diga el navegador",
       puntoLlegada: "otro texto",
-      partida: { direccion: "PC 3", departamento: "Pasco", provincia: "Oxapampa", distrito: "Constitución" },
+      partida: { ...gtfDatosVacio().traslado.partida, direccion: "PC 3", departamento: "Pasco", provincia: "Oxapampa", distrito: "Constitución" },
     };
     const r = puntosCompuestos(tr);
     expect(r.puntoPartida).toBe("PC 3, Constitución, Oxapampa, Pasco");

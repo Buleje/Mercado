@@ -37,6 +37,7 @@ const dest = (docNumero: string, nombre = "INVERSIONES AGROFORESTALES BLAS") => 
     provincia: "",
     distrito: "",
     zona: "",
+    autorizacion: "",
   },
 });
 

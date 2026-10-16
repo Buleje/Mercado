@@ -32,8 +32,12 @@ import { leerPlaca } from "./placa-peru";
  * es otra cosa —el que nos trae la madera con su GTF— y le pedía un título
  * habilitante que no tiene. Va al FINAL de la lista: el orden de las pestañas
  * del Directorio sale de acá y las cuatro de siempre no se mueven.
+ *
+ * «establecimiento» (15-10-2026): el depósito, lugar de acopio o centro de
+ * comercialización de donde sale la carga — «Datos del punto de partida» de la
+ * GTF 2024. También al final, por lo mismo.
  */
-export const ROLES_PARTE = ["proveedor", "destinatario", "transportista", "conductor", "cliente"] as const;
+export const ROLES_PARTE = ["proveedor", "destinatario", "transportista", "conductor", "cliente", "establecimiento"] as const;
 export type RolParte = (typeof ROLES_PARTE)[number];
 
 export const ROL_LABEL: Record<RolParte, string> = {
@@ -42,6 +46,7 @@ export const ROL_LABEL: Record<RolParte, string> = {
   transportista: "Transportista",
   conductor: "Conductor",
   cliente: "Cliente",
+  establecimiento: "Establecimiento",
 };
 
 /** Plural explícito: "destinatarioes" no existe y el `+ "es"` lo fabricaba. */
@@ -51,6 +56,7 @@ export const ROL_PLURAL: Record<RolParte, string> = {
   transportista: "Transportistas",
   conductor: "Conductores",
   cliente: "Clientes",
+  establecimiento: "Establecimientos",
 };
 
 /** Qué hace cada rol, en el idioma del patio. Para la ayuda de la UI. */
@@ -60,6 +66,7 @@ export const ROL_DESCRIPCION: Record<RolParte, string> = {
   transportista: "Empresa o persona que hace el traslado",
   conductor: "Quien maneja: el control le pide licencia y DNI",
   cliente: "A quien le cobras el aserrío o le vendes la madera: su precio del pie va en su ficha",
+  establecimiento: "Depósito, lugar de acopio o centro de comercialización de donde sale la carga: punto de partida de la guía",
 };
 
 export function esRolValido(v: string): v is RolParte {
@@ -789,6 +796,9 @@ export function faltantesParaGuiaDetalle(p: Parte, rol: RolParte): FaltanteParte
   if (rol === "transportista" && !p.docNumero) faltan.push({ clave: "documento", label: "documento" });
   if (rol === "conductor" && !p.licencia) faltan.push({ clave: "licencia", label: "licencia de conducir" });
   if (rol === "proveedor" && !p.docNumero) faltan.push({ clave: "documento", label: "documento" });
+  if (rol === "establecimiento" && !direccionCompleta(p)) {
+    faltan.push({ clave: "direccion", label: "dirección (es el punto de partida)" });
+  }
   return faltan;
 }
 

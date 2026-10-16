@@ -23,7 +23,7 @@
 import { esc, seccionDoc } from "@/lib/forestal/ctp-documento-print";
 import { claveFilaGTF, filasGTF, textoGTF, totalizarGTF } from "@/lib/forestal/gtf-redondeo";
 import { tituloDeGuia, type CtpFicha, type PermisoDeGuia } from "@/lib/forestal/ctp-ficha-types";
-import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { partidaImpresa, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 
 /**
  * Fecha a `DD.MM.YYYY`, como la imprime el talonario. Vacía si no hay.
@@ -293,12 +293,21 @@ export interface CuerpoGtfInput {
   permisos?: readonly PermisoDeGuia[];
 }
 
-/** Todos los casilleros con valor de la guía. `31p` = la placa (el papel la numera (31), igual que el vehículo). */
+/**
+ * Todos los casilleros con valor de la guía. `31p` = la placa (el papel la
+ * numera (31), igual que el vehículo).
+ *
+ * `p17`…`p20d` y `d22` son del formato 2024 (RDE D000014-2024-MIDAGRI-SERFOR-DE):
+ * «Datos del punto de partida» (17)(18)(19)(20a-d) y el N° de autorización del
+ * destino (22). Llevan prefijo porque esta hoja todavía numera como la RDE
+ * 122-2015 y su (17) es el departamento del propietario.
+ */
 export type CasillerosGtf = CasillerosIdentidadGtf &
   Record<
     | "13" | "14" | "15" | "16" | "17" | "18" | "19" | "20" | "21"
     | "22" | "23" | "24" | "25" | "26" | "27" | "28"
-    | "29" | "30" | "31" | "31p" | "32" | "33" | "34" | "35" | "36" | "38",
+    | "29" | "30" | "31" | "31p" | "32" | "33" | "34" | "35" | "36" | "38"
+    | "p17" | "p18" | "p19" | "p20a" | "p20b" | "p20c" | "p20d" | "d22",
     string
   >;
 
@@ -317,6 +326,7 @@ const COMPROBANTE_LABEL: Record<string, string> = {
  */
 export function casillerosGtf(i: CuerpoGtfInput): CasillerosGtf {
   const { ficha: f, datos: d } = i;
+  const pi = partidaImpresa(d.traslado?.partida);
   const comprobante =
     d.comprobante?.tipo && d.comprobante.tipo !== "ninguno"
       ? (COMPROBANTE_LABEL[d.comprobante.tipo] ?? d.comprobante.tipo)
@@ -357,7 +367,38 @@ export function casillerosGtf(i: CuerpoGtfInput): CasillerosGtf {
     "35": txt(i.listasTrozas),
     "36": txt(i.gtfOrigen),
     "38": txt(d.observaciones),
+    "p17": txt(pi?.nombre),
+    "p18": txt(pi?.autorizacion),
+    "p19": txt(pi?.tipo),
+    "p20a": txt(pi?.direccion),
+    "p20b": txt(pi?.departamento),
+    "p20c": txt(pi?.provincia),
+    "p20d": txt(pi?.distrito),
+    "d22": txt(d.destinatario?.autorizacion),
   };
+}
+
+/**
+ * «Datos del punto de partida» del formato 2024, entre el propietario y el
+ * destinatario (su lugar en el formato). Sólo en las guías que eligieron cómo
+ * arranca el transporte: las anteriores se imprimen como siempre. Sin número
+ * en los casilleros: esta hoja numera como la de 2015 y un (17) acá chocaría
+ * con el (17) del propietario.
+ */
+function bloquePartida(d: GtfDatos, v: CasillerosGtf): string {
+  const pi = partidaImpresa(d.traslado?.partida);
+  if (!pi) return "";
+  const filas =
+    pi.modo === "inicio"
+      ? `<tr>${box4("", "Punto de partida", "NO APLICA — el producto inicia su transporte en el área del título habilitante o desde un centro de transformación primaria")}</tr>`
+      : `<tr>${box2("", "Punto de partida", v.p17)}${box("", "N° Autorización", v.p18)}${box("", "Tipo de establecimiento", v.p19)}</tr>
+    <tr>${box2("", "Dirección", v.p20a)}${box("", "Depto.", v.p20b)}${box("", "Prov.", v.p20c)}</tr>
+    <tr>${box4("", "Distrito", v.p20d)}</tr>`;
+  return `${seccionDoc("Datos del punto de partida", "formato RDE D000014-2024-MIDAGRI-SERFOR-DE")}
+  <table class="cas">
+    ${filas}
+  </table>
+`;
 }
 
 /** El bloque central del documento, de (2) a (40). */
@@ -365,6 +406,8 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
   const { ficha: f, datos: d } = i;
   const v = casillerosGtf(i);
   const fluvial = d.vehiculo?.modo === "fluvial";
+  /* Formato 2024: la fila del distrito del destino lleva su (22) N° de autorización. */
+  const conPartida = Boolean(d.traslado?.partida?.modo);
 
   return `
   ${bloqueIdentidadGtf(f, {
@@ -382,11 +425,11 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
     <tr>${box("19", "Distrito", v["19"])}${box("20", "Comprobante", v["20"])}${box2("21", "N° Comprobante", v["21"])}</tr>
   </table>
 
-  ${seccionDoc("Destinatario", "casilleros (22) a (28)")}
+  ${bloquePartida(d, v)}${seccionDoc("Destinatario", "casilleros (22) a (28)")}
   <table class="cas">
     <tr>${box2("22", "Nombre o razón social", v["22"])}${box("23", "D.N.I.", v["23"])}${box("24", "R.U.C.", v["24"])}</tr>
     <tr>${box2("25", "Dirección", v["25"])}${box("26", "Depto.", v["26"])}${box("27", "Prov.", v["27"])}</tr>
-    <tr>${box4("28", "Distrito", v["28"])}</tr>
+    <tr>${conPartida ? `${box2("28", "Distrito", v["28"])}${box2("", "N° Autorización", v.d22)}` : box4("28", "Distrito", v["28"])}</tr>
   </table>
 
   ${seccionDoc("Transportista, vehículo y conductor", "casilleros (29) a (34)")}

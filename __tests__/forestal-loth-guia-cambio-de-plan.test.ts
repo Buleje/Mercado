@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
-import { conservarLoEscrito, mismoTalonario, sembradaParaElTraslado } from "@/lib/forestal/loth-guia-cambio-de-plan";
+import { conservarLoEscrito, mismoTalonario } from "@/lib/forestal/loth-guia-cambio-de-plan";
 
 /** La siembra de un plan: su titular, su título y su N° de lista. */
 function siembra(titular: string, titulo: string, lista: string): GtfDatos {
@@ -52,21 +52,6 @@ describe("conservarLoEscrito", () => {
   it("el propietario escrito a mano («Es el titular» apagado) se queda", () => {
     const otro: GtfDatos = { ...escrita, propietario: { ...escrita.propietario, nombre: "COMPRADOR SAC", esElCtp: false } };
     expect(conservarLoEscrito(nueva, otro, antes).propietario.nombre).toBe("COMPRADOR SAC");
-  });
-});
-
-describe("sembradaParaElTraslado", () => {
-  const nueva = gtfDatosVacio();
-  const llegada = { direccion: "Jr. Lima 120", departamento: "UCAYALI", provincia: "CORONEL PORTILLO", distrito: "CALLERIA" };
-
-  it("una llegada que sigue al destinatario sigue siendo automática", () => {
-    const final: GtfDatos = { ...nueva, destinatario: { ...nueva.destinatario, ...llegada }, traslado: { ...nueva.traslado, llegada } };
-    expect(sembradaParaElTraslado(final, nueva)).toBe(final);
-  });
-
-  it("una llegada escrita a mano sigue contando como escrita", () => {
-    const final: GtfDatos = { ...nueva, traslado: { ...nueva.traslado, llegada } };
-    expect(sembradaParaElTraslado(final, nueva)).toBe(nueva);
   });
 });
 

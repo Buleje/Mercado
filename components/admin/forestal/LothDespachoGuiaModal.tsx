@@ -39,6 +39,7 @@ import AvisoTrozasDeAntes, {
   type TrozasIniciales,
 } from "./LothGuiaTrozasDeAntes";
 import { Btn } from "./ctp-shared";
+import AvisoBorradorAMano from "./LothGuiaBorradorAMano";
 
 type Pestana = "guia" | "trozas";
 
@@ -291,6 +292,7 @@ export default function LothDespachoGuiaModal({
             ) : (
               <>
                 <AvisoTrozasDeAntes aviso={avisoDeAntes} />
+                <AvisoBorradorAMano borrador={g.borradorAMano} />
                 <div
                   className="flex flex-wrap gap-1 border-b-2 border-[var(--rule-base)]"
                   role="group"

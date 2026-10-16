@@ -11,36 +11,28 @@
  *      RUC/DNI y el nombre y la dirección vienen del padrón, sin typos.
  *   3. **Guardar en la libreta** — para que la próxima vez sea el gesto 1.
  *
- * Es una barra y no un modal a propósito: el formulario de la guía ya vive dentro
- * de un modal, y anidar dos capas bloqueantes hace que Escape cierre la de abajo.
+ * «Libreta» abre una ventana (`LibretaModal`, Brandon 15-10-2026) para elegir o
+ * agregar uno nuevo sin salir de la guía. Va con `aboveModals`: Escape cierra
+ * sólo la libreta. Antes era una lista desplegable dentro del bloque porque dos
+ * capas sin ese soporte hacían que Escape cerrara la guía.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Users,
-  Check,
-  ChevronDown,
-  Download,
-  Loader2,
-  Plus,
-  Search,
-} from "@buleje/design-system/icons";
+import { useMemo, useState } from "react";
+import { Users, Check, Download, Loader2, Plus } from "@buleje/design-system/icons";
 import {
   ROL_LABEL,
-  direccionCompleta,
   faltantesParaGuia,
-  filtrarPartes,
-  formatearPlaca,
   fuenteAutocompletado,
   motivoDocInvalido,
   normalizarDocumento,
-  placaParaGuia,
   type DocTipo,
   type Parte,
+  type ParteInput,
   type RolParte,
 } from "@/lib/forestal/directorio";
 import { consultarDocumento } from "@/hooks/use-directorio-forestal";
-import { Btn, I } from "./ctp-shared";
+import LibretaModal from "./LibretaModal";
+import { Btn } from "./ctp-shared";
 
 /** Los campos de la guía que esta barra sabe completar. */
 export interface ValorParte {
@@ -77,6 +69,15 @@ interface Props {
   onGuardar?: (v: ValorParte, rol: RolParte) => Promise<void>;
   /** Le suma ESTE rol a una parte que ya está en la libreta con otro papel. */
   onSumarRol?: (parte: Parte, rol: RolParte) => Promise<void>;
+  /**
+   * Alta completa en el Directorio desde la ventana de la libreta (con el N° de
+   * autorización, la licencia, el teléfono…). Devuelve la ficha guardada, que
+   * se usa en la guía como si se hubiera elegido. Sin esto, «Agregar nuevo»
+   * guarda por `onGuardar` sólo nombre, documento y dirección.
+   */
+  onCrear?: (input: ParteInput) => Promise<Parte>;
+  /** El nombre del bloque en la ventana («Punto de partida»); por defecto, el papel. */
+  titulo?: string;
 }
 
 export default function CtpParteBarra({
@@ -88,27 +89,20 @@ export default function CtpParteBarra({
   onElegir,
   onGuardar,
   onSumarRol,
+  onCrear,
+  titulo,
 }: Props) {
   const [abierta, setAbierta] = useState(false);
-  const [q, setQ] = useState("");
-  const buscador = useRef<HTMLInputElement>(null);
   const [estado, setEstado] = useState<"idle" | "consultando" | "guardando">("idle");
   const [aviso, setAviso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // El foco va al buscador al desplegar: es lo único que se hace ahí. Con `ref`
-  // y no `autoFocus` porque el atributo enfoca también en el primer render, y
-  // jsx-a11y lo marca por eso mismo.
-  useEffect(() => {
-    if (abierta) buscador.current?.focus();
-  }, [abierta]);
-
-  const filtradas = useMemo(() => filtrarPartes(opciones, q).slice(0, 40), [opciones, q]);
-  const filtradasOtras = useMemo(() => filtrarPartes(otras, q).slice(0, 20), [otras, q]);
   const fuente = fuenteAutocompletado(valor.docTipo);
   const docNormalizado = normalizarDocumento(valor.docNumero);
   const docMalFormado = motivoDocInvalido(valor.docTipo, valor.docNumero);
   const puedeConsultar = Boolean(fuente) && !docMalFormado && docNormalizado.length > 0;
+  const libretaVacia = opciones.length === 0 && otras.length === 0;
+  const puedeAgregar = Boolean(onCrear || onGuardar);
 
   /** ¿Lo que hay tipeado ya está en la libreta? Se compara por documento. */
   const yaEstá = useMemo(
@@ -147,12 +141,15 @@ export default function CtpParteBarra({
     }
   }
 
-  function usar(p: Parte) {
+  function usar(p: Parte, prefijo = `${p.nombre} cargado desde la libreta`) {
     onAplicar({
       nombre: p.nombre,
       docTipo: p.docTipo ?? valor.docTipo,
       docNumero: p.docNumero ?? "",
-      direccion: direccionCompleta(p),
+      // Sólo la dirección: el ubigeo va en sus columnas. Con `direccionCompleta`
+      // el distrito, la provincia y el departamento salían DOS veces en el punto
+      // impreso («JR. X, Callería, …, UCAYALI, Callería, …, UCAYALI»).
+      direccion: p.direccion ?? "",
       // La libreta ya las tiene separadas: aplanarlas dentro de `direccion` y
       // descartar las columnas dejaba los casilleros (17)-(19) y (26)-(28)
       // vacíos teniendo el dato a mano.
@@ -163,8 +160,27 @@ export default function CtpParteBarra({
     });
     onElegir?.(p);
     setAbierta(false);
-    setQ("");
-    setAviso(avisoDeFaltantes(p, `${p.nombre} cargado desde la libreta`));
+    setAviso(avisoDeFaltantes(p, prefijo));
+    setError(null);
+  }
+
+  /**
+   * «Agregar nuevo» de la ventana: guarda en el Directorio y lo usa en la guía.
+   * Con `onCrear` la ficha entra completa y se usa como si se hubiera elegido;
+   * sin él, `onGuardar` guarda lo básico y se aplica lo escrito. Si no se pudo
+   * guardar, tira: la ventana queda abierta con el motivo.
+   */
+  async function agregarNueva(input: ParteInput, v: ValorParte) {
+    if (onCrear) {
+      const parte = await onCrear(input);
+      usar(parte, `${parte.nombre} quedó en la libreta y en la guía`);
+      return;
+    }
+    if (!onGuardar) return;
+    await onGuardar(v, rol);
+    onAplicar(v);
+    setAbierta(false);
+    setAviso(`${v.nombre} quedó en la libreta y en la guía.`);
     setError(null);
   }
 
@@ -214,16 +230,18 @@ export default function CtpParteBarra({
       <div className="flex flex-wrap items-center gap-2">
         <Btn
           size="sm"
-          variant={abierta ? "dark" : "secondary"}
-          onClick={() => setAbierta((v) => !v)}
-          aria-expanded={abierta}
-          /* Apagado sólo si la libreta entera está vacía. Antes se apagaba
-             cuando no había nadie con ESTE papel, y con 5 partes cargadas y 0
-             destinatarios el botón quedaba muerto teniendo a quién ofrecer. */
-          disabled={opciones.length === 0 && otras.length === 0}
+          variant="secondary"
+          className="max-sm:h-12"
+          onClick={() => setAbierta(true)}
+          aria-haspopup="dialog"
+          /* Apagado sólo si no hay a quién ofrecer NI cómo agregar: con la
+             libreta vacía la ventana abre directo en «Agregar nuevo». */
+          disabled={libretaVacia && !puedeAgregar}
           title={
-            opciones.length === 0 && otras.length === 0
-              ? "Todavía no hay nadie en la libreta"
+            libretaVacia
+              ? puedeAgregar
+                ? "La libreta está vacía: agrega el primero"
+                : "Todavía no hay nadie en la libreta"
               : opciones.length === 0
                 ? `Nadie está guardado como ${ROL_LABEL[rol].toLowerCase()}, pero hay ${otras.length} con otro papel`
                 : undefined
@@ -234,7 +252,6 @@ export default function CtpParteBarra({
           <span className="rounded bg-[var(--surface-raised)]/60 px-1.5 font-mono text-xs tabular-nums">
             {opciones.length}
           </span>
-          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${abierta ? "rotate-180" : ""}`} />
         </Btn>
 
         {fuente && (
@@ -259,49 +276,19 @@ export default function CtpParteBarra({
       </div>
 
       {abierta && (
-        <div className="mt-2 space-y-2">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-            <input
-              ref={buscador}
-              type="text"
-              className={`${I} pl-9`}
-              placeholder={`Buscar ${ROL_LABEL[rol].toLowerCase()} por nombre o documento…`}
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-          </div>
-          {filtradas.length === 0 && filtradasOtras.length === 0 ? (
-            <p className="rounded-lg bg-[var(--surface-raised)] px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">
-              {q ? `Nadie coincide con “${q}”.` : "La libreta está vacía."}
-            </p>
-          ) : (
-            <ul className="max-h-64 space-y-1 overflow-y-auto">
-              {filtradas.map((p) => (
-                <li key={p.id}>
-                  <FilaDeParte parte={p} rol={rol} onUsar={() => usar(p)} />
-                </li>
-              ))}
-              {filtradasOtras.length > 0 && (
-                <>
-                  <li className="px-1 pt-2">
-                    <p className="text-xs font-bold text-[var(--text-secondary)]">
-                      También en tu libreta, con otro papel
-                    </p>
-                    <p className="text-xs text-[var(--text-tertiary)]">
-                      Elegir a uno le suma el papel de {ROL_LABEL[rol].toLowerCase()}: la próxima vez sale arriba.
-                    </p>
-                  </li>
-                  {filtradasOtras.map((p) => (
-                    <li key={p.id}>
-                      <FilaDeParte parte={p} rol={rol} otroPapel onUsar={() => void usarConOtroRol(p)} />
-                    </li>
-                  ))}
-                </>
-              )}
-            </ul>
-          )}
-        </div>
+        <LibretaModal
+          rol={rol}
+          titulo={titulo}
+          opciones={opciones}
+          otras={otras}
+          borrador={valor}
+          conExtras={Boolean(onCrear)}
+          puedeAgregar={puedeAgregar}
+          onUsar={(p) => usar(p)}
+          onUsarConOtroRol={(p) => void usarConOtroRol(p)}
+          onAgregar={agregarNueva}
+          onCerrar={() => setAbierta(false)}
+        />
       )}
 
       {docMalFormado && docNormalizado.length > 0 && (
@@ -313,146 +300,5 @@ export default function CtpParteBarra({
   );
 }
 
-/** Una fila de la libreta, con lo que le falta para poder ir en la guía. */
-function FilaDeParte({
-  parte,
-  rol,
-  otroPapel,
-  onUsar,
-}: {
-  parte: Parte;
-  rol: RolParte;
-  /** Está guardada con OTRO papel: elegirla se lo suma. */
-  otroPapel?: boolean;
-  onUsar: () => void;
-}) {
-  const faltan = faltantesParaGuia(parte, rol);
-  return (
-    <button
-      type="button"
-      onClick={onUsar}
-      className="flex w-full items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-1.5 min-h-10 text-left transition-colors hover:border-[var(--accent)] hover:bg-primary/5"
-    >
-      <div className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{parte.nombre}</span>
-        <span className="block truncate text-xs text-[var(--text-tertiary)]">
-          {[
-            otroPapel ? parte.roles.map((r) => ROL_LABEL[r]).join(", ") : null,
-            parte.docNumero ? `${parte.docTipo} ${parte.docNumero}` : null,
-            direccionCompleta(parte) || null,
-          ]
-            .filter(Boolean)
-            .join(" · ") || "Sin documento cargado"}
-        </span>
-        {/* Lo que le falta para la guía se ve ANTES de elegirlo: si no, se
-            descubre recién al imprimir, con el camión cargado. */}
-        {faltan.length > 0 && (
-          <span className="mt-0.5 block truncate text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-            Para la guía le falta {faltan.join(" y ")}
-          </span>
-        )}
-      </div>
-      {parte.usos > 0 && (
-        <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-bold tabular-nums text-[var(--text-tertiary)]">
-          {parte.usos}×
-        </span>
-      )}
-    </button>
-  );
-}
-
-/**
- * Selector de placa. El vehículo no es una "parte" (no tiene documento ni
- * dirección), pero se elige en el mismo paso que el transportista, así que vive
- * al lado. Elegir una placa completa además marca, tipo y —si el vehículo tiene
- * dueño cargado— deja al transportista listo para copiarse.
- *
- * Con la lista vacía ya NO desaparece: hasta 2026-09-15 se auto-ocultaba, así
- * que el único camino para guardar un camión era ir a Gestión → Directorio y
- * volver. En el tenant de Blas había **cero** vehículos cargados, o sea que la
- * barra nunca se dibujó: ahora ofrece crearlo desde la propia guía.
- */
-export function CtpVehiculoBarra({
-  vehiculos,
-  onAplicar,
-  onElegir,
-  onCrear,
-}: {
-  vehiculos: {
-    id: string;
-    placa: string;
-    placaRemolque?: string | null;
-    marca: string | null;
-    tipo: string | null;
-    transportistaNombre: string | null;
-    usos: number;
-  }[];
-  onAplicar: (v: { placa: string; marca: string; tipo: string; placaRemolque?: string }) => void;
-  onElegir?: (id: string) => void;
-  /** Abre el alta de vehículo sin salir de la guía. */
-  onCrear?: () => void;
-}) {
-  const [abierta, setAbierta] = useState(false);
-  if (vehiculos.length === 0) {
-    return onCrear ? (
-      <div className="sm:col-span-3">
-        <Btn size="sm" variant="secondary" onClick={onCrear}>
-          <Plus className="h-4 w-4" />
-          Guardar esta placa en el directorio
-        </Btn>
-        <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-          Todavía no hay camiones guardados. El que cargues acá se te va a ofrecer en la próxima guía.
-        </p>
-      </div>
-    ) : null;
-  }
-
-  return (
-    <div className="sm:col-span-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Btn size="sm" variant={abierta ? "dark" : "secondary"} onClick={() => setAbierta((v) => !v)} aria-expanded={abierta}>
-          <Users className="h-4 w-4" />
-          Placas guardadas
-          <span className="rounded bg-[var(--surface-raised)]/60 px-1.5 font-mono text-xs tabular-nums">{vehiculos.length}</span>
-        </Btn>
-        {onCrear && (
-          <Btn size="sm" variant="secondary" onClick={onCrear}>
-            <Plus className="h-4 w-4" />
-            Agregar vehículo
-          </Btn>
-        )}
-      </div>
-      {abierta && (
-        <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-          {vehiculos.map((v) => (
-            <li key={v.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  /* El Directorio guarda la placa sin guion (`W2D853`): a la guía
-                     va como se escribe en el papel. Y el remolque guardado viaja
-                     con el camión (antes se quedaba en la ficha). */
-                  onAplicar({
-                    placa: placaParaGuia(v.placa, v.tipo),
-                    marca: v.marca ?? "",
-                    tipo: v.tipo ?? "",
-                    ...(v.placaRemolque ? { placaRemolque: placaParaGuia(v.placaRemolque) } : {}),
-                  });
-                  onElegir?.(v.id);
-                  setAbierta(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 min-h-10 text-left transition-colors hover:border-[var(--accent)] hover:bg-primary/5"
-              >
-                <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{formatearPlaca(v.placa)}</span>
-                <span className="min-w-0 flex-1 truncate text-xs text-[var(--text-tertiary)]">
-                  {[v.marca, v.tipo, v.transportistaNombre].filter(Boolean).join(" · ")}
-                </span>
-                {v.usos > 0 && <span className="shrink-0 text-xs tabular-nums text-[var(--text-tertiary)]">{v.usos}×</span>}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
+/* El selector de placa vive en su archivo; se re-exporta para no tocar los imports. */
+export { CtpVehiculoBarra } from "./CtpVehiculoBarra";

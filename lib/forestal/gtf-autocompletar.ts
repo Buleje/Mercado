@@ -18,7 +18,7 @@
  * PURO y client-safe: recibe lo guardado y devuelve el parche.
  */
 
-import { componerPunto, llegadaDelDestinatario, type GtfDatos, type UbicacionTraslado } from "./ctp-gtf-datos";
+import { componerPunto, llegadaDelDestinatario, PARTIDA_VACIA, type GtfDatos, type UbicacionTraslado } from "./ctp-gtf-datos";
 import { ubigeoDelPadron } from "./gtf-serie-region";
 import { resolveUbigeo } from "@/lib/peru-ubigeo";
 
@@ -152,7 +152,7 @@ export function partidaSembrada(
 ): Partial<GtfDatos["traslado"]> {
   if (tr.puntoPartida.trim() || componerPunto(tr.partida)) return {};
   const u = ubicacionDePlanta(ficha);
-  return componerPunto(u) ? { partida: u, puntoPartida: componerPunto(u) } : {};
+  return componerPunto(u) ? { partida: { ...tr.partida, ...u }, puntoPartida: componerPunto(u) } : {};
 }
 
 /** `AAAA-MM-DD` + n días, sin arrastrar la hora ni el huso. */
@@ -223,6 +223,10 @@ export function rellenarGuia(datos: GtfDatos, f: FuentesDeRelleno): ResultadoRel
   destinatario.provincia = tomar(destinatario.provincia, dPrevio?.provincia);
   destinatario.distrito = tomar(destinatario.distrito, dPrevio?.distrito);
   destinatario.zona = tomar(destinatario.zona, dPrevio?.zona);
+  /* El (22) es del establecimiento: sólo si es el mismo destinatario de la vez anterior. */
+  if (dPrevio && String(dPrevio.nombre ?? "").trim() === destinatario.nombre.trim()) {
+    destinatario.autorizacion = tomar(destinatario.autorizacion, dPrevio.autorizacion);
+  }
   if (vacio(destinatario.nombre) || vacio(destinatario.direccion)) faltantes.push("destinatario");
   else completados.push("destinatario");
 
@@ -301,10 +305,12 @@ export function rellenarGuia(datos: GtfDatos, f: FuentesDeRelleno): ResultadoRel
   if (partidaVacia) {
     const previa = trPrevio?.partida && componerPunto(trPrevio.partida) ? trPrevio.partida : null;
     if (componerPunto(ubicPlanta)) {
-      traslado.partida = ubicPlanta;
+      traslado.partida = { ...traslado.partida, ...ubicPlanta };
       traslado.puntoPartida = componerPunto(ubicPlanta);
     } else if (previa) {
-      traslado.partida = { direccion: previa.direccion ?? "", departamento: previa.departamento ?? "", provincia: previa.provincia ?? "", distrito: previa.distrito ?? "" };
+      /* Con los casilleros del formato 2024 (modo, (17)(18)(19), internos): la
+         partida es la misma que la vez anterior, no sólo su dirección. */
+      traslado.partida = { ...PARTIDA_VACIA, ...previa, modo: previa.modo || traslado.partida.modo, direccion: previa.direccion ?? "", departamento: previa.departamento ?? "", provincia: previa.provincia ?? "", distrito: previa.distrito ?? "" };
       traslado.puntoPartida = componerPunto(traslado.partida);
     } else {
       traslado.puntoPartida = tomar(

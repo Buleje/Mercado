@@ -13,7 +13,7 @@
  *
  * PURO: lo usa `use-despacho-guia-loth`.
  */
-import { llegadaDelDestinatario, mismaUbicacion, type GtfDatos } from "./ctp-gtf-datos";
+import type { GtfDatos } from "./ctp-gtf-datos";
 import { identidadDelTitulo, type CaratulaParaGuia, type PermisoParaGuia, type PlanParaGuia } from "./loth-guia-despacho";
 import { esDelDueno, talonarioDelPlan, type DuenoDelTalonario, type GtfUsadaLoth } from "./loth-talonario";
 
@@ -57,19 +57,6 @@ export function conservarLoEscrito(nueva: GtfDatos, actual: GtfDatos, sembrada: 
   const r = mezclar(nueva, actual, sembrada, "") as GtfDatos;
   const propio = actual.propietario.esElCtp === false && !igual(actual.propietario, sembrada.propietario);
   return { ...r, propietario: propio ? actual.propietario : nueva.propietario };
-}
-
-/**
- * Lo que el traslado toma como «sembrado» tras el cambio (`alSembrar`): si la
- * llegada que quedó sigue al destinatario (o es la de la siembra nueva), vale
- * `final` y la llegada sigue al destinatario; si es una escrita a mano, vale
- * `nueva`, así sigue contando como escrita y no la pisa un destinatario nuevo.
- */
-export function sembradaParaElTraslado(final: GtfDatos, nueva: GtfDatos): GtfDatos {
-  const llegada = final.traslado.llegada;
-  const automatica =
-    mismaUbicacion(llegada, nueva.traslado.llegada) || mismaUbicacion(llegada, llegadaDelDestinatario(final));
-  return automatica ? final : nueva;
 }
 
 export interface TalonarioDeLaGuia {

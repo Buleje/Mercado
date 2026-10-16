@@ -9,11 +9,17 @@
  * misma libreta. Vivían dentro de la pestaña del CTP; se mudaron sin cambiar
  * una línea de lo que dibujan para que la guía del bosque no fuera una copia
  * que se queda atrás el día que se toque una.
+ *
+ * 15-10-2026: cada libreta abre su ventana (`LibretaModal`) con las partes de
+ * ese papel, las demás de la libreta abajo (elegir una le suma el papel) y
+ * «Agregar nuevo», que guarda la ficha completa en el Directorio (`libretaDe`).
+ * Con `llegada`, el destinatario es además el punto de llegada (formato 2024,
+ * RDE D000014-2024-MIDAGRI-SERFOR-DE: no hay un bloque de llegada aparte).
  */
 
 import type { Dispatch, SetStateAction } from "react";
-import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
-import type { Parte, RolParte } from "@/lib/forestal/directorio";
+import { componerPunto, llegadaDelDestinatario, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { ordenarPorUso, parteAInput, type Parte, type RolParte } from "@/lib/forestal/directorio";
 import { leerPlaca } from "@/lib/forestal/placa-peru";
 import type { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import CtpParteBarra, { CtpVehiculoBarra, type ValorParte } from "./CtpParteBarra";
@@ -32,6 +38,24 @@ export type SetSeccion = <K extends SeccionObjeto>(k: K, v: Partial<GtfDatos[K]>
 const vacio = (v: string | null | undefined) => !v?.trim();
 const falta = (v: string | null | undefined) => (vacio(v) ? CLASE_FALTA : "");
 
+/**
+ * Lo que la libreta de un bloque necesita: las partes con ese papel, las demás
+ * (activas, por uso: elegir una le suma el papel) y el alta completa en el
+ * Directorio. Se arma igual en todos los bloques de la guía.
+ */
+export function libretaDe(directorio: Directorio, rol: RolParte, opciones: Parte[] = directorio.porRol(rol)) {
+  const ya = new Set(opciones.map((p) => p.id));
+  return {
+    rol,
+    opciones,
+    otras: ordenarPorUso(directorio.partes.filter((p) => p.activo && !ya.has(p.id))),
+    onCrear: directorio.guardarParte,
+    onSumarRol: async (p: Parte, r: RolParte) => {
+      await directorio.guardarParte({ ...parteAInput(p), roles: [...new Set([...p.roles, r])] });
+    },
+  };
+}
+
 interface PropsParte {
   datos: GtfDatos;
   set: SetSeccion;
@@ -42,32 +66,79 @@ interface PropsParte {
   faltan: readonly string[];
 }
 
-/** (22)–(28) A quién se le entrega la madera. */
-export function BloqueDestinatario({ datos, set, directorio, onAnotarParte, onGuardarEnLibreta, faltan }: PropsParte) {
+/**
+ * (22)–(28) A quién se le entrega la madera. Con `llegada` (guía del Libro TH,
+ * formato 2024): (21) nombre, (22) N° de autorización, (23) DNI/RUC y (24) la
+ * dirección hacia donde va la carga, que es el punto de llegada.
+ */
+export function BloqueDestinatario({
+  datos,
+  set,
+  directorio,
+  onAnotarParte,
+  onGuardarEnLibreta,
+  faltan,
+  llegada,
+}: PropsParte & { llegada?: boolean }) {
+  const d = datos.destinatario;
+  const autorizacionNoAplica = vacio(d.autorizacion);
+  const punto = llegada ? componerPunto(llegadaDelDestinatario(datos)) : "";
   return (
         <Bloque
-          titulo="Destinatario"
-          hint="A quién se le entrega el producto: el aserradero o comprador de destino."
+          titulo={llegada ? "Destinatario y punto de llegada" : "Destinatario"}
+          hint={
+            llegada
+              ? "A quién se le entrega el producto y a dónde va. En el formato 2024 (RDE D000014-2024-MIDAGRI-SERFOR-DE) la llegada es la dirección del destinatario: no hay otro bloque."
+              : "A quién se le entrega el producto: el aserradero o comprador de destino."
+          }
           faltan={faltan}
           acciones={
             <CtpParteBarra
-              rol="destinatario"
-              valor={datos.destinatario}
-              opciones={directorio.receptores()}
+              {...libretaDe(directorio, "destinatario", directorio.receptores())}
+              titulo={llegada ? "Destinatario y llegada" : undefined}
+              valor={d}
               onAplicar={(v) => set("destinatario", v)}
-              onElegir={onAnotarParte}
+              onElegir={(p) => {
+                onAnotarParte(p);
+                if (llegada) set("destinatario", { autorizacion: p.codigoCtp ?? "" });
+              }}
               onGuardar={onGuardarEnLibreta}
             />
           }
         >
-          <Field span={6} label="Nombre o razón social" required>
-            <input type="text" className={`${I} ${falta(datos.destinatario.nombre)}`} value={datos.destinatario.nombre} onChange={(e) => set("destinatario", { nombre: e.target.value })} />
+          <Field span={llegada ? 8 : 6} label="Nombre o razón social" required>
+            <input type="text" className={`${I} ${falta(d.nombre)}`} value={d.nombre} onChange={(e) => set("destinatario", { nombre: e.target.value })} />
           </Field>
-          <DocsDeParte parte={datos.destinatario} onChange={(v) => set("destinatario", v)} />
-          <Field span={8} label="Domicilio" required hint="Punto de llegada que cotejan los controles">
-            <input type="text" className={`${I} ${falta(datos.destinatario.direccion)}`} value={datos.destinatario.direccion} onChange={(e) => set("destinatario", { direccion: e.target.value })} />
+          {llegada && (
+            <Field
+              span={4}
+              label="N° de autorización"
+              hint="Formato 2024, casillero (22): la autorización del CTP o depósito que recibe. Si es una persona sin establecimiento, «No aplica»."
+            >
+              <input
+                type="text"
+                className={`${I} font-mono ${autorizacionNoAplica ? CLASE_NO_APLICA : ""}`}
+                placeholder={autorizacionNoAplica ? "no aplica" : undefined}
+                value={d.autorizacion}
+                onChange={(e) => set("destinatario", { autorizacion: e.target.value })}
+              />
+            </Field>
+          )}
+          <DocsDeParte parte={d} onChange={(v) => set("destinatario", v)} span={llegada ? 6 : 3} />
+          <Field
+            span={8}
+            label={llegada ? "Dirección de llegada" : "Domicilio"}
+            required
+            hint={llegada ? "Formato 2024, casillero (24): la dirección hacia donde se dirige la carga." : "Punto de llegada que cotejan los controles"}
+          >
+            <input type="text" className={`${I} ${falta(d.direccion)}`} value={d.direccion} onChange={(e) => set("destinatario", { direccion: e.target.value })} />
           </Field>
-          <UbicacionDeParte parte={datos.destinatario} onChange={(v) => set("destinatario", v)} conZona />
+          <UbicacionDeParte parte={d} onChange={(v) => set("destinatario", v)} conZona />
+          {llegada && (
+            <p className="text-xs text-[var(--text-secondary)] sm:col-span-12">
+              Llegada en la guía: <b className="text-[var(--text-primary)]">{punto || "falta la dirección y el ubigeo"}</b>
+            </p>
+          )}
         </Bloque>
   );
 }
@@ -98,9 +169,8 @@ export function BloqueTransporte({
             etiqueta="Transportista"
             acciones={
               <CtpParteBarra
-                rol="transportista"
+                {...libretaDe(directorio, "transportista")}
                 valor={datos.transportista}
-                opciones={directorio.porRol("transportista")}
                 onAplicar={(v) => set("transportista", v)}
                 onElegir={onAnotarParte}
                 onGuardar={onGuardarEnLibreta}
@@ -133,9 +203,8 @@ export function BloqueTransporte({
             etiqueta={esFluvial ? "Patrón" : "Conductor"}
             acciones={
               <CtpParteBarra
-                rol="conductor"
+                {...libretaDe(directorio, "conductor")}
                 valor={{ nombre: datos.vehiculo.conductor, docTipo: "DNI", docNumero: datos.vehiculo.conductorDni, direccion: "" }}
-                opciones={directorio.porRol("conductor")}
                 onAplicar={(v) =>
                   set("vehiculo", {
                     ...(v.nombre === undefined ? {} : { conductor: v.nombre }),
@@ -163,7 +232,15 @@ export function BloqueTransporte({
 
           <SubBloque
             etiqueta={esFluvial ? "Embarcación" : "Vehículo"}
-            acciones={<CtpVehiculoBarra vehiculos={directorio.vehiculosActivos} onAplicar={(v) => set("vehiculo", v)} onElegir={onAnotarVehiculo} />}
+            acciones={
+              <CtpVehiculoBarra
+                vehiculos={directorio.vehiculosActivos}
+                borrador={datos.vehiculo}
+                onAplicar={(v) => set("vehiculo", v)}
+                onElegir={onAnotarVehiculo}
+                onGuardarVehiculo={directorio.guardarVehiculo}
+              />
+            }
           >
             <Field span={4} label="Modo de transporte" hint="Río, carretera o mixto">
               <select

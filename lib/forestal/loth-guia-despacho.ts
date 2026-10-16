@@ -24,7 +24,7 @@
 import { codigoDeLaGuia } from "./codigo-unico-troza";
 import { claveEspecie } from "./loth-constants";
 import { filasGTF, m3OficialDeFila, totalizarGTF } from "./gtf-redondeo";
-import { componerPunto, conPunto, faltantesGtf, gtfDatosVacio, llegadaDelDestinatario, mismaUbicacion, type FaltanteGtf, type GtfDatos, type UbicacionTraslado } from "./ctp-gtf-datos";
+import { componerPunto, conPunto, faltantesGtf, gtfDatosVacio, llegadaDelDestinatario, mismaUbicacion, PARTIDA_VACIA, type FaltanteGtf, type GtfDatos, type UbicacionTraslado } from "./ctp-gtf-datos";
 
 /* Viven en `ctp-gtf-datos` (las usa también la guía del CTP); se re-exportan para no mover a nadie. */
 export { conPunto, llegadaDelDestinatario, mismaUbicacion };
@@ -472,7 +472,10 @@ export function puntosCompuestos(tr: GtfDatos["traslado"]): GtfDatos["traslado"]
  */
 export function datosInicialesLoth(id: IdentidadDelTitulo, emision: string): GtfDatos {
   const base = gtfDatosVacio();
-  const partida = ubicacionDePartida(id);
+  /* Sale del área del título habilitante: en el formato 2024 el bloque «Datos
+     del punto de partida» «No aplica» (`modo: "inicio"`). La ubicación sigue
+     siendo la del bosque: arma la ruta y el origen del despacho. */
+  const partida = { ...PARTIDA_VACIA, ...ubicacionDePartida(id), modo: "inicio" as const };
   /* (10)(11)(12): como los dice el plan. Sólo si el plan no puso un
      departamento sino un lugar que el padrón ubica en uno solo, se escriben
      los del padrón (si no, la guía decía «Constitucion» como departamento). */
@@ -547,7 +550,7 @@ export function rellenarGuiaLoth(datos: GtfDatos, f: Omit<FuentesDeRelleno, "fic
         traslado: f.ultimaGuia.traslado
           ? mismoPermiso
             ? f.ultimaGuia.traslado
-            : { ...f.ultimaGuia.traslado, puntoPartida: "", partida: { direccion: "", departamento: "", provincia: "", distrito: "" } }
+            : { ...f.ultimaGuia.traslado, puntoPartida: "", partida: { ...PARTIDA_VACIA } }
           : undefined,
       }
     : null;
@@ -559,20 +562,29 @@ export function rellenarGuiaLoth(datos: GtfDatos, f: Omit<FuentesDeRelleno, "fic
 }
 
 /**
- * La llegada desarmada, sembrada del destinatario cuando todavía no dice nada:
- * su dirección y su ubigeo. Si el destinatario no trae ninguno, queda el texto
- * que ya había (la guía anterior). La ruta armada sola se rehace con el texto
+ * La llegada ES el destinatario (Brandon 15-10-2026; el formato 2024 no tiene
+ * bloque de llegada: el (24a) es «dirección hacia donde se dirige la carga»):
+ * su dirección y su ubigeo. Si el destinatario no trae ninguno, queda lo que
+ * ya había (la guía anterior). La ruta armada sola se rehace con el texto
  * nuevo; una ruta escrita a mano no se toca.
  */
 export function sembrarLlegada(d: GtfDatos): GtfDatos["traslado"] {
   const tr = d.traslado;
-  if (componerPunto(tr.llegada)) return tr;
   const dest = llegadaDelDestinatario(d);
-  const texto = componerPunto(dest);
+  if (componerPunto(dest)) return mismaUbicacion(tr.llegada, dest) ? tr : conPunto(tr, "llegada", dest);
+  if (componerPunto(tr.llegada)) return tr;
   /* Sin destinatario, el texto que ya había (la guía anterior) pasa a la
      dirección: el formulario muestra lo mismo que se va a imprimir. */
-  if (!texto) return txt(tr.puntoLlegada) ? { ...tr, llegada: { ...tr.llegada, direccion: txt(tr.puntoLlegada) } } : tr;
-  return conPunto(tr, "llegada", dest);
+  return txt(tr.puntoLlegada) ? { ...tr, llegada: { ...tr.llegada, direccion: txt(tr.puntoLlegada) } } : tr;
+}
+
+/**
+ * El traslado que se GUARDA: la llegada sale del destinatario (lo que mande el
+ * navegador en `traslado.llegada` no se cree) y los textos impresos se rearman
+ * de sus casilleros (`puntosCompuestos`).
+ */
+export function trasladoParaGuardar(d: GtfDatos): GtfDatos["traslado"] {
+  return puntosCompuestos(sembrarLlegada(d));
 }
 
 /** Las trozas de una guía YA emitida (su foto en `ForestGtf.items`), para reimprimirla. */

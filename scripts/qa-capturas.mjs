@@ -20,12 +20,13 @@
  *     [--resumen]   (stdout sólo con lo esencial —los evals recortados a 400 caracteres—; el JSON completo igual queda en <salida>/reporte.json) \
  *     [--ls '{"clave":"valor"}']   (siembra localStorage antes de cargar: estados recordados sin recargar) \
  *     (sin QA_BASE prueba :3000 y :3001 y usa el que contesta: el dev reiniciado vuelve a veces en :3001) \
+ *     [--voz-falsa]   (la voz anota cada frase en window.__qaVoz en vez de hablar: verificar «Leer») \
  *     [--candado]   (toma /tmp/bsm-pesado.lock por su cuenta y avisa por stderr cuánto lleva esperándolo;
  *                    si ya lo corres con `flock /tmp/bsm-pesado.lock node …`, lo detecta y no lo pide otra vez)
  *
  * Pasos (array JSON, una clave por paso; los selectores son de Playwright,
  * p. ej. `text=Guardar`, `role=button[name="Dueños"]`, `#id`):
- *   {"click": "<sel>"} {"hover": "<sel>"} {"llenar": ["<sel>", "texto"]}
+ *   {"click": "<sel>"} {"hover": "<sel>"} {"activar": "<sel>"} (sólo si aria-pressed≠true) {"llenar": ["<sel>", "texto"]}
  *   {"abrir": "<sel>"}            → click sólo si su aria-expanded no es "true" (plegables recordados)
  *   {"tecla": "Enter"}            {"elegir": ["<sel>", "valor o etiqueta"]}
  *   {"rueda": [x, y, dy]}         → rueda REAL del mouse en (x, y): prueba scroll bloqueado/libre detrás de un modal
@@ -496,6 +497,30 @@ async function recorrido(t, primero) {
   await page.addInitScript((o) => {
     try { sessionStorage.setItem("buleje-theme-session-v2", o ? "dark" : "light"); } catch { /* ignore */ }
   }, t === "oscuro");
+  /* --voz-falsa (15-10): el Chrome de Playwright no habla; la voz anota cada frase en
+     window.__qaVoz y dispara onstart/onend, así «Leer» se verifica con un {"eval": "window.__qaVoz"}. */
+  if (bandera("voz-falsa")) await page.addInitScript(() => {
+    const s = window.speechSynthesis;
+    window.__qaVoz = [];
+    if (!s) return;
+    let cola = [];
+    let sonando = null;
+    const tocar = () => {
+      if (sonando || !cola.length) return;
+      sonando = cola.shift();
+      window.__qaVoz.push(sonando.text);
+      try { sonando.onstart?.(new Event("start")); } catch { /* la app decide */ }
+      setTimeout(() => {
+        const u = sonando;
+        sonando = null;
+        try { u?.onend?.(new Event("end")); } catch { /* la app decide */ }
+        tocar();
+      }, 30);
+    };
+    s.speak = (u) => { cola.push(u); tocar(); };
+    s.cancel = () => { cola = []; sonando = null; };
+    Object.defineProperty(s, "speaking", { configurable: true, get: () => sonando != null });
+  });
   /* Los `fallar`/`parchear` del PRINCIPIO rigen desde la primera carga (10-10: dos
      carriles midieron la vista vacía creyéndola parcheada, porque el patch sólo
      tocaba los pedidos de DESPUÉS). Los de más abajo siguen pidiendo un reload. */
@@ -515,6 +540,12 @@ async function recorrido(t, primero) {
         if (tipo === "click") await visible(page, valor).click({ timeout: 15_000 });
         // {"hover": "<selector>"} (15-10: el menú de Cámaras se abre al pasar el mouse; antes, pointerover a mano en un eval).
         else if (tipo === "hover") await visible(page, valor).hover({ timeout: 15_000 });
+        else if (tipo === "activar") {
+          /* Como abrir, para interruptores (aria-pressed): la pasada oscura volvía a tocar
+             «Fijar» y desfijaba la especie que dejó la clara (15-10, despacho a mano). */
+          const el = visible(page, valor);
+          if ((await el.getAttribute("aria-pressed", { timeout: 15_000 })) !== "true") await el.click({ timeout: 15_000 });
+        }
         else if (tipo === "abrir") {
           /* Como click, pero sólo si está cerrado (aria-expanded ≠ true): un plegable que se
              recuerda abierto se cerraba con el click del segundo tema (05-10, indicadores). */

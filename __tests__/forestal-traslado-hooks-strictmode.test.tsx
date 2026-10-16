@@ -51,7 +51,10 @@ describe("la llegada sigue al destinatario (StrictMode)", () => {
     expect(result.current.datos.traslado.puntoLlegada).toBe("Av. Tres 3, ATE, LIMA, LIMA");
   });
 
-  it("Libro TH: lo escrito a mano en la llegada no lo pisa el destinatario", () => {
+  /* 15-10-2026: la llegada ES el destinatario (formato 2024, pedido de Brandon):
+     ya no hay llegada escrita a mano en el Libro TH; la anterior regla
+     («lo escrito a mano no lo pisa») se invierte a propósito. */
+  it("Libro TH: la llegada no se separa del destinatario (formato 2024)", () => {
     const { result } = renderHook(
       () => {
         const [datos, setDatos] = useState<GtfDatos>(gtfDatosVacio());
@@ -61,9 +64,10 @@ describe("la llegada sigue al destinatario (StrictMode)", () => {
       { wrapper: strict },
     );
     act(() => result.current.setDatos((p) => conDestinatario(p, "Av. Uno 1")));
-    act(() => result.current.h.setPunto("llegada", { direccion: "Mi patio" }));
+    act(() => result.current.setDatos((p) => ({ ...p, traslado: { ...p.traslado, llegada: { ...p.traslado.llegada, direccion: "Mi patio" } } })));
     act(() => result.current.setDatos((p) => conDestinatario(p, "Av. Dos 2")));
-    expect(result.current.datos.traslado.llegada.direccion).toBe("Mi patio");
+    expect(result.current.datos.traslado.llegada.direccion).toBe("Av. Dos 2");
+    expect(result.current.datos.traslado.puntoLlegada).toBe("Av. Dos 2, ATE, LIMA, LIMA");
   });
 });
 
@@ -76,7 +80,7 @@ describe("rellenarGuiaLoth no hereda la partida de otro bosque", () => {
     const base = gtfDatosVacio();
     const anterior = {
       ...base,
-      traslado: { ...base.traslado, partida: { direccion: "Otro bosque", departamento: "Ucayali", provincia: "Coronel Portillo", distrito: "Callería" }, puntoPartida: "Otro bosque, Callería, Coronel Portillo, Ucayali" },
+      traslado: { ...base.traslado, partida: { ...base.traslado.partida, direccion: "Otro bosque", departamento: "Ucayali", provincia: "Coronel Portillo", distrito: "Callería" }, puntoPartida: "Otro bosque, Callería, Coronel Portillo, Ucayali" },
     };
     const d = rellenarGuiaLoth(datosInicialesLoth(id, "2026-09-29"), { ultimaGuia: anterior, emision: "2026-09-29" });
     expect(d.traslado.puntoPartida).not.toContain("Otro bosque");

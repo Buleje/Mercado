@@ -155,6 +155,16 @@ const CAMPOS_GUIA: DefCampo[] = [
   { id: "19", label: "(19) Distrito", grupo: "Propietario", x: C1, y: 110, ancho: CUARTO },
   { id: "20", label: "(20) Comprobante", grupo: "Propietario", x: C2, y: 110, ancho: CUARTO },
   { id: "21", label: "(21) N° de comprobante", grupo: "Propietario", x: C3, y: 110, ancho: MEDIA_DER },
+  /* Formato 2024 (RDE D000014-2024): «Datos del punto de partida» (17)-(20d) y
+     el (22) del destino. Arrancan ocultos: el talonario de la hoja 2015 no los
+     tiene; quien tenga el de 2024 los prende y los ubica. */
+  { id: "p17", label: "Partida (17) Nombre o referencia", grupo: "Punto de partida (2024)", x: C1, y: 116, ancho: MEDIA, oculto: true },
+  { id: "p18", label: "Partida (18) N° de autorización", grupo: "Punto de partida (2024)", x: C3, y: 116, ancho: CUARTO, oculto: true },
+  { id: "p19", label: "Partida (19) Tipo de establecimiento", grupo: "Punto de partida (2024)", x: C4, y: 116, ancho: ULTIMO, oculto: true },
+  { id: "p20a", label: "Partida (20a) Dirección", grupo: "Punto de partida (2024)", x: C1, y: 119, ancho: MEDIA, oculto: true },
+  { id: "p20b", label: "Partida (20b) Departamento", grupo: "Punto de partida (2024)", x: C3, y: 119, ancho: CUARTO, oculto: true },
+  { id: "p20c", label: "Partida (20c) Provincia", grupo: "Punto de partida (2024)", x: C4, y: 119, ancho: ULTIMO, oculto: true },
+  { id: "p20d", label: "Partida (20d) Distrito", grupo: "Punto de partida (2024)", x: C1, y: 122, ancho: ENTERA, oculto: true },
   { id: "22", label: "(22) Destinatario", grupo: "Destinatario", x: C1, y: 124, ancho: MEDIA },
   { id: "23", label: "(23) D.N.I.", grupo: "Destinatario", x: C3, y: 124, ancho: CUARTO },
   { id: "24", label: "(24) R.U.C.", grupo: "Destinatario", x: C4, y: 124, ancho: ULTIMO },
@@ -162,6 +172,7 @@ const CAMPOS_GUIA: DefCampo[] = [
   { id: "26", label: "(26) Departamento", grupo: "Destinatario", x: C3, y: 132, ancho: CUARTO },
   { id: "27", label: "(27) Provincia", grupo: "Destinatario", x: C4, y: 132, ancho: ULTIMO },
   { id: "28", label: "(28) Distrito", grupo: "Destinatario", x: C1, y: 140, ancho: ENTERA },
+  { id: "d22", label: "Destino (22) N° de autorización (2024)", grupo: "Destinatario", x: C3, y: 144, ancho: MEDIA_DER, oculto: true },
   { id: "29", label: "(29) N° guía de remisión", grupo: "Transporte", x: C1, y: 154, ancho: CUARTO },
   { id: "30", label: "(30) Tipo de transporte", grupo: "Transporte", x: C2, y: 154, ancho: CUARTO },
   { id: "31", label: "(31) Vehículo", grupo: "Transporte", x: C3, y: 154, ancho: CUARTO },

@@ -4,9 +4,11 @@
  * «Datos de la guía» del despacho con guía del Libro TH — los casilleros de la
  * GTF en el orden del papel, con los MISMOS bloques que la guía del CTP.
  *
- * Izquierda: el documento (1)(2)(3)(4), el título habilitante (5)–(12) y el
- * propietario (13)–(21). Derecha: el destinatario (22)–(28), el transporte
- * (29)–(34) y el traslado con (35)(36)(38). Casi todo llega ya escrito: el
+ * Izquierda: el documento (1)(2)(3)(4), el título habilitante (5)–(12), el
+ * propietario (13)–(21) y el punto de partida (formato 2024, (17)–(20)).
+ * Derecha: el destinatario, que es también el punto de llegada (no hay otro
+ * bloque: así lo arma el formato 2024), y el transporte (29)–(34). Abajo, a lo
+ * ancho, el traslado con (35)(36)(38). Casi todo llega ya escrito: el
  * título sale del plan de las trozas, el propietario es el titular y el
  * transporte se hereda de la guía anterior. Lo que el libro no sabe queda
  * vacío con «Falta» — nunca se rellena por rellenar.
@@ -23,6 +25,7 @@ import { BloqueDestinatario, BloqueTransporte } from "./ctp-guia-bloques-partes"
 import { CLASE_FALTA, ResumenDatos } from "./ctp-guia-piezas";
 import { Btn, Field, FormularioClaro, I } from "./ctp-shared";
 import { BloquePropietarioLoth, parcheDe, type PropsGuiaLoth } from "./LothGuiaBloques";
+import { BloquePartidaLoth } from "./LothGuiaPartida";
 import { BloqueTrasladoLoth } from "./LothGuiaTraslado";
 import LothDestinoCtp from "./LothDestinoCtp";
 import LothGuiaLineaCopiada from "./LothGuiaLineaCopiada";
@@ -41,6 +44,9 @@ export default function LothGuiaDatos(props: PropsGuiaLoth) {
      (`faltantesDespachoLoth`): la del CTP más el N°, la lista y la partida
      casillero por casillero. */
   const de = (...s: string[]) => g.faltan.filter((f) => s.includes(f.seccion)).map((f) => f.campo);
+  /* Los de la partida van a su bloque; el resto del traslado, al de abajo. */
+  const esDePartida = (campo: string) => campo.startsWith("Partida");
+  const traslado = de("traslado");
 
   return (
     <FormularioClaro>
@@ -50,6 +56,7 @@ export default function LothGuiaDatos(props: PropsGuiaLoth) {
           <BloqueDocumento g={g} />
           <BloqueTitulo g={g} faltaTitulo={de("titulos")} />
           <BloquePropietarioLoth {...props} faltan={de("propietario")} />
+          <BloquePartidaLoth {...props} faltan={traslado.filter(esDePartida)} />
         </div>
         <div className="grid gap-3">
           <BloqueDestinatario
@@ -59,6 +66,7 @@ export default function LothGuiaDatos(props: PropsGuiaLoth) {
             onAnotarParte={onAnotarParte}
             onGuardarEnLibreta={onGuardarEnLibreta}
             faltan={de("destinatario")}
+            llegada
           />
           <LothDestinoCtp g={g} />
           <BloqueTransporte
@@ -72,9 +80,8 @@ export default function LothGuiaDatos(props: PropsGuiaLoth) {
             faltan={de("transportista", "vehiculo")}
           />
         </div>
-        {/* A lo ancho: la partida y la llegada lado a lado. En la columna
-            derecha medía 832 px y dejaba la izquierda vacía (1944 vs 1001). */}
-        <BloqueTrasladoLoth g={g} faltan={de("traslado")} className="xl:col-span-2" />
+        {/* A lo ancho: la ruta, la lista, el origen y las observaciones. */}
+        <BloqueTrasladoLoth g={g} faltan={traslado.filter((c) => !esDePartida(c))} className="xl:col-span-2" />
       </div>
     </FormularioClaro>
   );

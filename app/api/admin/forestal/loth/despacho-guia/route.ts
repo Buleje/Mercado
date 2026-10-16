@@ -18,7 +18,7 @@ import {
   faltantesDespachoLoth,
   identidadDelTitulo,
   mensajeOtraRegion,
-  puntosCompuestos,
+  trasladoParaGuardar,
   titularParaGuardar,
   revisarNumeroLoth,
   talonarioDelPlan,
@@ -251,8 +251,10 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
      dos hojas es «9, 10»), para que reimprimir diga lo mismo. */
   const hojas = hojasDeLista(totalTrozas);
   /* La partida y la llegada impresas se rearman acá con `componerPunto` desde
-     sus casilleros: el texto que manda el cliente no se cree (29-09-2026). */
-  const traslado = puntosCompuestos(datosParsed.data.traslado);
+     sus casilleros: el texto que manda el cliente no se cree (29-09-2026). La
+     llegada ES el destinatario (formato 2024, 15-10-2026): la que mande el
+     navegador tampoco se cree. */
+  const traslado = trasladoParaGuardar(datosParsed.data);
   const datos = {
     ...datosParsed.data,
     traslado: { ...traslado, fechaInicio: traslado.fechaInicio || gtfDate },

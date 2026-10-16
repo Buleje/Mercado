@@ -6,8 +6,9 @@
  *   · Propietario (13)–(21): en el bosque el dueño de la madera es el TITULAR
  *     del título habilitante, no la planta. «Es el titular» lo resume; se
  *     destilda cuando la madera ya es de un comprador.
- *   · Traslado (35)(36)(38): vive en `LothGuiaTraslado.tsx` (29-09-2026: la
- *     partida y la llegada desarmadas, la lista numerada y el origen).
+ *   · Traslado (35)(36)(38): vive en `LothGuiaTraslado.tsx` (la ruta, la
+ *     lista numerada y el origen). La partida, en `LothGuiaPartida.tsx`
+ *     (15-10-2026, formato 2024); la llegada es el destinatario.
  */
 
 import { useState } from "react";
@@ -20,7 +21,7 @@ import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import CtpParteBarra, { type ValorParte } from "./CtpParteBarra";
 import { Bloque, DocsDeParte, UbicacionDeParte } from "./ctp-guia-bloques";
 import { CLASE_FALTA, ResumenDatos } from "./ctp-guia-piezas";
-import type { SeccionObjeto } from "./ctp-guia-bloques-partes";
+import { libretaDe, type SeccionObjeto } from "./ctp-guia-bloques-partes";
 import { Btn, Field, I } from "./ctp-shared";
 
 type Directorio = ReturnType<typeof useDirectorioForestal>;
@@ -74,9 +75,9 @@ export function BloquePropietarioLoth({ g, directorio, onAnotarParte, onGuardarE
             </Btn>
           ) : (
             <CtpParteBarra
-              rol="proveedor"
+              {...libretaDe(directorio, "proveedor")}
+              titulo="Propietario del producto"
               valor={prop}
-              opciones={directorio.porRol("proveedor")}
               onAplicar={(v) => set("propietario", v)}
               onElegir={onAnotarParte}
               onGuardar={onGuardarEnLibreta}

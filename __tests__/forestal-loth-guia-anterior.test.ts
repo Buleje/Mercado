@@ -112,7 +112,7 @@ describe("guiaAnteriorDelDespacho", () => {
 describe("rellenarGuiaLoth con la guía del MISMO permiso", () => {
   // Plan sin ubigeo ni parcela: la partida no sale del plan.
   const id = identidadDelTitulo({ plan: { planType: "DEMA", tituloHabilitante: "19-SEC/PER-FMC-2024-008", titularName: "Juan Pérez" }, caratula: null });
-  const partida = { direccion: "PC 3 Quebrada Chinchihuani", departamento: "Pasco", provincia: "Oxapampa", distrito: "Constitución" };
+  const partida = { ...gtfDatosVacio().traslado.partida, direccion: "PC 3 Quebrada Chinchihuani", departamento: "Pasco", provincia: "Oxapampa", distrito: "Constitución" };
   const anterior = { ...gtfDatosVacio(), traslado: { ...gtfDatosVacio().traslado, partida, puntoPartida: "PC 3 Quebrada Chinchihuani, Constitución" } };
 
   it("del mismo permiso hereda la partida si el plan no la dice", () => {

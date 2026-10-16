@@ -3,24 +3,24 @@
  "pasos": [
   {
    "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=0",
+    "[data-qa=alta-d1]",
     "45"
    ]
   },
   {
    "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=1",
+    "[data-qa=alta-d2]",
     "40"
    ]
   },
   {
    "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=2",
+    "[data-qa=alta-largo]",
     "3,2"
    ]
   },
   {
-   "click": "[data-testid=trozas-a-mano] input >> nth=3"
+   "click": "[data-qa=alta-cantidad]"
   },
   {
    "tecla": "Enter"
@@ -33,24 +33,24 @@
   },
   {
    "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=0",
+    "[data-qa=alta-d1]",
     "50"
    ]
   },
   {
    "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=1",
+    "[data-qa=alta-d2]",
     "46"
    ]
   },
   {
    "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=2",
+    "[data-qa=alta-largo]",
     "4"
    ]
   },
   {
-   "click": "[data-testid=trozas-a-mano] input >> nth=3"
+   "click": "[data-qa=alta-cantidad]"
   },
   {
    "tecla": "Enter"

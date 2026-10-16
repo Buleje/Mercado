@@ -1,30 +1,30 @@
 "use client";
 
 /**
- * Traslado y detalle de la guía del bosque — partida, llegada y ruta; (35) la
- * lista de trozas, (36) la GTF de origen y (38) las observaciones.
+ * Traslado y detalle de la guía del bosque — la ruta; (35) la lista de trozas,
+ * (36) la GTF de origen y (38) las observaciones.
  *
  * Brandon 29-09-2026:
- *   · la partida con dirección + departamento + provincia + distrito (el
- *     formato de SERFOR: «JR. X, Constitución, OXAPAMPA, PASCO»); se siembra
- *     del plan, y la llegada, del destinatario;
  *   · el N° de la lista de trozas automático: su propio correlativo, uno por
  *     hoja (`loth-lista-numero`);
  *   · el (36) automático: «No aplica · sale del bosque» puesto, o el N° de una
  *     guía del sistema elegido, sin tipear.
+ *
+ * 15-10-2026: la partida se mudó a su bloque (`LothGuiaPartida.tsx`, casilleros
+ * (17)-(20) del formato 2024) y la llegada dejó de ser un bloque aparte: es la
+ * dirección del destinatario, como en el formato (casillero (24)).
  */
 
 import { useState } from "react";
-import { componerPunto, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
-import { llegadaDelDestinatario, mismaUbicacion, type GuiaParaOrigen } from "@/lib/forestal/loth-guia-despacho";
+import type { GuiaParaOrigen } from "@/lib/forestal/loth-guia-despacho";
 import { FILAS_POR_LISTA } from "@/lib/forestal/loth-lista-numero";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import { Bloque } from "./ctp-guia-bloques";
 import { CLASE_NO_APLICA } from "./ctp-guia-piezas";
 import { claseFalta } from "./TramiteRelacionGuiaFila";
-import PuntoTraslado from "./PuntoTraslado";
-import { Btn, Field, I } from "./ctp-shared";
+import { Field, I } from "./ctp-shared";
 import { parcheDe } from "./LothGuiaBloques";
 
 const vacio = (v: string | null | undefined) => !v?.trim();
@@ -35,14 +35,12 @@ const conFalta = (v: string | null | undefined, base: string) => (vacio(v) ? cla
 const TEXTAREA =
   "w-full rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] placeholder:text-[var(--text-tertiary)]";
 
-/** Partida, llegada y ruta; (35) lista de trozas, (36) GTF de origen y (38) observaciones. */
+/** La ruta; (35) lista de trozas, (36) GTF de origen y (38) observaciones. */
 export function BloqueTrasladoLoth({ g, faltan, className }: { g: DespachoGuiaLoth; faltan: string[]; className?: string }) {
   const { datos, setDatos } = g;
   const set = parcheDe(setDatos);
   const setGuia = (v: Partial<GtfDatos["guia"]>) => setDatos((p) => ({ ...p, guia: { ...p.guia, ...v } }));
   const llevaCites = g.piezas.some((p) => p.cites);
-  const destino = llegadaDelDestinatario(datos);
-  const hayDestino = Boolean(componerPunto(destino));
   const ultimaLista = g.propuestaListas?.ultimo ?? null;
   const ayudaLista = `Cada hoja de la lista lleva hasta ${FILAS_POR_LISTA} trozas y su propio N°, como las de SERFOR (34 trozas: listas 5 y 6; la guía siguiente, 7 y 8). ${
     ultimaLista != null
@@ -53,32 +51,11 @@ export function BloqueTrasladoLoth({ g, faltan, className }: { g: DespachoGuiaLo
     <Bloque
       titulo="Traslado y detalle"
       hint="La ruta que se autoriza y los casilleros (35), (36) y (38)."
-      nota="Sale en original y dos copias, como manda la RDE 122-2015 (art. 5), con la lista de trozas como anexo."
+      nota="Sale en original y dos copias, como manda la RDE D000014-2024-MIDAGRI-SERFOR-DE (art. 5), con la lista de trozas como anexo."
       faltan={faltan}
       className={className}
     >
-      <PuntoTraslado
-        titulo="Punto de partida"
-        requerido
-        ayuda="La parcela de corta y el sector del plan de manejo, con el ubigeo del plan. Así lo publica SERFOR: dirección, distrito, provincia, departamento."
-        valor={datos.traslado.partida}
-        onChange={(v) => g.setPunto("partida", v)}
-      />
-      <PuntoTraslado
-        titulo="Punto de llegada"
-        requerido
-        ayuda="Sale de la dirección y el ubigeo del destinatario, y lo sigue mientras no lo cambies a mano."
-        valor={datos.traslado.llegada}
-        onChange={(v) => g.setPunto("llegada", v)}
-        acciones={
-          hayDestino && !mismaUbicacion(destino, datos.traslado.llegada) ? (
-            <Btn size="sm" variant="ghost" onClick={g.usarLlegadaDelDestinatario}>
-              Usar la del destinatario
-            </Btn>
-          ) : null
-        }
-      />
-      <Field span={12} label="Ruta declarada" hint="Los puestos de control la cotejan">
+      <Field span={12} label="Ruta declarada" hint="Del punto de partida a la dirección del destinatario. Los puestos de control la cotejan.">
         <input type="text" className={I} value={datos.traslado.ruta} onChange={(e) => set("traslado", { ruta: e.target.value })} />
       </Field>
       <Field span={6} label="N° de la lista de trozas" casillero={35} required hint={ayudaLista}>
