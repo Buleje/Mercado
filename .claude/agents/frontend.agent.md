@@ -35,8 +35,9 @@ Stack: React 19.2, Next.js 16 (App Router, Turbopack), Tailwind 4 (`@theme` toke
    `modal-portal-hereda-tokens-de-la-tienda`).
 2. Dark mode completo; `min-w-*` en Tailwind 4 puede estar muerta; `[&_th]:x` del padre pisa la
    clase del hijo (hub `hub-ui-tokens-dark`).
-3. Tablas admin: `useMobileTableCards` (no cards a mano). Títulos: `BlockTitle`. Gutter de modal
-   lo pone `AdminModal`. Modal dentro de modal → `aboveModals` + `useModalAccesible`
+3. Tablas admin: `useMobileTableCards` (no cards a mano). Títulos: `BlockTitle`. Margen de modal:
+   `AdminModal` sólo lo pone en el pie; el cuerpo va con `MODAL_BODY` (`AdminModal.tsx:147`) o sale pegado
+   al borde (16-10: dos ventanas sin margen hasta medirlas). Modal dentro de modal → `aboveModals` + `useModalAccesible`
    (memoria `modales-anidados-z-index-radix`); después de arreglar uno, correr
    `node scripts/barrido-modales-anidados.mjs` para encontrar a los hermanos.
 4. Sin totales en cliente; `"use client"` solo si hay interactividad; ≤300 líneas por componente,

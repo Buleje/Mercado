@@ -166,6 +166,7 @@ model Product {
   stockoutPredictions StockoutPrediction[]
   sponsoredBoosts     SponsoredBoost[]
   pageOverrides       TenantPageProductOverride[]
+  reviews             Review[] // FK Review_productId_fkey (ON DELETE SET NULL)
 
   // ── Dropshipping (ADR-298) — aditivo, default off ─────────────────
   isDropship         Boolean @default(false) // el proveedor despacha directo al cliente
@@ -179,6 +180,14 @@ model Product {
   @@index([tenantId, category, active])
   @@index([barcode])
   @@index([tenantId, isDropship])
+  // Índices PARCIALES que viven sólo en la base (16-10-2026, migración
+  // add_idempotency_soft_delete / add_partial_and_composite_indexes):
+  //   Product_active_idx          (id)              WHERE "deletedAt" IS NULL
+  //   Product_active_visible_idx  (tenantId, name)  WHERE active AND "deletedAt" IS NULL
+  //   Product_low_stock_idx       (tenantId, stock) WHERE active AND "deletedAt" IS NULL AND stock IS NOT NULL
+  // Prisma 7.8 sólo los declara con previewFeatures = ["partialIndexes"], y
+  // prenderlo hace que el diff proponga soltar 30 de los 35 parciales de la base
+  // (incluidos los únicos `_vivo_key`). Apagado, Prisma los ignora: no los borra.
 }
 
 // ─── Dropshipping fulfillment (ADR-298) ──────────────────
@@ -417,6 +426,7 @@ model Customer {
   @@index([phone]) // legacy queries still filter by phone (replaces former @@index([tenantId, phone]))
   @@index([tenantId, createdAt])
   @@index([createdAt])
+  @@index([tenantId, totalSpent(sort: Desc)], map: "Customer_tenant_spend_idx")
 }
 
 // ─── Loyalty Ledger (ADR-024 — TD-030) ──────────────────
@@ -547,6 +557,12 @@ model Order {
   // Audit #3 (Brandon 2026-05-30): KPIs públicos del marketplace (activity feed,
   // live stats, top hoy, popularity 30d) filtran por source + deletedAt + createdAt.
   @@index([source, deletedAt, createdAt])
+  // Índices PARCIALES que viven sólo en la base (ver la nota en Product):
+  //   Order_active_idx            (id)                         WHERE "deletedAt" IS NULL
+  //   Order_active_by_tenant_idx  (tenantId, createdAt DESC)   WHERE status <> 'cancelado' AND "deletedAt" IS NULL
+  //   Order_customer_recent_idx   (customerPhone, createdAt DESC) WHERE "deletedAt" IS NULL
+  //   Order_dispatch_queue_idx    (tenantId, createdAt DESC)   WHERE status IN ('pendiente','confirmado','en_camino')
+  // Order_idempotencyKey_key es único COMPLETO (no parcial), igual que el @unique de arriba.
 }
 
 model OrderItem {
@@ -576,6 +592,7 @@ model Review {
   rating         Int
   phone          String?
   productId      Int? // null = general store review; set for product-specific reviews
+  product        Product?  @relation(fields: [productId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Review_productId_fkey")
   storeId        String? // null = reseña de tienda del sistema; set for marketplace store reviews
   store          Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
   status         String    @default("approved") // pending | approved | rejected | hidden

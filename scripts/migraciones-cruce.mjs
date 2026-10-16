@@ -50,13 +50,20 @@ const todas = args.includes("--todas");
 const verificar = args.includes("--verificar");
 // `--verificar <carpeta>` o `--verificar ruta/a/archivo.sql` (p. ej. los .sql
 // sueltos de prisma/migrations, que Prisma no registra).
-const elegidas = args.filter((a) => !a.startsWith("--"));
+// Una carpeta también entra como ruta (`prisma/migrations/<carpeta>/`): se queda con el nombre.
+const elegidas = args.filter((a) => !a.startsWith("--")).map((a) => (a.endsWith(".sql") ? a : a.replace(/\/+$/, "").split("/").pop()));
 const DIR = resolve(repo, "prisma/migrations");
 
 const q = (s) => s.replace(/"/g, "");
 const t63 = (s) => Buffer.from(q(s)).subarray(0, 63).toString(); // NAMEDATALEN
+// Postgres guarda `!=` como `<>` y `x IN ('a','b')` como `x = ANY (ARRAY['a'::"Enum", …])` (16-10:
+// Order_active_by_tenant_idx / Order_dispatch_queue_idx daban ✗ creados con el texto exacto del archivo).
 const normExpr = (s) =>
-  String(s ?? "").replace(/::("[^"]+"|[A-Za-z ]+)(\(\d+(,\d+)?\))?(\[\])?/g, "").toLowerCase().replace(/now\(\)/g, "current_timestamp").replace(/["()\s]/g, "");
+  String(s ?? "")
+    .replace(/("?\w+"?)\s+NOT\s+IN\s*\(([^()]*)\)/gi, "$1 <> ALL (ARRAY[$2])")
+    .replace(/("?\w+"?)\s+IN\s*\(([^()]*)\)/gi, "$1 = ANY (ARRAY[$2])")
+    .replace(/!=/g, "<>")
+    .replace(/::("[^"]+"|[A-Za-z ]+)(\(\d+(,\d+)?\))?(\[\])?/g, "").toLowerCase().replace(/now\(\)/g, "current_timestamp").replace(/["()\s]/g, "");
 function normTipo(t) {
   let s = t.trim().replace(/\s+/g, " ");
   const arr = s.endsWith("[]");
@@ -143,7 +150,14 @@ function verificarRestriccion(K, tabla, def, out) {
   const [, nombre, cuerpo] = m;
   const real = K.con.get(`${tabla}.${t63(nombre)}`);
   const id = `${tabla}.${nombre}`;
-  if (!real) return out.push(["FALTA", `restricción ${id}: ${cuerpo.replace(/\s+/g, " ")}`]);
+  if (!real) {
+    // UNIQUE como índice único con el mismo nombre y columnas (así lo hace Prisma con @@unique): mismo efecto.
+    const uqCols = /^UNIQUE\s*\(([^)]*)\)\s*$/i.exec(cuerpo)?.[1];
+    const ix = uqCols ? K.idx.get(t63(nombre)) : null;
+    if (ix && ix.t === tabla && ix.uni && !ix.pred && normExpr(ix.cols.join(",")) === normExpr(cols(uqCols).join(",")))
+      return out.push(["ok", `${id} UNIQUE (como índice único)`]);
+    return out.push(["FALTA", `restricción ${id}: ${cuerpo.replace(/\s+/g, " ")}`]);
+  }
   const dif = [];
   const pk = /^PRIMARY\s+KEY\s*\(([^)]*)\)/i.exec(cuerpo);
   const uq = /^UNIQUE\s*\(([^)]*)\)/i.exec(cuerpo);

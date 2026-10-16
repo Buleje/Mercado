@@ -308,7 +308,8 @@ function prismaDestructivo(command, ejecutable) {
     const m = seg.match(/\bprisma\b.*?\bmigrate\s+(dev|reset)\b/i);
     let label = m ? `prisma migrate ${m[1]}` : null;
     if (!label && /\b(?:npm\s+run|pnpm(?:\s+run)?|yarn(?:\s+run)?|bun\s+run)\s+db:migrate(?![\w:-])/.test(seg)) label = "npm run db:migrate (= prisma migrate dev)";
-    if (!label && /\bprisma\b.*\bdb\s+push\b/i.test(seg) && /--(?:force-reset|accept-data-loss)\b/.test(seg)) label = "prisma db push --force-reset/--accept-data-loss";
+    // db push SIN flags también (16-10): aplica el schema sin migración y suelta lo que no declara (parciales, FKs de la base).
+    if (!label && /\bprisma\b.*\bdb\s+push\b/i.test(seg)) label = "prisma db push";
     if (!label) continue;
     // prisma-session.mjs fuerza el pooler de Supabase: nunca es local.
     if (!/prisma-session/.test(seg) && destinoLocal(command)) continue;

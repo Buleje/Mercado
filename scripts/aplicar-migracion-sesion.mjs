@@ -6,6 +6,7 @@
  *
  * Uso:
  *   node -r dotenv/config scripts/aplicar-migracion-sesion.mjs <archivo.sql> [--ensayo] dotenv_config_path=.env.local
+ *   … <archivo.sql> --sin-tx [--max-seg 60] [--ensayo] …   (CONCURRENTLY / FK NOT VALID + VALIDATE; ver `sinTransaccion`)
  *
  * `--ensayo` (08-10, K2): corre todo igual y termina en ROLLBACK. Antes de
  * revertir verifica DENTRO de la transacción que existan las tablas
@@ -97,6 +98,208 @@ export function partirSentencias(texto) {
   return out.map((x) => x.trim()).filter(Boolean);
 }
 
+const RE_INDICE_CONC =
+  /^CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?"(\w+)"\s+ON\s+"(\w+)"\s*\(([^)]*)\)\s*(?:WHERE\s+([\s\S]+))?$/i;
+
+/** null = no existe · true/false = pg_index.indisvalid */
+async function indiceValido(k, nombre) {
+  const r = await k.query(
+    "SELECT i.indisvalid FROM pg_index i JOIN pg_class x ON x.oid = i.indexrelid JOIN pg_namespace n ON n.oid = x.relnamespace WHERE n.nspname = 'public' AND x.relname = $1",
+    [nombre],
+  );
+  return r.rows[0]?.indisvalid ?? null;
+}
+
+/**
+ * Vigía en OTRA conexión: cancela (`pg_cancel_backend`) la sentencia del `pid`
+ * si pasa `maxSeg`, si espera >5 s un candado de TABLA o si frena a otra
+ * sesión >5 s. Reemplaza a `statement_timeout`/`lock_timeout` donde no hay
+ * transacción que los haga LOCAL (y SET SESSION se pega en el pooler).
+ */
+function vigilar(w, pid, maxSeg) {
+  let motivo = null;
+  let vivo = true;
+  let esperaDesde = null;
+  let frenaDesde = null;
+  let despertar = () => {};
+  const vuelta = (async () => {
+    while (vivo) {
+      await new Promise((r) => {
+        const t = setTimeout(r, 500);
+        despertar = () => (clearTimeout(t), r());
+      });
+      if (!vivo) break;
+      try {
+        const f = (
+          await w.query(
+            `SELECT extract(epoch FROM now() - query_start)::float AS seg, wait_event_type AS tipo, wait_event AS evento,
+                    (SELECT count(*)::int FROM pg_stat_activity o WHERE $1 = ANY (pg_blocking_pids(o.pid))) AS frena
+               FROM pg_stat_activity WHERE pid = $1 AND state = 'active'`,
+            [pid],
+          )
+        ).rows[0];
+        if (!f) continue;
+        const ahora = Date.now();
+        esperaDesde = f.tipo === "Lock" && f.evento === "relation" ? (esperaDesde ?? ahora) : null;
+        frenaDesde = f.frena > 0 ? (frenaDesde ?? ahora) : null;
+        if (f.seg > maxSeg) motivo = `pasó ${maxSeg} s`;
+        else if (esperaDesde && ahora - esperaDesde > 5000) motivo = "esperó >5 s un candado de tabla";
+        else if (frenaDesde && ahora - frenaDesde > 5000) motivo = `frenó a ${f.frena} sesión(es) >5 s`;
+        if (motivo) {
+          await w.query("SELECT pg_cancel_backend($1)", [pid]);
+          break;
+        }
+      } catch (e) {
+        console.error(`  ⚠ vigía cayó: ${e.message}`);
+        break;
+      }
+    }
+  })();
+  return {
+    async parar() {
+      vivo = false;
+      despertar();
+      await vuelta;
+      return motivo;
+    },
+  };
+}
+
+/**
+ * `--sin-tx` (16-10): sentencias que Postgres no deja correr en una
+ * transacción (`CREATE|DROP INDEX CONCURRENTLY`) o que conviene separar
+ * (`ADD CONSTRAINT … NOT VALID` y después `VALIDATE CONSTRAINT`: así el
+ * candado del ADD no se sostiene mientras valida). De a UNA sentencia:
+ * · CONCURRENTLY → autocommit pelado, cuidado por `vigilar`. Después mira
+ *   `pg_index.indisvalid`: si quedó INVALID (cancelado o fallado) lo suelta con
+ *   `DROP INDEX CONCURRENTLY` y corta. `IF NOT EXISTS` sobre un INVALID viejo
+ *   también lo agarra (Postgres lo «saltea» y lo dejaría inservible).
+ * · El resto → su propia tx con `SET LOCAL lock_timeout '5s'` y
+ *   `statement_timeout` (LOCAL: mueren con la tx), más el vigía.
+ * No hay todo-o-nada: corta en el primer error y lo anterior queda.
+ * `--ensayo`: nada queda escrito. CREATE INDEX → `SELECT` de sus columnas con
+ * su WHERE (prueba columnas y predicado, cuenta filas que entrarían) y si ya
+ * existe/es válido. El resto → UNA tx que termina en ROLLBACK (un VALIDATE de
+ * FK prueba de verdad que no hay huérfanas), con centinela de que revirtió.
+ * Usado por primera vez en los índices de marzo (20260316/17/18), 16-10.
+ */
+async function sinTransaccion(url, sentencias, ensayo, maxSeg) {
+  const conectar = async () => {
+    const k = new pg.Client({ connectionString: url.toString(), ssl: { rejectUnauthorized: false } });
+    await k.connect();
+    return k;
+  };
+  const c = await conectar();
+  const avisos = [];
+  c.on("notice", (n) => avisos.push(String(n.message)));
+  console.log(`[aplicar] --sin-tx · ${url.host} (session) · ${sentencias.length} sentencias · tope ${maxSeg} s${ensayo ? " · ENSAYO (nada queda escrito)" : ""}`);
+  const cabeza = (s) => s.replace(/\s+/g, " ").slice(0, 110);
+  try {
+    if (ensayo) {
+      const fks = sentencias.map((s) => /ADD CONSTRAINT "(\w+)"/i.exec(s)?.[1]).filter(Boolean);
+      const hay = async (n) => (await c.query("SELECT count(*)::int AS n FROM pg_constraint WHERE conname = $1", [n])).rows[0].n;
+      const antes = Object.fromEntries(await Promise.all(fks.map(async (n) => [n, await hay(n)])));
+      let malas = 0;
+      await c.query("BEGIN");
+      await c.query("SET LOCAL lock_timeout = '5s'");
+      for (const [i, s] of sentencias.entries()) {
+        await c.query(`SAVEPOINT e${i}`);
+        try {
+          const m = RE_INDICE_CONC.exec(s);
+          if (m) {
+            const cols = m[3].split(",").map((x) => x.trim().replace(/\s+(ASC|DESC)\b[\s\S]*$/i, "").replace(/\s+NULLS\s+(FIRST|LAST)$/i, ""));
+            const where = m[4] ? ` WHERE ${m[4]}` : "";
+            await c.query(`SELECT ${cols.join(", ")} FROM "${m[2]}"${where} LIMIT 0`);
+            const n = (await c.query(`SELECT count(*)::int AS n FROM "${m[2]}"${where}`)).rows[0].n;
+            const v = await indiceValido(c, m[1]);
+            if (v === false) malas += 1;
+            console.log(`  ${v ? "· ya estaba" : v === false ? "✗ existe INVALID" : "✓ se puede crear"}: ${m[1]} ON ${m[2]}(${cols.join(",")}) · ${n} filas entrarían`);
+          } else if (/\bCONCURRENTLY\b/i.test(s)) {
+            console.log(`  ? no se ensaya (CONCURRENTLY no entra en una tx): ${cabeza(s)}`);
+          } else {
+            await c.query(s);
+            console.log(`  ✓ ${cabeza(s)}`);
+          }
+          await c.query(`RELEASE SAVEPOINT e${i}`);
+        } catch (e) {
+          await c.query(`ROLLBACK TO SAVEPOINT e${i}`);
+          malas += 1;
+          console.log(`  ✗ ${e.message} ← ${cabeza(s)}`);
+        }
+      }
+      await c.query("ROLLBACK");
+      for (const n of fks) {
+        if (!antes[n] && (await hay(n))) {
+          malas += 1;
+          console.log(`  ⚠️ NO HUBO ROLLBACK: ${n} quedó creada`);
+        }
+      }
+      console.log(`[aplicar] ENSAYO → ROLLBACK · ${malas ? `${malas} con problema` : "todo se puede aplicar"}`);
+      if (malas) process.exitCode = 1;
+      return;
+    }
+    const pid = (await c.query("SELECT pg_backend_pid() AS p")).rows[0].p;
+    const w = await conectar();
+    let nuevas = 0;
+    let yaEstaban = 0;
+    try {
+      for (const s of sentencias) {
+        const m = RE_INDICE_CONC.exec(s);
+        const conc = /\bCONCURRENTLY\b/i.test(s);
+        avisos.length = 0;
+        const val = /VALIDATE CONSTRAINT "(\w+)"/i.exec(s)?.[1];
+        if (val && (await c.query("SELECT convalidated FROM pg_constraint WHERE conname = $1", [val])).rows[0]?.convalidated) {
+          yaEstaban += 1;
+          console.log(`  · ya estaba (validada): ${cabeza(s)}`);
+          continue;
+        }
+        const t0 = Date.now();
+        const vigia = vigilar(w, pid, maxSeg);
+        let error = null;
+        try {
+          if (conc) await c.query(s);
+          else {
+            await c.query("BEGIN");
+            await c.query("SET LOCAL lock_timeout = '5s'");
+            await c.query(`SET LOCAL statement_timeout = '${Math.round(maxSeg)}s'`);
+            await c.query(s);
+            await c.query("COMMIT");
+          }
+        } catch (e) {
+          if (!conc) await c.query("ROLLBACK").catch((err) => console.error("[aplicar] ROLLBACK falló:", err.message));
+          error = e;
+        }
+        const seg = ((Date.now() - t0) / 1000).toFixed(2);
+        const motivo = await vigia.parar();
+        const v = m ? await indiceValido(c, m[1]) : undefined;
+        if (m && v === false) {
+          await c.query(`DROP INDEX CONCURRENTLY IF EXISTS "${m[1]}"`);
+          throw new Error(`${m[1]} quedó INVALID${motivo ? ` (vigía: ${motivo})` : ""}${error ? ` · ${error.message}` : ""} → soltado con DROP INDEX CONCURRENTLY`);
+        }
+        if (error && String(error.message).includes("already exists")) {
+          yaEstaban += 1;
+          console.log(`  · ya estaba (${seg} s): ${cabeza(s)}`);
+          continue;
+        }
+        if (error) throw new Error(`${error.message}${motivo ? ` (vigía: ${motivo})` : ""} ← ${cabeza(s)}`);
+        if (m && v === null) throw new Error(`${m[1]} no existe después de crearlo`);
+        const ya = avisos.some((a) => a.includes("already exists, skipping") || a.includes("does not exist, skipping"));
+        if (ya) yaEstaban += 1;
+        else nuevas += 1;
+        console.log(`  ${ya ? "· ya estaba" : "✓"} (${seg} s${m ? " · válido" : ""}) ${cabeza(s)}`);
+      }
+    } finally {
+      await w.end();
+      console.log(`[aplicar] --sin-tx · ${nuevas} nuevas · ${yaEstaban} ya estaban`);
+    }
+  } catch (e) {
+    console.error("[aplicar] CORTÓ:", e.message);
+    process.exitCode = 1;
+  } finally {
+    await c.end();
+  }
+}
+
 const esCli = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (esCli) await main();
 
@@ -123,6 +326,16 @@ url.searchParams.delete("connection_limit");
 const texto = readFileSync(archivo, "utf8");
 const sentencias = partirSentencias(texto);
 const sinComentarios = sentencias.join(";\n");
+if (process.argv.includes("--sin-tx")) {
+  const iMax = process.argv.indexOf("--max-seg");
+  const maxSeg = iMax > 0 ? Number(process.argv[iMax + 1]) : 60;
+  if (!(maxSeg > 0)) {
+    console.error("[aplicar] --max-seg tiene que ser un número de segundos > 0");
+    process.exit(1);
+  }
+  await sinTransaccion(url, sentencias, ensayo, maxSeg);
+  return;
+}
 
 /** Lo que el archivo dice crear: se verifica en el ensayo antes del ROLLBACK. */
 function declarado(sql) {

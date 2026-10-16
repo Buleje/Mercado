@@ -103,10 +103,33 @@ Error: P3006 — Migration failed to apply cleanly to the shadow database.
 
 ### 🛑 Candado contra el «reset» (16-10-2026)
 La base de `.env.local` es PRODUCCIÓN. Con migraciones aplicadas cuyo `.sql` cambió después
-(10 quedan con checksum distinto: la base difiere del archivo) y ~740 líneas de drift heredado,
+(8 quedan con checksum distinto, abajo) y ~740 líneas de drift heredado,
 `migrate dev` ofrece RESETEAR la base = borrar todo. Por eso están **bloqueados** contra cualquier
 host no local: `prisma migrate dev` (también `--create-only` y `npm run db:migrate`, que ES
-`migrate dev`), `prisma migrate reset` y `prisma db push --force-reset|--accept-data-loss`.
+`migrate dev`), `prisma migrate reset` y `prisma db push` **con o sin flags** (sin
+`--accept-data-loss` igual suelta los índices y FKs que el schema no declara).
+- **8 «diferencia aceptada»** (16-10; `node scripts/migraciones-cruce.mjs` las lista; la base
+  manda, no se re-aplican):
+
+  | Migración | Base ≠ archivo | Por qué se acepta |
+  |---|---|---|
+  | `20260404230000_add_credit_engine`, `20260404240000_add_supplier_portal_models`, `20260411_marketplace_abandoned_cart` | plata en `numeric(12,2)`, el archivo dice `double` | la base es la correcta: plata con centavos exactos |
+  | `20260328000000_add_prestamos_guia_new_fields`, `20260502120000_add_payment_approval` | `updatedAt` con/sin `DEFAULT` | Prisma lo llena con `@updatedAt`; el default no se lee |
+  | `20260918190000_forest_contrato_eje` | `updatedAt` default + único **parcial** `_vivo_key` en vez de completo | el parcial deja re-crear lo borrado (soft-delete) |
+  | `20260318020000_add_transfer_location_models` | `tenantId` sin `DEFAULT 'main'` | sin fallback a `main` es la regla de aislamiento |
+  | `20260316120000_add_idempotency_soft_delete` | `Order_idempotencyKey_key` único COMPLETO, el archivo lo pide parcial | coincide con el `@unique` del schema; Postgres ya admite NULL repetidos |
+- **Índices parciales viven sólo en la base** (35, entre ellos `Product_active_idx`,
+  `Product_active_visible_idx`, `Product_low_stock_idx`, `Order_active_idx`,
+  `Order_active_by_tenant_idx`, `Order_customer_recent_idx`, `Order_dispatch_queue_idx` y los
+  únicos `_vivo_key`). Prisma 7.8 sólo los declara con `previewFeatures = ["partialIndexes"]`, y
+  prenderlo hace que el diff proponga soltar 30 de los 35: **no prenderlo**. Apagado, los ignora.
+- **CONCURRENTLY / FK sin bloquear**: `node -r dotenv/config scripts/aplicar-migracion-sesion.mjs
+  <sql> --sin-tx [--max-seg 60] [--ensayo] dotenv_config_path=.env.local`. Cada sentencia por
+  separado (CONCURRENTLY en autocommit; el resto en su tx con `lock_timeout 5s`), un vigía en otra
+  conexión cancela si pasa `--max-seg`, si espera un lock >5 s o si bloquea a otros >5 s; índice
+  que queda INVALID se suelta solo. FK nueva = `ADD … NOT VALID` y después `VALIDATE` (dos
+  sentencias en el mismo .sql). Así se crearon el 16-10 los 8 índices de `add_partial_and_composite_indexes`
+  / `add_idempotency_soft_delete` y `Review_productId_fkey`.
 - **Personas** (`npx prisma …` a mano, `scripts/prisma-session.mjs`): `prisma.config.ts` corta
   antes de conectar. Postgres local (localhost, 127.x, ::1, docker) pasa. Salida deliberada:
   `PRISMA_PERMITIR_DESTRUCTIVO=<host exacto>` en el mismo comando.

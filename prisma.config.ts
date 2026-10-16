@@ -12,7 +12,8 @@ import { defineConfig } from "prisma/config";
  * Todo comando de Prisma carga este archivo —`npx prisma …` a mano,
  * `npm run db:migrate` y `scripts/prisma-session.mjs`—, así que el freno va acá.
  *
- * Frena `migrate dev`, `migrate reset` y `db push --force-reset|--accept-data-loss`
+ * Frena `migrate dev`, `migrate reset` y `db push` (con o sin flags: sin
+ * `--accept-data-loss` igual suelta los índices y FKs que el schema no declara)
  * salvo contra un Postgres local (localhost, 127.x, ::1, host.docker.internal o
  * un nombre sin punto, como el servicio de un docker compose). Salida
  * deliberada: `PRISMA_PERMITIR_DESTRUCTIVO=<host exacto>` en el mismo comando.
@@ -26,8 +27,8 @@ function frenarComandoDestructivo(): void {
   const comando =
     sub === "dev" || sub === "reset"
       ? `prisma migrate ${sub}`
-      : iDb >= 0 && a[iDb + 1] === "push" && a.some((x) => /^--(?:force-reset|accept-data-loss)(?:=|$)/.test(x))
-        ? "prisma db push --force-reset/--accept-data-loss"
+      : iDb >= 0 && a[iDb + 1] === "push"
+        ? "prisma db push"
         : null;
   if (!comando) return;
 
@@ -53,7 +54,8 @@ function frenarComandoDestructivo(): void {
 
   process.stderr.write(
     `\n🛑 [prisma.config] ${comando} BLOQUEADO contra ${remotos.join(", ")} (base compartida = PRODUCCIÓN).\n` +
-      "   Prisma ofrecería RESETEAR la base: migraciones con el .sql cambiado + drift heredado.\n" +
+      "   Prisma ofrecería RESETEAR la base (migraciones con el .sql cambiado + drift heredado),\n" +
+      "   y `db push` soltaría lo que el schema no declara (índices parciales, FKs sólo de la base).\n" +
       "   Camino correcto:\n" +
       "   1. SQL a mano en prisma/migrations/<fecha>_<nombre>/migration.sql (borrador:\n" +
       "      node scripts/prisma-session.mjs migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script)\n" +
