@@ -14,7 +14,7 @@ import {
   type PiezaGuia,
 } from "@/lib/forestal/loth-guia-despacho";
 import { gtfDatosSchema, gtfDatosVacio, leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
-import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
+import { hojasDeLaLista, papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
 
 /** Las trozas C y D del 85-TOR del tenant de QA (medidas reales del Trozado). */
 const pieza = (p: Partial<PiezaGuia> & { codigo: string }): PiezaGuia => ({
@@ -41,7 +41,7 @@ describe("detallePorEspecie — el casillero (37)", () => {
         tipoProducto: "Madera en rollo",
         presentacion: "Trozas",
         cantidad: 2,
-        unidad: "Metros cúbicos",
+        unidad: "m3",
         total: 2.126,
       },
     ]);
@@ -238,7 +238,9 @@ describe("papelesGuiaLoth — la GTF y la lista con el formato del CTP", () => {
     expect(gtf.html).toContain("19-SEC/PER-FMC-2024-008");
     expect(gtf.html).toContain("Declaración de Manejo (DEMA)");
     expect(gtf.html).toContain("Madera en rollo");
-    expect(gtf.html).toContain("Metros cúbicos");
+    // Unidad del (37f) como la escribe el talonario (16-10): «m3», nunca «Metros cúbicos».
+    expect(gtf.html).toContain(">m3<");
+    expect(gtf.html).not.toContain("Metros cúbicos");
     expect(gtf.html).toContain("2.126");
     expect(gtf.html).toContain("Inversiones Agroforestales Blas SAC");
     expect(gtf.html).toContain('<span class="n">(33)</span> <span class="l">Lista de Trozas/ Productos Transformados N°:</span> <b>019-0000001</b>');
@@ -250,11 +252,12 @@ describe("papelesGuiaLoth — la GTF y la lista con el formato del CTP", () => {
     expect(gtf.html).toMatch(/Permiso<\/span><span class="bx">X<\/span>/);
   });
 
-  it("la lista trae cada troza con D1·D2 en cm y el total", () => {
+  it("la lista trae cada troza con d1·d2·L en metros y el total", () => {
     const { lista } = papelesGuiaLoth({ gtfNumber: "019-0000001", gtfDate: "2026-09-28", titular: id.titular, datos, piezas: [C, D] });
     expect(lista.html).toContain("85-TOR-C");
     expect(lista.html).toContain("85-TOR-D");
-    expect(lista.html).toContain("70.0");
+    expect(lista.html).toContain(">0.70<");
+    expect(lista.html).not.toContain(">70.0<");
     expect(lista.html).toContain("2.126");
     expect(lista.etiqueta).toBe("2 trozas · anexo del (33)");
   });
@@ -263,6 +266,55 @@ describe("papelesGuiaLoth — la GTF y la lista con el formato del CTP", () => {
     const { gtf, lista } = papelesGuiaLoth({ gtfNumber: "019-0000001", gtfDate: "2026-09-28", titular: id.titular, datos, piezas: [C], borrador: true });
     expect(gtf.html).toContain("Borrador");
     expect(lista.html).toContain("Borrador");
+  });
+});
+
+/**
+ * 30 trozas por hoja desde el 16-10-2026 (talonario de Brandon: 49 trozas =
+ * lista 19-000005 con 30 + 19-000006 con 19), pero lo ya emitido se reimprime
+ * como viajó. Casos reales de SERFOR, partidos de a 20: 019-001-0000003 (34
+ * trozas) → «5, 6»; 019-001-0000004 (31) → «7, 8». La regla «k números
+ * guardados» no los distingue (31-40 trozas son 2 hojas de a 20 o de a 30): la
+ * guía guarda `filasPorLista` al emitirse y sin marca es de antes.
+ */
+describe("la lista se parte como se emitió", () => {
+  const id = identidadDelTitulo({ plan: { titularName: "X", tituloHabilitante: "ABC-1" } });
+  const trozas = (n: number) => Array.from({ length: n }, (_, i) => pieza({ codigo: `85-TOR-${String(i + 1).padStart(3, "0")}` }));
+  const guia = (listaTrozasNro: string, filasPorLista?: number) => {
+    const d = datosInicialesLoth(id, "2026-09-28");
+    return { ...d, guia: { ...d.guia, listaTrozasNro, filasPorLista } };
+  };
+  const filasPorHoja = (html: string) => {
+    const partes = html.split('class="doc-parte"').slice(1);
+    return (partes.length ? partes : [html]).map((h) => (h.match(/<td class="c n">/g) ?? []).length);
+  };
+  const papel = (datos: ReturnType<typeof guia>, n: number) =>
+    papelesGuiaLoth({ gtfNumber: "019-001-0000003", gtfDate: "2026-09-28", titular: "X", datos, piezas: trozas(n) });
+
+  it("una guía nueva sale de a 30: datosInicialesLoth ya lo marca", () => {
+    expect(datosInicialesLoth(id, "2026-09-28").guia.filasPorLista).toBe(30);
+  });
+
+  it("emitida antes del 16-10 (sin marca): 34 trozas → «5, 6» = 20 + 14, como viajó", () => {
+    const datos = guia("5, 6");
+    expect(hojasDeLaLista(datos, "019-001-0000003", 34)).toEqual({ hojas: 2, numeros: ["5", "6"], casillero35: "5, 6", filasPorHoja: 20 });
+    expect(filasPorHoja(papel(datos, 34).lista.html)).toEqual([20, 14]);
+  });
+
+  it("emitida antes del 16-10 (sin marca): 31 trozas → «7, 8» = 20 + 11", () => {
+    const datos = guia("7, 8");
+    expect(hojasDeLaLista(datos, "019-001-0000004", 31).numeros).toEqual(["7", "8"]);
+    expect(filasPorHoja(papel(datos, 31).lista.html)).toEqual([20, 11]);
+  });
+
+  it("guía nueva de 49 trozas → 2 listas: 30 + 19", () => {
+    const datos = guia("5, 6", 30);
+    expect(hojasDeLaLista(datos, "019-001-0000005", 49)).toMatchObject({ hojas: 2, numeros: ["5", "6"], filasPorHoja: 30 });
+    expect(filasPorHoja(papel(datos, 49).lista.html)).toEqual([30, 19]);
+  });
+
+  it("guía nueva de 30 trozas: una sola lista", () => {
+    expect(filasPorHoja(papel(guia("9", 30), 30).lista.html)).toEqual([30]);
   });
 });
 

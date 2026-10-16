@@ -367,6 +367,14 @@ export const gtfDatosSchema = z.object({
     guiaRemisionNro: texto(40).default(""),
     /** (35) N° de la lista de trozas o cuartones que acompaña la guía. */
     listaTrozasNro: texto(40).default(""),
+    /**
+     * Filas por hoja con que se partió esa lista al emitir la guía del Libro
+     * TH (30 desde el 16-10-2026, las del talonario). La pone el servidor al
+     * guardar; sin ella, la guía es de antes y se reimprime de a 20
+     * (`filasPorHojaGuardada`). Un valor raro se lee como ausente: no tumba
+     * el resto de la guía.
+     */
+    filasPorLista: z.number().int().min(1).max(60).optional().catch(undefined),
     /** (36) N° de la GTF de origen, cuando la madera viene amparada por otra. */
     gtfOrigenNro: texto(40).default(""),
     /*

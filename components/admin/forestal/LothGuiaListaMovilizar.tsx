@@ -10,12 +10,17 @@
  * imprenta con el (1) N° de la lista y el (2) GTF N°, la cabecera de dos filas
  * (ESPECIE, Dimensiones) con la numeración impresa, el N° de fila en tinta y
  * la fila (11) TOTAL. El «Producto», que el papel no tiene, va al final.
+ *
+ * d1, d2 y L en METROS con 2 decimales, como los escribe el talonario
+ * (`celdasTroza`, la misma celda de la lista impresa): las entradas del
+ * formulario siguen en cm, así se miden en el monte.
  */
 
 import { Fragment, useMemo } from "react";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import { celdasTroza } from "@/lib/forestal/ctp-lista-trozas";
 import { listaDeTrozas, totalM3 } from "@/lib/forestal/loth-guia-despacho";
 import { FILAS_POR_LISTA } from "@/lib/forestal/loth-lista-numero";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
@@ -87,15 +92,15 @@ export default function LothGuiaListaMovilizar({
                 <th rowSpan={2} scope="col" className={TH_GTF}>{th("codificacion", "Codificación")}</th>
                 <th colSpan={3} scope="colgroup" className={TH_GTF}>Dimensiones</th>
                 <th rowSpan={2} scope="col" className={TH_GTF}>{th("cantidad", "Cantidad")}</th>
-                <th rowSpan={2} scope="col" className={TH_GTF}>{th("volumen", "Volumen m³")}</th>
+                <th rowSpan={2} scope="col" className={TH_GTF}>{th("volumen", "Volumen m3")}</th>
                 <th rowSpan={2} scope="col" className={TH_GTF} title="No tiene casillero en el papel">Producto</th>
               </tr>
               <tr>
                 <th scope="col" className={TH_GTF}>{th("cientifico", "Nombre científico")}</th>
                 <th scope="col" className={TH_GTF}>{th("comun", "Nombre común o comercial")}</th>
-                <th scope="col" className={TH_GTF}>{th("d1", "d1 cm")}</th>
-                <th scope="col" className={TH_GTF}>{th("d2", "d2 cm")}</th>
-                <th scope="col" className={TH_GTF}>{th("largo", "L m")}</th>
+                <th scope="col" className={TH_GTF}>{th("d1", "d1 (m)")}</th>
+                <th scope="col" className={TH_GTF}>{th("d2", "d2 (m)")}</th>
+                <th scope="col" className={TH_GTF}>{th("largo", "L (m)")}</th>
               </tr>
             </thead>
             <tbody>
@@ -106,30 +111,33 @@ export default function LothGuiaListaMovilizar({
                   </td>
                 </tr>
               ) : (
-                lista.map((f, i) => (
-                  <Fragment key={f.codificacion}>
-                    {g.hojas > 1 && i % FILAS_POR_LISTA === 0 && (
+                lista.map((f, i) => {
+                  const m = celdasTroza(f);
+                  return (
+                    <Fragment key={f.codificacion}>
+                      {g.hojas > 1 && i % FILAS_POR_LISTA === 0 && (
+                        <tr>
+                          <td colSpan={COLUMNAS} className={`${TD_GTF} bg-[var(--gtf-franja)] font-semibold text-[var(--gtf-tinta)]`}>
+                            Lista N° <span className="font-mono tabular-nums">{nroHoja(i / FILAS_POR_LISTA)}</span>
+                            <span className="font-normal"> · hoja {i / FILAS_POR_LISTA + 1} de {g.hojas}</span>
+                          </td>
+                        </tr>
+                      )}
                       <tr>
-                        <td colSpan={COLUMNAS} className={`${TD_GTF} bg-[var(--gtf-franja)] font-semibold text-[var(--gtf-tinta)]`}>
-                          Lista N° <span className="font-mono tabular-nums">{nroHoja(i / FILAS_POR_LISTA)}</span>
-                          <span className="font-normal"> · hoja {i / FILAS_POR_LISTA + 1} de {g.hojas}</span>
-                        </td>
+                        <td className={TD_N_GTF}>{(i % FILAS_POR_LISTA) + 1}</td>
+                        <td className={`${TD_GTF} italic`}>{f.especieCientifica || "—"}</td>
+                        <td className={TD_GTF}>{f.especieComun || "—"}</td>
+                        <td className={`${TD_GTF} font-mono font-bold`}>{f.codificacion}</td>
+                        <td className={TD_NUM_GTF}>{m.d1 || "—"}</td>
+                        <td className={TD_NUM_GTF}>{m.d2 || "—"}</td>
+                        <td className={TD_NUM_GTF}>{m.largo || "—"}</td>
+                        <td className={TD_NUM_GTF}>{f.cantidad}</td>
+                        <td className={`${TD_NUM_GTF} font-bold`}>{f.volumenM3 == null ? "—" : fmtM3(f.volumenM3)}</td>
+                        <td className={`${TD_GTF} whitespace-nowrap`}>{f.producto}</td>
                       </tr>
-                    )}
-                    <tr>
-                      <td className={TD_N_GTF}>{(i % FILAS_POR_LISTA) + 1}</td>
-                      <td className={`${TD_GTF} italic`}>{f.especieCientifica || "—"}</td>
-                      <td className={TD_GTF}>{f.especieComun || "—"}</td>
-                      <td className={`${TD_GTF} font-mono font-bold`}>{f.codificacion}</td>
-                      <td className={TD_NUM_GTF}>{dec(f.d1Cm, 1)}</td>
-                      <td className={TD_NUM_GTF}>{dec(f.d2Cm, 1)}</td>
-                      <td className={TD_NUM_GTF}>{dec(f.largoM, 2)}</td>
-                      <td className={TD_NUM_GTF}>{f.cantidad}</td>
-                      <td className={`${TD_NUM_GTF} font-bold`}>{f.volumenM3 == null ? "—" : fmtM3(f.volumenM3)}</td>
-                      <td className={`${TD_GTF} whitespace-nowrap`}>{f.producto}</td>
-                    </tr>
-                  </Fragment>
-                ))
+                    </Fragment>
+                  );
+                })
               )}
             </tbody>
             {lista.length > 0 && (

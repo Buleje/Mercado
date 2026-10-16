@@ -43,6 +43,7 @@ import {
   type RenglonSalida,
 } from "@/lib/forestal/gtf-salida-geometria";
 import { pdfPrueba, pdfTalonario, PT_POR_MM, sanearParaFuente } from "@/lib/forestal/gtf-salida-pdf";
+import { plantillaTalonario } from "@/lib/forestal/gtf-talonario-plantilla";
 import type { LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 
 const FICHA = (fichasJson as unknown as Record<string, GtfSerfor>)["1-10-0473187"];
@@ -406,5 +407,25 @@ describe("cada valor en su renglón (Brandon 16-10)", () => {
       tabla: { ...fab.tabla, columnas: { ...fab.tabla.columnas, "37c": { ...fab.tabla.columnas["37c"], encajar: false } } },
     });
     expect([nueva.campos.p20a.varias, nueva.campos.p20a.encajar, nueva.tabla.columnas["37c"].encajar]).toEqual([true, false, false]);
+  });
+});
+
+describe("el formato del talonario NO viaja en la impresión normal (16-10)", () => {
+  it("ni el PDF ni el ESC/P llevan un rótulo de la plantilla: sólo valores", async () => {
+    const e = entradasDeLaGuia(doc(), null);
+    for (const formato of ["guia", "lista"] as const) {
+      const hoja = hojaDeFabrica(formato);
+      const paginas = formato === "guia" ? paginasGuia(e, hoja) : paginasLista(e, hoja);
+      const t = transformacionDe(hoja, null);
+      const renglones = paginas.map((p) => renglonesDeLaPagina(hoja, CATALOGO[formato], p, t));
+      const rotulos = plantillaTalonario(formato, {}).trazos.flatMap((x) => (x.t === "texto" && x.s.length >= 12 ? [x.s] : []));
+      expect(rotulos.length, formato).toBeGreaterThan(3);
+      const textos = (await textosDelPdf(await pdfTalonario(hoja, renglones, "x"))).map((x) => x.texto).join("\n");
+      const escp = Buffer.from(escpTalonario(hoja, renglones, 9).bytes).toString("latin1");
+      for (const r of rotulos) {
+        expect(textos, r).not.toContain(r);
+        expect(escp, r).not.toContain(Buffer.from(codificarTexto(r)).toString("latin1"));
+      }
+    }
   });
 });

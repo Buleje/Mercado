@@ -106,7 +106,8 @@ export function paginasLista(e: EntradasGuiaLoth, hoja: DisposicionHoja): Pagina
     fechaa: f.a,
     obs: e.lista.observaciones ?? "",
   };
-  const listas = partirEnHojas(e.filas);
+  /* De a cuántas filas se partió al emitirse (30, o 20 si es anterior): las hojas del talonario son esas listas. */
+  const listas = partirEnHojas(e.filas, e.listas.filasPorHoja);
   const paginas: PaginaTalonario[] = [];
   (listas.length ? listas : [[]]).forEach((trozas, li) => {
     /* El N° de fila arranca en 1 en cada lista, como en el papel A4. */

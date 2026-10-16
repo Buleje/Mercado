@@ -12,13 +12,18 @@ import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import { gtfDatosConFicha } from "@/lib/forestal/loth-importar-guia";
 import { casillerosGtf } from "@/lib/forestal/ctp-gtf-formato";
 import { CATALOGO, entraEnUnaLinea, hojaDeFabrica, normalizarHoja } from "@/lib/forestal/gtf-matricial-disposicion";
-import { PLANTILLA_FABRICA, plantillaTalonario } from "@/lib/forestal/gtf-talonario-plantilla";
+import { ANEXOS_TALONARIO, PLANTILLA_FABRICA, plantillaTalonario } from "@/lib/forestal/gtf-talonario-plantilla";
+import { ESTILO_PANTALLA, ESTILO_PAPEL, grupoPlantillaSvg, trazosPlantillaSvg } from "@/lib/forestal/gtf-talonario-plantilla-svg";
+import { CLAVE_ANEXO_TRANSFORMADOS, CLAVE_ANEXO_TROZAS } from "@/lib/forestal/gtf-anexos";
+import { perfilesDeFabrica, transformacionDe } from "@/lib/forestal/gtf-matricial-perfiles";
 import { entradasDeLaGuia, paginasGuia, paginasLista } from "@/lib/forestal/gtf-matricial-valores";
-import { htmlTalonario } from "@/lib/forestal/gtf-matricial-print";
+import { cajasDeLaPagina, htmlHojaPruebaBlanca, htmlTalonario } from "@/lib/forestal/gtf-matricial-print";
 import { camposQueNoEntran, encabezadoDelTalonario, revisarEncaje, serieYNumero } from "@/lib/forestal/gtf-matricial-pantalla";
 import type { LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 import PlantillaTalonario from "@/components/admin/forestal/gtf-matricial-plantilla";
 import CampoTalonario from "@/components/admin/forestal/gtf-matricial-campo";
+import { DetalleProductoPapel } from "@/components/admin/forestal/gtf-datos-papel-detalle";
+import { datosDeLaFicha } from "@/components/admin/forestal/gtf-datos-papel-comun";
 
 const FICHA = (fichasJson as unknown as Record<string, GtfSerfor>)["1-10-0473187"];
 const DATOS = JSON.parse(JSON.stringify(gtfDatosConFicha(FICHA, true))) as unknown;
@@ -139,5 +144,100 @@ describe("el valor en la hoja de pantalla", () => {
     const lleno = render(<CampoTalonario {...base} texto="PEREZ" nombre="(7) Titular" soloValores />);
     expect(lleno.container.querySelector("[data-nombre-campo]")).toBeNull();
     expect(lleno.container.textContent).toBe("PEREZ");
+  });
+});
+
+/** La geometría de cada elemento del SVG (sin colores ni grosores): lo que tiene que caer igual en pantalla y en papel. */
+function geometria(svgInterior: string): string[] {
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  g.innerHTML = svgInterior;
+  const attrs = ["x", "y", "x1", "y1", "x2", "y2", "width", "height", "rx", "font-size", "font-weight", "text-anchor", "textLength", "lengthAdjust", "stroke-dasharray"];
+  return [...g.children].map((el) => [el.tagName, ...attrs.map((a) => el.getAttribute(a) ?? ""), el.textContent ?? ""].join("|"));
+}
+
+describe("hoja de prueba en papel blanco (16-10)", () => {
+  const e = entradasDeLaGuia(doc(), null);
+  const enc = encabezadoDelTalonario("guia", e, undefined, "INVERSIONES DE PRUEBA S.A.");
+  const pl = plantillaTalonario("guia", enc);
+
+  it("la pantalla y el papel dibujan la plantilla con la MISMA traducción (textLength, punteados, folio)", () => {
+    const { container } = render(<PlantillaTalonario formato="guia" encabezado={enc} anchoMm={210} altoMm={297} />);
+    const svg = container.querySelector("svg[data-plantilla-talonario='guia']");
+    const enPantalla = geometria(svg?.innerHTML ?? "");
+    expect(enPantalla).toEqual(geometria(trazosPlantillaSvg(pl, ESTILO_PANTALLA)));
+    expect(enPantalla).toEqual(geometria(trazosPlantillaSvg(pl, ESTILO_PAPEL.gris)));
+    expect(enPantalla.length).toBe(pl.trazos.length);
+    expect(enPantalla.some((x) => x.includes("|spacingAndGlyphs|"))).toBe(true);
+    expect(enPantalla.some((x) => x.includes("|0.4 0.5|"))).toBe(true);
+    /* En papel: sin rellenos y rayas de 0,2 mm como máximo; el folio en su tinta. */
+    const papel = trazosPlantillaSvg(pl, ESTILO_PAPEL.gris);
+    expect(papel).not.toContain("var(--");
+    const grosores = [...papel.matchAll(/stroke-width="([\d.]+)"/g)].map((m) => Number(m[1]));
+    expect(Math.max(...grosores)).toBeLessThanOrEqual(0.2);
+    expect(papel).not.toMatch(/fill="(?!none|#)/);
+  });
+
+  it("lleva el formato, los valores y las cruces, TODO con la impresora elegida", () => {
+    const hoja = { ...hojaDeFabrica("guia"), offsetXMm: 1.5, offsetYMm: -2 };
+    const [pg] = paginasGuia(e, hoja);
+    const monte = { ...perfilesDeFabrica().monte, corrimientoXmm: 3, corrimientoYmm: 2, escalaX: 1.01, escalaY: 0.99 };
+    for (const [perfil, transform] of [
+      [null, "translate(1.5 -2)\">"],
+      [monte, "translate(3 2) scale(1.01 0.99)\">"],
+    ] as const) {
+      const tr = transformacionDe(hoja, perfil);
+      const html = htmlHojaPruebaBlanca(hoja, CATALOGO.guia, pg, pl, "Hoja de prueba", tr);
+      expect(html).toContain(`<g transform="${transform}${grupoPlantillaSvg(pl, ESTILO_PAPEL.gris)}`);
+      expect(html.match(/<circle /g)).toHaveLength(4);
+      expect(html).toContain(cajasDeLaPagina(hoja, CATALOGO.guia, pg, tr).join(""));
+      expect(html).toContain(`HOJA DE PRUEBA · Impresora: ${tr.perfil.nombre}`);
+      expect(html).toContain("@page { size: 210mm 297mm; margin: 0; }");
+    }
+  });
+});
+
+describe("(36) Anexos en el talonario", () => {
+  it("dos casillas de fábrica (Anexo 03 y 04) en el grupo «Anexos (36)», centradas en su casilla dibujada", () => {
+    const fab = hojaDeFabrica("guia");
+    const pl = plantillaTalonario("guia", {});
+    const casillas = pl.trazos.filter((t) => t.t === "casilla" && t.x === 22.7);
+    expect(casillas).toHaveLength(ANEXOS_TALONARIO.length);
+    for (const [clave, i, y] of [[CLAVE_ANEXO_TROZAS, 2, 257.8], [CLAVE_ANEXO_TRANSFORMADOS, 3, 261.4]] as const) {
+      const def = CATALOGO.guia.campos.find((c) => c.id === clave);
+      expect(def, clave).toMatchObject({ grupo: "Anexos (36)", x: 21.45, y });
+      expect(def?.oculto, clave).toBeUndefined();
+      expect(fab.campos[clave], clave).toMatchObject({ x: 21.45, y, alinea: "centro", visible: true });
+      const c = casillas[i];
+      if (c.t !== "casilla") throw new Error("casilla");
+      expect(fab.campos[clave].x + fab.campos[clave].anchoMm / 2).toBeCloseTo(c.x + c.w / 2, 2);
+    }
+  });
+
+  it("la X del Anexo 03 cae en su casilla al imprimir; el talonario guardado antes la recibe en su lugar de fábrica", () => {
+    const hoja = normalizarHoja("guia", JSON.parse(JSON.stringify({ ...hojaDeFabrica("guia"), campos: { "7": hojaDeFabrica("guia").campos["7"] } })));
+    expect(hoja.campos[CLAVE_ANEXO_TROZAS]).toMatchObject({ x: 21.45, y: 257.8 });
+    const cajas = cajasDeLaPagina(hoja, CATALOGO.guia, { campos: { [CLAVE_ANEXO_TROZAS]: "X", [CLAVE_ANEXO_TRANSFORMADOS]: "" }, filas: [] }, transformacionDe(hoja, null)).join("");
+    expect(cajas).toContain("left:21.45mm");
+    expect(cajas).toContain("top:257.8mm");
+    expect(cajas).toMatch(/>X</);
+    expect(cajas).not.toContain("top:261.4mm");
+  });
+});
+
+describe("(36) Anexos en «Datos de la GTF»", () => {
+  const marcadas = (lista: string | null, tipo: string, presentacion: string) => {
+    const ficha = { ...FICHA, productos: [{ ...(FICHA.productos?.[0] ?? {}), tipoProducto: tipo, presentacion }] } as GtfSerfor;
+    const d = { ...datosDeLaFicha(ficha), "35": { valor: lista, label: "Lista de trozas" } };
+    const { container } = render(<DetalleProductoPapel d={d} ficha={ficha} />);
+    const bloque = container.querySelector("[data-qa='anexos-36']");
+    const filas = [...(bloque?.children ?? [])].map((c) => c.textContent ?? "");
+    cleanup();
+    return { filas: filas.length, marcadas: filas.filter((t) => t.includes("(marcada)")).map((t) => t.replace(/^X/, "").slice(0, 8)) };
+  };
+
+  it("cuatro casillas como el papel; la X sale del (33) y de lo que viaja", () => {
+    expect(marcadas("000123", "Madera en rollo", "Trozas")).toEqual({ filas: 4, marcadas: ["Anexo 03"] });
+    expect(marcadas("000123", "Madera aserrada", "Tablas")).toEqual({ filas: 4, marcadas: ["Anexo 04"] });
+    expect(marcadas(null, "Madera en rollo", "Trozas")).toEqual({ filas: 4, marcadas: [] });
   });
 });

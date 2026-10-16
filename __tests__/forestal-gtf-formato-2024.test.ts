@@ -14,8 +14,10 @@ import {
   cuerpoGtfOficial,
   ORIGENES,
   ORIGENES_SIN_CASILLA_2024,
+  filasDeLaGuia,
   type CuerpoGtfInput,
   type FilaDetalleGtf,
+  type LineaProducto,
 } from "@/lib/forestal/ctp-gtf-formato";
 import { gtfDatosVacio } from "@/lib/forestal/ctp-gtf-datos";
 import { emptyCtpFicha } from "@/lib/forestal/ctp-ficha-types";
@@ -105,6 +107,59 @@ describe("la hoja impresa", () => {
     expect(cuerpoGtfOficial({ ...base, datos })).toContain(`${rotulo} <b>20601234567</b>`);
     datos.propietario = { ...datos.propietario, docTipo: "DNI", docNumero: "41234567" };
     expect(cuerpoGtfOficial({ ...base, datos })).toContain(`${rotulo} <b>41234567</b>`);
+  });
+});
+
+/**
+ * (36) «Anexos que forman parte integrante de la GTF» (Brandon 16-10: su guía
+ * 19-000003 trae a mano la X en «Anexo 03: Listado de Trozas»). La lista del
+ * (33) es el Anexo 03 si viaja madera en rollo y el 04 si son transformados;
+ * el 01 y el 02 los marca quien emite.
+ */
+describe("(36) Anexos: la X sale de la lista del (33)", () => {
+  const rollo: LineaProducto = { cientifico: "Cedrelinga cateniformis", comun: "Tornillo", tipoProducto: "Madera en rollo", presentacion: "Trozas", cantidad: 2, unidad: "m3", total: 2.126 };
+  const tablas: LineaProducto = { ...rollo, tipoProducto: "Madera aserrada", presentacion: "Tablas", unidad: "pt" };
+  const casilla = (html: string, rotulo: string) => html.match(new RegExp(`${rotulo}[^<]*</span><span class="bx">([^<]*)</span>`))?.[1];
+
+  it("madera en rollo con N° de lista: X en el Anexo 03, nada en el 04", () => {
+    const c = casillerosGtf({ ...base, lineas: [rollo] });
+    expect([c["36a3"], c["36a4"]]).toEqual(["X", ""]);
+    const html = cuerpoGtfOficial({ ...base, lineas: [rollo] });
+    expect(casilla(html, "Anexo 03")).toBe("X");
+    expect(casilla(html, "Anexo 04")).toBe("&nbsp;");
+    expect(casilla(html, "Anexo 01")).toBe("&nbsp;");
+    expect(casilla(html, "Anexo 02")).toBe("&nbsp;");
+  });
+
+  it("productos transformados con N° de lista: X en el Anexo 04", () => {
+    const c = casillerosGtf({ ...base, lineas: [tablas] });
+    expect([c["36a3"], c["36a4"]]).toEqual(["", "X"]);
+    expect(casilla(cuerpoGtfOficial({ ...base, lineas: [tablas] }), "Anexo 04")).toBe("X");
+  });
+
+  it("sin N° de lista en el (33), ninguna X: no hay anexo que viaje", () => {
+    const c = casillerosGtf({ ...base, lineas: [rollo], listasTrozas: "" });
+    expect([c["36a3"], c["36a4"]]).toEqual(["", ""]);
+    expect(cuerpoGtfOficial({ ...base, lineas: [rollo], listasTrozas: "" }).match(/class="bx">X</g)?.length ?? 0).toBe(
+      cuerpoGtfOficial({ ...base, lineas: [], listasTrozas: "" }).match(/class="bx">X</g)?.length ?? 0,
+    );
+  });
+
+  it("el (36) toma sus dos claves y nadie más las usa", () => {
+    const de36 = CASILLEROS_GTF_2024.find((c) => c.n === "36");
+    expect(de36 && "de" in de36 ? [...de36.de] : []).toEqual(["36a3", "36a4"]);
+  });
+});
+
+/** (37f) Unidad de medida: como la escribe el talonario, «m3» (16-10). */
+describe("unidad del detalle: m3", () => {
+  it("una guía guardada con «Metros cúbicos» se imprime «m3»; otras unidades, tal cual", () => {
+    const filas = filasDeLaGuia([
+      { cientifico: "A", comun: "a", tipoProducto: "Madera en rollo", presentacion: "Trozas", cantidad: 1, unidad: "Metros cúbicos", total: 1 },
+      { cientifico: "B", comun: "b", tipoProducto: "Madera en rollo", presentacion: "Trozas", cantidad: 1, unidad: "m³", total: 1 },
+      { cientifico: "C", comun: "c", tipoProducto: "Madera aserrada", presentacion: "Tablas", cantidad: 1, unidad: "pt", total: 1 },
+    ]);
+    expect(filas.map((f) => f.unidad)).toEqual(["m3", "m3", "pt"]);
   });
 });
 

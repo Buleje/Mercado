@@ -15,7 +15,7 @@ import type { SeparadorFecha } from "@/lib/forestal/gtf-matricial-disposicion";
 import { PERFIL_OFICINA_ID } from "@/lib/forestal/gtf-salida-tipos";
 import { Btn } from "./ctp-shared";
 import { Casilla, fmtMm, NumeroMm, Opciones } from "./gtf-matricial-controles";
-import ImpresoraTalonario from "./gtf-matricial-impresora";
+import ImpresoraTalonario, { type TipoPrueba } from "./gtf-matricial-impresora";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
 import type { useFondoTalonario } from "./hooks/use-gtf-matricial-fondo";
 import type { EstadoPerfilesTalonario, useSalidaTalonario } from "./hooks/use-gtf-matricial-perfiles";
@@ -61,7 +61,7 @@ export default function AjustesTalonario({
   salida: ReturnType<typeof useSalidaTalonario>;
   conValores: boolean;
   setConValores: (v: boolean) => void;
-  onPrueba: () => void;
+  onPrueba: (tipo?: TipoPrueba) => void;
 }) {
   const archivo = useRef<HTMLInputElement>(null);
   const hoja = t.hoja;

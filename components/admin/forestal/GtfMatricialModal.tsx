@@ -28,7 +28,9 @@ import AdminModal, { MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { CATALOGO } from "@/lib/forestal/gtf-matricial-disposicion";
-import { htmlPruebaTalonario, htmlTalonario, imprimirEnMarco } from "@/lib/forestal/gtf-matricial-print";
+import { htmlHojaPruebaBlanca, htmlPruebaTalonario, htmlTalonario, imprimirEnMarco } from "@/lib/forestal/gtf-matricial-print";
+import { encabezadoDelTalonario } from "@/lib/forestal/gtf-matricial-pantalla";
+import { plantillaTalonario } from "@/lib/forestal/gtf-talonario-plantilla";
 import { transformacionDe } from "@/lib/forestal/gtf-matricial-perfiles";
 import { Btn, ModalFooter, PanelSkeleton, useCierreSeguro } from "./ctp-shared";
 import type { Gtf } from "./gtf-tabla-columnas";
@@ -45,6 +47,7 @@ import CamposTalonario from "./gtf-matricial-campos";
 import TitularTalonario from "./gtf-matricial-titular";
 import PanelTalonario from "./gtf-matricial-panel";
 import AjustesTalonario from "./gtf-matricial-ajustes";
+import type { TipoPrueba } from "./gtf-matricial-impresora";
 
 /** Clases enteras (Tailwind no ve las armadas): costado abierto 13/15 rem a la izq., 15/17 a la der.; plegado, la barrita de 3 rem. */
 const COLUMNAS: Record<string, string> = {
@@ -85,11 +88,20 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
     if (t.sucio && !(await t.guardar())) return;
     imprimirEnMarco(htmlTalonario(hoja, cat, t.paginas, nombre, transformacionDe(hoja, imp.elegido)));
   };
-  /* Con la impresora elegida: Oficina = el X/Y de la hoja; las demás, su corrimiento y escala. */
-  const prueba = () => {
+  /*
+   * Con la impresora elegida: Oficina = el X/Y de la hoja; las demás, su corrimiento y escala.
+   * «cruces» = la cuadrícula para medir con regla; «blanca» = el formato dibujado + valores + cruces, para ver a contraluz.
+   */
+  const prueba = (tipo: TipoPrueba = "cruces") => {
     if (!hoja) return;
     const tr = transformacionDe(hoja, imp.elegido);
-    imprimirEnMarco(htmlPruebaTalonario(hoja, cat, conValores ? (t.paginas[t.pagina] ?? null) : null, `Prueba · ${nombre} · ${tr.perfil.nombre}`, tr));
+    const pagina = t.paginas[t.pagina];
+    if (tipo === "blanca") {
+      const plantilla = plantillaTalonario(t.formato, encabezadoDelTalonario(t.formato, t.entradas, pagina, t.info?.titular?.nombre));
+      imprimirEnMarco(htmlHojaPruebaBlanca(hoja, cat, pagina ?? null, plantilla, `Hoja de prueba · ${nombre} · ${tr.perfil.nombre}`, tr));
+      return;
+    }
+    imprimirEnMarco(htmlPruebaTalonario(hoja, cat, conValores ? (pagina ?? null) : null, `Prueba · ${nombre} · ${tr.perfil.nombre}`, tr));
   };
 
   return (

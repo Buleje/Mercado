@@ -24,7 +24,7 @@ import {
   talonarioDelPlan,
   type GtfUsadaLoth,
 } from "@/lib/forestal/loth-guia-despacho";
-import { hojasDeLista, listasEfectivas } from "@/lib/forestal/loth-lista-numero";
+import { FILAS_POR_LISTA, hojasDeLista, listasEfectivas } from "@/lib/forestal/loth-lista-numero";
 import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-api-errors";
 import { motivoSchema } from "@/lib/forestal/motivo";
 import { TROZAS_POR_GUIA_MAX, trozaAManoSchema, trozasDeFilas } from "@/lib/forestal/loth-trozas-a-mano";
@@ -258,7 +258,13 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
   const datos = {
     ...datosParsed.data,
     traslado: { ...traslado, fechaInicio: traslado.fechaInicio || gtfDate },
-    guia: { ...datosParsed.data.guia, listaTrozasNro: listasEfectivas(datosParsed.data.guia.listaTrozasNro, hojas).texto },
+    /* Y con cuántas filas por hoja se partió: reimprimirla mañana, con otro
+       corte vigente, tiene que dar las mismas hojas (`filasPorHojaGuardada`). */
+    guia: {
+      ...datosParsed.data.guia,
+      listaTrozasNro: listasEfectivas(datosParsed.data.guia.listaTrozasNro, hojas).texto,
+      filasPorLista: FILAS_POR_LISTA,
+    },
   };
 
   /* El despacho y la guía son el mismo acto y la guía no se edita después:

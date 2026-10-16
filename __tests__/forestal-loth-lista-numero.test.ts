@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   FILAS_POR_LISTA,
+  FILAS_POR_LISTA_ANTERIOR,
+  filasPorHojaGuardada,
   hojasDeLista,
   leerNumerosDeLista,
   listasEfectivas,
@@ -58,8 +60,32 @@ describe("hojasDeLista — dentro del rango de SERFOR (17-30 filas)", () => {
     expect(hojasDeLista(0)).toBe(0);
   });
 
-  it("parte las filas como el papel", () => {
-    expect(partirEnHojas(Array.from({ length: 34 })).map((h) => h.length)).toEqual([FILAS_POR_LISTA, 34 - FILAS_POR_LISTA]);
+  it("30 por hoja, como el talonario (16-10: 49 trozas = 30 + 19)", () => {
+    expect(FILAS_POR_LISTA).toBe(30);
+    expect(hojasDeLista(49)).toBe(2);
+    expect(partirEnHojas(Array.from({ length: 49 })).map((h) => h.length)).toEqual([30, 19]);
+    expect(partirEnHojas(Array.from({ length: 34 })).map((h) => h.length)).toEqual([30, 4]);
+  });
+
+  it("lo emitido antes se parte de a 20, como viajó (34 → 20 + 14; 31 → 20 + 11)", () => {
+    expect(FILAS_POR_LISTA_ANTERIOR).toBe(20);
+    expect(partirEnHojas(Array.from({ length: 34 }), FILAS_POR_LISTA_ANTERIOR).map((h) => h.length)).toEqual([20, 14]);
+    expect(partirEnHojas(Array.from({ length: 31 }), FILAS_POR_LISTA_ANTERIOR).map((h) => h.length)).toEqual([20, 11]);
+    expect(hojasDeLista(34, FILAS_POR_LISTA_ANTERIOR)).toBe(2);
+  });
+});
+
+describe("filasPorHojaGuardada — la marca que la guía guardó al emitirse", () => {
+  it("sin marca = guía de antes del 16-10: de a 20", () => {
+    expect(filasPorHojaGuardada(undefined)).toBe(20);
+    expect(filasPorHojaGuardada(null)).toBe(20);
+    expect(filasPorHojaGuardada(0)).toBe(20);
+    expect(filasPorHojaGuardada(2.5)).toBe(20);
+  });
+
+  it("con marca, la que guardó", () => {
+    expect(filasPorHojaGuardada(30)).toBe(30);
+    expect(filasPorHojaGuardada(20)).toBe(20);
   });
 });
 

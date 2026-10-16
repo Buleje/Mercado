@@ -65,6 +65,11 @@ export interface ListaTrozasInput {
 const num = (v: number | null | undefined, dec: number): string =>
   v == null || !Number.isFinite(Number(v)) ? "" : Number(v).toFixed(dec);
 
+/** Un diámetro guardado en cm, en METROS como el talonario (65 cm → «0.65»). Se
+ *  redondea el cm primero: 64,96 cm → 65 → «0.65», sin el 0.6496 del float. */
+const cmAMetros = (cm: number | null | undefined): string =>
+  cm == null || !Number.isFinite(Number(cm)) ? "" : (Math.round(Number(cm)) / 100).toFixed(2);
+
 /**
  * El total es la suma de lo LISTADO, no del ingreso entero: esta lista ampara
  * las piezas que se están movilizando, y un total que no cierra con las filas
@@ -112,9 +117,15 @@ export function piezasListadas(trozas: ReadonlyArray<TrozaListada>): number {
   return trozas.reduce((a, t) => a + (Number(t.cantidad) || 1), 0);
 }
 
-/** Las celdas numéricas de una troza como las imprime la lista. Single source de `htmlListaTrozas` y del talonario de la matricial. */
+/**
+ * Las celdas numéricas de una troza como las imprime la lista: d1, d2 y L en
+ * METROS con 2 decimales, como el talonario de la imprenta (Brandon 16-10-2026:
+ * «0.65», «0.57», «3.13»). Los diámetros se guardan y se escriben en cm —así se
+ * miden en el monte—; sólo el papel los pasa a metros. Single source de
+ * `htmlListaTrozas`, de la pantalla de la lista y del talonario de la matricial.
+ */
 export function celdasTroza(t: TrozaListada): { d1: string; d2: string; largo: string; cant: string; vol: string } {
-  return { d1: num(t.d1Cm, 1), d2: num(t.d2Cm, 1), largo: num(t.largoM, 2), cant: String(t.cantidad ?? 1), vol: num(t.volumenM3, 3) };
+  return { d1: cmAMetros(t.d1Cm), d2: cmAMetros(t.d2Cm), largo: num(t.largoM, 2), cant: String(t.cantidad ?? 1), vol: num(t.volumenM3, 3) };
 }
 
 export function htmlListaTrozas(i: ListaTrozasInput): string {
@@ -185,24 +196,24 @@ export function htmlListaTrozas(i: ListaTrozasInput): string {
 
   ${resumenDoc(fichas)}
 
-  ${seccionDoc("Detalle de las piezas", "casilleros (2) a (6)")}
+  ${seccionDoc("Detalle de las piezas", "casilleros (3) a (11) · medidas en metros")}
 
   <table class="lt">
     <thead>
       <tr>
-        <th rowspan="2" class="w-n">N°</th><th rowspan="2">Nombre Científico</th>
-        <th rowspan="2" class="w-com">Nombre Común o Comercial</th><th rowspan="2" class="w-p">Producto</th>
-        <th rowspan="2" class="w-cod">(2) Codificación</th>
-        <th colspan="3">(3) Dimensiones</th>
-        <th rowspan="2" class="w-c">Cant.</th><th rowspan="2" class="w-v">Volumen M3</th>
+        <th rowspan="2" class="w-n">N°</th><th rowspan="2">(3) Nombre Científico</th>
+        <th rowspan="2" class="w-com">(4) Nombre Común o Comercial</th><th rowspan="2" class="w-p">Producto</th>
+        <th rowspan="2" class="w-cod">(5) Codificación</th>
+        <th colspan="3">Dimensiones</th>
+        <th rowspan="2" class="w-c">(9) Cant.</th><th rowspan="2" class="w-v">(10) Volumen m3</th>
       </tr>
-      <tr><th class="sub w-d">(4) D1<i>cm</i></th><th class="sub w-d">(5) D2<i>cm</i></th><th class="sub w-d">(6) L<i>m</i></th></tr>
+      <tr><th class="sub w-d">(6) d1<i>(m)</i></th><th class="sub w-d">(7) d2<i>(m)</i></th><th class="sub w-d">(8) L<i>(m)</i></th></tr>
     </thead>
     <tbody>${filas || `<tr><td colspan="10" class="vacio">Sin trozas listadas</td></tr>`}</tbody>
     <tfoot>
       <tr>
         <td colspan="5" class="lid">LISTA ID: ${esc(i.numero)}</td>
-        <td colspan="3" class="r lbl">${i.trozas.length ? `Suma de las ${i.trozas.length} filas` : ""}</td>
+        <td colspan="3" class="r lbl">${i.trozas.length ? `(11) Total · ${i.trozas.length} filas` : "(11) Total"}</td>
         <td class="c tot">${i.trozas.length ? piezas : ""}</td>
         <td class="r tot">${total.toFixed(3)}</td>
       </tr>
@@ -212,10 +223,10 @@ export function htmlListaTrozas(i: ListaTrozasInput): string {
 
   ${porEspecie}
 
-  ${seccionDoc("Observaciones y responsables", "casillero (7)")}
+  ${seccionDoc("Observaciones y responsables", "casillero (12)")}
   <table class="lt-pie">
     <tr>
-      <td class="obs"><span class="n">(7)</span> Observaciones:<div class="obs-v">${esc(i.observaciones ?? "")}</div></td>
+      <td class="obs"><span class="n">(12)</span> Observaciones:<div class="obs-v">${esc(i.observaciones ?? "")}</div></td>
       <td class="fir">
         ${firmasDoc(["Firma del despachador", "Nombres y apellidos del despachador"])}
       </td>
@@ -223,7 +234,7 @@ export function htmlListaTrozas(i: ListaTrozasInput): string {
   </table>
 
   ${notaDoc(
-    `<b>Cómo se lee.</b> Cada fila es una pieza física con su codificación en el rollo; las medidas (4)(5)(6) son las
+    `<b>Cómo se lee.</b> Cada fila es una pieza física con su codificación en el rollo; las medidas (6)(7)(8), en metros, son las
      tomadas al medirla y el volumen es el que declaró el Libro de Operaciones — no se recalcula acá para que la lista
      y el libro digan lo mismo de la misma troza. El total debe coincidir con el volumen amparado por la guía.`,
   )}
@@ -241,18 +252,26 @@ export function htmlListaTrozas(i: ListaTrozasInput): string {
  * espaciado del «TOTAL MOVILIZADO» lo pone el CSS, no espacios en el texto:
  * con letras separadas a mano el lector de pantalla y la búsqueda del PDF
  * leían «T O T A L».
+ *
+ * Compacta para que una lista de 30 trozas —las del talonario— entre en UNA
+ * A4 en el peor caso: sello de borrador, resumen de 4 especies, observaciones
+ * y firmas (16-10-2026, Chromium a PDF con Arial y con DejaVu: 30 → 1 página,
+ * 31 → 2). Fila de ~4,1 mm (el renglón del talonario mide 9,6 mm a mano; acá
+ * se escribe a máquina). Subir un padding o una altura obliga a medir de nuevo.
  */
 export const CSS_LISTA_TROZAS = `
   .lt { width:100%; border-collapse:collapse; margin:0; }
-  .lt th, .lt td { border-bottom:.5pt solid var(--linea-suave); padding:1.1mm 1.4mm; font-size:7.2pt; }
+  .lt th, .lt td { border-bottom:.5pt solid var(--linea-suave); padding:.45mm 1.4mm; font-size:7.2pt; line-height:1.2; }
   .lt thead th { background:var(--tenue); color:var(--tinta); font-weight:bold; text-align:center; letter-spacing:.3pt;
-                 font-size:6.4pt; text-transform:uppercase; vertical-align:bottom;
+                 font-size:6.4pt; text-transform:uppercase; vertical-align:bottom; padding:.7mm 1mm;
                  border:.5pt solid var(--linea-suave); border-bottom-color:var(--linea); }
   .lt thead tr:first-child th { border-top:.6pt solid var(--linea); }
   /* Pegada a su sección, la regla de la sección ya es el borde de arriba. */
   .doc-sec + .lt thead tr:first-child th { border-top:none; }
   .lt thead th:first-child { border-left:none; }
   .lt thead tr:first-child th:last-child, .lt thead tr:last-child th:last-child { border-right:none; }
+  /* d1, d2 y L en minúscula, como el talonario. */
+  .lt thead th.sub { text-transform:none; }
   .lt thead th.sub i { display:block; font-style:normal; font-weight:normal; text-transform:none; color:var(--gris-suave); font-size:6.2pt; }
   /* Anchos fijos para lo que mide siempre igual (números y códigos): así el aire
      sobrante se lo quedan los nombres, que son los que se partían en dos líneas
@@ -274,9 +293,10 @@ export const CSS_LISTA_TROZAS = `
   .lt tfoot .lbl { font-weight:normal; font-size:6.4pt; letter-spacing:.5pt; text-transform:uppercase; color:var(--gris); }
   .lt tfoot .lid { text-align:left; font-family:"Courier New",Courier,monospace; letter-spacing:.2pt; }
   .lt tfoot .tot { font-variant-numeric:tabular-nums; }
+  .lt tfoot td { padding-top:.7mm; padding-bottom:.7mm; }
   .lt tfoot tr.rot td { border-top:.5pt solid var(--linea-suave); border-bottom:1.2pt solid var(--linea);
-                        font-size:6.8pt; letter-spacing:1.6pt; text-transform:uppercase; padding-top:1.4mm; padding-bottom:1.4mm; }
-  .lt tfoot tr.rot td:last-child { font-size:10pt; letter-spacing:0; font-variant-numeric:tabular-nums; }
+                        font-size:6.8pt; letter-spacing:1.6pt; text-transform:uppercase; padding-top:.7mm; padding-bottom:.7mm; }
+  .lt tfoot tr.rot td:last-child { font-size:9pt; letter-spacing:0; font-variant-numeric:tabular-nums; }
 
   .lt.esp { margin-top:0; }
   .lt.esp td { font-size:7.4pt; }
@@ -285,7 +305,7 @@ export const CSS_LISTA_TROZAS = `
   .lt-pie td { vertical-align:top; font-size:7.4pt; padding:0 0 0 6mm; }
   .lt-pie .obs { width:48%; padding:0 6mm 0 0; color:var(--gris); }
   .lt-pie .obs .n { color:var(--gris-suave); font-size:6.8pt; }
-  .lt-pie .obs-v { min-height:16mm; border:.5pt solid var(--linea-suave); padding:1.5mm; margin-top:1mm; color:var(--tinta); }
+  .lt-pie .obs-v { min-height:10mm; border:.5pt solid var(--linea-suave); padding:1.5mm; margin-top:1mm; color:var(--tinta); }
   .lt-pie .fir .doc-firmas { margin-top:1mm; gap:6mm; }
-  .lt-pie .fir .doc-firmas .linea { height:14mm; }
+  .lt-pie .fir .doc-firmas .linea { height:9mm; }
 `;

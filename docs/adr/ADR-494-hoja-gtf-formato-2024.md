@@ -67,13 +67,13 @@
 | (34a)–(34g) | Científico · Común · Tipo · Descripción · Cantidad · Unidad · Total | `37a`–`37g` | (37) columnas |
 | (34h) | Total movilizado | `volumenTotal` | fila de total |
 | (35) | Observaciones | `38` | (38) |
-| (36) | Anexos (01-04) | **no se llena** | — (nuevo) |
+| (36) | Anexos (01-04) | `36a3` · `36a4` (`marcasAnexos`, 16-10): X en el Anexo 03 si el (33) tiene N° de lista y viaja madera en rollo; en el 04 si son transformados. 01 y 02 en blanco | — (nuevo) |
 | (37) | Firma y sello del emisor | **a mano** | (39) |
 | (38) | Nombres y apellidos del emisor | **a mano** | (40) |
 | (39) | Documento de Identidad del emisor | **no se llena** | — (nuevo) |
 
 **Quedan en blanco con su número:**
-- (36): qué anexo viaja lo marca quien emite.
+- (36): sólo el Anexo 01 (detalle adicional) y el 02 (varios orígenes), que los marca quien emite. El 03 y el 04 salen de la lista del (33) desde el 16-10 (ADR-495).
 - (37) y (38): se llenan a mano.
 - (39): el sistema no guarda quién firma.
 - (5), las tres casillas nuevas: ningún dato las produce todavía, pero se pueden elegir.

@@ -7,9 +7,13 @@
  * («Monte – Epson LX-350») tienen el suyo y una escala para la que estira o
  * encoge el papel. La prueba sale con la elegida: en el navegador, en PDF a
  * tamaño real o en ESC/P (.prn) para la matricial.
+ *
+ * Dos pruebas: las CRUCES (se miden con regla) y la «Hoja de prueba en papel
+ * blanco» (el formato dibujado + los valores + las cruces, para ponerla sobre el
+ * talonario contra una ventana y ver si las rayas coinciden).
  */
 
-import { FileDown, Pencil, Plus, Printer, Trash2 } from "@buleje/design-system/icons";
+import { FileDown, Layers, Pencil, Plus, Printer, Trash2 } from "@buleje/design-system/icons";
 import { useId } from "react";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -25,6 +29,9 @@ const SELECT = I.replace("h-11", "h-12");
 const aPct = (v: number): number => Math.round(v * 1000) / 10;
 const dePct = (v: number): number => Math.round(v * 100) / 10000;
 
+/** «cruces» = la cuadrícula para medir con regla; «blanca» = el formato + valores + cruces en papel blanco. */
+export type TipoPrueba = "cruces" | "blanca";
+
 export default function ImpresoraTalonario({
   t,
   imp,
@@ -38,7 +45,7 @@ export default function ImpresoraTalonario({
   salida: ReturnType<typeof useSalidaTalonario>;
   conValores: boolean;
   setConValores: (v: boolean) => void;
-  onPrueba: () => void;
+  onPrueba: (tipo?: TipoPrueba) => void;
 }) {
   const id = useId();
   const { prompt, confirm } = useConfirm();
@@ -101,7 +108,7 @@ export default function ImpresoraTalonario({
 
       <Casilla label="Con los valores de esta guía" checked={conValores} onChange={setConValores} />
       <div className="flex items-center gap-1">
-        <Btn variant="secondary" className="min-h-12 flex-1" onClick={onPrueba}>
+        <Btn variant="secondary" className="min-h-12 flex-1" onClick={() => onPrueba("cruces")}>
           <Printer className="h-4 w-4" aria-hidden /> Imprimir prueba
         </Btn>
         <ActionMenu
@@ -125,6 +132,20 @@ export default function ImpresoraTalonario({
           }
           affects="Oficina usa el X/Y de cada hoja del talonario; las demás impresoras, el suyo para todas las guías."
           example="En el diálogo de impresión: márgenes «Ninguno», escala 100 % y sin encabezados ni pies de página."
+        />
+      </div>
+      <div className="flex items-center gap-1">
+        {/* El rótulo entero no entra en el costado a 1280 (y `* { min-width: 0 }` encoge el botón): parte en dos renglones. */}
+        <Btn variant="secondary" className="min-h-12 flex-1 whitespace-normal! leading-tight" onClick={() => onPrueba("blanca")} data-qa="prueba-papel-blanco">
+          <Layers className="h-4 w-4 shrink-0" aria-hidden />
+          <span>Hoja de prueba en papel blanco</span>
+        </Btn>
+        <InfoTip
+          icono="ayuda"
+          title="Hoja de prueba en papel blanco"
+          what="Imprime en una hoja blanca el formato del talonario en rayas finas grises, los valores de esta hoja y las cruces de las esquinas, con la impresora elegida."
+          affects="Ponla encima del talonario contra una ventana: si las rayas grises caen sobre las celestes, la medida y la impresora están bien. Si no, corrige «Medida» o el corrimiento y la escala de arriba."
+          example="Si todo cae 2 mm a la derecha, pon −2 en Corrimiento X; si arriba coincide y abajo se pasa 1 mm, baja la escala Y a 99,6 %."
         />
       </div>
       {aviso && <span className="text-sm font-semibold text-[var(--data-warning-ink)]">{aviso}</span>}

@@ -16,6 +16,7 @@
  */
 
 import { z } from "zod";
+import { CLAVE_ANEXO_TRANSFORMADOS, CLAVE_ANEXO_TROZAS } from "./gtf-anexos";
 import { PLANTILLA_FABRICA, RANURAS, type Ranura, type TablaPlantilla } from "./gtf-talonario-plantilla";
 
 /**
@@ -217,6 +218,10 @@ const CAMPOS_GUIA: DefCampo[] = [
   en(G["35"], "35", "(33) Lista de trozas / productos transformados", "Producto"),
   en(G["37t"], "37t", "(34h) Total movilizado", "Producto"),
   en(G["38"], "38", "(35) Observaciones", "Producto"),
+  /* (36): la «X» del anexo que viaja con la guía (`marcasAnexos`, ADR-494). Campo
+     nuevo = posición de fábrica: una disposición guardada lo completa sola. */
+  en(G[CLAVE_ANEXO_TROZAS], CLAVE_ANEXO_TROZAS, "(36) Anexo 03 · Listado de trozas", "Anexos (36)"),
+  en(G[CLAVE_ANEXO_TRANSFORMADOS], CLAVE_ANEXO_TRANSFORMADOS, "(36) Anexo 04 · Productos transformados", "Anexos (36)"),
 ];
 
 /* El encabezado de la lista (titular, RUC, título, ubicación), su N° y la

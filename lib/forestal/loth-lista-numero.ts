@@ -18,20 +18,27 @@
  */
 
 /**
- * Filas de trozas por hoja de la lista. 20 = lo que entra en UNA hoja A4 de la
- * lista impresa (`loth-guia-print.ts` + `htmlListaTrozas`, @page 10 mm) en el
- * peor caso: sello de borrador, resumen de 4 especies, observaciones y firmas.
- * Medido en Chromium imprimiendo a PDF con Arial real y con DejaVu (29-09-2026):
+ * Filas de trozas por hoja de la lista: 30, las del talonario de la imprenta
+ * (Brandon 16-10-2026: su GTF 19-000003 movió 49 trozas en DOS listas,
+ * 19-000005 con 30 y 19-000006 con 19). SERFOR acepta de 17 a 30.
  *
- *   4 especies + borrador   20 filas → 1 página · 21 → 2
- *   4 especies, registrada  21 → 1 · 22 → 2
- *   1 especie, registrada   27 → 1 · 28 → 2
+ * La lista A4 impresa (`loth-guia-print.ts` + `htmlListaTrozas`, @page 10 mm)
+ * entra en UNA hoja con 30 filas en el peor caso —sello de borrador, resumen
+ * de 4 especies, observaciones y firmas—. Medido en Chromium imprimiendo a PDF
+ * con Arial real y con DejaVu (16-10-2026): 30 filas → 1 página · 31 → 2.
  *
- * Dentro del rango de SERFOR (17-30): 34 trozas → 20 + 14 (2 listas, como la
- * 019-001-0000003), 31 → 20 + 11 (como la 0000004). La impresión pagina con
- * este MISMO número: cada hoja es una lista con su N°.
+ * Con 30: 49 trozas → 30 + 19 (las listas 5 y 6 del talonario). La impresión
+ * pagina con este MISMO número; la guía lo guarda al emitirse (`filasPorLista`)
+ * para que lo ya emitido se reimprima como viajó (`filasPorHojaGuardada`).
  */
-export const FILAS_POR_LISTA = 20;
+export const FILAS_POR_LISTA = 30;
+
+/**
+ * Lo que partía la lista hasta el 16-10-2026 (lo que entraba en una A4 con el
+ * formato de entonces). Lo usan sólo las guías YA guardadas con ese corte:
+ * reimprimirlas tiene que dar las mismas hojas que viajaron.
+ */
+export const FILAS_POR_LISTA_ANTERIOR = 20;
 
 /** Un rango «7 al 9» o «5-6» se expande sólo si es corto: «5-60» son dos números. */
 const RANGO_MAX = 50;
@@ -147,6 +154,21 @@ export function listasEfectivas(texto: string | null | undefined, hojas: number)
       ? `La lista sale en ${hojas} ${hojas === 1 ? "hoja" : "hojas"}: se usa${hojas === 1 ? "" : "n"} ${textoListas(numeros)} y sobra${sobran === 1 ? "" : "n"} ${textoListas(leidos.slice(hojas))}.`
       : null;
   return { numeros, texto: textoListas(numeros), aviso };
+}
+
+/**
+ * Filas por hoja con que se parte la lista de una guía: las que guardó al
+ * emitirse (`gtfDatos.guia.filasPorLista`, 30 desde el 16-10-2026). Lo ya
+ * emitido no cambia: una guía guardada antes no tiene la marca y se partió de
+ * a 20, así que se reimprime de a 20 (34 trozas «5, 6» = 20 + 14; 31 trozas
+ * «7, 8» = 20 + 11).
+ *
+ * Una marca y no contar los N° del (33): con 31 a 40 trozas, de a 20 y de a
+ * 30 dan las MISMAS dos hojas («5, 6») repartidas distinto (20 + 14 contra
+ * 30 + 4), y el texto solo no dice cuál viajó.
+ */
+export function filasPorHojaGuardada(guardadas: number | null | undefined): number {
+  return guardadas != null && Number.isInteger(guardadas) && guardadas > 0 ? guardadas : FILAS_POR_LISTA_ANTERIOR;
 }
 
 /** Parte las filas en hojas de `filasPorHoja` (la última, con las que quedan). */

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  celdasTroza,
   htmlListaTrozas,
   piezasListadas,
   subtotalesPorEspecie,
@@ -46,17 +47,26 @@ describe("htmlListaTrozas", () => {
 
   it("numera las filas y trae los casilleros del formato", () => {
     const html = htmlListaTrozas({ ...base, trozas: [troza(), troza({ codificacion: "14/A" })] });
-    for (const c of ["(2) Codificación", "(3) Dimensiones", "(4) D1", "(5) D2", "(6) L", "(7)"]) {
+    // La numeración del talonario «LISTA DE TROZAS» (Brandon 16-10-2026), con (m) donde el papel no la dice.
+    for (const c of ["(3) Nombre Científico", "(4) Nombre Común", "(5) Codificación", "(6) d1<i>(m)</i>", "(7) d2<i>(m)</i>", "(8) L<i>(m)</i>", "(9) Cant.", "(10) Volumen m3", "(11) Total", "(12)"]) {
       expect(html).toContain(c);
     }
     expect(html).toContain("LISTA ID: 0000004");
+    expect(html).not.toContain("cm</i>");
   });
 
-  it("las dimensiones van con la precisión de cada una: cm con 1, largo con 2", () => {
+  it("d1, d2 y L en metros con 2 decimales, como el talonario (65 cm → 0.65)", () => {
     const html = htmlListaTrozas({ ...base, trozas: [troza({ d1Cm: 72, d2Cm: 58, largoM: 8.15 })] });
-    expect(html).toContain(">72.0<");
-    expect(html).toContain(">58.0<");
+    expect(html).toContain(">0.72<");
+    expect(html).toContain(">0.58<");
     expect(html).toContain(">8.15<");
+    expect(html).not.toContain(">72.0<");
+  });
+
+  it("celdasTroza: el cm se redondea antes de pasar a metros (sin el ruido del float)", () => {
+    expect(celdasTroza(troza({ d1Cm: 65, d2Cm: 57, largoM: 3.13 }))).toMatchObject({ d1: "0.65", d2: "0.57", largo: "3.13" });
+    expect(celdasTroza(troza({ d1Cm: 64.96, d2Cm: 100, largoM: 3 }))).toMatchObject({ d1: "0.65", d2: "1.00", largo: "3.00" });
+    expect(celdasTroza(troza({ d1Cm: null, d2Cm: null, largoM: null }))).toMatchObject({ d1: "", d2: "", largo: "" });
   });
 
   it("una medida ausente queda en blanco, no en 0 — un 0 afirma que se midió", () => {

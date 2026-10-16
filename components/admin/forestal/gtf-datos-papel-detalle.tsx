@@ -1,8 +1,8 @@
 /**
  * El pie de la GTF «como el papel»: la franja DETALLE DEL PRODUCTO con el (32),
  * el (33), el cuadro (34) con la cabecera del Anexo I (agrupada en «Forma de
- * embalaje o presentación» y «Cantidad»), el (34h) TOTAL MOVILIZADO y el (35);
- * y aparte, lo que la consulta de SERFOR publica y el papel no imprime.
+ * embalaje o presentación» y «Cantidad»), el (34h) TOTAL MOVILIZADO, el (35)
+ * y el (36) Anexos con sus cuatro casillas; y aparte, lo que la consulta de SERFOR publica y el papel no imprime.
  *
  * Las tablas usan TH_GTF/TD_GTF y no `DataTable`: excepción a ADR-489 porque
  * replican el talonario impreso (Brandon 16-10).
@@ -10,10 +10,12 @@
 
 import { formatNumber } from "@/lib/format";
 import { casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
+import { esMaderaEnRollo, marcasAnexos } from "@/lib/forestal/gtf-anexos";
+import { ANEXOS_TALONARIO } from "@/lib/forestal/gtf-talonario-plantilla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { camposNoMapeados } from "@/lib/forestal/gtf-serfor-bloques";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
-import { FranjaGtf, PapelGtf, RenglonGtf, RotuloGtf, TABLA_GTF, TD_GTF, TD_NUM_GTF, TH_GTF } from "./gtf-papel";
+import { CasillaGtf, FranjaGtf, PapelGtf, RenglonGtf, RotuloGtf, TABLA_GTF, TD_GTF, TD_NUM_GTF, TH_GTF } from "./gtf-papel";
 import {
   AyudaFranja,
   CasilleroPapel,
@@ -40,7 +42,31 @@ function Th({ clave, rowSpan }: { clave: string; rowSpan?: number }) {
 
 const TD_TEXTO = `${TD_GTF} text-sm`;
 
-export function DetalleProductoPapel({ d, ficha }: { d: DatosPapel; ficha: GtfSerfor }) {
+/**
+ * (36) Anexos, como el papel: las cuatro casillas. La «X» sale de los datos
+ * (`marcasAnexos`): con N° de lista en el (33), el Anexo 03 si viaja madera en
+ * rollo o el 04 si son productos transformados. El 01 y el 02 los marca quien
+ * emite: acá quedan en blanco.
+ */
+function AnexosPapel({ lista, productos, conTrozas }: { lista: string | null | undefined; productos: NonNullable<GtfSerfor["productos"]>; conTrozas: boolean }) {
+  /* SERFOR a veces no publica el N° del (33): si la guía trae su lista de trozas, la lleva igual (como el talonario). */
+  const conLista = (lista ?? "").trim() || (conTrozas ? "lista de trozas" : "");
+  const marcas: Readonly<Record<string, string>> = marcasAnexos(conLista, esMaderaEnRollo(productos));
+  return (
+    <div className="space-y-1.5">
+      <RotuloGtf n="36">{rotuloDelNumero("36")}</RotuloGtf>
+      <div className="flex flex-col gap-1.5 pl-1" data-qa="anexos-36">
+        {ANEXOS_TALONARIO.map((a) => (
+          <CasillaGtf key={a.texto} marcada={!!a.clave && marcas[a.clave] === "X"}>
+            {a.texto}
+          </CasillaGtf>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function DetalleProductoPapel({ d, ficha, conTrozas = false }: { d: DatosPapel; ficha: GtfSerfor; conTrozas?: boolean }) {
   const productos = ficha.productos ?? [];
   /* El total es el que publica SERFOR; si no lo publica, la suma de las filas (como siempre). */
   const suma = productos.reduce((a, p) => a + (p.volumen ?? 0), 0);
@@ -55,8 +81,8 @@ export function DetalleProductoPapel({ d, ficha }: { d: DatosPapel; ficha: GtfSe
         extra={
           <AyudaFranja
             titulo="Detalle del producto"
-            que={`${rango("36", "38")}: qué madera viaja y cuánto, tal como lo declara la guía.`}
-            nota="No se recalcula: es lo que dice el documento. El total movilizado es el que publica SERFOR; si no lo publica, la suma de las filas."
+            que={`${rango("36", "38")} y (36): qué madera viaja, cuánto y con qué anexos, tal como lo declara la guía.`}
+            nota="No se recalcula: es lo que dice el documento. El total movilizado es el que publica SERFOR; si no lo publica, la suma de las filas. La X del (36) la pone el sistema (SERFOR no la publica): Anexo 03 si el (33) tiene N° y viaja madera en rollo; Anexo 04 si son productos transformados."
           />
         }
       />
@@ -127,6 +153,7 @@ export function DetalleProductoPapel({ d, ficha }: { d: DatosPapel; ficha: GtfSe
           </div>
         </div>
         <CasilleroPapel d={d} claves={["38"]} />
+        <AnexosPapel lista={d["35"]?.valor} productos={productos} conTrozas={conTrozas} />
       </CuerpoPapel>
     </>
   );

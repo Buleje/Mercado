@@ -14,13 +14,17 @@
  *
  * Dos usos, UNA fuente:
  *   · `plantillaTalonario` dibuja el formulario debajo de los valores en el
- *     diseñador (sólo pantalla; el papel ya lo trae impreso);
+ *     diseñador y en la «Hoja de prueba en papel blanco» (los dos con la
+ *     traducción de `gtf-talonario-plantilla-svg`); la impresión del talonario
+ *     NO la lleva: el papel ya la trae impresa;
  *   · `RANURAS` es el lugar de fábrica de cada valor: el renglón punteado que
  *     sigue a su rótulo. `gtf-matricial-disposicion` arma su catálogo de acá,
  *     así el valor de fábrica cae siempre sobre su línea dibujada.
  *
  * PURO y client-safe. Origen arriba a la izquierda; `y` de un texto = su base.
  */
+
+import { CLAVE_ANEXO_TRANSFORMADOS, CLAVE_ANEXO_TROZAS } from "./gtf-anexos";
 
 /** Cambia cuando cambian las ranuras: una disposición guardada sobre otra plantilla vuelve a la de fábrica. */
 export const PLANTILLA_FABRICA = "imprenta-2024-v2";
@@ -187,6 +191,23 @@ const CASILLAS_ORIGEN: Array<[string, string, number, number, number]> = [
   ["varios_origenes", "Varios Orígenes (*)", 166.5, 192.1, 58.4],
 ];
 
+/** Las casillas del (36): x de la casilla y altura del centro de la primera, una cada 3,57 mm. */
+const ANEXO_X0 = 22.7, ANEXO_X1 = 26.2, ANEXO_CY = 252.5, ANEXO_PASO = 3.57;
+const centroAnexo = (i: number): number => Math.round((ANEXO_CY + i * ANEXO_PASO) * 100) / 100;
+
+/**
+ * Las cuatro casillas del (36) como las imprime la imprenta: la clave de
+ * `casillerosGtf` que la marca (null = la marca a mano quien emite, ADR-494),
+ * el texto del papel y su ancho medido en la foto. «Datos de la GTF» dibuja
+ * las mismas cuatro con este texto.
+ */
+export const ANEXOS_TALONARIO: ReadonlyArray<{ clave: string | null; texto: string; anchoMm: number }> = [
+  { clave: null, texto: "Anexo 01 : Formato Adicional para el detalle de Productos de la Guía de Transporte Forestal", anchoMm: 100.8 },
+  { clave: null, texto: "Anexo 02 : Formato para consignar Varios Orígenes de la Guía de Transporte Forestal", anchoMm: 94.2 },
+  { clave: CLAVE_ANEXO_TROZAS, texto: "Anexo 03 : Listado de Trozas", anchoMm: 31.7 },
+  { clave: CLAVE_ANEXO_TRANSFORMADOS, texto: "Anexo 04 : Listado de Productos Transformados", anchoMm: 52.5 },
+];
+
 /** Columnas del (34): [id, borde izq, borde der, alineación del valor]. */
 const COLS_GUIA: Array<[string, number, number, Ranura["alinea"]]> = [
   ["37a", X0, 53.5, "izq"],
@@ -240,6 +261,10 @@ function ranurasGuia(): Record<string, Ranura> {
     r[`${n}a`] = { x: x0 + 17, y: top, ancho: 10, alinea: "centro" };
   }
   for (const [clave, , , cx, cy] of CASILLAS_ORIGEN) r[`5:${clave}`] = enCasilla(cx, cy);
+  /* (36): la «X» del Anexo 03 / 04 en su casilla (los 01 y 02 se marcan a mano). */
+  ANEXOS_TALONARIO.forEach((a, i) => {
+    if (a.clave) r[a.clave] = enCasilla((ANEXO_X0 + ANEXO_X1) / 2, centroAnexo(i));
+  });
   /* Los dos orígenes que el formato 2024 retiró: sin casilla en el papel (quedan ocultos, a la izquierda del (5)). */
   r["5:plan_consolidado"] = enCasilla(80, 58.4);
   r["5:otros"] = enCasilla(80, 62);
@@ -386,16 +411,9 @@ function plantillaGuia(e: EncabezadoTalonario): PlantillaHoja {
   t.push({ t: "rect", x: 173.9, y: abajo, w: X1 - 173.9, h: 6, grosor: LINEA });
   /* (36) anexos */
   t.push(texto(16.4, 248.7, "(36) Anexos que forman parte integrante de la Guía de Transporte Forestal:", 8.8, { peso: 700, ancho: 112.9 }));
-  /* [texto, ancho medido en la foto] */
-  const anexos: Array<[string, number]> = [
-    ["Anexo 01 : Formato Adicional para el detalle de Productos de la Guía de Transporte Forestal", 100.8],
-    ["Anexo 02 : Formato para consignar Varios Orígenes de la Guía de Transporte Forestal", 94.2],
-    ["Anexo 03 : Listado de Trozas", 31.7],
-    ["Anexo 04 : Listado de Productos Transformados", 52.5],
-  ];
-  anexos.forEach(([s, ancho], i) => {
-    const cy = 252.5 + i * 3.57;
-    t.push({ t: "casilla", x: 22.7, y: cy - 1.3, w: 3.5, h: 2.6 }, texto(27.5, cy + 0.95, s, 6.9, { ancho }));
+  ANEXOS_TALONARIO.forEach((a, i) => {
+    const cy = centroAnexo(i);
+    t.push({ t: "casilla", x: ANEXO_X0, y: cy - 1.3, w: ANEXO_X1 - ANEXO_X0, h: 2.6 }, texto(27.5, cy + 0.95, a.texto, 6.9, { ancho: a.anchoMm }));
   });
   const notas = [
     "* En caso el origen del recurso procede de “Varios Orígenes” se debe usar el Anexo N° 02 Formato",
@@ -459,7 +477,7 @@ function plantillaLista(e: EncabezadoTalonario): PlantillaHoja {
   return { anchoMm: 210, altoMm: 297, trazos: t };
 }
 
-/** El formulario impreso de la hoja, para dibujarlo debajo de los valores (sólo pantalla). */
+/** El formulario impreso de la hoja, para dibujarlo debajo de los valores (pantalla y hoja de prueba en papel blanco). */
 export function plantillaTalonario(formato: "guia" | "lista", e: EncabezadoTalonario = {}): PlantillaHoja {
   return formato === "guia" ? plantillaGuia(e) : plantillaLista(e);
 }

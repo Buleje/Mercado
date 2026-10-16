@@ -108,7 +108,7 @@ describe("lista: hojas del talonario", () => {
     expect(ps.map((p) => p.campos.totVol)).toEqual(["", "", "19.000", "6.650"]);
     expect(ps[2].campos.numero).toBe(ps[0].campos.numero);
     expect(ps[1].filas[0].n).toBe("9");
-    expect(ps[0].filas[0]).toMatchObject({ codigo: "T-1", d1: "60.0", d2: "50.0", largo: "4.00", vol: "0.950" });
+    expect(ps[0].filas[0]).toMatchObject({ codigo: "T-1", d1: "0.60", d2: "0.50", largo: "4.00", vol: "0.950" });
   });
 
   it("una guía anotada a mano (sin `gtfDatos`) sale con la identidad de la carátula", () => {

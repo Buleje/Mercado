@@ -27,6 +27,7 @@ import { esc, seccionDoc } from "@/lib/forestal/ctp-documento-print";
 import { claveFilaGTF, filasGTF, textoGTF, totalizarGTF } from "@/lib/forestal/gtf-redondeo";
 import { tituloDeGuia, type CtpFicha, type PermisoDeGuia } from "@/lib/forestal/ctp-ficha-types";
 import { partidaImpresa, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { CLAVE_ANEXO_TRANSFORMADOS, CLAVE_ANEXO_TROZAS, esMaderaEnRollo, marcasAnexos } from "@/lib/forestal/gtf-anexos";
 
 /**
  * Fecha a `DD.MM.YYYY`, como la imprime el talonario. Vacía si no hay.
@@ -133,19 +134,23 @@ export function casillasOrigen(marcado: string | null | undefined): string {
 
 /**
  * (36) «Anexos que forman parte integrante de la GTF»: las cuatro casillas del
- * formato, SIN marcar. Cuál corresponde lo decide quien emite (la lista de
- * trozas es el Anexo 03 sólo si viaja como tal); marcarla desde acá sería
- * declarar por él.
+ * formato. La 03 y la 04 salen de los datos (`marcasAnexos`, Brandon 16-10-2026:
+ * su 19-000003 trae a mano «X Anexo 03»): con N° en el (33), la lista es el
+ * Anexo 03 si viaja madera en rollo y el 04 si son transformados. La 01 y la
+ * 02 las marca quien emite: el sistema no arma esos formatos.
  */
 const ANEXOS_GTF_2024 = [
-  "Anexo 01: Formato adicional para el detalle de productos",
-  "Anexo 02: Formato para consignar varios orígenes",
-  "Anexo 03: Lista de trozas",
-  "Anexo 04: Lista de productos transformados",
+  { rotulo: "Anexo 01: Formato adicional para el detalle de productos", clave: null },
+  { rotulo: "Anexo 02: Formato para consignar varios orígenes", clave: null },
+  { rotulo: "Anexo 03: Lista de trozas", clave: CLAVE_ANEXO_TROZAS },
+  { rotulo: "Anexo 04: Lista de productos transformados", clave: CLAVE_ANEXO_TRANSFORMADOS },
 ] as const;
 
-const casillasAnexos = (): string =>
-  ANEXOS_GTF_2024.map((a) => `<span class="ck"><span class="lb">${esc(a)}</span><span class="bx">&nbsp;</span></span>`).join("");
+const casillasAnexos = (v: ValoresHoja): string =>
+  ANEXOS_GTF_2024.map((a) => {
+    const marca = a.clave ? txt(v[a.clave]).trim() : "";
+    return `<span class="ck"><span class="lb">${esc(a.rotulo)}</span><span class="bx">${marca ? esc(marca) : "&nbsp;"}</span></span>`;
+  }).join("");
 
 export interface LineaProducto {
   cientifico: string;
@@ -163,13 +168,25 @@ export interface LineaProducto {
  * forman redondeada UNA vez a 3 decimales (HALF_UP). Una guía con dos asientos
  * de la misma especie y producto imprime una fila, como SERFOR.
  */
-export function filasDeLaGuia(lineas: ReadonlyArray<LineaProducto>): LineaProducto[] {
+export function filasDeLaGuia(lineasDeEntrada: ReadonlyArray<LineaProducto>): LineaProducto[] {
+  const lineas = lineasDeEntrada.map((l) => ({ ...l, unidad: unidadDelPapel(l.unidad) }));
   return filasGTF(
     lineas,
     (l) => claveFilaGTF({ cientifico: l.cientifico, comun: l.comun, tipo: l.tipoProducto, unidad: l.unidad }),
     (l) => l.total,
     (l) => l.cantidad,
   ).map((f) => ({ ...f.items[0], cantidad: f.piezas, total: f.m3 }));
+}
+
+/**
+ * La unidad como la escribe el papel: «m3» (el talonario de la imprenta,
+ * Brandon 16-10-2026). Las guías guardadas antes con «Metros cúbicos» o «m³»
+ * imprimen «m3» igual, y una guía que mezcla las dos agrupa en UNA fila: es la
+ * misma unidad. Cualquier otra («Pies tablares», «Unidades») queda como vino.
+ */
+export function unidadDelPapel(unidad: string): string {
+  const u = String(unidad ?? "").trim();
+  return /^(metros?\s+c[uú]bicos?|m³|m3)$/i.test(u) ? "m3" : u;
 }
 
 /** El Volumen Total de la guía: la suma de sus filas YA redondeadas, nunca la del crudo. */
@@ -296,7 +313,8 @@ export type CasillerosGtf = CasillerosIdentidadGtf &
     | "13" | "14" | "15" | "16" | "17" | "18" | "19" | "20" | "21"
     | "22" | "23" | "24" | "25" | "26" | "27" | "28"
     | "29" | "30" | "31" | "31p" | "32" | "33" | "34" | "35" | "36" | "38"
-    | "p17" | "p18" | "p19" | "p20a" | "p20b" | "p20c" | "p20d" | "d22",
+    | "p17" | "p18" | "p19" | "p20a" | "p20b" | "p20c" | "p20d" | "d22"
+    | typeof CLAVE_ANEXO_TROZAS | typeof CLAVE_ANEXO_TRANSFORMADOS,
     string
   >;
 
@@ -372,6 +390,8 @@ export function casillerosGtf(i: CuerpoGtfInput): CasillerosGtf {
     "p20c": txt(pi?.provincia),
     "p20d": txt(pi?.distrito),
     "d22": txt(d.destinatario?.autorizacion),
+    /* (36) Anexo 03 / Anexo 04: «X» en la que corresponde a la lista del (33). */
+    ...marcasAnexos(i.listasTrozas, esMaderaEnRollo(i.lineas)),
   };
 }
 
@@ -459,10 +479,8 @@ export const CASILLEROS_GTF_2024 = [
   { n: "34g", rotulo: "Total", bloque: "detalle", de: ["37g"] },
   { n: "34h", rotulo: "Total movilizado", bloque: "detalle", de: ["volumenTotal"] },
   { n: "35", rotulo: "Observaciones", bloque: "detalle", de: ["38"] },
-  {
-    n: "36", rotulo: "Anexos que forman parte integrante de la Guía de Transporte Forestal", bloque: "detalle",
-    vacio: "Se marca a mano: qué anexo viaja con la guía lo declara quien la emite.",
-  },
+  /* La 03 y la 04 salen de los datos (`marcasAnexos`); la 01 y la 02 las marca quien emite. */
+  { n: "36", rotulo: "Anexos que forman parte integrante de la Guía de Transporte Forestal", bloque: "detalle", de: [CLAVE_ANEXO_TROZAS, CLAVE_ANEXO_TRANSFORMADOS] },
   { n: "37", rotulo: "Firma y sello del emisor", bloque: "firmas", vacio: "Se firma a mano." },
   { n: "38", rotulo: "Nombres y apellidos del emisor", bloque: "firmas", vacio: "Se escribe a mano junto a la firma." },
   {
@@ -633,7 +651,7 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
 
   <table class="cas">
     <tr>${celda(v, "35", C4)}</tr>
-    <tr>${celdaCasillas("36", casillasAnexos())}</tr>
+    <tr>${celdaCasillas("36", casillasAnexos(v))}</tr>
   </table>
 
   <table class="pie">

@@ -120,7 +120,7 @@ export function BloqueTrasladoLoth({
   const llevaCites = g.piezas.some((p) => p.cites);
   const detalle = useMemo(() => detallePorEspecie(g.piezas, cientificoDe), [g.piezas, cientificoDe]);
   const ultimaLista = g.propuestaListas?.ultimo ?? null;
-  const ayudaLista = `Cada hoja de la lista lleva hasta ${FILAS_POR_LISTA} trozas y su propio N°, como las de SERFOR (34 trozas: listas 5 y 6; la guía siguiente, 7 y 8). ${
+  const ayudaLista = `Cada hoja de la lista lleva hasta ${FILAS_POR_LISTA} trozas y su propio N°, como el talonario (49 trozas: lista 5 con 30 y lista 6 con 19; la guía siguiente empieza en la 7). ${
     ultimaLista != null
       ? `Sigue a la lista ${ultimaLista}, la última de este titular.`
       : "No hay listas anteriores de este titular: escribe el N° de la primera hoja y las siguientes se numeran solas."

@@ -37,13 +37,16 @@ import { esPlanDePlantacion } from "./loth-poa";
 import { rellenarGuia, type FuentesDeRelleno } from "./gtf-autocompletar";
 import { ubigeoDelPadron } from "./gtf-serie-region";
 import { mismoTitular } from "./loth-talonario";
+import { FILAS_POR_LISTA } from "./loth-lista-numero";
 
 // ── Qué sale en el camión ────────────────────────────────────────────────────
 
 /** El producto, la presentación y la unidad del (37) cuando lo que viaja son trozas. */
 export const PRODUCTO_TROZA = "Madera en rollo";
 export const EMBALAJE_TROZA = "Trozas";
-export const UNIDAD_TROZA = "Metros cúbicos";
+/** «m3», como la escribe el talonario de la imprenta (Brandon 16-10-2026). Las
+ *  guías guardadas con «Metros cúbicos» imprimen «m3» igual (`filasDeLaGuia`). */
+export const UNIDAD_TROZA = "m3";
 
 /** Una troza que va en la guía: lo que declara su línea de Trozado. */
 export interface PiezaGuia {
@@ -512,6 +515,9 @@ export function datosInicialesLoth(id: IdentidadDelTitulo, emision: string): Gtf
       // Madera que sale del bosque: no hay guía anterior que la ampare (el
       // papel imprime «NO APLICA», `ORIGEN_NO_APLICA`; acá queda vacío).
       gtfOrigenNro: "",
+      // Una guía nueva parte su lista como el talonario: «Ver cómo sale»
+      // muestra las mismas hojas que guardará el servidor.
+      filasPorLista: FILAS_POR_LISTA,
     },
   };
 }

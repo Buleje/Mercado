@@ -21,9 +21,11 @@ La posición de fábrica de cada valor del talonario («Imprimir en talonario»)
 
 - Un talonario de otra imprenta puede no coincidir: se corrige con la calibración del perfil (corrimiento y escala) y arrastrando, como antes.
 - La A4 es supuesta: si el talonario mide distinto, se cambia en «Medida».
-- Quedan sin resolver, para que decida Brandon:
-  - la lista del sistema parte cada 20 trozas (`FILAS_POR_LISTA`). Su talonario lleva 30: 49 trozas fueron 2 listas (19-000005 y 19-000006), y el sistema propondría 3.
-  - El papel escribe los diámetros en metros (0.65) y la unidad como «m3». El sistema imprime cm (65.0) y «Metros cúbicos», que no entra en la columna (34f).
+- Resuelto el 16-10 (Brandon eligió las tres partes):
+  - **30 trozas por lista** (`FILAS_POR_LISTA = 30`), como su talonario: 49 trozas = 2 listas (30 + 19). La lista A4 del sistema entra en UNA hoja con 30 filas (medido con Chromium `page.pdf`, Arial y DejaVu: 30 filas con 4 especies, sello de borrador, observaciones y firmas → 1 página; 31 → 2).
+  - **Lo ya emitido no cambia**: la guía guarda `gtfDatos.guia.filasPorLista` al emitirse (la pone la ruta POST de `despacho-guia` y `datosInicialesLoth`). Sin esa marca es de antes y se reimprime de a 20 (`FILAS_POR_LISTA_ANTERIOR`, `filasPorHojaGuardada`): 34 trozas → «5, 6» = 20 + 14, como viajó. Contar los N° guardados del (33) no alcanza: de 31 a 40 trozas, de a 20 o de a 30 son 2 hojas igual. Las guías importadas de SERFOR no traen la marca y siguen de a 20.
+  - **Metros y «m3»**: la lista impresa y la pantalla «Lista de trozas a movilizar» escriben d1, d2 y L en metros con 2 decimales (65 cm → 0.65); el formulario sigue pidiendo cm. La unidad del (34f) es «m3»; las guías guardadas con «Metros cúbicos» se normalizan en un solo lugar (`unidadDelPapel`, dentro de `filasDeLaGuia`). Las pantallas del CTP que no son el papel siguen diciendo «Metros cúbicos».
+  - **(36) Anexos**: X en el Anexo 03 (madera en rollo) o 04 (transformados) cuando el (33) tiene N° de lista (`marcasAnexos`, claves `36a3`/`36a4`); ADR-494 actualizado.
 
 ## Alternativas descartadas
 

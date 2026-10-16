@@ -29,7 +29,7 @@ import { CSS_GTF_OFICIAL, CSS_GTF_SALIDA, cuerpoGtfOficial, fechaGtf, type Cuerp
 import { CSS_LISTA_TROZAS, htmlListaTrozas, type ListaTrozasInput } from "./ctp-lista-trozas";
 import { fmtM3 } from "./cubicacion-formato";
 import { detallePorEspecie, guiaEsDePlantacion, leyendaDeConstancia, leyendaDelTitulo, listaDeTrozas, totalM3, type FilaListaTrozas, type PiezaGuia } from "./loth-guia-despacho";
-import { listasEfectivas, partirEnHojas } from "./loth-lista-numero";
+import { filasPorHojaGuardada, hojasDeLista, listasEfectivas, partirEnHojas } from "./loth-lista-numero";
 
 /** Un documento listo para `CtpDocumentoVisor` (mismo shape que `DocumentoImprimible`). */
 export interface HojaGuiaLoth {
@@ -79,19 +79,25 @@ const CSS_HOJAS_DE_LISTA = "@media print { .doc-parte + .doc-parte { margin-top:
 /** El rótulo del recuadro del N° de una hoja de la lista (el de `htmlListaTrozas`). */
 const NOTA_LISTA = '<div class="pie">Anexo del casillero (33)</div>';
 
-/** Cuántas hojas sale la lista y el N° de cada una (lo que va en el (33) y en cada cabecera). */
+/**
+ * Cuántas hojas sale la lista, de cuántas filas cada una y el N° de cada una
+ * (lo que va en el (33) y en cada cabecera). Las filas por hoja son las que
+ * la guía guardó al emitirse (`filasPorHojaGuardada`): una emitida antes del
+ * 16-10-2026 se reimprime de a 20; una nueva, de a 30 como el talonario.
+ */
 export function hojasDeLaLista(
   datos: GtfDatos,
   gtfNumber: string,
   trozas: number,
-): { hojas: number; numeros: string[]; casillero35: string } {
-  const hojas = Math.max(1, partirEnHojas(Array.from({ length: trozas })).length);
+): { hojas: number; numeros: string[]; casillero35: string; filasPorHoja: number } {
+  const filasPorHoja = filasPorHojaGuardada(datos.guia.filasPorLista);
+  const hojas = Math.max(1, hojasDeLista(trozas, filasPorHoja));
   const ef = listasEfectivas(datos.guia.listaTrozasNro, hojas);
   /* Una guía vieja sin N° de lista: la lista lleva el de la guía, como se
      imprimía antes (reimprimir no cambia lo que ya viajó). */
   const respaldo = ef.texto || t(gtfNumber);
   const numeros = Array.from({ length: hojas }, (_, i) => (ef.numeros[i] != null ? String(ef.numeros[i]) : respaldo));
-  return { hojas, numeros, casillero35: respaldo };
+  return { hojas, numeros, casillero35: respaldo, filasPorHoja };
 }
 
 /**
@@ -125,8 +131,8 @@ export interface EntradasGuiaLoth {
   cuerpo: CuerpoGtfInput;
   /** Las filas de la lista, en el orden del papel. */
   filas: FilaListaTrozas[];
-  /** Cuántas hojas sale la lista y el N° de cada una. */
-  listas: { hojas: number; numeros: string[]; casillero35: string };
+  /** Cuántas hojas sale la lista, el N° de cada una y de a cuántas filas se parte (30, o 20 si la guía se emitió así). */
+  listas: { hojas: number; numeros: string[]; casillero35: string; filasPorHoja: number };
   /** El encabezado de cada hoja de la lista (sin su N° ni sus trozas). */
   lista: Omit<ListaTrozasInput, "numero" | "trozas">;
 }
@@ -255,9 +261,9 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
 
   /* Cada hoja es UNA lista con su N° (las de SERFOR: 34 trozas → listas 5 y
      6), y se imprime en su propia página: cabecera, filas, total y firmas.
-     Se parte con `FILAS_POR_LISTA`, el mismo número con que se propone
-     cuántos N° lleva el (33). */
-  const trozos = partirEnHojas(filas);
+     Se parte con las filas por hoja de `hojasDeLaLista`: las mismas con que
+     se contaron los N° del (33), y las de a 20 si la guía se emitió así. */
+  const trozos = partirEnHojas(filas, listas.filasPorHoja);
   const hojasLista = (trozos.length ? trozos : [[]]).map((trozo, i, todas) => {
     const html = htmlListaTrozas({ ...entradas.lista, numero: listas.numeros[i] ?? nroLista, trozas: trozo });
     const nota = todas.length > 1 ? `<div class="pie">Hoja ${i + 1} de ${todas.length} · anexo del (33)</div>` : NOTA_LISTA;

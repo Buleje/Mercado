@@ -72,7 +72,7 @@ export function CasillaGtf({ marcada, children }: { marcada: boolean; children: 
     <span className="inline-flex items-center gap-1.5 text-sm text-[var(--gtf-tinta)]">
       <span
         aria-hidden
-        className="inline-flex h-4 w-5 items-center justify-center border border-[var(--gtf-tinta)] text-sm font-bold leading-none text-[var(--text-primary)]"
+        className="inline-flex h-4 w-5 shrink-0 items-center justify-center border border-[var(--gtf-tinta)] text-sm font-bold leading-none text-[var(--text-primary)]"
       >
         {marcada ? "X" : ""}
       </span>

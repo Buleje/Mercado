@@ -40,10 +40,10 @@ export default function LothImportarGuiasBloques({
   /* Sin ficha (un ingreso sin la consulta de SERFOR) sólo hay lista de trozas: va el resumen solo. */
   if (!ficha) return partes === "datos" ? null : <ResumenEspeciesPapel r={resumen} />;
   if (partes === "resumen") return <ResumenEspeciesPapel r={resumen} />;
-  if (partes === "datos") return <GtfDatosPapelGuia ficha={ficha} />;
+  if (partes === "datos") return <GtfDatosPapelGuia ficha={ficha} conTrozas={piezas.length > 0} />;
   return (
     <div className="space-y-3">
-      <GtfDatosPapelGuia ficha={ficha} />
+      <GtfDatosPapelGuia ficha={ficha} conTrozas={piezas.length > 0} />
       <ResumenEspeciesPapel r={resumen} />
     </div>
   );

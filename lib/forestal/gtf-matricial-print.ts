@@ -22,6 +22,8 @@ import type { PaginaTalonario } from "./gtf-matricial-valores";
 import { INTERLINEA } from "./gtf-matricial-edicion";
 import { aplicarX, aplicarY, escalaPct, transformacionDe, type Transformacion } from "./gtf-matricial-perfiles";
 import { encajarValor, type Encaje, type ModoValor } from "./gtf-salida-geometria";
+import type { PlantillaHoja } from "./gtf-talonario-plantilla";
+import { ESTILO_PAPEL, grupoPlantillaSvg, type EstiloPlantilla } from "./gtf-talonario-plantilla-svg";
 
 /** Interlineado de los valores: el mismo en pantalla y en papel (vive con las cajas de `gtf-matricial-edicion`). */
 export { INTERLINEA };
@@ -104,6 +106,18 @@ export function htmlTalonario(hoja: DisposicionHoja, cat: CatalogoFormato, pagin
 /** Distancia de las cruces de la prueba a cada borde (vive en la disposición: la usan también el PDF y el ESC/P). */
 export { CRUZ_MM };
 
+/** Una cruz de la prueba: dos rayas de 12 mm y un círculo de 3 mm, centrada en (cx, cy). */
+const cruz = (cx: number, cy: number): string =>
+  `<g stroke-width="0.35"><line x1="${n(cx - 6)}" y1="${n(cy)}" x2="${n(cx + 6)}" y2="${n(cy)}"/><line x1="${n(cx)}" y1="${n(cy - 6)}" x2="${n(cx)}" y2="${n(cy + 6)}"/><circle cx="${n(cx)}" cy="${n(cy)}" r="1.5" fill="none"/></g>`;
+
+/** La transformación de la impresora en SVG: `x · escala + corrimiento` (el mismo orden que `aplicarX/aplicarY`). */
+const transformSvg = (tr: Transformacion): string =>
+  `translate(${n(tr.dx)} ${n(tr.dy)})${tr.sx !== 1 || tr.sy !== 1 ? ` scale(${tr.sx} ${tr.sy})` : ""}`;
+
+/** «Impresora: Monte · corrimiento X 2 mm · Y 0 mm · escala X 100 % · Y 100,4 %». */
+const rotuloImpresora = (tr: Transformacion): string =>
+  `Impresora: ${tr.perfil.nombre} · corrimiento X ${n(tr.dx)} mm · Y ${n(tr.dy)} mm${tr.sx !== 1 || tr.sy !== 1 ? ` · escala X ${escalaPct(tr.sx)} · Y ${escalaPct(tr.sy)}` : ""}`;
+
 /**
  * La hoja de PRUEBA: cuadrícula de 10 mm (más gruesa cada 50), los mm
  * rotulados en los bordes y una cruz a 10 mm de cada esquina, todo con el
@@ -129,20 +143,46 @@ export function htmlPruebaTalonario(
     lineas.push(`<line x1="0" y1="${y}" x2="${n(W)}" y2="${y}" stroke-width="${y % 50 === 0 ? 0.3 : 0.12}"/>`);
     lineas.push(`<text x="0.6" y="${y - 0.6}">${y}</text>`);
   }
-  const cruz = (cx: number, cy: number) =>
-    `<g stroke-width="0.35"><line x1="${n(cx - 6)}" y1="${n(cy)}" x2="${n(cx + 6)}" y2="${n(cy)}"/><line x1="${n(cx)}" y1="${n(cy - 6)}" x2="${n(cx)}" y2="${n(cy + 6)}"/><circle cx="${n(cx)}" cy="${n(cy)}" r="1.5" fill="none"/></g>`;
   const cruces = [
     cruz(CRUZ_MM, CRUZ_MM), cruz(W - CRUZ_MM, CRUZ_MM), cruz(CRUZ_MM, H - CRUZ_MM), cruz(W - CRUZ_MM, H - CRUZ_MM), cruz(W / 2, H / 2),
   ].join("");
   const leyenda = `<text x="${n(W / 2)}" y="${n(H / 2 - 9)}" text-anchor="middle" font-size="3.4">PRUEBA DE ALINEACIÓN · ${n(W)} × ${n(H)} mm</text>
     <text x="${n(W / 2)}" y="${n(H / 2 + 12)}" text-anchor="middle" font-size="2.8">Del borde del papel al centro de cada cruz debe dar ${CRUZ_MM} mm.</text>
-    <text x="${n(W / 2)}" y="${n(H / 2 + 16)}" text-anchor="middle" font-size="2.8">${esc(`Impresora: ${tr.perfil.nombre} · corrimiento usado: X ${n(tr.dx)} mm · Y ${n(tr.dy)} mm`)}${
-      tr.sx !== 1 || tr.sy !== 1 ? ` · escala X ${escalaPct(tr.sx)} · Y ${escalaPct(tr.sy)}` : ""
-    }</text>`;
-  const escala = tr.sx !== 1 || tr.sy !== 1 ? ` scale(${tr.sx} ${tr.sy})` : "";
+    <text x="${n(W / 2)}" y="${n(H / 2 + 16)}" text-anchor="middle" font-size="2.8">${esc(rotuloImpresora(tr).replace("corrimiento", "corrimiento usado:"))}</text>`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${n(W)}mm" height="${n(H)}mm" viewBox="0 0 ${n(W)} ${n(H)}"
     style="position:absolute;left:0;top:0" font-family="Courier New, monospace" font-weight="bold" font-size="2.2" fill="#000" stroke="#000">
-    <g transform="translate(${n(tr.dx)} ${n(tr.dy)})${escala}"><g stroke="#000">${lineas.join("")}</g>${cruces}<g stroke="none">${leyenda}</g></g></svg>`;
+    <g transform="${transformSvg(tr)}"><g stroke="#000">${lineas.join("")}</g>${cruces}<g stroke="none">${leyenda}</g></g></svg>`;
+  const valores = pagina ? cajasDeLaPagina(hoja, cat, pagina, tr).join("") : "";
+  return documento(hoja, titulo, [svg + valores]);
+}
+
+/**
+ * La HOJA DE PRUEBA EN PAPEL BLANCO (16-10): el formato del talonario
+ * dibujado 1:1 en rayas finas (`plantilla`, con la traducción de la pantalla),
+ * los valores de la hoja que se ve y las cruces a `CRUZ_MM` de cada esquina,
+ * TODO con la impresora elegida (corrimiento y escala): la prueba es honesta,
+ * cae donde caería la guía. Se pone sobre el talonario contra una ventana: si
+ * las rayas coinciden, la impresora y la medida están bien; si no, se corrige
+ * Medida o Calibrar. La impresión normal (`htmlTalonario`) NO lleva el formato.
+ */
+export function htmlHojaPruebaBlanca(
+  hoja: DisposicionHoja,
+  cat: CatalogoFormato,
+  pagina: PaginaTalonario | null,
+  plantilla: PlantillaHoja,
+  titulo: string,
+  tr: Transformacion = transformacionDe(hoja, null),
+  estilo: EstiloPlantilla = ESTILO_PAPEL.gris,
+): string {
+  const W = hoja.anchoMm;
+  const H = hoja.altoMm;
+  const cruces = [cruz(CRUZ_MM, CRUZ_MM), cruz(W - CRUZ_MM, CRUZ_MM), cruz(CRUZ_MM, H - CRUZ_MM), cruz(W - CRUZ_MM, H - CRUZ_MM)].join("");
+  /* La leyenda va en el margen de abajo y sin corrimiento: dice con qué impresora salió, no se mide. */
+  const leyenda = `<text x="${n(W / 2)}" y="${n(H - 2)}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="2.3" fill="${estilo.tinta}">${esc(
+    `HOJA DE PRUEBA · ${rotuloImpresora(tr)} · a contraluz, cada raya cae sobre la del talonario`,
+  )}</text>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" data-hoja-prueba-blanca="1" width="${n(W)}mm" height="${n(H)}mm" viewBox="0 0 ${n(W)} ${n(H)}"
+    style="position:absolute;left:0;top:0"><g transform="${transformSvg(tr)}">${grupoPlantillaSvg(plantilla, estilo)}<g stroke="#000" fill="none">${cruces}</g></g>${leyenda}</svg>`;
   const valores = pagina ? cajasDeLaPagina(hoja, cat, pagina, tr).join("") : "";
   return documento(hoja, titulo, [svg + valores]);
 }
