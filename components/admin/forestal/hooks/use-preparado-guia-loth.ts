@@ -24,6 +24,8 @@ export interface PreparadoGuiaLoth {
   ultimasPorPlan?: Record<string, { gtfNumber: string; datos: GtfDatos }>;
   /** La planta propia (Ficha del CTP) si el negocio lleva Libro CTP: una guía a ese RUC pasa allá. */
   ctpPropio: PlantaPropia | null;
+  /** El N° que sigue por permiso para las trozas a mano (`sin_permiso` = sin plan; 16-10, «Medir por foto»). */
+  siguienteCorrelativo?: Record<string, number>;
 }
 
 export function usePreparadoGuiaLoth() {
@@ -48,6 +50,7 @@ export function usePreparadoGuiaLoth() {
         ultimaGuiaNumero: j.ultimaGuiaNumero ?? null,
         ultimasPorPlan: j.ultimasPorPlan ?? {},
         ctpPropio: j.ctpPropio ?? null,
+        siguienteCorrelativo: j.siguienteCorrelativo ?? {},
       });
     } catch (e) {
       setErrorCarga(e instanceof Error ? e.message : String(e));

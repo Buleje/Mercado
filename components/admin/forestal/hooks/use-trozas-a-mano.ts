@@ -10,6 +10,11 @@
  * (`loth-trozas-a-mano-planilla`). El historial guarda QUÉ filas se dieron
  * vuelta, no una foto de la lista: deshacer no se lleva las filas agregadas
  * ni las correcciones hechas después.
+ *
+ * «Medir por foto» (16-10): `agregarVarias` pasa la carga entera de una vez y
+ * `desde` es el primer N° de las trozas sin árbol (el correlativo del permiso;
+ * 1 = lo de siempre). Corregir D1 de una troza pareja (`d2Supuesto`) mueve D2
+ * con él; tipear D2 le saca la marca: ya no es supuesto.
  */
 
 import { useCallback, useRef, useState } from "react";
@@ -32,20 +37,37 @@ interface Historial {
 }
 const SIN_HISTORIAL: Historial = { deshacer: [], rehacer: [] };
 
+/** El cambio aplicado a una fila; la troza pareja (D2 supuesto) sigue a D1 hasta que D2 se tipea. */
+function conCambio(f: FilaAMano, cambio: Partial<TrozaAMano>): FilaAMano {
+  if (!f.d2Supuesto) return { ...f, ...cambio };
+  if (cambio.d2Cm !== undefined && cambio.d2Cm !== f.d2Cm) return { ...f, ...cambio, d2Supuesto: false };
+  if (cambio.d1Cm !== undefined) return { ...f, ...cambio, d2Cm: cambio.d1Cm };
+  return { ...f, ...cambio };
+}
+
 export function useTrozasAMano() {
   const [filas, setFilas] = useState<FilaAMano[]>([]);
   const [historial, setHistorial] = useState<Historial>(SIN_HISTORIAL);
+  const [desde, setDesdeCrudo] = useState(1);
   const siguiente = useRef(0);
   const agregar = useCallback((t: TrozaAMano) => {
     siguiente.current += 1;
     const key = siguiente.current;
     setFilas((prev) => [...prev, { ...t, key }]);
   }, []);
+  const agregarVarias = useCallback((ts: readonly TrozaAMano[]) => {
+    const nuevas = ts.map((t) => {
+      siguiente.current += 1;
+      return { ...t, key: siguiente.current };
+    });
+    setFilas((prev) => [...prev, ...nuevas]);
+  }, []);
+  const setDesde = useCallback((n: number) => setDesdeCrudo(Number.isInteger(n) && n >= 1 ? n : 1), []);
   const quitar = useCallback((key: number) => setFilas((prev) => prev.filter((f) => f.key !== key)), []);
   /** Corrige medidas de una fila ya anotada (ya revisadas con `revisarCeldaAMano`). */
   const editar = useCallback(
     (key: number, cambio: Partial<TrozaAMano>) =>
-      setFilas((prev) => prev.map((f) => (f.key === key ? { ...f, ...cambio } : f))),
+      setFilas((prev) => prev.map((f) => (f.key === key ? conCambio(f, cambio) : f))),
     [],
   );
 
@@ -80,7 +102,10 @@ export function useTrozasAMano() {
 
   return {
     filas,
+    desde,
+    setDesde,
     agregar,
+    agregarVarias,
     quitar,
     editar,
     ordenar,

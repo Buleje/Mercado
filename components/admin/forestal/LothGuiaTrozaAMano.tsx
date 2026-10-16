@@ -20,7 +20,8 @@
  */
 
 import { useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { Plus } from "@buleje/design-system/icons";
+import dynamic from "next/dynamic";
+import { Camera, Plus } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
@@ -41,6 +42,9 @@ import { ArbolDeTrozaAMano } from "./arbol-de-troza-a-mano";
 import TrozaAManoTabla from "./troza-a-mano-tabla";
 import { useTecladoGrilla } from "./celdas-excel";
 import { COLUMNAS_A_MANO, GRILLA_A_MANO } from "./troza-a-mano-celda";
+
+/* «Medir por foto» (16-10): su ventana y el medidor se bajan recién al tocar el botón. */
+const LothTrozasPorFoto = dynamic(() => import("./LothTrozasPorFoto"), { ssr: false });
 
 type Medida = Exclude<CampoAMano, "especie">;
 const VACIO: CrudoAMano = { especie: "", d1: "", d2: "", largo: "", cantidad: "1" };
@@ -63,6 +67,7 @@ export default function LothGuiaTrozaAMano({ g, catalogo }: { g: DespachoGuiaLot
   const [arbolId, setArbolId] = useState<string | null>(null);
   /* Los errores se muestran recién al intentar agregar: mientras se tipea, no se grita. */
   const [intentado, setIntentado] = useState(false);
+  const [porFoto, setPorFoto] = useState(false);
   const refEspecie = useRef<HTMLSelectElement>(null);
   const refD1 = useRef<HTMLInputElement>(null);
   const refD2 = useRef<HTMLInputElement>(null);
@@ -149,7 +154,11 @@ export default function LothGuiaTrozaAMano({ g, catalogo }: { g: DespachoGuiaLot
             Sin permiso: lo asignas después
           </span>
         )}
+        <Btn onClick={() => setPorFoto(true)} disabled={restantes <= 0} className="ml-auto" data-qa="medir-por-foto">
+          <Camera className="h-4 w-4" aria-hidden="true" /> Medir por foto
+        </Btn>
       </div>
+      {porFoto && <LothTrozasPorFoto g={g} catalogo={catalogo} onClose={() => setPorFoto(false)} />}
 
       <TrozaAManoTabla g={g} />
 

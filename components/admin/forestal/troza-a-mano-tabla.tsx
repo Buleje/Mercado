@@ -41,6 +41,7 @@ const AVISO =
   "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]";
 const PASTILLA: Record<ProblemaEspecieAMano["tipo"], string> = { catalogo: ERROR, permiso: AVISO };
 const PILDORA = "mt-0.5 mr-1 inline-block rounded-full px-2 py-0.5 text-xs font-bold";
+const FOTO = "bg-[var(--accent-soft)] text-[var(--accent-ink)]";
 
 /** Los códigos que imprime la guía para una fila: «4», «4 y 5», «4 a 9». */
 function codigosDeFila(codigos: readonly string[]): string {
@@ -127,6 +128,16 @@ export default function TrozaAManoTabla({ g }: { g: DespachoGuiaLoth }) {
                     {f.especie && (
                       <span className="block text-xs font-semibold text-[var(--text-secondary)]">
                         {f.especie}
+                      </span>
+                    )}
+                    {f.medidoPorFoto && (
+                      <span title="El D1 salió de la foto de la carga" className={`${PILDORA} ${FOTO}`}>
+                        Foto
+                      </span>
+                    )}
+                    {f.d2Supuesto && (
+                      <span title="No se midió la otra punta: va pareja (ADR-492). Anota el D2 si lo tienes." data-qa="d2-supuesto" className={`${PILDORA} ${AVISO}`}>
+                        D2 = D1
                       </span>
                     )}
                     {malEspecie && (

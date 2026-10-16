@@ -4,7 +4,9 @@
  *
  * - Diccionario `DICT_4X4_250` de OpenCV (cualquier generador ArUco lo
  *   imprime igual). Ids 0-199 = trozas · 200-244 = chalecos/cascos (todavía
- *   sin uso) · 245-249 = la hoja de PRUEBA de distancia (nunca una troza).
+ *   sin uso) · 245-249 = hojas de PRUEBA (nunca una troza): 245-247 la de
+ *   distancia; 248-249 las de ESCALA de «Medir por foto» (`IDS_HOJA_ESCALA`,
+ *   16-10). Un id nuevo de hoja sale de 245-249, nunca de chalecos.
  * - Un id cuenta como «visto» con ≥3 cuadros en ≥2 s (`confirmarMarcadores`):
  *   un cuadro suelto puede ser ruido del video.
  * - La asignación marcador → troza va por `trozaId` (el código de la troza

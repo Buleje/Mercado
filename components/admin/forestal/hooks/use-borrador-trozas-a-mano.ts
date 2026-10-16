@@ -30,6 +30,8 @@ export interface BorradorTrozasAMano {
   v: 1;
   planId: string | null;
   filas: TrozaAMano[];
+  /** El primer N° de las trozas sin árbol (16-10, «Medir por foto»); sin él, 1. */
+  desde?: number;
   guardadoAt: number;
 }
 
@@ -56,7 +58,8 @@ export function leerBorrador(clave: string): BorradorTrozasAMano | null {
       return r.success ? [r.data] : [];
     });
     if (filas.length === 0) return null;
-    return { v: 1, planId: typeof j.planId === "string" ? j.planId : null, filas, guardadoAt: Number(j.guardadoAt) || 0 };
+    const desde = Number.isInteger(j.desde) && Number(j.desde) > 1 ? Number(j.desde) : undefined;
+    return { v: 1, planId: typeof j.planId === "string" ? j.planId : null, filas, ...(desde ? { desde } : {}), guardadoAt: Number(j.guardadoAt) || 0 };
   } catch {
     return null; // sin almacenamiento o JSON roto: no hay borrador
   }
@@ -88,7 +91,7 @@ export function useBorradorTrozasAMano(opts: {
   registrada: boolean;
 }) {
   const { prep, planId, setPlanId, aMano, registrada } = opts;
-  const { filas, agregar, quitar } = aMano;
+  const { filas, agregar, quitar, desde, setDesde } = aMano;
   const clave = useMemo(() => (prep ? claveDelBorrador(prep) : null), [prep]);
   const intentado = useRef(false);
   const porMarcar = useRef(false);
@@ -105,11 +108,12 @@ export function useBorradorTrozasAMano(opts: {
       const planVive = b.planId === null || prep.planes.some((p) => p.id === b.planId);
       if (b.planId !== planId && planVive) setPlanId(b.planId);
       for (const f of b.filas) agregar(f);
+      if (b.desde) setDesde(b.desde);
       porMarcar.current = true;
       setRecuperado({ guardadoAt: b.guardadoAt, claves: null });
     }
     setListo(true);
-  }, [clave, prep, planId, filas.length, agregar, setPlanId]);
+  }, [clave, prep, planId, filas.length, agregar, setPlanId, setDesde]);
 
   /* Las claves que recibieron las filas recuperadas (las pone `agregar`, en el render siguiente). */
   useEffect(() => {
@@ -130,9 +134,10 @@ export function useBorradorTrozasAMano(opts: {
       v: 1,
       planId: planId ?? null,
       filas: filas.map(({ key: _key, ...t }) => t),
+      ...(desde > 1 ? { desde } : {}),
       guardadoAt: Date.now(),
     });
-  }, [listo, clave, registrada, filas, planId]);
+  }, [listo, clave, registrada, filas, planId, desde]);
 
   const vivas = useMemo(
     () => (recuperado?.claves ? filas.filter((f) => recuperado.claves?.has(f.key)) : []),

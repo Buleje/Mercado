@@ -8,7 +8,7 @@
  */
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatNumber } from "@/lib/format";
-import { cssMarcadorA4, htmlHojaMarcador, htmlHojasDePrueba } from "@/lib/camaras/marcador-a4";
+import { cssMarcadorA4, htmlHojaMarcador, htmlHojasDeEscala, htmlHojasDePrueba } from "@/lib/camaras/marcador-a4";
 import { openCtpReport } from "@/lib/forestal/ctp-print-shared";
 import { urlCortaDeTroza } from "@/lib/forestal/ctp-troza-url";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
@@ -72,4 +72,9 @@ export async function imprimirMarcadoresDeTrozas(
 /** La hoja de prueba de 3/5/8 m (no asigna nada: los ids 245-247 son de prueba). */
 export function imprimirHojaDePrueba(): void {
   openCtpReport({ title: "Prueba de marcadores · 3, 5 y 8 m", css: cssMarcadorA4(), body: htmlHojasDePrueba() });
+}
+
+/** Las dos hojas de escala de «Medir por foto» (ids 248-249: no asigna nada). */
+export function imprimirHojasDeEscala(): void {
+  openCtpReport({ title: "Hojas de escala · medir por foto", css: cssMarcadorA4(), body: htmlHojasDeEscala() });
 }

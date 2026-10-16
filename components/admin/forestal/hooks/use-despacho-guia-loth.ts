@@ -52,6 +52,7 @@ import { useTrozasAMano } from "./use-trozas-a-mano";
 import { useEspeciesAMano, type CatalogoParaJuzgar } from "./use-especies-a-mano";
 import { useArbolesAMano } from "./use-arboles-a-mano";
 import { useBorradorTrozasAMano } from "./use-borrador-trozas-a-mano";
+import { useFotosDeLaCarga } from "./use-fotos-de-la-carga";
 import { conCodigosDelServidor, piezasAMano, trozasDelLibroAMano } from "@/lib/forestal/loth-trozas-a-mano";
 
 export interface RegistradaLoth {
@@ -141,8 +142,8 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
   /* El árbol de cada una (opcional), juzgado como al registrar (plan + especie del censo + T4). */
   const arbolesAMano = useArbolesAMano({ planId: planId ?? null, filas: aMano.filas });
   const piezasManuales = useMemo(
-    () => trozasDelLibroAMano(piezasAMano(aMano.filas, delLibro.map((t) => t.codigo), arbolesAMano.porId), planId ?? null),
-    [aMano.filas, delLibro, planId, arbolesAMano.porId],
+    () => trozasDelLibroAMano(piezasAMano(aMano.filas, delLibro.map((t) => t.codigo), arbolesAMano.porId, aMano.desde), planId ?? null),
+    [aMano.filas, aMano.desde, delLibro, planId, arbolesAMano.porId],
   );
   const piezas = useMemo(() => [...delLibro, ...piezasManuales], [delLibro, piezasManuales]);
   /** El N° de lista y la llegada (= el destinatario) que se llenan solos (`use-traslado-guia-loth`). */
@@ -211,6 +212,9 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
   const [registrada, setRegistrada] = useState<RegistradaLoth | null>(null);
   /* Las filas a mano, a salvo de un remonte (recarga, pestaña descartada al girar el celular). */
   const borradorAMano = useBorradorTrozasAMano({ prep, planId, setPlanId: setPlanElegido, aMano, registrada: registrada != null });
+  /* «Medir por foto»: las fotos esperan a la guía registrada para ir a sus papeles. */
+  const fotosCarga = useFotosDeLaCarga();
+  const subirFotos = fotosCarga.subir;
 
   const registrar = useCallback(
     async (confirmar?: PreguntaNumero["tipo"]) => {
@@ -230,14 +234,18 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
             gtfDate: emision,
             trozas: delLibro.map((p) => p.codigo),
             /* Sólo las medidas: el volumen lo calcula el servidor. */
-            aMano: aMano.filas.map(({ d1Cm, d2Cm, largoM, cantidad, especie, arbolId }) => ({
+            aMano: aMano.filas.map(({ d1Cm, d2Cm, largoM, cantidad, especie, arbolId, medidoPorFoto, d2Supuesto }) => ({
               d1Cm,
               d2Cm,
               largoM,
               cantidad,
               especie: especie ?? null,
               arbolId: arbolId ?? null,
+              ...(medidoPorFoto ? { medidoPorFoto: true } : {}),
+              ...(d2Supuesto ? { d2Supuesto: true } : {}),
             })),
+            /* El primer N° de las trozas sin árbol (el correlativo del permiso); 1 = lo de siempre. */
+            ...(aMano.desde > 1 ? { desde: aMano.desde } : {}),
             planId: planId ?? null,
             titularName: identidad.titular || null,
             gtfDatos: enviados,
@@ -270,6 +278,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
           titular: identidad.titular,
           ctp: j.ctp ?? null,
         });
+        void subirFotos(gtfNumber.trim());
         onRegistrada?.();
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -277,7 +286,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
         setEnviando(false);
       }
     },
-    [enviando, faltan.length, identidad, gtfNumber, emision, piezas, delLibro, piezasManuales, aMano.filas, planId, datos, traslado.listas.texto, onRegistrada],
+    [enviando, faltan.length, identidad, gtfNumber, emision, piezas, delLibro, piezasManuales, aMano.filas, aMano.desde, planId, datos, traslado.listas.texto, onRegistrada, subirFotos],
   );
 
   /* Cambiar el N° invalida lo que se confirmó del anterior. */
@@ -309,6 +318,10 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void; catalogo?
     borradorAMano,
     especiesAMano,
     arbolesAMano,
+    /** Las fotos de «Medir por foto»: suben a los papeles de la guía al registrar. */
+    fotosCarga,
+    /** El correlativo que sigue en cada permiso (o `sin_permiso`), del servidor. */
+    siguienteCorrelativo: prep?.siguienteCorrelativo ?? {},
     piezasManuales,
     piezas,
     emision,

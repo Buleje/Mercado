@@ -50,6 +50,14 @@ export interface TrozaAMano {
    * (`revisarArbolDeTroza`).
    */
   arbolId?: string | null;
+  /**
+   * La fila salió de «Medir por foto» (16-10, `testas-medicion`): D1 lo dio la
+   * testa en la foto y el operador lo confirmó. Queda escrito en la
+   * observación de la línea de Trozado (`notaPorFoto`).
+   */
+  medidoPorFoto?: boolean;
+  /** D2 no se midió (no hubo foto de la otra punta ni se tipeó): va pareja, D2 = D1 (ADR-492), y se marca. */
+  d2Supuesto?: boolean;
 }
 
 /** Lo que el libro guarda: Ø en METROS a 3 decimales (Decimal 8,3), largo a 2 (Decimal 8,2). */
@@ -88,6 +96,8 @@ export const trozaAManoSchema = z
       .max(64)
       .regex(/^[A-Za-z0-9_-]+$/, "Árbol no válido")
       .nullish(),
+    medidoPorFoto: z.boolean().optional(),
+    d2Supuesto: z.boolean().optional(),
   })
   .superRefine((t, ctx) => {
     if (!(volumenPorTroza(t) > 0)) {
@@ -127,6 +137,8 @@ function leer(v: string): number | null {
   const n = Number(t);
   return Number.isFinite(n) ? n : null;
 }
+/** El mismo `leer` para las pantallas que tipean medidas sueltas («Medir por foto»). */
+export const leerMedida = leer;
 
 const CAMPO_DE: Partial<Record<keyof TrozaAMano, CampoAMano>> = { especie: "especie", d1Cm: "d1", d2Cm: "d2", largoM: "largo", cantidad: "cantidad" };
 
@@ -183,6 +195,8 @@ export interface PiezaAMano {
   /** El árbol de su fila (`null` = sin árbol): `treeCode` del censo y su id. */
   treeCode: string | null;
   arbolId: string | null;
+  /** Medida por foto (`medidoPorFoto`): «pareja» = D2 no se midió y va igual a D1. `null` = a mano. */
+  porFoto: "medida" | "pareja" | null;
 }
 
 /** Lo que hace falta de un árbol para numerar sus trozas: su código y los de las que ya tiene. */
@@ -201,30 +215,36 @@ export interface ArbolParaNumerar {
  * guía o en esta misma lista («001-TOR-A», «001-TOR-B»). Si el árbol no está
  * (todavía cargando en la pantalla), la troza va con número y sin árbol: el
  * servidor rechaza un árbol que no existe antes de numerar.
+ *
+ * `desde` (16-10, «asignar código según el correlativo que se quede»): el
+ * primer número de las trozas sin árbol. 1 = lo de siempre; la foto propone
+ * el que sigue al mayor del permiso (`siguienteCorrelativo`).
  */
 export function piezasAMano(
   filas: readonly TrozaAMano[],
   ocupados: Iterable<string> = [],
   arboles: ReadonlyMap<string, ArbolParaNumerar> = new Map(),
+  desde = 1,
 ): PiezaAMano[] {
   const usados = new Set([...ocupados].map((c) => c.trim()));
   const piezas: PiezaAMano[] = [];
-  let n = 0;
+  let n = Number.isFinite(desde) ? Math.max(0, Math.floor(desde) - 1) : 0;
   for (const f of filas) {
     const medidas = medidasDelLibro(f);
     const especie = f.especie?.trim() || null;
     const arbolId = f.arbolId?.trim() || null;
     const arbol = arbolId ? arboles.get(arbolId) : undefined;
+    const porFoto = f.medidoPorFoto ? (f.d2Supuesto ? "pareja" : "medida") : null;
     for (let i = 0; i < f.cantidad; i++) {
       if (arbol && arbolId) {
         const codigo = siguienteCodigoDelArbol(arbol.treeCode, [...arbol.trozas, ...usados]);
         usados.add(codigo);
-        piezas.push({ codigo, ...medidas, especie, treeCode: arbol.treeCode, arbolId });
+        piezas.push({ codigo, ...medidas, especie, treeCode: arbol.treeCode, arbolId, porFoto });
         continue;
       }
       do n += 1;
       while (usados.has(String(n)));
-      piezas.push({ codigo: String(n), ...medidas, especie, treeCode: null, arbolId: null });
+      piezas.push({ codigo: String(n), ...medidas, especie, treeCode: null, arbolId: null, porFoto });
     }
   }
   return piezas;
@@ -239,7 +259,7 @@ export const ID_A_MANO = "a-mano:";
  * con el catálogo (`cientificoDe`), como hace con las del libro sin binomio.
  */
 export function trozasDelLibroAMano(piezas: readonly PiezaAMano[], planId: string | null): TrozaDelLibro[] {
-  return piezas.map(({ especie, treeCode, arbolId: _arbolId, ...p }) => ({
+  return piezas.map(({ especie, treeCode, arbolId: _arbolId, porFoto: _porFoto, ...p }) => ({
     ...p,
     id: `${ID_A_MANO}${p.codigo}`,
     lineNo: 0,
@@ -337,8 +357,18 @@ const citaDeLaGuia = (gtfNumber: string): string => `Troza anotada a mano al des
  * Una sola definición para quien la escribe (`asentarTrozasAManoEnTx`) y quien
  * la lee (`trozadosNacidosDeLaGuia`).
  */
-export const observacionAMano = (gtfNumber: string, codigo: string): string =>
-  `${citaDeLaGuia(gtfNumber)}en la guía: ${codigo}).`;
+export const observacionAMano = (gtfNumber: string, codigo: string, nota?: string | null): string =>
+  `${citaDeLaGuia(gtfNumber)}en la guía: ${codigo}).${nota ? ` ${nota}` : ""}`;
+
+/**
+ * Lo que la línea de Trozado dice de una troza medida por foto (16-10): de
+ * dónde salió cada Ø y quién lo confirmó. `null` = anotada a mano.
+ */
+export function notaPorFoto(porFoto: PiezaAMano["porFoto"], usuario: string): string | null {
+  if (!porFoto) return null;
+  const d2 = porFoto === "pareja" ? "D2 = D1 (troza pareja, ADR-492: no se midió la otra punta)" : "D2 a mano";
+  return `Medido por foto: D1 de la testa, ${d2}; confirmado por ${usuario}.`;
+}
 
 /** Una línea de Trozado, con lo que hace falta para saber si nació con una guía. */
 export interface TrozadoDeLaGuia {

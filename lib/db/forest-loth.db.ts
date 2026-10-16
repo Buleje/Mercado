@@ -58,6 +58,7 @@ import {
 } from "@/lib/forestal/loth-borrar-del-plan";
 import {
   especiesDeLasFilas,
+  notaPorFoto,
   observacionAMano,
   piezasAMano,
   trozadoIdsDeItems,
@@ -65,6 +66,7 @@ import {
   type TrozaAMano,
 } from "@/lib/forestal/loth-trozas-a-mano";
 import { ForestEspeciesDB } from "@/lib/db/forest-especies.db";
+import { siguientesCorrelativos } from "@/lib/forestal/testas-medicion";
 import { candidatosCodigoUnico, partirCodigoUnico } from "@/lib/forestal/codigo-unico-troza";
 import { repitePlaca } from "@/lib/forestal/loth-restante";
 import { ForestLothArbolesAManoDB } from "@/lib/db/forest-loth-arboles-a-mano.db";
@@ -727,7 +729,8 @@ export class ForestLothDB {
       gtfNumber: string;
       gtfDate: Date;
       trozaCodes: string[];
-      aMano?: { filas: readonly TrozaAMano[]; planId: string | null };
+      /** `desde`: el primer N° de las trozas a mano sin árbol (16-10, correlativo del permiso; default 1). */
+      aMano?: { filas: readonly TrozaAMano[]; planId: string | null; desde?: number };
       gtfDatos: GtfDatos;
       titularName: string | null;
       observations?: string | null;
@@ -759,6 +762,7 @@ export class ForestLothDB {
           ? await ForestLothDB.asentarTrozasAManoEnTx(tx, tenantId, {
               filas: filasAMano,
               planId: aMano.planId,
+              desde: aMano.desde,
               ocupados: codes,
               gtfNumber: num,
               gtfDate: input.gtfDate,
@@ -860,6 +864,8 @@ export class ForestLothDB {
       planId: string | null;
       /** Códigos que ya imprime la guía (sus trozas del libro): la numeración los salta. */
       ocupados: readonly string[];
+      /** El primer N° de las trozas sin árbol (`piezasAMano`); sin él, 1. */
+      desde?: number;
       gtfNumber: string;
       gtfDate: Date;
       caratulaId: string | null;
@@ -869,7 +875,7 @@ export class ForestLothDB {
     if (!tenantId) throw new Error("tenantId is required");
     await GtfNumeroDB.bloquear(tx, tenantId, x.gtfNumber);
     const { filas, arboles } = await ForestLothDB.arbolesDeLasFilasEnTx(tx, tenantId, x.filas, x.planId);
-    const piezas = piezasAMano(filas, x.ocupados, arboles);
+    const piezas = piezasAMano(filas, x.ocupados, arboles, x.desde);
     /* El científico va con la especie (la grafía ya es la del catálogo): una por nombre. */
     const cientificoDe = new Map(filas.flatMap((f) => (f.especie ? [[f.especie, f.cientifico] as const] : [])));
     const candidatos = piezas.map((p) => candidatosCodigoUnico(p.codigo, x.gtfNumber));
@@ -910,7 +916,7 @@ export class ForestLothDB {
             diamMenorM: p.diamMenorM,
             lengthM: p.lengthM,
             volumeM3: p.volumeM3,
-            observations: observacionAMano(x.gtfNumber, p.codigo),
+            observations: observacionAMano(x.gtfNumber, p.codigo, notaPorFoto(p.porFoto, x.createdBy)),
             createdBy: x.createdBy,
           },
           x.gtfDate,
@@ -2952,6 +2958,22 @@ export class ForestLothDB {
    * que trae justamente las YA despachadas) se marcaba "no está en el libro"
    * por construcción. Esta consulta no excluye nada: es la fuente correcta.
    */
+  /**
+   * El N° que sigue en cada permiso para las trozas sin árbol (16-10, «asignar
+   * código según el correlativo que se quede»): el mayor código numérico que
+   * imprime la guía entre las trozas vivas del Trozado de ese plan, + 1
+   * (`siguientesCorrelativos`). Clave `sin_permiso` = las de sin plan.
+   */
+  static async siguientesCorrelativos(tenantId: string): Promise<Record<string, number>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.forestLothEntry.findMany({
+      where: { tenantId, deletedAt: null, status: "registrado", section: "trozado", trozaCode: { not: null } },
+      select: { planId: true, trozaCode: true },
+      take: 20000,
+    });
+    return siguientesCorrelativos(rows);
+  }
+
   static async trozaCodesRegistrados(tenantId: string): Promise<string[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const rows = await prisma.forestLothEntry.findMany({

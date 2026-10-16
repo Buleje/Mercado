@@ -28,6 +28,7 @@ import { FILAS_POR_LISTA, hojasDeLista, listasEfectivas } from "@/lib/forestal/l
 import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-api-errors";
 import { motivoSchema } from "@/lib/forestal/motivo";
 import { TROZAS_POR_GUIA_MAX, trozaAManoSchema, trozasDeFilas } from "@/lib/forestal/loth-trozas-a-mano";
+import { CORRELATIVO_MAX } from "@/lib/forestal/testas-medicion";
 import type { Contrato } from "@/lib/forestal/contratos";
 
 /**
@@ -82,6 +83,8 @@ const postSchema = z.object({
   trozas: z.array(z.string().trim().min(1).max(60)).max(TROZAS_POR_GUIA_MAX, "Una guía lleva hasta 150 trozas").default([]),
   /** Trozas anotadas a mano: medidas y cantidad. El volumen NO viaja: lo calcula el servidor. */
   aMano: z.array(trozaAManoSchema).max(TROZAS_POR_GUIA_MAX).optional(),
+  /** El primer N° de las trozas a mano sin árbol (16-10: el correlativo del permiso, «Medir por foto»). Sin él, 1. */
+  desde: z.number().int().min(1).max(CORRELATIVO_MAX).optional(),
   /** El plan de la guía cuando sólo lleva trozas a mano (`null` = sin permiso todavía). */
   planId: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/, "El permiso no es válido.").nullable().optional(),
   titularName: z.string().trim().max(200).nullable().optional(),
@@ -164,13 +167,14 @@ export const GET = withApiHandler("forestal-loth-despacho-guia-get", async (req:
   }
 
   try {
-    const [caratula, planes, trozas, usadas, ultima, libroCtp] = await Promise.all([
+    const [caratula, planes, trozas, usadas, ultima, libroCtp, siguienteCorrelativo] = await Promise.all([
       ForestLothDB.getActiveCaratula(auth.tenantId),
       ForestPlanDB.listPlans(auth.tenantId),
       ForestLothDB.trozasParaGuia(auth.tenantId),
       usadasDelTalonario(auth.tenantId),
       ForestGtfDB.ultimaConDatos(auth.tenantId),
       isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"),
+      ForestLothDB.siguientesCorrelativos(auth.tenantId),
     ]);
     /* La planta propia: si el destinatario lleva este RUC, la guía pasa al
        Libro CTP para recibirla. Sin Libro CTP no se ofrece nada. */
@@ -220,6 +224,8 @@ export const GET = withApiHandler("forestal-loth-despacho-guia-get", async (req:
       ultimaGuiaNumero: ultima?.gtfNumber ?? null,
       ultimasPorPlan: Object.fromEntries([...ultimasPorPlan].map(([planId, g]) => [planId, { gtfNumber: g.gtfNumber, datos: leerGtfDatos(g.gtfDatos) }])),
       ctpPropio,
+      /** El N° que sigue por permiso (`sin_permiso` = sin plan) para las trozas a mano. */
+      siguienteCorrelativo,
     });
   } catch (err) {
     logger.error("[loth-despacho-guia.GET] failed", { error: String(err), tenantId: auth.tenantId });
@@ -362,7 +368,7 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
       gtfDate: new Date(`${gtfDate}T00:00:00.000Z`),
       trozaCodes: trozas,
       /* Las a mano van con el plan de la guía (el de sus trozas del libro, si las hay). */
-      ...(aMano.length ? { aMano: { filas: aMano, planId: unPlan ? planId : null } } : {}),
+      ...(aMano.length ? { aMano: { filas: aMano, planId: unPlan ? planId : null, desde: parsed.data.desde } } : {}),
       gtfDatos: datos,
       titularName: titular.titular,
       createdBy: auth.username ?? "unknown",

@@ -13,6 +13,7 @@
  * lector no lo tolera.
  */
 import { esc } from "@/lib/forestal/ctp-print-shared";
+import { IDS_HOJA_ESCALA, LADO_HOJA_ESCALA_MM } from "@/lib/forestal/testas-medicion";
 import { RANGO_PRUEBA, svgMarcador } from "./marcadores";
 
 /** Lado del cuadrado negro de la hoja de troza (mm). */
@@ -100,6 +101,35 @@ export function htmlHojasDePrueba(): string {
       <li>Pega las tres hojas en una troza o una tabla, de frente a la cámara «Patio de trozas», a 3 m.</li>
       <li>En el panel: Cámaras › Hoy en el patio › Trozas a la vista › «Contar ahora». Anota qué números leyó y sus px por celda.</li>
       <li>Repite a 5 m y a 8 m. Si a 8 m no lee la de 18 cm, hace falta A3 o poner la cámara más cerca de la pila.</li>
+    </ol></div>`
+        : ""
+    }
+  </section>`,
+  ).join("");
+}
+
+/**
+ * Las dos hojas de ESCALA de «Medir por foto» (16-10): marcadores 248 y 249
+ * (del rango de prueba, nunca una troza ni un chaleco) con el cuadrado negro
+ * de 180 mm. Pegadas en la cara de la carga, dan los cm de cada testa.
+ */
+export function htmlHojasDeEscala(): string {
+  return IDS_HOJA_ESCALA.map(
+    (id, i) => `<section class="hoja">
+    <div class="mk" style="width:${LADO_HOJA_ESCALA_MM}mm;height:${LADO_HOJA_ESCALA_MM}mm">${svgMarcador(id)}</div>
+    <div class="pie">
+      <div class="txt">
+        <div class="cod" style="font-size:44pt">ESCALA ${i + 1}</div>
+        <div class="det">Cuadrado de ${LADO_HOJA_ESCALA_MM / 10} cm · marcador ${id}</div>
+      </div>
+    </div>
+    ${
+      i === 0
+        ? `<div class="pasos"><ol>
+      <li>Imprime en A4 al 100 % (sin «ajustar a la página») y mide el cuadrado negro: tiene que dar 18 cm. Si da otra cosa, todas las medidas salen mal.</li>
+      <li>Pega la hoja 1 plana sobre las testas, en un extremo de la cara de la carga, y la hoja 2 en el otro extremo. Con una sola también mide, pero la foto tiene que ir de frente.</li>
+      <li>Toma la foto de frente, a 3-5 m: que entren todas las testas y las dos hojas enteras.</li>
+      <li>En el panel: Despachar con guía › Anotar a mano › Medir por foto.</li>
     </ol></div>`
         : ""
     }
