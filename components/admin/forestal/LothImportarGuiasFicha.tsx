@@ -16,7 +16,7 @@
  * ADR-474 (07-10): la lista dice el «Código único» de cada troza en el libro y
  * su «Código en la guía» — las DOS columnas siempre (Brandon 08-10), aunque
  * coincidan: así se ve de un vistazo cuál se renombró al importar. El N° de la
- * Lista de trozas (35) que trajo la guía va en el título de la lista.
+ * Lista de trozas (33) que trajo la guía va en el título de la lista.
  */
 
 import { useId, useMemo, useState } from "react";

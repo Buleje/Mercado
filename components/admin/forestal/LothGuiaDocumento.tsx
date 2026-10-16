@@ -6,6 +6,7 @@
  * que la cabecera de plantillas entre sin pasar las 300 líneas.
  */
 
+import { casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
 import { avisoDeOtroTitular, type TalonarioDelPlan } from "@/lib/forestal/loth-guia-despacho";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
@@ -124,10 +125,10 @@ export default function LothGuiaDocumento({ g }: { g: DespachoGuiaLoth }) {
           )}
         </div>
       </Field>
-      <Field span={6} label="Fecha de expedición" casillero={3} required>
+      <Field span={6} label="Fecha de expedición" casillero={casilleroGtf2024("3")} required>
         <input type="date" className={`${I} ${falta(g.emision)}`} value={g.emision} onChange={(e) => g.setEmision(e.target.value)} />
       </Field>
-      <Field span={6} label="Vencimiento" casillero={4} hint="La fija la ARFFS por ruta y distancia. Se propone la de siempre y se corrige acá.">
+      <Field span={6} label="Vencimiento" casillero={casilleroGtf2024("4")} hint="La fija la ARFFS por ruta y distancia. Se propone la de siempre y se corrige acá.">
         <input
           type="date"
           className={I}
@@ -135,7 +136,7 @@ export default function LothGuiaDocumento({ g }: { g: DespachoGuiaLoth }) {
           onChange={(e) => setDatos((p) => ({ ...p, traslado: { ...p.traslado, fechaFin: e.target.value } }))}
         />
       </Field>
-      <Field span={6} label="Autoridad forestal" casillero={2} hint="La ARFFS competente. Sale del plan de manejo de las trozas.">
+      <Field span={6} label="Autoridad forestal" casillero={casilleroGtf2024("2")} hint="La ARFFS competente. Sale del plan de manejo de las trozas.">
         <input
           type="text"
           className={`${I} ${falta(datos.guia.autoridad)}`}

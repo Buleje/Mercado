@@ -190,7 +190,7 @@ describe("datosInicialesLoth — el MISMO esquema de la guía del CTP", () => {
 
   it("lo que el libro no sabe se nombra (no bloquea)", () => {
     const d = datosInicialesLoth(id, "2026-09-28");
-    expect(huecosDelTitulo(d)).toEqual(["(8) N° de resolución", "(11) Provincia", "(12) Distrito"]);
+    expect(huecosDelTitulo(d)).toEqual(["(9) N° de resolución", "(11b) Provincia", "(11c) Distrito"]);
   });
 });
 

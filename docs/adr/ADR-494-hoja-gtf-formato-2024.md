@@ -100,9 +100,9 @@ Test de la tabla: `__tests__/forestal-gtf-formato-2024.test.ts`. Comprueba:
 ## Consecuencias
 
 - Una guía impresa antes del cambio y su reimpresión numeran distinto, aunque los valores sean los mismos.
-- Formularios del panel que todavía rotulan con números de 2015. Es el paso siguiente; la hoja ya está bien:
-  - `CtpGuiaOficialForm`, `CtpIngresoPartesForm`, `CtpIngresoEditModal`, `WoodEntryForm`, `LothGuiaDatos` (casilleros 8 y 9);
-  - `CtpGuiaDatosTab`, `LothGuiaTraslado`, `LothGuiaDocumento`, `LothGuiaBloques`, `LothGuiaListaMovilizar`, `ctp-guia-bloques-partes`, `CtpCuadrarGuiaModal`, `CtpListaProductosTab`;
-  - `huecosDelTitulo`;
-  - el texto «RDE 122-2015» en `CtpGuiaDatosTab` y `CtpGtfDatosForm`.
+- **Formularios del panel con la numeración 2024 (16-10, hecho):** los rótulos salen de `casilleroGtf2024(clave)` (`lib/forestal/ctp-gtf-formato.ts`, derivada de `CASILLEROS_GTF_2024`), no de números a mano. `Field`/`Casillero` aceptan `number` (LO-CTP) o `string` (GTF 2024).
+  - Hechos: `CtpGuiaOficialForm`, `CtpIngresoPartesForm`, `CtpIngresoEditModal` (solo su sección GTF; los casilleros LO-CTP 2-13 no cambian), `WoodEntryForm` (textos de ayuda GTF; sus casilleros son del LO-CTP), `LothGuiaDatos`, `CtpGuiaDatosTab`, `LothGuiaTraslado`, `LothGuiaDocumento`, `LothGuiaBloques`, `LothGuiaListaMovilizar`, `ctp-guia-bloques-partes`, `CtpCuadrarGuiaModal`, `CtpListaProductosTab`, `huecosDelTitulo` (y su gemelo de `ctp-ficha-types`), `LothImportarGuiasBloques`/`Ficha`, `CtpGtfSeccion`, `CtpFichaReadView`, `CtpFichaFormTitulos`, `CtpParteModal`, `CtpGuiaRegistrada`.
+  - El texto «RDE 122-2015» de `CtpGuiaDatosTab` y `CtpGtfDatosForm` cita ahora la RDE D000014-2024 (arts. 3-5).
+  - No se tocan: `CtpGuiaSerforHoja` y `serfor-gtf-print` (reproducen la guía tal como la publica SERFOR, con sus números) y los casilleros LO-CTP.
+  - Test: `__tests__/forestal-gtf-rotulos-panel.test.ts`.
 - Un talonario ya calibrado con «Otros» o «Plan consolidado» visibles sigue cruzando esa casilla (rótulo «(2015)»). Quien imprime sobre papel 2024 debe ocultarla en «Acomodar».

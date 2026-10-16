@@ -139,7 +139,7 @@ export default function CtpIngresoEditModal({
   /* El catálogo de especies de esta planta: alimenta el datalist y el
      autocompletado del nombre científico (ADR-410). */
   const catalogoEspecies = useEspeciesCatalogo();
-  /** Casilleros (13) a (34): propietario, destinatario, transporte. */
+  /** Casilleros (12) a (31): propietario, destinatario, transporte. */
   const gtfBase = leerGtfDatos((entry as { gtfDatos?: unknown }).gtfDatos);
   const [gtfDatos, setGtfDatos] = useState<GtfDatos>(gtfBase);
   const [guardando, setGuardando] = useState(false);
@@ -615,7 +615,7 @@ export default function CtpIngresoEditModal({
             {/* Lo que el papel trae y nadie transcribió al recibir. Antes estos
                 casilleros se veían vacíos en la ficha y no había dónde
                 llenarlos: el PATCH no los aceptaba. */}
-            <Seccion numero={7} title="Cuerpo del documento · casilleros (13) a (34)">
+            <Seccion numero={7} title="Cuerpo del documento · casilleros (12) a (31)">
               <CtpIngresoPartesForm datos={gtfDatos} onChange={setGtfDatos} />
             </Seccion>
           </div>

@@ -4,18 +4,18 @@
  * «Datos de la guía» del despacho con guía del Libro TH — los casilleros de la
  * GTF en el orden del papel, con los MISMOS bloques que la guía del CTP.
  *
- * Izquierda: el documento (1)(2)(3)(4), el título habilitante (5)–(12), el
- * propietario (13)–(21) y el punto de partida (formato 2024, (17)–(20)).
+ * Izquierda: el documento (1)(2)(3)(4), el título habilitante (5)–(11c), el
+ * propietario (12)–(16) y el punto de partida (formato 2024, (17)–(20)).
  * Derecha: el destinatario, que es también el punto de llegada (no hay otro
- * bloque: así lo arma el formato 2024), y el transporte (29)–(34). Abajo, a lo
- * ancho, el traslado con (35)(36)(38). Casi todo llega ya escrito: el
+ * bloque: así lo arma el formato 2024), y el transporte (25)–(31). Abajo, a lo
+ * ancho, el traslado con (33)(32)(35). Casi todo llega ya escrito: el
  * título sale del plan de las trozas, el propietario es el titular y el
  * transporte se hereda de la guía anterior. Lo que el libro no sabe queda
  * vacío con «Falta» — nunca se rellena por rellenar.
  */
 
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
-import { ORIGENES, ORIGENES_SIN_CASILLA_2024 } from "@/lib/forestal/ctp-gtf-formato";
+import { ORIGENES, ORIGENES_SIN_CASILLA_2024, casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
 import { guiaEsDePlantacion, huecosDelTitulo, rotuloDelTitulo } from "@/lib/forestal/loth-guia-despacho";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import CtpUbigeoSelects from "./CtpUbigeoSelects";
@@ -89,14 +89,14 @@ export default function LothGuiaDatos(props: PropsGuiaLoth) {
   );
 }
 
-/** (5)–(12): el título habilitante, tal como sale del plan y la carátula. */
+/** (5)–(11c): el título habilitante, tal como sale del plan y la carátula. */
 function BloqueTitulo({ g, faltaTitulo }: { g: DespachoGuiaLoth; faltaTitulo: string[] }) {
   const { datos, setDatos } = g;
   const guia = datos.guia;
   const setGuia = (v: Partial<GtfDatos["guia"]>) => setDatos((p) => ({ ...p, guia: { ...p.guia, ...v } }));
   const huecos = huecosDelTitulo(datos);
   /* Una plantación se ampara con su REGISTRO y su constancia (ADR-459): el
-     bloque lo dice con esas palabras. Los casilleros oficiales (6) y (8) no
+     bloque lo dice con esas palabras. Los casilleros oficiales (6) y (9) no
      cambian de nombre en el papel; sólo se aclara qué va en cada uno. */
   const plantacion = g.identidad?.esPlantacion || guiaEsDePlantacion(datos);
   const f = g.identidad?.fuentes;
@@ -108,7 +108,7 @@ function BloqueTitulo({ g, faltaTitulo }: { g: DespachoGuiaLoth; faltaTitulo: st
   return (
     <Bloque
       titulo={rotuloDelTitulo(plantacion)}
-      hint={`Casilleros (5) a (12). Salen de ${procedencia.length ? procedencia.join(", ") : "lo que cargues acá"}: no se tipean en cada guía.`}
+      hint={`Casilleros (5) a (11c). Salen de ${procedencia.length ? procedencia.join(", ") : "lo que cargues acá"}: no se tipean en cada guía.`}
       nota="Lo que el libro no sabe queda en blanco en el papel, para llenarlo a mano sobre el talonario. Se corrige en el plan de manejo y sale bien en la próxima."
       faltan={[...faltaTitulo, ...huecos]}
     >
@@ -117,7 +117,7 @@ function BloqueTitulo({ g, faltaTitulo }: { g: DespachoGuiaLoth; faltaTitulo: st
           { etiqueta: "(7) Titular", valor: g.identidad?.titular ?? "", ancho: 4, falta: "en el plan de manejo" },
         ]}
       />
-      <Field span={6} label="Tipo de título" casillero={5} hint="La casilla que se cruza en el papel.">
+      <Field span={6} label="Tipo de título" casillero={casilleroGtf2024("5")} hint="La casilla que se cruza en el papel.">
         <select className={`${I} ${falta(guia.origenRecurso)}`} value={guia.origenRecurso} onChange={(e) => setGuia({ origenRecurso: e.target.value })}>
           <option value="">Sin marcar</option>
           {ORIGENES.map((o) => (
@@ -133,7 +133,7 @@ function BloqueTitulo({ g, faltaTitulo }: { g: DespachoGuiaLoth; faltaTitulo: st
       <Field
         span={6}
         label="N° del título habilitante"
-        casillero={6}
+        casillero={casilleroGtf2024("6")}
         required
         hint={plantacion ? "En una plantación va el código de su registro (RNPF)." : undefined}
       >
@@ -144,18 +144,18 @@ function BloqueTitulo({ g, faltaTitulo }: { g: DespachoGuiaLoth; faltaTitulo: st
           onChange={(e) => setDatos((p) => ({ ...p, titulos: e.target.value ? [e.target.value] : [] }))}
         />
       </Field>
-      <Field span={6} label="Representante legal" hint="Va bajo el casillero (7) cuando el titular es una empresa o una comunidad.">
+      <Field span={6} label="Representante legal" hint="Va en el casillero (8) cuando el titular es una empresa o una comunidad.">
         <input type="text" className={I} value={guia.representanteLegal} onChange={(e) => setGuia({ representanteLegal: e.target.value })} />
       </Field>
       <Field
         span={6}
         label="N° de resolución"
-        casillero={8}
+        casillero={casilleroGtf2024("8")}
         hint={plantacion ? "En una plantación va la constancia de inscripción." : undefined}
       >
         <input type="text" className={`${I} ${falta(guia.resolucion)}`} value={guia.resolucion} onChange={(e) => setGuia({ resolucion: e.target.value })} />
       </Field>
-      <Field span={12} label="Plan de manejo (tipo)" casillero={9}>
+      <Field span={12} label="Plan de manejo (tipo)" casillero={casilleroGtf2024("9")}>
         <input type="text" className={`${I} ${falta(guia.planManejoTipo)}`} value={guia.planManejoTipo} onChange={(e) => setGuia({ planManejoTipo: e.target.value })} />
       </Field>
       <CtpUbigeoSelects

@@ -113,9 +113,9 @@ describe("rótulos", () => {
 
   it("el hueco del (8) habla de constancia en una plantación", () => {
     const d = datosInicialesLoth(identidadDelTitulo({ plan: { ...PLANTACION, resolucionNumber: null } }), "2026-10-02");
-    expect(huecosDelTitulo(d)).toContain("(8) N° de constancia del registro");
+    expect(huecosDelTitulo(d)).toContain("(9) N° de constancia del registro");
     const po = datosInicialesLoth(identidadDelTitulo({ plan: { ...PO, resolucionNumber: null } }), "2026-10-02");
-    expect(huecosDelTitulo(po)).toContain("(8) N° de resolución");
+    expect(huecosDelTitulo(po)).toContain("(9) N° de resolución");
   });
 });
 

@@ -11,6 +11,7 @@
  *     (15-10-2026, formato 2024); la llegada es el destinatario.
  */
 
+import { casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
 import { useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
@@ -43,7 +44,7 @@ export function parcheDe(setDatos: Dispatch<SetStateAction<GtfDatos>>) {
 const vacio = (v: string | null | undefined) => !v?.trim();
 const falta = (v: string | null | undefined) => (vacio(v) ? CLASE_FALTA : "");
 
-/** (13)–(21) El dueño de la madera que viaja. */
+/** (12)–(16) El dueño de la madera que viaja. */
 export function BloquePropietarioLoth({ g, directorio, onAnotarParte, onGuardarEnLibreta, faltan }: PropsGuiaLoth & { faltan: string[] }) {
   const { datos, setDatos } = g;
   const set = parcheDe(setDatos);
@@ -62,7 +63,7 @@ export function BloquePropietarioLoth({ g, directorio, onAnotarParte, onGuardarE
   return (
     <Bloque
       titulo="Propietario del producto"
-      hint="Casilleros (13) a (21). Es el dueño de la madera que viaja: casi siempre el titular del permiso. Si ya se la vendió a alguien, destilda y elígelo del Directorio."
+      hint="Casilleros (12) a (16). Es el dueño de la madera que viaja: casi siempre el titular del permiso. Si ya se la vendió a alguien, destilda y elígelo del Directorio."
       faltan={faltan}
       acciones={
         <>
@@ -107,7 +108,7 @@ export function BloquePropietarioLoth({ g, directorio, onAnotarParte, onGuardarE
           <UbicacionDeParte parte={prop} onChange={(v) => set("propietario", v)} />
         </>
       )}
-      <Field span={6} label="Tipo de comprobante" casillero={20} hint="Comprobante de la venta: la guía ampara el traslado y el comprobante, la operación.">
+      <Field span={6} label="Tipo de comprobante" casillero={casilleroGtf2024("20")} hint="Comprobante de la venta: la guía ampara el traslado y el comprobante, la operación.">
         <select
           className={I}
           value={datos.comprobante.tipo}
@@ -120,7 +121,7 @@ export function BloquePropietarioLoth({ g, directorio, onAnotarParte, onGuardarE
           <option value="otro">Otro</option>
         </select>
       </Field>
-      <Field span={6} label="N° de comprobante" casillero={21}>
+      <Field span={6} label="N° de comprobante" casillero={casilleroGtf2024("21")}>
         <input
           type="text"
           className={`${I} font-mono`}

@@ -3,8 +3,8 @@
 /**
  * Cuadrar una guía que se contradice a sí misma (ADR-353).
  *
- * La GTF trae el mismo volumen dos veces —cabecera por especie (37) y lista de
- * trozas (35)— y a veces no coinciden. Cuando pasa, el ingreso queda muerto: no
+ * La GTF trae el mismo volumen dos veces —cabecera por especie (34) y lista de
+ * trozas (33)— y a veces no coinciden. Cuando pasa, el ingreso queda muerto: no
  * se puede consumir (choca con I2) y tampoco corregir (validado ⇒ no editable).
  *
  * Acá se ven **los dos testigos del papel, uno al lado del otro**, y el operador
@@ -299,13 +299,13 @@ export default function CtpCuadrarGuiaModal({
                   <div className="flex flex-wrap gap-2">
                     <Testigo
                       titulo="Cabecera del producto"
-                      casillero="37"
+                      casillero="34"
                       volumen={a.descuadre.declaradoM3}
                       piezas={a.descuadre.piezasDeclaradas}
                     />
                     <Testigo
                       titulo="Lista de trozas"
-                      casillero="35"
+                      casillero="33"
                       volumen={a.descuadre.listaM3}
                       piezas={a.descuadre.piezasEnLista}
                       resaltado

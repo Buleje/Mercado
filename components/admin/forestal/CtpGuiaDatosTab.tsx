@@ -13,6 +13,7 @@
  * cuerpo del documento, uno solo para las N líneas de producto que viajan.
  */
 
+import { casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { AlertTriangle, Check } from "@buleje/design-system/icons";
@@ -139,7 +140,7 @@ function CampoTituloHabilitante({
             `Permiso cargado${opcion.titular ? ` · ${opcion.titular}` : ""}`,
             opcion.area,
             opcion.resolucion ? `Resolución ${opcion.resolucion}` : null,
-            "en el papel, los casilleros (5)(8)(9) salen de la ficha del CTP",
+            "en el papel, los casilleros (5)(9)(10) salen de la ficha del CTP",
           ]
             .filter(Boolean)
             .join(" · ")
@@ -366,7 +367,7 @@ export default function CtpGuiaDatosTab({
                  busca; como dato, no como caja para escribir. */
               <span className="inline-flex items-center gap-1.5 text-sm">
                 <span className="font-medium text-[var(--text-secondary)]">N° de GTF</span>
-                <Casillero n={4} />
+                <Casillero n={casilleroGtf2024("4") ?? "4"} />
                 {gtfNumber ? (
                   <b className="font-mono tabular-nums text-[var(--text-primary)]">{gtfNumber}</b>
                 ) : (
@@ -381,7 +382,7 @@ export default function CtpGuiaDatosTab({
             <Field span={4} label="Vencimiento" hint="Fecha de vencimiento de la guía: la fija la ARFFS.">
               <input type="date" className={I} value={datos.traslado.fechaFin} onChange={(e) => set("traslado", { fechaFin: e.target.value })} />
             </Field>
-            <Field span={4} label="Tipo de documento" casillero={3}>
+            <Field span={4} label="Tipo de documento" casillero={casilleroGtf2024("3")}>
               <select className={I} value={docType} onChange={(e) => onDocType(e.target.value)}>
                 {TIPOS_DOCUMENTO_LOCTP.map((t) => (
                   <option key={t.valor} value={t.valor}>{t.label}</option>
@@ -391,7 +392,7 @@ export default function CtpGuiaDatosTab({
             {/* 5 + 7 y no mitad y mitad: la verificación trae su botón al lado
                 del número y, a la mitad, el rótulo partía en dos renglones. */}
             <div className={slotVerificacion ? "sm:col-span-5" : "sm:col-span-12"}>
-              <Field label="Autoridad que la ampara" casillero={2} hint="ARFFS competente">
+              <Field label="Autoridad que la ampara" casillero={casilleroGtf2024("2")} hint="ARFFS competente">
                 <input type="text" className={I} value={datos.guia.autoridad} onChange={(e) => setGuia({ autoridad: e.target.value })} placeholder={ficha?.arffs || "GORE · DRSAFFS"} />
               </Field>
             </div>
@@ -468,7 +469,7 @@ export default function CtpGuiaDatosTab({
             )}
             {/* La GTF ampara el traslado; el comprobante, la operación. El control
                 pide los dos, así que van juntos en el bloque del propietario. */}
-            <Field span={6} label="Tipo de comprobante" casillero={20} hint="Comprobante de compra o venta: la guía ampara el traslado y el comprobante, la operación.">
+            <Field span={6} label="Tipo de comprobante" casillero={casilleroGtf2024("20")} hint="Comprobante de compra o venta: la guía ampara el traslado y el comprobante, la operación.">
               <select
                 className={I}
                 value={datos.comprobante.tipo}
@@ -481,7 +482,7 @@ export default function CtpGuiaDatosTab({
                 <option value="otro">Otro</option>
               </select>
             </Field>
-            <Field span={6} label="N° de comprobante" casillero={21}>
+            <Field span={6} label="N° de comprobante" casillero={casilleroGtf2024("21")}>
               <input
                 type="text"
                 className={`${I} font-mono`}
@@ -517,7 +518,7 @@ export default function CtpGuiaDatosTab({
           <Bloque
             titulo="Traslado y títulos"
             hint="La ruta que se autoriza y con qué título sale la madera."
-            nota="Sale en original y dos copias, como manda la RDE 122-2015 (art. 5). Lo que falte se puede completar después desde la ficha del despacho."
+            nota="Sale en original y dos copias, como manda la RDE D000014-2024-MIDAGRI-SERFOR-DE (arts. 3-5). Lo que falte se puede completar después desde la ficha del despacho."
             faltan={faltan.traslado}
           >
             <CtpTrasladoPuntos datos={datos} setDatos={setDatos} ficha={ficha} className="sm:col-span-12" />

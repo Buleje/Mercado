@@ -6,9 +6,9 @@
  * bloques igual como es para despachar, en cada fila 2 o más bloques»).
  *
  * De a dos por fila, cada fila con su par natural:
- *   Documento (1)–(4)             · Título habilitante (5)–(12)
- *   Propietario (13)–(21)         · Destinatario (22)–(28)
- *   Transporte (29)–(34)          · Traslado (partida, llegada, 35, 36)
+ *   Documento (1)–(4)             · Título habilitante (5)–(11c)
+ *   Propietario (12)–(16)         · Destinatario (21)–(24d)
+ *   Transporte (25)–(31)          · Traslado (partida, llegada, 35, 36)
  *   Resumen por especie (lista)   · Detalle del producto (37, declarado)
  *
  * `partes` (07-10-2026, Brandon: «los datos en una sección y las trozas y
@@ -193,7 +193,7 @@ export default function LothImportarGuiasBloques({
         </Bloque>
         <Bloque
           titulo={rotuloDelTitulo(/plantaci/i.test(ficha.origenRecurso ?? ""))}
-          hint="Casilleros (5) a (12): el permiso que ampara la madera, su titular y dónde está el recurso."
+          hint="Casilleros (5) a (11c): el permiso que ampara la madera, su titular y dónde está el recurso."
           nota={NOTA}
         >
           <Datos
@@ -211,14 +211,14 @@ export default function LothImportarGuiasBloques({
 
         <Bloque
           titulo="Propietario del producto"
-          hint="Casilleros (13) a (21): el dueño de la madera que viaja."
+          hint="Casilleros (12) a (16): el dueño de la madera que viaja."
           nota={NOTA}
         >
           <Datos casilleros={bloques.propietario ?? []} />
         </Bloque>
         <Bloque
           titulo="Destinatario"
-          hint="Casilleros (22) a (28): a quién va la madera."
+          hint="Casilleros (21) a (24d): a quién va la madera."
           nota={NOTA}
         >
           <Datos casilleros={bloques.destinatario ?? []} />
@@ -226,7 +226,7 @@ export default function LothImportarGuiasBloques({
 
         <Bloque
           titulo="Transporte"
-          hint="Casilleros (29) a (34): la guía de remisión, el vehículo y el conductor."
+          hint="Casilleros (25) a (31): la guía de remisión, el vehículo y el conductor."
           nota={NOTA}
         >
           <SubBloque etiqueta="Guía y vehículo">
@@ -238,7 +238,7 @@ export default function LothImportarGuiasBloques({
         </Bloque>
         <Bloque
           titulo="Traslado"
-          hint="De dónde sale (el origen del recurso) y a dónde llega (el destinatario), con la lista de trozas (35)."
+          hint="De dónde sale (el origen del recurso) y a dónde llega (el destinatario), con la lista de trozas (33)."
           nota={NOTA}
         >
           <Datos

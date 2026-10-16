@@ -527,7 +527,7 @@ export default function CtpGtfDatosForm({
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-[var(--text-tertiary)]">
-          Sale en original y dos copias, como manda la RDE 122-2015 (art. 5).
+          Sale en original y dos copias, como manda la RDE D000014-2024-MIDAGRI-SERFOR-DE (arts. 3-5).
         </p>
         <div className="flex gap-2">
           <Btn variant="secondary" disabled={guardando} onClick={() => void guardar()}>

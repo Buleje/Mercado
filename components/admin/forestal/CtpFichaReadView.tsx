@@ -177,7 +177,7 @@ export default function CtpFichaReadView({ ficha: f, onEditar }: { ficha: CtpFic
             <InfoTip
               title="Títulos habilitantes"
               what="El origen legal de la materia prima."
-              affects="Los casilleros (5), (6), (8) y (9) de la guía salen del título marcado, salvo que en esa guía se elija otro."
+              affects="Los casilleros (5), (6), (9) y (10) de la guía salen del título marcado, salvo que en esa guía se elija otro."
             />
           </div>
           <button

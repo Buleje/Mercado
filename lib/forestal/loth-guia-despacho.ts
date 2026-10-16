@@ -21,6 +21,7 @@
  * y la impresión.
  */
 
+import { casilleroGtf2024 } from "./ctp-gtf-formato";
 import { codigoDeLaGuia } from "./codigo-unico-troza";
 import { claveEspecie } from "./loth-constants";
 import { filasGTF, m3OficialDeFila, totalizarGTF } from "./gtf-redondeo";
@@ -681,13 +682,15 @@ export function faltantesDespachoLoth(
 export function huecosDelTitulo(datos: GtfDatos): string[] {
   const g = datos.guia;
   const huecos: string[] = [];
-  if (!txt(g.autoridad)) huecos.push("(2) Autoridad forestal");
-  if (!txt(g.origenRecurso)) huecos.push("(5) Tipo de título");
-  if (!txt(g.resolucion)) huecos.push(guiaEsDePlantacion(datos) ? "(8) N° de constancia del registro" : "(8) N° de resolución");
-  if (!txt(g.planManejoTipo)) huecos.push("(9) Plan de manejo");
-  if (!txt(g.departamento)) huecos.push("(10) Departamento");
-  if (!txt(g.provincia)) huecos.push("(11) Provincia");
-  if (!txt(g.distrito)) huecos.push("(12) Distrito");
+  /* Los números son los de la hoja 2024 (ADR-494), no las claves internas. */
+  const n = (clave: string): string => `(${casilleroGtf2024(clave)})`;
+  if (!txt(g.autoridad)) huecos.push(`${n("2")} Autoridad forestal`);
+  if (!txt(g.origenRecurso)) huecos.push(`${n("5")} Tipo de título`);
+  if (!txt(g.resolucion)) huecos.push(`${n("8")} ${guiaEsDePlantacion(datos) ? "N° de constancia del registro" : "N° de resolución"}`);
+  if (!txt(g.planManejoTipo)) huecos.push(`${n("9")} Plan de manejo`);
+  if (!txt(g.departamento)) huecos.push(`${n("10")} Departamento`);
+  if (!txt(g.provincia)) huecos.push(`${n("11")} Provincia`);
+  if (!txt(g.distrito)) huecos.push(`${n("12")} Distrito`);
   return huecos;
 }
 

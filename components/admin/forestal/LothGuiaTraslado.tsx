@@ -15,6 +15,7 @@
  * dirección del destinatario, como en el formato (casillero (24)).
  */
 
+import { casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
 import { useState } from "react";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
@@ -35,7 +36,7 @@ const conFalta = (v: string | null | undefined, base: string) => (vacio(v) ? cla
 const TEXTAREA =
   "w-full rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] placeholder:text-[var(--text-tertiary)]";
 
-/** La ruta; (35) lista de trozas, (36) GTF de origen y (38) observaciones. */
+/** La ruta; (33) lista de trozas, (32) GTF de origen y (35) observaciones. */
 export function BloqueTrasladoLoth({ g, faltan, className }: { g: DespachoGuiaLoth; faltan: string[]; className?: string }) {
   const { datos, setDatos } = g;
   const set = parcheDe(setDatos);
@@ -50,7 +51,7 @@ export function BloqueTrasladoLoth({ g, faltan, className }: { g: DespachoGuiaLo
   return (
     <Bloque
       titulo="Traslado y detalle"
-      hint="La ruta que se autoriza y los casilleros (35), (36) y (38)."
+      hint="La ruta que se autoriza y los casilleros (33), (32) y (35)."
       nota="Sale en original y dos copias, como manda la RDE D000014-2024-MIDAGRI-SERFOR-DE (art. 5), con la lista de trozas como anexo."
       faltan={faltan}
       className={className}
@@ -58,11 +59,11 @@ export function BloqueTrasladoLoth({ g, faltan, className }: { g: DespachoGuiaLo
       <Field span={12} label="Ruta declarada" hint="Del punto de partida a la dirección del destinatario. Los puestos de control la cotejan.">
         <input type="text" className={I} value={datos.traslado.ruta} onChange={(e) => set("traslado", { ruta: e.target.value })} />
       </Field>
-      <Field span={6} label="N° de la lista de trozas" casillero={35} required hint={ayudaLista}>
+      <Field span={6} label="N° de la lista de trozas" casillero={casilleroGtf2024("35")} required hint={ayudaLista}>
         <div className="grid gap-1">
           <input
             type="text"
-            aria-label="N° de la lista de trozas (35)"
+            aria-label="N° de la lista de trozas (33)"
             className={g.piezas.length > 0 ? conFalta(datos.guia.listaTrozasNro, `${I} font-mono tabular-nums`) : `${I} font-mono tabular-nums`}
             placeholder={g.hojas > 1 ? "N° de la 1.ª hoja" : "N° de la lista"}
             value={datos.guia.listaTrozasNro}
@@ -90,7 +91,7 @@ export function BloqueTrasladoLoth({ g, faltan, className }: { g: DespachoGuiaLo
           onChange={(e) => setDatos((p) => ({ ...p, citesPermiso: e.target.value }))}
         />
       </Field>
-      <Field span={8} label="Observaciones" casillero={38}>
+      <Field span={8} label="Observaciones" casillero={casilleroGtf2024("38")}>
         <textarea
           rows={2}
           className={TEXTAREA}
@@ -127,12 +128,12 @@ function OrigenDeLaGuia({
     <Field
       span={6}
       label="GTF de origen"
-      casillero={36}
+      casillero={casilleroGtf2024("36")}
       hint="La madera que sale del bosque no la ampara ninguna guía anterior: «No aplica», y el papel lo imprime así (un casillero en blanco se puede llenar después). Si viene con otra guía, elígela de las que ya están en el sistema."
     >
       <div className="grid gap-1.5">
         <select
-          aria-label="GTF de origen (36)"
+          aria-label="GTF de origen (32)"
           className={I}
           value={seleccion}
           onChange={(e) => {

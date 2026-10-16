@@ -106,7 +106,7 @@ export default function CtpFichaFormTitulos({
             Títulos habilitantes (origen de la materia prima)
             <InfoTip
               title="Títulos habilitantes"
-              what="El primero es el que cada guía de salida propone (casilleros 5, 6, 8 y 9); en el formulario de la guía se puede elegir otro."
+              what="El primero es el que cada guía de salida propone (casilleros 5, 6, 9 y 10); en el formulario de la guía se puede elegir otro."
               affects={<>Usa <ArrowUp className="inline h-3.5 w-3.5" aria-hidden /> para cambiar el predeterminado.</>}
             />
           </span>

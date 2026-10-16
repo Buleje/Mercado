@@ -93,7 +93,7 @@ export default function CtpGuiaRegistrada({
         cadenaDeGuia(filas),
         datos,
         /* El binomio que falte en el asiento sale del catálogo de la planta: el
-           casillero (37) lo pide y una guía a medio llenar la para el control. */
+           casillero (34) lo pide y una guía a medio llenar la para el control. */
         lineasDeGuia(filas, catalogoEspecies.cientificoDe),
         permisos,
       );

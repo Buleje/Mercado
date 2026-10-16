@@ -408,7 +408,7 @@ const SPAN_CLASS: Record<CampoSpan, string> = {
 /**
  * Un campo del formulario.
  *
- * `casillero` es el número del campo en el formato oficial del LO-CTP: va como
+ * `casillero` es el número del campo en el formato oficial del LO-CTP (number) o de la GTF 2024 (string, de `casilleroGtf2024`): va como
  * un chip discreto al lado de la etiqueta en vez de un párrafo gris debajo
  * ("Casillero (3) del Libro de Operaciones"). Con seis campos así, esos párrafos
  * eran más texto que el formulario y empujaban todo hacia abajo.
@@ -425,7 +425,7 @@ export function Field({
   label: string;
   required?: boolean;
   hint?: string;
-  casillero?: number;
+  casillero?: number | string;
   span?: CampoSpan;
   /**
    * Por qué este casillero NO corresponde llenarlo en ESTA guía.
@@ -509,7 +509,7 @@ export function Field({
       {required && <span className="text-[var(--data-error-600)]" aria-hidden="true">*</span>}
       {casillero != null && (
         <span
-          title={`Casillero (${casillero}) del formato oficial LO-CTP`}
+          title={`Casillero (${casillero}) del formato oficial ${typeof casillero === "string" ? "de la GTF (SERFOR 2024)" : "LO-CTP"}`}
           // Fuera del nombre accesible: el número es una ayuda visual para
           // cruzar con el papel, no parte de cómo se llama el campo.
           aria-hidden="true"

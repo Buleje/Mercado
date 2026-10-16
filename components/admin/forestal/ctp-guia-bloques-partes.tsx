@@ -17,6 +17,7 @@
  * RDE D000014-2024-MIDAGRI-SERFOR-DE: no hay un bloque de llegada aparte).
  */
 
+import { casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
 import type { Dispatch, SetStateAction } from "react";
 import { componerPunto, llegadaDelDestinatario, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { ordenarPorUso, parteAInput, type Parte, type RolParte } from "@/lib/forestal/directorio";
@@ -289,7 +290,7 @@ export function BloqueTransporte({
             <Field
               span={6}
               label="Guía de remisión"
-              casillero={29}
+              casillero={casilleroGtf2024("29")}
               hint={`${remisionNoAplica ? "No aplica: sólo si el transportista la emitió. " : ""}Es la guía del transportista, no el comprobante.`}
             >
               <input

@@ -39,7 +39,7 @@ export default function LothGuiaListaMovilizar({
   return (
     <Bloque
       titulo="Lista de trozas a movilizar"
-      hint={`La lista que viaja con la guía y a la que apunta el casillero (35): cada troza con su codificación, sus dos diámetros, su largo y su volumen. Cada hoja lleva hasta ${FILAS_POR_LISTA} trozas y su propio N°; el N° se cambia en «Datos de la guía».`}
+      hint={`La lista que viaja con la guía y a la que apunta el casillero (33): cada troza con su codificación, sus dos diámetros, su largo y su volumen. Cada hoja lleva hasta ${FILAS_POR_LISTA} trozas y su propio N°; el N° se cambia en «Datos de la guía».`}
       faltan={g.piezas.length > 0 && !g.listas.texto ? ["N° de la lista de trozas"] : undefined}
       acciones={
         <span className="text-sm text-[var(--text-secondary)]">

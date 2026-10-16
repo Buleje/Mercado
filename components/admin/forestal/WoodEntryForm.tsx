@@ -1172,7 +1172,7 @@ export default function WoodEntryForm({
    * INSTANCIA que registra (ATFFS, Gobierno Regional) — medido en Blas, el
    * mismo RUC lo tienen dos titulares distintos (revisión 2026-09-25). La
    * consulta pública no publica el RUC del titular; sí el del propietario del
-   * producto (casillero 15), que vale sólo si el propietario ES el titular. Si
+   * producto (casillero 12), que vale sólo si el propietario ES el titular. Si
    * no, no hay documento y se compara por nombre.
    */
   const docDelTitularSerfor = useMemo(
@@ -2119,7 +2119,7 @@ export default function WoodEntryForm({
                       <Seccion
                         numero={3}
                         title="Trozas de la guía"
-                        hint="La lista de trozas (casillero 35) tal como la publica SERFOR, pieza por pieza, y cómo entra al libro: un ingreso por especie con sus trozas."
+                        hint="La lista de trozas (casillero 33) tal como la publica SERFOR, pieza por pieza, y cómo entra al libro: un ingreso por especie con sus trozas."
                       >
                         <CtpGuiaSerforTrozas
                           key={serforGtf.numeroRegistro}
@@ -2820,7 +2820,7 @@ export default function WoodEntryForm({
                   hint={
                     trozasManuales.length > 0
                       ? `${trozasManuales.length} pieza(s) · ${fmtM3(trozasManuales.reduce((a, t) => a + (t.volumenM3 ?? 0), 0))} m³`
-                      : "La que acompaña a la guía (casillero 35)"
+                      : "La que acompaña a la guía (casillero 33)"
                   }
                   className="xl:col-span-2"
                 >
@@ -3110,7 +3110,7 @@ export default function WoodEntryForm({
                         )}
                         <span className="min-w-0 flex-1">
                           <span className="block text-sm font-bold text-[var(--text-primary)]">
-                            {verGuiaOficial ? "Ocultar" : "Completar"} los casilleros 13 a 36 de la
+                            {verGuiaOficial ? "Ocultar" : "Completar"} los casilleros 12 a 33 de la
                             guía
                           </span>
                           <span className="block truncate text-xs text-[var(--text-secondary)]">

@@ -477,6 +477,19 @@ export type NumeroGtf2024 = (typeof CASILLEROS_GTF_2024)[number]["n"];
 
 const CASILLERO = Object.fromEntries(CASILLEROS_GTF_2024.map((c) => [c.n, c])) as Record<NumeroGtf2024, Casillero2024>;
 
+/**
+ * El número 2024 que lleva en el papel el campo cuya clave interna es `clave`
+ * ("13" → "12", "37a" → "34a", "p17" → "17"). Los formularios del panel rotulan
+ * con esto, así que el número de la pantalla es el de la hoja (ADR-494). Una
+ * clave que ninguna fuente nombra devuelve `undefined`: el campo no tiene casillero.
+ */
+const NUMERO_POR_CLAVE: ReadonlyMap<string, string> = new Map(
+  CASILLEROS_GTF_2024.flatMap((c) =>
+    ("de" in c ? (c.de as readonly string[]) : []).map((k): [string, string] => [k, c.n]),
+  ),
+);
+export const casilleroGtf2024 = (clave: string): string | undefined => NUMERO_POR_CLAVE.get(clave);
+
 /** Los valores con los que se dibuja la hoja: los de `casillerosGtf` más el N° de la guía. */
 type ValoresHoja = Partial<Record<FuenteGtf2024, string>>;
 

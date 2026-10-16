@@ -40,10 +40,10 @@ export const CLASE_SIN_CAJA =
   "[&>div]:mb-0 [&>div]:rounded-none [&>div]:border-0 [&>div]:bg-transparent [&>div]:p-0 has-[[aria-expanded=true]]:basis-full [&>div:has([aria-expanded=true])]:basis-full has-[>div_p]:basis-full [&>div:has(p)]:basis-full";
 
 /** El casillero del formato oficial, como el chip de `Field`. */
-export function Casillero({ n }: { n: number }) {
+export function Casillero({ n }: { n: number | string }) {
   return (
     <span
-      title={`Casillero (${n}) del formato oficial LO-CTP`}
+      title={`Casillero (${n}) del formato oficial ${typeof n === "string" ? "de la GTF (SERFOR 2024)" : "LO-CTP"}`}
       aria-hidden="true"
       className="shrink-0 rounded bg-[var(--surface-raised)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold tabular-nums text-[var(--text-tertiary)]"
     >

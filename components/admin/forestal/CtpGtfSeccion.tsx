@@ -65,7 +65,7 @@ export default function CtpGtfSeccion({
   const [colaArchivo, setColaArchivo] = useState<GuiaParaArchivar[]>([]);
   const [archivada, setArchivada] = useState<string | null>(null);
   /* Los permisos cargados (ADR-421/425): el título de la guía puede ser uno que
-     la Ficha del CTP no declara, y sin esta lista sus casilleros (5)(8)(9)
+     la Ficha del CTP no declara, y sin esta lista sus casilleros (5)(9)(10)
      salían en blanco en el papel. Se piden sólo si hay guía que imprimir. */
   const permisos = usePermisosForestal({ activo: Boolean(gtf) });
 

@@ -13,6 +13,7 @@
  * atribución que después sostiene el certificado de trazabilidad (I4/I5).
  */
 
+import { casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
 import { Boxes, Ruler, Trash2, TreePine } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
@@ -47,7 +48,7 @@ export default function CtpListaProductosTab({
   filas: FilaDespacho[];
   onCambiarFila: (uid: string, campo: "cantidad" | "volumen" | "valorVenta", valor: number | null) => void;
   onQuitar: (uid: string) => void;
-  /** Casillero (35): N° de la lista de trozas/productos que acompaña la guía. */
+  /** Casillero (33): N° de la lista de trozas/productos que acompaña la guía. */
   listaNro: string;
   onListaNro: (v: string) => void;
   observaciones: string;
@@ -71,7 +72,7 @@ export default function CtpListaProductosTab({
   return (
     <div className="space-y-3">
       <Bloque titulo="Lista de trozas / productos" hint="Lo que sube al camión, renglón por renglón">
-        <Field span={4} label="N° lista de trozas / producto" casillero={35}>
+        <Field span={4} label="N° lista de trozas / producto" casillero={casilleroGtf2024("35")}>
           <input type="text" className={`${I} font-mono`} value={listaNro} onChange={(e) => onListaNro(e.target.value)} />
         </Field>
         <div className="flex flex-wrap items-end gap-2 sm:col-span-8">

@@ -84,7 +84,7 @@ import { ETIQUETA_SERVICIO_PRECIO } from "@/lib/forestal/precio-cliente";
 /** Id estable de este formulario para los campos personalizados (ADR-427). */
 const FORMULARIO_FICHA = "directorio.parte";
 
-/** Los documentos de gestión de la norma — el casillero (9) de la guía. */
+/** Los documentos de gestión de la norma — el casillero (10) de la guía. */
 const DOCUMENTOS_DE_GESTION = TIPOS_PLAN_LISTA.map((t) => t.sigla);
 
 /** Lo que el libro ya sabe de este proveedor, resumido para la ficha. */

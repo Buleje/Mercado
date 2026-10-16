@@ -752,8 +752,8 @@ export function avisosDeFicha(f: CtpFicha, ahora: number = Date.now()): AvisoFic
   const guia = tituloDeGuia(f);
   if (guia) {
     const huecos: string[] = [];
-    if (!s(guia.resolucion)) huecos.push("(8) N° de resolución");
-    if (!s(guia.planManejo)) huecos.push("(9) Plan de manejo");
+    if (!s(guia.resolucion)) huecos.push("(9) N° de resolución");
+    if (!s(guia.planManejo)) huecos.push("(10) Plan de manejo");
     if (huecos.length > 0) {
       out.push({
         clave: "gtf-casilleros",

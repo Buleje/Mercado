@@ -14,6 +14,7 @@
  * queda marcado «a mano» en la ficha (ADR-392).
  */
 
+import { casilleroGtf2024 } from "@/lib/forestal/ctp-gtf-formato";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { CampoPlaca } from "./ctp-campo-placa";
 import { Field, I } from "./ctp-shared";
@@ -27,10 +28,10 @@ function ParteFields({
 }: {
   parte: Parte;
   onChange: (v: Partial<Parte>) => void;
-  /** Primer casillero del bloque: 13 para el propietario, 22 para el destinatario. */
+  /** Clave interna (2015) del primer casillero del bloque: 13 el propietario, 22 el destinatario; se rotula con el número 2024. */
   desde: 13 | 22;
 }) {
-  const c = (n: number) => desde + n;
+  const c = (n: number) => casilleroGtf2024(String(desde + n));
   return (
     <>
       <Field span={6} label="Nombre o razón social" casillero={c(0)}>
@@ -53,7 +54,7 @@ function ParteFields({
           <option value="PASAPORTE">Pasaporte</option>
         </select>
       </Field>
-      <Field span={4} label="N° de documento" casillero={desde === 13 ? 14 : 23}>
+      <Field span={4} label="N° de documento" casillero={casilleroGtf2024(desde === 13 ? "14" : "23")}>
         <input
           type="text"
           className={`${I} font-mono`}
@@ -114,21 +115,21 @@ export default function CtpIngresoPartesForm({
     <>
       <div className="sm:col-span-12">
         <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          Propietario del producto · casilleros (13) a (19)
+          Propietario del producto · casilleros (12) a (14d)
         </p>
       </div>
       <ParteFields parte={datos.propietario} onChange={(v) => set("propietario", v)} desde={13} />
 
       <div className="sm:col-span-12 mt-2">
         <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          Destinatario · casilleros (22) a (28)
+          Destinatario · casilleros (21) a (24d)
         </p>
       </div>
       <ParteFields parte={datos.destinatario} onChange={(v) => set("destinatario", v)} desde={22} />
 
       <div className="sm:col-span-12 mt-2">
         <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          Transportista y vehículo · casilleros (29) a (34)
+          Transportista y vehículo · casilleros (25) a (31)
         </p>
       </div>
       <Field span={4} label="Empresa de transporte">
@@ -139,7 +140,7 @@ export default function CtpIngresoPartesForm({
           onChange={(e) => set("transportista", { nombre: e.target.value })}
         />
       </Field>
-      <Field span={2} label="Modo" casillero={30}>
+      <Field span={2} label="Modo" casillero={casilleroGtf2024("30")}>
         <select
           className={I}
           value={datos.vehiculo.modo}
@@ -152,7 +153,7 @@ export default function CtpIngresoPartesForm({
           <option value="multimodal">Multimodal</option>
         </select>
       </Field>
-      <Field span={3} label="Tipo de vehículo" casillero={31}>
+      <Field span={3} label="Tipo de vehículo" casillero={casilleroGtf2024("31")}>
         <input
           type="text"
           className={I}
@@ -162,7 +163,7 @@ export default function CtpIngresoPartesForm({
         />
       </Field>
       {esFluvial ? (
-        <Field span={3} label="Matrícula / embarcación" casillero={31}>
+        <Field span={3} label="Matrícula / embarcación" casillero={casilleroGtf2024("31")}>
           <input
             type="text"
             className={`${I} font-mono uppercase`}
@@ -176,14 +177,14 @@ export default function CtpIngresoPartesForm({
         <CampoPlaca
           span={3}
           label="Placa"
-          casillero={31}
+          casillero={casilleroGtf2024("31")}
           transcribir
           soloAviso="papel"
           valor={datos.vehiculo.placa}
           onCambio={(v) => set("vehiculo", { placa: v })}
         />
       )}
-      <Field span={6} label={esFluvial ? "Patrón" : "Conductor"} casillero={32}>
+      <Field span={6} label={esFluvial ? "Patrón" : "Conductor"} casillero={casilleroGtf2024("32")}>
         <input
           type="text"
           className={I}
@@ -191,7 +192,7 @@ export default function CtpIngresoPartesForm({
           onChange={(e) => set("vehiculo", { conductor: e.target.value })}
         />
       </Field>
-      <Field span={3} label="DNI del conductor" casillero={33}>
+      <Field span={3} label="DNI del conductor" casillero={casilleroGtf2024("33")}>
         <input
           type="text"
           className={`${I} font-mono`}
@@ -199,7 +200,7 @@ export default function CtpIngresoPartesForm({
           onChange={(e) => set("vehiculo", { conductorDni: e.target.value })}
         />
       </Field>
-      <Field span={3} label="Licencia" casillero={34}>
+      <Field span={3} label="Licencia" casillero={casilleroGtf2024("34")}>
         <input
           type="text"
           className={`${I} font-mono`}
@@ -210,13 +211,13 @@ export default function CtpIngresoPartesForm({
 
       <div className="sm:col-span-12 mt-2">
         <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-          Documentos que acompañan · casilleros (35) y (36)
+          Documentos que acompañan · casilleros (33) y (32)
         </p>
       </div>
       <Field
         span={6}
         label="N° de lista de trozas"
-        casillero={35}
+        casillero={casilleroGtf2024("35")}
         hint="La del titular, si vino con la guía"
       >
         <input
@@ -229,7 +230,7 @@ export default function CtpIngresoPartesForm({
       <Field
         span={6}
         label="GTF de origen"
-        casillero={36}
+        casillero={casilleroGtf2024("36")}
         hint="Sólo si la madera ya venía de otro CTP"
       >
         <input

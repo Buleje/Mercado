@@ -208,11 +208,11 @@ describe("avisosDeFicha", () => {
     expect(avisosDeFicha(f, HOY).some((a) => a.nivel === "critico")).toBe(false);
   });
 
-  it("delata los casilleros (8) y (9) vacíos del título que va en la guía", () => {
+  it("delata los casilleros (9) y (10) vacíos del título que va en la guía", () => {
     const f = ficha({ titulos: [{ tipo: "concesion", codigo: "CONC-001", resolucion: "", planManejo: "", vencimiento: "2030-01-01" }] });
     const aviso = avisosDeFicha(f, HOY).find((a) => a.clave === "gtf-casilleros");
-    expect(aviso?.detalle).toContain("(8)");
     expect(aviso?.detalle).toContain("(9)");
+    expect(aviso?.detalle).toContain("(10)");
   });
 
   it("mira SÓLO el título de la guía para los casilleros: el segundo no imprime", () => {

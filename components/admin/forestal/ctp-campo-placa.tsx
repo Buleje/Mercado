@@ -111,7 +111,7 @@ export function CampoPlaca({
    */
   onRemolque?: (v: string) => void;
   hint?: string;
-  casillero?: number;
+  casillero?: number | string;
   /** Lo que va al lado del campo (el botón «Buscar»). */
   accion?: ReactNode;
   autoFocus?: boolean;
