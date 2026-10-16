@@ -63,7 +63,7 @@ function normTipo(t) {
   if (arr) s = s.slice(0, -2).trim();
   // Tipo entre comillas (enum propio): sensible a mayúsculas, se compara tal cual.
   if (s.includes('"')) return `${s.replace(/"/g, "")}${arr ? "[]" : ""}`;
-  s = s.toLowerCase().replace(/^char$/, "character(1)").replace(/^char\b/, "character");
+  s = s.toLowerCase().replace(/^char$/, "character(1)").replace(/^char\b/, "character").replace(/\(\s*(\d+)\s*,\s*(\d+)\s*\)/, "($1,$2)");
   s = s.replace(/^decimal/, "numeric").replace(/^(int|int4)$/, "integer").replace(/^int8$/, "bigint").replace(/^int2$/, "smallint")
     .replace(/^bool$/, "boolean").replace(/^varchar/, "character varying").replace(/^float8$/, "double precision").replace(/^serial$/, "integer");
   if (/^timestamptz(\(\d+\))?$/.test(s)) s = s.replace("timestamptz", "timestamp") + " with time zone";
@@ -215,6 +215,9 @@ function verificarSentencia(K, s, out, borradas) {
     const existe = () => (k === "INDEX" ? K.idx.has(t63(nombre)) : k === "TABLE" ? K.tablas.has(nombre) : K.enums.has(nombre));
     return borradas.push([nombre, existe, `${k.toLowerCase()} ${nombre}`]);
   }
+  // DROP TRIGGER … ON t: ausencia, salvo que el mismo archivo lo vuelva a crear (DROP IF EXISTS + CREATE).
+  if ((m = /^DROP TRIGGER (?:IF EXISTS )?"?(\w+)"? ON (?:"?public"?\.)?"?(\w+)"?/i.exec(S)))
+    return borradas.push([m[1], () => K.trg.has(`${m[2]}.${m[1]}`), `trigger ${m[1]}`]);
   if ((m = /^CREATE TYPE "?(\w+)"? AS ENUM \((.*)\)$/i.exec(S))) {
     const vals = [...m[2].matchAll(/'((?:[^']|'')*)'/g)].map((v) => v[1]);
     const real = K.enums.get(m[1]);
@@ -239,6 +242,7 @@ function verificarSentencia(K, s, out, borradas) {
     return;
   }
   if (/^(INSERT|UPDATE|DELETE|MERGE|COPY)\b/i.test(S)) return out.push(["MANUAL", `escribe datos: ${S.slice(0, 90)}`]);
+  if (/^SELECT \d+$/i.test(S)) return out.push(["ok", `sin efecto (no-op): ${S}`]);
   if (/^(COMMENT ON|GRANT|REVOKE|SET LOCAL)\b/i.test(S)) return out.push(["ok", `sin efecto de estructura: ${S.slice(0, 60)}`]);
   out.push(["MANUAL", `no reconocida: ${S.slice(0, 90)}`]);
 }

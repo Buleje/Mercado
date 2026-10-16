@@ -82,7 +82,7 @@ Detalle de agentes y frontmatter: `AGENTS.md`. 8 defs en `.claude/agents/` (`arc
 |---|---|
 | Dev | `npm run dev` · `dev:clean` (kill+lock) · `dev:nuke` (wipe `.next`, solo con caché corrupto) · `dev:health` |
 | Check | **`npm run typecheck`** · `npm run test` · `npm run lint` (lo corre el commit) · `npm run build` · `test:e2e` · `test:load` |
-| DB | `db:seed` · `db:migrate` (flujo Supabase/pgBouncer en `MEMORIA-PROYECTO.md`) · `db:sanity` · medir: `node scripts/sql-lectura.mjs "select … $1" <param>` (READ ONLY, 1 llamada) |
+| DB | `db:seed` · migrar = SQL a mano → `aplicar-migracion-sesion.mjs` → `migraciones-cruce.mjs --verificar` → `prisma-session.mjs migrate resolve --applied` (`migrate dev`/`reset`/`db push --force-reset` = **bloqueados** contra la base compartida por hook + `prisma.config.ts`; `db:migrate` ES `migrate dev`; detalle en `MEMORIA-PROYECTO.md` §3) · `db:sanity` · medir: `node scripts/sql-lectura.mjs "select … $1" <param>` (READ ONLY, 1 llamada) |
 | Otros | `cap:sync` · `app:build:android` · `openapi:generate` · `storybook` · `queue:workers` |
 
 Env mínimas: `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_BASE_URL` (schema completo en `.env.example`, validado por `lib/env.ts`).

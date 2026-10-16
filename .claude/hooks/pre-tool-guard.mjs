@@ -214,7 +214,7 @@ const SUDO_DENYLIST = [
 const BLOCK_PATTERNS = [
   { pattern: /\brm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b/, label: "rm -rf (recursivo)", severity: "critical", reason: "Borrado recursivo fuera de las carpetas temporales (/tmp, /var/tmp, ~/.cache, %TEMP% de Windows). Usá `git rm` o `rimraf` si es node_modules.", sobre: "ejecutable" },
   { pattern: /\brm\b.*(--no-preserve-root|\s\/\*?(?:\s|$)|\s(?:~|\$HOME)\/?\*?(?:\s|$))/, label: "rm sobre / o ~", severity: "critical", reason: "rm apuntando a raíz o home. Bloqueado siempre.", sobre: "ejecutable" },
-  { pattern: /\bDROP\s+(TABLE|DATABASE|SCHEMA|INDEX)\b/i, label: "DROP SQL", severity: "critical", reason: "Usá migration Prisma + DIRECT_URL." },
+  { pattern: /\bDROP\s+(TABLE|DATABASE|SCHEMA|INDEX)\b/i, label: "DROP SQL", severity: "critical", reason: "La base de .env.local es PRODUCCIÓN. Escribí el .sql con Write en prisma/migrations/<carpeta>/ y aplicalo con `node -r dotenv/config scripts/aplicar-migracion-sesion.mjs <archivo.sql> --ensayo dotenv_config_path=.env.local` (DIRECT_URL no resuelve desde esta red)." },
   { pattern: /\bvitest\b[^|;&]*--root[= ]\/(?:\s|$)/, label: "vitest --root /", severity: "critical", reason: "Recorre TODO el disco: el 05-10 quedó 87 min colgado con 8,2 GB y tumbó el dev 2 veces. Agregá el caso a un test del repo o usá --root del proyecto." },
   { pattern: /\bTRUNCATE\s+TABLE\b/i, label: "TRUNCATE TABLE", severity: "critical", reason: "Usá soft-delete o migration formal." },
   { pattern: /\bDELETE\s+FROM\s+[A-Za-z_][A-Za-z0-9_]*\s*(?!WHERE|LIMIT)/i, label: "DELETE sin WHERE", severity: "critical", reason: "Agregá WHERE explícito." },
@@ -273,12 +273,58 @@ function rmRecursivoSeguro(ejecutable) {
   return true;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 2b. PRISMA DESTRUCTIVO contra la base compartida (16-10-2026)
+//   La base de .env.local es PRODUCCIÓN. Hay migraciones aplicadas con el .sql
+//   cambiado (checksum distinto) y ~740 líneas de drift heredado: `migrate dev`
+//   lo ve y ofrece RESETEAR la base. Pasa sólo si el MISMO comando apunta
+//   DATABASE_URL a un Postgres local. Va antes del bypass BSM_ALLOW_INSTALL: no
+//   es una instalación. Segunda capa (personas, `npx prisma` a mano):
+//   prisma.config.ts. Casos: scripts/dev-helpers/guard-casos.mjs.
+// ─────────────────────────────────────────────────────────────────────────────
+const PRISMA_CAMINO =
+  "La base de .env.local es PRODUCCIÓN: con migraciones editadas y drift heredado, Prisma ofrece RESETEARLA (= borrar todo). " +
+  "Camino: 1) SQL a mano en prisma/migrations/<fecha>_<nombre>/migration.sql con Write (borrador: `node scripts/prisma-session.mjs migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`); " +
+  "2) `node -r dotenv/config scripts/aplicar-migracion-sesion.mjs <archivo.sql> --ensayo dotenv_config_path=.env.local` y otra vez sin --ensayo; " +
+  "3) `node scripts/migraciones-cruce.mjs --verificar <carpeta>`; 4) `node scripts/prisma-session.mjs migrate resolve --applied <carpeta>`. " +
+  "Contra un Postgres local: DATABASE_URL=postgresql://…@localhost:5432/… en el mismo comando.";
+
+const hostLocal = (h) =>
+  /^(?:localhost|127(?:\.\d{1,3}){3}|\[::1\]|::1|0\.0\.0\.0|host\.docker\.internal)$/i.test(h) ||
+  h.endsWith(".localhost") || !h.includes(".");
+
+/** true si el comando fija DATABASE_URL/DIRECT_URL y TODAS las URL postgres que nombra son locales. */
+function destinoLocal(command) {
+  if (!/\b(?:DATABASE_URL|DIRECT_URL)=/.test(command)) return false;
+  const urls = command.match(/postgres(?:ql)?:\/\/[^\s"'`]+/gi) ?? [];
+  return urls.length > 0 && urls.every((u) => {
+    try { return hostLocal(new URL(u).hostname); } catch { return false; }
+  });
+}
+
+/** @returns {null | {label,severity,reason}} */
+function prismaDestructivo(command, ejecutable) {
+  for (const seg of ejecutable.split(/;|&&|\|\||\||\n/)) {
+    const m = seg.match(/\bprisma\b.*?\bmigrate\s+(dev|reset)\b/i);
+    let label = m ? `prisma migrate ${m[1]}` : null;
+    if (!label && /\b(?:npm\s+run|pnpm(?:\s+run)?|yarn(?:\s+run)?|bun\s+run)\s+db:migrate(?![\w:-])/.test(seg)) label = "npm run db:migrate (= prisma migrate dev)";
+    if (!label && /\bprisma\b.*\bdb\s+push\b/i.test(seg) && /--(?:force-reset|accept-data-loss)\b/.test(seg)) label = "prisma db push --force-reset/--accept-data-loss";
+    if (!label) continue;
+    // prisma-session.mjs fuerza el pooler de Supabase: nunca es local.
+    if (!/prisma-session/.test(seg) && destinoLocal(command)) continue;
+    return { label: `${label} contra la base compartida`, severity: "critical", reason: PRISMA_CAMINO };
+  }
+  return null;
+}
+
 /** @returns {null | {label,severity,reason}} */
 function bashGuard(toolInput) {
-  if (process.env.BSM_ALLOW_INSTALL === "1") return null;
   const command = String(toolInput?.command ?? "");
   if (!command) return null;
   const ejecutable = textoEjecutable(command);
+  const prisma = prismaDestructivo(command, ejecutable);
+  if (prisma) return prisma;
+  if (process.env.BSM_ALLOW_INSTALL === "1") return null;
 
   if (/\bsudo\b/.test(ejecutable)) {
     for (const d of SUDO_DENYLIST) {

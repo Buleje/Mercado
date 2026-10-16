@@ -3,6 +3,70 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+/**
+ * Candado contra el «reset» de la base compartida (16-10-2026).
+ *
+ * La base de `.env.local` es PRODUCCIÓN (Supabase). Hay migraciones aplicadas
+ * cuyo `migration.sql` cambió después y ~740 líneas de drift heredado:
+ * `prisma migrate dev` lo detecta y ofrece RESETEAR la base (= borrar todo).
+ * Todo comando de Prisma carga este archivo —`npx prisma …` a mano,
+ * `npm run db:migrate` y `scripts/prisma-session.mjs`—, así que el freno va acá.
+ *
+ * Frena `migrate dev`, `migrate reset` y `db push --force-reset|--accept-data-loss`
+ * salvo contra un Postgres local (localhost, 127.x, ::1, host.docker.internal o
+ * un nombre sin punto, como el servicio de un docker compose). Salida
+ * deliberada: `PRISMA_PERMITIR_DESTRUCTIVO=<host exacto>` en el mismo comando.
+ * La capa para agentes es `.claude/hooks/pre-tool-guard.mjs`.
+ */
+function frenarComandoDestructivo(): void {
+  const a = process.argv.slice(2);
+  const iMigrate = a.indexOf("migrate");
+  const iDb = a.indexOf("db");
+  const sub = iMigrate >= 0 ? a[iMigrate + 1] : undefined;
+  const comando =
+    sub === "dev" || sub === "reset"
+      ? `prisma migrate ${sub}`
+      : iDb >= 0 && a[iDb + 1] === "push" && a.some((x) => /^--(?:force-reset|accept-data-loss)(?:=|$)/.test(x))
+        ? "prisma db push --force-reset/--accept-data-loss"
+        : null;
+  if (!comando) return;
+
+  const urls = [
+    process.env["DATABASE_URL"],
+    ...a.flatMap((x, k) => (x === "--url" ? [a[k + 1]] : x.startsWith("--url=") ? [x.slice(6)] : [])),
+  ].filter((u): u is string => Boolean(u));
+  const host = (u: string): string => {
+    try {
+      return new URL(u).hostname;
+    } catch {
+      return "(url ilegible)";
+    }
+  };
+  const esLocal = (h: string): boolean =>
+    /^(?:localhost|127(?:\.\d{1,3}){3}|\[::1\]|::1|0\.0\.0\.0|host\.docker\.internal)$/i.test(h) ||
+    h.endsWith(".localhost") ||
+    (h !== "(url ilegible)" && !h.includes("."));
+  const remotos = [...new Set(urls.map(host).filter((h) => !esLocal(h)))];
+  if (!remotos.length) return;
+  const permitido = process.env["PRISMA_PERMITIR_DESTRUCTIVO"];
+  if (permitido && remotos.every((h) => h === permitido)) return;
+
+  process.stderr.write(
+    `\n🛑 [prisma.config] ${comando} BLOQUEADO contra ${remotos.join(", ")} (base compartida = PRODUCCIÓN).\n` +
+      "   Prisma ofrecería RESETEAR la base: migraciones con el .sql cambiado + drift heredado.\n" +
+      "   Camino correcto:\n" +
+      "   1. SQL a mano en prisma/migrations/<fecha>_<nombre>/migration.sql (borrador:\n" +
+      "      node scripts/prisma-session.mjs migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script)\n" +
+      "   2. node -r dotenv/config scripts/aplicar-migracion-sesion.mjs <archivo.sql> --ensayo dotenv_config_path=.env.local\n" +
+      "      (y otra vez sin --ensayo)\n" +
+      "   3. node scripts/migraciones-cruce.mjs --verificar <carpeta>\n" +
+      "   4. node scripts/prisma-session.mjs migrate resolve --applied <carpeta>\n" +
+      "   Contra un Postgres local: DATABASE_URL=postgresql://…@localhost:5432/… en el mismo comando.\n\n",
+  );
+  process.exit(1);
+}
+frenarComandoDestructivo();
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {

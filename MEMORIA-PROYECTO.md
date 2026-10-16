@@ -101,6 +101,25 @@ Supabase + pgBouncer bloquea la shadow DB que `migrate dev` necesita. Error típ
 Error: P3006 — Migration failed to apply cleanly to the shadow database.
 ```
 
+### 🛑 Candado contra el «reset» (16-10-2026)
+La base de `.env.local` es PRODUCCIÓN. Con migraciones aplicadas cuyo `.sql` cambió después
+(10 quedan con checksum distinto: la base difiere del archivo) y ~740 líneas de drift heredado,
+`migrate dev` ofrece RESETEAR la base = borrar todo. Por eso están **bloqueados** contra cualquier
+host no local: `prisma migrate dev` (también `--create-only` y `npm run db:migrate`, que ES
+`migrate dev`), `prisma migrate reset` y `prisma db push --force-reset|--accept-data-loss`.
+- **Personas** (`npx prisma …` a mano, `scripts/prisma-session.mjs`): `prisma.config.ts` corta
+  antes de conectar. Postgres local (localhost, 127.x, ::1, docker) pasa. Salida deliberada:
+  `PRISMA_PERMITIR_DESTRUCTIVO=<host exacto>` en el mismo comando.
+- **Agentes**: `.claude/hooks/pre-tool-guard.mjs` (`prismaDestructivo`); casos en
+  `node scripts/dev-helpers/guard-casos.mjs`.
+- **Camino correcto**: SQL a mano en `prisma/migrations/<fecha>_<nombre>/migration.sql` →
+  `node -r dotenv/config scripts/aplicar-migracion-sesion.mjs <sql> --ensayo dotenv_config_path=.env.local`
+  (y sin `--ensayo`) → `node scripts/migraciones-cruce.mjs --verificar <carpeta>` →
+  `node scripts/prisma-session.mjs migrate resolve --applied <carpeta>`.
+- Si se edita una migración YA aplicada: `--verificar <carpeta>` y, si da OK,
+  `node scripts/migraciones-checksum.mjs <carpeta>` (alinea el checksum de esa fila; `--ensayo`, `--a <sha>` deshace).
+- Los pasos de abajo con `npx prisma db execute` sin wrapper ya no andan: no hay `.env` y `DIRECT_URL` no resuelve.
+
 ### Procedimiento estándar (4 pasos, idempotente)
 
 **1. Crear SQL manual** con guards `IF NOT EXISTS` / `DO $$ BEGIN ... END $$`:
