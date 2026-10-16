@@ -14,6 +14,10 @@
  *   · Resumen interno → siempre (R1-R4, `gtf-resumen-interno`)
  *   · Imprimir en talonario → viva: sólo los valores, en su lugar, sobre el
  *     talonario preimpreso de la matricial (15-10, `GtfMatricialModal`)
+ *   · Enviar al monte → viva: a la cola «Por imprimir» del celular del monte
+ *     + WhatsApp (16-10, `GtfEnviarAlMonteModal`). Si ya salió del talonario
+ *     dice «Ya impresa en la hoja N° …» y abre el mismo modal, que sólo deja
+ *     «Reimprimir en otra hoja» con motivo (otra hoja numerada = a propósito)
  *   · Documentos del permiso → siempre; sin permiso sólo los papeles de la guía (ADR-482)
  *     (ADR-467: las carpetas del plan, por `planId`; ver, descargar,
  *     imprimir y enviar por WhatsApp — 08-10)
@@ -30,7 +34,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Ban, Eye, FileText, FolderOpen, Link2, LogIn, Printer, ReceiptText, Ruler, Undo2 } from "@buleje/design-system/icons";
+import { Ban, CheckCircle2, Eye, FileText, FolderOpen, Link2, LogIn, Printer, ReceiptText, Ruler, Send, Undo2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
 import { fichaDeGuiaImportada } from "@/lib/forestal/loth-importar-guia-ficha";
@@ -43,6 +47,9 @@ import GtfDocumentosModal from "./GtfDocumentosModal";
 import LothGtfCubicarModal from "./LothGtfCubicarModal";
 import LothGtfAsignarPermiso from "./LothGtfAsignarPermiso";
 import GtfMatricialModal from "./GtfMatricialModal";
+import GtfEnviarAlMonteModal from "./GtfEnviarAlMonteModal";
+import { useColaMonteCtx } from "./cola-monte-contexto";
+import { etiquetaMonteImpresa } from "./gtf-monte-ya-impresa";
 
 /** La guía salió sin permiso y todavía se le puede asignar uno (viva y de trozas). */
 export const pideAsignarPermiso = (g: Pick<Gtf, "planId" | "status" | "deletedAt" | "tipo">): boolean =>
@@ -76,6 +83,8 @@ export function opcionesGtf(
     abrirCubicar,
     abrirPermiso,
     abrirTalonario,
+    abrirMonte,
+    monteImpresa = null,
     onHoja,
     onResumen,
     onAnular,
@@ -87,6 +96,9 @@ export function opcionesGtf(
     abrirCubicar?: () => void;
     abrirPermiso?: () => void;
     abrirTalonario?: () => void;
+    abrirMonte?: () => void;
+    /** «Ya impresa en la hoja N° …» si la guía ya salió del talonario (`etiquetaMonteImpresa`). */
+    monteImpresa?: string | null;
     onHoja: (g: Gtf) => void;
     onResumen: (g: Gtf) => void;
     onAnular?: (id: string) => void;
@@ -120,6 +132,13 @@ export function opcionesGtf(
       icon: ReceiptText,
       onSelect: abrirTalonario,
     });
+  }
+  if (viva && abrirMonte) {
+    a.push(
+      monteImpresa
+        ? { id: "monte", label: monteImpresa, hint: "Ver la foto · Reimprimir en otra hoja si se dañó", icon: CheckCircle2, onSelect: abrirMonte }
+        : { id: "monte", label: "Enviar al monte", hint: "A la cola «Por imprimir» del celular del monte, con aviso por WhatsApp", icon: Send, onSelect: abrirMonte },
+    );
   }
   if (abrirDocumentos) {
     /* Una anulada no recibe papeles (el servidor responde 404): sólo quedan las carpetas del plan. */
@@ -170,7 +189,9 @@ export function opcionesGtf(
 export default function AccionesGtf({
   g, porIngresar = false, soloLectura = false, onIngresarCtp, onHoja, onResumen, onAnular, onRecargar,
 }: AccionesGtfProps) {
-  const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | "cubicar" | "permiso" | "talonario" | null>(null);
+  const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | "cubicar" | "permiso" | "talonario" | "monte" | null>(null);
+  /* La pastilla de la fila (vivo o, si no hay, la última confirmada): ya impresa = otro envío gastaría otra hoja. */
+  const monteImpresa = etiquetaMonteImpresa(useColaMonteCtx()?.porGuia.get(g.id));
   const acciones = useMemo(
     () =>
       opcionesGtf(g, {
@@ -181,11 +202,13 @@ export default function AccionesGtf({
         abrirCubicar: () => setAbierto("cubicar"),
         abrirPermiso: () => setAbierto("permiso"),
         abrirTalonario: () => setAbierto("talonario"),
+        abrirMonte: () => setAbierto("monte"),
+        monteImpresa,
         onHoja,
         onResumen,
         onAnular,
       }),
-    [g, soloLectura, onHoja, onResumen, onAnular],
+    [g, soloLectura, monteImpresa, onHoja, onResumen, onAnular],
   );
   return (
     <div className="flex items-center justify-end gap-2">
@@ -218,6 +241,7 @@ export default function AccionesGtf({
       )}
       {abierto === "cubicar" && <LothGtfCubicarModal g={g} onClose={() => setAbierto(null)} />}
       {abierto === "talonario" && <GtfMatricialModal g={g} onClose={() => setAbierto(null)} />}
+      {abierto === "monte" && <GtfEnviarAlMonteModal g={g} onClose={() => setAbierto(null)} />}
       {abierto === "permiso" && (
         <LothGtfAsignarPermiso
           gtf={g}

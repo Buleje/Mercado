@@ -23,14 +23,17 @@
  */
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, PanelLeftOpen, PanelRightClose, PanelRightOpen, Printer, RotateCcw, Save } from "@buleje/design-system/icons";
+import { ChevronLeft, ChevronRight, FileDown, PanelLeftOpen, PanelRightClose, PanelRightOpen, Printer, RotateCcw, Save } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { CATALOGO } from "@/lib/forestal/gtf-matricial-disposicion";
 import { htmlPruebaTalonario, htmlTalonario, imprimirEnMarco } from "@/lib/forestal/gtf-matricial-print";
+import { transformacionDe } from "@/lib/forestal/gtf-matricial-perfiles";
 import { Btn, ModalFooter, PanelSkeleton, useCierreSeguro } from "./ctp-shared";
 import type { Gtf } from "./gtf-tabla-columnas";
 import { useGtfMatricial } from "./hooks/use-gtf-matricial";
+import { usePerfilesTalonario, useSalidaTalonario } from "./hooks/use-gtf-matricial-perfiles";
 import { useFondoTalonario } from "./hooks/use-gtf-matricial-fondo";
 import { usePanelesTalonario, type PanelesTalonario, type PestanaTalonario } from "./hooks/use-gtf-matricial-paneles";
 import { useSeleccionTalonario } from "./hooks/use-gtf-matricial-seleccion";
@@ -66,6 +69,8 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
   const s = useSeleccionTalonario(t);
   const z = useZoomTalonario(t.hoja, s.centroElegido);
   const p = usePanelesTalonario();
+  const imp = usePerfilesTalonario();
+  const salida = useSalidaTalonario(g.id, t, imp);
   const [conValores, setConValores] = useState(true);
   const cerrar = useCierreSeguro(t.sucio, onClose);
   const hoja = t.hoja;
@@ -78,11 +83,13 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
     if (!hoja) return;
     /* Lo que se acomodó y se imprimió es lo que va a querer la próxima vez. */
     if (t.sucio && !(await t.guardar())) return;
-    imprimirEnMarco(htmlTalonario(hoja, cat, t.paginas, nombre));
+    imprimirEnMarco(htmlTalonario(hoja, cat, t.paginas, nombre, transformacionDe(hoja, imp.elegido)));
   };
+  /* Con la impresora elegida: Oficina = el X/Y de la hoja; las demás, su corrimiento y escala. */
   const prueba = () => {
     if (!hoja) return;
-    imprimirEnMarco(htmlPruebaTalonario(hoja, cat, conValores ? (t.paginas[t.pagina] ?? null) : null, `Prueba · ${nombre}`));
+    const tr = transformacionDe(hoja, imp.elegido);
+    imprimirEnMarco(htmlPruebaTalonario(hoja, cat, conValores ? (t.paginas[t.pagina] ?? null) : null, `Prueba · ${nombre} · ${tr.perfil.nombre}`, tr));
   };
 
   return (
@@ -104,7 +111,8 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
       }
       footer={
         <ModalFooter
-          error={t.error}
+          error={t.error ?? salida.aviso}
+          aviso={salida.recortes && <span role="status" className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{salida.recortes}</span>}
           nota={
             hoja && (
               <span className="tabular-nums">
@@ -133,6 +141,16 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
           <Btn variant="secondary" onClick={() => void t.guardar()} disabled={!t.sucio || t.guardando}>
             <Save className="h-4 w-4" aria-hidden /> {t.guardando ? "Guardando…" : "Guardar"}
           </Btn>
+          <ActionMenu
+            label="Bajar la guía"
+            soloIcono
+            icon={FileDown}
+            disabled={!hoja || t.guardando}
+            actions={[
+              { id: "pdf", label: "PDF a tamaño real", hint: `Para mandarlo · ${imp.elegido?.nombre ?? "Oficina"}`, icon: FileDown, busy: salida.bajando === "pdf", onSelect: () => void salida.bajar("pdf") },
+              { id: "escp", label: "ESC/P para la matricial (.prn)", hint: `Directo a la Epson · ${imp.elegido?.nombre ?? "Oficina"}`, icon: Printer, busy: salida.bajando === "escp", onSelect: () => void salida.bajar("escp") },
+            ]}
+          />
           <Btn variant="primary" onClick={() => void imprimir()} disabled={!hoja || t.guardando}>
             <Printer className="h-4 w-4" aria-hidden /> Imprimir {cat.nombre.toLowerCase()}
           </Btn>
@@ -190,7 +208,7 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
                 <PanelTalonario t={t} s={s} />
               </div>
               <div className={enPestana(p, "talonario")}>
-                <AjustesTalonario t={t} f={f} conValores={conValores} setConValores={setConValores} onPrueba={prueba} />
+                <AjustesTalonario t={t} f={f} imp={imp} salida={salida} conValores={conValores} setConValores={setConValores} onPrueba={prueba} />
               </div>
             </div>
           </div>

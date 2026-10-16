@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * loth-gtf-oficial — la guía del título habilitante, en la hoja de casilleros.
  *

@@ -9,13 +9,16 @@
  */
 
 import { useRef } from "react";
-import { ChevronDown, ImagePlus, Printer, Trash2 } from "@buleje/design-system/icons";
+import { ChevronDown, ImagePlus, Trash2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { SeparadorFecha } from "@/lib/forestal/gtf-matricial-disposicion";
+import { PERFIL_OFICINA_ID } from "@/lib/forestal/gtf-salida-tipos";
 import { Btn } from "./ctp-shared";
 import { Casilla, fmtMm, NumeroMm, Opciones } from "./gtf-matricial-controles";
+import ImpresoraTalonario from "./gtf-matricial-impresora";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
 import type { useFondoTalonario } from "./hooks/use-gtf-matricial-fondo";
+import type { EstadoPerfilesTalonario, useSalidaTalonario } from "./hooks/use-gtf-matricial-perfiles";
 
 /** Un bloque plegable: el título y su dato en un renglón de 48 px; abierto, sus controles. */
 function Plegable({ titulo, dato, children }: { titulo: string; dato: string; children: React.ReactNode }) {
@@ -46,12 +49,16 @@ const SEPARADORES: ReadonlyArray<{ value: SeparadorFecha; label: string; title: 
 export default function AjustesTalonario({
   t,
   f,
+  imp,
+  salida,
   conValores,
   setConValores,
   onPrueba,
 }: {
   t: EstadoGtfMatricial;
   f: ReturnType<typeof useFondoTalonario>;
+  imp: EstadoPerfilesTalonario;
+  salida: ReturnType<typeof useSalidaTalonario>;
   conValores: boolean;
   setConValores: (v: boolean) => void;
   onPrueba: () => void;
@@ -59,31 +66,13 @@ export default function AjustesTalonario({
   const archivo = useRef<HTMLInputElement>(null);
   const hoja = t.hoja;
   if (!hoja) return null;
+  const p = imp.elegido;
+  const propio = p && p.id !== PERFIL_OFICINA_ID;
+  const [dx, dy] = propio ? [p.corrimientoXmm, p.corrimientoYmm] : [hoja.offsetXMm, hoja.offsetYMm];
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <Plegable titulo="Calibrar" dato={`X ${fmtMm(hoja.offsetXMm)} · Y ${fmtMm(hoja.offsetYMm)} mm`}>
-        <div className="grid grid-cols-2 gap-2">
-          <NumeroMm label="Corrimiento X" value={hoja.offsetXMm} min={-50} max={50} onChange={(offsetXMm) => t.cambiarHoja({ offsetXMm })} />
-          <NumeroMm label="Corrimiento Y" value={hoja.offsetYMm} min={-50} max={50} onChange={(offsetYMm) => t.cambiarHoja({ offsetYMm })} />
-        </div>
-        <Casilla label="Con los valores de esta guía" checked={conValores} onChange={setConValores} />
-        <div className="flex items-center gap-1">
-          <Btn variant="secondary" className="flex-1" onClick={onPrueba}>
-            <Printer className="h-4 w-4" aria-hidden /> Imprimir prueba
-          </Btn>
-          <InfoTip
-            icono="ayuda"
-            title="Cómo calibrar"
-            what={
-              <span>
-                1) Mide tu talonario y ponlo en «Medida de la hoja». 2) Pon una hoja en la matricial e imprime la prueba.
-                3) Con una regla, mide del borde del papel al centro de cada cruz: debe dar 10 mm. 4) Si da 12 mm a la
-                izquierda, pon −2 en X; si da 8 mm arriba, pon +2 en Y. Repite hasta que dé 10.
-              </span>
-            }
-            example="En el diálogo de impresión: márgenes «Ninguno», escala 100 % y sin encabezados ni pies de página."
-          />
-        </div>
+      <Plegable titulo="Calibrar" dato={`${p?.nombre ?? "Oficina"} · X ${fmtMm(dx)} · Y ${fmtMm(dy)} mm`}>
+        <ImpresoraTalonario t={t} imp={imp} salida={salida} conValores={conValores} setConValores={setConValores} onPrueba={onPrueba} />
       </Plegable>
 
       <Plegable titulo="Medida" dato={`${fmtMm(hoja.anchoMm)} × ${fmtMm(hoja.altoMm)} mm`}>

@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * LISTA DE TROZAS O CUARTONES A MOVILIZAR — el anexo que acompaña a la GTF.
  *

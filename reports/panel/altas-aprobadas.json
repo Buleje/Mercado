@@ -264,6 +264,11 @@
    },
    "porque": "Ola 3: Documentos (el Archivo y Contratos) entra a la barra en el grupo Gestión. Sale donde sale Documentos › Contratos (ver arriba): `?tab=contratos` abría el hub de Documentos ENTERO, con el drive, así que el Archivo nombra `contratos` en su origen. Sin eso, en Blas (rubro bodega, que no tiene `documentos` en modules.enabled) el hub filtrado mostraba sólo Contratos y el drive desaparecía.",
    "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1 grupo Gestión: Documentos) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "loth-libro-operaciones:monte",
+   "porque": "Vista nueva del Libro TH «Por imprimir»: la cola de guías que la oficina manda al celular del monte para imprimirlas en el talonario. Vive DENTRO de Libro TH, con el mismo permiso que su vista GTF (sin origen propio): sale sólo donde el Libro TH ya salía, nadie gana una pestaña que su plan no paga.",
+   "aprobo": "Brandon, pedido del 2026-10-16 «enviar la guía al monte» (vista ?tab=loth-libro-operaciones&vista=monte pedida con nombre) — carril cola del monte"
   }
  ]
 }

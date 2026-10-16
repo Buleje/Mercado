@@ -15,9 +15,10 @@
  */
 
 import { esc } from "./ctp-documento-print";
-import type { Alineacion, CatalogoFormato, DisposicionHoja } from "./gtf-matricial-disposicion";
+import { CRUZ_MM, type Alineacion, type CatalogoFormato, type DisposicionHoja } from "./gtf-matricial-disposicion";
 import type { PaginaTalonario } from "./gtf-matricial-valores";
 import { INTERLINEA } from "./gtf-matricial-edicion";
+import { aplicarX, aplicarY, escalaPct, transformacionDe, type Transformacion } from "./gtf-matricial-perfiles";
 
 /** Interlineado de los valores: el mismo en pantalla y en papel (vive con las cajas de `gtf-matricial-edicion`). */
 export { INTERLINEA };
@@ -43,16 +44,21 @@ function caja(c: Caja, texto: string): string {
   return `<div class="v" style="left:${n(c.x)}mm;top:${n(c.y)}mm;width:${n(c.anchoMm)}mm;font-size:${n(c.letraPt)}pt;text-align:${ALINEA_CSS[c.alinea]};${ws}">${esc(texto)}</div>`;
 }
 
-/** Las cajas de una hoja, ya con el corrimiento. Lo vacío y lo oculto no salen. */
-export function cajasDeLaPagina(hoja: DisposicionHoja, cat: CatalogoFormato, p: PaginaTalonario): string[] {
-  const dx = hoja.offsetXMm;
-  const dy = hoja.offsetYMm;
+/**
+ * Las cajas de una hoja, ya con el corrimiento (y la escala) de la impresora.
+ * Sin `tr`: Oficina = el X/Y de la hoja. Lo vacío y lo oculto no salen. La
+ * escala corre cada caja y su ancho; dentro de una caja de varios renglones el
+ * interlineado es el de la letra (con 1 % de escala, 0,04 mm de diferencia
+ * contra el PDF / ESC/P, que escalan cada renglón).
+ */
+export function cajasDeLaPagina(hoja: DisposicionHoja, cat: CatalogoFormato, p: PaginaTalonario, tr: Transformacion = transformacionDe(hoja, null)): string[] {
   const out: string[] = [];
+  const en = (c: Caja): Caja => ({ ...c, x: aplicarX(tr, c.x), y: aplicarY(tr, c.y), anchoMm: c.anchoMm * tr.sx });
   for (const def of cat.campos) {
     const pos = hoja.campos[def.id];
     const valor = (p.campos[def.id] ?? "").trim();
     if (!pos?.visible || !valor) continue;
-    out.push(caja({ ...pos, x: pos.x + dx, y: pos.y + dy }, valor));
+    out.push(caja(en(pos), valor));
   }
   const t = hoja.tabla;
   p.filas.slice(0, t.maxFilas).forEach((fila, i) => {
@@ -60,7 +66,7 @@ export function cajasDeLaPagina(hoja: DisposicionHoja, cat: CatalogoFormato, p: 
       const pos = t.columnas[col.id];
       const valor = (fila[col.id] ?? "").trim();
       if (!pos?.visible || !valor) continue;
-      out.push(caja({ x: pos.x + dx, y: t.y + i * t.altoFilaMm + dy, anchoMm: pos.anchoMm, letraPt: t.letraPt, alinea: pos.alinea, unaLinea: true }, valor));
+      out.push(caja(en({ x: pos.x, y: t.y + i * t.altoFilaMm, anchoMm: pos.anchoMm, letraPt: t.letraPt, alinea: pos.alinea, unaLinea: true }), valor));
     }
   });
   return out;
@@ -81,20 +87,27 @@ html, body { margin: 0; padding: 0; background: #fff; }
 }
 
 /** El documento a imprimir: una hoja del talonario por página. */
-export function htmlTalonario(hoja: DisposicionHoja, cat: CatalogoFormato, paginas: PaginaTalonario[], titulo: string): string {
-  return documento(hoja, titulo, paginas.map((p) => cajasDeLaPagina(hoja, cat, p).join("")));
+export function htmlTalonario(hoja: DisposicionHoja, cat: CatalogoFormato, paginas: PaginaTalonario[], titulo: string, tr?: Transformacion): string {
+  return documento(hoja, titulo, paginas.map((p) => cajasDeLaPagina(hoja, cat, p, tr).join("")));
 }
 
-/** Distancia de las cruces de la prueba a cada borde. */
-export const CRUZ_MM = 10;
+/** Distancia de las cruces de la prueba a cada borde (vive en la disposición: la usan también el PDF y el ESC/P). */
+export { CRUZ_MM };
 
 /**
  * La hoja de PRUEBA: cuadrícula de 10 mm (más gruesa cada 50), los mm
  * rotulados en los bordes y una cruz a 10 mm de cada esquina, todo con el
  * corrimiento aplicado. Se mide con regla del borde del papel al centro de
  * cada cruz: tiene que dar 10 mm. Con `pagina`, encima van los valores.
+ * Con `tr`, la de esa impresora (sin él, Oficina = el X/Y de la hoja).
  */
-export function htmlPruebaTalonario(hoja: DisposicionHoja, cat: CatalogoFormato, pagina: PaginaTalonario | null, titulo: string): string {
+export function htmlPruebaTalonario(
+  hoja: DisposicionHoja,
+  cat: CatalogoFormato,
+  pagina: PaginaTalonario | null,
+  titulo: string,
+  tr: Transformacion = transformacionDe(hoja, null),
+): string {
   const W = hoja.anchoMm;
   const H = hoja.altoMm;
   const lineas: string[] = [];
@@ -113,11 +126,14 @@ export function htmlPruebaTalonario(hoja: DisposicionHoja, cat: CatalogoFormato,
   ].join("");
   const leyenda = `<text x="${n(W / 2)}" y="${n(H / 2 - 9)}" text-anchor="middle" font-size="3.4">PRUEBA DE ALINEACIÓN · ${n(W)} × ${n(H)} mm</text>
     <text x="${n(W / 2)}" y="${n(H / 2 + 12)}" text-anchor="middle" font-size="2.8">Del borde del papel al centro de cada cruz debe dar ${CRUZ_MM} mm.</text>
-    <text x="${n(W / 2)}" y="${n(H / 2 + 16)}" text-anchor="middle" font-size="2.8">Corrimiento usado: X ${n(hoja.offsetXMm)} mm · Y ${n(hoja.offsetYMm)} mm</text>`;
+    <text x="${n(W / 2)}" y="${n(H / 2 + 16)}" text-anchor="middle" font-size="2.8">${esc(`Impresora: ${tr.perfil.nombre} · corrimiento usado: X ${n(tr.dx)} mm · Y ${n(tr.dy)} mm`)}${
+      tr.sx !== 1 || tr.sy !== 1 ? ` · escala X ${escalaPct(tr.sx)} · Y ${escalaPct(tr.sy)}` : ""
+    }</text>`;
+  const escala = tr.sx !== 1 || tr.sy !== 1 ? ` scale(${tr.sx} ${tr.sy})` : "";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${n(W)}mm" height="${n(H)}mm" viewBox="0 0 ${n(W)} ${n(H)}"
     style="position:absolute;left:0;top:0" font-family="Courier New, monospace" font-weight="bold" font-size="2.2" fill="#000" stroke="#000">
-    <g transform="translate(${n(hoja.offsetXMm)} ${n(hoja.offsetYMm)})"><g stroke="#000">${lineas.join("")}</g>${cruces}<g stroke="none">${leyenda}</g></g></svg>`;
-  const valores = pagina ? cajasDeLaPagina(hoja, cat, pagina).join("") : "";
+    <g transform="translate(${n(tr.dx)} ${n(tr.dy)})${escala}"><g stroke="#000">${lineas.join("")}</g>${cruces}<g stroke="none">${leyenda}</g></g></svg>`;
+  const valores = pagina ? cajasDeLaPagina(hoja, cat, pagina, tr).join("") : "";
   return documento(hoja, titulo, [svg + valores]);
 }
 

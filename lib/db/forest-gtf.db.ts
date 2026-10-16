@@ -480,6 +480,17 @@ export class ForestGtfDB {
     });
   }
 
+  /**
+   * El estado de cada guía (sólo id y status), sin las borradas: la cola del
+   * monte cierra los envíos de las que se anularon o borraron. Sin tope de 200
+   * (a diferencia de `porIds`): una guía que falta acá se toma como borrada.
+   */
+  static async estadosPorIds(tenantId: string, ids: readonly string[]): Promise<{ id: string; status: string }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (ids.length === 0) return [];
+    return prisma.forestGtf.findMany({ where: { tenantId, id: { in: [...ids] }, deletedAt: null }, select: { id: true, status: true } });
+  }
+
   /** N° de las guías vigentes (ni anuladas ni borradas): ¿una anulada se volvió a registrar? */
   static async numerosVigentes(tenantId: string): Promise<string[]> {
     if (!tenantId) throw new Error("tenantId is required");

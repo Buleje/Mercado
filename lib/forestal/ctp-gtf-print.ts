@@ -45,12 +45,15 @@ import {
 } from "@/lib/forestal/ctp-documento-print";
 import type { CtpFicha, PermisoDeGuia } from "@/lib/forestal/ctp-ficha-types";
 import { COPIAS_GTF, faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
-import { CSS_GTF_OFICIAL, cuerpoGtfOficial, fechaGtf, filasDeLaGuia, type LineaProducto } from "@/lib/forestal/ctp-gtf-formato";
+import { CSS_GTF_OFICIAL, CSS_GTF_SALIDA, cuerpoGtfOficial, fechaGtf, filasDeLaGuia, type LineaProducto } from "@/lib/forestal/ctp-gtf-formato";
 import { revisarTiposGTF, type AvisoTipo } from "@/lib/forestal/gtf-validador-tipo";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { urlVerificarDespacho } from "@/lib/tenant-url-publica";
 import { obtenerBaseVerificacion } from "@/lib/base-verificacion-cliente";
 import { aplicarPiezasGuia } from "@/lib/extensiones/guia-impresa";
+
+/** Vive en `ctp-gtf-formato` (sin "use client"): la usa también el servidor (salida de la matricial, 16-10). */
+export { CSS_GTF_SALIDA };
 
 /** `unitLabel` no siempre es m³ (kg/pt/unidad, según la corrida): los tres
  *  decimales de SERFOR sólo aplican cuando de verdad se está declarando m³. */
@@ -293,37 +296,3 @@ export async function documentoGtfSalida(
     guiasDeIngreso: [...new Set((cadena?.corridas ?? []).flatMap((c) => c.guias))],
   });
 }
-
-/**
- * Lo propio de la guía de salida: la tira de copia, el visado y el QR.
- *
- * La tira marcaba la copia con una banda verde rellena y letra blanca; ahora
- * es una línea fina arriba y abajo —borde y texto, como un `doc-sello`, sin
- * fondo— y el encabezado de `.gs` copia al `.det` de la GTF de ingreso:
- * `--tenue` de fondo, texto en `--tinta`, nunca tinta sólida con letra blanca.
- */
-export const CSS_GTF_SALIDA = `
-  .gs-tira { display:flex; justify-content:space-between; align-items:center; gap:4mm;
-             border-top:1pt solid var(--tinta); border-bottom:.5pt solid var(--linea-suave);
-             padding:1.4mm 0; margin-bottom:3mm; color:var(--gris);
-             font-size:7pt; letter-spacing:1.2pt; text-transform:uppercase; }
-  .gs-tira b { color:var(--tinta); font-size:8.5pt; letter-spacing:1.6pt; }
-  .gs { width:100%; border-collapse:collapse; margin:0; }
-  .gs th, .gs td { border:.5pt solid var(--linea-suave); padding:1.2mm 1.5mm; font-size:7.4pt; }
-  .gs thead th { background:var(--tenue); color:var(--tinta); border-color:var(--linea-suave); border-bottom-color:var(--linea);
-                 font-weight:bold; font-size:6.8pt; letter-spacing:.3pt; text-transform:uppercase; text-align:left; }
-  .gs td.r { text-align:right; }
-  .gs td.cod { font-family:"Courier New",Courier,monospace; font-weight:bold; }
-  .gs td.vol { font-variant-numeric:tabular-nums; font-weight:bold; }
-  .gs-visado { display:flex; gap:6mm; margin-top:4mm; border:.6pt dashed var(--tinta); padding:2mm 3mm; }
-  .gs-visado div { flex:1; }
-  .gs-visado span { font-size:6.6pt; letter-spacing:.5pt; text-transform:uppercase; color:var(--gris); }
-  .gs-visado i { display:block; height:16mm; border-bottom:.6pt solid var(--linea-suave); }
-  .gs-qr { display:flex; align-items:center; gap:4mm; margin-top:4mm;
-           border:.6pt solid var(--linea-suave); border-left:2pt solid var(--tinta); padding:2.4mm 3mm; }
-  .gs-qr img { width:22mm; height:22mm; }
-  .gs-qr div { font-size:7pt; line-height:1.45; color:var(--gris); }
-  .gs-qr b { color:var(--tinta); }
-  .gs-qr .url { display:block; margin-top:.8mm; font-family:"Courier New",Courier,monospace;
-                font-size:6.2pt; color:var(--gris-suave); word-break:break-all; }
-`;

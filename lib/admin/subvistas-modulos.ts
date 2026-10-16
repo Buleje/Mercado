@@ -501,6 +501,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
 export const LOTH_VISTAS: readonly SubvistaModulo[] = [
   { key: "secciones", label: "Secciones", hint: "Las 6 secciones SERFOR" },
   { key: "gtf", label: "GTF", hint: "Guías de transporte forestal" },
+  { key: "monte", label: "Por imprimir", hint: "Guías que la oficina mandó al monte: imprimir en el talonario, marcar y subir la foto con el N° de la hoja" },
   { key: "tablero", label: "Control del permiso", hint: "Por permiso: volumen que le queda, trozas en el patio y su antigüedad, kárdex y extracción (censo − tala, trozado y despacho)" },
   { key: "plan", label: "Plan de Manejo", hint: "Censo + especies autorizadas" },
   { key: "mapa", label: "Mapa", hint: "Dónde se taló cada árbol (GPS de campo)" },

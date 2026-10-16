@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * loth-guia-print — los dos papeles de la guía del bosque: la GTF con sus
  * casilleros (2)–(40) y la LISTA DE TROZAS O CUARTONES A MOVILIZAR.
@@ -27,8 +25,7 @@ import {
 } from "./ctp-documento-print";
 import type { CtpFicha } from "./ctp-ficha-types";
 import { COPIAS_GTF, type GtfDatos } from "./ctp-gtf-datos";
-import { CSS_GTF_OFICIAL, cuerpoGtfOficial, fechaGtf, type CuerpoGtfInput } from "./ctp-gtf-formato";
-import { CSS_GTF_SALIDA } from "./ctp-gtf-print";
+import { CSS_GTF_OFICIAL, CSS_GTF_SALIDA, cuerpoGtfOficial, fechaGtf, type CuerpoGtfInput } from "./ctp-gtf-formato";
 import { CSS_LISTA_TROZAS, htmlListaTrozas, type ListaTrozasInput } from "./ctp-lista-trozas";
 import { fmtM3 } from "./cubicacion-formato";
 import { detallePorEspecie, guiaEsDePlantacion, leyendaDeConstancia, leyendaDelTitulo, listaDeTrozas, totalM3, type FilaListaTrozas, type PiezaGuia } from "./loth-guia-despacho";

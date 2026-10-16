@@ -9,6 +9,7 @@ import {
   calcularPlanilla, descuentoDelLote, fmtNum, paraGuardar, planillaInicial, type Planilla,
 } from "@/components/admin/forestal/hooks/use-cubicar-guia-loth";
 import { opcionesGtf } from "@/components/admin/forestal/gtf-acciones-menu";
+import { etiquetaMonteImpresa } from "@/components/admin/forestal/gtf-monte-ya-impresa";
 import type { Gtf } from "@/components/admin/forestal/gtf-tabla-columnas";
 
 const PREFILL: PrefillOrigenLoth = {
@@ -145,5 +146,17 @@ describe("opcionesGtf · «Cubicar en Oxapampina»", () => {
     expect(ids(g({ deletedAt: "2026-10-01" }))).not.toContain("cubicar");
     expect(ids(g(), true)).not.toContain("cubicar");
     expect(ids(g({ tipo: "madera_aserrada" }))).not.toContain("cubicar");
+  });
+
+  it("«Enviar al monte» pasa a «Ya impresa en la hoja N° …» cuando la guía ya salió del talonario", () => {
+    const monte = (monteImpresa: string | null) =>
+      opcionesGtf(g(), { abrirDatos: nada, abrirDeshacer: nada, abrirMonte: nada, monteImpresa, onHoja: nada, onResumen: nada }).find((o) => o.id === "monte")?.label;
+    const t = { numeroGuia: "019-001-0000772", numeroHoja: "0971772" as string | undefined };
+    expect(monte(null)).toBe("Enviar al monte");
+    expect(etiquetaMonteImpresa(undefined)).toBeNull();
+    expect(etiquetaMonteImpresa({ ...t, estado: "pendiente" })).toBeNull();
+    expect(monte(etiquetaMonteImpresa({ ...t, estado: "confirmada" }))).toBe("Ya impresa en la hoja N° 0971772");
+    expect(etiquetaMonteImpresa({ ...t, numeroHoja: undefined, estado: "confirmada" })).toBe("Ya impresa en la hoja N° 0000772");
+    expect(etiquetaMonteImpresa({ ...t, estado: "impresa" })).toBe("Ya impresa: falta el N° de la hoja");
   });
 });

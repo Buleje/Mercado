@@ -23,6 +23,7 @@ import AccionesGtf from "./gtf-acciones-menu";
 import { CasillaFilaGtf, CasillaTodasGtf, ElegirFiltradasMovil } from "./gtf-seleccion-casillas";
 import type { SeleccionGuias } from "./hooks/use-seleccion-guias";
 import { PapelesGuiasProvider } from "./papeles-guias-contexto";
+import { ColaMonteProvider } from "./cola-monte-contexto";
 
 const POR_PAGINA = 25;
 
@@ -92,6 +93,8 @@ export default function LothGtfTabla({
   return (
     /* ADR-482: los «Papeles 3/4» de las guías de esta página, en un pedido. */
     <PapelesGuiasProvider gtfs={enPagina.filter((x) => x.g.status !== "anulada" && !x.g.deletedAt).map((x) => x.g.gtfNumber)}>
+    {/* 16-10: la pastilla «Por imprimir / Observada» del envío al monte, una lectura por tabla. */}
+    <ColaMonteProvider>
     <div className="space-y-3">
       <BarraFiltrosTabla f={f} />
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
@@ -174,6 +177,7 @@ export default function LothGtfTabla({
         </div>
       )}
     </div>
+    </ColaMonteProvider>
     </PapelesGuiasProvider>
   );
 }

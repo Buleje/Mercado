@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * ctp-documento-print.ts — el ARMAZÓN de papel de los documentos del libro.
  *

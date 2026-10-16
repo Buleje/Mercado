@@ -375,6 +375,9 @@ export function normalizarDisposicion(raw: unknown): DisposicionTalonario {
 /** Redondea a medio milímetro (el paso de la matricial que se puede medir con regla). */
 export const aMedioMm = (v: number): number => Math.round(v * 2) / 2;
 
+/** Distancia de las cruces de la hoja de prueba a cada borde (navegador, PDF y ESC/P). */
+export const CRUZ_MM = 10;
+
 /** Ancho de un carácter de Courier New: 0,6 em. 1 pt = 25,4/72 mm. */
 export const mmPorCaracter = (letraPt: number): number => letraPt * 0.6 * (25.4 / 72);
 

@@ -13,6 +13,8 @@
  *   { version: 2, empresa: { guia, lista } | null, porTitular: { <clave>: {...} } }
  * Compatible hacia atrás: la disposición de antes (`{ guia, lista }` sueltas)
  * pasa a ser la «de la empresa», y un titular sin la suya arranca copiándola.
+ * `perfiles` (16-10): la calibración de cada impresora, de todos los titulares
+ * (`gtf-matricial-perfiles.ts`); sin ella, Oficina + Monte de fábrica.
  *
  * Funciones puras: las usa la DB class dentro del bloqueo de la clave.
  */
@@ -25,6 +27,7 @@ import {
   type DisposicionTalonario,
   type FormatoTalonario,
 } from "./gtf-matricial-disposicion";
+import { normalizarPerfiles, perfilesDeFabrica, type PerfilesTalonario } from "./gtf-matricial-perfiles";
 import { esDelDueno } from "./loth-talonario";
 import { palabrasDelTitular } from "./serfor-titular";
 
@@ -52,6 +55,8 @@ export interface AlmacenTalonario {
   version: 2;
   empresa: DisposicionTalonario | null;
   porTitular: Record<string, EntradaTitular>;
+  /** Una calibración por impresora; Oficina siempre está. */
+  perfiles: PerfilesTalonario;
 }
 
 export type OrigenDisposicion = "titular" | "empresa" | "fabrica";
@@ -81,7 +86,7 @@ export function claveDeTitular(nombre: string | null | undefined): string | null
   return ps.length ? ps.join(" ") : null;
 }
 
-export const almacenVacio = (): AlmacenTalonario => ({ version: 2, empresa: null, porTitular: {} });
+export const almacenVacio = (): AlmacenTalonario => ({ version: 2, empresa: null, porTitular: {}, perfiles: perfilesDeFabrica() });
 
 function normalizarEntrada(raw: unknown): EntradaTitular | null {
   if (!esObjeto(raw)) return null;
@@ -103,10 +108,15 @@ export function normalizarAlmacen(raw: unknown): AlmacenTalonario {
         if (e && Object.keys(porTitular).length < MAX_TITULARES) porTitular[k] = e;
       }
     }
-    return { version: 2, empresa: esObjeto(raw.empresa) ? normalizarDisposicion(raw.empresa) : null, porTitular };
+    return {
+      version: 2,
+      empresa: esObjeto(raw.empresa) ? normalizarDisposicion(raw.empresa) : null,
+      porTitular,
+      perfiles: normalizarPerfiles(raw.perfiles),
+    };
   }
   const hayVieja = esObjeto(raw.guia) || esObjeto(raw.lista);
-  return { version: 2, empresa: hayVieja ? normalizarDisposicion(raw) : null, porTitular: {} };
+  return { version: 2, empresa: hayVieja ? normalizarDisposicion(raw) : null, porTitular: {}, perfiles: perfilesDeFabrica() };
 }
 
 /** El talonario guardado de este dueño: clave exacta primero, si no la misma vara que la numeración. */

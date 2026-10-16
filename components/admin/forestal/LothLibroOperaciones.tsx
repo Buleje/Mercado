@@ -138,7 +138,7 @@ const POR_PAGINA = LINEAS_POR_PAGINA;
 /** Las columnas de cada sección y sus celdas viven en `loth-seccion-cols` (08-10). */
 const COLS = COLS_SECCION;
 
-type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
+type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "monte" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
 
 /** «Analítica» y «Rentabilidad» se fusionaron en «Rentabilidad y rendimiento» (2026-09-29):
  *  un `?vista=analitica` guardado, o un botón que aún la nombra, llegan a la nueva.
@@ -148,6 +148,12 @@ const LOTH_VISTAS_FUSIONADAS = { analitica: "rentabilidad", extraccion: "tablero
 
 /* «Importar guías despachadas» (ADR-461): se usa de vez en cuando, se baja al abrirlo. */
 const LothImportarGuiasModal = dynamic(() => import("./LothImportarGuiasModal"), { ssr: false });
+
+/* «Por imprimir» (16-10): la cola del monte, sólo cuando se abre. */
+const LothColaMonte = dynamic(() => import("./LothColaMonte"), {
+  ssr: false,
+  loading: () => <p className="p-6 text-sm text-[var(--text-tertiary)]">Abriendo la cola…</p>,
+});
 
 /* «Extracción» (ADR-454) trae recharts: se baja sólo al abrir la vista. */
 const LothExtraccionView = dynamic(() => import("./LothExtraccionView"), {
@@ -170,6 +176,8 @@ const LOTH_GROUPS: LibroGroup[] = [
     views: [
       { key: "secciones", ...LOTH_VISTAS_POR_KEY["secciones"], icon: Layers },
       { key: "gtf", ...LOTH_VISTAS_POR_KEY["gtf"], icon: Truck },
+      /* 16-10: la cola del celular del monte (talonario + matricial). */
+      { key: "monte", ...LOTH_VISTAS_POR_KEY["monte"], icon: Printer },
     ],
   },
   {
@@ -1100,6 +1108,9 @@ export default function LothLibroOperaciones() {
           reloadSignal={reloadSignal}
         />
       )}
+
+      {/* Vista «Por imprimir» — la cola del celular del monte (16-10) */}
+      {view === "monte" && <LothColaMonte />}
 
       {/* Vista Cumplimiento — veredicto de fiscalización OSINFOR + reporte (ADR-305) */}
       {view === "cumplimiento" && (

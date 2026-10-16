@@ -2,6 +2,17 @@ import "server-only";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import type { DisposicionTalonario, FormatoTalonario } from "@/lib/forestal/gtf-matricial-disposicion";
 import {
+  agregarPerfil,
+  borrarPerfil,
+  buscarPerfil,
+  cambiarPerfil,
+  listaPerfiles,
+  type PerfilAlta,
+  type PerfilCambio,
+  type ResultadoPerfil,
+} from "@/lib/forestal/gtf-matricial-perfiles";
+import type { PerfilImpresora } from "@/lib/forestal/gtf-salida-tipos";
+import {
   disposicionDe,
   guardarHojaEnAlmacen,
   normalizarAlmacen,
@@ -40,9 +51,51 @@ async function leer(tenantId: string): Promise<AlmacenTalonario> {
 
 export const ForestGtfMatricialDB = {
   /** La que abre el modal para la guía de este dueño, y los titulares que ya tienen la suya. */
-  async paraDueno(tenantId: string, dueno: DuenoTalonario): Promise<DisposicionResuelta & { titulares: ResumenTitular[]; hayEmpresa: boolean }> {
+  async paraDueno(
+    tenantId: string,
+    dueno: DuenoTalonario,
+  ): Promise<DisposicionResuelta & { titulares: ResumenTitular[]; hayEmpresa: boolean; perfiles: PerfilImpresora[] }> {
     const alm = await leer(tenantId);
-    return { ...resolverDisposicion(alm, dueno), titulares: resumenTitulares(alm), hayEmpresa: !!alm.empresa };
+    return { ...resolverDisposicion(alm, dueno), titulares: resumenTitulares(alm), hayEmpresa: !!alm.empresa, perfiles: listaPerfiles(alm.perfiles) };
+  },
+
+  /** Lo que necesita la salida (PDF / ESC/P) en UNA lectura: la disposición del dueño y la impresora. */
+  async paraSalida(
+    tenantId: string,
+    dueno: DuenoTalonario,
+    perfilId: string,
+  ): Promise<{ disposicion: DisposicionTalonario; perfil: PerfilImpresora | null }> {
+    const alm = await leer(tenantId);
+    return { disposicion: resolverDisposicion(alm, dueno).disposicion, perfil: buscarPerfil(alm.perfiles, perfilId) };
+  },
+
+  /** Las impresoras calibradas: Oficina primero. */
+  async perfiles(tenantId: string): Promise<PerfilImpresora[]> {
+    return listaPerfiles((await leer(tenantId)).perfiles);
+  },
+
+  /** Alta, cambio o baja de una impresora, con el bloqueo de la clave (no pisa una hoja que otro guarda). */
+  async cambiarPerfiles(
+    tenantId: string,
+    op: { tipo: "alta"; datos: PerfilAlta } | { tipo: "cambio"; datos: PerfilCambio } | { tipo: "baja"; id: string },
+    user = "unknown",
+  ): Promise<ResultadoPerfil> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return PlatformSettingsDB.actualizar<unknown, ResultadoPerfil>(
+      claveTalonario(tenantId),
+      (actual) => {
+        const alm = normalizarAlmacen(actual);
+        const cuando = { en: new Date().toISOString(), por: user };
+        const r =
+          op.tipo === "alta"
+            ? agregarPerfil(alm.perfiles, op.datos, cuando)
+            : op.tipo === "cambio"
+              ? cambiarPerfil(alm.perfiles, op.datos, cuando)
+              : borrarPerfil(alm.perfiles, op.id);
+        return r.ok ? { valor: { ...alm, perfiles: r.perfiles }, resultado: r } : { resultado: r };
+      },
+      user,
+    );
   },
 
   /** La de otro titular (`clave`) o la de la empresa («empresa»), para copiarla. */
