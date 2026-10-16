@@ -8,16 +8,20 @@
  * La tabla se acomoda desde su PRIMERA fila: arrastrar una celda corre esa
  * columna en X y toda la tabla en Y. Las demás filas siguen el alto de fila, y
  * el recuadro punteado marca hasta dónde llegan las filas que entran.
+ *
+ * El lienzo tiene alto fijo y se desplaza adentro: así la lupa acerca sobre un
+ * punto y «Ver hoja completa» puede hacer entrar el alto. Con el mouse, un
+ * recuadro sobre la hoja vacía elige lo que toca; al arrastrar, las guías
+ * (líneas de la marca) avisan que un borde o un centro coincide con otro.
  */
 
-import { useEffect, useRef, useState } from "react";
 import { CATALOGO } from "@/lib/forestal/gtf-matricial-disposicion";
+import { claveElemento, INTERLINEA, ptAMm } from "@/lib/forestal/gtf-matricial-edicion";
+import { alineaCss } from "@/lib/forestal/gtf-matricial-print";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
-import CampoTalonario, { ptAMm } from "./gtf-matricial-campo";
-import { alineaCss, INTERLINEA } from "@/lib/forestal/gtf-matricial-print";
-
-/** Aire alrededor de la hoja dentro del lienzo, en px. */
-const AIRE = 16;
+import type { SeleccionTalonario } from "./hooks/use-gtf-matricial-seleccion";
+import { AIRE_LIENZO, type ZoomTalonario } from "./hooks/use-gtf-matricial-zoom";
+import CampoTalonario from "./gtf-matricial-campo";
 
 export interface FondoHoja {
   src: string | null;
@@ -25,54 +29,22 @@ export interface FondoHoja {
   cuadricula: boolean;
 }
 
-export default function HojaTalonario({
-  t,
-  fondo,
-  zoom,
-}: {
-  t: EstadoGtfMatricial;
-  fondo: FondoHoja;
-  zoom: number;
-}) {
-  const caja = useRef<HTMLDivElement>(null);
-  const [ancho, setAncho] = useState(0);
+const MONO = '"Courier New", Courier, monospace';
 
-  useEffect(() => {
-    const el = caja.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([e]) => setAncho(e.contentRect.width));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
+export default function HojaTalonario({ t, s, z, fondo }: { t: EstadoGtfMatricial; s: SeleccionTalonario; z: ZoomTalonario; fondo: FondoHoja }) {
   return (
     <div
-      ref={caja}
-      className="min-w-0 overflow-auto rounded-xl bg-[var(--surface-sunken)]"
-      style={{ padding: AIRE }}
+      ref={z.caja}
+      /* Alto = lo que queda visible bajo la cabecera, las pestañas, la barra y el pie (1280 × 900: ~556 px). */
+      className="relative h-[clamp(22rem,calc(100dvh-21.5rem),64rem)] min-w-0 overflow-auto overscroll-contain rounded-xl bg-[var(--surface-sunken)]"
+      style={{ padding: AIRE_LIENZO }}
     >
-      {t.hoja ? (
-        <Lienzo
-          t={t}
-          fondo={fondo}
-          escalaBase={Math.max(0.5, (ancho || 600) / t.hoja.anchoMm) * zoom}
-        />
-      ) : (
-        <div className="min-h-64" />
-      )}
+      {t.hoja ? <Lienzo t={t} s={s} escala={z.escala} fondo={fondo} /> : <div className="min-h-64" />}
     </div>
   );
 }
 
-function Lienzo({
-  t,
-  fondo,
-  escalaBase: escala,
-}: {
-  t: EstadoGtfMatricial;
-  fondo: FondoHoja;
-  escalaBase: number;
-}) {
+function Lienzo({ t, s, escala, fondo }: { t: EstadoGtfMatricial; s: SeleccionTalonario; escala: number; fondo: FondoHoja }) {
   const hoja = t.hoja;
   if (!hoja) return null;
   const cat = CATALOGO[t.formato];
@@ -82,13 +54,22 @@ function Lienzo({
   const izq = Math.min(...cols.map((c) => tabla.columnas[c.id].x));
   const der = Math.max(...cols.map((c) => tabla.columnas[c.id].x + tabla.columnas[c.id].anchoMm));
   const letraTabla = ptAMm(tabla.letraPt) * escala;
+  const ref = s.elegidos[0];
+  const props = (k: string) => ({
+    escala,
+    seleccionado: s.elegidos.includes(k),
+    referencia: ref === k,
+    onPresionar: (e: React.PointerEvent) => s.presionarElemento(e, k, escala),
+    onFocoTeclado: () => !s.elegidos.includes(k) && s.elegir(k),
+    onFlecha: s.moverConFlechas,
+  });
 
   return (
     <div
       role="application"
       aria-label={`Hoja de ${cat.nombre.toLowerCase()} del talonario, ${hoja.anchoMm} × ${hoja.altoMm} mm`}
-      onPointerDown={() => t.setSel(null)}
-      className="relative overflow-hidden border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
+      onPointerDown={(e) => s.presionarHoja(e, escala)}
+      className="relative mx-auto select-none overflow-hidden border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
       style={{
         width: hoja.anchoMm * escala,
         height: hoja.altoMm * escala,
@@ -116,12 +97,7 @@ function Lienzo({
         <div
           aria-hidden
           className="pointer-events-none absolute rounded-[2px] border border-dashed border-[var(--rule-strong)]"
-          style={{
-            left: izq * escala,
-            top: tabla.y * escala,
-            width: (der - izq) * escala,
-            height: tabla.altoFilaMm * tabla.maxFilas * escala,
-          }}
+          style={{ left: izq * escala, top: tabla.y * escala, width: (der - izq) * escala, height: tabla.altoFilaMm * tabla.maxFilas * escala }}
         />
       )}
 
@@ -143,7 +119,7 @@ function Lienzo({
                 fontSize: letraTabla,
                 lineHeight: INTERLINEA,
                 textAlign: alineaCss(pos.alinea) as React.CSSProperties["textAlign"],
-                fontFamily: '"Courier New", Courier, monospace',
+                fontFamily: MONO,
                 fontWeight: 700,
               }}
             >
@@ -155,9 +131,10 @@ function Lienzo({
 
       {cols.map((c) => {
         const pos = tabla.columnas[c.id];
+        const k = claveElemento({ tipo: "columna", id: c.id });
         return (
           <CampoTalonario
-            key={`col-${c.id}`}
+            key={k}
             etiqueta={c.label}
             texto={pagina.filas[0]?.[c.id] ?? ""}
             x={pos.x}
@@ -165,14 +142,8 @@ function Lienzo({
             anchoMm={pos.anchoMm}
             letraPt={tabla.letraPt}
             alinea={pos.alinea}
-            escala={escala}
             unaLinea
-            seleccionado={t.sel?.tipo === "columna" && t.sel.id === c.id}
-            onSeleccionar={() => t.setSel({ tipo: "columna", id: c.id })}
-            onMover={(x, y) => {
-              t.cambiarColumna(c.id, { x });
-              if (y !== tabla.y) t.cambiarTabla({ y });
-            }}
+            {...props(k)}
           />
         );
       })}
@@ -180,9 +151,10 @@ function Lienzo({
       {cat.campos.map((c) => {
         const pos = hoja.campos[c.id];
         if (!pos?.visible) return null;
+        const k = claveElemento({ tipo: "campo", id: c.id });
         return (
           <CampoTalonario
-            key={c.id}
+            key={k}
             etiqueta={c.label}
             texto={pagina.campos[c.id] ?? ""}
             x={pos.x}
@@ -190,13 +162,24 @@ function Lienzo({
             anchoMm={pos.anchoMm}
             letraPt={pos.letraPt}
             alinea={pos.alinea}
-            escala={escala}
-            seleccionado={t.sel?.tipo === "campo" && t.sel.id === c.id}
-            onSeleccionar={() => t.setSel({ tipo: "campo", id: c.id })}
-            onMover={(x, y) => t.cambiarCampo(c.id, { x, y })}
+            {...props(k)}
           />
         );
       })}
+
+      {s.guias?.x.map((x) => (
+        <span key={`gx-${x}`} aria-hidden className="pointer-events-none absolute inset-y-0 z-30 w-px bg-[var(--accent)]" style={{ left: x * escala }} />
+      ))}
+      {s.guias?.y.map((y) => (
+        <span key={`gy-${y}`} aria-hidden className="pointer-events-none absolute inset-x-0 z-30 h-px bg-[var(--accent)]" style={{ top: y * escala }} />
+      ))}
+      {s.recuadro && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute z-30 rounded-[2px] border border-[var(--accent)] bg-[var(--accent-muted)]/40"
+          style={{ left: s.recuadro.x * escala, top: s.recuadro.y * escala, width: s.recuadro.ancho * escala, height: s.recuadro.alto * escala }}
+        />
+      )}
     </div>
   );
 }

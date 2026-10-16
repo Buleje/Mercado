@@ -8,9 +8,13 @@
  * Los valores salen de `entradasDeLaGuia` (la misma entrada que «Imprimir hoja
  * SERFOR»). Una guía anotada a mano necesita la carátula del libro para su
  * identidad (casilleros 6 y 7): se pide sólo en ese caso.
+ *
+ * Todo cambio de la hoja pasa por `editar`, que guarda el paso anterior para
+ * deshacer (uno por hoja, hasta `HISTORIAL_MAX`). Los cambios con la misma
+ * `clave` seguidos (un arrastre) son UN paso.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   acotarPos,
@@ -22,13 +26,15 @@ import {
   type FormatoTalonario,
   type TablaPos,
 } from "@/lib/forestal/gtf-matricial-disposicion";
+import { deshacer as deshacerH, empujar, historialVacio, rehacer as rehacerH, type Historial } from "@/lib/forestal/gtf-matricial-edicion";
 import { entradasDeLaGuia, paginasDe, type PaginaTalonario } from "@/lib/forestal/gtf-matricial-valores";
 import type { LothGtfCaratula, LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 import type { Gtf } from "../gtf-tabla-columnas";
 
 const RUTA = "/api/admin/forestal/loth/gtf-matricial";
 
-export type SeleccionTalonario = { tipo: "campo" | "columna"; id: string } | null;
+/** Dos cambios con la misma clave a menos de esto son un solo paso de deshacer. */
+const JUNTAR_MS = 1200;
 
 const foto = (h: DisposicionHoja | undefined): string => JSON.stringify(h ?? null);
 
@@ -41,13 +47,21 @@ async function leerJson<T>(r: Response): Promise<T | null> {
 }
 
 export function useGtfMatricial(g: Gtf) {
-  const [disp, setDisp] = useState<DisposicionTalonario | null>(null);
+  const [disp, setDispEstado] = useState<DisposicionTalonario | null>(null);
+  /* Espejo síncrono: varias ediciones en el mismo cuadro (un arrastre) leen la última, no la del render. */
+  const dispRef = useRef<DisposicionTalonario | null>(null);
+  const setDisp = useCallback((d: DisposicionTalonario | null) => {
+    dispRef.current = d;
+    setDispEstado(d);
+  }, []);
+  const historial = useRef<Record<FormatoTalonario, Historial<DisposicionHoja>>>({ guia: historialVacio(), lista: historialVacio() });
+  const ultimo = useRef<{ clave: string | null; t: number }>({ clave: null, t: 0 });
+  const [, setPasos] = useState(0);
   /** Lo último que confirmó el servidor, hoja por hoja: contra eso se mide «sin guardar». */
   const [guardado, setGuardado] = useState<Record<FormatoTalonario, string>>({ guia: "", lista: "" });
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [formato, setFormato] = useState<FormatoTalonario>("guia");
-  const [sel, setSel] = useState<SeleccionTalonario>(null);
   const [pagina, setPagina] = useState(0);
   const [caratula, setCaratula] = useState<LothGtfCaratula | null>(null);
   const necesitaCaratula = !g.gtfDatos;
@@ -66,7 +80,7 @@ export function useGtfMatricial(g: Gtf) {
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [setDisp]);
 
   useEffect(() => {
     if (!necesitaCaratula) return;
@@ -83,49 +97,75 @@ export function useGtfMatricial(g: Gtf) {
 
   const sucio = !!disp && (foto(disp.guia) !== guardado.guia || foto(disp.lista) !== guardado.lista);
 
-  const cambiarHoja = useCallback(
-    (patch: Partial<DisposicionHoja>) => setDisp((d) => (d ? { ...d, [formato]: { ...d[formato], ...patch } } : d)),
-    [formato],
+  /** Cambia la hoja abierta y guarda el paso anterior para deshacer. */
+  const editar = useCallback(
+    (fn: (h: DisposicionHoja) => DisposicionHoja, clave: string | null = null) => {
+      const d = dispRef.current;
+      if (!d) return;
+      const actual = d[formato];
+      const nueva = fn(actual);
+      if (foto(nueva) === foto(actual)) return;
+      const ahora = Date.now();
+      /* Un arrastre (clave única por arrastre) es UN paso aunque se pause; lo demás, si llega seguido. */
+      const misma = clave != null && ultimo.current.clave === clave;
+      const juntar = misma && (clave.startsWith("arrastre:") || ahora - ultimo.current.t < JUNTAR_MS);
+      if (!juntar) historial.current[formato] = empujar(historial.current[formato], actual);
+      ultimo.current = { clave, t: ahora };
+      setDisp({ ...d, [formato]: nueva });
+      setPasos((n) => n + 1);
+    },
+    [formato, setDisp],
   );
+
+  const moverEnHistorial = useCallback(
+    (cual: "deshacer" | "rehacer") => {
+      const d = dispRef.current;
+      if (!d) return;
+      const r = (cual === "deshacer" ? deshacerH : rehacerH)(historial.current[formato], d[formato]);
+      if (!r) return;
+      historial.current[formato] = r.h;
+      ultimo.current = { clave: null, t: 0 };
+      setDisp({ ...d, [formato]: r.valor });
+      setPasos((n) => n + 1);
+    },
+    [formato, setDisp],
+  );
+  const deshacer = useCallback(() => moverEnHistorial("deshacer"), [moverEnHistorial]);
+  const rehacer = useCallback(() => moverEnHistorial("rehacer"), [moverEnHistorial]);
+  const puedeDeshacer = historial.current[formato].pasado.length > 0;
+  const puedeRehacer = historial.current[formato].futuro.length > 0;
+
+  const cambiarHoja = useCallback((patch: Partial<DisposicionHoja>) => editar((h) => ({ ...h, ...patch })), [editar]);
   const cambiarCampo = useCallback(
     (id: string, patch: Partial<CampoPos>) =>
-      setDisp((d) => {
-        if (!d) return d;
-        const h = d[formato];
+      editar((h) => {
         const p = { ...patch, ...(patch.x != null && { x: acotarPos(patch.x) }), ...(patch.y != null && { y: acotarPos(patch.y) }) };
-        return { ...d, [formato]: { ...h, campos: { ...h.campos, [id]: { ...h.campos[id], ...p } } } };
+        return { ...h, campos: { ...h.campos, [id]: { ...h.campos[id], ...p } } };
       }),
-    [formato],
+    [editar],
   );
   const cambiarTabla = useCallback(
     (patch: Partial<Omit<TablaPos, "columnas">>) =>
-      setDisp((d) => {
-        if (!d) return d;
+      editar((h) => {
         const p = { ...patch, ...(patch.y != null && { y: acotarPos(patch.y) }) };
-        return { ...d, [formato]: { ...d[formato], tabla: { ...d[formato].tabla, ...p } } };
+        return { ...h, tabla: { ...h.tabla, ...p } };
       }),
-    [formato],
+    [editar],
   );
   const cambiarColumna = useCallback(
     (id: string, patch: Partial<ColumnaPos>) =>
-      setDisp((d) => {
-        if (!d) return d;
-        const t = d[formato].tabla;
+      editar((h) => {
         const p = { ...patch, ...(patch.x != null && { x: acotarPos(patch.x) }) };
-        return { ...d, [formato]: { ...d[formato], tabla: { ...t, columnas: { ...t.columnas, [id]: { ...t.columnas[id], ...p } } } } };
+        return { ...h, tabla: { ...h.tabla, columnas: { ...h.tabla.columnas, [id]: { ...h.tabla.columnas[id], ...p } } } };
       }),
-    [formato],
+    [editar],
   );
 
-  /** Vuelve a la de fábrica las posiciones; la medida de la hoja y el corrimiento son del papel y de la impresora: quedan. */
+  /** Vuelve a la de fábrica las posiciones; la medida de la hoja y el corrimiento son del papel y de la impresora: quedan. Se deshace. */
   const restaurar = useCallback(
     () =>
-      setDisp((d) => {
-        if (!d) return d;
-        const h = d[formato];
-        return { ...d, [formato]: { ...hojaDeFabrica(formato), anchoMm: h.anchoMm, altoMm: h.altoMm, offsetXMm: h.offsetXMm, offsetYMm: h.offsetYMm } };
-      }),
-    [formato],
+      editar((h) => ({ ...hojaDeFabrica(formato), anchoMm: h.anchoMm, altoMm: h.altoMm, offsetXMm: h.offsetXMm, offsetYMm: h.offsetYMm })),
+    [editar, formato],
   );
 
   /** Guarda las hojas que cambiaron. `true` si quedó todo guardado. */
@@ -149,7 +189,8 @@ export function useGtfMatricial(g: Gtf) {
         const servidor = j.disposicion;
         setGuardado((prev) => ({ ...prev, [f]: foto(servidor[f]) }));
         /* Lo que se movió MIENTRAS se guardaba se queda (y sigue «sin guardar»): sólo se adopta la del servidor si nada cambió. */
-        setDisp((d) => (d ? { ...d, ...(foto(d[f]) === enviado && { [f]: servidor[f] }), actualizado: servidor.actualizado } : d));
+        const d = dispRef.current;
+        if (d) setDisp({ ...d, ...(foto(d[f]) === enviado && { [f]: servidor[f] }), actualizado: servidor.actualizado });
       }
       return true;
     } catch (err) {
@@ -158,17 +199,17 @@ export function useGtfMatricial(g: Gtf) {
     } finally {
       setGuardando(false);
     }
-  }, [disp, guardado]);
+  }, [disp, guardado, setDisp]);
 
   const elegirFormato = useCallback((f: FormatoTalonario) => {
     setFormato(f);
-    setSel(null);
     setPagina(0);
   }, []);
 
   return {
-    disp, hoja, formato, elegirFormato, sel, setSel, entradas, paginas, pagina: paginaActual, setPagina,
+    disp, hoja, formato, elegirFormato, entradas, paginas, pagina: paginaActual, setPagina,
     sucio, guardando, error, guardar, restaurar, cambiarHoja, cambiarCampo, cambiarTabla, cambiarColumna,
+    editar, deshacer, rehacer, puedeDeshacer, puedeRehacer,
   };
 }
 

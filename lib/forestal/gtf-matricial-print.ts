@@ -17,9 +17,10 @@
 import { esc } from "./ctp-documento-print";
 import type { Alineacion, CatalogoFormato, DisposicionHoja } from "./gtf-matricial-disposicion";
 import type { PaginaTalonario } from "./gtf-matricial-valores";
+import { INTERLINEA } from "./gtf-matricial-edicion";
 
-/** Interlineado de los valores: el mismo en pantalla y en papel. */
-export const INTERLINEA = 1.15;
+/** Interlineado de los valores: el mismo en pantalla y en papel (vive con las cajas de `gtf-matricial-edicion`). */
+export { INTERLINEA };
 
 const ALINEA_CSS: Record<Alineacion, string> = { izq: "left", centro: "center", der: "right" };
 export const alineaCss = (a: Alineacion): string => ALINEA_CSS[a];

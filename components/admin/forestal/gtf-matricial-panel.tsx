@@ -3,12 +3,15 @@
 /**
  * El panel del campo elegido (X/Y, letra, ancho, alineación, si se imprime) y
  * la lista de todos los campos de la hoja, para prender los que el talonario
- * pide y elegir los que no se alcanzan con el mouse.
+ * pide y elegir los que no se alcanzan con el mouse. Con varios elegidos, lo
+ * que se cambia acá (ancho, letra, alineación, si se imprime) vale para todos.
  */
 
 import { AlertTriangle } from "@buleje/design-system/icons";
-import { CATALOGO, entraEnUnaLinea, type Alineacion } from "@/lib/forestal/gtf-matricial-disposicion";
+import { CATALOGO, entraEnUnaLinea, type Alineacion, type DisposicionHoja } from "@/lib/forestal/gtf-matricial-disposicion";
+import { claveElemento, elementoDeClave } from "@/lib/forestal/gtf-matricial-edicion";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
+import type { SeleccionTalonario } from "./hooks/use-gtf-matricial-seleccion";
 import { Casilla, NumeroMm, Opciones } from "./gtf-matricial-controles";
 
 const ALINEAS: ReadonlyArray<{ value: Alineacion; label: string }> = [
@@ -20,22 +23,64 @@ const ALINEAS: ReadonlyArray<{ value: Alineacion; label: string }> = [
 const CAJA = "flex flex-col gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3";
 const SUBTITULO = "text-sm font-bold text-[var(--text-primary)]";
 
-function CampoElegido({ t }: { t: EstadoGtfMatricial }) {
+/** Lo mismo a todos los elegidos: campos y columnas (la letra de una columna es la de su tabla). */
+function aTodos(h: DisposicionHoja, claves: readonly string[], p: { anchoMm?: number; letraPt?: number; alinea?: Alineacion; visible?: boolean }): DisposicionHoja {
+  const campos = { ...h.campos };
+  const columnas = { ...h.tabla.columnas };
+  let letraTabla = h.tabla.letraPt;
+  for (const k of claves) {
+    const e = elementoDeClave(k);
+    if (e.tipo === "campo" && campos[e.id]) campos[e.id] = { ...campos[e.id], ...p };
+    if (e.tipo === "columna" && columnas[e.id]) {
+      const { letraPt, ...resto } = p;
+      columnas[e.id] = { ...columnas[e.id], ...resto };
+      if (letraPt != null) letraTabla = letraPt;
+    }
+  }
+  return { ...h, campos, tabla: { ...h.tabla, letraPt: letraTabla, columnas } };
+}
+
+function GrupoElegido({ t, s }: { t: EstadoGtfMatricial; s: SeleccionTalonario }) {
+  const hoja = t.hoja;
+  const ref = elementoDeClave(s.elegidos[0] ?? "");
+  if (!hoja) return null;
+  const pos = ref.tipo === "campo" ? hoja.campos[ref.id] : hoja.tabla.columnas[ref.id];
+  if (!pos) return null;
+  const letra = ref.tipo === "campo" ? hoja.campos[ref.id].letraPt : hoja.tabla.letraPt;
+  /* Una clave por dato: las flechas del número seguidas son un solo paso de deshacer. */
+  const fijar = (p: Parameters<typeof aTodos>[2]) => t.editar((h) => aTodos(h, s.elegidos, p), `panel:${Object.keys(p).join(",")}`);
+  return (
+    <div className={CAJA}>
+      <span className={SUBTITULO}>{s.elegidos.length} campos elegidos</span>
+      <span className="text-sm text-[var(--text-secondary)]">Muévelos juntos en la hoja o con las flechas; alinéalos con la barra de arriba.</span>
+      <div className="grid grid-cols-2 gap-2">
+        <NumeroMm label="Ancho de todos" value={pos.anchoMm} min={1} onChange={(anchoMm) => fijar({ anchoMm })} />
+        <NumeroMm label="Letra de todos" value={letra} min={5} max={24} sufijo="pt" onChange={(letraPt) => fijar({ letraPt })} />
+      </div>
+      <Opciones label="Alineación de todos" value={pos.alinea} opciones={ALINEAS} onChange={(alinea) => fijar({ alinea })} />
+      <Casilla label="Se imprimen" checked={pos.visible} onChange={(visible) => fijar({ visible })} />
+    </div>
+  );
+}
+
+function CampoElegido({ t, s }: { t: EstadoGtfMatricial; s: SeleccionTalonario }) {
   const hoja = t.hoja;
   const cat = CATALOGO[t.formato];
-  if (!hoja || !t.sel) {
+  if (!hoja || s.elegidos.length === 0) {
     return (
       <div className={CAJA}>
         <span className={SUBTITULO}>Campo elegido</span>
         <span className="text-sm text-[var(--text-secondary)]">
-          Toca un valor en la hoja y arrástralo, o muévelo con las flechas (Shift: de 5 en 5 mm).
+          Toca un valor en la hoja y arrástralo, o muévelo con las flechas (Shift: de 5 en 5 mm). Shift + clic suma otro.
         </span>
       </div>
     );
   }
-  if (t.sel.tipo === "columna") {
-    const def = cat.columnas.find((c) => c.id === t.sel?.id);
-    const pos = hoja.tabla.columnas[t.sel.id];
+  if (s.elegidos.length > 1) return <GrupoElegido t={t} s={s} />;
+  const sel = elementoDeClave(s.elegidos[0]);
+  if (sel.tipo === "columna") {
+    const def = cat.columnas.find((c) => c.id === sel.id);
+    const pos = hoja.tabla.columnas[sel.id];
     if (!def || !pos) return null;
     const id = def.id;
     const tabla = hoja.tabla;
@@ -60,8 +105,8 @@ function CampoElegido({ t }: { t: EstadoGtfMatricial }) {
       </div>
     );
   }
-  const def = cat.campos.find((c) => c.id === t.sel?.id);
-  const pos = hoja.campos[t.sel.id];
+  const def = cat.campos.find((c) => c.id === sel.id);
+  const pos = hoja.campos[sel.id];
   if (!def || !pos) return null;
   const id = def.id;
   const valor = t.paginas[t.pagina]?.campos[id] ?? "";
@@ -90,7 +135,7 @@ function CampoElegido({ t }: { t: EstadoGtfMatricial }) {
   );
 }
 
-function ListaDeCampos({ t }: { t: EstadoGtfMatricial }) {
+function ListaDeCampos({ t, s }: { t: EstadoGtfMatricial; s: SeleccionTalonario }) {
   const hoja = t.hoja;
   if (!hoja) return null;
   const cat = CATALOGO[t.formato];
@@ -108,9 +153,9 @@ function ListaDeCampos({ t }: { t: EstadoGtfMatricial }) {
       />
       <button
         type="button"
-        onClick={() => t.setSel({ tipo, id })}
+        onClick={(e) => s.elegir(claveElemento({ tipo, id }), e.shiftKey || e.ctrlKey || e.metaKey)}
         className={`flex min-h-12 min-w-0 flex-1 flex-col justify-center rounded-lg px-2 text-left hover:bg-[var(--surface-sunken)] ${
-          t.sel?.tipo === tipo && t.sel.id === id ? "bg-[var(--accent-muted)]" : ""
+          s.elegidos.includes(claveElemento({ tipo, id })) ? "bg-[var(--accent-muted)]" : ""
         }`}
       >
         <span className="truncate text-sm font-semibold text-[var(--text-primary)]">{label}</span>
@@ -151,11 +196,11 @@ function ListaDeCampos({ t }: { t: EstadoGtfMatricial }) {
   );
 }
 
-export default function PanelTalonario({ t }: { t: EstadoGtfMatricial }) {
+export default function PanelTalonario({ t, s }: { t: EstadoGtfMatricial; s: SeleccionTalonario }) {
   return (
     <div className="flex min-w-0 flex-col gap-3">
-      <CampoElegido t={t} />
-      <ListaDeCampos t={t} />
+      <CampoElegido t={t} s={s} />
+      <ListaDeCampos t={t} s={s} />
     </div>
   );
 }

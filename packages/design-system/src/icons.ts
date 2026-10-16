@@ -494,6 +494,17 @@ export {
   Candy,
   Hammer,
   SprayCan,
+  // ── Diseñador de posiciones (talonario de la matricial) ──────
+  AlignStartHorizontal,
+  AlignCenterHorizontal,
+  AlignEndHorizontal,
+  AlignStartVertical,
+  AlignCenterVertical,
+  AlignEndVertical,
+  AlignHorizontalSpaceAround,
+  AlignVerticalSpaceAround,
+  Magnet,
+  Fullscreen,
 } from "lucide-react";
 
 // Aliases semánticos re-exportados para uso claro en el dominio:

@@ -25,21 +25,19 @@ import { Btn, ModalBody, ModalFooter, PanelSkeleton, useCierreSeguro } from "./c
 import type { Gtf } from "./gtf-tabla-columnas";
 import { useGtfMatricial } from "./hooks/use-gtf-matricial";
 import { useFondoTalonario } from "./hooks/use-gtf-matricial-fondo";
+import { useSeleccionTalonario } from "./hooks/use-gtf-matricial-seleccion";
+import { useZoomTalonario } from "./hooks/use-gtf-matricial-zoom";
 import { Opciones } from "./gtf-matricial-controles";
+import BarraTalonario from "./gtf-matricial-barra";
 import HojaTalonario from "./gtf-matricial-hoja";
 import PanelTalonario from "./gtf-matricial-panel";
 import AjustesTalonario from "./gtf-matricial-ajustes";
 
-const ZOOMS = [
-  { value: "1", label: "Ajustar" },
-  { value: "1.5", label: "150 %" },
-  { value: "2", label: "200 %" },
-] as const;
-
 export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () => void }) {
   const t = useGtfMatricial(g);
   const f = useFondoTalonario(t.formato);
-  const [zoom, setZoom] = useState<(typeof ZOOMS)[number]["value"]>("1");
+  const s = useSeleccionTalonario(t);
+  const z = useZoomTalonario(t.hoja, s.centroElegido);
   const [conValores, setConValores] = useState(true);
   const cerrar = useCierreSeguro(t.sucio, onClose);
   const hoja = t.hoja;
@@ -76,7 +74,7 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
         <InfoTip
           icono="ayuda"
           title="Cómo se usa"
-          what="Arrastra cada valor hasta su casillero (o muévelo con las flechas), guarda, y pon el talonario en la matricial. Sólo se imprimen los valores: el talonario ya trae los rótulos."
+          what="Arrastra cada valor hasta su casillero (o muévelo con las flechas), guarda, y pon el talonario en la matricial. Sólo se imprimen los valores: el talonario ya trae los rótulos. Con la barra de arriba acercas, eliges varios y los alineas."
           affects="La disposición queda guardada para todas las guías de esta empresa: se acomoda una vez."
           example="Una sola impresión: las 3 copias salen del papel autocopiativo."
         />
@@ -127,14 +125,12 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
                   </Btn>
                 </div>
               )}
-              <div className="ml-auto w-64 max-sm:w-full">
-                <Opciones label="Zoom" labelOculto value={zoom} opciones={ZOOMS} onChange={setZoom} />
-              </div>
             </div>
+            <BarraTalonario t={t} s={s} z={z} />
             <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_22rem]">
-              <HojaTalonario t={t} fondo={f.fondo} zoom={Number(zoom)} />
+              <HojaTalonario t={t} s={s} z={z} fondo={f.fondo} />
               <div className="flex min-w-0 flex-col gap-3">
-                <PanelTalonario t={t} />
+                <PanelTalonario t={t} s={s} />
                 <AjustesTalonario t={t} f={f} conValores={conValores} setConValores={setConValores} onPrueba={prueba} />
               </div>
             </div>
