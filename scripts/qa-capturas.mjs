@@ -231,8 +231,10 @@ try {
      (sembrar el cubicador se tipeó a mano 6 veces el 03-10: ahora es un preset). */
   const dePresets = presetsPedidos.flatMap((n) => leerPreset(n).pasos);
   const crudo = arg("pasos-archivo") ? readFileSync(arg("pasos-archivo"), "utf8") : arg("pasos", "[]");
-  pasos = [...dePresets, ...JSON.parse(crudo)];
-  if (!Array.isArray(pasos)) throw new Error("los pasos van en un array");
+  const propios = JSON.parse(crudo);
+  if (!Array.isArray(propios)) throw new Error("los pasos van en un array");
+  // Un {"preset": "x"} dentro de --pasos/--pasos-archivo también se abre (15-10: sólo lo hacía --preset).
+  pasos = [...dePresets, ...propios.flatMap((p) => (p && typeof p === "object" && typeof p.preset === "string" ? leerPreset(p.preset).pasos : [p]))];
   /* {"medir": "<selector raíz>" | true} (10-10): la medición de una vista del panel que 3
      carriles (Hoy, Calendario, Logros) escribieron a mano: pantallas, títulos por nivel,
      textos visibles de menos de 14 px, botones de menos de 48 px de alto y desborde. Se

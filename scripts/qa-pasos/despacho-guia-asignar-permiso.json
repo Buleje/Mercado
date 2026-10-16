@@ -1,21 +1,13 @@
 {
+ "nota": "preset despacho-guia-asignar-permiso: la troza del libro DEMO-023-A (Tornillo) + 1 a mano de OTRA especie → «Asignar permiso» compara con lo autorizado: PO-2026-001 (sólo Tornillo) bloquea por T7 en la ventana Y en el servidor (422); QA-PERMISO-2 (sin especies) asigna. Al final se anula.",
  "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
  "ruta": "/admin?tab=loth-libro-operaciones&vista=gtf",
  "pasos": [
   {
-   "espiar": [
-    "/api/admin/forestal/loth/despacho-guia",
-    "POST"
-   ]
+   "eval": "(() => { /* despacho-abrir deja en la lista sólo la troza del libro DEMO-023-A (Tornillo). */ window.__qaDejarTrozas = 'DEMO-023-A'; return 'dejar DEMO-023-A'; })()"
   },
   {
-   "eval": "(() => { /* preset despacho-guia-asignar-permiso: la troza del libro DEMO-023-A (Tornillo) + 1 a mano de OTRA especie → «Asignar permiso» compara con lo autorizado: PO-2026-001 (sólo Tornillo) bloquea por T7 en la ventana Y en el servidor (422); QA-PERMISO-2 (sin especies) asigna. Al final se anula. Base: despacho-guia-a-mano (QA-ui): la lista sin trozas del libro + la «última guía» de main 019-001-0000482 (destinatario, transporte y llegada completos) + guarda la respuesta del POST en window.__qaGuia para anularla al final. */ const prev = {\"guia\": {\"distrito\": \"Constitución\", \"autoridad\": \"GERFOR Ucayali\", \"provincia\": \"Oxapampa\", \"resolucion\": \"RDF N° 001-2026-GOREU-GERFOR\", \"departamento\": \"Pasco\", \"gtfOrigenNro\": \"\", \"origenRecurso\": \"concesion\", \"listaTrozasNro\": \"10\", \"planManejoTipo\": \"Plan Operativo (PO)\", \"guiaRemisionNro\": \"\", \"representanteLegal\": \"\"}, \"titulos\": [\"17-CPO/C-J-001-02\"], \"traslado\": {\"ruta\": \"PC 12, Constitución, Oxapampa, Pasco → Av. Centenario 1800, Calleria, Coronel Portillo, Ucayali\", \"llegada\": {\"distrito\": \"Calleria\", \"direccion\": \"Av. Centenario 1800\", \"provincia\": \"Coronel Portillo\", \"departamento\": \"Ucayali\"}, \"partida\": {\"distrito\": \"Constitución\", \"direccion\": \"PC 12\", \"provincia\": \"Oxapampa\", \"departamento\": \"Pasco\"}, \"fechaFin\": \"2026-10-08\", \"fechaInicio\": \"2026-10-08\", \"puntoLlegada\": \"Av. Centenario 1800, Calleria, Coronel Portillo, Ucayali\", \"puntoPartida\": \"PC 12, Constitución, Oxapampa, Pasco\"}, \"vehiculo\": {\"modo\": \"terrestre\", \"tipo\": \"\", \"marca\": \"\", \"placa\": \"ABC-123\", \"licencia\": \"Q44120987\", \"conductor\": \"JULIO PAREDES\", \"embarcacion\": \"\", \"conductorDni\": \"44120987\", \"placaRemolque\": \"\", \"tipoTransporte\": \"privado\"}, \"comprobante\": {\"tipo\": \"ninguno\", \"numero\": \"\"}, \"propietario\": {\"zona\": \"\", \"nombre\": \"Maderera San Martín SAC\", \"docTipo\": \"RUC\", \"esElCtp\": true, \"distrito\": \"\", \"direccion\": \"\", \"docNumero\": \"\", \"provincia\": \"\", \"departamento\": \"Ucayali\"}, \"citesPermiso\": \"\", \"destinatario\": {\"zona\": \"\", \"nombre\": \"Maderera San Martín SAC\", \"docTipo\": \"RUC\", \"distrito\": \"Calleria\", \"direccion\": \"Av. Centenario 1800\", \"docNumero\": \"20512345678\", \"provincia\": \"Coronel Portillo\", \"departamento\": \"Ucayali\"}, \"observaciones\": \"QA L13 — se deshace con --deshacer\", \"transportista\": {\"zona\": \"\", \"nombre\": \"Maderera San Martín SAC\", \"docTipo\": \"RUC\", \"distrito\": \"\", \"direccion\": \"Av. Centenario 1800\", \"docNumero\": \"20512345678\", \"provincia\": \"\", \"registroMtc\": \"\", \"departamento\": \"\"}}; const f = window.fetch; window.fetch = async (...a) => { const r = await f(...a); const u = String(a[0]); const m = (a[1] && a[1].method) || 'GET'; if (u.includes('/loth/despacho-guia') && m === 'POST') { r.clone().json().then((j) => { window.__qaGuia = j && j.gtf ? { id: j.gtf.id, gtfNumber: j.gtf.gtfNumber, volumen: j.volumen } : { status: r.status, error: j && (j.message || j.error) }; }).catch(() => null); return r; } if (u.includes('/loth/despacho-guia') && m === 'GET' && !u.includes('lineasDeGuia')) { const j = await r.clone().json(); j.trozas = (j.trozas || []).filter((t) => JSON.stringify(t).includes('DEMO-023-A')); j.ultimaGuia = prev; j.ultimaGuiaNumero = '019-001-0000482'; return new Response(JSON.stringify(j), { status: 200, headers: { 'content-type': 'application/json' } }); } return r; };  const f2 = window.fetch; window.fetch = async (...a) => { const r = await f2(...a); const u = String(a[0]); const m = (a[1] && a[1].method) || 'GET'; if (u.includes('/loth/guia-permiso') && m === 'POST') r.clone().json().then((j) => { (window.__qaPermiso = window.__qaPermiso || []).push({ status: r.status, error: j && j.error, message: j && j.message }); }).catch(() => null); if (u.includes('/loth/despacho-guia') && m === 'PATCH') r.clone().json().then((j) => { window.__qaAnular = { status: r.status, estado: j && j.gtf && j.gtf.status, lineasAnuladas: j && j.lineasAnuladas, trozasAnuladas: j && j.trozasAnuladas, error: j && (j.message || j.error) }; }).catch(() => null); return r; }; return 'parche ok'; })()"
-  },
-  {
-   "clicTexto": "Despachar con guía"
-  },
-  {
-   "esperar": "[data-testid=trozas-a-mano]"
+   "preset": "despacho-abrir"
   },
   {
    "eval": "[...document.querySelectorAll('[role=dialog] input[type=checkbox][aria-label^=\"Todas las trozas del árbol\"]')].map((x) => x.getAttribute('aria-label'))"
@@ -30,151 +22,10 @@
    "click": "[data-testid=trozas-a-mano] button[aria-pressed]"
   },
   {
-   "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=0",
-    "45"
-   ]
+   "preset": "despacho-dos-a-mano"
   },
   {
-   "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=1",
-    "40"
-   ]
-  },
-  {
-   "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=2",
-    "3,2"
-   ]
-  },
-  {
-   "click": "[data-testid=trozas-a-mano] input >> nth=3"
-  },
-  {
-   "tecla": "Enter"
-  },
-  {
-   "esperar": 300
-  },
-  {
-   "eval": "(() => { const r = document.querySelector('[data-testid=trozas-a-mano]'); const a = document.activeElement; return { especie: r.querySelector('select').value, fijada: r.querySelector('button[aria-pressed]').getAttribute('aria-pressed'), foco: a && (a.getAttribute('placeholder') || a.getAttribute('aria-label')) }; })()"
-  },
-  {
-   "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=0",
-    "50"
-   ]
-  },
-  {
-   "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=1",
-    "46"
-   ]
-  },
-  {
-   "llenar": [
-    "[data-testid=trozas-a-mano] input >> nth=2",
-    "4"
-   ]
-  },
-  {
-   "click": "[data-testid=trozas-a-mano] input >> nth=3"
-  },
-  {
-   "tecla": "Enter"
-  },
-  {
-   "esperar": 300
-  },
-  {
-   "eval": "[...document.querySelectorAll('[data-testid=trozas-a-mano] tbody tr')].map((t) => t.innerText.replace(/\\s+/g, ' '))"
-  },
-  {
-   "clicTexto": "Datos de la guía"
-  },
-  {
-   "esperar": "input[aria-label^=\"N° de GTF\"]"
-  },
-  {
-   "eval": "(() => { /* El N° que sigue del talonario (un N° anulado no se reusa: 409). Sin propuesta, uno por la hora. */ const b = [...document.querySelectorAll('[role=dialog] button')].find((x) => /^Usar el que sigue/.test(x.textContent.trim())); if (b) { b.click(); return 'siguiente: ' + b.textContent.replace(/\\s+/g, ' ').trim(); } const i = document.querySelector('input[aria-label^=\"N° de GTF\"]'); if (!i) return 'sin campo'; const v = String(Date.now() % 900000 + 100000); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(i, v); i.dispatchEvent(new Event('input', { bubbles: true })); return 'por la hora: ' + v; })()"
-  },
-  {
-   "eval": "(() => { const sec=[...document.querySelectorAll(\"[role=dialog] section\")].find(s=>/N° del título habilitante/.test(s.textContent)); const ss=[...sec.querySelectorAll(\"select\")].slice(-3); ss.forEach((s,k)=>s.setAttribute(\"data-qa\",\"ubi-\"+k)); return ss.length; })()"
-  },
-  {
-   "elegir": [
-    "[data-qa=ubi-0]",
-    "Ucayali"
-   ]
-  },
-  {
-   "elegirPrimera": [
-    "[data-qa=ubi-1]",
-    "^$"
-   ]
-  },
-  {
-   "elegirPrimera": [
-    "[data-qa=ubi-2]",
-    "^$"
-   ]
-  },
-  {
-   "llenar": [
-    "input[aria-label=\"N° de la lista de trozas (35)\"]",
-    "1"
-   ]
-  },
-  {
-   "esperar": 300
-  },
-  {
-   "eval": "[...document.querySelectorAll(\"[role=dialog] section\")].map(s=>s.querySelector(\"header\")?.innerText.replace(/\\s+/g,\" \")).filter(t=>/Falta/.test(t||\"\"))"
-  },
-  {
-   "eval": "(() => { const sec=[...document.querySelectorAll(\"[role=dialog] section\")].find(s=>/Traslado y detalle/.test(s.querySelector(\"header\")?.textContent||\"\")); const ss=[...sec.querySelectorAll(\"select\")].slice(0,3); ss.forEach((s,k)=>s.setAttribute(\"data-qa\",\"par-\"+k)); return ss.map(s=>s.value); })()"
-  },
-  {
-   "elegir": [
-    "[data-qa=par-0]",
-    "Ucayali"
-   ]
-  },
-  {
-   "elegirPrimera": [
-    "[data-qa=par-1]",
-    "^$"
-   ]
-  },
-  {
-   "elegirPrimera": [
-    "[data-qa=par-2]",
-    "^$"
-   ]
-  },
-  {
-   "esperar": 500
-  },
-  {
-   "eval": "(() => { const i=document.querySelector(\"input[aria-label^=\\\"N° de GTF\\\"]\"); const pie=[...document.querySelectorAll(\"[role=dialog] *\")].find(x=>/para registrar/.test(x.textContent) && x.children.length===0); return { numero: i && i.value, faltan: pie ? pie.textContent : \"nada falta\" }; })()"
-  },
-  {
-   "clicTexto": "Registrar despacho y guía"
-  },
-  {
-   "esperar": 3000
-  },
-  {
-   "eval": "(() => { const b=[...document.querySelectorAll(\"[role=dialog] button\")].find(x=>/Sí, usar ese número/.test(x.textContent)); if(b){ b.click(); return \"confirmó número\"; } return \"sin pregunta\"; })()"
-  },
-  {
-   "esperar": "text=Cerrar y volver al libro"
-  },
-  {
-   "eval": "({ guia: window.__qaGuia ?? null, dialogo: document.querySelector('[role=dialog]').innerText.replace(/\\s+/g, ' ').slice(0, 300) })"
-  },
-  {
-   "clicTexto": "Cerrar y volver al libro"
+   "preset": "despacho-datos-y-registrar"
   },
   {
    "eval": "(async () => { /* La fila de la guía recién registrada (por su N°). */ const g = window.__qaGuia; if (!g || !g.gtfNumber) return { sinGuia: g ?? null }; for (let k = 0; k < 40; k++) { const b = [...document.querySelectorAll('tr')].filter((t) => t.textContent.includes(g.gtfNumber)).flatMap((t) => [...t.querySelectorAll('button')]).find((x) => x.textContent.trim() === 'Asignar permiso'); if (b) { b.setAttribute('data-qa', 'asignar-fila'); return { fila: g.gtfNumber }; } await new Promise((r) => setTimeout(r, 500)); } return { noEsta: g.gtfNumber }; })()"
@@ -222,7 +73,7 @@
    "eval": "(() => { const g = window.__qaGuia; const filas = [...document.querySelectorAll('tr')].filter((t) => t.textContent.includes(g.gtfNumber)); return { posts: window.__qaPermiso ?? null, dialogoAbierto: !!document.querySelector('#gtf-asignar-permiso'), filaSigueSinPermiso: filas.some((t) => [...t.querySelectorAll('button')].some((x) => x.textContent.trim() === 'Asignar permiso')) }; })()"
   },
   {
-   "eval": "(async () => { const g = window.__qaGuia; if (!g || !g.id) return { anulada: false, guia: g ?? null }; const tok = (document.cookie.match(/(?:^|;\\s*)csrf-token=([^;]+)/) || [])[1]; const r = await fetch('/api/admin/forestal/loth/despacho-guia', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(tok ? { 'x-csrf-token': decodeURIComponent(tok) } : {}) }, body: JSON.stringify({ id: g.id, action: 'anular', reason: 'QA preset: se anula para poder repetirlo', conDespachos: true }) }); const j = await r.json().catch(() => null); return { guia: g, anular: r.status, estado: j && j.gtf && j.gtf.status, lineasAnuladas: j && j.lineasAnuladas, trozasAnuladas: j && j.trozasAnuladas, error: j && (j.message || j.error) }; })()"
+   "preset": "despacho-anular-al-final"
   }
  ]
 }
