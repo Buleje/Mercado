@@ -13,16 +13,17 @@
  * talonario contra una ventana y ver si las rayas coinciden).
  */
 
-import { FileDown, Layers, Pencil, Plus, Printer, Trash2 } from "@buleje/design-system/icons";
+import { FileDown, Layers, Pencil, Plus, Printer, Ruler, Trash2 } from "@buleje/design-system/icons";
 import { useId } from "react";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { PERFIL_OFICINA_ID } from "@/lib/forestal/gtf-salida-tipos";
 import { Btn, I } from "./ctp-shared";
+import CalibrarConRegla, { accionesBajarPrueba } from "./gtf-matricial-calibrar";
 import { BotonIcono, Casilla, NumeroMm } from "./gtf-matricial-controles";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
-import type { EstadoPerfilesTalonario, useSalidaTalonario } from "./hooks/use-gtf-matricial-perfiles";
+import { useCalibrarConRegla, type EstadoPerfilesTalonario, type useSalidaTalonario } from "./hooks/use-gtf-matricial-perfiles";
 
 const SELECT = I.replace("h-11", "h-12");
 /** Escala en %, con una décima: 100,4 % = el papel sale 0,4 % más largo. */
@@ -49,6 +50,7 @@ export default function ImpresoraTalonario({
 }) {
   const id = useId();
   const { prompt, confirm } = useConfirm();
+  const cal = useCalibrarConRegla(t, imp);
   const hoja = t.hoja;
   if (!hoja) return null;
   const p = imp.elegido;
@@ -92,19 +94,32 @@ export default function ImpresoraTalonario({
         </div>
       </div>
 
-      {oficina || !p ? (
-        <div className="grid grid-cols-2 gap-2">
-          <NumeroMm label="Corrimiento X" value={hoja.offsetXMm} min={-50} max={50} onChange={(offsetXMm) => t.cambiarHoja({ offsetXMm })} />
-          <NumeroMm label="Corrimiento Y" value={hoja.offsetYMm} min={-50} max={50} onChange={(offsetYMm) => t.cambiarHoja({ offsetYMm })} />
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-2">
-          <NumeroMm label="Corrimiento X" value={p.corrimientoXmm} min={-50} max={50} onChange={(corrimientoXmm) => imp.calibrar(p.id, { corrimientoXmm })} />
-          <NumeroMm label="Corrimiento Y" value={p.corrimientoYmm} min={-50} max={50} onChange={(corrimientoYmm) => imp.calibrar(p.id, { corrimientoYmm })} />
-          <NumeroMm label="Escala X" sufijo="%" paso={0.1} value={aPct(p.escalaX)} min={90} max={110} onChange={(v) => imp.calibrar(p.id, { escalaX: dePct(v) })} />
-          <NumeroMm label="Escala Y" sufijo="%" paso={0.1} value={aPct(p.escalaY)} min={90} max={110} onChange={(v) => imp.calibrar(p.id, { escalaY: dePct(v) })} />
-        </div>
-      )}
+      {/* Oficina corre con el X/Y de la hoja; las demás, con el suyo. La escala es siempre de la impresora (la pone también «Calibrar con regla»). */}
+      <div className="grid grid-cols-2 gap-2">
+        <NumeroMm
+          label="Corrimiento X"
+          value={oficina || !p ? hoja.offsetXMm : p.corrimientoXmm}
+          min={-50}
+          max={50}
+          onChange={(v) => (oficina || !p ? t.cambiarHoja({ offsetXMm: v }) : imp.calibrar(p.id, { corrimientoXmm: v }))}
+        />
+        <NumeroMm
+          label="Corrimiento Y"
+          value={oficina || !p ? hoja.offsetYMm : p.corrimientoYmm}
+          min={-50}
+          max={50}
+          onChange={(v) => (oficina || !p ? t.cambiarHoja({ offsetYMm: v }) : imp.calibrar(p.id, { corrimientoYmm: v }))}
+        />
+        {p && (
+          <>
+            <NumeroMm label="Escala X" sufijo="%" paso={0.1} value={aPct(p.escalaX)} min={90} max={110} onChange={(v) => imp.calibrar(p.id, { escalaX: dePct(v) })} />
+            <NumeroMm label="Escala Y" sufijo="%" paso={0.1} value={aPct(p.escalaY)} min={90} max={110} onChange={(v) => imp.calibrar(p.id, { escalaY: dePct(v) })} />
+          </>
+        )}
+      </div>
+      <Btn variant="secondary" className="min-h-12 w-full" onClick={cal.abrir} disabled={imp.ocupado} data-qa="calibrar-con-regla">
+        <Ruler className="h-4 w-4" aria-hidden /> Calibrar con regla
+      </Btn>
 
       <Casilla label="Con los valores de esta guía" checked={conValores} onChange={setConValores} />
       <div className="flex items-center gap-1">
@@ -115,19 +130,16 @@ export default function ImpresoraTalonario({
           label="Bajar la prueba"
           soloIcono
           icon={FileDown}
-          actions={[
-            { id: "pdf", label: "PDF a tamaño real", hint: "Para imprimirla desde otro equipo", icon: FileDown, busy: salida.bajando === "pdf", onSelect: () => void salida.bajar("pdf", { valores: conValores }) },
-            { id: "escp", label: "ESC/P para la matricial (.prn)", hint: "Directo, sin el diálogo de impresión", icon: Printer, busy: salida.bajando === "escp", onSelect: () => void salida.bajar("escp", { valores: conValores }) },
-          ]}
+          actions={accionesBajarPrueba(salida, conValores)}
         />
         <InfoTip
           icono="ayuda"
           title="Cómo calibrar"
           what={
             <span>
-              1) Mide tu talonario y ponlo en «Medida». 2) Elige la impresora, pon una hoja en la matricial e imprime la prueba.
-              3) Con una regla, mide del borde del papel al centro de cada cruz: debe dar 10 mm. 4) Si da 12 mm a la izquierda,
-              pon −2 en X; si da 8 mm arriba, pon +2 en Y. Si arriba da 10 y abajo 11, la escala Y va en 100,4 %.
+              1) Mide tu talonario y ponlo en «Medida». 2) Elige la impresora y abre «Calibrar con regla»: imprime la prueba,
+              mide dos cruces con regla y el corrimiento y la escala se calculan solos. A mano: si la cruz da 12 mm a la
+              izquierda, pon −2 en X; si da 8 mm arriba, pon +2 en Y.
             </span>
           }
           affects="Oficina usa el X/Y de cada hoja del talonario; las demás impresoras, el suyo para todas las guías."
@@ -149,6 +161,7 @@ export default function ImpresoraTalonario({
         />
       </div>
       {aviso && <span className="text-sm font-semibold text-[var(--data-warning-ink)]">{aviso}</span>}
+      <CalibrarConRegla c={cal} salida={salida} onImprimir={() => onPrueba("cruces")} />
     </div>
   );
 }

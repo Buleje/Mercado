@@ -13,6 +13,8 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { avisoRecortados, bajarSalida, descargarBlob } from "@/lib/forestal/gtf-cola-monte-imprimir";
+import { calcularCalibracion, CAMPOS_MEDIDA, type AjusteImpresora, type CampoMedida, type MedidasCruces } from "@/lib/forestal/gtf-matricial-calibrar";
+import { transformacionDe } from "@/lib/forestal/gtf-matricial-perfiles";
 import { PERFIL_OFICINA_ID, type FormatoSalida, type PerfilImpresora } from "@/lib/forestal/gtf-salida-tipos";
 import type { EstadoGtfMatricial } from "./use-gtf-matricial";
 
@@ -177,3 +179,98 @@ export function useSalidaTalonario(gtfId: string, t: EstadoGtfMatricial, imp: Es
   );
   return { bajar, bajando, aviso, recortes };
 }
+
+export type MedidasTexto = Record<CampoMedida, string>;
+const SIN_MEDIDAS: MedidasTexto = { "arribaIzq.x": "", "arribaIzq.y": "", "abajoDer.x": "", "abajoDer.y": "" };
+
+/** «12,5» o «12.5» → 12.5; vacío o lo que no es número → null. */
+const numero = (texto: string): number | null => {
+  const t = texto.trim().replace(",", ".");
+  if (!t || !/^-?\d*\.?\d*$/.test(t)) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+};
+
+function leerMedidas(m: MedidasTexto): MedidasCruces | null {
+  const v = CAMPOS_MEDIDA.map((c) => numero(m[c]));
+  if (v.some((x) => x === null)) return null;
+  const [ax, ay, bx, by] = v as number[];
+  return { arribaIzq: { x: ax, y: ay }, abajoDer: { x: bx, y: by } };
+}
+
+interface Aplicado {
+  perfilId: string;
+  nombre: string;
+  antes: AjusteImpresora;
+  despues: AjusteImpresora;
+  medidas: MedidasTexto;
+}
+
+/**
+ * «Calibrar con regla» (16-10): las 4 medidas de la hoja de cruces, la cuenta
+ * (`calcularCalibracion`, con el perfil con que sale la prueba) y aplicarla al
+ * perfil elegido con deshacer. Oficina: el corrimiento va al X/Y de la hoja
+ * (se guarda con la hoja) y la escala a su perfil; las demás, todo a su perfil.
+ * Otra impresora u otra hoja borran lo medido: era la prueba de la anterior.
+ */
+export function useCalibrarConRegla(t: EstadoGtfMatricial, imp: EstadoPerfilesTalonario) {
+  const [abierto, setAbierto] = useState(false);
+  const [medidas, setMedidas] = useState<MedidasTexto>(SIN_MEDIDAS);
+  const [aplicado, setAplicado] = useState<Aplicado | null>(null);
+  const perfilId = imp.elegido?.id ?? PERFIL_OFICINA_ID;
+  const clave = `${perfilId}|${t.formato}|${t.formaId ?? ""}`;
+  const [de, setDe] = useState(clave);
+  if (de !== clave) {
+    setDe(clave);
+    setMedidas(SIN_MEDIDAS);
+    setAplicado(null);
+  }
+  const hoja = t.hoja;
+  const tr = hoja ? transformacionDe(hoja, imp.elegido) : null;
+  const actual: AjusteImpresora | null = tr ? { dx: tr.dx, dy: tr.dy, sx: tr.sx, sy: tr.sy } : null;
+  const leidas = leerMedidas(medidas);
+  const resultado = hoja && actual && leidas ? calcularCalibracion(hoja, actual, leidas) : null;
+
+  const fijar = useCallback(
+    (id: string, a: AjusteImpresora) => {
+      if (id === PERFIL_OFICINA_ID) {
+        t.cambiarHoja({ offsetXMm: a.dx, offsetYMm: a.dy });
+        imp.calibrar(id, { escalaX: a.sx, escalaY: a.sy });
+      } else imp.calibrar(id, { corrimientoXmm: a.dx, corrimientoYmm: a.dy, escalaX: a.sx, escalaY: a.sy });
+    },
+    [t, imp],
+  );
+
+  const aplicar = () => {
+    if (!resultado?.ok || resultado.sinCambio || !actual) return;
+    fijar(perfilId, resultado.nuevo);
+    setAplicado({ perfilId, nombre: imp.elegido?.nombre ?? "Oficina", antes: actual, despues: resultado.nuevo, medidas });
+    /* Lo medido era de la hoja impresa con lo de antes: con lo nuevo hay que imprimir otra. */
+    setMedidas(SIN_MEDIDAS);
+  };
+  const deshacer = () => {
+    if (!aplicado) return;
+    fijar(aplicado.perfilId, aplicado.antes);
+    setMedidas(aplicado.medidas);
+    setAplicado(null);
+  };
+  const medir = (campo: CampoMedida, texto: string) => setMedidas((m) => ({ ...m, [campo]: texto }));
+
+  return {
+    abierto,
+    abrir: () => setAbierto(true),
+    cerrar: () => setAbierto(false),
+    hoja,
+    perfilId,
+    nombre: imp.elegido?.nombre ?? "Oficina",
+    actual,
+    medidas,
+    medir,
+    resultado,
+    aplicado,
+    aplicar,
+    deshacer,
+  };
+}
+
+export type EstadoCalibrarConRegla = ReturnType<typeof useCalibrarConRegla>;
