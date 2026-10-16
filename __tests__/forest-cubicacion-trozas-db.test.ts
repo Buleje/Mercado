@@ -295,6 +295,35 @@ describe("ForestCubicacionTrozasDB", () => {
     expect(H.db.forestCubicacionTrozas[0].estado).toBe("borrador");
   });
 
+  it("Cedro con 2 precios en el lote (5 y 6) + general 3 → 422 ESPECIE_CON_DOS_PRECIOS sin escribir; con su precio, se aplica", async () => {
+    /* «Cédro» y «Cedro» son la MISMA línea para el servidor (claveEspecie). */
+    const cedro: GuardarCubicacionInput = { ...entrada, trozas: [{ especie: "Cedro", d1: 20, largo: 12 }, { especie: "Cédro", d1: 18, largo: 10 }] };
+    const montoCedro = (p: { clave: string; precio: number }[], general?: number) => {
+      const { trozas } = cubicarEnServidor("oxapampina", cedro.trozas, 1);
+      return valorizar(agruparPorEspecie(trozas, "oxapampina"), p, general).monto;
+    };
+    const c = await ForestCubicacionTrozasDB.guardar(T, cedro, actor);
+    const marcas = [{ clave: "cedro", cuantos: 2 }];
+    /* El cliente honesto no manda el general (preciosParaAplicar); uno modificado sí: igual rebota. */
+    const conGeneral = { precios: [], precioGeneral: 3, especiesConVariosPrecios: marcas, montoVisto: montoCedro([], 3) };
+    expect(await codigoDe(aplicarCon(c.id, { ...conGeneral, idempotencyKey: "clave-cedro-1" }))).toBe("422 ESPECIE_CON_DOS_PRECIOS");
+    expect(await codigoDe(aplicarCon(c.id, { ...conGeneral, especiesConVariosPrecios: [{ clave: "Cédro", cuantos: 2 }], idempotencyKey: "clave-cedro-2" }))).toBe(
+      "422 ESPECIE_CON_DOS_PRECIOS",
+    );
+    try {
+      await aplicarCon(c.id, { ...conGeneral, idempotencyKey: "clave-cedro-3" });
+    } catch (e) {
+      expect((e as CubicacionTrozasError).extra).toMatchObject({ especie: "Cedro", cuantos: 2 });
+      expect((e as Error).message).toBe("Cedro tiene 2 precios en el lote: elige uno.");
+    }
+    expect(H.db.adelantoEntrega).toHaveLength(0);
+    expect(H.db.forestCuentaMov).toHaveLength(0);
+    expect(H.db.forestCubicacionTrozas[0].estado).toBe("borrador");
+
+    const r = await aplicarCon(c.id, { precios: [{ clave: "cedro", precio: 5 }], precioGeneral: 3, especiesConVariosPrecios: marcas, montoVisto: montoCedro([{ clave: "cedro", precio: 5 }]), idempotencyKey: "clave-cedro-4" });
+    expect(r.cubicacion).toMatchObject({ estado: "aplicada", monto: montoCedro([{ clave: "cedro", precio: 5 }]) });
+  });
+
   it("guía con abono `madera` vivo → 409 GUIA_YA_VALORIZADA (la guía se bloquea primero)", async () => {
     H.db.woodEntry.push({ id: "w1", tenantId: T, gtfNumber: "019-001-0000001", deletedAt: null, status: "validado", costoTotal: null });
     const c = await ForestCubicacionTrozasDB.guardar(T, { ...entrada, gtfNumber: "019-001-0000001" }, actor);

@@ -24,29 +24,21 @@ import { useTenant } from "@/contexts/tenant-context";
 import { formatCurrency } from "@/lib/currency";
 import { cubicarEnServidor, fmtVolumen, MedidaFueraDeRangoError } from "@/lib/forestal/cubicacion-cuenta";
 import { cubicarTrozasComercial, DescuentoInvalidoError } from "@/lib/forestal/cubicacion-comercial";
-import { etiquetaPersonaCubicacion } from "@/lib/forestal/cubicacion-a-cuenta";
 import type { DescuentoLote, DescuentoTroza } from "@/lib/forestal/cubicacion-comercial-tipos";
 import { limaDateKey } from "@/lib/utils";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { UNIDADES_FORMULA, totalesSegun, type DiametrosPorTroza, type FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
 import { BOTON_PRIMARIO, BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
+import { CAMPO_CUENTA, CampoPersonaCuenta, CampoSentidoCuenta, ETIQUETA_CUENTA as ETIQUETA, usePersonasOrdenadas } from "./cubicacion-cuenta-persona";
 import type { FilaTroza } from "./cubicador-trozas-tabla";
 import {
   guardarCubicacionTrozas, leerCubicacionTrozas, trozasParaGuardar, usePersonasDeLaCuenta,
-  type CubicacionTrozas, type GuardarCubicacionInput, type PersonaCuenta, type SentidoCubicacion,
+  type CubicacionTrozas, type GuardarCubicacionInput, type SentidoCubicacion,
 } from "./hooks/use-cubicaciones-trozas";
 
-export const CAMPO_CUENTA =
-  "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
-const ETIQUETA = "mb-1 block text-sm font-semibold text-[var(--text-secondary)]";
-
-/** Lo que cada persona tiene abierto del lado que toca (compra paga lo DADO; venta, lo RECIBIDO). */
-function abiertosDe(p: PersonaCuenta, sentido: SentidoCubicacion): { n: number; monto: number } {
-  const a = p.adelantos;
-  if (!a || !p.beneficiarioId) return { n: 0, monto: 0 };
-  return sentido === "venta" ? { n: a.recibidosAbiertos, monto: a.recibidoPendiente } : { n: a.abiertos, monto: a.teDebe };
-}
+/* Los campos de la persona viven en `cubicacion-cuenta-persona` (también los usa el Cubicador de madera). */
+export { CAMPO_CUENTA };
 
 
 /** Las trozas salen de una guía (K7): la guía fija y los descuentos, alineados por índice con `rows`. */
@@ -108,10 +100,7 @@ export default function GuardarEnLaCuentaModal({
     return () => { vivo = false; };
   }, [previaId, guiaFija]);
 
-  const ordenadas = useMemo(
-    () => [...(personas ?? [])].sort((a, b) => abiertosDe(b, sentido).n - abiertosDe(a, sentido).n || a.nombre.localeCompare(b.nombre)),
-    [personas, sentido],
-  );
+  const ordenadas = usePersonasOrdenadas(personas, sentido);
   const persona = ordenadas.find((p) => p.clave === clave) ?? null;
   const u = UNIDADES_FORMULA[formula];
   /* El volumen que va a congelar el servidor (misma función, ADR-478): re-cubicado
@@ -209,30 +198,11 @@ export default function GuardarEnLaCuentaModal({
           )}
         </div>
 
-        <div>
-          <label htmlFor="cub-persona" className={ETIQUETA}>¿De quién es la madera?</label>
-          <select id="cub-persona" className={CAMPO_CUENTA} value={clave} onChange={(e) => setClave(e.target.value)} disabled={cargando}>
-            <option value="">{cargando ? "Cargando cuentas…" : "Elige la persona"}</option>
-            {ordenadas.map((p) => <option key={p.clave} value={p.clave}>{etiquetaPersonaCubicacion(p, sentido)}</option>)}
-          </select>
-          {errorPersonas && <p className="mt-1 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{errorPersonas}</p>}
-          {persona && !persona.beneficiarioId && (
-            <p className="mt-1 text-sm text-[var(--text-tertiary)]">No tiene adelantos: al valorizarla, todo va a su cuenta.</p>
-          )}
-        </div>
+        <CampoPersonaCuenta id="cub-persona" ordenadas={ordenadas} persona={persona} clave={clave} onClave={setClave}
+          sentido={sentido} cargando={cargando} error={errorPersonas} />
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <div role="radiogroup" aria-label="Quién entrega la madera">
-            <span className={ETIQUETA}>La madera…</span>
-            <div className="grid grid-cols-2 gap-1 rounded-2xl bg-[var(--surface-sunken)] p-1">
-              {(["compra", "venta"] as const).map((s) => (
-                <button key={s} type="button" role="radio" aria-checked={sentido === s} onClick={() => setSentido(s)}
-                  className={`h-12 rounded-xl text-sm font-bold transition-colors ${sentido === s ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
-                  {s === "compra" ? "Te la trae" : "Se la entregas"}
-                </button>
-              ))}
-            </div>
-          </div>
+          <CampoSentidoCuenta sentido={sentido} onSentido={setSentido} />
           <div>
             <label htmlFor="cub-fecha" className={ETIQUETA}>Fecha</label>
             <input id="cub-fecha" type="date" className={CAMPO_CUENTA} value={fecha} max={limaDateKey()} onChange={(e) => setFecha(e.target.value)} />

@@ -160,13 +160,19 @@ export const leerCubicacionTrozas = (id: string) => pedir(`${RUTA_CUBICACIONES_T
  * Sin `material`, el servidor trae sólo trozas (ADR-483 D12).
  */
 export function useCubicacionesTrozas(
-  filtros: { beneficiario?: string; estado?: EstadoCubicacion; material?: MaterialCubicacion | "todas"; origen?: OrigenCubicacion; origenId?: string },
+  filtros: {
+    beneficiario?: string; estado?: EstadoCubicacion; material?: MaterialCubicacion | "todas"; origen?: OrigenCubicacion; origenId?: string;
+    /** Las que salieron de una cubicación del Cubicador de madera (`cubicacionRefId`). */
+    ref?: string;
+  },
   activo = true,
 ) {
   const [lista, setLista] = useState<CubicacionTrozas[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [vuelta, setVuelta] = useState(0);
-  const { beneficiario, estado, material, origen, origenId } = filtros;
+  const { beneficiario, estado, material, origen, origenId, ref } = filtros;
+  /* Otros filtros = otra lista: mientras llega, «cargando» (no la de antes con el rótulo nuevo). */
+  useEffect(() => { setLista(null); }, [beneficiario, estado, material, origen, origenId, ref]);
   useEffect(() => {
     if (!activo) return;
     let vivo = true;
@@ -176,14 +182,16 @@ export function useCubicacionesTrozas(
     if (material) q.set("material", material);
     if (origen) q.set("origen", origen);
     if (origenId) q.set("origenId", origenId);
-    setError(null);
+    if (ref) q.set("ref", ref);
+    /* El error se borra cuando llega la respuesta buena, no al reintentar: con la
+       lista vacía y sin error, quien decide «¿ya hay una?» la creía vacía. */
     void pedir(`${RUTA_CUBICACIONES_TROZAS}${q.toString() ? `?${q}` : ""}`, {}, muchas).then((r) => {
       if (!vivo) return;
-      if (r.ok) setLista(r.data);
+      if (r.ok) { setLista(r.data); setError(null); }
       else { setLista([]); setError(r.mensaje); }
     });
     return () => { vivo = false; };
-  }, [activo, beneficiario, estado, material, origen, origenId, vuelta]);
+  }, [activo, beneficiario, estado, material, origen, origenId, ref, vuelta]);
   const recargar = useCallback(() => setVuelta((v) => v + 1), []);
   return { lista, cargando: activo && lista === null && !error, error, recargar };
 }

@@ -12,7 +12,8 @@ import { ROLES_PLATA, guardCubicacion, invalido, leerJson, noStore, responderErr
  * 200 `{ cubicacion, imputacion }` (con `repetido: true` si es el mismo intento;
  * `cubicacion.aCuenta` y `cubicacion.valorVenta` dicen qué más movió)
  * · 409 `GUIA_YA_VALORIZADA` / `GUIA_YA_ANOTADA` / `DESACTUALIZADA` / `YA_APLICADA`
- * · 422 `SIN_CUENTA {resto}` / `MONEDA_NO_SOPORTADA` / `FALTA_PRECIO {especie}` / `IDEMPOTENCIA_DISTINTA`.
+ * · 422 `SIN_CUENTA {resto}` / `MONEDA_NO_SOPORTADA` / `FALTA_PRECIO {especie}` / `IDEMPOTENCIA_DISTINTA`
+ *   / `ESPECIE_CON_DOS_PRECIOS {especie, cuantos}` (marcada en `especiesConVariosPrecios` y sin precio propio: el general no la cubre).
  */
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

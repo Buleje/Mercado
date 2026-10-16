@@ -22,13 +22,15 @@ import { BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
 import { MedidasAserrada, ResumenDescuentos } from "./cubicacion-comercial-medidas";
 import MedidasCongeladas from "./cubicador-trozas-medidas";
 import ValorizarPrecios from "./cubicador-trozas-precios";
+import ValorizarPreciosDelLote from "./cubicador-trozas-precios-del-lote";
 import { ACuentaHecha } from "./cubicador-trozas-a-cuenta";
+import type { PreciosSugeridos } from "@/lib/forestal/cubicacion-madera-cuenta";
 import { anularCubicacionTrozas, borrarCubicacionTrozas, ESTADO_CUB, medidasDe, useCubicacionTrozas, type CubicacionTrozas } from "./hooks/use-cubicaciones-trozas";
 
 const ERROR = "flex items-start gap-1.5 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
 
 export default function ValorizarCubicacionModal({
-  id, puedeAplicar, soloLectura = false, aboveModals = false, onCambio, onCerrar,
+  id, puedeAplicar, soloLectura = false, aboveModals = false, preciosSugeridos, onCambio, onCerrar,
 }: {
   id: string;
   /** Dueño o admin: valoriza, descuenta, anula y borra. */
@@ -36,6 +38,12 @@ export default function ValorizarCubicacionModal({
   soloLectura?: boolean;
   /** Se abre desde otro modal (la ficha del adelanto). */
   aboveModals?: boolean;
+  /**
+   * Del Cubicador de madera: el precio por PT que ya mostraba ese lote
+   * (`preciosSugeridosMadera`). Sin la prop (`undefined`), una de madera con
+   * `cubicacionRefId` los lee de su lote; `null` = sin sugeridos.
+   */
+  preciosSugeridos?: PreciosSugeridos | null;
   onCambio?: (c: CubicacionTrozas | null) => void;
   onCerrar: () => void;
 }) {
@@ -132,7 +140,12 @@ export default function ValorizarCubicacionModal({
             {cub.notas && <p className="text-sm text-[var(--text-secondary)]">{cub.notas}</p>}
             <ResumenDescuentos bruto={cub.volumenBruto} neto={cub.volumen} descuentos={cub.descuentos} formula={cub.formula} nombres={nombres} antesDelLote={antesDelLote} />
 
-            {cub.estado === "borrador" && acciones && <ValorizarPrecios cub={cub} cuenta={cuentaPersona} onAplicada={cambio} />}
+            {cub.estado === "borrador" && acciones && (
+              /* Madera de un lote del Cubicador abierta sin sus precios: los lee ella (la marca de «2 precios» no depende de la puerta). */
+              preciosSugeridos === undefined && aserrada && cub.cubicacionRefId
+                ? <ValorizarPreciosDelLote cub={cub} refId={cub.cubicacionRefId} cuenta={cuentaPersona} onAplicada={cambio} />
+                : <ValorizarPrecios cub={cub} cuenta={cuentaPersona} preciosSugeridos={preciosSugeridos} onAplicada={cambio} />
+            )}
             {cub.estado === "borrador" && !acciones && !soloLectura && (
               <p className="rounded-2xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
                 Guardada sin descontar. El precio y el descuento del adelanto los pone el dueño o el admin.

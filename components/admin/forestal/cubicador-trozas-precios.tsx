@@ -17,10 +17,11 @@ import { AlertTriangle, Coins, Loader2 } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import {
-  decimalesDe, FaltaPrecioError, fmtVolumen, repartirConCuenta,
-  unidadDe, valorizar, type AdelantoAbierto, type LineaEspecie,
+  decimalesDe, fmtVolumen, repartirConCuenta,
+  unidadDe, type AdelantoAbierto, type LineaEspecie,
 } from "@/lib/forestal/cubicacion-cuenta";
 import { aplicarDescuentoLote, lineasDeEspecie } from "@/lib/forestal/cubicacion-comercial";
+import { preciosParaAplicar, valorizarConSugeridos, type PreciosSugeridos, type VistaValorizada } from "@/lib/forestal/cubicacion-madera-cuenta";
 import { BOTON_PRIMARIO } from "./ctp-lotes-modal-marco";
 import { ACuentaPrevia } from "./cubicador-trozas-a-cuenta";
 import {
@@ -43,18 +44,23 @@ function lineasNetas(cub: CubicacionTrozas): LineaEspecie[] {
 }
 
 export default function ValorizarPrecios({
-  cub, cuenta, onAplicada,
+  cub, cuenta, preciosSugeridos, onAplicada,
 }: {
   cub: CubicacionTrozas;
   /** Su cuenta forestal: adonde va lo que el adelanto no cubre (null = sin ficha en el directorio). */
   cuenta: CuentaDeLaPersona | null;
+  /** Lo que el Cubicador de madera ya cobraba por PT en este lote: arranca con eso (el servidor recalcula). */
+  preciosSugeridos?: PreciosSugeridos | null;
   onAplicada: (c: CubicacionTrozas) => void;
 }) {
   const unidad = unidadDe(cub.formula);
   const aserrada = cub.material === "aserrada";
   const lineas = useMemo(() => lineasNetas(cub), [cub]);
-  const [precios, setPrecios] = useState<Record<string, string>>({});
-  const [general, setGeneral] = useState("");
+  const [precios, setPrecios] = useState<Record<string, string>>(() =>
+    Object.fromEntries(Object.entries(preciosSugeridos?.porEspecie ?? {}).map(([k, v]) => [k, v.toFixed(2)])),
+  );
+  const [general, setGeneral] = useState(() => preciosSugeridos?.general?.toFixed(2) ?? "");
+  const conSugeridos = !!preciosSugeridos && (preciosSugeridos.general != null || Object.keys(preciosSugeridos.porEspecie).length > 0);
   const { lista: anteriores } = useCubicacionesTrozas(
     { beneficiario: cub.beneficiarioId ?? undefined, estado: "aplicada", ...(aserrada ? { material: "aserrada" as const } : {}) },
     !!cub.beneficiarioId,
@@ -84,10 +90,12 @@ export default function ValorizarPrecios({
     [lineas, precios],
   );
   const precioGeneral = leerPrecio(general);
-  const vista = useMemo((): { monto: number; porEspecie: ReturnType<typeof valorizar>["porEspecie"] } | { falta: string } => {
-    try { return valorizar(lineas, propios, precioGeneral); }
-    catch (e) { return { falta: e instanceof FaltaPrecioError ? e.especie : "una especie" }; }
-  }, [lineas, propios, precioGeneral]);
+  /* Una especie con varios precios en el lote del cubicador no toma el general:
+     sin el suyo no hay monto (ni botón). */
+  const vista = useMemo(
+    (): VistaValorizada => valorizarConSugeridos(lineas, propios, precioGeneral, preciosSugeridos),
+    [lineas, propios, precioGeneral, preciosSugeridos],
+  );
   const monto = "monto" in vista ? vista.monto : null;
 
   /* Cada adelanto hasta su saldo; el resto, a su cuenta (ADR-484). */
@@ -106,9 +114,10 @@ export default function ValorizarPrecios({
     if (!listo || monto == null) return;
     setEnviando(true);
     setError(null);
+    /* Las especies con varios precios viajan marcadas y el general no va si
+       cubriría una de ellas: el servidor rechaza ese cobro (422). */
     const r = await aplicarCubicacionTrozas(cub.id, {
-      precios: propios,
-      ...(precioGeneral != null ? { precioGeneral } : {}),
+      ...preciosParaAplicar(lineas, propios, precioGeneral, preciosSugeridos),
       montoVisto: monto,
       idempotencyKey: clave.current,
       version: cub.version,
@@ -123,10 +132,13 @@ export default function ValorizarPrecios({
 
   return (
     <div className="space-y-3" data-vista="cubicacion-valorizar">
+      {conSugeridos && <p className="text-sm text-[var(--text-tertiary)]">Con los precios del cubicador: revísalos antes de confirmar.</p>}
       <ul className="divide-y divide-[var(--rule-soft)] rounded-2xl border border-[var(--rule-soft)]">
         {lineas.map((l) => {
           const linea = "porEspecie" in vista ? vista.porEspecie.find((x) => x.clave === l.clave) : null;
           const ultimo = ultimos[l.clave];
+          const varios = preciosSugeridos?.variosPrecios[l.clave];
+          const sinElegir = !!varios && !propios.some((p) => p.clave === l.clave);
           return (
             <li key={l.clave} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
               <div className="w-full sm:w-auto sm:flex-1">
@@ -135,11 +147,26 @@ export default function ValorizarPrecios({
                   {aserrada ? (l.n > 0 ? `${l.n} ${l.n === 1 ? "pieza" : "piezas"} · ` : "") : `${l.n} ${l.n === 1 ? "troza" : "trozas"} · `}
                   {fmtVolumen(l.volumen, cub.formula)}
                 </p>
+                {varios && (
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm" data-vista="varios-precios">
+                    <span className={`inline-flex items-center gap-1 font-semibold ${sinElegir ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`}>
+                      {sinElegir && <AlertTriangle className="h-4 w-4 shrink-0" />}
+                      {varios.precios.length + (varios.sinPrecio ? 1 : 0)} precios en el lote{sinElegir ? " — elige" : ""}
+                    </span>
+                    {varios.precios.map((v) => (
+                      <button key={v} type="button" onClick={() => { setPrecios({ ...precios, [l.clave]: v.toFixed(2) }); setConfirmado(false); }}
+                        className="h-12 rounded-full bg-[var(--surface-sunken)] px-3 text-sm font-semibold tabular-nums text-[var(--text-secondary)] hover:text-[var(--accent-dark)]">
+                        {formatCurrency(v)}
+                      </button>
+                    ))}
+                    {varios.sinPrecio && <span className="text-xs text-[var(--text-tertiary)]">y piezas sin precio</span>}
+                  </div>
+                )}
               </div>
               <label className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
                 S/
                 <input inputMode="decimal" aria-label={`Precio de ${l.nombre} por ${unidad}`} value={precios[l.clave] ?? ""}
-                  placeholder={precioGeneral != null ? general.trim() : "0,00"}
+                  placeholder={varios ? "elige" : precioGeneral != null ? general.trim() : "0,00"}
                   onChange={(e) => { setPrecios({ ...precios, [l.clave]: e.target.value }); setConfirmado(false); }}
                   className="h-11 w-24 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right text-base font-semibold tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]" />
                 por {unidad}
@@ -174,7 +201,9 @@ export default function ValorizarPrecios({
 
       <div className="flex items-baseline justify-between rounded-2xl bg-[var(--surface-sunken)] px-4 py-3">
         <span className="text-sm font-semibold text-[var(--text-secondary)]">
-          {"falta" in vista ? `Falta el precio de ${vista.falta} (o pon un precio general)` : "Total"}
+          {"elegir" in vista
+            ? `${vista.elegir} tiene varios precios en el lote: elige el de esta cuenta`
+            : "falta" in vista ? `Falta el precio de ${vista.falta} (o pon un precio general)` : "Total"}
         </span>
         <span className="text-xl font-extrabold tabular-nums text-[var(--text-primary)]">{monto != null ? formatCurrency(monto) : "—"}</span>
       </div>

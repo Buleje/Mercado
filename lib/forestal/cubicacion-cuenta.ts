@@ -96,6 +96,14 @@ export const aplicarCubicacionSchema = z.object({
     .max(60)
     .default([]),
   ...precioGeneralCampo,
+  /** Las especies que en el lote tienen más de un precio (las marca la pantalla
+   *  con los precios del cubicador, `preciosSugeridosMadera`): el general NO las
+   *  cubre, cada una necesita el suyo en `precios` (422 `ESPECIE_CON_DOS_PRECIOS`).
+   *  Las piezas guardadas no traen su precio —vive en el navegador—: por eso viaja acá. */
+  especiesConVariosPrecios: z
+    .array(z.object({ clave: z.string().trim().min(1).max(80), cuantos: z.number().int().min(2).max(999) }))
+    .max(60)
+    .optional(),
   montoVisto: z.number().positive().max(9_999_999),
   idempotencyKey: z.string().trim().min(8).max(80),
   version: z.number().int().positive(),
@@ -212,6 +220,14 @@ export class FaltaPrecioError extends Error {
   }
 }
 
+/** Una especie con más de un precio en el lote llegó sin el suyo: el general no la cubre. */
+export class EspecieConVariosPreciosError extends Error {
+  constructor(readonly especie: string, readonly cuantos: number) {
+    super(`${especie} tiene ${cuantos} precios en el lote: elige uno.`);
+    this.name = "EspecieConVariosPreciosError";
+  }
+}
+
 // ── Cuentas ──────────────────────────────────────────────────────────────────
 
 /** Céntimos enteros, medio céntimo hacia arriba sobre el DECIMAL: 33,33 × 2,5 = 83,325 → 8 333 (el float da 83,32499…). */
@@ -287,18 +303,27 @@ export function agruparPorEspecie(
  * Σ por especie al céntimo: monto de cada especie = volumen × precio al céntimo y
  * el total es la suma de esas líneas (la que se ve en la tabla). Precio de la
  * especie > `precioGeneral` (ADR-483) > `FaltaPrecioError` con su nombre.
+ * Una especie de `variosPrecios` (dos precios en el lote) sólo vale con el suyo:
+ * el general no la cubre (`EspecieConVariosPreciosError`), ni en la pantalla ni
+ * en el servidor.
  */
 export function valorizar(
   lineas: readonly LineaEspecie[],
   precios: ReadonlyArray<{ clave: string; precio: number }>,
   precioGeneral?: number | null,
+  variosPrecios: ReadonlyArray<{ clave: string; cuantos: number }> = [],
 ): { porEspecie: LineaEspecie[]; monto: number } {
-  const precioDe = new Map(precios.map((p) => [claveEspecie(p.clave) || p.clave.trim().toLowerCase(), p.precio]));
+  const clave = (c: string) => claveEspecie(c) || c.trim().toLowerCase();
+  const precioDe = new Map(precios.map((p) => [clave(p.clave), p.precio]));
+  const marcadas = new Map(variosPrecios.map((v) => [clave(v.clave), v.cuantos]));
   const general = precioGeneral != null && precioGeneral > 0 ? precioGeneral : null;
   let centimos = 0;
   const porEspecie = lineas.map((l) => {
     if (!(l.volumen > 0)) return { ...l, precio: null, monto: null };
-    const precio = precioDe.get(l.clave) ?? general;
+    const propio = precioDe.get(l.clave);
+    const cuantos = marcadas.get(l.clave);
+    if (cuantos != null && !(propio != null && propio > 0)) throw new EspecieConVariosPreciosError(l.nombre, cuantos);
+    const precio = propio ?? general;
     if (precio == null || !(precio > 0)) throw new FaltaPrecioError(l.nombre);
     const c = aCentimos(l.volumen * precio);
     centimos += c;

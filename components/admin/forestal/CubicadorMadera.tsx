@@ -44,6 +44,7 @@ import { clasificarTipo, ORDEN_TIPO, tipoDePieza, tipoEsManual, type TipoComerci
 import { TipoSelect } from "./tipo-badge";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import { AccionLote, MenuAcciones } from "./cubicador-acciones";
+import CuentaDeMadera from "./cubicador-madera-cuenta";
 import { useTecladoGrilla, enfocarCelda } from "./celdas-excel";
 import {
   AsaRelleno,
@@ -2060,10 +2061,12 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
   /**
    * Guarda el lote como cubicación con nombre y fecha. Los totales los
    * recalcula el servidor desde las piezas — el papel guardado no depende de
-   * lo que diga la pantalla.
+   * lo que diga la pantalla. Devuelve el lote guardado (null = no se pudo):
+   * «Cuenta ▾» lo guarda así antes de subirlo a la cuenta, en `silencioso`
+   * (sin el aviso propio: el de la cuenta dice lo que pasó).
    */
-  const guardarCubicacion = async () => {
-    if (!rows.length || guardando) return;
+  const guardarCubicacion = async ({ silencioso = false }: { silencioso?: boolean } = {}): Promise<{ id: string; nombre: string } | null> => {
+    if (!rows.length || guardando) return null;
     setGuardando(true);
     setErrMsg(null);
     try {
@@ -2095,15 +2098,19 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       }
       const { cubicacion } = (await r.json()) as { cubicacion: CubicacionRegistro };
       setCubicacionActual({ id: cubicacion.id, nombre: cubicacion.nombre });
-      setGuardadoOk(cubicacion.nombre);
       setShowGuardar(false);
       setHistorialToken((v) => v + 1);
-      setTimeout(() => setGuardadoOk(null), 6000);
-      pushToast({ tono: "success", msg: "Cubicación guardada", detail: `«${cubicacion.nombre}»` });
+      if (!silencioso) {
+        setGuardadoOk(cubicacion.nombre);
+        setTimeout(() => setGuardadoOk(null), 6000);
+        pushToast({ tono: "success", msg: "Cubicación guardada", detail: `«${cubicacion.nombre}»` });
+      }
+      return { id: cubicacion.id, nombre: cubicacion.nombre };
     } catch (e) {
       const msg = `No se pudo guardar: ${e instanceof Error ? e.message : String(e)}`;
       setErrMsg(msg);
-      pushToast({ tono: "error", msg: "No se pudo guardar", detail: e instanceof Error ? e.message : String(e) });
+      if (!silencioso) pushToast({ tono: "error", msg: "No se pudo guardar", detail: e instanceof Error ? e.message : String(e) });
+      return null;
     } finally {
       setGuardando(false);
     }
@@ -2492,6 +2499,23 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                   </button>
                 )}
               </>
+            )}
+
+            {/* El lote a la cuenta de una persona (ADR-478/483): el mismo camino que el
+                patio de trozas. Dentro de «Producir sin lote» (`onLote`) no va: ahí
+                las piezas son del libro, no de una cuenta. */}
+            {!onLote && (
+              <CuentaDeMadera
+                rows={rows}
+                especieDelLote={especie || null}
+                cliente={form.cliente}
+                fechaDelLote={form.fecha}
+                refId={cubicacionActual?.id ?? null}
+                precioDe={precioDe}
+                precioGeneral={precio}
+                guardarLote={() => guardarCubicacion({ silencioso: true })}
+                avisar={pushToast}
+              />
             )}
 
             {/* Cambiar de lote. «Vaciar» vive acá abajo y separada: borra el

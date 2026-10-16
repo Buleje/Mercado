@@ -11,6 +11,7 @@ import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
 import { bloquearLineasDeDespachoEnTx, cubicacionQuePagoLaGuia, cubicacionQueVendioLaGuia, despachosDeLaGuiaDeSalida, filtroMismaGuia } from "@/lib/db/guia-cubicacion.db";
 import { mismoNumeroGtf, puedeSerLaMismaGtf } from "@/lib/forestal/gtf-talonario";
 import {
+  EspecieConVariosPreciosError,
   FaltaPrecioError,
   MedidaFueraDeRangoError,
   PREFIJO_CUBICACION,
@@ -91,6 +92,7 @@ export type CodigoCubicacion =
   | "GUIA_YA_ANOTADA"
   | "MONEDA_NO_SOPORTADA"
   | "FALTA_PRECIO"
+  | "ESPECIE_CON_DOS_PRECIOS"
   | "ADELANTO_NO_VALIDO"
   | "IDEMPOTENCIA_DISTINTA"
   | "LIQUIDADA_DESPUES"
@@ -121,6 +123,7 @@ const STATUS: Record<CodigoCubicacion, 404 | 409 | 422> = {
   GUIA_YA_ANOTADA: 409,
   MONEDA_NO_SOPORTADA: 422,
   FALTA_PRECIO: 422,
+  ESPECIE_CON_DOS_PRECIOS: 422,
   ADELANTO_NO_VALIDO: 422,
   IDEMPOTENCIA_DISTINTA: 422,
   LIQUIDADA_DESPUES: 409,
@@ -766,13 +769,15 @@ export const ForestCubicacionTrozasDB = {
       material?: MaterialCubicacion | "todas";
       origen?: OrigenCubicacion;
       origenId?: string;
+      /** Las que salieron de UNA cubicación del Cubicador de madera (`cubicacionRefId`). */
+      cubicacionRefId?: string;
     } = {},
   ): Promise<CubicacionTrozasResumen[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const material = filtros.material ?? "troza";
     const clave = [
       `${CACHE}:${tenantId}:list`, filtros.beneficiarioId ?? "", filtros.parteId ?? "", filtros.estado ?? "",
-      material, filtros.origen ?? "", filtros.origenId ?? "",
+      material, filtros.origen ?? "", filtros.origenId ?? "", filtros.cubicacionRefId ?? "",
     ].join(":");
     return getOrSet(clave, 20, async () => {
       const rows = await prisma.forestCubicacionTrozas.findMany({
@@ -784,6 +789,7 @@ export const ForestCubicacionTrozasDB = {
           ...(material === "todas" ? {} : { material }),
           ...(filtros.origen ? { origen: filtros.origen } : {}),
           ...(filtros.origenId ? { origenId: filtros.origenId } : {}),
+          ...(filtros.cubicacionRefId ? { cubicacionRefId: filtros.cubicacionRefId } : {}),
         },
         select: SELECT_RESUMEN,
         orderBy: [{ fecha: "desc" }, { createdAt: "desc" }],
@@ -1014,9 +1020,12 @@ export const ForestCubicacionTrozasDB = {
         let valor: ReturnType<typeof valorizar>;
         try {
           const lineas = lineasDeEspecie({ material, modo: cub.modo === "total" ? "total" : "pieza", formula, trozas: arr<unknown>(cub.trozas) ?? [] });
-          valor = valorizar(aplicarDescuentoLote(lineas, descuentosDe(cub.descuentos), formula).lineas, input.precios, input.precioGeneral);
+          valor = valorizar(aplicarDescuentoLote(lineas, descuentosDe(cub.descuentos), formula).lineas, input.precios, input.precioGeneral, input.especiesConVariosPrecios);
         } catch (err) {
           if (err instanceof FaltaPrecioError) throw new CubicacionTrozasError("FALTA_PRECIO", err.message, { especie: err.especie });
+          if (err instanceof EspecieConVariosPreciosError) {
+            throw new CubicacionTrozasError("ESPECIE_CON_DOS_PRECIOS", err.message, { especie: err.especie, cuantos: err.cuantos });
+          }
           throw comoErrorDeDescuento(err);
         }
         if (!(valor.monto >= 0.01)) throw new CubicacionTrozasError("MONTO_CERO", "Con esos precios la madera vale S/ 0,00: revisa los precios.");

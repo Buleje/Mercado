@@ -19,6 +19,7 @@ import { formatCurrency } from "@/lib/currency";
 import { fmtVolumen } from "@/lib/forestal/cubicacion-cuenta";
 import { fechaConDia } from "@/lib/forestal/loth-tablero-reporte";
 import type { DiametrosPorTroza, FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
+import type { MaterialCubicacion } from "@/lib/forestal/cubicacion-comercial-tipos";
 import { AccionLote } from "./cubicador-acciones";
 import { ActionToasts, useActionToasts } from "./cubicador-toasts";
 import { BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
@@ -154,11 +155,13 @@ const FILTROS: { valor: EstadoCubicacion | undefined; label: string }[] = [
   { valor: "anulada", label: "Anuladas" },
 ];
 
-function ListaGuardadasModal({ onAbrir, onCerrar }: { onAbrir: (id: string) => void; onCerrar: () => void }) {
+/** Las guardadas a cuenta; `material="aserrada"` = las del Cubicador de madera (y las comerciales de un despacho). */
+export function ListaGuardadasModal({ onAbrir, onCerrar, material }: { onAbrir: (id: string) => void; onCerrar: () => void; material?: MaterialCubicacion }) {
   const [estado, setEstado] = useState<EstadoCubicacion | undefined>(undefined);
-  const { lista, cargando, error } = useCubicacionesTrozas({ estado });
+  const { lista, cargando, error } = useCubicacionesTrozas({ estado, ...(material ? { material } : {}) });
   return (
-    <AdminModal open onClose={onCerrar} title="Cubicaciones guardadas" icon={FolderOpen} claveVentana="cubicador-trozas-guardadas"
+    <AdminModal open onClose={onCerrar} title={material === "aserrada" ? "Madera a cuenta" : "Cubicaciones guardadas"} icon={FolderOpen}
+      claveVentana={material === "aserrada" ? "cubicador-madera-a-cuenta" : "cubicador-trozas-guardadas"}
       footer={<div className="flex justify-end"><button type="button" className={BOTON_SECUNDARIO} onClick={onCerrar}>Cerrar</button></div>}>
       <div className={`space-y-3 ${MODAL_BODY}`} data-vista="cubicaciones-guardadas">
         <div className="flex flex-wrap gap-1" role="tablist" aria-label="Filtrar por estado">
@@ -196,7 +199,7 @@ function ListaGuardadasModal({ onAbrir, onCerrar }: { onAbrir: (id: string) => v
                       ) : "—"}
                     </span>
                     <span className="text-sm tabular-nums text-[var(--text-secondary)]">
-                      {c.nTrozas} trozas · {fmtVolumen(c.volumen, c.formula)}
+                      {c.material === "aserrada" ? (c.nTrozas > 0 ? `${c.nTrozas} piezas · ` : "") : `${c.nTrozas} trozas · `}{fmtVolumen(c.volumen, c.formula)}
                       {c.monto != null && ` · ${formatCurrency(c.monto)}`}
                     </span>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${e.clase}`}>{e.label}</span>
