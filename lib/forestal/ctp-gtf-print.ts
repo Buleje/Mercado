@@ -11,9 +11,10 @@
  * destinatario, transportista, vehículo y conductor, títulos habilitantes y los
  * datos del traslado** (ver `ctp-gtf-datos.ts` para el mapeo a la norma).
  *
- * Reglas formales que sí están verificadas contra la RDE 122-2015-SERFOR-DE:
- * · art. 3 — **Arial**, prenumerada, **A4**;
- * · art. 4 — el talonario lo visa la ARFFS: se deja el recuadro del visado;
+ * Reglas formales verificadas contra la RDE D000014-2024-MIDAGRI-SERFOR-DE
+ * (deroga la 122-2015 y repite estos tres artículos):
+ * · art. 3 — **Arial**, prenumerada, papel autocopiativo, **A4**;
+ * · art. 4 — el talonario se registra ante la ARFFS, que pone su marca en la guía;
  * · art. 5 — se imprime **original + 2 copias**, y cada una dice a dónde va
  *   (el original viaja, una copia queda en el primer puesto de control, otra la
  *   conserva el emisor);
@@ -262,7 +263,7 @@ export async function documentoGtfSalida(
 
     <div class="doc-pie">
       <span>${esc(copia.titulo)} · GTF ${esc(despacho.gtfNumber ?? "")}</span>
-      <span>Despacho línea #${despacho.lineNo} · RDE N° 122-2015-SERFOR-DE, art. 5</span>
+      <span>Despacho línea #${despacho.lineNo} · RDE N° D000014-2024-MIDAGRI-SERFOR-DE, art. 5</span>
     </div>`);
 
   const documento: DocumentoGtfSalida = {

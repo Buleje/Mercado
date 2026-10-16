@@ -40,7 +40,7 @@ describe("fechaGtf", () => {
 describe("casillasOrigen — el (5) es un juego de casillas, no un texto", () => {
   it("dibuja TODAS las opciones para que se vea cuáles NO son", () => {
     const html = casillasOrigen("concesion");
-    for (const label of ["Concesión", "Permiso", "Autorización", "Bosque Local", "Desbosque", "Plantación"]) {
+    for (const label of ["Concesión", "Permiso", "Autorización", "Bosque local", "Desbosque", "Plantación", "Varios orígenes", "Cesión en Uso"]) {
       expect(html).toContain(label);
     }
   });
@@ -90,11 +90,13 @@ describe("cuerpoGtfOficial", () => {
     gtfOrigen: "",
   };
 
-  it("numera los casilleros que el puesto de control pide por número", () => {
+  it("numera los casilleros que el puesto de control pide por número (formato 2024)", () => {
     const html = cuerpoGtfOficial(base);
-    for (const n of ["(2)", "(5)", "(13)", "(22)", "(29)", "(31)", "(35)", "(38)", "(39)", "(40)"]) {
+    for (const n of ["(1)", "(2)", "(5)", "(11c)", "(13)", "(20d)", "(22)", "(29)", "(31)", "(34h)", "(35)", "(36)", "(39)"]) {
       expect(html).toContain(n);
     }
+    // El formato 2024 termina en el (39): un (40) sería del formato derogado.
+    expect(html).not.toContain("(40)");
   });
 
   it("NO afirma 'REGISTRADA' si SERFOR no devolvió un número", () => {
@@ -111,12 +113,12 @@ describe("cuerpoGtfOficial", () => {
     expect(html).toContain("1-19-0313969");
   });
 
-  it("por río pide MATRÍCULA y patrón, no placa y conductor", () => {
+  it("por río el (28) es el mismo casillero «Placa (s)/ Matrícula»: el formato 2024 no cambia rótulos por modo", () => {
     const datos = { ...gtfDatosVacio() };
-    datos.vehiculo = { ...datos.vehiculo, modo: "fluvial" as const };
+    datos.vehiculo = { ...datos.vehiculo, modo: "fluvial" as const, placa: "MAT-123" };
     const html = cuerpoGtfOficial({ ...base, datos });
-    expect(html).toContain("Matrícula N°");
-    expect(html).toContain("Patrón");
+    expect(html).toContain('<span class="n">(28)</span> <span class="l">Placa (s)/ Matrícula N.º:</span> <b>MAT-123</b>');
+    expect(html).toContain('<span class="n">(29)</span> <span class="l">Nombre del conductor:</span>');
   });
 
   it("un casillero sin dato va vacío, nunca con un guión que parezca declarado", () => {
@@ -133,7 +135,7 @@ describe("detalles del formato que se ven en el papel", () => {
   };
 
   it("un campo sin número no dibuja un '()' huérfano", () => {
-    // El representante legal cuelga del (7): no tiene casillero propio.
+    // Desde 2024 el representante legal tiene su propio número, el (8).
     expect(cuerpoGtfOficial(base)).not.toContain("()</span>");
   });
 

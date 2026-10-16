@@ -6,7 +6,7 @@
  * `celdasTroza`). Un casillero vacío queda vacío y no se imprime.
  *
  * Paginado:
- *   · guía: una hoja; si el detalle (37) pasa de las filas del talonario,
+ *   · guía: una hoja; si el detalle (34) pasa de las filas del talonario,
  *     sigue en otra con los mismos casilleros y el total sólo en la última;
  *   · lista: cada lista de SERFOR (20 trozas, `partirEnHojas`) con su N°; si
  *     el talonario entra menos filas, la lista sigue en otra hoja y su total

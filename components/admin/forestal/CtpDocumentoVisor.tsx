@@ -58,7 +58,7 @@ export type { MetaArchivado } from "@/hooks/use-documento-acciones";
 export interface DocumentoImprimible {
   /** Nombre del archivo al descargar y rótulo de la pestaña. */
   nombre: string;
-  /** Línea chica bajo el nombre en la pestaña ("12 piezas · anexo del (35)"). */
+  /** Línea chica bajo el nombre en la pestaña ("12 piezas · anexo del (33)"). */
   etiqueta?: string;
   /**
    * Nombre del ARCHIVO al descargar o archivar, si difiere del rótulo. La

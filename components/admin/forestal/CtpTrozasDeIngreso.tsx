@@ -79,7 +79,7 @@ export default function CtpTrozasDeIngreso({
   /** m³ con que está registrado el ingreso, para contrastarlo con lo recibido. */
   volumenDelIngreso?: number | null;
   /** Datos del ingreso para encabezar la LISTA DE TROZAS: el N° de la lista es
-   *  el de la guía —así el casillero (35) de la GTF le apunta— y el producto y
+   *  el de la guía —así el casillero (33) de la GTF le apunta— y el producto y
    *  el titular son del ingreso, no de cada pieza. */
   gtfNumber?: string | null;
   productType?: string | null;
@@ -583,7 +583,7 @@ export default function CtpTrozasDeIngreso({
         <CtpDocumentoVisor
           documentos={[{
             nombre: gtfNumber ? `Lista de trozas ${gtfNumber}` : "Lista de trozas",
-            etiqueta: `${trozas.length} pieza(s) · anexo del (35)`,
+            etiqueta: `${trozas.length} pieza(s) · anexo del (33)`,
             pieCorrido: pieLista,
             html: documentoHtml({
               titulo: gtfNumber ? `Lista de trozas ${gtfNumber}` : "Lista de trozas",
@@ -593,7 +593,7 @@ export default function CtpTrozasDeIngreso({
                 titular: titular || "Centro de Transformación Primaria",
                 subtitulo: gtfNumber ? `Guía ${gtfNumber}` : undefined,
                 guia: gtfNumber || undefined,
-                // El N° de la lista es el de la guía: el casillero (35) de la
+                // El N° de la lista es el de la guía: el casillero (33) de la
                 // GTF apunta acá, y un fragmento de id interno no le sirve a
                 // nadie en un puesto de control.
                 numero: gtfNumber || entryId.slice(-7),

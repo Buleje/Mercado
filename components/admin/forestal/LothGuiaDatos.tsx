@@ -15,7 +15,7 @@
  */
 
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
-import { ORIGENES } from "@/lib/forestal/ctp-gtf-formato";
+import { ORIGENES, ORIGENES_SIN_CASILLA_2024 } from "@/lib/forestal/ctp-gtf-formato";
 import { guiaEsDePlantacion, huecosDelTitulo, rotuloDelTitulo } from "@/lib/forestal/loth-guia-despacho";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import CtpUbigeoSelects from "./CtpUbigeoSelects";
@@ -122,6 +122,11 @@ function BloqueTitulo({ g, faltaTitulo }: { g: DespachoGuiaLoth; faltaTitulo: st
           <option value="">Sin marcar</option>
           {ORIGENES.map((o) => (
             <option key={o.clave} value={o.clave}>{o.label}</option>
+          ))}
+          {/* Una guía vieja con una casilla que el formato 2024 ya no tiene: se
+              muestra lo guardado, pero el papel no cruza ninguna (ADR-494). */}
+          {ORIGENES_SIN_CASILLA_2024.filter((o) => o.clave === guia.origenRecurso).map((o) => (
+            <option key={o.clave} value={o.clave}>{o.label} (formato 2015, no sale en el papel)</option>
           ))}
         </select>
       </Field>

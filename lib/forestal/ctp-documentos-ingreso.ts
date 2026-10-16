@@ -132,7 +132,7 @@ export function papelesDeIngreso(
   const lista: HojaDeIngreso = {
     nombre: "Lista de trozas",
     archivo: `Lista de trozas ${nroLista}`,
-    etiqueta: `${trozas.length} pieza(s) · anexo del (35)`,
+    etiqueta: `${trozas.length} pieza(s) · anexo del (33)`,
     pieCorrido: pieLista,
     html: documentoHtml({
       titulo: `Lista de trozas ${nroLista}`,
@@ -208,7 +208,7 @@ export function papelesDeGuia(
   const lista: HojaDeIngreso = {
     nombre: "Lista de trozas",
     archivo: `Lista de trozas ${numero}`,
-    etiqueta: `${piezas.length} pieza(s) · anexo del (35)`,
+    etiqueta: `${piezas.length} pieza(s) · anexo del (33)`,
     pieCorrido: pieLista,
     html: documentoHtml({
       titulo: `Lista de trozas ${numero}`,

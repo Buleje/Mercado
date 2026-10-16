@@ -5,7 +5,7 @@
  *
  * La guía declara el volumen por especie; esta lista dice QUÉ PIEZAS son, con su
  * codificación y sus tres medidas. Es el documento que un puesto de control usa
- * para contar la pila contra el papel, y el casillero (35) de la GTF apunta
+ * para contar la pila contra el papel, y el casillero (33) de la GTF apunta
  * justamente a su número.
  *
  * ── El volumen NO se recalcula ───────────────────────────────────────────────
@@ -54,7 +54,7 @@ export interface ListaTrozasInput {
   subtitulo?: string;
   ubicacion?: string;
   ruc?: string;
-  /** N° de la lista — el mismo que referencia el casillero (35) de la GTF. */
+  /** N° de la lista — el mismo que referencia el casillero (33) de la GTF (formato 2024). */
   numero: string;
   trozas: TrozaListada[];
   observaciones?: string;
@@ -177,7 +177,7 @@ export function htmlListaTrozas(i: ListaTrozasInput): string {
     meta: [i.subtitulo, i.ubicacion, i.ruc ? `RUC: ${i.ruc}` : ""],
     tipo: "Lista de trozas",
     numero: i.numero,
-    numeroNota: "Anexo del casillero (35)",
+    numeroNota: "Anexo del casillero (33)",
   })}
 
   ${tituloDoc(

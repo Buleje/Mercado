@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Vista previa de los casilleros (2)–(12) de la GTF con los datos de la Ficha.
+ * Vista previa de los casilleros (2)–(11c) de la GTF (formato 2024) con los datos de la Ficha.
  *
  * Una lista de "falta X" no muestra el daño: el daño se ve cuando mirás el
  * papel y el casillero (8) está en blanco. Esto arma el MISMO bloque que
@@ -27,12 +27,12 @@ export function casillerosVaciosDeFicha(f: CtpFicha): string[] {
   if (!t) falta.push("(5) y (6) origen y N° del título habilitante");
   if (t && !t.codigo.trim()) falta.push("(6) N° del título");
   if (!f.razonSocial.trim()) falta.push("(7) titular");
-  if (!f.representante.trim()) falta.push("representante legal");
-  if (t && !t.resolucion.trim()) falta.push("(8) N° de resolución");
-  if (t && !t.planManejo.trim()) falta.push("(9) plan de manejo");
-  if (!f.region.trim()) falta.push("(10) departamento");
-  if (!f.provincia.trim()) falta.push("(11) provincia");
-  if (!f.distrito.trim()) falta.push("(12) distrito");
+  if (!f.representante.trim()) falta.push("(8) representante legal");
+  if (t && !t.resolucion.trim()) falta.push("(9) N° de resolución");
+  if (t && !t.planManejo.trim()) falta.push("(10) plan de manejo");
+  if (!f.region.trim()) falta.push("(11a) departamento");
+  if (!f.provincia.trim()) falta.push("(11b) provincia");
+  if (!f.distrito.trim()) falta.push("(11c) distrito");
   return falta;
 }
 
@@ -45,7 +45,7 @@ export default function CtpFichaPreviewGtf({ ficha, onCerrar }: { ficha: CtpFich
         )
       : notaDoc("<b>Los casilleros de identidad salen completos.</b> El resto de la guía lo llena cada despacho.");
     return documentoHtml({
-      titulo: "Vista previa — casilleros (2) a (12) de la GTF",
+      titulo: "Vista previa — casilleros (2) a (11c) de la GTF",
       css: CSS_GTF_OFICIAL,
       cuerpo: `
         ${tituloDoc("Vista previa de la guía de salida", "Cómo quedan los casilleros que llena la Ficha del CTP")}
@@ -62,7 +62,7 @@ export default function CtpFichaPreviewGtf({ ficha, onCerrar }: { ficha: CtpFich
     <CtpDocumentoVisor
       documentos={[{
         nombre: "Vista previa de la GTF",
-        etiqueta: "Casilleros (2) a (12) — los que llena la Ficha",
+        etiqueta: "Casilleros (2) a (11c) — los que llena la Ficha",
         archivo: "vista-previa-gtf-ficha",
         html,
       }]}

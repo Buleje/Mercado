@@ -80,9 +80,9 @@ export const ORIGEN_NO_APLICA = "NO APLICA";
 const CSS_HOJAS_DE_LISTA = "@media print { .doc-parte + .doc-parte { margin-top:0; } }";
 
 /** El rótulo del recuadro del N° de una hoja de la lista (el de `htmlListaTrozas`). */
-const NOTA_LISTA = '<div class="pie">Anexo del casillero (35)</div>';
+const NOTA_LISTA = '<div class="pie">Anexo del casillero (33)</div>';
 
-/** Cuántas hojas sale la lista y el N° de cada una (lo que va en el (35) y en cada cabecera). */
+/** Cuántas hojas sale la lista y el N° de cada una (lo que va en el (33) y en cada cabecera). */
 export function hojasDeLaLista(
   datos: GtfDatos,
   gtfNumber: string,
@@ -150,7 +150,7 @@ export function entradasGuiaLoth(g: GuiaLothParaImprimir): EntradasGuiaLoth {
       lineas: detallePorEspecie(g.piezas, g.cientificoDe),
       numeroGtf: numero,
       fechaExpedicion: g.gtfDate,
-      // (35) los N° de la lista que viaja con la guía, uno por hoja; (36) NO
+      // (33) los N° de la lista que viaja con la guía, uno por hoja; (32) NO
       // APLICA: madera del bosque, no la ampara ninguna guía anterior.
       listasTrozas: listas.casillero35,
       gtfOrigen: t(d.guia.gtfOrigenNro) || ORIGEN_NO_APLICA,
@@ -249,7 +249,7 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
     ${visado}
     <div class="doc-pie">
       <span>${esc(copia.titulo)} · GTF ${esc(numero)}</span>
-      <span>Lista de trozas N° ${esc(nroLista)} · RDE N° 122-2015-SERFOR-DE, art. 5</span>
+      <span>Lista de trozas N° ${esc(nroLista)} · RDE N° D000014-2024-MIDAGRI-SERFOR-DE, art. 5</span>
     </div>`,
   );
 
@@ -259,11 +259,11 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
   /* Cada hoja es UNA lista con su N° (las de SERFOR: 34 trozas → listas 5 y
      6), y se imprime en su propia página: cabecera, filas, total y firmas.
      Se parte con `FILAS_POR_LISTA`, el mismo número con que se propone
-     cuántos N° lleva el (35). */
+     cuántos N° lleva el (33). */
   const trozos = partirEnHojas(filas);
   const hojasLista = (trozos.length ? trozos : [[]]).map((trozo, i, todas) => {
     const html = htmlListaTrozas({ ...entradas.lista, numero: listas.numeros[i] ?? nroLista, trozas: trozo });
-    const nota = todas.length > 1 ? `<div class="pie">Hoja ${i + 1} de ${todas.length} · anexo del (35)</div>` : NOTA_LISTA;
+    const nota = todas.length > 1 ? `<div class="pie">Hoja ${i + 1} de ${todas.length} · anexo del (33)</div>` : NOTA_LISTA;
     return `${sello}${html.replace(NOTA_LISTA, nota)}`;
   });
 
@@ -280,8 +280,8 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
       archivo: `Lista de trozas ${nroLista}`,
       etiqueta:
         listas.hojas > 1
-          ? `${filas.length} trozas en ${listas.hojas} hojas · anexo del (35)`
-          : `${filas.length} troza${filas.length === 1 ? "" : "s"} · anexo del (35)`,
+          ? `${filas.length} trozas en ${listas.hojas} hojas · anexo del (33)`
+          : `${filas.length} troza${filas.length === 1 ? "" : "s"} · anexo del (33)`,
       pieCorrido: pieLista,
       html: documentoHtml({
         titulo: `Lista de trozas ${nroLista}`,

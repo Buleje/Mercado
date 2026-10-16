@@ -184,7 +184,7 @@ describe("partida desarmada y faltantes por casillero", () => {
   });
 });
 
-describe("el papel: la lista se parte en hojas numeradas y el (36) dice NO APLICA", () => {
+describe("el papel: la lista se parte en hojas numeradas y el (32) dice NO APLICA", () => {
   const pieza = (i: number): PiezaGuia => ({
     codigo: `${100 + i}-TOR-A`,
     arbol: `${100 + i}`,
@@ -203,15 +203,15 @@ describe("el papel: la lista se parte en hojas numeradas y el (36) dice NO APLIC
 
   it("34 trozas: dos listas, N° 9 y 10, cada una en su hoja con «hoja i de 2»", () => {
     const { gtf, lista } = papelesGuiaLoth({ gtfNumber: "019-001-0000005", gtfDate: "2026-09-29", titular: SANTA_ROSA, datos, piezas });
-    expect(lista.etiqueta).toBe("34 trozas en 2 hojas · anexo del (35)");
+    expect(lista.etiqueta).toBe("34 trozas en 2 hojas · anexo del (33)");
     expect(lista.html.match(/class="doc-parte"/g)).toHaveLength(2);
-    expect(lista.html).toContain("Hoja 1 de 2 · anexo del (35)");
-    expect(lista.html).toContain("Hoja 2 de 2 · anexo del (35)");
+    expect(lista.html).toContain("Hoja 1 de 2 · anexo del (33)");
+    expect(lista.html).toContain("Hoja 2 de 2 · anexo del (33)");
     expect(lista.html).toContain("LISTA ID: 9");
     expect(lista.html).toContain("LISTA ID: 10");
-    expect(gtf.html).toMatch(/\(35\)<\/span> <span class="l">Lista\(s\) de Troza\(s\):<\/span> <b>9, 10<\/b>/);
-    // El (36) mismo: el bloque «punto de partida» del formato 2024 también dice NO APLICA.
-    expect(gtf.html).toMatch(new RegExp(`\\(36\\)</span> <span class="l">N° GTF de Origen:</span> <b>${ORIGEN_NO_APLICA}</b>`));
+    // Formato 2024 (ADR-494): la lista va en el (33) y la GTF de origen en el (32).
+    expect(gtf.html).toContain('<span class="n">(33)</span> <span class="l">Lista de Trozas/ Productos Transformados N°:</span> <b>9, 10</b>');
+    expect(gtf.html).toContain(`<span class="n">(32)</span> <span class="l">N.º GTF de origen:</span> <b>${ORIGEN_NO_APLICA}</b>`);
   });
 
   it("una guía vieja sin N° de lista sigue imprimiendo el de la guía (reimprimir no cambia lo que viajó)", () => {
@@ -243,26 +243,32 @@ describe("el papel: la lista se parte en hojas numeradas y el (36) dice NO APLIC
     expect(gtf.html).toContain("Datos del punto de partida");
     expect(gtf.html).toContain('<span class="l">Punto de partida:</span> <b>Depósito El Ucayalino SAC</b>');
     expect(gtf.html).toContain('<span class="l">N° Autorización:</span> <b>DEP-UCA-0123-2025</b>');
-    expect(gtf.html).toContain('<span class="l">Tipo de establecimiento:</span> <b>Depósito</b>');
+    expect(gtf.html).toContain('<span class="l">Tipo de Establecimiento:</span> <b>Depósito</b>');
     expect(gtf.html).toContain('<span class="l">N° Autorización:</span> <b>CTP-UCA-0456-2024</b>');
     // Los internos no salen en el papel.
     expect(gtf.html).not.toContain("20601234567");
     expect(gtf.html).not.toContain("Rosa Díaz");
   });
 
-  it("una guía anterior al formato 2024 (partida sin modo) sale igual que antes: sin bloque de partida ni (22)", () => {
+  it("una guía anterior al formato 2024 (partida sin modo) también sale en 2024: el bloque de partida va con sus casilleros vacíos", () => {
+    // La RDE D000014-2024 deroga la 122-2015 sin régimen transitorio (ADR-494):
+    // toda guía se imprime con el formato vigente. Lo que no se cargó queda en
+    // blanco con su número; no se inventa.
     const vieja = { ...datos, traslado: { ...datos.traslado, partida: { ...datos.traslado.partida, modo: "" as const } } };
     const { gtf } = papelesGuiaLoth({ gtfNumber: "019-001-0000003", gtfDate: "2026-09-01", titular: SANTA_ROSA, datos: vieja, piezas: piezas.slice(0, 2) });
-    expect(gtf.html).not.toContain("Datos del punto de partida");
-    expect(gtf.html).toContain('<td class="c" colspan="4"><span class="n">(28)</span> <span class="l">Distrito:</span>');
+    expect(gtf.html).toContain("Datos del punto de partida");
+    expect(gtf.html).toContain('<span class="n">(17)</span> <span class="l">Punto de partida:</span> <b></b>');
+    expect(gtf.html).toContain('<span class="n">(20d)</span> <span class="l">Distrito:</span> <b></b>');
+    expect(gtf.html).toContain('<span class="n">(22)</span> <span class="l">N° Autorización:</span>');
+    expect(gtf.html).toContain('<td class="c" colspan="2"><span class="n">(24d)</span> <span class="l">Distrito:</span>');
   });
 
   it("con GTF de origen elegida, se imprime ese N° (no NO APLICA)", () => {
     const conOrigen = { ...datos, guia: { ...datos.guia, gtfOrigenNro: "019-001-0000004" } };
     const { gtf } = papelesGuiaLoth({ gtfNumber: "019-001-0000005", gtfDate: "2026-09-29", titular: SANTA_ROSA, datos: conOrigen, piezas: piezas.slice(0, 2) });
     expect(gtf.html).toContain("019-001-0000004");
-    expect(gtf.html).toMatch(/\(36\)<\/span> <span class="l">N° GTF de Origen:<\/span> <b>019-001-0000004<\/b>/);
-    expect(gtf.html).not.toMatch(new RegExp(`N° GTF de Origen:</span> <b>${ORIGEN_NO_APLICA}`));
+    expect(gtf.html).toContain('<span class="n">(32)</span> <span class="l">N.º GTF de origen:</span> <b>019-001-0000004</b>');
+    expect(gtf.html).not.toContain(`N.º GTF de origen:</span> <b>${ORIGEN_NO_APLICA}`);
   });
 });
 

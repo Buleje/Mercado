@@ -233,7 +233,7 @@ describe("papelesGuiaLoth — la GTF y la lista con el formato del CTP", () => {
   const datos = datosInicialesLoth(id, "2026-09-28");
   datos.destinatario = { ...datos.destinatario, nombre: "Inversiones Agroforestales Blas SAC", direccion: "Carretera Federico Basadre km 12" };
 
-  it("la GTF lleva el título (5)(6)(9), el detalle por especie y apunta a su lista (35)", () => {
+  it("la GTF lleva el título (5)(6)(10), el detalle por especie y apunta a su lista (33)", () => {
     const { gtf } = papelesGuiaLoth({ gtfNumber: "019-0000001", gtfDate: "2026-09-28", titular: id.titular, datos, piezas: [C, D] });
     expect(gtf.html).toContain("19-SEC/PER-FMC-2024-008");
     expect(gtf.html).toContain("Declaración de Manejo (DEMA)");
@@ -241,7 +241,7 @@ describe("papelesGuiaLoth — la GTF y la lista con el formato del CTP", () => {
     expect(gtf.html).toContain("Metros cúbicos");
     expect(gtf.html).toContain("2.126");
     expect(gtf.html).toContain("Inversiones Agroforestales Blas SAC");
-    expect(gtf.html).toMatch(/\(35\)<\/span> <span class="l">Lista\(s\) de Troza\(s\):<\/span> <b>019-0000001<\/b>/);
+    expect(gtf.html).toContain('<span class="n">(33)</span> <span class="l">Lista de Trozas/ Productos Transformados N°:</span> <b>019-0000001</b>');
     // Una sola copia en el visor (07-10): la ORIGINAL.
     expect(gtf.html.match(/class="gs-tira"/g)).toHaveLength(1);
     expect(gtf.html).toContain("ORIGINAL");
@@ -256,7 +256,7 @@ describe("papelesGuiaLoth — la GTF y la lista con el formato del CTP", () => {
     expect(lista.html).toContain("85-TOR-D");
     expect(lista.html).toContain("70.0");
     expect(lista.html).toContain("2.126");
-    expect(lista.etiqueta).toBe("2 trozas · anexo del (35)");
+    expect(lista.etiqueta).toBe("2 trozas · anexo del (33)");
   });
 
   it("antes de registrar, el papel dice que es un borrador", () => {

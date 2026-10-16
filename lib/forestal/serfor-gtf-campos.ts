@@ -24,6 +24,11 @@ export function claveOrigen(texto: string | null | undefined): string {
   if (s.includes("cambio")) return "cambio_uso";
   if (s.includes("plantaci")) return "plantacion";
   if (s.includes("consolidado")) return "plan_consolidado";
+  /* Las tres casillas que trajo el formato 2024 (RDE D000014-2024, ADR-494).
+     «Cesión» va DESPUÉS de «concesión», que también contiene «cesi». */
+  if (s.includes("varios")) return "varios_origenes";
+  if (s.includes("transformaci") || /\bctp\b/.test(s)) return "ctp";
+  if (s.includes("cesi")) return "cesion_uso";
   return "otros";
 }
 

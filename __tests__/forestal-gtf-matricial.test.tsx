@@ -13,7 +13,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import fichasJson from "./forestal-loth-importar-guia.fichas-blas.json";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import { gtfDatosConFicha } from "@/lib/forestal/loth-importar-guia";
-import { casillerosGtf, cuerpoGtfOficial, detalleGtf, ORIGENES } from "@/lib/forestal/ctp-gtf-formato";
+import { casillerosGtf, cuerpoGtfOficial, detalleGtf, ORIGENES, ORIGENES_SIN_CASILLA_2024 } from "@/lib/forestal/ctp-gtf-formato";
 import {
   acotarPos,
   CATALOGO,
@@ -76,8 +76,14 @@ describe("valores: los de la hoja SERFOR", () => {
     expect(html).toContain(det.total);
   });
 
-  it("las casillas del (5) son las mismas del formato (el talonario no puede perder una)", () => {
-    expect(ORIGENES_TALONARIO).toEqual(ORIGENES);
+  it("las casillas del (5): las 10 del formato 2024 más las 2 de 2015 (el talonario no puede perder una)", () => {
+    const claves = (xs: ReadonlyArray<{ clave: string }>) => xs.map((o) => o.clave).sort();
+    expect(claves(ORIGENES_TALONARIO)).toEqual(claves([...ORIGENES, ...ORIGENES_SIN_CASILLA_2024]));
+    // Las 9 de antes conservan su orden: la posición de fábrica de cada casilla
+    // sale de ese orden y un talonario ya calibrado no se corre (ADR-494).
+    expect(ORIGENES_TALONARIO.slice(0, 9).map((o) => o.clave)).toEqual([
+      "concesion", "permiso", "autorizacion", "bosque_local", "desbosque", "cambio_uso", "plantacion", "plan_consolidado", "otros",
+    ]);
   });
 });
 

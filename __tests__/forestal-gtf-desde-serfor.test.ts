@@ -46,6 +46,14 @@ describe("claveOrigen — el texto de SERFOR al casillero (5)", () => {
     expect(claveOrigen("Plan de Manejo Consolidado")).toBe("plan_consolidado");
   });
 
+  it("reconoce las tres casillas del formato 2024 (y «Cesión» no se confunde con «Concesión»)", () => {
+    expect(claveOrigen("Varios orígenes")).toBe("varios_origenes");
+    expect(claveOrigen("Centro de Transformación Primaria-CTP")).toBe("ctp");
+    expect(claveOrigen("CTP")).toBe("ctp");
+    expect(claveOrigen("Cesión en Uso")).toBe("cesion_uso");
+    expect(claveOrigen("Concesión forestal")).toBe("concesion");
+  });
+
   it("sin origen no cruza ninguna casilla", () => {
     expect(claveOrigen("")).toBe("");
     expect(claveOrigen(null)).toBe("");
@@ -139,11 +147,10 @@ describe("separarDocumento — la ficha trae RUC y DNI en el mismo campo", () =>
     expect(separarDocumento("no aplica")).toEqual({ ruc: "", dni: "" });
   });
 
-  it("el documento llega repartido en sus dos casilleros del formato", () => {
+  it("el documento llega entero al único casillero DNI/RUC del formato 2024, RUC primero", () => {
+    // 2015 tenía DNI y RUC en casilleros separados; el (23) de 2024 es uno solo.
     const html = cuerpoDesdeSerfor(guia({ destinatarioDoc: "20605859438 / 80186494" }));
-    expect(html).toContain("20605859438");
-    expect(html).toContain("80186494");
-    expect(html).not.toContain("20605859438 / 80186494");
+    expect(html).toContain('<span class="n">(23)</span> <span class="l">DNI/RUC N.º:</span> <b>20605859438 / 80186494</b>');
   });
 
   it("el (20) se lee en criollo, no como valor de enum", () => {

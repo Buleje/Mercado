@@ -7,7 +7,7 @@
  * SÓLO los valores, cada uno en sus milímetros. Esto define:
  *   · el catálogo de campos de cada hoja («guía» y «lista») con una posición
  *     de fábrica que sigue el orden de casilleros de la hoja SERFOR (ADR-338);
- *   · la tabla de cada hoja: la (37) de la guía y las trozas de la lista;
+ *   · la tabla de cada hoja: el (34) de la guía y las trozas de la lista;
  *   · el esquema Zod y la normalización (lo guardado se completa con la de
  *     fábrica: un campo nuevo del catálogo no rompe una disposición vieja).
  *
@@ -18,21 +18,36 @@
 import { z } from "zod";
 
 /**
- * Las casillas del (5), en el orden del papel. Copia de `ORIGENES` de
+ * Las casillas del (5). Copia de `ORIGENES` + `ORIGENES_SIN_CASILLA_2024` de
  * `ctp-gtf-formato` (ese módulo es "use client" y esto lo lee también la ruta
  * del servidor): el test `forestal-gtf-matricial` falla si se separan.
+ *
+ * El ORDEN no es el del papel 2024 sino el del alta de cada campo: la posición
+ * de fábrica de los nueve primeros sale de su índice (`C1 + i·21`, la hoja
+ * 2015) y reordenarlos movería las «X» de quien nunca acomodó su talonario.
+ * Los tres que trajo el formato 2024 van al final, en su propio renglón;
+ * «Plan de Manejo Consolidado» y «Otros» ya no existen en 2024 pero se quedan
+ * (ADR-494): borrar un campo borra el acomodo guardado de ese campo.
  */
 export const ORIGENES_TALONARIO: ReadonlyArray<{ clave: string; label: string }> = [
   { clave: "concesion", label: "Concesión" },
   { clave: "permiso", label: "Permiso" },
   { clave: "autorizacion", label: "Autorización" },
-  { clave: "bosque_local", label: "Bosque Local" },
+  { clave: "bosque_local", label: "Bosque local" },
   { clave: "desbosque", label: "Desbosque" },
   { clave: "cambio_uso", label: "Cambio de Uso" },
   { clave: "plantacion", label: "Plantación" },
   { clave: "plan_consolidado", label: "Plan de Manejo Consolidado" },
   { clave: "otros", label: "Otros" },
+  { clave: "varios_origenes", label: "Varios orígenes" },
+  { clave: "ctp", label: "Centro de Transformación Primaria-CTP" },
+  { clave: "cesion_uso", label: "Cesión en Uso" },
 ];
+
+/** Las casillas del (5) que el formato 2024 ya no tiene: su campo se queda, con la marca «2015». */
+const ORIGENES_SOLO_2015 = new Set(["plan_consolidado", "otros"]);
+/** Las que trajo el formato 2024: arrancan ocultas, en un segundo renglón. */
+const ORIGENES_SOLO_2024 = ["varios_origenes", "ctp", "cesion_uso"];
 
 export type FormatoTalonario = "guia" | "lista";
 export type Alineacion = "izq" | "centro" | "der";
@@ -111,7 +126,7 @@ export interface CatalogoFormato {
   tablaLabel: string;
 }
 
-/** A4 vertical, la hoja de la RDE 122-2015-SERFOR-DE. Brandon la cambia por la medida de su talonario. */
+/** A4 vertical, la hoja de la RDE D000014-2024-MIDAGRI-SERFOR-DE (art. 3). Brandon la cambia por la medida de su talonario. */
 export const HOJA_FABRICA = { anchoMm: 210, altoMm: 297 } as const;
 export const LETRA_FABRICA_PT = 9;
 /** Paso del arrastre y de las flechas; con Shift, el grande. */
@@ -131,59 +146,66 @@ const fecha = (n: "3" | "4", nombre: string, x: number, y: number): DefCampo[] =
 
 const CAMPOS_GUIA: DefCampo[] = [
   { id: "numero", label: "N° de la GTF", grupo: "La guía", x: C4, y: 14, ancho: ULTIMO, oculto: true },
-  { id: "2", label: "(2) Autoridad Regional Forestal", grupo: "La guía", x: C1, y: 40, ancho: MEDIA },
-  ...fecha("3", "F. Expedición", C3, 40),
-  ...fecha("4", "F. Vencimiento", C4, 40),
+  { id: "2", label: "(2) Autoridad Regional Forestal (ARFFS)", grupo: "La guía", x: C1, y: 40, ancho: MEDIA },
+  ...fecha("3", "Fecha de expedición", C3, 40),
+  ...fecha("4", "Fecha de vencimiento", C4, 40),
   /* (5) son casillas: cada origen es su campo y sólo el marcado imprime su «X». */
-  ...ORIGENES_TALONARIO.map((o, i): DefCampo => ({
-    id: `5:${o.clave}`, label: `(5) ${o.label}`, grupo: "Origen del recurso (5)", x: C1 + i * 21, y: 48, ancho: 6, alinea: "centro",
+  ...ORIGENES_TALONARIO.filter((o) => !ORIGENES_SOLO_2024.includes(o.clave)).map((o, i): DefCampo => ({
+    id: `5:${o.clave}`, label: `(5) ${o.label}${ORIGENES_SOLO_2015.has(o.clave) ? " (2015)" : ""}`,
+    grupo: "Origen del recurso (5)", x: C1 + i * 21, y: 48, ancho: 6, alinea: "centro",
   })),
+  ...ORIGENES_TALONARIO.filter((o) => ORIGENES_SOLO_2024.includes(o.clave)).map((o, i): DefCampo => ({
+    id: `5:${o.clave}`, label: `(5) ${o.label}`, grupo: "Origen del recurso (5)", x: C1 + i * 21, y: 52, ancho: 6, alinea: "centro",
+    oculto: true,
+  })),
+  /* Rótulos con la numeración del formato 2024 (ADR-494). El id es la clave de
+     `casillerosGtf` y no cambia: el acomodo guardado de cada campo va por id. */
   { id: "6", label: "(6) N° del título habilitante", grupo: "La guía", x: C1, y: 56, ancho: MEDIA },
   { id: "7", label: "(7) Nombre del titular", grupo: "La guía", x: C3, y: 56, ancho: MEDIA_DER },
-  { id: "rep", label: "Representante legal", grupo: "La guía", x: C1, y: 64, ancho: MEDIA },
-  { id: "8", label: "(8) N° de resolución", grupo: "La guía", x: C3, y: 64, ancho: MEDIA_DER },
-  { id: "9", label: "(9) Plan de manejo", grupo: "La guía", x: C1, y: 72, ancho: MEDIA },
-  { id: "10", label: "(10) Departamento", grupo: "La guía", x: C3, y: 72, ancho: CUARTO },
-  { id: "11", label: "(11) Provincia", grupo: "La guía", x: C4, y: 72, ancho: ULTIMO },
-  { id: "12", label: "(12) Distrito", grupo: "La guía", x: C1, y: 80, ancho: ENTERA },
-  { id: "13", label: "(13) Propietario", grupo: "Propietario", x: C1, y: 94, ancho: MEDIA },
-  { id: "14", label: "(14) D.N.I.", grupo: "Propietario", x: C3, y: 94, ancho: CUARTO },
-  { id: "15", label: "(15) R.U.C.", grupo: "Propietario", x: C4, y: 94, ancho: ULTIMO },
-  { id: "16", label: "(16) Dirección", grupo: "Propietario", x: C1, y: 102, ancho: MEDIA },
-  { id: "17", label: "(17) Departamento", grupo: "Propietario", x: C3, y: 102, ancho: CUARTO },
-  { id: "18", label: "(18) Provincia", grupo: "Propietario", x: C4, y: 102, ancho: ULTIMO },
-  { id: "19", label: "(19) Distrito", grupo: "Propietario", x: C1, y: 110, ancho: CUARTO },
-  { id: "20", label: "(20) Comprobante", grupo: "Propietario", x: C2, y: 110, ancho: CUARTO },
-  { id: "21", label: "(21) N° de comprobante", grupo: "Propietario", x: C3, y: 110, ancho: MEDIA_DER },
-  /* Formato 2024 (RDE D000014-2024): «Datos del punto de partida» (17)-(20d) y
-     el (22) del destino. Arrancan ocultos: el talonario de la hoja 2015 no los
-     tiene; quien tenga el de 2024 los prende y los ubica. */
-  { id: "p17", label: "Partida (17) Nombre o referencia", grupo: "Punto de partida (2024)", x: C1, y: 116, ancho: MEDIA, oculto: true },
-  { id: "p18", label: "Partida (18) N° de autorización", grupo: "Punto de partida (2024)", x: C3, y: 116, ancho: CUARTO, oculto: true },
-  { id: "p19", label: "Partida (19) Tipo de establecimiento", grupo: "Punto de partida (2024)", x: C4, y: 116, ancho: ULTIMO, oculto: true },
-  { id: "p20a", label: "Partida (20a) Dirección", grupo: "Punto de partida (2024)", x: C1, y: 119, ancho: MEDIA, oculto: true },
-  { id: "p20b", label: "Partida (20b) Departamento", grupo: "Punto de partida (2024)", x: C3, y: 119, ancho: CUARTO, oculto: true },
-  { id: "p20c", label: "Partida (20c) Provincia", grupo: "Punto de partida (2024)", x: C4, y: 119, ancho: ULTIMO, oculto: true },
-  { id: "p20d", label: "Partida (20d) Distrito", grupo: "Punto de partida (2024)", x: C1, y: 122, ancho: ENTERA, oculto: true },
-  { id: "22", label: "(22) Destinatario", grupo: "Destinatario", x: C1, y: 124, ancho: MEDIA },
-  { id: "23", label: "(23) D.N.I.", grupo: "Destinatario", x: C3, y: 124, ancho: CUARTO },
-  { id: "24", label: "(24) R.U.C.", grupo: "Destinatario", x: C4, y: 124, ancho: ULTIMO },
-  { id: "25", label: "(25) Dirección", grupo: "Destinatario", x: C1, y: 132, ancho: MEDIA },
-  { id: "26", label: "(26) Departamento", grupo: "Destinatario", x: C3, y: 132, ancho: CUARTO },
-  { id: "27", label: "(27) Provincia", grupo: "Destinatario", x: C4, y: 132, ancho: ULTIMO },
-  { id: "28", label: "(28) Distrito", grupo: "Destinatario", x: C1, y: 140, ancho: ENTERA },
-  { id: "d22", label: "Destino (22) N° de autorización (2024)", grupo: "Destinatario", x: C3, y: 144, ancho: MEDIA_DER, oculto: true },
-  { id: "29", label: "(29) N° guía de remisión", grupo: "Transporte", x: C1, y: 154, ancho: CUARTO },
-  { id: "30", label: "(30) Tipo de transporte", grupo: "Transporte", x: C2, y: 154, ancho: CUARTO },
-  { id: "31", label: "(31) Vehículo", grupo: "Transporte", x: C3, y: 154, ancho: CUARTO },
-  { id: "31p", label: "(31) Placa", grupo: "Transporte", x: C4, y: 154, ancho: ULTIMO },
-  { id: "32", label: "(32) Conductor", grupo: "Transporte", x: C1, y: 162, ancho: MEDIA },
-  { id: "33", label: "(33) D.N.I. del conductor", grupo: "Transporte", x: C3, y: 162, ancho: CUARTO },
-  { id: "34", label: "(34) Licencia", grupo: "Transporte", x: C4, y: 162, ancho: ULTIMO },
-  { id: "35", label: "(35) Lista(s) de trozas", grupo: "Producto", x: C1, y: 176, ancho: MEDIA },
-  { id: "36", label: "(36) N° GTF de origen", grupo: "Producto", x: C3, y: 176, ancho: MEDIA_DER },
-  { id: "37t", label: "Volumen total", grupo: "Producto", x: 174, y: 242, ancho: 24, alinea: "der" },
-  { id: "38", label: "(38) Observaciones", grupo: "Producto", x: C1, y: 252, ancho: ENTERA },
+  { id: "rep", label: "(8) Rep. legal", grupo: "La guía", x: C1, y: 64, ancho: MEDIA },
+  { id: "8", label: "(9) N° de resolución", grupo: "La guía", x: C3, y: 64, ancho: MEDIA_DER },
+  { id: "9", label: "(10) Plan de manejo (tipo)", grupo: "La guía", x: C1, y: 72, ancho: MEDIA },
+  { id: "10", label: "(11a) Departamento", grupo: "La guía", x: C3, y: 72, ancho: CUARTO },
+  { id: "11", label: "(11b) Provincia", grupo: "La guía", x: C4, y: 72, ancho: ULTIMO },
+  { id: "12", label: "(11c) Distrito", grupo: "La guía", x: C1, y: 80, ancho: ENTERA },
+  { id: "13", label: "(12) Propietario del producto", grupo: "Propietario", x: C1, y: 94, ancho: MEDIA },
+  { id: "14", label: "(13) DNI/RUC · el DNI", grupo: "Propietario", x: C3, y: 94, ancho: CUARTO },
+  { id: "15", label: "(13) DNI/RUC · el RUC", grupo: "Propietario", x: C4, y: 94, ancho: ULTIMO },
+  { id: "16", label: "(14a) Dirección", grupo: "Propietario", x: C1, y: 102, ancho: MEDIA },
+  { id: "17", label: "(14b) Departamento", grupo: "Propietario", x: C3, y: 102, ancho: CUARTO },
+  { id: "18", label: "(14c) Provincia", grupo: "Propietario", x: C4, y: 102, ancho: ULTIMO },
+  { id: "19", label: "(14d) Distrito", grupo: "Propietario", x: C1, y: 110, ancho: CUARTO },
+  { id: "20", label: "(15) Tipo de comprobante", grupo: "Propietario", x: C2, y: 110, ancho: CUARTO },
+  { id: "21", label: "(16) N° de comprobante", grupo: "Propietario", x: C3, y: 110, ancho: MEDIA_DER },
+  /* «Datos del punto de partida» (17)-(20d) y el (22) del destino nacieron con
+     el formato 2024. Arrancan ocultos: el talonario 2015 no los tiene; quien
+     tenga el de 2024 los prende y los ubica. */
+  { id: "p17", label: "(17) Punto de partida", grupo: "Punto de partida", x: C1, y: 116, ancho: MEDIA, oculto: true },
+  { id: "p18", label: "(18) N° de autorización", grupo: "Punto de partida", x: C3, y: 116, ancho: CUARTO, oculto: true },
+  { id: "p19", label: "(19) Tipo de establecimiento", grupo: "Punto de partida", x: C4, y: 116, ancho: ULTIMO, oculto: true },
+  { id: "p20a", label: "(20a) Dirección", grupo: "Punto de partida", x: C1, y: 119, ancho: MEDIA, oculto: true },
+  { id: "p20b", label: "(20b) Departamento", grupo: "Punto de partida", x: C3, y: 119, ancho: CUARTO, oculto: true },
+  { id: "p20c", label: "(20c) Provincia", grupo: "Punto de partida", x: C4, y: 119, ancho: ULTIMO, oculto: true },
+  { id: "p20d", label: "(20d) Distrito", grupo: "Punto de partida", x: C1, y: 122, ancho: ENTERA, oculto: true },
+  { id: "22", label: "(21) Destinatario", grupo: "Destinatario", x: C1, y: 124, ancho: MEDIA },
+  { id: "23", label: "(23) DNI/RUC · el DNI", grupo: "Destinatario", x: C3, y: 124, ancho: CUARTO },
+  { id: "24", label: "(23) DNI/RUC · el RUC", grupo: "Destinatario", x: C4, y: 124, ancho: ULTIMO },
+  { id: "25", label: "(24a) Dirección", grupo: "Destinatario", x: C1, y: 132, ancho: MEDIA },
+  { id: "26", label: "(24b) Departamento", grupo: "Destinatario", x: C3, y: 132, ancho: CUARTO },
+  { id: "27", label: "(24c) Provincia", grupo: "Destinatario", x: C4, y: 132, ancho: ULTIMO },
+  { id: "28", label: "(24d) Distrito", grupo: "Destinatario", x: C1, y: 140, ancho: ENTERA },
+  { id: "d22", label: "(22) N° de autorización del destinatario", grupo: "Destinatario", x: C3, y: 144, ancho: MEDIA_DER, oculto: true },
+  { id: "29", label: "(25) N° guía de remisión del transportista", grupo: "Transporte", x: C1, y: 154, ancho: CUARTO },
+  { id: "30", label: "(26) Tipo de transporte", grupo: "Transporte", x: C2, y: 154, ancho: CUARTO },
+  { id: "31", label: "(27) Tipo de vehículo", grupo: "Transporte", x: C3, y: 154, ancho: CUARTO },
+  { id: "31p", label: "(28) Placa(s) / matrícula", grupo: "Transporte", x: C4, y: 154, ancho: ULTIMO },
+  { id: "32", label: "(29) Nombre del conductor", grupo: "Transporte", x: C1, y: 162, ancho: MEDIA },
+  { id: "33", label: "(30) DNI del conductor", grupo: "Transporte", x: C3, y: 162, ancho: CUARTO },
+  { id: "34", label: "(31) Licencia de conducir", grupo: "Transporte", x: C4, y: 162, ancho: ULTIMO },
+  { id: "35", label: "(33) Lista de trozas / productos transformados", grupo: "Producto", x: C1, y: 176, ancho: MEDIA },
+  { id: "36", label: "(32) N° GTF de origen", grupo: "Producto", x: C3, y: 176, ancho: MEDIA_DER },
+  { id: "37t", label: "(34h) Total movilizado", grupo: "Producto", x: 174, y: 242, ancho: 24, alinea: "der" },
+  { id: "38", label: "(35) Observaciones", grupo: "Producto", x: C1, y: 252, ancho: ENTERA },
 ];
 
 const CAMPOS_LISTA: DefCampo[] = [
@@ -206,16 +228,16 @@ export const CATALOGO: Record<FormatoTalonario, CatalogoFormato> = {
   guia: {
     nombre: "Guía",
     campos: CAMPOS_GUIA,
-    tablaLabel: "Detalle del producto (37)",
+    tablaLabel: "Cuadro detalle de productos (34)",
     tabla: { y: 192, altoFilaMm: 6, maxFilas: 8, letraPt: 8 },
     columnas: [
-      { id: "37a", label: "(37a) N. científico", x: 12, ancho: 40 },
-      { id: "37b", label: "(37b) N. común", x: 53, ancho: 30 },
-      { id: "37c", label: "(37c) Producto", x: 84, ancho: 26 },
-      { id: "37d", label: "(37d) Descripción", x: 111, ancho: 30 },
-      { id: "37e", label: "(37e) Cantidad", x: 142, ancho: 14, alinea: "der" },
-      { id: "37f", label: "(37f) Unidad", x: 157, ancho: 16 },
-      { id: "37g", label: "(37g) Total", x: 174, ancho: 24, alinea: "der" },
+      { id: "37a", label: "(34a) N. científico", x: 12, ancho: 40 },
+      { id: "37b", label: "(34b) N. común o comercial", x: 53, ancho: 30 },
+      { id: "37c", label: "(34c) Tipo de producto", x: 84, ancho: 26 },
+      { id: "37d", label: "(34d) Descripción", x: 111, ancho: 30 },
+      { id: "37e", label: "(34e) Cantidad", x: 142, ancho: 14, alinea: "der" },
+      { id: "37f", label: "(34f) Unidad de medida", x: 157, ancho: 16 },
+      { id: "37g", label: "(34g) Total", x: 174, ancho: 24, alinea: "der" },
     ],
   },
   lista: {

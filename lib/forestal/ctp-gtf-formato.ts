@@ -3,10 +3,15 @@
 /**
  * El cuerpo de la GTF con los casilleros numerados del formato de SERFOR.
  *
- * Hasta ahora la guía se imprimía con los mismos datos pero en un orden propio,
- * y el que la recibe en un puesto de control busca por NÚMERO: pide el (22) y el
- * (31), no "el destinatario" y "la placa". Este módulo arma el bloque central
- * respetando esa numeración —(2) a (40)— para que se lea igual que el talonario.
+ * El que la recibe en un puesto de control busca por NÚMERO: pide el (21) y el
+ * (28), no "el destinatario" y "la placa". Este módulo arma el bloque central
+ * con la numeración del formato VIGENTE —(1) a (39), Anexo I de la RDE
+ * D000014-2024-MIDAGRI-SERFOR-DE, que derogó la RDE 122-2015 (ADR-494)—.
+ *
+ * `CASILLEROS_GTF_2024` es el mapa: cada casillero 2024 dice qué claves de
+ * `casillerosGtf` lo llenan, o por qué va vacío. Las CLAVES no cambiaron con el
+ * formato (son el contrato del talonario de la matricial, que guarda el acomodo
+ * por clave, y de la libreta): cambió dónde y con qué número se imprimen.
  *
  * ── Lo que NO hace, a propósito ──────────────────────────────────────────────
  * No imprime "ESTADO: REGISTRADA" ni un N° de registro propio. Ese estado y ese
@@ -76,17 +81,11 @@ const txt = (v: unknown): string => (v == null ? "" : String(v));
  * no entran en un cuarto de fila (una razón social, una dirección).
  */
 function box(n: string, label: string, valor: unknown, ancho = ""): string {
-  // Sin número no se dibuja el paréntesis: el formato tiene campos que van
-  // pegados al casillero anterior (el representante legal cuelga del (7)) y un
-  // "()" vacío se lee como un casillero que perdió su número.
+  // Sin número no se dibuja el paréntesis: un "()" vacío se lee como un
+  // casillero que perdió su número.
   const num = n ? `<span class="n">(${esc(n)})</span> ` : "";
   return `<td class="c" ${ancho}>${num}<span class="l">${esc(label)}:</span> <b>${esc(valor)}</b></td>`;
 }
-
-/** Casillero que ocupa media fila (dos de las cuatro columnas). */
-const box2 = (n: string, label: string, valor: unknown) => box(n, label, valor, 'colspan="2"');
-/** Casillero de fila entera. */
-const box4 = (n: string, label: string, valor: unknown) => box(n, label, valor, 'colspan="4"');
 
 /** Cómo viaja la madera. En el papel se lee entero, no el valor del enum. */
 const MODO_LABEL: Record<string, string> = {
@@ -96,18 +95,32 @@ const MODO_LABEL: Record<string, string> = {
 };
 
 /**
- * Casillero (5): el origen del recurso es un juego de casillas marcadas, no un
- * texto. Se dibujan TODAS y se cruza la que corresponde — así se lee igual que
- * el talonario, donde el fiscalizador ve de un vistazo cuáles NO son.
+ * Casillero (5) «Origen del recurso o procedencia»: un juego de casillas
+ * marcadas, no un texto. Se dibujan TODAS y se cruza la que corresponde — así
+ * se lee igual que el talonario, donde el fiscalizador ve de un vistazo cuáles
+ * NO son. Son las diez del formato 2024, en su orden.
  */
 export const ORIGENES: ReadonlyArray<{ clave: string; label: string }> = [
   { clave: "concesion", label: "Concesión" },
   { clave: "permiso", label: "Permiso" },
   { clave: "autorizacion", label: "Autorización" },
-  { clave: "bosque_local", label: "Bosque Local" },
+  { clave: "bosque_local", label: "Bosque local" },
   { clave: "desbosque", label: "Desbosque" },
   { clave: "cambio_uso", label: "Cambio de Uso" },
   { clave: "plantacion", label: "Plantación" },
+  { clave: "varios_origenes", label: "Varios orígenes" },
+  { clave: "ctp", label: "Centro de Transformación Primaria-CTP" },
+  { clave: "cesion_uso", label: "Cesión en Uso" },
+];
+
+/**
+ * Las casillas del formato 2015 que el de 2024 ya no tiene. Una guía vieja
+ * puede traerlas guardadas: la hoja no cruza ninguna (no hay dónde, y cruzar
+ * otra sería inventar), y el talonario conserva su campo para no perder el
+ * acomodo de quien todavía imprime sobre el talonario 2015. El plan consolidado
+ * en 2024 se declara con los códigos de todos los títulos en el (6).
+ */
+export const ORIGENES_SIN_CASILLA_2024: ReadonlyArray<{ clave: string; label: string }> = [
   { clave: "plan_consolidado", label: "Plan de Manejo Consolidado" },
   { clave: "otros", label: "Otros" },
 ];
@@ -119,6 +132,22 @@ export function casillasOrigen(marcado: string | null | undefined): string {
       `<span class="ck"><span class="lb">${esc(o.label)}</span><span class="bx">${o.clave === m ? "X" : "&nbsp;"}</span></span>`,
   ).join("");
 }
+
+/**
+ * (36) «Anexos que forman parte integrante de la GTF»: las cuatro casillas del
+ * formato, SIN marcar. Cuál corresponde lo decide quien emite (la lista de
+ * trozas es el Anexo 03 sólo si viaja como tal); marcarla desde acá sería
+ * declarar por él.
+ */
+const ANEXOS_GTF_2024 = [
+  "Anexo 01: Formato adicional para el detalle de productos",
+  "Anexo 02: Formato para consignar varios orígenes",
+  "Anexo 03: Lista de trozas",
+  "Anexo 04: Lista de productos transformados",
+] as const;
+
+const casillasAnexos = (): string =>
+  ANEXOS_GTF_2024.map((a) => `<span class="ck"><span class="lb">${esc(a)}</span><span class="bx">&nbsp;</span></span>`).join("");
 
 export interface LineaProducto {
   cientifico: string;
@@ -149,12 +178,13 @@ export function filasDeLaGuia(lineas: ReadonlyArray<LineaProducto>): LineaProduc
 export const volumenTotalDeLaGuia = (lineas: ReadonlyArray<LineaProducto>): number =>
   totalizarGTF(filasDeLaGuia(lineas).map((l) => ({ m3: l.total }))).m3;
 
-/** Una fila del detalle (37) como se imprime: ya formateada, columna por columna. */
+/** Una fila del detalle (34) como se imprime: ya formateada, columna por columna.
+ *  Las claves son las del talonario (numeración 2015, «37a»…): (34a) ← 37a … (34g) ← 37g. */
 export type FilaDetalleGtf = Record<"37a" | "37b" | "37c" | "37d" | "37e" | "37f" | "37g", string>;
 
 /**
- * El detalle (37a–37g) y su Volumen Total, en texto. Single source de la tabla
- * del papel A4 (`tablaProductos`) y del talonario de la matricial
+ * El detalle (34a–34g) y su (34h) Total movilizado, en texto. Single source de
+ * la tabla del papel A4 (`tablaProductos`) y del talonario de la matricial
  * (`gtf-matricial-valores`): los dos imprimen ESTO.
  */
 export function detalleGtf(lineasDeEntrada: ReadonlyArray<LineaProducto>): { filas: FilaDetalleGtf[]; total: string } {
@@ -171,32 +201,7 @@ export function detalleGtf(lineasDeEntrada: ReadonlyArray<LineaProducto>): { fil
   };
 }
 
-/** El detalle (37a–37g) con su fila de Volumen Total, como el formato oficial. */
-export function tablaProductos(lineasDeEntrada: ReadonlyArray<LineaProducto>): string {
-  const det = detalleGtf(lineasDeEntrada);
-  const filas = det.filas
-    .map(
-      (l) => `<tr>
-        <td>${esc(l["37a"])}</td><td>${esc(l["37b"])}</td><td>${esc(l["37c"])}</td>
-        <td>${esc(l["37d"])}</td><td class="num">${esc(l["37e"])}</td>
-        <td>${esc(l["37f"])}</td><td class="num">${l["37g"]}</td>
-      </tr>`,
-    )
-    .join("");
-  return `<table class="det">
-    <thead><tr>
-      <th rowspan="2">(37a) N. Científico</th><th rowspan="2">(37b) N. Común</th>
-      <th rowspan="2">(37c) Producto</th><th colspan="2">Embalaje / presentación</th>
-      <th colspan="2">Cantidad</th>
-    </tr><tr>
-      <th>(37d) Descripción</th><th>(37e) Cant.</th><th>(37f) Unidad</th><th>(37g) Total</th>
-    </tr></thead>
-    <tbody>${filas || `<tr><td colspan="7" class="vacio">Sin líneas declaradas</td></tr>`}</tbody>
-    <tfoot><tr><td colspan="6" class="tot">Volumen Total:</td><td class="num tot">${det.total}</td></tr></tfoot>
-  </table>`;
-}
-
-/** Lo que recibe la identidad (2)–(12) además de la Ficha. */
+/** Lo que recibe la identidad (2)–(11c) además de la Ficha. */
 export interface ExtraIdentidadGtf {
   fechaExpedicion?: string;
   fechaVencimiento?: string;
@@ -207,19 +212,23 @@ export interface ExtraIdentidadGtf {
   /**
    * Los permisos cargados (`ForestContrato`, ADR-421/425). Desde que el
    * select de la guía ofrece las dos listas, el elegido puede ser uno que la
-   * Ficha no tiene: sin esto sus casilleros (5)(8)(9) salían en blanco
+   * Ficha no tiene: sin esto sus casilleros (5)(9)(10) salían en blanco
    * teniendo el dato cargado. La Ficha sigue mandando cuando está en las dos.
    */
   permisos?: readonly PermisoDeGuia[];
 }
 
-/** Los casilleros de la identidad, en texto. `rep` = el Representante Legal (sin número en el papel). */
+/**
+ * Los casilleros de la identidad, en texto. Las claves son las del talonario
+ * (numeración 2015) y NO se renombran: `CASILLEROS_GTF_2024` dice en qué
+ * casillero 2024 cae cada una — "8" es el (9) N° Resolución, `rep` el (8).
+ */
 export type CasillerosIdentidadGtf = Record<"2" | "3" | "4" | "5" | "6" | "7" | "rep" | "8" | "9" | "10" | "11" | "12", string>;
 
 /**
- * El VALOR de (2)–(12), ya formateado. El (5) es la CLAVE del origen marcado
- * (`ORIGENES`), en minúsculas; "" si ninguno. Lo leen `bloqueIdentidadGtf` y
- * `casillerosGtf`.
+ * El VALOR de la identidad, ya formateado. El "5" es la CLAVE del origen
+ * marcado (`ORIGENES`), en minúsculas; "" si ninguno. Lo leen
+ * `bloqueIdentidadGtf` y `casillerosGtf`.
  */
 export function casillerosIdentidad(f: CtpFicha, extra: ExtraIdentidadGtf = {}): CasillerosIdentidadGtf {
   const titulo = tituloDeGuia(f, extra.tituloElegido, extra.permisos);
@@ -239,44 +248,23 @@ export function casillerosIdentidad(f: CtpFicha, extra: ExtraIdentidadGtf = {}):
   };
 }
 
-/**
- * Los casilleros **(2) a (12)**: los únicos que salen de la Ficha del CTP y del
- * título habilitante. El resto de la guía depende del despacho.
- *
- * Vive aparte para que la Ficha pueda mostrar una VISTA PREVIA de cómo quedan
- * esos casilleros sin inventar un despacho — misma función que imprime la guía
- * de verdad, así que lo que se ve acá es exactamente lo que va a salir. Si se
- * duplicara el HTML, la vista previa mentiría en cuanto cambie el formato.
- */
-export function bloqueIdentidadGtf(f: CtpFicha, extra: ExtraIdentidadGtf = {}): string {
-  const v = casillerosIdentidad(f, extra);
-  return `${seccionDoc("Título habilitante y titular del recurso", "casilleros (2) a (12)")}
-  <table class="cas">
-    <tr>${box2("2", "Autoridad Regional Forestal (ARFFS)", v["2"])}${box("3", "F. Expedición", v["3"])}${box("4", "F. Vencimiento", v["4"])}</tr>
-    <tr><td class="c" colspan="4"><span class="n">(5)</span> <span class="l">Origen del Recurso:</span>${casillasOrigen(v["5"])}</td></tr>
-    <tr>${box2("6", "N° del título habilitante", v["6"])}${box2("7", "Nombre del Titular", v["7"])}</tr>
-    <tr>${box2("", "Representante Legal", v.rep)}${box2("8", "N° de Resolución", v["8"])}</tr>
-    <tr>${box2("9", "Plan de Manejo (Tipo)", v["9"])}${box("10", "Depto.", v["10"])}${box("11", "Prov.", v["11"])}</tr>
-    <tr>${box4("12", "Distrito", v["12"])}</tr>
-  </table>`;
-}
-
 export interface CuerpoGtfInput {
   ficha: CtpFicha;
   datos: GtfDatos;
   lineas: LineaProducto[];
-  /** N° de la guía que se está emitiendo (serie + correlativo del CTP). */
+  /** N° de la guía que se está emitiendo (serie + correlativo del CTP) — casillero (1). */
   numeroGtf: string;
   /** Fecha de expedición, `YYYY-MM-DD`. */
   fechaExpedicion: string;
-  /** Listas de trozas que amparan el despacho — casillero (35). */
+  /** Listas de trozas que amparan el despacho — casillero (33). */
   listasTrozas: string;
-  /** GTF con la que la materia prima ENTRÓ al CTP — casillero (36). */
+  /** GTF con la que la materia prima ENTRÓ al CTP — casillero (32). */
   gtfOrigen: string;
   /**
-   * N° de registro que devolvió SERFOR al registrar la guía. Vacío = el recuadro
-   * de estado va en blanco: Buleje no registra ante la autoridad y afirmar
-   * "REGISTRADA" sin serlo es fabricar la constancia de un trámite.
+   * N° de registro que devolvió SERFOR al registrar la guía («N° de registro»
+   * del encabezado). Vacío = el recuadro va en blanco: Buleje no registra ante
+   * la autoridad y afirmar "REGISTRADA" sin serlo es fabricar la constancia de
+   * un trámite.
    */
   registroSerfor?: string;
   /**
@@ -288,20 +276,22 @@ export interface CuerpoGtfInput {
   /**
    * Los permisos cargados, para resolver un título elegido que sólo vive ahí
    * (ADR-421/425). Sin ellos el comportamiento es el de siempre: lo que no está
-   * en la Ficha imprime el código y deja (5)(8)(9) en blanco.
+   * en la Ficha imprime el código y deja (5)(9)(10) en blanco.
    */
   permisos?: readonly PermisoDeGuia[];
 }
 
 /**
- * Todos los casilleros con valor de la guía. `31p` = la placa (el papel la
- * numera (31), igual que el vehículo) y, si hay, la del remolque: el casillero
- * es «Placa(s) N°» y el puesto de control coteja las dos.
+ * Todos los casilleros con valor de la guía, por CLAVE del talonario. Las
+ * claves numéricas son las de la RDE 122-2015 y se quedan así (el talonario
+ * guarda el acomodo de cada campo por clave en `gtf-talonario:<tenantId>`):
+ * qué casillero 2024 llena cada una lo dice `CASILLEROS_GTF_2024`.
  *
- * `p17`…`p20d` y `d22` son del formato 2024 (RDE D000014-2024-MIDAGRI-SERFOR-DE):
- * «Datos del punto de partida» (17)(18)(19)(20a-d) y el N° de autorización del
- * destino (22). Llevan prefijo porque esta hoja todavía numera como la RDE
- * 122-2015 y su (17) es el departamento del propietario.
+ * `31p` = las placas: el tracto y, si hay, el remolque («Placa (s)/ Matrícula
+ * N.º», el (28)). `p17`…`p20d` = «Datos del punto de partida» (17)–(20d) y
+ * `d22` = el (22) N° de autorización del destinatario: nacieron con el formato
+ * 2024 y su clave lleva prefijo porque "17" ya era el departamento del
+ * propietario.
  */
 export type CasillerosGtf = CasillerosIdentidadGtf &
   Record<
@@ -312,7 +302,7 @@ export type CasillerosGtf = CasillerosIdentidadGtf &
     string
   >;
 
-/** El (20) se lee en el papel: "guia_remision" es el valor del enum, no algo que un puesto de control deba descifrar. */
+/** El (15) se lee en el papel: "guia_remision" es el valor del enum, no algo que un puesto de control deba descifrar. */
 const COMPROBANTE_LABEL: Record<string, string> = {
   factura: "Factura", boleta: "Boleta de venta",
   guia_remision: "Guía de remisión", otro: "Otro",
@@ -363,7 +353,10 @@ export function casillerosGtf(i: CuerpoGtfInput): CasillerosGtf {
     "26": txt(d.destinatario?.departamento),
     "27": txt(d.destinatario?.provincia),
     "28": txt(d.destinatario?.distrito),
-    "29": d.comprobante?.tipo === "guia_remision" ? txt(d.comprobante?.numero) : "",
+    /* (25) la guía de remisión DEL TRANSPORTISTA, que se carga aparte del
+       comprobante. Hasta el 16-10-2026 este casillero sólo leía el comprobante
+       cuando era una guía de remisión, y el N° cargado en su campo no salía. */
+    "29": txt(d.guia?.guiaRemisionNro).trim() || (d.comprobante?.tipo === "guia_remision" ? txt(d.comprobante?.numero) : ""),
     "30": txt(MODO_LABEL[d.vehiculo?.modo ?? ""] ?? d.vehiculo?.modo),
     "31": txt(d.vehiculo?.tipo),
     "31p": placas,
@@ -384,98 +377,270 @@ export function casillerosGtf(i: CuerpoGtfInput): CasillerosGtf {
   };
 }
 
-/**
- * «Datos del punto de partida» del formato 2024, entre el propietario y el
- * destinatario (su lugar en el formato). Sólo en las guías que eligieron cómo
- * arranca el transporte: las anteriores se imprimen como siempre. Sin número
- * en los casilleros: esta hoja numera como la de 2015 y un (17) acá chocaría
- * con el (17) del propietario.
- */
-function bloquePartida(d: GtfDatos, v: CasillerosGtf): string {
-  const pi = partidaImpresa(d.traslado?.partida);
-  if (!pi) return "";
-  const filas =
-    pi.modo === "inicio"
-      ? `<tr>${box4("", "Punto de partida", "NO APLICA — el producto inicia su transporte en el área del título habilitante o desde un centro de transformación primaria")}</tr>`
-      : `<tr>${box2("", "Punto de partida", v.p17)}${box("", "N° Autorización", v.p18)}${box("", "Tipo de establecimiento", v.p19)}</tr>
-    <tr>${box2("", "Dirección", v.p20a)}${box("", "Depto.", v.p20b)}${box("", "Prov.", v.p20c)}</tr>
-    <tr>${box4("", "Distrito", v.p20d)}</tr>`;
-  return `${seccionDoc("Datos del punto de partida", "formato RDE D000014-2024-MIDAGRI-SERFOR-DE")}
-  <table class="cas">
-    ${filas}
-  </table>
-`;
+/** De dónde sale el valor de un casillero 2024: una clave de `casillerosGtf`, una columna del detalle, el N° de la guía o el total. */
+export type FuenteGtf2024 = keyof CasillerosGtf | keyof FilaDetalleGtf | "numeroGtf" | "volumenTotal";
+
+/** Los bloques del Anexo I, en su orden. */
+export type BloqueGtf2024 =
+  | "encabezado" | "origen" | "propietario" | "partida" | "destinatario" | "transportista" | "detalle" | "firmas";
+
+/** Un casillero del formato 2024: lo llenan las fuentes de `de` (unidas por « / ») o va vacío por `vacio`. */
+export interface Casillero2024 {
+  /** Como lo imprime el formato: "1", "11a", "34h". */
+  n: string;
+  /** El rótulo del Anexo I. */
+  rotulo: string;
+  bloque: BloqueGtf2024;
+  de?: readonly FuenteGtf2024[];
+  /** Por qué ningún dato del sistema lo llena: queda con su número y en blanco. */
+  vacio?: string;
 }
 
-/** El bloque central del documento, de (2) a (40). */
+/**
+ * El mapa del formato vigente: los 58 casilleros del Anexo I de la RDE
+ * D000014-2024-MIDAGRI-SERFOR-DE, en su orden, con la clave de `casillerosGtf`
+ * que llena cada uno (ADR-494). La hoja toma de acá el número y el rótulo; el
+ * test `forestal-gtf-formato-2024` comprueba que ninguna clave quede sin casillero.
+ *
+ * Dos casilleros juntan dos claves del 2015, que tenía uno para el DNI y otro
+ * para el RUC: el (13) y el (23) son «DNI/RUC N.º» e imprimen el RUC y, si la
+ * ficha trae también un DNI, los dos.
+ */
+export const CASILLEROS_GTF_2024 = [
+  { n: "1", rotulo: "N°", bloque: "encabezado", de: ["numeroGtf"] },
+  { n: "2", rotulo: "Autoridad Regional Forestal y de Fauna Silvestre (ARFFS)", bloque: "encabezado", de: ["2"] },
+  { n: "3", rotulo: "Fecha de expedición", bloque: "encabezado", de: ["3"] },
+  { n: "4", rotulo: "Fecha de vencimiento", bloque: "encabezado", de: ["4"] },
+  { n: "5", rotulo: "Origen del recurso o procedencia", bloque: "origen", de: ["5"] },
+  { n: "6", rotulo: "N°", bloque: "origen", de: ["6"] },
+  { n: "7", rotulo: "Nombre del Titular", bloque: "origen", de: ["7"] },
+  { n: "8", rotulo: "Rep. Legal", bloque: "origen", de: ["rep"] },
+  { n: "9", rotulo: "N° Resolución", bloque: "origen", de: ["8"] },
+  { n: "10", rotulo: "Plan de Manejo (Tipo)", bloque: "origen", de: ["9"] },
+  { n: "11a", rotulo: "Departamento", bloque: "origen", de: ["10"] },
+  { n: "11b", rotulo: "Provincia", bloque: "origen", de: ["11"] },
+  { n: "11c", rotulo: "Distrito", bloque: "origen", de: ["12"] },
+  { n: "12", rotulo: "Propietario del producto", bloque: "propietario", de: ["13"] },
+  { n: "13", rotulo: "DNI/RUC N.º", bloque: "propietario", de: ["15", "14"] },
+  { n: "14a", rotulo: "Dirección", bloque: "propietario", de: ["16"] },
+  { n: "14b", rotulo: "Departamento", bloque: "propietario", de: ["17"] },
+  { n: "14c", rotulo: "Provincia", bloque: "propietario", de: ["18"] },
+  { n: "14d", rotulo: "Distrito", bloque: "propietario", de: ["19"] },
+  { n: "15", rotulo: "Tipo de Comprobante de Compra o Venta", bloque: "propietario", de: ["20"] },
+  { n: "16", rotulo: "N° de comprobante", bloque: "propietario", de: ["21"] },
+  { n: "17", rotulo: "Punto de partida", bloque: "partida", de: ["p17"] },
+  { n: "18", rotulo: "N° Autorización", bloque: "partida", de: ["p18"] },
+  { n: "19", rotulo: "Tipo de Establecimiento", bloque: "partida", de: ["p19"] },
+  { n: "20a", rotulo: "Dirección", bloque: "partida", de: ["p20a"] },
+  { n: "20b", rotulo: "Departamento", bloque: "partida", de: ["p20b"] },
+  { n: "20c", rotulo: "Provincia", bloque: "partida", de: ["p20c"] },
+  { n: "20d", rotulo: "Distrito", bloque: "partida", de: ["p20d"] },
+  { n: "21", rotulo: "Destinatario", bloque: "destinatario", de: ["22"] },
+  { n: "22", rotulo: "N° Autorización", bloque: "destinatario", de: ["d22"] },
+  { n: "23", rotulo: "DNI/RUC N.º", bloque: "destinatario", de: ["24", "23"] },
+  { n: "24a", rotulo: "Dirección", bloque: "destinatario", de: ["25"] },
+  { n: "24b", rotulo: "Departamento", bloque: "destinatario", de: ["26"] },
+  { n: "24c", rotulo: "Provincia", bloque: "destinatario", de: ["27"] },
+  { n: "24d", rotulo: "Distrito", bloque: "destinatario", de: ["28"] },
+  { n: "25", rotulo: "N.º Guía de Remisión de Transportista", bloque: "transportista", de: ["29"] },
+  { n: "26", rotulo: "Tipo de Transporte", bloque: "transportista", de: ["30"] },
+  { n: "27", rotulo: "Tipo de vehículo", bloque: "transportista", de: ["31"] },
+  { n: "28", rotulo: "Placa (s)/ Matrícula N.º", bloque: "transportista", de: ["31p"] },
+  { n: "29", rotulo: "Nombre del conductor", bloque: "transportista", de: ["32"] },
+  { n: "30", rotulo: "DNI N°", bloque: "transportista", de: ["33"] },
+  { n: "31", rotulo: "Lic. Conducir N.º", bloque: "transportista", de: ["34"] },
+  { n: "32", rotulo: "N.º GTF de origen", bloque: "detalle", de: ["36"] },
+  { n: "33", rotulo: "Lista de Trozas/ Productos Transformados N°", bloque: "detalle", de: ["35"] },
+  { n: "34", rotulo: "Cuadro detalle de productos", bloque: "detalle", vacio: "Es el título del cuadro: los datos van en (34a) a (34h)." },
+  { n: "34a", rotulo: "Nombre Científico", bloque: "detalle", de: ["37a"] },
+  { n: "34b", rotulo: "Nombre común o comercial", bloque: "detalle", de: ["37b"] },
+  { n: "34c", rotulo: "Tipo de producto", bloque: "detalle", de: ["37c"] },
+  { n: "34d", rotulo: "Descripción", bloque: "detalle", de: ["37d"] },
+  { n: "34e", rotulo: "Cantidad", bloque: "detalle", de: ["37e"] },
+  { n: "34f", rotulo: "Unidad de medida", bloque: "detalle", de: ["37f"] },
+  { n: "34g", rotulo: "Total", bloque: "detalle", de: ["37g"] },
+  { n: "34h", rotulo: "Total movilizado", bloque: "detalle", de: ["volumenTotal"] },
+  { n: "35", rotulo: "Observaciones", bloque: "detalle", de: ["38"] },
+  {
+    n: "36", rotulo: "Anexos que forman parte integrante de la Guía de Transporte Forestal", bloque: "detalle",
+    vacio: "Se marca a mano: qué anexo viaja con la guía lo declara quien la emite.",
+  },
+  { n: "37", rotulo: "Firma y sello del emisor", bloque: "firmas", vacio: "Se firma a mano." },
+  { n: "38", rotulo: "Nombres y apellidos del emisor", bloque: "firmas", vacio: "Se escribe a mano junto a la firma." },
+  {
+    n: "39", rotulo: "Documento de Identidad del emisor", bloque: "firmas",
+    vacio: "Nuevo en 2024; el sistema no guarda quién firma la guía.",
+  },
+] as const satisfies readonly Casillero2024[];
+
+export type NumeroGtf2024 = (typeof CASILLEROS_GTF_2024)[number]["n"];
+
+const CASILLERO = Object.fromEntries(CASILLEROS_GTF_2024.map((c) => [c.n, c])) as Record<NumeroGtf2024, Casillero2024>;
+
+/** Los valores con los que se dibuja la hoja: los de `casillerosGtf` más el N° de la guía. */
+type ValoresHoja = Partial<Record<FuenteGtf2024, string>>;
+
+/** Media fila, tres cuartos y fila entera (la hoja tiene cuatro columnas). */
+const C2 = 'colspan="2"';
+const C3 = 'colspan="3"';
+const C4 = 'colspan="4"';
+
+const numero = (n: NumeroGtf2024): string => `<span class="n">(${n})</span>`;
+
+/** El casillero `n` con su número, su rótulo del Anexo I y el valor de sus fuentes. */
+function celda(v: ValoresHoja, n: NumeroGtf2024, ancho = ""): string {
+  const c = CASILLERO[n];
+  const valor = (c.de ?? []).map((k) => txt(v[k]).trim()).filter(Boolean).join(" / ");
+  return box(n, c.rotulo, valor, ancho);
+}
+
+/** Un casillero de casillas para marcar —el (5), el (36)—, a fila entera. */
+const celdaCasillas = (n: NumeroGtf2024, casillas: string): string =>
+  `<td class="c" ${C4}>${numero(n)} <span class="l">${esc(CASILLERO[n].rotulo)}:</span>${casillas}</td>`;
+
+/** El detalle (34a–34g) con su fila del (34h) Total movilizado, como el formato oficial. */
+export function tablaProductos(lineasDeEntrada: ReadonlyArray<LineaProducto>): string {
+  const det = detalleGtf(lineasDeEntrada);
+  const th = (n: NumeroGtf2024, attrs = ""): string => `<th ${attrs}>${numero(n)} ${esc(CASILLERO[n].rotulo)}</th>`;
+  const filas = det.filas
+    .map(
+      (l) => `<tr>
+        <td>${esc(l["37a"])}</td><td>${esc(l["37b"])}</td><td>${esc(l["37c"])}</td>
+        <td>${esc(l["37d"])}</td><td class="num">${esc(l["37e"])}</td>
+        <td>${esc(l["37f"])}</td><td class="num">${l["37g"]}</td>
+      </tr>`,
+    )
+    .join("");
+  return `<table class="det">
+    <caption>${numero("34")} ${esc(CASILLERO["34"].rotulo)}</caption>
+    <thead><tr>
+      ${th("34a", 'rowspan="2"')}${th("34b", 'rowspan="2"')}${th("34c", 'rowspan="2"')}
+      <th colspan="2">Forma de embalaje o presentación del producto</th><th colspan="2">Cantidad</th>
+    </tr><tr>
+      ${th("34d")}${th("34e")}${th("34f")}${th("34g")}
+    </tr></thead>
+    <tbody>${filas || `<tr><td colspan="7" class="vacio">Sin líneas declaradas</td></tr>`}</tbody>
+    <tfoot><tr><td colspan="6" class="tot">${numero("34h")} ${esc(CASILLERO["34h"].rotulo)}:</td><td class="num tot">${det.total}</td></tr></tfoot>
+  </table>`;
+}
+
+/**
+ * El encabezado (2)–(4) y «Datos del origen del recurso o procedencia»
+ * (5)–(11c): los únicos casilleros que salen de la Ficha del CTP y del título
+ * habilitante. El resto de la guía depende del despacho.
+ *
+ * Vive aparte para que la Ficha pueda mostrar una VISTA PREVIA de cómo quedan
+ * esos casilleros sin inventar un despacho — misma función que imprime la guía
+ * de verdad, así que lo que se ve acá es exactamente lo que va a salir. Si se
+ * duplicara el HTML, la vista previa mentiría en cuanto cambie el formato.
+ *
+ * `cabecera`: la fila del (1) N° y el N° de registro, que antepone la guía (la
+ * vista previa de la Ficha no tiene número que mostrar).
+ */
+export function bloqueIdentidadGtf(f: CtpFicha, extra: ExtraIdentidadGtf = {}, cabecera = ""): string {
+  const v = casillerosIdentidad(f, extra);
+  return `<table class="cas cab">
+    ${cabecera}<tr>${celda(v, "2", C2)}${celda(v, "3")}${celda(v, "4")}</tr>
+  </table>
+  ${seccionDoc("Datos del origen del recurso o procedencia", "casilleros (5) a (11c)")}
+  <table class="cas">
+    <tr>${celdaCasillas("5", casillasOrigen(v["5"]))}</tr>
+    <tr>${celda(v, "6", C2)}${celda(v, "7", C2)}</tr>
+    <tr>${celda(v, "8", C2)}${celda(v, "9", C2)}</tr>
+    <tr>${celda(v, "10")}${celda(v, "11a")}${celda(v, "11b")}${celda(v, "11c")}</tr>
+  </table>`;
+}
+
+/**
+ * La guía entera, (1) a (39), en el orden del Anexo I de la RDE
+ * D000014-2024-MIDAGRI-SERFOR-DE.
+ *
+ * Las guías emitidas antes del cambio también salen así: la RDE derogó la
+ * 122-2015 sin régimen de transición para las ya emitidas (art. 2), y
+ * reimprimir con el formato derogado sería imprimir un papel que ya no existe.
+ * Ningún valor se pierde: cada clave tiene su casillero 2024 (ADR-494). Los
+ * «Datos del punto de partida» y el (22) se imprimen SIEMPRE —el formato los
+ * tiene—; en una guía que no eligió cómo arranca el transporte quedan en
+ * blanco, para llenar a mano.
+ */
 export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
   const { ficha: f, datos: d } = i;
-  const v = casillerosGtf(i);
-  const fluvial = d.vehiculo?.modo === "fluvial";
-  /* Formato 2024: la fila del distrito del destino lleva su (22) N° de autorización. */
-  const conPartida = Boolean(d.traslado?.partida?.modo);
+  const v: ValoresHoja = { ...casillerosGtf(i), numeroGtf: txt(i.numeroGtf) };
+  const registro = txt(i.registroSerfor).trim();
+  /* «N° de registro» no lleva número en el formato: lo llena el SNIFFS al registrar. */
+  const cabecera = `<tr>${celda(v, "1", C2)}<td class="c est ${registro ? "ok" : "sin"}" ${C2}><span class="l">N° de registro:</span> <b>${esc(registro)}</b>${
+    registro
+      ? ` <span class="estado">ESTADO: REGISTRADA</span>`
+      : ` <span class="sinreg">Estado ante la ARFFS: pendiente de registro</span>`
+  }</td></tr>`;
 
   return `
-  ${bloqueIdentidadGtf(f, {
-    fechaExpedicion: i.fechaExpedicion,
-    fechaVencimiento: d.traslado?.fechaFin,
-    origenRecurso: i.origenRecurso,
-    tituloElegido: d.titulos?.[0],
-    permisos: i.permisos,
-  })}
+  ${bloqueIdentidadGtf(
+    f,
+    {
+      fechaExpedicion: i.fechaExpedicion,
+      fechaVencimiento: d.traslado?.fechaFin,
+      origenRecurso: i.origenRecurso,
+      tituloElegido: d.titulos?.[0],
+      permisos: i.permisos,
+    },
+    cabecera,
+  )}
 
-  ${seccionDoc("Propietario del producto", "casilleros (13) a (21)")}
+  ${seccionDoc("Datos del propietario del producto", "casilleros (12) a (16)")}
   <table class="cas">
-    <tr>${box2("13", "Nombre o razón social", v["13"])}${box("14", "D.N.I.", v["14"])}${box("15", "R.U.C.", v["15"])}</tr>
-    <tr>${box2("16", "Dirección", v["16"])}${box("17", "Depto.", v["17"])}${box("18", "Prov.", v["18"])}</tr>
-    <tr>${box("19", "Distrito", v["19"])}${box("20", "Comprobante", v["20"])}${box2("21", "N° Comprobante", v["21"])}</tr>
+    <tr>${celda(v, "12", C3)}${celda(v, "13")}</tr>
+    <tr>${celda(v, "14a", C2)}${celda(v, "14b")}${celda(v, "14c")}</tr>
+    <tr>${celda(v, "14d")}${celda(v, "15")}${celda(v, "16", C2)}</tr>
   </table>
 
-  ${bloquePartida(d, v)}${seccionDoc("Destinatario", "casilleros (22) a (28)")}
+  ${seccionDoc("Datos del punto de partida", "casilleros (17) a (20d)")}
   <table class="cas">
-    <tr>${box2("22", "Nombre o razón social", v["22"])}${box("23", "D.N.I.", v["23"])}${box("24", "R.U.C.", v["24"])}</tr>
-    <tr>${box2("25", "Dirección", v["25"])}${box("26", "Depto.", v["26"])}${box("27", "Prov.", v["27"])}</tr>
-    <tr>${conPartida ? `${box2("28", "Distrito", v["28"])}${box2("", "N° Autorización", v.d22)}` : box4("28", "Distrito", v["28"])}</tr>
+    <tr>${celda(v, "17", C2)}${celda(v, "18")}${celda(v, "19")}</tr>
+    <tr>${celda(v, "20a")}${celda(v, "20b")}${celda(v, "20c")}${celda(v, "20d")}</tr>
   </table>
 
-  ${seccionDoc("Transportista, vehículo y conductor", "casilleros (29) a (34)")}
+  ${seccionDoc("Datos del destinatario", "casilleros (21) a (24d)")}
   <table class="cas">
-    <tr>${box("29", "N° G. Remisión", v["29"])}${box("30", "Transporte", v["30"])}${box("31", "Vehículo", v["31"])}${box("31", fluvial ? "Matrícula N°" : "Placa(s) N°", v["31p"])}</tr>
-    <tr>${box2("32", fluvial ? "Patrón" : "Conductor", v["32"])}${box("33", "D.N.I.", v["33"])}${box("34", "Licencia", v["34"])}</tr>
+    <tr>${celda(v, "21", C2)}${celda(v, "22", C2)}</tr>
+    <tr>${celda(v, "23")}${celda(v, "24a", C3)}</tr>
+    <tr>${celda(v, "24b")}${celda(v, "24c")}${celda(v, "24d", C2)}</tr>
   </table>
 
-  ${seccionDoc("Detalle del producto que se moviliza", "casilleros (35) a (38)")}
+  ${seccionDoc("Datos del transportista", "casilleros (25) a (31)")}
   <table class="cas">
-    <tr>${box2("35", "Lista(s) de Troza(s)", v["35"])}${box2("36", "N° GTF de Origen", v["36"])}</tr>
+    <tr>${celda(v, "25")}${celda(v, "26")}${celda(v, "27")}${celda(v, "28")}</tr>
+    <tr>${celda(v, "29", C2)}${celda(v, "30")}${celda(v, "31")}</tr>
+  </table>
+
+  ${seccionDoc("Detalle del producto", "casilleros (32) a (36)")}
+  <table class="cas">
+    <tr>${celda(v, "32", C2)}${celda(v, "33", C2)}</tr>
   </table>
 
   ${tablaProductos(i.lineas)}
 
   <table class="cas">
-    <tr>${box4("38", "Observaciones", v["38"])}</tr>
+    <tr>${celda(v, "35", C4)}</tr>
+    <tr>${celdaCasillas("36", casillasAnexos())}</tr>
   </table>
 
   <table class="pie">
-    <tr>
-      <td class="est ${i.registroSerfor?.trim() ? "ok" : "sin"}">${
-        i.registroSerfor?.trim()
-          ? `<b>ESTADO: REGISTRADA</b><span class="reg">N° REGISTRO : ${esc(i.registroSerfor)}</span>`
-          : `<span class="sinreg">Estado ante la ARFFS: pendiente de registro</span>`
-      }</td>
-      <td class="firma"><span class="n">(39)</span> Firma y sello del emisor :<div class="linea"></div></td>
-    </tr>
-    <tr><td></td><td class="firma"><span class="n">(40)</span> Nombres y apellidos del emisor :<div class="linea"></div></td></tr>
+    <tr>${(["37", "38", "39"] as const)
+      .map((n) => `<td class="firma"><div class="linea"></div>${numero(n)} ${esc(CASILLERO[n].rotulo)}</td>`)
+      .join("")}</tr>
   </table>
 
   <p class="legal">
-    Se invalida la GTF cuando contiene enmendaduras y/o alteraciones.<br>
+    La GTF no es válida si contiene enmendaduras y/o alteraciones.<br>
     La presente GTF tiene carácter de declaración jurada y está sujeta a acciones penales contempladas
-    en el numeral 32.3 del artículo N° 32 de la Ley 27444 (Ley del Procedimiento Administrativo General).
+    en el numeral 34.3 del artículo N.º 34 de la Ley 27444 (Ley del Procedimiento Administrativo General).
   </p>`;
 }
 
 /**
- * Los estilos del formato: Arial y A4, como manda la RDE 122-2015-SERFOR-DE.
+ * Los estilos del formato: Arial y A4, como manda la RDE D000014-2024-MIDAGRI-SERFOR-DE
+ * (art. 3).
  *
  * Decisiones de lectura que no son cosméticas:
  * · **rótulo y dato en la misma línea**, rótulo gris y dato en negro — el
@@ -486,7 +651,7 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
  *   hueco mudo que se confundía con un error de impresión;
  * · **grilla de hilos grises, sin bordes laterales afuera** — la tabla se lee
  *   por filas; el marco exterior no informa nada y sí ensucia la hoja;
- * · **columnas cortas del (37) sin partir** — «MADERA EN ROLLO» y «Metros
+ * · **columnas cortas del (34) sin partir** — «MADERA EN ROLLO» y «Metros
  *   Cúbicos» en dos renglones duplicaban el alto de cada fila y una guía de
  *   cuatro especies se iba a dos hojas.
  *
@@ -499,8 +664,9 @@ export const CSS_GTF_OFICIAL = `
   .cas td.c { border:.5pt solid var(--linea-suave); padding:.75mm 1.5mm; vertical-align:top; line-height:1.22; }
   .cas td.c:first-child { border-left:none; padding-left:0; }
   .cas td.c:last-child { border-right:none; }
-  /* La regla de la sección hace de borde superior: sin hilo doble. */
-  .doc-sec + .cas tr:first-child td.c { border-top:none; }
+  /* La regla de la sección hace de borde superior: sin hilo doble. El encabezado
+     (1)–(4) no tiene sección: va pegado a la cabecera del documento. */
+  .doc-sec + .cas tr:first-child td.c, .cas.cab tr:first-child td.c { border-top:none; }
   .cas .n { color:var(--gris-suave); font-size:6pt; font-variant-numeric:tabular-nums; margin-right:.5mm; }
   .cas .l { font-size:6pt; letter-spacing:.25pt; text-transform:uppercase; color:var(--gris); }
   .cas b { font-size:8pt; word-wrap:break-word; }
@@ -515,8 +681,11 @@ export const CSS_GTF_OFICIAL = `
   .ck .bx { display:inline-block; width:3mm; height:3mm; line-height:2.8mm; border:.6pt solid var(--tinta);
             text-align:center; font-size:6.6pt; font-weight:bold; margin-left:.7mm; vertical-align:middle; }
 
-  /* ── (37) Detalle del producto ── */
+  /* ── (34) Cuadro detalle de productos ── */
   .det { width:100%; border-collapse:collapse; margin:0; }
+  .det caption { caption-side:top; text-align:left; padding:.9mm 0 .6mm; font-size:6pt; letter-spacing:.25pt;
+                 text-transform:uppercase; color:var(--gris); }
+  .det .n { color:var(--gris-suave); font-weight:normal; font-variant-numeric:tabular-nums; text-transform:none; }
   .det th, .det td { border-bottom:.5pt solid var(--linea-suave); padding:.7mm 1.2mm; font-size:6.8pt; line-height:1.2; }
   .det thead th { background:var(--tenue); color:var(--tinta); font-weight:bold; font-size:6.2pt; letter-spacing:.3pt;
                   text-transform:uppercase; text-align:center; vertical-align:bottom;
@@ -533,19 +702,18 @@ export const CSS_GTF_OFICIAL = `
   .det tfoot td.tot:first-child { text-align:right; font-size:6.4pt; letter-spacing:.8pt; text-transform:uppercase; color:var(--gris); }
   .det tfoot td.num.tot { font-size:9pt; }
 
-  /* ── Estado ante la ARFFS y firmas (39)(40) ── */
-  table.pie { width:100%; border-collapse:collapse; margin-top:2.2mm; }
-  table.pie td { padding:0 0 0 6mm; font-size:7pt; vertical-align:top; }
-  table.pie .est { width:34%; padding:1mm 2mm; text-align:left; }
-  table.pie .est.ok { border:.8pt solid var(--tinta); }
-  table.pie .est.ok b { font-size:6.8pt; letter-spacing:1pt; }
-  table.pie .est.ok .reg { display:block; margin-top:.5mm; font-size:8pt; font-weight:bold;
-                           font-family:"Courier New",Courier,monospace; }
-  table.pie .est.sin { border:.6pt dashed #9a9a9a; }
-  table.pie .est .sinreg { font-size:6.6pt; color:var(--gris); }
+  /* ── N° de registro (lo asigna el SNIFFS) y estado ante la ARFFS ── */
+  .cas td.est.ok b { font-family:"Courier New",Courier,monospace; }
+  .cas td.est .estado { margin-left:1.5mm; font-size:6pt; font-weight:bold; letter-spacing:1pt; }
+  .cas td.est .sinreg { margin-left:1.5mm; font-size:6pt; color:var(--gris); }
+
+  /* ── Firmas (37)(38)(39): renglón arriba, rótulo debajo, como el formato ── */
+  table.pie { width:100%; border-collapse:collapse; margin-top:2.2mm; table-layout:fixed; }
+  table.pie td { padding:0 0 0 6mm; vertical-align:top; }
+  table.pie td:first-child { padding-left:0; }
   table.pie .firma { font-size:6.2pt; letter-spacing:.4pt; text-transform:uppercase; color:var(--gris); }
   table.pie .firma .n { color:var(--gris-suave); }
-  table.pie .linea { border-bottom:.6pt solid var(--linea); height:4.2mm; }
+  table.pie .linea { border-bottom:.6pt solid var(--linea); height:6mm; margin-bottom:.6mm; }
   .legal { font-size:6pt; margin:1.8mm 0 0; line-height:1.3; color:var(--gris); }
 
   /* ── De dónde salen los datos (reproducción del SNIFFS o reconstrucción del libro) ──
