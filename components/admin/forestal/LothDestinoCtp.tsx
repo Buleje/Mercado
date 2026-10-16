@@ -11,7 +11,7 @@
  */
 
 import { Check, Info, TreePine } from "@buleje/design-system/icons";
-import { destinoDeGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
+import { destinatarioDeMiPlanta, destinoDeGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import { Btn } from "./ctp-shared";
 
@@ -20,19 +20,12 @@ export default function LothDestinoCtp({ g }: { g: DespachoGuiaLoth }) {
   if (!planta) return null;
   const destino = destinoDeGuiaTh(g.datos, planta.ruc);
 
+  /* Sin arrastrar el (22) ni la dirección del destinatario anterior
+     (`destinatarioDeMiPlanta`): se imprimían al lado de tu planta. */
   const esMiPlanta = () =>
     g.setDatos((d) => ({
       ...d,
-      destinatario: {
-        ...d.destinatario,
-        nombre: planta.nombre ?? d.destinatario.nombre,
-        docTipo: "RUC",
-        docNumero: planta.ruc ?? "",
-        direccion: planta.direccion || d.destinatario.direccion,
-        departamento: planta.departamento || d.destinatario.departamento,
-        provincia: planta.provincia || d.destinatario.provincia,
-        distrito: planta.distrito || d.destinatario.distrito,
-      },
+      destinatario: destinatarioDeMiPlanta(d.destinatario, planta),
       traslado: { ...d.traslado, puntoLlegada: d.traslado.puntoLlegada || planta.direccion },
     }));
 

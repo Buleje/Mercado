@@ -22,7 +22,8 @@ import { componerPunto, llegadaDelDestinatario, type GtfDatos } from "@/lib/fore
 import { ordenarPorUso, parteAInput, type Parte, type RolParte } from "@/lib/forestal/directorio";
 import { leerPlaca } from "@/lib/forestal/placa-peru";
 import type { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
-import CtpParteBarra, { CtpVehiculoBarra, type ValorParte } from "./CtpParteBarra";
+import CtpParteBarra, { CtpVehiculoBarra } from "./CtpParteBarra";
+import type { GuardarEnLibreta } from "@/lib/forestal/libreta";
 import { Bloque, DocsDeParte, UbicacionDeParte } from "./ctp-guia-bloques";
 import { CLASE_FALTA, CLASE_NO_APLICA, SubBloque } from "./ctp-guia-piezas";
 import { CampoPlaca } from "./ctp-campo-placa";
@@ -50,6 +51,9 @@ export function libretaDe(directorio: Directorio, rol: RolParte, opciones: Parte
     opciones,
     otras: ordenarPorUso(directorio.partes.filter((p) => p.activo && !ya.has(p.id))),
     onCrear: directorio.guardarParte,
+    /* La ventana muestra la libreta entera por categorías, vehículos incluidos. */
+    vehiculos: directorio.vehiculosActivos,
+    onGuardarVehiculo: directorio.guardarVehiculo,
     onSumarRol: async (p: Parte, r: RolParte) => {
       await directorio.guardarParte({ ...parteAInput(p), roles: [...new Set([...p.roles, r])] });
     },
@@ -61,7 +65,7 @@ interface PropsParte {
   set: SetSeccion;
   directorio: Directorio;
   onAnotarParte: (p: Parte) => void;
-  onGuardarEnLibreta: (v: ValorParte, rol: RolParte) => Promise<void>;
+  onGuardarEnLibreta: GuardarEnLibreta;
   /** Lo que le falta al bloque para imprimir la guía. */
   faltan: readonly string[];
 }
@@ -204,7 +208,7 @@ export function BloqueTransporte({
             acciones={
               <CtpParteBarra
                 {...libretaDe(directorio, "conductor")}
-                valor={{ nombre: datos.vehiculo.conductor, docTipo: "DNI", docNumero: datos.vehiculo.conductorDni, direccion: "" }}
+                valor={{ nombre: datos.vehiculo.conductor, docTipo: "DNI", docNumero: datos.vehiculo.conductorDni, direccion: "", licencia: datos.vehiculo.licencia }}
                 onAplicar={(v) =>
                   set("vehiculo", {
                     ...(v.nombre === undefined ? {} : { conductor: v.nombre }),
@@ -235,10 +239,12 @@ export function BloqueTransporte({
             acciones={
               <CtpVehiculoBarra
                 vehiculos={directorio.vehiculosActivos}
+                partes={directorio.partes.filter((p) => p.activo)}
                 borrador={datos.vehiculo}
                 onAplicar={(v) => set("vehiculo", v)}
                 onElegir={onAnotarVehiculo}
                 onGuardarVehiculo={directorio.guardarVehiculo}
+                onGuardarParte={directorio.guardarParte}
               />
             }
           >

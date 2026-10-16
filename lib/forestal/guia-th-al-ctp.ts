@@ -615,6 +615,39 @@ export interface PlantaPropia {
   departamento: string;
   provincia: string;
   distrito: string;
+  /** «Código de CTP» de la Ficha: el (22) de la guía cuando la madera va a tu planta. */
+  autorizacion?: string;
+}
+
+type DestinatarioGuia = GtfDatos["destinatario"];
+
+/**
+ * «Es mi planta»: el destinatario de la guía pasa a ser tu propia planta.
+ *
+ * Antes se copiaba el destinatario anterior entero y se pisaban sólo nombre,
+ * RUC, dirección y ubigeo: el (22) N° de autorización de la OTRA empresa
+ * quedaba impreso al lado de tu planta (revisión 15-10-2026), y si la Ficha no
+ * tenía dirección quedaba la del otro. Ahora, si el destinatario era otro
+ * (otro RUC), se arranca en blanco; si ya era tu planta, lo escrito se respeta
+ * donde la Ficha no dice nada. El (22) es el código de CTP de la Ficha.
+ */
+export function destinatarioDeMiPlanta(d: DestinatarioGuia, planta: PlantaPropia): DestinatarioGuia {
+  const ruc = planta.ruc ?? "";
+  const mismo = Boolean(ruc) && d.docNumero.replace(/\D/g, "") === ruc;
+  const base: DestinatarioGuia = mismo
+    ? d
+    : { ...d, nombre: "", docNumero: "", direccion: "", departamento: "", provincia: "", distrito: "", zona: "", autorizacion: "" };
+  return {
+    ...base,
+    nombre: planta.nombre ?? base.nombre,
+    docTipo: "RUC",
+    docNumero: ruc,
+    direccion: planta.direccion || base.direccion,
+    departamento: planta.departamento || base.departamento,
+    provincia: planta.provincia || base.provincia,
+    distrito: planta.distrito || base.distrito,
+    autorizacion: planta.autorizacion?.trim() || base.autorizacion,
+  };
 }
 
 /** Qué pasó con la guía del TH en el Libro CTP al emitirla. */

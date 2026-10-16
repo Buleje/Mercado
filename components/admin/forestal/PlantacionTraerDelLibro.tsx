@@ -28,6 +28,7 @@ import {
 } from "@/lib/forestal/plantacion-libro";
 import type { BloqueInput } from "@/lib/forestal/plantacion-tramite";
 import { Btn, I } from "./ctp-shared";
+import { cn } from "@/lib/utils";
 import PlantacionLibroFila from "./PlantacionLibroFila";
 
 const AVISO = "flex items-start gap-2 rounded-xl border-l-4 p-3 text-sm";
@@ -200,7 +201,7 @@ export default function PlantacionTraerDelLibro({
                           <span aria-hidden="true">Agregar al</span>
                           <select
                             aria-label="Bloque al que se agregan las especies"
-                            className={`${I} w-auto`}
+                            className={cn(I, "w-auto")}
                             value={destino}
                             onChange={(e) => setBloqueDestino(Number(e.target.value))}
                           >

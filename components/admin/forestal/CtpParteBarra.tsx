@@ -14,39 +14,31 @@
  * «Libreta» abre una ventana (`LibretaModal`, Brandon 15-10-2026) para elegir o
  * agregar uno nuevo sin salir de la guía. Va con `aboveModals`: Escape cierra
  * sólo la libreta. Antes era una lista desplegable dentro del bloque porque dos
- * capas sin ese soporte hacían que Escape cerrara la guía.
+ * capas sin ese soporte hacían que Escape cerrara la guía. Desde el 16-10 la
+ * ventana muestra la libreta entera por categorías, con la ficha al lado.
  */
 
 import { useMemo, useState } from "react";
 import { Users, Check, Download, Loader2, Plus } from "@buleje/design-system/icons";
 import {
   ROL_LABEL,
-  faltantesParaGuia,
   fuenteAutocompletado,
   motivoDocInvalido,
   normalizarDocumento,
-  type DocTipo,
   type Parte,
   type ParteInput,
   type RolParte,
+  type Vehiculo,
+  type VehiculoInput,
 } from "@/lib/forestal/directorio";
+import { aLaGuia, avisoDeFaltantes, type ChoqueDeLocal, type GuardarEnLibreta, type ValorParte } from "@/lib/forestal/libreta";
 import { consultarDocumento } from "@/hooks/use-directorio-forestal";
 import LibretaModal from "./LibretaModal";
+import AvisosDeBarra from "./ctp-parte-barra-avisos";
 import { Btn } from "./ctp-shared";
 
-/** Los campos de la guía que esta barra sabe completar. */
-export interface ValorParte {
-  nombre: string;
-  docTipo: DocTipo;
-  docNumero: string;
-  direccion: string;
-  /** Casilleros (17)(18)(19) / (26)(27)(28) del formato. */
-  departamento?: string;
-  provincia?: string;
-  distrito?: string;
-  /** Sólo transportista. */
-  registroMtc?: string;
-}
+/** Los campos de la guía que esta barra sabe completar (vive en `lib/forestal/libreta`). */
+export type { ValorParte };
 
 interface Props {
   rol: RolParte;
@@ -54,30 +46,27 @@ interface Props {
   /** Lista de la libreta para ESTE rol, ya ordenada por uso. */
   opciones: Parte[];
   /**
-   * Las demás partes de la libreta — las que todavía NO tienen este papel.
-   *
-   * Medido en el tenant de Blas (2026-09-15): 5 partes cargadas y **cero** con
-   * rol `destinatario`, así que el botón «Libreta» del destinatario aparecía
-   * apagado teniendo la libreta llena y había que ir a Gestión → Directorio a
-   * marcarle el rol. Se ofrecen abajo, separadas, y elegir una le suma el papel.
+   * Las demás partes de la libreta (sin este papel): elegir una se lo suma. Blas
+   * (15-09) tenía 5 partes y cero destinatarios: el botón salía apagado.
    */
   otras?: Parte[];
   onAplicar: (v: Partial<ValorParte>) => void;
   /** Se llama al elegir de la libreta: el consumidor suma el uso al guardar. */
   onElegir?: (parte: Parte) => void;
   /** Alta rápida en la libreta con lo que ya está tipeado. */
-  onGuardar?: (v: ValorParte, rol: RolParte) => Promise<void>;
+  onGuardar?: GuardarEnLibreta;
   /** Le suma ESTE rol a una parte que ya está en la libreta con otro papel. */
   onSumarRol?: (parte: Parte, rol: RolParte) => Promise<void>;
   /**
-   * Alta completa en el Directorio desde la ventana de la libreta (con el N° de
-   * autorización, la licencia, el teléfono…). Devuelve la ficha guardada, que
-   * se usa en la guía como si se hubiera elegido. Sin esto, «Agregar nuevo»
-   * guarda por `onGuardar` sólo nombre, documento y dirección.
+   * Alta completa (y edición, con `id`) en el Directorio desde la ventana. Sin
+   * esto, «Agregar nuevo» guarda por `onGuardar` lo escrito en el bloque.
    */
-  onCrear?: (input: ParteInput) => Promise<Parte>;
+  onCrear?: (input: ParteInput & { id?: string }) => Promise<Parte>;
   /** El nombre del bloque en la ventana («Punto de partida»); por defecto, el papel. */
   titulo?: string;
+  /** Los vehículos de la libreta: la ventana los muestra en su pestaña (y los edita con `onGuardarVehiculo`). */
+  vehiculos?: Vehiculo[];
+  onGuardarVehiculo?: (input: VehiculoInput & { id?: string }) => Promise<Vehiculo>;
 }
 
 export default function CtpParteBarra({
@@ -91,11 +80,17 @@ export default function CtpParteBarra({
   onSumarRol,
   onCrear,
   titulo,
+  vehiculos,
+  onGuardarVehiculo,
 }: Props) {
   const [abierta, setAbierta] = useState(false);
   const [estado, setEstado] = useState<"idle" | "consultando" | "guardando">("idle");
   const [aviso, setAviso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** El local choca con la ficha de su RUC: se pregunta antes de guardar (revisión 16-10). Vale mientras no cambie lo escrito. */
+  const [choqueDe, setChoqueDe] = useState<{ c: ChoqueDeLocal; clave: string } | null>(null);
+  const claveValor = `${valor.docNumero}|${valor.direccion}|${valor.autorizacion ?? ""}`;
+  const choque = choqueDe?.clave === claveValor ? choqueDe.c : null;
 
   const fuente = fuenteAutocompletado(valor.docTipo);
   const docNormalizado = normalizarDocumento(valor.docNumero);
@@ -104,24 +99,18 @@ export default function CtpParteBarra({
   const libretaVacia = opciones.length === 0 && otras.length === 0;
   const puedeAgregar = Boolean(onCrear || onGuardar);
 
+  /** La libreta entera para la ventana, y quiénes ya tienen este papel. */
+  const todas = useMemo(() => {
+    const ya = new Set(opciones.map((p) => p.id));
+    return [...opciones, ...otras.filter((p) => !ya.has(p.id))];
+  }, [opciones, otras]);
+  const conPapel = useMemo(() => new Set(opciones.map((p) => p.id)), [opciones]);
+
   /** ¿Lo que hay tipeado ya está en la libreta? Se compara por documento. */
   const yaEstá = useMemo(
     () => opciones.some((p) => p.docNumero && p.docNumero === docNormalizado),
     [opciones, docNormalizado],
   );
-
-  /**
-   * Lo que le falta a la parte elegida para poder ir en la guía CON este papel
-   * (`faltantesParaGuia`, el mismo juez que usa el Directorio). Se dice al
-   * elegirla y no al imprimir: un destinatario sin documento se arregla acá, con
-   * la libreta abierta, no cuando el camión ya está cargado.
-   */
-  function avisoDeFaltantes(p: Parte, prefijo: string): string {
-    const faltan = faltantesParaGuia(p, rol);
-    return faltan.length === 0
-      ? `${prefijo}.`
-      : `${prefijo}, pero para la guía le falta ${faltan.join(" y ")}: complétalo en los campos de abajo.`;
-  }
 
   /** Le suma este papel a una parte que ya está en la libreta con otro. */
   async function usarConOtroRol(p: Parte) {
@@ -130,7 +119,7 @@ export default function CtpParteBarra({
     setEstado("guardando");
     try {
       await onSumarRol(p, rol);
-      setAviso(avisoDeFaltantes(p, `${p.nombre} quedó en la libreta también como ${ROL_LABEL[rol].toLowerCase()}`));
+      setAviso(avisoDeFaltantes(p, rol, `${p.nombre} quedó en la libreta también como ${ROL_LABEL[rol].toLowerCase()}`));
     } catch (e) {
       /* El dato ya se copió a la guía: que no se haya podido guardar el rol no
          invalida el despacho, sólo significa que la próxima vez hay que
@@ -142,25 +131,16 @@ export default function CtpParteBarra({
   }
 
   function usar(p: Parte, prefijo = `${p.nombre} cargado desde la libreta`) {
-    onAplicar({
-      nombre: p.nombre,
-      docTipo: p.docTipo ?? valor.docTipo,
-      docNumero: p.docNumero ?? "",
-      // Sólo la dirección: el ubigeo va en sus columnas. Con `direccionCompleta`
-      // el distrito, la provincia y el departamento salían DOS veces en el punto
-      // impreso («JR. X, Callería, …, UCAYALI, Callería, …, UCAYALI»).
-      direccion: p.direccion ?? "",
-      // La libreta ya las tiene separadas: aplanarlas dentro de `direccion` y
-      // descartar las columnas dejaba los casilleros (17)-(19) y (26)-(28)
-      // vacíos teniendo el dato a mano.
-      departamento: p.region ?? "",
-      provincia: p.provincia ?? "",
-      distrito: p.distrito ?? "",
-      ...(rol === "transportista" ? { registroMtc: p.registroMtc ?? "" } : {}),
-    });
+    const n = (x: string | null | undefined) => x ?? "";
+    onAplicar(
+      aLaGuia(
+        { nombre: p.nombre, docTipo: p.docTipo ?? valor.docTipo, docNumero: n(p.docNumero), direccion: n(p.direccion), departamento: n(p.region), provincia: n(p.provincia), distrito: n(p.distrito), registroMtc: n(p.registroMtc) },
+        rol,
+      ),
+    );
     onElegir?.(p);
     setAbierta(false);
-    setAviso(avisoDeFaltantes(p, prefijo));
+    setAviso(avisoDeFaltantes(p, rol, prefijo));
     setError(null);
   }
 
@@ -170,15 +150,16 @@ export default function CtpParteBarra({
    * sin él, `onGuardar` guarda lo básico y se aplica lo escrito. Si no se pudo
    * guardar, tira: la ventana queda abierta con el motivo.
    */
-  async function agregarNueva(input: ParteInput, v: ValorParte) {
+  async function agregarNueva(input: ParteInput, v: ValorParte): Promise<{ id: string } | void> {
     if (onCrear) {
       const parte = await onCrear(input);
       usar(parte, `${parte.nombre} quedó en la libreta y en la guía`);
-      return;
+      return parte;
     }
     if (!onGuardar) return;
-    await onGuardar(v, rol);
-    onAplicar(v);
+    const c = await onGuardar(v, rol);
+    if (c) throw new Error(`${c.existente.nombre} ya está en la libreta con otro dato (${c.tiene}): guárdalo con «Guardar en la libreta» del bloque.`);
+    onAplicar(aLaGuia(v, rol));
     setAbierta(false);
     setAviso(`${v.nombre} quedó en la libreta y en la guía.`);
     setError(null);
@@ -210,14 +191,17 @@ export default function CtpParteBarra({
     }
   }
 
-  async function guardarEnLibreta() {
+  async function guardarEnLibreta(aparte = false) {
     if (!onGuardar) return;
+    const de = choque?.existente.nombre;
     setEstado("guardando");
     setAviso(null);
     setError(null);
+    setChoqueDe(null);
     try {
-      await onGuardar(valor, rol);
-      setAviso(`${valor.nombre} quedó en la libreta como ${ROL_LABEL[rol].toLowerCase()}.`);
+      const c = await onGuardar(valor, rol, aparte);
+      if (c) setChoqueDe({ c, clave: claveValor });
+      else setAviso(`${valor.nombre} quedó en la libreta como ${aparte && de ? `otro local de ${de}` : ROL_LABEL[rol].toLowerCase()}.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -277,25 +261,30 @@ export default function CtpParteBarra({
 
       {abierta && (
         <LibretaModal
-          rol={rol}
+          bloque={{ tipo: "parte", rol }}
           titulo={titulo}
-          opciones={opciones}
-          otras={otras}
-          borrador={valor}
+          partes={todas}
+          conPapel={conPapel}
+          vehiculos={vehiculos ?? null}
+          borradorParte={valor}
           conExtras={Boolean(onCrear)}
-          puedeAgregar={puedeAgregar}
-          onUsar={(p) => usar(p)}
-          onUsarConOtroRol={(p) => void usarConOtroRol(p)}
-          onAgregar={agregarNueva}
+          onUsarParte={(p, sumarRol) => (sumarRol ? void usarConOtroRol(p) : usar(p))}
+          onAgregarParte={puedeAgregar ? agregarNueva : undefined}
+          onEditarParte={onCrear}
+          onEditarVehiculo={onGuardarVehiculo}
           onCerrar={() => setAbierta(false)}
         />
       )}
 
-      {docMalFormado && docNormalizado.length > 0 && (
-        <p className="mt-2 text-sm font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{docMalFormado}</p>
-      )}
-      {aviso && <p className="mt-2 text-sm font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{aviso}</p>}
-      {error && <p className="mt-2 text-sm font-medium text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}
+      <AvisosDeBarra
+        docMalFormado={docNormalizado ? docMalFormado : null}
+        aviso={aviso}
+        error={error}
+        choque={choque}
+        ocupado={estado !== "idle"}
+        onAparte={() => void guardarEnLibreta(true)}
+        onCancelar={() => setChoqueDe(null)}
+      />
     </div>
   );
 }

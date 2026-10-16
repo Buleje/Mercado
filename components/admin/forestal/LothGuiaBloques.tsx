@@ -14,11 +14,12 @@
 import { useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
-import type { Parte, RolParte } from "@/lib/forestal/directorio";
+import type { Parte } from "@/lib/forestal/directorio";
 import type { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import { propietarioTitular } from "@/lib/forestal/loth-guia-despacho";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
-import CtpParteBarra, { type ValorParte } from "./CtpParteBarra";
+import CtpParteBarra from "./CtpParteBarra";
+import type { GuardarEnLibreta } from "@/lib/forestal/libreta";
 import { Bloque, DocsDeParte, UbicacionDeParte } from "./ctp-guia-bloques";
 import { CLASE_FALTA, ResumenDatos } from "./ctp-guia-piezas";
 import { libretaDe, type SeccionObjeto } from "./ctp-guia-bloques-partes";
@@ -31,7 +32,7 @@ export interface PropsGuiaLoth {
   directorio: Directorio;
   onAnotarParte: (p: Parte) => void;
   onAnotarVehiculo: (id: string) => void;
-  onGuardarEnLibreta: (v: ValorParte, rol: RolParte) => Promise<void>;
+  onGuardarEnLibreta: GuardarEnLibreta;
 }
 
 /** Parche superficial de una sección; lo demás no se toca. */

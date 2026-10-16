@@ -38,7 +38,8 @@ import {
   guiaEditable,
   motivoNoEditable,
 } from "@/lib/forestal/gtf-estado";
-import type { Parte, RolParte } from "@/lib/forestal/directorio";
+import type { Parte } from "@/lib/forestal/directorio";
+import { useGuardarEnLibreta } from "./hooks/use-guardar-en-libreta";
 import CtpGuiaDatosTab from "./CtpGuiaDatosTab";
 import CtpGtfConfirmarNumero from "./CtpGtfConfirmarNumero";
 import {
@@ -46,7 +47,6 @@ import {
   type ConfirmacionEmision,
   type RespuestaEmision,
 } from "@/hooks/use-proxima-gtf";
-import type { ValorParte } from "./CtpParteBarra";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 
 /** Lo que el modal necesita de la línea del libro. */
@@ -196,20 +196,8 @@ export default function CtpGuiaDeLineaModal({
   const anotarVehiculo = useCallback((id: string) => {
     usados.current.vehiculos.add(id);
   }, []);
-  const guardarEnLibreta = useCallback(
-    async (v: ValorParte, rol: RolParte) => {
-      const parte = await directorio.guardarParte({
-        roles: [rol],
-        nombre: v.nombre,
-        docTipo: v.docTipo,
-        docNumero: v.docNumero,
-        direccion: v.direccion,
-        registroMtc: v.registroMtc,
-      });
-      anotarParte(parte);
-    },
-    [directorio, anotarParte],
-  );
+  /* Todo lo escrito en el bloque, sin pisar otra ficha del mismo RUC (revisión 16-10). */
+  const guardarEnLibreta = useGuardarEnLibreta(directorio, anotarParte);
   /** Lo elegido de la libreta sube en el ranking sólo si el acto se concretó. */
   const contarUsos = useCallback(() => {
     directorio.marcarUso({

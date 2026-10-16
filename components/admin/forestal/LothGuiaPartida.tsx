@@ -52,10 +52,15 @@ function aPartida(v: Partial<ValorParte>): Partial<PartidaTraslado> {
   return c;
 }
 
-/** Los internos de la ficha elegida: el (18) sale del código guardado. */
+/**
+ * Los internos de la ficha elegida: el (18) sale del código guardado. El (19)
+ * se limpia: el tipo del establecimiento anterior no es el de éste (la ficha
+ * no lo guarda, se vuelve a elegir).
+ */
 function internosDe(p: Parte): Partial<PartidaTraslado> {
   return {
     modo: "establecimiento",
+    tipoEstablecimiento: "",
     autorizacion: p.codigoCtp ?? "",
     referencia: p.acopioReferencia ?? "",
     encargado: p.contactoNombre ?? "",
@@ -86,6 +91,12 @@ export function BloquePartidaLoth({ g, directorio, onAnotarParte, onGuardarEnLib
     departamento: p.departamento,
     provincia: p.provincia,
     distrito: p.distrito,
+    /* «Guardar en la libreta» se lleva también el (18) y los internos: sin
+       esto, al volver a elegirla la partida quedaba con esos campos en blanco. */
+    autorizacion: p.autorizacion,
+    encargado: p.encargado,
+    telefono: p.telefono,
+    referencia: p.referencia,
   };
 
   return (
@@ -104,7 +115,7 @@ export function BloquePartidaLoth({ g, directorio, onAnotarParte, onGuardarEnLib
             onAnotarParte(parte);
             g.setPartida(internosDe(parte));
           }}
-          onGuardar={(v) => onGuardarEnLibreta(v, "establecimiento")}
+          onGuardar={onGuardarEnLibreta}
         />
       }
     >

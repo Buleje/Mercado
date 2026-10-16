@@ -8,31 +8,41 @@
  * en el mismo paso que el transportista, así que vive al lado. Elegir una placa
  * completa además marca, tipo y el remolque guardado.
  *
- * «Placas guardadas» abre una ventana (`LibretaVehiculosModal`, Brandon
- * 15-10-2026) con buscador y «Agregar nuevo»: el camión que se carga ahí queda
- * en el Directorio y en la guía en el mismo gesto. Hasta 2026-09-15 la barra se
- * escondía con la libreta vacía (Blas tenía **cero** vehículos), así que nunca
- * se dibujaba; ahora con la libreta vacía abre directo en el alta.
+ * «Placas guardadas» abre la libreta (`LibretaModal`, Brandon 15/16-10-2026)
+ * en la pestaña «Vehículos», con la ficha al lado y «Agregar nuevo»: el camión
+ * que se carga ahí queda en el Directorio y en la guía en el mismo gesto. Hasta
+ * 2026-09-15 la barra se escondía con la libreta vacía (Blas tenía **cero**
+ * vehículos), así que nunca se dibujaba; ahora con la libreta vacía abre
+ * directo en el alta.
  */
 
 import { useState } from "react";
 import { Truck } from "@buleje/design-system/icons";
-import { placaParaGuia, type Vehiculo, type VehiculoInput } from "@/lib/forestal/directorio";
-import LibretaVehiculosModal, { type VehiculoDeLaGuia } from "./LibretaVehiculosModal";
+import { placaParaGuia, type Parte, type ParteInput, type Vehiculo, type VehiculoInput } from "@/lib/forestal/directorio";
+import type { VehiculoDeLaGuia } from "./hooks/use-libreta";
+import LibretaModal from "./LibretaModal";
 import { Btn } from "./ctp-shared";
+
+const SIN_PAPEL: ReadonlySet<string> = new Set();
 
 export function CtpVehiculoBarra({
   vehiculos,
+  partes,
   onAplicar,
   onElegir,
   onGuardarVehiculo,
+  onGuardarParte,
   borrador,
 }: {
   vehiculos: Vehiculo[];
+  /** Las personas de la libreta: la ventana las muestra en sus pestañas (se usan desde su bloque). */
+  partes?: readonly Parte[];
   onAplicar: (v: { placa: string; marca: string; tipo: string; placaRemolque?: string }) => void;
   onElegir?: (id: string) => void;
-  /** Alta en el Directorio desde la ventana. Sin esto, la ventana sólo elige. */
-  onGuardarVehiculo?: (input: VehiculoInput) => Promise<Vehiculo>;
+  /** Alta y edición en el Directorio desde la ventana. Sin esto, la ventana sólo elige. */
+  onGuardarVehiculo?: (input: VehiculoInput & { id?: string }) => Promise<Vehiculo>;
+  /** Editar la ficha de una persona vista desde acá. */
+  onGuardarParte?: (input: ParteInput & { id?: string }) => Promise<Parte>;
   /** Lo que ya está tipeado en la guía: arranca el alta. */
   borrador?: VehiculoDeLaGuia;
 }) {
@@ -65,16 +75,25 @@ export function CtpVehiculoBarra({
       </div>
       {aviso && <p className="mt-1 text-sm font-medium text-[var(--data-success-ink)]">{aviso}</p>}
       {abierta && (
-        <LibretaVehiculosModal
+        <LibretaModal
+          bloque={{ tipo: "vehiculo" }}
+          partes={partes ?? null}
+          conPapel={SIN_PAPEL}
           vehiculos={vehiculos}
-          borrador={borrador}
-          puedeAgregar={Boolean(onGuardarVehiculo)}
-          onUsar={(v) => usar(v, `${placaParaGuia(v.placa, v.tipo)} cargada desde la libreta`)}
-          onAgregar={async (input) => {
-            if (!onGuardarVehiculo) return;
-            const v = await onGuardarVehiculo(input);
-            usar(v, `${placaParaGuia(v.placa, v.tipo)} quedó en la libreta y en la guía`);
-          }}
+          borradorVehiculo={borrador}
+          conExtras
+          onUsarVehiculo={(v) => usar(v, `${placaParaGuia(v.placa, v.tipo)} cargada desde la libreta`)}
+          onAgregarVehiculo={
+            onGuardarVehiculo
+              ? async (input) => {
+                  const v = await onGuardarVehiculo(input);
+                  usar(v, `${placaParaGuia(v.placa, v.tipo)} quedó en la libreta y en la guía`);
+                  return v;
+                }
+              : undefined
+          }
+          onEditarVehiculo={onGuardarVehiculo}
+          onEditarParte={onGuardarParte}
           onCerrar={() => setAbierta(false)}
         />
       )}

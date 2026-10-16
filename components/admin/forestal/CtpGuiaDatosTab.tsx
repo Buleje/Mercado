@@ -19,7 +19,7 @@ import { AlertTriangle, Check } from "@buleje/design-system/icons";
 import { TIPOS_DOCUMENTO_LOCTP } from "@/lib/forestal/loctp-campos";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { FichaCtp } from "@/hooks/use-ficha-ctp";
-import type { Parte, RolParte } from "@/lib/forestal/directorio";
+import type { Parte } from "@/lib/forestal/directorio";
 import type { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
 import {
@@ -30,7 +30,8 @@ import {
   type TituloDeFicha,
 } from "@/lib/forestal/titulos-de-la-guia";
 import CtpTrasladoPuntos from "./CtpTrasladoPuntos";
-import CtpParteBarra, { type ValorParte } from "./CtpParteBarra";
+import CtpParteBarra from "./CtpParteBarra";
+import type { GuardarEnLibreta } from "@/lib/forestal/libreta";
 import { ESTADO_LABEL } from "./contratos-ui";
 import { Bloque, DocsDeParte, UbicacionDeParte } from "./ctp-guia-bloques";
 import { CLASE_NO_APLICA, Casillero, ResumenDatos, faltantesPorBloque } from "./ctp-guia-piezas";
@@ -262,7 +263,7 @@ export default function CtpGuiaDatosTab({
   onAnotarParte: (p: Parte) => void;
   /** Se llama al elegir una placa de la libreta: el uso se cuenta al guardar. */
   onAnotarVehiculo: (id: string) => void;
-  onGuardarEnLibreta: (v: ValorParte, rol: RolParte) => Promise<void>;
+  onGuardarEnLibreta: GuardarEnLibreta;
   /** Verificación de la guía contra SERFOR: va con el número, que es lo que verifica. */
   slotVerificacion?: React.ReactNode;
 }) {

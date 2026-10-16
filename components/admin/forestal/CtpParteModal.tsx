@@ -377,14 +377,22 @@ export default function CtpParteModal({
   const esConductor = b.roles.includes("conductor");
   const esProveedor = b.roles.includes("proveedor");
   const esCliente = b.roles.includes("cliente");
+  const esDestinatario = b.roles.includes("destinatario");
+  const esEstablecimiento = b.roles.includes("establecimiento");
   const categoriaProveedor = categoriaEfectiva(b.categoria as CategoriaParte | null | undefined);
+  /* El N° de autorización (columna `codigoCtp`) sale en la guía 2024 en el (18)
+     del establecimiento de partida y en el (22) del destinatario. Antes sólo se
+     pedía al proveedor «aserradero»: un destinatario o un depósito no tenía
+     dónde cargarlo desde el Directorio. Si el campo del aserradero ya se
+     dibuja, éste no se repite (es la misma columna). */
+  const conAutorizacion = (esDestinatario || esCliente || esEstablecimiento) && !(esProveedor && categoriaProveedor === "aserradero");
 
   /**
    * «Según el papel» sólo aparece para ciertos roles, y con los números fijos el
    * formulario mostraba 01·02·03·05: el operador buscaba una sección 04 que no
    * existía. Se numeran las que de verdad se pintan.
    */
-  const hayPapel = esTransportista || esConductor || esProveedor || esCliente;
+  const hayPapel = esTransportista || esConductor || esProveedor || esCliente || esDestinatario || esEstablecimiento;
   const base = hayPapel ? 4 : 3;
   const nro = {
     roles: 1,
@@ -775,6 +783,19 @@ export default function CtpParteModal({
                 <input type="text" className={I} value={b.registroMtc ?? ""} onChange={(e) => set({ registroMtc: e.target.value })} />
               </Field>
               </>
+            )}
+            {conAutorizacion && (
+              <Field
+                label="N° de autorización"
+                span={6}
+                hint={
+                  esEstablecimiento
+                    ? "Formato 2024, casillero (18): el N° que la ARFFS le dio al depósito o centro de comercialización"
+                    : "Formato 2024, casillero (22): la autorización del CTP o depósito que recibe; vacío si es una persona"
+                }
+              >
+                <input type="text" className={`${I} font-mono`} value={b.codigoCtp ?? ""} onChange={(e) => set({ codigoCtp: e.target.value })} />
+              </Field>
             )}
             {esConductor && (
               <Field label="Licencia de conducir" span={4} hint="Es lo que pide el puesto de control">

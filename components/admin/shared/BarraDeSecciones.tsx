@@ -29,6 +29,11 @@ interface Props<T extends string> {
   etiqueta: string;
   /** El `id` del panel que cambia (el `tabpanel`); cada pestaña lo controla. */
   idPanel: string;
+  /**
+   * «alerta» (por defecto): la cifra en rojo, sólo si hay algo que mirar.
+   * «neutro»: cuántas hay en cada sección (la libreta), en gris y también el 0.
+   */
+  tonoCuenta?: "alerta" | "neutro";
 }
 
 export const idPestanaDeSeccion = (idPanel: string, clave: string) => `${idPanel}-pestana-${clave}`;
@@ -36,7 +41,7 @@ export const idPestanaDeSeccion = (idPanel: string, clave: string) => `${idPanel
 /* Sólo un clic o una flecha mueven el foco a la elegida; al cargar la página no. */
 let enfocarActiva = false;
 
-export function BarraDeSecciones<T extends string>({ secciones, activa, onCambiar, etiqueta, idPanel }: Props<T>) {
+export function BarraDeSecciones<T extends string>({ secciones, activa, onCambiar, etiqueta, idPanel, tonoCuenta = "alerta" }: Props<T>) {
   const carril = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -98,7 +103,11 @@ export function BarraDeSecciones<T extends string>({ secciones, activa, onCambia
               )}
             >
               {s.rotulo}
-              {s.cuenta ? (
+              {tonoCuenta === "neutro" && s.cuenta !== undefined ? (
+                <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 text-sm font-bold tabular-nums text-[var(--text-tertiary)] ring-1 ring-[var(--rule-soft)]">
+                  {s.cuenta}
+                </span>
+              ) : s.cuenta ? (
                 <span className="rounded-full bg-[var(--data-error-500)]/15 px-1.5 text-sm font-bold tabular-nums text-[var(--data-error-ink)]">{s.cuenta}</span>
               ) : null}
             </button>

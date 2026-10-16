@@ -184,6 +184,7 @@ export class GuiaThAlCtpDB {
       departamento: t(f.region),
       provincia: t(f.provincia),
       distrito: t(f.distrito),
+      autorizacion: t(f.codigoCtp),
     };
   }
 

@@ -21,8 +21,9 @@ import { partidaSembrada } from "@/lib/forestal/gtf-autocompletar";
 import CtpTrasladoPuntos from "./CtpTrasladoPuntos";
 import type { FichaCtp } from "@/hooks/use-ficha-ctp";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
-import type { Parte, RolParte } from "@/lib/forestal/directorio";
-import CtpParteBarra, { CtpVehiculoBarra, type ValorParte } from "./CtpParteBarra";
+import type { Parte } from "@/lib/forestal/directorio";
+import { useGuardarEnLibreta } from "./hooks/use-guardar-en-libreta";
+import CtpParteBarra, { CtpVehiculoBarra } from "./CtpParteBarra";
 import CtpParteCampos from "./CtpParteCampos";
 import { CampoPlaca } from "./ctp-campo-placa";
 import { Btn, Field, I } from "./ctp-shared";
@@ -94,20 +95,8 @@ export default function CtpGtfDatosForm({
   }, []);
 
   /** Alta rápida desde la guía: lo tipeado acá pasa a la libreta con ese rol. */
-  const guardarEnLibreta = useCallback(
-    async (v: ValorParte, rol: RolParte) => {
-      const parte = await directorio.guardarParte({
-        roles: [rol],
-        nombre: v.nombre,
-        docTipo: v.docTipo,
-        docNumero: v.docNumero,
-        direccion: v.direccion,
-        registroMtc: v.registroMtc,
-      });
-      anotarParte(parte);
-    },
-    [directorio, anotarParte],
-  );
+  /* Todo lo escrito en el bloque, sin pisar otra ficha del mismo RUC (revisión 16-10). */
+  const guardarEnLibreta = useGuardarEnLibreta(directorio, anotarParte);
 
   /**
    * Primera apertura: se copia lo que el sistema ya sabe (identidad del CTP,

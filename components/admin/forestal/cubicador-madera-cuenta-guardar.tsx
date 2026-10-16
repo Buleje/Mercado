@@ -158,7 +158,9 @@ export default function GuardarMaderaEnLaCuentaModal({
 
   const pt = vista.ok ? vista.pt : 0;
   return (
+    /* Se abre también desde «Producir sin lote» (otra ventana): por encima, como la trasera y el variado. */
     <AdminModal
+      aboveModals
       open
       onClose={onCerrar}
       title="Guardar en la cuenta"

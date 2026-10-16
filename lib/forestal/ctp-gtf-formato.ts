@@ -295,7 +295,8 @@ export interface CuerpoGtfInput {
 
 /**
  * Todos los casilleros con valor de la guía. `31p` = la placa (el papel la
- * numera (31), igual que el vehículo).
+ * numera (31), igual que el vehículo) y, si hay, la del remolque: el casillero
+ * es «Placa(s) N°» y el puesto de control coteja las dos.
  *
  * `p17`…`p20d` y `d22` son del formato 2024 (RDE D000014-2024-MIDAGRI-SERFOR-DE):
  * «Datos del punto de partida» (17)(18)(19)(20a-d) y el N° de autorización del
@@ -331,6 +332,11 @@ export function casillerosGtf(i: CuerpoGtfInput): CasillerosGtf {
     d.comprobante?.tipo && d.comprobante.tipo !== "ninguno"
       ? (COMPROBANTE_LABEL[d.comprobante.tipo] ?? d.comprobante.tipo)
       : "";
+  /* «Placa(s) N°»: el tracto y su remolque («ABC-123 / XYZ-456»); la embarcación, su matrícula. */
+  const placas =
+    d.vehiculo?.modo === "fluvial"
+      ? txt(d.vehiculo?.placa)
+      : [d.vehiculo?.placa, d.vehiculo?.placaRemolque].map((x) => txt(x).trim()).filter(Boolean).join(" / ");
   return {
     ...casillerosIdentidad(f, {
       fechaExpedicion: i.fechaExpedicion,
@@ -360,7 +366,7 @@ export function casillerosGtf(i: CuerpoGtfInput): CasillerosGtf {
     "29": d.comprobante?.tipo === "guia_remision" ? txt(d.comprobante?.numero) : "",
     "30": txt(MODO_LABEL[d.vehiculo?.modo ?? ""] ?? d.vehiculo?.modo),
     "31": txt(d.vehiculo?.tipo),
-    "31p": txt(d.vehiculo?.placa),
+    "31p": placas,
     "32": txt(d.vehiculo?.conductor),
     "33": txt(d.vehiculo?.conductorDni),
     "34": txt(d.vehiculo?.licencia),

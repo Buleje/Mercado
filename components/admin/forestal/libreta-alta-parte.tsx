@@ -12,6 +12,11 @@
  *
  * El documento se valida con la misma regla del Directorio (`motivoDocInvalido`)
  * y se completa con el mismo padrón (`consultarDocumento`: SUNAT o RENIEC).
+ *
+ * Con `editando` es la edición de una ficha ya guardada (el «Editar» de la
+ * ficha de la libreta): arranca con lo guardado, pide los extras de TODOS sus
+ * papeles y manda la fila completa con `id` (`parteAInput` + lo cambiado: con
+ * `id` el Directorio reemplaza, y lo que no viajara se borraría).
  */
 
 import { useState } from "react";
@@ -22,55 +27,18 @@ import {
   fuenteAutocompletado,
   motivoDocInvalido,
   normalizarDocumento,
+  parteAInput,
   type DocTipo,
+  type Parte,
   type ParteInput,
   type RolParte,
 } from "@/lib/forestal/directorio";
-import type { ValorParte } from "./CtpParteBarra";
+import type { ValorParte } from "@/lib/forestal/libreta";
+import { ubigeoDeNombres } from "@/lib/peru-ubigeo";
+import { CLAVES_EXTRA, EXTRAS, extrasDe, type ClaveExtra } from "./libreta-alta-extras";
 import CtpUbigeoSelects from "./CtpUbigeoSelects";
 import { CLASE_FALTA } from "./ctp-guia-piezas";
 import { Btn, Field, I } from "./ctp-shared";
-
-/** Los campos de la ficha que el alta sabe pedir además de los de siempre. */
-type ClaveExtra = "codigoCtp" | "registroMtc" | "licencia" | "telefono" | "contactoNombre" | "acopioReferencia";
-
-interface Extra {
-  clave: ClaveExtra;
-  label: string;
-  hint?: string;
-  mono?: boolean;
-  span: 4 | 6 | 12;
-}
-
-const TELEFONO: Extra = { clave: "telefono", label: "Teléfono", span: 6 };
-const AUTORIZACION_DESTINO: Extra = {
-  clave: "codigoCtp",
-  label: "N° de autorización",
-  hint: "Formato 2024, casillero (22): la autorización del CTP o depósito que recibe. Si es una persona sin establecimiento, déjalo vacío.",
-  mono: true,
-  span: 6,
-};
-
-/** Lo que pide cada papel. El registro MTC viaja en la guía; lo demás queda en la ficha. */
-const EXTRAS: Record<RolParte, Extra[]> = {
-  proveedor: [TELEFONO],
-  destinatario: [AUTORIZACION_DESTINO, TELEFONO],
-  cliente: [AUTORIZACION_DESTINO, TELEFONO],
-  transportista: [{ clave: "registroMtc", label: "Registro MTC", hint: "Si es empresa de transporte", mono: true, span: 6 }, TELEFONO],
-  conductor: [{ clave: "licencia", label: "N° de licencia", hint: "La que pide el puesto de control", mono: true, span: 6 }, TELEFONO],
-  establecimiento: [
-    {
-      clave: "codigoCtp",
-      label: "N° de autorización (ARFFS)",
-      hint: "Formato 2024, casillero (18): el N° que la ARFFS le dio al depósito o centro de comercialización.",
-      mono: true,
-      span: 6,
-    },
-    { clave: "acopioReferencia", label: "Referencia", hint: "Interno: cómo llegar («frente al grifo»). No sale en la guía.", span: 6 },
-    { clave: "contactoNombre", label: "Encargado", hint: "Interno: a quién llamar. No sale en la guía.", span: 6 },
-    TELEFONO,
-  ],
-};
 
 interface Formulario {
   nombre: string;
@@ -83,7 +51,29 @@ interface Formulario {
   extras: Partial<Record<ClaveExtra, string>>;
 }
 
-function inicial(rol: RolParte, b: ValorParte): Formulario {
+function inicial(rol: RolParte, b: ValorParte, editando: Parte | undefined): Formulario {
+  if (editando) {
+    return {
+      nombre: editando.nombre,
+      docTipo: editando.docTipo ?? (rol === "conductor" ? "DNI" : "RUC"),
+      docNumero: editando.docNumero ?? "",
+      direccion: editando.direccion ?? "",
+      region: editando.region ?? "",
+      provincia: editando.provincia ?? "",
+      distrito: editando.distrito ?? "",
+      extras: Object.fromEntries(CLAVES_EXTRA.map((k) => [k, editando[k] ?? ""])),
+    };
+  }
+  /* Lo que el bloque ya tiene de los extras (el (18) de la partida, la
+     licencia del conductor…) también arranca escrito. */
+  const delBloque: Partial<Record<ClaveExtra, string | undefined>> = {
+    codigoCtp: b.autorizacion,
+    registroMtc: b.registroMtc,
+    licencia: b.licencia,
+    telefono: b.telefono,
+    contactoNombre: b.encargado,
+    acopioReferencia: b.referencia,
+  };
   return {
     nombre: b.nombre ?? "",
     docTipo: b.docTipo || (rol === "conductor" ? "DNI" : "RUC"),
@@ -92,7 +82,7 @@ function inicial(rol: RolParte, b: ValorParte): Formulario {
     region: b.departamento ?? "",
     provincia: b.provincia ?? "",
     distrito: b.distrito ?? "",
-    extras: b.registroMtc ? { registroMtc: b.registroMtc } : {},
+    extras: sinVacios(delBloque),
   };
 }
 
@@ -105,6 +95,7 @@ export default function AltaDeParte({
   id,
   rol,
   borrador,
+  editando,
   conExtras,
   onGuardar,
   onError,
@@ -114,12 +105,14 @@ export default function AltaDeParte({
   rol: RolParte;
   /** Lo que ya está tipeado en el bloque de la guía. */
   borrador: ValorParte;
+  /** La ficha guardada que se edita (con `id`). */
+  editando?: Parte;
   /** Sin alta completa (el consumidor sólo guarda nombre, documento y dirección), no se piden los extras. */
   conExtras: boolean;
-  onGuardar: (input: ParteInput, valor: ValorParte) => void;
+  onGuardar: (input: ParteInput & { id?: string }, valor: ValorParte) => void;
   onError: (msg: string | null) => void;
 }) {
-  const [f, setF] = useState<Formulario>(() => inicial(rol, borrador));
+  const [f, setF] = useState<Formulario>(() => inicial(rol, borrador, editando));
   const [consultando, setConsultando] = useState(false);
   const [lectura, setLectura] = useState<string | null>(null);
   const set = (v: Partial<Formulario>) => setF((p) => ({ ...p, ...v }));
@@ -127,7 +120,7 @@ export default function AltaDeParte({
 
   const fuente = fuenteAutocompletado(f.docTipo);
   const docMal = f.docNumero.trim() ? motivoDocInvalido(f.docTipo, f.docNumero) : null;
-  const extras = EXTRAS[rol].filter((e) => conExtras || e.clave === "registroMtc");
+  const extras = (editando ? extrasDe([rol, ...editando.roles]) : EXTRAS[rol]).filter((e) => conExtras || e.clave === "registroMtc");
 
   async function traerDelPadron() {
     setConsultando(true);
@@ -162,13 +155,29 @@ export default function AltaDeParte({
     if (docMal) return onError(docMal);
     onError(null);
     const docNumero = normalizarDocumento(f.docNumero);
-    const input: ParteInput = {
-      roles: [rol],
-      nombre: f.nombre.trim(),
-      ...(docNumero ? { docTipo: f.docTipo, docNumero } : {}),
-      ...sinVacios({ direccion: f.direccion, region: f.region, provincia: f.provincia, distrito: f.distrito }),
-      ...sinVacios(f.extras),
-    };
+    const ubigeo = ubigeoDeNombres(f.region, f.provincia, f.distrito);
+    const input: ParteInput & { id?: string } = editando
+      ? {
+          ...parteAInput(editando),
+          nombre: f.nombre.trim(),
+          docTipo: f.docTipo,
+          docNumero,
+          direccion: f.direccion.trim(),
+          region: f.region,
+          provincia: f.provincia,
+          distrito: f.distrito,
+          ...(ubigeo ? { ubigeo } : {}),
+          ...Object.fromEntries(Object.entries(f.extras).map(([k, v]) => [k, v?.trim() ?? ""])),
+        }
+      : {
+          roles: [rol],
+          nombre: f.nombre.trim(),
+          ...(docNumero ? { docTipo: f.docTipo, docNumero } : {}),
+          ...sinVacios({ direccion: f.direccion, region: f.region, provincia: f.provincia, distrito: f.distrito }),
+          ...(ubigeo ? { ubigeo } : {}),
+          ...sinVacios(f.extras),
+        };
+    const x = (k: ClaveExtra) => f.extras[k]?.trim() ?? "";
     onGuardar(input, {
       nombre: input.nombre,
       docTipo: f.docTipo,
@@ -177,7 +186,12 @@ export default function AltaDeParte({
       departamento: f.region,
       provincia: f.provincia,
       distrito: f.distrito,
-      ...(rol === "transportista" ? { registroMtc: f.extras.registroMtc?.trim() ?? "" } : {}),
+      registroMtc: x("registroMtc"),
+      licencia: x("licencia"),
+      autorizacion: x("codigoCtp"),
+      encargado: x("contactoNombre"),
+      telefono: x("telefono"),
+      referencia: x("acopioReferencia"),
     });
   }
 
@@ -185,6 +199,13 @@ export default function AltaDeParte({
     <form id={id} onSubmit={enviar} className="grid grid-cols-1 gap-x-3 gap-y-2.5 sm:grid-cols-12 sm:[&_label]:min-h-6">
       <Field span={12} label="Nombre o razón social" required>
         <input
+          /* Foco al abrir el formulario, un cuadro después: el de AdminModal lo pisaba. */
+          ref={(el) => {
+            if (el && !el.dataset.enfocado) {
+              el.dataset.enfocado = "1";
+              requestAnimationFrame(() => el.focus());
+            }
+          }}
           type="text"
           className={`${I} ${f.nombre.trim() ? "" : CLASE_FALTA}`}
           value={f.nombre}

@@ -30,7 +30,8 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { useFichaCtp, type FichaCtp } from "@/hooks/use-ficha-ctp";
 import CtpFichaParaEmitir from "./CtpFichaParaEmitir";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
-import type { Parte, RolParte } from "@/lib/forestal/directorio";
+import type { Parte } from "@/lib/forestal/directorio";
+import { useGuardarEnLibreta } from "./hooks/use-guardar-en-libreta";
 import { faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { partidaSembrada } from "@/lib/forestal/gtf-autocompletar";
 import { rellenarGuia, siguienteNumeroGtf } from "@/lib/forestal/gtf-autocompletar";
@@ -46,7 +47,6 @@ import {
   type CorridaDisponible,
   type FilaDespacho,
 } from "@/lib/forestal/despacho-lista";
-import type { ValorParte } from "./CtpParteBarra";
 import { UNIT_LABELS } from "./ctp-section-shared";
 import CtpGuiaDatosTab from "./CtpGuiaDatosTab";
 import CtpGuiaRegistrada from "./CtpGuiaRegistrada";
@@ -205,20 +205,8 @@ export default function CtpDespachoGuiaModal({
   const anotarVehiculo = useCallback((id: string) => {
     usados.current.vehiculos.add(id);
   }, []);
-  const guardarEnLibreta = useCallback(
-    async (v: ValorParte, rol: RolParte) => {
-      const parte = await directorio.guardarParte({
-        roles: [rol],
-        nombre: v.nombre,
-        docTipo: v.docTipo,
-        docNumero: v.docNumero,
-        direccion: v.direccion,
-        registroMtc: v.registroMtc,
-      });
-      anotarParte(parte);
-    },
-    [directorio, anotarParte],
-  );
+  /* Todo lo escrito en el bloque, sin pisar otra ficha del mismo RUC (revisión 16-10). */
+  const guardarEnLibreta = useGuardarEnLibreta(directorio, anotarParte);
 
   /**
    * Autollenado con lo que el sistema ya sabe. Corre UNA vez, cuando la ficha

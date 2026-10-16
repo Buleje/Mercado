@@ -23,6 +23,7 @@ import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import { Bloque } from "./ctp-guia-bloques";
 import { I } from "./ctp-shared";
+import { cn } from "@/lib/utils";
 import LothGuiaListaMovilizar, { MARCO, TD, TDR, TH, THR, dec } from "./LothGuiaListaMovilizar";
 import LothGuiaTrozaAMano from "./LothGuiaTrozaAMano";
 import type { CatalogoUI } from "./ctp-especie-campo";
@@ -99,7 +100,7 @@ export default function LothGuiaTrozas({
             <label className="inline-flex items-center gap-2 text-sm">
               <span className="font-medium text-[var(--text-secondary)]">Plan</span>
               <select
-                className={`${I} h-9 w-auto max-w-[16rem]`}
+                className={cn(I, "h-9 w-auto max-w-[16rem]")}
                 value={g.planId ?? ""}
                 onChange={(e) => g.setPlanId(e.target.value || null)}
               >

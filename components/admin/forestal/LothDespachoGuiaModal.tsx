@@ -18,7 +18,8 @@ import { FileText, Loader2, RefreshCw, Truck, Wand2 } from "@buleje/design-syste
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
-import type { Parte, RolParte } from "@/lib/forestal/directorio";
+import type { Parte } from "@/lib/forestal/directorio";
+import { useGuardarEnLibreta } from "./hooks/use-guardar-en-libreta";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   detallePorEspecie,
@@ -29,7 +30,6 @@ import {
 import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
 import { useDespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import { useEspeciesConCatalogo } from "./ctp-especie-campo";
-import type { ValorParte } from "./CtpParteBarra";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import LothGuiaDatos from "./LothGuiaDatos";
 import LothGuiaTrozas from "./LothGuiaTrozas";
@@ -98,23 +98,8 @@ export default function LothDespachoGuiaModal({
   const anotarVehiculo = useCallback((id: string) => {
     usados.current.vehiculos.add(id);
   }, []);
-  const guardarEnLibreta = useCallback(
-    async (v: ValorParte, rol: RolParte) => {
-      const parte = await directorio.guardarParte({
-        roles: [rol],
-        nombre: v.nombre,
-        docTipo: v.docTipo,
-        docNumero: v.docNumero,
-        direccion: v.direccion,
-        registroMtc: v.registroMtc,
-        region: v.departamento,
-        provincia: v.provincia,
-        distrito: v.distrito,
-      });
-      anotarParte(parte);
-    },
-    [directorio, anotarParte],
-  );
+  /* Todo lo escrito en el bloque, sin pisar otra ficha del mismo RUC (revisión 16-10). */
+  const guardarEnLibreta = useGuardarEnLibreta(directorio, anotarParte);
 
   function rellenarConLibreta() {
     g.rellenar({
