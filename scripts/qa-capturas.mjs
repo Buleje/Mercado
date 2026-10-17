@@ -246,6 +246,18 @@ try {
   process.exit(1);
 }
 
+/* Cada TEMA vuelve a correr todos los pasos desde el login: un paso que escribe
+   (Enter en un campo, «Guardar», «Agregar»…) se hace una vez por tema. 16-10: el
+   FODA de prueba quedó con el punto dos veces y pareció un bug de la pantalla
+   (ya pasó el 11-10 con la bolsa). Aviso, no bloqueo: a veces se quiere. */
+const ESCRIBE = /\b(guardar|agregar|crear|registrar|enviar|confirmar|eliminar|borrar|subir)\b/i;
+const pasoEscribe = (p) =>
+  p && typeof p === "object" &&
+  ((p.tecla === "Enter") || p.subir || [p.click, p.clicTexto, p.activar].some((s) => typeof s === "string" && ESCRIBE.test(s)));
+if (temas.length > 1 && pasos.some(pasoEscribe)) {
+  console.error(`⚠️  qa-capturas: hay pasos que escriben y ${temas.length} temas → se escriben ${temas.length} veces. Si no lo quieres: --temas claro.`);
+}
+
 const t0 = Date.now();
 const chrome = resolverChromium();
 if (!chrome) {
