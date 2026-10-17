@@ -13,6 +13,8 @@ import { POS_MAX_MM, POS_MIN_MM } from "@/lib/forestal/gtf-matricial-disposicion
 import { I } from "./ctp-shared";
 
 const INPUT = I.replace("h-11", "h-12");
+/** En una tabla: 6 rem alcanzan para «−12,25» o «1000». */
+const INPUT_COMPACTO = INPUT.replace("w-full", "w-20").replace("px-3.5", "px-3");
 
 /** «12,5» o «12.5» → 12.5; lo que no es número → null. */
 export function leerNumero(texto: string): number | null {
@@ -25,6 +27,8 @@ export function leerNumero(texto: string): number | null {
 /** Con coma decimal, como se lee en Perú; sin ceros de más. */
 export const fmtMm = (v: number): string => String(Math.round(v * 100) / 100).replace(".", ",");
 
+const redondear = (n: number, entero: boolean): number => (entero ? Math.round(n) : Math.round(n * 100) / 100);
+
 export function NumeroMm({
   label,
   value,
@@ -34,6 +38,10 @@ export function NumeroMm({
   max = POS_MAX_MM,
   sufijo = "mm",
   entero = false,
+  compacto = false,
+  vivo = false,
+  onFocus,
+  qa,
 }: {
   label: string;
   value: number;
@@ -43,12 +51,25 @@ export function NumeroMm({
   max?: number;
   sufijo?: string;
   entero?: boolean;
+  /** Dentro de una tabla: el rótulo sólo para el lector de pantalla y sin el «mm» (va en la cabecera). */
+  compacto?: boolean;
+  /** Avisa cada cifra válida mientras se tipea (la hoja de atrás se mueve al instante), no sólo al salir. */
+  vivo?: boolean;
+  onFocus?: () => void;
+  qa?: string;
 }) {
   const id = useId();
   const [borrador, setBorrador] = useState(fmtMm(value));
-  useEffect(() => setBorrador(fmtMm(value)), [value]);
+  const redondo = (n: number) => redondear(n, entero);
+  /* Lo de afuera (deshacer, otro control) reescribe la cifra; lo que se está tipeando y ya vale eso («12,» = 12) se respeta. */
+  useEffect(() => {
+    setBorrador((b) => {
+      const n = leerNumero(b);
+      return n != null && redondear(n, entero) === value ? b : fmtMm(value);
+    });
+  }, [value, entero]);
   const fijar = (n: number) => {
-    const limpio = Math.min(max, Math.max(min, entero ? Math.round(n) : Math.round(n * 100) / 100));
+    const limpio = Math.min(max, Math.max(min, redondo(n)));
     onChange(limpio);
     setBorrador(fmtMm(limpio));
   };
@@ -57,15 +78,27 @@ export function NumeroMm({
     if (n == null) setBorrador(fmtMm(value));
     else fijar(n);
   };
+  const tipear = (texto: string) => {
+    setBorrador(texto);
+    if (!vivo) return;
+    const n = leerNumero(texto);
+    if (n != null && texto.trim() !== "-" && n >= min && n <= max && redondo(n) !== value) onChange(redondo(n));
+  };
   return (
-    <label htmlFor={id} className="flex min-w-0 flex-col gap-1 text-sm font-semibold text-[var(--text-secondary)]">
-      <span>{label}</span>
-      <span className="relative">
+    <label
+      htmlFor={id}
+      className={compacto ? "block" : "flex min-w-0 flex-col gap-1 text-sm font-semibold text-[var(--text-secondary)]"}
+    >
+      <span className={compacto ? "sr-only" : undefined}>{label}</span>
+      <span className="relative block">
         <input
           id={id}
           inputMode="decimal"
+          autoComplete="off"
           value={borrador}
-          onChange={(e) => setBorrador(e.target.value)}
+          data-qa={qa}
+          onChange={(e) => tipear(e.target.value)}
+          onFocus={onFocus}
           onBlur={confirmar}
           onKeyDown={(e) => {
             if (e.key === "Enter") confirmar();
@@ -75,11 +108,13 @@ export function NumeroMm({
               fijar(base + (e.key === "ArrowUp" ? 1 : -1) * paso * (e.shiftKey ? 10 : 1));
             }
           }}
-          className={`${INPUT} pr-10 font-mono tabular-nums`}
+          className={compacto ? `${INPUT_COMPACTO} font-mono tabular-nums` : `${INPUT} pr-10 font-mono tabular-nums`}
         />
-        <span aria-hidden className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-[var(--text-tertiary)]">
-          {sufijo}
-        </span>
+        {!compacto && (
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-[var(--text-tertiary)]">
+            {sufijo}
+          </span>
+        )}
       </span>
     </label>
   );

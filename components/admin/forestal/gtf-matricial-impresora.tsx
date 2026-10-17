@@ -24,6 +24,7 @@ import CalibrarConRegla, { accionesBajarPrueba } from "./gtf-matricial-calibrar"
 import { BotonIcono, Casilla, NumeroMm } from "./gtf-matricial-controles";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
 import { useCalibrarConRegla, type EstadoPerfilesTalonario, type useSalidaTalonario } from "./hooks/use-gtf-matricial-perfiles";
+import { CORRIMIENTO_MAX_MM, CORRIMIENTO_MIN_MM, useCorrimientoTalonario } from "./hooks/use-gtf-matricial-corrimiento";
 
 const SELECT = I.replace("h-11", "h-12");
 /** Escala en %, con una décima: 100,4 % = el papel sale 0,4 % más largo. */
@@ -51,10 +52,10 @@ export default function ImpresoraTalonario({
   const id = useId();
   const { prompt, confirm } = useConfirm();
   const cal = useCalibrarConRegla(t, imp);
-  const hoja = t.hoja;
-  if (!hoja) return null;
+  const corr = useCorrimientoTalonario(t, imp);
+  if (!t.hoja) return null;
   const p = imp.elegido;
-  const oficina = !p || p.id === PERFIL_OFICINA_ID;
+  const oficina = corr.oficina;
   const lista = imp.perfiles.length ? imp.perfiles : [{ id: PERFIL_OFICINA_ID, nombre: "Oficina" }];
 
   const agregar = async () => {
@@ -96,20 +97,8 @@ export default function ImpresoraTalonario({
 
       {/* Oficina corre con el X/Y de la hoja; las demás, con el suyo. La escala es siempre de la impresora (la pone también «Calibrar con regla»). */}
       <div className="grid grid-cols-2 gap-2">
-        <NumeroMm
-          label="Corrimiento X"
-          value={oficina || !p ? hoja.offsetXMm : p.corrimientoXmm}
-          min={-50}
-          max={50}
-          onChange={(v) => (oficina || !p ? t.cambiarHoja({ offsetXMm: v }) : imp.calibrar(p.id, { corrimientoXmm: v }))}
-        />
-        <NumeroMm
-          label="Corrimiento Y"
-          value={oficina || !p ? hoja.offsetYMm : p.corrimientoYmm}
-          min={-50}
-          max={50}
-          onChange={(v) => (oficina || !p ? t.cambiarHoja({ offsetYMm: v }) : imp.calibrar(p.id, { corrimientoYmm: v }))}
-        />
+        <NumeroMm label="Corrimiento X" value={corr.x} min={CORRIMIENTO_MIN_MM} max={CORRIMIENTO_MAX_MM} onChange={corr.fijarX} />
+        <NumeroMm label="Corrimiento Y" value={corr.y} min={CORRIMIENTO_MIN_MM} max={CORRIMIENTO_MAX_MM} onChange={corr.fijarY} />
         {p && (
           <>
             <NumeroMm label="Escala X" sufijo="%" paso={0.1} value={aPct(p.escalaX)} min={90} max={110} onChange={(v) => imp.calibrar(p.id, { escalaX: dePct(v) })} />

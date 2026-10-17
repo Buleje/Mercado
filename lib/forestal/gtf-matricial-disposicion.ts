@@ -321,9 +321,15 @@ const alineaSchema = z.enum(["izq", "centro", "der"]);
 /** Una hoja de matricial no pasa de 1 m: más es un tipeo. Negativos chicos: el borde se puede corregir hacia afuera. */
 export const POS_MIN_MM = -50;
 export const POS_MAX_MM = 1000;
+export const ANCHO_MIN_MM = 1;
+export const ANCHO_MAX_MM = 1000;
+export const LETRA_MIN_PT = 5;
+export const LETRA_MAX_PT = 24;
+export const ALTO_FILA_MIN_MM = 2;
+export const ALTO_FILA_MAX_MM = 60;
 const POS = mm(POS_MIN_MM, POS_MAX_MM);
-const ANCHO = mm(1, 1000);
-const LETRA = mm(5, 24);
+const ANCHO = mm(ANCHO_MIN_MM, ANCHO_MAX_MM);
+const LETRA = mm(LETRA_MIN_PT, LETRA_MAX_PT);
 
 /* `varias` y `encajar` opcionales: lo guardado antes del 16-10 no los trae y queda con los defectos (una línea + encajar). */
 export const campoPosSchema = z.object({
@@ -344,7 +350,7 @@ export const hojaSchema = z.object({
   campos: claves(campoPosSchema),
   tabla: z.object({
     y: POS,
-    altoFilaMm: mm(2, 60),
+    altoFilaMm: mm(ALTO_FILA_MIN_MM, ALTO_FILA_MAX_MM),
     maxFilas: z.int().min(1).max(200),
     letraPt: LETRA,
     columnas: claves(columnaPosSchema),

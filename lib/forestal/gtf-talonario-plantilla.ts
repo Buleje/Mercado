@@ -167,6 +167,17 @@ const RENGLONES_GUIA: Renglon[] = [
   { id: "38", rotulo: "(35) Observaciones:", x: 16.4, finRotulo: 45.5, y: 239.6, hasta: 135 },
 ];
 
+/**
+ * El rótulo del casillero tal como está impreso en el papel, sin los dos
+ * puntos del final: «(2) Autoridad Regional Forestal y de Fauna Silvestre
+ * (ARFFS)». Sólo la guía tiene renglones con rótulo; la lista, null.
+ */
+export function rotuloDelPapel(formato: "guia" | "lista", id: string): string | null {
+  if (formato !== "guia") return null;
+  const r = RENGLONES_GUIA.find((l) => l.id === id);
+  return r ? r.rotulo.replace(/\s*:\s*$/, "") : null;
+}
+
 /** Franjas de sección: [título, y de arriba, y de abajo]. */
 const FRANJAS_GUIA: Array<[string, number, number]> = [
   ["DATOS DEL ORIGEN DEL RECURSO O PROCEDENCIA", 48.5, 52.3],

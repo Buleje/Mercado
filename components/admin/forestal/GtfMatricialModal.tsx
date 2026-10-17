@@ -42,6 +42,7 @@ import { useSeleccionTalonario } from "./hooks/use-gtf-matricial-seleccion";
 import { useZoomTalonario } from "./hooks/use-gtf-matricial-zoom";
 import { BotonIcono, Opciones } from "./gtf-matricial-controles";
 import BarraTalonario from "./gtf-matricial-barra";
+import PosicionesTalonario from "./gtf-matricial-posiciones";
 import HojaTalonario from "./gtf-matricial-hoja";
 import CamposTalonario from "./gtf-matricial-campos";
 import TitularTalonario from "./gtf-matricial-titular";
@@ -75,6 +76,7 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
   const imp = usePerfilesTalonario();
   const salida = useSalidaTalonario(g.id, t, imp);
   const [conValores, setConValores] = useState(true);
+  const [posiciones, setPosiciones] = useState(false);
   const cerrar = useCierreSeguro(t.sucio, onClose);
   const hoja = t.hoja;
   const cat = CATALOGO[t.formato];
@@ -178,7 +180,7 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
         >
           {/* Centro: la barra y la hoja. Primero en el DOM: a 400 px va arriba. */}
           <div className="flex min-w-0 flex-col gap-2 lg:col-start-2 lg:row-start-1 lg:min-h-0">
-            <BarraTalonario t={t} s={s} z={z} p={p} v={{ soloValores: f.fondo.soloValores, alternar: f.alternarSoloValores }} />
+            <BarraTalonario t={t} s={s} z={z} p={p} v={{ soloValores: f.fondo.soloValores, alternar: f.alternarSoloValores }} onPosiciones={() => setPosiciones(true)} />
             <HojaTalonario t={t} s={s} z={z} fondo={f.fondo} nombres={p.nombres} />
           </div>
 
@@ -226,6 +228,7 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
           </div>
         </div>
       )}
+      {posiciones && <PosicionesTalonario t={t} s={s} imp={imp} onClose={() => setPosiciones(false)} />}
     </AdminModal>
   );
 }
