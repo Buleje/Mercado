@@ -22,6 +22,7 @@ experimental:
 > Checkout principal, **nunca worktree**. Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura);
 > se escribe solo en QA. «Listo» = comando + salida por el camino del usuario (rule `verificacion-de-verdad`).
 > **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
+> **Tope de turnos**: a la llamada 30 dejás de buscar y escribís el contrato con lo que tengas (lo que falte va como «sin verificar»). Dos veces seguidas (17-10) llegaste a 40 sin entregar nada.
 > **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
 
 ## Qué entregás
