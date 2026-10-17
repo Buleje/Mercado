@@ -304,6 +304,7 @@ export default function KpisDeExistencias({
      entró y salió, en el botón; las dos tiras de apoyo vuelven al abrirlo. */
   return (
     <CtpKpisPlegables
+      alRiel
       claveMemoria="ctp-saldos"
       resumen={`saldo ${m3(mp.saldoM3)} · ingresado ${m3(mp.ingresoM3)} · consumido ${m3(mp.consumidoM3)}${kpis.coberturaDias != null ? ` · ${kpis.coberturaDias} días de patio` : ""}`}
       tarjetas={[tarjeta]}

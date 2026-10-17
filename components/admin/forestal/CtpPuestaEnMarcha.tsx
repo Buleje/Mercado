@@ -10,10 +10,19 @@
  *
  * Se dibuja sólo si hay algo que decir. Cuando el libro está entero en uso, una
  * línea y listo: el espacio es para lo que falta, no para felicitar.
+ *
+ * Compactación del libro (17-10): eran ~470 px ARRIBA de las cifras del mes, y
+ * el tablero es el movimiento del mes. Ahora es una línea plegable y recordada
+ * (`ctp-puesta-en-marcha:abierta`): plegada sigue diciendo cuántas partes hay
+ * en uso y nombra las que faltan, cada una con su atajo; desplegada, la lista
+ * de siempre. Lo que antes eran renglones por fila (qué papel sale roto y por
+ * qué campo) va en el ⓘ de la parte: la Ficha lo repite entero en Directorio ›
+ * «Tu CTP», adonde lleva su atajo.
  */
 
 import { CardTitle } from "@buleje/design-system";
-import { ArrowRight, Circle, CheckCircle2, CircleDot } from "@buleje/design-system/icons";
+import { ArrowRight, ChevronDown, Circle, CheckCircle2, CircleDot } from "@buleje/design-system/icons";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { usePuestaEnMarcha } from "@/hooks/use-puesta-en-marcha";
 import type { Capacidad } from "@/lib/forestal/ctp-puesta-en-marcha";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -42,6 +51,7 @@ const TONO = {
 
 export default function CtpPuestaEnMarcha({ onIr }: { onIr?: (vista: string) => void }) {
   const { capacidades, resumen, cargando } = usePuestaEnMarcha();
+  const [abierta, setAbierta] = useLocalStorage<boolean>("ctp-puesta-en-marcha:abierta", false);
 
   if (cargando || !resumen || capacidades.length === 0) return null;
 
@@ -60,39 +70,72 @@ export default function CtpPuestaEnMarcha({ onIr }: { onIr?: (vista: string) => 
   const orden = { sin_estrenar: 0, a_medias: 1, en_uso: 2, no_aplica: 3 } as const;
   const filas = [...capacidades].sort((a, b) => orden[a.estado] - orden[b.estado]);
 
+  const faltan = filas.filter((c) => c.estado === "sin_estrenar" || c.estado === "a_medias");
+
   return (
     <section className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-          Qué del libro está sin estrenar
-        </CardTitle>
-        <p className="text-xs text-[var(--text-tertiary)]">
-          {resumen.enUso} de {resumen.total} en uso · {resumen.frase}
-        </p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5">
+        <button
+          type="button"
+          onClick={() => setAbierta((v) => !v)}
+          aria-expanded={abierta}
+          aria-controls="ctp-puesta-en-marcha-lista"
+          className="inline-flex min-h-10 items-center gap-2 rounded-lg text-left"
+        >
+          <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform ${abierta ? "" : "-rotate-90"}`} aria-hidden />
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+            Qué del libro está sin estrenar
+          </CardTitle>
+        </button>
+        {/* La barra: cuánto del libro está funcionando de verdad. «A medias»
+            vale medio — con uno el número miente hacia arriba, con cero
+            castiga a quien ya arrancó. */}
+        <span className="inline-flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
+          <span className="h-2 w-20 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+            <span
+              className="block h-full rounded-full bg-primary transition-[width]"
+              style={{ width: `${resumen.pct}%` }}
+              role="progressbar"
+              aria-valuenow={resumen.pct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Partes del libro en funcionamiento"
+            />
+          </span>
+          <span className="font-mono tabular-nums">
+            {resumen.enUso} de {resumen.total} en uso
+          </span>
+          <InfoTip title="Qué del libro está sin estrenar" what={resumen.frase} />
+        </span>
+        {/* Plegada, nombra lo que falta y lleva a cada parte: plegar no es esconder. */}
+        {!abierta && onIr && (
+          <span className="flex flex-wrap gap-1.5">
+            {faltan.map((c) => {
+              const t = TONO[c.estado as keyof typeof TONO] ?? TONO.sin_estrenar;
+              return (
+                <button
+                  key={c.clave}
+                  type="button"
+                  onClick={() => onIr(c.vista)}
+                  title={c.paso ?? c.medida}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--rule-base)] px-2.5 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:border-primary hover:bg-primary/10"
+                >
+                  <t.Icono className={`h-3.5 w-3.5 shrink-0 ${t.color}`} aria-label={t.rotulo} />
+                  {c.titulo}
+                </button>
+              );
+            })}
+          </span>
+        )}
       </div>
 
-      {/* La barra: cuánto del libro está funcionando de verdad. «A medias» vale
-          medio — con uno el número miente hacia arriba, con cero castiga a
-          quien ya arrancó. */}
-      <div className="px-4 pt-3">
-        <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-          <div
-            className="h-full rounded-full bg-primary transition-[width]"
-            style={{ width: `${resumen.pct}%` }}
-            role="progressbar"
-            aria-valuenow={resumen.pct}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="Partes del libro en funcionamiento"
-          />
-        </div>
-      </div>
-
-      <ul className="divide-y divide-[var(--rule-soft)]">
-        {filas.map((c) => (
-          <Fila key={c.clave} c={c} onIr={onIr} />
-        ))}
-      </ul>
+      {abierta && (
+        <ul id="ctp-puesta-en-marcha-lista" className="divide-y divide-[var(--rule-soft)] border-t border-[var(--rule-base)]">
+          {filas.map((c) => (
+            <Fila key={c.clave} c={c} onIr={onIr} />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -100,7 +143,7 @@ export default function CtpPuestaEnMarcha({ onIr }: { onIr?: (vista: string) => 
 function Fila({ c, onIr }: { c: Capacidad; onIr?: (vista: string) => void }) {
   const t = TONO[c.estado as keyof typeof TONO] ?? TONO.sin_estrenar;
   return (
-    <li className="flex flex-wrap items-start gap-3 px-4 py-3">
+    <li className="flex flex-wrap items-start gap-3 px-4 py-2.5">
       <t.Icono className={`mt-0.5 h-5 w-5 shrink-0 ${t.color}`} aria-label={t.rotulo} />
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-x-2 text-sm">
@@ -112,24 +155,15 @@ function Fila({ c, onIr }: { c: Capacidad; onIr?: (vista: string) => void }) {
             ancho="w-80"
             what={c.queDa}
             affects={c.desbloquea && c.desbloquea.length > 0 ? `Mientras tanto no funciona: ${c.desbloquea.join(" · ")}` : undefined}
+            /* Qué papel sale roto y por qué campo: sin esto, «completa la
+               Ficha» manda a un formulario de dieciocho casilleros sin decir
+               cuáles importan para qué. Iba en renglones debajo de la fila. */
+            example={c.detalle && c.detalle.length > 0 ? c.detalle.join(" · ") : undefined}
           />
           {/* La medida al lado del nombre: sin el número esto es una opinión. */}
           <span className={`font-mono text-xs tabular-nums ${t.color}`}>{c.medida}</span>
         </p>
-        {c.paso && <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">{c.paso}</p>}
-        {c.detalle && c.detalle.length > 0 && (
-          /* Qué papel sale roto y por qué campo. Sin esto, «completá la Ficha»
-             manda a un formulario de dieciocho casilleros sin decir cuáles
-             importan para qué. */
-          <ul className="mt-1 space-y-0.5">
-            {c.detalle.map((d) => (
-              <li key={d} className="text-xs text-[var(--text-secondary)]">
-                · {d}
-              </li>
-            ))}
-          </ul>
-        )}
-
+        {c.paso && <p className="mt-0.5 text-sm font-medium text-[var(--text-primary)]">{c.paso}</p>}
       </div>
       {c.paso && onIr && (
         <button

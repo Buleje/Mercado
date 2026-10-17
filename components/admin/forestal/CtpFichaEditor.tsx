@@ -24,7 +24,8 @@ import CtpFichaFormIdentidad, { type EstadoPadron } from "./CtpFichaFormIdentida
 import CtpFichaFormTitulos from "./CtpFichaFormTitulos";
 import CtpFichaFormUbicacion from "./CtpFichaFormUbicacion";
 import { emptyCtpFicha, type CtpFicha } from "@/lib/forestal/ctp-ficha-types";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { TextoDeAccion } from "@/components/admin/shared/libro-acciones-vista";
+import { VistaHeader } from "./ctp-shared";
 
 export default function CtpFichaEditor() {
   const [ficha, setFicha] = useState<CtpFicha>(emptyCtpFicha());
@@ -110,19 +111,19 @@ export default function CtpFichaEditor() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Qué es la Ficha, en el ⓘ (2026-09-24): era un párrafo de 29 palabras. */}
-        <InfoTip
-          title="Ficha del CTP"
-          what="La identidad legal del Centro de Transformación Primaria ante SERFOR / ARFFS."
-          affects="Es la carátula del Libro de Operaciones y encabeza el certificado de trazabilidad y la GTF de salida."
-        />
+      {/* Qué es la Ficha, en el ⓘ (2026-09-24: era un párrafo de 29 palabras).
+          En el libro el ⓘ y «Editar ficha» van al riel, junto a las pestañas
+          (compactación, 17-10); fuera de él, la fila con su título. */}
+      <VistaHeader
+        titulo="Ficha del CTP"
+        hint="La identidad legal del Centro de Transformación Primaria ante SERFOR / ARFFS. Es la carátula del Libro de Operaciones y encabeza el certificado de trazabilidad y la GTF de salida."
+      >
         {!editing && (
-          <button type="button" onClick={abrirEdicion} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
-            <Pencil className="h-4 w-4" /> Editar ficha
+          <button type="button" onClick={abrirEdicion} title="Editar ficha" className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+            <Pencil className="h-4 w-4" aria-hidden /> <TextoDeAccion corto="Editar">Editar ficha</TextoDeAccion>
           </button>
         )}
-      </div>
+      </VistaHeader>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
       {ok && <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-sm font-medium text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]"><CheckCircle2 className="h-5 w-5" /> Ficha guardada.</div>}

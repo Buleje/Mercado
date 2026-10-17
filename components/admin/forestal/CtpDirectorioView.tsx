@@ -11,19 +11,16 @@
  * Los faltantes se muestran por rol y no bloquean: una libreta a medio llenar
  * sigue sirviendo, pero el operador tiene que ver antes de imprimir que a ese
  * destinatario le falta la dirección.
+ *
+ * Compactación del libro (17-10): «Agregar» y «Planilla» van al riel, las
+ * pestañas en UNA fila con `?sub=` (`SUBS_DIRECTORIO`) y la última es «Tu CTP»,
+ * la Ficha del CTP que antes era otra vista (`?vista=ficha` abre ahí).
  */
 
 import { useMemo, useState } from "react";
-import { MessageCircle, Share2, Loader2, Pencil, Plus, Search, Trash2, Truck, Upload, Users, Download } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
-  CATEGORIA_LABEL,
-  ROLES_PARTE,
-  ROL_DESCRIPCION,
   ROL_LABEL,
-  ROL_PLURAL,
-  categoriaEfectiva,
-  direccionCompleta,
   faltantesParaGuia,
   filtrarPartes,
   filtrarVehiculos,
@@ -33,32 +30,42 @@ import {
   type RolParte,
   type Vehiculo,
 } from "@/lib/forestal/directorio";
-import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import CtpDirectorioDesdeGuias from "./CtpDirectorioDesdeGuias";
 import CtpParteModal from "./CtpParteModal";
 import CtpVehiculoModal from "./CtpVehiculoModal";
 import CtpProveedorTrazaModal from "./CtpProveedorTrazaModal";
-import { Btn, I, TablaSkeleton, VistaHeader, IconAction } from "./ctp-shared";
-import ActionMenu from "@/components/admin/shared/action-menu";
+import { TablaSkeleton } from "./ctp-shared";
 import CtpImportarPartesModal from "./CtpImportarPartesModal";
 import { useParteEnUrl } from "./hooks/use-parte-en-url";
 import { partesACsv } from "@/lib/forestal/directorio-importar";
-
-type Pestaña = RolParte | "vehiculos";
-
-const PESTAÑAS: { id: Pestaña; label: string }[] = [
-  ...ROLES_PARTE.map((r) => ({ id: r as Pestaña, label: ROL_PLURAL[r] })),
-  { id: "vehiculos", label: "Vehículos" },
-];
+import CtpDirectorioPestanas from "./CtpDirectorioPestanas";
+import { ListaPartes, ListaVehiculos } from "./CtpDirectorioListas";
+import CtpFichaEditor from "./CtpFichaEditor";
+import { BuscarDirectorio, RielDirectorio } from "./CtpDirectorioBarra";
+import { SUBS_DIRECTORIO, subPedidoPorVistaVieja, type SubDirectorio } from "./ctp-vistas-fusionadas";
+import { usePestanaInterna } from "./hooks/use-pestana-interna";
 
 /** "1 parte" y no "1 partes": el conteo del encabezado se lee todo el tiempo. */
 const plural = (n: number, sing: string, plur: string) => `${n} ${n === 1 ? sing : plur}`;
 
-export default function CtpDirectorioView() {
+export default function CtpDirectorioView({
+  pedido = null,
+}: {
+  /** La pestaña que pide el libro estando YA en el Directorio (ver `usePestanaInterna`). */
+  pedido?: { sub: string; n: number } | null;
+} = {}) {
   const { confirm } = useConfirm();
   const dir = useDirectorioForestal();
-  const [pestaña, setPestaña] = useState<Pestaña>("destinatario");
+  /* La URL vieja (`?vista=ficha`) se lee UNA vez, al montar: después el libro la reescribe. */
+  const [forzada] = useState(() => subPedidoPorVistaVieja("directorio"));
+  const { sub: pestaña, irA: setPestaña } = usePestanaInterna<SubDirectorio>({
+    moduleId: "ctp-directorio",
+    validas: SUBS_DIRECTORIO,
+    porDefecto: "destinatario",
+    forzada,
+    pedido,
+  });
   const [q, setQ] = useState("");
   const [soloIncompletos, setSoloIncompletos] = useState(false);
   const [editando, setEditando] = useState<{ tipo: "parte"; valor: Parte | null } | { tipo: "vehiculo"; valor: Vehiculo | null } | null>(null);
@@ -73,29 +80,32 @@ export default function CtpDirectorioView() {
   const parteAbierta = fichaParte.parte ?? (editando?.tipo === "parte" ? editando.valor : null);
 
   const esVehiculos = pestaña === "vehiculos";
+  const esTuCtp = pestaña === "tu-ctp";
+  /** El rol de la pestaña; `null` en Vehículos y en Tu CTP. */
+  const rol: RolParte | null = esVehiculos || esTuCtp ? null : (pestaña as RolParte);
   const transportistas = useMemo(() => dir.porRol("transportista"), [dir]);
 
   const partesDelRol = useMemo(() => {
-    if (esVehiculos) return [];
+    if (!rol) return [];
     // Incluye las inactivas: esta vista ES la administración, y una parte dada de
     // baja tiene que poder verse para reactivarla.
-    return dir.partes.filter((p) => p.roles.includes(pestaña as RolParte));
-  }, [dir.partes, pestaña, esVehiculos]);
+    return dir.partes.filter((p) => p.roles.includes(rol));
+  }, [dir.partes, rol]);
 
   /** Cuántas de esta pestaña le faltan datos para poder usarse en una guía. */
   const incompletosDelRol = useMemo(
-    () => partesDelRol.filter((p) => faltantesParaGuia(p, pestaña as RolParte).length > 0).length,
-    [partesDelRol, pestaña],
+    () => (rol ? partesDelRol.filter((p) => faltantesParaGuia(p, rol).length > 0).length : 0),
+    [partesDelRol, rol],
   );
 
   const partesVisibles = useMemo(() => {
-    if (esVehiculos) return [];
+    if (!rol) return [];
     const filtradas = filtrarPartes(partesDelRol, q);
     // Más usadas primero — el mismo orden que ya ve el operador al elegir en
     // una guía (dir.porRol), acá simplemente no estaba aplicado.
     const ordenadas = ordenarPorUso(filtradas);
-    return soloIncompletos ? ordenadas.filter((p) => faltantesParaGuia(p, pestaña as RolParte).length > 0) : ordenadas;
-  }, [partesDelRol, pestaña, q, esVehiculos, soloIncompletos]);
+    return soloIncompletos ? ordenadas.filter((p) => faltantesParaGuia(p, rol).length > 0) : ordenadas;
+  }, [partesDelRol, rol, q, soloIncompletos]);
 
   const vehiculosVisibles = useMemo(
     () => (esVehiculos ? ordenarPorUso(filtrarVehiculos(dir.vehiculos, q)) : []),
@@ -116,8 +126,12 @@ export default function CtpDirectorioView() {
     URL.revokeObjectURL(url);
   }
 
-  const conteo = (p: Pestaña) =>
-    p === "vehiculos" ? dir.vehiculos.length : dir.partes.filter((x) => x.roles.includes(p as RolParte)).length;
+  const conteo = (p: SubDirectorio) =>
+    p === "tu-ctp"
+      ? null
+      : p === "vehiculos"
+        ? dir.vehiculos.length
+        : dir.partes.filter((x) => x.roles.includes(p as RolParte)).length;
 
   async function borrar(id: string, nombre: string, tipo: "parte" | "vehiculo") {
     if (!(await confirm({
@@ -135,158 +149,93 @@ export default function CtpDirectorioView() {
     }
   }
 
+  const agregar = esVehiculos ? "Agregar vehículo" : rol ? `Agregar ${ROL_LABEL[rol].toLowerCase()}` : null;
+
   return (
     <div className="space-y-3">
-      <VistaHeader
-        titulo="Directorio"
-        meta={`${plural(dir.partes.length, "parte", "partes")} · ${plural(dir.vehiculos.length, "vehículo", "vehículos")}`}
-        hint="Proveedores, clientes, destinatarios, transportistas, conductores y placas. Se completan solos en la guía."
-      >
-        <Btn
-          size="sm"
-          variant="primary"
-          onClick={() =>
-            setEditando(esVehiculos ? { tipo: "vehiculo", valor: null } : { tipo: "parte", valor: null })
-          }
-        >
-          <Plus className="h-4 w-4" />
-          {esVehiculos ? "Agregar vehículo" : `Agregar ${ROL_LABEL[pestaña as RolParte].toLowerCase()}`}
-        </Btn>
-        {/* La planilla entra y sale por las MISMAS columnas: lo exportado se
-            corrige en Excel y vuelve sin traducir nada. Van en el menú porque
-            no son de uso diario — el de uso diario es agregar. */}
-        {!esVehiculos && (
-          <ActionMenu
-            label="Planilla"
-            size="md"
-            actions={[
-              {
-                id: "exportar",
-                label: "Bajar lo que estoy viendo",
-                hint: `${partesVisibles.length} ${partesVisibles.length === 1 ? "ficha" : "fichas"} a Excel, con el filtro puesto`,
-                icon: Download,
-                disabled: partesVisibles.length === 0,
-                onSelect: () => descargarCsv(),
-              },
-              {
-                id: "importar",
-                label: "Traer de una planilla",
-                hint: "Un .xlsx o .csv; se ve qué entra antes de guardar",
-                icon: Upload,
-                onSelect: () => setImportando(true),
-              },
-            ]}
-          />
-        )}
-      </VistaHeader>
+      {/* En «Tu CTP» el riel (ⓘ y «Editar ficha») es el de la Ficha. */}
+      {agregar && (
+        <RielDirectorio
+          meta={`${plural(dir.partes.length, "parte", "partes")} · ${plural(dir.vehiculos.length, "vehículo", "vehículos")}`}
+          conPlanilla={rol !== null}
+          visibles={partesVisibles.length}
+          agregar={agregar}
+          onBajar={descargarCsv}
+          onTraer={() => setImportando(true)}
+          onAgregar={() => setEditando(esVehiculos ? { tipo: "vehiculo", valor: null } : { tipo: "parte", valor: null })}
+        />
+      )}
 
       {/* La libreta que ya está escrita en las guías (ADR-357). Va ARRIBA de las
           pestañas: con el directorio en cero, lo primero que hay que ver es que
           los contactos ya existen y de dónde sacarlos. */}
-      <CtpDirectorioDesdeGuias
-        partes={dir.partes}
-        vehiculos={dir.vehiculos}
-        onGuardarParte={dir.guardarParte}
-        onGuardarVehiculo={dir.guardarVehiculo}
-      />
+      {!esTuCtp && (
+        <CtpDirectorioDesdeGuias
+          partes={dir.partes}
+          vehiculos={dir.vehiculos}
+          onGuardarParte={dir.guardarParte}
+          onGuardarVehiculo={dir.guardarVehiculo}
+        />
+      )}
 
-      <div className="flex flex-wrap gap-1.5">
-        {PESTAÑAS.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            aria-pressed={pestaña === p.id}
-            title={p.id === "vehiculos" ? "Las placas que ya viajaron" : ROL_DESCRIPCION[p.id as RolParte]}
-            onClick={() => setPestaña(p.id)}
-            className={`inline-flex h-12 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-semibold transition-colors ${
-              pestaña === p.id
-                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
-            }`}
-          >
-            {p.id === "vehiculos" ? <Truck className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-            {p.label}
-            <span className="rounded bg-[var(--surface-sunken)] px-1.5 font-mono text-xs tabular-nums">{conteo(p.id)}</span>
-          </button>
-        ))}
-      </div>
+      <CtpDirectorioPestanas activa={pestaña} onCambiar={setPestaña} conteo={conteo}>
+        {esTuCtp ? (
+          <CtpFichaEditor />
+        ) : (
+          <>
+            <BuscarDirectorio
+              esVehiculos={esVehiculos}
+              q={q}
+              onQ={setQ}
+              incompletos={rol ? incompletosDelRol : null}
+              soloIncompletos={soloIncompletos}
+              onSoloIncompletos={() => setSoloIncompletos((v) => !v)}
+            />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input
-            type="search"
-            className={`${I} pl-9`}
-            placeholder={esVehiculos ? "Buscar por placa, marca o dueño…" : "Buscar por nombre o documento…"}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
-        {/* Con los campos nuevos (DNI del representante, zona, ubigeo) la
-            libreta vieja quedó con huecos — este toggle es la forma de
-            recorrerlos uno por uno en vez de buscarlos a ojo en la lista. */}
-        {/* El botón sigue visible aunque ESTA pestaña ya no tenga incompletos
-            (soloIncompletos) — si sólo se mostrara con incompletosDelRol > 0,
-            prenderlo en una pestaña y pasar a otra completa lo dejaba
-            activado sin ningún control a la vista para apagarlo. */}
-        {!esVehiculos && (incompletosDelRol > 0 || soloIncompletos) && (
-          <button
-            type="button"
-            aria-pressed={soloIncompletos}
-            onClick={() => setSoloIncompletos((v) => !v)}
-            className={`inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-semibold transition-colors ${
-              soloIncompletos
-                ? "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
-            }`}
-          >
-            Sólo incompletos
-            <span className="rounded bg-[var(--surface-sunken)] px-1.5 font-mono text-xs tabular-nums">{incompletosDelRol}</span>
-          </button>
+            {dir.error && (
+              <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                {dir.error}
+              </p>
+            )}
+
+            {fichaParte.noEsta && (
+              <p role="status" className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-sm text-[var(--text-secondary)]">
+                El enlace apunta a una parte que no está en el directorio.
+                <button type="button" onClick={fichaParte.cerrar} className="font-semibold text-[var(--accent-ink)] underline underline-offset-2">
+                  Quitar
+                </button>
+              </p>
+            )}
+
+            {dir.cargando ? (
+              <TablaSkeleton />
+            ) : esVehiculos ? (
+              <ListaVehiculos
+                vehiculos={vehiculosVisibles}
+                borrando={borrando}
+                onEditar={(v) => setEditando({ tipo: "vehiculo", valor: v })}
+                onBorrar={(v) => void borrar(v.id, formatearPlaca(v.placa), "vehiculo")}
+              />
+            ) : rol ? (
+              <ListaPartes
+                partes={partesVisibles}
+                rol={rol}
+                borrando={borrando}
+                vacioTexto={soloIncompletos ? "Ningún registro incompleto — la libreta está al día en este rol." : undefined}
+                onTrazar={(p) => setTrazando(p.nombre)}
+                onEditar={(p) => fichaParte.abrir(p.id)}
+                onBorrar={(p) => void borrar(p.id, p.nombre, "parte")}
+              />
+            ) : null}
+          </>
         )}
-      </div>
-
-      {dir.error && (
-        <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-          {dir.error}
-        </p>
-      )}
-
-      {fichaParte.noEsta && (
-        <p role="status" className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-sm text-[var(--text-secondary)]">
-          El enlace apunta a una parte que no está en el directorio.
-          <button type="button" onClick={fichaParte.cerrar} className="font-semibold text-[var(--accent-ink)] underline underline-offset-2">
-            Quitar
-          </button>
-        </p>
-      )}
-
-      {dir.cargando ? (
-        <TablaSkeleton />
-      ) : esVehiculos ? (
-        <ListaVehiculos
-          vehiculos={vehiculosVisibles}
-          borrando={borrando}
-          onEditar={(v) => setEditando({ tipo: "vehiculo", valor: v })}
-          onBorrar={(v) => void borrar(v.id, formatearPlaca(v.placa), "vehiculo")}
-        />
-      ) : (
-        <ListaPartes
-          partes={partesVisibles}
-          rol={pestaña as RolParte}
-          borrando={borrando}
-          vacioTexto={soloIncompletos ? "Ningún registro incompleto — la libreta está al día en este rol." : undefined}
-          onTrazar={(p) => setTrazando(p.nombre)}
-          onEditar={(p) => fichaParte.abrir(p.id)}
-          onBorrar={(p) => void borrar(p.id, p.nombre, "parte")}
-        />
-      )}
+      </CtpDirectorioPestanas>
 
       {(fichaParte.parte || editando?.tipo === "parte") && (
         <CtpParteModal
           key={parteAbierta?.id ?? "nueva"}
           parte={parteAbierta}
-          rolInicial={esVehiculos ? "destinatario" : (pestaña as RolParte)}
+          rolInicial={rol ?? "destinatario"}
           existentes={dir.partes}
           // La misma ficha abierta desde el picker lista los camiones del
           // transportista; sin esto, la de ESTA pantalla no los mostraba.
@@ -304,7 +253,7 @@ export default function CtpDirectorioView() {
       {importando && (
         <CtpImportarPartesModal
           existentes={dir.partes}
-          rol={esVehiculos ? "destinatario" : (pestaña as RolParte)}
+          rol={rol ?? "destinatario"}
           onImportar={(input) => dir.guardarParte(input)}
           onClose={() => setImportando(false)}
         />
@@ -321,163 +270,5 @@ export default function CtpDirectorioView() {
         />
       )}
     </div>
-  );
-}
-
-function Vacio({ texto }: { texto: string }) {
-  return (
-    <p className="rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
-      {texto}
-    </p>
-  );
-}
-
-function ListaPartes({
-  partes,
-  rol,
-  borrando,
-  vacioTexto,
-  onEditar,
-  onBorrar,
-  onTrazar,
-}: {
-  partes: Parte[];
-  rol: RolParte;
-  borrando: string | null;
-  /** Override del mensaje vacío — el filtro "Sólo incompletos" no es "no hay nada". */
-  vacioTexto?: string;
-  onEditar: (p: Parte) => void;
-  onBorrar: (p: Parte) => void;
-  /** Sólo para proveedores: abre su cadena completa. */
-  onTrazar: (p: Parte) => void;
-}) {
-  if (partes.length === 0) {
-    return <Vacio texto={vacioTexto ?? `Todavía no hay ${ROL_PLURAL[rol].toLowerCase()} cargados. El primero se agrega acá o desde una guía.`} />;
-  }
-  return (
-    <ul className="space-y-1.5">
-      {partes.map((p) => {
-        const faltan = faltantesParaGuia(p, rol);
-        return (
-          <li
-            key={p.id}
-            className={`flex items-center gap-3 rounded-xl border bg-[var(--surface-raised)] px-3 py-2.5 ${
-              p.activo ? "border-[var(--rule-base)]" : "border-dashed border-[var(--rule-soft)] opacity-70"
-            }`}
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-baseline gap-x-2">
-                <span className="truncate text-sm font-bold text-[var(--text-primary)]">{p.nombre}</span>
-                {p.docNumero && (
-                  <span className="font-mono text-xs text-[var(--text-tertiary)]">{p.docTipo} {p.docNumero}</span>
-                )}
-                {rol === "proveedor" && (
-                  <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
-                    {CATEGORIA_LABEL[categoriaEfectiva(p.categoria)]}
-                  </span>
-                )}
-                {!p.activo && <span className="text-xs font-bold text-[var(--text-tertiary)]">dado de baja</span>}
-              </div>
-              <span className="block truncate text-xs text-[var(--text-tertiary)]">
-                {[direccionCompleta(p) || null, p.codigoCtp ? `CTP ${p.codigoCtp}` : null, p.tipoEstablecimiento, p.tituloHabilitante, p.licencia ? `Lic. ${p.licencia}` : null]
-                  .filter(Boolean)
-                  .join(" · ") || "Sin dirección cargada"}
-              </span>
-              {faltan.length > 0 && (
-                <span className="mt-0.5 block text-xs font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                  Para una guía le falta: {faltan.join(", ")}
-                </span>
-              )}
-            </div>
-            {p.usos > 0 && (
-              <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-bold tabular-nums text-[var(--text-secondary)]" title="Veces usado en un documento">
-                {p.usos}×
-              </span>
-            )}
-            <div className="flex shrink-0 items-center gap-1">
-              {/* Sólo el proveedor tiene cadena hacia adelante: es de quien
-                  entró la madera. Un destinatario no "rinde". */}
-              {rol === "proveedor" && (
-                <IconAction
-                  icon={Share2}
-                  label="Ver todo lo que trajo y en qué terminó"
-                  onClick={() => onTrazar(p)}
-                  tone="accent"
-                />
-              )}
-              {p.telefono && (
-                <IconAction
-                  icon={MessageCircle}
-                  label={`Escribirle a ${p.nombre} por WhatsApp`}
-                  onClick={() => {
-                    const link = enlaceWhatsAppConTexto(p.telefono, `Hola ${p.nombre}, te escribo desde el aserradero.`);
-                    if (link) window.open(link, "_blank", "noopener,noreferrer");
-                  }}
-                  tone="success"
-                />
-              )}
-              <IconAction icon={Pencil} label="Editar" onClick={() => onEditar(p)} tone="info" />
-              {borrando === p.id ? (
-                <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
-              ) : (
-                <IconAction icon={Trash2} label="Dar de baja" onClick={() => onBorrar(p)} tone="danger" />
-              )}
-            </div>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-function ListaVehiculos({
-  vehiculos,
-  borrando,
-  onEditar,
-  onBorrar,
-}: {
-  vehiculos: Vehiculo[];
-  borrando: string | null;
-  onEditar: (v: Vehiculo) => void;
-  onBorrar: (v: Vehiculo) => void;
-}) {
-  if (vehiculos.length === 0) {
-    return <Vacio texto="Todavía no hay vehículos cargados. Agrega el primero para elegirlo por placa en la guía." />;
-  }
-  return (
-    <ul className="space-y-1.5">
-      {vehiculos.map((v) => (
-        <li
-          key={v.id}
-          className={`flex items-center gap-3 rounded-xl border bg-[var(--surface-raised)] px-3 py-2.5 ${
-            v.activo ? "border-[var(--rule-base)]" : "border-dashed border-[var(--rule-soft)] opacity-70"
-          }`}
-        >
-          <span className="shrink-0 font-mono text-sm font-bold text-[var(--text-primary)]">{formatearPlaca(v.placa)}</span>
-          <div className="min-w-0 flex-1">
-            <span className="block truncate text-sm text-[var(--text-secondary)]">
-              {[v.marca, v.tipo, v.configuracion].filter(Boolean).join(" · ") || "Sin datos del vehículo"}
-            </span>
-            <span className="block truncate text-xs text-[var(--text-tertiary)]">
-              {[v.transportistaNombre, v.capacidadM3 != null ? `${v.capacidadM3} m³` : null].filter(Boolean).join(" · ") ||
-                "Sin dueño asignado"}
-            </span>
-          </div>
-          {v.usos > 0 && (
-            <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-bold tabular-nums text-[var(--text-secondary)]">
-              {v.usos}×
-            </span>
-          )}
-          <div className="flex shrink-0 items-center gap-1">
-            <IconAction icon={Pencil} label="Editar" onClick={() => onEditar(v)} tone="info" />
-            {borrando === v.id ? (
-              <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
-            ) : (
-              <IconAction icon={Trash2} label="Dar de baja" onClick={() => onBorrar(v)} tone="danger" />
-            )}
-          </div>
-        </li>
-      ))}
-    </ul>
   );
 }

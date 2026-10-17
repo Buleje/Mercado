@@ -8,22 +8,30 @@
  *
  * A 400 px las cuatro se encimaban (medido 24-09: botones de 87 px con texto de
  * 111 a 144 px). La causa era `flex-1 whitespace-nowrap` dentro de un
- * `flex-wrap`: con base 0 % ningún botón pide renglón y el texto se sale. Ahora
- * es una grilla de 2×2 en angosto y de 4 en ancho, y el texto envuelve.
+ * `flex-wrap`: con base 0 % ningún botón pide renglón y el texto se sale.
+ *
+ * Compactación del libro (17-10): la sección vive en `?sub=` (como Tablero o
+ * Despacho) y las pestañas son las del 2.º nivel de los libros
+ * (`PestanasDeVista`: 48 px, `basis-auto`, el texto envuelve): una fila en
+ * ancho, dos en el celular — antes era una grilla 2×2 hasta 1024 px.
  */
 
 import type { ReactNode } from "react";
 import CtpKpiFiltros, { notaDeFiltros } from "../CtpKpiFiltros";
+import type { SubSaldos } from "../ctp-vistas-fusionadas";
 import Pestanas from "./Pestanas";
 
-export const SECCIONES = [
-  { id: "estado" as const, label: "Cómo está hoy" },
-  { id: "capacidad" as const, label: "Qué puede salir" },
-  { id: "movimiento" as const, label: "Cómo se movió" },
-  { id: "libro" as const, label: "Lo que firma el libro" },
+export const SECCIONES: readonly { id: SubSaldos; label: string; hint: string }[] = [
+  { id: "estado", label: "Cómo está hoy", hint: "Existencias, patio y antigüedad de las guías" },
+  { id: "capacidad", label: "Qué puede salir", hint: "Lo que cada permiso, lote y producto deja despachar" },
+  { id: "movimiento", label: "Cómo se movió", hint: "Entradas, consumos y salidas del período" },
+  {
+    id: "libro",
+    label: "Lo que firma el libro",
+    hint: "Los tres Cuadros Resumen del formato oficial y el stock de productos",
+  },
 ];
-export type Seccion = (typeof SECCIONES)[number]["id"];
-export const SECCION_IDS = SECCIONES.map((s) => s.id) as readonly Seccion[];
+export type Seccion = SubSaldos;
 
 const idTab = (s: Seccion) => `saldos-tab-${s}`;
 const idPanel = (s: Seccion) => `saldos-panel-${s}`;
@@ -43,15 +51,15 @@ export default function SeccionesSaldos({
   return (
     <>
       <Pestanas
-        items={SECCIONES.map((s) => ({ id: s.id, contenido: s.label }))}
+        items={SECCIONES.map((s) => ({ id: s.id, contenido: <span title={s.hint}>{s.label}</span> }))}
         activa={seccion}
         onCambiar={onSeccion}
         etiqueta="Secciones de Saldos"
         idTab={idTab}
         idPanel={idPanel}
-        className="grid grid-cols-2 gap-1 rounded-xl bg-[var(--surface-sunken)] p-1 lg:grid-cols-4"
+        className="flex flex-wrap gap-1 rounded-xl bg-[var(--surface-sunken)] p-1"
         claseBoton={(sel) =>
-          `min-h-11 rounded-lg px-3 py-2 text-center text-sm font-semibold leading-tight transition-colors ${
+          `min-h-12 flex-1 basis-auto rounded-lg px-3 py-1.5 text-center text-sm font-semibold leading-tight transition-colors duration-[var(--dur-fast)] sm:px-4 ${
             sel
               ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
               : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]/60 hover:text-[var(--text-primary)]"
@@ -63,7 +71,7 @@ export default function SeccionesSaldos({
         id={idPanel(seccion)}
         aria-labelledby={idTab(seccion)}
         aria-busy={cargando || undefined}
-        className="space-y-6"
+        className="space-y-4"
       >
         {children}
       </div>

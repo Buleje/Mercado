@@ -19,22 +19,20 @@ import { ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { DestinoExcepcion, Excepcion } from "@/lib/forestal/ctp-saldos-excepciones";
 import { resumenPorPermiso } from "@/lib/forestal/patio-resumen";
 import { PanelSkeleton } from "./ctp-shared";
+import { SUBS_SALDOS, subPedidoPorVistaVieja, type SubSaldos } from "./ctp-vistas-fusionadas";
 import { useAntiguedadGuias } from "./hooks/use-antiguedad-guias";
 import { useCapacidadDeSaldos } from "./hooks/use-capacidad-de-saldos";
 import { useEspeciesSinIngreso } from "./hooks/use-especies-sin-ingreso";
 import { useExcepcionesDeSaldos } from "./hooks/use-excepciones-de-saldos";
 import { useFuentesDeCapacidad } from "./hooks/use-fuentes-de-capacidad";
+import { usePestanaInterna } from "./hooks/use-pestana-interna";
 import { useReportesDeSaldos } from "./hooks/use-reportes-de-saldos";
 import ExcepcionesSaldo from "./saldos/ExcepcionesSaldo";
 import SaldosCabecera from "./saldos/SaldosCabecera";
 import SaldosModales, { useModalesDeSaldos } from "./saldos/SaldosModales";
 import SeccionCapacidad from "./saldos/SeccionCapacidad";
 import SeccionEstado from "./saldos/SeccionEstado";
-import SeccionesSaldos, {
-  FiltroEspecieKpis,
-  SECCION_IDS,
-  type Seccion,
-} from "./saldos/SeccionesSaldos";
+import SeccionesSaldos, { FiltroEspecieKpis } from "./saldos/SeccionesSaldos";
 import SeccionLibro from "./saldos/SeccionLibro";
 import SeccionMovimiento from "./saldos/SeccionMovimiento";
 
@@ -42,17 +40,31 @@ export function CtpSaldosView({
   period,
   onDespachar,
   onIr,
+  pedido = null,
 }: {
   period: CtpPeriod;
   /** Atajo "del stock a la guía": lleva a Despacho con producto y especie ya elegidos. */
   onDespachar?: (producto: string, especie: string | null) => void;
   /** Lleva a la pestaña del libro donde se corrige cada excepción. */
   onIr?: (vista: DestinoExcepcion, filtro?: Excepcion["filtro"]) => void;
+  /** Un salto a una sección pedido desde el libro (`?vista=resumenes` → «Lo que firma el libro»). */
+  pedido?: { sub: string; n: number } | null;
 }) {
   const { activo, contratoFiltro } = useContratoActivo();
   const codigoContrato = contratoFiltro ? (activo?.codigo ?? null) : null;
-  const { seccion, setSeccion, filtros, setFiltros, especieKpi, setEspecieKpi } =
-    useParamsDeSaldos<Seccion>(SECCION_IDS, "estado");
+  const { seccionVieja, filtros, setFiltros, especieKpi, setEspecieKpi } = useParamsDeSaldos<SubSaldos>(SUBS_SALDOS);
+  /* La sección es una pestaña interna como en el resto del libro (`?sub=`,
+     recordada). Un enlace viejo con `?seccion=` sigue abriendo la suya. */
+  const { sub: seccion, irA } = usePestanaInterna<SubSaldos>({
+    moduleId: "ctp-saldos",
+    validas: SUBS_SALDOS,
+    porDefecto: "estado",
+    forzada: subPedidoPorVistaVieja("saldos") ?? seccionVieja ?? undefined,
+    pedido,
+  });
+  const setSeccion = useCallback((s: SubSaldos) => irA(s), [irA]);
+  /** Sube con «Recargar»: los cuadros oficiales de «Lo que firma el libro» se recalculan. */
+  const [version, setVersion] = useState(0);
   const { data, concil, curva, loading, error, recargar } = useCtpSaldos(
     period,
     especieKpi || undefined,
@@ -100,6 +112,7 @@ export function CtpSaldosView({
     recargarFuentes();
     recargarAging();
     recargarSinIngreso();
+    setVersion((v) => v + 1);
   }, [recargar, recargarFuentes, recargarAging, recargarSinIngreso]);
 
   const excepciones = useExcepcionesDeSaldos({
@@ -131,9 +144,10 @@ export function CtpSaldosView({
 
       {data && (
         <>
-          <ExcepcionesSaldo excepciones={excepciones} onIr={onIr} onSeccion={setSeccion} />
-
+          {/* Las pestañas arriba, pegadas al riel (2.º nivel, como en el resto
+              del libro); «Qué revisar» vale para las cuatro y abre cada panel. */}
           <SeccionesSaldos seccion={seccion} onSeccion={setSeccion} cargando={loading}>
+            <ExcepcionesSaldo excepciones={excepciones} onIr={onIr} onSeccion={setSeccion} />
             {seccion !== "capacidad" && (
               <FiltroEspecieKpis
                 especie={especieKpi}
@@ -184,6 +198,9 @@ export function CtpSaldosView({
               <SeccionLibro
                 data={data}
                 concil={concil}
+                period={period}
+                especie={especieKpi}
+                version={version}
                 onKardex={modales.setKardexEspecie}
                 onDespachar={onDespachar}
               />

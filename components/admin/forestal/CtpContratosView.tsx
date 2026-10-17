@@ -19,9 +19,9 @@
  */
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, FileSignature, RefreshCw } from "@buleje/design-system/icons";
-import { SectionTitle } from "@buleje/design-system";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { AlertTriangle, CheckCircle2, RefreshCw } from "@buleje/design-system/icons";
+import { VistaHeader } from "./ctp-shared";
+import { BotonRecargar } from "./ctp-riel-control";
 import {
   useContratos,
   type CandidatoContrato,
@@ -85,31 +85,22 @@ export default function CtpContratosView() {
   }
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <SectionTitle as="h2" className="flex items-center gap-2">
-              <FileSignature className="h-5 w-5 shrink-0 text-[var(--accent)]" aria-hidden />
-              Contratos ({contratos.length})
-            </SectionTitle>
-            <InfoTip
-              title="Contratos"
-              what="El permiso, la concesión o el contrato bajo el que se trabaja."
-              affects="Todo lo que se registra con uno —madera, gastos, fletes, adelantos y cuenta corriente— suma en su balance."
-            />
-          </div>
-        </div>
-        <button
-          type="button"
+    <div className="space-y-3">
+      {/* Compactación del libro (17-10): en el libro el título se calla (la
+          pestaña ya dice «Contratos»), el ⓘ y la cuenta van al riel y
+          «Actualizar» es la flecha del riel. Fuera del libro, la fila entera. */}
+      <VistaHeader
+        titulo="Contratos"
+        meta={`${contratos.length} ${contratos.length === 1 ? "contrato" : "contratos"}`}
+        hint="El permiso, la concesión o el contrato bajo el que se trabaja. Todo lo que se registra con uno —madera, gastos, fletes, adelantos y cuenta corriente— suma en su balance."
+      >
+        <BotonRecargar
           onClick={() => void recargar()}
+          cargando={cargando}
           disabled={cargando || sembrando}
-          className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} aria-hidden />
-          Actualizar
-        </button>
-      </header>
+          etiqueta="Actualizar los contratos"
+        />
+      </VistaHeader>
 
       {error && (
         <p className="flex items-start gap-1.5 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-3 py-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">

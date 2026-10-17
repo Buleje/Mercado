@@ -35,7 +35,9 @@ import {
 import CtpFleteModal from "./CtpFleteModal";
 import CtpFletesCandidatosBanner from "./CtpFletesCandidatosBanner";
 import CtpCuentaCorriente from "./CtpCuentaCorriente";
-import { Btn, IconAction, TablaSkeleton, VistaHeader, useKpisPlegables } from "./ctp-shared";
+import { AccionesDeLaVista, ORDEN_ACCION, TextoDeAccion } from "@/components/admin/shared/libro-acciones-vista";
+import { CLASE_PRINCIPAL_RIEL } from "./ctp-riel-piezas";
+import { IconAction, TablaSkeleton, VistaHeader, useKpisPlegables } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatCurrency, formatDateShort, formatNumber } from "@/lib/format";
 
@@ -159,11 +161,15 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
         hint="El viaje que trae la madera y el que se lleva el producto. Un flete sin monto no vale 0: queda pendiente de cerrar."
       >
         {kpis.boton}
-        <Btn size="sm" variant="primary" onClick={() => abrirIndividual({ flete: null })}>
-          <Plus className="h-4 w-4" />
-          Anotar viaje
-        </Btn>
       </VistaHeader>
+      {/* La acción de todos los días: en el riel, a la derecha, como «Nuevo
+          ingreso» (compactación del libro, 17-10). */}
+      <AccionesDeLaVista orden={ORDEN_ACCION.principal}>
+        <button type="button" className={CLASE_PRINCIPAL_RIEL} title="Anotar viaje" onClick={() => abrirIndividual({ flete: null })}>
+          <Plus className="h-4 w-4" aria-hidden />
+          <TextoDeAccion corto="Anotar">Anotar viaje</TextoDeAccion>
+        </button>
+      </AccionesDeLaVista>
 
       {kpis.panel}
 

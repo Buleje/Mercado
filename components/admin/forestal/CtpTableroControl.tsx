@@ -22,7 +22,6 @@ import {
   Flame,
   Minus,
   PackageOpen,
-  RefreshCw,
   Scale,
   TrendingUp,
   Truck,
@@ -44,7 +43,8 @@ import {
   type TotalesMovimiento,
 } from "@/lib/forestal/movimiento-libro";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
-import { Btn, VistaHeader, useKpisPlegables } from "./ctp-shared";
+import { VistaHeader, useKpisPlegables } from "./ctp-shared";
+import { BotonRecargar } from "./ctp-riel-control";
 import CtpPuestaEnMarcha from "./CtpPuestaEnMarcha";
 import { formatNumber } from "@/lib/format";
 import { cantidadDelPeriodo } from "@/lib/forestal/inicio-forestal";
@@ -285,9 +285,7 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
         hint="Las cuatro secciones del LO-CTP en el tiempo: lo que entró, lo que fue a la sierra, lo que salió de producto y lo que se despachó. Mismos números que el balance de Saldos."
       >
         {kpis.boton}
-        <Btn variant="secondary" onClick={() => void cargar()} disabled={cargando}>
-          <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Recargar
-        </Btn>
+        <BotonRecargar onClick={() => void cargar()} cargando={cargando} etiqueta="Recargar el tablero" />
       </VistaHeader>
 
       {/* Qué partes del libro están construidas y sin estrenar. Va acá, en la
