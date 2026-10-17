@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+import type { Faltante } from "@/lib/cotizaciones/disponibilidad";
 import type { EmpresaEmisor } from "@/lib/documentos/cotizacion-print";
 import type { Cotizacion, CotizacionStatus } from "./tipos";
 
@@ -18,6 +19,8 @@ export function useDetalleCotizacion(alCambiar: () => void) {
   const [pedidoCreado, setPedidoCreado] = useState<{ cotizacionId: string; orderId: string } | null>(null);
   const [convertirError, setConvertirError] = useState<string | null>(null);
   const [estadoError, setEstadoError] = useState<string | null>(null);
+  /** Lo que no alcanza al convertir (409 del servidor): se muestra y se pide confirmar. */
+  const [faltantes, setFaltantes] = useState<Faltante[] | null>(null);
 
   // Datos del emisor (para el header del PDF); best-effort desde la config SUNAT.
   const [empresa, setEmpresa] = useState<EmpresaEmisor | null>(null);
@@ -37,6 +40,7 @@ export function useDetalleCotizacion(alCambiar: () => void) {
     // El error de «Convertir en venta» es de UNA cotización: no se arrastra a la siguiente.
     setConvertirError(null);
     setEstadoError(null);
+    setFaltantes(null);
     setSelected(c);
     setDetailLoading(true);
     try {
@@ -73,17 +77,28 @@ export function useDetalleCotizacion(alCambiar: () => void) {
     [selected, alCambiar],
   );
 
-  const convertir = useCallback(async () => {
+  /** `aceptarFaltantes`: ya vio lo que no alcanza y convierte igual (el pedido sale con todo). */
+  const convertir = useCallback(async (aceptarFaltantes = false) => {
     if (!selected) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/cotizaciones/${selected.id}/convertir`, { method: "POST", headers: csrfHeaders() });
-      let data: { orderId?: string; error?: string } = {};
+      const res = await fetch(`/api/cotizaciones/${selected.id}/convertir`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(aceptarFaltantes ? { aceptarFaltantes: true } : {}),
+      });
+      let data: { orderId?: string; error?: string; motivo?: string; faltantes?: Faltante[] } = {};
       try {
         data = await res.json();
       } catch {
         /* sin cuerpo: queda el mensaje genérico */
       }
+      if (res.status === 409 && data.motivo === "faltantes" && Array.isArray(data.faltantes)) {
+        setFaltantes(data.faltantes);
+        setConvertirError(null);
+        return;
+      }
+      setFaltantes(null);
       if (!res.ok) throw new Error(data.error ?? "No se pudo convertir la cotización");
       // El pedido que nació de esta cotización: el detalle lo enlaza.
       if (data.orderId) setPedidoCreado({ cotizacionId: selected.id, orderId: data.orderId });
@@ -97,7 +112,7 @@ export function useDetalleCotizacion(alCambiar: () => void) {
     }
   }, [selected, alCambiar]);
 
-  return { selected, abrir, cerrar, detailLoading, actionLoading, cambiarEstado, convertir, pedidoCreado, convertirError, estadoError, empresa };
+  return { selected, abrir, cerrar, detailLoading, actionLoading, cambiarEstado, convertir, faltantes, descartarFaltantes: () => setFaltantes(null), pedidoCreado, convertirError, estadoError, empresa };
 }
 
 export type DetalleCotizacion = ReturnType<typeof useDetalleCotizacion>;

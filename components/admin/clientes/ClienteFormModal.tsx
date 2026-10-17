@@ -157,14 +157,23 @@ const EMPTY_FORM: CustomerFormData = {
   observaciones: '',
 };
 
+/** Lo que se acaba de guardar, para que la pantalla que abrió el alta lo use sin pedirlo otra vez. */
+export type ClienteGuardado = { name: string; phone: string; documento?: string; tipoDocumento?: string };
+
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (guardado?: ClienteGuardado) => void;
   customer?: Record<string, unknown> | null;
   initialFormat?: 'simple' | 'completo';
   /** Precarga el teléfono en un alta nueva — para no hacer retipear lo que ya se escribió en otra pantalla. */
   initialPhone?: string;
+  /** Precarga el nombre en un alta nueva (la cotización ya lo tenía escrito). */
+  initialName?: string;
+  /** Precarga el RUC (11 dígitos → empresa) o DNI (8) ya escrito en otra pantalla. */
+  initialDocumento?: string;
+  /** Se abre desde otra ventana (p. ej. «Nueva cotización»): va encima de ella. */
+  aboveModals?: boolean;
 };
 
 // ── Accordion Section ──────────────────────────────────────────────────────
@@ -188,7 +197,7 @@ function Section({ title, defaultOpen, children }: { title: string; defaultOpen?
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, initialFormat, initialPhone }: Props) {
+export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, initialFormat, initialPhone, initialName, initialDocumento, aboveModals }: Props) {
   const [format, setFormat] = useState<'simple' | 'completo'>(() => {
     if (initialFormat) return initialFormat;
     if (typeof window !== 'undefined') {
@@ -235,9 +244,17 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
         observaciones: (customer.observaciones as string) ?? '',
       });
     } else {
-      setForm({ ...EMPTY_FORM, phone: initialPhone ?? '' });
+      const doc = (initialDocumento ?? '').replace(/\D/g, '');
+      const empresa = doc.length === 11;
+      setForm({
+        ...EMPTY_FORM,
+        phone: initialPhone ?? '',
+        name: initialName ?? '',
+        ...(empresa ? { tipoPersona: 'juridica', tipoDocumento: 'RUC', razonSocial: initialName ?? '' } : {}),
+        ...(doc.length === 8 || empresa ? { documento: doc } : {}),
+      });
     }
-  }, [customer, initialPhone]);
+  }, [customer, initialPhone, initialName, initialDocumento]);
 
   const changeFormat = useCallback((f: 'simple' | 'completo') => {
     setFormat(f);
@@ -343,7 +360,11 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
           throw new Error(data.error ?? 'Error al crear');
         }
       }
-      onSaved();
+      onSaved({
+        name: body.name as string,
+        phone: body.phone as string,
+        ...(form.documento ? { documento: form.documento, tipoDocumento: form.tipoDocumento } : {}),
+      });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado');
@@ -364,6 +385,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
       onClose={onClose}
       title={isEdit ? 'Editar cliente' : 'Nuevo cliente'}
       variant="wide"
+      aboveModals={aboveModals}
     >
       <div>
         {/* Format toggle */}

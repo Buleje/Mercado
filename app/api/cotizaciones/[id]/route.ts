@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { vigenciaDesdeEntrada } from "@/lib/cotizaciones/vigencia";
 
 const UpdateCotizacionSchema = z.object({
   status: z.enum(["BORRADOR", "ENVIADA", "ACEPTADA", "RECHAZADA", "VENCIDA", "CONVERTIDA"]).optional(),
@@ -47,7 +48,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     const updated = await CotizacionesDB.update(id, auth.tenantId, {
       status: parsed.data.status,
       notas: parsed.data.notas,
-      validoHasta: parsed.data.validoHasta ? new Date(parsed.data.validoHasta) : undefined,
+      validoHasta: parsed.data.validoHasta ? (vigenciaDesdeEntrada(parsed.data.validoHasta) ?? undefined) : undefined,
     });
     if (!updated) {
       return NextResponse.json({ error: "Cotización no encontrada" }, { status: 404 });

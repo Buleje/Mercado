@@ -25,6 +25,7 @@ import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { printCotizacion } from "@/lib/documentos/cotizacion-print";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 import { AvisoVencidas } from "./cotizaciones/AvisoVencidas";
+import { BandejaSeguimiento } from "./cotizaciones/BandejaSeguimiento";
 import { DetalleCotizacion } from "./cotizaciones/DetalleCotizacion";
 import { FiltrosCotizaciones, type VistaLista } from "./cotizaciones/FiltrosCotizaciones";
 import { ListaCotizaciones } from "./cotizaciones/ListaCotizaciones";
@@ -40,14 +41,14 @@ import {
   seccionDe,
   type Cotizacion,
   type CotizacionStatus,
-  type Plantilla,
   type SeccionCotizaciones,
 } from "./cotizaciones/tipos";
 import { useCotizaciones } from "./cotizaciones/use-cotizaciones";
 import { useDetalleCotizacion } from "./cotizaciones/use-detalle-cotizacion";
 import { useIndicadoresCotizaciones } from "./cotizaciones/use-indicadores-cotizaciones";
 import { useNuevaCotizacion } from "./cotizaciones/use-nueva-cotizacion";
-import { usePlantillas } from "./cotizaciones/use-plantillas";
+import { usePlantillas, type PlantillaElegida } from "./cotizaciones/use-plantillas";
+import { useSeguimiento } from "./cotizaciones/use-seguimiento";
 
 const MODULE_ID = "cotizaciones";
 
@@ -87,6 +88,7 @@ export default function CotizacionesModule() {
   const { cotizaciones, recargar } = datos;
   const detalle = useDetalleCotizacion(recargar);
   const plantillas = usePlantillas();
+  const seguimiento = useSeguimiento();
   const [estado, setEstado] = useState<CotizacionStatus | "">("");
   const [texto, setTexto] = useState("");
   const [vista, setVista] = useState<VistaLista>("lista");
@@ -139,15 +141,18 @@ export default function CotizacionesModule() {
   };
   const renovar = (c: Cotizacion) => {
     detalle.cerrar();
-    form.abrir({ items: draftDeItems(c.items), clienteNombre: c.clienteNombre, clienteRuc: c.clienteRuc ?? "", validoHasta: fechaEnDias(15), notas: c.notas ?? "", paso: 3 });
+    // Renovar = cotización nueva (número y fecha nuevos) para el MISMO cliente de la lista.
+    const cliente = c.customerId ? { phone: c.customerId, nombre: c.clienteNombre, ...(c.clienteRuc ? { documento: c.clienteRuc } : {}) } : null;
+    form.abrir({ items: draftDeItems(c.items), clienteNombre: c.clienteNombre, clienteRuc: c.clienteRuc ?? "", cliente, validoHasta: fechaEnDias(15), notas: c.notas ?? "", paso: 3 });
   };
-  const usarPlantilla = (p: Plantilla) => {
+  /** Sólo ítems y condiciones: el cliente, la fecha y el número quedan como estaban en el formulario. */
+  const usarPlantilla = (p: PlantillaElegida) => {
     plantillas.setVentana(null);
-    form.abrir({ items: p.items.map((it) => ({ descripcion: it.descripcion, cantidad: String(it.cantidad), precioUnit: String(it.precioUnit), descuento: "0" })), paso: 2 });
+    form.abrir({ items: draftDeItems(p.items), ...(p.notas ? { notas: p.notas } : {}), paso: 2 });
   };
 
   const acciones: MenuAccion[] = [
-    { id: "plantillas", label: "Plantillas guardadas", hint: "Usar o borrar las plantillas de ítems", icon: Bookmark, meta: String(plantillas.plantillas.length), onSelect: () => plantillas.setVentana("gestionar") },
+    { id: "plantillas", label: "Plantillas guardadas", hint: "Las de tu empresa y las de este navegador", icon: Bookmark, meta: String(plantillas.total), onSelect: () => plantillas.setVentana("gestionar") },
     { id: "cliente", label: "Nuevo cliente", hint: "Darlo de alta sin salir de Cotizaciones", icon: UserPlus, onSelect: () => setClienteRapido(true) },
     { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: () => void recargar() },
   ];
@@ -180,7 +185,10 @@ export default function CotizacionesModule() {
 
       <div role="tabpanel" id={ID_PANEL_COTIZACIONES} aria-labelledby={idPestanaDeSeccion(ID_PANEL_COTIZACIONES, seccion)} className="space-y-3">
         {seccion === "en-curso" && (
-          <AvisoVencidas vencidas={datos.vencidas} procesando={datos.procesandoVencidas} onRenovar={() => void datos.renovarVencidas()} onMarcar={() => void datos.marcarVencidas()} />
+          <>
+            <AvisoVencidas vencidas={datos.vencidas} procesando={datos.procesandoVencidas} onRenovar={() => void datos.renovarVencidas()} onMarcar={() => void datos.marcarVencidas()} />
+            <BandejaSeguimiento cotizaciones={cotizaciones} seguimiento={seguimiento} onAbrir={(c) => void detalle.abrir(c)} />
+          </>
         )}
         {!nada && (
           <FiltrosCotizaciones seccion={seccion} texto={texto} onTexto={setTexto} estado={estadoVigente} onEstado={setEstado} cuentas={cuentas} vista={vista} onVista={cambiarVista} />
@@ -210,10 +218,12 @@ export default function CotizacionesModule() {
         onRenovar={renovar}
         onImprimir={(c) => printCotizacion(c, detalle.empresa)}
         onGuardarPlantilla={plantillas.guardarDesde}
+        seguimiento={seguimiento}
       />
       <NuevaCotizacionModal
         form={form}
-        cuantasPlantillas={plantillas.plantillas.length}
+        empresa={detalle.empresa}
+        cuantasPlantillas={plantillas.total}
         onElegirPlantilla={() => plantillas.setVentana("elegir")}
         onGestionarPlantillas={() => plantillas.setVentana("gestionar")}
       />

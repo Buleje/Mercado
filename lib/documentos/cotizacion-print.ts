@@ -4,6 +4,7 @@
  * un documento limpio, branded y auto-contenido (ventana nueva, sin auto-print
  * para no colgar en automatización — misma lección que los reportes forestales).
  */
+import { diaDeVigencia } from "@/lib/cotizaciones/vigencia";
 
 export interface CotizacionPrintItem {
   descripcion: string;
@@ -36,10 +37,17 @@ export interface EmpresaEmisor {
 const esc = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 const money = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+/* En hora de Lima, no la del navegador: a las 20:00 el UTC ya es mañana. */
 const fecha = (iso: string) => {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric", timeZone: "America/Lima" });
 };
+/* La vigencia es un DÍA: las viejas se guardaron a medianoche UTC (= 19:00 del día anterior en Lima). */
+const fechaVigencia = (v: string) => {
+  const dia = diaDeVigencia(v);
+  return dia ? fecha(`${dia}T12:00:00-05:00`) : "—";
+};
+const rotuloDoc = (doc: string) => (doc.replace(/\D/g, "").length === 8 ? "DNI" : "RUC");
 
 export function printCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor | null): void {
   // `numero` del backend ya viene formateado (string); un número legacy se
@@ -57,7 +65,7 @@ export function printCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor
       <td>${esc(it.descripcion)}</td>
       <td class="r">${it.cantidad}</td>
       <td class="r">S/ ${money(it.precioUnit)}</td>
-      <td class="r">${it.descuento > 0 ? `S/ ${money(it.descuento)}` : "—"}</td>
+      <td class="r">${it.descuento > 0 ? `${String(it.descuento).replace(".", ",")} %` : "—"}</td>
       <td class="r"><b>S/ ${money(it.subtotal)}</b></td>
     </tr>`,
     )
@@ -90,10 +98,10 @@ export function printCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor
   <div class="top">
     ${empresaBlock}
     <div class="doc"><div class="doctitle">COTIZACIÓN</div><div class="docnum">${num}</div>
-      <div class="docmeta">Emitida: ${fecha(cot.createdAt)}<br>Válida hasta: <b>${fecha(cot.validoHasta)}</b></div>
+      <div class="docmeta">Emitida: ${fecha(cot.createdAt)}<br>Válida hasta: <b>${fechaVigencia(cot.validoHasta)}</b></div>
     </div>
   </div>
-  <div class="cli"><div class="k">Cliente</div><div class="v">${esc(cot.clienteNombre)}</div>${cot.clienteRuc ? `<div class="empmeta">RUC ${esc(cot.clienteRuc)}</div>` : ""}</div>
+  <div class="cli"><div class="k">Cliente</div><div class="v">${esc(cot.clienteNombre)}</div>${cot.clienteRuc ? `<div class="empmeta">${rotuloDoc(cot.clienteRuc)} ${esc(cot.clienteRuc)}</div>` : ""}</div>
   <table><thead><tr><th>Descripción</th><th class="r">Cant.</th><th class="r">P. Unit.</th><th class="r">Desc.</th><th class="r">Subtotal</th></tr></thead>
   <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:#999">Sin ítems</td></tr>'}</tbody></table>
   <table class="tot"><tbody>

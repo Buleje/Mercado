@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
-import { vencioSinRespuesta, type Cotizacion } from "./tipos";
+import { fechaEnDias, vencioSinRespuesta, type Cotizacion } from "./tipos";
 
 export function useCotizaciones() {
   const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
@@ -70,18 +70,18 @@ export function useCotizaciones() {
     setProcesandoVencidas(true);
     try {
       for (const c of vencidas) {
-        /* 15 días desde HOY: contados desde la vigencia vieja, una vencida hace un
-           mes nacía ya vencida y el aviso volvía a pedirla. */
-        const nueva = new Date(Math.max(Date.now(), new Date(c.validoHasta).getTime()));
-        nueva.setDate(nueva.getDate() + 15);
+        /* 15 días desde HOY (en Lima): contados desde la vigencia vieja, una vencida
+           hace un mes nacía ya vencida y el aviso volvía a pedirla. Va el DÍA: el
+           servidor lo guarda hasta el final de ese día. */
         const res = await fetch("/api/cotizaciones", {
           method: "POST",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             clienteNombre: c.clienteNombre,
             clienteRuc: c.clienteRuc,
-            validoHasta: nueva.toISOString(),
-            items: c.items.map((it) => ({ descripcion: it.descripcion, cantidad: it.cantidad, precioUnit: it.precioUnit, descuento: it.descuento })),
+            customerId: c.customerId,
+            validoHasta: fechaEnDias(15),
+            items: c.items.map((it) => ({ descripcion: it.descripcion, cantidad: it.cantidad, precioUnit: it.precioUnit, descuento: it.descuento, ...(it.productoId ? { productoId: it.productoId } : {}) })),
             notas: c.notas,
           }),
         });

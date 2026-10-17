@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 import type {
   Cotizacion as PCotizacion,
   CotizacionItem as PCotizacionItem,
+  Prisma,
 } from "@/lib/generated/prisma/client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -256,4 +257,99 @@ export const CotizacionesDB = {
     await prisma.cotizacion.delete({ where: { id } });
     return true;
   },
+
+  // ── F25: elegir el cliente ────────────────────────────────────────────────
+
+  /**
+   * Clientes del negocio que coinciden con lo escrito (nombre, razón social,
+   * documento o celular). Sin caché: el que se acaba de dar de alta tiene que
+   * salir en la búsqueda siguiente.
+   */
+  async buscarClientes(tenantId: string, q: string, limite = 8): Promise<ClienteParaCotizar[]> {
+    const texto = q.trim();
+    if (texto.length < 2) return [];
+    const digitos = texto.replace(/\D/g, "");
+    const or: Prisma.CustomerWhereInput[] = [
+      { name: { contains: texto, mode: "insensitive" } },
+      { razonSocial: { contains: texto, mode: "insensitive" } },
+    ];
+    if (digitos.length >= 3) or.push({ documento: { contains: digitos } }, { phone: { contains: digitos } });
+    const filas = await prisma.customer.findMany({
+      where: { tenantId, OR: or },
+      select: SELECT_CLIENTE,
+      orderBy: { updatedAt: "desc" },
+      take: Math.min(Math.max(limite, 1), 20),
+    });
+    return filas.map(aClienteParaCotizar);
+  },
+
+  /** El cliente de este negocio con ese celular, o null (el FK va por `phone`, que es único en TODA la plataforma). */
+  async clienteDelNegocio(tenantId: string, phone: string): Promise<ClienteParaCotizar | null> {
+    const fila = await prisma.customer.findFirst({ where: { tenantId, phone }, select: SELECT_CLIENTE });
+    return fila ? aClienteParaCotizar(fila) : null;
+  },
+
+  // ── F26: lo que hay de cada producto ──────────────────────────────────────
+
+  /** Existencias de HOY (sin la caché de 5 min del catálogo) de los productos del negocio. */
+  async productosParaCotizar(tenantId: string, ids: readonly number[]): Promise<ProductoParaCotizar[]> {
+    const unicos = [...new Set(ids.filter((n) => Number.isSafeInteger(n) && n > 0))].slice(0, 100);
+    if (unicos.length === 0) return [];
+    const filas = await prisma.product.findMany({
+      where: { tenantId, id: { in: unicos }, deletedAt: null },
+      select: { id: true, name: true, unit: true, type: true, stock: true, stockMin: true, active: true },
+    });
+    return filas.map((p) => ({
+      id: p.id,
+      nombre: p.name,
+      unidad: p.unit,
+      tipo: p.type,
+      stock: p.stock,
+      stockMin: p.stockMin,
+      activo: p.active,
+    }));
+  },
 };
+
+export type ClienteParaCotizar = {
+  /** Celular normalizado: es la clave a la que apunta `Cotizacion.customerId`. */
+  phone: string;
+  nombre: string;
+  razonSocial?: string;
+  documento?: string;
+  tipoDocumento?: string;
+};
+
+export type ProductoParaCotizar = {
+  id: number;
+  nombre: string;
+  unidad: string;
+  tipo: string;
+  stock: number | null;
+  stockMin: number | null;
+  activo: boolean;
+};
+
+const SELECT_CLIENTE = {
+  phone: true,
+  name: true,
+  razonSocial: true,
+  documento: true,
+  tipoDocumento: true,
+} as const;
+
+function aClienteParaCotizar(c: {
+  phone: string;
+  name: string;
+  razonSocial: string | null;
+  documento: string | null;
+  tipoDocumento: string | null;
+}): ClienteParaCotizar {
+  return {
+    phone: c.phone,
+    nombre: c.name,
+    ...(c.razonSocial && { razonSocial: c.razonSocial }),
+    ...(c.documento && { documento: c.documento }),
+    ...(c.tipoDocumento && { tipoDocumento: c.tipoDocumento }),
+  };
+}

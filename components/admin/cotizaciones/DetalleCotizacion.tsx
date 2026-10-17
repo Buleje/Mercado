@@ -11,23 +11,35 @@ import { Calendar, Loader2, X } from "@buleje/design-system/icons";
 import { AnimatePresence, m } from "@/components/admin/providers";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { textoDia, textoQuedan } from "@/lib/cotizaciones/vigencia";
+import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { AccionesCotizacion } from "./AccionesCotizacion";
+import { ChipDisponibilidad } from "./ChipDisponibilidad";
+import { AvisoSinReserva } from "./PasoItems";
 import { SeguimientoCotizacion } from "./SeguimientoCotizacion";
 import { STATUS_META, type Cotizacion } from "./tipos";
 import type { DetalleCotizacion as Detalle } from "./use-detalle-cotizacion";
+import { useDisponibilidad } from "./use-disponibilidad";
+import type { DondePlantilla, ResultadoGuardar } from "./use-plantillas";
+import type { Seguimiento } from "./use-seguimiento";
+
+/** Las que todavía pueden volverse pedido: a esas se les muestra el stock de hoy. */
+const ABIERTAS = new Set(["BORRADOR", "ENVIADA", "ACEPTADA"]);
 
 interface Props {
   detalle: Detalle;
   onDuplicar: (c: Cotizacion) => void;
   onRenovar: (c: Cotizacion) => void;
   onImprimir: (c: Cotizacion) => void;
-  onGuardarPlantilla: (c: Cotizacion, nombre: string) => boolean;
+  onGuardarPlantilla: (c: Cotizacion, nombre: string, donde: DondePlantilla, reemplazarId?: string) => Promise<ResultadoGuardar>;
+  seguimiento: Seguimiento;
 }
 
-export function DetalleCotizacion({ detalle, onDuplicar, onRenovar, onImprimir, onGuardarPlantilla }: Props) {
+export function DetalleCotizacion({ detalle, onDuplicar, onRenovar, onImprimir, onGuardarPlantilla, seguimiento }: Props) {
   const { selected: c, cerrar, detailLoading } = detalle;
+  const abierta = !!c && ABIERTAS.has(c.status);
+  const stock = useDisponibilidad(c?.items ?? [], abierta && !detailLoading);
   const panelRef = useRef<HTMLDivElement>(null);
   const tituloId = useId();
   useModalAccesible(panelRef, { onCerrar: cerrar, activo: !!c });
@@ -64,7 +76,13 @@ export function DetalleCotizacion({ detalle, onDuplicar, onRenovar, onImprimir, 
                     <p className="font-bold text-[var(--text-primary)]">
                       <EnlacePanel cosa="cliente" id={c.customerId} className="font-bold" title="Abrir su ficha de cliente">{c.clienteNombre}</EnlacePanel>
                     </p>
-                    {c.clienteRuc && <p className="text-sm text-[var(--text-secondary)]">RUC {c.clienteRuc}</p>}
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      {[
+                        c.clienteRuc ? `${c.clienteRuc.replace(/\D/g, "").length === 8 ? "DNI" : "RUC"} ${c.clienteRuc}` : "",
+                        c.customerId ? `cel. ${c.customerId.replace(/\D/g, "").slice(-9)}` : "sin celular",
+                        c.createdBy ? `la hizo ${c.createdBy}` : "",
+                      ].filter(Boolean).join(" · ")}
+                    </p>
                   </div>
                   <span className={cn("ml-auto shrink-0 rounded-lg px-2 py-1 text-sm font-semibold", STATUS_META[c.status].clase)}>{STATUS_META[c.status].label}</span>
                 </div>
@@ -77,7 +95,8 @@ export function DetalleCotizacion({ detalle, onDuplicar, onRenovar, onImprimir, 
                   ))}
                 </dl>
                 <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                  <Calendar className="h-4 w-4" aria-hidden /> Válida hasta el {formatDate(c.validoHasta)}
+                  <Calendar className="h-4 w-4" aria-hidden /> Vale hasta el {textoDia(c.validoHasta)}
+                  {abierta && <span>· {textoQuedan(c.validoHasta)}</span>}
                 </p>
                 {c.notas && <p className="text-sm text-[var(--text-secondary)]">{c.notas}</p>}
               </div>
@@ -88,29 +107,34 @@ export function DetalleCotizacion({ detalle, onDuplicar, onRenovar, onImprimir, 
                 <div>
                   <BlockTitle className="mb-3">Ítems</BlockTitle>
                   <ul className="space-y-2">
-                    {(c.items ?? []).map((it, i) => (
+                    {(c.items ?? []).map((it, i) => {
+                      const estado = abierta ? stock.estadoDe(it.productoId) : null;
+                      return (
                       <li key={it.id ?? i} className="flex items-center gap-3 rounded-xl bg-[var(--surface-sunken)] p-3">
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-[var(--text-primary)]">{it.descripcion}</p>
                           <p className="text-sm text-[var(--text-secondary)]">
                             {it.cantidad} × {formatCurrency(it.precioUnit)} {it.descuento > 0 ? `(−${it.descuento} %)` : ""}
                           </p>
+                          {estado && <ChipDisponibilidad estado={estado} />}
                         </div>
                         <p className="text-sm font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(it.subtotal)}</p>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
+                  {abierta && stock.hayProductos && <div className="mt-2"><AvisoSinReserva error={stock.error} /></div>}
                 </div>
               )}
 
-              <SeguimientoCotizacion c={c} onRenovar={() => onRenovar(c)} />
+              <SeguimientoCotizacion c={c} onRenovar={() => onRenovar(c)} seguimiento={seguimiento} />
               <AccionesCotizacion
                 key={c.id}
                 c={c}
                 detalle={detalle}
                 onDuplicar={() => onDuplicar(c)}
                 onImprimir={() => onImprimir(c)}
-                onGuardarPlantilla={(nombre) => onGuardarPlantilla(c, nombre)}
+                onGuardarPlantilla={(nombre, donde, reemplazarId) => onGuardarPlantilla(c, nombre, donde, reemplazarId)}
               />
             </div>
           </m.div>

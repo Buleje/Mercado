@@ -6,19 +6,22 @@
  * (WhatsApp, duplicar, PDF, guardarla como plantilla).
  */
 import { useState } from "react";
-import { Bookmark, Check, Copy, MessageCircle, Printer, Send, ShoppingCart, XCircle } from "@buleje/design-system/icons";
+import { AlertTriangle, Bookmark, Check, Copy, MessageCircle, Printer, Send, ShoppingCart, XCircle } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { cantidadConUnidad } from "@/lib/cotizaciones/disponibilidad";
 import type { DetalleCotizacion } from "./use-detalle-cotizacion";
 import { useMembrete } from "@/hooks/use-membrete";
+import { GuardarPlantilla } from "./GuardarPlantilla";
 import { abrirWhatsApp, textoWhatsApp, type Cotizacion } from "./tipos";
+import type { DondePlantilla, ResultadoGuardar } from "./use-plantillas";
 
 interface Props {
   c: Cotizacion;
   detalle: DetalleCotizacion;
   onDuplicar: () => void;
   onImprimir: () => void;
-  onGuardarPlantilla: (nombre: string) => boolean;
+  onGuardarPlantilla: (nombre: string, donde: DondePlantilla, reemplazarId?: string) => Promise<ResultadoGuardar>;
 }
 
 const PRINCIPAL = button({ variant: "primary", className: "gap-1.5 rounded-xl px-4" });
@@ -26,16 +29,9 @@ const SECUNDARIO = button({ variant: "secondary", className: "gap-1.5 rounded-xl
 
 export function AccionesCotizacion({ c, detalle, onDuplicar, onImprimir, onGuardarPlantilla }: Props) {
   const [guardando, setGuardando] = useState(false);
+  const [guardada, setGuardada] = useState<string | null>(null);
   const membrete = useMembrete();
-  const [nombre, setNombre] = useState("");
-  const { actionLoading, cambiarEstado, convertir, pedidoCreado, convertirError, estadoError } = detalle;
-
-  const guardar = () => {
-    if (onGuardarPlantilla(nombre)) {
-      setGuardando(false);
-      setNombre("");
-    }
-  };
+  const { actionLoading, cambiarEstado, convertir, faltantes, descartarFaltantes, pedidoCreado, convertirError, estadoError } = detalle;
 
   return (
     <div className="space-y-3">
@@ -56,11 +52,11 @@ export function AccionesCotizacion({ c, detalle, onDuplicar, onImprimir, onGuard
           </>
         )}
         {c.status === "ACEPTADA" && (
-          <button type="button" onClick={convertir} disabled={actionLoading} className={PRINCIPAL}>
+          <button type="button" onClick={() => void convertir()} disabled={actionLoading} className={PRINCIPAL}>
             <ShoppingCart className="h-4 w-4" aria-hidden /> Convertir en pedido
           </button>
         )}
-        <button type="button" onClick={() => abrirWhatsApp(textoWhatsApp(c, membrete))} className={SECUNDARIO}>
+        <button type="button" onClick={() => abrirWhatsApp(textoWhatsApp(c, membrete), c.customerId ?? "")} className={SECUNDARIO}>
           <MessageCircle className="h-4 w-4 text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" aria-hidden /> WhatsApp
         </button>
         <button type="button" onClick={onDuplicar} className={SECUNDARIO}>
@@ -69,7 +65,7 @@ export function AccionesCotizacion({ c, detalle, onDuplicar, onImprimir, onGuard
         <button type="button" onClick={onImprimir} className={SECUNDARIO}>
           <Printer className="h-4 w-4" aria-hidden /> Imprimir PDF
         </button>
-        <button type="button" onClick={() => { setGuardando((v) => !v); setNombre(""); }} aria-expanded={guardando} className={SECUNDARIO}>
+        <button type="button" onClick={() => { setGuardando((v) => !v); setGuardada(null); }} aria-expanded={guardando} className={SECUNDARIO}>
           <Bookmark className="h-4 w-4" aria-hidden /> Guardar como plantilla
         </button>
       </div>
@@ -81,30 +77,35 @@ export function AccionesCotizacion({ c, detalle, onDuplicar, onImprimir, onGuard
           Pedido creado: <EnlacePanel cosa="pedido" id={pedidoCreado.orderId}>ver el pedido #{pedidoCreado.orderId.slice(-6)}</EnlacePanel>
         </p>
       )}
+      {faltantes && c.status === "ACEPTADA" && (
+        <div role="alert" className="space-y-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-sm dark:bg-[var(--data-warning-500)]/10">
+          <p className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]" aria-hidden />
+            Hoy no alcanza el stock para todo lo cotizado
+          </p>
+          <ul className="space-y-0.5 text-[var(--text-primary)]">
+            {faltantes.map((f) => (
+              <li key={f.productoId}>{f.descripcion}: pide {cantidadConUnidad(f.pide, f.unidad)}, hay {cantidadConUnidad(f.hay, f.unidad)}</li>
+            ))}
+          </ul>
+          <p className="text-[var(--text-secondary)]">Si conviertes igual, el pedido sale con todo y lo que falta queda por conseguir.</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={descartarFaltantes} className={button({ variant: "ghost", className: "rounded-xl px-4" })}>No convertir</button>
+            <button type="button" onClick={() => void convertir(true)} disabled={actionLoading} className={button({ variant: "secondary", className: "rounded-xl px-4" })}>Convertir igual</button>
+          </div>
+        </div>
+      )}
+      {guardada && <p role="status" className="text-sm text-[var(--text-secondary)]">{guardada}</p>}
       {((convertirError && c.status === "ACEPTADA") || estadoError) && (
         <p role="alert" className="text-sm text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]">{estadoError ?? convertirError}</p>
       )}
 
       {guardando && (
-        <div className="space-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-          <label className="block text-sm font-semibold text-[var(--text-primary)]">
-            Nombre de la plantilla
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && guardar()}
-              placeholder="Ej. Pedido mensual del colegio"
-              maxLength={60}
-              autoFocus
-              className="mt-1 h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-normal text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
-            />
-          </label>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setGuardando(false)} className={button({ variant: "ghost", className: "flex-1 rounded-xl" })}>Cancelar</button>
-            <button type="button" onClick={guardar} disabled={!nombre.trim()} className={button({ variant: "primary", className: "flex-1 rounded-xl" })}>Guardar</button>
-          </div>
-        </div>
+        <GuardarPlantilla
+          onGuardar={onGuardarPlantilla}
+          onListo={(m) => { setGuardando(false); setGuardada(m); }}
+          onCancelar={() => setGuardando(false)}
+        />
       )}
     </div>
   );

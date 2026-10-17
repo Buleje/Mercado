@@ -10,10 +10,11 @@ import { AlertTriangle, ChevronLeft, ChevronRight, MessageCircle } from "@buleje
 import { DataTable, LoadingState } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { textoDia, textoQuedan } from "@/lib/cotizaciones/vigencia";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { VistaLista } from "./FiltrosCotizaciones";
-import { abrirWhatsApp, diasDeVigencia, PER_PAGE, STATUS_META, type Cotizacion } from "./tipos";
+import { abrirWhatsApp, PER_PAGE, STATUS_META, type Cotizacion } from "./tipos";
 
 interface Props {
   filas: readonly Cotizacion[];
@@ -82,7 +83,6 @@ export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, 
       {vista === "cards" ? (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {visibles.map((c) => {
-            const dias = diasDeVigencia(c);
             return (
               <div
                 key={c.id}
@@ -102,13 +102,13 @@ export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, 
                 </p>
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(c.total)}</span>
-                  <span className="text-sm text-[var(--text-secondary)]">{c.status === "ENVIADA" || c.status === "BORRADOR" ? (dias > 0 ? `vale ${dias} d más` : "venció") : formatDate(c.createdAt)}</span>
+                  <span className="text-sm text-[var(--text-secondary)]">{c.status === "ENVIADA" || c.status === "BORRADOR" ? textoQuedan(c.validoHasta) : formatDate(c.createdAt)}</span>
                 </div>
                 <div className="flex gap-2 border-t border-[var(--rule-soft)] pt-2">
                   <button type="button" onClick={(e) => { e.stopPropagation(); onAbrir(c); }} className={button({ variant: "secondary", className: "flex-1 rounded-xl" })}>Ver</button>
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); abrirWhatsApp(`Cotización ${c.numero} por ${formatCurrency(c.total)}`); }}
+                    onClick={(e) => { e.stopPropagation(); abrirWhatsApp(`Cotización ${c.numero} por ${formatCurrency(c.total)}`, c.customerId ?? ""); }}
                     className={button({ variant: "secondary", className: "flex-1 gap-1.5 rounded-xl" })}
                   >
                     <MessageCircle className="h-4 w-4 text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" aria-hidden /> WhatsApp
@@ -150,7 +150,7 @@ export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, 
                   </div>
                 </td>
                 <td className="num font-bold">{formatCurrency(c.total)}</td>
-                <td className="text-[var(--text-secondary)]">{formatDate(c.validoHasta)}</td>
+                <td className="text-[var(--text-secondary)]">{textoDia(c.validoHasta)}</td>
                 <td><Estado c={c} /></td>
               </tr>
             ))}

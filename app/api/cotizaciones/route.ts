@@ -5,6 +5,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { vigenciaDesdeEntrada } from "@/lib/cotizaciones/vigencia";
+import { idDeProducto } from "@/lib/cotizaciones/disponibilidad";
 
 const CotizacionItemSchema = z.object({
   descripcion: z.string().min(1).max(500),
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json();
+  const raw: unknown = await req.json().catch(() => null);
   const parsed = CreateCotizacionSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
@@ -57,16 +59,32 @@ export async function POST(req: NextRequest) {
     );
   }
   const data = parsed.data;
+  // «2026-10-22» = vale hasta el final de ese día en Lima (antes se guardaba
+  // la medianoche UTC: 19:00 del día anterior, y la lista mostraba otro día).
+  const validoHasta = vigenciaDesdeEntrada(data.validoHasta);
+  if (!validoHasta) return NextResponse.json({ error: { validoHasta: ["Fecha inválida"] } }, { status: 400 });
 
   try {
-    const numero = await CotizacionesDB.siguienteNumero(auth.tenantId);
+    // El cliente y los productos se enlazan sólo si son de ESTE negocio:
+    // `customerId` apunta a `Customer.phone`, único en toda la plataforma.
+    const idsProducto = data.items.map((i) => idDeProducto(i.productoId)).filter((n): n is number => n != null);
+    const [numero, cliente, productos] = await Promise.all([
+      CotizacionesDB.siguienteNumero(auth.tenantId),
+      data.customerId ? CotizacionesDB.clienteDelNegocio(auth.tenantId, data.customerId) : Promise.resolve(null),
+      CotizacionesDB.productosParaCotizar(auth.tenantId, idsProducto),
+    ]);
+    if (data.customerId && !cliente) {
+      logger.warn("[cotizaciones] customerId ajeno al negocio, se guarda sin enlazar", { tenantId: auth.tenantId });
+    }
+    const delNegocio = new Set(productos.map((p) => String(p.id)));
 
     // Calculate totals server-side
     const items = data.items.map((i) => {
       const base = i.cantidad * i.precioUnit;
       const desc = (i.descuento ?? 0) / 100;
       const subtotal = base * (1 - desc);
-      return { ...i, subtotal };
+      const productoId = i.productoId && delNegocio.has(String(idDeProducto(i.productoId))) ? i.productoId : undefined;
+      return { ...i, productoId, subtotal };
     });
     const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
     const igv = subtotal * 0.18;
@@ -76,8 +94,8 @@ export async function POST(req: NextRequest) {
       numero,
       clienteNombre: data.clienteNombre,
       clienteRuc: data.clienteRuc,
-      customerId: data.customerId,
-      validoHasta: new Date(data.validoHasta),
+      customerId: cliente?.phone,
+      validoHasta,
       subtotal,
       igv,
       total,

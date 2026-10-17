@@ -3,18 +3,22 @@
 /**
  * Mejora 5: la línea de tiempo de una cotización (creada → enviada →
  * respuesta → pedido) y, si está enviada, el empujón que corresponde:
- * vencida → renovarla; más de 3 días sin respuesta → recordar por WhatsApp.
+ * vencida → renovarla; más de 3 días sin respuesta → recordar por WhatsApp
+ * (F31: al celular del cliente, con constancia de quién y cuándo; si ya se le
+ * recordó hoy, pregunta antes de repetir).
  */
 import { BlockTitle } from "@buleje/design-system";
 import { Check, Clock, MessageCircle, RefreshCw } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { abrirWhatsApp, vencioSinRespuesta, type Cotizacion } from "./tipos";
+import { ConfirmarRecordatorio, textoUltimo } from "./BandejaSeguimiento";
+import { vencioSinRespuesta, type Cotizacion } from "./tipos";
+import type { Seguimiento } from "./use-seguimiento";
 
 const ORDEN = ["BORRADOR", "ENVIADA", "ACEPTADA", "RECHAZADA", "CONVERTIDA", "VENCIDA"];
 
-export function SeguimientoCotizacion({ c, onRenovar }: { c: Cotizacion; onRenovar: () => void }) {
+export function SeguimientoCotizacion({ c, onRenovar, seguimiento }: { c: Cotizacion; onRenovar: () => void; seguimiento: Seguimiento }) {
   const pasos = [
     { label: "Creada", status: "BORRADOR", date: c.createdAt },
     { label: "Enviada", status: "ENVIADA", date: c.status !== "BORRADOR" ? c.updatedAt : null },
@@ -61,14 +65,15 @@ export function SeguimientoCotizacion({ c, onRenovar }: { c: Cotizacion; onRenov
         </div>
       ) : c.status === "ENVIADA" && diasEnviada > 3 ? (
         <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 dark:bg-[var(--data-warning-500)]/10">
-          <p className="text-sm font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">Sin respuesta hace {diasEnviada} días.</p>
-          <button
-            type="button"
-            onClick={() => abrirWhatsApp(`Hola ${c.clienteNombre}, te enviamos la cotización ${c.numero} por ${formatCurrency(Number(c.total))}. ¿Te interesa?`)}
-            className={button({ variant: "secondary", className: "ml-auto gap-1.5 rounded-xl" })}
-          >
+          <p className="text-sm text-[var(--text-primary)]">
+            <span className="font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">Sin respuesta hace {diasEnviada} días</span>
+            {" · "}{textoUltimo(seguimiento.ultimoDe(c.id))}
+          </p>
+          <button type="button" onClick={() => seguimiento.recordar(c)} className={button({ variant: "secondary", className: "ml-auto gap-1.5 rounded-xl" })}>
             <MessageCircle className="h-4 w-4 text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" aria-hidden /> Recordar por WhatsApp
           </button>
+          <ConfirmarRecordatorio seguimiento={seguimiento} c={c} />
+          {seguimiento.aviso && <p role="status" className="w-full text-sm text-[var(--text-secondary)]">{seguimiento.aviso}</p>}
         </div>
       ) : null}
     </div>
