@@ -170,6 +170,8 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "notas", label: "Notas de crédito", hint: "Anular o corregir una boleta o factura: devoluciones, descuentos y errores", origen: ["notas-credito", "documentos"] },
     { key: "guias", label: "Guías de remisión", hint: "Los papeles del traslado de mercadería: transportista, vehículo, punto de partida y llegada", origen: ["guias-remision", "documentos"] },
     { key: "cotizaciones", label: "Cotizaciones", hint: "Presupuestos para tus clientes que, aceptados, se convierten en pedido", origen: ["cotizaciones", "documentos"] },
+    // Noche 17-10 (N02 + N08): la bandeja de pendientes y la conciliación, con el expediente de cada operación.
+    { key: "seguimiento", label: "Seguimiento", hint: "Lo que quedó pendiente en tus papeles (rechazos, borradores, cotizaciones por vencer) y la conciliación de lo vendido con lo facturado", origen: ["facturacion", "documentos"] },
   ],
   // Documentos (ola 3): el Archivo (drive) y Contratos. Lo comercial se fue a
   // Comprobantes y queda como alias (`documentos:cotizaciones` → VISTA_MIGRATION).
@@ -403,6 +405,9 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "cotizaciones", key: "cerradas", label: "Cotizaciones cerradas", hint: "Convertidas en pedido, rechazadas y vencidas", origen: ["cotizaciones", "documentos"] },
     { vista: "cotizaciones", key: "nueva", label: "Nueva cotización", hint: "Armar un presupuesto", origen: ["cotizaciones", "documentos"] },
     { vista: "cotizaciones", key: "dashboard", label: "Resumen de cotizaciones", hint: "Cuántas cotizaste este mes, qué parte se convirtió y por cuánto", origen: ["cotizaciones", "documentos"] },
+    // Comprobantes › Seguimiento (noche 17-10): dos secciones en `?sub=`.
+    { vista: "seguimiento", key: "pendientes", label: "Papeles pendientes", hint: "Rechazados y sin respuesta de SUNAT, notas y guías en borrador, cotizaciones por vencer y pedidos sin comprobante", origen: ["facturacion", "documentos"] },
+    { vista: "seguimiento", key: "conciliacion", label: "Conciliación documental", hint: "Por período: pedidos sin comprobante, comprobantes sin pedido, notas por motivo; emitido y aceptado por separado", origen: ["facturacion", "documentos"] },
   ],
   // Ventas y caja › Caja (con «Cuadrar caja», que era la vista `arqueo`) y
   // Ventas y caja › Me deben (las pestañas del módulo de fiados).
@@ -443,6 +448,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "cuentas-por-pagar", key: "cuentas", label: "Cuentas por pagar", hint: "Cada deuda con su proveedor, de qué factura u orden viene y cuándo vence", origen: ["compras"] },
     { vista: "cuentas-por-pagar", key: "calendario", label: "Calendario de pagos", hint: "Qué vence cada semana y la antigüedad del saldo por tramos", origen: ["compras"] },
     { vista: "cuentas-por-pagar", key: "propuesta", label: "Propuesta de pagos", hint: "Las vencidas y las de la semana ya marcadas, con el total y en CSV", origen: ["compras"] },
+    { vista: "cuentas-por-pagar", key: "conciliacion", label: "Conciliación", hint: "Orden, recepción, factura, cuenta y pago lado a lado: qué no cuadra y de qué papel sale", origen: ["compras"] },
   ],
   "pagina-inicio": [
     { vista: "apariencia", key: "identidad", label: "Identidad", hint: "Nombre, logo, lema y cómo sale en Google" },

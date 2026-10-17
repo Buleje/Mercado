@@ -5,7 +5,8 @@
 import { CheckCircle2, Clock, Send, XCircle } from "@buleje/design-system/icons";
 import { formatNumber } from "@/lib/format";
 
-export type DocType = "boleta" | "factura" | "nota-credito" | "nota-debito";
+/** `baja` = comunicación de baja a SUNAT (antes se mostraba como «Boleta»). */
+export type DocType = "boleta" | "factura" | "nota-credito" | "nota-debito" | "baja";
 export type DocStatus = "emitido" | "aceptado" | "rechazado" | "anulado" | "pendiente";
 
 export type EDocument = {
@@ -24,6 +25,8 @@ export type EDocument = {
   sunatResponse: string;
   pdfUrl?: string | null;
   relatedDoc?: string;
+  /** Fecha numérica completa (dd/mm/aaaa) para el Excel. */
+  creado?: string;
   /** El pedido del que sale: con él se sabe si un pedido ya tiene comprobante. */
   orderId?: string | null;
 };
@@ -35,6 +38,7 @@ export const TYPE_META: Record<DocType, { label: string; color: string; bg: stri
   factura:        { label: "Factura",         color: "text-primary",  bg: "bg-primary/10 dark:bg-primary/15" },
   "nota-credito": { label: "Nota de crédito", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   "nota-debito":  { label: "Nota de débito",  color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
+  baja:           { label: "Comunicación de baja", color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
 };
 
 export const STATUS_META: Record<DocStatus, { label: string; color: string; icon: typeof CheckCircle2 }> = {
@@ -47,29 +51,3 @@ export const STATUS_META: Record<DocStatus, { label: string; color: string; icon
 
 /** Las columnas de datos en su orden de fábrica (Ver/PDF es fija, al final). */
 export const COLS_EINVOICE = ["serieNro", "fecha", "tipo", "cliente", "total", "estado"] as const;
-
-/** Los números que muestra el panel de Indicadores (de las mismas cuentas de antes). */
-export interface StatsComprobantes {
-  totalEmitted: number;
-  totalIGV: number;
-  pending: number;
-  rejected: number;
-  boletas: number;
-  facturas: number;
-  notas: number;
-  total: number;
-}
-
-export function calcularStats(docs: readonly EDocument[]): StatsComprobantes {
-  const vivos = docs.filter(d => d.status !== "anulado");
-  return {
-    totalEmitted: vivos.reduce((s, d) => s + d.total, 0),
-    totalIGV: vivos.reduce((s, d) => s + d.igv, 0),
-    pending: docs.filter(d => d.status === "pendiente").length,
-    rejected: docs.filter(d => d.status === "rechazado").length,
-    boletas: docs.filter(d => d.type === "boleta").length,
-    facturas: docs.filter(d => d.type === "factura").length,
-    notas: docs.filter(d => d.type === "nota-credito" || d.type === "nota-debito").length,
-    total: docs.length,
-  };
-}

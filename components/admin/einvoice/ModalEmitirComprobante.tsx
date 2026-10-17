@@ -109,6 +109,7 @@ export function ModalEmitirComprobante({ emision, docs, sunat }: Props) {
             emisor={estado?.emisor ?? null}
             falta={falta}
             onCambiarPedido={emision.volverAlOrigen}
+            docs={docs}
           />
         )}
         {paso === "resultado" && resultado && <EmitirResultado resultado={resultado} />}

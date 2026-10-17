@@ -318,6 +318,10 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       archivo: "components/admin/CotizacionesModule.tsx",
       constante: /const COTIZACIONES_VISTAS = \[([^\]]+)\]/,
     },
+    "facturacion/seguimiento": {
+      archivo: "components/admin/einvoice/seguimiento/SeguimientoModule.tsx",
+      constante: /export const SECCIONES_SEGUIMIENTO = \[([^\]]+)\]/,
+    },
     "documentos/drive": {
       archivo: "components/admin/documentos/DocumentosModule.tsx",
       constante: /const DRIVE_MODOS = \[([\s\S]*?)\] as const;/,

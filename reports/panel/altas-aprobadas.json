@@ -381,6 +381,22 @@
    },
    "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
    "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "facturacion:seguimiento",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Noche 17-10: pestaña nueva N02 «Seguimiento y pendientes» del PDF de Comprobantes (Codex 15-10): bandeja de rechazados, en cola, notas sin documento, guías sin enviar y cotizaciones por vencer, leída de lo que ya existe. Sólo para los roles que ya ven Comprobantes completo (admin y tienda_owner, medido por esta prueba): si otro rol la gana, la prueba avisa.",
+   "aprobo": "Brandon delegó las decisiones de la noche 17-10 («todas tus propuestas, decisiones… implementa todas las mejoras») — coordinador de la noche"
+  },
+  {
+   "par": "facturacion:seguimiento",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Noche 17-10: pestaña nueva N02 «Seguimiento y pendientes» del PDF de Comprobantes (Codex 15-10): bandeja de rechazados, en cola, notas sin documento, guías sin enviar y cotizaciones por vencer, leída de lo que ya existe. Sólo para los roles que ya ven Comprobantes completo (admin y tienda_owner, medido por esta prueba): si otro rol la gana, la prueba avisa.",
+   "aprobo": "Brandon delegó las decisiones de la noche 17-10 («todas tus propuestas, decisiones… implementa todas las mejoras») — coordinador de la noche"
   }
  ]
 }

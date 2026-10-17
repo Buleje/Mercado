@@ -21,7 +21,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { ClipboardList, FileMinus, ReceiptText, Truck } from "@buleje/design-system/icons";
+import { ClipboardList, FileMinus, ListChecks, ReceiptText, Truck } from "@buleje/design-system/icons";
 import { useVistaModulo, type AliasDeVista, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -32,16 +32,20 @@ const FacturacionModule = dynamic(() => import("@/components/admin/unified/Factu
 const NotasCreditoModule = dynamic(() => import("@/components/admin/NotasCreditoModule"), { loading: S });
 const GuiasRemisionModule = dynamic(() => import("@/components/admin/GuiasRemisionModule"), { loading: S });
 const CotizacionesModule = dynamic(() => import("@/components/admin/CotizacionesModule"), { loading: S });
+const SeguimientoModule = dynamic(() => import("@/components/admin/einvoice/seguimiento/SeguimientoModule"), { loading: S });
+/* El expediente (N03) se abre con `?expediente=` desde cualquier vista del hub o de otra pestaña. */
+const ModalExpediente = dynamic(() => import("@/components/admin/einvoice/expediente/ModalExpediente"));
 
 const MODULE_ID = "comprobantes-hub";
 
-type Vista = "facturas" | "notas" | "guias" | "cotizaciones";
+type Vista = "facturas" | "notas" | "guias" | "cotizaciones" | "seguimiento";
 
 const TABS: readonly (AdminTab & { id: Vista })[] = [
   { id: "facturas", label: "Facturas y boletas", icon: ReceiptText },
   { id: "notas", label: "Notas de crédito", icon: FileMinus },
   { id: "guias", label: "Guías de remisión", icon: Truck },
   { id: "cotizaciones", label: "Cotizaciones", icon: ClipboardList },
+  { id: "seguimiento", label: "Seguimiento", icon: ListChecks },
 ];
 
 /**
@@ -58,10 +62,10 @@ const ALIAS: AliasDeVista<Vista> = {
 };
 
 /** Cada vista lleva su sección en `?sub=`: al salir, no viaja a la vista siguiente. */
-const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { facturas: ["sub"], notas: ["sub"], guias: ["sub"], cotizaciones: ["sub"] };
+const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { facturas: ["sub"], notas: ["sub"], guias: ["sub"], cotizaciones: ["sub"], seguimiento: ["sub"] };
 
 const AYUDA_DEL_HUB =
-  "Los papeles de tus ventas: boletas y facturas, las notas que las corrigen, las guías del traslado y las cotizaciones antes de vender.";
+  "Los papeles de tus ventas: boletas y facturas, las notas que las corrigen, las guías del traslado, las cotizaciones antes de vender y el seguimiento de lo que quedó pendiente.";
 
 /** Cuánto se espera al rol antes de abrir igual (con las vistas propias del hub). */
 const ESPERA_DEL_ROL_MS = 4000;
@@ -106,7 +110,9 @@ function HubComprobantes({ initialTab }: { initialTab?: string }) {
         {vista === "notas" && <NotasCreditoModule />}
         {vista === "guias" && <GuiasRemisionModule />}
         {vista === "cotizaciones" && <CotizacionesModule />}
+        {vista === "seguimiento" && <SeguimientoModule />}
       </AdminTabBar>
+      <ModalExpediente />
     </div>
   );
 }

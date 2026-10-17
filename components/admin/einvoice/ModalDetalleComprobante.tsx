@@ -2,10 +2,12 @@
 
 import { useId, useRef } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Download, X } from "@buleje/design-system/icons";
+import { Download, FolderOpen, X } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { button } from "@/components/ui-system/button-variants";
+import { abrirExpediente } from "./expediente/expediente-url";
 import { fmt, STATUS_META, TYPE_META, type EDocument } from "./tipos";
 
 interface Props {
@@ -52,8 +54,21 @@ export function ModalDetalleComprobante({ doc, onCerrar }: Props) {
         </div>
         <div>
           <p className="text-sm text-[var(--text-tertiary)] mb-1">Respuesta SUNAT</p>
-          <p className="text-sm text-[var(--text-primary)] bg-[var(--surface-alt)] rounded-xl p-3 font-mono">{doc.sunatResponse}</p>
+          <p className="text-sm text-[var(--text-primary)] bg-[var(--surface-sunken)] rounded-xl p-3 font-mono">{doc.sunatResponse}</p>
         </div>
+        {/* N03: el comprobante dentro de su operación (pedido, notas, guías, cobro). Sólo lectura. */}
+        <button
+          type="button"
+          data-qa="detalle-ver-expediente"
+          onClick={() => {
+            const ref = doc.orderId ?? `${doc.serie}-${doc.number}`;
+            onCerrar();
+            abrirExpediente(ref);
+          }}
+          className={button({ variant: "secondary", className: "w-full rounded-xl" })}
+        >
+          <FolderOpen className="h-4 w-4" aria-hidden /> Ver expediente de la operación
+        </button>
         {doc.pdfUrl && (
           <a
             href={doc.pdfUrl}

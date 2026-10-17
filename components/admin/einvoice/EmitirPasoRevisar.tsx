@@ -5,15 +5,18 @@
  * (F05/F07/F43). Cliente precargado del pedido y validado junto al campo; las
  * líneas y el total son los del pedido (backend): acá no se calcula ningún total.
  */
-import type { Dispatch, SetStateAction } from "react";
+import { useId, useMemo, type Dispatch, type SetStateAction } from "react";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { SunatEmisor } from "@/lib/sunat/modo-oficial.types";
+import { clientesFrecuentes, nombreAnteriorDistinto } from "./clientes-frecuentes";
 import { diaYFecha, TOPE_BOLETA_SIN_DNI, type DatosCliente, type PedidoElegible, type TipoComprobante } from "./emision-reglas";
+import type { EDocument } from "./tipos";
 
 const ETIQUETA = "mb-1 block text-sm font-semibold text-[var(--text-secondary)]";
 const CAMPO = "h-12 w-full rounded-xl border bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]";
+const MENSAJE_CAMPO = "mt-1 block text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
 
 interface Props {
   pedido: PedidoElegible;
@@ -22,9 +25,14 @@ interface Props {
   emisor: SunatEmisor | null;
   falta: { campo: "nombre" | "documento"; mensaje: string } | null;
   onCambiarPedido: () => void;
+  /** Comprobantes vivos (sin filtro): de ahí salen los clientes frecuentes (F40). */
+  docs: readonly EDocument[];
 }
 
-export function EmitirPasoRevisar({ pedido, datos, setDatos, emisor, falta, onCambiarPedido }: Props) {
+export function EmitirPasoRevisar({ pedido, datos, setDatos, emisor, falta, onCambiarPedido, docs }: Props) {
+  const id = useId();
+  const frecuentes = useMemo(() => clientesFrecuentes(docs, datos), [docs, datos]);
+  const otroNombre = useMemo(() => nombreAnteriorDistinto(docs, datos), [docs, datos]);
   const serie = (t: TipoComprobante) => (t === "boleta" ? emisor?.serieBoleta : emisor?.serieFactura);
   const cambiar = (parcial: Partial<DatosCliente>) => setDatos((d) => ({ ...d, ...parcial }));
   const borde = (campo: "nombre" | "documento") =>
@@ -63,6 +71,7 @@ export function EmitirPasoRevisar({ pedido, datos, setDatos, emisor, falta, onCa
         ))}
       </div>
 
+      {/* F40: el mensaje va debajo de SU campo; las sugerencias sólo se ponen con un clic. */}
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
           <span className={ETIQUETA}>{datos.tipo === "factura" ? "Razón social" : "Cliente"}</span>
@@ -70,8 +79,14 @@ export function EmitirPasoRevisar({ pedido, datos, setDatos, emisor, falta, onCa
             value={datos.nombre}
             onChange={(e) => cambiar({ nombre: e.target.value })}
             aria-invalid={falta?.campo === "nombre"}
+            aria-describedby={falta?.campo === "nombre" ? `${id}-nombre` : undefined}
             className={cn(CAMPO, borde("nombre"))}
           />
+          {falta?.campo === "nombre" && (
+            <span id={`${id}-nombre`} aria-live="polite" className={MENSAJE_CAMPO}>
+              {falta.mensaje}
+            </span>
+          )}
         </label>
         <label className="block">
           <span className={ETIQUETA}>
@@ -83,14 +98,39 @@ export function EmitirPasoRevisar({ pedido, datos, setDatos, emisor, falta, onCa
             inputMode="numeric"
             placeholder={datos.tipo === "factura" ? "11 dígitos" : "8 dígitos"}
             aria-invalid={falta?.campo === "documento"}
+            aria-describedby={falta?.campo === "documento" || otroNombre ? `${id}-documento` : undefined}
             className={cn(CAMPO, "font-mono", borde("documento"))}
           />
+          {falta?.campo === "documento" ? (
+            <span id={`${id}-documento`} aria-live="polite" className={MENSAJE_CAMPO}>
+              {falta.mensaje}
+            </span>
+          ) : (
+            otroNombre && (
+              <span id={`${id}-documento`} aria-live="polite" className="mt-1 block text-sm font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
+                Este número salió antes a nombre de «{otroNombre}». Revisa el nombre antes de emitir.
+              </span>
+            )
+          )}
         </label>
       </div>
-      {falta && (
-        <p role="alert" className="text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-          {falta.mensaje}
-        </p>
+      {frecuentes.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Clientes a los que ya emitiste">
+          <span className="text-sm text-[var(--text-secondary)]">Ya le emitiste a:</span>
+          {frecuentes.map((c) => (
+            <button
+              key={c.documento}
+              type="button"
+              onClick={() => cambiar({ nombre: c.nombre, documento: c.documento })}
+              title={`${c.veces} ${c.veces === 1 ? "vez" : "veces"} · se pone en los campos para que lo revises`}
+              data-qa="cliente-frecuente"
+              className="inline-flex min-h-12 max-w-full items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-left text-sm hover:bg-[var(--surface-sunken)]"
+            >
+              <span className="truncate font-semibold text-[var(--text-primary)]">{c.nombre}</span>
+              <span className="shrink-0 font-mono text-[var(--text-secondary)]">{c.documento}</span>
+            </button>
+          ))}
+        </div>
       )}
 
       {/* Lo que va a decir el comprobante: líneas y total del pedido. */}
