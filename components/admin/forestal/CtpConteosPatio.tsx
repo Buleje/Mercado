@@ -26,6 +26,8 @@ import { TAB_LIBRO_CTP } from "@/lib/forestal/ctp-troza-url";
 import { openCtpReport } from "@/lib/forestal/ctp-print-shared";
 import { Btn, ModalFooter } from "./ctp-shared";
 import { BOTON_PRIMARIO, BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
+import { BTN_ACCION_RIEL } from "./ctp-cabecera-vista";
+import { CLASE_TEXTO_ACCION, TextoDeAccion } from "@/components/admin/shared/libro-acciones-vista";
 
 /** Al terminar el conteo, el celular vuelve acá: la línea ya dice cómo salió. */
 const URL_CONTAR = urlContarElPatio(`/admin?tab=${TAB_LIBRO_CTP}&vista=trozas`);
@@ -164,13 +166,15 @@ export default function CtpConteosPatio() {
     return (
       <a
         href={URL_CONTAR}
-        className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-lg border border-[var(--accent)] px-2.5 py-1 text-left text-sm font-bold text-[var(--text-primary)] no-underline transition-colors hover:bg-[var(--accent-soft)]"
-        title="Recorre el patio con el celular: etiquetas, escanear cada troza y el acta de lo que falta o sobra"
+        className={cn(BTN_ACCION_RIEL, "max-w-full border-[var(--accent)] no-underline")}
+        title="Contar el patio (nunca se contó): recorre el patio con el celular, etiquetas, escanear cada troza y el acta de lo que falta o sobra"
         data-ultimo-conteo
         data-contar-patio
       >
         <ScanLine className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
-        <span className="min-w-0">Contar el patio · nunca se contó</span>
+        <TextoDeAccion>
+          <span className="min-w-0">Contar el patio · nunca se contó</span>
+        </TextoDeAccion>
       </a>
     );
   }
@@ -181,18 +185,26 @@ export default function CtpConteosPatio() {
         type="button"
         onClick={() => setAbierto(true)}
         aria-haspopup="dialog"
-        title={ultimo ? fraseDelConteo(ultimo) : undefined}
-        className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-left text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+        title={ultimo ? fraseDelConteo(ultimo) : texto}
+        aria-label={ultimo ? fraseDelConteo(ultimo) : texto}
+        className={cn(BTN_ACCION_RIEL, "max-w-full")}
         data-ultimo-conteo
       >
         {cargando && !ultimo ? (
           <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
         ) : (
-          <ClipboardList className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
+          <ClipboardList
+            className={cn(
+              "h-4 w-4 shrink-0",
+              pideMirar ? "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]" : "text-[var(--accent)]",
+            )}
+            aria-hidden
+          />
         )}
         <span
           className={cn(
             "min-w-0",
+            CLASE_TEXTO_ACCION,
             pideMirar && "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]",
           )}
         >

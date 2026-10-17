@@ -4,16 +4,21 @@
  * Consumos del Libro CTP: qué queda en el patio y qué entró a la sierra.
  *
  * Shell (ADR-431): título, aviso de «Solo este permiso», dos pestañas de verdad
- * —Patio y el cuadro oficial— y los toasts. La lógica vive en `usePatioConsumos`
+ * —Patio y el cuadro oficial— y los toasts. Desde la compactación del libro
+ * (17-10) las pestañas son las de toda vista con 2.º nivel (`PestanasDeVista`,
+ * con la cifra en el rótulo) y las «Opciones» de cada una van al riel. La lógica vive en `usePatioConsumos`
  * y `useConsumosSeccion2`. Refresco no bloqueante: consumir ya no desmonta la
  * vista, y un error del cuadro no tumba el patio.
  */
 
 import { useCallback, useEffect, useId, useState } from "react";
-import { SectionTitle } from "@buleje/design-system";
+import { ClipboardList, Trees } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { AccionesDeLaVista, useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
-import CtpApartados, { CtpApartadoPanel, useApartado, type Apartado } from "./ctp-apartados";
+import { useApartado, type Apartado } from "./ctp-apartados";
+import { CabeceraDeVista } from "./ctp-cabecera-vista";
+import PestanasDeVista, { type PestanaDeVista } from "./PestanasDeVista";
 import CtpAvisoAlcancePermiso from "./CtpAvisoAlcancePermiso";
 import CtpAvisoSinOrigen from "./CtpAvisoSinOrigen";
 import CtpConsumosPatio from "./CtpConsumosPatio";
@@ -28,6 +33,7 @@ import type { LoteAProducir } from "./CtpLotesView";
 
 /** Los ids de las pestañas: `useApartado` los valida al montar. */
 const PESTANAS: readonly Apartado[] = [{ id: "patio", label: "Patio" }, { id: "seccion2", label: "Sección 2 · Consumos" }];
+type IdPestana = "patio" | "seccion2";
 
 export default function CtpConsumosView({
   period,
@@ -45,6 +51,7 @@ export default function CtpConsumosView({
   onPresetLoteUsado?: () => void;
 }) {
   const idBase = useId();
+  const enLibro = useEnElLibro();
   const { toasts, push, dismiss } = useActionToasts();
   const [resumenPermiso, setResumenPermiso] = useState(false);
   const abrirResumen = useCallback(() => setResumenPermiso(true), []);
@@ -66,41 +73,38 @@ export default function CtpConsumosView({
      permiso»: libres + en lote). Salía de las cifras filtradas y, con un lote
      elegido, decía «Patio 0 trozas» con 44 en el patio (medido 2026-09-24). */
   const enPatio = p.porPermiso.totales.enPatio.trozas;
-  const apartados: Apartado[] = [
+  const nPatio = p.lotes.cargando && p.lotes.trozas.length === 0 ? "…" : `${enPatio} ${enPatio === 1 ? "troza" : "trozas"}`;
+  const nCuadro = s2.cargandoInicial ? "…" : `${s2.filas.length} ${s2.filas.length === 1 ? "consumo" : "consumos"}`;
+  const pestanas: readonly PestanaDeVista<IdPestana>[] = [
     {
       id: "patio",
-      label: "Patio",
+      label: `Patio · ${nPatio}`,
+      icon: Trees,
       hint: "La madera recibida que todavía no entró a la sierra: de acá se elige lo que se consume",
-      contador: p.lotes.cargando && p.lotes.trozas.length === 0 ? "…" : enPatio,
-      unidad: enPatio === 1 ? "troza" : "trozas",
     },
     {
       id: "seccion2",
-      label: "Sección 2 · Consumos",
+      label: `Sección 2 · ${nCuadro}`,
+      icon: ClipboardList,
       hint: "El cuadro oficial del libro: qué madera entró a la sierra en el período",
-      contador: s2.cargandoInicial ? "…" : s2.filas.length,
-      unidad: s2.filas.length === 1 ? "consumo" : "consumos",
     },
   ];
 
   return (
     <div className="space-y-4">
-      {/* Título y apartados en UNA fila (2026-09-24): las pestañas eran un
-          renglón propio entre el subtítulo y el contenido. */}
-      <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-        {/* El subtítulo pasó al ⓘ (Brandon 2026-09-24: «mucho texto por todos
-            lados»): a la vista queda el título; la explicación, a un toque. */}
-        <div className="flex min-w-0 items-center gap-1.5">
-          <SectionTitle as="h2">Consumos</SectionTitle>
+      {/* Dentro del libro el título se calla y el ⓘ va al riel (compactación
+          17-10): el riel ya dice «Consumos». */}
+      <CabeceraDeVista
+        titulo="Consumos"
+        info={
           <InfoTip
             title="Consumos"
             what="Qué madera queda en el patio y qué entró a la sierra en el período."
             affects="Patio: de acá se eligen las trozas que se cargan en un lote. Sección 2: el cuadro oficial del libro."
             example="Patio con 44 trozas esperando; en Sección 2, los 6 consumos del mes tal como van al formato de SERFOR."
           />
-        </div>
-        <CtpApartados apartados={apartados} activo={activo} onIr={ir} idBase={idBase} etiqueta="Apartados de Consumos" />
-      </header>
+        }
+      />
 
       {p.contratoFiltro && p.codigoPermisoActivo && (
         <CtpAvisoAlcancePermiso
@@ -110,7 +114,13 @@ export default function CtpConsumosView({
         />
       )}
 
-      <CtpApartadoPanel idBase={idBase} id={activo}>
+      <PestanasDeVista<IdPestana>
+        prefijo={`ctp-consumos${idBase.replace(/:/g, "")}`}
+        etiqueta="Pestañas de Consumos"
+        items={pestanas}
+        activa={activo as IdPestana}
+        onCambiar={ir}
+      >
         {activo === "patio" ? (
           <CtpConsumosPatio
             estado={p}
@@ -122,6 +132,12 @@ export default function CtpConsumosView({
           />
         ) : (
           <div className="space-y-4" aria-busy={s2.refrescando || s2.cargandoInicial || undefined}>
+            {/* «Opciones» del cuadro al riel; los indicadores ya van solos. */}
+            {enLibro && (
+              <AccionesDeLaVista>
+                <CtpConsumosSeccion2Opciones s2={s2} onResumenPermiso={abrirResumen} />
+              </AccionesDeLaVista>
+            )}
             <CtpAvisoSinOrigen
               corridas={s2.resumen.corridasSinOrigen}
               producidoSinOrigen={s2.resumen.producidoSinOrigen}
@@ -133,7 +149,7 @@ export default function CtpConsumosView({
               accion={
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   {kpis2.boton}
-                  <CtpConsumosSeccion2Opciones s2={s2} onResumenPermiso={abrirResumen} />
+                  {!enLibro && <CtpConsumosSeccion2Opciones s2={s2} onResumenPermiso={abrirResumen} />}
                 </div>
               }
               barra={
@@ -145,7 +161,7 @@ export default function CtpConsumosView({
             />
           </div>
         )}
-      </CtpApartadoPanel>
+      </PestanasDeVista>
 
       <ActionToasts toasts={toasts} onDismiss={dismiss} />
 

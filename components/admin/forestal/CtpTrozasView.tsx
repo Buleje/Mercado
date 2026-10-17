@@ -16,27 +16,18 @@
  *   2. la lista filtrable — la pieza concreta, con sus medidas y su guía;
  *   3. el buscador del fiscalizador — pregunta al servidor, sin el tope de 5.000.
  *
- * ## Un solo título y una sola jerarquía
+ * ## Compacta (Brandon 05-10 y 17-10)
  *
- * La vista tiene UN título (`SectionTitle`) y cada bloque el suyo (`CardTitle`).
- * Antes había dos encabezados casi iguales —«El patio, troza por troza» y «El
- * patio, pieza por pieza»— y cinco `<h3>` del mismo peso: con todo al mismo
- * nivel, nada es el título.
- *
- * ## Compacta (Brandon 05-10)
- *
- * Todo lo que no es la tabla vive en DOS renglones: la cabecera (título,
- * «Indicadores» plegable con su titular, «Sin título declarado», conteos y
- * actualizar) y el de buscar (escáner + «Buscar en el libro», que antes era
- * una caja al pie). Los indicadores arrancan plegados y se recuerdan; «Sin
- * título» es un botón con su tabla en un modal, y D1/D2 se anotan desde la
- * tabla cuando ninguna fuente los trae.
+ * Un solo título, que dentro del libro se calla: el riel ya dice dónde estás y
+ * recibe ⓘ, «Indicadores», «Sin título declarado», «Plan del día», el último
+ * conteo y actualizar (`CtpTrozasCabecera`). La vista arranca en el escáner y
+ * «Buscar en el libro»; «Sin título» abre su tabla en un modal y D1/D2 se
+ * anotan desde la tabla cuando ninguna fuente los trae. También es la pestaña
+ * «Por troza» de Volumen disponible: el mismo componente, sin copia.
  */
 
 import { useMemo, useState } from "react";
-import { SectionTitle } from "@buleje/design-system";
-import { AlertTriangle, Axe, RefreshCw, Search, ShieldAlert } from "@buleje/design-system/icons";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { AlertTriangle, Search } from "@buleje/design-system/icons";
 import { SIN_TITULO, type EstadoTroza } from "@/lib/forestal/trozas-patio";
 import { faltanMedidas, piezasSinTitulo } from "@/lib/forestal/trozas-patio-medidas";
 import { escribirTrozaEnUrl, trozaDeUrl } from "@/lib/forestal/ctp-troza-etiquetas";
@@ -44,7 +35,7 @@ import CtpApartarEnLoteModal from "./CtpApartarEnLoteModal";
 import { CtpArmarLoteEscaneoSuelto } from "./CtpArmarLoteEscaneoModal";
 import CtpCodigosDuplicados from "./CtpCodigosDuplicados";
 import CtpEtiquetasTrozasModal from "./CtpEtiquetasTrozasModal";
-import CtpConteosPatio from "./CtpConteosPatio";
+import CtpTrozasCabecera from "./CtpTrozasCabecera";
 import CtpTrozaFichaModal from "./CtpTrozaFichaModal";
 import CtpTrozasPlanAserrioModal from "./CtpTrozasPlanAserrioModal";
 import EscanerTrozas from "./EscanerTrozas";
@@ -53,7 +44,6 @@ import CtpTrozasLista from "./CtpTrozasLista";
 import CtpTrozasMedirModal from "./CtpTrozasMedirModal";
 import { useIndicadoresPatio } from "./CtpTrozasPatio";
 import CtpTrozasSinTituloModal from "./CtpTrozasSinTituloModal";
-import { n2 } from "./ctp-trozas-ui";
 import { usePlantaUbicacion } from "./hooks/use-planta-ubicacion";
 import { useTrozasPatio } from "./hooks/use-trozas-patio";
 
@@ -139,51 +129,15 @@ export default function CtpTrozasView() {
 
   return (
     <div data-vista-trozas className="space-y-2.5">
-      <header className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <SectionTitle>El patio, troza por troza</SectionTitle>
-          <InfoTip
-            title="El patio, troza por troza"
-            what="Qué hay parado hoy, qué se puede llevar a la sierra y qué lleva demasiado tiempo esperando."
-            affects="Consumos cuenta m³ por guía; acá la unidad es la pieza."
-          />
-        </div>
-        {botonKpis}
-        {/* La deuda de origen legal, a la vista aunque los indicadores estén
-            plegados; abre su tabla. Sólo cuando existe: un cero en verde sería
-            una felicitación que nadie pidió. */}
-        {sinTitulo.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setVerSinTitulo(true)}
-            title="Piezas paradas sin título habilitante: ver cuáles y de qué guía"
-            className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--data-warning-500)]/20"
-          >
-            <ShieldAlert className="h-4 w-4 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden="true" />
-            Sin título declarado
-            <span className="font-mono tabular-nums">{sinTitulo.length}</span>
-            <span className="font-mono text-xs font-normal tabular-nums text-[var(--text-secondary)]">{n2(m3SinTitulo)} m³</span>
-          </button>
-        )}
-        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
-          {/* Qué mandar hoy a la sierra (Brandon 05-10): las más viejas primero, por especie. */}
-          <button
-            type="button" onClick={() => setVerPlan(true)} disabled={cargando}
-            className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-60 dark:text-[var(--accent)]"
-          >
-            <Axe className="h-4 w-4" aria-hidden="true" /> Plan del día
-          </button>
-          {/* El conteo físico del patio (acta del modo patio, 2026-09-26). */}
-          <CtpConteosPatio />
-          <button
-            type="button" onClick={() => void recargar()} disabled={cargando}
-            title="Actualizar el patio" aria-label="Actualizar el patio"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-60"
-          >
-            <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} />
-          </button>
-        </div>
-      </header>
+      {botonKpis}
+      <CtpTrozasCabecera
+        sinTitulo={sinTitulo.length}
+        m3SinTitulo={m3SinTitulo}
+        cargando={cargando}
+        onVerSinTitulo={() => setVerSinTitulo(true)}
+        onVerPlan={() => setVerPlan(true)}
+        onRecargar={() => void recargar()}
+      />
 
       {panelKpis && (
         <section aria-label="Indicadores del patio" className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">

@@ -11,6 +11,8 @@
 
 import type { FotoEspecie } from "@/lib/forestal/especies-fotos";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
+import { ptDe } from "@/lib/forestal/trozas-disponibles";
 import { diasParada, ESTADO_META, estadoDeTroza } from "@/lib/forestal/trozas-patio";
 import { medidasDePieza } from "@/lib/forestal/trozas-patio-medidas";
 import { claseDias, n, tituloDias } from "./ctp-trozas-lista-shared";
@@ -57,6 +59,9 @@ export default function CtpTrozasCards({
                   <span className="font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? t.codigoPlanta ?? "—"}</span>
                   <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
                     {t.volumenM3 == null ? "—" : `${fmtM3(t.volumenM3)} m³`}
+                    {t.volumenM3 != null && t.volumenM3 > 0 && (
+                      <span className="ml-1 text-xs font-normal text-[var(--text-secondary)]">≈{formatNumber(ptDe(t.volumenM3))} pt</span>
+                    )}
                   </span>
                 </span>
                 <span className="mt-0.5 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
@@ -68,7 +73,7 @@ export default function CtpTrozasCards({
                     <span className="h-2 w-2 rounded-full" style={{ background: puntoDeTono(m.tono) }} aria-hidden="true" />
                     {m.label}
                   </span>
-                  <span className={`font-mono font-bold ${claseDias(d)}`} title={tituloDias(d)}>{d == null ? "sin fecha" : `${d} d parada`}</span>
+                  <span className={`font-mono font-bold ${claseDias(d)}`} title={tituloDias(d)}>{d == null ? "sin fecha" : `${d} d en el patio`}</span>
                   <span className="font-mono text-[var(--text-secondary)]">
                     {cm(medidasDePieza(t).d1)}·{cm(medidasDePieza(t).d2)} cm · {n(t.largoM)} m · {t.gtfNumber ?? "—"}
                   </span>

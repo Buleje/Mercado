@@ -29,7 +29,7 @@ export interface FiltrosCabeceraProps {
   titulo: readonly string[];
   onTitulo: (v: string[]) => void;
   titulosFaceta: FacetaOpcion[];
-  /** Código, Proveedor y los rangos (Parada, D1, D2, Largo, Volumen). */
+  /** Código, Proveedor y los rangos (Días en el patio, D1, D2, Largo, Volumen). */
   extra: FiltrosTrozas;
   orden: OrdenColumnaTroza;
   onOrdenar: (c: CampoOrdenTroza) => void;
@@ -66,8 +66,8 @@ export function celdasCabeceraTrozas(p: FiltrosCabeceraProps): Record<string, Re
       </ThTroza>
     ),
     parada: (
-      <ThTroza {...th} campo="parada" col="parada" align="right" title="Días que lleva parada en el patio" filtro={<FiltroRangoTroza id="parada" label="Parada" unidad="d" paso={1} f={extra} />}>
-        Parada
+      <ThTroza {...th} campo="parada" col="parada" align="right" title="Días en el patio: los que lleva parada desde que llegó" filtro={<FiltroRangoTroza id="parada" label="Días en el patio" unidad="d" paso={1} f={extra} />}>
+        Días
       </ThTroza>
     ),
     d1: (
@@ -86,7 +86,7 @@ export function celdasCabeceraTrozas(p: FiltrosCabeceraProps): Record<string, Re
       </ThTroza>
     ),
     volumen: (
-      <ThTroza {...th} campo="volumen" col="volumen" align="right" filtro={<FiltroRangoTroza id="volumen" label="Volumen" unidad="m³" paso={0.01} f={extra} />}>
+      <ThTroza {...th} campo="volumen" col="volumen" align="right" title="Volumen en m³ y, debajo, los pies tablares aserrables (≈pt, derivado al 56 %)" filtro={<FiltroRangoTroza id="volumen" label="Volumen" unidad="m³" paso={0.01} f={extra} />}>
         Vol. (m³)
       </ThTroza>
     ),

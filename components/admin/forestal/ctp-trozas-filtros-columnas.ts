@@ -69,7 +69,7 @@ export function columnasTrozas(hoy: Date): ColumnaFiltro<TrozaPatioAPI>[] {
     { id: "estado", label: "Estado", tipo: "multi", valor: (t) => ESTADO_META[estadoDeTroza(t)].label },
     { id: "guia", label: "Guía", tipo: "multi", valor: (t) => (t.gtfNumber ?? "").trim() },
     { id: "proveedor", label: "Proveedor", tipo: "multi", valor: (t) => (t.proveedor ?? "").trim() },
-    { id: "parada", label: "Parada", tipo: "rango", numero: (t) => diasParada(t, hoy), unidad: "d", paso: 1 },
+    { id: "parada", label: "Días en el patio", tipo: "rango", numero: (t) => diasParada(t, hoy), unidad: "d", paso: 1 },
     { id: "d1", label: "D1", tipo: "rango", numero: (t) => medidasDePieza(t).d1, unidad: "cm", paso: 1 },
     { id: "d2", label: "D2", tipo: "rango", numero: (t) => medidasDePieza(t).d2, unidad: "cm", paso: 1 },
     { id: "largo", label: "Largo", tipo: "rango", numero: (t) => t.largoM, unidad: "m", paso: 0.1 },

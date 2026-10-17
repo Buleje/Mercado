@@ -27,11 +27,11 @@ import {
   AlertTriangle,
   ChevronRight,
   Loader2,
-  RefreshCw,
   Scissors,
 } from "@buleje/design-system/icons";
 import { StatCard, DataTable } from "@buleje/design-system";
 import { CtpKpisPlegables } from "./kpis-plegables";
+import RielDeReprocesos from "./ctp-reprocesos-riel";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
@@ -75,7 +75,14 @@ const COLUMNAS_UNO_POR_UNO: ColumnaFiltro<ReprocesoAnalizado>[] = [
 const fmtFecha = (iso: string) =>
   formatDateNumeric(iso, { soloFecha: true });
 
-export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod }) {
+export default function CtpReprocesosDeclarados({
+  period,
+  onIr,
+}: {
+  period: CtpPeriod;
+  /** Cambiar de vista dentro del libro; sin él, el enlace navega por URL. */
+  onIr?: (vista: string) => void;
+}) {
   const [filas, setFilas] = useState<ReprocesoDeclarado[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,23 +120,33 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
 
   const f = useFiltrosTabla(visibles, COLUMNAS_UNO_POR_UNO);
 
+  const riel = <RielDeReprocesos onIr={onIr} cargando={cargando} onRecargar={() => void cargar()} />;
+
   if (cargando) {
     return (
+      <>
+      {riel}
       <p className="flex items-center gap-2 px-1 py-6 text-sm text-[var(--text-tertiary)]">
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Buscando los reprocesos del período…
       </p>
+      </>
     );
   }
   if (error) {
     return (
+      <>
+      {riel}
       <p className="flex items-start gap-1.5 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-3 py-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
         <span>{error}</span>
       </p>
+      </>
     );
   }
   if (analizados.length === 0) {
     return (
+      <>
+      {riel}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-8 text-center">
         <Scissors className="mx-auto h-6 w-6 text-[var(--text-tertiary)]" aria-hidden />
         <p className="mt-2 flex flex-wrap items-center justify-center gap-1 text-sm font-bold text-[var(--text-primary)]">
@@ -142,25 +159,20 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
           />
         </p>
       </div>
+      </>
     );
   }
 
   return (
+    <>
+    {riel}
     <div className="space-y-3">
       {/* 1 · Lo que entró, lo que salió y la merma del conjunto — plegables
-          (Brandon 05-10); «Actualizar» sube a la misma fila. */}
+          (Brandon 05-10); el botón va al riel, junto a «Actualizar». */}
       <CtpKpisPlegables
+        alRiel
         claveMemoria="ctp-reprocesos"
         resumen={`${fmtM3(resumen.entro)} m³ entró · ${fmtM3(resumen.salio)} m³ salió${resumen.mermaPct != null ? ` · merma ${resumen.mermaPct} %` : ""}${resumen.noHabituales + resumen.sospechosos > 0 ? ` · ${resumen.noHabituales + resumen.sospechosos} por explicar` : ""}`}
-        acciones={
-          <button
-            type="button"
-            onClick={() => void cargar()}
-            className="inline-flex h-12 items-center gap-1 rounded-2xl border-[1.5px] border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-          >
-            <RefreshCw className="h-4 w-4" aria-hidden /> Actualizar
-          </button>
-        }
         tarjetas={[
           <StatCard key="0"
             label="Volvió a la sierra"
@@ -402,5 +414,6 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
         </div>
       </div>
     </div>
+    </>
   );
 }

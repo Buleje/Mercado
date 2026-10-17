@@ -15,9 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoadingState } from "@buleje/design-system";
-import { AlertCircle, RefreshCw, Printer, X, Truck, Map as MapIcon, Satellite, MoreHorizontal } from "@buleje/design-system/icons";
-import ActionMenu from "@/components/admin/shared/action-menu";
-import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { AlertCircle, X } from "@buleje/design-system/icons";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { contenidoPorZona, type Punto } from "@/lib/forestal/planta-croquis";
@@ -40,7 +38,7 @@ import { usePlantaCanchaUrl } from "./hooks/use-planta-cancha-url";
 import { usePlantaUbicados } from "./hooks/use-planta-ubicados";
 import { useCroquisImprimir } from "./hooks/use-croquis-imprimir";
 import type { SeleccionCroquis } from "./hooks/use-croquis-leaflet";
-import { button } from "@/components/ui-system/button-variants";
+import CtpPlantaCabecera from "./CtpPlantaCabecera";
 
 export type { Item, ItemKind, ZonaInv };
 
@@ -161,53 +159,24 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        {indicadores.boton}
-        <p className="min-w-0 flex-1 truncate text-sm text-[var(--text-tertiary)]" title="El croquis o el satélite muestran dónde está la madera; el Libro, cuánta se mueve.">
-          <strong className="text-[var(--text-secondary)]">Mapa de tu aserradero.</strong> El mapa dice <em>dónde</em> está la madera; el Libro, <em>cuánta</em>.
-        </p>
-        <div className="flex shrink-0 items-center gap-2">
-          <SegmentedControl<PlanoPlanta>
-            size="sm" label="Capa del mapa" value={plano} onChange={(v) => { setPref(v); setSeleccion(null); }}
-            options={[{ value: "croquis", label: "Croquis", icon: <MapIcon className="h-4 w-4" /> }, { value: "satelite", label: "Satélite", icon: <Satellite className="h-4 w-4" /> }]}
-          />
-          {/* El acto que se hace todos los días va PRIMERO y siempre visible.
-              Antes sólo aparecía dentro de una cancha de reserva: si nunca
-              habías dibujado una, no existía en ninguna parte de la pantalla. */}
-          {corridasAserradas.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setBloque({ corridas: corridasAserradas, titulo: "Despachar aserrada de la planta" })}
-              title="Elige qué paquetes suben al camión y registra su guía sin salir de acá"
-              aria-label="Nuevo despacho"
-              className={button({ variant: "primary", className: "rounded-xl" })}
-            ><Truck className="h-4 w-4" /><span className="hidden sm:inline">Nuevo despacho</span></button>
-          )}
-          {/* Imprimir y recargar no son de cada rato: al «⋯» (ADR-489, muchos botones → un botón con opciones). */}
-          <ActionMenu
-            label="Más opciones de la planta" soloIcono icon={MoreHorizontal}
-            actions={[
-              {
-                id: "imprimir",
-                label: verCroquis ? "Imprimir croquis" : "Imprimir plano",
-                // Con el croquis a la vista se imprime el CROQUIS (hoja A4 apaisada con
-                // vista previa); con el satélite, el plano satelital de siempre.
-                hint: verCroquis ? "Zonas con lo que tienen, pilas, máquinas y rutas en una hoja A4 apaisada" : "Satélite + zonas + inventario, para la visita de la ARFFS",
-                icon: Printer,
-                busy: hoja.armando,
-                disabled: hoja.armando,
-                onSelect: () => {
-                  if (verCroquis) { void hoja.abrir().then((motivo) => { if (motivo) setAviso(motivo); }); return; }
-                  try { printPlantaPlano({ zonas: zonasSat, invByZona: sat.invObj, areaTotalM2: sat.areaTotal, periodLabel: period.label }); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
-                },
-              },
-              { id: "recargar", label: "Recargar", hint: "Vuelve a leer zonas e inventario", icon: RefreshCw, busy: loading, disabled: loading, onSelect: () => void load() },
-            ]}
-          />
-        </div>
-      </div>
+      {/* Dentro del libro todo esto va al riel, junto a las pestañas (Brandon
+          17-10): el ⓘ, las cifras, la capa del mapa, el «⋯» y el despacho. */}
+      {indicadores.boton}
+      <CtpPlantaCabecera
+        plano={plano}
+        onPlano={(v) => { setPref(v); setSeleccion(null); }}
+        verCroquis={verCroquis}
+        imprimiendo={hoja.armando}
+        onImprimir={() => {
+          if (verCroquis) { void hoja.abrir().then((motivo) => { if (motivo) setAviso(motivo); }); return; }
+          try { printPlantaPlano({ zonas: zonasSat, invByZona: sat.invObj, areaTotalM2: sat.areaTotal, periodLabel: period.label }); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+        }}
+        cargando={loading}
+        onRecargar={() => void load()}
+        onDespachar={corridasAserradas.length > 0 ? () => setBloque({ corridas: corridasAserradas, titulo: "Despachar aserrada de la planta" }) : null}
+      />
 
-      {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
+      {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
 
       {indicadores.panel}
 

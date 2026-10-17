@@ -16,14 +16,16 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Clock, Printer, RefreshCw } from "@buleje/design-system/icons";
+import { AlertTriangle, ArrowLeft, Clock, Printer, RefreshCw } from "@buleje/design-system/icons";
+import { AccionesDeLaVista } from "@/components/admin/shared/libro-acciones-vista";
 import { Btn, PanelSkeleton, VistaHeader, useKpisPlegables } from "./ctp-shared";
-import { COLOR_ETAPA, Etapa, ProduccionDelLote, SalidaDelLote, TablaDeTrozas } from "./historia/EtapasDelLote";
+import { Etapa, ProduccionDelLote, SalidaDelLote, TablaDeTrozas } from "./historia/EtapasDelLote";
 import DescargarLotes from "./historia/DescargarLotes";
+import { Paso, PasoTarjeta, frasesDeTiempo, pieRendimiento } from "./historia/pasos-del-lote";
+import { BTN_ICONO_RIEL } from "./ctp-riel-piezas";
 import { useHistoriaLote } from "@/hooks/use-historia-lote";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { esLoteDeInventario } from "@/lib/forestal/lotes-aserrio";
-import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { imprimirHistoriaLote } from "@/lib/forestal/historia-lote-print";
 import { formatDate, formatNumber } from "@/lib/format";
 
@@ -33,16 +35,30 @@ const unidad = (u: string | null | undefined) => (!u || u === "m3" ? "m³" : u);
 const fecha = (iso: string | null) =>
   iso ? formatDate(iso, { soloFecha: true }) : "—";
 
-export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: string | null }) {
+export default function CtpHistoriaLoteView({
+  loteInicial,
+  onLote,
+  onVolver,
+}: {
+  loteInicial?: string | null;
+  /** Avisa el lote elegido: la pestaña de Lotes lo recuerda al volver. */
+  onLote?: (loteId: string) => void;
+  /** Dentro de Lotes de aserrío: el estado vacío lleva a armar el primero. */
+  onVolver?: () => void;
+}) {
   const { lotes, cargando: cargandoLotes } = useLotesAserrio();
-  const [loteId, setLoteId] = useState<string | null>(loteInicial ?? null);
+  const [loteId, setLoteIdLocal] = useState<string | null>(loteInicial ?? null);
+  const setLoteId = (id: string | null) => {
+    setLoteIdLocal(id);
+    if (id) onLote?.(id);
+  };
 
   /* Se abre en el primer lote CON algo adentro. Abrir en uno vacío muestra
      cuatro etapas en blanco y parece que la pantalla no anda. */
   useEffect(() => {
     if (loteId || lotes.length === 0) return;
     const conMadera = lotes.find((l) => (l.trozas?.length ?? 0) > 0 || (l.volumenM3 ?? 0) > 0);
-    setLoteId((conMadera ?? lotes[0]).id);
+    setLoteIdLocal((conMadera ?? lotes[0]).id);
   }, [lotes, loteId]);
 
   const { historia: h, cargando, error, recargar } = useHistoriaLote(loteId);
@@ -74,22 +90,26 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
 
   return (
     <div className="space-y-3">
+      {/* Dentro del libro el lote, Imprimir, Descargar y Recargar van al riel
+          (compactación 17-10). La especie viaja en cada opción del selector:
+          la cifra suelta al lado repetía el código. */}
       <VistaHeader
         titulo="Historia del lote"
-        meta={h ? `${h.lote.code} · ${h.lote.speciesCommon ?? "sin especie"}` : undefined}
         hint="Todo lo que pasó con una pila de madera: qué trozas se apartaron, qué corrida se las comió, qué salió de ellas y con qué guía se fueron."
-      >
-        {kpis.boton}
+      />
+      {kpis.boton}
+      <AccionesDeLaVista>
         <select
           value={loteId ?? ""}
           onChange={(e) => setLoteId(e.target.value || null)}
           aria-label="Elige el lote"
-          className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
+          title="El lote cuya historia ves"
+          className="h-12 min-w-0 max-w-[16rem] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] max-sm:max-w-full max-sm:flex-1"
         >
           {cargandoLotes && <option value="">Cargando lotes…</option>}
           {lotes.map((l) => (
             <option key={l.id} value={l.id}>
-              {l.code} · {l.status}
+              {l.code} · {l.speciesCommon ?? "sin especie"} · {l.status}
               {(l.trozas?.length ?? 0) > 0 ? ` · ${l.trozas!.length} pz` : ""}
             </option>
           ))}
@@ -97,17 +117,31 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
         {/* Dos puertas distintas a propósito: «Imprimir» abre la hoja para
             mirarla y mandarla a papel; «Descargar» baja el archivo —uno o
             varios lotes— sin pasar por el diálogo del sistema. */}
-        <Btn variant="secondary" size="md" onClick={() => h && imprimirHistoriaLote(h)} disabled={!h}>
-          <Printer className="h-4 w-4" /> Imprimir
-        </Btn>
+        <button
+          type="button"
+          onClick={() => h && imprimirHistoriaLote(h)}
+          disabled={!h}
+          aria-label="Imprimir la historia del lote"
+          title="Imprimir la historia del lote"
+          className={BTN_ICONO_RIEL}
+        >
+          <Printer className="h-4 w-4" aria-hidden />
+        </button>
         <DescargarLotes
           lotes={lotes.map((l) => ({ id: l.id, code: l.code, status: l.status, piezas: l.trozas?.length ?? 0 }))}
           loteActual={loteId}
         />
-        <Btn variant="secondary" size="md" onClick={() => void recargar()} disabled={cargando}>
-          <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Recargar
-        </Btn>
-      </VistaHeader>
+        <button
+          type="button"
+          onClick={() => void recargar()}
+          disabled={cargando}
+          aria-label="Recargar la historia"
+          title="Recargar la historia"
+          className={BTN_ICONO_RIEL}
+        >
+          <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} aria-hidden />
+        </button>
+      </AccionesDeLaVista>
 
       {error && (
         <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2.5 text-sm font-medium text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]">
@@ -117,9 +151,14 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
 
       {cargando && !h && <PanelSkeleton kpis={4} />}
       {!cargando && !h && !error && lotes.length === 0 && (
-        <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
-          Todavía no hay lotes de aserrío. Arma uno en «Lotes de aserrío» y su historia empieza acá.
-        </p>
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-8 text-center text-sm text-[var(--text-secondary)]">
+          <p>Todavía no hay lotes de aserrío. Arma uno y su historia empieza acá.</p>
+          {onVolver && (
+            <Btn variant="secondary" onClick={onVolver} className="mt-3">
+              <ArrowLeft className="h-4 w-4" aria-hidden /> Ir a los lotes
+            </Btn>
+          )}
+        </div>
       )}
 
       {h && (
@@ -249,66 +288,4 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
       )}
     </div>
   );
-}
-
-/**
- * Un paso del recorrido. Lleva el MISMO color que su etapa de abajo: la tira de
- * arriba y la línea de tiempo son dos vistas de lo mismo, y sin el color
- * compartido hay que leer las dos para saber cuál corresponde a cuál.
- */
-/** Cada etapa del recorrido como tarjeta suelta del panel plegable. */
-function PasoTarjeta({ children }: { children: React.ReactNode }) {
-  return <dl className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">{children}</dl>;
-}
-
-function Paso({ n, termino, valor, pie }: { n: 1 | 2 | 3 | 4; termino: string; valor: string; pie: string }) {
-  return (
-    <div className="border-t border-[var(--rule-soft)] px-4 py-3 first:border-t-0 sm:border-t-0">
-      <dt className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: COLOR_ETAPA[n] }} aria-hidden />
-        {termino}
-      </dt>
-      <dd className="font-mono text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{valor}</dd>
-      <p className="text-xs text-[var(--text-tertiary)]">{pie}</p>
-    </div>
-  );
-}
-
-/**
- * El pie del rendimiento, contra el referencial SERFOR del producto.
- *
- * Un 47 % suelto no dice nada: contra el referencial de la madera aserrada dice
- * si la sierra anduvo bien o si alguien declaró de más. Se usa `evaluarRendimiento`,
- * el mismo que ya juzga las corridas en Producción y en el score — no una
- * segunda regla que se desincronice.
- */
-function pieRendimiento(h: NonNullable<ReturnType<typeof useHistoriaLote>["historia"]>): string {
-  const pct = h.produccion.rendimientoPct;
-  if (pct == null) return "sin rendimiento que calcular";
-  const producto = h.produccion.corridas.find((c) => c.producto)?.producto ?? null;
-  const { estado, ref } = evaluarRendimiento(producto, pct);
-  const base = `${Number(pct).toFixed(2)} % de rendimiento`;
-  if (ref == null) return `${base} · sin referencial para este producto`;
-  return estado === "alto"
-    ? `${base} · SOBRE el referencial SERFOR (${ref} %)`
-    : `${base} · referencial SERFOR ${ref} %`;
-}
-
-/** Las frases de tiempo que SÍ tienen dato, en orden del flujo. */
-function frasesDeTiempo(t: { esperaEnPatio: number | null; hastaLaSalida: number | null; edad: number | null }) {
-  return [
-    t.esperaEnPatio != null && {
-      clave: "espera",
-      antes: "Esperó ",
-      dias: t.esperaEnPatio,
-      despues: " en el patio antes de la sierra",
-    },
-    t.hastaLaSalida != null && { clave: "salida", antes: "Tardó ", dias: t.hastaLaSalida, despues: " en salir" },
-    t.edad != null && {
-      clave: "edad",
-      antes: "Lleva ",
-      dias: t.edad,
-      despues: " desde que se armó, con madera todavía adentro",
-    },
-  ].filter((x): x is { clave: string; antes: string; dias: number; despues: string } => Boolean(x));
 }

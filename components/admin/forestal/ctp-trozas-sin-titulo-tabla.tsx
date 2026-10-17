@@ -81,7 +81,7 @@ export default function CtpTrozasSinTituloTabla({
           <ThTroza {...th} campo="largo" align="right" filtro={<FiltroRangoTroza id="largo" label="Largo" unidad="m" paso={0.1} f={f} />}>Largo (m)</ThTroza>
           <ThTroza {...th} campo="volumen" align="right" filtro={<FiltroRangoTroza id="volumen" label="Volumen" unidad="m³" paso={0.01} f={f} />}>Vol. (m³)</ThTroza>
           <ThTroza {...th} campo="estado" filtro={<FiltroMultiTroza id="estado" label="Estado" f={f} />}>Estado</ThTroza>
-          <ThTroza {...th} campo="parada" align="right" title="Días que lleva parada" filtro={<FiltroRangoTroza id="parada" label="Parada" unidad="d" paso={1} f={f} />}>Parada</ThTroza>
+          <ThTroza {...th} campo="parada" align="right" title="Días en el patio: los que lleva parada desde que llegó" filtro={<FiltroRangoTroza id="parada" label="Días en el patio" unidad="d" paso={1} f={f} />}>Días</ThTroza>
         </tr>
       </thead>
       {grupos.map((g) => (

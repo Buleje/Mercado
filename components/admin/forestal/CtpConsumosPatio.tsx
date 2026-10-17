@@ -18,6 +18,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, BarChart3, Layers, Ruler, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { AccionesDeLaVista, useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import type { AgrupacionPatio } from "@/lib/forestal/consumo-trozas";
 import { ETIQUETA_TRAMO_DIAS, TRAMOS_DIAS, type TramoDias } from "@/lib/forestal/patio-resumen";
 import { formatNumber } from "@/lib/format";
@@ -65,6 +66,7 @@ export default function CtpConsumosPatio({
   const { lotes, carga, patio } = estado;
   const { loteElegido, lotesAbiertos, seleccion, setSeleccion, fechaConsumo } = carga;
   const jornadas = useRegistrarJornadas(lotes);
+  const enLibro = useEnElLibro();
   const mixto = useLoteMixtoEnConsumos({
     estado,
     onProducir,
@@ -154,8 +156,21 @@ export default function CtpConsumosPatio({
     <CtpConsumosPatioAccion estado={estado} onIrALotes={onIr ? () => onIr("lotes") : undefined} mixto={mixto.boton} />
   );
   const barra = <CtpPatioFiltros filtro={patio} />;
+  /* «Opciones» de la pila: en el riel del libro (compactación 17-10), en la
+     cabecera de la tabla fuera de él. Con un lote elegido no hay pila que agrupar. */
+  const menuPatio = (
+    <ActionMenu
+      label={agruparPatio === "ninguna" ? "Opciones" : `Opciones · ${ETIQUETA_AGRUPAR_PATIO[agruparPatio]}`}
+      title="Agrupar la pila, ver lo que entró por permiso o cubicar"
+      actions={opcionesPatio}
+      size={enLibro ? "md" : "sm"}
+      soloIcono={enLibro}
+      className={enLibro ? "w-12!" : ""}
+    />
+  );
   return (
     <div className="space-y-4">
+      {enLibro && !loteElegido && <AccionesDeLaVista>{menuPatio}</AccionesDeLaVista>}
       {lotes.patioTruncado && (
         <p role="status" className="flex items-start gap-2 rounded-2xl border-2 border-[var(--data-warning-500)] px-4 py-3 text-sm text-[var(--text-primary)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
@@ -254,14 +269,7 @@ export default function CtpConsumosPatio({
                 ? "Para llevar piezas a la sierra, elige un lote en «Consumir en un lote…»: la tabla se acota a su especie y se tildan las piezas."
                 : undefined
             }
-            menuAgrupar={
-              <ActionMenu
-                label={agruparPatio === "ninguna" ? "Opciones" : `Opciones · ${ETIQUETA_AGRUPAR_PATIO[agruparPatio]}`}
-                title="Agrupar la pila, ver lo que entró por permiso o cubicar"
-                actions={opcionesPatio}
-                size="sm"
-              />
-            }
+            menuAgrupar={enLibro ? undefined : menuPatio}
           />
       )}
     </div>

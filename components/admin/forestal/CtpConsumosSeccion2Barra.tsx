@@ -13,6 +13,7 @@
 import { useId, useMemo } from "react";
 import { BarChart3, Download, Layers, Search, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import type { AgrupacionConsumo } from "@/lib/forestal/loctp-consumos-analisis";
 import { formatNumber } from "@/lib/format";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
@@ -53,6 +54,8 @@ export function CtpConsumosSeccion2Opciones({
   onResumenPermiso: () => void;
 }) {
   const { agrupar, setAgrupar, visibles, descargarCsv, limpiar, cuantosFiltros } = s2;
+  /* En el riel del libro: cuadrado de 48 px con el rótulo en el `aria-label`. */
+  const enLibro = useEnElLibro();
 
   const acciones: MenuAccion[] = useMemo(() => {
     const lista: MenuAccion[] = (Object.keys(ETIQUETA_AGRUPAR) as AgrupacionConsumo[]).map((clave) => ({
@@ -96,7 +99,9 @@ export function CtpConsumosSeccion2Opciones({
       label={agrupar === "ninguna" ? "Opciones" : `Opciones · ${ETIQUETA_AGRUPAR[agrupar]}`}
       title="Agrupar el cuadro, descargarlo o limpiar el filtro"
       actions={acciones}
-      size="sm"
+      size={enLibro ? "md" : "sm"}
+      soloIcono={enLibro}
+      className={enLibro ? "w-12!" : ""}
     />
   );
 }

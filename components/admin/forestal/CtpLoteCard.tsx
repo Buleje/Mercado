@@ -17,7 +17,7 @@
  * `ctp-lote-card-partes.tsx` y `ctp-lote-cuadre-sniffs.tsx`.
  */
 
-import { Archive, Boxes, PackageOpen, Play, Plus, Trash2 } from "@buleje/design-system/icons";
+import { Archive, Boxes, History, PackageOpen, Play, Plus, Trash2 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { FotoEspecie } from "@/lib/forestal/especies-fotos";
 import {
@@ -59,6 +59,7 @@ export default function CtpLoteCard({
   onDeshacer,
   onResolverCuadre,
   onVerProductos,
+  onHistoria,
   elegido = false,
   onElegir,
 }: {
@@ -83,6 +84,8 @@ export default function CtpLoteCard({
    * SALIÓ, con su saldo. Son las dos mitades del lote y hacían falta las dos.
    */
   onVerProductos?: () => void;
+  /** Tocar el código: la historia del lote, de punta a punta (compactación 17-10). */
+  onHistoria?: () => void;
   /** Tildado para la barra de lotes elegidos (2026-10-02). Sin `onElegir` no hay casilla. */
   elegido?: boolean;
   onElegir?: () => void;
@@ -138,7 +141,19 @@ export default function CtpLoteCard({
             </label>
           )}
           <CardTitle as="h3" className="font-mono text-sm font-bold text-[var(--text-primary)]">
-            {lote.code}
+            {onHistoria ? (
+              <button
+                type="button"
+                onClick={onHistoria}
+                title="Ver la historia del lote: qué se apartó, qué corrida lo aserró y con qué guía salió"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg underline decoration-[var(--rule-strong)] underline-offset-4 hover:text-[var(--accent-ink)] hover:decoration-[var(--accent)] dark:hover:text-[var(--accent)]"
+              >
+                {lote.code}
+                <History className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+              </button>
+            ) : (
+              lote.code
+            )}
           </CardTitle>
           {esLoteDeInventario(lote) && (
             <span

@@ -26,11 +26,9 @@ import {
   AlertTriangle,
   Boxes,
   Eye,
-  Camera,
-  FileDown,
+  ArrowUpRight,
   Landmark,
   PackageOpen,
-  FileSpreadsheet,
   RefreshCw,
   Route,
   ShieldAlert,
@@ -67,6 +65,9 @@ import type { TrazaGrafo } from "@/lib/db/forest-ctp.db";
 import CtpNodeDetailLoader, { type DetailTarget } from "./CtpNodeDetailLoader";
 import CtpRadarCronologia from "./CtpRadarCronologia";
 import CtpRadarRendimiento from "./CtpRadarRendimiento";
+import CtpRadarAcciones from "./ctp-radar-acciones";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { useContextoPermiso, usePermisoDe } from "@/hooks/use-vistas-permitidas";
 import CtpRadarResumen from "./CtpRadarResumen";
 import CtpRadarControles from "./CtpRadarControles";
 import CtpRadarLienzo from "./CtpRadarLienzo";
@@ -98,7 +99,14 @@ import {
 
 
 
-export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
+export default function CtpTrazaRadar({
+  period,
+  onIr,
+}: {
+  period: CtpPeriod;
+  /** Cambiar de vista dentro del libro; sin él, los enlaces navegan por URL. */
+  onIr?: (vista: string) => void;
+}) {
   const [g, setG] = useState<TrazaGrafo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +117,13 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   const [zoom, setZoom] = useState(1);
   const [query, setQuery] = useState("");
   const [detail, setDetail] = useState<DetailTarget | null>(null);
-  const [vista, setVista] = useState<Vista>("cadena");
+  const [vistaElegida, setVista] = useState<Vista>("cadena");
+  /* Rendimiento se mudó al Tablero › Rendimiento (17-10). Quien no lo puede
+     ver ahí (permiso de Herramientas) conserva la pestaña de acá. */
+  const ctxPermiso = useContextoPermiso();
+  const rendimientoEnTablero = usePermisoDe(["forestal-herramientas"]);
+  const rendimientoPropio = ctxPermiso !== null && !rendimientoEnTablero;
+  const vista: Vista = vistaElegida === "rendimiento" && !rendimientoPropio ? "cadena" : vistaElegida;
   /** null = automático (agrupa sólo si la columna no entra). */
   const [agruparManual, setAgruparManual] = useState<boolean | null>(null);
   const [expandidos, setExpandidos] = useState<ReadonlySet<string>>(new Set());
@@ -643,34 +657,16 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
         meta={ctpPeriodShortLabel(period)}
         hint="GTF de ingreso → corrida → despacho. Toca un nodo para fijar de dónde salió y a dónde fue; la barra de cada línea es la parte con respaldo documental."
       >
-          {g && !isEmpty && (
-            <>
-              <button type="button" onClick={exportarCsv} title="Planilla con el saldo de cada línea y el volumen de cada eslabón" className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
-                <FileSpreadsheet className="h-4 w-4" /> CSV
-              </button>
-              <button type="button" onClick={() => printCadenaCustodia(g, period.label)} title="Documento imprimible de la cadena de custodia (para adjuntar a un informe ARFFS)" className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
-                <FileDown className="h-4 w-4" /> Imprimir
-              </button>
-              {/* El DIBUJO como archivo: lo que se entiende de un vistazo, para
-                  el informe. Sólo tiene sentido con la cadena en pantalla. */}
-              {vista === "cadena" && (
-                <div className="inline-flex h-10 items-center overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-                  <span className="flex h-full items-center gap-1.5 border-r-2 border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-tertiary)]">
-                    <Camera className="h-4 w-4" aria-hidden="true" /> Imagen
-                  </span>
-                  <button type="button" onClick={() => void exportarImagen("png")} disabled={!!exportando} title="PNG del dibujo, al doble de resolución — para pegarlo en un WhatsApp o un Word" className="h-full px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">
-                    {exportando === "png" ? "…" : "PNG"}
-                  </button>
-                  <button type="button" onClick={() => void exportarImagen("svg")} disabled={!!exportando} title="SVG vectorial: se agranda sin pixelarse, para el informe impreso" className="h-full border-l-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">
-                    {exportando === "svg" ? "…" : "SVG"}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-          <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
-          </button>
+          <CtpRadarAcciones
+            hayCadena={!!g && !isEmpty}
+            conDibujo={vista === "cadena"}
+            exportando={exportando}
+            cargando={loading}
+            onCsv={exportarCsv}
+            onImprimir={() => { if (g) printCadenaCustodia(g, period.label); }}
+            onImagen={(f) => void exportarImagen(f)}
+            onRecargar={() => void load()}
+          />
       </VistaHeader>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
@@ -688,6 +684,8 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
             onFoco={setFoco}
             vista={vista}
             onVista={setVista}
+            rendimientoPropio={rendimientoPropio}
+            rendimientoEnTablero={rendimientoEnTablero}
             seguirId={seguirId}
             onSeguir={setSeguirId}
             cadenaSeguida={cadenaSeguida}
@@ -768,6 +766,14 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
                 <span className="text-[var(--text-secondary)]">
                   · {fmtNum(titulos.sinTituloM3)} m³ sin origen legal · la cadena traza al monte en el {titulos.cobertura}% del volumen
                 </span>
+                {/* La misma pregunta, del lado del dossier UE: el EUDR pide el predio de cada origen. */}
+                <button
+                  type="button"
+                  onClick={() => (onIr ? onIr("eudr") : irAEnlace("/admin?tab=ctp-libro-operaciones&vista=eudr"))}
+                  className="ml-auto inline-flex h-11 items-center gap-1 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
+                >
+                  Ver en EUDR <ArrowUpRight className="h-4 w-4" aria-hidden />
+                </button>
               </div>
             )}
 
@@ -837,7 +843,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
             <CtpRadarCronologia g={g} t={tiempo} onVerNodo={abrirNodo} />
           )}
 
-          {vista === "rendimiento" && (
+          {vista === "rendimiento" && rendimientoPropio && (
             <CtpRadarRendimiento rs={rendimiento} onVerCorrida={abrirNodo} />
           )}
         </>

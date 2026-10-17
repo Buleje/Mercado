@@ -52,7 +52,7 @@ export default function CtpTrozasFiltrosActivos({
     quitar[id] = accion;
   };
   for (const e of estadoFiltro) poner(`estado:${e}`, "Estado", `Estado: ${ESTADO_META[e].label}`, () => onEstadoFiltro(estadoFiltro.filter((x) => x !== e)));
-  for (const t of tramoFiltro) poner(`tramo:${t}`, "Parada", TRAMO_LABEL[t] ?? t, () => onTramoFiltro(tramoFiltro.filter((x) => x !== t)));
+  for (const t of tramoFiltro) poner(`tramo:${t}`, "Días en el patio", TRAMO_LABEL[t] ?? t, () => onTramoFiltro(tramoFiltro.filter((x) => x !== t)));
   for (const e of especie) poner(`especie:${e}`, "Especie", `Especie: ${e}`, () => onEspecie(especie.filter((x) => x !== e)));
   for (const g of guia) poner(`guia:${g}`, "Guía", `Guía: ${g}`, () => onGuia(guia.filter((x) => x !== g)));
   for (const t of titulo) {

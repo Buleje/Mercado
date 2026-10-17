@@ -34,7 +34,7 @@ import CtpRadarCadenaGtf from "./CtpRadarCadenaGtf";
 import { useKpisPlegables } from "./kpis-plegables";
 import { fmtNum, SummaryChip, trunc } from "./ctp-radar-svg";
 import type { Foco, Vista } from "./ctp-radar-tipos";
-import { VISTAS } from "./ctp-radar-tipos";
+import CtpRadarSelectorVistas from "./ctp-radar-selector-vistas";
 
 export interface CtpRadarResumenProps {
   g: TrazaGrafo;
@@ -45,6 +45,10 @@ export interface CtpRadarResumenProps {
   onFoco: (f: Foco) => void;
   vista: Vista;
   onVista: (v: Vista) => void;
+  /** Sin permiso para el Tablero › Rendimiento, la pestaña sigue en el Radar. */
+  rendimientoPropio: boolean;
+  /** El enlace al Tablero › Rendimiento (quien lo puede ver). */
+  rendimientoEnTablero: boolean;
   seguirId: string | null;
   onSeguir: (id: string | null) => void;
   cadenaSeguida: CadenaGtf | null;
@@ -66,6 +70,8 @@ export default function CtpRadarResumen({
   onFoco,
   vista,
   onVista,
+  rendimientoPropio,
+  rendimientoEnTablero,
   seguirId,
   onSeguir,
   cadenaSeguida,
@@ -179,27 +185,14 @@ export default function CtpRadarResumen({
               scroll; como pestañas, cada pregunta tiene su lugar. */}
           <div className="flex flex-wrap items-center gap-2">
             {kpis.boton}
-            <div className="inline-flex h-11 items-center overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-              {VISTAS.map((v) => {
-                const Icon = v.icon;
-                const alertas = v.key === "cronologia" ? (tiempo?.anomalias.length ?? 0)
-                  : v.key === "rendimiento" ? alertasRendimiento(rendimiento).length
-                  : 0;
-                return (
-                  <button
-                    key={v.key} type="button" title={v.hint} onClick={() => setVista(v.key)} aria-pressed={vista === v.key}
-                    className={`flex h-full items-center gap-1.5 px-3.5 text-sm font-semibold transition ${vista === v.key ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden="true" /> {v.label}
-                    {alertas > 0 && (
-                      <span className={`ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums ${vista === v.key ? "bg-white/25 text-white" : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/20 dark:text-[var(--data-warning-500)]"}`}>
-                        {alertas}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <CtpRadarSelectorVistas
+              vista={vista}
+              onVista={setVista}
+              rendimientoPropio={rendimientoPropio}
+              rendimientoEnTablero={rendimientoEnTablero}
+              alertasCronologia={tiempo?.anomalias.length ?? 0}
+              alertasRendimiento={alertasRendimiento(rendimiento).length}
+            />
             {seguirId && (
               <button type="button" onClick={() => setSeguirId(null)} className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
                 <XIcon className="h-3.5 w-3.5" /> Dejar de seguir la GTF

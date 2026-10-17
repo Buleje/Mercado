@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { CardTitle } from "@buleje/design-system";
-import { AlertCircle, CheckCircle2, XCircle, Download, FileText, Globe, Loader2, MapPin, Package, PenTool, ShieldAlert, ShieldCheck } from "@buleje/design-system/icons";
+import { AlertCircle, CheckCircle2, XCircle, FileText, Globe, Loader2, MapPin, Package, PenTool, ShieldAlert, ShieldCheck } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import EudrGauge from "./EudrGauge";
 import CtpEudrMap from "./CtpEudrMap";
@@ -27,6 +27,7 @@ import { origenGeolocalizado, computeCtpEudrReadiness, buildOriginsGeoJson, type
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { CtpIngresosFiltroRapido } from "./ctp-shared";
 import { CtpKpisPlegables } from "./kpis-plegables";
+import RielDeEudr from "./ctp-eudr-riel";
 
 interface OriginRow { originCode: string; originType: string | null; region: string | null; ingresos: number }
 interface DespachoRow { id: string; lineNo: number; productType: string | null; speciesCommon: string | null; gtfNumber: string | null; destino: string | null }
@@ -191,29 +192,20 @@ export default function CtpEudrPanel({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
+      <RielDeEudr onNavigate={onNavigate} geolocalizados={readiness.geolocalizados} onGeoJson={exportGeoJson} />
       {error && (
-        <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">
+        <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div><strong>Error:</strong> {error}</div>
         </div>
       )}
 
       {/* Cockpit de readiness EUDR de la planta — plegable (Brandon 05-10): cerrado
-          queda el puntaje y los orígenes en el botón; el GeoJSON sigue a la mano. */}
+          queda el puntaje y los orígenes en el botón, que va al riel. */}
       <CtpKpisPlegables
+        alRiel
         claveMemoria="ctp-eudr"
         resumen={`${readiness.score} % · ${readiness.geolocalizados}/${readiness.total} geolocalizados · ${readiness.deforestationFree}/${readiness.total} sin deforestación`}
-        acciones={
-          <button
-            type="button"
-            onClick={exportGeoJson}
-            disabled={readiness.geolocalizados === 0}
-            title={readiness.geolocalizados > 0 ? "Descargar la geolocalización de los orígenes en GeoJSON (dossier UE)" : "Geolocaliza al menos un origen"}
-            className="inline-flex h-12 items-center gap-1.5 rounded-2xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
-          >
-            <Download className="h-4 w-4" /> GeoJSON
-          </button>
-        }
         tarjetas={[
           <div key="cockpit" className={`rounded-2xl border-2 p-4 ${readiness.listo ? "border-[var(--data-success-500)] bg-[var(--data-success-50)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"}`}>
             <div className="flex flex-wrap items-start gap-4">

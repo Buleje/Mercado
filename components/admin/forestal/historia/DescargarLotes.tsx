@@ -17,6 +17,8 @@ import { useCallback, useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, Download, FileSpreadsheet, FileText, Loader2 } from "@buleje/design-system/icons";
 import { Btn } from "../ctp-shared";
+import { BTN_ACCION_RIEL } from "../ctp-cabecera-vista";
+import { TextoDeAccion } from "@/components/admin/shared/libro-acciones-vista";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import type { HistoriaLote } from "@/lib/forestal/historia-lote";
 import { exportarHistoriasExcel, exportarHistoriasPDF } from "@/lib/forestal/historia-lote-export";
@@ -108,12 +110,20 @@ export default function DescargarLotes({
 
   return (
     <div className="relative">
-      <Btn variant="secondary" size="md" onClick={() => setAbierto((v) => !v)} aria-expanded={abierto}>
-        <Download className="h-4 w-4" /> Descargar
-      </Btn>
+      {/* En el riel del libro: sólo ícono con el riel angosto (17-10). */}
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        aria-expanded={abierto}
+        title="Descargar la historia de uno o varios lotes en PDF o Excel"
+        className={BTN_ACCION_RIEL}
+      >
+        <Download className="h-4 w-4 shrink-0" aria-hidden />
+        <TextoDeAccion>Descargar</TextoDeAccion>
+      </button>
 
       {abierto && (
-        <div className="absolute right-0 z-30 mt-2 w-[22rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
+        <div className="absolute right-0 z-30 mt-2 w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
           <div className="flex items-baseline justify-between gap-2">
             <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
               Qué lotes bajar

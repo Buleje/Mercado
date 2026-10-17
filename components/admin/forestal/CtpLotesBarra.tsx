@@ -1,7 +1,11 @@
 "use client";
 
 /**
- * La barra de la vista Lotes: indicadores, buscador, «Filtros» y el orden.
+ * La barra de la vista Lotes: buscador, «Filtros», «Opciones» y el orden.
+ *
+ * Compactación del libro (17-10): la lupa, Filtros y Opciones van al riel de
+ * las vistas; en la página queda la fila que ordena las tarjetas (elegir
+ * todas, con o sin madera y el orden) y el panel de filtros cuando se abre.
  *
  * Antes los cuatro desplegables (especie, estado, cuánto queda, fecha de fin)
  * iban sueltos en la barra: a 1280 partían la fila en dos y en el celular
@@ -13,8 +17,11 @@
  */
 
 import type { ReactNode } from "react";
-import { ArrowUpDown, Search, SlidersHorizontal, X } from "@buleje/design-system/icons";
+import { ArrowUpDown, SlidersHorizontal, X } from "@buleje/design-system/icons";
+import { AccionesDeLaVista, TextoDeAccion } from "@/components/admin/shared/libro-acciones-vista";
+import { cn } from "@/lib/utils";
 import { BTN_FILTRO, CampoDeFiltro, usePanelFiltros } from "./ctp-filtros-panel";
+import { CLASE_ENCENDIDO_RIEL, useBuscarEnRiel } from "./ctp-riel-piezas";
 import { ETIQUETA_ORDEN, type FacetaLotes, type OrdenLotes } from "@/lib/forestal/lotes-aserrio";
 import type { FiltroMadera, FiltrosLotes } from "./hooks/use-filtros-lotes";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
@@ -66,17 +73,31 @@ function Campo({ titulo, children }: { titulo: string; children: ReactNode }) {
 export default function CtpLotesBarra({
   f,
   facetas,
-  kpiBoton,
   conMadera,
+  hayLotes,
+  elegirTodos,
+  menu,
 }: {
   f: FiltrosLotes;
   facetas: Facetas;
-  /** El botón «Indicadores» (Brandon, 2026-09-24: alineado con los demás botones). */
-  kpiBoton: ReactNode;
   /** Algún lote trae el dato de su madera: sin él, el filtro rápido no filtraría nada. */
   conMadera: boolean;
+  /** Sin lotes no hay nada que ordenar ni elegir: la fila de abajo no se pinta. */
+  hayLotes: boolean;
+  /** «Elegir los N visibles»: abre la fila que ordena las tarjetas. */
+  elegirTodos: ReactNode;
+  /** «Opciones» de la vista: va detrás de Filtros, como en las demás vistas. */
+  menu: ReactNode;
 }) {
   const { panelId, abierto, alternar } = usePanelFiltros(f.activos);
+  const buscar = useBuscarEnRiel({
+    id: "ctp-lotes-buscar",
+    etiqueta: "Buscar un lote",
+    placeholder: "Lote, especie, permiso, guía o pieza…",
+    valor: f.texto,
+    onCambiar: f.setTexto,
+    claseFuera: "min-w-0 flex-1 sm:basis-48",
+  });
   /* Un filtro con una sola opción no se dibuja: ocupaba lugar sin filtrar nada
      (los 5 lotes del tenant eran todos Tornillo). */
   const ejes = [
@@ -89,65 +110,55 @@ export default function CtpLotesBarra({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-0 max-sm:w-full sm:basis-72">{kpiBoton}</div>
-        <label className="relative min-w-0 flex-1 sm:basis-48">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
-            aria-hidden
-          />
-          <input
-            value={f.texto}
-            onChange={(e) => f.setTexto(e.target.value)}
-            placeholder="Lote, especie, permiso, guía o pieza…"
-            aria-label="Buscar un lote"
-            className={`${CAMPO} w-full pl-9 ${f.texto ? "pr-10" : "pr-3"}`}
-          />
-          {f.texto && (
-            <button
-              type="button"
-              onClick={() => f.setTexto("")}
-              aria-label="Borrar la búsqueda"
-              className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </label>
-        {/* En el celular también lleva el orden: sin filtros que mostrar el
-            botón sigue ahí, pero sólo en el celular. */}
+      {/* Dentro del libro, lupa · Filtros · Opciones van al riel (17-10); fuera,
+          en una fila propia como siempre. En el celular Filtros también lleva
+          el orden, así que se ve aunque no haya filtros que mostrar. */}
+      <AccionesDeLaVista>
+        {buscar.boton}
         <button
           type="button"
           onClick={alternar}
           aria-expanded={abierto}
           aria-controls={panelId}
           title="Filtrar por especie, estado, cuánto queda y fecha de fin"
-          className={`${BTN_FILTRO} ${hayFiltros ? "" : "sm:hidden"} ${
-            f.activos > 0
-              ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] max-sm:w-auto max-sm:px-3 dark:text-[var(--accent)]"
-              : ""
-          }`}
+          className={cn(
+            BTN_FILTRO,
+            !hayFiltros && "sm:hidden",
+            f.activos > 0 ? cn(CLASE_ENCENDIDO_RIEL, "@max-[80rem]/riel:px-3") : "@max-[80rem]/riel:w-12 @max-[80rem]/riel:px-0",
+          )}
         >
-          <SlidersHorizontal className="h-4 w-4" aria-hidden />
-          <span className="max-sm:sr-only">Filtros</span>
+          <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden />
+          <TextoDeAccion>Filtros</TextoDeAccion>
           {f.activos > 0 && (
             <span className="rounded-full bg-[var(--accent)] px-1.5 text-xs font-bold tabular-nums text-white">
               {f.activos}
             </span>
           )}
         </button>
-        {conMadera && (
-          <SegmentedControl
-            value={f.madera}
-            onChange={f.setMadera}
-            options={OPCIONES_MADERA}
-            size="lg"
-            label="Lotes con o sin madera aserrada en patio"
-            className="max-sm:w-full max-sm:justify-between"
-          />
-        )}
-        <Orden f={f} className="hidden sm:flex" />
-      </div>
+        {menu}
+      </AccionesDeLaVista>
+      {buscar.campo}
+
+      {/* Lo que ordena las tarjetas, pegado a ellas: elegir todas, con o sin
+          madera (la pregunta del despacho) y el orden. */}
+      {hayLotes && (
+        <div className="flex flex-wrap items-center gap-2">
+          {elegirTodos}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2 max-sm:w-full">
+            {conMadera && (
+              <SegmentedControl
+                value={f.madera}
+                onChange={f.setMadera}
+                options={OPCIONES_MADERA}
+                size="lg"
+                label="Lotes con o sin madera aserrada en patio"
+                className="max-sm:w-full max-sm:justify-between"
+              />
+            )}
+            <Orden f={f} className="hidden sm:flex" />
+          </div>
+        </div>
+      )}
 
       {/* Sin filtros con más de una opción y sin nada activo, el panel no
           tiene nada que mostrar: quedaba una caja vacía, sin ejes y sin el

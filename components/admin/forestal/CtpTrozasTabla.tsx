@@ -15,6 +15,8 @@
 import { DataTable } from "@buleje/design-system";
 import type { FotoEspecie } from "@/lib/forestal/especies-fotos";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
+import { ptDe } from "@/lib/forestal/trozas-disponibles";
 import {
   diasParada,
   ESTADO_META,
@@ -197,7 +199,18 @@ export default function CtpTrozasTabla(props: CtpTrozasTablaProps) {
                     </td>
                   ),
                   largo: <td className={`${NUM} text-[var(--text-secondary)]`}>{n(t.largoM)}</td>,
-                  volumen: <td className={`${NUM} whitespace-nowrap font-bold`}>{t.volumenM3 == null ? "—" : fmtM3(t.volumenM3)}</td>,
+                  /* ≈pt debajo del m³ y no en una columna propia (fusión con Volumen
+                     disponible › Por troza, 17-10): la tabla ya va justa a 1280. */
+                  volumen: (
+                    <td className={`${NUM} whitespace-nowrap`}>
+                      <span className="block font-bold">{t.volumenM3 == null ? "—" : fmtM3(t.volumenM3)}</span>
+                      {t.volumenM3 != null && t.volumenM3 > 0 && (
+                        <span className="block text-[length:var(--ts-2xs)] leading-tight text-[var(--text-secondary)]" title="Pies tablares aserrables, derivado al 56 %">
+                          ≈{formatNumber(ptDe(t.volumenM3))} pt
+                        </span>
+                      )}
+                    </td>
+                  ),
                   guia: (
                     <td>
                       <span className="block whitespace-nowrap font-mono text-xs leading-tight text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</span>

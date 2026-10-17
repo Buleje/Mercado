@@ -30,7 +30,7 @@ export default function CtpTrozasFiltrosMovil({ f, estadoFiltro, onEstadoFiltro,
         onChange={(v) => onEstadoFiltro(v as EstadoTroza[])} placeholder="Estado"
       />
       <FiltroMultiTroza id="proveedor" label="Proveedor" f={f} placeholder="Proveedor" />
-      <FiltroRangoTroza id="parada" label="Parada" unidad="d" paso={1} f={f} />
+      <FiltroRangoTroza id="parada" label="Días en el patio" unidad="d" paso={1} f={f} />
       <FiltroRangoTroza id="d1" label="D1" unidad="cm" paso={1} f={f} />
       <FiltroRangoTroza id="d2" label="D2" unidad="cm" paso={1} f={f} />
       <FiltroRangoTroza id="largo" label="Largo" unidad="m" paso={0.1} f={f} />
