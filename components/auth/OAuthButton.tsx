@@ -21,10 +21,7 @@
  */
 
 import { useCallback, useState } from "react";
-import {
-  getSupabaseBrowser,
-  isSupabaseAuthConfigured,
-} from "@/lib/supabase/client";
+import { getSupabaseBrowserPerezoso, isSupabaseAuthConfigured } from "@/lib/supabase/cliente-perezoso";
 
 type Provider = "google" | "facebook";
 
@@ -101,7 +98,7 @@ export function OAuthButton({
     if (!configured) return;
     setLoading(true);
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = await getSupabaseBrowserPerezoso();
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
       const redirectParam = encodeURIComponent(redirectTo);

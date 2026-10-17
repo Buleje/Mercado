@@ -25,20 +25,17 @@ const TELEMETRY_FILE = path.join(PROJECT_ROOT, ".claude", ".skill-usage.jsonl");
 // Keywords → skill mapping (top mappings, mantener corto)
 const KEYWORD_HINTS = {
   // dominio
-  checkout: ["checkout-squad", "outcome-evaluator"],
-  pago: ["checkout-squad", "outcome-evaluator"],
-  yape: ["checkout-squad"],
+  checkout: ["audit-first"],
+  pago: ["audit-first"],
+  yape: ["audit-first"],
   fiado: ["multi-tenant-guard"],
   marketplace: ["bsm-typography-rules", "bsm-design-system"],
   pedido: ["bsm-design-system"],
   // database
-  database: ["db-sanity", "migration-planner", "outcome-evaluator"],
-  prisma: ["migration-planner", "db-sanity"],
+  database: ["migration-planner"],
+  prisma: ["migration-planner"],
   schema: ["migration-planner", "audit-first"],
-  migration: ["migration-planner", "bulk-safe-migrate"],
-  // performance/perf
-  performance: ["health-check", "deploy-check"],
-  lento: ["health-check"],
+  migration: ["migration-planner"],
   // seguridad
   security: ["multi-tenant-guard"],
   auth: ["multi-tenant-guard", "audit-first"],
@@ -46,16 +43,8 @@ const KEYWORD_HINTS = {
   dark: ["bsm-design-system", "bsm-typography-rules"],
   responsive: ["bsm-design-system", "bsm-typography-rules"],
   ui: ["bsm-design-system", "bsm-typography-rules"],
-  // operativos
-  deploy: ["deploy-check", "verify"],
-  test: ["test-all", "fix-tests", "verify"],
-  commit: ["commit", "review"],
-  pr: ["pr-describer", "review"],
-  // agentic
-  parallel: ["turbo-parallel", "parallel-work", "agentic-loops"],
-  agent: ["agentic-loops", "multi-agent-bg"],
   // memoria
-  memory: ["dreaming", "session-handoff"],
+  memory: ["dreaming"],
 };
 
 function readPayload() {

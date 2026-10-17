@@ -106,7 +106,7 @@ export function LocationConfirmModal({
                   <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
                     Confirma tu ubicación
                   </h3>
-                  <p className="text-xs text-muted leading-snug mt-0.5">
+                  <p className="text-xs text-muted dark:text-[var(--text-tertiary)] leading-snug mt-0.5">
                     Arrastra el pin para ajustar la precisión exacta de tu casa.
                   </p>
                 </div>
@@ -135,8 +135,8 @@ export function LocationConfirmModal({
                     <p className="text-base font-extrabold text-[var(--text-primary)] tracking-tight">
                       Obteniendo tu ubicación
                     </p>
-                    <p className="text-sm text-muted mt-1 leading-relaxed max-w-sm">
-                      Estamos consultando tu GPS. Si el navegador lo pide, aceptá el permiso.
+                    <p className="text-sm text-muted dark:text-[var(--text-tertiary)] mt-1 leading-relaxed max-w-sm">
+                      Estamos consultando tu GPS. Si el navegador lo pide, acepta el permiso.
                     </p>
                   </div>
                 </div>
@@ -154,7 +154,7 @@ export function LocationConfirmModal({
                     {/* Hint flotante */}
                     <div className="absolute top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-raised)] shadow-lg px-3.5 py-1.5 text-xs font-bold text-[var(--text-primary)] border border-[var(--rule-soft)]">
                       <MapPin className="h-3.5 w-3.5 text-[var(--color-primary,#00A0A0)]" strokeWidth={2.5} />
-                      Mové el pin para ajustar
+                      Mueve el pin para ajustar
                     </div>
                   </div>
 
@@ -171,11 +171,11 @@ export function LocationConfirmModal({
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2">
-                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">Latitud</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted dark:text-[var(--text-tertiary)]">Latitud</p>
                         <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{lat.toFixed(6)}</p>
                       </div>
                       <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2">
-                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">Longitud</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted dark:text-[var(--text-tertiary)]">Longitud</p>
                         <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{lon.toFixed(6)}</p>
                       </div>
                     </div>

@@ -97,7 +97,7 @@ const TIERS: Tier[] = [
     name: "Diamante",
     min: 9000,
     max: Infinity,
-    bgClass: "bg-[var(--accent-soft)] border-2 border-[var(--accent)]",
+    bgClass: "bg-primary/10 border-2 border-[var(--accent)]",
     textClass: "text-[var(--accent)]",
   },
 ];
@@ -120,7 +120,7 @@ function computeBadges(
       desc: "Tu primer viaje",
       state: totalAccepted >= 1 ? "unlocked" : "locked",
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
     {
       id: "rating-alto",
@@ -135,7 +135,7 @@ function computeBadges(
             : "locked",
       progress: rating > 0 ? Math.min(100, Math.round((rating / 4.8) * 100)) : undefined,
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
     {
       id: "diez-viajes",
@@ -150,7 +150,7 @@ function computeBadges(
             : "locked",
       progress: totalAccepted > 0 ? Math.min(100, Math.round((totalAccepted / 10) * 100)) : undefined,
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
     {
       id: "cumplidor",
@@ -165,13 +165,13 @@ function computeBadges(
             : "locked",
       progress: onTime > 0 ? Math.min(100, Math.round((onTime / 90) * 100)) : undefined,
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
     {
       id: "cincuenta",
       name: "50 viajes",
       Icon: Rocket,
-      desc: "Llegá a 50 entregas",
+      desc: "Llega a 50 entregas",
       state:
         totalAccepted >= 50
           ? "unlocked"
@@ -180,7 +180,7 @@ function computeBadges(
             : "locked",
       progress: totalAccepted > 0 ? Math.min(100, Math.round((totalAccepted / 50) * 100)) : undefined,
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
     {
       id: "cien",
@@ -195,7 +195,7 @@ function computeBadges(
             : "locked",
       progress: totalAccepted > 0 ? Math.min(100, Math.round((totalAccepted / 100) * 100)) : undefined,
       colorClass: "text-[var(--accent)]",
-      bgClass: "bg-[var(--accent-soft)]",
+      bgClass: "bg-primary/10",
     },
   ];
 }
@@ -232,7 +232,7 @@ function BadgeCircle({ badge }: { badge: BadgeDef }) {
       {/* Círculo */}
       <div
         className={[
-          "relative h-16 w-16 rounded-full flex items-center justify-center transition-transform duration-200",
+          "relative h-16 w-16 flex items-center justify-center transition-transform duration-200",
           isUnlocked
             ? [
                 badge.bgClass,
@@ -291,9 +291,9 @@ function BadgeCircle({ badge }: { badge: BadgeDef }) {
       {/* Descripción / progreso */}
       {isInProgress && badge.progress !== undefined ? (
         <div className="w-14">
-          <div className="h-1 rounded-full bg-[var(--rule-base)] overflow-hidden">
+          <div className="h-1 bg-[var(--rule-base)] overflow-hidden">
             <div
-              className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
+              className="h-full bg-[var(--accent)] transition-all duration-500"
               style={{ width: `${badge.progress}%` }}
               role="progressbar"
               aria-valuenow={badge.progress}
@@ -333,7 +333,7 @@ function TierProgress({
     <div className="mt-4 space-y-2">
       {/* Track */}
       <div
-        className="h-2 rounded-full bg-[var(--rule-base)] overflow-hidden"
+        className="h-2 bg-[var(--rule-base)] overflow-hidden"
         role="progressbar"
         aria-valuenow={progress}
         aria-valuemin={0}
@@ -341,7 +341,7 @@ function TierProgress({
         aria-label={`Progreso hacia ${next.name}: ${progress}%`}
       >
         <div
-          className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
+          className="h-full bg-[var(--accent)] transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -408,7 +408,7 @@ export default function RiderScoreCard({
 
   return (
     <section
-      className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
+      className=" border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
       aria-label="Tu score de repartidor"
     >
       {/* ── Grid principal ── */}
@@ -419,7 +419,7 @@ export default function RiderScoreCard({
           {/* Tier badge grande */}
           <div>
             <div
-              className={`inline-flex items-center gap-3 rounded-2xl px-5 py-3 ${tier.bgClass}`}
+              className={`inline-flex items-center gap-3 px-5 py-3 ${tier.bgClass}`}
               aria-label={`Nivel actual: ${tier.name}`}
             >
               <Trophy

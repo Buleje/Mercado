@@ -1,10 +1,11 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { AlertCircle, CheckCircle, RefreshCw, Shield, Star, Truck, Users, X } from "@buleje/design-system/icons";
+import { AlertCircle, CheckCircle, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton } from "@/components/admin/delivery-partners/shared";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 interface StorePermission {
   id: string;
@@ -36,9 +37,9 @@ const PERMISSION_LABELS: Record<string, { label: string; short: string; descript
   view_analytics:  { label: "Ver analytics",       short: "Analytics", description: "Acceso a reportes" },
 };
 const USER_TYPE_LABELS: Record<string, { label: string; bg: string; text: string }> = {
-  admin:    { label: "Admin",       bg: "bg-primary/10",                  text: "text-primary" },
+  admin:    { label: "Admin",       bg: "bg-primary/10",                  text: "text-[var(--accent-ink)] dark:text-[var(--accent)]" },
   cajero:   { label: "Cajero",      bg: "bg-[var(--data-warning-100)]",   text: "text-[var(--data-warning-500)]" },
-  delivery: { label: "Delivery",    bg: "bg-[var(--accent-soft)]",        text: "text-[var(--data-success-500)]" },
+  delivery: { label: "Delivery",    bg: "bg-primary/10",        text: "text-[var(--data-success-500)]" },
 };
 
 
@@ -108,218 +109,67 @@ export function PermisosTab() {
     }
   };
 
-  // Derivados para KPIs
   const userTypes = Array.from(new Set(permissions.map((p) => p.userType)));
   const filtered = filterUserType === "all"
     ? permissions
     : permissions.filter((p) => p.userType === filterUserType);
-  const adminsCount = permissions.filter((p) => p.userType === "admin").length;
-  const cajerosCount = permissions.filter((p) => p.userType === "cajero").length;
-  const deliveryCount = permissions.filter((p) => p.userType === "delivery").length;
   const totalGrants = permissions.reduce((acc, p) => acc + p.permissions.length, 0);
+  const etiquetaTipo = (ut: string) => USER_TYPE_LABELS[ut]?.label ?? ut;
 
+  // 10-10: sin la tarjeta grande (título, párrafo, «Refrescar» y cuatro
+  // cifras) ni la grilla «Permisos disponibles»: vive plegado bajo
+  // Asignaciones, el título lo pone el plegable y la lista de permisos va en el ⓘ.
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {error && (
-        <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-500)]">
+        <div className="flex items-center gap-3 py-1 pl-4 pr-1 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/10">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span className="font-bold">{error}</span>
-          <button
+          <button aria-label="Quitar"
             type="button"
             onClick={() => setError(null)}
-            className="ml-auto p-1 rounded-lg hover:bg-[var(--data-error-100)] transition-colors"
+            className="ml-auto inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl hover:bg-[var(--data-error-100)] transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
-        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
-          <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-              <Shield className="h-5 w-5" />
-            </span>
-            <div>
-              <CardTitle className="font-display text-xl leading-tight">
-                Permisos de tienda
-              </CardTitle>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
-                {permissions.length === 0
-                  ? "No hay permisos configurados todavía. Asigná accesos granulares por usuario."
-                  : `${permissions.length} ${permissions.length === 1 ? "usuario" : "usuarios"} con accesos · ${totalGrants} ${totalGrants === 1 ? "permiso otorgado" : "permisos otorgados"}.`}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={load}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-primary)] text-sm font-bold hover:brightness-95 border border-[var(--rule-base)] transition-colors disabled:opacity-50 shrink-0"
-          >
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            Refrescar
-          </button>
-        </div>
-
-        {permissions.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <Users className="h-5 w-5 text-primary" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Total usuarios
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
-                {permissions.length}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Con accesos</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <Shield className="h-5 w-5 text-primary" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Admins
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-primary leading-tight mt-2">
-                {adminsCount}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Acceso total</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-100)]">
-                  <Star className="h-5 w-5 text-[var(--data-warning-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Cajeros
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-warning-500)] leading-tight mt-2">
-                {cajerosCount}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Operativos</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
-                  <Truck className="h-5 w-5 text-[var(--data-success-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Delivery
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
-                {deliveryCount}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Repartidores</p>
-            </div>
-          </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm text-[var(--text-secondary)]">
+          {permissions.length === 0
+            ? "Nadie tiene permisos sobre tu tienda todavía."
+            : `${permissions.length} ${permissions.length === 1 ? "usuario" : "usuarios"} · ${totalGrants} ${totalGrants === 1 ? "permiso" : "permisos"}`}
+        </p>
+        <InfoTip
+          title="Permisos de tienda"
+          what={PERMISSION_TYPES.map((perm) => `${PERMISSION_LABELS[perm].label}: ${PERMISSION_LABELS[perm].description.toLowerCase()}`).join(" · ")}
+          affects="Toca un permiso de la tarjeta de cada usuario para darlo o quitarlo; se guarda al momento."
+        />
+        {userTypes.length > 1 && (
+          <SegmentedControl<string>
+            value={filterUserType}
+            onChange={setFilterUserType}
+            label="Qué usuarios ver"
+            size="lg"
+            className="ml-auto"
+            options={[
+              { value: "all", label: "Todos", badge: permissions.length },
+              ...userTypes.map((ut) => ({ value: ut, label: etiquetaTipo(ut), badge: permissions.filter((p) => p.userType === ut).length })),
+            ]}
+          />
         )}
       </div>
-
-      {/* ── 2. Leyenda de permisos ─────────────────────────────────── */}
-      {permissions.length > 0 && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
-            Permisos disponibles
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {PERMISSION_TYPES.map((perm) => {
-              const meta = PERMISSION_LABELS[perm];
-              return (
-                <div key={perm} className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4">
-                  <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
-                    {meta.label}
-                  </p>
-                  <p className="text-sm text-[var(--text-tertiary)] mt-1 leading-snug">
-                    {meta.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── 3. Filtros por tipo de usuario ─────────────────────────── */}
-      {permissions.length > 0 && userTypes.length > 1 && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-2">
-              Filtrar por tipo
-            </span>
-            <button
-              type="button"
-              onClick={() => setFilterUserType("all")}
-              className={cn(
-                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
-                filterUserType === "all"
-                  ? "bg-primary text-white border-primary"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
-              )}
-            >
-              Todos
-              <span className={cn(
-                "inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full text-xs font-extrabold tabular-nums",
-                filterUserType === "all" ? "bg-white/25" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-              )}>
-                {permissions.length}
-              </span>
-            </button>
-            {userTypes.map((ut) => {
-              const count = permissions.filter((p) => p.userType === ut).length;
-              const meta = USER_TYPE_LABELS[ut] ?? { label: ut, bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)]" };
-              return (
-                <button
-                  key={ut}
-                  type="button"
-                  onClick={() => setFilterUserType(ut)}
-                  className={cn(
-                    "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
-                    filterUserType === ut
-                      ? "bg-primary text-white border-primary"
-                      : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
-                  )}
-                >
-                  {meta.label}
-                  <span className={cn(
-                    "inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full text-xs font-extrabold tabular-nums",
-                    filterUserType === ut ? "bg-white/25" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-                  )}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* ── 4. Cards de usuarios / Empty / Loading ─────────────────── */}
       {loading ? (
         <TableSkeleton />
       ) : filtered.length === 0 ? (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
-          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
-            <Shield className="h-8 w-8 text-[var(--text-tertiary)]" />
-          </span>
-          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
-            {permissions.length === 0 ? "Sin permisos configurados" : "Sin coincidencias"}
+        permissions.length === 0 ? null : (
+          <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-6 text-center text-sm font-semibold text-[var(--text-secondary)]">
+            Nadie de ese tipo: elige «Todos».
           </p>
-          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
-            {permissions.length === 0
-              ? "Cuando otorgues accesos a usuarios sobre tu tienda, aparecerán acá con detalle por permiso."
-              : "Cambiá el filtro para ver permisos de otro tipo."}
-          </p>
-        </div>
+        )
       ) : (
         <div className="space-y-3">
           {filtered.map((p) => {
@@ -366,7 +216,7 @@ export function PermisosTab() {
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <p className="text-sm font-semibold text-[var(--text-secondary)]">
                       Permisos
                     </p>
                     <p className="text-2xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-1">
@@ -389,9 +239,9 @@ export function PermisosTab() {
                         disabled={isSaving}
                         title={meta.description}
                         className={cn(
-                          "inline-flex items-center justify-between gap-2 px-4 h-11 rounded-xl text-sm font-bold transition-colors border-2",
+                          "inline-flex items-center justify-between gap-2 px-4 h-12 rounded-xl text-sm font-semibold transition-colors border-2",
                           has
-                            ? "bg-[var(--accent-soft)] border-[var(--data-success-500)]/40 text-[var(--data-success-500)]"
+                            ? "bg-primary/10 border-[var(--data-success-500)]/40 text-[var(--data-success-500)]"
                             : "bg-[var(--surface-sunken)] border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:border-primary/30 hover:text-[var(--text-secondary)]",
                           isSaving && "cursor-not-allowed",
                         )}

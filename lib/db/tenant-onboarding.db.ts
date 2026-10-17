@@ -28,7 +28,8 @@ export interface CreateTenantInput {
   ownerPhone?: string;
   plan: "free" | "pro" | "business" | "enterprise";
   type: "store" | "supplier" | "delivery";
-  trialEndsAt: Date;
+  /** null = plan pago otorgado (voucher aprobado): sin prueba que venza. */
+  trialEndsAt: Date | null;
 }
 
 export interface CreateAdminUserInput {

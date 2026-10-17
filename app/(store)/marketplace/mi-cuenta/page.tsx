@@ -198,7 +198,7 @@ export default function MiCuentaPage() {
           </div>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex items-start gap-3 rounded-xl bg-[var(--surface-sunken)]/60 p-3">
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <User className="h-4 w-4" strokeWidth={2} aria-hidden />
               </span>
               <div className="min-w-0">
@@ -212,7 +212,7 @@ export default function MiCuentaPage() {
             </div>
             {customer.phone && (
               <div className="flex items-start gap-3 rounded-xl bg-[var(--surface-sunken)]/60 p-3">
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <Phone className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </span>
                 <div className="min-w-0">
@@ -227,7 +227,7 @@ export default function MiCuentaPage() {
             )}
             {customer.location && (
               <div className="sm:col-span-2 flex items-start gap-3 rounded-xl bg-[var(--surface-sunken)]/60 p-3">
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <MapPin className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </span>
                 <div className="min-w-0">

@@ -2,7 +2,8 @@
  * lib/ai/yape-vision.ts
  *
  * Extrae monto/código/fecha/last4 de una captura de Yape usando
- * Claude Sonnet 4.6 Vision (claude-sonnet-4-6).
+ * Claude Sonnet 5.5 Vision (`MODEL_IDS.sonnet` de `lib/claude-router.ts`; $2/$10 por MTok,
+ * verificado 2026-10-15 — mismo precio que el Sonnet 5 de antes).
  *
  * Diseño:
  *  - Recibe un `imageUrl` (público o pre-firmado) y deja que el SDK lo
@@ -24,6 +25,7 @@ import "server-only";
 import { generateText } from "ai";
 import { z } from "zod";
 import { anthropicProvider } from "@/lib/ai/provider";
+import { MODEL_IDS } from "@/lib/claude-router";
 import { aiCostGuard } from "@/lib/ai/cost-control";
 import { logger } from "@/lib/logger";
 
@@ -192,7 +194,7 @@ export async function extractYapePayment(
   // confidence:low y el cliente reenviaba la captura → 2× costo Anthropic.
   async function callVisionOnce(): Promise<string> {
     const { text } = await generateText({
-      model: anthropicProvider("claude-sonnet-4-6"),
+      model: anthropicProvider(MODEL_IDS.sonnet),
       maxOutputTokens: 400,
       system: SYSTEM_PROMPT,
       messages: [

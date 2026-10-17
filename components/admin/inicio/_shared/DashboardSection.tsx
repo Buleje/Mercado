@@ -1,18 +1,21 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { ChevronDown } from "@buleje/design-system/icons";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useChartRegistration } from "@/lib/admin/charts-visibility";
+import { KpiTile, esKpiSinDato, gridDeKpis, type SectionKPI } from "./KpiTile";
 
-export interface SectionKPI {
-  label: string;
-  value: string;
-  tone?: "primary" | "warning" | "success" | "neutral";
-  // Brandon 2026-05-16 (audit P1 UI): hint opcional para tooltips/info
-  // explicando por qué un KPI muestra "—" o un asterisco (ej. faltan
-  // datos de costo). Se muestra como title="..." en el wrapper.
-  hint?: string;
-}
+// El tipo vive con la tarjeta; se re-exporta acá para no romper los imports.
+export type { SectionKPI };
+
+/**
+ * Hasta este largo la bajada entra en UNA línea a 400 px y queda a la vista;
+ * más larga es un párrafo y pasa al ⓘ del título (ley de la vista, regla 9).
+ */
+const BAJADA_A_LA_VISTA_MAX = 48;
 
 interface Props {
   kicker: string;
@@ -23,6 +26,9 @@ interface Props {
    * un bodeguero de 50 años entienda sin jerga. Ej: "Acá ves quién es tu
    * mejor cliente del mes. Llamalo y agradecele — vuelven más cuando los
    * tratás como persona."
+   *
+   * 2026-10-09: si pasa de ~48 caracteres va al ⓘ al lado del título (ley de
+   * la vista: explicar con ⓘ, no con párrafos); corta, queda como bajada.
    */
   description?: string;
   kpis?: SectionKPI[];
@@ -43,9 +49,11 @@ interface Props {
    */
   chartId?: string;
   /**
-   * Indica si el chart tiene datos suficientes. Si false, se oculta por
-   * default (el user puede mostrarlo manualmente desde el modal). Solo
-   * aplica si `chartId` está presente.
+   * Indica si el chart tiene datos suficientes. Si false, se oculta (aunque
+   * el usuario lo haya prendido antes) hasta que llegue un dato; en el botón
+   * «Gráficos» figura como «Sin datos todavía» y se puede mostrar igual.
+   * Calcularlo con `lib/admin/inicio/hay-datos` (`hayDatosEnSerie`,
+   * `hayTendencia`, `hayFilas`). Solo aplica si `chartId` está presente.
    */
   hasData?: boolean;
   /**
@@ -55,6 +63,25 @@ interface Props {
    * El user los puede activar desde el modal "Gráficos".
    */
   defaultVisible?: boolean;
+  /**
+   * 2026-10-11 (Inicio a ≤2 pantallas): clave para plegar el bloque y
+   * recordarlo («inicio:<vista>:<bloque>»). Plegado queda el título y, en una
+   * línea, sus dos primeras cifras con dato: plegar no es esconder el dato.
+   */
+  plegable?: string;
+  /** Cómo arranca un bloque `plegable` la primera vez (default: plegado). */
+  abiertoAlInicio?: boolean;
+  /** Las cifras de la línea plegada cuando el bloque las dibuja adentro (no por `kpis`). */
+  cifrasPlegado?: SectionKPI[];
+}
+
+/** «Valor del stock: S/ 10,923.22 · Bajo stock: 1» — las cifras del bloque plegado. */
+function lineaPlegada(kpis: SectionKPI[] | undefined): string {
+  return (kpis ?? [])
+    .filter((k) => !esKpiSinDato(k))
+    .slice(0, 2)
+    .map((k) => `${k.label}: ${k.value}`)
+    .join(" · ");
 }
 
 /**
@@ -69,7 +96,11 @@ interface Props {
  *
  * Se usa en Resumen, Ventas base y Ventas advanced para consistencia total.
  */
-export function DashboardSection({ kicker, title, description, kpis, rightSlot, children, className, hideHeader, chartId, hasData = true, defaultVisible = true }: Props) {
+export function DashboardSection({ kicker, title, description, kpis, rightSlot, children, className, hideHeader, chartId, hasData = true, defaultVisible = true, plegable, abiertoAlInicio = false, cifrasPlegado }: Props) {
+  // Los hooks van antes del retorno temprano del gráfico oculto.
+  const [guardado, setGuardado] = useLocalStorage<boolean>(plegable ?? "inicio:sin-plegar", abiertoAlInicio);
+  const abierto = !plegable || guardado;
+  const idCuerpo = `${useId()}-cuerpo`;
   // Si el chart se registró con un id, consultar visibility. Si no tiene
   // chartId, siempre visible (back-compat con secciones legacy).
   const { visible } = useChartRegistration(chartId ?? "__none__", {
@@ -83,16 +114,29 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
   // pero vacío → huecos blancos enormes al lado de charts visibles
   // impares cuando los compañeros estaban ocultos por defaultVisible=false.
   if (chartId && !visible) {
-    return <div data-chart-hidden="true" style={{ display: "none" }} aria-hidden />;
+    return (
+      <div
+        data-chart-hidden="true"
+        data-chart-sin-datos={hasData ? undefined : "true"}
+        style={{ display: "none" }}
+        aria-hidden
+      />
+    );
   }
+  const bajadaEnInfo = !!description && description.length > BAJADA_A_LA_VISTA_MAX;
 
   return (
     <section
+      data-dashboard-section=""
+      data-chart-id={chartId}
       className={
         // h-full + flex-col asegura que el chart (children) se estire al alto
         // disponible cuando el padre usa gridAutoRows: 1fr. Sin huecos entre
         // secciones de la misma fila.
-        "border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 h-full flex flex-col " +
+        // @container: la fila de KPIs elige columnas por el ancho de la SECCIÓN.
+        // Plegada no se estira al alto de la vecina de fila (self-start).
+        "@container border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 flex flex-col " +
+        (abierto ? "h-full " : "self-start w-full ") +
         (className ?? "")
       }
     >
@@ -105,59 +149,63 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
       ) : (
         // Brandon mayo 2026 v2: header agrandado — eyebrow text-xs (era 2xs),
         // título text-lg sm:text-xl (era base) para que se lea a 1m del monitor.
-        <header className="mb-5 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+        <header className={(abierto ? "mb-5 " : "") + "flex items-start justify-between gap-3"}>
+          <div className={plegable ? "min-w-0 flex-1" : "min-w-0"}>
+            <p className="text-sm font-bold text-[var(--text-tertiary)] mb-1">
               {kicker}
             </p>
-            <CardTitle className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-              {title}
-            </CardTitle>
-            {description && (
-              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed font-medium">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <CardTitle className="min-w-0 text-[length:var(--ts-xl)] font-bold tracking-tight text-[var(--text-primary)] leading-tight">
+                {plegable ? (
+                  // -my-2.5 + min-h-12: 48 px para el dedo sin agrandar la cabecera.
+                  <button
+                    type="button"
+                    aria-expanded={abierto}
+                    aria-controls={idCuerpo}
+                    onClick={() => setGuardado(!abierto)}
+                    className="-mx-2 -my-2.5 inline-flex min-h-12 items-center gap-2 rounded-lg px-2 text-left hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                  >
+                    <span>{title}</span>
+                    <ChevronDown
+                      aria-hidden
+                      className={"h-5 w-5 shrink-0 text-[var(--text-tertiary)] transition-transform duration-[var(--dur-fast)] " + (abierto ? "rotate-180" : "")}
+                    />
+                  </button>
+                ) : (
+                  title
+                )}
+              </CardTitle>
+              {bajadaEnInfo && (
+                <InfoTip title={title} what={description} className="shrink-0" ariaLabel={`Qué muestra «${title}»`} />
+              )}
+            </div>
+            {description && !bajadaEnInfo && abierto && (
+              <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-snug font-medium">
                 {description}
               </p>
+            )}
+            {!abierto && lineaPlegada(kpis ?? cifrasPlegado) && (
+              <p className="mt-1.5 text-sm font-semibold tabular-nums text-[var(--text-secondary)]">{lineaPlegada(kpis ?? cifrasPlegado)}</p>
             )}
           </div>
           {rightSlot && <div className="flex-shrink-0 pr-10">{rightSlot}</div>}
         </header>
       )}
-      {kpis && kpis.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 shrink-0">
+      {abierto && kpis && kpis.length > 0 && (
+        <div className={gridDeKpis(kpis.length) + " mb-6 shrink-0"}>
           {kpis.map((k) => (
-            <div
-              key={k.label}
-              className="border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5"
-              title={k.hint}
-            >
-              <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
-                {k.label}
-              </p>
-              <p
-                className={
-                  // tone=primary lee la CSS var scoped --section-primary
-                  // (fallback a --text-primary). Brandon v2: text-base sm:text-lg
-                  // (era text-sm), respiro vertical para que el número resalte.
-                  "text-base sm:text-lg font-extrabold tabular-nums truncate " +
-                  (k.tone === "warning"
-                    ? "text-[var(--data-warning-500)]"
-                    : k.tone === "success"
-                      ? "text-[var(--data-success-500)]"
-                      : k.tone === "primary"
-                        ? "text-[color:var(--section-primary,var(--text-primary))]"
-                        : "text-[var(--text-secondary)]")
-                }
-                title={k.value}
-              >
-                {k.value}
-              </p>
-            </div>
+            <KpiTile key={k.label} kpi={k} />
           ))}
         </div>
       )}
       {/* children wrapper con flex-1 min-h-0 para que el chart (ResponsiveContainer
-          de Recharts) se estire al espacio restante sin desbordar. */}
-      <div className="flex-1 min-h-0 flex flex-col justify-end">{children}</div>
+          de Recharts) se estire al espacio restante sin desbordar. Plegado no se
+          monta: el gráfico sigue anotado en «Gráficos» (lo registra esta sección). */}
+      {abierto ? (
+        <div id={idCuerpo} className="flex-1 min-h-0 flex flex-col justify-end">{children}</div>
+      ) : (
+        <div id={idCuerpo} hidden />
+      )}
     </section>
   );
 }

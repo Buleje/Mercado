@@ -107,10 +107,21 @@ async function handleReject(
       continue;
     }
     try {
-      const updated = await OrdersDB.update(order.tenantId, order.id, {
-        status: "cancelado",
-      });
-      if (updated) ordersUpdated++;
+      // SOLO `cancelarConReposicion`: marca cancelado + cancelledAt y repone el
+      // stock una vez, y su WHERE salta los entregados. Antes se ponía
+      // «cancelado» primero y la condición «no entregado» ya no frenaba: un
+      // pedido entregado quedaba cancelado y con su stock devuelto.
+      const r = await OrdersDB.cancelarConReposicion(order.tenantId, order.id, parsed.data.reason);
+      if (r.repuesto) {
+        ordersUpdated++;
+      } else {
+        logger.warn("[payment-approvals/reject] pedido no cancelado (entregado o ya cancelado)", {
+          approvalId: id,
+          orderId: order.id,
+          tenantId: order.tenantId,
+          status: order.status,
+        });
+      }
     } catch (err) {
       logger.error("[payment-approvals/reject] order cancel failed", {
         approvalId: id,

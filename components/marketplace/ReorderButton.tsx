@@ -116,7 +116,7 @@ export default function ReorderButton({ customerPhone }: ReorderButtonProps) {
   return (
     <button
       onClick={handleReorder}
-      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 dark:border-primary/20 dark:bg-primary/10 dark:hover:bg-primary/20"
+      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors hover:bg-primary/10 dark:border-primary/20 dark:bg-primary/10 dark:hover:bg-primary/20"
       aria-label={`Repetir último pedido — ${totalUnits} productos`}
     >
       <RotateCcw className="h-4 w-4 shrink-0" aria-hidden="true" />

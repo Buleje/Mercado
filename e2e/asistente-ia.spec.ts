@@ -1,89 +1,67 @@
 import { test, expect, APIRequestContext } from "@playwright/test";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helper: login via API and return the session cookie string.
-// ─────────────────────────────────────────────────────────────────────────────
+// Hub «Asistente IA» (10-10): tres vistas — Chat IA, Comandos IA y
+// Automatizaciones. «Sugerencias IA» se fundió en Comandos: su `?vista=` y su
+// tab viejo (`?tab=sugerencias-ia`) tienen que caer en Comandos, y el `?sub=`
+// de Comandos no puede quedar pegado al volver al Chat.
+
 async function adminLogin(request: APIRequestContext): Promise<string | null> {
   const password = process.env.E2E_ADMIN_PASSWORD;
   if (!password) return null;
-
-  const res = await request.post("/api/auth/login", {
-    data: { password },
-  });
+  const res = await request.post("/api/auth/login", { data: { password } });
   if (!res.ok()) return null;
-
-  const setCookie = res.headers()["set-cookie"] ?? "";
-  const match = setCookie.match(/bsm-admin-sess=[^;]+/);
+  const match = (res.headers()["set-cookie"] ?? "").match(/bsm-admin-sess=[^;]+/);
   return match ? match[0] : null;
 }
 
-test.describe("Asistente IA Module", () => {
+/** Las pestañas del hub (no las internas de Comandos). */
+const VISTAS = ["Chat IA", "Comandos IA", "Automatizaciones"];
+
+test.describe("Asistente IA", () => {
   test.beforeEach(async ({ page, request }) => {
     const cookie = await adminLogin(request);
     test.skip(!cookie, "E2E_ADMIN_PASSWORD not set");
-
-    await page.context().addCookies([{
-      name: "bsm-admin-sess",
-      value: cookie!.split("=")[1],
-      domain: "localhost",
-      path: "/",
-    }]);
+    await page.context().addCookies([
+      { name: "bsm-admin-sess", value: cookie!.split("=")[1], domain: "localhost", path: "/" },
+    ]);
   });
 
-  test("navigates to Asistente IA module", async ({ page }) => {
-    await page.goto("/admin");
-
-    // Click on Asistente IA in sidebar
-    const sidebarItem = page.getByRole("button", { name: /asistente ia/i });
-    await sidebarItem.click();
-
-    // Should show the module with tab bar
-    await expect(page.getByText("Mi negocio hoy")).toBeVisible({ timeout: 10000 });
+  test("el hub tiene sus tres vistas y ya no Sugerencias IA", async ({ page }) => {
+    await page.goto("/admin?tab=asistente-ia");
+    for (const nombre of VISTAS) {
+      await expect(page.getByRole("tab", { name: nombre })).toBeVisible({ timeout: 15000 });
+    }
+    await expect(page.getByRole("tab", { name: "Sugerencias IA" })).toHaveCount(0);
   });
 
-  test("all 6 tabs are visible", async ({ page }) => {
-    await page.goto("/admin");
-
-    const sidebarItem = page.getByRole("button", { name: /asistente ia/i });
-    await sidebarItem.click();
-
-    // Verify all 6 tabs exist
-    const expectedTabs = [
-      "Mi negocio hoy",
-      "Centro de Comando",
-      "Sugerencias",
-      "Metas y Logros",
-      "Chat",
-      "Alertas",
-    ];
-
-    for (const tabName of expectedTabs) {
-      await expect(page.getByRole("button", { name: tabName })).toBeVisible({ timeout: 10000 });
+  test("?vista=sugerencias y ?tab=sugerencias-ia abren Comandos IA", async ({ page }) => {
+    for (const ruta of ["/admin?tab=asistente-ia&vista=sugerencias", "/admin?tab=sugerencias-ia"]) {
+      await page.goto(ruta);
+      await expect(page.getByRole("tab", { name: "Comandos IA" })).toHaveAttribute("aria-selected", "true", {
+        timeout: 15000,
+      });
     }
   });
 
-  test("switches between tabs", async ({ page }) => {
-    await page.goto("/admin");
+  test("el ?sub= de Comandos no queda pegado en el Chat", async ({ page }) => {
+    await page.goto("/admin?tab=asistente-ia&vista=comandos&sub=historial");
+    await expect(page.getByRole("tab", { name: "Lo que hizo la IA" })).toHaveAttribute("aria-selected", "true", {
+      timeout: 15000,
+    });
+    await page.getByRole("tab", { name: "Chat IA" }).click();
+    await expect(page).toHaveURL(/vista=chat/);
+    expect(new URL(page.url()).searchParams.get("sub")).toBeNull();
+  });
 
-    const sidebarItem = page.getByRole("button", { name: /asistente ia/i });
-    await sidebarItem.click();
-
-    // Wait for initial tab to load
-    await expect(page.getByText("Mi negocio hoy")).toBeVisible({ timeout: 10000 });
-
-    // Click Centro de Comando tab
-    await page.getByRole("button", { name: "Centro de Comando" }).click();
-
-    // Click Sugerencias tab
-    await page.getByRole("button", { name: "Sugerencias" }).click();
-
-    // Click Metas y Logros tab
-    await page.getByRole("button", { name: "Metas y Logros" }).click();
-
-    // Click Chat tab
-    await page.getByRole("button", { name: "Chat" }).click();
-
-    // Click Alertas tab
-    await page.getByRole("button", { name: "Alertas" }).click();
+  test("un link del Chat con ?sub= pegado lo suelta y Comandos abre su vista", async ({ page }) => {
+    await page.goto("/admin?tab=asistente-ia&vista=chat&sub=historial");
+    await expect(page.getByRole("tab", { name: "Chat IA" })).toHaveAttribute("aria-selected", "true", {
+      timeout: 15000,
+    });
+    await expect.poll(() => new URL(page.url()).searchParams.get("sub")).toBeNull();
+    await page.getByRole("tab", { name: "Comandos IA" }).click();
+    await expect(page.getByRole("tab", { name: "Lee un papel" })).toHaveAttribute("aria-selected", "true", {
+      timeout: 15000,
+    });
   });
 });

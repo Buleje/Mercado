@@ -93,7 +93,7 @@ const CARD_DEFS: CardDef[] = [
   {
     id: "enterprise",
     icon: Globe,
-    iconColor: "#f59e0b",
+    iconColor: "#ff6b5b",
     priceMonthly: null,
     priceYearly: null,
     priceLabel: "Personalizado",

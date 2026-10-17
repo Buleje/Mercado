@@ -18,6 +18,10 @@
 
 import { useEffect, useState } from "react";
 import { clearAllTenantCache } from "@/lib/tenant-cache";
+import { cachedJson } from "@/lib/client-cache-fetch";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
+import { limpiarVistaSuplantada } from "@/lib/auth/suplantacion-vista";
+import { salirDeVistaDeTienda } from "./useSuplantacionActiva";
 
 export type TenantType = "tienda" | "proveedor" | "delivery";
 
@@ -50,15 +54,15 @@ export function useImpersonation(): UseImpersonationResult {
     const slug = impersonateSlug ?? tenantSlug;
 
     if (impersonateSlug) setIsSuperAdminImpersonating(true);
-    if (!slug || slug === "main") return;
+    if (!slug || esMarketplace(slug)) return;
 
     setActiveTenantSlug(slug);
 
     // Fetch del nombre/logo/tipo de tienda — el proxy resuelve el tenant
     // desde la cookie de sesión (canonical ID), no desde el header.
-    fetch("/api/settings")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: SettingsResponse | null) => {
+    // Misma lectura que useAdminAuth y el resto del panel (una sola clave).
+    cachedJson<SettingsResponse>("/api/settings", 30_000)
+      .then((d) => {
         if (!d) return;
         if (d.businessName) setActiveTenantName(d.businessName);
         if (d.logoUrl) setActiveTenantLogo(d.logoUrl);
@@ -77,10 +81,15 @@ export function useImpersonation(): UseImpersonationResult {
     // [SEGURIDAD MULTI-TENANT] Antes de salir, borrar TODO el cache cliente
     // para que el próximo tenant no herede datos del actual.
     clearAllTenantCache();
-    localStorage.removeItem("superadmin-impersonate-tenant");
+    limpiarVistaSuplantada();
     localStorage.removeItem("active-tenant-slug");
     setIsSuperAdminImpersonating(false);
-    window.location.href = "/superadmin";
+    // Salir de verdad (security 11-10): el servidor borra la cookie y ANULA el
+    // token; antes sólo se volvía a /superadmin con la sesión de la tienda viva.
+    // Si el servidor no confirma, se vuelve igual (la cookie vence sola a los 10 min).
+    void salirDeVistaDeTienda().then((ok) => {
+      if (!ok) window.location.href = "/superadmin";
+    });
   };
 
   return {

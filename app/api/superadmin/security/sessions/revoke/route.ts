@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   if (body.all !== true) {
     return NextResponse.json(
       {
-        error: "Invalidación per-sesión no soportada (sesiones JWT stateless). Enviá { all: true } para forzar logout global.",
+        error: "Invalidación per-sesión no soportada (sesiones JWT stateless). Envía { all: true } para forzar logout global.",
       },
       { status: 400, headers: NO_STORE_HEADERS },
     );

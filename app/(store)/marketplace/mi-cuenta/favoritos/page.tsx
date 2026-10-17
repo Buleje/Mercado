@@ -84,7 +84,7 @@ export default function FavoritosPage() {
       <EmptyState
         eyebrow="Favoritos"
         title="Aún no guardaste productos"
-        description="Tocá el corazón sobre cualquier producto del marketplace y aparecerá aquí para volver a comprarlo rápido."
+        description="Toca el corazón sobre cualquier producto del marketplace y aparecerá aquí para volver a comprarlo rápido."
         action={
           <Link
             href="/marketplace"

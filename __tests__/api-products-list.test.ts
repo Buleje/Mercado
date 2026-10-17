@@ -61,6 +61,7 @@ vi.mock("@/lib/plans", () => ({
 
 // ── Mock: cache ───────────────────────────────────────────────────────────────
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   invalidate: vi.fn(),
 }));
 

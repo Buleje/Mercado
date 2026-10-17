@@ -26,6 +26,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { ensureTable } from "@/lib/db/ensure-table";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,13 +40,9 @@ export interface PaymentApproval {
   id: string;
   /**
    * tenantId del tenant dueño de la conversación que generó esta approval.
-<<<<<<< Updated upstream
    * CONTRACT PHASE (2026-05-11): la columna es NOT NULL en DB tras 0 rows
    * legacy. Todos los callers pasan tenantId obligatorio desde
    * Conversation.tenantId.
-=======
-   * Contract phase completada (multi-tenant-contract-audit): NOT NULL en DB.
->>>>>>> Stashed changes
    */
   tenantId: string;
   conversationId: string | null;
@@ -103,9 +100,7 @@ let bootstrapDone = false;
 
 async function bootstrap(): Promise<void> {
   if (bootstrapDone) return;
-  try {
-     
-    await prisma.$executeRawUnsafe(`
+  await ensureTable("PaymentApproval", `
       CREATE TABLE IF NOT EXISTS "PaymentApproval" (
         "id"              TEXT PRIMARY KEY,
         "tenantId"        TEXT NOT NULL,
@@ -139,14 +134,8 @@ async function bootstrap(): Promise<void> {
         ON "PaymentApproval"("tenantId");
       CREATE INDEX IF NOT EXISTS "PaymentApproval_tenantId_status_idx"
         ON "PaymentApproval"("tenantId", "status");
-    `);
-    bootstrapDone = true;
-  } catch (err) {
-    logger.error("[payment-approval] bootstrap failed", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    throw err;
-  }
+    `, "payment-approval");
+  bootstrapDone = true;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

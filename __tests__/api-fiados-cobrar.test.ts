@@ -36,6 +36,12 @@ vi.mock("@/lib/db/fiados.db", () => {
   };
 });
 
+// ── Mock: CustomersDB (el nombre de la etiqueta de caja sale de la base) ─────
+const { mockGetByPhone } = vi.hoisted(() => ({
+  mockGetByPhone: vi.fn(async (_phone: string, _tenantId: string): Promise<{ name: string } | null> => null),
+}));
+vi.mock("@/lib/db/customers.db", () => ({ CustomersDB: { getByPhone: mockGetByPhone } }));
+
 // ── Mock: logger ─────────────────────────────────────────────────────────────
 vi.mock("@/lib/logger", () => ({
   logger: {
@@ -223,7 +229,8 @@ describe("POST /api/fiados/cobrar", () => {
       "main",
       "987654321",
       100,
-      "Pago parcial"
+      "Pago parcial",
+      undefined, // sin aCaja: no entra a la caja
     );
   });
 
@@ -261,6 +268,55 @@ describe("POST /api/fiados/cobrar", () => {
     expect(body.retryable).toBe(true);
   });
 
+  it("con aCaja + metodo: el medio va a la nota y el ingreso a la caja con el nombre (Me deben 08-10)", async () => {
+    mockRequireAdmin.mockResolvedValue(ADMIN_SESSION);
+    mockCobrarPorCliente.mockResolvedValue({
+      totalCobrado: 30,
+      payments: [{ id: "pago-1", fiadoId: "fiado-1", monto: 30 }],
+      remaining: 0,
+      caja: { sinCaja: true },
+    });
+
+    const { POST } = await import("@/app/api/fiados/cobrar/route");
+    const res = await POST(makeRequest({ customerPhone: "987654321", monto: 30, metodo: "yape", aCaja: true, nombre: "Rosa Pérez" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.caja).toEqual({ sinCaja: true });
+    expect(mockCobrarPorCliente).toHaveBeenCalledWith("main", "987654321", 30, "Yape", {
+      metodo: "yape",
+      etiqueta: "Cobro de fiado · Rosa Pérez",
+    });
+  });
+
+  it("con aCaja: la etiqueta usa el nombre de la base, no el que manda el navegador", async () => {
+    mockRequireAdmin.mockResolvedValue(CAJERO_SESSION);
+    mockGetByPhone.mockResolvedValueOnce({ name: "  Rosa Pérez  " });
+    mockCobrarPorCliente.mockResolvedValue({ totalCobrado: 10, payments: [{ id: "p1", monto: 10 }], remaining: 0, caja: { sinCaja: false } });
+
+    const { POST } = await import("@/app/api/fiados/cobrar/route");
+    const res = await POST(makeRequest({ customerPhone: "987654321", monto: 10, aCaja: true, nombre: "Pago de alquiler" }));
+    expect(res.status).toBe(200);
+    expect(mockGetByPhone).toHaveBeenCalledWith("987654321", "tenant-1");
+    expect(mockCobrarPorCliente.mock.calls[0][4]).toEqual({ metodo: "efectivo", etiqueta: "Cobro de fiado · Rosa Pérez" });
+  });
+
+  it("con aCaja y sin cliente en la base: el nombre del navegador va saneado (una línea)", async () => {
+    mockRequireAdmin.mockResolvedValue(CAJERO_SESSION);
+    mockCobrarPorCliente.mockResolvedValue({ totalCobrado: 10, payments: [{ id: "p1", monto: 10 }], remaining: 0 });
+
+    const { POST } = await import("@/app/api/fiados/cobrar/route");
+    await POST(makeRequest({ customerPhone: "987654321", monto: 10, aCaja: true, nombre: "Rosa\n\tPérez\u0007" }));
+    expect(mockCobrarPorCliente.mock.calls[0][4].etiqueta).toBe("Cobro de fiado · Rosa Pérez");
+  });
+
+  it("sin aCaja no consulta el nombre", async () => {
+    mockRequireAdmin.mockResolvedValue(CAJERO_SESSION);
+    mockCobrarPorCliente.mockResolvedValue({ totalCobrado: 10, payments: [{ id: "p1", monto: 10 }], remaining: 0 });
+    const { POST } = await import("@/app/api/fiados/cobrar/route");
+    await POST(makeRequest({ customerPhone: "987654321", monto: 10 }));
+    expect(mockGetByPhone).not.toHaveBeenCalled();
+  });
+
   it("usa tenantId del cajero en multi-tenant", async () => {
     mockRequireAdmin.mockResolvedValue(CAJERO_SESSION);
     mockCobrarPorCliente.mockResolvedValue({
@@ -282,7 +338,8 @@ describe("POST /api/fiados/cobrar", () => {
       "tenant-1",
       "987654321",
       75,
-      undefined
+      undefined,
+      undefined,
     );
   });
 });

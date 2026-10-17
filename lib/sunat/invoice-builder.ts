@@ -8,15 +8,21 @@
  *  - Boleta (B001): cliente puede ser DNI o sin documento (00000000)
  *  - Factura (F001): cliente obligatorio con RUC
  *  - Nota de crédito: referencia al comprobante original
- *  - IGV 18%: base = precio_con_igv / 1.18
+ *  - IGV por producto (Product.taxType): gravado 18 % (base = precio / 1.18),
+ *    exonerado (Amazonía, Ley 27037) o inafecto sin IGV. Los totales salen de
+ *    sumar las líneas (lib/sunat/lineas-comprobante.ts).
+ *  - Si la orden se cobró por menos que sus productos, ese descuento se
+ *    prorratea en las líneas; el total del comprobante = lo cobrado.
  */
 
-import { calculateIGV } from "@/lib/sunat";
 import type {
   NubefactComprobantePayload,
   NubefactBajaPayload,
-  NubefactItem,
 } from "./nubefact-client";
+import {
+  armarLineasComprobante,
+  type LineasComprobante,
+} from "./lineas-comprobante";
 
 // ── Tipos de entrada ──────────────────────────────────────────────────────────
 
@@ -26,6 +32,8 @@ export interface BuilderOrderItem {
   price: number;   // precio con IGV incluido (precio de venta al público)
   unit: string;
   productCode?: string;
+  /** Product.taxType: gravado | exonerado | inafecto. Vacío = gravado. */
+  taxType?: string | null;
 }
 
 export interface BuilderOrder {
@@ -63,8 +71,11 @@ export interface BuiltCreditNoteInput {
   customerName: string;
   customerDocTipo: 1 | 6;
   customerDoc: string;
+  /** Total de la nota. El IGV y la base se recalculan desde las líneas. */
   total: number;
+  /** @deprecated Se recalcula desde `items` (cada uno con su afectación). */
   igv: number;
+  /** @deprecated Se recalcula desde `items` (cada uno con su afectación). */
   gravado: number;
   items: BuilderOrderItem[];
   series: string;        // "BC01" | "FC01"
@@ -78,28 +89,25 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function buildItems(items: BuilderOrderItem[]): NubefactItem[] {
-  return items.map((item) => {
-    const igvCalc = calculateIGV(item.price * item.quantity);
-    const valorUnitario = +(item.price / 1.18).toFixed(6);
+/** Líneas con su afectación + totales que cuadran con lo cobrado. */
+export function lineasDeOrden(order: Pick<BuilderOrder, "items" | "total">): LineasComprobante {
+  return armarLineasComprobante(order.items, { totalCobrado: order.total });
+}
 
-    return {
-      unidad_de_medida: "NIU",
-      codigo: item.productCode ?? "",
-      descripcion: item.name,
-      cantidad: item.quantity,
-      valor_unitario: valorUnitario,
-      precio_unitario: +item.price.toFixed(6),
-      descuento: 0,
-      subtotal: +igvCalc.gravado.toFixed(2),
-      tipo_de_igv: 1,    // gravado operación onerosa
-      igv: +igvCalc.igv.toFixed(2),
-      total: +igvCalc.total.toFixed(2),
-      anticipo_regularizacion: false,
-      anticipo_documento_serie: "",
-      anticipo_documento_numero: "",
-    };
-  });
+/** Los campos de totales del payload, todos salidos de las líneas. */
+function totalesDelPayload({ totales }: LineasComprobante) {
+  return {
+    descuento_global: 0,
+    total_descuento: totales.descuento,
+    total_anticipo: 0,
+    total_gravada: totales.gravada,
+    total_inafecta: totales.inafecta,
+    total_exonerada: totales.exonerada,
+    total_igv: totales.igv,
+    total_gratuita: 0,
+    total_otros_cargos: totales.otrosCargos,
+    total: totales.total,
+  };
 }
 
 // ── Constructores públicos ────────────────────────────────────────────────────
@@ -115,7 +123,7 @@ export function buildBoleta(
   customerDni?: string,
   customerEmail?: string,
 ): NubefactComprobantePayload {
-  const igvCalc = calculateIGV(order.total);
+  const lineas = lineasDeOrden(order);
   const hoy = todayISO();
 
   const tieneDocumento = customerDni && /^\d{8}$/.test(customerDni);
@@ -137,17 +145,8 @@ export function buildBoleta(
     fecha_de_vencimiento: hoy,
     moneda: 1,
     porcentaje_de_igv: 18,
-    descuento_global: 0,
-    total_descuento: 0,
-    total_anticipo: 0,
-    total_gravada: +igvCalc.gravado.toFixed(2),
-    total_inafecta: 0,
-    total_exonerada: 0,
-    total_igv: +igvCalc.igv.toFixed(2),
-    total_gratuita: 0,
-    total_otros_cargos: 0,
-    total: +igvCalc.total.toFixed(2),
-    items: buildItems(order.items),
+    ...totalesDelPayload(lineas),
+    items: lineas.items,
     observaciones: `Orden #${order.id}`,
     formato_de_pdf: "A4",
   };
@@ -168,7 +167,7 @@ export function buildFactura(
     );
   }
 
-  const igvCalc = calculateIGV(order.total);
+  const lineas = lineasDeOrden(order);
   const hoy = todayISO();
 
   return {
@@ -188,17 +187,8 @@ export function buildFactura(
     fecha_de_vencimiento: hoy,
     moneda: 1,
     porcentaje_de_igv: 18,
-    descuento_global: 0,
-    total_descuento: 0,
-    total_anticipo: 0,
-    total_gravada: +igvCalc.gravado.toFixed(2),
-    total_inafecta: 0,
-    total_exonerada: 0,
-    total_igv: +igvCalc.igv.toFixed(2),
-    total_gratuita: 0,
-    total_otros_cargos: 0,
-    total: +igvCalc.total.toFixed(2),
-    items: buildItems(order.items),
+    ...totalesDelPayload(lineas),
+    items: lineas.items,
     observaciones: `Orden #${order.id}`,
     formato_de_pdf: "A4",
   };
@@ -211,6 +201,7 @@ export function buildFactura(
 export function buildNotaCredito(
   input: BuiltCreditNoteInput,
 ): NubefactComprobantePayload {
+  const lineas = armarLineasComprobante(input.items, { totalCobrado: input.total });
   return {
     operacion: "generar_comprobante",
     tipo_de_comprobante: 4,           // 4 = nota de crédito
@@ -228,17 +219,8 @@ export function buildNotaCredito(
     fecha_de_vencimiento: todayISO(),
     moneda: 1,
     porcentaje_de_igv: 18,
-    descuento_global: 0,
-    total_descuento: 0,
-    total_anticipo: 0,
-    total_gravada: +input.gravado.toFixed(2),
-    total_inafecta: 0,
-    total_exonerada: 0,
-    total_igv: +input.igv.toFixed(2),
-    total_gratuita: 0,
-    total_otros_cargos: 0,
-    total: +input.total.toFixed(2),
-    items: buildItems(input.items),
+    ...totalesDelPayload(lineas),
+    items: lineas.items,
     observaciones: input.motivo,
     formato_de_pdf: "A4",
     // Campos específicos de nota de crédito

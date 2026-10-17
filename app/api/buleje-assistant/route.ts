@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateText } from "ai";
+import { GATEWAY_MODEL_IDS } from "@/lib/claude-router";
 import { logger } from "@/lib/logger";
 
 /**
@@ -12,7 +13,7 @@ import { logger } from "@/lib/logger";
  *   - Soporte (delivery, pago, tracking, devoluciones)
  *   - Busqueda en lenguaje natural
  *
- * Uso gateway Vercel AI con plain string "anthropic/claude-haiku-4-5".
+ * Uso gateway Vercel AI con Haiku 5.5 (`GATEWAY_MODEL_IDS.haiku`, sin temperature: da 400).
  * MVP sin streaming (generateText). Si no hay AI key, devuelve 503 con
  * mensaje de WhatsApp fallback.
  */
@@ -110,10 +111,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const { text } = await generateText({
-      model: "anthropic/claude-haiku-4-5",
+      model: GATEWAY_MODEL_IDS.haiku,
+      // Haiku 5.5 razona por defecto (effort medium); `low` es lo indicado para rutas cortas.
+      providerOptions: { anthropic: { effort: "low" } },
       system: SYSTEM_PROMPT,
       messages: parsed.data.messages,
-      temperature: 0.6,
     });
     return NextResponse.json({ reply: text });
   } catch (err) {

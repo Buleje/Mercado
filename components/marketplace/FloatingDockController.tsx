@@ -105,7 +105,7 @@ export default function FloatingDockController() {
           {/* Label — visible en sm+; en mobile el stack solo ya comunica */}
           <span className="hidden sm:flex min-w-0 flex-col items-start leading-none">
             <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)] group-hover:text-[var(--accent)]">
-              Seguí viendo
+              Sigue viendo
             </span>
             <span className="mt-0.5 text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
               {items.length} reciente{items.length === 1 ? "" : "s"}

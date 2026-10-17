@@ -12,6 +12,9 @@ import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
 import { AdminTotpDB } from "@/lib/db/admin-totp.db";
 import { alertNewDeviceLogin } from "@/lib/auth/security-alerts";
+import { AdminDevicesDB } from "@/lib/db/admin-devices.db";
+import { TrustedDevicesDB, TRUSTED_DEVICE_COOKIE } from "@/lib/db/trusted-devices.db";
+import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 
 type LegacyAdminUser = { id: string; username: string; password: string; role: AdminRole; name: string };
 
@@ -78,7 +81,7 @@ function makeRefreshCookie() {
 
 export async function POST(req: Request) {
   // Rate limit: 3 failed login attempts per hour (AUTH preset)
-  const rateLimitResponse = applyRateLimit(req, "AUTH", "auth:login");
+  const rateLimitResponse = applyRateLimit(req, "LOGIN", "auth:login");
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
@@ -87,7 +90,7 @@ export async function POST(req: Request) {
   // Round 27 (security hardening): req.json() puede throw si body no es JSON
   // válido — devolver 400 explícito en lugar de fallar al catch externo (500).
   // Test descubrió que payloads malformados producían 500 (DoS signal).
-  const body = await req.json().catch(() => null) as { username?: string; password?: string; tenantSlug?: string } | null;
+  const body = await leerJson<{ username?: string; password?: string; tenantSlug?: string }>(req);
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   }
@@ -203,25 +206,52 @@ export async function POST(req: Request) {
     // y retornar { requires2FA: true } para que el frontend redirija a /login/2fa.
     const totpRecord = await AdminTotpDB.getByUsername(matchedTenantId, u.username).catch((err) => { logger.warn("[security] op failed", { err: String(err) }); return null; });
     if (totpRecord?.totpEnabledAt) {
-      const pendingToken = await createPendingTotpToken(
-        u.username,
-        matchedTenantId,
-        u.name,
-        u.role as AdminRole,
-      );
-      const res = NextResponse.json({ requires2FA: true });
-      res.cookies.set(PENDING_TOTP_COOKIE, pendingToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 300, // 5 minutos
-        path: "/",
-      });
-      logger.info("[auth/login] 2FA required — pending-totp cookie emitida", {
+      // ADR-304: dispositivo de confianza → saltar el 2FA. La contraseña YA se
+      // verificó arriba; esto sólo evita el segundo factor en este navegador
+      // por 30 días. Cookie robada ≠ bypass (falta el password). Best-effort.
+      const rawCookie = req.headers.get("cookie") ?? "";
+      const trustedToken = rawCookie
+        .split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith(`${TRUSTED_DEVICE_COOKIE}=`))
+        ?.slice(TRUSTED_DEVICE_COOKIE.length + 1);
+      // El token es `id.secret` (hex+punto): cookie-safe, NUNCA percent-encoded.
+      // NO usar decodeURIComponent — con una cookie malformada (`%`) lanzaría
+      // URIError ANTES de crear la promesa, el `.catch` no lo atraparía y el
+      // login caería en 500 (DoS de disponibilidad). Se pasa crudo.
+      const deviceTrusted = trustedToken
+        ? await TrustedDevicesDB
+            .verify(matchedTenantId, u.username, trustedToken, new Date())
+            .catch(() => false)
+        : false;
+
+      if (!deviceTrusted) {
+        const pendingToken = await createPendingTotpToken(
+          u.username,
+          matchedTenantId,
+          u.name,
+          u.role as AdminRole,
+        );
+        const res = NextResponse.json({ requires2FA: true });
+        res.cookies.set(PENDING_TOTP_COOKIE, pendingToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+          maxAge: 300, // 5 minutos
+          path: "/",
+        });
+        logger.info("[auth/login] 2FA required — pending-totp cookie emitida", {
+          username: u.username,
+          tenantId: matchedTenantId,
+        });
+        return res;
+      }
+
+      logger.info("[auth/login] 2FA saltado — dispositivo de confianza", {
         username: u.username,
         tenantId: matchedTenantId,
       });
-      return res;
+      // Cae al flujo normal de sesión completa (abajo).
     }
 
     const [token, refreshToken] = await Promise.all([
@@ -252,7 +282,22 @@ export async function POST(req: Request) {
       mustChangePassword = rows[0]?.mustChangePassword ?? false;
     } catch { /* si falla, no bloquear el login */ }
 
-    const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending, tenantId: matchedTenantId, tenantSlug, mustChangePassword });
+    // B3 "último acceso": leer el ingreso ANTERIOR (antes de que
+    // alertNewDeviceLogin actualice el lastSeenAt de este dispositivo) para
+    // que el front lo muestre al entrar ("¿no fuiste vos?"). Best-effort.
+    const lastLogin = await AdminDevicesDB.getLastLogin(matchedTenantId, u.username).catch(sinDato("api/auth/login último acceso del usuario"));
+
+    const response = NextResponse.json({
+      ok: true,
+      role: u.role,
+      name: u.name,
+      onboardingPending,
+      tenantId: matchedTenantId,
+      tenantSlug,
+      mustChangePassword,
+      lastLoginAt: lastLogin?.lastSeenAt ?? null,
+      lastLoginIp: lastLogin?.ip ?? null,
+    });
     response.cookies.set(SESSION.COOKIE_NAME, token, makeAccessCookie());
     response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
     response.cookies.set("active-tenant", matchedTenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
@@ -356,7 +401,11 @@ export async function POST(req: Request) {
   }
 
   logger.warn("[auth/login] Failed authentication attempt", { username, tenantId });
-  return NextResponse.json({ error: "incorrect credentials" }, { status: 401 });
+  // Intentos restantes antes del lockout per-username (5/15min) — para que el
+  // cliente avise "te quedan N intentos" en vez de un genérico. currentAttempts
+  // se leyó pre-compare; tras este fallo el nuevo total es currentAttempts+1.
+  const attemptsLeft = Math.max(0, LOGIN_LOCKOUT_MAX - (currentAttempts + 1));
+  return NextResponse.json({ error: "incorrect credentials", attemptsLeft }, { status: 401 });
   } catch (e) {
     logger.error("[auth/login] Unhandled error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "server error" }, { status: 500 });

@@ -1,0 +1,31 @@
+{
+ "nota": "QA-ui: dos trozas a mano Tornillo con la especie fijada → datos de la guía → registrar → anular.",
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=loth-libro-operaciones&vista=gtf",
+ "pasos": [
+  {
+   "preset": "despacho-abrir"
+  },
+  {
+   "elegir": [
+    "[data-testid=trozas-a-mano] select",
+    "Tornillo"
+   ]
+  },
+  {
+   "click": "[data-testid=trozas-a-mano] button[aria-pressed]"
+  },
+  {
+   "preset": "despacho-dos-a-mano"
+  },
+  {
+   "captura": "a-mano-fijada"
+  },
+  {
+   "preset": "despacho-datos-y-registrar"
+  },
+  {
+   "preset": "despacho-anular-al-final"
+  }
+ ]
+}

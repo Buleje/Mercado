@@ -43,6 +43,9 @@ export default function ImageWarningBadge({
 
   return (
     <span
+      /* `aria-label` en un <span> sin rol no se anuncia (axe «aria-prohibited-attr»,
+         49 nodos en Inventario): `role="img"` hace del aviso una imagen con nombre. */
+      role="img"
       title={result.reason ?? "Imagen no cumple requisitos"}
       aria-label={result.reason ?? "Imagen no cumple requisitos"}
       className={cn(

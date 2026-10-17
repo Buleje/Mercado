@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
+import { CustomersDB } from "@/lib/db/customers.db";
 
 /**
  * CampaignsDB
@@ -30,6 +31,11 @@ interface UpdateData {
   opened?: number;
   conversions?: number;
   revenue?: number;
+}
+
+/** Clientes con fiado abierto (ACTIVO + VENCIDO, saldo > 0): la deuda real, no la columna `creditBalance`. */
+export async function clientesConFiado(tenantId: string): Promise<string[]> {
+  return [...(await CustomersDB.deudaDeFiados(tenantId)).keys()];
 }
 
 export const CampaignsDB = {
@@ -66,14 +72,87 @@ export const CampaignsDB = {
         });
       }
       if (segment === "deudores") {
-        return await prisma.customer.count({
-          where: { tenantId, creditBalance: { lt: 0 } },
-        });
+        /* `Customer.creditBalance` siempre vale 0 (no sigue a los fiados): la deuda real sale de los fiados abiertos. */
+        return (await clientesConFiado(tenantId)).length;
       }
     } catch {
       /* graceful degrade */
     }
     return 0;
+  },
+
+  /**
+   * Brandon 2026-06-17: resuelve la audiencia REAL (clientes con teléfono) de un
+   * segmento, para el cron de dispatch. Mismo criterio que estimateAudience pero
+   * devuelve la lista. CONSENTIMIENTO: solo clientes con `notifPromotions=true`.
+   */
+  async resolveAudience(
+    tenantId: string,
+    segment: string,
+  ): Promise<{ id: string; name: string; phone: string }[]> {
+    const thirty = new Date();
+    thirty.setDate(thirty.getDate() - 30);
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const conFiado = segment === "deudores" ? await clientesConFiado(tenantId) : [];
+    const segWhere =
+      segment === "vip"
+        ? { loyaltyTier: { in: ["oro", "diamante"] } }
+        : segment === "inactivos"
+          ? { sales: { none: { createdAt: { gte: thirty } } } }
+          : segment === "cumpleanos"
+            ? { birthday: { gte: firstOfMonth, lte: lastOfMonth } }
+            : segment === "deudores"
+              ? { id: { in: conFiado } }
+              : {};
+    const rows = await prisma.customer.findMany({
+      where: { tenantId, notifPromotions: true, ...segWhere },
+      select: { id: true, name: true, phone: true },
+    });
+    return rows
+      .filter((r) => r.phone && r.phone.trim() !== "")
+      .map((r) => ({ id: r.id, name: r.name ?? "", phone: r.phone }));
+  },
+
+  /** Cross-tenant: campañas programadas vencidas con canal WhatsApp (para el cron). */
+  async listDueWhatsApp() {
+    return prisma.campaign.findMany({
+      where: {
+        status: "programada",
+        scheduledAt: { lte: new Date() },
+        channel: { in: ["whatsapp", "ambos"] },
+      },
+      select: { id: true, tenantId: true, name: true, message: true, segment: true },
+    });
+  },
+
+  /**
+   * Tracking de apertura/clic: incrementa `opened` por id (público, sin auth —
+   * lo dispara el cliente al hacer clic en el link de la campaña). Devuelve el
+   * tenantId para resolver el destino del redirect. Errores → null.
+   */
+  async trackOpen(id: string): Promise<{ tenantId: string } | null> {
+    try {
+      const updated = await prisma.campaign.update({
+        where: { id },
+        data: { opened: { increment: 1 } },
+        select: { tenantId: true },
+      });
+      revalidateTag(`tenant:${updated.tenantId}:campaigns`, "max");
+      return { tenantId: updated.tenantId };
+    } catch {
+      return null;
+    }
+  },
+
+  /** Marca una campaña como despachada (completada + métricas). */
+  async markDispatched(tenantId: string, id: string, audience: number) {
+    await prisma.campaign.update({
+      where: { id },
+      data: { status: "completada", sentAt: new Date(), totalAudience: audience, delivered: audience },
+    });
+    revalidateTag(`tenant:${tenantId}:campaigns`, "max");
   },
 
   async list(tenantId: string, opts: { status?: string } = {}) {

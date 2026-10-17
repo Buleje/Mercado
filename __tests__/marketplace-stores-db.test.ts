@@ -30,6 +30,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getOrSet: (...args: any[]) => mockGetOrSet(...args),
   invalidate: vi.fn(),

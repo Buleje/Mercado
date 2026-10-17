@@ -1,8 +1,11 @@
 import "server-only";
 import nodemailer from "nodemailer";
-import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { SuperadminChurnPlaybooksDB } from "@/lib/db/superadmin-churn-playbooks.db";
+import { SuperadminChurnSignalsDB } from "@/lib/db/superadmin-churn-signals.db";
 import type { ChurnSignalDetected } from "./health-scorer";
+import { ORDEN_SEVERIDAD, type Severidad } from "./playbook-catalog";
+import { fueAccionReal } from "./intervencion";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -29,17 +32,20 @@ interface PlaybookRow {
 
 // ─── Rate limit: máximo 1 intervención por tipo por tenant por semana ─────────
 
-async function isRateLimited(tenantId: string, signalType: string): Promise<boolean> {
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const recent = await prisma.churnSignal.findFirst({
-    where: {
-      tenantId,
-      signalType,
-      intervention: { not: null },
-      createdAt: { gte: oneWeekAgo },
-    },
-  });
-  return recent !== null;
+const UNA_SEMANA_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** El primer playbook aplicable gana: el de umbral más alto (el más específico). */
+function elegirPlaybook(playbooks: PlaybookRow[], signal: ChurnSignalDetected): PlaybookRow | null {
+  const nivel = ORDEN_SEVERIDAD[signal.severity] ?? 0;
+  const aplicables = playbooks
+    .filter((p) => p.triggerSignal === signal.signalType)
+    .filter((p) => nivel >= (ORDEN_SEVERIDAD[p.triggerSeverity as Severidad] ?? 0))
+    .sort(
+      (a, b) =>
+        (ORDEN_SEVERIDAD[b.triggerSeverity as Severidad] ?? 0) -
+        (ORDEN_SEVERIDAD[a.triggerSeverity as Severidad] ?? 0),
+    );
+  return aplicables[0] ?? null;
 }
 
 // ─── Helpers de envío ────────────────────────────────────────────────────────
@@ -200,12 +206,24 @@ function buildWhatsAppMessage(templateId: string, tenant: TenantInfo): string {
 
 // ─── Ejecución del playbook ──────────────────────────────────────────────────
 
+/**
+ * Ejecuta la regla que corresponde a UNA alerta ya guardada (`registrarSenales`).
+ * La alerta se guarda siempre; esto sólo decide y anota la acción (correo,
+ * WhatsApp, descuento, llamada). El cron lo llama sólo con CHURN_AUTORUN=true.
+ */
 export async function executePlaybook(
   signal: ChurnSignalDetected,
-  tenant: TenantInfo
+  tenant: TenantInfo,
+  alerta: { id: string; intervention: string | null },
 ): Promise<void> {
-  // Verificar rate limit antes de buscar playbooks
-  const limited = await isRateLimited(tenant.id, signal.signalType);
+  // Una intervención por alerta abierta: si ya se actuó, no se repite cada día.
+  if (fueAccionReal(alerta.intervention)) return;
+
+  const limited = await SuperadminChurnSignalsDB.huboIntervencionDesde(
+    tenant.id,
+    signal.signalType,
+    new Date(Date.now() - UNA_SEMANA_MS),
+  );
   if (limited) {
     logger.info("[churn/playbook] Rate limited, skip intervención", {
       slug: tenant.slug,
@@ -214,23 +232,9 @@ export async function executePlaybook(
     return;
   }
 
-  // Buscar playbooks que aplican para este signal y severity
-  const severityOrder: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 };
-  const signalSeverityLevel = severityOrder[signal.severity] ?? 0;
-
-  const playbooks = await prisma.churnPlaybook.findMany({
-    where: {
-      triggerSignal: signal.signalType,
-      isActive: true,
-    },
-  });
-
-  const applicablePlaybooks = playbooks.filter((p) => {
-    const minLevel = severityOrder[p.triggerSeverity] ?? 0;
-    return signalSeverityLevel >= minLevel;
-  });
-
-  if (applicablePlaybooks.length === 0) {
+  const playbooks = (await SuperadminChurnPlaybooksDB.list(true)) as PlaybookRow[];
+  const playbook = elegirPlaybook(playbooks, signal);
+  if (!playbook) {
     logger.info("[churn/playbook] Sin playbooks aplicables", {
       slug: tenant.slug,
       signalType: signal.signalType,
@@ -239,17 +243,24 @@ export async function executePlaybook(
     return;
   }
 
-  // Ejecutar el primer playbook aplicable
-  const playbook = applicablePlaybooks[0] as PlaybookRow;
-  let interventionDescription: string | null = null;
+  // Reclamar antes de enviar: dos corridas a la vez no mandan dos mensajes.
+  const textoReclamo = `En curso: ${playbook.name}`;
+  const reclamada = await SuperadminChurnSignalsDB.reclamar(tenant.id, alerta.id, textoReclamo);
+  if (!reclamada) return;
 
+  // Sólo lo que de verdad ocurrió se anota. Si no salió nada (sin config, sin
+  // plantilla, error) la alerta se libera y la próxima corrida reintenta: antes
+  // «WhatsApp skip (sin config)» la dejaba como atendida para siempre.
+  let interventionDescription: string | null = null;
+  let motivoSinAccion = "sin plantilla";
   try {
     switch (playbook.action) {
       case "email": {
         if (playbook.templateId) {
           const { subject, html } = buildEmailHtml(playbook.templateId, tenant);
           const sent = await sendChurnEmail(tenant, subject, html);
-          interventionDescription = sent ? `Email enviado: ${playbook.templateId}` : "Email skip (sin config)";
+          if (sent) interventionDescription = `Email enviado: ${playbook.templateId}`;
+          else motivoSinAccion = "correo sin configurar o negocio sin email";
         }
         break;
       }
@@ -258,7 +269,8 @@ export async function executePlaybook(
         if (playbook.templateId) {
           const message = buildWhatsAppMessage(playbook.templateId, tenant);
           const sent = await sendChurnWhatsApp(tenant, message);
-          interventionDescription = sent ? `WhatsApp enviado: ${playbook.templateId}` : "WhatsApp skip (sin config)";
+          if (sent) interventionDescription = `WhatsApp enviado: ${playbook.templateId}`;
+          else motivoSinAccion = "WhatsApp sin configurar, sin teléfono o la API falló";
         }
         break;
       }
@@ -281,6 +293,7 @@ export async function executePlaybook(
       }
 
       default:
+        motivoSinAccion = `acción desconocida «${playbook.action}»`;
         logger.warn("[churn/playbook] Acción desconocida", { action: playbook.action });
     }
   } catch (err) {
@@ -289,20 +302,21 @@ export async function executePlaybook(
       playbook: playbook.name,
       error: err instanceof Error ? err.message : String(err),
     });
-    interventionDescription = `Error: ${err instanceof Error ? err.message : String(err)}`;
+    interventionDescription = null;
+    motivoSinAccion = `error: ${err instanceof Error ? err.message : String(err)}`;
   }
 
-  // Persistir el signal con la intervención ejecutada
-  await prisma.churnSignal.create({
-    data: {
-      tenantId: tenant.id,
-      signalType: signal.signalType,
-      severity: signal.severity,
-      detail: signal.detail,
-      resolved: false,
-      intervention: interventionDescription,
-    },
-  });
+  if (interventionDescription === null) {
+    await SuperadminChurnSignalsDB.liberar(tenant.id, alerta.id, textoReclamo);
+    logger.warn("[churn/playbook] No salió nada; la alerta queda sin acción para reintentar", {
+      slug: tenant.slug,
+      playbook: playbook.name,
+      motivo: motivoSinAccion,
+    });
+    return;
+  }
+
+  await SuperadminChurnSignalsDB.anotarIntervencion(tenant.id, alerta.id, interventionDescription);
 
   logger.info("[churn/playbook] Intervención registrada", {
     slug: tenant.slug,

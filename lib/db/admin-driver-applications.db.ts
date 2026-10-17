@@ -10,6 +10,7 @@
  */
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -129,7 +130,7 @@ export const AdminDriverApplicationsDB = {
         },
         select: { id: true },
       })
-      .catch(() => null);
+      .catch(sinDato("admin-driver-applications.db alta del repartidor (fallback)"));
   },
 
   /**

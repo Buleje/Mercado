@@ -12,7 +12,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { buildCSP } from "@/lib/middleware-utils";
+import { buildCSP, esPaginaTv } from "@/lib/middleware-utils";
 
 /**
  * Mutate the given NextResponse with the standard security headers
@@ -44,16 +44,28 @@ export function applySecurityHeaders(
   // embebible (DENY); el resto SAMEORIGIN para habilitar el preview en vivo del
   // editor (iframe same-origin del storefront). Algunos browsers aplican XFO
   // aunque haya frame-ancestors, así que deben coincidir.
+  /* `/tv` (Modo TV, ADR-473) igual que el panel: alineado con `buildCSP`. */
   const isAdminRoute =
-    pathname.startsWith("/admin") || pathname.startsWith("/superadmin");
+    pathname.startsWith("/admin") || pathname.startsWith("/superadmin") || esPaginaTv(pathname);
   response.headers.set("X-Frame-Options", isAdminRoute ? "DENY" : "SAMEORIGIN");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   // geolocation=(self) habilita el botón "Usar mi ubicación" en
-  // /marketplace/registrar — solo same-origin, los iframes externos no
-  // heredan permiso. camera/microphone siguen bloqueados.
+  // /marketplace/registrar. microphone=(self) SOLO en superficies admin
+  // (cubicador forestal por voz, ADR-124) — es el default del navegador
+  // (first-party, igual gatea el permiso del usuario); en storefront/checkout
+  // queda bloqueado (microphone=()). camera bloqueada en todos lados.
+  // OJO: el admin del tenant vive en /t/<slug>/admin, no solo /admin.
+  const isAdminSurface =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/superadmin") ||
+    /^\/t\/[^/]+\/admin/.test(pathname);
+  // camera=(self) SOLO en el kiosko de asistencia (2026-10-10): la tablet del
+  // local lee el QR del fotocheck y saca la foto de la marca con su cámara.
+  // Esta cabecera es la que llega (pisa la de next.config.ts).
+  const esKiosko = pathname.startsWith("/kiosko/");
   response.headers.set(
     "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=(self)",
+    `camera=(${esKiosko ? "self" : ""}), microphone=(${isAdminSurface ? "self" : ""}), geolocation=(self)`,
   );
 
   return response;

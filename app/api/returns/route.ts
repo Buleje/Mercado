@@ -1,9 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ReturnsDB, InventoryMovementsDB, CustomersDB } from "@/lib/jsondb";
+import { SalesDB } from "@/lib/db/sales.db";
+import { OrdersDB } from "@/lib/db/orders.db";
+import { withDbRetry } from "@/lib/db-retry";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { logger } from "@/lib/logger";
+import {
+  resolveAuthoritativeReturn,
+  ReturnValidationError,
+  type SourceLineItem,
+} from "@/lib/returns/authoritative-total";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -28,7 +36,41 @@ async function createReturn(
   const { saleId, orderId, reason, items, photoUrl, customerPhone, applyCredit } = body;
   if (!items?.length) return NextResponse.json({ error: "items requeridos" }, { status: 400 });
 
-  const total = items.reduce((s: number, i: { price: number; quantity: number }) => s + i.price * i.quantity, 0);
+  // ── Anti-fraude (regla #6 / danger-zone): el total y los precios se derivan
+  //    del comprobante ORIGINAL (venta u orden), nunca de los precios que manda
+  //    el cliente. Sin un comprobante de referencia no se puede validar. ──────
+  if (!saleId && !orderId) {
+    return NextResponse.json({ error: "saleId u orderId requerido" }, { status: 400 });
+  }
+
+  let sourceItems: SourceLineItem[];
+  if (saleId) {
+    const sale = await withDbRetry(() => SalesDB.getById(auth.tenantId, String(saleId)));
+    if (!sale) return NextResponse.json({ error: "Venta no encontrada" }, { status: 404 });
+    sourceItems = sale.items.map((i) => ({
+      productId: i.productId, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit,
+    }));
+  } else {
+    const order = await withDbRetry(() => OrdersDB.getById(auth.tenantId, String(orderId)));
+    if (!order) return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+    // En DbOrder el item guarda el productId en el campo `id`.
+    sourceItems = order.items.map((i) => ({
+      productId: i.id, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit,
+    }));
+  }
+
+  let resolved: { items: ReturnType<typeof resolveAuthoritativeReturn>["items"]; total: number };
+  try {
+    resolved = resolveAuthoritativeReturn(sourceItems, items);
+  } catch (err) {
+    if (err instanceof ReturnValidationError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    throw err;
+  }
+  // Items con precio autoritativo + total computado en backend.
+  const validatedItems = resolved.items;
+  const total = resolved.total;
 
   let creditApplied = false;
   if (applyCredit && customerPhone && total > 0) {
@@ -49,11 +91,11 @@ async function createReturn(
     photoUrl: photoUrl ?? undefined,
     customerPhone: customerPhone ?? undefined,
     creditApplied,
-    items,
+    items: validatedItems,
     tenantId: auth.tenantId,
   });
 
-  for (const item of items) {
+  for (const item of validatedItems) {
     if (item.productId && item.quantity > 0) {
       await InventoryMovementsDB.record({
         productId: item.productId,

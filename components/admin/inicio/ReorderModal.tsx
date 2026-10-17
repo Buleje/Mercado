@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { m, AnimatePresence } from "@/components/admin/providers";
 import { toast } from "sonner";
-import { X, Package, Check, Loader2 } from "@buleje/design-system/icons";
+import { Package, Check, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
+import { formatNumber } from "@/lib/format";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 export interface ReorderCandidate {
   id: string | number;
   name: string;
@@ -42,15 +46,6 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
     setNotes("");
   }, [open, candidates]);
 
-  useEffect(() => {
-    if (!open) return;
-    function handleEsc(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
-  }, [open, onClose]);
-
   function toggleItem(id: string) {
     const next = new Map(selection);
     if (next.has(id)) next.delete(id);
@@ -72,7 +67,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
 
   async function handleSubmit() {
     if (selectedCount === 0) {
-      toast.error("Seleccioná al menos un producto");
+      toast.error("Selecciona al menos un producto");
       return;
     }
     setSubmitting(true);
@@ -109,200 +104,138 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
   }
 
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <m.div
-            key="backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="modal-backdrop"
+    <AdminModal
+      open={open}
+      onClose={onClose}
+      title="Generar orden de compra"
+      description="Ajusta las cantidades sugeridas y genera la OC borrador."
+      icon={Package}
+      size="lg"
+      claveVentana="inventario-generar-oc"
+      footer={
+        <ModalFooter
+          nota={
+            <>
+              <span className="text-[var(--text-tertiary)]">Resumen:</span>{" "}
+              <span className="font-semibold text-[var(--text-primary)]">
+                {selectedCount} SKU{selectedCount !== 1 ? "s" : ""}
+              </span>
+              <span className="text-[var(--text-tertiary)]"> · </span>
+              <span className="font-semibold text-[var(--text-primary)]">
+                {formatNumber(totalItems)} u
+              </span>
+            </>
+          }
+        >
+          <button
+            type="button"
             onClick={onClose}
-          />
-          <m.div
-            key="modal"
-            initial={{ opacity: 0, y: 20, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.96 }}
-            transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className={cn(
-              "fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none",
-            )}
+            disabled={submitting}
+            className={button({ variant: "secondary" })}
           >
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="reorder-title"
-              className={cn(
-                "pointer-events-auto w-full max-w-2xl max-h-[85vh] flex flex-col",
-                "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]",
-                "shadow-2xl shadow-black/20",
-                "overflow-hidden",
-              )}
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between px-6 py-4 border-b border-[var(--rule-soft)]">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
-                    <Package className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                      Inventario
-                    </p>
-                    <h2
-                      id="reorder-title"
-                      className="text-lg font-extrabold text-[var(--text-primary)] leading-tight"
-                    >
-                      Generar orden de compra
-                    </h2>
-                    <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                      Ajusta las cantidades sugeridas y genera la OC borrador.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Cerrar"
-                  className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Items list */}
-              <div className="flex-1 overflow-y-auto px-2 py-2">
-                {candidates.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-[var(--text-tertiary)]">
-                    Sin productos críticos detectados.
-                  </div>
-                ) : (
-                  <ul className="space-y-1">
-                    {candidates.map((c) => {
-                      const id = String(c.id);
-                      const selected = selection.has(id);
-                      const qty = selection.get(id) ?? c.suggestedQty;
-                      return (
-                        <li key={id}>
-                          <label
-                            className={cn(
-                              "flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors",
-                              selected
-                                ? "bg-primary/5 border border-primary/20"
-                                : "hover:bg-[var(--surface-sunken)] border border-transparent",
-                            )}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selected}
-                              onChange={() => toggleItem(id)}
-                              className="h-4 w-4 rounded border-[var(--rule-base)] accent-primary"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                                {c.name}
-                              </p>
-                              <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                                Stock: {c.stock} u · Quedan ~{c.daysRemaining}d
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="number"
-                                min={1}
-                                value={qty}
-                                disabled={!selected}
-                                onChange={(e) => setQty(id, Number(e.target.value))}
-                                onClick={(e) => e.preventDefault()}
-                                className={cn(
-                                  "w-20 px-2 py-1 text-sm font-semibold text-right rounded-md",
-                                  "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
-                                  "text-[var(--text-primary)]",
-                                  "disabled:opacity-40",
-                                  "focus:outline-none focus:ring-2 focus:ring-primary/40",
-                                )}
-                              />
-                              <span className="text-xs text-[var(--text-tertiary)]">u</span>
-                            </div>
-                          </label>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-
-              {/* Notes */}
-              <div className="px-6 py-3 border-t border-[var(--rule-soft)]">
-                <label className="block text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-                  Notas
-                </label>
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Ej: urgente, confirmar precios, etc."
-                  className={cn(
-                    "w-full px-3 py-2 text-sm rounded-md",
-                    "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
-                    "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
-                    "focus:outline-none focus:ring-2 focus:ring-primary/40",
-                  )}
-                />
-              </div>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-                <div className="text-sm">
-                  <span className="text-[var(--text-tertiary)]">Resumen:</span>{" "}
-                  <span className="font-semibold text-[var(--text-primary)]">
-                    {selectedCount} SKU{selectedCount !== 1 ? "s" : ""}
-                  </span>
-                  <span className="text-[var(--text-tertiary)]"> · </span>
-                  <span className="font-semibold text-[var(--text-primary)]">
-                    {totalItems.toLocaleString("es-PE")} u
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    disabled={submitting}
-                    className="px-4 py-2 text-sm font-semibold rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] border border-[var(--rule-base)] transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={submitting || selectedCount === 0}
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting || selectedCount === 0}
+            className={button({ variant: "primary" })}
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creando...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" />
+                Generar OC
+              </>
+            )}
+          </button>
+        </ModalFooter>
+      }
+    >
+      <div className="px-2 py-2 sm:px-3">
+        {candidates.length === 0 ? (
+          <div className="p-8 text-center text-sm text-[var(--text-tertiary)]">
+            Sin productos críticos detectados.
+          </div>
+        ) : (
+          <ul className="space-y-1">
+            {candidates.map((c) => {
+              const id = String(c.id);
+              const selected = selection.has(id);
+              const qty = selection.get(id) ?? c.suggestedQty;
+              return (
+                <li key={id}>
+                  <label
+                    aria-label={c.name}
                     className={cn(
-                      "inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all",
-                      "bg-primary text-white shadow-sm hover:shadow-md",
-                      "disabled:opacity-50 disabled:cursor-not-allowed",
+                      "flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors",
+                      selected
+                        ? "bg-primary/5 border border-primary/20"
+                        : "hover:bg-[var(--surface-sunken)] border border-transparent",
                     )}
                   >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Creando...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4" />
-                        Generar OC
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </m.div>
-        </>
-      )}
-    </AnimatePresence>
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleItem(id)}
+                      className="h-4 w-4 rounded border-[var(--rule-base)] accent-primary"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                        {c.name}
+                      </p>
+                      <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                        Stock: {c.stock} u · Quedan ~{c.daysRemaining}d
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min={1}
+                        value={qty}
+                        disabled={!selected}
+                        onChange={(e) => setQty(id, Number(e.target.value))}
+                        onClick={(e) => e.preventDefault()}
+                        className={cn(
+                          "w-20 px-2 py-1 text-sm font-semibold text-right rounded-xl",
+                          "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
+                          "text-[var(--text-primary)]",
+                          "disabled:opacity-40",
+                          "focus:outline-none focus:ring-2 focus:ring-primary/40",
+                        )}
+                      />
+                      <span className="text-xs text-[var(--text-tertiary)]">u</span>
+                    </div>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+      <div className="border-t border-[var(--rule-soft)] px-5 py-3 sm:px-6">
+        <Field
+          label="Notas"
+          labelClassName="block text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1"
+        >
+          <input
+            type="text"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Ej: urgente, confirmar precios, etc."
+            className={cn(
+              "w-full px-3 h-10 text-sm rounded-xl",
+              "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
+              "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
+              "focus:outline-none focus:ring-2 focus:ring-primary/40",
+            )}
+          />
+        </Field>
+      </div>
+    </AdminModal>
   );
 }

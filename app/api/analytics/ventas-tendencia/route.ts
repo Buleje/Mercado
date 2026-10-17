@@ -4,6 +4,7 @@ import { AnalyticsSalesByDateDB } from "@/lib/db/analytics-sales-by-date.db";
 import { z } from "zod";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { startOfLimaDay, limaDateKey } from "@/lib/utils";
 
 const querySchema = z.object({
   period: z.enum(["7d", "30d", "90d"]).default("30d"),
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
     const totalDays = periodDays + 7;
 
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(startOfLimaDay(now));
     const startDate = new Date(todayStart);
     startDate.setDate(startDate.getDate() - totalDays);
 
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest) {
     // Group sales by day (YYYY-MM-DD)
     const dailyTotals = new Map<string, number>();
     for (const sale of sales) {
-      const dateKey = sale.createdAt.toISOString().slice(0, 10);
+      const dateKey = limaDateKey(sale.createdAt);
       // TD-018: sale.total es Decimal
       dailyTotals.set(dateKey, (dailyTotals.get(dateKey) ?? 0) + toNumOrZero(sale.total));
     }

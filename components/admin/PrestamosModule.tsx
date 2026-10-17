@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { csrfHeaders } from "@/lib/csrf-client";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 import { escapeHtml } from "@/lib/safe-html";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -9,106 +14,50 @@ import {
   ChevronLeft, ChevronRight, User, Landmark,
   Clock, CheckCircle2, XCircle, Ban, Calculator, FileText, Printer, TrendingUp, BarChart3,
   ArrowUpDown, ArrowDownToLine, ArrowUpFromLine, Building2,
-  RefreshCcw, Paperclip, Shield, Coins,
+  RefreshCcw, Paperclip, Coins,
   Filter, ChevronDown, ChevronUp, Trash2, AlertCircle, Bell,
-  RotateCcw, History, Scale, FileDown } from "@buleje/design-system/icons";
-import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
-import { CardTitle, LoadingState, PageTitle, SectionTitle, WarningAlert } from "@buleje/design-system";
+  RotateCcw, History, Scale, FileDown, MoreHorizontal } from "@buleje/design-system/icons";
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
+import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
+import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
+import { Field } from "@/components/admin/shared/Field";
+import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import { useOrdenColumnas, EnOrden } from "@/components/admin/shared/columnas-ordenables";
+import type { Rango } from "@/lib/admin/filtros-columna";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";
 import ClienteFormModal from "./clientes/ClienteFormModal";
+import { formatCurrency, formatDate, formatDateShort, formatDateNumeric, formatDateLong } from "@/lib/format";
+import { capitalPendiente, tablaDeAmortizacion } from "@/lib/prestamos/amortizacion";
+import { cuerpoRefinanciar } from "@/lib/prestamos/refinanciar";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type PrestamoStatus = "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO";
-type PrestamoTipo = "PERSONAL" | "BANCARIO" | "TERCERO" | "PROVEEDOR";
-type PrestamoDireccion = "DADO" | "RECIBIDO";
-type PrestamoEntidadTipo = "BANCO" | "PERSONA_NATURAL" | "EMPRESA" | "PROVEEDOR";
-type SistemaAmortizacion = "FRANCES" | "ALEMAN" | "AMERICANO";
-
-type PrestamoCuota = {
-  id: string;
-  prestamoId: string;
-  numeroCuota: number;
-  monto: number;
-  capital: number;
-  interes: number;
-  moraCalculada: number;
-  fechaVence: string;
-  pagadoEn?: string;
-  montoPagado?: number;
-};
-
-type PrestamoDocumento = {
-  id: string;
-  prestamoId: string;
-  nombre: string;
-  tipo: string;
-  url: string;
-  createdAt: string;
-};
-
-type Prestamo = {
-  id: string;
-  tenantId: string;
-  customerId?: string;
-  tipo: PrestamoTipo;
-  direccion: PrestamoDireccion;
-  entidadNombre?: string;
-  entidadTipo?: PrestamoEntidadTipo;
-  nroOperacion?: string;
-  monto: number;
-  moneda: string;
-  tasaInteres: number;
-  tea?: number;
-  moraInteres: number;
-  numeroCuotas: number;
-  sistemaAmortizacion: SistemaAmortizacion;
-  periodoGracia: number;
-  status: PrestamoStatus;
-  fechaDesembolso?: string;
-  fechaVencimiento?: string;
-  garantia?: string;
-  notas?: string;
-  cuotas: PrestamoCuota[];
-  documentos?: PrestamoDocumento[];
-  createdAt: string;
-  updatedAt: string;
-};
-
-type Resumen = {
-  totalDados: number;
-  totalRecibidos: number;
-  saldoDados: number;
-  saldoRecibidos: number;
-  cuotasVencidas: number;
-  moraAcumulada: number;
-  porTipo: Record<string, number>;
-  activosDados: number;
-  activosRecibidos: number;
-};
+import type { Prestamo, PrestamoDireccion, PrestamoEntidadTipo, PrestamoStatus, PrestamoTipo, Resumen, SistemaAmortizacion } from "@/components/admin/prestamos/tipos";
+import PrestamosDashboard from "@/components/admin/prestamos/PrestamosDashboard";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_META: Record<PrestamoStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
   ACTIVO:    { label: "Activo",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)]",   icon: Clock },
-  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: CheckCircle2 },
+  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-primary/10", icon: CheckCircle2 },
   VENCIDO:   { label: "Vencido",   color: "text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-100)]",       icon: XCircle },
-  CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-gray-100",     icon: Ban },
+  CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-[var(--surface-sunken)]",     icon: Ban },
 };
 
 const TIPO_META: Record<PrestamoTipo, { label: string; color: string; bg: string; icon: typeof Landmark }> = {
-  PERSONAL:  { label: "Personal",  color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)]",     icon: User },
+  PERSONAL:  { label: "Personal",  color: "text-[var(--data-success-500)]",     bg: "bg-primary/10",     icon: User },
   BANCARIO:  { label: "Bancario",  color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: Building2 },
   TERCERO:   { label: "Tercero",   color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)]", icon: ArrowUpDown },
-  PROVEEDOR: { label: "Proveedor", color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)]",     icon: Coins },
+  PROVEEDOR: { label: "Proveedor", color: "text-[var(--data-success-500)]",     bg: "bg-primary/10",     icon: Coins },
 };
 
 const DIRECCION_META: Record<PrestamoDireccion, { label: string; shortLabel: string; color: string; bg: string; icon: typeof ArrowDownToLine }> = {
   DADO:     { label: "Préstamo Dado",     shortLabel: "Dado",     color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)]",     icon: ArrowUpFromLine },
-  RECIBIDO: { label: "Préstamo Recibido", shortLabel: "Recibido", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: ArrowDownToLine },
+  RECIBIDO: { label: "Préstamo Recibido", shortLabel: "Recibido", color: "text-[var(--data-success-500)]", bg: "bg-primary/10", icon: ArrowDownToLine },
 };
 
 const SISTEMA_LABELS: Record<SistemaAmortizacion, string> = {
@@ -124,381 +73,30 @@ const ENTIDAD_LABELS: Record<PrestamoEntidadTipo, string> = {
   PROVEEDOR: "Proveedor",
 };
 
-function formatCurrency(n: number, moneda = "PEN") {
-  const symbol = moneda === "USD" ? "$" : "S/";
-  return `${symbol}${n.toFixed(2)}`;
-}
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
-}
-
 const PER_PAGE = 10;
 
-// ── Empty state for charts ───────────────────────────────────────────────────
-function EmptyChartPrestamos({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-        <BarChart3 className="h-6 w-6 text-primary" />
-      </div>
-      <p className="text-sm font-medium text-[var(--text-secondary)]">{message}</p>
-      <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos aparecerán cuando registres préstamos</p>
-    </div>
-  );
-}
+// ── Tabla de amortización: la MISMA cuenta que guarda el servidor ────────────
+// (lib/prestamos/amortizacion.ts: tasa MENSUAL, en céntimos). Antes era un
+// cálculo propio en float que difería 1 céntimo del cronograma guardado.
+const calcAmortizacion = tablaDeAmortizacion;
 
-// ── Sparkline KPI Card (mejora #1) ───────────────────────────────────────────
 
-function genSparkData(base: number): { v: number }[] {
-  const seed = Math.abs(base) || 100;
-  return Array.from({ length: 6 }, (_, i) => ({
-    v: Math.max(0, seed * (0.65 + Math.sin(i + seed * 0.01) * 0.2 + Math.cos(i * 1.5) * 0.15) * (1 + i * 0.04)),
-  }));
-}
-
-function SparklineKPICard({
-  title, value, sub, accentColor, iconColor, valueColor, icon: Icon, sparkData,
-}: {
-  title: string;
-  value: string;
-  sub?: string;
-  /** Trazo del sparkline. Usa `var(--accent)` o `var(--text-tertiary)`. */
-  accentColor: string;
-  /** Icono — default neutro gris. */
-  iconColor?: string;
-  /** Valor numérico — default neutro; usa warning/error sólo si es crítico. */
-  valueColor?: string;
-  icon: React.ElementType;
-  sparkData: { v: number }[];
-}) {
-  const gradId = `sp-${title.replace(/\W+/g, "")}`;
-  const resolvedIconColor = iconColor ?? "var(--text-secondary)";
-  const resolvedValueColor = valueColor ?? "var(--text-primary)";
-  return (
-    <div className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl p-4 relative overflow-hidden">
-      <div className="flex items-center gap-1.5 mb-1">
-        <Icon className="h-4 w-4" style={{ color: resolvedIconColor }} />
-        <p className="text-xs uppercase font-bold text-[var(--text-tertiary)] truncate">{title}</p>
-      </div>
-      <p className="text-2xl font-extrabold font-mono leading-tight" style={{ color: resolvedValueColor }}>{value}</p>
-      {sub && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{sub}</p>}
-      <div className="absolute bottom-0 right-0 w-20 h-10 opacity-40 pointer-events-none">
-        <ResponsiveContainer minWidth={0} width={80} height={40}>
-          <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={accentColor} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <Area type="monotone" dataKey="v" stroke={accentColor} strokeWidth={1.5} fill={`url(#${gradId})`} dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
-// ── Amortization calculators (client-side) ───────────────────────────────────
-
-function calcAmortizacion(monto: number, tasa: number, cuotas: number, sistema: SistemaAmortizacion, periodoGracia = 0) {
-  const tasaMensual = tasa > 0 ? tasa / 100 / 12 : 0;
-  const tabla: { num: number; cuota: number; interes: number; capital: number; saldo: number }[] = [];
-  let saldo = monto;
-
-  // Período de gracia: solo interés
-  for (let i = 1; i <= periodoGracia; i++) {
-    const interes = saldo * tasaMensual;
-    tabla.push({ num: i, cuota: interes, interes, capital: 0, saldo });
-  }
-
-  const n = cuotas - periodoGracia;
-  if (n <= 0) return tabla;
-
-  if (sistema === "FRANCES") {
-    const cuotaFija = tasaMensual > 0
-      ? (saldo * tasaMensual * Math.pow(1 + tasaMensual, n)) / (Math.pow(1 + tasaMensual, n) - 1)
-      : saldo / n;
-    for (let i = 1; i <= n; i++) {
-      const interes = saldo * tasaMensual;
-      const capital = cuotaFija - interes;
-      saldo = Math.max(0, saldo - capital);
-      tabla.push({ num: periodoGracia + i, cuota: cuotaFija, interes, capital, saldo });
-    }
-  } else if (sistema === "ALEMAN") {
-    const capitalFijo = saldo / n;
-    for (let i = 1; i <= n; i++) {
-      const interes = saldo * tasaMensual;
-      const cuotaTotal = capitalFijo + interes;
-      saldo = Math.max(0, saldo - capitalFijo);
-      tabla.push({ num: periodoGracia + i, cuota: cuotaTotal, interes, capital: capitalFijo, saldo });
-    }
-  } else {
-    // AMERICANO: solo interés + capital al final
-    for (let i = 1; i <= n; i++) {
-      const interes = saldo * tasaMensual;
-      const capital = i === n ? saldo : 0;
-      const cuotaTotal = interes + capital;
-      if (i === n) saldo = 0;
-      tabla.push({ num: periodoGracia + i, cuota: cuotaTotal, interes, capital, saldo });
-    }
-  }
-  return tabla;
-}
-
-// ── Prestamos Dashboard ──────────────────────────────────────────────────────
-
-function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; resumen?: Resumen | null }) {
-  const now = new Date();
-  const activosAll = prestamos.filter(p => p.status !== "CANCELADO");
-  const totalPrestado = activosAll.reduce((s, p) => s + p.monto, 0);
-  const porCobrar = activosAll.reduce((s, p) => s + p.cuotas.filter(c => !c.pagadoEn).reduce((ss, c) => ss + c.monto, 0), 0);
-  const totalCobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
-  const tasaRecuperacion = totalPrestado > 0 ? (totalCobrado / totalPrestado) * 100 : 0;
-  const cuotasVencidas = resumen?.cuotasVencidas ?? activosAll.reduce((s, p) => s + p.cuotas.filter(c => !c.pagadoEn && new Date(c.fechaVence) < now).length, 0);
-  const moraAcumulada = resumen?.moraAcumulada ?? 0;
-  const totalDados = resumen?.totalDados ?? prestamos.filter(p => p.direccion === "DADO").reduce((s, p) => s + p.monto, 0);
-  const totalRecibidos = resumen?.totalRecibidos ?? prestamos.filter(p => p.direccion === "RECIBIDO").reduce((s, p) => s + p.monto, 0);
-  const maxDireccion = Math.max(totalDados, totalRecibidos, 1);
-  // Sparkline data (mejora 1)
-  const spark1 = genSparkData(totalDados); const spark2 = genSparkData(totalRecibidos);
-  const spark3 = genSparkData(porCobrar); const spark4 = genSparkData(cuotasVencidas * 200);
-  const spark5 = genSparkData(moraAcumulada); const spark6 = genSparkData(tasaRecuperacion * 50);
-
-  // Area chart: cobros vs nuevos prestamos (6 meses)
-  const areaData: { mes: string; cobrado: number; nuevos: number }[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(); d.setMonth(d.getMonth() - i);
-    const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("es-PE", { month: "short" });
-    const cobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn && c.pagadoEn.startsWith(mesKey)).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
-    const nuevos = prestamos.filter(p => p.createdAt.startsWith(mesKey)).reduce((s, p) => s + p.monto, 0);
-    areaData.push({ mes: label, cobrado, nuevos });
-  }
-
-  // Top 5 deudores (horizontal bar)
-  const deudorMap = new Map<string, number>();
-  for (const p of activosAll.filter(p => (p.status === "ACTIVO" || p.status === "VENCIDO") && p.direccion === "DADO")) {
-    const saldo = p.cuotas.filter(c => !c.pagadoEn).reduce((s, c) => s + c.monto, 0);
-    if (saldo > 0) {
-      const key = (p.customerId || p.entidadNombre || "Sin nombre").slice(0, 15);
-      deudorMap.set(key, (deudorMap.get(key) ?? 0) + saldo);
-    }
-  }
-  const topDeudores = Array.from(deudorMap.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([name, monto]) => ({ name, monto }));
-
-  // Mejora 4: Donut de riesgo con 4 estados (semáforo)
-  const statusCounts = {
-    ACTIVO: prestamos.filter(p => p.status === "ACTIVO").length,
-    PAGADO: prestamos.filter(p => p.status === "PAGADO").length,
-    VENCIDO: prestamos.filter(p => p.status === "VENCIDO").length,
-    CANCELADO: prestamos.filter(p => p.status === "CANCELADO").length,
-  };
-  const donutData = [
-    { name: "Activos", value: statusCounts.ACTIVO, color: "var(--data-warning)" },
-    { name: "Pagados", value: statusCounts.PAGADO, color: "var(--data-success)" },
-    { name: "Vencidos", value: statusCounts.VENCIDO, color: "var(--data-error)" },
-    { name: "Cancelados", value: statusCounts.CANCELADO, color: "var(--text-tertiary)" },
-  ].filter(d => d.value > 0);
-
-  // Salud de la cartera: prioriza cuotas vencidas; si no, al día con/ sin saldo.
-  const saldoPorCobrar = resumen?.saldoDados ?? porCobrar;
-  const health =
-    cuotasVencidas > 0
-      ? { cls: "text-[var(--data-warning-500)]", border: "border-l-[var(--data-warning)]", Icon: AlertTriangle, text: `Tenés ${cuotasVencidas} cuota${cuotasVencidas === 1 ? "" : "s"} vencida${cuotasVencidas === 1 ? "" : "s"} · ${formatCurrency(saldoPorCobrar)} por cobrar.` }
-      : saldoPorCobrar > 0
-        ? { cls: "text-[var(--text-primary)]", border: "border-l-[var(--accent)]", Icon: DollarSign, text: `Cartera al día · ${formatCurrency(saldoPorCobrar)} por cobrar, sin atrasos.` }
-        : { cls: "text-[var(--data-success-500)]", border: "border-l-[var(--data-success)]", Icon: TrendingUp, text: "Cartera al día — no tenés nada por cobrar." };
-
-  return (
-    <div className="space-y-6">
-      {/* Mejora 0: mensaje de salud de la cartera */}
-      <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-        <div className={cn("rounded-2xl border-2 border-l-4 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center gap-3", health.border)}>
-          <health.Icon className={cn("h-6 w-6 shrink-0", health.cls)} />
-          <p className={cn("text-base font-semibold", health.cls)}>{health.text}</p>
-        </div>
-      </m.div>
-
-      {/* Mejora 1: KPI Cards con sparklines */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <SparklineKPICard title="Dados" value={formatCurrency(totalDados)} sub={`${resumen?.activosDados ?? prestamos.filter(p=>p.direccion==="DADO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={ArrowUpFromLine} sparkData={spark1} />
-          <SparklineKPICard title="Recibidos" value={formatCurrency(totalRecibidos)} sub={`${resumen?.activosRecibidos ?? prestamos.filter(p=>p.direccion==="RECIBIDO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={ArrowDownToLine} sparkData={spark2} />
-          <SparklineKPICard title="Por cobrar" value={formatCurrency(resumen?.saldoDados ?? porCobrar)} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={DollarSign} sparkData={spark3} />
-          <SparklineKPICard title="Cuotas vencidas" value={String(cuotasVencidas)} valueColor={cuotasVencidas > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={cuotasVencidas > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={XCircle} sparkData={spark4} />
-          <SparklineKPICard title="Mora acumulada" value={formatCurrency(moraAcumulada)} valueColor={moraAcumulada > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={moraAcumulada > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={AlertTriangle} sparkData={spark5} />
-          <SparklineKPICard title="Recuperación" value={`${tasaRecuperacion.toFixed(1)}%`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={TrendingUp} sparkData={spark6} />
-        </div>
-      </m.div>
-
-      {/* Mejora 5: Indicador de mora destacado */}
-      {moraAcumulada > 0 && (
-        <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}>
-          <WarningAlert
-            title="Mora Acumulada"
-            description={
-              <span>
-                <span className="block text-3xl font-extrabold font-mono text-[var(--data-warning-500)]">
-                  {formatCurrency(moraAcumulada)}
-                </span>
-                <span className="block text-xs mt-0.5">En prestamos con cuotas vencidas</span>
-              </span>
-            }
-            action={
-              <div className="text-right shrink-0">
-                <p className="text-xs text-[var(--text-secondary)]">{cuotasVencidas} cuots. vencidas</p>
-                <div className="mt-1 h-2 w-24 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[var(--data-warning-500)] rounded-full"
-                    style={{ width: `${Math.min(100, (cuotasVencidas / Math.max(1, prestamos.reduce((s,p)=>s+p.cuotas.length,0))) * 100 * 10)}%` }}
-                  />
-                </div>
-              </div>
-            }
-          />
-        </m.div>
-      )}
-
-      {/* AreaChart: cobros vs nuevos */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Cobros vs Nuevos préstamos (6 meses)</CardTitle>
-          {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
-            <ResponsiveContainer minWidth={0} width="100%" height={250}>
-              <AreaChart data={areaData}>
-                <defs>
-                  <linearGradient id="prestCobGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--data-success)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="var(--data-success)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="prestNuevGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--text-tertiary)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="var(--text-tertiary)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
-                <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={((v: number, name: string) => [formatCurrency(Number(v)), name === "cobrado" ? "Cobrado" : "Nuevos"]) as never} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
-                <Legend formatter={(v: string) => v === "cobrado" ? "Cobrado" : "Nuevos préstamos"} />
-                <Area type="monotone" dataKey="cobrado" stroke="var(--data-success)" fill="url(#prestCobGrad)" strokeWidth={2} />
-                <Area type="monotone" dataKey="nuevos" stroke="var(--text-tertiary)" fill="url(#prestNuevGrad)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChartPrestamos message="Sin movimiento en los últimos 6 meses" />
-          )}
-        </div>
-      </m.div>
-
-      {/* Mejoras 3, 4 y 6: Top deudores + Donut riesgo + Dirección */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Mejora 3: Top 5 deudores */}
-          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-              <User className="h-4 w-4 text-secondary" /> Top 5 deudores
-            </CardTitle>
-            {topDeudores.length > 0 ? (
-              <ResponsiveContainer minWidth={0} width="100%" height={220}>
-                <BarChart data={topDeudores} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.1)" horizontal={false} />
-                  <XAxis type="number" tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={((v: number) => [formatCurrency(Number(v)), "Saldo"]) as never} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
-                  <Bar dataKey="monto" radius={[0, 6, 6, 0]}>
-                    {topDeudores.map((_, i) => (
-                      <Cell key={i} fill={i === 0 ? "#ef4444" : i === 1 ? "#f97316" : "#f97316"} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyChartPrestamos message="Sin deudores activos" />
-            )}
-          </div>
-
-          {/* Mejora 4: Donut de riesgo con 4 estados semáforo */}
-          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
-              <Shield className="h-4 w-4 text-[var(--text-secondary)]" /> Distribución por estado
-            </CardTitle>
-            {donutData.length > 0 ? (
-              <>
-                <ResponsiveContainer minWidth={0} width="100%" height={160}>
-                  <PieChart>
-                    <Pie data={donutData} cx="50%" cy="50%" innerRadius={45} outerRadius={72} dataKey="value" stroke="none" paddingAngle={2}>
-                      {donutData.map((d, i) => <Cell key={i} fill={d.color} />)}
-                    </Pie>
-                    <Tooltip formatter={((v: number, name: string) => [v, name]) as never} contentStyle={{ borderRadius: "12px", fontSize: "12px" }} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="grid grid-cols-2 gap-1.5 mt-1">
-                  {donutData.map(d => (
-                    <div key={d.name} className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{d.name}: <strong>{d.value}</strong></span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <EmptyChartPrestamos message="Sin préstamos" />
-            )}
-          </div>
-
-          {/* Mejora 6: Resumen por dirección con barras comparativas */}
-          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-              <Scale className="h-4 w-4 text-[var(--data-success-500)]" /> Dado vs Recibido
-            </CardTitle>
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <ArrowUpFromLine className="h-3.5 w-3.5 text-[var(--data-error-500)]" />
-                    <span className="text-xs font-bold text-[var(--text-secondary)]">Dados</span>
-                  </div>
-                  <span className="text-xs font-bold font-mono text-[var(--data-error-500)]">{formatCurrency(totalDados)}</span>
-                </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <m.div className="h-full bg-[var(--data-error-500)] rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalDados / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.3 }} />
-                </div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{prestamos.filter(p=>p.direccion==="DADO").length} préstamos</p>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <ArrowDownToLine className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
-                    <span className="text-xs font-bold text-[var(--text-secondary)]">Recibidos</span>
-                  </div>
-                  <span className="text-xs font-bold font-mono text-[var(--data-success-500)]">{formatCurrency(totalRecibidos)}</span>
-                </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <m.div className="h-full bg-[var(--accent-soft)] rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
-                </div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{prestamos.filter(p=>p.direccion==="RECIBIDO").length} préstamos</p>
-              </div>
-              <div className="pt-3 border-t border-[var(--rule-soft)]">
-                <p className="text-xs text-[var(--text-secondary)]">Balance neto</p>
-                <p className={cn("text-lg font-extrabold font-mono", totalDados > totalRecibidos ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
-                  {totalDados > totalRecibidos ? "− " : "+ "}{formatCurrency(Math.abs(totalDados - totalRecibidos))}
-                </p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{totalDados > totalRecibidos ? "Más dado que recibido" : "Más recibido que dado"}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </m.div>
-    </div>
-  );
-}
+// Sub-tabs coherentes con el resto del admin: AdminTabBar da reorden por drag,
+// persistencia del orden y registro en el sidebar. El badge de "Cobros" se
+// inyecta en el render (depende de cobrosData, no es estático).
+const PRESTAMOS_MODULE_ID = "prestamos";
+const PRESTAMOS_TAB_ITEMS: AdminTab[] = [
+  { id: "dashboard", label: "Tablero", icon: BarChart3 },
+  { id: "activos", label: "Activos" },
+  { id: "cobros", label: "Cobros", icon: Bell },
+  { id: "calculadora", label: "Calculadora" },
+  { id: "historial", label: "Historial" },
+];
 
 // ── Component ─────────────────────────────────────────────────────────────────
+
+type PrestamosVista = "dashboard" | "activos" | "cobros" | "calculadora" | "historial";
+const PRESTAMOS_VISTAS: readonly PrestamosVista[] = ["dashboard", "activos", "cobros", "calculadora", "historial"];
 
 export default function PrestamosModule() {
   const { businessName, storeTheme } = useSettings();
@@ -506,7 +104,10 @@ export default function PrestamosModule() {
     || businessName?.trim()
     || "Tu Tienda";
   const storeLocation = (storeTheme as { address?: string } | null)?.address || "Pucallpa, Perú";
-  const [activeTab, setActiveTab] = useState<"dashboard" | "activos" | "cobros" | "calculadora" | "historial">("dashboard");
+  // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
+  // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
+  const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<PrestamosVista>("prestamos", PRESTAMOS_VISTAS, "dashboard");
+  const enHub = useRanuraDelSegundoNivel();
 
   // Mejora nueva: Filtro por estado en prestamos
   const [prestamoStatusFilter, setPrestamoStatusFilter] = useState<"" | PrestamoStatus>("");
@@ -567,15 +168,16 @@ export default function PrestamosModule() {
   // Búsqueda mejorada (mejora 10)
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filtro avanzado colapsable (mejora 7)
+  // Filtro avanzado colapsable (mejora 7). Monto y Sistema son columnas de la
+  // tabla (Monto, Sys): viven en su `<th>` (autofiltro tipo Excel, Brandon
+  // 2026-09-24). Lo que no es columna (fecha, tipo, dirección) se queda afuera.
   const [showFilters, setShowFilters] = useState(false);
   const [filterFechaFrom, setFilterFechaFrom] = useState("");
   const [filterFechaTo, setFilterFechaTo] = useState("");
-  const [filterMontoMin, setFilterMontoMin] = useState("");
-  const [filterMontoMax, setFilterMontoMax] = useState("");
+  const [montoRango, setMontoRango] = useState<Rango<number>>({ min: null, max: null });
   const [filterTipo, setFilterTipo] = useState<"" | PrestamoTipo>("");
   const [filterDireccion, setFilterDireccion] = useState<"" | PrestamoDireccion>("");
-  const [filterSistema, setFilterSistema] = useState<"" | SistemaAmortizacion>("");
+  const [filterSistema, setFilterSistema] = useState<SistemaAmortizacion[]>([]);
 
   // Sort por columnas (mejora 8)
   const [sortKey, setSortKey] = useState<"monto" | "tasaInteres" | "numeroCuotas" | "createdAt" | "">("");
@@ -584,9 +186,11 @@ export default function PrestamosModule() {
   // Bulk selection (mejora 9)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // Columnas de la tabla de cartera: arrastrar el título para reordenarlas.
+  const ordenCartera = useOrdenColumnas("prestamos-cartera", ["cliente", "sistema", "monto", "tasa", "cuotas", "saldo", "status"]);
+
   // Refinanciar modal (mejora 15)
   const [showRefinanciar, setShowRefinanciar] = useState(false);
-  const [refMonto, setRefMonto] = useState("");
   const [refTasa, setRefTasa] = useState("");
   const [refCuotas, setRefCuotas] = useState("");
   const [refSistema, setRefSistema] = useState<SistemaAmortizacion>("FRANCES");
@@ -647,19 +251,7 @@ export default function PrestamosModule() {
   useEffect(() => { fetchPrestamos(); fetchResumen(); }, [fetchPrestamos, fetchResumen]);
   useEffect(() => { if (activeTab === "cobros") fetchCobros(); }, [activeTab, fetchCobros]);
 
-  // Cerrar modales con Escape
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (showPago) { setShowPago(false); return; }
-      if (showRefinanciar) { setShowRefinanciar(false); return; }
-      if (showCancelConfirm) { setShowCancelConfirm(false); return; }
-      if (showCreate) { setShowCreate(false); return; }
-      if (selected) { setSelected(null); return; }
-    };
-    document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
-  }, [showPago, showRefinanciar, showCancelConfirm, showCreate, selected]);
+  // Escape: lo resuelve cada AdminModal (cierra sólo la de arriba).
 
   // ── Detail ─────────────────────────────────────────────────────────────────
 
@@ -750,24 +342,21 @@ export default function PrestamosModule() {
   const handleRefinanciar = async () => {
     if (!selected) return;
     setRefinanciarError(null);
-    const monto = parseFloat(refMonto);
-    const tasa = parseFloat(refTasa);
-    const cuotas = parseInt(refCuotas);
-    if (isNaN(monto) || monto <= 0) { setRefinanciarError("Monto inválido"); return; }
-    if (isNaN(tasa) || tasa < 0) { setRefinanciarError("Tasa inválida"); return; }
-    if (isNaN(cuotas) || cuotas <= 0) { setRefinanciarError("N° cuotas inválido"); return; }
+    // Mismo contrato que la ruta (lib/prestamos/refinanciar.ts); el capital lo pone el servidor.
+    const armado = cuerpoRefinanciar({ tasa: refTasa, cuotas: refCuotas, sistema: refSistema });
+    if (!armado.ok) { setRefinanciarError(armado.error); return; }
     setRefinancing(true);
     try {
       const res = await fetch(`/api/prestamos/${selected.id}/refinanciar`, {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ monto, tasaInteres: tasa, numeroCuotas: cuotas, sistemaAmortizacion: refSistema }),
+        body: JSON.stringify(armado.cuerpo),
       });
       if (!res.ok) { const err = await res.json().catch(() => ({ error: "Error" })); throw new Error(err.error || "Error al refinanciar"); }
       const updated: Prestamo = await res.json();
       setSelected(updated);
       setShowRefinanciar(false);
-      setRefMonto(""); setRefTasa(""); setRefCuotas("");
+      setRefTasa(""); setRefCuotas("");
       fetchPrestamos();
     } catch (e) {
       setRefinanciarError(e instanceof Error ? e.message : "Error");
@@ -808,6 +397,15 @@ export default function PrestamosModule() {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
+  };
+
+  /** Lo marcado en la tabla, a un CSV (antes, un botón al lado de las pastillas). */
+  const bajarMarcadosCsv = () => {
+    const sel = prestamos.filter(p => selectedIds.has(p.id));
+    const rows = sel.map(p => [p.id, p.entidadNombre || p.customerId || "", p.monto, p.tasaInteres, p.numeroCuotas, p.status].join(","));
+    const csv = ["ID,Cliente,Monto,Tasa mensual %,Cuotas,Status", ...rows].join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a"); a.href = url; a.download = "prestamos.csv"; a.click(); URL.revokeObjectURL(url);
   };
 
   const toggleSelectAll = () => {
@@ -884,6 +482,14 @@ export default function PrestamosModule() {
     setCreateFechaDesembolso(""); setCreateStep(1); setCreateError(null);
   };
 
+  // Las ventanas son AdminModal (11-10): foco, Escape y ventana vienen con él.
+  const cerrarSelected = useCallback(() => setSelected(null), []);
+  // `resetCreateForm` no está memoizada (se redefine cada render); un ref
+  // evita que `cerrarCreate` cambie de identidad en cada tecleo del form.
+  const resetCreateFormRef = useRef(resetCreateForm);
+  resetCreateFormRef.current = resetCreateForm;
+  const cerrarCreate = useCallback(() => { setShowCreate(false); resetCreateFormRef.current(); }, []);
+
   // Bank presets para autocompletar campos
   const BANK_PRESETS: Array<{ nombre: string; entidadTipo: PrestamoEntidadTipo; tasaRef: string; moraRef: string; teaRef: string; sistema: SistemaAmortizacion }> = [
     { nombre: "BCP", entidadTipo: "BANCO", tasaRef: "1.5", moraRef: "15", teaRef: "19.56", sistema: "FRANCES" },
@@ -950,14 +556,14 @@ export default function PrestamosModule() {
         (p.nroOperacion || "").toLowerCase().includes(q)
       );
     }
-    // Filtros avanzados (mejora 7)
+    // Filtros avanzados (mejora 7) + autofiltro de columna (Monto, Sys)
     if (filterFechaFrom) list = list.filter(p => p.createdAt >= filterFechaFrom);
     if (filterFechaTo) list = list.filter(p => p.createdAt <= filterFechaTo + "T23:59:59");
-    if (filterMontoMin) list = list.filter(p => p.monto >= parseFloat(filterMontoMin));
-    if (filterMontoMax) list = list.filter(p => p.monto <= parseFloat(filterMontoMax));
+    if (montoRango.min != null) list = list.filter(p => p.monto >= (montoRango.min as number));
+    if (montoRango.max != null) list = list.filter(p => p.monto <= (montoRango.max as number));
     if (filterTipo) list = list.filter(p => p.tipo === filterTipo);
     if (filterDireccion) list = list.filter(p => p.direccion === filterDireccion);
-    if (filterSistema) list = list.filter(p => p.sistemaAmortizacion === filterSistema);
+    if (filterSistema.length > 0) list = list.filter(p => filterSistema.includes(p.sistemaAmortizacion));
     // Sort (mejora 8)
     if (sortKey) {
       list = [...list].sort((a, b) => {
@@ -968,13 +574,18 @@ export default function PrestamosModule() {
     }
     return list;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prestamos, activeTab, prestamoStatusFilter, searchQuery, filterFechaFrom, filterFechaTo, filterMontoMin, filterMontoMax, filterTipo, filterDireccion, filterSistema, sortKey, sortDir]);
+  }, [prestamos, activeTab, prestamoStatusFilter, searchQuery, filterFechaFrom, filterFechaTo, montoRango, filterTipo, filterDireccion, filterSistema, sortKey, sortDir]);
 
-  const activeFilterCount = [filterFechaFrom, filterFechaTo, filterMontoMin, filterMontoMax, filterTipo, filterDireccion, filterSistema].filter(Boolean).length;
+  // Cuenta TODO lo que el panel «Filtros» muestra: Monto y Sistema viven ahí
+  // también (ocultos salvo < sm, el mismo atajo del `<th>`), así que el
+  // número del botón sigue siendo "lo que este panel puede acotar".
+  const activeFilterCount = [filterFechaFrom, filterFechaTo, filterTipo, filterDireccion].filter(Boolean).length
+    + (montoRango.min != null || montoRango.max != null ? 1 : 0)
+    + (filterSistema.length > 0 ? 1 : 0);
 
   const clearFilters = () => {
-    setFilterFechaFrom(""); setFilterFechaTo(""); setFilterMontoMin(""); setFilterMontoMax("");
-    setFilterTipo(""); setFilterDireccion(""); setFilterSistema(""); setSearchQuery("");
+    setFilterFechaFrom(""); setFilterFechaTo(""); setMontoRango({ min: null, max: null });
+    setFilterTipo(""); setFilterDireccion(""); setFilterSistema([]); setSearchQuery("");
   };
 
   const totalPages = Math.max(1, Math.ceil(displayList.length / PER_PAGE));
@@ -993,132 +604,63 @@ export default function PrestamosModule() {
     ? `Préstamos a clientes con cuotas programadas. ${activos.length} activos${saldoPendiente > 0 ? ` — saldo pendiente ${formatCurrency(saldoPendiente)}.` : "."}`
     : "Préstamos a clientes con cuotas programadas. Registra, calcula cuotas y lleva el seguimiento de pagos.";
 
+  const pestanas = PRESTAMOS_TAB_ITEMS.map((t) =>
+    t.id === "cobros" && cobrosData && cobrosData.vencidas.length > 0
+      ? { ...t, badge: cobrosData.vencidas.length }
+      : t
+  );
+  const irAPestana = (id: string) => setActiveTab(id as PrestamosVista);
+
   return (
     <div className="space-y-4 sm:space-y-6">
-      <AdminModuleHeader
-        icon={DollarSign}
-        eyebrow="Finanzas · Créditos y cuotas"
-        title="Préstamos"
-        description={prestamosDescription}
-      />
-
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto">
-        {([
-          { id: "dashboard" as const, label: "Dashboard" },
-          { id: "activos" as const, label: "Préstamos Activos" },
-          { id: "cobros" as const, label: "Cobros", badge: cobrosData ? cobrosData.vencidas.length : undefined },
-          { id: "calculadora" as const, label: "Calculadora" },
-          { id: "historial" as const, label: "Historial" },
-        ]).map(t => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={cn(
-              "shrink-0 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5",
-              activeTab === t.id
-                ? "border-[var(--accent)] text-[var(--accent)]"
-                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            {t.id === "dashboard" && <BarChart3 className="h-3.5 w-3.5" />}
-            {t.id === "cobros" && <Bell className="h-3.5 w-3.5" />}
-            {t.label}
-            {"badge" in t && t.badge != null && t.badge > 0 && (
-              <span className="ml-0.5 bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold rounded-full px-1.5 py-0.5 leading-none">{t.badge}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* Dentro de Mi Plata, sus pestañas son el segundo nivel del hub (en la
+          fila del título) y no dibuja título ni barra propios: eran el tercer
+          nivel. Fuera de un hub, como siempre. */}
+      {enHub ? (
+        <SegundoNivelEnElHub
+          ranura={enHub.ranura}
+          items={pestanas}
+          activa={activeTab}
+          onIr={irAPestana}
+          etiqueta="Pestañas de Préstamos"
+        />
+      ) : (
+        <>
+          <AdminModuleHeader
+            as="h2"
+            icon={DollarSign}
+            eyebrow="Finanzas · Créditos y cuotas"
+            title="Préstamos"
+            description={prestamosDescription}
+          />
+          <AdminTabBar
+            moduleId={PRESTAMOS_MODULE_ID}
+            tabs={pestanas}
+            activeTab={activeTab}
+            onTabChange={irAPestana}
+          />
+        </>
+      )}
 
       {/* ── Tab: Dashboard ────────────────────────────────────────────────── */}
-      {activeTab === "dashboard" && !loading && <PrestamosDashboard prestamos={prestamos} resumen={resumen} />}
+      {activeTab === "dashboard" && !loading && (
+        <PrestamosDashboard
+          prestamos={prestamos}
+          resumen={resumen}
+          onNuevo={() => { setShowCreate(true); setCreateError(null); }}
+          onActualizar={() => { fetchPrestamos(); fetchResumen(); }}
+          onIr={irAPestana}
+        />
+      )}
       {activeTab === "dashboard" && loading && (
         <LoadingState />
       )}
 
-      {/* ── Resumen Cartera de Préstamos ───────────────────────────────────── */}
-      {activeTab === "activos" && !loading && prestamos.length > 0 && (() => {
-        const activosAll = prestamos.filter(p => p.status !== "CANCELADO");
-        const totalPrestado = activosAll.reduce((s, p) => s + p.monto, 0);
-        const porCobrar = activosAll.reduce((s, p) => s + p.cuotas.filter(c => !c.pagadoEn).reduce((ss, c) => ss + c.monto, 0), 0);
-        const totalCobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
-        const tasaRecuperacion = totalPrestado > 0 ? (totalCobrado / totalPrestado) * 100 : 0;
-        const hoy = new Date();
-        const cuotasVencidas = activosAll.reduce((s, p) => s + p.cuotas.filter(c => !c.pagadoEn && new Date(c.fechaVence) < hoy).length, 0);
-
-        // Grafica mensual ultimos 6 meses
-        const monthData: { mes: string; cobrado: number; nuevos: number }[] = [];
-        for (let i = 5; i >= 0; i--) {
-          const d = new Date();
-          d.setMonth(d.getMonth() - i);
-          const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-          const label = d.toLocaleDateString("es-PE", { month: "short" });
-          const cobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn && c.pagadoEn.startsWith(mesKey)).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
-          const nuevos = prestamos.filter(p => p.createdAt.startsWith(mesKey)).reduce((s, p) => s + p.monto, 0);
-          monthData.push({ mes: label, cobrado, nuevos });
-        }
-
-        return (
-          <div className="space-y-6">
-            {/* KPI Cards — mejorado con iconos prominentes */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Landmark className="h-4 w-4 text-[var(--data-info-500)]" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total prestado</p>
-                </div>
-                <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{formatCurrency(totalPrestado)}</p>
-              </div>
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <DollarSign className="h-4 w-4 text-secondary" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Por cobrar</p>
-                </div>
-                <p className={cn("text-2xl font-extrabold font-mono", porCobrar > totalPrestado * 0.5 ? "text-secondary" : "text-[var(--data-error-500)]")}>{formatCurrency(porCobrar)}</p>
-              </div>
-              <div className={cn("bg-white dark:bg-[var(--color-card)] border rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3", cuotasVencidas > 3 ? "border-[var(--data-error-500)]" : "border-[var(--rule-base)]")}>
-                <div className="flex items-center gap-2 mb-1">
-                  <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Cuotas vencidas</p>
-                </div>
-                <p className={cn("text-2xl font-extrabold font-mono", cuotasVencidas > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
-                  {cuotasVencidas}
-                </p>
-              </div>
-              <div className={cn("bg-white dark:bg-[var(--color-card)] border rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3", tasaRecuperacion > 80 ? "border-[var(--data-success-500)]/30" : "border-[var(--rule-base)]")}>
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="h-4 w-4 text-[var(--data-success-500)]" />
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Tasa recuperacion</p>
-                </div>
-                <p className={cn("text-2xl font-extrabold font-mono", tasaRecuperacion > 80 ? "text-[var(--data-success-500)]" : tasaRecuperacion > 50 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
-                  {tasaRecuperacion.toFixed(1)}%
-                </p>
-              </div>
-            </div>
-
-            {/* Grafica mensual */}
-            {monthData.some(d => d.cobrado > 0 || d.nuevos > 0) && (
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 ">
-                <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 flex items-center gap-1.5">
-                  <TrendingUp className="h-3.5 w-3.5" /> Movimiento mensual (6 meses)
-                </h4>
-                <ResponsiveContainer minWidth={0} width="100%" height={180}>
-                  <BarChart data={monthData}>
-                    <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 10 }} width={50} tickFormatter={(v: number) => `S/${v}`} />
-                    <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="cobrado" name="Cobrado" fill="var(--data-success)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="nuevos" name="Nuevos" fill="var(--text-tertiary)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
+      {/* La «Cartera» que abría «Préstamos activos» (total prestado, por cobrar,
+          cuotas vencidas, recuperación y el gráfico de 6 meses) repetía el
+          Tablero con OTRA cuenta: su «por cobrar» sumaba también las cuotas de
+          los préstamos RECIBIDOS (plata que debes). Se fue el 11-10: esas
+          cifras viven en los Indicadores del Tablero, con la del servidor. */}
       {/* Mejora 25: Banner de vencimiento */}
       {(activeTab === "activos" || activeTab === "historial") && !loading && (() => {
         const hoy = new Date();
@@ -1128,10 +670,10 @@ export default function PrestamosModule() {
         return (
           <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] border-l-2 border-l-[var(--data-warning)] p-3 flex items-center gap-3">
             <Bell className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
-            <p className="text-xs text-[var(--text-secondary)] font-semibold flex-1">
+            <p className="text-sm text-[var(--text-secondary)] font-semibold flex-1">
               {venciendoProx.length} préstamo{venciendoProx.length > 1 ? "s" : ""} con cuotas venciendo esta semana
             </p>
-            <button onClick={() => { setPrestamoStatusFilter("ACTIVO"); setActiveTab("activos"); }} className="text-xs font-semibold text-[var(--data-warning-500)] hover:underline shrink-0">Ver</button>
+            <button type="button" onClick={() => { setPrestamoStatusFilter("ACTIVO"); setActiveTab("activos"); }} className={button({ variant: "secondary", className: "shrink-0 rounded-xl" })}>Ver</button>
           </m.div>
         );
       })()}
@@ -1139,32 +681,74 @@ export default function PrestamosModule() {
       {/* Mejora 10: Búsqueda + Mejora 7: Filtros */}
       {(activeTab === "activos" || activeTab === "historial") && (
         <div className="space-y-3">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-              <input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+          {/* Una fila (11-10): buscador · estado · Filtros · «⋯». Las pastillas de
+              estado (5 botones) pasan a un selector con sus cuentas; recargar,
+              restablecer columnas y bajar lo marcado, al «⋯». */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[12rem] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+              <input type="search" aria-label="Buscar préstamos" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
             </div>
-            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 py-2.5 rounded-lg border text-sm font-semibold transition-colors", showFilters ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]" : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]")}>
-              <Filter className="h-4 w-4" />
-              Filtros {activeFilterCount > 0 && <span className="bg-secondary text-white rounded-full text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5">{activeFilterCount}</span>}
+            <label className="sr-only" htmlFor="prestamos-estado">Estado</label>
+            <select
+              id="prestamos-estado"
+              value={prestamoStatusFilter}
+              onChange={e => { setPrestamoStatusFilter(e.target.value as "" | PrestamoStatus); setPage(1); }}
+              className="h-12 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+            >
+              <option value="">Todos ({prestamos.length})</option>
+              {(Object.keys(STATUS_META) as PrestamoStatus[]).map(st => (
+                <option key={st} value={st}>{STATUS_META[st].label} ({prestamos.filter(p => p.status === st).length})</option>
+              ))}
+            </select>
+            <button type="button" onClick={() => setShowFilters(f => !f)} aria-expanded={showFilters} className={button({ variant: showFilters ? "primary" : "secondary", className: "shrink-0 rounded-xl px-4" })}>
+              <Filter className="h-4 w-4" aria-hidden />
+              Filtros {activeFilterCount > 0 && <span className="rounded-full bg-[var(--accent-soft)] px-1.5 text-sm font-bold text-[var(--accent-ink)]">{activeFilterCount}</span>}
             </button>
-            <button onClick={() => { fetchPrestamos(); fetchResumen(); }} title="Recargar" className="p-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors">
-              <RotateCcw className="h-4 w-4 text-[var(--text-tertiary)]" />
-            </button>
+            <ActionMenu
+              label="Más"
+              icon={MoreHorizontal}
+              soloIcono
+              size="md"
+              className="w-12 shrink-0"
+              badge={selectedIds.size || undefined}
+              title="Actualizar, columnas y lo marcado"
+              actions={[
+                ...(selectedIds.size > 0
+                  ? [
+                      { id: "csv", label: `Bajar ${selectedIds.size} marcados en CSV`, icon: FileDown, seccion: "Lo marcado", onSelect: () => bajarMarcadosCsv() },
+                      { id: "quitar", label: "Quitar la marca", icon: X, seccion: "Lo marcado", onSelect: () => setSelectedIds(new Set()) },
+                    ]
+                  : []),
+                { id: "actualizar", label: "Actualizar", icon: RotateCcw, onSelect: () => { fetchPrestamos(); fetchResumen(); } },
+                ...(ordenCartera.cambiado ? [{ id: "columnas", label: "Restablecer columnas", hint: "Vuelve al orden de siempre", icon: ArrowUpDown, onSelect: ordenCartera.restablecer }] : []),
+              ]}
+            />
           </div>
           <AnimatePresence>
             {showFilters && (
               <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                <div className="bg-gray-50 rounded-xl border border-[var(--rule-base)] p-4">
+                <div className="bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)] p-4">
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Desde</label><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Hasta</label><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Monto mín.</label><input type="number" value={filterMontoMin} onChange={e => { setFilterMontoMin(e.target.value); setPage(1); }} placeholder="0" className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Monto máx.</label><input type="number" value={filterMontoMax} onChange={e => { setFilterMontoMax(e.target.value); setPage(1); }} placeholder="∞" className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Tipo</label><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Dirección</label><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Sistema amort.</label><select value={filterSistema} onChange={e => { setFilterSistema(e.target.value as ""|SistemaAmortizacion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></div>
-                    <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] bg-gray-100 hover:bg-[var(--data-error-50)] transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
+                    {/* Monto y Sistema ya se filtran en su `<th>` (Monto, Sys) — acá sólo
+                        lo que no es una columna de la tabla: período y tipo/dirección.
+                        Monto y Sistema se repiten abajo, ocultos salvo < sm: en el
+                        celular la tabla es tarjetas y `.admin-mobile-cards` esconde el
+                        `<thead>` ENTERO (no sólo lo que tiene `hidden sm:table-cell`),
+                        así que su único `<th>` deja de ser alcanzable ahí (mismo
+                        estado, no lógica nueva). */}
+                    <Field label="Desde"><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Hasta"><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Tipo"><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></Field>
+                    <Field label="Dirección"><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></Field>
+                    <Field label="Monto (S/)" className="sm:hidden">
+                      <div className="flex items-center gap-1.5">
+                        <input type="number" step={10} min={0} value={montoRango.min ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, min: v })); setPage(1); }} placeholder="Desde" aria-label="Monto desde" className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+                        <input type="number" step={10} min={0} value={montoRango.max ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, max: v })); setPage(1); }} placeholder="Hasta" aria-label="Monto hasta" className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+                      </div>
+                    </Field>
+                    <Field label="Sistema amort." className="sm:hidden"><select value={filterSistema[0] ?? ""} onChange={e => { setFilterSistema(e.target.value ? [e.target.value as SistemaAmortizacion] : []); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></Field>
+                    <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] bg-[var(--surface-sunken)] hover:bg-[var(--data-error-50)] transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
                   </div>
                 </div>
               </m.div>
@@ -1173,81 +757,91 @@ export default function PrestamosModule() {
         </div>
       )}
 
-      {/* Mejora 9: Status pills + bulk actions */}
-      {(activeTab === "activos" || activeTab === "historial") && !loading && prestamos.length > 0 && (() => {
-        const counts = { ACTIVO: prestamos.filter(p => p.status === "ACTIVO").length, PAGADO: prestamos.filter(p => p.status === "PAGADO").length, VENCIDO: prestamos.filter(p => p.status === "VENCIDO").length, CANCELADO: prestamos.filter(p => p.status === "CANCELADO").length };
-        const pills = [
-          { id: "" as "" | PrestamoStatus, label: "Todos", count: prestamos.length, activeBg: "bg-[var(--accent-600,var(--accent))] text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)]" },
-          { id: "ACTIVO" as PrestamoStatus, label: "Activos", count: counts.ACTIVO, activeBg: "bg-[var(--accent-soft)] text-white", inactiveClass: "bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30" },
-          { id: "PAGADO" as PrestamoStatus, label: "Pagados", count: counts.PAGADO, activeBg: "bg-gray-500 text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]" },
-          { id: "VENCIDO" as PrestamoStatus, label: "Vencidos", count: counts.VENCIDO, activeBg: "bg-[var(--data-error-500)] text-white", inactiveClass: "bg-red-50 text-[var(--data-error-700)] border border-red-200" },
-          { id: "CANCELADO" as PrestamoStatus, label: "Cancelados", count: counts.CANCELADO, activeBg: "bg-gray-700 text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]" },
-        ];
-        return (
-          <div className="flex flex-wrap gap-2 items-center">
-            {pills.map(pill => (
-              <button key={pill.id} onClick={() => { setPrestamoStatusFilter(pill.id); setPage(1); }} className={cn("shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors", prestamoStatusFilter === pill.id ? pill.activeBg : pill.inactiveClass)}>
-                {pill.label} ({pill.count})
-              </button>
-            ))}
-            {selectedIds.size > 0 && (
-              <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--accent-soft)] border border-[var(--accent)]/20">
-                <span className="text-xs font-bold text-[var(--accent)]">{selectedIds.size} selec.</span>
-                <button onClick={() => {
-                  const sel = prestamos.filter(p => selectedIds.has(p.id));
-                  const rows = sel.map(p => [p.id, p.entidadNombre||p.customerId||"", p.monto, p.tasaInteres, p.numeroCuotas, p.status].join(","));
-                  const csv = ["ID,Cliente,Monto,Tasa,Cuotas,Status", ...rows].join("\n");
-                  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-                  const a = document.createElement("a"); a.href = url; a.download = "prestamos.csv"; a.click(); URL.revokeObjectURL(url);
-                }} className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:underline"><FileDown className="h-3 w-3" /> CSV</button>
-                <button onClick={() => setSelectedIds(new Set())} className="text-[var(--accent)] hover:text-[var(--data-error-500)]"><X className="h-3 w-3" /></button>
-              </div>
-            )}
-          </div>
-        );
-      })()}
       {(activeTab === "activos" || activeTab === "historial") && (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
           {loading ? (
             <LoadingState />
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-12 gap-2">
               <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
               <p className="text-sm text-[var(--data-error-500)]">{error}</p>
-              <button onClick={fetchPrestamos} className="text-xs text-[var(--accent)] hover:underline font-semibold">Reintentar</button>
+              <button onClick={fetchPrestamos} className="text-sm text-[var(--accent)] hover:underline font-semibold">Reintentar</button>
             </div>
-          ) : displayList.length === 0 ? (
+          ) : (activeTab === "activos" ? activos : historial).length === 0 ? (
+            // El vacío de "no hay nada" se decide por el total SIN filtrar de esta
+            // pestaña — si sólo el filtro dejó `displayList` en 0, la tabla (con su
+            // `<thead>` y los filtros) sigue abajo, con una fila que ofrece quitarlos.
             <div className="text-center py-16 px-4">
               <Landmark className="h-16 w-16 mb-4 text-[var(--text-tertiary)] mx-auto" />
-              <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin préstamos</CardTitle>
+              <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Sin préstamos</CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Registra préstamos a clientes con cuotas</p>
-              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[var(--accent-600,var(--accent))] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[var(--data-success-500)]">Crear préstamo</button>
+              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className={button({ variant: "primary", className: "rounded-xl px-6" })}>Crear préstamo</button>
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="w-full min-w-[600px] sm:min-w-0 text-sm">
-                  <thead>
-                    <tr className="border-b border-[var(--rule-soft)] text-left">
-                      <th className="px-3 py-3 w-8">
-                        <input type="checkbox" checked={selectedIds.size > 0 && selectedIds.size === paginated.length} onChange={toggleSelectAll} className="rounded accent-blue-600 cursor-pointer" />
+              <div className="-mx-4 sm:mx-0">
+                <DataTable className="min-w-[600px] sm:min-w-0">
+                  <thead ref={ordenCartera.refCabecera}>
+                    <tr className="border-b border-[var(--rule-soft)]">
+                      <th className="w-8">
+                        <input type="checkbox" checked={selectedIds.size > 0 && selectedIds.size === paginated.length} onChange={toggleSelectAll} aria-label="Seleccionar todos" className="rounded accent-blue-600 cursor-pointer" />
                       </th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Cliente</th>
-                      <th className="px-2 py-3 font-semibold text-[var(--text-secondary)] text-center hidden sm:table-cell">Sys</th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("monto")}>
-                        <span className="flex items-center justify-end gap-1">Monto {sortKey === "monto" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("tasaInteres")}>
-                        <span className="flex items-center justify-end gap-1">Tasa {sortKey === "tasaInteres" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("numeroCuotas")}>
-                        <span className="flex items-center justify-end gap-1">Cuotas {sortKey === "numeroCuotas" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Saldo</th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Status</th>
+                      <EnOrden
+                        orden={ordenCartera.orden}
+                        celdas={{
+                          cliente: <th data-col="cliente">Cliente</th>,
+                          sistema: (
+                            <th data-col="sistema" className="text-center hidden sm:table-cell">
+                              <span className="block">Sys</span>
+                              <FiltroColumnaMulti
+                                label="Sistema"
+                                value={filterSistema}
+                                options={(["FRANCES", "ALEMAN", "AMERICANO"] as SistemaAmortizacion[]).map((s) => ({ value: s, count: prestamos.filter((p) => p.sistemaAmortizacion === s).length }))}
+                                etiqueta={(v) => SISTEMA_LABELS[v as SistemaAmortizacion] ?? v}
+                                onChange={(v) => { setFilterSistema(v as SistemaAmortizacion[]); setPage(1); }}
+                                placeholder="Todos"
+                                className="mx-auto"
+                              />
+                            </th>
+                          ),
+                          monto: (
+                            <th data-col="monto" className="text-right cursor-pointer select-none" onClick={() => handleSort("monto")}>
+                              <span className="flex items-center justify-end gap-1">Monto {sortKey === "monto" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                              {/* `role="presentation"` corta la burbuja del click del filtro antes
+                                  de que llegue al onClick de ordenar del `<th>` padre. */}
+                              <div role="presentation" onClick={(e) => e.stopPropagation()}>
+                                <FiltroColumnaRango label="Monto" unidad="S/" paso={10} valor={montoRango} onChange={(r) => { setMontoRango(r as Rango<number>); setPage(1); }} placeholder="Todos" className="ml-auto" />
+                              </div>
+                            </th>
+                          ),
+                          tasa: (
+                            <th data-col="tasa" className="text-right hidden sm:table-cell cursor-pointer select-none" onClick={() => handleSort("tasaInteres")}>
+                              <span className="flex items-center justify-end gap-1">Tasa mensual {sortKey === "tasaInteres" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                            </th>
+                          ),
+                          cuotas: (
+                            <th data-col="cuotas" className="text-right hidden sm:table-cell cursor-pointer select-none" onClick={() => handleSort("numeroCuotas")}>
+                              <span className="flex items-center justify-end gap-1">Cuotas {sortKey === "numeroCuotas" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                            </th>
+                          ),
+                          saldo: <th data-col="saldo" className="text-right">Saldo</th>,
+                          status: <th data-col="status">Status</th>,
+                        }}
+                      />
                     </tr>
                   </thead>
                   <tbody>
+                    {displayList.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="text-center py-12">
+                          <p className="text-sm font-semibold text-[var(--text-primary)]">Ningún préstamo coincide con el filtro.</p>
+                          {/* `clearFilters` no toca la pastilla de Status (mejora 9,
+                              estado propio) — acá sí, para garantizar que el botón
+                              realmente vacíe la tabla de filtros. */}
+                          <button onClick={() => { clearFilters(); setPrestamoStatusFilter(""); }} className="mt-2 text-sm font-bold text-[var(--accent)] hover:underline">Quitar filtros</button>
+                        </td>
+                      </tr>
+                    )}
                     {paginated.map(p => {
                       const meta = STATUS_META[p.status];
                       const StatusIcon = meta.icon;
@@ -1258,62 +852,80 @@ export default function PrestamosModule() {
                       const rowNow = new Date(); const rowSemana = new Date(); rowSemana.setDate(rowNow.getDate() + 7);
                       const tieneVenc = p.cuotas.some(c => !c.pagadoEn && new Date(c.fechaVence) < rowNow);
                       const venceSemana = !tieneVenc && p.cuotas.some(c => !c.pagadoEn && new Date(c.fechaVence) <= rowSemana);
-                      const riskDot = tieneVenc ? "bg-[var(--data-error-500)]" : venceSemana ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]";
+                      const riskDot = tieneVenc ? "bg-[var(--data-error-500)]" : venceSemana ? "bg-[var(--data-warning-500)]" : "bg-primary/10";
                       // Mejora 12: Badge de sistema de amortización
                       const sisBadge = p.sistemaAmortizacion === "FRANCES" ? "F" : p.sistemaAmortizacion === "ALEMAN" ? "A" : "AM";
-                      const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : p.sistemaAmortizacion === "ALEMAN" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]";
+                      const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : p.sistemaAmortizacion === "ALEMAN" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]";
                       return (
-                        <tr key={p.id} className={cn("border-b border-gray-50 hover:bg-gray-50 transition-colors", selectedIds.has(p.id) && "bg-[var(--accent-soft)]")}>
-                          <td className="px-3 py-3 w-8" onClick={e => e.stopPropagation()}>
-                            <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded accent-blue-600 cursor-pointer" />
+                        <tr
+                          key={p.id}
+                          onClick={() => openDetail(p)}
+                          tabIndex={0}
+                          onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(p); } }}
+                          aria-label={`Ver detalle del préstamo de ${p.entidadNombre || p.customerId}`}
+                          className={cn("cursor-pointer", selectedIds.has(p.id) ? "bg-primary/10" : undefined)}
+                        >
+                          <td className="w-8" onClick={e => e.stopPropagation()}>
+                            <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} aria-label={`Seleccionar préstamo de ${p.entidadNombre || p.customerId}`} className="rounded accent-blue-600 cursor-pointer" />
                           </td>
-                          <td className="px-4 py-3 cursor-pointer" onClick={() => openDetail(p)}>
-                            <div className="flex items-center gap-2">
-                              <div className="relative h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
-                                <User className="h-4 w-4 text-secondary" />
-                                <span className={cn("absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white", riskDot)} title={tieneVenc ? "Cuota vencida" : venceSemana ? "Vence esta semana" : "Al día"} />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-medium text-[var(--text-primary)] truncate">{p.entidadNombre || p.customerId}</p>
-                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                                  <div className="bg-[var(--accent)] h-1.5 rounded-full" style={{ width: `${p.numeroCuotas > 0 ? (cuotasPagadas / p.numeroCuotas) * 100 : 0}%` }} />
-                                </div>
-                                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{cuotasPagadas}/{p.numeroCuotas} cuotas</span>
-                                {proxVence && (
-                                  <span className="ml-1 text-[length:var(--ts-2xs)] bg-[var(--data-warning-100)] text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full">
-                                    {new Date(proxVence.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" })} · {formatCurrency(proxVence.monto)}
+                          <EnOrden
+                            orden={ordenCartera.orden}
+                            celdas={{
+                              cliente: (
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <div className="relative h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
+                                      <User className="h-4 w-4 text-secondary" />
+                                      <span className={cn("absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white", riskDot)} title={tieneVenc ? "Cuota vencida" : venceSemana ? "Vence esta semana" : "Al día"} />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-medium text-[var(--text-primary)] truncate">{p.entidadNombre || p.customerId}</p>
+                                      <div className="w-full bg-[var(--surface-sunken)] rounded-full h-1.5 mt-1">
+                                        <div className="bg-[var(--accent)] h-1.5 rounded-full" style={{ width: `${p.numeroCuotas > 0 ? (cuotasPagadas / p.numeroCuotas) * 100 : 0}%` }} />
+                                      </div>
+                                      <span className="text-sm text-[var(--text-tertiary)]">{cuotasPagadas}/{p.numeroCuotas} cuotas</span>
+                                      {proxVence && (
+                                        <span className="ml-1 text-sm bg-[var(--data-warning-100)] text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full">
+                                          {new Date(proxVence.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" })} · {formatCurrency(proxVence.monto)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                              ),
+                              sistema: (
+                                <td className="hidden sm:table-cell text-center">
+                                  <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-sm font-bold", sisBg)}>{sisBadge}</span>
+                                </td>
+                              ),
+                              monto: <td className="num font-medium text-[var(--text-primary)]">{formatCurrency(p.monto)}</td>,
+                              tasa: <td className="num text-[var(--text-secondary)] hidden sm:table-cell">{p.tasaInteres}%</td>,
+                              cuotas: <td className="num text-[var(--text-secondary)] hidden sm:table-cell">{p.numeroCuotas}</td>,
+                              saldo: <td className="num font-bold text-[var(--text-primary)]">{formatCurrency(saldoPend)}</td>,
+                              status: (
+                                <td>
+                                  <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold", meta.bg, meta.color)}>
+                                    <StatusIcon className="h-3 w-3" />
+                                    {meta.label}
                                   </span>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-2 py-3 hidden sm:table-cell text-center cursor-pointer" onClick={() => openDetail(p)}>
-                            <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold", sisBg)}>{sisBadge}</span>
-                          </td>
-                          <td className="num px-4 py-3 font-medium text-[var(--text-primary)] cursor-pointer" onClick={() => openDetail(p)}>{formatCurrency(p.monto)}</td>
-                          <td className="num px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell cursor-pointer" onClick={() => openDetail(p)}>{p.tasaInteres}%</td>
-                          <td className="num px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell cursor-pointer" onClick={() => openDetail(p)}>{p.numeroCuotas}</td>
-                          <td className="num px-4 py-3 font-bold text-[var(--text-primary)] cursor-pointer" onClick={() => openDetail(p)}>{formatCurrency(saldoPend)}</td>
-                          <td className="px-4 py-3 cursor-pointer" onClick={() => openDetail(p)}>
-                            <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
-                              <StatusIcon className="h-3 w-3" />
-                              {meta.label}
-                            </span>
-                          </td>
+                                </td>
+                              ),
+                            }}
+                          />
                         </tr>
                       );
                     })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
-                  <p className="text-xs text-[var(--text-secondary)]">{displayList.length} préstamo{displayList.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{displayList.length} préstamo{displayList.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}</p>
                   <div className="flex gap-1">
-                    <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                    <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30">
                       <ChevronLeft className="h-4 w-4" />
                     </button>
-                    <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                    <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30">
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
@@ -1330,15 +942,15 @@ export default function PrestamosModule() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <SectionTitle className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <SectionTitle className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Bell className="h-4 w-4 text-[var(--data-warning-500)]" /> Centro de Cobros
               </SectionTitle>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">Cuotas vencidas y próximas a vencer (30 días)</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Cuotas vencidas y próximas a vencer (30 días)</p>
             </div>
             <button
               onClick={fetchCobros}
               disabled={cobrosLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-xs font-bold hover:opacity-90 transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-50"
             >
               <RefreshCcw className={cn("h-3.5 w-3.5", cobrosLoading && "animate-spin")} />
               Actualizar
@@ -1352,7 +964,7 @@ export default function PrestamosModule() {
           {!cobrosLoading && cobrosData && (
             <>
               {/* Vencidas */}
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--data-error-500)] rounded-xl  overflow-hidden">
+              <div className="bg-[var(--surface-raised)] border border-[var(--data-error-500)] rounded-xl overflow-hidden">
                 <div className="bg-[var(--data-error-50)] px-4 py-3 flex items-center gap-2 border-b border-[var(--data-error-500)]">
                   <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
                   <span className="text-sm font-bold text-[var(--data-error-500)]">
@@ -1362,7 +974,7 @@ export default function PrestamosModule() {
                 {cobrosData.vencidas.length === 0 ? (
                   <div className="px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">Sin cuotas vencidas.</div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-[var(--rule-soft)]">
                     {cobrosData.vencidas.map((c) => {
                       const symbol = c.moneda === "USD" ? "$" : "S/";
                       const msg = encodeURIComponent(
@@ -1376,12 +988,12 @@ export default function PrestamosModule() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold text-[var(--text-primary)] truncate">{c.nombre}</span>
-                              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                              <span className="text-sm font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                 {c.diasAtraso}d atraso
                               </span>
                             </div>
-                            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                              Cuota N°{c.numeroCuota} · Vencía {new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                            <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+                              Cuota N°{c.numeroCuota} · Vencía {formatDateShort(c.fechaVence)}
                             </p>
                           </div>
                           <span className="text-sm font-extrabold font-mono text-[var(--data-error-500)] shrink-0">
@@ -1392,7 +1004,7 @@ export default function PrestamosModule() {
                               href={waLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition"
+                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-sm font-bold hover:bg-primary/10 transition"
                               title="Enviar recordatorio por WhatsApp"
                             >
                               <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -1407,7 +1019,7 @@ export default function PrestamosModule() {
               </div>
 
               {/* Próximas */}
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--data-warning-500)] rounded-xl  overflow-hidden">
+              <div className="bg-[var(--surface-raised)] border border-[var(--data-warning-500)] rounded-xl overflow-hidden">
                 <div className="bg-[var(--data-warning-50)] px-4 py-3 flex items-center gap-2 border-b border-[var(--data-warning-500)]">
                   <Clock className="h-4 w-4 text-[var(--data-warning-500)]" />
                   <span className="text-sm font-bold text-[var(--data-warning-500)]">
@@ -1417,7 +1029,7 @@ export default function PrestamosModule() {
                 {cobrosData.proximas.length === 0 ? (
                   <div className="px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">Sin cuotas próximas este mes</div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-[var(--rule-soft)]">
                     {cobrosData.proximas.map((c) => {
                       const symbol = c.moneda === "USD" ? "$" : "S/";
                       const isUrgent = c.diasRestantes <= 3;
@@ -1433,16 +1045,16 @@ export default function PrestamosModule() {
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold text-[var(--text-primary)] truncate">{c.nombre}</span>
                               <span className={cn(
-                                "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap",
+                                "text-sm font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap",
                                 isUrgent
                                   ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
-                                  : "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                  : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                               )}>
                                 {c.diasRestantes}d restantes
                               </span>
                             </div>
-                            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                              Cuota N°{c.numeroCuota} · Vence {new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                            <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+                              Cuota N°{c.numeroCuota} · Vence {formatDateShort(c.fechaVence)}
                             </p>
                           </div>
                           <span className="text-sm font-extrabold font-mono text-[var(--text-primary)] shrink-0">
@@ -1453,7 +1065,7 @@ export default function PrestamosModule() {
                               href={waLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition"
+                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-sm font-bold hover:bg-primary/10 transition"
                               title="Enviar recordatorio por WhatsApp"
                             >
                               <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -1480,10 +1092,9 @@ export default function PrestamosModule() {
       {/* ── Tab: Calculadora ──────────────────────────────────────────────────── */}
       {activeTab === "calculadora" && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6  space-y-4">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto (S/)</label>
+              <Field label="Monto (S/)">
                 <input
                   type="number"
                   step="0.01"
@@ -1491,41 +1102,38 @@ export default function PrestamosModule() {
                   value={calcMonto}
                   onChange={e => setCalcMonto(e.target.value)}
                   placeholder="1000"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                  className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tasa de interés (%)</label>
+              </Field>
+              <Field label="Tasa mensual %">
                 <input
                   type="number"
-                  step="0.1"
+                  step="0.01"
                   min="0"
                   max="100"
                   value={calcTasa}
                   onChange={e => setCalcTasa(e.target.value)}
-                  placeholder="12"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                  placeholder="1.5"
+                  className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label>
-                <input type="number" min="1" max="60" value={calcCuotas} onChange={e => setCalcCuotas(e.target.value)} placeholder="12" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
-              </div>
+              </Field>
+              <Field label="N° cuotas">
+                <input type="number" min="1" max="60" value={calcCuotas} onChange={e => setCalcCuotas(e.target.value)} placeholder="12" className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+              </Field>
               {/* Mejora 19: Sistema selector */}
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Sistema amortización</label>
-                <select value={calcSistema} onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30">
+              <Field label="Sistema amortización">
+                <select value={calcSistema} onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30">
                   {Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
-              </div>
+              </Field>
             </div>
             <div className="flex flex-wrap gap-2">
               {amortizacion.length > 0 && (
                 <>
-                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors">
+                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 transition-colors">
                     <Plus className="h-4 w-4" /> Crear Préstamo con estos datos
                   </button>
-                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold  transition-colors border", showComparador ? "bg-[var(--accent-soft)] text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
+                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold  transition-colors border", showComparador ? "bg-primary/10 text-white border-[var(--accent)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/30 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]")}>
                     <Scale className="h-4 w-4" /> Comparar sistemas
                   </button>
                 </>
@@ -1535,45 +1143,45 @@ export default function PrestamosModule() {
 
           {/* Amortization table */}
           {amortizacion.length > 0 && (
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--rule-soft)]">
                 <p className="text-sm font-bold text-[var(--text-primary)]">Tabla de amortización</p>
-                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
                   Cuota mensual: <span className="font-bold">{formatCurrency(amortizacion[0]?.cuota ?? 0)}</span>
                   {" — "}
                   Total a pagar: <span className="font-bold">{formatCurrency(amortizacion.reduce((s, r) => s + r.cuota, 0))}</span>
                 </p>
               </div>
-              <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white dark:bg-[var(--color-card)]">
-                    <tr className="border-b border-[var(--rule-soft)] text-left">
-                      <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-center">#</th>
-                      <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-right">Cuota</th>
-                      <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-right">Interés</th>
-                      <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-right">Capital</th>
-                      <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-right">Saldo</th>
+              <div className="max-h-[400px] overflow-y-auto">
+                <DataTable stickyHeader>
+                  <thead>
+                    <tr className="border-b border-[var(--rule-soft)]">
+                      <th className="text-center">#</th>
+                      <th className="text-right">Cuota</th>
+                      <th className="text-right">Interés</th>
+                      <th className="text-right">Capital</th>
+                      <th className="text-right">Saldo</th>
                     </tr>
                   </thead>
                   <tbody>
                     {amortizacion.map(r => (
-                      <tr key={r.num} className="border-b border-gray-50">
-                        <td className="px-4 py-2 text-center text-[var(--text-secondary)]">{r.num}</td>
-                        <td className="px-4 py-2 text-right font-medium text-[var(--text-primary)]">{formatCurrency(r.cuota)}</td>
-                        <td className="px-4 py-2 text-right text-[var(--data-error-500)]">{formatCurrency(r.interes)}</td>
-                        <td className="px-4 py-2 text-right text-[var(--data-success-500)]">{formatCurrency(r.capital)}</td>
-                        <td className="px-4 py-2 text-right text-[var(--text-primary)]">{formatCurrency(r.saldo)}</td>
+                      <tr key={r.num}>
+                        <td className="text-center text-[var(--text-secondary)]">{r.num}</td>
+                        <td className="text-right font-medium text-[var(--text-primary)]">{formatCurrency(r.cuota)}</td>
+                        <td className="text-right text-[var(--data-error-500)]">{formatCurrency(r.interes)}</td>
+                        <td className="text-right text-[var(--data-success-500)]">{formatCurrency(r.capital)}</td>
+                        <td className="text-right text-[var(--text-primary)]">{formatCurrency(r.saldo)}</td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             </div>
           )}
 
           {/* Mejora 20: Gráfico capital vs interés */}
           {amortizacion.length > 0 && (
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-[var(--data-info-500)]" /> Evolución Capital vs Interés ({calcSistema})
               </CardTitle>
@@ -1601,8 +1209,8 @@ export default function PrestamosModule() {
             return (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[{ label: "Total a pagar", value: formatCurrency(totalPagar), color: "text-[var(--text-primary)]" }, { label: "Total intereses", value: formatCurrency(totalInt), color: "text-[var(--data-error-500)]" }, { label: "Cuota promedio", value: formatCurrency(cuotaProm), color: "text-[var(--accent)]" }, { label: "Costo / capital", value: montoBase > 0 ? `${((totalInt / montoBase) * 100).toFixed(1)}%` : "—", color: "text-[var(--data-warning-500)]" }].map(kpi => (
-                  <div key={kpi.label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3  text-center">
-                    <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">{kpi.label}</p>
+                  <div key={kpi.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-center">
+                    <p className="text-sm font-bold text-[var(--text-tertiary)] mb-1">{kpi.label}</p>
                     <p className={cn("text-lg font-extrabold font-mono", kpi.color)}>{kpi.value}</p>
                   </div>
                 ))}
@@ -1615,7 +1223,7 @@ export default function PrestamosModule() {
             const sistemas = Object.entries(amortizacionAll) as [SistemaAmortizacion, { num: number; cuota: number; interes: number; capital: number; saldo: number }[]][];
             const colores: Record<SistemaAmortizacion, string> = { FRANCES: "var(--data-success)", ALEMAN: "var(--text-secondary)", AMERICANO: "var(--text-tertiary)" };
             return (
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6  space-y-4">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 space-y-4">
                 <CardTitle className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                   <Scale className="h-4 w-4 text-[var(--data-success-500)]" /> Comparador — mismo monto, tasa y plazo
                 </CardTitle>
@@ -1625,12 +1233,12 @@ export default function PrestamosModule() {
                     const intTotal = tabla.reduce((s, r) => s + r.interes, 0);
                     return (
                       <div key={sis} className="border border-[var(--rule-base)] rounded-xl p-4 space-y-1" style={{ borderTopColor: colores[sis], borderTopWidth: 3 }}>
-                        <p className="text-xs font-bold text-[var(--text-primary)] mb-2">{SISTEMA_LABELS[sis]}</p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">1ª cuota: <strong className="text-[var(--text-primary)]">{formatCurrency(tabla[0]?.cuota ?? 0)}</strong></p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Última: <strong className="text-[var(--text-primary)]">{formatCurrency(tabla[tabla.length-1]?.cuota ?? 0)}</strong></p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Intereses: <strong className="text-[var(--data-error-500)]">{formatCurrency(intTotal)}</strong></p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Total: <strong className="text-[var(--text-primary)]">{formatCurrency(total)}</strong></p>
-                        <button onClick={() => { setCalcSistema(sis); setShowComparador(false); }} className="mt-2 w-full text-[length:var(--ts-2xs)] font-bold py-1.5 rounded-lg transition-colors" style={{ backgroundColor: colores[sis] + "20", color: colores[sis] }}>Usar este sistema</button>
+                        <p className="text-sm font-bold text-[var(--text-primary)] mb-2">{SISTEMA_LABELS[sis]}</p>
+                        <p className="text-sm text-[var(--text-secondary)]">1ª cuota: <strong className="text-[var(--text-primary)]">{formatCurrency(tabla[0]?.cuota ?? 0)}</strong></p>
+                        <p className="text-sm text-[var(--text-secondary)]">Última: <strong className="text-[var(--text-primary)]">{formatCurrency(tabla[tabla.length-1]?.cuota ?? 0)}</strong></p>
+                        <p className="text-sm text-[var(--text-secondary)]">Intereses: <strong className="text-[var(--data-error-500)]">{formatCurrency(intTotal)}</strong></p>
+                        <p className="text-sm text-[var(--text-secondary)]">Total: <strong className="text-[var(--text-primary)]">{formatCurrency(total)}</strong></p>
+                        <button onClick={() => { setCalcSistema(sis); setShowComparador(false); }} className="mt-2 w-full text-sm font-bold py-1.5 rounded-lg transition-colors" style={{ backgroundColor: colores[sis] + "20", color: colores[sis] }}>Usar este sistema</button>
                       </div>
                     );
                   })}
@@ -1641,59 +1249,36 @@ export default function PrestamosModule() {
         </div>
       )}
 
-      {/* ── Detail Sheet ──────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {selected && (
-          <>
-            <m.div
-              key="prestamo-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop" style={{ zIndex: 40 }}
-              onClick={() => setSelected(null)}
-            />
-            <m.div
-              key="prestamo-panel"
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto"
-            >
-              <div className="p-4 sm:p-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Detalle Préstamo</CardTitle>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
-                  </button>
-                </div>
+      {/* ── Detalle: ventana lateral del panel ── */}
+      {selected && (
+        <AdminModal open onClose={cerrarSelected} variant="side" title="Detalle del préstamo" icon={Landmark}>
+              <div className={cn(MODAL_BODY, "space-y-5")}>
 
                 {/* Info */}
-                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center">
                       <User className="h-5 w-5 text-secondary" />
                     </div>
                     <div>
                       <p className="font-bold text-[var(--text-primary)]">{selected.customerId}</p>
-                      <p className="text-xs text-[var(--text-secondary)]">Creado: {formatDate(selected.createdAt)}</p>
+                      <p className="text-sm text-[var(--text-secondary)]">Creado: {formatDate(selected.createdAt)}</p>
                     </div>
-                    <span className={cn("ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", STATUS_META[selected.status].bg, STATUS_META[selected.status].color)}>
+                    <span className={cn("ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold", STATUS_META[selected.status].bg, STATUS_META[selected.status].color)}>
                       {STATUS_META[selected.status].label}
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-base)]">
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Monto</p>
+                      <p className="text-sm font-bold text-[var(--text-tertiary)]">Monto</p>
                       <p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.monto)}</p>
                     </div>
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Tasa</p>
+                      <p className="text-sm font-bold text-[var(--text-tertiary)]">Tasa mensual</p>
                       <p className="text-sm font-bold text-[var(--text-primary)]">{selected.tasaInteres}%</p>
                     </div>
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Cuotas</p>
+                      <p className="text-sm font-bold text-[var(--text-tertiary)]">Cuotas</p>
                       <p className="text-sm font-bold text-[var(--text-primary)]">{selected.numeroCuotas}</p>
                     </div>
                   </div>
@@ -1708,8 +1293,8 @@ export default function PrestamosModule() {
                     return (
                       <div className="mt-3 pt-3 border-t border-[var(--rule-base)] grid grid-cols-2 gap-2">
                         {[{ label: "Pagado", val: formatCurrency(totalPagado), col: "text-[var(--data-success-500)]" }, { label: "Pendiente", val: formatCurrency(totalPendiente), col: "text-secondary" }, { label: "Intereses pag.", val: formatCurrency(interesesPag), col: "text-[var(--data-error-500)]" }, { label: "Mora acum.", val: formatCurrency(moraAcum), col: moraAcum > 0 ? "text-[var(--data-warning-600)]" : "text-[var(--text-tertiary)]" }].map(item => (
-                          <div key={item.label} className="bg-gray-50 rounded-lg p-2 text-center">
-                            <p className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)]">{item.label}</p>
+                          <div key={item.label} className="bg-[var(--surface-sunken)] rounded-lg p-2 text-center">
+                            <p className="text-sm font-bold text-[var(--text-tertiary)]">{item.label}</p>
                             <p className={cn("text-sm font-extrabold font-mono", item.col)}>{item.val}</p>
                           </div>
                         ))}
@@ -1719,9 +1304,9 @@ export default function PrestamosModule() {
                 </div>
 
                 {/* Datos del préstamo (tipo, entidad, sistema, etc.) */}
-                <div className="bg-gray-50 rounded-xl p-3 space-y-2">
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">Información del préstamo</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                <div className="bg-[var(--surface-sunken)] rounded-xl p-3 space-y-2">
+                  <p className="text-sm font-bold text-[var(--text-tertiary)] mb-1">Información del préstamo</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
                     <div className="flex justify-between">
                       <span className="text-[var(--text-secondary)]">Dirección:</span>
                       <span className="font-bold" style={{ color: DIRECCION_META[selected.direccion].color }}>{DIRECCION_META[selected.direccion].label}</span>
@@ -1746,7 +1331,7 @@ export default function PrestamosModule() {
                     )}
                     {selected.moraInteres > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-[var(--text-secondary)]">Mora:</span>
+                        <span className="text-[var(--text-secondary)]">Mora anual:</span>
                         <span className="font-bold text-[var(--data-error-500)]">{selected.moraInteres}%</span>
                       </div>
                     )}
@@ -1792,17 +1377,17 @@ export default function PrestamosModule() {
                 {/* Cronograma de cuotas — tabs: timeline vs tabla amortización */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-bold text-[var(--text-primary)]">Cronograma de cuotas</h4>
-                    <div className="flex bg-gray-100 rounded-lg p-0.5">
+                    <BlockTitle>Cronograma de cuotas</BlockTitle>
+                    <div className="flex bg-[var(--surface-sunken)] rounded-lg p-0.5">
                       <button
                         onClick={() => setDetailView("timeline")}
-                        className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-colors", detailView === "timeline" ? "bg-white dark:bg-[var(--color-card)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
+                        className={cn("px-2.5 py-1 rounded-lg text-sm font-bold transition-colors", detailView === "timeline" ? "bg-[var(--surface-raised)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
                       >
                         Timeline
                       </button>
                       <button
                         onClick={() => setDetailView("amortizacion")}
-                        className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-colors", detailView === "amortizacion" ? "bg-white dark:bg-[var(--color-card)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
+                        className={cn("px-2.5 py-1 rounded-lg text-sm font-bold transition-colors", detailView === "amortizacion" ? "bg-[var(--surface-raised)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
                       >
                         Tabla
                       </button>
@@ -1833,35 +1418,35 @@ export default function PrestamosModule() {
                         const totalInteres = selected.cuotas.reduce((s, c) => s + c.interes, 0);
                         const totalCuota = selected.cuotas.reduce((s, c) => s + c.monto, 0);
                         return (
-                          <div className="overflow-x-auto -mx-1">
-                            <table className="w-full text-[length:var(--ts-xs)]">
+                          <div className="-mx-1">
+                            <DataTable>
                               <thead>
                                 <tr className="border-b border-[var(--rule-base)]">
-                                  <th className="text-left py-1.5 px-1 font-bold text-[var(--text-tertiary)]">#</th>
-                                  <th className="text-left py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Fecha</th>
-                                  <th className="text-right py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Capital</th>
-                                  <th className="text-right py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Interés</th>
-                                  <th className="text-right py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Cuota</th>
-                                  <th className="text-right py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Saldo</th>
-                                  <th className="text-center py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Estado</th>
+                                  <th>#</th>
+                                  <th>Fecha</th>
+                                  <th className="text-right">Capital</th>
+                                  <th className="text-right">Interés</th>
+                                  <th className="text-right">Cuota</th>
+                                  <th className="text-right">Saldo</th>
+                                  <th className="text-center">Estado</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {rows.map(c => (
-                                  <tr key={c.id} className={cn("border-b border-[var(--rule-soft)]", c.pagadoEn ? "bg-[var(--accent-soft)]/50" : !c.pagadoEn && new Date(c.fechaVence) < new Date() ? "bg-[var(--data-error-50)]/50" : "")}>
-                                    <td className="py-1.5 px-1 font-mono text-[var(--text-secondary)]">{c.numeroCuota}</td>
-                                    <td className="py-1.5 px-1 text-[var(--text-secondary)]">{new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</td>
-                                    <td className="py-1.5 px-1 text-right font-mono text-[var(--text-primary)]">{formatCurrency(c.capital)}</td>
-                                    <td className="py-1.5 px-1 text-right font-mono text-[var(--data-error-500)]/70">{formatCurrency(c.interes)}</td>
-                                    <td className="py-1.5 px-1 text-right font-mono font-bold text-[var(--text-primary)]">{formatCurrency(c.monto)}</td>
-                                    <td className="py-1.5 px-1 text-right font-mono text-[var(--data-success-500)]">{formatCurrency(c.saldo)}</td>
-                                    <td className="py-1.5 px-1 text-center">
+                                  <tr key={c.id} className={c.pagadoEn ? "bg-primary/10" : !c.pagadoEn && new Date(c.fechaVence) < new Date() ? "bg-[var(--data-error-50)]/50" : undefined}>
+                                    <td className="font-mono text-[var(--text-secondary)]">{c.numeroCuota}</td>
+                                    <td className="text-[var(--text-secondary)]">{formatDateShort(c.fechaVence)}</td>
+                                    <td className="text-right font-mono text-[var(--text-primary)]">{formatCurrency(c.capital)}</td>
+                                    <td className="text-right font-mono text-[var(--data-error-500)]/70">{formatCurrency(c.interes)}</td>
+                                    <td className="text-right font-mono font-bold text-[var(--text-primary)]">{formatCurrency(c.monto)}</td>
+                                    <td className="text-right font-mono text-[var(--data-success-500)]">{formatCurrency(c.saldo)}</td>
+                                    <td className="text-center">
                                       {c.pagadoEn ? (
-                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] px-1.5 py-0.5 rounded">PAGADA</span>
+                                        <span className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 px-1.5 py-0.5 rounded">PAGADA</span>
                                       ) : new Date(c.fechaVence) < new Date() ? (
-                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1.5 py-0.5 rounded">VENCIDA</span>
+                                        <span className="text-sm font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1.5 py-0.5 rounded">VENCIDA</span>
                                       ) : (
-                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] bg-[var(--data-warning-100)] px-1.5 py-0.5 rounded">PEND.</span>
+                                        <span className="text-sm font-bold text-[var(--data-warning-500)] bg-[var(--data-warning-100)] px-1.5 py-0.5 rounded">PEND.</span>
                                       )}
                                     </td>
                                   </tr>
@@ -1869,14 +1454,14 @@ export default function PrestamosModule() {
                               </tbody>
                               <tfoot>
                                 <tr className="border-t-2 border-[var(--rule-base)] font-bold">
-                                  <td colSpan={2} className="py-2 px-1 text-[var(--text-secondary)]">TOTAL</td>
-                                  <td className="py-2 px-1 text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCapital)}</td>
-                                  <td className="py-2 px-1 text-right font-mono text-[var(--data-error-500)]">{formatCurrency(totalInteres)}</td>
-                                  <td className="py-2 px-1 text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCuota)}</td>
+                                  <td colSpan={2} className="text-[var(--text-secondary)]">TOTAL</td>
+                                  <td className="text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCapital)}</td>
+                                  <td className="text-right font-mono text-[var(--data-error-500)]">{formatCurrency(totalInteres)}</td>
+                                  <td className="text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCuota)}</td>
                                   <td colSpan={2}></td>
                                 </tr>
                               </tfoot>
-                            </table>
+                            </DataTable>
                           </div>
                         );
                       })()}
@@ -1892,36 +1477,36 @@ export default function PrestamosModule() {
                         const pagoAnticipado = capitalPendiente + (pendientes[0]?.interes || 0);
                         const ahorro = totalPendiente - pagoAnticipado;
                         return (
-                          <div className="mt-3 bg-[var(--accent-soft)] rounded-xl p-3 border border-[var(--data-success-500)]/30">
+                          <div className="mt-3 bg-primary/10 rounded-xl p-3 border border-[var(--data-success-500)]/30">
                             <button
                               onClick={() => setShowPagoAnticipado(!showPagoAnticipado)}
                               className="w-full flex items-center justify-between"
                             >
-                              <span className="text-xs font-bold text-[var(--data-success-500)] flex items-center gap-1.5">
+                              <span className="text-sm font-bold text-[var(--data-success-500)] flex items-center gap-1.5">
                                 <Calculator className="h-3.5 w-3.5" /> Pago anticipado total
                               </span>
                               {showPagoAnticipado ? <ChevronUp className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <ChevronDown className="h-3.5 w-3.5 text-[var(--data-success-500)]" />}
                             </button>
                             {showPagoAnticipado && (
                               <div className="mt-2 pt-2 border-t border-[var(--data-success-500)]/30 space-y-1.5">
-                                <div className="flex justify-between text-[length:var(--ts-xs)]">
+                                <div className="flex justify-between text-sm">
                                   <span className="text-[var(--data-success-500)]">Capital pendiente:</span>
                                   <span className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(capitalPendiente)}</span>
                                 </div>
-                                <div className="flex justify-between text-[length:var(--ts-xs)]">
+                                <div className="flex justify-between text-sm">
                                   <span className="text-[var(--data-success-500)]">Intereses pendientes:</span>
                                   <span className="font-mono text-[var(--data-error-500)]">{formatCurrency(interesPendiente)}</span>
                                 </div>
-                                <div className="flex justify-between text-[length:var(--ts-xs)]">
+                                <div className="flex justify-between text-sm">
                                   <span className="text-[var(--data-success-500)]">Interés mes actual:</span>
                                   <span className="font-mono text-[var(--text-secondary)]">{formatCurrency(pendientes[0]?.interes || 0)}</span>
                                 </div>
-                                <div className="flex justify-between text-xs pt-1 border-t border-[var(--data-success-500)]/30">
+                                <div className="flex justify-between text-sm pt-1 border-t border-[var(--data-success-500)]/30">
                                   <span className="font-bold text-[var(--data-success-500)]">Liquidación hoy:</span>
                                   <span className="font-extrabold font-mono text-[var(--data-success-500)]">{formatCurrency(pagoAnticipado)}</span>
                                 </div>
                                 {ahorro > 0 && (
-                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold bg-[var(--accent-soft)] rounded-lg px-2 py-1 text-center">
+                                  <p className="text-sm text-[var(--data-success-500)] font-bold bg-primary/10 rounded-lg px-2 py-1 text-center">
                                     Ahorro de {formatCurrency(ahorro)} en intereses futuros
                                   </p>
                                 )}
@@ -1953,7 +1538,7 @@ export default function PrestamosModule() {
   td { padding: 6px 8px; border-bottom: 1px solid #eee; }
   tr:nth-child(even) { background: #f9f9f9; }
   .paid { color: var(--accent); font-weight: bold; }
-  .pending { color: #d97706; }
+  .pending { color: #f0503f; }
   .total-row { background: #f0fdf4 !important; font-weight: bold; }
   .right { text-align: right; }
   .footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px; display: flex; justify-content: space-between; font-size: 12px; }
@@ -1976,15 +1561,15 @@ export default function PrestamosModule() {
 <tbody>
 ${cuotas.map(c => { const row = `<tr>
   <td>${c.numeroCuota}</td>
-  <td>${new Date(c.fechaVence).toLocaleDateString("es-PE")}</td>
-  <td class="right">S/${Number(c.capital).toFixed(2)}</td>
-  <td class="right">S/${Number(c.interes).toFixed(2)}</td>
-  <td class="right"><b>S/${Number(c.monto).toFixed(2)}</b></td>
-  <td class="right">S/${(saldo = Math.max(0, saldo - c.capital)).toFixed(2)}</td>
+  <td>${formatDateNumeric(c.fechaVence)}</td>
+  <td class="right">${formatCurrency(c.capital)}</td>
+  <td class="right">${formatCurrency(c.interes)}</td>
+  <td class="right"><b>${formatCurrency(c.monto)}</b></td>
+  <td class="right">${formatCurrency((saldo = Math.max(0, saldo - c.capital)))}</td>
   <td class="${c.pagadoEn ? "paid" : "pending"}">${c.pagadoEn ? "Pagado" : "Pendiente"}</td>
-  <td>${c.pagadoEn ? new Date(c.pagadoEn).toLocaleDateString("es-PE") : "—"}</td>
+  <td>${formatDateNumeric(c.pagadoEn)}</td>
 </tr>`; return row; }).join("")}
-<tr class="total-row"><td colspan="2"><b>TOTAL</b></td><td class="right"><b>S/${cuotas.reduce((s,c)=>s+c.capital,0).toFixed(2)}</b></td><td class="right"><b>S/${cuotas.reduce((s,c)=>s+c.interes,0).toFixed(2)}</b></td><td class="right"><b>S/${totalPagar.toFixed(2)}</b></td><td colspan="3"></td></tr>
+<tr class="total-row"><td colspan="2"><b>TOTAL</b></td><td class="right"><b>${formatCurrency(cuotas.reduce((s,c)=>s+c.capital,0))}</b></td><td class="right"><b>${formatCurrency(cuotas.reduce((s,c)=>s+c.interes,0))}</b></td><td class="right"><b>${formatCurrency(totalPagar)}</b></td><td colspan="3"></td></tr>
 </tbody></table>
 <div class="footer">
   <div class="firma">Firma del deudor</div>
@@ -1994,7 +1579,7 @@ ${cuotas.map(c => { const row = `<tr>
                             w.document.close();
                             setTimeout(() => w.print(), 300);
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors"
                         >
                           <Printer className="h-3.5 w-3.5" /> Cronograma
                         </button>
@@ -2004,7 +1589,7 @@ ${cuotas.map(c => { const row = `<tr>
                             const pagadas = cuotas.filter(c => c.pagadoEn);
                             const pendientes = cuotas.filter(c => !c.pagadoEn);
                             const saldoPendiente = pendientes.reduce((s, c) => s + c.monto, 0);
-                            const hoy = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
+                            const hoy = formatDateLong(new Date());
                             const w = window.open("", "_blank");
                             if (!w) return;
                             w.document.write(`<!DOCTYPE html><html><head><title>Resumen de Deuda</title>
@@ -2021,7 +1606,7 @@ ${cuotas.map(c => { const row = `<tr>
   th { background: #f0f0f0; padding: 6px; text-align: left; border: 1px solid #ddd; }
   td { padding: 5px 6px; border: 1px solid #eee; }
   .paid { color: var(--accent); }
-  .pend { color: #d97706; }
+  .pend { color: #f0503f; }
   .right { text-align: right; }
   .firma-section { margin-top: 50px; }
   .firma-line { border-top: 1px solid #333; width: 250px; margin-top: 40px; padding-top: 4px; text-align: center; font-size: 11px; }
@@ -2054,12 +1639,12 @@ ${cuotas.map(c => { const row = `<tr>
   <tbody>
   ${cuotas.map(c => `<tr>
     <td>${c.numeroCuota}</td>
-    <td>${new Date(c.fechaVence).toLocaleDateString("es-PE")}</td>
-    <td class="right">S/ ${Number(c.capital).toFixed(2)}</td>
-    <td class="right">S/ ${Number(c.interes).toFixed(2)}</td>
-    <td class="right"><b>S/ ${Number(c.monto).toFixed(2)}</b></td>
+    <td>${formatDateNumeric(c.fechaVence)}</td>
+    <td class="right">${formatCurrency(c.capital)}</td>
+    <td class="right">${formatCurrency(c.interes)}</td>
+    <td class="right"><b>${formatCurrency(c.monto)}</b></td>
     <td class="${c.pagadoEn ? "paid" : "pend"}">${c.pagadoEn ? "PAGADO" : "PEND."}</td>
-    <td>${c.pagadoEn ? new Date(c.pagadoEn).toLocaleDateString("es-PE") : "—"}</td>
+    <td>${formatDateNumeric(c.pagadoEn)}</td>
   </tr>`).join("")}
   </tbody></table>
 </div>
@@ -2071,7 +1656,7 @@ ${cuotas.map(c => { const row = `<tr>
                             w.document.close();
                             setTimeout(() => w.print(), 300);
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]/80 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-[var(--accent)] bg-primary/10 hover:bg-primary/10 transition-colors"
                         >
                           <FileText className="h-3.5 w-3.5" /> Resumen Deuda
                         </button>
@@ -2080,7 +1665,7 @@ ${cuotas.map(c => { const row = `<tr>
                       {/* Acciones de pago — mejorado con multi-cuota */}
                       {selected.status === "ACTIVO" && (
                         <div className="mt-4 space-y-3">
-                          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Pagar cuotas</p>
+                          <p className="text-sm font-bold text-[var(--text-tertiary)]">Pagar cuotas</p>
                           {/* Selección múltiple de cuotas */}
                           <div className="space-y-1.5 max-h-40 overflow-y-auto">
                             {selected.cuotas.filter(c => !c.pagadoEn).map(c => {
@@ -2091,7 +1676,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   key={c.id}
                                   className={cn(
                                     "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all",
-                                    isSelected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--rule-base)] hover:border-gray-300",
+                                    isSelected ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)] hover:border-[var(--rule-base)]",
                                     isOverdue && !isSelected && "border-[var(--data-error-500)] bg-[var(--data-error-50)]/50"
                                   )}
                                 >
@@ -2105,12 +1690,12 @@ ${cuotas.map(c => { const row = `<tr>
                                     }}
                                     className="accent-blue-600 h-3.5 w-3.5"
                                   />
-                                  <span className="flex-1 text-xs">
+                                  <span className="flex-1 text-sm">
                                     <span className="font-bold text-[var(--text-primary)]">Cuota {c.numeroCuota}</span>
-                                    <span className="text-[var(--text-secondary)] ml-1">— {new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
+                                    <span className="text-[var(--text-secondary)] ml-1">— {formatDateShort(c.fechaVence)}</span>
                                   </span>
-                                  <span className="text-xs font-bold font-mono text-[var(--text-primary)]">{formatCurrency(c.monto)}</span>
-                                  {isOverdue && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1 py-0.5 rounded">VENCIDA</span>}
+                                  <span className="text-sm font-bold font-mono text-[var(--text-primary)]">{formatCurrency(c.monto)}</span>
+                                  {isOverdue && <span className="text-sm font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1 py-0.5 rounded">VENCIDA</span>}
                                 </label>
                               );
                             })}
@@ -2121,7 +1706,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 onClick={handlePagoMultiple}
                                 disabled={payingMultiple}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 disabled:opacity-50 transition-colors"
                               >
                                 {payingMultiple ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                                 Pagar {selectedCuotaIds.size} cuota{selectedCuotaIds.size > 1 ? "s" : ""} ({formatCurrency(selected.cuotas.filter(c => selectedCuotaIds.has(c.id)).reduce((s, c) => s + c.monto, 0))})
@@ -2132,7 +1717,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   const next = selected.cuotas.find(c => !c.pagadoEn);
                                   if (next) { setPagoCuotaId(next.id); setPagoMonto(String(next.monto)); setPagoError(null); setShowPago(true); }
                                 }}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 transition-colors"
                               >
                                 <DollarSign className="h-4 w-4" /> Pagar siguiente cuota
                               </button>
@@ -2142,17 +1727,17 @@ ${cuotas.map(c => { const row = `<tr>
                                 const all = new Set(selected.cuotas.filter(c => !c.pagadoEn).map(c => c.id));
                                 setSelectedCuotaIds(selectedCuotaIds.size === all.size ? new Set() : all);
                               }}
-                              className="px-3 py-2.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                              className="px-3 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors"
                               title={selectedCuotaIds.size > 0 ? "Deseleccionar todas" : "Seleccionar todas"}
                             >
                               {selectedCuotaIds.size > 0 ? <X className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                             </button>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30">
+                            <button onClick={() => { setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-[var(--accent-soft)] hover:bg-[var(--accent-muted)] border border-[var(--accent)]/30">
                               <RotateCcw className="h-3.5 w-3.5" /> Refinanciar
                             </button>
-                            <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error-500)]">
+                            <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error-500)]">
                               <Ban className="h-3.5 w-3.5" /> Cancelar
                             </button>
                           </div>
@@ -2161,28 +1746,28 @@ ${cuotas.map(c => { const row = `<tr>
 
                       {/* Mejora 17: Documentos adjuntos */}
                       <div>
-                        <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
+                        <BlockTitle className="mb-2 flex items-center gap-2">
                           <Paperclip className="h-4 w-4 text-[var(--data-success-500)]" /> Documentos
-                          <span className="text-xs text-[var(--text-tertiary)] font-normal">({selected.documentos?.length ?? 0})</span>
-                        </h4>
+                          <span className="text-sm text-[var(--text-tertiary)] font-normal">({selected.documentos?.length ?? 0})</span>
+                        </BlockTitle>
                         {selected.documentos && selected.documentos.length > 0 ? (
                           <div className="space-y-1.5">
                             {selected.documentos.map(doc => (
-                              <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg border border-[var(--rule-soft)] hover:bg-gray-50 transition-colors">
+                              <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg border border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)] transition-colors">
                                 <FileText className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
-                                <span className="text-xs text-[var(--text-primary)] flex-1 truncate">{doc.nombre}</span>
-                                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{formatDate(doc.createdAt)}</span>
+                                <span className="text-sm text-[var(--text-primary)] flex-1 truncate">{doc.nombre}</span>
+                                <span className="text-sm text-[var(--text-tertiary)] shrink-0">{formatDate(doc.createdAt)}</span>
                               </a>
                             ))}
                           </div>
-                        ) : <p className="text-xs text-[var(--text-tertiary)] py-1">Sin documentos adjuntos</p>}
-                        <label className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[var(--rule-base)] cursor-pointer hover:bg-gray-50">
+                        ) : <p className="text-sm text-[var(--text-tertiary)] py-1">Sin documentos adjuntos</p>}
+                        <label className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[var(--rule-base)] cursor-pointer hover:bg-[var(--surface-sunken)]">
                           <input type="file" className="hidden" onChange={async (e) => {
                             const file = e.target.files?.[0]; if (!file) return; setUploadingDoc(true);
-                            try { const form = new FormData(); form.append("file", file); form.append("nombre", file.name); await fetch(`/api/prestamos/${selected.id}/documentos`, { method: "POST", body: form }); await openDetail(selected); } catch { /* silent */ } finally { setUploadingDoc(false); e.target.value = ""; }
+                            try { const form = new FormData(); form.append("file", file); form.append("nombre", file.name); await fetch(`/api/prestamos/${selected.id}/documentos`, { method: "POST", headers: csrfHeaders(), body: form }); await openDetail(selected); } catch { /* silent */ } finally { setUploadingDoc(false); e.target.value = ""; }
                           }} />
                           {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent)]" /> : <Plus className="h-3.5 w-3.5 text-[var(--data-info-500)]" />}
-                          <span className="text-xs text-[var(--text-secondary)]">Subir documento</span>
+                          <span className="text-sm text-[var(--text-secondary)]">Subir documento</span>
                         </label>
                       </div>
 
@@ -2192,19 +1777,19 @@ ${cuotas.map(c => { const row = `<tr>
                         if (pagadas.length === 0) return null;
                         return (
                           <div>
-                            <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
+                            <BlockTitle className="mb-2 flex items-center gap-2">
                               <History className="h-4 w-4 text-[var(--data-info-500)]" /> Historial de pagos ({pagadas.length})
-                            </h4>
+                            </BlockTitle>
                             <div className="space-y-2 max-h-52 overflow-y-auto">
                               {pagadas.map(c => (
-                                <div key={c.id} className="flex items-center justify-between py-2 px-3 bg-[var(--accent-soft)] rounded-xl">
+                                <div key={c.id} className="flex items-center justify-between py-2 px-3 bg-primary/10 rounded-xl">
                                   <div>
-                                    <p className="text-xs font-bold text-[var(--text-primary)]">Cuota #{c.numeroCuota}</p>
-                                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{formatDate(c.pagadoEn!)}</p>
+                                    <p className="text-sm font-bold text-[var(--text-primary)]">Cuota #{c.numeroCuota}</p>
+                                    <p className="text-sm text-[var(--text-secondary)]">{formatDate(c.pagadoEn!)}</p>
                                   </div>
                                   <div className="text-right">
                                     <p className="text-sm font-bold text-[var(--data-success-500)]">{formatCurrency(c.montoPagado || c.monto)}</p>
-                                    {c.montoPagado && c.montoPagado > c.monto && <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)]">+{formatCurrency(c.montoPagado - c.monto)} mora</p>}
+                                    {c.montoPagado && c.montoPagado > c.monto && <p className="text-sm text-[var(--data-warning-500)]">+{formatCurrency(c.montoPagado - c.monto)} mora</p>}
                                   </div>
                                 </div>
                               ))}
@@ -2216,159 +1801,114 @@ ${cuotas.map(c => { const row = `<tr>
                   )}
                 </div>
               </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+        </AdminModal>
+      )}
 
-      {/* ── Refinanciar Modal (mejora 15) ──────────────────────────────────────── */}
-      <AnimatePresence>
-        {showRefinanciar && selected && (
-          <>
-            <m.div key="ref-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowRefinanciar(false)} />
-            <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowRefinanciar(false)}>
-              <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2"><RotateCcw className="h-5 w-5 text-[var(--data-success-500)]" /> Refinanciar Préstamo</CardTitle>
-                  <button onClick={() => setShowRefinanciar(false)}><X className="h-4 w-4 text-[var(--text-secondary)]" /></button>
-                </div>
+      {/* ── Refinanciar (mejora 15): ventana del panel, se abre desde el detalle ── */}
+      {showRefinanciar && selected && (
+        <AdminModal
+          open
+          onClose={() => setShowRefinanciar(false)}
+          title="Refinanciar préstamo"
+          icon={RotateCcw}
+          size="sm"
+          aboveModals
+          claveVentana="prestamos-refinanciar"
+          footer={
+            <ModalFooter error={refinanciarError}>
+              <button type="button" onClick={() => setShowRefinanciar(false)} className={button({ variant: "secondary", className: "rounded-xl" })}>Cancelar</button>
+              <button type="button" onClick={handleRefinanciar} disabled={refinancing} className={button({ variant: "primary", className: "rounded-xl px-5" })}>
+                {refinancing ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <RotateCcw className="h-4 w-4" aria-hidden />} Refinanciar
+              </button>
+            </ModalFooter>
+          }
+        >
+          <div className={MODAL_BODY}>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nuevo monto (S/)</label><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nueva tasa (%)</label><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Sistema</label><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+                  <Field label="Capital pendiente"><input type="text" readOnly aria-readonly="true" value={formatCurrency(capitalPendiente(selected.cuotas))} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] cursor-default focus:outline-none" /></Field>
+                  <Field label="Nueva tasa mensual %"><input type="number" step="0.01" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="N° cuotas"><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="Sistema"><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
                 </div>
-                {refinanciarError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{refinanciarError}</p>}
-                <div className="flex gap-2">
-                  <button onClick={() => setShowRefinanciar(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200">Cancelar</button>
-                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50">
-                    {refinancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Refinanciar
-                  </button>
-                </div>
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+          </div>
+        </AdminModal>
+      )}
 
-      {/* ── Cancelar Préstamo Confirm (mejora 23) ─────────────────────────────── */}
-      <AnimatePresence>
-        {showCancelConfirm && selected && (
-          <>
-            <m.div key="cancel-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowCancelConfirm(false)} />
-            <m.div key="cancel-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowCancelConfirm(false)}>
-              <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-[var(--data-error-50)] rounded-xl border border-[var(--data-error-500)]">
-                  <AlertCircle className="h-6 w-6 text-[var(--data-error-500)] shrink-0" />
-                  <div>
-                    <p className="text-sm font-bold text-[var(--data-error-500)]">¿Cancelar este préstamo?</p>
-                    <p className="text-xs text-[var(--data-error-500)] mt-0.5">Esta acción cambiará el estado a CANCELADO. Las cuotas pendientes no se cobrarán.</p>
-                  </div>
-                </div>
-                <p className="text-sm text-[var(--text-primary)]">Préstamo: <strong>{selected.entidadNombre || selected.customerId}</strong> — {formatCurrency(selected.monto)}</p>
-                <div className="flex gap-2">
-                  <button onClick={() => setShowCancelConfirm(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200">Volver</button>
-                  <button onClick={handleCancelPrestamo} disabled={canceling} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50">
-                    {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Sí, cancelar
-                  </button>
-                </div>
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* ── Cancelar préstamo (mejora 23) ── */}
+      {showCancelConfirm && selected && (
+        <AdminModal
+          open
+          onClose={() => setShowCancelConfirm(false)}
+          title="¿Cancelar este préstamo?"
+          icon={AlertCircle}
+          size="sm"
+          aboveModals
+          footer={
+            <ModalFooter>
+              <button type="button" onClick={() => setShowCancelConfirm(false)} className={button({ variant: "secondary", className: "rounded-xl" })}>Volver</button>
+              <button type="button" onClick={handleCancelPrestamo} disabled={canceling} className={button({ variant: "danger", className: "rounded-xl px-5" })}>
+                {canceling ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Ban className="h-4 w-4" aria-hidden />} Sí, cancelar
+              </button>
+            </ModalFooter>
+          }
+        >
+          <div className={cn(MODAL_BODY, "space-y-3")}>
+            <p className="text-sm text-[var(--text-secondary)]">Su estado pasa a «Cancelado» y las cuotas pendientes ya no se cobran.</p>
+            <p className="text-sm text-[var(--text-primary)]">Préstamo: <strong>{selected.entidadNombre || selected.customerId}</strong> — {formatCurrency(selected.monto)}</p>
+          </div>
+        </AdminModal>
+      )}
 
-      {/* ── Pago Modal ────────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showPago && selected && (
-          <>
-            <m.div
-              key="pago-prestamo-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop" style={{ zIndex: 60 }}
-              onClick={() => setShowPago(false)}
-            />
-            <m.div
-              key="pago-prestamo-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowPago(false)}
-            >
-              <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
-                <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Pagar Cuota</CardTitle>
-                <div>
-                  <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto del pago (S/)</label>
+      {/* ── Pagar cuota: se abre desde el detalle ── */}
+      {showPago && selected && (
+        <AdminModal
+          open
+          onClose={() => setShowPago(false)}
+          title="Pagar cuota"
+          icon={DollarSign}
+          size="sm"
+          aboveModals
+          claveVentana="prestamos-pagar-cuota"
+          footer={
+            <ModalFooter error={pagoError}>
+              <button type="button" onClick={() => setShowPago(false)} className={button({ variant: "secondary", className: "rounded-xl" })}>Cancelar</button>
+              <button type="button" onClick={handlePago} disabled={paying} className={button({ variant: "primary", className: "rounded-xl px-5" })}>
+                {paying ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <DollarSign className="h-4 w-4" aria-hidden />} Pagar
+              </button>
+            </ModalFooter>
+          }
+        >
+          <div className={MODAL_BODY}>
+                <Field label="Monto del pago (S/)">
                   <input
                     type="number"
                     step="0.01"
                     min="0.01"
                     value={pagoMonto}
                     onChange={e => setPagoMonto(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                    className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                   />
-                </div>
-                {pagoError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{pagoError}</p>}
-                <div className="flex gap-2">
-                  <button onClick={() => setShowPago(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handlePago}
-                    disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
-                  >
-                    {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
-                    Pagar
-                  </button>
-                </div>
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+                </Field>
+          </div>
+        </AdminModal>
+      )}
 
-      {/* ── Create Prestamo Modal ─────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showCreate && (
-          <>
-            <m.div
-              key="create-prestamo-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop"
-              onClick={() => { setShowCreate(false); resetCreateForm(); }}
-            />
-            <m.div
-              key="create-prestamo-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
-              onClick={e => e.target === e.currentTarget && (() => { setShowCreate(false); resetCreateForm(); })()}
-            >
-              <div className="w-full max-w-2xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 my-4">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Crear Préstamo</CardTitle>
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)]">
-                      Paso {createStep} de 2
-                    </span>
-                  </div>
-                  <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="p-1.5 rounded-lg hover:bg-gray-100">
-                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                  </button>
-                </div>
-
+      {/* ── Crear préstamo: ventana del panel (11-10, «todo parejo») ── */}
+      {showCreate && (
+        <AdminModal
+          open
+          onClose={cerrarCreate}
+          title="Crear préstamo"
+          description={`Paso ${createStep} de 2`}
+          icon={Landmark}
+          size="lg"
+          claveVentana="prestamos-crear"
+        >
+              <div className={cn(MODAL_BODY, "space-y-4")}>
                 {/* Step indicator */}
                 <div className="flex gap-2">
-                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 1 ? "bg-[var(--accent)]" : "bg-gray-200"}`} />
-                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 2 ? "bg-[var(--accent)]" : "bg-gray-200"}`} />
+                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 1 ? "bg-[var(--accent)]" : "bg-[var(--surface-sunken)]"}`} />
+                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 2 ? "bg-[var(--accent)]" : "bg-[var(--surface-sunken)]"}`} />
                 </div>
 
                 {/* ── STEP 1: Tipo, Dirección, Entidad ──────────── */}
@@ -2376,7 +1916,7 @@ ${cuotas.map(c => { const row = `<tr>
                   <div className="space-y-6">
                     {/* Dirección: DADO / RECIBIDO */}
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">¿Prestas o te prestan?</label>
+                      <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1.5">¿Prestas o te prestan?</span>
                       <div className="grid grid-cols-2 gap-2">
                         {(["DADO", "RECIBIDO"] as const).map(dir => {
                           const meta = DIRECCION_META[dir];
@@ -2386,11 +1926,11 @@ ${cuotas.map(c => { const row = `<tr>
                             <button
                               key={dir}
                               onClick={() => setCreateDireccion(dir)}
-                              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300"}`}
+                              className={`flex items-center gap-2 px-3 min-h-11 rounded-xl border-2 text-sm font-semibold transition-all ${active ? "border-[var(--accent)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-base)]"}`}
                             >
                               <Icon className="h-4 w-4" />
                               {meta.label}
-                              <span className="text-[length:var(--ts-2xs)] font-normal opacity-60">{dir === "DADO" ? "(tú prestas)" : "(te prestan)"}</span>
+                              <span className="text-sm font-normal opacity-60">{dir === "DADO" ? "(tú prestas)" : "(te prestan)"}</span>
                             </button>
                           );
                         })}
@@ -2399,7 +1939,7 @@ ${cuotas.map(c => { const row = `<tr>
 
                     {/* Tipo de préstamo */}
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Tipo de préstamo</label>
+                      <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1.5">Tipo de préstamo</span>
                       <div className="grid grid-cols-2 gap-2">
                         {(["PERSONAL", "BANCARIO", "TERCERO", "PROVEEDOR"] as const).map(tipo => {
                           const meta = TIPO_META[tipo];
@@ -2414,7 +1954,7 @@ ${cuotas.map(c => { const row = `<tr>
                                 if (tipo === "BANCARIO") setCreateEntidadTipo("BANCO");
                                 if (tipo === "PROVEEDOR") setCreateEntidadTipo("PROVEEDOR");
                               }}
-                              className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${active ? `border-current bg-current/5` : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300"}`}
+                              className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-bold transition-all ${active ? `border-current bg-current/5` : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-base)]"}`}
                               style={active ? { color: meta.color, borderColor: meta.color, backgroundColor: meta.color + "10" } : undefined}
                             >
                               <Icon className="h-3.5 w-3.5" />
@@ -2428,7 +1968,7 @@ ${cuotas.map(c => { const row = `<tr>
                     {/* Bancos rápidos — solo si tipo BANCARIO */}
                     {createTipo === "BANCARIO" && (
                       <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Seleccionar banco (tasa referencial)</label>
+                        <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1.5">Seleccionar banco (tasa referencial)</span>
                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                           {BANK_PRESETS.map(preset => {
                             const active = createEntidadNombre === preset.nombre;
@@ -2436,10 +1976,10 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 key={preset.nombre}
                                 onClick={() => applyBankPreset(preset)}
-                                className={`px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all border ${active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50"}`}
+                                className={`px-2 py-1.5 rounded-lg text-sm font-bold transition-all border ${active ? "border-[var(--accent)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50"}`}
                               >
                                 <span className="block">{preset.nombre}</span>
-                                <span className="block text-[length:var(--ts-2xs)] opacity-60">TEA ~{preset.teaRef}%</span>
+                                <span className="block text-sm opacity-60">TEA ~{preset.teaRef}%</span>
                               </button>
                             );
                           })}
@@ -2450,77 +1990,78 @@ ${cuotas.map(c => { const row = `<tr>
                     {/* Entidad (para no-personal) */}
                     {createTipo !== "PERSONAL" && (
                       <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre de entidad</label>
+                        <Field label="Nombre de entidad">
                           <input
                             type="text"
                             value={createEntidadNombre}
                             onChange={e => setCreateEntidadNombre(e.target.value)}
                             placeholder={createTipo === "BANCARIO" ? "Ej: BCP" : createTipo === "PROVEEDOR" ? "Ej: Distribuidora Lima" : "Ej: Juan Pérez"}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                            className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                           />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tipo de entidad</label>
+                        </Field>
+                        <Field label="Tipo de entidad">
                           <select
                             value={createEntidadTipo}
                             onChange={e => setCreateEntidadTipo(e.target.value as PrestamoEntidadTipo)}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                            className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                           >
                             <option value="">Seleccionar...</option>
                             {(Object.entries(ENTIDAD_LABELS) as [PrestamoEntidadTipo, string][]).map(([k, v]) => (
                               <option key={k} value={k}>{v}</option>
                             ))}
                           </select>
-                        </div>
+                        </Field>
                       </div>
                     )}
 
                     {/* Cliente — solo si DADO */}
                     {createDireccion === "DADO" && (
                       <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">¿A quién le prestas? (teléfono del cliente)</label>
-                        <div className="flex gap-1">
-                          <input
-                            type="text"
-                            value={createCustomerId}
-                            onChange={e => setCreateCustomerId(e.target.value)}
-                            placeholder="Ej: 987654321"
-                            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowQuickClient(true)}
-                            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] text-[var(--text-secondary)] transition-colors"
-                            title="Crear cliente rápido"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        </div>
+                        <Field label="¿A quién le prestas? (teléfono del cliente)">
+                          {(id) => (
+                            <div className="flex gap-1">
+                              <input
+                                id={id}
+                                type="text"
+                                value={createCustomerId}
+                                onChange={e => setCreateCustomerId(e.target.value)}
+                                placeholder="Ej: 987654321"
+                                className="flex-1 px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowQuickClient(true)}
+                                className="shrink-0 h-12 w-12 flex items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] text-[var(--text-secondary)] transition-colors"
+                                title="Crear cliente rápido"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </Field>
                       </div>
                     )}
 
                     {/* Nro Operación */}
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° de operación (opcional)</label>
+                    <Field label="N° de operación (opcional)">
                       <input
                         type="text"
                         value={createNroOperacion}
                         onChange={e => setCreateNroOperacion(e.target.value)}
                         placeholder="Ej: OP-2025-001234"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                        className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                       />
-                    </div>
+                    </Field>
 
-                    {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
+                    {createError && <p className="text-sm text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
                     <div className="flex gap-2 pt-1">
-                      <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+                      <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors">
                         Cancelar
                       </button>
                       <button
                         onClick={() => { setCreateError(null); setCreateStep(2); }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 transition-colors"
                       >
                         Siguiente
                         <ChevronRight className="h-4 w-4" />
@@ -2533,31 +2074,29 @@ ${cuotas.map(c => { const row = `<tr>
                 {createStep === 2 && (
                   <div className="space-y-6">
                     {/* Resumen de paso 1 */}
-                    <div className="bg-gray-50 rounded-xl p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                    <div className="bg-[var(--surface-sunken)] rounded-xl p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                         <span className="font-bold">{DIRECCION_META[createDireccion].label}</span>
                         <span>·</span>
                         <span style={{ color: TIPO_META[createTipo].color }} className="font-bold">{TIPO_META[createTipo].label}</span>
                         {createEntidadNombre && <><span>·</span><span className="font-medium">{createEntidadNombre}</span></>}
                       </div>
-                      <button onClick={() => setCreateStep(1)} className="text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:underline">Editar</button>
+                      <button onClick={() => setCreateStep(1)} className="text-sm font-bold text-[var(--accent)] hover:underline">Editar</button>
                     </div>
 
                     {/* Moneda + Monto */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Moneda</label>
+                      <Field label="Moneda">
                         <select
                           value={createMoneda}
                           onChange={e => setCreateMoneda(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         >
                           <option value="PEN">S/ Soles</option>
                           <option value="USD">$ Dólares</option>
                         </select>
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto total</label>
+                      </Field>
+                      <Field label="Monto total" className="col-span-2">
                         <input
                           type="number"
                           step="0.01"
@@ -2565,15 +2104,14 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcMonto}
                           onChange={e => setCalcMonto(e.target.value)}
                           placeholder="10000"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Tasa mensual + TEA + Mora */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tasa mensual %</label>
+                      <Field label="Tasa mensual %">
                         <input
                           type="number"
                           step="0.01"
@@ -2582,11 +2120,10 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcTasa}
                           onChange={e => setCalcTasa(e.target.value)}
                           placeholder="1.5"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">TEA % <span className="font-normal opacity-60">(anual)</span></label>
+                      </Field>
+                      <Field label={<>TEA % <span className="font-normal opacity-60">(anual)</span></>}>
                         <input
                           type="number"
                           step="0.01"
@@ -2595,11 +2132,10 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createTea}
                           onChange={e => setCreateTea(e.target.value)}
                           placeholder="19.56"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Mora % <span className="font-normal opacity-60">(penalidad)</span></label>
+                      </Field>
+                      <Field label={<>Mora % <span className="font-normal opacity-60">(anual)</span></>}>
                         <input
                           type="number"
                           step="0.1"
@@ -2608,15 +2144,14 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createMoraInteres}
                           onChange={e => setCreateMoraInteres(e.target.value)}
                           placeholder="15"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Cuotas + Sistema + Periodo gracia */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label>
+                      <Field label="N° cuotas">
                         <input
                           type="number"
                           min="1"
@@ -2624,23 +2159,21 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcCuotas}
                           onChange={e => setCalcCuotas(e.target.value)}
                           placeholder="12"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Amortización</label>
+                      </Field>
+                      <Field label="Amortización">
                         <select
                           value={calcSistema}
                           onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)}
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         >
                           {(Object.entries(SISTEMA_LABELS) as [SistemaAmortizacion, string][]).map(([k, v]) => (
                             <option key={k} value={k}>{v}</option>
                           ))}
                         </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Gracia <span className="font-normal opacity-60">(meses)</span></label>
+                      </Field>
+                      <Field label={<>Gracia <span className="font-normal opacity-60">(meses)</span></>}>
                         <input
                           type="number"
                           min="0"
@@ -2648,56 +2181,53 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createPeriodoGracia}
                           onChange={e => setCreatePeriodoGracia(e.target.value)}
                           placeholder="0"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Fecha desembolso + Garantía */}
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Fecha de desembolso</label>
+                      <Field label="Fecha de desembolso">
                         <input
                           type="date"
                           value={createFechaDesembolso}
                           onChange={e => setCreateFechaDesembolso(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Garantía <span className="font-normal opacity-60">(opcional)</span></label>
+                      </Field>
+                      <Field label={<>Garantía <span className="font-normal opacity-60">(opcional)</span></>}>
                         <input
                           type="text"
                           value={createGarantia}
                           onChange={e => setCreateGarantia(e.target.value)}
                           placeholder="Ej: Título de propiedad"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Notas */}
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
+                    <Field label="Notas (opcional)">
                       <input
                         type="text"
                         value={createNotas}
                         onChange={e => setCreateNotas(e.target.value)}
                         placeholder="Motivo del préstamo, condiciones especiales..."
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                        className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                       />
-                    </div>
+                    </Field>
 
-                    {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
+                    {createError && <p className="text-sm text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
                     <div className="flex gap-2 pt-1">
-                      <button onClick={() => setCreateStep(1)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+                      <button onClick={() => setCreateStep(1)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors">
                         <ChevronLeft className="h-4 w-4 inline -mt-0.5" /> Atrás
                       </button>
                       <button
                         onClick={handleCreate}
                         disabled={creating}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 disabled:opacity-50 transition-colors"
                       >
                         {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                         Crear Préstamo
@@ -2706,10 +2236,8 @@ ${cuotas.map(c => { const row = `<tr>
                   </div>
                 )}
               </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+        </AdminModal>
+      )}
 
       {/* Quick client creation modal */}
       <ClienteFormModal

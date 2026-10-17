@@ -1,340 +1,169 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { CardTitle } from "@buleje/design-system";
-import AdminModal from "@/components/admin/shared/AdminModal";
-import { Download, Eye, ChevronLeft, ChevronRight, CalendarOff } from "@buleje/design-system/icons";
-import { exportToExcel } from "@/lib/export-excel";
-import EmptyState from "@/components/admin/shared/EmptyState";
+
+/**
+ * Mi Plata › Impuestos y reportes › Cierres: cada día cerrado en UNA fila con
+ * lo vendido y su cuadre de caja; el detalle (fiados, stock, notas) en la ficha.
+ *
+ * Antes (medido 11-10): 30 filas por página con un botón «Ver» de 32 px cada
+ * una (2,21 pantallas, 46 botones bajos), la diferencia en «N/A» y la fecha
+ * corrida un día (medianoche UTC leída en la hora del navegador).
+ */
+import { useCallback, useEffect, useState } from "react";
+import { DataTable, SectionTitle } from "@buleje/design-system";
+import { CalendarClock, ChevronLeft, ChevronRight, Download, MoreHorizontal, RefreshCw, Wallet } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { abrirCierreDiario } from "@/lib/admin/abrir-cierre-diario";
+import { exportToExcel } from "@/lib/export-excel";
+import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
+import { fechaDelCierre, textoDiferencia, type CierreDelDia } from "./cierres/cierres";
+import FichaCierre from "./cierres/FichaCierre";
 
-type DailySummary = {
-  id: string;
-  fecha: string;
-  totalVentas: number;
-  cantidadVentas: number;
-  ticketPromedio: number;
-  efectivoContado: number | null;
-  efectivoEsperado: number;
-  diferenciaCaja: number;
-  fiadosCobrados: number;
-  fiadosNuevos: number;
-  fiadosVencidos: number;
-  mejorHora: string | null;
-  productoTop: string | null;
-  stockAlertas: string | null;
-  notas: string | null;
-  creadoPor: string;
-  createdAt: string;
-};
+type Pagina = { items: CierreDelDia[]; total: number; page: number; limit: number };
 
-type HistoryResponse = {
-  items: DailySummary[];
-  total: number;
-  page: number;
-  limit: number;
-};
-
-function formatFecha(dateStr: string) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("es-PE", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
-}
-
-function formatMoney(n: number | null | undefined) {
-  if (n == null) return "N/A";
-  return `S/ ${Number(n).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
+/** 15 filas de 48 px: la lista entra en una pantalla y media. */
+const LIMIT = 15;
+const BOTON_PAG = button({ variant: "ghost", className: "rounded-xl px-3 aria-disabled:opacity-40" });
 
 export default function HistorialCierresTab() {
-  const [data, setData] = useState<HistoryResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<Pagina | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(false);
   const [page, setPage] = useState(1);
-  const [detail, setDetail] = useState<DailySummary | null>(null);
-  const LIMIT = 30;
+  const [ficha, setFicha] = useState<CierreDelDia | null>(null);
 
-  const fetchData = useCallback(async (p: number) => {
-    setLoading(true);
+  const cargar = useCallback(async (p: number) => {
+    setCargando(true);
+    setError(false);
     try {
       const res = await fetch(`/api/cierre-diario/history?page=${p}&limit=${LIMIT}`);
-      if (res.ok) {
-        const json: HistoryResponse = await res.json();
-        setData(json);
-      }
+      if (!res.ok) throw new Error(String(res.status));
+      setData((await res.json()) as Pagina);
     } catch {
-      // ignore
+      setError(true);
     } finally {
-      setLoading(false);
+      setCargando(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchData(page);
-  }, [page, fetchData]);
+  useEffect(() => { void cargar(page); }, [page, cargar]);
 
-  const handleExport = () => {
+  const exportar = () => {
     if (!data?.items.length) return;
-    const rows = data.items.map((s) => ({
-      Fecha: formatFecha(s.fecha),
-      "Total Ventas": Number(s.totalVentas),
-      "Cantidad Ventas": s.cantidadVentas,
-      "Ticket Promedio": Number(s.ticketPromedio),
-      "Efectivo Contado": s.efectivoContado != null ? Number(s.efectivoContado) : "N/A",
-      "Efectivo Esperado": Number(s.efectivoEsperado),
-      "Diferencia Caja": Number(s.diferenciaCaja),
-      "Fiados Cobrados": Number(s.fiadosCobrados),
-      "Fiados Nuevos": Number(s.fiadosNuevos),
-      "Fiados Vencidos": s.fiadosVencidos,
-      "Mejor Hora": s.mejorHora ?? "",
-      "Producto Top": s.productoTop ?? "",
-      Notas: s.notas ?? "",
-      "Creado Por": s.creadoPor,
-    }));
-    exportToExcel(rows as Record<string, unknown>[], `historial-cierres-pag${page}`, "Cierres");
+    exportToExcel(
+      data.items.map((s) => ({
+        Fecha: s.fecha.slice(0, 10), "Total Ventas": Number(s.totalVentas), "Cantidad Ventas": s.cantidadVentas,
+        "Ticket Promedio": Number(s.ticketPromedio), "Efectivo Contado": s.efectivoContado != null ? Number(s.efectivoContado) : "Sin contar",
+        "Efectivo Esperado": Number(s.efectivoEsperado), "Diferencia Caja": Number(s.diferenciaCaja), "Fiados Cobrados": Number(s.fiadosCobrados),
+        "Fiados Nuevos": Number(s.fiadosNuevos), "Fiados Vencidos": s.fiadosVencidos, "Mejor Hora": s.mejorHora ?? "",
+        "Producto Top": s.productoTop ?? "", Notas: s.notas ?? "", "Creado Por": s.creadoPor,
+      })) as Record<string, unknown>[],
+      `historial-cierres-pag${page}`,
+      "Cierres",
+    );
   };
 
-  const totalPages = data ? Math.ceil(data.total / LIMIT) : 1;
+  const paginas = data ? Math.max(1, Math.ceil(data.total / LIMIT)) : 1;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">
-            Historial de Cierres
-          </CardTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
-            {data ? `${data.total} cierres registrados` : "Cargando..."}
-          </p>
+    <div className="space-y-4">
+      {/* Una fila: título · cuántos · Cerrar el día · Más */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Cierres del día</SectionTitle>
+          <InfoTip
+            title="Cierres del día"
+            what="Cada día que cerraste: lo vendido y si el efectivo contado cuadró con lo esperado. Toca una fila para ver fiados, stock bajo y notas."
+            affects="El conteo de cada caja (turnos) está en Caja › Historial; acá va el resumen del día entero."
+            example="Sábado 10/10: S/ 850 vendidos, contaste S/ 420 y esperabas S/ 422 → −S/ 2.00."
+          />
+          {data && <span className="text-sm text-[var(--text-secondary)]">{data.total} días</span>}
         </div>
-        <button
-          onClick={handleExport}
-          disabled={!data?.items.length}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
-        >
-          <Download className="h-4 w-4" />
-          Descargar Excel
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <button type="button" onClick={abrirCierreDiario} className={button({ variant: "primary", className: "rounded-xl px-4" })}>
+            <CalendarClock className="h-4 w-4" aria-hidden /> Cerrar el día
+          </button>
+          <ActionMenu
+            label="Más"
+            icon={MoreHorizontal}
+            soloIcono
+            size="md"
+            className="w-12 shrink-0"
+            title="Bajar a Excel, cuadres en Caja, actualizar"
+            actions={[
+              { id: "excel", label: "Bajar esta página a Excel", hint: `${data?.items.length ?? 0} cierres`, icon: Download, disabled: !data?.items.length, onSelect: exportar },
+              { id: "caja", label: "Cuadres en Caja", hint: "El conteo de cada caja cerrada", icon: Wallet, seccion: "Ver", onSelect: () => irAEnlace("/admin?tab=ventas-caja&vista=caja-registradora&sub=historial") },
+              { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: () => void cargar(page) },
+            ]}
+          />
+        </div>
       </div>
 
-      {/* Table */}
-      {loading ? (
-        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
+      {cargando && !data ? (
+        <TableSkeleton rows={6} cols={4} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" />
+      ) : error ? (
+        <p role="alert" className="flex items-center gap-2 py-6 text-sm text-[var(--data-error-ink)]">
+          No se pudieron leer los cierres.
+          <button type="button" onClick={() => void cargar(page)} className={button({ variant: "secondary", className: "rounded-xl" })}>Reintentar</button>
+        </p>
       ) : !data?.items.length ? (
-        <EmptyState
-          icon={CalendarOff}
-          title="Sin cierres de caja"
-          description="No hay cierres de caja registrados aún. Usa el botón «Cerrar día» en la barra superior para crear el primer cierre."
-        />
+        <p className="py-6 text-sm text-[var(--text-secondary)]">Todavía no cerraste ningún día.</p>
       ) : (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Ventas</th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">Caja</th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Diferencia</th>
-                  <th className="text-center px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((s) => {
-                  const dif = Number(s.diferenciaCaja);
-                  return (
-                    <tr
-                      key={s.id}
-                      className="border-b border-[var(--rule-soft)] dark:border-card-border last:border-0 hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
-                    >
-                      <td className="px-4 py-3 font-medium text-[var(--text-primary)] dark:text-foreground whitespace-nowrap">
-                        {formatFecha(s.fecha)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
-                        {formatMoney(s.totalVentas)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
-                        {formatMoney(s.efectivoContado)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className={`font-bold ${
-                          dif > 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
-                          dif < 0 ? "text-[var(--data-error-500)]" :
-                          "text-[var(--text-secondary)] dark:text-foreground"
-                        }`}>
-                          {s.efectivoContado != null ? (
-                            <>{dif >= 0 ? "+" : ""}S/ {dif.toFixed(2)}</>
-                          ) : (
-                            <span className="text-[var(--text-tertiary)] dark:text-muted">N/A</span>
-                          )}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => setDetail(s)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          Ver
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-base)] dark:border-card-border">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors disabled:opacity-40"
-              >
-                <ChevronLeft className="h-4 w-4" /> Anterior
+        <div className={cn("space-y-2", cargando && "opacity-60")}>
+          {/* Una tabla del DS como todas: la fila entera abre la ficha (clic,
+              Enter o espacio); en el celular pasa a tarjetas sola. */}
+          <DataTable>
+            <thead>
+              <tr>
+                <th>Día</th>
+                <th className="text-right">Vendido</th>
+                <th className="hidden text-right sm:table-cell">Ventas</th>
+                <th className="hidden text-right sm:table-cell">Contado</th>
+                <th className="text-right">Cuadre</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((s) => {
+                const dif = textoDiferencia(s);
+                const dia = fechaDelCierre(s.fecha);
+                return (
+                  <tr
+                    key={s.id}
+                    tabIndex={0}
+                    aria-label={`Ver el cierre del ${dia}`}
+                    onClick={() => setFicha(s)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFicha(s); } }}
+                    className="cursor-pointer"
+                  >
+                    <td className="capitalize">{dia}</td>
+                    <td className="text-right font-bold tabular-nums">{formatCurrency(Number(s.totalVentas))}</td>
+                    <td className="hidden text-right tabular-nums sm:table-cell">{s.cantidadVentas}</td>
+                    <td className="hidden text-right tabular-nums sm:table-cell">{s.efectivoContado != null ? formatCurrency(Number(s.efectivoContado)) : "—"}</td>
+                    <td className={cn("text-right font-semibold tabular-nums", dif.clase)}>{dif.texto}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </DataTable>
+          {paginas > 1 && (
+            <div className="flex items-center justify-between">
+              <button type="button" onClick={() => page > 1 && setPage(page - 1)} aria-disabled={page <= 1} className={BOTON_PAG}>
+                <ChevronLeft className="h-4 w-4" aria-hidden /> Más nuevos
               </button>
-              <span className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                Página {page} de {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors disabled:opacity-40"
-              >
-                Siguiente <ChevronRight className="h-4 w-4" />
+              <span className="text-sm text-[var(--text-secondary)]">Página {page} de {paginas}</span>
+              <button type="button" onClick={() => page < paginas && setPage(page + 1)} aria-disabled={page >= paginas} className={BOTON_PAG}>
+                Más viejos <ChevronRight className="h-4 w-4" aria-hidden />
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* Detail modal */}
-      <AdminModal open={!!detail} onClose={() => setDetail(null)} title={detail ? `Cierre — ${formatFecha(detail.fecha)}` : ""} variant="default">
-        {detail && (
-          <div className="p-5 space-y-4">
-                {/* Ventas */}
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-primary">Ventas</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Total vendido</p>
-                      <p className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">{formatMoney(detail.totalVentas)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">N&ordm; de ventas</p>
-                      <p className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">{detail.cantidadVentas}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Ticket promedio</p>
-                      <p className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">{formatMoney(detail.ticketPromedio)}</p>
-                    </div>
-                    {detail.mejorHora && (
-                      <div>
-                        <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Mejor hora</p>
-                        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{detail.mejorHora}</p>
-                      </div>
-                    )}
-                  </div>
-                  {detail.productoTop && (
-                    <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Más vendido: <strong>{detail.productoTop}</strong></p>
-                  )}
-                </div>
-
-                <div className="h-px bg-[var(--surface-sunken)] dark:bg-card-border" />
-
-                {/* Caja */}
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Caja</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Contado</p>
-                      <p className="text-base font-bold text-[var(--text-primary)] dark:text-foreground">{formatMoney(detail.efectivoContado)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Esperado</p>
-                      <p className="text-base font-bold text-[var(--text-primary)] dark:text-foreground">{formatMoney(detail.efectivoEsperado)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Diferencia</p>
-                      {detail.efectivoContado != null ? (
-                        <p className={`text-base font-bold ${
-                          Number(detail.diferenciaCaja) >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
-                        }`}>
-                          {Number(detail.diferenciaCaja) >= 0 ? "+" : ""}S/ {Number(detail.diferenciaCaja).toFixed(2)}
-                        </p>
-                      ) : (
-                        <p className="text-base text-[var(--text-tertiary)] dark:text-muted">N/A</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="h-px bg-[var(--surface-sunken)] dark:bg-card-border" />
-
-                {/* Fiados */}
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Fiados</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Cobrados</p>
-                      <p className="text-base font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatMoney(detail.fiadosCobrados)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Nuevos</p>
-                      <p className="text-base font-bold text-[var(--data-warning-500)]">{formatMoney(detail.fiadosNuevos)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Vencidos</p>
-                      <p className={`text-base font-bold ${detail.fiadosVencidos > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)] dark:text-foreground"}`}>
-                        {detail.fiadosVencidos}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stock alerts */}
-                {detail.stockAlertas && (
-                  <>
-                    <div className="h-px bg-[var(--surface-sunken)] dark:bg-card-border" />
-                    <div className="space-y-2">
-                      <p className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Alertas de stock</p>
-                      <div className="text-sm text-[var(--text-secondary)] dark:text-muted space-y-1">
-                        {(() => {
-                          try {
-                            const items = JSON.parse(detail.stockAlertas as string) as Array<{ nombre: string; stock: number; stockMin: number }>;
-                            return items.map((item, i) => (
-                              <div key={i} className="flex justify-between">
-                                <span className="truncate mr-2">{item.nombre}</span>
-                                <span className="font-bold text-[var(--data-error-500)] shrink-0">{item.stock}/{item.stockMin}</span>
-                              </div>
-                            ));
-                          } catch {
-                            return <p>{detail.stockAlertas}</p>;
-                          }
-                        })()}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Notes */}
-                {detail.notas && (
-                  <>
-                    <div className="h-px bg-[var(--surface-sunken)] dark:bg-card-border" />
-                    <div>
-                      <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1">Notas</p>
-                      <p className="text-sm text-[var(--text-primary)] dark:text-foreground whitespace-pre-wrap">{detail.notas}</p>
-                    </div>
-                  </>
-                )}
-
-                {/* Footer */}
-                <div className="pt-2 text-xs text-[var(--text-tertiary)] dark:text-muted">
-                  Creado por: {detail.creadoPor} &middot; {new Date(detail.createdAt).toLocaleString("es-PE")}
-                </div>
-          </div>
-        )}
-      </AdminModal>
+      {ficha && <FichaCierre cierre={ficha} onClose={() => setFicha(null)} />}
     </div>
   );
 }

@@ -5,11 +5,11 @@ import { Store, ShoppingCart, Search, Star, ChevronRight, Sparkles, Package } fr
 import { cn } from "@/lib/utils";
 
 const COLOR_PRESETS = [
-  { name: "Teal", primary: "var(--accent)", secondary: "#f97316" },
+  { name: "Teal", primary: "var(--accent)", secondary: "#ff6b5b" },
   { name: "Azul", primary: "#2563eb", secondary: "#7c3aed" },
-  { name: "Rosa", primary: "#e11d48", secondary: "#f59e0b" },
+  { name: "Rosa", primary: "#e11d48", secondary: "#ff6b5b" },
   { name: "Verde", primary: "#16a34a", secondary: "#0ea5e9" },
-  { name: "Naranja", primary: "#ea580c", secondary: "#8b5cf6" },
+  { name: "Naranja", primary: "#f0503f", secondary: "#8b5cf6" },
 ];
 
 const SAMPLE_PRODUCTS = [

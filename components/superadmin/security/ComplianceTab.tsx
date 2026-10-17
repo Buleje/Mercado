@@ -16,7 +16,8 @@
  *  - Keyboard / Esc (mantiene v1)
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
@@ -92,19 +93,19 @@ const STATUS_META: Record<
   pass: {
     label: "Cumple",
     icon: ShieldCheck,
-    cls: "border-emerald-300/60 bg-emerald-50 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-500/15 dark:text-emerald-300",
-    dot: "bg-emerald-500",
+    cls: "border-[var(--data-success-500)]/60 bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:border-[var(--data-success-700)]/40 dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
+    dot: "bg-[var(--data-success-500)]",
   },
   partial: {
     label: "Parcial",
     icon: AlertTriangle,
-    cls: "border-amber-300/60 bg-amber-50 text-amber-700 dark:border-amber-700/40 dark:bg-amber-500/15 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-teal-300/60 bg-teal-50 text-teal-700 dark:border-teal-700/40 dark:bg-teal-500/15 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
   fail: {
     label: "No cumple",
     icon: XCircle,
-    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     dot: "bg-rose-500",
   },
   na: {
@@ -118,11 +119,11 @@ const STATUS_META: Record<
 const SEVERITY_META: Record<Severity, { label: string; cls: string }> = {
   high: {
     label: "Alta",
-    cls: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+    cls: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
   },
   medium: {
     label: "Media",
-    cls: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    cls: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
   },
   low: {
     label: "Baja",
@@ -180,7 +181,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}
@@ -301,9 +302,9 @@ export function ComplianceTab() {
     return (
       <div
         role="alert"
-        className="rounded-2xl border-2 border-rose-300 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 p-5"
+        className="rounded-2xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-rose-500/10 dark:border-[var(--data-error-500)] p-5"
       >
-        <p className="flex items-center gap-2 text-sm font-bold text-rose-700 dark:text-rose-300">
+        <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           No se pudo cargar el checklist ({error ?? "unknown"})
         </p>
@@ -340,12 +341,12 @@ export function ComplianceTab() {
               </div>
             </div>
             <p className="text-sm text-[var(--text-secondary)]">
-              <strong className="text-emerald-700 dark:text-emerald-300">
+              <strong className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                 {overall.pass}
               </strong>{" "}
               de <strong>{overall.total}</strong> controles cumplen.{" "}
               {overall.highSeverityFails > 0 ? (
-                <span className="text-rose-700 dark:text-rose-300 font-bold">
+                <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)] font-bold">
                   {overall.highSeverityFails} de severidad alta requieren acción
                 </span>
               ) : (
@@ -354,12 +355,12 @@ export function ComplianceTab() {
             </p>
             <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)] flex">
               <div
-                className="bg-emerald-500 transition-all duration-500"
+                className="bg-[var(--data-success-500)] transition-all duration-500"
                 style={{ width: `${(overall.pass / overall.total) * 100}%` }}
                 title={`${overall.pass} cumplen`}
               />
               <div
-                className="bg-amber-500 transition-all duration-500"
+                className="bg-teal-500 transition-all duration-500"
                 style={{ width: `${(overall.partial / overall.total) * 100}%` }}
                 title={`${overall.partial} parciales`}
               />
@@ -371,11 +372,11 @@ export function ComplianceTab() {
             </div>
             <div className="flex flex-wrap items-center gap-3 text-xs">
               <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]" />
                 {overall.pass} cumplen
               </span>
               <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                <span className="h-2.5 w-2.5 rounded-full bg-teal-500" />
                 {overall.partial} parciales
               </span>
               <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
@@ -456,7 +457,7 @@ export function ComplianceTab() {
                 onClick={() => setFilter(f)}
                 aria-pressed={isActive}
                 className={cn(
-                  "inline-flex h-10 items-center gap-1.5 rounded-lg px-3.5 text-sm font-bold transition",
+                  "inline-flex h-10 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold transition",
                   isActive
                     ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                     : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
@@ -490,12 +491,12 @@ export function ComplianceTab() {
               onChange={(e) => setSearchRaw(e.target.value)}
               placeholder="Buscar control o referencia…"
               aria-label="Buscar control"
-              className="w-full sm:w-64 h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+              className="w-full sm:w-64 h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
             />
           </div>
           <button
             onClick={() => exportComplianceCSV(data)}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
           >
             <Download className="h-4 w-4" aria-hidden />
             CSV
@@ -541,14 +542,17 @@ export function ComplianceTab() {
               <FileDown className="h-5 w-5" strokeWidth={1.75} aria-hidden />
             </span>
             <div className="min-w-0">
-              <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-                Derecho de acceso (Art. 18)
-              </h3>
-              <p className="text-sm text-[var(--text-secondary)] mt-1">
-                Genera un JSON con todos los datos personales de un cliente:
-                pedidos, comentarios, direcciones, consentimientos y audit trail.
-                Cada solicitud queda en el audit log.
-              </p>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                  Derecho de acceso (Art. 18)
+                </h3>
+                <InfoTip
+                  title="Derecho de acceso"
+                  what="Genera un JSON con los datos personales de un cliente: pedidos, comentarios, direcciones, consentimientos y auditoría."
+                  affects="Cada solicitud queda registrada en el audit log."
+                  side="bottom"
+                />
+              </div>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1.5">
                 <strong className="text-[var(--text-primary)]">
                   {dsarExportsLast30d}
@@ -578,9 +582,6 @@ export function ComplianceTab() {
             <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
               Política de retención
             </h3>
-            <p className="text-xs text-[var(--text-tertiary)]">
-              Tiempo de conservación por tipo de dato
-            </p>
           </div>
         </header>
         <ul className="divide-y divide-[var(--rule-soft)]">
@@ -645,7 +646,7 @@ function NormKpi({
   const displaySub = subtitle ?? `${pass} de ${total}`;
   const iconTone =
     tone === "warning"
-      ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+      ? "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300"
       : "bg-[var(--accent)]/10 text-[var(--accent)]";
   return (
     <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
@@ -725,6 +726,12 @@ function ChecklistSection({
                         <p className="font-bold text-sm text-[var(--text-primary)]">
                           {item.title}
                         </p>
+                        <InfoTip
+                          title={item.title}
+                          what={item.description}
+                          example={item.reference ? <span className="font-mono">{item.reference}</span> : undefined}
+                          side="bottom"
+                        />
                         <span
                           className={cn(
                             "inline-flex items-center rounded-full px-1.5 py-0 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
@@ -735,14 +742,6 @@ function ChecklistSection({
                           {sev.label}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                        {item.description}
-                      </p>
-                      {item.reference && (
-                        <p className="mt-1 text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)]">
-                          {item.reference}
-                        </p>
-                      )}
                     </div>
                   </div>
                   <span
@@ -858,7 +857,7 @@ function ExportDialog({
                 value={tenantSlug}
                 onChange={(e) => setTenantSlug(e.target.value)}
                 placeholder="ej: bodega-rosita"
-                className="w-full h-11 px-3 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)]"
+                className="w-full h-11 px-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)]"
               />
             </label>
             <label className="block">
@@ -869,13 +868,13 @@ function ExportDialog({
                 value={dni}
                 onChange={(e) => setDni(e.target.value)}
                 placeholder="ej: 12345678"
-                className="w-full h-11 px-3 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)]"
+                className="w-full h-11 px-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)]"
               />
             </label>
             {error && (
               <p
                 role="alert"
-                className="flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-300"
+                className="flex items-center gap-1.5 text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
               >
                 <AlertTriangle className="h-3 w-3 shrink-0" />
                 {error}
@@ -884,7 +883,7 @@ function ExportDialog({
           </div>
           <div className="flex justify-end gap-2 border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
             <Dialog.Close asChild>
-              <button className="h-11 px-4 rounded-xl text-sm font-bold border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--rule-base)]">
+              <button className="h-11 px-4 rounded-xl text-sm font-semibold border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--rule-base)]">
                 Cancelar
               </button>
             </Dialog.Close>

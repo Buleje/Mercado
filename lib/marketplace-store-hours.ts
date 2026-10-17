@@ -33,6 +33,28 @@ export const DAY_FULL: Record<DayKey, string> = {
 
 const JS_DAY_TO_KEY: DayKey[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
+/**
+ * El día y el minuto en Pucallpa, no en el reloj del servidor (11-10): en Vercel el servidor
+ * corre en UTC y de 19:00 a 24:00 de Lima `getDay()`/`getHours()` ya daban el día siguiente —
+ * la ficha decía «cerrado» y la reserva validaba contra el horario de mañana. Perú no tiene
+ * horario de verano: UTC−5 fijo.
+ */
+const LIMA_MS = 5 * 3_600_000;
+function enLima(d: Date): { dia: number; minuto: number; anio: number; mes: number; fecha: number } {
+  const l = new Date(d.getTime() - LIMA_MS);
+  return {
+    dia: l.getUTCDay(),
+    minuto: l.getUTCHours() * 60 + l.getUTCMinutes(),
+    anio: l.getUTCFullYear(),
+    mes: l.getUTCMonth(),
+    fecha: l.getUTCDate(),
+  };
+}
+/** El instante de las `minuto` de Lima del día `fecha + dias` (en Lima). */
+function instanteLima(base: ReturnType<typeof enLima>, dias: number, minuto: number): Date {
+  return new Date(Date.UTC(base.anio, base.mes, base.fecha + dias, 0, minuto) + LIMA_MS);
+}
+
 /** Convierte "HH:MM" a minutos desde medianoche. Devuelve null si inválido. */
 function toMinutes(hhmm?: string): number | null {
   if (!hhmm || typeof hhmm !== "string") return null;
@@ -48,17 +70,22 @@ function toMinutes(hhmm?: string): number | null {
 /** ¿Está abierta la tienda en `now` según `hours`? */
 export function isOpenNow(hours: StoreHours | null | undefined, now: Date): boolean {
   if (!hours) return false;
-  const todayKey = JS_DAY_TO_KEY[now.getDay()];
-  const day = hours[todayKey];
-  if (!day || day.closed) return false;
-  const open = toMinutes(day.open);
-  const close = toMinutes(day.close);
-  if (open === null || close === null) return false;
-  const cur = now.getHours() * 60 + now.getMinutes();
-  // Soporte de cierres después de medianoche (close < open):
-  // ej. 19:00 → 02:00. Se considera abierto si cur >= open OR cur <= close.
-  if (close < open) return cur >= open || cur <= close;
-  return cur >= open && cur <= close;
+  const lima = enLima(now);
+  const cur = lima.minuto;
+  // Un turno que cruza la medianoche (19:00 → 02:00) es del día en que ABRE:
+  // el domingo a la 01:00 sigue abierta por el turno del sábado aunque el
+  // domingo esté cerrado (antes miraba sólo el día de hoy y daba «cerrado»).
+  const turno = (key: DayKey) => {
+    const day = hours[key];
+    if (!day || day.closed) return null;
+    const open = toMinutes(day.open);
+    const close = toMinutes(day.close);
+    return open === null || close === null ? null : { open, close };
+  };
+  const hoy = turno(JS_DAY_TO_KEY[lima.dia]);
+  if (hoy && (hoy.close < hoy.open ? cur >= hoy.open : cur >= hoy.open && cur <= hoy.close)) return true;
+  const ayer = turno(JS_DAY_TO_KEY[(lima.dia + 6) % 7]);
+  return !!ayer && ayer.close < ayer.open && cur <= ayer.close;
 }
 
 /**
@@ -71,22 +98,18 @@ export function isOpenNow(hours: StoreHours | null | undefined, now: Date): bool
  */
 export function nextOpening(hours: StoreHours | null | undefined, now: Date): Date | null {
   if (!hours) return null;
-  const cur = now.getHours() * 60 + now.getMinutes();
+  const lima = enLima(now);
   for (let offset = 0; offset < 14; offset++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() + offset);
-    const key = JS_DAY_TO_KEY[d.getDay()];
+    const key = JS_DAY_TO_KEY[(lima.dia + offset) % 7];
     const day = hours[key];
     if (!day || day.closed) continue;
     const open = toMinutes(day.open);
     if (open === null) continue;
-    if (offset === 0 && open <= cur) {
+    if (offset === 0 && open <= lima.minuto) {
       // hoy ya pasó la apertura — sigue al día siguiente
       continue;
     }
-    const result = new Date(d);
-    result.setHours(Math.floor(open / 60), open % 60, 0, 0);
-    return result;
+    return instanteLima(lima, offset, open);
   }
   return null;
 }
@@ -95,20 +118,44 @@ export function nextOpening(hours: StoreHours | null | undefined, now: Date): Da
 export function nextOpeningLabel(hours: StoreHours | null | undefined, now: Date): string {
   const next = nextOpening(hours, now);
   if (!next) return "Sin horario configurado";
-  const sameDay = next.getDate() === now.getDate() && next.getMonth() === now.getMonth();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const isTomorrow =
-    next.getDate() === tomorrow.getDate() && next.getMonth() === tomorrow.getMonth();
+  const n = enLima(next);
+  const h = enLima(now);
+  const m = enLima(new Date(now.getTime() + 86_400_000));
+  const sameDay = n.fecha === h.fecha && n.mes === h.mes;
+  const isTomorrow = n.fecha === m.fecha && n.mes === m.mes;
   const time = next.toLocaleTimeString("es-PE", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: "America/Lima",
   });
   if (sameDay) return `Abre hoy a las ${time}`;
   if (isTomorrow) return `Abre mañana a las ${time}`;
-  const dayKey = JS_DAY_TO_KEY[next.getDay()];
+  const dayKey = JS_DAY_TO_KEY[n.dia];
   return `Abre el ${DAY_FULL[dayKey].toLowerCase()} a las ${time}`;
+}
+
+/** Minutos desde medianoche → "8:00 a. m." (formato PE 12h). */
+function minutesToLabel(mins: number): string {
+  const base = new Date(2000, 0, 1, 0, 0, 0, 0);
+  base.setMinutes(mins);
+  return base.toLocaleTimeString("es-PE", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
+/**
+ * Rango de atención de HOY, p.ej. "8:00 a. m.–10:00 p. m.". Devuelve `null` si el
+ * día está cerrado, faltan datos, o `hours` no viene con el shape por-día
+ * esperado (degradación limpia — la card simplemente no muestra el horario).
+ */
+export function todayHoursLabel(hours: StoreHours | null | undefined, now: Date): string | null {
+  if (!hours || typeof hours !== "object" || Array.isArray(hours)) return null;
+  const key = JS_DAY_TO_KEY[enLima(now).dia];
+  const day = (hours as StoreHours)[key];
+  if (!day || day.closed) return null;
+  const o = toMinutes(day.open);
+  const c = toMinutes(day.close);
+  if (o == null || c == null) return null;
+  return `${minutesToLabel(o)}–${minutesToLabel(c)}`;
 }
 
 /** Estado derivado de una tienda. Prioridad construction > vacation > closed > open. */
@@ -163,14 +210,15 @@ export function isValidReservationSlot(
   if (when.getTime() > limit.getTime()) {
     return { ok: false, reason: `Solo aceptamos reservas hasta ${maxDaysAhead} días en el futuro` };
   }
-  const key = JS_DAY_TO_KEY[when.getDay()];
+  const limaWhen = enLima(when);
+  const key = JS_DAY_TO_KEY[limaWhen.dia];
   const day = hours[key];
   if (!day || day.closed) {
     return { ok: false, reason: `La tienda no atiende el ${DAY_FULL[key].toLowerCase()}` };
   }
   const open = toMinutes(day.open);
   const close = toMinutes(day.close);
-  const slot = when.getHours() * 60 + when.getMinutes();
+  const slot = limaWhen.minuto;
   if (open === null || close === null) {
     return { ok: false, reason: "Horario inválido" };
   }

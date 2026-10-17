@@ -69,7 +69,7 @@ export function SADataTable<T = Record<string, unknown>>({
             <tr className="border-b border-[var(--rule-base)] bg-[var(--surface-canvas)]/60">
               {columns.map((col) => (
                 <th key={col.key} className="px-4 py-3">
-                  <div className="h-3 w-20 rounded bg-gray-200 dark:bg-gray-700" />
+                  <div className="h-3 w-20 rounded bg-[var(--rule-base)] " />
                 </th>
               ))}
             </tr>
@@ -79,7 +79,7 @@ export function SADataTable<T = Record<string, unknown>>({
               <tr key={i} className="border-b border-[var(--rule-base)]">
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
-                    <div className="h-4 w-full rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-4 w-full rounded bg-[var(--rule-base)] " />
                   </td>
                 ))}
               </tr>

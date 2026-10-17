@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/require-admin";
 import { BillingWebhookQueueDB } from "@/lib/db/billing-webhook-queue.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
@@ -7,9 +6,12 @@ import { withApiHandler } from "@/lib/api-handler";
 /**
  * GET /api/billing/webhook-queue — return all queue items for the admin UI
  * Audit project-wide 2026-05-19: migrado a BillingWebhookQueueDB.
+ * 2026-10-10: superadmin-only, como el DELETE. La cola es de la plataforma (sin tenantId):
+ * con `requireAdmin(["admin"])` el admin de cualquier negocio leía los eventos de Stripe de todos.
  */
 export const GET = withApiHandler("billing-webhook-queue-get", async (req: NextRequest) => {
-  const auth = await requireAdmin(req, ["admin"]);
+  const { requirePlatformAPI } = await import("@/lib/superadmin-auth");
+  const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
   try {

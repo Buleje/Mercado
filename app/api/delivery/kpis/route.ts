@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { startOfLimaDay } from "@/lib/utils";
 
 // GET /api/delivery/kpis — KPIs for delivery module dashboard
 export async function GET(req: NextRequest) {
@@ -9,8 +10,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    const todayStart = new Date(startOfLimaDay());
 
     // SECURITY 2026-05-06 (audit team): scope tenantId. Los 3 count() sin
     // tenantId mostraban métricas operativas globales — competidores veían

@@ -28,7 +28,7 @@ export function CashChangeCalculator({ finalTotal }: { finalTotal: number }) {
             onClick={() => setSelected(prev => prev === bill ? null : bill)}
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
               selected === bill
-                ? "bg-[var(--data-success-600)] text-white shadow-md scale-105"
+                ? "bg-[var(--data-success-600)] text-white dark:text-[var(--text-inverse)] shadow-md scale-105"
                 : "bg-white dark:bg-emerald-900/30 text-[var(--data-success-700)] dark:text-emerald-300 border border-emerald-300 dark:border-[var(--data-success-700)] hover:border-[var(--data-success-500)]"
             }`}
           >
@@ -40,7 +40,7 @@ export function CashChangeCalculator({ finalTotal }: { finalTotal: number }) {
           onClick={() => setSelected(null)}
           className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
             selected === null
-              ? "bg-[var(--data-success-600)] text-white shadow-md"
+              ? "bg-[var(--data-success-600)] text-white dark:text-[var(--text-inverse)] shadow-md"
               : "bg-white dark:bg-emerald-900/30 text-[var(--data-success-700)] dark:text-emerald-300 border border-emerald-300 dark:border-[var(--data-success-700)] hover:border-[var(--data-success-500)]"
           }`}
         >

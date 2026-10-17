@@ -27,7 +27,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
     <section
       aria-labelledby="tracking-items-heading"
       className={cn(
-        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
+        "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
         className,
       )}
     >
@@ -44,7 +44,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
           </h2>
         </div>
         {paymentMethod && (
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted bg-[var(--surface-alt)] dark:bg-surface rounded-full px-2 py-1">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted bg-[var(--surface-alt)] dark:bg-surface px-2 py-1">
             {paymentMethod === "yape" ? "Yape" : "Efectivo"}
           </span>
         )}
@@ -56,7 +56,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
             key={item.productId}
             className="py-3 first:pt-0 last:pb-0 flex items-center gap-3"
           >
-            <div className="h-12 w-12 shrink-0 rounded-xl bg-[var(--surface-alt)] dark:bg-surface border border-[var(--rule-base)] overflow-hidden flex items-center justify-center">
+            <div className="h-12 w-12 shrink-0 bg-[var(--surface-alt)] dark:bg-surface border border-[var(--rule-base)] overflow-hidden flex items-center justify-center">
               {item.image ? (
                 <Image
                   src={item.image}
@@ -71,7 +71,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
+              <p className="text-base font-semibold text-[var(--text-primary)] truncate">
                 {item.name}
               </p>
               <p className="text-[length:var(--ts-2xs)] text-muted mt-0.5 tabular-nums">
@@ -87,13 +87,13 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
 
       <div className="mt-4 pt-4 border-t border-[var(--rule-base)] space-y-1.5">
         {hasDiscount && (
-          <div className="flex items-center justify-between text-xs text-muted">
+          <div className="flex items-center justify-between text-sm text-muted">
             <span>Subtotal</span>
             <span className="tabular-nums">{fmtSoles(subtotal)}</span>
           </div>
         )}
         {hasDiscount && (
-          <div className="flex items-center justify-between text-xs text-muted">
+          <div className="flex items-center justify-between text-sm text-muted">
             <span>Descuentos</span>
             <span className="tabular-nums">-{fmtSoles(subtotal - total)}</span>
           </div>

@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { PROMO_BANNER_STATS_PATH } from "@/lib/promo-banner-stats-path";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * POST /api/marketplace/promo-banners/track  (banners v2 F3 — analytics)
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
   const rl = applyRateLimit(req, "GENEROUS", "banner-track");
   if (rl) return rl;
 
-  const parsed = BodySchema.safeParse(await req.json().catch(() => null));
+  const parsed = BodySchema.safeParse(await leerJson(req));
   if (!parsed.success) return new NextResponse(null, { status: 204 });
 
   const { event } = parsed.data;

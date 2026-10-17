@@ -70,7 +70,16 @@ export default function SegmentedControl<T extends string>({
     else if (e.key === "ArrowLeft") nextIdx = (currentIdx - 1 + enabled.length) % enabled.length;
     else if (e.key === "Home") nextIdx = 0;
     else if (e.key === "End") nextIdx = enabled.length - 1;
-    onChange(enabled[nextIdx].value);
+    const destino = enabled[nextIdx].value;
+    onChange(destino);
+    /* El foco va con la selección, como pide el patrón radiogroup de ARIA: sin
+       esto la flecha cambiaba de opción y el foco se quedaba en la anterior,
+       que ya tiene tabIndex -1 (medido 25-09 en la ficha del permiso). */
+    requestAnimationFrame(() => {
+      containerRef.current
+        ?.querySelector<HTMLButtonElement>(`[data-value="${CSS.escape(destino)}"]`)
+        ?.focus();
+    });
   };
 
   return (
@@ -91,6 +100,7 @@ export default function SegmentedControl<T extends string>({
             key={opt.value}
             type="button"
             role="radio"
+            data-value={opt.value}
             aria-checked={selected}
             tabIndex={selected ? 0 : -1}
             disabled={opt.disabled}

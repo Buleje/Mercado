@@ -8,9 +8,10 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { listSpecializations } from "@/lib/specializations";
 import SpecializationsClient from "./SpecializationsClient";
+import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 export const metadata = {
-  title: "Especializaciones — Superadmin",
+  title: "Qué tiene cada negocio — Superadmin",
   description:
     "Habilita módulos especializados por tenant (forestal CTP, salud, textil).",
   robots: { index: false, follow: false },
@@ -60,9 +61,12 @@ export default async function SpecializationsPage() {
   const catalog = listSpecializations();
 
   return (
-    <SpecializationsClient
-      tenants={tenantsWithFlags}
-      catalog={catalog}
-    />
+    <>
+      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
+      <SpecializationsClient
+        tenants={tenantsWithFlags}
+        catalog={catalog}
+      />
+    </>
   );
 }

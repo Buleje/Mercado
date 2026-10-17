@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { toast } from "sonner";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 
 interface UseOrderActionsProps {
-  orders: DbOrder[];
   setOrders: React.Dispatch<React.SetStateAction<DbOrder[]>>;
   setDetailOrder: React.Dispatch<React.SetStateAction<DbOrder | null>>;
   load: () => Promise<void>;
 }
 
-export function useOrderActions({ orders, setOrders, setDetailOrder, load }: UseOrderActionsProps) {
+export function useOrderActions({ setOrders, setDetailOrder, load }: UseOrderActionsProps) {
   const [adminNote, setAdminNote] = useState("");
   const [savingNote, setSavingNote] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export function useOrderActions({ orders, setOrders, setDetailOrder, load }: Use
       return;
     }
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
-    const data = await res.json().catch(() => null);
+    const data = await leerJson<{ whatsappLink?: string; whatsappSent?: boolean }>(res);
     if (data?.whatsappLink && !data.whatsappSent) {
       window.open(data.whatsappLink, "_blank", "noopener,noreferrer");
     }
@@ -62,6 +62,14 @@ export function useOrderActions({ orders, setOrders, setDetailOrder, load }: Use
       setDetailOrder(prevDetail);
       const err = await res.json().catch(() => ({ error: "Error al actualizar pedido" }));
       toast.error(err.error ?? "Error al actualizar pedido");
+      return;
+    }
+    // Entregado desde el tablero: el servidor devuelve el enlace para avisar al cliente.
+    if (patch.status) {
+      const data = await leerJson<{ whatsappLink?: string; whatsappSent?: boolean }>(res);
+      if (data?.whatsappLink && !data.whatsappSent) {
+        window.open(data.whatsappLink, "_blank", "noopener,noreferrer");
+      }
     }
   };
 
@@ -76,24 +84,42 @@ export function useOrderActions({ orders, setOrders, setDetailOrder, load }: Use
 
   const markDeudaPaid = (id: string) => patchOrder(id, { deuda: false });
 
-  const saveAdminNote = async (orderId: string) => {
-    if (!adminNote.trim()) return;
+  /**
+   * Nota interna nueva: el servidor la guarda con quién la escribió y la hora
+   * (`adminNote` → historial del pedido). Antes se mandaba `adminNotes` con
+   * todo el texto junto y el servidor lo descartaba: ninguna nota se guardaba.
+   * Devuelve si se guardó, para que el detalle relea su historial.
+   */
+  const saveAdminNote = async (orderId: string): Promise<boolean> => {
+    const texto = adminNote.trim();
+    if (!texto) return false;
     setSavingNote(true);
-    const o = orders.find(x => x.id === orderId);
-    const existingNotes = (o as (typeof o) & { adminNotes?: string })?.adminNotes ?? "";
-    const ts = new Date().toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-    const updated = existingNotes
-      ? `${existingNotes}\n[${ts}] ${adminNote.trim()}`
-      : `[${ts}] ${adminNote.trim()}`;
-    await patchOrder(orderId, { adminNotes: updated } as Partial<DbOrder>);
-    setAdminNote("");
-    setSavingNote(false);
+    try {
+      const res = await tenantFetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminNote: texto }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "No se pudo guardar la nota" }));
+        toast.error(err.error ?? "No se pudo guardar la nota");
+        return false;
+      }
+      setAdminNote("");
+      return true;
+    } catch {
+      toast.error("No se pudo guardar la nota: revisa tu conexión");
+      return false;
+    } finally {
+      setSavingNote(false);
+    }
   };
 
+  /** Cancelar con motivo: va a `cancelReason` (lo guarda el servidor junto a `cancelledAt` y en el historial). */
   const executeReject = async () => {
     if (!showRejectModal) return;
     const reason = rejectReason.trim() || "Pedido cancelado";
-    await patchOrder(showRejectModal, { status: "cancelado", adminNotes: reason } as Partial<DbOrder>);
+    await patchOrder(showRejectModal, { status: "cancelado", cancelReason: reason } as Partial<DbOrder>);
     setShowRejectModal(null);
     setRejectReason("");
   };

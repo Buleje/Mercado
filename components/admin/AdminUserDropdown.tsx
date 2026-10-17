@@ -41,10 +41,13 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
     .slice(0, 2)
     .toUpperCase() || "U";
 
+  // Entradas fijas de la cuenta. «Mi perfil» ya no está en la barra lateral:
+  // ésta es su puerta (plan «panel unificado», ola 2), junto al enlace de
+  // Configuración › Usuarios y acceso. «plan» abre Configuración › Plan (alias).
   const MENU_ITEMS = [
+    { id: "mi-perfil", label: "Mi perfil", icon: UserCircle, color: "text-[var(--text-secondary)]" },
     { id: "config", label: "Configuración", icon: Settings, color: "text-[var(--text-secondary)]" },
-    { id: "plan", label: "Mi Plan", icon: CreditCard, color: "text-[var(--text-secondary)]" },
-    { id: "mi-perfil", label: "Mi Perfil", icon: UserCircle, color: "text-[var(--text-secondary)]" },
+    { id: "plan", label: "Mi plan", icon: CreditCard, color: "text-[var(--text-secondary)]" },
   ];
 
   return (
@@ -54,7 +57,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
         onClick={() => setOpen(v => !v)}
         className={cn(
           "flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all duration-[var(--dur-base)]",
-          "hover:bg-[var(--surface-sunken)] dark:hover:bg-accent",
+          "hover:bg-[var(--surface-sunken)] ",
           open && "bg-[var(--surface-sunken)] dark:bg-accent"
         )}
         aria-expanded={open}
@@ -80,7 +83,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
             className="absolute right-0 top-full mt-2 w-64 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden z-100"
           >
             {/* User info header */}
-            <div className="px-4 py-3.5 border-b border-[var(--rule-soft)] dark:border-white/5 bg-[var(--surface-alt)]/50 dark:bg-surface/50">
+            <div className="px-4 py-3.5 border-b border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 dark:bg-surface/50">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/90 flex items-center justify-center shrink-0">
                   <span className="text-white text-sm font-bold">{initials}</span>
@@ -100,7 +103,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
                   <button
                     key={item.id}
                     onClick={() => { onNavigate(item.id); setOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 transition-colors"
+                    className="w-full flex items-center gap-3 px-3 min-h-12 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                   >
                     <Icon className={cn("h-4 w-4 shrink-0", item.color)} />
                     <span>{item.label}</span>
@@ -110,10 +113,10 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
             </div>
 
             {/* Logout divider */}
-            <div className="border-t border-[var(--rule-soft)] dark:border-white/5 py-1.5 px-1.5">
+            <div className="border-t border-[var(--rule-soft)] py-1.5 px-1.5">
               <button
                 onClick={() => { onLogout(); setOpen(false); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
+                className="w-full flex items-center gap-3 px-3 min-h-11 rounded-xl text-sm font-medium text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
                 <span>Cerrar sesión</span>

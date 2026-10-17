@@ -3,13 +3,34 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { ScopeBadge } from "@/components/admin/layout/ScopeBadge";
+import { preloadTab } from "@/app/admin/_lib/tab-preload";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export type FlyoutTheme = "light" | "dark" | "cristal";
 
+/** «Pronto»: el módulo existe para este tipo de negocio pero todavía no se abre. Igual en menú y flyouts. */
+export function PillPronto({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-md bg-[var(--text-tertiary)]/15 text-[var(--text-tertiary)] leading-none",
+        className,
+      )}
+    >
+      Pronto
+    </span>
+  );
+}
+
 interface SidebarFlyoutProps {
   category: { id: string; label: string; tabs: string[] };
   tabs: Array<{
+    id: string;
+    label: string;
+    icon: React.ElementType;
+  }>;
+  /** Los que el menú muestra como «Pronto»: se ven, pero no se abren. */
+  proximos?: Array<{
     id: string;
     label: string;
     icon: React.ElementType;
@@ -28,6 +49,7 @@ interface SidebarFlyoutProps {
 export function SidebarFlyout({
   category: _category,
   tabs,
+  proximos = [],
   activeTab,
   onNavigate,
   position,
@@ -74,9 +96,9 @@ export function SidebarFlyout({
       bg: "bg-[var(--surface-raised)]",
       arrow: "bg-[var(--surface-raised)] border-[var(--rule-soft)]",
       border: "border-[var(--rule-soft)] shadow-lg",
-      activeBg: "bg-[var(--accent-soft)] text-primary font-semibold",
+      activeBg: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold",
       inactiveText: "text-[var(--text-secondary)]",
-      hoverBg: "hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800/40 hover:text-[var(--text-primary)]",
+      hoverBg: "hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]",
       indicator: "bg-primary",
       activeIcon: "text-primary",
       inactiveIcon: "text-[var(--text-tertiary)]",
@@ -115,6 +137,9 @@ export function SidebarFlyout({
               onNavigate(id);
               onClose();
             }}
+            // Precarga el chunk del tab al pasar el mouse / enfocar → el clic abre al instante.
+            onMouseEnter={() => preloadTab(id)}
+            onFocus={() => preloadTab(id)}
             className={cn(
               "relative w-full flex items-center gap-2.5 px-4 py-2.5 text-[length:var(--ts-sm)] font-medium transition-all",
               isActive
@@ -132,10 +157,26 @@ export function SidebarFlyout({
               )}
             />
             <span className="truncate flex-1 text-left">{label}</span>
-            <ScopeBadge tabId={id} variant="chip" />
+            {/* El mismo punto que el menú: el chip «TIENDA» repetido en cada
+                fila gritaba lo mismo cuatro veces (Brandon 28-09). */}
+            <ScopeBadge tabId={id} variant="dot" />
           </button>
         );
       })}
+      {proximos.map(({ id, label, icon: Icon }) => (
+        <div
+          key={`pronto-${id}`}
+          title="Módulo disponible pronto"
+          className={cn(
+            "relative w-full flex items-center gap-2.5 px-4 py-2.5 text-[length:var(--ts-sm)] font-medium opacity-50 cursor-not-allowed select-none",
+            themeStyles.inactiveText,
+          )}
+        >
+          <Icon className={cn("h-4 w-4 shrink-0", themeStyles.inactiveIcon)} />
+          <span className="truncate flex-1 text-left">{label}</span>
+          <PillPronto />
+        </div>
+      ))}
     </div>
   );
 }

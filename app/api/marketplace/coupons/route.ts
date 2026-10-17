@@ -28,7 +28,14 @@ const CreateCouponSchema = z.object({
   maxUses: z.number().int().positive().optional().nullable(),
   expiresAt: z.string().datetime().optional().nullable(),
   storeId: z.string().optional().nullable(),
-});
+}).refine(
+  // El mismo guard que /api/coupons (PENTEST 2026-05-18 Sprint A #3). Vivía
+  // sólo en la puerta de la tienda: por acá se podía crear un percent=500 que
+  // el otro endpoint rechazaba. Duplicar la clase CouponsDB duplicó la puerta,
+  // y el fix había entrado a una sola.
+  (d) => d.discountType !== "percent" || d.discountValue <= 100,
+  { message: "discountValue debe ser ≤100 cuando discountType=percent", path: ["discountValue"] },
+);
 
 /**
  * GET /api/marketplace/coupons

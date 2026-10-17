@@ -55,7 +55,7 @@ const CONFETTI_PIECES = Array.from({ length: 12 }, (_, i) => {
   const distance = 30 + (i * 3); // deterministic instead of random
   const color = [
     "bg-[var(--accent)]",
-    "bg-[#f97316]",
+    "bg-[#ff6b5b]",
     "bg-yellow-400",
     "bg-emerald-400",
     "bg-pink-400",

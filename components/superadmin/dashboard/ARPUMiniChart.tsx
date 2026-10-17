@@ -45,7 +45,7 @@ function ARPUTooltip({
  */
 export function ARPUMiniChart({ data, currentARPU }: Props) {
   const tokens = useChartTokens();
-  const amber = "#f59e0b";
+  const amber = "#00A0A0"; // Brandon 2026-06-16: "sin naranja" → línea ARPU teal de marca.
   const first = data[0]?.arpu ?? currentARPU;
   const last = data[data.length - 1]?.arpu ?? currentARPU;
   const deltaPct = first > 0 ? ((last - first) / first) * 100 : 0;
@@ -76,7 +76,7 @@ export function ARPUMiniChart({ data, currentARPU }: Props) {
         </Caption>
       </div>
       <div style={{ width: "100%", height: 110, minHeight: 90 }}>
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={50}>
+        <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} width="100%" height="100%" minWidth={0} debounce={50}>
           <LineChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
             <XAxis
               dataKey="month"

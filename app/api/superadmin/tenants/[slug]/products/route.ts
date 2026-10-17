@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { invalidateByPrefix } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -162,7 +163,9 @@ export async function POST(
           description: productData.description ?? null,
           image: productData.image ?? "",
           stock: productData.stock ?? 999,
-          stockMin: productData.stockMin ?? 0,
+          // Sin mínimo propio usa el del negocio (un solo stock mínimo, 09-10);
+          // un 0 grabado acá decía «avisar sólo al agotarse» sin que nadie lo pidiera.
+          stockMin: productData.stockMin ?? null,
           active: productData.active,
           isPrepared: productData.isPrepared ?? false, // ADR-131
         },
@@ -240,7 +243,7 @@ export async function PATCH(
     });
     if (!tenant) return NextResponse.json({ error: "Tenant no encontrado" }, { status: 404 });
 
-    const parsed = PatchProductSchema.safeParse(await req.json().catch(() => null));
+    const parsed = PatchProductSchema.safeParse(await leerJson(req));
     if (!parsed.success) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }

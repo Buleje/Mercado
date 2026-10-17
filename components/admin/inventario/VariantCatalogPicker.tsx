@@ -12,8 +12,9 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { CardTitle } from "@buleje/design-system";
 import {
-  BookOpen, Loader2, Check, Image as ImageIcon, ChevronDown, ChevronRight,
+  Loader2, Check, Image as ImageIcon, ChevronDown, ChevronRight,
   CheckSquare, Square, Plus,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -177,16 +178,16 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
       open
       onClose={onClose}
       title="Catálogo de adicionales"
-      description="Importá plantillas completas o seleccioná opciones específicas (con sus imágenes)."
+      description="Importa plantillas completas o selecciona opciones específicas (con sus imágenes)."
       variant="wide"
     >
           {/* Filtros */}
-          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-white dark:bg-card">
+          <div className="shrink-0 border-b border-[var(--rule-soft)] space-y-2 bg-[var(--surface-raised)] px-5 py-3 sm:px-6">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar plantilla, categoría o opción…"
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 h-10 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
             {categories.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -196,7 +197,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
                     "px-3 py-1.5 rounded-full text-xs font-bold border transition-colors",
                     !activeCategory
                       ? "border-primary bg-primary text-white"
-                      : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40"
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40"
                   )}
                 >
                   Todas ({templates.length})
@@ -212,7 +213,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
                         "px-3 py-1.5 rounded-full text-xs font-bold border transition-colors",
                         active
                           ? "border-primary bg-primary text-white"
-                          : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40"
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40"
                       )}
                     >
                       {c} ({count})
@@ -265,7 +266,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3 flex items-center justify-between gap-2 bg-white dark:bg-card">
+          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3 flex items-center justify-between gap-2 bg-[var(--surface-raised)] ">
             <span className="text-xs text-[var(--text-tertiary)]">
               {totalSelected > 0
                 ? `${totalSelected} opción${totalSelected === 1 ? "" : "es"} seleccionada${totalSelected === 1 ? "" : "s"}`
@@ -273,7 +274,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
             </span>
             <button
               onClick={() => { onImported(); }}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-semibold text-white hover:bg-primary/90"
             >
               <Check className="h-4 w-4" />
               Listo
@@ -303,7 +304,7 @@ function TemplateRow({
   const allSelected = selectedIds.size === template.options.length && template.options.length > 0;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-card overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
       <div className="p-4">
         <div className="flex items-start gap-3">
           <button onClick={onToggleExpand} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors mt-1">
@@ -311,12 +312,12 @@ function TemplateRow({
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-bold text-[var(--text-primary)]">{template.name}</h3>
+              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{template.name}</CardTitle>
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                 {template.category}
               </span>
               {template.required && (
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   Obligatorio
                 </span>
               )}
@@ -334,7 +335,7 @@ function TemplateRow({
             onClick={onImportFull}
             disabled={isImporting}
             className={cn(
-              "shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-colors",
+              "shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors",
               isImported
                 ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border border-[var(--data-success-500)]/30"
                 : "bg-primary text-white hover:bg-primary/90",
@@ -356,7 +357,7 @@ function TemplateRow({
             {template.options.length > 6 && (
               <button
                 onClick={onToggleExpand}
-                className="rounded-lg border border-dashed border-[var(--rule-soft)] p-2 flex items-center justify-center text-xs font-bold text-[var(--text-tertiary)] hover:border-primary hover:text-primary transition-colors min-h-[44px]"
+                className="rounded-xl border border-dashed border-[var(--rule-soft)] p-2 flex items-center justify-center text-xs font-bold text-[var(--text-tertiary)] hover:border-primary hover:text-primary transition-colors min-h-[44px]"
               >
                 +{template.options.length - 6} más
               </button>
@@ -377,7 +378,7 @@ function TemplateRow({
               {allSelected ? "Deseleccionar todas" : "Seleccionar todas"}
             </button>
             <span className="text-xs text-[var(--text-tertiary)]">
-              {selectedIds.size > 0 ? `${selectedIds.size} de ${template.options.length} elegidas` : "Tocá las que querés importar"}
+              {selectedIds.size > 0 ? `${selectedIds.size} de ${template.options.length} elegidas` : "Toca las que quieres importar"}
             </span>
           </div>
 
@@ -392,7 +393,7 @@ function TemplateRow({
                     "text-left rounded-xl border-2 p-2.5 transition-all relative",
                     isChecked
                       ? "border-primary bg-primary/5"
-                      : "border-[var(--rule-soft)] bg-white dark:bg-card hover:border-primary/40"
+                      : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-primary/40"
                   )}
                 >
                   <div className="flex items-center gap-2.5">
@@ -417,7 +418,7 @@ function TemplateRow({
               <button
                 onClick={onImportSelected}
                 disabled={isImporting}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 disabled:opacity-50"
               >
                 {isImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
                 Importar selección

@@ -25,7 +25,7 @@ export default function ShareStoreButton({ slug, name, className }: Props) {
     e.stopPropagation();
     const origin =
       typeof window !== "undefined" ? window.location.origin : "https://buleje.pe";
-    const msg = `Mirá *${name}* en Buleje — pedí con delivery a domicilio 🛵: ${origin}/marketplace/${slug}`;
+    const msg = `Mira *${name}* en Buleje — pide con delivery a domicilio 🛵: ${origin}/marketplace/${slug}`;
     window.open(
       `https://wa.me/?text=${encodeURIComponent(msg)}`,
       "_blank",

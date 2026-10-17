@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type EventType = "view" | "click" | "add_to_cart" | "conversion";
 
@@ -35,7 +36,7 @@ export function useProductAnalyticsTracking() {
       // Fallback: fetch con keepalive
       fetch("/api/marketplace/analytics/track-batch", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: payload,
         keepalive: true,
       }).catch(() => {});

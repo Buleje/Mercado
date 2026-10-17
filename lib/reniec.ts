@@ -100,7 +100,37 @@ async function lookupWithApisNetPe(dni: string): Promise<ReniecPerson | null> {
   return person ? { ...person, dni } : null;
 }
 
-/* ── Provider 3: eldni.com (free, no auth — web scraping) ──────────── */
+/* ── Provider 3: apis.net.pe v1 (PÚBLICA, sin token) ───────────────── */
+
+/**
+ * La v1 de apis.net.pe no pide credenciales y devuelve el nombre del padrón.
+ *
+ * Faltaba en la cadena, y por eso la consulta de DNI moría: `configured`
+ * apuntaba a la v2 con un token vencido, el provider 2 se saltaba por falta de
+ * `APISNETPE_TOKEN`, y sólo quedaba el scraping. Va ANTES de scrapear: una API
+ * pública es más estable y más honesta que raspar el HTML de un tercero.
+ */
+async function lookupWithApisNetPeV1(dni: string): Promise<ReniecPerson | null> {
+  const response = await fetch(`https://api.apis.net.pe/v1/dni?numero=${encodeURIComponent(dni)}`, {
+    method: "GET",
+    headers: { Accept: "application/json", "User-Agent": "Buleje/1.0 (+https://www.buleje.pe)" },
+    cache: "no-store",
+    signal: AbortSignal.timeout(6000),
+  });
+  if (!response.ok) return null;
+
+  const data = (await response.json()) as Record<string, unknown>;
+  /* La v1 devuelve el nombre COMPLETO en un solo campo, en orden
+     «APELLIDOS NOMBRES» — no los tres campos que espera `parseApiResponse`. */
+  const completo = typeof data.nombre === "string" ? data.nombre.trim() : "";
+  if (completo) {
+    return { dni, nombres: completo, apellidoPaterno: "", apellidoMaterno: "", nombreCompleto: completo };
+  }
+  const person = parseApiResponse(data);
+  return person ? { ...person, dni } : null;
+}
+
+/* ── Provider 4: eldni.com (free, no auth — web scraping) ──────────── */
 
 async function lookupWithElDni(dni: string): Promise<ReniecPerson | null> {
   // Step 1: GET page to obtain CSRF token + session cookie
@@ -172,6 +202,7 @@ export async function lookupDniInReniec(dni: string): Promise<ReniecPerson> {
   const providers = [
     { name: "configured", fn: () => lookupWithConfiguredApi(dni) },
     { name: "apis.net.pe", fn: () => lookupWithApisNetPe(dni) },
+    { name: "apis.net.pe v1", fn: () => lookupWithApisNetPeV1(dni) },
     { name: "eldni.com", fn: () => lookupWithElDni(dni) },
   ];
 

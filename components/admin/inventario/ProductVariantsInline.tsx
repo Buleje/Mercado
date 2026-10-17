@@ -18,7 +18,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Plus, Trash2, Camera, Check, X, Loader2, AlertTriangle, GripVertical, Sparkles, ChevronDown } from "@buleje/design-system/icons";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Plantillas — sets pre-armados de variantes comunes ──────────────────────
 // Formato: { name } se usa como label; { attr } se guarda en attributesJson.
@@ -196,6 +198,7 @@ interface Props {
 }
 
 export default function ProductVariantsInline({ productId, basePrice, parentImage }: Props) {
+  const { confirm } = useConfirm();
   const [rows, setRows] = useState<VariantRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -285,7 +288,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
       const existingAttrs = new Set(rows.map(r => r.attr.toLowerCase()));
       const itemsToCreate = tpl.items.filter(it => !existingAttrs.has(it.attr.toLowerCase()));
       if (itemsToCreate.length === 0) {
-        setError(`Ya tenés todas las variantes de "${tpl.label}"`);
+        setError(`Ya tienes todas las variantes de "${tpl.label}"`);
         return;
       }
       // POST en serie (no paralelo) para preservar position y evitar rate limits
@@ -319,7 +322,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar esta variante?")) return;
+    if (!(await confirm({ title: "¿Eliminar esta variante?", intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
     setSaving(id);
     try {
       const res = await fetch(`/api/marketplace/products/${productId}/variants?variantId=${encodeURIComponent(id)}`, {
@@ -366,7 +369,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
         <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] text-xs">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
           <span className="flex-1">{error}</span>
-          <button onClick={() => setError(null)} className="opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
+          <button aria-label="Quitar" onClick={() => setError(null)} className="opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
         </div>
       )}
 
@@ -424,7 +427,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
           <button
             type="button"
             onClick={() => setDraftRow({ name: "", attr: "", priceModifier: 0, stock: null, image: null, sku: null })}
-            className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors text-sm font-bold"
+            className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-primary/40 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors text-sm font-bold"
           >
             <Plus className="h-4 w-4" />
             Agregar variante
@@ -434,7 +437,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
               type="button"
               onClick={() => setShowTemplates(s => !s)}
               disabled={generatingFromTemplate}
-              className="h-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
+              className="h-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-50"
               title="Crear varias variantes desde una plantilla pre-armada"
             >
               {generatingFromTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
@@ -443,18 +446,18 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
             </button>
             {showTemplates && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowTemplates(false)} />
+                <div className="fixed inset-0 z-dropdown" onClick={() => setShowTemplates(false)} />
                 <div className="absolute right-0 top-full mt-1 z-20 w-72 max-h-80 overflow-y-auto rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl">
                   <div className="px-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Elegí una plantilla</p>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Crea todas las variantes en un click. Después podés editarlas o agregar más.</p>
+                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Elige una plantilla</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Crea todas las variantes en un click. Después puedes editarlas o agregar más.</p>
                   </div>
                   {VARIANT_TEMPLATES.map(tpl => (
                     <button
                       key={tpl.id}
                       type="button"
                       onClick={() => handleGenerateFromTemplate(tpl.id)}
-                      className="w-full text-left px-3 py-2.5 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-b-0"
+                      className="w-full text-left px-3 min-h-11 hover:bg-[var(--surface-sunken)] transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-b-0"
                     >
                       <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{tpl.label}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{tpl.description}</p>
@@ -528,8 +531,8 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
           const file = e.dataTransfer.files?.[0];
           if (file && onDropImage) onDropImage(file);
         }}
-        className="relative h-16 w-16 rounded-lg overflow-hidden border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary shrink-0 bg-[var(--surface-sunken)] dark:bg-surface group transition-all"
-        title="Click para elegir o arrastrá una imagen aquí"
+        className="relative h-16 w-16 rounded-xl overflow-hidden border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary shrink-0 bg-[var(--surface-sunken)] group transition-all"
+        title="Click para elegir o arrastra una imagen aquí"
       >
         {previewImg ? (
           <Image
@@ -563,13 +566,13 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
           value={row.name}
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder="Nombre (ej: Talla M)"
-          className="sm:col-span-2 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+          className="sm:col-span-2 px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
         />
         <input
           value={row.attr}
           onChange={(e) => onChange({ attr: e.target.value })}
           placeholder="Atributo (500ml, M, rojo)"
-          className="sm:col-span-2 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+          className="sm:col-span-2 px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
         />
         <div className="flex items-center gap-1">
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold">±S/</span>
@@ -579,7 +582,7 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
             value={row.priceModifier}
             onChange={(e) => onChange({ priceModifier: Number(e.target.value) || 0 })}
             placeholder="0.00"
-            className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+            className="flex-1 min-w-0 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
             title="Diferencia de precio respecto al padre"
           />
         </div>
@@ -591,22 +594,22 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
             value={row.stock ?? ""}
             onChange={(e) => onChange({ stock: e.target.value === "" ? null : Number(e.target.value) })}
             placeholder="—"
-            className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+            className="flex-1 min-w-0 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <input
           value={row.sku ?? ""}
           onChange={(e) => onChange({ sku: e.target.value || null })}
           placeholder="SKU (opcional)"
-          className="sm:col-span-2 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+          className="sm:col-span-2 px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
         />
 
         {/* Resumen precio final */}
         <p className="sm:col-span-4 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
-          Precio final: <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{finalPrice.toFixed(2)}</strong>
+          Precio final: <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(finalPrice)}</strong>
           {row.priceModifier !== 0 && (
             <span className="ml-1.5">
-              ({row.priceModifier > 0 ? "+" : ""}{Number(row.priceModifier).toFixed(2)} sobre el base S/{basePrice.toFixed(2)})
+              ({row.priceModifier > 0 ? "+" : ""}{Number(row.priceModifier).toFixed(2)} sobre el base {formatCurrency(basePrice)})
             </span>
           )}
         </p>
@@ -627,7 +630,7 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
         <button
           type="button"
           onClick={onDelete}
-          className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--data-error-500)] text-xs font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
+          className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--data-error-500)] text-xs font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
           title={isDraft ? "Cancelar" : "Eliminar"}
         >
           <Trash2 className="h-3.5 w-3.5" />

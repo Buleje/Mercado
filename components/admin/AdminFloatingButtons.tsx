@@ -42,7 +42,7 @@ export function AdminFloatingButtons({
       {presentationMode && (
         <button
           onClick={onExitPresentation}
-          className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-lg bg-black/30 backdrop-blur-md text-white/80 text-sm font-semibold hover:bg-black/50 hover:text-white transition-all"
+          className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 min-h-10 rounded-xl bg-black/30 backdrop-blur-md text-white/80 text-sm font-semibold hover:bg-black/50 hover:text-white transition-all"
           title="Salir de presentación (Ctrl+Shift+P)"
         >
           <EyeOff className="h-4 w-4" />

@@ -2,7 +2,8 @@
 
 import React from "react";
 import { AlertTriangle, RefreshCw } from "@buleje/design-system/icons";
-import * as Sentry from "@sentry/nextjs";
+// Sentry se baja en el primer error, no en la carga de cada página (16-10).
+import { capturarErrorCliente } from "@/lib/telemetry/capturar-error-cliente";
 
 interface Props {
   children: React.ReactNode;
@@ -42,7 +43,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (typeof window !== "undefined" && (window as unknown as Record<string, unknown>).Sentry) {
       (window as unknown as { Sentry: { captureException: (error: Error, info: React.ErrorInfo) => void } }).Sentry.captureException(error, info);
     }
-    Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
+    capturarErrorCliente(error instanceof Error ? error : new Error(String(error)));
   }
 
   handleReset = () => {

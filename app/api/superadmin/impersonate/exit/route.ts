@@ -1,8 +1,10 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionPayload, SESSION } from "@/lib/session";
+import { cacheStore } from "@/lib/cache";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { logger } from "@/lib/logger";
+import { superadminDeSuplantacion } from "@/lib/auth/suplantacion";
 
 /**
  * POST /api/superadmin/impersonate/exit
@@ -32,11 +34,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Solo sesiones impersonadas tienen username con prefijo "impersonated-by:"
-    if (!payload.username.startsWith("impersonated-by:")) {
+    const impersonator = superadminDeSuplantacion(payload.username);
+    if (impersonator === null) {
       return NextResponse.json({ error: "Esta sesion no es de impersonacion" }, { status: 400 });
     }
 
-    const impersonator = payload.username.replace("impersonated-by:", "");
     const tenantId = payload.tenantId;
 
     // Audit trail — fire-and-forget obligatorio (Ley 29733 Art. 16)
@@ -52,6 +54,12 @@ export async function POST(req: NextRequest) {
       },
       impersonator,
     ).catch((err) => logger.warn("[impersonate/exit] audit failed", { err: String(err) }));
+
+    // Anular el token, no sólo borrar la cookie (security 11-10): igual que el
+    // logout, su jti va a la lista negra que mira requireAdmin. Antes, tras
+    // «Salir», una copia del token seguía entrando a /api/admin-users. El TTL
+    // cubre la vida de cualquier token de acceso (15 min) aunque éste viva 10.
+    if (payload.jti) cacheStore.set(`revoked-access:${payload.jti}`, true, SESSION.MAX_AGE);
 
     // Limpiar todas las cookies de sesion admin
     const res = NextResponse.json({ ok: true, impersonator });

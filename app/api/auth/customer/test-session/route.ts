@@ -31,11 +31,15 @@ export async function POST(req: NextRequest) {
   // En producción este endpoint devuelve 404 (oculta su propia existencia).
   // Habilitado en tests, flag E2E explícita y DESARROLLO LOCAL
   // (NODE_ENV=development) para probar el flujo de compra sin registrarse.
-  // En producción (NODE_ENV=production) SIEMPRE 404 — fail-closed.
+  // El despliegue de producción (VERCEL_ENV=production) SIEMPRE 404, aunque
+  // ALLOW_E2E_TEST_AUTH esté prendida (security 08-10). Los e2e corren contra
+  // `next start` local (NODE_ENV=production sin VERCEL_ENV), por eso no basta
+  // NODE_ENV para distinguirlos.
   const e2eAllowed =
-    process.env.NODE_ENV === "test" ||
-    process.env.NODE_ENV === "development" ||
-    process.env.ALLOW_E2E_TEST_AUTH === "1";
+    process.env.VERCEL_ENV !== "production" &&
+    (process.env.NODE_ENV === "test" ||
+      process.env.NODE_ENV === "development" ||
+      process.env.ALLOW_E2E_TEST_AUTH === "1");
   if (!e2eAllowed) {
     return NextResponse.json(null, { status: 404 });
   }

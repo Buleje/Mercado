@@ -26,7 +26,7 @@ import { z } from "zod";
 import { SunatDB } from "@/lib/db/sunat.db";
 import { sendInvoice, voidInvoice, getInvoiceStatus } from "@/lib/sunat/nubefact-client";
 import { buildBoleta, buildFactura, buildBaja } from "@/lib/sunat/invoice-builder";
-import { calculateIGV } from "@/lib/sunat";
+import { armarLineasComprobante, montosParaRegistro } from "@/lib/sunat/lineas-comprobante";
 import { logger } from "@/lib/logger";
 // PERF 2026-05-05: rate limiter distribuido (Upstash Redis) — reemplaza el
 // Map en-memoria que no compartía estado entre instancias de Vercel.
@@ -42,6 +42,8 @@ const ItemSchema = z.object({
   /** Precio de venta CON IGV incluido (precio al público) */
   precioConIgv: z.number().positive("El precio debe ser mayor a 0"),
   unidad: z.string().default("NIU"), // NIU = unidades, ZZ = servicios
+  /** Product.taxType: exonerado (Amazonía, Ley 27037) / inafecto van sin IGV. Vacío = gravado. */
+  afectacion: z.enum(["gravado", "exonerado", "inafecto"]).optional(),
 });
 
 const BoletaInputSchema = z.object({
@@ -52,6 +54,8 @@ const BoletaInputSchema = z.object({
   clienteNombre: z.string().default("CONSUMIDOR FINAL"),
   clienteEmail: z.string().email().optional(),
   items: z.array(ItemSchema).min(1, "Debe incluir al menos un item"),
+  /** Lo que de verdad se cobró (Order.total). Menor que los items = descuento prorrateado. */
+  totalCobrado: z.number().nonnegative().optional(),
 });
 
 const FacturaInputSchema = z.object({
@@ -64,6 +68,8 @@ const FacturaInputSchema = z.object({
   clienteDireccion: z.string().optional(),
   clienteEmail: z.string().email().optional(),
   items: z.array(ItemSchema).min(1, "Debe incluir al menos un item"),
+  /** Lo que de verdad se cobró (Order.total). Menor que los items = descuento prorrateado. */
+  totalCobrado: z.number().nonnegative().optional(),
 });
 
 const AnulacionInputSchema = z.object({
@@ -150,19 +156,26 @@ async function checkRateLimit(tenantId: string): Promise<{ allowed: boolean; rem
 
 // ── Helper: calcular totales desde items ─────────────────────────────────────
 
+/** Items del facade → ítems del builder, con la afectación del IGV de cada producto. */
+function itemsParaBuilder(items: z.infer<typeof ItemSchema>[]) {
+  return items.map((item) => ({
+    name: item.descripcion,
+    quantity: item.cantidad,
+    price: item.precioConIgv,
+    unit: item.unidad,
+    productCode: item.codigo,
+    taxType: item.afectacion ?? null,
+  }));
+}
+
+/** Totales con el IGV de cada línea (exonerado/inafecto = 0) y lo cobrado de verdad. */
 function calcularTotalesDesdeItems(
-  items: z.infer<typeof ItemSchema>[]
+  items: z.infer<typeof ItemSchema>[],
+  totalCobrado?: number,
 ): { subtotal: number; igv: number; total: number } {
-  const totalConIgv = items.reduce(
-    (acc, item) => acc + item.precioConIgv * item.cantidad,
-    0
+  return montosParaRegistro(
+    armarLineasComprobante(itemsParaBuilder(items), { totalCobrado }).totales,
   );
-  const igvCalc = calculateIGV(totalConIgv);
-  return {
-    subtotal: +igvCalc.gravado.toFixed(2),
-    igv: +igvCalc.igv.toFixed(2),
-    total: +igvCalc.total.toFixed(2),
-  };
 }
 
 // ── Funciones públicas ────────────────────────────────────────────────────────
@@ -237,7 +250,7 @@ export async function emitirBoleta(
   }
 
   const nextNumber = await SunatDB.incrementCorrelativo(tenantId, "boleta");
-  const totales = calcularTotalesDesdeItems(data.items);
+  const totales = calcularTotalesDesdeItems(data.items, data.totalCobrado);
 
   // 5. Crear registro pending (para que el cron pueda reintentarlo si falla)
   const invoiceRecord = await SunatDB.createInvoice(tenantId, {
@@ -257,13 +270,7 @@ export async function emitirBoleta(
       id: data.orderId ?? invoiceRecord.id,
       customerName: data.clienteNombre,
       total: totales.total,
-      items: data.items.map((item) => ({
-        name: item.descripcion,
-        quantity: item.cantidad,
-        price: item.precioConIgv,
-        unit: item.unidad,
-        productCode: item.codigo,
-      })),
+      items: itemsParaBuilder(data.items),
     },
     {
       ruc: config.ruc,
@@ -399,7 +406,7 @@ export async function emitirFactura(
   }
 
   const nextNumber = await SunatDB.incrementCorrelativo(tenantId, "factura");
-  const totales = calcularTotalesDesdeItems(data.items);
+  const totales = calcularTotalesDesdeItems(data.items, data.totalCobrado);
 
   // 5. Crear registro pending
   const invoiceRecord = await SunatDB.createInvoice(tenantId, {
@@ -420,13 +427,7 @@ export async function emitirFactura(
       id: data.orderId ?? invoiceRecord.id,
       customerName: data.clienteRazonSocial,
       total: totales.total,
-      items: data.items.map((item) => ({
-        name: item.descripcion,
-        quantity: item.cantidad,
-        price: item.precioConIgv,
-        unit: item.unidad,
-        productCode: item.codigo,
-      })),
+      items: itemsParaBuilder(data.items),
     },
     {
       ruc: config.ruc,
@@ -524,7 +525,7 @@ export async function consultarEstado(
   numero: number
 ): Promise<SunatResponse> {
   // Buscar en DB local por serie+número
-  const { invoices } = await SunatDB.listInvoices(tenantId, { limit: 1 });
+  await SunatDB.listInvoices(tenantId, { limit: 1 });
   // Buscamos manualmente por serie+número (listInvoices no filtra por eso aún)
   const allForTenant = await SunatDB.listInvoices(tenantId, { limit: 200 });
   const invoice = allForTenant.invoices.find(

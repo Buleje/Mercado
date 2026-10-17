@@ -10,6 +10,9 @@ import {
   type ReactNode,
 } from "react";
 import { tenantKey } from "@/contexts/tenant-context";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { cerrarSesionCliente } from "@/lib/auth/salir-cliente";
+import { pedirClienteMe } from "@/lib/cliente-me";
 
 export type SavedLocation = {
   id: string;
@@ -76,7 +79,14 @@ type CustomerCtx = {
   closeAccountModal: () => void;
   openOrderStatusModal: () => void;
   closeOrderStatusModal: () => void;
+  /** Olvida al cliente SÓLO en este navegador (no cierra la sesión del servidor). */
   clear: () => void;
+  /**
+   * «Salir»: cierra la sesión del cliente en el servidor (cookie verificada o de
+   * seguimiento + Google) y después lo olvida en este navegador. Quien llama
+   * recarga si quiere que el layout del servidor también lo vea fuera.
+   */
+  salir: () => Promise<void>;
   findByPhone: (phone: string) => Promise<Customer | null>;
 };
 
@@ -125,8 +135,20 @@ function upsertAccount(list: Customer[], next: Customer): Customer[] {
   return [next, ...cleaned].slice(0, 8); // max 8 cuentas guardadas
 }
 
-export function CustomerProvider({ children }: { children: ReactNode }) {
-  const [customer, setCustomer] = useState<Customer | null>(null);
+export function CustomerProvider({
+  children,
+  // Audit #9 (SSR-auth, Brandon 2026-07-06): estado inicial resuelto en el SERVER
+  // desde la cookie buleje-customer-sess. `undefined` = el server no lo proveyó
+  // (comportamiento viejo con skeleton). Con valor (Customer o null) arrancamos
+  // HIDRATADOS → el navbar pinta el estado real en el primer byte, sin skeleton
+  // ni CLS. El cliente arranca con el mismo prop → sin hydration mismatch; el
+  // useEffect de abajo reconcilia con localStorage / /me después.
+  initialCustomer,
+}: {
+  children: ReactNode;
+  initialCustomer?: Customer | null;
+}) {
+  const [customer, setCustomer] = useState<Customer | null>(initialCustomer ?? null);
   const [accounts, setAccounts] = useState<Customer[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [openMode, setOpenMode] = useState<"order" | "profile">("order");
@@ -135,7 +157,9 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   // Brandon 2026-06-04 (auditoría /negocios): true cuando terminó la hidratación
   // de auth (localStorage o /api/auth/customer/me). El navbar lo usa para mostrar
   // un skeleton estable en vez de parpadear "Ingresar" → avatar.
-  const [hydrated, setHydrated] = useState(false);
+  // Audit #9: si el server proveyó initialCustomer (aunque sea null = logout),
+  // ya conocemos el estado de auth → arrancamos hidratados (sin skeleton).
+  const [hydrated, setHydrated] = useState(initialCustomer !== undefined);
 
   // Hydrate from localStorage after mount — null during SSR to avoid mismatch.
   // Si no hay localStorage (primera visita en este dispositivo) pero SÍ existe
@@ -147,17 +171,10 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
     const hydrateFromServer = async () => {
       try {
-        const res = await fetch("/api/auth/customer/me", {
-          credentials: "include",
-          cache: "no-store",
-        });
+        // Mismo pedido que `useCustomerAuthStatus` (lib/cliente-me.ts): uno solo por carga.
+        const data = await pedirClienteMe();
         if (cancelled) return;
-        if (!res.ok) return;
-        const data = (await res.json()) as {
-          authenticated?: boolean;
-          customer?: { name: string; phone?: string };
-        };
-        if (!data.authenticated || !data.customer?.name) return;
+        if (!data?.authenticated || !data.customer?.name) return;
 
         const next: Customer = {
           name: data.customer.name,
@@ -211,12 +228,6 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   const register = useCallback((data: Customer) => {
     setCustomer(data);
     localStorage.setItem(getStorageKey(), JSON.stringify(data));
-    // FIX 2026-05-07: limpiar flag de session expirada al hacer login fresco.
-    // Header.tsx setea sessionStorage["customer-notifs-401:${phone}"] cuando
-    // recibe 401, para evitar spam de polling. Al re-loguearse hay cookie nueva.
-    if (data.phone) {
-      try { sessionStorage.removeItem(`customer-notifs-401:${data.phone}`); } catch { /* ignore */ }
-    }
     // Upsert en la lista de accounts (multi-account support)
     setAccounts((prev) => {
       const next = upsertAccount(prev, data);
@@ -236,7 +247,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     if (data.phone && hasAdminSession) {
       fetch("/api/customers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           phone: data.phone,
           name: data.name,
@@ -287,6 +298,14 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     setCustomer(null);
     localStorage.removeItem(getStorageKey());
   }, []);
+  const salir = useCallback(async () => {
+    await cerrarSesionCliente();
+    try {
+      clear();
+    } catch {
+      /* almacenamiento bloqueado: la cookie ya se venció en el servidor */
+    }
+  }, [clear]);
 
   const switchAccount = useCallback(
     (phone: string) => {
@@ -326,7 +345,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         customer, hydrated, accounts, showModal, openMode, accountModalOpen, orderStatusModalOpen,
         register, switchAccount, removeAccount,
         openModal, closeModal, openAccountModal, closeAccountModal,
-        openOrderStatusModal, closeOrderStatusModal, clear, findByPhone,
+        openOrderStatusModal, closeOrderStatusModal, clear, salir, findByPhone,
       }}
     >
       {children}

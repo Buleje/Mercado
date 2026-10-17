@@ -80,7 +80,7 @@ export function CustomerVerifiedCard({
         {reference && (
           <div className="flex items-start gap-2.5 px-3 py-1.5">
             <Home className="h-3.5 w-3.5 text-primary/60 shrink-0 mt-0.5" />
-            <span className="text-xs text-gray-500 leading-tight">{reference}</span>
+            <span className="text-xs text-gray-500 dark:text-[var(--text-secondary)] leading-tight">{reference}</span>
           </div>
         )}
         {loyaltyPoints !== null && loyaltyPoints > 0 && (
@@ -95,7 +95,7 @@ export function CustomerVerifiedCard({
 
       {locations.length > 1 && (
         <div className="mt-3 px-3 pb-3">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
+          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-400 dark:text-[var(--text-tertiary)] uppercase tracking-wider mb-2 px-1">
             Dirección de entrega
           </p>
           <div className="space-y-2">
@@ -108,7 +108,7 @@ export function CustomerVerifiedCard({
                   "w-full text-left flex items-start gap-3 p-3 rounded-xl border-2 transition-all",
                   selectedLocId === loc.id
                     ? "border-primary bg-primary/5"
-                    : "border-gray-100 hover:border-primary/30"
+                    : "border-gray-100 dark:border-[var(--rule-soft)] hover:border-primary/30"
                 )}
               >
                 <div
@@ -116,7 +116,7 @@ export function CustomerVerifiedCard({
                     "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0",
                     selectedLocId === loc.id
                       ? "border-primary bg-primary"
-                      : "border-gray-300"
+                      : "border-gray-300 dark:border-[var(--rule-base)]"
                   )}
                 >
                   {selectedLocId === loc.id && (
@@ -135,7 +135,7 @@ export function CustomerVerifiedCard({
                     {loc.location}
                   </p>
                   {loc.reference && (
-                    <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                    <p className="text-xs text-gray-400 dark:text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1">
                       <Home className="h-3 w-3 shrink-0" />
                       {loc.reference}
                     </p>
@@ -146,7 +146,7 @@ export function CustomerVerifiedCard({
             <button
               type="button"
               onClick={onAddNewAddress}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm font-semibold text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 dark:border-[var(--rule-base)] text-sm font-semibold text-gray-400 dark:text-[var(--text-tertiary)] hover:text-primary hover:border-primary/30 transition-all"
             >
               <MapPin className="h-4 w-4" /> Agregar nueva dirección
             </button>

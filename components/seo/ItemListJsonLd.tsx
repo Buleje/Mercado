@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 /**
  * ItemListJsonLd — componente reutilizable para emitir JSON-LD `ItemList`
  * en páginas con listados de productos, tiendas, recetas, artículos.
@@ -126,7 +127,7 @@ export default function ItemListJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }}
     />
   );
 }

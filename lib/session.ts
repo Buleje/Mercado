@@ -145,7 +145,12 @@ export async function createSessionToken(
   role: AdminRole = "admin",
   username = "admin",
   tenantId = "main",
-  name = ""
+  name = "",
+  /**
+   * Vida del token. Por defecto la de toda sesión (15 min). La suplantación del
+   * superadmin pasa 10 min: su token muere junto con su cookie (security 11-10).
+   */
+  duracionMs: number = ACCESS_DURATION_MS,
 ): Promise<string> {
   // SECURITY 2026-05-07 (pentest F1): jti único por access token para
   // permitir revocación inmediata en logout (blacklist en cacheStore).
@@ -160,7 +165,7 @@ export async function createSessionToken(
     name,
     type: "access",
     jti,
-    exp: Date.now() + ACCESS_DURATION_MS,
+    exp: Date.now() + duracionMs,
   });
   const encoded = b64Encode(payload);
   const rawSig = await signHmac(getSecret(), encoded);
@@ -236,6 +241,21 @@ export async function getRefreshPayload(token: string): Promise<SessionPayload |
       tenantId: payload.tenantId,
       name: payload.name,
     };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * `exp` (ms) de un token de acceso VÁLIDO (firma, tipo y vigencia los decide
+ * getSessionPayload), o null. Sólo para mostrar cuánto le queda: la franja de
+ * la vista de tienda del superadmin (11-10) cuenta los minutos con esto.
+ */
+export async function vencimientoDeSesion(token: string): Promise<number | null> {
+  if (!(await getSessionPayload(token))) return null;
+  try {
+    const { exp } = JSON.parse(b64Decode(token.slice(0, token.lastIndexOf(".")))) as { exp?: unknown };
+    return typeof exp === "number" ? exp : null;
   } catch {
     return null;
   }

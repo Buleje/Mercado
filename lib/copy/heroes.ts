@@ -23,7 +23,7 @@ export const HERO = {
     headline: "Tu bodega del barrio,",
     headlineAccent: "en tu celular",
     subhead:
-      "Pide a cualquier bodega cerca tuyo. Delivery en 25 min. Pagás con Yape o efectivo al recibir.",
+      "Pide a cualquier bodega cerca tuyo. Delivery en 25 min. Pagas con Yape o efectivo al recibir.",
     ctaPrimary: "Ver tiendas cerca",
     ctaSecondary: "Ofertas del día",
     socialProofTemplate: (bodegas: number, ordersToday: number) =>
@@ -34,7 +34,7 @@ export const HERO = {
   // Framework: PAS — problema específico → agitación → solución
   negocios: {
     eyebrow: "Software para bodegas",
-    headline: "Cerrás cada noche",
+    headline: "Cierras cada noche",
     headlineAccent: "sin saber cuánto ganaste",
     subhead:
       "Buleje automatiza inventario, ventas y delivery. Ves todo desde tu celular — sin instalar nada, sin anotar en cuaderno.",
@@ -46,7 +46,7 @@ export const HERO = {
     alternativeHeadline: "Vende el doble",
     alternativeAccent: "sin contratar a nadie",
     alternativeSubhead:
-      "Automatizá pedidos por WhatsApp, inventario y facturación SUNAT. Ahorrá 2 horas cada día.",
+      "Automatiza pedidos por WhatsApp, inventario y facturación SUNAT. Ahorra 2 horas cada día.",
   },
 
   // ── Tienda (store owner's storefront) ─────────────────────
@@ -55,7 +55,7 @@ export const HERO = {
     headline: "Tu despensa completa",
     headlineAccent: "en 25 minutos",
     subhead:
-      "Abarrotes, frescos, bebidas y limpieza. Con delivery a tu puerta. Pagás como prefieras.",
+      "Abarrotes, frescos, bebidas y limpieza. Con delivery a tu puerta. Pagas como prefieras.",
     ctaPrimary: "Ver catálogo",
     ctaSecondary: "Ofertas del día",
     trustRow: [
@@ -82,7 +82,7 @@ export const HERO = {
     headline: "Tenemos respuesta",
     headlineAccent: "para todo",
     subhead:
-      "Respuestas rápidas a las preguntas más comunes. Si no encontrás lo tuyo, escríbenos por WhatsApp.",
+      "Respuestas rápidas a las preguntas más comunes. Si no encuentras lo tuyo, escríbenos por WhatsApp.",
     ctaPrimary: "Chatear por WhatsApp",
   },
 
@@ -100,7 +100,7 @@ export const HERO = {
   planes: {
     eyebrow: "Planes y precios",
     headline: "Empiezas gratis,",
-    headlineAccent: "crecés a tu ritmo",
+    headlineAccent: "creces a tu ritmo",
     subhead:
       "Prueba Buleje 14 días sin pagar un sol. Subes de plan solo cuando te ayude a vender más.",
     ctaPrimary: "Empezar plan gratis",
@@ -113,7 +113,7 @@ export const HERO = {
     headline: "Por cada sol,",
     headlineAccent: "más valor",
     subhead:
-      "Ganás 1 punto por cada S/10 de pedido. 100 puntos = S/5 de descuento. Subes de nivel automático.",
+      "Ganas 1 punto por cada S/10 de pedido. 100 puntos = S/5 de descuento. Subes de nivel automático.",
     ctaPrimary: "Ver mi nivel",
   },
 

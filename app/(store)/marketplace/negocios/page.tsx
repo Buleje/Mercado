@@ -34,9 +34,9 @@ const FEATURES = [
 
 const BENEFITS: { Icon: LucideIcon; title: string; desc: string }[] = [
   { Icon: Coins, title: "Aumenta tus ventas", desc: "Clientes compran 24/7 desde su celular. Delivery amplía tu zona de cobertura." },
-  { Icon: Timer, title: "Ahorrá tiempo", desc: "Automatizá cobros, inventario y reportes. Lo que antes tomaba horas, ahora es 1 click." },
-  { Icon: TrendingDown, title: "Reduce pérdidas", desc: "Control de vencimientos, mermas y fiados. Sabes exactamente cuánto ganás y cuánto perdés." },
-  { Icon: Trophy, title: "Competí con los grandes", desc: "Tu bodega con la misma tecnología que las cadenas. Presencia online profesional." },
+  { Icon: Timer, title: "Ahorra tiempo", desc: "Automatiza cobros, inventario y reportes. Lo que antes tomaba horas, ahora es 1 click." },
+  { Icon: TrendingDown, title: "Reduce pérdidas", desc: "Control de vencimientos, mermas y fiados. Sabes exactamente cuánto ganas y cuánto pierdes." },
+  { Icon: Trophy, title: "Compite con los grandes", desc: "Tu bodega con la misma tecnología que las cadenas. Presencia online profesional." },
 ];
 
 const PLANS = [
@@ -147,7 +147,7 @@ export default function NegociosPage() {
       <section className="py-16 sm:py-20 bg-white dark:bg-[var(--surface-canvas)]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold rounded-full px-3 py-1 mb-4">
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold rounded-full px-3 py-1 mb-4">
               <Zap className="h-3.5 w-3.5" />
               Todo en un solo panel
             </span>
@@ -155,7 +155,7 @@ export default function NegociosPage() {
               Mira cómo funciona
             </h2>
             <p className="mt-3 text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] max-w-xl mx-auto">
-              Tocá cada feature para ver el mockup real. Son los mismos paneles que
+              Toca cada feature para ver el mockup real. Son los mismos paneles que
               usan 500+ bodegas hoy.
             </p>
           </div>
@@ -329,7 +329,7 @@ export default function NegociosPage() {
             Digitaliza tu bodega hoy
           </h2>
           <p className="text-lg text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mb-10">
-            Unete a los negocios que ya venden mas con Buleje. Empieza gratis, sin compromiso.
+            Únete a los negocios que ya venden mas con Buleje. Empieza gratis, sin compromiso.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link

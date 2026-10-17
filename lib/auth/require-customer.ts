@@ -6,6 +6,7 @@ import {
 } from "@/lib/auth/customer-session";
 import type { CustomerPayload } from "@/lib/auth/customer-session";
 import { logger } from "@/lib/logger";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 /**
  * Verify customer session from a store API request.
@@ -54,12 +55,11 @@ export async function requireCustomer(
   // el cliente puede comprar en múltiples bodegas y cada pedido lleva su
   // propio storeSlug/tenant destino. Bloquearlo por mismatch rompe
   // subscriptions, reviews y cualquier feature cross-tenant del marketplace.
-  const PLATFORM_TENANT = "main";
   const headerTenantId = req.headers.get("x-tenant-id");
   if (
     headerTenantId &&
     headerTenantId !== payload.tenantId &&
-    payload.tenantId !== PLATFORM_TENANT
+    !esMarketplace(payload.tenantId)
   ) {
     logger.warn("[CUSTOMER_AUTH] Tenant mismatch — forbidden", {
       email: payload.email,

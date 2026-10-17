@@ -271,7 +271,7 @@ function Stat({
   tone: "accent" | "success" | "amber";
 }) {
   const ring: Record<typeof tone, string> = {
-    accent: "bg-[var(--accent-soft)]",
+    accent: "bg-primary/10",
     success: "bg-[var(--data-success-500)]/10",
     amber: "bg-[var(--brand-secondary)]/10",
   } as const;

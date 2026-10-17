@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { logger } from "@/lib/logger";
+import { ACCION_NOTA_PEDIDO } from "@/lib/db/pedido-historial.db";
 
 /**
  * GET /api/cron/activity-log-purge
@@ -11,7 +12,9 @@ import { logger } from "@/lib/logger";
  * viejos: lo de hace más de 90 días ya no sirve para auditoría operativa
  * diaria (la obligación Ley 29733 se cubre con el período retenido).
  *
- * - ActivityLog: retención 90 días
+ * - ActivityLog: retención 90 días, MENOS las notas internas de pedidos
+ *   (`entity="pedido"`, `action="Nota interna"`): son datos del pedido que
+ *   escribe el equipo, no auditoría, y viven sólo acá (security 17-10).
  * - CronHealthLog: retención 30 días (heartbeats, solo valor reciente)
  *
  * Authorization: Bearer <CRON_SECRET>
@@ -33,7 +36,10 @@ export async function GET(req: NextRequest) {
     const healthCutoff = new Date(Date.now() - CRON_HEALTH_RETENTION_DAYS * 24 * 60 * 60 * 1000);
 
     const deletedActivity = await prisma.activityLog.deleteMany({
-      where: { createdAt: { lt: activityCutoff } },
+      where: {
+        createdAt: { lt: activityCutoff },
+        NOT: { entity: "pedido", action: ACCION_NOTA_PEDIDO },
+      },
     });
 
     const deletedHealth = await prisma.cronHealthLog.deleteMany({

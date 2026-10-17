@@ -1,195 +1,150 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect } from "react";
-import { Bell, Loader2, Send, ExternalLink, CheckCircle2, Clock, Search, MessageCircle } from "@buleje/design-system/icons";
+/**
+ * Mensajes › Avisos por pedido.
+ *
+ * Una fila de cabecera (título + ⓘ · «Avisar a un cliente» · Más), una fila de
+ * filtros pegada a la tabla y el historial, un aviso por fila con el mensaje en
+ * una línea. Avisar se hace en una ventana; el detalle de cada aviso, en otra.
+ *
+ * Antes (medido 11-10, main): 393 textos < 14 px; «Total enviados 108» contaba
+ * también las alertas al dueño, las pendientes y las que fallaron; el buscador
+ * de pedidos leía `customerName` de la rama de `/api/orders` que trae `customer.name`
+^ * (todos «Sin nombre», sin celular → «Enviar por WhatsApp» no hacía nada), y
+ * ese botón era blanco sobre turquesa al 10 %.
+ */
+import { useMemo, useState } from "react";
+import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { AlertCircle, MoreHorizontal, RefreshCw, Search, Send } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
-import { csrfHeaders } from "@/lib/csrf-client";
+import { ModalAvisarCliente } from "@/components/admin/avisos/ModalAvisarCliente";
+import { ModalDetalleAviso } from "@/components/admin/avisos/ModalDetalleAviso";
+import { TablaAvisos } from "@/components/admin/avisos/TablaAvisos";
+import { cuando, pasaFiltro, paraQuien, rotuloTipo, type Aviso, type FiltroAvisos } from "@/components/admin/avisos/tipos";
+import { useAvisos } from "@/components/admin/avisos/use-avisos";
 
-type NotifLog = { id: string; type: string; recipient: string; message: string; status: string; orderId: string | null; createdAt: string };
-type Order = { id: string; customerName: string; customerPhone: string; total: number; status: string; createdAt: string };
+const POR_PAGINA = 20;
 
-const TYPE_LABELS: Record<string, string> = {
-  order_confirmation: "Confirmación",
-  order_status: "Estado de pedido",
-  delivery: "Entrega",
-  promotion: "Promoción",
-};
+const CHIP = "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors";
+const CHIP_ON = "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
+const CHIP_OFF = "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
 
-const STATUS_ICONS: Record<string, string> = {
-  sent: "",
-  pending: "",
-  failed: "",
+const FILTROS: { clave: FiltroAvisos; rotulo: string }[] = [
+  { clave: "clientes", rotulo: "A clientes" },
+  { clave: "alertas", rotulo: "Alertas para ti" },
+  { clave: "error", rotulo: "Fallaron" },
+  { clave: "todos", rotulo: "Todos" },
+];
+
+const VACIO: Record<FiltroAvisos, string> = {
+  clientes: "Todavía no avisaste a ningún cliente: «Avisar a un cliente» arma el mensaje del estado de su pedido.",
+  alertas: "Sin alertas para ti todavía.",
+  error: "Ningún aviso falló.",
+  todos: "Todavía no salió ningún aviso.",
 };
 
 export default function NotificationsTab() {
-  const [logs, setLogs] = useState<NotifLog[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const [tick, setTick] = useState(0);
-  const [orderSearch, setOrderSearch] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [waUrl, setWaUrl] = useState<string | null>(null);
+  const { avisos, error, recargar } = useAvisos();
+  const [filtro, setFiltro] = useState<FiltroAvisos>("clientes");
+  const [texto, setTexto] = useState("");
+  const [cuantos, setCuantos] = useState(POR_PAGINA);
+  const [avisando, setAvisando] = useState(false);
+  const [viendo, setViendo] = useState<Aviso | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    Promise.all([
-      fetch("/api/notifications").then(r => r.ok ? r.json() : []),
-      fetch("/api/orders").then(r => r.ok ? r.json() : []),
-    ]).then(([notifs, ords]) => {
-      if (active) {
-        setLogs(notifs);
-        setOrders(ords);
-        setLoading(false);
-      }
-    }).catch(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [tick]);
+  const cuentas = useMemo(() => {
+    const c: Record<FiltroAvisos, number> = { clientes: 0, alertas: 0, error: 0, todos: 0 };
+    for (const a of avisos ?? []) for (const f of FILTROS) if (pasaFiltro(a, f.clave)) c[f.clave] += 1;
+    return c;
+  }, [avisos]);
 
-  const sendNotification = async () => {
-    if (!selectedOrder || !selectedOrder.customerPhone) return;
-    setSending(true);
-    const res = await fetch("/api/notifications", {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ phone: selectedOrder.customerPhone, orderId: selectedOrder.id }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setWaUrl(data.whatsappUrl);
-      setTick(v => v + 1);
-    }
-    setSending(false);
-  };
+  const filas = useMemo(() => {
+    const q = texto.trim().toLowerCase();
+    return (avisos ?? []).filter((a) => pasaFiltro(a, filtro) && (!q || `${a.recipient} ${paraQuien(a.recipient)} ${a.message} ${a.orderId ?? ""} ${rotuloTipo(a.type)}`.toLowerCase().includes(q)));
+  }, [avisos, filtro, texto]);
 
-  const filteredOrders = orderSearch
-    ? orders.filter(o => o.customerName?.toLowerCase().includes(orderSearch.toLowerCase()) || o.customerPhone?.includes(orderSearch) || o.id.includes(orderSearch))
-    : orders.slice(0, 10);
-
-  const todayCount = logs.filter(l => new Date(l.createdAt).toDateString() === new Date().toDateString()).length;
-  const sentCount = logs.filter(l => l.status === "sent").length;
-
-  if (loading) return <LoadingState />;
+  const ultimo = avisos?.[0];
+  const acciones: MenuAccion[] = [{ id: "actualizar", label: "Actualizar", hint: "Vuelve a traer el historial", icon: RefreshCw, onSelect: recargar }];
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Bell className="h-6 w-6 text-primary" />Notificaciones WhatsApp</SectionTitle>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{logs.length}</p>
-          <p className="text-xs text-[var(--text-tertiary)]">Total enviados</p>
+    <div className="space-y-3">
+      {/* Una fila: título · ⓘ · Avisar a un cliente · Más. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Avisos por pedido</SectionTitle>
+          <InfoTip
+            title="Avisos por pedido"
+            what="El mensaje de WhatsApp que le avisa al cliente cómo va su pedido, y el historial de todo lo que salió: a tus clientes y las alertas que el sistema te manda a ti (stock bajo, reporte diario)."
+            affects="Nada sale solo: el mensaje se arma según el estado del pedido y WhatsApp se abre con el texto listo para que lo mandes."
+            example={ultimo ? `Último: ${rotuloTipo(ultimo.type)} para ${paraQuien(ultimo.recipient)}, ${cuando(ultimo.createdAt)}.` : "«Tu pedido va en camino» cuando sale el repartidor."}
+          />
         </div>
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">{sentCount}</p>
-          <p className="text-xs text-[var(--text-tertiary)]">Exitosos</p>
-        </div>
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-primary">{todayCount}</p>
-          <p className="text-xs text-[var(--text-tertiary)]">Hoy</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Send notification */}
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-4">
-          <CardTitle className="font-extrabold flex flex-wrap items-center gap-2"><MessageCircle className="h-5 w-5 text-[var(--data-success-500)]" />Enviar Notificación</CardTitle>
-
-          {/* Order picker */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-            <input value={orderSearch} onChange={e => { setOrderSearch(e.target.value); setSelectedOrder(null); setWaUrl(null); }} placeholder="Buscar pedido por nombre, teléfono o ID..." className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-          </div>
-
-          {!selectedOrder && filteredOrders.length > 0 && (
-            <div className="max-h-48 overflow-y-auto space-y-1">
-              {filteredOrders.map(o => (
-                <button key={o.id} onClick={() => { setSelectedOrder(o); setOrderSearch(""); setWaUrl(null); }} className="w-full text-left flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-surface border border-transparent hover:border-gray-200 dark:hover:border-[var(--rule-base)] transition text-sm">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{o.customerName ?? "Sin nombre"}</p>
-                    <p className="text-xs text-[var(--text-tertiary)]">{o.customerPhone} · #{o.id.slice(0, 8)}</p>
-                  </div>
-                  <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase",
-                    o.status === "entregado" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
-                    o.status === "cancelado" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" :
-                    o.status === "en_camino" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
-                    "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
-                  )}>{o.status}</span>
-                  <span className="font-bold text-sm text-[var(--text-secondary)]">S/{o.total?.toFixed(2)}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {selectedOrder && (
-            <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{selectedOrder.customerName}</p>
-                  <p className="text-sm text-[var(--text-tertiary)]">{selectedOrder.customerPhone}</p>
-                </div>
-                <button onClick={() => { setSelectedOrder(null); setWaUrl(null); }} className="text-xs text-[var(--text-tertiary)] underline">Cambiar</button>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 text-sm">
-                <span className="text-[var(--text-secondary)]">Pedido #{selectedOrder.id.slice(0, 8)}</span>
-                <span className="font-bold">S/{selectedOrder.total?.toFixed(2)}</span>
-                <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase",
-                  selectedOrder.status === "entregado" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
-                  selectedOrder.status === "cancelado" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" :
-                  "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
-                )}>{selectedOrder.status}</span>
-              </div>
-            </div>
-          )}
-
-          {waUrl && (
-            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-2 sm:px-4 py-2 sm:py-3 space-y-2">
-              <p className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex flex-wrap items-center gap-2"><CheckCircle2 className="h-4 w-4" />Notificación registrada</p>
-              <a href={waUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-[var(--accent-soft)] text-white rounded-lg text-sm font-bold hover:bg-[var(--accent-soft)] transition">
-                <ExternalLink className="h-4 w-4" />Abrir WhatsApp
-              </a>
-            </div>
-          )}
-
-          <button onClick={sendNotification} disabled={!selectedOrder || sending} className="w-full py-2.5 bg-[var(--accent-soft)] text-white rounded-lg font-bold text-sm hover:bg-[var(--accent-soft)] transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Enviar por WhatsApp
+        <div className="ml-auto flex items-center gap-2">
+          <button type="button" onClick={() => setAvisando(true)} className={button({ variant: "primary", className: "rounded-xl" })}>
+            <Send className="h-4 w-4" aria-hidden />
+            <span className="max-sm:sr-only">Avisar a un cliente</span>
           </button>
-        </div>
-
-        {/* Notification log */}
-        <div className="space-y-3">
-          <CardTitle className="font-extrabold flex flex-wrap items-center gap-2"><Clock className="h-5 w-5 text-[var(--text-tertiary)]" />Historial de Envíos</CardTitle>
-          {logs.length === 0 ? (
-            <div className="text-center py-12 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
-              <Bell className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
-              <p className="text-sm text-[var(--text-tertiary)]">Sin notificaciones enviadas</p>
-            </div>
-          ) : (
-            <div className="max-h-100 overflow-y-auto space-y-2">
-              {logs.map(l => (
-                <div key={l.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 sm:px-4 py-2 sm:py-3 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
-                      {l.recipient}
-                    </span>
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{new Date(l.createdAt).toLocaleString("es-PE")}</span>
-                  </div>
-                  <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{l.message}</p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-surface text-[var(--text-secondary)]">{TYPE_LABELS[l.type] ?? l.type}</span>
-                    {l.orderId && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">#{l.orderId.slice(0, 8)}</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Actualizar" />
         </div>
       </div>
+
+      {/* Filtros pegados a la tabla: buscador · a quién · los que fallaron. */}
+      <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
+        <label className="relative min-w-0 grow basis-full sm:basis-60">
+          <span className="sr-only">Buscar avisos</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <input
+            type="search"
+            value={texto}
+            onChange={(e) => { setTexto(e.target.value); setCuantos(POR_PAGINA); }}
+            placeholder="Buscar por celular, mensaje o N° de pedido…"
+            className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
+          />
+        </label>
+        <div role="group" aria-label="Qué avisos ver" className="flex min-w-0 max-w-full gap-1.5 overflow-x-auto scrollbar-none">
+          {FILTROS.map((f) => (
+            <button
+              key={f.clave}
+              type="button"
+              aria-pressed={filtro === f.clave}
+              onClick={() => { setFiltro(f.clave); setCuantos(POR_PAGINA); }}
+              className={cn(CHIP, filtro === f.clave ? CHIP_ON : CHIP_OFF)}
+            >
+              {f.rotulo}
+              {avisos && f.clave !== "todos" && <span className="tabular-nums text-[var(--text-secondary)]">{cuentas[f.clave]}</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {error && !avisos ? (
+        <p className="flex items-center gap-2 text-sm text-[var(--data-error-ink)]">
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+          No se pudo traer el historial.
+          <button type="button" onClick={recargar} className="font-semibold underline underline-offset-2">Reintentar</button>
+        </p>
+      ) : !avisos ? (
+        <LoadingState />
+      ) : filas.length === 0 ? (
+        <p className="py-8 text-center text-sm text-[var(--text-secondary)]">{texto.trim() ? `Ningún aviso coincide con «${texto.trim()}».` : VACIO[filtro]}</p>
+      ) : (
+        <>
+          <TablaAvisos avisos={filas.slice(0, cuantos)} onVer={setViendo} />
+          {filas.length > cuantos && (
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm text-[var(--text-secondary)]">{cuantos} de {filas.length}</p>
+              <button type="button" onClick={() => setCuantos((n) => n + POR_PAGINA)} className={button({ variant: "secondary", className: "rounded-xl" })}>
+                Ver {Math.min(POR_PAGINA, filas.length - cuantos)} más
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      <ModalAvisarCliente abierto={avisando} onCerrar={() => setAvisando(false)} onAvisado={recargar} />
+      <ModalDetalleAviso aviso={viendo} onCerrar={() => setViendo(null)} />
     </div>
   );
 }
-

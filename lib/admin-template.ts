@@ -37,7 +37,7 @@ export type AdminPlan = "basico" | "pro" | "enterprise" | "max";
 export type ModuleScope = "tienda" | "marketplace" | "mixto" | "sistema";
 
 export interface AdminModuleEntry {
-  /** Tab id (debe coincidir con `Tab` en `app/admin/admin-types.ts`). */
+  /** Tab id (debe coincidir con `Tab` en `app/admin/_lib/tabs.types.ts`; un id viejo es alias en `tab-migration.ts`). */
   id: string;
   /** Etiqueta default (puede sobreescribirse por el superadmin). */
   defaultLabel: string;
@@ -61,7 +61,8 @@ export interface AdminModuleEntry {
  * Catálogo COMPLETO de módulos del panel admin que el superadmin puede
  * configurar. Cada entrada se proyecta a una fila editable en la UI.
  *
- * Mantener sincronizado con `VALID_TABS` de `app/admin/admin-types.ts`.
+ * Mantener sincronizado con `VALID_TABS` de `app/admin/_lib/tabs.types.ts`
+ * (`app/admin/admin-types.ts` es una copia muerta: no la mira nadie).
  */
 export const ADMIN_MODULE_CATALOG: AdminModuleEntry[] = [
   // ── Free (basico) — solo lo basico para arrancar ─────────────────
@@ -71,6 +72,8 @@ export const ADMIN_MODULE_CATALOG: AdminModuleEntry[] = [
   { id: "productos",      defaultLabel: "Productos",          category: "Catálogo",      defaultVisible: true,  defaultPlan: "basico",     description: "Catalogo (limite 20 productos en Free).", scope: "mixto" },
   { id: "store-customizer",   defaultLabel: "Identidad y tema",   category: "Marketplace",defaultVisible: false, defaultPlan: "basico",     description: "Editor visual de la tienda online (identidad y tema).", scope: "tienda" },
   { id: "pagina-inicio",      defaultLabel: "Mi tienda pública",  category: "Marketplace",defaultVisible: true,  defaultPlan: "basico",     description: "Página pública de la tienda: hero, secciones y catálogo.", scope: "tienda" },
+
+  { id: "planificacion",      defaultLabel: "Planificación",      category: "Gestión",    defaultVisible: true,  defaultPlan: "basico",     description: "Plan de la empresa: ficha, socios e inversión, FODA, objetivos, organigrama, croquis y políticas (ADR-497).", scope: "tienda" },
 
   // ── Starter (pro) — bodega con flujo diario, S/ 89 ──────────────
   { id: "inventario",     defaultLabel: "Inventario",         category: "Inventario",    defaultVisible: true,  defaultPlan: "pro",        description: "Stock, kardex, vencimientos y mermas.", scope: "tienda" },
@@ -96,6 +99,7 @@ export const ADMIN_MODULE_CATALOG: AdminModuleEntry[] = [
   { id: "tesoreria",              defaultLabel: "Tesoreria",          category: "Finanzas",    defaultVisible: false, defaultPlan: "enterprise", description: "Flujo de caja y reportes financieros.", scope: "tienda" },
   { id: "marketplace",            defaultLabel: "Marketplace",        category: "Marketplace", defaultVisible: false, defaultPlan: "enterprise", description: "Vender destacado en el marketplace cross-tenant.", scope: "marketplace" },
   { id: "marketplace-chat",       defaultLabel: "Chat marketplace",   category: "Marketplace", defaultVisible: false, defaultPlan: "enterprise", description: "Conversaciones cross-vendor.", scope: "marketplace" },
+  { id: "whatsapp-inbox",         defaultLabel: "WhatsApp",           category: "CRM",         defaultVisible: true,  defaultPlan: "basico",     description: "Inbox del WhatsApp del negocio: conversaciones y respuesta desde el panel.", scope: "tienda" },
   { id: "delivery-partners",      defaultLabel: "Repartidores",       category: "Marketplace", defaultVisible: false, defaultPlan: "enterprise", description: "Red de repartidores propia.", scope: "mixto" },
   { id: "analytics-pro",          defaultLabel: "Analytics Pro",      category: "Inteligencia",defaultVisible: false, defaultPlan: "enterprise", description: "Analytics con cohortes.", scope: "mixto" },
   { id: "support-inbox",          defaultLabel: "Soporte clientes",   category: "CRM",         defaultVisible: false, defaultPlan: "enterprise", description: "Inbox de tickets de tus clientes.", scope: "tienda" },
@@ -122,7 +126,11 @@ export const ADMIN_MODULE_CATALOG: AdminModuleEntry[] = [
   { id: "leads-funnel",           defaultLabel: "Funnel de Leads",                category: "CRM",         defaultVisible: false, defaultPlan: "enterprise", description: "Embudo de prospectos y conversion.", scope: "mixto" },
   { id: "cacao-acopio",           defaultLabel: "Acopio de Cacao",                category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Acopio y beneficio de cacao (especializacion agricola — requiere spec ON).", scope: "tienda" },
   { id: "ctp-libro-operaciones",  defaultLabel: "Libro CTP (Forestal)",           category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Libro de operaciones CTP forestal (especializacion — requiere spec ON).", scope: "tienda" },
+  { id: "forestal-lotes",         defaultLabel: "Lotes de Producción (Forestal)", category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Lotes comerciales de producto forestal (especializacion — requiere spec ON).", scope: "tienda" },
   { id: "loth-libro-operaciones", defaultLabel: "Libro Titulos Hab. (Forestal)",  category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Libro de titulos habilitantes forestal (especializacion — requiere spec ON).", scope: "tienda" },
+  { id: "forestal-herramientas",  defaultLabel: "Herramientas Forestales",        category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Cubicador de madera por voz (pie tablar + m3) y utilidades forestales (especializacion — requiere spec ON).", scope: "tienda" },
+  { id: "forestal-tramites",      defaultLabel: "Trámites y Oficios (Forestal)",  category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Solicitudes a SERFOR/ARFFS/OSINFOR con el membrete del CTP (visado de talonario GTF, inspección de campo, descargo, CITES) + expediente de lo presentado (especializacion — requiere spec ON).", scope: "tienda" },
+  { id: "camaras",                defaultLabel: "Cámaras",                        category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Las fotos que manda la cámara del patio, con su hora y lo que se ve en cada una (ADR-411).", scope: "tienda" },
 
   // ── Sistema (siempre core, free y arriba) ─────────────────────────
   { id: "config",             defaultLabel: "Configuracion",      category: "Sistema",       defaultVisible: true,  defaultPlan: "basico",     description: "Usuarios, permisos y configuracion general.", scope: "sistema" },
@@ -239,7 +247,11 @@ export const SIDEBAR_STYLE_PRESETS: Record<
   SidebarStylePreset
 > = {
   buleje: { theme: "buleje", accent: "teal" },
-  ejecutivo: { theme: "dark", accent: "amber" },
+  /* Barra oscura (la tinta del logo) + turquesa del logo (Brandon 2026-09-24:
+     «los colores de acuerdo a mi logo»). Traía acento coral, que no está en
+     el logo, y pintaba el `<html>` entero: el coral se colaba en los portales
+     y en la escala del acento en modo oscuro. */
+  ejecutivo: { theme: "dark", accent: "teal" },
   sereno: { theme: "light", accent: "sky" },
   vibrante: { theme: "light", accent: "rose" },
 };

@@ -144,13 +144,26 @@ const REQUIRED: EnvSpec[] = [
 //
 // RENIEC + SUNAT vendor identity verification (audit 2026-05-17 TD-058):
 //   RENIEC_PROVIDER       — "mock" (default) | "apisperu" | "decolecta"
-//   SUNAT_RUC_PROVIDER    — "mock" (default) | "apisperu" | "decolecta"
+//   SUNAT_RUC_PROVIDER    — "auto" (default) | "apisperu" | "decolecta" | "mock"
+//                          "auto" = v1 pública de apis.net.pe, sin token, datos
+//                          REALES; cae al mock sólo si no contesta. "mock" pasó
+//                          a ser opt-in explícito y no sale a la red.
 //   RENIEC_API_TOKEN      — Token del provider RENIEC (apis.net.pe o decolecta.com)
 //   SUNAT_RUC_API_TOKEN   — Token del provider SUNAT (fallback al RENIEC token si falta)
 //   En "mock" no hay hits externos — útil para dev. Para activar verificación
 //   real en prod, setear los 2 PROVIDER + 1 TOKEN (mismo token vale para
 //   ambos si usás apis.net.pe). Si el provider cae, soft-pass (no bloquea
 //   onboarding) y admin verifica manual desde el panel.
+//
+// Placa vehicular (lib/integrations/placa-peru.ts, «Buscar placa» de la guía):
+//   PLACA_API_PROVIDER    — "jsonpe" (default; único soportado hoy)
+//   PLACA_API_TOKEN       — Bearer de api.json.pe. OPCIONAL: sin él la búsqueda
+//                          usa sólo las guías y el Directorio del negocio y la
+//                          pantalla dice por qué no consulta SUNARP.
+//   PLACA_API_TOPE_DIA    — consultas pagas por negocio y día (default 10; 0 = ninguna)
+//   PLACA_API_TOPE_MES    — ídem por mes (default 60). La caché no cuenta.
+//   PLACA_API_TOPE_MES_GLOBAL — por mes para TODA la plataforma (default 20 =
+//                          plan gratis de json.pe: 100 créditos / 5 por placa).
 //
 // Analytics:
 //   NEXT_PUBLIC_GA_MEASUREMENT_ID — Google Analytics 4

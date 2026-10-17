@@ -6,6 +6,8 @@ import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { safeParseJSON } from "@/lib/ai-json-parser";
 import { callLLM } from "@/lib/llm-router";
 import { logger } from "@/lib/logger";
+import { enStockBajo, stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 // Schema estructurado del output — ADR 009 (prompt-based JSON enforcement).
@@ -48,7 +50,11 @@ export async function POST(req: NextRequest) {
     const { period } = await req.json().catch(() => ({ period: "mes" }));
 
     // Gather data
-    const [sales, products] = await Promise.all([SalesDB.getAll(auth.tenantId), ProductsDB.getAll(auth.tenantId)]);
+    const [sales, products, minimoGlobal] = await Promise.all([
+      SalesDB.getAll(auth.tenantId),
+      ProductsDB.getAll(auth.tenantId),
+      minimoGlobalDelNegocio(auth.tenantId),
+    ]);
 
     const now = new Date();
     const cutoff = new Date(now);
@@ -74,11 +80,12 @@ export async function POST(req: NextRequest) {
       .slice(0, 20)
       .map(([id, d]) => {
         const prod = products.find(p => p.id === Number(id));
-        return { id, name: d.name, qtySold: d.qty, revenue: d.revenue, stock: prod?.stock ?? 0, stockMin: prod?.stockMin ?? 0 };
+        return { id, name: d.name, qtySold: d.qty, revenue: d.revenue, stock: prod?.stock ?? 0, stockMin: stockMinimoDe(prod ?? {}, minimoGlobal) };
       });
 
-    const lowStock = products.filter(p => p.stock != null && p.stockMin != null && p.stock <= p.stockMin)
-      .map(p => ({ name: p.name, stock: p.stock, stockMin: p.stockMin }));
+    // Un solo stock mínimo (09-10): el propio o el global del negocio.
+    const lowStock = products.filter(p => p.active && enStockBajo(p, minimoGlobal))
+      .map(p => ({ name: p.name, stock: p.stock, stockMin: stockMinimoDe(p, minimoGlobal) }));
 
     const prompt = `Eres un analista de inventario para una bodega (tienda de abarrotes) en Pucallpa, Perú.
 

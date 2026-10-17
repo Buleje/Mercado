@@ -1,28 +1,30 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
-import AdminModal from "@/components/admin/shared/AdminModal";
+/**
+ * Usuarios del panel (Configuración › Usuarios y acceso).
+ *
+ * Compactado el 11-10 (patrón del panel): una fila de cabecera con el conteo,
+ * la leyenda de roles en el ⓘ y «Agregar usuario» de 48 px; cada usuario una
+ * fila de una lista (antes, tarjetas sueltas de 78 px con tres íconos de 32 px);
+ * «Editar» a la vista y lo demás en «⋯». Arreglos: el aviso de éxito era
+ * blanco sobre turquesa al 10 % (no se leía) → toasts del panel; activar o
+ * desactivar a alguien fallaba callado.
+ */
+import { LoadingState, CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import {
-  Users,
-  UserPlus,
-  Pencil,
-  Trash2,
-  ShieldCheck,
-  ShoppingCart,
-  Package,
-  Loader2,
-  Eye,
-  EyeOff,
-  CheckCircle2,
-  XCircle,
-} from "@buleje/design-system/icons";
+import { toast } from "sonner";
+import { Users, UserPlus, Pencil, Trash2, ShieldCheck, ShoppingCart, Package, MoreHorizontal, UserCheck, UserX } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useUndoToast } from "@/components/admin/shared/UndoToast";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { NOMBRE_ROL, UsuarioForm, type FormUsuario, type RolUsuario } from "@/components/admin/settings/UsuarioForm";
 
-type Role = "admin" | "cajero" | "almacenero";
+/** El rol tal como viene de la base: además de los tres asignables hay encargado (`manager`), dueño… */
+type Role = string;
 
 interface AdminUser {
   id: string;
@@ -33,31 +35,23 @@ interface AdminUser {
   createdAt: string;
 }
 
-const ROLE_LABELS: Record<Role, string> = {
-  admin: "Administrador",
-  cajero: "Cajero",
-  almacenero: "Almacenero",
+// Antes sólo tenía los tres asignables: «QA Encargado» (manager) salía con el rol en inglés.
+const ROLE_LABELS: Record<Role, string> = NOMBRE_ROL;
+
+const ROLE_ICONS: Record<RolUsuario, React.ReactNode> = {
+  admin: <ShieldCheck className="w-3.5 h-3.5" aria-hidden />,
+  cajero: <ShoppingCart className="w-3.5 h-3.5" aria-hidden />,
+  almacenero: <Package className="w-3.5 h-3.5" aria-hidden />,
 };
 
-const ROLE_ICONS: Record<Role, React.ReactNode> = {
-  admin: <ShieldCheck className="w-3.5 h-3.5" />,
-  cajero: <ShoppingCart className="w-3.5 h-3.5" />,
-  almacenero: <Package className="w-3.5 h-3.5" />,
-};
-
-const ROLE_COLORS: Record<Role, string> = {
+// Texto en -ink (texto semántico chico): el -500 sobre su tinte no llegaba a 4,5:1.
+const ROLE_COLORS: Record<RolUsuario, string> = {
   admin: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  cajero: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-  almacenero: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
+  cajero: "bg-[var(--data-success-500)]/12 text-[var(--data-success-ink)]",
+  almacenero: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-ink)]",
 };
 
-interface FormData {
-  username: string;
-  name: string;
-  role: Role;
-  password: string;
-  active: boolean;
-}
+type FormData = FormUsuario;
 
 const EMPTY_FORM: FormData = {
   username: "",
@@ -76,13 +70,7 @@ export default function TeamTab() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
-  const [showPassword, setShowPassword] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
-
-  const showToast = (msg: string, ok = true) => {
-    setToast({ msg, ok });
-    setTimeout(() => setToast(null), 3500);
-  };
+  const showToast = (msg: string, ok = true) => (ok ? toast.success(msg) : toast.error(msg));
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -101,14 +89,12 @@ export default function TeamTab() {
   const openCreate = () => {
     setEditingId(null);
     setForm(EMPTY_FORM);
-    setShowPassword(false);
     setShowForm(true);
   };
 
   const openEdit = (u: AdminUser) => {
     setEditingId(u.id);
     setForm({ username: u.username, name: u.name, role: u.role, password: "", active: u.active });
-    setShowPassword(false);
     setShowForm(true);
   };
 
@@ -124,7 +110,9 @@ export default function TeamTab() {
         ? {
             id: editingId,
             name: form.name,
-            role: form.role,
+            // El rol sólo si cambió: editar a un encargado (manager, que la API no
+            // asigna) fallaba con «Error al guardar» aunque sólo cambiaras el nombre.
+            ...(form.role !== users.find((x) => x.id === editingId)?.role ? { role: form.role } : {}),
             active: form.active,
             ...(form.password ? { password: form.password } : {}),
           }
@@ -157,7 +145,7 @@ export default function TeamTab() {
       confirmLabel: "Eliminar acceso",
     });
     if (!ok) return;
-    const res = await fetch(`/api/admin-users?id=${u.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin-users?id=${u.id}`, { method: "DELETE", headers: csrfHeaders() });
     if (res.ok) {
       showUndo({ message: `Usuario "${u.name}" eliminado`, duration: 5000 });
       fetchUsers();
@@ -172,215 +160,81 @@ export default function TeamTab() {
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ id: u.id, active: !u.active }),
     });
-    if (res.ok) fetchUsers();
+    if (res.ok) {
+      toast.success(u.active ? `${u.name} ya no puede entrar` : `${u.name} puede entrar de nuevo`);
+      fetchUsers();
+    } else {
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      toast.error(data.error ?? "No se pudo cambiar el acceso");
+    }
   };
 
-  return (
-    <div className="space-y-3 sm:space-y-6 p-1">
-      {/* Toast */}
-      {toast && (
-        <div
-          className={cn(
-            "fixed top-4 right-4 z-50 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm font-medium",
-            toast.ok
-              ? "bg-[var(--accent-soft)] text-white"
-              : "bg-[var(--data-error-500)] text-white"
-          )}
-        >
-          {toast.ok ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-          {toast.msg}
-        </div>
-      )}
+  const conteoRoles = new Map<string, number>();
+  for (const u of users) conteoRoles.set(u.role, (conteoRoles.get(u.role) ?? 0) + 1);
+  const porRol = [...conteoRoles].map(([r, n]) => `${n} ${(ROLE_LABELS[r] ?? r).toLowerCase()}`).join(" · ");
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <Users className="w-5 h-5 text-primary" />
-          <SectionTitle className="text-lg font-bold">Equipo de la tienda</SectionTitle>
-          <span className="text-xs text-muted bg-(--color-surface) px-2 py-0.5 rounded-full">
-            {users.length} usuario{users.length !== 1 ? "s" : ""}
-          </span>
-        </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-1.5 bg-primary hover:opacity-90 text-white text-sm font-semibold px-3 py-1.5 rounded-lg"
-        >
-          <UserPlus className="w-4 h-4" />
-          Agregar
+  return (
+    <div className="space-y-3">
+      {/* Cabecera en una fila: el título de la vista ya lo pone Configuración. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Users className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+        <CardTitle className="text-sm font-bold">{users.length} usuario{users.length !== 1 ? "s" : ""}</CardTitle>
+        <InfoTip
+          title="Roles"
+          what="Administrador: todo el panel. Cajero: POS, caja y pedidos. Almacenero: inventario y compras. Encargado y dueño no se asignan desde aquí."
+          example={loading ? undefined : porRol}
+        />
+        <button type="button" onClick={openCreate} className={button({ variant: "primary", className: "ml-auto rounded-xl" })}>
+          <UserPlus className="h-4 w-4" aria-hidden /> Agregar usuario
         </button>
       </div>
 
-      {/* Role legend */}
-      <div className="flex flex-wrap gap-2 text-xs">
-        {(["admin", "cajero", "almacenero"] as Role[]).map((r) => (
-          <span key={r} className={cn("flex items-center gap-1 px-2 py-1 rounded-lg font-medium", ROLE_COLORS[r])}>
-            {ROLE_ICONS[r]} {ROLE_LABELS[r]}
-          </span>
-        ))}
-      </div>
-
-      {/* User list */}
       {loading ? (
         <LoadingState />
       ) : users.length === 0 ? (
-        <div className="text-center py-12 text-muted text-sm">
-          <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
-          No hay usuarios aún. Agrega el primer miembro del equipo.
-        </div>
+        <p className="py-6 text-center text-sm text-[var(--text-secondary)]">Todavía no hay usuarios: agrega al primero de tu equipo.</p>
       ) : (
-        <div className="space-y-2">
+        <ul className="divide-y divide-[var(--rule-soft)] overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:divide-[var(--rule-base)]">
           {users.map((u) => (
-            <div
-              key={u.id}
-              className={cn(
-                "flex items-center justify-between gap-3 p-4 rounded-xl border transition-opacity",
-                u.active
-                  ? "bg-(--color-card) border-(--color-card-border)"
-                  : "opacity-50 bg-(--color-surface) border-(--color-card-border)"
-              )}
-            >
-              {/* Avatar + info */}
-              <div className="flex flex-wrap items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center shrink-0">
-                  {u.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-sm truncate">{u.name}</p>
-                  <p className="text-xs text-muted">@{u.username}</p>
-                </div>
-              </div>
-
-              {/* Role badge */}
-              <span className={cn("flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium shrink-0", ROLE_COLORS[u.role])}>
-                {ROLE_ICONS[u.role]} {ROLE_LABELS[u.role]}
+            <li key={u.id} className="flex items-center gap-3 px-3 sm:px-4">
+              <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold", u.active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]")} aria-hidden>
+                {u.name.charAt(0).toUpperCase()}
               </span>
-
-              {/* Actions */}
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  onClick={() => handleToggleActive(u)}
-                  title={u.active ? "Desactivar" : "Activar"}
-                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
-                >
-                  {u.active ? <CheckCircle2 className="w-4 h-4 text-[var(--data-success-500)]" /> : <XCircle className="w-4 h-4" />}
-                </button>
-                <button
-                  onClick={() => openEdit(u)}
-                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(u)}
-                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-muted hover:text-[var(--data-error-500)]"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <div className="min-w-0 flex-1">
+                <p className={cn("truncate text-sm font-semibold", u.active ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{u.name}</p>
+                <p className="truncate text-sm text-[var(--text-secondary)]">@{u.username}{!u.active && " · sin acceso"}</p>
               </div>
-            </div>
+              <span className={cn("hidden shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium sm:inline-flex", ROLE_COLORS[u.role as RolUsuario] ?? ROLE_COLORS.admin)}>
+                {ROLE_ICONS[u.role as RolUsuario] ?? ROLE_ICONS.admin} {ROLE_LABELS[u.role] ?? u.role}
+              </span>
+              <button type="button" onClick={() => openEdit(u)} aria-label={`Editar a ${u.name}`} title="Editar" className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
+                <Pencil className="h-4 w-4" />
+              </button>
+              <ActionMenu
+                label={`Más acciones de ${u.name}`}
+                icon={MoreHorizontal}
+                soloIcono
+                size="md"
+                className="w-12 shrink-0"
+                actions={[
+                  { id: "acceso", label: u.active ? "Quitarle el acceso" : "Devolverle el acceso", icon: u.active ? UserX : UserCheck, onSelect: () => handleToggleActive(u) },
+                  { id: "eliminar", label: "Eliminar usuario", icon: Trash2, tone: "danger", onSelect: () => handleDelete(u) },
+                ]}
+              />
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
-      {/* Create / Edit form modal */}
-      <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editingId ? "Editar usuario" : "Nuevo usuario"} variant="default">
-        <div className="p-5 space-y-4">
-            {/* Username (only on create) */}
-            {!editingId && (
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted uppercase">Usuario</label>
-                <input
-                  type="text"
-                  value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value.toLowerCase() })}
-                  placeholder="ej: cajero1"
-                  className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface)"
-                />
-              </div>
-            )}
-
-            {/* Name */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted uppercase">Nombre completo</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="ej: María García"
-                className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface)"
-              />
-            </div>
-
-            {/* Role */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted uppercase">Rol</label>
-              <select
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-                className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface)"
-              >
-                <option value="admin">Administrador — acceso total</option>
-                <option value="cajero">Cajero — POS + pedidos</option>
-                <option value="almacenero">Almacenero — inventario + compras</option>
-              </select>
-            </div>
-
-            {/* Password */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted uppercase">
-                Contraseña {editingId && <span className="font-normal">(deja vacío para no cambiar)</span>}
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder={editingId ? "Nueva contraseña (opcional)" : "Mínimo 6 caracteres"}
-                  className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface) pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Active toggle (only on edit) */}
-            {editingId && (
-              <label className="flex flex-wrap items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.active}
-                  onChange={(e) => setForm({ ...form, active: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Usuario activo</span>
-              </label>
-            )}
-
-            {/* Action buttons */}
-            <div className="flex flex-wrap gap-2 pt-1">
-              <button
-                onClick={() => setShowForm(false)}
-                className="flex-1 py-2 rounded-lg border border-(--color-card-border) text-sm font-medium hover:bg-(--color-surface)"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1"
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {editingId ? "Guardar cambios" : "Crear usuario"}
-              </button>
-            </div>
-        </div>
-      </AdminModal>
+      <UsuarioForm
+        open={showForm}
+        editando={editingId !== null}
+        form={form}
+        setForm={setForm}
+        guardando={saving}
+        onGuardar={handleSave}
+        onCerrar={() => setShowForm(false)}
+      />
     </div>
   );
 }
-

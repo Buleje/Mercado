@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import * as Sentry from "@sentry/nextjs";
+// Sentry se baja en el primer error, no en la carga de cada página (16-10).
+import { capturarErrorCliente } from "@/lib/telemetry/capturar-error-cliente";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -16,7 +17,7 @@ export default function TenantTiendaError({
   const slug = params?.slug ?? "";
 
   useEffect(() => {
-    Sentry.captureException(error, {
+    capturarErrorCliente(error, {
       tags: { surface: "tenant-storefront", slug },
     });
   }, [error, slug]);
@@ -46,8 +47,8 @@ export default function TenantTiendaError({
             No pudimos cargar la tienda
           </h2>
           <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-muted">
-            Tuvimos un problema momentáneo. Probá reintentar; si persiste,
-            volvé al inicio de la tienda.
+            Tuvimos un problema momentáneo. Prueba reintentar; si persiste,
+            vuelve al inicio de la tienda.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

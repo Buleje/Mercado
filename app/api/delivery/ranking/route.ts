@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { startOfLimaMonth } from "@/lib/utils";
 
 /**
  * GET /api/delivery/ranking
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
       from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       to = now;
     } else if (period === "mes") {
-      from = new Date(now.getFullYear(), now.getMonth(), 1);
+      from = new Date(startOfLimaMonth(0, now));
       to = now;
     }
     // "todo" => no date filter

@@ -1,66 +1,31 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ReorderAlertsDB } from "@/lib/db/reorder-alerts.db";
 import { broadcastPush } from "@/lib/push-sender";
 import nodemailer from "nodemailer";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { logger } from "@/lib/logger";
+import { productosBajoMinimo, reponerPorNegocio, type ProductoParaReponer, type ReposicionDeNegocio } from "@/lib/compras/reposicion-automatica";
 
 /**
  * GET /api/reorder-alerts — Check low-stock products and send reorder suggestions.
  * Runs daily via Vercel Cron alongside stock-alerts.
+ *
+ * Aislamiento (10-10): cada negocio se resuelve aparte (`reponerPorNegocio`):
+ * su historial, su proveedor, sus productos y su push. Antes el proveedor se
+ * buscaba por nombre en toda la base y el push salía a todos los negocios.
  */
 
-type LowStockItem = {
-  id: number;
-  name: string;
-  stock: number;
-  stockMin: number;
-  stockMax: number;
-  category: string;
-  unit: string;
-  supplier?: string;
-  suggestedQty: number;
-};
+type LowStockItem = ProductoParaReponer;
 
-async function checkAndAlert() {
-  // Audit project-wide 2026-05-19: migrado a ReorderAlertsDB.
-  const products = await ReorderAlertsDB.listProductsWithMinStock();
-
-  const lowStock = products.filter(
-    (p) => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin
-  );
+async function checkAndAlert(crearBorradores: boolean) {
+  const lowStock = await productosBajoMinimo();
 
   if (lowStock.length === 0) {
     return { alerts: 0, sent: false };
   }
 
-  // Try to find last supplier for each product from purchase order history
-  const productIds = lowStock.map(p => p.id);
-  const recentPurchaseItems = await ReorderAlertsDB.getRecentSuppliersForProducts(productIds);
-
-  const supplierMap = new Map<number, string>();
-  for (const item of recentPurchaseItems) {
-    if (item.productId && !supplierMap.has(item.productId)) {
-      supplierMap.set(item.productId, item.purchaseOrder.supplierName);
-    }
-  }
-
-  const items: LowStockItem[] = lowStock.map((p) => {
-    const max = p.stockMax ?? (p.stockMin ?? 0) * 3;
-    const current = p.stock ?? 0;
-    return {
-      id: p.id,
-      name: p.name,
-      stock: current,
-      stockMin: p.stockMin ?? 0,
-      stockMax: max,
-      category: p.category,
-      unit: p.unit,
-      supplier: supplierMap.get(p.id),
-      suggestedQty: Math.max(max - current, p.stockMin ?? 1),
-    };
-  });
+  const porNegocio: ReposicionDeNegocio[] = await reponerPorNegocio(lowStock, { crearBorradores, origen: "reorder-alerts" });
+  const items: LowStockItem[] = porNegocio.flatMap((n) => n.productos);
 
   // Group by supplier for the email
   const bySupplier = new Map<string, LowStockItem[]>();
@@ -90,7 +55,7 @@ async function checkAndAlert() {
           (p) =>
             `<tr>
               <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:13px;">${p.name}</td>
-              <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;color:${p.stock <= 0 ? "#dc2626" : "#f59e0b"};font-weight:bold;">${p.stock}</td>
+              <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;color:${p.stock <= 0 ? "#dc2626" : "#ff6b5b"};font-weight:bold;">${p.stock}</td>
               <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;">${p.stockMin}</td>
               <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;color:#16a34a;font-weight:bold;">${p.suggestedQty} ${p.unit}</td>
             </tr>`
@@ -132,14 +97,22 @@ async function checkAndAlert() {
     });
   }
 
-  // Push notification to admin
-  broadcastPush({
-    title: `🔄 ${items.length} productos para reabastecer`,
-    body: items.slice(0, 3).map(p => p.name).join(", ") + (items.length > 3 ? ` y ${items.length - 3} más` : ""),
-    url: "/admin?tab=inventario",
-  }).catch((err) => logger.warn("[reorder-alerts] broadcastPush failed", { err: String(err) }));
+  // Push a los admins de CADA negocio con SUS productos: sin `tenantId`,
+  // `broadcastPush` le mandaba a todos los negocios los nombres de todos.
+  for (const n of porNegocio) {
+    if (n.productos.length === 0) continue;
+    broadcastPush({
+      title: `🔄 ${n.productos.length} productos para reabastecer`,
+      body: n.productos.slice(0, 3).map((p) => p.name).join(", ") + (n.productos.length > 3 ? ` y ${n.productos.length - 3} más` : ""),
+      url: "/admin?tab=inventario",
+    }, n.tenantId).catch((err) => logger.warn("[reorder-alerts] broadcastPush failed", { err: String(err), tenantId: n.tenantId }));
+  }
 
-  return { alerts: items.length, sent: true, bySupplier: Object.fromEntries(bySupplier) };
+  return {
+    alerts: items.length,
+    sent: true,
+    porNegocio: porNegocio.map((n) => ({ tenantId: n.tenantId, alertas: n.productos.length, borradores: n.borradores })),
+  };
 }
 
 export async function GET(req: NextRequest) {
@@ -149,41 +122,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const result = await withCronRetry("reorder-alerts", async () => {
-      const alertResult = await checkAndAlert();
-
-      // Auto-create draft purchase orders grouped by supplier
-      if (alertResult.sent && alertResult.bySupplier) {
-        for (const [supplierName, items] of Object.entries(alertResult.bySupplier) as [string, LowStockItem[]][]) {
-          if (supplierName === "Sin proveedor asignado") continue;
-
-          // Audit project-wide 2026-05-19: migrado a ReorderAlertsDB.
-          const supplier = await ReorderAlertsDB.findSupplierByName(supplierName);
-          if (!supplier) continue;
-
-          const poId = `auto-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-          const total = items.reduce((s, i) => s + i.suggestedQty * (i.stockMin || 1), 0);
-
-          await ReorderAlertsDB.createDraftPurchaseOrder({
-            poId,
-            tenantId: supplier.tenantId,
-            supplierId: supplier.id,
-            supplierName,
-            total,
-            notes: `Auto-generado por sistema de reabastecimiento. ${items.length} productos bajo stock mínimo.`,
-            items: items.map((i) => ({
-              productId: i.id,
-              name: i.name,
-              quantity: i.suggestedQty,
-              unitCost: 0,
-              unit: i.unit,
-            })),
-          });
-        }
-      }
-
-      return alertResult;
-    });
+    // Reintentar es seguro: `reponerBorrador` no duplica la orden de un proveedor.
+    const result = await withCronRetry("reorder-alerts", () => checkAndAlert(true));
     return NextResponse.json(result);
   } catch (e) {
     logger.error("[reorder-alerts] error", { err: e instanceof Error ? e.message : String(e) });

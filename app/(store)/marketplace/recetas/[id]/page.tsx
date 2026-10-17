@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 /**
  * @cross-tenant intentional — endpoint público marketplace (recetas
  * compartidas entre tiendas son discoverable). Visual QA Bug Hunter Report
@@ -202,7 +203,7 @@ export default async function RecetaDetallePage({ params }: PageProps) {
       <script
         type="application/ld+json"
         suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }}
       />
       {/*
         SEO 2026-05-28 audit P4: H1 sr-only con nombre receta + keyword

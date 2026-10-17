@@ -24,8 +24,7 @@ import { Package, ShoppingCart, Bike, CreditCard, FileText, BarChart3 } from "@b
 import {
   generateSoftwareApplicationLD,
   generateZoneLandingLD,
-  generateFAQPageLD,
-} from "@/lib/seo/json-ld";
+  generateFAQPageLD, safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const BASE_URL =
@@ -69,7 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // ("bodegas con delivery") para captar búsquedas de consumo. La cola de marca
   // mantiene el reconocimiento; el copy B2B (software) vive en el cuerpo + FAQ.
   const title = `Bodegas, restaurantes y tiendas en ${zone.name} con delivery`;
-  const description = `Pedí comida, abarrotes y productos en ${zone.name}, ${zone.region}: bodegas, restaurantes, mercados, minimarkets y tiendas con delivery rápido y pago con Yape, Plin o efectivo. ¿Tenés un negocio? Digitalízalo con Buleje: inventario, POS, fiado y facturación SUNAT.`;
+  const description = `Pide comida, abarrotes y productos en ${zone.name}, ${zone.region}: bodegas, restaurantes, mercados, minimarkets y tiendas con delivery rápido y pago con Yape, Plin o efectivo. ¿Tienes un negocio? Digitalízalo con Buleje: inventario, POS, fiado y facturación SUNAT.`;
   const url = `${BASE_URL}/zona/${zone.slug}`;
 
   return {
@@ -101,7 +100,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 function CategoryCard({
   category,
   count,
-  zoneName,
+  zoneName: _zoneName,
   zoneSlug,
 }: {
   category: { id: string; label: string; emoji: string };
@@ -137,7 +136,7 @@ function CategoryCard({
 const FEATURES = [
   { Icon: Package, title: "Inventario", desc: "Control de stock en tiempo real con alertas" },
   { Icon: ShoppingCart, title: "Ventas POS", desc: "Punto de venta rápido desde celular o PC" },
-  { Icon: Bike, title: "Delivery", desc: "Tus clientes piden y vos entregás a domicilio" },
+  { Icon: Bike, title: "Delivery", desc: "Tus clientes piden y tú entregas a domicilio" },
   { Icon: CreditCard, title: "Fiado Digital", desc: "Crédito automático con score para clientes" },
   { Icon: FileText, title: "SUNAT", desc: "Boletas y facturas electrónicas integradas" },
   { Icon: BarChart3, title: "Reportes", desc: "Resumen diario por WhatsApp con IA" },
@@ -231,7 +230,7 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: safeJsonLdStringify(
             generateSoftwareApplicationLD(zone),
           ),
         }}
@@ -239,7 +238,7 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: safeJsonLdStringify(
             generateZoneLandingLD(zone, realCategories),
           ),
         }}
@@ -247,7 +246,7 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateFAQPageLD(faqs)),
+          __html: safeJsonLdStringify(generateFAQPageLD(faqs)),
         }}
       />
 

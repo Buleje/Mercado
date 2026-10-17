@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { 
-  getPageById, 
-  updatePage, 
-  deletePage
-} from "@/lib/cms-db/pages";
+import { CmsPagesDB } from "@/lib/db/cms-pages.db";
 import { PageSchema } from "@/lib/cms/types";
+import { z } from "zod";
+
+// `.partial()` de Zod 4 aplica los `.default()`: un PUT con sólo el título
+// devolvía la página a borrador. Sin defaults, lo que no viene no se toca.
+const PageUpdateSchema = PageSchema.extend({
+  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
+  layout: z.string(),
+}).partial();
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
@@ -23,7 +27,7 @@ export async function GET(
 
   const { id } = await params;
   try {
-    const page = await getPageById(id, auth.tenantId);
+    const page = await CmsPagesDB.porId(auth.tenantId, id);
 
     if (!page) {
       return NextResponse.json(
@@ -58,7 +62,7 @@ export async function PUT(
   const { id } = await params;
   try {
     const body = await req.json();
-    const parsed = PageSchema.partial().safeParse(body);
+    const parsed = PageUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0]?.message ?? "Datos inválidos" },
@@ -67,13 +71,16 @@ export async function PUT(
     }
     const validated = parsed.data;
 
-    const page = await updatePage(id, auth.tenantId, validated);
+    const page = await CmsPagesDB.actualizar(auth.tenantId, id, validated);
     if (!page) {
       return NextResponse.json({ error: "Página no encontrada" }, { status: 404 });
     }
 
     return NextResponse.json(page);
   } catch (error) {
+    if ((error as { code?: string }).code === "P2002") {
+      return NextResponse.json({ error: "Ya tienes una página con ese enlace" }, { status: 409 });
+    }
     logger.error("[cms/pages/id] PUT error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al actualizar página" },
@@ -95,7 +102,7 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    const deleted = await deletePage(id, auth.tenantId);
+    const deleted = await CmsPagesDB.eliminar(auth.tenantId, id);
     if (!deleted) {
       return NextResponse.json({ error: "Página no encontrada" }, { status: 404 });
     }

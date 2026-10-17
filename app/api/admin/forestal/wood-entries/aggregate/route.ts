@@ -22,7 +22,7 @@ export const GET = withApiHandler("forestal-wood-entries-aggregate-get", async (
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
-  const rl = await applyRateLimit(req, "STRICT");
+  const rl = await applyRateLimit(req, "GENEROUS", "ctp");
   if (rl) return rl;
 
   const ok = await isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro");

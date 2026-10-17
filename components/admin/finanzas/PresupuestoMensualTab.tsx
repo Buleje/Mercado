@@ -1,12 +1,14 @@
 'use client';
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { LoadingState } from "@buleje/design-system";
+import { CabeceraVista } from "@/components/admin/inventario/movimientos/CabeceraVista";
+import { button } from "@/components/ui-system/button-variants";
 
-import { useState, useEffect, useCallback } from "react";
-import { Loader2, Plus, X, AlertTriangle, Pencil, Wallet } from "@buleje/design-system/icons";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { Plus, Pencil, RefreshCw, Wallet } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { csrfHeaders } from "@/lib/csrf-client";
-import AdminModal from "@/components/admin/shared/AdminModal";
+import EditarPresupuestoModal, { type BorradorCategoria } from "./presupuesto/EditarPresupuestoModal";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -22,14 +24,9 @@ type PresupuestoData = {
   categorias: CategoriaPresupuesto[];
 };
 
-type DraftCategoria = {
-  nombre: string;
-  limite: string;
-};
+type DraftCategoria = BorradorCategoria;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
 const CATEGORIAS_SUGERIDAS = [
   "Mercaderia", "Alquiler", "Servicios", "Personal", "Transporte", "Marketing", "Otros",
@@ -46,19 +43,26 @@ function getBarColor(porcentaje: number): string {
   if (porcentaje > 100) return "bg-[var(--data-error-500)] animate-pulse";
   if (porcentaje > 80) return "bg-[var(--data-error-500)]";
   if (porcentaje > 60) return "bg-[var(--data-warning-500)]";
-  return "bg-[var(--accent-soft)]";
+  return "bg-primary/10";
 }
 
 function getBarTrack(porcentaje: number): string {
   if (porcentaje > 100) return "bg-red-100 dark:bg-red-900/20";
   if (porcentaje > 80) return "bg-red-100 dark:bg-red-900/20";
   if (porcentaje > 60) return "bg-amber-100 dark:bg-amber-900/20";
-  return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]";
+  return "bg-primary/10 dark:bg-primary/15";
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function PresupuestoMensualTab() {
+interface Props {
+  /** Las secciones de la vista (Mi Plata › Gastos y presupuesto): van en la fila del título. */
+  barra?: ReactNode;
+  /** Si hay categorías cargadas, según el resumen del hub (`undefined` = no se sabe). */
+  hayPresupuesto?: boolean;
+}
+
+export default function PresupuestoMensualTab({ barra, hayPresupuesto }: Props = {}) {
   const [data, setData] = useState<PresupuestoData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,8 +70,8 @@ export default function PresupuestoMensualTab() {
   // Edit modal
   const [showEdit, setShowEdit] = useState(false);
   const [draft, setDraft] = useState<DraftCategoria[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  /** Un `key` nuevo por apertura: el borrador de la ventana arranca limpio. */
+  const [apertura, setApertura] = useState(0);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
@@ -96,55 +100,8 @@ export default function PresupuestoMensualTab() {
     } else {
       setDraft(CATEGORIAS_SUGERIDAS.map(n => ({ nombre: n, limite: "" })));
     }
-    setSaveError(null);
+    setApertura((n) => n + 1);
     setShowEdit(true);
-  };
-
-  const addDraftCat = () => {
-    setDraft(prev => [...prev, { nombre: "", limite: "" }]);
-  };
-
-  const removeDraftCat = (i: number) => {
-    setDraft(prev => prev.filter((_, idx) => idx !== i));
-  };
-
-  const updateDraft = (i: number, field: keyof DraftCategoria, value: string) => {
-    setDraft(prev => prev.map((d, idx) => idx === i ? { ...d, [field]: value } : d));
-  };
-
-  const handleSave = async () => {
-    setSaveError(null);
-    const categorias = draft
-      .filter(d => d.nombre.trim() && d.limite.trim())
-      .map(d => ({ nombre: d.nombre.trim(), limite: parseFloat(d.limite) }));
-
-    if (categorias.length === 0) {
-      setSaveError("Agrega al menos una categoria con nombre y limite");
-      return;
-    }
-    if (categorias.some(c => isNaN(c.limite) || c.limite <= 0)) {
-      setSaveError("Todos los limites deben ser mayores a 0");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const res = await fetch("/api/presupuesto", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ categorias }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Error al guardar" }));
-        throw new Error(err.error || "Error al guardar");
-      }
-      setShowEdit(false);
-      fetchData();
-    } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "Error");
-    } finally {
-      setSaving(false);
-    }
   };
 
   // ── Computed ───────────────────────────────────────────────────────────────
@@ -155,62 +112,53 @@ export default function PresupuestoMensualTab() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  if (loading) {
-    return (
-      <LoadingState />
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 gap-2">
-        <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
-        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
-        <button onClick={fetchData} className="text-xs text-primary hover:underline font-semibold">Reintentar</button>
-      </div>
-    );
-  }
-
-  // Empty state
-  if (!data || data.categorias.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Wallet className="h-8 w-8 text-primary" />
-        </div>
-        <div className="text-center">
-          <p className="text-base font-bold text-[var(--text-primary)]">No has definido un presupuesto</p>
-          <p className="text-sm text-[var(--text-tertiary)] mt-1">Crea uno para controlar tus gastos mensuales.</p>
-        </div>
-        <button
-          onClick={openEdit}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Crear presupuesto
-        </button>
-      </div>
-    );
-  }
+  /* La cabecera va en TODOS los estados: las secciones de la vista no se
+     pueden ir mientras carga o cuando todavía no hay presupuesto. */
+  const vacio = !data || data.categorias.length === 0;
+  const cabecera = (
+    <CabeceraVista
+      titulo="Gastos"
+      ayuda={{
+        what:
+          hayPresupuesto === false || (!loading && vacio)
+            ? "El techo que le pones a cada rubro del mes. Todavía no le pusiste techo a ningún rubro."
+            : `El techo que le pones a cada rubro${data ? ` en ${mesLabel(data.mes)}` : " del mes"} y cuánto llevas gastado de él.`,
+        affects: "La barra de cada rubro pasa a coral al 60 % de su techo y a rojo al 80 %.",
+        example: "Techo de transporte S/ 600 y llevas S/ 450: vas en 75 %.",
+      }}
+      secciones={barra}
+      accion={
+        !loading && !error ? (
+          <button type="button" onClick={openEdit} className={button({ variant: vacio ? "primary" : "secondary", className: "h-12 shrink-0 gap-2 rounded-xl px-4" })}>
+            {vacio ? <Plus className="h-4 w-4" aria-hidden /> : <Pencil className="h-4 w-4" aria-hidden />}
+            <span className="max-sm:sr-only">{vacio ? "Crear presupuesto" : "Editar presupuesto"}</span>
+          </button>
+        ) : undefined
+      }
+      acciones={[{ id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: () => void fetchData() }]}
+      tituloMenu="Actualizar el presupuesto"
+    />
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <CardTitle className="text-base font-bold text-[var(--text-primary)]">
-            Presupuesto Mensual — {mesLabel(data.mes)}
-          </CardTitle>
+    <div className="space-y-4">
+      {cabecera}
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--surface-raised)] px-4 py-3">
+          <p className="text-sm font-bold text-[var(--data-error-ink)]">{error}</p>
+          <button type="button" onClick={fetchData} className={button({ variant: "secondary", className: "h-12 shrink-0 gap-2 rounded-xl" })}>
+            <RefreshCw className="h-4 w-4" aria-hidden />Reintentar
+          </button>
         </div>
-        <button
-          onClick={openEdit}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-          Editar presupuesto
-        </button>
-      </div>
-
+      ) : vacio || !data ? (
+        <p className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
+          <Wallet className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+          Todavía no le pusiste techo a ningún rubro: toca «Crear presupuesto».
+        </p>
+      ) : (
+    <div className="space-y-6">
       {/* Cards grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {data.categorias.map((cat) => {
@@ -219,19 +167,19 @@ export default function PresupuestoMensualTab() {
           return (
             <div
               key={cat.nombre}
-              className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  space-y-3"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3"
             >
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-[var(--text-primary)]">{cat.nombre}</p>
                 <span className={cn(
-                  "text-xs font-bold px-2 py-0.5 rounded-lg",
+                  "text-sm font-bold px-2 py-0.5 rounded-lg",
                   cat.porcentaje > 100
                     ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] animate-pulse"
                     : cat.porcentaje > 80
                       ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                       : cat.porcentaje > 60
                         ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
-                        : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                        : "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 )}>
                   {cat.porcentaje}%
                 </span>
@@ -245,14 +193,14 @@ export default function PresupuestoMensualTab() {
                 />
               </div>
 
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-[var(--text-tertiary)]">
                   {formatCurrency(cat.gastado)} de {formatCurrency(cat.limite)}
                 </span>
               </div>
 
               <p className={cn(
-                "text-xs font-bold",
+                "text-sm font-bold",
                 restante >= 0
                   ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                   : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
@@ -274,7 +222,7 @@ export default function PresupuestoMensualTab() {
       </div>
 
       {/* Resumen inferior */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
         <div className="grid grid-cols-3 gap-4">
           <div>
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total presupuestado</p>
@@ -306,76 +254,20 @@ export default function PresupuestoMensualTab() {
         </div>
       </div>
 
-      {/* ── Edit Modal ──────────────────────────────────────────────────────── */}
-      <AdminModal
+    </div>
+      )}
+
+      <EditarPresupuestoModal
+        key={apertura}
         open={showEdit}
+        creando={vacio}
+        inicial={draft}
         onClose={() => setShowEdit(false)}
-        title="Editar Presupuesto"
-        variant="default"
-      >
-        <div className="p-5 space-y-4">
-          <div className="space-y-2">
-            {draft.map((d, i) => (
-              <div key={i} className="flex gap-2 items-end bg-gray-50 dark:bg-white/5 rounded-xl p-3">
-                <div className="flex-1">
-                  <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Categoria</label>
-                  <input
-                    type="text"
-                    value={d.nombre}
-                    onChange={e => updateDraft(i, "nombre", e.target.value)}
-                    placeholder="Ej: Mercaderia"
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                </div>
-                <div className="w-28">
-                  <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Limite (S/)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={d.limite}
-                    onChange={e => updateDraft(i, "limite", e.target.value)}
-                    placeholder="0.00"
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                </div>
-                <button
-                  onClick={() => removeDraftCat(i)}
-                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={addDraftCat}
-            className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-          >
-            <Plus className="h-3.5 w-3.5" /> Agregar categoria
-          </button>
-
-          {saveError && <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold">{saveError}</p>}
-
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={() => setShowEdit(false)}
-              className="flex-1 h-10 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
-            >
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              Guardar
-            </button>
-          </div>
-        </div>
-      </AdminModal>
+        onGuardado={() => {
+          setShowEdit(false);
+          void fetchData();
+        }}
+      />
     </div>
   );
 }

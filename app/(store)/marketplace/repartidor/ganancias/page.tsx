@@ -14,7 +14,6 @@ import {
   PinIcon,
   CheckBadge,
   TimerIcon,
-  LiveSignal,
 } from "@/components/delivery/icons";
 
 interface Assignment {
@@ -75,7 +74,7 @@ export default function GananciasRepartidorPage() {
             Enlace inválido
           </h1>
           <p className="mt-2 text-base text-[var(--text-secondary)]">
-            El link no contiene tu identificador. Volvé al panel del repartidor.
+            El link no contiene tu identificador. Vuelve al panel del repartidor.
           </p>
           <Link
             href="/delivery-app"
@@ -102,7 +101,7 @@ export default function GananciasRepartidorPage() {
         <div className="text-center">
           <AlertTriangle className="mx-auto h-12 w-12 text-[var(--brand-secondary)]" />
           <p className="mt-3 text-base text-[var(--text-secondary)]">
-            No pudimos cargar tus datos. Verificá tu enlace.
+            No pudimos cargar tus datos. Verifica tu enlace.
           </p>
         </div>
       </main>
@@ -286,7 +285,7 @@ function Stat({
   tone: "accent" | "info" | "success" | "amber";
 }) {
   const ring: Record<typeof tone, string> = {
-    accent: "bg-[var(--accent-soft)]",
+    accent: "bg-primary/10",
     info: "bg-[var(--brand-info)]/10",
     success: "bg-[var(--data-success-500)]/10",
     amber: "bg-[var(--brand-secondary)]/10",

@@ -20,7 +20,7 @@ const KioskPOS = dynamic(
 export default function KioskPage() {
   return (
     // overflow-hidden evita cualquier scroll no deseado en tablet
-    <div className="fixed inset-0 z-[9999] bg-black overflow-hidden">
+    <div className="fixed inset-0 z-tour bg-black overflow-hidden">
       <KioskPOS />
     </div>
   );

@@ -2,7 +2,10 @@
  * guest-order.ts — Zod schemas para Guest Checkout (compra sin login).
  *
  * Regla CLAUDE.md #2: safeParse() siempre.
- * Regla zona peligro: NO toca orders reales. Stub paralelo documentado.
+ * ZONA DE PELIGRO: este flujo SÍ persiste Orders reales (source="guest"). El
+ * `unitPrice` del item es solo un hint del cliente y NO es autoritativo — el
+ * route /api/guest/orders/create recalcula precio y total desde Product.price
+ * (regla #6). No confiar nunca en el unitPrice del body para cobrar.
  */
 
 import { z } from "zod";

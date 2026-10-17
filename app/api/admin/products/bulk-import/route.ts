@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
 
   if (!skipDuplicates && uniqueRows.length < validRows.length) {
     return NextResponse.json(
-      { ok: false, created: 0, skipped, errors, message: "Hay duplicados — pasá skipDuplicates=true para omitirlos" },
+      { ok: false, created: 0, skipped, errors, message: "Hay duplicados — pasa skipDuplicates=true para omitirlos" },
       { status: 409 },
     );
   }

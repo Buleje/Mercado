@@ -14,13 +14,15 @@ import { m } from "framer-motion";
 import { ProductCardGrid } from "@buleje/design-system";
 import { toProductCardShape } from "@/lib/marketplace/product-adapter";
 import type { SearchProduct } from "@/lib/db/marketplace-search.db";
+import { linkBuscar, type ParamsBuscar } from "@/lib/marketplace/buscar-params";
 
 interface SearchResultsProps {
   products: SearchProduct[];
   total: number;
   page: number;
   limit: number;
-  query: string;
+  /** Filtros y orden del link: Anterior/Siguiente los conservan. */
+  params: ParamsBuscar;
   isPending: boolean;
 }
 
@@ -51,9 +53,10 @@ export default function SearchResults({
   total,
   page,
   limit,
-  query,
+  params,
   isPending,
 }: SearchResultsProps) {
+  const query = params.q;
   const from = (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
   const totalPages = Math.ceil(total / limit);
@@ -125,7 +128,7 @@ export default function SearchResults({
         >
           {page > 1 && (
             <Link
-              href={buildPageUrl(query, page - 1)}
+              href={buildPageUrl(params, page - 1)}
               className="inline-flex items-center rounded-xl border-2 border-[var(--rule-base)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-[var(--rule-strong)] transition-colors"
             >
               Anterior
@@ -145,7 +148,7 @@ export default function SearchResults({
 
           {page < totalPages && (
             <Link
-              href={buildPageUrl(query, page + 1)}
+              href={buildPageUrl(params, page + 1)}
               className="inline-flex items-center rounded-xl border-2 border-[var(--rule-base)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-[var(--rule-strong)] transition-colors"
             >
               Siguiente
@@ -157,9 +160,8 @@ export default function SearchResults({
   );
 }
 
-function buildPageUrl(query: string, page: number): string {
-  const params = new URLSearchParams();
-  if (query) params.set("q", query);
-  if (page > 1) params.set("page", String(page));
-  return `/marketplace/buscar?${params.toString()}`;
+// Antes armaba sólo q + page: pasar de página borraba stock, calificación,
+// zona, categoría, tienda, precio y orden.
+function buildPageUrl(params: ParamsBuscar, page: number): string {
+  return `/marketplace/buscar?${linkBuscar({ ...params, page })}`;
 }

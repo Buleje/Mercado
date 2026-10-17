@@ -9,7 +9,7 @@
  *   1. Lista DeliveryPartners reales del tenant (libres + ocupados + offline)
  *      vía useDeliveryPartnersLive() → /api/admin/delivery/partners-live.
  *   2. Click en partner libre → POST /api/admin/delivery/manual-assign,
- *      crea DeliveryAssignment + ocupa al partner + persiste deliveryDriver
+ *      crea DeliveryAssignment + ocupa al partner + persiste riderName
  *      string en el order (para chips de la lista).
  *   3. Acordeón "Ad-hoc" → input texto libre + Asignar (sólo persiste string,
  *      sin DeliveryAssignment) — fallback para vecinos/ad-hoc sin registro.
@@ -18,12 +18,14 @@
  */
 
 import { useMemo, useState } from "react";
-import {
-  Bike, Star, MapPin, UserCheck, AlertTriangle, Loader2, ChevronDown, Phone, Sparkles, X,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { AlertTriangle, Bike, Loader2, X } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { DbOrder } from "@/lib/jsondb";
 import { useDeliveryPartnersLive, type DeliveryPartnerLive } from "./hooks/useDeliveryPartnersLive";
+import { DespachoAdHoc } from "./detalle/DespachoAdHoc";
+import { ListaLibres, ListaOcupados } from "./detalle/DespachoListas";
+import { responsableDe } from "./siguiente-paso";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 interface DespachoSectionProps {
@@ -56,7 +58,7 @@ export function DespachoSection({
   const [assignError, setAssignError] = useState<string | null>(null);
   const [showAdHoc, setShowAdHoc] = useState(false);
 
-  const currentDriver = (order as DbOrder & { deliveryDriver?: string }).deliveryDriver;
+  const currentDriver = responsableDe(order);
 
   const grouped = useMemo(() => {
     const free: DeliveryPartnerLive[] = [];
@@ -87,9 +89,10 @@ export function DespachoSection({
         setAssignError(data.error ?? "No pudimos asignar.");
         return;
       }
-      // Persistimos también el string para que la lista/Kanban muestre el chip
-      // del motorizado sin necesidad de cargar DeliveryAssignment cada vez.
-      await onPatchOrder(order.id, { deliveryDriver: partner.name } as Partial<DbOrder>);
+      // Persistimos también el nombre para que la lista/Kanban muestre el chip
+      // del motorizado sin cargar DeliveryAssignment cada vez. `riderName` es
+      // la columna (17-10: se mandaba `deliveryDriver` y el servidor lo descartaba).
+      await onPatchOrder(order.id, { riderName: partner.name });
       refresh();
     } catch {
       setAssignError("Error de red.");
@@ -99,7 +102,7 @@ export function DespachoSection({
   };
 
   const handleClearDriver = () => {
-    void onPatchOrder(order.id, { deliveryDriver: "" } as Partial<DbOrder>);
+    void onPatchOrder(order.id, { riderName: "" });
   };
 
   const handleSaveAdHoc = () => {
@@ -108,33 +111,25 @@ export function DespachoSection({
   };
 
   return (
-    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
-      {/* Header editorial */}
-      <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40">
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            Despacho
-          </p>
-          <p className="text-base font-bold text-[var(--text-primary)] mt-0.5">
-            {currentDriver ? "Motorizado asignado" : "Sin asignar"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-bold tabular-nums">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
-            {grouped.free.length} libre{grouped.free.length === 1 ? "" : "s"}
+    <section className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      {/* Una fila: «Despacho · Sin asignar» y cuántos libres. Los ocupados los
+          cuenta su plegable de abajo (antes la cifra salía tres veces). */}
+      <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40 px-4 py-2.5">
+        <CardTitle className="min-w-0 truncate text-sm font-bold">
+          Despacho{" "}
+          <span className="font-semibold text-[var(--text-secondary)]">
+            · {currentDriver ? "con motorizado" : "sin asignar"}
           </span>
-          {grouped.busy.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] border border-[var(--data-warning-500)]/30">
-              {grouped.busy.length} ocupado{grouped.busy.length === 1 ? "" : "s"}
-            </span>
-          )}
-        </div>
+        </CardTitle>
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/10 px-2.5 py-0.5 text-sm font-bold tabular-nums text-[var(--data-success-ink)]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" aria-hidden />
+          {grouped.free.length} libre{grouped.free.length === 1 ? "" : "s"}
+        </span>
       </header>
 
       {/* Asignado actual */}
       {currentDriver && (
-        <div className="flex items-center gap-3 px-5 py-3 bg-[var(--accent-soft)]/40 border-b border-[var(--rule-soft)]">
+        <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-primary/10 px-4 py-2">
           <span
             aria-hidden
             className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white font-bold text-sm shrink-0"
@@ -144,221 +139,104 @@ export function DespachoSection({
           </span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-[var(--text-primary)] truncate">{currentDriver}</p>
-            <p className="text-xs text-[var(--text-secondary)]">Motorizado en marcha</p>
+            <p className="text-sm text-[var(--text-secondary)]">Motorizado en marcha</p>
           </div>
           <button
             type="button"
             onClick={handleClearDriver}
-            className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-xs font-bold text-[var(--text-secondary)] border border-[var(--rule-base)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
+            className="inline-flex h-12 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--data-error-500)] hover:text-[var(--data-error-ink)]"
           >
-            <X className="h-3.5 w-3.5" /> Cambiar
+            <X className="h-4 w-4" aria-hidden /> Cambiar
           </button>
         </div>
       )}
 
       {/* Estados de carga / error */}
       {loading && (
-        <div className="flex items-center justify-center gap-2 px-5 py-8 text-sm text-[var(--text-tertiary)]">
+        <div className="flex items-center justify-center gap-2 px-4 py-4 text-sm text-[var(--text-secondary)]">
           <Loader2 className="h-4 w-4 animate-spin" />
           Cargando motorizados…
         </div>
       )}
 
       {!loading && error && (
-        <div className="mx-5 my-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 text-sm font-semibold text-[var(--data-error-500)]">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
+        <div
+          role="alert"
+          className="mx-4 my-3 flex items-center gap-2 rounded-lg border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-3 text-sm font-semibold text-[var(--data-error-ink)]"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
           <span className="flex-1">{error}</span>
-          <button onClick={refresh} className="text-xs underline">Reintentar</button>
+          <button type="button" onClick={refresh} className="h-12 px-2 text-sm underline">
+            Reintentar
+          </button>
         </div>
       )}
 
       {!loading && assignError && (
-        <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 text-sm font-semibold text-[var(--data-error-500)]">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
+        <div
+          role="alert"
+          className="mx-4 mt-3 flex items-center gap-2 rounded-lg border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-3 text-sm font-semibold text-[var(--data-error-ink)]"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
           <span className="flex-1">{assignError}</span>
-          <button onClick={() => setAssignError(null)} className="text-xs underline">Cerrar</button>
+          <button
+            type="button"
+            onClick={() => setAssignError(null)}
+            className="h-12 px-2 text-sm underline"
+          >
+            Cerrar
+          </button>
         </div>
       )}
 
       {/* Sin partners registrados */}
       {!loading && !error && summary.total === 0 && (
-        <div className="px-5 py-6 text-center">
-          <Bike className="h-10 w-10 mx-auto text-[var(--text-tertiary)]" strokeWidth={1.5} />
-          <p className="mt-3 text-sm font-bold text-[var(--text-secondary)]">
-            Aún no tenés motorizados registrados
-          </p>
-          <p className="mt-1 text-xs text-[var(--text-tertiary)] max-w-xs mx-auto">
-            Andá a <strong className="text-[var(--accent)]">Delivery Partners</strong> para
-            registrar al personal de tu tienda con su WhatsApp y vehículo.
-          </p>
-          <button
-            type="button"
-            onClick={() => setShowAdHoc(true)}
-            className="mt-4 inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border-2 border-[var(--accent)] text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors"
-          >
-            <Sparkles className="h-4 w-4" /> Asignar nombre ad-hoc
-          </button>
-        </div>
+        <p className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-[var(--text-secondary)]">
+          <Bike
+            className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]"
+            strokeWidth={1.5}
+            aria-hidden
+          />
+          Aún no tienes motorizados registrados
+          <InfoTip what="Regístralos en Pedidos › Reparto › Repartidores, con su WhatsApp y vehículo. Mientras tanto, abajo puedes poner el nombre de quien lo lleva." />
+        </p>
       )}
 
-      {/* Lista de partners libres */}
-      {!loading && !error && grouped.free.length > 0 && (
-        <ul className="divide-y divide-[var(--rule-soft)]">
-          {grouped.free.map((p) => (
-            <li key={p.id}>
-              <button
-                type="button"
-                onClick={() => void handleAssign(p)}
-                disabled={assigning !== null}
-                className={cn(
-                  "w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors",
-                  "hover:bg-[var(--accent-soft)]/40 disabled:opacity-50 disabled:cursor-not-allowed",
-                )}
-              >
-                <span
-                  aria-hidden
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full text-white font-bold text-base shrink-0"
-                  style={{ backgroundColor: driverColor(p.name) }}
-                >
-                  {p.name.charAt(0).toUpperCase()}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-[var(--text-primary)] text-sm truncate">{p.name}</span>
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] text-xs font-bold border border-[var(--data-success-500)]/30">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
-                      Libre
-                    </span>
-                  </div>
-                  <p className="mt-1 flex items-center gap-2 text-xs text-[var(--text-tertiary)] tabular-nums">
-                    <span className="inline-flex items-center gap-0.5">
-                      <Star className="h-3 w-3 text-[var(--data-warning-500)]" strokeWidth={2.5} aria-hidden />
-                      {Number(p.rating).toFixed(1)}
-                    </span>
-                    <span aria-hidden>·</span>
-                    <span>{Math.round(p.acceptanceRate * 100)}% acepta</span>
-                    <span aria-hidden>·</span>
-                    <span className="capitalize">{p.vehicleType}</span>
-                    {p.lat != null && p.lng != null && (
-                      <>
-                        <span aria-hidden>·</span>
-                        <span className="inline-flex items-center gap-0.5 text-[var(--data-success-500)] font-bold">
-                          <MapPin className="h-3 w-3" strokeWidth={2} aria-hidden />
-                          GPS
-                        </span>
-                      </>
-                    )}
-                  </p>
-                </div>
-                <span className="shrink-0 inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-[var(--text-primary)] text-[var(--surface-canvas)] text-xs font-bold uppercase tracking-wider">
-                  {assigning === p.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <UserCheck className="h-3.5 w-3.5" /> Asignar
-                    </>
-                  )}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Ocupados — no se pueden asignar pero se ven */}
-      {!loading && !error && grouped.busy.length > 0 && (
-        <details className="border-t border-[var(--rule-soft)]">
-          <summary className="cursor-pointer flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
-            <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
-            Ocupados ahora ({grouped.busy.length})
-          </summary>
-          <ul className="divide-y divide-[var(--rule-soft)]">
-            {grouped.busy.map((p) => (
-              <li key={p.id} className="flex items-center gap-3 px-5 py-3 opacity-70">
-                <span
-                  aria-hidden
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white font-bold text-sm shrink-0"
-                  style={{ backgroundColor: driverColor(p.name) }}
-                >
-                  {p.name.charAt(0).toUpperCase()}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-[var(--text-primary)] text-sm truncate">{p.name}</p>
-                  <p className="text-xs text-[var(--text-tertiary)]">
-                    Atendiendo #{p.currentOrderId?.slice(-6)}
-                  </p>
-                </div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--data-warning-500)]">
-                  Ocupado
-                </span>
-              </li>
-            ))}
-          </ul>
-        </details>
+      {!loading && !error && (
+        <>
+          <ListaLibres
+            libres={grouped.free}
+            asignando={assigning}
+            driverColor={driverColor}
+            onAsignar={(p) => void handleAssign(p)}
+          />
+          <ListaOcupados ocupados={grouped.busy} driverColor={driverColor} />
+        </>
       )}
 
       {/* Sin libres pero hay registrados */}
       {!loading && !error && summary.total > 0 && grouped.free.length === 0 && (
-        <div className="px-5 py-5 text-center">
-          <p className="text-sm font-bold text-[var(--text-secondary)]">
-            No hay motorizados libres ahora mismo
-          </p>
-          <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-            {summary.busy} ocupado{summary.busy === 1 ? "" : "s"} ·{" "}
-            {summary.total - summary.online} fuera de línea
-          </p>
-        </div>
+        <p className="px-4 py-3 text-sm font-semibold text-[var(--text-secondary)]">
+          Nadie libre ahora
+          {summary.total - summary.online > 0
+            ? ` · ${summary.total - summary.online} fuera de línea`
+            : ""}
+        </p>
       )}
 
       {/* Asignación ad-hoc — para vecino/familiar sin registro */}
-      <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/30">
-        {!showAdHoc ? (
-          <button
-            type="button"
-            onClick={() => setShowAdHoc(true)}
-            className="w-full flex items-center justify-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Asignar a alguien sin registro
-          </button>
-        ) : (
-          <div className="px-5 py-4 space-y-2">
-            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              Nombre ad-hoc
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={customDriver}
-                onChange={(e) => onCustomDriverChange(e.target.value)}
-                placeholder="Ej: María (vecina), Juan (sobrino)…"
-                className="flex-1 h-12 px-3.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] transition-colors"
-                onKeyDown={(e) => e.key === "Enter" && handleSaveAdHoc()}
-              />
-              <button
-                type="button"
-                onClick={handleSaveAdHoc}
-                disabled={savingDriver || !customDriver.trim()}
-                className="h-12 px-4 rounded-xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-bold hover:bg-[var(--accent)] transition-colors disabled:opacity-50"
-              >
-                {savingDriver ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setShowAdHoc(false); onCustomDriverChange(""); }}
-                className="h-12 w-12 inline-flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-                aria-label="Cancelar"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1">
-              <Phone className="h-3 w-3" />
-              Sin GPS ni tracking. Sólo persistimos el nombre como referencia.
-            </p>
-          </div>
-        )}
-      </div>
+      <DespachoAdHoc
+        abierto={showAdHoc}
+        onAbrir={() => setShowAdHoc(true)}
+        onCerrar={() => {
+          setShowAdHoc(false);
+          onCustomDriverChange("");
+        }}
+        valor={customDriver}
+        onValor={onCustomDriverChange}
+        guardando={savingDriver}
+        onGuardar={handleSaveAdHoc}
+      />
     </section>
   );
 }

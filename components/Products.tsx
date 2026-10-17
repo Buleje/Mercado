@@ -119,7 +119,7 @@ export default function Products() {
           transition={{ duration: 0.6 }}
           className="text-center mb-14"
         >
-          <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-4">
+          <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             Nuestros Productos
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--text-primary)] mb-4">

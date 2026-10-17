@@ -81,10 +81,10 @@ export function InactiveCustomersCard({ orders, sales, loading }: Props) {
   if (loading) return null;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex items-center gap-2 mb-3">
         <Users className="w-4 h-4 text-[var(--text-tertiary)]" />
-        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-300">Clientes que no vuelven</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)] ">Clientes que no vuelven</span>
       </div>
       {inactiveCustomers.length === 0 ? (
         <div className="flex items-center gap-2 py-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">
@@ -93,10 +93,10 @@ export function InactiveCustomersCard({ orders, sales, loading }: Props) {
       ) : (
         <div className="space-y-2">
           {inactiveCustomers.map((c, i) => (
-            <div key={i} className="flex items-center gap-3 bg-gray-50 dark:bg-zinc-700/50 rounded-lg px-3 py-2.5">
+            <div key={i} className="flex items-center gap-3 bg-[var(--surface-sunken)] rounded-lg px-3 py-2.5">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-200 truncate">{c.name}</p>
-                <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">
+                <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{c.name}</p>
+                <p className="text-xs text-[var(--text-tertiary)] ">
                   Última compra: hace {c.daysSince} dias &middot; Gasto total S/{Number(c.totalSpent).toFixed(0)}
                 </p>
               </div>
@@ -105,7 +105,7 @@ export function InactiveCustomersCard({ orders, sales, loading }: Props) {
                   href={`https://wa.me/${c.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${c.name}! Te extrañamos en Buleje. Tenemos productos nuevos esperandote!`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-bold hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+                  className="shrink-0 px-2.5 py-1.5 rounded-lg bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-bold hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
                 >
                   Contactar
                 </a>

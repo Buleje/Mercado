@@ -1,0 +1,43 @@
+-- Código de planta único por negocio, garantizado por la base (ADR-436 · ADR-336).
+--
+-- El ADR-336 planeó este índice y nunca se creó: un «118» repetido en `main`
+-- (Sapotillo libre + Tornillo consumida) lo bloqueaba. El 2026-09-26 la Tornillo
+-- se renumeró por la vía de la app (`POST /api/admin/forestal/trozas/renumerar`,
+-- queda en la auditoría: 118 → 90100135) y ya no queda ningún repetido en
+-- ningún tenant.
+--
+-- La expresión es la MISMA que usa el guard app-level (`guardCodigoPlantaUnico`):
+-- sin distinguir mayúsculas y sin espacios de los bordes. «13/a», «13/A» y
+-- « 13/A » son la misma marca pintada sobre la madera. Un índice sobre la
+-- columna cruda dejaba pasar lo que el guard rechaza.
+--
+-- Parcial: una troza SIN código (NULL o vacío) no ocupa ningún número; hay
+-- cientos así (las que todavía no se etiquetaron).
+--
+-- Mira la TABLA, no el estado del ingreso: una pieza de un ingreso anulado sigue
+-- ocupando su número (149 en `main` al aplicarlo). El guard y el aviso previo
+-- (`codigosPlantaEnUso`) cuentan igual, para no dar por libre lo que esto rechaza.
+--
+-- Prisma no sabe declarar un índice parcial ni sobre expresión: vive SÓLO acá y
+-- está documentado en el `///` de `WoodEntryTroza` en schema.prisma.
+--
+-- CONCURRENTLY: no bloquea las escrituras mientras se construye. NO puede ir
+-- dentro de una transacción, y por eso esto es UNA sola sentencia. Si se corta
+-- a la mitad deja el índice INVÁLIDO en el catálogo (y `IF NOT EXISTS` lo daría
+-- por hecho): verificar `indisvalid` después.
+--
+-- Aplicar (por el pooler en modo SESIÓN, :5432 — el :6543 no sirve para DDL):
+--   node -r dotenv/config scripts/<script pg que fuerza url.port="5432"> dotenv_config_path=.env.local
+-- Verificar:
+--   SELECT c.relname, i.indisvalid, pg_get_indexdef(i.indexrelid)
+--   FROM pg_class c JOIN pg_index i ON i.indexrelid = c.oid
+--   WHERE c.relname = 'WoodEntryTroza_tenant_codigoPlanta_unico';
+-- Contar repetidos antes de reintentar (debe dar 0 filas):
+--   SELECT "tenantId", upper(btrim("codigoPlanta")), count(*) FROM "WoodEntryTroza"
+--   WHERE "codigoPlanta" IS NOT NULL AND btrim("codigoPlanta") <> ''
+--   GROUP BY 1, 2 HAVING count(*) > 1;
+-- Revertir (contract): DROP INDEX CONCURRENTLY IF EXISTS "WoodEntryTroza_tenant_codigoPlanta_unico";
+
+CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "WoodEntryTroza_tenant_codigoPlanta_unico"
+  ON "WoodEntryTroza" ("tenantId", upper(btrim("codigoPlanta")))
+  WHERE "codigoPlanta" IS NOT NULL AND btrim("codigoPlanta") <> '';

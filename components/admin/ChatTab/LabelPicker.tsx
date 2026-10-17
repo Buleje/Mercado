@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Tag, X, Check, Plus } from "@buleje/design-system/icons";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { THREAD_LABEL_PRESETS, labelChipClass } from "./types";
 
@@ -42,7 +43,7 @@ export function LabelPicker({ value, onChange }: LabelPickerProps) {
     try {
       await onChange(next);
     } catch {
-      window.alert("No se pudo actualizar la etiqueta.");
+      toast.error("No se pudo actualizar la etiqueta.");
     } finally {
       setBusy(false);
     }
@@ -68,7 +69,7 @@ export function LabelPicker({ value, onChange }: LabelPickerProps) {
         <span
           key={l}
           className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold",
+ "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold",
             labelChipClass(l),
           )}
         >
@@ -89,14 +90,14 @@ export function LabelPicker({ value, onChange }: LabelPickerProps) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="inline-flex items-center gap-1 rounded-full border border-dashed border-slate-300 px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-slate-500 hover:border-primary hover:text-primary dark:border-slate-600 dark:text-slate-400"
+        className="inline-flex items-center gap-1 rounded-full border border-dashed border-[var(--rule-base)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] hover:border-primary hover:text-primary dark:border-[var(--rule-base)]"
       >
         <Tag className="h-3 w-3" aria-hidden /> Etiqueta
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 z-20 mt-1 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-          <p className="px-1 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-slate-400">
+        <div className="absolute top-full left-0 z-20 mt-1 w-52 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-lg">
+          <p className="px-1 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
             Etiquetas
           </p>
           <div className="space-y-0.5">
@@ -106,7 +107,7 @@ export function LabelPicker({ value, onChange }: LabelPickerProps) {
                 type="button"
                 onClick={() => toggle(p.name)}
                 disabled={busy}
-                className="flex w-full items-center justify-between gap-2 rounded-lg px-1.5 py-1.5 text-left hover:bg-slate-50 disabled:opacity-50 dark:hover:bg-slate-800"
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-1.5 py-1.5 text-left hover:bg-[var(--surface-sunken)] disabled:opacity-50 dark:hover:bg-[var(--surface-sunken)]"
               >
                 <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold", p.chip)}>
                   {p.name}
@@ -115,7 +116,7 @@ export function LabelPicker({ value, onChange }: LabelPickerProps) {
               </button>
             ))}
           </div>
-          <div className="mt-1.5 flex items-center gap-1 border-t border-slate-100 pt-1.5 dark:border-slate-800">
+          <div className="mt-1.5 flex items-center gap-1 border-t border-[var(--rule-base)] pt-1.5 dark:border-[var(--rule-base)]">
             <input
               value={custom}
               onChange={(e) => setCustom(e.target.value)}
@@ -123,7 +124,7 @@ export function LabelPicker({ value, onChange }: LabelPickerProps) {
               placeholder="Nueva etiqueta…"
               aria-label="Crear etiqueta"
               maxLength={40}
-              className="h-8 min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2 text-xs outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-800"
+              className="h-8 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 text-xs outline-none focus:border-primary"
             />
             <button
               type="button"

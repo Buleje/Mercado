@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION, REFRESH, getSessionPayload } from "@/lib/session";
+import { SESSION, REFRESH, getRefreshPayload, getSessionPayload } from "@/lib/session";
+import { cerrarRefresh } from "@/lib/auth/refresh-sucesor";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { cacheStore } from "@/lib/cache";
 import { logger } from "@/lib/logger";
@@ -19,6 +20,14 @@ export async function POST(req: NextRequest) {
       if (payload?.jti) {
         cacheStore.set(`revoked-access:${payload.jti}`, true, ACCESS_TTL_SEC);
       }
+    }
+
+    // SECURITY 2026-10-09: el logout también mata el refresh token. Antes sólo
+    // se borraba la cookie: una copia del refresh seguía rotando hasta 7 días.
+    const refreshToken = req.cookies.get(REFRESH.COOKIE_NAME)?.value;
+    if (refreshToken) {
+      const refresh = await getRefreshPayload(refreshToken);
+      if (refresh?.jti) cerrarRefresh(cacheStore, refresh.jti);
     }
 
     const response = NextResponse.json({ ok: true });

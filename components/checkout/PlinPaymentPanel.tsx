@@ -39,50 +39,50 @@ export function PlinPaymentPanel({ plin, finalTotal, plinOpNumber, onOpNumberCha
   const seconds = countdown % 60;
 
   return (
-    <div className="bg-linear-to-b from-cyan-50 to-cyan-100/50 rounded-2xl border border-cyan-200 p-4 space-y-4">
+    <div className="bg-linear-to-b from-cyan-50 to-cyan-100/50 dark:from-cyan-950/40 dark:to-cyan-950/20 rounded-2xl border border-cyan-200 dark:border-cyan-800/50 p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-bold text-cyan-600 uppercase tracking-wider">Pago con Plin</p>
+        <p className="text-xs font-bold text-cyan-600 dark:text-[var(--text-secondary)] uppercase tracking-wider">Pago con Plin</p>
         <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold",
-          countdown > 120 ? "bg-cyan-200 text-cyan-700" : "bg-red-100 text-[var(--data-error-600)] animate-pulse")}>
+          countdown > 120 ? "bg-cyan-200 text-cyan-700 dark:bg-cyan-500/20 dark:text-[var(--text-primary)]" : "bg-red-100 dark:bg-red-950/40 text-[var(--data-error-600)] dark:text-[var(--data-error-500)] animate-pulse")}>
           <Clock className="h-3 w-3" />
           {minutes}:{seconds.toString().padStart(2, "0")}
         </div>
       </div>
 
       {/* QR or Phone */}
-      <div className="bg-white rounded-xl p-4 text-center space-y-3">
+      <div className="bg-white dark:bg-[var(--surface-raised)] rounded-xl p-4 text-center space-y-3">
         {plin.image && (
-          <img src={plin.image} alt="QR Plin" className="w-40 h-40 mx-auto rounded-lg" />
+          <img src={plin.image} alt="QR Plin" className="w-40 h-40 mx-auto rounded-lg dark:bg-white" />
         )}
         {plin.phone && (
           <button
             onClick={() => copyText(plin.phone!, "phone")}
-            className="flex items-center gap-2 mx-auto px-3 py-1.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 transition-colors"
+            className="flex items-center gap-2 mx-auto px-3 py-1.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-500/15 dark:hover:bg-cyan-500/25 transition-colors"
           >
-            <span className="text-sm font-bold text-gray-900">{plin.phone}</span>
-            {copied === "phone" ? <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <Copy className="h-3.5 w-3.5 text-gray-400" />}
+            <span className="text-sm font-bold text-gray-900 dark:text-[var(--text-primary)]">{plin.phone}</span>
+            {copied === "phone" ? <Check className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <Copy className="h-3.5 w-3.5 text-gray-400 dark:text-[var(--text-tertiary)]" />}
           </button>
         )}
         {plin.name && (
-          <p className="text-xs text-gray-500">A nombre de: <span className="font-bold text-gray-700">{plin.name}</span></p>
+          <p className="text-xs text-gray-500 dark:text-[var(--text-secondary)]">A nombre de: <span className="font-bold text-gray-700 dark:text-[var(--text-primary)]">{plin.name}</span></p>
         )}
       </div>
 
       {/* Amount to pay */}
-      <div className="flex items-center justify-between bg-white rounded-xl px-4 py-3">
-        <span className="text-sm text-gray-500">Monto a pagar</span>
+      <div className="flex items-center justify-between bg-white dark:bg-[var(--surface-raised)] rounded-xl px-4 py-3">
+        <span className="text-sm text-gray-500 dark:text-[var(--text-secondary)]">Monto a pagar</span>
         <button
           onClick={() => copyText(finalTotal.toFixed(2), "amount")}
           className="flex items-center gap-2"
         >
-          <span className="text-lg font-extrabold text-cyan-600">{formatCurrency(finalTotal)}</span>
-          {copied === "amount" ? <Check className="h-4 w-4 text-[var(--data-success-500)]" /> : <Copy className="h-4 w-4 text-gray-400" />}
+          <span className="text-lg font-extrabold text-cyan-600 dark:text-[var(--text-primary)]">{formatCurrency(finalTotal)}</span>
+          {copied === "amount" ? <Check className="h-4 w-4 text-[var(--data-success-500)]" /> : <Copy className="h-4 w-4 text-gray-400 dark:text-[var(--text-tertiary)]" />}
         </button>
       </div>
 
       {/* Operation number */}
       <div>
-        <label className="text-xs font-bold text-gray-600 mb-1 block">
+        <label className="text-xs font-bold text-gray-600 dark:text-[var(--text-secondary)] mb-1 block">
           <Hash className="h-3 w-3 inline mr-1" />
           Número de operacion Plin
         </label>
@@ -99,8 +99,8 @@ export function PlinPaymentPanel({ plin, finalTotal, plinOpNumber, onOpNumberCha
             className={cn(
               "w-full px-4 py-3 rounded-xl border-2 text-sm font-bold outline-none transition-colors",
               opEntered
-                ? "border-emerald-400 bg-emerald-50 text-[var(--data-success-700)]"
-                : "border-gray-200 bg-white text-gray-900 focus:border-cyan-400"
+                ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 text-[var(--data-success-700)]"
+                : "border-gray-200 dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-sunken)] text-gray-900 dark:text-[var(--text-primary)] focus:border-cyan-400"
             )}
           />
           {opEntered && (
@@ -110,7 +110,7 @@ export function PlinPaymentPanel({ plin, finalTotal, plinOpNumber, onOpNumberCha
       </div>
 
       {countdown === 0 && (
-        <p className="text-xs text-[var(--data-error-600)] font-bold text-center">
+        <p className="text-xs text-[var(--data-error-600)] dark:text-[var(--data-error-500)] font-bold text-center">
           Tiempo agotado. Si ya pagaste, ingresa el número de operacion.
         </p>
       )}

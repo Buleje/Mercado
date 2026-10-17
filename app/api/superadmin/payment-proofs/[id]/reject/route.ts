@@ -61,7 +61,7 @@ export async function POST(
     "",
     `*Motivo:* ${parsed.data.reason}`,
     "",
-    `Volvé a subir el comprobante o respondé este WhatsApp si necesitás ayuda.`,
+    `Vuelve a subir el comprobante o responde este WhatsApp si necesitas ayuda.`,
   ].join("\n");
 
   sendWhatsAppQueued(proof.ownerPhone, msg, {

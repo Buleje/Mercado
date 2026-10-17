@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { headers } from "next/headers";
+import { tenantDeVerificacion } from "../../verificar/_componentes/tenant-verificacion";
 import { CacaoDB } from "@/lib/db/cacao.db";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
 
@@ -41,8 +41,8 @@ export default async function VerificarCacaoPage({ params }: { params: Promise<{
 }
 
 async function TraceBody({ code }: { code: string }) {
-  const h = await headers();
-  const tenantId = h.get("x-tenant-id");
+  // Host (subdominio, dominio propio, `/t/<slug>`) o el código de `/v/…` (ADR-486).
+  const tenantId = await tenantDeVerificacion();
   const t = tenantId ? await CacaoDB.traceByCode(tenantId, code).catch(() => null) : null;
 
   if (!t) {
@@ -77,7 +77,7 @@ async function TraceBody({ code }: { code: string }) {
         <div className="px-6 py-5">
           <div className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-400">Calidad del grano</div>
           <div className="flex h-3 w-full overflow-hidden rounded-full bg-stone-100">
-            {[{ v: t.cut.bien ?? 0, c: "#16a34a" }, { v: t.cut.violeta ?? 0, c: "#f59e0b" }, { v: t.cut.pizarroso ?? 0, c: "#ef4444" }, { v: t.cut.mohoso ?? 0, c: "#b91c1c" }].map((s, i) => s.v > 0 && <div key={i} style={{ width: `${s.v}%`, background: s.c }} />)}
+            {[{ v: t.cut.bien ?? 0, c: "#16a34a" }, { v: t.cut.violeta ?? 0, c: "#ff6b5b" }, { v: t.cut.pizarroso ?? 0, c: "#ef4444" }, { v: t.cut.mohoso ?? 0, c: "#b91c1c" }].map((s, i) => s.v > 0 && <div key={i} style={{ width: `${s.v}%`, background: s.c }} />)}
           </div>
           <div className="mt-2 flex justify-between text-xs text-stone-500">
             <span>Bien fermentado {t.cut.bien ?? 0}%</span>

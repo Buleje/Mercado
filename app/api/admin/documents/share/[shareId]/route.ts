@@ -18,7 +18,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { shareId } = await ctx.params;
-    const ok = await DocumentsDB.revokeShare(auth.tenantId, shareId);
+    const ok = await DocumentsDB.revokeShare(auth.tenantId, shareId, auth.role);
     if (!ok) return NextResponse.json({ error: "not_found_or_already_revoked" }, { status: 404 });
 
     DocumentsDB.log(auth.tenantId, {

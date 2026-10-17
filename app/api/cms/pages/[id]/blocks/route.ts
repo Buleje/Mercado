@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { requireAdmin } from "@/lib/require-admin";
-import {
-  getPageBlocks,
-  createBlock,
-  updateBlock,
-  deleteBlock,
-  reorderBlocks,
-  duplicateBlock,
-} from "@/lib/cms-db/pages";
+import { CmsPagesDB } from "@/lib/db/cms-pages.db";
 import { BlockSchema } from "@/lib/cms/types";
+import { z } from "zod";
+
+// Sin el default de `visible`: guardar sólo las props no debe volver a mostrar un bloque oculto.
+const OrdenSchema = z.array(z.object({ id: z.string().min(1), order: z.number().int().min(0) })).max(200);
+
+const BlockUpdateSchema = BlockSchema.extend({ visible: z.boolean() }).partial();
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -27,7 +27,7 @@ export async function GET(
 
   const { id } = await params;
   try {
-    const blocks = await getPageBlocks(id);
+    const blocks = await CmsPagesDB.listarBloques(auth.tenantId, id);
     return NextResponse.json(blocks);
   } catch (error) {
     logger.error("[cms/blocks] GET error", { err: error instanceof Error ? error.message : String(error) });
@@ -48,6 +48,8 @@ export async function POST(
   const _rl = await applyRateLimit(req, "MODERATE", "cms-pages-X-blocks"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   const { id } = await params;
   try {
@@ -55,12 +57,17 @@ export async function POST(
     
     // Handle special actions
     if (body.action === "reorder") {
-      const blocks = await reorderBlocks(id, body.blockOrders);
+      const orden = OrdenSchema.safeParse(body.blockOrders);
+      if (!orden.success) return NextResponse.json({ error: "Orden inválido" }, { status: 400 });
+      const blocks = await CmsPagesDB.reordenarBloques(auth.tenantId, id, orden.data);
+      if (!blocks) return NextResponse.json({ error: "Página no encontrada" }, { status: 404 });
       return NextResponse.json(blocks);
     }
 
     if (body.action === "duplicate") {
-      const block = await duplicateBlock(body.blockId, id);
+      if (typeof body.blockId !== "string") return NextResponse.json({ error: "blockId requerido" }, { status: 400 });
+      const block = await CmsPagesDB.duplicarBloque(auth.tenantId, id, body.blockId);
+      if (!block) return NextResponse.json({ error: "Bloque no encontrado" }, { status: 404 });
       return NextResponse.json(block);
     }
 
@@ -73,7 +80,8 @@ export async function POST(
       );
     }
     const validated = parsed.data;
-    const block = await createBlock(id, validated);
+    const block = await CmsPagesDB.crearBloque(auth.tenantId, id, validated);
+    if (!block) return NextResponse.json({ error: "Página no encontrada" }, { status: 404 });
 
     return NextResponse.json(block, { status: 201 });
   } catch (error) {
@@ -95,6 +103,8 @@ export async function PUT(
   const _rl = await applyRateLimit(req, "MODERATE", "cms-pages-X-blocks"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   const { id: pageId } = await params;
 
@@ -110,7 +120,7 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const parsed = BlockSchema.partial().safeParse(body);
+    const parsed = BlockUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0]?.message ?? "Datos inválidos" },
@@ -118,8 +128,7 @@ export async function PUT(
       );
     }
     const validated = parsed.data;
-    // F2: pasar pageId + tenantId para prevenir IDOR cross-tenant
-    const block = await updateBlock(pageId, blockId, validated, auth.tenantId);
+    const block = await CmsPagesDB.actualizarBloque(auth.tenantId, pageId, blockId, validated);
     if (!block) {
       return NextResponse.json({ error: "Bloque no encontrado" }, { status: 404 });
     }
@@ -158,8 +167,7 @@ export async function DELETE(
       );
     }
 
-    // F2: pasar pageId + tenantId para prevenir IDOR cross-tenant
-    const result = await deleteBlock(pageId, blockId, auth.tenantId);
+    const result = await CmsPagesDB.eliminarBloque(auth.tenantId, pageId, blockId);
     if (!result) {
       return NextResponse.json({ error: "Bloque no encontrado" }, { status: 404 });
     }

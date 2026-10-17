@@ -22,7 +22,7 @@ const REVIEWS: Review[] = [
     initial: "M",
     name: "María C.",
     zone: "Yarinacocha",
-    text: "Pedí pollo a la brasa un domingo a las 8pm y llegó calentito en 22 min. Mi marido pensó que había salido a comprar.",
+    text: "Pide pollo a la brasa un domingo a las 8pm y llegó calentito en 22 min. Mi marido pensó que había salido a comprar.",
     rating: 5,
   },
   {

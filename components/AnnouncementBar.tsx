@@ -54,7 +54,7 @@ function FirstPurchaseBanner() {
         <span className="text-sm font-medium text-[var(--surface-canvas)]">
           Primera compra con <strong className="font-semibold">10% de descuento</strong>
           <span className="mx-2 text-white/40">·</span>
-          Código <code className="font-mono text-[length:var(--ts-2xs)] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)] tracking-wider">BIENVENIDO</code>
+          Código <code className="font-mono text-[length:var(--ts-2xs)] px-2 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] tracking-wider">BIENVENIDO</code>
         </span>
         <button
           onClick={handleCopy}

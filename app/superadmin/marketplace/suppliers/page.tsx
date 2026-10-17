@@ -1,4 +1,5 @@
 import SuppliersQueueClient from "./SuppliersQueueClient";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 /**
  * /superadmin/marketplace/suppliers
@@ -10,14 +11,16 @@ import SuppliersQueueClient from "./SuppliersQueueClient";
 export default function SuperAdminSuppliersPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-6">
+      <div className="mb-6 flex items-center gap-2">
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">
           Cola de proveedores
         </h1>
-        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          Revisa las solicitudes de registro de proveedores y aprueba o
-          rechaza cada una. Las aprobaciones generan un API key único.
-        </p>
+        <InfoTip
+          side="bottom"
+          title="Cola de proveedores"
+          what="Solicitudes de registro de proveedores: aprueba o rechaza cada una."
+          affects="Al aprobar, se genera una API key única para el proveedor."
+        />
       </div>
       <SuppliersQueueClient />
     </div>

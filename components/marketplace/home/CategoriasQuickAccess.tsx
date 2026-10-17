@@ -70,7 +70,7 @@ export default function CategoriasQuickAccess() {
                   className={cn(
                     "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full",
                     "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-                    "transition-all duration-300 group-hover:scale-110 group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
+                    "transition-all duration-300 group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-[var(--accent)]",
                   )}
                 >
                   <Icon className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={1.5} aria-hidden />

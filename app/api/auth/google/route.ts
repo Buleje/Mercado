@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         error: "Google OAuth no configurado",
-        message: "Faltan GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en el .env. Configurá ambos desde Google Cloud Console (APIs & Services → Credentials) y reiniciá el servidor.",
+        message: "Faltan GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en el .env. Configura ambos desde Google Cloud Console (APIs & Services → Credentials) y reinicia el servidor.",
         setupUrl: "https://console.cloud.google.com/apis/credentials",
       },
       { status: 503 }
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   if (!enabled) {
     logger.info("[oauth/google] OAuth flag disabled for tenant", { tenantId });
     return NextResponse.json(
-      { error: "Google OAuth está deshabilitado para este tenant. Activá el feature flag oauth-google." },
+      { error: "Google OAuth está deshabilitado para este tenant. Activa el feature flag oauth-google." },
       { status: 404 }
     );
   }

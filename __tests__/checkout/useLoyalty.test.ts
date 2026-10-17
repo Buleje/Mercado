@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import {
-  useLoyalty,
-  getTierDiscountPct,
-  TIER_DISCOUNT,
-} from "@/components/checkout/hooks/useLoyalty";
+import { useLoyalty } from "@/components/checkout/hooks/useLoyalty";
 import { useCheckoutState } from "@/components/checkout/hooks/useCheckoutState";
 
 const mockFetch = vi.fn();
@@ -18,26 +14,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("getTierDiscountPct", () => {
-  it("retorna 0 para tier null", () => {
-    expect(getTierDiscountPct(null)).toBe(0);
-  });
-
-  it("retorna 0 para tier desconocido", () => {
-    expect(getTierDiscountPct("bronce")).toBe(0);
-  });
-
-  it("retorna los porcentajes correctos por tier", () => {
-    expect(getTierDiscountPct("plata")).toBe(2);
-    expect(getTierDiscountPct("oro")).toBe(4);
-    expect(getTierDiscountPct("diamante")).toBe(6);
-  });
-
-  it("la tabla TIER_DISCOUNT contiene los 3 niveles esperados", () => {
-    expect(TIER_DISCOUNT).toEqual({ plata: 2, oro: 4, diamante: 6 });
-  });
-});
-
+// El descuento por «tier» (plata 2 % / oro 4 % / diamante 6 %) se retiró del
+// checkout el 2026-10-08: el servidor no lo cobraba y todo pedido con tier caía
+// en 422. El descuento automático lo cotiza el servidor
+// (`calcularDescuentoAutomatico`); useLoyalty solo carga puntos y tier.
 describe("useLoyalty", () => {
   it("carga puntos y tier al llamar fetchPoints", async () => {
     // fetchPoints hace primero un pre-check de sesión en /api/auth/customer/me

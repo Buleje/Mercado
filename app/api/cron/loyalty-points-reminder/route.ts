@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { withCronAuth } from "@/lib/cron-auth";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +14,7 @@ import { logger } from "@/lib/logger";
  * Sugerencia vercel.json: "0 10 1 * *" (1ero de cada mes a las 10 AM)
  * Autorización: Bearer <CRON_SECRET>
  */
-export const GET = withCronAuth("loyalty-points-reminder", async (req) => {
+export const GET = withCronAuth("loyalty-points-reminder", async (_req) => {
   try {
     const result = await withCronRetry("loyalty-points-reminder", async () => {
       // Find all active tenants

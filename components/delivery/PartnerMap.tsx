@@ -52,7 +52,7 @@ const STORES_REFRESH_MS = 120_000; // 2 min
 
 const HEAT_COLOR: Record<NearbyStore["heat"], string> = {
   high: "#dc2626", // rojo: alta demanda
-  medium: "#d97706", // naranja: media
+  medium: "#f0503f", // naranja: media
   low: "#737373", // gris: baja
 };
 
@@ -261,7 +261,7 @@ export default function PartnerMap({ partnerLat, partnerLng }: Props) {
 
       const dashed = hasRealCoords ? "" : "border-style:dashed;";
       const icon = L.divIcon({
-        html: `<div style="background:#fbbf24;color:#111;font-weight:900;width:36px;height:36px;border-radius:50%;border:3px solid white;${dashed}display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-size:11px;">S/${Math.round(offer.feeOffered)}</div>`,
+        html: `<div style="background:#ff8676;color:#111;font-weight:900;width:36px;height:36px;border-radius:50%;border:3px solid white;${dashed}display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-size:11px;">S/${Math.round(offer.feeOffered)}</div>`,
         className: "",
         iconSize: [36, 36],
         iconAnchor: [18, 18],

@@ -17,6 +17,16 @@ import { PRISMA_DIRECT_LEGACY } from "./eslint.legacy-allowlist.mjs";
 const escapeGlobChars = (s) => s.replace(/[[\]()]/g, (m) => `\\${m}`);
 const PRISMA_DIRECT_LEGACY_ESCAPED = PRISMA_DIRECT_LEGACY.map(escapeGlobChars);
 
+// ADR-457 · lo que una pieza (`extensiones/**`) no puede importar: clientes de
+// base (`@/lib/prisma*` y relativos a `lib/prisma*`, el cliente generado,
+// `@prisma/*`, `pg`) y módulos de Node que tocan disco, procesos o el cargador.
+// Una sola expresión para el import estático y para import(); la variante
+// esquery escribe "/" como `\u002F` (esquery corta el regex en la primera "/").
+const PIEZA_MODULO_PROHIBIDO =
+  "(^|/)lib/prisma|(^|/)lib/generated/|^@prisma/|^pg(/|-|$)|" +
+  "^(node:)?(fs|child_process|module|vm|worker_threads|cluster|net|tls|dgram|http2?|https|inspector|v8|process|repl)(/|$)";
+const PIEZA_MODULO_PROHIBIDO_ESQUERY = PIEZA_MODULO_PROHIBIDO.replaceAll("/", "\\u002F");
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -78,12 +88,19 @@ const eslintConfig = defineConfig([
         destructuredArrayIgnorePattern: "^_",
       }],
       // React Compiler rules (eslint-plugin-react-hooks v7+).
-      // STATUS 2026-05-19: TODAS desactivadas — el codebase no está migrado
-      // al React Compiler y v7 detecta patrones legacy masivamente (refs en
-      // render, mutación, factories de componentes en render, etc.).
-      // eslint-config-next@16.1.6 requiere react-hooks ^7.0.0 transitivo
-      // → no podemos downgrade. Si en el futuro migramos al React Compiler
-      // (ADR pendiente), activar gradualmente con "warn".
+      // STATUS 2026-09-22: censadas sobre el repo entero (3.305 archivos:
+      // components/marketplace + components/admin + app). Resultado medido:
+      //   593 set-state-in-effect · 153 exhaustive-deps  → patrón, NO bloquean el compiler
+      //    79 refs · 39 purity · 20 static-components · 19 immutability
+      //    14 preserve-manual-memoization                → 171 DURAS: el compiler
+      //                                                     salta (bail out) esos componentes
+      // Las 6 duras pasan a "warn" para tener el residuo a la vista y bajarlo; las de
+      // patrón siguen en "off" porque 746 warnings enterrarían la señal.
+      // Camino a compilationMode:"infer" = bajar esas 171. Ver next.config.ts.
+      //
+      // Siguen TODAS en "off" a propósito: lint-staged corre `eslint --fix --max-warnings 0`,
+      // así que un solo "warn" bloquearía el commit en 171 archivos. El residuo se mide
+      // bajo demanda, sin tocar el gate:  npm run compiler:census
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/set-state-in-render": "off",
       "react-hooks/refs": "off",
@@ -248,7 +265,9 @@ const eslintConfig = defineConfig([
       "app/api/billing/webhook/**",
       "app/api/marketplace/payment/**",
       "app/api/superadmin/**",
+      "app/superadmin/**", // superadmin = plataforma cross-tenant por diseño (gestiona todos los tenants)
       "app/api/cron/**",
+      "app/api/prestamos/cron/**", // crons que iteran TODOS los tenants activos (recordatorios/mora) — cross-tenant por diseño
       "app/api/compliance/**",
       "app/api/debug-tenant-leak/**",
       "scripts/**",
@@ -260,14 +279,18 @@ const eslintConfig = defineConfig([
       ...PRISMA_DIRECT_LEGACY_ESCAPED,
     ],
     rules: {
-      // STATUS 2026-05-19: bajado de "error" a "warn". Razón: el allowlist
-      // tenía 53/328 entries broken por glob escape (fix en commit 14943294)
-      // y aún quedan ~10-15 archivos no allowlisted con prisma directo
-      // pre-existente. Subir de vuelta a "error" cuando se complete la
-      // migración a lib/db/*.db.ts. Hasta entonces, los warnings siguen
-      // visibles en CI logs para code review.
+      // STATUS 2026-06-26: SUBIDO de vuelta a "error" (lock-and-progress completo).
+      // Auditoría de aislamiento multi-tenant (23 agentes, verificación adversarial)
+      // confirmó 0 violaciones ACTIVAS: todo prisma.* directo del repo está cubierto
+      // por la allowlist legacy, los `ignores` permanentes, o un `eslint-disable`
+      // inline documentado. Verificado corriendo eslint sobre los 38 candidatos no
+      // allowlisted → 0 flagged. Con la rule en "error", cualquier prisma.<modelo>
+      // directo NUEVO (sin tenantId+cache+audit de lib/db) bloquea CI. La allowlist
+      // se sigue recortando al migrar archivos legacy a lib/db/*.db.ts.
+      // Histórico: bajada a "warn" 2026-05-19 por allowlist con glob-escape roto
+      // (fix 14943294) + ~10-15 archivos sin allowlistar, ya resueltos.
       "no-restricted-properties": [
-        "warn",
+        "error",
         {
           object: "prisma",
           message:
@@ -350,6 +373,85 @@ const eslintConfig = defineConfig([
             "CallExpression[callee.object.object.name='prisma'][callee.property.name=/^(deleteMany|updateMany)$/] > ObjectExpression > Property[key.name='where'] > ObjectExpression:not(:has(> Property[key.name='tenantId']))",
           message:
             "CRITICAL ZONE (CRIT-1): deleteMany/updateMany sin tenantId en este path PROHIBIDO. Estos endpoints son destrucción de datos masiva — el guard tenantId es zero-tolerance. Si necesitas borrar modelos indirectos (ADR-101), pre-filtrar los IDs por tenant primero y agregar eslint-disable-next-line con justificación + referencia al ADR.",
+        },
+      ],
+    },
+  },
+  // ────────────────────────────────────────────────────────────────────────────
+  // ADR-457 · Piezas (`extensiones/**`): código a medida que el superadmin
+  // prende por negocio. Una pieza lee por DB classes como cualquier pantalla
+  // (tenantId primero, caché, auditoría): nada de clientes de base (`prisma`,
+  // `prisma-rls` —su `rlsSuperadmin` ve todos los negocios—, `prisma-readonly`,
+  // `prismaForTenant`, `pg`), nada de módulos de Node que tocan disco, procesos
+  // o el cargador (`fs`, `child_process`, `module`/`createRequire`, `vm`…), ni
+  // `process.env` (los secretos del servidor) ni `eval`.
+  //
+  // Endurecido tras la auditoría de seguridad del 01-10: aplica también a
+  // .js/.mjs/.cjs; `import()` sólo con un texto literal; `require` prohibido
+  // del todo (una pieza es ESM). `no-restricted-imports` ve los import/export
+  // estáticos; lo dinámico lo mira `no-restricted-syntax`, que acá repite los
+  // selectores de catch vacío del bloque general (un bloque posterior REEMPLAZA
+  // las opciones de la regla, no las suma).
+  // ────────────────────────────────────────────────────────────────────────────
+  {
+    files: ["extensiones/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/lib/tenant",
+              importNames: ["prismaForTenant"],
+              message: "ADR-457: una pieza lee por lib/db/*.db.ts, no con un cliente de base.",
+            },
+          ],
+          patterns: [
+            {
+              regex: PIEZA_MODULO_PROHIBIDO,
+              message: "ADR-457: una pieza no importa clientes de base ni módulos de Node que tocan disco, procesos o el cargador.",
+            },
+          ],
+        },
+      ],
+      "no-eval": "error",
+      "no-implied-eval": "error",
+      "no-new-func": "error",
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: `ImportExpression[source.type='Literal'][source.value=/${PIEZA_MODULO_PROHIBIDO_ESQUERY}/]`,
+          message: "ADR-457: una pieza no importa prisma, pg ni módulos de Node peligrosos (tampoco con import()).",
+        },
+        {
+          selector: "ImportExpression:not([source.type='Literal'])",
+          message: "ADR-457: import() en una pieza sólo con un texto literal (si no, ESLint no puede ver qué carga).",
+        },
+        {
+          selector: "CallExpression[callee.name='require']",
+          message: "ADR-457: una pieza es ESM: nada de require().",
+        },
+        {
+          selector: "Identifier[name='createRequire']",
+          message: "ADR-457: createRequire saltea los controles de import de una pieza.",
+        },
+        {
+          selector: "MemberExpression[object.name='process'][property.name=/^(env|binding|dlopen|mainModule)$/]",
+          message: "ADR-457: una pieza no lee process.env (secretos del servidor): su configuración son sus opciones.",
+        },
+        {
+          selector: "MemberExpression[object.property.name='process'][property.name=/^(env|binding|dlopen|mainModule)$/]",
+          message: "ADR-457: una pieza no lee process.env (secretos del servidor): su configuración son sus opciones.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='catch'] > ArrowFunctionExpression[body.type='BlockStatement'][body.body.length=0]",
+          message: "Empty .catch() suppresses errors silently. Use a logger or explain the intentional swallow.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='catch'] > ArrowFunctionExpression[body.type='Literal'][body.value=null]",
+          message: "`.catch(() => null)` hides errors. Log first, then return null.",
         },
       ],
     },

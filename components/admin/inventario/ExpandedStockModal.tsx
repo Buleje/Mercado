@@ -1,11 +1,15 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
-import { useMemo, useState } from "react";
+import { DataTable, SectionTitle } from "@buleje/design-system";
+import { useId, useMemo, useRef, useState } from "react";
 import { X, Search, ArrowUpDown, ArrowUp, ArrowDown, Package, AlertTriangle, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbProduct, DbInventoryMovement } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -68,6 +72,10 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "inventario-completo" });
 
   useScrollLock(true);
 
@@ -130,12 +138,12 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
   }, [enriched, search, sortKey, sortDir]);
 
   return (
-    <div className="modal-backdrop flex items-center justify-center" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-[var(--surface-raised)] w-[95vw] max-w-7xl h-[90vh] rounded-xl flex flex-col overflow-hidden">
+    <div className="modal-backdrop flex items-center justify-center" onClick={e => e.target === e.currentTarget && !ventana.fijado && onClose()}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] w-[95vw] max-w-7xl h-[90vh] rounded-xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
+        <div {...ventana.asaProps} className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Inventario completo</SectionTitle>
+            <SectionTitle id={titleId} className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Inventario completo</SectionTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{filtered.length} productos activos</p>
           </div>
           <div className="flex items-center gap-3">
@@ -146,10 +154,11 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar producto..."
-                className="pl-9 pr-3 py-2 w-56 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="pl-9 pr-3 h-10 w-56 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+            <ControlesDeVentana ventana={ventana} />
+            <button aria-label="Cerrar" onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
               <X className="h-5 w-5 text-[var(--text-secondary)]" />
             </button>
           </div>
@@ -157,30 +166,30 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
 
         {/* Table */}
         <div className="flex-1 overflow-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-gray-50 dark:bg-surface z-10">
-              <tr className="text-left">
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-12">#</th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("name")}>
+          <DataTable className="w-full">
+            <thead className="sticky top-0 z-10">
+              <tr>
+                <th className="w-12">#</th>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("name")}>
                   <span className="inline-flex items-center gap-1">Producto <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Categoría</th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("stock")}>
+                <th>Categoría</th>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("stock")}>
                   <span className="inline-flex items-center gap-1">Stock <SortIcon col="stock" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("cost")}>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("cost")}>
                   <span className="inline-flex items-center gap-1">Costo <SortIcon col="cost" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("price")}>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("price")}>
                   <span className="inline-flex items-center gap-1">Precio <SortIcon col="price" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("margin")}>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("margin")}>
                   <span className="inline-flex items-center gap-1">Margen <SortIcon col="margin" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("movement")}>
+                <th className="cursor-pointer select-none" onClick={() => toggleSort("movement")}>
                   <span className="inline-flex items-center gap-1">Movimiento <SortIcon col="movement" sortKey={sortKey} sortDir={sortDir} /></span>
                 </th>
-                <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Rotación</th>
+                <th>Rotación</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
@@ -191,28 +200,28 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 const recentMove = p.daysSinceMove !== null && p.daysSinceMove <= 7;
 
                 return (
-                  <tr key={p.id} className={cn("hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors", noStock && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
-                    <td className="px-4 py-3 text-xs text-[var(--text-tertiary)] font-mono">{i + 1}</td>
+                  <tr key={p.id} className={cn("dark:hover:bg-surface/50", noStock && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
+                    <td className="text-[var(--text-tertiary)] font-mono">{i + 1}</td>
 
                     {/* Producto */}
-                    <td className="px-4 py-3">
+                    <td>
                       <div className="flex items-center gap-2">
                         <span className={cn("h-2.5 w-2.5 rounded-full shrink-0",
-                          noStock ? "bg-[var(--data-error-500)]" : lowStock ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]"
+                          noStock ? "bg-[var(--data-error-500)]" : lowStock ? "bg-[var(--data-warning-500)]" : "bg-primary/10"
                         )} />
                         <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[220px]">{p.name}</span>
                       </div>
                     </td>
 
                     {/* Categoría */}
-                    <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted capitalize text-xs">{p.category}</td>
+                    <td className="text-[var(--text-secondary)] dark:text-muted capitalize">{p.category}</td>
 
                     {/* Stock */}
-                    <td className="px-4 py-3">
+                    <td>
                       <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
                         noStock ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]" :
                         lowStock ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]" :
-                        "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                       )}>
                         {noStock && <AlertTriangle className="h-3 w-3" />}
                         {p.stock ?? 0}
@@ -220,18 +229,18 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     </td>
 
                     {/* Costo */}
-                    <td className="px-4 py-3">
+                    <td>
                       {p.costPrice != null && p.costPrice > 0
-                        ? <span className="font-mono text-xs text-[var(--text-secondary)]">S/{Number(p.costPrice).toFixed(2)}</span>
+                        ? <span className="font-mono text-xs text-[var(--text-secondary)]">{formatCurrency(Number(p.costPrice))}</span>
                         : <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>
                       }
                     </td>
 
                     {/* Precio venta */}
-                    <td className="px-4 py-3 font-bold text-primary text-xs">S/{Number(p.price).toFixed(2)}</td>
+                    <td className="font-bold text-primary">{formatCurrency(Number(p.price))}</td>
 
                     {/* Margen */}
-                    <td className="px-4 py-3">
+                    <td>
                       {p.margin ? (
                         <div className="flex flex-col">
                           <span className={cn("text-xs font-bold",
@@ -242,7 +251,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                             {Number(p.margin.pct).toFixed(0)}%
                           </span>
                           <span className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                            S/{Number(p.margin.soles).toFixed(2)}
+                            {formatCurrency(Number(p.margin.soles))}
                           </span>
                         </div>
                       ) : (
@@ -251,7 +260,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     </td>
 
                     {/* Movimiento (sin movimiento / con movimiento) */}
-                    <td className="px-4 py-3">
+                    <td>
                       {p.daysSinceMove === null ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]">
                           Nunca vendido
@@ -261,7 +270,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                           <TrendingDown className="h-3 w-3" /> {p.daysSinceMove}d sin mov.
                         </span>
                       ) : recentMove ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]">
                           <TrendingUp className="h-3 w-3" /> Hace {p.daysSinceMove}d
                         </span>
                       ) : (
@@ -272,7 +281,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     </td>
 
                     {/* Rotación */}
-                    <td className="px-4 py-3">
+                    <td>
                       {(() => {
                         const spw = p.salesWeek;
                         if (spw > 10) return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-orange-950/30 dark:text-[var(--data-warning-500)]">Rápido</span>;
@@ -286,7 +295,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 );
               })}
             </tbody>
-          </table>
+          </DataTable>
 
           {filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)]">
@@ -297,13 +306,14 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
         </div>
 
         {/* Footer summary */}
-        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface flex flex-wrap items-center gap-4 text-xs shrink-0">
+        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] flex flex-wrap items-center gap-4 text-xs shrink-0">
           <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{filtered.length} productos</span>
           <span className="text-[var(--data-error-500)] font-semibold">{filtered.filter(p => (p.stock ?? 0) === 0).length} sin stock</span>
           <span className="text-[var(--data-error-500)] font-semibold">{filtered.filter(p => p.daysSinceMove === null || (p.daysSinceMove ?? 0) > 30).length} sin movimiento</span>
           <span className="text-[var(--data-warning-500)] font-semibold">{filtered.filter(p => p.margin && p.margin.pct < 15).length} margen bajo (&lt;15%)</span>
           <span className="text-[var(--data-success-500)] font-semibold">{filtered.filter(p => p.margin && p.margin.pct >= 30).length} margen alto (&gt;30%)</span>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

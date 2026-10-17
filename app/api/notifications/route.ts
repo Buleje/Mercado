@@ -55,10 +55,10 @@ export async function POST(req: NextRequest) {
     const storeName = settings?.businessName ?? "Buleje";
 
     const STATUS_MSGS: Record<string, string> = {
-      pendiente: `ðŸ›’ ¡Hola! Tu pedido #${order.id.slice(-6)} en ${storeName} ha sido recibido. Te confirmaremos pronto. Total: S/${order.total.toFixed(2)}`,
-      confirmado: `âœ… ¡Tu pedido #${order.id.slice(-6)} ha sido confirmado! Estamos preparándolo. Total: S/${order.total.toFixed(2)}`,
-      en_camino: `ðŸšš ¡Tu pedido #${order.id.slice(-6)} va en camino! Pronto llegará a tu dirección.`,
-      entregado: `ðŸ“¦ ¡Pedido #${order.id.slice(-6)} entregado! Gracias por tu compra en ${storeName}. ¡Vuelve pronto!`,
+      pendiente: `🛒 ¡Hola! Tu pedido #${order.id.slice(-6)} en ${storeName} ha sido recibido. Te confirmaremos pronto. Total: S/${order.total.toFixed(2)}`,
+      confirmado: `✅ ¡Tu pedido #${order.id.slice(-6)} ha sido confirmado! Estamos preparándolo. Total: S/${order.total.toFixed(2)}`,
+      en_camino: `🚚 ¡Tu pedido #${order.id.slice(-6)} va en camino! Pronto llegará a tu dirección.`,
+      entregado: `📦 ¡Pedido #${order.id.slice(-6)} entregado! Gracias por tu compra en ${storeName}. ¡Vuelve pronto!`,
       cancelado: `âŒ Tu pedido #${order.id.slice(-6)} ha sido cancelado. Para más info contacta al ${settings?.businessPhone ?? "tienda"}.`,
     };
 

@@ -17,7 +17,8 @@ const MovementSchema = z.object({
   productId: z.number().positive(),
   type: z.string().min(1).max(50),
   lossType: z.string().max(50).optional(),
-  quantity: z.number().positive(),
+  // `InventoryMovement.quantity` es Int: un 2,5 llegaba a Prisma y volvía como 500 sin explicación.
+  quantity: z.number().int("La cantidad tiene que ser un número entero").positive(),
   reference: z.string().max(100).optional(),
   warehouseId: z.string().optional(),
   notes: z.string().max(300).optional(),
@@ -47,6 +48,17 @@ export async function GET(req: NextRequest) {
       // aislamiento.
       const movements = await InventoryMovementsDB.getByProduct(auth.tenantId, Number(productId));
       return NextResponse.json(movements);
+    }
+
+    // Paginado por cursor cuando la pantalla lo pide. Sin `paged` se responde
+    // como siempre (un array de los últimos 200): hay otros consumidores.
+    if (searchParams.get("paged") === "1") {
+      const limitRaw = Number(searchParams.get("limit") ?? 100);
+      const page = await InventoryMovementsDB.listWithCursor(auth.tenantId, {
+        limit: Number.isFinite(limitRaw) ? limitRaw : 100,
+        ...(searchParams.get("cursor") ? { cursor: searchParams.get("cursor")! } : {}),
+      });
+      return NextResponse.json(page);
     }
 
     return NextResponse.json(await InventoryMovementsDB.getAll(auth.tenantId));
@@ -99,8 +111,10 @@ export async function POST(req: NextRequest) {
     // Default: record a movement
     const parsed = MovementSchema.safeParse(raw);
     if (!parsed.success) {
+      // La cantidad entera es la regla que se rompe desde la pantalla: se dice tal cual.
+      const entero = parsed.error.issues.find((i) => i.path[0] === "quantity" && "expected" in i && i.expected === "int");
       return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+        { error: entero?.message ?? "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 }
       );
     }

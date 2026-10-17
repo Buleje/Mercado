@@ -1,9 +1,12 @@
 "use client";
 
-import { LoadingState } from "@buleje/design-system";
+import { toast } from "sonner";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { FileText, Download, Loader2, RefreshCw, TrendingUp, Package, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateLong, formatDateShort } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -48,7 +51,7 @@ type WeeklyData = {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function getWeekRange() {
@@ -99,9 +102,9 @@ export default function WeeklyReportCard() {
     setError(null);
     try {
       const [dashRes, salesRes, expRes] = await Promise.all([
-        fetch("/api/daily-report").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch("/api/daily-report").then(r => r.ok ? r.json() : null).catch(sinDato("Reporte semanal /api/daily-report")),
         fetch("/api/sales").then(r => r.ok ? r.json() : []).catch(() => []),
-        fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null).catch(sinDato("Reporte semanal /api/expenses/summary")),
       ]);
 
       const { monday, sunday } = getWeekRange();
@@ -118,7 +121,7 @@ export default function WeeklyReportCard() {
       }, 0);
       const margin = weekTotal > 0 ? ((weekTotal - totalCost) / weekTotal) * 100 : 0;
 
-      const weekLabel = `${monday.toLocaleDateString("es-PE", { day: "numeric", month: "short" })} — ${sunday.toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}`;
+      const weekLabel = `${formatDateShort(monday)} — ${formatDate(sunday)}`;
 
       setData({
         dashboard: dashRes,
@@ -151,7 +154,7 @@ export default function WeeklyReportCard() {
       const autoTable = (await import("jspdf-autotable")).default;
 
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const now = new Date().toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" });
+      const now = formatDateLong(new Date());
 
       // Header
       doc.setFillColor(45, 106, 79);
@@ -245,7 +248,7 @@ export default function WeeklyReportCard() {
 
       doc.save(`reporte-semanal-${data.weekLabel.replace(/\s/g, "-")}.pdf`);
     } catch {
-      alert("Error al generar el PDF. Intente de nuevo.");
+      toast.error("Error al generar el PDF. Intente de nuevo.");
     } finally {
       setGeneratingPdf(false);
     }
@@ -257,31 +260,33 @@ export default function WeeklyReportCard() {
   const maxDay = data ? Math.max(...data.salesByDay.map(d => d.total), 1) : 1;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]  overflow-hidden">
-      {/* Header */}
-      <div className="bg-primary px-5 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-white" />
-          <span className="text-white font-semibold text-sm">Reporte Semanal</span>
-        </div>
+    <section aria-label="Esta semana" className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      {/* La cabecera de un bloque del Resumen (2026-10-11): antes una franja
+          turquesa con texto blanco (3,2:1) que no se parecía a ningún otro
+          bloque de la sección; ahora el título del bloque y «Actualizar». */}
+      <div className="flex min-h-12 items-center gap-2 px-4 pt-2 sm:px-6">
+        <FileText className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+        <CardTitle className="text-sm font-bold">Esta semana</CardTitle>
         <button
+          type="button"
           onClick={fetchData}
           disabled={loading}
-          className="text-white/70 hover:text-white transition-colors"
-          aria-label="Actualizar"
+          className="ml-auto inline-flex h-12 w-12 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+          aria-label="Actualizar la semana"
+          title="Actualizar"
         >
-          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden />
         </button>
       </div>
 
       {/* Body */}
-      <div className="p-5">
+      <div className="px-4 pb-4 pt-2 sm:px-6 sm:pb-6">
         {loading ? (
           <LoadingState />
         ) : error ? (
           <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-center py-6">{error}</p>
         ) : data ? (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Periodo */}
             <p className="text-xs text-[var(--text-tertiary)]">{data.weekLabel}</p>
 
@@ -315,7 +320,7 @@ export default function WeeklyReportCard() {
                   return (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
                       <div
-                        className="w-full rounded-t-sm bg-primary dark:bg-[var(--accent-soft)] min-h-[2px] transition-all"
+                        className="w-full rounded-t-sm bg-primary dark:bg-primary/10 min-h-[2px] transition-all"
                         style={{ height: `${Math.max(pct, 2)}%` }}
                         title={fmt(d.total)}
                       />
@@ -359,7 +364,7 @@ export default function WeeklyReportCard() {
               onClick={handleDownloadPdf}
               disabled={generatingPdf}
               className={cn(
-                "w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                "w-full flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-medium transition-colors",
                 "bg-primary hover:bg-primary-dark text-white",
                 "disabled:opacity-60 disabled:cursor-not-allowed"
               )}
@@ -379,6 +384,6 @@ export default function WeeklyReportCard() {
           </div>
         ) : null}
       </div>
-    </div>
+    </section>
   );
 }

@@ -59,7 +59,7 @@ describe("B-P0-2 · cobrarPorCliente usa updateMany TOCTOU guard (anti-overpayme
     expect(call.where).toMatchObject({
       id: "f1",
       tenantId: "tenant-1",
-      status: "ACTIVO",
+      status: { in: ["ACTIVO", "VENCIDO"] }, // VENCIDO también se cobra (Me deben 08-10)
       saldo: { gte: 40 },
     });
     expect(call.data.saldo).toEqual({ decrement: 40 });

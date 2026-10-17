@@ -83,7 +83,7 @@ export default function NosotrosSection() {
           <figcaption className="mt-5 inline-flex items-center gap-3">
             <span
               aria-hidden
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] font-extrabold text-sm"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-extrabold text-sm"
             >
               B
             </span>
@@ -135,7 +135,7 @@ export default function NosotrosSection() {
               >
                 <span
                   aria-hidden
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-5 transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-5 transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
                 >
                   <Icon className="h-5 w-5" strokeWidth={2} />
                 </span>

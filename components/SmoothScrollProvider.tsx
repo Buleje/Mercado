@@ -16,8 +16,19 @@ import Lenis from "lenis";
  * - Se desactiva en touch-only puro (mobile pequeño) — la física
  *   nativa de iOS/Android ya es excelente. Tablets con stylus/mouse
  *   sí aprovechan Lenis.
- * - Expone `data-lenis-prevent` para contenedores internos (drawers,
- *   modals, dropdowns).
+ * - `allowNestedScroll: true` — sin esto Lenis se queda con la rueda de
+ *   TODA la página y las cajas con scroll propio (tablas altas, listas
+ *   de un modal, dropdowns largos) no se mueven: girar la rueda encima
+ *   de una desliza la página por detrás. Medido en el Cubicador con un
+ *   lote de 700 filas: 20 notches sobre la tabla y su `scrollTop` seguía
+ *   en 0 mientras la página se iba sola y frenaba de a poco — que es el
+ *   «se mueve solo, sube y baja» que se siente al querer ver el final.
+ *   Con la opción puesta, la caja interna scrollea nativa mientras le
+ *   queda recorrido y Lenis retoma la página cuando se termina, que es
+ *   lo que hace el navegador sin scroll suave. Lenis cachea el
+ *   `getComputedStyle` de cada nodo 2 s, así que no cuesta por evento.
+ * - `data-lenis-prevent` sigue disponible para forzar el caso de un
+ *   contenedor que Lenis no detecte (drawers, modals, dropdowns).
  */
 export default function SmoothScrollProvider() {
   useEffect(() => {
@@ -62,6 +73,8 @@ export default function SmoothScrollProvider() {
         syncTouchLerp: 0.055,
         // Gesto de "drag" (touchpad/trackpad de 2 dedos) también animado.
         gestureOrientation: "vertical",
+        // La rueda sobre una caja con scroll propio mueve ESA caja (ver arriba).
+        allowNestedScroll: true,
       });
       document.documentElement.classList.add("lenis", "lenis-smooth");
       const raf = (time: number) => {

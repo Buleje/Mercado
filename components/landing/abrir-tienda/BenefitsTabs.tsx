@@ -6,7 +6,7 @@
  * destacada con preview lado a lado.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import {
   ShoppingBag,
@@ -282,7 +282,7 @@ function CategoryMockup({ category }: { category: Category }) {
               23 compras · S/ 487 total
             </p>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
             <Star className="h-3 w-3 fill-current" strokeWidth={0} />
             VIP
           </span>
@@ -314,14 +314,38 @@ function CategoryMockup({ category }: { category: Category }) {
   );
 }
 
+const TAB_BADGES: Record<CategoryId, string> = {
+  vender: "Te encontró un cliente",
+  cobrar: "Pago recibido · S/ 28.50",
+  entregar: "Repartidor asignado",
+  fidelizar: "Reseña 5★ nueva",
+};
+
 export default function BenefitsTabs() {
   const [active, setActive] = useState<CategoryId>("vender");
+  const [paused, setPaused] = useState(false);
   const cat = CATEGORIES.find((c) => c.id === active) ?? CATEGORIES[0];
   const Icon = cat.icon;
   const headlineParts = cat.headline.split(cat.highlight);
 
+  // Auto-rotación de tabs (showcase): avanza cada 4.5s, se pausa al pasar el
+  // mouse. El timeout depende de `active` → un click reinicia el ciclo en vez
+  // de saltar enseguida.
+  useEffect(() => {
+    if (paused) return;
+    const id = setTimeout(() => {
+      const idx = CATEGORIES.findIndex((c) => c.id === active);
+      setActive(CATEGORIES[(idx + 1) % CATEGORIES.length].id);
+    }, 4500);
+    return () => clearTimeout(id);
+  }, [active, paused]);
+
   return (
-    <section className="py-20 sm:py-28 bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)]">
+    <section
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      className="py-20 sm:py-28 bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)]"
+    >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12">
@@ -356,7 +380,7 @@ export default function BenefitsTabs() {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActive(c.id)}
-                className={`group inline-flex items-center gap-2 px-5 py-3 rounded-full text-sm font-extrabold transition-all ${
+                className={`group relative inline-flex items-center gap-2 overflow-hidden px-5 py-3 rounded-full text-sm font-extrabold transition-all ${
                   isActive
                     ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-md"
                     : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--rule-soft)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
@@ -364,6 +388,17 @@ export default function BenefitsTabs() {
               >
                 <TabIcon className="h-4 w-4" strokeWidth={2.25} />
                 {c.label}
+                {/* Barra de progreso del auto-rotado en el tab activo */}
+                {isActive && !paused && (
+                  <m.span
+                    key={`${c.id}-progress`}
+                    aria-hidden
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ duration: 4.5, ease: "linear" }}
+                    className="absolute inset-x-0 bottom-0 h-[3px] origin-left bg-[var(--accent)]"
+                  />
+                )}
               </button>
             );
           })}
@@ -377,8 +412,23 @@ export default function BenefitsTabs() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8"
+            className="relative grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8"
           >
+            {/* Notificación flotante (desktop) — "señal de vida" por categoría */}
+            <m.div
+              key={`${cat.id}-badge`}
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: "spring", stiffness: 320, damping: 20, delay: 0.1 }}
+              className="absolute left-[51%] -top-3 z-20 hidden items-center gap-2 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 py-2 text-xs font-extrabold text-[var(--text-primary)] shadow-[var(--shadow-lg)] lg:inline-flex"
+            >
+              <span aria-hidden className="relative inline-flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
+              </span>
+              {TAB_BADGES[cat.id]}
+            </m.div>
+
             {/* Lado izquierdo: descripción + features */}
             <div className="rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-8 sm:p-10">
               <span className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br ${cat.bg} text-white shadow-md mb-6`}>

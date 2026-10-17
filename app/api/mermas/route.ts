@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { MermasDB } from "@/lib/db";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
   const rl = applyRateLimit(req, "MODERATE", "mermas");
   if (rl) return rl;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   if (!body) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
 
   const parsed = CreateSchema.safeParse(body);

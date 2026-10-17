@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 export type DigestData = {
   date: string;
@@ -206,8 +207,17 @@ async function buildDigestDataForTenant(tenantId: string, tenantName?: string): 
   // Stock alert: count products flagged as low/critical for this tenant.
   let stockAlert: string | null = null;
   try {
+    // Un solo stock mínimo (09-10): el propio o `Settings.globalMinStock`, sin
+    // borrados ni inactivos (antes `stock <= 5` para todos).
+    const minimoGlobal = await minimoGlobalDelNegocio(tenantId);
     const lowStock = await prisma.product.count({
-      where: { tenantId, stock: { lte: 5 } },
+      where: {
+        tenantId, active: true, deletedAt: null, stock: { not: null },
+        OR: [
+          { stockMin: { not: null }, stock: { lte: prisma.product.fields.stockMin } },
+          { stockMin: null, stock: { lte: minimoGlobal } },
+        ],
+      },
     });
     if (lowStock > 0) stockAlert = `${lowStock} productos con stock crítico`;
   } catch {

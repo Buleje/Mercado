@@ -16,8 +16,9 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 import { sendInvoice } from "@/lib/sunat/nubefact-client";
-import { buildBoleta, buildFactura } from "@/lib/sunat/invoice-builder";
-import { calculateIGV } from "@/lib/sunat";
+import { buildBoleta, buildFactura, lineasDeOrden } from "@/lib/sunat/invoice-builder";
+import { faltaDniEnBoleta } from "@/lib/sunat/boleta-dni";
+import { montosParaRegistro } from "@/lib/sunat/lineas-comprobante";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { DomainEvents } from "@/lib/domain-events";
 import { emitMeteringEvent } from "@/lib/billing/wire-up/metering-bus";
@@ -83,11 +84,17 @@ async function emitHandler(
     // Obtener orden con items
     const order = await prisma.order.findFirst({
       where: { id: orderId, tenantId },
-      include: { items: true },
+      include: { items: { include: { product: { select: { taxType: true } } } } },
     });
 
     if (!order) {
       return NextResponse.json({ error: "Orden no encontrada." }, { status: 404 });
+    }
+
+    // Boleta de más de S/ 700 sin DNI: 400 ANTES de gastar un correlativo (SUNAT la pide con documento).
+    const sinDni = faltaDniEnBoleta(type, toNumOrZero(order.total), customerDni);
+    if (sinDni) {
+      return NextResponse.json({ error: sinDni, campo: "customerDni" }, { status: 400 });
     }
 
     // Verificar que no existe ya un comprobante aceptado para esta orden
@@ -159,6 +166,7 @@ async function emitHandler(
         quantity: item.quantity,
         price: toNumOrZero(item.price),
         unit: item.unit,
+        taxType: item.product?.taxType ?? null,
       })),
     };
 
@@ -186,7 +194,8 @@ async function emitHandler(
           });
 
     // Calcular montos para el registro
-    const igvCalc = calculateIGV(orderTotalNum);
+    // Con el IGV de cada producto (exonerado/inafecto = 0) — igual que el payload.
+    const montos = montosParaRegistro(lineasDeOrden(builderOrder).totales);
 
     // Crear registro en estado pending antes de enviar
     const invoice = await prisma.sunatInvoice.create({
@@ -198,9 +207,9 @@ async function emitHandler(
         number: nextNumber,
         customerRuc: type === "factura" ? customerRuc : undefined,
         customerName: order.customerName,
-        subtotal: +igvCalc.gravado.toFixed(2),
-        igv: +igvCalc.igv.toFixed(2),
-        total: +igvCalc.total.toFixed(2),
+        subtotal: montos.subtotal,
+        igv: montos.igv,
+        total: montos.total,
         sunatStatus: "pending",
         sentAt: new Date(),
       },
@@ -273,7 +282,7 @@ async function emitHandler(
         customerDocument: type === "factura" ? (customerRuc ?? "") : (customerDni ?? ""),
         customerName:     order.customerName,
         documentType:     type,
-        total:            +igvCalc.total.toFixed(2),
+        total:            montos.total,
         sunatHash:        nubefactResponse.nubefact_id ?? undefined,
         cdrUrl:           nubefactResponse.enlace_del_pdf ?? undefined,
       }).catch((err: unknown) => {
@@ -294,7 +303,7 @@ async function emitHandler(
             documentType: type,
             series,
             number: nextNumber,
-            total: +igvCalc.total.toFixed(2),
+            total: montos.total,
           },
         });
       } catch {

@@ -126,7 +126,7 @@ export function useCelebrate() {
           fireConfetti({ particleCount: 90, spread: 100 });
           haptic();
           toast.success("¡Tu primera venta!", {
-            description: "Este es solo el comienzo. Seguí adelante.",
+            description: "Este es solo el comienzo. Sigue adelante.",
           });
           markAsCelebrated(moment);
           break;

@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit, createDistributedRateLimiter } from "@/lib/rate-limit";
 import { redactPhone, truncate } from "@/lib/logger-pii";
 import { processMessage } from "@/lib/whatsapp/conversation-engine";
 import { handleIncomingMessage as handleConciergeMessage } from "@/lib/whatsapp/concierge/concierge-router";
+import { WhatsAppMessagesDB, getBotPausedPhones } from "@/lib/db/whatsapp-messages.db";
+import { emitAdminSSE } from "@/lib/sse-emitter";
+import { sendPushToPhone } from "@/lib/push-sender";
 
 // ─── Feature flag (ADR-058) ───────────────────────────────────────────────────
 //
@@ -20,7 +23,47 @@ function isAiFirstEnabled(): boolean {
   return v.toLowerCase() !== "false" && v !== "0";
 }
 
+// ─── Tope por clienta ─────────────────────────────────────────────────────────
+// 20 mensajes cada 10 min por negocio + teléfono antes de llamar al bot (cada
+// respuesta gasta IA del negocio). Al pasarse: un aviso amable UNA vez por
+// ventana y después silencio; los mensajes igual quedan en la bandeja.
+const MENSAJES_POR_CLIENTA = 20;
+const VENTANA_CLIENTA_MS = 10 * 60_000;
+const limiteClienta = createDistributedRateLimiter({
+  key: "wa-clienta",
+  maxRequests: MENSAJES_POR_CLIENTA,
+  windowMs: VENTANA_CLIENTA_MS,
+});
+const avisoLimiteClienta = createDistributedRateLimiter({
+  key: "wa-clienta-aviso",
+  maxRequests: 1,
+  windowMs: VENTANA_CLIENTA_MS,
+});
+const AVISO_LIMITE_CLIENTA =
+  "Recibimos varios mensajes seguidos 🙏 En unos minutos te seguimos respondiendo por aquí. Si es urgente, escríbelo en un solo mensaje.";
+
+/** «ok» = contesta el bot; «avisar» = se pasó y toca el aviso (una vez por ventana); «callar» = ya se avisó. Ante un fallo, «ok». */
+async function dentroDelTopeDeClienta(tenantId: string, phone: string): Promise<"ok" | "avisar" | "callar"> {
+  try {
+    if (await limiteClienta.check(`${tenantId}:${phone}`)) return "ok";
+    return (await avisoLimiteClienta.check(`${tenantId}:${phone}`)) ? "avisar" : "callar";
+  } catch (err) {
+    logger.warn("[whatsapp/webhook] tope por clienta no disponible — sigue el bot", {
+      tenantId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return "ok";
+  }
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+interface MetaMediaRef {
+  id: string;
+  mime_type?: string;
+  caption?: string;
+  filename?: string;
+}
 
 interface MetaTextMessage {
   from: string;
@@ -33,6 +76,24 @@ interface MetaTextMessage {
     button_reply?: { id: string; title: string };
     list_reply?: { id: string; title: string };
   };
+  // Media entrante (el binario vive en el CDN de Meta ~30 días)
+  image?: MetaMediaRef;
+  audio?: MetaMediaRef;
+  video?: MetaMediaRef;
+  document?: MetaMediaRef;
+  sticker?: MetaMediaRef;
+}
+
+/** Placeholder legible para el inbox cuando el mensaje es solo media. */
+function mediaPlaceholder(type: string, media: MetaMediaRef): string {
+  switch (type) {
+    case "image": return "📷 Foto";
+    case "audio": return "🎙️ Audio";
+    case "video": return "🎬 Video";
+    case "document": return media.filename ? `📄 ${media.filename}` : "📄 Documento";
+    case "sticker": return "💟 Sticker";
+    default: return "📎 Adjunto";
+  }
 }
 
 interface MetaChange {
@@ -41,6 +102,8 @@ interface MetaChange {
     metadata?: { display_phone_number: string; phone_number_id: string };
     messages?: MetaTextMessage[];
     statuses?: { recipient_id: string; status: string }[];
+    // Meta adjunta el nombre de perfil del remitente (para el inbox del admin)
+    contacts?: { wa_id: string; profile?: { name?: string } }[];
   };
   field: string;
 }
@@ -87,7 +150,7 @@ async function sendReply(
   token: string,
   toPhone: string,
   message: string
-): Promise<void> {
+): Promise<boolean> {
   const url = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
   const res = await fetch(url, {
     method: "POST",
@@ -111,6 +174,7 @@ async function sendReply(
       phoneNumberId,
     });
   }
+  return res.ok;
 }
 
 // ─── GET — Meta webhook verification ─────────────────────────────────────────
@@ -160,12 +224,6 @@ export async function GET(req: NextRequest) {
  *  - Verificar firma X-Hub-Signature-256 si WHATSAPP_APP_SECRET está configurado.
  */
 export async function POST(req: NextRequest) {
-  // PENTEST 2026-05-18 Sprint B: rate limit STRICT. Meta nunca envía más
-  // de 1 webhook/sec por número. Sin rate limit, atacante con firmas
-  // inválidas puede agotar CPU en HMAC verify por cada request.
-  const rl = applyRateLimit(req, "STRICT", "whatsapp-webhook");
-  if (rl) return rl as NextResponse;
-
   // Leer el body crudo antes de cualquier operación (firma requiere raw bytes)
   const rawBody = await req.text();
 
@@ -184,17 +242,30 @@ export async function POST(req: NextRequest) {
     const signature = req.headers.get("x-hub-signature-256");
     const valid = await verifySignature(rawBody, signature, appSecret);
     if (!valid) {
+      // PENTEST 2026-05-18 Sprint B: el límite STRICT (10 cada 15 min por IP)
+      // frena a quien manda firmas inválidas. Antes se aplicaba a TODO POST:
+      // Meta manda desde pocas IPs y cada respuesta del bot trae 3 avisos de
+      // estado (enviado/entregado/leído) → con 2-3 clientas escribiendo, los
+      // mensajes reales caían en 429 (11-10, bot de Musa).
+      const rl = applyRateLimit(req, "STRICT", "whatsapp-webhook-firma-invalida");
+      if (rl) return rl as NextResponse;
       logger.warn("[whatsapp/webhook] Firma inválida — rechazado");
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
     }
   }
 
-  // Responder 200 inmediatamente para cumplir el timeout de Meta (< 5s)
-  // El procesamiento real se hace en fire-and-forget
-  processWebhookPayload(rawBody).catch((err) => {
-    logger.error("[whatsapp/webhook] Error en procesamiento asíncrono", {
-      error: err,
-    });
+  // Responder 200 inmediatamente para cumplir el timeout de Meta (< 5s).
+  // PROD BUG 2026-07-16: fire-and-forget "pelado" MUERE en Vercel serverless
+  // (la función se congela al responder) → mensajes entrantes se PERDÍAN en
+  // producción. `after()` (Next 16) mantiene viva la función hasta terminar.
+  after(async () => {
+    try {
+      await processWebhookPayload(rawBody);
+    } catch (err) {
+      logger.error("[whatsapp/webhook] Error en procesamiento asíncrono", {
+        error: err,
+      });
+    }
   });
 
   return NextResponse.json({ success: true }, { status: 200 });
@@ -233,10 +304,133 @@ export async function processWebhookPayload(rawBody: string): Promise<void> {
 
       const tenantConfig = await resolveTenant(phoneNumberId);
 
+      // Nombre de perfil del remitente (Meta lo manda en value.contacts)
+      const contactNames = new Map<string, string>();
+      for (const c of value.contacts ?? []) {
+        if (c.profile?.name) contactNames.set(normalizePhone(c.wa_id), c.profile.name);
+      }
+
       for (const message of value.messages ?? []) {
-        await handleSingleMessage(message, phoneNumberId, tenantConfig);
+        await handleSingleMessage(message, phoneNumberId, tenantConfig, contactNames);
       }
     }
+  }
+}
+
+/**
+ * Web push al dueño del tenant cuando entra un mensaje de WhatsApp.
+ * Best-effort: cualquier fallo solo se loggea (patrón pedidos marketplace).
+ */
+async function notifyOwnerOfMessage(
+  tenantId: string,
+  customerName: string,
+  text: string
+): Promise<void> {
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { ownerPhone: true },
+    });
+    if (!tenant?.ownerPhone) return;
+    await sendPushToPhone(
+      tenant.ownerPhone,
+      {
+        title: `WhatsApp: ${customerName}`,
+        body: truncate(text, 90),
+        url: "/admin?tab=marketplace-chat",
+      },
+      tenantId
+    );
+  } catch (err) {
+    logger.warn("[whatsapp/webhook] push al dueño falló", {
+      tenantId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
+/**
+ * ¿Este mensaje es del dueño anotando, o de un cliente comprando?
+ *
+ * Devuelve `true` si ya quedó atendido como dueño y el flujo normal NO debe
+ * seguir. Cualquier fallo devuelve `false`: si el bot que anota se rompe, el
+ * mensaje sigue al Concierge en vez de perderse — un cliente sin respuesta es
+ * peor que un dictado que hay que repetir.
+ */
+async function enrutarComoDueno(
+  message: MetaTextMessage,
+  senderPhone: string,
+  tenantId: string,
+  phoneNumberId: string,
+  token: string,
+  contactNames: Map<string, string>,
+): Promise<boolean> {
+  try {
+    const { pareceVinculacion, intentarVincular, manejarMensajeDeDueno } = await import(
+      "@/lib/whatsapp/anotar"
+    );
+    const { WhatsAppDuenosDB } = await import("@/lib/db/whatsapp-duenos.db");
+
+    const cred = { phoneNumberId, token };
+    const nombre = contactNames.get(senderPhone) ?? "alguien";
+    const texto = (message.text?.body ?? message.image?.caption ?? message.audio?.caption ?? "").trim();
+
+    // Primero la vinculación: mientras el teléfono no esté en la lista, el
+    // camino normal lo manda al Concierge y nunca podría engancharse.
+    const codigo = pareceVinculacion(texto);
+    if (codigo) {
+      return await intentarVincular({ codigo, telefono: senderPhone, nombre, tenantIdDelNumero: tenantId, cred });
+    }
+
+    if (!(await WhatsAppDuenosDB.puedeAnotar(tenantId, senderPhone))) return false;
+
+    await manejarMensajeDeDueno({
+      tenantId,
+      telefono: senderPhone,
+      nombre,
+      texto,
+      audio: message.audio ? { id: message.audio.id, mime: message.audio.mime_type } : undefined,
+      imagen: message.image ? { id: message.image.id, mime: message.image.mime_type } : undefined,
+      botonId: message.interactive?.button_reply?.id,
+      cred,
+    });
+    return true;
+  } catch (err) {
+    logger.error("[whatsapp/webhook] el bot que anota falló — sigue el flujo de cliente", {
+      error: String(err),
+      from: redactPhone(senderPhone),
+      tenantId,
+    });
+    return false;
+  }
+}
+
+/**
+ * Manda el aviso de «estamos cerrados» si toca. Cualquier fallo se loguea y
+ * sigue: el aviso nunca le quita la respuesta del bot al cliente.
+ */
+async function avisarFueraDeHorario(
+  tenantId: string,
+  phoneNumberId: string,
+  token: string,
+  senderPhone: string,
+  contactNames: Map<string, string>,
+): Promise<void> {
+  try {
+    const { avisarSiEstaCerrado } = await import("@/lib/whatsapp/aviso-fuera-de-horario");
+    await avisarSiEstaCerrado({
+      tenantId,
+      phoneNumberId,
+      customerPhone: senderPhone,
+      customerName: contactNames.get(senderPhone),
+      enviar: (texto) => sendReply(phoneNumberId, token, senderPhone, texto),
+    });
+  } catch (err) {
+    logger.warn("[whatsapp/webhook] aviso fuera de horario falló — sigue el bot", {
+      tenantId,
+      from: redactPhone(senderPhone),
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
@@ -249,7 +443,8 @@ async function handleSingleMessage(
     whatsappToken: string;
     businessName: string | null;
     yapeNumber: string | null;
-  } | null
+  } | null,
+  contactNames: Map<string, string> = new Map()
 ): Promise<void> {
   const senderPhone = normalizePhone(message.from);
 
@@ -259,11 +454,17 @@ async function handleSingleMessage(
     message.interactive?.button_reply?.title ??
     message.interactive?.list_reply?.title ??
     "";
-
   text = text.trim();
-  if (!text) {
-    logger.info("[whatsapp/webhook] Mensaje sin texto — ignorado", {
+
+  // Media entrante (foto/audio/video/documento/sticker) — 2026-07-17: antes se
+  // descartaba; ahora se persiste y el operador la ve en el inbox (proxy).
+  const media =
+    message.image ?? message.video ?? message.audio ?? message.document ?? message.sticker;
+
+  if (!text && !media) {
+    logger.info("[whatsapp/webhook] Mensaje sin texto ni media — ignorado", {
       from: redactPhone(senderPhone),
+      type: message.type,
     });
     return;
   }
@@ -296,6 +497,21 @@ async function handleSingleMessage(
     return;
   }
 
+  // ─── Bifurcación dueño / cliente (ADR-391) ──────────────────────────────────
+  //
+  // El mismo número atiende a los clientes (Concierge) y al dueño (el bot que
+  // anota en los libros). Esta decisión va ANTES del inbox y del Concierge por
+  // dos razones: lo que dicta el dueño no es una conversación de venta y no
+  // tiene por qué aparecer en la bandeja de atención; y una operación que
+  // escribe plata no puede pasar por el motor pensado para clientes.
+  //
+  // El default es SIEMPRE cliente: se requiere estar en la lista blanca de
+  // `WhatsAppDuenosDB`. Equivocarse hacia el otro lado significaría darle a un
+  // cliente una herramienta que escribe en los libros.
+  if (await enrutarComoDueno(message, senderPhone, effectiveTenantId, phoneNumberId, effectiveToken, contactNames)) {
+    return;
+  }
+
   // PENTEST Sprint D #6: redact phone + truncate text antes de loggear.
   logger.info("[whatsapp/webhook] Procesando mensaje", {
     from: redactPhone(senderPhone),
@@ -303,6 +519,127 @@ async function handleSingleMessage(
     textPreview: truncate(text, 60),
     aiFirst: isAiFirstEnabled(),
   });
+
+  // Inbox admin (migración 310): persistir el mensaje entrante.
+  // AWAITED (no fire-and-forget): en Vercel serverless las promesas sueltas
+  // mueren al terminar el handler — se perdían mensajes en prod (2026-07-16).
+  // La respuesta a Meta ya salió (after()), así que esto no bloquea nada.
+  const inboundBody =
+    text || (media ? `${mediaPlaceholder(message.type, media)}${media.caption ? ` — ${media.caption}` : ""}` : "");
+  let reentregado = false;
+  try {
+    const persisted = await WhatsAppMessagesDB.append(effectiveTenantId, {
+      phoneNumberId,
+      customerPhone: senderPhone,
+      customerName: contactNames.get(senderPhone),
+      direction: "in",
+      sentBy: "customer",
+      body: inboundBody,
+      waMessageId: message.id,
+      mediaId: media?.id ?? null,
+      mediaMime: media?.mime_type ?? null,
+    });
+    // null = webhook re-entregado (dedupe) — no notificar dos veces
+    reentregado = persisted === null;
+    if (persisted) {
+      // 1) SSE: refresco instantáneo del inbox y del badge del sidebar
+      emitAdminSSE(effectiveTenantId, "wa_message_new", {
+        customerPhone: senderPhone,
+        phoneNumberId,
+      });
+      // 2) Web push al dueño (best-effort, try/catch interno)
+      await notifyOwnerOfMessage(effectiveTenantId, persisted.customerName, inboundBody);
+    }
+  } catch (err) {
+    logger.error("[whatsapp/webhook] persistencia inbound falló", {
+      error: err instanceof Error ? err.message : String(err),
+      tenantId: effectiveTenantId,
+    });
+  }
+
+  // Re-entregado por Meta (o el mismo cuerpo firmado reenviado: la firma no
+  // tiene fecha): ya se contestó la primera vez. Sin esto el bot respondía de
+  // nuevo y gastaba IA del negocio por cada repetición.
+  if (reentregado) {
+    logger.info("[whatsapp/webhook] Mensaje re-entregado — sin segunda respuesta", {
+      tenantId: effectiveTenantId,
+      from: redactPhone(senderPhone),
+    });
+    return;
+  }
+
+  // Media pura (sin texto): el bot NO responde — la atiende el operador.
+  // (El concierge está diseñado para texto; una foto del Yape no es un pedido.)
+  if (!text) {
+    logger.info("[whatsapp/webhook] Media sin texto — persistida, sin auto-respuesta", {
+      tenantId: effectiveTenantId,
+      from: redactPhone(senderPhone),
+      type: message.type,
+    });
+    return;
+  }
+
+  // ── Pausa del bot por hilo (el dueño está atendiendo a mano) ──────────────
+  // Si el hilo está pausado, NO se responde automático: el mensaje ya quedó
+  // persistido + notificado arriba; el humano contesta desde el inbox.
+  try {
+    const paused = await getBotPausedPhones(effectiveTenantId);
+    if (paused.includes(senderPhone)) {
+      logger.info("[whatsapp/webhook] Bot pausado en este hilo — sin auto-respuesta", {
+        tenantId: effectiveTenantId,
+        from: redactPhone(senderPhone),
+      });
+      return;
+    }
+  } catch (err) {
+    // Fallo leyendo la pausa → seguir con el bot (mejor responder que callar)
+    logger.warn("[whatsapp/webhook] No se pudo leer pausa del bot", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  // ── Tope por clienta: 20 mensajes cada 10 min ─────────────────────────────
+  const tope = await dentroDelTopeDeClienta(effectiveTenantId, senderPhone);
+  if (tope !== "ok") {
+    logger.warn("[whatsapp/webhook] Clienta pasó el tope de mensajes — sin respuesta del bot", {
+      tenantId: effectiveTenantId,
+      from: redactPhone(senderPhone),
+      aviso: tope === "avisar",
+    });
+    if (tope === "avisar") {
+      const avisoOk = await sendReply(phoneNumberId, effectiveToken, senderPhone, AVISO_LIMITE_CLIENTA).catch((err) => {
+        logger.warn("[whatsapp/webhook] aviso de tope no salió", {
+          error: err instanceof Error ? err.message : String(err),
+          tenantId: effectiveTenantId,
+        });
+        return false;
+      });
+      try {
+        await WhatsAppMessagesDB.append(effectiveTenantId, {
+          phoneNumberId,
+          customerPhone: senderPhone,
+          customerName: contactNames.get(senderPhone),
+          direction: "out",
+          sentBy: "ai",
+          body: AVISO_LIMITE_CLIENTA,
+          status: avisoOk ? "sent" : "failed",
+        });
+      } catch (err) {
+        logger.error("[whatsapp/webhook] persistencia del aviso de tope falló", {
+          error: err instanceof Error ? err.message : String(err),
+          tenantId: effectiveTenantId,
+        });
+      }
+    }
+    return;
+  }
+
+  // ── Aviso de «estamos cerrados» (Mensajes › Números y bot) ────────────────
+  // Si el dueño lo prendió y la tienda está cerrada según SU horario, va antes
+  // de la respuesta del bot, una sola vez cada 12 h por cliente. El bot sigue
+  // contestando después (precios, pedidos). Un hilo pausado no lo recibe (ya
+  // salió arriba): ahí atiende una persona.
+  await avisarFueraDeHorario(effectiveTenantId, phoneNumberId, effectiveToken, senderPhone, contactNames);
 
   // ── ADR-058: AI-first routing con fallback al engine legacy ───────────────
   // El Concierge AI (ADR-046) jamás lanza — captura todo internamente y
@@ -362,13 +699,36 @@ async function handleSingleMessage(
     }
   }
 
-  await sendReply(phoneNumberId, effectiveToken, senderPhone, replyText).catch(
-    (replyErr) => {
-      logger.warn("[whatsapp/webhook] sendReply falló", {
-        error: replyErr instanceof Error ? replyErr.message : String(replyErr),
-        to: senderPhone,
-        path: pathUsed,
-      });
-    }
-  );
+  const sentOk = await sendReply(
+    phoneNumberId,
+    effectiveToken,
+    senderPhone,
+    replyText
+  ).catch((replyErr) => {
+    logger.warn("[whatsapp/webhook] sendReply falló", {
+      error: replyErr instanceof Error ? replyErr.message : String(replyErr),
+      to: senderPhone,
+      path: pathUsed,
+    });
+    return false;
+  });
+
+  // Inbox admin: persistir la respuesta del bot (awaited — ver nota arriba
+  // sobre promesas sueltas en Vercel serverless).
+  try {
+    await WhatsAppMessagesDB.append(effectiveTenantId, {
+      phoneNumberId,
+      customerPhone: senderPhone,
+      customerName: contactNames.get(senderPhone),
+      direction: "out",
+      sentBy: "ai",
+      body: replyText,
+      status: sentOk ? "sent" : "failed",
+    });
+  } catch (err) {
+    logger.error("[whatsapp/webhook] persistencia outbound falló", {
+      error: err instanceof Error ? err.message : String(err),
+      tenantId: effectiveTenantId,
+    });
+  }
 }

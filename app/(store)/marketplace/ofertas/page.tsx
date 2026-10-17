@@ -30,7 +30,7 @@ const ofertasCollectionLd = {
 export const metadata: Metadata = {
   title: "Ofertas — Precios que no te puedes perder",
   description:
-    "Descuentos reales en bodegas cerca tuyo. Hoy ahorrás en lo que mas usas. Ofertas de esta semana en Ciudad Constitución — delivery rápido, pago Yape o efectivo.",
+    "Descuentos reales en bodegas cerca tuyo. Hoy ahorras en lo que mas usas. Ofertas de esta semana en Ciudad Constitución — delivery rápido, pago Yape o efectivo.",
   alternates: {
     canonical: `${BASE_URL}/marketplace/ofertas`,
   },

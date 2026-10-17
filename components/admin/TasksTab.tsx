@@ -1,49 +1,22 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
-import AdminModal from "@/components/admin/shared/AdminModal";
-import { useState, useEffect, useCallback } from "react";
-import { ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { ListChecks, Plus, Check, Search } from "@buleje/design-system/icons";
+import { EmptyState, LoadingState } from "@buleje/design-system";
+import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { toast } from "sonner";
+import { Field } from "@/components/admin/shared/Field";
+import { filtrarTareas } from "@/lib/admin/tareas-buscar";
+import SelectorEncargado from "@/components/admin/tareas/SelectorEncargado";
+import FilaTarea, { STATUS_META } from "@/components/admin/tareas/FilaTarea";
+import { CLASE_CAMPO_TAREA, CLASE_ROTULO_TAREA, EMPTY, MODULES, PRIORITY_META, type FormData, type Task, type TaskStatus, type Priority } from "@/components/admin/tareas/tareas-shared";
 
-type Priority = "baja" | "media" | "alta" | "urgente";
-type TaskStatus = "pendiente" | "en_progreso" | "completada" | "cancelada";
-
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  priority: Priority;
-  status: TaskStatus;
-  assignedTo?: string;
-  dueDate?: string;
-  module?: string;
-  createdAt: string;
-  completedAt?: string;
-}
-
-const PRIORITY_META: Record<Priority, { label: string; color: string; bg: string }> = {
-  baja:     { label: "Baja",    color: "text-[var(--text-secondary)]",   bg: "bg-gray-100" },
-  media:    { label: "Media",   color: "text-[var(--data-success-500)]",   bg: "bg-[var(--accent-soft)]" },
-  alta:     { label: "Alta",    color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)]" },
-  urgente:  { label: "Urgente", color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)]" },
-};
-
-const STATUS_META: Record<TaskStatus, { label: string; color: string; icon: React.ElementType }> = {
-  pendiente:    { label: "Pendiente",    color: "text-[var(--text-secondary)]",   icon: Clock },
-  en_progreso:  { label: "En progreso",  color: "text-[var(--data-success-500)]",   icon: AlertCircle },
-  completada:   { label: "Completada",   color: "text-[var(--data-success-500)]",icon: CheckCircle2 },
-  cancelada:    { label: "Cancelada",    color: "text-[var(--data-error-500)]",    icon: X },
-};
-
-const MODULES = [
-  "Inventario", "Pedidos", "Clientes", "Caja", "Proveedores",
-  "Compras", "Promociones", "Reportes", "POS", "Otro",
-];
-
-interface FormData { title: string; description: string; priority: Priority; assignedTo: string; dueDate: string; module: string; }
-const EMPTY: FormData = { title: "", description: "", priority: "media", assignedTo: "", dueDate: "", module: "" };
+/* `STATUS_META` vive con la fila (`tareas/FilaTarea`), que es quien lo pinta. */
 
 export default function TasksTab() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -53,14 +26,26 @@ export default function TasksTab() {
   const [form, setForm] = useState<FormData>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [filterStatus, setFilterStatus] = useState<TaskStatus | "todas">("todas");
+  const [busqueda, setBusqueda] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // Una carga que salió antes de un cambio trae la lista vieja. Medido
+  // 2026-09-14: el GET del doble montaje llegó 470 ms después del clic en
+  // Eliminar y la tarea volvió a la pantalla aunque ya no estaba en la base.
+  // Sólo aplica su lista la carga más nueva, y sólo si no hubo cambios mientras
+  // viajaba; cada cambio termina con una carga silenciosa que trae lo guardado.
+  const cargasRef = useRef({ ultima: 0, cambios: 0 });
+  const load = useCallback(async (opciones?: { silenciosa?: boolean }) => {
+    const esta = ++cargasRef.current.ultima;
+    const cambiosAlSalir = cargasRef.current.cambios;
+    if (!opciones?.silenciosa) setLoading(true);
     try {
       const res = await fetch("/api/tasks");
-      if (res.ok) setTasks(await res.json());
+      if (res.ok) {
+        const lista = (await res.json()) as Task[];
+        if (esta === cargasRef.current.ultima && cambiosAlSalir === cargasRef.current.cambios) setTasks(lista);
+      }
     } catch { /* silent */ }
-    setLoading(false);
+    if (esta === cargasRef.current.ultima) setLoading(false);
   }, []);
 
   useEffect(() => { void load(); }, [load]);
@@ -75,177 +60,166 @@ export default function TasksTab() {
   const save = async () => {
     if (!form.title.trim()) return;
     setSaving(true);
-    const body = { title: form.title.trim(), description: form.description || undefined, priority: form.priority, assignedTo: form.assignedTo || undefined, dueDate: form.dueDate || undefined, module: form.module || undefined };
+    // null borra el campo al editar; undefined lo dejaba como estaba (ADR-415).
+    cargasRef.current.cambios += 1;
+    const body = { title: form.title.trim(), description: form.description || null, priority: form.priority, assignedTo: form.assignedTo || null, dueDate: form.dueDate || null, module: form.module || null };
     try {
-      if (editId) {
-        await fetch(`/api/tasks/${editId}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
-      } else {
-        await fetch("/api/tasks", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
+      const res = editId
+        ? await fetch(`/api/tasks/${editId}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) })
+        : await fetch("/api/tasks", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
+      // Antes no se miraba la respuesta: si el servidor fallaba, el modal se cerraba igual.
+      if (!res.ok) {
+        const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+        toast.error(errBody.error || `No se pudo guardar la tarea (HTTP ${res.status})`);
+        setSaving(false);
+        return;
       }
       setShowForm(false);
       await load();
-    } catch { /* silent */ }
+    } catch {
+      toast.error("No se pudo guardar la tarea. Revisa tu conexión.");
+    }
     setSaving(false);
   };
 
+  /** Cambia en pantalla al toque y vuelve atrás si el servidor no lo guarda. `completedAt` lo pone el servidor. */
   const changeStatus = async (id: string, status: TaskStatus) => {
-    await fetch(`/api/tasks/${id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status, ...(status === "completada" ? { completedAt: new Date().toISOString() } : {}) }) });
+    cargasRef.current.cambios += 1;
+    const previo = tasks.find(t => t.id === id);
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+    try {
+      const res = await fetch(`/api/tasks/${id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status }) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const guardada = (await res.json()) as Task;
+      setTasks(prev => prev.map(t => t.id === id ? guardada : t));
+    } catch {
+      if (previo) setTasks(prev => prev.map(t => t.id === id ? previo : t));
+      toast.error("No se pudo cambiar el estado. Reintenta.");
+    } finally {
+      void load({ silenciosa: true });
+    }
   };
 
   const deleteTask = async (id: string) => {
-    await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+    cargasRef.current.cambios += 1;
+    const previas = tasks;
     setTasks(prev => prev.filter(t => t.id !== id));
+    try {
+      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE", headers: csrfHeaders() });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch {
+      setTasks(previas);
+      toast.error("No se pudo eliminar la tarea. Reintenta.");
+    } finally {
+      void load({ silenciosa: true });
+    }
   };
 
-  const filtered = filterStatus === "todas" ? tasks : tasks.filter(t => t.status === filterStatus);
+  const filtered = filtrarTareas(tasks, filterStatus, busqueda);
   const counts = { pendiente: tasks.filter(t => t.status === "pendiente").length, en_progreso: tasks.filter(t => t.status === "en_progreso").length, completada: tasks.filter(t => t.status === "completada").length };
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Tareas & Asignaciones</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Coordina el trabajo del equipo</p>
-        </div>
-        <button onClick={openCreate} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
-          <Plus className="h-4 w-4" /> Nueva Tarea
+    <div className="space-y-3">
+      {/* El título de la vista con su acción principal en la misma fila
+          (Equipo › Tareas; antes, AdminModuleHeader con subtítulo a la vista). */}
+      <TituloDeVista
+        titulo="Lo que hay que hacer"
+        ayuda={{
+          what: "Las tareas del equipo: qué hay que hacer, con qué prioridad, para cuándo y a quién le toca.",
+          affects: "Una tarea vencida y sin completar sale en rojo. Completarla la saca de Pendientes.",
+          example: "«Contar el stock de gaseosas» para Luis, prioridad alta, para el jueves.",
+        }}
+      >
+        <button type="button" onClick={openCreate} className={button({ variant: "accent" })}>
+          <Plus className="h-4 w-4" aria-hidden /> Nueva tarea
         </button>
-      </div>
+      </TituloDeVista>
 
-      {/* Status filter tabs */}
-      <div className="flex items-center gap-1.5">
-        {([["todas", "Todas"], ["pendiente", `Pendientes (${counts.pendiente})`], ["en_progreso", `En progreso (${counts.en_progreso})`], ["completada", `Completadas (${counts.completada})`]] as [string, string][]).map(([s, label]) => (
-          <button
-            key={s}
-            onClick={() => setFilterStatus(s as TaskStatus | "todas")}
-            className={cn("px-3 py-1.5 rounded-xl text-xs font-bold transition-all border",
-              filterStatus === s ? "bg-primary text-white border-transparent " : "bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
-            )}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Estado + buscador, en una fila pegada a la lista que filtran. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-2">
+          {([["todas", "Todas"], ["pendiente", `Pendientes (${counts.pendiente})`], ["en_progreso", `En progreso (${counts.en_progreso})`], ["completada", `Completadas (${counts.completada})`]] as [string, string][]).map(([s, label]) => (
+            <button
+              key={s}
+              type="button"
+              aria-pressed={filterStatus === s}
+              onClick={() => setFilterStatus(s as TaskStatus | "todas")}
+              className={button({ variant: "secondary", className: cn("rounded-xl px-4", filterStatus === s && "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]") })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <label className="relative ml-auto w-full sm:w-72">
+          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+          <input
+            type="search"
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar por título o encargado"
+            aria-label="Buscar tareas por título o encargado"
+            className={cn(CLASE_CAMPO_TAREA, "h-12 pl-9 bg-[var(--surface-raised)]")}
+          />
+        </label>
       </div>
 
       {/* Task list */}
       {loading ? (
-        <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted">Cargando…</div>
+        <LoadingState message="Cargando las tareas..." />
       ) : filtered.length === 0 ? (
-        <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-12 text-center">
-          <ListChecks className="h-12 w-12 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" />
-          <p className="text-[var(--text-secondary)] dark:text-muted font-semibold">No hay tareas{filterStatus !== "todas" ? ` con estado "${filterStatus}"` : ""}</p>
-        </div>
+        <EmptyState
+          icon={ListChecks}
+          title={busqueda.trim() ? `Ninguna tarea coincide con «${busqueda.trim()}»` : `No hay tareas${filterStatus !== "todas" ? ` con estado «${STATUS_META[filterStatus].label.toLowerCase()}»` : ""}`}
+        />
       ) : (
-        <div className="space-y-2.5">
-          {filtered.map(t => {
-            const pm = PRIORITY_META[t.priority];
-            const sm = STATUS_META[t.status];
-            const StatusIcon = sm.icon;
-            return (
-              <div
-                key={t.id}
-                className={cn(
-                  "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow",
-                  t.status === "completada" && "opacity-70"
-                )}
-              >
-                <div className="flex flex-wrap items-start gap-3">
-                  {/* Status toggle */}
-                  <button
-                    onClick={() => changeStatus(t.id, t.status === "completada" ? "pendiente" : "completada")}
-                    className={cn("mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all",
-                      t.status === "completada" ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]" : "border-[var(--rule-base)] dark:border-card-border hover:border-[var(--data-success-500)]/30"
-                    )}
-                  >
-                    {t.status === "completada" && <Check className="h-3 w-3 text-white" />}
-                  </button>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <p className={cn("font-semibold text-sm text-[var(--text-primary)] dark:text-foreground", t.status === "completada" && "line-through text-[var(--text-tertiary)]")}>{t.title}</p>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button onClick={() => openEdit(t)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
-                          <Pencil className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                        </button>
-                        <button onClick={() => deleteTask(t.id)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
-                          <Trash2 className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]" />
-                        </button>
-                      </div>
-                    </div>
-                    {t.description && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 line-clamp-2">{t.description}</p>}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", pm.bg, pm.color)}>{pm.label}</span>
-                      <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold", sm.color)}>
-                        <StatusIcon className="h-3 w-3" />{sm.label}
-                      </span>
-                      {t.assignedTo && (
-                        <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
-                          <User className="h-3 w-3" />{t.assignedTo}
-                        </span>
-                      )}
-                      {t.module && <span className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
-                      {t.dueDate && (
-                        <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)]", new Date(t.dueDate) < new Date() && t.status !== "completada" ? "text-[var(--data-error-500)] font-bold" : "text-[var(--text-tertiary)] dark:text-muted")}>
-                          <Clock className="h-3 w-3" />{new Date(t.dueDate).toLocaleDateString("es-PE")}
-                        </span>
-                      )}
-                    </div>
-                    {/* Status change dropdown */}
-                    {t.status !== "completada" && (
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Cambiar estado:</span>
-                        {(["pendiente", "en_progreso", "completada"] as TaskStatus[]).filter(s => s !== t.status).map(s => (
-                          <button key={s} onClick={() => changeStatus(t.id, s)}
-                            className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
-                            {STATUS_META[s].label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        /* Una lista, no una tarjeta por tarea: filas separadas por una raya. */
+        <div className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          {filtered.map(t => (
+            <FilaTarea key={t.id} tarea={t} onCambiarEstado={(s) => changeStatus(t.id, s)} onEditar={() => openEdit(t)} onEliminar={() => deleteTask(t.id)} />
+          ))}
         </div>
       )}
 
       {/* Modal */}
-      <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editId ? "Editar tarea" : "Nueva tarea"} variant="default">
-        <div className="p-5 space-y-4">
-          <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Título de la tarea" className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
-          <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción (opcional)" rows={2} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none" />
+      <AdminModal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title={editId ? "Editar tarea" : "Nueva tarea"}
+        variant="default"
+        footer={
+          <ModalFooter>
+            <button type="button" onClick={() => setShowForm(false)} className={button({ variant: "secondary" })}>Cancelar</button>
+            <button type="button" onClick={save} disabled={saving || !form.title.trim()} className={button({ variant: "accent" })}>
+              {saving ? "Guardando…" : <><Check className="h-4 w-4" aria-hidden />{editId ? "Guardar" : "Crear tarea"}</>}
+            </button>
+          </ModalFooter>
+        }
+      >
+        <div className={cn("space-y-4", MODAL_BODY)}>
+          <Field label="Título" labelClassName={CLASE_ROTULO_TAREA}>
+            <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ej.: contar el stock de gaseosas" className={CLASE_CAMPO_TAREA} />
+          </Field>
+          <Field label="Descripción (opcional)" labelClassName={CLASE_ROTULO_TAREA}>
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} className={cn(CLASE_CAMPO_TAREA, "h-auto py-2.5 resize-none")} />
+          </Field>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Prioridad</label>
-              <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all">
+            <Field label="Prioridad" labelClassName={CLASE_ROTULO_TAREA}>
+              <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))} className={CLASE_CAMPO_TAREA}>
                 {Object.entries(PRIORITY_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Módulo</label>
-              <select value={form.module} onChange={e => setForm(f => ({ ...f, module: e.target.value }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all">
+            </Field>
+            <Field label="Módulo" labelClassName={CLASE_ROTULO_TAREA}>
+              <select value={form.module} onChange={e => setForm(f => ({ ...f, module: e.target.value }))} className={CLASE_CAMPO_TAREA}>
                 <option value="">Sin módulo</option>
                 {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
-            </div>
+            </Field>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Asignado a</label>
-              <input type="text" value={form.assignedTo} onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))} placeholder="Nombre del encargado" className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Fecha límite</label>
-              <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all" />
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3 pt-1">
-            <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground text-sm font-semibold hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-            <button onClick={save} disabled={saving || !form.title.trim()} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 flex flex-wrap items-center justify-center gap-2 transition-colors">
-              {saving ? "Guardando…" : <><Check className="h-4 w-4" />{editId ? "Guardar" : "Crear tarea"}</>}
-            </button>
+            <SelectorEncargado value={form.assignedTo} onChange={v => setForm(f => ({ ...f, assignedTo: v }))} />
+            <Field label="Fecha límite" labelClassName={CLASE_ROTULO_TAREA}>
+              <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={CLASE_CAMPO_TAREA} />
+            </Field>
           </div>
         </div>
       </AdminModal>

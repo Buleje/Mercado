@@ -174,7 +174,7 @@ export default function SaasComparison() {
                           {h}
                           <span
                             className="ml-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-black text-white"
-                            style={{ background: "#f97316" }}
+                            style={{ background: "#ff6b5b" }}
                           >
                             NUEVO
                           </span>

@@ -1,0 +1,2 @@
+# Motor de MediaPipe (≈23 MB): lo copia scripts/copy-mediapipe-assets.mjs en postinstall.
+wasm/

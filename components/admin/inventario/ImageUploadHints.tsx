@@ -39,7 +39,7 @@ export default function ImageUploadHints({ className }: { className?: string }) 
         {HINTS.map((h, i) => {
           const Icon = h.ok ? Check : X;
           const colorCls = h.ok
-            ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+            ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
             : "bg-[var(--data-error-50)] text-[var(--data-error-500)]";
           return (
             <li key={i} className="flex items-center gap-2.5 text-sm">

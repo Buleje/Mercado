@@ -11,6 +11,8 @@ import {
   type ReactNode,
 } from "react";
 import type { Product } from "@/data/products";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 // Unique identifier for this browser tab — prevents BroadcastChannel self-echo loop
 const TAB_ID = typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36).slice(2);
@@ -69,6 +71,15 @@ function createBroadcastChannel(slug: string): BroadcastChannel | null {
 function sk(slug: string, key: string): string {
   return slug ? `buleje-${slug}-${key}` : `buleje-${key}`;
 }
+
+/**
+ * Evento de `window` cuando `addItem` NO agrega un producto porque no es de la
+ * tienda que se está mirando (confirmado contra el servidor por su slug).
+ * `detail` = `{ id, nombre }`. La tienda decide cómo decirlo: el botón nunca
+ * queda mudo (16-10, tienda Musa).
+ */
+export const CARRITO_NO_AGREGADO = "buleje:carrito-no-agregado";
+export type CarritoNoAgregadoDetalle = { id: number; nombre: string };
 
 export type CartItem = Product & {
   quantity: number;
@@ -250,7 +261,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   // tenant isolation — es trade-off de UX explícito documentado.
   useEffect(() => {
     const s = tenantSlug;
-    if (!s || s === "main") {
+    if (!s || esMarketplace(s)) {
       validProductIdsRef.current = null; // marketplace cross-store: backend valida
       return;
     }
@@ -261,7 +272,11 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
     // Solo gastaba conexiones y latencia. /api/products?active=true es la
     // fuente real de validProductIdsRef.
     const controller = new AbortController();
-    fetch("/api/products?active=true", { cache: "no-store", signal: controller.signal })
+    // `credentials: "omit"` (16-10): con sesión de admin, /api/products devuelve
+    // los productos del negocio del ADMIN (JWT), no los de la tienda que mira;
+    // Brandon (admin de main) no podía agregar nada en /t/musa. Como visitante,
+    // el endpoint resuelve la tienda por el subdominio o la página `/t/<slug>`.
+    fetch("/api/products?active=true", { cache: "no-store", credentials: "omit", signal: controller.signal })
       .then(r => r.ok ? r.json() : null)
       .then((data: unknown) => {
         if (!Array.isArray(data)) return;
@@ -317,7 +332,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
         // tenants en el carrito y el checkout fallaba con invalid_product.
         const isMarketplaceContext = typeof window !== "undefined"
           && window.location.pathname.startsWith("/marketplace");
-        const tenantParam = !isMarketplaceContext && s !== "main"
+        const tenantParam = !isMarketplaceContext && !esMarketplace(s)
           ? `&tenantSlug=${encodeURIComponent(s)}`
           : "";
         fetch(`/api/marketplace/products/check-exists?ids=${idsQuery}${tenantParam}`, { signal: controller.signal })
@@ -472,7 +487,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
     const timeout = setTimeout(() => {
       fetch(`/api/cart/${encodeURIComponent(phone)}?token=${encodeURIComponent(token)}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ items: state.items }),
       }).catch(() => { /* silent — local cart is primary */ });
     }, 2000); // 2s debounce
@@ -541,30 +556,52 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   const count = state.items.reduce((acc, i) => acc + i.quantity, 0);
   const total = state.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
 
+  // Ids que se están confirmando contra la tienda (un doble toque no agrega dos).
+  const confirmandoRef = useRef<Set<number>>(new Set());
+
   const addItem = useCallback((p: Product) => {
-    // FIX 2026-05-07: defensa final contra cross-tenant items. Si validIds
-    // está cargado (del tenant actual via /api/products) y el productId NO
-    // está en el set, RECHAZAR el add y mostrar warning. Si validIds es null
-    // (aún cargando o tenant 'main' legacy), permitir todo. Esto evita el
-    // bug "carrito con productos fantasma" que llegaban al checkout y daban
-    // 400 invalid_product.
-    const valid = validProductIdsRef.current;
-    if (valid && typeof p.id === "number" && !valid.has(p.id)) {
-      // No añadir + log para diagnóstico. UI puede mostrar toast desde el
-      // caller si quiere (no spammeamos toasts desde acá).
-      if (typeof console !== "undefined") {
-        console.warn("[cart] rechazando add: producto no pertenece al tenant actual", {
-          productId: p.id,
-          tenantSlug: slugRef.current,
-        });
-      }
-      return;
-    }
     // ADR-096: tag con slug actual para descartar después si el usuario
     // navega a otro storefront. El reducer hace `{ ...payload, quantity: 1 }`
     // por lo que `storeSlug` se persiste tal cual en el item.
-    dispatch({ type: "ADD_ITEM", payload: { ...p, storeSlug: slugRef.current } as Product });
-    playPopSound();
+    const agregar = () => {
+      dispatch({ type: "ADD_ITEM", payload: { ...p, storeSlug: slugRef.current } as Product });
+      playPopSound();
+    };
+    // FIX 2026-05-07: defensa final contra cross-tenant items. Si validIds
+    // está cargado (del tenant actual via /api/products) y el productId NO
+    // está en el set, no se agrega a ciegas. Si validIds es null (aún
+    // cargando o marketplace), permitir todo: el backend valida al pedir.
+    const valid = validProductIdsRef.current;
+    if (!valid || typeof p.id !== "number" || valid.has(p.id)) {
+      agregar();
+      return;
+    }
+    // 16-10: el set puede estar mal (sesión de otro negocio, Referer quitado
+    // por el navegador): antes de rechazar, se confirma contra la tienda por
+    // su slug. Rechazado de verdad → `CARRITO_NO_AGREGADO` (antes era sólo un
+    // console.warn y el botón quedaba mudo). Si la red falla, se agrega.
+    const id = p.id;
+    const slug = slugRef.current;
+    if (confirmandoRef.current.has(id)) return;
+    confirmandoRef.current.add(id);
+    fetch(`/api/marketplace/products/check-exists?ids=${id}&tenantSlug=${encodeURIComponent(slug)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<{ existingIds?: unknown }>) : null))
+      .then((data) => {
+        if (slugRef.current !== slug) return; // cambió de tienda mientras tanto
+        const existe = !data || !Array.isArray(data.existingIds) || data.existingIds.includes(id);
+        if (existe) {
+          validProductIdsRef.current?.add(id);
+          agregar();
+          return;
+        }
+        console.warn("[cart] rechazando add: producto no pertenece al tenant actual", { productId: id, tenantSlug: slug });
+        window.dispatchEvent(new CustomEvent<CarritoNoAgregadoDetalle>(CARRITO_NO_AGREGADO, { detail: { id, nombre: p.name } }));
+      })
+      .catch((err: unknown) => {
+        console.warn("[cart] no se pudo confirmar el producto; se agrega igual", { productId: id, error: String(err) });
+        if (slugRef.current === slug) agregar();
+      })
+      .finally(() => confirmandoRef.current.delete(id));
   }, []);
   const addMultiple = useCallback(
     (items: { product: Product; quantity: number }[]) =>

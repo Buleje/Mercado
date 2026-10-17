@@ -122,7 +122,7 @@ export default function FeatureSpotlight({
       style={style}
     >
       <div className="flex items-start gap-3">
-        <div className="shrink-0 h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center">
+        <div className="shrink-0 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
           {icon}
         </div>
         <div className="flex-1 min-w-0">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { startOfLimaDay } from "@/lib/utils";
 
 /**
  * GET /api/delivery/assignments/suggest
@@ -39,8 +40,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Count pending assignments per partner today
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    const todayStart = new Date(startOfLimaDay());
 
     const pendingCounts = await prisma.deliveryAssignment.groupBy({
       by: ["partnerId"],

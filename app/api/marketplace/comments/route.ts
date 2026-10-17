@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ReviewsMarketplaceDB } from "@/lib/db/reviews.db";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
+import { ProductsDB } from "@/lib/db/products.db";
 import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
   const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
   if (!session?.name) {
     return NextResponse.json(
-      { error: "Iniciá sesión para comentar", requiresAuth: true },
+      { error: "Inicia sesión para comentar", requiresAuth: true },
       { status: 401 },
     );
   }
@@ -65,6 +66,11 @@ export async function POST(req: NextRequest) {
     const store = await MarketplaceStoresDB.getBySlug(parsed.data.storeSlug);
     if (!store) {
       return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
+    }
+
+    // El producto tiene que ser de ESTA tienda (la FK sólo pide que exista).
+    if (!(await ProductsDB.getById(store.tenantId, parsed.data.productId))) {
+      return NextResponse.json({ error: "El producto no existe en esta tienda" }, { status: 400 });
     }
 
     const comment = await ReviewsMarketplaceDB.createComment({

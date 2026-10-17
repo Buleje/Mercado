@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { startOfLimaDay } from "@/lib/utils";
 
 // ─── GET /api/superadmin/security/posture ─────────────────────────────────────
 //
@@ -106,7 +107,7 @@ export async function GET(req: NextRequest) {
     const daySeries: Array<{ day: string; failed: number; succeeded: number; iso: string }> = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now - i * 24 * 60 * 60 * 1000);
-      const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      const start = startOfLimaDay(d); // el día de Lima, como la etiqueta
       const end = start + 24 * 60 * 60 * 1000;
       let failed = 0;
       let succeeded = 0;

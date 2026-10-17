@@ -49,7 +49,7 @@ export function CheckoutDeliverySchedule({
         <div className="space-y-3">
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1">
+              <label className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" strokeWidth={2.25} />
                 Fecha
               </label>
@@ -62,7 +62,7 @@ export function CheckoutDeliverySchedule({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1">
+              <label className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" strokeWidth={2.25} />
                 Hora
               </label>
@@ -107,7 +107,7 @@ export function CheckoutDeliverySchedule({
               </p>
             </div>
           )}
-          <p className="text-xs text-muted leading-relaxed">
+          <p className="text-xs text-muted dark:text-[var(--text-tertiary)] leading-relaxed">
             Atendemos lunes a domingo de 8:00 AM a 8:00 PM
           </p>
           <button
@@ -169,7 +169,7 @@ export function CheckoutDeliverySchedule({
                   <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                     Lo antes posible
                   </p>
-                  <p className="text-xs text-muted leading-tight mt-0.5">
+                  <p className="text-xs text-muted dark:text-[var(--text-tertiary)] leading-tight mt-0.5">
                     Recomendado · ~30 min
                   </p>
                 </div>
@@ -208,7 +208,7 @@ export function CheckoutDeliverySchedule({
               slots: typeof todaySlots,
             ) => (
               <div className="space-y-2">
-                <p className="text-xs font-bold text-muted uppercase tracking-wider">
+                <p className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] uppercase tracking-wider">
                   {label}
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -225,7 +225,7 @@ export function CheckoutDeliverySchedule({
                           active
                             ? "border-transparent text-white shadow-sm"
                             : slot.disabled
-                              ? "border-[var(--rule-soft)] bg-[var(--surface-sunken)] text-muted opacity-50 cursor-not-allowed line-through"
+                              ? "border-[var(--rule-soft)] bg-[var(--surface-sunken)] text-muted dark:text-[var(--text-tertiary)] opacity-50 cursor-not-allowed line-through"
                               : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--color-primary,#00A0A0)]/40 hover:text-[var(--color-primary,#00A0A0)]",
                         )}
                         style={

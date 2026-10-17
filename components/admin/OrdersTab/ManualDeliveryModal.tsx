@@ -25,7 +25,7 @@ const METHODS = [
   { id: "otro", label: "Otro", icon: MoreHorizontal },
 ] as const;
 
-type MethodId = typeof METHODS[number]["id"];
+type MethodId = (typeof METHODS)[number]["id"];
 
 interface ManualDeliveryModalProps {
   open: boolean;
@@ -73,19 +73,17 @@ export default function ManualDeliveryModal({
     <AdminModal
       open={open}
       onClose={onCancel}
+      aboveModals
       title="Marcar como entregado"
       description={`Pedido de ${customerName}`}
       variant="default"
     >
-      <div className="px-5 py-5 space-y-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         {/* Método */}
         <div className="space-y-2">
-          <p className="text-sm font-bold text-[var(--text-primary)]">
-            ¿Cómo se entregó?
-          </p>
+          <p className="text-sm font-bold text-[var(--text-primary)]">¿Cómo se entregó?</p>
           <p className="text-xs text-[var(--text-secondary)]">
-            Esto queda guardado para tus reportes — sabrás cuántas entregas
-            haces sin delivery.
+            Esto queda guardado para tus reportes — sabrás cuántas entregas haces sin delivery.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             {METHODS.map((m) => {
@@ -97,7 +95,7 @@ export default function ManualDeliveryModal({
                   type="button"
                   onClick={() => setMethod(m.id)}
                   className={cn(
-                    "flex items-center gap-2.5 px-3 h-10 rounded-xl border-2 text-sm font-semibold text-left transition-all",
+                    "flex items-center gap-2.5 px-3 h-12 rounded-xl border-2 text-sm font-semibold text-left transition-all",
                     isActive
                       ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--data-success-500)]/40",
@@ -125,7 +123,7 @@ export default function ManualDeliveryModal({
             onChange={(e) => setNote(e.target.value.slice(0, 200))}
             placeholder="Ej: cliente preguntó por descuento, entregué con propina, etc."
             rows={3}
-            className="w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none resize-y"
+            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none resize-y"
           />
           <p className="text-xs text-[var(--text-tertiary)] text-right font-mono">
             {note.length}/200
@@ -138,14 +136,14 @@ export default function ManualDeliveryModal({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 sm:flex-none inline-flex items-center justify-center h-10 px-4 rounded-xl text-sm font-semibold border-2 border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+          className="flex-1 sm:flex-none inline-flex items-center justify-center h-12 px-4 rounded-xl text-sm font-semibold border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           Cancelar
         </button>
         <button
           type="button"
           onClick={handleConfirm}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-sm font-extrabold bg-[var(--data-success-500)] text-white hover:opacity-90 shadow-[var(--shadow-md)] shadow-[var(--data-success-500)]/30 transition-all active:scale-[0.99]"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 h-12 px-4 rounded-xl text-sm font-semibold bg-[var(--accent-dark)] text-white hover:opacity-90 shadow-[var(--shadow-md)] shadow-[var(--accent-dark)]/30 transition-all active:scale-[0.99]"
         >
           <Check className="h-4 w-4" strokeWidth={2.5} />
           Confirmar entrega

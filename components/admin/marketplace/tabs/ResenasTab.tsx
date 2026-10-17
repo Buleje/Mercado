@@ -1,352 +1,176 @@
 "use client";
+
+/**
+ * Marketplace › Reseñas: aprobar, rechazar y responder las reseñas de tu
+ * tienda y del marketplace (`/api/reviews?all=1`, todas las del negocio menos
+ * los comentarios de producto). Antes filtraba por `storeId`, que esa ruta no
+ * devuelve: la lista salía siempre vacía (11-10).
+ *
+ * No duplica a Clientes › Opiniones: aquélla lee el mismo endpoint pero sólo
+ * para el análisis (promedio, tendencia, sin acciones); ésta es la de
+ * moderar. Patrón del panel (11-10): cabecera en una fila con Indicadores
+ * (antes, un héroe con las mismas cifras que los chips de abajo), estados
+ * como chips pegados a la lista y, por reseña, la acción que toca a la vista
+ * (Aprobar si espera, Responder si no) y el resto en «⋯».
+ */
+import { MessageSquare, MoreHorizontal, Star, ThumbsUp, Check, X, BarChart3 } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { useMarketplaceReviews, type ReviewItem } from "@/components/admin/marketplace/hooks/use-marketplace-reviews";
+import { TableSkeleton } from "@/components/admin/marketplace/shared";
+import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
-import { useMarketplaceReviews } from "@/components/admin/marketplace/hooks/use-marketplace-reviews";
-import { TableSkeleton, REVIEW_STATUS_CONFIG } from "@/components/admin/marketplace/shared";
-import { CheckCircle, MessageSquare, Star, XCircle } from "@buleje/design-system/icons";
+import { useAccionesDeVista } from "@/components/admin/marketplace/acciones-de-vista";
+import { StatCard } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { diaDe, FilaDeVista, SelectFiltro, VacioDeUnaFrase, type OpcionFiltro } from "./cabecera-vista";
+
+type Filtro = "all" | "pending" | "approved" | "rejected";
+
+const ESTADO: Record<string, { rotulo: string; clase: string }> = {
+  pending: { rotulo: "Por moderar", clase: "bg-[var(--data-warning-100)] text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]" },
+  approved: { rotulo: "Aprobada", clase: "bg-[var(--data-success-100)] text-[var(--data-success-ink)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]" },
+  rejected: { rotulo: "Rechazada", clase: "bg-[var(--data-error-100)] text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]" },
+};
+const HREF_OPINIONES = "/admin?tab=clientes&vista=resenas";
+
+function Estrellas({ n }: { n: number }) {
+  return (
+    <span className="inline-flex items-center gap-0.5" role="img" aria-label={`${n} de 5 estrellas`}>
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star key={s} aria-hidden className={cn("h-4 w-4", s <= n ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-[var(--rule-base)] dark:text-[var(--rule-strong)]")} />
+      ))}
+    </span>
+  );
+}
 
 export function MarketplaceResenasTab() {
-  const {
-    reviews, filtered, loading, filter, setFilter,
-    replyingTo, setReplyingTo, replyText, setReplyText,
-    saving, pendingCount,
-    handleStatusChange, handleReply,
-  } = useMarketplaceReviews();
+  const r = useMarketplaceReviews();
+  const { reviews, filtered, loading, filter, setFilter, replyingTo, setReplyingTo, replyText, setReplyText, saving, pendingCount, handleStatusChange, handleReply } = r;
 
-  if (loading) return <TableSkeleton />;
-
-  // Métricas agregadas
   const total = reviews.length;
-  const avg = total > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / total : 0;
-  const approvedCount = reviews.filter((r) => r.status === "approved").length;
-  const rejectedCount = reviews.filter((r) => r.status === "rejected").length;
-  const responseRate = approvedCount > 0
-    ? Math.round((reviews.filter((r) => r.status === "approved" && r.adminReply).length / approvedCount) * 100)
-    : 0;
+  const promedio = total > 0 ? reviews.reduce((s, x) => s + x.rating, 0) / total : 0;
+  const aprobadas = reviews.filter((x) => x.status === "approved");
+  const respondidas = aprobadas.filter((x) => x.adminReply).length;
+  const cuenta = (s: string) => reviews.filter((x) => x.status === s).length;
 
-  // Distribución por estrellas (5,4,3,2,1)
-  const distribution = [5, 4, 3, 2, 1].map((s) => {
-    const count = reviews.filter((r) => r.rating === s).length;
-    const pct = total > 0 ? (count / total) * 100 : 0;
-    return { stars: s, count, pct };
+  const kpis = useKpisPlegables({
+    claveMemoria: "marketplace-resenas",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    sinDatosAun: loading && total === 0,
+    resumen: total > 0 ? `${promedio.toFixed(1)} ★ · ${pendingCount} por moderar` : "Sin reseñas",
+    tarjetas: [
+      <StatCard density="compact" key="p" label="Promedio" value={total > 0 ? `${promedio.toFixed(1)} de 5` : "—"} icon={Star} info={<InfoTip what={`De ${total} reseñas de tu puesto, también las que esperan.`} />} />,
+      <StatCard density="compact" key="m" label="Por moderar" value={pendingCount} icon={MessageSquare} highlight={pendingCount > 0} info={<InfoTip what="No se ven en tu tienda hasta que las apruebes." />} />,
+      <StatCard density="compact" key="r" label="Respondidas" value={aprobadas.length > 0 ? `${respondidas} de ${aprobadas.length}` : "—"} icon={ThumbsUp} info={<InfoTip what="De las aprobadas, cuántas tienen tu respuesta." />} />,
+    ],
   });
 
-  // Iniciales avatar
-  const initials = (name: string | null | undefined) => {
-    const n = (name ?? "").trim();
-    if (!n) return "?";
-    return n.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
-  };
+  const acciones: MenuAccion[] = [
+    { id: "opiniones", label: "Análisis de opiniones", hint: "Clientes › Opiniones: promedio y tendencia de todas", icon: BarChart3, onSelect: () => irAEnlace(HREF_OPINIONES) },
+  ];
+  /* Al «⋯ Más» del hub; «Actualizar» ya lo pone el hub. */
+  useAccionesDeVista(acciones);
+  const opciones: OpcionFiltro<Filtro>[] = [
+    { valor: "all", rotulo: "Todos los estados", cuenta: total },
+    { valor: "pending", rotulo: "Por moderar", cuenta: cuenta("pending") },
+    { valor: "approved", rotulo: "Aprobadas", cuenta: cuenta("approved") },
+    { valor: "rejected", rotulo: "Rechazadas", cuenta: cuenta("rejected") },
+  ];
 
-  const filterMeta = {
-    all: { label: "Todas", count: total },
-    pending: { label: "Por moderar", count: pendingCount },
-    approved: { label: "Aprobadas", count: approvedCount },
-    rejected: { label: "Rechazadas", count: rejectedCount },
-  } as const;
+  const abrirRespuesta = (x: ReviewItem) => {
+    setReplyingTo(x.id);
+    setReplyText(x.adminReply ?? "");
+  };
+  const accionesDe = (x: ReviewItem): MenuAccion[] => [
+    { id: "responder", label: x.adminReply ? "Editar respuesta" : "Responder", icon: MessageSquare, onSelect: () => abrirRespuesta(x) },
+    ...(x.status !== "approved" ? [{ id: "aprobar", label: "Aprobar", hint: "Se ve en tu tienda", icon: Check, onSelect: () => void handleStatusChange(x.id, "approved") }] : []),
+    ...(x.status !== "rejected" ? [{ id: "rechazar", label: "Rechazar", hint: "Deja de verse en tu tienda", icon: X, tone: "danger" as const, onSelect: () => void handleStatusChange(x.id, "rejected") }] : []),
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* ── Hero: rating promedio + distribución ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-[var(--data-warning)]/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
-        <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-[var(--data-warning)]/10 blur-3xl pointer-events-none" />
-        <div className="relative grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-6 items-center">
-          {/* Promedio grande */}
-          <div className="text-center sm:text-left sm:border-r sm:border-[var(--rule-base)] sm:pr-6">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Calificación promedio</p>
-            <p className="mt-1 flex items-center gap-2 justify-center sm:justify-start">
-              <span className="text-5xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
-                {avg > 0 ? avg.toFixed(1) : "—"}
-              </span>
-              <span className="text-base font-bold text-[var(--text-tertiary)] tabular-nums">/ 5.0</span>
-            </p>
-            <div className="mt-2 flex items-center gap-0.5 justify-center sm:justify-start">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star
-                  key={s}
-                  className={cn(
-                    "h-5 w-5",
-                    s <= Math.round(avg)
-                      ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
-                      : "text-[var(--rule-base)]"
-                  )}
-                />
-              ))}
-            </div>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">
-              <span className="font-bold text-[var(--text-primary)] tabular-nums">{total}</span> {total === 1 ? "reseña" : "reseñas"}
-            </p>
-          </div>
+    <div className="space-y-3 sm:space-y-4">
+      <FilaDeVista
+        titulo="Reseñas"
+        ayuda={{
+          what: "Lo que opinan quienes te compraron, en tu tienda o por el marketplace. Aquí las apruebas, las rechazas y las respondes.",
+          affects: "Sólo las aprobadas se ven en tu tienda, con tu respuesta debajo. El promedio y la tendencia de todas están en Clientes › Opiniones.",
+          example: "«Faltó una lata de leche» → respondes «Ya quedó corregido» y la apruebas.",
+        }}
+        derecha={kpis.boton}
+      >
+        {total > 0 && <SelectFiltro opciones={opciones} activo={filter} onCambiar={setFilter} etiqueta="Estado de la reseña" />}
+      </FilaDeVista>
+      {kpis.panel}
 
-          {/* Distribución por estrellas */}
-          <div className="space-y-1.5">
-            {distribution.map(({ stars, count, pct }) => (
-              <div key={stars} className="flex items-center gap-2 text-xs">
-                <span className="inline-flex items-center gap-1 w-8 font-bold text-[var(--text-secondary)] tabular-nums shrink-0">
-                  {stars}
-                  <Star className="h-3 w-3 fill-[var(--data-warning)] text-[var(--data-warning)]" />
-                </span>
-                <div className="flex-1 h-2 rounded-full bg-[var(--rule-soft)] overflow-hidden">
-                  <div
-                    className="h-full bg-[var(--data-warning)] rounded-full transition-all"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <span className="w-8 text-right font-bold text-[var(--text-tertiary)] tabular-nums shrink-0">{count}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Mini stats secundarias */}
-          <div className="grid grid-cols-3 sm:grid-cols-1 gap-3 sm:gap-2 sm:border-l sm:border-[var(--rule-base)] sm:pl-6 sm:min-w-[140px]">
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-warning)]">Por moderar</p>
-              <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums">{pendingCount}</p>
-            </div>
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success)]">Aprobadas</p>
-              <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums">{approvedCount}</p>
-            </div>
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary">Respondidas</p>
-              <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums">{responseRate}%</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Filtros como chips grandes ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {(["all", "pending", "approved", "rejected"] as const).map((f) => {
-          const active = filter === f;
-          const meta = filterMeta[f];
-          return (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={cn(
-                "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-bold transition-all",
-                active
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
-              )}
-            >
-              {meta.label}
-              <span className={cn(
-                "tabular-nums text-xs font-bold px-1.5 py-0.5 rounded-md",
-                active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
-              )}>
-                {meta.count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[var(--data-warning)]/10 text-[var(--data-warning)] mb-4">
-            <Star className="h-6 w-6" />
-          </div>
-          <p className="text-base font-extrabold text-[var(--text-primary)]">
-            {filter === "all" ? "Sin reseñas todavía" : `Sin reseñas ${filterMeta[filter].label.toLowerCase()}`}
-          </p>
-          <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-sm mx-auto">
-            {filter === "all"
-              ? "Cuando los clientes valoren tus productos, las reseñas aparecerán acá."
-              : "Probá con otro filtro para ver más resultados."}
-          </p>
-        </div>
+      {loading && total === 0 ? (
+        <TableSkeleton />
+      ) : filtered.length === 0 ? (
+        <VacioDeUnaFrase>{total === 0 ? "Sin reseñas todavía: aparecen cuando un cliente califica tu tienda." : "Ninguna reseña en ese estado."}</VacioDeUnaFrase>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((review) => {
-            const cfg = REVIEW_STATUS_CONFIG[review.status] ?? REVIEW_STATUS_CONFIG.pending;
-            const isReplying = replyingTo === review.id;
-            const hasReply = !!review.adminReply;
+        <ul className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          {filtered.map((x) => {
+            const est = ESTADO[x.status] ?? { rotulo: x.status, clase: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" };
+            const respondiendo = replyingTo === x.id;
+            const ocupado = saving === x.id;
             return (
-              <div
-                key={review.id}
-                className={cn(
-                  "relative overflow-hidden rounded-2xl border-2 bg-white transition-all",
-                  review.status === "pending"
-                    ? "border-[var(--data-warning)]/40 hover:border-[var(--data-warning)]"
-                    : review.status === "rejected"
-                    ? "border-[var(--rule-base)] opacity-75"
-                    : "border-[var(--rule-base)] hover:border-primary/30"
+              <li key={x.id} className="space-y-2 px-4 py-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="text-sm font-bold text-[var(--text-primary)]">{x.name || "Anónimo"}</span>
+                  <Estrellas n={x.rating} />
+                  <span className="text-sm text-[var(--text-secondary)]">{diaDe(x.date)}</span>
+                  <span className={cn("rounded-full px-2.5 py-0.5 text-sm font-semibold", est.clase)}>{est.rotulo}</span>
+                  <div className="ml-auto flex items-center gap-1">
+                    {x.status === "pending" ? (
+                      <button type="button" disabled={ocupado} onClick={() => void handleStatusChange(x.id, "approved")} className={button({ variant: "secondary", className: "h-12 rounded-xl px-4 text-sm" })}>
+                        <Check className="h-4 w-4" aria-hidden /> Aprobar
+                      </button>
+                    ) : (
+                      !respondiendo && (
+                        <button type="button" onClick={() => abrirRespuesta(x)} className={button({ variant: "ghost", className: "h-12 rounded-xl px-4 text-sm" })}>
+                          <MessageSquare className="h-4 w-4" aria-hidden /> {x.adminReply ? "Editar respuesta" : "Responder"}
+                        </button>
+                      )
+                    )}
+                    <ActionMenu label="Acciones" icon={MoreHorizontal} soloIcono size="md" className="w-12" title={`Más acciones de la reseña de ${x.name || "Anónimo"}`} actions={accionesDe(x)} disabled={ocupado} />
+                  </div>
+                </div>
+                {x.text && <p className="text-sm text-[var(--text-primary)]">{x.text}</p>}
+                {x.adminReply && !respondiendo && (
+                  <p className="border-l-2 border-primary/40 pl-3 text-sm text-[var(--text-secondary)]">
+                    <span className="font-semibold text-[var(--text-primary)]">Tu respuesta: </span>
+                    {x.adminReply}
+                  </p>
                 )}
-              >
-                {/* Banda lateral según estado */}
-                <div className={cn(
-                  "absolute left-0 top-0 bottom-0 w-1.5",
-                  review.status === "pending"
-                    ? "bg-[var(--data-warning)]"
-                    : review.status === "approved"
-                    ? "bg-[var(--data-success)]"
-                    : "bg-[var(--rule-base)]"
-                )} />
-
-                <div className="pl-3 p-5 space-y-4">
-                  {/* Header: avatar + nombre + estrellas + estado + acciones */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      {/* Avatar con iniciales */}
-                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br from-primary/20 to-primary/5 border border-primary/20 text-primary font-extrabold text-sm shrink-0">
-                        {initials(review.name)}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-extrabold text-sm text-[var(--text-primary)] truncate">
-                            {review.name || "Anónimo"}
-                          </span>
-                          <span className={cn(
-                            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
-                            cfg.className
-                          )}>
-                            {cfg.label}
-                          </span>
-                          {hasReply && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-primary bg-primary/10">
-                              <MessageSquare className="h-2.5 w-2.5" /> Respondida
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="flex items-center gap-0.5">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                              <Star
-                                key={s}
-                                className={cn(
-                                  "h-4 w-4",
-                                  s <= review.rating
-                                    ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
-                                    : "text-[var(--rule-base)]"
-                                )}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">·</span>
-                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
-                            {new Date(review.date).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Acciones */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {review.status !== "approved" && (
-                        <button
-                          onClick={() => handleStatusChange(review.id, "approved")}
-                          disabled={saving === review.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-success)]/10 text-[var(--data-success)] text-xs font-bold hover:bg-[var(--data-success)] hover:text-white transition-colors disabled:opacity-50"
-                          title="Aprobar"
-                        >
-                          <CheckCircle className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline">Aprobar</span>
-                        </button>
-                      )}
-                      {review.status !== "rejected" && (
-                        <button
-                          onClick={() => handleStatusChange(review.id, "rejected")}
-                          disabled={saving === review.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] text-xs font-bold hover:bg-[var(--data-error)] hover:text-white transition-colors disabled:opacity-50"
-                          title="Rechazar"
-                        >
-                          <XCircle className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline">Rechazar</span>
-                        </button>
-                      )}
-                      <button
-                        onClick={() => { setReplyingTo(isReplying ? null : review.id); setReplyText(review.adminReply ?? ""); }}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                          isReplying
-                            ? "bg-primary text-white"
-                            : "bg-primary/10 text-primary hover:bg-primary hover:text-white"
-                        )}
-                        title="Responder"
-                      >
-                        <MessageSquare className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">{hasReply ? "Editar" : "Responder"}</span>
+                {respondiendo && (
+                  <div className="space-y-2">
+                    <textarea
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      rows={2}
+                      autoFocus
+                      aria-label={`Respuesta a ${x.name || "Anónimo"}`}
+                      placeholder="Gracias por tu compra…"
+                      className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button type="button" onClick={() => { setReplyingTo(null); setReplyText(""); }} className={button({ variant: "ghost", className: "h-12 rounded-xl px-4 text-sm" })}>
+                        Cancelar
+                      </button>
+                      <button type="button" disabled={!replyText.trim() || ocupado} onClick={() => void handleReply(x.id)} className={button({ variant: "primary", className: "h-12 rounded-xl px-4 text-sm" })}>
+                        {ocupado ? "Guardando…" : "Guardar respuesta"}
                       </button>
                     </div>
                   </div>
-
-                  {/* Texto de la reseña — destacado tipo cita */}
-                  <blockquote className="text-sm text-[var(--text-primary)] leading-relaxed italic font-display border-l-4 border-[var(--rule-base)] pl-4">
-                    “{review.text}”
-                  </blockquote>
-
-                  {/* Respuesta admin existente */}
-                  {hasReply && !isReplying && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white">
-                          <MessageSquare className="h-2.5 w-2.5" />
-                        </span>
-                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary">Tu respuesta</p>
-                      </div>
-                      <p className="text-sm text-[var(--text-primary)] leading-relaxed">{review.adminReply}</p>
-                    </div>
-                  )}
-
-                  {/* Reply form */}
-                  {isReplying && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white">
-                            <MessageSquare className="h-2.5 w-2.5" />
-                          </span>
-                          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary">
-                            {hasReply ? "Editar respuesta" : "Nueva respuesta"}
-                          </p>
-                        </div>
-                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
-                          {replyText.length}/500
-                        </span>
-                      </div>
-                      <textarea
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        placeholder="Gracias por tu reseña…"
-                        rows={3}
-                        maxLength={500}
-                        className="w-full rounded-lg border-2 border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
-                      />
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => { setReplyingTo(null); setReplyText(""); }}
-                          className="px-3 py-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-white text-[var(--text-secondary)] text-xs font-bold hover:bg-[var(--surface-sunken)] transition-colors"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          onClick={() => handleReply(review.id)}
-                          disabled={saving === review.id || !replyText.trim()}
-                          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
-                        >
-                          {saving === review.id ? (
-                            <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <MessageSquare className="h-3 w-3" />
-                          )}
-                          {saving === review.id ? "Guardando…" : "Enviar respuesta"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+                )}
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );
 }
-
-
-// ─────────────────────────────────────────────
-// Orquestador principal
-// ─────────────────────────────────────────────

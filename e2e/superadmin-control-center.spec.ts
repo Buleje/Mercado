@@ -23,7 +23,8 @@ test.describe("/superadmin/control-center", () => {
     await expect(page.getByRole("heading", { name: /Centro de control/i }).first()).toBeVisible();
 
     // Stats hero
-    await expect(page.getByText(/Plataformas activas/i)).toBeVisible();
+    // 2026-10-08: sin chequeo real la tarjeta se llama «Páginas» (antes «Plataformas activas 7/142» era un stub).
+    await expect(page.getByText(/^(Plataformas activas|Páginas)$/i).first()).toBeVisible();
     await expect(page.getByText(/Credenciales OK/i)).toBeVisible();
 
     // Título de sección "Plataformas · N páginas"

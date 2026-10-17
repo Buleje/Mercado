@@ -11,20 +11,28 @@
  * ver docs/refactor-giant-files-plan.md).
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ALL_TABS } from "../_lib/tab-data";
 import type { Tab } from "../_lib/tabs.types";
 import type { TabCategory } from "../_lib/tab-categories";
-import { MODULE_PERMISSIONS } from "@/lib/module-permissions";
 import { usePlanTier } from "@/hooks/use-plan-tier";
 import { useAdminTemplateOverlay } from "./useAdminTemplateOverlay";
-import { useEnabledSpecs, SPEC_GATED_MODULE_IDS } from "@/hooks/use-enabled-specs";
+import { useEnabledSpecs } from "@/hooks/use-enabled-specs";
+import {
+  SIN_FILTRO,
+  idsDelPlan,
+  idsDelRol,
+  idsPermitidos,
+  normalizarGuardadas,
+  normalizarOcultas,
+  pestanaPermitida,
+  type ContextoPermiso,
+} from "@/lib/admin/permiso-vista";
 
 type Params = {
   userRole: string;
   savedRolePerms: Record<string, string[]> | null;
   hiddenTabs: Set<Tab>;
-  selectedCategory: string | null;
   visibleCategories: TabCategory[];
   sidebarSearch: string;
   favoriteTabs: Set<Tab>;
@@ -33,13 +41,15 @@ type Params = {
   fuzzyMatch: (text: string, query: string) => boolean;
 };
 
+/** Los ids que el panel sabe dibujar: contra esto se validan las preferencias guardadas. */
+const IDS_DEL_PANEL: readonly string[] = ALL_TABS.map((t) => t.id);
+const IDS_CONOCIDOS: ReadonlySet<string> = new Set(IDS_DEL_PANEL);
+
 export function useAdminTabsDerived(params: Params) {
   const {
     userRole,
     savedRolePerms,
     hiddenTabs,
-    selectedCategory,
-    visibleCategories,
     sidebarSearch,
     favoriteTabs,
     recentTabs,
@@ -51,8 +61,16 @@ export function useAdminTabsDerived(params: Params) {
   // Los tabs se intersectan con los desbloqueados por el plan actual.
   // Cambiar de plan dispara `buleje-plan-change` y este hook re-rendera
   // automáticamente — el sidebar se actualiza sin recargar.
-  const { definition: planDefinition } = usePlanTier();
-  const planUnlockedTabs = planDefinition.unlockedTabs;
+  const { plan: planTier } = usePlanTier();
+
+  // Override DEV-ONLY (localStorage admin_mode_dev_unlock="1"): bypasea el plan
+  // gate para que el equipo vea TODOS los módulos al verificar Modo Avanzado.
+  // Nunca afecta a un tenant que no haya puesto la key manualmente. Requiere
+  // reload para cambiar (alineado con useAdminMode).
+  const [devUnlock] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("admin_mode_dev_unlock") === "1"; } catch { return false; }
+  });
 
   // ── Plantilla del superadmin (overlay) ──────────────────────────────────
   // Sobreescribe labels y filtra módulos marcados como no-visibles.
@@ -71,68 +89,65 @@ export function useAdminTabsDerived(params: Params) {
     [resolveLabel],
   );
 
-  const allowedTabs = useMemo((): Tab[] => {
-    // DEFAULT_ROLE_TABS: base sin overrides guardados.
-    // Los casts a Tab[] son intencionales — MODULE_PERMISSIONS usa ModuleId[]
-    // pero en la práctica los ids coinciden con los del tipo Tab.
-    const DEFAULT_ROLE_TABS: Record<string, Tab[]> = {
-      admin: ALL_TABS.map(t => t.id),
-      cajero: MODULE_PERMISSIONS.cajero as unknown as Tab[],
-      almacenero: MODULE_PERMISSIONS.almacenero as unknown as Tab[],
-    };
-    // ROLE_TABS: overrides guardados por Settings sobreescriben defaults,
-    // pero admin siempre tiene acceso completo (no puede limitarse).
-    const ROLE_TABS: Record<string, Tab[]> = {
-      ...DEFAULT_ROLE_TABS,
-      ...(savedRolePerms
-        ? Object.fromEntries(
-            Object.entries(savedRolePerms).map(([role, tabs]) => [role, tabs as Tab[]]),
-          )
-        : {}),
-      // admin siempre ve todo — no puede ser restringido por overrides
-      admin: ALL_TABS.map(t => t.id),
-    };
-    const baseTabs = ROLE_TABS[userRole] ?? ROLE_TABS.admin;
-    // Intersección con plan tier — admin siempre ve todo lo que su plan
-    // permita (no más). Los tabs del módulo Config siempre pasan
-    // (config, plan, mi-perfil, auditoria) para que el dueño pueda
-    // gestionar su suscripción incluso en Básico.
-    //
-    // 2026-05-28 (ADR-124 fix): los tabs SPEC-GATED (forestal CTP, salud,
-    // textil) bypasean el plan tier filter — la feature flag de spec
-    // ES el mecanismo de unlock. Si los filtraramos por plan, no
-    // aparecerían NUNCA porque no están en ningún unlockedTabs de planes
-    // genéricos. El gating real lo hace `enabledSpecModuleIds` abajo.
-    return baseTabs.filter((tab) => {
-      if (SPEC_GATED_MODULE_IDS.has(tab)) return true;
-      return planUnlockedTabs.has(tab);
-    });
-  }, [userRole, savedRolePerms, planUnlockedTabs]);
+  // ── Permiso por vista (plan «panel unificado», regla R2) ────────────────
+  // Las capas se arman acá y las decide `lib/admin/permiso-vista.ts`: una
+  // pestaña se ve si ALGUNA de sus vistas pasa, evaluando cada vista sobre la
+  // pestaña de donde vino. Mientras ninguna vista declare otro origen, eso es
+  // exactamente lo de antes (lo prueba __tests__/panel-sin-perdida.test.ts).
+  //
+  // Rol: lo decide `tabsDelRol` (lib/module-permissions.ts). Hoy: admin ve todo;
+  // cajero y almacenero, su lista por defecto (o la guardada en Ajustes);
+  // cualquier otro rol sin lista guardada ve lo de admin, como siempre.
+  const rolVe = useMemo(() => idsDelRol(userRole, savedRolePerms), [userRole, savedRolePerms]);
+  // Plan: config, plan y mi-perfil pasan porque todos los planes los
+  // desbloquean (el dueño gestiona su suscripción incluso en Básico). Los
+  // SPEC-GATED (forestal, cacao…) se saltan el plan: su bandera ES el candado
+  // (ADR-124); el gate real lo hace `enabledSpecModuleIds` más abajo.
+  const planVe = devUnlock ? null : idsDelPlan(planTier);
+
+  /** Rol + plan, por id: la base de todo lo demás. */
+  const capaRolPlan = useMemo<ContextoPermiso>(
+    () => ({ ...SIN_FILTRO, rol: rolVe, plan: planVe }),
+    [rolVe, planVe],
+  );
+
+  // `allowedTabs` sigue siendo POR ID (sin unir vistas): la barra lo usa como la
+  // capa de rol + plan de cada origen.
+  const allowedTabs = useMemo(
+    (): Tab[] => idsPermitidos(capaRolPlan, IDS_DEL_PANEL) as Tab[],
+    [capaRolPlan],
+  );
+
+  // Ocultos del usuario: sólo los que siguen siendo pestaña (no siguen alias,
+  // ver `normalizarOcultas`).
+  const ocultos = useMemo(() => normalizarOcultas(hiddenTabs, IDS_CONOCIDOS), [hiddenTabs]);
+
+  /** Menú del celular y Command Palette: rol + plan + plantilla + especialización (sin rubro, como siempre). */
+  const capaMovil = useMemo<ContextoPermiso>(
+    () => ({ ...capaRolPlan, plantilla: isHiddenByTemplate, especialidades: enabledSpecModuleIds }),
+    [capaRolPlan, isHiddenByTemplate, enabledSpecModuleIds],
+  );
+
+  /** Favoritos y recientes: rol + plan + plantilla (nunca miraron la especialización). */
+  const capaGuardadas = useMemo<ContextoPermiso>(
+    () => ({ ...capaRolPlan, plantilla: isHiddenByTemplate }),
+    [capaRolPlan, isHiddenByTemplate],
+  );
 
   // Set base de módulos VISIBLES del negocio (rol + plan + ocultos + plantilla +
   // specs), SIN el narrowing por categoría/búsqueda del sidebar. Es "los módulos
   // que se tienen actuales" — lo usa el Command Palette (Brandon 2026-05-29).
   const visibleTabs = useMemo(
-    () =>
-      enhancedTabs.filter(
-        t =>
-          allowedTabs.includes(t.id) &&
-          !hiddenTabs.has(t.id) &&
-          !isHiddenByTemplate(t.id) &&
-          (!SPEC_GATED_MODULE_IDS.has(t.id) || enabledSpecModuleIds.has(t.id)),
-      ),
-    [enhancedTabs, allowedTabs, hiddenTabs, isHiddenByTemplate, enabledSpecModuleIds],
+    () => enhancedTabs.filter((t) => !ocultos.has(t.id) && pestanaPermitida(capaMovil, t.id)),
+    [enhancedTabs, ocultos, capaMovil],
   );
 
   const filteredTabs = useMemo(() => {
     let result = visibleTabs;
 
-    // Filtra por categoría seleccionada en el sidebar
-    if (selectedCategory) {
-      const categoryTabs =
-        visibleCategories.find(c => c.id === selectedCategory)?.tabs ?? [];
-      result = result.filter(t => categoryTabs.includes(t.id));
-    }
+    // (El filtro por categoría se retiró junto con el selector "Todas las
+    // categorías" del drawer: era el único que lo seteaba, así que quedaba
+    // siempre en null y el filtro no hacía nada. Ahora se filtra por búsqueda.)
 
     // Fuzzy search en el sidebar
     if (sidebarSearch.trim()) {
@@ -140,33 +155,33 @@ export function useAdminTabsDerived(params: Params) {
     }
 
     return result;
-  }, [visibleTabs, selectedCategory, visibleCategories, sidebarSearch, fuzzyMatch]);
+  }, [visibleTabs, sidebarSearch, fuzzyMatch]);
+
+  // Favoritos y recientes guardados pasan por `resolverDestino`: un id que dejó
+  // de ser pestaña lleva a la que lo abre hoy en vez de perderse en silencio.
+  const favoritas = useMemo(
+    () => new Set(normalizarGuardadas(favoriteTabs, IDS_CONOCIDOS)),
+    [favoriteTabs],
+  );
 
   const favoriteTabItems = useMemo(
-    () =>
-      enhancedTabs.filter(
-        t =>
-          favoriteTabs.has(t.id) &&
-          allowedTabs.includes(t.id) &&
-          !isHiddenByTemplate(t.id),
-      ),
-    [enhancedTabs, favoriteTabs, allowedTabs, isHiddenByTemplate],
+    () => enhancedTabs.filter((t) => favoritas.has(t.id) && pestanaPermitida(capaGuardadas, t.id)),
+    [enhancedTabs, favoritas, capaGuardadas],
   );
 
   const recentTabItems = useMemo(
     () =>
-      recentTabs
+      normalizarGuardadas(recentTabs, IDS_CONOCIDOS)
         .filter(
           id =>
             id !== currentTab &&
-            !favoriteTabs.has(id) &&
-            allowedTabs.includes(id) &&
-            !isHiddenByTemplate(id),
+            !favoritas.has(id) &&
+            pestanaPermitida(capaGuardadas, id),
         )
-        .map(id => enhancedTabs.find(t => t.id === id)!)
-        .filter(Boolean)
+        .map(id => enhancedTabs.find(t => t.id === id))
+        .filter((t): t is (typeof enhancedTabs)[number] => t !== undefined)
         .slice(0, 5),
-    [enhancedTabs, recentTabs, currentTab, favoriteTabs, allowedTabs, isHiddenByTemplate],
+    [enhancedTabs, recentTabs, currentTab, favoritas, capaGuardadas],
   );
 
   return { allowedTabs, filteredTabs, visibleTabs, favoriteTabItems, recentTabItems };

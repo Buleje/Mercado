@@ -37,17 +37,21 @@ function getPidsWindows(port) {
 }
 
 function getPidsUnix(port) {
-  const res = spawnSync("lsof", ["-tiTCP:" + port, "-sTCP:LISTEN"], {
-    encoding: "utf8",
-  });
-  if (res.status !== 0) return [];
-  return res.stdout
+  // `ss` primero: en WSL2 con networkingMode=mirrored, `lsof -tiTCP:PORT` devuelve
+  // vacio con exit 1 aunque haya un listener (verificado 2026-09-03), asi que el
+  // script decia "puerto libre" con next-server vivo y `dev:clean`/`dev:nuke`
+  // levantaban un segundo server en :3001. `ss -ltnpH` si lo ve.
+  const ss = spawnSync("ss", ["-ltnpH", `sport = :${port}`], { encoding: "utf8" });
+  const desdeSs = [...(ss.stdout ?? "").matchAll(/pid=(\d+)/g)].map((m) => Number(m[1]));
+  if (desdeSs.length > 0) return [...new Set(desdeSs)];
+  // Fallback lsof: se lee la salida aunque el exit sea != 0 (en WSL warnea y sale 1).
+  const res = spawnSync("lsof", ["-tiTCP:" + port, "-sTCP:LISTEN"], { encoding: "utf8" });
+  return (res.stdout ?? "")
     .trim()
     .split("\n")
     .map((s) => Number(s.trim()))
     .filter((n) => Number.isFinite(n) && n > 0);
 }
-
 function killWindows(pid) {
   const res = spawnSync("taskkill", ["/F", "/PID", String(pid)], {
     encoding: "utf8",

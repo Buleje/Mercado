@@ -3,6 +3,9 @@
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef } from "react";
 
+/** Punto en modo agregado (varios productores en un mapa). */
+export type LeafletMarker = { lat: number; lon: number; popupHtml?: string };
+
 type Props = {
   lat: number;
   lon: number;
@@ -10,14 +13,21 @@ type Props = {
   height?: number;
   /** If provided, the map is interactive: clicking/dragging sets a new location */
   onPick?: (lat: number, lon: number, address: string) => void;
+  /** Si se pasa (aunque sea []), el mapa entra en modo AGREGADO: pinta estos
+   *  marcadores con popup y ajusta el encuadre (fitBounds). Ignora onPick. */
+  markers?: LeafletMarker[];
 };
 
-export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }: Props) {
+export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick, markers }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Leaflet Map instance (dynamically imported)
   const mapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Leaflet Marker instance (dynamically imported)
   const markerRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Leaflet module + layerGroup (dynamically imported)
+  const LRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const groupRef = useRef<any>(null);
 
   // Keep refs up-to-date to avoid stale closures in the init effect
   const latRef = useRef(lat);
@@ -26,6 +36,32 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
   lonRef.current = lon;
   const onPickRef = useRef(onPick);
   onPickRef.current = onPick;
+  const markersRef = useRef(markers);
+  markersRef.current = markers;
+  const aggregate = Array.isArray(markers);
+
+  // Pinta/actualiza los marcadores del modo agregado y ajusta el encuadre.
+  function renderAggregate() {
+    const L = LRef.current;
+    const map = mapRef.current;
+    const list = markersRef.current;
+    if (!L || !map || !Array.isArray(list)) return;
+    if (!groupRef.current) groupRef.current = L.layerGroup().addTo(map);
+    groupRef.current.clearLayers();
+    if (list.length === 0) return;
+    const pts: [number, number][] = [];
+    for (const m of list) {
+      const mk = L.marker([m.lat, m.lon]);
+      if (m.popupHtml) mk.bindPopup(m.popupHtml);
+      mk.addTo(groupRef.current);
+      pts.push([m.lat, m.lon]);
+    }
+    try {
+      map.fitBounds(L.latLngBounds(pts), { padding: [40, 40], maxZoom: 14 });
+    } catch {
+      /* un solo punto o bounds inválido: mantené la vista inicial */
+    }
+  }
 
   // ── Initialize map once ────────────────────────────────────────────────────
   useEffect(() => {
@@ -34,6 +70,7 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
 
     import("leaflet").then((L) => {
       if (destroyed || !containerRef.current) return;
+      LRef.current = L;
 
       // Fix default icon URLs broken by bundlers
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,10 +93,15 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
         maxZoom: 19,
       }).addTo(map);
 
-      const marker = L.marker([latRef.current, lonRef.current], {
-        draggable: !!onPickRef.current,
-      }).addTo(map);
-      markerRef.current = marker;
+      if (aggregate) {
+        // Modo agregado: varios marcadores read-only, sin marcador arrastrable.
+        renderAggregate();
+      } else {
+        const marker = L.marker([latRef.current, lonRef.current], {
+          draggable: !!onPickRef.current,
+        }).addTo(map);
+        markerRef.current = marker;
+      }
 
       // Fix gray tiles caused by modal animation — invalidate after container settles
       setTimeout(() => { if (!destroyed) map.invalidateSize(); }, 250);
@@ -73,7 +115,8 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
         (map as any)._roCleanup = () => ro.disconnect();
       }
 
-      if (onPickRef.current) {
+      if (!aggregate && onPickRef.current) {
+        const marker = markerRef.current;
         const reverseGeocode = async (lat: number, lng: number) => {
           try {
             const res = await fetch(
@@ -116,17 +159,24 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
         mapRef.current.remove();
         mapRef.current = null;
         markerRef.current = null;
+        groupRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Sync marker/view when lat/lon change from outside ─────────────────────
+  // ── Sync marker/view when lat/lon change from outside (solo modo simple) ───
   useEffect(() => {
     if (!mapRef.current || !markerRef.current) return;
     markerRef.current.setLatLng([lat, lon]);
     mapRef.current.panTo([lat, lon]);
   }, [lat, lon]);
+
+  // ── Re-render de marcadores cuando cambian los datos (modo agregado) ───────
+  useEffect(() => {
+    if (aggregate) renderAggregate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [markers]);
 
   return (
     <div

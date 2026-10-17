@@ -7,14 +7,16 @@ import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
-import { getTenantIdFromRequest } from "@/lib/tenant";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 const ProductUpdateSchema = z.object({
   name: z.string().min(1).max(150).optional(),
   category: z.string().min(1).max(100).optional(),
   price: z.number().positive().optional(),
-  costPrice: z.number().min(0).optional().nullable(),
+  // Costo en soles redondeado a céntimos (la columna es Decimal(12,2)). Un 0
+  // no es un costo: se ignora abajo para no pisar el que hay (la OC recibida
+  // manda stock + costo juntos y un 400 perdería el stock); quitar = null.
+  costPrice: z.number().min(0).transform((v) => Math.round(v * 100) / 100).optional().nullable(),
   // FIX 2026-05: bumped 500 → 500_000 para soportar dataURL WebP comprimida.
   // El processImage() del cliente garantiza ≤120KB (~160_000 chars base64).
   // 500K da margen para imágenes grandes pegadas como URL externa también.
@@ -46,15 +48,34 @@ const ProductUpdateSchema = z.object({
   durationLabel: z.string().max(60).optional(),
   pricingUnit:   z.enum(["fijo", "hora", "m3", "unidad", "dia"]).optional(),
   notes:         z.string().max(2000).optional(),
+  // Contenido rico (estilo Amazon) — arrays estructurados; se guardan como JSON.
+  specs:         z.array(z.object({ label: z.string().max(60), value: z.string().max(400) })).max(30).optional(),
+  richContent:   z.array(z.object({ heading: z.string().max(120).optional(), body: z.string().max(3000).optional(), imageUrl: z.string().max(500_000).optional() })).max(20).optional(),
 });
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
+/**
+ * Ficha completa de un producto — SÓLO para el panel.
+ *
+ * Estaba abierta: sin sesión devolvía el registro entero, con `costPrice`,
+ * `stock` y las notas internas. Cualquiera que supiera el id (son enteros
+ * correlativos) podía leer los márgenes y el inventario del negocio.
+ *
+ * La tienda pública no lo usa: el storefront y el marketplace consumen
+ * `/api/marketplace/products/[productId]`, y el resto del repo sólo llama a
+ * sub-rutas (`/modifiers`, `/price-history`, `/stock-check`). Verificado con
+ * un grep repo-wide antes de cerrarlo.
+ *
+ * El tenant sale de la SESIÓN, no de `getTenantIdFromRequest`: el host lo pone
+ * el cliente y no debería decidir a qué catálogo se entra.
+ */
 export async function GET(req: NextRequest, ctx: RouteCtx) {
+  const auth = await requireAdmin(req, ["admin", "almacenero"]);
+  if (auth instanceof NextResponse) return auth;
   try {
-    const tenantId = getTenantIdFromRequest(req);
     const { id } = await ctx.params;
-    const product = await ProductsDB.getById(tenantId, Number(id));
+    const product = await ProductsDB.getById(auth.tenantId, Number(id));
     if (!product) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     return NextResponse.json(product);
   } catch (e) {
@@ -84,12 +105,16 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
       );
     }
 
-    const body = parsed.data;
+    // specs/richContent salen del body y se convierten a JSON aparte (el upsert
+    // espera specsJson/richContentJson string, no los arrays crudos).
+    const { specs, richContent, ...body } = parsed.data;
     const updated = await ProductsDB.upsert({
       ...existing,
       ...body,
       id: numId,
-      costPrice: body.costPrice ?? existing.costPrice,
+      // null explícito = quitar el costo (casilla vacía en la fila del
+      // inventario); sin enviar o 0 = conservar. Con `??` el null no limpiaba.
+      costPrice: "costPrice" in body && body.costPrice !== 0 ? body.costPrice : existing.costPrice,
       badge: body.badge ?? existing.badge,
       barcode: body.barcode ?? existing.barcode,
       // Brandon 2026-06-06: distinguir null (stock ILIMITADO — el admin lo
@@ -99,6 +124,8 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
       stockMin: "stockMin" in body ? body.stockMin : existing.stockMin,
       stockMax: "stockMax" in body ? body.stockMax : existing.stockMax,
       description: body.description ?? existing.description,
+      specsJson: specs !== undefined ? JSON.stringify(specs) : existing.specsJson,
+      richContentJson: richContent !== undefined ? JSON.stringify(richContent) : existing.richContentJson,
     });
 
     // Record price history when price actually changed
@@ -116,6 +143,10 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
         quantity: Math.abs(diff),
         notes: body.adjustReason ?? "Ajuste manual sin razón documentada",
         createdBy: auth.username ?? "admin",
+        // `ProductsDB.update` de arriba ya dejó el stock en el valor pedido.
+        // Sin esta bandera, `record` aplicaba la diferencia de nuevo: ajustar
+        // de 100 a 80 terminaba en 60 (medido 2026-08-11).
+        stockYaAplicado: true,
       }).catch((err) => logger.warn("[products/id] stock diff log failed", { error: String(err) }));
     }
 

@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const tenant = await resolveTenantId(auth.tenantId);
     if (!tenant) {
       return NextResponse.json(
-        { error: "Tenant inválido — completá onboarding primero" },
+        { error: "Tenant inválido — completa onboarding primero" },
         { status: 404 },
       );
     }

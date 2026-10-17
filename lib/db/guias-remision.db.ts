@@ -7,6 +7,7 @@ import type {
   GuiaRemision as PGuiaRemision,
   GuiaRemisionItem as PGuiaRemisionItem,
 } from "@/lib/generated/prisma/client";
+import { startOfLimaMonth } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -292,7 +293,7 @@ export const GuiasRemisionDB = {
     transportistasFrecuentes: Array<{ nombre: string; ruc: string; count: number }>;
   }> {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfMonth = new Date(startOfLimaMonth(0, now));
 
     const [totalMes, enTransito, entregadas, anuladas, transportistas] =
       await Promise.all([

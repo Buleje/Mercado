@@ -71,7 +71,7 @@ export default function MisPedidosFavoritosStrip() {
     <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12">
       <TiendasSectionHeader
         eyebrow="Tus favoritos"
-        title="Repetí lo que te gusta"
+        title="Repite lo que te gusta"
         action={{ label: "Ver historial", href: "/marketplace/mi-cuenta?tab=pedidos" }}
       />
 
@@ -83,7 +83,7 @@ export default function MisPedidosFavoritosStrip() {
             className="snap-start shrink-0 w-[260px] group rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 hover:border-[var(--accent)] hover:shadow-md transition-all"
           >
             <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <Star className="h-3.5 w-3.5 fill-current" strokeWidth={2} />
               </span>
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">

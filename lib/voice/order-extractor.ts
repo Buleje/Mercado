@@ -5,6 +5,7 @@ import {
   processSafeInput,
   detectPromptInjection,
 } from "@/lib/ai-safety/sanitize";
+import { groqProvider } from "@/lib/llm-providers/groq";
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
 
@@ -102,7 +103,9 @@ export async function extractOrderFromText(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        // Del registro: un slug tipeado acá se cae en silencio cuando Groq
+        // da de baja el modelo, y el dictado queda sin extraer nada.
+        model: groqProvider.models.balanced,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           {

@@ -6,6 +6,7 @@ import { invalidate } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
 
 
 // GET /api/products/csv — Export products as CSV download
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
   return new NextResponse(csvRows.join("\n"), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="productos_${new Date().toISOString().slice(0, 10)}.csv"`,
+      "Content-Disposition": `attachment; filename="productos_${limaDateKey()}.csv"`,
     },
   });
 }

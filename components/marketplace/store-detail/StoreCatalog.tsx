@@ -15,12 +15,13 @@
 import { useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, LayoutGrid, List, ShoppingCart, Check, Flame } from "@buleje/design-system/icons";
+import { Search, LayoutGrid, List, ShoppingCart, Check, Flame, X } from "@buleje/design-system/icons";
 import { CanastaVacia } from "@/components/ui-system/illustrations";
 import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import ProductModifierModal from "@/components/marketplace/ProductModifierModal";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
+import { formatCategoryLabel } from "@/lib/format-category";
 import type { DbStoreProduct } from "@/lib/db/marketplace.db";
 
 /**
@@ -44,6 +45,12 @@ interface StoreCatalogProps {
   storeSlug: string;
   storeName: string;
   storeId: string;
+  /** Prueba social de la tienda — para el bloque de confianza del modal. */
+  storeRating?: number;
+  storeReviewCount?: number;
+  storeCategory?: string | null;
+  /** ISO de creación de la tienda (antigüedad en el modal). */
+  storeSince?: string | null;
   products: DbStoreProduct[];
   /** Categoría activa desde StoreCategories (prop-driven, no local state) */
   activeCategory: string | null;
@@ -55,6 +62,16 @@ interface StoreCatalogProps {
       Si no se pasa, fallback al toggle local en el toolbar. */
   externalView?: "grid" | "list";
   onExternalViewChange?: (view: "grid" | "list") => void;
+  /** Sugerencias de autocompletar (categorías + productos) calculadas por el
+      padre (que tiene los datos). Se muestran en un dropdown bajo el input. */
+  searchSuggestions?: SearchSuggestion[];
+  onSelectSuggestion?: (suggestion: SearchSuggestion) => void;
+}
+
+export interface SearchSuggestion {
+  type: "product" | "category";
+  label: string;
+  value: string;
 }
 
 type SortKey = "default" | "price_asc" | "price_desc" | "name_az";
@@ -74,33 +91,38 @@ function ProductListRow({
   storeSlug,
   storeId,
   storeName,
+  storeRating,
+  storeReviewCount,
+  storeCategory,
+  storeSince,
+  storeProductCount,
 }: {
   product: DbStoreProduct;
   storeSlug: string;
   storeId: string;
   storeName: string;
+  storeRating?: number;
+  storeReviewCount?: number;
+  storeCategory?: string | null;
+  storeSince?: string | null;
+  storeProductCount?: number;
 }) {
   const href = `/marketplace/${storeSlug}/producto/${product.productId}`;
   const { addItem, items } = useMarketplaceCart();
   // qty del producto en este store (para mostrar feedback "ya agregado")
-  const inCart = items.find(
-    (i) => i.productId === product.productId && i.storeId === storeId,
-  );
+  const inCart = items.find((i) => i.productId === product.productId && i.storeId === storeId);
   const qty = inCart?.quantity ?? 0;
   const hasModifiers = (product.modifierGroups?.length ?? 0) > 0;
   const [modifierModalOpen, setModifierModalOpen] = useState(false);
 
-  const handleAdd = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      // Brandon 2026-05-27: SIEMPRE abrir el modal "Armá tu pedido", tenga o no
-      // adicionales. Sin grupos el modal muestra solo cantidad + agregar.
-      // Unifica el flujo de agregado en un único formato.
-      setModifierModalOpen(true);
-    },
-    [],
-  );
+  const handleAdd = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Brandon 2026-05-27: SIEMPRE abrir el modal "Armá tu pedido", tenga o no
+    // adicionales. Sin grupos el modal muestra solo cantidad + agregar.
+    // Unifica el flujo de agregado en un único formato.
+    setModifierModalOpen(true);
+  }, []);
 
   return (
     <div className="flex gap-3 sm:gap-4 items-center p-3 sm:p-4 rounded-xl max-md:rounded-none border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 transition-colors group">
@@ -147,7 +169,11 @@ function ProductListRow({
       <button
         type="button"
         onClick={handleAdd}
-        aria-label={qty > 0 ? `Agregar otro ${product.productName}` : `Agregar ${product.productName} al carrito`}
+        aria-label={
+          qty > 0
+            ? `Agregar otro ${product.productName}`
+            : `Agregar ${product.productName} al carrito`
+        }
         title={hasModifiers ? "Elegi opciones del producto" : "Agregar al carrito"}
         className={cn(
           "shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl max-md:rounded-none border-2 transition-all",
@@ -173,7 +199,7 @@ function ProductListRow({
 
       {/* Modal "Armá tu pedido" — SIEMPRE montado (Brandon 2026-05-27): todo
           producto abre este formato; sin adicionales muestra solo cantidad. */}
-      {(
+      {
         <ProductModifierModal
           open={modifierModalOpen}
           onClose={() => setModifierModalOpen(false)}
@@ -189,6 +215,11 @@ function ProductListRow({
             storeSlug,
             storeProductId: String(product.id),
             description: null,
+            storeRating: storeRating ?? null,
+            storeReviewCount: storeReviewCount ?? null,
+            storeCategory: storeCategory ?? null,
+            storeProductCount: storeProductCount ?? null,
+            storeSince: storeSince ?? null,
           }}
           groups={product.modifierGroups ?? []}
           onConfirm={({ quantity, modifiers, finalUnitPrice }) => {
@@ -212,7 +243,7 @@ function ProductListRow({
             setModifierModalOpen(false);
           }}
         />
-      )}
+      }
     </div>
   );
 }
@@ -221,13 +252,29 @@ export default function StoreCatalog({
   storeSlug,
   storeName,
   storeId,
+  storeRating,
+  storeReviewCount,
+  storeCategory,
+  storeSince,
   products,
   activeCategory,
   externalSearch,
   onExternalSearchChange,
   externalView,
   onExternalViewChange,
+  searchSuggestions = [],
+  onSelectSuggestion,
 }: StoreCatalogProps) {
+  // Tamaño real del catálogo — prueba social honesta (no "unidades vendidas").
+  const storeProductCount = products.length;
+  // Prueba social compartida que viaja al modal de añadir (vía card o list row).
+  const storeTrust = {
+    storeRating,
+    storeReviewCount,
+    storeCategory,
+    storeProductCount,
+    storeSince,
+  } as const;
   const [internalSearch, setInternalSearch] = useState("");
   // Si el padre controla la búsqueda (desde el sticky bar), usar esa.
   // Si no, fallback al estado interno (input local del toolbar).
@@ -237,17 +284,17 @@ export default function StoreCatalog({
   const [internalView, setInternalView] = useState<"grid" | "list">("grid");
   const view = externalView ?? internalView;
   const setView = onExternalViewChange ?? setInternalView;
-  // Si el view se controla afuera, ocultamos el toggle local en el toolbar.
-  const showLocalViewToggle = externalView === undefined;
+  // Brandon 2026-07-07: el input de búsqueda ahora vive SIEMPRE en este toolbar
+  // (junto a "Relevancia" + toggle), no en un sticky bar aparte. El foco
+  // controla la visibilidad del dropdown de sugerencias.
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const filtered = useMemo(() => {
     let list = [...products];
 
     // Filter by active category (controlled from parent)
     if (activeCategory) {
-      list = list.filter(
-        (p) => p.productCategory?.toLowerCase() === activeCategory.toLowerCase()
-      );
+      list = list.filter((p) => p.productCategory?.toLowerCase() === activeCategory.toLowerCase());
     }
 
     // Filter by search
@@ -259,7 +306,8 @@ export default function StoreCatalog({
     // Sort
     if (sort === "price_asc") list.sort((a, b) => a.retailPrice - b.retailPrice);
     else if (sort === "price_desc") list.sort((a, b) => b.retailPrice - a.retailPrice);
-    else if (sort === "name_az") list.sort((a, b) => a.productName.localeCompare(b.productName, "es"));
+    else if (sort === "name_az")
+      list.sort((a, b) => a.productName.localeCompare(b.productName, "es"));
 
     return list;
   }, [products, activeCategory, search, sort]);
@@ -286,8 +334,8 @@ export default function StoreCatalog({
     return Array.from(map.entries());
   }, [filtered, activeCategory, search]);
 
-  const humanizeCategory = (id: string) =>
-    id.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  // Single source: mismo label legible que los chips/tabs de categoría.
+  const humanizeCategory = formatCategoryLabel;
 
   return (
     <section
@@ -303,79 +351,128 @@ export default function StoreCatalog({
         Catálogo de productos
       </h2>
 
-      {/* Toolbar — filtros grandes, cuadrados, visibles */}
-      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
-        {/* Search local — solo se muestra si NO hay search externo del sticky
-            bar (el padre la controla). Evita tener dos inputs duplicados. */}
-        {externalSearch === undefined && (
-          <div className="relative flex-1 lg:max-w-md">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-secondary)]"
-              aria-hidden
-            />
-            <input
-              type="search"
-              placeholder="Buscar producto..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 h-12 text-base font-medium rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition"
-            />
-          </div>
-        )}
+      {/* Toolbar consolidado (Brandon 2026-07-07) — búsqueda + orden +
+          vista en UNA sola fila. Antes la búsqueda vivía en un sticky bar
+          aparte arriba del banner; ahora está "al lado de Relevancia" y del
+          toggle tarjeta/lista, como pidió Brandon. */}
+      <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 sm:items-center">
+        {/* Búsqueda dentro de la tienda — input grande con dropdown de
+            sugerencias (categorías + productos) provisto por el padre. */}
+        <div className="relative flex-1 min-w-0">
+          <Search
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-secondary)]"
+            aria-hidden
+          />
+          <input
+            type="search"
+            placeholder={`Buscar en ${storeName}…`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+            aria-label="Buscar productos"
+            autoComplete="off"
+            className="w-full pl-12 pr-11 h-12 text-base font-medium rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition [&::-webkit-search-cancel-button]:hidden"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="Limpiar búsqueda"
+              className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              <X className="h-4 w-4" strokeWidth={2.5} />
+            </button>
+          )}
 
-        {/* Sort — select grande con label visible */}
-        <label className="relative inline-flex flex-col gap-1">
-          <span className="sr-only">Ordenar por</span>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            aria-label="Ordenar por"
-            className="h-12 rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] px-4 pr-10 focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition cursor-pointer"
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {/* View toggle — quitado el contador "N productos" (ruido visual).
-            Brandon mayo 15 v6: facilidad de uso primero, los contadores
-            distraen del catálogo. */}
-        <div className="flex items-center gap-3 lg:ml-auto">
-          {showLocalViewToggle && (
-            <div className="flex rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)]">
-              <button
-                type="button"
-                onClick={() => setView("grid")}
-                aria-label="Vista en cuadrícula"
-                aria-pressed={view === "grid"}
-                className={cn(
-                  "h-12 w-12 inline-flex items-center justify-center transition-colors",
-                  view === "grid"
-                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-                )}
-              >
-                <LayoutGrid className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setView("list")}
-                aria-label="Vista en lista"
-                aria-pressed={view === "list"}
-                className={cn(
-                  "h-12 w-12 inline-flex items-center justify-center border-l-2 border-[var(--rule-base)] transition-colors",
-                  view === "list"
-                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-                )}
-              >
-                <List className="h-5 w-5" />
-              </button>
+          {/* Dropdown de sugerencias */}
+          {searchFocused && searchSuggestions.length > 0 && (
+            <div className="absolute top-full mt-1.5 left-0 right-0 z-40 rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden max-h-[60vh] overflow-y-auto">
+              {searchSuggestions.map((s, idx) => (
+                <button
+                  key={`${s.type}:${s.value}:${idx}`}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    onSelectSuggestion?.(s);
+                    setSearchFocused(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary/10 transition-colors border-b border-[var(--rule-soft)] last:border-b-0"
+                >
+                  <span
+                    className={cn(
+                      "inline-flex items-center justify-center h-8 w-8 rounded-full shrink-0",
+                      s.type === "category"
+                        ? "bg-[var(--accent)]/10 text-[var(--accent)]"
+                        : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+                    )}
+                  >
+                    <Search className="h-4 w-4" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[var(--text-primary)] truncate">
+                      {s.label}
+                    </p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      {s.type === "category" ? "Filtrar por categoría" : "Producto"}
+                    </p>
+                  </div>
+                </button>
+              ))}
             </div>
           )}
+        </div>
+
+        {/* Orden + toggle — en mobile comparten una fila (debajo del search);
+            en desktop van inline a la derecha del search. */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <label className="relative inline-flex flex-1 sm:flex-none">
+            <span className="sr-only">Ordenar por</span>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              aria-label="Ordenar por"
+              className="h-12 w-full rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] px-4 pr-10 focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition cursor-pointer"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {/* Toggle tarjeta/lista — pegado al orden. */}
+          <div className="flex shrink-0 rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)]">
+          <button
+            type="button"
+            onClick={() => setView("grid")}
+            aria-label="Vista en cuadrícula"
+            aria-pressed={view === "grid"}
+            className={cn(
+              "h-12 w-12 inline-flex items-center justify-center transition-colors",
+              view === "grid"
+                ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+            )}
+          >
+            <LayoutGrid className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("list")}
+            aria-label="Vista en lista"
+            aria-pressed={view === "list"}
+            className={cn(
+              "h-12 w-12 inline-flex items-center justify-center border-l-2 border-[var(--rule-base)] transition-colors",
+              view === "list"
+                ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+            )}
+          >
+            <List className="h-5 w-5" />
+          </button>
+          </div>
         </div>
       </div>
 
@@ -383,7 +480,9 @@ export default function StoreCatalog({
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-[var(--text-secondary)]">
           <CanastaVacia size={120} strokeWidth={1.5} />
-          <p className="text-lg font-bold text-[var(--text-primary)]">No hay productos que coincidan</p>
+          <p className="text-lg font-bold text-[var(--text-primary)]">
+            No hay productos que coincidan
+          </p>
           {(search || activeCategory) && (
             <button
               type="button"
@@ -403,6 +502,7 @@ export default function StoreCatalog({
               storeSlug={storeSlug}
               storeId={storeId}
               storeName={storeName}
+              {...storeTrust}
             />
           ))}
         </div>
@@ -424,74 +524,79 @@ export default function StoreCatalog({
                   ? "Para todos los gustos"
                   : "Selección curada";
             return (
-            <section
-              key={cat}
-              id={`cat-${slugifyCat(cat)}`}
-              data-cat-name={cat}
-              className="scroll-mt-28"
-              aria-labelledby={`cat-h-${slugifyCat(cat)}`}
-            >
-              <div className="flex items-end justify-between gap-3 mb-5">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span
-                    aria-hidden
-                    className="h-3.5 w-3.5 rounded-full bg-[var(--text-primary)] shrink-0 shadow-[0_0_0_4px_var(--surface-sunken)]"
-                  />
-                  <div className="min-w-0">
-                    <h3
-                      id={`cat-h-${slugifyCat(cat)}`}
-                      className="text-xl sm:text-2xl font-black text-[var(--text-primary)] leading-tight tracking-tight"
-                    >
-                      {isFirstCategory ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Flame className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={2.5} aria-hidden />
-                          Los más pedidos
-                        </span>
-                      ) : (
-                        humanizeCategory(cat)
-                      )}
-                    </h3>
-                    <p className="text-sm font-medium text-[var(--text-tertiary)] mt-0.5">
-                      {subtitleByPosition}
-                    </p>
+              <section
+                key={cat}
+                id={`cat-${slugifyCat(cat)}`}
+                data-cat-name={cat}
+                className="scroll-mt-28"
+                aria-labelledby={`cat-h-${slugifyCat(cat)}`}
+              >
+                <div className="flex items-end justify-between gap-3 mb-5">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      aria-hidden
+                      className="h-3.5 w-3.5 rounded-full bg-[var(--text-primary)] shrink-0 shadow-[0_0_0_4px_var(--surface-sunken)]"
+                    />
+                    <div className="min-w-0">
+                      <h3
+                        id={`cat-h-${slugifyCat(cat)}`}
+                        className="text-lg sm:text-xl font-semibold text-[var(--text-primary)] leading-tight tracking-tight"
+                      >
+                        {isFirstCategory ? (
+                          <span className="inline-flex items-center gap-2">
+                            <Flame
+                              className="h-4.5 w-4.5 text-[var(--text-tertiary)]"
+                              strokeWidth={2}
+                              aria-hidden
+                            />
+                            Los más pedidos
+                          </span>
+                        ) : (
+                          humanizeCategory(cat)
+                        )}
+                      </h3>
+                      <p className="text-sm font-medium text-[var(--text-tertiary)] mt-0.5">
+                        {subtitleByPosition}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                {/* Badge "popular" en la primera categoría — social proof */}
-                {isFirstCategory && (
-                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] px-3 h-7 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0 border border-[var(--rule-base)]">
-                    <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--text-tertiary)] opacity-70 animate-ping" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]" />
+                  {/* Badge "popular" en la primera categoría — social proof */}
+                  {isFirstCategory && (
+                    <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] px-3 h-7 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0 border border-[var(--rule-base)]">
+                      <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--text-tertiary)] opacity-70 animate-ping" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]" />
+                      </span>
+                      Trending
                     </span>
-                    Trending
-                  </span>
-                )}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6">
-                {items.map((p, idx) => (
-                  <UnifiedProductCard
-                    key={p.id}
-                    index={idx}
-                    hideStore
-                    href={`/marketplace/${storeSlug}/producto/${p.productId}`}
-                    product={{
-                      id: p.productId,
-                      name: p.productName,
-                      price: p.retailPrice,
-                      image: p.productImage,
-                      unit: p.productUnit,
-                      category: p.productCategory,
-                      stock: p.stock ?? undefined,
-                      storeId,
-                      storeName,
-                      storeSlug,
-                      storeProductId: p.id,
-                      modifierGroups: p.modifierGroups,
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6">
+                  {items.map((p, idx) => (
+                    <UnifiedProductCard
+                      key={p.id}
+                      index={idx}
+                      hideStore
+                      href={`/marketplace/${storeSlug}/producto/${p.productId}`}
+                      product={{
+                        id: p.productId,
+                        name: p.productName,
+                        price: p.retailPrice,
+                        image: p.productImage,
+                        unit: p.productUnit,
+                        category: p.productCategory,
+                        stock: p.stock ?? undefined,
+                        storeId,
+                        storeName,
+                        storeSlug,
+                        storeProductId: p.id,
+                        modifierGroups: p.modifierGroups,
+                        ...storeTrust,
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
             );
           })}
         </div>
@@ -516,6 +621,7 @@ export default function StoreCatalog({
                 storeSlug,
                 storeProductId: p.id,
                 modifierGroups: p.modifierGroups,
+                ...storeTrust,
               }}
             />
           ))}

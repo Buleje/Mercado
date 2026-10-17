@@ -126,7 +126,7 @@ export default function ReviewModal() {
       ? "border-red-400 bg-red-50 text-[var(--data-error-700)] font-medium"
       : tier === "neutral"
       ? "border-amber-400 bg-amber-50 text-[var(--data-warning-700)] font-medium"
-      : "border-primary bg-primary/8 text-primary font-medium";
+      : "border-primary bg-primary/8 text-[var(--accent-ink)] dark:text-[var(--accent)] font-medium";
 
   const labelColor =
     tier === "critical" ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]";
@@ -215,8 +215,8 @@ export default function ReviewModal() {
                         >
                           <Star
                             className="h-9 w-9 transition-colors"
-                            fill={(hovered || rating) >= n ? "#FBBF24" : "none"}
-                            color={(hovered || rating) >= n ? "#FBBF24" : "#D1D5DB"}
+                            fill={(hovered || rating) >= n ? "#ff8676" : "none"}
+                            color={(hovered || rating) >= n ? "#ff8676" : "#D1D5DB"}
                           />
                         </m.button>
                       ))}
@@ -258,7 +258,7 @@ export default function ReviewModal() {
                             className={`w-full text-left text-sm px-4 py-3 rounded-xl border transition-all leading-relaxed ${
                               selectedPreset === idx
                                 ? selectedStyle
-                                : "border-gray-200 hover:border-primary/40 hover:bg-primary/4 text-[var(--text-primary)]"
+                                : "border-gray-200 hover:border-primary/40 hover:bg-primary/4 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]"
                             }`}
                           >
                             {msg}
@@ -402,7 +402,7 @@ export default function ReviewModal() {
                       <p className="text-sm text-[var(--text-primary)] leading-relaxed">{activeText.trim()}</p>
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((n) => (
-                          <Star key={n} className="h-3.5 w-3.5" fill={n <= rating ? "#FBBF24" : "none"} color={n <= rating ? "#FBBF24" : "#D1D5DB"} />
+                          <Star key={n} className="h-3.5 w-3.5" fill={n <= rating ? "#ff8676" : "none"} color={n <= rating ? "#ff8676" : "#D1D5DB"} />
                         ))}
                       </div>
                       <p className="text-xs text-muted font-medium">{customerName} · {customerLocation}</p>

@@ -4,6 +4,7 @@ import { withCronRetry } from "@/lib/cron-retry";
 import { SalesDB, CashRegistersDB } from "@/lib/db/sales.db";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { ProductsDB } from "@/lib/db/products.db";
+import { PorCobrarDB } from "@/lib/db/por-cobrar.db";
 import { logger } from "@/lib/logger";
 import { enqueueActivityLog } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
@@ -11,6 +12,11 @@ import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { generateDailyInsights } from "@/lib/ai/daily-insights";
 import { reportAICall } from "@/lib/billing/wire-up/ai-metering-middleware";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { enStockBajo } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
+import { startOfLimaDay, limaDateKey } from "@/lib/utils";
 
 /**
  * GET /api/cron/daily-summary
@@ -22,6 +28,11 @@ import { reportAICall } from "@/lib/billing/wire-up/ai-metering-middleware";
  * Sugerencia vercel.json: "0 20 * * *" (20:00 cada día)
  * Autorización: Bearer <CRON_SECRET>
  */
+/** El día de Lima de `ahora` a las 00:00 UTC: así guarda `DailySummary.fecha` cada día. */
+function fechaDelResumen(ahora: Date): Date {
+  return new Date(`${limaDateKey(ahora)}T00:00:00.000Z`);
+}
+
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization") ?? "";
@@ -44,7 +55,7 @@ export async function GET(req: NextRequest) {
         const tenantId = tenant.id;
 
         const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfDay = new Date(startOfLimaDay(now));
         const startOfDayISO = startOfDay.toISOString();
 
         // Recopilar datos en paralelo
@@ -97,23 +108,21 @@ export async function GET(req: NextRequest) {
           .slice(0, 5);
 
         // Productos con stock bajo
-        const productosStockBajo = allProducts.filter((p) => {
-          if (!p.active) return false;
-          if (p.stock == null) return false;
-          const min = p.stockMin ?? 5;
-          return p.stock <= min;
-        });
+        // Un solo stock mínimo (09-10): el propio o el global del negocio.
+        const minimoGlobal = await minimoGlobalDelNegocio(tenantId);
+        const productosStockBajo = allProducts.filter(
+          (p) => p.active && enStockBajo(p, minimoGlobal),
+        );
 
         // Diferencia de caja
         let diferenciaCaja: number | null = null;
         if (openCash) {
-          const totalIngresos = openCash.movements
-            .filter((m) => m.type === "venta" || m.type === "ingreso")
-            .reduce((sum, m) => sum + m.amount, 0);
-          const totalEgresos = openCash.movements
-            .filter((m) => m.type === "egreso")
-            .reduce((sum, m) => sum + m.amount, 0);
-          const esperado = openCash.openingAmount + totalIngresos - totalEgresos;
+          /* LA cuenta del arqueo (`saldoEsperadoDeCaja`, sólo efectivo). OJO: este
+             bloque no da nunca un número — `openCash` es la caja ABIERTA y su
+             `closingAmount` es siempre null (0 de 1 307 resúmenes con diferencia,
+             medido 2026-09-29). Anotado para borrar; se corrige la cuenta para que
+             no quede una 5ª copia de la vieja. */
+          const esperado = saldoEsperadoDeCaja(openCash.openingAmount, openCash.movements).esperado;
           diferenciaCaja = openCash.closingAmount != null
             ? openCash.closingAmount - esperado
             : null;
@@ -123,11 +132,10 @@ export async function GET(req: NextRequest) {
         const fechaTexto = new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
 
         // Obtener resumen del día anterior para comparar tendencias
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-        yesterday.setHours(0, 0, 0, 0);
-        const yesterdayEnd = new Date(yesterday);
-        yesterdayEnd.setHours(23, 59, 59, 999);
+        // `DailySummary.fecha` guarda el DÍA a las 00:00 UTC (formato de siempre);
+        // el día es el de LIMA, no el del servidor (UTC).
+        const yesterday = new Date(fechaDelResumen(now).getTime() - 24 * 60 * 60 * 1000);
+        const yesterdayEnd = new Date(yesterday.getTime() + 24 * 60 * 60 * 1000 - 1);
 
         let summaryAyer: { totalVentas: number; totalPedidos: number; ticketPromedio: number } | null = null;
         try {
@@ -191,8 +199,7 @@ export async function GET(req: NextRequest) {
         // to findFirst + update/create. Schema field types:
         //   diferenciaCaja: Decimal NOT NULL @default(0)
         //   stockAlertas:   String? (JSON stringified list)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = fechaDelResumen(new Date());
         const diferenciaCajaSafe = diferenciaCaja ?? 0;
         const stockAlertasJson = JSON.stringify(
           productosStockBajo.map((p) => ({ id: p.id, name: p.name, stock: p.stock ?? 0 })),
@@ -238,9 +245,16 @@ export async function GET(req: NextRequest) {
         const aiSummaryText = aiInsights?.summary ?? null;
         const trendEmoji = aiInsights?.emoji ?? "📊";
 
+        // Brandon 2026-06-17: "te deben Y" — agrega el total por cobrar (fiados)
+        // al resumen diario. PorCobrarDB es tenant-scoped; fallback null si falla.
+        const porCobrar = await PorCobrarDB.getSummary(tenant.id).catch(sinDato("cron/daily-summary total por cobrar"));
+
         const rawLines = [
           `💰 Ventas: S/ ${totalVentas.toFixed(2)} (${totalPedidos} transacciones)`,
           `🧾 Ticket promedio: S/ ${ticketPromedio.toFixed(2)}`,
+          porCobrar && porCobrar.fiados.total > 0
+            ? `🤝 Te deben: S/ ${porCobrar.fiados.total.toFixed(2)} (${porCobrar.fiados.count} fiados)`
+            : null,
           `📦 Stock bajo: ${productosStockBajo.length} productos`,
           diferenciaCaja !== null ? `💵 Diferencia caja: S/ ${diferenciaCaja.toFixed(2)}` : null,
           top5Productos.length > 0 ? `🏆 Top: ${top5Productos.slice(0, 3).map((p, i) => `${i + 1}. ${p.nombre} (${p.cantidad})`).join(" | ")}` : null,
@@ -270,6 +284,7 @@ export async function GET(req: NextRequest) {
               where: { id: tenant.id },
               select: { ownerPhone: true },
             });
+            // TODO(ADR-457 §Excepciones): excepción de negocio — el teléfono de aviso de `main` sale de NOTIFY_PHONE. Debe ser una opción del dueño (campo/pantalla), no un `=== "main"`; requiere schema + pantalla, por eso queda escrita.
             const ownerPhone = tenantWithPhone?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
             if (ownerPhone) {
               enqueueNotification({ type: "whatsapp", recipient: ownerPhone, message: whatsappText, tenantId: tenant.id, metadata: { purpose: "daily-summary" } }).catch((err) => logger.error("[cron/daily-summary] WhatsApp enqueue failed", { error: String(err), tenantId: tenant.id }));

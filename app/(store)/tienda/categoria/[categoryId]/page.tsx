@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { connection } from "next/server";
@@ -16,9 +17,7 @@ import { Truck, CreditCard } from "@buleje/design-system/icons";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
 const CustomerModal = dynamic(() => import("@/components/CustomerModal"));
-const Footer = dynamic(() => import("@/components/Footer"));
 const CookieConsent = dynamic(() => import("@/components/CookieConsent"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 const StickyCartBar = dynamic(() => import("@/components/StickyCartBar"));
 
 const realCategories = categories.filter((c) => c.id !== "todos");
@@ -143,7 +142,7 @@ async function CategoryPageContent({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLdStringify({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
             name: `${cat.label} — Buleje`,
@@ -163,7 +162,7 @@ async function CategoryPageContent({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLdStringify({
             "@context": "https://schema.org",
             "@type": "ItemList",
             name: cat.label,

@@ -1,96 +1,187 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+/**
+ * Reparto — el delivery del negocio, dentro de Pedidos y reparto (plan «panel
+ * unificado», 09-10; Brandon eligió Delivery DENTRO de Pedidos).
+ *
+ * 10-10 (Brandon: «cada pestaña cumple su tarea, sin repetir; compactar; en
+ * secciones para pasar de una a otra»), cinco secciones en `?sub=` con la barra
+ * compartida `BarraDeSecciones` (como Turnos y Me deben):
+ *
+ *   En vivo        el mapa con la lista, lo primero de la pantalla; plegadas,
+ *                  las rutas y paradas.
+ *   Equipo         tus repartidores y, con el selector de al lado del buscador,
+ *                  quienes postulan (`?sub=postulantes`, la cifra roja = por
+ *                  revisar).
+ *   Asignaciones   qué pedido va con qué repartidor; plegados, los permisos.
+ *   Pagos          los retiros que piden los repartidores (cifra = por pagar).
+ *   Ranking        quién entrega más y mejor en el período.
+ *
+ * Cabecera en UNA fila: secciones · ⓘ · Indicadores de la sección · Más. Cada
+ * sección pone su botón de Indicadores en el hueco de la cabecera
+ * (`HuecoIndicadores`); antes eran la franja «Hoy en el reparto» encima de
+ * todo y cuatro tarjetas grandes en cada sección. La Red de repartidores Buleje
+ * (un ajuste que se toca una vez) pasó del tope de Equipo al menú Más.
+ *
+ * Se monta de dos maneras con el MISMO cuerpo: dentro de Pedidos y reparto
+ * (`anidado`: la sección vive en `?sub=`) y suelto por `?tab=delivery-partners`
+ * (hoy TabRouter lo manda a Pedidos y reparto; la sección vive en `?vista=`).
+ * Los nombres viejos (`live`, `retiros`, `solicitudes`…) llevan a la sección
+ * que hoy los cubre.
+ */
 import dynamic from "next/dynamic";
-import { Truck, Users, ClipboardList, Shield, RefreshCw, MapPin, FileText, Trophy } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
-import { tenantFetch } from "@/lib/tenant-fetch";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { useCallback, useEffect, useState } from "react";
+import { SectionTitle } from "@buleje/design-system";
+import { Globe, MoreHorizontal, RefreshCw } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
+import Plegable from "@/components/admin/shared/Plegable";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { HuecoIndicadores } from "@/components/admin/delivery/reparto-indicadores";
+import { AYUDA_REPARTO, BARRA_REPARTO, type SeccionDeBarraReparto } from "@/components/admin/delivery/secciones-reparto";
+import { usePendientesReparto } from "@/components/admin/delivery/use-pendientes-reparto";
+import RepartoEnVivo from "@/components/admin/delivery/RepartoEnVivo";
 import { RepartidoresTab } from "@/components/admin/delivery-partners/tabs/RepartidoresTab";
 import { AsignacionesTab } from "@/components/admin/delivery-partners/tabs/AsignacionesTab";
 import { PermisosTab } from "@/components/admin/delivery-partners/tabs/PermisosTab";
 import { RankingTab } from "@/components/admin/delivery-partners/tabs/RankingTab";
 import { SolicitudesTab } from "@/components/admin/delivery-partners/tabs/SolicitudesTab";
+import { RetirosTab } from "@/components/admin/repartidores/RetirosTab";
+import { useSubvistaModulo, useVistaModulo, type AliasDeVista } from "@/hooks/use-vista-modulo";
 
-// Lazy-load del mapa Leaflet (usa window) — tab "live".
-const DeliveryPartnersLiveMap = dynamic(
-  () => import("@/components/admin/delivery/DeliveryPartnersLiveMap"),
-  { ssr: false, loading: () => <div className="h-[600px] flex items-center justify-center text-[var(--text-tertiary)]">Cargando mapa…</div> },
-);
+const NetworkToggleCard = dynamic(() => import("@/components/admin/delivery/NetworkToggleCard"), { ssr: false });
 
 const MODULE_ID = "delivery-partners";
+const ID_PANEL = "reparto-secciones-panel";
 
-const TABS = [
-  { id: "live",          label: "En vivo",       icon: MapPin },
-  { id: "repartidores",  label: "Repartidores",  icon: Users },
-  { id: "solicitudes",   label: "Solicitudes",   icon: FileText },
-  { id: "asignaciones",  label: "Asignaciones",  icon: ClipboardList },
-  { id: "ranking",       label: "Ranking",        icon: Trophy },
-  { id: "permisos",      label: "Permisos",       icon: Shield },
-];
+/**
+ * Lo que la URL puede pedir. `postulantes` no es una sección de la barra: es
+ * Equipo con el selector en «Postulantes» (la vieja «Solicitudes») y así tiene
+ * link propio.
+ */
+const SECCIONES_REPARTO = ["en-vivo", "repartidores", "postulantes", "asignaciones", "pagos", "ranking"] as const;
+type Seccion = (typeof SECCIONES_REPARTO)[number];
 
-type TabId = string;
+/** Los ids de las 8 pestañas de antes → la sección que hoy los cubre. */
+const NOMBRES_VIEJOS: AliasDeVista<Seccion> = {
+  live: "en-vivo",
+  "pedidos-vivo": "en-vivo",
+  solicitudes: "postulantes",
+  retiros: "pagos",
+  permisos: "asignaciones",
+};
 
-// ─────────────────────────────────────────────
-// Modal para crear/editar repartidor
-// ─────────────────────────────────────────────
-
-interface DeliveryKPIs {
-  activePartners: number;
-  deliveriesToday: number;
-  pendingDeliveries: number;
+export default function DeliveryPartnersModule({
+  initialTab,
+  anidado = false,
+}: { initialTab?: string; anidado?: boolean } = {}) {
+  return anidado ? <RepartoAnidado /> : <RepartoSuelto initialTab={initialTab} />;
 }
 
-export default function DeliveryPartnersModule() {
-  const [tab, setTab] = useState<TabId>(TABS[0].id);
-  const [kpis, setKpis] = useState<DeliveryKPIs>({
-    activePartners: 0,
-    deliveriesToday: 0,
-    pendingDeliveries: 0,
-  });
-  const [kpisLoading, setKpisLoading] = useState(true);
+function RepartoSuelto({ initialTab }: { initialTab?: string }) {
+  const forzada = initialTab ? (NOMBRES_VIEJOS[initialTab] ?? initialTab) : undefined;
+  const { vista, irA } = useVistaModulo<Seccion>(MODULE_ID, SECCIONES_REPARTO, "en-vivo", forzada, { alias: NOMBRES_VIEJOS });
+  return <Reparto seccion={vista} irA={irA} conTitulo />;
+}
 
-  const refreshKpis = useCallback(() => {
-    setKpisLoading(true);
-    tenantFetch("/api/delivery/kpis")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d) setKpis(d as DeliveryKPIs); })
-      .catch((err) => console.warn("[DeliveryPartnersModule] /api/delivery/kpis failed:", err))
-      .finally(() => setKpisLoading(false));
-  }, []);
+function RepartoAnidado() {
+  const { vista, irA } = useSubvistaModulo<Seccion>(MODULE_ID, SECCIONES_REPARTO, "en-vivo", undefined, { alias: NOMBRES_VIEJOS });
+  return <Reparto seccion={vista} irA={irA} />;
+}
 
-  useEffect(() => { refreshKpis(); }, [refreshKpis]);
+function Reparto({ seccion, irA, conTitulo = false }: { seccion: Seccion; irA: (v: Seccion) => void; conTitulo?: boolean }) {
+  const activa: SeccionDeBarraReparto = seccion === "postulantes" ? "repartidores" : seccion;
+  const [hueco, setHueco] = useState<HTMLElement | null>(null);
+  const [vuelta, setVuelta] = useState(0);
+  const [verRed, setVerRed] = useState(false);
+  const pendientes = usePendientesReparto();
+  const { recargar: recargarPendientes } = pendientes;
+
+  /* Volver a entrar a Equipo o a Pagos (aprobar, pagar) cambia las cifras rojas de la barra. */
+  useEffect(() => {
+    recargarPendientes();
+  }, [activa, recargarPendientes]);
+
+  const actualizar = useCallback(() => {
+    setVuelta((v) => v + 1);
+    recargarPendientes();
+  }, [recargarPendientes]);
+
+  const secciones = BARRA_REPARTO.map((s) => ({
+    ...s,
+    cuenta: s.clave === "repartidores" ? pendientes.postulantes : s.clave === "pagos" ? pendientes.retiros : undefined,
+  }));
+  const ayuda = AYUDA_REPARTO[seccion];
+  const acciones: MenuAccion[] = [
+    { id: "actualizar", label: "Actualizar", hint: "Vuelve a pedir lo de esta sección", icon: RefreshCw, onSelect: actualizar },
+    {
+      id: "red",
+      label: "Red de repartidores Buleje",
+      hint: "Si los repartidores de Buleje pueden tomar tus pedidos",
+      icon: Globe,
+      onSelect: () => setVerRed(true),
+    },
+  ];
+
+  const selectorEquipo = (
+    <SegmentedControl<"repartidores" | "postulantes">
+      value={seccion === "postulantes" ? "postulantes" : "repartidores"}
+      onChange={irA}
+      label="Qué repartidores ver"
+      size="lg"
+      options={[
+        { value: "repartidores", label: "Tu equipo" },
+        { value: "postulantes", label: "Postulantes", badge: pendientes.postulantes || undefined },
+      ]}
+    />
+  );
 
   return (
-    <div className="space-y-4">
-      <AdminModuleHeader
-        title="Delivery"
-        description="Gestiona repartidores, asignaciones y permisos"
-        icon={Truck}
-      >
-        <button
-          onClick={refreshKpis}
-          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
-          title="Actualizar"
-        >
-          <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
-        </button>
-      </AdminModuleHeader>
+    <HuecoIndicadores.Provider value={hueco}>
+      <div className="space-y-4">
+        {/* Una fila: secciones · ⓘ · Indicadores de la sección · Más (también a 400 px: la barra se desliza). */}
+        <div className="flex items-center gap-2">
+          {conTitulo && <SectionTitle className="shrink-0 whitespace-nowrap text-[var(--text-primary)]">Reparto</SectionTitle>}
+          <div className="min-w-0">
+            <BarraDeSecciones secciones={secciones} activa={activa} onCambiar={irA} etiqueta="Secciones de Reparto" idPanel={ID_PANEL} />
+          </div>
+          <span className="shrink-0">
+            <InfoTip title={ayuda.titulo} what={ayuda.what} affects={ayuda.affects} example={ayuda.example} />
+          </span>
+          <div className="ml-auto flex min-w-0 items-center gap-2 max-sm:shrink-0">
+            <div ref={setHueco} className="flex min-w-0" />
+            <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Actualizar y Red de repartidores Buleje" />
+          </div>
+        </div>
 
-      <AdminTabBar
-        tabs={TABS}
-        activeTab={tab}
-        onTabChange={(id) => setTab(id)}
-        moduleId={MODULE_ID}
-      >
-        {tab === "live"         && <DeliveryPartnersLiveMap />}
-        {tab === "repartidores" && <RepartidoresTab />}
-        {tab === "solicitudes"  && <SolicitudesTab />}
-        {tab === "asignaciones" && <AsignacionesTab />}
-        {tab === "ranking"      && <RankingTab />}
-        {tab === "permisos"     && <PermisosTab />}
-      </AdminTabBar>
-    </div>
+        <div
+          key={`${activa}-${vuelta}`}
+          role="tabpanel"
+          id={ID_PANEL}
+          aria-labelledby={idPestanaDeSeccion(ID_PANEL, activa)}
+          className="space-y-4"
+        >
+          {activa === "en-vivo" && <RepartoEnVivo />}
+          {activa === "repartidores" &&
+            (seccion === "postulantes" ? <SolicitudesTab selector={selectorEquipo} /> : <RepartidoresTab selector={selectorEquipo} />)}
+          {activa === "asignaciones" && (
+            <>
+              <AsignacionesTab />
+              <Plegable clave="pedidos:reparto:permisos" titulo="Permisos de tienda">
+                <PermisosTab />
+              </Plegable>
+            </>
+          )}
+          {activa === "pagos" && <RetirosTab />}
+          {activa === "ranking" && <RankingTab />}
+        </div>
+      </div>
+
+      <AdminModal open={verRed} onClose={() => setVerRed(false)} title="Red de repartidores Buleje" icon={Globe} variant="wide">
+        <div className={MODAL_BODY}>{verRed && <NetworkToggleCard enVentana />}</div>
+      </AdminModal>
+    </HuecoIndicadores.Provider>
   );
 }

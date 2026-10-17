@@ -68,14 +68,14 @@ export default function SitemapHero({
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Buscar ruta, categoría o tag..."
           aria-label="Buscar rutas del proyecto"
-          className="w-full pl-11 pr-10 py-3 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-[var(--accent)] transition-colors"
+          className="w-full pl-11 pr-10 h-11 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-[var(--accent)] transition-colors"
         />
         {hasQuery && (
           <button
             type="button"
             onClick={() => onQueryChange("")}
             aria-label="Limpiar búsqueda"
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>

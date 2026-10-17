@@ -195,7 +195,7 @@ async function fetchJson<T>(
       ...init,
       headers: {
         "Content-Type": "application/json",
-        ...(init?.headers ?? {}),
+        ...init?.headers,
       },
     });
     if (!res.ok) return { ok: false, status: res.status };

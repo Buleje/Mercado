@@ -54,7 +54,7 @@ export function SocioBadge({ regularPrice, socioPrice, className }: SocioBadgePr
             Precio Socio {fmt(socioPrice)}
           </CardTitle>
           <Caption className="mt-0.5 text-[var(--text-secondary)]">
-            Ahorrás {fmt(savings)} sobre {fmt(regularPrice)} ({pct}% menos)
+            Ahorras {fmt(savings)} sobre {fmt(regularPrice)} ({pct}% menos)
           </Caption>
         </div>
       </div>

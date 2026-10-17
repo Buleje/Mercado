@@ -1,807 +1,172 @@
 "use client";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
-import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
-import Image from "next/image";
+
+/**
+ * Análisis › Métricas: ventas, productos y clientes en gráficos.
+ *
+ * Patrón del panel (11-10): UNA fila con título + ⓘ · secciones (`?sub=`) ·
+ * Indicadores · «Más». Las cifras van en un solo panel de Indicadores
+ * (`use-indicadores-metricas`).
+ *
+ * Cada sección es UNA tarjeta con un gráfico a la vista a la vez
+ * (`PanelDeGraficos`), no tarjetas apiladas (Brandon 11-10: «muchos datos →
+ * secciones»). Medido antes: Resumen 1,51 pantallas, Ventas 1,82, Productos
+ * 2,4, Clientes 1,55. La sección Resumen se repartió: la tendencia y las
+ * alertas eran de Ventas (la tendencia estaba DOS veces), el producto estrella
+ * de Productos y el Top 10 de Clientes (también dos veces). `?sub=resumen`
+ * viejo cae en Ventas. El enlace a los segmentos (vivían en Campañas) pasó a
+ * «Más». El período es uno para todos los gráficos que lo usan y se recuerda.
+ */
+
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { RefreshCw, Users } from "@buleje/design-system/icons";
+import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { CabeceraAnalisis } from "@/components/admin/analisis/CabeceraAnalisis";
 import {
-  BarChart3, Flame, TrendingUp,
-  CreditCard, Users, Trophy, Package,
-  LayoutDashboard, DollarSign,
-  Target, Clock, AlertTriangle } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
-import type { Sale, Customer } from "@/types/erp";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import ChartManager, { type ChartDefinition } from "@/components/admin/shared/ChartManager";
-
+  PanelDeGraficos, ProveedorPeriodo, PERIODOS, VacioMetricas,
+  type GraficoMetricas, type PeriodoMetricas,
+} from "@/components/admin/analisis/metricas-tarjetas";
+import { AnomalyDetectorWrapper, StarProductCard, Top10Clientes } from "@/components/admin/analisis/metricas-bloques";
+import { useIndicadoresMetricas } from "@/components/admin/analisis/use-indicadores-metricas";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
-// ── Existing components (dynamic imports) ────────────────────────────────────
 const ABCAnalysisTab = dynamic(() => import("@/components/admin/ABCAnalysisTab"), { loading: S });
 const BCGMatrixTab = dynamic(() => import("@/components/admin/BCGMatrixTab"), { loading: S });
 const BasketAnalysisTab = dynamic(() => import("@/components/admin/BasketAnalysisTab"), { loading: S });
 const PeakHoursTab = dynamic(() => import("@/components/admin/PeakHoursTab"), { loading: S });
-const PredictiveAnalyticsTab = dynamic(() => import("@/components/admin/PredictiveAnalyticsTab"), { loading: S });
+const SalesTrendChart = dynamic(() => import("@/components/admin/analytics/SalesTrendChart"), { loading: S });
+const VentasHeatmap = dynamic(() => import("@/components/admin/analytics/VentasHeatmap"), { loading: S });
+const MarginWaterfallChart = dynamic(() => import("@/components/admin/analytics/MarginWaterfallChart"), { loading: S });
+const FiadoAnalyticsPanel = dynamic(() => import("@/components/admin/analytics/FiadoAnalyticsPanel"), { loading: S });
+const FiadosRiesgoIA = dynamic(() => import("@/components/admin/fiados/FiadosRiesgoIA"), { loading: S });
 
-// ── New Analytics PRO components (React.lazy) ────────────────────────────────
-const _AnalyticsKPIBarV2 = lazy(() => import("@/components/admin/analytics/AnalyticsKPIBarV2"));
-const SalesTrendChart = lazy(() => import("@/components/admin/analytics/SalesTrendChart"));
-const VentasHeatmap = lazy(() => import("@/components/admin/analytics/VentasHeatmap"));
-const MarginWaterfallChart = lazy(() => import("@/components/admin/analytics/MarginWaterfallChart"));
-const FiadoAnalyticsPanel = lazy(() => import("@/components/admin/analytics/FiadoAnalyticsPanel"));
-const FiadosSection = lazy(() => import("@/components/admin/ai-center/sections/FiadosSection"));
-const AnomalyDetector = lazy(() => import("@/components/admin/analytics/AnomalyDetector"));
-const RFMSegmentationPanel = lazy(() => import("@/components/admin/analytics/RFMSegmentationPanel"));
-
-// ── Types ────────────────────────────────────────────────────────────────────
+/** Lo usa `PeakHoursTab` para su rango. */
 export type AnalyticsPeriod = "1d" | "7d" | "30d" | "90d" | "1y";
 
-type SectionId = "resumen" | "ventas" | "productos" | "clientes" | "predicciones";
+const SECCIONES = ["ventas", "productos", "clientes"] as const;
+type Seccion = (typeof SECCIONES)[number];
+const ROTULO: Record<Seccion, string> = { ventas: "Ventas", productos: "Productos", clientes: "Clientes" };
+const ID_PANEL = "analisis-metricas-panel";
 
-// ── Constants ────────────────────────────────────────────────────────────────
-const _PERIODS: { key: AnalyticsPeriod; label: string }[] = [
-  { key: "1d",  label: "Hoy" },
-  { key: "7d",  label: "7 dias" },
-  { key: "30d", label: "30 dias" },
-  { key: "90d", label: "90 dias" },
-  { key: "1y",  label: "1 ano" },
-];
-
-const _PERIOD_DISPLAY: Record<AnalyticsPeriod, string> = {
-  "1d": "Hoy",
-  "7d": "Ultimos 7 dias",
-  "30d": "Últimos 30 días",
-  "90d": "Ultimos 90 dias",
-  "1y": "Último ano",
+const AYUDA = {
+  what: "Tus ventas, productos y clientes en gráficos, uno a la vez, con las seis cifras del negocio en Indicadores.",
+  affects: "Ventas: tendencia, cuándo te compran y días fuera de lo normal · Productos: estrella, ABC, BCG, márgenes y qué se compra junto · Clientes: los mejores y los fiados.",
+  example: "En Ventas › Mapa de calor ves que el sábado de 6 a 8 p. m. es tu hora fuerte.",
 };
 
-const MODULE_ID = "analytics-bi";
-
-const SECTIONS: { id: SectionId; label: string; icon: typeof LayoutDashboard; description: string }[] = [
-  { id: "resumen",   label: "Resumen",   icon: LayoutDashboard, description: "Vista general de tu negocio" },
-  { id: "ventas",    label: "Ventas",    icon: TrendingUp,      description: "Tendencias, horarios y patrones de venta" },
-  { id: "productos", label: "Productos", icon: Package,         description: "Clasificacion ABC, BCG y margenes" },
-  { id: "clientes",  label: "Clientes",  icon: Users,           description: "Segmentación RFM (Recencia, Frecuencia, Monetario — clasifica clientes por comportamiento de compra), ranking y fidelidad" },
-  { id: "predicciones", label: "Predicciones", icon: Target,          description: "Pronosticos y alertas basados en historial" },
-];
-
-// ── AnalyticsCard — wrapper profesional para cada grafico ────────────────────
-function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
-  title: string;
-  subtitle?: string;
-  icon?: typeof BarChart3;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={cn(
-      "bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
-      className,
-    )}>
-      <div className="mb-5">
-        <div className="flex items-center gap-2.5">
-          {Icon && (
-            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Icon className="h-4.5 w-4.5 text-primary" />
-            </div>
-          )}
-          <div>
-            <CardTitle className="text-lg font-semibold text-[var(--text-primary)] leading-tight">{title}</CardTitle>
-            {subtitle && <p className="text-sm text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
-          </div>
-        </div>
-      </div>
-      <div className="w-full">{children}</div>
-    </div>
-  );
-}
-
-// ── SectionHeader — encabezado de cada seccion ───────────────────────────────
-function _SectionHeader({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="mb-2">
-      <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">{title}</SectionTitle>
-      <div className="w-12 h-1 bg-primary rounded-full mt-2" />
-      <p className="text-sm text-[var(--text-secondary)] mt-2">{description}</p>
-    </div>
-  );
-}
-
-// ── Shared KPI cache — one fetch for all KPI strips ──────────────────────────
-let _kpiCache: { data: Record<string, unknown>; ts: number } | null = null;
-const KPI_CACHE_TTL = 60_000; // 1 minute
-
-async function fetchKpisV2(): Promise<Record<string, unknown>> {
-  if (_kpiCache && Date.now() - _kpiCache.ts < KPI_CACHE_TTL) return _kpiCache.data;
-  try {
-    const res = await fetch("/api/analytics/kpis-v2", { credentials: "include" });
-    if (!res.ok) return _kpiCache?.data ?? {};
-    const data = await res.json();
-    _kpiCache = { data, ts: Date.now() };
-    return data;
-  } catch {
-    return _kpiCache?.data ?? {};
+function graficosDe(seccion: Seccion, vuelta: number, periodo: PeriodoMetricas): GraficoMetricas[] {
+  switch (seccion) {
+    case "ventas":
+      return [
+        { clave: "tendencia", rotulo: "Tendencia", conPeriodo: true, ayuda: "Lo vendido cada día, con la media de 7 días y hacia dónde va si sigues igual.", contenido: <div className="min-h-80"><SalesTrendChart period={periodo} /></div> },
+        { clave: "calor", rotulo: "Mapa de calor", conPeriodo: true, ayuda: "Qué día y a qué hora te compran más: el cuadro más oscuro es tu hora fuerte.", contenido: <div className="min-h-70"><VentasHeatmap period={periodo} /></div> },
+        { clave: "hora", rotulo: "Por hora", conPeriodo: true, ayuda: "Cuántas ventas haces en cada hora del día, para saber cuándo reforzar la atención.", contenido: <div className="min-h-70"><PeakHoursTab period={periodo} vista="horas" /></div> },
+        { clave: "dia", rotulo: "Por día", conPeriodo: true, ayuda: "Cuántas ventas haces cada día de la semana.", contenido: <div className="min-h-70"><PeakHoursTab period={periodo} vista="dias" /></div> },
+        { clave: "alertas", rotulo: "Alertas", ayuda: "Días con ventas muy por encima o por debajo de lo normal. Necesita al menos 10 días con ventas.", contenido: <AnomalyDetectorWrapper refreshKey={vuelta} /> },
+      ];
+    case "productos":
+      return [
+        { clave: "estrella", rotulo: "Estrella", ayuda: "El producto que más te deja este mes.", contenido: <StarProductCard refreshKey={vuelta} /> },
+        { clave: "abc", rotulo: "ABC (80/20)", ayuda: "Clase A: los pocos productos que hacen el 80 % de tus ingresos; C: los que casi no pesan. Toca una clase para filtrar.", contenido: <ABCAnalysisTab /> },
+        { clave: "bcg", rotulo: "Matriz BCG", ayuda: "En qué etapa está cada producto: crece y vende mucho (estrella), vende mucho sin crecer (vaca), crece poco (perro) o es una apuesta (interrogante).", contenido: <BCGMatrixTab /> },
+        { clave: "margenes", rotulo: "Márgenes", ayuda: "De lo que vendes, cuánto se va en mercadería y gastos y cuánto te queda; y qué productos dejan más margen.", contenido: <div className="min-h-75"><MarginWaterfallChart /></div> },
+        { clave: "cesta", rotulo: "Cesta", conPeriodo: true, ayuda: "Qué productos se compran juntos: sirve para ponerlos cerca o armar combos.", contenido: <BasketAnalysisTab period={periodo} /> },
+      ];
+    case "clientes":
+      return [
+        { clave: "top10", rotulo: "Mejores clientes", ayuda: "Los 10 que más te han comprado en total.", contenido: <Top10Clientes refreshKey={vuelta} /> },
+        { clave: "fiados", rotulo: "Fiados", ayuda: "Cuánto se venció, cuánto cobraste este mes y cómo vienes recuperando lo fiado.", contenido: <div className="min-h-75"><FiadoAnalyticsPanel /></div> },
+        { clave: "riesgo", rotulo: "Quién te debe", ayuda: "Cada cliente con deuda y qué tan probable es que te pague.", contenido: <div className="min-h-75"><FiadosRiesgoIA /></div> },
+      ];
   }
 }
 
-// ── InlineKPIStrip — compact KPI bar embedded in Resumen ─────────────────────
-function InlineKPIStrip() {
-  const [kpis, setKpis] = useState<{
-    ventasHoy: number; ticketPromedio: number; margen: number; clientesHoy: number; fiadoPendiente: number; rotacion: number;
-  } | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      const d = await fetchKpisV2();
-      if (!d || Object.keys(d).length === 0) return;
-      setKpis({
-        ventasHoy: Number(d.ingresosHoy ?? d.ventasHoy ?? d.salesDay ?? 0) || 0,
-        ticketPromedio: Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0,
-        margen: Number(d.margenOperativo ?? d.marginPct ?? 0) || 0,
-        clientesHoy: Number(d.clientesActivos ?? d.clientesHoy ?? d.customersToday ?? 0) || 0,
-        fiadoPendiente: Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0,
-        rotacion: Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0,
-      });
-    })();
-  }, []);
-
-  if (!kpis) {
-    return (
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-
-  const items = [
-    { label: "Ventas hoy", value: `S/ ${Number(kpis.ventasHoy).toFixed(0)}`, color: "text-[var(--data-success-500)]" },
-    { label: "Ticket prom", value: `S/ ${Number(kpis.ticketPromedio).toFixed(0)}`, color: "text-[var(--data-success-500)]" },
-    { label: "Margen", value: `${Number(kpis.margen).toFixed(1)}%`, color: kpis.margen >= 20 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]" },
-    { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-[var(--text-secondary)]" },
-    { label: "Fiado pend.", value: `S/ ${Number(kpis.fiadoPendiente).toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)]" },
-    { label: "Rotación", value: `${Number(kpis.rotacion).toFixed(1)}x`, color: "text-[var(--data-info-500)]" },
-  ];
-
-  return (
-    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
-      {items.map((item) => (
-        <div
-          key={item.label}
-          className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2.5  text-center"
-        >
-          <p className="text-xs font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
-          <p className={cn("text-lg font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── SectionKPIStrip — KPIs contextuales por sección ──────────────────────────
-function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clientes" | "finanzas" }) {
-  const [items, setItems] = useState<{ label: string; value: string; color: string }[] | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      const d = await fetchKpisV2();
-      if (!d || Object.keys(d).length === 0) return;
-
-      if (section === "ventas") {
-          setItems([
-            { label: "Ventas hoy", value: `S/ ${(Number(d.ingresosHoy ?? d.ventasHoy ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-success-500)]" },
-            { label: "Ticket prom", value: `S/ ${(Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-success-500)]" },
-            { label: "Operaciones", value: String(Number(d.ordersToday ?? d.totalVentas ?? 0) || 0), color: "text-[var(--text-secondary)]" },
-            { label: "Pico (hora)", value: d.peakHour ? `${d.peakHour}h` : "--", color: "text-[var(--data-warning-500)]" },
-          ]);
-        } else if (section === "productos") {
-          setItems([
-            { label: "SKUs activos", value: String(Number(d.skuCount ?? d.totalProducts ?? 0) || 0), color: "text-[var(--data-success-500)]" },
-            { label: "Margen prom", value: `${(Number(d.margenOperativo ?? d.marginPct ?? 0) || 0).toFixed(1)}%`, color: "text-[var(--data-success-500)]" },
-            { label: "Stock bajo", value: String(Number(d.lowStockCount ?? d.stockBajo ?? 0) || 0), color: "text-[var(--data-error-500)]" },
-            { label: "Rotación", value: `${(Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0).toFixed(1)}x`, color: "text-[var(--data-info-500)]" },
-          ]);
-        } else if (section === "clientes") {
-          setItems([
-            { label: "Total clientes", value: String(Number(d.totalClientes ?? d.totalCustomers ?? 0) || 0), color: "text-[var(--data-success-500)]" },
-            { label: "Nuevos (mes)", value: String(Number(d.newCustomersMonth ?? d.clientesNuevos ?? 0) || 0), color: "text-[var(--data-success-500)]" },
-            { label: "Fiado pend.", value: `S/ ${(Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0).toFixed(0)}`, color: "text-[var(--data-error-500)]" },
-            { label: "Retención", value: `${(Number(d.retentionRate ?? d.retencion ?? 0) || 0).toFixed(0)}%`, color: "text-[var(--text-secondary)]" },
-          ]);
-        }
-      })();
-  }, [section]);
-
-  if (!items) {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-      {items.map((item) => (
-        <div key={item.label} className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2  text-center">
-          <p className="text-xs font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
-          <p className={cn("text-base font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── TabbedCard — card con tabs internas para unificar componentes ─────────────
-function TabbedCard({ title, subtitle, icon, tabs, className }: {
-  title: string;
-  subtitle?: string;
-  icon?: typeof BarChart3;
-  tabs: { id: string; label: string; content: React.ReactNode }[];
-  className?: string;
-}) {
-  const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
-  return (
-    <div className={cn(
-      "bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
-      className,
-    )}>
-      <div className="mb-4">
-        <div className="flex items-center gap-2.5 mb-3">
-          {icon && (
-            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              {React.createElement(icon, { className: "h-4.5 w-4.5 text-primary" })}
-            </div>
-          )}
-          <div className="flex-1">
-            <CardTitle className="text-lg font-semibold text-[var(--text-primary)] leading-tight">{title}</CardTitle>
-            {subtitle && <p className="text-sm text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
-          </div>
-        </div>
-        <div className="flex gap-1 border-b border-[var(--rule-base)]">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className={cn(
-                "px-3 py-2 text-xs font-semibold rounded-t-lg transition-colors",
-                activeTab === t.id
-                  ? "bg-primary/10 text-primary border-b-2 border-primary"
-                  : "text-[var(--text-secondary)] hover:bg-gray-50"
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="w-full">
-        {tabs.find(t => t.id === activeTab)?.content}
-      </div>
-    </div>
-  );
-}
-
-// ── Top 10 Clientes ─────────────────────────────────────────────────────────
-function Top10Clientes({ refreshKey }: { refreshKey: number }) {
-  const [customers, setCustomers] = useState<Array<{
-    id: string; nombre: string; gastoTotal: number; compras: number; ticketPromedio: number; tendencia: number;
-  }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    (async () => {
-      try {
-        const res = await fetch("/api/customers?sort=totalSpent&limit=10", { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
-          const list = (Array.isArray(data) ? data : data.customers ?? data.data ?? []).slice(0, 10);
-          setCustomers(list.map((c: Record<string, unknown>) => ({
-            id: String(c.id ?? ""),
-            nombre: String(c.name ?? c.nombre ?? c.customerName ?? "Cliente"),
-            gastoTotal: Number(c.totalSpent ?? c.gastoTotal ?? c.total ?? 0),
-            compras: Number(c.orderCount ?? c.compras ?? c.totalOrders ?? 0),
-            ticketPromedio: Number(c.avgTicket ?? c.ticketPromedio ?? 0) || (Number(c.totalSpent ?? 0) / Math.max(1, Number(c.orderCount ?? 1))),
-            tendencia: Number(c.trend ?? c.tendencia ?? 0),
-          })));
-        }
-      } catch { /* silent */ }
-      finally { setLoading(false); }
-    })();
-  }, [refreshKey]);
-
-  if (loading) {
-    return (
-      <div className="space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-
-  const medals = ["\u{1F947}", "\u{1F948}", "\u{1F949}"];
-  const formatCurrency = (n: number) => `S/${n.toFixed(2)}`;
-
-  return (
-    <div className="overflow-x-auto">
-      {customers.length === 0 ? (
-        <p className="text-sm text-[var(--text-tertiary)] text-center py-8">No hay datos de clientes disponibles</p>
-      ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--rule-base)] text-left">
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs">#</th>
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs">Cliente</th>
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-right">Gasto total</th>
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-right hidden sm:table-cell">Compras</th>
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-right hidden md:table-cell">Ticket prom</th>
-              <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs text-center">Tendencia</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((c, i) => (
-              <tr key={c.id || `cust-${i}`} className="border-b border-[var(--rule-soft)] hover:bg-gray-50 cursor-pointer transition-colors">
-                <td className="px-3 py-3 text-center">
-                  {i < 3 ? <span className="text-lg">{medals[i]}</span> : <span className="text-xs font-bold text-[var(--text-tertiary)]">{i + 1}</span>}
-                </td>
-                <td className="px-3 py-3">
-                  <p className="font-medium text-[var(--text-primary)] truncate max-w-50">{c.nombre}</p>
-                </td>
-                <td className="px-3 py-3 text-right font-bold text-primary">{formatCurrency(c.gastoTotal)}</td>
-                <td className="px-3 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{c.compras} compras</td>
-                <td className="px-3 py-3 text-right text-[var(--text-secondary)] hidden md:table-cell">{formatCurrency(c.ticketPromedio)}</td>
-                <td className="px-3 py-3 text-center">
-                  {c.tendencia > 5 ? (
-                    <span className="text-[var(--data-success-500)] text-xs font-bold">&#8593; +{Number(c.tendencia).toFixed(0)}%</span>
-                  ) : c.tendencia < -5 ? (
-                    <span className="text-[var(--data-error-500)] text-xs font-bold">&#8595; {Number(c.tendencia).toFixed(0)}%</span>
-                  ) : (
-                    <span className="text-[var(--text-tertiary)] text-xs font-bold">&#8594; Estable</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
-
-// ── Star Product of the Week ─────────────────────────────────────────────────
-function StarProductCard({ refreshKey }: { refreshKey: number }) {
-  const [star, setStar] = useState<{
-    name: string; qty: number; revenue: number; trend: number; imageUrl?: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    (async () => {
-      try {
-        const res = await fetch("/api/sales?limit=500", { credentials: "include" });
-        if (!res.ok) return;
-        const raw = await res.json();
-        const sales = Array.isArray(raw) ? raw : raw.sales ?? [];
-        const now = new Date();
-        const weekAgo = new Date(now.getTime() - 7 * 86_400_000).toISOString().slice(0, 10);
-        const twoWeekAgo = new Date(now.getTime() - 14 * 86_400_000).toISOString().slice(0, 10);
-
-        const thisWeek: Record<string, { name: string; qty: number; revenue: number; imageUrl?: string }> = {};
-        const lastWeek: Record<string, { qty: number }> = {};
-
-        for (const s of sales) {
-          const d = (s.createdAt ?? "").slice(0, 10);
-          const items = s.items ?? [];
-          for (const i of items) {
-            const pid = String(i.productId ?? i.name ?? "?");
-            if (d >= weekAgo) {
-              if (!thisWeek[pid]) thisWeek[pid] = { name: i.name ?? "Producto", qty: 0, revenue: 0, imageUrl: i.imageUrl };
-              thisWeek[pid].qty += i.quantity ?? 1;
-              thisWeek[pid].revenue += (i.price ?? 0) * (i.quantity ?? 1);
-            } else if (d >= twoWeekAgo && d < weekAgo) {
-              if (!lastWeek[pid]) lastWeek[pid] = { qty: 0 };
-              lastWeek[pid].qty += i.quantity ?? 1;
-            }
-          }
-        }
-
-        const top = Object.entries(thisWeek).sort((a, b) => b[1].qty - a[1].qty)[0];
-        if (top) {
-          const [pid, data] = top;
-          const lastQty = lastWeek[pid]?.qty ?? 0;
-          const trend = lastQty > 0 ? ((data.qty - lastQty) / lastQty) * 100 : 0;
-          setStar({ name: data.name, qty: data.qty, revenue: data.revenue, trend, imageUrl: data.imageUrl });
-        }
-      } catch { /* silent */ }
-      finally { setLoading(false); }
-    })();
-  }, [refreshKey]);
-
-  if (loading) {
-    return (
-      <div className="animate-pulse">
-        <div className="h-5 w-40 bg-gray-200 rounded mb-4" />
-        <div className="h-8 w-56 bg-gray-200 rounded" />
-      </div>
-    );
-  }
-
-  if (!star) {
-    return (
-      <div>
-        <p className="text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-2">
-          <Flame className="h-4 w-4 text-secondary" /> Producto Estrella
-        </p>
-        <p className="text-xs text-[var(--text-tertiary)] mt-2">Aun no hay ventas esta semana</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-xl bg-[var(--surface-sunken)] p-4 border border-[var(--rule-base)]">
-      <div className="flex items-start gap-3">
-        {star.imageUrl && (
-          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white dark:bg-[var(--color-card)] shrink-0 border border-[var(--rule-base)]">
-            <Image src={star.imageUrl} alt={star.name} fill className="object-cover" sizes="64px" />
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold text-secondary bg-secondary/15 px-2.5 py-0.5 rounded-full">
-              Mas vendido
-            </span>
-          </div>
-          <p className="text-lg font-extrabold text-[var(--text-primary)] truncate">{star.name}</p>
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
-            <span className="text-sm text-[var(--text-secondary)]">{star.qty} unidades esta semana</span>
-            <span className="text-sm font-bold text-primary">S/{Number(star.revenue).toFixed(0)}</span>
-            {star.trend !== 0 && (
-              <span className={`text-xs font-bold ${star.trend > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
-                {star.trend > 0 ? "\u2191" : "\u2193"} {star.trend > 0 ? "+" : ""}{Number(star.trend).toFixed(0)}% vs sem. pasada
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── AnomalyDetectorWrapper — fetches data for AnomalyDetector ────────────────
-function AnomalyDetectorWrapper({ refreshKey }: { refreshKey: number }) {
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [orders, setOrders] = useState<Array<{ id: string; status: string; total: number; createdAt: string; items?: Array<{ productId?: string | number; name?: string; quantity: number; price: number }> }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [salesRaw, ordersRaw] = await Promise.all([
-        fetch("/api/sales?limit=500", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
-        fetch("/api/orders?limit=500", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
-      ]);
-      setSales(Array.isArray(salesRaw) ? salesRaw : salesRaw.sales ?? []);
-      setOrders(Array.isArray(ordersRaw) ? ordersRaw : ordersRaw.orders ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData, refreshKey]);
-
-  if (loading) return <S />;
-
-  if (sales.length === 0 && orders.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] flex items-center justify-center mx-auto mb-3">
-          <svg className="w-5 h-5 text-[var(--data-success-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <p className="text-sm text-[var(--text-secondary)]">Sin anomalias — Todo marcha bien</p>
-      </div>
-    );
-  }
-
-  return (
-    <Suspense fallback={<S />}>
-      <AnomalyDetector sales={sales} orders={orders} />
-    </Suspense>
-  );
-}
-
-// ── RFMWrapper — fetches data for RFMSegmentationPanel ──────────────────────
-function RFMWrapper({ refreshKey }: { refreshKey: number }) {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [customersRaw, salesRaw] = await Promise.all([
-        fetch("/api/customers?limit=500", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
-        fetch("/api/sales?limit=1000", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
-      ]);
-      setCustomers(Array.isArray(customersRaw) ? customersRaw : customersRaw.customers ?? customersRaw.data ?? []);
-      setSales(Array.isArray(salesRaw) ? salesRaw : salesRaw.sales ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData, refreshKey]);
-
-  if (loading) return <S />;
-
-  return (
-    <Suspense fallback={<S />}>
-      <RFMSegmentationPanel customers={customers} sales={sales} />
-    </Suspense>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ── MAIN MODULE ──────────────────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
 export default function AnalyticsBIModule() {
-  const [activeSection, setActiveSection] = useState<SectionId>("resumen");
-  const [period, _setPeriod] = useState<AnalyticsPeriod>("30d");
-  const [refreshKey, setRefreshKey] = useState(0);
+  const { vista: seccion, irA } = useSubvistaModulo<Seccion>("analisis-metricas", SECCIONES, "ventas", undefined, {
+    alias: { resumen: "ventas" },
+  });
+  const [vuelta, setVuelta] = useState(0);
+  const kpis = useIndicadoresMetricas(vuelta);
+  // El gráfico elegido en cada sección y el período: se recuerdan (claves
+  // `admin-*`, las que borra medir-orden-admin antes de medir).
+  const [elegidos, setElegidos] = useLocalStorage<Partial<Record<Seccion, string>>>("admin-analisis-graficos", {});
+  const [periodoGuardado, setPeriodo] = useLocalStorage<PeriodoMetricas>("admin-analisis-periodo", "30d");
+  const periodo = PERIODOS.some((p) => p.clave === periodoGuardado) ? periodoGuardado : "30d";
 
-  const _handleRefresh = useCallback(() => {
-    setRefreshKey(k => k + 1);
-  }, []);
+  // Sin NINGUNA venta ni pedido, el estado vacío en vez del muro de gráficos en
+  // cero (mismo criterio que Inicio, Brandon 2026-06-21).
+  const [datos, setDatos] = useState<"cargando" | "vacio" | "hay">("cargando");
+  useEffect(() => {
+    let cancelado = false;
+    const contar = (url: string, clave: "sales" | "orders") =>
+      fetch(url, { credentials: "include" })
+        .then((r) => (r.ok ? r.json() : []))
+        .then((d) => (Array.isArray(d) ? d.length : ((d?.[clave] as unknown[] | undefined)?.length ?? 0)))
+        .catch(() => 0);
+    Promise.all([contar("/api/sales?limit=1", "sales"), contar("/api/orders?limit=1", "orders")]).then(([v, p]) => {
+      if (!cancelado) setDatos(v > 0 || p > 0 ? "hay" : "vacio");
+    });
+    return () => { cancelado = true; };
+  }, [vuelta]);
 
-  // ── Section content renderer ───────────────────────────────────────────────
-  const renderSection = () => {
-    switch (activeSection) {
-      // ────────────────────────────────────────────────────────────────────────
-      // SECCION 1: RESUMEN
-      // ────────────────────────────────────────────────────────────────────────
-      case "resumen": {
-        const resumenCharts: ChartDefinition[] = [
-          {
-            id: "kpis-strip",
-            label: "KPIs Resumen",
-            description: "Indicadores clave compactos",
-            component: <InlineKPIStrip />,
-          },
-          {
-            id: "sales-trend",
-            label: "Tendencia de Ventas",
-            description: "Ventas diarias con media móvil y proyección",
-            component: (
-              <AnalyticsCard title="Tendencia de Ventas" subtitle="Ventas diarias con media móvil y proyección" icon={TrendingUp}>
-                <div className="min-h-80">
-                  <Suspense fallback={<S />}><SalesTrendChart /></Suspense>
-                </div>
-              </AnalyticsCard>
-            ),
-          },
-          {
-            id: "alerts-highlights",
-            label: "Alertas y Destacados",
-            description: "Anomalias y producto estrella",
-            component: (
-              <TabbedCard title="Alertas y Destacados" subtitle="Lo más importante de un vistazo" icon={AlertTriangle}
-                tabs={[
-                  { id: "alertas", label: "Alertas", content: <AnomalyDetectorWrapper refreshKey={refreshKey} /> },
-                  { id: "estrella", label: "Producto Estrella", content: <StarProductCard refreshKey={refreshKey} /> },
-                ]}
-              />
-            ),
-          },
-          {
-            id: "top-clients",
-            label: "Top 10 Clientes",
-            description: "Ranking por gasto total acumulado",
-            component: (
-              <AnalyticsCard title="Top 10 Clientes" subtitle="Ranking por gasto total acumulado" icon={Trophy}>
-                <Top10Clientes refreshKey={refreshKey} />
-              </AnalyticsCard>
-            ),
-          },
-        ];
-        return (
-          <div className="max-w-[1600px] mx-auto" key={`resumen-${refreshKey}`}>
-            <ChartManager moduleId="analytics-resumen" charts={resumenCharts} />
-          </div>
-        );
-      }
-
-      // ────────────────────────────────────────────────────────────────────────
-      // SECCION 2: VENTAS
-      // ────────────────────────────────────────────────────────────────────────
-      case "ventas": {
-        const ventasCharts: ChartDefinition[] = [
-          {
-            id: "ventas-kpis",
-            label: "KPIs de Ventas",
-            description: "Métricas clave de ventas",
-            component: <SectionKPIStrip section="ventas" />,
-          },
-          {
-            id: "ventas-trend",
-            label: "Tendencia de Ventas",
-            description: "Ventas diarias con media móvil y predicción",
-            component: (
-              <AnalyticsCard title="Tendencia de Ventas" subtitle="Ventas diarias con media móvil y predicción" icon={TrendingUp}>
-                <div className="min-h-80">
-                  <Suspense fallback={<S />}><SalesTrendChart /></Suspense>
-                </div>
-              </AnalyticsCard>
-            ),
-          },
-          {
-            id: "ventas-patterns",
-            label: "Patrones de Venta",
-            description: "Mapa de calor y distribucion horaria",
-            component: (
-              <TabbedCard title="Patrones de Venta" subtitle="¿Cuándo compran tus clientes? Mapa de calor y distribución horaria" icon={Clock}
-                tabs={[
-                  { id: "heatmap", label: "Mapa de Calor", content: <div className="min-h-70"><Suspense fallback={<S />}><VentasHeatmap /></Suspense></div> },
-                  { id: "horario", label: "Por Hora", content: <div className="min-h-70"><PeakHoursTab period={period} /></div> },
-                ]}
-              />
-            ),
-          },
-        ];
-        return (
-          <div className="max-w-[1600px] mx-auto" key={`ventas-${refreshKey}`}>
-            <ChartManager moduleId="analytics-ventas" charts={ventasCharts} />
-          </div>
-        );
-      }
-
-      // ────────────────────────────────────────────────────────────────────────
-      // SECCION 3: PRODUCTOS
-      // ────────────────────────────────────────────────────────────────────────
-      case "productos": {
-        const productosCharts: ChartDefinition[] = [
-          {
-            id: "productos-kpis",
-            label: "KPIs de Productos",
-            description: "Métricas clave de productos",
-            component: <SectionKPIStrip section="productos" />,
-          },
-          {
-            id: "product-classification",
-            label: "Clasificación de Productos",
-            description: "ABC y Matriz BCG",
-            component: (
-              <TabbedCard title="Clasificación de Productos" subtitle="ABC: cuáles generan más ingresos · BCG: en qué etapa de vida están" icon={Package}
-                tabs={[
-                  { id: "abc", label: "ABC (80/20)", content: <div className="min-h-87.5"><ABCAnalysisTab /></div> },
-                  { id: "bcg", label: "Matriz BCG", content: <div className="min-h-87.5"><BCGMatrixTab /></div> },
-                ]}
-              />
-            ),
-          },
-          {
-            id: "profitability",
-            label: "Rentabilidad y Comportamiento",
-            description: "Margenes por producto y cesta de compra",
-            component: (
-              <TabbedCard title="Rentabilidad y Comportamiento" subtitle="Márgenes por producto · Qué se compra junto" icon={DollarSign}
-                tabs={[
-                  { id: "margenes", label: "Márgenes", content: <div className="min-h-75"><Suspense fallback={<S />}><MarginWaterfallChart /></Suspense></div> },
-                  { id: "cesta", label: "Cesta de Compra", content: <BasketAnalysisTab /> },
-                ]}
-              />
-            ),
-          },
-        ];
-        return (
-          <div className="max-w-[1600px] mx-auto" key={`productos-${refreshKey}`}>
-            <ChartManager moduleId="analytics-productos" charts={productosCharts} />
-          </div>
-        );
-      }
-
-      // ────────────────────────────────────────────────────────────────────────
-      // SECCION 4: CLIENTES
-      // ────────────────────────────────────────────────────────────────────────
-      case "clientes": {
-        const clientesCharts: ChartDefinition[] = [
-          {
-            id: "clientes-kpis",
-            label: "KPIs de Clientes",
-            description: "Métricas clave de clientes",
-            component: <SectionKPIStrip section="clientes" />,
-          },
-          {
-            id: "client-intelligence",
-            label: "Inteligencia de Clientes",
-            description: "Segmentacion RFM y ranking de mejores clientes",
-            component: (
-              <TabbedCard title="Inteligencia de Clientes" subtitle="Segmentación por comportamiento de compra · Ranking de los mejores" icon={Users}
-                tabs={[
-                  { id: "rfm", label: "Segmentación RFM", content: <RFMWrapper refreshKey={refreshKey} /> },
-                  { id: "top10", label: "Top 10 Ranking", content: <Top10Clientes refreshKey={refreshKey} /> },
-                ]}
-              />
-            ),
-          },
-          {
-            id: "fiados-analytics",
-            label: "Fiados — Deuda y Cobranza",
-            description: "Resumen de deudas y analisis de riesgo IA",
-            component: (
-              <TabbedCard title="Fiados — Deuda y Cobranza" subtitle="Cuánto te deben, quién paga y quién no · Análisis de riesgo IA" icon={CreditCard}
-                tabs={[
-                  { id: "resumen-fiados", label: "Resumen", content: <div className="min-h-75"><Suspense fallback={<S />}><FiadoAnalyticsPanel /></Suspense></div> },
-                  { id: "ia-fiados", label: "Riesgo IA", content: <div className="min-h-75"><Suspense fallback={<S />}><FiadosSection /></Suspense></div> },
-                ]}
-              />
-            ),
-          },
-        ];
-        return (
-          <div className="max-w-[1600px] mx-auto" key={`clientes-${refreshKey}`}>
-            <ChartManager moduleId="analytics-clientes" charts={clientesCharts} />
-          </div>
-        );
-      }
-
-      // ────────────────────────────────────────────────────────────────────────
-      // SECCION 5: PREDICCIONES
-      // ────────────────────────────────────────────────────────────────────────
-      case "predicciones": {
-        const predCharts: ChartDefinition[] = [
-          {
-            id: "predictive",
-            label: "Análisis Predictivo",
-            description: "Proyecciones y predicciones de ventas",
-            component: <PredictiveAnalyticsTab />,
-          },
-        ];
-        return (
-          <div className="max-w-5xl mx-auto" key={`pred-${refreshKey}`}>
-            <ChartManager moduleId="analytics-predicciones" charts={predCharts} />
-          </div>
-        );
-      }
-
-      default:
-        return null;
-    }
-  };
+  const graficos = graficosDe(seccion, vuelta, periodo);
+  const activo = graficos.find((g) => g.clave === elegidos[seccion])?.clave ?? graficos[0].clave;
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="Analytics BI"
-        description="Analítica avanzada de ventas, productos, clientes y predicciones"
-        icon={BarChart3}
-      />
-      <AdminTabBar
-        tabs={SECTIONS.map(s => ({ id: s.id, label: s.label, icon: s.icon }))}
-        activeTab={activeSection}
-        onTabChange={(id) => setActiveSection(id as SectionId)}
-        moduleId={MODULE_ID}
+      <CabeceraAnalisis
+        titulo="Métricas"
+        ayuda={AYUDA}
+        secciones={
+          <BarraDeSecciones
+            secciones={SECCIONES.map((clave) => ({ clave, rotulo: ROTULO[clave] }))}
+            activa={seccion}
+            onCambiar={irA}
+            etiqueta="Secciones de Métricas"
+            idPanel={ID_PANEL}
+          />
+        }
+        acciones={[
+          { id: "recargar", label: "Actualizar", hint: "Vuelve a pedir las cifras y los gráficos", icon: RefreshCw, onSelect: () => setVuelta((v) => v + 1) },
+          { id: "segmentos", label: "Segmentos de clientes", hint: "Los mejores, fieles, en riesgo y dormidos, en Campañas", icon: Users, onSelect: () => { irAEnlace("/admin?tab=campanas&vista=rfm"); } },
+        ]}
+        tituloMas="Actualizar y segmentos de clientes"
       >
-        {/* ── Section content with AnimatePresence ── */}
-        <AnimatePresence mode="wait">
-          <m.div
-            key={activeSection}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-          >
-            {renderSection()}
-          </m.div>
-        </AnimatePresence>
-      </AdminTabBar>
+        {kpis.boton}
+      </CabeceraAnalisis>
+
+      {kpis.panel}
+
+      <div role="tabpanel" id={ID_PANEL} aria-labelledby={idPestanaDeSeccion(ID_PANEL, seccion)}>
+        <ProveedorPeriodo value={{ periodo, cambiar: setPeriodo }}>
+          {datos === "vacio" ? (
+            <VacioMetricas titulo="Todavía no hay ventas para analizar" descripcion="Con tus primeras ventas aquí verás tendencias, productos y clientes." />
+          ) : (
+            <AnimatePresence mode="wait">
+              <m.div
+                key={`${seccion}-${vuelta}`}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="mx-auto max-w-[1600px]"
+              >
+                <PanelDeGraficos
+                  id={`metricas-${seccion}`}
+                  etiqueta={`Gráficos de ${ROTULO[seccion]}`}
+                  graficos={graficos}
+                  activo={activo}
+                  onCambiar={(clave) => setElegidos((e) => ({ ...e, [seccion]: clave }))}
+                />
+              </m.div>
+            </AnimatePresence>
+          )}
+        </ProveedorPeriodo>
+      </div>
     </div>
   );
 }

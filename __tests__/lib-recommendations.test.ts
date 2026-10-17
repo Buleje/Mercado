@@ -21,6 +21,7 @@ vi.mock("@/lib/logger", () => ({
 
 // ── Mock cache — passthrough para que los tests sean deterministas ────────────
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
   invalidate: vi.fn(),
   invalidateByPrefix: vi.fn(),

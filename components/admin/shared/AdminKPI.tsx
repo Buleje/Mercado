@@ -25,14 +25,14 @@ function AdminKPI({ label, value, icon: Icon, iconColor = "#6b7280", trend, load
           </div>
         )}
 
-        <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium">
+        <p className="text-xs text-[var(--text-secondary)] font-medium">
           {label}
         </p>
 
         {loading ? (
           <div className="space-y-2">
-            <div className="h-8 w-24 bg-[var(--surface-sunken)] dark:bg-zinc-800 rounded animate-pulse" />
-            <div className="h-4 w-16 bg-[var(--surface-sunken)] dark:bg-zinc-800 rounded animate-pulse" />
+            <div className="h-8 w-24 bg-[var(--surface-sunken)] rounded animate-pulse" />
+            <div className="h-4 w-16 bg-[var(--surface-sunken)] rounded animate-pulse" />
           </div>
         ) : (
           <>
@@ -51,7 +51,7 @@ function AdminKPI({ label, value, icon: Icon, iconColor = "#6b7280", trend, load
                   {trend.value >= 0 ? "↑" : "↓"} {Math.abs(trend.value).toFixed(1)}%
                 </span>
                 {trend.label && (
-                  <span className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">
+                  <span className="text-xs text-[var(--text-tertiary)] ">
                     {trend.label}
                   </span>
                 )}

@@ -90,12 +90,12 @@ export default function ChatPageClient() {
       {!customer ? (
         // ── No logueado ──
         <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-          <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <StoreIcon className="h-8 w-8" strokeWidth={1.75} aria-hidden />
           </span>
-          <p className="text-base font-extrabold text-[var(--text-primary)]">Entrá para chatear</p>
+          <p className="text-base font-extrabold text-[var(--text-primary)]">Entra para chatear</p>
           <p className="mt-1 text-sm font-medium text-[var(--text-tertiary)]">
-            Iniciá sesión para hablar con las tiendas y seguir tus pedidos.
+            Inicia sesión para hablar con las tiendas y seguir tus pedidos.
           </p>
           <button
             type="button"
@@ -138,12 +138,12 @@ export default function ChatPageClient() {
               </div>
             ) : conversations.length === 0 ? (
               <div className="px-6 py-12 text-center">
-                <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <StoreIcon className="h-8 w-8" strokeWidth={1.75} aria-hidden />
                 </span>
-                <p className="text-sm font-extrabold text-[var(--text-primary)]">Todavía no tenés chats</p>
+                <p className="text-sm font-extrabold text-[var(--text-primary)]">Todavía no tienes chats</p>
                 <p className="mt-1 text-sm font-medium text-[var(--text-tertiary)]">
-                  Entrá a una tienda y tocá “Mensaje” para empezar a chatear.
+                  Entra a una tienda y toca “Mensaje” para empezar a chatear.
                 </p>
                 <Link href="/tiendas" className="mt-5 inline-flex h-11 items-center justify-center rounded-full border-2 border-[var(--accent)] px-6 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white">
                   Ver tiendas

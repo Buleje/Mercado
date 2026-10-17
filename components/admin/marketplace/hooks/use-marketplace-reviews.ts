@@ -29,8 +29,14 @@ export function useMarketplaceReviews() {
     fetch("/api/reviews?all=1")
       .then((r) => (r.ok ? r.json() : []))
       .then((data: ReviewItem[]) => {
-        const storeReviews = data.filter((r) => r.storeId);
-        setReviews(storeReviews);
+        /* Todas las reseñas de TU negocio (el servidor ya filtra por el tenant
+           del JWT), menos los comentarios de producto, que reusan la tabla con
+           `status = "comment"` y no se moderan acá. Antes filtraba por
+           `storeId`, que `?all=1` nunca devuelve (mapReview no lo trae): la
+           lista salía SIEMPRE vacía y las reseñas que deja el cliente en tu
+           tienda (POST /api/reviews, «pending») no se aprobaban en ningún lado
+           — la tienda sólo muestra las aprobadas (11-10). */
+        setReviews(Array.isArray(data) ? data.filter((r) => r.status !== "comment") : []);
       })
       .catch((err) => { /* fire-and-forget */ void err; })
       .finally(() => setLoading(false));

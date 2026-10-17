@@ -9,7 +9,7 @@ description: |
   "qué patrones repito", "actualizá memory.md", o al final de sprints largos.
 user-invocable: true
 model: opus
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash, TaskCreate, TaskUpdate
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 argument-hint: "[lookback-days=14] [--apply]"
 ---
 

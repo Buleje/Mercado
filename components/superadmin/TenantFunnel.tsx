@@ -14,7 +14,7 @@ interface FunnelData {
 const STAGES = [
   { key: "registered" as const, label: "Registrados", icon: Users, color: "bg-[var(--data-success-500)]" },
   { key: "onboarded" as const, label: "Onboarding completo", icon: CheckCircle2, color: "bg-[var(--data-info-500)]" },
-  { key: "withProducts" as const, label: "Con productos", icon: Package, color: "bg-[var(--data-warning-500)]" },
+  { key: "withProducts" as const, label: "Con productos", icon: Package, color: "bg-[var(--accent)]" },
   { key: "withSales" as const, label: "Con ventas", icon: ShoppingCart, color: "bg-[var(--data-success-500)]" },
 ];
 
@@ -80,7 +80,7 @@ export default function TenantFunnel() {
             <div key={stage.key} className="flex-1 flex flex-col items-center gap-2">
               {/* Conversion rate from previous */}
               {convRate && (
-                <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400">
+                <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
                   {convRate}%
                 </span>
               )}
@@ -102,9 +102,9 @@ export default function TenantFunnel() {
 
               {/* Value */}
               <div className="text-center">
-                <Icon className="h-4 w-4 text-gray-400 mx-auto mb-0.5" />
+                <Icon className="h-4 w-4 text-[var(--text-tertiary)] mx-auto mb-0.5" />
                 <p className="text-lg font-bold text-[var(--text-primary)]">{value}</p>
-                <p className="text-[length:var(--ts-2xs)] text-gray-500 leading-tight">{stage.label}</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] leading-tight">{stage.label}</p>
               </div>
             </div>
           );

@@ -1,10 +1,13 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { CheckCircle, Clock, DollarSign, Star, Trophy, Users } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
+import { CheckCircle, Clock, DollarSign, Star, Trophy, Users, Crown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon, toNum } from "@/components/admin/delivery-partners/shared";
+import { useIndicadoresReparto } from "@/components/admin/delivery/reparto-indicadores";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { formatCurrency } from "@/lib/format";
 
 export function RankingTab() {
   const [data, setData] = useState<RankingEntry[]>([]);
@@ -35,135 +38,68 @@ export function RankingTab() {
   const periodLabel = PERIODS.find((p) => p.id === period)?.label.toLowerCase() ?? "";
   const topPartner = data[0];
 
+  const pct = summary ? Math.round(summary.avgCompletionRate * 100) : 0;
+  const kpis = useIndicadoresReparto({
+    clave: "ranking",
+    cargando: loading && !summary,
+    resumen: summary ? `${summary.totalDelivered} entregas · ${pct}% completas` : undefined,
+    indicadores: summary
+      ? [
+          { icono: Users, rotulo: "Repartidores", valor: String(summary.totalPartners), ayuda: `Los que entran en el ranking de ${periodLabel}.` },
+          { icono: CheckCircle, rotulo: "Entregas", valor: String(summary.totalDelivered), tono: summary.totalDelivered > 0 ? "ok" : undefined },
+          {
+            icono: DollarSign,
+            rotulo: "Ganado en tarifas",
+            valor: formatCurrency(toNum(summary.totalEarnings)),
+            ayuda: "Lo que sumaron las tarifas de sus entregas en el período. No es lo pagado: los retiros pagados están en Pagos.",
+          },
+          {
+            icono: Trophy,
+            rotulo: "Completadas",
+            valor: `${pct}%`,
+            ayuda: "De los pedidos que aceptaron, cuántos terminaron entregados (promedio de todos).",
+            tono: summary.avgCompletionRate >= 0.85 ? "ok" : summary.avgCompletionRate >= 0.5 ? "alerta" : "error",
+          },
+        ]
+      : [],
+  });
+
   return (
-    <div className="space-y-6">
-      {/* ── 1. Hero card con period selector + KPIs ─────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
-        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
-          <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-100)] text-[var(--data-warning-500)] shrink-0">
-              <Trophy className="h-5 w-5" />
+    <div className="space-y-4">
+      {kpis.boton}
+      {kpis.panel}
+
+      {/* Una fila: período · quién lidera. */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <SegmentedControl<"week" | "month" | "all">
+          value={period}
+          onChange={setPeriod}
+          label="Período del ranking"
+          size="lg"
+          options={PERIODS.map((p) => ({ value: p.id, label: p.label }))}
+        />
+        {topPartner && (
+          <p className="flex min-w-0 items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            <Crown className="h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden />
+            <span>
+              <span className="font-bold text-[var(--text-primary)]">{topPartner.name}</span> lidera {periodLabel} con {topPartner.delivered}{" "}
+              {topPartner.delivered === 1 ? "entrega" : "entregas"} y {toNum(topPartner.rating).toFixed(1)} de calificación.
             </span>
-            <div>
-              <CardTitle className="font-display text-xl leading-tight">
-                Ranking de repartidores
-              </CardTitle>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
-                {topPartner
-                  ? <>👑 <span className="font-bold text-[var(--text-primary)]">{topPartner.name}</span> lidera {periodLabel} con {topPartner.delivered} entregas y rating {toNum(topPartner.rating).toFixed(1)}.</>
-                  : `Métricas de rendimiento ${periodLabel}. Aceptación, entregas, ratings y ganancias.`}
-              </p>
-            </div>
-          </div>
-
-          {/* Period pills */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {PERIODS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setPeriod(p.id)}
-                className={cn(
-                  "px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
-                  period === p.id
-                    ? "bg-primary text-white border-primary"
-                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
-                )}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {summary ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <Users className="h-5 w-5 text-primary" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Repartidores
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
-                {summary.totalPartners}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Activos en ranking</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
-                  <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Entregados
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
-                {summary.totalDelivered}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Total entregas</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
-                  <DollarSign className="h-5 w-5 text-[var(--data-success-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Pagado a riders
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
-                S/{toNum(summary.totalEarnings).toFixed(0)}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Tarifas acumuladas</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <Trophy className="h-5 w-5 text-primary" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Completion avg
-              </p>
-              <p className={cn(
-                "text-3xl font-extrabold tabular-nums leading-tight mt-2",
-                summary.avgCompletionRate >= 0.85
-                  ? "text-[var(--data-success-500)]"
-                  : summary.avgCompletionRate >= 0.5
-                    ? "text-[var(--data-warning-500)]"
-                    : "text-[var(--data-error-500)]",
-              )}>
-                {Math.round(summary.avgCompletionRate * 100)}%
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Tasa de éxito</p>
-            </div>
-          </div>
-        ) : null}
+          </p>
+        )}
       </div>
 
       {/* ── 2. Tabla / Empty / Loading ──────────────────────────── */}
       {loading ? (
         <TableSkeleton />
       ) : data.length === 0 ? (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
-          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
-            <Trophy className="h-8 w-8 text-[var(--text-tertiary)]" />
-          </span>
-          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
-            Sin datos de ranking
-          </p>
-          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
-            No hay entregas registradas {periodLabel}. Cambia el periodo o esperá a que tus repartidores acumulen actividad.
-          </p>
-        </div>
+        <p className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-8 text-center text-sm font-semibold text-[var(--text-secondary)]">
+          Nadie entregó {periodLabel}: elige otro período o espera a que tus repartidores sumen entregas.
+        </p>
       ) : (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            <p className="text-sm font-semibold text-[var(--text-secondary)]">
               Tabla de posiciones · {periodLabel}
             </p>
             <p className="text-sm text-[var(--text-tertiary)] font-bold">
@@ -171,18 +107,18 @@ export function RankingTab() {
             </p>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
-                <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                  <th className="px-6 py-4 w-16">#</th>
-                  <th className="px-6 py-4">Repartidor</th>
-                  <th className="px-4 py-4 text-center">Rating</th>
-                  <th className="px-4 py-4 text-center">Aceptación</th>
-                  <th className="px-4 py-4 text-center">Entregas</th>
-                  <th className="px-4 py-4 text-center">Cancel.</th>
-                  <th className="px-4 py-4 text-center">Avg min</th>
-                  <th className="px-4 py-4 text-right">Ganado</th>
-                  <th className="px-6 py-4 text-center">Completion</th>
+            <DataTable className="w-full">
+              <thead>
+                <tr>
+                  <th className="w-16">#</th>
+                  <th>Repartidor</th>
+                  <th className="text-center">Rating</th>
+                  <th className="text-center">Aceptación</th>
+                  <th className="text-center">Entregas</th>
+                  <th className="text-center">Cancel.</th>
+                  <th className="text-center">Avg min</th>
+                  <th className="text-right">Ganado</th>
+                  <th className="text-center">Completion</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -199,11 +135,11 @@ export function RankingTab() {
                     <tr
                       key={entry.id}
                       className={cn(
-                        "transition-colors hover:bg-[var(--surface-sunken)]/50",
+                        "",
                         isPodium && "bg-[var(--data-warning-50)]/30",
                       )}
                     >
-                      <td className="px-6 py-4">
+                      <td>
                         <span className={cn(
                           "inline-flex items-center justify-center h-10 w-10 rounded-xl font-extrabold tabular-nums text-base",
                           medalBg,
@@ -211,9 +147,9 @@ export function RankingTab() {
                           {isPodium ? <Trophy className="h-5 w-5" /> : idx + 1}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td>
                         <div className="flex items-center gap-3">
-                          <div className="h-11 w-11 rounded-2xl flex items-center justify-center text-base font-extrabold text-primary bg-primary/10 shrink-0">
+                          <div className="h-11 w-11 rounded-2xl flex items-center justify-center text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 shrink-0">
                             {entry.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
@@ -227,16 +163,16 @@ export function RankingTab() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-center">
+                      <td className="text-center">
                         <span className="inline-flex items-center justify-center gap-1 text-base font-extrabold text-[var(--data-warning-500)] tabular-nums">
                           <Star className="h-4 w-4 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
                           {toNum(entry.rating).toFixed(1)}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-center text-base font-bold text-[var(--text-secondary)] tabular-nums">
+                      <td className="text-center font-bold text-[var(--text-secondary)] tabular-nums">
                         {Math.round(entry.acceptanceRate * 100)}%
                       </td>
-                      <td className="px-4 py-4 text-center">
+                      <td className="text-center">
                         <span className="text-base font-extrabold text-[var(--data-success-500)] tabular-nums">
                           {entry.delivered}
                         </span>
@@ -246,23 +182,23 @@ export function RankingTab() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-4 text-center text-base text-[var(--text-tertiary)] tabular-nums font-bold">
+                      <td className="text-center text-[var(--text-tertiary)] tabular-nums font-bold">
                         {entry.cancelled || "—"}
                       </td>
-                      <td className="px-4 py-4 text-center">
+                      <td className="text-center">
                         <span className="inline-flex items-center justify-center gap-1 text-base text-[var(--text-secondary)] font-bold tabular-nums">
                           <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
                           {entry.avgDeliveryMin != null ? `${Math.round(entry.avgDeliveryMin)}` : "—"}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-right text-base font-extrabold text-[var(--text-primary)] tabular-nums">
-                        S/{toNum(entry.totalEarnings).toFixed(0)}
+                      <td className="text-right font-extrabold tabular-nums">
+                        {formatCurrency(toNum(entry.totalEarnings))}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="text-center">
                         <span className={cn(
                           "inline-flex items-center justify-center h-9 px-3 rounded-full text-sm font-extrabold tabular-nums",
                           entry.completionRate >= 0.85
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                             : entry.completionRate >= 0.5
                               ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                               : "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
@@ -274,7 +210,7 @@ export function RankingTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}

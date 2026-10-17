@@ -180,6 +180,27 @@ export const NotasCreditoDB = {
     return Number(acum._sum.monto ?? 0);
   },
 
+  /**
+   * Suma de `total` (CON IGV) de las notas ACTIVAS de una venta: el tope exacto de
+   * POST /api/notas-credito compara total contra `Sale.total`, sin tolerancia (09-10).
+   */
+  async sumActiveTotalForSale(tenantId: string, saleId: string): Promise<number> {
+    const acum = await prisma.notaCredito.aggregate({
+      _sum: { total: true },
+      where: { tenantId, saleId, status: { not: "ANULADA" as never } },
+    });
+    return Number(acum._sum.total ?? 0);
+  },
+
+  /** Lo mismo para un pedido de la tienda: antes las notas por `orderId` no tenían tope. */
+  async sumActiveTotalForOrder(tenantId: string, orderId: string): Promise<number> {
+    const acum = await prisma.notaCredito.aggregate({
+      _sum: { total: true },
+      where: { tenantId, orderId, status: { not: "ANULADA" as never } },
+    });
+    return Number(acum._sum.total ?? 0);
+  },
+
   async updateStatus(
     id: string,
     tenantId: string,

@@ -1,0 +1,557 @@
+[
+ {
+  "parchear": [
+   "/api/cash-registers",
+   [
+    {
+     "id": "qa-caja-abierta",
+     "openedAt": "2026-10-10T13:00:00.000Z",
+     "status": "abierta",
+     "openingAmount": 200,
+     "efectivoEsperado": 184.9,
+     "notes": null,
+     "movements": [
+      {
+       "id": "qa-mv-15",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "venta",
+       "amount": 22,
+       "method": "efectivo",
+       "description": "Venta #1029",
+       "createdAt": "2026-10-10T17:25:00.000Z",
+       "saleId": "qa-v-9"
+      },
+      {
+       "id": "qa-mv-14",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "arqueo",
+       "amount": 160,
+       "method": "efectivo",
+       "description": "Arqueo express: 10 oct., 12:10 | Esperado: S/ 162.90 | Contado: S/ 160.00 | Diferencia: −S/ 2.90",
+       "createdAt": "2026-10-10T17:10:00.000Z"
+      },
+      {
+       "id": "qa-mv-13",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "venta",
+       "amount": 33,
+       "method": "yape",
+       "description": "Venta #1028",
+       "createdAt": "2026-10-10T17:05:00.000Z",
+       "saleId": "qa-v-8"
+      },
+      {
+       "id": "qa-mv-12",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "venta",
+       "amount": 15.5,
+       "method": "efectivo",
+       "description": "Venta #1027",
+       "createdAt": "2026-10-10T16:40:00.000Z",
+       "saleId": "qa-v-7"
+      },
+      {
+       "id": "qa-mv-11",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "egreso",
+       "amount": 60,
+       "method": "efectivo",
+       "description": "Adelanto de sueldo — Valentina",
+       "createdAt": "2026-10-10T16:20:00.000Z"
+      },
+      {
+       "id": "qa-mv-10",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "egreso",
+       "amount": 100,
+       "method": "efectivo",
+       "description": "Retiro del dueño — para la casa",
+       "createdAt": "2026-10-10T16:00:00.000Z"
+      },
+      {
+       "id": "qa-mv-9",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "ingreso",
+       "amount": 50,
+       "method": "efectivo",
+       "description": "Cambio — sencillo del banco",
+       "createdAt": "2026-10-10T15:45:00.000Z"
+      },
+      {
+       "id": "qa-mv-8",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "venta",
+       "amount": 64,
+       "method": "efectivo",
+       "description": "Venta #1026",
+       "createdAt": "2026-10-10T15:30:00.000Z",
+       "saleId": "qa-v-6"
+      },
+      {
+       "id": "qa-mv-7",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "venta",
+       "amount": 27.3,
+       "method": "plin",
+       "description": "Venta #1025",
+       "createdAt": "2026-10-10T15:10:00.000Z",
+       "saleId": "qa-v-5"
+      },
+      {
+       "id": "qa-mv-6",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "venta",
+       "amount": 120,
+       "method": "tarjeta",
+       "description": "Venta #1024",
+       "createdAt": "2026-10-10T14:55:00.000Z",
+       "saleId": "qa-v-4"
+      },
+      {
+       "id": "qa-mv-5",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "egreso",
+       "amount": 35,
+       "method": "efectivo",
+       "description": "Compra de insumos — bolsas y hielo",
+       "createdAt": "2026-10-10T14:20:00.000Z"
+      },
+      {
+       "id": "qa-mv-4",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "venta",
+       "amount": 9.9,
+       "method": "efectivo",
+       "description": "Venta #1023",
+       "createdAt": "2026-10-10T14:05:00.000Z",
+       "saleId": "qa-v-3"
+      },
+      {
+       "id": "qa-mv-3",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "venta",
+       "amount": 42,
+       "method": "yape",
+       "description": "Venta #1022",
+       "createdAt": "2026-10-10T13:40:00.000Z",
+       "saleId": "qa-v-2"
+      },
+      {
+       "id": "qa-mv-2",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "venta",
+       "amount": 18.5,
+       "method": "efectivo",
+       "description": "Venta #1021",
+       "createdAt": "2026-10-10T13:12:00.000Z",
+       "saleId": "qa-v-1"
+      },
+      {
+       "id": "qa-mv-1",
+       "cashRegisterId": "qa-caja-abierta",
+       "type": "apertura",
+       "amount": 200,
+       "method": "efectivo",
+       "description": "Apertura de caja",
+       "createdAt": "2026-10-10T13:00:00.000Z"
+      }
+     ]
+    },
+    {
+     "id": "qa-caja-c1",
+     "openedAt": "2026-10-09T13:00:00.000Z",
+     "closedAt": "2026-10-09T23:10:00.000Z",
+     "openingAmount": 200,
+     "closingAmount": 510,
+     "expectedAmount": 512.4,
+     "difference": -2.4,
+     "status": "cerrada",
+     "notes": "Arqueo Guiado - 9 oct.",
+     "movements": [
+      {
+       "id": "qa-c1-a",
+       "cashRegisterId": "qa-caja-c1",
+       "type": "apertura",
+       "amount": 200,
+       "method": "efectivo",
+       "description": "Apertura de caja",
+       "createdAt": "2026-10-09T13:00:00.000Z"
+      },
+      {
+       "id": "qa-c1-v",
+       "cashRegisterId": "qa-caja-c1",
+       "type": "venta",
+       "amount": 312.4,
+       "method": "efectivo",
+       "description": "Venta",
+       "createdAt": "2026-10-09T15:00:00.000Z",
+       "saleId": "qa-c1-s"
+      },
+      {
+       "id": "qa-c1-z",
+       "cashRegisterId": "qa-caja-c1",
+       "type": "cierre",
+       "amount": 510,
+       "method": "efectivo",
+       "description": "Cierre de caja",
+       "createdAt": "2026-10-09T23:10:00.000Z"
+      }
+     ]
+    },
+    {
+     "id": "qa-caja-c2",
+     "openedAt": "2026-10-08T13:00:00.000Z",
+     "closedAt": "2026-10-08T23:10:00.000Z",
+     "openingAmount": 200,
+     "closingAmount": 430,
+     "expectedAmount": 430,
+     "difference": 0,
+     "status": "cerrada",
+     "notes": null,
+     "movements": [
+      {
+       "id": "qa-c2-a",
+       "cashRegisterId": "qa-caja-c2",
+       "type": "apertura",
+       "amount": 200,
+       "method": "efectivo",
+       "description": "Apertura de caja",
+       "createdAt": "2026-10-08T13:00:00.000Z"
+      },
+      {
+       "id": "qa-c2-v",
+       "cashRegisterId": "qa-caja-c2",
+       "type": "venta",
+       "amount": 230,
+       "method": "efectivo",
+       "description": "Venta",
+       "createdAt": "2026-10-08T15:00:00.000Z",
+       "saleId": "qa-c2-s"
+      },
+      {
+       "id": "qa-c2-z",
+       "cashRegisterId": "qa-caja-c2",
+       "type": "cierre",
+       "amount": 430,
+       "method": "efectivo",
+       "description": "Cierre de caja",
+       "createdAt": "2026-10-08T23:10:00.000Z"
+      }
+     ]
+    },
+    {
+     "id": "qa-caja-c3",
+     "openedAt": "2026-10-07T13:00:00.000Z",
+     "closedAt": "2026-10-07T23:10:00.000Z",
+     "openingAmount": 150,
+     "closingAmount": 388.2,
+     "expectedAmount": 388.2,
+     "difference": 0,
+     "status": "cerrada",
+     "notes": "Cierre automático: turno cerrado sin contar",
+     "movements": [
+      {
+       "id": "qa-c3-a",
+       "cashRegisterId": "qa-caja-c3",
+       "type": "apertura",
+       "amount": 150,
+       "method": "efectivo",
+       "description": "Apertura de caja",
+       "createdAt": "2026-10-07T13:00:00.000Z"
+      },
+      {
+       "id": "qa-c3-v",
+       "cashRegisterId": "qa-caja-c3",
+       "type": "venta",
+       "amount": 238.2,
+       "method": "efectivo",
+       "description": "Venta",
+       "createdAt": "2026-10-07T15:00:00.000Z",
+       "saleId": "qa-c3-s"
+      },
+      {
+       "id": "qa-c3-z",
+       "cashRegisterId": "qa-caja-c3",
+       "type": "cierre",
+       "amount": 388.2,
+       "method": "efectivo",
+       "description": "Cierre de caja",
+       "createdAt": "2026-10-07T23:10:00.000Z"
+      }
+     ]
+    },
+    {
+     "id": "qa-caja-c4",
+     "openedAt": "2026-10-06T13:00:00.000Z",
+     "closedAt": "2026-10-06T23:10:00.000Z",
+     "openingAmount": 200,
+     "closingAmount": 590,
+     "expectedAmount": 601,
+     "difference": -11,
+     "status": "cerrada",
+     "notes": "Faltó contar monedas",
+     "movements": [
+      {
+       "id": "qa-c4-a",
+       "cashRegisterId": "qa-caja-c4",
+       "type": "apertura",
+       "amount": 200,
+       "method": "efectivo",
+       "description": "Apertura de caja",
+       "createdAt": "2026-10-06T13:00:00.000Z"
+      },
+      {
+       "id": "qa-c4-v",
+       "cashRegisterId": "qa-caja-c4",
+       "type": "venta",
+       "amount": 401,
+       "method": "efectivo",
+       "description": "Venta",
+       "createdAt": "2026-10-06T15:00:00.000Z",
+       "saleId": "qa-c4-s"
+      },
+      {
+       "id": "qa-c4-z",
+       "cashRegisterId": "qa-caja-c4",
+       "type": "cierre",
+       "amount": 590,
+       "method": "efectivo",
+       "description": "Cierre de caja",
+       "createdAt": "2026-10-06T23:10:00.000Z"
+      }
+     ]
+    },
+    {
+     "id": "qa-caja-c5",
+     "openedAt": "2026-10-05T13:00:00.000Z",
+     "closedAt": "2026-10-05T23:10:00.000Z",
+     "openingAmount": 200,
+     "closingAmount": 347,
+     "expectedAmount": 345.5,
+     "difference": 1.5,
+     "status": "cerrada",
+     "notes": null,
+     "movements": [
+      {
+       "id": "qa-c5-a",
+       "cashRegisterId": "qa-caja-c5",
+       "type": "apertura",
+       "amount": 200,
+       "method": "efectivo",
+       "description": "Apertura de caja",
+       "createdAt": "2026-10-05T13:00:00.000Z"
+      },
+      {
+       "id": "qa-c5-v",
+       "cashRegisterId": "qa-caja-c5",
+       "type": "venta",
+       "amount": 145.5,
+       "method": "efectivo",
+       "description": "Venta",
+       "createdAt": "2026-10-05T15:00:00.000Z",
+       "saleId": "qa-c5-s"
+      },
+      {
+       "id": "qa-c5-z",
+       "cashRegisterId": "qa-caja-c5",
+       "type": "cierre",
+       "amount": 347,
+       "method": "efectivo",
+       "description": "Cierre de caja",
+       "createdAt": "2026-10-05T23:10:00.000Z"
+      }
+     ]
+    },
+    {
+     "id": "qa-caja-c6",
+     "openedAt": "2026-10-04T13:00:00.000Z",
+     "closedAt": "2026-10-04T23:10:00.000Z",
+     "openingAmount": 200,
+     "closingAmount": 410,
+     "expectedAmount": 410,
+     "difference": 0,
+     "status": "cerrada",
+     "notes": null,
+     "movements": [
+      {
+       "id": "qa-c6-a",
+       "cashRegisterId": "qa-caja-c6",
+       "type": "apertura",
+       "amount": 200,
+       "method": "efectivo",
+       "description": "Apertura de caja",
+       "createdAt": "2026-10-04T13:00:00.000Z"
+      },
+      {
+       "id": "qa-c6-v",
+       "cashRegisterId": "qa-caja-c6",
+       "type": "venta",
+       "amount": 210,
+       "method": "efectivo",
+       "description": "Venta",
+       "createdAt": "2026-10-04T15:00:00.000Z",
+       "saleId": "qa-c6-s"
+      },
+      {
+       "id": "qa-c6-z",
+       "cashRegisterId": "qa-caja-c6",
+       "type": "cierre",
+       "amount": 410,
+       "method": "efectivo",
+       "description": "Cierre de caja",
+       "createdAt": "2026-10-04T23:10:00.000Z"
+      }
+     ]
+    }
+   ]
+  ]
+ },
+ {
+  "parchear": [
+   "/api/cash-registers/qa-caja-abierta/parte",
+   {
+    "cajaId": "qa-caja-abierta",
+    "estado": "abierta",
+    "abiertaEn": "2026-10-10T13:00:00.000Z",
+    "cerradaEn": null,
+    "apertura": 200,
+    "ventasEfectivo": 129.9,
+    "ingresos": 50,
+    "egresos": 195,
+    "esperado": 184.9,
+    "contado": null,
+    "diferencia": null,
+    "porOrigen": [
+     {
+      "clave": "apertura",
+      "etiqueta": "Fondo de apertura",
+      "n": 1,
+      "entraEfectivo": 200,
+      "saleEfectivo": 0,
+      "otrosMedios": 0
+     },
+     {
+      "clave": "venta",
+      "etiqueta": "Venta",
+      "n": 9,
+      "entraEfectivo": 129.9,
+      "saleEfectivo": 0,
+      "otrosMedios": 222.3
+     },
+     {
+      "clave": "cambio",
+      "etiqueta": "Cambio",
+      "n": 1,
+      "entraEfectivo": 50,
+      "saleEfectivo": 0,
+      "otrosMedios": 0
+     },
+     {
+      "clave": "gasto",
+      "etiqueta": "Gasto",
+      "n": 1,
+      "entraEfectivo": 0,
+      "saleEfectivo": 35,
+      "otrosMedios": 0
+     },
+     {
+      "clave": "retiro-dueno",
+      "etiqueta": "Retiro del dueño",
+      "n": 1,
+      "entraEfectivo": 0,
+      "saleEfectivo": 100,
+      "otrosMedios": 0
+     },
+     {
+      "clave": "adelanto",
+      "etiqueta": "Adelanto",
+      "n": 1,
+      "entraEfectivo": 0,
+      "saleEfectivo": 60,
+      "otrosMedios": 0
+     }
+    ],
+    "conciliacion": {
+     "ventasSistema": {
+      "n": 10,
+      "total": 364.7,
+      "efectivo": 142.4
+     },
+     "ventasEnCaja": {
+      "n": 9,
+      "total": 352.2,
+      "efectivo": 129.9
+     },
+     "sinCaja": {
+      "n": 1,
+      "total": 12.5,
+      "efectivo": 12.5,
+      "muestra": [
+       {
+        "id": "qa-v-x",
+        "total": 12.5,
+        "efectivo": 12.5,
+        "medio": "efectivo",
+        "createdAt": "2026-10-10T16:50:00.000Z"
+       }
+      ]
+     },
+     "diferenciaEfectivo": -12.5,
+     "cuadra": false,
+     "truncado": false
+    }
+   }
+  ]
+ },
+ {
+  "parchear": [
+   "/api/cash-registers/historial",
+   {
+    "entries": [
+     {
+      "id": "qa-h1",
+      "action": "Editar",
+      "entity": "caja",
+      "entityId": "qa-caja-abierta",
+      "detail": "Egreso S/60.00 — Adelanto de sueldo — Valentina",
+      "user": "qaadmin",
+      "createdAt": "2026-10-10T16:20:00.000Z"
+     },
+     {
+      "id": "qa-h2",
+      "action": "Editar",
+      "entity": "caja",
+      "entityId": "qa-caja-abierta",
+      "detail": "Egreso S/100.00 — Retiro del dueño — para la casa",
+      "user": "qaadmin",
+      "createdAt": "2026-10-10T16:00:00.000Z"
+     },
+     {
+      "id": "qa-h3",
+      "action": "Abrir",
+      "entity": "caja",
+      "entityId": "qa-caja-abierta",
+      "detail": "Apertura de caja con S/200.00 — QA Admin",
+      "user": "qaadmin",
+      "createdAt": "2026-10-10T13:00:00.000Z"
+     },
+     {
+      "id": "qa-h4",
+      "action": "Cerrar",
+      "entity": "caja",
+      "entityId": "qa-caja-c1",
+      "detail": "Cierre con S/510.00 (esperado S/512.40, diferencia S/-2.40)",
+      "user": "qacajero",
+      "createdAt": "2026-10-09T23:10:00.000Z"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "eval": "location.reload()"
+ },
+ {
+  "esperar": 3500
+ }
+]

@@ -1,317 +1,123 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+/**
+ * Mi Plata › Impuestos y reportes › Importar y exportar: los DATOS CRUDOS de
+ * cada módulo (respaldo o para otro sistema) y la carga de productos de golpe.
+ * Lo armado para el contador (libros, reportes con totales) vive en «Para el
+ * contador».
+ *
+ * Antes (medido 11-10): tres pestañas internas (Descargar/Subir/Historial),
+ * siete tarjetas con «Excel» en blanco sobre turquesa al 10 % (no se leía),
+ * «Proveedores» y «Gastos» que siempre decían «No hay datos» y un «Subir» que
+ * ofrecía siete destinos y cargaba todo como productos.
+ */
 import { useState } from "react";
-import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck, DollarSign } from "@buleje/design-system/icons";
-import { cn, exportToCSV } from "@/lib/utils";
-
-type ExportModule = { id: string; label: string; icon: React.ElementType };
-type ImportRecord = { id: string; module: string; filename: string; records: number; status: "success" | "partial" | "error"; date: string; errors: number };
-
-const EXPORT_MODULES: ExportModule[] = [
-  { id: "productos", label: "Productos", icon: Package },
-  { id: "clientes", label: "Clientes", icon: Users },
-  { id: "pedidos", label: "Pedidos", icon: ShoppingCart },
-  { id: "ventas", label: "Ventas", icon: DollarSign },
-  { id: "inventario", label: "Movimientos Inventario", icon: Package },
-  { id: "proveedores", label: "Proveedores", icon: Truck },
-  { id: "gastos", label: "Gastos", icon: FileText },
-];
-
-const IMPORT_HISTORY: ImportRecord[] = [];
-
-function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
-
-// Fetch real data and return CSV rows per module
-async function fetchModuleData(moduleId: string): Promise<Record<string, unknown>[]> {
-  if (moduleId === "productos") {
-    const res = await fetch("/api/products");
-    if (!res.ok) return [];
-    const data = await res.json() as Record<string, unknown>[];
-    return data.map(p => ({
-      id: p.id, nombre: p.name, categoria: p.category, precio: p.price,
-      unidad: p.unit, stock: p.stock ?? "", stock_min: p.stockMin ?? "",
-      activo: p.active !== false ? "sí" : "no", badge: p.badge ?? "",
-      codigo_barras: p.barcode ?? "",
-    }));
-  }
-  if (moduleId === "clientes") {
-    const res = await fetch("/api/customers");
-    if (!res.ok) return [];
-    const data = await res.json() as { customers?: Record<string, unknown>[] } | Record<string, unknown>[];
-    const list = Array.isArray(data) ? data : ((data as { customers?: Record<string, unknown>[] }).customers ?? []);
-    return list.map(c => ({
-      nombre: c.name, teléfono: c.phone, ubicacion: c.location ?? "",
-      puntos: c.loyaltyPoints ?? 0, nivel: c.loyaltyTier ?? "bronce",
-      total_gastado: c.totalSpent ?? 0, credito: c.creditBalance ?? 0,
-      registrado: c.createdAt ? String(c.createdAt).slice(0, 10) : "",
-    }));
-  }
-  if (moduleId === "pedidos") {
-    const res = await fetch("/api/orders");
-    if (!res.ok) return [];
-    const data = await res.json() as { orders?: Record<string, unknown>[] } | Record<string, unknown>[];
-    const list = Array.isArray(data) ? data : ((data as { orders?: Record<string, unknown>[] }).orders ?? []);
-    return list.map(o => ({
-      id: o.id, cliente: (o.customer as Record<string, unknown>)?.name ?? "", teléfono: (o.customer as Record<string, unknown>)?.phone ?? "",
-      total: o.total, estado: o.status, pago: o.paymentMethod ?? "",
-      fecha: o.createdAt ? String(o.createdAt).slice(0, 10) : "",
-      num_productos: Array.isArray(o.items) ? o.items.length : 0,
-    }));
-  }
-  if (moduleId === "inventario") {
-    const res = await fetch("/api/inventory-movements");
-    if (!res.ok) return [];
-    const data = await res.json() as Record<string, unknown>[];
-    return data.map(m => ({
-      id: m.id, producto_id: m.productId, tipo: m.type,
-      cantidad: m.quantity, notas: m.notes ?? "",
-      fecha: m.createdAt ? String(m.createdAt).slice(0, 10) : "",
-    }));
-  }
-  if (moduleId === "ventas") {
-    const res = await fetch("/api/sales");
-    if (!res.ok) return [];
-    const data = await res.json() as Record<string, unknown>[];
-    return data.map(s => {
-      const total = Number(s.total) || 0;
-      const totalCogs = Number(s.totalCogs) || 0;
-      const margin = total - totalCogs;
-      return {
-        id: s.id,
-        fecha: s.createdAt ? String(s.createdAt).slice(0, 10) : "",
-        num_productos: Array.isArray(s.items) ? s.items.length : 0,
-        total: total.toFixed(2),
-        costo_total: totalCogs.toFixed(2),
-        margen: margin.toFixed(2),
-        margen_pct: total > 0 ? ((margin / total) * 100).toFixed(1) + "%" : "0%",
-        metodo_pago: s.payment ?? "",
-        comprobante: s.comprobanteTipo ?? "ticket",
-        descuento: s.descuentoMonto ?? 0,
-        cajero: s.cashierId ?? "",
-        cliente: s.customerPhone ?? "",
-      };
-    });
-  }
-  // proveedores / gastos — no dedicated API yet, return empty
-  return [];
-}
-
-function downloadExcel(rows: Record<string, unknown>[], filename: string) {
-  if (rows.length === 0) return;
-  const keys = Object.keys(rows[0]);
-  const escape = (v: unknown) => {
-    const s = v == null ? "" : String(v);
-    return s.includes("\t") || s.includes("\n") ? `"${s}"` : s;
-  };
-  const tsv =
-    keys.join("\t") + "\n" +
-    rows.map(r => keys.map(k => escape(r[k])).join("\t")).join("\n");
-  // .xls with tab-separated content opens directly in Excel
-  const blob = new Blob([tsv], { type: "application/vnd.ms-excel;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${filename}.xls`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+import { toast } from "sonner";
+import { DataTable, SectionTitle } from "@buleje/design-system";
+import { BookOpen, Download, FileSpreadsheet, History, MoreHorizontal, Upload } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { exportToCSV } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
+import { EXPORT_MODULES, downloadExcel, fetchModuleData } from "./importar-exportar/exportar-datos";
+import SubirProductosModal from "./importar-exportar/SubirProductosModal";
+import HistorialImportacionesModal from "./importar-exportar/HistorialImportacionesModal";
 
 export default function ImportExportTab() {
-  const [view, setView] = useState<"export" | "import" | "history">("export");
-  const [selectedModule, setSelectedModule] = useState<string | null>(null);
-  const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ success: boolean; count: number; errors: number } | null>(null);
-  const [dragOver, setDragOver] = useState(false);
-  const [exporting, setExporting] = useState<string | null>(null);
+  const [exportando, setExportando] = useState<string | null>(null);
+  const [subir, setSubir] = useState(false);
+  const [historial, setHistorial] = useState(false);
 
-  const handleExport = async (moduleId: string, format: "csv" | "excel") => {
-    setExporting(`${moduleId}-${format}`);
+  const exportar = async (id: string, formato: "csv" | "excel") => {
+    if (exportando) return;
+    setExportando(`${id}-${formato}`);
     try {
-      const rows = await fetchModuleData(moduleId);
-      if (rows.length === 0) {
-        alert("No hay datos disponibles para exportar.");
-        return;
-      }
-      const filename = `${moduleId}_${new Date().toISOString().slice(0, 10)}`;
-      if (format === "csv") {
-        exportToCSV(rows as Record<string, string | number | boolean | null | undefined>[], filename);
-      } else {
-        downloadExcel(rows, filename);
-      }
+      const filas = await fetchModuleData(id);
+      if (filas.length === 0) { toast.info("No hay datos para bajar."); return; }
+      const nombre = `${id}_${new Date().toISOString().slice(0, 10)}`;
+      if (formato === "csv") exportToCSV(filas as Record<string, string | number | boolean | null | undefined>[], nombre);
+      else downloadExcel(filas, nombre);
     } catch {
-      alert("Error al exportar. Intenta de nuevo.");
+      toast.error("No se pudo bajar. Intenta de nuevo.");
     } finally {
-      setExporting(null);
+      setExportando(null);
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) simulateImport();
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) simulateImport();
-  };
-
-  const simulateImport = () => {
-    setImporting(true); setImportResult(null);
-    setTimeout(() => {
-      setImporting(false);
-      setImportResult({ success: true, count: Math.floor(Math.random() * 100) + 10, errors: Math.floor(Math.random() * 3) });
-    }, 2000);
-  };
-
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Upload className="h-6 w-6 text-primary" /> Subir / Descargar Datos</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Descarga tus datos a Excel o sube archivos para cargar productos de golpe</p>
+    <div className="space-y-4">
+      {/* Una fila: título · Subir productos · Más */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Importar y exportar</SectionTitle>
+          <InfoTip
+            title="Importar y exportar"
+            what="Baja los datos de cada módulo tal como están (para respaldo o para pasarlos a otro sistema) y sube productos de golpe desde un Excel."
+            affects="Para tu contador están los libros de ventas y compras del mes en «Para el contador»."
+            example="Bajas «Productos» en Excel, corriges precios y lo vuelves a subir."
+          />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {(["export", "import", "history"] as const).map(v => (
-            <button key={v} onClick={() => setView(v)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === v ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
-              {v === "export" ? "Descargar" : v === "import" ? "Subir" : "Historial"}
-            </button>
-          ))}
+        <div className="ml-auto flex items-center gap-2">
+          <button type="button" onClick={() => setSubir(true)} className={button({ variant: "primary", className: "rounded-xl px-4" })}>
+            <Upload className="h-4 w-4" aria-hidden /> Subir productos
+          </button>
+          <ActionMenu
+            label="Más"
+            icon={MoreHorizontal}
+            soloIcono
+            size="md"
+            className="w-12 shrink-0"
+            title="Historial de importaciones, libros para el contador"
+            actions={[
+              { id: "historial", label: "Historial de importaciones", hint: "Cada archivo subido, con sus filas y errores", icon: History, onSelect: () => setHistorial(true) },
+              { id: "contador", label: "Libros para el contador", hint: "Registro de ventas y de compras del mes", icon: BookOpen, seccion: "Ver", onSelect: () => irAEnlace("/admin?tab=plata&vista=contador") },
+            ]}
+          />
         </div>
       </div>
 
-      {view === "export" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-          {EXPORT_MODULES.map(mod => {
-            const Icon = mod.icon;
-            const isExportingCSV = exporting === `${mod.id}-csv`;
-            const isExportingXLS = exporting === `${mod.id}-excel`;
-            return (
-              <div key={mod.id} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
-                <div className="flex flex-wrap items-center gap-3 mb-4">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Icon className="h-5 w-5 text-primary" /></div>
-                  <div>
-                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{mod.label}</CardTitle>
-                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Datos reales desde la base de datos</p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => handleExport(mod.id, "csv")}
-                    disabled={!!exporting}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
-                  >
-                    {isExportingCSV ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                    CSV
-                  </button>
-                  <button
-                    onClick={() => handleExport(mod.id, "excel")}
-                    disabled={!!exporting}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-60"
-                  >
-                    {isExportingXLS ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                    Excel
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Una fila por módulo: qué trae y UN botón «Bajar» con sus dos formatos
+          (antes dos botones por fila: 14 a la vista). */}
+      <DataTable>
+        <thead>
+          <tr>
+            <th>Módulo</th>
+            <th className="hidden sm:table-cell">Qué trae</th>
+            <th className="w-32 text-right">Bajar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {EXPORT_MODULES.map(({ id, label, hint, icon: Icono }) => (
+            <tr key={id}>
+              <td>
+                <span className="inline-flex items-center gap-2 font-semibold">
+                  <Icono className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" aria-hidden />
+                  {label}
+                </span>
+              </td>
+              <td className="hidden sm:table-cell">{hint}</td>
+              <td className="text-right">
+                <ActionMenu
+                  label="Bajar"
+                  icon={Download}
+                  size="md"
+                  className="ml-auto"
+                  title={`Bajar ${label} en Excel o CSV`}
+                  disabled={exportando !== null}
+                  actions={[
+                    { id: "excel", label: "En Excel", hint: "Para abrir y corregir en Excel", icon: FileSpreadsheet, busy: exportando === `${id}-excel`, onSelect: () => void exportar(id, "excel") },
+                    { id: "csv", label: "En CSV", hint: "Texto separado por comas, para otro sistema", icon: Download, busy: exportando === `${id}-csv`, onSelect: () => void exportar(id, "csv") },
+                  ]}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </DataTable>
 
-      {view === "import" && (
-        <div className="space-y-6">
-          {/* Module selector */}
-          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">1. Elige a dónde van los datos</CardTitle>
-            <div className="flex flex-wrap gap-2">
-              {EXPORT_MODULES.map(m => (
-                <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-lg text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary")}>
-                  {m.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Upload zone */}
-          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">2. Sube tu archivo</CardTitle>
-            <div
-              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleDrop}
-              className={cn("border-2 border-dashed rounded-xl p-8 text-center transition-colors", dragOver ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}
-            >
-              {importing ? (
-                <LoadingState message="Procesando archivo..." />
-              ) : importResult ? (
-                <div className="flex flex-col items-center gap-3">
-                  <CheckCircle className="h-8 w-8 text-[var(--data-success-500)]" />
-                  <p className="text-sm font-bold text-[var(--data-success-500)]">{importResult.count} registros importados</p>
-                  {importResult.errors > 0 && <p className="text-xs text-[var(--data-warning-500)]">{importResult.errors} errores encontrados</p>}
-                  <button onClick={() => setImportResult(null)} className="text-xs text-primary font-bold underline">Importar otro</button>
-                </div>
-              ) : (
-                <>
-                  <Upload className="h-8 w-8 text-[var(--text-tertiary)] mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Arrastra tu archivo CSV o Excel aquí</p>
-                  <p className="text-xs text-[var(--text-tertiary)] mb-3">Formatos: .csv, .xlsx, máximo 10MB</p>
-                  <label className="inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 cursor-pointer transition-colors">
-                    <Upload className="h-4 w-4" /> Seleccionar archivo
-                    <input type="file" accept=".csv,.xlsx" onChange={handleFileInput} className="hidden" />
-                  </label>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Rules */}
-          <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/10 rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 p-4">
-            <div className="flex flex-wrap items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
-              <div className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
-                <p className="font-bold mb-1">Reglas para subir archivos:</p>
-                <ul className="list-disc ml-4 space-y-0.5">
-                  <li>La primera fila debe contener los encabezados</li>
-                  <li>Los campos requeridos dependen del módulo seleccionado</li>
-                  <li>Registros con error se omiten (el resto se importa)</li>
-                  <li>Se genera un log detallado al finalizar</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {view === "history" && (
-        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-y-hidden overflow-x-auto">
-          <table className="w-full min-w-150 text-sm">
-            <thead><tr className="bg-[var(--surface-alt)] dark:bg-surface text-left">
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Archivo</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Módulo</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Registros</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Estado</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
-            </tr></thead>
-            <tbody>
-              {IMPORT_HISTORY.map(r => (
-                <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-2"><FileText className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" /><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-48">{r.filename}</span></td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.records}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3">
-                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : r.status === "partial" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
-                      {r.status === "success" ? "Exitoso" : r.status === "partial" ? `${r.errors} errores` : "Error"}
-                    </span>
-                  </td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(r.date)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {subir && <SubirProductosModal onClose={() => setSubir(false)} onImportado={() => undefined} />}
+      {historial && <HistorialImportacionesModal onClose={() => setHistorial(false)} />}
     </div>
   );
 }

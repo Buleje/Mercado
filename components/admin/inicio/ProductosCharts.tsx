@@ -11,13 +11,14 @@ import type { ProductosData } from "./ProductosDashboard";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
 import { DashboardSection, MicroList } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
-import { Link2 } from "@buleje/design-system/icons";
+import { Link2, CheckCircle2 } from "@buleje/design-system/icons";
+import { formatNumber } from "@/lib/format";
 
 function fmtS(v: number) {
-  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  return `S/ ${formatNumber(v, { max: 0 })}`;
 }
 function fmtU(v: number) {
-  return `${v.toLocaleString("es-PE")} u`;
+  return `${formatNumber(v)} u`;
 }
 
 export default function ProductosCharts({ data }: { data: ProductosData }) {
@@ -85,6 +86,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       render: () => (
         <DashboardSection
           chartId="productos.top-10-productos"
+          plegable="inicio:productos.top-10-productos"
+          abiertoAlInicio
           hasData={true}
           kicker="Rankings · top 10 del periodo"
           title="Los productos que más venden"
@@ -147,6 +150,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       render: () => (
         <DashboardSection
           chartId="productos.ventas-categoria"
+          plegable="inicio:productos.ventas-categoria"
+          abiertoAlInicio
           hasData={true}
           kicker="Categorías · periodo"
           title="Ingresos por categoría"
@@ -226,6 +231,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       render: () => (
         <DashboardSection
           chartId="productos.sin-movimiento"
+          plegable="inicio:productos.sin-movimiento"
+          abiertoAlInicio
           hasData={true}
           kicker="Dead stock · top 10 zombies"
           title="Productos sin movimiento · capital inmovilizado"
@@ -247,8 +254,9 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
           {sinMovRows.length > 0 ? (
             <MicroList items={sinMovRows} barColor="var(--data-warning)" showRank />
           ) : (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin productos zombies — todo rota ✓
+            <div className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" aria-hidden />
+              Sin productos zombies — todo rota
             </div>
           )}
         </DashboardSection>
@@ -259,6 +267,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       render: () => (
         <DashboardSection
           chartId="productos.afinidades"
+          plegable="inicio:productos.afinidades"
+          abiertoAlInicio
           hasData={true}
           defaultVisible={false}
           kicker="Análisis de cesta · co-compra"
@@ -304,7 +314,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
                     className="relative rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 overflow-hidden"
                   >
                     <div
-                      className="absolute inset-y-0 left-0 bg-[var(--accent-soft)] transition-all"
+                      className="absolute inset-y-0 left-0 bg-primary/10 transition-all"
                       style={{ width: `${width}%` }}
                     />
                     <div className="relative flex items-center gap-3">

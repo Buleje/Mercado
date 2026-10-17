@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Ya tienes una aplicación con ese RUC. Contactá a soporte para consultar su estado.",
+              "Ya tienes una aplicación con ese RUC. Contacta a soporte para consultar su estado.",
             code: err.code,
           },
           { status: 409 },
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       error: err instanceof Error ? err.message : String(err),
     });
     return NextResponse.json(
-      { error: "No se pudo procesar la solicitud. Intentá nuevamente." },
+      { error: "No se pudo procesar la solicitud. Intenta nuevamente." },
       { status: 500 },
     );
   }

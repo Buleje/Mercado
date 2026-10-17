@@ -4,6 +4,7 @@ import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { enqueueDeliveryNotification } from "@/lib/queue/queues";
 import { isFeatureEnabled } from "@/lib/feature-flags";
+import { startOfLimaDay } from "@/lib/utils";
 
 /**
  * lib/db/delivery.db.ts — Bloque D1 del Marketplace (Delivery vivo)
@@ -480,8 +481,7 @@ export const DeliveryRoutesDB = {
     const cacheKey = `delivery:routes:${tenantId}:today:${opts.storeId ?? "all"}:${opts.status ?? "all"}`;
 
     return getOrSet(cacheKey, 20, async () => {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
+      const startOfDay = new Date(startOfLimaDay());
       const endOfDay = new Date(startOfDay);
       endOfDay.setDate(endOfDay.getDate() + 1);
 

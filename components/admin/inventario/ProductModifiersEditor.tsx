@@ -14,6 +14,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { CardTitle } from "@buleje/design-system";
 import {
   X, Plus, Trash2, BookOpen, Camera, Loader2, AlertTriangle, Check,
   Sliders, Upload, Star,
@@ -166,7 +167,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
       variant="wide"
     >
           {/* Body */}
-          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 bg-[var(--surface-canvas)]/50">
+          <div className="flex-1 overflow-y-auto space-y-4 bg-[var(--surface-canvas)]/50 px-5 py-5 sm:px-6">
             {loading && (
               <div className="flex items-center justify-center py-10 gap-2 text-[var(--text-tertiary)]">
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -175,11 +176,11 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             )}
 
             {!loading && groups.length === 0 && (
-              <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center bg-white dark:bg-card">
+              <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center bg-[var(--surface-raised)] ">
                 <Sliders className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-3" />
-                <h3 className="text-sm font-bold text-[var(--text-primary)] mb-1">Aún no hay adicionales</h3>
+                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)] mb-1">Aún no hay adicionales</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] max-w-md mx-auto leading-snug">
-                  Agregá un grupo (ej. <em>Cremas</em>, <em>Tamaño</em>, <em>Toppings</em>) o importá uno listo desde el catálogo global.
+                  Agrega un grupo (ej. <em>Cremas</em>, <em>Tamaño</em>, <em>Toppings</em>) o importa uno listo desde el catálogo global.
                 </p>
               </div>
             )}
@@ -204,11 +205,11 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             {!loading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                 <button onClick={addGroup}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-white dark:bg-card px-4 py-3 text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
                   <Plus className="h-4 w-4" /> Agregar grupo nuevo
                 </button>
                 <button onClick={() => setShowCatalog(true)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white px-4 py-3 text-sm font-bold hover:opacity-90 transition-all">
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white px-4 min-h-11 text-sm font-semibold hover:opacity-90 transition-all">
                   <BookOpen className="h-4 w-4" /> Importar del catálogo
                 </button>
               </div>
@@ -226,23 +227,23 @@ export default function ProductModifiersEditor({ productId, productName, onClose
               <div className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-3 text-sm text-[var(--data-error-500)] flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                 <span className="flex-1">{error}</span>
-                <button onClick={() => setError(null)} className="opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
+                <button aria-label="Quitar" onClick={() => setError(null)} className="opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3.5 flex items-center justify-between gap-2 bg-white dark:bg-card">
+          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3.5 flex items-center justify-between gap-2 bg-[var(--surface-raised)] ">
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] hidden sm:block">
               Los cambios reemplazan completamente los adicionales del producto al guardar.
             </p>
             <div className="flex items-center gap-2 ml-auto">
               <button onClick={onClose}
-                className="rounded-xl border border-[var(--rule-base)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+                className="rounded-xl border border-[var(--rule-base)] px-4 min-h-10 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
                 Cancelar
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50">
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 Guardar
               </button>
@@ -268,7 +269,7 @@ function GroupCard({
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
   const existingNames = new Set(group.options.map((o) => o.name.toLowerCase()));
   return (
-    <div className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-card overflow-hidden shadow-sm">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden shadow-sm">
       {/* Group header */}
       <div className="border-b border-[var(--rule-soft)] p-4 space-y-3">
         <div className="flex items-start gap-2">
@@ -276,10 +277,10 @@ function GroupCard({
             value={group.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
             placeholder="Nombre del grupo (ej: Cremas, Tamaño)"
-            className="flex-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-base font-bold text-[var(--text-primary)] outline-none focus:border-primary"
+            className="flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 h-10 text-base font-bold text-[var(--text-primary)] outline-none focus:border-primary"
           />
           <button onClick={onRemove} title="Eliminar grupo"
-            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">
+            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
@@ -287,7 +288,7 @@ function GroupCard({
           value={group.description ?? ""}
           onChange={(e) => onUpdate({ description: e.target.value })}
           placeholder="Descripción para el cliente (opcional, ej: Elige las cremas que prefieras)"
-          className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm text-[var(--text-secondary)] outline-none focus:border-primary"
+          className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm text-[var(--text-secondary)] outline-none focus:border-primary"
         />
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <label className="inline-flex items-center gap-2 cursor-pointer select-none">
@@ -306,7 +307,7 @@ function GroupCard({
               type="number" min={0} max={20}
               value={group.minSelect}
               onChange={(e) => onUpdate({ minSelect: Math.max(0, Number(e.target.value) || 0) })}
-              className="w-14 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1 text-sm tabular-nums outline-none focus:border-primary"
+              className="w-14 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1 text-sm tabular-nums outline-none focus:border-primary"
             />
           </label>
           <label className="inline-flex items-center gap-1.5">
@@ -315,7 +316,7 @@ function GroupCard({
               type="number" min={1} max={20}
               value={group.maxSelect}
               onChange={(e) => onUpdate({ maxSelect: Math.max(1, Number(e.target.value) || 1) })}
-              className="w-14 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1 text-sm tabular-nums outline-none focus:border-primary"
+              className="w-14 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1 text-sm tabular-nums outline-none focus:border-primary"
             />
           </label>
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] italic ml-auto">
@@ -330,7 +331,7 @@ function GroupCard({
           Opciones ({group.options.length})
         </p>
         {group.options.length === 0 ? (
-          <p className="text-xs text-[var(--text-tertiary)] italic py-2">Aún no hay opciones. Agregá una para empezar.</p>
+          <p className="text-xs text-[var(--text-tertiary)] italic py-2">Aún no hay opciones. Agrega una para empezar.</p>
         ) : (
           <div className="space-y-2">
             {group.options.map((o, oIdx) => (
@@ -345,11 +346,11 @@ function GroupCard({
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button onClick={onAddOption}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10 transition-colors">
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors">
             <Plus className="h-3.5 w-3.5" /> Agregar opción
           </button>
           <button onClick={() => setShowCatalogPicker(true)}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-linear-to-r from-primary to-[var(--data-success-500)] text-white px-3 py-2 text-xs font-bold hover:opacity-90 transition-all">
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white px-3 py-2 text-xs font-bold hover:opacity-90 transition-all">
             <BookOpen className="h-3.5 w-3.5" /> Añadir del catálogo
           </button>
         </div>
@@ -398,7 +399,7 @@ function OptionRow({
   };
 
   return (
-    <div className="rounded-xl border border-[var(--rule-soft)] bg-white dark:bg-card p-2.5">
+    <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2.5">
       <div className="flex flex-wrap items-center gap-2.5">
         {/* Image upload zone — drag-drop + click */}
         <button
@@ -413,12 +414,12 @@ function OptionRow({
             if (f) void handleFile(f);
           }}
           className={cn(
-            "relative h-12 w-12 rounded-lg overflow-hidden border-2 border-dashed shrink-0 transition-all group",
+            "relative h-12 w-12 rounded-xl overflow-hidden border-2 border-dashed shrink-0 transition-all group",
             option.imageUrl
               ? "border-[var(--rule-base)]"
               : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-primary"
           )}
-          title={option.imageUrl ? "Click o arrastrá para reemplazar" : "Click o arrastrá una imagen aquí"}
+          title={option.imageUrl ? "Click o arrastra para reemplazar" : "Click o arrastra una imagen aquí"}
         >
           {option.imageUrl ? (
             <Image
@@ -461,7 +462,7 @@ function OptionRow({
           value={option.name}
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder="Nombre (ej: Mayonesa, Pierna, Queso extra)"
-          className="flex-1 min-w-[140px] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+          className="flex-1 min-w-[140px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
         />
 
         {/* Price delta */}
@@ -471,7 +472,8 @@ function OptionRow({
             type="number" min={0} step={0.5}
             value={option.priceDelta}
             onChange={(e) => onChange({ priceDelta: Number(e.target.value) || 0 })}
-            className="w-16 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1.5 text-sm font-mono tabular-nums outline-none focus:border-primary"
+            className="w-16 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1.5 text-sm font-mono tabular-nums outline-none focus:border-primary"
+            aria-label="Precio adicional de esta opción"
             title="Cuánto suma al precio del producto si se elige"
           />
         </div>
@@ -482,7 +484,7 @@ function OptionRow({
           onClick={() => onChange({ isDefault: !option.isDefault })}
           title={option.isDefault ? "Pre-seleccionada por defecto" : "Marcar como por defecto"}
           className={cn(
-            "p-1.5 rounded-lg transition-colors",
+            "p-1.5 rounded-xl transition-colors",
             option.isDefault
               ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]"
               : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
@@ -496,7 +498,7 @@ function OptionRow({
           type="button"
           onClick={onRemove}
           aria-label="Eliminar opción"
-          className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
+          className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
         >
           <Trash2 className="h-4 w-4" />
         </button>

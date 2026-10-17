@@ -89,7 +89,7 @@ export default function CouponInput({
         role="status"
         aria-live="polite"
         className={cn(
-          "flex items-center gap-3 rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-3",
+          "flex items-center gap-3 rounded-2xl border-2 border-[var(--accent)] bg-primary/10 p-3",
           className,
         )}
       >
@@ -186,7 +186,7 @@ export default function CouponInput({
                     className="w-full flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-left hover:border-[var(--accent)] transition-colors"
                   >
                     <code className="text-xs font-bold text-[var(--accent)] uppercase tracking-wider">{c.code}</code>
-                    <span className="inline-block rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold">
+                    <span className="inline-block rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold">
                       {c.isFixed ? `-${formatSoles(c.amount)}` : `-${c.amount}%`}
                     </span>
                     <span className="flex-1 min-w-0 text-xs text-[var(--text-secondary)] truncate">{c.description}</span>

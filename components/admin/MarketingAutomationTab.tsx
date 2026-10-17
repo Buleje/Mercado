@@ -1,243 +1,125 @@
-﻿"use client";
+"use client";
 
-import { CardTitle, PageTitle } from "@buleje/design-system";
-
-import { useState, useMemo } from "react";
-import {
-  Megaphone, Download, Search, Eye, X,
-  Mail, Smartphone, Users,
-  BarChart3,
-} from "@buleje/design-system/icons";
-import { cn, exportToCSV } from "@/lib/utils";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type CampaignType = "email" | "sms" | "push" | "mixto";
-type CampaignStatus = "borrador" | "activa" | "pausada" | "completada" | "cancelada";
-type TriggerType = "manual" | "cumpleaños" | "abandono-carrito" | "inactividad" | "primera-compra" | "recurrente";
-
-type Campaign = {
-  id: string;
-  name: string;
-  type: CampaignType;
-  status: CampaignStatus;
-  trigger: TriggerType;
-  segment: string;
-  sentCount: number;
-  openRate: number;
-  clickRate: number;
-  conversions: number;
-  revenue: number;
-  cost: number;
-  startDate: string;
-  endDate: string | null;
-};
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
-const pct = (n: number) => n.toFixed(1) + "%";
-
-const TYPE_META: Record<CampaignType, { label: string; icon: typeof Mail; color: string }> = {
-  email: { label: "Email", icon: Mail, color: "text-[var(--data-success-500)]" },
-  sms:   { label: "SMS",   icon: Smartphone, color: "text-[var(--data-success-500)]" },
-  push:  { label: "Push",  icon: Megaphone, color: "text-[var(--text-secondary)]" },
-  mixto: { label: "Mixto", icon: Users, color: "text-[var(--data-warning-500)]" },
-};
-
-const STATUS_META: Record<CampaignStatus, { label: string; color: string; bg: string }> = {
-  borrador:   { label: "Borrador",   color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]/30" },
-  activa:     { label: "Activa",     color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  pausada:    { label: "Pausada",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  completada: { label: "Completada", color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  cancelada:  { label: "Cancelada",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
-};
-
-const TRIGGER_LABELS: Record<TriggerType, string> = {
-  manual: "Manual", "cumpleaños": "Cumpleaños", "abandono-carrito": "Abandono Carrito",
-  inactividad: "Inactividad (30d)", "primera-compra": "Post 1ra Compra", recurrente: "Recurrente Semanal",
-};
-
-// ── Seed Data ─────────────────────────────────────────────────────────────────
-
-const SEED: Campaign[] = [];
-
-// ── Component ─────────────────────────────────────────────────────────────────
+/**
+ * Crecimiento › Campañas: mensajes que salen SOLOS por el WhatsApp del negocio
+ * (o la app) a un grupo de clientes, ahora o a una hora. Patrón del panel
+ * (11-10): título · Indicadores · Nueva campaña · Más en una fila; «Para quién»
+ * (lo que era la pestaña Segmentos) en una fila de 48 px; la lista en una
+ * tabla con el «⋯» por fila.
+ *
+ * No es Clientes › Mensajes masivos: ahí los abres tú uno por uno en tu
+ * WhatsApp (wa.me); acá los manda el servidor a la hora y cuenta cómo le fue.
+ * Por eso conviven, y el «Más» lleva de una a la otra.
+ */
+import { useState } from "react";
+import { SectionTitle, StatCard } from "@buleje/design-system";
+import { AlertTriangle, Megaphone, MessageCircle, MoreHorizontal, Plus, RefreshCw } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
+import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
+import { formatNumber } from "@/lib/format";
+import { AudienciasCampana } from "@/components/admin/crecimiento/campanas/AudienciasCampana";
+import { ModalNuevaCampana } from "@/components/admin/crecimiento/campanas/ModalNuevaCampana";
+import { TablaCampanas } from "@/components/admin/crecimiento/campanas/TablaCampanas";
+import { useCampanas } from "@/components/admin/crecimiento/campanas/use-campanas";
+import type { Segment } from "@/components/admin/crecimiento/campanas/tipos";
 
 export default function MarketingAutomationTab() {
-  const [campaigns] = useState(SEED);
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<CampaignStatus | "todos">("todos");
-  const [filterType, setFilterType] = useState<CampaignType | "todos">("todos");
-  const [detail, setDetail] = useState<Campaign | null>(null);
+  const c = useCampanas();
+  // Tocar un grupo de «Para quién» abre el alta ya apuntada a ese grupo.
+  const [modal, setModal] = useState<{ abierto: boolean; segmento: Segment }>({ abierto: false, segmento: "todos" });
+  const abrir = (segmento: Segment = "todos") => setModal({ abierto: true, segmento });
 
-  const filtered = useMemo(() => {
-    let list = [...campaigns];
-    if (filterStatus !== "todos") list = list.filter(c => c.status === filterStatus);
-    if (filterType !== "todos") list = list.filter(c => c.type === filterType);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(c => c.name.toLowerCase().includes(q) || c.segment.toLowerCase().includes(q));
-    }
-    return list;
-  }, [campaigns, filterStatus, filterType, search]);
+  const programadas = c.campaigns.filter((x) => x.status === "programada").length;
+  const enviadas = c.campaigns.filter((x) => x.status === "completada").length;
+  const alcance = c.campaigns.reduce((s, x) => s + (x.delivered || 0), 0);
 
-  const stats = useMemo(() => {
-    const active = campaigns.filter(c => c.status === "activa").length;
-    const totalRevenue = campaigns.reduce((s, c) => s + c.revenue, 0);
-    const totalCost = campaigns.reduce((s, c) => s + c.cost, 0);
-    const totalConversions = campaigns.reduce((s, c) => s + c.conversions, 0);
-    const roi = totalCost > 0 ? ((totalRevenue - totalCost) / totalCost) * 100 : 0;
-    return { active, totalRevenue, totalConversions, roi };
-  }, [campaigns]);
+  const kpis = useKpisPlegables({
+    claveMemoria: "crecimiento-campanas",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    sinDatosAun: c.loading && c.campaigns.length === 0,
+    resumen: `${programadas} programada${programadas === 1 ? "" : "s"}`,
+    tarjetas: [
+      <StatCard key="t" density="compact" label="Campañas" value={String(c.campaigns.length)} />,
+      <StatCard key="p" density="compact" label="Programadas" value={String(programadas)} />,
+      <StatCard key="e" density="compact" label="Enviadas" value={String(enviadas)} />,
+      <StatCard key="a" density="compact" label="Clientes alcanzados" value={formatNumber(alcance)} />,
+    ],
+  });
+
+  const acciones: MenuAccion[] = [
+    {
+      id: "masivos",
+      label: "Escribir uno por uno",
+      hint: "Clientes › Mensajes masivos: los abres tú en tu WhatsApp, con los grupos de Mis clientes",
+      icon: MessageCircle,
+      onSelect: () => { irAEnlace(hrefDeDestino({ tab: "clientes", params: { vista: "mensajes" } })); },
+    },
+    { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: c.recargar },
+  ];
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
-            <Megaphone className="h-6 w-6 text-primary" /> Marketing Automation
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Campañas automáticas, segmentación y seguimiento de ROI</p>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Campañas</SectionTitle>
+          <InfoTip
+            title="Campañas"
+            what="Un mensaje que sale solo por el WhatsApp del negocio (o la app) a un grupo de clientes, ahora o a la hora que elijas."
+            affects="Sólo llega a quienes aceptaron promociones (Ley 29733). Para escribir tú, uno por uno, desde tu WhatsApp: Más › Escribir uno por uno."
+            example="«Hola {{nombre}}, hoy 20% en arroz» a los Inactivos, programada para el sábado 9:00."
+          />
         </div>
-        <button onClick={() => exportToCSV(campaigns.map(c => ({ nombre: c.name, tipo: TYPE_META[c.type].label, estado: STATUS_META[c.status].label, trigger: TRIGGER_LABELS[c.trigger], enviados: c.sentCount, apertura: c.openRate, clicks: c.clickRate, conversiones: c.conversions, revenue: c.revenue, costo: c.cost })), "marketing-campañas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-          <Download className="h-4 w-4" /> Exportar
-        </button>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {kpis.boton}
+          <button type="button" onClick={() => abrir()} aria-haspopup="dialog" className={button({ variant: "primary", className: "shrink-0 gap-1.5 rounded-xl px-4 max-sm:w-12 max-sm:px-0" })}>
+            <Plus className="h-4 w-4" aria-hidden />
+            <span className="max-sm:sr-only">Nueva campaña</span>
+          </button>
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Escribir uno por uno y actualizar" />
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: "Campañas activas", value: String(stats.active), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Revenue total", value: fmt(stats.totalRevenue), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Conversiones", value: stats.totalConversions.toLocaleString("es-PE"), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-          { label: "ROI campañas", value: pct(stats.roi), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-        ].map(({ label, value, color, bg }) => (
-          <div key={label} className={cn("rounded-xl p-4", bg)}>
-            <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
-            <p className={cn("text-xl font-extrabold", color)}>{value}</p>
+      {kpis.panel}
+
+      <AudienciasCampana conteos={c.conteos} onElegir={abrir} />
+
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        {c.loading && c.campaigns.length === 0 ? (
+          <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Cargando campañas…</p>
+        ) : c.error && c.campaigns.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 p-6 text-center">
+            <AlertTriangle className="h-6 w-6 text-[var(--data-error-500)]" aria-hidden />
+            <p className="text-sm text-[var(--data-error-ink)]">No se pudieron cargar las campañas.</p>
+            <button type="button" onClick={c.recargar} className={button({ variant: "ghost", className: "rounded-xl text-sm" })}>Reintentar</button>
           </div>
-        ))}
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, segmento..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-        </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as CampaignStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          <option value="todos">Todos los estados</option>
-          {(Object.keys(STATUS_META) as CampaignStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
-        </select>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as CampaignType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          <option value="todos">Todos los tipos</option>
-          {(Object.keys(TYPE_META) as CampaignType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
-        </select>
-      </div>
-
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-              <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Estado</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Campaña</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Tipo</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Trigger</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Enviados</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Apertura</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Clicks</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Conv.</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Revenue</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-card-border">
-              {filtered.length === 0 && <tr><td colSpan={10} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">Sin campañas.</td></tr>}
-              {filtered.map(c => {
-                const st = STATUS_META[c.status];
-                const tp = TYPE_META[c.type];
-                const TpIcon = tp.icon;
-                return (
-                  <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-xs">{c.name}</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.segment}</p>
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-semibold", tp.color)}><TpIcon className="h-3 w-3" />{tp.label}</span></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)]">{TRIGGER_LABELS[c.trigger]}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.sentCount.toLocaleString("es-PE")}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{pct(c.openRate)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{pct(c.clickRate)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-success-500)]">{c.conversions}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.revenue)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(c)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Funnel */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-3">
-        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Embudo de conversión (campañas activas)</CardTitle>
-        {(() => {
-          const active = campaigns.filter(c => c.status === "activa");
-          const totalSent = active.reduce((s, c) => s + c.sentCount, 0);
-          const totalOpened = active.reduce((s, c) => s + Math.round(c.sentCount * c.openRate / 100), 0);
-          const totalClicked = active.reduce((s, c) => s + Math.round(c.sentCount * c.clickRate / 100), 0);
-          const totalConv = active.reduce((s, c) => s + c.conversions, 0);
-          const steps = [
-            { label: "Enviados", value: totalSent, color: "bg-[var(--accent-soft)]" },
-            { label: "Abiertos", value: totalOpened, color: "bg-[var(--text-primary)]" },
-            { label: "Clicks", value: totalClicked, color: "bg-[var(--data-warning-500)]" },
-            { label: "Conversiones", value: totalConv, color: "bg-[var(--accent-soft)]" },
-          ];
-          return (
-            <div className="space-y-2">
-              {steps.map(s => {
-                const w = totalSent > 0 ? (s.value / totalSent) * 100 : 0;
-                return (
-                  <div key={s.label} className="space-y-1">
-                    <div className="flex justify-between text-xs"><span className="text-[var(--text-secondary)] dark:text-muted">{s.label}</span><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.value.toLocaleString("es-PE")}</span></div>
-                    <div className="h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden"><div className={cn("h-full rounded-full", s.color)} style={{ width: `${Math.max(w, 2)}%` }} /></div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
-      </div>
-
-      {detail && (
-        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{detail.name}</CardTitle>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
-            </div>
-            <div className="space-y-2 text-sm">
-              {[
-                ["Tipo", TYPE_META[detail.type].label], ["Estado", STATUS_META[detail.status].label],
-                ["Trigger", TRIGGER_LABELS[detail.trigger]], ["Segmento", detail.segment],
-                ["Enviados", detail.sentCount.toLocaleString("es-PE")],
-                ["Tasa apertura", pct(detail.openRate)], ["Tasa clicks", pct(detail.clickRate)],
-                ["Conversiones", String(detail.conversions)], ["Revenue", fmt(detail.revenue)],
-                ["Costo", fmt(detail.cost)],
-                ["ROI", detail.cost > 0 ? pct(((detail.revenue - detail.cost) / detail.cost) * 100) : "—"],
-                ["Inicio", detail.startDate], ["Fin", detail.endDate ?? "En curso"],
-              ].map(([k, v]) => (
-                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
-                  <span className="text-[var(--text-secondary)] dark:text-muted shrink-0">{k}</span>
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{v}</span>
-                </div>
-              ))}
-            </div>
+        ) : c.campaigns.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 p-6 text-center">
+            <Megaphone className="h-6 w-6 text-[var(--text-tertiary)]" aria-hidden />
+            <p className="text-sm text-[var(--text-secondary)]">Aún no tienes campañas</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <TablaCampanas
+            campaigns={c.campaigns}
+            busyId={c.busyId}
+            onCancelar={(id) => { void c.cambiarEstado(id, "cancelada"); }}
+            onEliminar={(id) => { void c.eliminar(id); }}
+          />
+        )}
+      </div>
+
+      <ModalNuevaCampana
+        abierto={modal.abierto}
+        segmentoInicial={modal.segmento}
+        conteos={c.conteos}
+        onCerrar={() => setModal((m) => ({ ...m, abierto: false }))}
+        onCrear={c.crear}
+      />
     </div>
   );
 }

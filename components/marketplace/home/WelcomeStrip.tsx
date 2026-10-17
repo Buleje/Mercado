@@ -111,7 +111,7 @@ export default function WelcomeStrip() {
         <div
           className={cn(
             "flex items-center justify-between gap-4 flex-wrap",
-            "rounded-xl border border-[var(--accent)]/20 bg-[var(--accent-soft)]",
+            "rounded-xl border border-[var(--accent)]/20 bg-primary/10",
             "px-5 sm:px-6 py-4",
           )}
         >

@@ -181,7 +181,7 @@ async function notifyPartnerOfOffer(
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.buleje.pe";
   const url = `${baseUrl}/delivery-app/oferta/${offerId}`;
   const title = "Pedido nuevo cerca tuyo";
-  const body = `${meta.distanceKm.toFixed(1)} km · S/ ${meta.fee.toFixed(0)} · Aceptá en 2 min`;
+  const body = `${meta.distanceKm.toFixed(1)} km · S/ ${meta.fee.toFixed(0)} · Acepta en 2 min`;
 
   // Push
   try {

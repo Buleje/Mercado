@@ -8,6 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export type Review = {
   id: string;
@@ -90,7 +91,7 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
     // Sync to backend (fire-and-forget)
     fetch("/api/reviews", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(newReview),
     }).catch(() => {});
   }, []);

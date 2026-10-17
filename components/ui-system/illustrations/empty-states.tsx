@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Ilustraciones Buleje — Empty States
  *

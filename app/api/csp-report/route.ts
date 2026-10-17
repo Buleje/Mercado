@@ -23,6 +23,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 // Dedupe in-memory: hash → timestamp. TTL 1h para no spammear Sentry.
 // SECURITY 2026-05-12 (pentest N2 audit): cap duro a 10k entries para evitar
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
   if (_rl) return _rl;
 
   try {
-    const body = await req.json().catch(() => null);
+    const body = await leerJson(req);
     if (!body || typeof body !== "object") {
       return NextResponse.json({ ok: false }, { status: 400 });
     }

@@ -29,7 +29,7 @@ export default function BreakEvenGauge({ progress, reached }: Props) {
 
   return (
     <>
-      <ResponsiveContainer>
+      <ResponsiveContainer initialDimension={{ width: 1, height: 1 }}>
         <RadialBarChart
           cx="50%"
           cy="50%"

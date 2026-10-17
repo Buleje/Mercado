@@ -74,7 +74,7 @@ export function AddressInput({
       <div className="space-y-3">
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-gray-500 dark:text-[var(--text-secondary)] uppercase tracking-wider">
               Dirección *
             </label>
             <button
@@ -92,7 +92,7 @@ export function AddressInput({
                 <select
                   value={address.streetType}
                   onChange={(e) => onStreetTypeChange(e.target.value)}
-                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-[var(--rule-base)] text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
                 >
                   <option value="Calle">Calle</option>
                   <option value="Avenida">Avenida</option>
@@ -109,7 +109,7 @@ export function AddressInput({
                   value={address.streetNumber}
                   onChange={(e) => onStreetNumberChange(e.target.value)}
                   placeholder="N° / Lote"
-                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-[var(--rule-base)] text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 dark:placeholder:text-[var(--text-tertiary)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
                 />
               </div>
               <input
@@ -117,11 +117,11 @@ export function AddressInput({
                 value={address.streetName}
                 onChange={(e) => onStreetNameChange(e.target.value)}
                 placeholder="Nombre de la vía (ej: Ucayali, San Martín)"
-                className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-[var(--rule-base)] text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 dark:placeholder:text-[var(--text-tertiary)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
               />
               {address.location && (
                 <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
-                  <p className="text-[length:var(--ts-2xs)] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-[var(--text-tertiary)] font-semibold uppercase tracking-wider mb-0.5">
                     Vista previa:
                   </p>
                   <p className="text-sm font-semibold text-primary">
@@ -132,14 +132,14 @@ export function AddressInput({
             </div>
           ) : (
             <div className="relative">
-              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-[var(--text-tertiary)]" />
               <input
                 required
                 value={address.location}
                 onChange={(e) => onLocationChange(e.target.value)}
                 placeholder="Ej: Jr. Ucayali 450"
                 data-testid="location-input"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-[var(--rule-base)] text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 dark:placeholder:text-[var(--text-tertiary)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
               />
             </div>
           )}
@@ -169,7 +169,7 @@ export function AddressInput({
                 {ui.loadingGeo ? "Obteniendo ubicación..." : "Usar mi ubicación GPS"}
               </span>
               {!ui.loadingGeo && (
-                <span className="text-[length:var(--ts-2xs)] font-medium text-white/80 uppercase tracking-wide">
+                <span className="text-[length:var(--ts-2xs)] font-medium text-white/80 dark:text-white uppercase tracking-wide">
                   Preciso y rápido
                 </span>
               )}
@@ -209,23 +209,23 @@ export function AddressInput({
       {/* Columna derecha: Referencia */}
       <div className="space-y-3">
         <div>
-          <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">
+          <label className="block text-xs font-bold text-gray-500 dark:text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider">
             Referencia *
           </label>
           <div className="relative">
-            <Home className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Home className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-[var(--text-tertiary)]" />
             <input
               required
               value={address.reference}
               onChange={(e) => onReferenceChange(e.target.value)}
               placeholder="Ej: Casa azul frente al parque"
               data-testid="reference-input"
-              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-[var(--rule-base)] text-gray-900 dark:text-[var(--text-primary)] placeholder:text-gray-300 dark:placeholder:text-[var(--text-tertiary)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
             />
           </div>
           {ui.showRefSuggestions && ui.refSuggestions.length > 0 && (
             <div className="mt-2 space-y-1">
-              <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 uppercase tracking-wider">
+              <p className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-[var(--text-tertiary)] uppercase tracking-wider">
                 Sugerencias de referencia:
               </p>
               {ui.refSuggestions.map((s, i) => (
@@ -233,7 +233,7 @@ export function AddressInput({
                   key={i}
                   type="button"
                   onClick={() => onSelectSuggestion(s)}
-                  className="w-full text-left text-xs px-3 py-2 rounded-lg bg-primary/5 text-primary font-medium hover:bg-primary/10 transition-colors"
+                  className="w-full text-left text-xs px-3 py-2 rounded-lg bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)] font-medium hover:bg-primary/10 transition-colors"
                 >
                   {s}
                 </button>

@@ -1,0 +1,64 @@
+{
+ "nota": "preset despacho-guia-a-mano-arbol (QA-ui): la 1.ª troza a mano con el árbol DEMO-014 del censo (plan PO-2026-001; su trozado ya tiene DEMO-014-A y -B con otro árbol en la columna) en una guía que arranca sin permiso → «Usar el permiso» → la troza sale «DEMO-014-C» en la guía (DEMO-014-C-<corr> en el libro) con su árbol; la 2.ª va sin árbol («1»). Al final se anula y las dos quedan anuladas.",
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=loth-libro-operaciones&vista=gtf",
+ "pasos": [
+  {
+   "preset": "despacho-abrir"
+  },
+  {
+   "elegir": [
+    "[data-testid=trozas-a-mano] select",
+    "Tornillo"
+   ]
+  },
+  {
+   "click": "[data-testid=trozas-a-mano] button[aria-pressed]"
+  },
+  {
+   "click": "[data-qa=arbol-a-mano] > button[aria-expanded]"
+  },
+  {
+   "esperar": "#arbol-a-mano-lista li >> text=DEMO-014"
+  },
+  {
+   "eval": "[...document.querySelectorAll('#arbol-a-mano-lista li')].map((l) => l.innerText.replace(/\\s+/g, ' '))"
+  },
+  {
+   "captura": "arbol-lista"
+  },
+  {
+   "click": "#arbol-a-mano-lista li button >> text=DEMO-014"
+  },
+  {
+   "esperar": 300
+  },
+  {
+   "eval": "(() => { const r = document.querySelector('[data-qa=arbol-a-mano]'); return { boton: r.querySelector('button[aria-expanded]').innerText.replace(/\\s+/g, ' '), alerta: r.querySelector('[role=alert]')?.innerText ?? null, usar: [...r.querySelectorAll('button')].map((b) => b.innerText).find((t) => /^Usar el permiso/.test(t)) ?? null }; })()"
+  },
+  {
+   "captura": "arbol-sin-permiso"
+  },
+  {
+   "eval": "(() => { const b = [...document.querySelectorAll('[data-qa=arbol-a-mano] button')].find((x) => /^Usar el permiso/.test(x.innerText)); if (!b) return 'sin botón'; b.click(); return b.innerText; })()"
+  },
+  {
+   "esperar": 2500
+  },
+  {
+   "eval": "(() => { const r = document.querySelector('[data-qa=arbol-a-mano]'); const sinPermiso = [...document.querySelectorAll('[data-testid=trozas-a-mano] *')].some((x) => x.children.length === 0 && /Sin permiso: lo asignas después/.test(x.textContent)); return { boton: r && r.querySelector('button[aria-expanded]').innerText.replace(/\\s+/g, ' '), alerta: r && (r.querySelector('[role=alert]')?.innerText ?? null), sinPermiso, especie: document.querySelector('[data-testid=trozas-a-mano] select').value }; })()"
+  },
+  {
+   "preset": "despacho-dos-a-mano"
+  },
+  {
+   "captura": "a-mano-fijada"
+  },
+  {
+   "preset": "despacho-datos-y-registrar"
+  },
+  {
+   "preset": "despacho-anular-al-final"
+  }
+ ]
+}

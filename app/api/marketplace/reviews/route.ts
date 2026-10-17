@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ReviewsMarketplaceDB } from "@/lib/db/reviews.db";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
+import { ProductsDB } from "@/lib/db/products.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
@@ -69,7 +70,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
     }
 
-    // 2. Crear la review (la verificación del orderId la hace la DB class)
+    // 2. El producto tiene que ser de ESTA tienda (la FK sólo pide que exista).
+    if (parsed.data.productId != null && !(await ProductsDB.getById(store.tenantId, parsed.data.productId))) {
+      return NextResponse.json({ error: "El producto no existe en esta tienda" }, { status: 400 });
+    }
+
+    // 3. Crear la review (la verificación del orderId la hace la DB class)
     const review = await ReviewsMarketplaceDB.createVerified({
       tenantId:       store.tenantId,
       storeId:        store.id,
@@ -85,7 +91,7 @@ export async function POST(req: NextRequest) {
       photosJson:     parsed.data.photosJson,
     });
 
-    // 3. Exponer sólo campos seguros (nunca tenantId, phone completo)
+    // 4. Exponer sólo campos seguros (nunca tenantId, phone completo)
     return NextResponse.json(
       {
         data: {

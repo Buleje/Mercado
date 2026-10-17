@@ -22,6 +22,12 @@ export interface MarketplaceProduct {
   isActive: boolean;
   retailPrice: number;
   wholesalePrice: number;
+  /** Precio de oferta. `null` = sin rebaja (nunca 0: eso sería regalarlo). */
+  discountPrice?: number | null;
+  /** Hasta cuándo vale. `null` con oferta cargada = sin caducidad. */
+  discountUntil?: string | null;
+  /** Chip de la vidriera: "2x1", "Liquidación", "-30%". */
+  discountLabel?: string | null;
   stock: number;
   sku: string;
   // Brandon mayo 2026 v7: campos que el endpoint ya devolvía pero no
@@ -166,6 +172,57 @@ export function useMarketplaceProducts() {
     }
   };
 
+  /**
+   * Poner (o sacar) un producto en oferta.
+   *
+   * `discountPrice: null` la quita — nunca 0, que significaría regalarlo. El
+   * backend rechaza con 400 y mensaje si la oferta no es MENOR que el precio de
+   * lista; ese texto se muestra tal cual, porque dice el monto exacto.
+   */
+  const updateOferta = async (
+    productId: string,
+    patch: { discountPrice: number | null; discountUntil?: string | null; discountLabel?: string | null },
+  ) => {
+    setPricingId(productId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/marketplace/stores/my/products/${productId}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(
+          // Quitar la oferta limpia también su fecha y su chip: dejarlos vivos
+          // haría reaparecer "-30%" sobre un producto sin rebaja.
+          patch.discountPrice == null
+            ? { discountPrice: null, discountLabel: null }
+            : patch,
+        ),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        discountPrice?: number | null; discountUntil?: string | null; discountLabel?: string | null;
+        error?: { message?: string };
+      };
+      if (!res.ok) throw new Error(data.error?.message ?? "No se pudo actualizar la oferta.");
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === productId
+            ? {
+                ...p,
+                discountPrice: data.discountPrice ?? null,
+                discountUntil: data.discountUntil ?? null,
+                discountLabel: data.discountLabel ?? null,
+              }
+            : p,
+        ),
+      );
+      return { ok: true };
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo actualizar la oferta.");
+      return { ok: false };
+    } finally {
+      setPricingId(null);
+    }
+  };
+
   // Brandon mayo 2026 v7 (Nivel C): crear un SponsoredBoost para destacar
   // un producto en el marketplace.
   const createBoost = async (
@@ -232,6 +289,7 @@ export function useMarketplaceProducts() {
     toggleActive,
     bulkSetActive,
     updatePrice,
+    updateOferta,
     createBoost,
     stopBoost,
   };

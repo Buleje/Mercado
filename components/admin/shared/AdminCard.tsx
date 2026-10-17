@@ -17,8 +17,8 @@ const paddingMap = {
 /**
  * AdminCard — wrapper canónico para cards admin/superadmin.
  *
- * ADR-074 Phase 2: eliminamos los pares `bg-white dark:bg-zinc-900` y
- * `border-[var(--rule-soft)] dark:border-zinc-800` — todo son tokens que
+ * ADR-074 Phase 2: eliminamos los pares `bg-[var(--surface-raised)] ` y
+ * `border-[var(--rule-soft)] ` — todo son tokens que
  * ya resuelven dark mode en `app/globals.css`. Si se cambia `--surface-raised`,
  * el card sigue sin editar.
  *

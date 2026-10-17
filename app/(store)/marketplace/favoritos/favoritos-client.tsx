@@ -78,7 +78,7 @@ export default function FavoritosClient() {
               Tu lista está vacía
             </h2>
             <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-1 max-w-sm mx-auto">
-              Tocá el corazón en cualquier producto del marketplace para guardarlo aquí
+              Toca el corazón en cualquier producto del marketplace para guardarlo aquí
               y comprarlo después.
             </p>
             <Link

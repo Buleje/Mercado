@@ -62,6 +62,21 @@ const PROMOS: readonly Promo[] = [
   },
 ] as const;
 
+/** Si el CTA trae un código de cupón (BIENVENIDO), va en un chip punteado coral. */
+function CtaConCodigo({ cta }: { cta: string }) {
+  const m = cta.match(/\b[A-Z]{4,}\d{0,3}\b/);
+  if (!m || m.index === undefined) return <>{cta}</>;
+  return (
+    <>
+      {cta.slice(0, m.index)}
+      <span className="rounded-[var(--radius-xs)] border border-dashed border-amber-400 px-1.5 font-mono font-bold tracking-wide text-amber-300">
+        {m[0]}
+      </span>
+      {cta.slice(m.index + m[0].length)}
+    </>
+  );
+}
+
 const DISMISS_KEY = "buleje-promo-bar-dismissed-until";
 const DISMISS_HOURS = 24;
 const ROTATE_MS = 6000;
@@ -113,12 +128,13 @@ export default function MarketplacePromoBar() {
       aria-label="Promociones del marketplace"
       className={cn(
         "relative w-full",
-        "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
-        "border-b border-[var(--rule-soft)]",
+        // «Dosel» (2026-10-10): la franja toma el teal hondo del hero.
+        "bg-[var(--dosel-950)] text-white",
+        "border-b border-white/10",
       )}
     >
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-center gap-2 h-9 text-[length:var(--ts-xs)]">
+        <div className="flex items-center justify-center gap-2 h-9 pr-7 text-[length:var(--ts-xs)]">
           <Icon
             className="h-3.5 w-3.5 shrink-0 opacity-80"
             strokeWidth={1.75}
@@ -131,7 +147,7 @@ export default function MarketplacePromoBar() {
             href={promo.href}
             className="inline-flex items-center gap-1 font-semibold underline-offset-2 hover:underline whitespace-nowrap"
           >
-            {promo.cta}
+            <CtaConCodigo cta={promo.cta} />
             <ArrowRight className="h-3 w-3" aria-hidden strokeWidth={2} />
           </Link>
         </div>
@@ -146,7 +162,7 @@ export default function MarketplacePromoBar() {
         className={cn(
           "absolute right-2 top-1/2 -translate-y-1/2",
           "inline-flex h-6 w-6 items-center justify-center rounded-full",
-          "text-[var(--surface-canvas)]/70 hover:text-[var(--surface-canvas)]",
+          "text-white/70 hover:text-white",
           "hover:bg-white/10 transition-colors",
         )}
       >

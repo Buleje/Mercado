@@ -1,65 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { readData, writeData } from "@/lib/file-store";
-import { toErrorPayload } from "@/lib/api-error";
+import { assertCsrf } from "@/lib/auth/csrf";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
+import { AdminGoalsDB, type MotivoMetaNoEditada } from "@/lib/db/admin-goals.db";
+import { MENSAJES_REGLA_META, metaEditarSchema, reglaMetaRota } from "@/lib/admin/metas-tareas";
 
-const GOALS_KEY = "goals";
+type Contexto = { params: Promise<{ id: string }> };
 
-interface Goal {
-  id: string;
-  name: string;
-  category: string;
-  period: string;
-  target: number;
-  current: number;
-  unit: string;
-  createdAt: string;
-  dueDate?: string;
-}
+/** Lo que ve la persona cuando el cambio no se guardó (ADR-488). */
+const NO_EDITADA: Readonly<Record<MotivoMetaNoEditada, { status: number; error: string }>> = {
+  no_existe: { status: 404, error: "La meta ya no existe" },
+  avance_solo_manual: { status: 422, error: MENSAJES_REGLA_META.avance_solo_manual },
+  unidad_no_valida: { status: 422, error: MENSAJES_REGLA_META.unidad_no_valida },
+  cambio_en_paralelo: { status: 409, error: "Alguien cambió esta meta mientras la editabas. Vuelve a abrirla." },
+};
 
-async function getGoals(): Promise<Goal[]> {
-  const data = await readData<{ goals?: Goal[] }>(GOALS_KEY).catch(() => null);
-  return data?.goals ?? [];
-}
-
-async function saveGoals(goals: Goal[]): Promise<void> {
-  await writeData(GOALS_KEY, { goals });
-}
-
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const _rl = await applyRateLimit(req, "MODERATE", "goals-X"); if (_rl) return _rl;
+/**
+ * PATCH — cambia sólo los campos que llegan. `{ current }` sólo en una meta a
+ * mano: en las demás el avance sale de los datos (ADR-488) → 422.
+ */
+export async function PATCH(req: NextRequest, { params }: Contexto) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
+  const _rl = applyRateLimit(req, "MODERATE", "goals-X");
+  if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
+  const { id } = await params;
+  const parsed = metaEditarSchema.safeParse(await leerJson(req));
+  if (!parsed.success) {
+    const regla = reglaMetaRota(parsed.error.issues);
+    return NextResponse.json(
+      {
+        error: regla ? MENSAJES_REGLA_META[regla] : "Revisa los datos de la meta",
+        code: regla ?? "validation_error",
+        issues: parsed.error.issues,
+      },
+      { status: 422 },
+    );
+  }
+
   try {
-    const { id } = await params;
-    const body = await req.json();
-    const goals = await getGoals();
-    const idx = goals.findIndex(g => g.id === id);
-    if (idx === -1) return NextResponse.json({ error: "not found" }, { status: 404 });
-    goals[idx] = { ...goals[idx], ...body, id };
-    await saveGoals(goals);
-    return NextResponse.json(goals[idx]);
-  } catch (err) {
-    const { payload, status } = toErrorPayload(err);
-    return NextResponse.json(payload, { status });
+    const r = await AdminGoalsDB.editar(auth.tenantId, id, parsed.data);
+    if (!r.ok) {
+      const { status, error } = NO_EDITADA[r.motivo];
+      return NextResponse.json({ error, code: r.motivo }, { status });
+    }
+    return NextResponse.json(r.meta);
+  } catch (e) {
+    logger.error("[goals] PATCH error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "No se pudo guardar la meta. Reintenta." }, { status: 503 });
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const _rl = await applyRateLimit(req, "MODERATE", "goals-X"); if (_rl) return _rl;
+/**
+ * DELETE — idempotente: si la meta ya no estaba, el resultado es el mismo.
+ * GoalsTab repone la meta en pantalla ante cualquier error, así que un 404 la
+ * haría reaparecer.
+ */
+export async function DELETE(req: NextRequest, { params }: Contexto) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
+  const _rl = applyRateLimit(req, "MODERATE", "goals-X");
+  if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
+  const { id } = await params;
   try {
-    const { id } = await params;
-    const goals = await getGoals();
-    const filtered = goals.filter(g => g.id !== id);
-    await saveGoals(filtered);
+    await AdminGoalsDB.borrar(auth.tenantId, id);
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    const { payload, status } = toErrorPayload(err);
-    return NextResponse.json(payload, { status });
+  } catch (e) {
+    logger.error("[goals] DELETE error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "No se pudo eliminar la meta. Reintenta." }, { status: 503 });
   }
 }

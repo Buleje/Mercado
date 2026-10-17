@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { MarketplaceOrdersDB } from "@/lib/db/marketplace.db";
+import { LoyaltyDB } from "@/lib/db/loyalty.db";
 import { MarketplaceAdminDB } from "@/lib/db/marketplace-public.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
@@ -16,6 +17,7 @@ import { sendPushToPhone } from "@/lib/push-sender";
 import { createNotification } from "@/lib/create-notification";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { cacheStore } from "@/lib/cache";
+import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 import { logger } from "@/lib/logger";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import {
@@ -24,6 +26,7 @@ import {
 } from "@/app/api/marketplace/checkout/payment-proof/route";
 import {
   getCustomerPayload,
+  telefonoDeLaSesion,
   CUSTOMER_SESSION,
 } from "@/lib/auth/customer-session";
 import { randomBytes } from "crypto";
@@ -203,6 +206,28 @@ export async function POST(req: NextRequest) {
       paymentProof,
     } = parsed.data;
 
+    // ── Canje de puntos: solo quien PROBÓ ese teléfono ───────────────
+    // Los puntos salen de la ficha del teléfono del cuerpo: sin esta llave,
+    // cualquiera escribía un número ajeno y gastaba sus puntos (security
+    // 2026-10-08). La sesión tiene que haber probado el número con el código
+    // (Google/Facebook prueban un correo, no un teléfono). Se comparan los
+    // dígitos completos y no `normalizePhone` (últimos 9): el canje busca la
+    // ficha con el teléfono TAL CUAL, y «1987654321» no es «987654321».
+    // Sin puntos, el pedido de invitado sigue igual.
+    if ((loyaltyRedeemPoints ?? 0) > 0) {
+      const tokenPuntos = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+      const telSesion = telefonoDeLaSesion(
+        tokenPuntos ? await getCustomerPayload(tokenPuntos) : null,
+      );
+      const digitos = customerPhone.replace(/\D/g, "");
+      if (!telSesion || (digitos !== telSesion && digitos !== `51${telSesion}`)) {
+        return NextResponse.json(
+          { error: "Para usar tus puntos inicia sesión con tu número" },
+          { status: 401 },
+        );
+      }
+    }
+
     // ── Validación de comprobante (Yape/Plin/Transfer) ───────────────
     // Si el cliente envió un paymentProof, requiere sesión de customer
     // + token HMAC válido emitido por /api/marketplace/checkout/payment-proof.
@@ -355,6 +380,10 @@ export async function POST(req: NextRequest) {
           items,
         }),
     );
+
+    // El pedido es del tenant vendedor: su Tablero de Ventas lo cuenta como
+    // canal «Marketplace». Sin purgar el tag quedaba 2 min sin verlo.
+    invalidarVentasOverview(order.sellerTenantId);
 
     // ── PENTEST-001: validar que el monto del comprobante coincide con ──
     // el total real server-side. El token HMAC solo certifica que el
@@ -638,9 +667,14 @@ export async function POST(req: NextRequest) {
         if (!exists) return;
         const pointsToEarn = Math.floor(order.total);
         if (pointsToEarn <= 0) return;
-        await prisma.customer.updateMany({
-          where: { phone: customerPhone, tenantId: tenantIdForLoyalty },
-          data: { loyaltyPoints: { increment: pointsToEarn } },
+        // ADR-380 Fase 1.3: antes esto era un updateMany directo — movía el
+        // saldo sin dejar asiento en LoyaltyTransaction, así que el historial
+        // que el cliente ve nunca cuadraba con lo que de verdad tiene. `earn`
+        // hace ambas cosas en la MISMA tx (ver lib/db/loyalty.db.ts) y también
+        // invalida la caché del saldo.
+        await LoyaltyDB.earn(tenantIdForLoyalty, customerPhone, pointsToEarn, "purchase", {
+          orderId: order.id,
+          channel: "marketplace",
         });
       } catch (err) {
         logger.warn("[marketplace/orders] loyalty earn failed", { err: String(err) });
@@ -695,7 +729,7 @@ export async function POST(req: NextRequest) {
               `Te regalamos un cupon de *10% de descuento* para tu proxima compra:\n\n` +
               `Codigo: *${welcomeCode}*\n` +
               `Valido por 30 dias\n\n` +
-              `Usalo en tu proximo pedido!`,
+              `Úsalo en tu proximo pedido!`,
               { tenantId: targetStore.tenantId, context: "marketplace-welcome-coupon" },
             ).catch((err) => logger.error("[marketplace/orders] welcome coupon whatsapp failed", { error: String(err), tenantId: targetStore!.tenantId }));
           }

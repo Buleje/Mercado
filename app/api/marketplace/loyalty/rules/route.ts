@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { logger } from "@/lib/logger";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { conservarSellos } from "@/lib/loyalty/sellos";
 
 /**
  * GET/PUT /api/marketplace/loyalty/rules
@@ -52,7 +53,16 @@ export async function PUT(req: NextRequest) {
         );
       }
 
-      await SettingsDB.updateLoyaltyRules(auth.tenantId, parsed.data);
+      /* Reemplaza el Json entero: la tarjeta de sellos guarda su config y sus
+         canjes en los mismos dos campos y no se pueden perder (11-10). */
+      const datos = conservarSellos(parsed.data, await SettingsDB.getLoyaltyRules(auth.tenantId));
+      if (!datos) {
+        return NextResponse.json(
+          { error: "La tarjeta de sellos guarda datos aquí: manda reglas y recompensas como objeto" },
+          { status: 409 },
+        );
+      }
+      await SettingsDB.updateLoyaltyRules(auth.tenantId, datos);
       return NextResponse.json({ ok: true });
     } catch (err) {
       logger.error("[loyalty/rules] PUT failed", {

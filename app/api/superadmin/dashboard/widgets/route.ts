@@ -6,6 +6,9 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { estadoDeCobro } from "@/lib/billing/mrr-plataforma";
+import { precioMensualDePlan } from "@/lib/billing/plan-tiers";
+import { startOfLimaDayDaysAgo, startOfLimaMonth, limaDateKey } from "@/lib/utils";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -41,16 +44,16 @@ export async function GET(req: NextRequest) {
     // Key incluye rango para no servir respuestas cruzadas.
     const cached = getOrSet(`superadmin:dashboard:widgets:${rangeParam}`, 30, async () => {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const windowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysWindow);
+    const startOfMonth = new Date(startOfLimaMonth(0, now));
+    const windowStart = new Date(startOfLimaDayDaysAgo(daysWindow));
     const last30Start = windowStart; // mantengo el nombre para minimal diff
     const monthFmt = new Intl.DateTimeFormat("es-PE", { month: "short" });
 
     // Pre-compute month windows para ARPU (últimos 6 meses)
     const arpuWindows = Array.from({ length: 6 }, (_, idx) => {
       const i = 5 - idx;
-      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const nextMonthStart = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const monthStart = new Date(startOfLimaMonth(-i, now));
+      const nextMonthStart = new Date(startOfLimaMonth(-i + 1, now));
       return { monthStart, nextMonthStart };
     });
 
@@ -97,22 +100,15 @@ export async function GET(req: NextRequest) {
         where: { createdAt: { gte: windowStart }, status: { not: "cancelado" } },
         select: { createdAt: true, total: true },
       }),
-      Promise.all(
-        arpuWindows.map(({ monthStart, nextMonthStart }) =>
-          Promise.all([
-            prisma.order.aggregate({
-              where: {
-                createdAt: { gte: monthStart, lt: nextMonthStart },
-                status: { not: "cancelado" },
-              },
-              _sum: { total: true },
-            }),
-            prisma.tenant.count({
-              where: { active: true, plan: { not: "free" }, createdAt: { lt: nextMonthStart } },
-            }),
-          ]),
-        ),
-      ),
+      // ARPU = MRR (suscripciones) / tiendas que pagan, al cierre de cada mes. Mismo criterio
+      // que /api/superadmin/analytics (`pagaEn`): ya creada y `estadoDeCobro` = paid
+      // (fuera de prueba y sin prueba vencida), al precio de `precioMensualDePlan`.
+      prisma.tenant.findMany({
+        select: {
+          plan: true, active: true, createdAt: true, trialEndsAt: true, cancelAtPeriodEnd: true,
+          stripeSubscriptionId: true, stripeCurrentPeriodEnd: true, mpSubscriptionId: true,
+        },
+      }),
     ]);
 
     // ── Phase 2: queries que dependen de Phase 1 ───────────────────────────
@@ -165,8 +161,8 @@ export async function GET(req: NextRequest) {
     // Brandon 2026-05-21 audit fix #6: agregamos count real de órdenes
     // del mes por tenant en latestActive — antes el page hardcodeaba
     // ordersThisMonth=1 para todas las filas (bug visual obvio).
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const currentNextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const currentMonthStart = new Date(startOfLimaMonth(0, now));
+    const currentNextMonthStart = new Date(startOfLimaMonth(1, now));
     const ordersThisMonthByTenant = latestTenantIds.length
       ? await prisma.order.groupBy({
           by: ["tenantId"],
@@ -203,8 +199,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Series últimos N días (N = daysWindow del query param)
-    const dayKey = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const dayKey = (d: Date) => limaDateKey(d); // día de Lima
     const revenueByDay = new Map<string, number>();
     const ordersByDay = new Map<string, number>();
     for (let i = 0; i < daysWindow; i++) {
@@ -229,14 +224,22 @@ export async function GET(req: NextRequest) {
       count,
     }));
 
-    // ARPU desde los pares pre-resueltos en paralelo
-    const arpuSeries = arpuWindows.map(({ monthStart }, idx) => {
-      const [orderSum, payingCount] = arpuMonthly[idx];
-      const total = toNumOrZero(orderSum._sum.total ?? 0);
-      const arpu = payingCount > 0 ? total / payingCount : 0;
+    // ARPU = MRR / tiendas de pago al cierre del mes (el mes en curso, a hoy).
+    const arpuTenants = arpuMonthly;
+    const arpuSeries = arpuWindows.map(({ monthStart, nextMonthStart }) => {
+      const corte = nextMonthStart > now ? now : new Date(nextMonthStart.getTime() - 1);
+      let mrrMes = 0;
+      let pagan = 0;
+      for (const t of arpuTenants) {
+        const paga =
+          new Date(t.createdAt) <= corte && estadoDeCobro(t, corte.getTime()).status === "paid";
+        if (!paga) continue;
+        pagan += 1;
+        mrrMes += precioMensualDePlan(t.plan);
+      }
       return {
         month: monthFmt.format(monthStart),
-        arpu: Math.round(arpu * 100) / 100,
+        arpu: pagan > 0 ? Math.round((mrrMes / pagan) * 100) / 100 : 0,
       };
     });
 

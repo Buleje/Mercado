@@ -4,6 +4,7 @@
  * de PurchaseOrderPDF). El productor se lleva su comprobante de pago.
  */
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
+import { openPrintable } from "@/lib/cacao/cacao-print";
 
 export interface ReciboLote {
   loteCode: string;
@@ -82,9 +83,5 @@ export function printCacaoRecibo(lote: ReciboLote, acopiador = "Acopio de Cacao"
 </div>
 <script>window.onload=function(){window.print();}</script>
 </body></html>`;
-  const w = window.open("", "_blank", "width=820,height=900");
-  if (!w) return;
-  w.document.write(html);
-  w.document.close();
-  w.focus();
+  openPrintable(html);
 }

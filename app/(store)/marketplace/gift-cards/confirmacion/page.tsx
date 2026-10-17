@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Link from "next/link";
-import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 import ConfirmacionClient from "@/components/marketplace/gift-cards/comprar/ConfirmacionClient";
 
 export const metadata: Metadata = {
@@ -22,11 +20,8 @@ function ConfirmacionFallback() {
 
 export default function ConfirmacionPage() {
   return (
-    <>
-      <MarketplaceNavbar />
-      <Suspense fallback={<ConfirmacionFallback />}>
-        <ConfirmacionClient />
-      </Suspense>
-    </>
+    <Suspense fallback={<ConfirmacionFallback />}>
+      <ConfirmacionClient />
+    </Suspense>
   );
 }

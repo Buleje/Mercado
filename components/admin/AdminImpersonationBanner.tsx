@@ -3,71 +3,47 @@
 /**
  * components/admin/AdminImpersonationBanner.tsx
  *
- * Banner editorial discreto fijado en el top que se muestra cuando un
- * SuperAdmin esta impersonando un tenant. Reemplaza el warning stripe
- * amarillo saturado por un diseno minimalista estilo Holded/Buleje:
- *   - fondo sutilmente tenido de warning (color-mix 8%)
- *   - tipografia en colores semanticos del design system
- *   - boton "Salir" outline (no inverse), alineado con el resto del admin
+ * Franja de la «vista de tienda» del superadmin (11-10): sólo cuando la sesión
+ * del panel es una suplantación (lo confirma el servidor, ver
+ * `useSuplantacionActiva`). Dice qué negocio se está viendo, cuántos minutos le
+ * quedan a la vista (10 en total) y ofrece «Salir», que cierra la suplantación
+ * y vuelve al superadmin. Antes no había forma de salir desde el panel.
  *
- * Requisito: mantener posicion fixed top-0 inset-x-0 z-50 (se monta sobre
- * el shell admin y empuja el contenido via padding en el layout).
+ * `sticky top-0` de 56 px encima del AdminTopHeader (que baja a `top-14` con la
+ * franja activa): las dos quedan fijas al hacer scroll. A 400 px se acorta a
+ * «Musa · quedan N min» para que el botón de 48 px entre en una sola fila.
  */
 
 import { LogOut, Shield } from "@buleje/design-system/icons";
+import { Button } from "@/components/ui-system/Button";
 
 export interface AdminImpersonationBannerProps {
-  visible: boolean;
-  tenantName: string | null;
-  tenantSlug: string | null;
-  onExit: () => void;
+  /** Nombre del negocio que se está viendo (o su slug si aún no cargó). */
+  negocio: string;
+  minutos: number;
+  saliendo: boolean;
+  onSalir: () => void;
 }
 
-export function AdminImpersonationBanner({
-  visible,
-  tenantName,
-  tenantSlug,
-  onExit,
-}: AdminImpersonationBannerProps) {
-  if (!visible) return null;
-
-  const tenant = tenantName ?? tenantSlug ?? "tienda";
-
+export function AdminImpersonationBanner({ negocio, minutos, saliendo, onSalir }: AdminImpersonationBannerProps) {
   return (
     <div
-      className="fixed top-0 inset-x-0 z-50 h-10 border-b border-[var(--rule-base)]"
-      style={{
-        // fondo canvas con un 8% de tinte warning para diferenciarse sin gritar
-        background:
-          "color-mix(in oklch, var(--data-warning) 8%, var(--surface-canvas))",
-      }}
       role="status"
       aria-live="polite"
+      data-franja-suplantacion=""
+      className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-[var(--rule-base)] bg-[color-mix(in_oklab,var(--data-warning)_10%,var(--surface-raised))] px-4 sm:px-6"
     >
-      <div className="h-full max-w-screen-2xl mx-auto px-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <Shield
-            className="w-3.5 h-3.5 shrink-0 text-[var(--data-warning-500)]"
-            aria-hidden="true"
-          />
-          <span className="text-xs text-[var(--text-primary)] truncate">
-            <span className="font-semibold">Viendo como SuperAdmin</span>
-            <span className="text-[var(--text-secondary)]"> &middot; </span>
-            <span className="text-[var(--text-secondary)] truncate">
-              {tenant}
-            </span>
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={onExit}
-          className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[var(--rule-base)] bg-transparent text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-        >
-          <LogOut className="w-3 h-3" aria-hidden="true" />
-          Salir
-        </button>
-      </div>
+      <Shield className="h-4 w-4 shrink-0 text-[var(--data-warning)]" aria-hidden="true" />
+      <p className="min-w-0 flex-1 truncate text-sm text-[var(--text-primary)]">
+        <span className="hidden sm:inline">Estás viendo </span>
+        <span className="font-semibold">{negocio}</span>
+        <span className="hidden sm:inline"> como superadmin</span>
+        <span className="text-[var(--text-secondary)]"> · quedan {minutos} min</span>
+      </p>
+      <Button variant="secondary" onClick={onSalir} disabled={saliendo} className="shrink-0 gap-2">
+        <LogOut className="h-4 w-4" aria-hidden="true" />
+        {saliendo ? "Saliendo…" : "Salir"}
+      </Button>
     </div>
   );
 }

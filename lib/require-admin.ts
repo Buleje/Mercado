@@ -18,7 +18,9 @@ import { isSessionRevoked } from "@/lib/auth/session-revocation";
  */
 export async function requireAdmin(
   req: NextRequest,
-  allowedRoles?: AdminRole[],
+  // readonly: permite pasar los arrays `as const` de lib/auth/roles-rutas-panel.ts
+  // (single source de qué roles puede pedir cada ruta) sin copiarlos a mutable.
+  allowedRoles?: readonly AdminRole[],
 ): Promise<SessionPayload | NextResponse> {
   const token = req.cookies.get(SESSION.COOKIE_NAME)?.value;
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? 

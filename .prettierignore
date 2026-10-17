@@ -10,3 +10,7 @@ public/openapi.json
 .vercel
 android
 ios
+# Línea base de scripts/matriz-pestanas.mjs: una combinación por línea a propósito
+# (prettier la lleva de 502 a 7.385 líneas y el diff deja de leerse).
+reports/panel/visibilidad-antes.json
+reports/panel/altas-aprobadas.json

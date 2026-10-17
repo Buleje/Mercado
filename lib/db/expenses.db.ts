@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { claveDeComprobante, gastoConMismoComprobante, type GastoConMismoComprobante } from "@/lib/gastos/factura-repetida";
 
 /**
  * ExpensesDB
@@ -40,5 +41,28 @@ export const ExpensesDB = {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     return this.listByDateRange(tenantId, startOfMonth, endOfMonth);
+  },
+
+  /**
+   * El gasto de ESTE negocio que ya tiene el comprobante `ruc` + `numero`
+   * (comparado sin ceros a la izquierda en el correlativo), o `null`. Sin
+   * caché a propósito: el que se anotó hace un segundo tiene que aparecer.
+   */
+  async comprobanteRepetido(tenantId: string, ruc: string, numero: string, tipo?: string | null): Promise<GastoConMismoComprobante | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const clave = claveDeComprobante(numero);
+    if (!ruc.trim() || !clave) return null;
+    const filas = await prisma.expense.findMany({
+      where: { tenantId, supplierRuc: ruc.trim(), documentNumber: { not: null } },
+      select: { id: true, date: true, amount: true, description: true, documentType: true, documentNumber: true },
+      orderBy: { date: "desc" },
+      take: 500,
+    });
+    // El mismo número en OTRO tipo de papel (recibo por honorarios E001-5 vs factura E001-5) no
+    // es la misma factura (reviewer 11-10); sin tipo en alguno de los dos, se compara igual.
+    const igual = filas.find(
+      (f) => claveDeComprobante(f.documentNumber) === clave && (!tipo || !f.documentType || f.documentType === tipo),
+    );
+    return igual ? gastoConMismoComprobante(igual) : null;
   },
 };

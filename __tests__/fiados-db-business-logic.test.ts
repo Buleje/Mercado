@@ -222,10 +222,11 @@ describe("FiadosDB.validateForNewFiado — multi-tenant isolation", () => {
 
     // aggregate llamado 1x cuando creditLimit > 0
     expect(mockAggregate).toHaveBeenCalledTimes(1);
+    // 11-10: el límite cuenta también lo VENCIDO (el cron pasa ahí la deuda más vieja).
     expect(mockAggregate.mock.calls[0][0].where).toMatchObject({
       tenantId: TENANT,
       customerId: CUSTOMER,
-      status: "ACTIVO",
+      status: { in: ["ACTIVO", "VENCIDO"] },
     });
   });
 
@@ -239,13 +240,16 @@ describe("FiadosDB.validateForNewFiado — multi-tenant isolation", () => {
 
     // 2da llamada a count = filtra muyVencidos
     const secondCall = mockCount.mock.calls[1][0];
-    expect(secondCall.where.status).toBe("ACTIVO");
+    // ACTIVO y VENCIDO: el cron pasa a VENCIDO lo que vence (11-10).
+    expect(secondCall.where.status).toEqual({ in: ["ACTIVO", "VENCIDO"] });
     expect(secondCall.where.fechaVence.lt).toBeInstanceOf(Date);
 
-    // El cutoff debe estar ~60 días atrás (con tolerancia del tiempo de ejecución)
+    // Corte por DÍA (11-10, igual que «A quién fiarle»): medianoche UTC del día de Lima de hoy
+    // menos 59, o sea entre 59 y 61 días atrás según la hora; siempre una medianoche UTC.
     const cutoffMs = secondCall.where.fechaVence.lt.getTime();
-    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
-    expect(cutoffMs).toBeGreaterThanOrEqual(beforeCall - sixtyDaysMs);
-    expect(cutoffMs).toBeLessThanOrEqual(afterCall - sixtyDaysMs);
+    const dayMs = 24 * 60 * 60 * 1000;
+    expect(cutoffMs % dayMs).toBe(0);
+    expect(cutoffMs).toBeGreaterThanOrEqual(beforeCall - 61 * dayMs);
+    expect(cutoffMs).toBeLessThanOrEqual(afterCall - 58 * dayMs);
   });
 });

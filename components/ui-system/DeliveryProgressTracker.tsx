@@ -79,7 +79,7 @@ export default function DeliveryProgressTracker({
                   isDone
                     ? "bg-[var(--accent)] text-[var(--surface-canvas)]"
                     : isCurrent
-                    ? "bg-[var(--accent-soft)] border-2 border-[var(--accent)]"
+                    ? "bg-primary/10 border-2 border-[var(--accent)]"
                     : "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
                 )}
               >
@@ -157,7 +157,7 @@ export default function DeliveryProgressTracker({
                   isDone
                     ? "bg-[var(--accent)] text-[var(--surface-canvas)]"
                     : isCurrent
-                    ? "bg-[var(--accent-soft)] border-2 border-[var(--accent)]"
+                    ? "bg-primary/10 border-2 border-[var(--accent)]"
                     : "bg-[var(--surface-raised)] border border-[var(--rule-base)]",
                 )}
               >

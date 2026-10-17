@@ -96,13 +96,13 @@ const STATUS_META: Record<
   confirmado: {
     label: "Confirmado",
     icon: CheckCircle2,
-    chip: "bg-[var(--accent-soft)] text-[var(--accent)]",
+    chip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
     dot: "bg-[var(--accent)]",
   },
   en_camino: {
     label: "En camino",
     icon: Truck,
-    chip: "bg-[var(--accent-soft)] text-[var(--accent)]",
+    chip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
     dot: "bg-[var(--accent)]",
   },
   entregado: {
@@ -211,7 +211,7 @@ function OrderCard({ order }: { order: UiOrder }) {
               )}
             </div>
           ) : (
-            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <Package className="h-5 w-5" strokeWidth={2} />
             </span>
           )}
@@ -358,12 +358,14 @@ export default function PedidosPage() {
                   key={t.key}
                   type="button"
                   role="tab"
+                  id={`pedidos-tab-${t.key}`}
                   aria-selected={activeTab}
+                  aria-controls="pedidos-tabpanel"
                   onClick={() => setTab(t.key)}
                   className={cn(
                     "inline-flex h-10 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition-colors",
                     activeTab
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40",
                   )}
                 >
@@ -414,12 +416,12 @@ export default function PedidosPage() {
             </Link>
           </section>
         ) : filtered.length === 0 ? (
-          <section className={`${CARD} px-6 py-10 text-center`}>
+          <section id="pedidos-tabpanel" role="tabpanel" aria-labelledby={`pedidos-tab-${tab}`} className={`${CARD} px-6 py-10 text-center`}>
             <p className="text-base font-bold text-[var(--text-primary)]">Nada por aquí</p>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">No tienes pedidos en esta categoría.</p>
           </section>
         ) : (
-          <ul className="space-y-3">
+          <ul id="pedidos-tabpanel" role="tabpanel" aria-labelledby={`pedidos-tab-${tab}`} className="space-y-3">
             {filtered.map((o) => (
               <OrderCard key={o.id} order={o} />
             ))}

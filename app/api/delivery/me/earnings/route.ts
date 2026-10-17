@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePartner } from "@/lib/delivery/partner-session";
+import { limaDateKey, startOfLimaDay, startOfLimaDayDaysAgo } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 
 /**
@@ -26,13 +27,16 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const period = searchParams.get("period") ?? "month";
 
-    const now = new Date();
-    const since = new Date(now);
+    // "Hoy" del rider arranca a las 00:00 de Lima (UTC-5), no a las 00:00 UTC
+    // (= 19:00 Lima del día anterior). Sin esto las ganancias de la tarde-noche
+    // caían en el día equivocado del total y del gráfico.
+    let sinceMs: number;
     let bucketDays = 30;
-    if (period === "today") { since.setHours(0, 0, 0, 0); bucketDays = 1; }
-    else if (period === "week") { since.setDate(now.getDate() - 7); bucketDays = 7; }
-    else if (period === "month") { since.setDate(now.getDate() - 30); bucketDays = 30; }
-    else { since.setFullYear(now.getFullYear() - 5); bucketDays = 90; }
+    if (period === "today") { sinceMs = startOfLimaDay(); bucketDays = 1; }
+    else if (period === "week") { sinceMs = startOfLimaDayDaysAgo(7); bucketDays = 7; }
+    else if (period === "month") { sinceMs = startOfLimaDayDaysAgo(30); bucketDays = 30; }
+    else { sinceMs = startOfLimaDayDaysAgo(365 * 5); bucketDays = 90; }
+    const since = new Date(sinceMs);
 
     // SECURITY 2026-05-05 (pentest delivery H012): scope tenantId. Antes
     // un assignment con tenantId divergente (ver H010 ya parchado) inflaba
@@ -62,18 +66,16 @@ export async function GET(req: NextRequest) {
     const map = new Map<string, { fees: number; tips: number; count: number }>();
     for (const a of assignments) {
       if (!a.deliveredAt) continue;
-      const key = a.deliveredAt.toISOString().slice(0, 10);
+      const key = limaDateKey(a.deliveredAt);
       const existing = map.get(key) ?? { fees: 0, tips: 0, count: 0 };
       existing.fees += Number(a.fee);
       existing.tips += Number(a.tipAmount ?? 0);
       existing.count += 1;
       map.set(key, existing);
     }
-    // Llenar ventana con ceros para que el chart no salte.
+    // Llenar ventana con ceros (días Lima) para que el chart no salte.
     for (let i = bucketDays - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(now.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+      const key = limaDateKey(startOfLimaDayDaysAgo(i));
       const e = map.get(key) ?? { fees: 0, tips: 0, count: 0 };
       byDay.push({ date: key, ...e });
     }

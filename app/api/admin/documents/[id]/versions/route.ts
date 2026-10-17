@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { resolverMime } from "@/lib/documents/tipos-archivo";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import {
   buildStoragePath,
@@ -15,7 +16,7 @@ import { assertCsrf } from "@/lib/auth/csrf";
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, ctx: Ctx) {
-  const rl = await applyRateLimit(req, "MODERATE", "documents:versions:list");
+  const rl = await applyRateLimit(req, "DRIVE_READ", "documents:versions:list");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
@@ -23,12 +24,21 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await ctx.params;
-  const versions = await DocumentsDB.listVersions(auth.tenantId, id);
+  // Mismo permiso que el documento: un papel que el rol no ve no tiene versiones (404).
+  if (!(await DocumentsDB.puedeVer(auth.tenantId, id, auth.role, { incluirBorrados: true }))) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  const versions = await DocumentsDB.listVersions(auth.tenantId, id, auth.role);
   return NextResponse.json({ versions });
 }
 
 export async function POST(req: NextRequest, ctx: Ctx) {
-  const rl = await applyRateLimit(req, "STRICT", "documents:version:upload");
+  // MODERATE (20 / 5 min) y no STRICT (10 / 15 min): desde que se puede editar
+  // una planilla dentro del panel, cada autoguardado pasa por acá. Con STRICT,
+  // diez minutos de edición seguida agotaban el presupuesto y el guardado
+  // empezaba a fallar en medio del trabajo. Sigue siendo un admin autenticado
+  // subiendo archivos a su propio tenant, con el tope de tamaño aparte.
+  const rl = await applyRateLimit(req, "DRIVE", "documents:version:upload");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
@@ -36,7 +46,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await ctx.params;
-  const doc = await DocumentsDB.getById(auth.tenantId, id);
+  const doc = await DocumentsDB.getById(auth.tenantId, id, auth.role);
   if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   try {
@@ -46,13 +56,13 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (file.size > MAX_UPLOAD_SIZE) {
       return NextResponse.json({ error: "too_large" }, { status: 413 });
     }
-    const mime = file.type || "application/octet-stream";
-    if (!isMimeAllowed(mime)) {
+    const mime = resolverMime(file.name, file.type);
+    if (!isMimeAllowed(mime, file.name)) {
       return NextResponse.json({ error: "mime_not_allowed", mime }, { status: 415 });
     }
     const changeNote = (form.get("changeNote") as string | null) ?? undefined;
 
-    const versions = await DocumentsDB.listVersions(auth.tenantId, id);
+    const versions = await DocumentsDB.listVersions(auth.tenantId, id, auth.role);
     const nextLabel = `v${(versions[0]?.versionNumber ?? 1) + 1}`;
 
     const storagePath = buildStoragePath({

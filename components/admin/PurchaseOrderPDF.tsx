@@ -1,24 +1,36 @@
 "use client";
 
 import type { DbPurchaseOrder, DbSupplier } from "@/lib/jsondb";
+import { totalesOC } from "@/lib/compras/totales-oc";
+import { formatCurrency, formatDateLong } from "@/lib/format";
+import type { Membrete } from "@/lib/admin/membrete";
 
 interface PurchaseOrderPDFProps {
   order: DbPurchaseOrder;
   supplier?: DbSupplier;
 }
 
-export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier) {
-  const subtotal = order.items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
-  const igv = subtotal * 0.18;
-  const total = subtotal + igv;
+/** Texto del negocio dentro del HTML del papel (un «&» o «<» en el nombre no rompe la hoja). */
+const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/**
+ * El papel de la orden de compra, encabezado con el negocio de la sesión
+ * (`membrete`). Antes decía «Buleje», «Jr. Los Pinos 123» y un RUC de relleno
+ * en la orden de cualquier negocio.
+ */
+export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier, membrete?: Membrete | null) {
+  const datosNegocio = [membrete?.ruc && `RUC: ${esc(membrete.ruc)}`, membrete?.telefono && `Tel: ${esc(membrete.telefono)}`]
+    .filter(Boolean)
+    .join("<br>");
+  // El TOTAL del papel es el de la orden. Antes se calculaba acá sumando 18%
+  // encima del costo e ignorando el descuento, así que el PDF que se le
+  // entregaba al proveedor no coincidía con la orden ni con la pantalla.
+  const { subtotalBruto, descuentoPct, descuentoMonto, total, baseImponible, igvContenido } =
+    totalesOC(order);
 
   const orderDate = (() => {
     try {
-      return new Date(order.createdAt).toLocaleDateString("es-PE", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
+      return formatDateLong(order.createdAt);
     } catch {
       return order.createdAt;
     }
@@ -30,8 +42,8 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
       <tr style="background:${i % 2 === 0 ? "#f9fafb" : "#ffffff"}">
         <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;color:#111827">${item.name}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:center;color:#374151">${item.quantity} ${item.unit}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;color:#374151">S/${Number(item.unitCost).toFixed(2)}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;font-weight:600;color:#111827">S/${(item.quantity * item.unitCost).toFixed(2)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;color:#374151">${formatCurrency(Number(item.unitCost))}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;font-weight:600;color:#111827">${formatCurrency(item.quantity * item.unitCost)}</td>
       </tr>`
     )
     .join("");
@@ -67,7 +79,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
     .info-row strong { color: #111827; }
 
     /* Status badge */
-    .status-pendiente { background:#fef3c7; color:#92400e; }
+    .status-pendiente { background:#fff1ef; color:#842e25; }
     .status-recibido  { background:#d1fae5; color:#065f46; }
     .status-parcial   { background:#dbeafe; color:#1e40af; }
     .status-cancelado { background:#fee2e2; color:#991b1b; }
@@ -104,13 +116,9 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
   <!-- Header -->
   <div class="header">
     <div>
-      <div class="brand-name">Buleje</div>
-      <div class="brand-sub">Abarrotes y Delivery - Pucallpa, Peru</div>
-      <div class="brand-info">
-        Jr. Los Pinos 123, Pucallpa<br>
-        RUC: 10XXXXXXXXXX<br>
-        Tel: 061-XXXXXX
-      </div>
+      <div class="brand-name">${esc(membrete?.nombre ?? "")}</div>
+      ${membrete?.direccion ? `<div class="brand-sub">${esc(membrete.direccion)}</div>` : ""}
+      ${datosNegocio ? `<div class="brand-info">${datosNegocio}</div>` : ""}
     </div>
     <div>
       <div class="oc-badge">
@@ -159,17 +167,26 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
   <!-- Totals -->
   <div class="totals">
     <div class="totals-box">
+      ${descuentoPct > 0 ? `
       <div class="totals-row">
-        <span>Subtotal (sin IGV)</span>
-        <span>S/${subtotal.toFixed(2)}</span>
+        <span>Subtotal</span>
+        <span>${formatCurrency(subtotalBruto)}</span>
       </div>
       <div class="totals-row">
-        <span>IGV (18%)</span>
-        <span>S/${igv.toFixed(2)}</span>
+        <span>Descuento (${descuentoPct}%)</span>
+        <span>-${formatCurrency(descuentoMonto)}</span>
+      </div>` : ""}
+      <div class="totals-row">
+        <span>Valor de venta</span>
+        <span>${formatCurrency(baseImponible)}</span>
+      </div>
+      <div class="totals-row">
+        <span>IGV (18%) incluido</span>
+        <span>${formatCurrency(igvContenido)}</span>
       </div>
       <div class="totals-row total">
         <span>TOTAL</span>
-        <span>S/${total.toFixed(2)}</span>
+        <span>${formatCurrency(total)}</span>
       </div>
     </div>
   </div>

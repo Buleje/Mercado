@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { generateText } from "ai";
-import { chatModel } from "@/lib/ai/provider";
+import { chatModel, chatModelId } from "@/lib/ai/provider";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
@@ -15,7 +15,7 @@ import { requireActiveSubscription } from "@/lib/billing/require-active-subscrip
  * Genera una descripción comercial breve (2-3 oraciones) para un producto
  * de bodega/marketplace peruano, dado nombre + categoría + atributos.
  *
- * Usa chatModel (Haiku 4.5) — rápido, barato y nativo en español.
+ * Usa chatModel (Haiku 5.5) — rápido, barato y nativo en español.
  * Auth: requireAdmin. Rate limit: STRICT preset (10 req/15min por tenant+IP)
  * para frenar abuso de generación masiva.
  */
@@ -58,14 +58,15 @@ export async function POST(req: NextRequest) {
 
     // F4: Cap mensual por plan de tenant — estimado ~0.001 USD por descripción (Haiku)
     const estimatedCost = 0.001;
-    // auth.plan no existe en el JWT payload — fallback "free" (cap conservador).
-    if (!await aiCostGuard.canSpend(auth.tenantId, estimatedCost, "free")) {
+    // canSpend resuelve el plan REAL del tenant (Tenant.plan, cacheado) cuando
+    // no se pasa explícito — así los planes pagos usan su presupuesto, no el free.
+    if (!await aiCostGuard.canSpend(auth.tenantId, estimatedCost)) {
       const nextMonth = new Date();
       nextMonth.setMonth(nextMonth.getMonth() + 1);
       nextMonth.setDate(1);
       const resetTs = Math.floor(nextMonth.getTime() / 1000);
       return NextResponse.json(
-        { error: "Límite mensual de generaciones IA alcanzado. Actualizá tu plan o esperá el próximo mes." },
+        { error: "Límite mensual de generaciones IA alcanzado. Actualiza tu plan o espera el próximo mes." },
         {
           status: 429,
           headers: { "Retry-After": String(resetTs) },
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const prompt = `Generá una descripción de producto para una bodega/marketplace en Perú.
+    const prompt = `Genera una descripción de producto para una bodega/marketplace en Perú.
 
 Producto: ${name}
 ${category ? `Categoría: ${category}` : ""}
@@ -84,19 +85,19 @@ Tono: ${TONE_HINTS[tone]}
 Reglas estrictas:
 - Español de Perú natural, NUNCA voseo argentino.
 - 2 a 3 oraciones, máximo 280 caracteres en total.
-- Comenzá describiendo qué es y para qué sirve.
-- Mencioná sin exagerar 1-2 atributos diferenciadores (origen, calidad, presentación, uso típico).
+- Comienza describiendo qué es y para qué sirve.
+- Menciona sin exagerar 1-2 atributos diferenciadores (origen, calidad, presentación, uso típico).
 - NO inventes datos nutricionales, ingredientes específicos ni certificaciones.
 - NO uses emojis.
 - NO uses palabras vacías como "increíble", "lo mejor del mercado".
 - NO uses muletillas tipo "¡Descubrí!" o "¡Llevátelo!".
 
-Devolvé EXCLUSIVAMENTE el texto de la descripción, sin comillas, sin markdown, sin prefijos.`;
+Devuelve EXCLUSIVAMENTE el texto de la descripción, sin comillas, sin markdown, sin prefijos.`;
 
     // Round 20: trackAiUsage envuelve la llamada — captura tokens reales
     // del SDK + recordSpend automático. Reemplaza el manual recordSpend de abajo.
     const result = await trackAiUsage(
-      { tenantId: auth.tenantId, feature: "product-description", model: "claude-haiku-4-5" },
+      { tenantId: auth.tenantId, feature: "product-description", model: chatModelId },
       () =>
         generateText({
           model: chatModel,

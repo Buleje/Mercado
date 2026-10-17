@@ -14,6 +14,8 @@ import type {
 import type { DbCustomer, DbReview } from "./misc.db";
 import { normalizePhone } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { invalidateByPrefix } from "@/lib/cache";
+import { loyaltyCachePrefix } from "./loyalty.db";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -117,7 +119,20 @@ function computePoints(amount: number): number {
  * normalizePhone (blast radius). Root-cause real (normalizar-al-escribir +
  * migración) queda como follow-up de su propio sprint.
  */
+/**
+ * ¿Es la ficha propia de un login social (`google_<id>` / `facebook_<id>`)?
+ * Su `phone` es un id sintético, no un teléfono: nunca se normaliza.
+ */
+export function esFichaSocial(id: string): boolean {
+  return /^(google|facebook)_/.test(id);
+}
+
 function phoneMatchCandidates(phone: string): string[] {
+  // La ficha de un login social se busca EXACTA: sus dígitos no son un
+  // teléfono, y los últimos 9 de «google_1177…987654321» caían en la ficha
+  // del 987654321 de otra persona (el callback copiaba su nombre, dirección,
+  // puntos y crédito). Security 2026-10-08.
+  if (esFichaSocial(phone)) return [phone];
   const normalized = normalizePhone(phone); // últimos 9 dígitos
   return Array.from(
     new Set([normalized, `51${normalized}`, `+51${normalized}`, phone.trim()].filter(Boolean))
@@ -126,11 +141,149 @@ function phoneMatchCandidates(phone: string): string[] {
 
 // ── CustomersDB ───────────────────────────────────────────────────────────────
 
+/** Lo que compró un cliente (ver `CustomersDB.comprasPorCliente`). */
+export interface ComprasDeCliente {
+  compras: number;
+  gastado: number;
+  /** Las compras que suman a `gastado` (pedidos entregados + ventas): el divisor del ticket promedio. */
+  cerradas: number;
+  ultimaCompra: string | null;
+  compras30d: number;
+}
+const SIN_COMPRAS: ComprasDeCliente = { compras: 0, gastado: 0, cerradas: 0, ultimaCompra: null, compras30d: 0 };
+/** El mismo celular escrito de tres formas: sus últimos 9 dígitos. */
+const claveDeTelefono = (t: string) => t.replace(/\D/g, "").slice(-9);
+
 export const CustomersDB = {
   async getAll(tenantId: string, limit = 2000): Promise<DbCustomer[]> {
     const where: Record<string, unknown> = { tenantId };
     const rows = await withRlsTx(tenantId, (tx) => tx.customer.findMany({ where, include: { locations: true }, orderBy: { updatedAt: "desc" }, take: limit }));
     return rows.map(mapCustomer);
+  },
+
+  /**
+   * Lo que cada cliente debe DE VERDAD: suma del `saldo` de sus fiados ACTIVO +
+   * VENCIDO (la misma regla que `FiadosDB.resumenByCustomer`). La columna
+   * `Customer.creditBalance` no sigue a los fiados —medido 2026-10-09: 0 en
+   * todos los clientes de todos los tenants aunque haya fiados abiertos—, así
+   * que el panel lee esto. Dos consultas agregadas en la misma tx; no escribe
+   * nada. `vencido` = estado VENCIDO o ACTIVO con la fecha ya pasada.
+   * Montos en céntimos al sumar para no arrastrar decimales del float.
+   */
+  async deudaDeFiados(tenantId: string, ahora: Date = new Date()): Promise<Map<string, { deuda: number; vencido: number }>> {
+    const [abiertos, vencidos] = await withRlsTx(tenantId, (tx) =>
+      Promise.all([
+        tx.fiado.groupBy({
+          by: ["customerId"],
+          where: { tenantId, status: { in: ["ACTIVO", "VENCIDO"] } },
+          _sum: { saldo: true },
+        }),
+        tx.fiado.groupBy({
+          by: ["customerId"],
+          where: {
+            tenantId,
+            OR: [{ status: "VENCIDO" }, { status: "ACTIVO", fechaVence: { lt: ahora } }],
+          },
+          _sum: { saldo: true },
+        }),
+      ]),
+    );
+    const enCentimos = (v: Parameters<typeof toNumOrZero>[0]) => Math.round(toNumOrZero(v) * 100);
+    const vencidoPor = new Map(vencidos.map((r) => [r.customerId, enCentimos(r._sum.saldo)]));
+    const out = new Map<string, { deuda: number; vencido: number }>();
+    for (const r of abiertos) {
+      const deuda = enCentimos(r._sum.saldo);
+      if (deuda <= 0) continue;
+      out.set(r.customerId, { deuda: deuda / 100, vencido: (vencidoPor.get(r.customerId) ?? 0) / 100 });
+    }
+    return out;
+  },
+
+  /**
+   * `getAll` con `creditBalance` = la deuda real de fiados (ver `deudaDeFiados`)
+   * y `fiadoVencido` = la parte vencida. Lo usa GET /api/customers (CRM, POS,
+   * Cobrar): ahí «Fiado S/ X» tiene que ser lo que el cliente debe hoy.
+   */
+  async getAllConDeuda(tenantId: string, limit = 2000): Promise<(DbCustomer & { fiadoVencido: number })[]> {
+    const [clientes, deudas] = await Promise.all([
+      CustomersDB.getAll(tenantId, limit),
+      CustomersDB.deudaDeFiados(tenantId),
+    ]);
+    return clientes.map((c) => {
+      const d = deudas.get(c.phone);
+      return { ...c, creditBalance: d?.deuda ?? 0, fiadoVencido: d?.vencido ?? 0 };
+    });
+  },
+
+  /**
+   * Lo que compró cada cliente, contado desde los pedidos y las ventas del POS
+   * (10-10). `Customer.totalSpent` sólo lo mueve la venta del POS con teléfono
+   * (`LoyaltyDB.accruePoints`): los pedidos no lo tocan, así que «Total
+   * gastado» y el «CLV promedio» del CRM daban S/ 0,00 para un cliente con 9
+   * pedidos (main, QA Sec: S/ 229,70 en pedidos, columna 0). Y la lista sacaba
+   * cuántas compras y la última de /api/orders y /api/sales con tope de 500
+   * cada uno, en el navegador.
+   *
+   *  · `compras` y `ultimaCompra`: pedidos no cancelados + ventas del POS.
+   *  · `gastado`: pedidos ENTREGADOS + ventas del POS (`isSale`: un pedido en
+   *    curso todavía se puede cancelar; la misma regla que los tableros).
+   *  · `cerradas`: cuántas suman a `gastado` (el divisor del ticket promedio).
+   *  · `compras30d`: compras de los últimos 30 días (frecuencia y «activos»).
+   *
+   * La clave es el teléfono en sus últimos 9 dígitos: «+51 916 409 675» de una
+   * venta y «916409675» del cliente son el mismo. Céntimos al sumar.
+   */
+  async comprasPorCliente(tenantId: string, ahora: Date = new Date()): Promise<Map<string, ComprasDeCliente>> {
+    const hace30 = new Date(ahora.getTime() - 30 * 86_400_000);
+    const vivo = { tenantId, customerPhone: { not: null }, status: { not: "cancelado" as const } };
+    const conTelefono = { tenantId, customerPhone: { not: null } };
+    const [pedidos, entregados, pedidos30, ventas, ventas30] = await withRlsTx(tenantId, (tx) =>
+      Promise.all([
+        tx.order.groupBy({ by: ["customerPhone"], where: vivo, _count: { _all: true }, _max: { createdAt: true } }),
+        tx.order.groupBy({ by: ["customerPhone"], where: { ...conTelefono, status: "entregado" as const }, _count: { _all: true }, _sum: { total: true } }),
+        tx.order.groupBy({ by: ["customerPhone"], where: { ...vivo, createdAt: { gte: hace30 } }, _count: { _all: true } }),
+        tx.sale.groupBy({ by: ["customerPhone"], where: conTelefono, _count: { _all: true }, _sum: { total: true }, _max: { createdAt: true } }),
+        tx.sale.groupBy({ by: ["customerPhone"], where: { ...conTelefono, createdAt: { gte: hace30 } }, _count: { _all: true } }),
+      ]),
+    );
+    const acum = new Map<string, { compras: number; centimos: number; cerradas: number; ultima: Date | null; compras30d: number }>();
+    const de = (tel: string | null) => {
+      const k = claveDeTelefono(tel ?? "");
+      if (!k) return null;
+      let a = acum.get(k);
+      if (!a) acum.set(k, (a = { compras: 0, centimos: 0, cerradas: 0, ultima: null, compras30d: 0 }));
+      return a;
+    };
+    const masReciente = (a: Date | null, b: Date | null | undefined) => (!b ? a : !a || b > a ? b : a);
+    const centimos = (v: Parameters<typeof toNumOrZero>[0]) => Math.round(toNumOrZero(v) * 100);
+    for (const r of pedidos) {
+      const a = de(r.customerPhone);
+      if (a) { a.compras += r._count._all; a.ultima = masReciente(a.ultima, r._max.createdAt); }
+    }
+    for (const r of entregados) {
+      const a = de(r.customerPhone);
+      if (a) { a.centimos += centimos(r._sum.total); a.cerradas += r._count._all; }
+    }
+    for (const r of pedidos30) { const a = de(r.customerPhone); if (a) a.compras30d += r._count._all; }
+    for (const r of ventas) {
+      const a = de(r.customerPhone);
+      if (a) { a.compras += r._count._all; a.cerradas += r._count._all; a.centimos += centimos(r._sum.total); a.ultima = masReciente(a.ultima, r._max.createdAt); }
+    }
+    for (const r of ventas30) { const a = de(r.customerPhone); if (a) a.compras30d += r._count._all; }
+    const out = new Map<string, ComprasDeCliente>();
+    for (const [k, a] of acum) {
+      out.set(k, { compras: a.compras, gastado: a.centimos / 100, cerradas: a.cerradas, ultimaCompra: a.ultima ? a.ultima.toISOString() : null, compras30d: a.compras30d });
+    }
+    return out;
+  },
+
+  /** `getAllConDeuda` + lo que compró cada uno (`comprasPorCliente`): GET /api/customers?compras=1 (CRM). */
+  async getAllConCompras(tenantId: string, limit = 2000): Promise<(DbCustomer & { fiadoVencido: number } & ComprasDeCliente)[]> {
+    const [clientes, compras] = await Promise.all([
+      CustomersDB.getAllConDeuda(tenantId, limit),
+      CustomersDB.comprasPorCliente(tenantId),
+    ]);
+    return clientes.map((c) => ({ ...c, ...(compras.get(claveDeTelefono(c.phone)) ?? SIN_COMPRAS) }));
   },
 
   /**
@@ -231,6 +384,24 @@ export const CustomersDB = {
   },
 
   /**
+   * getFirstNameByPhone: SOLO el primer nombre del customer dentro del tenant.
+   * Diseñado para el autocompletado público del checkout invitado — expone la
+   * mínima PII posible (un nombre de pila, jamás apellidos/email/dirección).
+   * Matching tolerante a formatos legacy (ver phoneMatchCandidates). Null si no
+   * existe. Decisión Brandon 2026-06-18: el tradeoff de enumeración de nombres
+   * de pila (scoped al tenant + rate limit estricto) es aceptable por la UX.
+   */
+  async getFirstNameByPhone(tenantId: string, phone: string): Promise<string | null> {
+    if (!tenantId) throw new Error("CustomersDB.getFirstNameByPhone: tenantId requerido");
+    const row = await withRlsTx(tenantId, (tx) => tx.customer.findFirst({
+      where: { phone: { in: phoneMatchCandidates(phone) }, tenantId },
+      select: { name: true },
+    }));
+    const first = row?.name?.trim().split(/\s+/)[0] ?? "";
+    return first || null;
+  },
+
+  /**
    * Lee las preferencias de notificacion del customer (Ley 29733 consent).
    * Audit project-wide 2026-05-19 — migracion de /api/customer-preferences.
    */
@@ -269,6 +440,29 @@ export const CustomersDB = {
         where: { phone: normalized, tenantId },
         select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
       });
+    });
+  },
+  /**
+   * Marca una dirección guardada como principal (Customer.activeLocationId).
+   * updateMany con doble filtro (phone + tenantId) para evitar cross-tenant
+   * write (mismo patrón que updatePreferences — Customer.phone @unique global,
+   * TD-040 fase 3 pendiente). La pertenencia de locationId al customer debe
+   * verificarse ANTES en el route (MeAddressesDB.findOwned). Retorna false si
+   * el customer no existía en el tenant.
+   */
+  async setActiveLocation(
+    tenantId: string,
+    phone: string,
+    locationId: string,
+  ): Promise<boolean> {
+    if (!tenantId) throw new Error("CustomersDB.setActiveLocation: tenantId requerido");
+    const normalized = normalizePhone(phone);
+    return withRlsTx(tenantId, async (tx) => {
+      const result = await tx.customer.updateMany({
+        where: { phone: normalized, tenantId },
+        data: { activeLocationId: locationId },
+      });
+      return result.count > 0;
     });
   },
   async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">, tenantId: string): Promise<DbCustomer> {
@@ -439,32 +633,61 @@ export const LoyaltyDB = {
     const normalized = normalizePhone(phone);
     // TD-116: read-modify-write en UNA tx RLS (de paso cierra la carrera
     // entre dos accruals concurrentes del mismo customer).
-    return withRlsTx(tenantId, async (tx) => {
+    const result = await withRlsTx(tenantId, async (tx) => {
       const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId } });
       if (!c) return null;
       const newTotal = toNumOrZero(c.totalSpent) + amount;
-      const newPoints = c.loyaltyPoints + computePoints(amount);
+      const earned = computePoints(amount);
+      const newPoints = c.loyaltyPoints + earned;
       const newTier = computeTier(newTotal);
       await tx.customer.updateMany({
         where: { phone: normalized, tenantId },
         data: { totalSpent: newTotal, loyaltyPoints: newPoints, loyaltyTier: newTier },
       });
+      // El asiento va DENTRO de la misma tx: si el update falla, no queda un
+      // movimiento fantasma. Antes este camino movía la columna sin escribir
+      // el ledger, así que el historial que muestra el marketplace
+      // (LoyaltyDB.getHistory) tenía huecos y no cuadraba contra el saldo.
+      if (earned > 0) {
+        await tx.loyaltyTransaction.create({
+          data: { customerId: normalized, tenantId, amount: earned, reason: "purchase" },
+        });
+      }
       return { phone: normalized, loyaltyPoints: newPoints, loyaltyTier: newTier, totalSpent: newTotal };
     });
+    // getBalance/getHistory cachean 60s con este prefijo. Sin invalidar, el
+    // marketplace mostraba el saldo viejo hasta un minuto después de la venta.
+    if (result) invalidateByPrefix(loyaltyCachePrefix(tenantId, normalized));
+    return result;
   },
   /** Redeem points (returns false if insufficient) */
   async redeemPoints(tenantId: string, phone: string, points: number) {
+    if (points <= 0) return false;
     const normalized = normalizePhone(phone);
-    // TD-116: check + decremento en UNA tx RLS (cierra doble-canje concurrente).
-    return withRlsTx(tenantId, async (tx) => {
-      const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId } });
-      if (!c || c.loyaltyPoints < points) return false;
-      await tx.customer.updateMany({
-        where: { phone: normalized, tenantId },
-        data: { loyaltyPoints: c.loyaltyPoints - points },
+    // FIX 2026-08-22: el `findFirst` + `updateMany` con el valor calculado
+    // (`c.loyaltyPoints - points`) tenía una carrera real bajo READ COMMITTED
+    // sin lock de fila — dos canjes concurrentes del mismo teléfono (doble
+    // clic en caja, o dos terminales POS con el mismo cliente) podían leer el
+    // MISMO saldo antes de que ninguno commitee, los dos pasar el check, y el
+    // segundo pisar el saldo dejándolo negativo. Ahora la condición de saldo
+    // vive en el WHERE del propio UPDATE (Prisma lo traduce a un solo
+    // statement atómico: `SET points = points - $1 WHERE ... AND points >=
+    // $1`) — el segundo canje concurrente pierde la carrera con `count: 0` en
+    // vez de escribir un saldo inválido. Mismo patrón que `loyalty.db.ts`
+    // (ahí con SQL crudo; acá alcanza con Prisma nativo).
+    const ok = await withRlsTx(tenantId, async (tx) => {
+      const result = await tx.customer.updateMany({
+        where: { phone: normalized, tenantId, loyaltyPoints: { gte: points } },
+        data: { loyaltyPoints: { decrement: points } },
+      });
+      if (result.count === 0) return false;
+      await tx.loyaltyTransaction.create({
+        data: { customerId: normalized, tenantId, amount: -points, reason: "redemption" },
       });
       return true;
     });
+    if (ok) invalidateByPrefix(loyaltyCachePrefix(tenantId, normalized));
+    return ok;
   },
   TIERS: LOYALTY_TIERS,
 };

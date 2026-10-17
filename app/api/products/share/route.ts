@@ -8,9 +8,10 @@
  */
 
 import { type NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { headers } from "next/headers";
-import { slugify } from "@/data/products";
+import { CatalogoPublicoDB } from "@/lib/db/catalogo-publico.db";
+import { resolverNegocioPublico } from "@/lib/tienda-publica/negocio-publico";
+import { urlDeImagen, urlDeProducto, origenDe } from "@/lib/tienda-publica/feed-productos";
+import { logger } from "@/lib/logger";
 
 // F7: TTL de tokens de share — 7 días en segundos
 const SHARE_LINK_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -33,27 +34,32 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const hdrs = await headers();
-    const tenantId = hdrs.get("x-tenant-id") ?? "main";
-
-    const product = await prisma.product.findFirst({
-      where: { id: productId, tenantId, active: true },
-      select: { name: true, price: true, image: true, unit: true },
+    // El negocio de la página que pide el enlace (host o `/t/<slug>` de origen,
+    // vía proxy). Antes: `x-tenant-id ?? "main"` crudo y enlace fijo a
+    // www.buleje.pe con «Buleje» en el texto, para cualquier negocio.
+    const r = await resolverNegocioPublico({
+      tienda: null,
+      tenantCrudo: req.headers.get("x-tenant-id"),
+      origen: req.nextUrl.origin,
     });
+    if (!r.ok) {
+      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
+    }
+    const { negocio } = r;
 
-    if (!product) {
+    const product = await CatalogoPublicoDB.producto(negocio.tenantId, productId);
+    const productUrl = product ? urlDeProducto(negocio.base, product.nombre) : null;
+    if (!product || !productUrl) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
-    const slug = slugify(product.name);
-    const productUrl = `${baseUrl}/tienda/${slug}`;
-    const price = Number(product.price);
+    const price = product.precio;
+    const unidad = product.unidad || "und";
 
-    const whatsappText = `Mira este producto en Buleje: ${product.name} a S/${price.toFixed(2)}/${product.unit ?? "und"} 🛒\n${productUrl}`;
+    const whatsappText = `Mira este producto en ${negocio.nombre}: ${product.nombre} a S/${price.toFixed(2)}/${unidad} 🛒\n${productUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
 
-    const twitterText = `${product.name} a S/${price.toFixed(2)} en @BulejePeru 🛒`;
+    const twitterText = `${product.nombre} a S/${price.toFixed(2)} en ${negocio.nombre} 🛒`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(productUrl)}`;
 
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}`;
@@ -63,9 +69,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       product: {
-        name: product.name,
+        name: product.nombre,
         price,
-        image: product.image,
+        image: urlDeImagen(origenDe(negocio.base), product.imagen) ?? product.imagen,
         url: productUrl,
       },
       share: {
@@ -82,6 +88,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("[products/share] GET error", { err: message, productId });
+    return NextResponse.json({ error: "No se pudo armar el enlace." }, { status: 500 });
   }
 }

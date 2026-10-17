@@ -250,11 +250,13 @@ export async function POST(req: NextRequest) {
     logActivity(
       "Importar",
       "producto",
-      `Importación Excel: ${created} creados, ${errors.length} errores`,
+      `Importación Excel "${(file as File).name}": ${created} creados, ${errors.length} errores`,
       undefined,
-      auth.username ?? "admin"
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+      auth.username ?? "admin",
+      requestId,
+      auth.tenantId,
+    ).catch((err) => {
+      logger.error("[products/import] logActivity failed", { requestId, error: String(err) });
     });
 
     return NextResponse.json({ created, errors }, { status: 201 });

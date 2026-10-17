@@ -1,5 +1,6 @@
 'use client';
 
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -46,9 +47,9 @@ type Receta = {
 
 const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {
   "Entradas": { from: "#0d9488", to: "#14b8a6" },
-  "Platos de fondo": { from: "#f59e0b", to: "#d97706" },
+  "Platos de fondo": { from: "#ff6b5b", to: "#f0503f" },
   "Postres": { from: "#00A0A0", to: "#0d9488" },
-  "Bebidas": { from: "#fbbf24", to: "#f59e0b" },
+  "Bebidas": { from: "#ff8676", to: "#ff6b5b" },
   "Sopas": { from: "#10b981", to: "#0d9488" },
 };
 
@@ -244,7 +245,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLdStringify({
             "@context": "https://schema.org",
             "@type": "Recipe",
             name: receta.nombre,
@@ -400,7 +401,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
               >
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-                    <ChefHat className="h-6 w-6 text-[var(--accent-dark)]" />
+                    <ChefHat className="h-6 w-6 text-[var(--accent-dark)] dark:text-[var(--accent)]" />
                     Preparacion
                   </h2>
                   {totalSteps > 0 && (
@@ -524,7 +525,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                 className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6 shadow-sm"
               >
                 <h2 className="text-lg font-bold text-[var(--text-primary)] mb-5 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-[var(--accent-dark)]" />
+                  <Sparkles className="h-5 w-5 text-[var(--accent-dark)] dark:text-[var(--accent)]" />
                   Tambien te puede gustar
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

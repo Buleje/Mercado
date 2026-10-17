@@ -154,7 +154,7 @@ export default function ExplorarHeroSearch() {
         {/* ── Keyboard hint + Popular chips ─────────────────── */}
         <div className="mt-4 max-w-3xl">
           <p className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
-            Tip: presioná{" "}
+            Tip: presiona{" "}
             <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded-md border border-[var(--rule-base)] bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
               /
             </kbd>{" "}

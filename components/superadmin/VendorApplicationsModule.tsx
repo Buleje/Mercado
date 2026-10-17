@@ -18,6 +18,8 @@
  *  - Touch targets ≥44px en mobile, focus rings visibles
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -43,6 +45,7 @@ import {
   ApplicationDetailsDrawer,
   type VendorApplication,
 } from "./vendor-applications/ApplicationDetailsDrawer";
+import { ApplicationScoreBadge } from "./vendor-applications/ApplicationScoreBadge";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -143,11 +146,11 @@ function initials(name: string): string {
 
 const STATUS_STYLES: Record<VendorApplication["status"], string> = {
   pendiente:
-    "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
+    "bg-teal-100 text-teal-800 dark:bg-teal-500/15 dark:text-teal-200",
   aprobada:
-    "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
+    "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]/30",
   rechazada:
-    "bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-200",
+    "bg-[var(--data-error-100)] text-[var(--data-error)]",
   info_solicitada:
     "bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
 };
@@ -160,9 +163,9 @@ const STATUS_LABELS: Record<VendorApplication["status"], string> = {
 };
 
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
-  good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-  warn: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
-  bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
+  good: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/10 dark:text-[var(--data-success-500)]",
+  warn: "bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-300",
+  bad: "bg-[var(--data-error-50)] text-[var(--data-error)]",
 };
 
 // ── Stat Card ───────────────────────────────────────────────────────────────
@@ -182,11 +185,11 @@ function StatCard({
 }) {
   const iconBg = {
     warning:
-      "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+      "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
     success:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+      "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]",
     danger:
-      "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+      "bg-[var(--data-error-100)] text-[var(--data-error)]",
     info: "bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300",
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
   }[tone];
@@ -462,11 +465,7 @@ export default function VendorApplicationsModule() {
   };
 
   // ── Auto refresh ─────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => reload(true), 60_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, reload]);
+  useVisiblePolling(() => void reload(true), 60_000, autoRefresh);
 
   // ── Keyboard shortcuts ───────────────────────────────────────────────
   useEffect(() => {
@@ -555,7 +554,7 @@ export default function VendorApplicationsModule() {
   const toggleSelectOne = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
@@ -738,7 +737,7 @@ export default function VendorApplicationsModule() {
             className={cn(
               "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
               t.tone === "success" &&
-                "bg-emerald-600 text-white",
+                "bg-[var(--data-success-600)] text-white",
               t.tone === "error" && "bg-rose-600 text-white",
               t.tone === "info" && "bg-slate-800 text-white",
             )}
@@ -760,28 +759,21 @@ export default function VendorApplicationsModule() {
                   aria-hidden
                 />
               </span>
-              <div className="min-w-0">
+              <div className="min-w-0 w-72">
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Marketplace · Onboarding
                 </p>
-                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                  Aplicaciones de vendedores
-                </h1>
-                <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                  Aprobá, rechazá o solicitá info. Atajos:{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-xs font-mono border border-[var(--rule-soft)]">
-                    /
-                  </kbd>{" "}
-                  buscar ·{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-xs font-mono border border-[var(--rule-soft)]">
-                    R
-                  </kbd>{" "}
-                  recargar ·{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-xs font-mono border border-[var(--rule-soft)]">
-                    Esc
-                  </kbd>{" "}
-                  cerrar
-                </p>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                    Solicitudes de vendedores
+                  </h1>
+                  <InfoTip
+                    side="bottom"
+                    title="Solicitudes de vendedores"
+                    what="Aprueba, rechaza o pide más información a quien quiere vender en el marketplace."
+                    example="Atajos: / buscar · R recargar · Esc cerrar."
+                  />
+                </div>
               </div>
             </div>
 
@@ -790,7 +782,7 @@ export default function VendorApplicationsModule() {
                 onClick={() => reload()}
                 disabled={refreshing}
                 title="Recargar (R)"
-                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
               >
                 <RefreshCcw
                   className={cn(
@@ -818,7 +810,7 @@ export default function VendorApplicationsModule() {
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5 sm:space-y-6">
         {error && (
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm font-semibold text-[var(--data-error)]">
             <span>{error}</span>
             <button
               onClick={() => setError(null)}
@@ -877,12 +869,12 @@ export default function VendorApplicationsModule() {
                 value={searchRaw}
                 onChange={(e) => setSearchRaw(e.target.value)}
                 aria-label="Buscar aplicaciones"
-                className="w-full h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                className="w-full h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
               />
             </div>
             <button
               onClick={() => exportCSV(filtered)}
-              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
               title="Exportar CSV"
             >
               <Download className="h-4 w-4" strokeWidth={2.25} aria-hidden />
@@ -898,7 +890,7 @@ export default function VendorApplicationsModule() {
                 )
               }
               aria-label="Filtrar por estado"
-              className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+              className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
             >
               <option value="all">Todos los estados</option>
               <option value="pendiente">Pendientes</option>
@@ -910,7 +902,7 @@ export default function VendorApplicationsModule() {
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               aria-label="Filtrar por categoría"
-              className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+              className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
             >
               <option value="all">Todas categorías</option>
               {categoryOptions.map((c) => (
@@ -923,7 +915,7 @@ export default function VendorApplicationsModule() {
               value={districtFilter}
               onChange={(e) => setDistrictFilter(e.target.value)}
               aria-label="Filtrar por distrito"
-              className="col-span-2 sm:col-span-1 h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+              className="col-span-2 sm:col-span-1 h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
             >
               <option value="all">Todos los distritos</option>
               {districtOptions.map((d) => (
@@ -944,14 +936,14 @@ export default function VendorApplicationsModule() {
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="h-10 px-3 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                className="h-10 px-3 rounded-xl text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               >
                 Limpiar
               </button>
               <button
                 onClick={bulkReject}
                 disabled={bulkBusy}
-                className="h-10 px-3.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 dark:text-rose-200 dark:bg-rose-500/15 dark:hover:bg-rose-500/25 disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="h-10 px-3.5 rounded-xl text-xs font-bold text-[var(--data-error)] bg-[var(--data-error-100)] hover:bg-[var(--data-error-500)]/20 disabled:opacity-50 inline-flex items-center gap-1.5"
               >
                 <X className="h-3.5 w-3.5" />
                 Rechazar
@@ -959,7 +951,7 @@ export default function VendorApplicationsModule() {
               <button
                 onClick={bulkApprove}
                 disabled={bulkBusy}
-                className="h-10 px-3.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="h-10 px-3.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-dark)] hover:brightness-110 disabled:opacity-50 inline-flex items-center gap-1.5"
               >
                 {bulkBusy ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -992,7 +984,7 @@ export default function VendorApplicationsModule() {
               Sin aplicaciones que mostrar
             </p>
             <p className="text-sm text-[var(--text-tertiary)] mt-1">
-              Ajustá los filtros para ver más.
+              Ajusta los filtros para ver más.
             </p>
             {(search ||
               categoryFilter !== "all" ||
@@ -1003,7 +995,7 @@ export default function VendorApplicationsModule() {
                   setCategoryFilter("all");
                   setDistrictFilter("all");
                 }}
-                className="mt-4 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                className="mt-4 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
               >
                 Limpiar filtros
               </button>
@@ -1014,7 +1006,6 @@ export default function VendorApplicationsModule() {
             {/* ── Mobile: cards ───────────────────────────────── */}
             <ul className="md:hidden space-y-2.5">
               {filtered.map((a) => {
-                const sla = slaInfo(a.submittedAt);
                 const isSel = selectedIds.has(a.id);
                 return (
                   <li
@@ -1045,14 +1036,17 @@ export default function VendorApplicationsModule() {
                           {a.ownerName}
                         </p>
                       </div>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0",
-                          STATUS_STYLES[a.status],
-                        )}
-                      >
-                        {STATUS_LABELS[a.status]}
-                      </span>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
+                            STATUS_STYLES[a.status],
+                          )}
+                        >
+                          {STATUS_LABELS[a.status]}
+                        </span>
+                        <ApplicationScoreBadge score={a.score} />
+                      </div>
                     </div>
 
                     <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
@@ -1093,7 +1087,7 @@ export default function VendorApplicationsModule() {
                     <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-[var(--rule-soft)]">
                       <button
                         onClick={() => openDetails(a)}
-                        className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                        className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
                       >
                         <Eye className="h-4 w-4" />
                         Detalles
@@ -1112,7 +1106,7 @@ export default function VendorApplicationsModule() {
                             onClick={() => openDetails(a)}
                             title="Rechazar"
                             aria-label="Rechazar"
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-rose-700 hover:bg-rose-100 dark:text-rose-300 dark:hover:bg-rose-500/15"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-[var(--data-error)] hover:bg-[var(--data-error-100)]"
                           >
                             <X className="h-5 w-5" />
                           </button>
@@ -1120,7 +1114,7 @@ export default function VendorApplicationsModule() {
                             onClick={() => handleApprove(a.id)}
                             title="Aprobar"
                             aria-label="Aprobar"
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white bg-emerald-600 hover:bg-emerald-700"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white bg-[var(--accent-dark)] hover:brightness-110"
                           >
                             <Check className="h-5 w-5" />
                           </button>
@@ -1219,7 +1213,7 @@ export default function VendorApplicationsModule() {
                               onClick={() => copy(a.ruc, "RUC")}
                               title="Copiar RUC"
                               aria-label="Copiar RUC"
-                              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
                             >
                               <Copy className="h-3.5 w-3.5" />
                             </button>
@@ -1242,15 +1236,18 @@ export default function VendorApplicationsModule() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-3 py-3 text-center">
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
-                              STATUS_STYLES[a.status],
-                            )}
-                          >
-                            {STATUS_LABELS[a.status]}
-                          </span>
+                        <td className="px-3 py-3">
+                          <div className="flex flex-col items-center gap-1">
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
+                                STATUS_STYLES[a.status],
+                              )}
+                            >
+                              {STATUS_LABELS[a.status]}
+                            </span>
+                            <ApplicationScoreBadge score={a.score} />
+                          </div>
                         </td>
                         <td className="pr-5 pl-3 py-3 text-right">
                           <div className="flex items-center justify-end gap-0.5">
@@ -1267,7 +1264,7 @@ export default function VendorApplicationsModule() {
                                 <button
                                   onClick={() => handleApprove(a.id)}
                                   aria-label="Aprobar"
-                                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-emerald-100 hover:text-emerald-700 dark:hover:bg-emerald-500/15 dark:hover:text-emerald-300"
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--data-success-100)] hover:text-[var(--data-success-700)] dark:hover:bg-[var(--data-success-500)]/15 dark:hover:text-[var(--data-success-500)]"
                                   title="Aprobar"
                                 >
                                   <Check className="h-4 w-4" />
@@ -1283,7 +1280,7 @@ export default function VendorApplicationsModule() {
                                 <button
                                   onClick={() => openDetails(a)}
                                   aria-label="Rechazar"
-                                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-rose-100 hover:text-rose-700 dark:hover:bg-rose-500/15 dark:hover:text-rose-300"
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--data-error-100)] hover:text-[var(--data-error)]"
                                   title="Rechazar"
                                 >
                                   <X className="h-4 w-4" />
@@ -1294,7 +1291,7 @@ export default function VendorApplicationsModule() {
                               <button
                                 onClick={() => handleReopen(a.id)}
                                 aria-label="Reabrir"
-                                className="inline-flex h-9 px-2.5 items-center justify-center rounded-lg text-xs font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 dark:text-amber-300 dark:bg-amber-500/15 dark:hover:bg-amber-500/25"
+                                className="inline-flex h-9 px-2.5 items-center justify-center rounded-lg text-xs font-bold text-teal-700 bg-teal-100 hover:bg-teal-200 dark:text-teal-300 dark:bg-teal-500/15 dark:hover:bg-teal-500/25"
                                 title="Reabrir aplicación"
                               >
                                 Reabrir

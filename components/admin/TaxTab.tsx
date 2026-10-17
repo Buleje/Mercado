@@ -1,288 +1,166 @@
 "use client";
 
-import { LoadingState, PageTitle } from "@buleje/design-system";
-import { useState, useEffect, useMemo } from "react";
-import {
-  Receipt, Loader2, RefreshCw, AlertTriangle,
-  CheckCircle, BookOpen,
-} from "@buleje/design-system/icons";
-import { cn, exportToCSV } from "@/lib/utils";
-import AdminCard from "./shared/AdminCard";
-import StatusBadge from "./shared/StatusBadge";
+/**
+ * Mi Plata › Impuestos y reportes › Impuestos del mes: CUÁNTO pagar a SUNAT y
+ * CUÁNDO. El cálculo vive en `impuestos/impuestos-del-mes.ts` (misma regla de
+ * IGV que el Resumen) y los totales salen de endpoints del servidor.
+ *
+ * Antes (medido 11-10): un «Libro tributario» armado en el navegador con
+ * boletas inventadas (B001-00000001…) sólo de pedidos web, IGV = ×18/118 y un
+ * botón «Declarar» por fila que no guardaba nada. El registro real de ventas y
+ * compras está en «Para el contador» (formatos 14.1 y 8.1).
+ *
+ * Dos secciones en `?sub=` (11-10, «muchos datos → secciones»): «El mes» y
+ * «El año» (la tabla de los 12 meses, antes un bloque plegable debajo).
+ */
+import { useState } from "react";
+import { toast } from "sonner";
+import { SectionTitle } from "@buleje/design-system";
+import { BookOpen, CheckCircle, FileText, MoreHorizontal, RefreshCw, Settings2 } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { limaDateKey } from "@/lib/utils";
+import { REGIMEN_LABELS } from "@/lib/tax/obligaciones-peru";
+import { nombreDelMes } from "./impuestos/impuestos-del-mes";
+import { useConfigTributaria, useDeclaraciones, type EstadoDeclaracion } from "./impuestos/use-impuestos";
+import { useImpuestosDelMes } from "./impuestos/use-impuestos-del-mes";
+import ApagarDelMes from "./impuestos/APagarDelMes";
+import ObligacionesTab from "./ObligacionesTab";
+import { BarraDeSecciones, idPestanaDeSeccion, type SeccionDeBarra } from "@/components/admin/shared/BarraDeSecciones";
+import { button } from "@/components/ui-system/button-variants";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import RegimenModal from "./impuestos/RegimenModal";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+type Seccion = "mes" | "anio";
+const SECCIONES: readonly SeccionDeBarra<Seccion>[] = [
+  { clave: "mes", rotulo: "El mes" },
+  { clave: "anio", rotulo: "El año" },
+];
+const CLAVES: readonly Seccion[] = ["mes", "anio"];
+const ID_PANEL = "impuestos-panel";
+const CONTROL = "h-12 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none";
 
-type TaxLine = {
-  id: string;
-  date: string;
-  type: "venta" | "compra";
-  docType: string;     // Factura / Boleta
-  serie: string;
-  number: string;
-  entity: string;      // Cliente o Proveedor
-  entityDoc: string;   // RUC/DNI
-  base: number;        // Base imponible
-  igv: number;         // IGV = base * 0.18
-  total: number;
-  status: "pendiente" | "declarado";
+const AYUDA: Record<Seccion, { title: string; what: string; affects: string; example: string }> = {
+  mes: {
+    title: "Impuestos del mes",
+    what: "Cuánto le pagas a SUNAT por el mes y hasta cuándo: el IGV de lo que registraste (comprobantes electrónicos menos el IGV de tus gastos) y el pago a cuenta de la Renta según tu régimen.",
+    affects: "Es una estimación con lo registrado: no reemplaza a tu contador. No incluye planilla (ESSALUD, ONP/AFP), detracciones, percepciones ni ITAN.",
+    example: "Régimen MYPE: 1 % de tus ingresos netos del mes. Vendiste S/ 10,000 sin comprobantes electrónicos → Renta S/ 100 e IGV sin registro.",
+  },
+  anio: {
+    title: "El año",
+    what: "La misma cuenta que «El mes», mes por mes (Formulario 621 de cada uno), y si marcaste la declaración presentada o pagada.",
+    affects: "Otras declaraciones: PLAME (sólo si tienes trabajadores en planilla: ESSALUD 9 %, ONP/AFP) y la Renta anual (marzo o abril del año siguiente, sobre la renta neta del ejercicio; no se estima acá).",
+    example: "Marcas octubre como pagada en «El mes» y en «El año» la fila de octubre dice «Pagada».",
+  },
 };
 
-type PeriodSummary = {
-  salesBase: number;
-  salesIGV: number;
-  purchasesBase: number;
-  purchasesIGV: number;
-  igvBalance: number;   // IGV ventas - IGV compras = saldo a pagar/favor
+const SIGUIENTE: Record<EstadoDeclaracion, { estado: EstadoDeclaracion; rotulo: string } | null> = {
+  pendiente: { estado: "presentada", rotulo: "Marcar presentada" },
+  presentada: { estado: "pagada", rotulo: "Marcar pagada" },
+  pagada: null,
 };
-
-const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-
-function fmt(n: number) {
-  return `S/ ${Math.abs(n).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-function fmtDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
-  catch { return iso; }
-}
-
-// Build mock tax lines
-function buildMockLines(year: number, month: number): TaxLine[] {
-  const prefix = `${year}-${String(month + 1).padStart(2, "0")}`;
-  const days = [2, 5, 7, 10, 12, 14, 17, 19, 22, 25, 28];
-  const entities = ["Restaurante El Sol SAC", "Bodega Don Pepe", "María García", "Carlos López", "Proveedo Alimentos SA", "Distribuidora Lima"];
-  const result: TaxLine[] = [];
-
-  for (let i = 0; i < days.length; i++) {
-    const date = `${prefix}-${String(days[i]).padStart(2, "0")}`;
-    const isVenta = i % 3 !== 0;
-    const base = parseFloat((200 + Math.random() * 1500).toFixed(2));
-    const igv = parseFloat((base * 0.18).toFixed(2));
-    result.push({
-      id: `tx-${i}`,
-      date,
-      type: isVenta ? "venta" : "compra",
-      docType: isVenta ? (i % 2 === 0 ? "Boleta" : "Factura") : "Factura",
-      serie: isVenta ? (i % 2 === 0 ? "B001" : "F001") : "FC01",
-      number: String(i + 1).padStart(8, "0"),
-      entity: entities[i % entities.length],
-      entityDoc: isVenta ? `${10000000 + i * 1234567}` : `20${513000000 + i * 123456}`,
-      base,
-      igv,
-      total: parseFloat((base + igv).toFixed(2)),
-      status: i < 6 ? "declarado" : "pendiente",
-    });
-  }
-  return result.sort((a, b) => a.date.localeCompare(b.date));
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function TaxTab() {
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
-  const [loading, setLoading] = useState(true);
-  const [lines, setLines] = useState<TaxLine[]>([]);
-  const [view, setView] = useState<"ventas" | "compras" | "resumen">("resumen");
+  const hoy = limaDateKey().slice(0, 7);
+  const [mes, setMes] = useState(hoy);
   const [tick, setTick] = useState(0);
+  const [regimenAbierto, setRegimenAbierto] = useState(false);
+  const { vista: seccion, irA } = useSubvistaModulo<Seccion>("plata-impuestos", CLAVES, "mes");
+  const anioActual = Number(hoy.slice(0, 4));
+  const [anio, setAnio] = useState(anioActual);
+  const ayuda = AYUDA[seccion];
+  const config = useConfigTributaria();
+  const declaraciones = useDeclaraciones(Number(mes.slice(0, 4)));
+  const { calculo, cargando, error, kpis } = useImpuestosDelMes(mes, config.regimen, tick);
+  const estado = declaraciones.estadoDe(mes);
+  const siguiente = SIGUIENTE[estado];
 
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  const marcar = (nuevo: EstadoDeclaracion) =>
+    declaraciones.marcar(mes, nuevo, calculo?.total).catch(() => toast.error("No se pudo guardar. Intenta de nuevo."));
 
-    Promise.all([
-      fetch(`/api/orders?from=${from}&to=${to}`).then(r => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([orders]) => {
-      if (!active) return;
-      // If real orders exist, generate tax lines from them; else use mock
-      if (Array.isArray(orders) && orders.length > 0) {
-        const realLines: TaxLine[] = orders
-          .filter((o: { status: string }) => o.status === "entregado" || o.status === "confirmado")
-          .map((o: { id: string; createdAt: string; total: number; customer: { name: string; phone: string } }, i: number) => {
-            const base = parseFloat((o.total / 1.18).toFixed(2));
-            const igv = parseFloat((o.total - base).toFixed(2));
-            return {
-              id: `ord-${o.id}`,
-              date: o.createdAt.slice(0, 10),
-              type: "venta" as const,
-              docType: "Boleta",
-              serie: "B001",
-              number: String(i + 1).padStart(8, "0"),
-              entity: o.customer?.name ?? "Cliente",
-              entityDoc: o.customer?.phone ?? "—",
-              base, igv, total: o.total,
-              status: "pendiente" as const,
-            };
-          });
-        setLines(realLines.length > 0 ? realLines : buildMockLines(year, month));
-      } else {
-        setLines(buildMockLines(year, month));
-      }
-      setLoading(false);
-    });
-
-    return () => { active = false; };
-  }, [year, month, tick]);
-
-  const summary = useMemo<PeriodSummary>(() => {
-    const ventas = lines.filter(l => l.type === "venta");
-    const compras = lines.filter(l => l.type === "compra");
-    const salesBase = ventas.reduce((s, l) => s + l.base, 0);
-    const salesIGV = ventas.reduce((s, l) => s + l.igv, 0);
-    const purchasesBase = compras.reduce((s, l) => s + l.base, 0);
-    const purchasesIGV = compras.reduce((s, l) => s + l.igv, 0);
-    return { salesBase, salesIGV, purchasesBase, purchasesIGV, igvBalance: salesIGV - purchasesIGV };
-  }, [lines]);
-
-  const visibleLines = view === "resumen" ? lines : lines.filter(l => l.type === (view === "ventas" ? "venta" : "compra"));
-
-  const handleDeclare = (id: string) => {
-    setLines(prev => prev.map(l => l.id === id ? { ...l, status: "declarado" } : l));
-  };
-
-  const handleExportBook = (type: "ventas" | "compras") => {
-    const filtered = lines.filter(l => l.type === (type === "ventas" ? "venta" : "compra"));
-    exportToCSV(filtered.map(l => ({ fecha: l.date, tipo_doc: l.docType, serie: l.serie, número: l.number, entidad: l.entity, ruc_dni: l.entityDoc, base_imponible: l.base, igv: l.igv, total: l.total, estado: l.status })), `libro-${type}-${MONTHS[month]}-${year}`);
-  };
+  const acciones: MenuAccion[] = [
+    {
+      id: "regimen",
+      label: "Régimen y RUC",
+      hint: "Cambian la tasa de la Renta y la semana en que vence",
+      meta: config.regimen.toUpperCase(),
+      icon: Settings2,
+      onSelect: () => setRegimenAbierto(true),
+    },
+    { id: "libros", label: "Libros para el contador", hint: "Registro de ventas y de compras del mes, en Excel", icon: BookOpen, onSelect: () => irAEnlace("/admin?tab=plata&vista=contador"), seccion: "Ver" },
+    { id: "hoja", label: "El mes en una hoja", hint: "Ingresos, gastos y utilidad en PDF", icon: FileText, onSelect: () => irAEnlace("/admin?tab=plata&vista=reportes"), seccion: "Ver" },
+    ...(estado !== "pendiente"
+      ? [{ id: "pendiente", label: "Volver a pendiente", hint: "Si la marcaste por error", icon: RefreshCw, onSelect: () => void marcar("pendiente") }]
+      : []),
+    { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: () => setTick((t) => t + 1) },
+  ];
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header — kicker uppercase + H1 + subtitle */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">SUNAT / Tributario</p>
-          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Receipt className="h-5 w-5 currentColor" />
-            Impuestos &amp; IGV
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Registro de ventas y compras, libro tributario, IGV a pagar</p>
+    <div className="space-y-4">
+      {/* Una fila: título · ⓘ · secciones · mes o año · Indicadores · acción del mes · Más */}
+      <div className="flex flex-wrap items-center gap-2 xl:flex-nowrap">
+        <div className="flex shrink-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Impuestos</SectionTitle>
+          <InfoTip title={ayuda.title} what={ayuda.what} affects={ayuda.affects} example={ayuda.example} />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-            {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-          </select>
-          <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-            {[now.getFullYear() - 1, now.getFullYear()].map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
-          </button>
-          <button onClick={() => handleExportBook("ventas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-            <BookOpen className="h-4 w-4" /> Libro ventas
-          </button>
-          <button onClick={() => handleExportBook("compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-            <BookOpen className="h-4 w-4" /> Libro compras
-          </button>
+        <div className="min-w-0">
+          <BarraDeSecciones secciones={SECCIONES} activa={seccion} onCambiar={irA} etiqueta="Secciones de Impuestos" idPanel={ID_PANEL} />
+        </div>
+        {seccion === "mes" ? (
+          <>
+            <label className="sr-only" htmlFor="impuestos-mes">Mes</label>
+            <input id="impuestos-mes" type="month" value={mes} max={hoy} onChange={(e) => e.target.value && setMes(e.target.value)} className={CONTROL} />
+          </>
+        ) : (
+          <>
+            <label className="sr-only" htmlFor="impuestos-anio">Año</label>
+            <select id="impuestos-anio" value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={CONTROL}>
+              {[anioActual, anioActual - 1].map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </>
+        )}
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {seccion === "mes" && kpis.boton}
+          {seccion === "mes" && siguiente ? (
+            <button
+              type="button"
+              onClick={() => void marcar(siguiente.estado)}
+              className={button({ variant: "primary", className: "shrink-0 rounded-xl px-4" })}
+              title={`Formulario 621 de ${nombreDelMes(mes)}`}
+            >
+              <CheckCircle className="h-4 w-4" aria-hidden />
+              {siguiente.rotulo}
+            </button>
+          ) : null}
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Régimen y RUC, libros para el contador, el mes en una hoja" />
         </div>
       </div>
 
-      {loading ? (
-        <LoadingState />
-      ) : (
-        <>
-          {/* IGV Balance card — AdminCard + intent via StatusBadge */}
-          <AdminCard padding="lg">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[var(--ls-wider)] font-semibold text-[var(--text-tertiary)] mb-2">IGV del período — {MONTHS[month]} {year}</p>
-                <p className={cn("text-4xl font-semibold tabular-nums", summary.igvBalance > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>
-                  {fmt(summary.igvBalance)}
-                </p>
-                <div className="mt-2">
-                  <StatusBadge
-                    variant={summary.igvBalance > 0 ? "warning" : "success"}
-                    label={summary.igvBalance > 0 ? "IGV a pagar a SUNAT" : "Crédito fiscal a favor"}
-                    dot
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 text-center">
-                  <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">IGV Ventas</p>
-                  <p className="font-semibold text-[var(--data-success-500)] tabular-nums">{fmt(summary.salesIGV)}</p>
-                  <p className="text-xs text-[var(--text-tertiary)] tabular-nums">Base: {fmt(summary.salesBase)}</p>
-                </div>
-                <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 text-center">
-                  <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">IGV Compras</p>
-                  <p className="font-semibold text-[var(--data-success-500)] tabular-nums">{fmt(summary.purchasesIGV)}</p>
-                  <p className="text-xs text-[var(--text-tertiary)] tabular-nums">Base: {fmt(summary.purchasesBase)}</p>
-                </div>
-              </div>
-            </div>
-          </AdminCard>
+      <div role="tabpanel" id={ID_PANEL} aria-labelledby={idPestanaDeSeccion(ID_PANEL, seccion)} className="space-y-4">
+        {seccion === "mes" ? (
+          <>
+            {kpis.panel}
+            <ApagarDelMes
+              mes={mes}
+              calculo={calculo}
+              cargando={cargando || !config.lista}
+              error={error}
+              estado={estado}
+              regimen={REGIMEN_LABELS[config.regimen]}
+              ruc={config.ruc}
+              onRuc={() => setRegimenAbierto(true)}
+              onReintentar={() => setTick((t) => t + 1)}
+            />
+          </>
+        ) : (
+          <ObligacionesTab anio={anio} />
+        )}
+      </div>
 
-          {/* Tabs */}
-          <div className="flex flex-wrap items-center gap-2">
-            {(["resumen", "ventas", "compras"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
-                {v === "resumen" ? "Todos" : v === "ventas" ? "Libro de ventas" : "Libro de compras"}
-              </button>
-            ))}
-          </div>
-
-          {/* Table */}
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-y-hidden overflow-x-auto">
-            <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                <tr>
-                  <th className="text-left px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Fecha</th>
-                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Tipo</th>
-                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Doc</th>
-                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Entidad</th>
-                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Base</th>
-                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">IGV</th>
-                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Total</th>
-                  <th className="text-center px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Estado</th>
-                  <th className="text-center px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Acc.</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-card-border">
-                {visibleLines.map(line => (
-                  <tr key={line.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
-                    <td className="px-5 py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>
-                    <td className="px-3 py-3">
-                      <StatusBadge variant={line.type === "venta" ? "success" : "neutral"} label={line.type === "venta" ? "V" : "C"} size="sm" />
-                    </td>
-                    <td className="px-3 py-3 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell font-mono">{line.serie}-{line.number}</td>
-                    <td className="px-3 py-3">
-                      <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[140px]">{line.entity}</p>
-                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{line.entityDoc}</p>
-                    </td>
-                    <td className="px-3 py-3 text-right text-sm text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmt(line.base)}</td>
-                    <td className="px-3 py-3 text-right font-semibold text-[var(--data-warning-500)]">{fmt(line.igv)}</td>
-                    <td className="px-3 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(line.total)}</td>
-                    <td className="px-3 py-3 text-center hidden sm:table-cell">
-                      <StatusBadge variant={line.status === "declarado" ? "success" : "pending"} label={line.status === "declarado" ? "Declarado" : "Pendiente"} size="sm" />
-                    </td>
-                    <td className="px-3 py-3 text-center hidden sm:table-cell">
-                      {line.status === "pendiente" && (
-                        <button onClick={() => handleDeclare(line.id)} className="text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-semibold transition-colors">Declarar</button>
-                      )}
-                      {line.status === "declarado" && <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] mx-auto" />}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {visibleLines.length === 0 && <p className="text-center py-10 text-[var(--text-tertiary)] dark:text-muted text-sm">Sin registros para el período.</p>}
-          </div>
-
-          {/* Pending alert — AdminCard con intent warning */}
-          {lines.filter(l => l.status === "pendiente").length > 0 && (
-            <AdminCard padding="md" className="flex items-start gap-3 border-l-2 border-l-[var(--data-warning)]">
-              <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)]">Registros pendientes de declaración</p>
-                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                  Tienes {lines.filter(l => l.status === "pendiente").length} registro(s) aún no marcados como declarados ante SUNAT.
-                </p>
-              </div>
-            </AdminCard>
-          )}
-        </>
+      {regimenAbierto && (
+        <RegimenModal open onClose={() => setRegimenAbierto(false)} regimen={config.regimen} ruc={config.ruc} guardar={config.guardar} />
       )}
     </div>
   );

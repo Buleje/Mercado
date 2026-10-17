@@ -12,6 +12,15 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 
+type SettingsContacto = {
+  tenantId: string;
+  logoUrl: string | null;
+  businessPhone: string | null;
+  whatsappBusinessNum: string | null;
+  ruc: string | null;
+  sunatRuc: string | null;
+};
+
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return null;
@@ -100,10 +109,10 @@ async function getTenantsData() {
       }).catch(() => [] as Array<{ tenantId: string; _sum: { amount: number | null } }>),
       // Logos configurados por el admin de cada tenant en Settings.
       // Tienen prioridad sobre Tenant.logoUrl porque reflejan lo último que el dueño puso.
+      // + teléfonos y RUC para buscar un negocio por su número (SUPMKT-3, 2026-10-09).
       prisma.settings.findMany({
-        select: { tenantId: true, logoUrl: true },
-        where: { logoUrl: { not: null } },
-      }).catch(() => [] as Array<{ tenantId: string; logoUrl: string | null }>),
+        select: { tenantId: true, logoUrl: true, businessPhone: true, whatsappBusinessNum: true, ruc: true, sunatRuc: true },
+      }).catch(() => [] as SettingsContacto[]),
     ]);
 
     // AdminUser.tenantId = slug, Order.tenantId = slug OR cuid (varies by tenant)
@@ -129,10 +138,11 @@ async function getTenantsData() {
     );
     // Settings.logoUrl indexado por tenantId (que en Settings es el slug)
     const settingsLogoMap = Object.fromEntries(
-      (settingsLogos as Array<{ tenantId: string; logoUrl: string | null }>)
+      (settingsLogos as SettingsContacto[])
         .filter((r) => r.logoUrl)
         .map((r) => [r.tenantId, r.logoUrl as string])
     );
+    const settingsMap = new Map((settingsLogos as SettingsContacto[]).map((r) => [r.tenantId, r]));
 
     // Audit performance #1 (2026-05-19): convertido de `getTenantUsage(slug)`
     // fan-out (4 queries × N tenants = 4N queries → 4000 con 1000 tenants)
@@ -167,9 +177,13 @@ async function getTenantsData() {
       // Logo: Settings primero (lo que el admin sube), Tenant.logoUrl como fallback
       const settingsLogo = settingsLogoMap[t.slug] ?? settingsLogoMap[t.id] ?? null;
       const effectiveLogo = settingsLogo ?? t.logoUrl ?? null;
+      const contacto = settingsMap.get(t.id) ?? settingsMap.get(t.slug);
       return {
         ...t,
         logoUrl: effectiveLogo,
+        businessPhone: contacto?.businessPhone ?? null,
+        whatsappPhone: contacto?.whatsappBusinessNum ?? null,
+        ruc: contacto?.ruc || contacto?.sunatRuc || null,
         _count: { AdminUser: adminCount },
         usage,
         limits: {

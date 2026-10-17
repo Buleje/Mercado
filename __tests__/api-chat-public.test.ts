@@ -38,6 +38,7 @@ vi.mock("@/lib/feature-flags", () => ({
 
 // ─── Mock cache ────────────────────────────────────────────────────────────
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: async <T>(_k: string, _ttl: number, fn: () => Promise<T>) => fn(),
   invalidateByPrefix: vi.fn(),
 }));

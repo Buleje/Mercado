@@ -109,7 +109,7 @@ export default function CheckoutAuthGate() {
           className="pointer-events-none absolute inset-0 flex items-center justify-center"
         >
           <div className="text-center max-w-md opacity-40">
-            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
+            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
               <ShieldCheck className="h-7 w-7" strokeWidth={1.75} aria-hidden />
             </span>
             <p className="text-xl sm:text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">

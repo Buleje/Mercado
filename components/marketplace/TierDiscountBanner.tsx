@@ -23,8 +23,8 @@ const ICON_MAP = {
 
 const COLOR_MAP = {
   frecuente: { bg: "var(--accent-soft)", border: "var(--accent)", text: "var(--accent)" },
-  vip: { bg: "#FED7AA", border: "#EA580C", text: "#92400E" },
-  embajador: { bg: "#FEF3C7", border: "#F59E0B", text: "#B45309" },
+  vip: { bg: "#ffe1dd", border: "#f0503f", text: "#842e25" },
+  embajador: { bg: "#fff1ef", border: "#ff6b5b", text: "#c93b2c" },
 } as const;
 
 interface TierDiscountBannerProps {
@@ -78,10 +78,10 @@ export default function TierDiscountBanner({
           {tier.label} · {count} pedidos
         </p>
         <p className="text-sm font-bold mt-0.5" style={{ color: colors.text }}>
-          Tenés <span className="text-base font-black">{tier.discountPct}%</span> off extra
+          Tienes <span className="text-base font-black">{tier.discountPct}%</span> off extra
           {savings != null && savings > 0 && (
             <span className="font-normal opacity-80">
-              {" "}— ahorrás S/ {savings.toFixed(2)} en este pedido
+              {" "}— ahorras S/ {savings.toFixed(2)} en este pedido
             </span>
           )}
         </p>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-const COLORS = ["var(--accent)", "#f59e0b", "#e63946", "#3b82f6", "#ffd166", "color-mix(in oklab, var(--accent) 70%, white)"];
+const COLORS = ["var(--accent)", "#ff6b5b", "#e63946", "#3b82f6", "#ffd166", "color-mix(in oklab, var(--accent) 70%, white)"];
 
 export default function Confetti({ active }: { active: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

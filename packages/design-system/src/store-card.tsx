@@ -290,7 +290,7 @@ export function StoreCardCanonical({
         )}
 
         {/* Nombre (+ slot inline opcional, ej: check de verificado) */}
-        <p
+        <div
           className={cn(
             "line-clamp-2 leading-[var(--lh-snug)] text-[var(--text-primary)]",
             nameSize,
@@ -300,7 +300,7 @@ export function StoreCardCanonical({
           {nameSuffix != null && (
             <span className="ml-1 inline-flex align-middle">{nameSuffix}</span>
           )}
-        </p>
+        </div>
 
         {/* Slot footer — debajo del nombre */}
         {footer != null && (

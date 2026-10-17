@@ -1,0 +1,2 @@
+# D-FINE-S (≈41,5 MB): lo baja scripts/copy-onnx-assets.mjs en postinstall (revisión fija + hash).
+dfine_s_obj2coco.onnx

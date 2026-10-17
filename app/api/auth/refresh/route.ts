@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getRefreshPayload,
+  getSessionPayload,
   createSessionToken,
   createRefreshToken,
   SESSION,
@@ -12,6 +13,8 @@ import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
 import { isSessionRevoked } from "@/lib/auth/session-revocation";
+import { anotarSucesor, anularSucesores, cerrarRefresh, decidirReuso } from "@/lib/auth/refresh-sucesor";
+import { esSuplantacion } from "@/lib/auth/suplantacion";
 
 /**
  * POST /api/auth/refresh
@@ -23,6 +26,48 @@ import { isSessionRevoked } from "@/lib/auth/session-revocation";
 export async function POST(req: NextRequest) {
   const rateLimitResponse = applyRateLimit(req, "MODERATE", "auth:refresh");
   if (rateLimitResponse) return rateLimitResponse;
+
+  // Suplantación del superadmin («Entrar como esta tienda», 11-10): su sesión no
+  // tiene refresh y vive sólo sus 10 min. El panel pide refresh al montar; antes
+  // eso daba 401 «no refresh token» → el cliente mandaba a /admin/login. Y si el
+  // navegador guardaba el refresh de OTRA sesión (el dueño logueado en su bodega),
+  // lo rotaba y la pestaña de Musa quedaba con la sesión de main. Mientras la
+  // suplantación siga viva manda ella: se confirma sin rotar y se borra cualquier
+  // refresh ajeno. Cuando su cookie vence, cae al 401 de siempre.
+  // Una suplantación ya cerrada (logout, «Salir» o «cerrar todas las sesiones»)
+  // no se confirma: cae al 401 de abajo (security 11-10).
+  const accesoActual = req.cookies.get(SESSION.COOKIE_NAME)?.value;
+  const sesionActual = accesoActual ? await getSessionPayload(accesoActual) : null;
+  const suplantacionAnulada =
+    !!sesionActual &&
+    ((!!sesionActual.jti && !!cacheStore.get(`revoked-access:${sesionActual.jti}`)) ||
+      isSessionRevoked(sesionActual.jti, sesionActual.tenantId, sesionActual.username));
+  if (sesionActual && esSuplantacion(sesionActual.username) && suplantacionAnulada) {
+    // Ni se confirma ni se rota un refresh que haya quedado: la vista terminó.
+    const res = NextResponse.json({ error: "session revoked" }, { status: 401 });
+    res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+    return res;
+  }
+  if (sesionActual && esSuplantacion(sesionActual.username)) {
+    const res = NextResponse.json(
+      {
+        ok: true,
+        suplantacion: true,
+        role: sesionActual.role,
+        username: sesionActual.username,
+        tenantId: sesionActual.tenantId,
+      },
+      { headers: { "Cache-Control": "no-store, max-age=0" } },
+    );
+    const refreshAjeno = req.cookies.get(REFRESH.COOKIE_NAME)?.value;
+    if (refreshAjeno) {
+      // Borrar la cookie no basta: se anula en el servidor como en el logout.
+      const ajeno = await getRefreshPayload(refreshAjeno);
+      if (ajeno?.jti) cerrarRefresh(cacheStore, ajeno.jti);
+      res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+    }
+    return res;
+  }
 
   const refreshToken = req.cookies.get(REFRESH.COOKIE_NAME)?.value;
 
@@ -56,39 +101,38 @@ export async function POST(req: NextRequest) {
     return res;
   }
 
-  // SECURITY 2026-05-06 (pentest H007) + FIX 2026-06: jti rotation con ventana
-  // de gracia. El blacklist evita REPLAY de un refresh token robado/viejo, pero
-  // el cliente legítimamente dispara refresh CONCURRENTES al cargar (varios
-  // hooks + React StrictMode double-mount). Sin gracia, el 2º request (mismo
-  // jti, enviado antes de que llegue la cookie rotada) caía como "replay" → 401
-  // + logout, rebotando al usuario a /login tras cada deploy/restart.
-  // Fix: dentro de GRACE_MS desde el 1er consumo es un refresh concurrente
-  // benigno → re-rota (re-emite par válido). Pasada la gracia = replay real → 401.
-  // Tokens viejos sin jti (pre-fix) se aceptan una vez para back-compat.
+  // SECURITY 2026-05-06 (pentest H007) + FIX 2026-06 + 2026-10-09: rotación con
+  // detección de reuso. Gracia de 30 s para pedidos simultáneos (varios hooks,
+  // StrictMode). Fuera de la gracia, si NINGÚN token emitido a partir de éste se
+  // usó todavía, la respuesta anterior se perdió (reinicio del servidor, 4G que
+  // se corta, recarga a mitad): se rota otra vez y se anulan esos sucesores sin
+  // usar. Si alguno ya se usó, hay dos copias → replay real → 401 (ver
+  // lib/auth/refresh-sucesor.ts). Tokens viejos sin jti se aceptan una vez.
+  let anularTrasRotar: string[] = [];
   if (payload.jti) {
-    const blacklistKey = `refresh-jti:consumed:${payload.jti}`;
-    const GRACE_MS = 30_000;
-    const consumedAt = cacheStore.get<number>(blacklistKey);
-    if (typeof consumedAt === "number") {
-      if (Date.now() - consumedAt > GRACE_MS) {
-        logger.warn("[auth/refresh] jti replay attempt (beyond grace)", {
-          username: payload.username,
-          jti: payload.jti,
-        });
-        const res = NextResponse.json({ error: "refresh token already used" }, { status: 401 });
-        res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
-        res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
-        return res;
-      }
-      // Dentro de la ventana de gracia → refresh concurrente legítimo. NO
-      // limpiar cookies ni bloquear; se re-rota abajo (par nuevo y válido).
+    const decision = decidirReuso(cacheStore, payload.jti, Date.now());
+    if (decision.tipo === "robo") {
+      logger.warn("[auth/refresh] jti replay attempt (beyond grace, successor already used)", {
+        username: payload.username,
+        jti: payload.jti,
+      });
+      const res = NextResponse.json({ error: "refresh token already used" }, { status: 401 });
+      res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+      res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+      return res;
+    }
+    if (decision.tipo === "respuesta-perdida") {
+      logger.warn("[auth/refresh] lost rotation response — re-rotating, unused successors voided", {
+        username: payload.username,
+        jti: payload.jti,
+        anulados: decision.anular.length,
+      });
+      anularTrasRotar = decision.anular;
+    } else if (decision.tipo === "concurrente") {
       logger.debug("[auth/refresh] concurrent refresh within grace window", {
         username: payload.username,
         jti: payload.jti,
       });
-    } else {
-      // Primer consumo — marcar con timestamp (TTL 7 días, igual al refresh).
-      cacheStore.set(blacklistKey, Date.now(), 7 * 24 * 60 * 60);
     }
   }
 
@@ -120,6 +164,14 @@ export async function POST(req: NextRequest) {
     createSessionToken(payload.role, payload.username, payload.tenantId, payload.name ?? ""),
     createRefreshToken(payload.role, payload.username, payload.tenantId, payload.name ?? ""),
   ]);
+
+  // Anotar el sucesor (para distinguir respuesta perdida de robo) y anular los
+  // que se emitieron y nunca llegaron al navegador.
+  if (payload.jti) {
+    const nuevo = await getRefreshPayload(newRefresh);
+    if (nuevo?.jti) anotarSucesor(cacheStore, payload.jti, nuevo.jti);
+    if (anularTrasRotar.length) anularSucesores(cacheStore, anularTrasRotar);
+  }
 
   const response = NextResponse.json({
     ok: true,

@@ -113,6 +113,12 @@ export interface ISocioBulejeDB {
     userId: string,
   ): Promise<SocioMembershipWithBalance | null>;
 
+  extendPeriod(
+    tenantId: string,
+    userId: string,
+    months: number,
+  ): Promise<SocioMembershipWithBalance | null>;
+
   earnCashback(
     tenantId: string,
     userId: string,

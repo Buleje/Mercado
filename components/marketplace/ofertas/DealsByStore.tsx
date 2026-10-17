@@ -17,10 +17,18 @@ import type { DealStore } from "@/lib/mock-deals";
 
 interface DealsByStoreProps {
   stores: DealStore[];
+  /** "lowest" = sin descuentos reales → NO mostramos "-0%" ni prometemos rebajas. */
+  source?: "deals" | "lowest";
 }
 
-export default function DealsByStore({ stores }: DealsByStoreProps) {
+export default function DealsByStore({ stores, source = "deals" }: DealsByStoreProps) {
   if (stores.length === 0) return null;
+
+  // Anti-contradicción (Brandon 2026-07-07): en modo "lowest" no hay descuentos,
+  // así que mostrar "-0% Máximo/Promedio" bajo el título "Las que más rebajan"
+  // transmite desconfianza. Reframeamos la sección como "bodegas del marketplace"
+  // y reemplazamos las columnas de % por el nº de productos.
+  const hasDiscounts = source === "deals";
 
   return (
     <section
@@ -28,9 +36,13 @@ export default function DealsByStore({ stores }: DealsByStoreProps) {
       className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14"
     >
       <ExplorarSectionHeader
-        kicker="Bodegas en oferta"
-        title="Las que mas rebajan esta semana"
-        subtitle={`${stores.length} bodegas con descuentos activos. Cliquea cualquiera para ver su catalogo en oferta.`}
+        kicker={hasDiscounts ? "Bodegas en oferta" : "Bodegas del marketplace"}
+        title={hasDiscounts ? "Las que más rebajan esta semana" : "Tiendas con más productos"}
+        subtitle={
+          hasDiscounts
+            ? `${stores.length} bodegas con descuentos activos. Cliquea cualquiera para ver su catálogo en oferta.`
+            : `${stores.length} ${stores.length === 1 ? "bodega" : "bodegas"} con productos disponibles. Cliquea cualquiera para ver su catálogo.`
+        }
         ctaLabel="Ver todas las bodegas"
         ctaHref="/tiendas"
       />
@@ -51,12 +63,12 @@ export default function DealsByStore({ stores }: DealsByStoreProps) {
               <div className="p-5 flex items-start gap-4 border-b border-[var(--rule-soft)]">
                 <span
                   aria-hidden
-                  className="inline-flex h-14 w-14 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-2xl font-black tracking-tight"
+                  className="inline-flex h-14 w-14 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-2xl font-bold tracking-tight"
                 >
                   {initial}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] line-clamp-1 group-hover:text-[var(--accent)] transition-colors">
+                  <h3 className="text-lg font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] line-clamp-1 group-hover:text-[var(--accent)] transition-colors">
                     {store.name}
                   </h3>
                   <p className="mt-1 inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
@@ -66,36 +78,43 @@ export default function DealsByStore({ stores }: DealsByStoreProps) {
                 </div>
               </div>
 
-              {/* Stats grid */}
-              <div className="grid grid-cols-3 divide-x divide-[var(--rule-soft)]">
-                <div className="p-3 flex flex-col items-center text-center">
-                  <Tag className="h-3.5 w-3.5 text-[var(--text-tertiary)] mb-1" strokeWidth={1.75} aria-hidden />
-                  <p className="text-[length:var(--ts-base)] font-black tabular-nums text-[var(--text-primary)] leading-none">
-                    {store.activeDeals}
-                  </p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
-                    Ofertas
-                  </p>
+              {/* Stats — con descuentos: Ofertas · Máximo · Promedio.
+                  Sin descuentos (lowest): solo nº de productos (nada de "-0%"). */}
+              {hasDiscounts ? (
+                <div className="grid grid-cols-3 divide-x divide-[var(--rule-soft)]">
+                  <div className="p-3 flex flex-col items-center text-center">
+                    <Tag className="h-3.5 w-3.5 text-[var(--text-tertiary)] mb-1" strokeWidth={1.75} aria-hidden />
+                    <p className="text-[length:var(--ts-base)] font-bold tabular-nums text-[var(--text-primary)] leading-none">
+                      {store.activeDeals}
+                    </p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">Ofertas</p>
+                  </div>
+                  <div className="p-3 flex flex-col items-center text-center">
+                    <StoreIcon className="h-3.5 w-3.5 text-[var(--text-tertiary)] mb-1" strokeWidth={1.75} aria-hidden />
+                    <p className="text-[length:var(--ts-base)] font-bold tabular-nums text-[var(--accent)] leading-none">
+                      -{store.maxDiscountPct}%
+                    </p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">Máximo</p>
+                  </div>
+                  <div className="p-3 flex flex-col items-center text-center">
+                    <Tag className="h-3.5 w-3.5 text-[var(--text-tertiary)] mb-1" strokeWidth={1.75} aria-hidden />
+                    <p className="text-[length:var(--ts-base)] font-bold tabular-nums text-[var(--text-primary)] leading-none">
+                      -{store.avgDiscountPct}%
+                    </p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">Promedio</p>
+                  </div>
                 </div>
-                <div className="p-3 flex flex-col items-center text-center">
-                  <StoreIcon className="h-3.5 w-3.5 text-[var(--text-tertiary)] mb-1" strokeWidth={1.75} aria-hidden />
-                  <p className="text-[length:var(--ts-base)] font-black tabular-nums text-[var(--accent)] leading-none">
-                    -{store.maxDiscountPct}%
-                  </p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
-                    Máximo
-                  </p>
+              ) : (
+                <div className="px-5 py-3.5 flex items-center gap-2 text-[var(--text-secondary)]">
+                  <Tag className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" strokeWidth={1.75} aria-hidden />
+                  <span className="text-sm">
+                    <span className="font-bold tabular-nums text-[var(--text-primary)]">
+                      {store.activeDeals}
+                    </span>{" "}
+                    {store.activeDeals === 1 ? "producto disponible" : "productos disponibles"}
+                  </span>
                 </div>
-                <div className="p-3 flex flex-col items-center text-center">
-                  <Tag className="h-3.5 w-3.5 text-[var(--text-tertiary)] mb-1" strokeWidth={1.75} aria-hidden />
-                  <p className="text-[length:var(--ts-base)] font-black tabular-nums text-[var(--text-primary)] leading-none">
-                    -{store.avgDiscountPct}%
-                  </p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
-                    Promedio
-                  </p>
-                </div>
-              </div>
+              )}
 
               {/* CTA pill */}
               <div className="p-3 border-t border-[var(--rule-soft)]">

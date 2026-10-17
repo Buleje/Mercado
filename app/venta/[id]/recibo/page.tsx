@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Printer, ArrowLeft, Loader2 } from "@buleje/design-system/icons";
 import Link from "next/link";
+import type { Membrete } from "@/lib/admin/membrete";
 
 type Item = { name: string; price: number; quantity: number; unit: string };
 type Sale = {
@@ -14,11 +15,6 @@ type Sale = {
   amountPaid: number;
   change: number;
   createdAt: string;
-};
-type Settings = {
-  businessName?: string;
-  businessPhone?: string;
-  businessAddress?: string;
 };
 
 const PAY_LABELS: Record<string, string> = {
@@ -31,7 +27,8 @@ const PAY_LABELS: Record<string, string> = {
 export default function ReciboPOSPage() {
   const { id } = useParams<{ id: string }>();
   const [sale, setSale] = useState<Sale | null>(null);
-  const [settings, setSettings] = useState<Settings>({});
+  // Nombre (o el registrado si no hay), dirección, teléfono y pie de ESTE negocio.
+  const [negocio, setNegocio] = useState<Partial<Membrete>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -40,13 +37,13 @@ export default function ReciboPOSPage() {
       fetch(`/api/sales/${encodeURIComponent(id)}`).then((r) =>
         r.ok ? r.json() : Promise.reject("Venta no encontrada")
       ),
-      fetch("/api/settings")
+      fetch("/api/admin/membrete")
         .then((r) => (r.ok ? r.json() : {}))
         .catch(() => ({})),
     ])
       .then(([s, cfg]) => {
         setSale(s);
-        setSettings(cfg);
+        setNegocio(cfg);
       })
       .catch((e) => setError(typeof e === "string" ? e : "Error al cargar"))
       .finally(() => setLoading(false));
@@ -81,7 +78,6 @@ export default function ReciboPOSPage() {
     hour: "2-digit",
     minute: "2-digit",
   });
-  const biz = settings.businessName || "Buleje";
 
   return (
     <div className="min-h-screen bg-gray-100 print:bg-white">
@@ -106,15 +102,15 @@ export default function ReciboPOSPage() {
         <div className="p-5 print:p-3">
           {/* Encabezado */}
           <div className="text-center border-b border-dashed border-gray-300 pb-3 mb-3">
-            <h1 className="text-base font-bold text-gray-900">{biz}</h1>
-            {settings.businessAddress && (
+            {negocio.nombre && <h1 className="text-base font-bold text-gray-900">{negocio.nombre}</h1>}
+            {negocio.direccion && (
               <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">
-                {settings.businessAddress}
+                {negocio.direccion}
               </p>
             )}
-            {settings.businessPhone && (
+            {negocio.telefono && (
               <p className="text-[length:var(--ts-2xs)] text-gray-500">
-                Tel: {settings.businessPhone}
+                Tel: {negocio.telefono}
               </p>
             )}
             <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1.5">
@@ -190,11 +186,8 @@ export default function ReciboPOSPage() {
 
           {/* Pie */}
           <div className="mt-4 text-center border-t border-dashed border-gray-300 pt-3">
-            <p className="text-[length:var(--ts-2xs)] text-gray-400">
-              ¡Gracias por su compra!
-            </p>
-            <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">
-              {biz} — Pucallpa, Perú
+            <p className="text-[length:var(--ts-2xs)] text-gray-400 whitespace-pre-line">
+              {negocio.pie || "¡Gracias por tu compra!"}
             </p>
           </div>
         </div>

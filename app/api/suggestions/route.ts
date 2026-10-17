@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, OrdersDB, CustomersDB } from "@/lib/jsondb";
+import { enStockBajo } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 type SuggestionType = "alerta" | "oportunidad" | "optimizacion" | "accion";
 interface Suggestion {
@@ -29,8 +31,14 @@ export async function GET(req: NextRequest) {
 
     // Inventory suggestions
     if (context === "inventario" || context === "general" || context === "compras") {
-      const lowStock = products.filter(p => (p.stock ?? 0) <= (p.stockMin ?? 0));
-      const outOfStock = products.filter(p => (p.stock ?? 0) === 0);
+      // Un solo stock mínimo (09-10): el propio o el global del negocio. Sin
+      // inactivos ni productos que no controlan stock (antes `stock ?? 0` los
+      // contaba como agotados y «bajo el mínimo»: main decía 23, eran 1).
+      // «Stock bajo» = todavía queda algo; los agotados tienen su aviso.
+      const minimoGlobal = await minimoGlobalDelNegocio(auth.tenantId);
+      const conStock = products.filter(p => p.active && typeof p.stock === "number");
+      const outOfStock = conStock.filter(p => (p.stock ?? 0) <= 0);
+      const lowStock = conStock.filter(p => (p.stock ?? 0) > 0 && enStockBajo(p, minimoGlobal));
 
       if (outOfStock.length > 0) {
         suggestions.push({

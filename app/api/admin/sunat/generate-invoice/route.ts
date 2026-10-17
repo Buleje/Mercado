@@ -7,6 +7,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 import { emitirBoleta, emitirFactura } from "@/lib/integrations/sunat";
 import { isSunatOficial } from "@/lib/sunat/modo-oficial";
+import { afectacionDe } from "@/lib/sunat/lineas-comprobante";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { assertCsrf } from "@/lib/auth/csrf";
 
@@ -74,7 +75,7 @@ async function generateInvoice(
     // Orden con items (necesarios para construir el comprobante).
     const order = await prisma.order.findFirst({
       where: { id: parsed.data.orderId, tenantId: auth.tenantId, deletedAt: null },
-      include: { items: true },
+      include: { items: { include: { product: { select: { taxType: true } } } } },
     });
     if (!order) {
       return NextResponse.json({ ok: false, error: "Orden no encontrada" }, { status: 404 });
@@ -87,6 +88,7 @@ async function generateInvoice(
       cantidad: item.quantity,
       precioConIgv: Number(item.price),
       unidad: "NIU",
+      afectacion: afectacionDe(item.product?.taxType),
     }));
 
     const doc = parsed.data.clienteDocumento ?? "";
@@ -99,12 +101,14 @@ async function generateInvoice(
           clienteRuc: doc,
           clienteRazonSocial: parsed.data.clienteNombre,
           items,
+          totalCobrado: Number(order.total),
         })
       : await emitirBoleta(auth.tenantId, {
           orderId: order.id,
           clienteNombre: parsed.data.clienteNombre,
           clienteDni: doc.length === 8 ? doc : undefined,
           items,
+          totalCobrado: Number(order.total),
         });
 
     logActivity(

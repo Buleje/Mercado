@@ -1,0 +1,163 @@
+import { useState, useEffect, useId, useCallback, useRef, type Dispatch, type SetStateAction } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { csrfHeaders } from "@/lib/csrf-client";
+import type { CreditoDeRecepcion } from "@/components/admin/cuentas-por-pagar/AvisoCreditoRecepcion";
+import { useConfirmarCreditoRecepcion } from "@/components/admin/cuentas-por-pagar/use-confirmar-credito-recepcion";
+import { errorDeVencimiento, pideLote } from "@/lib/compras/lotes-recepcion";
+import {
+  EMPTY_CHECKLIST, type ItemCondition, type PendingOC, type Reception, type ReceptionItem, type ReceptionStatus,
+} from "@/components/admin/ordenes-compra/recepciones/tipos";
+
+/**
+ * «Recibir mercadería» (con o sin orden): el formulario, las órdenes pendientes
+ * para auto-completar, la foto de la factura y el guardado. Salió de
+ * `ReceivingTab` (10-10) con el MISMO cuerpo que se manda a
+ * `POST /api/compras/recepciones`.
+ */
+export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Reception[]>>) {
+  const [showNew, setShowNew]           = useState(false);
+  const newTitleId = useId();
+  const newPanelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(newPanelRef, { onCerrar: () => setShowNew(false), activo: showNew });
+  const ventanaNueva = useVentanaDeModal(showNew, { ref: newPanelRef, aplicarTranslate: true, claveMemoria: "recepcion-nueva" });
+
+  // Órdenes pendientes de recibir (para el dropdown del modal)
+  const [pendingOCs, setPendingOCs] = useState<PendingOC[]>([]);
+  const confirmarCredito = useConfirmarCreditoRecepcion();
+  const [selectedOcId, setSelectedOcId] = useState("");
+
+  // New reception form
+  const [newForm, setNewForm] = useState({
+    supplier: "", orderRef: "", scheduledDate: new Date().toISOString().slice(0, 10), inspector: "",
+  });
+  const [checklist, setChecklist] = useState<ReceptionItem[]>([{ ...EMPTY_CHECKLIST }]);
+  const [saving, setSaving] = useState(false);
+  /** Lo que la última recepción bajó de la cuenta por pagar o dejó como reclamo. */
+  const [avisoCredito, setAvisoCredito] = useState<(CreditoDeRecepcion & { proveedor: string }) | null>(null);
+  // Factura del proveedor adjunta a la recepción (foto/imagen → /api/upload).
+  const [invoiceUrl, setInvoiceUrl] = useState("");
+  const [uploadingInvoice, setUploadingInvoice] = useState(false);
+  const [invoiceError, setInvoiceError] = useState("");
+
+  // Carga OCs pendientes al abrir el modal de nueva recepción
+  const loadPendingOCs = useCallback(async () => {
+    try {
+      const res = await fetch("/api/purchases", { credentials: "include" });
+      if (!res.ok) return;
+      const json = await res.json();
+      const all: PendingOC[] = Array.isArray(json) ? json : (json?.purchases ?? []);
+      // Solo mostrar OCs pendientes / parciales / auto_generated
+      const pending = all.filter((p) => {
+        const s = (p.status ?? "").toLowerCase();
+        return s === "pendiente" || s === "parcial" || s === "auto_generated" || s === "ordered" || s === "draft";
+      });
+      setPendingOCs(pending);
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    if (showNew) void loadPendingOCs();
+  }, [showNew, loadPendingOCs]);
+  const addChecklistRow  = () => setChecklist(prev => [...prev, { ...EMPTY_CHECKLIST }]);
+  const removeChecklistRow = (idx: number) => setChecklist(prev => prev.filter((_, i) => i !== idx));
+  const updateChecklistRow = <K extends keyof ReceptionItem>(idx: number, key: K, value: ReceptionItem[K]) =>
+    setChecklist(prev => prev.map((row, i) => i === idx ? { ...row, [key]: value } : row));
+
+  // Sube la foto de la factura del proveedor y guarda su URL (solo imágenes).
+  const uploadInvoice = async (file: File) => {
+    setInvoiceError("");
+    setUploadingInvoice(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "recepciones");
+      const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
+      const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !body.url) throw new Error(body.error ?? "No se pudo subir la factura");
+      setInvoiceUrl(body.url);
+    } catch (err) {
+      setInvoiceError(err instanceof Error ? err.message : "Error al subir la factura");
+    } finally {
+      setUploadingInvoice(false);
+    }
+  };
+
+  /** Una fecha de vencimiento imposible frena el guardado (el servidor la rechazaría igual). */
+  const venceConError = checklist.some((r) => pideLote(r) && errorDeVencimiento(r.expiryDate ?? "") !== null);
+
+  const saveReception = async () => {
+    if (!newForm.supplier || !newForm.orderRef || checklist.some(r => !r.product)) return;
+    const ocElegida = pendingOCs.find((p) => p.id === selectedOcId);
+    if (!(await confirmarCredito(ocElegida, newForm.supplier, checklist))) return;
+    setSaving(true);
+    const nonConformities = checklist.filter(it => it.condition !== "ok" || it.receivedQty < it.expectedQty).length;
+    const body = {
+      ...newForm,
+      // Igual que `OCRecepcionModal`: todo OK y completo = aceptada; algo
+      // faltante, dañado o distinto de lo pedido = parcial. Antes iba siempre
+      // «en-proceso» y los indicadores Aceptadas quedaban en 0.
+      status: (checklist.some((it) => it.condition !== "ok" || it.receivedQty !== it.expectedQty)
+        ? "parcial"
+        : "aceptada") as ReceptionStatus,
+      // Lo dañado, vencido o faltante no hace lote: la fecha no viaja.
+      items: checklist.map(({ expiryDate, lote, ...it }) => (it.condition === "ok" ? { ...it, expiryDate, lote } : it)),
+      photos: 0,
+      nonConformities,
+      invoiceUrl: invoiceUrl || undefined,
+    };
+    const res = await fetch("/api/compras/recepciones", {
+      method: "POST",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      const created: Reception & { credito?: CreditoDeRecepcion } = await res.json();
+      setAvisoCredito(created.credito && created.credito.total > 0 ? { ...created.credito, proveedor: created.supplier } : null);
+      setReceptions(prev => {
+        const next = [created, ...prev];
+        try { localStorage.setItem("admin-recepciones-cache", JSON.stringify({ data: next, ts: Date.now() })); } catch { /* quota */ }
+        return next;
+      });
+    }
+    setSaving(false);
+    setShowNew(false);
+    setNewForm({ supplier: "", orderRef: "", scheduledDate: new Date().toISOString().slice(0, 10), inspector: "" });
+    setChecklist([{ ...EMPTY_CHECKLIST }]);
+    setInvoiceUrl("");
+    setInvoiceError("");
+    setSelectedOcId("");
+  };
+
+  // Al elegir una OC del dropdown — auto-llena proveedor + items
+  const applyOC = useCallback((ocId: string) => {
+    setSelectedOcId(ocId);
+    if (!ocId) return;
+    const oc = pendingOCs.find((p) => p.id === ocId);
+    if (!oc) return;
+    setNewForm((f) => ({
+      ...f,
+      supplier: oc.supplierName ?? f.supplier,
+      orderRef: oc.id,
+    }));
+    if (oc.items && oc.items.length > 0) {
+      setChecklist(oc.items.map((it) => ({
+        product: it.name ?? "",
+        productId: typeof it.productId === "number" ? it.productId : undefined,
+        expectedQty: Number(it.quantity ?? 0),
+        receivedQty: Number(it.quantity ?? 0),
+        condition: "ok" as ItemCondition,
+        notes: "",
+      })));
+    }
+  }, [pendingOCs]);
+
+  return {
+    showNew, setShowNew, newTitleId, newPanelRef, ventanaNueva, pendingOCs, selectedOcId, newForm, setNewForm,
+    checklist, setChecklist, saving, avisoCredito, setAvisoCredito, invoiceUrl, setInvoiceUrl, uploadingInvoice,
+    invoiceError, addChecklistRow, removeChecklistRow, updateChecklistRow, uploadInvoice, venceConError,
+    saveReception, applyOC,
+  };
+}
+
+export type NuevaRecepcion = ReturnType<typeof useNuevaRecepcion>;

@@ -23,7 +23,7 @@ export default function MarketplaceError({
           No pudimos cargar el Marketplace
         </h1>
         <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] leading-relaxed">
-          Tu conexión puede estar intermitente. Intentá de nuevo en un momento.
+          Tu conexión puede estar intermitente. Intenta de nuevo en un momento.
         </p>
         {error.digest && (
           <p className="mt-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono tabular-nums">

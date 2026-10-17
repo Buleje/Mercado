@@ -25,6 +25,10 @@ export interface TenantRow {
   createdAt: string;
   ownerEmail: string | null;
   ownerPhone: string | null;
+  /** Teléfono del negocio, WhatsApp y RUC (Settings) — para buscar por número. */
+  businessPhone?: string | null;
+  whatsappPhone?: string | null;
+  ruc?: string | null;
   customDomain: string | null;
   /** Logo del tenant — prioriza Settings.logoUrl (configurado por el admin), fallback a Tenant.logoUrl. */
   logoUrl: string | null;

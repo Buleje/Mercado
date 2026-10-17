@@ -3,6 +3,7 @@
 import { Store } from "@buleje/design-system/icons";
 import { useTenantSlug } from "@/contexts/tenant-context";
 import { useSettings } from "@/contexts/settings-context";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 /**
  * Compact bar shown at the very top of the store when the user is browsing
@@ -14,7 +15,7 @@ export default function TenantIndicatorBar() {
   const { businessName } = useSettings();
 
   // Don't show for main tenant (it's the default)
-  if (slug === "main") return null;
+  if (esMarketplace(slug)) return null;
 
   const name = businessName || slug;
 

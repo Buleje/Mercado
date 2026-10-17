@@ -28,13 +28,19 @@ let sentryLoadAttempted = false;
 function loadSentry(): SentryLike | null {
   if (sentryMod || sentryLoadAttempted) return sentryMod;
   sentryLoadAttempted = true;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    sentryMod = require("@sentry/nextjs") as SentryLike;
-    return sentryMod;
-  } catch {
-    return null;
+  // Sólo en el servidor (16-10): el navegador no tiene `Sentry.init` (ver
+  // lib/telemetry/capturar-error-cliente.ts), así que ahí era un no-op y el
+  // `require` metía Sentry entero en la primera carga de cada página. Con
+  // `typeof window` constante, el bundler del cliente descarta la rama.
+  if (typeof window === "undefined") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      sentryMod = require("@sentry/nextjs") as SentryLike;
+    } catch {
+      return null;
+    }
   }
+  return sentryMod;
 }
 
 type LogLevel = "debug" | "info" | "warn" | "error";
@@ -72,7 +78,7 @@ function emit(level: LogLevel, message: string, context?: Record<string, unknown
       const rawErr = context?.error ?? context?.err;
       const errObj = rawErr instanceof Error ? rawErr : new Error(`${message}${rawErr ? ` — ${String(rawErr)}` : ""}`);
       try {
-        sentry.captureException(errObj, { extra: { message, ...(context ?? {}) } });
+        sentry.captureException(errObj, { extra: { message, ...context } });
       } catch {
         // Never let Sentry failure break logging
       }
@@ -90,10 +96,17 @@ function emit(level: LogLevel, message: string, context?: Record<string, unknown
       ...context,
     };
     const output = JSON.stringify(entry);
-    if (level === "error") {
-      process.stderr.write(output + "\n");
+    // En el navegador no hay `process.stdout`: el `process` que Next inyecta en
+    // el bundle del cliente no lo trae y `.write` tiraba TypeError. 42
+    // componentes "use client" importan este logger, así que en producción un
+    // `.catch((err) => logger.warn(...))` fallaba DENTRO del catch que debía
+    // absorber el error (revisión 2026-09-14, test `logger-navegador`).
+    const stream = typeof window === "undefined" && typeof process !== "undefined" ? (level === "error" ? process.stderr : process.stdout) : undefined;
+    if (stream && typeof stream.write === "function") {
+      stream.write(output + "\n");
     } else {
-      process.stdout.write(output + "\n");
+      const fn = level === "error" ? console.error : level === "warn" ? console.warn : console.log;
+      fn(output);
     }
   } else {
     // Human-friendly dev output

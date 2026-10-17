@@ -19,7 +19,7 @@
  *  - logger → silenciado para tests limpios.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
 
 // ─── Mocks (deben ir ANTES de los imports que los usan) ───────────────────────
 
@@ -144,6 +144,16 @@ describe("WhatsApp webhook — AI-first routing (ADR-058)", () => {
   afterEach(() => {
     delete process.env.WHATSAPP_AI_FIRST;
   });
+
+  /* El webhook importa PEREZOSO el manejo de dueños (`await import` de
+     `lib/whatsapp/anotar` y de `whatsapp-duenos.db` dentro de la ruta): la
+     primera llamada pagaba esa carga dentro del primer test y, con la suite
+     completa del hook de commit (~840 archivos), pasaba los 15 s y se cortaba
+     (medido el 22-09). Se paga acá, una vez y con su propio tope. */
+  beforeAll(async () => {
+    await import("@/lib/whatsapp/anotar");
+    await import("@/lib/db/whatsapp-duenos.db");
+  }, 60_000);
 
   // ─── Caso 1: Default = AI primero ────────────────────────────────────────
 

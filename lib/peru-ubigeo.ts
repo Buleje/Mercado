@@ -219,3 +219,73 @@ export function bestMatchFromGeocode(input: {
 
   return { departamento: dep, provincia: prov, distrito: dist };
 }
+
+/** Los tres nombres de un ubigeo + su código de 6 dígitos. */
+export type UbigeoResuelto = {
+  code: string;
+  departamento: string;
+  provincia: string;
+  distrito: string;
+};
+
+/**
+ * Código INEI de 6 dígitos → los tres nombres. `null` si no existe.
+ *
+ * El ubigeo es `DDPPDD`: departamento(2) + provincia(2) + distrito(2). Lo usa
+ * la Ficha del CTP para llenar Departamento/Provincia/Distrito de la carátula
+ * del Libro de Operaciones a partir del ubigeo que trae el padrón de SUNAT,
+ * en vez de que el operador los tipee y después no coincidan.
+ */
+export function resolveUbigeo(code: string): UbigeoResuelto | null {
+  const c = String(code ?? "").replace(/\D/g, "");
+  if (c.length !== 6) return null;
+  const [dep, prov, dist] = [c.slice(0, 2), c.slice(2, 4), c.slice(4, 6)];
+  const departamento = DEPARTAMENTOS.find((d) => d.code === dep);
+  if (!departamento) return null;
+  const provincia = (PROVINCIAS_BY_DEP.get(dep) ?? []).find((p) => p.code === prov);
+  if (!provincia) return null;
+  const distrito = (DISTRITOS_BY_DEP_PROV.get(`${dep}/${prov}`) ?? []).find((d) => d.code === dist);
+  if (!distrito) return null;
+  return {
+    code: c,
+    departamento: departamento.nombre,
+    provincia: provincia.nombre,
+    distrito: distrito.nombre,
+  };
+}
+
+/**
+ * Los tres nombres → código de ubigeo, o `""` si alguno no está en el padrón
+ * INEI. Devuelve vacío en vez de un código a medias: medio ubigeo es un dato
+ * inventado, y este sale impreso en documentos que se cruzan contra SUNAT.
+ */
+export function ubigeoDeNombres(
+  departamento: string,
+  provincia: string,
+  distrito: string,
+): string {
+  const dep = findDepartamentoByName(departamento ?? "");
+  if (!dep) return "";
+  const prov = findProvinciaByName(dep.code, provincia ?? "");
+  if (!prov) return "";
+  const dist = findDistritoByName(dep.code, prov.code, distrito ?? "");
+  if (!dist) return "";
+  return `${dep.code}${prov.code}${dist.code}`;
+}
+
+/** Provincias de un departamento buscado **por nombre** (lo que guarda la Ficha). */
+export function provinciasDeDepartamentoNombre(nombre: string): ProvinciaEntry[] {
+  const dep = findDepartamentoByName(nombre ?? "");
+  return dep ? listProvincias(dep.code) : [];
+}
+
+/** Distritos de un departamento + provincia buscados **por nombre**. */
+export function distritosDeProvinciaNombre(
+  departamento: string,
+  provincia: string,
+): DistritoEntry[] {
+  const dep = findDepartamentoByName(departamento ?? "");
+  if (!dep) return [];
+  const prov = findProvinciaByName(dep.code, provincia ?? "");
+  return prov ? listDistritos(dep.code, prov.code) : [];
+}

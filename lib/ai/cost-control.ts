@@ -1,5 +1,6 @@
 import "server-only";
 import { logger } from "@/lib/logger";
+import { TenantBillingDB } from "@/lib/db/tenant-billing.db";
 
 /**
  * lib/ai/cost-control.ts — Roadmap item #68
@@ -7,7 +8,7 @@ import { logger } from "@/lib/logger";
  * Tracking de costos de AI por tenant + circuit breaker por presupuesto.
  *
  * F4 FIX: Migrado a Upstash Redis para persistencia cross-instance/deploy.
- * Key pattern: aispend:{tenantId}:{YYYY-MM} (INCR atomico, TTL 31 dias).
+ * Key pattern: aispend:{tenantId}:{YYYY-MM} (INCRBYFLOAT atomico en centavos, TTL 31 dias).
  *
  * Fallback: si Upstash no esta disponible, usa Map in-memory con WARNING en log.
  * FIXME: si el fallback persiste, agregar tabla MonthlyAiSpend al schema Prisma.
@@ -18,7 +19,11 @@ import { logger } from "@/lib/logger";
  *   await aiCostGuard.recordSpend(tenantId, actualCost);
  */
 
-// Presupuestos por plan (USD por mes por tenant) — en centavos para INCR entero
+// Presupuestos por plan (USD por mes por tenant), en centavos. El gasto se
+// acumula en centavos CON decimales (INCRBYFLOAT): leer un papel cuesta ~$0,0029
+// = 0,29 centavos, y redondear a entero lo guardaba como 0 (el medidor no se
+// movía y el tope nunca frenaba los comandos). Las claves viejas, enteras, siguen
+// sirviendo: INCRBYFLOAT suma sobre un entero sin migrar nada.
 const PLAN_BUDGETS_CENTS: Record<string, number> = {
   free: 50,       // $0.50
   pro: 500,       // $5.00
@@ -76,6 +81,25 @@ function getMemTracker(tenantId: string, monthKey: string) {
   return existing;
 }
 
+/**
+ * El tope de IA del mes para el plan del tenant, resuelto IGUAL que `canSpend`
+ * (`TenantBillingDB.getPlan` + `PLAN_BUDGETS_CENTS`, con caída a free). Lo usa el
+ * medidor del panel (`/api/admin/ai-costs`) para mostrar el tope que de verdad
+ * se aplica: antes la ruta tenía su propia tabla y leía `plan` de la sesión
+ * (que no lo trae), así que todos veían el tope de free.
+ *
+ * `planEnTabla=false` = el plan no tiene fila propia y usa el tope de free
+ * (hoy le pasa a "starter").
+ */
+export async function topeDelPlan(
+  tenantId: string,
+): Promise<{ plan: string; capUsd: number; planEnTabla: boolean }> {
+  const plan = await TenantBillingDB.getPlan(tenantId);
+  const planEnTabla = Object.prototype.hasOwnProperty.call(PLAN_BUDGETS_CENTS, plan);
+  const cents = planEnTabla ? PLAN_BUDGETS_CENTS[plan] : PLAN_BUDGETS_CENTS.free;
+  return { plan, capUsd: cents / 100, planEnTabla };
+}
+
 function monthKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -83,15 +107,25 @@ function monthKey(): string {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 export const aiCostGuard = {
-  async canSpend(tenantId: string, estimatedCostUsd: number, plan = "free"): Promise<boolean> {
-    const budget = PLAN_BUDGETS_CENTS[plan] ?? PLAN_BUDGETS_CENTS.free;
-    const estimatedCents = Math.round(estimatedCostUsd * 100);
+  /**
+   * @param plan  Opcional. Si NO se pasa y `tenantId` es un tenant real, se
+   *   resuelve el plan REAL del tenant (Tenant.plan, cacheado). Antes el default
+   *   era "free" y todos los call sites lo hardcodeaban → los planes pagos
+   *   quedaban capados al presupuesto free. Pasar un plan explícito (ej. buckets
+   *   por IP que no son tenants, o un override) preserva el comportamiento viejo.
+   */
+  async canSpend(tenantId: string, estimatedCostUsd: number, plan?: string): Promise<boolean> {
+    const resolvedPlan = plan ?? (await TenantBillingDB.getPlan(tenantId));
+    const budget = PLAN_BUDGETS_CENTS[resolvedPlan] ?? PLAN_BUDGETS_CENTS.free;
+    // Sin redondear: un estimado de 0,29 centavos tiene que pesar en el tope.
+    const estimatedCents = Math.max(0, estimatedCostUsd * 100);
     const redis = await getRedis();
 
     if (redis) {
       try {
         const key = `aispend:${tenantId}:${monthKey()}`;
-        const current = await redis.get<number>(key) ?? 0;
+        // Number(): INCRBYFLOAT puede devolverlo como texto ("0.29") según el cliente.
+        const current = Number((await redis.get<number | string>(key)) ?? 0) || 0;
         if (current + estimatedCents > budget) {
           logger.warn("[ai-cost] Presupuesto agotado (Redis)", {
             tenantId: tenantId.slice(-6), spentCents: current, budget, estimatedCents,
@@ -117,14 +151,16 @@ export const aiCostGuard = {
   },
 
   async recordSpend(tenantId: string, actualCostUsd: number): Promise<void> {
-    const actualCents = Math.round(actualCostUsd * 100);
+    // Sin redondear (ver PLAN_BUDGETS_CENTS): hasta 4.999 tokens se guardaban 0 centavos.
+    const actualCents = Math.max(0, actualCostUsd * 100);
+    if (!Number.isFinite(actualCents)) return;
     const redis = await getRedis();
 
     if (redis) {
       try {
         const key = `aispend:${tenantId}:${monthKey()}`;
-        // INCR atomico + TTL 31 dias (mes completo con margen)
-        await redis.incrby(key, actualCents);
+        // INCRBYFLOAT atomico + TTL 31 dias (mes completo con margen)
+        await redis.incrbyfloat(key, actualCents);
         await redis.expire(key, 31 * 24 * 60 * 60);
         return;
       } catch (err) {
@@ -144,7 +180,7 @@ export const aiCostGuard = {
     if (redis) {
       try {
         const key = `aispend:${tenantId}:${monthKey()}`;
-        const totalCents = await redis.get<number>(key) ?? 0;
+        const totalCents = Number((await redis.get<number | string>(key)) ?? 0) || 0;
         return { spentUsd: totalCents / 100, count: 0 }; // count no persiste en Redis (no critico)
       } catch {
         // fallthrough a in-memory

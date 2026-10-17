@@ -64,7 +64,7 @@ export async function POST(
   const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
   const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
   if (!session) {
-    return NextResponse.json({ error: "Iniciá sesión para responder" }, { status: 401 });
+    return NextResponse.json({ error: "Inicia sesión para responder" }, { status: 401 });
   }
 
   // userId desde session (no Date.now() predecible)

@@ -21,6 +21,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { secureJson, secureError } from "@/lib/superadmin-response";
 import { NextResponse } from "next/server";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 interface AuditSnapshot {
   generatedAt: string;
@@ -49,8 +50,8 @@ export async function GET(req: NextRequest) {
 
     const [pkgRaw, pkgStat, lockStat] = await Promise.all([
       readFile(pkgPath, "utf8"),
-      stat(pkgPath).catch(() => null),
-      stat(lockPath).catch(() => null),
+      stat(pkgPath).catch(sinDato("api/superadmin/security/audit-snapshot stat de package.json")),
+      stat(lockPath).catch(sinDato("api/superadmin/security/audit-snapshot stat de package-lock.json")),
     ]);
 
     const pkg = JSON.parse(pkgRaw) as {

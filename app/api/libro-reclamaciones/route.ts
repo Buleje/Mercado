@@ -47,7 +47,7 @@ const schema = z.object({
 
 const RESEND_KEY = process.env.RESEND_API_KEY;
 const resend = RESEND_KEY ? new Resend(RESEND_KEY) : null;
-const FROM = process.env.RESEND_FROM_EMAIL ?? "Buleje <noreply@buleje.pe>";
+const FROM = process.env.RESEND_FROM_EMAIL || "Buleje <noreply@buleje.pe>";
 
 function esc(s: string): string {
   return s

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, type RefObject } from "react";
+import { hayModalEncima } from "@/lib/keyboard-guards";
 
 interface POSKeyboardCallbacks {
   onOpenPayment: () => void;
@@ -12,6 +13,8 @@ interface POSKeyboardCallbacks {
   onRemoveSelected: () => void;
   onAddTopResult: () => void;
   cartLength: number;
+  /** Un elemento del POS: si una ventana que no lo contiene está encima, las teclas son de ella. */
+  raiz: RefObject<HTMLElement | null>;
 }
 
 export function usePOSKeyboard({
@@ -24,9 +27,12 @@ export function usePOSKeyboard({
   onRemoveSelected,
   onAddTopResult,
   cartLength,
+  raiz,
 }: POSKeyboardCallbacks) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      // Con un acceso rápido (u otra ventana) encima, ni F1-F4 ni Enter son del POS de atrás.
+      if (hayModalEncima(raiz.current)) return;
       const target = e.target as HTMLElement;
       const tagName = target.tagName.toLowerCase();
       const isInput = tagName === "input" || tagName === "textarea" || tagName === "select";
@@ -93,6 +99,7 @@ export function usePOSKeyboard({
       onRemoveSelected,
       onAddTopResult,
       cartLength,
+      raiz,
     ]
   );
 

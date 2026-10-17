@@ -169,7 +169,7 @@ export default function LibroReclamacionesPage() {
             <ul className="mt-7 grid gap-3 sm:max-w-md sm:grid-cols-2">
               {BENEFITS.map(({ icon: Icon, label }) => (
                 <li key={label} className="flex items-center gap-2.5">
-                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                     <Icon className="h-4 w-4" strokeWidth={2.5} />
                   </span>
                   <span className="text-base font-medium text-[var(--text-secondary)]">{label}</span>

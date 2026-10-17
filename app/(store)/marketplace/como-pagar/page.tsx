@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import type { Metadata } from "next";
 import ComoPagarClient from "@/components/marketplace/como-pagar/ComoPagarClient";
 
@@ -7,7 +8,7 @@ const URL = `${BASE_URL}/marketplace/como-pagar`;
 export const metadata: Metadata = {
   title: "Cómo pagar — Yape, Plin, efectivo o transferencia",
   description:
-    "Pagá tu pedido como prefieras: Yape, Plin, transferencia o efectivo al recibir. Sin tarjeta obligatoria, sin comisión. Buleje · Ciudad Constitución, Pasco, Perú.",
+    "Paga tu pedido como prefieras: Yape, Plin, transferencia o efectivo al recibir. Sin tarjeta obligatoria, sin comisión. Buleje · Ciudad Constitución, Pasco, Perú.",
   keywords: [
     "pagar con Yape",
     "pagar con Plin",
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Cómo pagar tu pedido en Buleje",
     description:
-      "Yape, Plin, transferencia o efectivo al recibir. Pagá como te quede más cómodo, sin comisión.",
+      "Yape, Plin, transferencia o efectivo al recibir. Paga como te quede más cómodo, sin comisión.",
     url: URL,
     siteName: "Buleje",
     locale: "es_PE",
@@ -73,12 +74,12 @@ function ComoPagarJsonLd() {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     mainEntity: [
-      ["¿La bodega cobra comisión por usar Yape?", "No. Pagás exactamente lo que ves en el carrito — ni un sol más. Yape es gratis para vos y para la bodega."],
-      ["¿Puedo cambiar el método de pago después de pedir?", "Sí, mientras la bodega no haya despachado el pedido. Avisás por el chat del pedido y lo cambian en segundos."],
-      ["¿Y si pago en efectivo y no tengo el monto exacto?", "Al confirmar indicás con cuánto pagás (ej. 'con S/100') y la bodega prepara tu vuelto exacto."],
-      ["¿Mi tarjeta queda guardada en Buleje?", "Solo si lo pedís. Stripe y Mercado Pago tokenizan cada cobro; Buleje nunca ve el número completo."],
-      ["¿Qué hago si mi Yape no aparece en la bodega?", "Puede tardar hasta 30 segundos. Si pasa de 1 minuto, enviás el comprobante por WhatsApp a la bodega."],
-      ["¿Aceptan Yape de empresa?", "Sí. Poné tu RUC en la nota del pedido para que te emitan factura electrónica."],
+      ["¿La bodega cobra comisión por usar Yape?", "No. Pagas exactamente lo que ves en el carrito — ni un sol más. Yape es gratis para ti y para la bodega."],
+      ["¿Puedo cambiar el método de pago después de pedir?", "Sí, mientras la bodega no haya despachado el pedido. Avisas por el chat del pedido y lo cambian en segundos."],
+      ["¿Y si pago en efectivo y no tengo el monto exacto?", "Al confirmar indicas con cuánto pagas (ej. 'con S/100') y la bodega prepara tu vuelto exacto."],
+      ["¿Mi tarjeta queda guardada en Buleje?", "Solo si lo pides. Stripe y Mercado Pago tokenizan cada cobro; Buleje nunca ve el número completo."],
+      ["¿Qué hago si mi Yape no aparece en la bodega?", "Puede tardar hasta 30 segundos. Si pasa de 1 minuto, envías el comprobante por WhatsApp a la bodega."],
+      ["¿Aceptan Yape de empresa?", "Sí. Pon tu RUC en la nota del pedido para que te emitan factura electrónica."],
     ].map(([q, a]) => ({
       "@type": "Question",
       name: q,
@@ -91,22 +92,22 @@ function ComoPagarJsonLd() {
     "@type": "HowTo",
     name: "Cómo pagar tu pedido con Yape en Buleje",
     description:
-      "Pagá tu pedido de bodega con Yape en segundos, sin comisión, desde tu celular.",
+      "Paga tu pedido de bodega con Yape en segundos, sin comisión, desde tu celular.",
     totalTime: "PT1M",
     inLanguage: "es-PE",
     step: [
-      { "@type": "HowToStep", position: 1, name: "Elegí Yape", text: "Seleccioná Yape al confirmar el pedido." },
-      { "@type": "HowToStep", position: 2, name: "Escaneá el QR", text: "Escaneá el QR de la bodega o copiá su número." },
-      { "@type": "HowToStep", position: 3, name: "Yapeá el monto", text: "Confirmá el pago del monto exacto con tu huella." },
+      { "@type": "HowToStep", position: 1, name: "Elige Yape", text: "Selecciona Yape al confirmar el pedido." },
+      { "@type": "HowToStep", position: 2, name: "Escanea el QR", text: "Escanea el QR de la bodega o copia su número." },
+      { "@type": "HowToStep", position: 3, name: "Yapea el monto", text: "Confirma el pago del monto exacto con tu huella." },
       { "@type": "HowToStep", position: 4, name: "Listo", text: "La bodega ve el pago en segundos y empieza a empacar." },
     ],
   };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(faqLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(howToLd) }} />
     </>
   );
 }

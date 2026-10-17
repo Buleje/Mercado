@@ -9,30 +9,18 @@ import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { prisma } from "@/lib/prisma";
-import { prismaForTenant } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { autoEarnLoyaltyPoints } from "@/lib/loyalty/auto-earn";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { transicionesDesde } from "@/lib/order-status";
+import { PedidoHistorialDB } from "@/lib/db/pedido-historial.db";
 
 const NOTIFIABLE_STATUSES = new Set(["confirmado", "preparando", "en_camino", "entregado", "cancelado"]);
 
-// Valid order status transitions — prevents going backward (e.g. entregado → pendiente)
-// Mantener sincronizado con `components/admin/OrdersTab/types.ts:VALID_TRANSITIONS`.
-//
-// FIX 2026-05-07: agregar entrega manual directa desde confirmado y preparando.
-// Antes el dueño TENÍA que mover por "en_camino" antes de "entregado", aunque
-// el cliente vino al mostrador o lo entregó sin delivery. Ahora puede saltar
-// el paso "en_camino" — útil para negocios sin flota de repartidores.
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  pendiente: ["confirmado", "cancelado"],
-  confirmado: ["preparando", "en_camino", "entregado", "cancelado"],
-  preparando: ["en_camino", "entregado", "cancelado"],
-  en_camino: ["entregado", "cancelado"],
-  entregado: [],    // Terminal state
-  cancelado: [],    // Terminal state
-};
+// Transiciones válidas: `TRANSICIONES_PEDIDO` (lib/order-status.ts), la misma
+// tabla que usa el cambio en lote (`OrdersDB.cambiarEstadoEnLote`).
 
 const PatchSchema = z.object({
   status: z.enum(["pendiente", "confirmado", "preparando", "en_camino", "entregado", "cancelado"]).optional(),
@@ -74,7 +62,12 @@ export async function PATCH(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "orders-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  // Escriben pedidos los roles con `orders: write` en lib/auth/role-permissions.ts
+  // (cajero, tienda_owner; admin/dueño/encargado pasan solos en requireAdmin).
+  // Almacenero, analista y repartidor sólo LEEN: antes, sin lista, cualquiera
+  // del panel cancelaba (devolvía stock), tocaba la deuda o el repartidor
+  // (security 17-10). El repartidor marca entregado por /api/delivery/driver.
+  const auth = await requireAdmin(req, ["cajero", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
   // Round 12 M004: audit log de Order.update (state machine).
   return runWithAuditContext(req, auth.username, () => patchOrder(req, ctx, auth));
@@ -105,7 +98,7 @@ async function patchOrder(
 
     // Validate status transition if attempting to change status
     if (parsed.data.status && parsed.data.status !== existing.status) {
-      const allowed = VALID_TRANSITIONS[existing.status] ?? [];
+      const allowed = transicionesDesde(existing.status);
       if (!allowed.includes(parsed.data.status)) {
         return NextResponse.json(
           { error: `No se puede cambiar de "${existing.status}" a "${parsed.data.status}". Transiciones válidas: ${allowed.join(", ") || "ninguna (estado final)"}` },
@@ -116,8 +109,19 @@ async function patchOrder(
 
     // deliveryReason NO es columna de Order — se persiste en OrderStatusHistory.note
     // más abajo. Lo separamos del payload del update para que Prisma no falle.
-    const { deliveryReason: _deliveryReason, ...updatePayload } = parsed.data;
+    // adminNote tampoco: es una nota interna nueva y va a ActivityLog con quién
+    // la escribió (17-10: el panel mandaba `adminNotes`, que Zod descartaba, y
+    // ninguna nota se guardó nunca).
+    const { deliveryReason: _deliveryReason, adminNote, ...updatePayload } = parsed.data;
     void _deliveryReason;
+    const nota = adminNote?.trim();
+    if (nota) {
+      await PedidoHistorialDB.anotar(auth.tenantId, id, auth.username, nota);
+    }
+    // Sólo una nota: no se toca el pedido (un update vacío movía `updatedAt`,
+    // que es de donde sale «X h sin avanzar» en el tablero).
+    const soloNota = Object.values(updatePayload).every((v) => v === undefined);
+    if (soloNota && nota) return NextResponse.json(existing);
     const updated = await OrdersDB.update(auth.tenantId, id, updatePayload as Partial<DbOrder>);
     if (!updated) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
 
@@ -143,7 +147,8 @@ async function patchOrder(
         orderId: id,
         fromStatus: existing.status,
         toStatus: parsed.data.status!,
-        changedBy: "admin",
+        // Quién lo movió (17-10: decía «admin» en todos; P05 del PDF).
+        changedBy: auth.username,
         note: historyNote,
       }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
 
@@ -157,33 +162,14 @@ async function patchOrder(
         // F4: await — garantiza que el stock se repone antes de responder al cliente.
         // Si la tx falla, el catch loggea el error pero la respuesta HTTP ya se
         // preparó correctamente (el status del pedido sí cambió a cancelado).
-        await prismaForTenant(auth.tenantId).$transaction(async (tx) => {
-          const items = await tx.orderItem.findMany({
-            where: { orderId: id },
-            select: { productId: true, quantity: true },
-          });
-          for (const it of items) {
-            await tx.$executeRaw`
-              UPDATE "Product"
-                 SET "stock" = "stock" + ${it.quantity}
-               WHERE "id" = ${it.productId}
-                 AND "tenantId" = ${auth.tenantId}
-                 AND "stock" IS NOT NULL
-            `;
-          }
-          await tx.order.update({
-            where: { id },
-            data: {
-              cancelReason: parsed.data.cancelReason ?? null,
-              cancelledAt: new Date(),
-            },
-          });
-          logger.info("[orders/cancel] stock reverted + metadata persisted", {
-            orderId: id,
-            tenantId: auth.tenantId,
-            itemsReverted: items.length,
-          });
-        }).catch((err) => {
+        // Misma transacción que cancelar en lote y rechazar el pago
+        // (`OrdersDB.cancelarConReposicion`): marca `cancelledAt` y repone el
+        // stock una sola vez aunque lleguen dos PATCH «cancelado» a la vez.
+        await OrdersDB.cancelarConReposicion(
+          auth.tenantId,
+          id,
+          parsed.data.cancelReason ?? null,
+        ).catch((err) => {
           logger.error("[orders/cancel] revert+metadata transaction failed", {
             orderId: id,
             tenantId: auth.tenantId,
@@ -360,8 +346,9 @@ async function patchOrder(
       "Actualizar", "pedido",
       `Pedido ${id.slice(-6)}${parsed.data.status ? ` -> ${parsed.data.status}` : " editado"}`,
       id,
-      "admin",
+      auth.username,
       requestId,
+      auth.tenantId,
     ).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
 
     // Log to customer notification inbox
@@ -403,7 +390,9 @@ export async function DELETE(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "orders-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  // Borrar un pedido = `orders: delete`, que sólo tienen admin/dueño/encargado
+  // (los tres pasan con ["admin"]: management tier de requireAdmin).
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   // Round 12 M004: DELETE de Order — Ley 29733 art. 23 obliga trazabilidad.
   return runWithAuditContext(req, auth.username, () => deleteOrder(req, ctx, auth));
@@ -416,9 +405,15 @@ async function deleteOrder(
 ): Promise<NextResponse> {
   const { id } = await params;
   try {
+    // Antes de borrar: cancelar con reposición. Devuelve el stock y los puntos
+    // canjeados UNA vez (`cancelledAt`), y nunca de un pedido entregado o ya
+    // cancelado. «Rechazar Yape» del panel borra el pedido pendiente: sin esto
+    // el cliente perdía los puntos que había canjeado. El saldo en caché lo
+    // invalida `writeTransaction` (loyalty.db).
+    await OrdersDB.cancelarConReposicion(auth.tenantId, id, "eliminado");
     await OrdersDB.delete(auth.tenantId, id);
     const reqId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, auth.username, reqId).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
+    logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, auth.username, reqId, auth.tenantId).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
     // Fase 4 perf (2026-05-16): invalidación completa de caches admin.
     try {

@@ -39,13 +39,34 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   cancelado: "Cancelado",
 };
 
+/**
+ * Cómo se dice cada medio de pago, en UNA tabla (tarjeta, lista y detalle).
+ * Antes la tarjeta y la cabecera del detalle decían «Efectivo» para todo lo
+ * que no fuera Yape: un pedido con Plin o transferencia salía como efectivo.
+ */
+const METODO_PAGO: Record<string, string> = {
+  yape: "Yape",
+  plin: "Plin",
+  transfer: "Transferencia",
+  efectivo: "Efectivo",
+  fiado: "Fiado",
+  tarjeta: "Tarjeta",
+  cash: "Efectivo",
+  marketplace: "Marketplace",
+};
+
+export function nombreDelPago(metodo: string | null | undefined): string {
+  return metodo ? (METODO_PAGO[metodo] ?? metodo) : "";
+}
+
+/** Texto en `-ink` (10-10): el `-500` sobre su fondo claro daba ~2:1 en 14 px. Mismo color que la columna del tablero. */
 export const STATUS_COLORS: Record<OrderStatus, string> = {
-  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
-  confirmado: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
-  preparando: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]",
-  en_camino: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  entregado: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
-  cancelado: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
+  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-ink)]",
+  confirmado: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+  preparando: "bg-[var(--data-warning-100)] text-[var(--data-warning-ink)]",
+  en_camino: "bg-[var(--data-info-500)]/10 text-[var(--data-info-ink)]",
+  entregado: "bg-[var(--data-success-500)]/10 text-[var(--data-success-ink)]",
+  cancelado: "bg-[var(--data-error-100)] text-[var(--data-error-ink)]",
 };
 
 // Valid order status transitions — mirrors server-side VALID_TRANSITIONS

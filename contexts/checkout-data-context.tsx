@@ -34,6 +34,8 @@ export type CheckoutCustomer = {
   name: string;
   phone: string;
   email: string;
+  /** DNI (8 díg.) — opcional; el lookup RENIEC autocompleta el nombre. */
+  dni?: string;
 };
 export type CheckoutAddress = {
   address: string;
@@ -267,7 +269,16 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
     const isCustomerValid =
       customer.name.trim().length >= 2 &&
       customer.phone.trim().replace(/\D/g, "").length >= 6;
-    const isAddressValid = address.address.trim().length >= 5;
+    // Integridad de datos de entrega (QA 2026-07-04): no basta con la calle;
+    // sin departamento/provincia/distrito no se puede repartir. Exigimos los
+    // 3 códigos ubigeo (el geo los autollena; el manual debe elegirlos). Esta
+    // es la ÚNICA fuente: alimenta el guard de submit, el CTA disabled y el
+    // error inline en /checkout/entrega.
+    const isAddressValid =
+      address.address.trim().length >= 5 &&
+      address.departmentCode.trim() !== "" &&
+      address.provinceCode.trim() !== "" &&
+      address.districtCode.trim() !== "";
     // Método "" (sin elegir) = inválido. Brandon mayo 15 v4: el cliente debe
     // elegir un método explícitamente. Efectivo con cashAmount truthy debe
     // ser > 0 para ser válido.

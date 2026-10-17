@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { TenantsDB } from "@/lib/db/tenants.db";
 
 /**
  * SuperadminStoresHealthDB
@@ -21,17 +22,21 @@ export const SuperadminStoresHealthDB = {
   },
 
   async updateTenantLogo(tenantId: string, logoUrl: string | null) {
-    return prisma.tenant.update({
+    const t = await prisma.tenant.update({
       where: { id: tenantId },
       data: { logoUrl },
     });
+    TenantsDB.olvidarPublico(); // portada y /api/tenants/resolve
+    return t;
   },
 
   async updateTenantOwnerPhone(tenantId: string, ownerPhone: string | null) {
-    return prisma.tenant.update({
+    const t = await prisma.tenant.update({
       where: { id: tenantId },
       data: { ownerPhone },
     });
+    TenantsDB.olvidarPublico(); // la portada arma el WhatsApp con este número
+    return t;
   },
 
   async findStoreByTenant(tenantId: string) {

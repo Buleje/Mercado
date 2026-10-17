@@ -1,0 +1,61 @@
+{
+ "nota": "preset despacho-guia-anular-aviso: 1 troza a mano, se abre ⋯ → «Anular la guía» y el modal avisa qué trozas a mano se anulan; se anula DESDE el modal.",
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=loth-libro-operaciones&vista=gtf",
+ "pasos": [
+  {
+   "preset": "despacho-abrir"
+  },
+  {
+   "eval": "(() => { /* La especie de la troza a mano (15-10: la fila de alta la pide). Tornillo si está. */ const s = document.querySelector('select[aria-label=\"Especie de las trozas a mano\"]'); if (!s) return 'sin campo de especie'; const ops = [...s.options].filter((o) => o.value); const o = ops.find((x) => /tornillo/i.test(x.textContent)) ?? ops[0]; if (!o) return { sinOpcion: ops.map((x) => x.textContent) }; Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, o.value); s.dispatchEvent(new Event('change', { bubbles: true })); return { elegida: o.textContent, opciones: ops.map((x) => x.textContent) }; })()"
+  },
+  {
+   "click": "[data-testid=trozas-a-mano] button[aria-pressed]"
+  },
+  {
+   "preset": "despacho-dos-a-mano"
+  },
+  {
+   "preset": "despacho-datos-y-registrar"
+  },
+  {
+   "eval": "(async () => { /* La fila de la guía recién registrada (por su N°). */ const g = window.__qaGuia; if (!g || !g.gtfNumber) return { sinGuia: g ?? null }; for (let k = 0; k < 40; k++) { const b = document.querySelector(`[aria-label=\"Acciones de la GTF ${g.gtfNumber}\"]`); if (b) { b.setAttribute('data-qa', 'acciones-fila'); return { fila: g.gtfNumber }; } await new Promise((r) => setTimeout(r, 500)); } return { noEsta: g.gtfNumber }; })()"
+  },
+  {
+   "click": "[data-qa=acciones-fila]"
+  },
+  {
+   "clicTexto": "Anular la guía"
+  },
+  {
+   "esperar": "[data-testid=anular-guia-trozas-a-mano]"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "eval": "(() => { const a = document.querySelector('[data-testid=anular-guia-trozas-a-mano]'); return { conDespachos: a.innerText.replace(/\\s+/g, ' ') }; })()"
+  },
+  {
+   "captura": "anular-aviso"
+  },
+  {
+   "eval": "(async () => { /* Sin sus despachos, el aviso dice que quedan vivas; se vuelve a marcar. */ const c = [...document.querySelectorAll('[role=dialog] input[type=checkbox]')].find((x) => /de despacho de esta gu/.test(x.closest('label')?.textContent || '')); if (!c) return 'sin casilla'; c.click(); await new Promise((r) => setTimeout(r, 300)); const sin = document.querySelector('[data-testid=anular-guia-trozas-a-mano]').innerText.replace(/\\s+/g, ' '); c.click(); await new Promise((r) => setTimeout(r, 300)); return { sinDespachos: sin, vuelveA: document.querySelector('[data-testid=anular-guia-trozas-a-mano]').innerText.replace(/\\s+/g, ' ') }; })()"
+  },
+  {
+   "llenar": [
+    "[role=dialog] textarea",
+    "QA preset despacho-guia-anular-aviso: se anula para poder repetirlo"
+   ]
+  },
+  {
+   "click": "[role=dialog] button[type=submit]:has-text(\"Anular la guía\")"
+  },
+  {
+   "esperar": 3000
+  },
+  {
+   "eval": "({ anular: window.__qaAnular ?? null, modalAbierto: !!document.querySelector('[data-testid=anular-guia-trozas-a-mano]') })"
+  }
+ ]
+}

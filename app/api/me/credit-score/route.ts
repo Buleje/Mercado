@@ -19,6 +19,7 @@ import { MeCreditScoreDB } from "@/lib/db/me-credit-score.db";
 import { isFiadoDigitalPhase1Enabled } from "@/lib/feature-flags/fiado-digital";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { startOfLimaDay, limaWeekday } from "@/lib/utils";
 
 // Next 16 con cacheComponents: force-dynamic es redundante (cookies/headers
 // hacen la route dinamica implicitamente).
@@ -58,9 +59,8 @@ export async function GET(req: NextRequest) {
     const tips = generateTips(scoreResult.breakdown);
 
     // Next review date: next Sunday at midnight (weekly recalc runs Sundays)
-    const nextReview = new Date();
-    nextReview.setDate(nextReview.getDate() + (7 - nextReview.getDay()));
-    nextReview.setHours(0, 0, 0, 0);
+    // (domingo 00:00 de LIMA: el servidor corre en UTC)
+    const nextReview = new Date(startOfLimaDay() + (7 - limaWeekday()) * 24 * 60 * 60 * 1000);
 
     // Build reason string for transparency banner
     let reason = "Tu score se revisa cada semana automáticamente.";

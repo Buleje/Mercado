@@ -150,3 +150,19 @@ Cuando recibas una tarea que toque cualquiera de:
 → **Lee este SKILL.md primero**, luego edita.
 
 Si encontrás `text-xs`, `text-2xs`, `text-[10px]`, `border-gray-*` sin override, o filtros con `h-8/h-9` en componentes ya editados, **corrige al pasar** aunque no sea el foco de la tarea — es debt visual que rompe la regla blindada.
+
+---
+
+## 9. Gotchas de layout (verificados en este repo)
+
+| Gotcha | Regla |
+|---|---|
+| **`max-w-{sm,md,lg,xl}` valen 2×** (720/960/1200/1440px) por el override `--container-*` en `@theme` de `globals.css` | En modales/popovers/drawers usar rem explícito: `max-w-[28rem]`, `max-w-[36rem]` — nunca `max-w-md` esperando 448px |
+| Subagentes que reescriben componentes >1000 LOC los **truncan** | Verificar `wc -l` + diff antes de aceptar un rewrite bulk de UI |
+| Admin shell tiene safety-net CSS para grays en dark | NO confiarse: usar tokens desde el inicio; el safety-net no cubre `bg-white`, gradientes ni borders |
+
+## 10. Loop de enforcement (no manual)
+
+- Hook `post-edit-typography-lint` alerta violaciones al editar UI → si dispara, corregir en el momento.
+- Violaciones masivas / legacy → barrido con `Grep` + `Edit` en lote (text-xs→sm, h-8→h-12, border→border-2, grays→tokens) y screenshot light+dark al final. (El agente `typography-enforcer` se archivó el 2026-09-03: 1 despacho en 3 meses.)
+- Verificación visual: `/preview <ruta>` (light+dark) o `node scripts/visual-verify-admin-focused.mjs` (9 tabs, ~30s).

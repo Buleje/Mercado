@@ -2,12 +2,18 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
+const ORDERS_CAP = 2000;
+
 // GET /api/superadmin/marketplace/orders
-// Returns all marketplace orders with rich fields for analytics.
+// Returns marketplace orders (rich fields) for analytics. Cap a ORDERS_CAP con
+// flag `truncated` para no ocultar que la analítica está acotada.
 export async function GET(req: NextRequest) {
   try {
+    const rl = applyRateLimit(req, "MODERATE", "sa-mktplace-orders");
+    if (rl) return rl;
     const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
     if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     const session = await getPlatformSession(token);
@@ -20,7 +26,7 @@ export async function GET(req: NextRequest) {
           deletedAt: null,
         },
         orderBy: { createdAt: "desc" },
-        take: 2000,
+        take: ORDERS_CAP,
         select: {
           id: true,
           tenantId: true,
@@ -31,7 +37,9 @@ export async function GET(req: NextRequest) {
           status: true,
           paymentMethod: true,
           createdAt: true,
-          items: { select: { id: true } },
+          // [PERF] _count en DB en vez de traer todas las filas OrderItem solo
+          // para hacer .length (hasta 2000 órdenes × N ítems a memoria).
+          _count: { select: { items: true } },
         },
       }),
       prisma.tenant.findMany({
@@ -57,12 +65,12 @@ export async function GET(req: NextRequest) {
             : Number(o.total) || 0,
         status: o.status,
         paymentMethod: o.paymentMethod ?? "",
-        itemCount: o.items.length,
+        itemCount: o._count.items,
         createdAt: o.createdAt.toISOString(),
       };
     });
 
-    return NextResponse.json({ orders: mapped });
+    return NextResponse.json({ orders: mapped, truncated: orders.length >= ORDERS_CAP });
 
   } catch (e) {
     logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });

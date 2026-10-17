@@ -9,7 +9,8 @@
  *  - Agregar/quitar shortcuts desde un picker
  *  - Resetear a los defaults
  *
- * Persistido en localStorage["admin_sidebar_shortcuts"].
+ * Persistido en localStorage["admin_sidebar_shortcuts"]. Lo guardado se lee
+ * a través de `resolverDestino` (ADR-490): un id viejo sigue siendo un atajo.
  *
  * Requiere recibir `allTabs` (lista canónica de tabs con icono) y
  * `allowedTabs` (filtro por rol) para resolver iconos y filtrar el picker.
@@ -19,6 +20,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import type { ComponentType } from "react";
+import { resolverDestino } from "@/lib/admin/destino-tab";
 
 export interface ShortcutItem {
   id: string;
@@ -56,6 +58,31 @@ const DEFAULT_SHORTCUTS: ShortcutItem[] = [
   { id: "fiados", label: "Fiados" },
 ];
 
+/**
+ * Los atajos guardados, con los ids de hoy. Un id viejo que es otro nombre del
+ * mismo módulo (`kardex` → Inventario) pasa al nombre de hoy y a su rótulo; uno
+ * cuya pestaña hoy es una VISTA de otra se conserva tal cual (`navigateTab` lo
+ * lleva a la vista exacta); uno que no existe se descarta (antes tampoco se
+ * dibujaba: no tenía ícono). Dos que llevan al mismo lugar quedan en uno.
+ */
+export function atajosVigentes(guardados: readonly unknown[], allTabs: readonly AllTabsItem[]): ShortcutItem[] {
+  const vistos = new Set<string>();
+  const vigentes: ShortcutItem[] = [];
+  for (const guardado of guardados) {
+    if (!guardado || typeof guardado !== "object") continue;
+    const { id: crudo, label } = guardado as Partial<ShortcutItem>;
+    if (typeof crudo !== "string") continue;
+    const destino = resolverDestino(crudo);
+    if (!destino) continue;
+    const id = destino.vista ? crudo : destino.tab;
+    if (vistos.has(id)) continue;
+    vistos.add(id);
+    const rotulo = id === crudo && typeof label === "string" ? label : allTabs.find((t) => t.id === id)?.label;
+    vigentes.push({ id, label: rotulo ?? (typeof label === "string" ? label : id) });
+  }
+  return vigentes;
+}
+
 export function useSidebarShortcuts(
   allTabs: readonly AllTabsItem[],
   allowedTabs: readonly string[]
@@ -64,8 +91,9 @@ export function useSidebarShortcuts(
     try {
       const saved = localStorage.getItem("admin_sidebar_shortcuts");
       if (saved) {
-        const parsed = JSON.parse(saved) as ShortcutItem[];
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        const parsed: unknown = JSON.parse(saved);
+        const vigentes = Array.isArray(parsed) ? atajosVigentes(parsed, allTabs) : [];
+        if (vigentes.length > 0) return vigentes;
       }
     } catch {
       // localStorage bloqueado — usar defaults
@@ -116,7 +144,9 @@ export function useSidebarShortcuts(
     () =>
       sidebarShortcuts
         .map((s) => {
-          const match = allTabs.find((t) => t.id === s.id);
+          // Un atajo a una pestaña que hoy es vista toma el ícono de su destino.
+          const destino = resolverDestino(s.id)?.tab;
+          const match = allTabs.find((t) => t.id === s.id) ?? allTabs.find((t) => t.id === destino);
           return match ? { ...s, icon: match.icon } : null;
         })
         .filter((s): s is ResolvedShortcut => s !== null),

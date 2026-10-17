@@ -3,7 +3,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Bell } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { shouldIgnoreShortcut } from "@/lib/keyboard-guards";
 import { cachedJson } from "@/lib/client-cache-fetch";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import { useNotificationCenter } from "./useNotificationCenter";
 import NotificationHub from "./NotificationHub";
 
@@ -11,6 +14,10 @@ import NotificationHub from "./NotificationHub";
 
 function useCriticalAlertCount() {
   const [count, setCount] = useState(0);
+  // /api/admin/stats sólo deja pasar a admin: el almacenero recibía 403 en cada
+  // carga del panel. Con el rol sin resolver (null) tampoco se pide.
+  const rol = useMiRol();
+  const puedeStats = puedePedir("/api/admin/stats", rol);
 
   useEffect(() => {
     let cancelled = false;
@@ -21,7 +28,9 @@ function useCriticalAlertCount() {
         // dashboard (antes cada uno disparaba su request). TTL 30s = el intervalo
         // de 2min re-chequea fresco. Perf 2026-05-29.
         const [stats, batches] = await Promise.all([
-          cachedJson<{ lowStockProducts?: number; pendingOrders?: number }>("/api/admin/stats", 30_000),
+          puedeStats
+            ? cachedJson<{ lowStockProducts?: number; pendingOrders?: number }>("/api/admin/stats", 30_000)
+            : Promise.resolve(null),
           cachedJson<{ items?: unknown[] } | unknown[]>("/api/batches/expiring", 30_000),
         ]);
 
@@ -51,7 +60,7 @@ function useCriticalAlertCount() {
     check();
     const interval = setInterval(check, 120_000); // Re-check every 2 min
     return () => { cancelled = true; clearInterval(interval); };
-  }, []);
+  }, [puedeStats]);
 
   return count;
 }
@@ -101,22 +110,31 @@ function alertFeedback() {
   } catch { /* ignore — some browsers block AudioContext */ }
 }
 
-export default function NotificationBell() {
+interface NotificationBellProps {
+  /** El header renderiza sobre un fondo oscuro propio (temas Buleje/Ejecutivo
+   *  del sidebar) INDEPENDIENTE del modo claro/oscuro del sitio — `dark:`
+   *  no alcanza porque `.dark` puede no estar en el `<html>`. Sin esto el
+   *  ícono quedaba gris-400 sobre navy: invisible (Brandon 2026-08-28). */
+  onDarkHeader?: boolean;
+}
+
+export default function NotificationBell({ onDarkHeader = false }: NotificationBellProps) {
+  const [open, setOpen] = useState(false);
   const {
     notifications,
     unreadCount,
     isLoading,
+    cargaFallida,
     filter,
     setFilter,
     markAsRead,
     markAllRead,
     refetch,
-  } = useNotificationCenter();
+  } = useNotificationCenter(open);
 
   const criticalCount = useCriticalAlertCount();
   const totalBadge = unreadCount + criticalCount;
 
-  const [open, setOpen] = useState(false);
   const [pulse, setPulse] = useState(false);
   const prevCount = useRef(unreadCount);
   const prevCritical = useRef(criticalCount);
@@ -138,15 +156,17 @@ export default function NotificationBell() {
     prevCritical.current = criticalCount;
   }, [unreadCount, criticalCount]);
 
-  // Keyboard shortcut: "N" opens panel (when no input is focused)
+  // Keyboard shortcut: "N" abre el panel — SOLO como tecla simple deliberada.
+  // FIX 2026-07-08 (reporte QA Compras): antes se disparaba con cualquier "n"
+  // aunque hubiera un modal abierto o el usuario tuviera Ctrl/Cmd/Alt pulsado
+  // (ej. Cmd+N del navegador) → abría el Centro de Notificaciones sin pedirlo.
+  // `shouldIgnoreShortcut` centraliza el guard (campo editable + modal abierto +
+  // modificadores).
   const handleKeydown = useCallback((e: KeyboardEvent) => {
-    if (e.key === "n" || e.key === "N") {
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if ((e.target as HTMLElement)?.isContentEditable) return;
-      e.preventDefault();
-      setOpen((prev) => !prev);
-    }
+    if (e.key !== "n" && e.key !== "N") return;
+    if (shouldIgnoreShortcut(e)) return;
+    e.preventDefault();
+    setOpen((prev) => !prev);
   }, []);
 
   useEffect(() => {
@@ -159,21 +179,32 @@ export default function NotificationBell() {
   return (
     <>
       <button
+        type="button"
         onClick={toggle}
+        // 48 px como el resto de la cabecera (eran 32): el centro ahora es un
+        // modal (`aria-haspopup="dialog"`) y el nombre accesible dice cuántos hay.
+        aria-label={`Notificaciones${totalBadge > 0 ? `, ${totalBadge} pendientes` : ""}`}
+        aria-haspopup="dialog"
+        aria-expanded={open}
         title={`Notificaciones${totalBadge > 0 ? ` (${totalBadge} pendientes)` : ""} — tecla N`}
         className={cn(
-          "relative flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
-          open
-            ? "bg-primary/10 text-primary"
-            : "text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary"
+          "relative flex items-center justify-center h-12 w-12 shrink-0 rounded-xl transition-colors",
+          open && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+          !open && !onDarkHeader && "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]",
+          // onDarkHeader usa el token en vez de la clase literal `text-gray-400`
+          // a propósito: `globals.css` tiene `.dark .text-gray-400 { ...
+          // !important }` (parche WCAG P1 2026-05-08) que le gana a CUALQUIER
+          // `sm:text-*` que se agregue — medido acá mismo, quedaba gris oscuro
+          // pese al override. El token esquiva esa regla por completo.
+          !open && onDarkHeader && "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)] sm:text-white/60 sm:hover:bg-white/10 sm:hover:text-white"
         )}
       >
-        <Bell className={cn("h-4 w-4", pulse && "animate-bounce")} />
+        <Bell className={cn("h-5 w-5", pulse && "animate-bounce")} aria-hidden />
         {/* Badge */}
         {totalBadge > 0 && (
           <span
             className={cn(
-              "absolute -top-1 -right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white rounded-full px-1 shadow-sm",
+              "absolute top-1 right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white rounded-full px-1 shadow-sm",
               criticalCount > 0 ? "bg-[var(--data-error-600)] animate-pulse" : "bg-[var(--data-error-500)]",
               pulse && "animate-pulse"
             )}
@@ -189,6 +220,7 @@ export default function NotificationBell() {
         notifications={notifications}
         unreadCount={unreadCount}
         isLoading={isLoading}
+        cargaFallida={cargaFallida}
         filter={filter}
         setFilter={setFilter}
         markAsRead={markAsRead}

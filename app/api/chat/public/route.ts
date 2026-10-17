@@ -6,7 +6,7 @@ import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
+import { getCustomerPayload, telefonoDeLaSesion, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 import { markPresence, markTyping, readPresence } from "@/lib/chat/presence";
 
 /** Normaliza phone PE: "51XXXXXXXXX" o "9XXXXXXXX" → "9XXXXXXXX". */
@@ -32,7 +32,7 @@ async function enforceSessionPhone(
   if (!token) return null; // sin sesión → flujo legacy permitido
   const session = await getCustomerPayload(token);
   if (!session?.customerId) return null;
-  if (normalizePhone(session.customerId) !== normalizePhone(bodyPhone)) {
+  if (telefonoDeLaSesion(session) !== normalizePhone(bodyPhone)) {
     return NextResponse.json(
       { error: "El teléfono no coincide con tu sesión" },
       { status: 403 },
