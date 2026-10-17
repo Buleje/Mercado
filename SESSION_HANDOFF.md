@@ -1,4 +1,14 @@
-# SESSION HANDOFF — 2026-10-17 (noche autónoma 00:10-06:10): los 4 PDF de Codex implementados — 49 commits
+# SESSION HANDOFF — 2026-10-17 (día): Superadmin › Plantas forestales (control e inspección de aserraderos)
+
+**Estado:** commits `4c0f2b85e` (tabla `ForestInspeccionPlanta`, ADR-498, migración APLICADA) · `13373829e` (lista, ficha, incoherencias) · `065a7c7fb` (inspección) · `9a5d3ec0f` (arreglos de security) · `68c2c0001` (architect a la llamada 30) · qa-capturas `--superadmin`. Sin subir. Dos pasadas de security: la segunda cerró una ALTA (la planta reescribía el conteo del inspector) y quedó sin veto.
+
+**Qué hay:** `/superadmin/plantas` (5 plantas: Blas real + main + 3 de prueba), ficha por planta, `/plantas/incoherencias`, `/plantas/inspecciones`, inspección en celular. Contrato y reglas: `.claude/autonomo/plantas-forestales/contrato.md` + memoria `plantas-forestales-superadmin-2026-10-17`. Ningún número nuevo: todo compone las funciones del libro (paridad con Blas verificada).
+
+**Decide Brandon:** las 5 corridas de Blas marcadas «usado» el 03-10 con motivos de prueba («aaaaaaa») → aserrada disponible 0 m³ (el libro firma 19,772). Basura QA sin método de borrado: 5 conteos de patio en main/-op-qa-ui (ids en la memoria).
+
+**Sin verificar:** cámara y fotos desde un celular real; acta impresa en papel.
+
+## (anterior) 2026-10-17 (noche autónoma 00:10-06:10): los 4 PDF de Codex implementados — 49 commits
 
 **Estado:** commits `e81701b8e` → HEAD (desde `2eabc55dd`), **sin subir** (no se pidió push; deploy bloqueado). Árbol limpio salvo lo de siempre (`.claude/autonomo/`, VRT, `components/admin/forestal/.claude/`). `npm run typecheck` verde sobre el árbol limpio y 334 guardianes verdes al cerrar; la suite completa la cortó la presión de memoria (no se reintentó).
 

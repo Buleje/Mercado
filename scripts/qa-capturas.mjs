@@ -94,6 +94,10 @@
  * Sale un JSON: capturas, respuestas ≥400 (con ruta), errores de consola (nº y textos),
  * pageerror, evals y ms.
  * Código 1 si hubo `pageerror` o falló un paso.
+ *
+ * `--superadmin` (17-10): entra al superadmin con `dev-helpers/superadmin-auth.mjs --json` (mismo
+ * User-Agent que el login, la sesión lo exige) en vez del login del panel; `--ruta /superadmin/...`.
+ * Tres agentes de «Plantas forestales» armaron eso a mano con Playwright el mismo día.
  */
 import { chromium } from "playwright";
 import { mkdirSync, readFileSync, existsSync, writeFileSync, unlinkSync, readdirSync, readlinkSync } from "node:fs";
@@ -267,11 +271,23 @@ if (!chrome) {
 }
 mkdirSync(salida, { recursive: true });
 
+const superadmin = bandera("superadmin");
+/** { cookies, userAgent } de la sesión de superadmin, o null. */
+let sesionSa = null;
+if (superadmin) {
+  try {
+    sesionSa = JSON.parse(execSync(`node ${path.join(path.dirname(new URL(import.meta.url).pathname), "dev-helpers/superadmin-auth.mjs")} --json`, { encoding: "utf8", timeout: 120_000 }));
+  } catch (e) {
+    console.log(JSON.stringify({ ok: false, error: `login de superadmin: ${String(e?.stderr ?? e?.message ?? e).trim().slice(0, 300)}` }));
+    process.exit(1);
+  }
+}
 const browser = await chromium.launch({ headless: true, executablePath: chrome });
 const ctx = await browser.newContext({
   viewport: { width: anchos[0] ?? 1280, height: 900 },
-  extraHTTPHeaders: { "x-tenant-id": tenant },
+  ...(sesionSa ? { userAgent: sesionSa.userAgent } : { extraHTTPHeaders: { "x-tenant-id": tenant } }),
 });
+if (sesionSa) await ctx.addCookies(sesionSa.cookies);
 // El onboarding tapa el panel y se come los clics. `useOnboardingTrigger` arma
 // la clave con `localStorage["active-tenant-slug"] ?? "main"`: en un navegador
 // limpio pide la de `main` aunque se entre a otro tenant (medido 23-09).
@@ -508,7 +524,10 @@ async function recorrido(t, primero) {
     respuestas.push(`${r.status()} ${r.request().method()} ${u.pathname}${u.search.slice(0, 60)}`);
   });
   await page.addInitScript((o) => {
-    try { sessionStorage.setItem("buleje-theme-session-v2", o ? "dark" : "light"); } catch { /* ignore */ }
+    try {
+      sessionStorage.setItem("buleje-theme-session-v2", o ? "dark" : "light");
+      localStorage.setItem("superadmin-theme", o ? "dark" : "light"); // el superadmin guarda su tema aparte
+    } catch { /* ignore */ }
   }, t === "oscuro");
   /* --voz-falsa (15-10): el Chrome de Playwright no habla; la voz anota cada frase en
      window.__qaVoz y dispara onstart/onend, así «Leer» se verifica con un {"eval": "window.__qaVoz"}. */
@@ -739,7 +758,7 @@ let falla = null;
 try {
   // Login como la app: la cookie `csrf-token` sale de cualquier GET, y
   // `tenantSlug` va en el body porque `qaadmin` existe en varios tenants.
-  if (!bandera("sin-login")) {
+  if (!bandera("sin-login") && !superadmin) {
     // La cookie sale de `/api/health` (0,7 s) y no de cargar la portada: `/`
     // compila y pinta el marketplace entero (5-6 s en el navegador, medido
     // 2026-09-25) sólo para sembrar una cookie. Mismo `ctx`: el Set-Cookie de
