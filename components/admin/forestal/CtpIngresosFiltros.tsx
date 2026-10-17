@@ -11,8 +11,18 @@
  */
 
 import type { ReactNode } from "react";
-import { ArrowLeftRight, BarChart3, Coins, Download, FileStack, FolderOpen, FolderPlus, Plus, RefreshCw, Search, X } from "@buleje/design-system/icons";
+import { ArrowLeftRight, BarChart3, Coins, Download, FileStack, FolderOpen, FolderPlus, Plus, RefreshCw, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { AccionesDeLaVista, ORDEN_ACCION, TextoDeAccion, useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
+import { cn } from "@/lib/utils";
+import {
+  BotonFiltrosDelRiel,
+  CLASE_ENCENDIDO_RIEL,
+  CLASE_PRINCIPAL_PLEGABLE,
+  CLASE_PRINCIPAL_RIEL,
+  RotuloPrincipal,
+  useBuscarEnRiel,
+} from "./ctp-riel-piezas";
 import CtpFiltrosPanel, { BotonFiltros, BTN_FILTRO, usePanelFiltros } from "./ctp-filtros-panel";
 import { etiquetaDePermiso, type FiltroMovil } from "./CtpGuiasFiltrosCabecera";
 import { STATUS_META, productLabel, type WoodEntryStats, type WoodEntryStatus } from "./ctp-shared";
@@ -272,78 +282,85 @@ export default function CtpIngresosFiltros({
     ...(modoLista ?? []),
   ];
 
+  const enLibro = useEnElLibro();
+  const buscar = useBuscarEnRiel({
+    id: "ctp-ing-search",
+    etiqueta: "Buscar ingresos",
+    placeholder: "Buscar por GTF, proveedor o especie...",
+    valor: searchInput,
+    onCambiar: onSearch,
+    claseFuera: "flex-1 sm:basis-40",
+  });
+  /* La excepción del menú: con filas marcadas, armar el legajo de ESAS guías
+     es la acción del momento y sale a la barra. */
+  const legajo = legajoCount > 0 && !legajoDeTodo && (
+    <button
+      type="button"
+      onClick={onLegajo}
+      disabled={armandoLegajo}
+      title={`Armar un solo documento con las ${legajoCount} guías marcadas y su índice`}
+      className={cn(BTN_ICONO, CLASE_ENCENDIDO_RIEL, "@max-[80rem]/riel:px-3")}
+    >
+      <FileStack className={`h-4 w-4 ${armandoLegajo ? "animate-pulse" : ""}`} aria-hidden />
+      <TextoDeAccion corto={legajoCount}>{armandoLegajo ? "Armando…" : `Legajo (${legajoCount})`}</TextoDeAccion>
+    </button>
+  );
+  /* Cinco botones-icono (especies, descargar, legajo, recargar) más el CTA
+     envolvían a dos filas en un portátil: se pliegan en el menú, donde además
+     cada uno gana la línea que explica qué hace (ADR-360). */
+  const menu = (
+    <ActionMenu
+      label="Opciones"
+      title="Desglose por especie, guías guardadas, descargar, legajo y recargar"
+      actions={opciones}
+      size="md"
+      compactoEnMovil
+      soloIcono={enLibro}
+      className={enLibro ? "w-12!" : ""}
+    />
+  );
+  const nuevo = (
+    <button
+      type="button"
+      onClick={onNuevo}
+      title="Registrar la madera que llegó con su guía (atajo: N)"
+      className={cn(CLASE_PRINCIPAL_RIEL, enLibro ? CLASE_PRINCIPAL_PLEGABLE : "flex-1 rounded-2xl sm:flex-none")}
+    >
+      <Plus className="h-5 w-5" aria-hidden />
+      <RotuloPrincipal corto="Nuevo">Nuevo ingreso</RotuloPrincipal>
+    </button>
+  );
+
   return (
     <div className="space-y-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* El botón «Indicadores», primero de la fila (2026-09-24).
-            Con tope de ancho y el buscador con base propia: a 1280 px el
-            resumen del botón se llevaba 383 px y el buscador quedaba en 117
-            («Buscar p…»). `min-w-*` no sirve acá — el reset global
-            `* { min-width: 0 }` le gana a las utilidades (memoria
-            `min-width-utilities-muertas`); `basis` y `max-w` sí aplican. */}
-        {antes && <div className="flex min-w-0 sm:max-w-64 2xl:max-w-96">{antes}</div>}
-        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl sm:basis-40 border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 transition-colors focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]">
-          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <label htmlFor="ctp-ing-search" className="sr-only">
-            Buscar ingresos
-          </label>
-          <input
-            id="ctp-ing-search"
-            type="text"
-            value={searchInput}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder="Buscar por GTF, proveedor o especie..."
-            className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
-          />
-          {searchInput && (
-            <button
-              type="button"
-              onClick={() => onSearch("")}
-              aria-label="Limpiar búsqueda"
-              className="shrink-0 rounded-full p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+      {enLibro ? (
+        /* En el libro todo va al riel de las pestañas (Brandon, 2026-10-17);
+           en la vista queda sólo el campo de búsqueda cuando está abierto. */
+        <>
+          {antes}
+          <AccionesDeLaVista>
+            {buscar.boton}
+            <BotonFiltrosDelRiel activos={activos} abierto={abierto} panelId={panelId} onToggle={alternar} />
+            {menu}
+            {legajo}
+          </AccionesDeLaVista>
+          <AccionesDeLaVista orden={ORDEN_ACCION.principal}>{nuevo}</AccionesDeLaVista>
+          {buscar.campo}
+        </>
+      ) : (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          {/* «Indicadores» primero, con tope de ancho: a 1280 px el resumen se
+              llevaba 383 px y el buscador quedaba en 117 («Buscar p…»). */}
+          {antes && <div className="flex min-w-0 sm:max-w-64 2xl:max-w-96">{antes}</div>}
+          {buscar.boton}
+          <div className="flex items-center gap-2">
+            <BotonFiltros activos={activos} abierto={abierto} panelId={panelId} onToggle={alternar} />
+            {menu}
+            {legajo}
+            {nuevo}
+          </div>
         </div>
-        {/* En móvil los botones van en UNA fila: con `max-sm:sr-only` y ancho
-            completo se veían como cajas vacías. */}
-        <div className="flex items-center gap-2">
-          <BotonFiltros activos={activos} abierto={abierto} panelId={panelId} onToggle={alternar} />
-          {/* Cinco botones-icono (especies, descargar, legajo, recargar) más el
-              CTA envolvían a dos filas en un portátil. Se pliegan acá adentro,
-              donde además cada uno gana la línea que explica qué hace (ADR-360). */}
-          <ActionMenu
-            label="Opciones"
-            title="Desglose por especie, guías guardadas, descargar, legajo y recargar"
-            actions={opciones}
-            size="md"
-            compactoEnMovil
-          />
-          {/* La excepción: con filas marcadas, armar el legajo de ESAS guías es
-              la acción del momento y sale del menú a la barra. */}
-          {legajoCount > 0 && !legajoDeTodo && (
-            <button
-              type="button"
-              onClick={onLegajo}
-              disabled={armandoLegajo}
-              title={`Armar un solo documento con las ${legajoCount} guías marcadas y su índice`}
-              className={`${BTN_ICONO} border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]`}
-            >
-              <FileStack className={`h-4 w-4 ${armandoLegajo ? "animate-pulse" : ""}`} />
-              <span>{armandoLegajo ? "Armando…" : `Legajo (${legajoCount})`}</span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onNuevo}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent-600)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white shadow-sm transition hover:shadow-md hover:brightness-110 sm:flex-none"
-          >
-            <Plus className="h-5 w-5" />
-            Nuevo ingreso
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Chips de estado + cómo se lista, en la MISMA fila: los dos son
           controles de la tabla de abajo y separados costaban dos renglones en

@@ -53,6 +53,8 @@ export function accionesDeSeccion({
   onAnexos,
   onLibro,
   onTarifa,
+  onProducirSinLote,
+  onSaldoPermiso,
 }: {
   section: CtpSection;
   /** Cuántas líneas hay bajo el filtro actual (es lo que se descarga). */
@@ -75,6 +77,13 @@ export function accionesDeSeccion({
    *  toca de vez en cuando, no en cada corrida — por eso va acá y no en la
    *  barra. */
   onTarifa?: () => void;
+  /**
+   * Producir SIN lote y Saldo por permiso (Producción). Eran dos botones de la
+   * barra; con la barra al riel de las pestañas (Brandon, 2026-10-17) no
+   * entraban a 1280 px y viven acá, después del libro.
+   */
+  onProducirSinLote?: () => void;
+  onSaldoPermiso?: () => void;
 }): MenuAccion[] {
   const lista: MenuAccion[] = [
     {
@@ -108,6 +117,31 @@ export function accionesDeSeccion({
         onSelect: onLibro,
       });
     }
+    /* La sierra corta antes de que el papel exista (Brandon, 2026-09-09): se
+       cubica acá y la materia prima se vincula después. Saldo por permiso es
+       consulta (ADR-409): cuánto puede dar cada título al 56 %. */
+    lista.splice(
+      onLibro ? 1 : 0,
+      0,
+      ...(onProducirSinLote
+        ? [{
+            id: "producir-sin-lote",
+            label: "Producir sin lote",
+            hint: "Abrir el cubicador, cargar las medidas y declarar la producción sin lote ni consumo",
+            icon: Calculator,
+            onSelect: onProducirSinLote,
+          } satisfies MenuAccion]
+        : []),
+      ...(onSaldoPermiso
+        ? [{
+            id: "saldo-permiso",
+            label: "Saldo por permiso",
+            hint: "Permiso por permiso: rolliza por especie, su equivalente en pies al 56 %, lo ya declarado sin lote y lo que queda",
+            icon: Layers,
+            onSelect: onSaldoPermiso,
+          } satisfies MenuAccion]
+        : []),
+    );
     lista.push(
       {
         id: "simular",

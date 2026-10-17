@@ -25,6 +25,7 @@ import { Boxes, PackageCheck, Truck, Warehouse } from "@buleje/design-system/ico
 import type { ReactNode } from "react";
 import CtpKpi, { DesgloseSimple } from "./CtpKpi";
 import { CtpKpisPlegables, productLabel } from "./ctp-shared";
+import { useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import CtpBalanceProduccion, { GaugeRendimiento } from "./CtpBalanceProduccion";
 import CtpKpiFiltros, { type CampoKpiFiltro } from "./CtpKpiFiltros";
 import type { FiltrosSeccion, facetasDeSeccion } from "@/lib/forestal/ctp-secciones-filtro";
@@ -287,14 +288,19 @@ export default function CtpSeccionKpis({
           },
         ];
   const activos = campos.filter((c) => c.valor).length;
+  const enLibro = useEnElLibro();
 
   return (
+    <>
     <CtpKpisPlegables
       claveMemoria={`seccion-${section}`}
       tarjetas={tarjetas}
       resumen={resumen}
       trabajoActivo={trabajoActivo}
-      acciones={acciones}
+      /* Dentro del libro «Indicadores» y los botones de la vista van al riel de
+         las pestañas (Brandon, 2026-10-17); acá abajo no queda fila. */
+      alRiel
+      acciones={enLibro ? undefined : acciones}
       /* El rendimiento contra su techo, visible con el panel cerrado: es la
          cifra que decide si la corrida se puede declarar (ADR-358), y estaba
          escondida detrás del botón «Indicadores» como una más. */
@@ -351,5 +357,7 @@ export default function CtpSeccionKpis({
         ) : undefined
       }
     />
+    {enLibro && acciones}
+    </>
   );
 }

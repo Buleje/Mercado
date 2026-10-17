@@ -50,6 +50,7 @@ import {
   type Reparto,
 } from "@/lib/forestal/ctp-ingresos-kpis";
 import { useKpisPlegables, type WoodEntryStats } from "./ctp-shared";
+import { useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import CtpKpiFiltros, { camposDeIngresos, notaDeFiltros } from "./CtpKpiFiltros";
 import type { CtpFacetasActivas } from "./CtpIngresosFiltros";
 import { productLabel } from "./ctp-shared";
@@ -490,6 +491,7 @@ export default function CtpIngresosKpis({
      panel salen sueltos —no del envoltorio `CtpKpisPlegables`— para poder
      alinear el botón CON la barra de acciones en vez de centrarlo contra un
      bloque de varias filas (`items-start`, no `items-center`). */
+  const enLibro = useEnElLibro();
   const { boton, panel } = useKpisPlegables({
     claveMemoria: "ingresos",
     filtrosActivos: activos,
@@ -512,7 +514,8 @@ export default function CtpIngresosKpis({
           (stats.lateCount > 0 ? ` · ${nf(stats.lateCount)} fuera de plazo` : "")
         : "Leyendo el período…",
     tarjetas,
-    alto: acciones ? "md" : "sm",
+    /* En el riel de las pestañas va a la medida de los otros botones del riel. */
+    alto: acciones && !enLibro ? "md" : "sm",
   });
 
   return (

@@ -14,16 +14,20 @@
  * anulación, pérdida, talonario), igual que en la vista GTF del Libro TH.
  */
 
+
 import { useEffect, useMemo, useState } from "react";
-import CtpKpiFiltros from "./CtpKpiFiltros";
-import { StatCard } from "@buleje/design-system";
-import { AlertTriangle, Check, FileText, Loader2, Search } from "@buleje/design-system/icons";
+import { AlertTriangle, FileText, Loader2 } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
-import { filtrarGuias, numerosRepetidos, resumirGuias, type GuiaEmitida } from "@/lib/forestal/guias-emitidas";
-import { Btn, I, TablaSkeleton, VistaHeader, useKpisPlegables } from "./ctp-shared";
+import { filtrarGuias, numerosRepetidos, type GuiaEmitida } from "@/lib/forestal/guias-emitidas";
+import { Btn, TablaSkeleton, VistaHeader } from "./ctp-shared";
 import CtpGuiasEmitidasLista from "./CtpGuiasEmitidasLista";
 import CtpGuiasEmitidasBarra from "./CtpGuiasEmitidasBarra";
 import { useSeleccionGuias } from "./hooks/use-seleccion-guias";
+import { useGuiasEmitidasKpis } from "./hooks/use-guias-emitidas-kpis";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
+import { TextoDeAccion } from "@/components/admin/shared/libro-acciones-vista";
+import { CLASE_ENCENDIDO_RIEL, useBuscarEnRiel } from "./ctp-riel-piezas";
 
 export default function CtpGuiasEmitidasView({
   period,
@@ -38,16 +42,6 @@ export default function CtpGuiasEmitidasView({
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [soloIncompletas, setSoloIncompletas] = useState(false);
-  /**
-   * Los filtros que gobiernan las cifras de arriba (ADR-400).
-   *
-   * `soloIncompletas` NO entra acá: es el desglose que las propias tarjetas
-   * ofrecen, y recortarlas con lo que se elige EN ellas las dejaría en cero.
-   */
-  /* Listas: dos especies o dos destinos a la vez (Brandon, 2026-09-10). */
-  const [especie, setEspecie] = useState<string[]>([]);
-  const [producto, setProducto] = useState<string[]>([]);
-  const [destino, setDestino] = useState<string[]>([]);
   /**
    * Las tildadas, por id de despacho. Se cruzan con TODO lo cargado del
    * período, no con lo filtrado: buscar otra guía no destilda las anteriores
@@ -75,141 +69,22 @@ export default function CtpGuiasEmitidasView({
     return () => { vivo = false; };
   }, [period.from, period.to]);
 
-  /**
-   * Las guías que describen las cifras: todas, recortadas por especie, producto
-   * y destino. Antes el resumen contaba SIEMPRE el período entero mientras la
-   * lista de abajo mostraba otra cosa.
-   */
-  const delFiltro = useMemo(
-    () =>
-      /* OR adentro de cada filtro, AND entre filtros. */
-      guias.filter(
-        (g) =>
-          (especie.length === 0 || especie.includes(g.especie ?? "")) &&
-          (producto.length === 0 || producto.includes(g.producto ?? "")) &&
-          (destino.length === 0 || destino.includes(g.destino ?? "")),
-      ),
-    [guias, especie, producto, destino],
-  );
-  /* Las opciones salen del período ENTERO: de lo ya filtrado, quitar un filtro
-     no se podría hacer desde el propio desplegable. */
-  const opciones = useMemo(() => {
-    const contar = (get: (g: GuiaEmitida) => string | null) => {
-      const m = new Map<string, number>();
-      for (const g of guias) {
-        const v = (get(g) ?? "").trim();
-        if (!v) continue;
-        m.set(v, (m.get(v) ?? 0) + 1);
-      }
-      return [...m.entries()]
-        .map(([value, count]) => ({ value, count }))
-        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
-    };
-    return {
-      especies: contar((g) => g.especie),
-      productos: contar((g) => g.producto),
-      destinos: contar((g) => g.destino),
-    };
-  }, [guias]);
-
-  const resumen = useMemo(() => resumirGuias(delFiltro), [delFiltro]);
+  const { kpis, delFiltro, resumen } = useGuiasEmitidasKpis(guias, period.label);
   const repetidos = useMemo(() => numerosRepetidos(guias), [guias]);
   const visibles = useMemo(() => {
     const base = soloIncompletas ? delFiltro.filter((g) => g.estado === "incompleta") : delFiltro;
     return filtrarGuias(base, q);
   }, [delFiltro, q, soloIncompletas]);
 
-  /* Los filtros y las cifras, plegables (Brandon 05-10): el botón va en la fila
-     del título; con el período en cero queda sólo la tarjeta del total. */
-  const filtros = (
-    <CtpKpiFiltros
-        campos={[
-          {
-            key: "especie",
-            label: "Especie",
-            todos: "Todas las especies",
-            valor: especie,
-            opciones: opciones.especies.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
-            onChange: setEspecie,
-          },
-          {
-            key: "producto",
-            label: "Producto",
-            todos: "Todos los productos",
-            valor: producto,
-            opciones: opciones.productos.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
-            onChange: setProducto,
-          },
-          {
-            key: "destino",
-            label: "Destino",
-            todos: "Todos los destinos",
-            valor: destino,
-            opciones: opciones.destinos.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
-            onChange: setDestino,
-          },
-        ]}
-        onLimpiar={() => { setEspecie([]); setProducto([]); setDestino([]); }}
-        nota={
-          [especie, producto, destino].some((v) => v.length > 0)
-            ? `Las cifras y la lista muestran sólo ${[
-                especie.length > 0 ? `especie: ${especie.join(" o ")}` : "",
-                producto.length > 0 ? `producto: ${producto.join(" o ")}` : "",
-                destino.length > 0 ? `destino: ${destino.join(" o ")}` : "",
-              ]
-                .filter(Boolean)
-                .join(" · ")}`
-            : null
-        }
-      />
-  );
-  const kpis = useKpisPlegables({
-    claveMemoria: "ctp-guias",
-    filtros,
-    filtrosActivos: [especie, producto, destino].filter((v) => v.length > 0).length,
-    resumen:
-      resumen.total === 0
-        ? "Sin guías emitidas en el período"
-        : `${resumen.total} guía${resumen.total === 1 ? "" : "s"} · ${resumen.incompletas} a medio llenar · ${resumen.sinVerificar} sin verificar${resumen.sinOrigen > 0 ? ` · ${resumen.sinOrigen} sin origen` : ""}`,
-    tarjetas: [
-        <StatCard key="total" density="compact" label="Guías emitidas" value={String(resumen.total)} subValue={period.label} icon={FileText} emphasis="neutral" />,
-      ...(resumen.total > 0
-        ? [
-          <StatCard key="listas"
-            density="compact"
-            label="Listas para imprimir"
-            value={String(resumen.completas)}
-            subValue={resumen.completas === resumen.total - resumen.anuladas ? "todas completas" : "con todos sus datos"}
-            icon={Check}
-            emphasis="success"
-          />,
-          <StatCard key="medio"
-            density="compact"
-            label="A medio llenar"
-            value={String(resumen.incompletas)}
-            subValue={resumen.incompletas > 0 ? "no se pueden imprimir así" : "ninguna pendiente"}
-            icon={AlertTriangle}
-            emphasis={resumen.incompletas > 0 ? "warning" : "neutral"}
-          />,
-          <StatCard key="verificar"
-            density="compact"
-            label="Sin verificar en SERFOR"
-            value={String(resumen.sinVerificar)}
-            subValue={resumen.sinVerificar > 0 ? "lo primero que mira un control" : "todas verificadas"}
-            icon={AlertTriangle}
-            emphasis={resumen.sinVerificar > 0 ? "warning" : "success"}
-          />,
-          <StatCard key="origen"
-            density="compact"
-            label="Amparan madera sin origen"
-            value={String(resumen.sinOrigen)}
-            subValue={resumen.sinOrigen > 0 ? "el documento ya salió" : "todas con origen declarado"}
-            icon={AlertTriangle}
-            emphasis={resumen.sinOrigen > 0 ? "warning" : "success"}
-          />,
-          ]
-        : []),
-    ],
+  /* En el libro, la búsqueda es una lupa en el riel de las pestañas y el campo
+     se abre acá (Brandon, 2026-10-17: los botones al lado de las pestañas). */
+  const buscar = useBuscarEnRiel({
+    id: "ctp-guias-search",
+    etiqueta: "Buscar guías",
+    placeholder: "Buscar por N° de guía, destino, destinatario o placa…",
+    valor: q,
+    onCambiar: setQ,
+    claseFuera: "flex-1",
   });
 
   return (
@@ -227,9 +102,29 @@ export default function CtpGuiasEmitidasView({
       <VistaHeader
         titulo="Guías emitidas"
         meta={`${visibles.length} de ${guias.length}`}
-        hint="Las GTF de salida del CTP. Cada fila es un despacho: para imprimir o completar, se abre desde Despacho."
+        hint="Las GTF de salida del CTP. Cada fila es un despacho: para imprimir o completarla, ábrela desde Despachos."
       >
         {kpis.boton}
+        {buscar.boton}
+        <button
+          type="button"
+          aria-pressed={soloIncompletas}
+          onClick={() => setSoloIncompletas((v) => !v)}
+          title="Mostrar sólo las guías a medio llenar: no se pueden imprimir así"
+          className={cn(
+            button({ variant: "secondary", className: "shrink-0 rounded-xl" }),
+            soloIncompletas && CLASE_ENCENDIDO_RIEL,
+            resumen.incompletas > 0 ? "@max-[80rem]/riel:px-3" : "@max-[80rem]/riel:w-12 @max-[80rem]/riel:px-0",
+          )}
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+          <TextoDeAccion>Sólo las incompletas</TextoDeAccion>
+          {resumen.incompletas > 0 && (
+            <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 text-xs font-bold tabular-nums">
+              {resumen.incompletas}
+            </span>
+          )}
+        </button>
         {onAbrirDespacho && (
           <Btn size="sm" variant="secondary" onClick={onAbrirDespacho}>
             <FileText className="h-4 w-4" />
@@ -248,27 +143,7 @@ export default function CtpGuiasEmitidasView({
         </p>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input
-            type="search"
-            className={`${I} pl-9`}
-            placeholder="Buscar por N° de guía, destino, destinatario o placa…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
-        <Btn
-          size="md"
-          variant={soloIncompletas ? "dark" : "secondary"}
-          aria-pressed={soloIncompletas}
-          onClick={() => setSoloIncompletas((v) => !v)}
-        >
-          <AlertTriangle className="h-4 w-4" />
-          Sólo las incompletas
-        </Btn>
-      </div>
+      {buscar.campo}
 
       {error && (
         <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
