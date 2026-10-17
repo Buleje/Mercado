@@ -90,6 +90,17 @@ while true; do
     log "killed orphan tsc pids: $(echo $ORPHAN_TSC | tr '\n' ' ')"
   fi
 
+  # 2c. Workers de next huérfanos (17-10: dos de devs viejos, 164 MB y 28 MB, colgaban de
+  #     `systemd --user` y de un Relay, NO de pid 1): el padre ya no es un proceso de next.
+  for W in $(pgrep -f 'next/dist/compiled/jest-worker/processChild\.js'); do
+    PADRE=$(ps -o ppid= -p "$W" 2>/dev/null | tr -d ' ')
+    EDAD=$(ps -o etimes= -p "$W" 2>/dev/null | tr -d ' ')
+    [[ -z "$PADRE" || "${EDAD:-0}" -lt 300 ]] && continue
+    if ! ps -o args= -p "$PADRE" 2>/dev/null | grep -q 'next'; then
+      kill "$W" 2>/dev/null && log "killed orphan next worker pid=$W (padre $PADRE ya no es next)"
+    fi
+  done
+
   # 3. RAM baja → anotar QUIÉN la come (05-10 07:33: 75 MB libres durante 9 min
   #    y el log sólo decía «sin MCP gordo»; no se supo quién era). Antes acá se
   #    mataba un MCP (context7/firecrawl, ~100 MB: no salvaba nada y dejaba sin
