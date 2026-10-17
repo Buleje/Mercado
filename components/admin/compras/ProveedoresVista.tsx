@@ -47,7 +47,7 @@ export default function ProveedoresVista({
   useSeccionDeLaFicha(proveedor, "lista", irA);
   const barra = { activa: vista, onCambiar: irA };
 
-  if (vista === "lista") return <SuppliersTab barra={barra} />;
+  if (vista === "lista") return <SuppliersTab barra={barra} onNuevaOrden={onCrearOC} />;
   return (
     <div className="space-y-4">
       <CabeceraProveedores barra={barra} />

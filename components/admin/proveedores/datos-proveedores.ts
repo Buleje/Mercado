@@ -5,6 +5,7 @@
  * cuentas por pagar y órdenes de compra); acá sólo se agrupa.
  */
 import type { DbSupplier } from "@/lib/jsondb";
+import { proveedorCoincideBusqueda } from "@/lib/compras/proveedor-identidad";
 
 export type CuentaDeProveedor = {
   id: string;
@@ -107,13 +108,12 @@ export function filtrarProveedores(
   texto: string,
 ): DbSupplier[] {
   const deben = conDeuda(cuentas);
-  const q = texto.trim().toLowerCase();
   return proveedores.filter((s) => {
     if (filtro === "con-deuda" && !deben.has(s.id)) return false;
     if (filtro === "con-ruc" && !tieneRuc(s)) return false;
     if (filtro === "sin-ruc" && tieneRuc(s)) return false;
-    if (!q) return true;
-    return s.name.toLowerCase().includes(q) || (s.ruc ?? "").includes(texto.trim()) || (s.phone ?? "").includes(texto.trim());
+    // Nombre, razón social, contacto, correo, RUC/DNI y teléfonos, sin tildes ni guiones (C34).
+    return proveedorCoincideBusqueda(s, texto);
   });
 }
 

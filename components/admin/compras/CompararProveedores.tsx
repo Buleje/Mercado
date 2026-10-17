@@ -13,7 +13,7 @@
  * 4. Cuánto ganas con cada proveedor (`MargenPorProveedor`, 11-10): ventas,
  *    costo y ganancia de lo que le compras a cada uno (el de Lightspeed).
  * 5. Precios del mercado (`CompetitorPriceTracker`, era Análisis › Inteligencia):
- *    sigue guardado en el navegador (llevarlo a la base es decisión de Brandon)
+ *    se guarda en el navegador o, si lo eligen, con el equipo (C38, noche 17-10)
  *    y se ve sólo para quien lo veía allá (`PermisoDe`, regla R2).
  */
 
@@ -69,7 +69,7 @@ export default function CompararProveedores({ onCreateOC }: { onCreateOC: (prove
         <Plegable
           clave="compras:comparar:mercado"
           titulo="Precios del mercado"
-          resumen="Lo que cobra la competencia, guardado en este navegador · venía de Análisis › Inteligencia"
+          resumen="Lo que cobra la competencia, con fecha y quién lo vio · no es lo que pagas ni una oferta"
         >
           <CompetitorPriceTracker embebido />
         </Plegable>

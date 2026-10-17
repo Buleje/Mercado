@@ -39,7 +39,7 @@ export function useIndicadoresProveedores(
   const tarjetas: Tarjeta[] = [
     { rotulo: "Proveedores", valor: String(c.total), detalle: `${c.conRuc} con RUC · ${c.total - c.conRuc} sin documentar`, ayuda: "Los proveedores que tienes registrados. Uno sin RUC no podrá salir en un comprobante de compra." },
     { rotulo: "Con deuda", valor: String(c.conDeuda), aviso: c.conDeuda > 0, detalle: c.conDeuda > 0 ? `Les debes ${formatCurrency(c.debe)}` : "No le debes a ninguno", ayuda: "Proveedores con una cuenta por pagar abierta. El detalle, los vencimientos y «Pagar» están en Por pagar." },
-    { rotulo: "Le compras más a", valor: c.top?.nombre ?? "—", detalle: c.top ? `${formatCurrency(c.top.monto)} en ${c.top.ordenes} orden${c.top.ordenes === 1 ? "" : "es"}` : "Aún sin órdenes", ayuda: "El proveedor con más monto en tus órdenes de compra (las canceladas no cuentan)." },
+    { rotulo: "Le compras más a", valor: c.top?.nombre ?? "—", detalle: c.top ? `${formatCurrency(c.top.monto)} en ${c.top.ordenes} ${c.top.ordenes === 1 ? "orden" : "órdenes"}` : "Aún sin órdenes", ayuda: "El proveedor con más monto en tus órdenes de compra (las canceladas no cuentan)." },
     { rotulo: "Entrega en", valor: c.entrega ? `${formatNumber(c.entrega.dias, { max: 1 })} días` : "—", detalle: c.entrega ? `Promedio de ${c.entrega.declaran} que lo declaran` : "Ninguno declara sus días", ayuda: "Los días que dice tu ficha que tarda cada proveedor; de ahí sale el punto de reorden de Sugerencias." },
   ];
 

@@ -1,6 +1,7 @@
 'use client';
 
-import { Zap, ClipboardList, Loader2 } from "@buleje/design-system/icons";
+import { Zap, ClipboardList, Loader2, AlertTriangle } from "@buleje/design-system/icons";
+import { describirCoincidencia, type ProveedorParaCruce } from "@/lib/compras/proveedor-identidad";
 import { cn } from '@/lib/utils';
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
@@ -14,15 +15,19 @@ type Props = {
   onSaved: () => void;
   supplier?: Record<string, unknown> | null;
   initialFormat?: Formato;
+  /** Proveedores ya guardados: avisa si el que escribes se parece a uno (C34). */
+  existentes?: readonly ProveedorParaCruce[];
 };
 
 // ── Component ──────────────────────────────────────────────────────────────
 // Partido el 09-10 (675 líneas): datos en `proveedor-form-datos.ts`, estado y
 // guardado en `use-proveedor-form.ts`, cada formato en su componente.
 
-export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier, initialFormat }: Props) {
-  const { format, changeFormat, form, setForm, set, saving, error, rucLookup, setRucLookup, handleRucLookup, isEdit, handleSubmit } =
-    useProveedorForm({ supplier, initialFormat, onSaved, onClose });
+export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier, initialFormat, existentes }: Props) {
+  const {
+    format, changeFormat, form, setForm, set, saving, error, rucLookup, setRucLookup, handleRucLookup, isEdit, handleSubmit,
+    coincidencias, avisoDocumento, confirmarDuplicado,
+  } = useProveedorForm({ supplier, initialFormat, onSaved, onClose, existentes });
 
   return (
     <AdminModal
@@ -62,11 +67,22 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
       <form onSubmit={handleSubmit} className="p-5 space-y-4">
         {/* ── SIMPLE FORMAT ── */}
         {format === 'simple' && (
-          <ProveedorFormSimple form={form} set={set} rucLookup={rucLookup} setRucLookup={setRucLookup} handleRucLookup={handleRucLookup} />
+          <ProveedorFormSimple form={form} set={set} rucLookup={rucLookup} setRucLookup={setRucLookup} handleRucLookup={handleRucLookup} avisoDocumento={avisoDocumento} />
         )}
 
         {/* ── COMPLETE FORMAT ── */}
-        {format === 'completo' && <ProveedorFormCompleto form={form} set={set} setForm={setForm} />}
+        {format === 'completo' && <ProveedorFormCompleto form={form} set={set} setForm={setForm} avisoDocumento={avisoDocumento} />}
+
+        {/* C34: se parece a uno que ya tienes. Avisa; unir dos proveedores lo decide una persona. */}
+        {coincidencias.length > 0 && (
+          <div role="status" className="flex items-start gap-2 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 px-3 py-2 text-sm text-[var(--text-primary)]">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-warning-500)]" aria-hidden="true" />
+            <span>
+              Se parece a {coincidencias.slice(0, 3).map(describirCoincidencia).join(' · ')}
+              {coincidencias.length > 3 ? ` y ${coincidencias.length - 3} más` : ''}. Revisa que no sea el mismo antes de guardar.
+            </span>
+          </div>
+        )}
 
         {/* ADR-119: Documentos vinculados a este proveedor (solo en edición) */}
         {isEdit && typeof supplier?.id === "string" && (
@@ -77,7 +93,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
 
         {/* Error */}
         {error && (
-          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold bg-[var(--data-error-50)] dark:bg-red-950/20 px-3 py-2 rounded-lg">{error}</p>
+          <p role="alert" className="text-xs text-[var(--data-error-500)] font-semibold bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 px-3 py-2 rounded-lg">{error}</p>
         )}
 
         {/* Actions */}
@@ -95,7 +111,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             className="flex-1 h-12 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {saving ? 'Guardando...' : isEdit ? 'Guardar proveedor' : format === 'simple' ? 'Crear proveedor' : 'Guardar proveedor'}
+            {saving ? 'Guardando...' : confirmarDuplicado ? 'Guardar igual' : isEdit ? 'Guardar proveedor' : format === 'simple' ? 'Crear proveedor' : 'Guardar proveedor'}
           </button>
         </div>
       </form>

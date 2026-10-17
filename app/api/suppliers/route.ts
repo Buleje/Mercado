@@ -6,6 +6,8 @@ import { requireActiveSubscription } from "@/lib/billing/require-active-subscrip
 import { withDbRetry } from "@/lib/db-retry";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { ProveedorFichaDB } from "@/lib/db/proveedor-ficha.db";
+import { errorDeDocumento, hayMismoDocumento, describirCoincidencia } from "@/lib/compras/proveedor-identidad";
 
 const SupplierSchema = z.object({
   name: z.string().min(1, "name required").max(200),
@@ -35,6 +37,8 @@ const SupplierSchema = z.object({
   cuentaBancaria: z.string().max(50).optional().nullable(),
   banco: z.string().max(50).optional().nullable(),
   observaciones: z.string().max(2000).optional().nullable(),
+  /** C34: guardar aunque ya haya un proveedor con el mismo documento (lo decidió la persona). */
+  confirmarDuplicado: z.boolean().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -65,6 +69,24 @@ export async function POST(req: NextRequest) {
   const parsed = SupplierSchema.safeParse(raw);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   const data = parsed.data;
+
+  // C34: formato del documento por su tipo (RUC 11 dígitos, DNI 8) y el mismo
+  // documento ya guardado. Una coincidencia no une nada: frena y pregunta.
+  const documento = data.documento ?? data.ruc ?? null;
+  const errorDoc = errorDeDocumento(data.tipoDocumento, documento);
+  if (errorDoc) return NextResponse.json({ error: errorDoc, campo: "documento" }, { status: 400 });
+  if (documento && !data.confirmarDuplicado) {
+    const coincidencias = await ProveedorFichaDB.coincidencias(auth.tenantId, {
+      name: data.name, razonSocial: data.razonSocial, tipoDocumento: data.tipoDocumento, documento, ruc: data.ruc,
+    });
+    const mismo = hayMismoDocumento(coincidencias);
+    if (mismo) {
+      return NextResponse.json(
+        { error: `Ya tienes un proveedor con ese documento: ${describirCoincidencia(mismo)}. Si es otro, guarda igual.`, coincidencias },
+        { status: 409 },
+      );
+    }
+  }
   const id = `sup-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
   // Vía la DB class, no `prisma` directo (regla #1). El comentario que había

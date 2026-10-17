@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { SuppliersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { ProveedorFichaDB } from "@/lib/db/proveedor-ficha.db";
+import { errorDeDocumento, hayMismoDocumento, describirCoincidencia } from "@/lib/compras/proveedor-identidad";
 
 
 const SupplierPatchSchema = z.object({
@@ -35,6 +36,8 @@ const SupplierPatchSchema = z.object({
   cuentaBancaria: z.string().max(50).optional().nullable(),
   banco: z.string().max(50).optional().nullable(),
   observaciones: z.string().max(2000).optional().nullable(),
+  /** C34: guardar aunque ya haya otro proveedor con el mismo documento. */
+  confirmarDuplicado: z.boolean().optional(),
 }).partial();
 
 export async function GET(
@@ -50,10 +53,9 @@ export async function GET(
     if (!supplier) {
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
-    // Get full record with new fields from prisma — findFirst con tenantId para evitar IDOR cross-tenant.
-     
-    const full = await prisma.supplier.findFirst({ where: { id, tenantId: auth.tenantId } });
-    return NextResponse.json({ ...supplier, ...full });
+    // `getById` ya trae la ficha entera (mapSupplier): el `prisma.supplier`
+    // directo que había acá sólo duplicaba la lectura (regla 1).
+    return NextResponse.json(supplier);
   } catch (e) {
     logger.error("[suppliers/id] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
@@ -79,6 +81,27 @@ export async function PATCH(
     // Build update data — includes both old and new fields
     const data: Record<string, unknown> = {};
     const d = parsed.data;
+
+    // C34: si cambia el documento o su tipo, el formato y el repetido se
+    // revisan contra lo que queda guardado (lo nuevo encima de lo de hoy).
+    if (d.documento !== undefined || d.ruc !== undefined || d.tipoDocumento !== undefined) {
+      const actual = await SuppliersDB.getById(auth.tenantId, id);
+      if (!actual) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+      const tipo = d.tipoDocumento !== undefined ? d.tipoDocumento : actual.tipoDocumento;
+      const documento = (d.documento !== undefined ? d.documento : actual.documento) || (d.ruc !== undefined ? d.ruc : actual.ruc) || null;
+      const errorDoc = errorDeDocumento(tipo, documento);
+      if (errorDoc) return NextResponse.json({ error: errorDoc, campo: "documento" }, { status: 400 });
+      if (documento && !d.confirmarDuplicado) {
+        const coincidencias = await ProveedorFichaDB.coincidencias(auth.tenantId, { name: d.name ?? actual.name, tipoDocumento: tipo, documento }, id);
+        const mismo = hayMismoDocumento(coincidencias);
+        if (mismo) {
+          return NextResponse.json(
+            { error: `Ya tienes otro proveedor con ese documento: ${describirCoincidencia(mismo)}. Si es otro, guarda igual.`, coincidencias },
+            { status: 409 },
+          );
+        }
+      }
+    }
     if (d.name !== undefined) data.name = d.name;
     if (d.ruc !== undefined) data.ruc = d.ruc;
     if (d.phone !== undefined) data.phone = d.phone;

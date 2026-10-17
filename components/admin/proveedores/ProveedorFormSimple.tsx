@@ -8,8 +8,10 @@ import { inputCls, labelCls, type SupplierFormData } from './proveedor-form-dato
 import type { RucLookup } from './use-proveedor-form';
 
 /** Formato «Simple»: lo justo para dar de alta un proveedor (con RUC que autocompleta SUNAT). */
-export default function ProveedorFormSimple({ form, set, rucLookup, setRucLookup, handleRucLookup }: {
+export default function ProveedorFormSimple({ form, set, rucLookup, setRucLookup, handleRucLookup, avisoDocumento }: {
   form: SupplierFormData;
+  /** RUC de 11 dígitos con el verificador que no cuadra: avisa, no bloquea. */
+  avisoDocumento?: string | null;
   set: <K extends keyof SupplierFormData>(key: K, value: SupplierFormData[K]) => void;
   rucLookup: RucLookup;
   setRucLookup: (r: RucLookup) => void;
@@ -55,7 +57,7 @@ export default function ProveedorFormSimple({ form, set, rucLookup, setRucLookup
     {/* RUC + Teléfono */}
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <Field
-        label={<>RUC <span className="text-[var(--text-tertiary)] font-normal text-xs">(autocompleta SUNAT)</span></>}
+        label={<>RUC o DNI <span className="text-[var(--text-tertiary)] font-normal text-xs">(el RUC autocompleta SUNAT)</span></>}
         labelClassName={labelCls}
       >
         {(id) => (
@@ -67,6 +69,8 @@ export default function ProveedorFormSimple({ form, set, rucLookup, setRucLookup
                 onChange={(e) => {
                   const next = e.target.value.replace(/\D/g, "").slice(0, 11);
                   set('documento', next);
+                  // 8 dígitos = DNI; el resto, RUC (C34: el formato se valida por tipo).
+                  set('tipoDocumento', next.length === 8 ? 'DNI' : 'RUC');
                   if (next.length === 11) void handleRucLookup(next);
                   else setRucLookup({ status: "idle" });
                 }}
@@ -81,6 +85,9 @@ export default function ProveedorFormSimple({ form, set, rucLookup, setRucLookup
                 <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--data-success-500)]" />
               )}
             </div>
+            {avisoDocumento && rucLookup.status === "idle" && (
+              <p className="text-xs mt-1 font-medium text-[var(--data-warning-500)]">{avisoDocumento}</p>
+            )}
             {rucLookup.status !== "idle" && rucLookup.msg && (
               <p className={cn(
                 "text-xs mt-1 font-medium",

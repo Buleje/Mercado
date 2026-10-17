@@ -29,8 +29,10 @@ function Section({ title, defaultOpen, children }: { title: string; defaultOpen?
 }
 
 /** Formato «Completo»: la ficha entera del proveedor en cinco secciones plegables. */
-export default function ProveedorFormCompleto({ form, set, setForm }: {
+export default function ProveedorFormCompleto({ form, set, setForm, avisoDocumento }: {
   form: SupplierFormData;
+  /** RUC de 11 dígitos con el verificador que no cuadra: avisa, no bloquea. */
+  avisoDocumento?: string | null;
   set: <K extends keyof SupplierFormData>(key: K, value: SupplierFormData[K]) => void;
   setForm: Dispatch<SetStateAction<SupplierFormData>>;
 }) {
@@ -67,8 +69,18 @@ export default function ProveedorFormCompleto({ form, set, setForm }: {
               <option value="PASAPORTE">Pasaporte</option>
             </select>
           </Field>
-          <Field label="Número documento" labelClassName={labelCls}>
-            <input value={form.documento} onChange={e => set('documento', e.target.value)} placeholder="20xxxxxxxxx" className={cn(inputCls, "font-mono")} />
+          <Field
+            label="Número documento"
+            labelClassName={labelCls}
+            hint={avisoDocumento ? <span className="font-medium text-[var(--data-warning-500)]">{avisoDocumento}</span> : undefined}
+          >
+            <input
+              value={form.documento}
+              onChange={e => set('documento', e.target.value)}
+              placeholder={form.tipoDocumento === 'DNI' ? '8 dígitos' : form.tipoDocumento === 'RUC' ? '11 dígitos' : 'Número'}
+              inputMode={form.tipoDocumento === 'RUC' || form.tipoDocumento === 'DNI' ? 'numeric' : undefined}
+              className={cn(inputCls, "font-mono")}
+            />
           </Field>
         </div>
         <Field

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { ErrorAlert } from "@buleje/design-system";
 import { MoreHorizontal, Plus, RefreshCw, Search } from "@buleje/design-system/icons";
 import type { DbSupplier } from "@/lib/jsondb";
@@ -10,13 +11,17 @@ import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import { button } from "@/components/ui-system/button-variants";
 import { cn, limaDateKey } from "@/lib/utils";
+import { duplicadosEnLista } from "@/lib/compras/proveedor-identidad";
 import CabeceraProveedores, { ID_PANEL_PROVEEDORES, idPestanaDeSeccion, type BarraProveedores } from "./proveedores/CabeceraProveedores";
+import FichaProveedorModal from "./proveedores/FichaProveedorModal";
 import ProveedorFormModal from "./proveedores/ProveedorFormModal";
 import TablaProveedores from "./proveedores/TablaProveedores";
 import { conDeuda, filtrarProveedores, tieneRuc, type FiltroProveedor } from "./proveedores/datos-proveedores";
-import { useFichaProveedorUrl } from "./proveedores/use-ficha-proveedor-url";
+import { useFichaProveedorUrl, useListaRecordada } from "./proveedores/use-ficha-proveedor-url";
 import { useIndicadoresProveedores } from "./proveedores/use-indicadores-proveedores";
 import { useProveedores } from "./proveedores/use-proveedores";
+
+const EstadoDeCuentaModal = dynamic(() => import("./cuentas-por-pagar/EstadoDeCuentaModal"), { ssr: false });
 
 const FILTROS: { id: FiltroProveedor; label: string }[] = [
   { id: "todos", label: "Todos" },
@@ -25,25 +30,33 @@ const FILTROS: { id: FiltroProveedor; label: string }[] = [
   { id: "sin-ruc", label: "Sin RUC" },
 ];
 
+interface Props {
+  barra?: BarraProveedores;
+  /** «Nueva orden» desde la ficha (lo pasa Compras: lleva a Órdenes con el proveedor elegido). */
+  onNuevaOrden?: (proveedor: { id: string; name: string }) => void;
+}
+
 /**
  * Compras › Proveedores › lista. `barra` (la pone `ProveedoresVista`) dibuja las
  * secciones Lista / Comparar en la fila del título; sin ella la lista va sola.
+ *
+ * «Ficha» abre la ficha de CONSULTA (C33); «Editar» es aparte: desde la fila
+ * abre el formulario directo y desde la ficha lo abre encima y vuelve a ella.
  */
-export default function SuppliersTab({ barra }: { barra?: BarraProveedores } = {}) {
+export default function SuppliersTab({ barra, onNuevaOrden }: Props = {}) {
   const { proveedores, cuentas, compras, loading, error, load, borrar } = useProveedores();
-  const [editando, setEditando] = useState<DbSupplier | null>(null);
-  const [fichaAbierta, setFichaAbierta] = useState(false);
-  const [filtro, setFiltro] = useState<FiltroProveedor>("todos");
-  const [texto, setTexto] = useState("");
+  /** El formulario: `supplier: null` = nuevo. Con la ficha abierta, ésta espera detrás. */
+  const [form, setForm] = useState<{ supplier: DbSupplier | null } | null>(null);
+  /** Estado de cuenta del proveedor de la ficha (se abre en su lugar y vuelve). */
+  const [cuentaDe, setCuentaDe] = useState<DbSupplier | null>(null);
+  const { filtro, setFiltro, texto, setTexto } = useListaRecordada();
   const [porBorrar, setPorBorrar] = useState<DbSupplier | null>(null);
   const [borrando, setBorrando] = useState(false);
   /** Lo que dijo el servidor cuando no se pudo borrar. Antes se perdía. */
   const [errorBorrar, setErrorBorrar] = useState<string | null>(null);
 
-  const ficha = useFichaProveedorUrl({
-    suppliers: proveedores, loading, editingSupplier: editando, showProveedorModal: fichaAbierta,
-    setEditingSupplier: setEditando, setShowProveedorModal: setFichaAbierta,
-  });
+  const ficha = useFichaProveedorUrl({ proveedores, loading });
+  const duplicados = useMemo(() => duplicadosEnLista(proveedores), [proveedores]);
   const kpis = useIndicadoresProveedores(proveedores, cuentas, compras, !loading && !error);
 
   // «Hoy» en Lima, no en UTC del servidor/navegador.
@@ -60,7 +73,7 @@ export default function SuppliersTab({ barra }: { barra?: BarraProveedores } = {
     } satisfies Record<FiltroProveedor, number>;
   }, [proveedores, cuentas]);
 
-  const nuevo = () => { setEditando(null); setFichaAbierta(true); };
+  const nuevo = () => setForm({ supplier: null });
   const confirmarBorrado = async () => {
     if (!porBorrar) return;
     setBorrando(true);
@@ -112,7 +125,7 @@ export default function SuppliersTab({ barra }: { barra?: BarraProveedores } = {
                 <span className="sr-only">Buscar proveedor</span>
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
                 <input
-                  type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar por nombre, RUC o teléfono"
+                  type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar por nombre, RUC, DNI, contacto o teléfono"
                   className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-base text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
                 />
               </label>
@@ -133,7 +146,11 @@ export default function SuppliersTab({ barra }: { barra?: BarraProveedores } = {
                 <button type="button" onClick={() => { setFiltro("todos"); setTexto(""); }} className="mt-2 text-sm font-semibold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">Ver todos</button>
               </div>
             ) : (
-              <TablaProveedores proveedores={visibles} cuentas={cuentas} compras={compras} hoy={hoy} ahora={ahora} onFicha={ficha.abrirFicha} onEliminar={setPorBorrar} />
+              <TablaProveedores
+                proveedores={visibles} cuentas={cuentas} compras={compras} hoy={hoy} ahora={ahora}
+                duplicados={duplicados} resaltado={ficha.ultimo}
+                onFicha={ficha.abrir} onEditar={(s) => setForm({ supplier: s })} onEliminar={setPorBorrar}
+              />
             )}
           </>
         )}
@@ -155,13 +172,31 @@ export default function SuppliersTab({ barra }: { barra?: BarraProveedores } = {
         loading={borrando}
       />
 
-      <ProveedorFormModal
-        isOpen={fichaAbierta}
-        onClose={ficha.cerrarFicha}
-        /* El formulario llama `onSaved(); onClose();`: cerrar acá también era un 2.º «atrás» que sacaba del módulo. */
-        onSaved={() => void load()}
-        supplier={editando as Record<string, unknown> | null}
+      <FichaProveedorModal
+        proveedor={ficha.proveedor}
+        visible={!form && !cuentaDe}
+        seccion={ficha.seccion}
+        onSeccion={ficha.setSeccion}
+        onCerrar={ficha.cerrar}
+        onEditar={() => ficha.proveedor && setForm({ supplier: ficha.proveedor })}
+        onEstadoDeCuenta={() => setCuentaDe(ficha.proveedor)}
+        onNuevaOrden={onNuevaOrden && ficha.proveedor ? () => ficha.proveedor && onNuevaOrden({ id: ficha.proveedor.id, name: ficha.proveedor.name }) : undefined}
       />
+
+      <ProveedorFormModal
+        // La clave remonta el formulario por proveedor: abrir otro no arrastra lo escrito.
+        key={form?.supplier?.id ?? "nuevo"}
+        isOpen={!!form}
+        /* El formulario llama `onSaved(); onClose();`: cerrar sólo el formulario; si vino de la ficha, ésta vuelve a verse. */
+        onClose={() => setForm(null)}
+        onSaved={() => void load()}
+        supplier={(form?.supplier ?? null) as Record<string, unknown> | null}
+        existentes={proveedores}
+      />
+
+      {cuentaDe && (
+        <EstadoDeCuentaModal proveedores={[{ id: cuentaDe.id, nombre: cuentaDe.name }]} inicial={cuentaDe.id} onCerrar={() => setCuentaDe(null)} />
+      )}
     </div>
   );
 }

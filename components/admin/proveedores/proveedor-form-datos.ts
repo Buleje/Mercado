@@ -154,7 +154,10 @@ export function formDesdeProveedor(supplier: Record<string, unknown>): SupplierF
 export function cuerpoDelProveedor(form: SupplierFormData): Record<string, unknown> {
   return {
     name: form.tipoPersona === 'juridica' ? form.razonSocial || form.name : form.name,
-    ruc: form.documento || undefined,
+    // `ruc` sólo cuando el documento ES un RUC (C34): un DNI guardado ahí salía
+    // en la lista como «RUC 12345678» y contaba en el filtro «Con RUC». Vacío
+    // (no undefined) para que editar de RUC a DNI borre el RUC viejo.
+    ruc: (form.tipoDocumento || 'RUC').toUpperCase() === 'RUC' ? form.documento.trim() : '',
     phone: form.phone || undefined,
     email: form.email || undefined,
     address: form.direccion || undefined,

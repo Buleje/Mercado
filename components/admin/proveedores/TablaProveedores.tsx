@@ -1,21 +1,19 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { Award, BarChart3, History, Mail, MapPin, MessageCircle, MoreHorizontal, Phone, Trash2 } from "@buleje/design-system/icons";
+import { Award, BarChart3, History, Mail, MapPin, MessageCircle, MoreHorizontal, Pencil, Phone, Trash2 } from "@buleje/design-system/icons";
 import type { DbSupplier } from "@/lib/jsondb";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { button } from "@/components/ui-system/button-variants";
 import { formatCurrency, formatMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import SupplierScorecard from "@/components/admin/compras/SupplierScorecard";
-import SupplierTimeline from "@/components/admin/compras/SupplierTimeline";
+import { describirCoincidencia, tipoDeDocumento, type Coincidencia } from "@/lib/compras/proveedor-identidad";
+import type { SeccionFicha } from "./FichaProveedorModal";
 import {
   comprasPorMes, deudaDe, diasSinComprar, urlWhatsApp,
   type CompraDeProveedor, type CuentaDeProveedor,
 } from "./datos-proveedores";
 import { DataTable } from "@buleje/design-system";
-
-type Que = "evaluacion" | "historial" | "compras";
 
 interface Props {
   proveedores: readonly DbSupplier[];
@@ -23,7 +21,13 @@ interface Props {
   compras: readonly CompraDeProveedor[];
   hoy: string;
   ahora: Date;
-  onFicha: (s: DbSupplier) => void;
+  /** Posibles duplicados de TODA la lista (no sólo de lo filtrado): id → con quién se parece. */
+  duplicados: ReadonlyMap<string, Coincidencia[]>;
+  /** El último proveedor consultado: al volver a la lista se ve dónde estabas. */
+  resaltado?: string | null;
+  /** Abre la ficha de consulta, en la sección pedida. */
+  onFicha: (s: DbSupplier, seccion?: SeccionFicha) => void;
+  onEditar: (s: DbSupplier) => void;
   onEliminar: (s: DbSupplier) => void;
 }
 
@@ -39,14 +43,14 @@ function mensajeWhatsApp(debe: number): string {
 }
 
 /**
- * Una fila por proveedor: quién es, cómo contactarlo, cuánto le debes y «Ficha».
- * Evaluación, historial, compras de 6 meses, WhatsApp y eliminar van en el «⋯»
- * de la fila; lo que abre se muestra debajo. A 400 px la tabla pasa a tarjetas
- * sola (`useMobileTableCards`).
+ * Una fila por proveedor: quién es, cómo contactarlo, cuánto le debes y «Ficha»
+ * (consulta, C33). Editar, cómo te entrega, historial, compras de 6 meses,
+ * WhatsApp y eliminar van en el «⋯» de la fila: «Cómo te entrega» e
+ * «Historial» abren la ficha en esa sección; «Compras de 6 meses» se muestra
+ * debajo de la fila. A 400 px la tabla pasa a tarjetas sola (`useMobileTableCards`).
  */
-export default function TablaProveedores({ proveedores, cuentas, compras, hoy, ahora, onFicha, onEliminar }: Props) {
-  const [abierto, setAbierto] = useState<{ id: string; que: Que } | null>(null);
-  const alternar = (id: string, que: Que) => setAbierto((a) => (a?.id === id && a.que === que ? null : { id, que }));
+export default function TablaProveedores({ proveedores, cuentas, compras, hoy, ahora, duplicados, resaltado, onFicha, onEditar, onEliminar }: Props) {
+  const [comprasDe, setComprasDe] = useState<string | null>(null);
 
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
@@ -66,19 +70,27 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
             const sinContacto = !s.phone && !s.email && !s.address;
             const acciones: MenuAccion[] = [
               ...(s.phone ? [{ id: "wa", label: "WhatsApp", hint: deuda.total > 0 ? "Coordinar el pago" : "Hacerle un pedido", icon: MessageCircle, onSelect: () => window.open(urlWhatsApp(s.phone as string, mensajeWhatsApp(deuda.total)), "_blank", "noopener,noreferrer") }] : []),
-              { id: "evaluacion", label: "Cómo te entrega", hint: "Entregas a tiempo, órdenes completas y precio", icon: Award, activo: abierto?.id === s.id && abierto.que === "evaluacion", onSelect: () => alternar(s.id, "evaluacion") },
-              { id: "historial", label: "Historial", hint: "Órdenes y devoluciones", icon: History, activo: abierto?.id === s.id && abierto.que === "historial", onSelect: () => alternar(s.id, "historial") },
-              { id: "compras", label: "Compras de 6 meses", icon: BarChart3, activo: abierto?.id === s.id && abierto.que === "compras", onSelect: () => alternar(s.id, "compras") },
+              { id: "editar", label: "Editar datos", icon: Pencil, onSelect: () => onEditar(s) },
+              { id: "evaluacion", label: "Cómo te entrega", hint: "A tiempo, completas y precio, por período", icon: Award, onSelect: () => onFicha(s, "entrega") },
+              { id: "historial", label: "Historial", hint: "Órdenes, recepciones y devoluciones", icon: History, onSelect: () => onFicha(s, "ordenes") },
+              { id: "compras", label: "Compras de 6 meses", icon: BarChart3, activo: comprasDe === s.id, onSelect: () => setComprasDe((a) => (a === s.id ? null : s.id)) },
               { id: "eliminar", label: "Eliminar proveedor", icon: Trash2, tone: "danger", onSelect: () => onEliminar(s) },
             ];
+            const documento = (s.documento || s.ruc || "").trim();
+            const parecidos = duplicados.get(s.id);
             return (
               <Fragment key={s.id}>
-                <tr>
+                <tr className={cn(resaltado === s.id && "bg-[var(--accent-soft)]!")} aria-current={resaltado === s.id ? "true" : undefined}>
                   <td className="align-top">
                     <div className="min-w-0">
                       <p className="font-bold text-[var(--text-primary)]">{s.name}</p>
-                      {s.ruc && <p className="font-mono text-sm text-[var(--text-secondary)]">RUC {s.ruc}</p>}
+                      {documento && <p className="font-mono text-sm text-[var(--text-secondary)]">{tipoDeDocumento(s.tipoDocumento)} {documento}</p>}
                       <div className="mt-1 flex flex-wrap gap-1.5 empty:hidden">
+                        {parecidos && (
+                          <span className={cn(CHIP, CHIP_AMBAR)} title={`Se parece a ${parecidos.map(describirCoincidencia).join("; ")}. Revísalos: no se unen solos.`}>
+                            Posible duplicado
+                          </span>
+                        )}
                         {deuda.vencida && <span className={cn(CHIP, CHIP_ROJO)}>Deuda vencida</span>}
                         {deuda.proxima && <span className={cn(CHIP, CHIP_AMBAR)}>Próximo a vencer</span>}
                         {sinComprar != null && sinComprar > 30 && <span className={cn(CHIP, sinComprar > 60 ? CHIP_ROJO : CHIP_AMBAR)}>Sin compra hace {sinComprar} días</span>}
@@ -108,18 +120,16 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
                   </td>
                   <td className="align-top">
                     <div className="flex items-center justify-end gap-2">
-                      <button type="button" onClick={() => onFicha(s)} aria-haspopup="dialog" className={button({ variant: "secondary", className: "rounded-xl px-4" })}>Ficha</button>
+                      <button type="button" onClick={() => onFicha(s)} aria-haspopup="dialog" title={`Ver la ficha de ${s.name}`} className={button({ variant: "secondary", className: "rounded-xl px-4" })}>Ficha</button>
                       <ActionMenu label={`Más de ${s.name}`} soloIcono icon={MoreHorizontal} size="md" actions={acciones} className="w-12 shrink-0" />
                     </div>
                   </td>
                 </tr>
-                {abierto?.id === s.id && (
+                {comprasDe === s.id && (
                   <tr>
                     <td colSpan={4} data-label="">
                       <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 sm:p-4">
-                        {abierto.que === "evaluacion" && <SupplierScorecard supplierId={s.id} />}
-                        {abierto.que === "historial" && <SupplierTimeline supplierId={s.id} supplierName={s.name} />}
-                        {abierto.que === "compras" && <ComprasDeSeisMeses compras={comprasPorMes(compras, s.id, ahora)} />}
+                        <ComprasDeSeisMeses compras={comprasPorMes(compras, s.id, ahora)} />
                       </div>
                     </td>
                   </tr>

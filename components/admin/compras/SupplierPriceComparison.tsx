@@ -1,21 +1,16 @@
 "use client";
 
-import { DataTable } from "@buleje/design-system";
-import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, AlertTriangle } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { BlockTitle, DataTable } from "@buleje/design-system";
+import { AlertTriangle, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
-import { formatCurrency, formatDate } from "@/lib/format";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
-
-type Comparacion = {
-  supplierId: string;
-  supplierName: string;
-  lastPrice: number;
-  lastDate: string;
-  purchaseCount: number;
-  isCheapest: boolean;
-};
+import { button } from "@/components/ui-system/button-variants";
+import { diaCorto } from "@/lib/compras/ciclo-oc";
+import { DIAS_PRECIO_VIEJO, type FilaComparable } from "@/lib/compras/precio-comparable";
+import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 interface SupplierPriceComparisonProps {
   productId: number;
@@ -24,54 +19,86 @@ interface SupplierPriceComparisonProps {
 
 export { QuotationComparator } from "./QuotationComparator";
 
+const CHIP = "inline-flex items-center gap-0.5 whitespace-nowrap rounded-full px-1.5 py-0.5 text-sm font-semibold";
+const CHIP_VERDE = "bg-[var(--data-success-100)] text-[var(--data-success-ink)] dark:bg-[var(--data-success-500)]/15";
+const CHIP_AMBAR = "bg-[var(--data-warning-100)] text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/15";
+const CHIP_GRIS = "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
 
+const haceDias = (n: number) => (n === 0 ? "hoy" : n === 1 ? "ayer" : `hace ${n} días`);
+
+/**
+ * Cuánto te cuesta un producto con cada proveedor (C37): costo PUESTO en tu
+ * tienda (descuento, IGV y flete de la orden), una fila por proveedor y unidad,
+ * y «el mejor» sólo entre filas de la misma unidad. Lo calcula el servidor
+ * (`lib/compras/precio-comparable.ts`); acá sólo se dibuja.
+ */
 export default function SupplierPriceComparison({ productId, productName }: SupplierPriceComparisonProps) {
-  const [comparaciones, setComparaciones] = useState<Comparacion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [filas, setFilas] = useState<{ id: number; filas: FilaComparable[] } | null>(null);
+  const [error, setError] = useState(false);
+  const [vuelta, setVuelta] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetch(`/api/compras/precio-comparativo?productId=${productId}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (!cancelled && data) setComparaciones(data.comparaciones ?? []);
+    const ctrl = new AbortController();
+    setError(false);
+    fetch(`/api/compras/precio-comparativo?productId=${productId}`, { signal: ctrl.signal, cache: "no-store" })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = (await r.json()) as { comparaciones?: FilaComparable[] };
+        setFilas({ id: productId, filas: data.comparaciones ?? [] });
       })
-      .catch((err) => console.warn("[SupplierPriceComparison] fetch failed:", err))
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [productId]);
+      .catch((err: unknown) => {
+        if (ctrl.signal.aborted) return;
+        console.warn("[SupplierPriceComparison] fetch failed:", err);
+        setError(true);
+      });
+    return () => ctrl.abort();
+  }, [productId, vuelta]);
 
-  if (loading) return <TableSkeleton rows={2} cols={3} />;
+  const producto = <EnlacePanel cosa="producto" id={String(productId)} apariencia="heredada">{productName}</EnlacePanel>;
 
+  if (error) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 py-3 text-sm">
+        <span className="text-[var(--data-error-ink)]">No se pudo comparar los precios de {productName}.</span>
+        <button type="button" onClick={() => setVuelta((v) => v + 1)} className={button({ variant: "ghost", className: "rounded-xl" })}>Reintentar</button>
+      </div>
+    );
+  }
+  if (!filas || filas.id !== productId) return <TableSkeleton rows={2} cols={4} />;
+
+  const comparaciones = filas.filas;
   if (comparaciones.length === 0) {
     return (
-      <div className="text-center py-4">
-        <AlertTriangle className="h-6 w-6 text-[var(--text-tertiary)] mx-auto mb-2" />
-        <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
-          No hay historial de compras para{" "}
-          <strong>
-            <EnlacePanel cosa="producto" id={String(productId)} apariencia="heredada">{productName}</EnlacePanel>
-          </strong>
-        </p>
+      <div className="py-4 text-center">
+        <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-[var(--text-tertiary)]" aria-hidden />
+        <p className="text-sm text-[var(--text-secondary)]">No hay compras de <strong>{producto}</strong> (sin contar las anuladas).</p>
       </div>
     );
   }
 
-  const minPrice = Math.min(...comparaciones.map((c) => c.lastPrice));
+  const unidades = new Set(comparaciones.map((c) => c.unidad));
+  const proveedores = new Set(comparaciones.map((c) => c.supplierId));
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
-        Comparación de precios:{" "}
-        <EnlacePanel cosa="producto" id={String(productId)} apariencia="heredada">{productName}</EnlacePanel>
-      </h4>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <BlockTitle>Cuánto te cuesta puesto: {producto}</BlockTitle>
+        <InfoTip
+          title="Costo puesto en tu tienda"
+          what="El costo de la orden con su descuento, más IGV si se cargó sin IGV, más el flete y otros gastos de esa orden repartidos por valor."
+          affects={`Se toma la última compra que llegó de cada proveedor (si nunca llegó, la última pedida, marcada). «Mejor» sólo compara la misma unidad: un saco no se compara con un kilo. Un precio de más de ${DIAS_PRECIO_VIEJO} días puede no ser el de hoy.`}
+          example="S/ 100 con 10 % de descuento, sin IGV y S/ 5 de flete repartido = S/ 111,20."
+        />
+      </div>
 
-      {comparaciones.length === 1 && (
-        <div className="flex items-center gap-2 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg px-3 py-2">
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-          Solo has comprado a 1 proveedor. Considera cotizar con otros.
-        </div>
+      {proveedores.size === 1 && (
+        <p className="flex items-center gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/10">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          Sólo le compraste a 1 proveedor: cotiza con otro para tener con qué comparar.
+        </p>
+      )}
+      {unidades.size > 1 && (
+        <p className="text-sm text-[var(--text-secondary)]">Lo compraste en {unidades.size} unidades distintas: cada una se compara por separado.</p>
       )}
 
       <div className="overflow-x-auto">
@@ -79,52 +106,57 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
           <thead>
             <tr>
               <th>Proveedor</th>
-              <th className="text-right">Último precio</th>
+              <th>Unidad</th>
+              <th className="text-right">Costo puesto</th>
               <th className="text-right">Fecha</th>
-              <th className="text-center"># Compras</th>
-              <th className="text-right">vs Mejor</th>
+              <th className="text-right">Compras</th>
+              <th className="text-right">Frente al mejor</th>
             </tr>
           </thead>
           <tbody>
-            {comparaciones.map((c) => {
-              const diff = minPrice > 0 ? ((c.lastPrice - minPrice) / minPrice) * 100 : 0;
-              return (
-                <tr
-                  key={c.supplierId}
-                  className={cn(
-                    "",
-                    c.isCheapest && "bg-primary/10 dark:bg-primary/15",
+            {comparaciones.map((c) => (
+              <tr key={`${c.supplierId}|${c.unidad}`}>
+                <td>
+                  <div className="min-w-0">
+                    <EnlacePanel cosa="proveedor" id={c.supplierId} apariencia="heredada" className="font-semibold">{c.supplierName}</EnlacePanel>
+                    <div className="mt-0.5 flex flex-wrap gap-1 empty:hidden">
+                      {c.mejor && <span className={cn(CHIP, CHIP_VERDE)}><TrendingDown className="h-3 w-3" aria-hidden /> Mejor</span>}
+                      {!c.llego && <span className={cn(CHIP, CHIP_GRIS)}>Sólo pedida</span>}
+                      {c.vieja && <span className={cn(CHIP, CHIP_AMBAR)}>Precio viejo</span>}
+                    </div>
+                  </div>
+                </td>
+                <td>{c.unidad}</td>
+                <td className="text-right">
+                  <div className="min-w-0">
+                    <p className="font-bold tabular-nums">{c.costoPuesto > 0 ? formatCurrency(c.costoPuesto) : "Sin costo"}</p>
+                    {c.ajustes.length > 0 && (
+                      <p className="text-sm text-[var(--text-tertiary)]" title={c.ajustes.join(" · ")}>
+                        en la orden {formatCurrency(c.costoDeLista)}
+                      </p>
+                    )}
+                  </div>
+                </td>
+                <td className="text-right">
+                  <div className="min-w-0">
+                    <p>{diaCorto(c.fecha)}</p>
+                    <p className="text-sm text-[var(--text-tertiary)]">{haceDias(c.diasDesde)}</p>
+                  </div>
+                </td>
+                <td className="text-right tabular-nums">{c.compras}</td>
+                <td className="text-right">
+                  {c.mejor ? (
+                    <span className="text-sm font-bold text-[var(--data-success-ink)]">El mejor</span>
+                  ) : c.sobreElMejor !== null ? (
+                    <span className="inline-flex items-center justify-end gap-0.5 text-sm font-semibold text-[var(--data-error-ink)]">
+                      <TrendingUp className="h-3 w-3" aria-hidden /> +{c.sobreElMejor} %
+                    </span>
+                  ) : (
+                    <span className="text-sm text-[var(--text-tertiary)]">Sin con quién comparar</span>
                   )}
-                >
-                  <td className="font-semibold">
-                    <EnlacePanel cosa="proveedor" id={c.supplierId} apariencia="heredada">{c.supplierName}</EnlacePanel>
-                    {c.isCheapest && (
-                      <span className="ml-2 inline-flex items-center gap-0.5 text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-1.5 py-0.5 rounded-full">
-                        <TrendingDown className="h-2.5 w-2.5" /> Mejor precio
-                      </span>
-                    )}
-                  </td>
-                  <td className="text-right font-bold">
-                    {formatCurrency(Number(c.lastPrice))}
-                  </td>
-                  <td className="text-right text-[var(--text-secondary)] dark:text-muted">
-                    {formatDate(c.lastDate)}
-                  </td>
-                  <td className="text-center text-[var(--text-secondary)] dark:text-muted">
-                    {c.purchaseCount}
-                  </td>
-                  <td className="text-right">
-                    {c.isCheapest ? (
-                      <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold text-sm">Mejor</span>
-                    ) : (
-                      <span className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold text-sm flex items-center justify-end gap-0.5">
-                        <TrendingUp className="h-3 w-3" /> +{diff.toFixed(0)}%
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </DataTable>
       </div>
