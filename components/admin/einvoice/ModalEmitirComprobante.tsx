@@ -1,109 +1,118 @@
 "use client";
 
-import { useCallback, useId, useRef, type Dispatch, type SetStateAction } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { AlertTriangle, Loader2, Send, X } from "@buleje/design-system/icons";
-import { Field } from "@/components/admin/shared/Field";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import type { EmitForm } from "./tipos";
+/**
+ * «Emitir comprobante» (auditoría de comprobantes p1, 17-10): antes era un
+ * formulario a mano titulado siempre «Emitir comprobante SUNAT», con el id
+ * técnico del pedido a copiar y un botón que no decía qué se creaba. Ahora:
+ *
+ *   1. Elegir el pedido con buscador (los que ya tienen comprobante vivo no se
+ *      eligen: el servidor devolvería el mismo).
+ *   2. Revisar: qué se crea (oficial, prueba o nada), quién emite y con qué
+ *      serie, el cliente validado y las líneas y el total del pedido.
+ *   3. Resultado según la respuesta real, con «Revisar el pedido» si no se
+ *      sabe si quedó.
+ *
+ * Todos los botones son `type="button"` y no hay `<form>`: Enter no emite.
+ */
+import { useEffect, useMemo } from "react";
+import { Loader2, Send } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
+import { modoDeEmision } from "@/components/admin/sunat/requisitos-emision";
+import { estadoDe, type CargaEstadoSunat } from "@/components/admin/sunat/use-estado-sunat";
+import { AvisoModoEmision } from "./AvisoModoEmision";
+import { EmitirPasoOrigen } from "./EmitirPasoOrigen";
+import { EmitirPasoRevisar } from "./EmitirPasoRevisar";
+import { EmitirResultado } from "./EmitirResultado";
+import { validarCliente } from "./emision-reglas";
+import type { EDocument } from "./tipos";
+import type { Emision } from "./use-emision";
+import { usePedidosParaEmitir } from "./use-pedidos-para-emitir";
 
-const ETIQUETA = "text-sm font-semibold text-[var(--text-secondary)] mb-1 block";
-const CAMPO =
-  "w-full text-sm border border-[var(--rule-base)] rounded-xl px-3 h-12 bg-[var(--surface-raised)] text-[var(--text-primary)]";
+const PASOS = { origen: "Paso 1 de 3 · Elige el pedido", revisar: "Paso 2 de 3 · Revisa antes de emitir", resultado: "Paso 3 de 3 · Resultado" } as const;
+const PRIMARIO = button({ variant: "primary", className: "rounded-xl" });
+const SECUNDARIO = button({ variant: "secondary", className: "rounded-xl" });
 
 interface Props {
-  form: EmitForm | null;
-  setForm: Dispatch<SetStateAction<EmitForm | null>>;
-  cargando: boolean;
-  error: string | null;
-  onEmitir: () => void;
+  emision: Emision;
+  docs: readonly EDocument[];
+  sunat: CargaEstadoSunat;
 }
 
-/** «Emitir comprobante SUNAT»: mismo formulario y mismo endpoint de siempre; campos y botones de 48 px. */
-export function ModalEmitirComprobante({ form, setForm, cargando, error, onEmitir }: Props) {
-  const ref = useRef<HTMLDivElement>(null);
-  const tituloId = useId();
-  const cerrar = useCallback(() => { if (!cargando) setForm(null); }, [cargando, setForm]);
-  useModalAccesible(ref, { onCerrar: cerrar, activo: form !== null });
-  const ventana = useVentanaDeModal(form !== null, { ref, aplicarTranslate: true, claveMemoria: "efactura-emitir" });
+export function ModalEmitirComprobante({ emision, docs, sunat }: Props) {
+  const estado = estadoDe(sunat);
+  const lectura = modoDeEmision(estado);
+  const pedidos = usePedidosParaEmitir(emision.abierto, docs, emision.preelegido);
+  const { paso, pedido, datos, resultado, elegir } = emision;
+  const falta = useMemo(() => (pedido ? validarCliente(datos, pedido.total) : null), [pedido, datos]);
 
-  if (form === null) return null;
-  const cambiar = (parcial: Partial<EmitForm>) => setForm(f => f && { ...f, ...parcial });
+  // Abierta desde otra pantalla con `?emitir=<id>`: salta a Revisar; si ese
+  // pedido ya tiene comprobante, queda a la vista con el motivo.
+  const preelegido = pedidos.preelegido;
+  const { setBusqueda } = pedidos;
+  useEffect(() => {
+    if (paso !== "origen" || !preelegido) return;
+    if (preelegido.bloqueo === null) elegir(preelegido);
+    else setBusqueda(preelegido.codigo);
+  }, [paso, preelegido, elegir, setBusqueda]);
+
+  const puedeConfirmar = sunat.fase !== "cargando" && lectura.puedeEmitir && falta === null && !emision.enviando;
+
+  const pie =
+    paso === "origen" ? (
+      <ModalFooter nota={pedidos.fase === "lista" ? `${pedidos.total} pedidos recientes` : undefined}>
+        <button type="button" onClick={emision.cerrar} className={SECUNDARIO}>Cancelar</button>
+      </ModalFooter>
+    ) : paso === "revisar" ? (
+      <ModalFooter nota="Sólo documenta el pedido: no cobra otra vez ni descuenta stock.">
+        <button type="button" onClick={emision.volverAlOrigen} disabled={emision.enviando} className={SECUNDARIO}>Atrás</button>
+        <button type="button" onClick={emision.confirmar} disabled={!puedeConfirmar} data-qa="emitir-confirmar" className={PRIMARIO}>
+          {emision.enviando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
+          {emision.enviando ? "Emitiendo…" : lectura.accion}
+        </button>
+      </ModalFooter>
+    ) : (
+      <ModalFooter>
+        {resultado?.revisarAntes && (
+          <button type="button" onClick={emision.revisar} disabled={emision.revisando} className={PRIMARIO}>
+            {emision.revisando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />} Revisar el pedido
+          </button>
+        )}
+        {resultado?.puedeReintentar && (
+          <button type="button" onClick={emision.corregir} className={SECUNDARIO}>Corregir y reintentar</button>
+        )}
+        <button type="button" onClick={emision.volverAlOrigen} className={SECUNDARIO}>Emitir otro</button>
+        <button type="button" onClick={emision.cerrar} className={SECUNDARIO}>Listo</button>
+      </ModalFooter>
+    );
 
   return (
-    <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && !cargando && !ventana.fijado && setForm(null)}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={tituloId} tabIndex={-1} className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4">
-        <div {...ventana.asaProps} className="flex items-center justify-between">
-          <CardTitle id={tituloId} className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <Send className="h-4 w-4 text-primary" /> Emitir comprobante SUNAT
-          </CardTitle>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          {!cargando && (
-            <button aria-label="Cerrar" onClick={() => setForm(null)} className="flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)]">
-              <X className="h-4 w-4 text-[var(--text-tertiary)]" />
-            </button>
-          )}
-        </div>
-
-        <div className="space-y-3">
-          <Field label="Tipo de comprobante" labelClassName={ETIQUETA}>
-            <select value={form.tipoDoc} onChange={e => cambiar({ tipoDoc: e.target.value as "01" | "03" })} className={CAMPO}>
-              <option value="03">Boleta (B001)</option>
-              <option value="01">Factura (F001)</option>
-            </select>
-          </Field>
-          <Field label="ID del pedido" labelClassName={ETIQUETA}>
-            <input value={form.orderId} onChange={e => cambiar({ orderId: e.target.value })} placeholder="ej. cm3abc123..." className={CAMPO} />
-          </Field>
-          <Field label="Nombre del cliente" labelClassName={ETIQUETA}>
-            <input value={form.clienteNombre} onChange={e => cambiar({ clienteNombre: e.target.value })} placeholder="Nombre o razón social" className={CAMPO} />
-          </Field>
-          {form.tipoDoc === "03" ? (
-            <Field label={<>DNI <span className="font-normal">(opcional)</span></>} labelClassName={ETIQUETA}>
-              <input value={form.clienteDni} onChange={e => cambiar({ clienteDni: e.target.value })} placeholder="12345678" maxLength={8} className={CAMPO} />
-            </Field>
-          ) : (
-            <Field label="RUC" labelClassName={ETIQUETA}>
-              <input value={form.clienteRuc} onChange={e => cambiar({ clienteRuc: e.target.value })} placeholder="20123456789" maxLength={11} className={CAMPO} />
-            </Field>
-          )}
-          <Field label={<>Dirección <span className="font-normal">(opcional)</span></>} labelClassName={ETIQUETA}>
-            <input value={form.clienteDireccion} onChange={e => cambiar({ clienteDireccion: e.target.value })} placeholder="Av. Centenario 123, Pucallpa" className={CAMPO} />
-          </Field>
-        </div>
-
-        {error && (
-          <div role="alert" className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 rounded-xl p-3 text-sm text-[var(--data-error-ink)] dark:text-[var(--data-error-500)] font-semibold flex items-start gap-2">
-            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" /> {error}
-          </div>
+    <AdminModal
+      open={emision.abierto}
+      onClose={emision.cerrar}
+      title={lectura.titulo}
+      description={PASOS[paso]}
+      icon={Send}
+      size="lg"
+      claveVentana="efactura-emitir"
+      footer={pie}
+    >
+      <div className={`${MODAL_BODY} space-y-4`}>
+        {paso !== "resultado" && <AvisoModoEmision estado={estado} lectura={lectura} />}
+        {paso === "origen" && <EmitirPasoOrigen pedidos={pedidos} onElegir={elegir} />}
+        {paso === "revisar" && pedido && (
+          <EmitirPasoRevisar
+            pedido={pedido}
+            datos={datos}
+            setDatos={emision.setDatos}
+            emisor={estado?.emisor ?? null}
+            falta={falta}
+            onCambiarPedido={emision.volverAlOrigen}
+          />
         )}
-
-        <div className="flex gap-2 pt-1">
-          <button
-            onClick={() => setForm(null)}
-            disabled={cargando}
-            className="flex-1 min-h-12 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onEmitir}
-            disabled={cargando || !form.orderId.trim() || !form.clienteNombre.trim()}
-            className="flex-1 min-h-12 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {cargando ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Emitiendo...</>
-            ) : (
-              <><Send className="h-4 w-4" /> Emitir</>
-            )}
-          </button>
-        </div>
-        <TiradorDeVentana ventana={ventana} />
+        {paso === "resultado" && resultado && <EmitirResultado resultado={resultado} />}
       </div>
-    </div>
+    </AdminModal>
   );
 }

@@ -83,8 +83,8 @@ export default function NotasCreditoModule() {
               <span className="text-sm font-bold text-primary">{checkedIds.size} seleccionado{checkedIds.size !== 1 ? "s" : ""}</span>
               <div className="flex-1" />
               {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length > 0 && (
-                <button onClick={handleBulkEmit} className="flex items-center gap-1.5 px-4 min-h-12 rounded-xl text-sm font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors">
-                  <Send className="h-3.5 w-3.5" />Emitir {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length} NC
+                <button type="button" onClick={handleBulkEmit} title="Quedan emitidas en tus registros; no se envían a SUNAT desde aquí" className={button({ variant: "primary", className: "rounded-xl" })}>
+                  <Send className="h-4 w-4" aria-hidden />Marcar {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length} emitidas
                 </button>
               )}
               <button onClick={exportCSV} className="flex items-center gap-1.5 px-4 min-h-12 rounded-xl text-sm font-bold bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors">

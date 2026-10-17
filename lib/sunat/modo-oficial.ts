@@ -5,6 +5,7 @@ import { verifyRuc, isInvoiceable } from "@/lib/integrations/sunat-ruc";
 import {
   SUNAT_OFICIAL_FLAG,
   type SunatActivationBlocker,
+  type SunatEmisor,
   type SunatModoOficialState,
 } from "./modo-oficial.types";
 import { sinDato } from "@/lib/errores/sin-dato";
@@ -27,6 +28,7 @@ export async function computeBlockers(tenantId: string): Promise<{
   configReady: boolean;
   rucVerificado: boolean;
   ambiente: "beta" | "produccion";
+  emisor: SunatEmisor | null;
 }> {
   const config = await SunatDB.getConfig(tenantId);
   if (!config) {
@@ -37,6 +39,7 @@ export async function computeBlockers(tenantId: string): Promise<{
       configReady: false,
       rucVerificado: false,
       ambiente: "beta",
+      emisor: null,
     };
   }
 
@@ -60,6 +63,12 @@ export async function computeBlockers(tenantId: string): Promise<{
     configReady: bloqueos.length === 0,
     rucVerificado,
     ambiente: config.isProduction ? "produccion" : "beta",
+    emisor: {
+      ruc: config.ruc,
+      razonSocial: config.razonSocial,
+      serieBoleta: config.boletaSeries,
+      serieFactura: config.facturaSeries,
+    },
   };
 }
 
@@ -75,5 +84,6 @@ export async function getModoOficialState(tenantId: string): Promise<SunatModoOf
     rucVerificado: meta.rucVerificado,
     ambiente: meta.ambiente,
     bloqueos: meta.bloqueos,
+    emisor: meta.emisor,
   };
 }

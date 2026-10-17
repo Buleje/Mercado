@@ -24,15 +24,8 @@ export type EDocument = {
   sunatResponse: string;
   pdfUrl?: string | null;
   relatedDoc?: string;
-};
-
-export type EmitForm = {
-  orderId: string;
-  tipoDoc: "01" | "03";
-  clienteNombre: string;
-  clienteDni: string;
-  clienteRuc: string;
-  clienteDireccion: string;
+  /** El pedido del que sale: con él se sabe si un pedido ya tiene comprobante. */
+  orderId?: string | null;
 };
 
 export const fmt = (n: number) => "S/ " + formatNumber(n, { min: 2 });
@@ -54,15 +47,6 @@ export const STATUS_META: Record<DocStatus, { label: string; color: string; icon
 
 /** Las columnas de datos en su orden de fábrica (Ver/PDF es fija, al final). */
 export const COLS_EINVOICE = ["serieNro", "fecha", "tipo", "cliente", "total", "estado"] as const;
-
-export const EMPTY_FORM: EmitForm = {
-  orderId: "",
-  tipoDoc: "03",
-  clienteNombre: "",
-  clienteDni: "",
-  clienteRuc: "",
-  clienteDireccion: "",
-};
 
 /** Los números que muestra el panel de Indicadores (de las mismas cuentas de antes). */
 export interface StatsComprobantes {

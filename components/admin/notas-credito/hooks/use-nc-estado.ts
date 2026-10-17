@@ -46,7 +46,7 @@ export function useNcEstado() {
   const [devolverStock, setDevolverStock] = useState(true);
   const esDevolucion = form.codigoMotivo === "06" || form.codigoMotivo === "07";
   const searchRef = useRef<HTMLInputElement>(null);
-  const { confirm, prompt } = useConfirm();
+  const { confirm, prompt, notice } = useConfirm();
   const detailTitleId = useId();
   const detailPanelRef = useRef<HTMLDivElement>(null);
   return {
@@ -59,6 +59,6 @@ export function useNcEstado() {
     creating, setCreating, createError, setCreateError, form, setForm, pickerDocs, setPickerDocs,
     pickerLoading, setPickerLoading, pickerSearch, setPickerSearch, pickerDocType, setPickerDocType,
     selectedVenta, setSelectedVenta, devolverStock, setDevolverStock, esDevolucion, searchRef, confirm,
-    prompt, detailTitleId, detailPanelRef,
+    prompt, notice, detailTitleId, detailPanelRef,
   };
 }

@@ -6,6 +6,7 @@ import { formatCurrency, formatDateTime } from "@/lib/format";
 import { X, Copy, Trash2, Send, History, MessageCircle, FileDown, Activity, Users, FileText, Link2, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { STATUS_META } from "@/components/admin/notas-credito/nc-compartido";
+import { button } from "@/components/ui-system/button-variants";
 import { StatusTimeline } from "@/components/admin/notas-credito/NcPiezas";
 import type { NotasCreditoVista } from "@/components/admin/notas-credito/hooks/use-notas-credito";
 
@@ -51,8 +52,8 @@ export default function NcDetalle({ nc }: { nc: NotasCreditoVista }) {
                   )}
                   <div className="flex-1" />
                   {selected.status === "BORRADOR" && (
-                    <button onClick={() => handleEmitSunat(selected)} className="flex items-center gap-1.5 px-4 min-h-12 rounded-xl text-sm font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors">
-                      <Send className="h-3.5 w-3.5" />Emitir a SUNAT
+                    <button type="button" onClick={() => handleEmitSunat(selected)} title="Queda emitida en tus registros; no se envía a SUNAT desde aquí" className={button({ variant: "primary", className: "rounded-xl" })}>
+                      <Send className="h-4 w-4" aria-hidden />Marcar emitida
                     </button>
                   )}
                   {selected.status !== "ANULADA" && (

@@ -18,6 +18,11 @@ export default function NcPasoConfirmar({ nc }: { nc: NotasCreditoVista }) {
       {wizardStep === 2 && (
         <div className="space-y-6">
           {/* Document Reference */}
+          {!selectedVenta && (
+            <p role="note" className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-4 py-3 text-sm font-semibold text-[var(--text-primary)]">
+              Ajuste interno: sin documento de origen, no queda vinculada a ninguna boleta ni factura.
+            </p>
+          )}
           {selectedVenta && (
             <div className={cn("rounded-xl p-4 border-2", (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).border, (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).bg)}>
               <p className="text-sm uppercase font-bold text-[var(--text-tertiary)] mb-2">Documento de referencia</p>
@@ -52,7 +57,7 @@ export default function NcPasoConfirmar({ nc }: { nc: NotasCreditoVista }) {
           )}
 
           {/* Motivo Summary */}
-          <div className="bg-[var(--surface-alt)] rounded-xl p-4">
+          <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
             <p className="text-sm uppercase font-bold text-[var(--text-tertiary)] mb-2">Motivo</p>
             <div className="flex items-center gap-2">
               {(() => { const I = MOTIVOS_SUNAT.find(m => m.code === form.codigoMotivo)?.icon || FileText; return <I className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden />; })()}

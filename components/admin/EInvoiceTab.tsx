@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
-import { AlertTriangle, CheckCircle2, Download, MoreHorizontal, Receipt, Search, Send } from "@buleje/design-system/icons";
+import { AlertTriangle, Download, MoreHorizontal, Receipt, Search, Send } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
@@ -18,12 +17,10 @@ import {
   type DocStatus, type DocType, type EDocument,
 } from "./einvoice/tipos";
 import { useComprobantes } from "./einvoice/use-comprobantes";
+import { useEmision } from "./einvoice/use-emision";
+import EstadoSunatLinea from "@/components/admin/sunat/EstadoSunatLinea";
+import { useEstadoSunat } from "@/components/admin/sunat/use-estado-sunat";
 import { useIndicadoresComprobantes } from "./einvoice/use-indicadores-comprobantes";
-
-/* El estado de SUNAT en una línea (Comprobantes, ola 3 del panel unificado).
-   La tarjeta «Modo SUNAT Oficial» completa vive en Configuración › Cobros y
-   comprobantes, donde se arregla: estaba montada dos veces. */
-const EstadoSunatLinea = dynamic(() => import("@/components/admin/sunat/EstadoSunatLinea"), { ssr: false });
 
 const FILTRO_EN_FILA = "mt-0! min-w-0 flex-1 sm:flex-none [&_summary]:h-12 [&_summary]:rounded-xl";
 
@@ -33,7 +30,21 @@ interface Props {
 }
 
 export default function EInvoiceTab({ accionesExtra = [] }: Props) {
-  const { docs, cargando, emitForm, setEmitForm, emitLoading, emitError, toast, abrirEmision, emitir } = useComprobantes();
+  const { docs, cargando, recargar } = useComprobantes();
+  // El estado de SUNAT se lee una vez: lo usan la línea de arriba y la ventana de emisión.
+  const sunat = useEstadoSunat();
+  const emision = useEmision(recargar);
+  const { abrir: abrirEmision } = emision;
+
+  // Otra pantalla (el «⋯» de un pedido) abre la emisión con `?emitir=<id>`: se lee una vez y se limpia.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const id = url.searchParams.get("emitir");
+    if (!id) return;
+    abrirEmision(id);
+    url.searchParams.delete("emitir");
+    window.history.replaceState(window.history.state, "", url);
+  }, [abrirEmision]);
   const [search, setSearch] = useState("");
   // Tipo y Estado: `[]` = todos, admite varios a la vez (Brandon 2026-09-24).
   const [filterType, setFilterType] = useState<DocType[]>([]);
@@ -77,12 +88,6 @@ export default function EInvoiceTab({ accionesExtra = [] }: Props) {
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      {toast && (
-        <div role="status" className="fixed bottom-6 right-6 z-50 bg-primary text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0" /> {toast}
-        </div>
-      )}
-
       {/* Una fila: título · Indicadores · Emitir comprobante · Más. */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-2 xl:flex-nowrap">
         <div className="flex shrink-0 items-center gap-2">
@@ -104,7 +109,8 @@ export default function EInvoiceTab({ accionesExtra = [] }: Props) {
         </div>
       </div>
 
-      <EstadoSunatLinea />
+      {/* La tarjeta «Modo SUNAT Oficial» completa vive en Configuración › Cobros y comprobantes. */}
+      <EstadoSunatLinea carga={sunat} />
 
       {kpis.panel}
 
@@ -161,7 +167,7 @@ export default function EInvoiceTab({ accionesExtra = [] }: Props) {
       </div>
 
       <ModalDetalleComprobante doc={detail} onCerrar={cerrarDetail} />
-      <ModalEmitirComprobante form={emitForm} setForm={setEmitForm} cargando={emitLoading} error={emitError} onEmitir={emitir} />
+      <ModalEmitirComprobante emision={emision} docs={docs} sunat={sunat} />
     </div>
   );
 }

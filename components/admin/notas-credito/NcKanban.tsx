@@ -48,7 +48,7 @@ export default function NcKanban({ nc }: { nc: NotasCreditoVista }) {
                         <div className="flex gap-1">
                           {nc.status === "BORRADOR" && (
                             <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }}
-                              className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Emitir">
+                              className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Marcar emitida (no se envía a SUNAT)" aria-label="Marcar emitida">
                               <Send className="h-4 w-4" />
                             </button>
                           )}

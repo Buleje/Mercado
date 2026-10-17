@@ -12,7 +12,6 @@
  * sabe a quién pedírselo.
  */
 
-import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle, ShieldCheck } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
@@ -21,67 +20,43 @@ import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
 import { origenesDeVista } from "@/lib/admin/permiso-vista";
 import { vistasDelModulo } from "@/lib/admin/subvistas-modulos";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
-import { logger } from "@/lib/logger";
-import { SUNAT_BLOCKER_LABEL, type SunatModoOficialState } from "@/lib/sunat/modo-oficial.types";
+import type { SunatModoOficialState } from "@/lib/sunat/modo-oficial.types";
+import { requisitosDeEmision } from "./requisitos-emision";
+import type { CargaEstadoSunat } from "./use-estado-sunat";
 
-const DESTINO_CONEXION = { tab: "config", params: { vista: "cobros" } } as const;
+export const DESTINO_CONEXION = { tab: "config", params: { vista: "cobros" } } as const;
 
 /** El origen con que el panel ofrece Configuración › Cobros (el registrado; si no hay, la pestaña). */
-function origenDeCobros(): readonly Tab[] {
+export function origenDeCobros(): readonly Tab[] {
   const vista = vistasDelModulo(DESTINO_CONEXION.tab).find((v) => v.key === DESTINO_CONEXION.params.vista);
   return origenesDeVista(DESTINO_CONEXION.tab, vista ?? {}) as readonly Tab[];
 }
 
-type Carga =
-  | { fase: "cargando" }
-  | { fase: "error" }
-  | { fase: "lista"; estado: SunatModoOficialState };
-
-function useEstadoSunat(): Carga {
-  const [carga, setCarga] = useState<Carga>({ fase: "cargando" });
-  useEffect(() => {
-    const ac = new AbortController();
-    fetch("/api/admin/sunat/modo-oficial", { signal: ac.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j: { ok?: boolean; state?: SunatModoOficialState } | null) => {
-        setCarga(j?.ok && j.state ? { fase: "lista", estado: j.state } : { fase: "error" });
-      })
-      .catch((err: unknown) => {
-        if (ac.signal.aborted) return;
-        logger.warn("[comprobantes] estado SUNAT no se pudo leer", { error: String(err) });
-        setCarga({ fase: "error" });
-      });
-    return () => ac.abort();
-  }, []);
-  return carga;
-}
-
-/** Qué decir del estado: la frase de la línea, el tono y el detalle de la ⓘ. */
+/**
+ * Qué decir del estado: la frase de la línea, el tono y el detalle de la ⓘ.
+ * Con el modo apagado `generate-invoice` rechaza y no crea nada: antes decía
+ * «lo que emites queda como comprobante interno», y no era cierto (17-10).
+ */
 function lecturaDe(estado: SunatModoOficialState): { frase: string; ok: boolean; detalle: string } {
-  const ambiente = estado.ambiente === "produccion" ? "producción" : "pruebas";
   if (estado.enabled) {
-    return {
-      ok: true,
-      frase: `oficial (${ambiente}).`,
-      detalle: "Cada comprobante que emites acá viaja a SUNAT y vuelve con su constancia.",
-    };
+    return estado.ambiente === "produccion"
+      ? { ok: true, frase: "oficial: lo que emites viaja a SUNAT.", detalle: "Cada comprobante vuelve con su constancia de SUNAT." }
+      : {
+          ok: false,
+          frase: "en prueba: lo que emites no vale ante SUNAT.",
+          detalle: "Va al facturador de prueba. Para que valga, pasa a producción en Configuración › Cobros y comprobantes.",
+        };
   }
-  const faltan = estado.bloqueos.map((b) => SUNAT_BLOCKER_LABEL[b]);
+  const requisitos = requisitosDeEmision(estado);
+  const faltan = requisitos.filter((r) => !r.ok);
   return {
     ok: false,
-    frase:
-      faltan.length > 0
-        ? `aún no es oficial: falta${faltan.length === 1 ? "" : "n"} ${faltan.length} requisito${faltan.length === 1 ? "" : "s"}.`
-        : "todo listo: falta que soporte active el modo oficial.",
-    detalle:
-      faltan.length > 0
-        ? `${faltan.join(" ")} Mientras tanto, lo que emites queda como comprobante interno.`
-        : "Escríbele a soporte de Buleje y lo activa. Mientras tanto, lo que emites queda como comprobante interno.",
+    frase: `no se emiten comprobantes electrónicos: falta${faltan.length === 1 ? "" : "n"} ${faltan.length} de ${requisitos.length} requisitos.`,
+    detalle: `${faltan.map((r) => `${r.etiqueta}: ${r.queHacer}`).join(" ")} Mientras tanto no se crea ningún comprobante: tus ventas siguen con su ticket interno.`,
   };
 }
 
-export default function EstadoSunatLinea() {
-  const carga = useEstadoSunat();
+export default function EstadoSunatLinea({ carga }: { carga: CargaEstadoSunat }) {
 
   if (carga.fase === "cargando") {
     return (

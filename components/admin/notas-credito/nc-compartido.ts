@@ -1,5 +1,6 @@
 import { FileText, Receipt, CreditCard, Ticket, ClipboardList, Ban, Hash, Pencil, Wallet, Tag, Undo2, Package, Gift, TrendingDown, type LucideIcon } from "@buleje/design-system/icons";
 import { extractIgv } from "@/lib/tax";
+import { limaDateKey } from "@/lib/utils";
 
 /** Tipos, constantes y ayudas de Notas de crédito (antes arriba de NotasCreditoModule). */
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -42,6 +43,8 @@ export type SaleDoc = {
   total: number;
   clienteNombre: string;
   clienteDocumento: string;
+  /** Celular del cliente, si la venta lo guardó: también se busca por él. */
+  telefono?: string;
   items: Array<{
     id: string;
     nombre: string;
@@ -51,6 +54,33 @@ export type SaleDoc = {
     selected: boolean;
   }>;
 };
+
+const sinTildes = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/#/g, "").trim();
+
+/**
+ * Buscar la venta de origen de la nota: código («#a1b2c3»), DNI/RUC, celular,
+ * monto («45.50» o «45,50»), fecha («15/10») o producto. `/api/sales` no lee
+ * `search` (auditoría de comprobantes B5, 17-10): antes el buscador mandaba
+ * `?search=` y siempre volvían las mismas 24 ventas. Cada palabra tiene que
+ * aparecer en algún dato.
+ */
+export function buscarVentas(docs: readonly SaleDoc[], consulta: string): SaleDoc[] {
+  const palabras = sinTildes(consulta).split(/\s+/).filter(Boolean);
+  if (palabras.length === 0) return [...docs];
+  return docs.filter((d) => {
+    const key = Number.isFinite(Date.parse(d.fecha)) ? limaDateKey(d.fecha) : "";
+    const fecha = key ? `${key.slice(8, 10)}/${key.slice(5, 7)}` : "";
+    const pajar = sinTildes(
+      [
+        d.id, d.número, d.comprobanteNumero, d.comprobanteTipo, d.clienteNombre, d.clienteDocumento,
+        d.telefono ?? "", d.total.toFixed(2), d.total.toFixed(2).replace(".", ","), fecha,
+        ...d.items.map((it) => it.nombre),
+      ].join(" "),
+    );
+    return palabras.every((w) => pajar.includes(w));
+  });
+}
 
 export type PickerDocType = "all" | "factura" | "boleta" | "ticket";
 export type DocType = "all" | "factura" | "boleta" | "nota_credito";

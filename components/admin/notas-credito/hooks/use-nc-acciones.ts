@@ -11,7 +11,7 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
   const {
     selected, setSelected, checkedIds, setCheckedIds, templates, setTemplates,
     setShowTemplates, setShowNew, setWizardStep, setCreating, setCreateError, form, setForm,
-    setPickerSearch, setPickerDocType, setSelectedVenta, confirm, prompt, fetchNotas, montoNum, totalConIgv,
+    setPickerSearch, setPickerDocType, setSelectedVenta, confirm, prompt, notice, fetchNotas, montoNum, totalConIgv,
     filteredNotas,
   } = previo;
   // ── CRUD Operations ───────────────────────────────────────────────────────
@@ -23,9 +23,9 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
 
   const handleCreate = async () => {
     setCreateError(null);
-    if (montoNum <= 0) { setCreateError("Monto inv\u00e1lido"); return; }
+    if (montoNum <= 0) { setCreateError("Monto inválido"); return; }
     if (!form.codigoMotivo) { setCreateError("Selecciona un motivo"); return; }
-    if (!form.descripcionMotivo.trim()) { setCreateError("Descripci\u00f3n del motivo requerida"); return; }
+    if (!form.descripcionMotivo.trim()) { setCreateError("Descripción del motivo requerida"); return; }
     setCreating(true);
     try {
       const res = await fetch("/api/notas-credito", {
@@ -41,7 +41,7 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Error al crear" }));
-        throw new Error(typeof err.error === "string" ? err.error : "Error al crear nota de cr\u00e9dito");
+        throw new Error(typeof err.error === "string" ? err.error : "Error al crear nota de crédito");
       }
       resetWizard();
       fetchNotas();
@@ -55,44 +55,63 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
     setShowNew(true); setWizardStep(1); setSelected(null);
   };
 
+  /** El error del servidor en palabras, o el genérico. */
+  const motivoDe = async (res: Response) => {
+    const j = (await res.json().catch(() => null)) as { error?: unknown } | null;
+    return typeof j?.error === "string" ? j.error : `El servidor respondió ${res.status}.`;
+  };
+
+  // «Emitir» sólo cambia el estado a EMITIDA en el sistema: no viaja a SUNAT
+  // (`PATCH /api/notas-credito/[id]`). La pantalla decía «Emitir a SUNAT» (B6, 17-10).
   const handleEmitSunat = async (nc: NotaCredito) => {
     if (!(await confirm({
-      title: "\u00bfEmitir nota de cr\u00e9dito a SUNAT?",
-      description: "Esta acci\u00f3n no se puede deshacer.",
+      title: `¿Marcar ${nc.numero} como emitida?`,
+      description: "Queda emitida en tus registros y ya no se edita. No se envía a SUNAT desde aquí.",
       intent: "warning",
-      confirmLabel: "S\u00ed, emitir",
+      confirmLabel: "Sí, marcar emitida",
     }))) return;
     try {
       const res = await fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "EMITIDA" }) });
-      if (res.ok) fetchNotas();
-    } catch { /* silent */ }
+      if (res.ok) { fetchNotas(); return; }
+      await notice({ title: "No se pudo marcar como emitida", description: await motivoDe(res), intent: "danger" });
+    } catch {
+      await notice({ title: "No se pudo marcar como emitida", description: "Se cortó la conexión. Revisa la lista antes de repetir.", intent: "danger" });
+    }
   };
 
   const handleAnular = async (nc: NotaCredito) => {
     if (!(await confirm({
-      title: "\u00bfAnular esta nota de cr\u00e9dito?",
+      title: "¿Anular esta nota de crédito?",
       intent: "danger",
-      confirmLabel: "S\u00ed, anular",
+      confirmLabel: "Sí, anular",
     }))) return;
     try {
       const res = await fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "ANULADA" }) });
-      if (res.ok) { fetchNotas(); if (selected?.id === nc.id) setSelected(null); }
-    } catch { /* silent */ }
+      if (res.ok) { fetchNotas(); if (selected?.id === nc.id) setSelected(null); return; }
+      await notice({ title: "No se pudo anular", description: await motivoDe(res), intent: "danger" });
+    } catch {
+      await notice({ title: "No se pudo anular", description: "Se cortó la conexión. Revisa la lista antes de repetir.", intent: "danger" });
+    }
   };
 
-  // ── Bulk emit ─────────────────────────────────────────────────────────────
+  // ── Marcar emitidas en lote ───────────────────────────────────────────────
   const handleBulkEmit = async () => {
     const borradores = filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR");
     if (borradores.length === 0) return;
     if (!(await confirm({
-      title: `¿Emitir ${borradores.length} nota(s) de crédito a SUNAT?`,
+      title: `¿Marcar ${borradores.length} nota${borradores.length === 1 ? "" : "s"} como emitida${borradores.length === 1 ? "" : "s"}?`,
+      description: "Quedan emitidas en tus registros y ya no se editan. No se envían a SUNAT desde aquí.",
       intent: "warning",
-      confirmLabel: "Sí, emitir",
+      confirmLabel: "Sí, marcar emitidas",
     }))) return;
-    await Promise.all(borradores.map(nc =>
-      fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "EMITIDA" }) }).catch(sinDato("Notas de crédito PATCH /api/notas-credito"))
+    const oks = await Promise.all(borradores.map(nc =>
+      fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "EMITIDA" }) })
+        .then(r => r.ok)
+        .catch(sinDato("Notas de crédito PATCH /api/notas-credito"))
     ));
     fetchNotas(); setCheckedIds(new Set());
+    const fallidas = oks.filter(ok => !ok).length;
+    if (fallidas > 0) await notice({ title: `${fallidas} de ${borradores.length} no se marcaron`, description: "Quedaron en borrador: revísalas y vuelve a intentar.", intent: "danger" });
   };
 
   // ── Templates ─────────────────────────────────────────────────────────────

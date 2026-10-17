@@ -45,7 +45,7 @@ export default function NcPasoDocumento({ nc }: { nc: NotasCreditoVista }) {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
             <input type="text" value={pickerSearch} onChange={e => setPickerSearch(e.target.value)}
-              placeholder="Buscar por número, cliente, RUC/DNI..."
+              placeholder="Código, cliente, DNI/RUC, celular, monto o producto"
               className="w-full pl-9 pr-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
             {pickerLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />}
           </div>
@@ -102,8 +102,9 @@ export default function NcPasoDocumento({ nc }: { nc: NotasCreditoVista }) {
           {/* Actions */}
           <div className="flex items-center gap-3 pt-2 border-t border-[var(--rule-soft)]">
             <button type="button" onClick={() => { setSelectedVenta(null); setForm(prev => ({ ...prev, orderId: "" })); setWizardStep(1); }}
+              title="La nota no queda vinculada a ninguna boleta ni factura: es un ajuste interno"
               className="min-h-12 px-3 text-sm text-[var(--text-secondary)] hover:underline transition-colors">
-              Continuar sin documento {"\u2192"}
+              Seguir sin documento (ajuste interno) {"\u2192"}
             </button>
             <div className="flex-1" />
             <button onClick={() => setWizardStep(1)} disabled={!selectedVenta}
