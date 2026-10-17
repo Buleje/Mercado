@@ -7,17 +7,43 @@
  * deuda con su «Marcar cobrado».
  */
 import { CardTitle } from "@buleje/design-system";
-import { Check, ExternalLink, MapPin, MessageCircle, Phone } from "@buleje/design-system/icons";
+import { CalendarClock, Check, ExternalLink, MapPin, MessageCircle, Phone } from "@buleje/design-system/icons";
 import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
 import type { DbOrder } from "@/lib/jsondb";
 import { googleMapsUrl } from "@/lib/order-utils";
+import { diaRelativo, textoFranja } from "@/lib/pedidos/franja-entrega";
+import type { EntregaPrep } from "@/lib/pedidos/preparacion";
+import { limaDateKey } from "@/lib/utils";
 import { button } from "@/components/ui-system/button-variants";
 import { usePermisosPedidos } from "../permisos-pedidos";
 
 const BOTON =
   button({ variant: "secondary", className: "shrink-0 rounded-xl" });
 
-export function DetalleContacto({ order }: { order: DbOrder }) {
+const EN_MARCHA = new Set(["pendiente", "confirmado", "preparando", "en_camino"]);
+
+/**
+ * El día y la franja que eligió el cliente al pagar (17-10, `DeliverySlot`):
+ * «Hoy · de 14:00 a 16:00». Si el día ya pasó y el pedido sigue en marcha, lo dice.
+ */
+function EntregaPedida({ entrega, estado }: { entrega: EntregaPrep; estado: string }) {
+  const atrasado = entrega.fecha < limaDateKey(new Date()) && EN_MARCHA.has(estado);
+  // Día a mano sin hora ni franja: sólo el día (no «Sin franja»).
+  const hora = entrega.nota ?? (entrega.franja ? textoFranja(entrega.franja) : null);
+  return (
+    <div className="flex items-center gap-2 border-t border-[var(--rule-soft)] px-4 py-2">
+      <CalendarClock className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2} aria-hidden />
+      <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
+        Lo pidió para{" "}
+        <span className="font-semibold text-[var(--text-primary)]">{diaRelativo(entrega.fecha).toLowerCase()}</span>
+        {hora && ` · ${hora}`}
+        {atrasado && <span className="ml-1.5 font-semibold text-[var(--data-error-ink)]">· atrasado</span>}
+      </p>
+    </div>
+  );
+}
+
+export function DetalleContacto({ order, entrega = null }: { order: DbOrder; entrega?: EntregaPrep | null }) {
   const phone = order.customer.phone ?? "";
   const digitos = phone.replace(/\D+/g, "");
   return (
@@ -72,6 +98,7 @@ export function DetalleContacto({ order }: { order: DbOrder }) {
             <ExternalLink className="h-4 w-4" aria-hidden /> Mapa
           </a>
         </div>
+        {entrega && <EntregaPedida entrega={entrega} estado={order.status} />}
         {order.notes && (
           <div className="border-t border-[var(--rule-soft)] bg-primary/10 px-4 py-2">
             <p className="text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">

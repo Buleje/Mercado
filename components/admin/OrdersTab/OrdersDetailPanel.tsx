@@ -18,6 +18,8 @@
  *
  * 17-10: notas y línea de tiempo leen el historial guardado
  * (`useHistorialPedidos`); se relee al cambiar de estado y al guardar una nota.
+ * La franja que eligió el cliente y el chip «Listo para salir» de Preparación
+ * vienen de `useSalidaPedido`.
  */
 import { useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -30,6 +32,7 @@ import { DetalleLineaDeTiempo, DetalleNotas } from "./detalle/DetalleNotasYTiemp
 import { DetallePie } from "./detalle/DetallePie";
 import { DetalleProductos } from "./detalle/DetalleProductos";
 import { useHistorialPedidos } from "./hooks/useHistorialPedidos";
+import { useSalidaPedido } from "./hooks/useSalidaPedido";
 
 interface OrdersDetailPanelProps {
   order: DbOrder;
@@ -71,6 +74,7 @@ export function OrdersDetailPanel({
 }: OrdersDetailPanelProps) {
   const ids = [order.id];
   const h = useHistorialPedidos(ids, `${order.status}|${order.updatedAt}`);
+  const salida = useSalidaPedido(order.id, `${order.status}|${order.updatedAt}`);
   const eventos = h.historial[order.id] ?? [];
   const notas = eventos.filter((e) => e.tipo === "nota");
   const cambios = eventos.filter((e) => e.tipo === "estado");
@@ -107,7 +111,7 @@ export function OrdersDetailPanel({
         footer={<DetallePie order={order} onRechazar={onShowRejectModal} />}
       >
         <div className="sticky top-0 z-10">
-          <DetalleCabecera order={order} onClose={onClose} />
+          <DetalleCabecera order={order} onClose={onClose} listo={salida.listo} />
           <DetallePasoSiguiente
             order={order}
             onVerifyYape={onVerifyYape}
@@ -119,7 +123,7 @@ export function OrdersDetailPanel({
 
         <div className="space-y-4 bg-[var(--surface-canvas)] px-5 py-4 sm:px-6">
           <DetalleProductos order={order} />
-          <DetalleContacto order={order} />
+          <DetalleContacto order={order} entrega={salida.entrega} />
           <DespachoSection
             order={order}
             customDriver={customDriver}

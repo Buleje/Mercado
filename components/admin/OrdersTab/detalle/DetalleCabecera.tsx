@@ -24,6 +24,8 @@ import { button } from "@/components/ui-system/button-variants";
 import { formatDate } from "@/lib/admin-helpers";
 import { formatCurrency } from "@/lib/format";
 import type { DbOrder } from "@/lib/jsondb";
+import type { MarcaListo } from "@/lib/pedidos/preparacion";
+import { ChipEtapa } from "@/components/admin/pedidos/preparacion/piezas";
 import { cn } from "@/lib/utils";
 import { TINTA_COBRO, cobroDe, responsableDe, siguientePaso } from "../siguiente-paso";
 import { usePermisosPedidos } from "../permisos-pedidos";
@@ -35,7 +37,29 @@ function haceCuanto(fecha: string): string {
   return texto === "recién" ? "recién" : `hace ${texto}`;
 }
 
-export function DetalleCabecera({ order, onClose }: { order: DbOrder; onClose: () => void }) {
+/** «Lo dejó listo Ana · 2 bultos · Falta: 1 Arroz» (el ⓘ nativo del chip). */
+function detalleListo(listo: MarcaListo): string {
+  const partes = [`Lo dejó listo ${listo.por}`];
+  if (listo.bultos) partes.push(`${listo.bultos} ${listo.bultos === 1 ? "bulto" : "bultos"}`);
+  if (listo.faltantes.length > 0) {
+    partes.push(`Falta: ${listo.faltantes.map((f) => `${f.falta} ${f.unidad} ${f.nombre}`).join(", ")}`);
+  }
+  return partes.join(" · ");
+}
+
+/** El chip de Preparación sólo mientras el pedido no salió (confirmado o preparando). */
+const ANTES_DE_SALIR = new Set(["confirmado", "preparando"]);
+
+export function DetalleCabecera({
+  order,
+  onClose,
+  listo = null,
+}: {
+  order: DbOrder;
+  onClose: () => void;
+  /** La marca de Preparación (17-10): «Listo para salir» o «Listo con faltante». */
+  listo?: MarcaListo | null;
+}) {
   const cobro = cobroDe(order);
   const repartidor = responsableDe(order);
   return (
@@ -75,6 +99,11 @@ export function DetalleCabecera({ order, onClose }: { order: DbOrder; onClose: (
           >
             {STATUS_LABELS[order.status]}
           </span>
+          {listo && ANTES_DE_SALIR.has(order.status) && (
+            <span title={detalleListo(listo)} data-qa="chip-listo-para-salir">
+              <ChipEtapa etapa={listo.faltantes.length > 0 ? "listo-parcial" : "listo"} />
+            </span>
+          )}
           <span className="font-mono">#{order.id.slice(-8)}</span>
           <span aria-hidden>·</span>
           <span title={formatDate(order.createdAt)}>{haceCuanto(order.createdAt)}</span>

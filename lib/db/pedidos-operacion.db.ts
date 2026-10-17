@@ -15,12 +15,15 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { PlatformSettingsDB } from "./platform-settings.db";
+import { DeliverySlotsDB } from "./orders.db";
 import {
   aplicarCambio,
   podarAvances,
   type AvancePrep,
   type CambioPrep,
+  type EntregaPrep,
   type EstadoPedidoPrep,
+  type MarcaListo,
   type PedidoPrep,
 } from "@/lib/pedidos/preparacion";
 import type { PedidoActivo, PedidoAnalisis, ZonaConfigurada } from "@/lib/pedidos/analisis-operativo";
@@ -202,6 +205,28 @@ export const PedidosOperacionDB = {
         ? [{ id: o.id, cliente: o.customerName, estado: o.status, total: Number(o.total), fecha: s.date, franja: s.slot, nota: s.notes }]
         : [];
     });
+  },
+
+  /**
+   * Para cuándo lo pidió el cliente y si ya quedó listo para salir, de UN
+   * pedido (el detalle del pedido, 17-10). `null` si el pedido no es del
+   * negocio: no se dice ni que existe.
+   */
+  async salidaDe(
+    tenantId: string,
+    pedidoId: string,
+  ): Promise<{ entrega: EntregaPrep | null; listo: MarcaListo | null } | null> {
+    exigirTenant(tenantId);
+    const pedido = await prisma.order.findFirst({ where: { id: pedidoId, tenantId, deletedAt: null }, select: { id: true } });
+    if (!pedido) return null;
+    const [slot, kv] = await Promise.all([
+      DeliverySlotsDB.getByOrderId(tenantId, pedidoId),
+      PlatformSettingsDB.getFresco<unknown>(CLAVE_AVANCE(tenantId)),
+    ]);
+    return {
+      entrega: slot ? { fecha: slot.date, franja: slot.slot, nota: slot.notes ?? null } : null,
+      listo: avancesDe(kv, tenantId)[pedidoId]?.listo ?? null,
+    };
   },
 
   /**
