@@ -35,6 +35,12 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
 
   // Órdenes pendientes de recibir (para el dropdown del modal)
   const [pendingOCs, setPendingOCs] = useState<PendingOC[]>([]);
+  /**
+   * Revisión 17-10: sin esto, mientras llegaba la lista (1-3 s) y si el pedido
+   * fallaba, el formulario decía «No hay órdenes esperando mercadería» con 9
+   * órdenes pendientes en la base.
+   */
+  const [estadoOCs, setEstadoOCs] = useState<"cargando" | "listo" | "error">("cargando");
   const confirmarCredito = useConfirmarCreditoRecepcion();
   const { confirm } = useConfirm();
   const [selectedOcId, setSelectedOcId] = useState("");
@@ -60,10 +66,11 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
 
   // Carga OCs pendientes al abrir el modal de nueva recepción
   const loadPendingOCs = useCallback(async () => {
+    setEstadoOCs("cargando");
     try {
       // Con lo que ya llegó de cada orden: así se precarga lo que FALTA (C19).
       const res = await fetch("/api/purchases?seguimiento=1", { credentials: "include" });
-      if (!res.ok) return;
+      if (!res.ok) { setEstadoOCs("error"); return; }
       const json = await res.json();
       const all: PendingOC[] = Array.isArray(json) ? json : (json?.purchases ?? []);
       // Solo mostrar OCs pendientes / parciales / auto_generated
@@ -72,7 +79,9 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
         return s === "pendiente" || s === "parcial" || s === "auto_generated" || s === "ordered" || s === "draft";
       });
       setPendingOCs(pending);
+      setEstadoOCs("listo");
     } catch (err) {
+      setEstadoOCs("error");
       console.warn("[recepciones] no se cargaron las órdenes pendientes", err);
     }
   }, []);
@@ -257,7 +266,7 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
   };
 
   return {
-    showNew, setShowNew, newTitleId, newPanelRef, ventanaNueva, pendingOCs, selectedOcId, newForm, setNewForm,
+    showNew, setShowNew, newTitleId, newPanelRef, ventanaNueva, pendingOCs, estadoOCs, loadPendingOCs, selectedOcId, newForm, setNewForm,
     checklist, setChecklist, saving, avisoCredito, setAvisoCredito, invoiceUrl, setInvoiceUrl, uploadingInvoice,
     invoiceError, addChecklistRow, removeChecklistRow, updateChecklistRow, uploadInvoice, venceConError,
     saveReception, applyOC, origen, cambiarOrigen, motivo, setMotivo, motivoOtro, setMotivoOtro,

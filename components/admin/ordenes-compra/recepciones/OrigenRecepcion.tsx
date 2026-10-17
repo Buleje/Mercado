@@ -31,7 +31,7 @@ function rotuloDeOrden(oc: PendingOC): string {
  * nunca se guardaba (el botón no hacía nada).
  */
 export default function OrigenRecepcion({ n }: { n: Estado }) {
-  const { origen, cambiarOrigen, pendingOCs, selectedOcId, applyOC, motivo, setMotivo, motivoOtro, setMotivoOtro } = n;
+  const { origen, cambiarOrigen, pendingOCs, estadoOCs, loadPendingOCs, selectedOcId, applyOC, motivo, setMotivo, motivoOtro, setMotivoOtro } = n;
   const opcion = (valor: typeof origen, rotulo: string, Icono: typeof ClipboardList) => (
     <button
       type="button"
@@ -63,6 +63,13 @@ export default function OrigenRecepcion({ n }: { n: Estado }) {
             {pendingOCs.map((oc) => <option key={oc.id} value={oc.id}>{rotuloDeOrden(oc)}</option>)}
           </select>
         </Field>
+      ) : estadoOCs === "cargando" ? (
+        <p role="status" className="text-sm text-[var(--text-secondary)]">Buscando las órdenes que esperan mercadería…</p>
+      ) : estadoOCs === "error" ? (
+        <p role="alert" className="text-sm text-[var(--data-error-ink)]">
+          No se pudieron traer las órdenes.{" "}
+          <button type="button" onClick={() => void loadPendingOCs()} className="font-semibold underline underline-offset-2">Reintentar</button>
+        </p>
       ) : (
         <p role="status" className="text-sm text-[var(--text-secondary)]">
           No hay órdenes esperando mercadería. Si llegó algo igual, marca «Sin orden».

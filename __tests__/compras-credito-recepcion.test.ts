@@ -184,3 +184,39 @@ describe("aviso antes de guardar una recepción con crédito", () => {
     expect(textoConfirmarCredito(oc, "X", [item({ condition: "faltante" })])).toBeNull();
   });
 });
+
+describe("C20 · lo rechazado de una línea en buen estado no se paga (revisión 17-10)", () => {
+  const base = { ocItems: OC, totalOc: 140, recibidoTotal: new Map([[1, 10]]), faltantesYaAcreditados: new Map<number, number>() };
+
+  it("10 llegaron bien, 3 rechazados y 2 en revisión: se acreditan los 3 rechazados, no los 2 en revisión", () => {
+    const r = calcularCreditoRecepcion({ ...base, items: [item({ rechazado: 3, enRevision: 2 })] });
+    expect(r.total).toBe(30);
+    expect(r.lineas[0]).toMatchObject({ indice: 0, unidades: 3, motivo: "rechazado" });
+  });
+
+  it("sin rechazo (sólo en revisión) la cuenta no se toca", () => {
+    expect(calcularCreditoRecepcion({ ...base, items: [item({ enRevision: 4 })] }).total).toBe(0);
+  });
+
+  it("rechazado más dañado del mismo producto nunca pasa de lo pedido", () => {
+    const r = calcularCreditoRecepcion({
+      ...base, recibidoTotal: new Map([[1, 14]]),
+      items: [item({ receivedQty: 6, condition: "dañado" }), item({ receivedQty: 8, rechazado: 8 })],
+    });
+    expect(r.lineas.reduce((s, l) => s + l.unidades, 0)).toBe(10);
+    expect(r.total).toBe(100);
+  });
+
+  it("un rechazo mayor que lo que llegó se recorta a lo que llegó", () => {
+    expect(calcularCreditoRecepcion({ ...base, items: [item({ receivedQty: 2, rechazado: 9 })] }).lineas[0].unidades).toBe(2);
+  });
+});
+
+describe("C20 · el aviso antes de guardar también cuenta lo rechazado", () => {
+  it("una línea OK con 3 rechazados pregunta por el descuento", () => {
+    const oc = { id: "OC-1", total: 140, items: OC };
+    const t = textoConfirmarCredito(oc as never, "Distribuidora", [item({ rechazado: 3 })]);
+    expect(t?.title).toContain("30.00");
+    expect(t?.description).toContain("rechazado al recibir");
+  });
+});

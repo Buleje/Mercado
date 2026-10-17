@@ -11,7 +11,7 @@ export type OcDeLaRecepcion = {
   items?: Array<{ productId?: number; name?: string; quantity?: number; unitCost?: number }>;
 };
 
-const MOTIVO = { "dañado": "dañado", vencido: "vencido", faltante: "faltante (no llegará)" } as const;
+const MOTIVO = { "dañado": "dañado", vencido: "vencido", faltante: "faltante (no llegará)", rechazado: "rechazado al recibir" } as const;
 
 /** El texto del aviso: qué se descuenta, por qué y qué no tiene vuelta. */
 export function textoConfirmarCredito(oc: OcDeLaRecepcion, proveedor: string, items: ItemRecepcion[]) {
@@ -48,7 +48,8 @@ export function useConfirmarCreditoRecepcion() {
   const { confirm } = useConfirm();
   return useCallback(
     async (oc: OcDeLaRecepcion | undefined, proveedor: string, items: ItemRecepcion[]): Promise<boolean> => {
-      if (!oc || !items.some((i) => i.condition !== "ok")) return true;
+      // C20: un rechazo en una línea «ok» también se descuenta: se pregunta igual.
+      if (!oc || !items.some((i) => i.condition !== "ok" || Number(i.rechazado) > 0)) return true;
       const texto = textoConfirmarCredito(oc, proveedor, items);
       if (!texto) return true;
       return confirm({ ...texto, intent: "warning", confirmLabel: "Guardar y descontar", cancelLabel: "Revisar" });

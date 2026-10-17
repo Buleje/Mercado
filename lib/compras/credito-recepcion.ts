@@ -16,6 +16,8 @@
  * afuera), así que cada unidad vale `unitCost × total / subtotal`.
  */
 
+import { partirLinea } from "@/lib/compras/aceptacion-recepcion";
+
 export type CondicionRecepcion = "ok" | "dañado" | "vencido" | "faltante";
 
 /** Línea de la orden de compra. `unitCost` llega como number o Decimal. */
@@ -28,6 +30,9 @@ export type ItemRecepcion = {
   expectedQty: number;
   receivedQty: number;
   condition: CondicionRecepcion;
+  /** C20: de una línea «ok», lo rechazado (no entra a stock, no se paga). */
+  rechazado?: number;
+  enRevision?: number;
 };
 
 export type LineaCredito = {
@@ -35,7 +40,7 @@ export type LineaCredito = {
   indice: number;
   productId: number;
   nombre: string;
-  motivo: Exclude<CondicionRecepcion, "ok">;
+  motivo: Exclude<CondicionRecepcion, "ok"> | "rechazado";
   unidades: number;
   /** Lo que cobra el proveedor por unidad (descuento e IGV de la orden adentro). */
   precioUnitario: number;
@@ -89,13 +94,21 @@ export function calcularCreditoRecepcion(input: {
   const lineas: LineaCredito[] = [];
 
   input.items.forEach((item, indice) => {
-    if (item.condition === "ok") return;
+    // C20 (revisión 17-10): de una línea en buen estado, lo RECHAZADO no entra
+    // a stock y se reclama: igual que lo dañado, no se le paga al proveedor.
+    // Lo que está «en revisión» sí se paga (llegó y puede liberarse).
+    const rechazado = item.condition === "ok" ? partirLinea(item).rechazado : 0;
+    if (item.condition === "ok" && rechazado <= 0) return;
     const oc = lineaDeLaOc(item, input.ocItems);
     if (!oc) return;
     const pedido = num(oc.quantity);
     let unidades = 0;
 
-    if (item.condition === "faltante") {
+    if (item.condition === "ok") {
+      const yaMalo = acreditadoMalo.get(oc.productId) ?? 0;
+      unidades = Math.max(0, Math.min(rechazado, pedido - yaMalo));
+      if (unidades > 0) acreditadoMalo.set(oc.productId, yaMalo + unidades);
+    } else if (item.condition === "faltante") {
       const declarado = Math.max(0, num(item.expectedQty) - num(item.receivedQty));
       const falta = Math.max(
         0,
@@ -115,7 +128,7 @@ export function calcularCreditoRecepcion(input: {
       indice,
       productId: oc.productId,
       nombre: oc.name,
-      motivo: item.condition,
+      motivo: item.condition === "ok" ? "rechazado" : item.condition,
       unidades,
       precioUnitario: redondear2(precio),
       monto: redondear2(unidades * precio),
