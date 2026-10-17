@@ -241,6 +241,12 @@ describe("deuda al cancelar — la misma cuenta en pantalla y en el servidor (re
     expect(Object.fromEntries(m)).toEqual({ 1: 2, 2: 1 });
   });
 
+  it("valorDeLoRecibido: orden automática con costo 0 reparte el total por unidad pedida", () => {
+    const auto = [{ productId: 1, name: "A", quantity: 10, unitCost: 0 }, { productId: 2, name: "B", quantity: 10, unitCost: 0 }];
+    expect(valorDeLoRecibido(auto, 200, new Map([[1, 10], [2, 5]]))).toBe(150); // 15 u × 10
+    expect(valorDeLoRecibido(auto, 200, new Map([[1, 10]]), new Map([[1, 4]]))).toBe(60);
+  });
+
   it("valorDeLoRecibido: tope en lo pedido, sin lo no apto, con el factor del total", () => {
     expect(valorDeLoRecibido(ITEMS, 260, new Map([[1, 12], [2, 3]]))).toBe(230); // 10×20 + 3×10
     expect(valorDeLoRecibido(ITEMS, 260, { 1: 4 }, { 1: 4 })).toBe(0);

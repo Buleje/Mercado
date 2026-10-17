@@ -1,5 +1,6 @@
 import { formatCurrency } from "@/lib/format";
 import { TIPOS_COMPROBANTE } from "@/lib/compras/estados-oc";
+import { valorPorUnidad } from "@/lib/compras/valor-por-unidad";
 
 /**
  * ciclo-oc.ts — en qué va cada orden de compra y qué sigue (auditoría Compras
@@ -122,11 +123,10 @@ export function valorDeLoRecibido(
 ): number {
   const leer = (m: ReadonlyMap<number, number> | Readonly<Record<number, number>>, id: number) =>
     num(m instanceof Map ? m.get(id) : (m as Readonly<Record<number, number>>)[id]);
-  const subtotal = items.reduce((s, i) => s + i.quantity * num(i.unitCost), 0);
-  const factor = subtotal > 0 && num(total) > 0 ? num(total) / subtotal : 1;
+  const costo = valorPorUnidad(items, total);
   const valor = items.reduce((s, i) => {
     const aptas = Math.max(0, leer(recibido, i.productId) - leer(noAptos, i.productId));
-    return s + Math.min(aptas, i.quantity) * num(i.unitCost) * factor;
+    return s + Math.min(aptas, i.quantity) * costo(i);
   }, 0);
   return redondear2(valor);
 }

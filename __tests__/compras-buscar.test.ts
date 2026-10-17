@@ -73,4 +73,19 @@ describe("buscar en Compras (C57)", () => {
     const r = buscarEnCompras({ ...DATOS, cuentas: null }, "600", { hoy: HOY });
     expect(r.grupos.some((g) => g.tipo === "cuenta")).toBe(false);
   });
+
+  it("dos proveedores con la misma factura: cada fila lleva el suyo en el título", () => {
+    const datos: DatosDeCompras = {
+      ...DATOS,
+      ordenes: [
+        ...DATOS.ordenes,
+        orden({ id: "cmaaaaaaaa0004frigor4", supplierId: "p2", supplierName: "Frigorífico Amazonía", invoiceNumber: "F001-00000123" }),
+      ],
+    };
+    const hallazgos = buscarEnCompras(datos, "f001-123", { hoy: HOY }).grupos.find((g) => g.tipo === "orden")?.hallazgos ?? [];
+    expect(hallazgos).toHaveLength(2);
+    const titulos = hallazgos.map((h) => h.titulo).join(" | ");
+    expect(titulos).toContain("Distribuidora Ucayali");
+    expect(titulos).toContain("Frigorífico Amazonía");
+  });
 });
