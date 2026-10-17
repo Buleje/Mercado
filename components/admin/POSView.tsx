@@ -142,6 +142,9 @@ export default function POSView() {
         onClearQueue={posOffline.clearQueue}
         cola={posOffline.cola}
         onDescartar={posOffline.descartar}
+        onReintentar={posOffline.reintentar}
+        negocio={posOffline.negocio}
+        reintentaEn={posOffline.reintentaEn}
       />
       <POSToolbar
         products={products}

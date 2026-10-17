@@ -37,7 +37,7 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
   /* Cierre a ciegas: sin esperado ni diferencia hasta cerrar; después, el resultado y «Listo». */
   const { ciego } = useCierreACiegas();
   const oculto = ciego !== false;
-  const [resultado, setResultado] = useState<{ esperado: number; contado: number } | null>(null);
+  const [resultado, setResultado] = useState<{ esperado: number; contado: number; yaEstaba?: boolean } | null>(null);
   const listo = () => { onHecho(); onCerrar(); };
 
   const totalBilletes = BILLETES.reduce((s, b) => s + b * (billetes[String(b)] ?? 0), 0);
@@ -93,6 +93,16 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
           notes: `Arqueo Guiado - ${formatDateTimeShort(new Date())} | Billetes: ${formatCurrency(totalBilletes)} | Monedas: ${formatCurrency(totalMonedas)} | Total efectivo: ${formatCurrency(total)}${notaDigital} | Total general: ${formatCurrency(total + digital)} | Diferencia: ${diferencia >= 0 ? "+" : ""}${formatCurrency(diferencia)}${notaFoto}`,
         }),
       });
+      /* Reintento de un cierre que SÍ se hizo (la respuesta se perdió) u otra
+         pestaña que cerró primero: el servidor devuelve la caja cerrada y se
+         muestra ESE cierre, como en «Cerrar caja» (antes: el 409 como error). */
+      if (res.status === 409) {
+        const j = (await res.clone().json().catch(() => null)) as { yaCerrada?: boolean; caja?: CashRegister } | null;
+        if (j?.yaCerrada && j.caja) {
+          setResultado({ esperado: j.caja.expectedAmount ?? esperado, contado: j.caja.closingAmount ?? total, yaEstaba: true });
+          return;
+        }
+      }
       // Si el cierre falla (409 de otra pestaña, 503 de la base), el conteo NO se pierde.
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -122,7 +132,11 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
         onCerrar={listo}
         pie={<button type="button" onClick={listo} className={button({ variant: "primary", className: "flex-1 rounded-xl" })}>Listo</button>}
       >
-        <ResultadoACiegas titulo="Caja cerrada con tu conteo" esperado={resultado.esperado} contado={resultado.contado} />
+        <ResultadoACiegas
+          titulo={resultado.yaEstaba ? "Esta caja ya estaba cerrada: este es el cierre guardado" : "Caja cerrada con tu conteo"}
+          esperado={resultado.esperado}
+          contado={resultado.contado}
+        />
       </MarcoModalCaja>
     );
   }

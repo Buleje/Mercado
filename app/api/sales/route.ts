@@ -86,6 +86,32 @@ const SaleSchema = z.object({
  * Default: 500 ventas mas recientes. Antes devolvia TODAS las ventas
  * del tenant sin limit (perf issue audit ventas-caja P2 #11).
  */
+/** La venta de este negocio con esa clave de idempotencia (con sus ítems), o `null`. */
+function ventaPorClave(tenantId: string, clave: string) {
+  return prisma.sale.findFirst({ where: { tenantId, idempotencyKey: clave }, include: { items: true } });
+}
+
+/** La respuesta de una venta que ya existía (reintento del POS con la misma clave). */
+function respuestaDeduplicada(existing: NonNullable<Awaited<ReturnType<typeof ventaPorClave>>>): NextResponse {
+  return NextResponse.json({
+    id: existing.id,
+    items: existing.items.map(i => ({ productId: i.productId, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit })),
+    total: existing.total,
+    payment: existing.payment,
+    amountPaid: existing.amountPaid,
+    change: existing.change,
+    createdAt: existing.createdAt.toISOString(),
+    _deduplicated: true,
+  }, { status: 200 });
+}
+
+/** Choque con un índice único (Prisma P2002 / Postgres 23505). */
+function esChoqueDeUnico(err: unknown): boolean {
+  const code = (err as { code?: unknown } | null)?.code;
+  if (code === "P2002" || code === "23505") return true;
+  return err instanceof Error && /P2002|Unique constraint/i.test(err.message);
+}
+
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, RUTAS_PANEL["/api/sales"]);
   if (auth instanceof NextResponse) return auth;
@@ -99,6 +125,21 @@ export async function GET(req: NextRequest) {
     const toParam = searchParams.get("to");
     const cashierIdParam = searchParams.get("cashierId");
     const allParam = searchParams.get("all");
+
+    /* «¿Ya se guardó?» del POS sin conexión (revisión 17-10): antes de decir
+       «vuelve a anotarla» se busca la venta por su clave. La clave es un UUID
+       que sólo conoce el equipo que cobró, así que no se filtra por cajero; se
+       devuelve lo justo para reconocerla (monto y hora). */
+    const claveParam = searchParams.get("clave");
+    if (claveParam !== null) {
+      const clave = claveParam.trim();
+      if (!clave || clave.length > 100) return NextResponse.json({ error: "Clave inválida" }, { status: 400 });
+      const venta = await ventaPorClave(auth.tenantId, clave);
+      return NextResponse.json({
+        guardada: venta != null,
+        venta: venta ? { id: venta.id, total: venta.total, payment: venta.payment, createdAt: venta.createdAt.toISOString() } : null,
+      });
+    }
 
     // Audit 2026-05-17 B-P0-4: paginación + filtros Prisma-side (skip/take).
     // Antes: getAll() + 3 array.filter() en JS + slice() — cargaba todas las
@@ -179,13 +220,14 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  // SECURITY 2026-05-05 (audit POS #12): rate-limit STRICT en POST /api/sales.
-  // Antes brute-force de creación inflaba reportes y quemaba IDs.
-  const rl = await applyRateLimit(req, "STRICT", "sales-post");
-  if (rl) return rl;
-
   const auth = await requireAdmin(req, RUTAS_PANEL["/api/sales"]);
   if (auth instanceof NextResponse) return auth;
+  // SECURITY 2026-05-05 (audit POS #12): rate-limit en POST /api/sales contra el
+  // brute-force que inflaba reportes. 17-10: era STRICT por IP (10 cada 15 min) y
+  // la venta 11 de una bodega en hora punta daba 429 (el dueño y los cajeros
+  // comparten IP). Ahora va después del login, por negocio + cajero, 100/min.
+  const rl = await applyRateLimit(req, "GENEROUS", `sales-post:${auth.tenantId}:${auth.username}`);
+  if (rl) return rl;
   // MODO GRACIA 2026-07-08 (decisión Brandon, reporte ventas-caja bug 1): el
   // POS NUNCA se bloquea por trial expirado — una bodega real necesita seguir
   // cobrando en el mostrador aunque el trial del SaaS haya vencido. El gate
@@ -429,22 +471,10 @@ async function salesHandler(
   // Deduplicación por idempotencyKey: si el POS offline reintenta un POST
   // que ya llegó, devolver la Sale existente en vez de crear un duplicado.
   if (data.idempotencyKey) {
-    const existing = await prisma.sale.findFirst({
-      where: { tenantId: auth.tenantId, idempotencyKey: data.idempotencyKey },
-      include: { items: true },
-    });
+    const existing = await ventaPorClave(auth.tenantId, data.idempotencyKey);
     if (existing) {
       logger.info("[sales] POST deduplicated by idempotencyKey", { tenantId: auth.tenantId, idempotencyKey: data.idempotencyKey, saleId: existing.id });
-      return NextResponse.json({
-        id: existing.id,
-        items: existing.items.map(i => ({ productId: i.productId, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit })),
-        total: existing.total,
-        payment: existing.payment,
-        amountPaid: existing.amountPaid,
-        change: existing.change,
-        createdAt: existing.createdAt.toISOString(),
-        _deduplicated: true,
-      }, { status: 200 });
+      return respuestaDeduplicada(existing);
     }
   }
 
@@ -562,6 +592,20 @@ async function salesHandler(
       ...(saleRow.paymentDetails != null && { paymentDetails: saleRow.paymentDetails }),
     };
   } catch (dbErr) {
+    /* Carrera por la clave (revisión 17-10): dos POST con la misma clave a la
+       vez pasan los dos la revisión de arriba; el segundo choca con el @unique
+       de `idempotencyKey` cuando el primero ya guardó. La venta EXISTE: se
+       devuelve como deduplicada (antes, 500 y el POS la dejaba «No pasó»). */
+    if (data.idempotencyKey && esChoqueDeUnico(dbErr)) {
+      const yaGuardada = await ventaPorClave(auth.tenantId, data.idempotencyKey).catch((err) => {
+        logger.error("[sales] relectura por clave tras P2002 falló", { tenantId: auth.tenantId, err: String(err) });
+        return null;
+      });
+      if (yaGuardada) {
+        logger.info("[sales] POST deduplicated by idempotencyKey (P2002)", { tenantId: auth.tenantId, idempotencyKey: data.idempotencyKey, saleId: yaGuardada.id });
+        return respuestaDeduplicada(yaGuardada);
+      }
+    }
     const msg = dbErr instanceof Error ? dbErr.message : "Error al procesar venta";
     const isValidation = msg.startsWith("Stock insuficiente") || dbErr instanceof KitError;
     logger.error("[sales] POST error", { err: dbErr instanceof Error ? dbErr.message : String(dbErr), tenantId: auth.tenantId });

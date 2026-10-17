@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { WifiOff, Loader2, CheckCircle, AlertTriangle, RefreshCw, Trash2 } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import POSColaOffline from "./POSColaOffline";
-import type { VentaEnCola } from "./cola-offline";
+import type { Negocio, VentaEnCola } from "./cola-offline";
+
+const HORA = new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", hour12: false });
 
 interface POSOfflineBarProps {
   isOnline: boolean;
@@ -18,6 +20,12 @@ interface POSOfflineBarProps {
   /** La cola entera para listarla (M59). */
   cola?: readonly VentaEnCola[];
   onDescartar?: (clave: string) => void;
+  /** «Reintentar» una venta «No pasó» con la misma clave (revisión 17-10). */
+  onReintentar?: (clave: string) => void;
+  /** Negocio de la sesión, para saber cuáles de la cola son de acá. */
+  negocio?: Negocio;
+  /** Hora en que se vuelve a mandar sola (el servidor pidió esperar, 429). */
+  reintentaEn?: number | null;
 }
 
 export default function POSOfflineBar({
@@ -31,6 +39,9 @@ export default function POSOfflineBar({
   onClearQueue,
   cola,
   onDescartar,
+  onReintentar,
+  negocio,
+  reintentaEn,
 }: POSOfflineBarProps) {
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
   const [verCola, setVerCola] = useState(false);
@@ -64,7 +75,7 @@ export default function POSOfflineBar({
         <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
           <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
           <p className="text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex-1">
-            {errorCount} {errorCount === 1 ? "venta" : "ventas"} con error. No se pudo sincronizar.
+            {errorCount} {errorCount === 1 ? "venta no pasó" : "ventas no pasaron"}: el servidor no las aceptó. Revisa cuáles y reintenta o descarta.
           </p>
           <div className="flex gap-1.5 shrink-0">
             {onClearErrors && (
@@ -132,6 +143,7 @@ export default function POSOfflineBar({
           <Loader2 className="h-4 w-4 text-[var(--data-success-500)] animate-spin shrink-0" />
           <p className="text-xs text-[var(--data-success-ink)] flex-1">
             {pendingCount} {pendingCount === 1 ? "venta" : "ventas"} pendientes de sincronizar
+            {reintentaEn ? ` · el servidor pidió esperar: se mandan solas a las ${HORA.format(new Date(reintentaEn))}` : ""}
           </p>
           {onSyncRun && (
             <button
@@ -151,7 +163,7 @@ export default function POSOfflineBar({
             className="self-start rounded-lg px-1 text-sm font-semibold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]">
             {verCola ? "Ocultar la cola" : `Ver cuáles son (${cola.length})`}
           </button>
-          {verCola && <POSColaOffline cola={cola} onDescartar={onDescartar} />}
+          {verCola && <POSColaOffline cola={cola} negocio={negocio} onDescartar={onDescartar} onReintentar={onReintentar} />}
         </div>
       )}
     </div>
