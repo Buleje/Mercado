@@ -5,11 +5,10 @@ import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { ALL_TABS } from "@/app/admin/_lib/tab-data";
 import { ANIDADAS_POR_MODULO, CTP_VISTAS, LOTH_VISTAS, VISTAS_POR_MODULO } from "@/lib/admin/subvistas-modulos";
 import {
-  Search, X, Package, Users, ShoppingCart, FileText, ShoppingBasket, Tag, AlertTriangle, TrendingUp, Loader2, LayoutDashboard, Monitor, Boxes, Shield, Zap, ArrowRight,
+  Search, X, Package, Users, ShoppingCart, ShoppingBasket, Tag, AlertTriangle, Loader2, LayoutDashboard, Monitor, Shield, Zap, ArrowRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { destinoDelResultado } from "@/lib/admin/destino-busqueda";
-import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { ResultadoEnlazable } from "@/components/admin/shared/ResultadoEnlazable";
 
@@ -314,17 +313,6 @@ const GROUP_META: Record<keyof GroupedResults, { label: string; icon: React.Elem
 };
 
 const GROUP_ORDER: (keyof GroupedResults)[] = ["modulos", "productos", "clientes", "pedidos", "acciones"];
-
-// ── Acceso rápido (estado vacío) ──────────────────────────────────────────────
-
-const QUICK_ACCESS = [
-  { label: "Nuevo pedido",    tab: "pedidos",              icon: ShoppingCart,   color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
-  { label: "Mi stock",        tab: "inventario", icon: Boxes,          color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
-  { label: "Mis clientes",    tab: "clientes",         icon: Users,          color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
-  { label: "Caja",            tab: "ventas-caja",             icon: Monitor,        color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
-  { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-[var(--text-secondary)] bg-[var(--surface-alt)] " },
-  { label: "Promociones",     tab: "productos",       icon: TrendingUp,     color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
-];
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
@@ -654,34 +642,8 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
           </div>
         )}
 
-        {/* ── Acceso rápido (estado vacío) ── */}
-        {!isSearching && (
-          <div className="px-5 py-4">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-muted mb-3">
-              Acceso rápido
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {QUICK_ACCESS.map(item => {
-                const Icon = item.icon;
-                return (
-                  <ResultadoEnlazable
-                    key={item.tab}
-                    href={hrefDeDestino({ tab: item.tab, params: {} })}
-                    onElegir={() => { onNavigate(item.tab); onClose(); }}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] transition-colors text-left"
-                  >
-                    <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", item.color)}>
-                      <Icon className="h-4 w-4" strokeWidth={2} />
-                    </div>
-                    <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-tight">
-                      {item.label}
-                    </span>
-                  </ResultadoEnlazable>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Sin «Acceso rápido» (Brandon 16-10: «quita ese menú y que sólo funcione el
+            buscador»): con el campo vacío la ventana es el buscador y nada más. */}
 
         {/* ── Footer — atajos de teclado discretos ── */}
         <div className="px-5 py-2.5 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
