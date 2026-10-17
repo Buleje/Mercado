@@ -149,12 +149,15 @@ export function useKpisPlegables({
   if (tarjetas.length === 0) return { boton: null, enSuLugar: null, panel: null, abierto: false };
 
   /* Las clases `/riel` sólo pesan dentro del riel: en su lugar no hay
-     contenedor con ese nombre y el botón se ve como siempre. */
-  const enSuLugar = (
+     contenedor con ese nombre y el botón se ve como siempre.
+     `compacto` (17-10, Brandon: «achica indicadores… al mismo nivel de fila que las
+     pestañas»): en el riel va sólo ícono + cantidad; el titular queda en el `title`. */
+  const pintar = (compacto: boolean) => (
     <button
       type="button"
       onClick={alternar}
       aria-expanded={abierto}
+      aria-label={compacto ? `Indicadores (${tarjetas.length})` : undefined}
       title={
         abierto
           ? "Ocultar los indicadores"
@@ -166,7 +169,7 @@ export function useKpisPlegables({
         /* En una barra (h-12) el botón no pasa de 24rem: el titular se corta
            con «…» y el buscador conserva su lugar (medido en Ingresos: con el
            titular entero, el buscador quedaba en 70 px). */
-        alto === "md" ? "h-12 max-w-[min(100%,24rem)] rounded-2xl" : "h-12 max-w-full rounded-xl"
+        compacto ? "h-12 shrink-0 rounded-xl" : alto === "md" ? "h-12 max-w-[min(100%,24rem)] rounded-2xl" : "h-12 max-w-full rounded-xl"
       } ${
         abierto
           ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
@@ -174,7 +177,7 @@ export function useKpisPlegables({
       }`}
     >
       <BarChart3 className="h-4 w-4 shrink-0" aria-hidden />
-      <span className={`shrink-0 ${soloIcono ? "sr-only" : compactoEnMovil ? "max-sm:sr-only" : ""} ${CLASE_TEXTO_ACCION}`}>
+      <span className={`shrink-0 ${compacto || soloIcono ? "sr-only" : compactoEnMovil ? "max-sm:sr-only" : ""} ${CLASE_TEXTO_ACCION}`}>
         Indicadores
       </span>
       <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 text-sm tabular-nums text-[var(--text-tertiary)]">
@@ -182,7 +185,7 @@ export function useKpisPlegables({
       </span>
       {/* Con el panel cerrado, las cifras viajan en el botón: el titular sigue
           a la vista sin gastar una fila propia. */}
-      {!abierto && resumen && (
+      {!compacto && !abierto && resumen && (
         <span
           className={`min-w-0 truncate font-mono text-sm font-normal tabular-nums text-[var(--text-secondary)] ${
             soloIcono ? "max-xl:sr-only" : compactoEnMovil ? "max-sm:hidden" : ""
@@ -191,19 +194,26 @@ export function useKpisPlegables({
           {resumen}
         </span>
       )}
+      {/* El extra se queda aun compacto: lleva lo que decide (el rendimiento de Producción,
+          el chip rojo de «se consumió de más»), que nadie ve si se esconde tras un clic. */}
       {!abierto && resumenExtra && <span className="shrink-0">{resumenExtra}</span>}
       {/* Cerrado sobre cifras recortadas: sin esto, un número chico se lee como una caída. */}
       {filtrosActivos > 0 && (
         <span
           title="Los indicadores están mostrando sólo una parte del período"
-          className="shrink-0 rounded-full bg-[var(--accent-muted)] px-2 py-0.5 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+          className={
+            compacto
+              ? "h-2 w-2 shrink-0 rounded-full bg-[var(--accent)]"
+              : "shrink-0 rounded-full bg-[var(--accent-muted)] px-2 py-0.5 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+          }
         >
-          {filtrosActivos} filtro{filtrosActivos === 1 ? "" : "s"}
+          {compacto ? <span className="sr-only">{`${filtrosActivos} filtro${filtrosActivos === 1 ? "" : "s"}`}</span> : `${filtrosActivos} filtro${filtrosActivos === 1 ? "" : "s"}`}
         </span>
       )}
       <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
     </button>
   );
+  const enSuLugar = pintar(false);
 
   const panel = abierto ? (
     <div className="space-y-2" aria-busy={sinDatosAun}>
@@ -225,7 +235,7 @@ export function useKpisPlegables({
 
   const boton = alRiel ? (
     <AccionesDeLaVista orden={ORDEN_ACCION.indicadores} fueraDelLibro={enSuLugar}>
-      {enSuLugar}
+      {pintar(true)}
     </AccionesDeLaVista>
   ) : (
     enSuLugar

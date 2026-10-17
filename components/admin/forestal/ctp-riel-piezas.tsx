@@ -111,6 +111,7 @@ export function useBuscarEnRiel({
   onCambiar,
   claseFuera,
   atajo = true,
+  tablaConFiltros = false,
 }: {
   id: string;
   etiqueta: string;
@@ -121,6 +122,10 @@ export function useBuscarEnRiel({
   claseFuera?: string;
   /** `/` abre la lupa. Apágalo donde el hook vive pero no se pinta. */
   atajo?: boolean;
+  /** La tabla ya filtra por columna (Documento, Proveedor, Especies…): en el libro no hay
+   *  lupa (Brandon 17-10: «ya tengo en mi tabla filtros y no es necesario»). Si quedó un
+   *  texto puesto (URL, otra sesión), el campo se ve igual para poder borrarlo. */
+  tablaConFiltros?: boolean;
 }): { boton: ReactNode; campo: ReactNode } {
   const enLibro = useEnElLibro();
   const campoId = useId();
@@ -139,7 +144,7 @@ export function useBuscarEnRiel({
   /* `/` busca. La vista ya enfoca el campo por id, pero con la lupa cerrada
      el campo no existe: acá se abre primero. */
   useEffect(() => {
-    if (!enLibro || !atajo) return;
+    if (!enLibro || !atajo || tablaConFiltros) return;
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key !== "/" || ev.ctrlKey || ev.metaKey || ev.altKey || escribiendo(ev.target)) return;
       if (document.querySelector('[role="dialog"]')) return;
@@ -150,7 +155,7 @@ export function useBuscarEnRiel({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [enLibro, atajo, id]);
+  }, [enLibro, atajo, tablaConFiltros, id]);
 
   const cerrar = () => {
     onCambiar("");
@@ -194,7 +199,7 @@ export function useBuscarEnRiel({
   if (!enLibro) return { boton: <div className={cn(CAMPO, claseFuera)}>{input}</div>, campo: null };
 
   return {
-    boton: (
+    boton: tablaConFiltros ? null : (
       <button
         ref={lupaRef}
         type="button"

@@ -290,6 +290,8 @@ export default function CtpIngresosFiltros({
     valor: searchInput,
     onCambiar: onSearch,
     claseFuera: "flex-1 sm:basis-40",
+    /* Documento, Proveedor y Especies ya se filtran en la cabecera de la tabla. */
+    tablaConFiltros: true,
   });
   /* La excepción del menú: con filas marcadas, armar el legajo de ESAS guías
      es la acción del momento y sale a la barra. */
