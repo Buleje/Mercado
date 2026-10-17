@@ -13,6 +13,7 @@
  *   await setSpecialization(tenantId, "spec:forestal:ctp-libro", true, superadminId);
  */
 import { prisma } from "@/lib/prisma";
+import { getOrSet, invalidate } from "@/lib/cache";
 
 // ─── Registry: catálogo de especializaciones disponibles ──────────────────
 
@@ -156,6 +157,40 @@ export function isValidSpecializationKey(key: string): key is SpecializationKey 
 // ─── DB ops ───────────────────────────────────────────────────────────────
 
 /**
+ * Las claves `spec:*` encendidas del negocio, cacheadas 60 s (16-10, carril
+ * velocidad): las piden el sidebar en cada carga (`/api/admin/me/specializations`)
+ * y decenas de rutas forestales vía {@link isSpecializationEnabled}; era una
+ * ida a la base por pregunta (~120 ms desde la PC de Brandon). Los errores NO
+ * se cachean (getOrSet sólo guarda lo que resolvió). La limpian
+ * {@link setSpecialization} y `TenantFeatureFlagDB.set` vía
+ * {@link olvidarEspecializaciones}.
+ */
+async function especializacionesEncendidas(tenantId: string): Promise<string[]> {
+  // `{ v }`: getOrSet trata `null` como «no está»; una lista vacía sí se guarda.
+  const caja = await getOrSet<{ v: string[] }>(claveEspecializaciones(tenantId), 60, async () => {
+    const flags = await prisma.tenantFeatureFlag.findMany({
+      where: {
+        tenantId,
+        enabled: true,
+        flagKey: { startsWith: "spec:" },
+      },
+      select: { flagKey: true },
+    });
+    return { v: flags.map((f) => f.flagKey) };
+  });
+  return caja.v;
+}
+
+function claveEspecializaciones(tenantId: string): string {
+  return `especializaciones:${tenantId}`;
+}
+
+/** Tras escribir un `TenantFeatureFlag` del negocio. */
+export function olvidarEspecializaciones(tenantId: string): void {
+  invalidate(claveEspecializaciones(tenantId));
+}
+
+/**
  * ¿Está habilitada esta especialización para el tenant?
  * Falla cerrado: ante cualquier error retorna `false` (no habilitar).
  */
@@ -165,11 +200,7 @@ export async function isSpecializationEnabled(
 ): Promise<boolean> {
   if (!isValidSpecializationKey(spec)) return false;
   try {
-    const flag = await prisma.tenantFeatureFlag.findUnique({
-      where: { tenantId_flagKey: { tenantId, flagKey: spec } },
-      select: { enabled: true },
-    });
-    return flag?.enabled === true;
+    return (await especializacionesEncendidas(tenantId)).includes(spec);
   } catch {
     return false;
   }
@@ -183,17 +214,7 @@ export async function listEnabledSpecializations(
   tenantId: string,
 ): Promise<SpecializationKey[]> {
   try {
-    const flags = await prisma.tenantFeatureFlag.findMany({
-      where: {
-        tenantId,
-        enabled: true,
-        flagKey: { startsWith: "spec:" },
-      },
-      select: { flagKey: true },
-    });
-    return flags
-      .map((f) => f.flagKey)
-      .filter(isValidSpecializationKey);
+    return (await especializacionesEncendidas(tenantId)).filter(isValidSpecializationKey);
   } catch {
     return [];
   }
@@ -218,6 +239,7 @@ export async function setSpecialization(
     update: { enabled },
     create: { tenantId, flagKey: spec, enabled },
   });
+  olvidarEspecializaciones(tenantId);
   // TODO Fase 3: registrar ActivityLog con actorId, action, before/after
 }
 

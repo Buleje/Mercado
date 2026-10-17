@@ -112,7 +112,9 @@ export async function piezasDelPanel(tenantId: string): Promise<PiezasDelPanel> 
       .filter((p): p is PiezaResuelta => p !== null)
       .map(({ entrada: _entrada, ...asignada }) => asignada);
     if (piezas.length === 0) return { piezas, negocio: null };
-    const t = await TenantsDB.getBasicById(tenantId);
+    // Cacheado 60 s (16-10, carril velocidad): el sidebar lo pide en cada
+    // carga y era una ida en serie después de las piezas.
+    const t = await TenantsDB.publicoPorSlugOId(tenantId);
     return { piezas, negocio: t ? { tenantId, slug: t.slug } : null };
   } catch (err) {
     reportarFalloPieza(err, { enchufe: "*", tenantId, etapa: "leer" });

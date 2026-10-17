@@ -6,9 +6,8 @@ import "server-only";
  * Audit project-wide 2026-05-19: migracion de prisma directo en
  * app/api/admin/stats/route.ts a clase DB canonica (regla #1 CLAUDE.md).
  *
- * Todas las lecturas son paralelas (no transacciones) — seguras para
- * encapsular aqui. El raw SQL para stock <= stockMin se mantiene porque
- * Prisma no soporta comparacion columna-columna.
+ * Dos consultas en paralelo (no transacciones): las 11 cuentas en una sola
+ * ida y el stock bajo (comparacion columna-columna, raw SQL).
  */
 
 import { prisma } from "@/lib/prisma";
@@ -36,6 +35,35 @@ export type AdminStatsPayload = {
   generatedAt: string;
 };
 
+/** Fila de la consulta única de la cabecera (int/float8 llegan como number). */
+type FilaCuentas = {
+  pendingOrders: number;
+  oldPendingOrders: number;
+  todayOrders: number;
+  todayRevenue: number | string | null;
+  salesYesterday: number | string | null;
+  weekOrders: number;
+  totalCustomers: number;
+  overduePayables: number;
+  overdueFiados: number;
+  pendingYape: number;
+  waUnread: number;
+};
+
+const CUENTAS_EN_CERO: FilaCuentas = {
+  pendingOrders: 0,
+  oldPendingOrders: 0,
+  todayOrders: 0,
+  todayRevenue: 0,
+  salesYesterday: 0,
+  weekOrders: 0,
+  totalCustomers: 0,
+  overduePayables: 0,
+  overdueFiados: 0,
+  pendingYape: 0,
+  waUnread: 0,
+};
+
 export const AdminStatsDB = {
   /**
    * Devuelve los 8 contadores del header del admin panel.
@@ -53,123 +81,75 @@ export const AdminStatsDB = {
     const startOfYesterday = new Date(startOfToday.getTime() - DIA_MS);
     const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
 
-    const [
-      pendingOrders,
-      oldPendingOrders,
-      todayOrders,
-      todayRevenueResult,
-      salesYesterdayResult,
-      weekOrders,
-      totalCustomers,
-      overduePayables,
-      overdueFiados,
-      pendingYape,
-      waUnread,
-    ] = await withDbRetry(() =>
-      Promise.all([
-        // Pedidos activos en estado pendiente
-         
-        prisma.order.count({ where: { tenantId, status: "pendiente" } }),
-
-        // Pedidos pendientes esperando > 30 minutos
-         
-        prisma.order.count({
-          where: { tenantId, status: "pendiente", createdAt: { lt: thirtyMinutesAgo } },
-        }),
-
-        // Pedidos del dia
-         
-        prisma.order.count({ where: { tenantId, createdAt: { gte: startOfToday } } }),
-
-        // Ingresos de pedidos ENTREGADOS hoy (no contabilizar revertibles)
-         
-        prisma.order.aggregate({
-          _sum: { total: true },
-          where: { tenantId, createdAt: { gte: startOfToday }, status: "entregado" },
-        }),
-
-        // Ventas (entregadas) de AYER — para el "Ayer vendiste X" del briefing
-
-        prisma.order.aggregate({
-          _sum: { total: true },
-          where: {
-            tenantId,
-            status: "entregado",
-            createdAt: { gte: startOfYesterday, lt: startOfToday },
-          },
-        }),
-
-        // Pedidos ultimos 7 dias
-         
-        prisma.order.count({ where: { tenantId, createdAt: { gte: startOfWeek } } }),
-
-        // Total clientes
-         
-        prisma.customer.count({ where: { tenantId } }),
-
-        // Cuentas por pagar vencidas (dueDate < ahora, no pagadas)
-         
-        prisma.payable.count({
-          where: { tenantId, dueDate: { lt: now }, status: { not: "pagado" } },
-        }),
-
-        // Fiados de CLIENTE vencidos sin saldar (status no pagado + venció + saldo > 0)
-
-        prisma.fiado.count({
-          where: {
-            tenantId,
-            status: { in: ["ACTIVO", "VENCIDO"] },
-            saldo: { gt: 0 },
-            fechaVence: { lt: now },
-          },
-        }),
-
-        // Pedidos pendientes pagados con Yape esperando verificación del dueño
-
-        prisma.order.count({
-          where: { tenantId, status: "pendiente", paymentMethod: "yape" },
-        }),
-
-        // Mensajes WhatsApp entrantes sin leer (inbox de Mensajes, migración 310)
-
-        prisma.whatsAppMessage.count({
-          where: { tenantId, direction: "in", read: false },
-        }),
-      ])
-    );
-
-    // Productos bajo stock minimo: Prisma no soporta comparacion columna-columna,
-    // se usa raw SQL parametrizado (regla #11 CLAUDE.md: $1/$2, no interpolacion).
-     
-    // Un solo stock mínimo (09-10): el propio o `Settings.globalMinStock` (antes
-    // sólo los que tenían mínimo propio), sin borrados, como Inicio e Inventario.
-    const minimoGlobal = await minimoGlobalDelNegocio(tenantId);
-    const lowStockResult = await withDbRetry(() =>
-      prisma.$queryRaw<{ count: bigint }[]>`
-        SELECT COUNT(*)::bigint AS count
-        FROM "Product"
-        WHERE "tenantId" = ${tenantId}
-          AND "active" = true
-          AND "deletedAt" IS NULL
-          AND "stock" IS NOT NULL
-          AND "stock" <= COALESCE("stockMin", ${minimoGlobal}::int)
+    // Las 11 cuentas en UNA consulta (16-10, carril velocidad): con el pool de
+    // 5 conexiones eran 3 tandas de idas (~120 ms cada una desde la PC de
+    // Brandon). Subconsultas sueltas, no un FILTER sobre "Order": cada una usa
+    // su índice. Fechas como texto `::timestamp` (columnas sin zona, en UTC).
+    // Los estados son constantes del código, no entrada del usuario.
+    const ts = (d: Date) => d.toISOString();
+    const cuentasP = withDbRetry(() =>
+      prisma.$queryRaw<FilaCuentas[]>`
+        SELECT
+          (SELECT count(*) FROM "Order" WHERE "tenantId" = ${tenantId} AND status = 'pendiente')::int AS "pendingOrders",
+          (SELECT count(*) FROM "Order" WHERE "tenantId" = ${tenantId} AND status = 'pendiente'
+             AND "createdAt" < ${ts(thirtyMinutesAgo)}::timestamp)::int AS "oldPendingOrders",
+          (SELECT count(*) FROM "Order" WHERE "tenantId" = ${tenantId}
+             AND "createdAt" >= ${ts(startOfToday)}::timestamp)::int AS "todayOrders",
+          (SELECT COALESCE(sum(total), 0) FROM "Order" WHERE "tenantId" = ${tenantId} AND status = 'entregado'
+             AND "createdAt" >= ${ts(startOfToday)}::timestamp)::float8 AS "todayRevenue",
+          (SELECT COALESCE(sum(total), 0) FROM "Order" WHERE "tenantId" = ${tenantId} AND status = 'entregado'
+             AND "createdAt" >= ${ts(startOfYesterday)}::timestamp
+             AND "createdAt" < ${ts(startOfToday)}::timestamp)::float8 AS "salesYesterday",
+          (SELECT count(*) FROM "Order" WHERE "tenantId" = ${tenantId}
+             AND "createdAt" >= ${ts(startOfWeek)}::timestamp)::int AS "weekOrders",
+          (SELECT count(*) FROM "Customer" WHERE "tenantId" = ${tenantId})::int AS "totalCustomers",
+          (SELECT count(*) FROM "Payable" WHERE "tenantId" = ${tenantId}
+             AND "dueDate" < ${ts(now)}::timestamp AND status <> 'pagado')::int AS "overduePayables",
+          (SELECT count(*) FROM "Fiado" WHERE "tenantId" = ${tenantId} AND status IN ('ACTIVO', 'VENCIDO')
+             AND saldo > 0 AND "fechaVence" < ${ts(now)}::timestamp)::int AS "overdueFiados",
+          (SELECT count(*) FROM "Order" WHERE "tenantId" = ${tenantId} AND status = 'pendiente'
+             AND "paymentMethod" = 'yape')::int AS "pendingYape",
+          (SELECT count(*) FROM "WhatsAppMessage" WHERE "tenantId" = ${tenantId}
+             AND direction = 'in' AND "read" = false)::int AS "waUnread"
       `
     );
+
+    // Productos bajo stock minimo: comparacion columna-columna (raw SQL
+    // parametrizado). Un solo stock mínimo (09-10): el propio o
+    // `Settings.globalMinStock`, sin borrados, como Inicio e Inventario. Corre
+    // EN PARALELO con las cuentas (el mínimo sale de Settings, cacheado).
+    const stockBajoP = minimoGlobalDelNegocio(tenantId).then((minimoGlobal) =>
+      withDbRetry(() =>
+        prisma.$queryRaw<{ count: bigint }[]>`
+          SELECT COUNT(*)::bigint AS count
+          FROM "Product"
+          WHERE "tenantId" = ${tenantId}
+            AND "active" = true
+            AND "deletedAt" IS NULL
+            AND "stock" IS NOT NULL
+            AND "stock" <= COALESCE("stockMin", ${minimoGlobal}::int)
+        `
+      )
+    );
+
+    const [cuentas, lowStockResult] = await Promise.all([cuentasP, stockBajoP]);
+    const c: FilaCuentas = cuentas[0] ?? CUENTAS_EN_CERO;
     const lowStockProducts = Number(lowStockResult[0]?.count ?? 0);
+    const plata = (n: number | string | null) => Number(Number(n ?? 0).toFixed(2));
 
     return {
-      pendingOrders,
-      oldPendingOrders,
-      todayOrders,
-      todayRevenue: Number((todayRevenueResult._sum.total ?? 0).toFixed(2)),
-      salesYesterday: Number((salesYesterdayResult._sum.total ?? 0).toFixed(2)),
+      pendingOrders: Number(c.pendingOrders),
+      oldPendingOrders: Number(c.oldPendingOrders),
+      todayOrders: Number(c.todayOrders),
+      todayRevenue: plata(c.todayRevenue),
+      salesYesterday: plata(c.salesYesterday),
       lowStockProducts,
-      weekOrders,
-      totalCustomers,
-      overduePayables,
-      overdueFiados,
-      pendingYape,
-      waUnread,
+      weekOrders: Number(c.weekOrders),
+      totalCustomers: Number(c.totalCustomers),
+      overduePayables: Number(c.overduePayables),
+      overdueFiados: Number(c.overdueFiados),
+      pendingYape: Number(c.pendingYape),
+      waUnread: Number(c.waUnread),
       generatedAt: now.toISOString(),
     };
   },

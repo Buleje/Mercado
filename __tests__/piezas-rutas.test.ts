@@ -40,7 +40,13 @@ vi.mock("@/lib/db/tenant-pieza.db", () => ({
     matriz: (...a: unknown[]) => H.matriz(...a),
   },
 }));
-vi.mock("@/lib/db/tenants.db", () => ({ TenantsDB: { getBasicById: (...a: unknown[]) => H.getBasicById(...a) } }));
+// El panel lee el negocio por la lectura cacheada (16-10); el superadmin, sin caché.
+vi.mock("@/lib/db/tenants.db", () => ({
+  TenantsDB: {
+    getBasicById: (...a: unknown[]) => H.getBasicById(...a),
+    publicoPorSlugOId: (...a: unknown[]) => H.getBasicById(...a),
+  },
+}));
 vi.mock("@/lib/specializations", () => ({
   listEnabledSpecializations: (...a: unknown[]) => H.listEnabled(...a),
   SPECIALIZATIONS: { "spec:forestal:ctp-libro": { moduleId: "ctp-libro-operaciones" } },

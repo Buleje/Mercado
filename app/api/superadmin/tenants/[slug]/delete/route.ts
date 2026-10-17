@@ -8,6 +8,7 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { esTenantProtegido } from "@/lib/tenancy/negocio-por-defecto";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { permitirBorrarFirmas } from "@/lib/db/adelanto-firmas.db";
 
 async function requirePlatform(req: NextRequest) {
@@ -165,6 +166,7 @@ export async function DELETE(
     // `AdelantoFirma_inmutable`); el cascade del tenant lo borra sólo con el
     // permiso LOCAL de esta transacción (nunca un SET de sesión en el pooler).
     await prisma.$transaction([permitirBorrarFirmas(), prisma.tenant.delete({ where: { slug } })]);
+    TenantsDB.olvidarPublico(); // la página pública del negocio (/t/<slug>, tenants/resolve) cachea 60 s
 
     logger.info("[SuperAdmin] Tenant deleted", {
       username: session.username,

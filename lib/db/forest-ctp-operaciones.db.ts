@@ -11,6 +11,7 @@ import {
   type GrupoOperaciones,
   type OperacionHermana,
 } from "@/lib/forestal/ctp-operaciones";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { logger } from "@/lib/logger";
 
 /**
@@ -265,6 +266,7 @@ export const ForestCtpOperacionesDB = {
     if (hermana.tenantId === tenantId)
       throw new CtpInvariantError("No se puede quitar el libro desde el que estás.", "VALIDACION");
     await prisma.tenant.update({ where: { id: hermana.tenantId }, data: { active: false } });
+    TenantsDB.olvidarPublico(); // la página pública del negocio (/t/<slug>, tenants/resolve) cachea 60 s
     await PlatformSettingsDB.set(
       key,
       { tenants: indice.tenants.filter((t) => t.tenantId !== hermana.tenantId) },

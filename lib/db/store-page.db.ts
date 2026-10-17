@@ -689,31 +689,35 @@ export const StorePageDB = {
       visible: boolean; // true si override.visible OR no hay override
     }>
   > {
-    const products = await prisma.product.findMany({
-      where: { tenantId, deletedAt: null },
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        image: true,
-        category: true,
-        unit: true,
-        price: true,
-        stock: true,
-        active: true,
-      },
-    });
-
-    let overrides: Array<{ productId: number; visible: boolean }> = [];
-    try {
-      overrides = await prisma.tenantPageProductOverride.findMany({
-        where: { tenantId, productId: { in: products.map((p) => p.id) } },
-        select: { productId: true, visible: true },
-      });
-    } catch (err) {
-      if (!isMissingOverrideTableError(err)) throw err;
-      // Tabla no migrada todavía → todos visibles por default
-    }
+    // Productos y overrides en paralelo (16-10, velocidad): los overrides se
+    // piden por negocio y no por la lista de ids, así no esperan a los
+    // productos. Uno de un producto borrado sobra y no molesta (se busca por id).
+    const [products, overrides] = await Promise.all([
+      prisma.product.findMany({
+        where: { tenantId, deletedAt: null },
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          category: true,
+          unit: true,
+          price: true,
+          stock: true,
+          active: true,
+        },
+      }),
+      prisma.tenantPageProductOverride
+        .findMany({
+          where: { tenantId },
+          select: { productId: true, visible: true },
+        })
+        .catch((err: unknown): Array<{ productId: number; visible: boolean }> => {
+          if (!isMissingOverrideTableError(err)) throw err;
+          // Tabla no migrada todavía → todos visibles por default
+          return [];
+        }),
+    ]);
     const overrideMap = new Map(overrides.map((o) => [o.productId, o.visible]));
 
     return products.map((p) => ({

@@ -39,6 +39,11 @@ function cacheKey(key: string): string {
   return `${CACHE_PREFIX}${key}`;
 }
 
+/** Clave de {@link PlatformSettingsDB.getCacheandoAusencia} (guarda también «no existe»). */
+function cacheKeyConAusencia(key: string): string {
+  return `${CACHE_PREFIX}con-ausencia:${key}`;
+}
+
 /**
  * Claves de TRABAJO, no de configuración (29-09-2026): la caché de placas y el
  * contador de consultas pagas por negocio. Se escriben en cada búsqueda, así
@@ -51,6 +56,7 @@ const esInterna = (key: string) => key.startsWith(PREFIJO_INTERNO);
 /** Invalida la clave y —si es de configuración— la foto de `getAll()`. */
 function invalidarClave(key: string): void {
   invalidate(cacheKey(key));
+  invalidate(cacheKeyConAusencia(key));
   if (!esInterna(key)) invalidate(cacheKey("__all__"));
 }
 
@@ -86,6 +92,23 @@ export const PlatformSettingsDB = {
       if (!row) return null;
       return row.value as unknown as T;
     });
+  },
+
+  /**
+   * Como {@link get}, pero cachea también la AUSENCIA de la clave (16-10,
+   * carril velocidad). `get` no guarda `null` (getOrSet lo trata como «no
+   * está»), así que una clave que casi nunca existe —el ajuste de módulos de
+   * cada negocio, que el panel pide en cada carga— era una ida a la base por
+   * pedido. Sólo para claves que se escriben por esta clase (`set`, `setMany`,
+   * `actualizar`, `delete` limpian ambas cachés): una escrita por fuera
+   * quedaría «ausente» hasta 5 min.
+   */
+  async getCacheandoAusencia<T = unknown>(key: string): Promise<T | null> {
+    const caja = await getOrSet<{ v: T | null }>(cacheKeyConAusencia(key), CACHE_TTL_SEC, async () => {
+      const row = await prisma.platformSetting.findUnique({ where: { key }, select: { value: true } });
+      return { v: row ? (row.value as unknown as T) : null };
+    });
+    return caja.v;
   },
 
   /**

@@ -158,32 +158,41 @@ export const FiadosDB = {
     tenantId: string,
     filters?: { status?: string; customerId?: string }
   ): Promise<DbFiado[]> {
-    const where: Record<string, unknown> = { tenantId };
-    if (filters?.status) where.status = filters.status;
+    const where: Prisma.FiadoWhereInput = { tenantId };
+    if (filters?.status) where.status = filters.status as Prisma.FiadoWhereInput["status"];
     if (filters?.customerId) where.customerId = filters.customerId;
 
-    const rows = await prisma.fiado.findMany({
-      where,
-      include: { cuotas: { orderBy: { createdAt: "asc" } } },
-      orderBy: { createdAt: "desc" },
-    });
-    // Fetch customer names separately to avoid relation errors with multi-tenant extension.
+    // Fiados, cuotas y clientes en UNA tanda (16-10, carril velocidad): el
+    // `include` de cuotas era otra ida y el cliente una tercera, en serie
+    // (~120 ms cada una desde la PC de Brandon). Las cuotas y los clientes se
+    // filtran por la MISMA condición de los fiados vía la relación.
     //
-    // Audit 2026-05-17 P2-2: tenantId AGREGADO al where. Hoy `Customer.phone`
-    // es @unique global (TD-040 Phase 1), pero cuando Phase 3 contract lo
-    // relaje a @@unique([tenantId, phone]) sin este filtro devolveríamos
-    // names de OTROS tenants. Defense-in-depth ahora antes de la migración.
-    const customerPhones = [...new Set(rows.map(r => r.customerId))];
-    const customers = customerPhones.length > 0
-      ? await prisma.customer.findMany({
-          where: { tenantId, phone: { in: customerPhones } },
-          select: { phone: true, name: true, creditLimit: true },
-        })
-      : [];
+    // Audit 2026-05-17 P2-2: tenantId en el where de clientes. Hoy
+    // `Customer.phone` es @unique global (TD-040 Phase 1), pero cuando Phase 3
+    // lo relaje a @@unique([tenantId, phone]) sin este filtro devolveríamos
+    // nombres de OTROS tenants. Defense-in-depth antes de la migración.
+    const [rows, cuotas, customers] = await Promise.all([
+      prisma.fiado.findMany({ where, orderBy: { createdAt: "desc" } }),
+      prisma.fiadoCuota.findMany({ where: { fiado: where }, orderBy: { createdAt: "asc" } }),
+      prisma.customer.findMany({
+        where: { tenantId, fiados: { some: where } },
+        select: { phone: true, name: true, creditLimit: true },
+      }),
+    ]);
+    const cuotasPorFiado = new Map<string, typeof cuotas>();
+    for (const q of cuotas) {
+      const lista = cuotasPorFiado.get(q.fiadoId);
+      if (lista) lista.push(q);
+      else cuotasPorFiado.set(q.fiadoId, [q]);
+    }
     const customerMap = new Map(customers.map(c => [c.phone, c]));
     return rows.map(r => {
       const c = customerMap.get(r.customerId);
-      return mapFiado({ ...r, customer: { name: c?.name || null, creditLimit: c?.creditLimit ?? null } });
+      return mapFiado({
+        ...r,
+        cuotas: cuotasPorFiado.get(r.id) ?? [],
+        customer: { name: c?.name || null, creditLimit: c?.creditLimit ?? null },
+      });
     });
   },
 

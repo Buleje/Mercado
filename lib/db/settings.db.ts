@@ -203,8 +203,27 @@ export const SettingsDB = {
     return getOrSet<DbSettings>(`settings:${tenantId}`, 60, async () => {
       try {
         const tid = tenantId;
+        // La fila y las columnas fuera del schema (portada/banner/orden) salen
+        // juntas por tenantId (16-10, velocidad: eran dos idas en serie en
+        // frío). Si la fila se encuentra por otro camino, abajo se releen.
+        type Extras = Array<{ coverUrl: string | null; bannerUrl: string | null; categoryOrderJson: string | null }>;
+        const leerExtras = async (id: string): Promise<Extras | null> => {
+          try {
+            return await prisma.$queryRawUnsafe<Extras>(
+              `SELECT "coverUrl", "bannerUrl", "categoryOrderJson" FROM "Settings" WHERE "tenantId" = $1 LIMIT 1`,
+              id,
+            );
+          } catch (err) {
+            logger.warn("[settings.db] cover/banner/categoryOrder raw read skipped", { error: String(err) });
+            return null;
+          }
+        };
+        const [porTenant, extrasPorTenant] = await Promise.all([
+          prisma.settings.findUnique({ where: { tenantId: tid } }),
+          leerExtras(tid),
+        ]);
         // Try by tenantId first (multi-tenant), fallback to id:1 (legacy)
-        let row = await prisma.settings.findUnique({ where: { tenantId: tid } })
+        let row = porTenant
           ?? (esTenantPorDefecto(tid) ? await prisma.settings.findUnique({ where: { id: 1 } }) : null);
         // El middleware `slug-routes.ts` envía el SLUG en `x-tenant-id`
         // (no el cuid). Si no encontramos por id, resolvemos slug → cuid.
@@ -220,19 +239,13 @@ export const SettingsDB = {
         // Prisma `findUnique` ignora columnas que no están en schema.prisma.
         // coverUrl + bannerUrl se agregaron via ALTER TABLE pero el schema no
         // se regeneró (zona peligrosa). Leemos esos 2 campos via raw query.
-        try {
-          const extras = await prisma.$queryRawUnsafe<Array<{ coverUrl: string | null; bannerUrl: string | null; categoryOrderJson: string | null }>>(
-            `SELECT "coverUrl", "bannerUrl", "categoryOrderJson" FROM "Settings" WHERE "tenantId" = $1 LIMIT 1`,
-            (row as { tenantId?: string }).tenantId ?? tid,
-          );
-          const e = extras[0];
-          if (e) {
-            (row as Record<string, unknown>).coverUrl = e.coverUrl;
-            (row as Record<string, unknown>).bannerUrl = e.bannerUrl;
-            (row as Record<string, unknown>).categoryOrderJson = e.categoryOrderJson;
-          }
-        } catch (err) {
-          logger.warn("[settings.db] cover/banner/categoryOrder raw read skipped", { error: String(err) });
+        const idFila = (row as { tenantId?: string }).tenantId ?? tid;
+        const extras = idFila === tid ? extrasPorTenant : await leerExtras(idFila);
+        const e = extras?.[0];
+        if (e) {
+          (row as Record<string, unknown>).coverUrl = e.coverUrl;
+          (row as Record<string, unknown>).bannerUrl = e.bannerUrl;
+          (row as Record<string, unknown>).categoryOrderJson = e.categoryOrderJson;
         }
 
         return mapSettings(row);

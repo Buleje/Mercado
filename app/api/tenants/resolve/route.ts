@@ -10,7 +10,7 @@
 
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
@@ -23,22 +23,25 @@ export async function GET(req: NextRequest) {
     }
 
     // Acepta tanto slug como id (un cliente podría pasar el CUID directamente).
-    const tenant = await prisma.tenant.findFirst({
-      where: { OR: [{ slug }, { id: slug }] },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        plan: true,
-        active: true,
-        // Branding público (usado por mapas live, headers white-label, etc.)
-        logoUrl: true,
-        primaryColor: true,
-        secondaryColor: true,
-        // Nicho de negocio — usado por AdminSidebar para filtrar módulos por vertical
-        industry: true,
-      },
-    });
+    // `custom--<host>` no se resuelve acá (nunca lo hizo: daba 404).
+    // Cacheado 60 s en TenantsDB, compartido con la portada `/t/<negocio>`.
+    const encontrado = slug.startsWith("custom--") ? null : await TenantsDB.publicoPorSlugOId(slug);
+    // Sólo los campos públicos de siempre (TenantsDB también trae ownerPhone).
+    const tenant = encontrado
+      ? {
+          id: encontrado.id,
+          slug: encontrado.slug,
+          name: encontrado.name,
+          plan: encontrado.plan,
+          active: encontrado.active,
+          // Branding público (usado por mapas live, headers white-label, etc.)
+          logoUrl: encontrado.logoUrl,
+          primaryColor: encontrado.primaryColor,
+          secondaryColor: encontrado.secondaryColor,
+          // Nicho de negocio — usado por AdminSidebar para filtrar módulos por vertical
+          industry: encontrado.industry,
+        }
+      : null;
 
     if (!tenant) {
       return NextResponse.json({ error: "tenant no encontrado" }, { status: 404 });

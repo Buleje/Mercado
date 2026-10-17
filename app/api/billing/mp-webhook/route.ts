@@ -26,6 +26,7 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { PLAN_ORDER, type PlanId } from "@/lib/plans";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { withApiHandler } from "@/lib/api-handler";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -317,6 +318,7 @@ async function processMPPaymentApproved(opts: {
       cancelAtPeriodEnd: false,
     },
   });
+  TenantsDB.olvidarPublico(); // la página pública del negocio (/t/<slug>, tenants/resolve) cachea 60 s
 
   // Log de actividad (fire-and-forget)
   prisma.activityLog

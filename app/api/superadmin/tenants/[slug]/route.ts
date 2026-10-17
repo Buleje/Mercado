@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -92,6 +93,9 @@ export async function PATCH(
       data: updates,
       select: { id: true, slug: true, name: true, plan: true, active: true },
     });
+    // Suspender/reactivar o cambiar plan: la portada y /api/tenants/resolve
+    // leen `active`/`plan` cacheados 60 s.
+    TenantsDB.olvidarPublico();
 
     // Log activity
     const details: string[] = [];

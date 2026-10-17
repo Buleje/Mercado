@@ -1,7 +1,8 @@
 import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/prisma";
+import { getOrSet } from "@/lib/cache";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { getSessionPayload, SESSION } from "@/lib/session";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import { SettingsDB } from "@/lib/db/settings.db";
@@ -30,6 +31,26 @@ interface ShowcaseItem {
 }
 
 /**
+ * Prueba social (Brandon 2026-06-26): pedidos recientes ANONIMIZADOS, solo si
+ * el dueño activó el toggle (`storeTheme.socialProofEnabled`, el mismo que lee
+ * `editorTheme`). Sin pedidos → array vacío (no se inventa data). Cacheada
+ * 60 s: es una transacción con RLS (varias idas) por cada visita a la portada,
+ * y «alguien compró hace un rato» no necesita el segundo exacto.
+ */
+async function pruebaSocial(tenantId: string, storeTheme: unknown): Promise<Array<{ product: string; at: string }>> {
+  const st = storeTheme && typeof storeTheme === "object" ? (storeTheme as Record<string, unknown>) : undefined;
+  if (st?.["socialProofEnabled"] !== true) return [];
+  try {
+    return await getOrSet(`social-proof:${tenantId}`, 60, () => {
+      const since = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7); // últimos 7 días
+      return OrdersDB.recentForSocialProof(tenantId, since);
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Resolve tenant + customization + featured + promotions + exclusive count
  * en paralelo. Server Component — sin cache directive para evitar conflicto
  * con `cacheComponents: true` cuando leemos cookies/headers en middleware.
@@ -37,44 +58,26 @@ interface ShowcaseItem {
  */
 async function leerDatosDePagina(slug: string) {
   // SECURITY 2026-05-07 (audit MT5): si slug es synthetic `custom--{host}`,
-  // resolver al slug REAL via Tenant.customDomain. Si no hay match → null.
-  // Antes el synthetic slug se usaba como id directo y, si por casualidad
-  // coincidía con un slug registrado, daba acceso al tenant equivocado.
-  let lookupCondition: { OR: Array<{ id: string } | { slug: string } | { customDomain: string }> };
-  if (slug.startsWith("custom--")) {
-    const host = slug.slice("custom--".length);
-    lookupCondition = { OR: [{ customDomain: host }] };
-  } else {
-    lookupCondition = { OR: [{ id: slug }, { slug }] };
-  }
-  // eslint-disable-next-line no-restricted-properties -- Public SSR landing: lookup cross-tenant intentional por slug/id/customDomain; no hay tenantId del request todavía (esta misma query lo resuelve).
-  const tenant = await prisma.tenant
-    .findFirst({
-      where: lookupCondition,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        plan: true,
-        active: true,
-        ownerPhone: true,
-        customDomain: true,
-        logoUrl: true,
-        primaryColor: true,
-        createdAt: true,
-      },
-    })
+  // resolver al slug REAL via Tenant.customDomain (nunca como id ni slug). Si
+  // no hay match → null. Cacheado 60 s en TenantsDB (16-10, velocidad): era una
+  // ida a la base en serie antes de todo lo demás.
+  const tenant = await TenantsDB.publicoPorSlugOId(slug)
     .catch((err) => { logger.warn("[t/[slug]] tenant lookup failed", { err: String(err), slug }); return null; });
 
   if (!tenant) return null;
 
-  const [customization, featured, promotions, exclusiveCount, settings, catalog] = await Promise.all([
+  const settingsP = SettingsDB.get(tenant.id).catch((err) => { logger.warn("[t/[slug]] settings load failed", { err: String(err), tenantId: tenant.id }); return null; });
+  // La prueba social sale apenas llegan los ajustes, junto con lo demás (antes
+  // esperaba a que terminara todo el Promise.all: una ida más en serie).
+  const socialProofP = settingsP.then((s) => pruebaSocial(tenant.id, s?.storeTheme));
+  const [customization, featured, promotions, exclusiveCount, settings, catalog, socialProof] = await Promise.all([
     StorePageDB.getCustomization(tenant.id),
     StorePageDB.listPublicFeatured(tenant.id, 24),
     StorePageDB.listPromotions(tenant.id, true),
     StorePageDB.countActiveExclusivePrices(tenant.id),
-    SettingsDB.get(tenant.id).catch((err) => { logger.warn("[t/[slug]] settings load failed", { err: String(err), tenantId: tenant.id }); return null; }),
+    settingsP,
     StorePageDB.listCatalogWithVisibility(tenant.id).catch((err) => { logger.warn("[t/[slug]] catalog load failed", { err: String(err), tenantId: tenant.id }); return []; }),
+    socialProofP,
   ]);
 
   // "Productos al frente" (Brandon 2026-06-08): la landing debe mostrar
@@ -302,18 +305,6 @@ async function leerDatosDePagina(slug: string) {
   const features = Array.isArray(rawFeatures)
     ? rawFeatures.filter((x): x is string => typeof x === "string")
     : [];
-
-  // Prueba social (Brandon 2026-06-26): pedidos recientes ANONIMIZADOS, solo si
-  // el dueño activó el toggle. Sin pedidos → array vacío (no se inventa data).
-  let socialProof: Array<{ product: string; at: string }> = [];
-  if (editorTheme.socialProofEnabled) {
-    try {
-      const since = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7); // últimos 7 días
-      socialProof = await OrdersDB.recentForSocialProof(tenant.id, since);
-    } catch {
-      socialProof = [];
-    }
-  }
 
   return { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, categories, editorTheme, features, socialProof };
 }

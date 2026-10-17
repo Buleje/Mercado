@@ -14,7 +14,11 @@ const { llamadas, ventas, tzOriginal } = vi.hoisted(() => {
   process.env.TZ = "UTC"; // el servidor real; en la PC de Brandon (Lima) el bug no se ve
   return {
     tzOriginal,
-    llamadas: [] as { modelo: string; metodo: string; args: { where?: Record<string, unknown> } }[],
+    llamadas: [] as {
+      modelo: string;
+      metodo: string;
+      args: { where?: Record<string, unknown>; valores?: unknown[] };
+    }[],
     ventas: { filas: [] as { id: string; total: number; createdAt: Date; paymentMethod: string }[] },
   };
 });
@@ -28,7 +32,11 @@ vi.mock("@/lib/prisma", () => ({
     {
       get: (_t, modelo: string) =>
         modelo.startsWith("$")
-          ? async () => [] // $queryRaw de la cabecera (no mira fechas)
+          ? async (_sql: unknown, ...valores: unknown[]) => {
+              // $queryRaw de la cabecera: anota los valores (fechas incluidas).
+              llamadas.push({ modelo, metodo: "raw", args: { valores } });
+              return [];
+            }
           : new Proxy(
           {},
           {
@@ -126,10 +134,12 @@ describe("«Mi negocio hoy» (AdminTodaySummaryDB) y la cabecera del panel (Admi
 
   it("pedidos de hoy y de la semana desde las 00:00 de Lima", async () => {
     await AdminStatsDB.getHeaderStats("t1");
+    // Las cuentas van en una sola consulta (16-10): las fechas llegan como
+    // valores ISO del $queryRaw.
     const desdes = llamadas
-      .filter((l) => l.modelo === "order")
-      .map((l) => (l.args.where?.createdAt as { gte?: Date } | undefined)?.gte?.toISOString())
-      .filter(Boolean);
+      .filter((l) => l.metodo === "raw")
+      .flatMap((l) => l.args.valores ?? [])
+      .filter((v): v is string => typeof v === "string" && v.endsWith("Z"));
     expect(desdes).toContain(HOY_LIMA);
     expect(desdes).toContain("2026-10-03T05:00:00.000Z"); // 7 días móviles con hoy
     expect(desdes).toContain(AYER_LIMA);

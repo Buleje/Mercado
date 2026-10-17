@@ -26,10 +26,18 @@ const goal = { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn(), updateMan
 const task = { findMany: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() };
 vi.mock("@/lib/prisma", () => ({ prisma: { adminGoal: goal, adminTask: task } }));
 const mockInvalidateByPrefix = vi.fn();
-vi.mock("@/lib/cache", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/cache")>()),
-  invalidateByPrefix: mockInvalidateByPrefix,
-}));
+// Espía que además limpia de verdad: la lista de metas se cachea (16-10).
+vi.mock("@/lib/cache", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/lib/cache")>();
+  return {
+    ...real,
+    invalidateByPrefix: (prefijo: string) => {
+      mockInvalidateByPrefix(prefijo);
+      real.invalidateByPrefix(prefijo);
+    },
+  };
+});
+const { invalidateAll } = await import("@/lib/cache");
 
 const goalsRoute = await import("@/app/api/goals/route");
 const goalRoute = await import("@/app/api/goals/[id]/route");
@@ -82,6 +90,7 @@ const noEncontrado = () => Object.assign(new Error("Record to update not found")
 
 beforeEach(() => {
   vi.clearAllMocks();
+  invalidateAll(); // cada caso arranca sin la lista cacheada del anterior
   mockRequireAdmin.mockResolvedValue({ tenantId: "t1", username: "qa", role: "admin" });
 });
 
@@ -123,6 +132,20 @@ describe("/api/goals — metas por negocio", () => {
       unit: "S/",
       dueDate: null,
     });
+  });
+
+  it("GET cachea la lista (una ida para dos pedidos) y crear la vuelve a leer", async () => {
+    goal.findMany.mockResolvedValue([filaMeta()]);
+    await goalsRoute.GET(req("/api/goals", "GET"));
+    await goalsRoute.GET(req("/api/goals", "GET"));
+    expect(goal.findMany).toHaveBeenCalledTimes(1);
+
+    goal.create.mockResolvedValue(filaMeta({ id: "g2", dueDate: null }));
+    expect((await goalsRoute.POST(req("/api/goals", "POST", { name: "Otra", target: 5 }))).status).toBe(201);
+    goal.findMany.mockResolvedValue([filaMeta(), filaMeta({ id: "g2", dueDate: null })]);
+    const res = await goalsRoute.GET(req("/api/goals", "GET"));
+    expect(goal.findMany).toHaveBeenCalledTimes(2);
+    expect((await res.json()).map((m: { id: string }) => m.id)).toEqual(["g1", "g2"]);
   });
 
   it("POST con una categoría fuera de la lista → 422 y no toca la base", async () => {

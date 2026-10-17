@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { AdminGoal, Prisma } from "@/lib/generated/prisma/client";
-import { invalidateByPrefix } from "@/lib/cache";
+import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { normalizarUnidad, unidadPermitida } from "@/lib/admin/metas-catalogo";
 import { prefijoCacheAvance } from "@/lib/metas/avance/tipos";
 import {
@@ -52,10 +52,19 @@ const esManual = (category: CategoriaMeta) => category === "manual";
 const olvidarAvance = (tenantId: string) => invalidateByPrefix(prefijoCacheAvance(tenantId));
 
 export const AdminGoalsDB = {
-  /** En el orden en que se crearon, como cuando vivían en el JSON. */
+  /**
+   * En el orden en que se crearon, como cuando vivían en el JSON. Cacheada
+   * 60 s bajo la misma raíz que el avance (16-10, carril velocidad: Mi Plata
+   * la pide al abrir, ~120 ms por ida desde la PC de Brandon): crear, editar y
+   * borrar la limpian con {@link olvidarAvance}. Copia por llamada: la caché
+   * en memoria devuelve el mismo arreglo.
+   */
   async listar(tenantId: string): Promise<MetaDTO[]> {
-    const rows = await prisma.adminGoal.findMany({ where: { tenantId }, orderBy: { createdAt: "asc" } });
-    return rows.map(aDTO);
+    const caja = await getOrSet<{ v: MetaDTO[] }>(`${prefijoCacheAvance(tenantId)}lista`, 60, async () => {
+      const rows = await prisma.adminGoal.findMany({ where: { tenantId }, orderBy: { createdAt: "asc" } });
+      return { v: rows.map(aDTO) };
+    });
+    return caja.v.map((m) => ({ ...m }));
   },
 
   async crear(tenantId: string, datos: MetaCrear, creadoPor: string): Promise<MetaDTO> {
