@@ -1,7 +1,11 @@
+"use client";
+
 import {
   Folder, FileText, Scale, Receipt, Building2, Wrench, ShieldCheck, Landmark, Package, Camera,
 } from "@buleje/design-system/icons";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { urlMiniatura } from "@/lib/documents/miniatura-version";
 
 /**
  * Personalización visual de carpetas (color + ícono). El schema `DocumentFolder`
@@ -51,10 +55,13 @@ export function FolderGlyph({
   folder,
   active,
   className,
+  tono,
 }: {
   folder: { icon: string | null; color: string | null; emoji?: string | null };
   active?: boolean;
   className?: string;
+  /** Color cuando la carpeta no tiene uno propio (los íconos grandes del explorador). */
+  tono?: string;
 }) {
   if (folder.emoji?.trim()) {
     return (
@@ -63,8 +70,42 @@ export function FolderGlyph({
       </span>
     );
   }
+  const imagen = docDeIconoCarpeta(folder.icon);
+  if (imagen) return <ImagenDeCarpeta docId={imagen} className={className} active={active} color={folder.color} />;
   const Icon = (folder.icon && ICON_MAP[folder.icon]) || Folder;
   const style = folder.color ? { color: folder.color } : undefined;
-  const cls = folder.color ? "" : active ? "text-primary" : "text-[var(--text-tertiary)]";
+  const cls = folder.color ? "" : active ? "text-primary" : tono ?? "text-[var(--text-tertiary)]";
   return <Icon className={cn(className, cls)} style={style} />;
+}
+
+/**
+ * Una imagen del Drive como ícono de la carpeta (Brandon 16-10: «poder poner
+ * imágenes como ícono»). Se guarda en el mismo `folder.icon` que los íconos
+ * de la lista, como `doc:<id del documento>`: entra en los 40 caracteres que
+ * acepta el PATCH y no pide columna nueva.
+ */
+export const PREFIJO_ICONO_DOC = "doc:";
+
+export function docDeIconoCarpeta(icon: string | null | undefined): string | null {
+  return icon?.startsWith(PREFIJO_ICONO_DOC) ? icon.slice(PREFIJO_ICONO_DOC.length) || null : null;
+}
+
+/** Si la imagen ya no está (se borró), vuelve al ícono de carpeta. */
+function ImagenDeCarpeta({ docId, className, active, color }: { docId: string; className?: string; active?: boolean; color: string | null }) {
+  const [fallo, setFallo] = useState(false);
+  if (fallo) {
+    const cls = color ? "" : active ? "text-primary" : "text-[var(--text-tertiary)]";
+    return <Folder className={cn(className, cls)} style={color ? { color } : undefined} />;
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={urlMiniatura(docId)}
+      alt=""
+      aria-hidden
+      loading="lazy"
+      onError={() => setFallo(true)}
+      className={cn(className, "rounded-sm object-cover")}
+    />
+  );
 }

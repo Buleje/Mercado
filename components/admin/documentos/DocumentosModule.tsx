@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import {
-  Upload, Search, Grid3x3, List, FolderArchive,
+  Upload, Search, FolderArchive,
   FileSpreadsheet, File as FileIcon, Download, Trash2,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare, Monitor,
   Camera, AlarmClock, Wand2, Tag, MoreHorizontal, FileArchive, Loader2,
@@ -49,7 +49,6 @@ import {
   type FiltrosDoc as FiltrosDocumento,
 } from "@/lib/documentos/filtros-doc";
 import { palabrasUtiles } from "@/lib/documentos/terminos-busqueda";
-import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import PorQueAparecio, { TerminosIA } from "./PorQueAparecio";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { precargarVisor } from "./precargar-visores";
@@ -62,7 +61,7 @@ import { SendWhatsAppModal } from "./SendWhatsAppModal";
 import ImportarCarpetaModal from "./ImportarCarpetaModal";
 import { archivosDesdeDrop } from "@/lib/documentos/importar-arbol";
 import { useImportCarpeta } from "@/contexts/import-carpeta-context";
-import { familiaDe, etiquetaTipo, esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
+import { familiaDe, etiquetaTipo } from "@/lib/documents/tipos-archivo";
 import { MoveToFolderModal } from "./MoveToFolderModal";
 import { FolderEditModal } from "./FolderEditModal";
 import { FolderShareModal } from "./FolderShareModal";
@@ -86,6 +85,14 @@ import AvisosDelArchivo from "./AvisosDelArchivo";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import MenuDocumento, { type EstadoDelMenu, type PuntoDeMenu } from "./MenuDocumento";
 import { formatBytes, getFileIcon } from "./archivo-visual";
+import DocThumb from "./DocThumb";
+import { ActionMenu } from "@/components/admin/shared/action-menu";
+import { CLAVE_VISTA, VISTAS_ARCHIVO, esVistaIconos, leerVista, type VistaArchivo } from "./explorador/vista-archivo";
+import { useExplorador } from "./explorador/use-explorador";
+import MigasRuta from "./explorador/MigasRuta";
+import VistaExplorador from "./explorador/VistaExplorador";
+import FilaCarpetaDetalles from "./explorador/FilaCarpetaDetalles";
+import AccesoRapido from "./explorador/AccesoRapido";
 import { formatDate, formatDateLong, formatDateNumeric, formatDateShort, formatNumber } from "@/lib/format";
 import { esTagDeMaquinaPlan } from "@/lib/forestal/plan-documentos-tipos";
 
@@ -120,12 +127,6 @@ const fmtFechaCorta = (iso: string) =>
   formatDateNumeric(iso, { soloFecha: true });
 
 /**
- * Miniatura de la card de la grilla: imagen real para archivos de imagen y
- * render de la 1ª página para PDFs (endpoint `/thumbnail`). Si el render falla
- * (PDF corrupto, storage caído), cae al ícono del tipo. Estado por-card para no
- * reintentar en loop.
- */
-/**
  * A qué documento saltar cuando el que estás mirando se borra.
  *
  * `undefined` = el abierto no estaba en la tanda, no hay que tocar nada.
@@ -145,47 +146,6 @@ function sucesorTrasBorrar(
   if (siguiente) return siguiente;
   const quedan = lista.filter((d) => !borrados.has(d.id));
   return quedan[quedan.length - 1] ?? null;
-}
-
-function DocThumb({ doc, Icon, tint, bg }: { doc: DbDocument; Icon: typeof FileIcon; tint: string; bg: string }) {
-  // HEIC, TIFF o PSD son imágenes que el navegador NO dibuja: pedirlas en un
-  // <img> daba un roto y recién ahí caía al ícono. Se filtra antes.
-  const isImage = esImagenRenderizable(doc.name, doc.mimeType);
-  // HEIC, TIFF y SVG los convierte el servidor a PNG: antes eran un ícono gris
-  // y había que bajar el archivo para saber qué foto era.
-  const convertible = !isImage && esImagenConvertible(doc.name, doc.mimeType);
-  const isPdf = doc.mimeType === "application/pdf";
-  // Excel y Word también tienen carita: el servidor dibuja las primeras filas
-  // de la planilla o las primeras líneas del documento. Antes eran todos el
-  // mismo ícono y había que abrirlos de a uno para saber cuál era cuál.
-  const familia = familiaDe(doc.name, doc.mimeType);
-  const dibujable = familia === "planilla" || familia === "texto";
-  const [failed, setFailed] = useState(false);
-
-  if ((isImage || convertible || isPdf || dibujable) && !failed) {
-    // Las fotos también van por la miniatura: pedir `/raw` bajaba el archivo
-    // ORIGINAL (un logo de 657 KB) para dibujar un cuadradito de 200 px.
-    const src = isImage
-      ? urlMiniatura(doc.id)
-      : convertible
-        ? `/api/admin/documents/${doc.id}/preview-image?max=420`
-        : urlMiniatura(doc.id);
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt={doc.name}
-        loading="lazy"
-        onError={() => setFailed(true)}
-        className={cn("w-full h-full object-cover", (isPdf || dibujable) && "object-top bg-[var(--surface-raised)]")}
-      />
-    );
-  }
-  return (
-    <div className={cn("w-full h-full flex items-center justify-center", bg)}>
-      <Icon className={cn("h-12 w-12", tint)} />
-    </div>
-  );
 }
 
 /** Datos estructurados extraídos por IA (factura/recibo) guardados en ocrMetadata. */
@@ -323,8 +283,10 @@ export default function DocumentosModule() {
   // algo distinto. Los KPIs arrancan OCULTOS (Brandon 2026-08-30): el resumen
   // ocupaba una fila entera antes de llegar a los documentos, que es lo que
   // se busca el 100% de las veces que se abre esta pantalla.
-  const [view, setView] = useState<"grid" | "list">(() => {
-    try { return (localStorage.getItem("doc-view-mode") as "grid" | "list") || "grid"; } catch { return "grid"; }
+  // Tarjetas, o como el Explorador de Windows: íconos grandes, medianos,
+  // lista o detalles (`explorador/vista-archivo.ts`).
+  const [view, setView] = useState<VistaArchivo>(() => {
+    try { return leerVista(localStorage.getItem(CLAVE_VISTA)); } catch { return "grid"; }
   });
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     try {
@@ -338,7 +300,7 @@ export default function DocumentosModule() {
   const [otrosAbierto, setOtrosAbierto] = useState(() => {
     try { return localStorage.getItem("doc-sidebar-otros-abierto") === "1"; } catch { return false; }
   });
-  useEffect(() => { try { localStorage.setItem("doc-view-mode", view); } catch { /* quota */ } }, [view]);
+  useEffect(() => { try { localStorage.setItem(CLAVE_VISTA, view); } catch { /* quota */ } }, [view]);
   useEffect(() => { try { localStorage.setItem("doc-sidebar-otros-abierto", otrosAbierto ? "1" : "0"); } catch { /* quota */ } }, [otrosAbierto]);
   // Columnas opcionales de la vista lista (Nombre y Acción son fijas).
   // Etiquetas/Vencimiento arrancan ocultas: son nuevas, no cambiar lo que
@@ -1347,8 +1309,54 @@ export default function DocumentosModule() {
     e.preventDefault();
     setMenuEn({ id, x: e.clientX, y: e.clientY });
   };
-  const menuDe = (doc: DbDocument, variante: "fila" | "flotante" = "fila") => (
+
+  // ── Explorador (íconos grandes/medianos, lista, detalles) ──
+  const [slugDrive] = useState(slugActivo);
+  const abrirCarpetaExp = useCallback((id: string | null) => {
+    if (!id) { setFilterMode("all"); return; }
+    setFilterMode("folder");
+    setActiveFolderId(id);
+    setExpandedFolders((prev) => new Set(prev).add(id));
+  }, [setFilterMode, setActiveFolderId]);
+  const ex = useExplorador({
+    slug: slugDrive,
+    vista: view,
+    setVista: setView,
+    modo: filterMode,
+    carpetaId: filterMode === "folder" ? activeFolderId : null,
+    ruta: activePath,
+    irACarpeta: abrirCarpetaExp,
+    docs: displayDocs,
+    documentos: documents,
+    carpetas: folders,
+    hijos: childrenMap,
+    porId: folderById,
+    busqueda: searchDebounced,
+    acotado: hayBusqueda || cuantosFiltrosActivos(filtros) > 0 || !!statusFilter || soloSinDescribir,
+    orden: sortBy,
+    setOrden: setSortBy,
+    seleccion: selectedIds,
+    alternarSeleccion: toggleSelect,
+    prompt,
+    createFolder,
+    updateFolder,
+    renombrarDoc: (id, name) => patch(id, { name }),
+    upload: (files, opts) => upload(files, opts),
+    refresh,
+    abrirSubida: () => fileInputRef.current?.click(),
+    personalizar: setEditingFolder,
+    compartir: setSharingFolder,
+    eliminar: handleDeleteFolder,
+    zip: zipAndDownload,
+    verDoc: setPreview,
+    menuDoc: (id, punto) => setMenuEn({ id, ...punto }),
+  });
+  const docDelMenu = menuEn && ex.explorando && esVistaIconos(view) ? documents.find((d) => d.id === menuEn.id) ?? null : null;
+
+  const menuDe = (doc: DbDocument, variante: "fila" | "flotante" = "fila", sinBoton = false) => (
     <MenuDocumento
+      sinBoton={sinBoton}
+      extras={ex.extrasDe(doc)}
       flotante={variante === "flotante"}
       nombre={doc.name}
       estados={ESTADOS_DEL_MENU}
@@ -1644,6 +1652,16 @@ export default function DocumentosModule() {
             );
           })()}
 
+          <AccesoRapido
+            fijados={ex.acceso.fijados}
+            carpetaPorId={folderById}
+            docPorId={ex.docPorId}
+            activaId={filterMode === "folder" ? activeFolderId : null}
+            onAbrir={ex.abrirFijado}
+            onMenu={ex.abrirMenuFijado}
+            onReordenar={ex.acceso.reordenar}
+          />
+
           <div
             className={cn("flex items-center justify-between px-3 py-2 rounded-lg transition-all", rootDropActive && "bg-primary/10 ring-2 ring-primary")}
             onDragOver={(e) => {
@@ -1805,6 +1823,7 @@ export default function DocumentosModule() {
                       )}
                       <button
                         onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); }}
+                        onContextMenu={(e) => { e.preventDefault(); ex.abrirMenu({ tipo: "carpeta", carpeta: f }, { x: e.clientX, y: e.clientY }); }}
                         className={cn(
                           "relative group/folderrow flex-1 min-w-0 flex items-center gap-2 py-2 pr-14 rounded-xl text-sm font-bold transition-colors",
                           active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
@@ -2025,26 +2044,21 @@ export default function DocumentosModule() {
             </select>
             {/* La papelera es siempre una lista con sus propias acciones:
                 grilla/lista y columnas no le cambian nada (11-10). */}
-            {filterMode !== "trash" && (
-            <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
-              <button
-                onClick={() => setView("grid")}
-                aria-pressed={view === "grid"}
-                className={cn("flex h-12 w-12 items-center justify-center transition-colors", view === "grid" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
-                aria-label="Vista grilla"
-              >
-                <Grid3x3 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setView("list")}
-                aria-pressed={view === "list"}
-                className={cn("flex h-12 w-12 items-center justify-center transition-colors border-l border-[var(--rule-base)]", view === "list" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
-                aria-label="Vista lista"
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
-            )}
+            {/* Ver: como el Explorador de Windows (íconos grandes, medianos,
+                lista, detalles) o las tarjetas de siempre. */}
+            {filterMode !== "trash" && (() => {
+              const actual = VISTAS_ARCHIVO.find((v) => v.id === view) ?? VISTAS_ARCHIVO[0];
+              return (
+                <ActionMenu
+                  label="Ver"
+                  icon={actual.Icon}
+                  size="md"
+                  compactoEnMovil
+                  title={`Ver: ${actual.label}`}
+                  actions={VISTAS_ARCHIVO.map((v) => ({ id: v.id, label: v.label, icon: v.Icon, activo: v.id === view, onSelect: () => setView(v.id) }))}
+                />
+              );
+            })()}
             {/* Columnas opcionales — sólo tiene sentido en la tabla, la grilla
                 no tiene columnas que ocultar. */}
             {view === "list" && filterMode !== "trash" && (
@@ -2102,8 +2116,23 @@ export default function DocumentosModule() {
             </div>
           )}
 
-          {/* Breadcrumbs de la carpeta activa (subcarpetas anidadas) */}
-          {filterMode === "folder" && activePath.length > 0 && (
+          {/* Explorador: Atrás, Subir y la ruta, como la barra de Windows. */}
+          {ex.explorando && (filterMode === "all" || filterMode === "folder") && (
+            <MigasRuta
+              ruta={activePath}
+              raiz="Archivo"
+              onIr={abrirCarpetaExp}
+              puedeAtras={ex.puedeAtras}
+              onAtras={ex.atras}
+              resumen={ex.resumen}
+              onSoltarDoc={(docId, carpetaId) => void dropDocOnFolder(docId, carpetaId)}
+              zip={filterMode === "folder" && displayDocs.length > 0 ? { onClick: () => void downloadFolderZip(), ocupado: zipping } : undefined}
+            />
+          )}
+
+          {/* Breadcrumbs de la carpeta activa (subcarpetas anidadas) — en
+              Tarjetas; el explorador tiene su propia barra. */}
+          {!ex.explorando && filterMode === "folder" && activePath.length > 0 && (
             <nav className="flex items-center gap-1 flex-wrap text-sm" aria-label="Ruta de carpetas">
               <button
                 onClick={() => { setFilterMode("all"); setActiveFolderId(null); }}
@@ -2143,7 +2172,7 @@ export default function DocumentosModule() {
           )}
 
           {/* Subcarpetas de la carpeta activa — atajo para bajar un nivel */}
-          {filterMode === "folder" && activeChildren.length > 0 && (
+          {!ex.explorando && filterMode === "folder" && activeChildren.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Subcarpetas</span>
               {activeChildren.map((f) => {
@@ -2463,8 +2492,25 @@ export default function DocumentosModule() {
               onRestoreMany={restoreMany}
               onPurgeMany={purgeMany}
             />
-          ) : displayDocs.length === 0 ? (
+          ) : displayDocs.length === 0 && !(ex.explorando && ex.contenido.carpetas.length > 0) ? (
             <EmptyState onUpload={() => fileInputRef.current?.click()} />
+          ) : ex.explorando && esVistaIconos(view) ? (
+            <VistaExplorador
+              key={`${filterMode}:${activeFolderId ?? ""}:${view}`}
+              vista={view}
+              carpetas={ex.contenido.carpetas}
+              docs={ex.contenido.docs}
+              seleccion={selectedIds}
+              onAbrirCarpeta={(f) => abrirCarpetaExp(f.id)}
+              onAbrirDoc={setPreview}
+              onMenu={ex.abrirMenu}
+              onAlternarSeleccion={toggleSelect}
+              onRenombrar={ex.renombrar}
+              onSoltarDoc={(docId, carpetaId) => void dropDocOnFolder(docId, carpetaId)}
+              onArrastrarDoc={setDraggingDocId}
+              onAtras={ex.atras}
+              onSubir={ex.subir}
+            />
           ) : view === "grid" ? (
             <div className="space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
@@ -2572,10 +2618,26 @@ export default function DocumentosModule() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--rule-soft,#f1f5f9)]">
-                  {displayDocs.map((doc) => {
+                  {/* Detalles = explorador: las carpetas de acá arriba de los archivos. */}
+                  {ex.explorando && ex.contenido.carpetas.map((f) => (
+                    <FilaCarpetaDetalles
+                      key={f.id}
+                      carpeta={f}
+                      cols={colsVisibles}
+                      onAbrir={() => abrirCarpetaExp(f.id)}
+                      onMenu={(punto) => ex.abrirMenu({ tipo: "carpeta", carpeta: f }, punto)}
+                      onSoltarDoc={(docId) => void dropDocOnFolder(docId, f.id)}
+                    />
+                  ))}
+                  {(ex.explorando ? ex.contenido.docs : displayDocs).map((doc) => {
                     const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
                     return (
-                      <tr key={doc.id} onContextMenu={(e) => abrirMenuEn(e, doc.id)} className={cn("", selectedIds.has(doc.id) && "bg-primary/5")}>
+                      <tr
+                        key={doc.id}
+                        onContextMenu={(e) => abrirMenuEn(e, doc.id)}
+                        onDoubleClick={(e) => { if (!(e.target as HTMLElement).closest("button, input, a")) setPreview(doc); }}
+                        className={cn("", selectedIds.has(doc.id) && "bg-primary/5")}
+                      >
                         <td>
                           <input
                             type="checkbox"
@@ -2673,6 +2735,11 @@ export default function DocumentosModule() {
           )}
         </div>
       </div>
+
+      {/* Clic derecho del explorador (carpetas, fondo, Acceso rápido), la
+          imagen de ícono, y el menú de un archivo en las vistas de íconos. */}
+      {ex.capas}
+      {docDelMenu && menuDe(docDelMenu, "fila", true)}
 
       {/* Modals */}
       {preview && (() => {

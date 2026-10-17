@@ -19,8 +19,13 @@ import { createPortal } from "react-dom";
 import {
   Check, ChevronDown, ChevronRight, Download, Eye, FileStack, FolderInput, MessageCircle, MoreHorizontal,
   Pencil, PenLine, RotateCw, Scissors, Stamp, Star, Tag, Trash2, Wand2,
+  type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { usePanelTokens } from "@/components/admin/shared/use-panel-tokens";
+import { ANCHO_MENU, ubicar, useMenuQueEntra, type PosicionMenu, type PuntoDeMenu } from "./explorador/ubicar-menu";
+
+export type { PuntoDeMenu };
 
 export interface AccionesDocumento {
   onPreview: () => void;
@@ -51,10 +56,12 @@ export interface EstadoDelMenu {
   dot: string;
 }
 
-/** Dónde abrir el menú sin pasar por el botón: el clic derecho. */
-export interface PuntoDeMenu {
-  x: number;
-  y: number;
+/** Opciones que agrega quien lo usa (el explorador: fijar, usar como ícono). */
+export interface ExtraDelMenu {
+  id: string;
+  label: string;
+  Icon: LucideIcon;
+  onSelect: () => void;
 }
 
 interface Props extends AccionesDocumento {
@@ -70,37 +77,22 @@ interface Props extends AccionesDocumento {
    * que se ve es un círculo de 32 px con fondo, para no tapar la foto.
    */
   flotante?: boolean;
+  /** Sin «⋯»: sólo el menú, abierto con `abrirEn` (íconos y lista del explorador). */
+  sinBoton?: boolean;
+  /** Van arriba, después de «Ver»/«Descargar», separadas del resto. */
+  extras?: readonly ExtraDelMenu[];
 }
 
-const ANCHO_MENU = 232;
-const MARGEN = 12;
-const SEPARACION = 4;
-
-interface Posicion {
-  top?: number;
-  bottom?: number;
-  left: number;
-  maxHeight: number;
-}
-
-/** Abre hacia abajo salvo que abajo no entre y arriba haya más sitio. */
-function ubicar(x: number, yArriba: number, yAbajo: number): Posicion {
-  const left = Math.max(MARGEN, Math.min(x, window.innerWidth - ANCHO_MENU - MARGEN));
-  const abajo = window.innerHeight - yAbajo - SEPARACION - MARGEN;
-  const arriba = yArriba - SEPARACION - MARGEN;
-  if (abajo < 220 && arriba > abajo) {
-    return { bottom: window.innerHeight - yArriba + SEPARACION, left, maxHeight: Math.max(160, arriba) };
-  }
-  return { top: yAbajo + SEPARACION, left, maxHeight: Math.max(160, abajo) };
-}
-
-export default function MenuDocumento({ nombre, estados, abrirEn, onCerrado, flotante = false, ...a }: Props) {
-  const [pos, setPos] = useState<Posicion | null>(null);
+export default function MenuDocumento({ nombre, estados, abrirEn, onCerrado, flotante = false, sinBoton = false, extras, ...a }: Props) {
+  const [pos, setPos] = useState<PosicionMenu | null>(null);
   const [verEstados, setVerEstados] = useState(false);
   const botonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const porPunto = useRef(false);
+  /** Sin botón, el foco vuelve a lo que lo tenía (el ícono del clic derecho). */
+  const focoPrevio = useRef<HTMLElement | null>(null);
   const abierto = pos !== null;
+  const tokens = usePanelTokens(abierto);
   // En una ref: el dueño lo pasa como flecha nueva en cada render y, si fuera
   // dependencia, los efectos de abajo se re-armarían (y robarían el foco) en
   // cada render de la grilla.
@@ -112,20 +104,22 @@ export default function MenuDocumento({ nombre, estados, abrirEn, onCerrado, flo
     setVerEstados(false);
     porPunto.current = false;
     onCerradoRef.current?.();
-    if (devolverFoco) botonRef.current?.focus({ preventScroll: true });
+    if (devolverFoco) (botonRef.current ?? focoPrevio.current)?.focus({ preventScroll: true });
   }, []);
 
   // Clic derecho: el dueño manda el punto; otro documento con su punto me cierra.
   useEffect(() => {
     if (abrirEn) {
       porPunto.current = true;
+      focoPrevio.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setVerEstados(false);
-      setPos(ubicar(abrirEn.x, abrirEn.y, abrirEn.y));
+      setPos(ubicar(abrirEn.x, abrirEn.arriba ?? abrirEn.y, abrirEn.y));
     } else if (porPunto.current) {
       porPunto.current = false;
       setPos(null);
     }
   }, [abrirEn]);
+  useMenuQueEntra(menuRef, pos, setPos);
 
   useEffect(() => {
     if (!abierto) return;
@@ -197,6 +191,7 @@ export default function MenuDocumento({ nombre, estados, abrirEn, onCerrado, flo
 
   return (
     <>
+      {!sinBoton && (
       <button
         ref={botonRef}
         type="button"
@@ -225,13 +220,14 @@ export default function MenuDocumento({ nombre, estados, abrirEn, onCerrado, flo
           <MoreHorizontal className="h-5 w-5" aria-hidden />
         )}
       </button>
+      )}
       {abierto && pos && typeof document !== "undefined" && createPortal(
         <div
           ref={menuRef}
           role="menu"
           aria-label={`Acciones de ${nombre}`}
           className="fixed z-modal-2 overflow-y-auto overscroll-contain rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-[var(--shadow-lg)]"
-          style={{ top: pos.top, bottom: pos.bottom, left: pos.left, width: ANCHO_MENU, maxHeight: pos.maxHeight }}
+          style={{ ...tokens, top: pos.top, bottom: pos.bottom, left: pos.left, width: ANCHO_MENU, maxHeight: pos.maxHeight }}
           onClick={(e) => e.stopPropagation()}
           onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
         >
@@ -239,6 +235,7 @@ export default function MenuDocumento({ nombre, estados, abrirEn, onCerrado, flo
           {item(Download, "Descargar", a.onDownload)}
           {item(MessageCircle, "Enviar por WhatsApp", a.onWhatsApp)}
           {item(Star, a.favorite ? "Quitar de favoritos" : "Marcar favorito", a.onToggleFav)}
+          {extras?.map((x) => item(x.Icon, x.label, x.onSelect))}
           <div className="my-1 border-t border-[var(--rule-soft)]" />
           {item(Pencil, "Renombrar", a.onRename)}
           {item(FolderInput, "Mover a carpeta", a.onMove)}
