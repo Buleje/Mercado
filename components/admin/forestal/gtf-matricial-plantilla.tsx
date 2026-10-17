@@ -17,18 +17,30 @@
  */
 
 import { memo, useMemo } from "react";
-import { plantillaTalonario, type EncabezadoTalonario } from "@/lib/forestal/gtf-talonario-plantilla";
+import { plantillaTalonario, type EncabezadoTalonario, type MarcoHoja } from "@/lib/forestal/gtf-talonario-plantilla";
 import { ESTILO_PANTALLA, FUENTE_PLANTILLA, trazosPlantillaSvg } from "@/lib/forestal/gtf-talonario-plantilla-svg";
 import type { FormatoTalonario } from "@/lib/forestal/gtf-matricial-disposicion";
 
-function PlantillaTalonario({ formato, encabezado, anchoMm, altoMm }: { formato: FormatoTalonario; encabezado: EncabezadoTalonario; anchoMm: number; altoMm: number }) {
+interface Props {
+  formato: FormatoTalonario;
+  encabezado: EncabezadoTalonario;
+  anchoMm: number;
+  altoMm: number;
+  /** El recuadro medido en el papel (`DisposicionHoja.marco`): el dibujo se estira a él. */
+  marco?: MarcoHoja;
+}
+
+function PlantillaTalonario({ formato, encabezado, anchoMm, altoMm, marco }: Props) {
   /* Texto armado por un módulo puro con datos escapados (`esc`): sin HTML de afuera. */
-  const trazos = useMemo(() => ({ __html: trazosPlantillaSvg(plantillaTalonario(formato, encabezado), ESTILO_PANTALLA) }), [formato, encabezado]);
+  const trazos = useMemo(
+    () => ({ __html: trazosPlantillaSvg(plantillaTalonario(formato, encabezado, marco), ESTILO_PANTALLA) }),
+    [formato, encabezado, marco],
+  );
   return (
     <svg
       aria-hidden
       data-plantilla-talonario={formato}
-      /* El dibujo es A4 (en mm) y queda arriba a la izquierda en una hoja de otra medida: no se deforma. */
+      /* El dibujo es A4 (en mm) y queda arriba a la izquierda en una hoja de otra medida (o estirado a su recuadro medido). */
       viewBox={`0 0 ${anchoMm} ${altoMm}`}
       preserveAspectRatio="xMinYMin meet"
       className="pointer-events-none absolute inset-0 h-full w-full select-none"
@@ -41,5 +53,10 @@ function PlantillaTalonario({ formato, encabezado, anchoMm, altoMm }: { formato:
 /** Se dibuja otra vez sólo si cambian la hoja o los datos del encabezado: arrastrar un valor no la toca. */
 export default memo(
   PlantillaTalonario,
-  (a, b) => a.formato === b.formato && a.anchoMm === b.anchoMm && a.altoMm === b.altoMm && JSON.stringify(a.encabezado) === JSON.stringify(b.encabezado),
+  (a, b) =>
+    a.formato === b.formato &&
+    a.anchoMm === b.anchoMm &&
+    a.altoMm === b.altoMm &&
+    JSON.stringify(a.marco ?? null) === JSON.stringify(b.marco ?? null) &&
+    JSON.stringify(a.encabezado) === JSON.stringify(b.encabezado),
 );

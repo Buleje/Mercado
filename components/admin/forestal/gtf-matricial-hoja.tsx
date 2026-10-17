@@ -141,7 +141,7 @@ function Lienzo({
         />
       )}
 
-      {impreso && <PlantillaTalonario formato={t.formato} encabezado={encabezado} anchoMm={hoja.anchoMm} altoMm={hoja.altoMm} />}
+      {impreso && <PlantillaTalonario formato={t.formato} encabezado={encabezado} anchoMm={hoja.anchoMm} altoMm={hoja.altoMm} marco={hoja.marco} />}
 
       {/* Hasta dónde llegan las filas: con el formato dibujado ya se ve la tabla, sólo cuando se acomoda una columna. */}
       {cols.length > 0 && !solo && (!impreso || cols.some((c) => s.elegidos.includes(claveElemento({ tipo: "columna", id: c.id })))) && (

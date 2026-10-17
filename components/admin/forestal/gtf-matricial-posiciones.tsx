@@ -21,6 +21,7 @@ import { CATALOGO, type FormatoTalonario } from "@/lib/forestal/gtf-matricial-di
 import { revisarEncaje } from "@/lib/forestal/gtf-matricial-pantalla";
 import { columnasDePosiciones, coincide, filasDePosiciones } from "@/lib/forestal/gtf-matricial-posiciones";
 import { Btn, I, ModalFooter } from "./ctp-shared";
+import CargarCalibracion from "./gtf-matricial-calibracion";
 import { Casilla, NumeroMm, Opciones } from "./gtf-matricial-controles";
 import ColumnasPosiciones from "./gtf-matricial-posiciones-columnas";
 import { BotonesExcel, PegarDesdeExcel } from "./gtf-matricial-posiciones-excel";
@@ -130,6 +131,7 @@ export default function PosicionesTalonario({
           </label>
           <Casilla label={`Sólo los que no entran (${noEntran.size})`} checked={soloNoEntran} onChange={setSoloNoEntran} disabled={noEntran.size === 0 && !soloNoEntran} />
           <BotonesExcel t={t} pegando={pegando} alternarPegar={() => setPegando((v) => !v)} />
+          <CargarCalibracion t={t} />
         </div>
 
         {pegando && <PegarDesdeExcel t={t} onCerrar={() => setPegando(false)} />}

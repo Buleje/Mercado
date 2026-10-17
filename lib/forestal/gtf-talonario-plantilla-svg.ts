@@ -17,7 +17,7 @@
  */
 
 import { esc } from "./ctp-documento-print";
-import type { PlantillaHoja, TintaPlantilla, TrazoPlantilla } from "./gtf-talonario-plantilla";
+import { transformDelMarco, type PlantillaHoja, type TintaPlantilla, type TrazoPlantilla } from "./gtf-talonario-plantilla";
 
 export interface EstiloPlantilla {
   /** Rótulos, rayas y títulos. */
@@ -91,7 +91,10 @@ export function trazoSvg(t: TrazoPlantilla, e: EstiloPlantilla): string {
 
 /** Los trazos de la hoja, uno detrás de otro (el contenido de un `<svg>` o `<g>` en mm). */
 export function trazosPlantillaSvg(p: PlantillaHoja, e: EstiloPlantilla): string {
-  return p.trazos.map((t) => trazoSvg(t, e)).join("");
+  const trazos = p.trazos.map((t) => trazoSvg(t, e)).join("");
+  /* Con el recuadro medido en el papel, el dibujo (hecho sobre A4) se estira a él. */
+  const tr = transformDelMarco(p.marco);
+  return tr ? `<g transform="${tr}">${trazos}</g>` : trazos;
 }
 
 /** La plantilla en un grupo con su letra (para meterla en otro SVG, como la hoja de prueba). */

@@ -17,7 +17,7 @@
 
 import { z } from "zod";
 import { CLAVE_ANEXO_TRANSFORMADOS, CLAVE_ANEXO_TROZAS } from "./gtf-anexos";
-import { PLANTILLA_FABRICA, RANURAS, type Ranura, type TablaPlantilla } from "./gtf-talonario-plantilla";
+import { PLANTILLA_FABRICA, RANURAS, type MarcoHoja, type Ranura, type TablaPlantilla } from "./gtf-talonario-plantilla";
 
 /**
  * Las casillas del (5). Copia de `ORIGENES` + `ORIGENES_SIN_CASILLA_2024` de
@@ -92,6 +92,14 @@ export interface DisposicionHoja {
   separadorFecha: SeparadorFecha;
   campos: Record<string, CampoPos>;
   tabla: TablaPos;
+  /**
+   * Dónde cae el recuadro impreso del formulario en ESTE papel (mm desde su
+   * esquina). Lo pone una calibración medida («Cargar calibración», 17-10) y
+   * lo mueve «Medida › Recuadro». Falta = el de la plantilla sobre A4.
+   * Sólo dibuja la plantilla de la pantalla y de la hoja de prueba: los
+   * valores ya están en mm del papel.
+   */
+  marco?: MarcoHoja;
 }
 
 export interface DisposicionTalonario {
@@ -355,6 +363,7 @@ export const hojaSchema = z.object({
     letraPt: LETRA,
     columnas: claves(columnaPosSchema),
   }),
+  marco: z.object({ x: POS, y: POS, ancho: mm(20, 1000), alto: mm(20, 1000) }).optional(),
 });
 
 const esObjeto = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -372,6 +381,8 @@ export function normalizarHoja(formato: FormatoTalonario, raw: unknown): Disposi
     return r.success ? r.data : base[k];
   };
   const sep = hojaSchema.shape.separadorFecha.safeParse(raw.separadorFecha);
+  /* El recuadro va con los campos: medidos juntos sobre la misma plantilla. */
+  const marco = otraPlantilla ? null : hojaSchema.shape.marco.safeParse(raw.marco);
   const campos = !otraPlantilla && esObjeto(raw.campos) ? raw.campos : {};
   const tablaRaw = !otraPlantilla && esObjeto(raw.tabla) ? raw.tabla : {};
   const cols = esObjeto(tablaRaw.columnas) ? tablaRaw.columnas : {};
@@ -405,6 +416,7 @@ export function normalizarHoja(formato: FormatoTalonario, raw: unknown): Disposi
         }),
       ),
     },
+    ...(marco?.success && marco.data ? { marco: marco.data } : {}),
   };
 }
 

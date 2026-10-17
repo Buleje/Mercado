@@ -12,7 +12,9 @@
 import { useRef } from "react";
 import { ChevronDown, ImagePlus, Trash2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { MEDIDAS_PAPEL, moverRecuadro } from "@/lib/forestal/gtf-matricial-calibracion";
 import type { SeparadorFecha } from "@/lib/forestal/gtf-matricial-disposicion";
+import { MARCO_PLANTILLA } from "@/lib/forestal/gtf-talonario-plantilla";
 import { PERFIL_OFICINA_ID } from "@/lib/forestal/gtf-salida-tipos";
 import { Btn } from "./ctp-shared";
 import { Casilla, fmtMm, NumeroMm, Opciones } from "./gtf-matricial-controles";
@@ -36,12 +38,6 @@ function Plegable({ titulo, dato, children }: { titulo: string; dato: string; ch
     </details>
   );
 }
-
-const MEDIDAS: ReadonlyArray<{ nombre: string; ancho: number; alto: number }> = [
-  { nombre: "A4", ancho: 210, alto: 297 },
-  { nombre: "Carta", ancho: 215.9, alto: 279.4 },
-  { nombre: "A5", ancho: 148, alto: 210 },
-];
 
 const SEPARADORES: ReadonlyArray<{ value: SeparadorFecha; label: string; title: string }> = [
   { value: "/", label: "15/10", title: "15/10/2026" },
@@ -72,6 +68,7 @@ export default function AjustesTalonario({
   const p = imp.elegido;
   const propio = p && p.id !== PERFIL_OFICINA_ID;
   const [dx, dy] = propio ? [p.corrimientoXmm, p.corrimientoYmm] : [hoja.offsetXMm, hoja.offsetYMm];
+  const marco = hoja.marco ?? MARCO_PLANTILLA;
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <Plegable titulo="Calibrar" dato={`${p?.nombre ?? "Oficina"} · X ${fmtMm(dx)} · Y ${fmtMm(dy)} mm`}>
@@ -86,17 +83,48 @@ export default function AjustesTalonario({
         <FilasDeLaTabla t={t} />
       </Plegable>
 
-      <Plegable titulo="Medida" dato={`${fmtMm(hoja.anchoMm)} × ${fmtMm(hoja.altoMm)} mm`}>
+      <Plegable
+        titulo="Medida"
+        dato={`${fmtMm(hoja.anchoMm)} × ${fmtMm(hoja.altoMm)} mm${hoja.marco ? ` · recuadro ${fmtMm(marco.x)} / ${fmtMm(marco.y)}` : ""}`}
+      >
         <div className="grid grid-cols-2 gap-2">
           <NumeroMm label="Ancho" value={hoja.anchoMm} min={50} max={1000} onChange={(anchoMm) => t.cambiarHoja({ anchoMm })} />
           <NumeroMm label="Alto" value={hoja.altoMm} min={50} max={1000} onChange={(altoMm) => t.cambiarHoja({ altoMm })} />
         </div>
-        <div className="grid grid-cols-3 gap-1">
-          {MEDIDAS.map((m) => (
+        <div className="grid grid-cols-4 gap-1">
+          {MEDIDAS_PAPEL.map((m) => (
             <Btn key={m.nombre} variant="ghost" onClick={() => t.cambiarHoja({ anchoMm: m.ancho, altoMm: m.alto })}>
               {m.nombre}
             </Btn>
           ))}
+        </div>
+        <div className="flex items-end gap-1">
+          <div className="grid min-w-0 flex-1 grid-cols-2 gap-2">
+            <NumeroMm
+              label="Recuadro · izquierda"
+              value={marco.x}
+              min={0}
+              max={200}
+              onChange={(x) => t.editar((h) => moverRecuadro(h, x, (h.marco ?? MARCO_PLANTILLA).y), "recuadro")}
+              qa="medida-recuadro-x"
+            />
+            <NumeroMm
+              label="Recuadro · arriba"
+              value={marco.y}
+              min={0}
+              max={200}
+              onChange={(y) => t.editar((h) => moverRecuadro(h, (h.marco ?? MARCO_PLANTILLA).x, y), "recuadro")}
+              qa="medida-recuadro-y"
+            />
+          </div>
+          <div className="pb-1">
+            <InfoTip
+              title="Dónde cae el formulario en tu hoja"
+              what="Con la regla, desde el borde izquierdo del papel hasta la raya del recuadro impreso, y desde el borde de arriba hasta la raya de arriba."
+              affects="Mueve el formulario dibujado y todos los valores juntos, sin cambiar su lugar dentro del recuadro. Se deshace con Ctrl + Z."
+              example={`Recuadro de ${fmtMm(marco.ancho)} × ${fmtMm(marco.alto)} mm.`}
+            />
+          </div>
         </div>
         <Opciones label="Fechas" value={hoja.separadorFecha} opciones={SEPARADORES} onChange={(separadorFecha) => t.cambiarHoja({ separadorFecha })} />
       </Plegable>

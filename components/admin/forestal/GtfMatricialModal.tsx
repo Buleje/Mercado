@@ -99,7 +99,7 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
     const tr = transformacionDe(hoja, imp.elegido);
     const pagina = t.paginas[t.pagina];
     if (tipo === "blanca") {
-      const plantilla = plantillaTalonario(t.formato, encabezadoDelTalonario(t.formato, t.entradas, pagina, t.info?.titular?.nombre));
+      const plantilla = plantillaTalonario(t.formato, encabezadoDelTalonario(t.formato, t.entradas, pagina, t.info?.titular?.nombre), hoja.marco);
       imprimirEnMarco(htmlHojaPruebaBlanca(hoja, cat, pagina ?? null, plantilla, `Hoja de prueba · ${nombre} · ${tr.perfil.nombre}`, tr));
       return;
     }

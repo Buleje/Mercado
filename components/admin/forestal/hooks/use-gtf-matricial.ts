@@ -33,6 +33,7 @@ import {
   type FormatoTalonario,
   type TablaPos,
 } from "@/lib/forestal/gtf-matricial-disposicion";
+import { alRecuadro } from "@/lib/forestal/gtf-matricial-calibracion";
 import { deshacer as deshacerH, empujar, historialVacio, rehacer as rehacerH, type Historial } from "@/lib/forestal/gtf-matricial-edicion";
 import type { FormaResuelta, ResumenForma } from "@/lib/forestal/gtf-matricial-formas";
 import { entradasDeLaGuia, paginasDe, type PaginaTalonario } from "@/lib/forestal/gtf-matricial-valores";
@@ -238,10 +239,13 @@ export function useGtfMatricial(g: Gtf) {
     [editar],
   );
 
-  /** Vuelve a la de fábrica las posiciones; la medida de la hoja y el corrimiento son del papel y de la impresora: quedan. Se deshace. */
+  /** Vuelve a la de fábrica las posiciones (dentro del recuadro medido, si hay); la medida, el recuadro y el corrimiento son del papel y de la impresora: quedan. Se deshace. */
   const restaurar = useCallback(
     () =>
-      editar((h) => ({ ...hojaDeFabrica(formato), anchoMm: h.anchoMm, altoMm: h.altoMm, offsetXMm: h.offsetXMm, offsetYMm: h.offsetYMm })),
+      editar((h) => {
+        const f = { ...hojaDeFabrica(formato), anchoMm: h.anchoMm, altoMm: h.altoMm, offsetXMm: h.offsetXMm, offsetYMm: h.offsetYMm };
+        return h.marco ? alRecuadro(f, h.marco) : f;
+      }),
     [editar, formato],
   );
 

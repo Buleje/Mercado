@@ -52,6 +52,8 @@ export interface PlantillaHoja {
   anchoMm: number;
   altoMm: number;
   trazos: TrazoPlantilla[];
+  /** El recuadro real en el papel (`MarcoHoja`): los trazos se estiran a él al dibujarse. Falta = el de la plantilla. */
+  marco?: MarcoHoja;
 }
 
 /** Lo que la imprenta imprime con los datos del titular, arriba a la izquierda, y el N° prenumerado. */
@@ -89,6 +91,40 @@ export interface TablaPlantilla {
 
 /** El recuadro de las dos hojas (mm). */
 const X0 = 12.5, X1 = 197.5, Y0 = 6, Y1 = 289.5;
+
+/**
+ * El recuadro impreso (la raya del borde del formulario) en el papel, en mm
+ * desde la esquina del papel. Lo trae una calibración medida (17-10, Aguachini:
+ * 195 × 299,5 en un papel más alto que A4): la plantilla se dibuja estirada a
+ * ese recuadro. Sin él, el de esta plantilla (`MARCO_PLANTILLA`, sobre A4).
+ */
+export interface MarcoHoja {
+  x: number;
+  y: number;
+  ancho: number;
+  alto: number;
+}
+
+export const MARCO_PLANTILLA: Readonly<MarcoHoja> = { x: X0, y: Y0, ancho: X1 - X0, alto: Y1 - Y0 };
+
+const r4 = (v: number): number => Math.round(v * 10000) / 10000;
+
+/** El `transform` SVG que lleva el dibujo de la plantilla a `marco` (null = el de la plantilla: no se mueve). */
+export function transformDelMarco(marco: MarcoHoja | null | undefined): string | null {
+  if (!marco) return null;
+  const sx = marco.ancho / MARCO_PLANTILLA.ancho;
+  const sy = marco.alto / MARCO_PLANTILLA.alto;
+  if (marco.x === X0 && marco.y === Y0 && sx === 1 && sy === 1) return null;
+  return `translate(${r4(marco.x)} ${r4(marco.y)}) scale(${r4(sx)} ${r4(sy)}) translate(${-X0} ${-Y0})`;
+}
+
+/** Un punto del dibujo de la plantilla (mm sobre A4) en el papel de `marco`. */
+export function puntoEnMarco(marco: MarcoHoja, x: number, y: number): { x: number; y: number } {
+  return {
+    x: marco.x + ((x - X0) * marco.ancho) / MARCO_PLANTILLA.ancho,
+    y: marco.y + ((y - Y0) * marco.alto) / MARCO_PLANTILLA.alto,
+  };
+}
 /** Donde arrancan los rótulos de la columna izquierda y donde terminan los renglones. */
 const RX = 14.5, FIN = 195.5;
 const LINEA = 0.35, FINA = 0.2, GRUESA = 0.5;
@@ -488,7 +524,12 @@ function plantillaLista(e: EncabezadoTalonario): PlantillaHoja {
   return { anchoMm: 210, altoMm: 297, trazos: t };
 }
 
-/** El formulario impreso de la hoja, para dibujarlo debajo de los valores (pantalla y hoja de prueba en papel blanco). */
-export function plantillaTalonario(formato: "guia" | "lista", e: EncabezadoTalonario = {}): PlantillaHoja {
-  return formato === "guia" ? plantillaGuia(e) : plantillaLista(e);
+/**
+ * El formulario impreso de la hoja, para dibujarlo debajo de los valores
+ * (pantalla y hoja de prueba en papel blanco). Con `marco` (el recuadro medido
+ * en el papel de la hoja), se dibuja estirado a él.
+ */
+export function plantillaTalonario(formato: "guia" | "lista", e: EncabezadoTalonario = {}, marco?: MarcoHoja | null): PlantillaHoja {
+  const p = formato === "guia" ? plantillaGuia(e) : plantillaLista(e);
+  return marco ? { ...p, marco } : p;
 }
