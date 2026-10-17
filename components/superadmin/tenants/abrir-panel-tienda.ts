@@ -9,7 +9,7 @@ import { MARCA_SUPLANTACION } from "@/lib/auth/suplantacion-vista";
  * Compartido por «Impersonar» de la lista y «Entrar como esta tienda» de la
  * pestaña Credenciales.
  */
-export async function abrirPanelDeTienda(slug: string): Promise<void> {
+export async function abrirPanelDeTienda(slug: string, destino?: string): Promise<void> {
   // [SEGURIDAD MULTI-TENANT] Limpiar TODO cache cliente antes de abrir el
   // panel del tenant target. Sin esto, el localStorage/sessionStorage/SW
   // compartido entre pestañas filtraría datos del tenant anterior.
@@ -37,7 +37,19 @@ export async function abrirPanelDeTienda(slug: string): Promise<void> {
   // Cache-busting query (_fresh) garantiza que Next no sirva HTML cacheado
   // de un tenant previo y que assertTenantOwnership detecte el switch.
   // /t/{slug}/admin fuerza al proxy a setear x-tenant-id por URL.
-  window.open(`/t/${encodeURIComponent(slug)}/admin?_fresh=${Date.now()}`, "_blank");
+  window.open(urlPanelDeTienda(slug, destino), "_blank");
+}
+
+/**
+ * `/t/<slug>/admin?<destino>&_fresh=…`. `destino` es sólo la query del panel
+ * («tab=ctp-libro-operaciones&vista=saldos»): se rearma con URLSearchParams, así
+ * nunca cambia la ruta ni el host (el proxy conserva la query al reescribir).
+ */
+export function urlPanelDeTienda(slug: string, destino?: string, ahora: number = Date.now()): string {
+  const q = new URLSearchParams((destino ?? "").replace(/^\?/, ""));
+  q.delete("_fresh");
+  q.set("_fresh", String(ahora));
+  return `/t/${encodeURIComponent(slug)}/admin?${q.toString()}`;
 }
 
 /** La ficha de la tienda abierta en la pestaña Credenciales (donde se abre el candado). */
@@ -53,7 +65,12 @@ export type ResultadoSuplantar = "ok" | "candado" | "error";
  * callado, lleva a la ficha de la tienda en Credenciales para abrirlo (o hace lo
  * que diga `alCandado`, p. ej. abrir la ficha ahí mismo). Con 200 abre su panel.
  */
-export async function suplantarTienda(slug: string, alCandado?: (slug: string) => void): Promise<ResultadoSuplantar> {
+export async function suplantarTienda(
+  slug: string,
+  alCandado?: (slug: string) => void,
+  /** Query del panel a abrir (p. ej. el libro de la planta); sin esto, el inicio. */
+  destino?: string,
+): Promise<ResultadoSuplantar> {
   let res: Response;
   try {
     res = await fetch("/api/superadmin/impersonate", {
@@ -71,6 +88,6 @@ export async function suplantarTienda(slug: string, alCandado?: (slug: string) =
     return "candado";
   }
   if (!res.ok) return "error";
-  await abrirPanelDeTienda(slug);
+  await abrirPanelDeTienda(slug, destino);
   return "ok";
 }

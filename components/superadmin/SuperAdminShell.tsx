@@ -44,6 +44,7 @@ import {
   Search,
   Bell,
   Webhook,
+  TreePine,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useSessionKeepAlive } from "@/hooks/use-session-keepalive";
@@ -170,6 +171,12 @@ const NAV_GROUPS: NavGroupDef[] = [
         label: "Repartidores",
         icon: <Truck className="w-5 h-5 shrink-0" />,
         href: "/superadmin/repartidores",
+      },
+      {
+        // Aserraderos con el libro forestal (17-10): volumen, incoherencias, inspección.
+        label: "Plantas forestales",
+        icon: <TreePine className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/plantas",
       },
     ],
   },
@@ -314,6 +321,8 @@ const PAGE_META: Record<string, PageMeta> = {
   "/superadmin/tenants": { title: "Tenants", section: "Tiendas" },
   "/superadmin/orders": { title: "Pedidos", section: "Tiendas" },
   "/superadmin/repartidores": { title: "Repartidores", section: "Tiendas" },
+  "/superadmin/plantas": { title: "Plantas forestales", section: "Tiendas" },
+  "/superadmin/plantas/incoherencias": { title: "Incoherencias de volumen", section: "Tiendas" },
 
   "/superadmin/marketplace": { title: "Marketplace", section: "Marketplace" },
   "/superadmin/marketplace/suppliers": { title: "Proveedores", section: "Marketplace" },
@@ -734,7 +743,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     PAGE_META[pathname] ??
     (pathname.startsWith("/superadmin/tenants/")
       ? { title: "Tienda", section: "Tiendas" }
-      : { title: "Superadmin", section: "Plataforma" });
+      : pathname.startsWith("/superadmin/plantas/")
+        ? { title: "Ficha de la planta", section: "Tiendas" }
+        : { title: "Superadmin", section: "Plataforma" });
 
   return (
     <div

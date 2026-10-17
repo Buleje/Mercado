@@ -44,6 +44,8 @@ import {
   Image as ImageIcon,
   Bell,
   HeartHandshake,
+  TreePine,
+  AlertTriangle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -184,4 +186,10 @@ export const DISENO_TABS: ModuleTab[] = [
 export const RETENCION_TABS: ModuleTab[] = [
   { label: "Alertas", href: "/superadmin/alerts", icon: Bell },
   { label: "Rescate", href: "/superadmin/rescue", icon: HeartHandshake },
+];
+
+/** Aserraderos con el libro forestal: control de volumen e inspección (17-10). */
+export const PLANTAS_TABS: ModuleTab[] = [
+  { label: "Plantas", href: "/superadmin/plantas", icon: TreePine },
+  { label: "Incoherencias", href: "/superadmin/plantas/incoherencias", icon: AlertTriangle },
 ];

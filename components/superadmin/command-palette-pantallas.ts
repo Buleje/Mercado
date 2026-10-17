@@ -30,6 +30,7 @@ import {
   FINANZAS_TABS,
   MARCA_TABS,
   MARKETPLACE_TABS,
+  PLANTAS_TABS,
   RETENCION_TABS,
   SALUD_TABS,
   SEGURIDAD_TABS,
@@ -51,6 +52,7 @@ export interface PantallaSuperadmin {
 
 const MODULOS: [string, ModuleTab[]][] = [
   ["Tiendas", TENANTS_TABS],
+  ["Plantas forestales", PLANTAS_TABS],
   ["Retención", RETENCION_TABS],
   ["Comunicación", COMUNICACION_TABS],
   ["Finanzas", FINANZAS_TABS],
@@ -89,6 +91,8 @@ const PALABRAS: Record<string, string[]> = {
   "/superadmin/documentos": ["drive", "archivos"],
   "/superadmin/orders": ["ordenes", "ventas"],
   "/superadmin/repartidores": ["delivery", "motorizados"],
+  "/superadmin/plantas": ["aserradero", "aserraderos", "pietaje", "pies tablares", "trozas", "rolliza", "aserrada", "volumen", "m3", "inspeccion", "forestal"],
+  "/superadmin/plantas/incoherencias": ["descuadre", "saldo negativo", "diferencias", "volumen", "aserradero"],
   "/superadmin/gastos": ["egresos", "costos"],
   "/superadmin/tenants": ["clientes", "empresas", "tenants", "negocios"],
   "/superadmin/tenants/growth": ["altas", "nuevos"],

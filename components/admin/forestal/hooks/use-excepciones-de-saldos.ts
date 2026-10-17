@@ -17,14 +17,10 @@ import type { EspecieSinIngreso } from "@/lib/forestal/corrida-compra";
 import type { ResumenAntiguedad } from "@/lib/forestal/antiguedad-por-guia";
 import type { EstadoFuente } from "@/lib/forestal/capacidad-de-planta";
 import { excepcionesDeSaldo, type Excepcion } from "@/lib/forestal/ctp-saldos-excepciones";
-import { DIAS_LOTE_ANEJO } from "@/lib/forestal/lotes-aserrio";
+import { entradaDeExcepciones } from "@/lib/forestal/ctp-saldos-excepciones-entrada";
 import type { ResumenOrigen } from "@/lib/forestal/origen-incompleto";
-import { TRAMOS_DIAS_PATIO } from "@/lib/forestal/patio-resumen";
 import type { LoteDeReporte } from "@/lib/forestal/saldos-reporte";
 import type { CurvaSaldoData } from "../saldos/CurvaDeSaldo";
-
-const anejo = (l: LoteDeReporte) =>
-  !l.vencido && l.status === "abierto" && (l.diasParado ?? 0) > DIAS_LOTE_ANEJO;
 
 export function useExcepcionesDeSaldos({
   data,
@@ -48,28 +44,18 @@ export function useExcepcionesDeSaldos({
 }): Excepcion[] {
   return useMemo(() => {
     if (!data) return [];
-    const conAntiguedad = estadoAntiguedad === "ok";
-    return excepcionesDeSaldo({
-      materiaPrima: data.materiaPrima,
-      porEspecie: data.porEspecie,
-      productos: data.productos,
-      valleDelPeriodo: curva?.valle ?? null,
-      /* La existencia FINAL manda sobre el movimiento: con stock heredado se
-         puede consumir más de lo recibido sin que el libro esté mal. */
-      existenciaFinal: concil?.materiaPrima.map((m) => ({ especie: m.especie, final: m.final })),
-      origenIncompleto: { corridas: origen.corridas.length, m3: origen.m3SinCertificar },
-      lotes: {
-        vencidos: lotes.filter((l) => l.vencido).map((l) => l.code),
-        anejos: lotes.filter(anejo).map((l) => l.code),
-        diasAnejo: DIAS_LOTE_ANEJO,
-      },
-      guiasVaradas: conAntiguedad
-        ? { ...antiguedad.varadas, dias: TRAMOS_DIAS_PATIO[2] }
-        : undefined,
-      sinCosto: conAntiguedad
-        ? { m3: antiguedad.m3SinCosto, guias: antiguedad.guiasSinCosto }
-        : undefined,
-      especiesSinIngreso,
-    });
+    /* La entrada se arma en `entradaDeExcepciones` (la misma que usa el
+       superadmin): sin la antigüedad no se afirma nada de lo varado. */
+    return excepcionesDeSaldo(
+      entradaDeExcepciones({
+        saldos: data,
+        curva,
+        concil,
+        origen,
+        lotes,
+        antiguedad: estadoAntiguedad === "ok" ? antiguedad : null,
+        especiesSinIngreso,
+      }),
+    );
   }, [data, curva, concil, origen, lotes, estadoAntiguedad, antiguedad, especiesSinIngreso]);
 }

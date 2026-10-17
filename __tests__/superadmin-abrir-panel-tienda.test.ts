@@ -12,7 +12,7 @@ const m = vi.hoisted(() => ({ limpiar: vi.fn(() => 0) }));
 vi.mock("@/lib/tenant-cache", () => ({ clearAllTenantCache: m.limpiar }));
 vi.mock("@/lib/csrf-client", () => ({ csrfHeaders: (h: Record<string, string> = {}) => h }));
 
-import { abrirPanelDeTienda, suplantarTienda } from "@/components/superadmin/tenants/abrir-panel-tienda";
+import { abrirPanelDeTienda, suplantarTienda, urlPanelDeTienda } from "@/components/superadmin/tenants/abrir-panel-tienda";
 import { anotarVistaSuplantada, destinoSesionTerminada } from "@/lib/auth/suplantacion-vista";
 
 beforeEach(() => {
@@ -31,6 +31,15 @@ describe("abrirPanelDeTienda", () => {
     expect(localStorage.getItem("active-tenant-slug")).toBe("musa");
     expect(localStorage.getItem("superadmin-impersonate-tenant")).toBe("musa");
     expect(window.open).toHaveBeenCalledWith(expect.stringMatching(/^\/t\/musa\/admin\?_fresh=\d+$/), "_blank");
+  });
+
+  it("con destino (plantas forestales, 17-10) abre ese lugar del panel y la query no puede cambiar la ruta", () => {
+    expect(urlPanelDeTienda("blas", "?tab=ctp-libro-operaciones&vista=saldos&especie=Cumala", 7)).toBe(
+      "/t/blas/admin?tab=ctp-libro-operaciones&vista=saldos&especie=Cumala&_fresh=7",
+    );
+    expect(urlPanelDeTienda("blas", "_fresh=1&tab=x", 7)).toBe("/t/blas/admin?tab=x&_fresh=7");
+    expect(urlPanelDeTienda("blas", "//malo.com/x?tab=y", 7)).toMatch(/^\/t\/blas\/admin\?/);
+    expect(urlPanelDeTienda("blas", undefined, 7)).toBe("/t/blas/admin?_fresh=7");
   });
 
   it("con el candado cerrado (423) no marca nada ni abre el panel", async () => {
