@@ -8837,3 +8837,43 @@ model ForestPatioConteo {
   @@unique([tenantId, iniciadoEn])
   @@index([tenantId, fecha])
 }
+
+/// Inspección de una planta forestal hecha desde el superadmin (ADR-498, fase 3
+/// de «Plantas forestales»). Es un ACTA: no mueve saldos ni la frena el cierre.
+/// `libro` congela lo que decía el libro al abrirla: el acta compara contra eso,
+/// no contra el libro de hoy. El conteo de trozas se guarda IGUAL en
+/// `ForestPatioConteo` (`conteoPatioId`) y su resumen se copia en `trozas`.
+/// Sólo «abierta» se edita; los CHECK de estado y motivo viven en la migración.
+model ForestInspeccionPlanta {
+  id        String   @id @default(cuid())
+  /// La planta inspeccionada (no el superadmin).
+  tenantId  String
+  /// Día de la inspección en Lima (AAAA-MM-DD).
+  fecha     DateTime @db.Date
+  inspector String
+  /// abierta | cerrada | anulada.
+  estado    String   @default("abierta")
+  /// `FotoDelLibro` (lib/superadmin/plantas-forestales/tipos.ts) al abrir.
+  libro     Json
+
+  /// El acta del conteo físico de trozas (`ForestPatioConteo.id`, mismo tenant).
+  conteoPatioId String?
+  /// Resumen de esa acta al guardarla: `{ esperadas, contadas, m3Esperado, m3Contado, faltantes, sobrantes }`.
+  trozas        Json?
+  /// `ConteoAserrada[]`: lo contado de la madera aserrada contra el libro congelado.
+  aserrada      Json     @default("[]")
+  /// `HallazgoInspeccion[]`.
+  hallazgos     Json     @default("[]")
+
+  conclusion        String?
+  responsablePlanta String?
+  notas             String?
+  motivoAnulacion   String?
+  cerradaAt         DateTime?
+  anuladaAt         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, fecha])
+}
