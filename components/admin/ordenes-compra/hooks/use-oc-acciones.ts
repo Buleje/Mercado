@@ -1,6 +1,8 @@
 import { leerJson } from "@/lib/errores/sin-dato";
 import type { DbRecurringPurchase } from "@/lib/db/recurring-purchases.db";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { motivoSuficiente } from "@/lib/validations/motivo";
 import type { DbPurchaseOrder, PurchaseStatus } from "@/lib/jsondb";
 import { limaDateKey } from "@/lib/utils";
 import { efectoDeLaCondicion } from "@/lib/compras/estados-oc";
@@ -20,6 +22,7 @@ export function useOcAcciones(previo: ReturnType<typeof useOcEstado> & ReturnTyp
     recurringInterval, recurringNotifyDays, setGuardandoRecurrente, recurrentesRef, cargarRecurrentes,
     ordenesRef, load,
   } = previo;
+  const { prompt } = useConfirm();
   const addRecurringOrder = async (oc: DbPurchaseOrder) => {
     const sup = suppliers.find(s => s.id === oc.supplierId);
     setGuardandoRecurrente(true);
@@ -115,16 +118,23 @@ export function useOcAcciones(previo: ReturnType<typeof useOcEstado> & ReturnTyp
     const anterior = orden?.status;
     // Cancelar cierra la orden y ajusta su cuenta por pagar a lo que llegó: no
     // es un cambio de estado más, y salía del `<select>` sin preguntar nada.
+    let cancelReason: string | undefined;
     if (status === "cancelado") {
       // C15: lo que pasa con lo recibido, lo que falta y la plata, ANTES de
       // confirmar. La regla es la del servidor; acá sólo se muestra.
-      const ok = await confirm({
+      // b-9 (Brandon 17-10, «Motivo siempre»): y el porqué, que el servidor exige.
+      const motivo = await prompt({
         title: `¿Cancelar la orden de ${orden?.supplierName || "este proveedor"} por ${formatCurrency(Number(orden?.total ?? 0))}?`,
         description: orden ? resumenCancelacion(orden, orden.seguimiento).join("\n") : "Una orden cancelada no vuelve atrás.",
         intent: "danger",
         confirmLabel: "Sí, cancelar",
+        label: "Motivo de la cancelación",
+        placeholder: "Ej.: el proveedor no tiene stock",
+        required: true,
+        validar: motivoSuficiente,
       });
-      if (!ok) return;
+      if (motivo === null) return;
+      cancelReason = motivo.trim().slice(0, 300);
     }
     ordenesRef.current.cambios += 1;
     // Recibido, parcial y cancelado recargan con spinner, como antes; el resto, en silencio.
@@ -134,7 +144,7 @@ export function useOcAcciones(previo: ReturnType<typeof useOcEstado> & ReturnTyp
       const res = await fetch(`/api/purchases/${id}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(cancelReason ? { status, cancelReason } : { status }),
       });
       if (!res.ok) {
         if (anterior) setOrders(prev => prev.map(o => o.id === id ? { ...o, status: anterior } : o));

@@ -49,6 +49,9 @@ const patch = (body: unknown, ids = { id: "c1", movementId: "m1" }) =>
     { params: Promise.resolve(ids) },
   );
 
+/** b-9 (17-10): el motivo es obligatorio; los casos que no lo prueban mandan uno válido. */
+const M = "se anotó en efectivo y fue Yape";
+
 const CAMBIO = {
   movimiento: { id: "m1", cashRegisterId: "c1", type: "egreso", amount: 3642, method: "transferencia", description: "Adelanto ADL-2026-0001 · Juan", createdAt: new Date() },
   metodoAnterior: "efectivo",
@@ -81,7 +84,7 @@ describe("quién puede", () => {
   it("admin y dueño pasan", async () => {
     for (const role of ["admin", "owner"]) {
       H.sesion = { tenantId: "t1", username: "x", role };
-      expect((await patch({ method: "transferencia" })).status).toBe(200);
+      expect((await patch({ method: "transferencia", motivo: M })).status).toBe(200);
     }
   });
 });
@@ -95,14 +98,14 @@ describe("qué acepta", () => {
   });
 
   it("el tenant es el de la sesión, aunque el cuerpo traiga otro", async () => {
-    await patch({ method: "transferencia", tenantId: "otro-negocio" });
+    await patch({ method: "transferencia", motivo: M, tenantId: "otro-negocio" });
     expect(H.cambiarMedio).toHaveBeenCalledWith("t1", { cashRegisterId: "c1", movementId: "m1", metodo: "transferencia" });
   });
 
   it("caja o movimiento de otro negocio → 404", async () => {
     H.sesion = { tenantId: "t2", username: "ajeno", role: "admin" };
     H.cambiarMedio.mockResolvedValueOnce(null);
-    const r = await patch({ method: "yape" });
+    const r = await patch({ method: "yape", motivo: M });
     expect(r.status).toBe(404);
     expect(H.cambiarMedio).toHaveBeenCalledWith("t2", expect.anything());
     expect(H.logActivity).not.toHaveBeenCalled();
@@ -110,7 +113,7 @@ describe("qué acepta", () => {
 
   it("caja cerrada → 409 con el mensaje y el motivo", async () => {
     H.cambiarMedio.mockRejectedValueOnce(new H.MedioNoCambiadoError("La caja ya está cerrada: …", "caja_cerrada"));
-    const r = await patch({ method: "yape" });
+    const r = await patch({ method: "yape", motivo: M });
     expect(r.status).toBe(409);
     expect(await r.json()).toEqual({ error: "La caja ya está cerrada: …", motivo: "caja_cerrada" });
   });
@@ -118,7 +121,7 @@ describe("qué acepta", () => {
 
 describe("qué devuelve y qué deja registrado", () => {
   it("200 con el esperado antes/después, y el renglón de auditoría con quién y los dos medios", async () => {
-    const r = await patch({ method: "transferencia" });
+    const r = await patch({ method: "transferencia", motivo: M });
     expect(r.status).toBe(200);
     expect(await r.json()).toMatchObject({ metodoAnterior: "efectivo", esperadoAntes: -6424, esperadoDespues: -2782 });
     expect(H.logActivity).toHaveBeenCalledTimes(1);
@@ -144,12 +147,20 @@ describe("M28 · el motivo del cambio queda en la bitácora", () => {
     ]);
   });
 
-  it("sin motivo sigue igual; un motivo de más de 200 letras → 400 sin tocar la base", async () => {
-    await patch({ method: "transferencia", motivo: "   " });
-    expect((H.logActivity.mock.calls[0] as unknown as unknown[])[2]).not.toContain("motivo");
-    vi.clearAllMocks();
-    const r = await patch({ method: "transferencia", motivo: "x".repeat(201) });
-    expect(r.status).toBe(400);
+  it("b-9 · sin motivo, vacío o sin 3 letras/números → 400 con su mensaje y sin tocar la base", async () => {
+    for (const motivo of [undefined, "", "   ", "..", "a.b", "x".repeat(201)]) {
+      const r = await patch({ method: "transferencia", ...(motivo === undefined ? {} : { motivo }) });
+      expect(r.status).toBe(400);
+      const body = (await r.json()) as { error: string; campo?: string };
+      expect(body.campo).toBe("motivo");
+    }
     expect(H.cambiarMedio).not.toHaveBeenCalled();
+    expect(H.logActivity).not.toHaveBeenCalled();
+  });
+
+  it("b-9 · con 3 letras o números alcanza: 200", async () => {
+    const r = await patch({ method: "transferencia", motivo: "BCP" });
+    expect(r.status).toBe(200);
+    expect((H.logActivity.mock.calls[0] as unknown as unknown[])[2]).toMatch(/ — motivo: BCP$/);
   });
 });

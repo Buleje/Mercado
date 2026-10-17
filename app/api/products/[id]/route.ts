@@ -8,6 +8,7 @@ import { requireActiveSubscription } from "@/lib/billing/require-active-subscrip
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { MENSAJE_MOTIVO, limpiarMotivo, motivoSuficiente } from "@/lib/validations/motivo";
 
 const ProductUpdateSchema = z.object({
   name: z.string().min(1).max(150).optional(),
@@ -33,7 +34,8 @@ const ProductUpdateSchema = z.object({
   // generación AI lo llena. Sin esto los cambios al description se perdían
   // silenciosamente al guardar.
   description: z.string().max(2000).optional().nullable(),
-  // F2: razón requerida cuando el admin ajusta stock manualmente
+  // F2 + b-9 (Brandon 17-10, «Motivo siempre»): razón exigida cuando el stock
+  // cambia a mano (≥3 letras o números; sin ella → 400 antes de escribir).
   adjustReason: z.string().max(500).optional(),
   // ── Producto/servicio completo (2026-06) — fluyen via ...body al upsert.
   // Sin .nullable() para mantener compatibilidad de tipos con DbProduct
@@ -108,6 +110,13 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
     // specs/richContent salen del body y se convierten a JSON aparte (el upsert
     // espera specsJson/richContentJson string, no los arrays crudos).
     const { specs, richContent, ...body } = parsed.data;
+
+    // b-9: si el stock cambia (de un número a otro), el porqué va primero. El
+    // kardex lo guarda en `notes`; antes quedaba «Ajuste manual sin razón documentada».
+    const cambiaStock = body.stock != null && existing.stock != null && body.stock !== existing.stock;
+    if (cambiaStock && !motivoSuficiente(body.adjustReason)) {
+      return NextResponse.json({ error: MENSAJE_MOTIVO, campo: "adjustReason" }, { status: 400 });
+    }
     const updated = await ProductsDB.upsert({
       ...existing,
       ...body,
@@ -134,14 +143,14 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
     }
 
     // F2: Audit trail cuando el stock cambia manualmente
-    if (body.stock != null && existing.stock != null && body.stock !== existing.stock) {
+    if (cambiaStock && body.stock != null && existing.stock != null) {
       const diff = body.stock - existing.stock;
       InventoryMovementsDB.record({
         tenantId: auth.tenantId,
         productId: numId,
         type: diff > 0 ? "ajuste_positivo" : "ajuste_negativo",
         quantity: Math.abs(diff),
-        notes: body.adjustReason ?? "Ajuste manual sin razón documentada",
+        notes: limpiarMotivo(body.adjustReason ?? ""),
         createdBy: auth.username ?? "admin",
         // `ProductsDB.update` de arriba ya dejó el stock en el valor pedido.
         // Sin esta bandera, `record` aplicaba la diferencia de nuevo: ajustar

@@ -49,6 +49,8 @@ interface PromptParams extends ConfirmParams {
   inputType?: "text" | "number" | "textarea";
   /** No deja aceptar con el campo vacío. */
   required?: boolean;
+  /** Regla extra para aceptar (p. ej. `motivoSuficiente`: ≥3 letras o números). */
+  validar?: (valor: string) => boolean;
 }
 
 type NoticeParams = BaseParams;
@@ -150,7 +152,9 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
   const params = pending?.params;
   const isPrompt = pending?.kind === "prompt";
   const promptParams = isPrompt ? (pending.params as PromptParams) : null;
-  const blocked = Boolean(promptParams?.required && !value.trim());
+  const blocked = Boolean(
+    promptParams && ((promptParams.required && !value.trim()) || (promptParams.validar && !promptParams.validar(value))),
+  );
   const intent = params?.intent ?? (pending?.kind === "confirm" ? "danger" : "info");
   const styles = INTENT_STYLES[intent];
   const Icon = styles.icon;

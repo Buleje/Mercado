@@ -16,6 +16,7 @@ import { OrdenCambioDeEstadoError, TRANSICIONES_OC, mensajeOrdenCambiada, transi
 import { getFaltantesAcreditados } from "@/lib/compras/aplicar-credito-recepcion";
 import { esServicio } from "@/lib/compras/naturaleza";
 import { cerrarCuentaDeOrdenCancelada, ordenTieneDeudaPorPagar, type CuentaAlCancelar } from "@/lib/db/purchases-cancelar.db";
+import { MENSAJE_MOTIVO, limpiarMotivo, motivoSuficiente } from "@/lib/validations/motivo";
 
 /** Quiénes pueden mover la plata de una orden (cancelar una con deuda). */
 const ROLES_GESTION: readonly string[] = ["admin", "owner", "manager"];
@@ -48,6 +49,8 @@ const PatchSchema = z.object({
   igvIncluded: z.boolean().optional(),
   flete: z.number().min(0).optional(),
   otrosCostos: z.number().min(0).optional(),
+  // b-9 (Brandon 17-10, «Motivo siempre»): obligatorio al pasar a «cancelado»
+  // (≥3 letras o números); se guarda en `PurchaseOrder.cancelReason`.
   cancelReason: z.string().max(300).optional(),
   // C14: el proveedor avisó otro día. "" = sin fecha prometida.
   deliveryDate: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.literal("")]).optional(),
@@ -169,6 +172,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
+    // b-9: cancelar sin decir por qué → 400 antes de tocar la orden o su deuda.
+    // Va después del 403: a quien no puede cancelar no se le pide el motivo.
+    const cancela = statusChanged && parsed.data.status === "cancelado";
+    if (cancela && !motivoSuficiente(parsed.data.cancelReason)) {
+      return NextResponse.json({ error: MENSAJE_MOTIVO, campo: "cancelReason" }, { status: 400 });
+    }
+    const motivoCancelacion = cancela ? limpiarMotivo(parsed.data.cancelReason ?? "") : null;
+
     // C14: la fecha prometida sólo se mueve mientras se espera la mercadería.
     const cambiaEntrega =
       parsed.data.deliveryDate !== undefined &&
@@ -217,6 +228,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const patch: Partial<DbPurchaseOrder> = {
       ...campos,
+      ...(motivoCancelacion ? { cancelReason: motivoCancelacion } : {}),
       ...(totalRecalculado != null ? { total: totalRecalculado } : {}),
       ...(statusChanged && parsed.data.status === "recibido"
         ? { receivedDate: new Date().toISOString(), receivedBy: auth.username }
@@ -272,7 +284,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             : cuenta.resultado === "sin_cambio"
               ? `Orden ${corto} cancelada: la cuenta por pagar se queda (vale lo que llegó)`
               : `Orden ${corto} cancelada: la cuenta por pagar se conservó porque ya tenía pagos`;
-        logActivity("Actualizar", "compra", texto, id, auth.username)
+        logActivity("Actualizar", "compra", `${texto} — motivo: ${motivoCancelacion}`, id, auth.username)
           .catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
       }
     }
@@ -409,7 +421,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     if (statusChanged) {
-       logActivity("Actualizar", "compra", `Estado de orden ${id.slice(-6)} cambiado a ${updated.status}`, id, auth.username).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
+       logActivity("Actualizar", "compra", `Estado de orden ${id.slice(-6)} cambiado a ${updated.status}${motivoCancelacion ? ` — motivo: ${motivoCancelacion}` : ""}`, id, auth.username).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
     }
 
     // Este camino también mueve stock y costo con `tx.product.update` fuera de

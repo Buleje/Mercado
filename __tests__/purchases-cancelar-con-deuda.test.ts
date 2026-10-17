@@ -45,7 +45,9 @@ const patch = (body?: string) =>
     headers: { "content-type": "application/json" },
     body,
   });
-const cancelar = () => patch(JSON.stringify({ status: "cancelado" }));
+/** b-9 (17-10): cancelar exige el motivo; los casos que no lo prueban mandan uno. */
+const cancelar = (cancelReason: string | undefined = "el proveedor no tiene stock") =>
+  patch(JSON.stringify({ status: "cancelado", ...(cancelReason === undefined ? {} : { cancelReason }) }));
 const sesion = (role: string) => ({ role, username: "u", tenantId: "t-a" });
 
 beforeEach(() => {
@@ -92,6 +94,30 @@ describe("cancelar una orden con deuda en Por pagar", () => {
     expect(res.status).toBe(200);
     expect(h.payables).not.toHaveBeenCalled();
     expect(h.cerrarCuenta).toHaveBeenCalledTimes(1);
+  });
+
+  it("b-9 · sin motivo, vacío o sin 3 letras/números → 400 y la orden y su deuda quedan igual", async () => {
+    h.requireAdmin.mockResolvedValue(sesion("admin"));
+    for (const motivo of [undefined, "", "   ", "-.-", "no"]) {
+      const res = await PATCH(patch(JSON.stringify({ status: "cancelado", ...(motivo === undefined ? {} : { cancelReason: motivo }) })), params);
+      expect(res.status).toBe(400);
+      expect((await res.json()).campo).toBe("cancelReason");
+    }
+    expect(h.update).not.toHaveBeenCalled();
+    expect(h.cerrarCuenta).not.toHaveBeenCalled();
+  });
+
+  it("b-9 · con motivo → 200 y se guarda en una línea en cancelReason", async () => {
+    h.requireAdmin.mockResolvedValue(sesion("admin"));
+    const res = await PATCH(cancelar("  el proveedor\n cerró "), params);
+    expect(res.status).toBe(200);
+    expect(h.update).toHaveBeenCalledWith("t-a", OC.id, expect.objectContaining({ status: "cancelado", cancelReason: "el proveedor cerró" }), expect.anything());
+  });
+
+  it("b-9 · el almacenero con deuda sigue viendo el 403 aunque no mande motivo", async () => {
+    h.requireAdmin.mockResolvedValue(sesion("almacenero"));
+    h.payables.mockResolvedValue([{ amount: 100, paidAmount: 0 }]);
+    expect((await PATCH(cancelar(undefined), params)).status).toBe(403);
   });
 
   it("ordenTieneDeudaPorPagar cuenta el saldo, no la cuenta pelada", async () => {

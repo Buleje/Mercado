@@ -14,7 +14,8 @@ vi.mock("@/lib/jsondb", () => ({
   ProductsDB: { getById: vi.fn(async () => ({ ...existente })), upsert: (p: Record<string, unknown>) => upsert(p) },
   PriceHistoryDB: { record: vi.fn(async () => undefined) },
 }));
-vi.mock("@/lib/db/inventory.db", () => ({ InventoryMovementsDB: { record: vi.fn(async () => undefined) } }));
+const record = vi.fn(async (_m: Record<string, unknown>) => undefined);
+vi.mock("@/lib/db/inventory.db", () => ({ InventoryMovementsDB: { record: (m: Record<string, unknown>) => record(m) } }));
 vi.mock("@/lib/activity-logger", () => ({ logActivity: vi.fn(async () => undefined) }));
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: vi.fn(async () => ({ tenantId: "t1", username: "qa" })) }));
 vi.mock("@/lib/billing/require-active-subscription", () => ({ requireActiveSubscription: vi.fn(async () => null) }));
@@ -30,7 +31,10 @@ const put = (body: unknown) =>
     { params: Promise.resolve({ id: "7" }) },
   );
 
-beforeEach(() => upsert.mockClear());
+beforeEach(() => {
+  upsert.mockClear();
+  record.mockClear();
+});
 
 describe("PUT /api/products/[id] — costo", () => {
   it("costPrice null quita el costo (casilla vacía)", async () => {
@@ -55,7 +59,7 @@ describe("PUT /api/products/[id] — costo", () => {
   });
 
   it("un costo de 0 no pisa el que había (y el stock de la OC sí entra)", async () => {
-    const res = await put({ costPrice: 0, stock: 15 });
+    const res = await put({ costPrice: 0, stock: 15, adjustReason: "llegó la OC" });
     expect(res.status).toBe(200);
     const enviado = upsert.mock.calls[0][0];
     expect(enviado.costPrice).toBe(3.2);
@@ -71,5 +75,29 @@ describe("PUT /api/products/[id] — costo", () => {
     const res = await put({ costPrice: -1 });
     expect(res.status).toBe(400);
     expect(upsert).not.toHaveBeenCalled();
+  });
+});
+
+describe("PUT /api/products/[id] — b-9 (17-10): cambiar el stock a mano exige el motivo", () => {
+  it("stock distinto sin motivo, vacío o sin 3 letras/números → 400 sin escribir", async () => {
+    for (const adjustReason of [undefined, "", "   ", "?!", "ok"]) {
+      const res = await put({ stock: 8, ...(adjustReason === undefined ? {} : { adjustReason }) });
+      expect(res.status).toBe(400);
+      expect((await res.json()).campo).toBe("adjustReason");
+    }
+    expect(upsert).not.toHaveBeenCalled();
+    expect(record).not.toHaveBeenCalled();
+  });
+
+  it("stock distinto con motivo → 200 y el kardex guarda el motivo en una línea", async () => {
+    const res = await put({ stock: 8, adjustReason: " conteo:\n faltan 2 " });
+    expect(res.status).toBe(200);
+    expect(record).toHaveBeenCalledWith(expect.objectContaining({ type: "ajuste_negativo", quantity: 2, notes: "conteo: faltan 2" }));
+  });
+
+  it("mismo stock, o stock ilimitado (null), no pide motivo", async () => {
+    expect((await put({ stock: 10, name: "Arroz" })).status).toBe(200);
+    expect((await put({ stock: null })).status).toBe(200);
+    expect(record).not.toHaveBeenCalled();
   });
 });

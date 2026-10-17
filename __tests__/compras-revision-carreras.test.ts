@@ -212,11 +212,12 @@ describe("punto 5 — la deuda al cancelar", () => {
   it("la ruta devuelve qué pasó con la deuda y deja el rastro con las cifras", async () => {
     h.getById.mockResolvedValue(OC);
     h.cerrarCuenta.mockResolvedValue({ resultado: "ajustada", montoAntes: 260, montoDespues: 80 });
-    const res = await PATCH(patch({ status: "cancelado" }), params);
+    const res = await PATCH(patch({ status: "cancelado", cancelReason: "llegó lo que había" }), params);
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ cuentaPorPagar: "ajustada", montoAntes: 260, montoDespues: 80 });
     expect(h.cerrarCuenta.mock.calls[0][0]).toBe("t-a");
-    expect(h.logActivity.mock.calls.map((c) => c[2])).toContain("Orden 123456 cancelada: la cuenta por pagar bajó de 260.00 a 80.00 (lo que llegó)");
+    // b-9 (17-10): el motivo va al final del rastro.
+    expect(h.logActivity.mock.calls.map((c) => c[2])).toContain("Orden 123456 cancelada: la cuenta por pagar bajó de 260.00 a 80.00 (lo que llegó) — motivo: llegó lo que había");
   });
 });
 

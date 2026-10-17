@@ -14,6 +14,7 @@ import { ArrowDownCircle, ArrowUpCircle, Loader2, Plus, Search } from "@buleje/d
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { MENSAJE_MOTIVO, motivoSuficiente } from "@/lib/validations/motivo";
 import { Field } from "@/components/admin/shared/Field";
 import {
   CAUSA,
@@ -51,6 +52,8 @@ export function ModalRegistrarMovimiento({ productos, inicial, onClose, onSaved 
 
   const tipos = dir === "in" ? TIPOS_DE_ENTRADA : TIPOS_DE_SALIDA;
   const esPerdida = type === "merma";
+  // b-9 (17-10, «Motivo siempre»): un ajuste a mano dice por qué; el servidor también lo exige.
+  const esAjuste = type === "ajuste_positivo" || type === "ajuste_negativo";
   const selected = productos.find((p) => p.id === productId) ?? null;
   const qn = Number(qty) || 0;
   const newStock = selected
@@ -75,6 +78,7 @@ export function ModalRegistrarMovimiento({ productos, inicial, onClose, onSaved 
       toast.error("Pon una cantidad entera mayor que 0");
       return;
     }
+    if (esAjuste && !motivoSuficiente(texto)) return void toast.error(MENSAJE_MOTIVO);
     setSaving(true);
     try {
       const nota = texto.trim() || undefined;
@@ -82,13 +86,13 @@ export function ModalRegistrarMovimiento({ productos, inicial, onClose, onSaved 
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        // En una pérdida el texto es «qué pasó» (notas, como guardaba Pérdidas);
-        // en el resto, la referencia (N° de factura, proveedor).
+        // En una pérdida el texto es «qué pasó» y en un ajuste, su motivo (notas:
+        // lo que el kardex muestra); en el resto, la referencia (N° de factura, proveedor).
         body: JSON.stringify({
           productId,
           type,
           quantity: qn,
-          ...(esPerdida ? { lossType: causa, notes: nota } : { reference: nota }),
+          ...(esPerdida ? { lossType: causa, notes: nota } : esAjuste ? { notes: nota } : { reference: nota }),
         }),
       });
       if (!res.ok) {
@@ -130,7 +134,7 @@ export function ModalRegistrarMovimiento({ productos, inicial, onClose, onSaved 
           <button
             type="button"
             onClick={save}
-            disabled={saving}
+            disabled={saving || (esAjuste && !motivoSuficiente(texto))}
             className={button({ variant: "primary", className: "gap-2" })}
           >
             {saving ? (
@@ -267,16 +271,15 @@ export function ModalRegistrarMovimiento({ productos, inicial, onClose, onSaved 
           </Field>
         )}
         <Field
-          label={esPerdida ? "Qué pasó (opcional)" : "Referencia (opcional)"}
+          label={esPerdida ? "Qué pasó (opcional)" : esAjuste ? "Motivo del ajuste" : "Referencia (opcional)"}
           labelClassName={LABEL}
         >
           <input
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            maxLength={esPerdida ? 300 : 100}
-            placeholder={
-              esPerdida ? "Se cayó la caja al descargar…" : "N° de factura, proveedor, observación…"
-            }
+            maxLength={esPerdida || esAjuste ? 300 : 100}
+            required={esAjuste}
+            placeholder={esPerdida ? "Se cayó la caja al descargar…" : esAjuste ? "Ej.: el conteo dio 2 menos" : "N° de factura, proveedor, observación…"}
             className={FIELD}
           />
         </Field>

@@ -2,12 +2,15 @@ import { useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useAbrirFichaAlLlegar } from "@/hooks/use-abrir-ficha-al-llegar";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { motivoSuficiente } from "@/lib/validations/motivo";
 import type { DbProduct } from "@/lib/jsondb";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
 import { claveCategoria, textoDeCategoria } from "@/components/admin/inventario/inventario-compartido";
 
 /** Carga del catálogo, base nacional, importar CSV y editar un producto. Parte de `useInventario`. */
 export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado>) {
+  const { prompt } = useConfirm();
   const {
     setProducts, setMovements, setLoading, editModalProduct, setEditModalProduct, editForm,
     setEditForm, setSaving, setAddForm, editSpecs, setEditSpecs, editRich, setEditRich, setImgInfo,
@@ -218,6 +221,23 @@ export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado
         body.stock = null;
         body.stockMin = null;
         body.stockMax = null;
+      }
+      // b-9 (Brandon 17-10, «Motivo siempre»): cambiar el stock a mano pide el
+      // porqué; va al kardex con tu nombre. El servidor lo exige igual (400).
+      const stockNuevo = typeof body.stock === "number" ? body.stock : null;
+      if (stockNuevo != null && editModalProduct.stock != null && stockNuevo !== editModalProduct.stock) {
+        const motivo = await prompt({
+          title: `¿Por qué cambia el stock de ${editModalProduct.stock} a ${stockNuevo}?`,
+          description: "Queda en el kardex con tu nombre.",
+          label: "Motivo del ajuste",
+          placeholder: "Ej.: conteo físico, se rompió una caja",
+          intent: "warning",
+          confirmLabel: "Guardar",
+          required: true,
+          validar: motivoSuficiente,
+        });
+        if (motivo === null) return; // el `finally` suelta el botón
+        body.adjustReason = motivo.trim().slice(0, 500);
       }
 
       const res = await fetch(`/api/products/${editModalProduct.id}`, {
