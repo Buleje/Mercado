@@ -81,3 +81,16 @@ export async function cerrarCuentaDeOrdenCancelada(tenantId: string, orden: Orde
     return { resultado: "ajustada", montoAntes, montoDespues: decision.monto };
   }, { timeout: 15_000, maxWait: 5_000 });
 }
+
+/**
+ * ¿La orden tiene una cuenta en Por pagar con saldo? (seguridad 17-10, punto 3).
+ * Cancelar una orden así baja o borra esa deuda, y eso es plata: el almacenero
+ * puede cancelar una orden que no debe nada, pero no una con deuda.
+ */
+export async function ordenTieneDeudaPorPagar(tenantId: string, ordenId: string): Promise<boolean> {
+  const cuentas = await prisma.payable.findMany({
+    where: { tenantId, purchaseOrderId: ordenId },
+    select: { amount: true, paidAmount: true },
+  });
+  return cuentas.some((c) => num(c.amount) - num(c.paidAmount) > 0.005);
+}

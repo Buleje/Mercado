@@ -68,6 +68,14 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     // 2 órdenes desde la misma cotización. Ahora updateMany con
     // `status:"ACEPTADA"` solo gana 1 transición; el otro recibe count=0.
      
+    // Seguridad 17-10 (punto 1): `customerPhone: ""` violaba el FK a
+    // Customer.phone (sólo admite null) y TODA conversión caía en 503. El
+    // cliente va si es de este negocio (el FK es por `phone`, único en toda la
+    // plataforma: una cotización vieja no puede colgar el pedido de otro).
+    const cliente = cotizacion.customerId
+      ? await CotizacionesDB.clienteDelNegocio(auth.tenantId, cotizacion.customerId)
+      : null;
+
     const result = await prisma.$transaction(async (tx) => {
       const claimed = await tx.cotizacion.updateMany({
         where: { id, tenantId: auth.tenantId, status: "ACEPTADA" },
@@ -82,7 +90,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
           id: orderId,
           tenantId: auth.tenantId,
           customerName: cotizacion.clienteNombre,
-          customerPhone: "",
+          customerPhone: cliente?.phone ?? null,
           customerLocation: "",
           customerReference: "",
           total: cotizacion.total,

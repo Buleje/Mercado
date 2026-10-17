@@ -12,6 +12,7 @@
  * Puro: recibe celdas y devuelve filas interpretadas. Ni red ni Prisma.
  */
 
+import { celdaCsv } from "@/lib/csv/celda";
 import {
   ROLES_PARTE,
   claveBusqueda,
@@ -61,13 +62,10 @@ export const COLUMNAS_DIRECTORIO = [
 // ── Salida ──────────────────────────────────────────────────────────────────
 
 /**
- * Una celda de CSV. El separador es `;` y no `,` porque Excel en es-PE usa la
- * coma como decimal — el mismo criterio que el export de adelantos.
+ * Una celda de CSV: la común (`lib/csv/celda.ts`, separador `;` por la coma
+ * decimal de es-PE y sin fórmulas de Excel — un nombre pegado «=…» queda texto).
  */
-export function celdaCsv(valor: string | number | null | undefined): string {
-  const s = valor == null ? "" : String(valor);
-  return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+export { celdaCsv };
 
 function filaDeParte(p: Parte): string[] {
   const acopio = p.acopioLat != null && p.acopioLng != null ? `${p.acopioLat}, ${p.acopioLng}` : "";

@@ -12,17 +12,14 @@ import type { DbAdelanto, DbBeneficiario } from "@/lib/db/adelantos.db";
 import { direccionDe, ETIQUETA_CONCEPTO, ETIQUETA_DIRECCION } from "@/lib/adelantos/direccion";
 
 /**
- * Una celda de CSV, entrecomillada cuando hace falta.
- *
- * El separador de este archivo es `;` y no `,` porque Excel en es-PE usa la coma
- * como decimal: con `,` un «1,250.50» parte la fila en dos columnas. Igual se
- * entrecomilla todo lo que traiga separador, comillas o saltos — un motivo
- * escrito a mano tiene cualquier cosa adentro.
+ * La celda vive en `lib/csv/celda.ts` (17-10): separador `;` porque Excel en
+ * es-PE usa la coma como decimal, comillas para lo que trae `;`/comillas/saltos
+ * y un apóstrofo delante del texto que Excel ejecutaría como fórmula (un motivo
+ * escrito a mano tiene cualquier cosa adentro). Se reexporta: el parte de caja
+ * y los tests la importan desde acá.
  */
-export function celdaCsv(valor: string | number | null | undefined): string {
-  const s = valor == null ? "" : String(valor);
-  return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+import { celdaCsv } from "@/lib/csv/celda";
+export { celdaCsv };
 
 const dia = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString("es-PE") : "");
 

@@ -5,6 +5,7 @@ import { requireActiveSubscription } from "@/lib/billing/require-active-subscrip
 import { revalidateTenantTag } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { anularSupplierReturn, DevolucionAnuladaError } from "@/lib/db/supplier-returns-anular.db";
 
 const Body = z.object({
@@ -23,6 +24,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const auth = await requireAdmin(req, ["admin"]);
     if (auth instanceof NextResponse) return auth;
+    // `requireAdmin` deja pasar al encargado (management tier): esto mueve
+    // stock por fuera de una venta, así que es sólo de dueño o administrador.
+    const prohibido = soloAdminODueno(auth.role, "anular una devolución al proveedor");
+    if (prohibido) return prohibido;
     const blocked = await requireActiveSubscription(auth.tenantId);
     if (blocked) return blocked;
 

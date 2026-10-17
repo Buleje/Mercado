@@ -150,7 +150,27 @@ export interface ComprasDeCliente {
   ultimaCompra: string | null;
   compras30d: number;
 }
-const SIN_COMPRAS: ComprasDeCliente = { compras: 0, gastado: 0, cerradas: 0, ultimaCompra: null, compras30d: 0 };
+/** Lo que manda el alta del panel (ver `CustomersDB.altaSinPisar`). */
+export interface AltaDeCliente {
+  phone: string;
+  name: string;
+  location?: string;
+  reference?: string;
+  locations?: { id: string; location: string; reference: string }[];
+  activeLocationId?: string | null;
+  birthday?: string;
+  email?: string;
+  creditLimit?: number;
+}
+export type ResultadoAlta =
+  | { estado: "creado"; cliente: DbCustomer }
+  | {
+      estado: "existe";
+      cliente: DbCustomer;
+      identificacion: { documento: string | null; tipoDocumento: string | null; razonSocial: string | null };
+    }
+  | { estado: "otra_tienda" };
+const SIN_COMPRAS: ComprasDeCliente ={ compras: 0, gastado: 0, cerradas: 0, ultimaCompra: null, compras30d: 0 };
 /** El mismo celular escrito de tres formas: sus últimos 9 dígitos. */
 const claveDeTelefono = (t: string) => t.replace(/\D/g, "").slice(-9);
 
@@ -532,6 +552,58 @@ export const CustomersDB = {
       throw err;
     }
     });
+  },
+  /**
+   * Alta del panel (seguridad 17-10, punto 5): si el celular ya es de un
+   * cliente de ESTE negocio no lo toca y devuelve el que hay. El POST era un
+   * upsert: «Nuevo cliente» con un celular conocido pisaba el nombre y borraba
+   * las direcciones guardadas del cliente de verdad. Editar = PATCH.
+   *
+   * Busca con los formatos viejos del celular (`phoneMatchCandidates`): el
+   * 51987654321 guardado antes es el mismo cliente que el 987654321 de hoy.
+   * El P2002 de una alta simultánea del mismo celular se resuelve releyendo
+   * (fuera de la tx: un error dentro la deja abortada).
+   */
+  async altaSinPisar(tenantId: string, data: AltaDeCliente): Promise<ResultadoAlta> {
+    if (!tenantId) throw new Error("CustomersDB.altaSinPisar: tenantId requerido");
+    const buscar = () =>
+      withRlsTx(tenantId, (tx) =>
+        tx.customer.findFirst({ where: { phone: { in: phoneMatchCandidates(data.phone) }, tenantId }, include: { locations: true } }),
+      );
+    const yaEsta = (row: NonNullable<Awaited<ReturnType<typeof buscar>>>): ResultadoAlta => ({
+      estado: "existe",
+      cliente: mapCustomer(row),
+      identificacion: { documento: row.documento ?? null, tipoDocumento: row.tipoDocumento ?? null, razonSocial: row.razonSocial ?? null },
+    });
+
+    const antes = await buscar();
+    if (antes) return yaEsta(antes);
+
+    const locs = (data.locations ?? []).map((l) => ({ id: l.id, location: l.location, reference: l.reference }));
+    try {
+      const row = await withRlsTx(tenantId, (tx) =>
+        tx.customer.create({
+          data: {
+            phone: data.phone, name: data.name, tenantId,
+            location: data.location ?? "", reference: data.reference ?? "",
+            activeLocationId: data.activeLocationId ?? null,
+            // El límite de crédito del alta no se guardaba (ni acá ni en la ficha).
+            ...(data.creditLimit != null && data.creditLimit > 0 && { creditLimit: data.creditLimit }),
+            ...(data.email && { email: data.email }),
+            ...(data.birthday && { birthday: new Date(data.birthday) }),
+            locations: { create: locs },
+          },
+          include: { locations: true },
+        }),
+      );
+      return { estado: "creado", cliente: mapCustomer(row) };
+    } catch (err) {
+      if ((err as { code?: string }).code !== "P2002") throw err;
+      const despues = await buscar();
+      // Otro alta del mismo celular ganó en este negocio, o el celular es de
+      // otra tienda (Customer.phone sigue único en toda la plataforma, TD-040).
+      return despues ? yaEsta(despues) : { estado: "otra_tienda" };
+    }
   },
   async delete(tenantId: string, phone: string): Promise<void> {
     await withRlsTx(tenantId, (tx) => tx.customer.deleteMany({ where: { phone: normalizePhone(phone), tenantId } })).catch((err) => logger.error("[customers.db] customer delete failed", { error: String(err), phone }));

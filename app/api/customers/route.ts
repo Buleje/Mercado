@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
   if (rl) return rl;
 
   try {
-    const raw = await req.json();
+    const raw: unknown = await req.json().catch(() => null);
     const parsed = CustomerPostSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
@@ -158,23 +158,44 @@ export async function POST(req: NextRequest) {
     }
     const body = parsed.data;
     const normalizedPhone = normalizePhone(body.phone);
-    const record = await CustomersDB.upsert({
+    // Seguridad 17-10 (punto 5): el alta ya no pisa. Con un celular que ya es
+    // de un cliente de este negocio responde 409 con ese cliente (la pantalla
+    // ofrece «Usar este» o actualizarlo por PATCH); `?siExiste=usar` lo
+    // devuelve tal cual, sin tocarlo (POS, onboarding, registro de la tienda).
+    const alta = await CustomersDB.altaSinPisar(auth.tenantId, {
       phone: normalizedPhone,
       name: body.name,
       location: body.location ?? "",
       reference: body.reference ?? "",
       locations: body.locations ?? [],
       activeLocationId: body.activeLocationId ?? null,
-      ...(body.birthday !== undefined && { birthday: body.birthday ?? undefined }),
-      loyaltyPoints: 0,
-      loyaltyTier: "Nuevo",
-      totalSpent: 0,
-      creditBalance: 0,
-      creditLimit: body.creditLimit ?? 0,
-      notifOrderUpdates: true,
-      notifPromotions: true,
-      notifRestock: true,
-    }, auth.tenantId);
+      ...(body.birthday && { birthday: body.birthday }),
+      ...(body.email && { email: body.email }),
+      ...(body.creditLimit !== undefined && { creditLimit: body.creditLimit }),
+    });
+    if (alta.estado === "otra_tienda") {
+      return NextResponse.json(
+        {
+          error: `El teléfono ${normalizedPhone} ya está registrado en otra tienda de la red. Verifica el número o usa otro para este cliente.`,
+          motivo: "otra_tienda",
+        },
+        { status: 409 },
+      );
+    }
+    if (alta.estado === "existe") {
+      if (req.nextUrl.searchParams.get("siExiste") === "usar") {
+        return NextResponse.json({ ...alta.cliente, yaExistia: true });
+      }
+      return NextResponse.json(
+        {
+          error: "Ya tienes un cliente con ese celular.",
+          motivo: "existe",
+          existente: { phone: alta.cliente.phone, name: alta.cliente.name, ...alta.identificacion },
+        },
+        { status: 409 },
+      );
+    }
+    const record = alta.cliente;
 
     // Update new ficha fields if provided
     const fichaUpdate: Record<string, unknown> = {};
@@ -197,9 +218,6 @@ export async function POST(req: NextRequest) {
     if (body.alertasWhatsapp !== undefined) fichaUpdate.alertasWhatsapp = body.alertasWhatsapp;
     // Un solo cumpleaños: la ficha escribe las DOS columnas (`birthday` es la
     // que leen cupón, saludo y campañas; antes sólo iba a fechaNacimiento).
-    // Este POST es un upsert por teléfono y el formulario manda `null` cuando
-    // el campo queda vacío: «Nuevo cliente» desde POS o Fiados con un teléfono
-    // que ya existe borraba el cumpleaños que el cliente dio en la tienda.
     // En el alta sólo se escribe si trae fecha; borrarlo es cosa del PATCH.
     const cumple = cumpleParaGuardar(body.fechaNacimiento);
     if (cumple) {
@@ -212,7 +230,7 @@ export async function POST(req: NextRequest) {
 
     if (Object.keys(fichaUpdate).length > 0) {
       await prismaForTenant(auth.tenantId).customer.update({
-        where: { phone: normalizedPhone },
+        where: { phone: record.phone },
         data: fichaUpdate,
       }).catch((err) => logger.warn("[customers] ficha update failed", { phone: normalizedPhone, err: String(err) }));
     }

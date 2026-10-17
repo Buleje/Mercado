@@ -245,7 +245,9 @@ export function CustomerProvider({
       typeof document !== "undefined" &&
       /(?:^|;\s*)buleje-sess=/.test(document.cookie);
     if (data.phone && hasAdminSession) {
-      fetch("/api/customers", {
+      // `siExiste=usar` (seguridad 17-10): el registro de la tienda crea la
+      // ficha si falta, pero ya no pisa la que el negocio tiene cargada.
+      fetch("/api/customers?siExiste=usar", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({

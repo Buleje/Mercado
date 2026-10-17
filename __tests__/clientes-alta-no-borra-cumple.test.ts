@@ -1,8 +1,9 @@
 /**
- * POST /api/customers es un upsert por teléfono y el formulario de la ficha
- * manda `fechaNacimiento: null` cuando el campo queda vacío. «Nuevo cliente»
- * desde POS o Fiados con un teléfono que ya existe NO puede borrar el
- * cumpleaños que el cliente dio en la tienda (revisión 09-10).
+ * El formulario de la ficha manda `fechaNacimiento: null` cuando el campo
+ * queda vacío. «Nuevo cliente» desde POS o Fiados con un teléfono que ya
+ * existe NO puede borrar el cumpleaños que el cliente dio en la tienda
+ * (revisión 09-10). Desde 17-10 (seguridad, punto 5) el alta ni siquiera
+ * toca al que existe: 409 y la ficha queda como estaba.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
@@ -20,14 +21,14 @@ vi.mock("@/lib/billing/require-active-subscription", () => ({ requireActiveSubsc
 vi.mock("@/lib/create-notification", () => ({ createNotification: vi.fn(async () => undefined) }));
 vi.mock("@/lib/admin-cache", () => ({ invalidateAdminCache: { afterCustomer: vi.fn() } }));
 
-const { mockRequireAdmin, mockUpsert, mockUpdate } = vi.hoisted(() => ({
+const { mockRequireAdmin, mockAlta, mockUpdate } = vi.hoisted(() => ({
   mockRequireAdmin: vi.fn(),
-  mockUpsert: vi.fn(),
+  mockAlta: vi.fn(),
   mockUpdate: vi.fn(async () => ({})),
 }));
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 vi.mock("@/lib/jsondb", () => ({
-  CustomersDB: { upsert: mockUpsert, getAll: vi.fn(), getAllConDeuda: vi.fn() },
+  CustomersDB: { altaSinPisar: mockAlta, getAll: vi.fn(), getAllConDeuda: vi.fn() },
   normalizePhone: (p: string) => p,
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: { activityLog: { create: vi.fn(async () => ({})) } } }));
@@ -58,7 +59,27 @@ describe("alta de cliente con un teléfono que ya existe", () => {
   beforeEach(() => {
     mockUpdate.mockClear();
     mockRequireAdmin.mockResolvedValue({ tenantId: "main", role: "cajero", username: "caja1" });
-    mockUpsert.mockResolvedValue({ phone: "987654321", name: "María García" });
+    mockAlta.mockResolvedValue({
+      estado: "existe",
+      cliente: { phone: "987654321", name: "María de la tienda" },
+      identificacion: { documento: null, tipoDocumento: null, razonSocial: null },
+    });
+  });
+
+  it("no toca la ficha: 409, ni con fecha ni sin ella", async () => {
+    for (const fechaNacimiento of [null, "", "1990-05-12"]) {
+      const res = await POST(alta({ fechaNacimiento, genero: "F" }));
+      expect(res.status).toBe(409);
+    }
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe("alta de cliente nuevo", () => {
+  beforeEach(() => {
+    mockUpdate.mockClear();
+    mockRequireAdmin.mockResolvedValue({ tenantId: "main", role: "cajero", username: "caja1" });
+    mockAlta.mockResolvedValue({ estado: "creado", cliente: { phone: "987654321", name: "María García" } });
   });
 
   it("fechaNacimiento vacía (null) no toca birthday ni fechaNacimiento", async () => {

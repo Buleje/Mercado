@@ -13,6 +13,7 @@
  */
 import type { DdsData, DdsPlot } from "./eudr-types";
 import { urlVerificarDespacho } from "@/lib/tenant-url-publica";
+import { sinFormula } from "@/lib/csv/celda";
 
 export interface EmisorExpediente {
   razonSocial?: string;
@@ -42,9 +43,9 @@ export interface ArchivoExpediente {
   contenido: string;
 }
 
-/** Una celda CSV segura: los nombres de concesión traen comas y comillas. */
+/** Una celda CSV segura: los nombres de concesión traen comas y comillas, y un texto «=…» no se abre como fórmula. */
 export function csvCell(v: unknown): string {
-  const s = v == null ? "" : String(v);
+  const s = v == null ? "" : sinFormula(String(v));
   return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

@@ -10,22 +10,16 @@
  * que alguien va a leer en Excel) se puede testear sin navegador.
  */
 import type { WoodEntry } from "@/components/admin/forestal/ctp-shared";
+import { celdaCsv } from "@/lib/csv/celda";
 
 /**
  * Una celda CSV segura. La COMA no entrecomilla a propósito: el separador es
  * `;`, y como los decimales van con coma (13,6500 en es-PE) escaparlos los
  * dejaba entre comillas — Excel los leía como texto y no se podían sumar.
  */
-export function celdaCsv(v: unknown): string {
-  let s = v == null ? "" : String(v);
-  /* Una celda que empieza con = + - @ (o tab/CR) Excel la ejecuta como fórmula:
-     un código de lote «=cmd|…» o un permiso pegado desde un Excel ajeno se
-     convierte en código al abrir el reporte. Se antepone un apóstrofo, que
-     Excel muestra como texto. Los NÚMEROS negativos («-81,807») se dejan tal
-     cual: son lo que el reporte tiene que sumar. */
-  if (/^[=+\-@\t\r]/.test(s) && !/^[-+]?\d+([.,]\d+)?$/.test(s)) s = `'${s}`;
-  return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+// Una celda que empieza con = + - @ Excel la ejecuta como fórmula (un código de
+// lote «=cmd|…»): la común le antepone un apóstrofo y deja los números negativos.
+export { celdaCsv };
 
 /** Separador `;`: es el que espera Excel con configuración regional es-PE —
  *  con `,` las columnas caen todas en la A y el operador ve una sola tira. */

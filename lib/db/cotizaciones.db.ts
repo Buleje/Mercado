@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { CotizacionCambioDeEstadoError } from "@/lib/cotizaciones/estados";
 import type {
   Cotizacion as PCotizacion,
   CotizacionItem as PCotizacionItem,
@@ -228,24 +229,33 @@ export const CotizacionesDB = {
     return mapCotizacion(row);
   },
 
+  /**
+   * `siEstadoEs` (seguridad 17-10, punto 2): el cambio de estado sólo se
+   * escribe si la cotización sigue como se leyó. Sin eso, «Enviada» de una
+   * pestaña vieja pisaba una CONVERTIDA recién hecha y quedaba lista para un
+   * segundo pedido. Si perdió la carrera: `CotizacionCambioDeEstadoError`.
+   */
   async update(
     id: string,
     tenantId: string,
-    data: { status?: string; notas?: string; validoHasta?: Date }
+    data: { status?: string; notas?: string; validoHasta?: Date },
+    opts?: { siEstadoEs?: string },
   ): Promise<DbCotizacion | null> {
     const existing = await prisma.cotizacion.findFirst({
       where: { id, tenantId },
     });
     if (!existing) return null;
-    const row = await prisma.cotizacion.update({
-      where: { id },
+    const res = await prisma.cotizacion.updateMany({
+      where: { id, tenantId, ...(opts?.siEstadoEs ? { status: opts.siEstadoEs as never } : {}) },
       data: {
         ...(data.status && { status: data.status as never }),
         ...(data.notas !== undefined && { notas: data.notas }),
         ...(data.validoHasta && { validoHasta: data.validoHasta }),
       },
-      include: { items: true },
     });
+    const row = await prisma.cotizacion.findFirst({ where: { id, tenantId }, include: { items: true } });
+    if (!row) return null;
+    if (res.count === 0) throw new CotizacionCambioDeEstadoError(row.status);
     return mapCotizacion(row);
   },
 

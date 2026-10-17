@@ -101,14 +101,17 @@ export default function PagoCliente({ p }: { p: PagoModal }) {
                     onClick={async () => {
                       setSavingCustomer(true);
                       try {
-                        const res = await fetch("/api/customers", {
+                        // `siExiste=usar`: si el celular ya es de un cliente, se elige ése
+                        // tal cual (el alta ya no lo pisa) con su nombre y su celular guardado.
+                        const res = await fetch("/api/customers?siExiste=usar", {
                           method: "POST",
                           headers: csrfHeaders({ "Content-Type": "application/json" }),
                           body: JSON.stringify({ name: newCustName.trim(), phone: newCustPhone }),
                         });
                         if (res.ok) {
-                          setCustomerPhone(newCustPhone);
-                          setCustomerName(newCustName.trim());
+                          const guardado = (await res.json().catch(() => null)) as { phone?: string; name?: string } | null;
+                          setCustomerPhone(guardado?.phone || newCustPhone);
+                          setCustomerName(guardado?.name || newCustName.trim());
                           setShowNewCustomer(false);
                           setNewCustName("");
                           setNewCustPhone("");

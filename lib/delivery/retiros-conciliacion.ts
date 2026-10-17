@@ -16,6 +16,7 @@
  */
 import { z } from "zod";
 import { FILTROS_HISTORIAL } from "@/lib/delivery/payout-transiciones";
+import { celdaCsv } from "@/lib/csv/celda";
 
 export const PATRON_DIA = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -274,10 +275,8 @@ const ESTADO_CSV: Record<string, string> = {
   rejected: "Rechazado",
 };
 
-function celda(valor: string | number | null | undefined): string {
-  const s = valor == null ? "" : String(valor);
-  return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+/** `lib/csv/celda.ts`: también frena el texto que Excel abriría como fórmula (una nota «=…»). */
+const celda = celdaCsv;
 
 /** «2026-10-17 14:05» en hora de Lima: Excel lo ordena como texto sin perder el día. */
 function fechaHoraLima(v: Date | string | null | undefined): string {

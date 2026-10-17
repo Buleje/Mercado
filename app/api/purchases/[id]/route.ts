@@ -15,7 +15,10 @@ import { costoUnitarioReal, totalDeOrden } from "@/lib/compras/totales-oc";
 import { OrdenCambioDeEstadoError, TRANSICIONES_OC, mensajeOrdenCambiada, transicionValida, type EstadoOC } from "@/lib/compras/estados-oc";
 import { getFaltantesAcreditados } from "@/lib/compras/aplicar-credito-recepcion";
 import { esServicio } from "@/lib/compras/naturaleza";
-import { cerrarCuentaDeOrdenCancelada, type CuentaAlCancelar } from "@/lib/db/purchases-cancelar.db";
+import { cerrarCuentaDeOrdenCancelada, ordenTieneDeudaPorPagar, type CuentaAlCancelar } from "@/lib/db/purchases-cancelar.db";
+
+/** Quiénes pueden mover la plata de una orden (cancelar una con deuda). */
+const ROLES_GESTION: readonly string[] = ["admin", "owner", "manager"];
 
 const DiferenciaSchema = z.object({
   productoId: z.number().int().positive(),
@@ -131,7 +134,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const raw = await req.json();
+  // Cuerpo vacío o que no es JSON: 400, no un 500 (seguridad 17-10, punto 3).
+  const raw: unknown = await req.json().catch(() => null);
+  if (raw == null || typeof raw !== "object") {
+    return NextResponse.json({ error: "Manda los datos del cambio." }, { status: 400 });
+  }
   const parsed = PatchSchema.safeParse(raw);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
 
@@ -148,6 +155,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           { error: `Transición inválida: ${existing.status} → ${parsed.data.status}. Permitidas: [${allowed.join(", ")}]` },
           { status: 422 }
         );
+      }
+    }
+
+    // Seguridad 17-10 (punto 3): cancelar una orden con deuda en Por pagar la
+    // baja o la borra. Eso es plata: sólo dueño, administrador o encargado.
+    // Sin deuda (contado, o ya pagada), el almacenero cancela como siempre.
+    if (statusChanged && parsed.data.status === "cancelado" && !ROLES_GESTION.includes(auth.role)) {
+      if (await ordenTieneDeudaPorPagar(auth.tenantId, id)) {
+        // `error` es lo que muestra la pantalla de Órdenes de compra (use-oc-acciones).
+        const mensaje = "Esta orden tiene una deuda en Por pagar y cancelarla la cambia: pídeselo al administrador o al encargado.";
+        return NextResponse.json({ error: mensaje, message: mensaje, motivo: "deuda_por_pagar" }, { status: 403 });
       }
     }
 

@@ -7,6 +7,7 @@ import AdminModal from '@/components/admin/shared/AdminModal';
 import { Field } from '@/components/admin/shared/Field';
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cumpleDe } from "@/lib/clientes/cumpleanos";
+import { ClienteYaExiste, type ClienteExistente } from "./ClienteYaExiste";
 
 // ── Ubigeo data (principales departamentos de Peru) ─────────────────────────
 
@@ -208,6 +209,8 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
   const [form, setForm] = useState<CustomerFormData>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  // 409 del alta: el celular ya es de un cliente tuyo (el POST ya no lo pisa).
+  const [yaExiste, setYaExiste] = useState<{ existente: ClienteExistente; cuerpo: Record<string, unknown> } | null>(null);
   const [dniLoading, setDniLoading] = useState(false);
   const [dniMsg, setDniMsg] = useState('');
   const isEdit = !!customer;
@@ -292,9 +295,13 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
     }
   }, [set]);
 
+  // Otro celular = otra búsqueda: el aviso de «ya existe» deja de valer.
+  useEffect(() => { setYaExiste(null); }, [form.phone, isOpen]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    setYaExiste(null);
 
     // Validation
     const nombre = form.tipoPersona === 'juridica' ? form.razonSocial : form.name;
@@ -357,6 +364,10 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
+          if (res.status === 409 && data.motivo === 'existe' && data.existente) {
+            setYaExiste({ existente: data.existente as ClienteExistente, cuerpo: body });
+            return;
+          }
           throw new Error(data.error ?? 'Error al crear');
         }
       }
@@ -811,6 +822,15 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                 </Field>
               </Section>
             </div>
+          )}
+
+          {yaExiste && (
+            <ClienteYaExiste
+              existente={yaExiste.existente}
+              cuerpo={yaExiste.cuerpo}
+              onListo={(guardado) => { onSaved(guardado); onClose(); }}
+              onError={setError}
+            />
           )}
 
           {/* Error */}

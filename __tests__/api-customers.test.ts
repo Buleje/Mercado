@@ -35,9 +35,9 @@ vi.mock("@/lib/require-admin", () => ({
   requireAdmin: mockRequireAdmin,
 }));
 
-const { mockCustomersGetAll, mockCustomersUpsert, mockNormalizePhone } = vi.hoisted(() => ({
+const { mockCustomersGetAll, mockAltaSinPisar, mockNormalizePhone } = vi.hoisted(() => ({
   mockCustomersGetAll: vi.fn(),
-  mockCustomersUpsert: vi.fn(),
+  mockAltaSinPisar: vi.fn(),
   mockNormalizePhone: vi.fn((p: string) => p),
 }));
 
@@ -46,7 +46,7 @@ vi.mock("@/lib/jsondb", () => ({
     getAll: mockCustomersGetAll,
     // GET usa la variante con la deuda real de fiados (09-10); el contrato de la lista es el mismo.
     getAllConDeuda: mockCustomersGetAll,
-    upsert: mockCustomersUpsert,
+    altaSinPisar: mockAltaSinPisar,
   },
   normalizePhone: mockNormalizePhone,
 }));
@@ -192,7 +192,7 @@ describe("POST /api/customers", () => {
     vi.clearAllMocks();
     mockRequireAdmin.mockResolvedValue(ADMIN_AUTH);
     mockApplyRateLimit.mockReturnValue(null);
-    mockCustomersUpsert.mockResolvedValue({ ...CUSTOMER, name: "María García" });
+    mockAltaSinPisar.mockResolvedValue({ estado: "creado", cliente: { ...CUSTOMER, name: "María García" } });
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -225,17 +225,59 @@ describe("POST /api/customers", () => {
     expect(res.status).toBe(400);
   });
 
-  it("calls normalizePhone before upsert", async () => {
+  it("calls normalizePhone before the alta", async () => {
     await POST(makePost(VALID_POST_BODY));
     expect(mockNormalizePhone).toHaveBeenCalledWith("987654321");
   });
 
-  it("calls CustomersDB.upsert with the correct data", async () => {
-    await POST(makePost(VALID_POST_BODY));
-    expect(mockCustomersUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "María García" }),
+  it("calls CustomersDB.altaSinPisar with tenantId first and the data", async () => {
+    await POST(makePost({ ...VALID_POST_BODY, creditLimit: 300 }));
+    expect(mockAltaSinPisar).toHaveBeenCalledWith(
       "main",
+      expect.objectContaining({ name: "María García", creditLimit: 300 }),
     );
+  });
+
+  // Seguridad 17-10 (punto 5): un segundo alta con el mismo celular pisaba al cliente.
+  const EXISTE = {
+    estado: "existe",
+    cliente: { ...CUSTOMER },
+    identificacion: { documento: "44556677", tipoDocumento: "DNI", razonSocial: null },
+  };
+
+  it("celular de un cliente que ya tienes → 409 con ese cliente, sin bienvenida", async () => {
+    mockAltaSinPisar.mockResolvedValue(EXISTE);
+    const res = await POST(makePost(VALID_POST_BODY));
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.motivo).toBe("existe");
+    expect(body.existente).toEqual({ phone: "987654321", name: "Juan Pérez", documento: "44556677", tipoDocumento: "DNI", razonSocial: null });
+  });
+
+  it("?siExiste=usar → 200 con el cliente tal cual (no el nombre que llegó)", async () => {
+    mockAltaSinPisar.mockResolvedValue(EXISTE);
+    const req = new NextRequest("https://host/api/customers?siExiste=usar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(VALID_POST_BODY),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ name: "Juan Pérez", yaExistia: true });
+  });
+
+  it("celular de otra tienda → 409 con el mensaje (antes «invalid request»)", async () => {
+    mockAltaSinPisar.mockResolvedValue({ estado: "otra_tienda" });
+    const res = await POST(makePost(VALID_POST_BODY));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toMatch(/otra tienda de la red/);
+  });
+
+  it("cuerpo vacío → 400", async () => {
+    const res = await POST(new NextRequest("https://host/api/customers", { method: "POST" }));
+    expect(res.status).toBe(400);
+    expect(mockAltaSinPisar).not.toHaveBeenCalled();
   });
 
   it("returns 429 when rate limited", async () => {
