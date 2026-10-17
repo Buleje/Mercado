@@ -20,10 +20,13 @@ import {
  * juntas (`telefonoDeLaSesion`). El token de seguimiento de un pedido de
  * invitado y el login de Google no prueban un celular: no abren el chat.
  *
- * Escribir: con sesión, el celular del cuerpo tiene que ser el de la sesión (o
- * el aviso "sistema"/"bot" que manda el propio widget). Sin sesión sigue el
- * invitado —el negocio le contesta por WhatsApp—, pero nunca como "sistema" ni
- * "bot": eso dejaba a cualquiera meter avisos falsos en la bandeja del negocio.
+ * Escribir (security 17-10, T4): también exige la sesión verificada y el
+ * celular del cuerpo tiene que ser el suyo. Antes un invitado escribía con el
+ * celular de cualquier cliente (el mensaje aparecía en la bandeja como suyo) y
+ * cualquier cliente logueado escribía como "sistema"/"bot". Ningún cuerpo de un
+ * cliente puede hablar como el sistema: el aviso «el bot no pudo responder» lo
+ * arma el servidor en `/api/chat/auto-reply` con los datos de la sesión.
+ * El panel contesta por `/api/admin/chat` (requireAdmin con roles).
  */
 
 const CELULAR = /^9\d{8}$/;
@@ -75,11 +78,18 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: customer sends a message
+// POST: el cliente con sesión verificada escribe en SU conversación
 export async function POST(req: NextRequest) {
   try {
     const rl = applyRateLimit(req, "STRICT", "chat-post");
     if (rl) return rl;
+    const propio = await celularDeLaSesion(req);
+    if (!propio) {
+      return NextResponse.json(
+        { error: "Ingresa con tu celular para escribir al negocio", code: "CHAT_SESION_REQUERIDA" },
+        { status: 401 },
+      );
+    }
     const tenantId = getTenantIdFromRequest(req);
     let raw: unknown;
     try {
@@ -94,15 +104,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error }, { status: 400 });
     }
     const { phone, name, message } = parsed.data;
-    const esSistema = TELEFONOS_DEL_SISTEMA.has(phone);
-    if (!esSistema && !CELULAR.test(phone)) {
+    if (TELEFONOS_DEL_SISTEMA.has(phone)) {
+      return NextResponse.json(
+        { error: "Los avisos del sistema los escribe el servidor" },
+        { status: 403 },
+      );
+    }
+    if (!CELULAR.test(phone)) {
       return NextResponse.json({ error: "phone inválido" }, { status: 400 });
     }
-    const propio = await celularDeLaSesion(req);
-    if (esSistema && !propio) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
-    if (propio && !esSistema && phone !== propio) {
+    if (phone !== propio) {
       return NextResponse.json(
         { error: "El celular no coincide con tu sesión" },
         { status: 403 },

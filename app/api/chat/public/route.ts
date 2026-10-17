@@ -12,6 +12,7 @@ import {
   accesoAlHilo,
   esSesionDelTelefono,
   firmarTokenHilo,
+  normalizarTelefonoChat,
   respuestaSinAcceso,
 } from "@/lib/chat/thread-token";
 
@@ -185,6 +186,31 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
 
+/** ¿El celular del pedido es el del hilo? Vacío en cualquiera de los dos = no. */
+function mismoCelular(a: string | null | undefined, b: string | null | undefined): boolean {
+  const x = normalizarTelefonoChat(a ?? "");
+  return x.length > 0 && x === normalizarTelefonoChat(b ?? "");
+}
+
+/**
+ * Un pedido sólo se fija al hilo si es de ESE celular (security 17-10, T4):
+ * antes `open` aceptaba cualquier `orderId` y el GET mostraba el estado, el
+ * total y los ítems de un pedido ajeno. Si no coincide (o no existe en el
+ * negocio de la tienda) se ignora y el chat se abre igual, sin pedido.
+ */
+async function pedidoDelCelular(
+  tenantId: string,
+  orderId: string | undefined,
+  telefono: string,
+): Promise<string | undefined> {
+  if (!orderId) return undefined;
+  const { OrdersDB } = await import("@/lib/db/orders.db");
+  const order = await OrdersDB.getById(tenantId, orderId);
+  if (order && mismoCelular(order.customer?.phone, telefono)) return orderId;
+  logger.warn("[chat/public] open: orderId de otro celular ignorado", { tenantId });
+  return undefined;
+}
+
 async function handleOpen(req: NextRequest, body: unknown) {
   const parsed = OpenThreadBody.safeParse(body);
   if (!parsed.success) {
@@ -206,6 +232,7 @@ async function handleOpen(req: NextRequest, body: unknown) {
     // ya tiene uno abierto con la tienda (uno por tienda + celular + pedido),
     // se pide iniciar sesión: saber un celular ya no entrega su conversación.
     const dueno = await esSesionDelTelefono(req, parsed.data.customerPhone);
+    const orderId = await pedidoDelCelular(store.tenantId, parsed.data.orderId, parsed.data.customerPhone);
     let thread: Awaited<ReturnType<typeof ChatThreadsDB.openOrGet>>;
     try {
       thread = await ChatThreadsDB.openOrGet({
@@ -213,7 +240,7 @@ async function handleOpen(req: NextRequest, body: unknown) {
         storeId:       store.id,
         customerPhone: parsed.data.customerPhone,
         customerName:  parsed.data.customerName,
-        orderId:       parsed.data.orderId,
+        orderId,
         subject:       parsed.data.subject,
         soloNuevo:     !dueno,
       });
@@ -594,7 +621,10 @@ export async function GET(req: NextRequest) {
         const { OrdersDB } = await import("@/lib/db/orders.db");
         const { buildOrderContext } = await import("@/lib/chat/order-context");
         const order = await OrdersDB.getById(store.tenantId, threadCheck.orderId);
-        if (order) orderContext = buildOrderContext(order);
+        // Hilos fijados a un pedido ajeno antes del 17-10 (T4): sin contexto.
+        if (order && mismoCelular(order.customer?.phone, threadCheck.customerPhone)) {
+          orderContext = buildOrderContext(order);
+        }
       } catch (err) {
         logger.warn("[chat/public] orderContext failed", { err: String(err) });
       }

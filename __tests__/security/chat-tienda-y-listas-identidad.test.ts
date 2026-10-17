@@ -7,7 +7,9 @@
  *     local: 200 con 2 mensajes de un cliente real de `main`. Ahora exige la
  *     cookie de cliente que PROBÓ ese celular.
  *  2. `POST /api/chat` dejaba escribir como "sistema"/"bot" sin sesión y, con
- *     sesión, a nombre de otro celular.
+ *     sesión, a nombre de otro celular. T4 (17-10): sin sesión tampoco se
+ *     escribe con el celular de otro y nadie escribe como "sistema"/"bot": el
+ *     aviso «sin respuesta» lo arma `/api/chat/auto-reply` con la cookie.
  *  3. `/api/shopping-lists` (y `[id]`) no pedían sesión en la ruta (la salvaba
  *     el proxy) y tomaban el negocio del pedido, no de la sesión.
  *  4. `POST /api/admin/whatsapp/suggest`: cualquier sesión del panel, sin tope
@@ -60,12 +62,15 @@ vi.mock("@/lib/ai/cost-control", () => ({
 vi.mock("@/lib/db/whatsapp-messages.db", () => ({
   WhatsAppMessagesDB: { listMessages: h.waList },
 }));
+vi.mock("@/lib/ai-config", () => ({ getActiveProvider: () => null, chatCompletion: vi.fn() }));
+vi.mock("@/lib/db/products.db", () => ({ ProductsDB: { getAll: vi.fn(async () => []) } }));
 
 const { createCustomerToken, CUSTOMER_SESSION } = await import("@/lib/auth/customer-session");
 const chat = await import("@/app/api/chat/route");
 const listas = await import("@/app/api/shopping-lists/route");
 const listaPorId = await import("@/app/api/shopping-lists/[id]/route");
 const sugerir = await import("@/app/api/admin/whatsapp/suggest/route");
+const autoRespuesta = await import("@/app/api/chat/auto-reply/route");
 
 const MIO = "987654321";
 const AJENO = "912345678";
@@ -132,16 +137,26 @@ describe("GET /api/chat — leer exige la sesión de ESE celular", () => {
   });
 });
 
-describe("POST /api/chat — escribir", () => {
+describe("POST /api/chat — escribir exige la sesión de ESE celular (security 17-10, T4)", () => {
   it("sin sesión no se escribe como el sistema: 401", async () => {
     const res = await chat.POST(pedido("/api/chat", "POST", { phone: "sistema", message: "⚠️ falso" }));
     expect(res.status).toBe(401);
     expect(h.chatAdd).not.toHaveBeenCalled();
   });
 
-  it("invitado sin sesión con su celular: 201 (el negocio le contesta por WhatsApp)", async () => {
-    const res = await chat.POST(pedido("/api/chat", "POST", { phone: MIO, message: "¿Tienen arroz?" }));
-    expect(res.status).toBe(201);
+  it("invitado sin sesión con el celular de OTRO cliente: 401 y no se guarda", async () => {
+    const res = await chat.POST(pedido("/api/chat", "POST", { phone: AJENO, message: "cancelen mi pedido" }));
+    expect(res.status).toBe(401);
+    expect(h.chatAdd).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["seguimiento de un pedido de invitado", () => sesion("checkout", undefined, { pedidos: ["o1"] })],
+    ["login de Google", () => sesion("google", "google_123")],
+  ])("%s: 401 (no prueba el celular)", async (_n, token) => {
+    const res = await chat.POST(pedido("/api/chat", "POST", { phone: MIO, message: "hola" }, await token()));
+    expect(res.status).toBe(401);
+    expect(h.chatAdd).not.toHaveBeenCalled();
   });
 
   it("con sesión, a nombre de otro celular: 403", async () => {
@@ -151,16 +166,56 @@ describe("POST /api/chat — escribir", () => {
     expect(h.chatAdd).not.toHaveBeenCalled();
   });
 
-  it("con sesión, el aviso del widget como «sistema»: 201", async () => {
+  it.each(["sistema", "bot"])("con sesión, escribir como «%s»: 403 (el aviso lo arma el servidor)", async (phone) => {
     const t = await sesion("phone", MIO);
-    const res = await chat.POST(pedido("/api/chat", "POST", { phone: "sistema", name: "Bot", message: "no pude" }, t));
+    const res = await chat.POST(pedido("/api/chat", "POST", { phone, name: "Bot", message: "no pude" }, t));
+    expect(res.status).toBe(403);
+    expect(h.chatAdd).not.toHaveBeenCalled();
+  });
+
+  it("con sesión, en su propia conversación: 201 en el negocio del host", async () => {
+    const t = await sesion("phone", MIO);
+    const res = await chat.POST(pedido("/api/chat", "POST", { phone: MIO, name: "Ana", message: "¿Tienen arroz?" }, t));
     expect(res.status).toBe(201);
+    expect(h.chatAdd).toHaveBeenCalledWith("tenant-host", MIO, "Ana", "customer", "¿Tienen arroz?");
   });
 
   it("mensaje vacío o de más de 500: 400", async () => {
-    const vacio = await chat.POST(pedido("/api/chat", "POST", { phone: MIO, message: "  " }));
-    const largo = await chat.POST(pedido("/api/chat", "POST", { phone: MIO, message: "x".repeat(501) }));
+    const t = await sesion("phone", MIO);
+    const vacio = await chat.POST(pedido("/api/chat", "POST", { phone: MIO, message: "  " }, t));
+    const largo = await chat.POST(pedido("/api/chat", "POST", { phone: MIO, message: "x".repeat(501) }, t));
     expect([vacio.status, largo.status]).toEqual([400, 400]);
+  });
+});
+
+describe("POST /api/chat/auto-reply — el aviso «sin respuesta» lo arma el servidor", () => {
+  const RARA = "zzqx wvbn plok";
+
+  it("con sesión verificada: un aviso en «sistema» con nombre y celular de la COOKIE", async () => {
+    const t = await sesion("phone", MIO);
+    const res = await autoRespuesta.POST(pedido("/api/chat/auto-reply", "POST", { message: RARA }, t));
+    expect(res.status).toBe(200);
+    expect((await res.json()).type).toBe("fallback");
+    expect(h.chatAdd).toHaveBeenCalledTimes(1);
+    const [tenant, phone, nombre, sender, texto] = h.chatAdd.mock.calls[0]!;
+    expect([tenant, phone, nombre, sender]).toEqual(["tenant-host", "sistema", "Bot", "customer"]);
+    expect(texto).toContain(`Ana (${MIO})`);
+    expect(texto).toContain(RARA);
+  });
+
+  it("sin sesión o con Google: contesta igual pero no escribe en la bandeja", async () => {
+    const sin = await autoRespuesta.POST(pedido("/api/chat/auto-reply", "POST", { message: RARA }));
+    const google = await autoRespuesta.POST(
+      pedido("/api/chat/auto-reply", "POST", { message: RARA }, await sesion("google", "google_123")),
+    );
+    expect([sin.status, google.status]).toEqual([200, 200]);
+    expect(h.chatAdd).not.toHaveBeenCalled();
+  });
+
+  it("si la bandeja falla, el cliente igual recibe su respuesta", async () => {
+    h.chatAdd.mockRejectedValueOnce(new Error("db caída"));
+    const res = await autoRespuesta.POST(pedido("/api/chat/auto-reply", "POST", { message: RARA }, await sesion("phone", MIO)));
+    expect(res.status).toBe(200);
   });
 });
 

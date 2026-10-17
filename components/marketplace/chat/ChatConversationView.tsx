@@ -22,7 +22,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { guardarTokenHilo, headersTokenHilo, leerTokenHilo } from "@/lib/chat/thread-token-client";
+import { agregarHiloAlForm, guardarTokenHilo, headersTokenHilo, leerTokenHilo } from "@/lib/chat/thread-token-client";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, parseReviewRequest, fmtSoles, type SharedChatProduct, type ChatSubstitution, type ChatOrder, type ChatPayment } from "@/lib/chat/shared-product";
 import { parseOrderContext, orderStatusMeta, type ChatOrderContext } from "@/lib/chat/order-context";
@@ -356,7 +356,7 @@ export default function ChatConversationView({
     setUploading(true);
     setError(null);
     try {
-      const fd = new FormData();
+      const fd = agregarHiloAlForm(new FormData(), { threadId, storeSlug, customerPhone });
       fd.append("file", file);
       // CSRF: el proxy exige x-csrf-token en POST. NO seteamos Content-Type:
       // el browser pone el boundary del multipart solo.
@@ -436,7 +436,7 @@ export default function ChatConversationView({
     setError(null);
     try {
       const ext = blob.type.includes("mp4") ? "mp4" : "webm";
-      const fd = new FormData();
+      const fd = agregarHiloAlForm(new FormData(), { threadId, storeSlug, customerPhone });
       fd.append("file", new File([blob], `nota.${ext}`, { type: blob.type }));
       const up = await fetch("/api/chat/public/upload-audio", {
         method: "POST",

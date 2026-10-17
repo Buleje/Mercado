@@ -47,3 +47,19 @@ export function headersTokenHilo(threadId: string | null | undefined): Record<st
   const token = leerTokenHilo(threadId);
   return token ? { "x-chat-token": token } : {};
 }
+
+/**
+ * Hilo + token para las subidas (foto y nota de voz, security 17-10 T4): el
+ * servidor sólo guarda archivos del dueño del hilo abierto.
+ */
+export function agregarHiloAlForm(
+  fd: FormData,
+  hilo: { threadId: string; storeSlug: string; customerPhone: string },
+): FormData {
+  fd.append("threadId", hilo.threadId);
+  fd.append("storeSlug", hilo.storeSlug);
+  fd.append("customerPhone", hilo.customerPhone);
+  const token = leerTokenHilo(hilo.threadId);
+  if (token) fd.append("threadToken", token);
+  return fd;
+}

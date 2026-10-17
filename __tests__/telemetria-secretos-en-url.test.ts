@@ -10,7 +10,13 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { haySecretoEnRuta, tacharSecretosDeRuta, tacharSecretosEnObjeto } from "@/lib/telemetry/secretos-en-url";
+import {
+  haySecretoEnRuta,
+  tacharEventoSentry,
+  tacharMiga,
+  tacharSecretosDeRuta,
+  tacharSecretosEnObjeto,
+} from "@/lib/telemetry/secretos-en-url";
 
 const T = "QgqyRsC6G20Tji5BpxMNRCL5F6BCR5qQx9d8HzGE3JU";
 
@@ -42,12 +48,72 @@ describe("las 4 rutas de firma se tachan", () => {
   });
 });
 
-describe("los 4 canales pasan por el tachado", () => {
+describe("token en la query (chat de invitados, security 17-10 T4)", () => {
+  it.each([
+    [`/api/chat/public/stream?threadId=h1&threadToken=${T}`, "/api/chat/public/stream?threadId=h1&threadToken=[token]"],
+    [`https://x.pe/api/chat/public?action=messages&threadToken=${T}&since=1`, "https://x.pe/api/chat/public?action=messages&threadToken=[token]&since=1"],
+    [`/reset?token=${T}#a`, "/reset?token=[token]#a"],
+    [`https://open.ys7.com/x?accessToken=${T}&appToken=${T}`, "https://open.ys7.com/x?accessToken=[token]&appToken=[token]"],
+    [`threadId=h1&threadToken=${T}`, "threadId=h1&threadToken=[token]"],
+    [`{"url":"/api/chat/public/stream?threadToken=${T}"}`, '{"url":"/api/chat/public/stream?threadToken=[token]"}'],
+  ])("%s", (url, tachada) => {
+    expect(haySecretoEnRuta(url)).toBe(true);
+    expect(tacharSecretosDeRuta(url)).toBe(tachada);
+    expect(haySecretoEnRuta(tachada)).toBe(false);
+    expect(tacharSecretosDeRuta(tachada)).toBe(tachada);
+  });
+
+  it("no toca otros parámetros ni nombres parecidos", () => {
+    for (const u of ["/api/chat/public?action=open&phone=987654321", "/x?tokens=3&maxTokens=200", "/x?tokenId=7"]) {
+      expect(tacharSecretosDeRuta(u)).toBe(u);
+    }
+  });
+
+  it("evento de Sentry: url, query_string, referer, migas y spans quedan sin token; sdkProcessingMetadata intacto", () => {
+    const meta = { capturedSpanScope: { vivo: true } };
+    const evento = {
+      transaction: "GET /api/chat/public/stream",
+      request: {
+        url: `https://x.pe/api/chat/public/stream?threadToken=${T}`,
+        query_string: `threadId=h1&threadToken=${T}`,
+        headers: { referer: `https://x.pe/t/main/tienda?threadToken=${T}` },
+      },
+      breadcrumbs: [{ category: "fetch", data: { url: `/api/chat/public?action=messages&threadToken=${T}` } }],
+      spans: [{ description: `GET /api/chat/public/stream?threadToken=${T}`, data: { "http.query": `?threadToken=${T}` } }],
+      sdkProcessingMetadata: meta,
+    };
+    const limpio = tacharEventoSentry(evento);
+    const { sdkProcessingMetadata, ...resto } = limpio;
+    expect(JSON.stringify(resto)).not.toContain(T);
+    expect(sdkProcessingMetadata).toBe(meta);
+    expect(limpio.request.url).toBe("https://x.pe/api/chat/public/stream?threadToken=[token]");
+  });
+
+  it("evento sin secretos sale igual (mismo objeto) y uno circular tacha al menos la URL", () => {
+    const sano = { request: { url: "https://x.pe/admin?tab=plata" } };
+    expect(tacharEventoSentry(sano)).toBe(sano);
+    const circular: { request: { url: string }; extra: Record<string, unknown> } = {
+      request: { url: `/api/chat/public/stream?threadToken=${T}` },
+      extra: {},
+    };
+    circular.extra.yo = circular;
+    expect(tacharEventoSentry(circular).request.url).toBe("/api/chat/public/stream?threadToken=[token]");
+  });
+
+  it("miga de red: mensaje y todos los datos de texto", () => {
+    const miga = tacharMiga({ message: `GET /x?token=${T}`, data: { url: `/x?threadToken=${T}`, "http.query": `token=${T}`, status_code: 200 } });
+    expect(JSON.stringify(miga)).not.toContain(T);
+    expect(miga.data.status_code).toBe(200);
+  });
+});
+
+describe("los canales pasan por el tachado", () => {
   const leer = (p: string) => readFileSync(join(__dirname, "..", p), "utf8");
   it.each([
     ["instrumentation-client.ts", /before_send:[\s\S]*tacharSecretosEnObjeto\(ev\.properties\)/],
-    ["sentry.client.config.ts", /tacharSecretosDeRuta/],
-    ["sentry.server.config.ts", /event\.request\.url = tacharSecretosDeRuta\(/],
+    ["sentry.client.config.ts", /beforeBreadcrumb\(miga\) \{\s*return tacharMiga\(miga\)[\s\S]*beforeSend\(event, hint\) \{\s*event = tacharEventoSentry\(event\)/],
+    ["sentry.server.config.ts", /beforeBreadcrumb\(miga\) \{\s*return tacharMiga\(miga\)[\s\S]*beforeSend\(event, hint\) \{\s*event = tacharEventoSentry\(event\)/],
+    ["sentry.edge.config.ts", /beforeBreadcrumb\(miga\) \{\s*return tacharMiga\(miga\)[\s\S]*beforeSend\(event, hint\) \{\s*event = tacharEventoSentry\(event\)/],
     ["components/MedicionVercel.tsx", /<Analytics beforeSend=\{\(ev\) => \(\{ \.\.\.ev, url: tacharSecretosDeRuta\(ev\.url\) \}\)\}/],
   ])("%s", (archivo, patron) => {
     expect(leer(archivo)).toMatch(patron);

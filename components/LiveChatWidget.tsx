@@ -208,6 +208,16 @@ export default function LiveChatWidget() {
       if (res.ok) {
         const saved: Msg = await res.json();
         setMessages(prev => prev.map(m => m.id === customerMsg.id ? saved : m));
+      } else if (res.status === 401 || res.status === 403) {
+        // 17-10 (security T4): escribir al negocio exige la sesión verificada de
+        // ESE celular. Sin ella el mensaje no llega: se avisa en vez de fingir.
+        sinSesionRef.current = true;
+        setMessages(prev => [...prev, {
+          id: `aviso-${Date.now()}`,
+          sender: "bot",
+          message: "Para que el negocio reciba tu mensaje, ingresa con tu celular (te llega un código por WhatsApp).",
+          createdAt: new Date().toISOString(),
+        }]);
       }
     } catch { /* ignore */ }
 
@@ -216,7 +226,7 @@ export default function LiveChatWidget() {
     // Get auto-reply from bot
     setBotTyping(true);
     await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
-    const { reply, type } = await getAutoReply(msg);
+    const { reply } = await getAutoReply(msg);
     setBotTyping(false);
 
     const botMsg: Msg = {
@@ -226,19 +236,8 @@ export default function LiveChatWidget() {
       createdAt: new Date().toISOString(),
     };
     setMessages(prev => [...prev, botMsg]);
-
-    // If bot couldn't answer, log it so admin sees it needs attention
-    if (type === "fallback" && !sinSesionRef.current) {
-      fetch("/api/chat", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          phone: "sistema",
-          name: "Bot",
-          message: `⚠️ Cliente ${customerName || phone} preguntó algo que no pude responder: "${msg}"`,
-        }),
-      }).catch(() => {});
-    }
+    // Si el bot no pudo responder, el aviso a la bandeja del negocio lo arma el
+    // servidor en /api/chat/auto-reply con los datos de la sesión (17-10, T4).
   };
 
   if (!phone) return null;

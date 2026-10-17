@@ -206,16 +206,23 @@ describe("límite real: lo que hace la app en un turno", () => {
       const res = await GET(r);
       expect(res.status).toBe(200);
     }
-    const res = await POST(req("/api/chat", "POST", { phone: "987654321", name: "Ana", message: "¿Tienen arroz?" }));
+    // Escribir también exige esa sesión (security 17-10, T4).
+    const r = req("/api/chat", "POST", { phone: "987654321", name: "Ana", message: "¿Tienen arroz?" });
+    r.cookies.set(CUSTOMER_SESSION.COOKIE_NAME, token);
+    const res = await POST(r);
     expect(res.status).toBe(201);
   });
 
   it("el POST del chat sigue con su tope anti-spam (STRICT: el 11.º en 15 min es 429)", async () => {
     h.chatAdd.mockResolvedValue({});
     const { POST } = await import("@/app/api/chat/route");
+    const { createCustomerToken, CUSTOMER_SESSION } = await import("@/lib/auth/customer-session");
+    const token = await createCustomerToken({ customerId: "987654321", email: "987654321@cel", name: "Ana", tenantId: "tenant-1", provider: "phone" });
     const estados: number[] = [];
     for (let i = 0; i < 11; i++) {
-      const res = await POST(req("/api/chat", "POST", { phone: "987654321", message: `m${i}` }));
+      const r = req("/api/chat", "POST", { phone: "987654321", message: `m${i}` });
+      r.cookies.set(CUSTOMER_SESSION.COOKIE_NAME, token);
+      const res = await POST(r);
       estados.push(res.status);
     }
     expect(estados.slice(0, 10).every((s) => s === 201)).toBe(true);

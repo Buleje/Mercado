@@ -1,12 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { tacharSecretosDeRuta } from "@/lib/telemetry/secretos-en-url";
-
-/* La URL del pedido va en `request.url` y, si la ruta no tiene nombre, en `transaction`. */
-function tacharEventoServidor<T extends { request?: { url?: string }; transaction?: string }>(event: T): T {
-  if (event.request?.url) event.request.url = tacharSecretosDeRuta(event.request.url);
-  if (event.transaction) event.transaction = tacharSecretosDeRuta(event.transaction);
-  return event;
-}
+import { tacharEventoSentry, tacharMiga } from "@/lib/telemetry/secretos-en-url";
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -26,13 +19,19 @@ Sentry.init({
    * Attach the x-request-id header (injected by middleware) to every Sentry
    * event so backend logs and Sentry issues can be correlated by trace ID.
    */
-  /* El secreto del enlace del kiosko va en la ruta de la página (security 10-10, H2). */
+  /* Secretos en la URL: el enlace del kiosko/firma va en la RUTA (security 10-10, H2) y el
+     token del chat de invitados en la QUERY del stream (`?threadToken=`, security 17-10, T4).
+     Se tachan del evento entero: url, query_string, referer, migas y spans. */
+  beforeBreadcrumb(miga) {
+    return tacharMiga(miga);
+  },
+
   beforeSendTransaction(event) {
-    return tacharEventoServidor(event);
+    return tacharEventoSentry(event);
   },
 
   beforeSend(event, hint) {
-    tacharEventoServidor(event);
+    event = tacharEventoSentry(event);
     // hint.originalException is the raw Error; hint.data may carry extra context
     const requestId = (hint?.data as Record<string, unknown> | undefined)?.["requestId"] as string | undefined;
     if (requestId) {
