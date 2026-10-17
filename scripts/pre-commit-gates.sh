@@ -95,7 +95,13 @@ tokens() {
 MODO="en paralelo"; [ "$EN_PARALELO" = "1" ] || MODO="en fila (${DISPONIBLE_MB:-?} MB libres)"
 echo "🔎 Gates $MODO — $(printf '%s\n' "$STAGED_TS" | wc -l | tr -d ' ') archivo(s) TS staged"
 T0=$(date +%s)
-lanzar tsc node scripts/tsc7.mjs --noEmit
+# SKIP_TSC_GATE=1: sólo cuando el que commitea ya verificó que los errores son de
+# archivos ajenos sin commitear (carriles en paralelo; `scripts/dev-helpers/tsc-ajenos.mjs` desde `commit-carril.sh`).
+if [ "${SKIP_TSC_GATE:-0}" = "1" ]; then
+  echo "⏭️  tipos verificados aparte (SKIP_TSC_GATE)" >"$TMP/tsc.log"; echo 0 >"$TMP/tsc.rc"
+else
+  lanzar tsc node scripts/tsc7.mjs --noEmit
+fi
 
 if [ "${SKIP_VITEST_GATE:-0}" != "1" ]; then
   if [ -n "$VITEST_TODO" ]; then
