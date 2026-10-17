@@ -63,6 +63,10 @@ export type ReceptionItem = {
   /** C22 · Servicio: qué se aceptó y quién lo acepta. Viajan en `notes` (sin columna propia). */
   alcance?: string;
   aceptaServicio?: string;
+  /** C20 · De lo que llegó bien: apartado para revisar y rechazado (no entran a stock vendible). */
+  enRevision?: number;
+  rechazado?: number;
+  motivoRevision?: string;
 };
 
 export type Reception = {

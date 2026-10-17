@@ -26,6 +26,7 @@ export default function ResumenAlGuardar({ n }: { n: Estado }) {
     if (aStock.length) filas.push({ rotulo: "Suma al stock", texto: cantidades(aStock), tono: "text-[var(--data-success-ink)]" });
     if (aceptados.length) filas.push({ rotulo: "Servicio aceptado", texto: `${cantidades(aceptados)} (no suma stock)`, tono: "text-[var(--data-success-ink)]" });
     if (e.merma.length) filas.push({ rotulo: "Va a merma", texto: `${cantidades(e.merma)} (no se vende)`, tono: "text-[var(--data-warning-ink)]" });
+    if (e.enRevision.length) filas.push({ rotulo: "En revisión", texto: `${cantidades(e.enRevision)} (apartado, no se vende)`, tono: "text-[var(--data-warning-ink)]" });
     if (e.noLlegara.length) filas.push({ rotulo: "Ya no se espera", texto: cantidades(e.noLlegara), tono: "text-[var(--data-info-ink)]" });
     if (e.deMas.length) filas.push({ rotulo: "De más", texto: `${cantidades(e.deMas)}: pasa lo pedido y entra igual`, tono: "text-[var(--data-error-ink)]" });
     if (e.fueraDeOrden.length) filas.push({ rotulo: "No es de la orden", texto: `${listarCorto(e.fueraDeOrden)}: se anota, no suma`, tono: "text-[var(--data-warning-ink)]" });

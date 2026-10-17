@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import VenceLoteCampo from "@/components/admin/compras/VenceLoteCampo";
 import type { ControlDeLinea } from "@/lib/compras/conformidad-recepcion";
 import ConformidadDeLinea from "@/components/admin/ordenes-compra/recepciones/ConformidadDeLinea";
+import AceptacionDeLinea from "@/components/admin/ordenes-compra/recepciones/AceptacionDeLinea";
 import { listarCorto } from "@/lib/compras/ciclo-oc";
 import { CONDICIONES, type CondicionItem, type ReceivedItem } from "./oc-recepcion-tipos";
 
@@ -132,6 +133,9 @@ export default function OCRecepcionPaso1({ completos, receivedItems, controles, 
                         fila={item}
                         onChange={(patch) => updateItem(idx, patch)}
                       />
+                      {controles[idx] !== "servicio" && (
+                        <AceptacionDeLinea id={`oc-acep-${item.productId}`} fila={{ ...item, product: item.name }} onChange={(patch) => updateItem(idx, patch)} />
+                      )}
                       {controles[idx] !== "servicio" && <VenceLoteCampo
                         id={`oc-vence-${item.productId}`}
                         producto={item.name}

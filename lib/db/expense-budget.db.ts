@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { esCategoriaDeCompras } from "@/lib/compras/presupuesto-compras";
 
 /**
  * ExpenseBudgetDB — el techo mensual de gasto por categoría, y la comparación
@@ -168,7 +169,11 @@ export const ExpenseBudgetDB = {
       porCategoria.set(f.category, porMes);
     }
 
-    const techoPorCategoria = new Map(presupuestos.map((p) => [p.category, toNumOrZero(p.montoMensual)]));
+    // Los techos «compras:…» son el presupuesto de Compras (N02): no son gasto
+    // y sumarlos acá inflaría el techo del mes.
+    const techoPorCategoria = new Map(
+      presupuestos.filter((p) => !esCategoriaDeCompras(p.category)).map((p) => [p.category, toNumOrZero(p.montoMensual)]),
+    );
 
     const categorias: DbComparativaCategoria[] = [...porCategoria.entries()].map(([category, porMes]) => {
       const actual = redondear(porMes.get(mesActual) ?? 0);

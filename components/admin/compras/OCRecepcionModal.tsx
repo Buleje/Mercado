@@ -11,6 +11,7 @@ import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { errorDeVencimiento } from "@/lib/compras/lotes-recepcion";
 import { faltaConformidad, notasConConformidad, pereciblesSinVence } from "@/lib/compras/conformidad-recepcion";
+import { errorDeAceptacion, tieneApartado } from "@/lib/compras/aceptacion-recepcion";
 import { useControlesDeProductos } from "@/components/admin/ordenes-compra/recepciones/use-controles-de-productos";
 import { lineasDeSeguimiento, type SeguimientoOC } from "@/lib/compras/ciclo-oc";
 import { conVence, type CondicionItem, type OCItem, type ReceivedItem } from "./oc-recepcion-tipos";
@@ -101,7 +102,8 @@ export default function OCRecepcionModal({ ocId, supplier, items, seguimiento, o
   const controlDe = useControlesDeProductos();
   const controles = receivedItems.map((i) => controlDe(i.productId));
   const lineasC22 = receivedItems.map((i) => ({ ...i, product: i.name, receivedQty: i.noLlego ? 0 : i.receivedQty }));
-  const faltaC22 = faltaConformidad(lineasC22, controles);
+  // C20: en revisión + rechazado no pueden pasar de lo que llegó.
+  const faltaC22 = lineasC22.map((l) => errorDeAceptacion(l)).find((e) => e !== null) ?? faltaConformidad(lineasC22, controles);
   const sinVence = pereciblesSinVence(lineasC22, controles);
 
   const handleConfirm = async () => {
@@ -131,11 +133,15 @@ export default function OCRecepcionModal({ ocId, supplier, items, seguimiento, o
               condition: i.noLlego ? "faltante" : i.condition,
               notes: controlDe(i.productId) === "servicio" ? notasConConformidad("", i) : "",
               ...(conVence(i) && controlDe(i.productId) !== "servicio" ? { expiryDate: i.expiryDate, lote: i.lote } : {}),
+              // C20: lo apartado y lo rechazado de una línea en buen estado.
+              ...(!i.noLlego && controlDe(i.productId) !== "servicio" && tieneApartado(i)
+                ? { enRevision: i.enRevision, rechazado: i.rechazado, motivoRevision: i.motivoRevision }
+                : {}),
             })),
-          status: receivedItems.some((i) => i.noLlego || i.condition !== "ok" || i.receivedQty !== i.orderedQty)
+          status: receivedItems.some((i) => i.noLlego || i.condition !== "ok" || i.receivedQty !== i.orderedQty || tieneApartado(i))
             ? "parcial"
             : "aceptada",
-          nonConformities: receivedItems.filter((i) => i.noLlego || i.condition !== "ok").length,
+          nonConformities: receivedItems.filter((i) => i.noLlego || i.condition !== "ok" || tieneApartado(i)).length,
           // `notes`, no `notas`: con el nombre en castellano Zod lo descartaba
           // y la anotación de la recepción se perdía sin decir nada.
           notes: notas || undefined,

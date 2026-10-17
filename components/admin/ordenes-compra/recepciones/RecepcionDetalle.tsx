@@ -100,6 +100,15 @@ export default function RecepcionDetalle({
                         Vence {textoVence(it.expiryDate)}{it.lote ? ` · Lote ${it.lote}` : ""}
                       </span>
                     )}
+                    {((it.enRevision ?? 0) > 0 || (it.rechazado ?? 0) > 0) && (
+                      <span className="block font-semibold text-[var(--data-warning-ink)]">
+                        {[
+                          (it.enRevision ?? 0) > 0 ? `En revisión ${it.enRevision}` : null,
+                          (it.rechazado ?? 0) > 0 ? `Rechazado ${it.rechazado}` : null,
+                        ].filter(Boolean).join(" · ")}
+                        {it.motivoRevision ? ` · ${it.motivoRevision}` : ""}
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}

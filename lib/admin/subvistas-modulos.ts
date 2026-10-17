@@ -445,6 +445,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "ordenes-compra", key: "ordenes", label: "Órdenes de compra", hint: "Las órdenes emitidas a cada proveedor y su estado", origen: ["compras"] },
     { vista: "ordenes-compra", key: "entregas", label: "Entregas", hint: "Lo que tiene que llegar, por el día que prometió el proveedor: atrasadas, hoy y la semana, con «Recibir»", origen: ["compras"] },
     { vista: "ordenes-compra", key: "recibir", label: "Recepciones", hint: "Lo que llegó de cada proveedor y «Recibir» con o sin orden: cantidades, estado y fotos", origen: ["compras"] },
+    { vista: "ordenes-compra", key: "presupuesto", label: "Presupuesto", hint: "Lo comprado en el mes contra lo que pensabas comprar, en total y por proveedor, con lo que te queda", origen: ["compras"] },
     { vista: "proveedores", key: "lista", label: "Lista de proveedores", hint: "Tus proveedores, sus datos, pagos y la ficha de cada uno", origen: ["compras"] },
     { vista: "proveedores", key: "comparar", label: "Comparar proveedores", hint: "Puntaje de cada proveedor, cómo te entrega, precio por producto y precios del mercado", origen: ["compras"] },
     { vista: "cuentas-por-pagar", key: "cuentas", label: "Cuentas por pagar", hint: "Cada deuda con su proveedor, de qué factura u orden viene y cuándo vence", origen: ["compras"] },

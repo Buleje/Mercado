@@ -19,6 +19,7 @@ import { logAudit } from "@/lib/audit-logger";
 import { esServicio } from "@/lib/compras/naturaleza";
 import { BatchesDB } from "@/lib/db/batches.db";
 import { armarLoteDeRecepcion, errorDeVencimiento, pideLote, type LoteDeRecepcion } from "@/lib/compras/lotes-recepcion";
+import { errorDeAceptacion, partirLinea } from "@/lib/compras/aceptacion-recepcion";
 import {
   ESTADOS_OC_CERRADOS, OrdenCambioDeEstadoError, mensajeOrdenCambiada, ordenCerrada,
 } from "@/lib/compras/estados-oc";
@@ -38,7 +39,14 @@ const RecepcionItemSchema = z.object({
   // alertas de vencimiento y los descuentos por vencer.
   expiryDate: z.string().trim().max(10).optional(),
   lote: z.string().trim().max(60).optional(),
+  // C20 (17-10): de lo que llegó bien, lo apartado para revisar y lo
+  // rechazado. Ninguno de los dos entra a stock vendible.
+  enRevision: z.number().nonnegative().optional(),
+  rechazado: z.number().nonnegative().optional(),
+  motivoRevision: z.string().trim().max(200).optional(),
 }).superRefine((item, ctx) => {
+  const aceptacion = errorDeAceptacion(item);
+  if (aceptacion) ctx.addIssue({ code: "custom", path: ["enRevision"], message: aceptacion });
   // Solo se valida si va a nacer un lote: en una línea dañada o vencida la
   // fecha no se usa, y ahí una fecha pasada es justamente lo esperable.
   if (!pideLote(item)) return;
@@ -263,15 +271,36 @@ export async function POST(req: NextRequest) {
               noAptos += item.receivedQty;
               continue;
             }
+            /**
+             * C20 · Aceptación y cuarentena separadas: de lo que llegó bien,
+             * sólo lo DISPONIBLE entra a stock vendible. Lo rechazado queda
+             * como merma (igual que lo dañado: llegó y se reclama); lo que está
+             * en revisión queda en el acta (`itemsJson`) y se libera con un
+             * ajuste de stock con motivo.
+             */
+            const partes = partirLinea(item);
+            if (partes.rechazado > 0) {
+              await tx.inventoryMovement.create({
+                data: {
+                  productId: ocItem.productId, type: "merma", quantity: partes.rechazado,
+                  previousStock, newStock: previousStock, reference: `OC-${oc.id}`,
+                  notes: `Recepción ${ref}: ${partes.rechazado} rechazado${item.motivoRevision ? ` · ${item.motivoRevision}` : ""} — no entró a stock vendible`,
+                  tenantId, createdBy: auth.username,
+                },
+              });
+            }
+            noAptos += partes.enRevision + partes.rechazado;
+            const disponible = partes.disponible;
+            if (disponible <= 0) continue;
             // ADR-377: el costo autorizado incluye la parte de flete que le
             // toca a esta línea. Sin eso el costo promedio del producto
             // ignora lo que costó traerlo.
             const authorizedUnitCost = costoUnitarioReal(ocItem, subtotalOrden, sobrecostos);
             const currentCost = Number(product.costPrice ?? 0);
-            const totalQty = previousStock + item.receivedQty;
+            const totalQty = previousStock + disponible;
             const weightedAvgCost =
-              totalQty > 0 ? (previousStock * currentCost + item.receivedQty * authorizedUnitCost) / totalQty : authorizedUnitCost;
-            const newStock = previousStock + item.receivedQty;
+              totalQty > 0 ? (previousStock * currentCost + disponible * authorizedUnitCost) / totalQty : authorizedUnitCost;
+            const newStock = previousStock + disponible;
 
             // Dueño en el WHERE (regla 8), no sólo en el `findFirst` de arriba.
             await tx.product.updateMany({
@@ -280,7 +309,7 @@ export async function POST(req: NextRequest) {
             });
             await tx.inventoryMovement.create({
               data: {
-                productId: ocItem.productId, type: "compra", quantity: item.receivedQty,
+                productId: ocItem.productId, type: "compra", quantity: disponible,
                 previousStock, newStock, reference: `OC-${oc.id}`,
                 notes: item.notes || `Recepción ${ref}`, tenantId, createdBy: auth.username,
               },
@@ -289,7 +318,7 @@ export async function POST(req: NextRequest) {
             // Con «vence», lo que acaba de entrar nace como lote. El stock ya
             // se sumó arriba: el lote no lo vuelve a sumar, lo describe.
             const lote = armarLoteDeRecepcion({
-              indice, item, ref,
+              indice, item: { ...item, receivedQty: disponible }, ref,
               productId: ocItem.productId,
               productName: product.name,
               productCategory: product.category,

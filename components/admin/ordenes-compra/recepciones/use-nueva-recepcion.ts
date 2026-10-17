@@ -9,6 +9,7 @@ import { efectosDeRecepcion, lineasDeSeguimiento, listarCorto } from "@/lib/comp
 import type { CreditoDeRecepcion } from "@/components/admin/cuentas-por-pagar/AvisoCreditoRecepcion";
 import { useConfirmarCreditoRecepcion } from "@/components/admin/cuentas-por-pagar/use-confirmar-credito-recepcion";
 import { errorDeVencimiento, pideLote } from "@/lib/compras/lotes-recepcion";
+import { errorDeAceptacion, tieneApartado } from "@/lib/compras/aceptacion-recepcion";
 import { controlDeLinea, faltaConformidad, notasConConformidad, pereciblesSinVence, type ControlDeLinea } from "@/lib/compras/conformidad-recepcion";
 import type { ProductOption } from "@/components/admin/shared/ProductCombobox";
 import {
@@ -122,6 +123,8 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
     if (origen === "sin_orden" && !motivoFinal) return "Di por qué llega sin orden.";
     if (!newForm.supplier.trim()) return "Escribe el proveedor.";
     if (checklist.some((r) => !r.product.trim())) return "Cada fila necesita su producto (o quítala).";
+    const aceptacion = checklist.map((r) => errorDeAceptacion(r)).find((e) => e !== null);
+    if (aceptacion) return aceptacion;
     return faltaConformidad(checklist, controles);
   };
 
@@ -154,7 +157,7 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
     }
     if (!(await confirmarCredito(ocElegida, newForm.supplier, checklist))) return;
     setSaving(true);
-    const nonConformities = checklist.filter(it => it.condition !== "ok" || it.receivedQty < it.expectedQty).length;
+    const nonConformities = checklist.filter(it => it.condition !== "ok" || it.receivedQty < it.expectedQty || tieneApartado(it)).length;
     const body = {
       ...newForm,
       orderRef: ocElegida?.id ?? "",
@@ -162,15 +165,18 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
       // Igual que `OCRecepcionModal`: todo OK y completo = aceptada; algo
       // faltante, dañado o distinto de lo pedido = parcial. Antes iba siempre
       // «en-proceso» y los indicadores Aceptadas quedaban en 0.
-      status: (checklist.some((it) => it.condition !== "ok" || it.receivedQty !== it.expectedQty)
+      status: (checklist.some((it) => it.condition !== "ok" || it.receivedQty !== it.expectedQty || tieneApartado(it))
         ? "parcial"
         : "aceptada") as ReceptionStatus,
       // Lo dañado, vencido o faltante no hace lote: la fecha no viaja. Un servicio
       // no hace lote nunca; su alcance y quién lo acepta van en las notas (C22).
-      items: checklist.map(({ expiryDate, lote, alcance, aceptaServicio, ...it }, i) =>
+      // C20: lo apartado y lo rechazado sólo viajan en una línea en buen estado.
+      items: checklist.map(({ expiryDate, lote, alcance, aceptaServicio, enRevision, rechazado, motivoRevision, ...it }, i) =>
         controles[i] === "servicio"
           ? { ...it, notes: notasConConformidad(it.notes, { alcance, aceptaServicio }) }
-          : it.condition === "ok" ? { ...it, expiryDate, lote } : it),
+          : it.condition === "ok"
+            ? { ...it, expiryDate, lote, ...(tieneApartado({ ...it, enRevision, rechazado }) ? { enRevision, rechazado, motivoRevision } : {}) }
+            : it),
       photos: 0,
       nonConformities,
       invoiceUrl: invoiceUrl || undefined,

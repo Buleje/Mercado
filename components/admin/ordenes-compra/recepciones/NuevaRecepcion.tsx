@@ -13,6 +13,7 @@ import type { NuevaRecepcion as Estado } from "@/components/admin/ordenes-compra
 import OrigenRecepcion from "@/components/admin/ordenes-compra/recepciones/OrigenRecepcion";
 import ResumenAlGuardar from "@/components/admin/ordenes-compra/recepciones/ResumenAlGuardar";
 import ConformidadDeLinea from "@/components/admin/ordenes-compra/recepciones/ConformidadDeLinea";
+import AceptacionDeLinea from "@/components/admin/ordenes-compra/recepciones/AceptacionDeLinea";
 import { diaCorto } from "@/lib/compras/ciclo-oc";
 import { limaDateKey } from "@/lib/utils";
 
@@ -142,6 +143,13 @@ export default function NuevaRecepcion({
                   fila={row}
                   onChange={(patch) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, ...patch } : r))}
                 />
+                {controles[idx] !== "servicio" && (
+                  <AceptacionDeLinea
+                    id={`recep-acep-${idx}`}
+                    fila={row}
+                    onChange={(patch) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, ...patch } : r))}
+                  />
+                )}
                 {row.condition === "ok" && controles[idx] !== "servicio" && (
                   <VenceLoteCampo
                     id={`recep-vence-${idx}`}

@@ -40,6 +40,10 @@ export type ReceivedItem = {
   /** «Vence» (YYYY-MM-DD): con fecha, lo que entra a stock nace como lote. */
   expiryDate?: string;
   lote?: string;
+  /** C20 · De lo que llegó bien: apartado para revisar y rechazado (no entran a stock vendible). */
+  enRevision?: number;
+  rechazado?: number;
+  motivoRevision?: string;
 } & ConformidadServicio;
 
 /** La fecha y el lote viajan solo si la línea entra a stock: la merma no vence. */

@@ -2,9 +2,10 @@
 
 /**
  * Compras › Órdenes y recepción (plan «panel unificado», ola 3): las órdenes de
- * compra y la recepción de mercadería en UNA vista, con tres secciones en
+ * compra y la recepción de mercadería en UNA vista, con cuatro secciones en
  * `?sub=`: «Órdenes» (`ordenes`), «Entregas» (`entregas`, C14: lo que tiene
- * que llegar por día prometido) y «Recepciones» (`recibir`).
+ * que llegar por día prometido), «Recepciones» (`recibir`) y «Presupuesto»
+ * (`presupuesto`, N02: lo comprado en el mes contra lo planeado).
  *
  * Sin tercer nivel de pestañas (10-10): las secciones son una `BarraDeSecciones`
  * que va DENTRO de la fila del título de cada una (prop `barra`), como Ofertas y
@@ -30,8 +31,9 @@ import { useSeccionDeLaFicha } from "./use-seccion-de-la-ficha";
 const PurchaseOrdersTab = dynamic(() => import("@/components/admin/PurchaseOrdersTab"), { loading: S });
 const ReceivingTab = dynamic(() => import("@/components/admin/ReceivingTab"), { loading: S });
 const OcEntregas = dynamic(() => import("@/components/admin/ordenes-compra/OcEntregas"), { loading: S });
+const OcPresupuesto = dynamic(() => import("@/components/admin/ordenes-compra/OcPresupuesto"), { loading: S });
 
-export const SECCIONES_ORDENES = ["ordenes", "entregas", "recibir"] as const;
+export const SECCIONES_ORDENES = ["ordenes", "entregas", "recibir", "presupuesto"] as const;
 export type SeccionOrdenes = (typeof SECCIONES_ORDENES)[number];
 
 const ID_PANEL = "panel-ordenes-y-recepcion";
@@ -39,6 +41,7 @@ const SECCIONES = [
   { clave: "ordenes" as const, rotulo: "Órdenes" },
   { clave: "entregas" as const, rotulo: "Entregas" },
   { clave: "recibir" as const, rotulo: "Recepciones" },
+  { clave: "presupuesto" as const, rotulo: "Presupuesto" },
 ];
 
 export default function OrdenesYRecepcion({
@@ -62,7 +65,15 @@ export default function OrdenesYRecepcion({
 
   return (
     <div role="tabpanel" id={ID_PANEL} aria-labelledby={idPestanaDeSeccion(ID_PANEL, vista)} className="space-y-4">
-      {vista === "ordenes" ? <PurchaseOrdersTab barra={barra} /> : vista === "entregas" ? <OcEntregas barra={barra} /> : <ReceivingTab barra={barra} />}
+      {vista === "ordenes" ? (
+        <PurchaseOrdersTab barra={barra} />
+      ) : vista === "entregas" ? (
+        <OcEntregas barra={barra} />
+      ) : vista === "presupuesto" ? (
+        <OcPresupuesto barra={barra} />
+      ) : (
+        <ReceivingTab barra={barra} />
+      )}
     </div>
   );
 }

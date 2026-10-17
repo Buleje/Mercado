@@ -1,6 +1,7 @@
 import { formatCurrency } from "@/lib/format";
 import { TIPOS_COMPROBANTE } from "@/lib/compras/estados-oc";
 import { valorPorUnidad } from "@/lib/compras/valor-por-unidad";
+import { partirLinea } from "@/lib/compras/aceptacion-recepcion";
 
 /**
  * ciclo-oc.ts — en qué va cada orden de compra y qué sigue (auditoría Compras
@@ -457,12 +458,14 @@ export const esperaEntrega = (status: string) => status === "pendiente" || statu
 
 // ── Recepción: qué pasa al guardar (C23) ───────────────────────────────────────
 
-export type ItemBorrador = { product: string; productId?: number; expectedQty: number; receivedQty: number; condition: string };
+export type ItemBorrador = { product: string; productId?: number; expectedQty: number; receivedQty: number; condition: string; enRevision?: number; rechazado?: number };
 type Cantidad = { nombre: string; n: number };
 export type EfectosRecepcion = {
   aStock: Cantidad[];
-  /** Llegó dañado o vencido: se registra como merma, no entra a la venta. */
+  /** Llegó dañado o vencido, o se rechazó (C20): se registra como merma, no entra a la venta. */
   merma: Cantidad[];
+  /** C20 · Llegó bien pero se aparta para revisar: no se vende hasta liberarlo. */
+  enRevision: Cantidad[];
   /** Marcado «Faltante (no llegará)»: la orden deja de esperarlo. */
   noLlegara: Cantidad[];
   /** Pasa lo que faltaba de la orden. */
@@ -484,7 +487,7 @@ export function efectosDeRecepcion(
   items: readonly ItemBorrador[],
   orden: { items: readonly ItemOc[]; seguimiento?: Pick<SeguimientoOC, "recibido" | "noLlegara"> | null } | null,
 ): EfectosRecepcion {
-  const vacio: EfectosRecepcion = { aStock: [], merma: [], noLlegara: [], deMas: [], fueraDeOrden: [], quedaPendiente: [], ordenQueda: null };
+  const vacio: EfectosRecepcion = { aStock: [], merma: [], enRevision: [], noLlegara: [], deMas: [], fueraDeOrden: [], quedaPendiente: [], ordenQueda: null };
   if (!orden) return vacio;
   const previas = lineasDeSeguimiento(orden.items, orden.seguimiento);
   const llego = new Map(previas.map((l) => [l.productId, l.llego]));
@@ -493,7 +496,7 @@ export function efectosDeRecepcion(
     const ya = lista.find((x) => x.nombre === nombre);
     if (ya) ya.n += n; else lista.push({ nombre, n });
   };
-  const r = { ...vacio, aStock: [] as Cantidad[], merma: [] as Cantidad[], noLlegara: [] as Cantidad[], fueraDeOrden: [] as string[] };
+  const r = { ...vacio, aStock: [] as Cantidad[], merma: [] as Cantidad[], enRevision: [] as Cantidad[], noLlegara: [] as Cantidad[], fueraDeOrden: [] as string[] };
 
   for (const it of items) {
     if (!it.product && it.productId == null) continue;
@@ -502,7 +505,13 @@ export function efectosDeRecepcion(
     const linea = previas.find((l) => l.productId === pid)!;
     const recibida = Math.max(0, num(it.receivedQty));
     if (recibida > 0) {
-      sumar(it.condition === "dañado" || it.condition === "vencido" ? r.merma : r.aStock, linea.nombre, recibida);
+      if (it.condition === "dañado" || it.condition === "vencido") sumar(r.merma, linea.nombre, recibida);
+      else {
+        const p = partirLinea(it);
+        if (p.disponible > 0) sumar(r.aStock, linea.nombre, p.disponible);
+        if (p.rechazado > 0) sumar(r.merma, linea.nombre, p.rechazado);
+        if (p.enRevision > 0) sumar(r.enRevision, linea.nombre, p.enRevision);
+      }
       llego.set(pid, (llego.get(pid) ?? 0) + recibida);
     }
     if (it.condition === "faltante") {
