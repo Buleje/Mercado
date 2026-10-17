@@ -2,9 +2,16 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateText } from "ai";
-import { chatModel, getActiveProvider } from "@/lib/ai/provider";
+import { chatModel, chatModelId, getActiveProvider } from "@/lib/ai/provider";
+import { aiCostGuard } from "@/lib/ai/cost-control";
+import { calculateCostUsd, trackAiUsage } from "@/lib/ai/track-usage";
 import { requireAdmin } from "@/lib/require-admin";
-import { applyRateLimit } from "@/lib/rate-limit";
+import type { AdminRole } from "@/lib/session";
+import {
+  applyRateLimit,
+  createDistributedRateLimiter,
+  type DistributedRateLimiter,
+} from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
 import { WhatsAppMessagesDB } from "@/lib/db/whatsapp-messages.db";
@@ -24,10 +31,40 @@ const GENERIC_SUGGESTIONS = [
 
 const BodySchema = z.object({ phone: z.string().regex(/^\d{8,15}$/) });
 
+/**
+ * Quién atiende la bandeja de WhatsApp: el módulo `comunicaciones` de
+ * `lib/module-permissions.ts` (cajero, tienda_owner y la gerencia). Antes
+ * bastaba cualquier sesión del panel (almacenero, analista, repartidor…).
+ */
+const ROLES: readonly AdminRole[] = ["admin", "owner", "manager", "tienda_owner", "cajero"];
+
+/**
+ * Tope de gasto de IA (17-10). Dos frenos, los dos por NEGOCIO:
+ *  - el presupuesto mensual del plan (`aiCostGuard`, el mismo de los demás
+ *    lectores con IA): se reserva lo que cuesta como mucho una sugerencia;
+ *  - SUGERENCIAS_POR_DIA en 24 h (Upstash, compartido entre instancias): un
+ *    día de clics no se come el mes entero.
+ * Al llegar a cualquiera de los dos se devuelven las respuestas genéricas
+ * (`source: "tope"`): el operador sigue contestando, sin gastar.
+ */
+const SUGERENCIAS_POR_DIA = 150;
+/** 14 mensajes × 400 caracteres + instrucciones ≈ 2.500 tokens de entrada; salida tope 400. */
+const COSTO_MAXIMO_USD = calculateCostUsd(chatModelId, { promptTokens: 2500, completionTokens: 400 });
+
+let _topeDiario: DistributedRateLimiter | null = null;
+function topeDiario(): DistributedRateLimiter {
+  _topeDiario ??= createDistributedRateLimiter({
+    key: "ia:wa-sugerir:dia",
+    maxRequests: SUGERENCIAS_POR_DIA,
+    windowMs: 24 * 60 * 60 * 1000,
+  });
+  return _topeDiario;
+}
+
 export async function POST(req: NextRequest) {
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES);
   if (auth instanceof NextResponse) return auth;
   // 17-10: era STRICT por IP (10 cada 15 min) antes del login, compartido por
   // todos los que atienden la bandeja desde la misma bodega. Ahora por negocio
@@ -79,12 +116,24 @@ Reglas:
 - No inventes precios, stock ni horarios que no estén en la conversación; si falta un dato, deja la respuesta abierta.
 - Máximo 1 emoji por respuesta. Solo el JSON, sin markdown.`;
 
-    const result = await generateText({
-      model: chatModel,
-      prompt,
-      maxOutputTokens: 400,
-      temperature: 0.7,
-    });
+    if (
+      !(await aiCostGuard.canSpend(auth.tenantId, COSTO_MAXIMO_USD)) ||
+      !(await topeDiario().check(auth.tenantId))
+    ) {
+      logger.warn("[admin/whatsapp/suggest] tope de IA del negocio", { tenantId: auth.tenantId });
+      return NextResponse.json({ suggestions: GENERIC_SUGGESTIONS, source: "tope" });
+    }
+    // trackAiUsage registra el gasto REAL (tokens del SDK) en el presupuesto.
+    const result = await trackAiUsage(
+      { tenantId: auth.tenantId, feature: "whatsapp-suggest", model: chatModelId },
+      () =>
+        generateText({
+          model: chatModel,
+          prompt,
+          maxOutputTokens: 400,
+          temperature: 0.7,
+        }),
+    );
 
     const cleaned = result.text.trim().replace(/^```json\s*/i, "").replace(/```\s*$/i, "");
     let suggestions: string[] = [];

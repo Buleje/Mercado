@@ -38,7 +38,7 @@ vi.mock("@/lib/mailer", () => ({ sendCashSummaryEmail: vi.fn() }));
 vi.mock("@/lib/create-notification", () => ({ createNotification: vi.fn() }));
 vi.mock("@/lib/activity-logger", () => ({ logActivity: vi.fn() }));
 vi.mock("ai", () => ({ generateText: vi.fn() }));
-vi.mock("@/lib/ai/provider", () => ({ chatModel: vi.fn(), getActiveProvider: vi.fn() }));
+vi.mock("@/lib/ai/provider", () => ({ chatModel: vi.fn(), chatModelId: "claude-haiku-5-5", getActiveProvider: vi.fn() }));
 vi.mock("@/lib/db/whatsapp-messages.db", () => ({ WhatsAppMessagesDB: {} }));
 vi.mock("@/lib/integrations/sunat", () => ({ emitirBoleta: vi.fn(), emitirFactura: vi.fn() }));
 vi.mock("@/lib/sunat/modo-oficial", () => ({ isSunatOficial: vi.fn() }));
@@ -197,8 +197,13 @@ describe("límite real: lo que hace la app en un turno", () => {
     h.chatGet.mockResolvedValue([]);
     h.chatAdd.mockImplementation(async (_t: string, phone: string, name: string, _s: string, message: string) => ({ phone, name, message }));
     const { GET, POST } = await import("@/app/api/chat/route");
+    // Leer el chat exige la sesión verificada de ese celular (Ley 29733, 17-10).
+    const { createCustomerToken, CUSTOMER_SESSION } = await import("@/lib/auth/customer-session");
+    const token = await createCustomerToken({ customerId: "987654321", email: "987654321@cel", name: "Ana", tenantId: "tenant-1", provider: "phone" });
     for (let i = 0; i < 20; i++) {
-      const res = await GET(req("/api/chat?phone=987654321", "GET"));
+      const r = req("/api/chat?phone=987654321", "GET");
+      r.cookies.set(CUSTOMER_SESSION.COOKIE_NAME, token);
+      const res = await GET(r);
       expect(res.status).toBe(200);
     }
     const res = await POST(req("/api/chat", "POST", { phone: "987654321", name: "Ana", message: "¿Tienen arroz?" }));

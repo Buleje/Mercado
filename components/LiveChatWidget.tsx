@@ -66,12 +66,23 @@ export default function LiveChatWidget() {
   const [aiStatus, setAiStatus] = useState<{ hasAI: boolean; activeProviderName: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // 17-10 (Ley 29733): leer la conversación exige la sesión verificada de ESE
+  // celular. Sin ella el servidor responde 401/403: se deja de sondear (antes
+  // cualquiera leía el chat de otro sabiendo su número).
+  const sinSesionRef = useRef(false);
+  // Otro celular o abrir el chat (quizá ya ingresó con su código) = reintentar.
+  useEffect(() => { sinSesionRef.current = false; }, [phone, open]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fetchMessages = useCallback(async () => {
-    if (!phone) return;
+    if (!phone || sinSesionRef.current) return;
     try {
       const res = await fetch(`/api/chat?phone=${encodeURIComponent(phone)}`);
+      if (res.status === 401 || res.status === 403) {
+        sinSesionRef.current = true;
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        return;
+      }
       if (!res.ok) return;
       const data: Msg[] = await res.json();
       setMessages(prev => {
@@ -217,7 +228,7 @@ export default function LiveChatWidget() {
     setMessages(prev => [...prev, botMsg]);
 
     // If bot couldn't answer, log it so admin sees it needs attention
-    if (type === "fallback") {
+    if (type === "fallback" && !sinSesionRef.current) {
       fetch("/api/chat", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),

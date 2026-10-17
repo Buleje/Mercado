@@ -1,10 +1,48 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { ChatDB } from "@/lib/jsondb";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
+import {
+  CUSTOMER_SESSION,
+  getCustomerPayload,
+  telefonoDeLaSesion,
+} from "@/lib/auth/customer-session";
 
-// GET: fetch messages for a customer conversation
+/**
+ * Chat de la tienda (`LiveChatWidget`).
+ *
+ * SECURITY (Ley 29733, 17-10): `GET ?phone=` devolvía la conversación entera
+ * (nombre completo + mensajes) a cualquiera que supiera el celular, sin sesión.
+ * Ahora leer exige la cookie de cliente VERIFICADA (código por WhatsApp/SMS) y
+ * que su celular sea el pedido: el mismo candado que puntos, notificaciones y
+ * juntas (`telefonoDeLaSesion`). El token de seguimiento de un pedido de
+ * invitado y el login de Google no prueban un celular: no abren el chat.
+ *
+ * Escribir: con sesión, el celular del cuerpo tiene que ser el de la sesión (o
+ * el aviso "sistema"/"bot" que manda el propio widget). Sin sesión sigue el
+ * invitado —el negocio le contesta por WhatsApp—, pero nunca como "sistema" ni
+ * "bot": eso dejaba a cualquiera meter avisos falsos en la bandeja del negocio.
+ */
+
+const CELULAR = /^9\d{8}$/;
+const TELEFONOS_DEL_SISTEMA: ReadonlySet<string> = new Set(["sistema", "bot"]);
+
+/** El celular que la cookie de cliente PRUEBA, o null (sin sesión, seguimiento, Google…). */
+async function celularDeLaSesion(req: NextRequest): Promise<string | null> {
+  const token = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+  if (!token) return null;
+  return telefonoDeLaSesion(await getCustomerPayload(token));
+}
+
+const MensajeSchema = z.object({
+  phone: z.string().trim().min(1),
+  name: z.string().trim().max(100).optional(),
+  message: z.string().trim().min(1).max(500),
+});
+
+// GET: la conversación del cliente que inició sesión
 export async function GET(req: NextRequest) {
   try {
     // 17-10: GET y POST compartían el balde "chat" (misma clave por IP) y el
@@ -13,12 +51,22 @@ export async function GET(req: NextRequest) {
     // método tiene su balde y el sondeo usa POLL (×3 del intervalo abierto).
     const rl = applyRateLimit(req, "POLL", "chat-get");
     if (rl) return rl;
-    const tenantId = getTenantIdFromRequest(req);
+    const propio = await celularDeLaSesion(req);
+    if (!propio) {
+      return NextResponse.json(
+        { error: "Ingresa con tu celular para ver tus mensajes" },
+        { status: 401 },
+      );
+    }
     const phone = req.nextUrl.searchParams.get("phone");
-    if (!phone || !/^9\d{8}$/.test(phone)) {
+    if (!phone || !CELULAR.test(phone)) {
       return NextResponse.json({ error: "phone requerido (9 dígitos)" }, { status: 400 });
     }
-    const messages = await ChatDB.getByPhone(tenantId, phone);
+    if (phone !== propio) {
+      return NextResponse.json({ error: "Esa conversación no es tuya" }, { status: 403 });
+    }
+    const tenantId = getTenantIdFromRequest(req);
+    const messages = await ChatDB.getByPhone(tenantId, propio);
     return NextResponse.json(messages);
 
   } catch (e) {
@@ -33,16 +81,34 @@ export async function POST(req: NextRequest) {
     const rl = applyRateLimit(req, "STRICT", "chat-post");
     if (rl) return rl;
     const tenantId = getTenantIdFromRequest(req);
-    const { phone, name, message } = await req.json();
-    // Allow special system phones for bot/internal messages
-    const isSystemPhone = phone === "sistema" || phone === "bot";
-    if (!phone || (!isSystemPhone && !/^9\d{8}$/.test(phone))) {
+    let raw: unknown;
+    try {
+      raw = await req.json();
+    } catch {
+      return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+    }
+    const parsed = MensajeSchema.safeParse(raw);
+    if (!parsed.success) {
+      const campo = parsed.error.issues[0]?.path[0];
+      const error = campo === "message" ? "Mensaje requerido (máx 500 chars)" : "phone inválido";
+      return NextResponse.json({ error }, { status: 400 });
+    }
+    const { phone, name, message } = parsed.data;
+    const esSistema = TELEFONOS_DEL_SISTEMA.has(phone);
+    if (!esSistema && !CELULAR.test(phone)) {
       return NextResponse.json({ error: "phone inválido" }, { status: 400 });
     }
-    if (!message?.trim() || message.trim().length > 500) {
-      return NextResponse.json({ error: "Mensaje requerido (máx 500 chars)" }, { status: 400 });
+    const propio = await celularDeLaSesion(req);
+    if (esSistema && !propio) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
-    const msg = await ChatDB.add(tenantId, phone, name || "Cliente", "customer", message.trim());
+    if (propio && !esSistema && phone !== propio) {
+      return NextResponse.json(
+        { error: "El celular no coincide con tu sesión" },
+        { status: 403 },
+      );
+    }
+    const msg = await ChatDB.add(tenantId, phone, name || "Cliente", "customer", message);
     return NextResponse.json(msg, { status: 201 });
 
   } catch (e) {
