@@ -18,6 +18,7 @@
 
 import { useEffect, useState } from "react";
 import { clearAllTenantCache } from "@/lib/tenant-cache";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 import { limpiarVistaSuplantada } from "@/lib/auth/suplantacion-vista";
 import { salirDeVistaDeTienda } from "./useSuplantacionActiva";
@@ -59,9 +60,9 @@ export function useImpersonation(): UseImpersonationResult {
 
     // Fetch del nombre/logo/tipo de tienda — el proxy resuelve el tenant
     // desde la cookie de sesión (canonical ID), no desde el header.
-    fetch("/api/settings")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: SettingsResponse | null) => {
+    // Misma lectura que useAdminAuth y el resto del panel (una sola clave).
+    cachedJson<SettingsResponse>("/api/settings", 30_000)
+      .then((d) => {
         if (!d) return;
         if (d.businessName) setActiveTenantName(d.businessName);
         if (d.logoUrl) setActiveTenantLogo(d.logoUrl);

@@ -5,7 +5,9 @@
  *
  * Hook que mantiene los alerts (badges) y quickStats del panel admin.
  * Consume `/api/admin/stats` con dos estrategias:
- *  - Polling cada 60 s (con retraso inicial de 3 s para no competir con DashboardTab)
+ *  - Sondeo compartido cada 60 s (`suscribirSondeo`, 16-10): la campana y el
+ *    Inicio leen la misma URL por `cachedJson`, así que al abrir el panel sale
+ *    UN pedido de stats en vez de tres; con la pestaña oculta no se pide.
  *  - SSE en `/api/admin/sse` para updates instantáneos cuando entra un pedido nuevo
  *
  * SSE auto-disable: si falla 3 veces seguidas se rinde y queda solo el polling
@@ -22,6 +24,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
+import { refrescarSondeo, suscribirSondeo } from "@/lib/client-cache-fetch";
 import type { AdminRole } from "./useAdminAuth";
 
 export interface QuickStats {
@@ -49,8 +52,8 @@ export interface UseAdminAlertsResult {
   fetchAlerts: () => void;
 }
 
+const STATS_URL = "/api/admin/stats";
 const POLL_INTERVAL_MS = 60_000;
-const POLL_INITIAL_DELAY_MS = 3000;
 const SSE_MAX_FAILURES = 3;
 const SSE_BACKOFF_BASE_MS = 5000;
 
@@ -60,57 +63,41 @@ export function useAdminAlerts(authReady: boolean, userRole: AdminRole | null): 
   const puedeStats = authReady && puedePedir("/api/admin/stats", userRole);
   const puedeSSE = authReady && puedePedir("/api/admin/sse", userRole);
 
-  const fetchAlerts = useCallback(() => {
-    // Skip si la pestaña está oculta — evita invocar /api/admin/stats mientras
-    // el usuario trabaja en otra tab (p.ej. cajera con el admin abierto pero
-    // atendiendo el mostrador). Ahorra hasta 80% de invocaciones ociosas.
-    if (typeof document !== "undefined" && document.visibilityState === "hidden") {
-      return;
+  const aplicar = useCallback((d: StatsResponse | null) => {
+    if (!d) return;
+    const a: Record<string, number> = {};
+    if (d.lowStockProducts > 0) a["inventario"] = d.lowStockProducts;
+    if (d.pendingOrders > 0) a.pedidos = d.pendingOrders;
+    // Mensajes WhatsApp sin leer → badge en el tab WhatsApp del sidebar
+    // (y en Mensajes/marketplace-chat, que también contiene el inbox)
+    const wa = d.waUnread ?? 0;
+    if (wa > 0) {
+      a["whatsapp-inbox"] = wa;
+      a["marketplace-chat"] = wa;
     }
-    // Rol sin permiso (p.ej. almacenero) → ni intentarlo, requireAdmin lo
-    // rechaza siempre con 403.
-    if (!puedeStats) return;
-    fetch("/api/admin/stats")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: StatsResponse | null) => {
-        if (!d) return;
-        const a: Record<string, number> = {};
-        if (d.lowStockProducts > 0) a["inventario"] = d.lowStockProducts;
-        if (d.pendingOrders > 0) a.pedidos = d.pendingOrders;
-        // Mensajes WhatsApp sin leer → badge en el tab WhatsApp del sidebar
-        // (y en Mensajes/marketplace-chat, que también contiene el inbox)
-        if ((d.waUnread ?? 0) > 0) {
-          a["whatsapp-inbox"] = d.waUnread!;
-          a["marketplace-chat"] = d.waUnread!;
-        }
-        setAlerts(a);
-        setQuickStats({
-          pendingOrders: d.pendingOrders,
-          todayRevenue: d.todayRevenue,
-          lowStockProducts: d.lowStockProducts,
-          overduePayables: d.overduePayables,
-          oldPendingOrders: d.oldPendingOrders,
-          waUnread: d.waUnread,
-        });
-      })
-      .catch(() => {});
-  }, [puedeStats]);
+    setAlerts(a);
+    setQuickStats({
+      pendingOrders: d.pendingOrders,
+      todayRevenue: d.todayRevenue,
+      lowStockProducts: d.lowStockProducts,
+      overduePayables: d.overduePayables,
+      oldPendingOrders: d.oldPendingOrders,
+      waUnread: d.waUnread,
+    });
+  }, []);
 
-  // Polling: 3 s delay inicial + cada 60 s + reactivación al volver a la pestaña
+  // Sondeo compartido: pausa con la pestaña oculta y pide al volver si venció.
+  // Rol sin permiso (p.ej. almacenero) → ni intentarlo, requireAdmin lo
+  // rechaza siempre con 403.
   useEffect(() => {
-    const t = setTimeout(fetchAlerts, POLL_INITIAL_DELAY_MS);
-    const interval = setInterval(fetchAlerts, POLL_INTERVAL_MS);
-    // Al volver el foco, refrescar inmediatamente (sin esperar 60s más).
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") fetchAlerts();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      clearTimeout(t);
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [fetchAlerts]);
+    if (!puedeStats) return;
+    return suscribirSondeo<StatsResponse>(STATS_URL, POLL_INTERVAL_MS, aplicar);
+  }, [puedeStats, aplicar]);
+
+  /** Pide ya (pedido nuevo, mensaje entrante): avisa a todos los que leen stats. */
+  const fetchAlerts = useCallback(() => {
+    if (puedeStats) refrescarSondeo(STATS_URL);
+  }, [puedeStats]);
 
   // SSE: update instantáneo al recibir un pedido nuevo
   useEffect(() => {

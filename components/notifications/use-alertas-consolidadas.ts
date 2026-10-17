@@ -14,7 +14,7 @@
 import { useEffect, useState } from "react";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
-import { logger } from "@/lib/logger";
+import { cachedJson, invalidateCachedJson } from "@/lib/client-cache-fetch";
 import type { CategoriaId } from "./notificaciones-categorias";
 
 export interface AlertaAhora {
@@ -138,12 +138,13 @@ function alertasDeRecordatorios(
   return out;
 }
 
-async function leer(url: string): Promise<unknown> {
-  const res = await fetch(url, { credentials: "include" }).catch((err) => {
-    logger.warn("[notificaciones] no respondió", { url, error: String(err) });
-    return null;
-  });
-  return res?.ok ? res.json().catch(() => null) : null;
+/**
+ * Stats y lotes por vencer ya los leyó la campana (cachedJson 30 s): al abrir
+ * el centro salen sin pedirlos de nuevo. «Actualizar» (`fresco`) pide de verdad.
+ */
+function leer(url: string, fresco: boolean): Promise<unknown> {
+  if (fresco) invalidateCachedJson(url);
+  return cachedJson(url, 30_000);
 }
 
 /** Se pide al abrir y con cada «Actualizar» (`recarga`). */
@@ -159,10 +160,11 @@ export function useAlertasConsolidadas(abierto: boolean, recarga: number) {
     if (!abierto) return;
     let vivo = true;
     setCargando(true);
+    const fresco = recarga > 0;
     void Promise.all([
-      puedeStats ? leer("/api/admin/stats") : Promise.resolve(null),
-      leer("/api/batches/expiring"),
-      leer("/api/reminders"),
+      puedeStats ? leer("/api/admin/stats", fresco) : Promise.resolve(null),
+      leer("/api/batches/expiring", fresco),
+      leer("/api/reminders", fresco),
     ]).then(([stats, lotes, recordatorios]) => {
       if (!vivo) return;
       const listaLotes = Array.isArray(lotes)

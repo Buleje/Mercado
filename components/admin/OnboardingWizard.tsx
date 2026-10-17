@@ -7,8 +7,21 @@ import {
   ArrowRight, X, Sparkles, Rocket, Check, ChevronRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+/** Lo que el asistente mira de /api/admin/dashboard y /api/settings. */
+interface DashboardProgreso {
+  products?: unknown;
+  customers?: unknown;
+  sales?: unknown;
+}
+interface SettingsProgreso {
+  paymentMethods?: Record<string, unknown> | null;
+  businessName?: unknown;
+  slug?: unknown;
+}
 
 interface StepStatus {
   productsDone: boolean;
@@ -224,30 +237,28 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
   const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigatingRef = useRef(false);
 
-  // Fetch progress (con AbortController + cleanup)
+  // Progreso: el tablero y los ajustes ya los pide el panel al abrir
+  // (Inicio y SettingsProvider) → cachedJson comparte ese mismo pedido.
   useEffect(() => {
     let mounted = true;
-    const controller = new AbortController();
 
     async function checkProgress() {
       setLoading(true);
       setHasError(false);
       try {
-        const [dashRes, settingsRes] = await Promise.all([
-          fetch("/api/admin/dashboard", { signal: controller.signal }),
-          fetch("/api/settings", { signal: controller.signal }),
+        const [data, settingsRaw] = await Promise.all([
+          cachedJson<DashboardProgreso>("/api/admin/dashboard", 30_000),
+          cachedJson<SettingsProgreso>("/api/settings", 30_000),
         ]);
-        if (!dashRes.ok) throw new Error(`dashboard ${dashRes.status}`);
-
-        const data = await dashRes.json();
-        const settings = settingsRes.ok ? await settingsRes.json() : {};
+        if (!data) throw new Error("dashboard sin datos");
+        const settings: SettingsProgreso = settingsRaw ?? {};
 
         const products: unknown[] = Array.isArray(data.products) ? data.products : [];
         const customers: unknown[] = Array.isArray(data.customers) ? data.customers : [];
         const sales: unknown[] = Array.isArray(data.sales) ? data.sales : [];
 
         // paymentMethods puede ser null/undefined/objeto — Object.values(pm ?? {}) protege ambos
-        const pm = (settings && typeof settings === "object" ? settings.paymentMethods : null) ?? {};
+        const pm = settings.paymentMethods ?? {};
         const hasPayment = Object.values(pm).some(Boolean);
 
         const businessName: string =
@@ -264,10 +275,8 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
           salesDone: sales.length >= 1,
           settingsDone,
         });
-      } catch (err) {
-        if (mounted && !(err instanceof DOMException && err.name === "AbortError")) {
-          setHasError(true);
-        }
+      } catch {
+        if (mounted) setHasError(true);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -276,7 +285,6 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
 
     return () => {
       mounted = false;
-      controller.abort();
     };
   }, [tenantSlug]);
 

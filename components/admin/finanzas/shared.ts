@@ -12,36 +12,26 @@
  *  - invalidateFinanzasCache() expone limpieza manual ("Actualizar").
  */
 import { gastoDelMes, ingresosPorMes, mesLima } from "@/lib/finance/ingresos-del-periodo";
+import { cachedJson, invalidateCachedJson } from "@/lib/client-cache-fetch";
 
-type CacheEntry<T> = { value: T; expiresAt: number };
-const finanzasCache = new Map<string, CacheEntry<unknown>>();
-const finanzasInFlight = new Map<string, Promise<unknown>>();
 const FINANZAS_TTL_MS = 30_000;
+/** URLs leídas por `fetchFinanzas`: «Actualizar» las borra a todas. */
+const urlsFinanzas = new Set<string>();
 
+/**
+ * Desde el 16-10 vive sobre `cachedJson` (un solo cache en el panel): lo que Mi
+ * Plata ya leyó lo reusa cualquier otra pantalla, y una escritura a
+ * `/api/expenses` o `/api/fiados` lo invalida sola (`instalarInvalidacionPorEscritura`).
+ * Un no-2xx o una caída de red devuelve `fallback`, como antes.
+ */
 export async function fetchFinanzas<T>(url: string, fallback: T): Promise<T> {
-  const hit = finanzasCache.get(url) as CacheEntry<T> | undefined;
-  if (hit && Date.now() < hit.expiresAt) return hit.value;
-  const inFlight = finanzasInFlight.get(url) as Promise<T> | undefined;
-  if (inFlight) return inFlight;
-  const promise = (async () => {
-    try {
-      const res = await fetch(url);
-      const data = res.ok ? ((await res.json()) as T) : fallback;
-      finanzasCache.set(url, { value: data as unknown, expiresAt: Date.now() + FINANZAS_TTL_MS });
-      return data;
-    } catch {
-      return fallback;
-    } finally {
-      finanzasInFlight.delete(url);
-    }
-  })();
-  finanzasInFlight.set(url, promise as Promise<unknown>);
-  return promise;
+  urlsFinanzas.add(url);
+  const data = await cachedJson<T>(url, FINANZAS_TTL_MS);
+  return data ?? fallback;
 }
 
 export function invalidateFinanzasCache() {
-  finanzasCache.clear();
-  finanzasInFlight.clear();
+  for (const url of urlsFinanzas) invalidateCachedJson(url);
 }
 
 // Brandon 2026-05-17 (audit tsc cleanup): helpers tipados para evitar cascada

@@ -1,31 +1,29 @@
 /**
- * Tests — la precarga del panel respeta el rol (2026-09-14).
- * Medido en navegador: el almacenero recibía 403 de /api/customers y /api/sales
- * en cada carga porque useAdminPrefetch los pedía para cualquier rol.
+ * Tests — la precarga del panel (2026-09-14, recortada 16-10).
+ * 09-14: el almacenero recibía 403 de /api/customers y /api/sales en cada carga
+ * porque useAdminPrefetch los pedía para cualquier rol.
+ * 16-10: esos dos, /api/admin/dashboard y /api/goals se guardaban en claves de
+ * localStorage que nadie leía → fuera. Sólo queda lo que lee el Punto de compra.
  */
 import { describe, it, expect } from "vitest";
 import { objetivosParaRol } from "@/hooks/use-admin-prefetch";
 
 const urls = (rol: Parameters<typeof objetivosParaRol>[0]) => objetivosParaRol(rol).map((t) => t.url);
 
-describe("precarga del panel según el rol", () => {
-  it("el almacenero no precarga clientes ni ventas, sí productos", () => {
-    expect(urls("almacenero")).not.toContain("/api/customers");
-    expect(urls("almacenero")).not.toContain("/api/sales?limit=200");
+describe("precarga del panel", () => {
+  it("sólo precarga lo que el Punto de compra lee (productos y proveedores)", () => {
+    expect(urls("admin")).toEqual(["/api/products", "/api/suppliers"]);
+  });
+
+  it("ningún rol precarga clientes, ventas, dashboard ni metas (nadie los leía)", () => {
+    for (const rol of ["admin", "cajero", "almacenero", null] as const) {
+      expect(urls(rol)).not.toEqual(
+        expect.arrayContaining([expect.stringMatching(/customers|sales|dashboard|goals/)]),
+      );
+    }
+  });
+
+  it("el almacenero precarga productos", () => {
     expect(urls("almacenero")).toContain("/api/products");
-  });
-
-  it("el admin precarga clientes y ventas", () => {
-    expect(urls("admin")).toEqual(expect.arrayContaining(["/api/customers", "/api/sales?limit=200"]));
-  });
-
-  it("el cajero precarga ventas pero no clientes", () => {
-    expect(urls("cajero")).toContain("/api/sales?limit=200");
-    expect(urls("cajero")).not.toContain("/api/customers");
-  });
-
-  it("sin rol resuelto no precarga nada con roles acotados", () => {
-    expect(urls(null)).not.toContain("/api/customers");
-    expect(urls(null)).not.toContain("/api/sales?limit=200");
   });
 });

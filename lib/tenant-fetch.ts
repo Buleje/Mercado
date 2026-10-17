@@ -12,6 +12,8 @@
  * which tenant the request belongs to.
  */
 
+import { cachedJson } from "@/lib/client-cache-fetch";
+
 const DEFAULT_TENANT = "main";
 
 /** Subdomains that are NOT tenant slugs. */
@@ -88,26 +90,17 @@ export async function resolveActiveTenantSlug(): Promise<string> {
   if (current && current !== DEFAULT_TENANT) return current;
 
   try {
-    const authRes = await fetch("/api/auth/me", {
-      credentials: "include",
-      cache: "no-store",
-    });
-    if (!authRes.ok) return current || DEFAULT_TENANT;
+    // cachedJson: comparte el /api/auth/me que ya pidió useAdminAuth al abrir
+    // el panel y junta a los que resuelven a la vez (antes, 2 + 2 pedidos).
+    const auth = await cachedJson<{ tenantId?: string | null }>("/api/auth/me", 60_000);
+    if (!auth?.tenantId) return current || DEFAULT_TENANT;
 
-    const auth = (await authRes.json()) as { tenantId?: string | null };
-    if (!auth.tenantId) return current || DEFAULT_TENANT;
-
-    const tenantRes = await fetch(
+    const tenant = await cachedJson<{ slug?: string | null }>(
       `/api/tenants/resolve?slug=${encodeURIComponent(auth.tenantId)}`,
-      {
-        credentials: "include",
-        cache: "no-store",
-      },
+      60_000,
+      { cache: "no-store" },
     );
-    if (!tenantRes.ok) return current || DEFAULT_TENANT;
-
-    const tenant = (await tenantRes.json()) as { slug?: string | null };
-    const resolved = tenant.slug?.trim();
+    const resolved = tenant?.slug?.trim();
     if (!resolved) return current || DEFAULT_TENANT;
 
     try {

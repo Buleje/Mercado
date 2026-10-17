@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { logger } from "@/lib/logger";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import { cuentasDeCajaParaPantalla } from "@/lib/caja/cuentas-de-pantalla";
 import { fmt, type CashRegister, type StatsCaja } from "./tipos";
 
@@ -53,14 +54,12 @@ export function useCajaRegistradora() {
   const [cashAlertMax, setCashAlertMax] = useState<number>(500);
   useEffect(() => {
     let active = true;
-    // credentials same-origin: /api/settings sólo devuelve cashAlertMax con sesión admin.
-    fetch("/api/settings", { credentials: "same-origin" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        const v = Number(d?.cashAlertMax);
-        if (active && Number.isFinite(v) && v > 0) setCashAlertMax(v);
-      })
-      .catch((err) => logger.error("[cash-alert-max] fetch settings failed", { error: String(err) }));
+    // /api/settings sólo devuelve cashAlertMax con sesión admin. cachedJson:
+    // es el mismo pedido de ajustes que ya hizo el panel al abrir.
+    void cachedJson<{ cashAlertMax?: unknown }>("/api/settings", 30_000).then((d) => {
+      const v = Number(d?.cashAlertMax);
+      if (active && Number.isFinite(v) && v > 0) setCashAlertMax(v);
+    });
     return () => {
       active = false;
     };

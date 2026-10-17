@@ -87,7 +87,7 @@ describe("dónde vive Tesorería", () => {
       const { useSeccionesConDatos } = await import("@/hooks/use-secciones-con-datos");
       const { result } = renderHook(() => useSeccionesConDatos(["tesoreria"]));
       await waitFor(() => expect(result.current.tesoreria).toBe(esperado));
-      expect(mockFetch).toHaveBeenCalledWith("/api/treasury/cuentas");
+      expect(mockFetch).toHaveBeenCalledWith("/api/treasury/cuentas", expect.objectContaining({ credentials: "include" }));
       expect(mockFetch.mock.calls.some(([u]) => String(u).includes("/api/payables"))).toBe(false);
     }
   });

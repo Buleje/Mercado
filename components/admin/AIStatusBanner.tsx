@@ -5,6 +5,7 @@ import { AlertTriangle, X } from "lucide-react";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import type { AdminRole } from "@/lib/session";
+import { suscribirSondeo } from "@/lib/client-cache-fetch";
 
 const DISMISS_KEY = "ai-banner-dismissed-until";
 const DISMISS_HOURS = 6;
@@ -53,26 +54,16 @@ export default function AIStatusBanner({ userRole = null, authReady = true }: AI
       setDismissed(false);
     }
 
-    let alive = true;
-    const fetchStatus = async () => {
-      try {
-        const res = await fetch("/api/ai-assistant/health", {
-          credentials: "include",
-          cache: "no-store",
-        });
-        if (!res.ok) return;
-        const data = (await res.json()) as AIStatus;
-        if (alive) setStatus(data);
-      } catch {
-        /* silent */
-      }
-    };
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 60_000);
-    return () => {
-      alive = false;
-      clearInterval(interval);
-    };
+    // Sondeo compartido: con la pestaña oculta no pide, y el doble montaje
+    // de StrictMode no arma dos timers. Si falla, queda el último estado.
+    return suscribirSondeo<AIStatus>(
+      "/api/ai-assistant/health",
+      60_000,
+      (data) => {
+        if (data) setStatus(data);
+      },
+      { cache: "no-store" },
+    );
   }, [puede]);
 
   const dismiss = () => {

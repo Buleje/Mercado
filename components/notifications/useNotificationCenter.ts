@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+import { intervaloVisible } from "@/lib/client-cache-fetch";
 
 export type NotificationItem = {
   id: string;
@@ -38,7 +39,6 @@ export function useNotificationCenter(abierto = true) {
   const [filter, setFilter] = useState<NotificationFilter>("all");
   /** La última lectura falló: la lista vacía NO es «todo al día». */
   const [cargaFallida, setCargaFallida] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const limite = abierto ? LIMITE_ABIERTO : LIMITE_CERRADO;
   /**
    * Sube con cada «leída»: una lectura que salió ANTES llega con el aviso
@@ -91,14 +91,11 @@ export function useNotificationCenter(abierto = true) {
     setNotifications([]);
   }, [abierto, filter]);
 
-  // Initial fetch + polling
+  // Primera lectura + sondeo que se pausa con la pestaña oculta (lee el header
+  // X-Unread-Count, por eso no va por cachedJson).
   useEffect(() => {
-    fetchNotifications();
-
-    intervalRef.current = setInterval(fetchNotifications, POLL_INTERVAL);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    void fetchNotifications();
+    return intervaloVisible(() => void fetchNotifications(), POLL_INTERVAL);
   }, [fetchNotifications]);
 
   /**

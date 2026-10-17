@@ -40,6 +40,7 @@ import {
   Wallet,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { suscribirSondeo } from "@/lib/client-cache-fetch";
 import { puedePedir, type RutaPanel } from "@/lib/auth/roles-rutas-panel";
 import { avisoCajaAbierta, type CuentaCajaAbierta } from "@/lib/caja/caja-abierta";
 import type { AdminRole } from "@/lib/session";
@@ -124,37 +125,11 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false }
     // Rol sin permiso (p.ej. almacenero) o auth sin resolver todavía → ni
     // intentarlo, requireAdmin lo rechaza siempre con 403.
     if (!puede) return;
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch("/api/admin/alerts-summary", { credentials: "include" });
-        if (!res.ok) return;
-        const data: Summary = await res.json();
-        if (!cancelled) setSummary(data);
-      } catch {
-        /* polling silencioso */
-      }
-    };
-    load();
-    // QW4 perf (2026-05-16): pausar polling cuando document.hidden
-    // (pestaña no visible). Banner vive en TODO /admin/* → cada sesión
-    // inactiva eran 120 req/h. Ahora 0 req/h cuando idle. Al volver
-    // visible, refetch inmediato para datos frescos.
-    let id: ReturnType<typeof setInterval> | null = setInterval(load, REFRESH_MS);
-    function handleVisibilityChange() {
-      if (document.hidden) {
-        if (id) { clearInterval(id); id = null; }
-      } else {
-        load();
-        if (!id) id = setInterval(load, REFRESH_MS);
-      }
-    }
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      cancelled = true;
-      if (id) clearInterval(id);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
+    // Banner vive en TODO /admin/*: sondeo compartido que se pausa con la
+    // pestaña oculta (0 req/h inactivo) y pide al volver si ya venció.
+    return suscribirSondeo<Summary>(RUTA, REFRESH_MS, (data) => {
+      if (data) setSummary(data);
+    });
   }, [puede]);
 
   const alerts = useMemo<Alert[]>(() => {

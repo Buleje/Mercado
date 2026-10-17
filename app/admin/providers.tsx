@@ -12,6 +12,12 @@ import { ConfirmDialogProvider } from "@/components/admin/shared/ConfirmDialog";
 import { AdminShortcutsProvider } from "@/contexts/admin-shortcuts-context";
 import ShortcutsHelpConSecciones from "@/components/admin/shared/ShortcutsHelpConSecciones";
 import { ImportCarpetaProvider } from "@/contexts/import-carpeta-context";
+import { instalarInvalidacionPorEscritura } from "@/lib/client-cache-fetch";
+
+// Toda escritura del panel a `/api/<recurso>` limpia lo cacheado en memoria de
+// ese recurso (cachedJson / fetchFinanzas): con eso los lectores pueden
+// compartir una sola lectura sin mostrar el dato de antes de guardar.
+instalarInvalidacionPorEscritura();
 
 const NotificationToast = dynamic(
   () => import("@/components/admin/shared/NotificationToast"),

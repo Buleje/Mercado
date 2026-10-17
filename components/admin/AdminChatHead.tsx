@@ -26,6 +26,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Send, Loader2, ChevronRight, MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
+import { intervaloVisible } from "@/lib/client-cache-fetch";
 import type { ChatThreadView, ChatMessageView } from "@/components/admin/ChatTab/types";
 import { formatTime } from "@/lib/format";
 
@@ -80,10 +81,10 @@ export default function AdminChatHead() {
     } catch { /* polling no crítico */ }
   }, []);
 
+  // Con la pestaña oculta no sondea; al volver, pide si ya venció la vuelta.
   useEffect(() => {
     void refreshThreads();
-    const interval = window.setInterval(refreshThreads, active ? POLL_CHAT_MS : POLL_IDLE_MS);
-    return () => window.clearInterval(interval);
+    return intervaloVisible(() => void refreshThreads(), active ? POLL_CHAT_MS : POLL_IDLE_MS);
   }, [refreshThreads, active]);
 
   // ── El ícono del nav abre la bandeja completa ───────────────────────
@@ -122,10 +123,10 @@ export default function AdminChatHead() {
       await fetchMessages();
       if (!cancelled) setLoadingMsgs(false);
     })();
-    const interval = window.setInterval(fetchMessages, POLL_CHAT_MS);
+    const baja = intervaloVisible(() => void fetchMessages(), POLL_CHAT_MS);
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      baja();
     };
   }, [active, fetchMessages]);
 

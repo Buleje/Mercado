@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useImpersonation } from "@/app/admin/_hooks/useImpersonation";
+import { invalidateCachedJson } from "@/lib/client-cache-fetch";
 
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
@@ -53,6 +54,7 @@ describe("useImpersonation", () => {
   beforeEach(() => {
     localStorageMock.clear();
     fetchMock.mockReset();
+    invalidateCachedJson(); // /api/settings va por cachedJson: cada test con su respuesta
     // Default seguro: cualquier fetch no mockeado retorna {} para no romper hooks
     fetchMock.mockResolvedValue(jsonResponse({}));
     // Mock window.location.href setter

@@ -17,6 +17,7 @@ import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import { fechaConDia, soles } from "@/lib/admin/inicio/formato-tablero";
 import type { AlertaDeInicio } from "@/lib/admin/overview-tipos";
 import { cn } from "@/lib/utils";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import type { DateRange } from "../DashboardDateRange";
 
 /**
@@ -50,17 +51,13 @@ function useBriefing(): Briefing | null {
     // /api/admin/stats sólo deja pasar admin: un cajero recibía 403 en cada carga.
     if (!puedePedir("/api/admin/stats", rol)) return;
     let cancelado = false;
-    (async () => {
-      try {
-        const r = await fetch("/api/admin/stats");
-        if (cancelado || !r.ok) return;
-        const s = (await r.json()) as { salesYesterday?: number; pendingYape?: number } | null;
-        if (cancelado || !s) return;
-        setB({ ventasAyer: s.salesYesterday ?? 0, yape: s.pendingYape ?? 0 });
-      } catch {
-        /* sin estas dos cifras el bloque igual sale con los avisos */
-      }
-    })();
+    // Mismo pedido que la campana y las insignias del menú (cachedJson):
+    // antes eran 3 lecturas de stats al abrir Inicio.
+    void cachedJson<{ salesYesterday?: number; pendingYape?: number }>("/api/admin/stats", 30_000).then((s) => {
+      // sin estas dos cifras el bloque igual sale con los avisos
+      if (cancelado || !s) return;
+      setB({ ventasAyer: s.salesYesterday ?? 0, yape: s.pendingYape ?? 0 });
+    });
     return () => {
       cancelado = true;
     };

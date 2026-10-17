@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
+import { cachedJson, invalidateCachedJson, suscribirSondeo } from "@/lib/client-cache-fetch";
 
 // ── Shared dashboard response type ──────────────────────────────────────────
 // Matches the exact shape returned by /api/admin/dashboard
@@ -38,6 +39,7 @@ interface DashboardDataContextValue {
 const DashboardDataContext = createContext<DashboardDataContextValue | null>(null);
 
 const REFRESH_INTERVAL = 30_000;
+const URL_TABLERO = "/api/admin/dashboard";
 
 export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<DashboardPayload | null>(null);
@@ -46,35 +48,40 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const activeRef = useRef(true);
 
-  const refresh = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/admin/dashboard");
-      if (!res.ok) throw new Error(`Error ${res.status}`);
-      const json = await res.json();
-      if (activeRef.current) {
-        setData(json);
-        setLastUpdated(new Date());
-      }
-    } catch (err) {
-      if (activeRef.current) {
-        setError(err instanceof Error ? err.message : "Error al cargar");
-      }
-    } finally {
-      if (activeRef.current && !silent) setLoading(false);
+  const aplicar = useCallback((json: DashboardPayload | null) => {
+    if (!activeRef.current) return;
+    if (json) {
+      setData(json);
+      setLastUpdated(new Date());
+      setError(null);
+    } else {
+      setError("No se pudo cargar el resumen");
     }
+    setLoading(false);
   }, []);
 
+  /** Pide ya, sin lo guardado (botón «Actualizar», tras registrar algo). */
+  const refresh = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError(null);
+      invalidateCachedJson(URL_TABLERO);
+      aplicar(await cachedJson<DashboardPayload>(URL_TABLERO, REFRESH_INTERVAL));
+    },
+    [aplicar],
+  );
+
+  // Sondeo compartido (16-10): un timer aunque StrictMode monte dos veces,
+  // pausa con la pestaña oculta, y la primera lectura comparte el pedido del
+  // asistente de primeros pasos (cachedJson).
   useEffect(() => {
     activeRef.current = true;
-    void refresh();
-    const interval = setInterval(() => void refresh(true), REFRESH_INTERVAL);
+    const baja = suscribirSondeo<DashboardPayload>(URL_TABLERO, REFRESH_INTERVAL, aplicar);
     return () => {
       activeRef.current = false;
-      clearInterval(interval);
+      baja();
     };
-  }, [refresh]);
+  }, [aplicar]);
 
   return (
     <DashboardDataContext.Provider value={{ data, loading, error, lastUpdated, refresh }}>

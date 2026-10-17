@@ -11,10 +11,12 @@ import type { AdminRole } from "@/lib/session";
  * para que cualquier sub-tab que el usuario abra después tenga sus datos
  * disponibles instantáneo.
  *
- * Cada API tiene su propio TTL acorde a la frecuencia de cambio:
- * - products/suppliers: 5–30 min (cambian poco)
- * - sales/customers: 60s (frescos pero no urgentes)
- * - dashboard/stats: 30s
+ * Sólo lo que ALGUIEN LEE: productos y proveedores (Punto de compra,
+ * `use-compra-catalogo.ts`), 5–30 min. Hasta el 16-10 también bajaba
+ * `/api/customers`, `/api/sales?limit=200`, `/api/admin/dashboard` y
+ * `/api/goals` a claves de localStorage que ningún componente leía: 4 pedidos
+ * pesados en cada carga del panel para nada (medido con
+ * `scripts/medir-carga.mjs`; el Inicio pide su propio dashboard).
  *
  * Solo prefetcha si el cache está vacío o stale. No bloquea el render.
  */
@@ -52,34 +54,6 @@ const PREFETCH_TARGETS: CacheConfig[] = [
       const j = json as { suppliers?: unknown[] } | unknown[];
       return Array.isArray(j) ? j : (j as { suppliers?: unknown[] }).suppliers ?? [];
     },
-  },
-  {
-    url: "/api/customers",
-    ruta: "/api/customers",
-    storageKey: "admin-customers-cache",
-    ttlMs: 5 * 60 * 1000,
-    parser: (json: unknown) => {
-      const j = json as { customers?: unknown[] } | unknown[];
-      return Array.isArray(j) ? j : (j as { customers?: unknown[] }).customers ?? [];
-    },
-  },
-  {
-    url: "/api/sales?limit=200",
-    ruta: "/api/sales",
-    storageKey: "admin-sales-cache",
-    ttlMs: 60 * 1000,
-    parser: (json: unknown) => (Array.isArray(json) ? json : []),
-  },
-  {
-    url: "/api/admin/dashboard",
-    storageKey: "admin-dashboard-cache",
-    ttlMs: 60 * 1000,
-  },
-  {
-    url: "/api/goals",
-    storageKey: "admin-goals-cache",
-    ttlMs: 60 * 1000,
-    parser: (json: unknown) => (Array.isArray(json) ? json : []),
   },
 ];
 

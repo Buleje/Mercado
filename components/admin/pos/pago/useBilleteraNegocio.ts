@@ -29,7 +29,12 @@ export function tieneQR(b: BilleteraNegocio | null | undefined): b is BilleteraN
   return !!b && b.activo && b.qr.length > 0;
 }
 
-const URL_BILLETERAS = "/api/settings?_t=pos-billetera";
+/**
+ * La misma clave con la que el panel lee Ajustes al abrir (SettingsProvider,
+ * useAdminAuth): el POS ya no hace su propia lectura (medido 16-10). Guardar
+ * en Ajustes la invalida sola (`instalarInvalidacionPorEscritura`).
+ */
+const URL_BILLETERAS = "/api/settings";
 /** GET /api/settings del POS (una sola llamada): también la lee `useTopeDescuentoCajero`. */
 export const pedirBilleteras = () => cachedJson<Record<string, unknown>>(URL_BILLETERAS, 60_000, { cache: "no-store" });
 
@@ -40,7 +45,7 @@ export function precargarBilleteras(): void {
 
 /**
  * Yape y Plin del negocio tal como se guardan en Ajustes › Cobros. `null` mientras carga.
- * Clave propia en cachedJson (el `?_t=` el servidor lo ignora): el contexto de la tienda usa otra.
+ * Comparte la lectura de Ajustes del panel (cachedJson).
  */
 export function useBilleteraNegocio(): Billeteras | null {
   const [billeteras, setBilleteras] = useState<Billeteras | null>(null);

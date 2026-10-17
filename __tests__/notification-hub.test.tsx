@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import NotificationHub from "@/components/notifications/NotificationHub";
 import type { NotificationItem } from "@/components/notifications/useNotificationCenter";
+import { invalidateCachedJson } from "@/lib/client-cache-fetch";
 
 // El hub pide /api/admin/stats sólo si el rol puede (roles-rutas-panel). Los
 // tests de siempre corren como admin; los de abajo cambian el rol.
@@ -28,6 +29,9 @@ vi.mock("@/components/notifications/NotificationItem", () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // stats y lotes van por cachedJson (los comparte la campana): sin esto un
+  // test leería lo que guardó el anterior.
+  invalidateCachedJson();
   global.fetch = vi
     .fn()
     .mockResolvedValue({ ok: false, json: async () => ({}) }) as unknown as typeof fetch;

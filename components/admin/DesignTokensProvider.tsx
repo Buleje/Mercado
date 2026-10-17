@@ -21,6 +21,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DEFAULT_PRESET_SLUG, DESIGN_PRESETS, tokensToCssVars, type DesignTokens } from "@/lib/design-presets";
 import { useTheme } from "@/contexts/theme-context";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 /**
  * Variables que describen el CLARO/OSCURO de la interfaz (fondos, texto,
@@ -113,20 +114,18 @@ export default function DesignTokensProvider({
       ? `/api/design-system/active?tenantId=${encodeURIComponent(tenantId)}`
       : `/api/design-system/active`;
 
-    const load = async () => {
-      try {
-        // cache: no-store para que el cambio del superadmin se vea sin esperar el TTL.
-        const res = await fetch(url, { credentials: "include", cache: "no-store" });
-        if (!res.ok) return;
-        const json = await res.json();
-        if (!cancelled && json.tokens) setTokens(json.tokens as DesignTokens);
-      } catch {
-        // mantener default
-      }
-    };
+    // cache: no-store para que el cambio del superadmin se vea sin esperar el
+    // TTL del navegador; cachedJson (60 s) evita pedirlo en cada foco y junta
+    // los montajes que leen a la vez. Si falla, queda el default.
+    const load = () =>
+      void cachedJson<{ tokens?: DesignTokens }>(url, 60_000, { credentials: "include", cache: "no-store" }).then(
+        (json) => {
+          if (!cancelled && json?.tokens) setTokens(json.tokens);
+        },
+      );
     load();
 
-    // Refetch al volver al tab — captura cambios del superadmin sin reload
+    // Refetch al volver al tab (pasado el minuto) — captura cambios del superadmin sin reload
     const onFocus = () => load();
     window.addEventListener("focus", onFocus);
 

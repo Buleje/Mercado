@@ -17,6 +17,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import OnboardingWizard from "@/components/admin/OnboardingWizard";
+import { invalidateCachedJson } from "@/lib/client-cache-fetch";
 
 // Mock de los títulos del DS (SectionTitle, y CardTitle/PageTitle/Kicker que el
 // componente usa desde el barrido de títulos 2026-09-08) — pasamos id para validar aria-labelledby
@@ -108,6 +109,9 @@ function mockFetch(dashRes: unknown, settingsRes: unknown, opts?: { dashStatus?:
 beforeEach(() => {
   // Aislar localStorage entre tests
   localStorage.clear();
+  // Tablero y ajustes van por cachedJson (los comparte con el panel): un
+  // pedido que quedó colgado en el test anterior no debe servir al siguiente.
+  invalidateCachedJson();
   document.body.style.overflow = "";
 });
 
@@ -247,17 +251,22 @@ describe("OnboardingWizard", () => {
     expect(document.body.style.overflow).toBe("auto");
   });
 
-  it("aborta el fetch al desmontar (no setea estado en componente muerto)", async () => {
-    const abortSpy = vi.spyOn(AbortController.prototype, "abort");
+  it("lo que llega después de desmontar no toca un componente muerto", async () => {
+    // Sin abort: el pedido es compartido (cachedJson) y lo usa el resto del panel.
+    const soltar: Array<(r: Response) => void> = [];
     vi.stubGlobal(
       "fetch",
-      vi.fn(() => new Promise(() => { /* never resolves */ })),
+      vi.fn(() => new Promise<Response>((ok) => soltar.push(ok))),
     );
 
     const { unmount } = render(<OnboardingWizard tenantSlug="main" onClose={vi.fn()} />);
     unmount();
+    await act(async () => {
+      for (const ok of soltar) ok({ ok: true, status: 200, json: async () => ({}) } as Response);
+    });
 
-    expect(abortSpy).toHaveBeenCalled();
+    expect(soltar.length).toBe(2);
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("idempotencia: doble click en Saltar solo dispara onClose una vez", async () => {

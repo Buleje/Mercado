@@ -110,12 +110,14 @@ export function useResumenPlata(): ResumenPlata {
       // Sólo gastos reales: sin `recurring=false` venían también las
       // PLANTILLAS de gasto fijo (ADR-374) — en el tenant QA, S/ 2 119,80 de
       // plantillas con fecha de mayo. Ganancias ya las excluía.
-      fetch("/api/expenses?limit=2000&recurring=false").then(r => r.ok ? r.json() : []),
-      fetch("/api/payables").then(r => r.ok ? r.json() : []),
+      // fetchFinanzas (cachedJson 30 s): las tarjetas de Mi Plata que leen lo
+      // mismo comparten el pedido; una escritura a /api/<recurso> lo invalida.
+      fetchFinanzas<unknown>("/api/expenses?limit=2000&recurring=false", []),
+      fetchFinanzas<unknown>("/api/payables", []),
       // Lo que todavía se debe: ACTIVO y VENCIDO (antes sólo ACTIVO, y el
       // vencido —el más urgente— no salía). El endpoint filtra por UN estado.
       Promise.all(ESTADOS_FIADO_PENDIENTE.map((e) =>
-        fetch(`/api/fiados?status=${e}`).then(r => r.ok ? r.json() : []).then((d: unknown) => (Array.isArray(d) ? d : []) as FiadoDeLista[]),
+        fetchFinanzas<unknown>(`/api/fiados?status=${e}`, []).then((d) => (Array.isArray(d) ? d : []) as FiadoDeLista[]),
       )).then((listas) => listas.flat()),
       // Ingresos por mes: la ÚNICA fuente de Mi Plata (la regla vive en
       // lib/finance/ingresos-del-periodo.ts; Ganancias lee el mismo endpoint).

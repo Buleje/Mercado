@@ -181,10 +181,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     // cachedJson con clave por tenant (`?_t=`, el server lo ignora): colapsa el
     // doble-invoke de StrictMode (dev) sin mezclar settings entre tenants en
     // navegaciones /t/[slug]. Mantiene el header x-tenant-id. Perf 2026-05-29.
-    cachedJson<Record<string, unknown>>(`/api/settings?_t=${encodeURIComponent(tenantSlug)}`, 30_000, {
-      cache: "no-store",
-      headers: { "x-tenant-id": tenantSlug },
-    })
+    // En el panel decide la sesión (JWT > header, `resolveTenantIdForRoute`):
+    // la misma clave que useAdminAuth, use-vistas-permitidas y el Onboarding,
+    // así el panel lee Ajustes UNA vez al abrir (medido 16-10: eran 3-4).
+    const enPanel = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+    (enPanel
+      ? cachedJson<Record<string, unknown>>("/api/settings", 30_000)
+      : cachedJson<Record<string, unknown>>(`/api/settings?_t=${encodeURIComponent(tenantSlug)}`, 30_000, {
+          cache: "no-store",
+          headers: { "x-tenant-id": tenantSlug },
+        }))
       .then((data) => {
         if (data) {
           if (data.mode) setModeState(data.mode as StoreMode);
