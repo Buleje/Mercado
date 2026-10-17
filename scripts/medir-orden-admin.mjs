@@ -29,6 +29,12 @@
  *               destapó todo esto)
  *   desborde    px que la página se pasa del ancho de la ventana, y cuántos
  *   cortados    elementos se salen por la derecha sin un ancestro que scrollee
+ *   minW        elementos con `min-w-*` cuyo piso no rige (`anulados`) o que
+ *               quedaron más angostos que él (`cortos`), y marcos con scroll
+ *               horizontal propio pasados de ancho (`scrollX`). 17-10: una regla
+ *               sin capa anulaba 342 pisos por pantalla a 400 px sin que nada
+ *               lo viera. Ojo: `html`/`body` llevan `overflow-x: clip`, así que
+ *               `desborde` casi nunca sale; lo que se sale lo cuenta `cortados`.
  *   tituloCero  el h1 del módulo mide <20 px de ancho (08-10: «Gráficos» + el
  *               rango de fechas lo aplastaban a 0 px en el Inicio a 400 px).
  *               Estas tres no suman al puntaje: son para `ANCHO=400`.
@@ -361,6 +367,78 @@ function medirEnPagina() {
         })
         .concat(raices.length > 5 ? [`… y ${raices.length - 5} más`] : []);
     })(),
+    /* Pisos de ancho que no rigen (17-10): `* { min-width: 0 }` sin capa le
+       ganaba a toda utilidad `min-w-*` de Tailwind 4 y la clase escrita no
+       medía nada. Se compara el piso DECLARADO en la hoja (con su media
+       activa) contra el computado (`anulados`) y contra el ancho real
+       (`cortos`: el elemento quedó más angosto que su piso). Sólo largos
+       (rem, px, spacing); %, max-content y compañía no se cuentan. */
+    minW: (() => {
+      const pisos = new Map();
+      const recorrer = (reglas, sel, activa) => {
+        for (const r of reglas) {
+          if (typeof CSSContainerRule !== "undefined" && r instanceof CSSContainerRule) continue;
+          const a = activa && (!r.media || matchMedia(r.media.mediaText).matches);
+          const s = r.selectorText ?? sel;
+          if (a && s && r.style?.minWidth) for (const uno of s.split(",")) pisos.set(uno.trim(), r.style.minWidth);
+          if (r.cssRules) recorrer(r.cssRules, s, a);
+        }
+      };
+      for (const hoja of document.styleSheets) {
+        try {
+          recorrer(hoja.cssRules, null, true);
+        } catch {
+          /* hoja de otro origen: no se puede leer */
+        }
+      }
+      const sonda = document.createElement("div");
+      sonda.style.cssText = "position:absolute;visibility:hidden;height:0";
+      document.body.appendChild(sonda);
+      const aPx = (v) => {
+        if (/%|content|auto|none|fit|min\(|max\(/.test(v)) return null;
+        sonda.style.width = v;
+        return sonda.getBoundingClientRect().width;
+      };
+      const tarjetas = matchMedia("(max-width: 639px)").matches;
+      let anulados = 0;
+      let cortos = 0;
+      const ejemplos = [];
+      for (const e of document.body.querySelectorAll('[class*="min-w-"]')) {
+        if (e.getClientRects().length === 0) continue;
+        const cs = getComputedStyle(e);
+        if (cs.display === "inline" || cs.display === "contents") continue;
+        /* A menos de 640 px la tabla es tarjetas y globals.css le quita el piso a propósito. */
+        if (e.tagName === "TABLE" && tarjetas && e.closest(".admin-mobile-cards") && !e.closest(".hoja-grilla")) continue;
+        if (e.checkVisibility && !e.checkVisibility({ visibilityProperty: true })) continue;
+        let piso = 0;
+        let clase = "";
+        for (const c of (e.getAttribute("class") ?? "").split(/\s+/)) {
+          if (!c.includes("min-w-")) continue;
+          const v = pisos.get(`.${CSS.escape(c)}`);
+          const px = v ? aPx(v) : null;
+          if (px != null && px > piso) {
+            piso = px;
+            clase = c;
+          }
+        }
+        if (piso < 1) continue;
+        const ancho = e.getBoundingClientRect().width;
+        if (parseFloat(cs.minWidth || "0") + 0.5 < piso) anulados++;
+        if (ancho + 0.5 < piso) {
+          cortos++;
+          ejemplos.push({ falta: piso - ancho, t: `${e.tagName.toLowerCase()}.${clase} ${Math.round(ancho)}<${Math.round(piso)}px` });
+        }
+      }
+      sonda.remove();
+      /* Marcos con scroll horizontal propio que hoy se pasan de ancho: un piso
+         que vuelve a regir aparece acá (bien en una planilla, mal en una tabla
+         que a 400 px se lee en tarjetas). */
+      const scrollX = [...main.querySelectorAll("*")]
+        .filter((e) => e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 1 && /auto|scroll/.test(getComputedStyle(e).overflowX) && e.getClientRects().length > 0)
+        .map((e) => `${e.tagName.toLowerCase()}${e.querySelector("table") ? "[tabla]" : ""}${e.closest(".admin-mobile-cards") ? "[tarjetas]" : ""} ${e.clientWidth}→${e.scrollWidth}`);
+      /* Los que más ancho perdieron primero: un ícono 2 px más angosto no es noticia. */
+      return { anulados, cortos, ejemplos: ejemplos.sort((a, b) => b.falta - a.falta).slice(0, 4).map((x) => x.t), scrollX: scrollX.length, scrollXEj: scrollX.slice(0, 4) };
+    })(),
     tituloCero: (() => {
       const h1 = main.querySelector("h1");
       return h1 ? h1.getBoundingClientRect().width < 20 : false;
@@ -419,6 +497,8 @@ function lineaDe(f) {
     f.desborde ? `desborde ${f.desborde}px` : "",
     f.cortados.length ? `cortados: ${f.cortados.join(", ")}` : "",
     f.tituloCero ? "TÍTULO APLASTADO" : "",
+    f.minW?.anulados ? `min-w anulados ${f.minW.anulados} (cortos ${f.minW.cortos}${f.minW.ejemplos.length ? `: ${f.minW.ejemplos.join(", ")}` : ""})` : "",
+    f.minW?.scrollX ? `scroll x ${f.minW.scrollX}: ${f.minW.scrollXEj.join(", ")}` : "",
   ].filter(Boolean);
   return `${marca} ${String(f.puntaje).padStart(5)}  ${f.lugar.padEnd(38)} ${String(f.pantallas).padStart(5)} pant · ${String(f.botones).padStart(3)} bot · ${f.tablas} tab · ${String(f.ayuda).padStart(4)} pal. ayuda · h2/h3/h4 ${f.h2}/${f.h3}/${f.h4} · ${(f.espera.ms / 1000).toFixed(1)} s${extra.length ? ` · ${extra.join(" · ")}` : ""}`;
 }

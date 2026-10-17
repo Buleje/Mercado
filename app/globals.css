@@ -317,8 +317,15 @@
   animation-iteration-count: infinite !important;
 }
 
-* {
-  min-width: 0;
+/* Los hijos de flex y grid pueden achicarse (sin esto, un texto largo empuja
+   la fila fuera de la pantalla). En @layer base desde 2026-10-17: SIN capa le
+   ganaba a TODA utilidad `min-w-*` de Tailwind 4 (viven en @layer utilities)
+   y el piso escrito medía 0: el buscador de Compras › Órdenes quedaba de
+   15 px a 400 y su campo tapaba el chip «Todas». */
+@layer base {
+  * {
+    min-width: 0;
+  }
 }
 
 html {
@@ -801,6 +808,16 @@ body {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
+    /* El piso `min-w-[640px]` es de la tabla de escritorio (scroll en su
+       marco); hecha tarjetas va al ancho del celular. Desde que `min-w-*`
+       rige (17-10), sin esto las tarjetas medían 600-720 px a 400. */
+    min-width: 0;
+  }
+
+  /* La planilla sigue siendo tabla: conserva su piso (vuelve a la utilidad). */
+  .admin-mobile-cards table.hoja-grilla,
+  .admin-mobile-cards .hoja-grilla table {
+    min-width: revert-layer;
   }
 
   .admin-mobile-cards thead {
