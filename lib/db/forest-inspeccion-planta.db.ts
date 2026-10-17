@@ -6,9 +6,14 @@ import type { Prisma } from "@/lib/generated/prisma/client";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
-import { ForestPatioConteoDB } from "@/lib/db/forest-patio-conteo.db";
-import { trozasDeResumen, type CuentasDelActa } from "@/lib/superadmin/plantas-forestales/inspeccion";
-import { editarInspeccionSchema, type EditarInspeccion } from "@/lib/superadmin/plantas-forestales/schemas";
+import type { ConteoPatio } from "@/lib/forestal/conteo-patio";
+import { conteoPatioSchema } from "@/lib/forestal/conteo-patio-guardado";
+import { conteoDeLaInspeccion, trozasDeConteo } from "@/lib/superadmin/plantas-forestales/inspeccion";
+import {
+  editarInspeccionSchema,
+  leerFotoDeInspeccion,
+  type EditarInspeccion,
+} from "@/lib/superadmin/plantas-forestales/schemas";
 import type {
   ConteoAserrada,
   EstadoInspeccion,
@@ -31,10 +36,14 @@ import type {
  * firmada no se borra: queda anulada con su motivo). La guardia va en el mismo
  * UPDATE (`WHERE estado = …`): dos pestañas a la vez no la saltean.
  *
- * El conteo de trozas se guarda IGUAL que el de la planta (`ForestPatioConteoDB
- * .guardar`, idempotente por `iniciadoEn`) y la inspección guarda su id y una
- * copia de su resumen (`trozas`): la lista no relee el acta y el acta cerrada
- * no cambia si la tablet re-sube el conteo después.
+ * La inspección es DUEÑA de su conteo de trozas (security 17-10): va dentro de
+ * su propia fila, en el JSON `trozas` = `{ ...resumen, conteo }`, escrito en el
+ * MISMO UPDATE con la guardia de estado. Antes iba al `ForestPatioConteo` de la
+ * planta, con su misma clave (`iniciadoEn`): el admin de la planta lo leía en
+ * su historial, lo re-subía con lecturas falsas y el acta —aun cerrada— salía
+ * con sus números. El conteo se guarda SIN las trozas: salen del libro
+ * congelado al leer (`conteoDeLaInspeccion`). `conteoPatioId` queda `null` en
+ * las nuevas y ya no se lee (las viejas conservan su resumen, sin conteo).
  *
  * Los JSON se validan al LEER con `safeParse`: una fila o un elemento roto se
  * reporta en el log y no tumba la lista. Toda lectura y escritura lleva
@@ -108,6 +117,10 @@ const trozasSchema = z.object({
 
 export type TrozasInspeccion = NonNullable<InspeccionPlanta["trozas"]>;
 
+/** El conteo guardado en la fila: el del equipo sin `trozas` (salen del libro congelado). */
+const conteoGuardadoSchema = conteoPatioSchema.omit({ trozas: true });
+export type ConteoGuardado = Omit<ConteoPatio, "trozas">;
+
 /**
  * La foto del libro: se valida la forma de arriba (cuándo se tomó, las cuatro
  * lecturas — `null` = esa lectura falló al abrir — y el conteo de
@@ -161,12 +174,17 @@ export function leerTrozas(raw: unknown): TrozasInspeccion | null {
   return r.success ? r.data : null;
 }
 
-/**
- * El resumen del acta del conteo que se copia en la inspección (single source:
- * `trozasDeResumen`). «Sobrantes» suma los códigos desconocidos (`sorpresas`).
- */
-export function trozasDeActa(acta: CuentasDelActa): TrozasInspeccion {
-  return trozasDeResumen(acta);
+/** El conteo guardado dentro de `trozas`; sin conteo, de antes del 17-10 o roto = `null`. */
+export function leerConteoGuardado(raw: unknown): ConteoGuardado | null {
+  if (raw == null || typeof raw !== "object" || !("conteo" in raw)) return null;
+  const r = conteoGuardadoSchema.safeParse((raw as { conteo: unknown }).conteo);
+  return r.success ? r.data : null;
+}
+
+/** Lo que se guarda en `trozas`: el resumen (lo lee la lista) y el conteo sin las trozas. */
+export function trozasParaGuardar(c: ConteoPatio): TrozasInspeccion & { conteo: ConteoGuardado } {
+  const { trozas: _delLibro, ...conteo } = c;
+  return { ...trozasDeConteo(c), conteo };
 }
 
 /** Faltantes de trozas del resumen: de la copia guardada; sin conteo = `null`. */
@@ -182,7 +200,8 @@ const isoONulo = (d: Date | null) => (d ? d.toISOString() : null);
 /** Lo que la lista lee (sin `libro` ni `aserrada`: pesan y la lista no los usa). */
 export interface FilaResumen {
   id: string;
-  fecha: Date;
+  /** `Date` de Prisma o `AAAA-MM-DD` de las consultas en SQL. */
+  fecha: Date | string;
   inspector: string;
   estado: string;
   hallazgos: unknown;
@@ -190,6 +209,7 @@ export interface FilaResumen {
 }
 
 export interface FilaInspeccion extends FilaResumen {
+  fecha: Date;
   tenantId: string;
   libro: unknown;
   conteoPatioId: string | null;
@@ -204,6 +224,8 @@ export interface FilaInspeccion extends FilaResumen {
 
 /** La inspección completa más lo que `tipos.ts` todavía no declara. */
 export type InspeccionDetalle = InspeccionPlanta & {
+  /** El conteo de trozas de la inspección, con las trozas del libro congelado; sin conteo = `null`. */
+  conteoPatio: ConteoPatio | null;
   notas: string | null;
   motivoAnulacion: string | null;
   anuladaAt: string | null;
@@ -217,7 +239,7 @@ export function aResumen(f: FilaResumen): InspeccionResumen | null {
   if (!estado.success) return null;
   return {
     id: f.id,
-    fecha: dia(f.fecha),
+    fecha: typeof f.fecha === "string" ? f.fecha : dia(f.fecha),
     inspector: f.inspector,
     estado: estado.data,
     hallazgos: leerHallazgos(f.hallazgos).validos.length,
@@ -238,12 +260,14 @@ export function aInspeccion(f: FilaInspeccion): InspeccionDetalle {
   }
   const hallazgos = leerHallazgos(f.hallazgos);
   const aserrada = leerAserrada(f.aserrada);
+  const conteo = leerConteoGuardado(f.trozas);
   return {
     ...resumen,
     tenantId: f.tenantId,
     libro,
     conteoPatioId: f.conteoPatioId,
     trozas: leerTrozas(f.trozas),
+    conteoPatio: conteo ? conteoDeLaInspeccion({ ...conteo, trozas: [] }, { fecha: resumen.fecha, inspector: f.inspector, libro }) : null,
     aserrada: aserrada.validos,
     hallazgosDetalle: hallazgos.validos,
     conclusion: f.conclusion,
@@ -256,14 +280,12 @@ export function aInspeccion(f: FilaInspeccion): InspeccionDetalle {
   };
 }
 
-const SELECT_RESUMEN = {
-  id: true,
-  fecha: true,
-  inspector: true,
-  estado: true,
-  hallazgos: true,
-  trozas: true,
-} satisfies Prisma.ForestInspeccionPlantaSelect;
+/**
+ * Las columnas de la LISTA, en SQL: `trozas` sin el `conteo` (las lecturas
+ * pesan; la lista sólo lee el resumen). El recorte lo hace Postgres, no viaja.
+ */
+const COLUMNAS_RESUMEN = `"id", "tenantId", to_char("fecha", 'YYYY-MM-DD') AS "fecha", "inspector", "estado", "hallazgos",
+       CASE WHEN jsonb_typeof("trozas") = 'object' THEN "trozas" - 'conteo' ELSE "trozas" END AS "trozas"`;
 
 const texto = (v: string | undefined) => (v === undefined ? undefined : v.trim() || null);
 const json = (v: unknown) => v as Prisma.InputJsonValue;
@@ -297,12 +319,15 @@ export const ForestInspeccionPlantaDB = {
     if (!tenantId) throw new Error("tenantId is required");
     const n = Math.min(Math.max(1, Math.trunc(limite)), LIMITE_INSPECCIONES);
     return getOrSet(`${CACHE_PREFIX}:${tenantId}:lista:${n}`, TTL_LISTA_SEG, async () => {
-      const filas = await prisma.forestInspeccionPlanta.findMany({
-        where: { tenantId },
-        select: SELECT_RESUMEN,
-        orderBy: [{ fecha: "desc" }, { createdAt: "desc" }],
-        take: n,
-      });
+      const filas = await prisma.$queryRawUnsafe<FilaResumen[]>(
+        `SELECT ${COLUMNAS_RESUMEN}
+           FROM "ForestInspeccionPlanta"
+          WHERE "tenantId" = $1
+          ORDER BY "fecha" DESC, "createdAt" DESC
+          LIMIT $2`,
+        tenantId,
+        n,
+      );
       const salida: InspeccionResumen[] = [];
       for (const f of filas) {
         const r = aResumen(f);
@@ -355,12 +380,15 @@ export const ForestInspeccionPlantaDB = {
 
   /**
    * Edita una inspección ABIERTA. Cerrada o anulada → `InspeccionError` 409 (y
-   * el conteo NO se guarda). `null` = no existe en esta planta.
+   * nada se guarda). `null` = no existe en esta planta.
    *
-   * Con `conteoPatio`: se guarda primero como acta del patio de la planta y la
-   * inspección se queda con su id y su resumen. Si alguien la cierra entre las
-   * dos escrituras, el acta del conteo queda guardada (es un conteo real) y
-   * esta edición responde 409.
+   * Con `conteoPatio`: se clava a la foto del libro de ESTA inspección
+   * (`conteoDeLaInspeccion`: día, inicio, trozas) y va con su resumen al JSON
+   * `trozas`, en el mismo UPDATE condicionado al estado: si alguien la cierra
+   * en el medio, el conteo no entra.
+   *
+   * Fotos de los hallazgos: sólo las subidas para ESTA planta (la dirección
+   * lleva el `tenantId`); una de otra planta → 422.
    */
   async editar(
     tenantId: string,
@@ -369,14 +397,18 @@ export const ForestInspeccionPlantaDB = {
     usuario?: string,
   ): Promise<InspeccionDetalle | null> {
     if (!tenantId) throw new Error("tenantId is required");
+    const conConteo = cambios.conteoPatio !== undefined;
     const actual = await prisma.forestInspeccionPlanta.findFirst({
       where: { tenantId, id },
-      select: { estado: true, inspector: true },
+      select: { estado: true, inspector: true, fecha: true, libro: conConteo },
     });
     if (!actual) return null;
     const estado = estadoSchema.safeParse(actual.estado);
     if (!estado.success) throw new InspeccionError("corrupta", `La inspección ${id} tiene el estado ilegible.`, 500);
     if (!transicionPermitida("editar", estado.data)) throw noEditable(estado.data);
+    if (cambios.hallazgos?.some((h) => h.fotos.some((u) => leerFotoDeInspeccion(u)?.tenantId !== tenantId))) {
+      throw new InspeccionError("datos_invalidos", "Una foto no es de esta planta: súbela desde esta inspección.", 422);
+    }
 
     const quien = usuario ?? actual.inspector;
     const data: Prisma.ForestInspeccionPlantaUpdateManyMutationInput = {};
@@ -385,20 +417,19 @@ export const ForestInspeccionPlantaDB = {
     if (cambios.conclusion !== undefined) data.conclusion = texto(cambios.conclusion);
     if (cambios.responsablePlanta !== undefined) data.responsablePlanta = texto(cambios.responsablePlanta);
     if (cambios.conteoPatio) {
-      const { acta } = await ForestPatioConteoDB.guardar(
-        tenantId,
-        { conteo: cambios.conteoPatio, notas: `Conteo de la inspección de planta ${id}` },
-        quien,
-      );
-      data.conteoPatioId = acta.id;
-      data.trozas = json(trozasDeActa(acta));
+      const libro = leerLibro(actual.libro);
+      if (!libro) throw new InspeccionError("corrupta", `La inspección ${id} tiene el libro congelado ilegible.`, 500);
+      const conteo = conteoDeLaInspeccion(cambios.conteoPatio, { fecha: dia(actual.fecha), inspector: actual.inspector, libro });
+      data.trozas = json(trozasParaGuardar(conteo));
+      /* Una inspección de antes del 17-10 deja de apuntar al acta del patio de la planta. */
+      data.conteoPatioId = null;
     }
     if (Object.keys(data).length === 0) return ForestInspeccionPlantaDB.obtener(tenantId, id);
 
     const r = await prisma.forestInspeccionPlanta.updateMany({ where: { tenantId, id, estado: "abierta" }, data });
     if (r.count === 0) return rechazoDeCarrera(tenantId, id);
     invalidar(tenantId);
-    auditar(tenantId, "inspeccion.editar", id, `Cambió: ${Object.keys(data).join(", ")}`, quien);
+    auditar(tenantId, "inspeccion.editar", id, `Cambió: ${Object.keys(data).filter((k) => k !== "conteoPatioId").join(", ")}`, quien);
     return ForestInspeccionPlantaDB.obtener(tenantId, id);
   },
 
@@ -464,12 +495,16 @@ export const ForestInspeccionPlantaDB = {
     const n = Math.min(Math.max(1, Math.trunc(o.limite ?? LIMITE_INSPECCIONES)), 500);
     const huella = createHash("sha1").update(`${ids.join(",")}|${o.estado ?? "*"}|${n}`).digest("hex").slice(0, 16);
     return getOrSet(`${CACHE_PREFIX}:global:${huella}`, TTL_LISTA_SEG, async () => {
-      const filas = await prisma.forestInspeccionPlanta.findMany({
-        where: { tenantId: { in: ids }, ...(o.estado ? { estado: o.estado } : {}) },
-        select: { ...SELECT_RESUMEN, tenantId: true },
-        orderBy: [{ fecha: "desc" }, { createdAt: "desc" }],
-        take: n,
-      });
+      const filas = await prisma.$queryRawUnsafe<(FilaResumen & { tenantId: string })[]>(
+        `SELECT ${COLUMNAS_RESUMEN}
+           FROM "ForestInspeccionPlanta"
+          WHERE "tenantId" = ANY($1::text[]) AND ($2::text IS NULL OR "estado" = $2::text)
+          ORDER BY "fecha" DESC, "createdAt" DESC
+          LIMIT $3`,
+        ids,
+        o.estado ?? null,
+        n,
+      );
       const salida: (InspeccionResumen & { tenantId: string })[] = [];
       for (const f of filas) {
         const r = aResumen(f);

@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
+import { CARPETA_FOTOS_INSPECCION } from "@/lib/superadmin/plantas-forestales/schemas";
 
 /**
  * POST /api/superadmin/upload
@@ -48,6 +49,14 @@ export async function POST(req: NextRequest) {
        `..` ni barras (17-10, inspecciones de planta: era texto libre del form). */
     if (!/^[A-Za-z0-9_-]{1,80}$/.test(folder)) {
       return NextResponse.json({ error: "Carpeta inválida" }, { status: 400 });
+    }
+    /* Las fotos de una inspección de planta son PRIVADAS (security 17-10): este
+       endpoint publica en el bucket `media`. Van por `…/inspecciones/fotos`. */
+    if (folder === CARPETA_FOTOS_INSPECCION) {
+      return NextResponse.json(
+        { error: "Las fotos de una inspección se suben desde la inspección." },
+        { status: 400 },
+      );
     }
     const mode = (formData.get("mode") as "square" | "wide" | "free") ?? "square";
 

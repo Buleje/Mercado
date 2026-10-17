@@ -12,7 +12,7 @@ import {
 } from "@/lib/superadmin/plantas-forestales/incoherencias";
 import { semaforoDePlanta, type EntradaSemaforo } from "@/lib/superadmin/plantas-forestales/semaforo";
 import { resolverPeriodo } from "@/lib/superadmin/plantas-forestales/periodo";
-import { editarInspeccionSchema, esFotoDeInspeccion } from "@/lib/superadmin/plantas-forestales/schemas";
+import { editarInspeccionSchema, esFotoDeInspeccion, leerFotoDeInspeccion } from "@/lib/superadmin/plantas-forestales/schemas";
 import type { FuenteLectura, HallazgoInspeccion } from "@/lib/superadmin/plantas-forestales/tipos";
 
 const P = { tenantId: "planta-op-qa", nombre: "Aserradero QA" };
@@ -115,21 +115,26 @@ describe("candados de la ficha (security 17-10)", () => {
     expect(pendientesParaFicha(r)).toEqual(r);
   });
 
-  it("foto de hallazgo: sólo https del Storage del proyecto o el respaldo local de dev", () => {
+  it("foto de hallazgo: sólo la ruta privada de la inspección (con sesión), nunca una URL pública", () => {
+    const uuid = "0b9c3a52-5d8e-4f7a-9a51-2b7f0e6c1d34";
+    const buena = `/api/superadmin/plantas/planta-1/inspecciones/fotos/${uuid}`;
+    expect(esFotoDeInspeccion(buena)).toBe(true);
+    expect(leerFotoDeInspeccion(buena)).toEqual({ tenantId: "planta-1", id: uuid });
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://abcdefgh.supabase.co");
-    const ruta = "/storage/v1/object/public/media/superadmin/inspecciones-planta/1760000000000-foto.webp";
-    expect(esFotoDeInspeccion(`https://abcdefgh.supabase.co${ruta}`)).toBe(true);
-    expect(esFotoDeInspeccion("/uploads/inspecciones-planta/inspecciones-planta_1760000000000-foto.webp")).toBe(true);
+    const publica = "/storage/v1/object/public/media/superadmin/inspecciones-planta/1760000000000-foto.webp";
     for (const mala of [
       "javascript:alert(1)",
       "data:image/png;base64,AAAA",
-      `http://abcdefgh.supabase.co${ruta}`,
-      `https://otro.supabase.co${ruta}`,
-      `https://abcdefgh.supabase.co${ruta}?x=1`,
-      `https://evil.com@abcdefgh.supabase.co${ruta}`,
-      "https://abcdefgh.supabase.co/storage/v1/object/public/media/superadmin/banners/1-foto.webp",
-      "/uploads/inspecciones-planta/../../secreto.webp",
-      "//abcdefgh.supabase.co" + ruta,
+      /* Las formas de antes del 17-10: públicas, cualquiera las veía sin sesión. */
+      `https://abcdefgh.supabase.co${publica}`,
+      "/uploads/inspecciones-planta/inspecciones-planta_1760000000000-foto.webp",
+      `https://buleje.pe${buena}`,
+      `//evil.com${buena}`,
+      `${buena}?x=1`,
+      `${buena}/../../otra`,
+      `/api/superadmin/plantas/Planta_1/inspecciones/fotos/${uuid}`,
+      `/api/superadmin/plantas/planta-1/inspecciones/fotos/${uuid.toUpperCase()}`,
+      "/api/superadmin/plantas/planta-1/inspecciones/fotos/no-es-uuid",
     ]) {
       expect(esFotoDeInspeccion(mala), mala).toBe(false);
     }

@@ -7,6 +7,7 @@ import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { logger } from "@/lib/logger";
 import { PlantasForestalesDB } from "@/lib/db/plantas-forestales.db";
 import { ForestInspeccionPlantaDB } from "@/lib/db/forest-inspeccion-planta.db";
+import { jsonConTope } from "@/lib/cuerpo-con-tope";
 import { crearInspeccionSchema, tenantIdSchema } from "@/lib/superadmin/plantas-forestales/schemas";
 import { crearInspeccion, errorDeInspeccion } from "@/lib/superadmin/plantas-forestales/inspeccion.server";
 
@@ -56,7 +57,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ tenantId: 
 
   const id = tenantIdSchema.safeParse((await ctx.params).tenantId);
   if (!id.success) return NextResponse.json(NO_ES_PLANTA, { status: 404 });
-  const body = crearInspeccionSchema.safeParse(await req.json().catch(() => ({})));
+  /* Abrir lleva el día y unas notas: 64 KB sobran (security 17-10: cuerpos sin tope). */
+  const leido = await jsonConTope(req, 64 * 1024);
+  if (leido.grande) return NextResponse.json({ error: "Lo que mandaste es demasiado grande." }, { status: 413 });
+  const body = crearInspeccionSchema.safeParse(leido.valor ?? {});
   if (!body.success) return NextResponse.json({ error: "Datos inválidos: manda la fecha como AAAA-MM-DD" }, { status: 400 });
 
   try {

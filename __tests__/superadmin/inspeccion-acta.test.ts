@@ -8,7 +8,9 @@ import { anotarDesconocido, anotarTroza, nuevoConteo, type TrozaDelConteo } from
 import { actaDeInspeccion, type InspeccionParaActa } from "@/lib/superadmin/plantas-forestales/acta-inspeccion";
 
 const SUPABASE = "https://abcdefgh.supabase.co";
-const FOTO_BUENA = `${SUPABASE}/storage/v1/object/public/media/superadmin/inspecciones-planta/1760000000000-foto.webp`;
+/* La foto privada (security 17-10): la ruta con sesión, no una URL pública del almacén. */
+const FOTO_BUENA = "/api/superadmin/plantas/planta-1/inspecciones/fotos/0b9c3a52-5d8e-4f7a-9a51-2b7f0e6c1d34";
+const FOTO_PUBLICA_VIEJA = `${SUPABASE}/storage/v1/object/public/media/superadmin/inspecciones-planta/1760000000000-foto.webp`;
 
 const troza = (id: string, especie: string, guia: string, m3: number): TrozaDelConteo => ({
   id,
@@ -49,7 +51,7 @@ function inspeccion(extra: Partial<InspeccionParaActa> = {}): InspeccionParaActa
         categoria: "volumen",
         texto: `Faltan trozas <script>alert("x")</script> en la cancha 2`,
         m3: 1.3,
-        fotos: ["javascript:alert(1)", "data:image/png;base64,AAAA", FOTO_BUENA],
+        fotos: ["javascript:alert(1)", "data:image/png;base64,AAAA", FOTO_PUBLICA_VIEJA, FOTO_BUENA],
         referencia: { tipo: "guia", valor: "019-001-0000002" },
       },
     ],
@@ -90,10 +92,11 @@ describe("acta de la inspección", () => {
     expect(title).toContain("Aserradero");
   });
 
-  it("sólo dibuja las fotos subidas desde la inspección (ni javascript: ni data:)", () => {
+  it("sólo dibuja las fotos subidas desde la inspección (ni javascript: ni data: ni la pública vieja)", () => {
     const { body } = actaDeInspeccion(inspeccion(), { nombre: "Planta" });
     expect(body).not.toContain("javascript:");
     expect(body).not.toContain("data:image");
+    expect(body).not.toContain("supabase.co");
     expect(body).toContain(`<img src="${FOTO_BUENA}"`);
   });
 

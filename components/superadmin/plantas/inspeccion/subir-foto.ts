@@ -3,21 +3,18 @@
  *
  * La foto de la cámara pesa 3-6 MB y en la planta la señal es mala: si pasa de
  * 1,5 MB se achica en el equipo (lado mayor 1600 px, JPEG) antes de subirla.
- * El servidor la vuelve a optimizar a WebP (`mode=wide`) y la guarda en la
- * carpeta que el schema del hallazgo acepta (`CARPETA_FOTOS_INSPECCION`).
+ * El servidor la vuelve a optimizar a WebP y la guarda PRIVADA, en la carpeta
+ * de la planta (security 17-10): devuelve `/api/superadmin/plantas/<planta>/
+ * inspecciones/fotos/<uuid>`, que se ve sólo con la sesión del superadmin.
  */
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
-import { CARPETA_FOTOS_INSPECCION } from "@/lib/superadmin/plantas-forestales/schemas";
+import { rutaFotosDeInspeccion } from "@/lib/superadmin/plantas-forestales/schemas";
 
 const ACHICAR_DESDE = 1.5 * 1024 * 1024;
 const LADO_MAX = 1600;
 const TIPOS = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-const ERRORES: Record<string, string> = {
-  invalid_type: "Esa imagen no se puede subir: usa una foto JPG, PNG o WebP.",
-  too_large: "La foto pesa más de 8 MB.",
-  no_file: "No llegó la foto. Vuelve a tomarla.",
-};
+const TIPO_INVALIDO = "Esa imagen no se puede subir: usa una foto JPG, PNG o WebP.";
 
 async function achicar(file: File): Promise<File> {
   if (file.size <= ACHICAR_DESDE || typeof createImageBitmap !== "function") return file;
@@ -39,19 +36,17 @@ async function achicar(file: File): Promise<File> {
 }
 
 /** Devuelve la dirección de la foto o el error legible. */
-export async function subirFotoDeHallazgo(file: File): Promise<{ url: string } | { error: string }> {
-  if (file.type && !TIPOS.includes(file.type)) return { error: ERRORES.invalid_type };
+export async function subirFotoDeHallazgo(tenantId: string, file: File): Promise<{ url: string } | { error: string }> {
+  if (file.type && !TIPOS.includes(file.type)) return { error: TIPO_INVALIDO };
   const lista = await achicar(file);
   const fd = new FormData();
   fd.append("file", lista);
-  fd.append("folder", CARPETA_FOTOS_INSPECCION);
-  fd.append("mode", "wide");
   try {
-    const res = await fetchSuperadmin("/api/superadmin/upload", { method: "POST", body: fd });
+    const res = await fetchSuperadmin(rutaFotosDeInspeccion(tenantId), { method: "POST", body: fd });
     const d = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
     if (res.ok && d.url) return { url: d.url };
-    /* El servidor ya explica el error en castellano: va tal cual (los códigos viejos, traducidos). */
-    return { error: d.error ? (ERRORES[d.error] ?? d.error) : "No se pudo subir la foto. Prueba de nuevo." };
+    /* El servidor ya explica el error en castellano: va tal cual. */
+    return { error: d.error ?? "No se pudo subir la foto. Prueba de nuevo." };
   } catch {
     return { error: "Sin conexión: la foto no se subió. Prueba de nuevo cuando tengas señal." };
   }

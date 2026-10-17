@@ -134,14 +134,14 @@ export function InspeccionHallazgos({ s }: { s: Inspeccion }) {
             </Button>
           )}
         </div>
-        {s.editable && editando === "nuevo" && <FormHallazgo key="nuevo" inicial={null} onGuardar={guardar} onCancelar={() => setEditando(null)} />}
+        {s.editable && editando === "nuevo" && <FormHallazgo key="nuevo" tenantId={s.insp?.tenantId ?? ""} inicial={null} onGuardar={guardar} onCancelar={() => setEditando(null)} />}
         {hallazgos.length === 0 && editando !== "nuevo" && <p className="text-sm text-[var(--text-tertiary)]">Todavía no anotaste hallazgos.</p>}
         {hallazgos.length > 0 && (
           <ul className="space-y-3">
             {hallazgos.map((h) =>
               s.editable && enEdicion?.id === h.id ? (
                 <li key={h.id}>
-                  <FormHallazgo inicial={enEdicion} onGuardar={guardar} onCancelar={() => setEditando(null)} />
+                  <FormHallazgo tenantId={s.insp?.tenantId ?? ""} inicial={enEdicion} onGuardar={guardar} onCancelar={() => setEditando(null)} />
                 </li>
               ) : (
                 <TarjetaHallazgo

@@ -12,6 +12,7 @@ import "server-only";
 import sharp from "sharp";
 
 import { MAX_BYTES_FIRMA, MAX_BYTES_HUELLA } from "@/lib/adelantos/entregar-tipos";
+import { cuerpoConTope } from "@/lib/cuerpo-con-tope";
 
 const TIPOS = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -70,34 +71,6 @@ export type MultipartRechazado = { ok: false; status: 400 | 413; error: string; 
  * esperados (archivo donde va archivo, texto donde va texto). Un campo repetido
  * o inesperado → 400: así un segundo `firma` no se cuela detrás del primero.
  */
-/**
- * El cuerpo entero, cortando apenas pasa `max` bytes (no se confía en
- * `content-length`: puede faltar o mentir). `"grande"` = pasó el tope.
- */
-async function cuerpoConTope(req: Request, max: number): Promise<Uint8Array<ArrayBuffer> | "grande"> {
-  if (!req.body) return new Uint8Array(0);
-  const lector = req.body.getReader();
-  const trozos: Uint8Array[] = [];
-  let total = 0;
-  for (;;) {
-    const { done, value } = await lector.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > max) {
-      await lector.cancel().catch(() => undefined);
-      return "grande";
-    }
-    trozos.push(value);
-  }
-  const todo = new Uint8Array(total);
-  let i = 0;
-  for (const t of trozos) {
-    todo.set(t, i);
-    i += t.byteLength;
-  }
-  return todo;
-}
-
 /**
  * `maxBytes` (10-10, revisión de `security`): el pedido entero no puede pasar
  * de eso. Un `content-length` mayor → 413 ANTES de leer nada; sin ese header

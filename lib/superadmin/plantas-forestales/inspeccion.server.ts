@@ -7,8 +7,12 @@ import "server-only";
  *    con las trozas que el libro da en el patio: las MISMAS que cuenta la propia
  *    planta (`trozasComoConsumibles` → `aTrozaDelConteo`, con su cancha del Mapa
  *    de Planta, igual que `/api/admin/forestal/trozas/patio`).
- *  · Editar con conteo = el conteo se clava a esa foto (`conteoDeLaInspeccion`)
- *    antes de guardarlo: los totales los arma el servidor, no el equipo.
+ *  · Editar con conteo = la DB class lo clava a esa foto (`conteoDeLaInspeccion`)
+ *    y lo guarda DENTRO de la inspección (security 17-10: ya no va al
+ *    `ForestPatioConteo` de la planta, que la planta podía re-escribir): los
+ *    totales los arma el servidor, no el equipo.
+ *  · El PATCH devuelve la inspección LIVIANA (sin `libro` ni `conteoPatio`):
+ *    la pantalla ya los tiene y el autoguardado corre cada ~1,2 s.
  *  · Cerrar y anular cambian las incoherencias y el semáforo de la planta
  *    (los hallazgos de la última cerrada pesan): se olvida su cálculo cacheado.
  *
@@ -18,14 +22,12 @@ import "server-only";
 import { logger } from "@/lib/logger";
 import { limaDateKey } from "@/lib/utils";
 import { ForestInspeccionPlantaDB, InspeccionError, type InspeccionDetalle } from "@/lib/db/forest-inspeccion-planta.db";
-import { ForestPatioConteoDB } from "@/lib/db/forest-patio-conteo.db";
 import { ForestPlantaAsignacionDB } from "@/lib/db/forest-planta-asignacion.db";
 import { ForestPlantaZonaDB } from "@/lib/db/forest-planta-zona.db";
-import { aTrozaDelConteo, type ConteoPatio, type TrozaDelConteo } from "@/lib/forestal/conteo-patio";
+import { aTrozaDelConteo, type TrozaDelConteo } from "@/lib/forestal/conteo-patio";
 import { MAX_TROZAS_CONTEO } from "@/lib/forestal/conteo-patio-guardado";
 import { nombreDeCancha } from "@/lib/forestal/conteo-patio-pasos";
 import { claveTroza } from "@/lib/forestal/planta-zona-types";
-import { conteoDeLaInspeccion } from "./inspeccion";
 import { esDiaReal, periodoPorDefecto } from "./periodo";
 import { calcularParaInspeccion, olvidarPlantas, type PatioLeido } from "./resumen.server";
 import type { EditarInspeccion } from "./schemas";
@@ -56,12 +58,14 @@ export function errorDeInspeccion(err: unknown): { status: number; cuerpo: { err
   return null;
 }
 
-/** Lo que devuelven GET y PATCH de una inspección (la pantalla lo lee plano). */
+/** Lo que devuelve el GET de una inspección (la pantalla lo lee plano). */
 export type InspeccionParaPantalla = InspeccionDetalle & {
-  conteoPatio: ConteoPatio | null;
   planta: { nombre: string; slug: string };
   plantaNombre: string;
 };
+
+/** Lo que devuelve el PATCH: sin lo pesado que la pantalla ya tiene (`libro`, `conteoPatio`). */
+export type InspeccionGuardada = Omit<InspeccionParaPantalla, "libro" | "conteoPatio">;
 
 /* ── Abrir ──────────────────────────────────────────────────────────────── */
 
@@ -124,29 +128,18 @@ export async function crearInspeccion(
     { fecha: datos.fecha, inspector: datos.inspector, libro: foto, notas: datos.notas },
     datos.inspector,
   );
-  return { ...d, conteoPatio: null, planta: { nombre: identidad.nombre, slug: identidad.slug }, plantaNombre: identidad.nombre };
+  return paraPantalla(identidad, d);
 }
 
 /* ── Leer ───────────────────────────────────────────────────────────────── */
 
-/** El conteo guardado (para retomarlo e imprimir el acta). Ilegible → `null` con log, no 500. */
-async function conteoDe(tenantId: string, conteoPatioId: string | null): Promise<ConteoPatio | null> {
-  if (!conteoPatioId) return null;
-  try {
-    return (await ForestPatioConteoDB.porId(tenantId, conteoPatioId))?.conteo ?? null;
-  } catch (err) {
-    logger.warn("[plantas-forestales] conteo de la inspección no disponible", { tenantId, conteoPatioId, error: String(err) });
-    return null;
-  }
+function paraPantalla(identidad: PlantaIdentidad, d: InspeccionDetalle): InspeccionParaPantalla {
+  return { ...d, planta: { nombre: identidad.nombre, slug: identidad.slug }, plantaNombre: identidad.nombre };
 }
 
-async function paraPantalla(identidad: PlantaIdentidad, d: InspeccionDetalle): Promise<InspeccionParaPantalla> {
-  return {
-    ...d,
-    conteoPatio: await conteoDe(identidad.tenantId, d.conteoPatioId),
-    planta: { nombre: identidad.nombre, slug: identidad.slug },
-    plantaNombre: identidad.nombre,
-  };
+function guardada(identidad: PlantaIdentidad, d: InspeccionDetalle): InspeccionGuardada {
+  const { libro: _libro, conteoPatio: _conteo, ...liviana } = paraPantalla(identidad, d);
+  return liviana;
 }
 
 export async function obtenerParaPantalla(identidad: PlantaIdentidad, id: string): Promise<InspeccionParaPantalla | null> {
@@ -168,7 +161,7 @@ export async function editarInspeccion(
   id: string,
   cambios: EditarInspeccion,
   usuario: string,
-): Promise<{ inspeccion: InspeccionParaPantalla; acciones: AccionDeEdicion[] } | null> {
+): Promise<{ inspeccion: InspeccionGuardada; acciones: AccionDeEdicion[] } | null> {
   const tid = identidad.tenantId;
   const { cerrar, anular, conteoPatio, ...resto } = cambios;
   const hayEdicion = conteoPatio !== undefined || Object.values(resto).some((v) => v !== undefined);
@@ -178,20 +171,13 @@ export async function editarInspeccion(
     const d = await ForestInspeccionPlantaDB.anular(tid, id, anular, usuario);
     if (!d) return null;
     olvidarPlantas(tid);
-    return { inspeccion: await paraPantalla(identidad, d), acciones: ["anular"] };
+    return { inspeccion: guardada(identidad, d), acciones: ["anular"] };
   }
 
   const acciones: AccionDeEdicion[] = [];
   let d: InspeccionDetalle | null = null;
   if (hayEdicion) {
-    let conteo: ConteoPatio | undefined;
-    if (conteoPatio) {
-      /* El conteo se clava a la foto de ESTA inspección: hace falta leerla primero. */
-      const actual = await ForestInspeccionPlantaDB.obtener(tid, id);
-      if (!actual) return null;
-      conteo = conteoDeLaInspeccion(conteoPatio, actual);
-    }
-    d = await ForestInspeccionPlantaDB.editar(tid, id, { ...resto, ...(conteo ? { conteoPatio: conteo } : {}) }, usuario);
+    d = await ForestInspeccionPlantaDB.editar(tid, id, { ...resto, ...(conteoPatio ? { conteoPatio } : {}) }, usuario);
     if (!d) return null;
     acciones.push("editar");
   }
@@ -205,7 +191,7 @@ export async function editarInspeccion(
     d = await ForestInspeccionPlantaDB.obtener(tid, id);
     if (!d) return null;
   }
-  return { inspeccion: await paraPantalla(identidad, d), acciones };
+  return { inspeccion: guardada(identidad, d), acciones };
 }
 
 /* ── La lista de todas las plantas ──────────────────────────────────────── */

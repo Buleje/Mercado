@@ -28,6 +28,7 @@ import {
   type CampoGuardable,
   type EstadoGuardado,
   type InspeccionDeLaPantalla,
+  type InspeccionGuardadaDeLaPantalla,
 } from "./inspeccion-datos";
 
 const ESPERA_MS = 1200;
@@ -94,6 +95,19 @@ export function useInspeccion(tenantId: string, id: string) {
     }
   }, []);
 
+  /* El PATCH responde LIVIANO (security 17-10): sin el libro congelado ni el
+     conteo, que no cambian o ya están en el equipo. Se mezcla con lo que hay;
+     sin nada cargado todavía, se relee entero. */
+  const aplicarGuardada = useCallback(
+    (d: InspeccionGuardadaDeLaPantalla, reemplazar: boolean): boolean => {
+      const prev = actual.current.insp;
+      if (!prev) return false;
+      aplicar({ ...prev, ...d }, reemplazar);
+      return true;
+    },
+    [aplicar],
+  );
+
   const cargar = useCallback(async () => {
     setErrorCarga(null);
     try {
@@ -133,7 +147,7 @@ export function useInspeccion(tenantId: string, id: string) {
             keepalive: Boolean(o?.keepalive) && json.length < KEEPALIVE_MAX,
           });
           if (res.ok) {
-            aplicar((await res.json()) as InspeccionDeLaPantalla, false);
+            if (!aplicarGuardada((await res.json()) as InspeccionGuardadaDeLaPantalla, false)) void cargar();
             setGuardadoEn(new Date().toISOString());
             setMensaje(null);
             setEstado(sucios.current.size > 0 ? "pendiente" : "guardado");
@@ -165,7 +179,7 @@ export function useInspeccion(tenantId: string, id: string) {
         enVuelo.current = null;
       }
     },
-    [url, aplicar, cargar],
+    [url, aplicarGuardada, cargar],
   );
 
   const marcar = useCallback(
@@ -252,7 +266,7 @@ export function useInspeccion(tenantId: string, id: string) {
         const res = await fetchSuperadmin(url, { method: "PATCH", headers: JSON_HEADERS, body: JSON.stringify(body) });
         if (!res.ok) return await mensajeDeError(res);
         sucios.current.clear();
-        aplicar((await res.json()) as InspeccionDeLaPantalla, true);
+        if (!aplicarGuardada((await res.json()) as InspeccionGuardadaDeLaPantalla, true)) void cargar();
         setEstado("guardado");
         setMensaje(null);
         setGuardadoEn(new Date().toISOString());
@@ -263,7 +277,7 @@ export function useInspeccion(tenantId: string, id: string) {
         setAccion(null);
       }
     },
-    [url, guardar, aplicar],
+    [url, guardar, aplicarGuardada, cargar],
   );
 
   const cerrar = useCallback(() => terminar("cerrar", { cerrar: true }), [terminar]);

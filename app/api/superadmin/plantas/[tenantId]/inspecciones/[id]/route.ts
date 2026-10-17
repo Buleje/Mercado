@@ -6,7 +6,12 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { logger } from "@/lib/logger";
 import { PlantasForestalesDB } from "@/lib/db/plantas-forestales.db";
-import { editarInspeccionSchema, tenantIdSchema } from "@/lib/superadmin/plantas-forestales/schemas";
+import { jsonConTope } from "@/lib/cuerpo-con-tope";
+import {
+  editarInspeccionSchema,
+  MAX_BYTES_PATCH_INSPECCION,
+  tenantIdSchema,
+} from "@/lib/superadmin/plantas-forestales/schemas";
 import {
   editarInspeccion,
   errorDeInspeccion,
@@ -25,7 +30,9 @@ import {
  *    (puede venir con los últimos cambios) o `anular: "<motivo>"` (va solo).
  *    Cerrada o anulada = 409 `{ error, estado }`. Los totales de trozas los
  *    arma el servidor con el conteo clavado al libro congelado. Cada acción
- *    queda en la auditoría (`inspeccion.editar|cerrar|anular`).
+ *    queda en la auditoría (`inspeccion.editar|cerrar|anular`). Responde la
+ *    inspección LIVIANA (sin `libro` ni `conteoPatio`: la pantalla ya los
+ *    tiene). Cuerpo de más de 2 MB → 413 sin leer el resto (security 17-10).
  */
 const NO_STORE = { "Cache-Control": "no-store" } as const;
 const NO_ENCONTRADA = { error: "Inspección no encontrada" } as const;
@@ -74,7 +81,11 @@ export async function PATCH(req: NextRequest, ctx: Params) {
   const csrf = assertCsrf(req);
   if (csrf) return csrf;
 
-  const body = editarInspeccionSchema.safeParse(await req.json().catch(() => null));
+  const leido = await jsonConTope(req, MAX_BYTES_PATCH_INSPECCION);
+  if (leido.grande) {
+    return NextResponse.json({ error: "Lo que mandaste pesa más de 2 MB: guarda por partes." }, { status: 413 });
+  }
+  const body = editarInspeccionSchema.safeParse(leido.valor);
   if (!body.success) {
     /* El único mensaje propio es el de la foto; el resto, genérico (no se filtra el schema). */
     const propio = body.error.issues.find((i) => i.code === "custom")?.message;

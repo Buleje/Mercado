@@ -10,6 +10,7 @@ import { Camera, ImagePlus, Loader2, X } from "@buleje/design-system/icons";
 import { Button } from "@/components/ui-system/Button";
 import { cn } from "@/lib/utils";
 import type { HallazgoInspeccion } from "@/lib/superadmin/plantas-forestales/tipos";
+import { MAX_FOTOS_HALLAZGO, MAX_TEXTO_HALLAZGO } from "@/lib/superadmin/plantas-forestales/schemas";
 import { BOTON_BORDE, TARJETA } from "@/components/admin/forestal/ctp-conteo-pasos";
 import { GRAVEDAD } from "../formato";
 import { CAMPO, CampoNumero } from "./CampoNumero";
@@ -17,7 +18,6 @@ import { CATEGORIAS, idNuevo, REFERENCIAS } from "./inspeccion-datos";
 import { subirFotoDeHallazgo } from "./subir-foto";
 
 type Referencia = NonNullable<HallazgoInspeccion["referencia"]>;
-const MAX_FOTOS = 12;
 const ORDEN_GRAVEDAD: HallazgoInspeccion["gravedad"][] = ["error", "warning", "info"];
 const TONO_GRAVEDAD: Record<HallazgoInspeccion["gravedad"], string> = {
   error: "border-[var(--data-error-500)] bg-[var(--data-error-500)]/10 text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]",
@@ -29,7 +29,7 @@ export function FotoMiniatura({ url, onQuitar }: { url: string; onQuitar?: () =>
   return (
     <div className="relative h-20 w-20 overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]">
       <a href={url} target="_blank" rel="noreferrer" aria-label="Ver la foto completa">
-        {/* eslint-disable-next-line @next/next/no-img-element -- foto subida por el inspector (Supabase o /uploads en dev) */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- foto privada: la ruta con sesión redirige a una URL firmada */}
         <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
       </a>
       {onQuitar && (
@@ -47,10 +47,13 @@ export function FotoMiniatura({ url, onQuitar }: { url: string; onQuitar?: () =>
 }
 
 export function FormHallazgo({
+  tenantId,
   inicial,
   onGuardar,
   onCancelar,
 }: {
+  /** La planta: la foto se sube a SU carpeta privada. */
+  tenantId: string;
   inicial: HallazgoInspeccion | null;
   onGuardar: (h: HallazgoInspeccion) => void;
   onCancelar: () => void;
@@ -72,9 +75,9 @@ export function FormHallazgo({
     if (!file) return;
     setSubiendo(true);
     setErrorFoto(null);
-    const r = await subirFotoDeHallazgo(file);
+    const r = await subirFotoDeHallazgo(tenantId, file);
     setSubiendo(false);
-    if ("url" in r) setFotos((f) => [...f, r.url].slice(0, MAX_FOTOS));
+    if ("url" in r) setFotos((f) => [...f, r.url].slice(0, MAX_FOTOS_HALLAZGO));
     else setErrorFoto(r.error);
   };
   const guardar = () =>
@@ -82,7 +85,7 @@ export function FormHallazgo({
       id: inicial?.id ?? idNuevo(),
       gravedad,
       categoria,
-      texto: texto.trim().slice(0, 2000),
+      texto: texto.trim().slice(0, MAX_TEXTO_HALLAZGO),
       m3,
       fotos,
       referencia: refTipo && refValor.trim() ? { tipo: refTipo, valor: refValor.trim().slice(0, 80) } : null,
@@ -129,7 +132,7 @@ export function FormHallazgo({
         <textarea
           className={cn(CAMPO, "h-auto min-h-28 py-2")}
           value={texto}
-          maxLength={2000}
+          maxLength={MAX_TEXTO_HALLAZGO}
           onChange={(e) => setTexto(e.target.value)}
           placeholder="Ej.: 12 trozas de tornillo sin guía en la cancha 3."
         />
@@ -144,7 +147,7 @@ export function FormHallazgo({
             ))}
           </div>
         )}
-        {fotos.length < MAX_FOTOS && (
+        {fotos.length < MAX_FOTOS_HALLAZGO && (
           <div className="grid gap-2 sm:flex">
             <label htmlFor={`${id}-camara`} className={cn(BOTON_BORDE, "cursor-pointer", subiendo && "pointer-events-none opacity-60")}>
               {subiendo ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Camera className="h-5 w-5" aria-hidden />}

@@ -28,6 +28,12 @@ export type InspeccionDeLaPantalla = InspeccionPlanta & {
   plantaNombre?: string | null;
 };
 
+/**
+ * Lo que devuelve el PATCH (security 17-10): la misma inspección SIN el libro
+ * congelado ni el conteo — el autoguardado no los vuelve a bajar en cada cambio.
+ */
+export type InspeccionGuardadaDeLaPantalla = Omit<InspeccionDeLaPantalla, "libro" | "conteoPatio">;
+
 /** Lo que el inspector edita (el conteo de trozas va aparte: vive también en el equipo). */
 export interface Borrador {
   hallazgos: HallazgoInspeccion[];

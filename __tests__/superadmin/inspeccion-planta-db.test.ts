@@ -3,7 +3,9 @@
  * lectura de los JSON guardados. Base simulada: una tabla en memoria con lo
  * justo que usan `findFirst`, `findMany`, `updateMany` y `create`.
  *
- * 1. Cerrada o anulada no se edita (409) y el conteo NO se guarda en el patio.
+ * 1. Cerrada o anulada no se edita (409) y el conteo no entra.
+ * 1b. El conteo es de la inspección (security 17-10): va dentro de su fila, sin
+ *     las trozas (salen del libro congelado), nunca al patio de la planta.
  * 2. Si la cierran entre la lectura y el UPDATE (otra pestaña), también 409.
  * 3. Anular vale desde abierta o cerrada, nunca dos veces.
  * 4. `faltantesTrozas` y `hallazgos` del resumen salen de los JSON guardados;
@@ -17,7 +19,6 @@ const H = vi.hoisted(() => ({
   filas: [] as Fila[],
   /** Estado que la "otra pestaña" pone justo antes del UPDATE. */
   carrera: null as string | null,
-  guardar: vi.fn(),
   logError: vi.fn(),
 }));
 
@@ -59,7 +60,12 @@ vi.mock("@/lib/prisma", () => ({
         return { count: tocadas.length };
       }),
     },
-    $queryRawUnsafe: vi.fn(async () => []),
+    /* Las listas leen con SQL (recortan el conteo): acá, la misma tabla con la fecha ya en texto. */
+    $queryRawUnsafe: vi.fn(async (_sql: string, ...p: unknown[]) =>
+      H.filas
+        .filter((f) => (Array.isArray(p[0]) ? p[0].includes(f.tenantId) : f.tenantId === p[0]))
+        .map((f) => ({ ...f, fecha: (f.fecha as Date).toISOString().slice(0, 10) })),
+    ),
   },
 }));
 vi.mock("@/lib/cache", () => ({
@@ -68,8 +74,8 @@ vi.mock("@/lib/cache", () => ({
 }));
 vi.mock("@/lib/activity-logger", () => ({ logActivity: vi.fn(async () => undefined) }));
 vi.mock("@/lib/logger", () => ({ logger: { error: H.logError, warn: vi.fn(), info: vi.fn() } }));
-vi.mock("@/lib/db/forest-patio-conteo.db", () => ({ ForestPatioConteoDB: { guardar: H.guardar } }));
 
+import { anotarDesconocido, anotarTroza, nuevoConteo, type TrozaDelConteo } from "@/lib/forestal/conteo-patio";
 import {
   ForestInspeccionPlantaDB as DB,
   InspeccionError,
@@ -77,7 +83,6 @@ import {
   faltantesDeTrozas,
   leerHallazgos,
   transicionPermitida,
-  trozasDeActa,
 } from "@/lib/db/forest-inspeccion-planta.db";
 
 const T = "planta-1";
@@ -98,6 +103,27 @@ const HALLAZGO = {
   referencia: { tipo: "guia", valor: "123" },
 };
 const TROZAS = { esperadas: 84, contadas: 80, m3Esperado: 120.5, m3Contado: 115, faltantes: 4, sobrantes: 0 };
+
+const troza = (id: string, m3: number): TrozaDelConteo => ({
+  id,
+  codificacion: null,
+  codigoPlanta: id.toUpperCase(),
+  especieComun: "Cumala",
+  gtfNumber: "019-001-0000001",
+  volumenM3: m3,
+  motivo: null,
+});
+const PATIO = [troza("t-a", 1.2), troza("t-b", 0.8)];
+const LIBRO_PATIO = { ...LIBRO, trozasDelPatio: PATIO };
+
+/** Lo que manda el celular: 1 troza del libro + 1 código desconocido, sin trozas y con su propio inicio. */
+function conteoDelEquipo() {
+  const ahora = "2026-10-17T15:00:00.000Z";
+  let c = nuevoConteo({ fecha: "2020-01-01", quien: "inspector", trozas: PATIO, ahora: "2020-01-01T00:00:00.000Z" });
+  c = anotarTroza(c, PATIO[0], ahora);
+  c = anotarDesconocido(c, "ZZ-9", ahora);
+  return { ...c, trozas: [] };
+}
 
 function fila(estado: string, extra: Partial<Fila> = {}): Fila {
   const f: Fila = {
@@ -123,12 +149,9 @@ function fila(estado: string, extra: Partial<Fila> = {}): Fila {
   return f;
 }
 
-const ACTA = { id: "acta-9", esperadas: 84, contadas: 81, faltan: 3, sobrantes: 1, m3Esperado: 120.5, m3Contado: 116.1 };
-
 beforeEach(() => {
   H.filas = [];
   H.carrera = null;
-  H.guardar.mockReset().mockResolvedValue({ acta: ACTA, creada: true, obsoleta: false });
   H.logError.mockReset();
 });
 
@@ -141,14 +164,21 @@ describe("estados", () => {
     expect(transicionPermitida("anular", "anulada")).toBe(false);
   });
 
-  it("editar una cerrada → 409 y el conteo NO se guarda en el patio", async () => {
-    const f = fila("cerrada");
-    const err = await DB.editar(T, f.id, { conclusion: "x", conteoPatio: {} as never }).catch((e: unknown) => e);
+  it("editar una cerrada → 409 y el conteo no entra", async () => {
+    const f = fila("cerrada", { libro: LIBRO_PATIO });
+    const err = await DB.editar(T, f.id, { conclusion: "x", conteoPatio: conteoDelEquipo() }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(InspeccionError);
     expect((err as InspeccionError).status).toBe(409);
     expect((err as InspeccionError).estado).toBe("cerrada");
-    expect(H.guardar).not.toHaveBeenCalled();
+    expect(f.trozas).toBeNull();
     expect(f.conclusion).toBeNull();
+  });
+
+  it("la cierran entre la lectura y el UPDATE con un conteo → 409 y el conteo no entra", async () => {
+    const f = fila("abierta", { libro: LIBRO_PATIO });
+    H.carrera = "cerrada";
+    await expect(DB.editar(T, f.id, { conteoPatio: conteoDelEquipo() })).rejects.toMatchObject({ status: 409 });
+    expect(f.trozas).toBeNull();
   });
 
   it("editar una anulada → 409", async () => {
@@ -194,22 +224,30 @@ describe("estados", () => {
 });
 
 describe("conteo de trozas", () => {
-  it("se guarda como acta del patio y la inspección copia su id y su resumen", async () => {
-    const f = fila("abierta");
-    const r = await DB.editar(T, f.id, { conteoPatio: { v: 1 } as never }, "inspector@buleje");
-    /* La nota dice en el historial de conteos de la planta de dónde salió esta acta. */
-    expect(H.guardar).toHaveBeenCalledWith(
-      T,
-      { conteo: { v: 1 }, notas: `Conteo de la inspección de planta ${f.id}` },
-      "inspector@buleje",
-    );
-    expect(f.conteoPatioId).toBe("acta-9");
-    expect(r?.trozas).toEqual({ esperadas: 84, contadas: 81, m3Esperado: 120.5, m3Contado: 116.1, faltantes: 3, sobrantes: 1 });
-    expect(r?.faltantesTrozas).toBe(3);
+  it("va dentro de la fila de la inspección, sin trozas, clavado al libro congelado", async () => {
+    const f = fila("abierta", { libro: LIBRO_PATIO, conteoPatioId: "acta-vieja-del-patio" });
+    const r = await DB.editar(T, f.id, { conteoPatio: conteoDelEquipo() }, "inspector@buleje");
+    const guardado = f.trozas as Record<string, unknown> & { conteo: Record<string, unknown> };
+    /* El resumen (lo lee la lista) y el conteo SIN las trozas: salen del libro al leer. */
+    expect(guardado).toMatchObject({ esperadas: 2, contadas: 1, faltantes: 1, sobrantes: 1, m3Esperado: 2, m3Contado: 1.2 });
+    expect(guardado.conteo).not.toHaveProperty("trozas");
+    expect(guardado.conteo.iniciadoEn).toBe(LIBRO.tomadaEn);
+    expect((guardado.conteo.lecturas as unknown[]).length).toBe(2);
+    /* Ya no apunta al acta del patio de la planta (la planta podía reescribirla). */
+    expect(f.conteoPatioId).toBeNull();
+    expect(r?.conteoPatioId).toBeNull();
+    expect(r?.trozas).toEqual({ esperadas: 2, contadas: 1, m3Esperado: 2, m3Contado: 1.2, faltantes: 1, sobrantes: 1 });
+    expect(r?.faltantesTrozas).toBe(1);
+    expect(r?.conteoPatio?.trozas).toEqual(PATIO);
+    expect(r?.conteoPatio?.fecha).toBe("2026-10-17");
+    expect(r?.conteoPatio?.iniciadoEn).toBe(LIBRO.tomadaEn);
   });
 
-  it("trozasDeActa: faltantes = `faltan` del acta (esperadas no escaneadas)", () => {
-    expect(trozasDeActa(ACTA).faltantes).toBe(3);
+  it("una inspección vieja con acta del patio muestra su resumen y ningún conteo", async () => {
+    const f = fila("cerrada", { conteoPatioId: "acta-9", trozas: TROZAS });
+    const r = await DB.obtener(T, f.id);
+    expect(r?.trozas).toEqual(TROZAS);
+    expect(r?.conteoPatio).toBeNull();
   });
 
   it("faltantesDeTrozas: sin conteo o roto = null (nunca 0)", () => {
@@ -217,6 +255,20 @@ describe("conteo de trozas", () => {
     expect(faltantesDeTrozas({ esperadas: "84" })).toBeNull();
     expect(faltantesDeTrozas(TROZAS)).toBe(4);
     expect(faltantesDeTrozas({ ...TROZAS, faltantes: 0 })).toBe(0);
+  });
+});
+
+describe("fotos de los hallazgos", () => {
+  const foto = (planta: string) => `/api/superadmin/plantas/${planta}/inspecciones/fotos/0b9c3a52-5d8e-4f7a-9a51-2b7f0e6c1d34`;
+
+  it("la de esta planta entra; la de otra planta → 422 sin escribir", async () => {
+    const f = fila("abierta");
+    const r = await DB.editar(T, f.id, { hallazgos: [{ ...HALLAZGO, fotos: [foto(T)] } as never] });
+    expect(r?.hallazgosDetalle[0].fotos).toEqual([foto(T)]);
+    await expect(
+      DB.editar(T, f.id, { hallazgos: [{ ...HALLAZGO, fotos: [foto("otra-planta")] } as never] }),
+    ).rejects.toMatchObject({ status: 422 });
+    expect((f.hallazgos as { fotos: string[] }[])[0].fotos).toEqual([foto(T)]);
   });
 });
 
