@@ -1,12 +1,11 @@
 /**
  * Franja de beneficios + pie de la tienda (contrato §e).
  *
- * El pie va de cacao a cacao hondo, con grano: arriba la despedida en script
- * oro («gracias, linda») con la firma del manual y la suscripción; después
- * las columnas Tienda · Ayuda · Contacto · Pagos (arte propio de los medios
- * de pago, `PaymentMethodIcon` del DS) y, al borde, la línea de cerros y
- * neblina de la selva central. Los enlaces se subrayan creciendo en oro.
- * Ornamentos: la script y los cerros (máximo 2 por vista).
+ * El pie (16-10, minimalista): gris muy claro y plano (`--mu-cacao`, que en
+ * oscuro es el gris hondo), separado por un filo fino. Arriba la despedida
+ * («Gracias, linda») con la firma del manual y la suscripción; después las
+ * columnas Tienda · Ayuda · Contacto · Pagos (`PaymentMethodIcon` del DS).
+ * Sin cerros, grano ni degradé: la jerarquía la dan el tamaño y el peso.
  */
 import { Facebook, Instagram, MessageCircle, ShieldCheck, Truck, Wallet } from "@buleje/design-system/icons";
 import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
@@ -43,7 +42,7 @@ export function Beneficios({ pagos, nombre, sin = [] }: { pagos: string | null; 
           const Icono = ICONOS[b.icono];
           return (
             <li key={b.titulo} className={`flex w-[78%] shrink-0 snap-start items-start gap-4 sm:w-auto ${i === items.length - 1 ? "pr-8 sm:pr-0" : ""}`}>
-              <span className="mu-arco inline-flex h-12 w-12 shrink-0 items-center justify-center bg-[var(--mu-nude-claro)] text-[var(--mu-acento-tinta)]">
+              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)]">
                 <Icono className="h-5 w-5" strokeWidth={1.6} aria-hidden="true" />
               </span>
               <span>
@@ -55,48 +54,6 @@ export function Beneficios({ pagos, nombre, sin = [] }: { pagos: string | null; 
         })}
       </ul>
     </section>
-  );
-}
-
-/**
- * Los cerros con neblina de la selva central (Oxapampa, Villa Rica, Constitución), en
- * tres planos como se ven al amanecer: el de atrás más claro, el de adelante del color
- * del pie (se funde con el fondo), y bancos de neblina entre ellos. Los filos llevan el
- * trazo fino nude. Todo en tokens: en oscuro sale igual, con el nude claro del tema.
- */
-const FILO_ATRAS = "M0 96C80 80 140 52 220 58S360 96 440 72 580 20 680 34 820 88 920 70 1060 30 1160 44 1320 84 1440 64";
-const FILO_MEDIO = "M0 120C120 106 200 92 300 100S480 126 600 110 800 82 920 98 1120 128 1240 112 1380 98 1440 104";
-const FILO_FRENTE = "M0 136C180 128 320 122 480 128S760 138 900 130 1220 120 1440 128";
-
-function Cerros() {
-  const trazo = { fill: "none", strokeWidth: 1.25, vectorEffect: "non-scaling-stroke", strokeLinecap: "round", strokeLinejoin: "round" } as const;
-  const nude = (opacidad: number) => ({ stopColor: "var(--mu-nude-fuerte)", stopOpacity: opacidad });
-  return (
-    <svg viewBox="0 0 1440 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false" className="block h-24 w-full sm:h-36">
-      <defs>
-        <linearGradient id="mu-cerro-atras" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" style={nude(0.16)} />
-          <stop offset="1" style={nude(0.04)} />
-        </linearGradient>
-        <linearGradient id="mu-cerro-medio" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" style={{ stopColor: "var(--mu-cacao)" }} />
-          <stop offset="1" style={{ stopColor: "var(--mu-cacao-hondo)" }} />
-        </linearGradient>
-        <radialGradient id="mu-neblina">
-          <stop offset="0" style={{ stopColor: "var(--mu-sobre-cacao)", stopOpacity: 0.13 }} />
-          <stop offset="1" style={{ stopColor: "var(--mu-sobre-cacao)", stopOpacity: 0 }} />
-        </radialGradient>
-      </defs>
-      <path d={`${FILO_ATRAS}V150H0Z`} fill="url(#mu-cerro-atras)" />
-      <path d={`${FILO_MEDIO}V150H0Z`} fill="url(#mu-cerro-medio)" />
-      <ellipse cx="250" cy="104" rx="250" ry="14" fill="url(#mu-neblina)" />
-      <ellipse cx="860" cy="96" rx="300" ry="16" fill="url(#mu-neblina)" />
-      <ellipse cx="1240" cy="112" rx="220" ry="12" fill="url(#mu-neblina)" />
-      <path d={`${FILO_FRENTE}V150H0Z`} className="fill-[var(--mu-cacao-hondo)]" />
-      <path {...trazo} d={FILO_ATRAS} className="stroke-[var(--mu-nude-fuerte)] opacity-40" />
-      <path {...trazo} d={FILO_MEDIO} className="stroke-[var(--mu-nude-fuerte)] opacity-25" />
-      <path {...trazo} d={FILO_FRENTE} className="stroke-[var(--mu-nude-fuerte)] opacity-15" />
-    </svg>
   );
 }
 
@@ -116,19 +73,18 @@ export function Pie({
 }) {
   const r = rutas(slug);
   const enlace =
-    "mu-subrayado mu-foco inline-flex min-h-12 items-center text-base leading-snug text-[var(--mu-sobre-cacao-2)] transition-colors duration-[var(--mu-dur-corto)] hover:text-[var(--mu-sobre-cacao)] [--mu-subrayado-abajo:.55rem] [--mu-subrayado:var(--mu-oro)]";
-  const titulo = "mu-kicker text-[var(--mu-oro)]";
+    "mu-subrayado mu-foco inline-flex min-h-12 items-center text-base leading-snug text-[var(--mu-sobre-cacao-2)] transition-colors duration-[var(--mu-dur-corto)] hover:text-[var(--mu-sobre-cacao)] [--mu-subrayado-abajo:.55rem] [--mu-subrayado:var(--mu-sobre-cacao)]";
+  const titulo = "mu-kicker font-semibold text-[var(--mu-sobre-cacao)]";
   const seguro = (u?: string) => (u && /^https:\/\//.test(u) ? u : null);
   const fb = seguro(redes.facebook);
   const ig = seguro(redes.instagram);
   const red = "mu-foco inline-flex h-12 w-12 items-center justify-center rounded-full border border-[var(--mu-sobre-cacao)]/25 transition-colors hover:bg-[var(--mu-sobre-cacao)]/10";
 
   return (
-    <footer className="mu-grano bg-[linear-gradient(180deg,var(--mu-cacao)_0%,var(--mu-cacao-hondo)_100%)] text-[var(--mu-sobre-cacao)]">
-      <div className={`${ANCHO} grid gap-8 border-b border-[var(--mu-sobre-cacao)]/15 pb-10 pt-12 sm:pt-16 lg:grid-cols-[1.25fr_1fr] lg:items-end lg:gap-16`}>
+    <footer className="border-t border-[var(--rule-soft)] bg-[var(--mu-cacao)] text-[var(--mu-sobre-cacao)]">
+      <div className={`${ANCHO} grid gap-8 border-b border-[var(--rule-base)] pb-10 pt-12 sm:pt-16 lg:grid-cols-[1.25fr_1fr] lg:items-end lg:gap-16`}>
         <div>
-          {/* Cursiva de la serif y no la script: así la portada no baja Great Vibes (43 KB) sólo para el pie. */}
-          <p className="mu-titulo text-[length:var(--mu-t-bloque)] italic text-[var(--mu-oro)]">{DESPEDIDA.script}</p>
+          <p className="mu-titulo text-[length:var(--mu-t-bloque)] text-[var(--mu-sobre-cacao)]">{DESPEDIDA.script}</p>
           <p className="mt-3 text-[length:var(--mu-t-cuerpo)] text-[var(--mu-sobre-cacao-2)]">{DESPEDIDA.firma}</p>
         </div>
         <div>
@@ -140,10 +96,10 @@ export function Pie({
       <div className={`${ANCHO} grid grid-cols-2 gap-x-6 gap-y-8 pb-2 pt-10 sm:pb-4 sm:pt-14 lg:grid-cols-[1.3fr_1fr_1.05fr_1.3fr_1.05fr] lg:gap-8`}>
         <div className="col-span-2 flex flex-col gap-4 lg:col-span-1">
           <a href={r.base} className="mu-foco flex items-center gap-4 self-start rounded-full leading-none">
-            <Sello id="pie" claro className="h-[4.5rem] w-[4.5rem] shrink-0" />
-            <span className="mu-serif text-[2rem] leading-none">{nombre}</span>
+            <Sello id="pie" claro simple className="h-12 w-12 shrink-0" />
+            <span className="mu-serif text-[1.5rem] leading-none">{nombre}</span>
           </a>
-          <p className="mu-cursiva -mt-1 text-[1.125rem] leading-snug text-[var(--mu-sobre-cacao-2)]">Belleza profesional, cerca de ti</p>
+          <p className="-mt-1 text-base leading-snug text-[var(--mu-sobre-cacao-2)]">Belleza profesional, cerca de ti</p>
           <p className="line-clamp-3 max-w-sm text-[length:var(--mu-t-chico)] leading-relaxed text-[var(--mu-sobre-cacao-2)] sm:line-clamp-none">
             {descripcion ?? "Belleza profesional en Ciudad Constitución (Pasco): cabello, rostro y cuerpo, con asesoría gratis de Drucila por WhatsApp."}
           </p>
@@ -257,8 +213,7 @@ export function Pie({
         </div>
       </div>
 
-      <Cerros />
-      <div className="bg-[var(--mu-cacao-hondo)]">
+      <div className="mt-8 border-t border-[var(--rule-base)]">
         {/* En el celular la píldora «Ver bolsa» flota abajo (56 px + 16): el pie deja ese aire para que no tape la última línea. */}
         <div className={`${ANCHO} flex flex-col gap-1.5 pb-24 pt-5 text-[length:var(--mu-t-chico)] text-[var(--mu-sobre-cacao-2)] sm:flex-row sm:items-center sm:justify-between sm:py-6`}>
           <p>

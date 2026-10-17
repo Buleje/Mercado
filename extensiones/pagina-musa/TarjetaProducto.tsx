@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Tarjeta de un producto de Musa (contrato visual §e «Tarjeta»): el envase
- * ilustrado sobre el tinte de su categoría, dentro de un arco y con su sombra;
- * insignias (Preventa / Por encargo); kicker de categoría y código; nombre;
- * la frase «Ayuda a…»; precio en Cormorant y «Agregar», que al tocarlo se
+ * Tarjeta de un producto de Musa (minimalista, 16-10): el envase ilustrado
+ * sobre un panel gris claro redondeado, sin borde ni sombra de tarjeta (como
+ * mi.com o Aesop); insignias (Preventa / Por encargo); categoría y código en
+ * gris; nombre; la frase «Ayuda a…»; precio en la sans y «Agregar», que al tocarlo se
  * vuelve el contador `[− n +]` (`BotonAgregar`) y pone «✓ En tu bolsa».
  * Un kit suma la píldora «Ahorras S/ 18», qué trae con sus códigos y «Por
  * separado S/ 167» (cuentas del servidor, `datos.ts`; sin tachar nada).
@@ -66,7 +66,7 @@ export function Ilustracion({
     return (
       <span className="absolute inset-0 flex flex-col items-center justify-center gap-2" {...(alt ? { role: "img", "aria-label": alt } : {})}>
         <Sello id={`ilus-${p.id}`} className={`relative ${sello} opacity-90`} />
-        {p.codigo && <span className="relative text-sm font-semibold tracking-[0.14em] text-[var(--mu-acento-tinta)]">{p.codigo}</span>}
+        {p.codigo && <span className="relative text-sm font-semibold tabular-nums text-[var(--text-tertiary)]">{p.codigo}</span>}
       </span>
     );
   }
@@ -86,12 +86,12 @@ export function Ilustracion({
   );
 }
 
-/** El «escenario» del envase (como el catálogo): el tinte de su categoría, un arco claro y la sombra elíptica donde se apoya. */
+/** El «escenario» del envase: un gris muy claro y plano (`tinteDe`, el mismo en todas las categorías) y la sombra elíptica donde se apoya. */
 export function Escenario({ categoria, className = "", children }: { categoria: string; className?: string; children: ReactNode }) {
   return (
     <span className={`relative block overflow-hidden ${tinteDe(categoria)} ${className}`}>
-      {/* En oscuro el arco se aclara (nude al 30 %): la tapa negra de los envases sobre el arco oscuro medía 1,08:1 y se perdía. */}
-      <span aria-hidden="true" className="mu-arco absolute inset-x-[15%] bottom-[7%] top-[9%] bg-[var(--surface-raised)]/45 dark:bg-[var(--mu-nude-fuerte)]/30" />
+      {/* Sólo en oscuro, un arco claro (nude al 30 %): la tapa negra de los envases sobre el gris oscuro medía 1,08:1 y se perdía. */}
+      <span aria-hidden="true" className="mu-arco absolute inset-x-[15%] bottom-[7%] top-[9%] hidden bg-[var(--mu-nude-fuerte)]/30 dark:block" />
       <span
         aria-hidden="true"
         className="absolute inset-x-[24%] bottom-[8.5%] h-[6%] rounded-[50%] bg-[radial-gradient(closest-side,var(--mu-envase-sombra),transparent)] transition-[transform,opacity] duration-300 group-hover:scale-x-90 group-hover:opacity-70"
@@ -101,14 +101,14 @@ export function Escenario({ categoria, className = "", children }: { categoria: 
   );
 }
 
-/** Por encargo (achiote), Preventa u otro badge (acento, punto oro) o En stock (punto verde): `estadoProducto`. */
+/** Por encargo (fondo tibio), Preventa u otro badge (punto del acento) o En stock (punto verde): `estadoProducto`. 14 px, sin mayúsculas. */
 export function Insignia({ texto, grande = false }: { texto: string; grande?: boolean }) {
   const encargo = /encargo/i.test(texto);
   const enStock = texto === "En stock";
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-semibold uppercase tracking-[0.14em] ${grande ? "px-3 py-1.5 text-[12px]" : "px-2.5 py-1 text-[11px]"} ${
-        encargo ? "bg-[var(--mu-encargo-fondo)] text-[var(--mu-encargo)]" : "bg-[var(--surface-raised)] text-[var(--mu-acento-tinta)] ring-1 ring-[var(--rule-soft)]"
+      className={`inline-flex items-center gap-1.5 rounded-full font-medium ${grande ? "px-3 py-1.5 text-[0.9375rem]" : "px-2.5 py-1 text-sm"} ${
+        encargo ? "bg-[var(--mu-encargo-fondo)] text-[var(--mu-encargo)]" : "bg-[var(--surface-raised)] text-[var(--text-primary)] ring-1 ring-[var(--rule-soft)]"
       }`}
     >
       <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${encargo ? "bg-current" : enStock ? "bg-[var(--mu-exito)]" : "bg-[var(--mu-oro)]"}`} />
@@ -118,13 +118,13 @@ export function Insignia({ texto, grande = false }: { texto: string; grande?: bo
 }
 
 /**
- * La píldora negra del catálogo: «AHORRAS S/ 18» (sólo con ahorro real). Con los
+ * La píldora negra del catálogo: «Ahorras S/ 18» (sólo con ahorro real). Con los
  * colores del botón principal: cacao + hueso en claro e invertida en oscuro
  * (nude + negro, 9,39:1), porque el cacao sobre la tarjeta oscura no se despegaba.
  */
 export function PildoraAhorro({ ahorro, grande = false }: { ahorro: number; grande?: boolean }) {
   return (
-    <span className={`mu-brillo inline-flex items-center rounded-full bg-[var(--mu-boton-fondo)] font-semibold uppercase tracking-[0.14em] text-[var(--mu-boton-texto)] ${grande ? "px-3.5 py-1.5 text-[12px]" : "px-2.5 py-1 text-[11px]"}`}>
+    <span className={`inline-flex items-center rounded-full bg-[var(--mu-boton-fondo)] font-semibold tabular-nums text-[var(--mu-boton-texto)] ${grande ? "px-3.5 py-1.5 text-[0.9375rem]" : "px-2.5 py-1 text-sm"}`}>
       Ahorras {precio(ahorro)}
     </span>
   );
@@ -140,11 +140,11 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
   return (
     <article
       data-mu-producto
-      className="group @container relative flex h-full flex-col overflow-hidden rounded-[var(--mu-radio-tarjeta)] border border-[var(--rule-soft)] bg-[var(--surface-raised)] mu-sombra-tarjeta transition-colors duration-200 hover:border-[var(--rule-base)] focus-within:border-[var(--rule-base)]"
+      className="group @container relative flex h-full flex-col"
     >
       <EnlaceFicha p={p} data-mu-foto tabIndex={-1} aria-hidden="true" className="relative block">
         {/* Cuadrada como la ilustración: así un kit no pierde los envases de los costados. */}
-        <Escenario categoria={p.categoria} className="aspect-square">
+        <Escenario categoria={p.categoria} className="aspect-square rounded-[var(--mu-radio-tarjeta)]">
           <Ilustracion p={p} prioridad={prioridad} className="origin-bottom transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1.5 group-hover:rotate-2" />
         </Escenario>
         <span className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1.5 @min-[15.5rem]:left-3 @min-[15.5rem]:top-3">
@@ -175,9 +175,9 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
         )}
       </EnlaceFicha>
 
-      <div className="flex flex-1 flex-col p-3 @min-[15.5rem]:p-4">
+      <div className="flex flex-1 flex-col pb-1 pt-3 @min-[15.5rem]:pt-4">
         <p className="flex items-baseline justify-between gap-2">
-          <span className="mu-kicker truncate text-[var(--mu-acento-tinta)]">{p.kit ? (p.kit.componentes.length === 1 ? "Dúo" : "Kit") : p.categoria}</span>
+          <span className="mu-kicker truncate text-[var(--text-tertiary)]">{p.kit ? (p.kit.componentes.length === 1 ? "Dúo" : "Kit") : p.categoria}</span>
           {p.codigo && <span className="shrink-0 text-sm font-medium tabular-nums text-[var(--text-tertiary)]">{p.codigo}</span>}
         </p>
         <h3 className="mt-1.5 line-clamp-2 min-h-[2.7em] text-[length:var(--mu-t-nombre)] font-medium leading-[1.35] text-[var(--text-primary)]">
@@ -186,7 +186,7 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
           </EnlaceFicha>
         </h3>
         {linea && <p className="mt-1 line-clamp-2 text-[length:var(--mu-t-chico)] leading-snug text-[var(--text-tertiary)]">{linea}</p>}
-        {p.kit && <p className="mt-1 text-sm font-medium text-[var(--mu-acento-tinta)]">Cód. {p.kit.componentes.map((c) => c.codigo).join(", ")}</p>}
+        {p.kit && <p className="mt-1 text-sm text-[var(--text-tertiary)]">Cód. {p.kit.componentes.map((c) => c.codigo).join(", ")}</p>}
         {pocas && <p className="mt-1 text-sm font-semibold text-[var(--mu-achiote-tinta)]">¡Quedan {p.stock}!</p>}
 
         <div className="mt-auto flex flex-col gap-2.5 pt-3 @min-[15.5rem]:flex-row @min-[15.5rem]:items-end @min-[15.5rem]:justify-between">

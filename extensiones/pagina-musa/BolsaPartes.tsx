@@ -15,7 +15,7 @@
  * · `LineaBolsa` — una línea: ilustración, nombre, contador y lo que suma (el código
  *   del producto no se lee: va en el mensaje del pedido).
  *   Con 1 unidad el «−» es un tacho y la fila se va deslizando (200 ms).
- * · `BolsaVacia` — el sello, «aún vacía», «Ver kits» y las necesidades.
+ * · `BolsaVacia` — el sello, «Tu bolsa está vacía», «Ver kits» y las necesidades.
  * («Drucila te sugiere», el kit que completa lo que llevas, es `SugerenciaKit.tsx`.)
  */
 import { useRef, useState } from "react";
@@ -243,9 +243,7 @@ export function BolsaVacia() {
       {/* Centrado en el alto que sobra; si no entra, `my-auto` da 0 y corre desde arriba. */}
       <div className="my-auto flex flex-col items-center">
         <Sello id="bolsa-vacia" className="h-24 w-24" />
-        <p className="mu-script mt-2 text-[2.75rem] leading-none text-[var(--mu-rosa-tinta)]">
-          aún vacía
-        </p>
+        <p className="mu-titulo mt-4 text-[length:var(--mu-t-titulo)] text-[var(--text-primary)]">Tu bolsa está vacía</p>
         <p className="mt-3 max-w-[19rem] text-base leading-relaxed text-[var(--text-secondary)]">
           Agrega lo que te guste y pídelo por WhatsApp en un solo mensaje. Drucila te ayuda a
           elegir.

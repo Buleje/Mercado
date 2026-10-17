@@ -1,98 +1,87 @@
 /**
- * Los pares de letras de Musa (títulos + textos), auto-alojados en
- * `public/fonts/musa/` (subconjunto latín de Google Fonts, licencia OFL).
+ * Las letras de Musa (rediseño minimalista del 16-10): UNA sans para todo
+ * —títulos, textos, precios y botones—, auto-alojada en `public/fonts/musa/`
+ * (subconjunto latín de Google Fonts, licencia OFL, variable 400-700: una sola
+ * cara para todos los pesos). La jerarquía la dan el tamaño y el peso, no la
+ * familia ni el color.
  *
- * Se usa UNO por página: su `@font-face` va dentro de la hoja de la marca
- * (`tema.ts`), así el navegador sólo baja los archivos del par elegido y sólo
- * cuando los pinta. Los componentes no nombran letras: usan las variables
- * `--mu-fuente-display` / `--mu-fuente-texto` / `--mu-fuente-script` o las
- * clases `.mu-*`.
- *
- * · A (el de la tienda): Cormorant Garamond 600 + Jost. 74 KB las tres caras
- *   (antes 141 KB: Cormorant variable recta e itálica, Poppins × 3 y Great Vibes
- *   precargada). Jost es variable: una sola cara para 400, 500 y 600.
- * · B: Playfair Display 600 + Poppins (lo que pide el manual, «Títulos:
- *   Cormorant o Playfair · Textos: Poppins»).
- * · C: Fraunces 600 + Plus Jakarta Sans.
+ * · A (la de la tienda): Plus Jakarta Sans, 27 KB. Ojo grande y aberturas
+ *   abiertas: se lee bien a 14-16 px y a 60 px sigue limpia; más suave que una
+ *   grotesca (va con belleza).
+ * · B: Inter, 48 KB: la más neutra, la familia de MiSans (mi.com).
+ * · C: Manrope, 25 KB: geométrica, más redonda en los títulos.
  * Para comparar en el navegador: `/t/<negocio>?letras=b` (o `c`); sin el
- * parámetro, A. Cuando se elija uno, borrar los otros dos y sus archivos.
+ * parámetro, A.
  *
- * Great Vibes (la script de los empaques) queda declarada en los tres, con
- * `font-display:block` (una cursiva de respaldo se ve rota): sólo se baja si
- * una página la pinta (catálogo, ficha, bolsa); la portada ya no la usa.
+ * La serif (Cormorant Garamond 600) queda SÓLO para el sello completo del logo
+ * (`Sello.tsx` sin `simple`): se declara y el navegador la baja únicamente si
+ * ese sello se pinta. Antes iban Cormorant + su itálica + Jost + Great Vibes
+ * (la script): títulos que no se entendían y cuatro archivos por página.
+ *
+ * ¿Por qué no `next/font`? En «Buleje Beauty» su hoja de @font-face se colaba
+ * en TODAS las tiendas `/t/<negocio>` (medido 01-10 en /t/mi-pollo). Acá el
+ * @font-face vive dentro del `<style>` de la página (`tema.ts`).
  */
 export type ParLetras = "a" | "b" | "c";
 
 interface Par {
   nombre: string;
-  /** La familia de los títulos (el primer nombre del `font-family`). */
-  display: string;
-  texto: string;
+  /** La familia (el primer nombre del `font-family`). */
+  familia: string;
   caras: string;
-  /** Tamaños propios: cada serif rinde distinto al mismo tamaño (Cormorant es chica). */
+  /** Tamaños propios: cada sans rinde distinto al mismo tamaño. */
   tamanos: string;
-  /** Las caras del título del héroe (recta + cursiva): el LCP es ese texto, se precargan. */
-  titulo: readonly [string, string];
+  /** El archivo de la cara: el título del héroe es el LCP, se precarga. */
+  archivo: string;
 }
 
 const cara = (familia: string, archivo: string, peso: string, estilo = "normal", mostrar = "swap") =>
   `@font-face{font-family:"${familia}";src:url(/fonts/musa/${archivo}) format("woff2");font-weight:${peso};font-style:${estilo};font-display:${mostrar}}`;
 
-/*
- * Las caras fijas (600) se declaran para 500-700: así un `font-semibold` o un
- * `font-bold` usan la misma cara sin «negrita falsa» del navegador.
- */
-const POPPINS = [cara("Musa Poppins", "Poppins-400.woff2", "400"), cara("Musa Poppins", "Poppins-500.woff2", "500"), cara("Musa Poppins", "Poppins-600.woff2", "600 700")].join("");
+const sans = (familia: string, archivo: string) => cara(familia, archivo, "400 700");
 
 export const PARES: Readonly<Record<ParLetras, Par>> = {
   a: {
-    nombre: "Cormorant Garamond + Jost",
-    display: "Musa Cormorant",
-    texto: "Musa Jost",
-    caras: [
-      cara("Musa Cormorant", "CormorantGaramond-600.woff2", "500 700"),
-      cara("Musa Cormorant", "CormorantGaramond-600-Italic.woff2", "500 700", "italic"),
-      cara("Musa Jost", "Jost.woff2", "400 700"),
-    ].join(""),
-    tamanos: "--mu-t-heroe:clamp(2.75rem,1.6rem + 4.2vw,4.75rem);--mu-t-bloque:clamp(2rem,1.55rem + 1.4vw,2.875rem);",
-    titulo: ["CormorantGaramond-600.woff2", "CormorantGaramond-600-Italic.woff2"],
+    nombre: "Plus Jakarta Sans",
+    familia: "Musa Jakarta",
+    caras: sans("Musa Jakarta", "PlusJakartaSans.woff2"),
+    tamanos: "--mu-t-heroe:clamp(2.25rem,1.5rem + 3vw,3.75rem);--mu-t-bloque:clamp(1.625rem,1.35rem + 1.1vw,2.25rem);",
+    archivo: "PlusJakartaSans.woff2",
   },
   b: {
-    nombre: "Playfair Display + Poppins",
-    display: "Musa Playfair",
-    texto: "Musa Poppins",
-    caras: [cara("Musa Playfair", "PlayfairDisplay.woff2", "500 700"), cara("Musa Playfair", "PlayfairDisplay-Italic.woff2", "500 700", "italic"), POPPINS].join(""),
-    tamanos: "--mu-t-heroe:clamp(2.25rem,1.4rem + 3.4vw,4rem);--mu-t-bloque:clamp(2rem,1.6rem + 1.1vw,2.5rem);",
-    titulo: ["PlayfairDisplay.woff2", "PlayfairDisplay-Italic.woff2"],
+    nombre: "Inter",
+    familia: "Musa Inter",
+    caras: sans("Musa Inter", "Inter.woff2"),
+    tamanos: "--mu-t-heroe:clamp(2.25rem,1.5rem + 3vw,3.75rem);--mu-t-bloque:clamp(1.625rem,1.35rem + 1.1vw,2.25rem);",
+    archivo: "Inter.woff2",
   },
   c: {
-    nombre: "Fraunces + Plus Jakarta Sans",
-    display: "Musa Fraunces",
-    texto: "Musa Jakarta",
-    caras: [
-      cara("Musa Fraunces", "Fraunces.woff2", "500 700"),
-      cara("Musa Fraunces", "Fraunces-Italic.woff2", "500 700", "italic"),
-      cara("Musa Jakarta", "PlusJakartaSans.woff2", "400 700"),
-    ].join(""),
-    tamanos: "--mu-t-heroe:clamp(2.25rem,1.4rem + 3.4vw,4rem);--mu-t-bloque:clamp(2rem,1.6rem + 1.1vw,2.5rem);",
-    titulo: ["Fraunces.woff2", "Fraunces-Italic.woff2"],
+    nombre: "Manrope",
+    familia: "Musa Manrope",
+    caras: sans("Musa Manrope", "Manrope.woff2"),
+    tamanos: "--mu-t-heroe:clamp(2.25rem,1.5rem + 3vw,3.75rem);--mu-t-bloque:clamp(1.625rem,1.35rem + 1.1vw,2.25rem);",
+    archivo: "Manrope.woff2",
   },
 };
 
-const SCRIPT_CARA = cara("Musa Great Vibes", "GreatVibes-400.woff2", "400", "normal", "block");
+/** La serif del sello completo (sólo se baja si se pinta). */
+const LOGO_CARA = cara("Musa Cormorant", "CormorantGaramond-600.woff2", "500 700");
 
-/** Las URL de las caras del título del héroe, para `preload()` (sólo la portada). */
-export const precargasDe = (par: ParLetras): string[] => PARES[par].titulo.map((f) => `/fonts/musa/${f}`);
+/** La URL de la cara del par, para `preload()` (sólo la portada). */
+export const precargasDe = (par: ParLetras): string[] => [`/fonts/musa/${PARES[par].archivo}`];
 
-/** Los `@font-face` del par (y la script, que se baja sólo si se pinta). */
-export const carasDe = (par: ParLetras): string => PARES[par].caras + SCRIPT_CARA;
+/** Los `@font-face` del par (y la del logo, que se baja sólo si se pinta). */
+export const carasDe = (par: ParLetras): string => PARES[par].caras + LOGO_CARA;
 
-export const familiaDisplay = (par: ParLetras): string => `"${PARES[par].display}","Cormorant Garamond",Georgia,serif`;
-export const familiaTexto = (par: ParLetras): string => `"${PARES[par].texto}",Poppins,var(--font-geist-sans),system-ui,sans-serif`;
-export const FAMILIA_SCRIPT = `"Musa Great Vibes","Great Vibes","Segoe Script",cursive`;
+const PILA = `var(--font-geist-sans),system-ui,-apple-system,"Segoe UI",Roboto,sans-serif`;
+
+/** Títulos y textos: la misma familia (los títulos se distinguen por tamaño y peso). */
+export const familiaDisplay = (par: ParLetras): string => `"${PARES[par].familia}",${PILA}`;
+export const familiaTexto = (par: ParLetras): string => `"${PARES[par].familia}",${PILA}`;
 
 /** `?letras=b` → "b". Cualquier otra cosa (o nada) → "a", el de la tienda. */
 export function leerLetras(valor: string | string[] | undefined): ParLetras {
   const v = (Array.isArray(valor) ? valor[0] : valor)?.trim().toLowerCase();
   return v === "b" || v === "c" ? v : "a";
 }
+

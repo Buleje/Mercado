@@ -10,7 +10,7 @@
  *   Son dos hermanos (no un padre bajito) porque `sticky` sólo pega dentro de
  *   su padre: el padre es la página entera.
  * · `BolsaEncabezado` — la bolsa con el SELLO CONTADOR: el total de unidades
- *   sube con cada cambio, el aro oro hace un pulso y la bolsa late (si viene
+ *   sube con cada cambio, un aro fino hace un pulso y la bolsa late (si viene
  *   un vuelo de `volarABolsa`, el latido lo da su aterrizaje). Al agregar, un
  *   globo «Agregaste… · Llevas 3 · Ver bolsa» bajo la bolsa (2,5 s, desde
  *   768 px: en el celular taparía el contador de la tarjeta y el aviso de abajo
@@ -18,7 +18,8 @@
  *   El globo sólo sale si lo agregó la persona (un toque o tecla reciente):
  *   ni la carga de la bolsa guardada ni otra pestaña lo disparan. El globo
  *   lleva la mini ilustración del envase en su arco, sobre el tinte de su
- *   categoría (sin imagen, el sello).
+ *   categoría (sin imagen, el sello). Si la tienda rechaza un producto que ya
+ *   no está, `AvisoNoAgregado` lo dice en todos los anchos (antes, botón mudo).
  * El menú del celular vive en `MenuMovil.tsx`.
  */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
@@ -26,6 +27,7 @@ import { createPortal } from "react-dom";
 import { Check, ShoppingBag } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { unidades } from "./destinos";
+import { AvisoNoAgregado } from "./AvisoNoAgregado";
 import { abrirBolsa, useBolsaAbierta } from "./estado-bolsa";
 import { tinteDe } from "./imagenes";
 import { Sello, SelloContador } from "./Sello";
@@ -176,6 +178,7 @@ export function BolsaEncabezado() {
       <span className="sr-only" aria-live="polite">
         {anuncio}
       </span>
+      <AvisoNoAgregado raiz={raiz} />
       {aviso &&
         raiz &&
         createPortal(

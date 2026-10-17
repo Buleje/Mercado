@@ -39,7 +39,7 @@ export function Suscripcion() {
   if (estado === "hecho") {
     return (
       <p className="inline-flex items-center gap-2 text-base font-semibold text-[var(--mu-sobre-cacao)]" role="status">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--mu-oro)] text-[var(--mu-cacao)]">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--mu-boton-fondo)] text-[var(--mu-boton-texto)]">
           <Check className="h-4 w-4" strokeWidth={2.6} aria-hidden="true" />
         </span>
         ¡Listo, linda! Te avisaremos de las novedades y ofertas.
@@ -64,19 +64,19 @@ export function Suscripcion() {
             if (estado === "error") setEstado("listo");
           }}
           placeholder="tu@correo.com"
-          className="h-12 w-full rounded-full border border-[var(--mu-sobre-cacao)]/30 bg-[var(--mu-sobre-cacao)]/[.06] px-5 text-base text-[var(--mu-sobre-cacao)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--mu-sobre-cacao-2)] focus:border-[var(--mu-oro)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-oro)]"
+          className="h-12 w-full rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-base text-[var(--mu-sobre-cacao)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--mu-sobre-cacao-2)] focus:border-[var(--rule-strong)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-foco)]"
         />
         <button
           type="submit"
           disabled={estado === "enviando"}
           aria-label="Suscribirme"
-          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--mu-sello-nude)] text-[var(--mu-sello-m)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:scale-105 active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-oro)] disabled:opacity-60"
+          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--mu-boton-fondo)] text-[var(--mu-boton-texto)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-boton-fondo-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-foco)] disabled:opacity-60"
         >
           <ArrowRight className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
       {estado === "error" && (
-        <p className="text-sm font-semibold text-[var(--mu-nude-fuerte)]" role="alert">
+        <p className="text-sm font-semibold text-[var(--mu-sobre-cacao)]" role="alert">
           No pudimos guardar tu correo. Revisa que esté bien escrito e inténtalo de nuevo.
         </p>
       )}

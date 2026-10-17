@@ -1,7 +1,7 @@
 /**
  * Piezas chicas que repiten todas las secciones: el ancho, los botones, el
- * kicker, el título (versalitas + cursiva + línea script, como el catálogo)
- * y el destello ✦. Sin estado: sirven en servidor y en cliente.
+ * kicker y los títulos (pautas en el LEEME: un estilo de botón, títulos por
+ * tamaño y peso, sin cursivas ni color). Sin estado: sirven en servidor y en cliente.
  * Colores, letras y tiempos: los tokens de `tema.ts` (contrato §d).
  */
 import type { ReactNode } from "react";
@@ -12,67 +12,49 @@ export const ANCHO = "mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8";
 const MOVER =
   "transition-[transform,background-color,color,border-color] duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] active:scale-[.97] active:duration-[var(--mu-dur-micro)] mu-foco";
 
-/** Botón principal: cacao con letra hueso; en oscuro, nude con letra negra (9,39:1). */
-export const BOTON = `inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--mu-boton-fondo)] px-7 text-[length:var(--mu-t-boton)] font-semibold text-[var(--mu-boton-texto)] hover:-translate-y-0.5 hover:bg-[var(--mu-boton-fondo-hover)] ${MOVER}`;
+/** Botón principal: casi negro con letra blanca (17,4:1); en oscuro, al revés. Sin saltos al pasar: sólo cambia el tono. */
+export const BOTON = `inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--mu-boton-fondo)] px-7 text-[length:var(--mu-t-boton)] font-semibold text-[var(--mu-boton-texto)] hover:bg-[var(--mu-boton-fondo-hover)] ${MOVER}`;
 
-/** Botón secundario: borde de tinta que se rellena al pasar. */
-export const BOTON_BORDE = `inline-flex h-12 items-center justify-center gap-2 rounded-full border-[1.5px] border-[var(--text-primary)] px-7 text-[length:var(--mu-t-boton)] font-semibold text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--surface-canvas)] ${MOVER}`;
+/** Botón secundario: filete fino de tinta que se rellena al pasar. */
+export const BOTON_BORDE = `inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--rule-strong)] px-7 text-[length:var(--mu-t-boton)] font-semibold text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--surface-canvas)] ${MOVER}`;
 
-/** WhatsApp (pedir, asesoría): selva-tinta con letra blanca, 7,43:1 en los dos temas. */
-export const BOTON_WHATSAPP = `inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--mu-whatsapp-fondo)] px-7 text-[length:var(--mu-t-boton)] font-semibold text-[var(--mu-whatsapp-texto)] hover:-translate-y-0.5 ${MOVER}`;
+/** WhatsApp (pedir, asesoría): el mismo botón principal (un solo estilo de botón en toda la tienda). */
+export const BOTON_WHATSAPP = `inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--mu-whatsapp-fondo)] px-7 text-[length:var(--mu-t-boton)] font-semibold text-[var(--mu-whatsapp-texto)] hover:bg-[var(--mu-boton-fondo-hover)] ${MOVER}`;
 
-export const KICKER = "mu-kicker text-[var(--mu-acento-tinta)]";
+export const KICKER = "mu-kicker text-[var(--text-tertiary)]";
 
-/** Antetítulo: Poppins 600 de 12 px, mayúsculas espaciadas. `claro` = sobre cacao (en oro, 6,47:1). */
+/** Antetítulo: 14 px peso 500 en tipo oración, gris. `claro` = sobre la superficie de contraste. */
 export function Kicker({ children, claro = false, className = "" }: { children: ReactNode; claro?: boolean; className?: string }) {
-  return <p className={`mu-kicker ${claro ? "text-[var(--mu-oro)]" : "text-[var(--mu-acento-tinta)]"} ${className}`}>{children}</p>;
+  return <p className={`mu-kicker ${claro ? "text-[var(--mu-sobre-cacao-2)]" : "text-[var(--text-tertiary)]"} ${className}`}>{children}</p>;
 }
 
 /**
- * El título partido en dos: la última palabra en la cursiva de Cormorant
- * (tal como está escrita, en el acento de la marca), como «para *ti*» del catálogo.
- * Sobre cacao el acento no se lee: pasar `acento` (p. ej. el oro).
+ * Antes: la última palabra del título en cursiva y en el color de la marca.
+ * Desde el rediseño minimalista (16-10) el título va entero, en la misma letra:
+ * la jerarquía la dan el tamaño y el peso. `acento` se acepta y se ignora.
  */
-export function ConAcento({ texto, acento = "text-[var(--mu-acento-tinta)]" }: { texto: string; acento?: string | undefined }) {
-  const limpio = texto.trimEnd();
-  const corte = limpio.lastIndexOf(" ");
-  if (corte < 0) return <>{limpio}</>;
-  return (
-    <>
-      {limpio.slice(0, corte)} <span className={`mu-cursiva ${acento}`}>{limpio.slice(corte + 1)}</span>
-    </>
-  );
+export function ConAcento({ texto }: { texto: string; acento?: string | undefined }) {
+  return <>{texto.trimEnd()}</>;
 }
 
 /**
- * La línea script (Great Vibes) que acompaña a un título: «y te llegue todo
- * junto», «para ti». ≥28 px, máximo 3 palabras y una por vista; nunca precio,
- * dato ni botón. `claro` = sobre cacao (oro); si no, rosa-tinta (6,05:1).
+ * La línea corta que acompaña a un título («¿dudas?», «sin complicarte»): antes
+ * en script (Great Vibes); ahora la sans en 600, sin cursiva, del color del texto.
  */
 export function Script({ children, claro = false, grande = false, className = "" }: { children: ReactNode; claro?: boolean; grande?: boolean; className?: string }) {
   return (
     <span
-      className={`mu-script block ${grande ? "text-[length:var(--mu-t-script-xl)]" : "text-[length:var(--mu-t-script)]"} ${claro ? "text-[var(--mu-oro)]" : "text-[var(--mu-rosa-tinta)]"} ${className}`}
+      className={`mu-script block ${grande ? "text-[length:var(--mu-t-script-xl)]" : "text-[length:var(--mu-t-script)]"} ${claro ? "text-[var(--mu-sobre-cacao)]" : "text-[var(--text-primary)]"} ${className}`}
     >
       {children}
     </span>
   );
 }
 
-/** El destello ✦ del catálogo (decorativo). Color: el del texto (`currentColor`). */
-export function Destello({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
-      <path d="M12 0c.6 6.4 5.6 11.4 12 12-6.4.6-11.4 5.6-12 12-.6-6.4-5.6-11.4-12-12C6.4 11.4 11.4 6.4 12 0Z" fill="currentColor" />
-    </svg>
-  );
-}
-
 /**
- * Título de sección: kicker, versalitas con la última palabra en cursiva y,
- * si viene, la línea script encimada (sube un poco sobre el título, como
- * «esta Navidad» en la tapa del catálogo). En el celular el «Ver todo» sube a
- * la fila del kicker (ahorra una fila por sección); desde 640 px va abajo a la derecha.
+ * Título de sección: kicker gris chico, el título en la sans 600 y, si viene, la
+ * línea corta (`script`) seguida en gris. En el celular el «Ver todo» sube a la
+ * fila del kicker (ahorra una fila por sección); desde 640 px va abajo a la derecha.
  */
 export function TituloSeccion({
   id,
@@ -107,12 +89,12 @@ export function TituloSeccion({
     </a>
   );
   const h2 = (
-    <h2 id={id} className="mu-display text-[length:var(--mu-t-seccion)] leading-[1] text-[var(--text-primary)]">
-      <ConAcento texto={titulo} />
+    <h2 id={id} className="mu-titulo text-[length:var(--mu-t-seccion)] text-[var(--text-primary)]">
+      {titulo}
       {script && (
         <>
           {/* El espacio separa las palabras para el lector de pantalla. */}{" "}
-          <Script className={`relative mt-[-0.12em] ${centrado ? "" : "pl-[0.6em] sm:pl-[1.4em]"}`}>{script}</Script>
+          <span className="text-[var(--text-tertiary)]">{script}</span>
         </>
       )}
     </h2>
@@ -148,9 +130,9 @@ export function Seccion({ id, etiqueta, fondo, children }: { id?: string; etique
 }
 
 /**
- * Título de un bloque de la portada (letras de `letras.ts`): serif 600 en
- * minúsculas, con las últimas palabras (`acento`) en cursiva y el acento de la
- * marca, como «Kits que *ahorran*». Sin kicker ni script: una idea por bloque.
+ * Título de un bloque de la portada: la sans 600 en tipo oración. `acento` (las
+ * últimas palabras, «Kits que ahorran») va seguido, en la misma letra y color:
+ * nada de cursiva ni de color de marca. Sin kicker: una idea por bloque.
  * `accion` (un «Ver todo») va a la derecha desde 640 px y abajo en el celular.
  */
 export function TituloBloque({ id, titulo, acento, texto, accion }: { id: string; titulo: string; acento?: string; texto?: string; accion?: ReactNode }) {
@@ -158,13 +140,7 @@ export function TituloBloque({ id, titulo, acento, texto, accion }: { id: string
     <div className="mb-6 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
       <div className="max-w-2xl">
         <h2 id={id} className="mu-titulo text-[length:var(--mu-t-bloque)] text-[var(--text-primary)]">
-          {titulo}
-          {acento && (
-            <>
-              {" "}
-              <span className="italic text-[var(--mu-acento-tinta)]">{acento}</span>
-            </>
-          )}
+          {acento ? `${titulo} ${acento}` : titulo}
         </h2>
         {texto && <p className="mt-2 text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--text-secondary)]">{texto}</p>}
       </div>

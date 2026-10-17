@@ -111,7 +111,7 @@ export function FiltrosPuestos({ f, cambiar }: { f: Filtros; cambiar: Cambiar })
         <button
           type="button"
           onClick={() => cambiar({ q: "", categoria: null, oferta: false, marca: null, disponibles: false })}
-          className="inline-flex h-12 items-center px-2 text-base font-semibold text-[var(--text-primary)] underline decoration-[var(--mu-rosa)] decoration-2 underline-offset-4 hover:text-[var(--mu-acento-tinta)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-foco)]"
+          className="inline-flex h-12 items-center px-2 text-base font-semibold text-[var(--text-primary)] underline decoration-[var(--rule-base)] underline-offset-4 hover:text-[var(--mu-acento-tinta)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-foco)]"
         >
           Limpiar todo
         </button>

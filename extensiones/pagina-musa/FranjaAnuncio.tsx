@@ -9,18 +9,17 @@
  * Sin código de bienvenida no hay «copiar»: el pedido sale por WhatsApp y no
  * hay dónde aplicarlo (ver `tema.ts`, cupón de la tienda general escondido).
  */
-import { Destello } from "./ui";
 
 export function FranjaAnuncio({ mensajes }: { mensajes: string[] }) {
   const [primero, segundo] = mensajes;
   if (!primero) return null;
   return (
     <div role="region" aria-label="Aviso de la tienda" className="bg-[var(--mu-cacao)] text-[var(--mu-sobre-cacao)]">
-      <p className="mx-auto flex min-h-9 max-w-[1280px] items-center justify-center gap-3 px-4 text-center text-sm font-medium leading-snug tracking-[0.04em] sm:px-6 sm:tracking-[0.08em] lg:px-8">
+      <p className="mx-auto flex min-h-9 max-w-[1280px] items-center justify-center gap-3 px-4 text-center text-sm font-medium leading-snug sm:px-6 lg:px-8">
         <span>{primero}</span>
         {segundo && (
           <>
-            <Destello className="hidden h-2.5 w-2.5 shrink-0 text-[var(--mu-oro)] sm:block" />
+            <span aria-hidden="true" className="hidden text-[var(--text-tertiary)] sm:inline">·</span>
             <span className="hidden sm:inline">{segundo}</span>
           </>
         )}

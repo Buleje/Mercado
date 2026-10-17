@@ -45,7 +45,7 @@ export function Circulos({ productos, slug, whatsapp }: { productos: readonly Pr
         ))}
         <li>
           <a href={enlaceWhatsapp(whatsapp ?? WHATSAPP_MUSA, CARTA.mensaje)} {...externo} className={ENLACE}>
-            <span className={`${DISCO} flex items-center justify-center bg-[var(--mu-rosa-claro)]`}>
+            <span className={`${DISCO} flex items-center justify-center bg-[var(--surface-sunken)]`}>
               <Sello id="circulo" simple className="h-[64%] w-[64%]" />
             </span>
             <span className={ETIQUETA}>Asesoría gratis</span>

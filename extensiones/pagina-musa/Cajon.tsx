@@ -174,7 +174,7 @@ export function Cajon({ codigos, pedidos, negocio }: PropsCajon) {
     <div className="fixed inset-0 z-system" data-lenis-prevent onKeyDown={teclado}>
       <div
         ref={fondo}
-        className="absolute inset-0 bg-[var(--mu-cacao)]/55 backdrop-blur-[3px]"
+        className="absolute inset-0 bg-[var(--mu-velo)]/40 backdrop-blur-[2px]"
         onClick={cerrarBolsa}
         aria-hidden="true"
       />
@@ -222,14 +222,14 @@ export function Cajon({ codigos, pedidos, negocio }: PropsCajon) {
               ref={deshacerBtn}
               type="button"
               onClick={deshacer}
-              className="mu-foco inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full px-3 font-semibold text-[var(--mu-oro)] underline-offset-4 [--mu-foco-halo:var(--mu-cacao)] [--mu-foco:var(--mu-oro)] hover:underline"
+              className="mu-foco inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full px-3 font-semibold text-[var(--mu-sobre-cacao)] underline underline-offset-4 [--mu-foco-halo:var(--mu-cacao)]"
             >
               <Undo2 className="h-4 w-4" aria-hidden="true" /> Deshacer
             </button>
             <span
               ref={reloj}
               aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-[var(--mu-oro)]"
+              className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-[var(--mu-sobre-cacao)]"
             />
           </div>
         )}

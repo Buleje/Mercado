@@ -23,7 +23,6 @@ import { BolsaEncabezado, EncabezadoVivo } from "./EncabezadoVivo";
 import { MenuMovil, type EnlaceMenu } from "./MenuMovil";
 import { WHATSAPP_MUSA } from "./pedido-whatsapp";
 import { Sello } from "./Sello";
-import { Destello } from "./ui";
 
 const ASESORIA = "Hola Drucila, quiero asesoría para elegir mis productos.";
 
@@ -37,7 +36,7 @@ function Buscador({ id, catalogo, corto = false }: { id: string; catalogo: strin
       <CampoBuscar
         id={id}
         corto={corto}
-        className="h-12 w-full rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-12 text-base text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--text-tertiary)] hover:border-[var(--mu-nude-fuerte)] focus:border-[var(--mu-acento-tinta)] focus:outline-2 focus:outline-offset-2 focus:outline-[var(--mu-foco)]"
+        className="h-12 w-full rounded-full border border-transparent bg-[var(--surface-sunken)] pl-11 pr-12 text-base text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--text-tertiary)] hover:border-[var(--rule-base)] focus:border-[var(--rule-strong)] focus:bg-[var(--surface-raised)] focus:outline-2 focus:outline-offset-2 focus:outline-[var(--mu-foco)]"
       />
       {/* 44 px tocables; el círculo visible es de 32. El nombre va en `aria-label` (`.sr-only` de globals.css le gana a las variantes). */}
       <button type="submit" aria-label="Buscar" className="group absolute right-0 top-0 inline-flex h-12 w-12 items-center justify-center rounded-full mu-foco">
@@ -98,9 +97,9 @@ export function BarraSuperior({
         <a href={r.base} className="mu-foco flex items-center gap-2.5 rounded-full leading-none text-[var(--text-primary)]">
           <Sello id={logoEsTitulo ? "barra" : "barra-marco"} simple className="h-10 w-10 shrink-0 md:h-12 md:w-12" />
           <span className="flex flex-col">
-            <span className="mu-serif text-[1.625rem] leading-none md:text-[1.75rem]">{nombre}</span>
+            <span className="mu-serif text-[1.375rem] leading-none md:text-[1.5rem]">{nombre}</span>
             {/* El espacio no se ve (contenedor flex) pero separa las palabras para el lector de pantalla. */}{" "}
-            <span className="mu-cursiva mt-0.5 hidden text-base leading-tight text-[var(--mu-acento-tinta)] lg:block">Belleza profesional, cerca de ti</span>
+            <span className="mt-1 hidden text-sm leading-tight text-[var(--text-tertiary)] lg:block">Belleza profesional, cerca de ti</span>
             <span className="sr-only lg:hidden"> — belleza profesional, cerca de ti</span>
           </span>
         </a>
@@ -134,14 +133,14 @@ export function BarraSuperior({
 }
 
 /**
- * Desde 768 px: las categorías en kicker, centradas, con el filete rosa que crece desde el centro al pasar.
- * Al final, «Regalos» (los kits de la portada) en achiote con el destello ✦ del catálogo.
+ * Desde 768 px: las categorías en tipo oración (15 px, peso 500), centradas, con el filete de tinta que
+ * crece desde el centro al pasar. Al final, «Regalos» (los kits de la portada), igual que las demás.
  */
 export function MenuCategorias({ slug, categorias, hayOfertas }: { slug: string; categorias: string[]; hayOfertas: boolean }) {
   const r = rutas(slug);
   // (`min-w-*` está muerto en este repo por `* { min-width: 0 }`: anchos con `w-*`.)
   const enlace =
-    "mu-subrayado mu-foco inline-flex h-12 items-center whitespace-nowrap px-3 text-[length:var(--mu-t-kicker)] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)] transition-colors duration-[var(--mu-dur-corto)] hover:text-[var(--text-primary)] [--mu-subrayado-abajo:.6rem] xl:px-4 xl:tracking-[var(--mu-tracking-kicker)]";
+    "mu-subrayado mu-foco inline-flex h-12 items-center whitespace-nowrap px-3 text-[0.9375rem] font-medium text-[var(--text-secondary)] transition-colors duration-[var(--mu-dur-corto)] hover:text-[var(--text-primary)] [--mu-subrayado-abajo:.6rem] xl:px-4";
   return (
     <div className="hidden border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] md:block">
       <nav aria-label="Categorías" className="mx-auto max-w-[1280px] px-6 lg:px-8">
@@ -165,8 +164,7 @@ export function MenuCategorias({ slug, categorias, hayOfertas }: { slug: string;
           </li>
           {hayOfertas && (
             <li className="shrink-0">
-              <a href={r.promociones} className={`${enlace} gap-2 !text-[var(--mu-achiote-tinta)] [--mu-subrayado:var(--mu-achiote-tinta)]`}>
-                <Destello className="h-2.5 w-2.5 shrink-0 text-[var(--mu-oro)]" />
+              <a href={r.promociones} className={enlace}>
                 Regalos
               </a>
             </li>

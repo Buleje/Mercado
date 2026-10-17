@@ -27,7 +27,7 @@ export function CompartirProducto({ nombre, texto }: { nombre: string; texto: st
   };
   return (
     <button type="button" onClick={compartir} className={BOTON}>
-      <Share2 className="h-5 w-5 text-[var(--mu-rosa-tinta)]" aria-hidden="true" /> Compártelo con una amiga
+      <Share2 className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden="true" /> Compártelo con una amiga
     </button>
   );
 }

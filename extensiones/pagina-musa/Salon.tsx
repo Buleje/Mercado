@@ -57,7 +57,7 @@ function BotonNecesidad({ m, slug, productos, whatsapp }: { m: Necesidad; slug: 
       {...(aDrucila ? externo : {})}
       className="group mu-foco flex h-full min-h-14 items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 transition-colors duration-[var(--mu-dur-corto)] hover:border-[var(--text-primary)]"
     >
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--mu-nude-claro)] text-[var(--mu-acento-tinta)] transition-colors duration-[var(--mu-dur-corto)] group-hover:bg-[var(--mu-rosa-claro)]">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] group-hover:bg-[var(--mu-nude)]">
         <Icono className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
       </span>
       <span className="flex min-w-0 flex-col">
@@ -91,7 +91,7 @@ export function Mejorar({ slug, productos, whatsapp = null }: { slug: string; pr
 export function Confianza({ whatsapp }: { whatsapp: string | null }) {
   const numero = whatsapp ?? WHATSAPP_MUSA;
   return (
-    <section aria-labelledby="mu-confianza" className="bg-[var(--mu-crema)] py-12 sm:py-16">
+    <section aria-labelledby="mu-confianza" className="border-t border-[var(--rule-soft)] py-12 sm:py-20">
       <div className={ANCHO}>
         <TituloBloque id="mu-confianza" titulo="Compra" acento="tranquila" />
         <ul className="grid gap-6 md:grid-cols-3 md:gap-8">
@@ -99,7 +99,7 @@ export function Confianza({ whatsapp }: { whatsapp: string | null }) {
             const Icono = ICONOS_CONFIANZA[c.icono];
             return (
               <li key={c.titulo} className="flex gap-4">
-                <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface-raised)] text-[var(--mu-acento-tinta)] ring-1 ring-[var(--rule-base)]">
+                <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)]">
                   <Icono className="h-6 w-6" strokeWidth={1.5} aria-hidden="true" />
                 </span>
                 <div>
@@ -115,7 +115,7 @@ export function Confianza({ whatsapp }: { whatsapp: string | null }) {
             );
           })}
         </ul>
-        <div className="mt-8 flex flex-col gap-4 border-t border-[var(--rule-base)] pt-6 lg:flex-row lg:items-start lg:justify-between">
+        <div className="mt-8 flex flex-col gap-4 border-t border-[var(--rule-soft)] pt-6 lg:flex-row lg:items-start lg:justify-between">
           <p className="leading-relaxed text-[var(--text-secondary)]">
             <span className="font-semibold text-[var(--text-primary)]">Pagas como prefieras: </span>
             {PAGOS.map((p) => p.texto).join(" · ")}.

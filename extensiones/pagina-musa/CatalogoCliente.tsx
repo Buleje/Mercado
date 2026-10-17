@@ -26,7 +26,7 @@ import { FranjaServicios } from "./FranjaServicios";
 import { FiltrosPuestos, Pildoras } from "./Pildoras";
 import { Sello } from "./Sello";
 import { Escenario, Ilustracion, TarjetaProducto } from "./TarjetaProducto";
-import { ANCHO, BOTON, BOTON_BORDE, BOTON_WHATSAPP, ConAcento, Destello, Kicker, Script } from "./ui";
+import { ANCHO, BOTON, BOTON_BORDE, BOTON_WHATSAPP, ConAcento, Kicker, Script } from "./ui";
 
 export interface PropsCatalogo {
   productos: ProductoSalon[];
@@ -98,7 +98,7 @@ export function CatalogoCliente(p: PropsCatalogo) {
 
   return (
     <>
-      <section className="mu-grano relative overflow-hidden border-b border-[var(--rule-soft)] bg-[var(--mu-hueso)]">
+      <section className="relative overflow-hidden border-b border-[var(--rule-soft)]">
         <div className={`${ANCHO} grid items-end gap-8 py-8 sm:py-12 lg:grid-cols-[minmax(0,1fr)_auto]`}>
           <div className="min-w-0">
             <nav aria-label="Estás en" className="text-[length:var(--mu-t-chico)] text-[var(--text-secondary)]">
@@ -117,15 +117,14 @@ export function CatalogoCliente(p: PropsCatalogo) {
               </ol>
             </nav>
             <Kicker className="mt-6 flex items-center gap-2">
-              <Destello className="h-3 w-3 text-[var(--mu-oro)]" /> Catálogo {p.nombre}
+              Catálogo {p.nombre}
             </Kicker>
-            {/* Como los títulos de la portada (11-10): serif del par de letras, minúsculas y la última palabra en cursiva; sin la script. */}
+            {/* Como los títulos de la portada (16-10): la sans en 600, sin cursiva; la jerarquía la da el tamaño. */}
             <h1 className="mu-titulo mt-3 text-[length:var(--mu-t-heroe)] text-[var(--text-primary)]">
               <ConAcento texto={titulo} />
             </h1>
             {texto && <p className="mt-4 max-w-2xl text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--text-secondary)]">{texto}</p>}
             <p className="mt-4 inline-flex items-center gap-2 text-[length:var(--mu-t-chico)] font-semibold text-[var(--text-primary)]" role="status">
-              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[var(--mu-rosa)]" />
               {unidades(lista.length)}
             </p>
           </div>
@@ -176,15 +175,14 @@ export function CatalogoCliente(p: PropsCatalogo) {
   );
 }
 
-/** La tarjeta de asesoría a lo ancho (rosa): «¿dudas?» y el WhatsApp de Drucila. */
+/** La tarjeta de asesoría a lo ancho (gris muy claro): «¿Dudas?» y el WhatsApp de Drucila. */
 function Asesoria({ whatsapp }: { whatsapp: string | null }) {
   return (
-    <aside aria-label="Asesoría gratis" className="relative flex flex-col gap-5 overflow-hidden rounded-[var(--mu-radio-tarjeta)] bg-[var(--mu-rosa-claro)] px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-10 sm:py-8">
-      <Destello className="absolute -right-3 -top-3 h-20 w-20 text-[var(--mu-rosa)] opacity-40" />
+    <aside aria-label="Asesoría gratis" className="relative flex flex-col gap-5 overflow-hidden rounded-[var(--mu-radio-tarjeta)] bg-[var(--surface-sunken)] px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-10 sm:py-8">
       <div className="relative flex items-center gap-4 sm:gap-6">
         <Sello id="asesoria-catalogo" className="h-16 w-16 shrink-0 sm:h-20 sm:w-20" />
         <div>
-          <Script>¿dudas?</Script>
+          <Script>¿Dudas?</Script>
           <p className="mt-1 max-w-md text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--text-primary)]">
             Cuéntale a Drucila qué quieres mejorar y te dice qué te sirve. La asesoría es gratis.
           </p>

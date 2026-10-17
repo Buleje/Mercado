@@ -61,7 +61,7 @@ function Modal({ p }: { p: ProductoSalon }) {
 
   return (
     <div className="fixed inset-0 z-system flex items-end justify-center sm:items-center sm:p-6" data-lenis-prevent>
-      <div className="absolute inset-0 bg-[var(--mu-cacao)]/55 backdrop-blur-[2px]" onClick={cerrarFicha} aria-hidden="true" />
+      <div className="absolute inset-0 bg-[var(--mu-velo)]/40 backdrop-blur-[2px]" onClick={cerrarFicha} aria-hidden="true" />
       <div
         ref={caja}
         role="dialog"
@@ -96,7 +96,7 @@ function Modal({ p }: { p: ProductoSalon }) {
           <div className="flex min-w-0 flex-col sm:py-2">
             <p className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:pr-12">
               <span className={KICKER}>{servicio ? "Servicio del salón" : p.kit ? (p.kit.componentes.length === 1 ? "Dúo" : "Kit") : p.categoria}</span>
-              {p.codigo && <span className="text-sm font-semibold tabular-nums tracking-[0.1em] text-[var(--text-tertiary)]">{p.codigo}</span>}
+              {p.codigo && <span className="text-sm font-semibold tabular-nums text-[var(--text-tertiary)]">{p.codigo}</span>}
             </p>
             <h2 id={titulo} className="mu-serif mt-2 text-[1.625rem] leading-[1.1] text-[var(--text-primary)] sm:pr-12 sm:text-[2rem]">
               {p.nombre}

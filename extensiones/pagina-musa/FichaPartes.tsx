@@ -146,9 +146,9 @@ export function Galeria({ p, paso }: { p: ProductoSalon; paso: PasoRutina | null
         </Escenario>
         {kit && (
           // El círculo negro del catálogo («AHORRA S/ 18»), montado sobre el borde del arco.
-          <span className="mu-sombra-flotante absolute -right-1 top-[10%] grid h-24 w-24 place-items-center rounded-full bg-[var(--mu-cacao)] text-center text-[var(--mu-sobre-cacao)] ring-[1.5px] ring-[var(--mu-oro)] ring-offset-[3px] ring-offset-[var(--mu-cacao)] sm:h-28 sm:w-28">
+          <span className="mu-sombra-flotante absolute -right-1 top-[10%] grid h-24 w-24 place-items-center rounded-full bg-[var(--mu-boton-fondo)] text-center text-[var(--mu-boton-texto)] sm:h-28 sm:w-28">
             <span className="leading-none">
-              <span className="mu-kicker block text-[var(--mu-oro)]">Ahorras</span>
+              <span className="mu-kicker block">Ahorras</span>
               <span className="mu-precio mt-1 block text-[1.75rem] sm:text-[2rem]">{solesCortos(kit.ahorro)}</span>
             </span>
           </span>
@@ -174,8 +174,8 @@ export function Galeria({ p, paso }: { p: ProductoSalon; paso: PasoRutina | null
           )}
           {paso && (
             <Mini rotulo="Rutina" detalle={`Paso ${paso.numero} · ${paso.titulo}`}>
-              <span className="absolute inset-0 grid place-items-center bg-[var(--mu-oro-claro)]">
-                <span className="mu-precio text-[2.5rem] text-[var(--mu-oro-tinta)]">{paso.numero}</span>
+              <span className="absolute inset-0 grid place-items-center bg-[var(--surface-sunken)]">
+                <span className="mu-precio text-[2rem] text-[var(--text-primary)]">{paso.numero}</span>
               </span>
             </Mini>
           )}

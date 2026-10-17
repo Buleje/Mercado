@@ -4,8 +4,8 @@
  * `p.kit`, contador al agregar; nunca se tacha un precio). El Kit Regalo
  * especial (KT04) va primero.
  *
- * Al pie, la Campaña de Navidad en UNA franja (antes era un bloque oscuro de
- * media pantalla): el regalo con compra y la preventa, con las palabras y las
+ * Sin fondo propio (16-10, minimalista): el blanco de la página y aire. Al pie,
+ * la Campaña de Navidad en UNA franja con borde fino (antes, bloque oscuro): el regalo con compra y la preventa, con las palabras y las
  * fechas del manual (`CAMPANA_REGALO`, `PREVENTA_NAVIDAD`); se va sola el 31-12.
  */
 import { Gift, MessageCircle } from "@buleje/design-system/icons";
@@ -16,7 +16,7 @@ import { CAMPANA_REGALO, WHATSAPP_MUSA } from "./pedido-whatsapp";
 import { avisoEnviosProvincia, diaCorto, etapaPreventaNavidad, PREVENTA_NAVIDAD } from "./preventa";
 import { externo } from "./Salon";
 import { TarjetaProducto } from "./TarjetaProducto";
-import { ANCHO, EnlaceVer, TituloBloque } from "./ui";
+import { ANCHO, BOTON_BORDE, EnlaceVer, TituloBloque } from "./ui";
 
 /** El orden del catálogo impreso (pág. 3-4): el kit de regalo, los kits y, al final, los dúos de la campaña. */
 const ORDEN = ["KT04", "KT01", "KT02", "KT03", "KT05", "MU016-2", "MU013-2"];
@@ -38,11 +38,11 @@ function Campana({ whatsapp }: { whatsapp: string }) {
   ];
   const mensaje = preventa === "abierta" ? `Hola Drucila, quiero separar mi kit de Navidad con ${solesCortos(pv.separaCon)}.` : "Hola Drucila, quiero saber de la campaña de Navidad.";
   return (
-    <aside aria-label="Campaña de Navidad" className="mt-6 flex flex-col gap-4 rounded-[var(--mu-radio-tarjeta)] bg-[var(--mu-cacao)] p-4 text-[var(--mu-sobre-cacao)] sm:mt-8 sm:flex-row sm:items-center sm:gap-6 sm:px-6 dark:ring-1 dark:ring-[var(--rule-base)]">
-      <Gift className="hidden h-8 w-8 shrink-0 text-[var(--mu-oro)] sm:block" strokeWidth={1.5} aria-hidden="true" />
+    <aside aria-label="Campaña de Navidad" className="mt-6 flex flex-col gap-4 rounded-[var(--mu-radio-tarjeta)] border border-[var(--rule-soft)] p-5 text-[var(--text-primary)] sm:mt-8 sm:flex-row sm:items-center sm:gap-6 sm:px-6">
+      <Gift className="hidden h-8 w-8 shrink-0 text-[var(--text-secondary)] sm:block" strokeWidth={1.5} aria-hidden="true" />
       <div className="flex-1">
-        <p className="mu-kicker text-[var(--mu-oro)]">Campaña de Navidad</p>
-        <ul className="mt-1 grid gap-0.5 text-base leading-snug">
+        <p className="font-semibold text-[var(--text-primary)]">Campaña de Navidad</p>
+        <ul className="mt-1 grid gap-0.5 text-base leading-snug text-[var(--text-secondary)]">
           {lineas.map((l) => (
             <li key={l}>{l}</li>
           ))}
@@ -51,7 +51,7 @@ function Campana({ whatsapp }: { whatsapp: string }) {
       <a
         href={enlaceWhatsapp(whatsapp, mensaje)}
         {...externo}
-        className="mu-foco inline-flex h-12 shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[var(--mu-sello-nude)] px-6 font-semibold text-[var(--mu-sello-m)] transition-transform duration-[var(--mu-dur-corto)] hover:-translate-y-0.5 sm:self-center"
+        className={`${BOTON_BORDE} mu-foco shrink-0 self-start sm:self-center`}
       >
         <MessageCircle className="h-5 w-5" aria-hidden="true" /> {preventa === "abierta" ? "Separar por WhatsApp" : "Preguntar por WhatsApp"}
       </a>
@@ -63,7 +63,7 @@ export function Kits({ productos, slug, whatsapp }: { productos: readonly Produc
   const kits = productos.filter((p) => p.categoria === "Kits y ofertas").sort((a, b) => posicion(a) - posicion(b) || a.precio - b.precio);
   if (kits.length === 0) return null;
   return (
-    <section id="ofertas" aria-labelledby="mu-kits" className="scroll-mt-24 bg-[var(--mu-tinte-kits)] py-12 sm:py-16">
+    <section id="ofertas" aria-labelledby="mu-kits" className="scroll-mt-24 py-12 sm:py-20">
       <div className={ANCHO}>
         <TituloBloque
           id="mu-kits"

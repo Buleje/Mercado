@@ -9,14 +9,14 @@
  * 1. La tienda: lista editorial en Cormorant con filetes y flecha; «Regalos de
  *    Navidad» resaltado en achiote con el destello ✦ (la campaña del momento).
  * 2. Tu cuenta: dos filas chicas en Poppins con ícono.
- * 3. Al fondo, la tarjeta de asesoría en rosa: script «¿dudas?» (la única de
+ * 3. Al fondo, la tarjeta de asesoría en gris muy claro: «¿Dudas?» (la única de
  *    esta vista, ≥28 px), la frase de Drucila, el botón de WhatsApp (selva,
  *    7,43:1) y el horario. Llena el vacío que dejaba la lista corta.
  */
 import { useEffect, useRef } from "react";
 import { ChevronRight, Menu, MessageCircle, Package, User, X } from "@buleje/design-system/icons";
 import { Sello } from "./Sello";
-import { BOTON_WHATSAPP, Destello, Script } from "./ui";
+import { BOTON_WHATSAPP, Script } from "./ui";
 
 export type EnlaceMenu = { texto: string; href: string; resaltado?: boolean };
 
@@ -97,11 +97,10 @@ export function MenuMovil({
                 <li key={e.href + e.texto} className="border-b border-[var(--rule-soft)] last:border-b-0">
                   <a
                     href={e.href}
-                    className={`mu-foco group flex min-h-[3.25rem] items-center gap-2 rounded-[var(--mu-radio-control)] mu-serif text-[1.375rem] leading-tight ${
+                    className={`mu-foco group flex min-h-[3.25rem] items-center gap-2 rounded-[var(--mu-radio-control)] text-[1.125rem] font-medium leading-tight ${
                       e.resaltado ? "text-[var(--mu-achiote-tinta)]" : "text-[var(--text-primary)]"
                     }`}
                   >
-                    {e.resaltado && <Destello className="h-3.5 w-3.5 shrink-0 text-[var(--mu-oro)]" />}
                     <span className="flex-1">{e.texto}</span>
                     <ChevronRight
                       className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] group-hover:translate-x-1"
@@ -114,7 +113,7 @@ export function MenuMovil({
           </nav>
 
           <nav aria-label="Tu cuenta" className="mt-2 border-t border-[var(--rule-soft)] px-5 py-4">
-            <p className="mu-kicker text-[var(--mu-acento-tinta)]">Tu cuenta</p>
+            <p className="mu-kicker text-[var(--text-tertiary)]">Tu cuenta</p>
             <ul className="mt-1">
               {cuenta.map((e) => {
                 const Icono = ICONO_CUENTA[e.icono];
@@ -133,8 +132,8 @@ export function MenuMovil({
             </ul>
           </nav>
 
-          <aside aria-label="Asesoría gratis" className="mx-4 mb-4 mt-auto rounded-[var(--mu-radio-tarjeta)] bg-[var(--mu-rosa-claro)] p-5">
-            <Script>¿dudas?</Script>
+          <aside aria-label="Asesoría gratis" className="mx-4 mb-4 mt-auto rounded-[var(--mu-radio-tarjeta)] bg-[var(--surface-sunken)] p-5">
+            <Script>¿Dudas?</Script>
             <p className="mt-2 text-[length:var(--mu-t-chico)] leading-relaxed text-[var(--text-secondary)]">
               Drucila te ayuda a elegir lo tuyo, gratis y sin compromiso.
             </p>

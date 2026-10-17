@@ -132,7 +132,7 @@ export const PAGOS = [
 ] as const;
 
 /** La despedida del pie: script + la firma del manual. */
-export const DESPEDIDA = { script: "gracias, linda", firma: "— Drucila, tu asesora de belleza" } as const;
+export const DESPEDIDA = { script: "Gracias, linda", firma: "— Drucila, tu asesora de belleza" } as const;
 
 
 /** «¿Qué quieres mejorar?» (como el índice del catálogo): cada tarjeta lleva a su categoría o búsqueda. */

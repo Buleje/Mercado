@@ -63,7 +63,7 @@ export function RutinaCoreana({ productos, slug }: { productos: readonly Product
   const kit = porCodigo.get(RUTINA_COREANA.kit);
   const ahorro = kit?.kit && kit.kit.ahorro > 0 ? kit.kit : null;
   return (
-    <section aria-labelledby="mu-rutina" className="bg-[var(--mu-tinte-rostro)] py-12 sm:py-16">
+    <section aria-labelledby="mu-rutina" className="py-12 sm:py-20">
       <div className={ANCHO}>
         <TituloBloque
           id="mu-rutina"
@@ -78,12 +78,12 @@ export function RutinaCoreana({ productos, slug }: { productos: readonly Product
         />
         <ol className="grid gap-4 md:grid-cols-3 md:gap-5">
           {pasos.map((s, i) => (
-            <li key={s.verbo} className="mu-sombra-tarjeta rounded-[var(--mu-radio-tarjeta)] bg-[var(--surface-raised)] p-4 sm:p-5">
+            <li key={s.verbo} className="rounded-[var(--mu-radio-tarjeta)] border border-[var(--rule-soft)] p-5 sm:p-6">
               <p className="flex items-baseline gap-3">
-                <span aria-hidden="true" className="mu-num text-[2.5rem] leading-none text-[var(--mu-rosa-tinta)]">
+                <span aria-hidden="true" className="mu-num text-[length:var(--mu-t-titulo)] leading-none text-[var(--text-tertiary)]">
                   {i + 1}
                 </span>
-                <span className="mu-titulo text-[2rem] leading-none text-[var(--text-primary)]">
+                <span className="mu-titulo text-[length:var(--mu-t-titulo)] leading-none text-[var(--text-primary)]">
                   <span className="sr-only">Paso {i + 1}: </span>
                   {s.verbo}
                 </span>
@@ -106,7 +106,7 @@ export function RutinaCoreana({ productos, slug }: { productos: readonly Product
             </EnlaceFicha>
             <p className="min-w-[12rem] flex-1 leading-snug text-[var(--text-secondary)]">
               <span className="font-semibold text-[var(--text-primary)]">Los 3 pasos en una caja: </span>
-              <EnlaceFicha p={kit} className="mu-foco rounded-sm font-semibold text-[var(--text-primary)] underline decoration-[var(--mu-rosa)] decoration-2 underline-offset-4">
+              <EnlaceFicha p={kit} className="mu-foco rounded-sm font-semibold text-[var(--text-primary)] underline decoration-[var(--rule-base)] underline-offset-4 hover:decoration-[var(--rule-strong)]">
                 {kit.nombre}
               </EnlaceFicha>{" "}
               a <span className="mu-precio-chico text-[var(--text-primary)]">{solesCortos(kit.precio)}</span>

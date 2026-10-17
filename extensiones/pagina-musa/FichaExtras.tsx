@@ -16,7 +16,7 @@ import { imagenDe } from "./imagenes";
 import type { PasoRutina } from "./rutina";
 import { Sello } from "./Sello";
 import { Escenario, Ilustracion, PildoraAhorro, TarjetaProducto } from "./TarjetaProducto";
-import { ANCHO, BOTON, BOTON_BORDE, Destello, Kicker, TituloSeccion } from "./ui";
+import { ANCHO, BOTON, BOTON_BORDE, Kicker, TituloSeccion } from "./ui";
 
 const productoDe = (p: ProductoSalon) => ({
   id: p.id,
@@ -28,10 +28,10 @@ const productoDe = (p: ProductoSalon) => ({
   ...(p.stock !== null ? { stock: p.stock } : {}),
 });
 
-/** Numeral de paso: Cormorant grande en oro-tinta (5,74:1 sobre hueso). */
+/** Numeral de paso: la sans en gris (el verbo, al lado, manda). */
 function Numeral({ n }: { n: number }) {
   return (
-    <span aria-hidden="true" className="mu-precio text-[2.5rem] text-[var(--mu-oro-tinta)]">
+    <span aria-hidden="true" className="mu-precio text-[length:var(--mu-t-titulo)] text-[var(--text-tertiary)]">
       {n}
     </span>
   );
@@ -41,7 +41,7 @@ function Numeral({ n }: { n: number }) {
 export function RutinaTresPasos({ pasos, categoria }: { pasos: PasoRutina[]; categoria: string }) {
   if (pasos.length === 0) return null;
   return (
-    <section aria-labelledby="mu-rutina-pasos" className="bg-[var(--mu-hueso)] py-14 sm:py-20">
+    <section aria-labelledby="mu-rutina-pasos" className="border-t border-[var(--rule-soft)] py-14 sm:py-20">
       <div className={ANCHO}>
         <TituloSeccion id="mu-rutina-pasos" kicker={`Rutina de ${categoria.toLowerCase()}`} titulo="Tu rutina en 3 pasos" script="sin complicarte" />
         <ol className="grid gap-4 md:grid-cols-3 md:gap-6">
@@ -49,7 +49,7 @@ export function RutinaTresPasos({ pasos, categoria }: { pasos: PasoRutina[]; cat
             <li
               key={s.numero}
               data-mu-producto
-              className={`@container relative flex flex-col rounded-[var(--mu-radio-tarjeta)] border p-5 sm:p-6 ${s.esEste ? "border-[var(--mu-oro)] bg-[var(--mu-oro-claro)] ring-1 ring-[var(--mu-oro)]" : "border-[var(--rule-soft)] bg-[var(--surface-raised)]"}`}
+              className={`@container relative flex flex-col rounded-[var(--mu-radio-tarjeta)] border p-5 sm:p-6 ${s.esEste ? "border-[var(--rule-strong)] bg-[var(--surface-raised)]" : "border-[var(--rule-soft)] bg-[var(--surface-raised)]"}`}
             >
               <div className="flex items-baseline gap-3">
                 <Numeral n={s.numero} />
@@ -66,7 +66,7 @@ export function RutinaTresPasos({ pasos, categoria }: { pasos: PasoRutina[]; cat
                 </EnlaceFicha>
                 <div className="min-w-0">
                   {s.esEste ? (
-                    <p className="mu-kicker text-[var(--mu-oro-tinta)]">Este producto</p>
+                    <p className="mu-kicker font-semibold text-[var(--text-primary)]">Este producto</p>
                   ) : (
                     <p className="text-sm font-medium tabular-nums text-[var(--text-tertiary)]">{s.producto.codigo}</p>
                   )}
@@ -85,8 +85,8 @@ export function RutinaTresPasos({ pasos, categoria }: { pasos: PasoRutina[]; cat
               {/* El paso de esta ficha no repite «Agregar» (está arriba): dice dónde estás, a la altura de los botones de los otros dos. */}
               <div className="mt-auto pt-4">
                 {s.esEste ? (
-                  <p className="inline-flex h-10 items-center gap-2 text-[length:var(--mu-t-chico)] font-semibold text-[var(--mu-oro-tinta)]">
-                    <Destello className="h-3.5 w-3.5" /> Lo estás viendo
+                  <p className="inline-flex h-10 items-center gap-2 text-[length:var(--mu-t-chico)] font-semibold text-[var(--text-secondary)]">
+                    Lo estás viendo
                   </p>
                 ) : (
                   <BotonAgregar producto={productoDe(s.producto)} />
@@ -103,7 +103,7 @@ export function RutinaTresPasos({ pasos, categoria }: { pasos: PasoRutina[]; cat
 /** Un kit en horizontal: arco con la ilustración, qué trae, precio, ahorro real y «Agregar». */
 function TarjetaKit({ k, grande = false }: { k: ProductoSalon & { kit: KitSalon }; grande?: boolean }) {
   return (
-    <li data-mu-producto className={`@container flex gap-4 rounded-[var(--mu-radio-tarjeta)] border border-[var(--rule-soft)] bg-[var(--surface-raised)] mu-sombra-tarjeta ${grande ? "p-4 sm:gap-6 sm:p-6" : "p-4"}`}>
+    <li data-mu-producto className={`@container flex gap-4 rounded-[var(--mu-radio-tarjeta)] border border-[var(--rule-soft)] bg-[var(--surface-raised)] ${grande ? "p-4 sm:gap-6 sm:p-6" : "p-4"}`}>
       <EnlaceFicha p={k} data-mu-foto tabIndex={-1} aria-hidden="true" className="shrink-0">
         <Escenario categoria={k.categoria} className={`mu-arco ${grande ? "h-36 w-28 sm:h-52 sm:w-44" : "h-36 w-28"}`}>
           <Ilustracion p={k} cerca sello="h-[56%] w-[56%]" />
@@ -111,12 +111,12 @@ function TarjetaKit({ k, grande = false }: { k: ProductoSalon & { kit: KitSalon 
       </EnlaceFicha>
       <div className="flex min-w-0 flex-1 flex-col items-start">
         <PildoraAhorro ahorro={k.kit.ahorro} />
-        <p className="mt-2 text-[length:var(--mu-t-nombre)] font-semibold uppercase tracking-[0.04em] text-[var(--text-primary)]">
+        <p className="mt-2 text-[length:var(--mu-t-nombre)] font-semibold text-[var(--text-primary)]">
           <EnlaceFicha p={k} className="mu-foco rounded-sm hover:underline hover:underline-offset-4">
             {k.nombre}
           </EnlaceFicha>
         </p>
-        <p className="mt-1 text-sm font-medium text-[var(--mu-acento-tinta)]">
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           Cód. {k.codigo} · {k.kit.componentes.map((c) => (c.cantidad > 1 ? `${c.cantidad} × ${c.codigo}` : c.codigo)).join(" + ")}
         </p>
         {grande && (
@@ -192,7 +192,7 @@ export function QueTrae({ kit }: { kit: KitSalon }) {
 export function Pasos({ kicker, titulo, pasos }: { kicker: string; titulo: string; pasos: readonly string[] }) {
   if (pasos.length === 0) return null;
   return (
-    <section aria-labelledby="mu-pasos" className="bg-[var(--mu-hueso)] py-14 sm:py-20">
+    <section aria-labelledby="mu-pasos" className="border-t border-[var(--rule-soft)] py-14 sm:py-20">
       <div className={ANCHO}>
         <TituloSeccion id="mu-pasos" kicker={kicker} titulo={titulo} />
         <ol className="grid gap-4 sm:grid-cols-3 sm:gap-6">

@@ -66,7 +66,7 @@ function EsqueletoCatalogo() {
   const bloque = "animate-pulse bg-[var(--mu-nude-claro)]";
   return (
     <div aria-busy="true" aria-label="Cargando el catálogo" role="status">
-      <div className="border-b border-[var(--rule-soft)] bg-[var(--mu-hueso)]">
+      <div className="border-b border-[var(--rule-soft)]">
         <div className={`${ANCHO} flex flex-col gap-4 py-8 sm:py-12`}>
           <div className={`${bloque} h-4 w-40 rounded`} />
           <div className={`${bloque} h-14 w-72 rounded`} />

@@ -1,11 +1,10 @@
 /**
- * El héroe de la portada (11-10, «más general y más creativo»): UNO solo, sin
- * carrusel, sobre el papel de la tienda. Izquierda: el título en la serif
- * del par de letras con su cursiva, una línea y UN botón. Derecha: la vitrina
- * de Musa, un arco nude con una repisa kraft y cinco envases de las tres líneas
- * (cabello, rostro, cuerpo): la tienda entera de un vistazo, no sólo la campaña.
- * Cada envase abre su ficha y, con mouse o foco, dice nombre y precio DE LA BASE;
- * el sello «Kits desde S/ X» (el menor precio de los kits) lleva a los kits.
+ * El héroe de la portada (rediseño minimalista 16-10, como mi.com): UNO solo,
+ * sin carrusel. Izquierda: el título en la sans 600 (sin cursiva ni color), una
+ * línea y UN botón, con «Kits desde S/ X» como enlace de texto debajo. Derecha:
+ * la vitrina, un panel gris plano con los envases de las tres líneas (cabello,
+ * rostro, cuerpo) de pie sobre el borde: la tienda entera de un vistazo. Cada
+ * envase abre su ficha y, con mouse o foco, dice nombre y precio DE LA BASE.
  *
  * Rápido: el título es el LCP (texto, sin esperar fotos ni la script); los envases
  * son los webp de 480 px (5-6 KB cada uno) y salen sin esperar la vitrina. Con la
@@ -19,7 +18,7 @@ import { cargarVitrina, type ProductoSalon } from "./datos";
 import { rutas, solesCortos } from "./destinos";
 import { EnlaceFicha } from "./EnlaceFicha";
 import { anchosIlustracion, CARPETA_ILUSTRACIONES } from "./imagenes";
-import { ANCHO, BOTON, Destello } from "./ui";
+import { ANCHO, BOTON } from "./ui";
 
 /**
  * Los envases de la repisa, de izquierda a derecha (cabello, rostro, cuerpo,
@@ -85,7 +84,7 @@ function Pieza({ pieza, p, i }: { pieza: EnvaseRepisa; p: ProductoSalon | undefi
       {p ? (
         <EnlaceFicha p={p} aria-label={`${p.nombre}, ${solesCortos(p.precio)}: ver la ficha`} className="group mu-foco block h-full rounded-xl">
           {envase}
-          <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full bg-[var(--mu-cacao)] px-3 py-1.5 text-sm font-medium text-[var(--mu-sobre-cacao)] opacity-0 transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+          <span className="mu-sombra-flotante pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full bg-[var(--surface-raised)] px-3 py-1.5 text-sm font-medium text-[var(--text-primary)] opacity-0 transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
             {pieza.corto} · <span className="tabular-nums">{solesCortos(p.precio)}</span>
           </span>
         </EnlaceFicha>
@@ -96,16 +95,15 @@ function Pieza({ pieza, p, i }: { pieza: EnvaseRepisa; p: ProductoSalon | undefi
   );
 }
 
-/** «Kits desde S/ X»: el menor precio de los kits de la base; lleva a los kits (`#ofertas`). */
-function SelloKits({ desde }: { desde: number }) {
+/** «Kits desde S/ X»: el menor precio de los kits de la base, como enlace de texto que lleva a los kits (`#ofertas`). */
+function EnlaceKits({ desde }: { desde: number }) {
   return (
     <a
       href="#ofertas"
-      aria-label={`Kits desde ${solesCortos(desde)}: ver los kits`}
-      className="mu-foco group absolute -top-3 left-0 z-20 flex h-24 w-24 flex-col sm:top-[2%] items-center justify-center rounded-full bg-[var(--mu-cacao)] text-center text-[var(--mu-sobre-cacao)] outline outline-1 outline-offset-[-6px] outline-[var(--mu-oro)]/60 transition-transform duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-rotate-6 sm:h-28 sm:w-28 md:-left-2"
+      className="mu-subrayado mu-foco mt-2 inline-flex h-12 items-center gap-1.5 text-[length:var(--mu-t-cuerpo)] font-medium text-[var(--text-secondary)] transition-colors duration-[var(--mu-dur-corto)] hover:text-[var(--text-primary)] [--mu-subrayado-abajo:.6rem]"
     >
-      <span className="text-xs font-semibold uppercase leading-tight tracking-[0.06em] text-[var(--mu-oro)] sm:tracking-[0.16em]">Kits desde</span>
-      <span className="mu-num mt-0.5 whitespace-nowrap text-[1.75rem] leading-none sm:text-[2.125rem]">{solesCortos(desde)}</span>
+      Kits desde <span className="tabular-nums">{solesCortos(desde)}</span>
+      <ArrowRight className="h-4 w-4" aria-hidden="true" />
     </a>
   );
 }
@@ -121,24 +119,19 @@ function Heroe({ productos, slug }: { productos: readonly ProductoSalon[] | null
       <div className={`${ANCHO} grid items-center gap-6 pb-8 pt-6 md:grid-cols-2 md:gap-10 md:pb-14 md:pt-10 lg:gap-16`}>
         <div className="max-w-xl">
           <h2 id="mu-heroe" className="mu-titulo text-[length:var(--mu-t-heroe)] text-[var(--text-primary)]">
-            {HEROE.titulo} <span className="block italic text-[var(--mu-acento-tinta)]">{HEROE.acento}</span>
+            {HEROE.titulo} <span className="block">{HEROE.acento}</span>
           </h2>
-          <p className="mt-4 max-w-md text-pretty text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--text-secondary)] sm:text-lg">{HEROE.texto}</p>
-          <a href={rutas(slug).catalogo} className={`${BOTON} mt-6`}>
-            {HEROE.boton} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </a>
+          <p className="mt-5 max-w-md text-pretty text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--text-secondary)] sm:text-lg">{HEROE.texto}</p>
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-1">
+            <a href={rutas(slug).catalogo} className={BOTON}>
+              {HEROE.boton} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
+            {desde !== null && <EnlaceKits desde={desde} />}
+          </div>
         </div>
-        {/* La vitrina: nude en los dos temas (el arco oscuro se comía las tapas negras de los envases). */}
-        <div className="relative mx-auto aspect-[16/10] w-full max-w-[34rem] md:aspect-[4/3]">
-          <span aria-hidden="true" className="absolute inset-x-[4%] bottom-0 top-0 rounded-t-[999px] bg-[var(--mu-sello-nude)]" />
-          <span aria-hidden="true" className="absolute inset-x-[9%] bottom-0 top-[6%] rounded-t-[999px] bg-[var(--mu-envase-nude)]" />
-          <Destello className="absolute right-[3%] top-[6%] h-5 w-5 text-[var(--mu-oro)] sm:h-6 sm:w-6" />
-          <Destello className="absolute right-[12%] top-[17%] h-2.5 w-2.5 text-[var(--mu-oro)]" />
-          {desde !== null && <SelloKits desde={desde} />}
-          {/* La repisa: tabla kraft con su canto en sombra; los envases se apoyan encima. */}
-          <span aria-hidden="true" className="absolute inset-x-0 bottom-[9%] h-2.5 rounded-sm bg-[var(--mu-envase-kraft)] sm:h-3" />
-          <span aria-hidden="true" className="absolute inset-x-[1%] bottom-[calc(9%-0.375rem)] h-1.5 rounded-b-sm bg-[var(--mu-envase-kraft-sombra)]" />
-          <div className="absolute inset-x-[7%] bottom-[calc(9%+0.5rem)] flex items-end justify-between sm:bottom-[calc(9%+0.625rem)]">
+        {/* La vitrina: un panel gris plano (claro en los dos temas: el panel oscuro se comía las tapas negras). */}
+        <div className="relative mx-auto aspect-[16/10] w-full max-w-[36rem] overflow-hidden rounded-[1.5rem] bg-[var(--mu-vitrina)] md:aspect-[4/3]">
+          <div className="absolute inset-x-[8%] bottom-[6%] flex items-end justify-between">
             {piezas.map((pieza, i) => (
               <Pieza key={pieza.codigo} pieza={pieza} p={porCodigo.get(pieza.codigo)} i={i} />
             ))}

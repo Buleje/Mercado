@@ -60,9 +60,9 @@ const ESTILO: Record<Variante, { agregar: string; contador: string; paso: string
     numero: "34px",
   },
   barra: {
-    // Sobre la barra cacao: el nude del sello con la tinta negra (igual en los dos temas, 9,39:1).
-    agregar: "h-12 px-5 bg-[var(--mu-sello-nude)] text-[var(--mu-sello-m)] hover:opacity-90",
-    contador: "h-12 w-[8.5rem] bg-[var(--mu-sello-nude)] text-[var(--mu-sello-m)]",
+    // Sobre la barra blanca: el botón principal (negro en claro, hueso en oscuro).
+    agregar: "h-12 px-5 bg-[var(--mu-boton-fondo)] text-[var(--mu-boton-texto)] hover:bg-[var(--mu-boton-fondo-hover)]",
+    contador: "h-12 w-[8.5rem] bg-[var(--mu-boton-fondo)] text-[var(--mu-boton-texto)]",
     paso: "h-12 w-12",
     numero: "30px",
   },
@@ -224,7 +224,7 @@ export function BarraCompra({ producto, ancla }: { producto: Product; ancla: str
     <div
       inert={!ver}
       aria-hidden={!ver}
-      className={`mu-sombra-flotante fixed inset-x-0 bottom-0 z-50 bg-[var(--mu-cacao)] px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 text-[var(--mu-sobre-cacao)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden ${
+      className={`mu-sombra-flotante fixed inset-x-0 bottom-0 z-50 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 text-[var(--mu-sobre-cacao)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden ${
         ver ? "translate-y-0" : "translate-y-full"
       }`}
     >

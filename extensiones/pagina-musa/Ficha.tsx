@@ -171,7 +171,7 @@ function Resumen({ p, whatsapp }: { p: ProductoSalon; whatsapp: string | null })
       <h1 className="mu-serif mt-3 text-[length:var(--mu-t-titulo)] leading-[1.1] text-[var(--text-primary)]">{p.nombre}</h1>
       {p.codigo && (
         <p className="mt-3">
-          <span className="inline-flex items-center rounded-full bg-[var(--mu-negro)] px-3 py-1 text-sm font-semibold tracking-[0.14em] text-[var(--surface-canvas)]">Cód. {p.codigo}</span>
+          <span className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-3 py-1 text-sm font-medium tabular-nums text-[var(--text-secondary)]">Cód. {p.codigo}</span>
         </p>
       )}
       <Precio p={p} />

@@ -76,7 +76,7 @@ function mensajesFranja(pagos: string | null): string[] {
 export async function PaginaSalon({ tenantId, slug, letras = "a" }: { tenantId: string; slug: string; letras?: ParLetras }) {
   // La vitrina arranca YA, en paralelo (la comparten el héroe y las secciones: `cache`).
   void cargarVitrina(tenantId, slug).catch(sinDato("página salón · vitrina por adelantado"));
-  // El título del héroe es el LCP: sus dos caras (recta y cursiva) salen junto con el HTML.
+  // El título del héroe es el LCP: la cara de la sans (una sola, variable) sale junto con el HTML.
   for (const url of precargasDe(letras)) preload(url, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   const m = await cargarMarco(tenantId);
 
@@ -153,7 +153,7 @@ function EsqueletoVitrina() {
   );
 }
 
-/** Lo que se ve mientras llegan los datos: franja, barra, el héroe (texto + vitrina nude) y la fila de círculos (mismas alturas). */
+/** Lo que se ve mientras llegan los datos: franja, barra, el héroe (texto + panel gris de la vitrina) y la fila de círculos (mismas alturas). */
 export function EsqueletoSalon() {
   const bloque = "animate-pulse rounded-full bg-[var(--mu-nude-claro)]";
   const linea = "animate-pulse rounded bg-[var(--mu-nude-claro)]";
@@ -174,7 +174,7 @@ export function EsqueletoSalon() {
           <div className={`${linea} h-4 w-full max-w-md`} />
           <div className={`${bloque} mt-2 h-12 w-44`} />
         </div>
-        <div className="mx-auto aspect-[16/10] w-full max-w-[34rem] animate-pulse rounded-t-[999px] bg-[var(--mu-nude)]/40 md:aspect-[6/5]" />
+        <div className="mx-auto aspect-[16/10] w-full max-w-[36rem] animate-pulse rounded-[1.5rem] bg-[var(--mu-vitrina)] md:aspect-[4/3]" />
       </div>
       <FilaCirculos />
     </Lienzo>
