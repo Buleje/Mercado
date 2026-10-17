@@ -55,8 +55,13 @@ export type Resumen = {
 export type DraftItem = {
   descripcion: string;
   cantidad: string;
+  /** Código SUNAT (catálogo 03): `NIU`, `KGM`… El nombre legible sale de `guia-unidades.ts`. */
   unidad: string;
   pesoUnitario: string;
+  /** El producto del pedido del que salió la línea (viaja al backend). */
+  productoId?: string;
+  /** Cómo venía la unidad en el pedido cuando no tiene código SUNAT («porción»): se avisa, no se cambia en silencio. */
+  unidadOrigen?: string;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -74,6 +79,21 @@ export const ESTADOS_ORDEN = ["BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA"]
 
 export const MOTIVOS = ["VENTA", "TRASLADO ENTRE ALMACENES", "DEVOLUCION", "EXHIBICION", "CONSIGNACION", "OTROS"];
 
+/** Lo que se lee de cada motivo (el valor guardado no cambia). */
+export const MOTIVO_ROTULO: Record<string, string> = {
+  VENTA: "Venta",
+  "TRASLADO ENTRE ALMACENES": "Traslado entre tus locales o almacenes",
+  DEVOLUCION: "Devolución",
+  EXHIBICION: "Exhibición",
+  CONSIGNACION: "Consignación",
+  OTROS: "Otro motivo",
+};
+
+/** De dónde sale la guía: de un pedido (precarga) o de un traslado sin venta con su motivo. */
+export type FuenteGuia = "pedido" | "sin-pedido";
+/** Privado = vehículo propio (placa y conductor); público = empresa de transporte (su RUC). */
+export type ModalidadGuia = "privado" | "publico";
+
 export const POR_PAGINA = 10;
 
 export function getPlaca(g: GuiaRemision) {
@@ -85,14 +105,14 @@ export function emptyItem(): DraftItem {
 }
 
 export type FormGuia = {
-  orderIds: string; motivoTraslado: string; destinatarioNombre: string; destinatarioRuc: string;
+  fuente: FuenteGuia; modalidad: ModalidadGuia; motivoTraslado: string; destinatarioNombre: string; destinatarioRuc: string;
   destinatarioDireccion: string; transportistaNombre: string; transportistaRuc: string; vehiculoPlaca: string;
   conductorNombre: string; conductorDni: string; bultos: string; documentoRef: string; puntoPartida: string;
   puntoLlegada: string; fechaTraslado: string; pesoBruto: string; notas: string;
 };
 
 export const FORM_VACIO: FormGuia = {
-  orderIds: "", motivoTraslado: "VENTA", destinatarioNombre: "", destinatarioRuc: "", destinatarioDireccion: "",
+  fuente: "pedido", modalidad: "privado", motivoTraslado: "VENTA", destinatarioNombre: "", destinatarioRuc: "", destinatarioDireccion: "",
   transportistaNombre: "", transportistaRuc: "", vehiculoPlaca: "", conductorNombre: "", conductorDni: "",
   bultos: "", documentoRef: "", puntoPartida: "", puntoLlegada: "", fechaTraslado: "", pesoBruto: "", notas: "",
 };

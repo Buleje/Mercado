@@ -11,13 +11,15 @@ import { Copy, Package, Printer, Truck, User, X, XCircle } from "@buleje/design-
 import { m } from "@/components/admin/providers";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { button } from "@/components/ui-system/button-variants";
+import { useMembrete } from "@/hooks/use-membrete";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BOTON_ICONO, CAMPO } from "./estilos";
+import { unidadLegible } from "./guia-unidades";
 import { GuiaTimeline } from "./GuiaTimeline";
 import { printGuiaSunat } from "./imprimir-guia";
-import { getPlaca, STATUS_META, type GuiaRemision } from "./tipos";
+import { getPlaca, MOTIVO_ROTULO, STATUS_META, type GuiaRemision } from "./tipos";
 
 interface Props {
   guia: GuiaRemision;
@@ -46,6 +48,7 @@ export function GuiaDetalle({ guia, onCerrar, onDuplicar, onAnular }: Props) {
   const [motivo, setMotivo] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  const membrete = useMembrete();
 
   useModalAccesible(ref, { onCerrar, activo: true, cerrarConEscape: false });
   /* Escape cierra primero «Anular» (que se abre encima) y después el panel. */
@@ -125,7 +128,7 @@ export function GuiaDetalle({ guia, onCerrar, onDuplicar, onAnular }: Props) {
               <span className={cn("shrink-0 rounded-lg px-2 py-1 text-sm font-bold", meta.bg, meta.color)}>{meta.label}</span>
             </div>
             <div className="grid grid-cols-2 gap-3 border-t border-[var(--rule-base)] pt-3">
-              <Dato rotulo="Motivo">{guia.motivoTraslado}</Dato>
+              <Dato rotulo="Motivo">{MOTIVO_ROTULO[guia.motivoTraslado] ?? guia.motivoTraslado}</Dato>
               <Dato rotulo="Fecha de traslado">{formatDate(guia.fechaTraslado)}</Dato>
               <Dato rotulo="Origen">{guia.puntoPartida}</Dato>
               <Dato rotulo="Destino">{guia.puntoLlegada}</Dato>
@@ -181,7 +184,7 @@ export function GuiaDetalle({ guia, onCerrar, onDuplicar, onAnular }: Props) {
                   <Avatar><Package className="h-4 w-4" aria-hidden /></Avatar>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-[var(--text-primary)]">{item.descripcion}</p>
-                    <p className="text-sm text-[var(--text-tertiary)]">{item.cantidad} {item.unidad}{item.pesoUnitario ? ` · ${item.pesoUnitario} kg` : ""}</p>
+                    <p className="text-sm text-[var(--text-tertiary)]">{item.cantidad} {unidadLegible(item.unidad).toLowerCase()}{item.pesoUnitario ? ` · ${item.pesoUnitario} kg` : ""}</p>
                   </div>
                 </div>
               ))}
@@ -200,7 +203,7 @@ export function GuiaDetalle({ guia, onCerrar, onDuplicar, onAnular }: Props) {
             <button type="button" onClick={() => window.print()} className={button({ variant: "secondary", className: "flex-1 rounded-xl" })}>
               <Printer className="h-4 w-4" aria-hidden /> Imprimir
             </button>
-            <button type="button" onClick={() => printGuiaSunat(guia, formatDate)} className={button({ variant: "primary", className: "flex-1 rounded-xl" })}>
+            <button type="button" onClick={() => printGuiaSunat(guia, formatDate, membrete)} className={button({ variant: "primary", className: "flex-1 rounded-xl" })}>
               <Printer className="h-4 w-4" aria-hidden /> GRR SUNAT
             </button>
           </div>

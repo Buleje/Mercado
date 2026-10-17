@@ -26,13 +26,27 @@ import { useNuevaGuia } from "./use-nueva-guia";
 export default function GuiasRemisionVista() {
   const datos = useGuias();
   const [seleccionada, setSeleccionada] = useState<GuiaRemision | null>(null);
-  const [mostrarNueva, setMostrarNueva] = useState(false);
-  const cerrarNueva = useCallback(() => setMostrarNueva(false), []);
   const cerrarDetalle = useCallback(() => setSeleccionada(null), []);
-  const nueva = useNuevaGuia(() => { setMostrarNueva(false); datos.recargar(); });
+  /* Los «Usar de nuevo» y el aviso «este pedido ya tiene guía» miran la lista entera, no la buscada. */
+  const [todas, setTodas] = useState<GuiaRemision[]>([]);
+  useEffect(() => {
+    if (!datos.search.trim() && !datos.loading && !datos.error) setTodas(datos.guias);
+  }, [datos.search, datos.loading, datos.error, datos.guias]);
+  const { recargar } = datos;
+  const nueva = useNuevaGuia(todas, recargar);
   const kpis = useIndicadoresGuias(datos.resumen);
+  const { abrir: abrirGuia } = nueva;
+  const abrirNueva = useCallback(() => abrirGuia(), [abrirGuia]);
 
-  const abrirNueva = useCallback(() => { setMostrarNueva(true); nueva.setError(null); }, [nueva]);
+  /* Un pedido abre su guía con `?guia=<pedido>` (M56): se lee una vez y se limpia. */
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const id = url.searchParams.get("guia");
+    if (!id) return;
+    abrirGuia(id);
+    url.searchParams.delete("guia");
+    window.history.replaceState(window.history.state, "", url);
+  }, [abrirGuia]);
 
   /* Ctrl/⌘+N abre la guía nueva (desde fuera de un campo). */
   useEffect(() => {
@@ -45,7 +59,7 @@ export default function GuiasRemisionVista() {
   }, [abrirNueva]);
 
   const acciones: MenuAccion[] = [
-    { id: "pedidos", label: "Ir a Pedidos", hint: "La guía de un pedido nace ahí: toca «Hacer guía» y escribe su N° en «Vincular pedido»", icon: Truck, onSelect: () => irAEnlace(hrefDeDestino({ tab: "pedidos", params: {} })) },
+    { id: "pedidos", label: "Ir a Pedidos", hint: "Para ver el pedido antes de hacer su guía; la guía nueva ya lo busca por cliente o código", icon: Truck, onSelect: () => irAEnlace(hrefDeDestino({ tab: "pedidos", params: {} })) },
     { id: "exportar", label: "Exportar a Excel", hint: datos.estado ? "Solo las guías del estado elegido" : "Todas las guías", icon: Download, onSelect: datos.exportar },
     { id: "refrescar", label: "Actualizar", icon: RefreshCw, onSelect: datos.recargar },
   ];
@@ -60,7 +74,7 @@ export default function GuiasRemisionVista() {
           <InfoTip
             title="Guías de remisión"
             what="Los papeles que acompañan a la mercadería cuando sale de un lugar a otro: quién la lleva, en qué vehículo y hasta dónde."
-            affects="Una guía en tránsito queda pendiente hasta que la marcas entregada. Anularla no borra el traslado de tu historial. ¿Es de un pedido? Hazla desde el pedido (menú «Más» › Ir a Pedidos)."
+            affects="Una guía en tránsito queda pendiente hasta que la marcas entregada. Anularla no borra el traslado de tu historial. ¿Es de un pedido? En «Nueva guía» lo eliges por cliente o código y se llenan su dirección y sus productos."
             example="Mandas 40 sacos de arroz a la tienda de Yarinacocha en la camioneta ABC-123: haces la guía y viaja con el chofer."
             side="bottom"
           />
@@ -119,7 +133,7 @@ export default function GuiasRemisionVista() {
           />
         )}
       </AnimatePresence>
-      <NuevaGuiaModal abierto={mostrarNueva} onCerrar={cerrarNueva} nueva={nueva} />
+      <NuevaGuiaModal g={nueva} />
     </div>
   );
 }

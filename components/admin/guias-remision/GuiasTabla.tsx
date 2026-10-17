@@ -7,7 +7,7 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BOTON_ICONO } from "./estilos";
 import { GuiaHoverRow, GuiaPreview } from "./GuiaPreview";
-import { STATUS_META, type GuiaRemision } from "./tipos";
+import { MOTIVO_ROTULO, STATUS_META, type GuiaRemision } from "./tipos";
 
 interface Props {
   guias: GuiaRemision[];
@@ -60,7 +60,7 @@ export function GuiasTabla({ guias, total, page, totalPages, onPage, onAbrir }: 
                       <p className="truncate font-medium text-[var(--text-primary)]">{g.destinatarioNombre}</p>
                     </div>
                   </td>
-                  <td data-label="Motivo" className="text-[var(--text-secondary)]">{g.motivoTraslado}</td>
+                  <td data-label="Motivo" className="text-[var(--text-secondary)]">{MOTIVO_ROTULO[g.motivoTraslado] ?? g.motivoTraslado}</td>
                   <td data-label="Estado">
                     <span className={cn("inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-bold", meta.bg, meta.color)}>
                       <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} aria-hidden />

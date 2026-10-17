@@ -1,179 +1,91 @@
 "use client";
 
 /**
- * «Nueva guía de remisión»: una ventana (se mueve, se achica y se fija, ADR-420)
- * con el formulario en bloques —traslado, destinatario, ruta, transporte, carga
- * e ítems—. Lo que se manda al backend no cambió.
+ * «Nueva guía de remisión» en 5 etapas (F18): Origen → Destino → Transporte →
+ * Carga → Revisar. Se salta a cualquiera sin perder nada; la línea de resumen
+ * acompaña todas; «Crear guía» espera a que no falte nada. Lo escrito queda
+ * como borrador en este navegador.
  */
-import { type ReactNode } from "react";
-import { BlockTitle } from "@buleje/design-system";
-import { Calendar, Loader2, MapPin, Plus } from "@buleje/design-system/icons";
-import { Field } from "@/components/admin/shared/Field";
-import { button } from "@/components/ui-system/button-variants";
-import { BOTON_ICONO, CAMPO, CAMPO_ICONO, ETIQUETA } from "./estilos";
-import { GuiaItemsEditor } from "./GuiaItemsEditor";
-import { MOTIVOS } from "./tipos";
-import type { useNuevaGuia } from "./use-nueva-guia";
+import { Check, History, Loader2, Truck } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
+import { diaYFecha } from "@/components/admin/einvoice/emision-reglas";
+import { EtapasGuia } from "./guia-piezas";
+import { resumenGuia } from "./guia-reglas";
+import { GuiaItemsEditor } from "./GuiaItemsEditor";
+import { GuiaPasoDestino } from "./GuiaPasoDestino";
+import { GuiaPasoOrigen } from "./GuiaPasoOrigen";
+import { GuiaPasoRevisar } from "./GuiaPasoRevisar";
+import { GuiaPasoTransporte } from "./GuiaPasoTransporte";
+import type { NuevaGuia } from "./use-nueva-guia";
 
-interface Props {
-  abierto: boolean;
-  onCerrar: () => void;
-  nueva: ReturnType<typeof useNuevaGuia>;
-}
+const hora = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isFinite(d.getTime()) ? `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}` : "";
+};
 
-function Bloque({ titulo, children }: { titulo: string; children: ReactNode }) {
-  return (
-    <section className="space-y-3">
-      <BlockTitle>{titulo}</BlockTitle>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
-    </section>
-  );
-}
+export function NuevaGuiaModal({ g }: { g: NuevaGuia }) {
+  const { paso, pendientes, creating } = g;
+  const resumen = resumenGuia(g.form, g.items, g.pedido);
+  const ultimo = paso === "revisar";
+  const faltan = pendientes.length;
 
-export function NuevaGuiaModal({ abierto, onCerrar, nueva }: Props) {
-  const { form, campo, creating, error } = nueva;
-
-  const texto = (
-    k: keyof typeof form,
-    etiqueta: string,
-    placeholder: string,
-    extra?: {
-      className?: string;
-      maxLength?: number;
-      tipo?: string;
-      filtro?: (v: string) => string;
-    },
-  ) => (
-    <Field label={etiqueta} labelClassName={ETIQUETA} className={extra?.className}>
-      <input
-        type={extra?.tipo ?? "text"}
-        value={form[k]}
-        maxLength={extra?.maxLength}
-        placeholder={placeholder}
-        onChange={(e) => campo(k, extra?.filtro ? extra.filtro(e.target.value) : e.target.value)}
-        className={CAMPO}
-      />
-    </Field>
-  );
-
-  const conIcono = (
-    k: "puntoPartida" | "puntoLlegada" | "fechaTraslado",
-    etiqueta: string,
-    placeholder: string,
-    Icono: typeof MapPin,
-    tipo = "text",
-  ) => (
-    <Field label={etiqueta} labelClassName={ETIQUETA}>
-      {(id) => (
-        <div className="relative">
-          <Icono
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
-            aria-hidden
-          />
-          <input
-            id={id}
-            type={tipo}
-            value={form[k]}
-            placeholder={placeholder}
-            onChange={(e) => campo(k, e.target.value)}
-            className={CAMPO_ICONO}
-          />
-        </div>
-      )}
-    </Field>
-  );
-
-  return (
-    <AdminModal
-      open={abierto}
-      onClose={onCerrar}
-      title="Nueva guía de remisión"
-      size="lg"
-      claveVentana="guias-remision-nueva"
-      footer={
-        <ModalFooter>
-          <button type="button" onClick={onCerrar} className={button({ variant: "secondary" })}>
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={nueva.crear}
-            disabled={creating}
-            className={button({ variant: "primary" })}
-          >
-            {creating ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            ) : (
-              <Plus className="h-4 w-4" aria-hidden />
-            )}
-            Crear guía
-          </button>
-        </ModalFooter>
-      }
+  const pie = (
+    <ModalFooter
+      error={g.error}
+      nota={faltan > 0 ? `${faltan === 1 ? "Falta 1 dato" : `Faltan ${faltan} datos`} · se guarda solo como borrador` : "Se guarda solo como borrador"}
     >
-      <div className={`space-y-6 ${MODAL_BODY}`}>
-        <Bloque titulo="Traslado">
-          {texto("orderIds", "Vincular pedido (opcional)", "N° de orden")}
-          <Field label="Motivo de traslado" labelClassName={ETIQUETA}>
-            <select
-              value={form.motivoTraslado}
-              onChange={(e) => campo("motivoTraslado", e.target.value)}
-              className={CAMPO}
-            >
-              {MOTIVOS.map((mo) => (
-                <option key={mo} value={mo}>
-                  {mo}
-                </option>
-              ))}
-            </select>
-          </Field>
-          {conIcono("fechaTraslado", "Fecha y hora de traslado", "", Calendar, "datetime-local")}
-          {texto("documentoRef", "Doc. de referencia", "Factura, boleta u orden")}
-        </Bloque>
+      {paso === "origen" ? (
+        <button type="button" onClick={g.cerrar} className={button({ variant: "secondary" })}>Cancelar</button>
+      ) : (
+        <button type="button" onClick={g.atras} className={button({ variant: "secondary" })}>Atrás</button>
+      )}
+      {ultimo ? (
+        <button
+          type="button"
+          onClick={() => void g.crear()}
+          disabled={creating || faltan > 0}
+          title={faltan > 0 ? "Completa lo que falta para crear la guía" : undefined}
+          data-qa="guia-crear"
+          className={button({ variant: "primary", className: "px-6" })}
+        >
+          {creating ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
+          Crear guía
+        </button>
+      ) : (
+        <button type="button" onClick={g.siguiente} data-qa="guia-siguiente" className={button({ variant: "primary", className: "px-6" })}>
+          Siguiente
+        </button>
+      )}
+    </ModalFooter>
+  );
 
-        <Bloque titulo="Destinatario">
-          {texto("destinatarioNombre", "Destinatario", "Nombre")}
-          {texto("destinatarioRuc", "RUC del destinatario", "20XXXXXXXXX")}
-          {texto("destinatarioDireccion", "Dirección del destinatario", "Dirección", {
-            className: "sm:col-span-2",
-          })}
-        </Bloque>
-
-        <Bloque titulo="Ruta">
-          {conIcono("puntoPartida", "Punto de partida", "Dirección origen", MapPin)}
-          {conIcono("puntoLlegada", "Punto de llegada", "Dirección destino", MapPin)}
-        </Bloque>
-
-        <Bloque titulo="Transporte">
-          {texto("transportistaNombre", "Transportista", "Nombre")}
-          {texto("transportistaRuc", "RUC del transportista", "RUC")}
-          {texto("vehiculoPlaca", "Placa", "ABC-123")}
-          {texto("conductorNombre", "Conductor", "Nombre del conductor")}
-          {texto("conductorDni", "DNI del conductor", "12345678", {
-            maxLength: 8,
-            filtro: (v) => v.replace(/\D/g, "").slice(0, 8),
-          })}
-        </Bloque>
-
-        <Bloque titulo="Carga">
-          {texto("bultos", "N° de bultos", "0", { tipo: "number" })}
-          {texto("pesoBruto", "Peso bruto (kg)", "0.000", { tipo: "number" })}
-        </Bloque>
-
-        <GuiaItemsEditor
-          items={nueva.items}
-          onCambio={nueva.updateItem}
-          onQuitar={nueva.removeItem}
-          onAgregar={nueva.addItem}
-        />
-
-        {error ? (
-          <p role="alert" className="text-sm font-semibold text-[var(--data-error-ink)]">
-            {error}
+  return (
+    <AdminModal open={g.abierto} onClose={g.cerrar} title="Nueva guía de remisión" icon={Truck} size="lg" claveVentana="guias-remision-nueva" footer={pie}>
+      <div className={cn("space-y-4", MODAL_BODY)}>
+        <EtapasGuia paso={paso} pendientes={pendientes} onIr={g.irA} />
+        {resumen.length > 0 && (
+          <p className="truncate text-sm text-[var(--text-secondary)]" data-qa="guia-resumen" title={resumen.join(" · ")}>
+            {resumen.join(" · ")}
           </p>
-        ) : null}
+        )}
+        {g.recuperado && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-[var(--data-info-100)] px-3 py-1 text-sm text-[var(--data-info-ink)]">
+            <History className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="min-w-0 flex-1">Seguimos tu borrador del {diaYFecha(g.recuperado)}, {hora(g.recuperado)}.</span>
+            <button type="button" onClick={g.empezarDeCero} className={button({ variant: "ghost", className: "rounded-xl" })}>
+              Empezar de cero
+            </button>
+          </div>
+        )}
+
+        {paso === "origen" && <GuiaPasoOrigen g={g} />}
+        {paso === "destino" && <GuiaPasoDestino g={g} />}
+        {paso === "transporte" && <GuiaPasoTransporte g={g} />}
+        {paso === "carga" && <GuiaItemsEditor g={g} />}
+        {ultimo && <GuiaPasoRevisar g={g} />}
       </div>
     </AdminModal>
   );

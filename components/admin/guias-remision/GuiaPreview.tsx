@@ -5,7 +5,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { Truck } from "@buleje/design-system/icons";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { getPlaca, STATUS_META, type GuiaRemision } from "./tipos";
+import { getPlaca, MOTIVO_ROTULO, STATUS_META, type GuiaRemision } from "./tipos";
 
 export function GuiaPreview({ guia }: { guia: GuiaRemision }) {
   const meta = STATUS_META[guia.status];
@@ -35,7 +35,7 @@ export function GuiaPreview({ guia }: { guia: GuiaRemision }) {
       </div>
       <div className="flex items-center justify-between pt-1 border-t border-[var(--rule-soft)]">
         <span className="text-sm text-[var(--text-secondary)]">{formatDate(guia.fechaTraslado)}</span>
-        <span className="text-sm font-semibold text-[var(--text-secondary)]">{guia.motivoTraslado}</span>
+        <span className="text-sm font-semibold text-[var(--text-secondary)]">{MOTIVO_ROTULO[guia.motivoTraslado] ?? guia.motivoTraslado}</span>
       </div>
     </div>
   );

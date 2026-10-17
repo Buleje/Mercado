@@ -77,11 +77,11 @@ export async function POST(req: NextRequest) {
   try {
     // If orderId provided and no items, load items from the order
     let items = data.items ?? [];
-    if (data.orderId && items.length === 0) {
-      // SECURITY 2026-05-06 (pentest H8): validar que la orden pertenezca al
-      // tenant que crea la guía. El findMany scoped por order.tenantId nested
-      // garantiza cross-tenant isolation.
-      // Audit project-wide 2026-05-19: migrado a OrdersDB.getItemsForGuiaRemision.
+    // SECURITY 2026-05-06 (pentest H8): la orden tiene que ser del tenant que
+    // crea la guía. 17-10 (comprobantes p3): se valida SIEMPRE que llegue un
+    // orderId — antes sólo sin ítems, y con ítems un id de otro negocio quedaba
+    // enlazado y un texto («#a1b2c3») reventaba la FK con un 503.
+    if (data.orderId) {
       const order = await OrdersDB.getById(auth.tenantId, data.orderId);
       if (!order) {
         return NextResponse.json(
@@ -89,6 +89,9 @@ export async function POST(req: NextRequest) {
           { status: 404 }
         );
       }
+    }
+    if (data.orderId && items.length === 0) {
+      // Audit project-wide 2026-05-19: migrado a OrdersDB.getItemsForGuiaRemision.
       const orderItems = await OrdersDB.getItemsForGuiaRemision(auth.tenantId, data.orderId);
       items = orderItems.map((oi) => ({
         descripcion: oi.name,
