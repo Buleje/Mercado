@@ -30,7 +30,7 @@ export default function NcPasoMotivo({ nc }: { nc: NotasCreditoVista }) {
   const {
     templates, showTemplates, setShowTemplates, wizardStep, setWizardStep, createError, setCreateError,
     form, setForm, selectedVenta, saveTemplate, deleteTemplate, loadTemplate, remanente, lineas, cantidades,
-    setCantidad, marcarTodo, usarDevueltoEnCaja, limpiarCantidades, campos, setCampos, tasa, importe, descripcionFinal,
+    setCantidad, marcarTodo, usarDevueltoEnCaja, ofrecerDevuelto, limpiarCantidades, campos, setCampos, tasa, importe, descripcionFinal,
   } = nc;
   if (wizardStep !== 1) return null;
   const conDocumento = !!selectedVenta;
@@ -89,7 +89,7 @@ export default function NcPasoMotivo({ nc }: { nc: NotasCreditoVista }) {
 
           {(importe.forma === "lineas" || importe.forma === "descripcion") && (
             <NcLineasNota lineas={lineas} cantidades={cantidades} setCantidad={setCantidad} marcarTodo={marcarTodo}
-              usarDevueltoEnCaja={usarDevueltoEnCaja} limpiar={limpiarCantidades} titulo={tituloLineas(form.codigoMotivo)}
+              usarDevueltoEnCaja={usarDevueltoEnCaja} ofrecerDevuelto={ofrecerDevuelto} limpiar={limpiarCantidades} titulo={tituloLineas(form.codigoMotivo)}
               notasActivas={remanente.datos?.remanente.notasActivas ?? 0} />
           )}
 

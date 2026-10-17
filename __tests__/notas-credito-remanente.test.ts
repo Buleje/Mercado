@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import { importeDeLineas, lineasAjustables, remanenteDocumento } from "@/lib/notas-credito/remanente";
+import { importeDeLineas, lineasAjustables, ofrecerDevueltoEnCaja, remanenteDocumento } from "@/lib/notas-credito/remanente";
 import { cerrarPorTodo, descripcionArmada, reglaMotivo } from "@/lib/notas-credito/motivos";
 
 const h = vi.hoisted(() => ({
@@ -26,10 +26,12 @@ vi.mock("@/lib/require-admin", () => ({
 }));
 vi.mock("@/lib/db", () => ({
   NotasCreditoDB: {
-    sumActiveTotalForSale: h.sumVenta,
-    sumActiveTotalForOrder: h.sumPedido,
-    siguienteNumero: vi.fn(() => Promise.resolve("NC01-0001")),
-    create: h.create,
+    // Doble de `crearEnFila` (alta bajo candado, 17-10): lo acreditado sale de los mocks de suma.
+    crearEnFila: async (t: string, doc: { saleId?: string; orderId?: string }, armar: (ya: { venta: number; pedido: number }) => { ok: boolean; datos?: object; error?: unknown }) => {
+      const r = armar({ venta: doc.saleId ? await h.sumVenta(t, doc.saleId) : 0, pedido: doc.orderId ? await h.sumPedido(t, doc.orderId) : 0 });
+      if (!r.ok) return r;
+      return { ok: true, nota: await h.create(t, { ...r.datos, numero: await Promise.resolve("NC01-0001") }) };
+    },
     getAll: vi.fn(),
     porDocumento: h.porDocumento,
     devolucionesDeVenta: h.devoluciones,
@@ -80,6 +82,23 @@ describe("importeDeLineas (puro)", () => {
     expect(importeDeLineas(lineas, [1, 0, 0], 10)).toBe(3.34);
     expect(importeDeLineas(lineas, [1, 1, 0], 5)).toBe(5);
     expect(importeDeLineas(lineas, [9, 0, 0], 10)).toBe(3.34);
+  });
+});
+
+describe("ofrecerDevueltoEnCaja (puro): «Lo devuelto en Caja» no vuelve a proponer lo ya acreditado", () => {
+  const devuelta = [{ devueltasEnCaja: 1 }, { devueltasEnCaja: 0 }];
+  it("Caja devolvió S/ 11,80 y no hay notas: se ofrece", () => {
+    expect(ofrecerDevueltoEnCaja(devuelta, 0, 11.8)).toBe(true);
+  });
+  it("una nota ya acreditó esos S/ 11,80: se esconde (antes volvía a proponer la misma unidad)", () => {
+    expect(ofrecerDevueltoEnCaja(devuelta, 11.8, 11.8)).toBe(false);
+    expect(ofrecerDevueltoEnCaja(devuelta, 23.6, 11.8)).toBe(false);
+  });
+  it("lo acreditado no llega a lo devuelto (1 céntimo menos): se ofrece", () => {
+    expect(ofrecerDevueltoEnCaja(devuelta, 11.79, 11.8)).toBe(true);
+  });
+  it("sin unidades devueltas en Caja no hay nada que ofrecer", () => {
+    expect(ofrecerDevueltoEnCaja([{ devueltasEnCaja: 0 }], 0, 11.8)).toBe(false);
   });
 });
 

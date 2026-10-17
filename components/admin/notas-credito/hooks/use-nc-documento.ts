@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { descripcionArmada } from "@/lib/notas-credito/motivos";
+import { ofrecerDevueltoEnCaja } from "@/lib/notas-credito/remanente";
 import { importeDeLaNota } from "@/components/admin/notas-credito/nc-importe";
 import { useRemanenteDocumento } from "@/components/admin/notas-credito/hooks/use-remanente-documento";
 import { useNcEstado } from "@/components/admin/notas-credito/hooks/use-nc-estado";
@@ -56,9 +57,15 @@ export function useNcDocumento(previo: ReturnType<typeof useNcEstado> & ReturnTy
 
   const descripcionFinal = descripcionArmada(form.codigoMotivo, { libre: form.descripcionMotivo, ...campos });
   const devueltoEnCaja = lineas.some((l) => l.devueltasEnCaja > 0);
+  /** El botón «Lo devuelto en Caja» se esconde si las notas activas ya cubren lo que Caja devolvió. */
+  const ofrecerDevuelto = ofrecerDevueltoEnCaja(
+    lineas,
+    remanente.datos?.remanente.acreditadoConIgv ?? 0,
+    remanente.datos?.reembolsadoEnCaja ?? 0,
+  );
 
   return {
     remanente, lineas, cantidades, setCantidad, marcarTodo, usarDevueltoEnCaja, limpiarCantidades,
-    limpiarDocumento, campos, setCampos, tasa, importe, descripcionFinal, devueltoEnCaja,
+    limpiarDocumento, campos, setCampos, tasa, importe, descripcionFinal, devueltoEnCaja, ofrecerDevuelto,
   };
 }

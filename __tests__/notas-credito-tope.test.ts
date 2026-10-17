@@ -24,10 +24,12 @@ vi.mock("@/lib/require-admin", () => ({
 }));
 vi.mock("@/lib/db", () => ({
   NotasCreditoDB: {
-    sumActiveTotalForSale: mockSumVenta,
-    sumActiveTotalForOrder: mockSumPedido,
-    siguienteNumero: vi.fn(() => Promise.resolve("NC01-0001")),
-    create: mockCreate,
+    // Doble de `crearEnFila` (alta bajo candado, 17-10): lo acreditado sale de los mocks de suma.
+    crearEnFila: async (t: string, doc: { saleId?: string; orderId?: string }, armar: (ya: { venta: number; pedido: number }) => { ok: boolean; datos?: object; error?: unknown }) => {
+      const r = armar({ venta: doc.saleId ? await mockSumVenta(t, doc.saleId) : 0, pedido: doc.orderId ? await mockSumPedido(t, doc.orderId) : 0 });
+      if (!r.ok) return r;
+      return { ok: true, nota: await mockCreate(t, { ...r.datos, numero: await Promise.resolve("NC01-0001") }) };
+    },
     getAll: vi.fn(),
   },
 }));

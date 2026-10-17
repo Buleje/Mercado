@@ -12,24 +12,25 @@ const PASO = "h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center 
  * Líneas de la venta con lo que se cobró de verdad por unidad (F12) y lo que ya volvió por Caja (M55).
  * La suma nunca pasa de lo que queda del documento: el tope lo pone `importeDeLineas` y, al guardar, el servidor.
  */
-export default function NcLineasNota({ lineas, cantidades, setCantidad, marcarTodo, usarDevueltoEnCaja, limpiar, notasActivas, titulo }: {
+export default function NcLineasNota({ lineas, cantidades, setCantidad, marcarTodo, usarDevueltoEnCaja, ofrecerDevuelto, limpiar, notasActivas, titulo }: {
   lineas: readonly LineaAjustable[];
   cantidades: readonly number[];
   setCantidad: (i: number, n: number) => void;
   marcarTodo: () => void;
   usarDevueltoEnCaja: () => void;
+  /** `ofrecerDevueltoEnCaja`: hay unidades devueltas en Caja que ninguna nota acreditó todavía. */
+  ofrecerDevuelto: boolean;
   limpiar: () => void;
   notasActivas: number;
   titulo: string;
 }) {
-  const hayDevuelto = lineas.some((l) => l.devueltasEnCaja > 0);
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-bold text-[var(--text-secondary)]">{titulo}</span>
         <div className="flex-1" />
         <button type="button" onClick={marcarTodo} className={BOTON_CHICO}>Todo</button>
-        {hayDevuelto && (
+        {ofrecerDevuelto && (
           <button type="button" data-qa="nc-usar-devuelto" onClick={usarDevueltoEnCaja} className={BOTON_CHICO} title="Las mismas unidades que ya volvieron por Caja › Devolución">
             Lo devuelto en Caja
           </button>

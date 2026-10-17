@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { NotasCreditoDB } from "@/lib/db";
+import type { DecisionNotaCredito } from "@/lib/db/notas-credito.db";
 import { SalesDB } from "@/lib/db/sales.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logAudit } from "@/lib/audit-logger";
@@ -79,12 +80,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "El monto debe ser de al menos S/ 0,01." }, { status: 400 });
     }
 
-    // SECURITY/CRITICAL 2026-05-06 (pentest H2): la nota no pasa lo que queda de
-    // su documento. Tope EXACTO (09-10): total con IGV de la nota contra lo que el
-    // documento cobró menos el `total` de sus notas activas, en céntimos y sin
-    // tolerancia. Antes se sumaba la base con 1 céntimo de tolerancia, y las notas
-    // por `orderId` (pedidos de la tienda) no tenían tope.
-    let desglose = { monto, igv, total };
     // 01/02/06 anulan o devuelven el documento ENTERO: sin documento no hay qué anular (F11, 17-10).
     const porTodo = MOTIVOS_POR_TODO.has(data.motivoCodigo);
     if (porTodo && !data.saleId && !data.orderId) {
@@ -93,7 +88,9 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    const documentos: Array<{ tipo: "venta" | "pedido"; totalDocumento: number; totalYaEmitido: number }> = [];
+    // El total cobrado no cambia: se lee antes. Lo YA acreditado se lee dentro del candado del
+    // documento (`crearEnFila`): sin eso, dos envíos a la vez pasaban el mismo tope (revisión 17-10).
+    const documentos: Array<{ tipo: "venta" | "pedido"; totalDocumento: number }> = [];
     if (data.saleId) {
       const sale = await SalesDB.getById(auth.tenantId, data.saleId);
       if (!sale) {
@@ -102,8 +99,7 @@ export async function POST(req: NextRequest) {
           { status: 404 }
         );
       }
-      const totalYaEmitido = await NotasCreditoDB.sumActiveTotalForSale(auth.tenantId, data.saleId);
-      documentos.push({ tipo: "venta", totalDocumento: Number(sale.total), totalYaEmitido });
+      documentos.push({ tipo: "venta", totalDocumento: Number(sale.total) });
     }
     if (data.orderId) {
       const pedido = await OrdersDB.getById(auth.tenantId, data.orderId);
@@ -113,62 +109,82 @@ export async function POST(req: NextRequest) {
           { status: 404 }
         );
       }
-      const totalYaEmitido = await NotasCreditoDB.sumActiveTotalForOrder(auth.tenantId, data.orderId);
-      documentos.push({ tipo: "pedido", totalDocumento: Number(pedido.total), totalYaEmitido });
+      documentos.push({ tipo: "pedido", totalDocumento: Number(pedido.total) });
     }
-    for (const doc of documentos) {
-      const tope = topeNotaCredito({
-        totalDocumento: doc.totalDocumento,
-        totalYaEmitido: doc.totalYaEmitido,
-        pedido: desglose,
-        tasa,
-        porBase: data.totalConIgv == null,
-      });
-      if (!tope.ok) {
-        return NextResponse.json(
-          {
-            error: `El monto excede lo que queda ${doc.tipo === "venta" ? "de la venta" : "del pedido"}: hasta S/ ${tope.disponible.toFixed(2)} sin IGV (S/ ${tope.disponibleConIgv.toFixed(2)} con IGV).`,
-            saleTotal: doc.tipo === "venta" ? doc.totalDocumento : undefined,
-            orderTotal: doc.tipo === "pedido" ? doc.totalDocumento : undefined,
-            yaEmitidoConIgv: doc.totalYaEmitido,
-            disponible: tope.disponible,
-            disponibleConIgv: tope.disponibleConIgv,
-          },
-          { status: 400 }
-        );
-      }
-      desglose = tope.desglose;
-      if (porTodo) {
-        // Va por todo lo que queda, ni más ni menos (SUNAT rechaza una anulación por una parte).
-        const cierre = cerrarPorTodo({ desglose, disponibleConIgv: tope.disponibleConIgv, porBase: data.totalConIgv == null });
-        if (!cierre.ok) {
-          return NextResponse.json({ error: cierre.error, disponibleConIgv: tope.disponibleConIgv }, { status: 400 });
+
+    // SECURITY/CRITICAL 2026-05-06 (pentest H2): la nota no pasa lo que queda de
+    // su documento. Tope EXACTO (09-10): total con IGV de la nota contra lo que el
+    // documento cobró menos el `total` de sus notas activas, en céntimos y sin
+    // tolerancia. Antes se sumaba la base con 1 céntimo de tolerancia, y las notas
+    // por `orderId` (pedidos de la tienda) no tenían tope.
+    const alta = await NotasCreditoDB.crearEnFila(
+      auth.tenantId,
+      { saleId: data.saleId, orderId: data.orderId },
+      (ya): DecisionNotaCredito<NextResponse> => {
+        let desglose = { monto, igv, total };
+        for (const doc of documentos) {
+          const totalYaEmitido = doc.tipo === "venta" ? ya.venta : ya.pedido;
+          const tope = topeNotaCredito({
+            totalDocumento: doc.totalDocumento,
+            totalYaEmitido,
+            pedido: desglose,
+            tasa,
+            porBase: data.totalConIgv == null,
+          });
+          if (!tope.ok) {
+            return {
+              ok: false,
+              error: NextResponse.json(
+                {
+                  error: `El monto excede lo que queda ${doc.tipo === "venta" ? "de la venta" : "del pedido"}: hasta S/ ${tope.disponible.toFixed(2)} sin IGV (S/ ${tope.disponibleConIgv.toFixed(2)} con IGV).`,
+                  saleTotal: doc.tipo === "venta" ? doc.totalDocumento : undefined,
+                  orderTotal: doc.tipo === "pedido" ? doc.totalDocumento : undefined,
+                  yaEmitidoConIgv: totalYaEmitido,
+                  disponible: tope.disponible,
+                  disponibleConIgv: tope.disponibleConIgv,
+                },
+                { status: 400 }
+              ),
+            };
+          }
+          desglose = tope.desglose;
+          if (porTodo) {
+            // Va por todo lo que queda, ni más ni menos (SUNAT rechaza una anulación por una parte).
+            const cierre = cerrarPorTodo({ desglose, disponibleConIgv: tope.disponibleConIgv, porBase: data.totalConIgv == null });
+            if (!cierre.ok) {
+              return {
+                ok: false,
+                error: NextResponse.json({ error: cierre.error, disponibleConIgv: tope.disponibleConIgv }, { status: 400 }),
+              };
+            }
+            desglose = cierre.desglose;
+          }
         }
-        desglose = cierre.desglose;
-      }
-    }
-
-    const numero = await NotasCreditoDB.siguienteNumero(auth.tenantId);
-
-    const nota = await NotasCreditoDB.create(auth.tenantId, {
-      numero,
-      orderId: data.orderId,
-      saleId: data.saleId,
-      motivoCodigo: data.motivoCodigo,
-      motivoDesc: data.motivoDesc,
-      monto: desglose.monto,
-      igv: desglose.igv,
-      total: desglose.total,
-      notas: data.notas,
-      createdBy: auth.username,
-    });
+        return {
+          ok: true,
+          datos: {
+            orderId: data.orderId,
+            saleId: data.saleId,
+            motivoCodigo: data.motivoCodigo,
+            motivoDesc: data.motivoDesc,
+            monto: desglose.monto,
+            igv: desglose.igv,
+            total: desglose.total,
+            notas: data.notas,
+            createdBy: auth.username,
+          },
+        };
+      },
+    );
+    if (!alta.ok) return alta.error;
+    const nota = alta.nota;
 
     logAudit({
       req,
       action: "CREATE",
       entity: "Order",
       entityId: nota.id,
-      detail: `Nota de crédito ${numero} creada por S/${desglose.total.toFixed(2)} — ${data.motivoDesc}`,
+      detail: `Nota de crédito ${nota.numero} creada por S/${nota.total.toFixed(2)} — ${data.motivoDesc}`,
       user: auth.username,
       tenantId: auth.tenantId,
     });

@@ -48,6 +48,21 @@ export function remanenteDocumento(
   };
 }
 
+/**
+ * «Usar lo devuelto en Caja» propone las unidades que volvieron por Caja › Devolución. Esas unidades
+ * no traen qué nota las acreditó: si las notas activas ya cubren lo que Caja devolvió (con IGV, en
+ * céntimos), proponerlas otra vez es acreditar dos veces la misma unidad (revisión 17-10, bajo).
+ * Se ofrece sólo si hay unidades devueltas Y lo acreditado todavía no llega a lo devuelto.
+ */
+export function ofrecerDevueltoEnCaja(
+  lineas: readonly Pick<LineaAjustable, "devueltasEnCaja">[],
+  acreditadoConIgv: number,
+  reembolsadoEnCaja: number,
+): boolean {
+  if (!lineas.some((l) => l.devueltasEnCaja > 0)) return false;
+  return aCentimos(acreditadoConIgv) < aCentimos(reembolsadoEnCaja);
+}
+
 export interface LineaOrigen {
   productId: number;
   nombre: string;
