@@ -97,7 +97,7 @@ export default function PatioConteo({ onVolver }: { onVolver: () => void }) {
         <InfoTip
           title="Contar el patio"
           what="Recorres la pila escaneando cada troza. Al terminar sale el acta: qué falta (y en qué cancha) y qué sobra."
-          affects="Mientras cuentas se guarda en este celular: si recargas o pierdes señal, sigues donde ibas. El acta queda en el libro (pestaña Trozas) para todos. No mueve saldos."
+          affects="Mientras cuentas se guarda en este celular: si recargas o pierdes señal, sigues donde ibas. El acta queda en el libro (Volumen disponible › Por troza) para todos. No mueve saldos."
           example="Fin de mes: encuentras 12 de 13; la que falta sale con su cancha y sus días para ir a buscarla."
           side="left"
         />

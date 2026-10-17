@@ -86,13 +86,14 @@ describe("medidasEtiqueta — D1, D2 y largo SIEMPRE, con su nombre (Brandon 26-
 });
 
 describe("urlFichaDeTroza", () => {
-  it("abre el panel en Libro CTP → Trozas con el id de la pieza", () => {
+  it("abre el panel en Libro CTP → Volumen disponible › Por troza con el id de la pieza", () => {
     const url = urlFichaDeTroza("https://blas.buleje.pe", "abc123");
     const u = new URL(url);
     expect(u.origin).toBe("https://blas.buleje.pe");
     expect(u.pathname).toBe("/admin");
     expect(u.searchParams.get("tab")).toBe("ctp-libro-operaciones");
-    expect(u.searchParams.get("vista")).toBe("trozas");
+    expect(u.searchParams.get("vista")).toBe("disponibles");
+    expect(u.searchParams.get("sub")).toBe("por-troza");
     expect(u.searchParams.get("troza")).toBe("abc123");
   });
 

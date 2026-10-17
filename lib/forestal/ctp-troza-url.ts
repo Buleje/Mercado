@@ -38,7 +38,9 @@ export function esIdDeTroza(id: string | null | undefined): id is string {
 
 /** La ruta (sin origen) de la ficha de ESA troza dentro del panel. */
 export function rutaFichaDeTroza(trozaId: string): string {
-  const sp = new URLSearchParams({ tab: TAB_LIBRO_CTP, vista: "trozas", [PARAM_TROZA]: trozaId });
+  /* Trozas es la pestaña «Por troza» de Volumen disponible desde el 17-10; el
+     QR viejo (`vista=trozas`) sigue llegando por el alias del libro. */
+  const sp = new URLSearchParams({ tab: TAB_LIBRO_CTP, vista: "disponibles", sub: "por-troza", [PARAM_TROZA]: trozaId });
   return `/admin?${sp.toString()}`;
 }
 

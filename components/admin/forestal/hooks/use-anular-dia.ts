@@ -89,7 +89,7 @@ export function useAnularDiaDeProduccion({
         if (previa.periodoCerrado) {
           await notice({
             title: `El ${etiqueta} es de un mes cerrado`,
-            description: `El período ${previa.periodoCerrado} está cerrado: no se anulan líneas de un mes cerrado. Reábrelo en Cierre para corregir.`,
+            description: `El período ${previa.periodoCerrado} está cerrado: no se anulan líneas de un mes cerrado. Reábrelo en Cumplimiento › Cerrar el mes para corregir.`,
             intent: "warning",
           });
           return;

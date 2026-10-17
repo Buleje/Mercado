@@ -125,7 +125,7 @@ ${sorpresas}
 <h2>Encontradas (${r.contadas})</h2>
 ${encontradas}
 <div class="firma"><div>Contó</div><div>Revisó</div></div>
-<p class="foot">Acta generada desde el modo patio. Queda guardada en el libro (pestaña Trozas, «Conteos del patio»); no mueve saldos.</p>`;
+<p class="foot">Acta generada desde el modo patio. Queda guardada en el libro (Volumen disponible › Por troza, «Conteos del patio»); no mueve saldos.</p>`;
 
   return { title: `Conteo del patio · ${formatDateNumeric(c.iniciadoEn)}`, css: ACTA_CSS, body };
 }

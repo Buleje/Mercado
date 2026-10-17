@@ -15,8 +15,8 @@ export const BOTON_PRIMARIO =
 export const BOTON_SECUNDARIO =
   button({ variant: "secondary", className: "rounded-xl" });
 
-/** La trozas del libro, sin ninguna abierta. */
-const RUTA_TROZAS = `/admin?tab=${TAB_LIBRO_CTP}&vista=trozas`;
+/** Las trozas del libro (Volumen disponible › Por troza), sin ninguna abierta. */
+const RUTA_TROZAS = `/admin?tab=${TAB_LIBRO_CTP}&vista=disponibles&sub=por-troza`;
 
 /** El esqueleto con la forma de la tarjeta: la pantalla no salta al llegar la ficha. */
 export function TarjetaEsqueleto() {
@@ -75,12 +75,12 @@ export function TarjetaNoEncontrada({ idValido }: { idValido: boolean }) {
       titulo={idValido ? "Esa troza no está en el libro" : "Ese código no es de una troza"}
       texto={
         idValido
-          ? "Se anuló su guía o la etiqueta es de otro negocio. Búscala por su código en Trozas."
+          ? "Se anuló su guía o la etiqueta es de otro negocio. Búscala por su código en Volumen disponible › Por troza."
           : "El QR no trae una troza de este sistema. Escanea el QR chico de la etiqueta."
       }
     >
       <Link href={RUTA_TROZAS} className={BOTON_PRIMARIO}>
-        Ir a Trozas
+        Ir a las trozas
       </Link>
     </Aviso>
   );

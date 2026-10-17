@@ -44,6 +44,27 @@ export interface LibroView {
    * adivinar la letra es peor que no tener atajo.
    */
   tecla?: string;
+  /**
+   * Rótulo para el riel angosto (menos de 80rem, donde ya van sin ícono):
+   * «Lotes» por «Lotes de aserrío». El nombre entero sigue siendo el del
+   * botón para el lector de pantalla, para el `title` y para la barra lateral.
+   */
+  labelCorto?: string;
+}
+
+/**
+ * Desliza un tablist para que su pestaña elegida quede entera a la vista
+ * (centrada). Con `scrollLeft` y no `scrollIntoView`, que movería la página
+ * (mismo arreglo que `BarraDeSecciones`). Sin caja propia (`display:contents`)
+ * o sin desborde no hace nada.
+ */
+function centrarElegida(lista: HTMLElement | null) {
+  if (!lista || lista.scrollWidth <= lista.clientWidth) return;
+  const elegida = lista.querySelector<HTMLElement>('[aria-selected="true"]');
+  if (!elegida) return;
+  const rl = lista.getBoundingClientRect();
+  const re = elegida.getBoundingClientRect();
+  lista.scrollLeft += re.left + re.width / 2 - (rl.left + rl.width / 2);
 }
 
 export interface LibroGroup {
@@ -139,6 +160,21 @@ export default function LibroChrome({
     () => groups.find((g) => g.views.some((v) => v.key === view)) ?? groups[0],
     [groups, view],
   );
+
+  /* La pestaña activa, siempre a la vista (pedido del 17-10, medido: a 400
+     «Producción» y «Despacho» quedaban fuera del riel deslizable y nada las
+     traía; tampoco a la fase «Gestión»). También al cambiar el ancho. */
+  const rielFases = useRef<HTMLDivElement>(null);
+  const rielVistas = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const listas = [rielFases.current, rielVistas.current];
+    const centrar = () => listas.forEach(centrarElegida);
+    centrar();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(centrar);
+    for (const l of listas) if (l) ro.observe(l);
+    return () => ro.disconnect();
+  }, [view, activeGroup?.id]);
 
   // El handler del sidebar se registra UNA vez y lee la última versión por ref:
   // registrarlo en cada render lo mete en el estado del contexto → re-render →
@@ -296,6 +332,7 @@ export default function LibroChrome({
           {flat.length > 1 && groups.length > 1 && (
           <div className="order-last flex min-w-0 basis-full @min-[56rem]/banda:order-none @min-[56rem]/banda:basis-auto @min-[56rem]/banda:shrink-0">
           <div
+            ref={rielFases}
             role="tablist"
             aria-label="Fase del libro"
             className="flex min-w-0 max-w-full items-center gap-0.5 overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-0.5 scrollbar-none"
@@ -380,16 +417,23 @@ export default function LibroChrome({
             `<AccionesDeLaVista>` (libro-acciones-vista.tsx) al hueco del final.
             Se pliega según el ancho del riel, no de la ventana:
             · ≥80rem  vistas con ícono, acciones con texto;
-            · 60–80   vistas sin ícono, acciones sólo ícono («+ Nuevo» corto);
+            · 60–80   vistas sin ícono y con su rótulo corto si lo tienen,
+                      acciones sólo ícono («+ Nuevo» corto); si aun así no
+                      entran, las acciones bajan a su línea;
             · 40–60   el riel salta de línea y las acciones cierran la última;
             · <40     el riel se desliza de lado y las acciones van en su fila. */}
         {flat.length > 1 && (
         <div className="@container/riel rounded-b-[15px] border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
-          <div className="flex flex-wrap items-center gap-1 px-2 py-1 sm:px-3 @min-[60rem]/riel:flex-nowrap">
+          {/* Desde 60rem las vistas van con su ancho natural y las acciones, a
+              la derecha; si no entran juntas, las ACCIONES bajan a su línea
+              (antes el tablist cedía y escondía vistas: a 1280 en Lotes,
+              «Volumen disponible» y «Despacho» quedaban tapadas, 17-10). */}
+          <div className="flex flex-wrap items-center gap-1 px-2 py-1 sm:px-3">
           <div
+            ref={rielVistas}
             role="tablist"
             aria-label={activeGroup?.label}
-            className="flex min-w-0 max-w-full basis-full items-center gap-1 overflow-x-auto scrollbar-none @min-[40rem]/riel:@max-[60rem]/riel:contents @min-[60rem]/riel:flex-1 @min-[60rem]/riel:basis-0"
+            className="flex min-w-0 max-w-full basis-full items-center gap-1 overflow-x-auto scrollbar-none @min-[40rem]/riel:@max-[60rem]/riel:contents @min-[60rem]/riel:flex-none @min-[60rem]/riel:basis-auto"
             /* Mismo aislamiento que el riel de fases de arriba: sin `contain`
                este riel (7 vistas con sus badges) era el que realmente
                empujaba la página entera a 551px de ancho a 400px de viewport
@@ -410,14 +454,25 @@ export default function LibroChrome({
                   aria-selected={activo}
                   title={v.tecla ? `${v.hint}  ·  atajo: g ${v.tecla}` : v.hint}
                   onClick={() => onView?.(v.key)}
-                  className={`inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm transition-colors sm:px-3 ${
+                  className={`relative inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm transition-colors sm:px-3 @max-[80rem]/riel:px-2 ${
                     activo
                       ? "bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/20"
                       : "font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                   }`}
                 >
                   <VIcon className={`h-4 w-4 shrink-0 ${CLASE_SOLO_ANCHO}`} />
-                  <span>{v.label}</span>
+                  {v.labelCorto ? (
+                    <>
+                      {/* El corto se ve; el entero lo lee el lector (y la
+                          búsqueda por texto de los recorridos de QA). */}
+                      <span aria-hidden="true" className="hidden @max-[80rem]/riel:inline">
+                        {v.labelCorto}
+                      </span>
+                      <span className="@max-[80rem]/riel:sr-only">{v.label}</span>
+                    </>
+                  ) : (
+                    <span>{v.label}</span>
+                  )}
                   {/* El aviso de la vista era un punto de 6 px con `aria-hidden`:
                       no decía CUÁNTOS y un lector de pantalla no lo anunciaba
                       (2026-09-19, medido con el pendiente de corridas sin

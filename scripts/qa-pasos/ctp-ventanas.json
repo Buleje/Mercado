@@ -33,7 +33,7 @@
   "eval": "document.querySelectorAll('[role=dialog][data-modal-tamano]').length"
  },
  {
-  "eval": "(() => { const h=document.querySelector('button[aria-label=\"Herramientas del libro\"]'); const sib=[...h.parentElement.querySelectorAll('button')]; const i=sib.indexOf(h); const b=sib[i+1]; if(!b) return 'sin hermano'; b.click(); return 'click '+(b.getAttribute('aria-label')||b.textContent).trim().slice(0,30); })()"
+  "click": "button[aria-label=\"Herramientas del libro\"]"
  },
  {
   "esperar": 700

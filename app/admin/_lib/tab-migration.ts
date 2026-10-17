@@ -231,6 +231,13 @@ export const VISTA_MIGRATION: Record<string, DestinoTab> = {
   "ctp-libro-operaciones:reportes": { tab: "ctp-libro-operaciones", vista: "tablero", sub: "produccion" },
   "ctp-libro-operaciones:analisis": { tab: "ctp-libro-operaciones", vista: "tablero", sub: "tendencias" },
   "ctp-libro-operaciones:rentabilidad": { tab: "ctp-libro-operaciones", vista: "tablero", sub: "margen" },
+  // Libro CTP 22 → 16 (compactación 17-10, `ctp-vistas-fusionadas`).
+  "ctp-libro-operaciones:historia-lote": { tab: "ctp-libro-operaciones", vista: "lotes", sub: "historia" },
+  "ctp-libro-operaciones:trozas": { tab: "ctp-libro-operaciones", vista: "disponibles", sub: "por-troza" },
+  "ctp-libro-operaciones:guias": { tab: "ctp-libro-operaciones", vista: "despacho", sub: "guias" },
+  "ctp-libro-operaciones:resumenes": { tab: "ctp-libro-operaciones", vista: "saldos", sub: "libro" },
+  "ctp-libro-operaciones:cierre": { tab: "ctp-libro-operaciones", vista: "cumplimiento", sub: "cerrar" },
+  "ctp-libro-operaciones:ficha": { tab: "ctp-libro-operaciones", vista: "directorio", sub: "tu-ctp" },
   "forestal-herramientas:rendimiento": { tab: "ctp-libro-operaciones", vista: "tablero", sub: "rendimiento" },
   "loth-libro-operaciones:extraccion": { tab: "loth-libro-operaciones", vista: "tablero", sub: "extraccion" },
   // ── Ola 3 (2026-10-10) ──

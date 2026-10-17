@@ -2,14 +2,19 @@
  * Las vistas del Libro CTP que se mudaron ADENTRO de otra (plan «panel
  * unificado», fusión F31 + F34, ola 2 — 2026-10-10).
  *
- * El riel pasó de 26 a 22 entradas sin borrar nada: cada vista vieja es ahora
- * una pestaña interna (`?sub=`) de la que la absorbió.
+ * El riel pasó de 26 a 22 entradas sin borrar nada (y de 22 a 16 en la
+ * compactación del 17-10): cada vista vieja es ahora una pestaña interna
+ * (`?sub=`) de la que la absorbió.
  *   · «GTF ingresadas» era el MISMO `CtpIngresosView` que Ingresos con otro
  *     filtro: queda como Ingresos › Recepcionadas;
  *   · Reportes, Análisis y Rentabilidad —más el Rendimiento del aserradero que
  *     vivía en Herramientas— son pestañas del Tablero;
  *   · los Lotes comerciales con QR (`forestal-lotes`) son una pestaña de
  *     Despacho (Brandon, 2026-10-09: «dentro de Libro CTP › Despacho»).
+ *
+ *   · 17-10: Historia del lote → Lotes; Trozas → Volumen disponible; Guías
+ *     emitidas → Despacho; Cuadros SERFOR → Saldos; Cierre → Cumplimiento;
+ *     Ficha CTP → Directorio.
  *
  * Los nombres viejos siguen llegando: un botón que todavía dice `irA("reportes")`,
  * un `?vista=rentabilidad` guardado o la tecla `g y` caen en su pestaña nueva.
@@ -90,6 +95,13 @@ export const CTP_VISTAS_FUSIONADAS: Readonly<Record<string, DestinoFusionado>> =
   reportes: { vista: "tablero", sub: "produccion" },
   analisis: { vista: "tablero", sub: "tendencias" },
   rentabilidad: { vista: "tablero", sub: "margen" },
+  /* Compactación 17-10: el riel pasó de 22 a 16. */
+  "historia-lote": { vista: "lotes", sub: "historia" },
+  trozas: { vista: "disponibles", sub: "por-troza" },
+  guias: { vista: "despacho", sub: "guias" },
+  resumenes: { vista: "saldos", sub: "libro" },
+  cierre: { vista: "cumplimiento", sub: "cerrar" },
+  ficha: { vista: "directorio", sub: "tu-ctp" },
 };
 
 /** Para `useVistaModulo`: el nombre viejo abre la vista que lo absorbió. */
@@ -107,6 +119,12 @@ export const TECLAS_FUSIONADAS: readonly { tecla: string; vieja: string; descrip
   { tecla: "y", vieja: "reportes", descripcion: "Tablero › Producción" },
   { tecla: "b", vieja: "rentabilidad", descripcion: "Tablero › Margen" },
   { tecla: "a", vieja: "analisis", descripcion: "Tablero › Tendencias" },
+  { tecla: "h", vieja: "historia-lote", descripcion: "Lotes › Historia del lote" },
+  { tecla: "t", vieja: "trozas", descripcion: "Volumen disponible › Por troza" },
+  { tecla: "e", vieja: "guias", descripcion: "Despacho › Guías emitidas" },
+  { tecla: "q", vieja: "resumenes", descripcion: "Saldos › Lo que firma el libro" },
+  { tecla: "x", vieja: "cierre", descripcion: "Cumplimiento › Cerrar el mes" },
+  { tecla: "f", vieja: "ficha", descripcion: "Directorio › Tu CTP" },
 ];
 
 export function destinoFusionado(vista: string): DestinoFusionado | null {

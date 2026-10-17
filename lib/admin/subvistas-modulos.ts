@@ -37,11 +37,15 @@ export interface SubvistaModulo {
 }
 
 /**
- * Libro de Operaciones CTP (forestal) — 22 vistas (26 hasta la ola 2 del panel
- * unificado, 2026-10-10). GTF ingresadas, Reportes, Análisis y Rentabilidad no
- * se borraron: son pestañas internas (`?sub=`) de Ingresos y del Tablero
- * (`components/admin/forestal/ctp-vistas-fusionadas.ts`), y sus nombres viejos
- * siguen llegando por `VISTA_MIGRATION`.
+ * Libro de Operaciones CTP (forestal) — 16 vistas (26 hasta la ola 2 del panel
+ * unificado, 2026-10-10; 22 hasta la compactación del 17-10). GTF ingresadas,
+ * Reportes, Análisis y Rentabilidad no se borraron: son pestañas internas
+ * (`?sub=`) de Ingresos y del Tablero; y desde el 17-10 Historia del lote,
+ * Trozas, Guías emitidas, Cuadros SERFOR, Cierre y Ficha CTP lo son de Lotes,
+ * Volumen disponible, Despacho, Saldos, Cumplimiento y Directorio
+ * (`components/admin/forestal/ctp-vistas-fusionadas.ts`). Sus nombres viejos
+ * siguen llegando por `VISTA_MIGRATION` y el buscador las encuentra como
+ * pestañas internas (`ANIDADAS_POR_MODULO`).
  *
  * `origen` (regla R2) en las dos que recibieron contenido de otra pestaña: el
  * Rendimiento del aserradero vivía en Herramientas y los lotes con QR en
@@ -49,27 +53,21 @@ export interface SubvistaModulo {
  */
 export const CTP_VISTAS: readonly SubvistaModulo[] = [
   { key: "ingresos", label: "Ingresos", hint: "Las guías que llegaron: por recepcionar (la bandeja) o recepcionadas (el archivo, antes «GTF ingresadas»)" },
-  { key: "lotes", label: "Lotes de aserrío", hint: "Armar lo que va junto a la sierra: trozas de una especie apartadas en un lote" },
+  { key: "lotes", label: "Lotes de aserrío", hint: "Armar lo que va junto a la sierra y la historia de cada lote: qué trozas se apartaron, qué salió y con qué guía se fue" },
   { key: "consumos", label: "Consumos", hint: "Qué queda en el patio y qué entró a la sierra" },
   { key: "produccion", label: "Producción", hint: "Transformación" },
-  { key: "disponibles", label: "Volumen disponible", hint: "Cuánta madera hay para trabajar: trozas, productos aserrados, lo que sobra en los lotes y lo por recepcionar, por separado o sumado" },
-  { key: "despacho", label: "Despacho", hint: "Salida de producto y los lotes comerciales con su QR", origen: ["ctp-libro-operaciones", "forestal-lotes"] },
-  { key: "trozas", label: "Trozas", hint: "Buscar una pieza por su codificación" },
+  { key: "disponibles", label: "Volumen disponible", hint: "Cuánta madera hay para trabajar —trozas, productos, lo que sobra en los lotes y lo por recepcionar— y el patio troza por troza" },
+  { key: "despacho", label: "Despacho", hint: "Salida de producto, los lotes comerciales con su QR y las guías emitidas", origen: ["ctp-libro-operaciones", "forestal-lotes"] },
   { key: "radar", label: "Radar", hint: "Cadena de custodia visual" },
-  { key: "historia-lote", label: "Historia del lote", hint: "Todo lo que pasó con una pila: qué trozas se apartaron, qué corrida se las comió, qué salió y con qué guía se fue" },
   { key: "reprocesos", label: "Reprocesos", hint: "Qué producto volvió a la sierra, en qué se convirtió y cuánta merma dejó" },
   { key: "planta", label: "Planta", hint: "Mapa del aserradero" },
   { key: "eudr", label: "EUDR", hint: "Geolocalización + dossier UE" },
-  { key: "guias", label: "Guías emitidas", hint: "Las GTF de salida del CTP y cuáles quedaron a medio llenar" },
   { key: "tablero", label: "Tablero", hint: "El libro en gráficos y sus lecturas: movimiento, producción (reportes), tendencias (análisis), margen (rentabilidad) y rendimiento del aserradero", origen: ["ctp-libro-operaciones", "forestal-herramientas"] },
-  { key: "saldos", label: "Saldos", hint: "Lo que declaras y lo que puede salir" },
-  { key: "resumenes", label: "Cuadros SERFOR", hint: "Los 3 cuadros resumen del formato oficial" },
-  { key: "cumplimiento", label: "Cumplimiento", hint: "Alertas del período" },
-  { key: "cierre", label: "Cierre", hint: "Cerrar mes · bloquear el acta" },
+  { key: "saldos", label: "Saldos", hint: "Lo que declaras, lo que puede salir y los cuadros que firma el libro" },
+  { key: "cumplimiento", label: "Cumplimiento", hint: "Alertas del período y el cierre del mes" },
   { key: "fletes", label: "Fletes", hint: "Lo que cuesta traer la madera y a quién se le debe" },
-  { key: "directorio", label: "Directorio", hint: "Proveedores, compradores, transportistas y placas" },
+  { key: "directorio", label: "Directorio", hint: "Proveedores, compradores, transportistas, placas y la ficha de tu CTP" },
   { key: "contratos", label: "Contratos", hint: "El permiso bajo el que se trabaja y su balance: madera, gastos, fletes y adelantos" },
-  { key: "ficha", label: "Ficha CTP", hint: "Identidad legal SERFOR" },
 ];
 
 /**
@@ -502,6 +500,13 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "tablero", key: "margen", label: "Rentabilidad del CTP", hint: "Margen: venta − costo de lo vendido" },
     { vista: "tablero", key: "rendimiento", label: "Rendimiento del aserradero", hint: "Por especie y por corrida, tu rango, la plata por PT y el simulador", origen: ["forestal-herramientas"] },
     { vista: "despacho", key: "lotes-qr", label: "Lotes comerciales y QR", hint: "Corridas agrupadas en un lote con código, grado, certificado y QR", origen: ["forestal-lotes"] },
+    // Compactación 17-10: seis vistas del riel pasaron a ser pestañas internas.
+    { vista: "despacho", key: "guias", label: "Guías emitidas", hint: "Las GTF de salida del CTP y cuáles quedaron a medio llenar" },
+    { vista: "lotes", key: "historia", label: "Historia del lote", hint: "Todo lo que pasó con una pila: qué trozas se apartaron, qué corrida se las comió, qué salió y con qué guía se fue" },
+    { vista: "disponibles", key: "por-troza", label: "Trozas", hint: "Buscar una pieza por su codificación: su ficha, D1/D2 y los días en el patio" },
+    { vista: "saldos", key: "libro", label: "Cuadros SERFOR", hint: "Lo que firma el libro: los 3 cuadros resumen del formato oficial" },
+    { vista: "cumplimiento", key: "cerrar", label: "Cierre del mes", hint: "Cerrar mes · bloquear el acta" },
+    { vista: "directorio", key: "tu-ctp", label: "Ficha CTP", hint: "Identidad legal SERFOR: razón social, RUC, títulos y ubicación" },
   ],
   // Asistente IA › Comandos IA (10-10): con la fusión de «Sugerencias IA»,
   // «lo que no se vende» y «qué ofrecerle» viven acá; se declaran para que el

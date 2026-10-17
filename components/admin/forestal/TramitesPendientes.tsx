@@ -24,7 +24,7 @@ import TramiteAvisoWhatsApp from "./TramiteAvisoWhatsApp";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 
 /** Donde se completa el membrete (razón social, RUC, registro CTP). */
-const HREF_FICHA_CTP = "/admin?tab=ctp-libro-operaciones&vista=ficha";
+const HREF_FICHA_CTP = "/admin?tab=ctp-libro-operaciones&vista=directorio&sub=tu-ctp";
 
 type PorVencer = ReturnType<typeof tramitesPorVencer>[number];
 export interface AvisoPlazo {

@@ -19,6 +19,15 @@ describe("destinoFusionado", () => {
     expect(destinoFusionado("gtf-ingresadas")).toEqual({ vista: "ingresos", sub: "recepcionadas" });
   });
 
+  it("compactación 17-10: las seis vistas que dejaron el riel caen en su pestaña", () => {
+    expect(destinoFusionado("historia-lote")).toEqual({ vista: "lotes", sub: "historia" });
+    expect(destinoFusionado("trozas")).toEqual({ vista: "disponibles", sub: "por-troza" });
+    expect(destinoFusionado("guias")).toEqual({ vista: "despacho", sub: "guias" });
+    expect(destinoFusionado("resumenes")).toEqual({ vista: "saldos", sub: "libro" });
+    expect(destinoFusionado("cierre")).toEqual({ vista: "cumplimiento", sub: "cerrar" });
+    expect(destinoFusionado("ficha")).toEqual({ vista: "directorio", sub: "tu-ctp" });
+  });
+
   it("una vista que no se mudó (o una clave heredada del objeto) no tiene destino", () => {
     expect(destinoFusionado("tablero")).toBeNull();
     expect(destinoFusionado("toString")).toBeNull();
@@ -33,6 +42,12 @@ describe("ALIAS_FUSIONADAS y TECLAS_FUSIONADAS", () => {
       reportes: "tablero",
       analisis: "tablero",
       rentabilidad: "tablero",
+      "historia-lote": "lotes",
+      trozas: "disponibles",
+      guias: "despacho",
+      resumenes: "saldos",
+      cierre: "cumplimiento",
+      ficha: "directorio",
     });
   });
 
@@ -61,6 +76,12 @@ describe("subPedidoPorVistaVieja", () => {
     window.history.replaceState(null, "", "/admin?tab=ctp-libro-operaciones&vista=reportes");
     expect(subPedidoPorVistaVieja("tablero")).toBe("produccion");
     expect(subPedidoPorVistaVieja("ingresos")).toBeUndefined();
+  });
+
+  it("`?vista=cierre` abre «Cerrar el mes» en Cumplimiento", () => {
+    window.history.replaceState(null, "", "/admin?tab=ctp-libro-operaciones&vista=cierre");
+    expect(subPedidoPorVistaVieja("cumplimiento")).toBe("cerrar");
+    expect(subPedidoPorVistaVieja("saldos")).toBeUndefined();
   });
 
   it("una vista de hoy no pide pestaña", () => {

@@ -27,6 +27,8 @@ export interface DestinoAdmin {
   tab: string;
   /** Sub-vista dentro del módulo (`?vista=`), si aplica. */
   vista?: string;
+  /** Pestaña interna de esa vista (`?sub=`), si aplica. */
+  sub?: string;
   /** Cómo se lee el botón: "Abrir Kardex". */
   label: string;
   /** Para qué sirve — el LLM elige por esto. */
@@ -60,9 +62,9 @@ export const DESTINOS_ADMIN: DestinoAdmin[] = [
   { clave: "planificacion",     tab: "planificacion", label: "Planificación",       para: "el plan de la empresa: políticas, objetivos, licencias y FODA" },
   // ── Forestal (SERFOR) ──
   { clave: "libro-ctp",         tab: "ctp-libro-operaciones", label: "Libro de Operaciones CTP", para: "el libro forestal: ingresos, producción y despachos" },
-  { clave: "ctp-existencias",   tab: "ctp-libro-operaciones", vista: "existencias", label: "Existencias del libro", para: "cuánta madera hay en el patio y en producto" },
+  { clave: "ctp-existencias",   tab: "ctp-libro-operaciones", vista: "saldos", sub: "estado", label: "Existencias del libro", para: "cuánta madera hay en el patio y en producto" },
   { clave: "ctp-ingresos",      tab: "ctp-libro-operaciones", vista: "ingresos", label: "Ingresos del CTP", para: "las guías GTF que entraron al aserradero" },
-  { clave: "ctp-ficha",         tab: "ctp-libro-operaciones", vista: "ficha", label: "Ficha CTP", para: "la identidad legal ante SERFOR y los títulos habilitantes" },
+  { clave: "ctp-ficha",         tab: "ctp-libro-operaciones", vista: "directorio", sub: "tu-ctp", label: "Ficha CTP", para: "la identidad legal ante SERFOR y los títulos habilitantes" },
   { clave: "libro-th",          tab: "loth-libro-operaciones", label: "Libro de Títulos Habilitantes", para: "el libro del monte: censo, POA y tala" },
 ];
 
@@ -109,6 +111,7 @@ export function resolverDestino(pedido: string): DestinoAdmin | null {
 export function urlDeDestino(d: DestinoAdmin, filtro?: string): string {
   const params = new URLSearchParams({ tab: d.tab });
   if (d.vista) params.set("vista", d.vista);
+  if (d.sub) params.set("sub", d.sub);
   if (filtro) params.set("q", filtro);
   return `/admin?${params.toString()}#${d.tab}`;
 }
@@ -137,6 +140,7 @@ async function abrir(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
       navegar: {
         tab: destino.tab,
         vista: destino.vista ?? null,
+        sub: destino.sub ?? null,
         filtro: filtro || null,
         label: destino.label,
         url: urlDeDestino(destino, filtro || undefined),

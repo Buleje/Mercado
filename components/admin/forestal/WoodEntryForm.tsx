@@ -1926,7 +1926,7 @@ export default function WoodEntryForm({
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <div>
                     <strong>Ficha del CTP incompleta.</strong> Faltan datos legales (Código CTP,
-                    RUC…) que los documentos SERFOR necesitan. Complétala en la pestaña «Ficha CTP»
+                    RUC…) que los documentos SERFOR necesitan. Complétala en Directorio › «Tu CTP»
                     — puedes registrar igual, pero el libro no tendrá identidad legal completa.
                   </div>
                 </div>
@@ -2653,7 +2653,7 @@ export default function WoodEntryForm({
                           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
                           <span>
                             No hay permisos CITES cargados en la Ficha del CTP. Carga el permiso de
-                            esta especie en «Ficha CTP» antes de registrar — sin permiso archivado,
+                            esta especie en Directorio › «Tu CTP» antes de registrar — sin permiso archivado,
                             un ingreso CITES no tiene respaldo legal.
                           </span>
                         </p>

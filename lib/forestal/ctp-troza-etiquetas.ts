@@ -108,7 +108,10 @@ export function medidasEtiqueta(t: Pick<TrozaConsumible, "d1Cm" | "d2Cm" | "diam
 export function urlFichaDeTroza(origin: string, trozaId: string): string {
   const u = new URL("/admin", origin);
   u.searchParams.set("tab", TAB_LIBRO_CTP);
-  u.searchParams.set("vista", "trozas");
+  /* Trozas es Volumen disponible › Por troza desde el 17-10; los QR ya
+     impresos con `vista=trozas` siguen llegando por el alias del libro. */
+  u.searchParams.set("vista", "disponibles");
+  u.searchParams.set("sub", "por-troza");
   u.searchParams.set(PARAM_TROZA, trozaId);
   return u.toString();
 }

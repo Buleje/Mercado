@@ -1,7 +1,13 @@
 "use client";
 
 /**
- * useParamsDeSaldos — la pestaña y los filtros de Saldos, en la URL.
+ * useParamsDeSaldos — los filtros de Saldos, en la URL.
+ *
+ * La pestaña interna ya no vive acá (17-10): va en `?sub=` como en el resto de
+ * las vistas del libro (`usePestanaInterna`), con memoria y con el salto
+ * «Cuadros SERFOR → Saldos › Lo que firma el libro». El `?seccion=` viejo se lee
+ * UNA vez (`seccionVieja`) para que un link guardado siga abriendo su pestaña,
+ * y se borra de la URL.
  *
  * Sin esto, al recargar o al volver de otra vista se perdían la pestaña y el
  * recorte permiso/especie/guía: «mirá la capacidad del permiso X» era mandar
@@ -68,14 +74,15 @@ export function leerParams<S extends string>(
   };
 }
 
-/** Escribe sobre una URL lo que hay; borra lo que está vacío. Puro. */
+/** Escribe sobre una URL lo que hay; borra lo que está vacío (`seccion` incluida). Puro. */
 export function escribirParams(
   url: URL,
   seccion: string,
   filtros: FiltrosCapacidad,
   especieKpi?: string,
 ): URL {
-  url.searchParams.set(PARAM_SECCION, seccion);
+  if (seccion) url.searchParams.set(PARAM_SECCION, seccion);
+  else url.searchParams.delete(PARAM_SECCION);
   /* `undefined` = quien llama no maneja la especie de los KPIs: no se toca. */
   if (especieKpi !== undefined) {
     if (especieKpi.trim()) url.searchParams.set(PARAM_ESPECIE_KPI, especieKpi.trim());
@@ -89,38 +96,29 @@ export function escribirParams(
   return url;
 }
 
-export function useParamsDeSaldos<S extends string>(secciones: readonly S[], porDefecto: S) {
+export function useParamsDeSaldos<S extends string>(secciones: readonly S[]) {
   const [estado, setEstado] = useState<{
-    seccion: S;
+    seccionVieja: S | null;
     filtros: FiltrosCapacidad;
     especieKpi: string;
   }>(() => {
-    if (typeof window === "undefined") return { seccion: porDefecto, filtros: {}, especieKpi: "" };
+    if (typeof window === "undefined") return { seccionVieja: null, filtros: {}, especieKpi: "" };
     const { seccion, filtros, especieKpi } = leerParams(window.location.search, secciones);
-    return { seccion: seccion ?? porDefecto, filtros, especieKpi };
+    return { seccionVieja: seccion, filtros, especieKpi };
   });
 
-  /* Cada cambio va a la URL. Se escribe también al montar, para que el link
-     sea copiable aunque la sección venga del default. */
+  /* Cada cambio va a la URL; al montar, además, se borra el `?seccion=` viejo
+     (la pestaña ya quedó en `?sub=`). */
   useEffect(() => {
     try {
-      const url = escribirParams(
-        new URL(window.location.href),
-        estado.seccion,
-        estado.filtros,
-        estado.especieKpi,
-      );
+      const url = escribirParams(new URL(window.location.href), "", estado.filtros, estado.especieKpi);
       if (url.toString() !== window.location.href)
         window.history.replaceState(null, "", url.toString());
     } catch {
       // history no disponible: sin link copiable, sin bug
     }
-  }, [estado]);
+  }, [estado.filtros, estado.especieKpi]);
 
-  const setSeccion = useCallback(
-    (s: S) => setEstado((e) => (e.seccion === s ? e : { ...e, seccion: s })),
-    [],
-  );
   const setFiltros = useCallback(
     (f: FiltrosCapacidad) => setEstado((e) => ({ ...e, filtros: f })),
     [],
@@ -132,10 +130,10 @@ export function useParamsDeSaldos<S extends string>(secciones: readonly S[], por
   );
 
   return {
-    seccion: estado.seccion,
+    /** La pestaña de un link viejo (`?seccion=capacidad`), o `null`. */
+    seccionVieja: estado.seccionVieja,
     filtros: estado.filtros,
     especieKpi: estado.especieKpi,
-    setSeccion,
     setFiltros,
     setEspecieKpi,
   };

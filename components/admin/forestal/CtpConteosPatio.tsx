@@ -30,7 +30,7 @@ import { BTN_ACCION_RIEL } from "./ctp-cabecera-vista";
 import { CLASE_TEXTO_ACCION, TextoDeAccion } from "@/components/admin/shared/libro-acciones-vista";
 
 /** Al terminar el conteo, el celular vuelve acá: la línea ya dice cómo salió. */
-const URL_CONTAR = urlContarElPatio(`/admin?tab=${TAB_LIBRO_CTP}&vista=trozas`);
+const URL_CONTAR = urlContarElPatio(`/admin?tab=${TAB_LIBRO_CTP}&vista=disponibles&sub=por-troza`);
 
 /** La entrada al conteo: un enlace (abre el modo patio en el celular), no un botón. */
 function ContarElPatio({ className }: { className?: string }) {

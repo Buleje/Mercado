@@ -37,7 +37,7 @@ export function EstadoDelActa({ estado, mensaje, onReintentar }: { estado: Estad
   if (estado === "guardada") {
     return (
       <p className={cn("flex items-start gap-2 text-base font-bold", VERDE_TEXTO)} role="status" data-acta-estado="guardada">
-        <ClipboardCheck className="mt-0.5 h-5 w-5 shrink-0" aria-hidden /> Acta guardada en el libro: la ven todos en Trozas.
+        <ClipboardCheck className="mt-0.5 h-5 w-5 shrink-0" aria-hidden /> Acta guardada en el libro: la ven todos en Volumen disponible › Por troza.
       </p>
     );
   }

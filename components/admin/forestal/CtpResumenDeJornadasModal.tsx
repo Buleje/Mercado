@@ -245,12 +245,12 @@ export default function CtpResumenDeJornadasModal({
               <EnlacePanel
                 apariencia="heredada"
                 onClick={onClose}
-                href="/admin?tab=ctp-libro-operaciones&vista=cierre"
+                href="/admin?tab=ctp-libro-operaciones&vista=cumplimiento&sub=cerrar"
                 className="font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
               >
                 Cerrar el mes
               </EnlacePanel>{" "}
-              está en la pestaña Cierre.
+              está en Cumplimiento.
             </>
           }
         >

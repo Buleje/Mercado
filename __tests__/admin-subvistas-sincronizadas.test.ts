@@ -357,6 +357,27 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       archivo: "components/admin/forestal/ctp-vistas-fusionadas.ts",
       constante: /export const SUBS_DESPACHO = \[([^\]]+)\]/,
     },
+    // Compactación del Libro CTP (17-10): 22 → 16 vistas.
+    "ctp-libro-operaciones/lotes": {
+      archivo: "components/admin/forestal/ctp-vistas-fusionadas.ts",
+      constante: /export const SUBS_LOTES = \[([^\]]+)\]/,
+    },
+    "ctp-libro-operaciones/disponibles": {
+      archivo: "components/admin/forestal/ctp-vistas-fusionadas.ts",
+      constante: /export const SUBS_DISPONIBLES = \[([^\]]+)\]/,
+    },
+    "ctp-libro-operaciones/saldos": {
+      archivo: "components/admin/forestal/ctp-vistas-fusionadas.ts",
+      constante: /export const SUBS_SALDOS = \[([^\]]+)\]/,
+    },
+    "ctp-libro-operaciones/cumplimiento": {
+      archivo: "components/admin/forestal/ctp-vistas-fusionadas.ts",
+      constante: /export const SUBS_CUMPLIMIENTO = \[([^\]]+)\]/,
+    },
+    "ctp-libro-operaciones/directorio": {
+      archivo: "components/admin/forestal/ctp-vistas-fusionadas.ts",
+      constante: /export const SUBS_DIRECTORIO = \[([\s\S]*?)\]/,
+    },
     // Ola 3 del panel unificado (2026-10-10).
     "ventas-caja/caja-registradora": {
       archivo: "components/admin/caja/tipos.ts",

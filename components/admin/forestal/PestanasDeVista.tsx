@@ -9,6 +9,10 @@
  * completo, flechas, Inicio/Fin y foco itinerante), con la altura del panel
  * (48 px, decisión de Brandon del 2026-10-09) y el ícono de cada pestaña. El
  * qué-hace-cada-una va en el `title`, como en el riel: no ocupa pantalla.
+ *
+ * Compacta (17-10, «compactar… reducir espacios»): 48 px por fuera como el
+ * selector de fases de la banda (botón de 44 + 2 de borde), del ancho de sus
+ * pestañas y no de toda la vista, y 12 px hasta el contenido. Era 56 + 16.
  */
 
 import type { ReactNode } from "react";
@@ -42,7 +46,7 @@ export default function PestanasDeVista<T extends string>({
   const idTab = (id: T) => `${prefijo}-tab-${id}`;
   const idPanel = (id: T) => `${prefijo}-panel-${id}`;
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {items.length > 1 && (
         <Pestanas
           items={items.map((p) => ({
@@ -59,9 +63,9 @@ export default function PestanasDeVista<T extends string>({
           etiqueta={etiqueta}
           idTab={idTab}
           idPanel={idPanel}
-          className="flex flex-wrap gap-1 rounded-xl bg-[var(--surface-sunken)] p-1"
+          className="flex w-fit max-w-full flex-wrap gap-0.5 rounded-xl bg-[var(--surface-sunken)] p-0.5"
           claseBoton={(sel) =>
-            `min-h-12 flex-1 basis-auto rounded-lg px-3 text-sm sm:px-4 font-semibold leading-tight transition-colors duration-[var(--dur-fast)] ${
+            `min-h-11 flex-1 basis-auto rounded-[10px] px-3 text-sm sm:px-4 font-semibold leading-tight transition-colors duration-[var(--dur-fast)] ${
               sel
                 ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]/60 hover:text-[var(--text-primary)]"

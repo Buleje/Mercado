@@ -87,8 +87,8 @@ export const COSAS_DEL_PANEL: Readonly<Record<CosaDelPanel, FilaDeCosa>> = {
   },
   troza: {
     abre: true,
-    destino: (id) => d(CTP, { vista: "trozas", troza: id }),
-    lector: "lib/forestal/ctp-troza-url.ts → CtpTrozasView (ADR-436)",
+    destino: (id) => d(CTP, { vista: "disponibles", sub: "por-troza", troza: id }),
+    lector: "lib/forestal/ctp-troza-url.ts → Volumen disponible › Por troza → CtpTrozasView (ADR-436)",
   },
   arbol: {
     abre: true,

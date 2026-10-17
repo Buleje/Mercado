@@ -99,7 +99,7 @@ export default function CtpEtiquetasTrozasModal({ ids, contexto, onClose, onList
   };
 
   const n = resumen?.aImprimir.length ?? 0;
-  const rutaRepetidos = `/admin?tab=${TAB_LIBRO_CTP}&vista=trozas`;
+  const rutaRepetidos = `/admin?tab=${TAB_LIBRO_CTP}&vista=disponibles&sub=por-troza`;
 
   return (
     <AdminModal
@@ -159,7 +159,7 @@ export default function CtpEtiquetasTrozasModal({ ids, contexto, onClose, onList
                   {resumen.repetidos.slice(0, 6).map((r) => `${r.codigo} (${r.piezas} piezas)`).join(", ")}
                   {resumen.repetidos.length > 6 && ` y ${resumen.repetidos.length - 6} más`}. La etiqueta no distingue cuál es cuál.{" "}
                   <EnlacePanel apariencia="heredada" onClick={onClose} href={rutaRepetidos} className="font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]">
-                    Corregir en Trozas
+                    Corregirlos troza por troza
                   </EnlacePanel>
                 </p>
               </div>

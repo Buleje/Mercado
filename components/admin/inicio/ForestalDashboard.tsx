@@ -213,7 +213,7 @@ function tarjetasDelPeriodo(data: InicioForestal, periodo: string, ir: (href: st
         value={vigentes > 0 ? formatNumber(vigentes) : SIN_DATO}
         subValue={vigentes > 0 ? `${partes}${anuladas}` : `ninguna ${periodo}${anuladas}`}
         icon={FileText}
-        onClick={() => ir(ctp ? `${CTP}&vista=guias` : `${LOTH}&vista=gtf`)}
+        onClick={() => ir(ctp ? `${CTP}&vista=despacho&sub=guias` : `${LOTH}&vista=gtf`)}
       />,
     );
   }

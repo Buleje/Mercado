@@ -24,30 +24,31 @@
  * borrar nada: GTF ingresadas es Ingresos › Recepcionadas; Reportes, Análisis,
  * Rentabilidad y el Rendimiento de Herramientas son pestañas del Tablero; los
  * Lotes comerciales con QR, una pestaña de Despacho (`ctp-vistas-fusionadas`).
+ * 2026-10-17 v7 (compactación, plan `.claude/autonomo/ctp-compactar/plan.md`) —
+ * de 22 a 16, otra vez sin borrar nada: Historia del lote vive en Lotes;
+ * Trozas, en Volumen disponible; Guías emitidas, en Despacho; los Cuadros
+ * SERFOR, en Saldos; el Cierre, en Cumplimiento; y la Ficha CTP, en el
+ * Directorio. Las acciones de cada vista van en el riel, junto a sus pestañas.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Boxes,
-  Building2,
   CalendarClock,
   BarChart3,
-  ClipboardList,
   FileSignature,
   FileSpreadsheet,
   FileText,
   FolderOpen,
   Globe,
   Layers,
-  Lock,
   MapPin,
   Flame,
   PackageOpen,
   Scale,
   Search,
   Share2,
-  History,
   Scissors,
   ShieldCheck,
   TreePine,
@@ -73,6 +74,7 @@ import CtpPeriodPicker, { type CtpCustomRange } from "./CtpPeriodPicker";
 import CtpIngresosMitades from "./CtpIngresosMitades";
 import CtpTableroPestanas, { SUBS_TABLERO_SIN_PERIODO } from "./CtpTableroPestanas";
 import CtpDespachoPestanas from "./CtpDespachoPestanas";
+import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import {
   ALIAS_FUSIONADAS,
   TECLAS_FUSIONADAS,
@@ -85,21 +87,15 @@ import {
 import CtpOperacionSwitcher from "./CtpOperacionSwitcher";
 import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
-import CtpFichaEditor from "./CtpFichaEditor";
 import CtpDirectorioView from "./CtpDirectorioView";
 import CtpContratosView from "./CtpContratosView";
 import CtpFletesView from "./CtpFletesView";
-import CtpGuiasEmitidasView from "./CtpGuiasEmitidasView";
-import CtpCierrePanel from "./CtpCierrePanel";
-import { useCtpCierres } from "@/hooks/use-ctp-cierres";
 import CtpPatioBandeja from "./CtpPatioBandeja";
 import { usePatioCola } from "@/hooks/use-patio-cola";
-import CtpCierreAsistido from "./CtpCierreAsistido";
 import CtpEudrPanel from "./CtpEudrPanel";
 import CtpSerforImportModal from "./CtpSerforImportModal";
 import VaciarLibroModal from "./VaciarLibroModal";
 import CtpTrazaRadar from "./CtpTrazaRadar";
-import CtpHistoriaLoteView from "./CtpHistoriaLoteView";
 import CtpPlantaView from "./CtpPlantaView";
 import CtpAsistente from "./CtpAsistente";
 import CtpHealthChip from "./CtpHealthChip";
@@ -112,13 +108,11 @@ import type { WoodEntry } from "./ctp-shared";
 import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
 import { alertasPorVistaDe } from "@/lib/forestal/alertas-por-vista";
 import BandaPermiso from "@/components/admin/forestal/BandaPermiso";
-import CtpResumenesSerfor from "./CtpResumenesSerfor";
 import CtpConsumosView from "./CtpConsumosView";
 import CtpVolumenDisponible from "./CtpVolumenDisponible";
 import { fuenteDeVistaVieja, type FuentesPedidas } from "@/lib/forestal/volumen-disponible";
 import CtpReprocesosDeclarados from "./CtpReprocesosDeclarados";
 import CtpLotesView, { type LoteAProducir } from "./CtpLotesView";
-import CtpTrozasView from "./CtpTrozasView";
 import {
   CTP_INGRESAR_GTF_KEY,
   CTP_MODULE_TAB_ID,
@@ -137,25 +131,19 @@ type CtpView =
   | "produccion"
   | "disponibles"
   | "despacho"
-  | "trozas"
   | "radar"
-  | "historia-lote"
   | "reprocesos"
   | "planta"
+  | "eudr"
   | "tablero"
   | "saldos"
-  | "resumenes"
   | "cumplimiento"
-  | "cierre"
-  | "eudr"
   | "fletes"
-  | "guias"
   | "directorio"
-  | "contratos"
-  | "ficha";
+  | "contratos";
 
 /**
- * Las doce vistas, agrupadas por la fase del libro a la que sirven. El orden
+ * Las dieciséis vistas, agrupadas por la fase del libro a la que sirven. El orden
  * dentro de cada grupo es el del flujo real de la planta; el orden de los
  * grupos es el de un mes de trabajo: se opera, se demuestra de dónde salió,
  * se controla y recién al final se mira el negocio.
@@ -176,14 +164,19 @@ const CTP_GROUPS: LibroGroup[] = [
       { key: "ingresos", ...CTP_VISTAS_POR_KEY["ingresos"], icon: PackageOpen, tecla: "i" },
       /* Va entre Ingresos y Consumos porque ése es el orden del patio: llega la
          madera, se aparta la que entra junta al carro, y recién ahí se aserra. */
-      { key: "lotes", ...CTP_VISTAS_POR_KEY["lotes"], icon: Layers, tecla: "l" },
+      /* Con su «Historia del lote» adentro (17-10): la lista contesta «¿qué
+         hago hoy?» y la historia, «¿qué pasó con este lote?» — leen los mismos
+         lotes, y tocar uno abre su historia sin salir de la vista. */
+      { key: "lotes", ...CTP_VISTAS_POR_KEY["lotes"], icon: Layers, tecla: "l", labelCorto: "Lotes" },
       { key: "consumos", ...CTP_VISTAS_POR_KEY["consumos"], icon: Flame, tecla: "n" },
       { key: "produccion", ...CTP_VISTAS_POR_KEY["produccion"], icon: Boxes, tecla: "p" },
       /* «Volumen disponible» (Brandon 2026-10-03) juntó Trozas y Productos
          disponibles en UNA pestaña, con chips para mirar cada pila —trozas,
          lotes, por recepcionar, productos— o sumarlas. Conserva la clave y la
-         tecla de Productos: los links, la campana y la «v» siguen llegando. */
-      { key: "disponibles", ...CTP_VISTAS_POR_KEY["disponibles"], icon: Trees, tecla: "v" },
+         tecla de Productos: los links, la campana y la «v» siguen llegando.
+         Desde el 17-10 trae también «Por troza» (la vista Trozas). */
+      { key: "disponibles", ...CTP_VISTAS_POR_KEY["disponibles"], icon: Trees, tecla: "v", labelCorto: "Disponible" },
+      /* Despachos · Lotes con QR · Guías emitidas (17-10). */
       { key: "despacho", ...CTP_VISTAS_POR_KEY["despacho"], icon: Truck, tecla: "d" },
     ],
   },
@@ -191,13 +184,10 @@ const CTP_GROUPS: LibroGroup[] = [
     id: "trazabilidad",
     label: "Trazabilidad",
     views: [
-      { key: "trozas", ...CTP_VISTAS_POR_KEY["trozas"], icon: PackageOpen, tecla: "t" },
+      /* Trozas, Historia del lote y Guías emitidas se mudaron adentro de
+         Volumen disponible, Lotes y Despacho (17-10): sus teclas «t», «h» y
+         «e» siguen llevando ahí (`TECLAS_FUSIONADAS`). */
       { key: "radar", ...CTP_VISTAS_POR_KEY["radar"], icon: Share2, tecla: "r" },
-      /* El expediente del lote va en Trazabilidad y no en «Lotes de aserrío»:
-         esa vista es operativa —armar, cargar, producir— y contesta «¿qué hago
-         hoy?». Esta contesta la que llega después, de un comprador o de un
-         fiscalizador: «¿qué pasó con este lote?». */
-      { key: "historia-lote", ...CTP_VISTAS_POR_KEY["historia-lote"], icon: History, tecla: "h" },
       /* Va en Trazabilidad y no en Operación: registrar el reproceso es un
          acto (vive en Productos disponibles); esto contesta la pregunta que
          llega después —«¿por qué el libro dice que de una tabla salió
@@ -205,7 +195,6 @@ const CTP_GROUPS: LibroGroup[] = [
       { key: "reprocesos", ...CTP_VISTAS_POR_KEY["reprocesos"], icon: Scissors, tecla: "o" },
       { key: "planta", ...CTP_VISTAS_POR_KEY["planta"], icon: MapPin, tecla: "m" },
       { key: "eudr", ...CTP_VISTAS_POR_KEY["eudr"], icon: Globe, tecla: "u" },
-      { key: "guias", ...CTP_VISTAS_POR_KEY["guias"], icon: FileText, tecla: "e" },
     ],
   },
   {
@@ -215,10 +204,10 @@ const CTP_GROUPS: LibroGroup[] = [
       /* Con pestañas internas: Movimiento · Producción (Reportes) · Tendencias
          (Análisis) · Margen (Rentabilidad) · Rendimiento (de Herramientas). */
       { key: "tablero", ...CTP_VISTAS_POR_KEY["tablero"], icon: BarChart3, tecla: "k" },
+      /* Saldos trae «Lo que firma el libro» (los Cuadros SERFOR, «q») y
+         Cumplimiento, «Cerrar el mes» (el Cierre, «x») — 17-10. */
       { key: "saldos", ...CTP_VISTAS_POR_KEY["saldos"], icon: Scale, tecla: "s" },
-      { key: "resumenes", ...CTP_VISTAS_POR_KEY["resumenes"], icon: ClipboardList, tecla: "q" },
       { key: "cumplimiento", ...CTP_VISTAS_POR_KEY["cumplimiento"], icon: ShieldCheck, tecla: "c" },
-      { key: "cierre", ...CTP_VISTAS_POR_KEY["cierre"], icon: Lock, tecla: "x" },
     ],
   },
   {
@@ -228,13 +217,13 @@ const CTP_GROUPS: LibroGroup[] = [
       /* Reportes, Rentabilidad y Análisis se mudaron al Tablero (ola 2): sus
          teclas «y», «b» y «a» siguen llevando ahí (`TECLAS_FUSIONADAS`). */
       { key: "fletes", ...CTP_VISTAS_POR_KEY["fletes"], icon: Truck, tecla: "j" },
+      /* Su última pestaña es «Tu CTP», la Ficha del CTP («f», 17-10). */
       { key: "directorio", ...CTP_VISTAS_POR_KEY["directorio"], icon: Users, tecla: "g" },
       /* El contrato es el eje del movimiento (ADR-421): va en Gestión, al
          lado del directorio, porque contesta la pregunta del dueño —«¿cómo
          viene este permiso?»— y no una del turno de la sierra. La tecla es
          «w» porque «c» ya es Cumplimiento y «o», Reprocesos. */
       { key: "contratos", ...CTP_VISTAS_POR_KEY["contratos"], icon: FileSignature, tecla: "w" },
-      { key: "ficha", ...CTP_VISTAS_POR_KEY["ficha"], icon: Building2, tecla: "f" },
     ],
   },
 ];
@@ -257,34 +246,32 @@ const CTP_MODULE_ID = "ctp-libro";
 /* `contratos` entra acá (ADR-421): un contrato se mira entero, desde que se
    firmó hasta hoy. Acotar su balance al trimestre del libro mostraría una
    parte de la plata puesta y la haría pasar por el total. */
-const SIN_PERIODO: CtpView[] = [
-  "cierre",
-  "ficha",
-  "trozas",
-  "directorio",
-  "lotes",
-  "disponibles",
-  "contratos",
-];
+/* Cierre (por mes), Ficha y Trozas se mudaron adentro de Cumplimiento,
+   Directorio y Volumen disponible (17-10): el Cierre trae su propio selector de
+   mes y Cumplimiento sí lee el período, así que el selector se queda ahí. */
+const SIN_PERIODO: CtpView[] = ["directorio", "lotes", "disponibles", "contratos"];
 /* Análisis (6 meses fijos), Reportes (su propio período: N semanas, mes o
    rango) y Rendimiento viven ahora en el Tablero: el selector se esconde en
    esas pestañas (`SUBS_TABLERO_SIN_PERIODO`). */
 
 const PARAMS_DE_VISTA_CTP: ParamsDeVista<CtpView> = {
   contratos: [PARAM_CONTRATO, PARAM_SECCION_FICHA],
-  /* La ficha de una troza (ADR-436): al irse de Trozas, si quedó abierta, se
-     borra — igual que `contrato` en Contratos. */
-  trozas: [PARAM_TROZA],
-  /* Las pilas elegidas en Volumen disponible: al volver, manda la memoria. */
-  disponibles: ["fuentes"],
+  /* Las pilas elegidas en Volumen disponible: al volver, manda la memoria. La
+     ficha de una troza (ADR-436, `?troza=`) es de su pestaña «Por troza»: al
+     irse de la vista, si quedó abierta, se borra — igual que `contrato`. */
+  disponibles: ["fuentes", "sub", PARAM_TROZA],
   /* La ficha de una guía (`?ingreso=`, use-guia-de-ingreso-en-url) y la de una
      parte del Directorio (`?parte=`, use-parte-en-url): al irse de la vista,
      se borran, y volver muestra la lista. Las dos vistas de guías la leen. */
   ingresos: ["ingreso", "sub"],
-  directorio: ["parte"],
-  /* Las pestañas internas (`?sub=`) son de su vista: al irse, se borran. */
+  directorio: ["parte", "sub"],
+  /* Las pestañas internas (`?sub=`) son de su vista: al irse, se borran. Si
+     no, «Movimiento» del Tablero viajaba a Saldos, que también tiene uno. */
   tablero: ["sub"],
   despacho: ["sub", "lote"],
+  lotes: ["sub"],
+  saldos: ["sub"],
+  cumplimiento: ["sub"],
 };
 /** Las pestañas que se fusionaron en Volumen disponible: sus links viejos siguen llegando. */
 const ALIAS_CTP = {
@@ -295,8 +282,6 @@ const ALIAS_CTP = {
 } as const;
 
 export default function CTPLibroOperaciones() {
-  /** Un solo estado de cierres para el asistente y el historial. */
-  const cierres = useCtpCierres();
   /** Lo anotado en el patio sin señal, esperando subir al libro. */
   const cola = usePatioCola();
   // La vista vive en la URL (`?vista=`) con localStorage de memoria: así se
@@ -434,41 +419,17 @@ export default function CTPLibroOperaciones() {
   }
 
   /**
-   * `b` abre el buscador de guías desde cualquier vista. Vive en el shell y no
-   * en una vista porque la pregunta ("¿qué pasó con esta guía?") no pertenece a
-   * ninguna: llega por teléfono mientras mirás cualquier pestaña.
-   */
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => {
-      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
-      const t = ev.target as HTMLElement | null;
-      const tag = t?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable) return;
-      if (document.querySelector('[role="dialog"]')) return;
-      if (ev.key === "b" || ev.key === "B") {
-        ev.preventDefault();
-        setBuscarGtf(true);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  /**
    * `g` + la tecla de una vista que se mudó adentro de otra (ola 2): la cabina
    * arma sus atajos con el riel y estas vistas ya no están en él. Misma regla
-   * que la cabina: se apaga escribiendo o con un diálogo abierto, y la ventana
-   * del `g` dura 1,5 s.
+   * que la cabina: se apaga escribiendo o con un diálogo A LA VISTA, y la
+   * ventana del `g` dura 1,5 s. También atiende `b` (el buscador de guías).
    */
   useEffect(() => {
     let armado = false;
     let reloj: number | undefined;
     const onKey = (ev: KeyboardEvent) => {
       if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
-      const t = ev.target as HTMLElement | null;
-      const tag = t?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable) return;
-      if (document.querySelector('[role="dialog"]')) return;
+      if (isEditableTarget(ev.target) || isModalOpen()) return;
       if (armado) {
         armado = false;
         const destino = TECLAS_FUSIONADAS.find((x) => x.tecla === ev.key.toLowerCase());
@@ -476,6 +437,15 @@ export default function CTPLibroOperaciones() {
           ev.preventDefault();
           irA(destino.vieja);
         }
+        return;
+      }
+      /* `b` abre el buscador de guías desde cualquier vista: la pregunta
+         («¿qué pasó con esta guía?») llega por teléfono mientras miras
+         cualquier pestaña. Va en ESTE handler para que `g b` (Tablero ›
+         Margen) no abra además el buscador. */
+      if (ev.key === "b" || ev.key === "B") {
+        ev.preventDefault();
+        setBuscarGtf(true);
         return;
       }
       if (ev.key === "g" || ev.key === "G") {
@@ -636,6 +606,7 @@ export default function CTPLibroOperaciones() {
         moduleId={CTP_MODULE_ID}
         eyebrow="Forestal · LO-CTP SERFOR"
         title="Libro de Operaciones CTP"
+        tituloCorto="Libro CTP"
         icon={TreePine}
         groups={CTP_GROUPS}
         view={view}
@@ -687,12 +658,6 @@ export default function CTPLibroOperaciones() {
               <Search className="h-4 w-4" />
               <span className="max-lg:sr-only">Buscar guía</span>
             </button>
-            {/* Los avisos del libro (Brandon, 2026-09-02): campana acá, al lado
-                de «Modo patio», en vez de una tira de chips arriba de cada
-                vista. La tira costaba uno o dos renglones en las doce pestañas
-                y con seis avisos hacía wrap; son avisos, se miran cuando se
-                quiere. El número sigue a la vista en el badge. */}
-            <CtpPendientes estado={pendientes} onIr={irA} />
             {/* La puerta al modo patio. Va acá y no en el sidebar porque se abre
                 UNA vez, en la tablet que se lleva a la pila, y de ahí no se
                 vuelve al panel: es otra sesión de trabajo, no otra pestaña. */}
@@ -707,6 +672,10 @@ export default function CTPLibroOperaciones() {
             <CtpAsistente />
           </>
         }
+        /* Los avisos del libro (Brandon, 2026-09-02): una campana en vez de una
+           tira de chips arriba de cada vista. Va con el período: a la vista si
+           la fila tiene lugar, si no dentro del «⋯». */
+        avisos={<CtpPendientes estado={pendientes} onIr={irA} />}
         actions={acciones}
         atajosDeVista={atajosDeVista}
       >
@@ -738,6 +707,8 @@ export default function CTPLibroOperaciones() {
         {view === "lotes" && (
           <CtpLotesView
             onIr={irA}
+            pedido={pedidoSub?.vista === "lotes" ? pedidoSub : null}
+            loteInicial={loteHistoria}
             onProducir={(lote) => {
               // «Producir este lote» cruza de pestaña: el lote se guarda acá —el
               // shell es lo único que sobrevive al cambio de vista— y Producción
@@ -785,15 +756,17 @@ export default function CTPLibroOperaciones() {
             onIr={irA}
             fuentesPedidas={fuentesPedidas}
             onFuentesUsadas={() => setFuentesPedidas(null)}
+            pedido={pedidoSub?.vista === "disponibles" ? pedidoSub : null}
             onAbrirLote={(id) => {
               setLoteHistoria(id);
-              irA("historia-lote");
+              irASub("lotes", "historia");
             }}
           />
         )}
-        {view === "reprocesos" && <CtpReprocesosDeclarados period={period} />}
+        {view === "reprocesos" && <CtpReprocesosDeclarados period={period} onIr={irA} />}
         {view === "despacho" && (
           <CtpDespachoPestanas
+            period={period}
             pedido={pedidoSub?.vista === "despacho" ? pedidoSub : null}
             despachos={
               <CtpEntriesView
@@ -807,16 +780,14 @@ export default function CTPLibroOperaciones() {
             }
           />
         )}
-        {view === "radar" && <CtpTrazaRadar period={period} />}
-        {view === "historia-lote" && (
-          <CtpHistoriaLoteView key={loteHistoria ?? "elegir"} loteInicial={loteHistoria} />
-        )}
+        {view === "radar" && <CtpTrazaRadar period={period} onIr={irA} />}
         {view === "planta" && <CtpPlantaView period={period} />}
         {view === "saldos" && (
           <CtpSaldosView
             period={period}
             // Cada excepción de existencias sabe en qué pestaña se corrige.
             onIr={irA}
+            pedido={pedidoSub?.vista === "saldos" ? pedidoSub : null}
             onDespachar={(producto, especie) => {
               // Del stock a la guía: se elige el producto en Saldos y el
               // despacho se abre con él, sin volver a buscarlo en el catálogo.
@@ -825,8 +796,6 @@ export default function CTPLibroOperaciones() {
             }}
           />
         )}
-        {view === "trozas" && <CtpTrozasView />}
-        {view === "resumenes" && <CtpResumenesSerfor period={period} />}
         {view === "tablero" && (
           <CtpTableroPestanas
             period={period}
@@ -835,23 +804,19 @@ export default function CTPLibroOperaciones() {
             onSub={setSubTablero}
           />
         )}
-        {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={irA} />}
-        {view === "cierre" && (
-          <div className="space-y-6">
-            {/* El asistente ordena el trabajo; el panel de abajo sigue siendo
-                el historial de cierres (y el único lugar para reabrir). */}
-            <CtpCierreAsistido onIr={irA} cierres={cierres} />
-            <CtpCierrePanel estado={cierres} />
-          </div>
+        {view === "cumplimiento" && (
+          <CtpCompliancePanel
+            period={period}
+            onNavigate={irA}
+            pedido={pedidoSub?.vista === "cumplimiento" ? pedidoSub : null}
+          />
         )}
         {view === "eudr" && <CtpEudrPanel period={period} onNavigate={irA} />}
-        {view === "guias" && (
-          <CtpGuiasEmitidasView period={period} onAbrirDespacho={() => setView("despacho")} />
-        )}
         {view === "fletes" && <CtpFletesView period={period} />}
-        {view === "directorio" && <CtpDirectorioView />}
+        {view === "directorio" && (
+          <CtpDirectorioView pedido={pedidoSub?.vista === "directorio" ? pedidoSub : null} />
+        )}
         {view === "contratos" && <CtpContratosView />}
-        {view === "ficha" && <CtpFichaEditor />}
       </LibroChrome>
 
       {buscarGtf && (
