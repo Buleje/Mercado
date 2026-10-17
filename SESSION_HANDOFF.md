@@ -1,3 +1,30 @@
+# SESSION HANDOFF — 2026-10-16 (tarde): talonario GTF como el papel + trozas por foto + registro del despacho en lote — 9 commits
+
+**Estado:** commits `b43880c89` → `e8acb00eb`, **sin subir** (no se pidió push; deploy bloqueado). Árbol limpio salvo lo de siempre (`.claude/autonomo/`, VRT, `panel-ola.js` ajeno).
+
+**Hecho:**
+- **Talonario:** plantilla medida de las fotos, formas con nombre por permiso, encaje por valor, «Sólo valores», 30 trozas por lista (lo emitido no cambia), metros y m3, X en el Anexo 03, hoja a contraluz, calibrar con regla, filas en cm y mm, letra por hoja.
+- **Pantallas con cara de papel:** «Datos de la GTF» (con lupa) y el formulario del despacho.
+- **ADRs:** 495 y 496.
+- **Trozas por foto (F1-F4):** con corteza, D2 por la otra cara, cargas medidas en el monte, tocar la testa.
+- **Excel de «Anotar a mano».**
+- **Registro del despacho en lote:** fix del 500, 810 → 25 consultas.
+- **PC de Brandon:** LX-350 como impresora predeterminada.
+- Memorias: `gtf-talonario-matricial-2026-10-15`, `trozas-por-foto-2026-10-16`, `tx-por-fila-latencia-119ms`, `brandon-escribe-a-carriles`.
+
+**Falta probar en real:**
+- Brandon registra su guía real (el lote se midió con rollback).
+- La impresión en la LX-350: «Probar la impresora» + «Calibrar con regla».
+- Fotos reales de una carga para «Medir por foto». Lista en el §5 de `.claude/autonomo/contratos-2026-10-16/fotos-trozas.md`.
+
+**Pendiente:**
+- Carrera de mismo N° con carga (ADR-496, medio-bajo).
+- Largo por foto lateral.
+- El monte envía su forma (la cola acepta `formaId`, ningún cliente lo manda).
+- 30 trozas también en las guías del CTP.
+
+---
+
 # SESSION HANDOFF — 2026-10-11 (noche autónoma 00:25-07:00): panel compactado en 9 tandas + mejoras de otros sistemas — 41 commits
 
 **Estado:** commits `da2440089` → HEAD (más los de la tarde 10-10 desde `e9e3e748d`), **sin subir** (no se pidió push; el deploy sigue bloqueado: memoria `deploy-produccion-bloqueos-2026-10-09`). Typecheck y guardianes verdes en cada tanda. Árbol limpio salvo `.claude/autonomo/`, capturas VRT sin versionar y `components/admin/forestal/.claude/` (del 02-10).
