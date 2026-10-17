@@ -20,12 +20,14 @@ interface Props {
 /** Diferencia que ya no es redondeo: medio sol. */
 const TOLERANCIA_SOLES = 0.5;
 const TIPO: Record<string, string> = { factura: "Factura", boleta: "Boleta", guia: "Guía" };
+/** Costos dudosos a la vista; el resto se cuenta. */
+const MAX_DUDOSOS = 3;
 
 /** Lo que leyó el escáner: comprobante, proveedor, cuadre del total y lo que no encontró. */
 export default function CompraFacturaLeida({ factura, catalogo, totalCanasta, onCrearProveedor }: Props) {
   const { resumen, pendientes, creando, elegir, quitarPendiente, crearProducto, cerrar } = factura;
   if (!resumen) return null;
-  const { proveedor, proveedorElegido, comprobante, fecha, total, agregados, renglones } = resumen;
+  const { proveedor, proveedorElegido, comprobante, fecha, total, agregados, renglones, dudosos } = resumen;
   const diferencia = total > 0 ? totalCanasta - total : 0;
   const descuadre = Math.abs(diferencia) > TOLERANCIA_SOLES;
   const categorias = catalogo.categories.filter((c) => c !== "Todos");
@@ -61,6 +63,21 @@ export default function CompraFacturaLeida({ factura, catalogo, totalCanasta, on
               Total de la factura {formatCurrency(total)} · tu canasta {formatCurrency(totalCanasta)}
               {descuadre && ` (${diferencia > 0 ? "+" : "−"}${formatCurrency(Math.abs(diferencia))})`}
             </p>
+          )}
+          {dudosos.length > 0 && (
+            <div role="status" className="mt-1 text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              <span className="font-semibold">
+                {dudosos.length === 1 ? "1 costo para revisar" : `${dudosos.length} costos para revisar`} antes de guardar:
+              </span>
+              <ul className="mt-0.5 space-y-0.5">
+                {dudosos.slice(0, MAX_DUDOSOS).map((d) => (
+                  <li key={d.nombre} className="break-words">
+                    <span className="font-medium">{d.nombre}</span>: {d.motivo}
+                  </li>
+                ))}
+                {dudosos.length > MAX_DUDOSOS && <li>y {dudosos.length - MAX_DUDOSOS} más: míralos en la canasta</li>}
+              </ul>
+            </div>
           )}
           {!proveedorElegido && proveedor.nombre.trim() && (
             <button

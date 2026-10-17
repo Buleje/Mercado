@@ -3,7 +3,9 @@
 import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { PurchaseProduct as Product } from "@/lib/types/purchases";
+import { costoSugerido } from "./costo-compra";
 import { emparejarProveedor, emparejarRenglones, type Pendiente, type RenglonFactura } from "./emparejar-factura";
+import { costosDudosos, type CostoDudoso } from "./senales-factura";
 import type { CompraCarrito } from "./use-compra-carrito";
 import type { CompraCatalogo } from "./use-compra-catalogo";
 
@@ -25,6 +27,8 @@ export interface ResumenFactura {
   total: number;
   agregados: number;
   renglones: number;
+  /** C60: costos que no hay que creer sin mirar (sin precio o muy lejos del que tenías). */
+  dudosos: CostoDudoso[];
 }
 
 /** Renglón sin par con una identidad propia: se quita por id, no por posición
@@ -51,6 +55,7 @@ export function useFacturaEscaneada({ carrito, catalogo, setToastMsg }: Opciones
 
   const aplicarFactura = useCallback((data: FacturaLeida) => {
     const { encontrados, pendientes: sinPar } = emparejarRenglones(data.items, catalogo.products);
+    const dudosos = costosDudosos(encontrados.map((e) => ({ nombre: e.producto.name, precio: precioDe(e.renglon), ultimo: costoSugerido(e.producto, carrito.priceHistory) })));
     for (const e of encontrados) carrito.addToCart(e.producto, e.renglon.cantidad, precioDe(e.renglon));
     const proveedor = emparejarProveedor(data.proveedor, catalogo.suppliers);
     if (proveedor) carrito.setSelectedSupplier(proveedor);
@@ -67,6 +72,7 @@ export function useFacturaEscaneada({ carrito, catalogo, setToastMsg }: Opciones
       total: data.total,
       agregados: encontrados.length,
       renglones: data.items.length,
+      dudosos,
     });
   }, [carrito, catalogo.products, catalogo.suppliers]);
 

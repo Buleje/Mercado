@@ -57,10 +57,10 @@ export default function PuntoCompraView() {
   }, [agregarProveedor, setSelectedSupplier]);
   const np = useNuevoProveedor({ alCrear: alCrearProveedor, setToastMsg });
 
-  // Auto-limpiar toast después de 4 segundos
+  // Auto-limpiar el aviso: 4 s, más tiempo si es largo (al cargar una plantilla dice qué revisar).
   useEffect(() => {
     if (!toastMsg) return;
-    const t = setTimeout(() => setToastMsg(null), 4000);
+    const t = setTimeout(() => setToastMsg(null), Math.min(10000, Math.max(4000, toastMsg.length * 60)));
     return () => clearTimeout(t);
   }, [toastMsg]);
 
@@ -174,7 +174,7 @@ export default function PuntoCompraView() {
 
       {/* Toast flotante */}
       {toastMsg && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[var(--surface-sunken)] text-white px-4 py-2.5 rounded-lg text-sm font-medium animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-base)]">
+        <div role="status" className="fixed bottom-6 left-1/2 z-50 w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-[var(--surface-raised)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] shadow-[var(--shadow-lg)] ring-1 ring-[var(--rule-strong)] animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-base)] sm:max-w-xl">
           {toastMsg}
         </div>
       )}

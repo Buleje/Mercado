@@ -11,7 +11,9 @@ import { TIPOS_COMPROBANTE, type TipoComprobante } from "@/lib/compras/estados-o
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import CompraCondicionPago from "./CompraCondicionPago";
 import CompraPlantillas from "./CompraPlantillas";
+import { avisoComprobanteRepetido } from "./senales-factura";
 import { faltaParaOrden, type ConfirmarCompra } from "./use-confirmar-compra";
+import { useFacturaRepetida } from "./use-factura-repetida";
 import type { CompraCarrito } from "./use-compra-carrito";
 import type { PlantillasCompra } from "./use-plantillas-compra";
 
@@ -27,8 +29,11 @@ interface Props {
 export default function CompraCanastaTotales({ carrito, orden, plantillas, onPdf, onVenderACliente }: Props) {
   const {
     cart, discount, setDiscount, subtotal, discountAmount, desglose, total, paymentMethod, setPaymentMethod,
-    deliveryDate, setDeliveryDate, notes, setNotes, lastOC, invoiceType, setInvoiceType, invoiceNumber, setInvoiceNumber,
+    deliveryDate, setDeliveryDate, notes, setNotes, lastOC, invoiceType, setInvoiceType, invoiceNumber, setInvoiceNumber, selectedSupplier,
   } = carrito;
+  // C60: el mismo comprobante ya guardado se dice bajo el campo (no frena: otro proveedor puede repetir el número).
+  const repetida = useFacturaRepetida(invoiceNumber, invoiceType !== "ninguno" && cart.length > 0);
+  const avisoRepetido = repetida ? avisoComprobanteRepetido(repetida, invoiceNumber, selectedSupplier?.name ?? null) : null;
   const { processing, planBlockedMsg, confirmarOC, generateWhatsApp, handleSaveDraft } = orden;
   // Fecha mínima para deliveryDate (evitar recalcular en cada render)
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
@@ -131,10 +136,26 @@ export default function CompraCanastaTotales({ carrito, orden, plantillas, onPdf
           aria-invalid={invoiceType !== "ninguno" && !invoiceNumber.trim()}
           className={cn(
             "min-w-0 px-3 py-1.5 border rounded-xl text-sm font-mono bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-sans focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50",
-            invoiceType !== "ninguno" && !invoiceNumber.trim() ? "border-[var(--data-error-500)]" : "border-[var(--rule-base)]",
+            invoiceType !== "ninguno" && !invoiceNumber.trim() ? "border-[var(--data-error-500)]" : avisoRepetido?.mismoProveedor ? "border-[var(--data-warning-500)]" : "border-[var(--rule-base)]",
           )}
+          aria-describedby={avisoRepetido ? "poc-comprobante-repetido" : undefined}
         />
       </div>
+      {avisoRepetido && (
+        <p
+          id="poc-comprobante-repetido"
+          role="status"
+          className={cn(
+            "-mt-1 text-xs",
+            avisoRepetido.mismoProveedor ? "font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]",
+          )}
+        >
+          {avisoRepetido.texto}{" "}
+          <EnlacePanel cosa="oc" id={avisoRepetido.ordenId} className="font-semibold text-primary hover:underline">
+            Ver esa orden
+          </EnlacePanel>
+        </p>
+      )}
 
       {/* Fecha de entrega */}
       <div>

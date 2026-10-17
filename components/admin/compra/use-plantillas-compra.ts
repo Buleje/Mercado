@@ -5,6 +5,9 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import type { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { DbRecurringPurchase, ItemRecurrente } from "@/lib/db/recurring-purchases.db";
 import type { PurchaseProduct as Product, PurchaseSupplier as Supplier } from "@/lib/types/purchases";
+import { claveDeDia } from "@/lib/compras/ciclo-oc";
+import { limaDateKey } from "@/lib/utils";
+import { avisoDePlantilla } from "./aviso-plantilla";
 import { costoSugerido } from "./costo-compra";
 import type { CompraCarrito } from "./use-compra-carrito";
 
@@ -99,18 +102,39 @@ export function usePlantillasCompra({ carrito, products, suppliers, confirm, pro
     }
   }, [carrito, prompt, setToastMsg, crearEnBase]);
 
-  /** Pone los productos en la canasta: costo = el de la última compra; si no hay, el de la plantilla. */
-  const loadTemplate = useCallback((p: { nombre: string; supplierId?: string; items: Array<{ productId: number; quantity: number; unitCost?: number }> }) => {
+  /**
+   * Pone los productos en la canasta: costo = el de la última compra; si no
+   * hay, el de la plantilla. Lo que cambia sin que lo pidas (el proveedor, un
+   * costo guardado hace tiempo, un producto que ya no está) se dice (C61).
+   */
+  const loadTemplate = useCallback((p: { nombre: string; supplierId?: string; actualizada?: string; items: Array<{ productId: number; quantity: number; unitCost?: number }> }) => {
     let faltan = 0;
+    let costosDeLaPlantilla = 0;
+    let sinCosto = 0;
     for (const it of p.items) {
       const product = products.find((x) => x.id === it.productId);
       if (!product) { faltan++; continue; }
       const sugerido = costoSugerido(product, carrito.priceHistory);
-      carrito.addToCart(product, it.quantity, sugerido == null && (it.unitCost ?? 0) > 0 ? it.unitCost : undefined);
+      const deLaPlantilla = sugerido == null && (it.unitCost ?? 0) > 0 ? it.unitCost : undefined;
+      if (deLaPlantilla !== undefined) costosDeLaPlantilla++;
+      else if (sugerido == null) sinCosto++;
+      carrito.addToCart(product, it.quantity, deLaPlantilla);
     }
     const proveedor = p.supplierId ? suppliers.find((s) => s.id === p.supplierId) : undefined;
+    const antes = carrito.selectedSupplier;
     if (proveedor) carrito.setSelectedSupplier(proveedor);
-    setToastMsg(`Plantilla "${p.nombre}" cargada${faltan ? ` · ${faltan} producto${faltan === 1 ? "" : "s"} ya no está${faltan === 1 ? "" : "n"} en tu catálogo` : ""}`);
+    const { texto } = avisoDePlantilla({
+      nombre: p.nombre,
+      faltan,
+      costosDeLaPlantilla,
+      sinCosto,
+      guardadaEl: claveDeDia(p.actualizada),
+      hoy: limaDateKey(),
+      proveedorAntes: antes?.name ?? null,
+      traeProveedor: Boolean(p.supplierId),
+      proveedorDeLaPlantilla: proveedor?.name ?? null,
+    });
+    setToastMsg(texto);
   }, [products, suppliers, carrito, setToastMsg]);
 
   const deleteTemplate = useCallback(async (p: DbRecurringPurchase) => {

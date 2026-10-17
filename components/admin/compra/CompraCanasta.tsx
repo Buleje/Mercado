@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Package, ShoppingBasket } from "@buleje/design-system/icons";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { formatCurrency, formatDateShort, formatTime } from "@/lib/format";
+import { codigoDeOrden } from "@/lib/compras/referencia-documento";
 import type { PurchaseProduct as Product } from "@/lib/types/purchases";
 import CompraCanastaItem from "./CompraCanastaItem";
 import CompraCanastaTotales from "./CompraCanastaTotales";
@@ -102,13 +103,12 @@ export default function CompraCanasta({ carrito, orden, plantillas, products, on
 
         {cartTab === "paquetes" && (
           <PuntoCompraBundles
-            onAddBundle={(items: Array<{ productId: number; quantity: number }>) => {
-              items.forEach((item) => {
-                const product = products.find((p) => p.id === item.productId);
-                if (product) addToCart(product, item.quantity);
-              });
+            products={products}
+            onAddBundle={(lineas) => {
+              for (const l of lineas) addToCart(l.product, l.quantity);
               setCartTab("carrito");
             }}
+            onIrALaCanasta={() => setCartTab("carrito")}
           />
         )}
 
@@ -121,7 +121,7 @@ export default function CompraCanasta({ carrito, orden, plantillas, products, on
                 <div className="space-y-1">
                   {supplierHistory.map((h) => (
                     <div key={h.id} className="flex items-center justify-between text-xs">
-                      <span className="text-[var(--text-secondary)] truncate">{h.id.slice(0, 15)}...</span>
+                      <span className="text-[var(--text-secondary)] truncate">Orden {codigoDeOrden(h.id)}</span>
                       <span className="font-mono font-medium text-[var(--text-primary)]">{formatCurrency(Number(h.total))}</span>
                       <span className="text-[var(--text-tertiary)]">{h.date ? formatDateShort(h.date) : ""}</span>
                     </div>

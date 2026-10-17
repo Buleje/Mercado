@@ -15,6 +15,7 @@ import { MensajeProveedorModal } from "./devoluciones-proveedor/MensajeProveedor
 import { ValorarDevolucionModal } from "./devoluciones-proveedor/ValorarDevolucionModal";
 import { exportarDevolucionesCSV } from "./devoluciones-proveedor/exportar-csv";
 import { PERIODOS, SIN_FILTROS, conteoPorEstado, filtrarDevoluciones, type Devolucion, type FiltrosDevoluciones } from "./devoluciones-proveedor/tipos";
+import { consultaDeLaUrl } from "@/lib/compras/consulta-de-la-url";
 import { useDevoluciones } from "./devoluciones-proveedor/use-devoluciones";
 import { useIndicadoresDevoluciones } from "./devoluciones-proveedor/use-indicadores-devoluciones";
 
@@ -29,7 +30,8 @@ export default function DevolucionesProveedorModule() {
   const d = useDevoluciones();
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [filtros, setFiltros] = useState<FiltrosDevoluciones>(SIN_FILTROS);
+  // «Ver en Devoluciones» desde Buscar en Compras llega con `?q=` (el proveedor).
+  const [filtros, setFiltros] = useState<FiltrosDevoluciones>(() => ({ ...SIN_FILTROS, texto: consultaDeLaUrl() }));
   const [ventana, setVentana] = useState<{ tipo: "anular" | "valorar" | "mensaje"; id: string } | null>(null);
   // La fila viva (no una copia): si la recarga la cambia, la ventana ve lo último.
   const enVentana: Devolucion | undefined = ventana ? d.devoluciones.find((x) => x.id === ventana.id) : undefined;

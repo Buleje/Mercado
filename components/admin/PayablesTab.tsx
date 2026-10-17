@@ -18,6 +18,7 @@ import EstadoDeCuentaModal from "@/components/admin/cuentas-por-pagar/EstadoDeCu
 import NuevaCuentaModal from "@/components/admin/cuentas-por-pagar/NuevaCuentaModal";
 import PropuestaDePagos from "@/components/admin/cuentas-por-pagar/PropuestaDePagos";
 import SeccionCuentas, { type FiltrosCuentas } from "@/components/admin/cuentas-por-pagar/SeccionCuentas";
+import { consultaDeLaUrl } from "@/lib/compras/consulta-de-la-url";
 import type { Abierto } from "@/components/admin/cuentas-por-pagar/TablaCuentas";
 import VincularOrdenModal from "@/components/admin/cuentas-por-pagar/VincularOrdenModal";
 import { useCuentasPorPagar } from "@/components/admin/cuentas-por-pagar/use-cuentas-por-pagar";
@@ -42,7 +43,11 @@ export default function PayablesTab() {
   const { cuentas, proveedores, loading, error, setError, saving, load, crear, vincular, pagar, eliminar } = useCuentasPorPagar();
   const { confirm } = useConfirm();
   const { vista, irA } = useSubvistaModulo<SeccionPorPagar>("compras-por-pagar", SECCIONES_POR_PAGAR, "cuentas");
-  const [filtros, setFiltrosTodos] = useState<FiltrosCuentas>(FILTROS_INICIALES);
+  // «Ver su cuenta» desde Buscar en Compras llega con `?q=`: la cuenta aparece aunque ya esté pagada.
+  const [filtros, setFiltrosTodos] = useState<FiltrosCuentas>(() => {
+    const q = consultaDeLaUrl();
+    return q ? { estado: "todas", proveedorId: "", q } : FILTROS_INICIALES;
+  });
   const [abierto, setAbierto] = useState<Abierto>(null);
   const [nueva, setNueva] = useState(false);
   const [aVincular, setAVincular] = useState<CuentaPorPagar | null>(null);

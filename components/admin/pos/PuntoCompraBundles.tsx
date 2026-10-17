@@ -1,15 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import { Package, Boxes, Plus } from "@buleje/design-system/icons";
+/**
+ * Pestaña «Paquetes» de la canasta de Comprar (C61): los combos que vendes,
+ * para reponer todos sus productos de una vez. Los nombres salen de tu
+ * catálogo y el costo de cada línea es el de tu última compra (nunca el del
+ * paquete); lo que ya no está en el catálogo se avisa antes de agregar.
+ * Sin paquetes, el paso útil es la plantilla de compra de abajo.
+ */
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Boxes, Package, Plus, RefreshCw } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
 import { formatCurrency } from "@/lib/format";
+import { logger } from "@/lib/logger";
+import type { PurchaseProduct } from "@/lib/types/purchases";
 
 interface BundleItemData {
   productId: number;
   name?: string;
   quantity: number;
-  unitCost?: number;
 }
 
 interface BundleData {
@@ -17,169 +25,169 @@ interface BundleData {
   name: string;
   description?: string;
   price: number;
-  image?: string;
   active?: boolean;
   items: BundleItemData[];
 }
 
+export type LineaDePaquete = { product: PurchaseProduct; quantity: number };
+
 interface Props {
-  onAddBundle: (items: { productId: number; name: string; quantity: number; unitCost: number }[]) => void;
+  products: PurchaseProduct[];
+  /** Agrega lo que sí está en el catálogo (el costo lo pone la canasta). */
+  onAddBundle: (lineas: LineaDePaquete[]) => void;
+  /** Vuelve a la canasta, donde están las plantillas de compra. */
+  onIrALaCanasta: () => void;
 }
 
-export default function PuntoCompraBundles({ onAddBundle }: Props) {
-  const [bundles, setBundles] = useState<BundleData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+type Estado = { tipo: "cargando" } | { tipo: "error"; mensaje: string } | { tipo: "listo"; paquetes: BundleData[] };
+
+const ERROR_SIN_PERMISO = "Tu rol no ve los paquetes. Para repetir una compra, usa las plantillas de la canasta.";
+const ERROR_RED = "No pudimos traer los paquetes. Revisa tu conexión y prueba de nuevo.";
+
+export default function PuntoCompraBundles({ products, onAddBundle, onIrALaCanasta }: Props) {
+  const [estado, setEstado] = useState<Estado>({ tipo: "cargando" });
+  const [vez, setVez] = useState(0);
+  const porId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
   useEffect(() => {
-    let cancelled = false;
+    const ctrl = new AbortController();
+    fetch("/api/bundles?active=true", { signal: ctrl.signal })
+      .then(async (res) => {
+        if (res.status === 401 || res.status === 403) return setEstado({ tipo: "error", mensaje: ERROR_SIN_PERMISO });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: unknown = await res.json();
+        const lista = (Array.isArray(data) ? data : ((data as { bundles?: unknown })?.bundles ?? [])) as BundleData[];
+        setEstado({ tipo: "listo", paquetes: lista.filter((b) => b.active !== false && Array.isArray(b.items)) });
+      })
+      .catch((err: unknown) => {
+        if (ctrl.signal.aborted) return;
+        logger.warn("[PuntoCompraBundles] cargar paquetes failed", { error: String(err) });
+        setEstado({ tipo: "error", mensaje: ERROR_RED });
+      });
+    return () => ctrl.abort();
+  }, [vez]);
 
-    async function fetchBundles() {
-      setLoading(true);
-      setError(false);
-      try {
-        const res = await fetch("/api/bundles?active=true");
-        if (!res.ok) throw new Error("fetch failed");
-        const data = await res.json();
-        const list: BundleData[] = Array.isArray(data) ? data : data.bundles ?? [];
-        if (!cancelled) setBundles(list.filter((b) => b.active !== false));
-      } catch {
-        if (!cancelled) setError(true);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    fetchBundles();
-    return () => { cancelled = true; };
+  const reintentar = useCallback(() => {
+    setEstado({ tipo: "cargando" });
+    setVez((v) => v + 1);
   }, []);
 
-  // Loading skeleton
-  if (loading) {
+  if (estado.tipo === "cargando") {
     return (
-      <div className="space-y-2 p-1">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-20 rounded-xl bg-[var(--surface-sunken)] animate-pulse"
-          />
+      <div className="space-y-2 p-3" aria-busy="true" aria-label="Cargando paquetes">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-20 animate-pulse rounded-xl bg-[var(--surface-sunken)]" />
         ))}
       </div>
     );
   }
 
-  // Error state
-  if (error) {
+  if (estado.tipo === "error") {
     return (
-      <div className="text-center py-6 text-[var(--text-tertiary)] text-xs">
-        <Boxes className="h-5 w-5 mx-auto mb-2 opacity-40" />
-        <p>Error al cargar paquetes</p>
+      <div role="alert" className="space-y-3 p-4 text-center text-sm text-[var(--text-secondary)]">
+        <p>{estado.mensaje}</p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {estado.mensaje === ERROR_RED && (
+            <button type="button" onClick={reintentar} className={button({ variant: "secondary", className: "rounded-xl" })}>
+              <RefreshCw className="h-4 w-4" aria-hidden />
+              Reintentar
+            </button>
+          )}
+          <button type="button" onClick={onIrALaCanasta} className={button({ variant: "ghost", className: "rounded-xl" })}>
+            Ir a la canasta
+          </button>
+        </div>
       </div>
     );
   }
 
-  // Empty state
-  if (bundles.length === 0) {
+  if (estado.paquetes.length === 0) {
     return (
-      <div className="text-center py-8 text-[var(--text-tertiary)]">
-        <Boxes className="h-8 w-8 mx-auto mb-2 opacity-30" />
-        <p className="text-xs">No hay paquetes activos</p>
-        <p className="text-[length:var(--ts-2xs)] mt-1 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
-          Crea paquetes desde el modulo de Bundles
+      <div className="space-y-3 p-4 text-center">
+        <Boxes className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
+        <p className="text-sm font-semibold text-[var(--text-primary)]">No tienes paquetes activos</p>
+        <p className="text-sm text-[var(--text-secondary)]">
+          Para repetir una compra, arma la canasta y guárdala como plantilla: queda abajo, lista para la próxima.
         </p>
+        <button type="button" onClick={onIrALaCanasta} className={button({ variant: "secondary", className: "rounded-xl" })}>
+          Armar la canasta
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2 p-1 max-h-72 overflow-y-auto">
-      <div className="flex items-center gap-1.5 mb-2">
-        <Boxes className="h-3 w-3 text-[var(--data-warning-500)]" />
-        <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
-          {bundles.length} paquete{bundles.length !== 1 ? "s" : ""} disponible{bundles.length !== 1 ? "s" : ""}
-        </span>
+    <div className="max-h-72 space-y-2 overflow-y-auto p-3">
+      <p className="text-xs font-semibold text-[var(--text-tertiary)]">
+        {estado.paquetes.length === 1 ? "1 paquete" : `${estado.paquetes.length} paquetes`} · el costo es el de tu última compra
+      </p>
+      {estado.paquetes.map((b) => (
+        <TarjetaPaquete key={b.id} paquete={b} porId={porId} onAgregar={onAddBundle} />
+      ))}
+    </div>
+  );
+}
+
+function TarjetaPaquete({
+  paquete,
+  porId,
+  onAgregar,
+}: {
+  paquete: BundleData;
+  porId: Map<number, PurchaseProduct>;
+  onAgregar: (lineas: LineaDePaquete[]) => void;
+}) {
+  const lineas: LineaDePaquete[] = [];
+  const faltan: string[] = [];
+  for (const it of paquete.items) {
+    const product = porId.get(it.productId);
+    if (product) lineas.push({ product, quantity: it.quantity });
+    else faltan.push(it.name?.trim() || "un producto");
+  }
+  const etiqueta = lineas.length === 1 ? "Agregar 1 producto" : `Agregar ${lineas.length} productos`;
+
+  return (
+    <div className="space-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{paquete.name}</p>
+          {paquete.description && <p className="truncate text-xs text-[var(--text-tertiary)]">{paquete.description}</p>}
+        </div>
+        {Number(paquete.price) > 0 && (
+          <span className="shrink-0 text-xs text-[var(--text-tertiary)]" title="Precio de venta del paquete, no lo que te cuesta">
+            Se vende a {formatCurrency(Number(paquete.price))}
+          </span>
+        )}
       </div>
 
-      {bundles.map((bundle) => {
-        const itemsTotal = bundle.items.reduce(
-          (sum, item) => sum + (item.unitCost ?? 0) * item.quantity,
-          0,
-        );
-        const savings = itemsTotal > 0 ? itemsTotal - bundle.price : 0;
-        const savingsPct = itemsTotal > 0 ? ((savings / itemsTotal) * 100).toFixed(0) : "0";
-
-        return (
-          <div
-            key={bundle.id}
-            className="p-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] space-y-2"
+      <ul className="flex flex-wrap gap-1" aria-label={`Productos de ${paquete.name}`}>
+        {lineas.map((l) => (
+          <li
+            key={l.product.id}
+            className="inline-flex items-center gap-1 rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-0.5 text-xs text-[var(--text-secondary)]"
           >
-            {/* Header */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
-                  {bundle.name}
-                </p>
-                {bundle.description && (
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">
-                    {bundle.description}
-                  </p>
-                )}
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs font-bold font-mono text-primary">
-                  {formatCurrency(Number(bundle.price))}
-                </p>
-                {savings > 0 && (
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
-                    Ahorra {savingsPct}%
-                  </p>
-                )}
-              </div>
-            </div>
+            <Package className="h-3 w-3 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+            {l.product.name}
+            {l.quantity !== 1 && <span className="font-bold text-[var(--text-primary)]">×{l.quantity}</span>}
+          </li>
+        ))}
+      </ul>
 
-            {/* Items list */}
-            <div className="flex flex-wrap gap-1">
-              {bundle.items.map((item, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-md px-1.5 py-0.5 text-[var(--text-secondary)]"
-                >
-                  <Package className="h-2.5 w-2.5 shrink-0 opacity-50" />
-                  {item.name ?? `#${item.productId}`}
-                  {item.quantity > 1 && (
-                    <span className="font-bold text-[var(--text-primary)]">
-                      x{item.quantity}
-                    </span>
-                  )}
-                </span>
-              ))}
-            </div>
+      {faltan.length > 0 && (
+        <p className="text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          {faltan.length === 1 ? `${faltan[0]} ya no está en tu catálogo: no se agrega.` : `${faltan.length} productos ya no están en tu catálogo: no se agregan.`}
+        </p>
+      )}
 
-            {/* Add button */}
-            <button
-              type="button"
-              onClick={() =>
-                onAddBundle(
-                  bundle.items.map((item) => ({
-                    productId: item.productId,
-                    name: item.name ?? `Producto #${item.productId}`,
-                    quantity: item.quantity,
-                    unitCost: item.unitCost ?? 0,
-                  })),
-                )
-              }
-              className={cn(
-                "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                "bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-600)] text-white",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-warning-500)]",
-              )}
-            >
-              <Plus className="h-3 w-3" />
-              Agregar todo
-            </button>
-          </div>
-        );
-      })}
+      <button
+        type="button"
+        disabled={lineas.length === 0}
+        onClick={() => onAgregar(lineas)}
+        className={button({ variant: "secondary", className: "w-full rounded-xl" })}
+      >
+        <Plus className="h-4 w-4" aria-hidden />
+        {lineas.length === 0 ? "Ninguno está en tu catálogo" : etiqueta}
+      </button>
     </div>
   );
 }

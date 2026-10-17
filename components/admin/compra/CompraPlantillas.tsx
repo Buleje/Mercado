@@ -47,7 +47,7 @@ export default function CompraPlantillas({ plantillas: pl, hayItems, processing 
               <div key={p.id} className={CHIP}>
                 <button
                   type="button"
-                  onClick={() => loadTemplate({ nombre, supplierId: p.supplierId, items: p.items })}
+                  onClick={() => loadTemplate({ nombre, supplierId: p.supplierId, actualizada: p.updatedAt, items: p.items })}
                   title={`${p.supplierName} · ${p.items.length} productos${p.active ? ` · se repite cada ${p.intervalDays} días` : ""}`}
                   className="text-xs font-medium text-[var(--text-primary)] hover:text-primary"
                 >

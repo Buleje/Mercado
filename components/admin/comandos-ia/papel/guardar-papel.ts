@@ -46,26 +46,7 @@ export function anotarRecibo(body: { tipo: "compra" | "cobro" | "documento"; res
     .catch((err) => logger.warn("[comandos-ia/papel] recibo no anotado", { err: String(err) }));
 }
 
-export interface CompraYaCargada {
-  id: string;
-  total: number;
-  fecha: string;
-  proveedor: string;
-}
-
-/**
- * ¿Ya hay una compra (no cancelada) con ese N.º de comprobante? Para avisar antes
- * de duplicarla. Un GET por número: una fila, sin bajar todas las compras.
- */
-export async function buscarCompraConNumero(numero: string): Promise<CompraYaCargada | null> {
-  const n = numero.trim();
-  if (n.length < 3) return null;
-  const res = await fetch(`/api/purchases?numero=${encodeURIComponent(n.slice(0, 60))}`, { credentials: "include" });
-  if (!res.ok) return null;
-  const data = (await res.json().catch(() => null)) as { compra?: { id: string; total: number; createdAt: string; supplierName?: string } | null } | null;
-  const c = data?.compra;
-  return c ? { id: c.id, total: c.total, fecha: c.createdAt, proveedor: c.supplierName ?? "" } : null;
-}
+export { buscarCompraConNumero, type CompraYaCargada } from "@/lib/compras/compra-con-numero";
 
 export interface CobroYaHecho {
   resumen: string;

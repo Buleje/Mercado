@@ -18,7 +18,7 @@
  * sólo las que esta persona veía antes.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Lightbulb, ClipboardList, Users, PackagePlus, ShoppingBasket, RotateCcw, CreditCard, Truck,
@@ -29,6 +29,8 @@ import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-perm
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import BarraCompras from "@/components/admin/compras/barra/BarraCompras";
 
 const PuntoCompraView = dynamic(() => import("@/components/admin/pos/PuntoCompraView"), { loading: S });
 const OrdenesYRecepcion = dynamic(() => import("@/components/admin/compras/OrdenesYRecepcion"), { loading: S });
@@ -112,7 +114,7 @@ function ComprasConVistas({ initialTab }: { initialTab?: string }) {
   // (`?reponer=1`) son de UNA vista: se borran al salir.
   const [entrada, setEntrada] = useState(() => seccionPorNombreViejo(initialTab));
   const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, ids, ids[0] ?? "punto-compra", initialTab, {
-    paramsDeVista: { "punto-compra": ["reponer"], "ordenes-compra": ["oc", "sub"], proveedores: ["proveedor", "sub"], "cuentas-por-pagar": ["sub"] },
+    paramsDeVista: { "punto-compra": ["reponer"], "ordenes-compra": ["oc", "sub"], proveedores: ["proveedor", "sub"], "cuentas-por-pagar": ["sub", "q"], devoluciones: ["q"] },
     alias: ALIAS,
   });
   // La sección del nombre viejo vale sólo para la primera vista: al salir, se olvida.
@@ -130,6 +132,42 @@ function ComprasConVistas({ initialTab }: { initialTab?: string }) {
     },
     [setSub],
   );
+
+  /* «Buscar en Compras» y «Revisar pendientes» llevan a una fila (`?oc=`,
+     `?q=`…). La vista de destino lee esos params al montar: `vuelta` la
+     remonta aunque ya estuvieras en ella. Un `?q=` viejo no viaja. */
+  const [vuelta, setVuelta] = useState(0);
+  const irDesdeLaBarra = useCallback((href: string) => {
+    const actual = new URL(window.location.href);
+    if (actual.searchParams.has("q")) {
+      actual.searchParams.delete("q");
+      window.history.replaceState(window.history.state, "", actual.toString());
+    }
+    irAEnlace(href);
+    setVuelta((v) => v + 1);
+  }, []);
+
+  /** Nueva orden con el proveedor elegido: Órdenes la abre al montar (stash que lee `use-oc-carga`). */
+  const nuevaOrdenA = useCallback(
+    (supplier: { id: string; name: string }) => {
+      try { localStorage.setItem("bsm-new-oc-supplier", JSON.stringify(supplier)); } catch { /* quota */ }
+      irAVista("ordenes-compra");
+      setVuelta((v) => v + 1);
+    },
+    [irAVista],
+  );
+
+  /** «N»: Comprar con el buscador de productos listo para escribir. */
+  const nuevaCompra = useCallback(() => {
+    setSub("punto-compra");
+    const inicio = Date.now();
+    const enfocar = () => {
+      const campo = document.querySelector<HTMLInputElement>('input[aria-label="Buscar producto por nombre o código"]');
+      if (campo) campo.focus();
+      else if (Date.now() - inicio < 4000) window.requestAnimationFrame(enfocar);
+    };
+    window.requestAnimationFrame(enfocar);
+  }, [setSub]);
 
   // Escuchar navegación desde adentro: «Ver en Órdenes» del Punto de Compra,
   // el aviso de crédito de una recepción (Por pagar, Devoluciones).
@@ -169,30 +207,34 @@ function ComprasConVistas({ initialTab }: { initialTab?: string }) {
           Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
           pestañas a la derecha, una sola regla. */}
       <AdminTabBar
-        heading={{ title: "Compras", description: "Comprar, órdenes y recepción, qué reponer, proveedores, lo que debes y devoluciones.", icon: PackagePlus }}
+        heading={{
+          title: "Compras",
+          description: "Comprar, órdenes y recepción, qué reponer, proveedores, lo que debes y devoluciones.",
+          icon: PackagePlus,
+          actions: <BarraCompras onIr={irDesdeLaBarra} onNuevaOrdenA={nuevaOrdenA} onNuevaCompra={nuevaCompra} />,
+        }}
         tabs={vistas}
         activeTab={sub}
         onTabChange={setSub}
         moduleId="compras"
       >
+        <Fragment key={vuelta}>
         {sub === "punto-compra" && <PuntoCompraView />}
         {sub === "ordenes-compra" && <OrdenesYRecepcion seccionInicial={seccionDe("ordenes-compra")} />}
         {sub === "sugerencias" && <SugerenciasVista />}
         {sub === "proveedores" && (
           <ProveedoresVista
             seccionInicial={seccionDe("proveedores")}
-            onCrearOC={(supplier) => {
-              // "Crear OC" desde el comparador → llevar al flujo de Nueva Orden
-              // con el proveedor preseleccionado (una OC necesita productos; no
-              // se crea vacía por API). PurchaseOrdersTab lee este stash al montar.
-              try { localStorage.setItem("bsm-new-oc-supplier", JSON.stringify(supplier)); } catch { /* quota */ }
-              irAVista("ordenes-compra");
-            }}
+            // "Crear OC" desde el comparador → llevar al flujo de Nueva Orden
+            // con el proveedor preseleccionado (una OC necesita productos; no
+            // se crea vacía por API).
+            onCrearOC={nuevaOrdenA}
           />
         )}
         {sub === "cuentas-por-pagar" && <PayablesTab />}
         {sub === "devoluciones" && <DevolucionesProveedorModule />}
         {sub === "dropship" && <DropshipModule enCompras />}
+        </Fragment>
       </AdminTabBar>
     </div>
   );
