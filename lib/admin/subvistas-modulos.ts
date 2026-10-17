@@ -303,8 +303,10 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   pedidos: [
     { key: "tablero", label: "Tablero", hint: "Mueve cada pedido en marcha al paso siguiente (confirmar, preparar, enviar, entregar) y mira cuánto lleva sin avanzar", origen: ["pedidos"] },
     { key: "lista", label: "Lista", hint: "Busca y ordena los pedidos en marcha, elige varios para pasarlos de estado o imprimirlos de una vez", origen: ["pedidos"] },
+    { key: "preparacion", label: "Preparación", hint: "Qué juntar para los pedidos confirmados, sumado por producto o pedido por pedido, «listo para salir», hoja de recojo y agenda de entregas", origen: ["pedidos"] },
     { key: "reparto", label: "Reparto", hint: "Repartidores en vivo, tu equipo y quienes postulan, asignaciones, pagos a repartidores y ranking", origen: ["delivery-partners", "delivery-live"] },
     { key: "archivados", label: "Archivados", hint: "Los pedidos entregados y cancelados, con sus cifras, búsqueda por cliente y fechas", origen: ["pedidos"] },
+    { key: "analisis", label: "Análisis", hint: "Cuánto tarda cada paso, pedidos atascados, cancelados por motivo, entregas por repartidor y zona, y a qué hora entran", origen: ["pedidos"] },
   ],
   // Herramientas y trámites (ola 2): dos fases en una pestaña. Trámites
   // (`forestal-tramites`) se ve si su especialización está encendida, aunque

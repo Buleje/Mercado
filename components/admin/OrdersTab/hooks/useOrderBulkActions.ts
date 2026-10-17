@@ -4,33 +4,47 @@
  * Elegir varios pedidos y pasarlos de estado de una vez (Pedidos › Lista).
  *
  * 10-10: la respuesta del servidor se dice. Antes se tragaba cualquier
- * resultado (`catch {}` y sin mirar el status): si el paso no valía para
- * ninguno (422, «no se puede cambiar de pendiente a entregado») o valía sólo
- * para algunos, la selección se borraba igual y nadie se enteraba.
+ * resultado (`catch {}` y sin mirar el status).
+ * 17-10 (P09): «Aplicar» ya no manda a ciegas. Abre la revisión (cuáles van y
+ * cuáles no, con el porqué), manda sólo los que pueden, y el informe dice qué
+ * le pasó a CADA uno; «Reintentar» manda sólo los pendientes (red, 5xx,
+ * cambió mientras tanto). Al cerrar quedan elegidos los que falta decidir.
+ * La regla vive en `../lote-pedidos.ts`.
  */
 import { useState } from "react";
-import { toast } from "sonner";
-import type { OrderStatus } from "@/lib/jsondb";
+import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { STATUS_LABELS } from "../types";
+import { logger } from "@/lib/logger";
+import {
+  juntarResultados,
+  pendientesDe,
+  porDecidir,
+  resultadoDelLote,
+  revisarLote,
+  type FilaLote,
+  type RespuestaLote,
+} from "../lote-pedidos";
 
 interface UseOrderBulkActionsProps {
   onComplete: () => void;
 }
 
-interface RespuestaLote {
-  updated?: number;
-  rechazados?: { id: string; desde?: string }[];
-  sinCambio?: number;
-  error?: string;
+export interface EstadoLote {
+  destino: OrderStatus;
+  /** revisar → (enviando) → informe; un reintento vuelve a «enviando». */
+  fase: "revisar" | "enviando" | "informe";
+  /** Los que se mandan en el primer envío. */
+  elegibles: string[];
+  /** Una fila por pedido elegido: los que no se mandan ya traen su resultado. */
+  filas: FilaLote[];
+  /** Los pedidos tal como estaban al abrir (nombre del cliente para la tabla). */
+  pedidos: Pick<DbOrder, "id" | "status" | "customer" | "total">[];
 }
-
-const pedidos = (n: number) => `${n} ${n === 1 ? "pedido" : "pedidos"}`;
 
 export function useOrderBulkActions({ onComplete }: UseOrderBulkActionsProps) {
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [bulkStatusTarget, setBulkStatusTarget] = useState<OrderStatus | "">("");
-  const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [lote, setLote] = useState<EstadoLote | null>(null);
 
   const toggleOrderSelect = (id: string) => {
     setSelectedOrderIds((prev) => {
@@ -45,56 +59,69 @@ export function useOrderBulkActions({ onComplete }: UseOrderBulkActionsProps) {
   const setOrderSelection = (ids: Iterable<string>) => setSelectedOrderIds(new Set(ids));
   const clearOrderSelection = () => setSelectedOrderIds(new Set());
 
-  /** `ids`: los elegidos que todavía se ven (un filtro puesto después no arrastra a los ocultos). */
-  const executeBulkStatus = async (ids: readonly string[] = Array.from(selectedOrderIds)) => {
-    if (!bulkStatusTarget || ids.length === 0) return;
-    const destino = STATUS_LABELS[bulkStatusTarget];
-    setBulkUpdating(true);
+  /** «Aplicar»: abre la revisión con los elegidos que todavía se ven. */
+  const revisar = (pedidos: readonly DbOrder[]) => {
+    if (!bulkStatusTarget || pedidos.length === 0) return;
+    const { elegibles, excluidos } = revisarLote(pedidos, bulkStatusTarget);
+    const porId = new Map(excluidos.map((f) => [f.id, f]));
+    setLote({
+      destino: bulkStatusTarget,
+      fase: "revisar",
+      elegibles,
+      filas: pedidos.map(
+        (p) => porId.get(p.id) ?? { id: p.id, resultado: "pendiente", motivo: "Sin mandar todavía" },
+      ),
+      pedidos: pedidos.map((p) => ({ id: p.id, status: p.status, customer: p.customer, total: p.total })),
+    });
+  };
+
+  const enviar = async (ids: string[]) => {
+    if (!lote || ids.length === 0) return;
+    const destino = lote.destino;
+    setLote((l) => (l ? { ...l, fase: "enviando" } : l));
+    let filas: FilaLote[];
     try {
       const res = await fetch("/api/orders/bulk-status", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ ids, status: bulkStatusTarget }),
+        body: JSON.stringify({ ids, status: destino }),
       });
       const cuerpo = (await res.json().catch(() => ({}))) as RespuestaLote;
-      if (!res.ok) {
-        toast.error(cuerpo.error ?? `No se pudieron pasar a ${destino}`);
-        return;
-      }
-      const hechos = cuerpo.updated ?? 0;
-      const rechazados = cuerpo.rechazados ?? [];
-      if (rechazados.length > 0) {
-        toast.warning(
-          `${pedidos(hechos)} a ${destino}; ${pedidos(rechazados.length)} no podían saltar a ese paso`,
-        );
-      } else if (hechos === 0) {
-        toast.info(`Ya estaban en ${destino}`);
-      } else {
-        toast.success(`${pedidos(hechos)} a ${destino}`);
-      }
-      // Cambio a medias: los rechazados quedan elegidos para verlos y decidir.
-      if (rechazados.length > 0) {
-        setSelectedOrderIds(new Set(rechazados.map((r) => r.id)));
-      } else {
-        clearOrderSelection();
-      }
-      setBulkStatusTarget("");
-      onComplete();
-    } catch {
-      toast.error("Sin conexión: los pedidos no cambiaron. Prueba otra vez.");
-    } finally {
-      setBulkUpdating(false);
+      filas = resultadoDelLote(ids, res.status, cuerpo, destino);
+    } catch (err) {
+      logger.warn("[pedidos] lote sin respuesta", { error: String(err) });
+      filas = resultadoDelLote(ids, null, {}, destino);
     }
+    setLote((l) => (l ? { ...l, fase: "informe", filas: juntarResultados(l.filas, filas) } : l));
+    // Releer siempre: aun con error, alguno pudo cambiar antes del corte.
+    onComplete();
+  };
+
+  const confirmarLote = () => void enviar(lote?.elegibles ?? []);
+  const reintentarLote = () => void enviar(lote ? pendientesDe(lote.filas) : []);
+
+  /** Cerrar: sin mandar, la selección queda como estaba; con informe, quedan los que falta decidir. */
+  const cerrarLote = () => {
+    if (lote && lote.fase !== "revisar") {
+      setSelectedOrderIds(new Set(porDecidir(lote.filas)));
+      setBulkStatusTarget("");
+    }
+    setLote(null);
   };
 
   return {
     selectedOrderIds,
     bulkStatusTarget,
     setBulkStatusTarget,
-    bulkUpdating,
+    /** Mandando un lote (deshabilita «Aplicar»). */
+    bulkUpdating: lote?.fase === "enviando",
     toggleOrderSelect,
     setOrderSelection,
     clearOrderSelection,
-    executeBulkStatus,
+    lote,
+    revisar,
+    confirmarLote,
+    reintentarLote,
+    cerrarLote,
   };
 }

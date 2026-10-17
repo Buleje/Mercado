@@ -12,6 +12,7 @@ import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
 import type { DbOrder } from "@/lib/jsondb";
 import { googleMapsUrl } from "@/lib/order-utils";
 import { button } from "@/components/ui-system/button-variants";
+import { usePermisosPedidos } from "../permisos-pedidos";
 
 const BOTON =
   button({ variant: "secondary", className: "shrink-0 rounded-xl" });
@@ -91,6 +92,7 @@ export function DetallePago({
   order: DbOrder;
   onMarkDeudaPaid: (id: string) => void;
 }) {
+  const { mover } = usePermisosPedidos();
   const conComprobante = !!order.paymentMethod && order.paymentMethod !== "efectivo";
   const efectivo = order.paymentMethod === "efectivo";
   const conFila = !!order.yapeOperationNumber || (efectivo && order.deuda !== undefined);
@@ -111,6 +113,7 @@ export function DetallePago({
               <span className="inline-flex rounded-full border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-2 py-0.5 text-sm font-bold text-[var(--data-error-ink)]">
                 Deuda pendiente
               </span>
+              {mover && (
               <button
                 type="button"
                 onClick={() => onMarkDeudaPaid(order.id)}
@@ -118,6 +121,7 @@ export function DetallePago({
               >
                 <Check className="h-4 w-4" aria-hidden /> Marcar cobrado
               </button>
+              )}
             </>
           )}
           {efectivo && order.deuda === false && (

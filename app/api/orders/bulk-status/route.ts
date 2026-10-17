@@ -62,6 +62,10 @@ export async function POST(req: NextRequest) {
           error: `No se puede cambiar de "${desde}" a "${status}".`,
           code: "TRANSICION_INVALIDA",
           rechazados: lote.rechazados,
+          // 17-10 (P09): pedido por pedido, para el informe del lote del panel.
+          actualizados: [],
+          sinCambioIds: lote.sinCambio,
+          noEncontrados: lote.noEncontrados,
         },
         { status: 422 },
       );
@@ -99,6 +103,11 @@ export async function POST(req: NextRequest) {
       stockRepuesto,
       rechazados: lote.rechazados,
       sinCambio: lote.sinCambio.length,
+      // 17-10 (P09): qué le pasó a cada id (el informe del lote del panel);
+      // `sinCambio` sigue siendo la cuenta para quien ya la lee.
+      actualizados: lote.actualizados,
+      sinCambioIds: lote.sinCambio,
+      noEncontrados: lote.noEncontrados,
     });
   } catch (e) {
     logger.error("[orders/bulk-status] POST error", { err: e instanceof Error ? e.message : String(e) });

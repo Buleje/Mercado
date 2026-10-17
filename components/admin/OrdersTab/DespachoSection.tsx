@@ -27,6 +27,7 @@ import { DespachoAdHoc } from "./detalle/DespachoAdHoc";
 import { ListaLibres, ListaOcupados } from "./detalle/DespachoListas";
 import { responsableDe } from "./siguiente-paso";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { usePermisosPedidos } from "./permisos-pedidos";
 
 interface DespachoSectionProps {
   order: DbOrder;
@@ -53,6 +54,7 @@ export function DespachoSection({
   onSaveCustomDriver,
   onPatchOrder,
 }: DespachoSectionProps) {
+  const { mover } = usePermisosPedidos();
   const { partners, summary, loading, error, refresh } = useDeliveryPartnersLive();
   const [assigning, setAssigning] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
@@ -141,6 +143,7 @@ export function DespachoSection({
             <p className="text-sm font-bold text-[var(--text-primary)] truncate">{currentDriver}</p>
             <p className="text-sm text-[var(--text-secondary)]">Motorizado en marcha</p>
           </div>
+          {mover && (
           <button
             type="button"
             onClick={handleClearDriver}
@@ -148,6 +151,7 @@ export function DespachoSection({
           >
             <X className="h-4 w-4" aria-hidden /> Cambiar
           </button>
+          )}
         </div>
       )}
 
@@ -204,12 +208,14 @@ export function DespachoSection({
 
       {!loading && !error && (
         <>
+          {mover && (
           <ListaLibres
             libres={grouped.free}
             asignando={assigning}
             driverColor={driverColor}
             onAsignar={(p) => void handleAssign(p)}
           />
+          )}
           <ListaOcupados ocupados={grouped.busy} driverColor={driverColor} />
         </>
       )}
@@ -225,6 +231,7 @@ export function DespachoSection({
       )}
 
       {/* Asignación ad-hoc — para vecino/familiar sin registro */}
+      {mover && (
       <DespachoAdHoc
         abierto={showAdHoc}
         onAbrir={() => setShowAdHoc(true)}
@@ -237,6 +244,7 @@ export function DespachoSection({
         guardando={savingDriver}
         onGuardar={handleSaveAdHoc}
       />
+      )}
     </section>
   );
 }

@@ -17,6 +17,7 @@ import { googleMapsUrl } from "@/lib/order-utils";
 import type { DbOrder } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { ultimoCambio, type EventoPedido } from "./hooks/useHistorialPedidos";
+import { usePermisosPedidos } from "./permisos-pedidos";
 import { TINTA_COBRO, cobroDe } from "./siguiente-paso";
 import { STATUS_COLORS, STATUS_LABELS } from "./types";
 
@@ -61,6 +62,8 @@ export function TablaArchivados({
   onSelectOrder,
   onDeleteOrder,
 }: Props) {
+  /* Borrar es sólo de gestión (DELETE /api/orders/[id]): al resto le daba 403. */
+  const { borrar } = usePermisosPedidos();
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border">
       <DataTable className="w-full">
@@ -150,18 +153,20 @@ export function TablaArchivados({
                     >
                       <MapPin className="h-4 w-4" aria-hidden />
                     </a>
-                    <button
-                      type="button"
-                      className={cn(
-                        ACCION,
-                        "hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-ink)]",
-                      )}
-                      title="Eliminar el pedido"
-                      aria-label={`Eliminar el pedido de ${o.customer.name}`}
-                      onClick={() => onDeleteOrder(o.id)}
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden />
-                    </button>
+                    {borrar && (
+                      <button
+                        type="button"
+                        className={cn(
+                          ACCION,
+                          "hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-ink)]",
+                        )}
+                        title="Eliminar el pedido"
+                        aria-label={`Eliminar el pedido de ${o.customer.name}`}
+                        onClick={() => onDeleteOrder(o.id)}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -4,7 +4,7 @@
  * Menú «Vista» de cualquier pantalla (M07): cambiar de una vez lo que se ve
  * (las del sistema o las tuyas) y guardar lo que tienes puesto con un nombre.
  * El estado lo lleva `useVistasGuardadas`; las reglas, `lib/admin/vistas-guardadas`.
- * Mismo aspecto que el de la Lista de Pedidos (`OrdersTab/VistasPedidosMenu`).
+ * Lo usan la Lista de Pedidos (P08) y las demás pantallas con vistas.
  */
 
 import { useId, useState } from "react";

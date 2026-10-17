@@ -1,5 +1,17 @@
 "use client";
 
+/**
+ * Tickets de los pedidos elegidos en la Lista: vista previa en la ventana y,
+ * al imprimir, los MISMOS tickets desde un portal hijo de `<body>`.
+ *
+ * 17-10 (P12): salían en hoja blanca. `#print-content` vivía dentro del
+ * AdminModal y el `@media print` de globals.css esconde `.fixed` (el diálogo
+ * lo es) y todo `body *`. Ahora la hoja es un portal con la receta de
+ * `imprimir-pedidos.ts`, en claro aunque el panel esté oscuro. Se fueron las
+ * «notas internas» (leían `adminNotes`, que el servidor no manda; las notas
+ * viven en el historial y son internas: no van en el ticket del cliente).
+ */
+import { createPortal } from "react-dom";
 import { SectionTitle } from "@buleje/design-system";
 import { Printer, Store } from "@buleje/design-system/icons";
 import type { DbOrder } from "@/lib/jsondb";
@@ -9,6 +21,11 @@ import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
+import { usePanelTokens } from "@/components/admin/shared/use-panel-tokens";
+import { cssImpresion, imprimirEnClaro, nombreDelPdf } from "./imprimir-pedidos";
+
+const ID_TICKETS = "pedidos-hoja-tickets";
+const CSS_TICKETS = cssImpresion(ID_TICKETS, "size: 80mm auto; margin: 4mm");
 
 interface OrdersPrintPreviewProps {
   orders: DbOrder[];
@@ -26,35 +43,67 @@ export function OrdersPrintPreview({
   onClose,
 }: OrdersPrintPreviewProps) {
   const selectedOrders = orders.filter((o) => selectedOrderIds.has(o.id));
+  const tokens = usePanelTokens(true);
+  const n = selectedOrders.length;
+  const tickets = selectedOrders.map((order) => (
+    <TicketPedido key={order.id} order={order} storeName={storeName} driverColor={driverColor} />
+  ));
 
   return (
+    <>
     <AdminModal
       open
       onClose={onClose}
       title="Vista previa de impresión"
-      description={`${selectedOrderIds.size} pedido${selectedOrderIds.size > 1 ? "s" : ""} seleccionado${selectedOrderIds.size > 1 ? "s" : ""}`}
+      description={`${n} ${n === 1 ? "pedido elegido" : "pedidos elegidos"}`}
       icon={Printer}
       size="planilla"
       claveVentana="pedidos-vista-previa-impresion"
       footer={
         <ModalFooter>
-          <button onClick={onClose} className={button({ variant: "secondary" })}>
+          <button type="button" onClick={onClose} className={button({ variant: "secondary" })}>
             Cancelar
           </button>
-          <button onClick={() => window.print()} className={button({ variant: "primary" })}>
-            <Printer className="h-4 w-4" />
+          <button
+            type="button"
+            onClick={() => imprimirEnClaro(nombreDelPdf("tickets", new Date()))}
+            disabled={n === 0}
+            className={button({ variant: "primary" })}
+          >
+            <Printer className="h-4 w-4" aria-hidden />
             Imprimir
           </button>
         </ModalFooter>
       }
     >
       <div className={MODAL_BODY}>
-        <div id="print-content" className="space-y-6">
-          {selectedOrders.map((order) => {
-            const driver = responsableDe(order);
-            return (
+        <div className="space-y-6">{tickets}</div>
+      </div>
+    </AdminModal>
+    {typeof document !== "undefined" &&
+      createPortal(
+        <div id={ID_TICKETS} className="hidden print:block" style={tokens} aria-hidden>
+          <style>{CSS_TICKETS}</style>
+          {tickets}
+        </div>,
+        document.body,
+      )}
+    </>
+  );
+}
+
+function TicketPedido({
+  order,
+  storeName,
+  driverColor,
+}: {
+  order: DbOrder;
+  storeName: string;
+  driverColor: (name: string) => string;
+}) {
+  const driver = responsableDe(order);
+  return (
               <div
-                key={order.id}
                 className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg p-4 print:break-after-page print:border-0 print:rounded-none"
                 style={{ pageBreakAfter: "always" }}
               >
@@ -174,17 +223,6 @@ export function OrdersPrintPreview({
                     <p className="text-xs text-[var(--data-warning-500)]">{order.notes}</p>
                   </div>
                 )}
-                {(order as DbOrder & { adminNotes?: string }).adminNotes && (
-                  <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-lg p-2 mb-3">
-                    <p className="text-xs font-bold text-[var(--data-warning-500)] mb-0.5">
-                      Notas internas:
-                    </p>
-                    <p className="text-xs text-[var(--data-warning-500)] whitespace-pre-wrap">
-                      {(order as DbOrder & { adminNotes?: string }).adminNotes}
-                    </p>
-                  </div>
-                )}
-
                 {/* Footer */}
                 <div className="text-center pt-3 border-t border-dashed border-[var(--rule-base)]">
                   <p className="text-xs text-[var(--text-secondary)]">¡Gracias por tu compra!</p>
@@ -193,10 +231,5 @@ export function OrdersPrintPreview({
                   </p>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
-    </AdminModal>
   );
 }

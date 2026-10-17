@@ -17,6 +17,7 @@ import { Casilla } from "@/components/ui-system/Casilla";
 import { cn } from "@/lib/utils";
 import type { OrderFilters, FiltersAction, OrderSource } from "./types";
 import { STATUS_LABELS } from "./types";
+import { SIN_REPARTIDOR } from "./filtrar-pedidos";
 import type { OrderStatus } from "@/lib/jsondb";
 
 interface OrdersFiltersProps {
@@ -140,7 +141,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
           </div>
 
           {/* Repartidor — la barra lo muestra ≥640px; acá es su casa en el celular. */}
-          {repartidores.length > 0 && (
+          {(repartidores.length > 0 || repartidor === SIN_REPARTIDOR) && (
             <div className="space-y-2">
               <label htmlFor={repartidorId} className="block text-sm font-bold text-[var(--text-primary)]">Repartidor</label>
               <select
@@ -150,6 +151,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
                 className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary"
               >
                 <option value="">Todos los repartidores</option>
+                <option value={SIN_REPARTIDOR}>Sin repartidor</option>
                 {repartidores.map((r) => (
                   <option key={r} value={r}>{r}</option>
                 ))}

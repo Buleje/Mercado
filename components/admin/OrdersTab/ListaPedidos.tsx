@@ -15,7 +15,7 @@
  *
  * En el celular la tabla se vuelve tarjetas sola (`useMobileTableCards`).
  */
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown } from "@buleje/design-system/icons";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
@@ -24,7 +24,6 @@ import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import type { DbOrder } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import {
-  ORDEN_INICIAL,
   ordenarPedidos,
   siguienteOrden,
   type ColumnaOrden,
@@ -42,6 +41,9 @@ interface ListaPedidosProps {
   loading: boolean;
   /** Lo que se ve sin pedidos (`VacioPedidos`: dice si es por los filtros y qué hacer). */
   vacio: ReactNode;
+  /** Vive en `usePedidos`: lo guardan las vistas (P08) y lo sigue la hoja impresa (P12). */
+  orden: Orden;
+  onOrden: Dispatch<SetStateAction<Orden>>;
   elegidos: ReadonlySet<string>;
   onElegir: (id: string) => void;
   onElegirTodos: (ids: string[]) => void;
@@ -97,12 +99,13 @@ export function ListaPedidos({
   pedidos,
   loading,
   vacio,
+  orden,
+  onOrden,
   elegidos,
   onElegir,
   onElegirTodos,
   onSelectOrder,
 }: ListaPedidosProps) {
-  const [orden, setOrden] = useState<Orden>(ORDEN_INICIAL);
   /* El reloj de «Sin avanzar»: un minuto, como las tarjetas del tablero. */
   const [ahora, setAhora] = useState(() => Date.now());
   useEffect(() => {
@@ -117,7 +120,7 @@ export function ListaPedidos({
   const conRepartidor = pedidos.some((o) => responsableDe(o));
   const todos = pedidos.every((o) => elegidos.has(o.id));
   const algunos = !todos && pedidos.some((o) => elegidos.has(o.id));
-  const ordenar = (c: ColumnaOrden) => setOrden((o) => siguienteOrden(o, c));
+  const ordenar = (c: ColumnaOrden) => onOrden((o) => siguienteOrden(o, c));
 
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border">

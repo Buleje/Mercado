@@ -18,6 +18,8 @@
  * misma regla que la Lista y el detalle (`../siguiente-paso.ts`); y lo que
  * falta para moverlo (teléfono, dirección, repartidor) en una línea (P26).
  * El repartidor se leía de `deliveryDriver`, que nunca se guardó.
+ * Sin permiso para mover (almacenero) no hay botón de paso ni cobrar; el «⋯»
+ * suma los papeles del pedido (`../accesos-pedido.ts`).
  */
 import { memo, useState } from "react";
 import {
@@ -39,7 +41,9 @@ import { haversineKm, parseGps } from "@/lib/admin-helpers";
 import { formatCurrency } from "@/lib/format";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
+import { accesosDelPedido } from "../accesos-pedido";
 import ManualDeliveryModal from "../ManualDeliveryModal";
+import { usePermisosPedidos } from "../permisos-pedidos";
 import {
   cobroDe,
   loQueFalta,
@@ -130,6 +134,7 @@ export const TarjetaPedido = memo(function TarjetaPedido(props: TarjetaPedidoPro
     onManualDelivery,
   } = props;
   const [manualOpen, setManualOpen] = useState(false);
+  const { mover, ...permisos } = usePermisosPedidos();
   const ms = msEnEstado(order, nowMs);
   const nivel = nivelDeEspera(ms);
   const espera = textoDeEspera(ms);
@@ -141,6 +146,8 @@ export const TarjetaPedido = memo(function TarjetaPedido(props: TarjetaPedidoPro
   const siguiente = siguientePaso(order);
   const yapePorVerificar = siguiente?.verificaYape === true;
   const IconoPaso = siguiente ? (ICONO_PASO[siguiente.a] ?? Check) : Check;
+  /** El botón de paso, sólo si el rol puede mover el pedido. */
+  const paso = mover ? siguiente : null;
 
   const confirmarManual = (reason: string) => {
     setManualOpen(false);
@@ -149,7 +156,7 @@ export const TarjetaPedido = memo(function TarjetaPedido(props: TarjetaPedidoPro
   };
 
   const otras: MenuAccion[] = [
-    ...(conDeuda
+    ...(mover && conDeuda
       ? [
           {
             id: "cobrado",
@@ -160,7 +167,7 @@ export const TarjetaPedido = memo(function TarjetaPedido(props: TarjetaPedidoPro
           },
         ]
       : []),
-    ...(order.status === "confirmado" || order.status === "preparando"
+    ...(mover && (order.status === "confirmado" || order.status === "preparando")
       ? [
           {
             id: "manual",
@@ -171,6 +178,7 @@ export const TarjetaPedido = memo(function TarjetaPedido(props: TarjetaPedidoPro
           },
         ]
       : []),
+    ...accesosDelPedido(order, permisos),
   ];
 
   return (
@@ -240,21 +248,23 @@ export const TarjetaPedido = memo(function TarjetaPedido(props: TarjetaPedidoPro
         )}
       </div>
 
-      {siguiente && (
+      {(paso || otras.length > 0) && (
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={yapePorVerificar ? onVerifyYape : () => onUpdateStatus(siguiente.a)}
-            title={siguiente.ayuda}
-            className={button({
-              variant: "primary",
-              className: "min-w-0 flex-1 gap-1.5 rounded-xl px-3",
-            })}
-          >
-            <IconoPaso className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="truncate">{siguiente.corto}</span>
-          </button>
-          {yapePorVerificar && (
+          {paso && (
+            <button
+              type="button"
+              onClick={yapePorVerificar ? onVerifyYape : () => onUpdateStatus(paso.a)}
+              title={paso.ayuda}
+              className={button({
+                variant: "primary",
+                className: "min-w-0 flex-1 gap-1.5 rounded-xl px-3",
+              })}
+            >
+              <IconoPaso className="h-4 w-4 shrink-0" aria-hidden />
+              <span className="truncate">{paso.corto}</span>
+            </button>
+          )}
+          {paso && yapePorVerificar && (
             <button
               type="button"
               onClick={onRejectYape}
@@ -272,7 +282,7 @@ export const TarjetaPedido = memo(function TarjetaPedido(props: TarjetaPedidoPro
               actions={otras}
               soloIcono
               size="md"
-              className="w-12 shrink-0"
+              className="ml-auto w-12 shrink-0"
             />
           )}
         </div>

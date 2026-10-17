@@ -10,9 +10,28 @@ interface UseOrderActionsProps {
   setOrders: React.Dispatch<React.SetStateAction<DbOrder[]>>;
   setDetailOrder: React.Dispatch<React.SetStateAction<DbOrder | null>>;
   load: () => Promise<void>;
+  /**
+   * Si la sesión puede borrar pedidos (sólo gestión: `permisos-pedidos.ts`).
+   * Sin permiso, «Yape falso» cancela con motivo en vez de borrar: el DELETE
+   * le daba 403 al cajero y el pedido igual desaparecía de su pantalla.
+   */
+  puedeBorrar?: boolean;
 }
 
-export function useOrderActions({ setOrders, setDetailOrder, load }: UseOrderActionsProps) {
+/** El motivo con que se cancela un Yape que no llegó (está en `REJECTION_TEMPLATES`). */
+export const MOTIVO_YAPE_FALSO = "Pago no verificado";
+
+async function errorDe(res: Response, porDefecto: string): Promise<string> {
+  const cuerpo = (await res.json().catch(() => ({}))) as { error?: string };
+  return cuerpo.error ?? porDefecto;
+}
+
+export function useOrderActions({
+  setOrders,
+  setDetailOrder,
+  load,
+  puedeBorrar = true,
+}: UseOrderActionsProps) {
   const [adminNote, setAdminNote] = useState("");
   const [savingNote, setSavingNote] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
@@ -75,9 +94,30 @@ export function useOrderActions({ setOrders, setDetailOrder, load }: UseOrderAct
 
   const verifyYape = (id: string) => patchOrder(id, { status: "confirmado" });
 
+  /**
+   * «Yape falso». Gestión: borra el pedido, como siempre (B6, decide Brandon si
+   * pasa a cancelar para todos). Sin permiso de borrar: abre «Rechazar pedido»
+   * con el motivo puesto, que lo cancela y deja quién y por qué en el historial.
+   * Antes no miraba la respuesta: con un 403 el pedido se iba de la pantalla
+   * aunque seguía vivo.
+   */
   const rejectYape = async (id: string) => {
+    if (!puedeBorrar) {
+      setShowRejectModal(id);
+      setRejectReason(MOTIVO_YAPE_FALSO);
+      return;
+    }
     if (!confirm("¿Rechazar este pedido? El Yape es inválido y se eliminará el pedido.")) return;
-    await tenantFetch(`/api/orders/${id}`, { method: "DELETE" });
+    try {
+      const res = await tenantFetch(`/api/orders/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error(await errorDe(res, "No se pudo rechazar el pedido"));
+        return;
+      }
+    } catch {
+      toast.error("No se pudo rechazar el pedido: revisa tu conexión");
+      return;
+    }
     setOrders(prev => prev.filter(o => o.id !== id));
     setDetailOrder(prev => prev?.id === id ? null : prev);
   };
@@ -124,10 +164,22 @@ export function useOrderActions({ setOrders, setDetailOrder, load }: UseOrderAct
     setRejectReason("");
   };
 
+  /** Borrar desde Archivados. Antes cerraba y recargaba sin mirar si el servidor lo borró. */
   const confirmDelete = async () => {
     if (!confirmDeleteId) return;
-    await tenantFetch(`/api/orders/${confirmDeleteId}`, { method: "DELETE" });
-    setConfirmDeleteId(null);
+    try {
+      const res = await tenantFetch(`/api/orders/${confirmDeleteId}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error(await errorDe(res, "No se pudo eliminar el pedido"));
+        return;
+      }
+      toast.success("Pedido eliminado");
+    } catch {
+      toast.error("No se pudo eliminar el pedido: revisa tu conexión");
+      return;
+    } finally {
+      setConfirmDeleteId(null);
+    }
     void load();
   };
 

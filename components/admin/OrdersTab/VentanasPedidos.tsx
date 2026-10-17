@@ -4,12 +4,14 @@
  * Las ventanas de Pedidos y reparto: el formulario de filtros, el detalle de
  * un pedido (se abre desde Tablero, Lista y Archivados), la vista previa de
  * impresión de los elegidos, borrar y rechazar. Salieron de `index.tsx`
- * (10-10) sin cambiar nada de lo que hacen.
+ * (10-10) sin cambiar nada de lo que hacen. 17-10: la revisión y el informe
+ * del cambio en lote (P09).
  */
 import type { Pedidos } from "./hooks/usePedidos";
 import { repartidoresConPedidos } from "./filtrar-pedidos";
 import { OrdersDetailPanel } from "./OrdersDetailPanel";
 import { OrdersFilters } from "./OrdersFilters";
+import { LotePedidosModal } from "./LotePedidosModal";
 import { DeleteConfirmModal, RejectModal } from "./OrdersModals";
 import { OrdersPrintPreview } from "./OrdersPrintPreview";
 
@@ -59,6 +61,15 @@ export function VentanasPedidos({ p }: { p: Pedidos }) {
           storeName={datos.storeName}
           driverColor={r.driverColor}
           onClose={() => p.setImpresionAbierta(false)}
+        />
+      )}
+
+      {p.bulk.lote && (
+        <LotePedidosModal
+          lote={p.bulk.lote}
+          onConfirmar={p.bulk.confirmarLote}
+          onReintentar={p.bulk.reintentarLote}
+          onClose={p.bulk.cerrarLote}
         />
       )}
 

@@ -28,6 +28,8 @@ export type FiltersAction =
   | { type: "SET_CUSTOMER_SEARCH"; value: string }
   | { type: "SET_HAS_DEBT"; value: boolean }
   | { type: "SET_HAS_ADMIN_NOTES"; value: boolean }
+  /** Pone todos de una vez (una vista guardada, P08). */
+  | { type: "SET_ALL"; filters: OrderFilters }
   | { type: "CLEAR" };
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {

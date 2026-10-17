@@ -26,6 +26,7 @@ import { formatCurrency } from "@/lib/format";
 import type { DbOrder } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { TINTA_COBRO, cobroDe, responsableDe, siguientePaso } from "../siguiente-paso";
+import { usePermisosPedidos } from "../permisos-pedidos";
 import { textoDeEspera } from "../tiempo-en-estado";
 import { STATUS_COLORS, STATUS_LABELS } from "../types";
 
@@ -141,9 +142,10 @@ function pasoDe({
   return { ayuda: paso.ayuda, principal, segunda };
 }
 
-/** La fila del siguiente paso: el botón que lo da y, si hay, el de al lado. */
+/** La fila del siguiente paso: el botón que lo da y, si hay, el de al lado. Sin permiso de mover, no está. */
 export function DetallePasoSiguiente(props: PasoProps): ReactNode {
-  const paso = pasoDe(props);
+  const { mover } = usePermisosPedidos();
+  const paso = mover ? pasoDe(props) : null;
   if (!paso) return null;
   return (
     <section

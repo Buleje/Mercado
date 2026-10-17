@@ -15,7 +15,13 @@ import { limaDateKey } from "@/lib/utils";
 import { responsableDe } from "./siguiente-paso";
 import type { OrderFilters } from "./types";
 
-type PedidoConExtras = DbOrder & { adminNotes?: string; source?: string };
+type PedidoConExtras = DbOrder & { source?: string };
+
+/**
+ * El valor del filtro de repartidor que pide los pedidos SIN repartidor (la
+ * vista «Sin asignar», P08). Ningún nombre real empieza con dos guiones bajos.
+ */
+export const SIN_REPARTIDOR = "__sin_repartidor__";
 
 /** Los estados de un pedido en marcha, en el orden del tablero. */
 export const ESTADOS_EN_MARCHA = [
@@ -45,11 +51,18 @@ export function diaDelPedido(o: Pick<DbOrder, "createdAt">): string {
  * pestaña: fecha por el día de Lima (`diaDelPedido`), montos
  * inclusivos, búsqueda por nombre, teléfono o número, `source` ausente =
  * «direct» (Tienda personal).
+ *
+ * «Con notas internas» (B7, 17-10): las notas viven en el historial del
+ * pedido, no en el pedido; antes se miraba `adminNotes`, que el servidor
+ * nunca manda, y el filtro no encontraba nada. `conNotas` son los ids con al
+ * menos una nota según `/api/orders/historial`; `null` = todavía no se sabe
+ * (cargando o falló) y el filtro no se aplica — quien llama lo avisa.
  */
 export function pedidosEnMarcha(
   orders: readonly DbOrder[],
   f: OrderFilters,
   repartidor: string,
+  conNotas: ReadonlySet<string> | null = null,
 ): DbOrder[] {
   const q = f.customerSearch.toLowerCase();
   const min = f.amountMin ? parseFloat(f.amountMin) : null;
@@ -74,9 +87,13 @@ export function pedidosEnMarcha(
       return false;
     }
     if (f.hasDebt && o.deuda !== true) return false;
-    if (f.hasAdminNotes && !o.adminNotes) return false;
+    if (f.hasAdminNotes && conNotas && !conNotas.has(o.id)) return false;
     if (f.source && (o.source ?? "direct") !== f.source) return false;
-    if (repartidor && responsableDe(o) !== repartidor) return false;
+    if (repartidor === SIN_REPARTIDOR) {
+      if (responsableDe(o)) return false;
+    } else if (repartidor && responsableDe(o) !== repartidor) {
+      return false;
+    }
     return true;
   });
 }
@@ -199,6 +216,37 @@ export function criteriosDelModal(
   }
   if (f.hasDebt) lista.push({ clave: "deuda", texto: "Por cobrar" });
   if (f.hasAdminNotes) lista.push({ clave: "notas", texto: "Con notas internas" });
-  if (repartidor) lista.push({ clave: "repartidor", texto: `Lo lleva ${repartidor}` });
+  if (repartidor) {
+    lista.push({
+      clave: "repartidor",
+      texto: repartidor === SIN_REPARTIDOR ? "Sin repartidor" : `Lo lleva ${repartidor}`,
+    });
+  }
+  return lista;
+}
+
+const PAGO: Record<Exclude<OrderFilters["paymentMethod"], "">, string> = {
+  yape: "Yape",
+  efectivo: "Efectivo",
+};
+
+/**
+ * Todo lo que está filtrando, en palabras, para el encabezado de lo impreso
+ * (P12: «lo impreso corresponde al filtro visible»). Además de lo del
+ * formulario: cada estado por su nombre, el medio de pago y la búsqueda.
+ * Vacío = «todos los pedidos en marcha».
+ */
+export function filtrosEnTexto(
+  f: OrderFilters,
+  repartidor: string,
+  nombreEstado: (s: OrderStatus) => string,
+): string[] {
+  const lista: string[] = [];
+  if (f.statuses.size > 0) lista.push([...f.statuses].map(nombreEstado).join(" o "));
+  if (f.paymentMethod) lista.push(`Pago con ${PAGO[f.paymentMethod]}`);
+  if (f.customerSearch.trim()) lista.push(`Busca «${f.customerSearch.trim()}»`);
+  for (const c of criteriosDelModal(f, repartidor)) {
+    if (c.clave !== "estados") lista.push(c.texto);
+  }
   return lista;
 }

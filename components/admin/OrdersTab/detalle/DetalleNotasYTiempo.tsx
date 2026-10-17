@@ -21,6 +21,7 @@ import type { DbOrder } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import type { EventoPedido } from "../hooks/useHistorialPedidos";
 import { STATUS_LABELS } from "../types";
+import { usePermisosPedidos } from "../permisos-pedidos";
 
 function Plegable({
   titulo,
@@ -81,6 +82,8 @@ export function DetalleNotas({
   onNota,
   onGuardar,
 }: NotasProps) {
+  /* Anotar es un PATCH del pedido: el almacenero las lee, no las escribe. */
+  const { mover } = usePermisosPedidos();
   return (
     <Plegable
       titulo="Notas internas"
@@ -112,25 +115,30 @@ export function DetalleNotas({
           ))}
         </ul>
       )}
-      <div className="flex items-center gap-2">
-        <input
-          value={nota}
-          onChange={(e) => onNota(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !guardando && onGuardar(orderId)}
-          placeholder="Agregar nota interna…"
-          aria-label="Nota interna nueva"
-          maxLength={2000}
-          className="h-12 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-primary"
-        />
-        <button
-          type="button"
-          onClick={() => onGuardar(orderId)}
-          disabled={guardando || !nota.trim()}
-          className={button({ variant: "primary", className: "rounded-xl px-4" })}
-        >
-          {guardando ? "…" : "Guardar"}
-        </button>
-      </div>
+      {!mover && notas.length === 0 && (
+        <p className="text-sm text-[var(--text-secondary)]">Sin notas.</p>
+      )}
+      {mover && (
+        <div className="flex items-center gap-2">
+          <input
+            value={nota}
+            onChange={(e) => onNota(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !guardando && onGuardar(orderId)}
+            placeholder="Agregar nota interna…"
+            aria-label="Nota interna nueva"
+            maxLength={2000}
+            className="h-12 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-primary"
+          />
+          <button
+            type="button"
+            onClick={() => onGuardar(orderId)}
+            disabled={guardando || !nota.trim()}
+            className={button({ variant: "primary", className: "rounded-xl px-4" })}
+          >
+            {guardando ? "…" : "Guardar"}
+          </button>
+        </div>
+      )}
     </Plegable>
   );
 }

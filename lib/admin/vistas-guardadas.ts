@@ -6,9 +6,9 @@
  * borrar la tuya no cambia la de nadie del equipo, y «Estándar» siempre te
  * devuelve a la de fábrica.
  *
- * Las mismas reglas que la Lista de Pedidos (`OrdersTab/vistas-pedidos.ts`,
- * P08): nombre de hasta 40 letras, no se llama como una del sistema, tope de
- * 12, el mismo nombre la reemplaza. Pedidos puede mudarse a esto.
+ * La Lista de Pedidos (P08, `OrdersTab/vistas-pedidos.ts`) ya las usa:
+ * nombre de hasta 40 letras, no se llama como una del sistema, tope de 12,
+ * el mismo nombre la reemplaza.
  *
  * Genérico y puro (sin React ni `window`): cada pantalla dice qué es su estado
  * y cómo se valida lo leído (`__tests__/vistas-guardadas.test.ts`).

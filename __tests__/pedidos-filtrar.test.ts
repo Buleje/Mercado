@@ -12,10 +12,12 @@ import {
   cuantosPorEstado,
   diaDelPedido,
   esArchivado,
+  filtrosEnTexto,
   filtrosPuestos,
   pedidosArchivados,
   pedidosEnMarcha,
   repartidoresConPedidos,
+  SIN_REPARTIDOR,
 } from "@/components/admin/OrdersTab/filtrar-pedidos";
 
 const sinFiltros = (): OrderFilters => ({
@@ -144,5 +146,49 @@ describe("conteos de la barra", () => {
   it("cuenta los filtros puestos, el repartidor incluido", () => {
     expect(filtrosPuestos(sinFiltros(), "")).toBe(0);
     expect(filtrosPuestos({ ...sinFiltros(), statuses: new Set(["pendiente", "confirmado"]), hasDebt: true }, "Ana")).toBe(4);
+  });
+});
+
+describe("17-10: con notas, sin repartidor y filtros en palabras", () => {
+  const lote = [
+    pedido({ status: "confirmado", riderName: "Juan" }),
+    pedido({ status: "preparando" }),
+    pedido({ status: "pendiente", adminNotes: "vieja, ya nadie la escribe" }),
+  ];
+
+  it("«con notas» sigue al historial, no a adminNotes (B7)", () => {
+    const f = { ...sinFiltros(), hasAdminNotes: true };
+    const conNotas = new Set([lote[1].id]);
+    expect(pedidosEnMarcha(lote, f, "", conNotas).map((o) => o.id)).toEqual([lote[1].id]);
+    // Sin saber todavía (cargando o falló): no esconde nada; quien llama lo avisa.
+    expect(pedidosEnMarcha(lote, f, "", null)).toHaveLength(3);
+    // Sin el filtro, el set no cambia nada.
+    expect(pedidosEnMarcha(lote, sinFiltros(), "", conNotas)).toHaveLength(3);
+  });
+
+  it("«Sin repartidor» deja sólo los que nadie lleva", () => {
+    const sin = pedidosEnMarcha(lote, sinFiltros(), SIN_REPARTIDOR);
+    expect(sin.map((o) => o.status)).toEqual(["preparando", "pendiente"]);
+  });
+
+  it("lo impreso dice cada filtro puesto, también los de la barra (P12)", () => {
+    const f = {
+      ...sinFiltros(),
+      statuses: new Set<OrderStatus>(["confirmado", "preparando"]),
+      paymentMethod: "yape" as const,
+      customerSearch: " rosa ",
+      hasDebt: true,
+      dateFrom: "2026-10-17",
+    };
+    const nombre = (s: OrderStatus) => ({ confirmado: "Confirmado", preparando: "Preparando" })[s as "confirmado"] ?? s;
+    expect(filtrosEnTexto(f, SIN_REPARTIDOR, nombre)).toEqual([
+      "Confirmado o Preparando",
+      "Pago con Yape",
+      "Busca «rosa»",
+      "Desde el 17/10",
+      "Por cobrar",
+      "Sin repartidor",
+    ]);
+    expect(filtrosEnTexto(sinFiltros(), "", nombre)).toEqual([]);
   });
 });
