@@ -1,32 +1,22 @@
 "use client";
 
-import { DataTable, SectionTitle } from "@buleje/design-system";
+import { SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { Fragment, useId, useRef, useState } from "react";
-import {
-  X, ChevronRight, ChevronLeft, Check,
-  Loader2, AlertTriangle, Package,
-} from "@buleje/design-system/icons";
+import { useId, useRef, useState } from "react";
+import { X, ChevronRight, ChevronLeft, Check, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { formatCurrency } from "@/lib/format";
-import VenceLoteCampo from "@/components/admin/compras/VenceLoteCampo";
-import { errorDeVencimiento, pideLote, textoVence } from "@/lib/compras/lotes-recepcion";
-import { faltaConformidad, notasConConformidad, pereciblesSinVence, type ConformidadServicio } from "@/lib/compras/conformidad-recepcion";
-import ConformidadDeLinea from "@/components/admin/ordenes-compra/recepciones/ConformidadDeLinea";
+import { errorDeVencimiento } from "@/lib/compras/lotes-recepcion";
+import { faltaConformidad, notasConConformidad, pereciblesSinVence } from "@/lib/compras/conformidad-recepcion";
 import { useControlesDeProductos } from "@/components/admin/ordenes-compra/recepciones/use-controles-de-productos";
-import { lineasDeSeguimiento, listarCorto, type SeguimientoOC } from "@/lib/compras/ciclo-oc";
-
-type OCItem = {
-  productId: number;
-  name: string;
-  quantity: number;
-  unitCost: number;
-  unit: string;
-};
+import { lineasDeSeguimiento, type SeguimientoOC } from "@/lib/compras/ciclo-oc";
+import { conVence, type CondicionItem, type OCItem, type ReceivedItem } from "./oc-recepcion-tipos";
+import OCRecepcionPaso1 from "./OCRecepcionPaso1";
+import OCRecepcionPaso2 from "./OCRecepcionPaso2";
+import OCRecepcionPaso3 from "./OCRecepcionPaso3";
 
 interface OCRecepcionModalProps {
   ocId: string;
@@ -47,40 +37,11 @@ interface OCRecepcionModalProps {
   onClose: () => void;
 }
 
-/** Los mismos estados que acepta el endpoint y que ya usa Recepción. */
-type CondicionItem = "ok" | "dañado" | "vencido" | "faltante";
-
-const CONDICIONES: Array<{ v: CondicionItem; l: string }> = [
-  { v: "ok", l: "Bien" },
-  { v: "dañado", l: "Dañado" },
-  { v: "vencido", l: "Vencido" },
-];
-
-type ReceivedItem = {
-  productId: number;
-  name: string;
-  /** Lo que se espera en ESTE viaje: lo pedido menos lo que ya llegó o no llegará. */
-  orderedQty: number;
-  /** Lo que llegó en recepciones anteriores y lo pedido en la orden (para «ya llegó X de Y»). */
-  yaLlego: number;
-  pedidoTotal: number;
-  receivedQty: number;
-  unitPrice: number;
-  originalPrice: number;
-  unit: string;
-  noLlego: boolean;
-  /** Cómo llegó la mercadería. Lo dañado y lo vencido no entra a stock vendible. */
-  condition: CondicionItem;
-  /** «Vence» (YYYY-MM-DD): con fecha, lo que entra a stock nace como lote. */
-  expiryDate?: string;
-  lote?: string;
-} & ConformidadServicio;
-
-/** La fecha y el lote viajan solo si la línea entra a stock: la merma no vence. */
-function conVence(i: ReceivedItem): boolean {
-  return !i.noLlego && pideLote(i);
-}
-
+/**
+ * «Recibir la orden» en 3 pasos (contar → precios de la factura → confirmar).
+ * Cada paso vive en `OCRecepcionPaso{1,2,3}.tsx` y los tipos en `oc-recepcion-tipos.ts`;
+ * acá queda el estado, la validación y el POST a `/api/compras/recepciones`.
+ */
 export default function OCRecepcionModal({ ocId, supplier, items, seguimiento, onComplete, onClose }: OCRecepcionModalProps) {
   useScrollLock(true);
   const titleId = useId();
@@ -233,269 +194,34 @@ export default function OCRecepcionModal({ ocId, supplier, items, seguimiento, o
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {/* Step 1: Verify Items */}
           {step === 1 && (
-            <>
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
-                <Package className="h-4 w-4 text-primary" />
-                Cuenta lo que llegó
-              </p>
-              {completos.length > 0 && (
-                <p className="text-sm text-[var(--text-secondary)]" data-qa="recepcion-completos">
-                  Ya llegó todo de {listarCorto(completos.map((l) => l.nombre))}: no se vuelve a contar.
-                </p>
-              )}
-              {receivedItems.length === 0 && (
-                <p className="text-sm font-semibold text-[var(--data-success-ink)]">
-                  Ya llegó todo lo pedido. Si la orden sigue abierta, ciérrala desde «⋯» › Estado.
-                </p>
-              )}
-              <div className="overflow-x-auto">
-                <DataTable className="w-full">
-                  <thead>
-                    <tr>
-                      <th>Producto</th>
-                      <th className="text-center">{completos.length > 0 || receivedItems.some((i) => i.yaLlego > 0) ? "Falta" : "Pedido"}</th>
-                      <th className="text-center">Recibido</th>
-                      <th className="text-center">Dif.</th>
-                      <th className="text-center">Cómo llegó</th>
-                      <th className="text-center">No llegó</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {receivedItems.map((item, idx) => {
-                      const diff = item.receivedQty - item.orderedQty;
-                      return (
-                        <Fragment key={item.productId}>
-                        <tr className={cn(!item.noLlego && item.condition === "ok" && item.receivedQty > 0 ? "" : "border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50")}>
-                          <td className="font-semibold">
-                            {item.name}
-                          </td>
-                          <td className="text-center text-[var(--text-secondary)] dark:text-muted">
-                            {item.orderedQty} {item.unit}
-                            {item.yaLlego > 0 && (
-                              <span className="block text-xs">ya llegó {item.yaLlego} de {item.pedidoTotal}</span>
-                            )}
-                          </td>
-                          <td className="text-center">
-                            <input
-                              type="number"
-                              min={0}
-                              max={item.orderedQty}
-                              value={item.receivedQty}
-                              onChange={(e) => {
-                                const val = Math.max(0, parseInt(e.target.value) || 0);
-                                if (val > item.orderedQty) {
-                                  setError(
-                                    `«${item.name}»: ${item.yaLlego > 0 ? `ya llegaron ${item.yaLlego} de ${item.pedidoTotal}, faltan` : "pediste"} ${item.orderedQty}. ` +
-                                    "Si el proveedor mandó de más, anótalo en la nota del paso 3: lo de más no entra por esta orden.",
-                                  );
-                                  return;
-                                }
-                                setError(null);
-                                updateItem(idx, { receivedQty: val, noLlego: false });
-                              }}
-                              aria-label={`Cantidad recibida de ${item.name}`}
-                              className="w-16 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                              disabled={item.noLlego}
-                            />
-                          </td>
-                          <td className="text-center">
-                            {diff !== 0 && (
-                              <span className={cn("text-sm font-bold", diff < 0 ? "text-[var(--data-error-ink)]" : "text-[var(--data-success-ink)]")}>
-                                {diff < 0 ? `Faltaron ${Math.abs(diff)}` : `+${diff}`}
-                              </span>
-                            )}
-                          </td>
-                          {/* Lo dañado o vencido llegó, pero no se puede
-                              vender: el backend lo registra como merma en vez
-                              de sumarlo al stock. */}
-                          <td className="text-center">
-                            <label className="sr-only" htmlFor={`cond-${item.productId}`}>
-                              Cómo llegó {item.name}
-                            </label>
-                            <select
-                              id={`cond-${item.productId}`}
-                              value={item.condition}
-                              disabled={item.noLlego}
-                              onChange={(e) => updateItem(idx, { condition: e.target.value as CondicionItem })}
-                              className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary disabled:opacity-50"
-                            >
-                              {CONDICIONES.map((c) => (
-                                <option key={c.v} value={c.v}>{c.l}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="text-center">
-                            <input
-                              type="checkbox"
-                              checked={item.noLlego}
-                              onChange={(e) => updateItem(idx, { noLlego: e.target.checked })}
-                              className="h-4 w-4 accent-primary"
-                              aria-label={`${item.name} no llegó`}
-                            />
-                          </td>
-                        </tr>
-                        {!item.noLlego && item.condition === "ok" && item.receivedQty > 0 && (
-                          <tr>
-                            <td colSpan={6} className="pb-2">
-                              <ConformidadDeLinea
-                                id={`oc-conf-${item.productId}`}
-                                control={controles[idx]}
-                                fila={item}
-                                onChange={(patch) => updateItem(idx, patch)}
-                              />
-                              {controles[idx] !== "servicio" && <VenceLoteCampo
-                                id={`oc-vence-${item.productId}`}
-                                producto={item.name}
-                                valor={item}
-                                ayuda={idx === 0}
-                                onChange={(patch) => updateItem(idx, patch)}
-                              />}
-                            </td>
-                          </tr>
-                        )}
-                        </Fragment>
-                      );
-                    })}
-                  </tbody>
-                </DataTable>
-              </div>
-              {faltaC22 && <p className="text-sm font-semibold text-[var(--data-warning-ink)]">{faltaC22}</p>}
-              {error && <p role="alert" className="text-sm font-semibold text-[var(--data-error-ink)]">{error}</p>}
-            </>
+            <OCRecepcionPaso1
+              completos={completos}
+              receivedItems={receivedItems}
+              controles={controles}
+              faltaC22={faltaC22}
+              error={error}
+              setError={setError}
+              updateItem={updateItem}
+            />
           )}
 
           {/* Step 2: Adjust Prices */}
           {step === 2 && (
-            <>
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" />
-                Ajustar precios segun factura
-              </p>
-              <div className="overflow-x-auto">
-                <DataTable className="w-full">
-                  <thead>
-                    <tr>
-                      <th>Producto</th>
-                      <th className="text-right">Precio anterior</th>
-                      <th className="text-center">Precio factura</th>
-                      <th className="text-right">Dif. %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {receivedItems
-                      .filter((i) => i.receivedQty > 0)
-                      .map((item) => {
-                        const idx = receivedItems.findIndex((r) => r.productId === item.productId);
-                        const priceDiff =
-                          item.originalPrice > 0
-                            ? ((item.unitPrice - item.originalPrice) / item.originalPrice) * 100
-                            : 0;
-                        const isSignificant = Math.abs(priceDiff) > 5;
-
-                        return (
-                          <tr key={item.productId}>
-                            <td className="font-semibold">
-                              {item.name}
-                            </td>
-                            <td className="text-right text-[var(--text-secondary)] dark:text-muted">
-                              {formatCurrency(Number(item.originalPrice))}
-                            </td>
-                            <td className="text-center">
-                              <input
-                                type="number"
-                                min={0}
-                                step={0.01}
-                                value={item.unitPrice}
-                                onChange={(e) => updateItem(idx, { unitPrice: Math.max(0, parseFloat(e.target.value) || 0) })}
-                                aria-label={`Precio de factura de ${item.name}`}
-                                className="w-24 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                              />
-                            </td>
-                            <td className="text-right">
-                              {priceDiff !== 0 && (
-                                <span
-                                  className={cn(
-                                    "text-sm font-semibold flex items-center justify-end gap-0.5",
-                                    isSignificant ? "text-[var(--data-warning-ink)]" : "text-[var(--text-secondary)]",
-                                  )}
-                                >
-                                  {isSignificant && <AlertTriangle className="h-3 w-3" />}
-                                  {priceDiff > 0 ? "+" : ""}{priceDiff.toFixed(1)}%
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </DataTable>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Total factura:</p>
-                <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                  {formatCurrency(totalFactura)}
-                </p>
-              </div>
-            </>
+            <OCRecepcionPaso2 receivedItems={receivedItems} totalFactura={totalFactura} updateItem={updateItem} />
           )}
 
           {/* Step 3: Confirm */}
           {step === 3 && (
-            <>
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
-                <Check className="h-4 w-4 text-[var(--data-success-500)]" />
-                Confirmar la recepción
-              </p>
-              {sinVence.length > 0 && (
-                <p className="text-sm font-semibold text-[var(--data-warning-ink)]" data-qa="perecibles-sin-vence">
-                  Sin fecha de vencimiento: {listarCorto(sinVence)}. No saldrá{sinVence.length === 1 ? "" : "n"} en Por vencer; vuelve a «Anterior» para anotarla.
-                </p>
-              )}
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
-                  <p className="text-sm font-bold text-[var(--data-success-ink)] uppercase">Recibidos</p>
-                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsRecibidos.length}</p>
-                </div>
-                <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 text-center border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
-                  <p className="text-sm font-bold text-[var(--data-warning-ink)] uppercase">Con diferencia</p>
-                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsConDiferencia.length}</p>
-                </div>
-                <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
-                  <p className="text-sm font-bold text-[var(--data-success-ink)] uppercase">Total factura</p>
-                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(totalFactura)}</p>
-                </div>
-              </div>
-
-              {/* Items summary */}
-              <div className="bg-[var(--surface-sunken)] dark:bg-accent/50 rounded-xl p-3 space-y-1 max-h-40 overflow-y-auto">
-                {receivedItems.map((item) => (
-                  <div key={item.productId} className="flex justify-between text-sm">
-                    <span className={cn("text-[var(--text-primary)] dark:text-[var(--text-primary)]", item.receivedQty === 0 && "line-through text-[var(--text-tertiary)]")}>
-                      {item.name}
-                    </span>
-                    <span className="text-[var(--text-secondary)] dark:text-muted font-semibold">
-                      {item.receivedQty}/{item.orderedQty} - {formatCurrency(item.receivedQty * item.unitPrice)}
-                      {conVence(item) && item.expiryDate ? ` · vence ${textoVence(item.expiryDate)}` : ""}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <textarea
-                value={notas}
-                onChange={(e) => setNotas(e.target.value)}
-                placeholder="Notas sobre la recepcion (opcional)..."
-                className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary resize-none"
-                rows={3}
-              />
-
-              {error && (
-                <div className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-lg px-3 py-2">
-                  {error}
-                </div>
-              )}
-            </>
+            <OCRecepcionPaso3
+              receivedItems={receivedItems}
+              itemsRecibidos={itemsRecibidos}
+              itemsConDiferencia={itemsConDiferencia}
+              totalFactura={totalFactura}
+              sinVence={sinVence}
+              notas={notas}
+              setNotas={setNotas}
+              error={error}
+            />
           )}
         </div>
 

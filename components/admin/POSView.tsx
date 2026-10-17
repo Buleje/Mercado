@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { LoadingState } from "@buleje/design-system";
-import { Info, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { usePOSKeyboard } from "@/components/admin/pos/usePOSKeyboard";
@@ -32,6 +31,7 @@ import POSStockAlerts from "@/components/admin/pos/POSStockAlerts";
 import POSReturnModal from "@/components/admin/pos/POSReturnModal";
 import type { PaymentMethod } from "@/components/admin/pos/pos-shared";
 import { precargarBilleteras } from "@/components/admin/pos/pago/useBilleteraNegocio";
+import POSAvisoDeError from "@/components/admin/pos/POSAvisoDeError";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 
@@ -121,7 +121,6 @@ export default function POSView() {
     document.querySelector<HTMLInputElement>("[data-pos-search]")?.focus();
   };
 
-
   // La grilla filtra sólo por categoría (la búsqueda vive en POSSearchBar).
   const filtered = category === "todos" ? products : products.filter((p) => p.category === category);
 
@@ -169,13 +168,7 @@ export default function POSView() {
         onTrueque={() => setShowTrueque(true)}
       />
       {indicadores.panel}
-      {saleError && (
-        <div role="alert" className="flex items-center gap-2 pl-3 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
-          <Info className="h-4 w-4 text-[var(--data-error-ink)] shrink-0" aria-hidden />
-          <p className="text-sm text-[var(--data-error-ink)] flex-1">{saleError}</p>
-          <button type="button" aria-label="Quitar el aviso" onClick={() => setSaleError(null)} className="h-12 w-12 shrink-0 inline-flex items-center justify-center text-[var(--data-error-ink)]"><X className="h-4 w-4" /></button>
-        </div>
-      )}
+      {saleError && <POSAvisoDeError mensaje={saleError} onQuitar={() => setSaleError(null)} />}
 
       {/* La grilla y el carrito llegan al borde de la ventana: en escritorio la fila entera,
           en celular sólo la grilla (el carrito queda abajo y la barra de cobro lo resume). */}
@@ -281,7 +274,6 @@ export default function POSView() {
       <POSReturnModal isOpen={showReturn} onClose={() => setShowReturn(false)} onReturnComplete={() => fetchProducts()} />
     </>
   );
-
 
   if (expanded) {
     return (
