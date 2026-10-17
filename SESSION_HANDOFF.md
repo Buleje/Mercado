@@ -1,3 +1,15 @@
+# SESSION HANDOFF — 2026-10-17 (noche autónoma 00:10-05:30): los 4 PDF de Codex implementados — 38 commits
+
+**Estado:** commits `e81701b8e` → HEAD (desde `2eabc55dd`), **sin subir** (no se pidió push; deploy bloqueado). Árbol limpio salvo lo de siempre (`.claude/autonomo/`, VRT, `components/admin/forestal/.claude/`). `npm run typecheck` verde sobre el árbol limpio y 334 guardianes verdes al cerrar; la suite completa la cortó la presión de memoria (no se reintentó).
+
+**Hecho:** Ventas y caja (p1-p3), Pedidos y reparto (p1-p4 + Preparación/Análisis/agenda), Compras (p1-p7 + Conciliación), Comprobantes (p1-p5 + Seguimiento/Expediente/Conciliación), panel entero (buscador con comandos, recientes, vistas guardadas, avisos agrupados), 9 arreglos de seguridad/revisión (chat por celular, devolver de más, límites que frenaban la venta 11, cola offline, notas dobles, roles de pedidos), `--surface-alt` y `min-w-*` que no regían. Detalle: memoria `noche-autonoma-2026-10-17-resultados` y el PDF `Escritorio\Mejoras-de-la-noche-2026-10-17.pdf`.
+
+**Decide Brandon:** `.claude/autonomo/noche-17-10/decide-brandon.md` (22 cambios de base — 5 con SQL listo sin aplicar en `migraciones-propuestas/` —, 28 reglas de negocio, 11 de zona de peligro, con orden recomendado).
+
+**Al retomar:** para trabajar con varios carriles, `CARRILES=<carpeta> scripts/dev-helpers/commit-carril.sh <carril> <paquete>`. Falta: C22 (fechas y conformidad por tipo, parcial); chip «Listo para salir» y franja en el detalle del pedido; la tabla de Órdenes a 1280 desborda 99 px (viejo).
+
+---
+
 # SESSION HANDOFF — 2026-10-16 (tarde): talonario GTF como el papel + trozas por foto + registro del despacho en lote — 9 commits
 
 **Estado:** commits `b43880c89` → `e8acb00eb`, **sin subir** (no se pidió push; deploy bloqueado). Árbol limpio salvo lo de siempre (`.claude/autonomo/`, VRT, `panel-ola.js` ajeno).
