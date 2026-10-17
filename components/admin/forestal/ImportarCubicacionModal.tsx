@@ -20,6 +20,8 @@ import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
 import { descargarPlantillaImport } from "@/lib/forestal/cubicador-export";
 import { loadConfig } from "@/lib/forestal/cubicador-config";
 import { formatNumber } from "@/lib/format";
+import type { PlanillaId } from "@/lib/forestal/planillas/tipos";
+import SelectorPlanilla from "./planillas/SelectorPlanilla";
 
 const fmtPt = (v: number) => formatNumber(v, 2);
 
@@ -33,7 +35,7 @@ function leerComoDataUrl(file: File): Promise<string> {
 }
 
 export default function ImportarCubicacionModal({
-  onAgregar, onCerrar, filasActuales = 0, duenos = [],
+  onAgregar, onCerrar, filasActuales = 0, duenos = [], planillaInicial = null,
 }: {
   /** Suma las piezas leídas al lote del cubicador. */
   onAgregar: (piezas: PiezaImportada[]) => void;
@@ -42,8 +44,12 @@ export default function ImportarCubicacionModal({
   filasActuales?: number;
   /** Los dueños que ya existen: «dueño X» en un audio sólo elige entre ellos. */
   duenos?: readonly string[];
+  /** Llegó desde Herramientas › Planillas de campo: abre en «Foto» con esa hoja elegida. */
+  planillaInicial?: PlanillaId | null;
 }) {
-  const [modo, setModo] = useState<"excel" | "foto" | "audio">("excel");
+  const [modo, setModo] = useState<"excel" | "foto" | "audio">(planillaInicial ? "foto" : "excel");
+  /** La planilla de la foto: con una elegida, la IA la lee con su prompt (el del negocio si lo guardó). */
+  const [planilla, setPlanilla] = useState<PlanillaId | null>(planillaInicial);
   const [resultado, setResultado] = useState<ResultadoImport | null>(null);
   const [nombreArchivo, setNombreArchivo] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -81,7 +87,7 @@ export default function ImportarCubicacionModal({
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ image: dataUrl }),
+        body: JSON.stringify(planilla ? { image: dataUrl, planillaId: planilla } : { image: dataUrl }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
@@ -92,7 +98,7 @@ export default function ImportarCubicacionModal({
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [planilla]);
 
   const procesarAudio = useCallback(async (file: File) => {
     setCargando(true);
@@ -255,6 +261,10 @@ export default function ImportarCubicacionModal({
           {nombreArchivo && <span className="truncate text-xs text-[var(--text-tertiary)]">{nombreArchivo}</span>}
         </div>
         ) : modo === "foto" ? (
+          <div className="space-y-3">
+          <div className="sm:max-w-sm">
+            <SelectorPlanilla destino="cubicador-madera" value={planilla} onChange={setPlanilla} disabled={cargando} />
+          </div>
           <div className="flex flex-wrap items-center gap-3">
             <label className={`inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95 ${cargando ? "pointer-events-none opacity-70" : ""}`}>
               {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />} Tomar o elegir foto
@@ -268,6 +278,7 @@ export default function ImportarCubicacionModal({
               />
             </label>
             {nombreArchivo && <span className="truncate text-xs text-[var(--text-tertiary)]">{nombreArchivo}</span>}
+          </div>
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-3">

@@ -37,6 +37,8 @@ import PanelVozTrozas from "./cubicador-trozas-voz";
 import { useCuentaDelPatio } from "./cubicador-trozas-guardadas";
 import ReferenciasPatio from "./cubicador-trozas-referencias";
 import { useDictadoTrozas } from "./hooks/use-dictado-trozas";
+import { FORMULA_DE_PLANILLA, useImportarFotoPendiente } from "./planillas/importar-pendiente";
+import type { PlanillaId } from "@/lib/forestal/planillas/tipos";
 
 type Fila = FilaTroza;
 
@@ -69,6 +71,8 @@ export default function CubicadorTrozas() {
   const [especie, setEspecie] = useState("");
   const [lastAdded, setLastAdded] = useState<Fila | null>(null);
   const [importando, setImportando] = useState(false);
+  /** «Importar foto llenada» desde Herramientas › Planillas de campo. */
+  const [planillaPedida, setPlanillaPedida] = useState<PlanillaId | null>(null);
   /**
    * La fórmula elegida y cuántos Ø se miden con cada una — recordadas por
    * tenant. Por REF también: el reconocedor de voz las lee en medio de una frase.
@@ -229,6 +233,12 @@ export default function CubicadorTrozas() {
     setLastAdded(null);
     olvidarSobrante();
   };
+  /* Llega con la planilla elegida: abre el lote de SU fórmula y el importador en modo foto. */
+  useImportarFotoPendiente(["rolliza-smalian", "rolliza-oxapampa"], (id) => {
+    cambiarFormula(FORMULA_DE_PLANILLA[id] ?? "smalian");
+    setPlanillaPedida(id);
+    setImportando(true);
+  });
   const cambiarDiametros = (d: DiametrosPorTroza) => {
     const next = { ...diametrosPor, [formula]: d };
     setDiametrosPor(next);
@@ -347,8 +357,10 @@ export default function CubicadorTrozas() {
           filasActuales={rows.length}
           especiesActuales={especiesActuales}
           especiesCatalogo={catalogoEspecies.nombres}
+          planillaInicial={planillaPedida}
+          onCambiarFormula={cambiarFormula}
           onAgregar={agregarImportadas}
-          onCerrar={() => setImportando(false)}
+          onCerrar={() => { setImportando(false); setPlanillaPedida(null); }}
         />
       )}
     </div>

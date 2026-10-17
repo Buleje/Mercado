@@ -26,6 +26,7 @@ import {
 } from "@/lib/forestal/loth-censo-import";
 import { descargarPlantillaCenso } from "@/lib/forestal/loth-censo-plantilla";
 import LothCensoImportPreview from "./LothCensoImportPreview";
+import LeerFotoPlanilla from "./planillas/LeerFotoPlanilla";
 import { button } from "@/components/ui-system/button-variants";
 
 /** Dos filas reales de la hoja del regente (28-09), con su encabezado tal cual. */
@@ -154,6 +155,16 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
               {Object.keys(res.mapeo).length}
             </span>
           )}
+          {/* La foto va al final: su resumen (foto + dudas) ocupa la fila entera. */}
+          <LeerFotoPlanilla
+            planillaId="censo-arboles"
+            disabled={leyendo || importing}
+            onLeido={({ texto: t }) => {
+              setArchivo(null);
+              setFileError(null);
+              setTexto(t);
+            }}
+          />
         </div>
 
         {archivo ? (

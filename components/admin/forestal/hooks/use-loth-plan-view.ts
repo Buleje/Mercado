@@ -18,6 +18,7 @@ import type { PedidoEspecie, PedidoLote } from "../LothPlanEspecies";
 import { PESTANAS_PLAN, PESTANAS_PLANTACION, type PestanaPlan } from "../LothPlanPestanas";
 import { CLAVE_PESTANA_PLAN, CLAVE_PESTANA_PLANTACION, opcionesDelPlan, pestanasDelPlan } from "../loth-plan-view-shared";
 import { loQueFalta } from "../plan-documentos/modelo";
+import { useImportarFotoPendiente } from "../planillas/importar-pendiente";
 import { useAutorizarDesdeUrl } from "./use-autorizar-desde-url";
 import { useLothPlan } from "./use-loth-plan";
 import { usePlanDocumentos } from "./use-plan-documentos";
@@ -37,6 +38,16 @@ export function useLothPlanView(reloadSignal?: number, onCambioDelLibro?: () => 
   const pestanaGuardada = esPlantacion ? pestanaPlantacion : pestanaBosque;
   const [pedidoEspecie, setPedidoEspecie] = useState<PedidoEspecie | null>(null);
   const [importarSignal, setImportarSignal] = useState(0);
+  /* «Importar foto» del Censo de árboles en Herramientas › Planillas de campo:
+     espera al plan (el censo vive en su pestaña, montada con el plan). */
+  useImportarFotoPendiente(
+    ["censo-arboles"],
+    () => {
+      setPestana("censo");
+      setImportarSignal((n) => n + 1);
+    },
+    plan != null && !esPlantacion,
+  );
   /** El plan abierto para corregir sus datos (ADR-426). */
   const [editandoPlan, setEditandoPlan] = useState(false);
   const [borrandoPlan, setBorrandoPlan] = useState(false);

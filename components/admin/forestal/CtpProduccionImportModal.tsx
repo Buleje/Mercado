@@ -23,7 +23,9 @@ import { useMemo, useState } from "react";
 import { AlertTriangle, ClipboardList, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { filasDesdeTexto, interpretarProduccion } from "@/lib/forestal/produccion-import";
+import { filasDesdeTexto, interpretarProduccion, normalizarFecha } from "@/lib/forestal/produccion-import";
+import type { LecturaPlanilla } from "@/lib/forestal/planillas/tipos";
+import LeerFotoPlanilla from "./planillas/LeerFotoPlanilla";
 import { Btn, Field, I, ModalBody, ModalFooter } from "./ctp-shared";
 import { CtpEspecieInput, useEspeciesConCatalogo } from "./ctp-especie-campo";
 
@@ -40,6 +42,15 @@ export default function CtpProduccionImportModal({
   const [texto, setTexto] = useState("");
   const [fechaTurno, setFechaTurno] = useState(hoy());
   const [especieTurno, setEspecieTurno] = useState("");
+  /* La foto del Parte de producción: las filas van al cuadro (misma vista
+     previa) y la cabecera de la hoja trae la fecha y la especie del turno. */
+  const desdeFoto = ({ texto: t, lectura }: { texto: string; lectura: LecturaPlanilla }) => {
+    setTexto(t);
+    const fecha = normalizarFecha(lectura.cabecera.fecha);
+    if (fecha) setFechaTurno(fecha);
+    const especie = lectura.cabecera.especie?.trim();
+    if (especie) setEspecieTurno(especie);
+  };
   /* La misma lista que el cubicador y el resto del libro (ADR-410): la planilla
      del turno se pega con la especie escrita a mano, y ahí es donde nacían las
      dos filas «Tornillo» y «TORNILLO». */
@@ -133,7 +144,7 @@ export default function CtpProduccionImportModal({
     >
       <ModalBody className="space-y-3">
         <p className="text-sm text-[var(--text-secondary)]">
-          Pega la planilla del turno. Cada fila entra como una corrida de producción —{" "}
+          Pega la planilla del turno o léela de su foto. Cada fila entra como una corrida de producción —{" "}
           <strong>sin origen atribuido</strong>: hay que decir de qué ingresos salió antes de certificar.
         </p>
 
@@ -149,6 +160,10 @@ export default function CtpProduccionImportModal({
               catalogo={catalogoEspecies}
             />
           </Field>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <LeerFotoPlanilla planillaId="parte-produccion" disabled={cargando} onLeido={desdeFoto} />
         </div>
 
         <textarea

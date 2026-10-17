@@ -21,6 +21,10 @@ import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
 import { descargarPlantillaTrozas } from "@/lib/forestal/cubicacion-trozas-excel";
 import { cubicarSegun, fueraDeRango, UNIDADES_FORMULA, type FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
 import { formatNumber } from "@/lib/format";
+import type { PlanillaId } from "@/lib/forestal/planillas/tipos";
+import AvisoOtraFormula from "./planillas/AvisoOtraFormula";
+import SelectorPlanilla from "./planillas/SelectorPlanilla";
+import { FORMULA_DE_PLANILLA } from "./planillas/importar-pendiente";
 
 
 function leerComoDataUrl(file: File): Promise<string> {
@@ -34,6 +38,7 @@ function leerComoDataUrl(file: File): Promise<string> {
 
 export default function ImportarTrozasModal({
   onAgregar, onCerrar, filasActuales = 0, especiesActuales = [], especiesCatalogo = [], formula = "smalian",
+  planillaInicial = null, onCambiarFormula,
 }: {
   /** La fórmula del lote abierto: Oxapampina lee pulgadas y pies, y cubica en PT. */
   formula?: FormulaTrozas;
@@ -46,8 +51,17 @@ export default function ImportarTrozasModal({
   especiesActuales?: string[];
   /** El catálogo de especies de la base: arma el resumen de la plantilla. */
   especiesCatalogo?: readonly string[];
+  /** Llegó desde Herramientas › Planillas de campo: abre en «Foto» con esa hoja elegida. */
+  planillaInicial?: PlanillaId | null;
+  /** Abre el lote de la otra fórmula (cuando la planilla de la foto no es la del lote). */
+  onCambiarFormula?: (f: FormulaTrozas) => void;
 }) {
-  const [modo, setModo] = useState<"excel" | "foto">("excel");
+  const [modo, setModo] = useState<"excel" | "foto">(planillaInicial ? "foto" : "excel");
+  /** La planilla de la foto: con una elegida, la IA la lee con su prompt (el del negocio si lo guardó). */
+  const [planilla, setPlanilla] = useState<PlanillaId | null>(planillaInicial);
+  /** Smalian anota cm y m; la Oxapampina, pulgadas y pies: en el lote de la otra fórmula se cubicaría mal. */
+  const formulaDeLaHoja = planilla ? FORMULA_DE_PLANILLA[planilla] ?? null : null;
+  const otraFormula = modo === "foto" && formulaDeLaHoja != null && formulaDeLaHoja !== formula ? formulaDeLaHoja : null;
   const [resultado, setResultado] = useState<ResultadoImportTrozas | null>(null);
   const [nombreArchivo, setNombreArchivo] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -84,7 +98,7 @@ export default function ImportarTrozasModal({
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ image: dataUrl }),
+        body: JSON.stringify(planilla ? { image: dataUrl, planillaId: planilla } : { image: dataUrl }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
@@ -95,7 +109,7 @@ export default function ImportarTrozasModal({
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [planilla]);
 
   const [bajando, setBajando] = useState(false);
   const descargarPlantilla = () => {
@@ -131,7 +145,7 @@ export default function ImportarTrozasModal({
         >
           <Btn variant="ghost" onClick={onCerrar}>Cancelar</Btn>
           {listas && (
-            <Btn variant="dark" onClick={() => { onAgregar(listas); onCerrar(); }}>
+            <Btn variant="dark" disabled={otraFormula != null} onClick={() => { onAgregar(listas); onCerrar(); }}>
               <Check className="h-4 w-4" /> Agregar {listas.length} al patio
               {filasActuales > 0 ? ` (quedará con ${filasActuales + listas.length})` : ""}
             </Btn>
@@ -198,19 +212,27 @@ export default function ImportarTrozasModal({
             {nombreArchivo && <span className="truncate text-xs text-[var(--text-tertiary)]">{nombreArchivo}</span>}
           </div>
         ) : (
-          <div className="flex flex-wrap items-center gap-3">
-            <label className={`inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95 ${cargando ? "pointer-events-none opacity-70" : ""}`}>
-              {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />} Tomar o elegir foto
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                disabled={cargando}
-                className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) void procesarFoto(f); e.target.value = ""; }}
-              />
-            </label>
-            {nombreArchivo && <span className="truncate text-xs text-[var(--text-tertiary)]">{nombreArchivo}</span>}
+          <div className="space-y-3">
+            <div className="sm:max-w-sm">
+              <SelectorPlanilla destino="cubicador-trozas" value={planilla} onChange={setPlanilla} disabled={cargando} />
+            </div>
+            {otraFormula && planilla && (
+              <AvisoOtraFormula planilla={planilla} formulaLote={formula} formulaHoja={otraFormula} onCambiar={onCambiarFormula} />
+            )}
+            <div className="flex flex-wrap items-center gap-3">
+              <label className={`inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95 ${cargando ? "pointer-events-none opacity-70" : ""}`}>
+                {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />} Tomar o elegir foto
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  disabled={cargando}
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void procesarFoto(f); e.target.value = ""; }}
+                />
+              </label>
+              {nombreArchivo && <span className="truncate text-xs text-[var(--text-tertiary)]">{nombreArchivo}</span>}
+            </div>
           </div>
         )}
 

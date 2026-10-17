@@ -312,6 +312,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   "forestal-herramientas": [
     { key: "cubicador", label: "Cubicador de madera", hint: "Aserrada: pie tablar + m³ por voz", origen: ["forestal-herramientas"] },
     { key: "trozas", label: "Cubicador de trozas", hint: "Rolliza en patio: Smalian SERFOR (m³, contra la GTF) u Oxapampina (PT)", origen: ["forestal-herramientas"] },
+    { key: "planillas", label: "Planillas de campo", hint: "Hojas para anotar a mano en el monte, el patio y el aserradero; su Excel, su prompt y la foto llenada al importador", origen: ["forestal-herramientas"] },
     { key: "resumenes", label: "Resúmenes", hint: "Tablas por especie y tipo del lote cubicado", origen: ["forestal-herramientas"] },
     { key: "especies", label: "Fotos de especies", hint: "Referencia visual para no confundir dos maderas parecidas", origen: ["forestal-herramientas"] },
     { key: "catalogo", label: "Formatos", hint: "Elige el trámite y llénalo", origen: ["forestal-tramites"] },

@@ -63,6 +63,7 @@ const cargando = (
 );
 const CubicadorMadera = dynamic(() => import("./CubicadorMadera"), { ssr: false, loading: () => cargando });
 const CubicadorTrozas = dynamic(() => import("./CubicadorTrozas"), { ssr: false, loading: () => cargando });
+const PlanillasDeCampo = dynamic(() => import("./planillas/PlanillasDeCampo"), { ssr: false, loading: () => cargando });
 const CubicacionResumenes = dynamic(() => import("./CubicacionResumenes"), { ssr: false, loading: () => cargando });
 const EspeciesFotosBiblioteca = dynamic(() => import("./EspeciesFotosBiblioteca"), { ssr: false, loading: () => cargando });
 const TramitesCuerpo = dynamic(() => import("./TramitesCuerpo"), { ssr: false, loading: () => cargando });
@@ -176,6 +177,7 @@ export default function ForestalHerramientas({ initialTab }: { initialTab?: stri
         <div>
           {activa === "cubicador" && <CubicadorMadera />}
           {activa === "trozas" && <CubicadorTrozas />}
+          {activa === "planillas" && <PlanillasDeCampo onIrA={irA} />}
           {activa === "resumenes" && <CubicacionResumenes />}
           {activa === "especies" && <EspeciesFotosBiblioteca />}
           {verTramites && !tramitesVisitado && !enTramites && <ConteoExpediente onAlertas={setSinRespuesta} />}

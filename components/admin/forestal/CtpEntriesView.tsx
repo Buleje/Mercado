@@ -41,6 +41,7 @@ import { siguienteSinAnexo } from "@/lib/forestal/anexo-encadenado";
 import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 import CtpGuiaDeLineaModal from "./CtpGuiaDeLineaModal";
 import CtpProduccionImportModal from "./CtpProduccionImportModal";
+import { useImportarFotoPendiente } from "./planillas/importar-pendiente";
 import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
@@ -559,6 +560,8 @@ export function CtpEntriesView({
   const [showForm, setShowForm] = useState(false);
   /** Carga masiva del parte de turno (ADR-323), sólo en Producción. */
   const [importarParte, setImportarParte] = useState(false);
+  // «Importar foto» del Parte de producción en Herramientas › Planillas de campo.
+  useImportarFotoPendiente(["parte-produccion"], () => setImportarParte(true), section === "produccion");
   /** Con qué producto abrir el formulario (viene de Saldos; se consume una vez). */
   const [productoDelStock, setProductoDelStock] = useState<{
     producto: string;

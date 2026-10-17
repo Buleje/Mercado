@@ -83,6 +83,8 @@ import {
 } from "@/lib/forestal/observacion-de-pieza";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 import { AnfitrionDeModales, useModalAislado } from "./hooks/use-modal-aislado";
+import { useImportarFotoPendiente } from "./planillas/importar-pendiente";
+import type { PlanillaId } from "@/lib/forestal/planillas/tipos";
 import { AsaColumna, COLS_DEFAULT, COLS_ORDEN_DEFAULT, MenuColumnas, type ColOpcional } from "./cubicador-columnas-menu";
 import { useArrastreColumnas, useOrdenColumnas, type PropsThArrastrable } from "./hooks/use-orden-columnas";
 import { useTraseraCamion } from "./hooks/use-trasera-camion";
@@ -425,6 +427,14 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
   /* Los modales del cubicador (Dueños, Especies, Importar, Liquidación, Anexo
      04, Enviar): abrirlos o cerrarlos no redibuja la tabla (use-modal-aislado). */
   const modales = useModalAislado<ModalDelCubicador>();
+  /* «Importar foto llenada» desde Herramientas › Planillas de campo: abre el
+     importador en modo foto con esa planilla elegida (una sola vez). */
+  const [planillaPedida, setPlanillaPedida] = useState<PlanillaId | null>(null);
+  useImportarFotoPendiente(["aserrada-pt"], setPlanillaPedida);
+  /* Se abre DESPUÉS de guardar la planilla: el modal toma su modo inicial al montar. */
+  useEffect(() => {
+    if (planillaPedida) modales.abrir("importar");
+  }, [planillaPedida, modales]);
   /* El catálogo de especies de ESTA planta (ADR-410). Una sola lectura para el
      selector, la tabla y el dictado: si el dictado usara otra lista, reconocería
      especies que el selector no ofrece. */
@@ -3192,8 +3202,9 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               <ImportarCubicacionModal
                 filasActuales={rows.length}
                 duenos={duenosParaElegir}
+                planillaInicial={planillaPedida}
                 onAgregar={(piezas) => { agregarVarias(piezas); setEnviado(false); }}
-                onCerrar={() => cerrar("importar")}
+                onCerrar={() => { cerrar("importar"); if (planillaPedida) setPlanillaPedida(null); }}
               />
             )}
 

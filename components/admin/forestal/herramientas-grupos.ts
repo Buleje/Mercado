@@ -1,4 +1,4 @@
-import { BarChart3, Calculator, Ruler, Trees } from "@buleje/design-system/icons";
+import { BarChart3, Calculator, ClipboardList, Ruler, Trees } from "@buleje/design-system/icons";
 import type { LibroGroup } from "@/components/admin/shared/libro-chrome";
 import { GRUPOS as GRUPOS_TRAMITES, type Vista as VistaTramite } from "./tramites-grupos";
 
@@ -16,13 +16,13 @@ import { GRUPOS as GRUPOS_TRAMITES, type Vista as VistaTramite } from "./tramite
 
 export const HERRAMIENTAS_MODULE_ID = "forestal-herramientas";
 
-export type Herramienta = "cubicador" | "trozas" | "resumenes" | "especies";
+export type Herramienta = "cubicador" | "trozas" | "planillas" | "resumenes" | "especies";
 export type VistaHerramientas = Herramienta | VistaTramite;
 
 /** Todas las vistas, en orden (las valida `?vista=`). */
-export const VISTAS_HERRAMIENTAS = ["cubicador", "trozas", "resumenes", "especies", "catalogo", "expediente", "plantaciones"] as const;
+export const VISTAS_HERRAMIENTAS = ["cubicador", "trozas", "planillas", "resumenes", "especies", "catalogo", "expediente", "plantaciones"] as const;
 
-export const HERRAMIENTAS: readonly Herramienta[] = ["cubicador", "trozas", "resumenes", "especies"];
+export const HERRAMIENTAS: readonly Herramienta[] = ["cubicador", "trozas", "planillas", "resumenes", "especies"];
 export const VISTAS_TRAMITES: readonly VistaTramite[] = ["catalogo", "expediente", "plantaciones"];
 
 export const GRUPO_HERRAMIENTAS: LibroGroup = {
@@ -31,6 +31,7 @@ export const GRUPO_HERRAMIENTAS: LibroGroup = {
   views: [
     { key: "cubicador", label: "Cubicador de madera", icon: Calculator, hint: "Aserrada: pie tablar + m³ por voz" },
     { key: "trozas", label: "Cubicador de trozas", icon: Ruler, hint: "Rolliza en patio: Smalian SERFOR (m³, contra la GTF) u Oxapampina (PT)" },
+    { key: "planillas", label: "Planillas de campo", icon: ClipboardList, hint: "Hojas para anotar a mano en el monte, el patio y el aserradero; su Excel, su prompt y la foto llenada al importador" },
     { key: "resumenes", label: "Resúmenes", icon: BarChart3, hint: "Tablas por especie y tipo del lote cubicado" },
     { key: "especies", label: "Fotos de especies", icon: Trees, hint: "Referencia visual para no confundir dos maderas parecidas" },
   ],
