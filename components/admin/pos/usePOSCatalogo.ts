@@ -16,10 +16,9 @@ export function usePOSCatalogo() {
   const [favorites, setFavorites] = useState<number[]>(() => readStoredIds("pos-favorites"));
   const [, setRecentProducts] = useState<number[]>(() => readStoredIds("pos-recents"));
   /**
-   * ¿Hay turno abierto? Hasta acá el turno no controlaba nada: sólo decidía si
-   * se mostraba el strip de métricas. Una venta sin turno no tiene cajero
-   * responsable — no entra en su cuadre ni en sus comisiones, y si al cierre
-   * falta plata no hay a quién preguntarle.
+   * ¿Hay turno abierto? Una venta sin turno igual queda a nombre de quien está
+   * logueado (`Sale.cashierId`) y cuenta para SU comisión, pero no entra en el
+   * cuadre de ningún turno: si al cierre falta plata, ningún turno la explica.
    */
   const [turnoAbierto, setTurnoAbierto] = useState<boolean | null>(null);
 

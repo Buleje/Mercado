@@ -14,6 +14,7 @@
  * y el cajón no registró (se vendió con la caja cerrada, o falló el anotado).
  */
 
+import { limaDateKey } from "@/lib/utils";
 import { desglosarPago, efectivoDe } from "./desglosar-pago";
 import { medioDeMovimiento, saldoEsperadoDeCaja } from "./saldo-esperado";
 import { ETIQUETA_ORIGEN, ORDEN_ORIGEN, origenDeMovimiento, type OrigenClave } from "./origen-movimiento";
@@ -25,6 +26,8 @@ export interface MovimientoParaParte {
   description?: string | null;
   saleId?: string | null;
   liquidacionCodigo?: string | null;
+  /** ISO. Sólo lo usa «hoy» (M23); sin fecha el movimiento no se cuenta como de hoy. */
+  createdAt?: string | null;
 }
 
 export interface CajaParaParte {
@@ -93,6 +96,25 @@ export interface ParteDelDia {
   diferencia: number | null;
   porOrigen: LineaDeOrigen[];
   conciliacion: ConciliacionConVentas;
+  /**
+   * Lo que pasó HOY (día de Lima) en una caja abierta desde un día anterior
+   * (auditoría 15-10, H01/M23): la caja de Blas abierta el 10/06 mostraba el
+   * acumulado de 127 días bajo «Caja de hoy». `null` si se abrió hoy o ya cerró:
+   * ahí la sesión y el día son lo mismo.
+   */
+  hoy: FlujoDeHoy | null;
+}
+
+export interface FlujoDeHoy {
+  /** «2026-10-17», día de Lima. */
+  dia: string;
+  movimientos: number;
+  /** Efectivo: lo mismo que suma el esperado, pero sólo de hoy y sin el fondo. */
+  ventasEfectivo: number;
+  ingresos: number;
+  egresos: number;
+  /** Entró − salió hoy en efectivo. */
+  neto: number;
 }
 
 const r2 = (v: number) => Math.round((Number.isFinite(v) ? v : 0) * 100) / 100;
@@ -101,7 +123,7 @@ const MUESTRA_SIN_CAJA = 20;
 export function armarParteDelDia(
   caja: CajaParaParte,
   ventas: ReadonlyArray<VentaParaParte>,
-  opciones: { truncado?: boolean; tolerancia?: number } = {},
+  opciones: { truncado?: boolean; tolerancia?: number; ahora?: Date } = {},
 ): ParteDelDia {
   const tolerancia = opciones.tolerancia ?? 0.5;
   const saldo = saldoEsperadoDeCaja(caja.openingAmount, caja.movements);
@@ -124,6 +146,25 @@ export function armarParteDelDia(
     diferencia: contado == null ? null : r2(contado - esperado),
     porOrigen: lineasPorOrigen(caja),
     conciliacion: conciliar(caja.movements, ventas, tolerancia, opciones.truncado ?? false),
+    hoy: flujoDeHoy(caja, opciones.ahora ?? new Date()),
+  };
+}
+
+/** Movimientos de hoy de una sesión que empezó otro día: la misma suma del esperado, recortada al día. */
+function flujoDeHoy(caja: CajaParaParte, ahora: Date): FlujoDeHoy | null {
+  const dia = limaDateKey(ahora);
+  if (caja.status !== "abierta" || !dia || limaDateKey(caja.openedAt) === dia) return null;
+  const deHoy = caja.movements.filter(
+    (m) => m.type !== "apertura" && m.type !== "cierre" && m.type !== "arqueo" && !!m.createdAt && limaDateKey(m.createdAt) === dia,
+  );
+  const s = saldoEsperadoDeCaja(0, deHoy);
+  return {
+    dia,
+    movimientos: deHoy.length,
+    ventasEfectivo: s.ventasEfectivo,
+    ingresos: s.ingresos,
+    egresos: s.egresos,
+    neto: r2(s.ventasEfectivo + s.ingresos - s.egresos),
   };
 }
 

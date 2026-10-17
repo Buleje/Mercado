@@ -34,7 +34,7 @@ export const SECCIONES_ME_DEBEN: readonly Seccion[] = [
     rotulo: "Por vencer",
     ayuda: {
       what: "Lo que toca cobrar por fecha: las promesas de pago que no se cumplieron y los fiados que vencen hoy, esta semana o después.",
-      affects: "Un fiado sin fecha de vencimiento no aparece acá: ponle fecha desde «Cada fiado».",
+      affects: "Un fiado sin fecha de vencimiento no aparece acá: en «Cada fiado», columna Vencimiento, toca «Poner fecha».",
       example: "Juan prometió pagar el jueves 08/10 y no pagó: sale arriba, en rojo, para llamarlo hoy.",
     },
   },

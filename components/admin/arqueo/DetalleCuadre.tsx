@@ -8,7 +8,7 @@ import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { leerNotasArqueo } from "@/lib/caja/leer-notas-arqueo";
 import { cn } from "@/lib/utils";
-import { STATUS_MAP, TITULO_VENTANA, fmt, fmtSigno, horaLima, textoWhatsApp, type CashAudit } from "./arqueo-shared";
+import { STATUS_MAP, TITULO_VENTANA, fmt, fmtSigno, horaLima, lecturaDelConteo, textoWhatsApp, type CashAudit } from "./arqueo-shared";
 
 /** Lo que el arqueo contó, sacado de sus propias notas (billetes, monedas, medios digitales, foto). */
 function ComoSeConto({ notes }: { notes: string }) {
@@ -50,7 +50,7 @@ export default function DetalleCuadre({ detail, onClose, onVerParte }: { detail:
   useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
   const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "cash-audit-detalle" });
   const s = STATUS_MAP[detail.status];
-  const cerrada = detail.status !== "pendiente";
+  const l = lecturaDelConteo(detail);
 
   return (
     <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}>
@@ -79,9 +79,10 @@ export default function DetalleCuadre({ detail, onClose, onVerParte }: { detail:
 
         <div className="grid grid-cols-3 gap-2 text-center text-sm">
           <div className="rounded-xl bg-[var(--surface-sunken)] p-3"><p className="libro-kicker">Esperado</p><p className="font-extrabold tabular-nums text-[var(--text-primary)]">{fmt(detail.expectedAmount)}</p></div>
-          <div className="rounded-xl bg-[var(--surface-sunken)] p-3"><p className="libro-kicker">Contado</p><p className="font-extrabold tabular-nums text-[var(--text-primary)]">{cerrada ? fmt(detail.countedAmount) : "—"}</p></div>
-          <div className={cn("rounded-xl p-3", s.bg)}><p className="libro-kicker">Diferencia</p><p className={cn("font-extrabold tabular-nums", s.color)}>{cerrada ? fmtSigno(detail.difference) : "—"}</p></div>
+          <div className="rounded-xl bg-[var(--surface-sunken)] p-3"><p className="libro-kicker">Contado</p><p className="font-extrabold tabular-nums text-[var(--text-primary)]">{l.contado != null ? fmt(l.contado) : <span className="text-sm text-[var(--text-secondary)]">{l.etiqueta}</span>}</p></div>
+          <div className={cn("rounded-xl p-3", s.bg)}><p className="libro-kicker">Diferencia</p><p className={cn("font-extrabold tabular-nums", s.color)}>{l.diferencia != null ? fmtSigno(l.diferencia) : <span className="text-sm text-[var(--text-secondary)]">{l.etiqueta}</span>}</p></div>
         </div>
+        {l.porque && <p className="-mt-1 text-sm text-[var(--text-secondary)]">{l.porque}</p>}
 
         <ComoSeConto notes={detail.notes} />
 

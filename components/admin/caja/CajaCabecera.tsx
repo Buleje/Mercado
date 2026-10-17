@@ -25,6 +25,8 @@ interface Props {
   onVista: (v: VistaCaja) => void;
   /** Con la caja cerrada «Hoy» va como una sola pestaña. */
   hoyConSecciones: boolean;
+  /** Título del grupo «Hoy» cuando la caja viene de otro día («Caja en curso»). */
+  titulo?: string;
   /** Chip de la caja (abierta o cerrada). Sólo en «Hoy»: en el historial no dice nada nuevo. */
   estado?: ReactNode;
   acciones: MenuAccion[];
@@ -45,14 +47,14 @@ export function MenuMasCaja({ acciones }: { acciones: MenuAccion[] }) {
   return <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} size="md" compactoEnMovil title="Arqueos, imprimir, exportar y ajustes" />;
 }
 
-export function CajaCabecera({ vista, onVista, hoyConSecciones, estado, acciones, extra, principal, sinMas }: Props) {
+export function CajaCabecera({ vista, onVista, hoyConSecciones, titulo, estado, acciones, extra, principal, sinMas }: Props) {
   const grupo = grupoDe(vista);
   /* Con la caja cerrada «Hoy» es una sola pantalla: la ⓘ es la del Resumen. */
   const { ayuda } = seccionDe(grupo === "hoy" && !hoyConSecciones ? "hoy" : vista);
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
       <div className="flex min-w-0 items-center gap-2">
-        <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">{SECCIONES[grupo].titulo}</SectionTitle>
+        <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">{(grupo === "hoy" && titulo) || SECCIONES[grupo].titulo}</SectionTitle>
         <InfoTip what={ayuda.what} affects={ayuda.affects} example={ayuda.example} />
         {grupo === "hoy" && estado}
       </div>

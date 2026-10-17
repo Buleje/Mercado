@@ -20,10 +20,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LoadingState } from "@buleje/design-system";
 import { AlertTriangle, Unlock } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 import { useTenant } from "@/contexts/tenant-context";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { formatTime } from "@/lib/format";
+import { diasCalendarioLima, fechaCortaLima } from "@/lib/caja/caja-abierta";
 /* Estático, no `next/dynamic`: en Historial › Por caja la fila de la cabecera
    la completa el módulo de cuadres; si bajara aparte, la barra de secciones
    desaparecía mientras cargaba el chunk. */
@@ -133,10 +135,26 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
     recargar,
   });
 
+  /* Una caja abierta desde otro día no es «la caja de hoy» (H01/M01): el chip
+     dice desde cuándo y cuántos días lleva; el título deja de decir «hoy». */
+  const diasAbierta = caja ? (diasCalendarioLima(caja.openedAt) ?? 0) : 0;
   const estado = caja ? (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-1 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-      <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
-      Abierta {formatTime(caja.openedAt)}
+    <span
+      data-qa="chip-caja-abierta"
+      title={`Abierta el ${fechaCortaLima(caja.openedAt)} a las ${formatTime(caja.openedAt)}${diasAbierta > 0 ? `: lleva ${diasAbierta === 1 ? "1 día" : `${diasAbierta} días`} sin cerrarse. Las cifras son de toda la sesión.` : ""}`}
+      className={cn(
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-bold",
+        diasAbierta > 0
+          ? "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-ink)]"
+          : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+      )}
+    >
+      <span className={cn("h-1.5 w-1.5 rounded-full", diasAbierta > 0 ? "bg-[var(--data-warning-500)]" : "bg-primary")} aria-hidden />
+      {diasAbierta === 0
+        ? `Abierta hoy ${formatTime(caja.openedAt)}`
+        : diasAbierta === 1
+          ? `Abierta ayer ${formatTime(caja.openedAt)}`
+          : `Desde el ${fechaCortaLima(caja.openedAt)} · ${diasAbierta} días`}
     </span>
   ) : (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1 text-sm font-bold text-[var(--text-secondary)]">
@@ -160,6 +178,7 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
         vista={vista}
         onVista={setVista}
         hoyConSecciones={!!caja}
+        titulo={diasAbierta > 0 ? "Caja en curso" : undefined}
         estado={estado}
         acciones={cuadres ? [...cuadres.acciones, ...acciones] : acciones}
         extra={cuadres?.indicadores}

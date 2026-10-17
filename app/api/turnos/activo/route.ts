@@ -64,6 +64,9 @@ export async function GET(req: NextRequest) {
            cajera no puede listar usuarios (GET /api/admin-users es de gestión). */
         cashRegisterId: turno.cashRegisterId ?? undefined,
         cajeroNombre: turno.adminUser?.name?.trim() || turno.adminUser?.username || undefined,
+        /* El dueño ve el turno abierto de cualquiera: sin esto, el mostrador decía
+           «Turno abierto» mientras él vendía a SU nombre, fuera del cuadre de ese turno. */
+        esMio: adminUserId != null && turno.adminUserId === adminUserId,
         inicioEfectivo: Number(turno.inicioEfectivo),
         ventasTotal: Number(turno.ventasTotal),
         status: turno.status,

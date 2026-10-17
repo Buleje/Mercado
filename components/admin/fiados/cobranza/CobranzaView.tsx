@@ -22,7 +22,8 @@ import { button } from "@/components/ui-system/button-variants";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { waLink } from "@/lib/whatsapp-link";
-import { TRAMOS, tramoDe, type TramoId } from "@/lib/fiados/gestion-cobranza";
+import { TRAMOS } from "@/lib/fiados/gestion-cobranza";
+import { SIN_PLAZO, cajonDelDeudor, type CajonDeudor } from "@/lib/fiados/plazo";
 import { deudoresDeCobranza, ordenarPorUrgencia, type DeudorCobranza } from "@/lib/fiados/urgencia-cobranza";
 import type { Cobranza } from "../use-cobranza";
 import { estaAbierto, type Fiado } from "../tipos";
@@ -44,7 +45,7 @@ type Props = {
 };
 
 export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecordado }: Props) {
-  const [tramo, setTramo] = useState<TramoId | "todos">("todos");
+  const [tramo, setTramo] = useState<CajonDeudor | "todos">("todos");
   const [q, setQ] = useState("");
   const [tanda, setTanda] = useState<Set<string>>(new Set());
   const [anotando, setAnotando] = useState<DeudorCobranza | null>(null);
@@ -67,9 +68,10 @@ export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecorda
   }, [activos]);
 
   const totales = useMemo(() => {
-    const porTramo = Object.fromEntries(TRAMOS.map((t) => [t.id, { total: 0, n: 0 }])) as Record<TramoId, { total: number; n: number }>;
+    // Sin plazo va aparte: sus días son de antigüedad, no de mora (H03/M31).
+    const porTramo = Object.fromEntries([...TRAMOS, SIN_PLAZO].map((t) => [t.id, { total: 0, n: 0 }])) as Record<CajonDeudor, { total: number; n: number }>;
     for (const d of deudores) {
-      const t = porTramo[tramoDe(d.dias)];
+      const t = porTramo[cajonDelDeudor(d)];
       t.total += d.saldo;
       t.n += 1;
     }
@@ -78,7 +80,7 @@ export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecorda
 
   const filtrados = useMemo(() => {
     const t = sinTildes(q);
-    const base = deudores.filter((d) => (tramo === "todos" || tramoDe(d.dias) === tramo) && (!t || sinTildes(d.nombre).includes(t) || d.telefono.includes(t)));
+    const base = deudores.filter((d) => (tramo === "todos" || cajonDelDeudor(d) === tramo) && (!t || sinTildes(d.nombre).includes(t) || d.telefono.includes(t)));
     return ordenarPorUrgencia(base);
   }, [deudores, tramo, q]);
 
@@ -129,7 +131,7 @@ export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecorda
             className={cn(CHIP, tramo === "todos" ? "bg-primary/12 text-[var(--accent-ink)] ring-1 ring-primary/40 dark:text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
             Todos {deudores.length}
           </button>
-          {TRAMOS.filter((t) => totales[t.id].n > 0).map((t) => (
+          {[...TRAMOS, SIN_PLAZO].filter((t) => totales[t.id].n > 0).map((t) => (
             <button key={t.id} type="button" aria-pressed={tramo === t.id} onClick={() => setTramo(t.id)} title={t.detalle}
               className={cn(CHIP, tramo === t.id ? "bg-primary/12 text-[var(--accent-ink)] ring-1 ring-primary/40 dark:text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: t.tono }} aria-hidden />

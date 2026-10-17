@@ -7,6 +7,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
 import { formatNumber } from "@/lib/format";
 import { REGLA_GENERAL, TASA_POR_DEFECTO, type ReglaComision } from "@/lib/comisiones/calcular";
+import SimuladorComision from "./SimuladorComision";
 
 type Props = {
   reglas: ReglaComision[];
@@ -46,6 +47,15 @@ export default function ReglasComision({ reglas, equipo, nombreDe, onAgregar, on
     if (maxSales != null && maxSales <= minSales) { setAviso("«Hasta» tiene que ser mayor que «desde»."); return; }
     void correr(() => onAgregar({ cashierId: nueva.cashierId, minSales, maxSales, rate: tasa }));
   };
+
+  /** La regla del formulario, si ya es válida: el simulador la prueba antes de guardarla. */
+  const borrador = (() => {
+    const rate = Number(nueva.tasa);
+    const minSales = Number(nueva.desde) || 0;
+    const maxSales = nueva.hasta.trim() ? Number(nueva.hasta) : null;
+    if (!Number.isFinite(rate) || rate < 0 || rate > 100 || (maxSales != null && !(maxSales > minSales))) return null;
+    return { cashierId: nueva.cashierId, minSales, maxSales, rate };
+  })();
 
   const ordenadas = [...reglas].sort((a, b) => (a.cashierId === REGLA_GENERAL ? -1 : b.cashierId === REGLA_GENERAL ? 1 : a.cashierId.localeCompare(b.cashierId)) || a.minSales - b.minSales);
 
@@ -120,6 +130,7 @@ export default function ReglasComision({ reglas, equipo, nombreDe, onAgregar, on
           <Plus className="h-4 w-4" aria-hidden /> Agregar regla
         </button>
       </div>
+      <SimuladorComision reglas={reglas} nueva={borrador} campo={CAMPO} />
       {aviso && <p role="alert" className="text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{aviso}</p>}
     </section>
   );

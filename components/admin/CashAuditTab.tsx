@@ -8,7 +8,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { exportToCSV } from "@/lib/utils";
-import { STATUS_MAP, type CashAudit } from "@/components/admin/arqueo/arqueo-shared";
+import { STATUS_MAP, lecturaDelConteo, type CashAudit } from "@/components/admin/arqueo/arqueo-shared";
 import { useArqueos } from "@/components/admin/arqueo/use-arqueos";
 import KpisCuadre, { BotonIndicadores } from "@/components/admin/arqueo/KpisCuadre";
 import TablaCuadres from "@/components/admin/arqueo/TablaCuadres";
@@ -65,11 +65,15 @@ export default function CashAuditTab({ onIrACaja, cabecera, onVerParte, toleranc
 
   const descargar = () =>
     exportToCSV(
-      audits.map((a) => ({
+      audits.map((a) => {
+        const l = lecturaDelConteo(a);
+        return {
         fecha: a.fecha, turno: a.turno, cajero: a.cajero, cerro: a.cerro || "-",
-        esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference,
+        // Sin medir va con su palabra, no con 0 (H05).
+        esperado: a.expectedAmount, contado: l.contado ?? l.etiqueta ?? "", diferencia: l.diferencia ?? l.etiqueta ?? "",
         estado: STATUS_MAP[a.status].label, conteos_en_turno: a.conteos.length, nota: a.notes,
-      })),
+        };
+      }),
       "cuadres-de-caja",
     );
 

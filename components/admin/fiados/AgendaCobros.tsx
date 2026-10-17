@@ -99,7 +99,7 @@ export default function AgendaCobros({ fiados, cob, onCobrarCliente, onVerFiado,
         {sinFecha > 0 && !elegido && (
           <p className="flex items-center gap-1.5 border-t border-[var(--rule-soft)] px-4 py-2 text-sm text-[var(--text-secondary)]">
             {sinFecha} fiado{sinFecha === 1 ? "" : "s"} sin fecha de vencimiento no sale{sinFecha === 1 ? "" : "n"} acá
-            <InfoTip what="Un fiado sin fecha no vence nunca: sólo se ve en «Quién debe» por los días que lleva abierto." affects="Ponle fecha desde «Cada fiado» para que aparezca en esta agenda." />
+            <InfoTip what="Un fiado sin fecha no vence nunca: en «Quién debe» sale aparte, en «Sin plazo», con los días que lleva abierto (antigüedad, no atraso)." affects="En «Cada fiado», columna Vencimiento, toca «Poner fecha» para que aparezca en esta agenda." />
           </p>
         )}
       </div>

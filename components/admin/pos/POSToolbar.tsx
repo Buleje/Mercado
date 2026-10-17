@@ -157,7 +157,7 @@ export default function POSToolbar(props: POSToolbarProps) {
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent(falta === "turno" ? "buleje:navigate-turnos" : "buleje:navigate-caja"))}
-              title={falta === "turno" ? "Sin turno: lo que cobres no entra al arqueo ni a la comisión de nadie" : "Sin caja: lo que cobres no entra al arqueo"}
+              title={falta === "turno" ? "Sin turno: la venta queda a tu nombre (tu comisión), pero no entra en el cuadre de ningún turno" : "Sin caja: lo que cobres no entra al arqueo"}
               className="shrink-0 inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 text-sm font-bold text-[var(--data-warning-ink)] hover:bg-[var(--data-warning-500)]/20 transition-colors"
             >
               <Unlock className="h-4 w-4" aria-hidden />

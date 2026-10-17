@@ -5,7 +5,8 @@ import { ShoppingCart, Wallet, HandCoins, Clock, Users } from "@buleje/design-sy
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import { cn } from "@/lib/utils";
+import { ChipResponsable } from "@/components/admin/pos/ChipResponsable";
+import { useResponsableVenta } from "@/components/admin/pos/use-responsable-venta";
 
 const MODULE_ID = "ventas-caja";
 
@@ -92,20 +93,10 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
     if (sub !== "caja-registradora") setSubDeCaja(undefined);
   }, [sub]);
 
-  // ── Estado de turno abierto ──────────────────────────────────────────────
-  // `null` = todavía no se sabe (la consulta no volvió o falló): se dibuja como
-  // «Sin turno», igual que antes, pero no decide a dónde lleva «Abrir».
-  const [turnoAbierto, setTurnoAbierto] = useState<boolean | null>(null);
-
-  // Fetch turno activo al montar y al cambiar de tab (por si se abrió/cerró)
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/turnos/activo")
-      .then(res => res.ok ? res.json() : null)
-      .then(data => { if (!cancelled && data) setTurnoAbierto(!!data.turnoActivo); })
-      .catch((err) => console.warn("[POSCajaModule] turno activo", err));
-    return () => { cancelled = true; };
-  }, [sub]);
+  // ── Turno abierto y quién responde por la venta ─────────────────────────
+  // `turnoAbierto === null` = todavía no se sabe: se dibuja como «Sin turno»,
+  // igual que antes, pero no decide a dónde lleva «Abrir».
+  const { turnoAbierto, turnoDe, turnoEsMio, vendesComo } = useResponsableVenta(sub);
 
   useEffect(() => {
     const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
@@ -122,15 +113,6 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
     return () => clearTimeout(t);
   }, []);
 
-  // Escucha apertura/cierre desde TurnosModule (buleje:turno-changed)
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { abierto } = (e as CustomEvent<{ abierto: boolean }>).detail;
-      setTurnoAbierto(abierto);
-    };
-    window.addEventListener("buleje:turno-changed", handler);
-    return () => window.removeEventListener("buleje:turno-changed", handler);
-  }, []);
 
   /**
    * «Abrir» desde el POS tiene UN solo camino (plan «panel unificado», ola 3).
@@ -199,29 +181,8 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
         onTabChange={(id) => setSub(id as TabId)}
         moduleId="pos-caja"
         rightSlot={
-          /* Chip micro de status — visible desde cualquier sub-tab.
-             - Turno abierto: abre modal para cerrar (accion mas frecuente).
-             - Turno cerrado: navega a Turnos (donde se abre con el form). */
-          <button
-            type="button"
-            onClick={() => {
-              if (turnoAbierto) handleOpenCloseModal();
-              else setSub("turnos");
-            }}
-            className={cn(
-              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
-              turnoAbierto
-                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10"
-                : "bg-[var(--rule-soft)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)]",
-            )}
-            title={turnoAbierto ? "Turno abierto — click para cerrar" : "Sin turno — click para abrir uno"}
-          >
-            <span className={cn(
-              "w-1.5 h-1.5 rounded-full",
-              turnoAbierto ? "bg-[var(--data-success-500)] animate-pulse" : "bg-[var(--text-tertiary)]",
-            )} aria-hidden />
-            {turnoAbierto ? "Turno abierto" : "Sin turno"}
-          </button>
+          /* Quién vende y de quién es el turno, visible desde cualquier sub-pestaña. */
+          <ChipResponsable r={{ turnoAbierto, turnoDe, turnoEsMio, vendesComo }} onTurnoPropio={handleOpenCloseModal} onIrATurnos={() => setSub("turnos")} />
         }
       >
 

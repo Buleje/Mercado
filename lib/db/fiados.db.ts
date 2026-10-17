@@ -458,6 +458,30 @@ export const FiadosDB = {
   },
 
   /**
+   * Ponerle fecha de vencimiento a un fiado que NO la tiene (auditoría 15-10,
+   * M33). Sin fecha, el fiado nunca vence: no sale en «Por vencer», el
+   * semáforo no tiene contra qué medir y sólo se ve por los días que lleva.
+   * La condición `fechaVence: null` va en el WHERE: mover una fecha que ya
+   * existe (correr el plazo de una deuda) no pasa por acá. `null` = no se
+   * encontró o ya tenía fecha.
+   */
+  async ponerFechaVence(tenantId: string, id: string, fechaVence: Date): Promise<DbFiado | null> {
+    const result = await prisma.fiado.updateMany({
+      where: { id, tenantId, fechaVence: null, status: { in: ["ACTIVO", "VENCIDO"] } },
+      data: { fechaVence },
+    });
+    if (result.count === 0) return null;
+    const row = await prisma.fiado.findFirst({
+      where: { id, tenantId },
+      include: { cuotas: { orderBy: { createdAt: "asc" } } },
+    }).catch((err) => {
+      logger.warn("FiadosDB.ponerFechaVence: lookup failed", { fiadoId: id, err: String(err) });
+      return null;
+    });
+    return row ? mapFiado(row) : null;
+  },
+
+  /**
    * Resumen de fiados activos de un cliente. Centraliza la lógica que
    * antes vivía inline en /api/customers/[phone]/fiado-resumen (regla #1
    * CLAUDE.md). 2 queries paralelas: aggregate + oldest.

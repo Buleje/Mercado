@@ -12,12 +12,13 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { medioCorregible } from "@/lib/caja/cambiar-medio";
 import { ETIQUETA_ORIGEN, ORDEN_ORIGEN, origenDeMovimiento, type OrigenClave } from "@/lib/caja/origen-movimiento";
 import { medioDeMovimiento } from "@/lib/caja/saldo-esperado";
+import { fechaCortaLima } from "@/lib/caja/caja-abierta";
 import { formatTime } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import { CambiarMedioMovimiento } from "../cash-register/CambiarMedioMovimiento";
 import { CajaLineaDeTiempo } from "./CajaLineaDeTiempo";
 import type { ItemLineaDeTiempo } from "./use-caja-registradora";
-import { COLOR_SIGNO, fmt, signoDe, type CashRegister, type MethodFilter } from "./tipos";
+import { COLOR_SIGNO, acortarIds, fmt, signoDe, type CashRegister, type MethodFilter } from "./tipos";
 import { DataTable } from "@buleje/design-system";
 
 const MEDIOS: MethodFilter[] = ["all", "efectivo", "yape", "plin", "tarjeta", "transferencia"];
@@ -42,11 +43,18 @@ export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMe
   const [vista, setVista] = useLocalStorage<"lista" | "tiempo">("caja:movimientos-vista", "lista");
   const [medio, setMedio] = useState<MethodFilter>("all");
   const [origen, setOrigen] = useState<OrigenClave | "todos">("todos");
+  const [buscar, setBuscar] = useState("");
+  /* Sesión de varios días: la hora sola no dice cuándo (M24, caja abierta en junio). */
+  const variosDias = limaDateKey(caja.openedAt) !== limaDateKey();
 
   const conOrigen = useMemo(() => caja.movements.map((m) => ({ m, origen: origenDeMovimiento(m) })), [caja.movements]);
   const origenesPresentes = useMemo(() => ORDEN_ORIGEN.filter((o) => conOrigen.some((x) => x.origen.clave === o)), [conOrigen]);
+  const q = buscar.trim().toLowerCase().replace(/^#/, "");
   const filas = conOrigen.filter(
-    ({ m, origen: o }) => (medio === "all" || medioDeMovimiento(m.method) === medio) && (origen === "todos" || o.clave === origen),
+    ({ m, origen: o }) =>
+      (medio === "all" || medioDeMovimiento(m.method) === medio) &&
+      (origen === "todos" || o.clave === origen) &&
+      (!q || `${m.description} ${o.etiqueta} ${m.amount}`.toLowerCase().includes(q)),
   );
 
   return (
@@ -85,11 +93,19 @@ export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMe
                 </button>
               ))}
             </div>
+            <input
+              type="search"
+              value={buscar}
+              onChange={(e) => setBuscar(e.target.value)}
+              placeholder="Buscar código o concepto"
+              aria-label="Buscar movimiento por código, concepto o monto"
+              className="ml-auto min-h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] sm:w-56"
+            />
             <select
               value={origen}
               onChange={(e) => setOrigen(e.target.value as OrigenClave | "todos")}
               aria-label="Filtrar por origen"
-              className="ml-auto min-h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
+              className="min-h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
             >
               <option value="todos">Todo origen</option>
               {origenesPresentes.map((o) => (
@@ -107,13 +123,13 @@ export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMe
       ) : (
         <>
           {filas.length === 0 ? (
-            <p className="py-8 text-center text-sm font-semibold text-[var(--text-tertiary)]">Sin movimientos con ese filtro.</p>
+            <p className="py-8 text-center text-sm font-semibold text-[var(--text-secondary)]">{q ? `Nada con «${buscar.trim()}».` : "Sin movimientos con ese filtro."}</p>
           ) : (
             <div className="max-h-[70vh] overflow-y-auto">
               <DataTable className="w-full">
                 <thead className="sticky top-0">
                   <tr>
-                    <th>Hora</th>
+                    <th>{variosDias ? "Día y hora" : "Hora"}</th>
                     <th>Origen</th>
                     <th>Detalle</th>
                     <th>Medio</th>
@@ -125,12 +141,15 @@ export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMe
                     const signo = signoDe(m.type);
                     return (
                       <tr key={m.id} className="hover:bg-[var(--surface-alt)]">
-                        <td className="font-mono text-[var(--text-secondary)] whitespace-nowrap">{formatTime(m.createdAt)}</td>
+                        <td className="whitespace-nowrap text-[var(--text-secondary)]">
+                          {variosDias && <span className="block text-sm font-semibold text-[var(--text-primary)]">{fechaCortaLima(m.createdAt)}</span>}
+                          <span className="font-mono">{formatTime(m.createdAt)}</span>
+                        </td>
                         <td>
                           <span className={cn("inline-flex rounded-full px-2 py-0.5 text-sm font-semibold whitespace-nowrap", COLOR_ORIGEN[o.clave] ?? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>{o.etiqueta}</span>
                         </td>
                         <td className="max-w-[18rem] truncate text-[var(--text-secondary)]" title={m.description}>
-                          {m.description}
+                          {acortarIds(m.description)}
                         </td>
                         <td className="capitalize text-[var(--text-secondary)]">{medioDeMovimiento(m.method)}</td>
                         <td className="text-right">

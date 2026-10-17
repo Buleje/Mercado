@@ -193,3 +193,66 @@ export function calcularComisiones(
 export function rangoLima(desde: string, hasta: string): { from: Date; to: Date } {
   return { from: new Date(`${desde}T00:00:00.000-05:00`), to: new Date(`${hasta}T23:59:59.999-05:00`) };
 }
+
+/**
+ * Sobre qué se paga la comisión hoy (auditoría 15-10, M43: «decir la base
+ * actual»; cambiarla = DECIDE BRANDON). Lo dice `CommissionsDB.cashierSummary`:
+ * `Sale.total` (lo cobrado, con el descuento restado e IGV incluido) menos lo
+ * devuelto de esa venta, por el día de la venta y con cualquier medio de pago,
+ * fiado incluido.
+ */
+export const BASE_COMISION = {
+  corta: "lo vendido neto de devoluciones",
+  larga:
+    "El total de cada venta tal como se cobró (con el descuento ya restado e IGV incluido), menos lo devuelto de esa venta. Cuenta el día de la venta, con cualquier medio de pago: una venta fiada comisiona aunque todavía no se cobre.",
+  tramo:
+    "Un solo porcentaje para todo lo vendido en el período: el del tramo en el que cae el total, no por escalones.",
+} as const;
+
+export type ReglaVigente = { texto: string; fuente: FuenteTasa | "mixta"; propias: number };
+
+const pct = (n: number) => `${n.toLocaleString("es-PE")} %`;
+
+/**
+ * La regla que rige hoy, dicha en una línea (M40): «2 % para todos, por
+ * defecto» cuando no hay ninguna guardada — la cifra que antes salía sin
+ * decir de dónde venía.
+ */
+export function reglaVigente(reglas: ReglaComision[]): ReglaVigente {
+  const generales = reglas.filter((r) => r.cashierId === REGLA_GENERAL);
+  const propias = new Set(reglas.filter((r) => r.cashierId !== REGLA_GENERAL).map((r) => r.cashierId)).size;
+  const conPropias = propias > 0 ? ` · ${propias} ${propias === 1 ? "vendedor tiene" : "vendedores tienen"} regla propia` : "";
+  if (generales.length === 0) {
+    return {
+      texto: `${pct(TASA_POR_DEFECTO)} para todos, por defecto${propias > 0 ? "" : " (sin reglas guardadas)"}${conPropias}`,
+      fuente: propias > 0 ? "mixta" : "por_defecto",
+      propias,
+    };
+  }
+  const tasas = [...new Set(generales.map((r) => r.rate))].sort((a, b) => a - b);
+  const general = tasas.length === 1 ? pct(tasas[0]) : `de ${pct(tasas[0])} a ${pct(tasas[tasas.length - 1])} por tramos`;
+  return { texto: `${general} para todo el equipo${conPropias}`, fuente: propias > 0 ? "mixta" : "general", propias };
+}
+
+export type Simulacion = { tasa: number; fuente: FuenteTasa; tramo: string | null; comision: number };
+
+/**
+ * «¿Cuánto ganaría?» antes de guardar una regla (M41). Vista previa: la cifra
+ * que se paga la sigue calculando `calcularComisiones` en el backend. `nueva`
+ * = la regla escrita en el formulario y todavía no guardada.
+ */
+export function simularComision(
+  cashierId: string,
+  vendido: number,
+  reglas: ReglaComision[],
+  nueva: Omit<ReglaComision, "id" | "label"> | null,
+): { hoy: Simulacion; conLaNueva: Simulacion | null } {
+  const con = (rs: ReglaComision[]): Simulacion => {
+    const t = tasaPara(cashierId, vendido, rs);
+    return { ...t, comision: r2((vendido * t.tasa) / 100) };
+  };
+  return {
+    hoy: con(reglas),
+    conLaNueva: nueva ? con([...reglas, { ...nueva, id: "__nueva__", label: "" }]) : null,
+  };
+}

@@ -54,8 +54,12 @@ export function CajaAuditoria() {
           {error}
         </p>
       )}
+      {/* Alcance a la vista (H11/M28): sin esto parecía la lista completa de la caja. */}
+      <p className="border-b border-[var(--rule-soft)] px-5 py-2 text-sm text-[var(--text-secondary)]">
+        Sólo lo que hizo una persona: aperturas, cierres, anotaciones a mano y correcciones. Ventas y adelantos: en Movimientos.
+      </p>
       {rastro.length === 0 ? (
-        !error && <p className="p-8 text-center text-sm text-[var(--text-secondary)]">Todavía no hay movimientos registrados.</p>
+        !error && <p className="p-8 text-center text-sm text-[var(--text-secondary)]">Todavía nadie abrió, cerró ni anotó algo a mano en la caja.</p>
       ) : (
         <ul className="divide-y divide-[var(--rule-base)]">
           {rastro.slice(0, visibles).map((t) => {

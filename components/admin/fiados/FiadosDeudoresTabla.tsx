@@ -17,6 +17,7 @@ import { diaLeido } from "./fechas";
 import { STATUS_META, estaAbierto, type ColumnaOrden, type Fiado, type FiadoStatus } from "./tipos";
 import type { EstadoFiados } from "./use-fiados";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import PonerPlazo from "./PonerPlazo";
 
 const STATUS_FILTERS: { key: FiadoStatus | ""; label: string }[] = [
   { key: "", label: "Todos" },
@@ -159,8 +160,8 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
                         </td>
                         <td className="text-right font-medium">{formatCurrency(f.total)}</td>
                         <td className={cn("text-right font-bold font-mono", f.status === "PAGADO" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{formatCurrency(f.saldo)}</td>
-                        <td className="text-[var(--text-secondary)] hidden sm:table-cell">
-                          {f.fechaVence ? diaLeido(f.fechaVence) : "—"}
+                        <td className="text-[var(--text-secondary)] hidden sm:table-cell" onClick={f.fechaVence ? undefined : (e) => e.stopPropagation()} data-no-row-click={f.fechaVence ? undefined : true}>
+                          {f.fechaVence ? diaLeido(f.fechaVence) : estaAbierto(f) ? <PonerPlazo fiadoId={f.id} creado={f.createdAt} onGuardado={estado.fetchFiados} /> : "—"}
                         </td>
                         <td>
                           <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold", meta.bg, meta.color)}>

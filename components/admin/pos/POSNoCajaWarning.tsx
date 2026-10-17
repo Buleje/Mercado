@@ -2,6 +2,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle } from "@buleje/design-system/icons";
+import { useVendesComo } from "./use-responsable-venta";
 
 interface POSNoCajaWarningProps {
   turnoAbierto: boolean | null;
@@ -12,6 +13,9 @@ interface POSNoCajaWarningProps {
 
 /** Aviso antes de cobrar sin turno o sin caja abierta. */
 export default function POSNoCajaWarning({ turnoAbierto, cashRegisterOpen, setShowNoCajaWarning, setShowPayment }: POSNoCajaWarningProps) {
+  /* La venta se atribuye a quien está logueado (`Sale.cashierId`), con o sin
+     turno: antes este aviso decía que «no entra en sus comisiones», y sí entra. */
+  const vendesComo = useVendesComo();
   return (
         <div
           role="alertdialog"
@@ -46,8 +50,8 @@ export default function POSNoCajaWarning({ turnoAbierto, cashRegisterOpen, setSh
                   )}
                   {turnoAbierto === false && (
                     <>
-                      La venta <strong>no tendrá cajero responsable</strong>: no entra en su turno ni en sus comisiones, y si al cierre
-                      falta plata no hay a quién preguntarle.{" "}
+                      La venta queda <strong>a nombre de {vendesComo ?? "quien está logueado"}</strong> (cuenta para su comisión), pero{" "}
+                      <strong>no entra en el cuadre de ningún turno</strong>: si al cierre falta plata, ningún turno la explica.{" "}
                     </>
                   )}
                   ¿Continuar de todas formas?

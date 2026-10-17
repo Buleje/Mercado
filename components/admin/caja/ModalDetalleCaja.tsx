@@ -12,7 +12,7 @@ import { CajaCuadreDelDia } from "./CajaCuadreDelDia";
 import { useTenant } from "@/contexts/tenant-context";
 import { useParteDelDia } from "./use-parte-del-dia";
 import { abrirHojaImpresa } from "./acciones-parte";
-import { COLOR_SIGNO, fmt, fmtDate, MOVEMENT_COLORS, signoDe, type CashRegister } from "./tipos";
+import { COLOR_SIGNO, acortarIds, fmt, fmtDate, MOVEMENT_COLORS, signoDe, type CashRegister } from "./tipos";
 
 const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape", plin: "Plin", tarjeta: "Tarjeta" };
 
@@ -108,7 +108,7 @@ export function ModalDetalleCaja({ caja, onCerrar }: { caja: CashRegister; onCer
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-[var(--text-primary)]">{origenDeMovimiento(m).etiqueta}</span>
-                  <span className="block truncate text-xs text-[var(--text-tertiary)]">{m.description}</span>
+                  <span className="block truncate text-xs text-[var(--text-tertiary)]" title={m.description}>{acortarIds(m.description)}</span>
                 </span>
                 <span className={cn("text-sm font-bold tabular-nums shrink-0", COLOR_SIGNO[signo])}>
                   {signo === 1 ? "+" : signo === -1 ? "−" : ""}

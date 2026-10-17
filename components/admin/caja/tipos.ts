@@ -94,3 +94,11 @@ export const COLOR_SIGNO = {
 /** Clases de botón compartidas: misma altura y tono en toda la pestaña. */
 export const BOTON_PRIMARIO =
   button({ variant: "accent", className: "rounded-xl" });
+
+const UUID = /\b([0-9a-f]{8})-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
+/** «Venta 63a4541a-c2fc-…-9e123b53e916» → «Venta #63a4541a» (M24): el código
+ *  completo queda en el `title` y en la búsqueda, no en la celda. */
+export function acortarIds(texto: string): string {
+  return texto.replace(UUID, "#$1");
+}

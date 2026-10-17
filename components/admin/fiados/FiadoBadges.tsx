@@ -35,6 +35,8 @@ export function FiadoSemaphore({ fiado }: { fiado: { status: string; fechaVence?
   if (faltan != null && faltan <= 7) {
     return <StatusBadge variant="warning" label={faltan === 0 ? "Vence hoy" : `Vence en ${faltan}d`} dot size="sm" pulse />;
   }
+  // Sin fecha no hay contra qué estar «al día» (H03/M31): antes salía verde.
+  if (!dia) return <span title="No tiene fecha de vencimiento: ponle una en la columna Vencimiento"><StatusBadge variant="neutral" label="Sin plazo" dot size="sm" /></span>;
   return <StatusBadge variant="success" label="Al día" dot size="sm" />;
 }
 

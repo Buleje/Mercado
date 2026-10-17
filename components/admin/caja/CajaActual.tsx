@@ -25,6 +25,7 @@ import type { ParteDelDia } from "@/lib/caja/parte-del-dia";
 import { CajaCerrada } from "./CajaCerrada";
 import { CajaContar } from "./CajaContar";
 import { CajaCuadreDelDia } from "./CajaCuadreDelDia";
+import { CajaHoyYSesion } from "./CajaHoyYSesion";
 import { CajaMovimientos } from "./CajaMovimientos";
 import { CajaPorMedio } from "./CajaPorMedio";
 import { useIndicadoresCaja } from "./use-indicadores-caja";
@@ -103,6 +104,8 @@ function CajaAbierta({ vista, datos, parte, puedeCambiarMedio, onMovimiento, onC
         </button>
         {mas}
       </div>
+      {/* Caja abierta desde otro día: lo de hoy, aparte de la sesión (H01/M23). */}
+      {parte.parte?.hoy && <CajaHoyYSesion abiertaEn={caja.openedAt} hoy={parte.parte.hoy} />}
       {indicadores.panel}
 
       {vista === "hoy" && (

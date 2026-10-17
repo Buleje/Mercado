@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  REGLA_GENERAL, TASA_POR_DEFECTO, calcularComisiones, leerMarcaDePago, marcaDePago, moverDia, rangoLibre, rangoLima, tasaPara,
+  BASE_COMISION, REGLA_GENERAL, TASA_POR_DEFECTO, calcularComisiones, reglaVigente, simularComision, leerMarcaDePago, marcaDePago, moverDia, rangoLibre, rangoLima, tasaPara,
   type ReglaComision,
 } from "@/lib/comisiones/calcular";
 
@@ -108,5 +108,42 @@ describe("rangoLima", () => {
     const { from, to } = rangoLima("2026-10-01", "2026-10-01");
     expect(from.toISOString()).toBe("2026-10-01T05:00:00.000Z");
     expect(to.toISOString()).toBe("2026-10-02T04:59:59.999Z");
+  });
+});
+
+describe("reglaVigente (auditoría 15-10, M40: el 2 % dice de dónde sale)", () => {
+  it("sin reglas: 2 % por defecto, y lo dice", () => {
+    expect(reglaVigente([])).toEqual({ texto: "2 % para todos, por defecto (sin reglas guardadas)", fuente: "por_defecto", propias: 0 });
+  });
+  it("general única", () => {
+    expect(reglaVigente([regla("*", 3)]).texto).toBe("3 % para todo el equipo");
+  });
+  it("general por tramos + propias", () => {
+    const r = reglaVigente([regla("*", 2, 0, 5000), regla("*", 3, 5000), regla("maria", 4), regla("maria", 5, 8000), regla("ana", 1)]);
+    expect(r).toEqual({ texto: "de 2 % a 3 % por tramos para todo el equipo · 2 vendedores tienen regla propia", fuente: "mixta", propias: 2 });
+  });
+  it("sólo propias: el resto sigue en el 2 %", () => {
+    expect(reglaVigente([regla("maria", 4)]).texto).toBe("2 % para todos, por defecto · 1 vendedor tiene regla propia");
+  });
+  it("la base dicha es la que usa el cálculo: un solo % para todo lo vendido", () => {
+    expect(tasaPara("maria", 6000, [regla("maria", 2, 0, 5000), regla("maria", 3, 5000)]).tasa).toBe(3);
+    expect(BASE_COMISION.tramo).toMatch(/no por escalones/);
+  });
+});
+
+describe("simularComision (M41: probar la regla antes de guardarla)", () => {
+  it("sin reglas: hoy 2 %; con una general de 3 %, sube", () => {
+    const s = simularComision("maria", 6000, [], { cashierId: REGLA_GENERAL, minSales: 0, maxSales: null, rate: 3 });
+    expect(s.hoy).toEqual({ tasa: 2, fuente: "por_defecto", tramo: null, comision: 120 });
+    expect(s.conLaNueva).toEqual({ tasa: 3, fuente: "general", tramo: null, comision: 180 });
+  });
+  it("un tramo propio que no alcanza: sigue la general", () => {
+    const s = simularComision("maria", 4000, [regla(REGLA_GENERAL, 2)], { cashierId: "maria", minSales: 5000, maxSales: null, rate: 4 });
+    expect(s.conLaNueva).toMatchObject({ tasa: 2, fuente: "general", comision: 80 });
+  });
+  it("misma cuenta que el cálculo del backend", () => {
+    const reglas = [regla("maria", 3, 5000)];
+    const fila = calcularComisiones("2026-10-01", "2026-10-31", [{ cashierId: "maria", cashierName: "María", role: "cajero", sales: 10, revenue: 6000 }], reglas, []).filas[0];
+    expect(simularComision("maria", 6000, reglas, null).hoy.comision).toBe(fila.comision);
   });
 });

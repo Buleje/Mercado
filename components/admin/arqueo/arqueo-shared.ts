@@ -62,10 +62,33 @@ export type CashAudit = {
   expectedAmount: number;
   countedAmount: number;
   difference: number;
+  /** ¿Alguien contó el efectivo al cerrar? Abierta o cierre automático → no. */
+  huboConteo: boolean;
   status: AuditStatus;
   notes: string;
   conteos: ConteoExpress[];
 };
+
+/** Lo que se puede afirmar del conteo de cierre. `null` = no se midió: nunca
+ *  se dibuja como «S/ 0» (17-10: la caja de Blas abierta en junio, con esperado
+ *  negativo, salía con Contado S/ 0 y Diferencia S/ 0). */
+export type LecturaConteo = {
+  contado: number | null;
+  diferencia: number | null;
+  /** Palabra corta para la celda cuando falta el dato. */
+  etiqueta: "sin contar" | "sin conteo" | "no evaluable" | null;
+  /** Por qué falta, para el `title` o el detalle. */
+  porque: string | null;
+};
+
+export function lecturaDelConteo(a: Pick<CashAudit, "abierta" | "closedAt" | "huboConteo" | "status" | "countedAmount" | "difference">): LecturaConteo {
+  if (a.abierta || !a.closedAt) return { contado: null, diferencia: null, etiqueta: "sin contar", porque: "La caja sigue abierta: todavía nadie la contó para cerrarla." };
+  if (!a.huboConteo) return { contado: null, diferencia: null, etiqueta: "sin conteo", porque: "Se cerró sin contar el efectivo: no hay diferencia que medir." };
+  if (a.status === "imposible") {
+    return { contado: a.countedAmount, diferencia: null, etiqueta: "no evaluable", porque: "El esperado salió negativo: revisa los retiros antes de juzgar la diferencia." };
+  }
+  return { contado: a.countedAmount, diferencia: a.difference, etiqueta: null, porque: null };
+}
 
 /** Título de una ventana armada a mano: la misma clase que el de `AdminModal`. */
 export const TITULO_VENTANA = "font-display text-base sm:text-lg font-semibold text-[var(--text-primary)] tracking-tight";
@@ -171,6 +194,7 @@ export function mapRegisterToAudit(r: CashRegisterRaw, quien: QuienPorCaja = {})
     expectedAmount: esperado,
     countedAmount: r.closingAmount ?? 0,
     difference: diff ?? 0,
+    huboConteo: r.closedAt != null && r.closingAmount != null && status !== "sin_conteo" && status !== "pendiente",
     status,
     notes: status === "pendiente" ? "" : (r.notes ?? ""),
     conteos: conteosDe(r),
@@ -190,12 +214,13 @@ export const FILTROS: { id: FiltroCuadre; label: string; pasa: (a: CashAudit) =>
 
 /** Texto del cuadre para mandarlo por WhatsApp al dueño. */
 export function textoWhatsApp(a: CashAudit): string {
+  const l = lecturaDelConteo(a);
   const lineas = [
     `Cuadre de caja · ${a.fecha} (${a.turno})`,
     a.cajero !== "—" ? `Abrió: ${a.cajero}${a.cerro ? ` · Cerró: ${a.cerro}` : ""}` : "",
     `Esperado: ${fmt(a.expectedAmount)}`,
-    a.status !== "pendiente" ? `Contado: ${fmt(a.countedAmount)}` : "Caja abierta",
-    a.status !== "pendiente" ? `Diferencia: ${fmtSigno(a.difference)} · ${STATUS_MAP[a.status].label}` : "",
+    l.contado != null ? `Contado: ${fmt(l.contado)}` : a.abierta ? "Caja abierta: sin contar" : "Cerrada sin contar",
+    l.diferencia != null ? `Diferencia: ${fmtSigno(l.diferencia)} · ${STATUS_MAP[a.status].label}` : `Diferencia: ${l.etiqueta} · ${STATUS_MAP[a.status].label}`,
     a.conteos[0] ? `Último conteo: ${fmt(a.conteos[0].contado)} a las ${horaLima(a.conteos[0].creadoEn)}` : "",
   ];
   return lineas.filter(Boolean).join("\n");

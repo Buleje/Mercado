@@ -8,7 +8,7 @@ import { formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
 import type { ItemLineaDeTiempo } from "./use-caja-registradora";
-import { COLOR_SIGNO, fmt, signoDe } from "./tipos";
+import { COLOR_SIGNO, acortarIds, fmt, signoDe } from "./tipos";
 
 const BADGE_COLOR: Record<string, string> = {
   apertura: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
@@ -50,7 +50,7 @@ export function CajaLineaDeTiempo({ items, efectivoActual }: { items: ItemLineaD
                   <span className="text-sm font-medium text-[var(--text-secondary)] capitalize">{item.method}</span>
                 )}
               </div>
-              <p className="text-sm text-[var(--text-primary)] truncate">{item.description}</p>
+              <p className="text-sm text-[var(--text-primary)] truncate" title={item.description}>{acortarIds(item.description)}</p>
               <p className={cn("text-sm font-bold", COLOR_SIGNO[signo])}>
                 {signo === 1 ? "+" : signo === -1 ? "−" : ""}
                 {fmt(item.amount)}

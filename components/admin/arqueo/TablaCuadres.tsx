@@ -5,9 +5,14 @@ import { DataTable } from "@buleje/design-system";
 import { Calculator, CheckCircle2, Eye, Search } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
-import { FILTROS, STATUS_MAP, dentroDeTolerancia, fmt, fmtSigno, horaLima, type CashAudit, type FiltroCuadre } from "./arqueo-shared";
+import { FILTROS, STATUS_MAP, dentroDeTolerancia, fmt, fmtSigno, horaLima, lecturaDelConteo, type CashAudit, type FiltroCuadre } from "./arqueo-shared";
 
 const PAGINA = 20;
+
+/** Celda sin medir: palabra en gris, nunca «S/ 0». */
+function SinDato({ texto, porque }: { texto: string | null; porque: string | null }) {
+  return <span className="text-sm font-semibold text-[var(--text-secondary)]" title={porque ?? undefined}>{texto ?? "—"}</span>;
+}
 
 /**
  * Historial de cuadres con sus filtros pegados. `GET /api/cash-registers`
@@ -103,7 +108,7 @@ export default function TablaCuadres({
             {filas.slice(0, visibles).map((a) => {
               const s = STATUS_MAP[a.status];
               const SIcon = s.icon;
-              const cerrada = a.status !== "pendiente";
+              const l = lecturaDelConteo(a);
               const conteo = a.conteos[0];
               const tolerada = dentroDeTolerancia(a, tolerancia);
               return (
@@ -113,10 +118,10 @@ export default function TablaCuadres({
                   <td className="font-semibold">{a.cajero}</td>
                   <td className="text-right tabular-nums text-[var(--text-secondary)]">{fmt(a.expectedAmount)}</td>
                   <td className="text-right font-bold tabular-nums">
-                    {cerrada ? fmt(a.countedAmount) : conteo ? <span title={`Conteo express a las ${horaLima(conteo.creadoEn)}`}>{fmt(conteo.contado)}*</span> : "—"}
+                    {l.contado != null ? fmt(l.contado) : conteo ? <span title={`Conteo express a las ${horaLima(conteo.creadoEn)}`}>{fmt(conteo.contado)}*</span> : <SinDato texto={l.etiqueta} porque={l.porque} />}
                   </td>
-                  <td className={cn("text-right font-extrabold tabular-nums", !cerrada || a.difference === 0 ? "text-[var(--text-secondary)]" : tolerada || a.difference > 0 ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]")}>
-                    {cerrada ? fmtSigno(a.difference) : "—"}
+                  <td className={cn("text-right font-extrabold tabular-nums", l.diferencia == null || l.diferencia === 0 ? "text-[var(--text-secondary)]" : tolerada || l.diferencia > 0 ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]")}>
+                    {l.diferencia != null ? fmtSigno(l.diferencia) : <SinDato texto={l.etiqueta} porque={l.porque} />}
                   </td>
                   <td>
                     {tolerada ? (

@@ -8,14 +8,17 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { etiquetaMedio } from "@/components/admin/pos/use-resumen-hoy";
 import { cn, exportToCSV } from "@/lib/utils";
-import type { FilaComision } from "@/lib/comisiones/calcular";
+import { BASE_COMISION, TASA_POR_DEFECTO, type FilaComision, type FuenteTasa } from "@/lib/comisiones/calcular";
 import { PERIODOS, useComisiones, type Periodo } from "@/components/admin/comisiones/use-comisiones";
 import { fmt, tramoDias } from "@/components/admin/comisiones/formato";
 import { useIndicadoresComisiones } from "@/components/admin/comisiones/use-indicadores-comisiones";
 import ReglasComision from "@/components/admin/comisiones/ReglasComision";
 import TablaComisiones from "@/components/admin/comisiones/TablaComisiones";
+import ReglaVigente from "@/components/admin/comisiones/ReglaVigente";
 import VentasDelVendedor from "@/components/admin/comisiones/VentasDelVendedor";
 import { ID_PANEL_COMISIONES, SeccionesComisiones, idPestanaComisiones, type SeccionComisiones } from "@/components/admin/comisiones/SeccionesComisiones";
+
+const FUENTE_CSV: Record<FuenteTasa, string> = { propia: "propia", general: "todo el equipo", por_defecto: `${TASA_POR_DEFECTO} % por defecto (sin regla guardada)` };
 
 const CAMPO = "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)]";
 
@@ -59,7 +62,9 @@ export default function CommissionCalculator() {
   const exportar = () =>
     exportToCSV(
       (c.datos?.filas ?? []).map((f) => ({
-        Vendedor: f.cashierName, Ventas: f.ventas, Vendido: f.vendido.toFixed(2), "% comisión": f.tasa, Regla: f.fuente,
+        // Base y tramo en el archivo (M46): quien lo abre en Excel sabe sobre qué se calculó.
+        Vendedor: f.cashierName, Ventas: f.ventas, Vendido: f.vendido.toFixed(2), Base: BASE_COMISION.corta,
+        "% comisión": f.tasa, Regla: FUENTE_CSV[f.fuente], Tramo: f.tramo ?? "todo lo vendido",
         Comisión: f.comision.toFixed(2), Pagado: f.pagado.toFixed(2), Pendiente: f.pendiente.toFixed(2),
       })),
       `comisiones-${c.rango.desde}-a-${c.rango.hasta}.csv`,
@@ -132,6 +137,8 @@ export default function CommissionCalculator() {
           onPasarLocales={c.pasarLocales}
         />
       ) : (
+        <div className="space-y-3">
+        <ReglaVigente reglas={c.reglas} onVerReglas={() => setSeccion("reglas")} />
         <TablaComisiones
           datos={c.datos}
           pagando={pagando}
@@ -141,6 +148,7 @@ export default function CommissionCalculator() {
           loading={c.loading}
           onVerReglas={() => setSeccion("reglas")}
         />
+        </div>
       )}
       </div>
 

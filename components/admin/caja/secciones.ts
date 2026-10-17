@@ -81,7 +81,9 @@ export const SECCIONES: Record<GrupoCaja, { rotulo: string; titulo: string; secc
         clave: "auditoria",
         rotulo: "Quién la tocó",
         ayuda: {
-          what: "Aperturas, cierres e ingresos o retiros a mano, con el usuario que los hizo. Es un registro de auditoría: no se edita ni se borra.",
+          what: "Aperturas, cierres, ingresos o retiros anotados a mano y correcciones de medio, con el usuario que los hizo. Es un registro de auditoría: no se edita ni se borra.",
+          affects: "Las ventas, los adelantos y los cobros de fiado NO salen acá (los anota el sistema, no una persona): están en Movimientos, con su día y hora.",
+          example: "Si falta plata, acá ves quién retiró S/ 50 a mano y a qué hora; la venta que la explica la buscas en Movimientos por su código.",
         },
       },
     ],
