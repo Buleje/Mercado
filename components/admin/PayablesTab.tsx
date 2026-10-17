@@ -14,6 +14,7 @@ import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { codigoDeOrden, descripcionALaVista } from "@/lib/compras/referencia-documento";
 import { cn, exportToCSV, limaDateKey } from "@/lib/utils";
 import CalendarioPorPagar from "@/components/admin/cuentas-por-pagar/CalendarioPorPagar";
+import ConciliacionDocumentos from "@/components/admin/compras/conciliacion/ConciliacionDocumentos";
 import EstadoDeCuentaModal from "@/components/admin/cuentas-por-pagar/EstadoDeCuentaModal";
 import NuevaCuentaModal from "@/components/admin/cuentas-por-pagar/NuevaCuentaModal";
 import PropuestaDePagos from "@/components/admin/cuentas-por-pagar/PropuestaDePagos";
@@ -27,17 +28,19 @@ import {
   diaDeVencimiento, estaPagada, ordenar, proveedoresConCuentas, resumir, saldo, sugeridasParaPagar, type CuentaPorPagar,
 } from "@/components/admin/cuentas-por-pagar/resumen-cuentas";
 
-export const SECCIONES_POR_PAGAR = ["cuentas", "calendario", "propuesta"] as const;
+export const SECCIONES_POR_PAGAR = ["cuentas", "calendario", "propuesta", "conciliacion"] as const;
 type SeccionPorPagar = (typeof SECCIONES_POR_PAGAR)[number];
 const ID_PANEL = "panel-por-pagar";
 const FILTROS_INICIALES: FiltrosCuentas = { estado: "pendientes", proveedorId: "", q: "" };
 
 /**
  * Cuentas por pagar a proveedores: a quién le debes, cuánto, cuándo vence y
- * pagar. Vive en Compras › Por pagar. Tres secciones (`?sub=`): la lista de
- * cuentas, el calendario con la antigüedad del saldo (C45) y la propuesta de
- * pagos (C46, preparar no paga). El estado de cuenta de un proveedor (C48)
- * sale del «⋯» de la cabecera o de la fila.
+ * pagar. Vive en Compras › Por pagar. Cuatro secciones (`?sub=`): la lista de
+ * cuentas, el calendario con la antigüedad del saldo (C45), la propuesta de
+ * pagos (C46, preparar no paga) y la conciliación de documentos (N04: orden,
+ * recepción, factura, cuenta y pago lado a lado; se ve aunque no debas nada,
+ * porque también mira las compras al contado). El estado de cuenta de un
+ * proveedor (C48) sale del «⋯» de la cabecera o de la fila.
  */
 export default function PayablesTab() {
   const { cuentas, proveedores, loading, error, setError, saving, load, crear, vincular, pagar, eliminar } = useCuentasPorPagar();
@@ -71,10 +74,10 @@ export default function PayablesTab() {
     await eliminar(id);
   };
 
-  /** «Pagar» desde la propuesta: lleva a la cuenta, sin filtros que la escondan, con el pago abierto. */
-  const pagarDesdePropuesta = (id: string) => {
-    setFiltrosTodos(FILTROS_INICIALES);
-    setAbierto({ id, que: "pagar" });
+  /** Lleva a una cuenta, sin filtros que la escondan: con el pago abierto («Pagar» de la propuesta) o sólo a la vista (conciliación). */
+  const irACuenta = (id: string, abrir: Abierto) => {
+    setFiltrosTodos(abrir ? FILTROS_INICIALES : { ...FILTROS_INICIALES, estado: "todas" });
+    setAbierto(abrir);
     irA("cuentas");
     window.setTimeout(() => document.querySelector(`[data-cuenta="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "center" }), 80);
   };
@@ -84,12 +87,21 @@ export default function PayablesTab() {
     falta: saldo(c), vence: diaDeVencimiento(c.dueDate), estado: c.status, orden: c.purchaseOrderId ? codigoDeOrden(c.purchaseOrderId) : "",
   })), "cuentas-por-pagar");
 
+  /** «Vincular a su orden» desde la conciliación: la misma ventana que en la fila de la cuenta. */
+  const vincularDesdeConciliacion = (id: string) => {
+    const cuenta = cuentas.find((c) => c.id === id);
+    if (cuenta) setAVincular(cuenta);
+    else setAviso({ texto: "Esa cuenta ya no está en la lista: actualiza Por pagar.", tono: "aviso" });
+  };
+
   const conDatos = !loading && cuentas.length > 0;
+  const conciliando = vista === "conciliacion";
   const secciones = [
     // Sin cuenta: la misma cifra está en «Por pagar N» y en los indicadores, y la fila no entra a 1280.
     { clave: "cuentas" as const, rotulo: "Cuentas" },
     { clave: "calendario" as const, rotulo: "Calendario" },
     { clave: "propuesta" as const, rotulo: "Propuesta", cuenta: marcadas },
+    { clave: "conciliacion" as const, rotulo: "Conciliación" },
   ];
 
   return (
@@ -102,11 +114,11 @@ export default function PayablesTab() {
           affects="Al recibir con productos dañados, vencidos o faltantes, la cuenta de esa orden baja sola. Si pagas en efectivo puedes marcar «Sale de la caja» y el pago queda como egreso de la caja abierta."
           example="Orden de S/ 140 a 15 días con Distribuidora Ucayali: vence el jueves 23/10; si pagas S/ 100 hoy te faltan S/ 40."
         />
-        {conDatos && (
+        {(!loading || conciliando) && (
           <BarraDeSecciones secciones={secciones} activa={vista} onCambiar={irA} etiqueta="Secciones de Por pagar" idPanel={ID_PANEL} />
         )}
         <div className="ml-auto flex items-center gap-2">
-          {conDatos && kpis.boton}
+          {conDatos && !conciliando && kpis.boton}
           <button type="button" onClick={() => setNueva(true)} aria-haspopup="dialog" title="Nueva cuenta" className={button({ variant: "primary", className: "shrink-0 gap-1.5 rounded-xl px-4 max-2xl:w-12 max-2xl:px-0" })}>
             <Plus className="h-4 w-4" aria-hidden /> <span className="max-2xl:sr-only">Nueva cuenta</span>
           </button>
@@ -142,9 +154,13 @@ export default function PayablesTab() {
         </div>
       )}
 
-      {conDatos && kpis.panel}
+      {conDatos && !conciliando && kpis.panel}
 
-      {loading ? (
+      {conciliando ? (
+        <div role="tabpanel" id={ID_PANEL} aria-labelledby={idPestanaDeSeccion(ID_PANEL, vista)}>
+          <ConciliacionDocumentos marca={cuentas} onVerCuenta={(id) => irACuenta(id, null)} onVincular={vincularDesdeConciliacion} />
+        </div>
+      ) : loading ? (
         <TableSkeleton rows={4} cols={4} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" />
       ) : cuentas.length === 0 ? (
         <EmptyState
@@ -159,7 +175,7 @@ export default function PayablesTab() {
           {vista === "calendario" ? (
             <CalendarioPorPagar cuentas={cuentas} hoy={hoy} />
           ) : vista === "propuesta" ? (
-            <PropuestaDePagos cuentas={cuentas} hoy={hoy} elegidas={elegidas} setElegidas={setElegidas} onPagar={pagarDesdePropuesta} />
+            <PropuestaDePagos cuentas={cuentas} hoy={hoy} elegidas={elegidas} setElegidas={setElegidas} onPagar={(id) => irACuenta(id, { id, que: "pagar" })} />
           ) : (
             <SeccionCuentas
               cuentas={cuentas}
