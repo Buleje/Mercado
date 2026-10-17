@@ -5,6 +5,11 @@
  *
  * Sacado de `DeliveryPartnersLiveMap.tsx` el 10-10 para que el mapa quede en
  * menos de 300 líneas; mismo comportamiento.
+ *
+ * 17-10 (P14): cada repartidor dice de cuándo es su ubicación. El mapa se
+ * actualiza cada 10 s, pero eso no hace reciente una posición vieja: si está
+ * «en línea» y su app no manda nada hace más de 2 min, sale «Sin señal hace X»
+ * y su punto va apagado con borde punteado.
  */
 import type { DeliveryPartnerLive } from "@/components/admin/OrdersTab/hooks/useDeliveryPartnersLive";
 import { toNum, vehicleKind } from "@/components/admin/delivery-partners/shared";
@@ -54,9 +59,32 @@ export const STATE_META: Record<PartnerState, { label: string; color: string; bg
   },
 };
 
-export function timeAgo(iso: string | null): string {
+/** Más de esto sin noticias de la app = la posición del mapa ya no es de ahora. */
+export const SIN_SENAL_MS = 2 * 60_000;
+
+/** ¿La última señal es vieja? (en línea sin ninguna señal también cuenta). */
+export function senalVieja(p: Pick<DeliveryPartnerLive, "lastPingAt" | "isOnline">, ahora = Date.now()): boolean {
+  if (!p.lastPingAt) return p.isOnline;
+  const t = new Date(p.lastPingAt).getTime();
+  return Number.isNaN(t) || ahora - t > SIN_SENAL_MS;
+}
+
+/**
+ * «Ubicación hace 20 s» · «Sin señal hace 5 min» · «Última señal hace 2 h»;
+ * pasado un día: «Sin señal desde el 18 jun.» · «Última señal el 18 jun.»; null sin dato.
+ */
+export function textoSenal(p: Pick<DeliveryPartnerLive, "lastPingAt" | "isOnline">, ahora = Date.now()): string | null {
+  if (!p.lastPingAt) return p.isOnline ? "Sin señal todavía" : null;
+  const hace = timeAgo(p.lastPingAt, ahora);
+  const esFecha = !hace.startsWith("hace");
+  if (!p.isOnline) return esFecha ? `Última señal el ${hace}` : `Última señal ${hace}`;
+  if (!senalVieja(p, ahora)) return `Ubicación ${hace}`;
+  return esFecha ? `Sin señal desde el ${hace}` : `Sin señal ${hace}`;
+}
+
+export function timeAgo(iso: string | null, ahora = Date.now()): string {
   if (!iso) return "—";
-  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  const s = Math.max(0, Math.floor((ahora - new Date(iso).getTime()) / 1000));
   if (s < 60) return `hace ${s} s`;
   const m = Math.floor(s / 60);
   if (m < 60) return `hace ${m} min`;
@@ -97,8 +125,10 @@ function vehicleSvg(t: string): string {
 export function markerHtml(p: DeliveryPartnerLive, elegido: boolean): string {
   const lado = elegido ? 32 : 26;
   const color = STATE_META[partnerStateOf(p)].mapColor;
+  // En línea sin señal reciente: el punto es donde ESTABA, no donde está.
+  const viejo = p.isOnline && senalVieja(p);
   return `
-    <div style="background:${color};width:${lado}px;height:${lado}px;border-radius:50%;border:${elegido ? 4 : 3}px solid white;box-shadow:0 4px 10px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;color:white;transition:all 200ms;">
+    <div style="background:${color};width:${lado}px;height:${lado}px;border-radius:50%;border:${elegido ? 4 : 3}px ${viejo ? "dashed" : "solid"} white;opacity:${viejo ? 0.55 : 1};box-shadow:0 4px 10px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;color:white;transition:all 200ms;">
       ${vehicleSvg(p.vehicleType)}
     </div>
   `;
@@ -107,10 +137,12 @@ export function markerHtml(p: DeliveryPartnerLive, elegido: boolean): string {
 export function popupHtml(p: DeliveryPartnerLive): string {
   const rating = toNum(p.rating);
   const aceptacion = toNum(p.acceptanceRate);
+  const senal = textoSenal(p);
   return `
     <div style="font-family:system-ui,sans-serif;min-width:180px;">
       <div style="font-weight:800;font-size:14px;color:#1a1a1a;margin-bottom:4px;">${escapeHtml(p.name)}</div>
       <div style="font-size:14px;color:#555;margin-bottom:6px;">${escapeHtml(p.phone ?? "")}</div>
+      ${senal ? `<div style="font-size:14px;font-weight:700;color:${p.isOnline && senalVieja(p) ? "#842e25" : "#555"};margin-bottom:6px;">${escapeHtml(senal)}</div>` : ""}
       <div style="display:flex;gap:6px;font-size:14px;color:#444;">
         <span>&#11088; ${rating.toFixed(1)}</span>
         <span>· ${Math.round(aceptacion * 100)}% aceptaci&#243;n</span>

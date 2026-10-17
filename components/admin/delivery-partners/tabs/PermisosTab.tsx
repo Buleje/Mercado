@@ -1,4 +1,13 @@
 "use client";
+
+/**
+ * Reparto › Asignaciones › Permisos de tienda (plegado).
+ *
+ * 17-10 (P29): se explica quién puede qué en Reparto (lo decide el ROL del
+ * usuario, verificado en cada acción del servidor) y se dice sin rodeos que
+ * estas marcas se guardan pero hoy ninguna acción las consulta. Cada tarjeta
+ * dice quién hizo el último cambio.
+ */
 import { useState, useEffect, useCallback } from "react";
 import { AlertCircle, CheckCircle, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -36,6 +45,10 @@ const PERMISSION_LABELS: Record<string, { label: string; short: string; descript
   manage_products: { label: "Gestionar productos", short: "Productos", description: "Crear y editar inventario" },
   view_analytics:  { label: "Ver analytics",       short: "Analytics", description: "Acceso a reportes" },
 };
+/** Lo que el servidor verifica en cada acción de Reparto (requireAdmin por ruta). */
+const QUIEN_PUEDE_QUE =
+  "Dueño, administrador y encargado: todo. Cajero: ver el mapa y las rutas, ver el equipo y asignar pedidos; no da de alta ni pausa repartidores, no paga retiros, no ve el ranking ni la red Buleje. El repartidor sólo ve y acepta, desde su app, los pedidos que le ofrecen o le asignas.";
+
 const USER_TYPE_LABELS: Record<string, { label: string; bg: string; text: string }> = {
   admin:    { label: "Admin",       bg: "bg-primary/10",                  text: "text-[var(--accent-ink)] dark:text-[var(--accent)]" },
   cajero:   { label: "Cajero",      bg: "bg-[var(--data-warning-100)]",   text: "text-[var(--data-warning-500)]" },
@@ -138,13 +151,18 @@ export function PermisosTab() {
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm text-[var(--text-secondary)]">
           {permissions.length === 0
-            ? "Nadie tiene permisos sobre tu tienda todavía."
+            ? "Nadie tiene permisos de tienda marcados: manda el rol de cada usuario."
             : `${permissions.length} ${permissions.length === 1 ? "usuario" : "usuarios"} · ${totalGrants} ${totalGrants === 1 ? "permiso" : "permisos"}`}
         </p>
         <InfoTip
+          title="Quién puede qué en Reparto"
+          what={QUIEN_PUEDE_QUE}
+          affects="Lo decide el rol de cada usuario (Equipo y RRHH), y el servidor lo revisa en cada acción. Pertenecer al equipo de reparto no da acceso al panel."
+        />
+        <InfoTip
           title="Permisos de tienda"
           what={PERMISSION_TYPES.map((perm) => `${PERMISSION_LABELS[perm].label}: ${PERMISSION_LABELS[perm].description.toLowerCase()}`).join(" · ")}
-          affects="Toca un permiso de la tarjeta de cada usuario para darlo o quitarlo; se guarda al momento."
+          affects="Toca un permiso para darlo o quitarlo: se guarda al momento con tu nombre. Ojo: hoy estas marcas se guardan pero ninguna acción las consulta todavía; lo que cada uno puede hacer lo decide su rol. Cambiarlas no toca entregas ni pagos ya hechos."
         />
         {userTypes.length > 1 && (
           <SegmentedControl<string>
@@ -211,6 +229,11 @@ export function PermisosTab() {
                         <span className="flex items-center gap-1.5 font-bold">
                           <span className="text-[var(--text-tertiary)]">Tienda:</span>
                           {p.storeName}
+                        </span>
+                      )}
+                      {p.grantedBy && (
+                        <span>
+                          <span className="text-[var(--text-tertiary)]">Último cambio:</span> {p.grantedBy}
                         </span>
                       )}
                     </div>

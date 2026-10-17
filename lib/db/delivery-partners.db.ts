@@ -90,6 +90,86 @@ export const DeliveryPartnersDB = {
     });
     return { partnerId: created.id, wasNew: true };
   },
+
+  // ── Reparto › Equipo (panel del negocio) ───────────────────────────────
+  // 17-10: el panel editaba, borraba y pausaba contra `/api/delivery/partners/[id]`,
+  // una ruta que nunca existió (404 en todo). Estas son sus operaciones, siempre
+  // con `tenantId` en el where y SIN `passwordHash` (la lista lo mandaba al navegador).
+
+  /** La lista de Equipo, sin el hash de la contraseña de la app. */
+  async listForAdmin(
+    tenantId: string,
+    filtros: { zone?: string | null; active?: boolean; search?: string | null } = {},
+  ) {
+    const where: Record<string, unknown> = { tenantId };
+    if (filtros.zone) where.zone = filtros.zone;
+    if (filtros.active !== undefined) where.isActive = filtros.active;
+    if (filtros.search) {
+      where.OR = [
+        { name: { contains: filtros.search, mode: "insensitive" } },
+        { phone: { contains: filtros.search } },
+      ];
+    }
+    return prisma.deliveryPartner.findMany({
+      where,
+      omit: { passwordHash: true },
+      orderBy: { createdAt: "desc" },
+    });
+  },
+
+  /** Otro repartidor del negocio con ese teléfono (para no dar de alta dos veces a la misma persona). */
+  async findByPhone(tenantId: string, phone: string, exceptoId?: string) {
+    return prisma.deliveryPartner.findFirst({
+      where: { tenantId, phone, ...(exceptoId ? { NOT: { id: exceptoId } } : {}) },
+      select: { id: true, name: true, isActive: true },
+    });
+  },
+
+  async findForAdmin(tenantId: string, id: string) {
+    return prisma.deliveryPartner.findFirst({
+      where: { tenantId, id },
+      omit: { passwordHash: true },
+    });
+  },
+
+  async createForAdmin(
+    tenantId: string,
+    data: { name: string; phone: string; email?: string; zone: string; vehicleType?: string; fee?: number; isActive?: boolean },
+  ) {
+    return prisma.deliveryPartner.create({
+      data: { ...data, tenantId },
+      omit: { passwordHash: true },
+    });
+  },
+
+  /** Editar: el where lleva `tenantId` (un id de otro negocio no toca nada → `null`). */
+  async updateForAdmin(
+    tenantId: string,
+    id: string,
+    data: { name?: string; phone?: string; email?: string | null; zone?: string; vehicleType?: string; fee?: number; isActive?: boolean },
+  ) {
+    const { count } = await prisma.deliveryPartner.updateMany({ where: { tenantId, id }, data });
+    if (count === 0) return null;
+    return prisma.deliveryPartner.findFirst({ where: { tenantId, id }, omit: { passwordHash: true } });
+  },
+
+  /**
+   * Lo que se perdería al borrarlo: sus entregas (se borran en cascada, con la
+   * tarifa ganada) y sus retiros (la base no deja borrar si tiene). Con algo de
+   * eso, el panel ofrece pausarlo en vez de borrarlo.
+   */
+  async contarHistorial(tenantId: string, id: string) {
+    const [entregas, retiros] = await Promise.all([
+      prisma.deliveryAssignment.count({ where: { tenantId, partnerId: id } }),
+      prisma.partnerPayout.count({ where: { partnerId: id, partner: { tenantId } } }),
+    ]);
+    return { entregas, retiros };
+  },
+
+  async deleteForAdmin(tenantId: string, id: string): Promise<boolean> {
+    const { count } = await prisma.deliveryPartner.deleteMany({ where: { tenantId, id } });
+    return count > 0;
+  },
 };
 
 /**

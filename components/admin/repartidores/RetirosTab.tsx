@@ -47,6 +47,10 @@ const VACIO: Record<FiltroHistorial, string> = {
  * «Retiros por pagar»: lo que los repartidores pidieron en su app. Pagar anota
  * el gasto (y, en efectivo, el egreso de la caja); rechazar devuelve la plata
  * a su saldo. Todo lo decide el servidor: esta vista sólo pide y muestra.
+ *
+ * 17-10 (P31): la sección se llamaba «Pagos» y no decía quién le debe a quién.
+ * Ahora: «Retiros por pagar» = lo que TU negocio le debe al repartidor; lo que
+ * él cobró a tus clientes en efectivo no está acá.
  */
 export function RetirosTab() {
   const [filtro, setFiltro] = useState<FiltroHistorial>("todos");
@@ -108,8 +112,9 @@ export function RetirosTab() {
       ? [
           {
             icono: Wallet,
-            rotulo: "Por pagar",
+            rotulo: "Les debes",
             valor: formatCurrency(resumen.porPagar.monto),
+            ayuda: "Lo que tus repartidores te pidieron retirar de lo que ganaron con sus tarifas. Es plata que tu negocio les debe.",
             extra: `${resumen.porPagar.cantidad} ${resumen.porPagar.cantidad === 1 ? "retiro" : "retiros"}`,
             tono: resumen.porPagar.cantidad > 0 ? "alerta" : undefined,
           },
@@ -128,15 +133,15 @@ export function RetirosTab() {
       {kpis.boton}
       {kpis.panel}
       <div className="flex flex-wrap items-center gap-2">
-        <CardTitle>Por pagar</CardTitle>
+        <CardTitle>Retiros por pagar</CardTitle>
         {resumen && resumen.porPagar.cantidad > 0 && (
           <span className="text-sm tabular-nums text-[var(--text-secondary)]">
             {resumen.porPagar.cantidad} {resumen.porPagar.cantidad === 1 ? "retiro" : "retiros"} · {formatCurrency(resumen.porPagar.monto)}
           </span>
         )}
         <InfoTip
-          title="Retiros por pagar"
-          what="Lo que cada repartidor pidió retirar de lo que ganó, desde su app."
+          title="Quién le debe a quién"
+          what="Acá TÚ le debes al repartidor: pidió retirar, desde su app, lo que ganó con sus tarifas por entrega. No incluye lo que él cobró a tus clientes en efectivo: esa plata es tuya y te la entrega él."
           affects="Al pagar se anota el gasto «Pago a repartidor» en Transporte; en efectivo puede salir de la caja abierta. Rechazar le devuelve la plata a su saldo. Si pagaste por error: «Deshacer pago» en el historial."
           example="Juan pidió S/ 80 a su Yape: lo yapeas, tocas Pagar y queda en Gastos."
         />

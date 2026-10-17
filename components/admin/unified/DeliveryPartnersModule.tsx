@@ -8,13 +8,17 @@
  * secciones para pasar de una a otra»), cinco secciones en `?sub=` con la barra
  * compartida `BarraDeSecciones` (como Turnos y Me deben):
  *
- *   En vivo        el mapa con la lista, lo primero de la pantalla; plegadas,
- *                  las rutas y paradas.
+ *   En vivo        el mapa con la lista, lo primero de la pantalla.
+ *   Rutas          las rutas planificadas y sus paradas (17-10, P17: antes
+ *                  plegadas debajo del mapa de En vivo).
  *   Equipo         tus repartidores y, con el selector de al lado del buscador,
  *                  quienes postulan (`?sub=postulantes`, la cifra roja = por
  *                  revisar).
  *   Asignaciones   qué pedido va con qué repartidor; plegados, los permisos.
- *   Pagos          los retiros que piden los repartidores (cifra = por pagar).
+ *                  La pastilla «Reparten: …» dice si la red Buleje también
+ *                  ve tus pedidos y abre su ventana (17-10, P30).
+ *   Retiros        lo que les debes a los repartidores (clave `pagos`; cifra =
+ *                  por pagar).
  *   Ranking        quién entrega más y mejor en el período.
  *
  * Cabecera en UNA fila: secciones · ⓘ · Indicadores de la sección · Más. Cada
@@ -42,6 +46,8 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { HuecoIndicadores } from "@/components/admin/delivery/reparto-indicadores";
 import { AYUDA_REPARTO, BARRA_REPARTO, type SeccionDeBarraReparto } from "@/components/admin/delivery/secciones-reparto";
 import { usePendientesReparto } from "@/components/admin/delivery/use-pendientes-reparto";
+import { useEstadoRedReparto } from "@/components/admin/delivery/EstadoRedReparto";
+import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import RepartoEnVivo from "@/components/admin/delivery/RepartoEnVivo";
 import { RepartidoresTab } from "@/components/admin/delivery-partners/tabs/RepartidoresTab";
 import { AsignacionesTab } from "@/components/admin/delivery-partners/tabs/AsignacionesTab";
@@ -52,6 +58,11 @@ import { RetirosTab } from "@/components/admin/repartidores/RetirosTab";
 import { useSubvistaModulo, useVistaModulo, type AliasDeVista } from "@/hooks/use-vista-modulo";
 
 const NetworkToggleCard = dynamic(() => import("@/components/admin/delivery/NetworkToggleCard"), { ssr: false });
+// Rutas y paradas (antes el módulo «delivery-live»; usa Leaflet → sin SSR).
+const RutasYParadas = dynamic(() => import("@/components/admin/DeliveryTab"), {
+  ssr: false,
+  loading: () => <LoadingSpinner className="mx-auto my-8" />,
+});
 
 const MODULE_ID = "delivery-partners";
 const ID_PANEL = "reparto-secciones-panel";
@@ -61,13 +72,14 @@ const ID_PANEL = "reparto-secciones-panel";
  * Equipo con el selector en «Postulantes» (la vieja «Solicitudes») y así tiene
  * link propio.
  */
-const SECCIONES_REPARTO = ["en-vivo", "repartidores", "postulantes", "asignaciones", "pagos", "ranking"] as const;
+const SECCIONES_REPARTO = ["en-vivo", "rutas", "repartidores", "postulantes", "asignaciones", "pagos", "ranking"] as const;
 type Seccion = (typeof SECCIONES_REPARTO)[number];
 
 /** Los ids de las 8 pestañas de antes → la sección que hoy los cubre. */
 const NOMBRES_VIEJOS: AliasDeVista<Seccion> = {
   live: "en-vivo",
   "pedidos-vivo": "en-vivo",
+  "delivery-live": "rutas",
   solicitudes: "postulantes",
   retiros: "pagos",
   permisos: "asignaciones",
@@ -96,6 +108,7 @@ function Reparto({ seccion, irA, conTitulo = false }: { seccion: Seccion; irA: (
   const [hueco, setHueco] = useState<HTMLElement | null>(null);
   const [vuelta, setVuelta] = useState(0);
   const [verRed, setVerRed] = useState(false);
+  const red = useEstadoRedReparto(activa === "asignaciones" || verRed);
   const pendientes = usePendientesReparto();
   const { recargar: recargarPendientes } = pendientes;
 
@@ -164,11 +177,12 @@ function Reparto({ seccion, irA, conTitulo = false }: { seccion: Seccion; irA: (
           className="space-y-4"
         >
           {activa === "en-vivo" && <RepartoEnVivo />}
+          {activa === "rutas" && <RutasYParadas />}
           {activa === "repartidores" &&
             (seccion === "postulantes" ? <SolicitudesTab selector={selectorEquipo} /> : <RepartidoresTab selector={selectorEquipo} />)}
           {activa === "asignaciones" && (
             <>
-              <AsignacionesTab />
+              <AsignacionesTab red={red.enabled} onVerRed={() => setVerRed(true)} onIrEquipo={() => irA("repartidores")} />
               <Plegable clave="pedidos:reparto:permisos" titulo="Permisos de tienda">
                 <PermisosTab />
               </Plegable>
@@ -180,7 +194,7 @@ function Reparto({ seccion, irA, conTitulo = false }: { seccion: Seccion; irA: (
       </div>
 
       <AdminModal open={verRed} onClose={() => setVerRed(false)} title="Red de repartidores Buleje" icon={Globe} variant="wide">
-        <div className={MODAL_BODY}>{verRed && <NetworkToggleCard enVentana />}</div>
+        <div className={MODAL_BODY}>{verRed && <NetworkToggleCard enVentana onCambio={red.setEnabled} />}</div>
       </AdminModal>
     </HuecoIndicadores.Provider>
   );

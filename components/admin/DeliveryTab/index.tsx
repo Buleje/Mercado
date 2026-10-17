@@ -335,7 +335,7 @@ export default function DeliveryTab() {
             </span>
             <div>
               <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight">
-                Delivery en vivo
+                Rutas y paradas
               </CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
                 {kpis.activeRoutes > 0 ? (

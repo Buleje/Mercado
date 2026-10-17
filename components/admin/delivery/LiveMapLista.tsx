@@ -7,6 +7,9 @@
  *
  * Sacada de `DeliveryPartnersLiveMap.tsx` el 10-10 (mismo comportamiento; texto
  * de 14 px en vez de 12).
+ *
+ * 17-10 (P14): cada uno dice de cuándo es su ubicación; «Sin señal hace X» si
+ * está en línea pero su app calla hace más de 2 min.
  */
 import { CardTitle } from "@buleje/design-system";
 import { Phone, Star, Truck } from "@buleje/design-system/icons";
@@ -16,7 +19,7 @@ import type { DeliveryPartnerLive } from "@/components/admin/OrdersTab/hooks/use
 import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
-import { ORDEN_ESTADO, partnerStateOf, STATE_META, timeAgo } from "./live-map-helpers";
+import { ORDEN_ESTADO, partnerStateOf, senalVieja, STATE_META, textoSenal } from "./live-map-helpers";
 
 export function LiveMapLista({
   partners,
@@ -42,7 +45,8 @@ export function LiveMapLista({
           <InfoTip
             title="Repartidores"
             what="Primero los que están en línea; después, por lo que están haciendo."
-            affects="Toca uno para centrar el mapa en él. «Sin GPS»: la app no mandó su ubicación."
+            affects="Toca uno para centrar el mapa en él. «Ubicación hace X»: cuándo mandó su app esa posición. «Sin señal hace X»: está en línea pero su app no manda nada hace más de 2 min; su punto (apagado, borde punteado) es donde estaba. «Sin GPS»: nunca mandó su ubicación."
+            example="La app no manda la precisión del GPS: la posición puede errar algunos metros, más bajo techo."
           />
         </div>
         <span className="rounded-lg bg-[var(--surface-sunken)] px-2.5 py-0.5 text-sm font-bold tabular-nums text-[var(--text-secondary)]">
@@ -66,6 +70,8 @@ export function LiveMapLista({
             {ordenados.map((p) => {
               const meta = STATE_META[partnerStateOf(p)];
               const conGps = p.lat != null && p.lng != null;
+              const senal = textoSenal(p);
+              const sinSenal = p.isOnline && senalVieja(p);
               return (
                 <li key={p.id}>
                   <button
@@ -95,7 +101,7 @@ export function LiveMapLista({
                           <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" aria-hidden />
                           {toNum(p.rating).toFixed(1)}
                         </span>
-                        {p.lastPingAt && <span>{timeAgo(p.lastPingAt)}</span>}
+                        {senal && <span className={cn(sinSenal && "font-bold text-[var(--data-warning-ink)]")}>{senal}</span>}
                         {!conGps && <span className="font-bold text-[var(--data-error-ink)]">Sin GPS</span>}
                       </span>
                     </span>

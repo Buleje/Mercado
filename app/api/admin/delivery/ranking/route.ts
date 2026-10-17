@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { DeliveryPartnersDB } from "@/lib/db/delivery-partners.db";
 import { logger } from "@/lib/logger";
+import { desdeDelPeriodo, rankingReparto, type PeriodoRanking } from "@/lib/delivery/ranking-reparto";
 
 /**
  * GET /api/admin/delivery/ranking?period=week|month|all
@@ -23,67 +24,21 @@ export async function GET(req: NextRequest) {
                : rawPeriod === "mes" ? "month"
                : rawPeriod === "todo" ? "all"
                : rawPeriod;
-  const since = (() => {
-    const d = new Date();
-    if (period === "week") d.setDate(d.getDate() - 7);
-    else if (period === "month") d.setDate(d.getDate() - 30);
-    else d.setFullYear(d.getFullYear() - 5);
-    return d;
-  })();
+  const periodo: PeriodoRanking = period === "week" || period === "all" ? period : "month";
+  const hasta = new Date();
+  const since = desdeDelPeriodo(periodo, hasta);
 
   const partners = await DeliveryPartnersDB.getRanking(auth.tenantId, since);
-
-  const ranked = partners
-    .map((p) => {
-      const total = p.assignments.length;
-      const delivered = p.assignments.filter((a) => a.status === "delivered").length;
-      const cancelled = p.assignments.filter((a) => a.status === "cancelled").length;
-      const inProgress = total - delivered - cancelled;
-      const totalEarnings = p.assignments
-        .filter((a) => a.status === "delivered")
-        .reduce((sum, a) => sum + Number(a.fee), 0);
-      const completionRate = total > 0 ? delivered / total : 0;
-      const times: number[] = [];
-      for (const a of p.assignments) {
-        if (a.pickedUpAt && a.deliveredAt) {
-          times.push((a.deliveredAt.getTime() - a.pickedUpAt.getTime()) / 60_000);
-        }
-      }
-      const avgDeliveryMin = times.length > 0 ? times.reduce((s, n) => s + n, 0) / times.length : null;
-
-      return {
-        id: p.id,
-        name: p.name,
-        phone: p.phone,
-        vehicleType: p.vehicleType,
-        rating: p.rating,
-        acceptanceRate: p.acceptanceRate,
-        totalOffersHistorical: p.totalOffers,
-        totalAcceptedHistorical: p.totalAccepted,
-        delivered,
-        cancelled,
-        inProgress,
-        totalAssignments: total,
-        totalEarnings,
-        completionRate,
-        avgDeliveryMin,
-      };
-    })
-    .sort((a, b) => b.delivered - a.delivered || b.rating - a.rating);
+  // Cuentas en `lib/delivery/ranking-reparto.ts` (17-10): base = asignaciones
+  // creadas en el período; «completadas» = entregadas ÷ cerradas, null sin cerradas.
+  const { ranking, summary } = rankingReparto(partners);
 
   return NextResponse.json({
-    period,
+    period: periodo,
     since: since.toISOString(),
-    ranking: ranked,
-    summary: {
-      totalPartners: ranked.length,
-      totalDelivered: ranked.reduce((s, r) => s + r.delivered, 0),
-      totalEarnings: ranked.reduce((s, r) => s + r.totalEarnings, 0),
-      avgCompletionRate:
-        ranked.length > 0
-          ? ranked.reduce((s, r) => s + r.completionRate, 0) / ranked.length
-          : 0,
-    },
+    hasta: hasta.toISOString(),
+    ranking,
+    summary,
   });
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);

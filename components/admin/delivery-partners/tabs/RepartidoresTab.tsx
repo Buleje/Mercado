@@ -15,9 +15,11 @@ import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { AlertCircle, CheckCircle, Plus, Star, Users, X } from "@buleje/design-system/icons";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, vehicleKind, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
+import { borrarRepartidor, cambiarRecibePedidos, ErrorRepartidor, guardarRepartidor, type DatosRepartidor } from "../repartidores-api";
 import { useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { useIndicadoresReparto } from "@/components/admin/delivery/reparto-indicadores";
-import { ConfirmarBorrarRepartidor, PartnerModal } from "../PartnerModal";
+import { PartnerModal } from "../PartnerModal";
+import { ConfirmarBorrarRepartidor } from "../ConfirmarBorrarRepartidor";
 import { RepartidoresTabla } from "../RepartidoresTabla";
 import { AccionesEnBloque, BusquedaEquipo } from "../RepartidoresBarra";
 
@@ -28,6 +30,7 @@ export function RepartidoresTab({ selector }: { selector?: ReactNode } = {}) {
   const [modal, setModal]       = useState<{ open: boolean; partner: Partial<DeliveryPartner> | null }>({ open: false, partner: null });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [avisoBorrar, setAvisoBorrar] = useState<{ mensaje: string; pausar: boolean } | null>(null);
 
   // Brandon mayo 2026 v7 — mejoras RepartidoresTab:
   // - búsqueda libre (nombre / teléfono)
@@ -56,70 +59,44 @@ export function RepartidoresTab({ selector }: { selector?: ReactNode } = {}) {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleSave = async (data: Omit<DeliveryPartner, "id" | "createdAt">) => {
+  // 17-10 (P22): la ruta de editar/pausar/borrar no existía (404) y la pantalla
+  // seguía como si hubiera guardado. Los errores ahora dicen qué pasó.
+  const handleSave = async (data: DatosRepartidor) => {
     const id = modal.partner?.id;
-    const res = await tenantFetch(id ? `/api/delivery/partners/${id}` : "/api/delivery/partners", {
-      method: id ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error();
-    const saved = await res.json();
-    if (id) {
-      setPartners((prev) => prev.map((p) => (p.id === id ? saved : p)));
-    } else {
-      setPartners((prev) => [...prev, saved]);
-    }
+    const saved = await guardarRepartidor(id, data);
+    setPartners((prev) => (id ? prev.map((p) => (p.id === id ? saved : p)) : [saved, ...prev]));
   };
 
   const handleDelete = async (id: string) => {
     setDeleting(id);
+    setAvisoBorrar(null);
     try {
-      const res = await tenantFetch(`/api/delivery/partners/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
+      await borrarRepartidor(id);
       setPartners((prev) => prev.filter((p) => p.id !== id));
-    } catch {
-      setError("Error al eliminar el repartidor.");
+      setConfirmDelete(null);
+    } catch (err) {
+      // Con entregas o retiros no se borra: la ventana queda abierta y ofrece pausarlo.
+      setAvisoBorrar(err instanceof ErrorRepartidor ? { mensaje: err.message, pausar: err.conHistorial } : { mensaje: "No se pudo eliminar. Intenta otra vez.", pausar: false });
     } finally {
       setDeleting(null);
-      setConfirmDelete(null);
     }
   };
 
-  // Brandon mayo 2026 v7: bulk activar/desactivar repartidores.
-  const handleBulkSetActive = async (active: boolean) => {
-    if (selectedIds.size === 0) return;
-    const ids = Array.from(selectedIds);
+  // Brandon mayo 2026 v7: bulk activar/desactivar. 17-10: sólo cambia en
+  // pantalla lo que el servidor guardó; lo que falló se nombra.
+  const handleBulkSetActive = async (active: boolean, ids: string[] = Array.from(selectedIds)) => {
+    if (ids.length === 0) return;
     setBulkBusy(true);
     setError(null);
-    // No hay endpoint bulk — actualizamos secuencialmente con PUT por cada id.
-    // Es aceptable: <30 partners típicos por tenant. Si crece, agregar /api/delivery/partners/bulk.
     try {
-      await Promise.allSettled(
-        ids.map((id) => {
-          const p = partners.find((x) => x.id === id);
-          if (!p) return Promise.resolve(null);
-          return tenantFetch(`/api/delivery/partners/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: p.name,
-              phone: p.phone,
-              zone: p.zone,
-              vehicleType: p.vehicleType,
-              fee: toNum(p.fee),
-              rating: toNum(p.rating),
-              isActive: active,
-            }),
-          });
-        }),
-      );
-      setPartners((prev) =>
-        prev.map((p) => (selectedIds.has(p.id) ? { ...p, isActive: active } : p)),
-      );
-      setSelectedIds(new Set());
-    } catch {
-      setError("Error al actualizar repartidores en bloque.");
+      const { hechos, fallidos } = await cambiarRecibePedidos(ids, active);
+      const ok = new Set(hechos);
+      setPartners((prev) => prev.map((p) => (ok.has(p.id) ? { ...p, isActive: active } : p)));
+      setSelectedIds(new Set(fallidos.map((f) => f.id)));
+      if (fallidos.length > 0) {
+        const nombres = fallidos.map((f) => partners.find((p) => p.id === f.id)?.name ?? "uno").join(", ");
+        setError(`No se pudo ${active ? "activar" : "pausar"} a ${nombres}: ${fallidos[0].error}`);
+      }
     } finally {
       setBulkBusy(false);
     }
@@ -291,9 +268,12 @@ export function RepartidoresTab({ selector }: { selector?: ReactNode } = {}) {
 
       {confirmDelete && (
         <ConfirmarBorrarRepartidor
-          borrando={!!deleting}
-          onCancelar={() => setConfirmDelete(null)}
+          nombre={partners.find((p) => p.id === confirmDelete)?.name}
+          borrando={!!deleting || bulkBusy}
+          aviso={avisoBorrar}
+          onCancelar={() => { setConfirmDelete(null); setAvisoBorrar(null); }}
           onConfirmar={() => handleDelete(confirmDelete)}
+          onPausar={() => void handleBulkSetActive(false, [confirmDelete]).then(() => { setConfirmDelete(null); setAvisoBorrar(null); })}
         />
       )}
     </div>

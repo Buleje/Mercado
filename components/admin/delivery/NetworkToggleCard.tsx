@@ -20,12 +20,19 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { tenantFetch } from "@/lib/tenant-fetch";
 
 import { SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 /**
  * `enVentana` (10-10): dentro de la ventana que abre Reparto › Más, que ya
  * trae el título; sin caja ni encabezado propios, sólo la explicación corta y
  * las dos opciones.
+ *
+ * `onCambio` (17-10, P30): avisa al módulo para que la pastilla «Reparten: …»
+ * de Asignaciones muestre el estado nuevo sin recargar.
  */
-export default function NetworkToggleCard({ enVentana = false }: { enVentana?: boolean } = {}) {
+export default function NetworkToggleCard({
+  enVentana = false,
+  onCambio,
+}: { enVentana?: boolean; onCambio?: (enabled: boolean) => void } = {}) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -62,9 +69,14 @@ export default function NetworkToggleCard({ enVentana = false }: { enVentana?: b
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ enabled: next }),
         });
+        if (res.status === 403) {
+          setError("Sólo el dueño, el administrador o el encargado pueden cambiarlo.");
+          return;
+        }
         if (!res.ok) throw new Error();
         const json = (await res.json()) as { enabled: boolean };
         setEnabled(json.enabled);
+        onCambio?.(json.enabled);
         setToastVisible(true);
         setTimeout(() => setToastVisible(false), 2800);
       } catch {
@@ -73,7 +85,7 @@ export default function NetworkToggleCard({ enVentana = false }: { enVentana?: b
         setSaving(false);
       }
     },
-    [enabled, saving],
+    [enabled, saving, onCambio],
   );
 
   return (
@@ -114,7 +126,7 @@ export default function NetworkToggleCard({ enVentana = false }: { enVentana?: b
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <OptionRadio
             label="Activada"
-            description="Tu tienda aparece en /delivery-app · pedidos van a la red Buleje apenas se confirman."
+            description="Tu tienda aparece en la app Buleje Delivery · tus pedidos se ofrecen a tu equipo y a la red apenas se confirman."
             selected={enabled === true}
             disabled={saving}
             tone="accent"
@@ -131,10 +143,22 @@ export default function NetworkToggleCard({ enVentana = false }: { enVentana?: b
         </div>
       )}
 
+      {!loading && (
+        <p className="mt-3 flex items-center gap-1 text-sm font-semibold text-[var(--text-secondary)]">
+          Cambiarlo no reasigna los pedidos que ya tienen repartidor.
+          <InfoTip
+            title="Qué cambia y qué no"
+            what="Sólo cambia a quién se OFRECEN los pedidos que todavía esperan repartidor: los nuevos y los que nadie aceptó."
+            affects="Los pedidos ya asignados siguen con su repartidor. Las ofertas ya enviadas vencen solas en 2 minutos. Sólo el dueño, el administrador o el encargado lo ven y lo cambian."
+            example="Activas la red con un pedido esperando: al vencer la oferta a tu equipo, se ofrece también a los repartidores de Buleje cercanos."
+          />
+        </p>
+      )}
+
       {error && (
         <p
           role="alert"
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--brand-danger)]/10 border-2 border-[var(--brand-danger)]/30 px-3 py-2 text-sm font-bold text-[var(--brand-danger)]"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--data-error-500)]/10 border-2 border-[var(--data-error-500)]/30 px-3 py-2 text-sm font-bold text-[var(--data-error-ink)]"
         >
           <AlertTriangle className="h-4 w-4" aria-hidden />
           {error}

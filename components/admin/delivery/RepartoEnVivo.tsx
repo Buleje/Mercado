@@ -8,8 +8,8 @@
  *    del sondeo en vivo (en línea, con oferta, atendiendo). Una sola fila de
  *    tarjetas: antes eran la franja + cuatro tarjetas grandes encima del mapa.
  *  - El mapa con la lista, lo primero de la pantalla.
- *  - «Rutas y paradas» plegado (lo de la ruta planificada, con su propio mapa
- *    de paradas).
+ *  - Las rutas y paradas pasaron a su propia sección «Rutas» (17-10, P17):
+ *    plegadas abajo del mapa nadie las encontraba.
  *
  * Un solo sondeo (`useDeliveryPartnersLive`, cada 10 s) alimenta el mapa y los
  * indicadores. Las cifras son del servidor; acá no se suma plata.
@@ -18,7 +18,6 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle, Clock, PackageCheck, Truck, Users } from "@buleje/design-system/icons";
 import { useDeliveryPartnersLive } from "@/components/admin/OrdersTab/hooks/useDeliveryPartnersLive";
-import Plegable from "@/components/admin/shared/Plegable";
 import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import { formatNumber } from "@/lib/format";
 import { tenantFetch } from "@/lib/tenant-fetch";
@@ -28,12 +27,6 @@ import { useIndicadoresReparto, type Indicador } from "./reparto-indicadores";
 const DeliveryPartnersLiveMap = dynamic(() => import("./DeliveryPartnersLiveMap"), {
   ssr: false,
   loading: () => <LoadingSpinner className="mx-auto my-16" />,
-});
-
-// Rutas y paradas (antes el módulo «delivery-live»).
-const RutasYParadas = dynamic(() => import("@/components/admin/DeliveryTab"), {
-  ssr: false,
-  loading: () => <LoadingSpinner className="mx-auto my-8" />,
 });
 
 interface CifrasDelDia {
@@ -124,9 +117,6 @@ export default function RepartoEnVivo() {
       {kpis.boton}
       {kpis.panel}
       <DeliveryPartnersLiveMap live={live} onActualizar={actualizar} />
-      <Plegable clave="pedidos:reparto:rutas" titulo="Rutas y paradas">
-        <RutasYParadas />
-      </Plegable>
     </div>
   );
 }

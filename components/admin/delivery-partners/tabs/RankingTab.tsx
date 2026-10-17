@@ -8,10 +8,15 @@ import { TableSkeleton, VehicleIcon, toNum } from "@/components/admin/delivery-p
 import { useIndicadoresReparto } from "@/components/admin/delivery/reparto-indicadores";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { formatCurrency } from "@/lib/format";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { fechaConDia } from "@/lib/admin/inicio/formato-tablero";
+import { MUESTRA_CHICA, type FilaRanking, type ResumenRanking } from "@/lib/delivery/ranking-reparto";
+import { TasaCompletadas, tonoTasa } from "../TasaCompletadas";
 
 export function RankingTab() {
-  const [data, setData] = useState<RankingEntry[]>([]);
-  const [summary, setSummary] = useState<RankingSummary | null>(null);
+  const [data, setData] = useState<FilaRanking[]>([]);
+  const [summary, setSummary] = useState<ResumenRanking | null>(null);
+  const [rango, setRango] = useState<{ desde: string; hasta: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<"week" | "month" | "all">("month");
 
@@ -22,43 +27,50 @@ export function RankingTab() {
       .then((d) => {
         setData(d.ranking ?? []);
         setSummary(d.summary ?? null);
+        setRango(d.since && d.hasta ? { desde: d.since, hasta: d.hasta } : null);
       })
-      .catch(() => { setData([]); setSummary(null); })
+      .catch(() => { setData([]); setSummary(null); setRango(null); })
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { fetchRanking(period); }, [fetchRanking, period]);
 
-  const PERIODS: { id: "week" | "month" | "all"; label: string }[] = [
-    { id: "week",  label: "Esta semana" },
-    { id: "month", label: "Este mes" },
-    { id: "all",   label: "Todo" },
+  // 17-10 (P37): «Esta semana»/«Este mes» eran 7 y 30 días corridos, no la
+  // semana ni el mes del calendario. El rótulo dice lo que cuenta y al lado van las fechas.
+  const PERIODS: { id: "week" | "month" | "all"; label: string; enTexto: string }[] = [
+    { id: "week",  label: "7 días",  enTexto: "en los últimos 7 días" },
+    { id: "month", label: "30 días", enTexto: "en los últimos 30 días" },
+    { id: "all",   label: "Todo",    enTexto: "desde el inicio" },
   ];
 
-  const periodLabel = PERIODS.find((p) => p.id === period)?.label.toLowerCase() ?? "";
+  const periodLabel = PERIODS.find((p) => p.id === period)?.enTexto ?? "";
+  const fechas = rango && period !== "all" ? `del ${fechaConDia(rango.desde)} al ${fechaConDia(rango.hasta)}` : null;
   const topPartner = data[0];
 
-  const pct = summary ? Math.round(summary.avgCompletionRate * 100) : 0;
+  const tasa = summary?.completionRate ?? null;
+  const pct = tasa == null ? null : Math.round(tasa * 100);
   const kpis = useIndicadoresReparto({
     clave: "ranking",
     cargando: loading && !summary,
-    resumen: summary ? `${summary.totalDelivered} entregas · ${pct}% completas` : undefined,
+    resumen: summary
+      ? `${summary.totalDelivered} entregas · ${pct == null ? "sin cerradas" : `${pct}% completas`}`
+      : undefined,
     indicadores: summary
       ? [
-          { icono: Users, rotulo: "Repartidores", valor: String(summary.totalPartners), ayuda: `Los que entran en el ranking de ${periodLabel}.` },
+          { icono: Users, rotulo: "Repartidores", valor: String(summary.totalPartners), ayuda: "Los repartidores activos de tu equipo, tengan o no pedidos en el período." },
           { icono: CheckCircle, rotulo: "Entregas", valor: String(summary.totalDelivered), tono: summary.totalDelivered > 0 ? "ok" : undefined },
           {
             icono: DollarSign,
             rotulo: "Ganado en tarifas",
             valor: formatCurrency(toNum(summary.totalEarnings)),
-            ayuda: "Lo que sumaron las tarifas de sus entregas en el período. No es lo pagado: los retiros pagados están en Pagos.",
+            ayuda: "Lo que suman las tarifas de los pedidos entregados (de los asignados en el período). No es lo pagado: los retiros pagados están en Retiros.",
           },
           {
             icono: Trophy,
             rotulo: "Completadas",
-            valor: `${pct}%`,
-            ayuda: "De los pedidos que aceptaron, cuántos terminaron entregados (promedio de todos).",
-            tono: summary.avgCompletionRate >= 0.85 ? "ok" : summary.avgCompletionRate >= 0.5 ? "alerta" : "error",
+            valor: pct == null ? "Sin datos" : `${pct}%`,
+            ayuda: `Entregados ÷ (entregados + cancelados) de los pedidos asignados en el período: ${summary.totalDelivered} de ${summary.cerradas}. Los que siguen en camino (${summary.enCurso}) todavía no cuentan.`,
+            tono: tonoTasa(tasa, summary.cerradas),
           },
         ]
       : [],
@@ -78,7 +90,16 @@ export function RankingTab() {
           size="lg"
           options={PERIODS.map((p) => ({ value: p.id, label: p.label }))}
         />
-        {topPartner && (
+        <span className="flex items-center gap-1 text-sm text-[var(--text-secondary)]">
+          {fechas ?? "Todos los pedidos asignados"}
+          <InfoTip
+            title="Qué cuenta el ranking"
+            what="Los pedidos ASIGNADOS en esas fechas (por el día en que se asignaron, no el de la entrega). De ellos salen entregas, cancelados y tarifas."
+            affects={`«Completadas» = entregados ÷ (entregados + cancelados). Los que siguen en camino no cuentan hasta cerrarse. Con menos de ${MUESTRA_CHICA} cerrados se muestra la muestra. Aceptación y calificación son de toda su historia, no del período.`}
+            example="Rosa: 9 entregados y 1 cancelado → 90 %. Un repartidor nuevo sin pedidos cerrados → «Sin datos», no 0 %."
+          />
+        </span>
+        {topPartner && topPartner.delivered > 0 && (
           <p className="flex min-w-0 items-center gap-1.5 text-sm text-[var(--text-secondary)]">
             <Crown className="h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden />
             <span>
@@ -100,7 +121,7 @@ export function RankingTab() {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
             <p className="text-sm font-semibold text-[var(--text-secondary)]">
-              Tabla de posiciones · {periodLabel}
+              Tabla de posiciones · {PERIODS.find((p) => p.id === period)?.label}
             </p>
             <p className="text-sm text-[var(--text-tertiary)] font-bold">
               {data.length} {data.length === 1 ? "repartidor" : "repartidores"}
@@ -115,10 +136,10 @@ export function RankingTab() {
                   <th className="text-center">Rating</th>
                   <th className="text-center">Aceptación</th>
                   <th className="text-center">Entregas</th>
-                  <th className="text-center">Cancel.</th>
-                  <th className="text-center">Avg min</th>
+                  <th className="text-center">Cancelados</th>
+                  <th className="text-center">Min. promedio</th>
                   <th className="text-right">Ganado</th>
-                  <th className="text-center">Completion</th>
+                  <th className="text-center">Completadas</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -195,16 +216,7 @@ export function RankingTab() {
                         {formatCurrency(toNum(entry.totalEarnings))}
                       </td>
                       <td className="text-center">
-                        <span className={cn(
-                          "inline-flex items-center justify-center h-9 px-3 rounded-full text-sm font-extrabold tabular-nums",
-                          entry.completionRate >= 0.85
-                            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                            : entry.completionRate >= 0.5
-                              ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
-                              : "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
-                        )}>
-                          {Math.round(entry.completionRate * 100)}%
-                        </span>
+                        <TasaCompletadas tasa={entry.completionRate} cerradas={entry.cerradas} />
                       </td>
                     </tr>
                   );
@@ -216,29 +228,4 @@ export function RankingTab() {
       )}
     </div>
   );
-}
-
-
-// ── Tipos movidos de DeliveryPartnersModule (refactor 2026-06-15) ──
-interface RankingEntry {
-  id: string;
-  name: string;
-  phone: string;
-  vehicleType: string;
-  rating: number;
-  acceptanceRate: number;
-  delivered: number;
-  cancelled: number;
-  inProgress: number;
-  totalAssignments: number;
-  totalEarnings: number;
-  completionRate: number;
-  avgDeliveryMin: number | null;
-}
-
-interface RankingSummary {
-  totalPartners: number;
-  totalDelivered: number;
-  totalEarnings: number;
-  avgCompletionRate: number;
 }

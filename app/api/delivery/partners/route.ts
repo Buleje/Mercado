@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
-import { prisma } from "@/lib/prisma";
+import { DeliveryPartnersDB } from "@/lib/db/delivery-partners.db";
 import { logger } from "@/lib/logger";
-
-const PartnerPostSchema = z.object({
-  name: z.string().min(1, "Nombre requerido").max(100),
-  phone: z.string().regex(/^9\d{8}$/, "Teléfono peruano inválido (9XXXXXXXX)"),
-  email: z.string().email("Email inválido").optional(),
-  zone: z.string().min(1, "Zona requerida").max(100),
-  vehicleType: z.string().max(50).optional(),
-  fee: z.number().nonnegative("La tarifa debe ser >= 0").optional(),
-});
+import {
+  PartnerAltaSchema,
+  camposConError,
+  mensajeTelefonoRepetido,
+} from "@/lib/delivery/partner-admin";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
@@ -20,30 +15,22 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const zone = searchParams.get("zone");
     const active = searchParams.get("active");
-    const search = searchParams.get("search");
 
     // SECURITY 2026-05-06 (audit team): scope tenantId. Antes findMany sin
     // tenantId leakeaba teléfonos PE de partners de TODOS los tenants
     // (Ley 29733 PE — protección de datos personales).
-    const where: Record<string, unknown> = { tenantId: auth.tenantId };
-    if (zone) where.zone = zone;
-    if (active !== null) where.isActive = active === "true";
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search } },
-      ];
-    }
-
-    const partners = await prisma.deliveryPartner.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
+    // 17-10: además mandaba `passwordHash` (el de la app del repartidor) al
+    // navegador del cajero; la clase lo omite.
+    const partners = await DeliveryPartnersDB.listForAdmin(auth.tenantId, {
+      zone: searchParams.get("zone"),
+      active: active === null ? undefined : active === "true",
+      search: searchParams.get("search"),
     });
 
     return NextResponse.json(partners);
-  } catch {
+  } catch (err) {
+    logger.error("[delivery/partners] GET failed", { error: String(err) });
     return NextResponse.json({ error: "Error del servidor" }, { status: 503 });
   }
 }
@@ -53,27 +40,36 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const raw = await req.json();
-    const parsed = PartnerPostSchema.safeParse(raw);
+    const raw = await req.json().catch(() => null);
+    const parsed = PartnerAltaSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
-        { status: 400 }
+        {
+          error: "Revisa los campos marcados.",
+          campos: camposConError(parsed.error.issues),
+          issues: parsed.error.issues.map((i) => i.message),
+        },
+        { status: 400 },
       );
     }
 
-    const { name, phone, email, zone, vehicleType, fee } = parsed.data;
+    const { name, phone, email, zone, vehicleType, fee, isActive } = parsed.data;
 
-    const partner = await prisma.deliveryPartner.create({
-      data: {
-        name,
-        phone,
-        email,
-        zone,
-        tenantId: auth.tenantId,
-        ...(vehicleType && { vehicleType }),
-        ...(fee !== undefined && { fee }),
-      },
+    // La misma persona dada de alta dos veces recibe ofertas dobles y parte su historial.
+    const repetido = await DeliveryPartnersDB.findByPhone(auth.tenantId, phone);
+    if (repetido) {
+      const msg = mensajeTelefonoRepetido(repetido);
+      return NextResponse.json({ error: msg, campos: { phone: msg } }, { status: 409 });
+    }
+
+    const partner = await DeliveryPartnersDB.createForAdmin(auth.tenantId, {
+      name,
+      phone,
+      zone,
+      ...(email ? { email } : {}),
+      ...(vehicleType ? { vehicleType } : {}),
+      ...(fee !== undefined ? { fee } : {}),
+      ...(isActive !== undefined ? { isActive } : {}),
     });
 
     logActivity(
@@ -81,11 +77,12 @@ export async function POST(req: NextRequest) {
       "deliveryPartner",
       `Partner creado: ${partner.name} (${partner.zone})`,
       partner.id,
-      auth.username
+      auth.username,
     ).catch((err) => logger.error("[delivery/partners] activity log failed", { error: String(err) }));
 
     return NextResponse.json(partner, { status: 201 });
-  } catch {
+  } catch (err) {
+    logger.error("[delivery/partners] POST failed", { error: String(err) });
     return NextResponse.json({ error: "Error del servidor" }, { status: 503 });
   }
 }
