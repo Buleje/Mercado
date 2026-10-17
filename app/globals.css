@@ -1336,6 +1336,7 @@ body {
      override-ean a oklch light por algun layer intermedio de Tailwind 4. */
   --surface-canvas: #0d1117;
   --surface-sunken: #161b22;
+  --surface-alt: var(--surface-sunken); /* 17-10: 193 usos en 120 archivos y nunca existió (salían sin fondo) */
   --surface-raised: #1c2230;
   /* Brandon 2026-05-18: subido contraste de hairlines en dark.
      Antes #2e3645/#232a38 era casi imperceptible sobre #1c2230 (Δ luma ~7-14).
@@ -2231,6 +2232,7 @@ button,
   /* ── Colores semanticos (paleta reducida) ── */
   --surface-canvas: #ffffff;
   --surface-sunken: #fafafa;
+  --surface-alt: var(--surface-sunken); /* 17-10: 193 usos en 120 archivos y nunca existió (salían sin fondo) */
   --surface-raised: #ffffff;
   --surface-inverse: #0a0a0a;
 
@@ -2498,6 +2500,7 @@ button,
      ∆ entre niveles >= 6% para que cards se separen del canvas. */
   --surface-canvas: #0d1117;     /* Background app — slate-blue profundo */
   --surface-sunken: #161b22;     /* Inputs / nested cards / hover-bg */
+  --surface-alt: var(--surface-sunken); /* 17-10: 193 usos en 120 archivos y nunca existió (salían sin fondo) */
   --surface-raised: #1c2230;     /* Cards / panels — claramente elevado */
   --surface-inverse: #f0f3f7;    /* Toasts oscuros sobre claro (raro) */
 
