@@ -93,6 +93,7 @@ const PALABRAS: Record<string, string[]> = {
   "/superadmin/repartidores": ["delivery", "motorizados"],
   "/superadmin/plantas": ["aserradero", "aserraderos", "pietaje", "pies tablares", "trozas", "rolliza", "aserrada", "volumen", "m3", "inspeccion", "forestal"],
   "/superadmin/plantas/incoherencias": ["descuadre", "saldo negativo", "diferencias", "volumen", "aserradero"],
+  "/superadmin/plantas/inspecciones": ["inspección", "visita", "acta", "conteo de trozas", "hallazgos", "aserradero"],
   "/superadmin/gastos": ["egresos", "costos"],
   "/superadmin/tenants": ["clientes", "empresas", "tenants", "negocios"],
   "/superadmin/tenants/growth": ["altas", "nuevos"],

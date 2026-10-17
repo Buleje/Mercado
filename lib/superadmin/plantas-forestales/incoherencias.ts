@@ -12,6 +12,9 @@
  *                     repiten un aviso de saldo (saldos en negativo, corridas sin
  *                     materia prima) y las deudas con proveedores (no son volumen)
  *                     quedan fuera.
+ *  · inspeccion     → los hallazgos error/aviso de la ÚLTIMA inspección CERRADA
+ *                     (no anulada) de la planta: lo que el inspector vio en el
+ *                     patio vale como lo que el libro detecta solo.
  *
  * `m3EnJuego` es `null` cuando el aviso no se mide en m³ (stock de productos en
  * otras unidades, lotes vencidos, pendientes): nunca 0.
@@ -19,7 +22,7 @@
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import type { RendimientoCorrida } from "@/lib/forestal/ctp-radar-rendimiento";
 import { nombresVisibles, type Excepcion } from "@/lib/forestal/ctp-saldos-excepciones";
-import type { GravedadIncoherencia, IncoherenciaPlanta, PendientePlanta } from "./tipos";
+import type { GravedadIncoherencia, HallazgoInspeccion, IncoherenciaPlanta, PendientePlanta } from "./tipos";
 
 export interface PlantaRef {
   tenantId: string;
@@ -168,7 +171,7 @@ export function incoherenciasDeRendimiento(
 export const PENDIENTES_DUPLICADOS = new Set(["Saldos en negativo", "Corridas sin materia prima atribuida"]);
 
 /** Deudas con proveedores («N guías sin pagar a X · S/ …»): plata, no volumen. */
-const ES_DEUDA = / sin pagar a /;
+export const ES_DEUDA = / sin pagar a /;
 
 /**
  * La vista del libro de cada pendiente. El reporte diario sólo pasa el título
@@ -207,6 +210,125 @@ export function incoherenciasDePendientes(
     });
   }
   return fuera;
+}
+
+const URGENCIA_PESO: Record<PendientePlanta["urgencia"], number> = { bloquea: 0, atrasado: 1, pendiente: 2 };
+
+/**
+ * Los pendientes que viajan en la ficha del superadmin (security 17-10, Ley
+ * 29733): las deudas con proveedores traen el NOMBRE del proveedor y la plata
+ * («2 guías sin pagar a Nelly · S/ 800.00»). El superadmin controla volumen,
+ * no a quién le debe la planta: se juntan en una línea sin nombres ni montos
+ * («3 guías sin pagar (2 proveedores)») con la urgencia más alta. Idempotente.
+ */
+export function pendientesParaFicha(pendientes: readonly PendientePlanta[]): PendientePlanta[] {
+  const fuera: PendientePlanta[] = [];
+  let guias = 0;
+  let proveedores = 0;
+  let urgencia: PendientePlanta["urgencia"] = "pendiente";
+  for (const x of pendientes) {
+    if (!ES_DEUDA.test(x.titulo)) {
+      fuera.push({ titulo: x.titulo, urgencia: x.urgencia, cantidad: x.cantidad });
+      continue;
+    }
+    guias += x.cantidad;
+    proveedores += 1;
+    if (URGENCIA_PESO[x.urgencia] < URGENCIA_PESO[urgencia]) urgencia = x.urgencia;
+  }
+  if (proveedores > 0) {
+    fuera.push({
+      titulo: `${guias === 1 ? "1 guía" : `${guias} guías`} sin pagar (${proveedores === 1 ? "1 proveedor" : `${proveedores} proveedores`})`,
+      urgencia,
+      cantidad: guias,
+    });
+  }
+  return fuera.sort((a, b) => URGENCIA_PESO[a.urgencia] - URGENCIA_PESO[b.urgencia] || b.cantidad - a.cantidad);
+}
+
+/* ── Inspección ─────────────────────────────────────────────────────────── */
+
+/** Lo que hace falta de la última inspección cerrada para volverla incoherencias. */
+export interface InspeccionCerrada {
+  id: string;
+  /** AAAA-MM-DD (día de la inspección). */
+  fecha: string;
+  inspector: string;
+  hallazgos: readonly HallazgoInspeccion[];
+}
+
+const VISTA_DE_CATEGORIA: Record<HallazgoInspeccion["categoria"], string> = {
+  volumen: "saldos",
+  documentos: "ingresos",
+  trazabilidad: "trozas",
+  seguridad: "tablero",
+  otro: "tablero",
+};
+
+const VISTA_DE_REFERENCIA: Partial<Record<NonNullable<HallazgoInspeccion["referencia"]>["tipo"], string>> = {
+  guia: "ingresos",
+  troza: "trozas",
+  especie: "saldos",
+};
+
+/** «17/10/2026» de un AAAA-MM-DD sin pasar por `Date` (un día de Lima no se corre). */
+export function diaLegible(fecha: string): string {
+  const [a, m, d] = fecha.split("-");
+  return a && m && d ? `${d}/${m}/${a}` : fecha;
+}
+
+/** Primera línea del texto, cortada: el título de la lista no es el párrafo entero. */
+function titular(texto: string, max = 110): string {
+  const linea = texto.trim().split(/\r?\n/)[0] ?? "";
+  return linea.length > max ? `${linea.slice(0, max - 1).trimEnd()}…` : linea;
+}
+
+/**
+ * Los hallazgos error/aviso de la última inspección CERRADA → incoherencias de
+ * origen `inspeccion`. Los `info` no entran (son notas, no problemas). El id
+ * lleva el de la inspección: la siguiente inspección cerrada los reemplaza.
+ */
+export function incoherenciasDeInspeccion(p: PlantaRef, i: InspeccionCerrada | null): IncoherenciaPlanta[] {
+  if (!i) return [];
+  const fuera: IncoherenciaPlanta[] = [];
+  for (const h of i.hallazgos) {
+    if (h.gravedad === "info") continue;
+    const vista = (h.referencia && VISTA_DE_REFERENCIA[h.referencia.tipo]) || VISTA_DE_CATEGORIA[h.categoria];
+    fuera.push({
+      id: `${p.tenantId}:inspeccion:${i.id}:${h.id}`,
+      tenantId: p.tenantId,
+      plantaNombre: p.nombre,
+      origen: "inspeccion",
+      clave: h.categoria,
+      gravedad: h.gravedad,
+      titulo: `Inspección del ${diaLegible(i.fecha)}: ${titular(h.texto)}`,
+      detalle: `${h.texto.trim()} (inspeccionó ${i.inspector})`,
+      m3EnJuego: h.m3,
+      referencia: h.referencia,
+      enlaceLibro: enlaceLibro(vista),
+    });
+  }
+  return fuera;
+}
+
+/**
+ * La última inspección cerrada no se pudo leer: se dice (info) en vez de callar
+ * sus hallazgos. No es una `FuenteLectura` (el semáforo no se pone gris por esto),
+ * pero el cálculo no se cachea y el próximo pedido la reintenta.
+ */
+export function inspeccionIlegible(p: PlantaRef): IncoherenciaPlanta {
+  return {
+    id: `${p.tenantId}:inspeccion:ilegible`,
+    tenantId: p.tenantId,
+    plantaNombre: p.nombre,
+    origen: "inspeccion",
+    clave: "ilegible",
+    gravedad: "info",
+    titulo: "No se pudo leer la última inspección cerrada",
+    detalle: "Sus hallazgos no entran en esta cuenta ni en el semáforo; se reintenta en el próximo pedido.",
+    m3EnJuego: null,
+    referencia: null,
+    enlaceLibro: enlaceLibro("tablero"),
+  };
 }
 
 /* ── Conteo ─────────────────────────────────────────────────────────────── */

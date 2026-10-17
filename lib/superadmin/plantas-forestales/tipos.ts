@@ -8,6 +8,7 @@
  */
 import type { SpecializationKey } from "@/lib/specializations";
 import type { TendenciaMes } from "@/lib/db/forest-ctp.db";
+import type { TrozaDelConteo } from "@/lib/forestal/conteo-patio";
 
 export type Semaforo = "verde" | "amarillo" | "rojo" | "gris";
 export type EstadoLectura = "ok" | "error";
@@ -191,6 +192,13 @@ export interface ConteoAserrada {
 /** El libro congelado al abrir la inspección: el acta compara contra ESTO, no contra el libro de hoy. */
 export type FotoDelLibro = Pick<PlantaResumen, "trozas" | "aserrada" | "movimiento" | "incoherencias"> & {
   tomadaEn: string;
+  /** Las trozas que el libro dice que están en el patio (`aTrozaDelConteo` sobre `trozasDelPatio`):
+   *  el inspector las cuenta con `nuevoConteo`/`anotarTroza` como el conteo de la propia planta. */
+  trozasDelPatio: TrozaDelConteo[];
+  /** El patio era más grande que lo que se congeló (tope del libro): un «sobrante» puede ser una troza que sí estaba. */
+  trozasDelPatioTruncado?: boolean;
+  /** Las incoherencias del momento, para convertirlas en hallazgos. */
+  incoherenciasDetalle: IncoherenciaPlanta[];
 };
 
 export interface InspeccionResumen {

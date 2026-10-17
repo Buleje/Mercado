@@ -11,6 +11,7 @@ import { suplantarTienda } from "@/components/superadmin/tenants/abrir-panel-tie
 import type { FuenteLectura, PlantaResumen } from "@/lib/superadmin/plantas-forestales/tipos";
 import { SemaforoBadge } from "./cifras";
 import { FUENTE } from "./formato";
+import { resumenDeModulos } from "./modulos";
 
 interface Props {
   resumen: PlantaResumen;
@@ -50,6 +51,7 @@ export function FichaCabecera({ resumen, sufijo, marcarPrueba, cambiandoPrueba }
   const { identidad: id, semaforo, motivoSemaforo, lecturas } = resumen;
   const fallidas = (Object.keys(lecturas) as FuenteLectura[]).filter((f) => lecturas[f] === "error");
   const hermanas = id.grupoOperaciones?.hermanas ?? [];
+  const modulos = id.especializaciones.length > 0 ? resumenDeModulos(id.especializaciones) : null;
 
   return (
     <div className="space-y-4">
@@ -69,10 +71,10 @@ export function FichaCabecera({ resumen, sufijo, marcarPrueba, cambiandoPrueba }
             <span>{id.slug}</span>
             <span aria-hidden>·</span>
             <span>Plan {id.plan}</span>
-            {id.especializaciones.length > 0 && (
+            {modulos && (
               <>
                 <span aria-hidden>·</span>
-                <span>{id.especializaciones.join(", ")}</span>
+                <span title={modulos.todos}>{modulos.texto}</span>
               </>
             )}
           </div>

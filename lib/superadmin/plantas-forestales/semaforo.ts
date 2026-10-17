@@ -10,6 +10,9 @@
  * cargadas que esperan recepción (`detalleNegativo`, `cubrePendiente`)— es
  * trabajo pendiente, amarillo, no un faltante: rojo es sólo lo que nada explica.
  *
+ * Un hallazgo «error» de la última inspección CERRADA también es rojo: lo vio
+ * el inspector en el patio, no hace falta que el libro lo confirme (fase 3).
+ *
  * Orden: rojo (aunque otra lectura falle: lo que se vio ya es grave) → gris
  * (alguna lectura falló: no se afirma «todo bien» sin haberlo visto) →
  * amarillo → verde.
@@ -43,6 +46,8 @@ export interface EntradaSemaforo {
     consumoSinDeclararCount: number;
   } | null;
   incoherencias: Record<GravedadIncoherencia, number>;
+  /** La última inspección cerrada (no anulada) y cuántos hallazgos «error» dejó. */
+  inspeccion?: { fecha: string; errores: number } | null;
 }
 
 const m3 = (n: number): string => `${n.toLocaleString("es-PE", { maximumFractionDigits: 3 })} m³`;
@@ -67,6 +72,14 @@ export function semaforoDePlanta(e: EntradaSemaforo): { semaforo: Semaforo; moti
       motivo: `${plural(negativas.length, "especie", "especies")} con existencia final negativa (${m3(faltante)}): faltan ${m3(
         faltante - explicado,
       )} que ni el consumo sin guía ni lo pendiente de recepcionar explican`,
+    };
+  }
+
+  if (e.inspeccion && e.inspeccion.errores > 0) {
+    const [a, m, d] = e.inspeccion.fecha.split("-");
+    return {
+      semaforo: "rojo",
+      motivo: `La inspección del ${d}/${m}/${a} dejó ${plural(e.inspeccion.errores, "hallazgo grave", "hallazgos graves")}`,
     };
   }
 

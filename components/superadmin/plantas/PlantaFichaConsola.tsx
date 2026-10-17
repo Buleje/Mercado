@@ -91,7 +91,7 @@ export function PlantaFichaConsola({ tenantId }: { tenantId: string }) {
         {seccion === "seguimiento" && (
           <div className="space-y-6">
             <FichaPendientes pendientes={pendientes} leidos={resumen.lecturas.pendientes === "ok"} />
-            <FichaInspecciones inspecciones={inspecciones} />
+            <FichaInspecciones tenantId={resumen.identidad.tenantId} inspecciones={inspecciones} />
           </div>
         )}
       </div>

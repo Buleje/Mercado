@@ -23,7 +23,22 @@ export function periodoPorDefecto(hoy: string = limaDateKey()): PeriodoPlanta {
 
 export type PeriodoResuelto = { ok: true; periodo: PeriodoPlanta } | { ok: false; error: string };
 
-/** Completa lo que falte con el trimestre por omisión y rechaza un rango al revés. */
+/** Un año (bisiesto incluido): más que eso es leer el libro entero de cada planta. */
+export const MAX_DIAS_PERIODO = 366;
+
+/** AAAA-MM-DD que existe en el calendario (`2026-99-99` o `2026-02-31` no). */
+export function esDiaReal(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [a, m, d] = s.split("-").map(Number);
+  const f = new Date(Date.UTC(a, m - 1, d));
+  return f.getUTCFullYear() === a && f.getUTCMonth() === m - 1 && f.getUTCDate() === d;
+}
+
+/**
+ * Completa lo que falte con el trimestre por omisión y rechaza una fecha que
+ * no existe, un rango al revés y uno de más de {@link MAX_DIAS_PERIODO} días
+ * (security 17-10: `2026-99-99` respondía 200 con todo gris).
+ */
 export function resolverPeriodo(
   q: { desde?: string; hasta?: string },
   hoy: string = limaDateKey(),
@@ -31,7 +46,10 @@ export function resolverPeriodo(
   const def = periodoPorDefecto(hoy);
   const desde = q.desde ?? def.desde;
   const hasta = q.hasta ?? def.hasta;
+  if (!esDiaReal(desde) || !esDiaReal(hasta)) return { ok: false, error: "Esa fecha no existe: usa AAAA-MM-DD" };
   if (desde > hasta) return { ok: false, error: "La fecha «desde» es posterior a «hasta»" };
+  const dias = (Date.parse(`${hasta}T00:00:00Z`) - Date.parse(`${desde}T00:00:00Z`)) / 86_400_000 + 1;
+  if (dias > MAX_DIAS_PERIODO) return { ok: false, error: `El período puede ser de hasta ${MAX_DIAS_PERIODO} días` };
   return { ok: true, periodo: { desde, hasta } };
 }
 

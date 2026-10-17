@@ -44,6 +44,11 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const folder = (formData.get("folder") as string) ?? "platform";
+    /* La carpeta va a la ruta del bucket y, en dev, a `public/uploads/<folder>`: sin
+       `..` ni barras (17-10, inspecciones de planta: era texto libre del form). */
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(folder)) {
+      return NextResponse.json({ error: "Carpeta inválida" }, { status: 400 });
+    }
     const mode = (formData.get("mode") as "square" | "wide" | "free") ?? "square";
 
     if (!file) return NextResponse.json({ error: "no_file" }, { status: 400 });

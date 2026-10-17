@@ -40,13 +40,17 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import type { LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { resumenDeOrigen } from "@/lib/forestal/origen-incompleto";
 import { lotesParaReporte } from "@/lib/forestal/saldos-reporte";
+import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import {
   contarIncoherencias,
   incoherenciasDeCuadre,
+  incoherenciasDeInspeccion,
   incoherenciasDePendientes,
   incoherenciasDeRendimiento,
   incoherenciasDeSaldo,
+  inspeccionIlegible,
   ordenarIncoherencias,
+  pendientesParaFicha,
   type IngresoParaCuadre,
 } from "./incoherencias";
 import { diasDesde, periodoPorDefecto, rangoDelPeriodo } from "./periodo";
@@ -163,11 +167,22 @@ interface PlantaCalculada {
   semaforo: Semaforo;
   motivoSemaforo: string;
   calculadoEn: string;
+  /** La última inspección cerrada no se pudo leer: no se cachea (no hay fuente propia en `lecturas`). */
+  inspeccionIlegible?: boolean;
+}
+
+/** Las trozas que el libro dice que están en el patio, como las lee la propia planta. */
+export interface PatioLeido {
+  filas: TrozaConsumible[];
+  truncado: boolean;
 }
 
 const estado = (...ok: boolean[]): EstadoLectura => (ok.every(Boolean) ? "ok" : "error");
 
-async function calcularPlanta(p: PlantaIdentidad, periodo: PeriodoPlanta): Promise<PlantaCalculada> {
+async function calcularConPatio(
+  p: PlantaIdentidad,
+  periodo: PeriodoPlanta,
+): Promise<{ calc: PlantaCalculada; patio: PatioLeido | null }> {
   const tid = p.tenantId;
   const rango = rangoDelPeriodo(periodo);
   const ahora = new Date();
@@ -187,6 +202,7 @@ async function calcularPlanta(p: PlantaIdentidad, periodo: PeriodoPlanta): Promi
     pendL,
     cumplL,
     actividadL,
+    inspL,
   ] = await Promise.all([
     leer(tid, "saldos", () => ForestCtpDB.saldos(tid, rango)),
     leer(tid, "conciliacion", () => ForestCtpDB.conciliacionPeriodo(tid, rango)),
@@ -221,6 +237,8 @@ async function calcularPlanta(p: PlantaIdentidad, periodo: PeriodoPlanta): Promi
     ),
     leer(tid, "cumplimiento", () => PlantasForestalesDB.ultimaFotoCumplimiento(tid)),
     leer(tid, "actividad", () => PlantasForestalesDB.ultimaActividad(tid)),
+    /* Fase 3: lo que vio el inspector en el patio pesa como lo que dice el libro. */
+    leer(tid, "inspeccion", () => ForestInspeccionPlantaDB.ultimaCerrada(tid)),
   ]);
 
   const saldos = saldosL.ok ? saldosL.v : null;
@@ -333,6 +351,7 @@ async function calcularPlanta(p: PlantaIdentidad, periodo: PeriodoPlanta): Promi
   const pendientes: (PendientePlanta & { detalle: string })[] =
     pendL.ok && !pendientesFallaron ? (pendL.v.pendientes ?? []) : [];
   items.push(...incoherenciasDePendientes(ref, pendientes));
+  items.push(...(inspL.ok ? incoherenciasDeInspeccion(ref, inspL.v) : [inspeccionIlegible(ref)]));
 
   const incoherencias = ordenarIncoherencias(items);
   const conteo = contarIncoherencias(incoherencias);
@@ -350,23 +369,33 @@ async function calcularPlanta(p: PlantaIdentidad, periodo: PeriodoPlanta): Promi
         }
       : null,
     incoherencias: conteo,
+    inspeccion:
+      inspL.ok && inspL.v
+        ? { fecha: inspL.v.fecha, errores: inspL.v.hallazgos.filter((h) => h.gravedad === "error").length }
+        : null,
   });
 
-  return {
+  const calc: PlantaCalculada = {
     trozas,
     aserrada,
     movimiento,
     especiesNegativas,
     porEspecie,
     incoherencias,
-    pendientes: pendientes.map((x) => ({ titulo: x.titulo, urgencia: x.urgencia, cantidad: x.cantidad })),
+    /* Ley 29733 (security 17-10): las deudas con proveedores llevan nombre y
+       monto; al superadmin le basta saber cuántas guías hay sin pagar. */
+    pendientes: pendientesParaFicha(
+      pendientes.map((x) => ({ titulo: x.titulo, urgencia: x.urgencia, cantidad: x.cantidad })),
+    ),
     cumplimiento: cumplL.ok ? cumplL.v : null,
     ultimaActividad: actividadL.ok && actividadL.v ? actividadL.v.toISOString() : null,
     lecturas,
     semaforo,
     motivoSemaforo: motivo,
     calculadoEn: ahora.toISOString(),
+    ...(inspL.ok ? {} : { inspeccionIlegible: true }),
   };
+  return { calc, patio: patioL.ok ? { filas: patioL.v.filas, truncado: patioL.v.truncado != null } : null };
 }
 
 /** El estado de una lectura como lo pide `EntradaCapacidad.estado` (el balance lo dice, no lo esconde). */
@@ -387,10 +416,12 @@ async function calculadaCacheada(
   let recienCalculada = false;
   const caja = await getOrSet<{ v: PlantaCalculada }>(clave, TTL_PLANTA_SEG, async () => {
     recienCalculada = true;
-    return { v: await calcularPlanta(p, periodo) };
+    return { v: (await calcularConPatio(p, periodo)).calc };
   });
   /* Una lectura caída no se queda 5 minutos: el próximo pedido la reintenta. */
-  if (recienCalculada && Object.values(caja.v.lecturas).includes("error")) invalidate(clave);
+  if (recienCalculada && (Object.values(caja.v.lecturas).includes("error") || caja.v.inspeccionIlegible)) {
+    invalidate(clave);
+  }
   return { calc: caja.v, desdeCache: !recienCalculada };
 }
 
@@ -510,7 +541,8 @@ export async function armarFicha(identidad: PlantaIdentidad, periodo: PeriodoPla
     porEspecie: calc.porEspecie,
     incoherencias: conNombre(calc.incoherencias, identidad.nombre),
     tendencia,
-    pendientes: calc.pendientes,
+    /* Idempotente: lo cacheado antes del filtro de deudas también sale sin nombres. */
+    pendientes: pendientesParaFicha(calc.pendientes),
     inspecciones,
   };
 }
@@ -538,6 +570,34 @@ export async function armarIncoherencias(o: {
     todas.filter((x) => (!o.gravedad || x.gravedad === o.gravedad) && (!o.origen || x.origen === o.origen)),
   );
   return { items, porPlanta };
+}
+
+/**
+ * El libro de UNA planta para congelarlo en una inspección: SIN caché (la foto
+ * es de este instante, no de hace 5 minutos) y con las trozas del patio que se
+ * leyeron para el balance — las mismas que cuenta la planta.
+ */
+export async function calcularParaInspeccion(
+  identidad: PlantaIdentidad,
+  periodo: PeriodoPlanta,
+): Promise<{
+  libro: Pick<PlantaResumen, "trozas" | "aserrada" | "movimiento" | "incoherencias">;
+  incoherenciasDetalle: IncoherenciaPlanta[];
+  lecturas: Record<FuenteLectura, EstadoLectura>;
+  patio: PatioLeido | null;
+}> {
+  const { calc, patio } = await calcularConPatio(identidad, periodo);
+  return {
+    libro: {
+      trozas: calc.trozas,
+      aserrada: calc.aserrada,
+      movimiento: calc.movimiento,
+      incoherencias: contarIncoherencias(calc.incoherencias),
+    },
+    incoherenciasDetalle: calc.incoherencias,
+    lecturas: calc.lecturas,
+    patio,
+  };
 }
 
 /** «Recalcular»: olvida lo cacheado de una planta (o de todas) y la lista. */

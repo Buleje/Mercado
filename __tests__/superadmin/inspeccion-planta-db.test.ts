@@ -197,7 +197,12 @@ describe("conteo de trozas", () => {
   it("se guarda como acta del patio y la inspección copia su id y su resumen", async () => {
     const f = fila("abierta");
     const r = await DB.editar(T, f.id, { conteoPatio: { v: 1 } as never }, "inspector@buleje");
-    expect(H.guardar).toHaveBeenCalledWith(T, { conteo: { v: 1 } }, "inspector@buleje");
+    /* La nota dice en el historial de conteos de la planta de dónde salió esta acta. */
+    expect(H.guardar).toHaveBeenCalledWith(
+      T,
+      { conteo: { v: 1 }, notas: `Conteo de la inspección de planta ${f.id}` },
+      "inspector@buleje",
+    );
     expect(f.conteoPatioId).toBe("acta-9");
     expect(r?.trozas).toEqual({ esperadas: 84, contadas: 81, m3Esperado: 120.5, m3Contado: 116.1, faltantes: 3, sobrantes: 1 });
     expect(r?.faltantesTrozas).toBe(3);

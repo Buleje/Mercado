@@ -323,6 +323,7 @@ const PAGE_META: Record<string, PageMeta> = {
   "/superadmin/repartidores": { title: "Repartidores", section: "Tiendas" },
   "/superadmin/plantas": { title: "Plantas forestales", section: "Tiendas" },
   "/superadmin/plantas/incoherencias": { title: "Incoherencias de volumen", section: "Tiendas" },
+  "/superadmin/plantas/inspecciones": { title: "Inspecciones de planta", section: "Tiendas" },
 
   "/superadmin/marketplace": { title: "Marketplace", section: "Marketplace" },
   "/superadmin/marketplace/suppliers": { title: "Proveedores", section: "Marketplace" },
@@ -743,9 +744,11 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     PAGE_META[pathname] ??
     (pathname.startsWith("/superadmin/tenants/")
       ? { title: "Tienda", section: "Tiendas" }
-      : pathname.startsWith("/superadmin/plantas/")
-        ? { title: "Ficha de la planta", section: "Tiendas" }
-        : { title: "Superadmin", section: "Plataforma" });
+      : pathname.startsWith("/superadmin/plantas/") && pathname.includes("/inspeccion/")
+        ? { title: "Inspección de planta", section: "Tiendas" }
+        : pathname.startsWith("/superadmin/plantas/")
+          ? { title: "Ficha de la planta", section: "Tiendas" }
+          : { title: "Superadmin", section: "Plataforma" });
 
   return (
     <div

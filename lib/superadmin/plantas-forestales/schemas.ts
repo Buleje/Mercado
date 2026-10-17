@@ -37,6 +37,46 @@ export const crearInspeccionSchema = z.object({
   notas: z.string().max(2000).optional(),
 });
 
+/** La carpeta de `/api/superadmin/upload` donde van las fotos de los hallazgos. */
+export const CARPETA_FOTOS_INSPECCION = "inspecciones-planta";
+
+const FOTO_SUPABASE = /^\/storage\/v1\/object\/public\/media\/superadmin\/inspecciones-planta\/[A-Za-z0-9_-]+\.webp$/;
+const FOTO_LOCAL = /^\/uploads\/inspecciones-planta\/[A-Za-z0-9_-]+\.webp$/;
+
+function hostDeSupabase(): string | null {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) return null;
+  try {
+    return new URL(base).host;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sólo lo que devuelve `/api/superadmin/upload` con `folder=inspecciones-planta`
+ * (security 17-10: `z.string().url()` aceptaba `javascript:` y `data:`):
+ *  · Supabase Storage — `https://<proyecto>.supabase.co/storage/v1/object/public/media/superadmin/inspecciones-planta/<archivo>.webp`
+ *    (el host es el de `NEXT_PUBLIC_SUPABASE_URL`; sin esa variable, cualquier `*.supabase.co`);
+ *  · respaldo en disco de dev — `/uploads/inspecciones-planta/<archivo>.webp`.
+ * Sin query, hash ni usuario en la URL.
+ */
+export function esFotoDeInspeccion(u: string): boolean {
+  if (FOTO_LOCAL.test(u)) return true;
+  let url: URL;
+  try {
+    url = new URL(u);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== "https:" || url.search || url.hash || url.username || url.password || url.port) return false;
+  const host = hostDeSupabase();
+  if (host ? url.host !== host : !url.host.endsWith(".supabase.co")) return false;
+  return FOTO_SUPABASE.test(url.pathname);
+}
+
+const fotoSchema = z.string().max(500).refine(esFotoDeInspeccion, "La foto tiene que subirse desde la inspección");
+
 const referenciaSchema = z.object({
   tipo: z.enum(["guia", "especie", "corrida", "lote", "troza"]),
   valor: z.string().max(80),
@@ -48,7 +88,7 @@ const hallazgoSchema = z.object({
   categoria: z.enum(["volumen", "documentos", "trazabilidad", "seguridad", "otro"]),
   texto: z.string().min(3).max(2000),
   m3: z.number().nonnegative().nullable(),
-  fotos: z.array(z.string().url()).max(12),
+  fotos: z.array(fotoSchema).max(12),
   referencia: referenciaSchema.nullable(),
 });
 
@@ -72,6 +112,13 @@ export const editarInspeccionSchema = z
     anular: z.string().min(5).max(500).optional(),
   })
   .strict();
+
+/** GET /api/superadmin/plantas/inspecciones: las de todas las plantas. */
+export const inspeccionesQuerySchema = z.object({
+  estado: z.enum(["abierta", "cerrada", "anulada"]).optional(),
+  tenantId: tenantIdSchema.optional(),
+  incluirPrueba: z.enum(["0", "1"]).optional(),
+});
 
 export type ListaQuery = z.infer<typeof listaQuerySchema>;
 export type IncoherenciasQuery = z.infer<typeof incoherenciasQuerySchema>;

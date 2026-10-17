@@ -1,10 +1,14 @@
 "use client";
 
-import { BadgeStatus, CardTitle, DataTable } from "@buleje/design-system";
+import Link from "next/link";
+import { BadgeStatus, CardTitle } from "@buleje/design-system";
+import { button } from "@/components/ui-system/button-variants";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { InspeccionResumen, PendientePlanta } from "@/lib/superadmin/plantas-forestales/tipos";
 import { SinLectura } from "./cifras";
-import { diaCorto, ESTADO_INSPECCION, URGENCIA } from "./formato";
+import { URGENCIA } from "./formato";
+import { NuevaInspeccion } from "./inspeccion/NuevaInspeccion";
+import { enlaceInspeccion, TablaInspecciones } from "./inspeccion/TablaInspecciones";
 
 const ORDEN_URGENCIA: Record<PendientePlanta["urgencia"], number> = { bloquea: 0, atrasado: 1, pendiente: 2 };
 
@@ -37,39 +41,29 @@ export function FichaPendientes({ pendientes, leidos }: { pendientes: PendienteP
   );
 }
 
-/** Inspecciones hechas a la planta. Crear una llega en la fase 3. */
-export function FichaInspecciones({ inspecciones }: { inspecciones: InspeccionResumen[] }) {
+/** Inspecciones de la planta: abrir una nueva, seguir la abierta o ver las anteriores. */
+export function FichaInspecciones({ tenantId, inspecciones }: { tenantId: string; inspecciones: InspeccionResumen[] }) {
+  const abierta = inspecciones.find((i) => i.estado === "abierta");
   return (
     <section className="space-y-3">
-      <div className="flex items-center gap-1.5">
-        <CardTitle>Inspecciones</CardTitle>
-        <InfoTip title="Inspecciones" what="Visitas a la planta para contar lo que hay y compararlo con su libro." affects="Cada una guarda una foto del libro del día: el acta compara contra eso." />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <CardTitle>Inspecciones</CardTitle>
+          <InfoTip title="Inspecciones" what="Visitas a la planta para contar lo que hay y compararlo con su libro." affects="Cada una guarda una foto del libro del día: el acta compara contra eso." />
+        </div>
+        <div className="flex flex-wrap items-start gap-2">
+          {abierta && (
+            <Link href={enlaceInspeccion({ tenantId, id: abierta.id })} className={button({ variant: "secondary" })}>
+              Seguir la abierta
+            </Link>
+          )}
+          <NuevaInspeccion tenantId={tenantId} />
+        </div>
       </div>
       {inspecciones.length === 0 ? (
         <p className="text-sm text-[var(--text-tertiary)]">Sin inspecciones todavía.</p>
       ) : (
-        <DataTable>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Inspector</th>
-              <th>Estado</th>
-              <th className="text-right">Hallazgos</th>
-              <th className="text-right">Trozas que faltaron</th>
-            </tr>
-          </thead>
-          <tbody>
-            {inspecciones.map((i) => (
-              <tr key={i.id}>
-                <td className="whitespace-nowrap">{diaCorto(i.fecha)}</td>
-                <td>{i.inspector}</td>
-                <td><BadgeStatus variant={ESTADO_INSPECCION[i.estado].variante} label={ESTADO_INSPECCION[i.estado].rotulo} size="sm" /></td>
-                <td className="text-right tabular-nums">{i.hallazgos}</td>
-                <td className="text-right tabular-nums">{i.faltantesTrozas == null ? <span title="No se contó el patio">—</span> : i.faltantesTrozas}</td>
-              </tr>
-            ))}
-          </tbody>
-        </DataTable>
+        <TablaInspecciones filas={inspecciones.map((i) => ({ ...i, tenantId }))} />
       )}
     </section>
   );

@@ -7,7 +7,7 @@ import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 import { ForestPatioConteoDB } from "@/lib/db/forest-patio-conteo.db";
-import type { ResumenActaConteo } from "@/lib/forestal/conteo-patio-guardado";
+import { trozasDeResumen, type CuentasDelActa } from "@/lib/superadmin/plantas-forestales/inspeccion";
 import { editarInspeccionSchema, type EditarInspeccion } from "@/lib/superadmin/plantas-forestales/schemas";
 import type {
   ConteoAserrada,
@@ -161,18 +161,12 @@ export function leerTrozas(raw: unknown): TrozasInspeccion | null {
   return r.success ? r.data : null;
 }
 
-/** El resumen del acta del conteo que se copia en la inspección. */
-export function trozasDeActa(
-  acta: Pick<ResumenActaConteo, "esperadas" | "contadas" | "faltan" | "sobrantes" | "m3Esperado" | "m3Contado">,
-): TrozasInspeccion {
-  return {
-    esperadas: acta.esperadas,
-    contadas: acta.contadas,
-    m3Esperado: acta.m3Esperado,
-    m3Contado: acta.m3Contado,
-    faltantes: acta.faltan,
-    sobrantes: acta.sobrantes,
-  };
+/**
+ * El resumen del acta del conteo que se copia en la inspección (single source:
+ * `trozasDeResumen`). «Sobrantes» suma los códigos desconocidos (`sorpresas`).
+ */
+export function trozasDeActa(acta: CuentasDelActa): TrozasInspeccion {
+  return trozasDeResumen(acta);
 }
 
 /** Faltantes de trozas del resumen: de la copia guardada; sin conteo = `null`. */
@@ -277,6 +271,7 @@ const json = (v: unknown) => v as Prisma.InputJsonValue;
 function invalidar(tenantId: string): void {
   invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}:`);
   invalidateByPrefix(`${CACHE_PREFIX}:ultima:`);
+  invalidateByPrefix(`${CACHE_PREFIX}:global:`);
 }
 
 function auditar(tenantId: string, accion: string, id: string, detalle: string, usuario: string): void {
@@ -390,7 +385,11 @@ export const ForestInspeccionPlantaDB = {
     if (cambios.conclusion !== undefined) data.conclusion = texto(cambios.conclusion);
     if (cambios.responsablePlanta !== undefined) data.responsablePlanta = texto(cambios.responsablePlanta);
     if (cambios.conteoPatio) {
-      const { acta } = await ForestPatioConteoDB.guardar(tenantId, { conteo: cambios.conteoPatio }, quien);
+      const { acta } = await ForestPatioConteoDB.guardar(
+        tenantId,
+        { conteo: cambios.conteoPatio, notas: `Conteo de la inspección de planta ${id}` },
+        quien,
+      );
       data.conteoPatioId = acta.id;
       data.trozas = json(trozasDeActa(acta));
     }
@@ -427,6 +426,58 @@ export const ForestInspeccionPlantaDB = {
     invalidar(tenantId);
     auditar(tenantId, "inspeccion.anular", id, `Inspección anulada: ${m}`, usuario ?? "superadmin");
     return ForestInspeccionPlantaDB.obtener(tenantId, id);
+  },
+
+  /**
+   * La última inspección CERRADA de la planta (la más reciente por día de
+   * inspección; anuladas y abiertas no cuentan): sus hallazgos error/aviso
+   * entran en las incoherencias y el semáforo. Sin caché propia: la lee el
+   * cálculo de la planta, que ya se cachea, y cerrar/anular lo olvida.
+   */
+  async ultimaCerrada(
+    tenantId: string,
+  ): Promise<{ id: string; fecha: string; inspector: string; hallazgos: HallazgoInspeccion[] } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const f = await prisma.forestInspeccionPlanta.findFirst({
+      where: { tenantId, estado: "cerrada" },
+      select: { id: true, fecha: true, inspector: true, hallazgos: true },
+      orderBy: [{ fecha: "desc" }, { cerradaAt: "desc" }, { createdAt: "desc" }],
+    });
+    if (!f) return null;
+    const h = leerHallazgos(f.hallazgos);
+    if (h.rotos > 0) logger.warn("[forest-inspeccion-planta] hallazgos ilegibles omitidos", { tenantId, id: f.id, rotos: h.rotos });
+    return { id: f.id, fecha: dia(f.fecha), inspector: f.inspector, hallazgos: h.validos };
+  },
+
+  /**
+   * Las inspecciones de VARIAS plantas (la lista global del superadmin), de la
+   * más nueva a la más vieja. `tenantIds` sale de la lista de plantas: un id
+   * que no es planta no se consulta. Cruza negocios a propósito, como
+   * `ultimaPorPlanta`.
+   */
+  async listarDePlantas(
+    tenantIds: string[],
+    o: { estado?: EstadoInspeccion; limite?: number } = {},
+  ): Promise<(InspeccionResumen & { tenantId: string })[]> {
+    const ids = [...new Set(tenantIds.filter(Boolean))].sort();
+    if (ids.length === 0) return [];
+    const n = Math.min(Math.max(1, Math.trunc(o.limite ?? LIMITE_INSPECCIONES)), 500);
+    const huella = createHash("sha1").update(`${ids.join(",")}|${o.estado ?? "*"}|${n}`).digest("hex").slice(0, 16);
+    return getOrSet(`${CACHE_PREFIX}:global:${huella}`, TTL_LISTA_SEG, async () => {
+      const filas = await prisma.forestInspeccionPlanta.findMany({
+        where: { tenantId: { in: ids }, ...(o.estado ? { estado: o.estado } : {}) },
+        select: { ...SELECT_RESUMEN, tenantId: true },
+        orderBy: [{ fecha: "desc" }, { createdAt: "desc" }],
+        take: n,
+      });
+      const salida: (InspeccionResumen & { tenantId: string })[] = [];
+      for (const f of filas) {
+        const r = aResumen(f);
+        if (r) salida.push({ ...r, tenantId: f.tenantId });
+        else logger.error("[forest-inspeccion-planta] fila con estado ilegible", { tenantId: f.tenantId, id: f.id });
+      }
+      return salida;
+    });
   },
 
   /**

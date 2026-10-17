@@ -46,6 +46,7 @@ import {
   HeartHandshake,
   TreePine,
   AlertTriangle,
+  ClipboardCheck,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -192,4 +193,5 @@ export const RETENCION_TABS: ModuleTab[] = [
 export const PLANTAS_TABS: ModuleTab[] = [
   { label: "Plantas", href: "/superadmin/plantas", icon: TreePine },
   { label: "Incoherencias", href: "/superadmin/plantas/incoherencias", icon: AlertTriangle },
+  { label: "Inspecciones", href: "/superadmin/plantas/inspecciones", icon: ClipboardCheck },
 ];
