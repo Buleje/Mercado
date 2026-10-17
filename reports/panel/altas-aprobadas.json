@@ -269,6 +269,118 @@
    "par": "loth-libro-operaciones:monte",
    "porque": "Vista nueva del Libro TH «Por imprimir»: la cola de guías que la oficina manda al celular del monte para imprimirlas en el talonario. Vive DENTRO de Libro TH, con el mismo permiso que su vista GTF (sin origen propio): sale sólo donde el Libro TH ya salía, nadie gana una pestaña que su plan no paga.",
    "aprobo": "Brandon, pedido del 2026-10-16 «enviar la guía al monte» (vista ?tab=loth-libro-operaciones&vista=monte pedida con nombre) — carril cola del monte"
+  },
+  {
+   "par": "planificacion:resumen",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:empresa",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:socios",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:foda",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:objetivos",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:organizacion",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:politicas",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:resumen",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:empresa",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:socios",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:foda",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:objetivos",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:organizacion",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
+  },
+  {
+   "par": "planificacion:politicas",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Pestaña nueva «Planificación» (ADR-497): el plan de la empresa (ficha, socios e inversión, FODA, objetivos, organización, políticas). Brandon la pidió el 16-10 («realizar una sección de planificaciones y organización … construye todo eso»). Va en todos los planes desde Básico (no cuesta storage ni IA) y en todos los rubros; sólo para los roles que gobiernan el negocio. Socios e inversión, además, sólo admin/dueño en la API.",
+   "aprobo": "Brandon, pedido del 2026-10-16 (sesión Planificación)"
   }
  ]
 }

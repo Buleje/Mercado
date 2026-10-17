@@ -265,6 +265,16 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "calendario", label: "Calendario", hint: "Cada día de la semana y del mes contra su meta" },
     { key: "logros", label: "Logros", hint: "Lo que ganaste, lo próximo por ganar y tus récords" },
   ],
+  // Plan de la empresa (ADR-497). Cada vista parte en secciones con `?sub=`.
+  planificacion: [
+    { key: "resumen", label: "Resumen", hint: "Cuánto del plan está escrito, qué vence y qué está atrasado; imprimir el plan" },
+    { key: "empresa", label: "Empresa", hint: "Ficha, razón social, tipo de sociedad, misión, visión, valores, modelo de negocio y licencias" },
+    { key: "socios", label: "Socios e inversión", hint: "Socios, aportes, participación, inversión inicial y en cuánto se recupera" },
+    { key: "foda", label: "FODA y estrategias", hint: "Fortalezas, oportunidades, debilidades, amenazas y las estrategias que salen de cruzarlas" },
+    { key: "objetivos", label: "Objetivos y plan", hint: "Objetivos con responsable, plazo y acciones, y la línea de tiempo por trimestre" },
+    { key: "organizacion", label: "Organización", hint: "Organigrama, cargos y funciones, croquis y espacios del local o del campo" },
+    { key: "politicas", label: "Políticas y atención", hint: "Políticas del negocio, protocolo de atención y preguntas frecuentes" },
+  ],
   "analytics-pro": [
     { key: "analytics", label: "Métricas", hint: "Ventas, productos y clientes en gráficos, con sus seis cifras en Indicadores" },
     { key: "forecast", label: "Predicción", hint: "Cuánto vas a vender la próxima semana, qué se agota y a qué precio vender" },

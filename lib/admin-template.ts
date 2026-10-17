@@ -73,6 +73,8 @@ export const ADMIN_MODULE_CATALOG: AdminModuleEntry[] = [
   { id: "store-customizer",   defaultLabel: "Identidad y tema",   category: "Marketplace",defaultVisible: false, defaultPlan: "basico",     description: "Editor visual de la tienda online (identidad y tema).", scope: "tienda" },
   { id: "pagina-inicio",      defaultLabel: "Mi tienda pública",  category: "Marketplace",defaultVisible: true,  defaultPlan: "basico",     description: "Página pública de la tienda: hero, secciones y catálogo.", scope: "tienda" },
 
+  { id: "planificacion",      defaultLabel: "Planificación",      category: "Gestión",    defaultVisible: true,  defaultPlan: "basico",     description: "Plan de la empresa: ficha, socios e inversión, FODA, objetivos, organigrama, croquis y políticas (ADR-497).", scope: "tienda" },
+
   // ── Starter (pro) — bodega con flujo diario, S/ 89 ──────────────
   { id: "inventario",     defaultLabel: "Inventario",         category: "Inventario",    defaultVisible: true,  defaultPlan: "pro",        description: "Stock, kardex, vencimientos y mermas.", scope: "tienda" },
   { id: "clientes",       defaultLabel: "Clientes",           category: "CRM",           defaultVisible: true,  defaultPlan: "pro",        description: "CRM, fidelizacion y segmentacion.", scope: "mixto" },

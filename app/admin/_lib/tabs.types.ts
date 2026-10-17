@@ -83,7 +83,8 @@ export type Tab =
   | "forestal-tramites"      // Forestal: Trámites y oficios a SERFOR/ARFFS/OSINFOR (ADR-308)
   | "camaras"                // Cámaras del patio: lo que mandan, con su hora (ADR-411)
   | "cacao-acopio"  // Agrícola: Acopio & Beneficio de Cacao (ADR-128)
-  | "a-medida";     // Piezas a medida del negocio (ADR-457): sólo si tiene ≥1 en `panel.pestana`
+  | "a-medida"      // Piezas a medida del negocio (ADR-457): sólo si tiene ≥1 en `panel.pestana`
+  | "planificacion"; // Plan de la empresa: ficha, socios, FODA, objetivos, organización y políticas (ADR-497)
 
 /**
  * Subconjunto de Tabs cuya navegación directa por URL/hash/localStorage
@@ -152,5 +153,6 @@ export const VALID_TABS: readonly Tab[] = [
   "camaras",
   "cacao-acopio",
   "a-medida",
+  "planificacion",
   "mi-perfil",
 ] as const;

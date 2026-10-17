@@ -101,6 +101,9 @@ const CORE_BASE: ModuleId[] = [
      «Equipo» sólo la trae a ella; fuera de este núcleo el filtro vertical la
      ocultaba de la barra de escritorio igual que a RRHH (medido 2026-09-14). */
   "tareas",
+  /* Plan de la empresa (ADR-497): ficha, socios, FODA, objetivos y políticas
+     son de cualquier negocio — bodega, restaurante o aserradero. */
+  "planificacion",
 ];
 
 /** Set extendido — todos los tabs actuales (35). */

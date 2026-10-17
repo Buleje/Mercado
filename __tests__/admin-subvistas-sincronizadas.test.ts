@@ -51,6 +51,8 @@ const MODULOS: Record<string, { archivo: string; extraer: (src: string) => strin
   camaras: { archivo: "components/admin/forestal/CamarasView.tsx", extraer: idsDeArray("VISTAS") },
   "asistente-ia": { archivo: "components/admin/unified/AsistenteIAHubModule.tsx", extraer: idsDeTABS, lista: "TABS" },
   "metas-logros": { archivo: "components/admin/unified/MetasLogrosModule.tsx", extraer: idsDeTABS, lista: "TABS" },
+  // Plan de la empresa (ADR-497).
+  planificacion: { archivo: "components/admin/unified/PlanificacionModule.tsx", extraer: idsDeTABS, lista: "TABS" },
   "analytics-pro": { archivo: "components/admin/unified/AnalisisHubModule.tsx", extraer: idsDeTABS, lista: "TABS" },
   rrhh: {
     archivo: "components/admin/unified/RecursosHumanosHubModule.tsx",

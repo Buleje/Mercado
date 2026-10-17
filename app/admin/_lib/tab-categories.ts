@@ -55,6 +55,7 @@ import {
   Briefcase,
   FileCheck,
   FolderArchive,
+  Compass,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -343,6 +344,13 @@ export const MODULE_INFO: Partial<
     desc: "Boletas y facturas con su estado en SUNAT, notas de crédito, guías de remisión y cotizaciones.",
     tip: "Los papeles de tus ventas en un solo lugar; la conexión con SUNAT está en Configuración.",
   },
+  planificacion: {
+    icon: Compass,
+    iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    priority: "medium",
+    desc: "Tu empresa por escrito: ficha, socios e inversión, FODA y estrategias, objetivos, organigrama, croquis y políticas de atención.",
+    tip: "Llénalo de a poco: cada sección se guarda sola y el Resumen te dice qué falta y qué vence.",
+  },
   documentos: {
     icon: FolderArchive,
     iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
@@ -510,6 +518,7 @@ export const BASIC_MODULES: TabCategory[] = [
       "plata",
       "rrhh",
       "documentos",
+      "planificacion",
     ],
   },
 
@@ -684,7 +693,7 @@ export const TAB_CATEGORIES: TabCategory[] = [
   byId("clientes"),
   byId("crecimiento"),
   // Gestión — la plata, el equipo, los documentos y los números
-  byId("finanzas"), // «Gestión»: Mi Plata · Equipo · Documentos
+  byId("finanzas"), // «Gestión»: Mi Plata · Equipo · Documentos · Planificación
   byId("graficos"),
   A_MEDIDA_MODULE,
   // Canales — por dónde vende (Tienda online + Marketplace)

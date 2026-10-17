@@ -158,6 +158,9 @@ export const PLAN_BASICO: PlanDefinition = {
     // Recursos Humanos (ADR-414) — herramienta interna, igual criterio que
     // adelantos/tareas: sin costo asociado, visible desde el free.
     "rrhh",
+    // Plan de la empresa (ADR-497): escribir tu negocio no cuesta storage ni IA,
+    // y es lo primero que arma quien recién abre — desde el free.
+    "planificacion",
     // Config (siempre)
     "config",
     "plan",

@@ -65,6 +65,7 @@ import {
   StickyNote,
   ChefHat,
   Users,
+  Compass,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -118,6 +119,8 @@ export const ALL_TABS = [
   { id: "facturacion" as Tab,          label: "Comprobantes",        icon: FileCheck },
   // — DOCUMENTOS (ola 3: el Archivo y los Contratos, en el grupo Gestión) —
   { id: "documentos" as Tab,          label: "Documentos",          icon: FolderArchive },
+  // Plan de la empresa (ADR-497): quién es, a dónde va y cómo se organiza.
+  { id: "planificacion" as Tab,       label: "Planificación",       icon: Compass },
   { id: "cotizaciones" as Tab,        label: "Cotizaciones",        icon: ClipboardList },
   { id: "guias-remision" as Tab,      label: "Guías de Remisión",   icon: Truck },
   { id: "notas-credito" as Tab,       label: "Notas de Crédito",    icon: FileMinus },

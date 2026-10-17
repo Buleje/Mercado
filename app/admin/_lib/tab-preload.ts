@@ -66,6 +66,7 @@ const TAB_LOADERS: Record<string, Loader> = {
   notas: () => import("@/components/admin/unified/RecursosHumanosHubModule"),
   rrhh: () => import("@/components/admin/unified/RecursosHumanosHubModule"),
   metas: () => import("@/components/admin/unified/MetasLogrosModule"),
+  planificacion: () => import("@/components/admin/unified/PlanificacionModule"),
   analisis: () => import("@/components/admin/unified/AnalisisHubModule"),
   // Tienda online (`pagina-inicio`) absorbe Canales e Identidad y tema (ola 2).
   "pagina-inicio": () => import("@/components/admin/unified/MiTiendaHubModule"),

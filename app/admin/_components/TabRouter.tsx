@@ -37,6 +37,8 @@ const FinanzasModule          = dynamic(() => import("@/components/admin/unified
 const CRMClientesModule       = dynamic(() => import("@/components/admin/unified/CRMClientesModule"),       { loading: TabSpinner });
 // leads-funnel → sub-tab "Leads" de CRMClientesModule (ver dispatch)
 const MetasLogrosModule       = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"),       { loading: TabSpinner });
+// ADR-497 — plan de la empresa: ficha, socios, FODA, objetivos, organización y políticas
+const PlanificacionModule     = dynamic(() => import("@/components/admin/unified/PlanificacionModule"),     { loading: TabSpinner });
 // Crecimiento (Marketing & Fidelización) — Ola 1: Campañas + Puntos consolidados
 const CrecimientoHubModule    = dynamic(() => import("@/components/admin/unified/CrecimientoHubModule"),    { loading: TabSpinner });
 // Canales (SalesChannelsTab) es Tienda online › Redes y medición, y Tareas y
@@ -292,6 +294,7 @@ export function TabRouter({
   // Sugerencias IA se fundió en Comandos (10-10); el alias de vista no aplica a initialTab.
   if (tab === "sugerencias-ia") return <AsistenteIAHubModule key="sugerencias-ia" initialTab="comandos" />;
   if (tab === "metas-logros")   return <MetasLogrosModule />;
+  if (tab === "planificacion")  return <PlanificacionModule />;
 
   // ── Crecimiento (Marketing & Fidelización) — hub único ──
   // Absorbe campañas/segmentos/puntos/RFM + los 4 programas (gift cards, socio,
