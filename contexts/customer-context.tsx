@@ -12,6 +12,7 @@ import {
 import { tenantKey } from "@/contexts/tenant-context";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cerrarSesionCliente } from "@/lib/auth/salir-cliente";
+import { pedirClienteMe } from "@/lib/cliente-me";
 
 export type SavedLocation = {
   id: string;
@@ -170,17 +171,10 @@ export function CustomerProvider({
 
     const hydrateFromServer = async () => {
       try {
-        const res = await fetch("/api/auth/customer/me", {
-          credentials: "include",
-          cache: "no-store",
-        });
+        // Mismo pedido que `useCustomerAuthStatus` (lib/cliente-me.ts): uno solo por carga.
+        const data = await pedirClienteMe();
         if (cancelled) return;
-        if (!res.ok) return;
-        const data = (await res.json()) as {
-          authenticated?: boolean;
-          customer?: { name: string; phone?: string };
-        };
-        if (!data.authenticated || !data.customer?.name) return;
+        if (!data?.authenticated || !data.customer?.name) return;
 
         const next: Customer = {
           name: data.customer.name,

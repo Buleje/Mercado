@@ -1,7 +1,8 @@
 "use client";
 
 import { Component, type ReactNode, type ErrorInfo } from "react";
-import * as Sentry from "@sentry/nextjs";
+// Sentry se baja en el primer error, no en la carga de cada página (16-10).
+import { capturarErrorCliente } from "@/lib/telemetry/capturar-error-cliente";
 import { AlertTriangle, RefreshCw, Home, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -78,7 +79,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Report error to Sentry
-    Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
+    capturarErrorCliente(error instanceof Error ? error : new Error(String(error)));
 
     // Call custom error handler
     this.props.onError?.(error, errorInfo);

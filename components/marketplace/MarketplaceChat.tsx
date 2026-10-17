@@ -7,7 +7,8 @@ import {
   useCallback,
 } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import * as Sentry from "@sentry/nextjs";
+// Sentry se baja en el primer error, no en la carga de cada página (16-10).
+import { capturarErrorCliente } from "@/lib/telemetry/capturar-error-cliente";
 import Image from "next/image";
 import { m as motion, AnimatePresence } from "framer-motion";
 
@@ -202,7 +203,7 @@ export default function MarketplaceChat({
       // Revertir optimistic
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       setInput(text);
-      Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
+      capturarErrorCliente(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setIsSending(false);
     }

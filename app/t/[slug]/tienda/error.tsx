@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import * as Sentry from "@sentry/nextjs";
+// Sentry se baja en el primer error, no en la carga de cada página (16-10).
+import { capturarErrorCliente } from "@/lib/telemetry/capturar-error-cliente";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -16,7 +17,7 @@ export default function TenantTiendaError({
   const slug = params?.slug ?? "";
 
   useEffect(() => {
-    Sentry.captureException(error, {
+    capturarErrorCliente(error, {
       tags: { surface: "tenant-storefront", slug },
     });
   }, [error, slug]);

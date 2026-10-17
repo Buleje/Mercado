@@ -26,9 +26,9 @@ import {
 } from "@/components/marketplace/catalogo-producto";
 import { cachedJson } from "@/lib/client-cache-fetch";
 import { claveCategoria, etiquetaCategoria } from "@/lib/marketplace/familias-categoria";
+import { URL_MUESTRA_POPULAR, VIGENCIA_MUESTRA_MS } from "@/components/marketplace/home/muestra-popular";
 
 const URL_CATEGORIAS = "/api/marketplace/product-categories";
-const URL_MUESTRA = "/api/marketplace/catalog?sort=popular&limit=100";
 const PASILLOS = 3;
 const MINIMO = 4;
 const POR_PASILLO = 10;
@@ -87,7 +87,7 @@ function useMuestra() {
   const [categorias, setCategorias] = useState<Categorias | null | undefined>(undefined);
   useEffect(() => {
     let vivo = true;
-    void cachedJson<Muestra>(URL_MUESTRA, 120_000).then((m) => vivo && setMuestra(m));
+    void cachedJson<Muestra>(URL_MUESTRA_POPULAR, VIGENCIA_MUESTRA_MS).then((m) => vivo && setMuestra(m));
     void cachedJson<Categorias>(URL_CATEGORIAS, 300_000).then((c) => vivo && setCategorias(c));
     return () => {
       vivo = false;

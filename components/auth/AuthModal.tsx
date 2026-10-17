@@ -10,10 +10,9 @@ import {
 import { useRouter, usePathname } from "next/navigation";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { X, User, Phone, Shield, Loader2 } from "lucide-react";
-import {
-  getSupabaseBrowser,
-  isSupabaseAuthConfigured,
-} from "@/lib/supabase/client";
+// Supabase se baja recién al tocar «Google/Facebook» (16-10): el modal viaja en
+// la navbar de toda página pública.
+import { getSupabaseBrowserPerezoso, isSupabaseAuthConfigured } from "@/lib/supabase/cliente-perezoso";
 import { useCustomer } from "@/contexts/customer-context";
 
 // ---------------------------------------------------------------------------
@@ -367,7 +366,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
   const signInWithSupabase = useCallback(
     async (provider: "google" | "facebook") => {
       try {
-        const supabase = getSupabaseBrowser();
+        const supabase = await getSupabaseBrowserPerezoso();
         const origin = window.location.origin;
         const nextParam = encodeURIComponent("/marketplace/explorar");
         const { error } = await supabase.auth.signInWithOAuth({

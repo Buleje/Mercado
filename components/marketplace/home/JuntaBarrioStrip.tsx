@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Users, ArrowRight } from "@buleje/design-system/icons";
 import HomeSeccionTitulo from "@/components/marketplace/home/HomeSeccionTitulo";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 type Junta = {
   code: string;
@@ -24,8 +25,8 @@ export default function JuntaBarrioStrip() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/juntas")
-      .then((r) => (r.ok ? r.json() : null))
+    // cachedJson: volver a la home dentro del minuto no re-pide (16-10, velocidad).
+    cachedJson<{ juntas?: Junta[] }>("/api/juntas", 60_000)
       .then((d) => {
         if (alive && Array.isArray(d?.juntas)) setJuntas(d.juntas);
       })

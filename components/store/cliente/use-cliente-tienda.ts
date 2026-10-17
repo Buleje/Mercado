@@ -21,7 +21,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
-import { getSupabaseBrowser, isSupabaseAuthConfigured } from "@/lib/supabase/client";
+import { getSupabaseBrowserPerezoso, isSupabaseAuthConfigured } from "@/lib/supabase/cliente-perezoso";
 import { logger } from "@/lib/logger";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { ClienteTienda } from "@/lib/tienda-cliente/contrato";
@@ -118,7 +118,7 @@ export function useClienteTienda(): UsoClienteTienda {
       const destino = volverA ?? `${window.location.pathname}${window.location.search}`;
       // Al volver la página es otra carga, pero si Google no abre se vuelve a preguntar.
       consulta = null;
-      const { error } = await getSupabaseBrowser().auth.signInWithOAuth({
+      const { error } = await (await getSupabaseBrowserPerezoso()).auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: urlDeVuelta(window.location.origin, destino),

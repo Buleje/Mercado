@@ -55,10 +55,5 @@ export function getSupabaseBrowser(): SupabaseClient {
  * botones OAuth cuando el dueño aún no configuró las credenciales en Supabase
  * Dashboard.
  */
-export function isSupabaseAuthConfigured(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY),
-  );
-}
+// Single source del chequeo (sin Supabase adentro): `./cliente-perezoso`.
+export { isSupabaseAuthConfigured } from "./cliente-perezoso";

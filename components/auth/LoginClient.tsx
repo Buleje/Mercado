@@ -17,7 +17,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Phone, Shield, Loader2, Truck, BadgePercent, MapPin, Star, ShieldCheck } from "lucide-react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { getSupabaseBrowser, isSupabaseAuthConfigured } from "@/lib/supabase/client";
+import { getSupabaseBrowserPerezoso, isSupabaseAuthConfigured } from "@/lib/supabase/cliente-perezoso";
 import { useCustomer } from "@/contexts/customer-context";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
 
@@ -94,7 +94,7 @@ export default function LoginClient() {
 
   const signInWithSupabase = useCallback(async (provider: "google" | "facebook") => {
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = await getSupabaseBrowserPerezoso();
       const origin = window.location.origin;
       const nextParam = encodeURIComponent(next);
       const { error } = await supabase.auth.signInWithOAuth({

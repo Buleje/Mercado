@@ -12,11 +12,23 @@
  * Sin NEXT_PUBLIC_POSTHOG_KEY es no-op (dev sin key, previews). La key phc_*
  * es publicable por diseño: viaja al navegador igual que la de GA.
  */
-import posthog from "posthog-js";
 import { tacharSecretosEnObjeto } from "@/lib/telemetry/secretos-en-url";
 
-if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+/*
+ * `import()` y no import estático (16-10, carril velocidad): posthog-js pesa
+ * ~80 KB comprimidos y este entry se evalúa ANTES de hidratar, en toda página.
+ * Así baja en paralelo y no frena la hidratación; el pageview inicial lo sigue
+ * capturando `init` (con `history_change` el primero sale al iniciar).
+ */
+const clavePosthog = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+if (clavePosthog) {
+  import("posthog-js")
+    .then(({ default: posthog }) => iniciarPosthog(posthog, clavePosthog))
+    .catch((err: unknown) => console.warn("[posthog] no cargó", err));
+}
+
+function iniciarPosthog(posthog: typeof import("posthog-js").default, clave: string): void {
+  posthog.init(clave, {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
     defaults: "2025-05-24",
     // Pageviews automáticos en cada navegación del router (patrón SPA oficial).

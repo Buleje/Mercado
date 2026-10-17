@@ -26,6 +26,7 @@ import { aProductoDeCatalogo, type ProductoCrudo } from "@/components/marketplac
 import type { UnifiedProductCardProduct } from "@/components/marketplace/UnifiedProductCard";
 import { useCuentaMedianoche } from "@/hooks/use-cuenta-medianoche";
 import { cn } from "@/lib/utils";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 const POCAS_UNIDADES = 5;
 const MAX = 6;
@@ -86,10 +87,11 @@ export default function UrgenciaHoy() {
 
   useEffect(() => {
     let vivo = true;
-    fetch("/api/marketplace/catalog/sections")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((d: { data?: Record<string, unknown> }) => {
-        if (vivo) setItems(elegir(d?.data ?? {}));
+    // cachedJson: volver a la home dentro del minuto no re-pide (16-10, velocidad).
+    cachedJson<{ data?: Record<string, unknown> }>("/api/marketplace/catalog/sections", 60_000)
+      .then((d) => {
+        if (!d) throw new Error("sin respuesta");
+        if (vivo) setItems(elegir(d.data ?? {}));
       })
       .catch((err: unknown) => {
         // Sección no crítica: si falla, no se muestra.

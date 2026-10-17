@@ -11,11 +11,13 @@
  */
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+import { olvidarClienteMe } from "@/lib/cliente-me";
 
 export const RUTA_SALIR_CLIENTE = "/api/auth/customer/logout";
 
 /** Cierra la sesión del cliente en el servidor. Nunca tira: devuelve si el servidor respondió bien. */
 export async function cerrarSesionCliente(): Promise<boolean> {
+  olvidarClienteMe();
   try {
     const res = await fetch(RUTA_SALIR_CLIENTE, {
       method: "POST",

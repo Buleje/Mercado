@@ -28,13 +28,19 @@ let sentryLoadAttempted = false;
 function loadSentry(): SentryLike | null {
   if (sentryMod || sentryLoadAttempted) return sentryMod;
   sentryLoadAttempted = true;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    sentryMod = require("@sentry/nextjs") as SentryLike;
-    return sentryMod;
-  } catch {
-    return null;
+  // Sólo en el servidor (16-10): el navegador no tiene `Sentry.init` (ver
+  // lib/telemetry/capturar-error-cliente.ts), así que ahí era un no-op y el
+  // `require` metía Sentry entero en la primera carga de cada página. Con
+  // `typeof window` constante, el bundler del cliente descarta la rama.
+  if (typeof window === "undefined") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      sentryMod = require("@sentry/nextjs") as SentryLike;
+    } catch {
+      return null;
+    }
   }
+  return sentryMod;
 }
 
 type LogLevel = "debug" | "info" | "warn" | "error";

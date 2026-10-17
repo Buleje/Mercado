@@ -20,6 +20,8 @@ import HomeProductCard from "@/components/marketplace/home/HomeProductCard";
 import HomeSeccionTitulo from "@/components/marketplace/home/HomeSeccionTitulo";
 import { aProductoDeCatalogo, type ProductoCrudo } from "@/components/marketplace/home/producto-crudo";
 import type { UnifiedProductCardProduct } from "@/components/marketplace/UnifiedProductCard";
+import { cachedJson, invalidateCachedJson } from "@/lib/client-cache-fetch";
+import { URL_MUESTRA_POPULAR, VIGENCIA_MUESTRA_MS } from "@/components/marketplace/home/muestra-popular";
 
 type TabKey = "top" | "nuevos" | "baratos" | "combos";
 
@@ -29,6 +31,8 @@ interface TabDef {
   icon: LucideIcon;
   /** null = ya viene del servidor. */
   url: string | null;
+  /** Cuántos de la respuesta mirar (la muestra popular trae 100 y se usan 24). */
+  recorte?: number;
   verTodo: { label: string; href: string };
   puesto?: boolean;
 }
@@ -51,7 +55,8 @@ function armarTabs(hayRanking: boolean, conCombos: boolean): TabDef[] {
           key: "top",
           label: "Populares",
           icon: Flame,
-          url: "/api/marketplace/catalog?sort=popular&limit=24",
+          url: URL_MUESTRA_POPULAR,
+          recorte: 24,
           verTodo: { label: "Ver el catálogo", href: "/#catalogo" },
         },
     {
@@ -107,10 +112,13 @@ export default function HomeDiscoveryTabs({
   useEffect(() => {
     if (estado !== undefined || !tab.url) return;
     let vivo = true;
-    fetch(tab.url)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((d: { data?: unknown; items?: unknown }) => {
-        const crudos = Array.isArray(d?.data) ? d.data : Array.isArray(d?.items) ? d.items : [];
+    // cachedJson: la misma URL que ya pidió otro estante (o el doble montaje
+    // de dev) comparte la ida; volver a una pestaña dentro de 2 min no re-pide.
+    cachedJson<{ data?: unknown; items?: unknown }>(tab.url, VIGENCIA_MUESTRA_MS)
+      .then((d) => {
+        if (!d) throw new Error("sin respuesta del catálogo");
+        const todos = Array.isArray(d.data) ? d.data : Array.isArray(d.items) ? d.items : [];
+        const crudos = tab.recorte ? todos.slice(0, tab.recorte) : todos;
         const lista = paraComprar((crudos as ProductoCrudo[]).map(aProductoDeCatalogo));
         if (vivo) setCache((c) => ({ ...c, [tab.key]: lista }));
       })
@@ -121,15 +129,17 @@ export default function HomeDiscoveryTabs({
     return () => {
       vivo = false;
     };
-  }, [estado, tab.key, tab.url]);
+  }, [estado, tab.key, tab.url, tab.recorte]);
 
   const reintentar = useCallback(() => {
+    // El fallo quedó guardado como null en cachedJson: sin esto, reintentar no pide.
+    if (tab.url) invalidateCachedJson(tab.url);
     setCache((c) => {
       const resto = { ...c };
       delete resto[tab.key];
       return resto;
     });
-  }, [tab.key]);
+  }, [tab.key, tab.url]);
 
   // ── Indicador que se desliza entre píldoras (CSS, no Framer: el
   //    MotionProvider del storefront carga `domAnimation`, que no trae

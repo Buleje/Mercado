@@ -201,8 +201,12 @@ export default function TenantCatalog({ slug, storeName, primaryColor, currency 
 
   useEffect(() => {
     if (!slug) return;
+    // `credentials: "omit"` (16-10): con sesión de admin el endpoint usa el
+    // negocio del JWT e ignora `x-tenant-id`; como visitante manda el de la página.
     fetch("/api/products?active=true&limit=100", {
       headers: { "x-tenant-id": slug },
+      cache: "no-store",
+      credentials: "omit",
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { products?: Product[] } | Product[] | null) => {

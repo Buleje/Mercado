@@ -5,9 +5,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, waitFor } from "@testing-library/react";
 
-vi.mock("@/lib/supabase/client", () => ({
+vi.mock("@/lib/supabase/cliente-perezoso", () => ({
   isSupabaseAuthConfigured: () => true,
-  getSupabaseBrowser: () => ({ auth: { signInWithOAuth: async () => ({ error: null }) } }),
+  getSupabaseBrowserPerezoso: async () => ({ auth: { signInWithOAuth: async () => ({ error: null }) } }),
 }));
 vi.mock("@/lib/csrf-client", () => ({ csrfHeaders: () => ({}) }));
 
