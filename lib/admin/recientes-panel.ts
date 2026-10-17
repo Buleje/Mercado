@@ -155,6 +155,19 @@ export function retitular(lista: readonly Reciente[], href: string, titulo: stri
   return lista.map((r) => (r.href === href ? { ...r, titulo: limpio } : r));
 }
 
+/**
+ * Lo de este navegador y lo del servidor (otra computadora), sin repetir: de
+ * cada lugar queda la visita más nueva, y el más nuevo va primero.
+ */
+export function unirRecientes(a: readonly Reciente[], b: readonly Reciente[], tope = TOPE_RECIENTES): Reciente[] {
+  const porLugar = new Map<string, Reciente>();
+  for (const r of [...a, ...b]) {
+    const otro = porLugar.get(r.href);
+    if (!otro || r.en > otro.en) porLugar.set(r.href, r);
+  }
+  return [...porLugar.values()].sort((x, y) => y.en - x.en).slice(0, tope);
+}
+
 /** Lo guardado, validado (un JSON viejo o roto no rompe el panel). */
 export function leerRecientes(raw: string | null): Reciente[] {
   if (!raw) return [];

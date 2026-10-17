@@ -13,6 +13,7 @@ import {
   retitular,
   sumarReciente,
   TOPE_RECIENTES,
+  unirRecientes,
   type Reciente,
 } from "@/lib/admin/recientes-panel";
 
@@ -79,5 +80,23 @@ describe("la lista", () => {
     expect(recienteCoincide(x, "quien")).toBe(true);
     expect(recienteCoincide(x, "caja")).toBe(true);
     expect(recienteCoincide(x, "q")).toBe(false);
+  });
+});
+
+describe("unirRecientes (este navegador + el servidor)", () => {
+  it("junta los dos sin repetir: de cada lugar queda la visita más nueva, el más nuevo primero", () => {
+    const aca = [r("/admin?tab=crm", "Clientes", 30), r("/admin?tab=pos", "Caja", 10)];
+    const otraPc = [r("/admin?tab=pos", "Caja (otra pc)", 20), r("/admin?tab=orders", "Pedidos", 25)];
+    expect(unirRecientes(aca, otraPc).map((x) => [x.href, x.titulo])).toEqual([
+      ["/admin?tab=crm", "Clientes"],
+      ["/admin?tab=orders", "Pedidos"],
+      ["/admin?tab=pos", "Caja (otra pc)"],
+    ]);
+  });
+
+  it("respeta el tope y no cambia nada si uno está vacío", () => {
+    const muchos = Array.from({ length: TOPE_RECIENTES + 4 }, (_, i) => r(`/admin?tab=t${i}`, `T${i}`, i));
+    expect(unirRecientes(muchos, [])).toHaveLength(TOPE_RECIENTES);
+    expect(unirRecientes([], muchos)[0].href).toBe(`/admin?tab=t${TOPE_RECIENTES + 3}`);
   });
 });

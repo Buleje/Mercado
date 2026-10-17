@@ -5,7 +5,9 @@
  * llegas (un solo montaje, en la cabecera) y `useRecientes` los lee (el menú
  * del reloj y el buscador). Se guardan por persona y negocio en este navegador
  * (`useClaveDeUsuario`), con try/catch: sin espacio o en modo privado no se
- * anota y nada se rompe.
+ * anota y nada se rompe. También suben al servidor unos segundos después
+ * (`lib/admin/guardado-servidor`): al entrar desde otra computadora se juntan
+ * los de las dos, sin repetir.
  *
  * Cómo se entera de que cambió la URL sin volver a parchear `history`
  * (NavProgress ya lo hace): `popstate` (lo dispara `irAEnlace`), la pestaña
@@ -23,13 +25,19 @@ import {
   leerRecientes,
   retitular,
   sumarReciente,
+  unirRecientes,
   type Reciente,
 } from "@/lib/admin/recientes-panel";
 import { escribirGuardado, leerGuardado, useClaveDeUsuario } from "@/hooks/use-clave-de-usuario";
+import { leerDelServidor, subirAlServidor } from "@/lib/admin/guardado-servidor";
 
 const PREFIJO = "admin-recientes";
 /** Avisa a los que leen (menú y buscador) que la lista cambió en esta pestaña. */
 const EVENTO = "admin:recientes";
+/** Nombre en el servidor; sube cuando dejas de moverte un rato. */
+const EN_SERVIDOR = "recientes";
+const DEMORA_SUBIR = 4000;
+const quienDe = (clave: string) => clave.slice(PREFIJO.length + 1);
 
 const ROTULOS = new Map<string, string>(ALL_TABS.map((t) => [t.id as string, t.label]));
 const etiquetaTab = (tab: string) => ROTULOS.get(tab) ?? null;
@@ -46,9 +54,12 @@ function tituloDeLaVentana(): string | null {
   return titulo ?? arriba.getAttribute("aria-label") ?? arriba.querySelector("h1, h2, h3")?.textContent ?? null;
 }
 
-function escribir(clave: string, cambio: (lista: Reciente[]) => Reciente[]) {
+function escribir(clave: string, cambio: (lista: Reciente[]) => Reciente[], demora = DEMORA_SUBIR) {
   const nueva = cambio(leerRecientes(leerGuardado(clave)));
-  if (escribirGuardado(clave, nueva)) window.dispatchEvent(new CustomEvent(EVENTO));
+  /* Sin navegador donde guardar no se sube: la lista partiría de cero y pisaría la del servidor. */
+  if (!escribirGuardado(clave, nueva)) return;
+  window.dispatchEvent(new CustomEvent(EVENTO));
+  subirAlServidor(quienDe(clave), EN_SERVIDOR, nueva, demora);
 }
 
 /** Anota los lugares a los que llegas. Montar UNA vez (la cabecera del panel). */
@@ -56,6 +67,14 @@ export function useRegistrarRecientes(): void {
   const clave = useClaveDeUsuario(PREFIJO);
   useEffect(() => {
     if (!clave) return;
+    let vivo = true;
+    /* Los de otra computadora se juntan con los de acá (una vez por carga). */
+    void leerDelServidor(quienDe(clave), EN_SERVIDOR).then((valor) => {
+      if (!vivo || valor === undefined) return;
+      const delServidor = leerRecientes(JSON.stringify(valor ?? []));
+      if (valor === null && leerRecientes(leerGuardado(clave)).length === 0) return;
+      escribir(clave, (locales) => unirRecientes(locales, delServidor), 0);
+    });
     let ultima = "";
     let quieta: ReturnType<typeof setTimeout> | undefined;
     let titulo: ReturnType<typeof setTimeout> | undefined;
@@ -85,6 +104,7 @@ export function useRegistrarRecientes(): void {
     window.addEventListener("admin-tab-activated", revisar);
     const parar = intervaloVisible(revisar, 1000);
     return () => {
+      vivo = false;
       window.removeEventListener("popstate", revisar);
       window.removeEventListener("admin-tab-activated", revisar);
       parar();
@@ -114,7 +134,7 @@ export function useRecientes(): { recientes: Reciente[]; listo: boolean; borrar:
   }, [clave]);
   const borrar = useCallback(() => {
     if (!clave) return;
-    escribir(clave, () => []);
+    escribir(clave, () => [], 0);
   }, [clave]);
   return { recientes, listo: clave !== null, borrar };
 }
