@@ -28,9 +28,13 @@ export function isEditableTarget(target: EventTarget | null): boolean {
  */
 export function isModalOpen(): boolean {
   if (typeof document === "undefined") return false;
-  return !!document.querySelector(
-    '.modal-backdrop, [role="dialog"], [aria-modal="true"]',
-  );
+  /* Sólo los que están A LA VISTA: el cajón del menú móvil es un
+     `role="dialog"` montado siempre (display:none en escritorio) y, contado,
+     dejaba muertas todas las teclas del panel (medido 17-10: `g s` en el
+     Libro CTP no hacía nada a 1280). */
+  return Array.from(
+    document.querySelectorAll('.modal-backdrop, [role="dialog"], [aria-modal="true"]'),
+  ).some(estaALaVista);
 }
 
 /**

@@ -162,11 +162,17 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
   // (ej. Cmd+N del navegador) → abría el Centro de Notificaciones sin pedirlo.
   // `shouldIgnoreShortcut` centraliza el guard (campo editable + modal abierto +
   // modificadores).
+  // La `N` de la vista manda (17-10): «Nuevo ingreso» en el Libro CTP y la
+  // primera letra que el POS lleva a su buscador también son `N`. Se decide
+  // DESPUÉS de que corrieron todos los oyentes: si alguno la tomó
+  // (`preventDefault`), la campana no se abre encima. Antes no chocaban porque
+  // el cajón del celular, siempre montado con role="dialog", apagaba este atajo.
   const handleKeydown = useCallback((e: KeyboardEvent) => {
     if (e.key !== "n" && e.key !== "N") return;
     if (shouldIgnoreShortcut(e)) return;
-    e.preventDefault();
-    setOpen((prev) => !prev);
+    window.setTimeout(() => {
+      if (!e.defaultPrevented) setOpen((prev) => !prev);
+    }, 0);
   }, []);
 
   useEffect(() => {
