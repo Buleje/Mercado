@@ -4,16 +4,20 @@
  */
 import { formatCurrency } from "@/lib/format";
 
-export type DevolucionEstado = "PENDIENTE" | "ENVIADA" | "RESUELTA";
+/** ANULADA (17-10, C55) reemplaza al borrado: la fila queda con el motivo. Es final. */
+export type DevolucionEstado = "PENDIENTE" | "ENVIADA" | "RESUELTA" | "ANULADA";
 
 export interface ItemDevuelto {
+  /** Lo trae el servidor; un ítem del formulario todavía no lo tiene. */
+  id?: number;
   nombre: string;
   cantidad: number;
   unidad: string;
   // ADR-379. Sin `productId` el ítem no puede salir del stock: es un texto
   // escrito a mano. Con él, la devolución mueve inventario al marcarse enviada.
   productId?: number;
-  precioUnitario?: number;
+  /** Prisma lo manda como texto (Decimal); null = «pendiente de valoración». */
+  precioUnitario?: number | string | null;
 }
 
 export interface Devolucion {
@@ -34,14 +38,28 @@ export interface Devolucion {
 export interface Proveedor {
   id: string;
   name: string;
+  phone?: string | null;
+  email?: string | null;
+  personaContacto?: string | null;
 }
 
 export const soles = (n: number) => `${formatCurrency(n)}`;
 
 /** Lo que el proveedor debe por un ítem. Sin precio no se puede afirmar nada. */
 export function valorItem(item: ItemDevuelto): number | null {
-  if (item.precioUnitario == null) return null;
-  return item.precioUnitario * item.cantidad;
+  if (item.precioUnitario == null || item.precioUnitario === "") return null;
+  const precio = Number(item.precioUnitario);
+  return Number.isFinite(precio) ? precio * item.cantidad : null;
+}
+
+/**
+ * C51 (17-10): el valor como se lee. Sin ningún costo NO es «S/ 0»: es
+ * «Pendiente de valoración»; con algunos ítems sin costo, el total es parcial.
+ */
+export function etiquetaValor(items: ItemDevuelto[]): { texto: string; sinPrecio: number; pendiente: boolean } {
+  const { total, sinPrecio } = valorDevolucion(items);
+  if (sinPrecio > 0 && sinPrecio === items.length) return { texto: "Pendiente de valoración", sinPrecio, pendiente: true };
+  return { texto: soles(total), sinPrecio, pendiente: false };
 }
 
 /** Total de la devolución y cuántos ítems quedaron sin precio (que se avisa). */
@@ -72,6 +90,7 @@ export const ESTADO_STYLES: Record<DevolucionEstado, string> = {
   PENDIENTE: "bg-[var(--data-warning-100)] text-[var(--data-warning-ink)]",
   ENVIADA: "bg-[var(--data-info-100)] text-[var(--data-info-ink)]",
   RESUELTA: "bg-[var(--data-success-500)]/12 text-[var(--data-success-ink)]",
+  ANULADA: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
 };
 
 // El valor persistido sigue siendo ENVIADA; solo cambia lo que se lee.
@@ -79,18 +98,21 @@ export const ESTADO_LABEL: Record<DevolucionEstado, string> = {
   PENDIENTE: "Pendiente",
   ENVIADA: "Esperando respuesta",
   RESUELTA: "Resuelta",
+  ANULADA: "Anulada",
 };
 
 export const ESTADO_SIGUIENTE: Record<DevolucionEstado, DevolucionEstado | null> = {
   PENDIENTE: "ENVIADA",
   ENVIADA: "RESUELTA",
   RESUELTA: null,
+  ANULADA: null,
 };
 
 export const ESTADO_LABEL_SIGUIENTE: Record<DevolucionEstado, string> = {
   PENDIENTE: "Marcar enviada",
   ENVIADA: "Marcar resuelta",
   RESUELTA: "",
+  ANULADA: "",
 };
 
 // Días desde el envío tras los cuales una devolución "esperando respuesta" se
@@ -149,7 +171,7 @@ export function filtrarDevoluciones(lista: Devolucion[], f: FiltrosDevoluciones)
 }
 
 export function conteoPorEstado(lista: Devolucion[]): Record<DevolucionEstado, number> {
-  const c: Record<DevolucionEstado, number> = { PENDIENTE: 0, ENVIADA: 0, RESUELTA: 0 };
+  const c: Record<DevolucionEstado, number> = { PENDIENTE: 0, ENVIADA: 0, RESUELTA: 0, ANULADA: 0 };
   for (const d of lista) c[d.estado]++;
   return c;
 }
@@ -159,12 +181,31 @@ export function montoPorReclamar(lista: Devolucion[]): { total: number; sinPreci
   let total = 0;
   let sinPrecio = 0;
   for (const d of lista) {
-    if (d.estado === "RESUELTA") continue;
+    if (d.estado === "RESUELTA" || d.estado === "ANULADA") continue;
     const v = valorDevolucion(d.items);
     total += v.total;
     sinPrecio += v.sinPrecio;
   }
   return { total, sinPrecio };
+}
+
+/** Anulada con la mercadería todavía afuera: falta que vuelva al almacén (C55). */
+export function stockFuera(dev: Devolucion): boolean {
+  return dev.estado === "ANULADA" && !!dev.stockAplicadoAt;
+}
+
+/** C53: qué toca hacer ahora con esta devolución, en una frase. */
+export function proximoPaso(dev: Devolucion): string {
+  const sinCosto = valorDevolucion(dev.items).sinPrecio;
+  const costo = sinCosto > 0 ? ` Antes, ponle costo a ${sinCosto === 1 ? "1 ítem" : `${sinCosto} ítems`} para saber cuánto reclamar.` : "";
+  switch (dev.estado) {
+    case "PENDIENTE": return `Avísale al proveedor (Preparar mensaje) y márcala enviada cuando la mercadería salga: ahí baja del inventario.${costo}`;
+    case "ENVIADA": return `Espera su nota de crédito o la reposición y márcala resuelta.${costo}`;
+    case "RESUELTA": return "Nada: el proveedor ya respondió.";
+    case "ANULADA": return stockFuera(dev)
+      ? "La mercadería sigue fuera del almacén: cuando vuelva, toca «Volvió al almacén» para que regrese al inventario."
+      : "Nada: quedó anulada.";
+  }
 }
 
 /** Traduce una respuesta fallida a algo accionable (reporte QA Compras 2026-08-12). */
@@ -184,6 +225,7 @@ export async function mensajeDeError(res: Response, accion: string): Promise<str
     case 403: return "Tu sesión venció. Recarga la página e intenta de nuevo.";
     case 402: return detalle ?? "El plan de esta tienda no permite registrar cambios.";
     case 404: return "Esa devolución ya no está disponible. Recarga la lista.";
+    case 409: return detalle ?? "La devolución cambió mientras tanto. Recarga la lista.";
     case 429: return "Demasiados intentos seguidos. Espera unos segundos.";
     default: return detalle ?? `No se pudo ${accion} (error ${res.status}).`;
   }

@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { logger } from "@/lib/logger";
+import { DevolucionAnuladaError } from "@/lib/db/supplier-returns-anular.db";
 
 /**
  * SupplierReturnsByIdDB
@@ -54,6 +54,8 @@ export async function updateSupplierReturnEstado(
       include: { items: true },
     });
     if (!actual) return null;
+    // ANULADA es final (C55, 17-10): volver a ENVIADA sacaría el stock otra vez.
+    if (actual.estado === "ANULADA") throw new DevolucionAnuladaError();
 
     // El stock sale UNA sola vez. No alcanza con mirar la transición: la API
     // acepta cualquier estado válido, así que ENVIADA → RESUELTA → ENVIADA
@@ -130,7 +132,8 @@ export async function updateSupplierReturnEstado(
       }
     }
 
-    await tx.supplierReturn.updateMany({ where: { id, tenantId }, data: { estado } });
+    // `estado ≠ ANULADA` en el WHERE: una anulación que llegó entre la lectura y acá no se pisa.
+    await tx.supplierReturn.updateMany({ where: { id, tenantId, estado: { not: "ANULADA" } }, data: { estado } });
 
     return tx.supplierReturn.findFirst({
       where: { id, tenantId },
@@ -142,78 +145,8 @@ export async function updateSupplierReturnEstado(
   return { devolucion, avisos };
 }
 
-/**
- * Elimina una devolución por id. Devuelve true si se eliminó, false si no existía.
- *
- * Si la devolución ya había descontado stock (`stockAplicadoAt`), borrarla lo
- * devuelve: si el movimiento se borra, la mercadería nunca salió. Antes el
- * `deleteMany` se llevaba la devolución y dejaba el descuento hecho, así que el
- * inventario quedaba con unidades de menos y sin ningún registro que lo
- * explicara — la diferencia aparecía recién en el conteo físico.
+/*
+ * El borrado definitivo (`deleteSupplierReturn`) se fue el 17-10 (C55): se
+ * llevaba el registro y devolvía al inventario mercadería que quizá seguía en
+ * el proveedor. Ahora se anula: `supplier-returns-anular.db.ts`.
  */
-export async function deleteSupplierReturn(tenantId: string, id: string): Promise<boolean> {
-  return prisma.$transaction(async (tx) => {
-    const actual = await tx.supplierReturn.findFirst({
-      where: { id, tenantId },
-      include: { items: true },
-    });
-    if (!actual) return false;
-
-    if (actual.stockAplicadoAt !== null) {
-      for (const item of actual.items) {
-        if (item.productId == null) continue;
-        const producto = await tx.product.findFirst({
-          where: { id: item.productId, tenantId },
-          select: { id: true, name: true, stock: true },
-        });
-        if (!producto || producto.stock === null) continue;
-        const cantidad = Math.round(item.cantidad);
-        if (cantidad <= 0) continue;
-
-        const nuevoStock = producto.stock + cantidad;
-        await tx.product.update({ where: { id: producto.id }, data: { stock: nuevoStock } });
-        await tx.inventoryMovement.create({
-          data: {
-            productId: producto.id,
-            // Entra de vuelta: es la contracara exacta del `devolucion_proveedor`
-            // que sacó estas unidades.
-            type: "ajuste_positivo",
-            quantity: cantidad,
-            previousStock: producto.stock,
-            newStock: nuevoStock,
-            reference: id,
-            notes: `Se borró la devolución a ${actual.proveedorNombre}: vuelve el stock que había salido`,
-            tenantId,
-          },
-        });
-      }
-    }
-
-    const result = await tx.supplierReturn.deleteMany({ where: { id, tenantId } });
-    return result.count > 0;
-  });
-}
-
-/**
- * Obtiene el teléfono de un proveedor para notificaciones WhatsApp (fire-and-forget).
- * Devuelve null si no tiene teléfono o no existe.
- *
- * `tenantId` no es decorativo: sin él, un `proveedorId` de otro tenant devolvía
- * su teléfono y la devolución se le avisaba por WhatsApp a un proveedor ajeno.
- */
-export async function getSupplierPhone(
-  tenantId: string,
-  proveedorId: string,
-): Promise<string | null> {
-  const supplier = await prisma.supplier
-    .findFirst({ where: { id: proveedorId, tenantId }, select: { phone: true } })
-    .catch((err: unknown) => {
-      logger.warn("[supplier-returns-by-id] supplier lookup failed", {
-        tenantId,
-        proveedorId,
-        error: String(err),
-      });
-      return null;
-    });
-  return supplier?.phone ?? null;
-}

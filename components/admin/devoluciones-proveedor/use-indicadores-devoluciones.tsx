@@ -18,12 +18,19 @@ export function useIndicadoresDevoluciones(devoluciones: Devolucion[], cargando:
   const c = conteoPorEstado(devoluciones);
   const vencidas = devoluciones.filter((d) => diasEsperando(d) > DIAS_LIMITE_RESPUESTA).length;
   const mesActual = new Date().toISOString().slice(0, 7);
-  const delMes = devoluciones.filter((d) => d.createdAt.startsWith(mesActual));
+  const delMes = devoluciones.filter((d) => d.estado !== "ANULADA" && d.createdAt.startsWith(mesActual));
   const itemsMes = delMes.reduce((s, d) => s + d.items.reduce((a, i) => a + i.cantidad, 0), 0);
   const { total: porReclamar, sinPrecio } = montoPorReclamar(devoluciones);
+  const vivas = devoluciones.length - c.ANULADA;
+  // C51: lo que no tiene costo no es «S/ 0»: sin ningún costo, la cifra es «Sin valorar».
+  const reclamo = porReclamar === 0 && sinPrecio > 0 ? "Sin valorar" : soles(porReclamar);
+  const itemsSinCosto = `${sinPrecio} ítem${sinPrecio === 1 ? "" : "s"}`;
 
   const tarjetas: Tarjeta[] = [
-    { rotulo: "Devoluciones", valor: String(devoluciones.length), detalle: `${c.RESUELTA} resuelta${c.RESUELTA === 1 ? "" : "s"} · ${delMes.length} este mes (${itemsMes} unidades)`, icono: RotateCcw },
+    {
+      rotulo: "Devoluciones", valor: String(vivas), icono: RotateCcw,
+      detalle: `${c.RESUELTA} resuelta${c.RESUELTA === 1 ? "" : "s"} · ${delMes.length} este mes (${itemsMes} unidades)${c.ANULADA > 0 ? ` · ${c.ANULADA} anulada${c.ANULADA === 1 ? "" : "s"} aparte` : ""}`,
+    },
     { rotulo: "Por enviar", valor: String(c.PENDIENTE), detalle: "la mercadería sale del stock al enviarla", icono: Send, tono: c.PENDIENTE > 0 ? "aviso" : undefined },
     {
       rotulo: "Esperando respuesta", valor: String(c.ENVIADA), icono: Clock,
@@ -31,9 +38,12 @@ export function useIndicadoresDevoluciones(devoluciones: Devolucion[], cargando:
       tono: vencidas > 0 ? "aviso" : undefined,
     },
     {
-      rotulo: "Por reclamar", valor: soles(porReclamar), icono: Wallet,
-      detalle: sinPrecio > 0 ? `${sinPrecio} ítem${sinPrecio === 1 ? "" : "s"} sin costo` : "sin resolver, al costo registrado",
-      ayuda: "Suma lo devuelto que todavía no está resuelto, al costo que tenía el producto al registrar. Es un cálculo de esta pantalla: la nota de crédito se aplica en Por pagar.",
+      rotulo: "Por reclamar", valor: reclamo, icono: Wallet,
+      detalle: sinPrecio > 0
+        ? (porReclamar === 0 ? `${itemsSinCosto} pendiente${sinPrecio === 1 ? "" : "s"} de valoración` : `+ ${itemsSinCosto} sin valorar (no sumados)`)
+        : "sin resolver, al costo registrado",
+      tono: sinPrecio > 0 ? "aviso" : undefined,
+      ayuda: "Suma lo devuelto que todavía no está resuelto ni anulado, al costo de la compra a ese proveedor. Lo que no tiene costo no se suma: se cuenta aparte hasta que le pongas costo (⋯ › Poner costo). La nota de crédito se aplica en Por pagar.",
     },
   ];
 
@@ -43,7 +53,7 @@ export function useIndicadoresDevoluciones(devoluciones: Devolucion[], cargando:
     compactoEnMovil: true,
     anchoFijo: true,
     sinDatosAun: cargando && devoluciones.length === 0,
-    resumen: `${devoluciones.length} · ${c.PENDIENTE + c.ENVIADA} abiertas · ${soles(porReclamar)}`,
+    resumen: `${vivas} · ${c.PENDIENTE + c.ENVIADA} abiertas · ${reclamo}${sinPrecio > 0 && porReclamar > 0 ? " + sin valorar" : ""}`,
     tarjetas: tarjetas.map(({ rotulo, valor, detalle, icono: Icono, tono, ayuda }) => (
       <div key={rotulo} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
         <div className="mb-1 flex items-center gap-2">

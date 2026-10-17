@@ -13,7 +13,8 @@ import { formatCurrency } from "@/lib/format";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 
 type PurchaseStatus = "pendiente" | "recibido" | "parcial" | "cancelado" | "auto_generated";
-type ReturnEstado = "PENDIENTE" | "ENVIADA" | "RESUELTA";
+// ANULADA (17-10, C55): la devolución que antes se borraba queda con este estado.
+type ReturnEstado = "PENDIENTE" | "ENVIADA" | "RESUELTA" | "ANULADA";
 
 type PurchaseOrder = {
   id: string;
@@ -61,6 +62,7 @@ const RETURN_ESTADO_COLOR: Record<ReturnEstado, string> = {
   PENDIENTE: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]",
   ENVIADA: "bg-primary/10 dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]",
   RESUELTA: "bg-primary/10 dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]",
+  ANULADA: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
 };
 
 // Fecha absoluta es-PE + relativa ("hace 2 días") sin depender de date-fns.

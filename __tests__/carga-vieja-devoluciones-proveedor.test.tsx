@@ -28,6 +28,7 @@ const MADERERA = {
   motivo: "Producto dañado",
   estado: "PENDIENTE",
 };
+const MADERERA_ANULADA = { ...MADERERA, estado: "ANULADA", notas: "Anulada el jueves 17/10 por qaadmin: Me equivoqué de proveedor." };
 const FERRETERIA = {
   id: "d2",
   createdAt: "2026-09-14T15:00:00.000Z",
@@ -65,8 +66,10 @@ afterEach(() => {
 const gets = () => pendientes.filter((p) => p.metodo === "GET" && p.url === URL_DEVOLUCIONES);
 const pedido = (metodo: string, url: string) => pendientes.find((p) => p.metodo === metodo && p.url === url);
 const nombresEnLista = (nombre: string) => screen.queryAllByText(nombre, { selector: "span" });
-const idsEnCache = () =>
-  (JSON.parse(localStorage.getItem(CACHE_KEY) ?? '{"data":[]}') as { data: Array<{ id: string }> }).data.map((d) => d.id);
+const estadoEnCache = (id: string) =>
+  (JSON.parse(localStorage.getItem(CACHE_KEY) ?? '{"data":[]}') as { data: Array<{ id: string; estado: string }> }).data.find((d) => d.id === id)?.estado;
+/** La pastilla de estado de la (única) fila: el `<span>` justo después del nombre del proveedor. */
+const estadoEnFila = () => screen.getByText("Maderera Ucayali", { selector: "span" }).nextElementSibling?.textContent;
 
 async function resolver(p: Pendiente | undefined, cuerpo: unknown) {
   if (!p) throw new Error("el pedido todavía no salió");
@@ -90,28 +93,35 @@ function montar() {
 }
 
 describe("DevolucionesProveedorModule — una carga vieja no pisa lo que ya cambió", () => {
-  it("la devolución eliminada no reaparece (ni vuelve al cache) cuando el GET del doble montaje llega tarde", async () => {
+  it("la devolución anulada no vuelve a «Pendiente» (ni en el cache) cuando el GET del doble montaje llega tarde", async () => {
     montar();
     await waitFor(() => expect(gets()).toHaveLength(2));
 
     await resolver(gets()[1], [MADERERA]);
     expect(await screen.findByText("Maderera Ucayali", { selector: "span" })).toBeTruthy();
+    expect(estadoEnFila()).toBe("Pendiente");
 
-    // «Eliminar registro» vive en el «⋯» de la fila.
+    // C55 (17-10): ya no se borra. «Anular…» vive en el «⋯» de la fila y pide el motivo.
     await clic(screen.getByRole("button", { name: "Más acciones" }));
-    await clic(screen.getByRole("menuitem", { name: /Eliminar registro/ }));
-    await resolver(pedido("DELETE", `${URL_DEVOLUCIONES}/d1`), { ok: true });
-    expect(nombresEnLista("Maderera Ucayali")).toHaveLength(0);
+    await clic(screen.getByRole("menuitem", { name: /Anular/ }));
+    fireEvent.change(await screen.findByLabelText(/Por qué la anulas/), { target: { value: "Me equivoqué de proveedor" } });
+    await clic(screen.getByRole("button", { name: "Anular" }));
+    expect(pedido("DELETE", `${URL_DEVOLUCIONES}/d1`)).toBeUndefined();
+    const enviado = pedido("POST", `${URL_DEVOLUCIONES}/d1/anular`);
+    expect(enviado).toBeTruthy();
+    await resolver(enviado, MADERERA_ANULADA);
+    expect(estadoEnFila()).toBe("Anulada");
 
-    // El GET que salió en el montaje llega ahora, con la lista de antes del borrado.
+    // El GET que salió en el montaje llega ahora, con la lista de antes de anular.
     await resolver(gets()[0], [MADERERA]);
-    expect(nombresEnLista("Maderera Ucayali")).toHaveLength(0);
-    expect(idsEnCache()).not.toContain("d1");
+    expect(estadoEnFila()).toBe("Anulada");
+    expect(estadoEnCache("d1")).toBe("ANULADA");
 
-    // La carga silenciosa que sigue al borrado trae lo guardado.
+    // La carga silenciosa que sigue trae lo guardado: la fila sigue ahí, anulada.
     await waitFor(() => expect(gets()).toHaveLength(3));
-    await resolver(gets()[2], []);
-    expect(nombresEnLista("Maderera Ucayali")).toHaveLength(0);
+    await resolver(gets()[2], [MADERERA_ANULADA]);
+    expect(nombresEnLista("Maderera Ucayali")).toHaveLength(1);
+    expect(estadoEnFila()).toBe("Anulada");
   });
 
   it("registrar mientras viaja la recarga pedida con el botón no duplica la devolución nueva", async () => {

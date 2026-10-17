@@ -7,8 +7,11 @@ import ProductCombobox, { type ProductOption } from "@/components/admin/shared/P
 import { Field } from "@/components/admin/shared/Field";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
+import { OrigenDevolucionCampo } from "./OrigenDevolucionCampo";
+import { costoSugerido, revisarContraOrigen, type LineaOrigen } from "./origen-devolucion";
 import { MOTIVOS, UNIDADES, soles, valorDevolucion, valorItem, type ItemDevuelto, type Proveedor } from "./tipos";
 import type { DatosNuevaDevolucion } from "./use-devoluciones";
+import { useOrigenesDevolucion } from "./use-origenes-devolucion";
 
 const CAMPO = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40";
 const ROTULO = "text-sm font-medium text-[var(--text-secondary)]";
@@ -29,6 +32,21 @@ export function FormularioDevolucion({ proveedores, loadingProveedores, products
   const [motivo, setMotivo] = useState(MOTIVOS[0]);
   const [notas, setNotas] = useState("");
   const [items, setItems] = useState<ItemDevuelto[]>([{ ...ITEM_VACIO }]);
+  const [origenOrdenId, setOrigenOrdenId] = useState("");
+  const [sinOrigenMotivo, setSinOrigenMotivo] = useState("");
+  const origen = useOrigenesDevolucion(proveedorId);
+  const orden = origen.ordenes.find((o) => o.ordenId === origenOrdenId);
+  const revision = revisarContraOrigen(items, origen.porProducto, orden);
+  /** El costo que pondrá el servidor (orden → última compra → ficha), para que el total no engañe. */
+  const conCosto = items.map((i) => ({ ...i, precioUnitario: costoSugerido(i, origen.porProducto, orden) }));
+
+  /** Una línea de la orden de origen entra con su costo y su producto; cantidad 1 para empezar. */
+  const agregarDeOrden = (l: LineaOrigen) =>
+    setItems((prev) => {
+      const nuevo: ItemDevuelto = { nombre: l.nombre, cantidad: Math.min(1, l.puedesDevolver), unidad: l.unidad, productId: l.productId, precioUnitario: l.costo };
+      const vacio = prev.findIndex((i) => !i.nombre.trim());
+      return vacio >= 0 ? prev.map((i, k) => (k === vacio ? nuevo : i)) : [...prev, nuevo];
+    });
 
   const actualizarItem = (index: number, campo: keyof ItemDevuelto, valor: string | number) =>
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [campo]: valor } : item)));
@@ -53,8 +71,10 @@ export function FormularioDevolucion({ proveedores, loadingProveedores, products
       return { ...item, nombre: texto };
     }));
 
-  const { total, sinPrecio } = valorDevolucion(items.filter((i) => i.nombre.trim() !== ""));
+  const { total, sinPrecio } = valorDevolucion(conCosto.filter((i) => i.nombre.trim() !== ""));
   const sinNada = items.every((i) => !i.nombre.trim());
+  // El servidor vuelve a juzgar las dos cosas; acá se avisa antes de guardar.
+  const bloqueado = revision.excede.length > 0 || (revision.sinRecepcion.length > 0 && !sinOrigenMotivo.trim());
 
   return (
     <div className="space-y-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
@@ -70,7 +90,7 @@ export function FormularioDevolucion({ proveedores, loadingProveedores, products
           {(id) => loadingProveedores ? (
             <div className="h-12 animate-pulse rounded-xl bg-[var(--surface-sunken)]" />
           ) : (
-            <select id={id} value={proveedorId} onChange={(e) => setProveedorId(e.target.value)} className={CAMPO}>
+            <select id={id} value={proveedorId} onChange={(e) => { setProveedorId(e.target.value); setOrigenOrdenId(""); }} className={CAMPO}>
               <option value="">Selecciona un proveedor…</option>
               {proveedores.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
@@ -83,6 +103,21 @@ export function FormularioDevolucion({ proveedores, loadingProveedores, products
         </Field>
       </div>
 
+      {proveedorId && (
+        <OrigenDevolucionCampo
+          ordenes={origen.ordenes}
+          cargando={origen.cargando}
+          error={origen.error}
+          ordenId={origenOrdenId}
+          onOrden={setOrigenOrdenId}
+          revision={revision}
+          sinMotivo={sinOrigenMotivo}
+          onSinMotivo={setSinOrigenMotivo}
+          agregados={new Set(items.flatMap((i) => (i.productId != null ? [i.productId] : [])))}
+          onAgregar={agregarDeOrden}
+        />
+      )}
+
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className={ROTULO}>Items a devolver *</span>
@@ -91,7 +126,8 @@ export function FormularioDevolucion({ proveedores, loadingProveedores, products
           </button>
         </div>
         {items.map((item, index) => {
-          const valor = valorItem(item);
+          const valor = valorItem(conCosto[index]);
+          const tope = item.productId != null ? revision.tope.get(item.productId) : undefined;
           return (
             <div key={index} className="flex flex-wrap items-center gap-2">
               <div className="flex w-full min-w-0 sm:w-auto sm:min-w-56 sm:flex-1">
@@ -120,6 +156,7 @@ export function FormularioDevolucion({ proveedores, loadingProveedores, products
               <span className={cn("w-24 shrink-0 text-right text-sm tabular-nums", valor != null ? "font-semibold text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>
                 {valor != null ? soles(valor) : "sin costo"}
               </span>
+              {tope != null && <span className="w-full text-sm text-[var(--text-secondary)] sm:w-auto">hasta {tope}</span>}
               {items.length > 1 && (
                 <button type="button" aria-label="Quitar" onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))} className="flex h-12 w-12 items-center justify-center text-[var(--text-tertiary)] transition-colors hover:text-[var(--data-error-ink)]">
                   <X className="h-4 w-4" />
@@ -136,8 +173,8 @@ export function FormularioDevolucion({ proveedores, loadingProveedores, products
               {sinPrecio > 0 && (
                 <p className="text-sm text-[var(--text-secondary)]">
                   {sinPrecio === 1
-                    ? "Falta el costo de 1 ítem: elígelo del inventario para contarlo."
-                    : `Faltan los costos de ${sinPrecio} ítems: elígelos del inventario para contarlos.`}
+                    ? "1 ítem queda «pendiente de valoración»: le pones costo después."
+                    : `${sinPrecio} ítems quedan «pendientes de valoración»: les pones costo después.`}
                 </p>
               )}
             </div>
@@ -154,8 +191,8 @@ export function FormularioDevolucion({ proveedores, loadingProveedores, products
         <button type="button" onClick={onCerrar} className={button({ variant: "ghost" })}>Cancelar</button>
         <button
           type="button"
-          onClick={async () => { if (await onGuardar({ proveedorId, motivo, notas, items })) onCerrar(); }}
-          disabled={guardando || !proveedorId || sinNada}
+          onClick={async () => { if (await onGuardar({ proveedorId, motivo, notas, items, origenOrdenId, sinOrigenMotivo })) onCerrar(); }}
+          disabled={guardando || !proveedorId || sinNada || bloqueado}
           className={button({ variant: "primary", className: "gap-2" })}
         >
           {guardando && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { SupplierReturnsDB, ProductoAjenoError } from "@/lib/db/supplier-returns.db";
+import {
+  SupplierReturnsDB,
+  ProductoAjenoError,
+  ExcedeLoRecibidoError,
+  OrigenInvalidoError,
+  SinOrigenError,
+} from "@/lib/db/supplier-returns.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
@@ -34,6 +40,11 @@ const ReturnSchema = z.object({
   motivo:          z.string().min(1).max(500),
   notas:           z.string().max(1000).optional(),
   items:           z.array(ItemSchema).min(1),
+  // C49 (17-10): de qué orden recibida sale lo que se devuelve. Con orden, el
+  // servidor pone el costo de esa compra y no deja devolver más de lo que llegó.
+  origenOrdenId:   z.string().min(1).max(64).optional(),
+  // Si lo devuelto no entró de este proveedor por el sistema, hay que decir por qué.
+  sinOrigenMotivo: z.string().max(300).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -68,6 +79,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(record, { status: 201 });
   } catch (e) {
     if (e instanceof ProductoAjenoError) return NextResponse.json({ error: "Uno de los productos no es de tu negocio." }, { status: 400 });
+    // C49: el tope se juzga acá, no sólo en la pantalla (dos pestañas, una API directa).
+    if (e instanceof ExcedeLoRecibidoError) return NextResponse.json({ error: e.message, detalle: e.detalle }, { status: 409 });
+    if (e instanceof SinOrigenError || e instanceof OrigenInvalidoError) return NextResponse.json({ error: e.message }, { status: 400 });
     logger.error("[supplier-returns] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al registrar devolución" }, { status: 500 });
   }

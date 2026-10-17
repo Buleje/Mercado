@@ -2,13 +2,15 @@
 
 /**
  * Los datos de Devoluciones a proveedores: lista con cache SWR (60 s), proveedores,
- * productos del inventario y las tres mutaciones (registrar, avanzar de estado,
- * eliminar). Lo que se manda al backend es lo de siempre: el stock que sale y los
- * montos los calcula el servidor; acá sólo se muestran.
+ * productos del inventario y las mutaciones (registrar, avanzar de estado, anular,
+ * volver al almacén, poner costo). El stock que sale o vuelve, el tope de lo que se
+ * puede devolver y los costos los decide el servidor; acá sólo se muestran.
+ *
+ * 17-10 (C55): ya no se borra. Anular deja la fila con el motivo y, si la mercadería
+ * había salido, pregunta si volvió al almacén.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProductOption } from "@/components/admin/shared/ProductCombobox";
-import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   ESTADO_LABEL,
@@ -24,7 +26,19 @@ const CACHE_TTL = 60 * 1000;
 const LOG = "[DevolucionesProveedorModule]";
 
 export interface Aviso { tipo: "error" | "ok"; texto: string }
-export interface DatosNuevaDevolucion { proveedorId: string; motivo: string; notas: string; items: ItemDevuelto[] }
+export interface DatosNuevaDevolucion {
+  proveedorId: string;
+  motivo: string;
+  notas: string;
+  items: ItemDevuelto[];
+  /** C49: la orden recibida de la que sale lo devuelto. */
+  origenOrdenId?: string;
+  /** Si lo devuelto no entró de este proveedor por el sistema: por qué. */
+  sinOrigenMotivo?: string;
+}
+/** Resultado de una acción que se hace desde una ventana: si falla, la ventana lo muestra. */
+export type ResultadoAccion = { ok: true } | { ok: false; error: string };
+type ConAvisos = Devolucion & { avisos?: string[] };
 
 export function useDevoluciones() {
   const [devoluciones, setDevoluciones] = useState<Devolucion[]>([]);
@@ -35,7 +49,6 @@ export function useDevoluciones() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState<Aviso | null>(null);
-  const { confirm } = useConfirm();
 
   /**
    * Deja el estado y el cache de localStorage en la misma página. Toma un updater
@@ -128,7 +141,7 @@ export function useDevoluciones() {
   }, []);
 
   /** Devuelve true si se registró (el formulario se cierra solo en ese caso). */
-  async function registrar({ proveedorId, motivo, notas, items }: DatosNuevaDevolucion): Promise<boolean> {
+  async function registrar({ proveedorId, motivo, notas, items, origenOrdenId, sinOrigenMotivo }: DatosNuevaDevolucion): Promise<boolean> {
     const itemsValidos = items.filter((i) => i.nombre.trim() !== "");
     if (!proveedorId || itemsValidos.length === 0) return false;
 
@@ -147,6 +160,8 @@ export function useDevoluciones() {
           motivo,
           notas: notas.trim() || undefined,
           items: itemsValidos,
+          origenOrdenId: origenOrdenId || undefined,
+          sinOrigenMotivo: sinOrigenMotivo?.trim() || undefined,
         }),
       });
       if (res.ok) {
@@ -166,78 +181,75 @@ export function useDevoluciones() {
     return ok;
   }
 
-  async function avanzarEstado(id: string) {
-    const dev = devoluciones.find((d) => d.id === id);
-    if (!dev) return;
-    const siguiente = ESTADO_SIGUIENTE[dev.estado];
-    if (!siguiente) return;
-
+  /**
+   * Una mutación sobre una fila: la marca ocupada, reemplaza la fila con lo que
+   * devuelve el servidor y termina con una recarga silenciosa (carga vieja no pisa).
+   */
+  async function mutar(
+    id: string,
+    url: string,
+    init: { method: "PATCH" | "POST"; body: unknown },
+    accion: string,
+    exito: (d: ConAvisos) => string,
+  ): Promise<ResultadoAccion> {
     cargasRef.current.cambios += 1;
     setActionId(id);
     setAviso(null);
     try {
-      const res = await fetch(`/api/supplier-returns/${id}`, {
-        method: "PATCH",
+      const res = await fetch(url, {
+        method: init.method,
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ estado: siguiente }),
+        body: JSON.stringify(init.body),
       });
-      if (res.ok) {
-        const updated = (await res.json()) as Devolucion & { avisos?: string[] };
-        persistir((prev) => prev.map((d) => (d.id === id ? updated : d)));
-        // Al marcar enviada la mercadería sale del stock (ADR-379): decirlo es parte del cambio.
-        const salioDelStock = siguiente === "ENVIADA" && !!updated.stockAplicadoAt;
-        const pendientes = updated.avisos ?? [];
-        setAviso({
-          tipo: pendientes.length > 0 ? "error" : "ok",
-          texto: [
-            `${dev.proveedorNombre}: ${ESTADO_LABEL[siguiente].toLowerCase()}.`,
-            salioDelStock ? "La mercadería salió del inventario." : "",
-            ...pendientes,
-          ].filter(Boolean).join(" "),
-        });
-      } else {
-        setAviso({ tipo: "error", texto: await mensajeDeError(res, "cambiar el estado") });
-      }
+      if (!res.ok) return { ok: false, error: await mensajeDeError(res, accion) };
+      const updated = (await res.json()) as ConAvisos;
+      persistir((prev) => prev.map((d) => (d.id === id ? updated : d)));
+      const pendientes = updated.avisos ?? [];
+      setAviso({ tipo: pendientes.length > 0 ? "error" : "ok", texto: [exito(updated), ...pendientes].filter(Boolean).join(" ") });
+      return { ok: true };
     } catch {
-      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. El estado no cambió." });
+      return { ok: false, error: `Sin conexión con el servidor. No se pudo ${accion}.` };
     } finally {
       setActionId(null);
       void fetchDevoluciones(true, { silenciosa: true });
     }
   }
 
-  async function eliminar(id: string) {
-    // El borrado es definitivo: un click equivocado se llevaba el registro de algo que quizá ya se reclamó.
-    const dev = devoluciones.find((d) => d.id === id);
-    const detalle = dev ? `la devolución a ${dev.proveedorNombre} (${dev.items.length} item${dev.items.length === 1 ? "" : "s"})` : "esta devolución";
-    if (!(await confirm({
-      title: `¿Eliminar ${detalle}?`,
-      description: "Es definitivo: no queda en la papelera ni se puede deshacer.",
-      intent: "danger",
-      confirmLabel: "Sí, eliminar",
-    }))) return;
+  /** La de la fila muestra su error en el aviso de arriba; la de una ventana, adentro. */
+  const enAviso = (r: ResultadoAccion) => { if (!r.ok) setAviso({ tipo: "error", texto: r.error }); };
 
-    cargasRef.current.cambios += 1;
-    setActionId(id);
-    setAviso(null);
-    try {
-      const res = await fetch(`/api/supplier-returns/${id}`, { method: "DELETE", headers: csrfHeaders() });
-      if (res.ok) {
-        persistir((prev) => prev.filter((d) => d.id !== id));
-        setAviso({ tipo: "ok", texto: "Devolución eliminada." });
-      } else {
-        setAviso({ tipo: "error", texto: await mensajeDeError(res, "eliminar la devolución") });
-      }
-    } catch {
-      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. No se eliminó nada." });
-    } finally {
-      setActionId(null);
-      void fetchDevoluciones(true, { silenciosa: true });
-    }
+  async function avanzarEstado(id: string) {
+    const dev = devoluciones.find((d) => d.id === id);
+    const siguiente = dev ? ESTADO_SIGUIENTE[dev.estado] : null;
+    if (!dev || !siguiente) return;
+    enAviso(await mutar(id, `/api/supplier-returns/${id}`, { method: "PATCH", body: { estado: siguiente } }, "cambiar el estado", (u) =>
+      // Al marcar enviada la mercadería sale del stock (ADR-379): decirlo es parte del cambio.
+      `${dev.proveedorNombre}: ${ESTADO_LABEL[siguiente].toLowerCase()}.${siguiente === "ENVIADA" && u.stockAplicadoAt ? " La mercadería salió del inventario." : ""}`));
+  }
+
+  /** C55: reemplaza al borrado. `volvioAlAlmacen` sólo pesa si la mercadería ya había salido. */
+  function anular(id: string, motivo: string, volvioAlAlmacen: boolean): Promise<ResultadoAccion> {
+    const dev = devoluciones.find((d) => d.id === id);
+    const salio = !!dev?.stockAplicadoAt;
+    return mutar(id, `/api/supplier-returns/${id}/anular`, { method: "POST", body: { motivo, volvioAlAlmacen } }, "anular la devolución", () =>
+      `Devolución a ${dev?.proveedorNombre ?? "el proveedor"} anulada.${salio ? (volvioAlAlmacen ? " La mercadería regresó al inventario." : " La mercadería sigue fuera del almacén: el inventario no cambió.") : ""}`);
+  }
+
+  async function reingresar(id: string) {
+    enAviso(await mutar(id, `/api/supplier-returns/${id}/reingresar`, { method: "POST", body: {} }, "devolverla al inventario", () =>
+      "La mercadería volvió al almacén y regresó al inventario."));
+  }
+
+  /** C51: costo para los ítems que quedaron «pendientes de valoración». */
+  function valorar(id: string, valores: Array<{ itemId: number; precioUnitario: number }>): Promise<ResultadoAccion> {
+    return mutar(id, `/api/supplier-returns/${id}`, { method: "PATCH", body: { valorar: valores } }, "guardar el costo", (u) => {
+      const quedan = u.items.filter((i) => i.precioUnitario == null).length;
+      return quedan > 0 ? `Costo guardado. Faltan ${quedan === 1 ? "1 ítem" : `${quedan} ítems`} sin costo.` : "Costo guardado: la devolución ya tiene su valor.";
+    });
   }
 
   return {
     devoluciones, proveedores, products, loading, loadingProveedores, actionId, guardando, aviso, setAviso,
-    recargar: () => fetchDevoluciones(true), registrar, avanzarEstado, eliminar,
+    recargar: () => fetchDevoluciones(true), registrar, avanzarEstado, anular, reingresar, valorar,
   };
 }

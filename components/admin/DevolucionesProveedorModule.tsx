@@ -10,14 +10,17 @@ import { FilaDevolucion } from "./devoluciones-proveedor/FilaDevolucion";
 import { FiltrosDevolucionesBarra } from "./devoluciones-proveedor/FiltrosDevoluciones";
 import { ReportesDevoluciones } from "./devoluciones-proveedor/ReportesDevoluciones";
 import { FormularioDevolucion } from "./devoluciones-proveedor/FormularioDevolucion";
+import { AnularDevolucionModal } from "./devoluciones-proveedor/AnularDevolucionModal";
+import { MensajeProveedorModal } from "./devoluciones-proveedor/MensajeProveedorModal";
+import { ValorarDevolucionModal } from "./devoluciones-proveedor/ValorarDevolucionModal";
 import { exportarDevolucionesCSV } from "./devoluciones-proveedor/exportar-csv";
-import { SIN_FILTROS, conteoPorEstado, filtrarDevoluciones, type FiltrosDevoluciones } from "./devoluciones-proveedor/tipos";
+import { PERIODOS, SIN_FILTROS, conteoPorEstado, filtrarDevoluciones, type Devolucion, type FiltrosDevoluciones } from "./devoluciones-proveedor/tipos";
 import { useDevoluciones } from "./devoluciones-proveedor/use-devoluciones";
 import { useIndicadoresDevoluciones } from "./devoluciones-proveedor/use-indicadores-devoluciones";
 
 const AYUDA = {
-  what: "Lo que le devuelves a un proveedor (vencido, dañado, equivocado) y en qué va el reclamo: pendiente, enviada o resuelta.",
-  affects: "Al marcarla enviada, la mercadería sale del Inventario y queda en Movimientos como «devolución a proveedor». La nota de crédito de una recepción con faltantes baja la cuenta en Por pagar; aquí queda el reclamo hasta que el proveedor responda.",
+  what: "Lo que le devuelves a un proveedor (vencido, dañado, equivocado) y en qué va el reclamo: pendiente, enviada, resuelta o anulada. No puedes devolver más de lo que te llegó de ese proveedor.",
+  affects: "Al marcarla enviada, la mercadería sale del Inventario y queda en Movimientos como «devolución a proveedor». Si la anulas y la mercadería volvió, regresa al inventario. La nota de crédito de una recepción con faltantes baja la cuenta en Por pagar; aquí queda el reclamo hasta que el proveedor responda.",
   example: "5 cajas vencidas de Ferretería Pasco: la registras, la marcas enviada (salen 5 del stock) y, cuando te mandan la nota de crédito, la marcas resuelta.",
 };
 
@@ -27,6 +30,10 @@ export default function DevolucionesProveedorModule() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filtros, setFiltros] = useState<FiltrosDevoluciones>(SIN_FILTROS);
+  const [ventana, setVentana] = useState<{ tipo: "anular" | "valorar" | "mensaje"; id: string } | null>(null);
+  // La fila viva (no una copia): si la recarga la cambia, la ventana ve lo último.
+  const enVentana: Devolucion | undefined = ventana ? d.devoluciones.find((x) => x.id === ventana.id) : undefined;
+  const cerrar = () => setVentana(null);
   const kpis = useIndicadoresDevoluciones(d.devoluciones, d.loading);
 
   const filtradas = filtrarDevoluciones(d.devoluciones, filtros);
@@ -54,7 +61,13 @@ export default function DevolucionesProveedorModule() {
       </div>
 
       {kpis.panel}
-      {kpis.abierto && <ReportesDevoluciones devoluciones={d.devoluciones} />}
+      {/* C56: las tasas van sobre el período elegido en el filtro, y lo dicen. */}
+      {kpis.abierto && (
+        <ReportesDevoluciones
+          devoluciones={filtrarDevoluciones(d.devoluciones, { ...SIN_FILTROS, periodo: filtros.periodo })}
+          periodo={PERIODOS.find((p) => p.id === filtros.periodo)?.label ?? "Todas las fechas"}
+        />
+      )}
 
       {/* Resultado de la última acción: una guardada y una que no entró no se ven igual. */}
       {d.aviso && (
@@ -114,10 +127,23 @@ export default function DevolucionesProveedorModule() {
               ocupada={d.actionId === dev.id}
               onAlternar={() => setExpandedId(expandedId === dev.id ? null : dev.id)}
               onAvanzar={() => d.avanzarEstado(dev.id)}
-              onEliminar={() => d.eliminar(dev.id)}
+              onAnular={() => setVentana({ tipo: "anular", id: dev.id })}
+              onReingresar={() => d.reingresar(dev.id)}
+              onValorar={() => setVentana({ tipo: "valorar", id: dev.id })}
+              onMensaje={() => setVentana({ tipo: "mensaje", id: dev.id })}
             />
           ))}
         </div>
+      )}
+
+      {enVentana && ventana?.tipo === "anular" && (
+        <AnularDevolucionModal dev={enVentana} ocupada={d.actionId === enVentana.id} onAnular={(motivo, volvio) => d.anular(enVentana.id, motivo, volvio)} onCerrar={cerrar} />
+      )}
+      {enVentana && ventana?.tipo === "valorar" && (
+        <ValorarDevolucionModal dev={enVentana} ocupada={d.actionId === enVentana.id} onValorar={(v) => d.valorar(enVentana.id, v)} onCerrar={cerrar} />
+      )}
+      {enVentana && ventana?.tipo === "mensaje" && (
+        <MensajeProveedorModal dev={enVentana} proveedor={d.proveedores.find((p) => p.id === enVentana.proveedorId)} onCerrar={cerrar} />
       )}
     </div>
   );
