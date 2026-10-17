@@ -20,6 +20,7 @@ const h = vi.hoisted(() => {
     product: { findMany: vi.fn(), update: vi.fn() },
     inventoryMovement: { createMany: vi.fn() },
     customer: { updateMany: vi.fn() },
+    fiado: { aggregate: vi.fn() },
   };
   const viejo = {
     ReturnsDB: { getAll: vi.fn(), add: vi.fn() },
@@ -82,6 +83,7 @@ beforeEach(() => {
   h.tx.product.update.mockResolvedValue({ stock: 5 });
   h.tx.inventoryMovement.createMany.mockResolvedValue({ count: 1 });
   h.tx.customer.updateMany.mockResolvedValue({ count: 1 });
+  h.tx.fiado.aggregate.mockResolvedValue({ _sum: { saldo: null } });
   // Lo que la ruta vieja leía por su cuenta (sin tope): si se vuelve a usar, el test lo ve.
   h.viejo.SalesDB.getById.mockResolvedValue({
     ...VENTA_TRUEQUE,
@@ -156,6 +158,48 @@ describe("POST /api/returns con saleId — el mismo tope que el POS", () => {
   it("venta de otro tenant: 404", async () => {
     const res = await POST(post({ saleId: "venta-ajena", items: [{ productId: 1252382, quantity: 1 }], applyCredit: true }));
     expect(res.status).toBe(404);
+  });
+});
+
+// security-t5 (17-10): `Fiado` no sabe de qué venta salió; devolver una venta fiada dejaba
+// el fiado entero y le daba al cliente saldo a favor (o plata) por algo que no pagó.
+describe("POST /api/returns con saleId — venta fiada", () => {
+  const VENTA_FIADA = { ...VENTA_TRUEQUE, id: VENTA_TRUEQUE.id, total: "24.90", payment: "fiado" };
+  const devolverFiada = (extra: Record<string, unknown> = {}) => {
+    h.tx.sale.findFirst.mockResolvedValueOnce(VENTA_FIADA);
+    return POST(post({ saleId: VENTA_FIADA.id, items: [{ productId: 1252382, quantity: 1 }], applyCredit: true, ...extra }));
+  };
+
+  it("el cliente todavía debe fiado: 409 «descuéntalo del fiado», sin Return, stock ni saldo a favor", async () => {
+    h.tx.fiado.aggregate.mockResolvedValue({ _sum: { saldo: "24.90" } });
+    const res = await devolverFiada();
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.code).toBe("venta_fiada");
+    expect(body.error).toContain("Me deben");
+    expect(h.tx.fiado.aggregate.mock.calls[0][0].where).toMatchObject({ tenantId: "tenant-a", status: { in: ["ACTIVO", "VENCIDO"] } });
+    expect(h.tx.return.create).not.toHaveBeenCalled();
+    expect(h.tx.product.update).not.toHaveBeenCalled();
+    expect(h.tx.customer.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("en efectivo tampoco (dueño): la caja pagaría algo que no se cobró", async () => {
+    h.rol.value = "owner";
+    h.tx.fiado.aggregate.mockResolvedValue({ _sum: { saldo: "10.00" } });
+    const res = await devolverFiada({ applyCredit: false });
+    expect(res.status).toBe(409);
+    expect(h.tx.return.create).not.toHaveBeenCalled();
+  });
+
+  it("el fiado ya se cobró (no debe nada): la devolución sigue como cualquier otra", async () => {
+    const res = await devolverFiada();
+    expect(res.status).toBe(201);
+    expect(h.tx.return.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("una venta en efectivo no mira el fiado", async () => {
+    await POST(post({ saleId: VENTA_TRUEQUE.id, items: [{ productId: 1252382, quantity: 1 }], applyCredit: true }));
+    expect(h.tx.fiado.aggregate).not.toHaveBeenCalled();
   });
 });
 

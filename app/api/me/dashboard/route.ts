@@ -106,6 +106,7 @@ export async function GET(req: NextRequest) {
         totalSpentAllTime: toNumOrZero(customerData?.totalSpent),
         loyaltyPoints: customerData?.loyaltyPoints ?? 0,
         loyaltyTier: customerData?.loyaltyTier ?? "bronce",
+        // Saldo a favor (devoluciones a crédito), NO deuda: la deuda vive en `Fiado`.
         creditBalance: toNumOrZero(customerData?.creditBalance),
         creditLimit: toNumOrZero(customerData?.creditLimit),
         savedCartItems: savedCartCount,

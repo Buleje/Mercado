@@ -13,11 +13,13 @@
  * - Idempotente sin columna nueva: con `idempotencyKey` el `Return.id` sale de
  *   un hash de tenant + clave. El reintento encuentra la fila y responde lo
  *   mismo; la misma clave con otro cuerpo es 422 (como ADR-449).
+ * - Venta fiada con el cliente todavía debiendo fiado: 409 (`frenoDevolucionFiada`).
  */
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { KitsDB, salidasADevolver, sumarPorProducto } from "@/lib/db/kits.db";
+import { normalizePhone } from "@/lib/db/misc.db";
 import {
   calcularReembolso,
   planDevolucion,
@@ -89,6 +91,38 @@ const redondear = (n: number) => Math.round(n * 100) / 100;
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
+/**
+ * Venta o pedido FIADO: mientras el cliente siga debiendo fiado en este negocio,
+ * no se devuelve ni en efectivo ni a saldo a favor (409). `Fiado` no guarda de qué
+ * venta o pedido salió (17-10, security-t5): devolver dejaba su fiado entero y
+ * además le daba plata o saldo a favor por algo que no pagó. Lo que corresponde es
+ * descontarlo del fiado en «Me deben». Sin deuda abierta el fiado ya se cobró y la
+ * devolución sigue como cualquier otra. Sin teléfono no hay cómo mirar su deuda:
+ * también 409. Solución completa = vínculo fiado ↔ venta/pedido (migración 02).
+ */
+export async function frenoDevolucionFiada(
+  tx: Tx,
+  tenantId: string,
+  telefono: string | null,
+  origen: "venta" | "pedido",
+): Promise<void> {
+  const tel = telefono?.trim() ?? "";
+  let debe = 0;
+  if (tel) {
+    // `Fiado.customerId` = `Customer.phone`; el del pedido puede venir sin normalizar.
+    const claves = [...new Set([tel, normalizePhone(tel)].filter(Boolean))];
+    const deuda = await tx.fiado.aggregate({
+      where: { tenantId, customerId: { in: claves }, status: { in: ["ACTIVO", "VENCIDO"] }, saldo: { gt: 0 } },
+      _sum: { saldo: true },
+    });
+    debe = toNumOrZero(deuda._sum.saldo);
+    if (debe <= 0) return;
+  }
+  const que = origen === "venta" ? "Esa venta se fió" : "Ese pedido se fió";
+  const cuanto = debe > 0 ? ` (todavía debe S/ ${debe.toFixed(2)})` : "";
+  throw new DevolucionError(`${que}: descuéntalo del fiado en Me deben${cuanto}.`, 409, `${origen}_fiada`);
+}
+
 /** Lee con la tx de la devolución o, en la vista previa, sin tx (no ocupa una conexión del pool por una lectura). */
 async function leerVentaYDevuelto(tx: Tx | typeof prisma, tenantId: string, saleId: string) {
   const sale = await tx.sale.findFirst({
@@ -96,6 +130,7 @@ async function leerVentaYDevuelto(tx: Tx | typeof prisma, tenantId: string, sale
     select: {
       id: true,
       total: true,
+      payment: true,
       customerPhone: true,
       items: { select: { productId: true, name: true, price: true, quantity: true } },
     },
@@ -176,6 +211,9 @@ export const DevolucionesPosDB = {
         const leido = await leerVentaYDevuelto(tx, tenantId, saleId);
         if (!leido) throw new DevolucionError("Venta no encontrada", 404, "venta_no_encontrada");
         const { sale, lineas, yaDevuelto, yaReembolsado, cobrado } = leido;
+        if (sale.payment?.trim().toLowerCase() === "fiado") {
+          await frenoDevolucionFiada(tx, tenantId, sale.customerPhone, "venta");
+        }
 
         const plan = planDevolucion(lineas, yaDevuelto, items);
         if (!plan.ok) {

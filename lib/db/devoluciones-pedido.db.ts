@@ -8,20 +8,32 @@
  * mandaba el cuerpo y escribía stock, `Return` y crédito por separado, sin candado.
  *
  * Reglas:
- * - Se devuelve lo que de verdad se cobró: cada línea en la proporción
- *   `Order.total ÷ Σ price × cantidad` (`lib/pos/reembolso.ts`), y la suma de
- *   todas las devoluciones del pedido nunca pasa de `Order.total`.
+ * - Se devuelve lo que de verdad se cobró POR PRODUCTOS: `min(Order.total, Σ price ×
+ *   cantidad)`. El pedido de invitado (`/api/guest/orders/create`) guarda en
+ *   `Order.total` el envío (S/ 3,50) y no hay columna que lo separe: sin el `min`,
+ *   devolver todo devolvía también el envío ya hecho. Cada línea va en la proporción
+ *   cobrado ÷ Σ líneas (`lib/pos/reembolso.ts`) y la suma de todas las devoluciones
+ *   del pedido nunca pasa de lo cobrado por productos.
  * - Candado por pedido (`candadoDelNegocio`) y lo ya devuelto se lee DENTRO de
  *   la transacción, después del candado.
  * - El crédito va al cliente DEL PEDIDO y SUMA a `Customer.creditBalance` como
  *   saldo a favor (lo que la tienda le debe). La deuda de fiados vive en `Fiado`.
  * - El estado del pedido no se toca (la máquina de estados es de `orders.db.ts`).
- *   Un pedido anulado no se devuelve: no cobró nada.
+ *   Sólo se devuelve un pedido `entregado` (17-10, security-t5): uno sin entregar
+ *   se cancela, y `cancelarConReposicion` repone TODO su stock; devolverlo antes
+ *   reponía dos veces y dejaba saldo a favor de algo que no se cobró.
+ * - Pedido por cobrar (`deuda`) = 409; pagado con fiado y el cliente todavía
+ *   debiendo fiado = 409 (`frenoDevolucionFiada`).
  */
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { candadoDelNegocio } from "@/lib/db/candado";
-import { DevolucionError, type ItemDevuelto, type TipoReembolso } from "@/lib/db/devoluciones-pos.db";
+import {
+  DevolucionError,
+  frenoDevolucionFiada,
+  type ItemDevuelto,
+  type TipoReembolso,
+} from "@/lib/db/devoluciones-pos.db";
 import { calcularReembolso, planDevolucion, type LineaVentaProducto } from "@/lib/pos/reembolso";
 
 export interface PedidoDevolucionPedido {
@@ -61,6 +73,8 @@ export const DevolucionesPedidoDB = {
             id: true,
             total: true,
             status: true,
+            paymentMethod: true,
+            deuda: true,
             customerPhone: true,
             items: { select: { productId: true, name: true, price: true, quantity: true, unit: true } },
           },
@@ -69,7 +83,26 @@ export const DevolucionesPedidoDB = {
         if (order.status === "cancelado") {
           throw new DevolucionError("El pedido está anulado: no cobró nada que devolver", 409, "pedido_anulado");
         }
+        if (order.status !== "entregado") {
+          throw new DevolucionError(
+            "Ese pedido todavía no se entregó: cancélalo en vez de devolverlo.",
+            409,
+            "pedido_no_entregado",
+          );
+        }
         const telefono = order.customerPhone?.trim() || null;
+        // `Order.deuda` = «por cobrar» (filtro «Tiene deuda pendiente» de Pedidos), no un
+        // `Fiado`: devolver plata o saldo a favor de lo que no entró es regalarlo.
+        if (order.deuda === true) {
+          throw new DevolucionError(
+            "Ese pedido todavía está por cobrar: cóbralo primero y después registra la devolución.",
+            409,
+            "pedido_por_cobrar",
+          );
+        }
+        if (order.paymentMethod?.trim().toLowerCase() === "fiado") {
+          await frenoDevolucionFiada(tx, tenantId, telefono, "pedido");
+        }
         if (refundType === "credito" && !telefono) {
           throw new DevolucionError(
             "El pedido no tiene cliente: no hay a quién dejarle saldo a favor. Devuélvelo en efectivo.",
@@ -90,11 +123,13 @@ export const DevolucionesPedidoDB = {
           for (const it of r.items) yaDevuelto.set(it.productId, (yaDevuelto.get(it.productId) ?? 0) + it.quantity);
         }
         const yaReembolsado = yaReembolsadoC / 100;
-        const cobrado = toNumOrZero(order.total);
 
         // Todas las líneas cuentan para el factor (el total las cubre a todas); sólo las
         // que conservan su producto se pueden devolver (un producto borrado deja `productId` null).
         const todas = order.items.map((i) => ({ price: toNumOrZero(i.price), quantity: i.quantity }));
+        // Tope = lo cobrado por productos: el envío que `Order.total` pueda traer no se devuelve.
+        const sumaLineasC = Math.round(todas.reduce((s, l) => s + l.price * l.quantity, 0) * 100);
+        const cobrado = Math.min(Math.round(toNumOrZero(order.total) * 100), sumaLineasC) / 100;
         const conProducto: (LineaVentaProducto & { name: string; unit: string })[] = [];
         for (const i of order.items) {
           if (i.productId == null) continue;

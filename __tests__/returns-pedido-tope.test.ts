@@ -19,6 +19,7 @@ const h = vi.hoisted(() => {
     product: { findMany: vi.fn(), update: vi.fn() },
     inventoryMovement: { createMany: vi.fn() },
     customer: { updateMany: vi.fn() },
+    fiado: { aggregate: vi.fn() },
   };
   const viejo = {
     ReturnsDB: { getAll: vi.fn(), add: vi.fn() },
@@ -85,6 +86,7 @@ beforeEach(() => {
   h.tx.product.update.mockResolvedValue({ stock: 12 });
   h.tx.inventoryMovement.createMany.mockResolvedValue({ count: 1 });
   h.tx.customer.updateMany.mockResolvedValue({ count: 1 });
+  h.tx.fiado.aggregate.mockResolvedValue({ _sum: { saldo: null } });
   // Lo que la ruta vieja leía por su cuenta (sin tope): si se vuelve a usar, el test lo ve.
   h.viejo.OrdersDB.getById.mockResolvedValue({
     id: PEDIDO_CUPON.id,
@@ -175,6 +177,60 @@ describe("POST /api/returns con orderId — el mismo tope que la venta", () => {
     const res = await devolverLeche(1);
     expect(res.status).toBe(409);
     expect(h.tx.return.create).not.toHaveBeenCalled();
+  });
+
+  it("pedido sin entregar: 409 «cancélalo», sin Return ni stock (cancelarlo después repondría todo otra vez)", async () => {
+    for (const status of ["pendiente", "confirmado", "preparando", "en_camino"]) {
+      pedido = { ...PEDIDO_CUPON, status };
+      const res = await devolverLeche(1);
+      expect(res.status).toBe(409);
+      const body = await res.json();
+      expect(body.code).toBe("pedido_no_entregado");
+      expect(body.error).toContain("cancélalo");
+    }
+    expect(h.tx.return.create).not.toHaveBeenCalled();
+    expect(h.tx.product.update).not.toHaveBeenCalled();
+    expect(h.tx.customer.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("pedido por cobrar (deuda): 409 sin mirar el fiado, en crédito y en efectivo", async () => {
+    pedido = { ...PEDIDO_CUPON, deuda: true, paymentMethod: "efectivo" };
+    const credito = await devolverLeche(1);
+    expect(credito.status).toBe(409);
+    expect((await credito.json()).code).toBe("pedido_por_cobrar");
+    h.rol.value = "owner";
+    expect((await devolverLeche(1, { applyCredit: false })).status).toBe(409);
+    expect(h.tx.fiado.aggregate).not.toHaveBeenCalled();
+    expect(h.tx.return.create).not.toHaveBeenCalled();
+    expect(h.tx.customer.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("pedido pagado con fiado y el cliente debiendo: 409 «descuéntalo del fiado», en crédito y en efectivo", async () => {
+    pedido = { ...PEDIDO_CUPON, deuda: false, paymentMethod: "fiado" };
+    h.tx.fiado.aggregate.mockResolvedValue({ _sum: { saldo: "18.00" } });
+    const credito = await devolverLeche(1);
+    expect(credito.status).toBe(409);
+    expect((await credito.json()).code).toBe("pedido_fiada");
+    h.rol.value = "owner";
+    const efectivo = await devolverLeche(1, { applyCredit: false });
+    expect(efectivo.status).toBe(409);
+    expect(h.tx.return.create).not.toHaveBeenCalled();
+    expect(h.tx.customer.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("pedido fiado ya cobrado (no debe nada): se devuelve como cualquier otro", async () => {
+    pedido = { ...PEDIDO_CUPON, deuda: false, paymentMethod: "fiado" };
+    const res = await devolverLeche(2);
+    expect(res.status).toBe(201);
+    expect((await res.json()).total).toBe(9);
+  });
+
+  it("pedido de invitado con envío (total S/ 23,50 = S/ 20 + S/ 3,50): devolver todo devuelve S/ 20, no el envío", async () => {
+    pedido = { ...PEDIDO_CUPON, total: "23.50" };
+    const res = await devolverLeche(4);
+    expect(res.status).toBe(201);
+    expect((await res.json()).total).toBe(20);
+    expect(h.tx.customer.updateMany.mock.calls[0][0].data).toEqual({ creditBalance: { increment: 20 } });
   });
 
   it("crédito en un pedido sin cliente: 400 (no hay a quién dejarle el saldo)", async () => {
