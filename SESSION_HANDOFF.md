@@ -1,4 +1,4 @@
-# SESSION HANDOFF — 2026-10-17 (noche autónoma 00:10-05:30): los 4 PDF de Codex implementados — 38 commits
+# SESSION HANDOFF — 2026-10-17 (noche autónoma 00:10-05:35): los 4 PDF de Codex implementados — 42 commits
 
 **Estado:** commits `e81701b8e` → HEAD (desde `2eabc55dd`), **sin subir** (no se pidió push; deploy bloqueado). Árbol limpio salvo lo de siempre (`.claude/autonomo/`, VRT, `components/admin/forestal/.claude/`). `npm run typecheck` verde sobre el árbol limpio y 334 guardianes verdes al cerrar; la suite completa la cortó la presión de memoria (no se reintentó).
 
@@ -6,7 +6,7 @@
 
 **Decide Brandon:** `.claude/autonomo/noche-17-10/decide-brandon.md` (22 cambios de base — 5 con SQL listo sin aplicar en `migraciones-propuestas/` —, 28 reglas de negocio, 11 de zona de peligro, con orden recomendado).
 
-**Al retomar:** para trabajar con varios carriles, `CARRILES=<carpeta> scripts/dev-helpers/commit-carril.sh <carril> <paquete>`. Falta: C22 (fechas y conformidad por tipo, parcial); chip «Listo para salir» y franja en el detalle del pedido; la tabla de Órdenes a 1280 desborda 99 px (viejo).
+**Al retomar:** para trabajar con varios carriles, `CARRILES=<carpeta> scripts/dev-helpers/commit-carril.sh <carril> <paquete>`. Últimos de la noche (05:15-05:35): franja de entrega y «Listo para salir» en el detalle del pedido, Órdenes sin desborde a 1280 y conformidad al recibir (C22), motivo obligatorio al ajustar/cambiar medio/cancelar OC. Falta: unir los dos mapas de reparto (diseño en el reporte de pedidos-rem); Reparto oculto en main por la plantilla global (se activa en superadmin › Plantilla); `OCRecepcionModal.tsx` pasa las 300 líneas.
 
 ---
 
