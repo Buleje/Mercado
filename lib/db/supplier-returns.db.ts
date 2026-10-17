@@ -1,5 +1,7 @@
 import "server-only";
+import type { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { candadoDelProveedor } from "./candado-proveedor";
 import { codigoDeOrden } from "@/lib/compras/referencia-documento";
 import { diaYFecha } from "@/lib/compras/devoluciones-proveedor";
 
@@ -100,9 +102,13 @@ const TOLERANCIA = 0.001;
  * movimientos `compra` del kardex que apuntan a sus órdenes (la recepción usa
  * `OC-<id>`, el ingreso directo `<id>`): lo dañado al recibir es `merma`, ya va
  * como reclamo sin producto, y no cuenta.
+ *
+ * `db` = la transacción del alta, para que el tope se lea bajo el candado del proveedor.
  */
-async function entradasDelProveedor(tenantId: string, proveedorId: string, productIds?: number[]) {
-  const ordenes = await prisma.purchaseOrder.findMany({
+type LectorEntradas = Pick<Prisma.TransactionClient, "purchaseOrder" | "inventoryMovement" | "supplierReturnItem">;
+
+async function entradasDelProveedor(tenantId: string, proveedorId: string, productIds?: number[], db: LectorEntradas = prisma) {
+  const ordenes = await db.purchaseOrder.findMany({
     where: { tenantId, supplierId: proveedorId },
     select: { id: true, createdAt: true, receivedDate: true, items: { select: { productId: true, name: true, unit: true, unitCost: true } } },
   });
@@ -112,12 +118,12 @@ async function entradasDelProveedor(tenantId: string, proveedorId: string, produ
 
   const [movs, devueltos] = await Promise.all([
     ordenDeRef.size
-      ? prisma.inventoryMovement.findMany({
+      ? db.inventoryMovement.findMany({
           where: { tenantId, type: "compra", reference: { in: [...ordenDeRef.keys()] }, ...filtroProducto },
           select: { productId: true, quantity: true, reference: true, createdAt: true },
         })
       : Promise.resolve([]),
-    prisma.supplierReturnItem.findMany({
+    db.supplierReturnItem.findMany({
       where: { productId: productIds ? { in: productIds } : { not: null }, supplierReturn: { tenantId, proveedorId, estado: { not: "ANULADA" } } },
       select: { productId: true, cantidad: true },
     }),
@@ -214,70 +220,76 @@ export const SupplierReturnsDB = {
     const ajeno = ids.find((id) => !costoFicha.has(id));
     if (ajeno !== undefined) throw new ProductoAjenoError(ajeno);
 
-    const lineasNotas: string[] = [];
-    const costoOrigen = new Map<number, number>();
-    if (ids.length > 0) {
-      const ent = data.proveedorId ? await entradasDelProveedor(tenantId, data.proveedorId, ids) : null;
-      const origen = data.origenOrdenId ? ent?.recibidas.find((o) => o.id === data.origenOrdenId) : undefined;
-      if (data.origenOrdenId && !origen) throw new OrigenInvalidoError();
-      if (origen && ent) {
-        for (const i of origen.items) if (!costoOrigen.has(i.productId)) costoOrigen.set(i.productId, Number(i.unitCost));
-        lineasNotas.push(`Origen: orden ${codigoDeOrden(origen.id)} recibida el ${diaYFecha(ent.fechaDe(origen))}.`);
-      }
+    // El tope (lo que entró − lo ya devuelto) y el alta van en fila por proveedor (revisión
+    // 17-10): sin candado, dos pestañas leían «quedan 10» y creaban dos devoluciones de 10.
+    // La segunda espera acá y, al leer, ya ve la primera.
+    return prisma.$transaction(async (tx) => {
+      if (data.proveedorId && ids.length > 0) await candadoDelProveedor(tx, tenantId, data.proveedorId, "devoluciones");
+      const lineasNotas: string[] = [];
+      const costoOrigen = new Map<number, number>();
+      if (ids.length > 0) {
+        const ent = data.proveedorId ? await entradasDelProveedor(tenantId, data.proveedorId, ids, tx) : null;
+        const origen = data.origenOrdenId ? ent?.recibidas.find((o) => o.id === data.origenOrdenId) : undefined;
+        if (data.origenOrdenId && !origen) throw new OrigenInvalidoError();
+        if (origen && ent) {
+          for (const i of origen.items) if (!costoOrigen.has(i.productId)) costoOrigen.set(i.productId, Number(i.unitCost));
+          lineasNotas.push(`Origen: orden ${codigoDeOrden(origen.id)} recibida el ${diaYFecha(ent.fechaDe(origen))}.`);
+        }
 
-      const pedido = new Map<number, { nombre: string; cantidad: number }>();
-      for (const i of data.items) {
-        if (i.productId == null) continue;
-        const p = pedido.get(i.productId);
-        pedido.set(i.productId, { nombre: p?.nombre ?? i.nombre, cantidad: (p?.cantidad ?? 0) + i.cantidad });
-      }
-      const sinOrigen: string[] = [];
-      const excede: string[] = [];
-      for (const [productId, { nombre, cantidad }] of pedido) {
-        const r = ent?.porProducto.get(productId);
-        if (!r || r.recibido <= 0) { sinOrigen.push(nombre); continue; }
-        const enOrigen = origen ? ent?.porOrden.get(origen.id)?.get(productId) : undefined;
-        const tope = enOrigen != null ? Math.min(enOrigen, r.retornable) : r.retornable;
-        if (cantidad > tope + TOLERANCIA) {
-          excede.push(`${nombre}: pides ${cantidad} y puedes devolver hasta ${tope} (${enOrigen != null ? `en esa orden llegaron ${enOrigen}` : `te llegaron ${r.recibido}`}, ya le devolviste ${r.devuelto}).`);
+        const pedido = new Map<number, { nombre: string; cantidad: number }>();
+        for (const i of data.items) {
+          if (i.productId == null) continue;
+          const p = pedido.get(i.productId);
+          pedido.set(i.productId, { nombre: p?.nombre ?? i.nombre, cantidad: (p?.cantidad ?? 0) + i.cantidad });
+        }
+        const sinOrigen: string[] = [];
+        const excede: string[] = [];
+        for (const [productId, { nombre, cantidad }] of pedido) {
+          const r = ent?.porProducto.get(productId);
+          if (!r || r.recibido <= 0) { sinOrigen.push(nombre); continue; }
+          const enOrigen = origen ? ent?.porOrden.get(origen.id)?.get(productId) : undefined;
+          const tope = enOrigen != null ? Math.min(enOrigen, r.retornable) : r.retornable;
+          if (cantidad > tope + TOLERANCIA) {
+            excede.push(`${nombre}: pides ${cantidad} y puedes devolver hasta ${tope} (${enOrigen != null ? `en esa orden llegaron ${enOrigen}` : `te llegaron ${r.recibido}`}, ya le devolviste ${r.devuelto}).`);
+          }
+        }
+        if (excede.length > 0) throw new ExcedeLoRecibidoError(excede);
+        const motivoSinOrigen = data.sinOrigenMotivo?.trim();
+        if (sinOrigen.length > 0) {
+          if (!motivoSinOrigen) throw new SinOrigenError(sinOrigen);
+          lineasNotas.push(`Sin recepción en el sistema (${sinOrigen.join(", ")}): ${motivoSinOrigen}`);
+        }
+        // El costo de la última compra a ESE proveedor: es lo que se le reclama.
+        for (const id of ids) {
+          if (costoOrigen.has(id)) continue;
+          const ultimo = ent?.porProducto.get(id)?.ultimoCosto;
+          if (ultimo) costoOrigen.set(id, ultimo.costo);
         }
       }
-      if (excede.length > 0) throw new ExcedeLoRecibidoError(excede);
-      const motivoSinOrigen = data.sinOrigenMotivo?.trim();
-      if (sinOrigen.length > 0) {
-        if (!motivoSinOrigen) throw new SinOrigenError(sinOrigen);
-        lineasNotas.push(`Sin recepción en el sistema (${sinOrigen.join(", ")}): ${motivoSinOrigen}`);
-      }
-      // El costo de la última compra a ESE proveedor: es lo que se le reclama.
-      for (const id of ids) {
-        if (costoOrigen.has(id)) continue;
-        const ultimo = ent?.porProducto.get(id)?.ultimoCosto;
-        if (ultimo) costoOrigen.set(id, ultimo.costo);
-      }
-    }
 
-    const notas = [data.notas?.trim(), ...lineasNotas].filter(Boolean).join("\n") || undefined;
-    return prisma.supplierReturn.create({
-      data: {
-        proveedorId: data.proveedorId,
-        proveedorNombre: data.proveedorNombre,
-        motivo: data.motivo,
-        notas,
-        estado: "PENDIENTE",
-        tenantId,
-        items: {
-          create: data.items.map((i) => ({
-            nombre: i.nombre,
-            cantidad: i.cantidad,
-            unidad: i.unidad,
-            productId: i.productId ?? null,
-            precioUnitario: i.productId != null
-              ? (costoOrigen.get(i.productId) ?? costoFicha.get(i.productId) ?? null)
-              : (i.precioUnitario ?? null),
-          })),
+      const notas = [data.notas?.trim(), ...lineasNotas].filter(Boolean).join("\n") || undefined;
+      return tx.supplierReturn.create({
+        data: {
+          proveedorId: data.proveedorId,
+          proveedorNombre: data.proveedorNombre,
+          motivo: data.motivo,
+          notas,
+          estado: "PENDIENTE",
+          tenantId,
+          items: {
+            create: data.items.map((i) => ({
+              nombre: i.nombre,
+              cantidad: i.cantidad,
+              unidad: i.unidad,
+              productId: i.productId ?? null,
+              precioUnitario: i.productId != null
+                ? (costoOrigen.get(i.productId) ?? costoFicha.get(i.productId) ?? null)
+                : (i.precioUnitario ?? null),
+            })),
+          },
         },
-      },
-      include: { items: true },
-    });
+        include: { items: true },
+      });
+    }, { timeout: 15_000, maxWait: 5_000 });
   },
 };

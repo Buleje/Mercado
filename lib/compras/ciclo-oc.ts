@@ -89,6 +89,62 @@ export function acumularNoLlegara(recepciones: readonly RecepcionGuardada[], ocI
   return mapa;
 }
 
+/**
+ * Unidades que llegaron dañadas o vencidas: no entraron al stock vendible y su
+ * valor ya se descontó de la cuenta (o se reclamó) al recibir.
+ */
+export function acumularNoAptos(recepciones: readonly RecepcionGuardada[], ocItems: readonly ItemOcRef[]): Map<number, number> {
+  const mapa = new Map<number, number>();
+  for (const recepcion of recepciones) {
+    for (const raw of itemsDe(recepcion)) {
+      if (raw.condition !== "dañado" && raw.condition !== "vencido") continue;
+      const cantidad = num(raw.receivedQty);
+      if (cantidad <= 0) continue;
+      const productId = resolverLineaDeOrden(raw, ocItems);
+      if (productId != null) mapa.set(productId, (mapa.get(productId) ?? 0) + cantidad);
+    }
+  }
+  return mapa;
+}
+
+const redondear2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Lo que vale, al precio de la orden, lo que llegó en buen estado (revisión 17-10).
+ * Por línea, como mucho lo pedido; con el factor total ÷ subtotal, que es donde
+ * el total metió el IGV o el descuento (misma regla que el crédito al recibir).
+ */
+export function valorDeLoRecibido(
+  items: readonly ItemOc[],
+  total: number | null | undefined,
+  recibido: ReadonlyMap<number, number> | Readonly<Record<number, number>>,
+  noAptos: ReadonlyMap<number, number> | Readonly<Record<number, number>> = new Map(),
+): number {
+  const leer = (m: ReadonlyMap<number, number> | Readonly<Record<number, number>>, id: number) =>
+    num(m instanceof Map ? m.get(id) : (m as Readonly<Record<number, number>>)[id]);
+  const subtotal = items.reduce((s, i) => s + i.quantity * num(i.unitCost), 0);
+  const factor = subtotal > 0 && num(total) > 0 ? num(total) / subtotal : 1;
+  const valor = items.reduce((s, i) => {
+    const aptas = Math.max(0, leer(recibido, i.productId) - leer(noAptos, i.productId));
+    return s + Math.min(aptas, i.quantity) * num(i.unitCost) * factor;
+  }, 0);
+  return redondear2(valor);
+}
+
+export type DeudaAlCancelar = { accion: "anular" | "bajar" | "igual"; monto: number };
+
+/**
+ * Qué pasa con una deuda SIN pagos al cancelar la orden (revisión 17-10, Brandon
+ * delegó: contabilidad correcta). Antes se anulaba entera aunque la mercadería
+ * hubiera llegado: el proveedor quedaba sin cobrar lo que sí entregó. Ahora la
+ * deuda baja a lo que vale lo que llegó; nunca sube. Sin nada llegado, se anula.
+ */
+export function deudaAlCancelar(montoActual: number, valorRecibido: number): DeudaAlCancelar {
+  if (valorRecibido <= 0.005) return { accion: "anular", monto: 0 };
+  const nuevo = redondear2(Math.min(montoActual, valorRecibido));
+  return nuevo < montoActual - 0.005 ? { accion: "bajar", monto: nuevo } : { accion: "igual", monto: redondear2(montoActual) };
+}
+
 // ── Fechas (YYYY-MM-DD, sin depender del ICU del navegador) ────────────────────
 
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"] as const;
@@ -132,8 +188,12 @@ export type SeguimientoOC = {
   recibido: Record<number, number>;
   /** productId → unidades que el proveedor ya no mandará. */
   noLlegara: Record<number, number>;
+  /** productId → unidades que llegaron dañadas o vencidas (dentro de `recibido`). */
+  noAptos?: Record<number, number>;
   recepciones: RecepcionDeOrden[];
   cuenta: CuentaDeOrden | null;
+  /** La deuda existe pero este rol no la ve (revisión 17-10: el almacenero no ve plata). */
+  cuentaOculta?: true;
 };
 
 export type RecepcionCruda = RecepcionGuardada & {
@@ -151,6 +211,7 @@ export function armarSeguimiento(ocItems: readonly ItemOcRef[], recepciones: rea
   return {
     recibido: Object.fromEntries(acumularRecibido(recepciones, ocItems)),
     noLlegara: Object.fromEntries(acumularNoLlegara(recepciones, ocItems)),
+    noAptos: Object.fromEntries(acumularNoAptos(recepciones, ocItems)),
     recepciones: recepciones.map((r) => ({ id: r.id, ref: r.ref, fecha: claveDeDia(r.receivedDate ?? r.createdAt), estado: r.status })),
     cuenta: cuenta
       ? { monto, pagado, saldo: Math.max(0, Math.round((monto - pagado) * 100) / 100), vence: claveDeDia(cuenta.dueDate), estado: cuenta.status }
@@ -158,11 +219,16 @@ export function armarSeguimiento(ocItems: readonly ItemOcRef[], recepciones: rea
   };
 }
 
-/** Cada orden con su `seguimiento` (lo que devuelve `GET /api/purchases?seguimiento=1`). */
+/**
+ * Cada orden con su `seguimiento` (lo que devuelve `GET /api/purchases?seguimiento=1`).
+ * `ocultarCuenta`: para quien no gestiona plata (almacenero) la deuda no viaja;
+ * la pantalla dice dónde verla en vez de «no está en Por pagar».
+ */
 export function conSeguimiento<O extends { id: string; items: readonly ItemOcRef[] }>(
   ordenes: readonly O[],
   recepciones: readonly RecepcionCruda[],
   cuentas: readonly CuentaCruda[],
+  opts: { ocultarCuenta?: boolean } = {},
 ): Array<O & { seguimiento: SeguimientoOC }> {
   const porOrden = new Map<string, RecepcionCruda[]>();
   for (const r of recepciones) {
@@ -170,7 +236,10 @@ export function conSeguimiento<O extends { id: string; items: readonly ItemOcRef
     porOrden.set(r.purchaseOrderId, [...(porOrden.get(r.purchaseOrderId) ?? []), r]);
   }
   const cuentaDe = new Map(cuentas.filter((c) => c.purchaseOrderId).map((c) => [c.purchaseOrderId as string, c]));
-  return ordenes.map((o) => ({ ...o, seguimiento: armarSeguimiento(o.items, porOrden.get(o.id) ?? [], cuentaDe.get(o.id) ?? null) }));
+  return ordenes.map((o) => {
+    const seguimiento = armarSeguimiento(o.items, porOrden.get(o.id) ?? [], opts.ocultarCuenta ? null : cuentaDe.get(o.id) ?? null);
+    return { ...o, seguimiento: opts.ocultarCuenta ? { ...seguimiento, cuentaOculta: true as const } : seguimiento };
+  });
 }
 
 export type LineaSeguimiento = { productId: number; nombre: string; unidad: string; pedido: number; llego: number; noLlegara: number; falta: number };
@@ -244,6 +313,9 @@ function pasoComprobante(o: OrdenParaCiclo, llegoAlgo: boolean): PasoCiclo {
 function pasoPago(o: OrdenParaCiclo, seg: SeguimientoOC | null | undefined, hoy: string): PasoCiclo {
   const base = { clave: "pago" as const, etiqueta: "Pago", quien: TU };
   const forma = o.paymentMethod ?? "contado";
+  // Sin la cuenta (almacenero), sólo se sabe por la forma anotada; vacía puede ser crédito.
+  const puedeDeber = !o.paymentMethod || o.paymentMethod.startsWith("credito_");
+  if (seg?.cuentaOculta && puedeDeber) return { ...base, texto: "La deuda la ve el administrador en Por pagar", quien: "el administrador", tono: "neutro" };
   // La cuenta en Por pagar manda sobre la forma anotada: el servidor cobra y
   // anula por la cuenta, no por `paymentMethod` (80 de 91 órdenes de main lo tienen vacío).
   const cuenta = seg?.cuenta ?? null;
@@ -312,18 +384,18 @@ export function cicloDeOrden(o: OrdenParaCiclo, seg: SeguimientoOC | null | unde
 // ── Cancelar: qué pasa con lo recibido y con la plata (C15) ────────────────────
 
 /**
- * Lo que hay que saber ANTES de cancelar. La regla no cambia (la aplica
- * `PATCH /api/purchases/[id]`): lo recibido se queda en el stock, lo que falta
- * se deja de esperar, la deuda sin pagos se anula y la que tiene pagos se
- * conserva. Cancelar nunca devuelve plata.
+ * Lo que hay que saber ANTES de cancelar. La regla la aplica
+ * `PATCH /api/purchases/[id]`: lo recibido se queda en el stock, lo que falta
+ * se deja de esperar, la deuda sin pagos baja a lo que vale lo que llegó en
+ * buen estado (`deudaAlCancelar`; sin nada llegado se anula) y la que tiene
+ * pagos se conserva. Cancelar nunca devuelve plata.
  */
 export function resumenCancelacion(o: OrdenParaCiclo & { total?: number }, seg: SeguimientoOC | null | undefined): string[] {
   const lineas = lineasDeSeguimiento(o.items, seg);
   const llegaron = lineas.filter((l) => l.llego > 0);
   const faltan = lineas.filter((l) => l.falta > 0);
-  const subtotal = o.items.reduce((s, i) => s + i.quantity * num(i.unitCost), 0);
-  const factor = subtotal > 0 && num(o.total) > 0 ? num(o.total) / subtotal : 1;
-  const valorLlego = lineas.reduce((s, l) => s + Math.min(l.llego, l.pedido) * num(o.items.find((i) => i.productId === l.productId)?.unitCost) * factor, 0);
+  // La misma cuenta que hace el servidor al cancelar: lo dañado o vencido no cuenta.
+  const valorLlego = valorDeLoRecibido(o.items, o.total, seg?.recibido ?? {}, seg?.noAptos ?? {});
   const salida: string[] = [];
 
   if (llegaron.length > 0) {
@@ -334,15 +406,20 @@ export function resumenCancelacion(o: OrdenParaCiclo & { total?: number }, seg: 
   }
   const forma = o.paymentMethod ?? "contado";
   const cuenta = seg?.cuenta ?? null;
-  // Igual que el PATCH: anula o conserva la cuenta que tenga, sea cual sea la forma anotada.
-  if (forma.startsWith("credito_") || cuenta) {
+  // Igual que el PATCH: ajusta o conserva la cuenta que tenga, sea cual sea la forma anotada.
+  if (seg?.cuentaOculta && (!o.paymentMethod || o.paymentMethod.startsWith("credito_"))) {
+    salida.push("Lo que pasa con la deuda lo ve el administrador en Por pagar.");
+  } else if (forma.startsWith("credito_") || cuenta) {
     if (!cuenta) salida.push("No tiene cuenta en Por pagar.");
     else if (cuenta.pagado > 0.005) {
       salida.push(`La deuda se queda en Por pagar: ya le pagaste ${formatCurrency(cuenta.pagado)} y quedan ${formatCurrency(cuenta.saldo)}. Ajústala ahí.`);
-    } else if (valorLlego > 0.005) {
-      salida.push(`Se anula la deuda entera de ${formatCurrency(cuenta.monto)}, aunque ya recibiste unos ${formatCurrency(valorLlego)}: si le debes lo que llegó, anótalo en Por pagar.`);
     } else {
-      salida.push(`Se anula su deuda de ${formatCurrency(cuenta.monto)} (no tenía pagos).`);
+      const d = deudaAlCancelar(cuenta.monto, valorLlego);
+      salida.push(
+        d.accion === "anular" ? `Se anula su deuda de ${formatCurrency(cuenta.monto)}: no llegó nada que pagar.`
+        : d.accion === "bajar" ? `La deuda baja de ${formatCurrency(cuenta.monto)} a ${formatCurrency(d.monto)}: lo que ya llegó se paga, lo que falta se deja de deber.`
+        : `La deuda de ${formatCurrency(cuenta.monto)} se queda: es lo que vale lo que ya llegó.`,
+      );
     }
   } else {
     salida.push(forma === "transferencia"

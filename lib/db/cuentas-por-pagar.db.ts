@@ -23,6 +23,7 @@ import {
 } from "@/lib/compras/referencia-documento";
 import { armarEstadoDeCuenta, type EstadoDeCuenta } from "@/lib/compras/estado-de-cuenta";
 import { mapPayable } from "./finance.db";
+import { candadoDelProveedor } from "./candado-proveedor";
 import type { DbPayable } from "./misc.db";
 
 export type { OrdenSinCuenta };
@@ -45,14 +46,11 @@ export type ResultadoAlta =
 
 /**
  * Alta y vínculo de cuentas de UN proveedor van en fila (revisión de security
- * 17-10): «¿ya existe esa factura u orden?» y crear eran dos pasos, y 5 POST
- * simultáneos con la misma factura dejaban 5 deudas; dos cuentas podían
- * vincularse a la misma orden. Una orden sólo se cuelga de cuentas de SU
+ * 17-10): ver `candado-proveedor.ts`. Una orden sólo se cuelga de cuentas de SU
  * proveedor, así que la clave del proveedor también ordena los vínculos.
  */
-async function candadoDelProveedor(tx: Prisma.TransactionClient, tenantId: string, supplierId: string): Promise<void> {
-  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), hashtext(${`por-pagar:${supplierId}`}))`;
-}
+const candadoPorPagar = (tx: Prisma.TransactionClient, tenantId: string, supplierId: string) =>
+  candadoDelProveedor(tx, tenantId, supplierId, "por-pagar");
 
 const SELECT_COMPARABLE = {
   id: true, supplierId: true, description: true, amount: true, paidAmount: true, status: true, purchaseOrderId: true,
@@ -108,7 +106,7 @@ export const CuentasPorPagarDB = {
    * proveedor, o la misma orden, no crea otra deuda. Un importe igual sólo lo
    * avisa la ventana: dos compras pueden costar lo mismo. El proveedor tiene
    * que ser de este negocio (antes un `supplierId` ajeno daba 201) y revisar +
-   * crear va bajo `candadoDelProveedor`.
+   * crear va bajo `candadoPorPagar`.
    */
   async crearSinRepetir(tenantId: string, nueva: NuevaCuentaPorPagar): Promise<ResultadoAlta> {
     if (!tenantId) throw new Error("tenantId is required");
@@ -128,7 +126,7 @@ export const CuentasPorPagarDB = {
       if (orden.paymentMethod === NACIO_PAGADA) return { ok: false, status: 409, error: "Esa orden se registró ya pagada por transferencia." };
     }
     const r = await prisma.$transaction(async (tx): Promise<ResultadoAlta> => {
-      await candadoDelProveedor(tx, tenantId, supplierId);
+      await candadoPorPagar(tx, tenantId, supplierId);
       const existentes = await cuentasParaComparar(tx, tenantId, supplierId, purchaseOrderId);
       const repetida = revisarAlta(
         { supplierId, description: nueva.description ?? "", amount: nueva.amount, purchaseOrderId },
@@ -214,7 +212,7 @@ export const CuentasPorPagarDB = {
     const orden = await prisma.purchaseOrder.findFirst({ where: { tenantId, id: purchaseOrderId }, select: { supplierId: true, status: true, paymentMethod: true } });
     if (!orden) return { ok: false, status: 404, error: "No encontramos esa orden de compra." };
     const r = await prisma.$transaction(async (tx): Promise<ResultadoVinculo> => {
-      await candadoDelProveedor(tx, tenantId, orden.supplierId);
+      await candadoPorPagar(tx, tenantId, orden.supplierId);
       const cuenta = await tx.payable.findFirst({ where: { tenantId, id: payableId }, select: { id: true, supplierId: true, purchaseOrderId: true } });
       if (!cuenta) return { ok: false, status: 404, error: "No encontramos esa cuenta." };
       if (cuenta.purchaseOrderId === purchaseOrderId) return { ok: true };

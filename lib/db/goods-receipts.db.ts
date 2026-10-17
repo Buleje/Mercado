@@ -44,9 +44,13 @@ export const GoodsReceiptsDB = {
     });
   },
 
-  /** Crea una recepción. `items` se guarda como JSON (ReceiptItem[]). */
-  async create(tenantId: string, data: CreateReceiptData) {
-    return prisma.goodsReceipt.create({
+  /**
+   * Crea una recepción. `items` se guarda como JSON (ReceiptItem[]).
+   * `db` = la transacción que también mueve el stock de la orden (revisión 17-10):
+   * así una recepción rechazada porque la orden ya se cerró no deja registro suelto.
+   */
+  async create(tenantId: string, data: CreateReceiptData, db: Pick<Prisma.TransactionClient, "goodsReceipt"> = prisma) {
+    return db.goodsReceipt.create({
       data: {
         ref: data.ref,
         purchaseOrderId: data.purchaseOrderId ?? null,

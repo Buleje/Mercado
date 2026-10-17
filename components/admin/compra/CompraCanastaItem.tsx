@@ -5,6 +5,7 @@ import Image from "next/image";
 import { X as XIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import { naturalezaDe } from "@/lib/compras/naturaleza";
 import { computeEffectiveQty, esPromoDeUnidades, freeUnits, itemMatchesPromo } from "./promos";
 import { FUENTES_COSTO, fuenteDelCosto, type CompraItem } from "./costo-compra";
 import type { CompraCarrito } from "./use-compra-carrito";
@@ -23,6 +24,9 @@ interface Props {
 export default function CompraCanastaItem({ item, carrito, processing }: Props) {
   const { appliedPromo, priceHistory, costo, setCosto, updateQty, setQty, removeItem } = carrito;
   const { product } = item;
+  // Servicio o alquiler (C01): se pide por su unidad de cobro («/ hora»), no por la de inventario.
+  const nat = naturalezaDe(product);
+  const unidad = nat.distintivo ? nat.unidad : product.unit;
   const c = costo(item);
   const falta = c == null;
   const fuente = fuenteDelCosto(item, priceHistory);
@@ -59,6 +63,11 @@ export default function CompraCanastaItem({ item, carrito, processing }: Props) 
           ) : null}
         </div>
         <p className="flex-1 min-w-0 text-sm font-medium text-[var(--text-primary)] truncate" title={product.name}>{product.name}</p>
+        {nat.distintivo && (
+          <span className="shrink-0 text-xs text-[var(--text-tertiary)]" title={`${nat.distintivo}: no es mercadería del almacén`}>
+            {nat.distintivo}
+          </span>
+        )}
 
         {/* Subtotal ítem */}
         <div className="shrink-0 text-sm font-mono font-bold text-[var(--text-primary)] text-right whitespace-nowrap">
@@ -115,7 +124,7 @@ export default function CompraCanastaItem({ item, carrito, processing }: Props) 
               falta ? "border-[var(--data-error-500)]" : "border-[var(--rule-base)]",
             )}
           />
-          <span>/ {product.unit}</span>
+          <span>/ {unidad}</span>
           {fuente !== "falta" && (
             <span title={FUENTES_COSTO[fuente].ayuda} className="text-[var(--text-tertiary)]">
               · {FUENTES_COSTO[fuente].corto}
@@ -178,7 +187,7 @@ export default function CompraCanastaItem({ item, carrito, processing }: Props) 
             }
           }}
           disabled={processing}
-          aria-label={`Cantidad de ${product.name} (${product.unit})`}
+          aria-label={`Cantidad de ${product.name} (${unidad})`}
           className="h-8 w-11 rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] text-center font-mono text-xs font-bold text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary disabled:opacity-50"
         />
         <button

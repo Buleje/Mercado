@@ -12,6 +12,9 @@ import {
   claveDeDia,
   diaCorto,
   planParaRepetir,
+  acumularNoAptos,
+  valorDeLoRecibido,
+  deudaAlCancelar,
   type SeguimientoOC,
   type ItemOc,
 } from "@/lib/compras/ciclo-oc";
@@ -182,12 +185,30 @@ describe("cicloDeOrden — cada paso por separado y EL siguiente (C10)", () => {
 describe("resumenCancelacion — lo que hay que ver ANTES de cancelar (C15)", () => {
   const oc = { status: "parcial", items: ITEMS, total: 260, paymentMethod: "credito_15" };
 
-  it("con mercadería recibida y deuda sin pagos: avisa que se anula ENTERA (la regla no cambia)", () => {
+  it("con mercadería recibida y deuda sin pagos: la deuda BAJA a lo que llegó (revisión 17-10)", () => {
     const r = resumenCancelacion(oc, seg({ recibido: { 1: 4 }, recepciones: [{ id: "a", ref: "REC-1", fecha: "2026-10-15", estado: "parcial" }], cuenta: { monto: 260, pagado: 0, saldo: 260, vence: null, estado: "pendiente" } }));
     expect(r[0]).toBe("Lo que ya llegó se queda en el stock (4 de 10 Arroz Costeño 5 kg).");
     expect(r[1]).toBe("Se deja de esperar: 6 Arroz Costeño 5 kg, 6 Aceite Primor 1 L.");
-    expect(r[2]).toContain("Se anula la deuda entera de S/ 260.00, aunque ya recibiste unos S/ 80.00");
+    expect(r[2]).toBe("La deuda baja de S/ 260.00 a S/ 80.00: lo que ya llegó se paga, lo que falta se deja de deber.");
     expect(r).toContain("Su recepción queda registrada.");
+  });
+
+  it("lo que llegó dañado no se paga: la deuda baja sólo a lo bueno", () => {
+    const r = resumenCancelacion(oc, seg({ recibido: { 1: 4 }, noAptos: { 1: 1 }, cuenta: { monto: 260, pagado: 0, saldo: 260, vence: null, estado: "pendiente" } }));
+    expect(r.join(" ")).toContain("a S/ 60.00"); // 3 buenas × 20
+  });
+
+  it("si la deuda ya vale lo que llegó, se queda", () => {
+    const r = resumenCancelacion(oc, seg({ recibido: { 1: 4 }, cuenta: { monto: 80, pagado: 0, saldo: 80, vence: null, estado: "pendiente" } }));
+    expect(r.join(" ")).toContain("La deuda de S/ 80.00 se queda: es lo que vale lo que ya llegó.");
+  });
+
+  it("al almacenero no le dice cifras de la deuda", () => {
+    const r = resumenCancelacion(oc, seg({ recibido: { 1: 4 }, cuentaOculta: true }));
+    expect(r.join(" ")).toContain("Lo que pasa con la deuda lo ve el administrador en Por pagar.");
+    expect(r.join(" ")).not.toContain("No tiene cuenta");
+    // Ya pagada por transferencia: eso sí se lo dice (no es la deuda).
+    expect(resumenCancelacion({ ...oc, paymentMethod: "transferencia" }, seg({ cuentaOculta: true })).join(" ")).toContain("no devuelve la plata");
   });
 
   it("con pagos: la deuda se conserva y lo dice con cifras", () => {
@@ -197,7 +218,7 @@ describe("resumenCancelacion — lo que hay que ver ANTES de cancelar (C15)", ()
 
   it("sin forma anotada pero con cuenta: avisa la anulación igual que el servidor", () => {
     const r = resumenCancelacion({ ...oc, paymentMethod: undefined }, seg({ cuenta: { monto: 260, pagado: 0, saldo: 260, vence: null, estado: "pendiente" } }));
-    expect(r.join(" ")).toContain("Se anula su deuda de S/ 260.00 (no tenía pagos).");
+    expect(r.join(" ")).toContain("Se anula su deuda de S/ 260.00: no llegó nada que pagar.");
   });
 
   it("transferencia: cancelar no devuelve la plata", () => {
@@ -207,7 +228,41 @@ describe("resumenCancelacion — lo que hay que ver ANTES de cancelar (C15)", ()
 
   it("el valor de lo recibido lleva el IGV que el total le sumó", () => {
     const r = resumenCancelacion({ ...oc, total: 306.8 }, seg({ recibido: { 1: 4 }, cuenta: { monto: 306.8, pagado: 0, saldo: 306.8, vence: null, estado: "pendiente" } }));
-    expect(r.join(" ")).toContain("unos S/ 94.40"); // 4 × 20 × 1,18
+    expect(r.join(" ")).toContain("a S/ 94.40"); // 4 × 20 × 1,18
+  });
+});
+
+describe("deuda al cancelar — la misma cuenta en pantalla y en el servidor (revisión 17-10)", () => {
+  it("acumularNoAptos suma sólo lo dañado o vencido", () => {
+    const m = acumularNoAptos([
+      recepcion("a", [{ productId: 1, receivedQty: 2, condition: "dañado" }, { productId: 1, receivedQty: 5, condition: "ok" }]),
+      recepcion("b", [{ product: "Aceite Primor 1 L", receivedQty: 1, condition: "vencido" }, { productId: 2, receivedQty: 3, condition: "faltante", creditoUnidades: 3 }]),
+    ], ITEMS);
+    expect(Object.fromEntries(m)).toEqual({ 1: 2, 2: 1 });
+  });
+
+  it("valorDeLoRecibido: tope en lo pedido, sin lo no apto, con el factor del total", () => {
+    expect(valorDeLoRecibido(ITEMS, 260, new Map([[1, 12], [2, 3]]))).toBe(230); // 10×20 + 3×10
+    expect(valorDeLoRecibido(ITEMS, 260, { 1: 4 }, { 1: 4 })).toBe(0);
+    expect(valorDeLoRecibido(ITEMS, 306.8, { 1: 4 })).toBe(94.4);
+  });
+
+  it("deudaAlCancelar: anula sin nada, baja a lo que llegó, nunca sube", () => {
+    expect(deudaAlCancelar(260, 0)).toEqual({ accion: "anular", monto: 0 });
+    expect(deudaAlCancelar(260, 80)).toEqual({ accion: "bajar", monto: 80 });
+    expect(deudaAlCancelar(70, 80)).toEqual({ accion: "igual", monto: 70 });
+  });
+
+  it("conSeguimiento con ocultarCuenta no manda la deuda y el paso de pago no la nombra", () => {
+    const cuentas = [{ purchaseOrderId: "oc1", amount: 260, paidAmount: 0, status: "pendiente", dueDate: null }];
+    const [conCuenta] = conSeguimiento([{ id: "oc1", items: ITEMS }], [], cuentas);
+    const [oculta] = conSeguimiento([{ id: "oc1", items: ITEMS }], [], cuentas, { ocultarCuenta: true });
+    expect(conCuenta.seguimiento.cuenta?.monto).toBe(260);
+    expect(oculta.seguimiento.cuenta).toBeNull();
+    expect(oculta.seguimiento.cuentaOculta).toBe(true);
+    const pago = cicloDeOrden({ status: "parcial", items: ITEMS, paymentMethod: "credito_15" }, oculta.seguimiento, HOY).pasos.find((p) => p.clave === "pago");
+    expect(pago?.texto).toBe("La deuda la ve el administrador en Por pagar");
+    expect(JSON.stringify(oculta)).not.toContain("260");
   });
 });
 

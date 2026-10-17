@@ -45,6 +45,8 @@ export const ReorderAlertsDB = {
         active: true,
         deletedAt: null,
         stock: { not: null },
+        // Un servicio no se repone por saldo (Compras C01/O07, 17-10).
+        NOT: { type: "service" },
         OR: [
           { stockMin: { not: null }, stock: { lte: prisma.product.fields.stockMin } },
           { stockMin: null },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluarReposicion, COLCHON_DIAS } from "@/lib/compras/reorden";
+import { evaluarReposicion, COLCHON_DIAS, type EntradaReposicion } from "@/lib/compras/reorden";
 
 /**
  * La regla que decide si el negocio gasta plata. Cada caso de acá es un error
@@ -106,5 +106,50 @@ describe("evaluarReposicion", () => {
     const r = evaluarReposicion({ ...base, stock: 0, stockMin: 0, vendido: 30, diasConStock: 30, leadTimeDias: 5 });
     if (r.tipo === "reponer") expect(r.puntoReorden).toBe(5 + COLCHON_DIAS);
     else throw new Error("deberia reponer");
+  });
+});
+
+describe("explicación de la cantidad (C28) y causa (C26)", () => {
+  const casos: EntradaReposicion[] = [
+    { ...base, stock: 6 },
+    { ...base, stock: 0, enTransito: 3 },
+    { ...base, stock: 20, stockMin: 50, vendido: 3, diasConStock: 30 },
+    { ...base, stock: 10, vendido: 30, diasConStock: 5 },
+    { ...base, stock: 1, vendido: 7, diasConStock: 30, leadTimeDias: 4 },
+  ];
+
+  it("con los números del detalle se reconstruye «Pedir N»", () => {
+    for (const e of casos) {
+      const r = evaluarReposicion(e);
+      if (r.tipo !== "reponer") throw new Error("deberia reponer");
+      const d = r.detalle;
+      expect(d.disponible).toBe(e.stock + e.enTransito);
+      expect(d.diasCobertura).toBe(e.leadTimeDias + COLCHON_DIAS);
+      expect(d.puntoReorden).toBe(Math.max(d.porRitmo, d.stockMin));
+      expect(d.objetivo).toBe(Math.max(Math.round(d.porRitmo * 2 * 100) / 100, d.stockMin));
+      expect(d.cantidad).toBe(Math.max(1, Math.ceil(d.objetivo - d.disponible)));
+      expect(d.cantidad).toBe(r.cantidad);
+    }
+  });
+
+  it("la causa dice por qué entra, separada de la urgencia", () => {
+    const causa = (e: EntradaReposicion) => {
+      const r = evaluarReposicion(e);
+      return r.tipo === "reponer" ? r.causa : r.tipo;
+    };
+    expect(causa({ ...base, stock: 0 })).toBe("agotado");
+    expect(causa({ ...base, stock: 5 })).toBe("no_llega");
+    expect(causa({ ...base, stock: 9, stockMin: 0 })).toBe("durante_entrega");
+    // Se vende 0,1/día (punto 1) pero el mínimo es 50: manda el mínimo, sin apuro.
+    expect(causa({ ...base, stock: 20, stockMin: 50, vendido: 3, diasConStock: 30, leadTimeDias: 7 })).toBe("minimo");
+  });
+
+  it("pocas ventas o pocos días con stock se marcan como estimado, no como certeza", () => {
+    const pocas = evaluarReposicion({ ...base, stock: 0, vendido: 2, diasConStock: 30 });
+    const pocosDias = evaluarReposicion({ ...base, stock: 0, vendido: 30, diasConStock: 4 });
+    const suficiente = evaluarReposicion({ ...base, stock: 0 });
+    expect(pocas.tipo === "reponer" && pocas.detalle.pocosDatos).toBe(true);
+    expect(pocosDias.tipo === "reponer" && pocosDias.detalle.pocosDatos).toBe(true);
+    expect(suficiente.tipo === "reponer" && suficiente.detalle.pocosDatos).toBe(false);
   });
 });

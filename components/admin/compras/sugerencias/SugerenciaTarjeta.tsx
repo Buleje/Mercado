@@ -1,15 +1,20 @@
 "use client";
 
-import { AlertTriangle, Check, Loader2, ShoppingCart } from "@buleje/design-system/icons";
+import { useId, useState } from "react";
+import { AlertTriangle, Calculator, Check, Loader2, ShoppingCart } from "@buleje/design-system/icons";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
-import type { ConfigUrgencia, Sugerencia } from "./tipos";
+import SugerenciaExplicacion from "./SugerenciaExplicacion";
+import { cifra, criterioCorto, llegaEl, unidadDe } from "./explicar";
+import { CAUSA_CONFIG, type ConfigUrgencia, type Sugerencia } from "./tipos";
 
 interface Props {
   s: Sugerencia;
   config: ConfigUrgencia;
+  ventanaDias: number;
+  calculadoEn: string | null;
   elegida: boolean;
   creando: boolean;
   onElegir: () => void;
@@ -18,11 +23,16 @@ interface Props {
 
 /**
  * Una sugerencia: se marca tocando la tarjeta (para la orden por proveedor) o
- * se pide sola con «Crear OC». Textos a 14 px desde el 10-10 (los chips y el
- * proveedor iban a 12 px).
+ * se pide sola con «Crear OC». Desde el 17-10 dice por qué entra (causa y
+ * criterio, C26), lo que ya viene en camino y cuándo llega (C27) y, al pie,
+ * «¿Cómo se calculó?» con la cuenta entera (C28).
  */
-export default function SugerenciaTarjeta({ s, config, elegida, creando, onElegir, onCrearOC }: Props) {
+export default function SugerenciaTarjeta({ s, config, ventanaDias, calculadoEn, elegida, creando, onElegir, onCrearOC }: Props) {
+  const [verCuenta, setVerCuenta] = useState(false);
+  const idCuenta = useId();
   const lineTotal = s.lastPrice != null ? s.lastPrice * s.suggestedQty : null;
+  const llega = llegaEl(s.enCamino?.llegaEl);
+  const borrador = s.enCamino?.borrador ?? 0;
   return (
     <div className="flex flex-col gap-2">
       {/* Tarjeta elegible con enlaces adentro (producto, proveedor): un <a> no
@@ -63,14 +73,30 @@ export default function SugerenciaTarjeta({ s, config, elegida, creando, onElegi
             <span className={cn("inline-flex h-7 items-center rounded-lg border px-2.5 font-bold", config.iconBg, config.text, config.border)}>
               {s.daysOfStock >= 9999 ? "Stock alto" : `${s.daysOfStock} ${s.daysOfStock === 1 ? "día" : "días"}`}
             </span>
-            <span className="text-[var(--text-secondary)] tabular-nums">
-              Stock {s.currentStock} · vende {s.dailyAvg}/día
-            </span>
+            {s.causa && <span className={cn("font-bold", config.text)}>{CAUSA_CONFIG[s.causa].titulo}</span>}
+            <span className="text-[var(--text-secondary)]">· {criterioCorto(s, ventanaDias)}</span>
           </div>
 
+          <p className="text-sm tabular-nums text-[var(--text-secondary)]">
+            Stock {cifra(s.currentStock)} · vende {cifra(s.dailyAvg)}/día
+            {s.enTransito > 0 && (
+              <>
+                {" · "}
+                <strong className="font-semibold text-[var(--text-primary)]">+{cifra(s.enTransito)} en camino</strong>
+                {llega && ` (${llega})`}
+              </>
+            )}
+            {borrador > 0 && (
+              <span title="Está en una orden automática que todavía no enviaste: no se resta hasta que la confirmes.">
+                {" · "}
+                {cifra(borrador)} en borrador
+              </span>
+            )}
+          </p>
+
           <div className="flex flex-wrap items-baseline gap-2 pt-1">
-            <span className="text-lg font-extrabold leading-none tabular-nums text-[var(--text-primary)]">Pedir {s.suggestedQty}</span>
-            <span className="text-sm font-semibold text-[var(--text-secondary)]">{s.suggestedQty === 1 ? "unidad" : "unidades"}</span>
+            <span className="text-lg font-extrabold leading-none tabular-nums text-[var(--text-primary)]">Pedir {cifra(s.suggestedQty)}</span>
+            <span className="text-sm font-semibold text-[var(--text-secondary)]">{unidadDe(s.suggestedQty, s.unit)}</span>
             {lineTotal != null && (
               <span className="ml-auto text-sm font-bold tabular-nums text-[var(--text-primary)]">≈ {formatCurrency(lineTotal)}</span>
             )}
@@ -96,17 +122,30 @@ export default function SugerenciaTarjeta({ s, config, elegida, creando, onElegi
           </div>
         </div>
       </div>
-      {/* Crear OC de esta sola sugerencia en 1 clic (reporte QA Compras:
-          "pasar de sugerencia a OC con un clic"). */}
-      <button
-        type="button"
-        onClick={onCrearOC}
-        disabled={creando}
-        className={button({ variant: "secondary", className: "w-full gap-1.5 rounded-xl" })}
-      >
-        {creando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShoppingCart className="h-4 w-4" strokeWidth={2} aria-hidden />}
-        {creando ? "Creando…" : "Crear OC"}
-      </button>
+      {/* Fuera de la tarjeta elegible: abrir la cuenta no marca el producto.
+          «Crear OC» pide esta sola sugerencia en 1 clic (reporte QA Compras). */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setVerCuenta((v) => !v)}
+          aria-expanded={verCuenta}
+          aria-controls={idCuenta}
+          className={button({ variant: "ghost", className: "flex-1 gap-1.5 rounded-xl px-3 text-sm text-[var(--text-secondary)]" })}
+        >
+          <Calculator className="h-4 w-4" aria-hidden />
+          {verCuenta ? "Ocultar la cuenta" : "¿Cómo se calculó?"}
+        </button>
+        <button
+          type="button"
+          onClick={onCrearOC}
+          disabled={creando}
+          className={button({ variant: "secondary", className: "flex-1 gap-1.5 rounded-xl" })}
+        >
+          {creando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShoppingCart className="h-4 w-4" strokeWidth={2} aria-hidden />}
+          {creando ? "Creando…" : "Crear OC"}
+        </button>
+      </div>
+      {verCuenta && <SugerenciaExplicacion id={idCuenta} s={s} ventanaDias={ventanaDias} calculadoEn={calculadoEn} />}
     </div>
   );
 }

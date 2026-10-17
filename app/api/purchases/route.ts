@@ -38,6 +38,8 @@ const PurchaseSchema = z.object({
   otrosCostos: z.number().min(0).default(0),
 });
 
+const ROLES_QUE_VEN_LA_CUENTA: readonly string[] = ["admin", "owner", "manager"];
+
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
@@ -52,11 +54,14 @@ export async function GET(req: NextRequest) {
     const data = await withDbRetry(() => PurchasesDB.getAll(auth.tenantId));
     // `?seguimiento=1` (C10): cada orden con lo que llegó, lo que no llegará, sus
     // recepciones y su cuenta por pagar, para decir en qué va y qué sigue.
+    // Revisión 17-10 (punto 7): la deuda viaja sólo a quien gestiona la plata
+    // (admin, dueño, encargado); al almacenero le llega `cuentaOculta`.
     if (req.nextUrl.searchParams.get("seguimiento") === "1") {
+      const verCuenta = ROLES_QUE_VEN_LA_CUENTA.includes(auth.role);
       const { recepciones, cuentas } = await withDbRetry(() =>
-        PurchasesDB.datosDeSeguimiento(auth.tenantId, data.map((o) => o.id)),
+        PurchasesDB.datosDeSeguimiento(auth.tenantId, data.map((o) => o.id), verCuenta),
       );
-      return NextResponse.json(conSeguimiento(data, recepciones, cuentas));
+      return NextResponse.json(conSeguimiento(data, recepciones, cuentas, { ocultarCuenta: !verCuenta }));
     }
     return NextResponse.json(data);
   } catch (e) {

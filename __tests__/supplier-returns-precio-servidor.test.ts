@@ -13,22 +13,27 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-const { mockFindMany, mockCreate, mockOrdenes, mockMovs, mockDevueltos } = vi.hoisted(() => ({
+const { mockFindMany, mockCreate, mockOrdenes, mockMovs, mockDevueltos, mockCandado } = vi.hoisted(() => ({
+  mockCandado: vi.fn(),
   mockFindMany: vi.fn(),
   mockCreate: vi.fn(),
   mockOrdenes: vi.fn(),
   mockMovs: vi.fn(),
   mockDevueltos: vi.fn(),
 }));
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  const db: Record<string, unknown> = {
     product: { findMany: mockFindMany },
     supplierReturn: { create: mockCreate },
     purchaseOrder: { findMany: mockOrdenes },
     inventoryMovement: { findMany: mockMovs },
     supplierReturnItem: { findMany: mockDevueltos },
-  },
-}));
+    $executeRaw: mockCandado,
+  };
+  // El tope + el alta corren en una transacción (revisión 17-10): el doble la ejecuta sobre sí mismo.
+  db.$transaction = (fn: (tx: unknown) => unknown) => fn(db);
+  return { prisma: db };
+});
 
 import { SupplierReturnsDB, ProductoAjenoError } from "@/lib/db/supplier-returns.db";
 

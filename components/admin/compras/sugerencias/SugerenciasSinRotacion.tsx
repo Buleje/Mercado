@@ -20,6 +20,9 @@ interface Props {
  */
 export default function SugerenciasSinRotacion({ items, ventanaDias, abierto, onAlternar }: Props) {
   if (items.length === 0) return null;
+  // Los que estuvieron sin stock casi toda la ventana no prueban que no se
+  // vendan: no había qué vender (C28). Se cuentan aparte en la bajada.
+  const sinDatos = items.filter((s) => s.sinDatos).length;
   return (
     <section className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]">
       <button
@@ -31,9 +34,13 @@ export default function SugerenciasSinRotacion({ items, ventanaDias, abierto, on
         <Package className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" aria-hidden />
         <span className="min-w-0 flex-1">
           <span className="block font-extrabold text-[var(--text-primary)]">
-            {items.length} {items.length === 1 ? "producto no se vendió" : "productos no se vendieron"} en {ventanaDias} días
+            {items.length} {items.length === 1 ? "producto sin ventas registradas" : "productos sin ventas registradas"} en {ventanaDias} días
           </span>
-          <span className="block text-sm text-[var(--text-secondary)]">No entran en la lista de compra. Revisa si conviene liquidarlos antes de reponer.</span>
+          <span className="block text-sm text-[var(--text-secondary)]">
+            {sinDatos > 0
+              ? `No entran en la lista de compra. ${sinDatos} ${sinDatos === 1 ? "estuvo" : "estuvieron"} casi siempre sin stock: no se sabe cuánto se vende.`
+              : "No entran en la lista de compra. Revisa si conviene liquidarlos antes de reponer."}
+          </span>
         </span>
         <ChevronDown className={cn("h-5 w-5 shrink-0 transition-transform", abierto && "rotate-180")} aria-hidden />
       </button>

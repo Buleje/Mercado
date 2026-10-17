@@ -115,10 +115,35 @@ describe("anular", () => {
 
   it("si otra anulación ganó la marca antes, no devuelve el stock dos veces", async () => {
     filaEnMemoria(devolucion());
+    m.updateMany.mockResolvedValueOnce({ count: 1 }); // el estado: lo toma esta anulación
     m.updateMany.mockResolvedValueOnce({ count: 0 }); // el compara-y-cambia de stockAplicadoAt lo perdió
-    m.updateMany.mockResolvedValueOnce({ count: 1 });
     await anularSupplierReturn(TENANT, "ret-1", { motivo: "Doble clic", volvioAlAlmacen: true, usuario: "qaadmin" });
     expect(m.productUpdate).not.toHaveBeenCalled();
+  });
+
+  it("«Enviada» entre la lectura y la anulación: se relee la marca y la nota dice la verdad (revisión 17-10)", async () => {
+    // La 1.ª lectura vio PENDIENTE sin stock afuera; el update del estado esperó a «Enviada»
+    // y, con la fila tomada, la relectura ya la ve marcada.
+    const fila = filaEnMemoria(devolucion({ estado: "PENDIENTE", stockAplicadoAt: null }));
+    m.findFirst.mockResolvedValueOnce({ ...fila() });
+    Object.assign(fila(), { estado: "ENVIADA", stockAplicadoAt: new Date("2026-10-17T03:00:00Z") });
+
+    await anularSupplierReturn(TENANT, "ret-1", { motivo: "Ya no va", volvioAlAlmacen: false, usuario: "qaadmin" });
+    // El estado va PRIMERO: es lo que serializa con «Enviada».
+    expect(m.updateMany.mock.calls[0][0]).toEqual({ where: { id: "ret-1", tenantId: TENANT, estado: { not: "ANULADA" } }, data: { estado: "ANULADA" } });
+    expect(fila().estado).toBe("ANULADA");
+    expect(fila().notas).toMatch(/sigue fuera del almacén/);
+    expect(m.productUpdate).not.toHaveBeenCalled();
+  });
+
+  it("…y si la mercadería volvió, el stock que sacó «Enviada» vuelve una vez", async () => {
+    const fila = filaEnMemoria(devolucion({ estado: "PENDIENTE", stockAplicadoAt: null }));
+    m.findFirst.mockResolvedValueOnce({ ...fila() });
+    Object.assign(fila(), { estado: "ENVIADA", stockAplicadoAt: new Date("2026-10-17T03:00:00Z") });
+
+    await anularSupplierReturn(TENANT, "ret-1", { motivo: "Volvió", volvioAlAlmacen: true, usuario: "qaadmin" });
+    expect(fila().stockAplicadoAt).toBeNull();
+    expect(m.productUpdate).toHaveBeenCalledTimes(1);
   });
 
   it("anular una ya anulada se rechaza", async () => {
@@ -154,6 +179,18 @@ describe("volvió al almacén después de anular", () => {
 });
 
 describe("ANULADA es final", () => {
+  it("«Enviada» que pierde contra una anulación: no descuenta y avisa (revisión 17-10)", async () => {
+    // Leyó ENVIADA-able (PENDIENTE); la anulación tomó la fila antes y ya está ANULADA.
+    const fila = filaEnMemoria(devolucion({ estado: "PENDIENTE", stockAplicadoAt: null }));
+    m.findFirst.mockResolvedValueOnce({ ...fila() });
+    Object.assign(fila(), { estado: "ANULADA" });
+    await expect(updateSupplierReturnEstado(TENANT, "ret-1", "ENVIADA")).rejects.toBeInstanceOf(DevolucionAnuladaError);
+    // El compara-y-cambia del stock exige `estado ≠ ANULADA`: no ganó la marca.
+    expect(m.updateMany.mock.calls[0][0].where).toEqual({ id: "ret-1", tenantId: TENANT, stockAplicadoAt: null, estado: { not: "ANULADA" } });
+    expect(fila().stockAplicadoAt).toBeNull();
+    expect(m.productUpdate).not.toHaveBeenCalled();
+  });
+
   it("cambiarle el estado se rechaza y no saca stock", async () => {
     filaEnMemoria(devolucion({ estado: "ANULADA", stockAplicadoAt: null }));
     await expect(updateSupplierReturnEstado(TENANT, "ret-1", "ENVIADA")).rejects.toBeInstanceOf(DevolucionAnuladaError);

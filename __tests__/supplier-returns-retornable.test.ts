@@ -9,22 +9,27 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-const { mockProductos, mockCreate, mockOrdenes, mockMovs, mockDevueltos } = vi.hoisted(() => ({
+const { mockProductos, mockCreate, mockOrdenes, mockMovs, mockDevueltos, mockCandado } = vi.hoisted(() => ({
+  mockCandado: vi.fn(),
   mockProductos: vi.fn(),
   mockCreate: vi.fn(),
   mockOrdenes: vi.fn(),
   mockMovs: vi.fn(),
   mockDevueltos: vi.fn(),
 }));
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  const db: Record<string, unknown> = {
     product: { findMany: mockProductos },
     supplierReturn: { create: mockCreate },
     purchaseOrder: { findMany: mockOrdenes },
     inventoryMovement: { findMany: mockMovs },
     supplierReturnItem: { findMany: mockDevueltos },
-  },
-}));
+    $executeRaw: mockCandado,
+  };
+  // El tope + el alta corren en una transacción (revisión 17-10): el doble la ejecuta sobre sí mismo.
+  db.$transaction = (fn: (tx: unknown) => unknown) => fn(db);
+  return { prisma: db };
+});
 
 import {
   SupplierReturnsDB, ExcedeLoRecibidoError, OrigenInvalidoError, SinOrigenError,
@@ -100,6 +105,31 @@ describe("tope de lo recibido (C49)", () => {
     await SupplierReturnsDB.createWithItems("t1", { ...BASE, items: [arroz(1)] });
     expect(mockOrdenes.mock.calls[0][0].where).toEqual({ tenantId: "t1", supplierId: "prov-1" });
     expect(mockMovs.mock.calls[0][0].where).toMatchObject({ tenantId: "t1", type: "compra", productId: { in: [7] } });
+  });
+});
+
+describe("dos devoluciones a la vez (revisión 17-10)", () => {
+  it("el tope se lee bajo el candado del proveedor, antes de mirar lo que entró", async () => {
+    await SupplierReturnsDB.createWithItems("t1", { ...BASE, items: [arroz(1)] });
+    expect(mockCandado).toHaveBeenCalledTimes(1);
+    // Clave propia («devoluciones:»): no espera a las cuentas por pagar del mismo proveedor.
+    expect(mockCandado.mock.calls[0].slice(1)).toEqual(["t1", "devoluciones:prov-1"]);
+    expect(mockCandado.mock.invocationCallOrder[0]).toBeLessThan(mockOrdenes.mock.invocationCallOrder[0]);
+    expect(mockDevueltos.mock.invocationCallOrder[0]).toBeLessThan(mockCreate.mock.invocationCallOrder[0]);
+  });
+
+  it("la segunda, que entra cuando la primera ya se guardó, ve lo devuelto y se rechaza", async () => {
+    // 10 recibidos. La primera devuelve 10; la segunda lee con la primera ya escrita.
+    await SupplierReturnsDB.createWithItems("t1", { ...BASE, items: [arroz(10)] });
+    mockDevueltos.mockResolvedValue([{ productId: 7, cantidad: 10 }]);
+    await expect(SupplierReturnsDB.createWithItems("t1", { ...BASE, items: [arroz(10)] })).rejects.toBeInstanceOf(ExcedeLoRecibidoError);
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("sin proveedor no hay tope que cuidar ni candado", async () => {
+    const { proveedorId: _p, ...sinProveedor } = BASE;
+    await SupplierReturnsDB.createWithItems("t1", { ...sinProveedor, sinOrigenMotivo: "Compra vieja", items: [arroz(1)] });
+    expect(mockCandado).not.toHaveBeenCalled();
   });
 });
 

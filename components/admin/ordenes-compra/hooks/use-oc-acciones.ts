@@ -113,8 +113,8 @@ export function useOcAcciones(previo: ReturnType<typeof useOcEstado> & ReturnTyp
   const updateStatus = async (id: string, status: PurchaseStatus) => {
     const orden = orders.find(o => o.id === id);
     const anterior = orden?.status;
-    // Cancelar cierra la orden y anula su cuenta por pagar: no es un cambio de
-    // estado más, y salía del `<select>` sin preguntar nada.
+    // Cancelar cierra la orden y ajusta su cuenta por pagar a lo que llegó: no
+    // es un cambio de estado más, y salía del `<select>` sin preguntar nada.
     if (status === "cancelado") {
       // C15: lo que pasa con lo recibido, lo que falta y la plata, ANTES de
       // confirmar. La regla es la del servidor; acá sólo se muestra.
@@ -155,13 +155,17 @@ export function useOcAcciones(previo: ReturnType<typeof useOcEstado> & ReturnTyp
       // Marcar recibido mueve stock: recargar para ver los totales reales.
       if (status === "recibido" || status === "parcial") recargaConSpinner = true;
       if (status === "cancelado") {
-        const detalle = await leerJson<{ cuentaPorPagar?: string }>(res);
+        const detalle = await leerJson<{ cuentaPorPagar?: string; montoAntes?: number; montoDespues?: number }>(res);
         avisar(
           detalle?.cuentaPorPagar === "conservada_con_pagos"
             ? "Orden cancelada. La cuenta por pagar quedó abierta porque ya tenía pagos registrados."
             : detalle?.cuentaPorPagar === "anulada"
-              ? "Orden cancelada y su cuenta por pagar anulada."
-              : "Orden cancelada.",
+              ? "Orden cancelada y su cuenta por pagar anulada: no llegó nada."
+              : detalle?.cuentaPorPagar === "ajustada"
+                ? `Orden cancelada. La deuda bajó de ${formatCurrency(Number(detalle.montoAntes ?? 0))} a ${formatCurrency(Number(detalle.montoDespues ?? 0))}: lo que llegó.`
+                : detalle?.cuentaPorPagar === "sin_cambio"
+                  ? "Orden cancelada. La deuda se queda: es lo que vale lo que llegó."
+                  : "Orden cancelada.",
           detalle?.cuentaPorPagar === "conservada_con_pagos" ? "error" : "ok",
         );
         recargaConSpinner = true;

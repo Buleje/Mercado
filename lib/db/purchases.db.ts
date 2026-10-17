@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { invalidateAdminCache } from "@/lib/admin-cache";
 import { DatosAjenosEnOrdenError } from "@/lib/compras/datos-ajenos";
+import { OrdenCambioDeEstadoError } from "@/lib/compras/estados-oc";
 import type {
   Supplier as PSupplier,
   PurchaseOrder as PPurchaseOrder,
@@ -266,7 +267,18 @@ export const PurchasesDB = {
     invalidateAdminCache.afterPurchase(tenantId);
     return mapPurchaseOrder(row);
   },
-  async update(tenantId: string, id: string, patch: Partial<DbPurchaseOrder>): Promise<DbPurchaseOrder | null> {
+  /**
+   * `opts.siEstadoEs` (revisión 17-10): el cambio sólo se escribe si la orden sigue en ese
+   * estado. Dos «Marcar recibida» a la vez leían los dos «parcial» y los dos sumaban lo que
+   * faltaba al stock; con el estado en el WHERE la segunda no escribe y recibe
+   * `OrdenCambioDeEstadoError`, antes de tocar el stock.
+   */
+  async update(
+    tenantId: string,
+    id: string,
+    patch: Partial<DbPurchaseOrder>,
+    opts?: { siEstadoEs?: string },
+  ): Promise<DbPurchaseOrder | null> {
     const existing = await prisma.purchaseOrder.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
     const data: Record<string, unknown> = {};
@@ -286,7 +298,13 @@ export const PurchasesDB = {
     if (patch.receivedDate !== undefined) data.receivedDate = patch.receivedDate ? new Date(patch.receivedDate) : null;
     if (patch.receivedBy !== undefined) data.receivedBy = patch.receivedBy || null;
     if (patch.cancelReason !== undefined) data.cancelReason = patch.cancelReason || null;
-    await prisma.purchaseOrder.updateMany({ where: { id, tenantId }, data });
+    const condicion = opts?.siEstadoEs !== undefined ? { status: opts.siEstadoEs as PPurchaseOrder["status"] } : {};
+    const { count } = await prisma.purchaseOrder.updateMany({ where: { id, tenantId, ...condicion }, data });
+    if (count === 0 && opts?.siEstadoEs !== undefined) {
+      const ahora = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, select: { status: true } });
+      if (!ahora) return null;
+      throw new OrdenCambioDeEstadoError(ahora.status);
+    }
     const row = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, include: { items: true } });
     // Audit 2026-05-17 Q-P0-4: update status (recibido) cambia stock visible
     invalidateAdminCache.afterPurchase(tenantId);
@@ -295,8 +313,9 @@ export const PurchasesDB = {
   /**
    * Las recepciones y la cuenta por pagar de esas órdenes (C10: en qué va cada
    * una). Dos lecturas, sin ítems de producto: se cruzan en `ciclo-oc.ts`.
+   * `conCuentas = false` (revisión 17-10): quien no gestiona plata no recibe la deuda.
    */
-  async datosDeSeguimiento(tenantId: string, ids: string[]) {
+  async datosDeSeguimiento(tenantId: string, ids: string[], conCuentas = true) {
     if (ids.length === 0) return { recepciones: [], cuentas: [] };
     const [recepciones, cuentas] = await Promise.all([
       prisma.goodsReceipt.findMany({
@@ -304,10 +323,12 @@ export const PurchasesDB = {
         select: { id: true, ref: true, purchaseOrderId: true, status: true, receivedDate: true, createdAt: true, itemsJson: true },
         orderBy: { createdAt: "asc" },
       }),
-      prisma.payable.findMany({
-        where: { tenantId, purchaseOrderId: { in: ids } },
-        select: { purchaseOrderId: true, amount: true, paidAmount: true, status: true, dueDate: true },
-      }),
+      conCuentas
+        ? prisma.payable.findMany({
+            where: { tenantId, purchaseOrderId: { in: ids } },
+            select: { purchaseOrderId: true, amount: true, paidAmount: true, status: true, dueDate: true },
+          })
+        : Promise.resolve([]),
     ]);
     return { recepciones, cuentas };
   },

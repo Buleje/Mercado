@@ -119,7 +119,7 @@ describe("marcar ENVIADA saca la mercadería del stock", () => {
 
     expect(mockUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: "ret-1", tenantId: TENANT, stockAplicadoAt: null },
+        where: { id: "ret-1", tenantId: TENANT, stockAplicadoAt: null, estado: { not: "ANULADA" } },
         data: expect.objectContaining({ stockAplicadoAt: expect.any(Date) }),
       }),
     );

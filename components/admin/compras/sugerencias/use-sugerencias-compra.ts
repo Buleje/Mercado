@@ -11,7 +11,9 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
-import type { FilterKey, Resumen, SinRotacion, Sugerencia, Urgency } from "./tipos";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { PLEGADO_INICIAL, type AgruparPor, type Excluidos, type FilterKey, type Resumen, type SinRotacion, type Sugerencia, type Urgency } from "./tipos";
+import { notaDeLaOrden } from "./explicar";
 
 export function useSugerenciasCompra() {
   const [sugerencias, setSugerencias] = useState<Sugerencia[]>([]);
@@ -26,9 +28,12 @@ export function useSugerenciasCompra() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [collapsed, setCollapsed] = useState<Record<Urgency, boolean>>({
-    CRITICO: false, URGENTE: false, PLANIFICAR: true,
-  });
+  // Por urgencia o por causa (C26); el plegado es por grupo, sea cual sea.
+  const [agruparPor, setAgruparPor] = useLocalStorage<AgruparPor>("compras-sugerencias:agrupar", "urgencia");
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(PLEGADO_INICIAL);
+  // Cuándo se calculó (la orden lo conserva) y qué se apartó a propósito (C25).
+  const [calculadoEn, setCalculadoEn] = useState<string | null>(null);
+  const [excluidos, setExcluidos] = useState<Excluidos | null>(null);
   const [creating, setCreating] = useState(false);
   // productId de la sugerencia cuya OC se está creando (botón "Crear OC" por fila).
   const [creatingItemId, setCreatingItemId] = useState<number | null>(null);
@@ -48,6 +53,8 @@ export function useSugerenciasCompra() {
         setResumen(data.resumen ?? null);
         setAvisos(data.avisos ?? []);
         setSinStockMinimo(data.sinStockMinimo ?? null);
+        setCalculadoEn(data.calculadoEn ?? null);
+        setExcluidos(data.excluidos ?? null);
         setError(null);
       } else {
         // Antes un 403/500 dejaba la pantalla en «Nada que reponer»: un error
@@ -115,8 +122,8 @@ export function useSugerenciasCompra() {
     });
   };
 
-  const selectAllUrgency = (urgency: Urgency) => {
-    const ids = sugerencias.filter((s) => s.urgency === urgency).map((s) => s.productId);
+  /** Marca (o desmarca, si ya estaban todos) los productos de un grupo. */
+  const marcarGrupo = (ids: readonly number[]) => {
     setSelected((prev) => {
       const next = new Set(prev);
       const allSelected = ids.every((id) => next.has(id));
@@ -126,8 +133,8 @@ export function useSugerenciasCompra() {
     });
   };
 
-  const toggleCollapse = (urgency: Urgency) => {
-    setCollapsed((prev) => ({ ...prev, [urgency]: !prev[urgency] }));
+  const toggleCollapse = (grupo: string) => {
+    setCollapsed((prev) => ({ ...prev, [grupo]: !prev[grupo] }));
   };
 
   // ── Selected stats ────────────────────────────────────────────────────────
@@ -194,9 +201,10 @@ export function useSugerenciasCompra() {
             name: i.productName,
             quantity: i.suggestedQty,
             unitCost: i.lastPrice ?? 0,
-            unit: "und",
+            unit: i.unit || "und",
           })),
-          notes: `OC generada automaticamente por sugerencias de compra`,
+          // C26: la orden conserva con qué criterio y cuándo se sugirió.
+          notes: notaDeLaOrden(groupItems, calculadoEn, ventanaDias),
           // ADR-377: la forma de pago pactada con ESE proveedor. El endpoint
           // abre la cuenta por pagar sólo si es a crédito, y con el
           // vencimiento correcto.
@@ -275,7 +283,8 @@ export function useSugerenciasCompra() {
     sugerencias, sinRotacion, resumen, avisos, sinStockMinimo, verSinRotacion, setVerSinRotacion,
     ventanaDias, setVentanaDias, loading, refreshing, error, load, selected, setSelected, collapsed,
     creating, creatingItemId, filter, setFilter, search, setSearch, stats, visible, toggleSelect,
-    selectAllVisible, selectAllUrgency, toggleCollapse, selectedStats, createOCs, createOCForOne,
+    selectAllVisible, marcarGrupo, toggleCollapse, selectedStats, createOCs, createOCForOne,
+    agruparPor, setAgruparPor, calculadoEn, excluidos,
   };
 }
 

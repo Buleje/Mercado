@@ -55,6 +55,8 @@ export default function SugerenciasBajoMinimo({ items, ventanaDias }: { items: S
             )}
             <span className="tabular-nums text-[var(--text-secondary)]">
               stock <strong className="text-[var(--data-warning-ink)]">{s.currentStock}</strong> · mínimo {s.stockMin}
+              {/* Sin stock casi toda la ventana: «sin venta» no dice que no se venda. */}
+              {s.sinDatos && s.diasConStock != null && ` · sin stock ${Math.max(0, ventanaDias - s.diasConStock)} días`}
             </span>
           </li>
         ))}

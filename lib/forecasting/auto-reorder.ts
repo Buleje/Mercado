@@ -127,9 +127,11 @@ async function getLastSupplier(
 export async function generateReorderSuggestions(
   tenantId: string,
 ): Promise<ReorderSuggestion[]> {
-  // 1. Productos activos con stock conocido
+  // 1. Productos activos con stock conocido. Un servicio o alquiler no se
+  // repone por saldo (auditoría Compras C01/O07, 17-10): en Blas el aserrado
+  // con stock 0 salía «a reordenar».
   const products = await prisma.product.findMany({
-    where: { tenantId, active: true, deletedAt: null, stock: { not: null } },
+    where: { tenantId, active: true, deletedAt: null, stock: { not: null }, NOT: { type: "service" } },
     select: { id: true, name: true, stock: true, costPrice: true, unit: true },
   });
 

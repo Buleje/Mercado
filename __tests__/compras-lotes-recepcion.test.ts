@@ -228,7 +228,9 @@ describe("POST /api/compras/recepciones con «vence»", () => {
     h.ocFindFirst.mockResolvedValue(null);
     const res = await POST(req([linea({ expiryDate: EN_UN_MES })]));
     expect(h.ocFindFirst.mock.calls[0][0].where).toEqual({ id: "oc-1", tenantId: "t-b" });
-    expect((await res.json())).toMatchObject({ stockUpdated: 0, lotes: 0 });
+    // Revisión 17-10: sin orden propia no se guarda nada (antes, recepción suelta con stock 0).
+    expect(res.status).toBe(404);
+    expect(h.receiptCreate).not.toHaveBeenCalled();
     expect(h.tx!.batch.createMany).not.toHaveBeenCalled();
   });
 

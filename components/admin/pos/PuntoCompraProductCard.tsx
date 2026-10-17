@@ -6,9 +6,12 @@ import Image from "next/image";
 import {
   PurchaseProduct,
   calculateSuggestedQty,
+  metaDeReposicion,
   needsReorder,
 } from "@/lib/types/purchases";
+import { naturalezaDe } from "@/lib/compras/naturaleza";
 import { formatCurrency } from "@/lib/format";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 interface PuntoCompraProductCardProps {
   product: PurchaseProduct;
@@ -21,8 +24,12 @@ export default memo(function PuntoCompraProductCard({
   inCart,
   onAdd,
 }: PuntoCompraProductCardProps) {
+  // Servicio o alquiler (C01): sin agotado, sin «a reponer» y sin sugerido; se
+  // compra por su unidad de cobro («+1 hora»).
+  const nat = naturalezaDe(product);
+  const esServicio = nat.naturaleza !== "inventario";
   const suggestedQty = calculateSuggestedQty(product);
-  const targetStock = product.stockMax ?? (((product.stockMin ?? 0) * 3) || 10);
+  const { meta: targetStock, origen: origenMeta, minimo } = metaDeReposicion(product);
 
   const displayName = product.name || "Sin nombre";
 
@@ -33,11 +40,18 @@ export default memo(function PuntoCompraProductCard({
   // COMPRA, un producto agotado es justamente lo que querés pedir → la tarjeta
   // SIEMPRE agrega al carrito. Antes se deshabilitaba y el clic no hacía nada
   // sin ninguna explicación (reporte QA Compras 2026-07-08).
-  const isOutOfStock = product.stock === 0;
+  const isOutOfStock = !esServicio && product.stock === 0;
 
   // Dos acciones a la vista (auditoría Compras O02/C02): antes un clic en la
   // tarjeta sumaba TODA la sugerencia (21 unidades) sin decirlo.
-  const unidad = product.unit || "und";
+  const unidad = esServicio ? nat.unidad : product.unit || "und";
+  const conSugerido = !esServicio && suggestedQty > 1;
+  // C28: la «Meta» se explica con sus números, no sólo con el `title`.
+  const porQueMeta = origenMeta === "maximo"
+    ? `el stock máximo que le pusiste`
+    : origenMeta === "triple-del-minimo"
+      ? `el triple de su mínimo (${minimo}), porque no tiene stock máximo`
+      : "no tiene mínimo ni máximo: se usa 10";
   const botonCls = "h-10 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
   return (
@@ -49,7 +63,14 @@ export default memo(function PuntoCompraProductCard({
     >
       {/* Badge AGOTADO / REPONER — bg neutro, color solo en dot + texto.
           AGOTADO solo si el stock está RASTREADO en 0 (no si es null/sin control). */}
-      {isOutOfStock ? (
+      {esServicio ? (
+        <span
+          className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-secondary)] z-10"
+        >
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]" />
+          {nat.distintivo?.toUpperCase()}
+        </span>
+      ) : isOutOfStock ? (
         <span role="img"
           aria-label="Producto agotado"
           className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-error-500)]/30 text-[var(--data-error-500)] z-10"
@@ -117,20 +138,27 @@ export default memo(function PuntoCompraProductCard({
         >
           {costoFicha != null ? formatCurrency(costoFicha) : "sin costo"}
         </span>
-        <span
-          className="whitespace-nowrap text-sm text-[var(--text-secondary)]"
-          title={product.stock == null ? "Este producto no lleva control de inventario" : `${product.stock} ${product.unit ?? ""} en stock`}
-        >
-          Stock: {product.stock ?? "—"}
-        </span>
+        {esServicio ? (
+          <span className="text-sm text-[var(--text-secondary)]">{nat.cobro}</span>
+        ) : (
+          <span
+            className="whitespace-nowrap text-sm text-[var(--text-secondary)]"
+            title={product.stock == null ? "Este producto no lleva control de inventario" : `${product.stock} ${product.unit ?? ""} en stock`}
+          >
+            Stock: {product.stock ?? "—"}
+          </span>
+        )}
       </div>
 
-      {suggestedQty > 1 && (
-        <p
-          className="text-xs text-[var(--text-secondary)]"
-          title={`Stock: ${product.stock ?? 0} · Meta: ${targetStock} → faltan ${suggestedQty} ${unidad}`}
-        >
+      {conSugerido && (
+        <p className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
           Sugerido: {suggestedQty} {unidad}
+          <InfoTip
+            title={`Sugerido ${suggestedQty} ${unidad}`}
+            what={`Meta ${targetStock} ${unidad}: ${porQueMeta}. Tienes ${product.stock ?? 0} → faltan ${suggestedQty}.`}
+            example="No mira cuánto se vendió: para pedir según la venta y lo que ya está en camino, mira Compras › Sugerencias."
+            ariaLabel={`Cómo se calcula el sugerido de ${displayName}`}
+          />
         </p>
       )}
 
@@ -144,7 +172,7 @@ export default memo(function PuntoCompraProductCard({
         >
           +1
         </button>
-        {suggestedQty > 1 && (
+        {conSugerido && (
           <button
             type="button"
             onClick={() => onAdd(product, suggestedQty)}

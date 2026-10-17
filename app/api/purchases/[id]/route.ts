@@ -12,7 +12,10 @@ import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getRecibidoAcumulado, saldoPendiente } from "@/lib/compras/recibido-acumulado";
 import { costoUnitarioReal, totalDeOrden } from "@/lib/compras/totales-oc";
-import { TRANSICIONES_OC, transicionValida, type EstadoOC } from "@/lib/compras/estados-oc";
+import { OrdenCambioDeEstadoError, TRANSICIONES_OC, mensajeOrdenCambiada, transicionValida, type EstadoOC } from "@/lib/compras/estados-oc";
+import { getFaltantesAcreditados } from "@/lib/compras/aplicar-credito-recepcion";
+import { esServicio } from "@/lib/compras/naturaleza";
+import { cerrarCuentaDeOrdenCancelada, type CuentaAlCancelar } from "@/lib/db/purchases-cancelar.db";
 
 const DiferenciaSchema = z.object({
   productoId: z.number().int().positive(),
@@ -212,7 +215,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const revaluarInventario =
       !statusChanged && existing.status === "recibido" && Math.abs(deltaSobrecosto) > 0.005;
 
-    const updated = await PurchasesDB.update(auth.tenantId, id, patch);
+    // Revisión 17-10 (punto 4): el cambio de estado sólo se escribe si la orden
+    // sigue como se leyó. Dos «Marcar recibida entera» a la vez sumaban dos
+    // veces lo que faltaba; ahora el segundo encuentra «recibido» y no escribe.
+    let updated: Awaited<ReturnType<typeof PurchasesDB.update>>;
+    try {
+      updated = statusChanged
+        ? await PurchasesDB.update(auth.tenantId, id, patch, { siEstadoEs: existing.status })
+        : await PurchasesDB.update(auth.tenantId, id, patch);
+    } catch (e) {
+      if (e instanceof OrdenCambioDeEstadoError) {
+        return NextResponse.json({ error: mensajeOrdenCambiada(e.estado, "cambiar"), estado: e.estado }, { status: 409 });
+      }
+      throw e;
+    }
 
     if (!updated) return NextResponse.json({ error: "Error updating" }, { status: 500 });
 
@@ -220,34 +236,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
      * Cancelar una orden a crédito tiene que cerrar la deuda que abrió.
      *
      * El POST crea un `Payable` automático cuando la forma de pago es
-     * `credito_*`. Al cancelar la orden ese Payable quedaba vivo: Cuentas por
-     * Pagar seguía mostrando —y sumando— una deuda con un proveedor al que
-     * nunca se le compró.
-     *
-     * Si ya se le pagó algo, NO se toca: esa plata salió de verdad y borrar el
-     * registro la haría desaparecer del historial. En ese caso se avisa.
+     * `credito_*`. Al cancelar, la deuda sin pagos baja a lo que vale lo que
+     * llegó en buen estado y, si no llegó nada, se borra (revisión 17-10: antes
+     * se borraba entera aunque hubiera llegado mercadería). Con pagos NO se
+     * toca: esa plata salió de verdad. Regla en `cerrarCuentaDeOrdenCancelada`.
      */
-    let cuentaPorPagar: "anulada" | "conservada_con_pagos" | null = null;
+    let cuenta: CuentaAlCancelar | null = null;
     if (statusChanged && parsed.data.status === "cancelado") {
-      const payable = await prisma.payable.findFirst({
-        where: { purchaseOrderId: id, tenantId: auth.tenantId },
-        select: { id: true, paidAmount: true },
-      });
-      if (payable) {
-        if (toNumOrZero(payable.paidAmount) > 0) {
-          cuentaPorPagar = "conservada_con_pagos";
-        } else {
-          await prisma.payable.deleteMany({ where: { id: payable.id, tenantId: auth.tenantId } });
-          cuentaPorPagar = "anulada";
-        }
+      cuenta = await cerrarCuentaDeOrdenCancelada(auth.tenantId, updated);
+      if (cuenta) {
         revalidateTenantTag(auth.tenantId, "payables");
-        logActivity(
-          "Actualizar", "compra",
-          cuentaPorPagar === "anulada"
-            ? `Orden ${id.slice(-6)} cancelada: se anuló su cuenta por pagar`
-            : `Orden ${id.slice(-6)} cancelada: la cuenta por pagar se conservó porque ya tenía pagos`,
-          id, auth.username,
-        ).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
+        const corto = id.slice(-6);
+        const texto = cuenta.resultado === "anulada"
+          ? `Orden ${corto} cancelada: se anuló su cuenta por pagar (no llegó nada)`
+          : cuenta.resultado === "ajustada"
+            ? `Orden ${corto} cancelada: la cuenta por pagar bajó de ${cuenta.montoAntes.toFixed(2)} a ${cuenta.montoDespues.toFixed(2)} (lo que llegó)`
+            : cuenta.resultado === "sin_cambio"
+              ? `Orden ${corto} cancelada: la cuenta por pagar se queda (vale lo que llegó)`
+              : `Orden ${corto} cancelada: la cuenta por pagar se conservó porque ya tenía pagos`;
+        logActivity("Actualizar", "compra", texto, id, auth.username)
+          .catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
       }
     }
 
@@ -278,6 +286,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           // sumaba la cantidad ENTERA otra vez (medido: OC de 10 con 4
           // recibidos terminaba en stock 14).
           const yaRecibido = await getRecibidoAcumulado(tx, auth.tenantId, updated.id, updated.items);
+          // Revisión 17-10 (punto 6): lo marcado «no llegará» en una recepción ya
+          // se acreditó; no es mercadería que entre al cerrar la orden.
+          const noLlegara = await getFaltantesAcreditados(
+            tx, auth.tenantId, updated.id,
+            updated.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost })),
+            "",
+          );
           // ADR-377: flete + otros costos se reparten por valor entre los items.
           const subtotalOrden = updated.items.reduce((s, i) => s + i.quantity * toNumOrZero(i.unitCost), 0);
           const sobrecostos = (updated.flete ?? 0) + (updated.otrosCostos ?? 0);
@@ -292,14 +307,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             const product = await tx.product.findFirst({
               where: { id: item.productId, tenantId: auth.tenantId },
             });
-            if (!product) continue;
+            // Un servicio (flete, mano de obra) no tiene stock (revisión 17-10, punto 8).
+            if (!product || esServicio(product)) continue;
 
             // Con diferencias declaradas manda lo declarado; si no, lo que
-            // falte por recibir según las recepciones ya registradas.
+            // falte por recibir según las recepciones ya registradas, menos lo
+            // que el proveedor ya no mandará.
             const dif = difMap.get(item.productId);
             const quantityReceived = dif
               ? dif.cantidadRecibida
-              : saldoPendiente(item.quantity, yaRecibido.get(item.productId) ?? 0);
+              : saldoPendiente(item.quantity, (yaRecibido.get(item.productId) ?? 0) + (noLlegara.get(item.productId) ?? 0));
 
             if (quantityReceived <= 0) continue; // Nothing received for this item
 
@@ -388,7 +405,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...updated,
       ...(revaluarInventario ? { productosRevaluados } : {}),
       // Que la pantalla pueda decir qué pasó con la deuda al cancelar.
-      ...(cuentaPorPagar ? { cuentaPorPagar } : {}),
+      ...(cuenta ? { cuentaPorPagar: cuenta.resultado, montoAntes: cuenta.montoAntes, montoDespues: cuenta.montoDespues } : {}),
     });
   } catch (e) {
     logger.error("[purchases/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });

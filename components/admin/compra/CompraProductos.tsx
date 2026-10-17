@@ -6,6 +6,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { calculateSuggestedQty, needsReorder } from "@/lib/types/purchases";
+import { naturalezaDe } from "@/lib/compras/naturaleza";
 import PuntoCompraProductCard from "@/components/admin/pos/PuntoCompraProductCard";
 import type { CompraCatalogo } from "./use-compra-catalogo";
 import type { CompraCarrito } from "./use-compra-carrito";
@@ -104,7 +105,11 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
             <tbody>
               {paginatedProducts.map((p) => {
                 const needs = needsReorder(p);
-                const sug = calculateSuggestedQty(p);
+                // Servicio o alquiler (C01): sin «REPONER», sin stock ni sugerido; se pide por su unidad de cobro.
+                const nat = naturalezaDe(p);
+                const servicio = nat.naturaleza !== "inventario";
+                const sug = servicio ? 1 : calculateSuggestedQty(p);
+                const unidad = servicio ? nat.unidad : p.unit || "und";
                 return (
                   <tr
                     key={p.id}
@@ -115,6 +120,11 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
                         {needs && (
                           <span className="text-xs font-bold px-1 py-0.5 rounded bg-[var(--data-error-100)] text-[var(--data-error-500)]">
                             REPONER
+                          </span>
+                        )}
+                        {nat.distintivo && (
+                          <span className="text-xs font-bold px-1 py-0.5 rounded border border-[var(--rule-base)] text-[var(--text-secondary)]">
+                            {nat.distintivo.toUpperCase()}
                           </span>
                         )}
                         <span className="font-medium text-[var(--text-primary)]">
@@ -128,10 +138,10 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
                       </span>
                     </td>
                     <td className="text-right text-[var(--text-secondary)]">
-                      {p.stock ?? "—"} {p.unit}
+                      {servicio ? nat.cobro : <>{p.stock ?? "—"} {p.unit}</>}
                     </td>
                     <td className="text-right text-[var(--accent-ink)] dark:text-[var(--accent)] font-medium">
-                      {sug}
+                      {servicio ? "—" : sug}
                     </td>
                     {/* +1 y «Pedir N» separados (auditoría Compras O02/C02). */}
                     <td className="text-right">
@@ -139,7 +149,7 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
                         <button
                           type="button"
                           onClick={() => addToCart(p, 1)}
-                          aria-label={`Agregar 1 ${p.unit || "und"} de ${p.name}`}
+                          aria-label={`Agregar 1 ${unidad} de ${p.name}`}
                           className="h-11 w-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                         >
                           +1
@@ -148,7 +158,7 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
                           <button
                             type="button"
                             onClick={() => addToCart(p, sug)}
-                            aria-label={`Agregar los ${sug} ${p.unit || "und"} sugeridos de ${p.name}`}
+                            aria-label={`Agregar los ${sug} ${unidad} sugeridos de ${p.name}`}
                             className="h-11 whitespace-nowrap px-3 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                           >
                             Pedir {sug}

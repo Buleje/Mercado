@@ -304,7 +304,7 @@ describe("GET /api/purchases", () => {
     const res = await GET(new NextRequest("http://localhost/api/purchases?seguimiento=1"));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(mockDatosDeSeguimiento).toHaveBeenCalledWith(ADMIN_SESSION.tenantId, ["po-1", "po-2"]);
+    expect(mockDatosDeSeguimiento).toHaveBeenCalledWith(ADMIN_SESSION.tenantId, ["po-1", "po-2"], true); // admin ve la deuda (revisión 17-10)
     expect(body[0].seguimiento).toMatchObject({ recibido: { 7: 4 }, cuenta: { monto: 200, pagado: 50, saldo: 150, vence: "2026-10-20" } });
     expect(body[1].seguimiento).toMatchObject({ recibido: {}, recepciones: [], cuenta: null });
   });

@@ -68,7 +68,9 @@ export async function updateSupplierReturnEstado(
       estado === "ENVIADA" &&
       actual.stockAplicadoAt === null &&
       (await tx.supplierReturn.updateMany({
-        where: { id, tenantId, stockAplicadoAt: null },
+        // `estado ≠ ANULADA` (revisión 17-10): una anulación que tomó la fila antes gana, y
+        // esta transacción, al reevaluar, ya no descuenta.
+        where: { id, tenantId, stockAplicadoAt: null, estado: { not: "ANULADA" } },
         data: { stockAplicadoAt: new Date() },
       })).count === 1;
 
@@ -133,7 +135,10 @@ export async function updateSupplierReturnEstado(
     }
 
     // `estado ≠ ANULADA` en el WHERE: una anulación que llegó entre la lectura y acá no se pisa.
-    await tx.supplierReturn.updateMany({ where: { id, tenantId, estado: { not: "ANULADA" } }, data: { estado } });
+    // Y si no cambió nada, se avisa (revisión 17-10): antes respondía «listo» con la
+    // devolución ya anulada; el throw deshace también el descuento de arriba, si lo hubo.
+    const { count } = await tx.supplierReturn.updateMany({ where: { id, tenantId, estado: { not: "ANULADA" } }, data: { estado } });
+    if (count === 0) throw new DevolucionAnuladaError();
 
     return tx.supplierReturn.findFirst({
       where: { id, tenantId },

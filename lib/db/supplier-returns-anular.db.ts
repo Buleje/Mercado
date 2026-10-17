@@ -84,9 +84,23 @@ export async function anularSupplierReturn(
 ) {
   const avisos: string[] = [];
   const devolucion = await prisma.$transaction(async (tx) => {
-    const actual = await leer(tx, tenantId, id);
-    if (!actual) return null;
-    if (actual.estado === "ANULADA") throw new DevolucionAnuladaError();
+    const leida = await leer(tx, tenantId, id);
+    if (!leida) return null;
+    if (leida.estado === "ANULADA") throw new DevolucionAnuladaError();
+
+    // El estado PRIMERO (revisión 17-10). Antes se decidía el stock con la fila leída y
+    // después se anulaba: un «Enviada» que entraba en el medio sacaba el stock y la
+    // anulación quedaba diciendo «no salió nada», con el inventario descontado. Ahora el
+    // `updateMany` toma la fila: si «Enviada» la tiene, esperamos a que termine; si
+    // llegamos antes, su compara-y-cambia ve ANULADA y no descuenta.
+    // `estado: { not: ANULADA }` en el WHERE: dos anulaciones a la vez no escriben dos motivos.
+    const { count } = await tx.supplierReturn.updateMany({
+      where: { id, tenantId, estado: { not: "ANULADA" } },
+      data: { estado: "ANULADA" },
+    });
+    if (count !== 1) throw new DevolucionAnuladaError();
+    // Releída con la fila ya tomada: la marca de stock es la definitiva.
+    const actual = (await leer(tx, tenantId, id)) ?? leida;
 
     let stock: StockAlAnular = "no-salio";
     if (actual.stockAplicadoAt !== null) {
@@ -104,12 +118,7 @@ export async function anularSupplierReturn(
     }
 
     const notas = sumarANotas(actual.notas, lineaDeAnulacion({ fecha: new Date(), usuario: p.usuario, motivo: p.motivo, stock }));
-    // `estado: { not: ANULADA }` en el WHERE: dos anulaciones a la vez no escriben dos motivos.
-    const { count } = await tx.supplierReturn.updateMany({
-      where: { id, tenantId, estado: { not: "ANULADA" } },
-      data: { estado: "ANULADA", notas },
-    });
-    if (count !== 1) throw new DevolucionAnuladaError();
+    await tx.supplierReturn.updateMany({ where: { id, tenantId }, data: { notas } });
     return leer(tx, tenantId, id);
   });
   if (!devolucion) return null;

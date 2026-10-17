@@ -17,6 +17,44 @@ export const LEAD_TIME_DEFAULT = 7;
 
 export type UrgenciaReposicion = "CRITICO" | "URGENTE" | "PLANIFICAR";
 
+/**
+ * Por qué entra a la lista (C26): la urgencia dice CUÁNDO, la causa dice POR QUÉ.
+ * Dos productos «a planificar» pueden estar ahí por razones distintas: uno por
+ * lo que se vende, otro porque bajó del mínimo que fijaste.
+ */
+export type CausaReposicion = "agotado" | "no_llega" | "durante_entrega" | "minimo" | "ritmo";
+
+/** Con menos de esto la venta diaria es un estimado, no una certeza (C28). */
+export const POCOS_DATOS = { vendidas: 3, diasConStock: 7 } as const;
+
+/**
+ * Cada número de la cuenta, para que quien mira reconstruya «Pedir N» (C28).
+ * Son los MISMOS valores con que se decidió: no se recalculan en la pantalla.
+ */
+export interface DetalleReposicion {
+  vendido: number;
+  diasConStock: number;
+  ventaDiaria: number;
+  leadTimeDias: number;
+  colchonDias: number;
+  /** Lead time + colchón: los días que el stock tiene que aguantar. */
+  diasCobertura: number;
+  /** Venta diaria × días a cubrir, antes de mirar el mínimo. */
+  porRitmo: number;
+  stockMin: number;
+  /** El mínimo fijado le gana al ritmo de venta (punto de reorden = mínimo). */
+  minimoManda: boolean;
+  puntoReorden: number;
+  stock: number;
+  enTransito: number;
+  disponible: number;
+  /** A dónde se quiere llegar: dos ciclos de reposición, o el mínimo si es mayor. */
+  objetivo: number;
+  cantidad: number;
+  /** Pocas ventas o pocos días con stock: la venta diaria es un estimado. */
+  pocosDatos: boolean;
+}
+
 export interface EntradaReposicion {
   /** Lo que hay en el depósito hoy. */
   stock: number;
@@ -46,6 +84,8 @@ export type ResultadoReposicion =
       diasRestantes: number;
       cantidad: number;
       urgencia: UrgenciaReposicion;
+      causa: CausaReposicion;
+      detalle: DetalleReposicion;
     };
 
 const redondear = (n: number) => Math.round(n * 100) / 100;
@@ -85,8 +125,10 @@ export function evaluarReposicion(e: EntradaReposicion): ResultadoReposicion {
     return { tipo: "suficiente", ventaDiaria, puntoReorden, diasRestantes };
   }
 
-  const objetivo = Math.max(ventaDiaria * diasCobertura * 2, e.stockMin);
+  const porRitmo = redondear(ventaDiaria * diasCobertura);
+  const objetivo = redondear(Math.max(ventaDiaria * diasCobertura * 2, e.stockMin));
   const cantidad = Math.max(1, Math.ceil(objetivo - disponible));
+  const minimoManda = e.stockMin > porRitmo;
 
   const urgencia: UrgenciaReposicion =
     // Agotado es lo PEOR que puede pasar. La regla vieja lo mandaba a URGENTE,
@@ -97,5 +139,31 @@ export function evaluarReposicion(e: EntradaReposicion): ResultadoReposicion {
         : diasRestantes <= diasCobertura ? "URGENTE"
           : "PLANIFICAR";
 
-  return { tipo: "reponer", ventaDiaria, puntoReorden, diasRestantes, cantidad, urgencia };
+  const causa: CausaReposicion =
+    disponible <= 0 ? "agotado"
+      : diasRestantes <= e.leadTimeDias ? "no_llega"
+        : diasRestantes <= diasCobertura ? "durante_entrega"
+          : minimoManda ? "minimo"
+            : "ritmo";
+
+  const detalle: DetalleReposicion = {
+    vendido: e.vendido,
+    diasConStock: redondear(e.diasConStock),
+    ventaDiaria,
+    leadTimeDias: e.leadTimeDias,
+    colchonDias: COLCHON_DIAS,
+    diasCobertura,
+    porRitmo,
+    stockMin: e.stockMin,
+    minimoManda,
+    puntoReorden,
+    stock: e.stock,
+    enTransito: e.enTransito,
+    disponible,
+    objetivo,
+    cantidad,
+    pocosDatos: e.vendido < POCOS_DATOS.vendidas || e.diasConStock < POCOS_DATOS.diasConStock,
+  };
+
+  return { tipo: "reponer", ventaDiaria, puntoReorden, diasRestantes, cantidad, urgencia, causa, detalle };
 }

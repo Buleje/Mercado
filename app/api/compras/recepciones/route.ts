@@ -16,8 +16,12 @@ import {
   aplicarCreditoRecepcion, anotarCreditoEnItems, getFaltantesAcreditados, SIN_CREDITO, type ResultadoCredito,
 } from "@/lib/compras/aplicar-credito-recepcion";
 import { logAudit } from "@/lib/audit-logger";
+import { esServicio } from "@/lib/compras/naturaleza";
 import { BatchesDB } from "@/lib/db/batches.db";
 import { armarLoteDeRecepcion, errorDeVencimiento, pideLote, type LoteDeRecepcion } from "@/lib/compras/lotes-recepcion";
+import {
+  ESTADOS_OC_CERRADOS, OrdenCambioDeEstadoError, mensajeOrdenCambiada, ordenCerrada,
+} from "@/lib/compras/estados-oc";
 
 // Item del checklist tal como lo arma ReceivingTab. `productId` es opcional: si
 // el item se eligió del combobox o vino prefilleado de la OC, trae el id real
@@ -138,12 +142,28 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 1. Persistir la recepción SIEMPRE (es el registro de auditoría). El
-    //    ref legible se deriva de un id aleatorio para no depender de Date.now
-    //    (Cache Components) ni de contadores.
+    // 1. La orden vinculada, y si ya está cerrada, nada (revisión 17-10). Antes
+    //    la recepción no miraba el estado: con «Recibir» abierto mientras otra
+    //    persona marcaba la orden recibida, el stock entraba dos veces; y una
+    //    orden cancelada volvía a «parcial». El estado se vuelve a exigir DENTRO
+    //    de la transacción (paso 2): esto es sólo el aviso temprano.
+    const oc = data.orderRef
+      ? await prisma.purchaseOrder.findFirst({ where: { id: data.orderRef, tenantId }, include: { items: true } })
+      : null;
+    if (data.orderRef && !oc) {
+      return NextResponse.json({ error: "Orden de compra no encontrada" }, { status: 404 });
+    }
+    if (oc && ordenCerrada(oc.status)) {
+      return NextResponse.json({ error: mensajeOrdenCambiada(oc.status, "recibir"), estado: oc.status }, { status: 409 });
+    }
+
+    // La recepción es el registro de auditoría: se guarda SIEMPRE que la orden
+    // la admita. Con orden, dentro de la transacción del stock (paso 2); si esa
+    // transacción falla por otra cosa, se guarda sola al final. El ref legible
+    // se deriva de un id aleatorio (ni Date.now por Cache Components, ni contadores).
     const ref = `REC-${globalThis.crypto.randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()}`;
     const scheduledDate = data.scheduledDate ? new Date(data.scheduledDate) : null;
-    const receipt = await GoodsReceiptsDB.create(tenantId, {
+    const datosRecibo = {
       ref,
       purchaseOrderId: data.orderRef || null,
       supplierName: data.supplier,
@@ -156,12 +176,13 @@ export async function POST(req: NextRequest) {
       nonConformities: data.nonConformities,
       invoiceUrl: data.invoiceUrl ?? null,
       notes: data.notes ?? null,
-    });
+    };
+    let receipt: Awaited<ReturnType<typeof GoodsReceiptsDB.create>> | null = null;
 
-    // 2. Best-effort: si hay OC vinculada, actualizar stock (costo promedio
-    //    ponderado) + estado de la OC. Se mapea cada item recibido a su
-    //    productId buscando por NOMBRE dentro de los items de la OC. Va en
-    //    try/catch aparte: un fallo acá NO revierte la recepción ya guardada.
+    // 2. Con OC vinculada: recepción + stock (costo promedio ponderado) + crédito
+    //    + estado de la OC en UNA transacción. Se mapea cada item recibido a su
+    //    productId (o por NOMBRE dentro de los items de la OC). Un fallo que no
+    //    sea «la orden se cerró» no pierde la recepción: se guarda sola abajo.
     let stockUpdated = 0;
     /** Unidades que llegaron dañadas o vencidas: se registran, no se venden. */
     let noAptos = 0;
@@ -169,166 +190,188 @@ export async function POST(req: NextRequest) {
     let credito: ResultadoCredito = SIN_CREDITO;
     /** Lotes con vencimiento que nacieron de esta recepción. */
     let lotesAnotados = 0;
-    if (data.orderRef) {
+    if (oc) {
+      const norm = (s: string) => s.trim().toLowerCase();
       try {
-        const oc = await prisma.purchaseOrder.findFirst({
-          where: { id: data.orderRef, tenantId },
-          include: { items: true },
-        });
-        if (oc) {
-          const norm = (s: string) => s.trim().toLowerCase();
-          await prisma.$transaction(async (tx) => {
-            // 2026-08-11: el veredicto parcial/recibido se calcula sobre lo
-            // ACUMULADO de todas las recepciones de la OC. Antes comparaba
-            // cada tanda contra el total (`4 < 10` → parcial), así que una
-            // compra recibida en dos viajes quedaba parcial para siempre y
-            // había que cerrarla con el <select> — que duplicaba el stock.
-            const ocItemRefs = oc.items.map((i) => ({ productId: i.productId, name: i.name }));
-            const recibidoTotal = await getRecibidoAcumulado(tx, tenantId, oc.id, ocItemRefs, receipt.id);
-            // ADR-377: flete + otros costos, repartidos por valor entre items.
-            const subtotalOrden = oc.items.reduce((s, i) => s + i.quantity * Number(i.unitCost ?? 0), 0);
-            const sobrecostos = Number(oc.flete ?? 0) + Number(oc.otrosCostos ?? 0);
+        receipt = await prisma.$transaction(async (tx) => {
+          // Primero se TOMA la orden, sólo si sigue abierta. El `updateMany`
+          // espera a cualquier «Marcar recibida» o «Cancelar» en curso sobre la
+          // misma fila y, al reevaluar el WHERE, ve su estado final: si la
+          // cerraron, count 0 y no se escribe nada (ni la recepción).
+          const tomada = await tx.purchaseOrder.updateMany({
+            where: { id: oc.id, tenantId, status: { notIn: [...ESTADOS_OC_CERRADOS] } },
+            data: { updatedAt: new Date() },
+          });
+          if (tomada.count !== 1) {
+            const ahora = await tx.purchaseOrder.findFirst({ where: { id: oc.id, tenantId }, select: { status: true } });
+            throw new OrdenCambioDeEstadoError(ahora?.status ?? null);
+          }
+          const r = await GoodsReceiptsDB.create(tenantId, datosRecibo, tx);
+          // 2026-08-11: el veredicto parcial/recibido se calcula sobre lo
+          // ACUMULADO de todas las recepciones de la OC. Antes comparaba
+          // cada tanda contra el total (`4 < 10` → parcial), así que una
+          // compra recibida en dos viajes quedaba parcial para siempre y
+          // había que cerrarla con el <select> — que duplicaba el stock.
+          const ocItemRefs = oc.items.map((i) => ({ productId: i.productId, name: i.name }));
+          const recibidoTotal = await getRecibidoAcumulado(tx, tenantId, oc.id, ocItemRefs, r.id);
+          // ADR-377: flete + otros costos, repartidos por valor entre items.
+          const subtotalOrden = oc.items.reduce((s, i) => s + i.quantity * Number(i.unitCost ?? 0), 0);
+          const sobrecostos = Number(oc.flete ?? 0) + Number(oc.otrosCostos ?? 0);
 
-            const lotes: LoteDeRecepcion[] = [];
-            for (const [indice, item] of data.items.entries()) {
-              // Preferir match por productId exacto; caer a nombre si no vino.
-              const ocItem = item.productId != null
-                ? oc.items.find((i) => i.productId === item.productId)
-                : oc.items.find((i) => norm(i.name) === norm(item.product));
-              if (!ocItem) continue;
-              if (item.receivedQty <= 0) continue;
+          const lotes: LoteDeRecepcion[] = [];
+          for (const [indice, item] of data.items.entries()) {
+            // Preferir match por productId exacto; caer a nombre si no vino.
+            const ocItem = item.productId != null
+              ? oc.items.find((i) => i.productId === item.productId)
+              : oc.items.find((i) => norm(i.name) === norm(item.product));
+            if (!ocItem) continue;
+            if (item.receivedQty <= 0) continue;
 
-              recibidoTotal.set(
-                ocItem.productId,
-                (recibidoTotal.get(ocItem.productId) ?? 0) + item.receivedQty,
-              );
+            recibidoTotal.set(
+              ocItem.productId,
+              (recibidoTotal.get(ocItem.productId) ?? 0) + item.receivedQty,
+            );
 
-              const product = await tx.product.findFirst({ where: { id: ocItem.productId, tenantId } });
-              if (!product) continue;
+            const product = await tx.product.findFirst({ where: { id: ocItem.productId, tenantId } });
+            // Un servicio (flete, mano de obra) no tiene stock ni movimiento
+            // (revisión 17-10, punto 8). Igual cuenta en lo recibido: la orden
+            // se cierra y el crédito se calcula con él.
+            if (!product || esServicio(product)) continue;
 
-              const previousStock = product.stock ?? 0;
+            const previousStock = product.stock ?? 0;
 
-              /**
-               * Lo dañado y lo vencido NO entra a stock vendible.
-               *
-               * El endpoint aceptaba `condition` desde el primer día y después
-               * sumaba `receivedQty` al stock sin mirarla: marcar «Dañado» en
-               * Recepción servía de acta, pero la mercadería quedaba lista para
-               * venderse igual. Sigue contando como recibida frente al
-               * proveedor (se anotó arriba en `recibidoTotal`): llegó, y hay
-               * que reclamarla. Queda como merma, que es donde se mira lo que
-               * se perdió.
-               */
-              if (item.condition === "dañado" || item.condition === "vencido") {
-                await tx.inventoryMovement.create({
-                  data: {
-                    productId: ocItem.productId, type: "merma", quantity: item.receivedQty,
-                    previousStock, newStock: previousStock, reference: `OC-${oc.id}`,
-                    notes: `Recepción ${ref}: ${item.receivedQty} ${item.condition}${item.notes ? ` · ${item.notes}` : ""} — no entró a stock vendible`,
-                    tenantId, createdBy: auth.username,
-                  },
-                });
-                noAptos += item.receivedQty;
-                continue;
-              }
-              // ADR-377: el costo autorizado incluye la parte de flete que le
-              // toca a esta línea. Sin eso el costo promedio del producto
-              // ignora lo que costó traerlo.
-              const authorizedUnitCost = costoUnitarioReal(ocItem, subtotalOrden, sobrecostos);
-              const currentCost = Number(product.costPrice ?? 0);
-              const totalQty = previousStock + item.receivedQty;
-              const weightedAvgCost =
-                totalQty > 0 ? (previousStock * currentCost + item.receivedQty * authorizedUnitCost) / totalQty : authorizedUnitCost;
-              const newStock = previousStock + item.receivedQty;
-
-              // Dueño en el WHERE (regla 8), no sólo en el `findFirst` de arriba.
-              await tx.product.updateMany({
-                where: { id: ocItem.productId, tenantId },
-                data: { stock: newStock, costPrice: authorizedUnitCost > 0 ? weightedAvgCost : undefined },
-              });
+            /**
+             * Lo dañado y lo vencido NO entra a stock vendible.
+             *
+             * El endpoint aceptaba `condition` desde el primer día y después
+             * sumaba `receivedQty` al stock sin mirarla: marcar «Dañado» en
+             * Recepción servía de acta, pero la mercadería quedaba lista para
+             * venderse igual. Sigue contando como recibida frente al
+             * proveedor (se anotó arriba en `recibidoTotal`): llegó, y hay
+             * que reclamarla. Queda como merma, que es donde se mira lo que
+             * se perdió.
+             */
+            if (item.condition === "dañado" || item.condition === "vencido") {
               await tx.inventoryMovement.create({
                 data: {
-                  productId: ocItem.productId, type: "compra", quantity: item.receivedQty,
-                  previousStock, newStock, reference: `OC-${oc.id}`,
-                  notes: item.notes || `Recepción ${ref}`, tenantId, createdBy: auth.username,
+                  productId: ocItem.productId, type: "merma", quantity: item.receivedQty,
+                  previousStock, newStock: previousStock, reference: `OC-${oc.id}`,
+                  notes: `Recepción ${ref}: ${item.receivedQty} ${item.condition}${item.notes ? ` · ${item.notes}` : ""} — no entró a stock vendible`,
+                  tenantId, createdBy: auth.username,
                 },
               });
-              stockUpdated++;
-              // Con «vence», lo que acaba de entrar nace como lote. El stock ya
-              // se sumó arriba: el lote no lo vuelve a sumar, lo describe.
-              const lote = armarLoteDeRecepcion({
-                indice, item, ref,
-                productId: ocItem.productId,
-                productName: product.name,
-                productCategory: product.category,
-                unit: ocItem.unit || product.unit,
-                costUnit: authorizedUnitCost,
-                supplierId: oc.supplierId || null,
-                supplierName: oc.supplierName || data.supplier,
-              });
-              if (lote) lotes.push(lote);
+              noAptos += item.receivedQty;
+              continue;
             }
-            if (lotes.length > 0) {
-              lotesAnotados = await BatchesDB.crearDesdeRecepcionTx(tx, tenantId, receipt.id, lotes);
-              await BatchesDB.propagarVenceTx(tx, tenantId, lotes.map((l) => l.productId));
-            }
-            // 09-10: lo dañado, vencido o faltante no se le paga al proveedor.
-            // Antes la merma quedaba registrada y la cuenta seguía por el
-            // total pedido. Va en esta misma transacción: stock y plata juntos.
-            const lineasOc = oc.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost }));
-            const faltantesPrevios = await getFaltantesAcreditados(tx, tenantId, oc.id, lineasOc, receipt.id);
-            const calculo = calcularCreditoRecepcion({
-              ocItems: lineasOc,
-              totalOc: oc.total,
-              items: data.items,
-              recibidoTotal,
-              faltantesYaAcreditados: faltantesPrevios,
+            // ADR-377: el costo autorizado incluye la parte de flete que le
+            // toca a esta línea. Sin eso el costo promedio del producto
+            // ignora lo que costó traerlo.
+            const authorizedUnitCost = costoUnitarioReal(ocItem, subtotalOrden, sobrecostos);
+            const currentCost = Number(product.costPrice ?? 0);
+            const totalQty = previousStock + item.receivedQty;
+            const weightedAvgCost =
+              totalQty > 0 ? (previousStock * currentCost + item.receivedQty * authorizedUnitCost) / totalQty : authorizedUnitCost;
+            const newStock = previousStock + item.receivedQty;
+
+            // Dueño en el WHERE (regla 8), no sólo en el `findFirst` de arriba.
+            await tx.product.updateMany({
+              where: { id: ocItem.productId, tenantId },
+              data: { stock: newStock, costPrice: authorizedUnitCost > 0 ? weightedAvgCost : undefined },
             });
-            if (calculo.total > 0) {
-              credito = await aplicarCreditoRecepcion(tx, tenantId, {
-                purchaseOrderId: oc.id, supplierId: oc.supplierId || null, supplierName: oc.supplierName || data.supplier, ref, credito: calculo,
-              });
-              // Anotado por línea en la recepción: así un segundo viaje no
-              // vuelve a acreditar el mismo faltante.
-              await tx.goodsReceipt.updateMany({
-                where: { id: receipt.id, tenantId },
-                data: { itemsJson: anotarCreditoEnItems(data.items, calculo) },
-              });
-            }
-            // Lo que se acreditó como faltante ya no va a llegar: cuenta como
-            // cerrado para el veredicto. Sin esto la OC quedaba «parcial» para
-            // siempre esperando unidades que el proveedor no va a mandar.
-            const cerrado = new Map(recibidoTotal);
-            for (const [pid, n] of faltantesPrevios) cerrado.set(pid, (cerrado.get(pid) ?? 0) + n);
-            for (const l of calculo.lineas) if (l.motivo === "faltante") cerrado.set(l.productId, (cerrado.get(l.productId) ?? 0) + l.unidades);
-            const allComplete = estaCompleta(oc.items, cerrado);
-            await tx.purchaseOrder.updateMany({
-              where: { id: oc.id, tenantId },
+            await tx.inventoryMovement.create({
               data: {
-                status: (allComplete ? "recibido" : "parcial") as never,
-                // ADR-377: quién recibió y cuándo llegó de verdad. Este camino
-                // no lo anotaba, así que la orden cerrada por el botón
-                // "Recibir" no decía nada de su recepción.
-                ...(allComplete ? { receivedDate: new Date(), receivedBy: auth.username } : {}),
-                notes: `${oc.notes ? oc.notes + " | " : ""}Recepción ${ref}${data.invoiceUrl ? ` · Factura: ${data.invoiceUrl}` : ""}`,
+                productId: ocItem.productId, type: "compra", quantity: item.receivedQty,
+                previousStock, newStock, reference: `OC-${oc.id}`,
+                notes: item.notes || `Recepción ${ref}`, tenantId, createdBy: auth.username,
               },
             });
-            // Una recepción de 30 líneas son ~100 consultas en serie: con el
-            // corte por defecto de Prisma (5 s) se revertía entera y el stock
-            // no entraba (revisión 09-10).
-          }, { timeout: 20_000, maxWait: 5_000 });
-        }
+            stockUpdated++;
+            // Con «vence», lo que acaba de entrar nace como lote. El stock ya
+            // se sumó arriba: el lote no lo vuelve a sumar, lo describe.
+            const lote = armarLoteDeRecepcion({
+              indice, item, ref,
+              productId: ocItem.productId,
+              productName: product.name,
+              productCategory: product.category,
+              unit: ocItem.unit || product.unit,
+              costUnit: authorizedUnitCost,
+              supplierId: oc.supplierId || null,
+              supplierName: oc.supplierName || data.supplier,
+            });
+            if (lote) lotes.push(lote);
+          }
+          if (lotes.length > 0) {
+            lotesAnotados = await BatchesDB.crearDesdeRecepcionTx(tx, tenantId, r.id, lotes);
+            await BatchesDB.propagarVenceTx(tx, tenantId, lotes.map((l) => l.productId));
+          }
+          // 09-10: lo dañado, vencido o faltante no se le paga al proveedor.
+          // Antes la merma quedaba registrada y la cuenta seguía por el
+          // total pedido. Va en esta misma transacción: stock y plata juntos.
+          const lineasOc = oc.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost }));
+          const faltantesPrevios = await getFaltantesAcreditados(tx, tenantId, oc.id, lineasOc, r.id);
+          const calculo = calcularCreditoRecepcion({
+            ocItems: lineasOc,
+            totalOc: oc.total,
+            items: data.items,
+            recibidoTotal,
+            faltantesYaAcreditados: faltantesPrevios,
+          });
+          if (calculo.total > 0) {
+            credito = await aplicarCreditoRecepcion(tx, tenantId, {
+              purchaseOrderId: oc.id, supplierId: oc.supplierId || null, supplierName: oc.supplierName || data.supplier, ref, credito: calculo,
+            });
+            // Anotado por línea en la recepción: así un segundo viaje no
+            // vuelve a acreditar el mismo faltante.
+            await tx.goodsReceipt.updateMany({
+              where: { id: r.id, tenantId },
+              data: { itemsJson: anotarCreditoEnItems(data.items, calculo) },
+            });
+          }
+          // Lo que se acreditó como faltante ya no va a llegar: cuenta como
+          // cerrado para el veredicto. Sin esto la OC quedaba «parcial» para
+          // siempre esperando unidades que el proveedor no va a mandar.
+          const cerrado = new Map(recibidoTotal);
+          for (const [pid, n] of faltantesPrevios) cerrado.set(pid, (cerrado.get(pid) ?? 0) + n);
+          for (const l of calculo.lineas) if (l.motivo === "faltante") cerrado.set(l.productId, (cerrado.get(l.productId) ?? 0) + l.unidades);
+          const allComplete = estaCompleta(oc.items, cerrado);
+          // Con la fila ya tomada arriba, el estado no puede haber cambiado; el
+          // WHERE lo repite igual para que una orden cerrada nunca se reabra.
+          await tx.purchaseOrder.updateMany({
+            where: { id: oc.id, tenantId, status: { notIn: [...ESTADOS_OC_CERRADOS] } },
+            data: {
+              status: (allComplete ? "recibido" : "parcial") as never,
+              // ADR-377: quién recibió y cuándo llegó de verdad. Este camino
+              // no lo anotaba, así que la orden cerrada por el botón
+              // "Recibir" no decía nada de su recepción.
+              ...(allComplete ? { receivedDate: new Date(), receivedBy: auth.username } : {}),
+              notes: `${oc.notes ? oc.notes + " | " : ""}Recepción ${ref}${data.invoiceUrl ? ` · Factura: ${data.invoiceUrl}` : ""}`,
+            },
+          });
+          return r;
+          // Una recepción de 30 líneas son ~100 consultas en serie: con el
+          // corte por defecto de Prisma (5 s) se revertía entera y el stock
+          // no entraba (revisión 09-10).
+        }, { timeout: 20_000, maxWait: 5_000 });
       } catch (stockErr) {
-        // La transacción se revirtió entera: ni stock, ni crédito, ni lotes.
+        // La transacción se revirtió entera: ni recepción, ni stock, ni crédito, ni lotes.
         // Sin el 0 la respuesta decía «stock actualizado» de algo revertido.
         stockUpdated = 0;
+        noAptos = 0;
         credito = SIN_CREDITO;
         lotesAnotados = 0;
-        logger.warn("[compras/recepciones] actualización de stock falló (recepción sí guardada)", {
+        receipt = null;
+        if (stockErr instanceof OrdenCambioDeEstadoError) {
+          // Otra persona cerró la orden entre la lectura y acá: no se guarda nada.
+          if (stockErr.estado === null) return NextResponse.json({ error: "Orden de compra no encontrada" }, { status: 404 });
+          return NextResponse.json({ error: mensajeOrdenCambiada(stockErr.estado, "recibir"), estado: stockErr.estado }, { status: 409 });
+        }
+        logger.warn("[compras/recepciones] actualización de stock falló (la recepción se guarda sola)", {
           ref, err: stockErr instanceof Error ? stockErr.message : String(stockErr),
         });
       }
     }
+    // Sin orden, o con la transacción del stock caída: el registro igual queda.
+    if (!receipt) receipt = await GoodsReceiptsDB.create(tenantId, datosRecibo);
 
     // El stock se escribe acá con `tx.product.update`, salteando ProductsDB, que
     // es quien normalmente invalida. Sin esto, `ProductsDB.getAll` sigue

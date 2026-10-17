@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { enCaminoPorProducto, type EnCaminoProducto } from "@/lib/compras/en-camino";
 
 /**
  * Sugerencias de reabastecimiento — las queries que responden «¿qué compro?».
@@ -29,6 +30,10 @@ export type DbSugerenciaProduct = {
   stock: number | null;
   stockMin: number | null;
   stockMax: number | null;
+  /** "product" | "service": un servicio no se repone por saldo (C25). */
+  type: string;
+  unit: string;
+  pricingUnit: string | null;
 };
 
 export type DbSugerenciaLastPurchase = {
@@ -52,18 +57,22 @@ export type DbVentaProducto = {
 // ── Queries ───────────────────────────────────────────────────────────────────
 
 /**
- * Productos activos con stock controlado.
+ * Productos activos con stock mínimo, CON su tipo.
  *
- * `stockMin > 0` es lo que distingue un producto de inventario de un servicio
- * («Aserrado de madera» no se repone). Ver `necesitaReposicion` en
- * `lib/types/purchases.ts`.
+ * El mínimo NO distingue un servicio de la mercadería (así decía este
+ * comentario y era falso): en Blas «Aserrado de madera» y «Cargador Frontal
+ * CAT» son servicios con mínimo 10 y salían a reponer. La ruta los aparta con
+ * `esInventariable` (`lib/compras/naturaleza.ts`) y dice cuáles apartó.
  */
 export async function getProductosConStockMin(
   tenantId: string,
 ): Promise<DbSugerenciaProduct[]> {
   return prisma.product.findMany({
     where: { tenantId, active: true, deletedAt: null, stockMin: { gt: 0 } },
-    select: { id: true, name: true, category: true, stock: true, stockMin: true, stockMax: true },
+    select: {
+      id: true, name: true, category: true, stock: true, stockMin: true, stockMax: true,
+      type: true, unit: true, pricingUnit: true,
+    },
   });
 }
 
@@ -77,8 +86,10 @@ export async function getProductosConStockMin(
  * estaba todo abastecido.
  */
 export async function contarProductosActivos(tenantId: string): Promise<number> {
+  // Los servicios no llevan mínimo: «ninguno de tus 12 productos tiene
+  // mínimo» no puede contar el aserrado o el alquiler de la grúa.
   return prisma.product.count({
-    where: { tenantId, active: true, deletedAt: null },
+    where: { tenantId, active: true, deletedAt: null, NOT: { type: "service" } },
   });
 }
 
@@ -158,36 +169,63 @@ export async function getVentasYDisponibilidad(
 }
 
 /**
- * Unidades ya pedidas y todavía no recibidas, por producto.
+ * Lo ya pedido que todavía no llegó, por producto (C27).
  *
  * Sin esto la pantalla proponía comprar de nuevo lo que ya venía en camino —
  * el error más caro de una lista de reposición, porque el stock duplicado se
  * paga dos veces y se descubre cuando llega.
  *
- * SÓLO cuenta las órdenes `pendiente`. Una `parcial` ya trajo algo y el stock
- * lo refleja, pero `PurchaseItem` no guarda cuánto se recibió de cada línea,
- * así que dar por pendiente el total de una parcial sobreestimaría el tránsito
- * y haría comprar de menos. Se prefiere quedarse corto en la corrección antes
- * que inventar el dato. (Registrar la recepción por línea es lo que
- * destrabaría contarlas.)
+ * Cuenta las órdenes `pendiente` Y `parcial`, línea por línea: lo que falta es
+ * lo pedido menos lo que ya recibió cada recepción (y menos el faltante que el
+ * proveedor no mandará). Antes sólo contaba las pendientes enteras porque la
+ * recepción no guardaba lo recibido por línea; desde que lo guarda
+ * (`GoodsReceipt.itemsJson`), la parcial también resta. La cuenta vive en
+ * `lib/compras/en-camino.ts`. Los borradores automáticos se informan aparte.
  */
 export async function getStockEnTransito(
   tenantId: string,
   productIds: number[],
-): Promise<Map<number, number>> {
-  const map = new Map<number, number>();
-  if (productIds.length === 0) return map;
+): Promise<Map<number, EnCaminoProducto>> {
+  if (productIds.length === 0) return new Map();
   try {
+    // Las líneas COMPLETAS de cada orden abierta que trae alguno de estos
+    // productos: las recepciones que guardaron sólo el nombre se resuelven
+    // contra los ítems de su orden.
     const items = await prisma.purchaseItem.findMany({
       where: {
-        productId: { in: productIds },
-        purchaseOrder: { tenantId, status: "pendiente" },
+        purchaseOrder: {
+          tenantId,
+          status: { in: ["pendiente", "parcial", "auto_generated"] },
+          items: { some: { productId: { in: productIds } } },
+        },
       },
-      select: { productId: true, quantity: true },
+      select: {
+        purchaseOrderId: true, productId: true, name: true, quantity: true,
+        purchaseOrder: { select: { status: true, deliveryDate: true } },
+      },
     });
-    for (const it of items) {
-      if (it.quantity > 0) map.set(it.productId, (map.get(it.productId) ?? 0) + it.quantity);
-    }
+    if (items.length === 0) return new Map();
+    const ordenesConRecepcion = [...new Set(
+      items.filter((i) => i.purchaseOrder.status === "parcial" || i.purchaseOrder.status === "pendiente").map((i) => i.purchaseOrderId),
+    )];
+    const recepciones = ordenesConRecepcion.length === 0 ? [] : await prisma.goodsReceipt.findMany({
+      where: { tenantId, purchaseOrderId: { in: ordenesConRecepcion } },
+      select: { id: true, purchaseOrderId: true, itemsJson: true },
+    });
+    const todo = enCaminoPorProducto(
+      items.map((i) => ({
+        purchaseOrderId: i.purchaseOrderId,
+        status: i.purchaseOrder.status,
+        deliveryDate: i.purchaseOrder.deliveryDate,
+        productId: i.productId,
+        name: i.name,
+        quantity: i.quantity,
+      })),
+      recepciones,
+    );
+    const pedidos = new Set(productIds);
+    for (const id of todo.keys()) if (!pedidos.has(id)) todo.delete(id);
+    return todo;
   } catch (e) {
     // No se traga el error: quien llama decide si avisar. Decir «no hay nada en
     // camino» cuando la consulta falló haría pedir de más.
@@ -196,7 +234,6 @@ export async function getStockEnTransito(
     });
     throw e;
   }
-  return map;
 }
 
 /** Lo que hace falta saber del proveedor para sugerir y para pedir. */

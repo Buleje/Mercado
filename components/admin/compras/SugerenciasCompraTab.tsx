@@ -21,7 +21,9 @@ import SugerenciasGrupo from "./sugerencias/SugerenciasGrupo";
 import SugerenciasBajoMinimo from "./sugerencias/SugerenciasBajoMinimo";
 import SugerenciasSinRotacion from "./sugerencias/SugerenciasSinRotacion";
 import SugerenciasBarraSeleccion from "./sugerencias/SugerenciasBarraSeleccion";
-import { URGENCY_ORDER, bajoSuMinimo } from "./sugerencias/tipos";
+import SugerenciasExcluidos from "./sugerencias/SugerenciasExcluidos";
+import { agruparSugerencias } from "./sugerencias/explicar";
+import { bajoSuMinimo } from "./sugerencias/tipos";
 
 /** Aviso de una línea (patrón del panel): ícono, la frase y, si hace falta, ⓘ y la acción. */
 const AVISO = "flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border px-3 py-1 text-sm sm:px-4";
@@ -32,10 +34,11 @@ export default function SugerenciasCompraTab() {
   const {
     sugerencias, sinRotacion, avisos, sinStockMinimo, verSinRotacion, setVerSinRotacion, ventanaDias,
     loading, refreshing, error, load, visible, collapsed, selected, creatingItemId, toggleCollapse,
-    selectAllUrgency, toggleSelect, createOCForOne, setFilter, setSearch,
+    marcarGrupo, toggleSelect, createOCForOne, setFilter, setSearch, agruparPor, calculadoEn, excluidos,
   } = sc;
 
   const bajoMinimo = bajoSuMinimo(sinRotacion);
+  const grupos = agruparSugerencias(visible, agruparPor);
   // «Nada que comprar» es un estado, no el fin de la pantalla: lo que está bajo
   // su mínimo y lo que NO rota siguen abajo.
   const nadaQueComprar = !loading && !error && sugerencias.length === 0;
@@ -81,10 +84,18 @@ export default function SugerenciasCompraTab() {
           )}
         </div>
       ) : nadaQueComprar ? (
-        <div className={`${AVISO} border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/10 text-[var(--text-primary)]`}>
-          <Check className="h-4 w-4 shrink-0 text-[var(--data-success-ink)]" strokeWidth={2.5} aria-hidden />
+        /* Verde sólo si de verdad no falta nada: con productos en o bajo su
+           mínimo (justo debajo), «nada que reponer» en verde se leía como
+           «todo bien» (auditoría Compras C25). */
+        <div className={bajoMinimo.length > 0
+          ? `${AVISO} border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)]`
+          : `${AVISO} border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/10 text-[var(--text-primary)]`}>
+          <Check className={bajoMinimo.length > 0 ? "h-4 w-4 shrink-0 text-[var(--text-secondary)]" : "h-4 w-4 shrink-0 text-[var(--data-success-ink)]"} strokeWidth={2.5} aria-hidden />
           <p className="min-w-0">
-            <strong>Nada que reponer</strong> con lo vendido en {ventanaDias} días{refreshing ? "…" : "."}
+            <strong>Nada que reponer</strong> por lo vendido en {ventanaDias} días
+            {bajoMinimo.length > 0
+              ? <>, pero <strong className="tabular-nums">{bajoMinimo.length}</strong> {bajoMinimo.length === 1 ? "está" : "están"} en o bajo su mínimo (abajo){refreshing ? "…" : "."}</>
+              : refreshing ? "…" : "."}
           </p>
           <InfoTip
             title="Nada que reponer"
@@ -109,24 +120,21 @@ export default function SugerenciasCompraTab() {
 
           <SugerenciasFiltros sc={sc} />
 
-          {URGENCY_ORDER.map((urgency) => {
-            const items = visible.filter((s) => s.urgency === urgency);
-            if (items.length === 0) return null;
-            return (
-              <SugerenciasGrupo
-                key={urgency}
-                urgency={urgency}
-                items={items}
-                plegado={collapsed[urgency]}
-                elegidos={selected}
-                creandoId={creatingItemId}
-                onPlegar={() => toggleCollapse(urgency)}
-                onMarcarTodos={() => selectAllUrgency(urgency)}
-                onElegir={toggleSelect}
-                onCrearOC={(s) => void createOCForOne(s)}
-              />
-            );
-          })}
+          {grupos.map((g) => (
+            <SugerenciasGrupo
+              key={g.clave}
+              grupo={g}
+              ventanaDias={ventanaDias}
+              calculadoEn={calculadoEn}
+              plegado={collapsed[g.clave] ?? false}
+              elegidos={selected}
+              creandoId={creatingItemId}
+              onPlegar={() => toggleCollapse(g.clave)}
+              onMarcarTodos={() => marcarGrupo(g.items.map((s) => s.productId))}
+              onElegir={toggleSelect}
+              onCrearOC={(s) => void createOCForOne(s)}
+            />
+          ))}
 
           {visible.length === 0 && (
             <div className={`${AVISO} border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]`}>
@@ -144,6 +152,8 @@ export default function SugerenciasCompraTab() {
           <SugerenciasBarraSeleccion sc={sc} />
         </>
       )}
+
+      {!loading && !error && <SugerenciasExcluidos excluidos={excluidos} />}
 
       {!loading && !error && (
         <SugerenciasSinRotacion items={sinRotacion} ventanaDias={ventanaDias} abierto={verSinRotacion} onAlternar={() => setVerSinRotacion((v) => !v)} />

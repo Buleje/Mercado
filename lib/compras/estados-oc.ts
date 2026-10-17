@@ -57,6 +57,46 @@ export function transicionValida(desde: string, hasta: string): boolean {
   return (TRANSICIONES_OC[desde as EstadoOC] ?? []).includes(hasta as EstadoOC);
 }
 
+/**
+ * Una orden recibida o cancelada ya no recibe mercadería (revisión 17-10): antes la
+ * recepción no miraba el estado, así que con «Recibir» abierto mientras otra persona
+ * marcaba la orden recibida el stock entraba dos veces, y una orden cancelada volvía
+ * a «parcial».
+ */
+export const ESTADOS_OC_CERRADOS = ["recibido", "cancelado"] as const;
+
+export function ordenCerrada(estado: string | null | undefined): boolean {
+  return (ESTADOS_OC_CERRADOS as readonly string[]).includes(estado ?? "");
+}
+
+/**
+ * La orden cambió de estado entre que se leyó y se escribió: otra persona la recibió
+ * entera, la canceló o la recibió en otra pestaña. `estado` = cómo quedó (null si ya
+ * no existe). Las rutas lo traducen a 409 sin guardar nada.
+ */
+export class OrdenCambioDeEstadoError extends Error {
+  readonly estado: string | null;
+  constructor(estado: string | null) {
+    super(`La orden cambió de estado (ahora: ${estado ?? "no existe"})`);
+    this.name = "OrdenCambioDeEstadoError";
+    this.estado = estado;
+  }
+}
+
+/** Qué decirle a quien quiso recibir o cambiar una orden que otro cambió primero. */
+export function mensajeOrdenCambiada(estado: string | null, accion: "recibir" | "cambiar"): string {
+  if (accion === "recibir") {
+    if (estado === "recibido") {
+      return "Esta orden ya se recibió entera: otra persona la cerró mientras tenías abierto «Recibir». No se guardó nada; recarga para ver cómo quedó.";
+    }
+    if (estado === "cancelado") {
+      return "Esta orden se canceló mientras tenías abierto «Recibir». No se guardó nada. Si la mercadería llegó igual, regístrala como recepción sin orden.";
+    }
+  }
+  const ahora = estado ? ESTADO_OC_LABELS[estado as EstadoOC] ?? estado : "borrada";
+  return `La orden cambió mientras la veías: ahora está «${ahora}». No se guardó nada; recarga y vuelve a intentarlo.`;
+}
+
 /** Formas de pago aceptadas al emitir la OC. El crédito abre una cuenta por pagar. */
 export const FORMAS_DE_PAGO = [
   { id: "contado", label: "Contado", dias: 0, ayuda: "Pagas al recibir — no genera cuenta por pagar" },

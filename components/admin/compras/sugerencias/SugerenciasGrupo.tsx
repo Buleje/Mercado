@@ -3,11 +3,13 @@
 import { ChevronDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import SugerenciaTarjeta from "./SugerenciaTarjeta";
-import { URGENCY_CONFIG, type Sugerencia, type Urgency } from "./tipos";
+import type { GrupoSugerencias } from "./explicar";
+import { URGENCY_CONFIG, type Sugerencia } from "./tipos";
 
 interface Props {
-  urgency: Urgency;
-  items: Sugerencia[];
+  grupo: GrupoSugerencias;
+  ventanaDias: number;
+  calculadoEn: string | null;
   plegado: boolean;
   elegidos: ReadonlySet<number>;
   creandoId: number | null;
@@ -18,12 +20,14 @@ interface Props {
 }
 
 /**
- * Las sugerencias de una urgencia (Críticos, Urgentes, A planificar), plegables.
- * La cabecera es UN botón (antes título y chevron eran dos botones que hacían
- * lo mismo) y «Marcar todos» va a 48 px y 14 px.
+ * Un grupo de sugerencias, plegable: por urgencia (Críticos, Urgentes, A
+ * planificar) o, desde el 17-10, por causa (Sin stock, No llega a tiempo…).
+ * Cada tarjeta lleva el color de SU urgencia, así un grupo por causa no pinta
+ * de rojo lo que tiene margen. La cabecera es UN botón y «Marcar todos» va a
+ * 48 px y 14 px.
  */
-export default function SugerenciasGrupo({ urgency, items, plegado, elegidos, creandoId, onPlegar, onMarcarTodos, onElegir, onCrearOC }: Props) {
-  const config = URGENCY_CONFIG[urgency];
+export default function SugerenciasGrupo({ grupo, ventanaDias, calculadoEn, plegado, elegidos, creandoId, onPlegar, onMarcarTodos, onElegir, onCrearOC }: Props) {
+  const { config, items } = grupo;
   const Icon = config.icon;
   const todosMarcados = items.every((i) => elegidos.has(i.productId));
   return (
@@ -40,9 +44,9 @@ export default function SugerenciasGrupo({ urgency, items, plegado, elegidos, cr
           </span>
           <span className="min-w-0">
             <span className={cn("block text-base font-extrabold", config.text)}>
-              {config.short} <span className="tabular-nums">· {items.length}</span>
+              {grupo.titulo} <span className="tabular-nums">· {items.length}</span>
             </span>
-            <span className="block text-sm text-[var(--text-secondary)]">{config.label.split("—")[1]?.trim() ?? config.hint}</span>
+            <span className="block text-sm text-[var(--text-secondary)]">{grupo.bajada}</span>
           </span>
           <ChevronDown className={cn("ml-auto h-5 w-5 shrink-0 text-[var(--text-secondary)] transition-transform", !plegado && "rotate-180")} aria-hidden />
         </button>
@@ -64,7 +68,9 @@ export default function SugerenciasGrupo({ urgency, items, plegado, elegidos, cr
             <SugerenciaTarjeta
               key={s.productId}
               s={s}
-              config={config}
+              config={URGENCY_CONFIG[s.urgency]}
+              ventanaDias={ventanaDias}
+              calculadoEn={calculadoEn}
               elegida={elegidos.has(s.productId)}
               creando={creandoId === s.productId}
               onElegir={() => onElegir(s.productId)}

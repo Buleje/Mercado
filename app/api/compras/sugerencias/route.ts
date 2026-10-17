@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { evaluarReposicion, LEAD_TIME_DEFAULT } from "@/lib/compras/reorden";
 import { stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { esServicio, naturalezaDe } from "@/lib/compras/naturaleza";
+import type { EnCaminoProducto } from "@/lib/compras/en-camino";
 import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 import {
   getProductosConStockMin,
@@ -29,6 +31,13 @@ import {
  * ventas en la ventana NO se sugiere: se devuelve aparte, en `sinRotacion`,
  * porque «no compres esto» también es información — y si además está por
  * encima del mínimo, es plata inmovilizada.
+ *
+ * Noche 17-10 (auditoría Compras):
+ *  · C25: un servicio o alquiler no se repone por saldo; se aparta y se dice
+ *    cuáles (`excluidos`). Lo mismo un producto sin control de stock.
+ *  · C27: lo que falta llegar de las órdenes pendientes Y parciales resta.
+ *  · C26/C28: cada sugerencia trae su causa, su criterio, la fecha del cálculo
+ *    y el detalle numérico con que se decidió.
  */
 
 /**
@@ -57,7 +66,17 @@ export async function GET(req: NextRequest) {
     const hasta = new Date();
     const desde = new Date(hasta.getTime() - VENTANA_DIAS * 86_400_000);
 
-    const products = await getProductosConStockMin(tenantId);
+    const conMinimo = await getProductosConStockMin(tenantId);
+    const calculadoEn = hasta.toISOString();
+    // C25: el aserrado o el alquiler del cargador tienen «stock» y mínimo en la
+    // ficha, pero no son mercadería: se contratan cuando hace falta.
+    const excluidos = {
+      servicios: conMinimo.filter((p) => esServicio(p)).map((p) => ({
+        productId: p.id, name: p.name, naturaleza: naturalezaDe(p).naturaleza,
+      })),
+      sinControlDeStock: conMinimo.filter((p) => !esServicio(p) && p.stock == null).length,
+    };
+    const products = conMinimo.filter((p) => !esServicio(p) && p.stock != null);
     if (products.length === 0) {
       // Sin productos con stock mínimo no se analizó NADA, que es distinto de
       // «miré todo y está abastecido» — y hasta ahora las dos cosas devolvían
@@ -71,6 +90,8 @@ export async function GET(req: NextRequest) {
         resumen: { costoEstimado: 0, unidades: 0, sinPrecio: 0, enTransito: 0 },
         avisos: [],
         sinStockMinimo: { productosActivos },
+        calculadoEn,
+        excluidos,
       });
     }
 
@@ -84,7 +105,7 @@ export async function GET(req: NextRequest) {
         // dato lleva a pedir dos veces lo mismo.
         logger.warn("[compras/sugerencias] sin datos de tránsito", { err: String(e) });
         avisos.push("No se pudo leer qué órdenes están en camino: puede haber productos ya pedidos en esta lista.");
-        return new Map<number, number>();
+        return new Map<number, EnCaminoProducto>();
       }),
       getLeadTimePorProveedor(tenantId),
       getUltimaCompraPorProducto(tenantId, productIds),
@@ -102,7 +123,8 @@ export async function GET(req: NextRequest) {
 
     for (const p of products) {
       const stockActual = p.stock ?? 0;
-      const enCamino = transito.get(p.id) ?? 0;
+      const camino = transito.get(p.id);
+      const enCamino = camino?.confirmado ?? 0;
       // Lo que realmente vas a tener: lo que hay más lo que ya pediste.
       const disponible = stockActual + enCamino;
 
@@ -130,6 +152,9 @@ export async function GET(req: NextRequest) {
         currentStock: stockActual,
         stockMin: stockMinimoDe(p, minimoGlobal),
         enTransito: enCamino,
+        // De dónde sale lo que viene y lo que está en borrador (no se resta).
+        enCamino: camino ? { ordenes: camino.ordenes, llegaEl: camino.llegaEl, borrador: camino.borrador } : null,
+        unit: naturalezaDe(p).unidad,
         dailyAvg: ventaDiaria,
         diasConStock: Math.round(venta.diasConStock * 10) / 10,
         vendidoEnVentana: venta.vendido,
@@ -146,12 +171,19 @@ export async function GET(req: NextRequest) {
       // No se vendió una sola unidad. Reponerlo es comprar algo que ya está
       // parado; se informa aparte, con el exceso sobre el mínimo.
       if (decision.tipo === "sin_rotacion") {
+        // C28: «sin ventas» no es «nadie lo quiere». Si estuvo agotado casi
+        // toda la ventana, no hubo con qué vender: se dice que no se sabe.
+        const diasSinStock = Math.round(VENTANA_DIAS - venta.diasConStock);
+        const sinDatos = venta.diasConStock < VENTANA_DIAS / 2;
         sinRotacion.push({
           ...base,
           excesoSobreMinimo: decision.excesoSobreMinimo,
-          motivo: decision.excesoSobreMinimo > 0
-            ? `No se vendió nada en ${VENTANA_DIAS} días y tienes ${stockActual} en stock`
-            : `No se vendió nada en ${VENTANA_DIAS} días`,
+          sinDatos,
+          motivo: sinDatos
+            ? `Sin ventas registradas, pero estuvo sin stock ${diasSinStock} de ${VENTANA_DIAS} días: no se sabe cuánto se vende`
+            : decision.excesoSobreMinimo > 0
+              ? `Sin ventas registradas en ${VENTANA_DIAS} días y tienes ${stockActual} en stock`
+              : `Sin ventas registradas en ${VENTANA_DIAS} días`,
         });
         continue;
       }
@@ -165,10 +197,14 @@ export async function GET(req: NextRequest) {
         puntoReorden: decision.puntoReorden,
         suggestedQty: decision.cantidad,
         urgency: decision.urgencia,
+        causa: decision.causa,
+        // El criterio con que se decidió, para que la orden lo conserve.
+        criterio: decision.detalle.minimoManda ? "minimo" : "ventas",
+        detalle: decision.detalle,
         motivo:
           disponible <= 0
             ? "Sin stock" + (enCamino > 0 ? ` (${enCamino} en camino)` : "")
-            : `Se vende ${ventaDiaria}/día y el proveedor tarda ${leadTimeDias} días${lead ? "" : " (estimado)"}`,
+            : `Se vende ${ventaDiaria}/día y el proveedor tarda ${leadTimeDias} días${lead?.dias != null ? "" : " (estimado)"}`,
       });
     }
 
@@ -192,6 +228,8 @@ export async function GET(req: NextRequest) {
       sugerencias,
       sinRotacion,
       ventanaDias: VENTANA_DIAS,
+      calculadoEn,
+      excluidos,
       resumen: {
         costoEstimado: Math.round(costoEstimado * 100) / 100,
         unidades: sugerencias.reduce((acc, s) => acc + (s.suggestedQty as number), 0),
