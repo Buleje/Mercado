@@ -174,4 +174,31 @@ export const PlanEmpresaDB = {
       return escribir(tx, tenantId, seccion, leerSeccion(seccion, copia.datos), ahora?.version ?? 0, autor);
     }, TX_OPTS);
   },
+
+  /**
+   * Para el cron de avisos (`planificacion-avisos`): ENTRE NEGOCIOS a
+   * propósito, por eso no lleva `tenantId` (como `ContractsDB.listPendingExpiryReminders`).
+   * Una sola consulta para todos; sólo los negocios con alguna de estas
+   * secciones guardadas (el resto no tiene plan y no se le avisa nada).
+   * Cada sección pasa por `leerSeccion`, igual que al abrir la pestaña.
+   */
+  async seccionesDeTodos<S extends SeccionPlan>(
+    secciones: readonly S[],
+  ): Promise<Map<string, Partial<{ [K in S]: DatosSeccion<K> }>>> {
+    type Plan = Partial<{ [K in S]: DatosSeccion<K> }>;
+    const porTenant = new Map<string, Plan>();
+    if (secciones.length === 0) return porTenant;
+    const filas = await prisma.planEmpresaSeccion.findMany({
+      where: { seccion: { in: [...secciones] } },
+      select: { tenantId: true, seccion: true, datos: true },
+    });
+    for (const f of filas) {
+      const s = f.seccion as S;
+      if (!secciones.includes(s)) continue;
+      const plan: Plan = porTenant.get(f.tenantId) ?? {};
+      plan[s] = leerSeccion(s, f.datos) as Plan[S];
+      porTenant.set(f.tenantId, plan);
+    }
+    return porTenant;
+  },
 };

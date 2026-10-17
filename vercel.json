@@ -95,6 +95,10 @@
       "schedule": "10 9 * * *"
     },
     {
+      "path": "/api/cron/planificacion-avisos",
+      "schedule": "15 9 * * *"
+    },
+    {
       "path": "/api/cron/documentos-indexar",
       "schedule": "40 3 * * *"
     },
