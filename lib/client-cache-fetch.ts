@@ -25,20 +25,26 @@ export async function cachedJson<T = unknown>(url: string, ttlMs = 60_000, init?
   const flying = inflight.get(url);
   if (flying) return flying as Promise<T | null>;
 
-  const p = fetch(url, { credentials: "include", ...init })
+  // Sólo guarda si sigue siendo EL pedido vigente de esa URL: una invalidación
+  // (escritura, salir, cambiar de tienda) a mitad de camino lo saca de `inflight`,
+  // y su respuesta ya es vieja (revisión 16-10: un /api/auth/me del usuario
+  // anterior quedaba 60 s). Tampoco borra el pedido más nuevo que lo reemplazó.
+  const p: Promise<T | null> = fetch(url, { credentials: "include", ...init })
     .then((r) => (r.ok ? r.json() : null))
     .then((data) => {
-      cache.set(url, { at: Date.now(), data });
-      inflight.delete(url);
+      if (inflight.get(url) === p) {
+        cache.set(url, { at: Date.now(), data });
+        inflight.delete(url);
+      }
       return data as T;
     })
     .catch(() => {
-      inflight.delete(url);
+      if (inflight.get(url) === p) inflight.delete(url);
       return null;
     });
 
   inflight.set(url, p);
-  return p as Promise<T | null>;
+  return p;
 }
 
 /**
@@ -107,12 +113,25 @@ const NO_INVALIDA = /^\/api\/auth\/refresh(?:[/?#]|$)/;
 /** Escrituras que cambian QUIÉN es la sesión o de qué tienda: todo lo leído era de la anterior. */
 const CAMBIA_SESION = /^\/api\/(?:auth|superadmin\/impersonate)(?:[/?#]|$)/;
 
+/** Escrituras que mueven las cifras del tablero: Inicio no puede quedar 30 s atrás tras vender. */
+const MUEVE_TABLERO = /^\/api\/(?:admin\/)?(?:sales|orders|expenses|fiados|payables|purchases)(?:[/?#]|$)/;
+const LEE_TABLERO = ["/api/admin/stats", "/api/admin/dashboard", "/api/admin/por-cobrar"] as const;
+/** El plan se cambia por /api/admin/plan/… pero se lee también por /api/plan. */
+const CAMBIA_PLAN = /^\/api\/admin\/plan(?:[/?#]|$)/;
+
 /** Qué borra una escritura a `ruta` (null = nada). */
 function invalidacionDe(ruta: string): (() => void) | null {
   if (!ruta || NO_INVALIDA.test(ruta)) return null;
   if (CAMBIA_SESION.test(ruta)) return () => invalidateCachedJson();
   const recurso = recursoDe(ruta);
-  return recurso ? () => invalidateCachedJsonPrefijo(recurso) : null;
+  if (!recurso) return null;
+  const extra: string[] = [];
+  if (MUEVE_TABLERO.test(ruta)) extra.push(...LEE_TABLERO);
+  if (CAMBIA_PLAN.test(ruta)) extra.push("/api/plan");
+  return () => {
+    invalidateCachedJsonPrefijo(recurso);
+    for (const r of extra) invalidateCachedJsonPrefijo(r);
+  };
 }
 
 /**

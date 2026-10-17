@@ -7,6 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   cachedJson,
+  cachedJsonVigente,
   instalarInvalidacionPorEscritura,
   intervaloVisible,
   invalidateCachedJson,
@@ -60,6 +61,16 @@ describe("cachedJson", () => {
     await cachedJson("/api/fiados?status=ACTIVO");
     await cachedJson("/api/goals");
     expect(pedidos).toEqual(["/api/fiados?status=ACTIVO", "/api/fiados?status=VENCIDO", "/api/goals", "/api/fiados?status=ACTIVO"]);
+  });
+
+  it("un pedido que vuelve DESPUÉS de una invalidación no deja guardado el dato viejo", async () => {
+    let soltar: (r: Response) => void = () => {};
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((ok) => (soltar = ok))));
+    const viejo = cachedJson("/api/auth/me");
+    invalidateCachedJson(); // salir o cambiar de sesión a mitad del pedido
+    soltar(new Response(JSON.stringify({ username: "anterior" }), { status: 200 }));
+    await viejo;
+    expect(cachedJsonVigente("/api/auth/me")).toBeUndefined();
   });
 });
 
@@ -191,5 +202,24 @@ describe("invalidación al escribir", () => {
     await cachedJson("/api/auth/me");
     await cachedJson("/api/goals");
     expect(pedidos.slice(3)).toEqual(["/api/auth/logout", "/api/auth/me", "/api/goals"]);
+  });
+
+  it("vender o cobrar borra también las cifras del tablero; cambiar el plan, /api/plan", async () => {
+    instalarSobreElFetchDelTest();
+    await cachedJson("/api/admin/stats");
+    await cachedJson("/api/admin/dashboard");
+    await cachedJson("/api/plan");
+    await window.fetch("/api/sales", { method: "POST" });
+    await window.fetch("/api/admin/plan/checkout/confirm", { method: "POST" });
+    await cachedJson("/api/admin/stats");
+    await cachedJson("/api/admin/dashboard");
+    await cachedJson("/api/plan");
+    expect(pedidos.slice(3)).toEqual([
+      "/api/sales",
+      "/api/admin/plan/checkout/confirm",
+      "/api/admin/stats",
+      "/api/admin/dashboard",
+      "/api/plan",
+    ]);
   });
 });
