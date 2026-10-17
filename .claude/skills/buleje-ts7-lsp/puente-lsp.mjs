@@ -23,13 +23,33 @@ const bin =
 const depurar = process.env.BSM_LSP_DEBUG === "1";
 const log = (...a) => depurar && process.stderr.write(`[buleje-ts7-lsp] ${a.join(" ")}\n`);
 
-const srv = spawn(bin, ["--lsp", "--stdio"], { cwd: raiz, stdio: ["pipe", "pipe", "inherit"] });
-srv.on("error", (err) => {
-  process.stderr.write(`[buleje-ts7-lsp] no arranca ${bin}: ${err.message}\n`);
-  process.exit(1);
-});
-srv.on("exit", (code, sig) => process.exit(code ?? (sig ? 1 : 0)));
-process.stdin.on("end", () => srv.kill());
+// ── Dormir (17-10, Brandon eligió «dormir el revisor»): el servidor pesa 3,6 GB en este repo y nadie
+//    lo usa mientras juega o de noche. Tras BSM_LSP_DORMIR_MIN minutos (20; 0 = nunca) sin mensajes de
+//    Claude Code y sin pedidos en vuelo se cierra; el próximo mensaje lo despierta: se repite el
+//    `initialize` guardado, se reabren los documentos desde el disco y recién ahí sigue la cola.
+const DORMIR_MS = Number(process.env.BSM_LSP_DORMIR_MS ?? Number(process.env.BSM_LSP_DORMIR_MIN ?? 20) * 60_000);
+let srv = null; // el `tsc --lsp` vivo, o null mientras duerme
+let instancias = 0;
+let listo = true; // false mientras despierta: lo que manda Claude Code espera en `cola`
+const cola = [];
+let initParams = null;
+let idDespertar = null;
+let ultimoUso = Date.now();
+const enVuelo = new Set(); // ids de pedidos de Claude Code todavía sin respuesta
+
+function arrancar() {
+  const proc = spawn(bin, ["--lsp", "--stdio"], { cwd: raiz, stdio: ["pipe", "pipe", "inherit"] });
+  instancias++;
+  proc.on("error", (err) => {
+    process.stderr.write(`[buleje-ts7-lsp] no arranca ${bin}: ${err.message}\n`);
+    process.exit(1);
+  });
+  proc.on("exit", (code, sig) => (proc.durmiendo ? log("dormido") : process.exit(code ?? (sig ? 1 : 0))));
+  // Lo que un servidor ya dormido alcanzó a escribir no llega al cliente.
+  lector(proc.stdout, (msg) => proc === srv && delServidor(msg));
+  srv = proc;
+}
+process.stdin.on("end", () => (srv ? srv.kill() : process.exit(0)));
 
 // ── Marco LSP: «Content-Length: N\r\n\r\n<json>» ──────────────────────────────────────────────
 function lector(stream, alRecibir) {
@@ -55,7 +75,7 @@ const escribir = (stream, msg) => {
   const s = JSON.stringify(msg);
   stream.write(`Content-Length: ${Buffer.byteLength(s, "utf8")}\r\n\r\n${s}`);
 };
-const alServidor = (msg) => escribir(srv.stdin, msg);
+const alServidor = (msg) => (srv ? escribir(srv.stdin, msg) : log("descartado, dormido:", msg.method ?? msg.id));
 const alCliente = (msg) => escribir(process.stdout, msg);
 
 // ── Documentos abiertos: uri → { version, mtime } ──────────────────────────────────────────────
@@ -196,19 +216,61 @@ function sincronizarConDisco() {
   }
 }
 
+// ── Despertar ──────────────────────────────────────────────────────────────────────────────────
+const idiomaDe = (uri) =>
+  /\.tsx$/.test(uri) ? "typescriptreact" : /\.[mc]?ts$/.test(uri) ? "typescript" : /\.jsx$/.test(uri) ? "javascriptreact" : "javascript";
+function despertar() {
+  log("despertando");
+  listo = false;
+  arrancar();
+  idDespertar = `puente-despertar-${++seq}`;
+  escribir(srv.stdin, { jsonrpc: "2.0", id: idDespertar, method: "initialize", params: initParams });
+}
+function terminarDeDespertar() {
+  idDespertar = null;
+  escribir(srv.stdin, { jsonrpc: "2.0", method: "initialized", params: {} });
+  for (const [uri, doc] of abiertos) {
+    let texto;
+    try {
+      texto = readFileSync(fileURLToPath(uri), "utf8");
+    } catch {
+      abiertos.delete(uri);
+      publicar(uri, []);
+      continue;
+    }
+    doc.mtime = mtimeDe(uri);
+    const textDocument = { uri, languageId: doc.languageId ?? idiomaDe(uri), version: doc.version, text: texto };
+    escribir(srv.stdin, { jsonrpc: "2.0", method: "textDocument/didOpen", params: { textDocument } });
+  }
+  listo = true;
+  for (const msg of cola.splice(0)) delCliente(msg);
+}
+
 // ── Cliente (Claude Code) → servidor ───────────────────────────────────────────────────────────
 lector(process.stdin, (msg) => {
+  ultimoUso = Date.now();
+  if (srv && listo) return delCliente(msg);
+  cola.push(msg);
+  if (!srv) despertar();
+});
+function delCliente(msg) {
   const uri = msg.params?.textDocument?.uri;
+  if (msg.id !== undefined && msg.method) enVuelo.add(msg.id);
   switch (msg.method) {
     case "initialize": {
       // Sin esto el servidor no ofrece pull ni avisa (refresh) cuando cambian otros archivos.
       const cap = (msg.params.capabilities ??= {});
       (cap.textDocument ??= {}).diagnostic ??= { dynamicRegistration: false, relatedDocumentSupport: true };
       ((cap.workspace ??= {}).diagnostics ??= {}).refreshSupport = true;
+      initParams = msg.params;
       break;
     }
     case "textDocument/didOpen":
-      abiertos.set(uri, { version: msg.params.textDocument.version ?? 0, mtime: mtimeDe(uri) });
+      abiertos.set(uri, {
+        version: msg.params.textDocument.version ?? 0,
+        mtime: mtimeDe(uri),
+        languageId: msg.params.textDocument.languageId,
+      });
       alServidor(msg);
       pedirDiagnosticos(uri);
       revisarVecinos(uri);
@@ -236,10 +298,16 @@ lector(process.stdin, (msg) => {
   }
   if (msg.id !== undefined && msg.method) sincronizarConDisco();
   alServidor(msg);
-});
+}
 
 // ── Servidor → cliente ─────────────────────────────────────────────────────────────────────────
-lector(srv.stdout, (msg) => {
+function delServidor(msg) {
+  if (msg.id !== undefined && !msg.method) enVuelo.delete(msg.id);
+  if (msg.id === idDespertar && !msg.method) return terminarDeDespertar();
+  // Un servidor despertado vuelve a registrar capacidades que Claude Code ya tiene del primero.
+  if (instancias > 1 && /^client\/(un)?registerCapability$/.test(msg.method ?? "")) {
+    return alServidor({ jsonrpc: "2.0", id: msg.id, result: null });
+  }
   if (msg.id !== undefined && !msg.method && pedidosVecinos.has(msg.id)) {
     const resolver = pedidosVecinos.get(msg.id);
     pedidosVecinos.delete(msg.id);
@@ -265,4 +333,16 @@ lector(srv.stdout, (msg) => {
     return;
   }
   alCliente(msg);
-});
+}
+
+if (DORMIR_MS > 0) {
+  setInterval(() => {
+    if (!srv || !listo || Date.now() - ultimoUso < DORMIR_MS) return;
+    if (enVuelo.size || pedidosPropios.size || pedidosVecinos.size || esperas.size || esperasVecinos.size) return;
+    log("a dormir:", Math.round((Date.now() - ultimoUso) / 1000), "s sin uso");
+    srv.durmiendo = true;
+    srv.kill();
+    srv = null;
+  }, Math.min(60_000, Math.max(1_000, DORMIR_MS / 4))).unref();
+}
+arrancar();
