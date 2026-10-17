@@ -17,6 +17,7 @@ import { logger } from "@/lib/logger";
 import { tenantCacheKey } from "@/lib/tenant-cache";
 import { porcentajeATiempo } from "@/lib/fiados/reliability";
 import { tramoDe, ultimaGestionPorCliente, type Gestion } from "@/lib/fiados/gestion-cobranza";
+import { ultimosContactos } from "@/lib/fiados/ultimo-contacto";
 import { armarMensaje, guardarPlantillas, leerPlantillas, type Plantillas } from "@/lib/fiados/plantillas-cobranza";
 import type { DeudorCobranza } from "@/lib/fiados/urgencia-cobranza";
 import { limaDateKey } from "@/lib/utils";
@@ -57,6 +58,8 @@ export function useCobranza(fiados: readonly Fiado[]) {
    */
   const promesas = useMemo(() => promesasDeQuienDebe(gestiones, fiados), [gestiones, fiados]);
   const ultimas = useMemo(() => ultimaGestionPorCliente(gestiones), [gestiones]);
+  /** «Último contacto: martes 14/10 por WhatsApp · prometió pagar…» por cliente (lista y mensajes). */
+  const contactos = useMemo(() => ultimosContactos(gestiones), [gestiones]);
 
   /** % histórico de puntualidad de cada cliente, con sus fiados de siempre. */
   const cumplimientos = useMemo(() => {
@@ -81,9 +84,17 @@ export function useCobranza(fiados: readonly Fiado[]) {
   const recuperado = useMemo(() => cobradoDesde(fiados, primeroDelMes(limaDateKey())), [fiados]);
 
   const mensajeDe = useCallback(
-    (d: Pick<DeudorCobranza, "nombre" | "saldo" | "dias">) =>
-      armarMensaje(plantillas[tramoDe(d.dias)], { nombre: d.nombre, saldo: formatCurrency(d.saldo), dias: d.dias }),
-    [plantillas],
+    (d: Pick<DeudorCobranza, "nombre" | "saldo" | "dias"> & { id?: string }) => {
+      const contacto = d.id ? contactos.get(d.id) : undefined;
+      return armarMensaje(plantillas[tramoDe(d.dias)], {
+        nombre: d.nombre,
+        saldo: formatCurrency(d.saldo),
+        dias: d.dias,
+        ultimoContacto: contacto?.frase,
+        promesa: contacto?.promesa,
+      });
+    },
+    [plantillas, contactos],
   );
 
   const anotarRapido = useCallback(async (customerId: string, tipo: string) => {
@@ -116,7 +127,7 @@ export function useCobranza(fiados: readonly Fiado[]) {
   };
 
   return {
-    gestiones, promesas, ultimas, cumplimientos, recuperado, meta, plantillas,
+    gestiones, promesas, ultimas, contactos, cumplimientos, recuperado, meta, plantillas,
     cargarGestiones, mensajeDe, anotarRapido,
     verPlantillas, setVerPlantillas, guardarMensajes,
     verMeta, setVerMeta, guardarMeta,

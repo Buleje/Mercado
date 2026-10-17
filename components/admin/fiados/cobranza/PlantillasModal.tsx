@@ -5,9 +5,18 @@
 import { useState } from "react";
 import { RotateCcw } from "@buleje/design-system/icons";
 import { TRAMOS } from "@/lib/fiados/gestion-cobranza";
-import { PLANTILLAS_POR_DEFECTO, armarMensaje, type Plantillas } from "@/lib/fiados/plantillas-cobranza";
+import { PLANTILLAS_POR_DEFECTO, VARIABLES_PLANTILLA, armarMensaje, type Plantillas } from "@/lib/fiados/plantillas-cobranza";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { ModalActions, inputCls } from "./shared";
+
+/** Cliente de ejemplo para la vista previa (con último contacto y promesa, para ver los huecos llenos). */
+const EJEMPLO = {
+  nombre: "Juan",
+  saldo: "S/ 250.00",
+  dias: 45,
+  ultimoContacto: "Te escribí el martes 14/10.",
+  promesa: "Quedamos en que pagabas el viernes 17/10.",
+};
 
 export default function PlantillasModal({
   plantillas,
@@ -25,7 +34,7 @@ export default function PlantillasModal({
       open
       onClose={onClose}
       title="Mensajes de cobranza"
-      description="Uno por tramo de atraso. Puedes usar {nombre}, {saldo} y {dias}."
+      description="Uno por tramo de atraso. Toca un hueco para sumarlo al final del mensaje: se llena con los datos de cada cliente."
       variant="wide"
       footer={<ModalActions onClose={onClose} onSubmit={() => onGuardar(borrador)} saving={false} label="Guardar" />}
     >
@@ -55,8 +64,17 @@ export default function PlantillasModal({
               aria-label={`Mensaje para ${t.label}`}
               className={`${inputCls} h-auto py-2.5 text-sm`}
             />
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Huecos para ${t.label}`}>
+              {VARIABLES_PLANTILLA.map((v) => (
+                <button key={v.clave} type="button" title={v.ayuda} data-qa="plantilla-hueco"
+                  onClick={() => setBorrador((b) => ({ ...b, [t.id]: `${b[t.id].trimEnd()} ${v.clave}` }))}
+                  className="inline-flex min-h-9 items-center rounded-lg border border-[var(--rule-base)] px-2.5 font-mono text-sm text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
+                  {v.clave}
+                </button>
+              ))}
+            </div>
             <p className="rounded-lg bg-[var(--surface-sunken)] px-3 py-2 text-sm italic text-[var(--text-tertiary)]">
-              {armarMensaje(borrador[t.id], { nombre: "Juan", saldo: "S/ 250.00", dias: 45 })}
+              {armarMensaje(borrador[t.id], EJEMPLO)}
             </p>
           </div>
         ))}

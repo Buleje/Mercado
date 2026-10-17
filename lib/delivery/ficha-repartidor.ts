@@ -63,3 +63,41 @@ export function minutosDeEntrega(pickedUpAt: Date | string | null | undefined, d
 
 /** Con más de esto entre recoger y entregar, la fila se marca «tardó». */
 export const MINUTOS_ENTREGA_LENTA = 45;
+
+/** Un cambio de estado del pedido (`OrderStatusHistory`), como lo lee la ficha. */
+export interface PasoPedido {
+  estado: string;
+  cuando: string;
+  /** Usuario del panel que lo cambió, «system» o nada. */
+  quien: string | null;
+  nota: string | null;
+}
+
+/**
+ * Los tramos de una entrega (P39, 17-10): lo que pasó ANTES de que el
+ * repartidor tuviera el pedido no es su recorrido. «Tardó» se mide sólo con el
+ * recorrido (recoger → entregar); la espera en el negocio y lo que demoró
+ * asignarlo se muestran aparte para que una demora de preparación no se le
+ * cuente a él.
+ */
+export interface TramosEntrega {
+  /** Pedido hecho → asignado a este repartidor. */
+  antesDeAsignar: number | null;
+  /** Asignado → lo recogió (preparación o llegada al negocio). */
+  esperaRecojo: number | null;
+  /** Lo recogió → lo entregó: lo único que es suyo. */
+  recorrido: number | null;
+}
+
+export function tramosDeEntrega(t: {
+  pedidoCreado: Date | string | null | undefined;
+  asignado: Date | string | null | undefined;
+  recogido: Date | string | null | undefined;
+  entregado: Date | string | null | undefined;
+}): TramosEntrega {
+  return {
+    antesDeAsignar: minutosDeEntrega(t.pedidoCreado, t.asignado),
+    esperaRecojo: minutosDeEntrega(t.asignado, t.recogido),
+    recorrido: minutosDeEntrega(t.recogido, t.entregado),
+  };
+}

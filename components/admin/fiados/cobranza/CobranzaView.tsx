@@ -200,6 +200,7 @@ export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecorda
               deudor={d}
               promesa={cob.promesas.get(d.id)}
               ultima={cob.ultimas.get(d.id)}
+              contacto={cob.contactos.get(d.id)}
               cumplimiento={cob.cumplimientos.get(d.id) ?? null}
               limite={extra.get(d.id)?.limite ?? 0}
               desde={extra.get(d.id)?.desde ?? null}

@@ -19,7 +19,8 @@ import { waLink } from "@/lib/whatsapp-link";
 import { formatCurrency } from "@/lib/format";
 import { armarMensaje, leerPlantillas } from "@/lib/fiados/plantillas-cobranza";
 import { tramoDe, type Gestion } from "@/lib/fiados/gestion-cobranza";
-import { notaDelEnvio, recordatoriosDeHoy, ultimaGestionDe, ultimoContactoLeido } from "@/lib/fiados/recordatorio-revisable";
+import { notaDelEnvio, recordatoriosDeHoy } from "@/lib/fiados/recordatorio-revisable";
+import { ultimoContactoDe } from "@/lib/fiados/ultimo-contacto";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { Fiado } from "./tipos";
 
@@ -65,7 +66,17 @@ export function useRecordarPorWhatsApp(gestiones: readonly Gestion[] = []) {
   const { prompt } = useConfirm();
   return useCallback(
     async (d: DatosDelRecordatorio, onAnotado?: () => void): Promise<void> => {
-      const propuesto = d.texto ?? armarMensaje(leerPlantillas()[tramoDe(d.dias)], { nombre: d.nombre, saldo: formatCurrency(d.saldo), dias: d.dias });
+      // Último contacto y promesa de las gestiones del fiado: en la vista previa y como {ultimo_contacto}/{promesa}.
+      const contacto = ultimoContactoDe(gestiones, d.telefono);
+      const propuesto =
+        d.texto ??
+        armarMensaje(leerPlantillas()[tramoDe(d.dias)], {
+          nombre: d.nombre,
+          saldo: formatCurrency(d.saldo),
+          dias: d.dias,
+          ultimoContacto: contacto?.frase,
+          promesa: contacto?.promesa,
+        });
       if (!waLink(d.telefono, propuesto)) {
         toast.error("Ese cliente no tiene un celular válido para WhatsApp");
         return;
@@ -75,8 +86,11 @@ export function useRecordarPorWhatsApp(gestiones: readonly Gestion[] = []) {
         title: hoy ? `Ya le escribiste hoy a ${d.nombre}` : `Recordarle a ${d.nombre}`,
         description: [
           `WhatsApp al ${d.telefono} · debe ${formatCurrency(d.saldo)}${d.dias > 0 ? ` · ${d.dias} ${d.dias === 1 ? "día" : "días"} de atraso` : ""}`,
-          ultimoContactoLeido(ultimaGestionDe(gestiones, d.telefono)),
-        ].join(". "),
+          // Sin gestiones no se dice nada (antes: «Último contacto: ninguno anotado»).
+          contacto?.linea,
+        ]
+          .filter(Boolean)
+          .join(". "),
         label: "Mensaje (puedes cambiarlo)",
         inputType: "textarea",
         defaultValue: propuesto,

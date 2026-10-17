@@ -12,7 +12,49 @@ import { ESTADO_ASIGNACION } from "./TablaAsignaciones";
 import { ESTADOS_NO_ENTREGADA, MINUTOS_ENTREGA_LENTA } from "@/lib/delivery/ficha-repartidor";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { STATUS_LABELS } from "@/components/admin/OrdersTab/types";
 import type { EntregaFicha, RetiroFicha } from "./use-ficha-repartidor";
+
+const HORA = new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", hour12: false });
+
+/** P39: lo que pasó antes de que lo tuviera (no es su recorrido), en una línea. */
+function TramosPrevios({ e }: { e: EntregaFicha }) {
+  const partes: string[] = [];
+  if (e.tramos?.antesDeAsignar != null) partes.push(`asignado ${e.tramos.antesDeAsignar} min después del pedido`);
+  if (e.tramos?.esperaRecojo != null) partes.push(`esperó ${e.tramos.esperaRecojo} min para recoger`);
+  if (partes.length === 0) return null;
+  return (
+    <span className="block text-sm font-normal text-[var(--text-tertiary)]" title="No cuenta como su demora: «tardó» mide sólo de recoger a entregar">
+      {partes.join(" · ")}
+    </span>
+  );
+}
+
+/** P40: los cambios de estado del pedido con hora y quién, plegados bajo el número, en orden de hora. */
+function HistorialPedido({ e }: { e: EntregaFicha }) {
+  if (!e.historial?.length) return null;
+  const pasos = [
+    ...(e.pedidoCreadoAt ? [{ cuando: e.pedidoCreadoAt, que: "Pedido hecho", quien: null, nota: null }] : []),
+    { cuando: e.createdAt, que: "Asignado a este repartidor", quien: null, nota: null },
+    ...e.historial.map((h) => ({ cuando: h.cuando, que: STATUS_LABELS[h.estado as keyof typeof STATUS_LABELS] ?? h.estado, quien: h.quien, nota: h.nota })),
+  ].sort((a, b) => a.cuando.localeCompare(b.cuando));
+  return (
+    <details className="mt-1 text-sm" data-qa="ficha-historial">
+      <summary className="cursor-pointer select-none text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+        Historial ({e.historial.length})
+      </summary>
+      <ol className="mt-1 space-y-0.5 border-l border-[var(--rule-base)] pl-3">
+        {pasos.map((p, i) => (
+          <li key={`${p.cuando}-${i}`} className="tabular-nums text-[var(--text-secondary)]">
+            {HORA.format(new Date(p.cuando))} · <span className="font-semibold text-[var(--text-primary)]">{p.que}</span>
+            {p.quien && ` · ${p.quien === "system" ? "automático" : p.quien}`}
+            {p.nota && <span className="block italic">«{p.nota}»</span>}
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
 
 /** Una entrega es incidencia si no se entregó o si tardó más de lo normal. */
 export function esIncidencia(e: EntregaFicha): boolean {
@@ -50,6 +92,7 @@ export function TablaEntregasFicha({ entregas, total }: { entregas: EntregaFicha
                       #{e.orderId.slice(-8)}
                     </EnlacePanel>
                     {e.cliente && <span className="block text-sm text-[var(--text-secondary)]">{e.cliente}</span>}
+                    <HistorialPedido e={e} />
                   </td>
                   <td className="text-center">
                     <span className={cn(CLASE_CHIP, est.className)}>{est.label}</span>
@@ -59,9 +102,10 @@ export function TablaEntregasFicha({ entregas, total }: { entregas: EntregaFicha
                       <span className="text-[var(--text-tertiary)]">—</span>
                     ) : (
                       <span className={cn(tardo && "font-bold text-[var(--data-warning-700)]")}>
-                        {e.minutos} min{tardo && " · tardó"}
+                        {e.minutos} min de recorrido{tardo && " · tardó"}
                       </span>
                     )}
+                    <TramosPrevios e={e} />
                   </td>
                   <td className="text-right tabular-nums">
                     {e.status === "delivered" ? (

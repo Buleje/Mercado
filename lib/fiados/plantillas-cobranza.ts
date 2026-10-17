@@ -10,7 +10,24 @@ import type { TramoId } from "./gestion-cobranza";
 
 export const CLAVE_PLANTILLAS = "buleje:fiados-cobranza-plantillas";
 
-export type DatosMensaje = { nombre: string; saldo: string; dias: number };
+export type DatosMensaje = {
+  nombre: string;
+  saldo: string;
+  dias: number;
+  /** `{ultimo_contacto}`: «Te escribí el martes 14/10.» — vacío si no hay gestiones (ver `lib/fiados/ultimo-contacto.ts`). */
+  ultimoContacto?: string;
+  /** `{promesa}`: «Quedamos en que pagabas el viernes 17/10.» — vacío si no prometió. */
+  promesa?: string;
+};
+
+/** Los huecos que entiende la plantilla, con lo que significan (para la ayuda del editor). */
+export const VARIABLES_PLANTILLA = [
+  { clave: "{nombre}", ayuda: "su nombre" },
+  { clave: "{saldo}", ayuda: "lo que debe" },
+  { clave: "{dias}", ayuda: "días de atraso" },
+  { clave: "{ultimo_contacto}", ayuda: "«Te escribí el martes 14/10.» (vacío si no hay gestiones)" },
+  { clave: "{promesa}", ayuda: "«Quedamos en que pagabas el viernes 17/10.» (vacío si no prometió)" },
+] as const;
 export type Plantillas = Record<TramoId, string>;
 
 /** Ninguno amenaza: en una bodega de pueblo el deudor es el vecino. */
@@ -23,12 +40,20 @@ export const PLANTILLAS_POR_DEFECTO: Plantillas = {
     "Hola {nombre}, tu fiado de {saldo} lleva {dias} días sin pagarse. Necesito que nos sentemos a resolverlo — dime cuándo puedes pasar.",
 };
 
-/** Reemplaza los huecos. Lo que no se reconoce se deja tal cual, no se borra. */
+/**
+ * Reemplaza los huecos. Lo que no se reconoce se deja tal cual, no se borra.
+ * `{ultimo_contacto}` y `{promesa}` sin dato quedan vacíos y se limpian los
+ * espacios dobles que dejan (el texto no dice «Hola Juan,  te recuerdo»).
+ */
 export function armarMensaje(plantilla: string, datos: DatosMensaje): string {
-  return plantilla
+  const usaContexto = /\{(ultimo_contacto|promesa)\}/.test(plantilla);
+  const texto = plantilla
     .replace(/\{nombre\}/g, datos.nombre)
     .replace(/\{saldo\}/g, datos.saldo)
-    .replace(/\{dias\}/g, String(Math.max(0, datos.dias)));
+    .replace(/\{dias\}/g, String(Math.max(0, datos.dias)))
+    .replace(/\{ultimo_contacto\}/g, datos.ultimoContacto?.trim() ?? "")
+    .replace(/\{promesa\}/g, datos.promesa?.trim() ?? "");
+  return usaContexto ? texto.replace(/[ \t]{2,}/g, " ").replace(/ +([.,;:!?])/g, "$1").trim() : texto;
 }
 
 export function leerPlantillas(): Plantillas {

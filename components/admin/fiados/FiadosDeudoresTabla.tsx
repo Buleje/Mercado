@@ -14,6 +14,8 @@ import { formatCurrency } from "@/lib/format";
 import { FiadoAvatar, FiadoReliabilityBadge, FiadoSemaphore, FiadoStreakBadge } from "./FiadoBadges";
 import { diasDeAtraso, useRecordarPorWhatsApp } from "./recordar";
 import type { Gestion } from "@/lib/fiados/gestion-cobranza";
+import { ultimosContactos } from "@/lib/fiados/ultimo-contacto";
+import { useMemo } from "react";
 import { diaLeido } from "./fechas";
 import { STATUS_META, estaAbierto, type ColumnaOrden, type Fiado, type FiadoStatus } from "./tipos";
 import type { EstadoFiados } from "./use-fiados";
@@ -52,6 +54,8 @@ function Cabecera({ col, label, estado, alinear = "left" }: { col: ColumnaOrden;
 
 export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect, openDetail, onNuevo, onRecordado, gestiones }: Props) {
   const recordarPorWhatsApp = useRecordarPorWhatsApp(gestiones);
+  // «Último contacto: martes 14/10 por WhatsApp · prometió pagar…» de las gestiones del fiado; sin gestiones, nada.
+  const contactos = useMemo(() => ultimosContactos(gestiones ?? []), [gestiones]);
   const { loading, error, fiados, filtrados, paginated, page, setPage, totalPages, densidad } = estado;
   const saldoFiltrado = filtrados.reduce((s, f) => s + (estaAbierto(f) ? f.saldo : 0), 0);
   return (
@@ -158,6 +162,12 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
                               </div>
                               {f.descripcion && (
                                 <p className="text-sm text-[var(--text-secondary)] truncate max-w-[200px]">{f.descripcion}</p>
+                              )}
+                              {estaAbierto(f) && contactos.get(f.customerId) && (
+                                <p data-qa="fiado-ultimo-contacto"
+                                  className={cn("text-sm", contactos.get(f.customerId)?.estadoPromesa === "incumplio" ? "text-[var(--data-error-ink)]" : "text-[var(--text-secondary)]")}>
+                                  {contactos.get(f.customerId)?.linea}
+                                </p>
                               )}
                             </div>
                           </div>

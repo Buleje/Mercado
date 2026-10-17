@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { formatCurrency } from "@/lib/format";
 import type { PeriodoRanking } from "@/lib/delivery/ranking-reparto";
-import type { ResumenFicha } from "@/lib/delivery/ficha-repartidor";
+import type { PasoPedido, ResumenFicha, TramosEntrega } from "@/lib/delivery/ficha-repartidor";
 
 export interface EntregaFicha {
   id: string;
@@ -25,6 +25,12 @@ export interface EntregaFicha {
   pickedUpAt: string | null;
   deliveredAt: string | null;
   minutos: number | null;
+  /** Cuándo se hizo el pedido (para el tramo antes de asignarlo). */
+  pedidoCreadoAt: string | null;
+  /** P39: antes de asignar / espera para recoger / recorrido (sólo el recorrido es suyo). */
+  tramos: TramosEntrega;
+  /** P40: los cambios de estado del pedido, del más viejo al más nuevo. */
+  historial: PasoPedido[];
 }
 
 export interface RetiroFicha {

@@ -14,6 +14,7 @@ import { DollarSign, MessageCircle, NotebookPen, Phone } from "@buleje/design-sy
 import { button } from "@/components/ui-system/button-variants";
 import { waLink } from "@/lib/whatsapp-link";
 import { diasSinGestion, etiquetaGestion, type Gestion, type PromesaVigente } from "@/lib/fiados/gestion-cobranza";
+import type { UltimoContacto } from "@/lib/fiados/ultimo-contacto";
 import { explicarAtraso, type DeudorCobranza } from "@/lib/fiados/urgencia-cobranza";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ export default function FilaDeudor({
   cumplimiento,
   limite,
   desde,
+  contacto,
   enTanda,
   onTanda,
   onAnotar,
@@ -44,6 +46,8 @@ export default function FilaDeudor({
   deudor: DeudorCobranza;
   promesa?: PromesaVigente;
   ultima?: Gestion;
+  /** «Último contacto: martes 14/10 por WhatsApp» de las gestiones (la promesa ya tiene su chip). */
+  contacto?: UltimoContacto;
   /** % histórico de puntualidad; null si nunca tuvo un fiado cerrado. */
   cumplimiento: number | null;
   /** Límite de crédito del cliente (0 = sin tope). */
@@ -122,10 +126,12 @@ export default function FilaDeudor({
           {d.dias > 0 && (
             <span className={d.base === "vencimiento" ? "font-semibold text-[var(--data-error-ink)]" : undefined}>{explicarAtraso(d)}</span>
           )}
-          <span>
+          <span data-qa="cobranza-ultimo-contacto">
             {!ultima
               ? "sin gestionar"
-              : promesa && ultima.id === promesa.gestion.id
+              : contacto
+                ? contacto.contacto
+                : promesa && ultima.id === promesa.gestion.id
                 ? `anotado ${hace(sinGestion ?? 0)}`
                 : `${etiquetaGestion(ultima.tipo)} ${hace(sinGestion ?? 0)}`}
           </span>

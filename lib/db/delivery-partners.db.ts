@@ -1,7 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { ESTADOS_CERRADOS, minutosDeEntrega, resumenDeFicha } from "@/lib/delivery/ficha-repartidor";
+import { ESTADOS_CERRADOS, minutosDeEntrega, resumenDeFicha, tramosDeEntrega, type PasoPedido } from "@/lib/delivery/ficha-repartidor";
+import { PedidoHistorialDB } from "@/lib/db/pedido-historial.db";
 
 /**
  * DeliveryPartnersDB
@@ -193,7 +194,7 @@ export const DeliveryPartnersDB = {
         select: {
           id: true, orderId: true, status: true, fee: true, tipAmount: true, notes: true,
           createdAt: true, pickedUpAt: true, deliveredAt: true,
-          order: { select: { customerName: true, total: true } },
+          order: { select: { customerName: true, total: true, createdAt: true } },
         },
       }),
       prisma.deliveryAssignment.groupBy({
@@ -222,6 +223,8 @@ export const DeliveryPartnersDB = {
         _count: { _all: true },
       }),
     ]);
+    // P39/P40 (17-10): el historial de estados de cada pedido que llevó, de la misma fuente que el detalle del pedido.
+    const historial = await PedidoHistorialDB.deVarios(tenantId, entregas.map((e) => e.orderId));
     const resumen = resumenDeFicha(
       grupos.map((g) => ({
         status: g.status,
@@ -248,6 +251,11 @@ export const DeliveryPartnersDB = {
         pickedUpAt: e.pickedUpAt,
         deliveredAt: e.deliveredAt,
         minutos: minutosDeEntrega(e.pickedUpAt, e.deliveredAt),
+        pedidoCreadoAt: e.order?.createdAt ?? null,
+        tramos: tramosDeEntrega({ pedidoCreado: e.order?.createdAt, asignado: e.createdAt, recogido: e.pickedUpAt, entregado: e.deliveredAt }),
+        historial: (historial[e.orderId] ?? []).flatMap((h): PasoPedido[] =>
+          h.tipo === "estado" ? [{ estado: h.a, cuando: h.cuando, quien: h.quien, nota: h.nota }] : [],
+        ),
       })),
       retiros: retiros.map((r) => ({ ...r, amount: Number(r.amount) })),
     };
