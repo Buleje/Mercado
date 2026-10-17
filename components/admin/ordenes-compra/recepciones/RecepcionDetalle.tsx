@@ -8,6 +8,8 @@ import type { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import OrigenDeRecepcion from "@/components/admin/ordenes-compra/recepciones/OrigenDeRecepcion";
 import { textoVence } from "@/lib/compras/lotes-recepcion";
+import { fechasDeRecepcion } from "@/lib/compras/conformidad-recepcion";
+import { claveDeDia, diaCorto } from "@/lib/compras/ciclo-oc";
 import { cn } from "@/lib/utils";
 import { COND_MAP, getDiscrepancies, type Reception } from "@/components/admin/ordenes-compra/recepciones/tipos";
 
@@ -40,7 +42,7 @@ export default function RecepcionDetalle({
               <OrigenDeRecepcion rec={detail} /> ·{" "}
               <EnlacePanel cosa="proveedor" id={proveedorIdDe.get(detail.supplier)} apariencia="heredada">{detail.supplier}</EnlacePanel>
             </p>
-            {detail.inspector && <p className="text-sm text-[var(--text-tertiary)]">Inspector: {detail.inspector}</p>}
+            <FechasDeRecepcion rec={detail} />
           </div>
           <span className="ml-auto flex items-center gap-1">
             <ControlesDeVentana ventana={ventanaDetalle} />
@@ -123,5 +125,20 @@ export default function RecepcionDetalle({
         <TiradorDeVentana ventana={ventanaDetalle} />
       </div>
     </div>
+  );
+}
+
+const dia = (v: string | null) => { const k = claveDeDia(v); return k ? diaCorto(k) : "—"; };
+
+/** C22 · Programada, llegada y aceptación separadas (antes sólo «Inspector»). */
+function FechasDeRecepcion({ rec }: { rec: Reception }) {
+  const f = fechasDeRecepcion(rec);
+  const aceptacion = f.estadoAceptacion === "rechazada" ? "Rechazada"
+    : f.estadoAceptacion === "pendiente" ? "Sin aceptar"
+    : `${f.estadoAceptacion === "parcial" ? "Aceptada en parte" : "Aceptada"} ${dia(f.aceptada)}${rec.inspector ? ` por ${rec.inspector}` : ""}`;
+  return (
+    <p data-qa="fechas-recepcion" className="text-sm text-[var(--text-tertiary)]">
+      Programada {dia(f.programada)} · Llegó {dia(f.llego)} · {aceptacion}
+    </p>
   );
 }

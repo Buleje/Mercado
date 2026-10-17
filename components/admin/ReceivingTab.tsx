@@ -42,7 +42,7 @@ const TARJETAS = [
 export default function ReceivingTab({ barra }: { barra?: ReactNode }) {
   const r = useRecepciones();
   const { receptions, setReceptions, loading, stats, ordenRecepciones, proveedorIdDe, products, supplierNames } = r;
-  const n = useNuevaRecepcion(setReceptions);
+  const n = useNuevaRecepcion(setReceptions, products);
   const { setShowNew, showNew, avisoCredito, setAvisoCredito } = n;
 
   const [detail, setDetail] = useState<Reception | null>(null);

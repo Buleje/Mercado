@@ -14,12 +14,17 @@ const cantidades = (lista: Array<{ nombre: string; n: number }>) => listarCorto(
  * a ver si entró.
  */
 export default function ResumenAlGuardar({ n }: { n: Estado }) {
-  const { efectos: e, origen, ocElegida, errorGuardar } = n;
+  const { efectos: e, origen, ocElegida, errorGuardar, checklist, controles } = n;
   const filas: Fila[] = [];
+  /* C22: un servicio cierra su línea de la orden pero NO entra al stock (el servidor lo salta desde el 17-10). */
+  const servicios = new Set(checklist.filter((_, i) => controles[i] === "servicio").map((r) => r.product));
+  const aStock = e.aStock.filter((x) => !servicios.has(x.nombre));
+  const aceptados = e.aStock.filter((x) => servicios.has(x.nombre));
   if (origen === "sin_orden") {
     filas.push({ rotulo: "Al guardar", texto: "Queda anotada la llegada. No suma al stock ni a lo que debes.", tono: "text-[var(--text-secondary)]" });
   } else if (ocElegida) {
-    if (e.aStock.length) filas.push({ rotulo: "Suma al stock", texto: cantidades(e.aStock), tono: "text-[var(--data-success-ink)]" });
+    if (aStock.length) filas.push({ rotulo: "Suma al stock", texto: cantidades(aStock), tono: "text-[var(--data-success-ink)]" });
+    if (aceptados.length) filas.push({ rotulo: "Servicio aceptado", texto: `${cantidades(aceptados)} (no suma stock)`, tono: "text-[var(--data-success-ink)]" });
     if (e.merma.length) filas.push({ rotulo: "Va a merma", texto: `${cantidades(e.merma)} (no se vende)`, tono: "text-[var(--data-warning-ink)]" });
     if (e.noLlegara.length) filas.push({ rotulo: "Ya no se espera", texto: cantidades(e.noLlegara), tono: "text-[var(--data-info-ink)]" });
     if (e.deMas.length) filas.push({ rotulo: "De más", texto: `${cantidades(e.deMas)}: pasa lo pedido y entra igual`, tono: "text-[var(--data-error-ink)]" });

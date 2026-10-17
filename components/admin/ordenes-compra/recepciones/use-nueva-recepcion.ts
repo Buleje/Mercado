@@ -9,6 +9,8 @@ import { efectosDeRecepcion, lineasDeSeguimiento, listarCorto } from "@/lib/comp
 import type { CreditoDeRecepcion } from "@/components/admin/cuentas-por-pagar/AvisoCreditoRecepcion";
 import { useConfirmarCreditoRecepcion } from "@/components/admin/cuentas-por-pagar/use-confirmar-credito-recepcion";
 import { errorDeVencimiento, pideLote } from "@/lib/compras/lotes-recepcion";
+import { controlDeLinea, faltaConformidad, notasConConformidad, pereciblesSinVence, type ControlDeLinea } from "@/lib/compras/conformidad-recepcion";
+import type { ProductOption } from "@/components/admin/shared/ProductCombobox";
 import {
   EMPTY_CHECKLIST, PREFIJO_SIN_ORDEN, itemsDeOrden,
   type ItemCondition, type PendingOC, type Reception, type ReceptionItem, type ReceptionStatus,
@@ -23,7 +25,7 @@ export type OrigenRecepcion = "orden" | "sin_orden";
  * `ReceivingTab` (10-10) con el MISMO cuerpo que se manda a
  * `POST /api/compras/recepciones`.
  */
-export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Reception[]>>) {
+export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Reception[]>>, products: ProductOption[] = []) {
   const [showNew, setShowNew]           = useState(false);
   const newTitleId = useId();
   const newPanelRef = useRef<HTMLDivElement>(null);
@@ -101,6 +103,11 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
     }
   };
 
+  /** C22 · Qué control pide cada fila: servicio (alcance + quién acepta) o perecible (vence). Por id; si no, por nombre. */
+  const controles: ControlDeLinea[] = checklist.map((r) =>
+    controlDeLinea(products.find((p) => (r.productId != null && p.id === r.productId) || (r.productId == null && p.name === r.product))),
+  );
+
   /** Una fecha de vencimiento imposible frena el guardado (el servidor la rechazaría igual). */
   const venceConError = checklist.some((r) => pideLote(r) && errorDeVencimiento(r.expiryDate ?? "") !== null);
 
@@ -115,7 +122,7 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
     if (origen === "sin_orden" && !motivoFinal) return "Di por qué llega sin orden.";
     if (!newForm.supplier.trim()) return "Escribe el proveedor.";
     if (checklist.some((r) => !r.product.trim())) return "Cada fila necesita su producto (o quítala).";
-    return null;
+    return faltaConformidad(checklist, controles);
   };
 
   const saveReception = async () => {
@@ -133,6 +140,18 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
       });
       if (!ok) return;
     }
+    // C22: un perecible sin fecha no hace lote ni avisa al vencer. Se pide, sin trabar la puerta del almacén.
+    const sinVence = pereciblesSinVence(checklist, controles);
+    if (sinVence.length > 0) {
+      const ok = await confirm({
+        title: "Perecibles sin fecha de vencimiento",
+        description: `${listarCorto(sinVence)} vence${sinVence.length === 1 ? "" : "n"} y no tiene${sinVence.length === 1 ? "" : "n"} fecha.\nSin fecha no aparece${sinVence.length === 1 ? "" : "n"} en Por vencer ni te avisamos antes de que venza${sinVence.length === 1 ? "" : "n"}.`,
+        intent: "warning",
+        confirmLabel: "Guardar sin fecha",
+        cancelLabel: "Anotar la fecha",
+      });
+      if (!ok) return;
+    }
     if (!(await confirmarCredito(ocElegida, newForm.supplier, checklist))) return;
     setSaving(true);
     const nonConformities = checklist.filter(it => it.condition !== "ok" || it.receivedQty < it.expectedQty).length;
@@ -146,8 +165,12 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
       status: (checklist.some((it) => it.condition !== "ok" || it.receivedQty !== it.expectedQty)
         ? "parcial"
         : "aceptada") as ReceptionStatus,
-      // Lo dañado, vencido o faltante no hace lote: la fecha no viaja.
-      items: checklist.map(({ expiryDate, lote, ...it }) => (it.condition === "ok" ? { ...it, expiryDate, lote } : it)),
+      // Lo dañado, vencido o faltante no hace lote: la fecha no viaja. Un servicio
+      // no hace lote nunca; su alcance y quién lo acepta van en las notas (C22).
+      items: checklist.map(({ expiryDate, lote, alcance, aceptaServicio, ...it }, i) =>
+        controles[i] === "servicio"
+          ? { ...it, notes: notasConConformidad(it.notes, { alcance, aceptaServicio }) }
+          : it.condition === "ok" ? { ...it, expiryDate, lote } : it),
       photos: 0,
       nonConformities,
       invoiceUrl: invoiceUrl || undefined,
@@ -202,6 +225,8 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
       ...f,
       supplier: oc.supplierName ?? f.supplier,
       orderRef: oc.id,
+      // C22: «Programada» es la fecha que prometió el proveedor (medianoche UTC → su día), no hoy.
+      scheduledDate: oc.deliveryDate ? oc.deliveryDate.slice(0, 10) : f.scheduledDate,
     }));
     const faltan = lineasDeSeguimiento(itemsDeOrden(oc), oc.seguimiento).filter((l) => l.falta > 0);
     if (faltan.length > 0) {
@@ -230,7 +255,7 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
     checklist, setChecklist, saving, avisoCredito, setAvisoCredito, invoiceUrl, setInvoiceUrl, uploadingInvoice,
     invoiceError, addChecklistRow, removeChecklistRow, updateChecklistRow, uploadInvoice, venceConError,
     saveReception, applyOC, origen, cambiarOrigen, motivo, setMotivo, motivoOtro, setMotivoOtro,
-    ocElegida, efectos, errorGuardar,
+    ocElegida, efectos, errorGuardar, controles,
   };
 }
 

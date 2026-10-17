@@ -12,6 +12,9 @@ import { COND_MAP, type ItemCondition } from "@/components/admin/ordenes-compra/
 import type { NuevaRecepcion as Estado } from "@/components/admin/ordenes-compra/recepciones/use-nueva-recepcion";
 import OrigenRecepcion from "@/components/admin/ordenes-compra/recepciones/OrigenRecepcion";
 import ResumenAlGuardar from "@/components/admin/ordenes-compra/recepciones/ResumenAlGuardar";
+import ConformidadDeLinea from "@/components/admin/ordenes-compra/recepciones/ConformidadDeLinea";
+import { diaCorto } from "@/lib/compras/ciclo-oc";
+import { limaDateKey } from "@/lib/utils";
 
 /**
  * La ventana «Recibir mercadería»: contra una orden (precarga lo que falta) o
@@ -28,7 +31,7 @@ export default function NuevaRecepcion({
   const {
     setShowNew, newTitleId, newPanelRef, ventanaNueva, selectedOcId, newForm, setNewForm,
     checklist, setChecklist, saving, invoiceUrl, setInvoiceUrl, uploadingInvoice, invoiceError,
-    addChecklistRow, removeChecklistRow, updateChecklistRow, uploadInvoice, venceConError, saveReception,
+    addChecklistRow, removeChecklistRow, updateChecklistRow, uploadInvoice, venceConError, saveReception, controles,
   } = n;
   return (
     <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventanaNueva.fijado) setShowNew(false); }}>
@@ -62,11 +65,19 @@ export default function NuevaRecepcion({
               {supplierNames.map(n => <option key={n} value={n} />)}
             </datalist>
           </Field>
-          <Field label="Fecha programada" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">
+          {/* C22: tres fechas que antes eran una («Fecha programada» = hoy): la que prometió
+              el proveedor, la de llegada (la anota el servidor al guardar) y la aceptación (al guardar). */}
+          <Field label="Programada" hint="La que prometió el proveedor" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">
             <input type="date" value={newForm.scheduledDate} onChange={e => setNewForm(f => ({ ...f, scheduledDate: e.target.value }))}
               className="w-full mt-1 px-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
           </Field>
-          <Field label="Inspector" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">
+          <div data-qa="recepcion-llega">
+            <span className="text-sm font-semibold text-[var(--text-secondary)]">Llega y se acepta</span>
+            <p className="mt-1 flex h-12 items-center rounded-xl bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)]">
+              Hoy, {diaCorto(limaDateKey())} · al guardar
+            </p>
+          </div>
+          <Field label="Recibe y acepta" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">
             <input value={newForm.inspector} onChange={e => setNewForm(f => ({ ...f, inspector: e.target.value }))}
               placeholder="Nombre del responsable"
               className="w-full mt-1 px-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
@@ -125,7 +136,13 @@ export default function NuevaRecepcion({
                     <X className="h-3.5 w-3.5" />
                   </button>
                 )}
-                {row.condition === "ok" && (
+                <ConformidadDeLinea
+                  id={`recep-conf-${idx}`}
+                  control={controles[idx]}
+                  fila={row}
+                  onChange={(patch) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, ...patch } : r))}
+                />
+                {row.condition === "ok" && controles[idx] !== "servicio" && (
                   <VenceLoteCampo
                     id={`recep-vence-${idx}`}
                     producto={row.product || "el producto"}
@@ -147,7 +164,7 @@ export default function NuevaRecepcion({
             Factura del proveedor <span className="font-normal text-[var(--text-tertiary)]">(opcional, foto)</span>
           </label>
           {invoiceUrl ? (
-            <div className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2">
+            <div className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
               <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] shrink-0" aria-hidden />
               <a href={invoiceUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline flex-1 truncate">
                 Ver factura adjunta

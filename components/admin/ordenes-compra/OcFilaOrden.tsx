@@ -53,12 +53,14 @@ export default function OcFilaOrden({ oc, o, supplier, isExpanded }: { oc: Orden
           isExpanded && "bg-[var(--surface-sunken)]",
         )}
       >
-        <td>
+        {/* Desde 640 px la columna del proveedor toma lo que sobra y CORTA con «…» (ancho 100 % + tope 0):
+            antes la línea pedía 448 px fijos y la tabla medía 1.082 px en un marco de 962 a 1280. */}
+        <td className="sm:w-full sm:max-w-0">
           <div className="min-w-0">
-            <p className="font-semibold text-[var(--text-primary)]">
+            <p className="truncate font-semibold text-[var(--text-primary)]" title={o.supplierName}>
               <EnlacePanel cosa="proveedor" id={o.supplierId} apariencia="heredada">{o.supplierName}</EnlacePanel>
             </p>
-            <p className="max-w-[28rem] truncate text-sm text-[var(--text-secondary)]" title={o.notes ? `${linea}\n${o.notes}` : linea}>{linea}</p>
+            <p className="truncate text-sm text-[var(--text-secondary)]" title={o.notes ? `${linea}\n${o.notes}` : linea}>{linea}</p>
           </div>
         </td>
         <td className="whitespace-nowrap text-[var(--text-secondary)]">{diaDeOrden(o.createdAt)}</td>

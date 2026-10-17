@@ -18,6 +18,9 @@ export interface ProductOption {
   barcode?: string;
   /** Costo del producto. Lo usa Devoluciones para saber cuánto debe el proveedor (ADR-379). */
   costPrice?: number | null;
+  /** `Product.type` y categoría: Recepciones pide alcance a un servicio y vence a un perecible (C22). */
+  type?: string | null;
+  category?: string | null;
 }
 
 interface ProductComboboxProps {

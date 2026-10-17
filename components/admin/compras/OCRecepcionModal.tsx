@@ -15,6 +15,9 @@ import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/
 import { formatCurrency } from "@/lib/format";
 import VenceLoteCampo from "@/components/admin/compras/VenceLoteCampo";
 import { errorDeVencimiento, pideLote, textoVence } from "@/lib/compras/lotes-recepcion";
+import { faltaConformidad, notasConConformidad, pereciblesSinVence, type ConformidadServicio } from "@/lib/compras/conformidad-recepcion";
+import ConformidadDeLinea from "@/components/admin/ordenes-compra/recepciones/ConformidadDeLinea";
+import { useControlesDeProductos } from "@/components/admin/ordenes-compra/recepciones/use-controles-de-productos";
 import { lineasDeSeguimiento, listarCorto, type SeguimientoOC } from "@/lib/compras/ciclo-oc";
 
 type OCItem = {
@@ -71,7 +74,7 @@ type ReceivedItem = {
   /** «Vence» (YYYY-MM-DD): con fecha, lo que entra a stock nace como lote. */
   expiryDate?: string;
   lote?: string;
-};
+} & ConformidadServicio;
 
 /** La fecha y el lote viajan solo si la línea entra a stock: la merma no vence. */
 function conVence(i: ReceivedItem): boolean {
@@ -133,6 +136,12 @@ export default function OCRecepcionModal({ ocId, supplier, items, seguimiento, o
   const itemsRecibidos = receivedItems.filter((i) => i.receivedQty > 0);
   /** Una fecha de vencimiento imposible frena el paso (el servidor la rechazaría). */
   const venceConError = receivedItems.some((i) => conVence(i) && errorDeVencimiento(i.expiryDate ?? "") !== null);
+  /* C22: un servicio se acepta por alcance y responsable (no hace lote); un perecible pide su vence. */
+  const controlDe = useControlesDeProductos();
+  const controles = receivedItems.map((i) => controlDe(i.productId));
+  const lineasC22 = receivedItems.map((i) => ({ ...i, product: i.name, receivedQty: i.noLlego ? 0 : i.receivedQty }));
+  const faltaC22 = faltaConformidad(lineasC22, controles);
+  const sinVence = pereciblesSinVence(lineasC22, controles);
 
   const handleConfirm = async () => {
     setSaving(true);
@@ -159,8 +168,8 @@ export default function OCRecepcionModal({ ocId, supplier, items, seguimiento, o
               // Lo que no llegó se declara como faltante: es la diferencia que
               // el proveedor tiene que responder, no una recepción normal de 0.
               condition: i.noLlego ? "faltante" : i.condition,
-              notes: "",
-              ...(conVence(i) ? { expiryDate: i.expiryDate, lote: i.lote } : {}),
+              notes: controlDe(i.productId) === "servicio" ? notasConConformidad("", i) : "",
+              ...(conVence(i) && controlDe(i.productId) !== "servicio" ? { expiryDate: i.expiryDate, lote: i.lote } : {}),
             })),
           status: receivedItems.some((i) => i.noLlego || i.condition !== "ok" || i.receivedQty !== i.orderedQty)
             ? "parcial"
@@ -328,13 +337,19 @@ export default function OCRecepcionModal({ ocId, supplier, items, seguimiento, o
                         {!item.noLlego && item.condition === "ok" && item.receivedQty > 0 && (
                           <tr>
                             <td colSpan={6} className="pb-2">
-                              <VenceLoteCampo
+                              <ConformidadDeLinea
+                                id={`oc-conf-${item.productId}`}
+                                control={controles[idx]}
+                                fila={item}
+                                onChange={(patch) => updateItem(idx, patch)}
+                              />
+                              {controles[idx] !== "servicio" && <VenceLoteCampo
                                 id={`oc-vence-${item.productId}`}
                                 producto={item.name}
                                 valor={item}
                                 ayuda={idx === 0}
                                 onChange={(patch) => updateItem(idx, patch)}
-                              />
+                              />}
                             </td>
                           </tr>
                         )}
@@ -344,6 +359,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, seguimiento, o
                   </tbody>
                 </DataTable>
               </div>
+              {faltaC22 && <p className="text-sm font-semibold text-[var(--data-warning-ink)]">{faltaC22}</p>}
               {error && <p role="alert" className="text-sm font-semibold text-[var(--data-error-ink)]">{error}</p>}
             </>
           )}
@@ -430,6 +446,11 @@ export default function OCRecepcionModal({ ocId, supplier, items, seguimiento, o
                 <Check className="h-4 w-4 text-[var(--data-success-500)]" />
                 Confirmar la recepción
               </p>
+              {sinVence.length > 0 && (
+                <p className="text-sm font-semibold text-[var(--data-warning-ink)]" data-qa="perecibles-sin-vence">
+                  Sin fecha de vencimiento: {listarCorto(sinVence)}. No saldrá{sinVence.length === 1 ? "" : "n"} en Por vencer; vuelve a «Anterior» para anotarla.
+                </p>
+              )}
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
@@ -494,8 +515,8 @@ export default function OCRecepcionModal({ ocId, supplier, items, seguimiento, o
           {step < 3 ? (
             <button
               onClick={() => { setError(null); setStep((s) => s + 1); }}
-              disabled={step === 1 && (venceConError || receivedItems.length === 0)}
-              title={step === 1 && venceConError ? "Corrige la fecha de vencimiento marcada en rojo" : undefined}
+              disabled={step === 1 && (venceConError || receivedItems.length === 0 || faltaC22 !== null)}
+              title={step === 1 && venceConError ? "Corrige la fecha de vencimiento marcada en rojo" : step === 1 && faltaC22 ? faltaC22 : undefined}
               className="flex items-center gap-1 px-4 min-h-12 bg-[var(--accent-dark)] hover:brightness-110 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-colors"
             >
               Siguiente <ChevronRight className="h-4 w-4" />

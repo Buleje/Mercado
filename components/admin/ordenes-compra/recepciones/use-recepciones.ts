@@ -73,9 +73,9 @@ export function useRecepciones() {
       fetch("/api/suppliers").then(r => (r.ok ? r.json() : [])).catch(() => []),
     ]).then(([prods, sups]) => {
       if (cancelled) return;
-      const prodList = (toArr(prods, "products") as Array<{ id?: number | string; name?: string; stock?: number | null; unit?: string; barcode?: string }>)
+      const prodList = (toArr(prods, "products") as Array<{ id?: number | string; name?: string; stock?: number | null; unit?: string; barcode?: string; type?: string | null; category?: string | null }>)
         .filter(p => !!p.name)
-        .map(p => ({ id: p.id ?? p.name!, name: p.name!, stock: p.stock ?? null, unit: p.unit, barcode: p.barcode }));
+        .map(p => ({ id: p.id ?? p.name!, name: p.name!, stock: p.stock ?? null, unit: p.unit, barcode: p.barcode, type: p.type ?? null, category: p.category ?? null }));
       setProducts(prodList);
       const supList = toArr(sups, "suppliers") as Array<{ id?: string; name?: string }>;
       const supNames = supList.map(s => s.name).filter((n): n is string => !!n);

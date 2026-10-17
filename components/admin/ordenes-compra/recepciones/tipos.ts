@@ -60,6 +60,9 @@ export type ReceptionItem = {
   expiryDate?: string;
   /** Lote del proveedor; sin él, el lote lleva la referencia de la recepción. */
   lote?: string;
+  /** C22 · Servicio: qué se aceptó y quién lo acepta. Viajan en `notes` (sin columna propia). */
+  alcance?: string;
+  aceptaServicio?: string;
 };
 
 export type Reception = {
