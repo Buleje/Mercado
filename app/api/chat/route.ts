@@ -7,7 +7,11 @@ import { logger } from "@/lib/logger";
 // GET: fetch messages for a customer conversation
 export async function GET(req: NextRequest) {
   try {
-    const rl = applyRateLimit(req, "MODERATE", "chat");
+    // 17-10: GET y POST compartían el balde "chat" (misma clave por IP) y el
+    // widget sondea cada 15 s abierto / 30 s cerrado: a los 10 sondeos el POST
+    // (STRICT, corta en 10) daba 429 y el cliente no podía escribir. Ahora cada
+    // método tiene su balde y el sondeo usa POLL (×3 del intervalo abierto).
+    const rl = applyRateLimit(req, "POLL", "chat-get");
     if (rl) return rl;
     const tenantId = getTenantIdFromRequest(req);
     const phone = req.nextUrl.searchParams.get("phone");
@@ -26,7 +30,7 @@ export async function GET(req: NextRequest) {
 // POST: customer sends a message
 export async function POST(req: NextRequest) {
   try {
-    const rl = applyRateLimit(req, "STRICT", "chat");
+    const rl = applyRateLimit(req, "STRICT", "chat-post");
     if (rl) return rl;
     const tenantId = getTenantIdFromRequest(req);
     const { phone, name, message } = await req.json();

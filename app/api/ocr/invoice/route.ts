@@ -119,9 +119,14 @@ const PROMPT =
 export async function POST(req: NextRequest) {
   // SECURITY 2026-05-12 (H2 audit AI): auth + cost guard + rate limit STRICT.
   // Antes era abierto al mundo → atacante quemaba $30-100/dia de Vision API.
-  const _rl = await applyRateLimit(req, "STRICT", "ocr-invoice"); if (_rl) return _rl;
+  // 17-10: el límite iba ANTES del login, STRICT por IP: recibir un lote de 12
+  // facturas del proveedor (dueño y almacenero comparten la IP) moría en la 11.
+  // Ahora después del login, por negocio + usuario, MODERATE; la plata la sigue
+  // topando `aiCostGuard.canSpend` por negocio.
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+  const _rl = applyRateLimit(req, "MODERATE", `ocr-invoice:${auth.tenantId}:${auth.username}`);
+  if (_rl) return _rl;
 
   let body: unknown;
   try {

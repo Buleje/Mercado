@@ -435,6 +435,13 @@ export const RateLimitPresets = {
   // 300 cada 5 min (1/s sostenido) cubre una jornada entera navegando el panel
   // y sigue cortando un bucle desbocado.
   SHELL_POLL: { maxReqs: 300, windowSec: 5 * 60 },
+  // POLL — una pantalla que se refresca sola con un intervalo fijo: el chat de
+  // la tienda (cada 15 s abierto, 30 s cerrado) y el GPS del repartidor (cada
+  // 30 s en línea). 17-10: el ping usaba STRICT (10 cada 15 min) y a los 5 min
+  // en línea el repartidor quedaba congelado en el mapa 10 min; el chat usaba
+  // MODERATE (20 cada 5 min = justo su sondeo abierto). 60 cada 5 min (1 cada
+  // 5 s sostenido) = ×3 del sondeo más rápido y sigue cortando un bucle.
+  POLL: { maxReqs: 60, windowSec: 5 * 60 },
 } as const;
 
 /**

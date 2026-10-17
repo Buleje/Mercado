@@ -424,11 +424,11 @@ describe("ocr/invoice por el lector común", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("RBAC y límite como antes: admin y almacenero, STRICT «ocr-invoice»; sin sesión 401 sin gastar", async () => {
+  it("RBAC y límite: admin y almacenero, MODERATE por negocio + usuario después del login (17-10); sin sesión 401 sin gastar", async () => {
     conFetch(() => claude(JSON.stringify(FACTURA_LEIDA)));
     await post("factura", { image: JPEG });
     expect(h.roles[0]).toEqual(["admin", "almacenero"]);
-    expect(h.rl).toHaveBeenCalledWith(expect.anything(), "STRICT", "ocr-invoice");
+    expect(h.rl).toHaveBeenCalledWith(expect.anything(), "MODERATE", expect.stringMatching(/^ocr-invoice:t-qa-lector:/));
     h.sesion = null;
     vi.resetModules();
     const fetchMock = conFetch(() => claude("{}"));

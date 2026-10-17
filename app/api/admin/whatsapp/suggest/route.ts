@@ -25,12 +25,15 @@ const GENERIC_SUGGESTIONS = [
 const BodySchema = z.object({ phone: z.string().regex(/^\d{8,15}$/) });
 
 export async function POST(req: NextRequest) {
-  const _rl = applyRateLimit(req, "STRICT", "admin-whatsapp-suggest");
-  if (_rl) return _rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  // 17-10: era STRICT por IP (10 cada 15 min) antes del login, compartido por
+  // todos los que atienden la bandeja desde la misma bodega. Ahora por negocio
+  // + usuario, MODERATE (20 cada 5 min): un clic por respuesta sugerida.
+  const _rl = applyRateLimit(req, "MODERATE", `admin-whatsapp-suggest:${auth.tenantId}:${auth.username}`);
+  if (_rl) return _rl;
 
   let raw: unknown;
   try {

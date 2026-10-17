@@ -33,7 +33,9 @@ export async function POST(
   const session = await requirePartner(req);
   if (session instanceof NextResponse) return session;
 
-  const rl = await applyRateLimit(req, "STRICT", "delivery-proof-upload");
+  // Por repartidor, no por IP: en datos móviles varios repartidores salen por
+  // la misma IP del operador y se gastaban el cupo entre ellos (17-10).
+  const rl = await applyRateLimit(req, "STRICT", `delivery-proof-upload:${session.tenantId}:${session.partnerId}`);
   if (rl) return rl;
 
   const { id: assignmentId } = await params;

@@ -31,8 +31,6 @@ const InvoiceSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const rateLimitResponse = applyRateLimit(req, "STRICT", "sunat-generate");
-  if (rateLimitResponse) return rateLimitResponse;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
 
@@ -40,6 +38,12 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await requireAdmin(req, ["admin", "cajero"]);
     if (auth instanceof NextResponse) return auth;
+    // 17-10: era STRICT por IP (10 cada 15 min) antes del login; una boleta por
+    // venta y el dueño y los cajeros comparten la IP de la bodega → la boleta 11
+    // de la hora punta daba 429. La emisión es idempotente por pedido (el facade),
+    // así que el límite es anti-bucle: por negocio + usuario, 100/min.
+    const rateLimitResponse = applyRateLimit(req, "GENEROUS", `sunat-generate:${auth.tenantId}:${auth.username}`);
+    if (rateLimitResponse) return rateLimitResponse;
 
     // Round 16 M004: SUNAT invoice creation con admin/cajero actor + IP.
     return await runWithAuditContext(req, auth.username, () => generateInvoice(req, auth, traceId));

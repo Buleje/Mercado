@@ -64,9 +64,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const _rl = await applyRateLimit(req, "MODERATE", "cash-registers-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
+  // 17-10: movimientos, arqueo y cierre. Antes MODERATE por IP antes del login:
+  // los cajeros de la bodega se gastaban el cupo entre ellos. Ahora por usuario.
+  const _rl = await applyRateLimit(req, "MODERATE", `cash-registers-X:${auth.tenantId}:${auth.username}`);
+  if (_rl) return _rl;
 
   return runWithAuditContext(req, auth.username, async () => {
     try {
