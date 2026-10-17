@@ -6,6 +6,8 @@ import { aiCostGuard } from "@/lib/ai/cost-control";
 import { FORMATOS_IMAGEN, gastoDeLectura, visionExtractJSON } from "@/lib/ai/vision-extract";
 import { veDetalleDeClaveIA } from "@/lib/ai/detalle-clave-ia";
 import { isSpecializationEnabled } from "@/lib/specializations";
+import { ForestPlanillasDB } from "@/lib/db/forest-planillas.db";
+import { PROMPT_GENERICO_ASERRADA, planillaPorId } from "@/lib/forestal/planillas/catalogo";
 
 /**
  * /api/admin/forestal/cubicacion-ocr/aserrada — lee una foto de una planilla
@@ -17,6 +19,9 @@ import { isSpecializationEnabled } from "@/lib/specializations";
  *
  * NO escribe nada: el operador revisa el preview y confirma antes de que las
  * piezas entren al lote (mismo modal que el import de Excel).
+ *
+ * Los prompts viven en `lib/forestal/planillas/catalogo.ts`: el genérico (sin
+ * `planillaId`) y el de la planilla impresa «Aserrada · pie tablar».
  */
 
 const MAX_IMAGE_B64_BYTES = 10_000_000;
@@ -24,6 +29,11 @@ const OCR_COST_USD = 0.015;
 
 const RequestSchema = z.object({
   image: z.string().min(100, "Imagen requerida").max(MAX_IMAGE_B64_BYTES, "Imagen muy grande (>10MB)"),
+  /* La planilla de campo impresa (17-10): con ella se lee con SU prompt —el
+     del catálogo o el que guardó el negocio—, que conoce sus columnas y
+     unidades. Sin ella, el prompt genérico del cuaderno de siempre. La forma
+     de la respuesta es la misma en los dos casos. */
+  planillaId: z.enum(["aserrada-pt"]).optional(),
 });
 
 const PiezaOcrSchema = z.object({
@@ -65,25 +75,6 @@ const JSON_SCHEMA = {
   additionalProperties: false,
 };
 
-const PROMPT =
-  "Esta es una foto de una PLANILLA DE CUBICACIÓN DE MADERA ASERRADA (tablas/tablones) escrita a mano " +
-  "por un operario forestal peruano. Suele traer columnas para cantidad de piezas, espesor, ancho y largo, " +
-  "y a veces la especie — o aparecer como tríos \"espesor × ancho × largo\" por línea, con o sin cantidad " +
-  "al inicio. Puede tener tachones o correcciones: usá el valor final, no el tachado.\n\n" +
-  "Convención peruana: el espesor y el ancho se anotan en PULGADAS, el largo en PIES. Si una fila trae " +
-  "explícitamente otra unidad (cm, metros), convertila vos a pulgadas/pies antes de responder — el número " +
-  "que devuelvas siempre tiene que quedar en esas unidades.\n\n" +
-  "Para CADA fila/línea que puedas identificar, devuelve:\n" +
-  "- cantidad: cuántas piezas iguales representa esa línea. Si no está escrita, 1.\n" +
-  "- espesor: en pulgadas (número).\n" +
-  "- ancho: en pulgadas (número).\n" +
-  "- largo: en pies (número).\n" +
-  "- especie: si está escrita en esa fila o en un encabezado que aplica a todo el bloque; si no hay, dejalo vacío.\n" +
-  "- incierto: true si algún número de ESA fila es ambiguo o dudoso, false si se lee con confianza.\n\n" +
-  "Si la foto no parece una planilla de cubicación de madera aserrada, devuelve piezas: [] y advertencia con " +
-  "una frase corta explicando qué ves en cambio. Si hay zonas ilegibles, devuelve las filas que SÍ se puedan " +
-  "leer y deja esas fuera — nunca inventes un valor para lo que no se lee.";
-
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:herramientas");
   return ok ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
@@ -107,13 +98,16 @@ export async function POST(req: NextRequest) {
   const parsedReq = RequestSchema.safeParse(body);
   if (!parsedReq.success) return NextResponse.json({ error: parsedReq.error.issues[0]?.message ?? "Datos inválidos" }, { status: 400 });
 
+  const planilla = parsedReq.data.planillaId ? planillaPorId(parsedReq.data.planillaId) : null;
+  const prompt = planilla ? (await ForestPlanillasDB.promptParaLeer(auth.tenantId, planilla)).texto : PROMPT_GENERICO_ASERRADA;
+
   const result = await visionExtractJSON({
     imageBase64: parsedReq.data.image,
     /* El tipo real (por los bytes) tiene que ser una foto y coincidir con el
        declarado: se rechaza con 400 antes de llamar a la IA (auditoría 2026-10-02). */
     formatos: FORMATOS_IMAGEN,
     verDetalleDeClave: await veDetalleDeClaveIA(req),
-    prompt: PROMPT,
+    prompt,
     schema: ResponseSchema,
     jsonSchema: JSON_SCHEMA,
     maxTokens: 4000,

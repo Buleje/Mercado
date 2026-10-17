@@ -6,6 +6,8 @@ import { aiCostGuard } from "@/lib/ai/cost-control";
 import { FORMATOS_IMAGEN, gastoDeLectura, visionExtractJSON } from "@/lib/ai/vision-extract";
 import { veDetalleDeClaveIA } from "@/lib/ai/detalle-clave-ia";
 import { isSpecializationEnabled } from "@/lib/specializations";
+import { ForestPlanillasDB } from "@/lib/db/forest-planillas.db";
+import { PROMPT_GENERICO_TROZAS, planillaPorId } from "@/lib/forestal/planillas/catalogo";
 
 /**
  * /api/admin/forestal/cubicacion-ocr/trozas — lee una foto de una planilla de
@@ -16,6 +18,11 @@ import { isSpecializationEnabled } from "@/lib/specializations";
  *
  * NO escribe nada: el operador revisa el preview y confirma antes de que
  * las trozas entren al patio (mismo modal que el import de Excel).
+ *
+ * Unidades de la respuesta: d1/d2 en cm y largo en m, SALVO con
+ * `planillaId: "rolliza-oxapampa"` (lote Oxapampina): ahí d1/d2 son las dos
+ * puntas en PULGADAS y el largo en PIES, como se anotan para el pago. Los
+ * prompts viven en `lib/forestal/planillas/catalogo.ts`.
  */
 
 const MAX_IMAGE_B64_BYTES = 10_000_000;
@@ -23,6 +30,11 @@ const OCR_COST_USD = 0.015;
 
 const RequestSchema = z.object({
   image: z.string().min(100, "Imagen requerida").max(MAX_IMAGE_B64_BYTES, "Imagen muy grande (>10MB)"),
+  /* La planilla de campo impresa (17-10): con ella se lee con SU prompt —el
+     del catálogo o el que guardó el negocio—, que conoce sus columnas y
+     unidades. Sin ella, el prompt genérico del cuaderno de siempre. La forma
+     de la respuesta es la misma en los dos casos. */
+  planillaId: z.enum(["rolliza-smalian", "rolliza-oxapampa"]).optional(),
 });
 
 const TrozaOcrSchema = z.object({
@@ -62,22 +74,6 @@ const JSON_SCHEMA = {
   additionalProperties: false,
 };
 
-const PROMPT =
-  "Esta es una foto de una PLANILLA DE CUBICACIÓN DE TROZAS (madera rolliza) escrita a mano por un " +
-  "operario forestal peruano en el patio. Suele traer columnas para el diámetro menor (Ø1), el diámetro " +
-  "mayor (Ø2) y el largo, y a veces la especie — o aparecer como tríos de números por línea. Puede tener " +
-  "tachones o correcciones: usá el valor final, no el tachado.\n\n" +
-  "Para CADA troza (fila o línea) que puedas identificar, devuelve:\n" +
-  "- d1: diámetro MENOR en centímetros (número).\n" +
-  "- d2: diámetro MAYOR en centímetros. Si sólo hay un diámetro anotado, repetilo en d1 y d2.\n" +
-  "- largo: longitud en METROS (número).\n" +
-  "- especie: si está escrita en esa fila o en un encabezado que aplica a todo el bloque; si no hay, dejalo vacío.\n" +
-  "- incierto: true si algún número de ESA fila es ambiguo o dudoso (por ejemplo no distingues un 3 de un 8 " +
-  "o un 40 de un 46), false si se lee con confianza.\n\n" +
-  "Si la foto no parece una planilla de cubicación de trozas, devuelve trozas: [] y advertencia con una " +
-  "frase corta explicando qué ves en cambio. Si hay zonas ilegibles, devuelve las filas que SÍ se puedan " +
-  "leer y deja esas fuera — nunca inventes un valor para lo que no se lee.";
-
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:herramientas");
   return ok ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
@@ -101,13 +97,16 @@ export async function POST(req: NextRequest) {
   const parsedReq = RequestSchema.safeParse(body);
   if (!parsedReq.success) return NextResponse.json({ error: parsedReq.error.issues[0]?.message ?? "Datos inválidos" }, { status: 400 });
 
+  const planilla = parsedReq.data.planillaId ? planillaPorId(parsedReq.data.planillaId) : null;
+  const prompt = planilla ? (await ForestPlanillasDB.promptParaLeer(auth.tenantId, planilla)).texto : PROMPT_GENERICO_TROZAS;
+
   const result = await visionExtractJSON({
     imageBase64: parsedReq.data.image,
     /* El tipo real (por los bytes) tiene que ser una foto y coincidir con el
        declarado: se rechaza con 400 antes de llamar a la IA (auditoría 2026-10-02). */
     formatos: FORMATOS_IMAGEN,
     verDetalleDeClave: await veDetalleDeClaveIA(req),
-    prompt: PROMPT,
+    prompt,
     schema: ResponseSchema,
     jsonSchema: JSON_SCHEMA,
     maxTokens: 4000,

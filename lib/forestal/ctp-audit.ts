@@ -117,6 +117,8 @@ export type CtpAuditEntity =
   | "ForestCubicacionTrozas"
   /** Una carga medida por foto en el monte (KV `interno:medicion-carga:`, 16-10). */
   | "ForestMedicionCarga"
+  /** El prompt propio de un negocio para leer una planilla de campo (KV `planillas-prompt:`, 17-10). */
+  | "ForestPlanillaPrompt"
   | "Tenant";
 
 /**
@@ -469,7 +471,12 @@ export type CtpAuditAction =
   | "loth_medicion_carga_usar"
   | "loth_medicion_carga_descartar"
   // Security 16-10: una guía quiso llevar una carga que ya va en otra (o descartada): 409.
-  | "loth_medicion_carga_doble_uso";
+  | "loth_medicion_carga_doble_uso"
+  // Planillas de campo (17-10): el negocio cambia o vuelve al de fábrica el
+  // prompt con que la IA lee la foto de una planilla. Cambia lo que entra a
+  // los importadores: quién y cuándo deja rastro.
+  | "ctp_planilla_prompt_guardar"
+  | "ctp_planilla_prompt_borrar";
 
 /** Lo que describe un evento del libro. */
 export interface CtpAuditParams {
