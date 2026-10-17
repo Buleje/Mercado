@@ -35,6 +35,8 @@ export const AGENT_DOMAINS = [
   // Actividades, citas y recordatorios dictados («recordame el lunes…»).
   // Escribe sobre el `Reminder` que ya se ve en el panel.
   "agenda",
+  // El plan de la empresa (ADR-497): políticas, objetivos, licencias. Solo lectura.
+  "planificacion",
 ] as const;
 
 export type AgentDomain = (typeof AGENT_DOMAINS)[number];

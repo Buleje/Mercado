@@ -99,6 +99,9 @@ describe("cada dominio con tools es alcanzable desde una frase", () => {
       ["cobranzas", "¿quién me debe plata?"],
       ["forestal", "¿cuántas trozas hay en el patio?"],
       ["documentos", "buscame el contrato de alquiler"],
+      ["planificacion", "¿cuál es mi política de devoluciones?"],
+      ["planificacion", "¿qué objetivos tengo atrasados?"],
+      ["planificacion", "¿qué licencia vence?"],
       ["caja", "¿cómo viene la caja hoy?"],
       ["orders", "¿qué pedidos tengo?"],
     ];

@@ -743,7 +743,7 @@ const uiTools = defineTools("ui", [
     function: {
       name: "ui_abrir",
       description:
-        "Devuelve un botón que abre la pantalla del panel donde se resuelve lo que el usuario pide. Úsalo SIEMPRE que la respuesta implique 've a…' o 'revisa en…', en vez de nombrar el módulo en texto. Destinos: inventario, kardex, conteo-fisico, ventas, pos, caja, pedidos, clientes, fiados, compras, historial-gastos, sugerencias-compra, plata, adelantos, productos, promociones, analytics, documentos, libro-ctp, ctp-existencias, ctp-ingresos, ctp-ficha, libro-th.",
+        "Devuelve un botón que abre la pantalla del panel donde se resuelve lo que el usuario pide. Úsalo SIEMPRE que la respuesta implique 've a…' o 'revisa en…', en vez de nombrar el módulo en texto. Destinos: inventario, kardex, conteo-fisico, ventas, pos, caja, pedidos, clientes, fiados, compras, historial-gastos, sugerencias-compra, plata, adelantos, productos, promociones, analytics, documentos, planificacion, libro-ctp, ctp-existencias, ctp-ingresos, ctp-ficha, libro-th.",
       parameters: {
         type: "object",
         properties: {
@@ -780,6 +780,26 @@ const documentosTools = defineTools("documentos", [
       parameters: {
         type: "object",
         properties: { dias: { type: "number", description: "Ventana en días (por defecto 30)" } },
+      },
+    },
+  },
+]);
+
+// ── Plan de la empresa (ADR-497) ─────────────────────────────────────────────
+
+const planificacionTools = defineTools("planificacion", [
+  {
+    function: {
+      name: "planificacion_consultar",
+      description:
+        "Lee el plan de la empresa que el dueño escribió: políticas y preguntas frecuentes ('¿mi política de devoluciones?'), objetivos con avance y atrasos, licencias y vencimientos, ficha/misión, FODA, organigrama. Cita el texto tal cual.",
+      parameters: {
+        type: "object",
+        properties: {
+          tema: { type: "string", enum: ["politicas", "objetivos", "licencias", "empresa", "foda", "organizacion"] },
+          buscar: { type: "string", description: "Palabra para filtrar políticas: devoluciones, delivery, fiado…" },
+        },
+        required: ["tema"],
       },
     },
   },
@@ -1176,6 +1196,7 @@ export const ALL_AGENT_TOOLS: ToolDefinition[] = [
   ...plataTools,
   ...n8nTools,
   ...agendaTools,
+  ...planificacionTools,
 ];
 
 // Inicializa el registry usado por `isToolApprovalRequired` (declarado arriba).

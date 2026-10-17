@@ -144,6 +144,15 @@ export const AGENT_ACTION_PERMISSIONS: Record<
     "listar-flujos":        { resource: "settings", action: "read"  },
     "disparar-flujo":       { resource: "settings", action: "write" },
   },
+  /**
+   * El plan de la empresa. Ningún Resource lo cubre (es de ADR-497, posterior a
+   * los 26) y `role-permissions.ts` es zona de peligro: se gatea con lo básico
+   * del panel y el agente pregunta además `puedeVerSeccion(rol, sección)`, la
+   * misma regla de sus rutas. Socios e inversión no salen nunca al asistente.
+   */
+  planificacion: {
+    "consultar":            { resource: "analytics", action: "read" },
+  },
   notifications: {
     "send-order-update":    { resource: "notifications", action: "write" },
     "send-stock-alert":     { resource: "notifications", action: "write" },

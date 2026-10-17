@@ -1100,6 +1100,7 @@ const TOOL_LABELS: Record<string, string> = {
   documentos_buscar: "Buscando en el drive...",
   documentos_por_vencer: "Revisando vencimientos de papeles...",
   caja_estado: "Mirando la caja...",
+  planificacion_consultar: "Leyendo el plan de la empresa...",
   cobranzas_fiados: "Sumando lo que te deben...",
   cobranzas_adelantos: "Revisando adelantos...",
   orders_pending_summary: "Revisando pedidos pendientes...",

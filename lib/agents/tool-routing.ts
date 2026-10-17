@@ -110,6 +110,17 @@ const PALABRAS: Record<AgentDomain, readonly string[]> = {
   // es plata, no agenda, y arrastraría estas tools a media conversación. Lo que
   // selecciona el dominio es la INTENCIÓN de agendar, no la mención del tiempo.
   agenda: ["recordame", "recuérdame", "recuerdame", "acordame", "agenda", "agendar", "agendame", "agéndame", "cita", "citas", "reunion", "reunión", "reuniones", "actividad", "actividades", "tarea", "tareas", "pendiente", "pendientes", "programar", "programa", "visita", "visitas", "vencimiento", "hecho", "listo", "cumpli", "cumplí"],
+  // El plan de la empresa. «vence» y «devoluciones» también son de otros
+  // dominios: está bien, la frase manda los dos y el modelo elige.
+  planificacion: [
+    "plan", "planificacion", "planificación", "politica", "politicas", "política", "políticas",
+    "devolucion", "devolución", "devoluciones", "cambios", "reembolso", "garantia", "garantía",
+    "objetivo", "objetivos", "atrasado", "atrasados", "atrasada", "atrasadas", "meta", "metas",
+    "licencia", "licencias", "municipal", "digesa", "funcionamiento", "certificado", "vence", "vencen", "vencida",
+    "mision", "misión", "vision", "visión", "valores", "foda", "fortalezas", "debilidades",
+    "oportunidades", "amenazas", "estrategia", "estrategias", "organigrama", "cargo", "cargos", "funciones",
+    "preguntas", "frecuentes", "protocolo", "horario",
+  ],
   ui: [],
 };
 

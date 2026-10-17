@@ -6,6 +6,9 @@ import { calculateCostUsd } from "@/lib/ai/track-usage";
 import { processSafeInput, detectPromptInjection } from "@/lib/ai-safety/sanitize";
 import { logger } from "@/lib/logger";
 import { ProductsDB } from "@/lib/db/products.db";
+import { PlanEmpresaDB } from "@/lib/db/plan-empresa.db";
+import { vacia } from "@/lib/planificacion/secciones";
+import { limaDateKey } from "@/lib/utils";
 import { WhatsAppMessagesDB, getNotesMap, setConversationNote } from "@/lib/db/whatsapp-messages.db";
 import {
   armarInstrucciones,
@@ -18,6 +21,7 @@ import {
   type AjusteAsistente,
   type ProductoParaAsesora,
 } from "../../asistente-negocio";
+import { SECCIONES_PLAN_ASESORA, contextoDelPlan, type ContextoPlanAsesora } from "../../plan-para-asesora";
 import type { ActionResult, Classification, ConversationContext } from "../types";
 
 /**
@@ -61,6 +65,42 @@ export async function catalogoDelNegocio(tenantId: string): Promise<ProductoPara
     .filter((p) => p.tenantId === tenantId && p.price > 0)
     .map((p) => ({ nombre: p.name, precio: p.price, descripcion: p.description ?? null, stock: p.stock ?? null }))
     .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+}
+
+/**
+ * Lo que el plan de la empresa (ADR-497) le suma a la asesora: políticas
+ * vigentes, preguntas frecuentes, horario y propuesta de valor. UNA lectura por
+ * mensaje (sin caché: guardar el plan se ve en el mensaje siguiente) y sólo de
+ * las 3 secciones públicas: socios e inversión ni se piden. Lo que parece una
+ * orden al modelo se descarta. Nunca lanza: sin plan, la asesora de siempre.
+ */
+export async function planParaAsesora(tenantId: string): Promise<ContextoPlanAsesora | null> {
+  try {
+    const leido = await PlanEmpresaDB.leer(tenantId, SECCIONES_PLAN_ASESORA);
+    const ctx = contextoDelPlan(
+      {
+        ficha: leido.ficha?.datos ?? vacia("ficha"),
+        identidad: leido.identidad?.datos ?? vacia("identidad"),
+        politicas: leido.politicas?.datos ?? vacia("politicas"),
+      },
+      limaDateKey(),
+      { descartar: (t) => detectPromptInjection(t).severity === "high" },
+    );
+    if (ctx.descartados > 0 || ctx.recortados > 0) {
+      logger.warn("[asesora] plan de la empresa: textos fuera del contexto", {
+        tenantId: tenantId.slice(-6),
+        descartadosPorInyeccion: ctx.descartados,
+        recortadosPorTope: ctx.recortados,
+      });
+    }
+    return ctx;
+  } catch (err) {
+    logger.warn("[asesora] no se pudo leer el plan de la empresa — sigue sin él", {
+      tenantId: tenantId.slice(-6),
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  }
 }
 
 /**
@@ -133,8 +173,8 @@ export async function responderComoAsesora(
   }
 
   try {
-    const catalogo = await catalogoDelNegocio(tenantId);
-    const system = armarInstrucciones(ajuste, catalogo, ahoraEnLima());
+    const [catalogo, plan] = await Promise.all([catalogoDelNegocio(tenantId), planParaAsesora(tenantId)]);
+    const system = armarInstrucciones(ajuste, catalogo, ahoraEnLima(), plan);
     const messages = [
       ...historial.map((t) => ({
         role: t.rol === "clienta" ? ("user" as const) : ("assistant" as const),
@@ -154,7 +194,7 @@ export async function responderComoAsesora(
       logger.warn("[asesora] respuesta sin JSON — traspaso", { tenantId: tenantId.slice(-6), muestra: text.slice(0, 120) });
       return traspaso("ilegible");
     }
-    const noPermitidos = promesasNoPermitidas(salida.respuesta, ajuste, catalogo);
+    const noPermitidos = promesasNoPermitidas(salida.respuesta, ajuste, catalogo, plan);
     if (noPermitidos.length > 0) {
       logger.warn("[asesora] prometió algo que el negocio no escribió — traspaso", {
         tenantId: tenantId.slice(-6),

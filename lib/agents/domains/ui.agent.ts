@@ -57,6 +57,7 @@ export const DESTINOS_ADMIN: DestinoAdmin[] = [
   { clave: "promociones",       tab: "promociones", label: "Promociones y ofertas", para: "descuentos y ofertas" },
   { clave: "analytics",         tab: "analytics-pro", label: "Analytics",           para: "tendencias, márgenes y análisis del negocio" },
   { clave: "documentos",        tab: "documentos", label: "Documentos",             para: "el drive: buscar, subir y compartir archivos" },
+  { clave: "planificacion",     tab: "planificacion", label: "Planificación",       para: "el plan de la empresa: políticas, objetivos, licencias y FODA" },
   // ── Forestal (SERFOR) ──
   { clave: "libro-ctp",         tab: "ctp-libro-operaciones", label: "Libro de Operaciones CTP", para: "el libro forestal: ingresos, producción y despachos" },
   { clave: "ctp-existencias",   tab: "ctp-libro-operaciones", vista: "existencias", label: "Existencias del libro", para: "cuánta madera hay en el patio y en producto" },

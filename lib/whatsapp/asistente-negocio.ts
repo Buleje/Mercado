@@ -16,6 +16,7 @@
  *   lista pasa a una persona (que confirma total, pago y entrega).
  */
 import { z } from "zod";
+import type { ContextoPlanAsesora } from "./plan-para-asesora";
 
 export const CLAVE_ASISTENTE = "whatsappAsistente";
 
@@ -109,21 +110,25 @@ function lineaProducto(p: ProductoParaAsesora): string {
 
 /**
  * Las instrucciones de la asesora. El catálogo y los textos del dueño van
- * marcados como DATOS: el modelo los cita, no los obedece.
+ * marcados como DATOS: el modelo los cita, no los obedece. `plan` = lo que suma
+ * el plan de la empresa (`contextoDelPlan`); sin plan, o vacío, las
+ * instrucciones son exactamente las de siempre.
  */
 export function armarInstrucciones(
   a: AjusteAsistente,
   catalogo: ProductoParaAsesora[],
   ahora: { fecha: string; hora: string; diaSemana: string },
+  plan?: ContextoPlanAsesora | null,
 ): string {
   const productos = catalogo.slice(0, MAX_PRODUCTOS).map(lineaProducto).join("\n");
   const faq = a.preguntasFrecuentes.map((f) => `• ${f.tema}: ${f.respuesta}`).join("\n");
   const consejos = a.consejos.map((c) => `• ${c}`).join("\n");
   const cuidados = a.cuidados.map((c) => `• ${c}`).join("\n");
   const t = a.traspaso;
+  const bloquePlan = plan?.bloque ?? "";
 
   return `Eres ${a.nombreAsistente}, que contesta el WhatsApp de ${a.nombreNegocio}.
-Hoy es ${a.horario ? `${ahora.diaSemana} ${ahora.fecha}, ${ahora.hora} (hora de Perú)` : ahora.fecha}.
+Hoy es ${a.horario || plan?.horario ? `${ahora.diaSemana} ${ahora.fecha}, ${ahora.hora} (hora de Perú)` : ahora.fecha}.
 
 QUIÉN ERES Y CÓMO HABLAS (lo escribió el negocio):
 ${a.presentacion}
@@ -145,9 +150,9 @@ CUÁNDO PASAR LA CONVERSACIÓN A ${t.nombre.toUpperCase()} (traspasar = true):
 ${a.horario ? `Horario de atención de ${t.nombre}: ${a.horario}. Si traspasas fuera de ese horario, avísale cuándo le responde.` : ""}
 
 INFORMACIÓN DEL NEGOCIO (datos para citar):
-${faq || "(sin preguntas frecuentes cargadas)"}
+${faq || (bloquePlan ? "(las preguntas frecuentes están en el PLAN DEL NEGOCIO, abajo)" : "(sin preguntas frecuentes cargadas)")}
 ${consejos ? `\nGUÍA DE ASESORÍA (pregunta primero, después recomienda):\n${consejos}` : ""}
-${cuidados ? `\nCUIDADOS (siempre):\n${cuidados}` : ""}
+${cuidados ? `\nCUIDADOS (siempre):\n${cuidados}` : ""}${bloquePlan ? `\n\n${bloquePlan}` : ""}
 
 CATÁLOGO (datos para citar):
 ${productos || "(el catálogo está vacío: no ofrezcas productos, traspasa)"}
@@ -267,14 +272,19 @@ const PROMESAS: RegExp[] = [/\bdescuentos?\b/i, /\bgratis\b/i, /\b\d+\s*[x×]\s*
 
 const sinEspacios = (t: string) => t.toLowerCase().replace(/\s+/g, "").replace(/×/g, "x").replace(/,/g, ".");
 
-/** Los montos que la asesora puede decir: precios del catálogo y los escritos por el negocio. */
-export function montosPermitidos(a: AjusteAsistente, catalogo: ProductoParaAsesora[]): number[] {
+/** Los montos que la asesora puede decir: precios del catálogo y los escritos por el negocio (ajuste y plan). */
+export function montosPermitidos(
+  a: AjusteAsistente,
+  catalogo: ProductoParaAsesora[],
+  plan?: ContextoPlanAsesora | null,
+): number[] {
   const textos = [
     a.presentacion,
     a.traspaso.cuando,
     ...a.preguntasFrecuentes.map((f) => f.respuesta),
     ...a.consejos,
     ...a.cuidados,
+    ...(plan?.textos ?? []),
   ];
   return [...catalogo.map((p) => p.precio), ...textos.flatMap(montosEnTexto)];
 }
@@ -284,8 +294,11 @@ export function montosInventados(respuesta: string, permitidos: number[]): numbe
   return montosEnTexto(respuesta).filter((n) => !permitidos.some((p) => Math.abs(p - n) < 0.005));
 }
 
-/** Todo lo que el negocio escribió (ajuste + catálogo): lo único que la asesora puede prometer. */
-function textosDelNegocio(a: AjusteAsistente, catalogo: ProductoParaAsesora[]): string {
+/**
+ * Todo lo que el negocio escribió (ajuste + catálogo + lo del plan que entró a
+ * las instrucciones): lo único que la asesora puede prometer.
+ */
+function textosDelNegocio(a: AjusteAsistente, catalogo: ProductoParaAsesora[], plan?: ContextoPlanAsesora | null): string {
   return [
     a.presentacion,
     a.traspaso.cuando,
@@ -293,6 +306,7 @@ function textosDelNegocio(a: AjusteAsistente, catalogo: ProductoParaAsesora[]): 
     ...a.consejos,
     ...a.cuidados,
     ...catalogo.flatMap((p) => [p.nombre, p.descripcion ?? ""]),
+    ...(plan?.textos ?? []),
   ].join("\n");
 }
 
@@ -301,9 +315,14 @@ function textosDelNegocio(a: AjusteAsistente, catalogo: ProductoParaAsesora[]): 
  * son precio ni figuran en sus textos, montos en letras, porcentajes, y las
  * palabras «descuento», «gratis» o «2x1» si el negocio no las usa. Vacío = pasa.
  */
-export function promesasNoPermitidas(respuesta: string, a: AjusteAsistente, catalogo: ProductoParaAsesora[]): string[] {
-  const textos = textosDelNegocio(a, catalogo);
-  const out = montosInventados(respuesta, montosPermitidos(a, catalogo)).map((n) => `S/ ${n}`);
+export function promesasNoPermitidas(
+  respuesta: string,
+  a: AjusteAsistente,
+  catalogo: ProductoParaAsesora[],
+  plan?: ContextoPlanAsesora | null,
+): string[] {
+  const textos = textosDelNegocio(a, catalogo, plan);
+  const out = montosInventados(respuesta, montosPermitidos(a, catalogo, plan)).map((n) => `S/ ${n}`);
   for (const m of respuesta.matchAll(RE_MONTO_EN_LETRAS)) out.push(m[0].trim());
   const porcentajes = new Set([...textos.matchAll(RE_PORCENTAJE)].map((m) => sinEspacios(m[1])));
   for (const m of respuesta.matchAll(RE_PORCENTAJE)) {

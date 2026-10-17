@@ -15,6 +15,7 @@ const h = vi.hoisted(() => ({
   cross: vi.fn(),
   classify: vi.fn(),
   findMany: vi.fn(),
+  leerPlan: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -32,6 +33,7 @@ vi.mock("@/lib/db/whatsapp-messages.db", () => ({
   setConversationNote: h.setNote,
   WhatsAppMessagesDB: { listMessages: vi.fn().mockResolvedValue([]) },
 }));
+vi.mock("@/lib/db/plan-empresa.db", () => ({ PlanEmpresaDB: { leer: h.leerPlan } }));
 vi.mock("ai", () => ({ generateText: h.generateText }));
 vi.mock("@/lib/ai/provider", () => ({ smartModel: "modelo", chatModel: "modelo" }));
 vi.mock("@/lib/ai/cost-control", () => ({
@@ -72,6 +74,7 @@ const prod = (tenantId: string, name: string, price: number) => ({ id: name.leng
 beforeEach(() => {
   vi.clearAllMocks();
   h.flags = {};
+  h.leerPlan.mockResolvedValue({});
   h.getPage.mockResolvedValue({
     products: [prod(MUSA, "Sérum de vitamina C", 69), prod("tenant-bodega", "Aceite Primor Premium 1L", 12.5)],
     nextCursor: null,
@@ -126,6 +129,40 @@ describe("asesora activa", () => {
     expect(system).not.toContain("Aceite Primor");
     expect(r).toMatchObject({ reply: "El *Sérum de vitamina C* cuesta S/ 69.", escalated: false });
     expect(h.setBotPaused).not.toHaveBeenCalled();
+  });
+
+  it("lee el plan UNA vez, sólo sus secciones públicas, y la política y la pregunta frecuente llegan a las instrucciones", async () => {
+    h.leerPlan.mockResolvedValue({
+      politicas: {
+        version: 3,
+        datos: {
+          items: [{ id: "p1", categoria: "Cambios y devoluciones", titulo: "Cambios en 7 días", texto: "Con boleta y sin abrir.", vigenteDesde: "", revisar: "" }],
+          protocolo: [],
+          preguntas: [{ id: "q1", pregunta: "¿Hacen envíos?", respuesta: "Sí, gratis desde S/ 99 en Constitución." }],
+        },
+      },
+    });
+    h.generateText.mockResolvedValue({ text: '{"respuesta":"Sí, el envío es gratis desde S/ 99.","traspasar":false}' });
+
+    const r = await handleIncomingMessage(MUSA, PHONE, "¿cobran el envío?");
+
+    expect(h.leerPlan).toHaveBeenCalledTimes(1);
+    const [tenant, secciones] = h.leerPlan.mock.calls[0];
+    expect(tenant).toBe(MUSA);
+    expect(secciones).toEqual(["ficha", "identidad", "politicas"]);
+    const system = h.generateText.mock.calls[0][0].system as string;
+    expect(system).toContain("Cambios en 7 días: Con boleta y sin abrir.");
+    expect(system).toContain("¿Hacen envíos? → Sí, gratis desde S/ 99 en Constitución.");
+    // El «gratis» y los S/ 99 están escritos en el plan: no es una promesa inventada.
+    expect(r).toMatchObject({ reply: "Sí, el envío es gratis desde S/ 99.", escalated: false });
+  });
+
+  it("si el plan no se puede leer, la asesora contesta igual (sin él)", async () => {
+    h.leerPlan.mockRejectedValue(new Error("pool lleno"));
+    h.generateText.mockResolvedValue({ text: '{"respuesta":"El sérum cuesta S/ 69.","traspasar":false}' });
+    const r = await handleIncomingMessage(MUSA, PHONE, "precio del sérum");
+    expect(r).toMatchObject({ reply: "El sérum cuesta S/ 69.", escalated: false });
+    expect(h.generateText.mock.calls[0][0].system as string).not.toContain("PLAN DEL NEGOCIO");
   });
 
   it("compra lista → traspaso a Drucila y el bot se calla en ese hilo", async () => {
