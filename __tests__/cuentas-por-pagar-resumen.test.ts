@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  diaDeVencimiento, fechaConDia, filtrar, ordenar, proveedoresConCuentas, resumir, sumarDias, vencimiento, venceConCredito, type CuentaPorPagar,
+  antiguedad, diaDeVencimiento, fechaConDia, filtrar, ordenar, proveedoresConCuentas, resumir, sugeridasParaPagar, sumarDias, vencimiento,
+  venceConCredito, type CuentaPorPagar,
 } from "@/components/admin/cuentas-por-pagar/resumen-cuentas";
 import { cuerpoDelProveedor, diasDeEntrega, EMPTY_FORM, formDesdeProveedor } from "@/components/admin/proveedores/proveedor-form-datos";
 
@@ -83,5 +84,41 @@ describe("«Vence» de una cuenta nueva con los días de crédito del proveedor"
     expect(sumarDias("2028-02-28", 1)).toBe("2028-02-29");
     expect(sumarDias("2026-12-25", 10)).toBe("2027-01-04");
     expect(sumarDias("2026-10-09", 0)).toBe("2026-10-09");
+  });
+});
+
+describe("antigüedad del saldo y propuesta de pagos (C45, C46)", () => {
+  const cuentas = [
+    cuenta({ id: "v90", amount: 300, dueDate: "2026-07-01T00:00:00.000Z" }),
+    cuenta({ id: "v45", amount: 200, paidAmount: 50, status: "parcial", dueDate: "2026-08-25T00:00:00.000Z" }),
+    cuenta({ id: "v3", amount: 100, dueDate: "2026-10-06T00:00:00.000Z" }),
+    cuenta({ id: "hoy", amount: 80, dueDate: "2026-10-09T00:00:00.000Z" }),
+    cuenta({ id: "sem", amount: 70, dueDate: "2026-10-16T00:00:00.000Z" }),
+    cuenta({ id: "mes", amount: 60, dueDate: "2026-10-17T00:00:00.000Z" }),
+    cuenta({ id: "lejos", amount: 50, dueDate: "2026-12-31T00:00:00.000Z" }),
+    cuenta({ id: "pagada", amount: 999, paidAmount: 999, status: "pagado", dueDate: "2026-07-01T00:00:00.000Z" }),
+  ];
+
+  it("cada cuenta con saldo cae en un solo tramo y los tramos suman lo que debes", () => {
+    const { tramos, total } = antiguedad(cuentas, HOY);
+    const de = (id: string) => tramos.find((t) => t.id === id)!;
+    expect(de("vencido-61")).toMatchObject({ saldo: 300, n: 1 });
+    expect(de("vencido-31")).toMatchObject({ saldo: 150, n: 1 }); // 200 − 50 pagado
+    expect(de("vencido-1")).toMatchObject({ saldo: 100, n: 1 });
+    expect(de("hoy")).toMatchObject({ saldo: 80, n: 1 });
+    expect(de("semana")).toMatchObject({ saldo: 70, n: 1 }); // 7 días: todavía «semana»
+    expect(de("mes")).toMatchObject({ saldo: 60, n: 1 }); // 8 días
+    expect(de("despues")).toMatchObject({ saldo: 50, n: 1 });
+    expect(total).toBe(810);
+    expect(total).toBe(resumir(cuentas, HOY).porPagar);
+  });
+
+  it("contado a un día futuro, lo que vencía en la semana pasa a vencido", () => {
+    const { tramos } = antiguedad(cuentas, "2026-10-20");
+    expect(tramos.find((t) => t.id === "vencido-1")).toMatchObject({ saldo: 100 + 80 + 70 + 60, n: 4 });
+  });
+
+  it("la propuesta marca las vencidas y las de los próximos 7 días, nunca las pagadas", () => {
+    expect(sugeridasParaPagar(cuentas, HOY)).toEqual(["v90", "v45", "v3", "hoy", "sem"]);
   });
 });

@@ -112,7 +112,7 @@ function ComprasConVistas({ initialTab }: { initialTab?: string }) {
   // (`?reponer=1`) son de UNA vista: se borran al salir.
   const [entrada, setEntrada] = useState(() => seccionPorNombreViejo(initialTab));
   const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, ids, ids[0] ?? "punto-compra", initialTab, {
-    paramsDeVista: { "punto-compra": ["reponer"], "ordenes-compra": ["oc", "sub"], proveedores: ["proveedor", "sub"] },
+    paramsDeVista: { "punto-compra": ["reponer"], "ordenes-compra": ["oc", "sub"], proveedores: ["proveedor", "sub"], "cuentas-por-pagar": ["sub"] },
     alias: ALIAS,
   });
   // La sección del nombre viejo vale sólo para la primera vista: al salir, se olvida.

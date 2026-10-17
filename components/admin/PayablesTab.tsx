@@ -2,78 +2,108 @@
 
 import { useMemo, useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
-import { CreditCard, Download, MoreHorizontal, Plus, RefreshCw, X } from "@buleje/design-system/icons";
+import { CreditCard, Download, MoreHorizontal, Plus, RefreshCw, ScrollText, X } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
+import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import { button } from "@/components/ui-system/button-variants";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { formatCurrency } from "@/lib/format";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import { codigoDeOrden, descripcionALaVista } from "@/lib/compras/referencia-documento";
 import { cn, exportToCSV, limaDateKey } from "@/lib/utils";
+import CalendarioPorPagar from "@/components/admin/cuentas-por-pagar/CalendarioPorPagar";
+import EstadoDeCuentaModal from "@/components/admin/cuentas-por-pagar/EstadoDeCuentaModal";
 import NuevaCuentaModal from "@/components/admin/cuentas-por-pagar/NuevaCuentaModal";
-import TablaCuentas, { type Abierto } from "@/components/admin/cuentas-por-pagar/TablaCuentas";
+import PropuestaDePagos from "@/components/admin/cuentas-por-pagar/PropuestaDePagos";
+import SeccionCuentas, { type FiltrosCuentas } from "@/components/admin/cuentas-por-pagar/SeccionCuentas";
+import type { Abierto } from "@/components/admin/cuentas-por-pagar/TablaCuentas";
+import VincularOrdenModal from "@/components/admin/cuentas-por-pagar/VincularOrdenModal";
 import { useCuentasPorPagar } from "@/components/admin/cuentas-por-pagar/use-cuentas-por-pagar";
 import { useIndicadoresPorPagar } from "@/components/admin/cuentas-por-pagar/use-indicadores-por-pagar";
 import {
-  diaDeVencimiento, estaPagada, filtrar, ordenar, proveedoresConCuentas, resumir, saldo, type FiltroEstado,
+  diaDeVencimiento, estaPagada, ordenar, proveedoresConCuentas, resumir, saldo, sugeridasParaPagar, type CuentaPorPagar,
 } from "@/components/admin/cuentas-por-pagar/resumen-cuentas";
 
-const ESTADOS: { id: FiltroEstado; label: string }[] = [
-  { id: "pendientes", label: "Por pagar" },
-  { id: "pagadas", label: "Pagadas" },
-  { id: "todas", label: "Todas" },
-];
+export const SECCIONES_POR_PAGAR = ["cuentas", "calendario", "propuesta"] as const;
+type SeccionPorPagar = (typeof SECCIONES_POR_PAGAR)[number];
+const ID_PANEL = "panel-por-pagar";
+const FILTROS_INICIALES: FiltrosCuentas = { estado: "pendientes", proveedorId: "", q: "" };
 
 /**
  * Cuentas por pagar a proveedores: a quién le debes, cuánto, cuándo vence y
- * pagar. Vive en Compras › Por pagar y en Facturación › Cuentas x Pagar.
+ * pagar. Vive en Compras › Por pagar. Tres secciones (`?sub=`): la lista de
+ * cuentas, el calendario con la antigüedad del saldo (C45) y la propuesta de
+ * pagos (C46, preparar no paga). El estado de cuenta de un proveedor (C48)
+ * sale del «⋯» de la cabecera o de la fila.
  */
 export default function PayablesTab() {
-  const { cuentas, proveedores, loading, error, setError, saving, load, crear, pagar, eliminar } = useCuentasPorPagar();
+  const { cuentas, proveedores, loading, error, setError, saving, load, crear, vincular, pagar, eliminar } = useCuentasPorPagar();
   const { confirm } = useConfirm();
-  const [estado, setEstado] = useState<FiltroEstado>("pendientes");
-  const [proveedorId, setProveedorId] = useState("");
+  const { vista, irA } = useSubvistaModulo<SeccionPorPagar>("compras-por-pagar", SECCIONES_POR_PAGAR, "cuentas");
+  const [filtros, setFiltrosTodos] = useState<FiltrosCuentas>(FILTROS_INICIALES);
   const [abierto, setAbierto] = useState<Abierto>(null);
   const [nueva, setNueva] = useState(false);
+  const [aVincular, setAVincular] = useState<CuentaPorPagar | null>(null);
+  const [estadoDe, setEstadoDe] = useState<{ proveedor?: string } | null>(null);
+  // La propuesta arranca con las sugeridas; desde que marcas una, manda tu lista.
+  const [elegidasAMano, setElegidas] = useState<Set<string> | null>(null);
   const [aviso, setAviso] = useState<{ texto: string; tono: "ok" | "aviso" } | null>(null);
   const hoy = limaDateKey();
 
   const resumen = useMemo(() => resumir(cuentas, hoy), [cuentas, hoy]);
   const kpis = useIndicadoresPorPagar(resumen, !loading && !error);
   const porProveedor = useMemo(() => proveedoresConCuentas(cuentas), [cuentas]);
-  const visibles = useMemo(() => ordenar(filtrar(cuentas, estado, proveedorId)), [cuentas, estado, proveedorId]);
-  const conteo = useMemo(() => {
-    const deProveedor = filtrar(cuentas, "todas", proveedorId);
-    const pagadas = deProveedor.filter(estaPagada).length;
-    return { pendientes: deProveedor.length - pagadas, pagadas, todas: deProveedor.length };
-  }, [cuentas, proveedorId]);
-  const elegido = porProveedor.find((p) => p.id === proveedorId);
+  const sugeridas = useMemo(() => new Set(sugeridasParaPagar(cuentas, hoy)), [cuentas, hoy]);
+  const elegidas = elegidasAMano ?? sugeridas;
+  const marcadas = cuentas.filter((c) => elegidas.has(c.id) && !estaPagada(c)).length;
+
+  const setFiltros = (cambio: Partial<FiltrosCuentas>) => setFiltrosTodos((f) => ({ ...f, ...cambio }));
 
   const borrar = async (id: string) => {
     if (!(await confirm({ title: "¿Eliminar esta cuenta por pagar?", description: "Se borra con sus pagos registrados.", intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
     await eliminar(id);
   };
 
+  /** «Pagar» desde la propuesta: lleva a la cuenta, sin filtros que la escondan, con el pago abierto. */
+  const pagarDesdePropuesta = (id: string) => {
+    setFiltrosTodos(FILTROS_INICIALES);
+    setAbierto({ id, que: "pagar" });
+    irA("cuentas");
+    window.setTimeout(() => document.querySelector(`[data-cuenta="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "center" }), 80);
+  };
+
   const descargar = () => exportToCSV(ordenar(cuentas).map((c) => ({
-    proveedor: c.supplierName, concepto: c.description, total: c.amount, pagado: c.paidAmount,
-    falta: saldo(c), vence: diaDeVencimiento(c.dueDate), estado: c.status, orden: c.purchaseOrderId ?? "",
+    proveedor: c.supplierName, concepto: descripcionALaVista(c.description, c.purchaseOrderId), total: c.amount, pagado: c.paidAmount,
+    falta: saldo(c), vence: diaDeVencimiento(c.dueDate), estado: c.status, orden: c.purchaseOrderId ? codigoDeOrden(c.purchaseOrderId) : "",
   })), "cuentas-por-pagar");
+
+  const conDatos = !loading && cuentas.length > 0;
+  const secciones = [
+    // Sin cuenta: la misma cifra está en «Por pagar N» y en los indicadores, y la fila no entra a 1280.
+    { clave: "cuentas" as const, rotulo: "Cuentas" },
+    { clave: "calendario" as const, rotulo: "Calendario" },
+    { clave: "propuesta" as const, rotulo: "Propuesta", cuenta: marcadas },
+  ];
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+      <div className="flex flex-wrap items-center gap-2">
         <SectionTitle className="text-[var(--text-primary)]">Cuentas por pagar</SectionTitle>
         <InfoTip
           title="Cuentas por pagar"
-          what="Lo que le debes a cada proveedor: las compras a crédito crean su cuenta sola y también puedes cargar una a mano. Arriba van las vencidas y las que vencen primero."
+          what="Lo que le debes a cada proveedor: las compras a crédito crean su cuenta sola y también puedes cargar una a mano con su factura u orden. Arriba van las vencidas y las que vencen primero."
           affects="Al recibir con productos dañados, vencidos o faltantes, la cuenta de esa orden baja sola. Si pagas en efectivo puedes marcar «Sale de la caja» y el pago queda como egreso de la caja abierta."
           example="Orden de S/ 140 a 15 días con Distribuidora Ucayali: vence el jueves 23/10; si pagas S/ 100 hoy te faltan S/ 40."
         />
+        {conDatos && (
+          <BarraDeSecciones secciones={secciones} activa={vista} onCambiar={irA} etiqueta="Secciones de Por pagar" idPanel={ID_PANEL} />
+        )}
         <div className="ml-auto flex items-center gap-2">
-          {!loading && cuentas.length > 0 && kpis.boton}
-          <button type="button" onClick={() => setNueva(true)} aria-haspopup="dialog" className={button({ variant: "primary", className: "shrink-0 gap-1.5 rounded-xl px-4 max-sm:w-12 max-sm:px-0" })}>
-            <Plus className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Nueva cuenta</span>
+          {conDatos && kpis.boton}
+          <button type="button" onClick={() => setNueva(true)} aria-haspopup="dialog" title="Nueva cuenta" className={button({ variant: "primary", className: "shrink-0 gap-1.5 rounded-xl px-4 max-2xl:w-12 max-2xl:px-0" })}>
+            <Plus className="h-4 w-4" aria-hidden /> <span className="max-2xl:sr-only">Nueva cuenta</span>
           </button>
           <ActionMenu
             label="Más acciones"
@@ -83,6 +113,7 @@ export default function PayablesTab() {
             icon={MoreHorizontal}
             actions={[
               { id: "refrescar", label: "Actualizar", icon: RefreshCw, onSelect: () => void load(), busy: loading },
+              { id: "estado", label: "Estado de cuenta", hint: "Cargos, pagos y saldo con un proveedor", icon: ScrollText, onSelect: () => setEstadoDe({ proveedor: filtros.proveedorId || undefined }), disabled: porProveedor.length === 0 },
               { id: "csv", label: "Descargar CSV", hint: "Todas las cuentas", icon: Download, onSelect: descargar, disabled: cuentas.length === 0 },
             ]}
           />
@@ -106,7 +137,7 @@ export default function PayablesTab() {
         </div>
       )}
 
-      {!loading && cuentas.length > 0 && kpis.panel}
+      {conDatos && kpis.panel}
 
       {loading ? (
         <TableSkeleton rows={4} cols={4} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" />
@@ -119,61 +150,39 @@ export default function PayablesTab() {
           className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
         />
       ) : (
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <div role="group" aria-label="Qué cuentas ver" className="inline-flex gap-2">
-              {ESTADOS.map((e) => (
-                <button
-                  key={e.id}
-                  type="button"
-                  aria-pressed={estado === e.id}
-                  onClick={() => setEstado(e.id)}
-                  className={cn(
-                    "h-12 rounded-xl border px-3 text-sm font-semibold transition-colors",
-                    estado === e.id ? "border-primary bg-primary text-white" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                  )}
-                >
-                  {e.label} <span className="tabular-nums opacity-80">{conteo[e.id]}</span>
-                </button>
-              ))}
-            </div>
-            <select
-              value={proveedorId}
-              onChange={(e) => setProveedorId(e.target.value)}
-              aria-label="Filtrar por proveedor"
-              className="h-12 max-w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-            >
-              <option value="">Todos los proveedores</option>
-              {porProveedor.map((p) => (
-                <option key={p.id} value={p.id}>{p.nombre}{p.debe > 0 ? ` · debes ${formatCurrency(p.debe)}` : " · al día"}</option>
-              ))}
-            </select>
-            {elegido && (
-              <p className="text-sm text-[var(--text-secondary)]">
-                Le debes <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(elegido.debe)}</strong> en {elegido.n} cuenta{elegido.n === 1 ? "" : "s"}.
-              </p>
-            )}
-          </div>
-          {visibles.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-4 py-6 text-center text-sm text-[var(--text-secondary)]">
-              {estado === "pendientes" ? "No te falta pagar nada con este filtro." : "Sin cuentas con este filtro."}
-            </p>
+        <div role="tabpanel" id={ID_PANEL} aria-labelledby={idPestanaDeSeccion(ID_PANEL, vista)}>
+          {vista === "calendario" ? (
+            <CalendarioPorPagar cuentas={cuentas} hoy={hoy} />
+          ) : vista === "propuesta" ? (
+            <PropuestaDePagos cuentas={cuentas} hoy={hoy} elegidas={elegidas} setElegidas={setElegidas} onPagar={pagarDesdePropuesta} />
           ) : (
-            <TablaCuentas
-              cuentas={visibles}
+            <SeccionCuentas
+              cuentas={cuentas}
               hoy={hoy}
+              filtros={filtros}
+              setFiltros={setFiltros}
               abierto={abierto}
               setAbierto={setAbierto}
               saving={saving}
               onPagar={pagar}
               onEliminar={(id) => void borrar(id)}
               onAviso={(texto, tono) => setAviso({ texto, tono })}
+              onEstadoDeCuenta={(proveedor) => setEstadoDe({ proveedor })}
+              onVincular={setAVincular}
             />
           )}
         </div>
       )}
 
-      {nueva && <NuevaCuentaModal proveedores={proveedores} saving={saving} onCrear={crear} onCerrar={() => setNueva(false)} />}
+      {nueva && <NuevaCuentaModal proveedores={proveedores} cuentas={cuentas} saving={saving} onCrear={crear} onCerrar={() => setNueva(false)} />}
+      {aVincular && <VincularOrdenModal cuenta={aVincular} saving={saving} onVincular={vincular} onCerrar={() => setAVincular(null)} />}
+      {estadoDe && (
+        <EstadoDeCuentaModal
+          proveedores={porProveedor.map((p) => ({ id: p.id, nombre: p.nombre }))}
+          inicial={estadoDe.proveedor}
+          onCerrar={() => setEstadoDe(null)}
+        />
+      )}
     </div>
   );
 }

@@ -382,6 +382,10 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       archivo: "components/admin/compras/ProveedoresVista.tsx",
       constante: /export const SECCIONES_PROVEEDORES = \[([^\]]+)\]/,
     },
+    "compras/cuentas-por-pagar": {
+      archivo: "components/admin/PayablesTab.tsx",
+      constante: /export const SECCIONES_POR_PAGAR = \[([^\]]+)\]/,
+    },
     "loth-libro-operaciones/tablero": {
       archivo: "components/admin/forestal/LothControlPestanas.tsx",
       constante: /export const SUBS_CONTROL = \[([^\]]+)\]/,

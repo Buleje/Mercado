@@ -8,7 +8,10 @@ import type { CuentaPorPagar } from "./resumen-cuentas";
 export type ProveedorBasico = { id: string; name: string; diasCredito?: number | null };
 export type MetodoPago = "efectivo" | "yape" | "plin" | "transferencia";
 
-export type NuevaCuenta = { supplierId: string; description: string; amount: string; dueDate: string };
+/** `description` llega armada con su referencia (`armarDescripcion`); `purchaseOrderId` sólo si sale de una orden. */
+export type NuevaCuenta = { supplierId: string; description: string; amount: string; dueDate: string; purchaseOrderId?: string };
+/** El alta y el vínculo devuelven el motivo del rechazo para mostrarlo DENTRO de la ventana. */
+export type ResultadoAccion = { ok: true } | { ok: false; error: string };
 export type PagoCuenta = { amount: string; method: MetodoPago; reference: string; salidaDeCaja: boolean };
 /** Respuesta del pago según el contrato «sale de la caja» (`caja` sólo si se pidió). */
 export type ResultadoPago = { ok: true; caja?: { sinCaja: boolean } } | { ok: false };
@@ -63,7 +66,7 @@ export function useCuentasPorPagar() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const crear = useCallback(async (f: NuevaCuenta): Promise<boolean> => {
+  const crear = useCallback(async (f: NuevaCuenta): Promise<ResultadoAccion> => {
     const sup = proveedores.find((s) => s.id === f.supplierId);
     setSaving(true);
     setError(null);
@@ -77,17 +80,40 @@ export function useCuentasPorPagar() {
           description: f.description,
           amount: Number(f.amount),
           dueDate: f.dueDate ? new Date(f.dueDate).toISOString() : new Date().toISOString(),
+          ...(f.purchaseOrderId ? { purchaseOrderId: f.purchaseOrderId } : {}),
         }),
       });
-      if (!res.ok) { setError(await leerError(res)); return false; }
+      if (!res.ok) return { ok: false, error: await leerError(res) };
       const nueva = cuentaDeRespuesta(await res.json().catch(() => null));
       if (nueva) setCuentas((prev) => [nueva, ...prev.filter((c) => c.id !== nueva.id)]);
       else await load();
-      return true;
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Sin conexión: la cuenta no se guardó." };
     } finally {
       setSaving(false);
     }
   }, [proveedores, load]);
+
+  /** C41: la cuenta cargada a mano queda vinculada a la orden que apareció después. */
+  const vincular = useCallback(async (id: string, purchaseOrderId: string): Promise<ResultadoAccion> => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/payables/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ purchaseOrderId }),
+      });
+      if (!res.ok) return { ok: false, error: await leerError(res) };
+      const actual = cuentaDeRespuesta(await res.json().catch(() => null));
+      setCuentas((prev) => prev.map((c) => (c.id === id ? (actual ?? { ...c, purchaseOrderId }) : c)));
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Sin conexión: no se vinculó la orden." };
+    } finally {
+      setSaving(false);
+    }
+  }, []);
 
   const pagar = useCallback(async (id: string, p: PagoCuenta): Promise<ResultadoPago> => {
     setSaving(true);
@@ -124,5 +150,5 @@ export function useCuentasPorPagar() {
     setCuentas((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
-  return { cuentas, proveedores, loading, error, setError, saving, load, crear, pagar, eliminar };
+  return { cuentas, proveedores, loading, error, setError, saving, load, crear, vincular, pagar, eliminar };
 }

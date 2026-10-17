@@ -436,9 +436,13 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
   // Compras › Órdenes y recepción y › Proveedores (Recepción y Comparador eran vistas).
   compras: [
     { vista: "ordenes-compra", key: "ordenes", label: "Órdenes de compra", hint: "Las órdenes emitidas a cada proveedor y su estado", origen: ["compras"] },
+    { vista: "ordenes-compra", key: "entregas", label: "Entregas", hint: "Lo que tiene que llegar, por el día que prometió el proveedor: atrasadas, hoy y la semana, con «Recibir»", origen: ["compras"] },
     { vista: "ordenes-compra", key: "recibir", label: "Recepciones", hint: "Lo que llegó de cada proveedor y «Recibir» con o sin orden: cantidades, estado y fotos", origen: ["compras"] },
     { vista: "proveedores", key: "lista", label: "Lista de proveedores", hint: "Tus proveedores, sus datos, pagos y la ficha de cada uno", origen: ["compras"] },
     { vista: "proveedores", key: "comparar", label: "Comparar proveedores", hint: "Puntaje de cada proveedor, cómo te entrega, precio por producto y precios del mercado", origen: ["compras"] },
+    { vista: "cuentas-por-pagar", key: "cuentas", label: "Cuentas por pagar", hint: "Cada deuda con su proveedor, de qué factura u orden viene y cuándo vence", origen: ["compras"] },
+    { vista: "cuentas-por-pagar", key: "calendario", label: "Calendario de pagos", hint: "Qué vence cada semana y la antigüedad del saldo por tramos", origen: ["compras"] },
+    { vista: "cuentas-por-pagar", key: "propuesta", label: "Propuesta de pagos", hint: "Las vencidas y las de la semana ya marcadas, con el total y en CSV", origen: ["compras"] },
   ],
   "pagina-inicio": [
     { vista: "apariencia", key: "identidad", label: "Identidad", hint: "Nombre, logo, lema y cómo sale en Google" },
@@ -466,15 +470,17 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "sistema", key: "colas", label: "Colas", hint: "Trabajos en segundo plano y crons que fallaron", origen: ["colas"] },
   ],
   // Pedidos y reparto › Reparto (ola 2): las secciones del Delivery de antes.
-  // La barra dice En vivo · Equipo · Asignaciones · Pagos · Ranking (10-10);
+  // La barra dice En vivo · Rutas · Equipo · Asignaciones · Retiros · Ranking
+  // (10-10; Rutas salió de abajo del mapa y Pagos se llama Retiros el 17-10);
   // «Postulantes» no es sección (es Equipo con su selector) pero se busca por
   // su nombre.
   pedidos: [
-    { vista: "reparto", key: "en-vivo", label: "Repartidores en vivo", hint: "El mapa con los repartidores en la calle, las cifras de hoy y, plegadas, las rutas y paradas", origen: ["delivery-partners", "delivery-live"] },
+    { vista: "reparto", key: "en-vivo", label: "Repartidores en vivo", hint: "El mapa con los repartidores en la calle y las cifras de hoy", origen: ["delivery-partners", "delivery-live"] },
+    { vista: "reparto", key: "rutas", label: "Rutas y paradas", hint: "Las rutas planificadas con sus paradas en orden y lo último de cada entrega", origen: ["delivery-partners", "delivery-live"] },
     { vista: "reparto", key: "repartidores", label: "Equipo de reparto", hint: "Tus repartidores: teléfono, zona, vehículo, tarifa y si están activos", origen: ["delivery-partners"] },
     { vista: "reparto", key: "postulantes", label: "Postulantes a repartidor", hint: "Quienes postularon para repartir (antes Solicitudes)", origen: ["delivery-partners"] },
     { vista: "reparto", key: "asignaciones", label: "Asignaciones y permisos de repartidores", hint: "Qué pedido va con qué repartidor; plegados, los permisos de tienda de cada usuario", origen: ["delivery-partners"] },
-    { vista: "reparto", key: "pagos", label: "Pagos a repartidores", hint: "Lo que cobran los repartidores por sus entregas (antes Retiros)", origen: ["delivery-partners"] },
+    { vista: "reparto", key: "pagos", label: "Retiros de repartidores", hint: "Lo que les debes a tus repartidores por sus entregas y te pidieron retirar (antes Pagos)", origen: ["delivery-partners"] },
     { vista: "reparto", key: "ranking", label: "Ranking de repartidores", hint: "Quién entrega más y mejor", origen: ["delivery-partners"] },
   ],
   // Libros forestales (ola 2): las vistas que se fundieron son pestañas

@@ -58,6 +58,8 @@ function dibujar(cuentas: CuentaPorPagar[]) {
       onPagar={vi.fn()}
       onEliminar={vi.fn()}
       onAviso={vi.fn()}
+      onEstadoDeCuenta={vi.fn()}
+      onVincular={vi.fn()}
     />,
   );
   return { setAbierto };

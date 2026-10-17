@@ -167,7 +167,7 @@ function toISO(d: Date): string {
 
 // ── Mappers ───────────────────────────────────────────────────────────────────
 
-function mapPayable(p: PPayable & { payments: PPayment[] }): DbPayable {
+export function mapPayable(p: PPayable & { payments: PPayment[] }): DbPayable {
   return {
     id: p.id, supplierId: p.supplierId, supplierName: p.supplierName,
     ...(p.purchaseOrderId != null && { purchaseOrderId: p.purchaseOrderId }),
@@ -204,6 +204,13 @@ function mapExpense(e: PExpense): DbExpense {
 
 // ── Payables DB ───────────────────────────────────────────────────────────────
 
+/** Lo que se puede corregir de una cuenta a mano (el estado sale de los pagos). */
+export type EdicionPayable = Partial<Pick<DbPayable, "amount" | "dueDate" | "description" | "supplierName">>;
+
+export type ResultadoEdicionPayable =
+  | { ok: true; cuenta: DbPayable }
+  | { ok: false; status: 404 | 409; error: string };
+
 export const PayablesDB = {
   async getAll(tenantId: string): Promise<DbPayable[]> {
     "use cache";
@@ -238,20 +245,43 @@ export const PayablesDB = {
     safeRevalidate(`tenant:${tenantId}:payables`); // perf audit P1: invalidar caché tras write
     return mapPayable(row);
   },
-  async update(tenantId: string, id: string, patch: Partial<DbPayable>): Promise<DbPayable | null> {
-    const existing = await prisma.payable.findFirst({ where: { id, tenantId } });
-    if (!existing) return null;
+  /**
+   * Corrige los datos de una cuenta. El estado NO se edita: sale de los pagos
+   * (`addPayment` / `GastoConCajaDB.pagarCuenta`). Antes un PATCH
+   * `{status:"pagado"}` la daba por pagada con 0 abonos (revisión de security
+   * 17-10). El monto sólo se corrige mientras la cuenta no tiene pagos: con
+   * pagos, bajarlo dejaría pagado de más. Bajo el mismo candado de fila que
+   * `pagarCuenta`, para que un pago y una corrección no se crucen.
+   */
+  async update(tenantId: string, id: string, patch: EdicionPayable): Promise<ResultadoEdicionPayable> {
+    if (!tenantId) throw new Error("tenantId is required");
     const data: Record<string, unknown> = {};
     if (patch.description !== undefined) data.description = patch.description;
-    if (patch.amount !== undefined) data.amount = patch.amount;
-    if (patch.status !== undefined) data.status = patch.status;
     if (patch.dueDate !== undefined) data.dueDate = new Date(patch.dueDate);
     if (patch.supplierName !== undefined) data.supplierName = patch.supplierName;
-    await prisma.payable.updateMany({ where: { id, tenantId }, data });
-    const row = await prisma.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
-    if (!row) return null;
-    safeRevalidate(`tenant:${tenantId}:payables`); // perf audit P1: invalidar caché tras write
-    return mapPayable(row);
+    const r = await prisma.$transaction(async (tx): Promise<ResultadoEdicionPayable> => {
+      const filas = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id" FROM "Payable" WHERE "id" = ${id} AND "tenantId" = ${tenantId} FOR UPDATE
+      `;
+      if (filas.length === 0) return { ok: false, status: 404, error: "No encontramos esa cuenta." };
+      if (patch.amount !== undefined) {
+        const actual = await tx.payable.findFirst({
+          where: { id, tenantId },
+          select: { paidAmount: true, _count: { select: { payments: true } } },
+        });
+        if (!actual) return { ok: false, status: 404, error: "No encontramos esa cuenta." };
+        if (actual._count.payments > 0 || toNumOrZero(actual.paidAmount) > 0) {
+          return { ok: false, status: 409, error: "Esta cuenta ya tiene pagos anotados: su monto ya no se puede cambiar." };
+        }
+        data.amount = patch.amount;
+        data.status = "pendiente"; // sin pagos, lo único que puede ser
+      }
+      if (Object.keys(data).length > 0) await tx.payable.updateMany({ where: { id, tenantId }, data });
+      const row = await tx.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
+      return row ? { ok: true, cuenta: mapPayable(row) } : { ok: false, status: 404, error: "No encontramos esa cuenta." };
+    });
+    if (r.ok) safeRevalidate(`tenant:${tenantId}:payables`); // perf audit P1: invalidar caché tras write
+    return r;
   },
   async addPayment(tenantId: string, id: string, payment: DbPayment): Promise<DbPayable | null> {
     // F2: race lock — todo dentro de $transaction para evitar doble pago concurrente

@@ -147,3 +147,50 @@ export function proveedoresConCuentas(cuentas: CuentaPorPagar[]): { id: string; 
   }
   return [...m.values()].sort((a, b) => b.debe - a.debe || a.nombre.localeCompare(b.nombre));
 }
+
+/**
+ * Antigüedad del saldo (auditoría Compras C45): cada cuenta con saldo cae en
+ * UN tramo según los días que faltan o pasaron desde su vencimiento al día de
+ * corte. Los tramos suman lo mismo que «Le debes».
+ */
+export const TRAMOS = [
+  { id: "vencido-61", label: "Vencido hace más de 60 días", desde: -Infinity, hasta: -61, tono: "vencida" },
+  { id: "vencido-31", label: "Vencido hace 31 a 60 días", desde: -60, hasta: -31, tono: "vencida" },
+  { id: "vencido-1", label: "Vencido hace 1 a 30 días", desde: -30, hasta: -1, tono: "vencida" },
+  { id: "hoy", label: "Vence hoy", desde: 0, hasta: 0, tono: "pronto" },
+  { id: "semana", label: `Vence en 1 a ${DIAS_PRONTO} días`, desde: 1, hasta: DIAS_PRONTO, tono: "pronto" },
+  { id: "mes", label: `Vence en ${DIAS_PRONTO + 1} a 30 días`, desde: DIAS_PRONTO + 1, hasta: 30, tono: "al-dia" },
+  { id: "despues", label: "Vence en más de 30 días", desde: 31, hasta: Infinity, tono: "al-dia" },
+] as const satisfies readonly { id: string; label: string; desde: number; hasta: number; tono: TonoVence }[];
+export type TramoId = (typeof TRAMOS)[number]["id"];
+
+export type Tramo = { id: TramoId; label: string; tono: TonoVence; saldo: number; n: number; cuentas: CuentaPorPagar[] };
+
+export function antiguedad(cuentas: CuentaPorPagar[], hoy: string): { tramos: Tramo[]; total: number } {
+  const tramos: Tramo[] = TRAMOS.map((t) => ({ id: t.id, label: t.label, tono: t.tono, saldo: 0, n: 0, cuentas: [] }));
+  let total = 0;
+  for (const c of ordenar(cuentas)) {
+    if (estaPagada(c)) continue;
+    const dia = diaDeVencimiento(c.dueDate);
+    const dias = dia ? diasEntre(hoy, dia) : 0;
+    const i = TRAMOS.findIndex((t) => dias >= t.desde && dias <= t.hasta);
+    const t = tramos[i < 0 ? tramos.length - 1 : i];
+    const s = saldo(c);
+    t.saldo = r2(t.saldo + s);
+    t.n++;
+    t.cuentas.push(c);
+    total += s;
+  }
+  return { tramos, total: r2(total) };
+}
+
+/**
+ * Propuesta de pagos (C46, sólo vista): lo que conviene pagar primero son las
+ * vencidas y las que vencen hasta dentro de `DIAS_PRONTO` días. Preparar la
+ * lista no paga nada.
+ */
+export function sugeridasParaPagar(cuentas: CuentaPorPagar[], hoy: string): string[] {
+  return ordenar(cuentas)
+    .filter((c) => !estaPagada(c) && vencimiento(c, hoy).dias <= DIAS_PRONTO)
+    .map((c) => c.id);
+}

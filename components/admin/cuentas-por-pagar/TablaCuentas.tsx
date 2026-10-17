@@ -1,17 +1,18 @@
 "use client";
 
 import { Fragment } from "react";
-import { DollarSign, History, MoreHorizontal, Trash2 } from "@buleje/design-system/icons";
+import { DollarSign, History, Link2, MoreHorizontal, ScrollText, Trash2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
+import { codigoDeOrden, descripcionALaVista } from "@/lib/compras/referencia-documento";
 import PagarCuentaForm, { METODOS } from "./PagarCuentaForm";
 import { diaDeVencimiento, estaPagada, fechaConDia, saldo, vencimiento, type CuentaPorPagar, type TonoVence } from "./resumen-cuentas";
 import type { MetodoPago, PagoCuenta, ResultadoPago } from "./use-cuentas-por-pagar";
 import { DataTable } from "@buleje/design-system";
 
-const CHIP: Record<TonoVence, string> = {
+export const CHIP_VENCE: Record<TonoVence, string> = {
   vencida: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]",
   pronto: "bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]",
   "al-dia": "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
@@ -22,11 +23,12 @@ export type Abierto = { id: string; que: "pagar" | "pagos" } | null;
 
 /**
  * Una fila por cuenta: quién te cobra, cuánto falta, cuándo vence y «Pagar».
- * El resto (pagos hechos, eliminar) va en el menú de la fila. Debajo de la fila
+ * El resto (pagos hechos, estado de cuenta, vincular a su orden, eliminar) va
+ * en el menú de la fila. Debajo de la fila
  * se abre el pago o el historial. A 400 px la tabla pasa a tarjetas sola
  * (`useMobileTableCards` del panel).
  */
-export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving, onPagar, onEliminar, onAviso }: {
+export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving, onPagar, onEliminar, onAviso, onEstadoDeCuenta, onVincular }: {
   cuentas: CuentaPorPagar[];
   hoy: string;
   abierto: Abierto;
@@ -35,6 +37,8 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
   onPagar: (id: string, p: PagoCuenta) => Promise<ResultadoPago>;
   onEliminar: (id: string) => void;
   onAviso: (texto: string, tono: "ok" | "aviso") => void;
+  onEstadoDeCuenta: (supplierId: string) => void;
+  onVincular: (c: CuentaPorPagar) => void;
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
@@ -55,11 +59,13 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
             const pct = c.amount > 0 ? Math.min(100, (c.paidAmount / c.amount) * 100) : 0;
             const acciones: MenuAccion[] = [
               { id: "pagos", label: `Pagos hechos (${c.payments.length})`, icon: History, onSelect: () => setAbierto(abierto?.id === c.id && abierto.que === "pagos" ? null : { id: c.id, que: "pagos" }) },
+              { id: "estado", label: "Estado de cuenta del proveedor", icon: ScrollText, onSelect: () => onEstadoDeCuenta(c.supplierId) },
+              ...(c.purchaseOrderId ? [] : [{ id: "vincular", label: "Vincular a su orden", hint: "La orden de compra de esta deuda", icon: Link2, onSelect: () => onVincular(c) }]),
               { id: "eliminar", label: "Eliminar la cuenta", icon: Trash2, tone: "danger", onSelect: () => onEliminar(c.id) },
             ];
             return (
               <Fragment key={c.id}>
-                <tr className={cn(v.tono === "vencida" && "bg-[var(--data-error-50)]/40 dark:bg-[var(--data-error-500)]/5")}>
+                <tr data-cuenta={c.id} className={cn(v.tono === "vencida" && "bg-[var(--data-error-50)]/40 dark:bg-[var(--data-error-500)]/5")}>
                   <td className="align-top">
                     {/* Un solo hijo por celda: a 400 px la celda es «rótulo | contenido» y
                         dos hijos quedaban uno al lado del otro, montados. */}
@@ -68,7 +74,9 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
                         {/* El proveedor lleva a su ficha (con sus órdenes); sin id, queda el texto. */}
                         <EnlacePanel cosa="proveedor" id={c.supplierId} apariencia="heredada">{c.supplierName || "Sin nombre"}</EnlacePanel>
                       </p>
-                      {c.description && <p className="mt-0.5 line-clamp-2 text-sm text-[var(--text-secondary)]">{c.description}</p>}
+                      {(c.description || c.purchaseOrderId) && (
+                        <p className="mt-0.5 line-clamp-2 text-sm text-[var(--text-secondary)]">{descripcionALaVista(c.description, c.purchaseOrderId)}</p>
+                      )}
                     </div>
                   </td>
                   <td className="text-right align-top tabular-nums">
@@ -83,7 +91,7 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
                   <td className="align-top">
                     <div className="min-w-0">
                       <p className="text-[var(--text-primary)]">{fechaConDia(diaDeVencimiento(c.dueDate))}</p>
-                      <span className={cn("mt-1 inline-flex rounded-full px-2 py-0.5 text-sm font-semibold", CHIP[v.tono])}>{v.texto}</span>
+                      <span className={cn("mt-1 inline-flex rounded-full px-2 py-0.5 text-sm font-semibold", CHIP_VENCE[v.tono])}>{v.texto}</span>
                     </div>
                   </td>
                   <td className="align-top">
@@ -133,9 +141,25 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
   );
 }
 
+/**
+ * Pagos de la cuenta (C44): el cargo, lo pagado y lo que falta en una línea
+ * que se explica sola. El cargo ya trae restados los descuentos de una
+ * recepción con faltantes.
+ */
 function HistorialPagos({ cuenta }: { cuenta: CuentaPorPagar }) {
   return (
     <div className="space-y-1.5 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-3 sm:px-4">
+      <p className="text-sm text-[var(--text-secondary)]">
+        Cargo <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(cuenta.amount)}</strong>
+        {" − pagaste "}<strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(cuenta.paidAmount)}</strong>
+        {" = te falta "}<strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(saldo(cuenta))}</strong>
+        {cuenta.purchaseOrderId && (
+          <>
+            {" · "}
+            <EnlacePanel cosa="oc" id={cuenta.purchaseOrderId} apariencia="heredada">Orden de compra {codigoDeOrden(cuenta.purchaseOrderId)}</EnlacePanel>
+          </>
+        )}
+      </p>
       {cuenta.payments.length === 0 ? (
         <p className="text-sm text-[var(--text-secondary)]">Todavía no le pagaste nada de esta cuenta.</p>
       ) : (
@@ -150,15 +174,6 @@ function HistorialPagos({ cuenta }: { cuenta: CuentaPorPagar }) {
           </div>
         ))
       )}
-      <p className="pt-1 text-sm text-[var(--text-secondary)]">
-        Cuenta {cuenta.id}
-        {cuenta.purchaseOrderId && (
-          <>
-            {" · "}
-            <EnlacePanel cosa="oc" id={cuenta.purchaseOrderId} apariencia="heredada">Orden {cuenta.purchaseOrderId}</EnlacePanel>
-          </>
-        )}
-      </p>
     </div>
   );
 }

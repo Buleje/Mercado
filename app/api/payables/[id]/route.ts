@@ -5,14 +5,18 @@ import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { CuentasPorPagarDB } from "@/lib/db/cuentas-por-pagar.db";
 
 
+/* Sin `status` (revisión de security 17-10): el estado sale de los pagos.
+   `amount` sólo mientras la cuenta no tiene pagos (lo decide `PayablesDB.update`). */
 const PayablePatchSchema = z.object({
   amount: z.number().positive().optional(),
   dueDate: z.string().datetime().optional(),
   description: z.string().max(500).optional(),
   supplierName: z.string().max(200).optional(),
-  status: z.enum(["pendiente", "parcial", "pagado"]).optional(),
+  /** C41: conciliar una cuenta a mano con la orden que apareció después. Va sola. */
+  purchaseOrderId: z.string().min(1).max(100).optional(),
 }).partial();
 
 export async function GET(
@@ -49,7 +53,13 @@ export async function PATCH(
 
   const { id } = await params;
   try {
-    const raw = await req.json();
+    const raw: unknown = await req.json();
+    if (raw && typeof raw === "object" && "status" in raw) {
+      return NextResponse.json(
+        { error: "El estado de la cuenta sale de sus pagos: para darla por pagada, registra el pago." },
+        { status: 400 },
+      );
+    }
     const parsed = PayablePatchSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -58,7 +68,26 @@ export async function PATCH(
       return NextResponse.json({ error: "No hay campos para actualizar" }, { status: 400 });
     }
 
-    const updated = await PayablesDB.update(auth.tenantId, id, parsed.data);
+    const { purchaseOrderId, ...resto } = parsed.data;
+    if (purchaseOrderId) {
+      if (Object.keys(resto).length > 0) {
+        return NextResponse.json({ error: "Vincular la orden va solo, sin otros cambios." }, { status: 400 });
+      }
+      const r = await CuentasPorPagarDB.vincularOrden(auth.tenantId, id, purchaseOrderId);
+      if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status });
+    }
+
+    let updated: Awaited<ReturnType<typeof PayablesDB.getById>>;
+    if (Object.keys(resto).length > 0) {
+      const r = await PayablesDB.update(auth.tenantId, id, resto);
+      if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status });
+      updated = r.cuenta;
+    } else {
+      // `getById` está en caché (se invalida con «max»: la primera lectura es la
+      // vieja), así que el vínculo recién guardado se pone encima.
+      const leida = await PayablesDB.getById(auth.tenantId, id);
+      updated = leida && purchaseOrderId ? { ...leida, purchaseOrderId } : leida;
+    }
     if (!updated) {
       return NextResponse.json({ error: "Payable no encontrado" }, { status: 404 });
     }

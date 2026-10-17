@@ -52,6 +52,8 @@ afterEach(() => {
 
 describe("PayablesTab — el vencimiento se lee como fecha DATE-only", () => {
   it("una cuenta que vence el 15/10 se muestra «jueves 15/10», no «miércoles 14/10»", async () => {
+    // La barra de secciones (Cuentas · Calendario · Propuesta) centra la elegida con un ResizeObserver: jsdom no lo trae.
+    vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
     global.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const u = String(input);
       if (u === "/api/payables") return jsonResponse([cuenta]);
