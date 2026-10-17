@@ -1,14 +1,15 @@
 "use client";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Bookmark as BookmarkIcon, ClipboardList, FileDown, Loader2, MessageCircle, Users } from "@buleje/design-system/icons";
 import { Check as CheckIcon } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { TIPOS_COMPROBANTE, type TipoComprobante } from "@/lib/compras/estados-oc";
-import type { PaymentMethod } from "@/lib/types/purchases";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import CompraCondicionPago from "./CompraCondicionPago";
 import CompraPlantillas from "./CompraPlantillas";
 import { faltaParaOrden, type ConfirmarCompra } from "./use-confirmar-compra";
 import type { CompraCarrito } from "./use-compra-carrito";
@@ -25,11 +26,10 @@ interface Props {
 /** Totales, forma de pago, comprobante, notas, plantillas y acciones de la canasta. */
 export default function CompraCanastaTotales({ carrito, orden, plantillas, onPdf, onVenderACliente }: Props) {
   const {
-    cart, discount, setDiscount, subtotal, discountAmount, igvAmount, total, paymentMethod, setPaymentMethod,
+    cart, discount, setDiscount, subtotal, discountAmount, desglose, total, paymentMethod, setPaymentMethod,
     deliveryDate, setDeliveryDate, notes, setNotes, lastOC, invoiceType, setInvoiceType, invoiceNumber, setInvoiceNumber,
   } = carrito;
   const { processing, planBlockedMsg, confirmarOC, generateWhatsApp, handleSaveDraft } = orden;
-  const [showIGV, setShowIGV] = useState(false);
   // Fecha mínima para deliveryDate (evitar recalcular en cada render)
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
   const falta = faltaParaOrden(carrito);
@@ -73,56 +73,42 @@ export default function CompraCanastaTotales({ carrito, orden, plantillas, onPdf
         />
       </div>
 
-      {/* Totales */}
-      <div className="space-y-1 text-xs">
+      {/* Totales (C04): el costo ya incluye el IGV (ADR-377), así que se
+          desglosa —base + IGV (+ lo exonerado) = total— en vez de esconderlo tras un botón. */}
+      <dl className="space-y-1 text-xs">
+        {discountAmount > 0 && (
+          <>
+            <div className="flex justify-between text-[var(--text-secondary)]">
+              <dt>Subtotal</dt>
+              <dd className="font-mono">{formatCurrency(subtotal)}</dd>
+            </div>
+            <div className="flex justify-between text-[var(--data-error-500)]">
+              <dt>{discount > 0 ? `Descuento ${discount}%` : "Promoción"}</dt>
+              <dd className="font-mono">-{formatCurrency(discountAmount)}</dd>
+            </div>
+          </>
+        )}
         <div className="flex justify-between text-[var(--text-secondary)]">
-          <span>Subtotal</span>
-          <span className="font-mono">{formatCurrency(subtotal)}</span>
+          <dt>Base imponible</dt>
+          <dd className="font-mono">{formatCurrency(desglose.base)}</dd>
         </div>
-        {discount > 0 && (
-          <div className="flex justify-between text-[var(--data-error-500)]">
-            <span>Descuento {discount}%</span>
-            <span className="font-mono">
-              -{formatCurrency(discountAmount)}
-            </span>
+        <div className="flex justify-between text-[var(--text-secondary)]">
+          <dt>IGV 18 % (incluido)</dt>
+          <dd className="font-mono">{formatCurrency(desglose.igv)}</dd>
+        </div>
+        {desglose.noGravado > 0.004 && (
+          <div className="flex justify-between text-[var(--text-secondary)]">
+            <dt>Exonerado o inafecto</dt>
+            <dd className="font-mono">{formatCurrency(desglose.noGravado)}</dd>
           </div>
         )}
-        <div className="flex items-center gap-1 text-[var(--text-tertiary)]">
-          <button
-            type="button"
-            onClick={() => setShowIGV((v) => !v)}
-            aria-pressed={showIGV}
-            className="text-xs underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
-          >
-            IGV 18% incluido
-          </button>
-          {showIGV && (
-            <span className="font-mono ml-auto">
-              {formatCurrency(igvAmount)}
-            </span>
-          )}
-        </div>
         <div className="flex justify-between font-bold text-base text-[var(--text-primary)] pt-1 border-t border-[var(--rule-soft)]">
-          <span>TOTAL</span>
-          <span className="font-mono text-primary">
-            {formatCurrency(total)}
-          </span>
+          <dt>TOTAL</dt>
+          <dd className="font-mono text-primary">{formatCurrency(total)}</dd>
         </div>
-      </div>
+      </dl>
 
-      {/* Método de pago */}
-      <select
-        value={paymentMethod}
-        onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-        aria-label="Método de pago"
-        className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-      >
-        <option value="contado">Contado</option>
-        <option value="credito_7">Crédito 7 días</option>
-        <option value="credito_15">Crédito 15 días</option>
-        <option value="credito_30">Crédito 30 días</option>
-        <option value="transferencia">Transferencia</option>
-      </select>
+      <CompraCondicionPago value={paymentMethod} onChange={setPaymentMethod} disabled={processing} />
 
       {/* Comprobante del proveedor: sin número no hay forma de encontrar la
           compra cuando el contador la pide (0 de 71 órdenes lo tenían). */}
@@ -182,10 +168,13 @@ export default function CompraCanastaTotales({ carrito, orden, plantillas, onPdf
       </div>
 
       {lastOC && (
-        <div className="bg-primary/10 rounded-xl p-3 space-y-2">
-          <p className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)]"><CheckIcon className="h-3.5 w-3.5 shrink-0" aria-hidden /> OC Creada</p>
-          <p className="text-xs text-[var(--data-success-500)]">ID: {lastOC.id}</p>
-          <p className="text-xs text-[var(--data-success-500)]">{lastOC.items} productos — {formatCurrency(Number(lastOC.total))}</p>
+        <div role="status" className="bg-primary/10 rounded-xl p-3 space-y-1.5">
+          <p className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-ink)]"><CheckIcon className="h-3.5 w-3.5 shrink-0" aria-hidden /> Orden creada a {lastOC.proveedor}</p>
+          <p className="text-xs text-[var(--text-secondary)]">{lastOC.items} productos — {formatCurrency(Number(lastOC.total))}</p>
+          <p className="text-xs text-[var(--text-secondary)]">
+            Siguiente: cuando llegue la mercadería, recíbela en Órdenes (ahí sube el stock).
+            {lastOC.credito ? " La deuda ya está en Por pagar." : ""}
+          </p>
           <button
             type="button"
             onClick={() => {
@@ -239,7 +228,15 @@ export default function CompraCanastaTotales({ carrito, orden, plantillas, onPdf
           )}
           {processing ? "Creando..." : "Crear orden de compra"}
         </button>
-        <ActionMenu label="Más" actions={acciones} disabled={processing} size="md" />
+        <div className="shrink-0"><ActionMenu label="Más" soloIcono actions={acciones} disabled={processing} size="md" /></div>
+        <InfoTip
+          title="Orden, recepción y pago"
+          side="top"
+          what="Crear la orden sólo deja el pedido anotado para el proveedor: no mueve el stock ni registra un pago."
+          affects="El stock sube cuando la recibes en Órdenes › Recibir. Al contado pagas al recibir; a crédito queda una cuenta en Por pagar y ahí registras el pago."
+          example="Pides 21 tornillos a crédito 15 días: hoy se crea la orden y la cuenta; el día que llegan los recibes (stock +21) y al pagar eliges transferencia o efectivo."
+          className="self-center"
+        />
       </div>
     </div>
   );

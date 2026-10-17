@@ -2,7 +2,7 @@
 
 import { Kicker } from "@buleje/design-system";
 import { Calendar, Building2, StickyNote, Truck, CreditCard, Percent, Receipt } from "@buleje/design-system/icons";
-import { FORMAS_DE_PAGO, generaCuentaPorPagar, TIPOS_COMPROBANTE, type TipoComprobante } from "@/lib/compras/estados-oc";
+import { efectoDeLaCondicion, FORMAS_DE_PAGO, TIPOS_COMPROBANTE, type TipoComprobante } from "@/lib/compras/estados-oc";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { Field } from "@/components/admin/shared/Field";
@@ -55,7 +55,7 @@ export default function OcNuevaOrdenDatos({ oc }: { oc: OrdenesCompra }) {
         </Kicker>
 
         <div>
-          <span className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">Forma de pago</span>
+          <span className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">Condición de pago</span>
           <div className="flex flex-wrap gap-2">
             {FORMAS_DE_PAGO.map(forma => {
               const activa = paymentMethod === forma.id;
@@ -79,9 +79,7 @@ export default function OcNuevaOrdenDatos({ oc }: { oc: OrdenesCompra }) {
             })}
           </div>
           <p className="text-xs text-[var(--text-secondary)] mt-1.5">
-            {generaCuentaPorPagar(paymentMethod)
-              ? `Se abre una cuenta por pagar que vence en ${FORMAS_DE_PAGO.find(f => f.id === paymentMethod)?.dias} días.`
-              : "No genera cuenta por pagar: la compra queda saldada."}
+            {efectoDeLaCondicion(paymentMethod)}
           </p>
         </div>
 

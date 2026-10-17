@@ -4,7 +4,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Package, ShoppingBasket } from "@buleje/design-system/icons";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
-import { formatCurrency, formatDateShort } from "@/lib/format";
+import { formatCurrency, formatDateShort, formatTime } from "@/lib/format";
 import type { PurchaseProduct as Product } from "@/lib/types/purchases";
 import CompraCanastaItem from "./CompraCanastaItem";
 import CompraCanastaTotales from "./CompraCanastaTotales";
@@ -34,7 +34,7 @@ interface Props {
 
 /** Sidebar de la canasta: pestañas, últimas OC del proveedor, ítems con costo y totales. */
 export default function CompraCanasta({ carrito, orden, plantillas, products, onPdf, onVenderACliente }: Props) {
-  const { cart, hasDraft, cartTotalQty, clearCart, selectedSupplier, supplierHistory, addToCart } = carrito;
+  const { cart, estadoBorrador, cartTotalQty, clearCart, selectedSupplier, supplierHistory, addToCart } = carrito;
   const { processing } = orden;
   const [cartTab, setCartTab] = useState<PestanaCanasta>("carrito");
 
@@ -46,11 +46,6 @@ export default function CompraCanasta({ carrito, orden, plantillas, products, on
           <div className="flex items-center gap-2">
             <ShoppingBasket aria-hidden="true" className="h-4 w-4 text-primary" />
             <span className="font-semibold text-sm text-[var(--text-primary)]">Canasta</span>
-            {hasDraft && cart.length === 0 && (
-              <span className="text-xs bg-[var(--data-warning-100)] text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full font-medium">
-                Borrador
-              </span>
-            )}
             {cart.length > 0 && (
               <span
                 role="img"
@@ -61,6 +56,17 @@ export default function CompraCanasta({ carrito, orden, plantillas, products, on
               </span>
             )}
           </div>
+          {cart.length > 0 && (estadoBorrador.error || estadoBorrador.guardadoEn != null) && (
+            <span
+              role="status"
+              title={estadoBorrador.error
+                ? "Este navegador no dejó guardar la canasta: si cierras la pestaña, se pierde."
+                : "La canasta queda guardada en este equipo: al volver o recargar sigue igual. Vaciarla borra el borrador."}
+              className={`ml-auto mr-3 text-xs ${estadoBorrador.error ? "text-[var(--data-error-500)] font-medium" : "text-[var(--text-tertiary)]"}`}
+            >
+              {estadoBorrador.error ? "No se guardó" : `Guardada ${formatTime(estadoBorrador.guardadoEn ?? Date.now())}`}
+            </span>
+          )}
           {cart.length > 0 && (
             <button
               type="button"

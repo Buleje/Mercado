@@ -63,7 +63,7 @@ export const FORMAS_DE_PAGO = [
   { id: "credito_7", label: "Crédito 7 días", dias: 7, ayuda: "Vence a la semana" },
   { id: "credito_15", label: "Crédito 15 días", dias: 15, ayuda: "Vence a los 15 días" },
   { id: "credito_30", label: "Crédito 30 días", dias: 30, ayuda: "Vence al mes" },
-  { id: "transferencia", label: "Transferencia", dias: 0, ayuda: "Ya transferida — no genera cuenta por pagar" },
+  { id: "transferencia", label: "Ya pagada (transferencia)", dias: 0, ayuda: "Ya transferida — no genera cuenta por pagar" },
 ] as const;
 
 export type FormaDePago = (typeof FORMAS_DE_PAGO)[number]["id"];
@@ -71,6 +71,25 @@ export type FormaDePago = (typeof FORMAS_DE_PAGO)[number]["id"];
 /** Sólo el crédito abre una cuenta por pagar; contado y transferencia ya están saldados. */
 export function generaCuentaPorPagar(forma: string): boolean {
   return forma.startsWith("credito_");
+}
+
+const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"] as const;
+
+/**
+ * Qué hace la condición elegida al crear la orden (auditoría Compras C05:
+ * condición y medio son cosas distintas, y crear la orden no registra un
+ * pago). El medio —transferencia, efectivo, Yape— se elige al pagar la cuenta.
+ */
+export function efectoDeLaCondicion(forma: string, desde: Date = new Date()): string {
+  const f = FORMAS_DE_PAGO.find((x) => x.id === forma);
+  if (f && generaCuentaPorPagar(forma)) {
+    const v = new Date(desde);
+    v.setDate(v.getDate() + f.dias);
+    const fecha = `${DIAS_SEMANA[v.getDay()]} ${String(v.getDate()).padStart(2, "0")}/${String(v.getMonth() + 1).padStart(2, "0")}`;
+    return `Crea una cuenta en Por pagar que vence el ${fecha}. Cómo la pagas (transferencia, efectivo, Yape) lo eliges al pagarla.`;
+  }
+  if (forma === "transferencia") return "Ya la pagaste: no crea deuda ni registra otro pago.";
+  return "Pagas al recibir la mercadería: no crea deuda. Crear la orden no registra ningún pago.";
 }
 
 /**

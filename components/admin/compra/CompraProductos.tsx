@@ -133,15 +133,28 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
                     <td className="text-right text-[var(--accent-ink)] dark:text-[var(--accent)] font-medium">
                       {sug}
                     </td>
+                    {/* +1 y «Pedir N» separados (auditoría Compras O02/C02). */}
                     <td className="text-right">
-                      <button
-                        type="button"
-                        onClick={() => addToCart(p, sug)}
-                        aria-label={`Agregar ${p.name}`}
-                        className="h-11 whitespace-nowrap px-3 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                      >
-                        + Agregar
-                      </button>
+                      <div className="inline-flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => addToCart(p, 1)}
+                          aria-label={`Agregar 1 ${p.unit || "und"} de ${p.name}`}
+                          className="h-11 w-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        >
+                          +1
+                        </button>
+                        {sug > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => addToCart(p, sug)}
+                            aria-label={`Agregar los ${sug} ${p.unit || "und"} sugeridos de ${p.name}`}
+                            className="h-11 whitespace-nowrap px-3 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                          >
+                            Pedir {sug}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

@@ -13,6 +13,10 @@ export interface PurchaseProduct {
   unit: string;
   barcode?: string | null;
   active?: boolean;
+  /** `Product.taxType`: gravado | exonerado | inafecto. Vacío = gravado (lleva IGV). */
+  taxType?: string | null;
+  /** `Product.type`: "product" | "service". */
+  type?: string | null;
 }
 
 export interface PurchaseSupplier {

@@ -73,6 +73,12 @@ export default function NuevaRecepcion({
             </p>
           </div>
         )}
+        {/* Sin órdenes pendientes el selector no aparece: decirlo (auditoría Compras O09/C18). */}
+        {pendingOCs.length === 0 && (
+          <p role="status" className="text-sm text-[var(--text-secondary)]">
+            No hay órdenes pendientes de recibir: escribe el proveedor y los productos a mano.
+          </p>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Proveedor" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">
@@ -121,7 +127,7 @@ export default function NuevaRecepcion({
           </div>
           <div className="space-y-2">
             {checklist.map((row, idx) => (
-              <div key={idx} className="flex flex-wrap items-center gap-2 bg-[var(--surface-sunken)] rounded-xl p-2">
+              <div key={idx} className="flex flex-wrap items-end gap-2 bg-[var(--surface-sunken)] rounded-xl p-2">
                 <ProductCombobox
                   id={`recep-prod-${idx}`}
                   products={products}
@@ -130,12 +136,21 @@ export default function NuevaRecepcion({
                   onChange={(text) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, product: text, productId: undefined } : r))}
                   onSelect={(p) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, product: p.name, productId: typeof p.id === "number" ? p.id : undefined, expectedQty: r.expectedQty } : r))}
                 />
-                <input type="number" min="0" value={row.expectedQty} onChange={e => updateChecklistRow(idx, "expectedQty", +e.target.value)}
-                  placeholder="Esperado" className="w-24 px-2 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
-                <input type="number" min="0" value={row.receivedQty} onChange={e => updateChecklistRow(idx, "receivedQty", +e.target.value)}
-                  placeholder="Recibido" className="w-24 px-2 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
+                {/* Rótulos a la vista (auditoría Compras O08/C17): con 0 el placeholder no se ve y no se sabía cuál era cuál. */}
+                <label className="flex flex-col gap-0.5">
+                  <span className="text-xs font-semibold text-[var(--text-secondary)]">Esperado</span>
+                  <input type="number" min="0" value={row.expectedQty} onChange={e => updateChecklistRow(idx, "expectedQty", +e.target.value)}
+                    aria-label={`Cantidad esperada ${row.product ? `de ${row.product}` : "del producto"}`}
+                    className="w-24 px-2 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
+                </label>
+                <label className="flex flex-col gap-0.5">
+                  <span className="text-xs font-semibold text-[var(--text-secondary)]">Llegó</span>
+                  <input type="number" min="0" value={row.receivedQty} onChange={e => updateChecklistRow(idx, "receivedQty", +e.target.value)}
+                    aria-label={`Cantidad que llegó ${row.product ? `de ${row.product}` : "del producto"}`}
+                    className="w-24 px-2 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
+                </label>
                 <select value={row.condition} onChange={e => updateChecklistRow(idx, "condition", e.target.value as ItemCondition)}
-                  aria-label={`Condición de ${row.product || "el producto"}`}
+                  aria-label={`Condición ${row.product ? `de ${row.product}` : "del producto"}`}
                   className="px-2 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm">
                   {Object.entries(COND_MAP).map(([k, v]) => <option key={k} value={k}>{v.opcion ?? v.label}</option>)}
                 </select>

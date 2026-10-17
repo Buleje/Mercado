@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { buildPurchaseWhatsAppUrl } from "@/lib/whatsapp-client";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { generaCuentaPorPagar } from "@/lib/compras/estados-oc";
 import type { CompraCarrito } from "./use-compra-carrito";
 
 function nuevaClave(): string {
@@ -83,8 +84,8 @@ export function useConfirmarCompra(carrito: CompraCarrito, setToastMsg: Dispatch
       setPlanBlockedMsg(null);
       const oc = await res.json() as { id: string | number };
       const ocId = String(oc.id);
-      setToastMsg(`Orden de Compra creada — ID: ${ocId}`);
-      carrito.setLastOC({ id: ocId, total, items: cart.length });
+      setToastMsg("Orden creada: el stock sube recién al recibirla en Órdenes");
+      carrito.setLastOC({ id: ocId, total, items: cart.length, proveedor: selectedSupplier.name, credito: generaCuentaPorPagar(paymentMethod) });
       idempotencyKeyRef.current = nuevaClave();
       carrito.vaciarTrasOrden(items);
     } catch {
