@@ -9,9 +9,10 @@ import { MAX_PEDIDOS_HISTORIAL, PedidoHistorialDB } from "@/lib/db/pedido-histor
  * estado con quién y su nota, y las notas internas). Lo leen el detalle del
  * pedido (línea de tiempo y notas) y Archivados (columna «Cierre»).
  *
- * Panel, cualquier rol que ya ve Pedidos (mismo `requireAdmin` que
- * `GET /api/orders`). Pedidos de otro negocio no salen: filtra por el
- * `tenantId` del JWT.
+ * Panel: los roles que ven Pedidos y sus notas internas (`orders: read` en
+ * lib/auth/role-permissions.ts, salvo repartidor y proveedor, que no ven las
+ * notas del equipo; security 17-10). Pedidos de otro negocio no salen: filtra
+ * por el `tenantId` del JWT.
  */
 const IdsSchema = z
   .array(z.string().min(1).max(40).regex(/^[A-Za-z0-9_-]+$/))
@@ -19,7 +20,7 @@ const IdsSchema = z
   .max(MAX_PEDIDOS_HISTORIAL);
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["cajero", "almacenero", "analista", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
 
   const crudo = req.nextUrl.searchParams.get("ids") ?? "";

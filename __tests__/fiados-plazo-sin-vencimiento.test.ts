@@ -12,17 +12,18 @@ import { NextRequest } from "next/server";
 import { cajonDelDeudor, validarPlazoNuevo } from "@/lib/fiados/plazo";
 import { deudoresDeCobranza } from "@/lib/fiados/urgencia-cobranza";
 
-const { mockRequireAdmin, mockGetById, mockPonerFechaVence } = vi.hoisted(() => ({
+const { mockRequireAdmin, mockGetById, mockPonerFechaVence, mockUpdateStatus } = vi.hoisted(() => ({
   mockRequireAdmin: vi.fn(),
   mockGetById: vi.fn(),
   mockPonerFechaVence: vi.fn(),
+  mockUpdateStatus: vi.fn(),
 }));
 
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 vi.mock("@/lib/auth/csrf", () => ({ assertCsrf: () => null }));
 vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: () => null }));
 vi.mock("@/lib/db/fiados.db", () => ({
-  FiadosDB: { getById: mockGetById, ponerFechaVence: mockPonerFechaVence, updateStatus: vi.fn(), updateDescripcion: vi.fn() },
+  FiadosDB: { getById: mockGetById, ponerFechaVence: mockPonerFechaVence, updateStatus: mockUpdateStatus, updateDescripcion: vi.fn() },
 }));
 vi.mock("@/lib/activity-logger", () => ({ logActivity: vi.fn(() => Promise.resolve()) }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
@@ -113,5 +114,27 @@ describe("PATCH /api/fiados/[id] { fechaVence }", () => {
     const { PATCH } = await import("@/app/api/fiados/[id]/route");
     const res = await PATCH(pedido({ fechaVence: manana() }), ctx);
     expect(res.status).toBe(409);
+  });
+
+  // security 17-10: con `status` y `fechaVence` juntos el estado se guardaba
+  // aunque la fecha devolviera 409 (la fecha se escribía al final).
+  it("estado + fecha y la fecha pierde la carrera: 409 sin tocar el estado", async () => {
+    mockRequireAdmin.mockResolvedValue({ role: "admin", username: "dueno", tenantId: "t-1" });
+    mockGetById.mockResolvedValue({ id: "f1", tenantId: "t-1", status: "ACTIVO" });
+    mockPonerFechaVence.mockResolvedValue(null);
+    const { PATCH } = await import("@/app/api/fiados/[id]/route");
+    const res = await PATCH(pedido({ status: "VENCIDO", fechaVence: manana() }), ctx);
+    expect(res.status).toBe(409);
+    expect(mockUpdateStatus).not.toHaveBeenCalled();
+  });
+
+  it("cerrar (PAGADO) y ponerle plazo en el mismo pedido: 409 sin escribir nada", async () => {
+    mockRequireAdmin.mockResolvedValue({ role: "admin", username: "dueno", tenantId: "t-1" });
+    mockGetById.mockResolvedValue({ id: "f1", tenantId: "t-1", status: "ACTIVO" });
+    const { PATCH } = await import("@/app/api/fiados/[id]/route");
+    const res = await PATCH(pedido({ status: "PAGADO", fechaVence: manana() }), ctx);
+    expect(res.status).toBe(409);
+    expect(mockPonerFechaVence).not.toHaveBeenCalled();
+    expect(mockUpdateStatus).not.toHaveBeenCalled();
   });
 });

@@ -62,7 +62,12 @@ export async function PATCH(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "orders-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  // Escriben pedidos los roles con `orders: write` en lib/auth/role-permissions.ts
+  // (cajero, tienda_owner; admin/dueño/encargado pasan solos en requireAdmin).
+  // Almacenero, analista y repartidor sólo LEEN: antes, sin lista, cualquiera
+  // del panel cancelaba (devolvía stock), tocaba la deuda o el repartidor
+  // (security 17-10). El repartidor marca entregado por /api/delivery/driver.
+  const auth = await requireAdmin(req, ["cajero", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
   // Round 12 M004: audit log de Order.update (state machine).
   return runWithAuditContext(req, auth.username, () => patchOrder(req, ctx, auth));
@@ -343,6 +348,7 @@ async function patchOrder(
       id,
       auth.username,
       requestId,
+      auth.tenantId,
     ).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
 
     // Log to customer notification inbox
@@ -384,7 +390,9 @@ export async function DELETE(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "orders-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  // Borrar un pedido = `orders: delete`, que sólo tienen admin/dueño/encargado
+  // (los tres pasan con ["admin"]: management tier de requireAdmin).
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   // Round 12 M004: DELETE de Order — Ley 29733 art. 23 obliga trazabilidad.
   return runWithAuditContext(req, auth.username, () => deleteOrder(req, ctx, auth));
@@ -405,7 +413,7 @@ async function deleteOrder(
     await OrdersDB.cancelarConReposicion(auth.tenantId, id, "eliminado");
     await OrdersDB.delete(auth.tenantId, id);
     const reqId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, auth.username, reqId).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
+    logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, auth.username, reqId, auth.tenantId).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
     // Fase 4 perf (2026-05-16): invalidación completa de caches admin.
     try {

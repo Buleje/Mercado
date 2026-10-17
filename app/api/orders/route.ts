@@ -1124,7 +1124,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
     }
 
     const requestId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("Crear", "pedido", `Nuevo pedido de ${saved.customer.name} por S/${saved.total.toFixed(2)}`, saved.id, "admin", requestId).catch((err) => logger.error("[orders] activity log failed", { error: String(err), tenantId }));
+    logActivity("Crear", "pedido", `Nuevo pedido de ${saved.customer.name} por S/${saved.total.toFixed(2)}`, saved.id, "admin", requestId, tenantId).catch((err) => logger.error("[orders] activity log failed", { error: String(err), tenantId }));
 
     // SECURITY 2026-05-06 (audit notifs #1): SSE tenant-scoped. Antes el
     // fan-out global hacía que admins de otros tenants vieran este evento.
@@ -1215,7 +1215,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
               url: "/",
             }).catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
             // Log coupon creation
-            logActivity("crear", "cupon", `Cupón de fidelidad ${code} (${discountPct}%) generado automáticamente para ${saved.customer.name} — pedido #${orderCount}`, code).catch((err) => logger.error("[orders] activity log failed", { error: String(err), tenantId }));
+            logActivity("crear", "cupon", `Cupón de fidelidad ${code} (${discountPct}%) generado automáticamente para ${saved.customer.name} — pedido #${orderCount}`, code, "admin", requestId, tenantId).catch((err) => logger.error("[orders] activity log failed", { error: String(err), tenantId }));
           }
         } catch { /* non-critical — never block the response */ }
       })();

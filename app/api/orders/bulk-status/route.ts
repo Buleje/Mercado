@@ -18,7 +18,9 @@ const BulkStatusSchema = z.object({
 // POST /api/orders/bulk-status — bulk status update (admin only)
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "orders-bulk-status"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  // Mismos roles que PATCH /api/orders/[id] (`orders: write` en role-permissions):
+  // el almacenero sólo lee pedidos y un lote a «cancelado» devuelve stock.
+  const auth = await requireAdmin(req, ["cajero", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
 
   let body: unknown;
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
     logActivity(
       "Bulk", "pedido",
       `Cambio masivo de estado a "${status}" — ${result.count} pedido(s)`,
-      undefined, auth.username, requestId,
+      undefined, auth.username, requestId, auth.tenantId,
     ).catch((err) => logger.warn("[orders/bulk-status] activity log failed", { err: String(err) }));
 
     // ── Dropshipping (ADR-298) ──────────────────────────────────────────

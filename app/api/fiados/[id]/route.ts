@@ -92,9 +92,27 @@ export async function PATCH(
       }
       const invalida = validarPlazoNuevo(parsed.data.fechaVence);
       if (invalida) return NextResponse.json({ error: invalida }, { status: 400 });
+      // Plazo + cerrar el fiado en el mismo pedido se contradicen.
+      if (parsed.data.status === "PAGADO" || parsed.data.status === "CANCELADO") {
+        return NextResponse.json({ error: "Sólo un fiado abierto lleva fecha de vencimiento" }, { status: 409 });
+      }
     }
 
     let updated = existing;
+    // La fecha va PRIMERO: es la única escritura que puede perder una carrera
+    // (409). Antes iba al final y, con `status` en el mismo pedido, el estado
+    // quedaba guardado aunque la respuesta dijera 409 (security 17-10).
+    if (parsed.data.fechaVence !== undefined) {
+      const r = await FiadosDB.ponerFechaVence(auth.tenantId, id, new Date(`${parsed.data.fechaVence}T00:00:00.000Z`));
+      // null = alguien le puso fecha entre la lectura y ahora (o ya no está abierto).
+      if (!r) return NextResponse.json({ error: "Este fiado ya tiene fecha de vencimiento", code: "ya_tiene_fecha" }, { status: 409 });
+      updated = r;
+      logActivity(
+        "Actualizar", "fiado",
+        `Fiado ${id.slice(-6)} vence el ${parsed.data.fechaVence}`,
+        id, auth.username, undefined, auth.tenantId,
+      ).catch((err) => logger.error("[fiados] logActivity failed", { error: String(err) }));
+    }
     if (parsed.data.status !== undefined) {
       const r = await FiadosDB.updateStatus(auth.tenantId, id, parsed.data.status);
       if (!r) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
@@ -112,18 +130,6 @@ export async function PATCH(
       logActivity(
         "Actualizar", "fiado",
         `Fiado ${id.slice(-6)} descripcion actualizada`,
-        id, auth.username, undefined, auth.tenantId,
-      ).catch((err) => logger.error("[fiados] logActivity failed", { error: String(err) }));
-    }
-
-    if (parsed.data.fechaVence !== undefined) {
-      const r = await FiadosDB.ponerFechaVence(auth.tenantId, id, new Date(`${parsed.data.fechaVence}T00:00:00.000Z`));
-      // null = alguien le puso fecha entre la lectura y ahora (o ya no está abierto).
-      if (!r) return NextResponse.json({ error: "Este fiado ya tiene fecha de vencimiento", code: "ya_tiene_fecha" }, { status: 409 });
-      updated = r;
-      logActivity(
-        "Actualizar", "fiado",
-        `Fiado ${id.slice(-6)} vence el ${parsed.data.fechaVence}`,
         id, auth.username, undefined, auth.tenantId,
       ).catch((err) => logger.error("[fiados] logActivity failed", { error: String(err) }));
     }
