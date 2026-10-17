@@ -1,22 +1,22 @@
 "use client";
 
 /**
- * La vista SUMADA de «Volumen disponible» (dos o más pilas elegidas): cuánto
- * hay en total, de qué pila sale y cómo se reparte por permiso y por especie.
+ * La vista SUMADA de «Volumen disponible» (dos o más pilas elegidas): cómo se
+ * reparte por permiso y por especie, una columna por pila.
  *
- * Una tarjeta por pila con «Ver sola» lleva al detalle de esa pila (trozas,
- * paquetes, lotes o guías) sin perder el filtro de permiso.
+ * El total y cada pila (con su «Ver →») viven en la fila de tarjetas de arriba
+ * (`SelectorDePilas`), que es filtro y resumen a la vez: acá no se repiten
+ * (Brandon 17-10). Los filtros de permiso y especie van en la fila de esta
+ * tabla, que es lo que filtran.
  */
 
-import { useId } from "react";
-import { ArrowRight } from "@buleje/design-system/icons";
+import { useId, type ReactNode } from "react";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import {
-  DETALLE_FUENTE,
   ETIQUETA_FUENTE,
-  UNIDAD_FUENTE,
+  sonTodas,
   type FilaVolumen,
   type FuenteVolumen,
   type UnidadVolumen,
@@ -38,7 +38,7 @@ export function VolumenCombinado({
   unidad,
   permisos,
   especies,
-  onSolo,
+  filtros,
   onElegirPermiso,
   onElegirEspecie,
 }: {
@@ -47,7 +47,8 @@ export function VolumenCombinado({
   unidad: UnidadVolumen;
   permisos: readonly string[];
   especies: readonly string[];
-  onSolo: (f: FuenteVolumen) => void;
+  /** Permiso y especie: a la derecha de «Por permiso | Por especie». */
+  filtros?: ReactNode;
   onElegirPermiso: (clave: string) => void;
   onElegirEspecie: (clave: string) => void;
 }) {
@@ -55,11 +56,6 @@ export function VolumenCombinado({
   const { activo, ir } = useApartado("volumen-disponible", PESTANAS);
   const r = v.resumen;
   const enPt = unidad === "pt";
-  /* La barra y los % van en la unidad que se mira: en pt la troza pesa menos
-     (56 % aserrable) que la madera ya aserrada. */
-  const de = (x: { m3: number; pt: number }) => (enPt ? x.pt : x.m3);
-  const total = de(r.total);
-  const escrito = (x: { m3: number; pt: number }) => (enPt ? `${nf(x.pt)} pt` : `${fmtM3(x.m3)} m³`);
   /* Grupos CON nombre (lección de Trozas: «5 permisos» sobre un pie de 4); si
      sólo queda lo que no lo declara, se dice así y no «1 permiso». */
   const apartados: Apartado[] = PESTANAS.map((p) => {
@@ -69,95 +65,40 @@ export function VolumenCombinado({
     if (n === 0 && filas.length > 0) return { ...p, contador: `sin ${p.id}` };
     return { ...p, contador: n, unidad: p.id === "permiso" ? (n === 1 ? "permiso" : "permisos") : n === 1 ? "especie" : "especies" };
   });
+  /* Con dos o tres pilas elegidas, su suma (la que antes era «Total para
+     trabajar»): «Todo», arriba, es la de las cuatro. */
+  const suma = sonTodas(fuentes) || v.sinDatosAun
+    ? null
+    : `${fuentes.map((f) => ETIQUETA_FUENTE[f]).join(" + ")}: ${enPt ? `${nf(r.total.pt)} pt = ${fmtM3(r.total.m3)} m³` : `${fmtM3(r.total.m3)} m³ ≈ ${nf(r.total.pt)} pt`}`;
 
   return (
-    <div className="space-y-4">
-      {/* El total y de dónde sale: lo que se mira primero. */}
-      <section aria-label="Total disponible" className="space-y-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <div className="flex flex-wrap items-end gap-x-6 gap-y-1">
-          <div>
-            <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)]">
-              Total para trabajar
-              <InfoTip
-                title="Total para trabajar"
-                what="La suma de los m³ de las pilas elegidas. Cada m³ está en una sola pila: nada se cuenta dos veces."
-                affects="Suma troza y madera aserrada tal como están. Los pt aprovechables son un estimado: la troza al 56 %, lo aserrado a m³ × 424."
-                example="Trozas 13.5 + Lotes 8.6 + Productos 7.0 = 29.1 m³."
-              />
-            </p>
-            <p className="text-3xl font-bold tabular-nums text-[var(--text-primary)]">
-              {v.sinDatosAun ? "…" : escrito(r.total)}
-            </p>
-          </div>
-          <p className="pb-1 text-base tabular-nums text-[var(--text-secondary)]">
-            {v.sinDatosAun ? "…" : enPt ? `= ${fmtM3(r.total.m3)} m³` : `≈ ${nf(r.total.pt)} pt aprovechables`}
-          </p>
-        </div>
-        {total > 0 && (
-          <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]" role="img" aria-label={`Reparto: ${fuentes.map((f) => `${ETIQUETA_FUENTE[f]} ${escrito(r.porFuente[f])}`).join(", ")}`}>
-            {fuentes.map((f) =>
-              de(r.porFuente[f]) > 0 ? (
-                <span key={f} style={{ width: `${(de(r.porFuente[f]) / total) * 100}%`, background: COLOR_FUENTE[f] }} />
-              ) : null,
-            )}
-          </div>
-        )}
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {fuentes.map((f) => {
-            const p = r.porFuente[f];
-            const pct = total > 0 ? Math.round((de(p) / total) * 1000) / 10 : 0;
-            return (
-              <div key={f} className="min-w-0 rounded-xl border border-[var(--rule-base)] p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
-                    <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: COLOR_FUENTE[f] }} />
-                    <span className="truncate">{ETIQUETA_FUENTE[f]}</span>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => onSolo(f)}
-                    className="-mr-1 inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-1.5 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
-                    aria-label={`Ver solo ${ETIQUETA_FUENTE[f]}`}
-                  >
-                    Ver <ArrowRight className="h-4 w-4" aria-hidden />
-                  </button>
-                </div>
-                <p className="whitespace-nowrap text-xl font-bold tabular-nums text-[var(--text-primary)]">
-                  {v.sinDatosAun ? "…" : escrito(p)}
-                </p>
-                <p className="text-sm text-[var(--text-secondary)]">
-                  {nf(p.unidades)} {UNIDAD_FUENTE[f][p.unidades === 1 ? 0 : 1]} · {pct}% · {DETALLE_FUENTE[f]}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section aria-label="Reparto" className="space-y-3">
+    <section aria-label="Reparto" className="space-y-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <CtpApartados apartados={apartados} activo={activo} onIr={ir} idBase={idBase} etiqueta="Reparto del volumen" />
           <InfoTip
             title={activo === "permiso" ? "Por permiso" : "Por especie"}
-            what="Una columna por pila elegida y su total."
-            affects={activo === "permiso" ? "Clic en un permiso: toda la pestaña muestra solo lo suyo." : "Clic en una especie: toda la pestaña muestra solo esa."}
-            example="Elige solo Trozas y Lotes arriba para ver la madera en troza."
+            what="Una columna por pila elegida y su total. Cada m³ está en una sola pila: nada se cuenta dos veces."
+            affects={`${activo === "permiso" ? "Clic en un permiso: toda la pestaña muestra solo lo suyo." : "Clic en una especie: toda la pestaña muestra solo esa."} Los pt aprovechables son un estimado: la troza al 56 %, lo aserrado a m³ × 424.`}
+            example="Elige solo Trozas y Lotes arriba para ver la madera en troza: Trozas 13.5 + Lotes 8.6 = 22.1 m³."
           />
+          {suma && <span className="text-sm font-bold tabular-nums text-[var(--text-primary)]">{suma}</span>}
         </div>
-        <CtpApartadoPanel idBase={idBase} id={activo}>
-          <TablaVolumen
-            dim={activo === "especie" ? "especie" : "permiso"}
-            filas={activo === "especie" ? v.porEspecie : v.porPermiso}
-            fuentes={fuentes}
-            activos={activo === "permiso" ? permisos : especies}
-            onElegir={activo === "permiso" ? onElegirPermiso : onElegirEspecie}
-            unidad={unidad}
-            total={r.total}
-            cargando={v.sinDatosAun}
-          />
-        </CtpApartadoPanel>
-      </section>
-    </div>
+        {filtros && <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:ml-auto">{filtros}</div>}
+      </div>
+      <CtpApartadoPanel idBase={idBase} id={activo}>
+        <TablaVolumen
+          dim={activo === "especie" ? "especie" : "permiso"}
+          filas={activo === "especie" ? v.porEspecie : v.porPermiso}
+          fuentes={fuentes}
+          activos={activo === "permiso" ? permisos : especies}
+          onElegir={activo === "permiso" ? onElegirPermiso : onElegirEspecie}
+          unidad={unidad}
+          total={r.total}
+          cargando={v.sinDatosAun}
+        />
+      </CtpApartadoPanel>
+    </section>
   );
 }
 

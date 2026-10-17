@@ -38,8 +38,9 @@ import CtpProductosDisponibles from "./CtpProductosDisponibles";
 import CtpTrozasDisponibles from "./CtpTrozasDisponibles";
 import { CabeceraDeVista } from "./ctp-cabecera-vista";
 import { useFuentesElegidas, useVolumenDisponible } from "./hooks/use-volumen-disponible";
-import { FiltroDeChips, SelectorDePilas } from "./volumen-disponible-chips";
+import { SelectorDePilas } from "./volumen-disponible-chips";
 import { VolumenCombinado } from "./volumen-disponible-combinado";
+import { FiltroDeVolumen, muestraFiltro } from "./volumen-disponible-filtro";
 import { PilaLotes, PilaPorRecepcionar } from "./volumen-disponible-pilas";
 
 const HREF_REPROCESOS = "/admin?tab=ctp-libro-operaciones&vista=reprocesos";
@@ -105,6 +106,30 @@ export default function VolumenDisponibleCuerpo({
     ...(especies.length ? [`Especie: ${nombres(especies, v.opcionesEspecie).join(" o ")}`] : []),
   ];
 
+  /* Permiso y especie filtran las cuatro pilas: van pegados a la tabla. */
+  const hayFiltros =
+    muestraFiltro(v.opcionesPermiso, permisos) || muestraFiltro(v.opcionesEspecie, especies);
+  const filtros = (
+    <>
+      <FiltroDeVolumen
+        titulo="Permiso"
+        todos="Todos"
+        opciones={v.opcionesPermiso}
+        elegidos={permisos}
+        onAlternar={alternarPermiso}
+        onTodos={() => setPermisos([])}
+      />
+      <FiltroDeVolumen
+        titulo="Especie"
+        todos="Todas"
+        opciones={v.opcionesEspecie}
+        elegidos={especies}
+        onAlternar={alternarEspecie}
+        onTodos={() => setEspecies([])}
+      />
+    </>
+  );
+
   const bajarExcel = async () => setErrorExcel(await v.descargarExcel(filtrosEscritos));
   const opciones: MenuAccion[] = [
     ...(una
@@ -138,7 +163,7 @@ export default function VolumenDisponibleCuerpo({
             <InfoTip
               title="Volumen disponible"
               what="Cuánta madera hay para trabajar, en cuatro pilas que no se pisan: trozas libres, lo que sobra en los lotes, lo por recepcionar y los productos aserrados."
-              affects="Un chip muestra su pila con todo su detalle. Dos o más se suman. «Todo» suma las cuatro. La pestaña «Por troza» es el patio pieza por pieza."
+              affects="Toca una tarjeta para ver su pila con todo su detalle (la flecha la deja sola); dos o más se suman. «Todo» suma las cuatro, con su estimado en pt aprovechables (troza al 56 %, aserrado a m³ × 424). La pestaña «Por troza» es el patio pieza por pieza."
               example="Elige Trozas y Lotes para ver toda la madera en troza que puede ir a la sierra."
             />
           }
@@ -171,22 +196,7 @@ export default function VolumenDisponibleCuerpo({
           unidad={unidad}
           cargando={v.sinDatosAun}
           onAlternar={(f) => setFuentes(alternarFuente(fuentes, f))}
-        />
-        <FiltroDeChips
-          titulo="Permiso"
-          todos="Todos"
-          opciones={v.opcionesPermiso}
-          elegidos={permisos}
-          onAlternar={alternarPermiso}
-          onTodos={() => setPermisos([])}
-        />
-        <FiltroDeChips
-          titulo="Especie"
-          todos="Todas"
-          opciones={v.opcionesEspecie}
-          elegidos={especies}
-          onAlternar={alternarEspecie}
-          onTodos={() => setEspecies([])}
+          onSolo={(f) => setFuentes([f])}
         />
       </div>
 
@@ -213,6 +223,10 @@ export default function VolumenDisponibleCuerpo({
         </>
       )}
 
+      {/* Con una pila sola, su detalle trae su propia cabecera: los filtros van
+          en una fila justo encima. Sumadas, en la fila de su tabla. */}
+      {una && hayFiltros && <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{filtros}</div>}
+
       {una === "trozas" ? (
         <CtpTrozasDisponibles onIr={onIr} recorte={recorteTrozas} />
       ) : una === "productos" ? (
@@ -237,7 +251,7 @@ export default function VolumenDisponibleCuerpo({
           unidad={unidad}
           permisos={permisos}
           especies={especies}
-          onSolo={(f) => setFuentes([f])}
+          filtros={hayFiltros ? filtros : undefined}
           onElegirPermiso={alternarPermiso}
           onElegirEspecie={alternarEspecie}
         />
