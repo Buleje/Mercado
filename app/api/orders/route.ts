@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { OrdersDB, CouponsDB, PromotionsDB } from "@/lib/jsondb";
+import { OrdersDB, CouponsDB, PromotionsDB, DeliverySlotsDB } from "@/lib/jsondb";
 import type { DbOrder } from "@/lib/jsondb";
 import { emitAdminSSE } from "@/lib/sse-emitter";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
@@ -35,6 +35,7 @@ import { validarCanjePuntos, type CanjePuntos } from "@/lib/pricing/canje-puntos
 import { LoyaltyInsufficientBalanceError } from "@/lib/db/loyalty.db";
 import { withApiHandler } from "@/lib/api-handler";
 import { sanearNotasUbicacion } from "@/components/checkout/parts/ubicacion-en-notas";
+import { entregaElegida } from "@/lib/pedidos/franja-entrega";
 
 const OrderItemModifierSchema = z.object({
   groupId: z.string().min(1).max(50),
@@ -76,6 +77,11 @@ const OrderPostSchema = z.object({
   juntaCode: z.string().max(40).optional(), // Fase A4: pedido dentro de una Junta del Barrio
   notes: z.string().max(1000).optional(),
   deliverySlot: z.string().max(100).optional(),
+  // Día y hora elegidos a mano en el checkout (N01, 17-10): antes el Zod los
+  // descartaba y la agenda de entregas salía vacía.
+  // Sin regex a propósito: un valor raro no frena el pedido; `entregaElegida` lo valida y lo ignora.
+  deliveryDate: z.string().max(20).optional(),
+  deliveryTime: z.string().max(20).optional(),
   // Discount tracking fields
   appliedCouponCode: z.string().max(50).optional(),
   couponDiscount: z.number().min(0).optional(),     // server re-verifies this
@@ -968,6 +974,21 @@ export const POST = withApiHandler("orders-create", async (req) => {
         );
       }
       throw addErr;
+    }
+
+    // ── Para cuándo lo pidió (N01, 17-10): `OrdersDB.add` no guarda la franja.
+    //    Va a `DeliverySlot` (la agenda de Pedidos › Preparación). No frena el
+    //    pedido: si falla, el pedido queda igual, sin día en la agenda.
+    const entrega = entregaElegida({ franja: body.deliverySlot, fecha: body.deliveryDate, hora: body.deliveryTime });
+    if (entrega) {
+      const pedidoId = saved.id;
+      DeliverySlotsDB.set({
+        orderId: pedidoId,
+        date: entrega.fecha,
+        slot: entrega.franja,
+        notes: entrega.nota ?? undefined,
+        tenantId,
+      }).catch((err) => logger.error("[orders.POST] delivery slot failed", { error: String(err), orderId: pedidoId, tenantId }));
     }
 
     // ── Fiado: crear el Fiado ligado a la orden ("paga el día de pago").
