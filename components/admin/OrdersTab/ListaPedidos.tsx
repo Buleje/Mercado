@@ -9,19 +9,15 @@
  * casilla de la cabeza elige todos los que se ven y las acciones en bloque van
  * en la fila de la barra. «Sin avanzar» es nuevo: cuánto lleva cada pedido en
  * su paso, en rojo desde las 2 h. Repartidor sólo sale si alguno tiene.
+ * 17-10 (P03/M49): «Plata» dice qué falta cobrar o verificar con su monto
+ * (`siguiente-paso.ts`, la misma regla que la tarjeta) y el repartidor sale
+ * de `riderName` (antes `deliveryDriver`, que nunca se guardó).
  *
  * En el celular la tabla se vuelve tarjetas sola (`useMobileTableCards`).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { DataTable } from "@buleje/design-system";
-import {
-  AlertTriangle,
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  ShoppingBasket,
-} from "@buleje/design-system/icons";
-import { EmptyState } from "@/components/admin/EmptyState";
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown } from "@buleje/design-system/icons";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
@@ -35,7 +31,8 @@ import {
   type Orden,
 } from "./orden-pedidos";
 import { msEnEstado, nivelDeEspera, textoDeEspera } from "./tiempo-en-estado";
-import { STATUS_COLORS, STATUS_LABELS, nombreDelPago } from "./types";
+import { TINTA_COBRO, cobroDe, responsableDe } from "./siguiente-paso";
+import { STATUS_COLORS, STATUS_LABELS } from "./types";
 
 const TH = "px-3 text-left text-sm font-semibold text-[var(--text-secondary)]";
 const TD = "px-3 py-2.5";
@@ -43,7 +40,8 @@ const TD = "px-3 py-2.5";
 interface ListaPedidosProps {
   pedidos: readonly DbOrder[];
   loading: boolean;
-  conFiltros?: boolean;
+  /** Lo que se ve sin pedidos (`VacioPedidos`: dice si es por los filtros y qué hacer). */
+  vacio: ReactNode;
   elegidos: ReadonlySet<string>;
   onElegir: (id: string) => void;
   onElegirTodos: (ids: string[]) => void;
@@ -98,7 +96,7 @@ const ESPERA = {
 export function ListaPedidos({
   pedidos,
   loading,
-  conFiltros = false,
+  vacio,
   elegidos,
   onElegir,
   onElegirTodos,
@@ -113,22 +111,10 @@ export function ListaPedidos({
   }, []);
 
   if (loading) return <TableSkeleton rows={6} cols={7} />;
-  if (pedidos.length === 0) {
-    return (
-      <EmptyState
-        icon={<ShoppingBasket className="h-10 w-10 text-[var(--text-tertiary)]" />}
-        title={
-          conFiltros ? "No hay pedidos en marcha con estos filtros" : "No hay pedidos en marcha"
-        }
-        actions={[]}
-      />
-    );
-  }
+  if (pedidos.length === 0) return vacio;
 
   const filas = ordenarPedidos(pedidos, orden);
-  const conRepartidor = pedidos.some(
-    (o) => (o as DbOrder & { deliveryDriver?: string }).deliveryDriver,
-  );
+  const conRepartidor = pedidos.some((o) => responsableDe(o));
   const todos = pedidos.every((o) => elegidos.has(o.id));
   const algunos = !todos && pedidos.some((o) => elegidos.has(o.id));
   const ordenar = (c: ColumnaOrden) => setOrden((o) => siguienteOrden(o, c));
@@ -165,7 +151,7 @@ export function ListaPedidos({
             <CabezaOrden columna="espera" orden={orden} onOrdenar={ordenar}>
               Sin avanzar
             </CabezaOrden>
-            <th className={TH}>Pago</th>
+            <th className={TH}>Plata</th>
             {conRepartidor && <th className={TH}>Repartidor</th>}
             <CabezaOrden columna="fecha" orden={orden} onOrdenar={ordenar}>
               Pedido el
@@ -177,17 +163,15 @@ export function ListaPedidos({
         </thead>
         <tbody className="divide-y divide-[var(--rule-soft)]">
           {filas.map((o) => {
-            const repartidor = (o as DbOrder & { deliveryDriver?: string }).deliveryDriver;
+            const repartidor = responsableDe(o);
+            const cobro = cobroDe(o);
             const ms = msEnEstado(o, ahora);
             const nivel = nivelDeEspera(ms);
             const elegido = elegidos.has(o.id);
             return (
               <tr
                 key={o.id}
-                className={cn(
-                  "cursor-pointer",
-                  elegido && "bg-[var(--accent-soft)]",
-                )}
+                className={cn("cursor-pointer", elegido && "bg-[var(--accent-soft)]")}
                 onClick={() => onSelectOrder(o)}
                 tabIndex={0}
                 onKeyDown={(e) => {
@@ -233,14 +217,11 @@ export function ListaPedidos({
                     >
                       {STATUS_LABELS[o.status]}
                     </span>
-                    {o.deuda === true && (
-                      <span className="text-sm font-semibold text-[var(--data-error-ink)]">
-                        con deuda
-                      </span>
-                    )}
-                    {/* En el celular el pago va acá: su columna se esconde para que la tarjeta no pase de 5 renglones. */}
-                    <span className="text-sm text-[var(--text-secondary)] sm:hidden">
-                      {nombreDelPago(o.paymentMethod)}
+                    {/* En el celular la plata va acá: su columna se esconde para que la tarjeta no pase de 5 renglones. */}
+                    <span
+                      className={cn("text-sm font-semibold sm:hidden", TINTA_COBRO[cobro.tono])}
+                    >
+                      {cobro.texto}
                     </span>
                   </div>
                 </td>
@@ -254,8 +235,8 @@ export function ListaPedidos({
                     {textoDeEspera(ms)}
                   </span>
                 </td>
-                <td className={cn(TD, "text-[var(--text-secondary)] max-sm:hidden!")}>
-                  {nombreDelPago(o.paymentMethod) || "—"}
+                <td className={cn(TD, "font-semibold max-sm:hidden!", TINTA_COBRO[cobro.tono])}>
+                  {cobro.texto}
                 </td>
                 {conRepartidor && (
                   <td className={cn(TD, "text-[var(--text-secondary)]")}>{repartidor || "—"}</td>
@@ -271,7 +252,7 @@ export function ListaPedidos({
                 <td
                   className={cn(
                     TD,
-                    "text-right font-semibold tabular-nums text-[var(--text-primary)]",
+                    "whitespace-nowrap text-right font-semibold tabular-nums text-[var(--text-primary)]",
                   )}
                 >
                   {formatCurrency(Number(o.total))}

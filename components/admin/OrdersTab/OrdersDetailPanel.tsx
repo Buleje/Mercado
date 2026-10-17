@@ -15,6 +15,9 @@
  * 10-10: partido de 757 líneas en `detalle/` y sin cifras repetidas (el total
  * salía dos veces y el medio de pago también). Texto de 14 px y botones de
  * 48 px (antes rótulos de 10 px y el cerrar de 32 px).
+ *
+ * 17-10: notas y línea de tiempo leen el historial guardado
+ * (`useHistorialPedidos`); se relee al cambiar de estado y al guardar una nota.
  */
 import { useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -26,6 +29,7 @@ import { DetalleContacto, DetallePago } from "./detalle/DetalleContactoYPago";
 import { DetalleLineaDeTiempo, DetalleNotas } from "./detalle/DetalleNotasYTiempo";
 import { DetallePie } from "./detalle/DetallePie";
 import { DetalleProductos } from "./detalle/DetalleProductos";
+import { useHistorialPedidos } from "./hooks/useHistorialPedidos";
 
 interface OrdersDetailPanelProps {
   order: DbOrder;
@@ -36,7 +40,8 @@ interface OrdersDetailPanelProps {
   driverColor: (name: string) => string;
   onClose: () => void;
   onAdminNoteChange: (v: string) => void;
-  onSaveAdminNote: (orderId: string) => void;
+  /** true si se guardó (entonces se relee el historial). */
+  onSaveAdminNote: (orderId: string) => Promise<boolean>;
   onVerifyYape: (id: string) => void;
   onRejectYape: (id: string) => void;
   onMarkDeudaPaid: (id: string) => void;
@@ -64,7 +69,16 @@ export function OrdersDetailPanel({
   onSaveCustomDriver,
   onPatchOrder,
 }: OrdersDetailPanelProps) {
-  const adminNotes = (order as DbOrder & { adminNotes?: string }).adminNotes;
+  const ids = [order.id];
+  const h = useHistorialPedidos(ids, `${order.status}|${order.updatedAt}`);
+  const eventos = h.historial[order.id] ?? [];
+  const notas = eventos.filter((e) => e.tipo === "nota");
+  const cambios = eventos.filter((e) => e.tipo === "estado");
+  const guardarNota = (orderId: string) => {
+    void onSaveAdminNote(orderId).then((ok) => {
+      if (ok) h.recargar();
+    });
+  };
   // FIX 2026-05-07: «Entregado sin reparto» pide método y nota antes de marcar
   // entregado. Persiste en OrderStatusHistory.note para auditoría.
   const [manualOpen, setManualOpen] = useState(false);
@@ -118,13 +132,14 @@ export function OrdersDetailPanel({
           <DetallePago order={order} onMarkDeudaPaid={onMarkDeudaPaid} />
           <DetalleNotas
             orderId={order.id}
-            notasGuardadas={adminNotes}
+            notas={notas}
+            errorAlLeer={h.error}
             nota={adminNote}
             guardando={savingNote}
             onNota={onAdminNoteChange}
-            onGuardar={onSaveAdminNote}
+            onGuardar={guardarNota}
           />
-          <DetalleLineaDeTiempo order={order} />
+          <DetalleLineaDeTiempo order={order} cambios={cambios} cargando={h.cargando} />
         </div>
       </AdminModal>
       <ManualDeliveryModal

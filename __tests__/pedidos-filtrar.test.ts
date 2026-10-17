@@ -49,8 +49,8 @@ function pedido(extra: Partial<DbOrder> & Record<string, unknown> = {}): DbOrder
 describe("pedidos en marcha", () => {
   const lote = [
     pedido({ status: "pendiente", total: 20 }),
-    pedido({ status: "confirmado", paymentMethod: "efectivo", total: 80, deliveryDriver: "Juan" }),
-    pedido({ status: "en_camino", total: 120, deuda: true, source: "marketplace", deliveryDriver: "Ana" }),
+    pedido({ status: "confirmado", paymentMethod: "efectivo", total: 80, riderName: "Juan" }),
+    pedido({ status: "en_camino", total: 120, deuda: true, source: "marketplace", riderName: "Ana" }),
     pedido({ status: "entregado" }),
     pedido({ status: "cancelado" }),
   ];
@@ -113,14 +113,21 @@ describe("Archivados", () => {
     expect(archivadosQuePasan(archivo, { texto: "", desde: "2026-10-10", hasta: "2026-10-10" })).toHaveLength(1);
     expect(archivadosQuePasan(archivo, { texto: "", desde: null, hasta: "2026-10-09" })).toHaveLength(1);
   });
+
+  it("busca por número de pedido, con o sin #, desde 3 caracteres", () => {
+    const conId = [...archivo, pedido({ status: "entregado", id: "cmxyz9k4q7" })];
+    expect(archivadosQuePasan(conId, { texto: "#9k4q7", desde: null, hasta: null })).toHaveLength(1);
+    expect(archivadosQuePasan(conId, { texto: "9K4Q7", desde: null, hasta: null })).toHaveLength(1);
+    expect(archivadosQuePasan(conId, { texto: "#q7", desde: null, hasta: null })).toHaveLength(0);
+  });
 });
 
 describe("conteos de la barra", () => {
   it("repartidores por nombre con su cantidad y estados en marcha en orden", () => {
     const lote = [
-      pedido({ deliveryDriver: "Zoe" }),
-      pedido({ deliveryDriver: "Ana" }),
-      pedido({ deliveryDriver: "Ana", status: "en_camino" }),
+      pedido({ riderName: "Zoe" }),
+      pedido({ riderName: "Ana" }),
+      pedido({ riderName: "Ana", status: "en_camino" }),
     ];
     expect(repartidoresConPedidos(lote)).toEqual([
       { value: "Ana", count: 2 },

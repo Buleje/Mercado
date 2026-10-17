@@ -22,7 +22,7 @@ export function usePedidos() {
   const datos = useOrdersData();
   const { orders, loading, load, setOrders, setDetailOrder, detailOrder } = datos;
   const { filters, dispatch } = useOrdersFilters();
-  const acciones = useOrderActions({ orders, setOrders, setDetailOrder, load });
+  const acciones = useOrderActions({ setOrders, setDetailOrder, load });
   const reparto = useDeliveryDriver({ patchOrder: acciones.patchOrder });
   const bulk = useOrderBulkActions({ onComplete: load });
 

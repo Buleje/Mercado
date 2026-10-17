@@ -9,7 +9,7 @@
  *   1. Lista DeliveryPartners reales del tenant (libres + ocupados + offline)
  *      vía useDeliveryPartnersLive() → /api/admin/delivery/partners-live.
  *   2. Click en partner libre → POST /api/admin/delivery/manual-assign,
- *      crea DeliveryAssignment + ocupa al partner + persiste deliveryDriver
+ *      crea DeliveryAssignment + ocupa al partner + persiste riderName
  *      string en el order (para chips de la lista).
  *   3. Acordeón "Ad-hoc" → input texto libre + Asignar (sólo persiste string,
  *      sin DeliveryAssignment) — fallback para vecinos/ad-hoc sin registro.
@@ -25,6 +25,7 @@ import type { DbOrder } from "@/lib/jsondb";
 import { useDeliveryPartnersLive, type DeliveryPartnerLive } from "./hooks/useDeliveryPartnersLive";
 import { DespachoAdHoc } from "./detalle/DespachoAdHoc";
 import { ListaLibres, ListaOcupados } from "./detalle/DespachoListas";
+import { responsableDe } from "./siguiente-paso";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 interface DespachoSectionProps {
@@ -57,7 +58,7 @@ export function DespachoSection({
   const [assignError, setAssignError] = useState<string | null>(null);
   const [showAdHoc, setShowAdHoc] = useState(false);
 
-  const currentDriver = (order as DbOrder & { deliveryDriver?: string }).deliveryDriver;
+  const currentDriver = responsableDe(order);
 
   const grouped = useMemo(() => {
     const free: DeliveryPartnerLive[] = [];
@@ -88,9 +89,10 @@ export function DespachoSection({
         setAssignError(data.error ?? "No pudimos asignar.");
         return;
       }
-      // Persistimos también el string para que la lista/Kanban muestre el chip
-      // del motorizado sin necesidad de cargar DeliveryAssignment cada vez.
-      await onPatchOrder(order.id, { deliveryDriver: partner.name } as Partial<DbOrder>);
+      // Persistimos también el nombre para que la lista/Kanban muestre el chip
+      // del motorizado sin cargar DeliveryAssignment cada vez. `riderName` es
+      // la columna (17-10: se mandaba `deliveryDriver` y el servidor lo descartaba).
+      await onPatchOrder(order.id, { riderName: partner.name });
       refresh();
     } catch {
       setAssignError("Error de red.");
@@ -100,7 +102,7 @@ export function DespachoSection({
   };
 
   const handleClearDriver = () => {
-    void onPatchOrder(order.id, { deliveryDriver: "" } as Partial<DbOrder>);
+    void onPatchOrder(order.id, { riderName: "" });
   };
 
   const handleSaveAdHoc = () => {

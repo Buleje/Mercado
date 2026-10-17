@@ -15,6 +15,7 @@ import { autoEarnLoyaltyPoints } from "@/lib/loyalty/auto-earn";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { transicionesDesde } from "@/lib/order-status";
+import { PedidoHistorialDB } from "@/lib/db/pedido-historial.db";
 
 const NOTIFIABLE_STATUSES = new Set(["confirmado", "preparando", "en_camino", "entregado", "cancelado"]);
 
@@ -103,8 +104,19 @@ async function patchOrder(
 
     // deliveryReason NO es columna de Order — se persiste en OrderStatusHistory.note
     // más abajo. Lo separamos del payload del update para que Prisma no falle.
-    const { deliveryReason: _deliveryReason, ...updatePayload } = parsed.data;
+    // adminNote tampoco: es una nota interna nueva y va a ActivityLog con quién
+    // la escribió (17-10: el panel mandaba `adminNotes`, que Zod descartaba, y
+    // ninguna nota se guardó nunca).
+    const { deliveryReason: _deliveryReason, adminNote, ...updatePayload } = parsed.data;
     void _deliveryReason;
+    const nota = adminNote?.trim();
+    if (nota) {
+      await PedidoHistorialDB.anotar(auth.tenantId, id, auth.username, nota);
+    }
+    // Sólo una nota: no se toca el pedido (un update vacío movía `updatedAt`,
+    // que es de donde sale «X h sin avanzar» en el tablero).
+    const soloNota = Object.values(updatePayload).every((v) => v === undefined);
+    if (soloNota && nota) return NextResponse.json(existing);
     const updated = await OrdersDB.update(auth.tenantId, id, updatePayload as Partial<DbOrder>);
     if (!updated) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
 
@@ -130,7 +142,8 @@ async function patchOrder(
         orderId: id,
         fromStatus: existing.status,
         toStatus: parsed.data.status!,
-        changedBy: "admin",
+        // Quién lo movió (17-10: decía «admin» en todos; P05 del PDF).
+        changedBy: auth.username,
         note: historyNote,
       }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
 
@@ -328,7 +341,7 @@ async function patchOrder(
       "Actualizar", "pedido",
       `Pedido ${id.slice(-6)}${parsed.data.status ? ` -> ${parsed.data.status}` : " editado"}`,
       id,
-      "admin",
+      auth.username,
       requestId,
     ).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
 

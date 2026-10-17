@@ -18,7 +18,8 @@ export function useDeliveryDriver({ patchOrder }: UseDeliveryDriverProps) {
     const driver = customDriver.trim() || deliveryDriver;
     if (!driver) return;
     setSavingDriver(true);
-    await patchOrder(orderId, { deliveryDriver: driver } as Partial<DbOrder>);
+    // `riderName` es la columna (17-10: se mandaba `deliveryDriver` y el servidor lo descartaba).
+    await patchOrder(orderId, { riderName: driver });
     setDeliveryDriver("");
     setCustomDriver("");
     setSavingDriver(false);

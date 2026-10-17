@@ -9,6 +9,10 @@
  * bloque de tres renglones —rótulo, «Pendiente de confirmar» (que repetía el
  * chip del estado) y un consejo— más los botones abajo: ahora es una fila con
  * los botones y el consejo en el ⓘ.
+ *
+ * 17-10 (P03/M49): la línea del estado dice la plata («Cobrar S/ 42.50 al
+ * entregar», «Yape por verificar») y quién lo lleva; el paso y su consejo
+ * salen de `../siguiente-paso.ts`, igual que en la tarjeta del tablero.
  */
 import type { ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
@@ -21,8 +25,9 @@ import { formatDate } from "@/lib/admin-helpers";
 import { formatCurrency } from "@/lib/format";
 import type { DbOrder } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
+import { TINTA_COBRO, cobroDe, responsableDe, siguientePaso } from "../siguiente-paso";
 import { textoDeEspera } from "../tiempo-en-estado";
-import { STATUS_COLORS, STATUS_LABELS, nombreDelPago } from "../types";
+import { STATUS_COLORS, STATUS_LABELS } from "../types";
 
 function haceCuanto(fecha: string): string {
   const texto = textoDeEspera(Math.max(0, Date.now() - new Date(fecha).getTime()));
@@ -30,7 +35,8 @@ function haceCuanto(fecha: string): string {
 }
 
 export function DetalleCabecera({ order, onClose }: { order: DbOrder; onClose: () => void }) {
-  const pago = nombreDelPago(order.paymentMethod);
+  const cobro = cobroDe(order);
+  const repartidor = responsableDe(order);
   return (
     <CabeceraPropia
       className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-3 sm:px-6"
@@ -71,10 +77,12 @@ export function DetalleCabecera({ order, onClose }: { order: DbOrder; onClose: (
           <span className="font-mono">#{order.id.slice(-8)}</span>
           <span aria-hidden>·</span>
           <span title={formatDate(order.createdAt)}>{haceCuanto(order.createdAt)}</span>
-          {pago && (
+          <span aria-hidden>·</span>
+          <span className={cn("font-semibold", TINTA_COBRO[cobro.tono])}>{cobro.texto}</span>
+          {repartidor && (
             <>
               <span aria-hidden>·</span>
-              <span className="font-semibold">{pago}</span>
+              <span>Lo lleva {repartidor}</span>
             </>
           )}
         </p>
@@ -103,6 +111,11 @@ interface PasoProps {
   onEntregaManual: () => void;
 }
 
+/**
+ * El paso del detalle: rótulo y consejo salen de `siguientePaso` (los mismos
+ * que la tarjeta del tablero, con el repartidor y el monto a cobrar); acá se
+ * suma la acción de al lado (Yape falso, Entregado sin reparto).
+ */
 function pasoDe({
   order,
   onVerifyYape,
@@ -110,45 +123,22 @@ function pasoDe({
   onPatchOrder,
   onEntregaManual,
 }: PasoProps): Paso | null {
-  const a = (status: DbOrder["status"]) => () => onPatchOrder(order.id, { status });
+  const paso = siguientePaso(order);
+  if (!paso) return null;
+  const principal = {
+    label: paso.largo,
+    onClick: paso.verificaYape
+      ? () => onVerifyYape(order.id)
+      : () => onPatchOrder(order.id, { status: paso.a }),
+  };
   /* Entrega sin reparto (FIX 2026-05-07): pide método y nota; queda en el historial del pedido. */
   const manual = { label: "Entregado sin reparto", onClick: onEntregaManual, tono: "ok" as const };
-  switch (order.status) {
-    case "pendiente":
-      return order.paymentMethod === "yape"
-        ? {
-            ayuda: `Mira el comprobante en «Pago»${order.yapeOperationNumber ? ` (Nº Op. ${order.yapeOperationNumber})` : ""} antes de confirmar.`,
-            principal: { label: "Confirmar Yape", onClick: () => onVerifyYape(order.id) },
-            segunda: {
-              label: "Yape falso",
-              onClick: () => onRejectYape(order.id),
-              tono: "peligro",
-            },
-          }
-        : {
-            ayuda: "Confírmalo cuando esté listo para preparar.",
-            principal: { label: "Confirmar pedido", onClick: a("confirmado") },
-          };
-    case "confirmado":
-      return {
-        ayuda: "Márcalo cuando empieces a armar el pedido.",
-        principal: { label: "Empezar preparación", onClick: a("preparando") },
-        segunda: manual,
-      };
-    case "preparando":
-      return {
-        ayuda: "Asigna un motorizado en «Despacho» y avanza cuando salga.",
-        principal: { label: "Marcar en camino", onClick: a("en_camino") },
-        segunda: manual,
-      };
-    case "en_camino":
-      return {
-        ayuda: "Confírmalo cuando el cliente lo reciba.",
-        principal: { label: "Marcar entregado", onClick: a("entregado") },
-      };
-    default:
-      return null;
-  }
+  const segunda: Paso["segunda"] = paso.verificaYape
+    ? { label: "Yape falso", onClick: () => onRejectYape(order.id), tono: "peligro" }
+    : order.status === "confirmado" || order.status === "preparando"
+      ? manual
+      : undefined;
+  return { ayuda: paso.ayuda, principal, segunda };
 }
 
 /** La fila del siguiente paso: el botón que lo da y, si hay, el de al lado. */

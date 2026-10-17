@@ -12,6 +12,12 @@
  * El «+2h sin avanzar» fijo pasó a decir el tiempo real («177 días sin
  * avanzar»). Las acciones de al lado (cobrar la deuda, entregado sin
  * reparto) van en «⋯»; rechazar un Yape sigue a la vista, junto a Confirmar.
+ *
+ * 17-10 (P03/M49): la tarjeta dice su siguiente paso, quién lo lleva y cómo
+ * está su plata («Cobrar S/ 42.50 al entregar», «Yape por verificar»), con la
+ * misma regla que la Lista y el detalle (`../siguiente-paso.ts`); y lo que
+ * falta para moverlo (teléfono, dirección, repartidor) en una línea (P26).
+ * El repartidor se leía de `deliveryDriver`, que nunca se guardó.
  */
 import { memo, useState } from "react";
 import {
@@ -34,8 +40,15 @@ import { formatCurrency } from "@/lib/format";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import ManualDeliveryModal from "../ManualDeliveryModal";
+import {
+  cobroDe,
+  loQueFalta,
+  responsableDe,
+  seCobraAlEntregar,
+  siguientePaso,
+  type TonoCobro,
+} from "../siguiente-paso";
 import { msEnEstado, nivelDeEspera, textoDeEspera } from "../tiempo-en-estado";
-import { nombreDelPago } from "../types";
 
 export interface TarjetaPedidoProps {
   order: DbOrder;
@@ -52,8 +65,6 @@ export interface TarjetaPedidoProps {
   onManualDelivery?: (reason: string) => void;
 }
 
-type Pedido = DbOrder & { deliveryDriver?: string; source?: string };
-
 /** Los callbacks son lambdas nuevas en cada render de la columna: se miran sólo los datos. */
 function mismosDatos(a: TarjetaPedidoProps, b: TarjetaPedidoProps): boolean {
   return (
@@ -62,19 +73,29 @@ function mismosDatos(a: TarjetaPedidoProps, b: TarjetaPedidoProps): boolean {
     a.order.updatedAt === b.order.updatedAt &&
     a.order.total === b.order.total &&
     a.order.deuda === b.order.deuda &&
+    a.order.riderName === b.order.riderName &&
+    a.order.paymentMethod === b.order.paymentMethod &&
     a.nowMs === b.nowMs &&
     a.storeLat === b.storeLat &&
     a.storeLon === b.storeLon
   );
 }
 
-const SIGUIENTE: Partial<
-  Record<OrderStatus, { label: string; icon: typeof Check; a: OrderStatus }>
-> = {
-  pendiente: { label: "Confirmar", icon: Check, a: "confirmado" },
-  confirmado: { label: "Preparando", icon: ChefHat, a: "preparando" },
-  preparando: { label: "En camino", icon: ArrowRight, a: "en_camino" },
-  en_camino: { label: "Entregado", icon: Check, a: "entregado" },
+/** El ícono del botón según el estado al que lleva (el rótulo sale de `siguientePaso`). */
+const ICONO_PASO: Partial<Record<OrderStatus, typeof Check>> = {
+  confirmado: Check,
+  preparando: ChefHat,
+  en_camino: ArrowRight,
+  entregado: Check,
+};
+
+const TONO: Record<TonoCobro, string> = {
+  ok: "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/10 text-[var(--data-success-ink)]",
+  aviso:
+    "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-ink)]",
+  peligro:
+    "border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 text-[var(--data-error-ink)]",
+  neutro: "border-[var(--rule-base)] text-[var(--text-secondary)]",
 };
 
 const ESPERA: Record<ReturnType<typeof nivelDeEspera>, string> = {
@@ -108,16 +129,18 @@ export const TarjetaPedido = memo(function TarjetaPedido(props: TarjetaPedidoPro
     onMarkDeudaPaid,
     onManualDelivery,
   } = props;
-  const pedido = order as Pedido;
   const [manualOpen, setManualOpen] = useState(false);
   const ms = msEnEstado(order, nowMs);
   const nivel = nivelDeEspera(ms);
   const espera = textoDeEspera(ms);
   const km = distancia(order, storeLat, storeLon);
-  const pago = nombreDelPago(order.paymentMethod);
-  const conDeuda = order.paymentMethod === "efectivo" && order.deuda === true;
-  const yapePorVerificar = order.status === "pendiente" && order.paymentMethod === "yape";
-  const siguiente = SIGUIENTE[order.status];
+  const conDeuda = seCobraAlEntregar(order);
+  const cobro = cobroDe(order);
+  const repartidor = responsableDe(order);
+  const falta = loQueFalta(order);
+  const siguiente = siguientePaso(order);
+  const yapePorVerificar = siguiente?.verificaYape === true;
+  const IconoPaso = siguiente ? (ICONO_PASO[siguiente.a] ?? Check) : Check;
 
   const confirmarManual = (reason: string) => {
     setManualOpen(false);
@@ -169,7 +192,6 @@ export const TarjetaPedido = memo(function TarjetaPedido(props: TarjetaPedidoPro
         <span className="mt-0.5 block truncate text-sm text-[var(--text-secondary)]">
           <span className="font-mono">#{order.id.slice(-6)}</span>
           {` · ${order.items.length} ${order.items.length === 1 ? "ítem" : "ítems"}`}
-          {pago && ` · ${pago}`}
         </span>
       </button>
 
@@ -186,57 +208,51 @@ export const TarjetaPedido = memo(function TarjetaPedido(props: TarjetaPedidoPro
           : `${espera} sin avanzar`}
       </p>
 
-      {(conDeuda || km || pedido.deliveryDriver || pedido.source === "marketplace") && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {conDeuda && (
-            <span
-              className={cn(
-                ETIQUETA,
-                "border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 text-[var(--data-error-ink)]",
-              )}
-            >
-              Con deuda
-            </span>
-          )}
-          {pedido.source === "marketplace" && (
-            <span
-              className={cn(ETIQUETA, "border-[var(--rule-base)] text-[var(--text-secondary)]")}
-            >
-              <Boxes className="h-3.5 w-3.5" aria-hidden /> Marketplace
-            </span>
-          )}
-          {km && (
-            <span
-              className={cn(ETIQUETA, "border-[var(--rule-base)] text-[var(--text-secondary)]")}
-            >
-              <MapPin className="h-3.5 w-3.5" aria-hidden /> {km}
-            </span>
-          )}
-          {pedido.deliveryDriver && (
-            <span
-              className={cn(ETIQUETA, "border-transparent text-white")}
-              style={{ backgroundColor: driverColor(pedido.deliveryDriver) }}
-            >
-              <Bike className="h-3.5 w-3.5" aria-hidden /> {pedido.deliveryDriver}
-            </span>
-          )}
-        </div>
+      {falta.length > 0 && (
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-[var(--data-warning-ink)]">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+          Falta {falta.join(", ")}
+        </p>
       )}
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className={cn(ETIQUETA, TONO[cobro.tono])}>
+          <Banknote className="h-3.5 w-3.5 shrink-0" aria-hidden /> {cobro.texto}
+        </span>
+        {repartidor && (
+          <span
+            className={cn(ETIQUETA, "border-transparent text-white")}
+            style={{ backgroundColor: driverColor(repartidor) }}
+            title={`Lo lleva ${repartidor}`}
+          >
+            <Bike className="h-3.5 w-3.5" aria-hidden /> {repartidor}
+          </span>
+        )}
+        {order.source === "marketplace" && (
+          <span className={cn(ETIQUETA, "border-[var(--rule-base)] text-[var(--text-secondary)]")}>
+            <Boxes className="h-3.5 w-3.5" aria-hidden /> Marketplace
+          </span>
+        )}
+        {km && (
+          <span className={cn(ETIQUETA, "border-[var(--rule-base)] text-[var(--text-secondary)]")}>
+            <MapPin className="h-3.5 w-3.5" aria-hidden /> {km}
+          </span>
+        )}
+      </div>
 
       {siguiente && (
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={yapePorVerificar ? onVerifyYape : () => onUpdateStatus(siguiente.a)}
+            title={siguiente.ayuda}
             className={button({
               variant: "primary",
               className: "min-w-0 flex-1 gap-1.5 rounded-xl px-3",
             })}
           >
-            <siguiente.icon className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="truncate">
-              {yapePorVerificar ? "Confirmar Yape" : siguiente.label}
-            </span>
+            <IconoPaso className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="truncate">{siguiente.corto}</span>
           </button>
           {yapePorVerificar && (
             <button

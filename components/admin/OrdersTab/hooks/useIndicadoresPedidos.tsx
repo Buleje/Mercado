@@ -10,6 +10,11 @@
  * entregado es de Archivados (con su rango de fechas): acá va sólo lo que
  * nadie más dice — cuántos no avanzan, quién espera más y cuántos se cobran
  * al entregar. Cuenta lo que pasa los filtros de la barra (y lo dice).
+ *
+ * 17-10 (O04/P06): sin pedidos no hay nada que medir, y eso se dice («Sin
+ * pedidos»), no «Ninguno · todo se mueve» ni «Todo al día», que sonaban a
+ * buena noticia con el tablero vacío. «Con deuda» pasa a «Por cobrar», como
+ * la plata de cada tarjeta y el chip del filtro.
  */
 import { useEffect, useState } from "react";
 import { AlertTriangle, Banknote, Timer } from "@buleje/design-system/icons";
@@ -76,6 +81,9 @@ export function useIndicadoresPedidos({
 
   const { sinAvanzar, elQueMasEspera } = cifrasDeEspera(pedidos, ahora);
   const conDeuda = pedidos.filter((o) => o.deuda === true).length;
+  /* Sin pedidos (o ninguno pasa los filtros) no hay muestra: ni «todo se mueve» ni «0». */
+  const sinMuestra = pedidos.length === 0;
+  const vacio = filtrosActivos > 0 ? "con estos filtros" : "en marcha";
 
   const tarjetas = [
     <div key="sin-avanzar" className={TARJETA}>
@@ -90,10 +98,14 @@ export function useIndicadoresPedidos({
           sinAvanzar > 0 ? "text-[var(--data-error-ink)]" : "text-[var(--text-primary)]",
         )}
       >
-        {sinAvanzar > 0 ? `${sinAvanzar} ${sinAvanzar === 1 ? "pedido" : "pedidos"}` : "Ninguno"}
+        {sinMuestra
+          ? "Sin pedidos"
+          : sinAvanzar > 0
+            ? `${sinAvanzar} ${sinAvanzar === 1 ? "pedido" : "pedidos"}`
+            : "Ninguno"}
       </p>
       <p className="text-sm text-[var(--text-secondary)]">
-        {sinAvanzar > 0 ? "1 h o más en su paso" : "todo se mueve"}
+        {sinMuestra ? vacio : sinAvanzar > 0 ? "1 h o más en su paso" : "todo se mueve"}
       </p>
     </div>,
     <div key="espera" className={TARJETA}>
@@ -116,13 +128,15 @@ export function useIndicadoresPedidos({
           </span>
         </button>
       ) : (
-        <p className="text-lg font-extrabold text-[var(--text-primary)]">—</p>
+        <p className="text-lg font-extrabold text-[var(--text-primary)]">
+          {sinMuestra ? "Sin pedidos" : "—"}
+        </p>
       )}
     </div>,
     <div key="deuda" className={TARJETA}>
       <Rotulo
         icono={Banknote}
-        texto="Con deuda"
+        texto="Por cobrar"
         ayuda="Pedidos en efectivo que se cobran al entregar. Tócalo para ver sólo esos (y otra vez para quitar el filtro)."
       />
       <button
@@ -132,10 +146,12 @@ export function useIndicadoresPedidos({
         onClick={onFiltrarDeuda}
       >
         <span className="block text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-          {conDeuda} {conDeuda === 1 ? "pedido" : "pedidos"}
+          {sinMuestra && !conDeudaFiltrado
+            ? "Sin pedidos"
+            : `${conDeuda} ${conDeuda === 1 ? "pedido" : "pedidos"}`}
         </span>
         <span className="block text-sm text-[var(--text-secondary)]">
-          {conDeudaFiltrado ? "filtrando: sólo con deuda" : "se cobran al entregar"}
+          {conDeudaFiltrado ? "filtrando: sólo por cobrar" : "se cobran al entregar"}
         </span>
       </button>
     </div>,
@@ -149,7 +165,11 @@ export function useIndicadoresPedidos({
     anchoFijo: true,
     sinDatosAun: cargando,
     filtrosActivos,
-    resumen: sinAvanzar > 0 ? `${sinAvanzar} sin avanzar` : "Todo al día",
+    resumen: sinMuestra
+      ? `Sin pedidos ${vacio}`
+      : sinAvanzar > 0
+        ? `${sinAvanzar} sin avanzar`
+        : "Todo al día",
     tarjetas,
   });
 }

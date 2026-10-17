@@ -16,7 +16,7 @@
  * Partido el 10-10 de 822 líneas: tarjeta en `kanban/TarjetaPedido`, columna
  * en `kanban/ColumnaKanban`, la configuración en `kanban/columnas`.
  */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -29,8 +29,6 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { ShoppingBasket } from "@buleje/design-system/icons";
-import { EmptyState } from "@/components/admin/EmptyState";
 import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
@@ -43,8 +41,8 @@ import { VALID_TRANSITIONS } from "./types";
 interface OrdersKanbanProps {
   activeOrders: DbOrder[];
   loading: boolean;
-  /** Hay filtros puestos: el vacío lo dice («con estos filtros»). */
-  conFiltros?: boolean;
+  /** Lo que se ve sin pedidos (`VacioPedidos`: dice si es por los filtros y qué hacer). */
+  vacio: ReactNode;
   storeLat: number | null;
   storeLon: number | null;
   driverColor: (name: string) => string;
@@ -86,7 +84,7 @@ function useAncho<T extends HTMLElement>() {
 export function OrdersKanban({
   activeOrders,
   loading,
-  conFiltros = false,
+  vacio,
   storeLat,
   storeLon,
   driverColor,
@@ -178,17 +176,7 @@ export function OrdersKanban({
   }
 
   if (activeOrders.length === 0) {
-    return (
-      <EmptyState
-        icon={<ShoppingBasket className="h-10 w-10 text-[var(--text-tertiary)]" />}
-        title={
-          conFiltros
-            ? "No hay pedidos en marcha con estos filtros"
-            : "No hay pedidos en marcha: los nuevos aparecen aquí al momento"
-        }
-        actions={[]}
-      />
-    );
+    return vacio;
   }
 
   const angosto = ancho < DOS_COLUMNAS;

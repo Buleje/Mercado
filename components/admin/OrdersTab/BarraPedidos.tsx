@@ -16,6 +16,10 @@
  * La cuenta de cada estado va sólo en la Lista: en el Tablero la dice la
  * cabecera de su columna (`conCuentas`). Un estado sin pedidos no tiene chip.
  *
+ * 17-10 (O03/P02): lo puesto en «Filtros» que no tiene chip (fechas, montos,
+ * origen, por cobrar, repartidor, varios estados) se ve al lado, cada uno con
+ * su X: antes había que abrir el formulario para saber qué filtraba.
+ *
  * Todo escribe el MISMO estado (`useOrdersFilters` + el repartidor elegido).
  * En el celular quedan el buscador y «Filtros»; lo demás vive en el modal.
  */
@@ -24,7 +28,12 @@ import { Search, SlidersHorizontal, X } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 import { type FiltersAction, type OrderFilters } from "./types";
-import { cuantosPorEstado, filtrosPuestos } from "./filtrar-pedidos";
+import {
+  criteriosDelModal,
+  cuantosPorEstado,
+  filtrosPuestos,
+  type CriterioDelModal,
+} from "./filtrar-pedidos";
 
 const PAGOS = [
   { value: "yape", label: "Yape" },
@@ -98,6 +107,17 @@ export function BarraPedidos({
   const limpiar = () => {
     dispatch({ type: "CLEAR" });
     onRepartidor("");
+  };
+  const quitar: Record<CriterioDelModal, () => void> = {
+    estados: () => dispatch({ type: "SET_STATUSES", statuses: new Set() }),
+    desde: () => dispatch({ type: "SET_DATE_FROM", value: "" }),
+    hasta: () => dispatch({ type: "SET_DATE_TO", value: "" }),
+    minimo: () => dispatch({ type: "SET_AMOUNT_MIN", value: "" }),
+    maximo: () => dispatch({ type: "SET_AMOUNT_MAX", value: "" }),
+    origen: () => dispatch({ type: "SET_SOURCE", value: "" }),
+    deuda: () => dispatch({ type: "SET_HAS_DEBT", value: false }),
+    notas: () => dispatch({ type: "SET_HAS_ADMIN_NOTES", value: false }),
+    repartidor: () => onRepartidor(""),
   };
 
   return (
@@ -193,6 +213,22 @@ export function BarraPedidos({
             </span>
           )}
         </button>
+
+        {criteriosDelModal(filters, repartidor).map((c) => (
+          <button
+            key={c.clave}
+            type="button"
+            onClick={quitar[c.clave]}
+            aria-label={`Quitar el filtro «${c.texto}»`}
+            className={button({
+              variant: "secondary",
+              className: "gap-1.5 rounded-xl border-[var(--accent)] px-3 max-sm:hidden",
+            })}
+          >
+            {c.texto}
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        ))}
 
         {puestos > 0 && (
           <button

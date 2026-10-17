@@ -3,6 +3,7 @@
 import { SectionTitle } from "@buleje/design-system";
 import { Printer, Store } from "@buleje/design-system/icons";
 import type { DbOrder } from "@/lib/jsondb";
+import { responsableDe } from "./siguiente-paso";
 import { STATUS_LABELS, nombreDelPago } from "./types";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
@@ -50,7 +51,7 @@ export function OrdersPrintPreview({
       <div className={MODAL_BODY}>
         <div id="print-content" className="space-y-6">
           {selectedOrders.map((order) => {
-            const driver = (order as DbOrder & { deliveryDriver?: string }).deliveryDriver;
+            const driver = responsableDe(order);
             return (
               <div
                 key={order.id}

@@ -35,6 +35,7 @@ import { OrdersArchive } from "./OrdersArchive";
 import { BarraPedidos } from "./BarraPedidos";
 import { ListaPedidos } from "./ListaPedidos";
 import { ResumenImpresion } from "./ResumenImpresion";
+import { VacioPedidos } from "./VacioPedidos";
 import { VentanasPedidos } from "./VentanasPedidos";
 
 // Delivery entero, montado como vista (R5: mover = montar). Trae el mapa
@@ -94,6 +95,17 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
     v.id === "tablero" && p.enMarcha > 0 ? { ...v, badge: p.enMarcha } : v,
   );
   const enMarchaVisible = vista === "tablero" || vista === "lista";
+  const vacio = (
+    <VacioPedidos
+      conFiltros={p.puestos > 0}
+      onQuitarFiltros={() => {
+        p.dispatch({ type: "CLEAR" });
+        r.setSelectedDriverFilter("");
+      }}
+      onVerArchivados={() => irA("archivados")}
+      onIrAReparto={repartoVisible ? () => irA("reparto") : undefined}
+    />
+  );
 
   return (
     <AdminTabBar
@@ -164,7 +176,7 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
               <OrdersKanban
                 activeOrders={p.enMarchaFiltrados}
                 loading={datos.loading}
-                conFiltros={p.puestos > 0}
+                vacio={vacio}
                 storeLat={datos.storeLat}
                 storeLon={datos.storeLon}
                 driverColor={r.driverColor}
@@ -186,7 +198,7 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
               <ListaPedidos
                 pedidos={p.enMarchaFiltrados}
                 loading={datos.loading}
-                conFiltros={p.puestos > 0}
+                vacio={vacio}
                 elegidos={bulk.selectedOrderIds}
                 onElegir={bulk.toggleOrderSelect}
                 onElegirTodos={bulk.setOrderSelection}
