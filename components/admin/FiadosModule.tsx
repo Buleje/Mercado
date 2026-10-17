@@ -42,6 +42,8 @@ import { useIndicadoresMeDeben } from "./fiados/use-indicadores-me-deben";
 import { exportarDeudores, exportarListaDeCobro } from "./fiados/fiados-exportar";
 import { ID_PANEL_ME_DEBEN, SECCIONES_ME_DEBEN, seccionMeDeben } from "./fiados/secciones";
 import { FIADO_VISTAS, FIADO_VISTAS_ALIAS, estaAbierto, type Densidad, type Fiado, type FiadoTab } from "./fiados/tipos";
+import { comprasDelCliente } from "./fiados/cuenta-cliente";
+import type { PestanaFicha } from "./fiados/FiadoDetalleSheet";
 
 export type { Fiado } from "./fiados/tipos";
 
@@ -93,6 +95,15 @@ export default function FiadosModule() {
   const [compromisoFecha, setCompromisoFecha] = useState("");
   const firmaCanvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [pestanaFicha, setPestanaFicha] = useState<PestanaFicha>("Detalle");
+
+  /** Desde la ronda de cobro: la cuenta entera del cliente, abierta en su compra más vieja que debe (M32). */
+  const verCuenta = (customerId: string) => {
+    const primera = comprasDelCliente(fiados, customerId)[0];
+    if (!primera) return;
+    setPestanaFicha("Cuenta");
+    void acc.openDetail(primera);
+  };
 
   const abrirCompromiso = (f: Fiado) => {
     setShowCompromiso(true);
@@ -187,7 +198,7 @@ export default function FiadosModule() {
       )}
 
       <div role="tabpanel" id={ID_PANEL_ME_DEBEN} aria-labelledby={idPestanaDeSeccion(ID_PANEL_ME_DEBEN, activeTab)}>
-        {activeTab === "cobranza" && <CobranzaView fiados={fiados} loading={loading} cob={cob} onCobrar={cobrarCliente} onRecordado={fetchFiados} />}
+        {activeTab === "cobranza" && <CobranzaView fiados={fiados} loading={loading} cob={cob} onCobrar={cobrarCliente} onRecordado={fetchFiados} onVerCuenta={(d) => verCuenta(d.id)} />}
         {activeTab === "agenda" && <AgendaCobros fiados={fiados} cob={cob} onCobrarCliente={cobrarCliente} onVerFiado={acc.openDetail} onRecordado={fetchFiados} />}
         {activeTab === "cobrado" && (
           <CobradoView fiados={fiados} pagosEstaSemana={der.pagosEstaSemana} mejorPagadorMes={der.mejorPagadorMes}
@@ -202,7 +213,9 @@ export default function FiadosModule() {
       </div>
 
       <FiadoDetalleSheet selected={acc.selected} onCerrar={() => acc.setSelected(null)} fiados={fiados} detailLoading={acc.detailLoading}
-        onCobrar={(f) => acc.abrirCobro({ tipo: "fiado", fiado: f })} onCompromiso={abrirCompromiso} onRecordado={fetchFiados} />
+        onCobrar={(f) => acc.abrirCobro({ tipo: "fiado", fiado: f })} onCompromiso={abrirCompromiso} onRecordado={fetchFiados}
+        pestana={pestanaFicha} onPestana={setPestanaFicha} gestiones={cob.gestiones} promesa={acc.selected ? cob.promesas.get(acc.selected.customerId) : undefined}
+        onElegir={(f) => void acc.openDetail(f)} onVerRecibo={acc.verRecibo} />
 
       <PagoFiadoModal abierto={!!acc.cobrando} titulo={titulo} saldo={saldoACobrar} pagando={acc.paying} error={acc.pagoError}
         onCerrar={() => acc.setCobrando(null)} onCobrar={acc.cobrar} />

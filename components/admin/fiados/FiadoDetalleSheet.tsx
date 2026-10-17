@@ -20,8 +20,13 @@ import { formatCurrency, formatDate, formatDateNumeric, formatTime } from "@/lib
 import { tenantCacheKey } from "@/lib/tenant-cache";
 import { FiadoStreakBadge } from "./FiadoBadges";
 import { diasDeAtraso, recordarPorWhatsApp } from "./recordar";
-import { STATUS_META, estaAbierto, type Fiado } from "./tipos";
+import { STATUS_META, estaAbierto, type Fiado, type ReciboData } from "./tipos";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import type { Gestion, PromesaVigente } from "@/lib/fiados/gestion-cobranza";
+import CuentaCliente from "./CuentaCliente";
+
+export const PESTANAS_FICHA = ["Detalle", "Cuenta", "Pagos", "Acciones"] as const;
+export type PestanaFicha = (typeof PESTANAS_FICHA)[number];
 
 type Props = {
   selected: Fiado | null;
@@ -31,14 +36,20 @@ type Props = {
   onCobrar: (f: Fiado) => void;
   onCompromiso: (f: Fiado) => void;
   onRecordado: () => void;
+  /** La pestaña la lleva quien abre la ficha: desde la ronda de cobro abre en «Cuenta». */
+  pestana: PestanaFicha;
+  onPestana: (p: PestanaFicha) => void;
+  gestiones: readonly Gestion[];
+  promesa?: PromesaVigente;
+  onElegir: (f: Fiado) => void;
+  onVerRecibo: (r: ReciboData) => void;
 };
 
-export default function FiadoDetalleSheet({ selected, onCerrar, fiados, detailLoading, onCobrar, onCompromiso, onRecordado }: Props) {
+export default function FiadoDetalleSheet({ selected, onCerrar, fiados, detailLoading, onCobrar, onCompromiso, onRecordado, pestana: panelTab, onPestana: setPanelTab, gestiones, promesa, onElegir, onVerRecibo }: Props) {
   const sheetPanelRef = useRef<HTMLDivElement>(null);
   const sheetTitleId = useId();
   // El Escape central de FiadosModule cierra la ficha: el hook sólo da foco inicial + trampa de Tab.
   useModalAccesible(sheetPanelRef, { cerrarConEscape: false, activo: !!selected });
-  const [panelTab, setPanelTab] = useState<"Detalle" | "Pagos" | "Acciones">("Detalle");
   const [isPanelWide, setIsPanelWide] = useState(() => {
     try { return localStorage.getItem(tenantCacheKey("panel-width-preference")) === "wide"; } catch { return false; }
   });
@@ -96,9 +107,9 @@ export default function FiadoDetalleSheet({ selected, onCerrar, fiados, detailLo
 
                 {/* UX Mejora 15: Panel tabs */}
                 <div className="flex border-b border-[var(--rule-base)]">
-                  {(["Detalle", "Pagos", "Acciones"] as const).map(t => (
-                    <button key={t} onClick={() => setPanelTab(t)} className={cn(
-                      "px-3 py-2 text-xs font-medium border-b-2 transition-colors",
+                  {PESTANAS_FICHA.map(t => (
+                    <button key={t} type="button" onClick={() => setPanelTab(t)} aria-pressed={panelTab === t} data-qa={`ficha-${t.toLowerCase()}`} className={cn(
+                      "min-h-12 px-3 text-sm font-medium border-b-2 transition-colors",
                       panelTab === t ? "border-primary text-primary" : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     )}>{t}</button>
                   ))}
@@ -147,6 +158,10 @@ export default function FiadoDetalleSheet({ selected, onCerrar, fiados, detailLo
                   )}
                 </div>
                   </>
+                )}
+
+                {panelTab === "Cuenta" && (
+                  <CuentaCliente selected={selected} fiados={fiados} gestiones={gestiones} promesa={promesa} onElegir={onElegir} onVerRecibo={onVerRecibo} />
                 )}
 
                 {/* Tab: Pagos */}

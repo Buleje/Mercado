@@ -48,7 +48,7 @@ import { useIndicadoresTurnos } from "./turnos/use-indicadores-turnos";
 import { useResumenTurno } from "./turnos/use-resumen-turno";
 import { useTurnoEnUrl } from "./turnos/use-turno-en-url";
 import { useTurnos } from "./turnos/use-turnos";
-import { avisosDeTurnos, filtrarHistorial, FILTROS_INICIALES, nombreCajero, statsPorCajero, type Turno } from "./turnos/tipos";
+import { avisosDeTurnos, filtrarHistorial, FILTROS_INICIALES, nombreCajero, type Turno } from "./turnos/tipos";
 
 /**
  * Ir a Caja del mismo módulo: el hub sigue la URL por popstate (useVistaModulo)
@@ -86,7 +86,6 @@ export default function TurnosModule() {
   const kpis = useIndicadoresTurnos(historial, cajeros);
 
   const filtrados = useMemo(() => filtrarHistorial(historial, filtros), [historial, filtros]);
-  const stats = useMemo(() => statsPorCajero(historial, cajeros), [historial, cajeros]);
   const avisos = useMemo(() => avisosDeTurnos(turnoActivo, historial, datos.ahora), [turnoActivo, historial, datos.ahora]);
   const semana = useMemo(() => [...historial, ...(turnoActivo ? [turnoActivo] : [])], [historial, turnoActivo]);
   const ultimoTurno = historial.find((t) => t.cierreEfectivo != null) ?? null;
@@ -230,7 +229,7 @@ export default function TurnosModule() {
             <TurnosSemana turnos={semana} nombreDe={nombreDe} />
           </section>
         )}
-        {seccion === "cajeros" && <CajerosVista stats={stats} historial={historial} cajeros={cajeros} />}
+        {seccion === "cajeros" && <CajerosVista historial={historial} cajeros={cajeros} />}
       </div>
 
       <NuevaCajeraModal

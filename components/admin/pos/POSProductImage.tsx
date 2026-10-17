@@ -77,11 +77,9 @@ export default function POSProductImage({
       // para un lector de pantalla.
       aria-hidden="true"
     >
-      <span className="font-black leading-none" style={{ color: texto, fontSize: "clamp(1.1rem, 2.6vw, 1.9rem)" }}>
+      {/* Iniciales chicas y sin repetir el nombre (M09, 17-10): el nombre ya está debajo. */}
+      <span className="text-lg font-black leading-none" style={{ color: texto }}>
         {iniciales(name)}
-      </span>
-      <span className="line-clamp-2 text-[length:var(--ts-2xs,0.6875rem)] font-semibold leading-tight opacity-70" style={{ color: texto }}>
-        {name}
       </span>
     </div>
   );

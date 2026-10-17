@@ -29,7 +29,16 @@ export function prettyCategory(id: string): string {
     .replace(/\b\p{L}/gu, (ch) => ch.toUpperCase());
 }
 
-export type Product = Omit<BaseProduct, "id"> & { id: number; stock?: number; stockMin?: number; type?: string };
+export type Product = Omit<BaseProduct, "id"> & {
+  id: number;
+  stock?: number;
+  stockMin?: number;
+  type?: string;
+  /** Servicios: «45 min», «8:00 a 18:00» (lo manda /api/products). */
+  durationLabel?: string;
+  /** Cómo se cobra: fijo | hora | dia | m3 | unidad (hora/día = alquiler en la tarjeta). */
+  pricingUnit?: string;
+};
 
 export interface CartItem {
   product: Product;

@@ -30,6 +30,8 @@ export type Turno = {
   cerradoPorSistema?: boolean;
   /** Turno abierto: quién más tiene turno abierto en la MISMA caja (al cerrar éste, la caja sigue abierta). */
   cajaCompartidaCon?: string[];
+  /** Ventas (tickets) del cajero dentro del turno, contadas por el servidor; sin dato = no se inventa. */
+  tickets?: number | null;
 };
 
 export type Cajero = { id: string; username: string; name: string; role: string; active: boolean };
@@ -212,29 +214,65 @@ export type StatCajero = {
   /** Suma de las diferencias del servidor (los turnos sin dato no suman). */
   difCaja: number;
   ventasPorHora: number;
-  ticketPromedio: number;
+  /** Tickets de los turnos CERRADOS; null = el servidor no mandó el dato. */
+  tickets: number | null;
+  /** Ventas de esos mismos turnos: el numerador del ticket promedio. */
+  ventasConTickets: number;
+  /** Ventas ÷ tickets (no ÷ turnos); null sin tickets. */
+  ticketPromedio: number | null;
 };
 
+/**
+ * Por cajero: ventas por hora = ventas ÷ horas de los turnos cerrados (un turno
+ * abierto no tiene horas ni ventas todavía: `ventasTotal` se calcula al cerrar).
+ * Ticket promedio = ventas ÷ tickets de los turnos cerrados. Hasta el 17-10
+ * dividía entre TURNOS (un turno de 40 ventas «tenía un ticket» de S/ 800).
+ */
 export function statsPorCajero(historial: Turno[], cajeros: Cajero[]): StatCajero[] {
   const mapa = new Map<string, StatCajero>();
   for (const t of historial) {
     const id = t.adminUserId || "Desconocido";
     const prev = mapa.get(id) ?? {
-      id, name: nombreCajero(t, cajeros), turnos: 0, ventasTotal: 0, horasTotales: 0, difCaja: 0, ventasPorHora: 0, ticketPromedio: 0,
+      id, name: nombreCajero(t, cajeros), turnos: 0, ventasTotal: 0, horasTotales: 0, difCaja: 0, ventasPorHora: 0,
+      tickets: null, ventasConTickets: 0, ticketPromedio: null,
     };
     prev.turnos += 1;
     prev.ventasTotal += t.ventasTotal;
     prev.horasTotales += duracionHoras(t);
     if (t.diferencia != null) prev.difCaja += t.diferencia;
+    if (t.status === "CERRADO" && t.tickets != null) {
+      prev.tickets = (prev.tickets ?? 0) + t.tickets;
+      prev.ventasConTickets += t.ventasTotal;
+    }
     mapa.set(id, prev);
   }
   return [...mapa.values()]
     .map((c) => ({
       ...c,
       ventasPorHora: c.horasTotales > 0 ? c.ventasTotal / c.horasTotales : 0,
-      ticketPromedio: c.turnos > 0 ? c.ventasTotal / c.turnos : 0,
+      ticketPromedio: c.tickets ? c.ventasConTickets / c.tickets : null,
     }))
     .sort((a, b) => b.ventasPorHora - a.ventasPorHora);
+}
+
+// ── Alcance de las cifras por cajero (M20: el ranking y el gráfico, del mismo período) ───
+
+export type AlcanceCajeros = "semana" | "mes" | "todo";
+export const ETIQUETA_ALCANCE: Record<AlcanceCajeros, string> = { semana: "Esta semana", mes: "Este mes", todo: "Todo el historial" };
+
+/** Lunes 00:00 de la semana de `ahora` (la misma semana que dibuja la sección «Semana»). */
+export function inicioDeSemana(ahora = new Date()): Date {
+  const inicio = new Date(ahora);
+  inicio.setDate(inicio.getDate() - inicio.getDay() + (inicio.getDay() === 0 ? -6 : 1));
+  inicio.setHours(0, 0, 0, 0);
+  return inicio;
+}
+
+export function turnosDelAlcance(historial: Turno[], alcance: AlcanceCajeros, ahora = new Date()): Turno[] {
+  if (alcance === "todo") return historial;
+  if (alcance === "mes") return historial.filter((t) => esMesActual(t.abrioEn, ahora));
+  const desde = inicioDeSemana(ahora).getTime();
+  return historial.filter((t) => new Date(t.abrioEn).getTime() >= desde);
 }
 
 // ── Filtros del historial (pegados a la tabla) ───────────────────────────────

@@ -28,6 +28,8 @@ export type DbTurnoHistorial = DbTurno & {
   diferencia: number | null;
   /** Lo cerró el cron de turnos olvidados (>12 h) sin conteo: hay que revisar el arqueo. */
   cerradoPorSistema: boolean;
+  /** Ventas (tickets) del cajero dentro del turno: el divisor del ticket promedio. */
+  tickets: number;
 };
 
 /** La caja vinculada cuenta como «cerrada con el turno» si cerró a ±2 min de él. */
@@ -56,6 +58,27 @@ export function cifrasDeCajaDelTurno(
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Tickets de cada turno en UNA consulta: las ventas del cajero (`Sale.cashierId`
+ * guarda el username o el id, como en `/api/turnos/[id]/summary`) entre que abrió
+ * y que cerró (o ahora). Es el mismo criterio con el que se suma `ventasTotal`
+ * al cerrar, así que ventas ÷ tickets es el ticket promedio de verdad.
+ */
+async function contarTicketsPorTurno(tenantId: string, ids: string[]): Promise<Map<string, number>> {
+  if (ids.length === 0) return new Map();
+  const filas = await prisma.$queryRaw<{ id: string; tickets: number }[]>`
+    SELECT t.id, COUNT(s.id)::int AS tickets
+    FROM "Turno" t
+    LEFT JOIN "AdminUser" u ON u.id = t."adminUserId"
+    JOIN "Sale" s ON s."tenantId" = t."tenantId"
+      AND s."cashierId" IN (t."adminUserId", u.username)
+      AND s."createdAt" >= t."abrioEn"
+      AND s."createdAt" <= COALESCE(t."cerroEn", now())
+    WHERE t."tenantId" = ${tenantId} AND t.id = ANY(${ids})
+    GROUP BY t.id`;
+  return new Map(filas.map((f) => [f.id, Number(f.tickets)]));
+}
 
 function toISO(d: Date): string {
   return d.toISOString();
@@ -244,6 +267,7 @@ export const TurnosDB = {
         })
       : [];
     const cajaPorId = new Map(cajas.map((c) => [c.id, c]));
+    const ticketsPorTurno = await contarTicketsPorTurno(tenantId, rows.map((r) => r.id));
 
     return rows.map((r) => {
       const caja = r.cashRegisterId ? cajaPorId.get(r.cashRegisterId) : undefined;
@@ -251,6 +275,7 @@ export const TurnosDB = {
         ...mapTurno(r),
         cajeroNombre: r.adminUser?.name?.trim() || r.adminUser?.username || "—",
         ...cifrasDeCajaDelTurno(r, caja),
+        tickets: ticketsPorTurno.get(r.id) ?? 0,
       };
     });
   },

@@ -41,10 +41,12 @@ type Props = {
   loading: boolean;
   cob: Cobranza;
   onCobrar: (d: DeudorCobranza) => void;
+  /** Abre su cuenta entera en la ficha lateral, sin salir de la ronda (M32). */
+  onVerCuenta?: (d: DeudorCobranza) => void;
   onRecordado?: () => void;
 };
 
-export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecordado }: Props) {
+export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecordado, onVerCuenta }: Props) {
   const [tramo, setTramo] = useState<CajonDeudor | "todos">("todos");
   const [q, setQ] = useState("");
   const [tanda, setTanda] = useState<Set<string>>(new Set());
@@ -178,6 +180,7 @@ export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecorda
               })}
               onAnotar={() => setAnotando(d)}
               onCobrar={() => onCobrar(d)}
+              onVerCuenta={onVerCuenta ? () => onVerCuenta(d) : undefined}
               onEscrito={alEscribir}
               mensaje={cob.mensajeDe(d)}
             />

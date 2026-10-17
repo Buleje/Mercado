@@ -28,6 +28,7 @@ import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
 import AccesosRapidos from "@/components/admin/header/AccesosRapidos";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
+import { AtajoMod } from "@/components/admin/shared/AtajoMod";
 import { cn } from "@/lib/utils";
 
 type HeaderThemingEvent = {
@@ -205,7 +206,7 @@ export const AdminTopHeader = memo(function AdminTopHeader({
             Buscar módulos, productos, clientes…
           </span>
           <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border text-[var(--text-secondary)] bg-[var(--surface-raised)] border-[var(--rule-base)] transition-colors group-hover:border-[color-mix(in_oklab,var(--accent)_35%,var(--rule-base))]">
-            <span className="text-base leading-none">⌘</span>K
+            <AtajoMod tecla="K" claseSimbolo="text-base leading-none" />
           </kbd>
         </button>
 

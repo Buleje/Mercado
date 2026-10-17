@@ -61,6 +61,9 @@ export function useFiadoAcciones(alCambiar: () => void) {
     }
   };
 
+  /** El recibo de un abono ya hecho (pestaña «Cuenta» de la ficha): la misma ventana que sale al cobrar. */
+  const verRecibo = (r: ReciboData) => { setReciboData(r); setShowRecibo(true); };
+
   const handleCreate = async () => {
     setCreateError(null);
     const total = parseFloat(newForm.total);
@@ -162,6 +165,6 @@ export function useFiadoAcciones(alCambiar: () => void) {
     selected, setSelected, detailLoading, openDetail,
     showNew, setShowNew, newForm, setNewForm, creating, createError, setCreateError, dniPhoto, setDniPhoto, handleCreate,
     cobrando, setCobrando, abrirCobro, paying, pagoError, cobrar,
-    showRecibo, setShowRecibo, reciboData,
+    showRecibo, setShowRecibo, reciboData, verRecibo,
   };
 }

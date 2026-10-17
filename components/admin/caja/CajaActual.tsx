@@ -28,6 +28,7 @@ import { CajaCuadreDelDia } from "./CajaCuadreDelDia";
 import { CajaHoyYSesion } from "./CajaHoyYSesion";
 import { CajaMovimientos } from "./CajaMovimientos";
 import { CajaPorMedio } from "./CajaPorMedio";
+import { EsperadoNegativo } from "./EsperadoNegativo";
 import { useIndicadoresCaja } from "./use-indicadores-caja";
 import type { DatosCaja } from "./use-caja-registradora";
 import { fmt, type CashRegister, type VistaCaja } from "./tipos";
@@ -73,6 +74,8 @@ function CajaAbierta({ vista, datos, parte, puedeCambiarMedio, onMovimiento, onC
   const rol = useMiRol();
   const puedeEntregar = rol != null && checkPermission(rol, "adelantos-entregar", "write");
   const [entregando, setEntregando] = useState(false);
+  /* M26: «Ver en Movimientos» desde el esperado negativo llega con el egreso ya buscado. */
+  const [buscarMov, setBuscarMov] = useState("");
 
   return (
     <div className="space-y-4">
@@ -126,11 +129,12 @@ function CajaAbierta({ vista, datos, parte, puedeCambiarMedio, onMovimiento, onC
               }
             />
           )}
+          <EsperadoNegativo caja={caja} esperado={efectivo} onVerMovimiento={(texto) => { setBuscarMov(texto); onIrA("movimientos"); }} />
           <CajaCuadreDelDia parte={parte.parte} cargando={parte.cargando} error={parte.error} onReintentar={parte.releer} />
         </>
       )}
       {vista === "movimientos" && (
-        <CajaMovimientos caja={caja} timeline={timeline} efectivoActual={efectivo} puedeCambiarMedio={puedeCambiarMedio} onCambiado={() => void fetchData()} />
+        <CajaMovimientos key={buscarMov} buscarInicial={buscarMov} caja={caja} timeline={timeline} efectivoActual={efectivo} puedeCambiarMedio={puedeCambiarMedio} onCambiado={() => void fetchData()} />
       )}
       {vista === "medios" && <CajaPorMedio breakdown={paymentBreakdown} stats={stats} />}
       {vista === "cuadrar" && <CajaContar key={versionConteo} onIrACaja={() => onIrA("hoy")} />}

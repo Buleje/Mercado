@@ -23,11 +23,16 @@ export function useIndicadoresTurnos(historial: Turno[], cajeros: Cajero[]) {
 
   const tarjetas = [
     { icono: Clock, rotulo: "Turnos del mes", valor: String(delMes.length) },
-    { icono: Timer, rotulo: "Horas trabajadas", valor: `${horas.toFixed(1)} h` },
-    { icono: DollarSign, rotulo: "Ventas por hora", valor: formatCurrency(porHora) },
+    { icono: Timer, rotulo: "Horas del mes", valor: `${horas.toFixed(1)} h` },
+    {
+      icono: DollarSign,
+      rotulo: "Ventas por hora del mes",
+      valor: formatCurrency(porHora),
+      ayuda: horas > 0 ? `${formatCurrency(ventas)} vendidos ÷ ${horas.toFixed(1)} h de turnos cerrados = ${formatCurrency(porHora)}/h.` : "Sin turnos cerrados este mes.",
+    },
     {
       icono: Trophy,
-      rotulo: "Mejor por hora",
+      rotulo: "Mejor por hora del mes",
       valor: mejor ? mejor.name : "—",
       extra: mejor ? `${formatCurrency(mejor.ventasPorHora)}/h` : undefined,
       ayuda: "Quien más vendió por hora trabajada este mes, no quien más vendió en total.",

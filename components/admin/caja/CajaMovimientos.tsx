@@ -7,7 +7,7 @@
  * cabecera, y cómo verlos + los filtros (medio y origen) van en UNA fila
  * pegada a la tabla. Cada fila dice de dónde vino: venta, adelanto, gasto…
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { medioCorregible } from "@/lib/caja/cambiar-medio";
 import { ETIQUETA_ORIGEN, ORDEN_ORIGEN, origenDeMovimiento, type OrigenClave } from "@/lib/caja/origen-movimiento";
@@ -37,13 +37,19 @@ interface Props {
   efectivoActual: number;
   puedeCambiarMedio: boolean;
   onCambiado: () => void;
+  /** Texto con que llega buscado (desde «El esperado da negativo», M26). */
+  buscarInicial?: string;
 }
 
-export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMedio, onCambiado }: Props) {
+export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMedio, onCambiado, buscarInicial = "" }: Props) {
   const [vista, setVista] = useLocalStorage<"lista" | "tiempo">("caja:movimientos-vista", "lista");
   const [medio, setMedio] = useState<MethodFilter>("all");
   const [origen, setOrigen] = useState<OrigenClave | "todos">("todos");
-  const [buscar, setBuscar] = useState("");
+  const [buscar, setBuscar] = useState(buscarInicial);
+  /* La búsqueda sólo se ve en la lista: si llega un egreso buscado, se abre ahí. */
+  useEffect(() => {
+    if (buscarInicial) setVista("lista");
+  }, [buscarInicial, setVista]);
   /* Sesión de varios días: la hora sola no dice cuándo (M24, caja abierta en junio). */
   const variosDias = limaDateKey(caja.openedAt) !== limaDateKey();
 

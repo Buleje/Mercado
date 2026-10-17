@@ -5,6 +5,7 @@ import { Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { categories } from "@/data/products";
 import { CATEGORY_ICONS, prettyCategory, type Product } from "@/components/admin/pos/pos-shared";
+import { VistaCatalogoToggle } from "@/components/admin/pos/vista-catalogo";
 
 /** Chips de categoría del POS, sacadas del inventario real. */
 export default function POSCategoryChips({ products, category, setCategory }: { products: Product[]; category: string; setCategory: (id: string) => void }) {
@@ -29,7 +30,8 @@ export default function POSCategoryChips({ products, category, setCategory }: { 
   }, [products]);
 
   return (
-            <div className="relative">
+          <div className="flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
               <div className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x">
                 {posCategories.map((c) => {
                   const Icon = CATEGORY_ICONS[c.id] ?? Package;
@@ -57,5 +59,7 @@ export default function POSCategoryChips({ products, category, setCategory }: { 
                 className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-[var(--surface-raised)] to-transparent"
               />
             </div>
+            <VistaCatalogoToggle />
+          </div>
   );
 }

@@ -51,6 +51,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { setKeepAlive } from "@/lib/session-keepalive";
 import { SessionExpiryGuard } from "@/components/shared/SessionExpiryGuard";
 import { FinanceAlertBanner } from "@/components/superadmin/FinanceAlertBanner";
+import { AtajoMod } from "@/components/admin/shared/AtajoMod";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1153,7 +1154,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 <kbd
                   className={`inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border ${headerKbdClass}`}
                 >
-                  <span className="text-base leading-none">⌘</span>K
+                  <AtajoMod tecla="K" claseSimbolo="text-base leading-none" />
                 </kbd>
               </button>
             </div>

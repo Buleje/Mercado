@@ -49,7 +49,7 @@ export function usePOSKeyboard({
           return;
         case "F3":
           e.preventDefault();
-          if (cartLength > 0 && window.confirm("Vaciar el carrito?")) {
+          if (cartLength > 0 && window.confirm("¿Vaciar el carrito? Se quitan todos los productos.")) {
             onClearCart();
           }
           return;

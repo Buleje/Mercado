@@ -8,6 +8,7 @@
  * cifras. En el celular sale en tarjetas (useMobileTableCards) con todas.
  */
 import { DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { cajeroColor, cajeroColorText, type StatCajero } from "./tipos";
@@ -26,6 +27,29 @@ export function Inicial({ nombre, tam = "h-7 w-7 text-sm" }: { nombre: string; t
     <span className={cn("rounded-full flex items-center justify-center font-bold shrink-0", tam)} style={{ backgroundColor: cajeroColor(nombre), color: cajeroColorText(nombre) }} aria-hidden>
       {nombre.charAt(0).toUpperCase()}
     </span>
+  );
+}
+
+const horas = (h: number) => `${h.toLocaleString("es-PE", { maximumFractionDigits: 1 })} h`;
+
+/** M21: al pulsar la cifra, la cuenta con la que salió (ventas, horas y tickets usados). */
+function FormulaPorHora({ c }: { c: StatCajero }) {
+  return (
+    <InfoTip
+      title={`Ventas por hora de ${c.name}`}
+      what={c.horasTotales > 0 ? `${formatCurrency(c.ventasTotal)} ÷ ${horas(c.horasTotales)} trabajadas = ${formatCurrency(c.ventasPorHora)}/h` : "Sin horas: ningún turno cerrado en el período."}
+      affects="Cuenta sólo los turnos cerrados: uno abierto todavía no tiene horas ni ventas."
+    />
+  );
+}
+
+function FormulaTicket({ c }: { c: StatCajero }) {
+  return (
+    <InfoTip
+      title={`Ticket promedio de ${c.name}`}
+      what={c.ticketPromedio != null ? `${formatCurrency(c.ventasConTickets)} ÷ ${c.tickets} ${c.tickets === 1 ? "ticket" : "tickets"} = ${formatCurrency(c.ticketPromedio)}` : "Sin tickets en los turnos cerrados del período."}
+      affects="Divide entre las ventas hechas, no entre turnos: un turno sin ventas no cambia el promedio."
+    />
   );
 }
 
@@ -58,8 +82,12 @@ export function TurnosPorCajero({ stats }: { stats: StatCajero[] }) {
             </td>
             <td className="text-right text-[var(--text-secondary)] tabular-nums">{c.turnos}</td>
             <td className="text-right font-bold text-[var(--data-success-ink)] tabular-nums whitespace-nowrap">{formatCurrency(c.ventasTotal)}</td>
-            <td className="text-right font-bold tabular-nums whitespace-nowrap">{formatCurrency(c.ventasPorHora)}/h</td>
-            <td className="text-right text-[var(--text-secondary)] tabular-nums whitespace-nowrap">{formatCurrency(c.ticketPromedio)}</td>
+            <td className="text-right font-bold tabular-nums whitespace-nowrap">
+              <span className="inline-flex items-center gap-1">{formatCurrency(c.ventasPorHora)}/h<FormulaPorHora c={c} /></span>
+            </td>
+            <td className="text-right text-[var(--text-secondary)] tabular-nums whitespace-nowrap">
+              <span className="inline-flex items-center gap-1">{c.ticketPromedio != null ? formatCurrency(c.ticketPromedio) : "—"}<FormulaTicket c={c} /></span>
+            </td>
             <td className="text-right"><DifCaja valor={c.difCaja} /></td>
           </tr>
         ))}

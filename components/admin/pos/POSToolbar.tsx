@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import {
   ScanBarcode, Camera, Zap, MessageCircle, History, RotateCcw, RefreshCcw, Maximize2, Minimize2,
-  Type, Volume2, VolumeX, Printer, WifiOff, AlertTriangle, Unlock,
+  Type, Volume2, VolumeX, Printer, WifiOff, AlertTriangle, Unlock, Pin, Keyboard,
 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -17,6 +17,9 @@ import { edadCatalogo } from "@/components/admin/pos/pos-catalogo-offline";
 import { fmt, type CartItem, type Product } from "@/components/admin/pos/pos-shared";
 import type { POSCarrito } from "@/components/admin/pos/usePOSCarrito";
 import { button } from "@/components/ui-system/button-variants";
+import { useAdminShortcuts, useRegisterShortcuts, type ShortcutSection } from "@/contexts/admin-shortcuts-context";
+import { BotonesFijados, ElegirAccesosModal } from "@/components/admin/pos/AccesosFijos";
+import { FIJABLES, useAccionesFijadas, type AccionFijable } from "@/components/admin/pos/use-acciones-fijadas";
 
 type TamanoLetra = "normal" | "large" | "xlarge";
 const TAMANOS: { id: TamanoLetra; label: string }[] = [
@@ -53,6 +56,30 @@ type DetectorDeCodigos = new (opts?: { formats: string[] }) => { detect: (img: I
 
 const BOTON_48 = button({ variant: "secondary", size: "icon", className: "shrink-0 rounded-xl" });
 
+/* M05: la hoja de atajos («?» o «Más › Atajos del teclado») dice los del mostrador primero. */
+const ATAJOS_POS: ShortcutSection[] = [
+  {
+    title: "Vender (mostrador)",
+    items: [
+      { keys: ["F1"], description: "Ir al buscador" },
+      { keys: ["F2"], description: "Cobrar" },
+      { keys: ["F3"], description: "Vaciar el carrito (te pregunta antes)" },
+      { keys: ["F4"], description: "Ventas de hoy" },
+      { keys: ["Enter"], description: "En el buscador: agrega el primer resultado" },
+      { keys: ["+"], description: "Una más de la primera línea del carrito" },
+      { keys: ["−"], description: "Una menos de la primera línea del carrito" },
+      { keys: ["Supr"], description: "Quitar la primera línea del carrito" },
+      { keys: ["Ctrl", "M"], description: "Dictar por voz" },
+    ],
+  },
+];
+
+/* «Repetir» y «Reimprimir» sólo están en el «Más» si hubo una venta: igual se pueden fijar. */
+const RESERVA_FIJABLES: Partial<Record<AccionFijable, { label: string; icon: MenuAccion["icon"] }>> = {
+  repetir: { label: "Repetir última venta", icon: RotateCcw },
+  reimprimir: { label: "Reimprimir la última venta", icon: Printer },
+};
+
 /**
  * Cabecera de Vender en UNA fila (10-10): buscador con lector, dictado y cámara · lo que falta para
  * vender en regla (turno o caja) · «Indicadores» plegados · atajos ⓘ · «Más».
@@ -63,6 +90,10 @@ const BOTON_48 = button({ variant: "secondary", size: "icon", className: "shrink
 export default function POSToolbar(props: POSToolbarProps) {
   const { products, carrito, cashRegisterOpen, turnoAbierto, catalogoGuardadoEn, lastSaleInfo, expanded, fontSize, soundEnabled } = props;
   const { confirm } = useConfirm();
+  useRegisterShortcuts("pos", ATAJOS_POS);
+  const { open: abrirAtajos } = useAdminShortcuts();
+  const { fijadas, guardar } = useAccionesFijadas();
+  const [eligiendo, setEligiendo] = useState(false);
   const fotoRef = useRef<HTMLInputElement>(null);
   const [expressOn, setExpressOn] = useState(() => {
     try { return typeof window !== "undefined" && localStorage.getItem("pos-express-mode") === "true"; } catch { return false; }
@@ -127,6 +158,17 @@ export default function POSToolbar(props: POSToolbarProps) {
     { id: "sonido", seccion: "Pantalla", label: soundEnabled ? "Sonido al vender: sí" : "Sonido al vender: no", icon: soundEnabled ? Volume2 : VolumeX, activo: soundEnabled, onSelect: props.toggleSound },
   ];
 
+  // H06/M03: lo fijado sale del «Más» y queda a un clic; el «Más» suma cómo elegirlo y la hoja de atajos.
+  const opcionesFijables = FIJABLES.flatMap((id) => {
+    const a = acciones.find((x) => x.id === id) ?? RESERVA_FIJABLES[id];
+    return a ? [{ id, label: a.label, icon: a.icon }] : [];
+  });
+  const accionesMenu: MenuAccion[] = [
+    ...acciones.filter((a) => !(fijadas as readonly string[]).includes(a.id)),
+    { id: "fijar", seccion: "Pantalla", label: "Elegir accesos fijos…", hint: "Hasta 4 acciones a un clic, al lado del buscador", icon: Pin, onSelect: () => setEligiendo(true) },
+    { id: "atajos", seccion: "Pantalla", label: "Atajos del teclado", hint: "También con la tecla ?", icon: Keyboard, onSelect: abrirAtajos },
+  ];
+
   // Lo que falta para vender en regla. Con todo abierto no se dice nada: la barra de pestañas ya
   // dice «Turno abierto». Abrir el turno abre la caja, así que sin turno se manda a Turnos.
   const falta = turnoAbierto === false ? "turno" : cashRegisterOpen === false ? "caja" : null;
@@ -165,13 +207,14 @@ export default function POSToolbar(props: POSToolbarProps) {
             </button>
           )}
           {props.indicadores}
+          <BotonesFijados acciones={acciones} fijadas={fijadas} />
           <InfoTip
             title="Atajos del mostrador"
             what="F1 busca · F2 cobra · F3 vacía el carrito · F4 ventas de hoy · Enter agrega el primero de la búsqueda · + y − cambian la cantidad de la primera línea del carrito · Supr la quita · Ctrl+M dicta por voz."
             affects="El lector de código funciona aunque el cursor no esté en el buscador; si el código no está en tu inventario, suena y te avisa."
             example="Pasas el lector por una leche Gloria: entra al carrito con su precio y suena el ding."
           />
-          <ActionMenu label="Más" soloIcono size="md" actions={acciones} title="Más acciones del mostrador" />
+          <ActionMenu label="Más" soloIcono size="md" actions={accionesMenu} title="Más acciones del mostrador" />
         </div>
       </div>
       <input
@@ -188,6 +231,9 @@ export default function POSToolbar(props: POSToolbarProps) {
           if (file) void leerFoto(file);
         }}
       />
+      {eligiendo && (
+        <ElegirAccesosModal open onClose={() => setEligiendo(false)} opciones={opcionesFijables} fijadas={fijadas} onGuardar={guardar} />
+      )}
       {expressOn && (
         <POSExpressMode
           products={products as { id: number; name: string; price: number; barcode?: string | null; stock?: number | null }[]}

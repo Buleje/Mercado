@@ -13,14 +13,15 @@
  */
 
 import { KeyboardShortcutsHelp } from "./KeyboardShortcutsHelp";
-import { useAdminShortcuts } from "@/contexts/admin-shortcuts-context";
+import { useAdminShortcuts, type ShortcutSection } from "@/contexts/admin-shortcuts-context";
+import { useTeclaMod, type TeclaMod } from "@/hooks/use-tecla-mod";
 
-/** Los globales del shell (los que antes vivían como default de la hoja). */
-const GLOBALES = [
+/** Los globales del shell (los que antes vivían como default de la hoja). «Ctrl» o «⌘» según la máquina (M05). */
+const globales = (mod: TeclaMod): ShortcutSection[] => [
   {
     title: "Navegación del panel",
     items: [
-      { keys: ["Ctrl", "K"], description: "Buscar en todo el panel" },
+      { keys: [mod, "K"], description: "Buscar en todo el panel" },
       { keys: ["?"], description: "Abrir / cerrar esta ayuda" },
       { keys: ["F"], description: "Modo enfoque (ocultar sidebar)" },
       { keys: ["Esc"], description: "Cerrar modal / deseleccionar" },
@@ -36,6 +37,7 @@ export default function ShortcutsHelpConSecciones({
   onClose: () => void;
 }) {
   const { sections, isOpen, close } = useAdminShortcuts();
+  const mod = useTeclaMod();
   // Se abre por la tecla `?` (prop) o por un botón del módulo (contexto).
   const abierto = open || isOpen;
 
@@ -46,7 +48,7 @@ export default function ShortcutsHelpConSecciones({
         close();
         onClose();
       }}
-      sections={[...sections, ...GLOBALES]}
+      sections={[...sections, ...globales(mod)]}
     />
   );
 }

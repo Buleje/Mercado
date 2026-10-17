@@ -27,6 +27,20 @@ export function notasConMetodo(metodo: MetodoCobro | undefined, notas?: string):
   return (limpia ? `${ETIQUETA_METODO[metodo]} · ${limpia}` : ETIQUETA_METODO[metodo]).slice(0, TOPE_NOTA);
 }
 
+/**
+ * Lo inverso de `notasConMetodo`: «Yape · pagó su hijo» → medio «Yape» y nota
+ * «pagó su hijo». Sin medio reconocido, la nota tal cual (cobros viejos).
+ */
+export function medioYNota(notas?: string | null): { metodo: MetodoCobro | null; medio: string | null; nota: string } {
+  const t = notas?.trim() ?? "";
+  for (const metodo of METODOS_COBRO) {
+    const medio = ETIQUETA_METODO[metodo];
+    if (t === medio) return { metodo, medio, nota: "" };
+    if (t.startsWith(`${medio} · `)) return { metodo, medio, nota: t.slice(medio.length + 3) };
+  }
+  return { metodo: null, medio: null, nota: t };
+}
+
 /** Descripción del ingreso en la caja: «Cobro de fiado · Rosa Pérez». */
 export function etiquetaCobroFiado(persona: string): string {
   return `Cobro de fiado · ${persona}`.replace(/\s+/g, " ").trim().slice(0, 120);

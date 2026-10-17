@@ -4,7 +4,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: {} }));
 
 import {
   avisosDeTurnos, calcularDesdeDenominaciones, comparativoDelTurno, diaConFecha, esDiferenciaAnormal, filtrarHistorial,
-  FILTROS_INICIALES, statsPorCajero, turnoConAlerta, type Turno,
+  FILTROS_INICIALES, inicioDeSemana, statsPorCajero, turnoConAlerta, turnosDelAlcance, type Turno,
 } from "@/components/admin/turnos/tipos";
 import { lineasCorteTurno } from "@/components/admin/turnos/corte-turno";
 import { cifrasDeCajaDelTurno } from "@/lib/db/turnos.db";
@@ -100,5 +100,43 @@ describe("turnos · reglas puras", () => {
     expect(diaConFecha(c.diaAnterior)).toBe("martes 06/10");
     // Promedio de los 7 días previos al turno: 06/10 y 01/10, sin el propio ni el de después.
     expect(c.prom7).toBeCloseTo(125);
+  });
+
+  it("ticket promedio = ventas ÷ tickets, no ÷ turnos (M21)", () => {
+    const a = { ...base, id: "a", ventasTotal: 100, tickets: 4 };
+    const b = { ...base, id: "b", ventasTotal: 60, tickets: 2 };
+    const [s] = statsPorCajero([a, b], []);
+    expect(s.tickets).toBe(6);
+    expect(s.ticketPromedio).toBeCloseTo(160 / 6); // antes: 160 ÷ 2 turnos = 80
+  });
+
+  it("un turno sin ventas o abierto no cambia el ticket promedio", () => {
+    const a = { ...base, id: "a", ventasTotal: 100, tickets: 4 };
+    const vacio = { ...base, id: "v", ventasTotal: 0, tickets: 0 };
+    const abierto: Turno = { ...base, id: "o", status: "ABIERTO", cerroEn: undefined, ventasTotal: 0, tickets: 3 };
+    const [s] = statsPorCajero([a, vacio, abierto], []);
+    expect(s.ticketPromedio).toBe(25);
+    expect(s.turnos).toBe(3);
+    // Las horas del abierto no cuentan (todavía no tiene cierre): sólo 8 + 8.
+    expect(s.horasTotales).toBeCloseTo(16);
+    expect(s.ventasPorHora).toBeCloseTo(100 / 16);
+  });
+
+  it("sin dato de tickets no se inventa un promedio", () => {
+    const [s] = statsPorCajero([{ ...base, tickets: undefined }], []);
+    expect(s.ticketPromedio).toBeNull();
+    expect(s.tickets).toBeNull();
+  });
+
+  it("alcance del ranking: semana (lunes a domingo), mes o todo (M20)", () => {
+    const ahora = new Date("2026-10-17T15:00:00"); // sábado
+    expect(inicioDeSemana(ahora).getDate()).toBe(12); // lunes 12/10
+    const lunes = { ...base, id: "l", abrioEn: new Date("2026-10-12T09:00:00").toISOString() };
+    const domingoPasado = { ...base, id: "d", abrioEn: new Date("2026-10-11T09:00:00").toISOString() };
+    const setiembre = { ...base, id: "s", abrioEn: new Date("2026-09-30T09:00:00").toISOString() };
+    const h = [lunes, domingoPasado, setiembre];
+    expect(turnosDelAlcance(h, "semana", ahora).map((t) => t.id)).toEqual(["l"]);
+    expect(turnosDelAlcance(h, "mes", ahora).map((t) => t.id)).toEqual(["l", "d"]);
+    expect(turnosDelAlcance(h, "todo", ahora)).toHaveLength(3);
   });
 });

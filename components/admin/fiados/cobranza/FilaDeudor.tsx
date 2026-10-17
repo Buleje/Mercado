@@ -38,6 +38,7 @@ export default function FilaDeudor({
   onTanda,
   onAnotar,
   onCobrar,
+  onVerCuenta,
   onEscrito,
   mensaje,
 }: {
@@ -54,6 +55,8 @@ export default function FilaDeudor({
   onTanda: (v: boolean) => void;
   onAnotar: () => void;
   onCobrar: () => void;
+  /** Abre su cuenta entera (compras, abonos, gestiones) en la ficha lateral. */
+  onVerCuenta?: () => void;
   /** Se anotó el recordatorio en la bitácora (para refrescar «anotado hoy»). */
   onEscrito?: () => void;
   /** El texto que se le manda, según su tramo de atraso. */
@@ -71,7 +74,14 @@ export default function FilaDeudor({
 
       <span className="min-w-0 flex-1 basis-56">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="truncate text-base font-bold text-[var(--text-primary)]">{d.nombre}</span>
+          {onVerCuenta ? (
+            <button type="button" onClick={onVerCuenta} title="Ver su cuenta: compras, abonos y gestiones" data-qa="cobranza-ver-cuenta"
+              className="truncate text-left text-base font-bold text-[var(--text-primary)] underline-offset-4 hover:text-[var(--accent-ink)] hover:underline dark:hover:text-[var(--accent)]">
+              {d.nombre}
+            </button>
+          ) : (
+            <span className="truncate text-base font-bold text-[var(--text-primary)]">{d.nombre}</span>
+          )}
           {cumplimiento != null && (
             <span
               title={`Pagó a tiempo el ${cumplimiento} % de sus fiados cerrados`}

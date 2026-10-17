@@ -6,6 +6,7 @@
  */
 import { diaConNombre } from "@/lib/gastos/lista-gastos";
 import { diaDe } from "@/lib/fiados/gestion-cobranza";
+import { MESES } from "@/lib/admin/metas-periodo";
 
 /** `diaDe` y `diasEntre` viven en `lib/fiados` (10-10): las promesas también se cuentan por día de Lima. */
 export { diaDe, diasEntre } from "@/lib/fiados/gestion-cobranza";
@@ -14,4 +15,11 @@ export { diaDe, diasEntre } from "@/lib/fiados/gestion-cobranza";
 export function diaLeido(fecha: string | null | undefined): string {
   const d = diaDe(fecha);
   return d ? diaConNombre(d) : "sin fecha";
+}
+
+/** «octubre 2026» desde la clave «2026-10» (la del servidor en la tendencia de cobro). */
+export function mesLeido(clave: string): string {
+  const [y, m] = clave.split("-");
+  const nombre = MESES[Number(m) - 1];
+  return nombre ? `${nombre} ${y}` : clave;
 }

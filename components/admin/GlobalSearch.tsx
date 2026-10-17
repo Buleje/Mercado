@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { destinoDelResultado } from "@/lib/admin/destino-busqueda";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { ResultadoEnlazable } from "@/components/admin/shared/ResultadoEnlazable";
+import { AtajoMod } from "@/components/admin/shared/AtajoMod";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -662,7 +663,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
             </span>
           </div>
           <span className="hidden sm:flex items-center gap-1 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">
-            <kbd className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-1.5 rounded font-mono font-semibold">⌘K</kbd>
+            <kbd className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-1.5 rounded font-mono font-semibold"><AtajoMod tecla="K" /></kbd>
             <span>abrir/cerrar</span>
           </span>
         </div>
