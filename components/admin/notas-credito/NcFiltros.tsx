@@ -66,7 +66,7 @@ export default function NcFiltros({ nc }: { nc: NotasCreditoVista }) {
         <AnimatePresence>
           {showAdvFilters && (
             <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[var(--surface-alt)] rounded-xl p-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[var(--surface-sunken)] rounded-xl p-3">
                 <Field label="Desde" labelClassName="text-sm font-bold text-[var(--text-secondary)] block mb-1">
                   <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
                     className="h-12 w-full px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)]" />

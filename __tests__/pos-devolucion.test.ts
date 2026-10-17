@@ -136,6 +136,10 @@ describe("previaReembolso (la misma cuenta que el servidor)", () => {
   });
 });
 
+// La lista del POS trae todas las líneas de la venta: 1 arroz de S/ 23,60 → 07 parcial. Con sólo el arroz
+// en la lista salía 06 «total» por la mitad de la venta, y desde el 17-10 el 06 va por todo lo que queda.
+const PARCIAL = [item({ selected: true, returnQty: 1 }), item({ productId: 2, name: "Leche Gloria", price: 3.93, maxQty: 3 })];
+
 describe("POST /api/notas-credito con el cuerpo del POS (Zod real)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -147,7 +151,7 @@ describe("POST /api/notas-credito con el cuerpo del POS (Zod real)", () => {
 
   it("el cuerpo nuevo pasa: 201, va por saleId (tope anti-fraude) y el total vuelve a lo devuelto", async () => {
     const { POST } = await import("@/app/api/notas-credito/route");
-    const res = await POST(postNc(cuerpoNotaCredito(VENTA.id, [item({ selected: true, returnQty: 1 })], 11.8)));
+    const res = await POST(postNc(cuerpoNotaCredito(VENTA.id, PARCIAL, 11.8)));
     expect(res.status).toBe(201);
     expect(mockGetSale).toHaveBeenCalledWith("tenant-a", VENTA.id);
     const data = await res.json();
@@ -167,7 +171,7 @@ describe("POST /api/notas-credito con el cuerpo del POS (Zod real)", () => {
 
   it("con `totalConIgv` (lo devuelto) la NC suma exacto: 11,80 = 10,00 + 1,80", async () => {
     const { POST } = await import("@/app/api/notas-credito/route");
-    const res = await POST(postNc({ ...cuerpoNotaCredito(VENTA.id, [item({ selected: true, returnQty: 1 })], 11.8), totalConIgv: 11.8 }));
+    const res = await POST(postNc({ ...cuerpoNotaCredito(VENTA.id, PARCIAL, 11.8), totalConIgv: 11.8 }));
     expect(res.status).toBe(201);
     expect(mockCreate.mock.calls[0][1]).toMatchObject({ monto: 10, igv: 1.8, total: 11.8 });
   });

@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { STATUS_META } from "@/components/admin/notas-credito/nc-compartido";
 import { button } from "@/components/ui-system/button-variants";
 import { StatusTimeline } from "@/components/admin/notas-credito/NcPiezas";
+import NcHistorialDocumento from "@/components/admin/notas-credito/NcHistorialDocumento";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { NotasCreditoVista } from "@/components/admin/notas-credito/hooks/use-notas-credito";
 
 /** Panel lateral con el detalle de una nota. Pieza de NotasCreditoModule: recibe `useNotasCredito` entero. */
@@ -42,8 +44,14 @@ export default function NcDetalle({ nc }: { nc: NotasCreditoVista }) {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
+                  {/* F16: el estado de la nota en tu negocio y su estado ante SUNAT, por separado. */}
                   <span className={cn("px-3 py-1.5 rounded-xl text-sm font-bold", STATUS_META[selected.status].bg, STATUS_META[selected.status].color)}>
-                    {STATUS_META[selected.status].label}
+                    En tu negocio: {STATUS_META[selected.status].label.toLowerCase()}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-sm font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+                    Ante SUNAT: sin enviar
+                    <InfoTip title="Estado ante SUNAT" what="Esta pantalla no envía notas a SUNAT: «Marcar emitida» la deja emitida en tus registros y en el libro de ventas."
+                      affects="Hoy la nota vive en tus registros: el envío a SUNAT no sale de esta pantalla." example="Borrador → marcada emitida (resta en el libro) · ante SUNAT sigue sin enviar." />
                   </span>
                   {selected.orderNumero && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
@@ -72,7 +80,7 @@ export default function NcDetalle({ nc }: { nc: NotasCreditoVista }) {
                   </button>
                 </div>
 
-                <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-3">
+                <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-3">
                   <p className="text-sm font-bold text-[var(--text-primary)]">[{selected.motivoCodigo}] {selected.motivoDesc}</p>
                   {selected.clienteNombre && (
                     <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
@@ -88,7 +96,7 @@ export default function NcDetalle({ nc }: { nc: NotasCreditoVista }) {
                 </div>
 
                 {selected.items && selected.items.length > 0 && (
-                  <div className="bg-[var(--surface-alt)] rounded-xl p-4">
+                  <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
                     <p className="text-sm font-bold text-[var(--text-primary)] mb-2">Items</p>
                     <div className="space-y-1.5">
                       {selected.items.map((it, i) => (
@@ -101,7 +109,9 @@ export default function NcDetalle({ nc }: { nc: NotasCreditoVista }) {
                   </div>
                 )}
 
-                <div className="bg-[var(--surface-alt)] rounded-xl p-4">
+                <NcHistorialDocumento nota={selected} />
+
+                <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
                   <p className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-1.5">
                     <History className="h-3.5 w-3.5" />Historial
                   </p>
@@ -109,7 +119,7 @@ export default function NcDetalle({ nc }: { nc: NotasCreditoVista }) {
                 </div>
 
                 {selected.notas && (
-                  <div className="bg-[var(--surface-alt)] rounded-xl p-4">
+                  <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
                     <p className="text-sm font-bold text-[var(--text-primary)] mb-1">Notas</p>
                     <p className="text-sm text-[var(--text-secondary)]">{selected.notas}</p>
                   </div>
@@ -132,7 +142,7 @@ export default function NcDetalle({ nc }: { nc: NotasCreditoVista }) {
 
                 {/* ── Historial del cliente ───────────────────────────── */}
                 {selected.clienteNombre && (
-                  <div className="bg-[var(--surface-alt)] rounded-xl p-4">
+                  <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
                     <p className="text-sm font-bold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />Historial de {selected.clienteNombre}
                     </p>

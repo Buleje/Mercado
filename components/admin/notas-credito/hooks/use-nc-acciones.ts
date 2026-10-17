@@ -1,31 +1,32 @@
 import { sinDato } from "@/lib/errores/sin-dato";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { type NotaCredito, type NCTemplate, STATUS_META } from "@/components/admin/notas-credito/nc-compartido";
+import { type NotaCredito, STATUS_META } from "@/components/admin/notas-credito/nc-compartido";
 import { useNcEstado } from "@/components/admin/notas-credito/hooks/use-nc-estado";
 import { useNcSelector } from "@/components/admin/notas-credito/hooks/use-nc-selector";
 import { useNcLista } from "@/components/admin/notas-credito/hooks/use-nc-lista";
+import { useNcDocumento } from "@/components/admin/notas-credito/hooks/use-nc-documento";
 
-/** Crear, emitir, anular, plantillas, PDF y WhatsApp. Parte de `useNotasCredito`. */
-export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnType<typeof useNcSelector> & ReturnType<typeof useNcLista>) {
+/** Crear, duplicar, emitir, anular, PDF y WhatsApp (las plantillas, en `useNcPlantillas`). Parte de `useNotasCredito`. */
+export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnType<typeof useNcSelector> & ReturnType<typeof useNcDocumento> & ReturnType<typeof useNcLista>) {
   const {
-    selected, setSelected, checkedIds, setCheckedIds, templates, setTemplates,
-    setShowTemplates, setShowNew, setWizardStep, setCreating, setCreateError, form, setForm,
-    setPickerSearch, setPickerDocType, setSelectedVenta, confirm, prompt, notice, fetchNotas, montoNum, totalConIgv,
-    filteredNotas,
+    selected, setSelected, checkedIds, setCheckedIds, setShowNew, setWizardStep, setCreating,
+    setCreateError, form, setForm, setPickerSearch, setPickerDocType, setSelectedVenta, confirm, notice,
+    fetchNotas, filteredNotas, importe, descripcionFinal, remanente, limpiarDocumento, setCopiaDe,
   } = previo;
   // ── CRUD Operations ───────────────────────────────────────────────────────
   const resetWizard = () => {
     setShowNew(false); setWizardStep(0); setCreateError(null);
     setForm({ orderId: "", codigoMotivo: "", descripcionMotivo: "", monto: "", notasText: "" });
     setSelectedVenta(null); setPickerSearch(""); setPickerDocType("all");
+    limpiarDocumento(); setCopiaDe(null);
   };
 
   const handleCreate = async () => {
     setCreateError(null);
-    if (montoNum <= 0) { setCreateError("Monto inválido"); return; }
-    if (!form.codigoMotivo) { setCreateError("Selecciona un motivo"); return; }
-    if (!form.descripcionMotivo.trim()) { setCreateError("Descripción del motivo requerida"); return; }
+    // Lo mismo que muestra la vista previa; el servidor vuelve a contar y pone el tope (F12).
+    if (importe.problema || !importe.cuerpo) { setCreateError(importe.problema ?? "Revisa el importe."); return; }
+    if (!descripcionFinal.trim()) { setCreateError("Escribe por qué se emite la nota."); return; }
     setCreating(true);
     try {
       const res = await fetch("/api/notas-credito", {
@@ -34,8 +35,8 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
         body: JSON.stringify({
           saleId: form.orderId.trim() || undefined,
           motivoCodigo: form.codigoMotivo,
-          motivoDesc: form.descripcionMotivo.trim(),
-          ...(totalConIgv !== null ? { totalConIgv } : { monto: montoNum }),
+          motivoDesc: descripcionFinal,
+          ...importe.cuerpo,
           notas: form.notasText.trim() || undefined,
         }),
       });
@@ -47,12 +48,19 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
       fetchNotas();
     } catch (e) {
       setCreateError(e instanceof Error ? e.message : "Error desconocido");
+      // Otra nota pudo restar del documento mientras tanto: la vista previa se pone al día.
+      remanente.recargar();
     } finally { setCreating(false); }
   };
 
+  /**
+   * Copia el motivo, su texto y las notas internas; NUNCA el monto ni el documento (F14, 17-10):
+   * antes repetía el importe y saltaba al paso 2 con la misma venta, que ya podía estar acreditada.
+   */
   const handleDuplicate = (nc: NotaCredito) => {
-    setForm({ orderId: nc.saleId ?? nc.orderId ?? "", codigoMotivo: nc.motivoCodigo, descripcionMotivo: nc.motivoDesc, monto: String(nc.monto), notasText: nc.notas ?? "" });
-    setShowNew(true); setWizardStep(1); setSelected(null);
+    setForm({ orderId: "", codigoMotivo: nc.motivoCodigo, descripcionMotivo: nc.motivoDesc, monto: "", notasText: nc.notas ?? "" });
+    setSelectedVenta(null); limpiarDocumento(); setCopiaDe(nc.numero); setCreateError(null);
+    setShowNew(true); setWizardStep(0); setSelected(null);
   };
 
   /** El error del servidor en palabras, o el genérico. */
@@ -114,34 +122,6 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
     if (fallidas > 0) await notice({ title: `${fallidas} de ${borradores.length} no se marcaron`, description: "Quedaron en borrador: revísalas y vuelve a intentar.", intent: "danger" });
   };
 
-  // ── Templates ─────────────────────────────────────────────────────────────
-  const saveTemplate = async () => {
-    if (!form.codigoMotivo || !form.descripcionMotivo.trim()) return;
-    const name = await prompt({
-      title: "Nombre del template",
-      label: "Nombre",
-      placeholder: "Ej: Devolución Parcial",
-      inputType: "text",
-      required: true,
-    });
-    if (!name?.trim()) return;
-    const t: NCTemplate = { id: crypto.randomUUID(), name: name.trim(), codigoMotivo: form.codigoMotivo, descripcionMotivo: form.descripcionMotivo };
-    const updated = [...templates, t];
-    setTemplates(updated);
-    localStorage.setItem("nc-templates", JSON.stringify(updated));
-  };
-
-  const deleteTemplate = (id: string) => {
-    const updated = templates.filter(t => t.id !== id);
-    setTemplates(updated);
-    localStorage.setItem("nc-templates", JSON.stringify(updated));
-  };
-
-  const loadTemplate = (t: NCTemplate) => {
-    setForm(prev => ({ ...prev, codigoMotivo: t.codigoMotivo, descripcionMotivo: t.descripcionMotivo }));
-    setShowTemplates(false);
-  };
-
   // ── Exportar PDF real ─────────────────────────────────────────────────────
   const exportPDF = async (nc: NotaCredito) => {
     const { default: jsPDF } = await import("jspdf");
@@ -176,7 +156,7 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
     y += 12;
     doc.line(15, y, 195, y); y += 8;
     doc.setFontSize(12);
-    const montos = [["Monto base:", formatCurrency(nc.monto)], ["IGV (18%):", formatCurrency(nc.igv)], ["TOTAL NC:", formatCurrency(nc.total)]];
+    const montos = [["Monto base:", formatCurrency(nc.monto)], ["IGV:", formatCurrency(nc.igv)], ["TOTAL NC:", formatCurrency(nc.total)]];
     montos.forEach(([label, value], i) => {
       if (i === 2) { doc.setFontSize(14); doc.setTextColor(220, 38, 38); }
       doc.setFont("helvetica", "bold"); doc.text(label, 110, y);
@@ -197,6 +177,6 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
 
   return {
     resetWizard, handleCreate, handleDuplicate, handleEmitSunat, handleAnular, handleBulkEmit,
-    saveTemplate, deleteTemplate, loadTemplate, exportPDF, sendWhatsApp,
+    exportPDF, sendWhatsApp,
   };
 }

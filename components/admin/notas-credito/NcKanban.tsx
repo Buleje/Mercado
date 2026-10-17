@@ -21,7 +21,7 @@ export default function NcKanban({ nc }: { nc: NotasCreditoVista }) {
             const col = filteredNotas.filter(nc => nc.status === status);
             const meta = STATUS_META[status];
             return (
-              <div key={status} className="bg-[var(--surface-alt)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
+              <div key={status} className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
                 <div className={cn("px-4 py-3 flex items-center gap-2 border-b border-[var(--rule-base)]", meta.bg)}>
                   <span className={cn("w-2 h-2 rounded-full shrink-0", meta.dot)} />
                   <span className={cn("text-sm font-bold", meta.color)}>{meta.label}</span>

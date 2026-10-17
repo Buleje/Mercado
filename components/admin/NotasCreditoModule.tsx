@@ -87,7 +87,7 @@ export default function NotasCreditoModule() {
                   <Send className="h-4 w-4" aria-hidden />Marcar {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length} emitidas
                 </button>
               )}
-              <button onClick={exportCSV} className="flex items-center gap-1.5 px-4 min-h-12 rounded-xl text-sm font-bold bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors">
+              <button onClick={exportCSV} className="flex items-center gap-1.5 px-4 min-h-12 rounded-xl text-sm font-bold bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <Download className="h-3.5 w-3.5" />Exportar CSV
               </button>
               <button onClick={() => setCheckedIds(new Set())} className="min-h-12 px-3 text-sm text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">Deseleccionar</button>

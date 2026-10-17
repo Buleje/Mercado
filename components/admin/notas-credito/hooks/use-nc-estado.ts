@@ -1,6 +1,7 @@
 import { useState, useRef, useId } from "react";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { NCStatus, NotaCredito, SaleDoc, PickerDocType, DocType, SortField, SortDir, ViewMode, NCTemplate } from "@/components/admin/notas-credito/nc-compartido";
+import { CLAVE_PLANTILLAS, leerPlantillas } from "@/components/admin/notas-credito/nc-plantillas";
 
 /** Estado de Notas de crédito: lista, filtros, asistente y selector. Parte de `useNotasCredito`. */
 export function useNcEstado() {
@@ -24,9 +25,8 @@ export function useNcEstado() {
   const [maxAmount, setMaxAmount] = useState("");
   const [showAdvFilters, setShowAdvFilters] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [templates, setTemplates] = useState<NCTemplate[]>(() => {
-    try { return JSON.parse(localStorage.getItem("nc-templates") ?? "[]") as NCTemplate[]; } catch { return []; }
-  });
+  const [templates, setTemplates] = useState<NCTemplate[]>(() =>
+    typeof window === "undefined" ? [] : leerPlantillas(window.localStorage.getItem(CLAVE_PLANTILLAS)));
   const [showTemplates, setShowTemplates] = useState(false);
 
   // ── Wizard state ──────────────────────────────────────────────────────────
@@ -43,8 +43,8 @@ export function useNcEstado() {
   const [pickerDocType, setPickerDocType] = useState<PickerDocType>("all");
   const [selectedVenta, setSelectedVenta] = useState<SaleDoc | null>(null);
 
-  const [devolverStock, setDevolverStock] = useState(true);
-  const esDevolucion = form.codigoMotivo === "06" || form.codigoMotivo === "07";
+  /** Número de la nota que se está copiando («Duplicar»): se avisa en el paso 1 para elegir el documento. */
+  const [copiaDe, setCopiaDe] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const { confirm, prompt, notice } = useConfirm();
   const detailTitleId = useId();
@@ -58,7 +58,7 @@ export function useNcEstado() {
     setTemplates, showTemplates, setShowTemplates, showNew, setShowNew, wizardStep, setWizardStep,
     creating, setCreating, createError, setCreateError, form, setForm, pickerDocs, setPickerDocs,
     pickerLoading, setPickerLoading, pickerSearch, setPickerSearch, pickerDocType, setPickerDocType,
-    selectedVenta, setSelectedVenta, devolverStock, setDevolverStock, esDevolucion, searchRef, confirm,
+    selectedVenta, setSelectedVenta, copiaDe, setCopiaDe, searchRef, confirm,
     prompt, notice, detailTitleId, detailPanelRef,
   };
 }

@@ -9,7 +9,7 @@ import { type SaleDoc, DOC_STYLE, MOTIVOS_SUNAT } from "@/components/admin/notas
 /** Piezas del asistente «Nueva nota de crédito». */
 // ── WizardProgress ──────────────────────────────────────────────────────────
 
-export const WIZARD_STEPS = ["Documento", "Motivo & Items", "Confirmar"] as const;
+export const WIZARD_STEPS = ["Documento", "Motivo e importe", "Confirmar"] as const;
 
 export function WizardProgress({ step }: { step: number }) {
   return (
@@ -107,14 +107,15 @@ export function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSel
 
 // ── MotivoCard (Visual Motivo Picker) ───────────────────────────────────────
 
-export function MotivoCard({ motivo, selected, onClick }: { motivo: typeof MOTIVOS_SUNAT[number]; selected: boolean; onClick: () => void }) {
+/** `bloqueo`: por qué no se puede elegir ahora (01/02/06 sin documento); la tarjeta se ve pero no se elige. */
+export function MotivoCard({ motivo, selected, onClick, bloqueo }: { motivo: typeof MOTIVOS_SUNAT[number]; selected: boolean; onClick: () => void; bloqueo?: string | null }) {
   return (
-    <button type="button" onClick={onClick}
+    <button type="button" onClick={onClick} disabled={!!bloqueo} title={bloqueo ?? undefined} aria-pressed={selected}
       className={cn(
-        "text-left p-3 rounded-xl border-2 transition-all duration-[var(--dur-base)]",
+        "text-left p-3 rounded-xl border-2 transition-all duration-[var(--dur-base)] disabled:cursor-not-allowed disabled:opacity-50",
         selected
           ? "border-primary bg-primary/5 ring-1 ring-primary/20 "
-          : "border-[var(--rule-base)] hover:border-[var(--rule-base)] hover:bg-[var(--surface-alt)]"
+          : "border-[var(--rule-base)] hover:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]"
       )}>
       <div className="flex items-center gap-2 mb-1">
         <motivo.icon className="h-5 w-5" aria-hidden />
@@ -122,21 +123,22 @@ export function MotivoCard({ motivo, selected, onClick }: { motivo: typeof MOTIV
           selected ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>{motivo.code}</span>
       </div>
       <p className={cn("text-sm font-semibold mb-0.5", selected ? "text-primary" : "text-[var(--text-primary)]")}>{motivo.label}</p>
-      <p className="text-sm text-[var(--text-tertiary)] leading-tight">{motivo.desc}</p>
+      <p className="text-sm text-[var(--text-tertiary)] leading-tight">{bloqueo ? "Necesita el documento" : motivo.desc}</p>
     </button>
   );
 }
 
 // ── AmountBreakdown (Visual Amount Bar) ─────────────────────────────────────
 
-export function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: number; igv: number; total: number; originalTotal?: number }) {
+/** `tasa` en fracción (0,18): el rótulo dice la del negocio, no un 18 % fijo. */
+export function AmountBreakdown({ monto, igv, total, originalTotal, tasa = 0.18 }: { monto: number; igv: number; total: number; originalTotal?: number; tasa?: number }) {
   const pct = originalTotal && originalTotal > 0 ? Math.min(100, (total / originalTotal) * 100) : 100;
   return (
     <div className="space-y-3">
       {originalTotal != null && originalTotal > 0 && (
         <div>
           <div className="flex justify-between text-sm mb-1.5">
-            <span className="text-[var(--text-tertiary)]">NC respecto al documento original</span>
+            <span className="text-[var(--text-tertiary)]">La nota respecto al documento</span>
             <span className="font-bold text-[var(--text-primary)]">{pct.toFixed(0)}%</span>
           </div>
           <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
@@ -144,22 +146,22 @@ export function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: n
               className="h-full rounded-full bg-[var(--data-error-500)]" />
           </div>
           <div className="flex justify-between text-sm text-[var(--text-tertiary)] mt-1">
-            <span>NC: {formatCurrency(total)}</span>
-            <span>Original: {formatCurrency(originalTotal)}</span>
+            <span>Nota: {formatCurrency(total)}</span>
+            <span>Documento: {formatCurrency(originalTotal)}</span>
           </div>
         </div>
       )}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-[var(--surface-alt)] rounded-xl p-3 text-center">
+        <div className="bg-[var(--surface-sunken)] rounded-xl p-3 text-center">
           <p className="text-sm uppercase font-bold text-[var(--text-tertiary)] mb-1">Base sin IGV</p>
           <p className="text-lg font-extrabold text-[var(--text-primary)]">{formatCurrency(monto)}</p>
         </div>
         <div className="bg-[var(--data-warning-50)] rounded-xl p-3 text-center">
-          <p className="text-sm uppercase font-bold text-[var(--data-warning-ink)] mb-1">IGV 18%</p>
+          <p className="text-sm uppercase font-bold text-[var(--data-warning-ink)] mb-1">IGV {Math.round(tasa * 1000) / 10} %</p>
           <p className="text-lg font-extrabold text-[var(--data-warning-ink)]">{formatCurrency(igv)}</p>
         </div>
         <div className="bg-[var(--data-error-50)] rounded-xl p-3 text-center border border-[var(--data-error-500)]">
-          <p className="text-sm uppercase font-bold text-[var(--data-error-500)] mb-1">Total NC</p>
+          <p className="text-sm uppercase font-bold text-[var(--data-error-500)] mb-1">Total de la nota</p>
           <p className="text-lg font-extrabold text-[var(--data-error-500)]">{formatCurrency(total)}</p>
         </div>
       </div>

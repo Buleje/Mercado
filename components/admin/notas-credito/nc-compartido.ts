@@ -1,6 +1,7 @@
 import { FileText, Receipt, CreditCard, Ticket, ClipboardList, Ban, Hash, Pencil, Wallet, Tag, Undo2, Package, Gift, TrendingDown, type LucideIcon } from "@buleje/design-system/icons";
-import { extractIgv } from "@/lib/tax";
 import { limaDateKey } from "@/lib/utils";
+import { SIN_DATO, formatDateNumeric, formatWeekday } from "@/lib/format";
+import type { LineaAjustable, RemanenteDocumento } from "@/lib/notas-credito/remanente";
 
 /** Tipos, constantes y ayudas de Notas de crédito (antes arriba de NotasCreditoModule). */
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -50,8 +51,6 @@ export type SaleDoc = {
     nombre: string;
     cantidad: number;
     precio: number;
-    cantidadDevolver: number;
-    selected: boolean;
   }>;
 };
 
@@ -93,6 +92,49 @@ export type NCTemplate = {
   name: string;
   codigoMotivo: string;
   descripcionMotivo: string;
+  /** Desde el 17-10 (F14). Las viejas no los traen: se tratan como versión 1 sin reglas. */
+  notasText?: string;
+  /** `con-documento`: el motivo anula o devuelve todo y pide la boleta o factura. */
+  alcance?: "con-documento" | "cualquiera";
+  version?: number;
+  /** ISO de la última vez que se guardó. */
+  actualizada?: string;
+  /** `REGLAS_VERSION` con la que se guardó. */
+  reglas?: string;
+};
+
+/** Una nota del documento en su historial (`GET /api/notas-credito/remanente`). */
+export type NotaDelDocumento = {
+  id: string;
+  numero: string;
+  motivoCodigo: string;
+  motivoDesc: string;
+  total: number;
+  status: NCStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** Una devolución de Caja de la venta: lo que volvió y la plata que salió. */
+export type DevolucionDeCaja = {
+  id: string;
+  total: number;
+  reason: string;
+  /** true = a cuenta del cliente; false = en efectivo. */
+  creditApplied: boolean;
+  createdAt: string;
+  items: Array<{ productId: number; name: string; quantity: number }>;
+};
+
+/** Lo que queda por acreditar de un documento y su historial (F09/F12/F16, 17-10). */
+export type RemanenteRespuesta = {
+  documento: { tipo: "venta" | "pedido"; id: string; total: number; fecha: string; comprobanteTipo?: string };
+  tasa: number;
+  remanente: RemanenteDocumento;
+  lineas: LineaAjustable[];
+  reembolsadoEnCaja: number;
+  notas: NotaDelDocumento[];
+  devoluciones: DevolucionDeCaja[];
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -140,11 +182,9 @@ export const MOTIVOS_SUNAT = [
 
 export const PER_PAGE = 15;
 
-/**
- * Base (sin IGV) de lo que suman los ítems elegidos: los precios de la venta ya traen IGV.
- * Si el monto del asistente sigue siendo esta base, la nota viaja CON IGV (`totalConIgv`) y el
- * servidor la parte con la tasa del negocio: el total queda exacto a lo devuelto (09-10).
- */
-export function baseDeLosItems(totalConIgv: number): string {
-  return (Math.round(extractIgv(totalConIgv).base * 100) / 100).toFixed(2);
+
+/** «jueves 15/10» (hora de Lima): la fecha del negocio en el historial del documento. */
+export function diaYFecha(iso: string): string {
+  const dia = formatWeekday(iso, { largo: true });
+  return dia === SIN_DATO ? dia : `${dia.toLowerCase()} ${formatDateNumeric(iso).slice(0, 5)}`;
 }

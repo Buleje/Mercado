@@ -11,10 +11,14 @@ import { type NotaCredito, STATUS_META } from "@/components/admin/notas-credito/
 // ── StatusTimeline ──────────────────────────────────────────────────────────
 
 export function StatusTimeline({ nc }: { nc: NotaCredito }) {
+  // La base guarda la creación y el último cambio (`updatedAt`), no quién emitió ni anuló: no se inventan.
+  // Antes el tercer paso decía «Pagada», un estado que no existe: la nota no mueve plata (F16, 17-10).
+  const cambio = nc.emitidaAt ?? nc.anuladaAt ?? nc.updatedAt;
   const steps = [
-    { label: "Creada", date: nc.createdAt, by: nc.createdBy, done: true },
-    { label: "Emitida", date: nc.emitidaAt, by: nc.emitidaPor, done: nc.status === "EMITIDA" || nc.status === "ANULADA" },
-    { label: nc.status === "ANULADA" ? "Anulada" : "Pagada", date: nc.anuladaAt, by: nc.anuladaPor, done: nc.status === "ANULADA" },
+    { label: "Creada en borrador", date: nc.createdAt, by: nc.createdBy, done: true },
+    nc.status === "ANULADA"
+      ? { label: "Anulada: ya no resta del documento", date: cambio, by: nc.anuladaPor, done: true }
+      : { label: "Marcada emitida", date: nc.status === "EMITIDA" ? cambio : undefined, by: nc.emitidaPor, done: nc.status === "EMITIDA" },
   ];
   return (
     <div className="relative pl-6 space-y-4">

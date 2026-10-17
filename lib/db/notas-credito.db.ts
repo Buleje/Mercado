@@ -201,6 +201,49 @@ export const NotasCreditoDB = {
     return Number(acum._sum.total ?? 0);
   },
 
+  /**
+   * Todas las notas de un documento (también las anuladas, para el historial), de la más vieja a la
+   * más nueva. Alimenta `GET /api/notas-credito/remanente` (F12/F16, 17-10).
+   */
+  async porDocumento(
+    tenantId: string,
+    doc: { saleId: string } | { orderId: string },
+  ): Promise<DbNotaCredito[]> {
+    const rows = await prisma.notaCredito.findMany({
+      where: { tenantId, ...doc },
+      orderBy: { createdAt: "asc" },
+      take: 200,
+    });
+    return rows.map(mapNotaCredito);
+  },
+
+  /**
+   * Devoluciones de Caja (POS) de una venta: lo que volvió físicamente y la plata que salió. Sólo
+   * lectura, para el historial del ajuste: la nota y la devolución son dos eventos distintos (F16).
+   */
+  async devolucionesDeVenta(
+    tenantId: string,
+    saleId: string,
+  ): Promise<Array<{ id: string; total: number; reason: string; creditApplied: boolean; createdAt: string; items: Array<{ productId: number; name: string; quantity: number }> }>> {
+    const rows = await prisma.return.findMany({
+      where: { tenantId, saleId },
+      orderBy: { createdAt: "asc" },
+      take: 100,
+      select: {
+        id: true, total: true, reason: true, creditApplied: true, createdAt: true,
+        items: { select: { productId: true, name: true, quantity: true } },
+      },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      total: dec(r.total),
+      reason: r.reason,
+      creditApplied: r.creditApplied,
+      createdAt: toISO(r.createdAt),
+      items: r.items,
+    }));
+  },
+
   async updateStatus(
     id: string,
     tenantId: string,

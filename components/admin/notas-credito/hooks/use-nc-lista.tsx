@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useMemo } from "react";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "@buleje/design-system/icons";
-import { type NotaCredito, type SortField, PER_PAGE, baseDeLosItems } from "@/components/admin/notas-credito/nc-compartido";
+import { type NotaCredito, type SortField, PER_PAGE } from "@/components/admin/notas-credito/nc-compartido";
 import { useNcEstado } from "@/components/admin/notas-credito/hooks/use-nc-estado";
 import { useNcSelector } from "@/components/admin/notas-credito/hooks/use-nc-selector";
 
@@ -9,7 +9,7 @@ export function useNcLista(previo: ReturnType<typeof useNcEstado> & ReturnType<t
   const {
     notas, setNotas, setLoading, setError, search, debouncedSearch, setDebouncedSearch, statusFilter,
     page, setPage, checkedIds, setCheckedIds, sortField, setSortField, sortDir, setSortDir, dateFrom,
-    dateTo, minAmount, maxAmount, form, autoMonto, selectedVenta,
+    dateTo, minAmount, maxAmount,
   } = previo;
   // ── Main list logic ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -33,16 +33,6 @@ export function useNcLista(previo: ReturnType<typeof useNcEstado> & ReturnType<t
   }, [statusFilter, debouncedSearch, setError, setLoading, setNotas]);
 
   useEffect(() => { fetchNotas(); }, [fetchNotas]);
-
-  // ── Computed values ───────────────────────────────────────────────────────
-  const montoNum = parseFloat(form.monto) || 0;
-  // Monto sin tocar desde los ítems elegidos → la nota va por lo devuelto CON IGV (exacto, 09-10).
-  const totalConIgv = selectedVenta && autoMonto > 0 && form.monto === baseDeLosItems(autoMonto)
-    ? Math.round(autoMonto * 100) / 100
-    : null;
-  // Al céntimo, como lo guarda el servidor (la tasa la decide él).
-  const computedIgv = totalConIgv !== null ? Math.round((totalConIgv - montoNum) * 100) / 100 : Math.round(montoNum * 18) / 100;
-  const computedTotal = totalConIgv ?? montoNum + computedIgv;
 
   const filteredNotas = useMemo(() => {
     let list = [...notas];
@@ -96,7 +86,7 @@ export function useNcLista(previo: ReturnType<typeof useNcEstado> & ReturnType<t
   };
 
   return {
-    fetchNotas, montoNum, totalConIgv, computedIgv, computedTotal, filteredNotas, totalPages, paginated, toggleSort,
+    fetchNotas, filteredNotas, totalPages, paginated, toggleSort,
     SortIcon, allChecked, someChecked, toggleCheck, toggleAll, exportCSV,
   };
 }
