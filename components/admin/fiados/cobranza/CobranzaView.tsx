@@ -30,6 +30,7 @@ import { notaDelEnvio, partirRonda, recordatoriosDeHoy } from "@/lib/fiados/reco
 import { anotarRecordatorio, useRecordarPorWhatsApp } from "../recordar";
 import type { Cobranza } from "../use-cobranza";
 import { estaAbierto, type Fiado } from "../tipos";
+import { useParamDeEntrada } from "@/hooks/use-param-de-entrada";
 import FilaDeudor from "./FilaDeudor";
 import AnotarGestion from "./AnotarGestion";
 import ModoLlamada from "./ModoLlamada";
@@ -52,6 +53,8 @@ type Props = {
 export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecordado, onVerCuenta }: Props) {
   const [tramo, setTramo] = useState<CajonDeudor | "todos">("todos");
   const [q, setQ] = useState("");
+  /* «cobrar a Juan» desde el buscador del panel llega como `?q=Juan` (M04). */
+  useParamDeEntrada("q", setQ, (p) => ["ventas-caja", "plata", "fiados"].includes(p.get("tab") ?? ""));
   const [tanda, setTanda] = useState<Set<string>>(new Set());
   const [anotando, setAnotando] = useState<DeudorCobranza | null>(null);
   const [enLlamada, setEnLlamada] = useState(false);

@@ -11,6 +11,9 @@ import { exportToExcel } from "@/lib/export-excel";
 import { formatDateNumeric } from "@/lib/format";
 import { SEGMENT_CONFIG } from "@/components/admin/crm/crm-compartido";
 import type { Crm } from "@/components/admin/crm/use-crm";
+import { useParamDeEntrada } from "@/hooks/use-param-de-entrada";
+import { MenuVistasGuardadas } from "@/components/admin/shared/MenuVistasGuardadas";
+import { useVistasCrm } from "@/components/admin/crm/use-vistas-crm";
 
 /**
  * La cabecera de Mis clientes en UNA fila (patrón del panel, 10-10): título ·
@@ -23,6 +26,9 @@ export default function CrmCabecera({ crm, indicadores }: { crm: Crm; indicadore
   /* ActionMenu cierra sin devolverle el foco a su botón: la ventana que se abre
      guardaba «body» y, al cerrarla, el teclado volvía al inicio de la página. */
   const menuRef = useRef<HTMLDivElement>(null);
+  /* «Nuevo cliente» desde el buscador del panel llega como `?nuevo=1` (M04). */
+  useParamDeEntrada("nuevo", () => setShowNewClientModal(true), (p) => p.get("tab") === "clientes");
+  const vistas = useVistasCrm(crm);
   const conFoco = (accion: () => void) => () => {
     menuRef.current?.querySelector("button")?.focus({ preventScroll: true });
     accion();
@@ -86,6 +92,12 @@ export default function CrmCabecera({ crm, indicadores }: { crm: Crm; indicadore
       </div>
       <div className="ml-auto flex min-w-0 items-center gap-2">
         {indicadores}
+        {/* M07 (17-10): tu vista de la lista —búsqueda, filtros, columnas— con un nombre. */}
+        <MenuVistasGuardadas
+          vistas={vistas}
+          queGuarda="La búsqueda, los filtros y el orden de las columnas que tienes puestos ahora"
+          ejemplo="Ej.: Fiados del barrio"
+        />
         <button
           type="button"
           onClick={() => setShowNewClientModal(true)}

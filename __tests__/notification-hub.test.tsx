@@ -21,6 +21,14 @@ vi.mock("@/hooks/use-media-query", () => ({ useMediaQuery: () => anchoMock.ancho
 const irAEnlace = vi.hoisted(() => vi.fn());
 vi.mock("@/components/admin/shared/ir-a-enlace", () => ({ irAEnlace }));
 
+// M08: cada grupo lleva a su lugar sólo si el rol ve esa pestaña. Acá el
+// permiso se da por bueno (las capas tienen su propio test).
+vi.mock("@/hooks/use-vistas-permitidas", () => ({ useContextoPermiso: () => ({}) }));
+vi.mock("@/lib/admin/comandos-panel", async (original) => ({
+  ...(await original<typeof import("@/lib/admin/comandos-panel")>()),
+  destinoPermitido: () => true,
+}));
+
 vi.mock("@/components/notifications/NotificationItem", () => ({
   default: ({ notification }: { notification: NotificationItem }) => (
     <div data-testid={`notif-${notification.id}`}>{notification.title}</div>
@@ -180,7 +188,7 @@ describe("NotificationHub — clasificado", () => {
 });
 
 describe("NotificationHub — Para atender ahora", () => {
-  it("el stock bajo lleva a Inventario › Stock (antes `alertas-stock`, que no existe) y cierra", async () => {
+  it("el stock bajo se agrupa en «Reponer», lleva a Inventario › Stock y cierra", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ lowStockProducts: 3, pendingOrders: 0, overduePayables: 0 }),
@@ -189,7 +197,8 @@ describe("NotificationHub — Para atender ahora", () => {
     render(<NotificationHub {...defaultProps} onClose={onClose} />);
     expect(await screen.findByText("3 productos con stock bajo")).toBeInTheDocument();
     expect(categorias().getByRole("button", { name: /Inventario\s*1/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Ver stock/ }));
+    expect(screen.getByText("Reponer 3")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Resolver/ }));
     expect(irAEnlace).toHaveBeenCalledWith("/admin?tab=inventario&vista=stock");
     expect(onClose).toHaveBeenCalled();
   });

@@ -67,7 +67,8 @@ async function montar() {
 describe("CRMTab — Mis clientes", () => {
   it("pide las compras al servidor y nada más (sin /api/orders ni /api/sales)", async () => {
     await montar();
-    expect(pendientes.map((p) => p.url)).toEqual(["/api/customers?limit=500&compras=1"]);
+    // `/api/auth/me` es de quién eres (las vistas guardadas son por persona), no datos de la lista.
+    expect(pendientes.map((p) => p.url).filter((u) => !u.startsWith("/api/auth/me"))).toEqual(["/api/customers?limit=500&compras=1"]);
   });
 
   it("Total gastado sale de lo que compró, y el que más gastó va primero", async () => {

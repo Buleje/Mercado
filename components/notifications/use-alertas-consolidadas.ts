@@ -24,6 +24,8 @@ export interface AlertaAhora {
   title: string;
   description: string;
   action?: { label: string; href: string };
+  /** Cuántos son (el número del título): «Reponer 5» lo suma por acción. */
+  cantidad?: number;
 }
 
 const plural = (n: number, uno: string, varios: string) => (n === 1 ? uno : varios);
@@ -43,6 +45,7 @@ function alertasDeStats(stats: Stats): AlertaAhora[] {
     out.push({
       id: "pedidos-pendientes",
       categoria: "pedidos",
+      cantidad: pedidos,
       severity: pedidos > 5 ? "critical" : "warning",
       title: `${pedidos} ${plural(pedidos, "pedido pendiente", "pedidos pendientes")}`,
       description: "Esperan que los confirmes o los despaches.",
@@ -53,6 +56,7 @@ function alertasDeStats(stats: Stats): AlertaAhora[] {
     out.push({
       id: "stock-bajo",
       categoria: "inventario",
+      cantidad: stock,
       severity: stock > 10 ? "critical" : "warning",
       title: `${stock} ${plural(stock, "producto con stock bajo", "productos con stock bajo")}`,
       description: "Se están acabando: repónlos antes de quedarte sin nada.",
@@ -63,6 +67,7 @@ function alertasDeStats(stats: Stats): AlertaAhora[] {
     out.push({
       id: "pagos-vencidos",
       categoria: "plata",
+      cantidad: pagos,
       severity: "warning",
       title: `${pagos} ${plural(pagos, "pago a proveedor vencido", "pagos a proveedores vencidos")}`,
       description: "Deudas con proveedores que ya pasaron su fecha.",
@@ -92,6 +97,7 @@ function alertasDeLotes(
     out.push({
       id: "vencimiento-critico",
       categoria: "inventario",
+      cantidad: criticos,
       severity: "critical",
       title: `${criticos} ${plural(criticos, "producto vence", "productos vencen")} en 3 días o menos`,
       description: "Véndelos o retíralos antes de que venzan.",
@@ -102,6 +108,7 @@ function alertasDeLotes(
     out.push({
       id: "vencimiento-pronto",
       categoria: "inventario",
+      cantidad: pronto,
       severity: "warning",
       title: `${pronto} ${plural(pronto, "producto vence", "productos vencen")} esta semana`,
       description: "Ponlos en oferta para que salgan rápido.",

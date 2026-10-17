@@ -27,6 +27,7 @@ import AdminMensajesMenu from "@/components/admin/AdminMensajesMenu";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
 import AccesosRapidos from "@/components/admin/header/AccesosRapidos";
+import MenuRecientes from "@/components/admin/header/MenuRecientes";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { AtajoMod } from "@/components/admin/shared/AtajoMod";
 import { cn } from "@/lib/utils";
@@ -212,6 +213,8 @@ export const AdminTopHeader = memo(function AdminTopHeader({
 
         {/* Brandon 2026-10-10: «accesos directos al lado de Buscar módulos». */}
         <AccesosRapidos onDarkHeader={isAutoDarkTheme} />
+        {/* M06 (17-10): lo último que abriste, para volver con un clic. */}
+        <MenuRecientes onDarkHeader={isAutoDarkTheme} />
       </div>
 
       {/* Right: actions */}

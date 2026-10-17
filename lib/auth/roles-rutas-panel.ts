@@ -28,6 +28,8 @@ export const RUTAS_PANEL = {
   "/api/sales": ["admin", "cajero", "owner", "manager", "tienda_owner"],
   "/api/admin/alerts-summary": ["admin", "manager", "cajero"],
   "/api/admin/stats": ["admin"],
+  /** Bandeja de comprobantes pendientes (app/api/admin/comprobantes/pendientes): el centro de avisos cuenta los de SUNAT. */
+  "/api/admin/comprobantes/pendientes": ["admin", "cajero"],
   "/api/admin/sse": ["admin", "cajero"],
   "/api/admin/platform-chat": ["admin", "owner", "manager"],
   "/api/ai-assistant/health": ["admin", "owner"],

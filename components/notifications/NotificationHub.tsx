@@ -35,6 +35,7 @@ import {
   type FiltroCategoria,
 } from "./notificaciones-categorias";
 import { useAlertasConsolidadas } from "./use-alertas-consolidadas";
+import { useAccionesDeAvisos } from "./use-acciones-de-avisos";
 import type {
   NotificationItem as NotificationItemType,
   NotificationFilter,
@@ -109,8 +110,11 @@ export default function NotificationHub({
     [alertas, categoria],
   );
   const grupos = useMemo(() => agruparPorDia(avisos), [avisos]);
+  // M08: lo de ahora, agrupado por acción («Cobrar 3», «Reponer 5»).
+  const porAccion = useAccionesDeAvisos({ abierto: open, recarga, alertas: ahora, avisos, categoria });
+  const hayAhora = porAccion.grupos.length > 0 || porAccion.sueltas.length > 0;
   const nombreCategoria = categoria === "todas" ? null : etiquetaDeCategoria(categoria);
-  const sinNada = !isLoading && !cargaFallida && avisos.length === 0 && ahora.length === 0;
+  const sinNada = !isLoading && !cargaFallida && avisos.length === 0 && !hayAhora;
 
   const actualizar = () => {
     refetch();
@@ -204,7 +208,7 @@ export default function NotificationHub({
                entrar con teclado (tecla N). */
               <InfoTip
                 title="Notificaciones"
-                what="Arriba, lo que hay que atender hoy (stock bajo, pedidos pendientes, lotes por vencer). Abajo, los avisos que dejó el sistema, del más nuevo al más viejo."
+                what="Arriba, lo que hay que atender hoy agrupado por lo que hay que hacer: cuadrar la caja, cobrar, pagar, revisar comprobantes, reponer, atender pedidos (lo que más plata pone en juego, primero). Abajo, los avisos que dejó el sistema, del más nuevo al más viejo."
                 affects="El número rojo son los avisos sin leer de todo el negocio; las pestañas cuentan los 100 más recientes. «Marcar todas leídas» marca todos, no sólo los de la pestaña."
                 example="Un aviso de adelantos vencidos: «Ver cobranza» lo marca leído y te lleva a Mi Plata › Adelantos."
                 side="bottom"
@@ -213,7 +217,7 @@ export default function NotificationHub({
           />
 
           <div className={cn("min-h-0 flex-1 space-y-5 overflow-y-auto py-4", MODAL_GUTTER)}>
-            {!ahoraAlLado && <SeccionAhora alertas={ahora} onNavegar={onClose} />}
+            {!ahoraAlLado && <SeccionAhora {...porAccion} onNavegar={onClose} />}
 
             {cargaFallida && avisos.length === 0 ? (
               <div
@@ -267,9 +271,9 @@ export default function NotificationHub({
             )}
           </div>
 
-          {ahoraAlLado && ahora.length > 0 && (
+          {ahoraAlLado && hayAhora && (
             <div className="w-80 shrink-0 overflow-y-auto border-l border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-4">
-              <SeccionAhora alertas={ahora} onNavegar={onClose} />
+              <SeccionAhora {...porAccion} onNavegar={onClose} />
             </div>
           )}
         </div>

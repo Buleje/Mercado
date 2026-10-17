@@ -1,298 +1,23 @@
 "use client";
 
-import { useState, useEffect, useId, useRef, useCallback } from "react";
+/**
+ * Buscador del panel (⌘K): módulos, fichas, lo que abriste hace poco (M06) y
+ * comandos que abren el lugar exacto (M04). Qué encuentra y con qué permiso:
+ * `buscador/use-busqueda-panel`.
+ */
+
+import { useState, useEffect, useId, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { ALL_TABS } from "@/app/admin/_lib/tab-data";
-import { ANIDADAS_POR_MODULO, CTP_VISTAS, LOTH_VISTAS, VISTAS_POR_MODULO } from "@/lib/admin/subvistas-modulos";
 import {
-  Search, X, Package, Users, ShoppingCart, ShoppingBasket, Tag, AlertTriangle, Loader2, LayoutDashboard, Monitor, Shield, Zap, ArrowRight,
+  Search, X, Package, Users, ShoppingCart, AlertTriangle, Loader2, LayoutDashboard, Zap, History,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { destinoDelResultado } from "@/lib/admin/destino-busqueda";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
-import { ResultadoEnlazable } from "@/components/admin/shared/ResultadoEnlazable";
-import { AtajoMod } from "@/components/admin/shared/AtajoMod";
-
-// ── Tipos ─────────────────────────────────────────────────────────────────────
-
-type ResultType =
-  | "modulo"
-  | "producto"
-  | "cliente"
-  | "pedido"
-  | "accion";
-
-interface SearchResult {
-  id: string;
-  type: ResultType;
-  title: string;
-  subtitle: string;
-  badge?: string;
-  badgeColor?: string;
-  tab?: string;
-  /** Para módulos: navegar directo al tab */
-  navigateTo?: string;
-  /** Sub-vista dentro del módulo destino (`?vista=`). */
-  vista?: string;
-  /** Sub-vista del módulo ANIDADO dentro del destino (ver navigateTab). */
-  sub?: string;
-  /** Para acciones: callback directo */
-  action?: () => void;
-  /** Texto original para highlight */
-  matchText?: string;
-}
-
-interface GroupedResults {
-  modulos: SearchResult[];
-  productos: SearchResult[];
-  clientes: SearchResult[];
-  pedidos: SearchResult[];
-  acciones: SearchResult[];
-}
-
-// ── Índice de módulos ─────────────────────────────────────────────────────────
-// Se DERIVA de ALL_TABS (el catálogo que arma el sidebar), no de una lista
-// aparte. La lista hardcodeada anterior había quedado vieja: sus 20 entradas
-// apuntaban a tabs que ya no existen —pos-caja, crm-clientes,
-// inventario-almacenes, precios-promos…— así que el buscador no encontraba
-// medio panel y lo que encontraba no llevaba a ningún lado.
-
-interface ModuleEntry {
-  tab: string;
-  label: string;
-  icon: React.ElementType;
-  keywords: string[];
-  subtabs?: { id: string; label: string; keywords?: string[] }[];
-  /** Destinos que además necesitan abrir una vista del hub (ver ANIDADAS_INDEX). */
-  anidadas?: { id: string; vista: string; label: string; keywords: string[] }[];
-}
-
-/** "Análisis" → "analisis": así "analisis" sin tilde también encuentra. */
-function sinTildes(t: string): string {
-  return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-}
-
-/** Sinónimos de negocio que nadie deduce del label ("plata" → dinero, caja…). */
-const SINONIMOS: Record<string, string[]> = {
-  "vendor-dashboard": ["dashboard", "panel", "resumen", "home"],
-  "ventas-caja": ["pos", "punto de venta", "cobrar", "arqueo", "turno", "vender"],
-  inventario: ["stock", "almacen", "existencias", "merma", "vencimiento"],
-  productos: ["precios", "promos", "ofertas", "descuentos", "catalogo"],
-  plata: ["dinero", "finanzas", "gastos", "ingresos", "caja chica", "utilidad"],
-  clientes: ["crm", "compradores", "contactos"],
-  fiados: ["credito", "deuda", "prestado", "debe"],
-  pedidos: ["ordenes", "delivery", "envios"],
-  compras: ["proveedores", "abastecimiento", "reposicion"],
-  facturacion: ["sunat", "boleta", "factura", "comprobante", "electronica"],
-  documentos: ["drive", "archivos", "contratos", "licencias", "papeles"],
-  config: ["ajustes", "configuracion", "preferencias"],
-  "whatsapp-inbox": ["wa", "mensajes", "chat", "bot"],
-  "analytics-pro": ["metricas", "reportes", "bi", "estadisticas"],
-  auditoria: ["logs", "actividad", "historial", "seguridad"],
-  plan: ["suscripcion", "facturacion buleje", "limites", "upgrade"],
-};
-
-/**
- * Sub-vistas buscables por módulo.
- *
- * `subtabs` existía en la interfaz y el buscador ya lo leía, pero NADA lo
- * llenaba: con el Libro CTP (18 vistas) o el de Títulos Habilitantes, la mayor
- * parte de los destinos reales del panel no aparecía al buscar. Se derivan de
- * las MISMAS constantes que dibujan la cabina de cada módulo, así que agregar
- * una vista allá la hace buscable acá sin tocar este archivo.
- *
- * Sólo tiene sentido para módulos cuya vista es direccionable por `?vista=`
- * (los que usan `useVistaModulo`); el resto no tendría a dónde navegar.
- */
-const aSubtabs = (vistas: readonly { key: string; label: string; hint: string }[]) =>
-  vistas.map((v) => ({
-    id: v.key,
-    label: v.label,
-    keywords: [sinTildes(v.label), ...sinTildes(v.hint).split(/[^a-z0-9]+/).filter((w) => w.length > 3)],
-  }));
-
-const SUBTABS_POR_MODULO: Record<string, { id: string; label: string; keywords?: string[] }[]> = {
-  "ctp-libro-operaciones": aSubtabs(CTP_VISTAS),
-  "loth-libro-operaciones": aSubtabs(LOTH_VISTAS),
-  ...Object.fromEntries(Object.entries(VISTAS_POR_MODULO).map(([id, v]) => [id, aSubtabs(v)])),
-};
-
-/**
- * Los destinos de segundo nivel, aplanados por módulo. Llevan `vista` además de
- * `id`: el buscador tiene que abrir la vista del hub Y la sub-vista de adentro,
- * o aterriza en la puerta del módulo equivocado.
- */
-const ANIDADAS_INDEX: Record<string, { id: string; vista: string; label: string; keywords: string[] }[]> =
-  Object.fromEntries(
-    Object.entries(ANIDADAS_POR_MODULO).map(([id, vistas]) => [
-      id,
-      vistas.map((v) => ({
-        id: v.key,
-        vista: v.vista,
-        label: v.label,
-        keywords: [sinTildes(v.label), ...sinTildes(v.hint).split(/[^a-z0-9]+/).filter((w) => w.length > 3)],
-      })),
-    ]),
-  );
-
-const MODULE_INDEX: ModuleEntry[] = ALL_TABS.map((t) => {
-  const base = sinTildes(t.label).split(/[^a-z0-9]+/).filter((w) => w.length > 2);
-  return {
-    tab: t.id as string,
-    label: t.label,
-    icon: t.icon,
-    keywords: [...new Set([...base, ...(SINONIMOS[t.id as string] ?? [])])],
-    subtabs: SUBTABS_POR_MODULO[t.id as string],
-    anidadas: ANIDADAS_INDEX[t.id as string],
-  };
-});
-
-// ── Acciones rápidas ──────────────────────────────────────────────────────────
-
-interface QuickAction {
-  id: string;
-  label: string;
-  icon: React.ElementType;
-  navigateTo: string;
-  keywords: string[];
-}
-
-const QUICK_ACTIONS: QuickAction[] = [
-  { id: "nuevo-producto",  label: "Nuevo producto",    icon: Package,      navigateTo: "inventario", keywords: ["nuevo producto", "agregar producto", "crear producto"] },
-  { id: "nueva-orden",     label: "Nueva orden",       icon: ShoppingCart, navigateTo: "ventas-caja",             keywords: ["nueva orden", "nueva venta", "crear pedido", "nuevo pedido"] },
-  { id: "cerrar-caja",     label: "Cerrar caja",       icon: Monitor,      navigateTo: "ventas-caja",             keywords: ["cerrar caja", "arqueo", "cierre turno"] },
-  { id: "hacer-backup",    label: "Hacer backup",      icon: Shield,       navigateTo: "auditoria",              keywords: ["backup", "respaldo", "copia seguridad"] },
-  { id: "nueva-compra",    label: "Nueva orden compra", icon: ShoppingBasket, navigateTo: "compras",           keywords: ["nueva compra", "orden compra"] },
-  { id: "registrar-merma", label: "Registrar merma",   icon: Zap,          navigateTo: "inventario", keywords: ["merma", "pérdida", "registro merma"] },
-  { id: "nuevo-cliente",   label: "Nuevo cliente",     icon: Users,        navigateTo: "clientes",         keywords: ["nuevo cliente", "agregar cliente", "crear cliente"] },
-  { id: "nuevo-cupon",     label: "Nuevo cupón",       icon: Tag,          navigateTo: "productos",       keywords: ["nuevo cupón", "crear cupón", "descuento"] },
-];
-
-// ── Highlight de texto coincidente ───────────────────────────────────────────
-
-function HighlightText({ text, query }: { text: string; query: string }) {
-  if (!query.trim()) return <span>{text}</span>;
-  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
-  const parts = text.split(regex);
-  return (
-    <span>
-      {parts.map((part, i) =>
-        regex.test(part) ? (
-          <mark key={i} className="bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] rounded px-0.5">
-            {part}
-          </mark>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
-    </span>
-  );
-}
-
-// ── Skeleton de carga ─────────────────────────────────────────────────────────
-
-function ResultSkeleton() {
-  return (
-    <div className="px-4 py-3 space-y-3 animate-pulse">
-      {[1, 2, 3].map(i => (
-        <div key={i} className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[var(--rule-soft)] shrink-0" />
-          <div className="flex-1 space-y-1.5">
-            <div className="h-3.5 bg-[var(--rule-soft)] rounded w-2/3" />
-            <div className="h-3 bg-[var(--rule-soft)] rounded w-1/3" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Búsqueda local en módulos ─────────────────────────────────────────────────
-
-function searchModules(q: string): SearchResult[] {
-  const results: SearchResult[] = [];
-  const lower = q.toLowerCase();
-
-  for (const mod of MODULE_INDEX) {
-    const labelMatch = mod.label.toLowerCase().includes(lower);
-    const kwMatch = mod.keywords.some(k => k.includes(lower));
-
-    if (labelMatch || kwMatch) {
-      results.push({
-        id: `modulo-${mod.tab}-${mod.label}`,
-        type: "modulo",
-        title: mod.label,
-        subtitle: "Módulo",
-        navigateTo: mod.tab,
-        tab: mod.tab,
-      });
-    }
-
-    // Buscar en subtabs
-    if (mod.subtabs) {
-      for (const sub of mod.subtabs) {
-        const subMatch =
-          sub.label.toLowerCase().includes(lower) ||
-          (sub.keywords ?? []).some(k => k.includes(lower));
-        if (subMatch && !labelMatch) {
-          results.push({
-            id: `subtab-${mod.tab}-${sub.label}`,
-            type: "modulo",
-            title: sub.label,
-            subtitle: `En ${mod.label}`,
-            // El destino es el MÓDULO; la vista viaja en la URL (useVistaModulo
-            // la lee al montar). Antes se mandaba el id de la sub-vista como si
-            // fuera un tab de primer nivel — un destino que no existe.
-            navigateTo: mod.tab,
-            tab: mod.tab,
-            vista: sub.id,
-          });
-        }
-      }
-    }
-
-    // Y los de segundo nivel: mismo criterio, pero el destino lleva las DOS
-    // coordenadas (la vista del hub y la sub-vista del módulo de adentro).
-    if (mod.anidadas) {
-      for (const a of mod.anidadas) {
-        const match = a.label.toLowerCase().includes(lower) || a.keywords.some((k) => k.includes(lower));
-        if (match && !labelMatch) {
-          results.push({
-            id: `anidada-${mod.tab}-${a.vista}-${a.id}`,
-            type: "modulo",
-            title: a.label,
-            subtitle: `En ${mod.label}`,
-            navigateTo: mod.tab,
-            tab: mod.tab,
-            vista: a.vista,
-            sub: a.id,
-          });
-        }
-      }
-    }
-  }
-
-  return results.slice(0, 5);
-}
-
-function searchActions(q: string, onNavigate: (tab: string) => void, onClose: () => void): SearchResult[] {
-  const lower = q.toLowerCase();
-  return QUICK_ACTIONS
-    .filter(a =>
-      a.label.toLowerCase().includes(lower) ||
-      a.keywords.some(k => k.includes(lower))
-    )
-    .slice(0, 5)
-    .map(a => ({
-      id: `accion-${a.id}`,
-      type: "accion" as ResultType,
-      title: a.label,
-      subtitle: "Acción rápida",
-      navigateTo: a.navigateTo,
-      tab: a.navigateTo,
-      action: () => { onNavigate(a.navigateTo); onClose(); },
-    }));
-}
+import { PieBuscador } from "./buscador/PieBuscador";
+import type { GroupedResults, SearchResult } from "./buscador/indice-modulos";
+import { FilaResultado, ResultSkeleton } from "./buscador/FilaResultado";
+import { useBusquedaPanel } from "./buscador/use-busqueda-panel";
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -306,27 +31,29 @@ interface Props {
 // ── Metadatos de grupos ───────────────────────────────────────────────────────
 
 const GROUP_META: Record<keyof GroupedResults, { label: string; icon: React.ElementType; color: string }> = {
+  recientes: { label: "Abriste hace poco", icon: History,       color: "text-[var(--text-secondary)]" },
   modulos:   { label: "Módulos",         icon: LayoutDashboard, color: "text-primary" },
   productos: { label: "Productos",       icon: Package,         color: "text-[var(--data-success-500)]" },
   clientes:  { label: "Clientes",        icon: Users,           color: "text-[var(--text-secondary)]" },
   pedidos:   { label: "Pedidos",         icon: ShoppingCart,    color: "text-[var(--data-warning-500)]" },
-  acciones:  { label: "Acciones rápidas",icon: Zap,             color: "text-[var(--data-success-500)]" },
+  acciones:  { label: "Hacer",           icon: Zap,             color: "text-[var(--data-success-500)]" },
 };
 
-const GROUP_ORDER: (keyof GroupedResults)[] = ["modulos", "productos", "clientes", "pedidos", "acciones"];
+/** La ruta de un resultado: la suya (comando, reciente) o la de su ficha o módulo. */
+function hrefDe(r: SearchResult): string | null {
+  if (r.href) return r.href;
+  return r.action ? null : destinoDelResultado(r)?.href ?? null;
+}
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Props) {
   /** Para atar el diálogo con su título. */
   const idBase = useId();
-  const [query, setQuery]       = useState("");
-  const [grouped, setGrouped]   = useState<GroupedResults>({ modulos: [], productos: [], clientes: [], pedidos: [], acciones: [] });
-  const [loading, setLoading]   = useState(false);
+  const { query, setQuery, grouped, loading, orden } = useBusquedaPanel(open);
   const [selected, setSelected] = useState(0);
 
   const inputRef    = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dialogRef   = useRef<HTMLDivElement>(null);
   // Foco atrapado + devuelto al cerrar. Escape lo sigue manejando el handler
   // de más abajo (también mueve ↑/↓/Enter) — acá se apaga para no cerrarlo dos veces.
@@ -364,69 +91,31 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
     return () => window.removeEventListener("keydown", handleGlobalKey);
   }, [open, onClose, onOpen]);
 
-  // Focus al abrir
+  // Focus al abrir (la búsqueda se vacía sola en useBusquedaPanel)
   useEffect(() => {
     if (open) {
-      setQuery("");
-      setGrouped({ modulos: [], productos: [], clientes: [], pedidos: [], acciones: [] });
       setSelected(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
 
-  // Búsqueda combinada
-  const search = useCallback(async (q: string) => {
-    if (q.trim().length < 2) {
-      setGrouped({ modulos: [], productos: [], clientes: [], pedidos: [], acciones: [] });
-      return;
-    }
-
-    setLoading(true);
-
-    // Búsquedas locales (síncronas) — módulos y acciones
-    const modulos  = searchModules(q);
-    const acciones = searchActions(q, onNavigate, onClose);
-
-    // Búsquedas remotas en paralelo
-    const [apiRes] = await Promise.allSettled([
-      fetch(`/api/search?q=${encodeURIComponent(q.trim())}`).then(r => r.ok ? r.json() : { results: [] }),
-    ]);
-
-    const apiResults: SearchResult[] = apiRes.status === "fulfilled"
-      ? (apiRes.value?.results ?? [])
-      : [];
-
-    const productos: SearchResult[] = apiResults
-      .filter((r: SearchResult) => r.type === "producto")
-      .slice(0, 5);
-    const clientes: SearchResult[] = apiResults
-      .filter((r: SearchResult) => r.type === "cliente")
-      .slice(0, 5);
-    const pedidos: SearchResult[] = apiResults
-      .filter((r: SearchResult) => r.type === "pedido")
-      .slice(0, 5);
-
-    setGrouped({ modulos, productos, clientes, pedidos, acciones });
-    setLoading(false);
-  }, [onNavigate, onClose]);
-
-  // Debounce
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(query), 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [query, search]);
-
   // Lista plana para navegación por teclado
-  const flatResults = GROUP_ORDER.flatMap(g => grouped[g]);
+  const flatResults = orden.flatMap(g => grouped[g]);
   const totalResults = flatResults.length;
 
-  /* Elegir un resultado: un producto, cliente o pedido abre SU ficha si ya abre
-     por enlace (lib/admin/destino-busqueda; sin recargar: el video de las
-     cámaras sigue); si no, su módulo. Antes sólo navegaban los resultados con
-     `navigateTo` y los de /api/search (que traen `tab`) no hacían nada. */
+  /* Elegir un resultado: un comando o un reciente va a SU ruta (con el evento
+     que la pantalla escucha si ya estaba abierta: «Cerrar el turno»); un
+     producto, cliente o pedido abre SU ficha si ya abre por enlace
+     (lib/admin/destino-busqueda; sin recargar: el video de las cámaras sigue);
+     si no, su módulo. */
   const elegir = (r: SearchResult) => {
     if (r.action) { r.action(); return; }
+    if (r.href) {
+      irAEnlace(r.href);
+      if (r.evento) window.dispatchEvent(new CustomEvent(r.evento));
+      onClose();
+      return;
+    }
     const destino = destinoDelResultado(r);
     if (!destino) return;
     if (destino.abreFicha) irAEnlace(destino.href);
@@ -443,10 +132,10 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
       if (e.key === "Enter" && flatResults[selected]) {
         const r = flatResults[selected];
         /* Ctrl/Cmd + Enter: en otra pestaña, como el ctrl + clic del enlace. */
-        const destino = r.action ? null : destinoDelResultado(r);
-        if ((e.ctrlKey || e.metaKey) && destino) {
+        const href = hrefDe(r);
+        if ((e.ctrlKey || e.metaKey) && href) {
           e.preventDefault();
-          window.open(destino.href, "_blank", "noopener");
+          window.open(href, "_blank", "noopener");
           return;
         }
         elegir(r);
@@ -521,7 +210,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
             <input
               ref={inputRef}
               type="text"
-              placeholder="Módulos, productos, clientes, pedidos, acciones…"
+              placeholder="Busca o pide: «nueva venta», «cobrar a Juan»…"
               value={query}
               onChange={e => { setQuery(e.target.value); setSelected(0); }}
               className="flex-1 bg-transparent text-base font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted placeholder:font-normal outline-none"
@@ -546,8 +235,6 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
         {/* ── Resultados ── */}
         {isSearching && (
           <div className="max-h-[60vh] overflow-y-auto">
-            {loading && <ResultSkeleton />}
-
             {!loading && !hasResults && (
               <div className="flex items-center gap-3 px-4 py-8 text-[var(--text-tertiary)] dark:text-muted text-sm justify-center">
                 <AlertTriangle className="h-5 w-5" />
@@ -555,7 +242,9 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
               </div>
             )}
 
-            {!loading && hasResults && GROUP_ORDER.map(groupKey => {
+            {/* Comandos, módulos y recientes salen al toque; productos,
+                clientes y pedidos llegan del servidor (el esqueleto, abajo). */}
+            {orden.map(groupKey => {
               const items = grouped[groupKey];
               if (items.length === 0) return null;
               const meta = GROUP_META[groupKey];
@@ -578,95 +267,31 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
                   {items.map(r => {
                     const itemIdx = globalIdx++;
-                    const isSelected = itemIdx === selected;
-                    const Icon = (() => {
-                      if (groupKey === "modulos") {
-                        const mod = MODULE_INDEX.find(m => m.tab === r.navigateTo || m.tab === r.tab);
-                        return mod?.icon ?? LayoutDashboard;
-                      }
-                      if (groupKey === "productos") return Package;
-                      if (groupKey === "clientes")  return Users;
-                      if (groupKey === "pedidos")   return ShoppingCart;
-                      const action = QUICK_ACTIONS.find(a => `accion-${a.id}` === r.id);
-                      return action?.icon ?? Zap;
-                    })();
-
-                    const destino = r.action ? null : destinoDelResultado(r);
                     return (
-                      <ResultadoEnlazable
+                      <FilaResultado
                         key={r.id}
-                        href={destino?.href ?? null}
+                        r={r}
+                        query={r.type === "accion" ? "" : query}
+                        href={hrefDe(r)}
+                        seleccionado={itemIdx === selected}
+                        iconoGrupo={meta.icon}
+                        color={meta.color}
                         onElegir={() => elegir(r)}
-                        className={cn(
-                          // Separador `--rule-soft`: con `--rule-base` cada fila
-                          // quedaba subrayada y la lista se leía como una tabla
-                          // rayada en vez de una lista de resultados.
-                          "w-full flex items-center gap-3 px-4 min-h-11 text-left transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0",
-                          isSelected
-                            ? "bg-primary/10 ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_25%,transparent)]"
-                            : "hover:bg-[var(--surface-sunken)] "
-                        )}
-                      >
-                        <div className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[var(--surface-sunken)] ",
-                          meta.color
-                        )}>
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
-                            <HighlightText text={r.title} query={query} />
-                          </p>
-                          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted truncate">{r.subtitle}</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {r.badge && (
-                            <span
-                              className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
-                              // Fallback al token de la superficie fuerte: antes
-                              // era el hex #6b7280, que no existe en la paleta.
-                              style={{ background: r.badgeColor ?? "var(--rule-strong)" }}
-                            >
-                              {r.badge}
-                            </span>
-                          )}
-                          {isSelected && (
-                            <ArrowRight className="h-3.5 w-3.5 text-primary" />
-                          )}
-                        </div>
-                      </ResultadoEnlazable>
+                      />
                     );
                   })}
                 </div>
               );
             })}
+
+            {loading && <ResultSkeleton />}
           </div>
         )}
 
         {/* Sin «Acceso rápido» (Brandon 16-10: «quita ese menú y que sólo funcione el
             buscador»): con el campo vacío la ventana es el buscador y nada más. */}
 
-        {/* ── Footer — atajos de teclado discretos ── */}
-        <div className="px-5 py-2.5 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">
-            <span className="flex items-center gap-1.5">
-              <kbd className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-1.5 rounded font-mono font-semibold">↑↓</kbd>
-              navegar
-            </span>
-            <span className="flex items-center gap-1.5">
-              <kbd className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-1.5 rounded font-mono font-semibold">↵</kbd>
-              abrir
-            </span>
-            <span className="flex items-center gap-1.5">
-              <kbd className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-1.5 rounded font-mono font-semibold">Esc</kbd>
-              cerrar
-            </span>
-          </div>
-          <span className="hidden sm:flex items-center gap-1 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">
-            <kbd className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-1.5 rounded font-mono font-semibold"><AtajoMod tecla="K" /></kbd>
-            <span>abrir/cerrar</span>
-          </span>
-        </div>
+        <PieBuscador />
         </div>
       </div>
     </>

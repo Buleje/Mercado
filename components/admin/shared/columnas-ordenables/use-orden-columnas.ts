@@ -32,6 +32,8 @@ export interface UseOrdenColumnasResult {
   mover: (desde: string, hasta: string, lado: "antes" | "despues") => void;
   /** Vuelve al orden de fábrica. */
   restablecer: () => void;
+  /** Pone un orden entero (el de una vista guardada); `null` = el de fábrica. */
+  poner: (orden: readonly string[] | null) => void;
   /** El orden difiere del de fábrica: se ofrece «Restablecer». */
   cambiado: boolean;
   /** Va en el `<thead>`: escucha el arrastre y el teclado de todas sus cabeceras. */
@@ -59,6 +61,12 @@ export function useOrdenColumnas(clave: string, porDefecto: readonly string[]): 
     [setGuardado],
   );
   const restablecer = useCallback(() => setGuardado(null), [setGuardado]);
+  const poner = useCallback(
+    (nuevo: readonly string[] | null) =>
+      setGuardado(nuevo && ordenCambiado(fusionarOrden(nuevo, porDefecto), porDefecto) ? [...nuevo] : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `firma` resume `porDefecto`
+    [setGuardado, firma],
+  );
 
   /* Con el teclado, React mueve el nodo que tenía el foco y el navegador lo
      suelta: se devuelve a la misma cabecera después de pintar. */
@@ -167,5 +175,5 @@ export function useOrdenColumnas(clave: string, porDefecto: readonly string[]): 
   );
   useEffect(() => () => limpiar.current?.(), []);
 
-  return { orden, mover, restablecer, cambiado: ordenCambiado(orden, porDefecto), refCabecera };
+  return { orden, mover, restablecer, poner, cambiado: ordenCambiado(orden, porDefecto), refCabecera };
 }
