@@ -221,8 +221,9 @@ export async function mensajeDeError(res: Response, accion: string): Promise<str
 
   switch (res.status) {
     case 400: return detalle ?? "Faltan datos o son inválidos. Revisa el formulario.";
-    case 401:
-    case 403: return "Tu sesión venció. Recarga la página e intenta de nuevo.";
+    case 401: return "Tu sesión venció. Recarga la página e intenta de nuevo.";
+    // 403 = el rol no puede (anular y reingresar son sólo del dueño o el administrador), no sesión vencida.
+    case 403: return detalle ?? "Tu usuario no tiene permiso para esto. Pídeselo al dueño o al administrador.";
     case 402: return detalle ?? "El plan de esta tienda no permite registrar cambios.";
     case 404: return "Esa devolución ya no está disponible. Recarga la lista.";
     case 409: return detalle ?? "La devolución cambió mientras tanto. Recarga la lista.";
