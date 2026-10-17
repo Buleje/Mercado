@@ -1,7 +1,11 @@
 import { leerJson } from "@/lib/errores/sin-dato";
 import type { DbRecurringPurchase } from "@/lib/db/recurring-purchases.db";
 import { csrfHeaders } from "@/lib/csrf-client";
-import type { DbPurchaseOrder, DbProduct, PurchaseStatus } from "@/lib/jsondb";
+import type { DbPurchaseOrder, PurchaseStatus } from "@/lib/jsondb";
+import { limaDateKey } from "@/lib/utils";
+import { efectoDeLaCondicion } from "@/lib/compras/estados-oc";
+import { planParaRepetir, resumenCancelacion } from "@/lib/compras/ciclo-oc";
+import type { OrdenOC } from "@/components/admin/ordenes-compra/oc-compartido";
 import { formatCurrency } from "@/lib/format";
 import { useOcEstado } from "@/components/admin/ordenes-compra/hooks/use-oc-estado";
 import { useOcRecurrentes } from "@/components/admin/ordenes-compra/hooks/use-oc-recurrentes";
@@ -112,12 +116,11 @@ export function useOcAcciones(previo: ReturnType<typeof useOcEstado> & ReturnTyp
     // Cancelar cierra la orden y anula su cuenta por pagar: no es un cambio de
     // estado más, y salía del `<select>` sin preguntar nada.
     if (status === "cancelado") {
-      const aCredito = (orden?.paymentMethod ?? "").startsWith("credito_");
+      // C15: lo que pasa con lo recibido, lo que falta y la plata, ANTES de
+      // confirmar. La regla es la del servidor; acá sólo se muestra.
       const ok = await confirm({
-        title: `¿Cancelar la orden de ${orden?.supplierName || "este proveedor"}?`,
-        description: `Por ${formatCurrency(Number(orden?.total ?? 0))}.` +
-          (aCredito ? " Se anulará también la cuenta por pagar que generó (salvo que ya tenga pagos)." : "") +
-          " Una orden cancelada no vuelve atrás.",
+        title: `¿Cancelar la orden de ${orden?.supplierName || "este proveedor"} por ${formatCurrency(Number(orden?.total ?? 0))}?`,
+        description: orden ? resumenCancelacion(orden, orden.seguimiento).join("\n") : "Una orden cancelada no vuelve atrás.",
         intent: "danger",
         confirmLabel: "Sí, cancelar",
       });
@@ -172,34 +175,6 @@ export function useOcAcciones(previo: ReturnType<typeof useOcEstado> & ReturnTyp
     }
   };
 
-  const _receiveOrder = async (id: string) => {
-    await updateStatus(id, "recibido");
-    const po = orders.find(o => o.id === id);
-    if (po) {
-      const freshProds: DbProduct[] = await fetch("/api/products").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) ? d : []);
-      for (const item of po.items) {
-        const prod = freshProds.find(p => p.id === item.productId);
-        if (prod) {
-          await fetch(`/api/products/${item.productId}`, {
-            method: "PUT",
-            headers: csrfHeaders({ "Content-Type": "application/json" }),
-            body: JSON.stringify({ stock: (prod.stock ?? 0) + item.quantity, costPrice: item.unitCost }),
-          });
-        } else {
-          await fetch("/api/products", {
-            method: "POST",
-            headers: csrfHeaders({ "Content-Type": "application/json" }),
-            body: JSON.stringify({
-              name: item.name, category: "abarrotes", price: item.unitCost,
-              costPrice: item.unitCost, unit: item.unit, stock: item.quantity, active: true,
-            }),
-          });
-        }
-      }
-    }
-    load();
-  };
-
   const deleteOrder = async (id: string) => {
     if (!(await confirm({
       title: "¿Eliminar esta orden de compra?",
@@ -210,8 +185,30 @@ export function useOcAcciones(previo: ReturnType<typeof useOcEstado> & ReturnTyp
     load();
   };
 
-  // Mejora 19: Duplicar OC
-  const duplicateOrder = async (o: DbPurchaseOrder) => {
+  /**
+   * C16 · Repetir con revisión: antes de crear la copia dice qué tan vieja es
+   * la original y qué costos cambiaron desde entonces (salen con el de tu
+   * última compra). Comprobante, flete, pagos y fecha de entrega no se copian;
+   * «ya pagada» tampoco: la nueva no está pagada.
+   */
+  const repetirOrden = async (o: OrdenOC) => {
+    const plan = planParaRepetir(o, orders, limaDateKey());
+    const lineas = [
+      `La original es del ${plan.dia}${plan.dias > 0 ? ` (hace ${plan.dias} día${plan.dias === 1 ? "" : "s"})` : ""}.`,
+      ...(plan.cambios.length > 0
+        ? ["Sale con el costo de tu última compra:", ...plan.cambios.map((c) => `· ${c.nombre}: ${formatCurrency(c.antes)} → ${formatCurrency(c.ahora)} (${c.dia})`)]
+        : ["Los costos son los mismos de tu última compra."]),
+      plan.condicionCambio
+        ? "La original ya estaba pagada: la nueva sale al contado."
+        : efectoDeLaCondicion(plan.paymentMethod),
+      "No se copian el comprobante, el flete, los pagos ni la fecha de entrega. Queda pendiente: revisa las cantidades antes de enviarla.",
+    ];
+    const ok = await confirm({
+      title: `¿Repetir la orden de ${o.supplierName || "este proveedor"}?`,
+      description: lineas.join("\n"),
+      confirmLabel: "Repetir",
+    });
+    if (!ok) return;
     try {
       const sup = suppliers.find(s => s.id === o.supplierId);
       const res = await fetch("/api/purchases", {
@@ -220,23 +217,27 @@ export function useOcAcciones(previo: ReturnType<typeof useOcEstado> & ReturnTyp
         body: JSON.stringify({
           supplierId: o.supplierId,
           supplierName: sup?.name || o.supplierName || "",
-          items: o.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })),
-          notes: o.notes ? `(Duplicada) ${o.notes}` : "(Duplicada)",
+          items: plan.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })),
+          paymentMethod: plan.paymentMethod,
+          discount: o.discount ?? 0,
+          igvIncluded: o.igvIncluded ?? true,
+          notes: `(Repetida de la orden del ${plan.dia})`,
         }),
       });
       if (res.ok) {
-        avisar("OC duplicada — revisa las cantidades antes de enviar");
+        avisar("Orden repetida: revisa las cantidades antes de enviarla");
         load();
       } else {
-        avisar("No se pudo duplicar la orden", "error");
+        const detalle = await leerJson<{ error?: unknown }>(res);
+        avisar(typeof detalle?.error === "string" ? detalle.error : "No se pudo repetir la orden", "error");
       }
     } catch {
-      avisar("Sin conexión con el servidor — no se duplicó la orden", "error");
+      avisar("Sin conexión con el servidor — no se repitió la orden", "error");
     }
   };
   return {
     cambiarActivo,
-    addRecurringOrder, removeRecurring, generarDesdeRecurrente, updateStatus, _receiveOrder,
-    deleteOrder, duplicateOrder,
+    addRecurringOrder, removeRecurring, generarDesdeRecurrente, updateStatus,
+    deleteOrder, repetirOrden,
   };
 }

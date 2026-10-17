@@ -20,6 +20,8 @@ import PurchaseOrdersTab from "@/components/admin/PurchaseOrdersTab";
 
 const URL_RECURRENTES = "/api/compras/recurrentes";
 const URL_ORDENES = "/api/purchases";
+/** La lista trae el seguimiento de cada orden (C10, 17-10): recepciones y cuenta por pagar. */
+const URL_LISTA = `${URL_ORDENES}?seguimiento=1`;
 
 function recurrente(id: string, supplierName: string) {
   return {
@@ -100,7 +102,7 @@ async function resolver(p: Pendiente | undefined, cuerpo: unknown) {
 
 /** `load` pide órdenes, proveedores y productos juntos: la carga número `i` son los tres `i`-ésimos. */
 async function resolverCargaDeOrdenes(i: number, ordenes: unknown[]) {
-  await resolver(getsDe(URL_ORDENES)[i], ordenes);
+  await resolver(getsDe(URL_LISTA)[i], ordenes);
   await resolver(getsDe("/api/suppliers")[i], { suppliers: [] });
   await resolver(getsDe("/api/products")[i], []);
 }
@@ -152,7 +154,7 @@ describe("PurchaseOrdersTab — una carga vieja de recurrentes no pisa lo que ya
 describe("PurchaseOrdersTab — una carga vieja de órdenes no deshace el cambio de estado", () => {
   it("el estado elegido no vuelve al anterior cuando el GET del doble montaje llega mientras viaja el PATCH", async () => {
     montar();
-    await waitFor(() => expect(getsDe(URL_ORDENES)).toHaveLength(2));
+    await waitFor(() => expect(getsDe(URL_LISTA)).toHaveLength(2));
 
     await resolverCargaDeOrdenes(1, [ORDEN]);
     expect((await screen.findByTestId("estado-oc")).dataset.estado).toBe("pendiente");
@@ -167,7 +169,7 @@ describe("PurchaseOrdersTab — una carga vieja de órdenes no deshace el cambio
 
     // El PATCH confirma y la carga que le sigue trae lo guardado.
     await resolver(pedido("PATCH", `${URL_ORDENES}/oc1`), { ...ORDEN, status: "parcial" });
-    await waitFor(() => expect(getsDe(URL_ORDENES)).toHaveLength(3));
+    await waitFor(() => expect(getsDe(URL_LISTA)).toHaveLength(3));
     await resolverCargaDeOrdenes(2, [{ ...ORDEN, status: "parcial" }]);
     expect((await screen.findByTestId("estado-oc")).dataset.estado).toBe("parcial");
   });
@@ -178,7 +180,7 @@ describe("PurchaseOrdersTab — una carga vieja de órdenes no deshace el cambio
     const estados = estadosEnPantalla;
 
     montar();
-    await waitFor(() => expect(getsDe(URL_ORDENES)).toHaveLength(2));
+    await waitFor(() => expect(getsDe(URL_LISTA)).toHaveLength(2));
     await resolverCargaDeOrdenes(1, [AUTOMATICA, PARCIAL]);
     await resolverCargaDeOrdenes(0, [AUTOMATICA, PARCIAL]);
     await waitFor(() => expect(estados()).toEqual(["auto_generated", "parcial"]));
@@ -186,7 +188,7 @@ describe("PurchaseOrdersTab — una carga vieja de órdenes no deshace el cambio
     // Pasar la automática a pendiente: su recarga silenciosa queda en vuelo.
     await cambiarEstado("Molinera Pasco", /Aprobar la orden/);
     await resolver(pedido("PATCH", `${URL_ORDENES}/oc2`), { ...AUTOMATICA, status: "pendiente" });
-    await waitFor(() => expect(getsDe(URL_ORDENES)).toHaveLength(3));
+    await waitFor(() => expect(getsDe(URL_LISTA)).toHaveLength(3));
 
     // Marcar recibida la otra mientras esa recarga viaja; su PATCH queda pendiente.
     await cambiarEstado("Distribuidora Pucallpa", /Marcar recibida entera/);
@@ -198,14 +200,14 @@ describe("PurchaseOrdersTab — una carga vieja de órdenes no deshace el cambio
 
     // El PATCH confirma y la carga que le sigue trae lo guardado.
     await resolver(pedido("PATCH", `${URL_ORDENES}/oc1`), { ...ORDEN, status: "recibido" });
-    await waitFor(() => expect(getsDe(URL_ORDENES)).toHaveLength(4));
+    await waitFor(() => expect(getsDe(URL_LISTA)).toHaveLength(4));
     await resolverCargaDeOrdenes(3, [{ ...AUTOMATICA, status: "pendiente" }, { ...ORDEN, status: "recibido" }]);
     await waitFor(() => expect(estados()).toEqual(["pendiente", "recibido"]));
   });
 
   it("CONTROL: sin cambios de por medio, la carga de órdenes más nueva gana aunque la vieja llegue después", async () => {
     montar();
-    await waitFor(() => expect(getsDe(URL_ORDENES)).toHaveLength(2));
+    await waitFor(() => expect(getsDe(URL_LISTA)).toHaveLength(2));
 
     await resolverCargaDeOrdenes(1, [ORDEN]);
     expect(await screen.findByTestId("estado-oc")).toBeTruthy();

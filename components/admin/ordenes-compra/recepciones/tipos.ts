@@ -3,6 +3,7 @@
  * Salieron de `ReceivingTab` (887 líneas) el 10-10, sin cambiar qué se guarda.
  */
 import { formatDate } from "@/lib/format";
+import type { ItemOc, SeguimientoOC } from "@/lib/compras/ciclo-oc";
 
 import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 
@@ -14,6 +15,34 @@ export interface PendingOC {
   total?: number;
   createdAt?: string;
   items?: Array<{ productId?: number; name?: string; quantity?: number; unit?: string; unitCost?: number }>;
+  /** Fecha prometida y lo que ya llegó (`GET /api/purchases?seguimiento=1`). */
+  deliveryDate?: string;
+  seguimiento?: SeguimientoOC;
+}
+
+/** Las líneas de una orden pendiente con los campos que piden `lineasDeSeguimiento` / `efectosDeRecepcion`. */
+export function itemsDeOrden(oc: PendingOC | undefined): ItemOc[] {
+  return (oc?.items ?? []).flatMap((i) =>
+    typeof i.productId === "number" ? [{ productId: i.productId, name: i.name ?? "", quantity: Number(i.quantity ?? 0), unit: i.unit }] : [],
+  );
+}
+
+/**
+ * C18 · Mercadería que llega sin orden: se guarda con su motivo en `notes`
+ * («Sin orden: <motivo>»). Sin orden el servidor la anota pero NO suma al
+ * stock ni a la deuda (sólo con `orderRef` mueve algo).
+ */
+export const PREFIJO_SIN_ORDEN = "Sin orden: ";
+export const MOTIVOS_SIN_ORDEN = [
+  "Regalo o muestra del proveedor",
+  "Cambio de un producto dañado",
+  "Compra al paso, sin orden",
+  "Consignación (se paga lo que se venda)",
+] as const;
+
+/** El motivo de una recepción sin orden, o null si no lo tiene (las viejas no lo guardaban). */
+export function motivoSinOrden(notes: string | null | undefined): string | null {
+  return notes?.startsWith(PREFIJO_SIN_ORDEN) ? notes.slice(PREFIJO_SIN_ORDEN.length).split("\n")[0].trim() || null : null;
 }
 
 export type ReceptionStatus = "programada" | "en-proceso" | "aceptada" | "parcial" | "rechazada";
@@ -46,6 +75,7 @@ export type Reception = {
   photos: number;
   nonConformities: number;
   invoiceUrl?: string;
+  notes?: string;
 };
 
 export const STATUS_MAP: Record<ReceptionStatus, { label: string; color: string; bg: string }> = {

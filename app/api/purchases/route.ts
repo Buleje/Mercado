@@ -11,6 +11,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { getOrSet, revalidateTenantTag } from "@/lib/cache";
 import { totalDeOrden } from "@/lib/compras/totales-oc";
 import { DatosAjenosEnOrdenError } from "@/lib/compras/datos-ajenos";
+import { conSeguimiento } from "@/lib/compras/ciclo-oc";
 
 const PurchaseItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -49,6 +50,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ compra });
     }
     const data = await withDbRetry(() => PurchasesDB.getAll(auth.tenantId));
+    // `?seguimiento=1` (C10): cada orden con lo que llegó, lo que no llegará, sus
+    // recepciones y su cuenta por pagar, para decir en qué va y qué sigue.
+    if (req.nextUrl.searchParams.get("seguimiento") === "1") {
+      const { recepciones, cuentas } = await withDbRetry(() =>
+        PurchasesDB.datosDeSeguimiento(auth.tenantId, data.map((o) => o.id)),
+      );
+      return NextResponse.json(conSeguimiento(data, recepciones, cuentas));
+    }
     return NextResponse.json(data);
   } catch (e) {
     logger.error("[purchases] GET error", { err: e instanceof Error ? e.message : String(e) });

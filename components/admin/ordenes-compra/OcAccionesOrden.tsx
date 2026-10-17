@@ -5,7 +5,9 @@ import {
   MoreHorizontal, PackageCheck, ChevronDown, FileText, MessageCircle, Copy, Repeat, Trash2,
   CheckCircle2, PackageOpen, XCircle, ClipboardList,
 } from "@buleje/design-system/icons";
-import type { DbPurchaseOrder, DbSupplier, PurchaseStatus } from "@/lib/jsondb";
+import type { DbSupplier, PurchaseStatus } from "@/lib/jsondb";
+import { lineasDeSeguimiento, listarCorto } from "@/lib/compras/ciclo-oc";
+import type { OrdenOC } from "@/components/admin/ordenes-compra/oc-compartido";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { opcionesDeEstado } from "@/lib/compras/estados-oc";
 import { formatCurrency } from "@/lib/format";
@@ -18,21 +20,21 @@ import type { OrdenesCompra } from "@/components/admin/ordenes-compra/hooks/use-
 const CAMBIO: Partial<Record<PurchaseStatus, { label: string; hint: string; icon: typeof PackageCheck; tone?: "danger" }>> = {
   pendiente: { label: "Aprobar la orden", hint: "La propuesta automática pasa a pendiente", icon: ClipboardList },
   parcial: { label: "Pasar a parcial", hint: "Llegó una parte; el resto se recibe después", icon: PackageOpen },
-  recibido: { label: "Marcar recibida entera", hint: "Suma al stock todo lo pedido, sin contar", icon: CheckCircle2 },
+  recibido: { label: "Marcar recibida entera", hint: "Suma al stock lo que falta llegar, sin contar", icon: CheckCircle2 },
   cancelado: { label: "Cancelar la orden", hint: "No vuelve atrás", icon: XCircle, tone: "danger" },
 };
 
 /**
  * «Recibir» a la vista (48 px) si la orden espera mercadería y el resto en «⋯»:
- * detalle, PDF, WhatsApp, duplicar, recurrente, cambios de estado y eliminar.
+ * detalle, PDF, WhatsApp, repetir, recurrente, cambios de estado y eliminar.
  * Antes la tarjeta tenía un select de estado y siete botones sueltos de 28-40 px.
  */
 export default function OcAccionesOrden({
   oc, o, supplier, abierta,
-}: { oc: OrdenesCompra; o: DbPurchaseOrder; supplier: DbSupplier | undefined; abierta: boolean }) {
+}: { oc: OrdenesCompra; o: OrdenOC; supplier: DbSupplier | undefined; abierta: boolean }) {
   const {
     setExpanded, setRecepcionOC, setShowRecurringModal, setRecurringInterval, setRecurringNotifyDays,
-    updateStatus, deleteOrder, duplicateOrder, confirm,
+    updateStatus, deleteOrder, repetirOrden, confirm,
   } = oc;
   /* El menú cierra sin devolver el foco a su botón: la ventana que se abre
      guardaba «body» y, al cerrarla, el teclado volvía al inicio de la página. */
@@ -42,12 +44,22 @@ export default function OcAccionesOrden({
   const espera = o.status === "pendiente" || o.status === "parcial";
 
   const cambiar = async (destino: PurchaseStatus) => {
-    // Cerrar por el estado suma TODO lo pedido al stock: se pregunta antes (el
-    // select de antes lo hacía sin decir nada).
+    // Cerrar por el estado suma al stock lo pedido menos lo que ya entró por
+    // Recepciones (regla del servidor): se dice cuánto y de qué, antes.
     if (destino === "recibido") {
+      const lineas = lineasDeSeguimiento(o.items, o.seguimiento);
+      const suma = lineas.map((l) => ({ ...l, n: Math.max(0, l.pedido - l.llego) })).filter((l) => l.n > 0);
+      const conNoLlegara = lineas.some((l) => l.noLlegara > 0);
       const ok = await confirm({
         title: `¿Marcar recibida entera la orden de ${o.supplierName}?`,
-        description: `Suma al stock todo lo pedido (${o.items.length} producto${o.items.length === 1 ? "" : "s"}, ${formatCurrency(Number(o.total))}) sin contar lo que llegó. Para contar, usa «Recibir».`,
+        description: [
+          suma.length > 0
+            ? `Suma al stock sin contar: ${listarCorto(suma.map((l) => `${l.n} ${l.unidad || "u."} de ${l.nombre}`))}.`
+            : "Ya llegó todo lo pedido: no suma nada al stock.",
+          lineas.some((l) => l.llego > 0) ? "Lo que ya recibiste por Recepciones no se vuelve a sumar." : `Orden de ${formatCurrency(Number(o.total))}.`,
+          ...(conNoLlegara ? ["Ojo: también suma lo que anotaste como que no llegará."] : []),
+          "Para contar lo que llegó, usa «Recibir».",
+        ].join("\n"),
         confirmLabel: "Sí, recibida entera",
       });
       if (!ok) return;
@@ -66,7 +78,7 @@ export default function OcAccionesOrden({
     { id: "detalle", label: abierta ? "Ocultar detalle" : "Ver detalle", hint: "Productos, precios contra la compra anterior y flete", icon: ChevronDown, onSelect: () => setExpanded(abierta ? null : o.id) },
     { id: "pdf", label: "Descargar PDF", icon: FileText, onSelect: () => imprimirOC(o, supplier, membrete) },
     { id: "whatsapp", label: "Enviar por WhatsApp", hint: supplier?.phone ? `Al ${supplier.phone}` : "Eliges a quién en WhatsApp", icon: MessageCircle, onSelect: () => enviarOCPorWhatsApp(o, supplier, membrete) },
-    { id: "duplicar", label: "Duplicar", hint: "Una orden nueva con los mismos productos", icon: Copy, onSelect: () => void duplicateOrder(o) },
+    { id: "repetir", label: "Repetir con revisión", hint: "Te muestra los costos que cambiaron antes de crearla", icon: Copy, onSelect: () => void repetirOrden(o) },
     ...(o.status === "recibido" || o.status === "parcial"
       ? [{ id: "recurrente", label: "Hacer recurrente", hint: "Repetir este pedido cada cierto tiempo", icon: Repeat, onSelect: () => { setShowRecurringModal(o); setRecurringInterval(15); setRecurringNotifyDays(2); } }]
       : []),
@@ -89,7 +101,7 @@ export default function OcAccionesOrden({
       )}
       <ActionMenu
         label={`Más acciones de la orden de ${o.supplierName}`}
-        title="Detalle, PDF, WhatsApp, duplicar, estado y eliminar"
+        title="Detalle, PDF, WhatsApp, repetir, estado y eliminar"
         icon={MoreHorizontal}
         actions={acciones}
         soloIcono

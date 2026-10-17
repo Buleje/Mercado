@@ -4,6 +4,7 @@ import { z } from "zod";
 import { PurchasesDB, type DbPurchaseOrder } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
+import { claveDeDia, diaCorto, esperaEntrega } from "@/lib/compras/ciclo-oc";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { prisma } from "@/lib/prisma";
@@ -42,6 +43,8 @@ const PatchSchema = z.object({
   flete: z.number().min(0).optional(),
   otrosCostos: z.number().min(0).optional(),
   cancelReason: z.string().max(300).optional(),
+  // C14: el proveedor avisó otro día. "" = sin fecha prometida.
+  deliveryDate: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.literal("")]).optional(),
 });
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -143,6 +146,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           { status: 422 }
         );
       }
+    }
+
+    // C14: la fecha prometida sólo se mueve mientras se espera la mercadería.
+    const cambiaEntrega =
+      parsed.data.deliveryDate !== undefined &&
+      parsed.data.deliveryDate !== (claveDeDia(existing.deliveryDate) ?? "");
+    if (cambiaEntrega && !esperaEntrega(existing.status)) {
+      return NextResponse.json(
+        { error: "Esta orden ya no espera mercadería: su fecha de entrega no se cambia." },
+        { status: 422 },
+      );
     }
 
     // 10-10: recibir mueve stock y costo. Una orden cruzada (proveedor o
@@ -345,6 +359,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         logger.error("[purchases/id] transaction failed", { err: err instanceof Error ? err.message : String(err) });
         return NextResponse.json({ error: "Fallo de transacción al actualizar stock" }, { status: 500 });
       }
+    }
+
+    if (cambiaEntrega) {
+      const antes = claveDeDia(existing.deliveryDate);
+      const despues = parsed.data.deliveryDate || null;
+      logActivity(
+        "Actualizar",
+        "compra",
+        `Entrega de la orden ${id.slice(-6)}: ${antes ? diaCorto(antes) : "sin fecha"} → ${despues ? diaCorto(despues) : "sin fecha"}`,
+        id,
+        auth.username,
+      ).catch((err) => logger.warn("[purchases/id] activity log failed", { err: String(err) }));
     }
 
     if (statusChanged) {

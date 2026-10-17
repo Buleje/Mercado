@@ -105,7 +105,9 @@ export function useRecepciones() {
       list = list.filter(r =>
         r.supplier.toLowerCase().includes(q) ||
         r.ref.toLowerCase().includes(q) ||
-        r.orderRef.toLowerCase().includes(q)
+        r.orderRef.toLowerCase().includes(q) ||
+        // «muestra», «consignación»: el motivo de las que llegaron sin orden (C18).
+        (r.notes ?? "").toLowerCase().includes(q)
       );
     }
     return list;

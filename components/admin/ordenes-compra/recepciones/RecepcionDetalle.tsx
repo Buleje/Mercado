@@ -6,6 +6,7 @@ import { AlertTriangle, Camera, CheckCircle2, PackageCheck, X, XCircle } from "@
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import type { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
+import OrigenDeRecepcion from "@/components/admin/ordenes-compra/recepciones/OrigenDeRecepcion";
 import { textoVence } from "@/lib/compras/lotes-recepcion";
 import { cn } from "@/lib/utils";
 import { COND_MAP, getDiscrepancies, type Reception } from "@/components/admin/ordenes-compra/recepciones/tipos";
@@ -36,7 +37,7 @@ export default function RecepcionDetalle({
           <div>
             <CardTitle id={detailTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref}</CardTitle>
             <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
-              OC: {detail.orderRef} ·{" "}
+              <OrigenDeRecepcion rec={detail} /> ·{" "}
               <EnlacePanel cosa="proveedor" id={proveedorIdDe.get(detail.supplier)} apariencia="heredada">{detail.supplier}</EnlacePanel>
             </p>
             {detail.inspector && <p className="text-sm text-[var(--text-tertiary)]">Inspector: {detail.inspector}</p>}

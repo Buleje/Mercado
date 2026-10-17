@@ -4,6 +4,7 @@ import { DataTable, LoadingState } from "@buleje/design-system";
 import { Camera, CheckCircle2, ChevronRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
+import OrigenDeRecepcion from "@/components/admin/ordenes-compra/recepciones/OrigenDeRecepcion";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import { STATUS_MAP, fmtDate, getDiscrepancies, type Reception } from "@/components/admin/ordenes-compra/recepciones/tipos";
 import type { Recepciones } from "@/components/admin/ordenes-compra/recepciones/use-recepciones";
@@ -56,7 +57,7 @@ export default function RecepcionesTabla({ r, onVer }: { r: Recepciones; onVer: 
                     <td>
                       <div className="min-w-0">
                         <div className="font-mono text-sm font-bold text-[var(--text-primary)]">{rec.ref}</div>
-                        <div className="max-w-[11rem] truncate font-mono text-sm text-[var(--text-secondary)]" title={rec.orderRef}>{rec.orderRef}</div>
+                        <OrigenDeRecepcion rec={rec} className="block max-w-[11rem] truncate text-sm text-[var(--text-secondary)]" />
                       </div>
                     </td>
                   ),

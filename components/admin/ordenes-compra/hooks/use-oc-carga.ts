@@ -22,7 +22,8 @@ export function useOcCarga(previo: ReturnType<typeof useOcEstado> & ReturnType<t
     if (!opciones?.silenciosa) setLoading(true);
     try {
       const [poRes, supRes, prodRes] = await Promise.all([
-        fetch("/api/purchases"),
+        // Con lo que llegó y su cuenta por pagar: «en qué va» cada orden (C10).
+        fetch("/api/purchases?seguimiento=1"),
         fetch("/api/suppliers"),
         fetch("/api/products"),
       ]);

@@ -25,14 +25,16 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 // ── Mock: PurchasesDB (via @/lib/jsondb) ─────────────────────────────────────
-const { mockPurchasesAdd, mockPurchasesGetAll } = vi.hoisted(() => ({
+const { mockPurchasesAdd, mockPurchasesGetAll, mockDatosDeSeguimiento } = vi.hoisted(() => ({
   mockPurchasesAdd: vi.fn(),
   mockPurchasesGetAll: vi.fn<() => Promise<Array<Record<string, unknown>>>>(async () => []),
+  mockDatosDeSeguimiento: vi.fn(async (_t: string, _ids: string[]) => ({ recepciones: [] as unknown[], cuentas: [] as unknown[] })),
 }));
 vi.mock("@/lib/jsondb", () => ({
   PurchasesDB: {
     add: mockPurchasesAdd,
     getAll: mockPurchasesGetAll,
+    datosDeSeguimiento: mockDatosDeSeguimiento,
   },
 }));
 
@@ -285,5 +287,25 @@ describe("GET /api/purchases", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual(fakeOrders);
+    expect(mockDatosDeSeguimiento).not.toHaveBeenCalled();
+  });
+
+  it("?seguimiento=1 adjunta a cada OC lo recibido y su cuenta, sólo de sus ids (C10)", async () => {
+    mockPurchasesGetAll.mockResolvedValueOnce([
+      { id: "po-1", status: "parcial", items: [{ productId: 7, name: "Arroz", quantity: 10 }] },
+      { id: "po-2", status: "pendiente", items: [{ productId: 7, name: "Arroz", quantity: 3 }] },
+    ]);
+    mockDatosDeSeguimiento.mockResolvedValueOnce({
+      recepciones: [{ id: "r1", ref: "REC-1", purchaseOrderId: "po-1", status: "parcial", receivedDate: null, createdAt: "2026-10-15T15:00:00.000Z", itemsJson: [{ productId: 7, receivedQty: 4 }] }],
+      cuentas: [{ purchaseOrderId: "po-1", amount: "200", paidAmount: "50", status: "parcial", dueDate: "2026-10-20T15:00:00.000Z" }],
+    });
+
+    const { GET } = await import("@/app/api/purchases/route");
+    const res = await GET(new NextRequest("http://localhost/api/purchases?seguimiento=1"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(mockDatosDeSeguimiento).toHaveBeenCalledWith(ADMIN_SESSION.tenantId, ["po-1", "po-2"]);
+    expect(body[0].seguimiento).toMatchObject({ recibido: { 7: 4 }, cuenta: { monto: 200, pagado: 50, saldo: 150, vence: "2026-10-20" } });
+    expect(body[1].seguimiento).toMatchObject({ recibido: {}, recepciones: [], cuenta: null });
   });
 });

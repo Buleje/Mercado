@@ -1,5 +1,6 @@
 import "server-only";
 import type { Prisma } from "@/lib/generated/prisma/client";
+import { acumularRecibido } from "@/lib/compras/ciclo-oc";
 
 /**
  * recibido-acumulado.ts — cuánto se recibió YA de una orden de compra.
@@ -24,25 +25,14 @@ import type { Prisma } from "@/lib/generated/prisma/client";
 /** Item de la OC contra el que se resuelve un item de recepción. */
 export type OcItemRef = { productId: number; name: string };
 
-/**
- * Item tal como se guarda en `GoodsReceipt.itemsJson`. `productId` es opcional
- * porque las recepciones libres se escriben a mano y sólo traen el nombre.
- */
-type ItemRecepcionGuardado = {
-  product?: unknown;
-  productId?: unknown;
-  receivedQty?: unknown;
-};
-
 type ClienteDb = Prisma.TransactionClient | { goodsReceipt: Prisma.TransactionClient["goodsReceipt"] };
-
-const norm = (s: string) => s.trim().toLowerCase();
 
 /**
  * Suma, por producto, todo lo recibido en las recepciones ya registradas de
  * una OC. Cada item se resuelve por `productId` exacto y, si no vino (texto
  * libre), por nombre normalizado contra los items de la OC — el mismo criterio
- * que usa el endpoint de recepciones al mover stock.
+ * que usa el endpoint de recepciones al mover stock. La cuenta vive en
+ * `ciclo-oc.ts` (`acumularRecibido`) para que la pantalla sume igual (C19).
  *
  * @param excluirRecepcionId recepción a ignorar (la que se está creando ahora,
  *   si ya se persistió antes de calcular el acumulado previo).
@@ -54,43 +44,14 @@ export async function getRecibidoAcumulado(
   ocItems: OcItemRef[],
   excluirRecepcionId?: string,
 ): Promise<Map<number, number>> {
-  const recibido = new Map<number, number>();
-  if (!purchaseOrderId) return recibido;
+  if (!purchaseOrderId) return new Map<number, number>();
 
   const recepciones = await db.goodsReceipt.findMany({
     where: { tenantId, purchaseOrderId },
     select: { id: true, itemsJson: true },
   });
 
-  for (const recepcion of recepciones) {
-    if (excluirRecepcionId && recepcion.id === excluirRecepcionId) continue;
-    if (!Array.isArray(recepcion.itemsJson)) continue;
-
-    for (const raw of recepcion.itemsJson as ItemRecepcionGuardado[]) {
-      if (raw == null || typeof raw !== "object") continue;
-
-      const cantidad = Number(raw.receivedQty ?? 0);
-      if (!Number.isFinite(cantidad) || cantidad <= 0) continue;
-
-      const productId = resolverProductId(raw, ocItems);
-      if (productId == null) continue;
-
-      recibido.set(productId, (recibido.get(productId) ?? 0) + cantidad);
-    }
-  }
-
-  return recibido;
-}
-
-/** productId exacto si vino; si no, match por nombre contra los items de la OC. */
-function resolverProductId(raw: ItemRecepcionGuardado, ocItems: OcItemRef[]): number | null {
-  const directo = Number(raw.productId);
-  if (Number.isInteger(directo) && directo > 0) {
-    return ocItems.some((i) => i.productId === directo) ? directo : null;
-  }
-  if (typeof raw.product !== "string") return null;
-  const porNombre = ocItems.find((i) => norm(i.name) === norm(raw.product as string));
-  return porNombre ? porNombre.productId : null;
+  return acumularRecibido(recepciones, ocItems, excluirRecepcionId);
 }
 
 /**

@@ -15,6 +15,7 @@ import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/
 import { formatCurrency } from "@/lib/format";
 import VenceLoteCampo from "@/components/admin/compras/VenceLoteCampo";
 import { errorDeVencimiento, pideLote, textoVence } from "@/lib/compras/lotes-recepcion";
+import { lineasDeSeguimiento, listarCorto, type SeguimientoOC } from "@/lib/compras/ciclo-oc";
 
 type OCItem = {
   productId: number;
@@ -33,6 +34,12 @@ interface OCRecepcionModalProps {
    */
   supplier: string;
   items: OCItem[];
+  /**
+   * C19 · Lo que ya llegó por recepciones anteriores. Con esto cada línea se
+   * precarga con lo que FALTA (no con lo pedido entero) y las completas no se
+   * vuelven a contar: antes un segundo viaje sugería recibir todo de nuevo.
+   */
+  seguimiento?: SeguimientoOC;
   onComplete: () => void;
   onClose: () => void;
 }
@@ -49,7 +56,11 @@ const CONDICIONES: Array<{ v: CondicionItem; l: string }> = [
 type ReceivedItem = {
   productId: number;
   name: string;
+  /** Lo que se espera en ESTE viaje: lo pedido menos lo que ya llegó o no llegará. */
   orderedQty: number;
+  /** Lo que llegó en recepciones anteriores y lo pedido en la orden (para «ya llegó X de Y»). */
+  yaLlego: number;
+  pedidoTotal: number;
   receivedQty: number;
   unitPrice: number;
   originalPrice: number;
@@ -67,7 +78,7 @@ function conVence(i: ReceivedItem): boolean {
   return !i.noLlego && pideLote(i);
 }
 
-export default function OCRecepcionModal({ ocId, supplier, items, onComplete, onClose }: OCRecepcionModalProps) {
+export default function OCRecepcionModal({ ocId, supplier, items, seguimiento, onComplete, onClose }: OCRecepcionModalProps) {
   useScrollLock(true);
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -75,18 +86,23 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
   const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "oc-recepcion" });
 
   const [step, setStep] = useState(1);
-  const [receivedItems, setReceivedItems] = useState<ReceivedItem[]>(
-    items.map((i) => ({
+  const [lineas] = useState(() => lineasDeSeguimiento(items, seguimiento));
+  /** Lo que ya llegó entero: no se vuelve a contar. */
+  const completos = lineas.filter((l) => l.falta <= 0);
+  const [receivedItems, setReceivedItems] = useState<ReceivedItem[]>(() =>
+    items.flatMap((i, idx) => (lineas[idx].falta <= 0 ? [] : [{
       productId: i.productId,
       name: i.name,
-      orderedQty: i.quantity,
-      receivedQty: i.quantity,
+      orderedQty: lineas[idx].falta,
+      yaLlego: lineas[idx].llego,
+      pedidoTotal: i.quantity,
+      receivedQty: lineas[idx].falta,
       unitPrice: i.unitCost,
       originalPrice: i.unitCost,
       unit: i.unit,
       noLlego: false,
-      condition: "ok",
-    })),
+      condition: "ok" as CondicionItem,
+    }])),
   );
   const [notas, setNotas] = useState("");
   const [saving, setSaving] = useState(false);
@@ -165,7 +181,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
 
       onComplete();
     } catch {
-      setError("Error de conexion");
+      setError("Sin conexión con el servidor: no se guardó la recepción");
       setSaving(false);
     }
   };
@@ -177,10 +193,10 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
         <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <div>
             <SectionTitle id={titleId} className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-              Recepcion de Pedido
+              Recibir la orden
             </SectionTitle>
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
-              OC #{ocId.slice(-8).toUpperCase()} - Paso {step} de 3
+              {supplier} · Paso {step} de 3
             </p>
           </div>
           <span className="ml-auto flex items-center gap-1">
@@ -211,18 +227,28 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
             <>
               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <Package className="h-4 w-4 text-primary" />
-                Verificar cantidades recibidas
+                Cuenta lo que llegó
               </p>
+              {completos.length > 0 && (
+                <p className="text-sm text-[var(--text-secondary)]" data-qa="recepcion-completos">
+                  Ya llegó todo de {listarCorto(completos.map((l) => l.nombre))}: no se vuelve a contar.
+                </p>
+              )}
+              {receivedItems.length === 0 && (
+                <p className="text-sm font-semibold text-[var(--data-success-ink)]">
+                  Ya llegó todo lo pedido. Si la orden sigue abierta, ciérrala desde «⋯» › Estado.
+                </p>
+              )}
               <div className="overflow-x-auto">
                 <DataTable className="w-full">
                   <thead>
                     <tr>
                       <th>Producto</th>
-                      <th className="text-center">Pedido</th>
+                      <th className="text-center">{completos.length > 0 || receivedItems.some((i) => i.yaLlego > 0) ? "Falta" : "Pedido"}</th>
                       <th className="text-center">Recibido</th>
                       <th className="text-center">Dif.</th>
                       <th className="text-center">Cómo llegó</th>
-                      <th className="text-center">No llego</th>
+                      <th className="text-center">No llegó</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -236,6 +262,9 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                           </td>
                           <td className="text-center text-[var(--text-secondary)] dark:text-muted">
                             {item.orderedQty} {item.unit}
+                            {item.yaLlego > 0 && (
+                              <span className="block text-xs">ya llegó {item.yaLlego} de {item.pedidoTotal}</span>
+                            )}
                           </td>
                           <td className="text-center">
                             <input
@@ -246,7 +275,10 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                               onChange={(e) => {
                                 const val = Math.max(0, parseInt(e.target.value) || 0);
                                 if (val > item.orderedQty) {
-                                  setError(`"${item.name}": recibida (${val}) no puede exceder ordenada (${item.orderedQty})`);
+                                  setError(
+                                    `«${item.name}»: ${item.yaLlego > 0 ? `ya llegaron ${item.yaLlego} de ${item.pedidoTotal}, faltan` : "pediste"} ${item.orderedQty}. ` +
+                                    "Si el proveedor mandó de más, anótalo en la nota del paso 3: lo de más no entra por esta orden.",
+                                  );
                                   return;
                                 }
                                 setError(null);
@@ -312,6 +344,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                   </tbody>
                 </DataTable>
               </div>
+              {error && <p role="alert" className="text-sm font-semibold text-[var(--data-error-ink)]">{error}</p>}
             </>
           )}
 
@@ -395,7 +428,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
             <>
               <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <Check className="h-4 w-4 text-[var(--data-success-500)]" />
-                Confirmar recepcion
+                Confirmar la recepción
               </p>
 
               <div className="grid grid-cols-3 gap-3">
@@ -460,8 +493,8 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
 
           {step < 3 ? (
             <button
-              onClick={() => setStep((s) => s + 1)}
-              disabled={step === 1 && venceConError}
+              onClick={() => { setError(null); setStep((s) => s + 1); }}
+              disabled={step === 1 && (venceConError || receivedItems.length === 0)}
               title={step === 1 && venceConError ? "Corrige la fecha de vencimiento marcada en rojo" : undefined}
               className="flex items-center gap-1 px-4 min-h-12 bg-[var(--accent-dark)] hover:brightness-110 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-colors"
             >

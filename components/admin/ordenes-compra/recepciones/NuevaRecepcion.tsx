@@ -1,21 +1,22 @@
 "use client";
 
 import { CardTitle, BlockTitle } from "@buleje/design-system";
-import { Camera, Check, CheckCircle2, Loader2, Plus, Sparkles, X } from "@buleje/design-system/icons";
+import { Camera, Check, CheckCircle2, Loader2, Plus, X } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import ProductCombobox, { type ProductOption } from "@/components/admin/shared/ProductCombobox";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import VenceLoteCampo from "@/components/admin/compras/VenceLoteCampo";
-import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { COND_MAP, type ItemCondition } from "@/components/admin/ordenes-compra/recepciones/tipos";
 import type { NuevaRecepcion as Estado } from "@/components/admin/ordenes-compra/recepciones/use-nueva-recepcion";
+import OrigenRecepcion from "@/components/admin/ordenes-compra/recepciones/OrigenRecepcion";
+import ResumenAlGuardar from "@/components/admin/ordenes-compra/recepciones/ResumenAlGuardar";
 
 /**
- * La ventana «Recibir mercadería» (con o sin orden): auto-completar desde una
- * orden pendiente, checklist con vence/lote, foto de la factura. Salió de
- * `ReceivingTab` (10-10) con los mismos campos y el mismo guardado.
+ * La ventana «Recibir mercadería»: contra una orden (precarga lo que falta) o
+ * «Sin orden» con su motivo (C18), checklist con vence/lote, foto de la
+ * factura y, antes del pie, lo que va a pasar al guardar (C23).
  */
 export default function NuevaRecepcion({
   n, products, supplierNames,
@@ -25,9 +26,9 @@ export default function NuevaRecepcion({
   supplierNames: string[];
 }) {
   const {
-    setShowNew, newTitleId, newPanelRef, ventanaNueva, pendingOCs, selectedOcId, newForm, setNewForm,
+    setShowNew, newTitleId, newPanelRef, ventanaNueva, selectedOcId, newForm, setNewForm,
     checklist, setChecklist, saving, invoiceUrl, setInvoiceUrl, uploadingInvoice, invoiceError,
-    addChecklistRow, removeChecklistRow, updateChecklistRow, uploadInvoice, venceConError, saveReception, applyOC,
+    addChecklistRow, removeChecklistRow, updateChecklistRow, uploadInvoice, venceConError, saveReception,
   } = n;
   return (
     <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventanaNueva.fijado) setShowNew(false); }}>
@@ -48,55 +49,18 @@ export default function NuevaRecepcion({
           </span>
         </div>
 
-        {/* Dropdown OC pendiente — auto-completa todo */}
-        {pendingOCs.length > 0 && (
-          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <p className="text-sm font-bold text-[var(--text-primary)]">Auto-completar desde OC pendiente</p>
-            </div>
-            <select
-              value={selectedOcId}
-              onChange={(e) => applyOC(e.target.value)}
-              aria-label="Elegir orden de compra para auto-completar"
-              className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
-            >
-              <option value="">— Elegir orden de compra —</option>
-              {pendingOCs.map((oc) => (
-                <option key={oc.id} value={oc.id}>
-                  {oc.id} · {oc.supplierName ?? "Sin proveedor"} · {oc.items?.length ?? 0} items{oc.total ? ` · ${formatCurrency(Number(oc.total))}` : ""}
-                </option>
-              ))}
-            </select>
-            <p className="text-sm text-[var(--text-tertiary)]">
-              Al elegir, se rellenan proveedor, ref y los items del checklist con la cantidad esperada.
-            </p>
-          </div>
-        )}
-        {/* Sin órdenes pendientes el selector no aparece: decirlo (auditoría Compras O09/C18). */}
-        {pendingOCs.length === 0 && (
-          <p role="status" className="text-sm text-[var(--text-secondary)]">
-            No hay órdenes pendientes de recibir: escribe el proveedor y los productos a mano.
-          </p>
-        )}
+        <OrigenRecepcion n={n} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Proveedor" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">
-            {/* Al recibir contra una OC, proveedor y Nro. OC quedan
-                BLOQUEADOS (derivados de la OC) → trazabilidad garantizada,
-                no se puede escribir un proveedor/OC inexistente (reporte QA). */}
+            {/* Contra una orden, el proveedor sale de ella y queda BLOQUEADO:
+                no se puede anotar una recepción a nombre de otro (reporte QA). */}
             <input value={newForm.supplier} onChange={e => setNewForm(f => ({ ...f, supplier: e.target.value }))}
               placeholder="Distribuidora ABC" list={selectedOcId ? undefined : "recep-proveedores"} readOnly={!!selectedOcId}
               className={cn("w-full mt-1 px-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-[var(--surface-raised)] ")} />
             <datalist id="recep-proveedores">
               {supplierNames.map(n => <option key={n} value={n} />)}
             </datalist>
-          </Field>
-          <Field label="Nro. Orden de Compra" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">
-            <input value={newForm.orderRef} onChange={e => setNewForm(f => ({ ...f, orderRef: e.target.value }))}
-              placeholder="OC-001" readOnly={!!selectedOcId}
-              className={cn("w-full mt-1 px-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-mono", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-[var(--surface-raised)] ")} />
-            {selectedOcId && <p className="mt-1 text-sm text-primary">De la OC seleccionada</p>}
           </Field>
           <Field label="Fecha programada" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">
             <input type="date" value={newForm.scheduledDate} onChange={e => setNewForm(f => ({ ...f, scheduledDate: e.target.value }))}
@@ -210,6 +174,8 @@ export default function NuevaRecepcion({
           )}
           {invoiceError && <p className="text-sm text-[var(--data-error-500)] mt-1">{invoiceError}</p>}
         </div>
+
+        <ResumenAlGuardar n={n} />
 
         <div className="flex justify-end gap-2 pt-2">
           <button onClick={() => setShowNew(false)} className="px-4 h-12 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] ">Cancelar</button>

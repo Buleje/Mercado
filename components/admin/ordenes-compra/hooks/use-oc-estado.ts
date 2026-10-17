@@ -2,15 +2,15 @@ import { useState, useCallback, useRef } from "react";
 import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
 import { useAbrirFichaAlLlegar } from "@/hooks/use-abrir-ficha-al-llegar";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import type { DbPurchaseOrder, DbSupplier, DbProduct } from "@/lib/jsondb";
+import type { DbSupplier, DbProduct } from "@/lib/jsondb";
 import type { FormaDePago, TipoComprobante } from "@/lib/compras/estados-oc";
 import { useFiltrosOrdenesCompra, POR_PAGINA } from "@/hooks/use-filtros-ordenes-compra";
-import { nuevaIdempotencyKey, type ItemDraft } from "@/components/admin/ordenes-compra/oc-compartido";
+import { nuevaIdempotencyKey, type ItemDraft, type OrdenOC } from "@/components/admin/ordenes-compra/oc-compartido";
 
 /** Estado de Órdenes de compra: lista, filtros, formulario de la orden nueva y aviso. Parte de `useOrdenesCompra`. */
 export function useOcEstado() {
   const { confirm } = useConfirm();
-  const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
+  const [orders, setOrders] = useState<OrdenOC[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpandida] = useState<string | null>(null);
   /* La orden abierta en la URL (`?oc=<id>`, lib/admin/enlaces-panel): abrirla la escribe, el «atrás» la cierra. */
@@ -65,7 +65,7 @@ export function useOcEstado() {
   const [showAddItemModal, setShowAddItemModal] = useState(false);
 
   // Reception modal
-  const [recepcionOC, setRecepcionOC] = useState<DbPurchaseOrder | null>(null);
+  const [recepcionOC, setRecepcionOC] = useState<OrdenOC | null>(null);
 
   // Aviso flotante. Nace como toast de "OC duplicada" pero ahora también
   // reporta los rechazos del servidor: antes un cambio de estado fallido no
@@ -81,7 +81,7 @@ export function useOcEstado() {
   }, []);
 
   /* Llegar con `?oc=<id>`: la página donde cae (sin tocar los filtros), expandida y a la vista. */
-  useAbrirFichaAlLlegar<DbPurchaseOrder>({
+  useAbrirFichaAlLlegar<OrdenOC>({
     idEnUrl: ficha.id,
     idAbierto: expanded,
     listo: !loading,

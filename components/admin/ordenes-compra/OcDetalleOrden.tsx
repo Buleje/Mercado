@@ -1,25 +1,32 @@
 "use client";
 
 import { Package } from "@buleje/design-system/icons";
-import type { DbPurchaseOrder } from "@/lib/jsondb";
 import { TIPOS_COMPROBANTE } from "@/lib/compras/estados-oc";
+import { claveDeDia, diaCorto, diasEntre, esperaEntrega, lineasDeSeguimiento } from "@/lib/compras/ciclo-oc";
 import { cn } from "@/lib/utils";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import SupplierPriceComparison from "@/components/admin/compras/SupplierPriceComparison";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import FleteTardio from "@/components/admin/ordenes-compra/FleteTardio";
+import OcCicloOrden from "@/components/admin/ordenes-compra/OcCicloOrden";
+import type { OrdenOC } from "@/components/admin/ordenes-compra/oc-compartido";
 import type { OrdenesCompra } from "@/components/admin/ordenes-compra/hooks/use-ordenes-compra";
 
 /** Detalle desplegado de una orden. Pieza de PurchaseOrdersTab: recibe `useOrdenesCompra` entero. */
-export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurchaseOrder }) {
+export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: OrdenOC }) {
   const {
     orders, expanded, avisar, load,
   } = oc;
+  /* Cuánto llegó de cada producto según las recepciones (C10): la orden dice lo pedido, esto lo que entró. */
+  const lineas = new Map(lineasDeSeguimiento(o.items, o.seguimiento).map((l) => [l.productId, l]));
+  const prometida = claveDeDia(o.deliveryDate);
+  const llego = claveDeDia(o.receivedDate);
   return (
     <>
       {/* Expanded details */}
       {expanded === o.id && (
         <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-[var(--surface-alt)] ">
+          <OcCicloOrden oc={oc} o={o} />
           <p className="text-sm font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Detalle de productos</p>
           <div className="space-y-1.5">
             {o.items.map((item, i) => {
@@ -40,6 +47,8 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
                 return `hace ${Math.floor(days / 30)}m`;
               })() : null;
 
+              const l = o.seguimiento ? lineas.get(item.productId) : undefined;
+              const mostrarLlegada = l && (l.llego > 0 || l.noLlegara > 0 || o.status === "parcial");
               return (
                 <div key={i}>
                   <div className="flex justify-between items-center text-sm">
@@ -54,6 +63,13 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
                       <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(item.quantity * item.unitCost)}</span>
                     </div>
                   </div>
+                  {l && mostrarLlegada && (
+                    <p data-qa="llegada-item" className={cn("text-sm font-semibold pl-5 mt-0.5", l.falta > 0 && esperaEntrega(o.status) ? "text-[var(--data-warning-ink)]" : "text-[var(--data-success-ink)]")}>
+                      {l.llego >= l.pedido ? "Llegó todo" : `Llegó ${l.llego} de ${l.pedido}`}
+                      {l.noLlegara > 0 ? ` · ${l.noLlegara} no llegará${l.noLlegara === 1 ? "" : "n"}` : ""}
+                      {l.falta > 0 && esperaEntrega(o.status) ? ` · faltan ${l.falta}` : ""}
+                    </p>
+                  )}
                   {/* Mejora 20: Referencia de precio anterior */}
                   {prevPrice != null && (
                     <p className="text-sm text-[var(--text-tertiary)] pl-5 mt-0.5">
@@ -77,8 +93,9 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
             const datos: Array<{ etiqueta: string; valor: string }> = [];
             if (o.invoiceNumber) datos.push({ etiqueta: TIPOS_COMPROBANTE.find(t => t.id === o.invoiceType)?.label ?? "Comprobante", valor: o.invoiceNumber });
             if (sobrecosto > 0) datos.push({ etiqueta: "Costo de traerla", valor: `${formatCurrency(sobrecosto)}` });
-            if (o.deliveryDate) datos.push({ etiqueta: "Prometida", valor: formatDate(o.deliveryDate) });
-            if (o.receivedDate) datos.push({ etiqueta: "Llegó", valor: formatDate(o.receivedDate) });
+            // `deliveryDate` es medianoche UTC: con `formatDate` salía un día antes en Lima.
+            if (prometida) datos.push({ etiqueta: "Prometida", valor: diaCorto(prometida) });
+            if (llego) datos.push({ etiqueta: "Llegó", valor: diaCorto(llego) });
             if (o.createdBy) datos.push({ etiqueta: "La pidió", valor: o.createdBy });
             if (o.receivedBy) datos.push({ etiqueta: "La recibió", valor: o.receivedBy });
             if (datos.length === 0) return null;
@@ -96,10 +113,8 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
 
           {/* Entrega tarde: la promesa contra lo que pasó. */}
           {(() => {
-            if (!o.deliveryDate || !o.receivedDate) return null;
-            const dias = Math.round(
-              (new Date(o.receivedDate).getTime() - new Date(o.deliveryDate).getTime()) / 86400000,
-            );
+            if (!prometida || !llego) return null;
+            const dias = diasEntre(prometida, llego);
             if (dias <= 0) return (
               <p className="mt-2 text-sm font-bold text-[var(--data-success-500)]">
                 Llegó {dias === 0 ? "el día prometido" : `${Math.abs(dias)} día${Math.abs(dias) === 1 ? "" : "s"} antes`}
@@ -115,8 +130,6 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
           {/* Cargar el flete después de recibir: el costo de esos
               productos se calculó sin ese gasto (ADR-377). */}
           <FleteTardio orden={o} onGuardado={(msg) => { avisar(msg); load(); }} />
-
-          <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-2">ID: {o.id}</p>
 
           {/* Mejora 14: Ahorro vs compra anterior del proveedor */}
           {(() => {

@@ -74,6 +74,8 @@ function toReception(r: Awaited<ReturnType<typeof GoodsReceiptsDB.list>>[number]
     photos: r.photos,
     nonConformities: r.nonConformities,
     invoiceUrl: r.invoiceUrl ?? undefined,
+    // C18: el motivo de una recepción sin orden («Sin orden: …») vive acá.
+    notes: r.notes ?? undefined,
   };
 }
 

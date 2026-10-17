@@ -1,11 +1,12 @@
 "use client";
 
 import type { KeyboardEvent, MouseEvent } from "react";
-import type { DbPurchaseOrder, DbSupplier } from "@/lib/jsondb";
-import { cn } from "@/lib/utils";
+import type { DbSupplier } from "@/lib/jsondb";
+import { cn, limaDateKey } from "@/lib/utils";
+import { cicloDeOrden } from "@/lib/compras/ciclo-oc";
 import { formatCurrency } from "@/lib/format";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
-import { STATUS_LABELS, STATUS_COLORS, diaDeOrden, esAutomatica } from "@/components/admin/ordenes-compra/oc-compartido";
+import { STATUS_LABELS, STATUS_COLORS, TONO_TEXTO, diaDeOrden, esAutomatica, type OrdenOC } from "@/components/admin/ordenes-compra/oc-compartido";
 import type { OrdenesCompra } from "@/components/admin/ordenes-compra/hooks/use-ordenes-compra";
 import OcDetalleOrden from "@/components/admin/ordenes-compra/OcDetalleOrden";
 import OcAccionesOrden from "@/components/admin/ordenes-compra/OcAccionesOrden";
@@ -24,7 +25,7 @@ const esControl = (e: MouseEvent | KeyboardEvent) =>
  * Borr./Env./Conf./Rec. que no existen: una orden pendiente se leía «Borrador» y
  * una parcial «Enviada». Clic en la fila: el detalle debajo (y `?oc=` en la URL).
  */
-export default function OcFilaOrden({ oc, o, supplier, isExpanded }: { oc: OrdenesCompra; o: DbPurchaseOrder; supplier: DbSupplier | undefined; isExpanded: boolean }) {
+export default function OcFilaOrden({ oc, o, supplier, isExpanded }: { oc: OrdenesCompra; o: OrdenOC; supplier: DbSupplier | undefined; isExpanded: boolean }) {
   const { setExpanded } = oc;
   const alternar = () => setExpanded(isExpanded ? null : o.id);
   const productos = `${o.items.length} producto${o.items.length === 1 ? "" : "s"}`;
@@ -33,6 +34,8 @@ export default function OcFilaOrden({ oc, o, supplier, isExpanded }: { oc: Orden
   const linea = [productos, supplier?.ruc ? `RUC ${supplier.ruc}` : null, o.invoiceNumber ? `Fact. ${o.invoiceNumber}` : null, nota]
     .filter(Boolean)
     .join(" · ");
+  /* C10: el estado solo no dice qué sigue (una «Recibida» puede deber plata; una pendiente, estar atrasada). */
+  const { siguiente } = cicloDeOrden(o, o.seguimiento, limaDateKey());
   return (
     <>
       <tr
@@ -68,6 +71,11 @@ export default function OcFilaOrden({ oc, o, supplier, isExpanded }: { oc: Orden
           >
             {STATUS_LABELS[o.status]}
           </span>
+          {siguiente.accion && (
+            <p data-testid="sigue-oc" className={cn("mt-1 max-w-[14rem] truncate text-sm font-semibold", TONO_TEXTO[siguiente.tono])} title={`Sigue: ${siguiente.texto}`}>
+              Sigue: {siguiente.texto}
+            </p>
+          )}
         </td>
         <td>
           <OcAccionesOrden oc={oc} o={o} supplier={supplier} abierta={isExpanded} />

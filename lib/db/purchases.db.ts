@@ -292,6 +292,25 @@ export const PurchasesDB = {
     invalidateAdminCache.afterPurchase(tenantId);
     return row ? mapPurchaseOrder(row) : null;
   },
+  /**
+   * Las recepciones y la cuenta por pagar de esas órdenes (C10: en qué va cada
+   * una). Dos lecturas, sin ítems de producto: se cruzan en `ciclo-oc.ts`.
+   */
+  async datosDeSeguimiento(tenantId: string, ids: string[]) {
+    if (ids.length === 0) return { recepciones: [], cuentas: [] };
+    const [recepciones, cuentas] = await Promise.all([
+      prisma.goodsReceipt.findMany({
+        where: { tenantId, purchaseOrderId: { in: ids } },
+        select: { id: true, ref: true, purchaseOrderId: true, status: true, receivedDate: true, createdAt: true, itemsJson: true },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.payable.findMany({
+        where: { tenantId, purchaseOrderId: { in: ids } },
+        select: { purchaseOrderId: true, amount: true, paidAmount: true, status: true, dueDate: true },
+      }),
+    ]);
+    return { recepciones, cuentas };
+  },
   async delete(tenantId: string, id: string): Promise<void> {
     await prisma.purchaseOrder.deleteMany({ where: { id, tenantId } }).catch((err) => logger.error("[purchases.db] purchaseOrder delete failed", { error: String(err), id, tenantId }));
     // Audit 2026-05-17 Q-P0-4

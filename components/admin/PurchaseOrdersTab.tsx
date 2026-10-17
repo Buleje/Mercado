@@ -29,7 +29,7 @@ const AYUDA = {
   title: "Órdenes de compra",
   what: "Lo que le pides a cada proveedor: qué, cuánto, a qué precio y en qué estado está.",
   affects:
-    "«Recibir» cuenta lo que llegó y lo suma al stock con su costo; la orden pasa sola a parcial o recibida. El ⋯ de cada fila trae el PDF, WhatsApp, duplicar y los cambios de estado.",
+    "«Recibir» cuenta lo que llegó y lo suma al stock con su costo; la orden pasa sola a parcial o recibida. El ⋯ de cada fila trae el PDF, WhatsApp, repetir con revisión y los cambios de estado.",
   example:
     "Pediste 40 atunes a Frigorífico Amazonia: cuando lleguen, toca «Recibir» en su fila y anota cuántos llegaron.",
 };
@@ -145,6 +145,7 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
           ocId={recepcionOC.id}
           supplier={recepcionOC.supplierName}
           items={recepcionOC.items}
+          seguimiento={recepcionOC.seguimiento}
           onComplete={() => {
             setRecepcionOC(null);
             load();

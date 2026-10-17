@@ -1,4 +1,5 @@
-import type { PurchaseStatus } from "@/lib/jsondb";
+import type { DbPurchaseOrder, PurchaseStatus } from "@/lib/jsondb";
+import type { SeguimientoOC, Tono } from "@/lib/compras/ciclo-oc";
 import { ESTADO_OC_LABELS } from "@/lib/compras/estados-oc";
 
 /** Constantes y piezas chicas de Órdenes de compra (antes arriba de PurchaseOrdersTab). */
@@ -14,6 +15,21 @@ export const STATUS_COLORS: Record<PurchaseStatus, string> = {
   cancelado: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-ink)] border-[var(--data-error-500)]/30",
   auto_generated: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)]",
 };
+
+/** Color del texto de un paso del ciclo (C10): `-ink` para que llegue a 4,5:1 en claro y oscuro. */
+export const TONO_TEXTO: Record<Tono, string> = {
+  ok: "text-[var(--data-success-ink)]",
+  info: "text-[var(--data-info-ink)]",
+  aviso: "text-[var(--data-warning-ink)]",
+  alerta: "text-[var(--data-error-ink)]",
+  neutro: "text-[var(--text-secondary)]",
+};
+
+/** «tú» → «Te toca»; «el proveedor» → «Le toca al proveedor»; vacío → nada. */
+export const quienLee = (quien: string) => (quien === "tú" ? "Te toca" : quien ? `Le toca a${quien.startsWith("el ") ? "l" + quien.slice(2) : ` ${quien}`}` : "");
+
+/** Una orden como la trae `GET /api/purchases?seguimiento=1`: con lo que llegó y su cuenta por pagar. */
+export type OrdenOC = DbPurchaseOrder & { seguimiento?: SeguimientoOC };
 
 export type ItemDraft = { productId: number; name: string; quantity: number; unitCost: number; unit: string };
 
