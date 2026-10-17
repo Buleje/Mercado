@@ -9,9 +9,10 @@
  *  · «Vencimiento de puntos» + el select de 3/6/12 meses: inventaba la fecha
  *    («última actividad = hace 30 días») y el select no se guardaba en ningún
  *    lado. El programa no vence puntos.
- *  · «Saldo a favor»: sumaba a `creditBalance`, la columna del FIADO usado
- *    (`updateCreditBalance`: delta > 0 = «gasta más fiado», con tope en el
- *    límite de crédito). «+20 a favor» registraba S/ 20 más de deuda.
+ *  · «Saldo a favor»: sumaba a `creditBalance` cuando `updateCreditBalance`
+ *    todavía lo trataba como deuda («+20 a favor» = S/ 20 más de deuda). Desde
+ *    17-10 la columna ES el saldo a favor (devoluciones a crédito); se ve en la
+ *    ficha del cliente y en Clientes, y moverlo a mano es sólo admin/dueño.
  *  · «Notificaciones de puntos» (5 clientes de toda la lista dentro de la
  *    ficha de UNO): queda «Avisarle por WhatsApp» en la ficha y «Copiar
  *    avisos para todos» en Más.

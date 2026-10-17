@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { CustomersDB, normalizePhone } from "@/lib/jsondb";
+import { FiadosDB } from "@/lib/db/fiados.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
@@ -83,9 +84,16 @@ export async function GET(
     // Usamos customer.phone (valor real almacenado, ya resuelto por getByPhone
     // tolerante) en vez de `normalized` — así matchea filas legacy con prefijo.
      
-    const fullCustomer = await prisma.customer.findFirst({
-      where: { phone: customer.phone, tenantId: auth.tenantId },
-    });
+    const [fullCustomer, fiado] = await Promise.all([
+      prisma.customer.findFirst({
+        where: { phone: customer.phone, tenantId: auth.tenantId },
+      }),
+      // Lo que debe de fiados ACTIVO+VENCIDO: es lo que consume el límite de crédito.
+      FiadosDB.resumenByCustomer(auth.tenantId, customer.phone).catch((err) => {
+        logger.error("[customers GET] fiado resumen failed", { error: String(err), phone: normalized });
+        return null;
+      }),
+    ]);
 
     return NextResponse.json({
       name: customer.name,
@@ -100,6 +108,10 @@ export async function GET(
       healthScore,
       creditLimit: fullCustomer?.creditLimit ?? 0,
       creditBalance: fullCustomer?.creditBalance ?? 0,
+      // 17-10: la columna `creditBalance` es SALDO A FAVOR (lo suben las devoluciones a
+      // crédito); la deuda es la de los fiados. Cada pantalla lee el campo con su nombre.
+      saldoAFavor: Number(fullCustomer?.creditBalance ?? 0),
+      deudaFiado: fiado?.montoPendiente ?? null,
       tags: fullCustomer?.tags ?? null,
       // New ficha fields
       tipoPersona: fullCustomer?.tipoPersona ?? null,
@@ -154,7 +166,7 @@ export async function PATCH(
 async function patchCustomer(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> },
-  auth: { tenantId: string; username: string },
+  auth: { tenantId: string; username: string; role: string },
 ): Promise<NextResponse> {
   const { phone } = await params;
   const normalized = normalizePhone(phone);
@@ -168,7 +180,23 @@ async function patchCustomer(
       await CustomersDB.updatePrivateNotes(auth.tenantId, normalized, parsed.data.privateNotes);
     }
     if (parsed.data.creditDelta !== undefined && parsed.data.creditDelta !== 0) {
-      await CustomersDB.updateCreditBalance(auth.tenantId, normalized, parsed.data.creditDelta);
+      // Ajustar el saldo a favor a mano es plata que la tienda le debe al cliente:
+      // sólo admin o dueño (la misma regla que devolver en efectivo).
+      if (auth.role !== "admin" && auth.role !== "owner") {
+        return NextResponse.json({ error: "Ajustar el saldo a favor requiere al admin o al dueño" }, { status: 403 });
+      }
+      try {
+        await CustomersDB.updateCreditBalance(auth.tenantId, normalized, parsed.data.creditDelta);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        if (msg === "SALDO_A_FAVOR_INSUFICIENTE") {
+          return NextResponse.json({ error: "El cliente no tiene ese saldo a favor", code: msg }, { status: 422 });
+        }
+        if (msg === "CLIENTE_NO_ENCONTRADO") {
+          return NextResponse.json({ error: "Cliente no encontrado", code: msg }, { status: 404 });
+        }
+        throw err;
+      }
     }
     if (parsed.data.aiNotes !== undefined) {
       await CustomersDB.updateAiNotes(auth.tenantId, normalized, parsed.data.aiNotes);

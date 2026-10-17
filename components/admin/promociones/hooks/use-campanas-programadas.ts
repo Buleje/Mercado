@@ -111,7 +111,8 @@ export function useCampanasProgramadas(previo: ReturnType<typeof usePromocionesE
     if (s === "loyal" || s === "champions" || s === "vip") {
       list = customers.filter(c => ["oro", "diamante"].includes((c.loyaltyTier || "").toLowerCase()));
     } else if (s === "deudores") {
-      list = customers.filter(c => (c.creditBalance ?? 0) < 0);
+      // GET /api/customers trae en `creditBalance` lo que DEBE de fiados (> 0); con `< 0` el segmento salía vacío (17-10).
+      list = customers.filter(c => (c.creditBalance ?? 0) > 0);
     }
     // all / at-risk / lost / new / promising → todos (segmentación fina vive en Crecimiento → Campañas)
     return list.map(c => c.phone).filter(Boolean);

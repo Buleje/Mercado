@@ -223,15 +223,17 @@ export const CustomersDB = {
    * `getAll` con `creditBalance` = la deuda real de fiados (ver `deudaDeFiados`)
    * y `fiadoVencido` = la parte vencida. Lo usa GET /api/customers (CRM, POS,
    * Cobrar): ahí «Fiado S/ X» tiene que ser lo que el cliente debe hoy.
+   * `saldoAFavor` = la columna `creditBalance` cruda: lo que la tienda le debe al
+   * cliente por devoluciones a crédito (sentido opuesto a la deuda, 17-10).
    */
-  async getAllConDeuda(tenantId: string, limit = 2000): Promise<(DbCustomer & { fiadoVencido: number })[]> {
+  async getAllConDeuda(tenantId: string, limit = 2000): Promise<(DbCustomer & { fiadoVencido: number; saldoAFavor: number })[]> {
     const [clientes, deudas] = await Promise.all([
       CustomersDB.getAll(tenantId, limit),
       CustomersDB.deudaDeFiados(tenantId),
     ]);
     return clientes.map((c) => {
       const d = deudas.get(c.phone);
-      return { ...c, creditBalance: d?.deuda ?? 0, fiadoVencido: d?.vencido ?? 0 };
+      return { ...c, creditBalance: d?.deuda ?? 0, fiadoVencido: d?.vencido ?? 0, saldoAFavor: c.creditBalance };
     });
   },
 
@@ -298,7 +300,7 @@ export const CustomersDB = {
   },
 
   /** `getAllConDeuda` + lo que compró cada uno (`comprasPorCliente`): GET /api/customers?compras=1 (CRM). */
-  async getAllConCompras(tenantId: string, limit = 2000): Promise<(DbCustomer & { fiadoVencido: number } & ComprasDeCliente)[]> {
+  async getAllConCompras(tenantId: string, limit = 2000): Promise<(DbCustomer & { fiadoVencido: number; saldoAFavor: number } & ComprasDeCliente)[]> {
     const [clientes, compras] = await Promise.all([
       CustomersDB.getAllConDeuda(tenantId, limit),
       CustomersDB.comprasPorCliente(tenantId),
@@ -614,37 +616,25 @@ export const CustomersDB = {
   async updatePrivateNotes(tenantId: string, phone: string, privateNotes: string): Promise<void> {
     await withRlsTx(tenantId, (tx) => tx.customer.updateMany({ where: { phone: normalizePhone(phone), tenantId }, data: { privateNotes } }));
   },
+  /**
+   * Mueve el SALDO A FAVOR del cliente (`Customer.creditBalance`, 17-10): lo que la tienda le
+   * debe por devoluciones a crédito (`devoluciones-pos.db.ts`, `devoluciones-pedido.db.ts`).
+   * Lo que el cliente DEBE vive en `Fiado` (`deudaDeFiados`), no en esta columna.
+   * delta > 0 suma saldo; delta < 0 lo consume y nunca lo deja negativo (guarda en el WHERE,
+   * atómica: dos consumos a la vez no pasan los dos).
+   * Antes la guarda era de DEUDA (`creditBalance + delta <= creditLimit`, audit DB #5): con
+   * límite 0 toda devolución a crédito por acá fallaba, y «+20 a favor» contaba como deuda.
+   */
   async updateCreditBalance(tenantId: string, phone: string, delta: number): Promise<number> {
-    // SECURITY 2026-05-06 (audit DB #5): si delta > 0 (gasta más fiado),
-    // verificar que `creditBalance + delta <= creditLimit` atómicamente vía
-    // raw SQL. Antes 2 orders concurrentes podían pasar el check de límite
-    // y luego ambas hacer increment → exceder creditLimit (fraude).
     const normalized = normalizePhone(phone);
-    // TD-116: guard + readback en UNA tx RLS (el guard atómico se preserva).
     return withRlsTx(tenantId, async (tx) => {
-    if (delta > 0) {
-      // guard atómico de credit limit (audit DB #5).
-      const result = await tx.$executeRawUnsafe(
-        `UPDATE "Customer"
-            SET "creditBalance" = "creditBalance" + $1
-          WHERE phone = $2 AND "tenantId" = $3
-            AND "creditBalance" + $1 <= "creditLimit"`,
-        delta,
-        normalized,
-        tenantId,
-      );
-      if (result === 0) {
-        throw new Error("CREDIT_LIMIT_EXCEEDED");
-      }
-    } else {
-      // delta <= 0: pago/reverso, no necesita guard.
-      await tx.customer.updateMany({
-        where: { phone: normalized, tenantId },
+      const r = await tx.customer.updateMany({
+        where: { phone: normalized, tenantId, ...(delta < 0 ? { creditBalance: { gte: -delta } } : {}) },
         data: { creditBalance: { increment: delta } },
       });
-    }
-    const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId }, select: { creditBalance: true } });
-    return toNumOrZero(c?.creditBalance);
+      if (r.count === 0) throw new Error(delta < 0 ? "SALDO_A_FAVOR_INSUFICIENTE" : "CLIENTE_NO_ENCONTRADO");
+      const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId }, select: { creditBalance: true } });
+      return toNumOrZero(c?.creditBalance);
     });
   },
   /** Generate a unique referral code for a customer if they don't have one */

@@ -116,8 +116,12 @@ export default function CrmFilas({ crm }: { crm: Crm }) {
                       />
                     ) : (c.creditBalance ?? 0) > 0 ? (
                       <span className="text-sm font-semibold text-[var(--data-warning-ink)]">Debe {fmt(c.creditBalance ?? 0)}</span>
-                    ) : (
+                    ) : (c.saldoAFavor ?? 0) > 0 ? null : (
                       <span className="text-sm text-[var(--text-tertiary)]">—</span>
+                    )}
+                    {/* Sentido opuesto a «Debe»: la tienda le debe por devoluciones a crédito (17-10). */}
+                    {editingCreditLimit !== c.phone && (c.saldoAFavor ?? 0) > 0 && (
+                      <span className="block text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">A favor {fmt(c.saldoAFavor ?? 0)}</span>
                     )}
                   </td>
                 ),

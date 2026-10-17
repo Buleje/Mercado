@@ -4,6 +4,7 @@ import { CardTitle } from "@buleje/design-system";
 import { CreditCard, Star, Loader2, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { CustomerData } from "@/components/admin/cliente360/cliente360-compartido";
 import type { Cliente360 } from "@/components/admin/cliente360/use-cliente-360";
 
@@ -51,7 +52,10 @@ export default function FichaCreditoEtiquetas({ ficha, customer }: { ficha: Clie
           ) : (
             <div className="flex items-center gap-3">
               {customer.creditLimit != null && customer.creditLimit > 0 ? (() => {
-                const disponible = customer.creditLimit - (customer.creditBalance ?? 0);
+                /* Lo que consume el límite es la deuda de fiados, no `creditBalance`: esa columna
+                   es saldo A FAVOR (lo sube la devolución a crédito, 17-10). Restarla achicaba
+                   el crédito del cliente justo cuando la tienda le debía plata. */
+                const disponible = customer.creditLimit - (customer.deudaFiado ?? 0);
                 const pct = disponible / customer.creditLimit;
                 return (
                   <div className="flex items-center gap-2 flex-wrap">
@@ -84,6 +88,18 @@ export default function FichaCreditoEtiquetas({ ficha, customer }: { ficha: Clie
                 </button>
               )}
             </div>
+          )}
+          {(customer.saldoAFavor ?? 0) > 0 && (
+            <p className="mt-3 flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+              Saldo a favor:
+              <span className="font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                {formatCurrency(customer.saldoAFavor ?? 0)}
+              </span>
+              <InfoTip
+                what="Lo que la tienda le debe al cliente por devoluciones a crédito. No es deuda: no resta de su crédito."
+                example="Devolvió 2 leches de un pedido con cupón → S/ 9 a favor."
+              />
+            </p>
           )}
         </div>
 

@@ -19,7 +19,12 @@ export type CustomerData = {
   notifRestock?: boolean;
   healthScore?: HealthScore;
   creditLimit?: number;
+  /** Columna cruda = saldo A FAVOR (17-10). Para «disponible» usar `deudaFiado`. */
   creditBalance?: number;
+  /** Lo que la tienda le debe al cliente (devoluciones a crédito). */
+  saldoAFavor?: number;
+  /** Lo que el cliente debe de fiados ACTIVO+VENCIDO; null si no se pudo leer. */
+  deudaFiado?: number | null;
   tags?: string;
   // New ficha fields
   tipoPersona?: string | null;

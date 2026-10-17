@@ -159,15 +159,4 @@ describe("POST /api/returns con saleId — el mismo tope que el POS", () => {
   });
 });
 
-describe("POST /api/returns con orderId — sin cambios", () => {
-  it("sigue registrando por ReturnsDB.add con el precio del pedido", async () => {
-    h.viejo.OrdersDB.getById.mockResolvedValue({
-      id: "ord-1",
-      items: [{ id: 7, name: "Leche", price: 5, quantity: 2, unit: "unidad" }],
-    });
-    const res = await POST(post({ orderId: "ord-1", items: [{ productId: 7, quantity: 1 }] }));
-    expect(res.status).toBe(201);
-    expect(h.viejo.ReturnsDB.add).toHaveBeenCalledTimes(1);
-    expect((await res.json()).total).toBe(5);
-  });
-});
+// La rama con `orderId` tiene su propio test: `__tests__/returns-pedido-tope.test.ts`.

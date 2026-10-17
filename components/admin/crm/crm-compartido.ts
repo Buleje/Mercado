@@ -19,7 +19,10 @@ export type Customer = {
   loyaltyTier?: string;
   totalSpent?: number;
   loyaltyPoints?: number;
+  /** En GET /api/customers = lo que DEBE de fiados (ACTIVO+VENCIDO), no la columna. */
   creditBalance?: number;
+  /** Lo que la tienda le debe (devoluciones a crédito): la columna `creditBalance` cruda. */
+  saldoAFavor?: number;
   creditLimit?: number;
   tags?: string | null;
   comoLlego?: string | null;
