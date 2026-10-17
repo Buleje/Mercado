@@ -151,6 +151,8 @@ export async function DELETE(
       "AdminUser", "Settings", "NotificationLog", "PushSubscription",
       "ActivityLog", "AdminMessage", "ThemeSettings", "Navigation",
       "TenantInvitation", "CronDeadLetter", "ApiKey",
+      // Plan de la empresa (ADR-497): DNI y aportes de los socios — Ley 29733.
+      "PlanEmpresaVersion", "PlanEmpresaSeccion",
       // Store (after its children were deleted in Phase 1)
       "Store",
     ];

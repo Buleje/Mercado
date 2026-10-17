@@ -27,6 +27,8 @@ const ALLOWED_FOLDERS = new Set([
   "gastos",
   // La foto de la mercadería recibida (Recepciones): también caía en «general».
   "recepciones",
+  // Croquis del local y fotos de licencias del plan de la empresa (ADR-497, Planificación).
+  "planificacion",
 ]);
 
 export async function POST(req: NextRequest) {

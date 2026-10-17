@@ -282,6 +282,9 @@ const TENANT_MODELS = new Set([
   // Metas y tareas del panel (ADR-415): antes vivían en local-data/*.json, sin tenant.
   "adminGoal",
   "adminTask",
+  // Plan de la empresa (ADR-497): socios con DNI y plata de la inversión.
+  "planEmpresaSeccion",
+  "planEmpresaVersion",
 ]);
 
 /**

@@ -2266,6 +2266,37 @@ model AdminTask {
   @@index([tenantId, createdAt])
 }
 
+/// Plan de la empresa (ADR-497): una fila por sección, `datos` validado por SCHEMAS_SECCION
+/// (`lib/planificacion/secciones.ts`). `version` = concurrencia optimista: se escribe
+/// sólo si sigue siendo la que el cliente editó. El único (tenantId, seccion) ya sirve
+/// las lecturas por negocio: no lleva índice aparte.
+model PlanEmpresaSeccion {
+  id        String   @id @default(cuid())
+  tenantId  String
+  seccion   String
+  datos     Json
+  version   Int      @default(1)
+  updatedBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, seccion])
+}
+
+/// Cada guardado deja su copia (máx 30 por sección): «Versiones anteriores».
+/// El historial se ordena por `version`: lo sirve el único (tenantId, seccion, version).
+model PlanEmpresaVersion {
+  id        String   @id @default(cuid())
+  tenantId  String
+  seccion   String
+  version   Int
+  datos     Json
+  autor     String
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, seccion, version])
+}
+
 // ─── Message Templates ───────────────────────────────────
 model MessageTemplate {
   id            String   @id @default(cuid())
