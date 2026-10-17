@@ -22,6 +22,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { guardarTokenHilo, headersTokenHilo, leerTokenHilo } from "@/lib/chat/thread-token-client";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, parseReviewRequest, fmtSoles, type SharedChatProduct, type ChatSubstitution, type ChatOrder, type ChatPayment } from "@/lib/chat/shared-product";
 import { parseOrderContext, orderStatusMeta, type ChatOrderContext } from "@/lib/chat/order-context";
@@ -194,10 +195,10 @@ export default function ChatConversationView({
     try {
       const res = await fetch(
         `/api/chat/public?threadId=${encodeURIComponent(threadId)}&storeSlug=${encodeURIComponent(storeSlug)}&customerPhone=${encodeURIComponent(customerPhone)}`,
-        { credentials: "include" },
+        { credentials: "include", headers: headersTokenHilo(threadId) },
       );
-      // Hilo inaccesible (borrado / ownership / sesión) → cortar polling.
-      if (res.status === 404 || res.status === 403) { setUnavailable(true); return; }
+      // Hilo inaccesible (borrado / ownership / sin sesión ni token) → cortar polling.
+      if (res.status === 404 || res.status === 403 || res.status === 401) { setUnavailable(true); return; }
       if (!res.ok) return;
       const j = (await res.json()) as { data: ThreadMsg[]; presence?: ChatPresence; orderContext?: unknown };
       setMessages(j.data ?? []);
@@ -255,7 +256,10 @@ export default function ChatConversationView({
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ threadId, storeSlug, customerPhone, messageId, emoji }),
+        body: JSON.stringify({
+          threadId, storeSlug, customerPhone, messageId, emoji,
+          threadToken: leerTokenHilo(threadId) ?? undefined,
+        }),
       });
     } catch { /* el próximo poll reconcilia */ }
   }, [threadId, storeSlug, customerPhone, unavailable]);
@@ -270,7 +274,10 @@ export default function ChatConversationView({
       method: "POST",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       credentials: "include",
-      body: JSON.stringify({ threadId, storeSlug, customerPhone }),
+      body: JSON.stringify({
+        threadId, storeSlug, customerPhone,
+        threadToken: leerTokenHilo(threadId) ?? undefined,
+      }),
     }).catch(() => { /* efímero, no crítico */ });
   }, [threadId, storeSlug, customerPhone, unavailable]);
 
@@ -304,6 +311,7 @@ export default function ChatConversationView({
             storeSlug,
             customerPhone,
             customerName,
+            threadToken: leerTokenHilo(threadId) ?? undefined,
             body: trimmed,
             // Tanda 1: cita (reply) — snapshot del mensaje citado.
             ...(replyTo
@@ -324,6 +332,7 @@ export default function ChatConversationView({
       // action=open devuelve { data: { threadId } }.
       const newThreadId: string | undefined = j?.data?.threadId;
       if (!threadId && newThreadId) {
+        guardarTokenHilo(newThreadId, j?.data?.threadToken);
         setThreadId(newThreadId);
         onThreadCreated?.(newThreadId);
       }
@@ -368,6 +377,7 @@ export default function ChatConversationView({
         credentials: "include",
         body: JSON.stringify({
           threadId, storeSlug, customerPhone, customerName,
+          threadToken: leerTokenHilo(threadId) ?? undefined,
           body: "📷 Comprobante",
           attachmentUrl: uj.url,
           messageType: "image",
@@ -401,6 +411,7 @@ export default function ChatConversationView({
             credentials: "include",
             body: JSON.stringify({
               threadId, storeSlug, customerPhone, customerName,
+              threadToken: leerTokenHilo(threadId) ?? undefined,
               body: "📍 Mi ubicación",
               location: { lat: pos.coords.latitude, lng: pos.coords.longitude },
             }),
@@ -441,6 +452,7 @@ export default function ChatConversationView({
         credentials: "include",
         body: JSON.stringify({
           threadId, storeSlug, customerPhone, customerName,
+          threadToken: leerTokenHilo(threadId) ?? undefined,
           body: "🎤 Nota de voz",
           voice: { url: uj.url, durationSec },
         }),

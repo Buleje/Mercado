@@ -49,7 +49,7 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-import { ChatThreadsDB, ChatMessagesDB } from "@/lib/db/chat.db";
+import { HiloYaAbiertoError, ChatThreadsDB, ChatMessagesDB } from "@/lib/db/chat.db";
 
 const T1 = "tenant-main";
 const T2 = "tenant-demo";
@@ -144,6 +144,27 @@ describe("ChatThreadsDB.openOrGet", () => {
     });
     // El SELECT debe incluir el COALESCE con $4 = 'MKT-001'
     expect(mockQueryRawUnsafe.mock.calls[0]?.[4]).toBe("MKT-001");
+  });
+
+  // Privacidad del chat de invitado (2026-10-17): sin prueba de identidad no se
+  // devuelve el hilo abierto de ese celular; lo decide el índice único parcial.
+  it("soloNuevo: no busca el abierto y crea con ON CONFLICT DO NOTHING", async () => {
+    const result = await ChatThreadsDB.openOrGet({
+      tenantId: T1, storeId: STORE_ID, customerPhone: PHONE_A, customerName: "Ana", soloNuevo: true,
+    });
+    expect(mockQueryRawUnsafe).not.toHaveBeenCalled();
+    expect(String(mockExecuteRawUnsafe.mock.calls[0]?.[0])).toContain("ON CONFLICT DO NOTHING");
+    expect(result.status).toBe("open");
+  });
+
+  it("soloNuevo: si ya hay uno abierto (0 filas) tira HiloYaAbiertoError y no lo devuelve", async () => {
+    mockExecuteRawUnsafe.mockResolvedValueOnce(0);
+    await expect(
+      ChatThreadsDB.openOrGet({
+        tenantId: T1, storeId: STORE_ID, customerPhone: PHONE_A, customerName: "Ana", soloNuevo: true,
+      }),
+    ).rejects.toBeInstanceOf(HiloYaAbiertoError);
+    expect(mockInvalidateByPrefix).not.toHaveBeenCalled();
   });
 });
 

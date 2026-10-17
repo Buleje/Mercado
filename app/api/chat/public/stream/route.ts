@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { ChatPublicDB } from "@/lib/db/chat-public.db";
+import { accesoAlHilo, respuestaSinAcceso } from "@/lib/chat/thread-token";
 import { subscribeChatPublic, totalChatPublicConnections } from "@/lib/chat-public-bus";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 
 /**
- * GET /api/chat/public/stream?threadId=&storeSlug=&customerPhone=
+ * GET /api/chat/public/stream?threadId=&storeSlug=&customerPhone=&threadToken=
  *
  * Brandon 2026-05-16 (Chat realtime):
  *   Server-Sent Events stream para que el cliente del storefront reciba
@@ -19,6 +20,9 @@ import { isFeatureEnabled } from "@/lib/feature-flags";
  *   - Ownership check: el thread debe pertenecer al customerPhone+storeSlug
  *     que envía la request. Sin esto, cualquier visitante anónimo podría
  *     "escuchar" conversaciones ajenas conociendo el threadId.
+ *   - Privacidad (2026-10-17): además, la sesión verificada de ese celular o
+ *     el token del hilo (`threadToken` en la query: EventSource no manda
+ *     headers). Saber el celular y el threadId ya no alcanza.
  *   - Rate limit STRICT para evitar spam de conexiones.
  *   - Cap global de 2000 conexiones (storefront tiene más tráfico que admin).
  *   - Feature flag marketplace-chat-public protege el endpoint.
@@ -50,29 +54,27 @@ export async function GET(req: NextRequest) {
   }
 
   // Ownership check ANTES de subscribir el stream.
-  const store = await prisma.store.findUnique({
-    where: { slug: storeSlug },
-    select: { id: true, tenantId: true, isPublished: true },
-  });
+  const store = await ChatPublicDB.findStoreBySlug(storeSlug);
   if (!store || !store.isPublished) {
     return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
   }
 
-  const threadCheck = await prisma.$queryRawUnsafe<
-    Array<{ customerPhone: string; storeId: string }>
-  >(
-    `SELECT "customerPhone","storeId" FROM "ConversationThread"
-       WHERE "id" = $1 AND "tenantId" = $2 LIMIT 1`,
-    threadId,
-    store.tenantId,
-  );
+  const threadCheck = await ChatPublicDB.findThreadForOwnershipCheck(threadId, store.tenantId);
   if (
-    !threadCheck[0] ||
-    threadCheck[0].customerPhone !== customerPhone ||
-    threadCheck[0].storeId !== store.id
+    !threadCheck ||
+    threadCheck.customerPhone !== customerPhone ||
+    threadCheck.storeId !== store.id
   ) {
     return NextResponse.json({ error: "Thread no encontrado" }, { status: 404 });
   }
+  const acceso = await accesoAlHilo(
+    req,
+    store.tenantId,
+    threadId,
+    threadCheck.customerPhone,
+    req.nextUrl.searchParams.get("threadToken"),
+  );
+  if (acceso !== "ok") return respuestaSinAcceso(acceso);
 
   if (totalChatPublicConnections() > 2000) {
     return NextResponse.json({ error: "Capacity exceeded" }, { status: 503 });

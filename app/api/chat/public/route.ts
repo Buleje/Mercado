@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { ChatPublicDB } from "@/lib/db/chat-public.db";
-import { ChatThreadsDB, ChatMessagesDB } from "@/lib/db/chat.db";
+import { ChatThreadsDB, ChatMessagesDB, HiloYaAbiertoError } from "@/lib/db/chat.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getCustomerPayload, telefonoDeLaSesion, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 import { markPresence, markTyping, readPresence } from "@/lib/chat/presence";
+import {
+  accesoAlHilo,
+  esSesionDelTelefono,
+  firmarTokenHilo,
+  respuestaSinAcceso,
+} from "@/lib/chat/thread-token";
 
 /** Normaliza phone PE: "51XXXXXXXXX" o "9XXXXXXXX" → "9XXXXXXXX". */
 function normalizePhone(phone: string): string {
@@ -46,10 +52,11 @@ async function enforceSessionPhone(
  * desde el storefront sin necesidad de login admin.
  *
  * Autenticación:
- *   El buyer se identifica por (storeSlug + customerPhone). No hay sesión
- *   persistente — cada request envía los identificadores. Esto es suficiente
- *   porque el customerPhone es validado via OTP en otra etapa (fuera del
- *   scope de este endpoint v1).
+ *   Abrir un hilo NUEVO no pide sesión (storeSlug + customerPhone). Leer o
+ *   seguir uno existente pide la sesión verificada de ese celular o el token
+ *   del hilo que devuelve `action=open` (`threadToken`): en el body de los
+ *   POST, en el header `x-chat-token` del GET. Sin esa prueba, `open` crea un
+ *   hilo nuevo en vez de devolver el abierto de ese celular (2026-10-17).
  *
  * Seguridad:
  *   - Feature flag marketplace-chat-public arranca OFF
@@ -73,6 +80,7 @@ const ListMessagesQuery = z.object({
   threadId:      z.string().min(1).max(100),
   storeSlug:     z.string().min(1).max(200),
   customerPhone: z.string().min(6).max(20),
+  threadToken:   z.string().max(200).optional(),
 });
 
 /** Cita (reply) — snapshot del mensaje citado para render sin join. Tanda 1. */
@@ -106,6 +114,7 @@ const SendMessageBody = z.object({
     url:         z.string().url().max(600),
     durationSec: z.number().min(0).max(600),
   }).optional(),
+  threadToken:   z.string().max(200).optional(),
 });
 
 /** Reacción emoji a un mensaje (toggle). Tanda 1. */
@@ -115,6 +124,7 @@ const ReactBody = z.object({
   customerPhone: z.string().min(6).max(20),
   messageId:     z.string().min(1).max(100),
   emoji:         z.string().min(1).max(16),
+  threadToken:   z.string().max(200).optional(),
 });
 
 /** Ping de "escribiendo…" del buyer (efímero). Tanda 1 · Increment 2. */
@@ -122,6 +132,7 @@ const TypingBody = z.object({
   threadId:      z.string().min(1).max(100),
   storeSlug:     z.string().min(1).max(200),
   customerPhone: z.string().min(6).max(20),
+  threadToken:   z.string().max(200).optional(),
 });
 
 /**
@@ -160,21 +171,21 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === "open") {
-    return handleOpen(body);
+    return handleOpen(req, body);
   }
   if (action === "send") {
-    return handleSend(body);
+    return handleSend(req, body);
   }
   if (action === "react") {
-    return handleReact(body);
+    return handleReact(req, body);
   }
   if (action === "typing") {
-    return handleTyping(body);
+    return handleTyping(req, body);
   }
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
 
-async function handleOpen(body: unknown) {
+async function handleOpen(req: NextRequest, body: unknown) {
   const parsed = OpenThreadBody.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -190,14 +201,33 @@ async function handleOpen(body: unknown) {
       return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
     }
 
-    const thread = await ChatThreadsDB.openOrGet({
-      tenantId:      store.tenantId,
-      storeId:       store.id,
-      customerPhone: parsed.data.customerPhone,
-      customerName:  parsed.data.customerName,
-      orderId:       parsed.data.orderId,
-      subject:       parsed.data.subject,
-    });
+    // Privacidad (2026-10-17): sólo la sesión verificada de ESTE celular
+    // recupera el hilo abierto. Sin ella sólo se crea uno nuevo; si ese celular
+    // ya tiene uno abierto con la tienda (uno por tienda + celular + pedido),
+    // se pide iniciar sesión: saber un celular ya no entrega su conversación.
+    const dueno = await esSesionDelTelefono(req, parsed.data.customerPhone);
+    let thread: Awaited<ReturnType<typeof ChatThreadsDB.openOrGet>>;
+    try {
+      thread = await ChatThreadsDB.openOrGet({
+        tenantId:      store.tenantId,
+        storeId:       store.id,
+        customerPhone: parsed.data.customerPhone,
+        customerName:  parsed.data.customerName,
+        orderId:       parsed.data.orderId,
+        subject:       parsed.data.subject,
+        soloNuevo:     !dueno,
+      });
+    } catch (err) {
+      if (!(err instanceof HiloYaAbiertoError)) throw err;
+      return NextResponse.json(
+        {
+          error:
+            "Ya tienes una conversación abierta con esta tienda. Por tu privacidad, inicia sesión con tu celular para verla.",
+          code: "CHAT_INICIA_SESION",
+        },
+        { status: 401 },
+      );
+    }
 
     // Si hay firstMessage, enviarlo también
     if (parsed.data.firstMessage) {
@@ -238,6 +268,9 @@ async function handleOpen(body: unknown) {
         status:        thread.status,
         unreadForBuyer: thread.unreadForBuyer,
         createdAt:     thread.createdAt,
+        // Prueba de que este equipo abrió el hilo: el widget la guarda y la
+        // manda para leer/escribir (lib/chat/thread-token-client.ts).
+        threadToken:   firmarTokenHilo(store.tenantId, thread.id, thread.customerPhone),
       },
     });
   } catch (err) {
@@ -251,7 +284,7 @@ async function handleOpen(body: unknown) {
   }
 }
 
-async function handleSend(body: unknown) {
+async function handleSend(req: NextRequest, body: unknown) {
   const parsed = SendMessageBody.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -280,6 +313,14 @@ async function handleSend(body: unknown) {
     ) {
       return NextResponse.json({ error: "Thread no encontrado" }, { status: 404 });
     }
+    const acceso = await accesoAlHilo(
+      req,
+      store.tenantId,
+      parsed.data.threadId,
+      threadCheck.customerPhone,
+      parsed.data.threadToken,
+    );
+    if (acceso !== "ok") return respuestaSinAcceso(acceso);
     if (threadCheck.status !== "open") {
       return NextResponse.json({ error: "Conversación cerrada" }, { status: 409 });
     }
@@ -363,7 +404,7 @@ async function handleSend(body: unknown) {
 }
 
 /** POST ?action=react — toggle de reacción emoji del buyer sobre un mensaje. */
-async function handleReact(body: unknown) {
+async function handleReact(req: NextRequest, body: unknown) {
   const parsed = ReactBody.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -389,6 +430,14 @@ async function handleReact(body: unknown) {
     ) {
       return NextResponse.json({ error: "Thread no encontrado" }, { status: 404 });
     }
+    const acceso = await accesoAlHilo(
+      req,
+      store.tenantId,
+      parsed.data.threadId,
+      threadCheck.customerPhone,
+      parsed.data.threadToken,
+    );
+    if (acceso !== "ok") return respuestaSinAcceso(acceso);
 
     const { reactions } = await ChatMessagesDB.reactToMessage({
       tenantId:  store.tenantId,
@@ -417,7 +466,7 @@ async function handleReact(body: unknown) {
 }
 
 /** POST ?action=typing — marca al buyer "escribiendo…" (efímero, sin persistir). */
-async function handleTyping(body: unknown) {
+async function handleTyping(req: NextRequest, body: unknown) {
   const parsed = TypingBody.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
@@ -438,6 +487,14 @@ async function handleTyping(body: unknown) {
     ) {
       return NextResponse.json({ error: "Thread no encontrado" }, { status: 404 });
     }
+    const acceso = await accesoAlHilo(
+      req,
+      store.tenantId,
+      parsed.data.threadId,
+      threadCheck.customerPhone,
+      parsed.data.threadToken,
+    );
+    if (acceso !== "ok") return respuestaSinAcceso(acceso);
     markTyping(parsed.data.threadId, "buyer");
     return NextResponse.json({ ok: true });
   } catch (err) {
@@ -457,8 +514,11 @@ export async function GET(req: NextRequest) {
   const threadId = req.nextUrl.searchParams.get("threadId") ?? "";
   const storeSlug = req.nextUrl.searchParams.get("storeSlug") ?? "";
   const customerPhone = req.nextUrl.searchParams.get("customerPhone") ?? "";
+  // Header primero (no queda en la URL ni en los logs); query como respaldo.
+  const threadToken =
+    req.headers.get("x-chat-token") ?? req.nextUrl.searchParams.get("threadToken") ?? undefined;
 
-  const parsed = ListMessagesQuery.safeParse({ threadId, storeSlug, customerPhone });
+  const parsed = ListMessagesQuery.safeParse({ threadId, storeSlug, customerPhone, threadToken });
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Datos inválidos", issues: parsed.error.issues },
@@ -484,6 +544,14 @@ export async function GET(req: NextRequest) {
     ) {
       return NextResponse.json({ error: "Thread no encontrado" }, { status: 404 });
     }
+    const acceso = await accesoAlHilo(
+      req,
+      store.tenantId,
+      parsed.data.threadId,
+      threadCheck.customerPhone,
+      parsed.data.threadToken,
+    );
+    if (acceso !== "ok") return respuestaSinAcceso(acceso);
 
     const messages = await ChatMessagesDB.listByThread(
       store.tenantId,
