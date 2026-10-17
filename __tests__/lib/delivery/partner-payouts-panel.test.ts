@@ -11,7 +11,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const H = vi.hoisted(() => {
   const tx = {
-    partnerPayout: { updateMany: vi.fn(), findFirst: vi.fn(), findMany: vi.fn(), aggregate: vi.fn() },
+    partnerPayout: { updateMany: vi.fn(), findFirst: vi.fn(), findMany: vi.fn(), aggregate: vi.fn(), groupBy: vi.fn() },
     expense: { create: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
     cashMovement: { create: vi.fn(), findMany: vi.fn() },
     activityLog: { create: vi.fn() },
@@ -328,9 +328,41 @@ describe("historial del panel filtrado en la base", () => {
   it("«Pagados» pide sólo pagados al WHERE; sin filtro, todo lo resuelto", async () => {
     H.tx.partnerPayout.findMany.mockResolvedValue([]);
     H.tx.partnerPayout.aggregate.mockResolvedValue({ _sum: { amount: null }, _count: { _all: 0 } });
+    H.tx.partnerPayout.groupBy.mockResolvedValue([]);
     await PartnerPayoutsDB.listForTenant(T, { historial: "paid" }, ahora);
     expect(H.tx.partnerPayout.findMany.mock.calls[1][0].where).toEqual({ tenantId: T, status: { equals: "paid" } });
     await PartnerPayoutsDB.listForTenant(T, {}, ahora);
     expect(H.tx.partnerPayout.findMany.mock.calls[3][0].where).toEqual({ tenantId: T, status: { notIn: ["pending", "approved"] } });
+  });
+
+  it("desde/hasta en días de Lima, repartidor y tope: el WHERE del historial y el de los totales son el mismo", async () => {
+    H.tx.partnerPayout.findMany.mockResolvedValue([]);
+    H.tx.partnerPayout.aggregate.mockResolvedValue({ _sum: { amount: null }, _count: { _all: 0 } });
+    H.tx.partnerPayout.groupBy.mockResolvedValue([]);
+    await PartnerPayoutsDB.listForTenant(T, { desde: "2026-10-01", hasta: "2026-10-15", partnerId: "p9", take: 5000 }, ahora);
+    const rango = { gte: new Date("2026-10-01T05:00:00.000Z"), lt: new Date("2026-10-16T05:00:00.000Z") };
+    const esperado = {
+      tenantId: T,
+      status: { notIn: ["pending", "approved"] },
+      partnerId: "p9",
+      OR: [{ resolvedAt: rango }, { resolvedAt: null, createdAt: rango }],
+    };
+    const [porPagar, historial] = H.tx.partnerPayout.findMany.mock.calls.map((c) => c[0]);
+    expect(historial.where).toEqual(esperado);
+    expect(historial.take).toBe(2000);
+    expect(H.tx.partnerPayout.groupBy.mock.calls[0][0].where).toEqual(esperado);
+    expect(porPagar.where).toEqual({ tenantId: T, status: { in: ["pending", "approved"] }, partnerId: "p9" });
+  });
+
+  it("los totales suman TODAS las filas del rango (no sólo las que trae la página)", async () => {
+    H.tx.partnerPayout.findMany.mockResolvedValue([]);
+    H.tx.partnerPayout.aggregate.mockResolvedValue({ _sum: { amount: null }, _count: { _all: 0 } });
+    H.tx.partnerPayout.groupBy.mockResolvedValue([
+      { status: "paid", _sum: { amount: 1234.5 }, _count: { _all: 70 } },
+      { status: "rejected", _sum: { amount: 80 }, _count: { _all: 2 } },
+    ]);
+    const r = await PartnerPayoutsDB.listForTenant(T, {}, ahora);
+    expect(r.totales).toEqual({ filas: 72, pagados: { cantidad: 70, monto: 1234.5 }, rechazados: { cantidad: 2, monto: 80 } });
+    expect(r.historial).toEqual([]);
   });
 });

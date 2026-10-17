@@ -22,6 +22,7 @@ import { PartnerModal } from "../PartnerModal";
 import { ConfirmarBorrarRepartidor } from "../ConfirmarBorrarRepartidor";
 import { RepartidoresTabla } from "../RepartidoresTabla";
 import { AccionesEnBloque, BusquedaEquipo } from "../RepartidoresBarra";
+import { FichaRepartidor } from "../FichaRepartidor";
 
 export function RepartidoresTab({ selector }: { selector?: ReactNode } = {}) {
   const [partners, setPartners] = useState<DeliveryPartner[]>([]);
@@ -30,6 +31,7 @@ export function RepartidoresTab({ selector }: { selector?: ReactNode } = {}) {
   const [modal, setModal]       = useState<{ open: boolean; partner: Partial<DeliveryPartner> | null }>({ open: false, partner: null });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [ficha, setFicha] = useState<{ id: string; nombre: string } | null>(null);
   const [avisoBorrar, setAvisoBorrar] = useState<{ mensaje: string; pausar: boolean } | null>(null);
 
   // Brandon mayo 2026 v7 — mejoras RepartidoresTab:
@@ -255,7 +257,10 @@ export function RepartidoresTab({ selector }: { selector?: ReactNode } = {}) {
         onNuevo={() => setModal({ open: true, partner: null })}
         onEditar={(p) => setModal({ open: true, partner: p })}
         onBorrar={setConfirmDelete}
+        onFicha={(p) => setFicha({ id: p.id, nombre: p.name })}
       />
+
+      {ficha && <FichaRepartidor id={ficha.id} nombre={ficha.nombre} onClose={() => setFicha(null)} />}
 
       {/* Modal crear/editar */}
       {modal.open && (

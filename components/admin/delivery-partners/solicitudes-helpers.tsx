@@ -6,6 +6,7 @@
  */
 import type { ReactNode } from "react";
 import { Check, X } from "@buleje/design-system/icons";
+import { formatDateTime } from "@/lib/format";
 
 export function consentIcon(ok: boolean) {
   return ok
@@ -146,3 +147,16 @@ export const VEHICLE_LABELS: Record<string, string> = {
   auto: "Auto",
   a_pie: "A pie",
 };
+
+/** Cómo terminó una postulación revisada (17-10, P23): quién, cuándo y por qué. */
+export function DecisionRevisada({ app }: { app: DriverApplication }) {
+  const k = app.kyc;
+  if (!k?.reviewedAt && !k?.reviewedBy) return null;
+  const verbo = k.applicationStatus === "rechazada" ? "Rechazó" : k.applicationStatus === "aprobada" ? "Aprobó" : "Revisó";
+  return (
+    <p className="mt-1 text-sm text-[var(--text-secondary)]" data-qa="postulante-decision">
+      {verbo} {k.reviewedBy ?? "alguien del negocio"}
+      {k.reviewedAt ? ` el ${formatDateTime(k.reviewedAt)}` : ""} · {k.reviewNotes?.trim() || "sin nota"}
+    </p>
+  );
+}

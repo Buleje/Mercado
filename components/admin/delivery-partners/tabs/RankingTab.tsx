@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { DataTable } from "@buleje/design-system";
-import { CheckCircle, Clock, DollarSign, Star, Trophy, Users, Crown } from "@buleje/design-system/icons";
+import { CheckCircle, Clock, DollarSign, Star, Trophy, Users, Crown, Wallet } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon, toNum } from "@/components/admin/delivery-partners/shared";
@@ -12,6 +12,12 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fechaConDia } from "@/lib/admin/inicio/formato-tablero";
 import { MUESTRA_CHICA, type FilaRanking, type ResumenRanking } from "@/lib/delivery/ranking-reparto";
 import { TasaCompletadas, tonoTasa } from "../TasaCompletadas";
+import { FichaRepartidor } from "../FichaRepartidor";
+
+interface PagadoRanking {
+  total: { cantidad: number; monto: number };
+  porRepartidor: Record<string, number>;
+}
 
 export function RankingTab() {
   const [data, setData] = useState<FilaRanking[]>([]);
@@ -19,6 +25,8 @@ export function RankingTab() {
   const [rango, setRango] = useState<{ desde: string; hasta: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<"week" | "month" | "all">("month");
+  const [pagado, setPagado] = useState<PagadoRanking | null>(null);
+  const [ficha, setFicha] = useState<{ id: string; nombre: string } | null>(null);
 
   const fetchRanking = useCallback((p: string) => {
     setLoading(true);
@@ -28,8 +36,9 @@ export function RankingTab() {
         setData(d.ranking ?? []);
         setSummary(d.summary ?? null);
         setRango(d.since && d.hasta ? { desde: d.since, hasta: d.hasta } : null);
+        setPagado(d.pagado ?? null);
       })
-      .catch(() => { setData([]); setSummary(null); setRango(null); })
+      .catch(() => { setData([]); setSummary(null); setRango(null); setPagado(null); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -63,8 +72,16 @@ export function RankingTab() {
             icono: DollarSign,
             rotulo: "Ganado en tarifas",
             valor: formatCurrency(toNum(summary.totalEarnings)),
-            ayuda: "Lo que suman las tarifas de los pedidos entregados (de los asignados en el período). No es lo pagado: los retiros pagados están en Retiros.",
+            ayuda: "Lo que suman las tarifas de los pedidos entregados (de los asignados en el período). No es lo pagado: eso va en «Pagado en retiros».",
           },
+          ...(pagado
+            ? [{
+                icono: Wallet,
+                rotulo: "Pagado en retiros",
+                valor: formatCurrency(pagado.total.monto),
+                ayuda: `Los retiros que pagaste en el período (${pagado.total.cantidad}), por el día en que se pagaron. Es la plata que salió: no cambia las entregas ni lo ganado.`,
+              }]
+            : []),
           {
             icono: Trophy,
             rotulo: "Completadas",
@@ -174,9 +191,15 @@ export function RankingTab() {
                             {entry.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-extrabold text-[var(--text-primary)] text-base leading-tight truncate">
+                            <button
+                              type="button"
+                              onClick={() => setFicha({ id: entry.id, nombre: entry.name })}
+                              className="block max-w-full truncate text-left text-base font-extrabold leading-tight text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
+                              title="Ver sus entregas, incidencias y pagos de este período"
+                              data-qa="ranking-abrir-ficha"
+                            >
                               {entry.name}
-                            </p>
+                            </button>
                             <p className="text-sm text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1.5">
                               <VehicleIcon type={entry.vehicleType} className="h-3.5 w-3.5" />
                               <span className="font-mono">{entry.phone}</span>
@@ -214,6 +237,11 @@ export function RankingTab() {
                       </td>
                       <td className="text-right font-extrabold tabular-nums">
                         {formatCurrency(toNum(entry.totalEarnings))}
+                        {pagado && (
+                          <span className="block text-sm font-semibold text-[var(--text-tertiary)]">
+                            pagado {formatCurrency(pagado.porRepartidor[entry.id] ?? 0)}
+                          </span>
+                        )}
                       </td>
                       <td className="text-center">
                         <TasaCompletadas tasa={entry.completionRate} cerradas={entry.cerradas} />
@@ -226,6 +254,8 @@ export function RankingTab() {
           </div>
         </div>
       )}
+
+      {ficha && <FichaRepartidor id={ficha.id} nombre={ficha.nombre} periodoInicial={period} onClose={() => setFicha(null)} />}
     </div>
   );
 }

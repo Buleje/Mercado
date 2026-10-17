@@ -13,6 +13,7 @@ import { AlertCircle, Clock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { toNum } from "@/components/admin/delivery-partners/shared";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 export interface AsignacionFila {
   id: string;
@@ -29,7 +30,7 @@ export interface AsignacionFila {
   assignedAt?: string;
 }
 
-const ESTADO_ASIGNACION: Record<string, { label: string; className: string }> = {
+export const ESTADO_ASIGNACION: Record<string, { label: string; className: string }> = {
   assigned: { label: "Pendiente", className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
   accepted: { label: "Aceptado", className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
   picked_up: { label: "Recogido", className: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
@@ -39,6 +40,7 @@ const ESTADO_ASIGNACION: Record<string, { label: string; className: string }> = 
     className: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
   },
   cancelled: { label: "Cancelado", className: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
+  failed: { label: "No se pudo entregar", className: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
 };
 
 const nombreDe = (a: AsignacionFila) => a.partner?.name?.trim() || a.partnerName?.trim() || "Repartidor sin nombre";
@@ -69,7 +71,9 @@ export function TablaAsignaciones({ asignaciones, canceladas }: { asignaciones: 
               return (
                 <tr key={a.id}>
                   <td>
-                    <span className="block font-mono font-extrabold">#{a.orderId.slice(-8)}</span>
+                    <EnlacePanel cosa="pedido" id={a.orderId} className="block font-mono font-extrabold">
+                      #{a.orderId.slice(-8)}
+                    </EnlacePanel>
                     {cliente && <span className="block text-sm text-[var(--text-secondary)]">{cliente}</span>}
                   </td>
                   <td>

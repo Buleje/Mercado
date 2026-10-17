@@ -39,6 +39,8 @@ interface Props {
   onNuevo: () => void;
   onEditar: (p: DeliveryPartner) => void;
   onBorrar: (id: string) => void;
+  /** Abre la ficha del repartidor (17-10, P24): entregas, incidencias y pagos. */
+  onFicha?: (p: DeliveryPartner) => void;
 }
 
 export function RepartidoresTabla({
@@ -61,6 +63,7 @@ export function RepartidoresTabla({
   onNuevo,
   onEditar,
   onBorrar,
+  onFicha,
 }: Props) {
   return (
     <>
@@ -183,7 +186,19 @@ export function RepartidoresTabla({
                                 {(p.name || "?").trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase() ?? "").join("")}
                               </div>
                               <div className="min-w-0">
-                                <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">{p.name}</p>
+                                {onFicha ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => onFicha(p)}
+                                    className="text-left text-sm font-extrabold leading-tight text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
+                                    title="Ver su ficha: entregas, incidencias y pagos"
+                                    data-qa="abrir-ficha-repartidor"
+                                  >
+                                    {p.name}
+                                  </button>
+                                ) : (
+                                  <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">{p.name}</p>
+                                )}
                                 {p.phone && (
                                   <p className="text-sm text-[var(--text-secondary)] font-mono flex items-center gap-1 mt-1">
                                     <Phone className="h-3 w-3 shrink-0" />

@@ -14,12 +14,24 @@ const H = vi.hoisted(() => ({
   rechazar: vi.fn(),
   deshacerPago: vi.fn(),
   listForTenant: vi.fn(),
+  paraAlertas: vi.fn(),
+  conJustificacion: vi.fn(),
 }));
 
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: (...a: unknown[]) => H.requireAdmin(...a) }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("@/lib/db/partner-payouts.db", () => ({
-  PartnerPayoutsDB: { pagar: H.pagar, aprobar: H.aprobar, rechazar: H.rechazar, deshacerPago: H.deshacerPago, listForTenant: H.listForTenant },
+  PartnerPayoutsDB: {
+    pagar: H.pagar,
+    aprobar: H.aprobar,
+    rechazar: H.rechazar,
+    deshacerPago: H.deshacerPago,
+    listForTenant: H.listForTenant,
+    paraAlertas: H.paraAlertas,
+  },
+}));
+vi.mock("@/lib/db/retiros-alertas.db", () => ({
+  RetirosAlertasDB: { conJustificacion: (...a: unknown[]) => H.conJustificacion(...a) },
 }));
 
 import { POST } from "@/app/api/admin/delivery/payouts/[id]/route";
@@ -34,7 +46,11 @@ function req(body: unknown) {
 }
 const params = { params: Promise.resolve({ id: "po1" }) };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  H.paraAlertas.mockResolvedValue([]);
+  H.conJustificacion.mockImplementation(async (_t: string, alertas: unknown[]) => alertas);
+});
 
 describe("POST /api/admin/delivery/payouts/:id", () => {
   it("sin sesión responde 401", async () => {
@@ -99,7 +115,7 @@ describe("deshacer un pago y el historial filtrado", () => {
     H.listForTenant.mockResolvedValueOnce({ porPagar: [], historial: [], resumen: {} });
     const ok = await GET(new NextRequest("http://localhost/api/admin/delivery/payouts?historial=paid"));
     expect(ok.status).toBe(200);
-    expect(H.listForTenant).toHaveBeenCalledWith("t1", { historial: "paid" });
+    expect(H.listForTenant).toHaveBeenCalledWith("t1", { historial: "paid" }, expect.any(Date));
 
     H.requireAdmin.mockResolvedValueOnce({ role: "admin", username: "a", tenantId: "t1" });
     expect((await GET(new NextRequest("http://localhost/api/admin/delivery/payouts?historial=todo"))).status).toBe(400);
@@ -107,5 +123,44 @@ describe("deshacer un pago y el historial filtrado", () => {
     H.requireAdmin.mockResolvedValueOnce(NextResponse.json({ error: "No autorizado" }, { status: 401 }));
     expect((await GET(new NextRequest("http://localhost/api/admin/delivery/payouts"))).status).toBe(401);
     expect(H.listForTenant).toHaveBeenCalledTimes(1);
+  });
+
+  it("GET con fechas y repartidor los pasa a la base; «desde» después de «hasta» = 400 sin leer", async () => {
+    H.requireAdmin.mockResolvedValueOnce({ role: "admin", username: "a", tenantId: "t1" });
+    H.listForTenant.mockResolvedValueOnce({ porPagar: [], historial: [], resumen: {}, totales: {} });
+    const ok = await GET(new NextRequest("http://localhost/api/admin/delivery/payouts?desde=2026-10-01&hasta=2026-10-15&partnerId=p1"));
+    expect(ok.status).toBe(200);
+    expect(H.listForTenant).toHaveBeenCalledWith("t1", { desde: "2026-10-01", hasta: "2026-10-15", partnerId: "p1" }, expect.any(Date));
+
+    H.requireAdmin.mockResolvedValueOnce({ role: "admin", username: "a", tenantId: "t1" });
+    const mal = await GET(new NextRequest("http://localhost/api/admin/delivery/payouts?desde=2026-10-15&hasta=2026-10-01"));
+    expect(mal.status).toBe(400);
+    expect(H.listForTenant).toHaveBeenCalledTimes(1);
+  });
+
+  it("GET devuelve alertas y referencias usadas sin bloquear; exportar no las calcula y sube el tope", async () => {
+    const ahora = new Date();
+    const pagado = (id: string, note: string) => ({
+      id, partnerId: "p1", partnerName: "Juan", amount: 50, status: "paid", note,
+      createdAt: new Date(ahora.getTime() - 3_600_000), resolvedAt: ahora,
+    });
+    H.paraAlertas.mockResolvedValueOnce([pagado("a", "Yape · OP-123"), pagado("b", "Yape · op 123")]);
+    H.requireAdmin.mockResolvedValueOnce({ role: "manager", username: "m", tenantId: "t1" });
+    H.listForTenant.mockResolvedValueOnce({ porPagar: [], historial: [], resumen: {}, totales: {} });
+    const res = await GET(new NextRequest("http://localhost/api/admin/delivery/payouts"));
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.puedeResolver).toBe(false);
+    expect(body.alertas.some((a: { tipo: string; ids: string[] }) => a.tipo === "referencia-repetida" && a.ids.includes("a") && a.ids.includes("b"))).toBe(true);
+    expect(body.referencias.length).toBe(2);
+    expect(H.conJustificacion.mock.calls[0][0]).toBe("t1");
+
+    H.requireAdmin.mockResolvedValueOnce({ role: "admin", username: "a", tenantId: "t1" });
+    H.listForTenant.mockResolvedValueOnce({ porPagar: [], historial: [], resumen: {}, totales: {} });
+    const csv = await (await GET(new NextRequest("http://localhost/api/admin/delivery/payouts?exportar=1"))).json();
+    expect(H.listForTenant).toHaveBeenLastCalledWith("t1", { take: 2000 }, expect.any(Date));
+    expect(H.paraAlertas).toHaveBeenCalledTimes(1);
+    expect(csv.alertas).toEqual([]);
+    expect(csv.referencias).toEqual([]);
   });
 });

@@ -7,7 +7,9 @@ import { TableSkeleton, VehicleIcon } from "@/components/admin/delivery-partners
 import { useIndicadoresReparto } from "@/components/admin/delivery/reparto-indicadores";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { formatDateNumeric, formatDateTime } from "@/lib/format";
-import { AVAILABILITY_LABELS, consentIcon, isKycComplete, KycSection, parseApplicationBody, VEHICLE_LABELS, type DriverApplication } from "../solicitudes-helpers";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { AVAILABILITY_LABELS, consentIcon, DecisionRevisada, isKycComplete, KycSection, parseApplicationBody, VEHICLE_LABELS, type DriverApplication } from "../solicitudes-helpers";
+import { RevisarPostulanteModal, type DecisionPostulante } from "../RevisarPostulanteModal";
 
 export function SolicitudesTab({ selector }: { selector?: ReactNode } = {}) {
   const [apps, setApps] = useState<DriverApplication[]>([]);
@@ -15,38 +17,39 @@ export function SolicitudesTab({ selector }: { selector?: ReactNode } = {}) {
   const [processing, setProcessing] = useState<string | null>(null);
   const [filter, setFilter] = useState<"pending" | "all">("pending");
   const [error, setError] = useState<string | null>(null);
+  const [revisando, setRevisando] = useState<{ app: DriverApplication; decision: DecisionPostulante } | null>(null);
 
   const fetchApps = useCallback(() => {
     setLoading(true);
     tenantFetch("/api/admin/driver-applications")
       .then((r) => (r.ok ? r.json() : { data: [] }))
       .then((d) => setApps(d.data ?? []))
-      .catch(() => setApps([]))
+      .catch(() => {
+        setApps([]);
+        setError("Sin conexión: no pudimos leer las postulaciones.");
+      })
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { fetchApps(); }, [fetchApps]);
 
-  const handleAction = async (id: string, action: "approve" | "reject") => {
+  // 17-10 (P23): la decisión pasa por `RevisarPostulanteModal` (motivo + alcance)
+  // y el error vuelve a esa ventana, que no se cierra hasta que el servidor acepta.
+  const handleAction = async (id: string, action: DecisionPostulante, reviewNotes: string) => {
     setProcessing(id);
     setError(null);
     try {
       const res = await tenantFetch("/api/admin/driver-applications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, notificationId: id }),
+        body: JSON.stringify({ action, notificationId: id, ...(reviewNotes ? { reviewNotes } : {}) }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.detail ?? body.error ?? `HTTP ${res.status}`);
+        throw new Error(`No se pudo ${action === "approve" ? "aprobar" : "rechazar"}: ${body.detail ?? body.error ?? `error ${res.status}`}`);
       }
+      setRevisando(null);
       fetchApps();
-    } catch (err) {
-      // FIX 2026-05-06: catch silencioso → ahora muestra error al admin.
-      // Aprobar/rechazar driver sin feedback dejaba al admin creyendo que
-      // se procesó cuando no — bug operacional crítico en flujo KYC.
-      const msg = err instanceof Error ? err.message : "desconocido";
-      setError(`Error al ${action === "approve" ? "aprobar" : "rechazar"} la solicitud: ${msg}`);
     } finally {
       setProcessing(null);
     }
@@ -125,6 +128,12 @@ export function SolicitudesTab({ selector }: { selector?: ReactNode } = {}) {
             ]}
           />
         )}
+        <InfoTip
+          title="Decide una persona"
+          what="Cada postulación la aprueba o la rechaza alguien de tu negocio, con su motivo. Ningún puntaje ni los documentos completos aprueban solos: sólo habilitan el botón «Aprobar»."
+          affects="La decisión queda en la postulación con el nombre de quien la tomó, la fecha y la razón. Al rechazar, el motivo le llega al postulante por WhatsApp."
+          example="El SOAT de Luis vence mañana: lo rechazas con «SOAT por vencer; vuelve a postular con el nuevo»."
+        />
       </div>
 
       {/* ── 3. Lista / Empty state ─────────────────────────────────── */}
@@ -174,7 +183,7 @@ export function SolicitudesTab({ selector }: { selector?: ReactNode } = {}) {
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
                             <CheckCircle className="h-3.5 w-3.5" />
-                            Revisado
+                            {app.kyc?.applicationStatus === "aprobada" ? "Aprobada" : app.kyc?.applicationStatus === "rechazada" ? "Rechazada" : "Revisado"}
                           </span>
                         )}
                         {app.kyc ? (
@@ -233,6 +242,7 @@ export function SolicitudesTab({ selector }: { selector?: ReactNode } = {}) {
                         Recibida:{" "}
                         {formatDateTime(app.createdAt)}
                       </p>
+                      {!isPending && <DecisionRevisada app={app} />}
                     </div>
                   </div>
 
@@ -240,7 +250,7 @@ export function SolicitudesTab({ selector }: { selector?: ReactNode } = {}) {
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
-                        onClick={() => handleAction(app.id, "approve")}
+                        onClick={() => setRevisando({ app, decision: "approve" })}
                         disabled={isProcessing || !canApprove}
                         title={canApprove ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
                         className="inline-flex items-center gap-2 px-4 h-12 rounded-xl text-sm font-semibold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -250,7 +260,7 @@ export function SolicitudesTab({ selector }: { selector?: ReactNode } = {}) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleAction(app.id, "reject")}
+                        onClick={() => setRevisando({ app, decision: "reject" })}
                         disabled={isProcessing}
                         className="inline-flex items-center gap-2 px-4 h-12 rounded-xl text-sm font-semibold bg-[var(--data-error-50)] text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
                       >
@@ -318,6 +328,16 @@ export function SolicitudesTab({ selector }: { selector?: ReactNode } = {}) {
             );
           })}
         </div>
+      )}
+
+      {revisando && (
+        <RevisarPostulanteModal
+          nombre={parseApplicationBody(revisando.app.body).name || "el postulante"}
+          decision={revisando.decision}
+          faltan={isKycComplete(revisando.app.kyc, revisando.app.partner?.vehicleType ?? parseApplicationBody(revisando.app.body).vehicle).missing}
+          onClose={() => setRevisando(null)}
+          onConfirmar={(motivo) => handleAction(revisando.app.id, revisando.decision, motivo)}
+        />
       )}
     </div>
   );

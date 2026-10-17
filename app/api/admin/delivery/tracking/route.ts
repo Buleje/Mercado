@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
 /**
  * GET /api/admin/delivery/tracking?orderId=...
  * GET /api/admin/delivery/tracking           → último evento de cada order activo
+ * GET /api/admin/delivery/tracking?feed=dia  → todos los eventos de las últimas 24 h
  */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "delivery", "almacenero"]);
@@ -115,7 +116,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const latest = await DeliveryTrackingDB.latestPerOrder(auth.tenantId, limit);
+    // 17-10 (P18): `?feed=dia` = todos los eventos de las últimas 24 h (el
+    // feed los agrupa por pedido); sin él, el último de cada pedido activo.
+    const latest =
+      req.nextUrl.searchParams.get("feed") === "dia"
+        ? await DeliveryTrackingDB.eventosRecientes(auth.tenantId, 24, Number.isFinite(limit) ? Math.max(limit, 1) : 300)
+        : await DeliveryTrackingDB.latestPerOrder(auth.tenantId, Number.isFinite(limit) ? limit : 50);
     return NextResponse.json(
       { data: latest },
       {

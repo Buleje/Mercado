@@ -27,6 +27,10 @@ import {
   type FiltroHistorialRetiros,
   type MetodoPagoRetiro,
 } from "@/lib/delivery/payout-transiciones";
+import { MAXIMO_EXPORTAR, rangoLima } from "@/lib/delivery/retiros-conciliacion";
+
+/** Ventana de lo pagado en la que se buscan coincidencias (P36). */
+const DIAS_ALERTAS = 90;
 
 /**
  * PartnerPayoutsDB — retiros (cash-out) del repartidor a Yape.
@@ -127,6 +131,28 @@ export interface ResumenRetiros {
   porPagar: { cantidad: number; monto: number };
   /** Lo pagado desde el día 1 del mes (Lima). */
   pagadoEsteMes: { cantidad: number; monto: number };
+}
+
+/**
+ * Lo que suman TODAS las filas del historial con los mismos filtros (no sólo
+ * las que viajan): «la suma de filas coincide con los indicadores del mismo
+ * rango» (P35). `filas` dice cuántas hay en total, para el «Mostrando N de M».
+ */
+export interface TotalesHistorialRetiros {
+  filas: number;
+  pagados: { cantidad: number; monto: number };
+  rechazados: { cantidad: number; monto: number };
+}
+
+export interface OpcionesListaRetiros {
+  historial?: FiltroHistorialRetiros;
+  /** Cuántas filas del historial viajan (tope `MAXIMO_EXPORTAR`). */
+  take?: number;
+  /** Días de Lima (YYYY-MM-DD), incluidos: por el día en que se resolvió. */
+  desde?: string;
+  hasta?: string;
+  /** Sólo un repartidor (historial y «por pagar»; el resumen sigue siendo del negocio). */
+  partnerId?: string;
 }
 
 export type ResultadoAccionRetiro =
@@ -369,24 +395,43 @@ export const PartnerPayoutsDB = {
    * historial (los últimos `take`, del estado pedido: el filtro va en el WHERE,
    * no sobre los últimos N). El resumen sale de la base completa, no de la
    * ventana: el «por pagar» no puede depender de cuántas filas se listan.
+   *
+   * 17-10 (P35): período (por el día en que se resolvió; un retiro viejo sin
+   * fecha de resolución cuenta por el día en que se pidió) y repartidor van al
+   * WHERE, y `totales` suma TODAS las filas con esos filtros: así la suma de la
+   * tabla cuadra con sus cifras aunque no viajen todas.
    */
   async listForTenant(
     tenantId: string,
-    opciones: { historial?: FiltroHistorialRetiros; take?: number } = {},
+    opciones: OpcionesListaRetiros = {},
     ahora: Date = new Date(),
-  ): Promise<{ porPagar: RetiroDelPanel[]; historial: RetiroDelPanel[]; resumen: ResumenRetiros }> {
+  ): Promise<{
+    porPagar: RetiroDelPanel[];
+    historial: RetiroDelPanel[];
+    resumen: ResumenRetiros;
+    totales: TotalesHistorialRetiros;
+  }> {
     if (!tenantId) throw new Error("tenantId is required");
-    const take = opciones.take ?? 60;
+    const take = Math.min(Math.max(1, opciones.take ?? 60), MAXIMO_EXPORTAR);
     const estadoHistorial = opciones.historial ? { equals: opciones.historial } : { notIn: [...ESTADOS_POR_PAGAR] };
-    const [porPagar, historial, debe, pagado] = await Promise.all([
+    const deRepartidor = opciones.partnerId ? { partnerId: opciones.partnerId } : {};
+    const { gte, lt } = rangoLima(opciones.desde, opciones.hasta);
+    const enRango = gte || lt ? { ...(gte ? { gte } : {}), ...(lt ? { lt } : {}) } : null;
+    const whereHistorial: Prisma.PartnerPayoutWhereInput = {
+      tenantId,
+      status: estadoHistorial,
+      ...deRepartidor,
+      ...(enRango ? { OR: [{ resolvedAt: enRango }, { resolvedAt: null, createdAt: enRango }] } : {}),
+    };
+    const [porPagar, historial, debe, pagado, grupos] = await Promise.all([
       prisma.partnerPayout.findMany({
-        where: { tenantId, status: { in: [...ESTADOS_POR_PAGAR] } },
+        where: { tenantId, status: { in: [...ESTADOS_POR_PAGAR] }, ...deRepartidor },
         orderBy: { createdAt: "asc" },
         take: 200,
         select: SELECT_PANEL,
       }),
       prisma.partnerPayout.findMany({
-        where: { tenantId, status: estadoHistorial },
+        where: whereHistorial,
         orderBy: [{ resolvedAt: "desc" }, { createdAt: "desc" }],
         take,
         select: SELECT_PANEL,
@@ -401,7 +446,21 @@ export const PartnerPayoutsDB = {
         _sum: { amount: true },
         _count: { _all: true },
       }),
+      prisma.partnerPayout.groupBy({
+        by: ["status"],
+        where: whereHistorial,
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
     ]);
+    const totales: TotalesHistorialRetiros = { filas: 0, pagados: { cantidad: 0, monto: 0 }, rechazados: { cantidad: 0, monto: 0 } };
+    for (const g of grupos) {
+      const cantidad = g._count?._all ?? 0;
+      const monto = Number(g._sum?.amount ?? 0);
+      totales.filas += cantidad;
+      if (g.status === "paid") totales.pagados = { cantidad, monto };
+      else if (g.status === "rejected") totales.rechazados = { cantidad, monto };
+    }
     return {
       porPagar: porPagar.map(aPanel),
       historial: historial.map(aPanel),
@@ -409,7 +468,55 @@ export const PartnerPayoutsDB = {
         porPagar: { cantidad: debe._count._all, monto: Number(debe._sum.amount ?? 0) },
         pagadoEsteMes: { cantidad: pagado._count._all, monto: Number(pagado._sum.amount ?? 0) },
       },
+      totales,
     };
+  },
+
+  /**
+   * Las filas sobre las que se buscan coincidencias (P36): lo pagado en los
+   * últimos 90 días y lo que espera pago. Sólo lectura: las alertas nunca
+   * bloquean ni cambian un retiro.
+   */
+  async paraAlertas(tenantId: string, ahora: Date = new Date()): Promise<RetiroDelPanel[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const desde = new Date(ahora.getTime() - DIAS_ALERTAS * 86_400_000);
+    const filas = await prisma.partnerPayout.findMany({
+      where: {
+        tenantId,
+        OR: [{ status: "paid", resolvedAt: { gte: desde } }, { status: { in: [...ESTADOS_POR_PAGAR] } }],
+      },
+      orderBy: { createdAt: "desc" },
+      take: 1000,
+      select: SELECT_PANEL,
+    });
+    return filas.map(aPanel);
+  },
+
+  /**
+   * Lo pagado en retiros desde `desde`, por repartidor (P41): «ganado» sale de
+   * las entregas y «pagado» de acá; son cifras distintas y ninguna mueve a la otra.
+   */
+  async pagadoPorRepartidor(
+    tenantId: string,
+    desde: Date | null,
+  ): Promise<{ total: { cantidad: number; monto: number }; porRepartidor: Record<string, number> }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const grupos = await prisma.partnerPayout.groupBy({
+      by: ["partnerId"],
+      where: { tenantId, status: "paid", ...(desde ? { resolvedAt: { gte: desde } } : {}) },
+      _sum: { amount: true },
+      _count: { _all: true },
+    });
+    const porRepartidor: Record<string, number> = {};
+    let cantidad = 0;
+    let monto = 0;
+    for (const g of grupos) {
+      const m = Number(g._sum?.amount ?? 0);
+      porRepartidor[g.partnerId] = m;
+      cantidad += g._count?._all ?? 0;
+      monto += m;
+    }
+    return { total: { cantidad, monto: Math.round(monto * 100) / 100 }, porRepartidor };
   },
 
   /** «Ya lo vi, lo pago»: pending → approved. La plata sigue apartada. */

@@ -6,9 +6,11 @@ import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { BOTON, CLASE_AREA, CLASE_CAMPO, claseChipFiltro } from "@/components/admin/rrhh/rrhh-form";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { CuerpoAccion, RetiroFila } from "./use-retiros";
+import { normalizarReferencia, type ReferenciaUsada } from "@/lib/delivery/retiros-conciliacion";
+import { ChipEstadoRetiro } from "./retiros-estado";
+import { ErrorAccionRetiro, type CuerpoAccion, type RetiroFila } from "./use-retiros";
 
 type Metodo = "yape" | "efectivo" | "transferencia";
 
@@ -26,6 +28,8 @@ interface Props {
   onClose: () => void;
   /** Lanza con el mensaje del servidor si no se pudo. */
   onConfirmar: (cuerpo: CuerpoAccion) => Promise<void>;
+  /** N.° de operación ya usados (P34): avisa si se repite, sin bloquear. */
+  referencias?: ReferenciaUsada[];
 }
 
 const TEXTOS = {
@@ -39,13 +43,15 @@ const TEXTOS = {
 } as const;
 
 /** Pagar (con medio, salida de caja y n.° de operación), rechazar o deshacer un pago (con motivo). */
-export function ResolverRetiroModal({ retiro, modo, onClose, onConfirmar }: Props) {
+export function ResolverRetiroModal({ retiro, modo, onClose, onConfirmar, referencias = [] }: Props) {
   const [metodo, setMetodo] = useState<Metodo>("yape");
   const [deCaja, setDeCaja] = useState(true);
   const [referencia, setReferencia] = useState("");
   const [motivo, setMotivo] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Se mandó y no volvió respuesta: el botón dice «Reintentar» (el servidor no paga dos veces). */
+  const [incierto, setIncierto] = useState(false);
 
   // Cada retiro abre el formulario limpio.
   useEffect(() => {
@@ -54,10 +60,13 @@ export function ResolverRetiroModal({ retiro, modo, onClose, onConfirmar }: Prop
     setReferencia("");
     setMotivo("");
     setError(null);
+    setIncierto(false);
   }, [retiro?.id, modo]);
 
   if (!retiro) return null;
   const pagando = modo === "pagar";
+  const refNorm = normalizarReferencia(referencia);
+  const yaUsada = pagando && refNorm.length >= 3 ? referencias.find((r) => r.referencia === refNorm) : undefined;
   const conMotivo = modo === "pagar" ? null : TEXTOS[modo];
 
   async function enviar(e: FormEvent) {
@@ -76,6 +85,7 @@ export function ResolverRetiroModal({ retiro, modo, onClose, onConfirmar }: Prop
           : { accion: modo === "deshacer" ? "deshacer" : "rechazar", motivo: motivo.trim() },
       );
     } catch (err) {
+      setIncierto(err instanceof ErrorAccionRetiro && err.incierto);
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setGuardando(false);
@@ -95,7 +105,7 @@ export function ResolverRetiroModal({ retiro, modo, onClose, onConfirmar }: Prop
           </button>
           <button type="submit" form={FORM_ID} disabled={guardando} className={pagando ? BOTON.primario : BOTON.peligro}>
             {guardando && <Loader2 className="h-4 w-4 animate-spin" />}
-            {conMotivo?.boton ?? `Pagar ${formatCurrency(retiro.amount)}`}
+            {incierto ? "Reintentar" : (conMotivo?.boton ?? `Pagar ${formatCurrency(retiro.amount)}`)}
           </button>
         </ModalFooter>
       }
@@ -104,9 +114,12 @@ export function ResolverRetiroModal({ retiro, modo, onClose, onConfirmar }: Prop
         <div className="flex items-center justify-between gap-3 rounded-xl bg-[var(--surface-sunken)] p-3">
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{retiro.partnerName}</p>
-            <p className="text-xs text-[var(--text-tertiary)] tabular-nums">Yape {retiro.yapeNumber}</p>
+            <p className="text-sm text-[var(--text-tertiary)] tabular-nums">Yape {retiro.yapeNumber}</p>
           </div>
-          <span className="text-lg font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(retiro.amount)}</span>
+          <div className="flex flex-col items-end gap-1">
+            <span className="text-lg font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(retiro.amount)}</span>
+            <ChipEstadoRetiro status={incierto ? "por-confirmar" : retiro.status} />
+          </div>
         </div>
 
         {pagando ? (
@@ -147,7 +160,14 @@ export function ResolverRetiroModal({ retiro, modo, onClose, onConfirmar }: Prop
                 />
               )}
             </Field>
-            <p className="text-xs text-[var(--text-tertiary)]">Se anota el gasto «Pago a repartidor · {retiro.partnerName}» en Transporte.</p>
+            {yaUsada && (
+              <p role="status" className="rounded-xl bg-[var(--data-warning-100)] px-3 py-2 text-sm text-[var(--data-warning-700)]">
+                Ese N.° ya está en el pago a {yaUsada.partnerName}
+                {yaUsada.resolvedAt ? ` del ${formatDateTimeShort(yaUsada.resolvedAt)}` : ""} ({formatCurrency(yaUsada.amount)}). Revísalo; puedes
+                seguir igual.
+              </p>
+            )}
+            <p className="text-sm text-[var(--text-tertiary)]">Se anota el gasto «Pago a repartidor · {retiro.partnerName}» en Transporte.</p>
           </>
         ) : (
           <Field label="Motivo" required hint={conMotivo?.hint}>

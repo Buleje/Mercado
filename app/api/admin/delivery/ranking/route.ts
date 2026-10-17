@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { DeliveryPartnersDB } from "@/lib/db/delivery-partners.db";
+import { PartnerPayoutsDB } from "@/lib/db/partner-payouts.db";
 import { logger } from "@/lib/logger";
 import { desdeDelPeriodo, rankingReparto, type PeriodoRanking } from "@/lib/delivery/ranking-reparto";
 
@@ -28,7 +29,12 @@ export async function GET(req: NextRequest) {
   const hasta = new Date();
   const since = desdeDelPeriodo(periodo, hasta);
 
-  const partners = await DeliveryPartnersDB.getRanking(auth.tenantId, since);
+  // 17-10 (P41): lo pagado en retiros en el mismo período, aparte de lo
+  // ganado en tarifas: son cifras distintas y ninguna mueve a la otra.
+  const [partners, pagado] = await Promise.all([
+    DeliveryPartnersDB.getRanking(auth.tenantId, since),
+    PartnerPayoutsDB.pagadoPorRepartidor(auth.tenantId, periodo === "all" ? null : since),
+  ]);
   // Cuentas en `lib/delivery/ranking-reparto.ts` (17-10): base = asignaciones
   // creadas en el período; «completadas» = entregadas ÷ cerradas, null sin cerradas.
   const { ranking, summary } = rankingReparto(partners);
@@ -39,6 +45,7 @@ export async function GET(req: NextRequest) {
     hasta: hasta.toISOString(),
     ranking,
     summary,
+    pagado,
   });
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);

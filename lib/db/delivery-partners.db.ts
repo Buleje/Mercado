@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { ESTADOS_CERRADOS, minutosDeEntrega, resumenDeFicha } from "@/lib/delivery/ficha-repartidor";
 
 /**
  * DeliveryPartnersDB
@@ -164,6 +165,92 @@ export const DeliveryPartnersDB = {
       prisma.partnerPayout.count({ where: { partnerId: id, partner: { tenantId } } }),
     ]);
     return { entregas, retiros };
+  },
+
+  /**
+   * Ficha del repartidor (17-10, P24/P41/P42): sus entregas del período (por
+   * el día en que se asignaron, como el ranking), las incidencias, lo ganado
+   * (tarifas + propinas de lo entregado), lo pagado en retiros en el período y
+   * lo que se le debe hoy. Las cifras salen de TODAS las filas del período (no
+   * de las `take` que viajan). `null` = no es de este negocio.
+   */
+  async fichaForAdmin(tenantId: string, id: string, desde: Date | null, take = 100) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const repartidor = await prisma.deliveryPartner.findFirst({
+      where: { tenantId, id },
+      select: {
+        id: true, name: true, phone: true, zone: true, vehicleType: true, isActive: true,
+        fee: true, rating: true, acceptanceRate: true, createdAt: true, lastPingAt: true,
+      },
+    });
+    if (!repartidor) return null;
+    const enPeriodo = desde ? { createdAt: { gte: desde } } : {};
+    const [entregas, grupos, abiertas, retiros, pagado, porPagar] = await Promise.all([
+      prisma.deliveryAssignment.findMany({
+        where: { tenantId, partnerId: id, ...enPeriodo },
+        orderBy: { createdAt: "desc" },
+        take,
+        select: {
+          id: true, orderId: true, status: true, fee: true, tipAmount: true, notes: true,
+          createdAt: true, pickedUpAt: true, deliveredAt: true,
+          order: { select: { customerName: true, total: true } },
+        },
+      }),
+      prisma.deliveryAssignment.groupBy({
+        by: ["status"],
+        where: { tenantId, partnerId: id, ...enPeriodo },
+        _sum: { fee: true, tipAmount: true },
+        _count: { _all: true },
+      }),
+      prisma.deliveryAssignment.count({
+        where: { tenantId, partnerId: id, status: { notIn: [...ESTADOS_CERRADOS] } },
+      }),
+      prisma.partnerPayout.findMany({
+        where: { tenantId, partnerId: id, ...enPeriodo },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+        select: { id: true, amount: true, status: true, note: true, createdAt: true, resolvedAt: true },
+      }),
+      prisma.partnerPayout.aggregate({
+        where: { tenantId, partnerId: id, status: "paid", ...(desde ? { resolvedAt: { gte: desde } } : {}) },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      prisma.partnerPayout.aggregate({
+        where: { tenantId, partnerId: id, status: { in: ["pending", "approved"] } },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+    ]);
+    const resumen = resumenDeFicha(
+      grupos.map((g) => ({
+        status: g.status,
+        cantidad: g._count?._all ?? 0,
+        tarifas: Number(g._sum?.fee ?? 0),
+        propinas: Number(g._sum?.tipAmount ?? 0),
+      })),
+    );
+    return {
+      repartidor: { ...repartidor, fee: Number(repartidor.fee) },
+      resumen,
+      abiertas,
+      pagado: { cantidad: pagado._count._all, monto: Number(pagado._sum.amount ?? 0) },
+      porPagar: { cantidad: porPagar._count._all, monto: Number(porPagar._sum.amount ?? 0) },
+      entregas: entregas.map((e) => ({
+        id: e.id,
+        orderId: e.orderId,
+        status: e.status,
+        fee: Number(e.fee),
+        propina: Number(e.tipAmount),
+        notes: e.notes,
+        cliente: e.order?.customerName ?? null,
+        createdAt: e.createdAt,
+        pickedUpAt: e.pickedUpAt,
+        deliveredAt: e.deliveredAt,
+        minutos: minutosDeEntrega(e.pickedUpAt, e.deliveredAt),
+      })),
+      retiros: retiros.map((r) => ({ ...r, amount: Number(r.amount) })),
+    };
   },
 
   async deleteForAdmin(tenantId: string, id: string): Promise<boolean> {
