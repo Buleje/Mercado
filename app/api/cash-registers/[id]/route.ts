@@ -13,6 +13,7 @@ import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { z } from "zod";
 import { METODOS_DE_CAJA, saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 import { TOPE_CAJA, montoContado } from "@/lib/caja/monto-contado";
+import { nombreDelMedio } from "@/lib/caja/cambiar-medio";
 
 /** El motivo «Cobro pendiente (fiado)» que ofrecía «Registrar ingreso» (prefijo de la descripción). */
 const ES_COBRO_DE_FIADO_SUELTO = /^cobro pendiente\b/i;
@@ -85,7 +86,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const reg = await CashRegistersDB.close(auth.tenantId, id, closingAmount, notes);
         // Sin caja cerrada no hay «Cerrar» que anotar: el que perdió la carrera
         // dejaba un «Cerrar» (esperado S/0.00) y Cuadrar caja lo mostraba como quien cerró.
-        if (!reg) return NextResponse.json({ error: "Register not found" }, { status: 404 });
+        if (!reg) {
+          /* M30: reintentar un cierre que SÍ se hizo (la respuesta se perdió en
+             la red) decía «no encontrada». Ahora dice que ya estaba cerrada y
+             devuelve ese primer cierre, sin escribir nada: el cierre es único. */
+          const yaCerrada = await CashRegistersDB.getById(auth.tenantId, id);
+          if (yaCerrada?.closedAt) {
+            return NextResponse.json({ error: "Esta caja ya estaba cerrada.", yaCerrada: true, caja: yaCerrada }, { status: 409 });
+          }
+          return NextResponse.json({ error: "Register not found" }, { status: 404 });
+        }
         // Cerrar es el otro momento en que se fija el dinero: queda quién contó,
         // cuánto declaró y qué diferencia dio contra lo esperado.
         const esperado = Number(reg?.expectedAmount ?? reg?.openingAmount ?? 0);
@@ -131,6 +141,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           { type: body.type, amount: body.amount, method: body.method, description: body.description, saleId: body.saleId },
           auth.tenantId,
         );
+        /* M28: los ingresos y egresos anotados desde la caja (este camino, el de
+           «Registrar ingreso/egreso») no dejaban rastro en «Quién tocó la caja»:
+           sólo los dejaba la ruta vieja `movements`. Mismo molde que esa. */
+        logActivity(
+          "Crear",
+          "movimiento_caja",
+          `${body.type === "ingreso" ? "Ingreso" : "Egreso"} manual de S/${body.amount.toFixed(2)}${body.method !== "efectivo" ? ` por ${nombreDelMedio(body.method)}` : ""} — ${body.description}`,
+          movement?.id,
+          auth.username,
+          undefined,
+          auth.tenantId,
+        ).catch((err) => logger.warn("[cash-registers] activity log failed", { err: String(err) }));
         return NextResponse.json(movement, { status: 201 });
       }
 
@@ -147,6 +169,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
         // Anomaly detection: si el arqueo tiene diferencia con el esperado
         // mayor al umbral, alertar al admin via notification + push.
+        let esperadoDelArqueo: number | null = null;
         try {
           /* El esperado de la caja ABIERTA, con LA cuenta del cierre. Antes se
              leía `expectedAmount`, que sólo se escribe al cerrar: con la caja
@@ -154,6 +177,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           const reg = await CashRegistersDB.getById(auth.tenantId, id);
           const expected = reg ? saldoEsperadoDeCaja(reg.openingAmount, reg.movements).esperado : null;
           if (expected != null) {
+            esperadoDelArqueo = expected;
             const diff = arqueoAmount - expected;
             if (Math.abs(diff) >= ANOMALY_THRESHOLD_SOL) {
               const isShort = diff < 0;
@@ -175,6 +199,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             err: anomalyErr instanceof Error ? anomalyErr.message : String(anomalyErr),
           });
         }
+
+        /* M28: el arqueo tampoco dejaba rastro de quién contó. Va como
+           `movimiento_caja` (no `caja`): no gasta el cupo de abrir/cerrar por caja. */
+        const difArqueo = esperadoDelArqueo == null ? null : Math.round((arqueoAmount - esperadoDelArqueo) * 100) / 100;
+        logActivity(
+          "Arquear",
+          "movimiento_caja",
+          `Arqueo con S/${arqueoAmount.toFixed(2)}${esperadoDelArqueo == null || difArqueo == null ? "" : ` (esperado S/${esperadoDelArqueo.toFixed(2)}, diferencia S/${difArqueo.toFixed(2)})`}${body.notes ? ` — ${body.notes}` : ""}`,
+          movement?.id,
+          auth.username,
+          undefined,
+          auth.tenantId,
+        ).catch((err) => logger.warn("[cash-registers] activity log failed", { err: String(err) }));
 
         return NextResponse.json(movement, { status: 201 });
       }

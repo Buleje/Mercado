@@ -101,14 +101,20 @@ export default function CuentaCliente({ selected, fiados, gestiones, promesa, on
             {abonos.map((a) => (
               <li key={a.id} className={FILA}>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold tabular-nums text-[var(--data-success-ink)]">{formatCurrency(a.monto)}</span>
+                  <span className="block text-sm font-bold tabular-nums text-[var(--data-success-ink)]">
+                    {formatCurrency(a.monto)}
+                    {/* M34: el saldo de ESA compra antes y después del abono. */}
+                    <span className="font-normal text-[var(--text-secondary)]" data-qa="fiado-abono-saldo">
+                      {" "}· saldo {formatCurrency(a.saldoAntes)} → {formatCurrency(a.saldoDespues)}
+                    </span>
+                  </span>
                   <span className="block truncate text-sm text-[var(--text-secondary)]">
                     {[diaLeido(a.fecha), a.medio, a.nota, a.fiado.id !== selected.id ? `compra del ${diaLeido(a.fiado.createdAt)}` : null].filter(Boolean).join(" · ")}
                   </span>
                 </span>
                 <button
                   type="button"
-                  onClick={() => onVerRecibo(reciboDeAbono(a, cliente))}
+                  onClick={() => onVerRecibo(reciboDeAbono(a, cliente, { abonos, compras }))}
                   className="flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
                   data-qa="fiado-cuenta-recibo"
                 >

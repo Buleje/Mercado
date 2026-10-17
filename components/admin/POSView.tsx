@@ -140,6 +140,8 @@ export default function POSView() {
         onSyncRun={posOffline.syncQueue}
         onClearErrors={posOffline.clearErrors}
         onClearQueue={posOffline.clearQueue}
+        cola={posOffline.cola}
+        onDescartar={posOffline.descartar}
       />
       <POSToolbar
         products={products}

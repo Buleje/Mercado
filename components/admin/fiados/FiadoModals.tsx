@@ -16,6 +16,7 @@ import {
 import { formatCurrency, formatDateLong, formatTime } from "@/lib/format";
 import { ETIQUETA_METODO, type MetodoCobro } from "@/lib/fiados/cobro-metodo";
 import CobroMasivoModal from "./CobroMasivoModal";
+import type { ReciboData } from "./tipos";
 import type { DatosCobroMasivo, Reparto } from "./use-cobro-masivo";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { useMembrete } from "@/hooks/use-membrete";
@@ -59,17 +60,6 @@ type Fiado = {
   updatedAt: string;
 };
 
-type ReciboData = {
-  fecha: string;
-  clienteNombre: string;
-  clientePhone: string;
-  montoPagado: number;
-  saldoAnterior: number;
-  saldoActual: number;
-  /** Medio del pago y si entró a la caja (lo arma la ventana «Cobrar»). */
-  metodo?: MetodoCobro;
-  caja?: "entro" | "sin-caja";
-};
 
 type FiadoModalsProps = {
   selected: Fiado | null;
@@ -276,7 +266,7 @@ export default function FiadoModals({
               <div className="flex justify-between">
                 <span className="text-[var(--text-secondary)] print:text-black">Fecha:</span>
                 <span className="font-bold text-[var(--text-primary)]">
-                  {reciboData.fecha} {formatTime(new Date())}
+                  {reciboData.fecha} {reciboData.hora ?? formatTime(new Date())}
                 </span>
               </div>
               <div className="border-t border-[var(--rule-base)] print:border-gray-400" />
@@ -293,19 +283,37 @@ export default function FiadoModals({
                 </span>
               </div>
               <div className="border-t border-[var(--rule-base)] print:border-gray-400" />
-              <div className="flex justify-between">
-                <span className="text-[var(--text-secondary)] print:text-black">
-                  Deuda original:
-                </span>
-                {/* Fix 2026-07-08 (reporte fiado bug 5): "Deuda original" = el
-                        total original del fiado (Fiado.total), igual que la línea de
-                        detalle (~571). El ternario previo sumaba saldoAnterior +
-                        montoPagado (siempre > saldoAnterior) → mostraba S/70 sobre una
-                        deuda de S/50 con abono de S/20. */}
-                <span className="font-bold text-[var(--text-secondary)]">
-                  {formatCurrency(selected?.total ?? reciboData.saldoAnterior)}
-                </span>
-              </div>
+              {reciboData.alcance === "cliente" ? (
+                /* Revisión 17-10: un cobro repartido entre compras es UN recibo
+                   con la deuda entera del cliente; «deuda original» no aplica. */
+                <div className="flex justify-between">
+                  <span className="text-[var(--text-secondary)] print:text-black">Repartido en:</span>
+                  <span className="font-bold text-[var(--text-secondary)]">
+                    {reciboData.compras ?? 1} {(reciboData.compras ?? 1) === 1 ? "compra" : "compras"}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  {reciboData.compraDel && (
+                    <div className="flex justify-between">
+                      <span className="text-[var(--text-secondary)] print:text-black">Compra:</span>
+                      <span className="font-bold text-[var(--text-secondary)]">del {reciboData.compraDel}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-[var(--text-secondary)] print:text-black">
+                      Deuda original:
+                    </span>
+                    {/* Fix 2026-07-08 (reporte fiado bug 5): "Deuda original" = el
+                            total original del fiado (Fiado.total). Revisión 17-10: el
+                            del abono manda (`deudaOriginal`): el recibo de un abono de
+                            OTRA compra mostraba el total de la abierta en la ficha. */}
+                    <span className="font-bold text-[var(--text-secondary)]">
+                      {formatCurrency(reciboData.deudaOriginal ?? selected?.total ?? reciboData.saldoAnterior)}
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between">
                 <span className="text-[var(--text-secondary)] print:text-black">Monto pagado:</span>
                 <span className="font-extrabold text-[var(--data-success-500)] text-base">

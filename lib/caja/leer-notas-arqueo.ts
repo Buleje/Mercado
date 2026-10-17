@@ -38,15 +38,19 @@ const VACIO: NotasArqueo = {
 /** `S/1,234.50` → 1234.5 · `+S/3.50` → 3.5 · `-S/2` → −2 */
 function monto(raw: string | undefined): number | null {
   if (!raw) return null;
-  const limpio = raw.replace(/\s/g, "").replace(/S\//i, "").replace(/,/g, "");
-  const n = Number(limpio);
-  return Number.isFinite(n) ? n : null;
+  // El signo va antes o DESPUÉS de «S/»: el Arqueo express escribe
+  // `formatCurrency(-15.5)` = «S/ -15.50» y se leía como «sin diferencia»
+  // (17-10); también el «−» tipográfico.
+  const limpio = raw.replace(/\s/g, "").replace(/S\//i, "").replace(/,/g, "").replace(/−/g, "-");
+  const n = Number(limpio.replace(/[+-]/g, ""));
+  if (!Number.isFinite(n)) return null;
+  return limpio.includes("-") ? -n : n;
 }
 
 function buscar(texto: string, etiqueta: string): number | null {
   // `Billetes: S/450.00` en el Arqueo Guiado, pero `contado S/473.50` (sin dos
   // puntos) en el conteo manual: los dos formatos los escribe el mismo sistema.
-  const re = new RegExp(`${etiqueta}\\s*:?\\s*([+-]?\\s*S/\\s*[\\d.,]+)`, "i");
+  const re = new RegExp(`${etiqueta}\\s*:?\\s*([+\\-−]?\\s*S/\\s*[+\\-−]?\\s*[\\d.,]+)`, "i");
   return monto(re.exec(texto)?.[1]);
 }
 

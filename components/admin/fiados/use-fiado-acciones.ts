@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatDateLong } from "@/lib/format";
 import type { DatosCobro, Fiado, ReciboData } from "./tipos";
+import { diaLeido } from "./fechas";
 
 /** A quién se le cobra: un fiado puntual o el total de un cliente (del más viejo al más nuevo). */
 export type Cobrando =
@@ -119,6 +120,7 @@ export function useFiadoAcciones(alCambiar: () => void) {
       // En el recibo va lo que el servidor aplicó, no lo pedido (por cliente puede ser menos).
       let pagado = monto;
       let saldoAnterior: number, saldoActual: number, nombre: string, telefono: string, sinCaja = false;
+      let alcance: Pick<ReciboData, "alcance" | "deudaOriginal" | "compraDel" | "compras">;
       if (cobrando.tipo === "fiado") {
         const f = cobrando.fiado;
         const res = await fetch(`/api/fiados/${f.id}/pagar`, {
@@ -132,6 +134,7 @@ export function useFiadoAcciones(alCambiar: () => void) {
         saldoAnterior = f.saldo; saldoActual = updated.saldo;
         nombre = f.customerName || f.customerId; telefono = f.customerId;
         if (selected?.id === f.id) setSelected(updated);
+        alcance = { alcance: "compra", deudaOriginal: f.total, compraDel: diaLeido(f.createdAt) };
       } else {
         const res = await fetch("/api/fiados/cobrar", {
           method: "POST",
@@ -139,17 +142,19 @@ export function useFiadoAcciones(alCambiar: () => void) {
           body: JSON.stringify({ customerPhone: cobrando.telefono, monto, notas: nota, metodo, aCaja, nombre: cobrando.nombre }),
         });
         if (!res.ok) throw new Error(await leerError(res, "Error al cobrar"));
-        const r = (await res.json()) as { totalCobrado: number } & RespuestaCaja;
+        const r = (await res.json()) as { totalCobrado: number; payments?: unknown[] } & RespuestaCaja;
         sinCaja = !!r.caja?.sinCaja;
         pagado = r.totalCobrado;
         saldoAnterior = cobrando.saldo; saldoActual = Math.max(0, cobrando.saldo - r.totalCobrado);
         nombre = cobrando.nombre; telefono = cobrando.telefono;
+        alcance = { alcance: "cliente", compras: r.payments?.length ?? 1 };
       }
       if (aCaja && sinCaja) toast.warning("Cobro anotado, pero no había caja abierta: no entró a la caja.");
       setReciboData({
         clienteNombre: nombre, montoPagado: pagado, saldoAnterior, saldoActual,
         fecha: formatDateLong(new Date()), clientePhone: telefono,
         metodo, caja: aCaja ? (sinCaja ? "sin-caja" : "entro") : undefined,
+        ...alcance,
       });
       setShowRecibo(true);
       setCobrando(null);

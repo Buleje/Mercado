@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { cachedJson } from "@/lib/client-cache-fetch";
 import { logger } from "@/lib/logger";
 
-export const FIJABLES = ["express", "whatsapp", "historial", "devolucion", "trueque", "repetir", "reimprimir", "foto"] as const;
+export const FIJABLES = ["express", "whatsapp", "historial", "deuda", "emitir", "devolucion", "trueque", "repetir", "reimprimir", "foto"] as const;
 export type AccionFijable = (typeof FIJABLES)[number];
 export const TOPE_FIJADAS = 4;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Banknote, Clock, Loader2, Lock } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
@@ -12,6 +12,9 @@ import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BotonCancelar, MarcoModalCaja, mensajeDeError } from "./MarcoModalCaja";
 import { ResultadoACiegas } from "./ArqueoGuiadoPartes";
+import { BotonConstancia, PendientesAntesDeCerrar, imprimirConstancia, useQuienCierra } from "./CierrePendientes";
+import { pendientesDelCierre, type DestinoPendiente, type PendienteDeCierre } from "@/lib/caja/constancia-cierre";
+import type { ConciliacionConVentas } from "@/lib/caja/parte-del-dia";
 import { fmt, type CashRegister, type StatsCaja } from "./tipos";
 
 const DENOMS = [200, 100, 50, 20, 10, 5, 2, 1, 0.5, 0.2, 0.1];
@@ -21,10 +24,23 @@ interface Props {
   stats: StatsCaja | null;
   onCerrar: () => void;
   onHecho: () => void;
+  /** Cuadre con ventas del parte del día (ventas que no pasaron por la caja). */
+  conciliacion?: ConciliacionConVentas | null;
+  negocio?: string;
+  tolerancia?: number;
+  /** Lleva a la sección donde se arregla un pendiente (cierra el modal). */
+  onIr?: (destino: DestinoPendiente) => void;
+}
+
+/** Lo que devolvió el cierre: la caja cerrada DEL SERVIDOR y los pendientes de ese momento. */
+interface Cerrada {
+  caja: CashRegister;
+  yaEstabaCerrada: boolean;
+  pendientes: PendienteDeCierre[];
 }
 
 /** Contar el efectivo final y cerrar la caja del día. */
-export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho }: Props) {
+export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho, conciliacion, negocio, tolerancia = 0, onIr }: Props) {
   const [monto, setMonto] = useState("");
   const [notas, setNotas] = useState("");
   const [cerrando, setCerrando] = useState(false);
@@ -43,8 +59,25 @@ export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho }: Props) {
   /* Cierre a ciegas: sin esperado, ni efectivo vendido, ni diferencia hasta cerrar. */
   const { ciego } = useCierreACiegas();
   const oculto = ciego !== false;
-  const [resultado, setResultado] = useState<{ esperado: number; contado: number } | null>(null);
+  const [cerrada, setCerrada] = useState<Cerrada | null>(null);
   const listo = () => { onHecho(); onCerrar(); };
+  const responsable = useQuienCierra();
+  /* M30: lo que el cierre va a fijar tal como está (a ciegas, sin montos que delaten el esperado). */
+  const pendientes = useMemo(
+    () => pendientesDelCierre({ ahora: new Date(), abiertaEn: caja.openedAt, esperado, movimientos: caja.movements, conciliacion, aCiegas: oculto }, formatCurrency),
+    [caja.openedAt, caja.movements, esperado, conciliacion, oculto],
+  );
+  const constancia = () => {
+    if (!cerrada) return;
+    const ok = imprimirConstancia(cerrada.caja, {
+      negocio: negocio ?? "",
+      responsable,
+      tolerancia,
+      pendientes: cerrada.pendientes,
+      yaEstabaCerrada: cerrada.yaEstabaCerrada,
+    });
+    setError(ok ? null : "Tu navegador bloqueó la ventana de impresión: permite las ventanas emergentes de este sitio y vuelve a tocar «Imprimir constancia».");
+  };
 
   const sumarBillete = (d: number) => {
     setDenominaciones((prev) => ({ ...prev, [String(d)]: (prev[String(d)] ?? 0) + 1 }));
@@ -61,15 +94,27 @@ export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho }: Props) {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "close", closingAmount: Number(monto) || 0, notes: notas || undefined }),
       });
+      /* Reintento de un cierre que SÍ se hizo (la respuesta se perdió): el
+         servidor devuelve ese primer cierre y la constancia sale de él. */
+      if (res.status === 409) {
+        const j = (await res.clone().json().catch(() => null)) as { yaCerrada?: boolean; caja?: CashRegister } | null;
+        if (j?.yaCerrada && j.caja) {
+          setCerrada({ caja: j.caja, yaEstabaCerrada: true, pendientes });
+          return;
+        }
+      }
       // Si el cierre falla, el conteo NO se borra: volver a contarlo todo por un 503 es lo que hacía que nadie confiara.
       if (!res.ok) {
         setError(await mensajeDeError(res, "No se pudo cerrar la caja"));
         return;
       }
-      /* A ciegas: primero el resultado; la caja se relee al tocar «Listo» (si no, el modal se desmonta). */
-      if (oculto) { setResultado({ esperado, contado: Number(monto) || 0 }); return; }
-      onHecho();
-      onCerrar();
+      /* Primero el resultado y la constancia; la caja se relee al tocar «Listo» (si no, el modal se desmonta). */
+      const reg = (await res.json().catch(() => null)) as CashRegister | null;
+      setCerrada({
+        caja: reg?.id ? reg : { ...caja, closingAmount: Number(monto) || 0, expectedAmount: esperado, closedAt: new Date().toISOString() },
+        yaEstabaCerrada: false,
+        pendientes,
+      });
     } catch (err) {
       console.warn("[caja] cerrar caja falló", err);
       setError("Sin conexión con el servidor — la caja NO se cerró y el conteo sigue acá.");
@@ -87,18 +132,34 @@ export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho }: Props) {
     ["Egresos manuales", fmt(stats?.totalOut ?? 0), "text-[var(--data-error-500)]"],
   ];
 
-  if (resultado) {
+  if (cerrada) {
+    const r = cerrada.caja;
     return (
       <MarcoModalCaja
         claveMemoria="caja-cerrar"
         titulo="Cerrar caja"
-        subtitulo="La caja quedó cerrada"
+        subtitulo={cerrada.yaEstabaCerrada ? "Esta caja ya estaba cerrada: es el primer cierre, no uno nuevo" : "La caja quedó cerrada"}
         icono={Lock}
         iconoClase="bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]"
         onCerrar={listo}
-        pie={<button type="button" onClick={listo} className={button({ variant: "primary", className: "flex-1 rounded-xl" })}>Listo</button>}
+        error={error}
+        pie={
+          <>
+            <BotonConstancia onClick={constancia} />
+            <button type="button" onClick={listo} className={button({ variant: "primary", className: "flex-1 rounded-xl" })}>Listo</button>
+          </>
+        }
       >
-        <ResultadoACiegas titulo="Caja cerrada con tu conteo" esperado={resultado.esperado} contado={resultado.contado} />
+        <ResultadoACiegas
+          titulo={cerrada.yaEstabaCerrada ? "El cierre que quedó guardado" : "Caja cerrada con tu conteo"}
+          esperado={Number(r.expectedAmount ?? esperado)}
+          contado={Number(r.closingAmount ?? (Number(monto) || 0))}
+        />
+        {cerrada.pendientes.length > 0 && (
+          <p className="text-sm text-[var(--text-secondary)]">
+            {cerrada.pendientes.length === 1 ? "1 pendiente quedó escrito" : `${cerrada.pendientes.length} pendientes quedaron escritos`} en la constancia.
+          </p>
+        )}
       </MarcoModalCaja>
     );
   }
@@ -188,6 +249,8 @@ export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho }: Props) {
         {denomTotal > 0 && <p className="text-center text-sm font-extrabold text-primary">Contado por denominaciones: {fmt(denomTotal)}</p>}
       </div>
 
+      {/* Pegado al monto: el autoFocus del monto lleva el scroll hasta acá y arriba no se vería. */}
+      <PendientesAntesDeCerrar pendientes={pendientes} onIr={onIr} />
       <Field label="Monto contado en caja" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
         {(id) => (
           <>

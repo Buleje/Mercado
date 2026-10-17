@@ -11,7 +11,7 @@ const H = vi.hoisted(() => ({
   auth: { tenantId: "t1", username: "brandon", role: "admin" } as unknown,
 }));
 
-vi.mock("@/lib/prisma", () => ({ prisma: { activityLog: { findMany: vi.fn(async () => []) } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { activityLog: { findMany: vi.fn(async () => []) }, cashMovement: { findMany: vi.fn(async () => []) } } }));
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: vi.fn(async () => H.auth) }));
 vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: () => null }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
@@ -82,5 +82,26 @@ describe("GET /api/cash-registers/historial", () => {
     H.auth = NextResponse.json({ error: "No autorizado" }, { status: 401 });
     expect((await get("entity=caja")).status).toBe(401);
     expect(findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("M28 · «Ver caja» desde la bitácora", () => {
+  it("cada fila trae su caja: la de abrir/cerrar es su entityId; la de un movimiento, la del movimiento (del mismo tenant)", async () => {
+    const t = new Date("2026-10-17T15:00:00.000Z");
+    findMany.mockResolvedValueOnce([
+      { id: "l1", action: "Abrir", entity: "caja", entityId: "c1", detail: "Apertura de caja con S/200.00", user: "rosa", createdAt: t },
+      { id: "l2", action: "Editar", entity: "movimiento_caja", entityId: "m1", detail: "Medio corregido", user: "brandon", createdAt: t },
+      { id: "l3", action: "Crear", entity: "movimiento_caja", entityId: "m-borrado", detail: "Egreso", user: "rosa", createdAt: t },
+    ] as never);
+    const movs = vi.mocked(prisma.cashMovement.findMany);
+    movs.mockResolvedValueOnce([{ id: "m1", cashRegisterId: "c1" }] as never);
+    const filas = await CashAuditTrailDB.list("t1");
+    expect(filas.map((f) => f.cajaId)).toEqual(["c1", "c1", null]);
+    expect(movs.mock.calls[0][0]).toMatchObject({ where: { id: { in: ["m1", "m-borrado"] }, cashRegister: { tenantId: "t1" } } });
+  });
+
+  it("sin filas de movimientos no consulta movimientos", async () => {
+    await CashAuditTrailDB.list("t1", { soloCaja: true });
+    expect(vi.mocked(prisma.cashMovement.findMany)).not.toHaveBeenCalled();
   });
 });

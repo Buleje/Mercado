@@ -38,6 +38,7 @@ vi.mock("@/lib/db/cash-registers-movements.db", () => ({
 }));
 
 import { PATCH } from "@/app/api/cash-registers/[id]/movements/[movementId]/route";
+import { leerEntradaDeCaja } from "@/lib/caja/bitacora-cambios";
 
 const patch = (body: unknown, ids = { id: "c1", movementId: "m1" }) =>
   PATCH(
@@ -126,5 +127,29 @@ describe("qué devuelve y qué deja registrado", () => {
     expect(detalle).toContain("Efectivo → Transferencia");
     expect(detalle).toContain("S/-6424.00 → S/-2782.00");
     expect(detalle).toContain("ADL-2026-0001");
+  });
+});
+
+describe("M28 · el motivo del cambio queda en la bitácora", () => {
+  it("con motivo: va al final del renglón en una línea, y la bitácora lo lee con el antes → después", async () => {
+    const r = await patch({ method: "transferencia", motivo: "  pagó por BCP,\n se anotó en efectivo " });
+    expect(r.status).toBe(200);
+    const detalle = (H.logActivity.mock.calls[0] as unknown as unknown[])[2] as string;
+    expect(detalle).toMatch(/ — motivo: pagó por BCP, se anotó en efectivo$/);
+    const leida = leerEntradaDeCaja("Editar", detalle);
+    expect(leida.motivo).toBe("pagó por BCP, se anotó en efectivo");
+    expect(leida.cambios).toEqual([
+      { campo: "Medio", antes: "Efectivo", despues: "Transferencia" },
+      { campo: "Esperado", antes: "−S/ 6424.00", despues: "−S/ 2782.00" },
+    ]);
+  });
+
+  it("sin motivo sigue igual; un motivo de más de 200 letras → 400 sin tocar la base", async () => {
+    await patch({ method: "transferencia", motivo: "   " });
+    expect((H.logActivity.mock.calls[0] as unknown as unknown[])[2]).not.toContain("motivo");
+    vi.clearAllMocks();
+    const r = await patch({ method: "transferencia", motivo: "x".repeat(201) });
+    expect(r.status).toBe(400);
+    expect(H.cambiarMedio).not.toHaveBeenCalled();
   });
 });

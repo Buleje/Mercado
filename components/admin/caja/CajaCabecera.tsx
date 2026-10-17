@@ -42,9 +42,25 @@ interface Props {
   sinMas?: boolean;
 }
 
-/** «Más» de Caja: arqueos, imprimir, exportar, WhatsApp, tolerancia, refrescar. */
-export function MenuMasCaja({ acciones }: { acciones: MenuAccion[] }) {
-  return <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} size="md" compactoEnMovil title="Arqueos, imprimir, exportar y ajustes" />;
+/**
+ * «Más» de Caja: arqueos, imprimir, exportar, WhatsApp, tolerancia, refrescar.
+ * `cuadrado` = sólo los tres puntos, de 48 px: en la fila de la caja abierta
+ * (Indicadores + Ingreso + Retiro + Adelanto + Cerrar) el «Más» con texto caía
+ * solo a un segundo renglón a 1280 px (medido 17-10: faltaban 49 px).
+ */
+export function MenuMasCaja({ acciones, cuadrado = false }: { acciones: MenuAccion[]; cuadrado?: boolean }) {
+  return (
+    <ActionMenu
+      label="Más"
+      icon={MoreHorizontal}
+      actions={acciones}
+      size="md"
+      compactoEnMovil
+      soloIcono={cuadrado}
+      className={cuadrado ? "w-12!" : ""}
+      title="Más: arqueos, imprimir, exportar y ajustes"
+    />
+  );
 }
 
 export function CajaCabecera({ vista, onVista, hoyConSecciones, titulo, estado, acciones, extra, principal, sinMas }: Props) {

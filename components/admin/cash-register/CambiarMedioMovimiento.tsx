@@ -39,7 +39,7 @@ interface Props {
 }
 
 export function CambiarMedioMovimiento({ cashRegisterId, movimiento, esperadoActual, formato, onCambiado }: Props) {
-  const { confirm, notice } = useConfirm();
+  const { prompt, notice } = useConfirm();
   const [guardando, setGuardando] = useState(false);
   const selectId = useId();
   /* Cierre a ciegas (0ddc10d13): quien cuenta sin ver lo esperado tampoco lo ve acá — la
@@ -52,7 +52,9 @@ export function CambiarMedioMovimiento({ cashRegisterId, movimiento, esperadoAct
   async function elegir(nuevo: MedioDeCaja) {
     const cambio = esperadoTrasCambiarMedio(esperadoActual, movimiento, nuevo);
     const tipo = movimiento.type === "egreso" ? "egreso" : "ingreso";
-    const ok = await confirm({
+    /* M28: el porqué queda en la bitácora con el antes y el después. Opcional:
+       exigirlo es una regla nueva (decide Brandon). */
+    const motivo = await prompt({
       title: `¿Pasar este ${tipo} de ${nombreDelMedio(actual)} a ${NOMBRE_DEL_MEDIO_DE_CAJA[nuevo]}?`,
       description:
         `${formato(movimiento.amount)}${movimiento.description ? ` · ${movimiento.description}` : ""}. ` +
@@ -60,14 +62,16 @@ export function CambiarMedioMovimiento({ cashRegisterId, movimiento, esperadoAct
         " Queda registrado quién lo cambió.",
       intent: "warning",
       confirmLabel: `Sí, pasar a ${NOMBRE_DEL_MEDIO_DE_CAJA[nuevo]}`,
+      label: "Motivo (opcional)",
+      placeholder: "Ej.: el cliente pagó con Yape, se anotó en efectivo",
     });
-    if (!ok) return;
+    if (motivo === null) return;
     setGuardando(true);
     try {
       const res = await fetch(`/api/cash-registers/${cashRegisterId}/movements/${movimiento.id}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ method: nuevo }),
+        body: JSON.stringify({ method: nuevo, ...(motivo.trim() ? { motivo: motivo.trim().slice(0, 200) } : {}) }),
       });
       const body: { error?: unknown; esperadoDespues?: unknown } = await res.json().catch(() => ({}));
       if (!res.ok) {

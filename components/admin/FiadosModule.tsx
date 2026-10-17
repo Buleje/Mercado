@@ -208,7 +208,7 @@ export default function FiadosModule() {
         {activeTab === "deudores" && (
           <FiadosDeudoresTabla estado={estado}
             selectedIds={masivo.selectedIds} toggleSelect={masivo.toggleSelect} openDetail={acc.openDetail}
-            onNuevo={nuevoFiado} onRecordado={fetchFiados} />
+            onNuevo={nuevoFiado} onRecordado={fetchFiados} gestiones={cob.gestiones} />
         )}
       </div>
 

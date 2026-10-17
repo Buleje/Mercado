@@ -23,6 +23,12 @@ export interface CashTrailEntry {
   detail: string;
   user: string;
   createdAt: string;
+  /**
+   * La caja a la que pertenece (M28): la misma `entityId` en abrir/cerrar; la
+   * caja del movimiento en ingresos, egresos, arqueos y cambios de medio.
+   * `null` si el movimiento ya no existe.
+   */
+  cajaId: string | null;
 }
 
 /** Entidades que cuentan como «tocar la caja». */
@@ -65,6 +71,20 @@ export class CashAuditTrailDB {
       select: { id: true, action: true, entity: true, entityId: true, detail: true, user: true, createdAt: true },
     });
 
+    /* «Ver caja» desde una fila de movimiento: el registro guarda el id del
+       movimiento, no el de la caja. Una sola consulta, acotada al tenant. */
+    const idsDeMovimiento = Array.from(
+      new Set(rows.filter((r) => r.entity === "movimiento_caja" && r.entityId).map((r) => r.entityId as string)),
+    );
+    const cajaDelMovimiento = new Map<string, string>();
+    if (idsDeMovimiento.length > 0) {
+      const movs = await prisma.cashMovement.findMany({
+        where: { id: { in: idsDeMovimiento }, cashRegister: { tenantId } },
+        select: { id: true, cashRegisterId: true },
+      });
+      for (const m of movs) cajaDelMovimiento.set(m.id, m.cashRegisterId);
+    }
+
     return rows.map((r) => ({
       id: r.id,
       action: r.action,
@@ -73,6 +93,7 @@ export class CashAuditTrailDB {
       detail: r.detail,
       user: r.user,
       createdAt: r.createdAt.toISOString(),
+      cajaId: r.entity === "caja" ? r.entityId : r.entityId ? (cajaDelMovimiento.get(r.entityId) ?? null) : null,
     }));
   }
 }

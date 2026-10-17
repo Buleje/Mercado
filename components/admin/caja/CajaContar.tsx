@@ -16,8 +16,15 @@ import DesdeTurno from "@/components/admin/arqueo/DesdeTurno";
 import { useArqueos } from "@/components/admin/arqueo/use-arqueos";
 import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import { useCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
+import { PistasDelDescuadre } from "./PistasDelDescuadre";
+import type { CashMovement } from "./tipos";
 
-export function CajaContar({ onIrACaja }: { onIrACaja: () => void }) {
+export function CajaContar({ onIrACaja, movimientos, onVerMovimiento }: {
+  onIrACaja: () => void;
+  /** Movimientos de la caja abierta: para las pistas de «¿Por qué no cuadra?» (M60). */
+  movimientos: readonly CashMovement[];
+  onVerMovimiento: (buscar: string) => void;
+}) {
   const { loading, error, reload, openRegister, openAudit, openExpectedAmount } = useArqueos();
   /* En su propia sección el contador arranca abierto: es lo único que hay. */
   const [abierto, setAbierto] = useState(true);
@@ -51,6 +58,7 @@ export function CajaContar({ onIrACaja }: { onIrACaja: () => void }) {
           ciego={ciego}
         />
       )}
+      <PistasDelDescuadre conteo={openAudit?.conteos[0] ?? null} movimientos={movimientos} ciego={ciego} onVerMovimiento={onVerMovimiento} />
     </div>
   );
 }

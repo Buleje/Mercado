@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LoadingState } from "@buleje/design-system";
 import { CheckCircle, MessageCircle, Search } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { button } from "@/components/ui-system/button-variants";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,8 @@ import { waLink } from "@/lib/whatsapp-link";
 import { TRAMOS } from "@/lib/fiados/gestion-cobranza";
 import { SIN_PLAZO, cajonDelDeudor, type CajonDeudor } from "@/lib/fiados/plazo";
 import { deudoresDeCobranza, ordenarPorUrgencia, type DeudorCobranza } from "@/lib/fiados/urgencia-cobranza";
+import { notaDelEnvio, partirRonda, recordatoriosDeHoy } from "@/lib/fiados/recordatorio-revisable";
+import { anotarRecordatorio, useRecordarPorWhatsApp } from "../recordar";
 import type { Cobranza } from "../use-cobranza";
 import { estaAbierto, type Fiado } from "../tipos";
 import FilaDeudor from "./FilaDeudor";
@@ -53,6 +56,8 @@ export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecorda
   const [anotando, setAnotando] = useState<DeudorCobranza | null>(null);
   const [enLlamada, setEnLlamada] = useState(false);
   const [enviandoRonda, setEnviandoRonda] = useState(false);
+  const { confirm, notice } = useConfirm();
+  const recordar = useRecordarPorWhatsApp(cob.gestiones);
 
   const activos = useMemo(() => fiados.filter((f) => estaAbierto(f) && f.saldo > 0), [fiados]);
   const deudores = useMemo(() => deudoresDeCobranza(activos), [activos]);
@@ -93,14 +98,37 @@ export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecorda
     onRecordado?.();
   };
 
+  /*
+   * M36: la ronda dice a quién le va a escribir (con un ejemplo del texto) y se
+   * salta a quien ya recibió un recordatorio HOY; antes abría todos los chats
+   * de una y repetía el del día. La gestión guarda el texto que salió.
+   */
   const mandarLaRonda = async () => {
+    const { enviar, yaHoy } = partirRonda(filtrados.filter((x) => tanda.has(x.id)), recordatoriosDeHoy(cob.gestiones));
+    const nombres = (l: DeudorCobranza[]) => `${l.slice(0, 6).map((d) => d.nombre).join(", ")}${l.length > 6 ? ` y ${l.length - 6} más` : ""}`;
+    if (enviar.length === 0) {
+      await notice({ title: "A todos ya les escribiste hoy", description: `${nombres(yaHoy)}. La ronda no repite el recordatorio del día; si hace falta, escríbele desde su fila.`, intent: "info" });
+      return;
+    }
+    const ok = await confirm({
+      title: `Escribirle a ${enviar.length} ${enviar.length === 1 ? "cliente" : "clientes"}`,
+      description: [
+        `Se abre un chat por cliente con el mensaje de su tramo: ${nombres(enviar)}.`,
+        `Ejemplo para ${enviar[0].nombre}: «${cob.mensajeDe(enviar[0])}»`,
+        yaHoy.length ? `Se salta ${yaHoy.length === 1 ? "a 1" : `a ${yaHoy.length}`} que ya ${yaHoy.length === 1 ? "recibió" : "recibieron"} su recordatorio hoy: ${nombres(yaHoy)}.` : "",
+      ].filter(Boolean).join(" "),
+      intent: "info",
+      confirmLabel: "Abrir los chats",
+    });
+    if (!ok) return;
     setEnviandoRonda(true);
     try {
-      for (const d of filtrados.filter((x) => tanda.has(x.id))) {
-        const url = waLink(d.telefono, cob.mensajeDe(d));
+      for (const d of enviar) {
+        const texto = cob.mensajeDe(d);
+        const url = waLink(d.telefono, texto);
         if (!url) continue;
         window.open(url, "_blank", "noopener,noreferrer");
-        await cob.anotarRapido(d.id, "RECORDATORIO");
+        await anotarRecordatorio(d.id, notaDelEnvio(texto, "la ronda"));
         await new Promise((r) => setTimeout(r, 400));
       }
       setTanda(new Set());
@@ -181,7 +209,7 @@ export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecorda
               onAnotar={() => setAnotando(d)}
               onCobrar={() => onCobrar(d)}
               onVerCuenta={onVerCuenta ? () => onVerCuenta(d) : undefined}
-              onEscrito={alEscribir}
+              onEscribir={() => void recordar({ ...d, texto: cob.mensajeDe(d) }, alEscribir)}
               mensaje={cob.mensajeDe(d)}
             />
           ))}

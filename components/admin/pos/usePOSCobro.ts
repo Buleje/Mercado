@@ -4,6 +4,7 @@ import type { PaymentLine } from "@/components/admin/pos/POSPaymentModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { LastSaleDetails, ExtraCobro } from "@/components/admin/pos/pos-shared";
 import type { POSCarrito } from "@/components/admin/pos/usePOSCarrito";
+import { claveDeVenta } from "@/components/admin/pos/cola-offline";
 
 interface UsePOSCobroOpciones {
   carrito: POSCarrito;
@@ -64,6 +65,10 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
     const effectiveChange = Math.max(0, effectivePaid - effectiveTotal);
 
     const salePayload = {
+      // M59: la clave nace con la venta y viaja en el primer POST; si se
+      // pierde la respuesta y la venta va a la cola, la cola usa la MISMA y
+      // el servidor devuelve la que ya existía en vez de cobrarla dos veces.
+      idempotencyKey: claveDeVenta(),
       items: cart.map(i => ({
         productId: i.product.id,
         name: i.product.name,
@@ -145,7 +150,7 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
     } catch {
       // Offline fallback
       try {
-        posOffline.addToQueue(salePayload);
+        posOffline.addToQueue(salePayload, { total: effectiveTotal });
         playSaleComplete(effectiveTotal);
         setShowPayment(false);
         setSaleComplete({ id: `offline_${Date.now()}`, change: effectiveChange });

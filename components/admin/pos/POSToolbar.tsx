@@ -4,8 +4,9 @@ import { useRef, useState, type ReactNode } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import {
   ScanBarcode, Camera, Zap, MessageCircle, History, RotateCcw, RefreshCcw, Maximize2, Minimize2,
-  Type, Volume2, VolumeX, Printer, WifiOff, AlertTriangle, Unlock, Pin, Keyboard,
+  Type, Volume2, VolumeX, Printer, WifiOff, AlertTriangle, Unlock, Pin, Keyboard, HandCoins, Receipt,
 } from "@buleje/design-system/icons";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -152,6 +153,10 @@ export default function POSToolbar(props: POSToolbarProps) {
       hint: `${fmt(lastSaleInfo.total)} · hace ${Math.max(1, lastSaleInfo.minutesAgo)} min`, icon: Printer,
       onSelect: () => { window.open(`/venta/${lastSaleInfo.id}/recibo`, "_blank", "noopener,noreferrer"); },
     }] : []),
+    /* H06: cobrar un fiado y emitir sin salir a buscar el módulo. Las ventas del
+       mostrador no se facturan en esa ventana (sólo pedidos): va a Comprobantes. */
+    { id: "deuda", seccion: "Cobrar", label: "Cobrar una deuda", hint: "Me deben: quién te debe y cuánto; el cobro entra a la caja", icon: HandCoins, onSelect: () => { irAEnlace("/admin?tab=ventas-caja&vista=cuentas-cobrar&sub=cobranza"); } },
+    { id: "emitir", seccion: "Cobrar", label: "Emitir boleta o factura", hint: "Comprobantes: elige el pedido y emite", icon: Receipt, onSelect: () => { irAEnlace("/admin?tab=facturacion&vista=facturas"); } },
     { id: "devolucion", seccion: "Cobrar", label: "Devolución", icon: RotateCcw, tone: "danger", onSelect: props.onDevolucion },
     { id: "pantalla", seccion: "Pantalla", label: expanded ? "Salir de pantalla completa" : "Pantalla completa", icon: expanded ? Minimize2 : Maximize2, onSelect: () => props.setExpanded(!expanded) },
     ...TAMANOS.map((t) => ({ id: `letra-${t.id}`, seccion: "Pantalla", label: t.label, icon: Type, activo: fontSize === t.id, onSelect: () => props.changeFontSize(t.id) })),

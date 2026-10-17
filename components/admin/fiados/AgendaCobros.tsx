@@ -18,12 +18,11 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
 import { formatCurrency } from "@/lib/format";
 import { cn, limaDateKey } from "@/lib/utils";
-import { waLink } from "@/lib/whatsapp-link";
 import type { DeudorCobranza } from "@/lib/fiados/urgencia-cobranza";
 import CalendarioVencimientos from "./CalendarioVencimientos";
 import { armarAgenda, calendarioDeAgenda, totalPorCobrar, type ItemAgenda as Item } from "./cifras-me-deben";
 import { diaLeido, diasEntre } from "./fechas";
-import { anotarRecordatorio } from "./recordar";
+import { useRecordarPorWhatsApp } from "./recordar";
 import type { Cobranza } from "./use-cobranza";
 import type { Fiado } from "./tipos";
 
@@ -39,6 +38,7 @@ type Props = {
 
 export default function AgendaCobros({ fiados, cob, onCobrarCliente, onVerFiado, onRecordado }: Props) {
   const [elegido, setElegido] = useState<string | null>(null);
+  const recordar = useRecordarPorWhatsApp(cob.gestiones);
   const hoy = limaDateKey();
 
   /* `cob.promesas` ya viene sólo con quien todavía debe: la misma lista que cuentan los Indicadores. */
@@ -56,11 +56,7 @@ export default function AgendaCobros({ fiados, cob, onCobrarCliente, onVerFiado,
   const hayAlgo = grupos.some((g) => g.items.length > 0);
 
   const escribir = (i: Item) => {
-    const url = waLink(i.deudor.telefono, cob.mensajeDe(i.deudor));
-    if (!url) return;
-    window.open(url, "_blank", "noopener,noreferrer");
-    void anotarRecordatorio(i.deudor.telefono).then((ok) => {
-      if (!ok) return;
+    void recordar({ ...i.deudor, texto: cob.mensajeDe(i.deudor) }, () => {
       void cob.cargarGestiones();
       onRecordado?.();
     });

@@ -18,7 +18,6 @@ import { explicarAtraso, type DeudorCobranza } from "@/lib/fiados/urgencia-cobra
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { diaLeido } from "../fechas";
-import { anotarRecordatorio } from "../recordar";
 
 const hace = (dias: number) => (dias <= 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} d`);
 
@@ -39,7 +38,7 @@ export default function FilaDeudor({
   onAnotar,
   onCobrar,
   onVerCuenta,
-  onEscrito,
+  onEscribir,
   mensaje,
 }: {
   deudor: DeudorCobranza;
@@ -57,8 +56,8 @@ export default function FilaDeudor({
   onCobrar: () => void;
   /** Abre su cuenta entera (compras, abonos, gestiones) en la ficha lateral. */
   onVerCuenta?: () => void;
-  /** Se anotó el recordatorio en la bitácora (para refrescar «anotado hoy»). */
-  onEscrito?: () => void;
+  /** Abre la vista previa del recordatorio (texto editable) y, al confirmar, WhatsApp. */
+  onEscribir: () => void;
   /** El texto que se le manda, según su tramo de atraso. */
   mensaje: string;
 }) {
@@ -155,12 +154,12 @@ export default function FilaDeudor({
         <a href={`tel:${d.telefono.replace(/\D/g, "")}`} title="Llamar" aria-label={`Llamar a ${d.nombre}`} className={BOTON_ICONO}>
           <Phone className="h-5 w-5" aria-hidden />
         </a>
-        <a href={wa ?? "#"} target="_blank" rel="noopener noreferrer"
-          onClick={() => { if (wa) void anotarRecordatorio(d.telefono).then((ok) => { if (ok) onEscrito?.(); }); }}
-          title="Escribir por WhatsApp con tu mensaje de este tramo" aria-label={`Escribir a ${d.nombre} por WhatsApp`}
-          className={cn(BOTON_ICONO, "bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)]")}>
+        <button type="button" onClick={onEscribir} disabled={!wa}
+          title={wa ? "Escribir por WhatsApp con tu mensaje de este tramo (lo revisas antes)" : "Sin celular válido para WhatsApp"}
+          aria-label={`Escribir a ${d.nombre} por WhatsApp`} data-qa="fiado-escribir"
+          className={cn(BOTON_ICONO, "bg-primary/12 text-[var(--accent-ink)] disabled:opacity-50 dark:text-[var(--accent)]")}>
           <MessageCircle className="h-5 w-5" aria-hidden />
-        </a>
+        </button>
         <button type="button" onClick={onCobrar} className={button({ variant: "secondary", className: "gap-1.5 rounded-xl px-4 font-bold" })}>
           <DollarSign className="h-4 w-4" aria-hidden /> Cobrar
         </button>

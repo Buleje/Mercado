@@ -19,7 +19,7 @@ import { waLink } from "@/lib/whatsapp-link";
 import { formatCurrency, formatDate, formatDateNumeric, formatTime } from "@/lib/format";
 import { tenantCacheKey } from "@/lib/tenant-cache";
 import { FiadoStreakBadge } from "./FiadoBadges";
-import { diasDeAtraso, recordarPorWhatsApp } from "./recordar";
+import { diasDeAtraso, useRecordarPorWhatsApp } from "./recordar";
 import { STATUS_META, estaAbierto, type Fiado, type ReciboData } from "./tipos";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import type { Gestion, PromesaVigente } from "@/lib/fiados/gestion-cobranza";
@@ -47,6 +47,7 @@ type Props = {
 
 export default function FiadoDetalleSheet({ selected, onCerrar, fiados, detailLoading, onCobrar, onCompromiso, onRecordado, pestana: panelTab, onPestana: setPanelTab, gestiones, promesa, onElegir, onVerRecibo }: Props) {
   const sheetPanelRef = useRef<HTMLDivElement>(null);
+  const recordarPorWhatsApp = useRecordarPorWhatsApp(gestiones);
   const sheetTitleId = useId();
   // El Escape central de FiadosModule cierra la ficha: el hook sólo da foco inicial + trampa de Tab.
   useModalAccesible(sheetPanelRef, { cerrarConEscape: false, activo: !!selected });
@@ -231,7 +232,7 @@ export default function FiadoDetalleSheet({ selected, onCerrar, fiados, detailLo
                         </button>
                         <button
                           type="button"
-                          onClick={() => recordarPorWhatsApp({ telefono: selected.customerId, nombre: selected.customerName || selected.customerId, saldo: selected.saldo, dias: diasDeAtraso(selected) }, onRecordado)}
+                          onClick={() => void recordarPorWhatsApp({ telefono: selected.customerId, nombre: selected.customerName || selected.customerId, saldo: selected.saldo, dias: diasDeAtraso(selected) }, onRecordado)}
                           className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary/12 px-4 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
                         >
                           <MessageCircle className="h-4 w-4" />

@@ -69,4 +69,11 @@ describe("leerNotasArqueo", () => {
     expect(leerNotasArqueo(undefined).hayDatos).toBe(false);
     expect(leerNotasArqueo("").hayDatos).toBe(false);
   });
+
+  it("el signo después de «S/» (Arqueo express: formatCurrency) y el «−» tipográfico también son faltante", () => {
+    expect(leerNotasArqueo("10 oct., 12:10 | Esperado: S/ 162.90 | Contado: S/ 147.40 | Diferencia: S/ -15.50").diferencia).toBe(-15.5);
+    expect(leerNotasArqueo("Diferencia: −S/ 2.90").diferencia).toBe(-2.9);
+    expect(leerNotasArqueo("Diferencia: +S/ 3.50").diferencia).toBe(3.5);
+    expect(leerNotasArqueo("Conteo manual | Total efectivo: S/147.40 | Diferencia: -S/15.50").diferencia).toBe(-15.5);
+  });
 });

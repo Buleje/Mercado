@@ -51,6 +51,8 @@ import { POST as crearMovimiento } from "@/app/api/cash-registers/movements/rout
 import { htmlReporteDeCaja } from "@/lib/caja/reporte-impreso";
 import { anotarVentaEnCaja } from "@/lib/caja/anotar-venta";
 import { ConflictError } from "@/lib/api-error";
+import { logActivity } from "@/lib/activity-logger";
+import { leerEntradaDeCaja } from "@/lib/caja/bitacora-cambios";
 
 const MALO = `<img src=x onerror="fetch('/api/x?c='+document.cookie)">`;
 const patch = (body: unknown) =>
@@ -180,5 +182,48 @@ describe("5 · la alerta de arqueo salta con la caja abierta", () => {
     expect(n.title).toBe("Faltante en arqueo");
     /* El Yape no cuenta: esperado 150, no −350. */
     expect(n.body).toContain("esperado S/150.00");
+  });
+});
+
+describe("M30 · reintentar el cierre no dice «no encontrada»", () => {
+  it("la caja ya estaba cerrada → 409 con el primer cierre, sin volver a cerrar", async () => {
+    H.close.mockResolvedValue(null);
+    H.getById.mockResolvedValue({ id: "c1", closedAt: "2026-10-17T22:05:00.000Z", closingAmount: 180, expectedAmount: 184.9, difference: -4.9, movements: [] });
+    const r = await patch({ action: "close", closingAmount: 180 });
+    expect(r.status).toBe(409);
+    const j = await r.json();
+    expect(j).toMatchObject({ yaCerrada: true, caja: { id: "c1", closingAmount: 180 } });
+    expect(H.close).toHaveBeenCalledTimes(1);
+  });
+
+  it("la caja no existe (o es de otro negocio) → sigue siendo 404", async () => {
+    H.close.mockResolvedValue(null);
+    H.getById.mockResolvedValue(null);
+    const r = await patch({ action: "close", closingAmount: 180 });
+    expect(r.status).toBe(404);
+  });
+});
+
+describe("M28 · ingresos, egresos y arqueos desde la caja quedan en «Quién tocó la caja»", () => {
+  it("egreso por Yape: queda quién, cuánto, el medio y la descripción, con el id del movimiento", async () => {
+    const r = await patch({ action: "movement", type: "egreso", amount: 60, method: "yape", description: "Adelanto a Rosa" });
+    expect(r.status).toBe(201);
+    expect(vi.mocked(logActivity)).toHaveBeenCalledWith("Crear", "movimiento_caja", "Egreso manual de S/60.00 por Yape — Adelanto a Rosa", "m1", "cajero1", undefined, "t1");
+  });
+
+  it("arqueo: contado, esperado y diferencia, en el molde que lee la bitácora", async () => {
+    H.getById.mockResolvedValue({ id: "c1", openingAmount: 100, movements: [{ type: "venta", method: "efectivo", amount: 62.9 }] });
+    const r = await patch({ action: "arqueo", closingAmount: 160, notes: "conteo de la tarde" });
+    expect(r.status).toBe(201);
+    const [accion, entidad, detalle, entityId] = vi.mocked(logActivity).mock.calls[0];
+    expect([accion, entidad, entityId]).toEqual(["Arquear", "movimiento_caja", "m1"]);
+    expect(detalle).toBe("Arqueo con S/160.00 (esperado S/162.90, diferencia S/-2.90) — conteo de la tarde");
+    expect(leerEntradaDeCaja(accion, detalle).cambios.at(-1)).toMatchObject({ campo: "Faltante", despues: "S/ 2.90" });
+  });
+
+  it("un cobro de fiado suelto rechazado (422) no deja rastro", async () => {
+    const r = await patch({ action: "movement", type: "ingreso", amount: 20, description: "Cobro pendiente (fiado) Rosa" });
+    expect(r.status).toBe(422);
+    expect(vi.mocked(logActivity)).not.toHaveBeenCalled();
   });
 });

@@ -17,6 +17,7 @@
  * abre desde el detalle de cada cuadre.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { LoadingState } from "@buleje/design-system";
 import { AlertTriangle, Unlock } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
@@ -205,9 +206,13 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
      la misma lista que ya está cargada (no hay otro pedido). */
   const panel = { role: "tabpanel", id: ID_PANEL_CAJA, "aria-labelledby": idPestanaActiva(vista, !!caja) } as const;
 
-  const verParte = (id: string) => {
+  const verParte = async (id: string) => {
     const r = datos.registers.find((x) => x.id === id);
-    if (r) setDetalle(r);
+    if (r) return setDetalle(r);
+    /* M28: «Ver caja» desde la bitácora puede ser de una caja que ya no está en la lista. */
+    const res = await fetch(`/api/cash-registers/${encodeURIComponent(id)}`, { credentials: "include" }).catch(() => null);
+    if (res?.ok) setDetalle((await res.json()) as CashRegister);
+    else toast.error("No pudimos abrir esa caja.");
   };
 
   return (
@@ -229,11 +234,11 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
               onVerCaja={setDetalle}
               onIrA={setVista}
               versionConteo={verCuadres}
-              mas={<MenuMasCaja acciones={acciones} />}
+              mas={<MenuMasCaja acciones={acciones} cuadrado />}
             />
           )}
           {vista === "reconciliacion" && <CajaReconciliacion cerradas={datos.closedRegisters} tolerancia={datos.cashTolerance} />}
-          {vista === "auditoria" && <CajaAuditoria />}
+          {vista === "auditoria" && <CajaAuditoria onVerCaja={verParte} />}
         </div>
       )}
       {/* `onIrACaja` lleva a «Hoy»: ahí se abre y se cierra la caja. */}
@@ -253,7 +258,18 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
       {caja && (modal === "ingreso" || modal === "egreso") && (
         <ModalMovimientoCaja cajaId={caja.id} tipo={modal} onCerrar={cerrar} onHecho={alHacer} />
       )}
-      {caja && modal === "cerrar" && <ModalCerrarCaja caja={caja} stats={stats} onCerrar={cerrar} onHecho={alHacer} />}
+      {caja && modal === "cerrar" && (
+        <ModalCerrarCaja
+          caja={caja}
+          stats={stats}
+          onCerrar={cerrar}
+          onHecho={alHacer}
+          conciliacion={parte.parte?.conciliacion ?? null}
+          negocio={branding.name ?? undefined}
+          tolerancia={datos.cashTolerance}
+          onIr={(v) => { cerrar(); setVista(v); }}
+        />
+      )}
       {caja && modal === "arqueo" && <ModalArqueoExpress caja={caja} stats={stats} onCerrar={cerrar} onHecho={alHacer} />}
       {caja && modal === "guiado" && (
         <ModalArqueoGuiado caja={caja} stats={stats} ventasPorMedio={datos.paymentBreakdown} onCerrar={cerrar} onHecho={alHacer} />

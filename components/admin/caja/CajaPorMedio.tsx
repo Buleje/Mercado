@@ -9,13 +9,21 @@
 import { CardTitle } from "@buleje/design-system";
 import { Banknote, CreditCard, Smartphone } from "@buleje/design-system/icons";
 import { ConciliacionYapePlin } from "./ConciliacionYapePlin";
-import { fmt, type StatsCaja } from "./tipos";
+import { fmt, type CashMovement, type StatsCaja } from "./tipos";
 
 const ICONO: Record<string, typeof Banknote> = { efectivo: Banknote, yape: Smartphone, plin: Smartphone, tarjeta: CreditCard };
 
 const MARCO = "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]";
 
-export function CajaPorMedio({ breakdown, stats }: { breakdown: Record<string, number>; stats: StatsCaja | null }) {
+export function CajaPorMedio({
+  breakdown,
+  stats,
+  movimientos,
+}: {
+  breakdown: Record<string, number>;
+  stats: StatsCaja | null;
+  movimientos?: ReadonlyArray<CashMovement>;
+}) {
   const entradas = Object.entries(breakdown);
   if (entradas.length === 0) {
     return <p className={`${MARCO} p-6 text-center text-sm font-semibold text-[var(--text-secondary)]`}>Todavía no hay ventas en esta caja.</p>;
@@ -51,7 +59,7 @@ export function CajaPorMedio({ breakdown, stats }: { breakdown: Record<string, n
         })}
       </section>
       <div className="grid gap-4 lg:grid-cols-2">
-        {entradas.some(([k]) => k === "yape" || k === "plin") && <ConciliacionYapePlin breakdown={breakdown} />}
+        {entradas.some(([k]) => k === "yape" || k === "plin") && <ConciliacionYapePlin breakdown={breakdown} movimientos={movimientos} />}
         {franja.length > 0 && (
           <section className={`${MARCO} p-4`}>
             <CardTitle className="mb-2 text-sm font-bold text-[var(--text-primary)]">Ventas por hora</CardTitle>

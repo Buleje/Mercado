@@ -73,6 +73,19 @@ export type ReciboData = {
   /** Medio con que pagó y si el cobro entró a la caja abierta. */
   metodo?: MetodoCobro;
   caja?: "entro" | "sin-caja";
+  /** Hora del abono (un recibo rehecho no lleva la hora de hoy). */
+  hora?: string;
+  /**
+   * De qué son los saldos (revisión 17-10): `compra` = de UNA compra (cobro de
+   * un fiado); `cliente` = de toda su deuda (cobro repartido entre compras).
+   */
+  alcance?: "compra" | "cliente";
+  /** Total de la compra abonada (sólo `compra`): manda sobre la compra abierta en la ficha. */
+  deudaOriginal?: number;
+  /** «jueves 01/10»: de qué compra (sólo `compra`). */
+  compraDel?: string;
+  /** En cuántas compras se repartió (sólo `cliente`). */
+  compras?: number;
 };
 
 /** Lo que pide la ventana de cobro (un fiado o todo lo de un cliente). */

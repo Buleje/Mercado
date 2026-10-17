@@ -24,7 +24,7 @@ import { nombreDelMedio } from "@/lib/caja/cambiar-medio";
  * encargado entra a `requireAdmin` por el management tier; `soloAdminODueno`
  * lo corta.
  *
- * Cuerpo: `{ method: "efectivo" | "yape" | "plin" | "tarjeta" | "transferencia" }`.
+ * Cuerpo: `{ method: "efectivo" | "yape" | "plin" | "tarjeta" | "transferencia", motivo?: string }`.
  * Respuesta 200: `{ movimiento, metodoAnterior, esperadoAntes, esperadoDespues }`.
  * 404 caja o movimiento de otro negocio / inexistente · 409 caja cerrada, tipo
  * que no es ingreso/egreso, mismo medio, pago de una liquidación (su medio
@@ -33,7 +33,11 @@ import { nombreDelMedio } from "@/lib/caja/cambiar-medio";
  * Queda en el registro de la caja (`ActivityLog`, entidad `movimiento_caja`):
  * quién, el medio de antes y el de después, y cómo se movió el esperado.
  */
-const CambiarMedioSchema = z.object({ method: z.enum(METODOS_DE_CAJA) });
+const CambiarMedioSchema = z.object({
+  method: z.enum(METODOS_DE_CAJA),
+  /** M28: por qué se corrigió; va a la bitácora (opcional: exigirlo lo decide el dueño). */
+  motivo: z.string().trim().max(200).optional(),
+});
 
 /** Un cuid mide 25; el tope sólo corta basura antes de ir a la base. */
 const idValido = (s: string) => s.length > 0 && s.length <= 60;
@@ -63,6 +67,8 @@ export async function PATCH(
         );
       }
       const metodo = parsed.data.method;
+      // Una sola línea: el registro se lee de vuelta con `leerEntradaDeCaja`.
+      const motivo = parsed.data.motivo?.replace(/\s+/g, " ").trim() || null;
 
       const cambio = await CashRegistersMovementsDB.cambiarMedio(auth.tenantId, {
         cashRegisterId: id,
@@ -78,7 +84,8 @@ export async function PATCH(
         "movimiento_caja",
         `Medio corregido · ${tipo} de S/${m.amount.toFixed(2)}${m.description ? ` «${m.description}»` : ""}: ` +
           `${nombreDelMedio(cambio.metodoAnterior)} → ${nombreDelMedio(metodo)} ` +
-          `(esperado S/${cambio.esperadoAntes.toFixed(2)} → S/${cambio.esperadoDespues.toFixed(2)})`,
+          `(esperado S/${cambio.esperadoAntes.toFixed(2)} → S/${cambio.esperadoDespues.toFixed(2)})` +
+          (motivo ? ` — motivo: ${motivo}` : ""),
         m.id,
         auth.username,
         undefined,

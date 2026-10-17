@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { abonosDelCliente, comprasDelCliente, gestionesDelCliente, reciboDeAbono } from "@/components/admin/fiados/cuenta-cliente";
+import { abonosDelCliente, cobroDelAbono, comprasDelCliente, gestionesDelCliente, reciboDeAbono } from "@/components/admin/fiados/cuenta-cliente";
 import type { Fiado } from "@/components/admin/fiados/tipos";
 import { medioYNota } from "@/lib/fiados/cobro-metodo";
 
@@ -68,5 +68,39 @@ describe("cuenta del cliente (M32)", () => {
     expect(medioYNota("Transferencia · BCP")).toEqual({ metodo: "transferencia", medio: "Transferencia", nota: "BCP" });
     expect(medioYNota("pagó en la feria")).toEqual({ metodo: null, medio: null, nota: "pagó en la feria" });
     expect(medioYNota(undefined)).toEqual({ metodo: null, medio: null, nota: "" });
+  });
+
+  it("recibo de un abono de OTRA compra: deuda original = total de esa compra, no de la abierta", () => {
+    const a = fiado("a", { total: 300, saldo: 300, createdAt: "2026-10-05T15:00:00.000Z" });
+    const b = fiado("b", { total: 80, saldo: 50, cuotas: [cuota("cb", "b", 30, "2026-10-03T15:00:00.000Z", "Yape")] });
+    const abonos = abonosDelCliente([a, b], "999111222");
+    const r = reciboDeAbono(abonos[0], { nombre: "Rosa", telefono: "999111222" }, { abonos, compras: [a, b] });
+    expect(r).toMatchObject({ alcance: "compra", deudaOriginal: 80, saldoAnterior: 80, saldoActual: 50, compraDel: "jueves 01/10" });
+  });
+
+  it("un cobro de S/ 60 repartido en dos compras sale como UN recibo con la deuda del cliente", () => {
+    // El cobro: 40 cierra la vieja (A) y 20 va a la nueva (B), en la misma transacción.
+    const a = fiado("a", { total: 40, saldo: 0, status: "PAGADO", createdAt: "2026-09-20T15:00:00.000Z", cuotas: [cuota("ca", "a", 40, "2026-10-10T15:00:00.120Z", "Efectivo")] });
+    const b = fiado("b", { total: 100, saldo: 80, createdAt: "2026-10-01T15:00:00.000Z", cuotas: [cuota("cb", "b", 20, "2026-10-10T15:00:00.180Z", "Efectivo")] });
+    // Otra compra abierta que el cobro no tocó: también es deuda del cliente.
+    const c = fiado("c", { total: 25, saldo: 25, createdAt: "2026-10-05T15:00:00.000Z" });
+    // Un abono aparte, de otro día y a la misma compra: no se junta.
+    const compras = [a, b, c];
+    const abonos = abonosDelCliente(compras, "999111222");
+    const delB = abonos.find((x) => x.id === "cb")!;
+    expect(cobroDelAbono(delB, abonos).map((x) => x.id)).toEqual(["ca", "cb"]);
+    const r = reciboDeAbono(delB, { nombre: "Rosa", telefono: "999111222" }, { abonos, compras });
+    expect(r).toMatchObject({ alcance: "cliente", compras: 2, montoPagado: 60, saldoAnterior: 165, saldoActual: 105 });
+    expect(r.deudaOriginal).toBeUndefined();
+  });
+
+  it("dos cuotas de la MISMA compra son dos cobros aunque caigan juntas; otro medio tampoco se junta", () => {
+    const b = fiado("b", { total: 100, saldo: 70, cuotas: [
+      cuota("c1", "b", 10, "2026-10-10T15:00:00.000Z", "Efectivo"),
+      cuota("c2", "b", 20, "2026-10-10T15:00:01.000Z", "Efectivo"),
+    ] });
+    const a = fiado("a", { total: 50, saldo: 45, cuotas: [cuota("c3", "a", 5, "2026-10-10T15:00:00.500Z", "Yape")] });
+    const abonos = abonosDelCliente([a, b], "999111222");
+    expect(cobroDelAbono(abonos.find((x) => x.id === "c2")!, abonos).map((x) => x.id)).toEqual(["c2"]);
   });
 });

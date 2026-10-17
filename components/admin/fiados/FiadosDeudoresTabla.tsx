@@ -12,7 +12,8 @@ import EmptyState from "@/components/admin/shared/EmptyState";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { FiadoAvatar, FiadoReliabilityBadge, FiadoSemaphore, FiadoStreakBadge } from "./FiadoBadges";
-import { diasDeAtraso, recordarPorWhatsApp } from "./recordar";
+import { diasDeAtraso, useRecordarPorWhatsApp } from "./recordar";
+import type { Gestion } from "@/lib/fiados/gestion-cobranza";
 import { diaLeido } from "./fechas";
 import { STATUS_META, estaAbierto, type ColumnaOrden, type Fiado, type FiadoStatus } from "./tipos";
 import type { EstadoFiados } from "./use-fiados";
@@ -33,6 +34,8 @@ type Props = {
   openDetail: (f: Fiado) => void;
   onNuevo: () => void;
   onRecordado: () => void;
+  /** Bitácora de Cobranza: último contacto y «ya le escribiste hoy» en la vista previa del recordatorio. */
+  gestiones?: readonly Gestion[];
 };
 
 function Cabecera({ col, label, estado, alinear = "left" }: { col: ColumnaOrden; label: string; estado: EstadoFiados; alinear?: "left" | "right" }) {
@@ -47,7 +50,8 @@ function Cabecera({ col, label, estado, alinear = "left" }: { col: ColumnaOrden;
   );
 }
 
-export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect, openDetail, onNuevo, onRecordado }: Props) {
+export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect, openDetail, onNuevo, onRecordado, gestiones }: Props) {
+  const recordarPorWhatsApp = useRecordarPorWhatsApp(gestiones);
   const { loading, error, fiados, filtrados, paginated, page, setPage, totalPages, densidad } = estado;
   const saldoFiltrado = filtrados.reduce((s, f) => s + (estaAbierto(f) ? f.saldo : 0), 0);
   return (
@@ -175,7 +179,7 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                recordarPorWhatsApp({ telefono: f.customerId, nombre: f.customerName || f.customerId, saldo: f.saldo, dias: diasDeAtraso(f) }, onRecordado);
+                                void recordarPorWhatsApp({ telefono: f.customerId, nombre: f.customerName || f.customerId, saldo: f.saldo, dias: diasDeAtraso(f) }, onRecordado);
                               }}
                               title="Recordar por WhatsApp"
                               aria-label={`Recordar a ${f.customerName || f.customerId} por WhatsApp`}

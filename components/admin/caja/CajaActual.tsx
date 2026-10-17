@@ -29,6 +29,7 @@ import { CajaHoyYSesion } from "./CajaHoyYSesion";
 import { CajaMovimientos } from "./CajaMovimientos";
 import { CajaPorMedio } from "./CajaPorMedio";
 import { EsperadoNegativo } from "./EsperadoNegativo";
+import { ExcepcionesDelTurno } from "./ExcepcionesDelTurno";
 import { useIndicadoresCaja } from "./use-indicadores-caja";
 import type { DatosCaja } from "./use-caja-registradora";
 import { fmt, type CashRegister, type VistaCaja } from "./tipos";
@@ -66,7 +67,7 @@ export function CajaActual(props: Props) {
   return <CajaAbierta {...props} caja={caja} />;
 }
 
-function CajaAbierta({ vista, datos, parte, puedeCambiarMedio, onMovimiento, onCerrarCaja, onIrA, versionConteo, mas, caja }: Props & { caja: CashRegister }) {
+function CajaAbierta({ vista, datos, parte, puedeCambiarMedio, onMovimiento, onCerrarCaja, onIrA, onVerCaja, versionConteo, mas, caja }: Props & { caja: CashRegister }) {
   const { stats, timeline, paymentBreakdown, cashAlertMax, fetchData } = datos;
   const indicadores = useIndicadoresCaja(caja.openingAmount, stats);
   const efectivo = stats?.expectedCash ?? 0;
@@ -95,11 +96,12 @@ function CajaAbierta({ vista, datos, parte, puedeCambiarMedio, onMovimiento, onC
             onClick={() => setEntregando(true)}
             className={`${BOTON_ACCION} bg-primary/10 text-[var(--accent-ink)] hover:bg-primary/20 dark:text-[var(--accent)]`}
             aria-label="Entregar adelanto"
+            title="Entregar adelanto (con la firma de quien recibe)"
             data-caja-entregar-adelanto
           >
-            {/* A 400 px el texto entero empujaba «Más» a una fila sola. */}
-            <HandCoins className="h-4 w-4" aria-hidden /> <span className="sm:hidden">Adelanto</span>
-            <span className="max-sm:hidden">Entregar adelanto</span>
+            {/* El texto entero sólo con aire (≥1536 px): a 400 y a 1280 empujaba «Más» a una fila sola. */}
+            <HandCoins className="h-4 w-4" aria-hidden /> <span className="2xl:hidden">Adelanto</span>
+            <span className="max-2xl:hidden">Entregar adelanto</span>
           </button>
         )}
         <button type="button" onClick={onCerrarCaja} className={button({ variant: "primary", className: "rounded-xl" })}>
@@ -129,6 +131,8 @@ function CajaAbierta({ vista, datos, parte, puedeCambiarMedio, onMovimiento, onC
               }
             />
           )}
+          {/* M22: lo raro del turno junto, con «Ver» al lugar donde se mira. */}
+          <ExcepcionesDelTurno movimientos={caja.movements} cerradas={datos.closedRegisters} tolerancia={datos.cashTolerance} onIr={onIrA} onVerCaja={onVerCaja} />
           <EsperadoNegativo caja={caja} esperado={efectivo} onVerMovimiento={(texto) => { setBuscarMov(texto); onIrA("movimientos"); }} />
           <CajaCuadreDelDia parte={parte.parte} cargando={parte.cargando} error={parte.error} onReintentar={parte.releer} />
         </>
@@ -136,8 +140,15 @@ function CajaAbierta({ vista, datos, parte, puedeCambiarMedio, onMovimiento, onC
       {vista === "movimientos" && (
         <CajaMovimientos key={buscarMov} buscarInicial={buscarMov} caja={caja} timeline={timeline} efectivoActual={efectivo} puedeCambiarMedio={puedeCambiarMedio} onCambiado={() => void fetchData()} />
       )}
-      {vista === "medios" && <CajaPorMedio breakdown={paymentBreakdown} stats={stats} />}
-      {vista === "cuadrar" && <CajaContar key={versionConteo} onIrACaja={() => onIrA("hoy")} />}
+      {vista === "medios" && <CajaPorMedio breakdown={paymentBreakdown} stats={stats} movimientos={caja?.movements} />}
+      {vista === "cuadrar" && (
+        <CajaContar
+          key={versionConteo}
+          onIrACaja={() => onIrA("hoy")}
+          movimientos={caja.movements}
+          onVerMovimiento={(texto) => { setBuscarMov(texto); onIrA("movimientos"); }}
+        />
+      )}
       {/* Al entregar, la caja se relee: el adelanto ya es un movimiento del cajón. */}
       {entregando && <EntregarAdelantoModal onClose={() => setEntregando(false)} onEntregado={() => void fetchData()} />}
     </div>
