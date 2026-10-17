@@ -127,9 +127,16 @@ while true; do
   NEXT_GB=0
   [[ -n "$NEXT_PID" ]] && NEXT_GB=$(awk '/^VmRSS/ {printf "%d", $2/1048576}' "/proc/$NEXT_PID/status" 2>/dev/null || echo 0)
   PSI_FULL=$(awk '/^full/ {split($3, a, "="); printf "%d", a[2]}' /proc/pressure/memory 2>/dev/null || echo 0)
+  #     17-10 (Brandon eligió «reciclar a 6 GB»): llegó a 8,1 GB con 6 GB libres en Ubuntu y Windows
+  #     quedaba con 4,8 GB para jugar. Además, ≥ 6 GB recicla SIN presión, pero sólo si el dev lleva
+  #     ≥ 5 min sin pedidos (el log no se movió): no cortar a nadie a mitad de una pantalla (01-10).
+  DEV_QUIETO=$(( $(date +%s) - $(stat -c %Y /tmp/dev-server.log 2>/dev/null || date +%s) ))
   if [[ -n "$NEXT_PID" && "${NEXT_GB:-0}" -ge 4 && ( "$AVAIL" -lt 1200 || "${PSI_FULL:-0}" -ge 15 ) ]]; then
     reiniciar_dev
     log "dev server reciclado: ${NEXT_GB}GB de RSS con ${AVAIL}MB libres, PSI full ${PSI_FULL}% (pid=$NEXT_PID)"
+  elif [[ -n "$NEXT_PID" && "${NEXT_GB:-0}" -ge 6 && "$DEV_QUIETO" -ge 300 ]]; then
+    reiniciar_dev
+    log "dev server reciclado por tamaño: ${NEXT_GB}GB de RSS, ${DEV_QUIETO}s sin pedidos (pid=$NEXT_PID)"
   fi
 
   # 3c. `next dev` vivo sin next-server (lo cerró earlyoom o murió por señal):
