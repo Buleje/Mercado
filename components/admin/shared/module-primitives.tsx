@@ -11,6 +11,7 @@
 
 import type React from "react";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { AccionesDeLaVista, ORDEN_ACCION } from "./libro-acciones-vista";
 
 // ── Esqueletos de carga ─────────────────────────────────────────────────────
 // Un spinner centrado con "Cargando registros…" no dice nada mientras se
@@ -64,6 +65,13 @@ export function PanelSkeleton({ kpis = 3 }: { kpis?: number }) {
 // prima que entra vs. producto que sale. Es el saldo que se declara ante
 // SERFOR…»). Se lee una vez y estorba siempre: acá queda el qué + el cuándo en
 // una línea, y el porqué en el tooltip, que es donde se busca cuando hace falta.
+//
+// Dentro de un libro con riel de vistas (Brandon 17-10: «los botones… al lado
+// de las pestañas en la esquina»), la cabecera no ocupa fila: el riel ya dice
+// en qué vista estás, así que el título se calla y el ⓘ, la cifra corta y las
+// acciones se van al riel (`AccionesDeLaVista`). El título sigue en el ⓘ, y la
+// cifra también cuando el riel es angosto y no entra a la vista. Fuera de un
+// libro, o dentro de una ventana, se pinta entera como siempre.
 export function VistaHeader({
   titulo,
   meta,
@@ -75,10 +83,10 @@ export function VistaHeader({
   meta?: string;
   /** La explicación larga: va en el ⓘ al lado del título, no en pantalla. */
   hint?: string;
-  /** Acciones de la vista, a la derecha. */
+  /** Acciones de la vista, a la derecha (en el riel, dentro de un libro). */
   children?: React.ReactNode;
 }) {
-  return (
+  const completa = (
     <div className="flex flex-wrap items-center justify-between gap-3">
       {/* El `hint` era un `title` nativo: no se abre con el dedo ni con el
           teclado. Ahora es el ⓘ del panel (2026-09-24), el mismo en todas las
@@ -90,6 +98,31 @@ export function VistaHeader({
       </p>
       {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}
     </div>
+  );
+  return (
+    <>
+      <AccionesDeLaVista orden={ORDEN_ACCION.info} fueraDelLibro={completa}>
+        {(hint || meta) && (
+          <span className="flex min-w-0 items-center gap-1.5">
+            {meta && (
+              <span
+                title={meta}
+                /* Sin ⓘ que la guarde, la cifra no se esconde: se acorta. */
+                className={
+                  hint
+                    ? "hidden max-w-[16rem] truncate font-mono text-xs tabular-nums text-[var(--text-tertiary)] @min-[60rem]/riel:inline"
+                    : "max-w-[10rem] truncate font-mono text-xs tabular-nums text-[var(--text-tertiary)] @min-[60rem]/riel:max-w-[16rem]"
+                }
+              >
+                {meta}
+              </span>
+            )}
+            {hint && <InfoTip title={meta ? `${titulo} · ${meta}` : titulo} what={hint} />}
+          </span>
+        )}
+      </AccionesDeLaVista>
+      <AccionesDeLaVista fueraDelLibro={null}>{children}</AccionesDeLaVista>
+    </>
   );
 }
 

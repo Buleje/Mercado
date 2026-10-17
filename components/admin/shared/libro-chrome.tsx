@@ -17,16 +17,15 @@
  * el CTP sabe moverse en el de Títulos Habilitantes.
  */
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
-import { Keyboard, SlidersHorizontal, X, type LucideIcon } from "@buleje/design-system/icons";
-import { Kicker } from "@buleje/design-system";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { type LucideIcon } from "@buleje/design-system/icons";
 import { TituloModulo } from "./titulo-modulo";
-import ActionMenu, { marcoDeFixed, type MenuAccion } from "./action-menu";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { type MenuAccion } from "./action-menu";
+import { MasDelLibro, useMideAlMenos } from "./libro-herramientas";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
 import { FranjaDelLibro, FranjaLibroContext, type FranjaLibro } from "./libro-franja-permiso";
+import { CLASE_SOLO_ANCHO, ProveedorAccionesDeLaVista } from "./libro-acciones-vista";
 import {
   useAdminShortcuts,
   useRegisterShortcuts,
@@ -66,6 +65,12 @@ interface LibroChromeProps {
   moduleId: string;
   eyebrow: string;
   title: string;
+  /**
+   * El nombre corto («Libro CTP») para cuando el título comparte su fila con
+   * las fases y las acciones y no entra entero (banda de 33 a 64rem: la
+   * pantalla de 1280 con la barra lateral abierta). Sin él, se corta con «…».
+   */
+  tituloCorto?: string;
   icon: LucideIcon;
   /** Vacío (o una sola vista) = módulo sin sub-navegación: la fila no se dibuja. */
   groups?: LibroGroup[];
@@ -78,11 +83,17 @@ interface LibroChromeProps {
   /** Chip del permiso/contrato bajo el que se trabaja (`ContratoActivoChip`).
    *  Lo pasa cada libro forestal: `shared` no importa de `forestal`. */
   contrato?: ReactNode;
-  /** Control de contexto del libro (período). */
+  /** Control de contexto del libro (período). A la vista si la fila tiene
+   *  lugar (grupo de acciones ≥56rem); si no, dentro del «⋯». */
   context?: ReactNode;
+  /** La campana de avisos del libro. Mismo lugar que el período: a la vista
+   *  si entra, si no en el «⋯». */
+  avisos?: ReactNode;
   /** Acciones sueltas a la izquierda del menú (ej. el asistente IA). */
   tools?: ReactNode;
+  /** Acciones del libro (exportar, informar…): van al final del «⋯». */
   actions?: LibroAction[];
+  /** @deprecated Las acciones ya no tienen botón propio: van en el «⋯» del libro. */
   actionsLabel?: string;
   /** Atajos propios de la vista activa — se suman a la hoja que abre `?`. */
   atajosDeVista?: ShortcutSection[];
@@ -97,6 +108,7 @@ export default function LibroChrome({
   moduleId,
   eyebrow,
   title,
+  tituloCorto,
   icon: Icon,
   groups = SIN_GRUPOS,
   view = "",
@@ -107,13 +119,21 @@ export default function LibroChrome({
   context,
   tools,
   actions,
-  actionsLabel = "Acciones",
+  avisos,
   atajosDeVista,
   children,
 }: LibroChromeProps) {
   const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
   /* La franja «Viendo solo <permiso>» la publica el chip del permiso (libro-franja-permiso). */
   const [franja, setFranja] = useState<FranjaLibro | null>(null);
+  /* El hueco del riel adonde cada vista manda sus acciones (libro-acciones-vista).
+     `setHueco` es estable: como ref de callback no re-dispara nada (un setter
+     nuevo en cada render metía el bucle de «Maximum update depth»). */
+  const [hueco, setHueco] = useState<HTMLDivElement | null>(null);
+  /* El período y la campana se ven en la fila sólo con lugar de sobra:
+     permiso con su titular + puntaje + período + avisos + «⋯» ≈ 56rem. */
+  const accionesRef = useRef<HTMLDivElement>(null);
+  const herramientasALaVista = useMideAlMenos(accionesRef, 56 * 16);
   const flat = useMemo(() => groups.flatMap((g) => g.views), [groups]);
   const activeGroup = useMemo(
     () => groups.find((g) => g.views.some((v) => v.key === view)) ?? groups[0],
@@ -220,43 +240,65 @@ export default function LibroChrome({
   const alertasDe = (g: LibroGroup) =>
     g.views.reduce((n, v) => n + (alerts?.[v.key] ?? 0), 0);
 
+  const herramientasEnElMas =
+    tools || (!herramientasALaVista && (context || avisos)) ? (
+      <>
+        {!herramientasALaVista && context}
+        {!herramientasALaVista && avisos}
+        {tools}
+      </>
+    ) : null;
+
   return (
     <FranjaLibroContext.Provider value={setFranja}>
-    <div className="space-y-4">
+    <div className="space-y-3">
       <section
         data-module={moduleId}
-        className="@container/banda overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
+        /* Sin `overflow-hidden`: el período, cuando va a la vista en la fila,
+           abre su lista `absolute` y se recortaba. Las esquinas del riel de
+           abajo las redondea el propio riel. */
+        className="@container/banda rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
       >
-        {/* Identidad + estado + contexto + acciones — una sola fila (Brandon
-            2026-09-24, señalando la banda del LO-CTP a 1920 px: el grupo de la
-            derecha medía 821 px y caía a un segundo renglón por 65 px).
-            Desde 78rem de banda la fila NO se parte: lo que cede es el grupo de
-            la derecha, que se compacta por su propio ancho (`/acciones`) —
-            primero el titular del permiso, después los rótulos—. Debajo de
-            78rem el grupo baja entero a su renglón y ahí se ve completo.
+        {/* Fila 1 — título · fases · permiso · puntaje · «⋯», en UNA fila de
+            56 px desde 56rem de banda (Brandon 17-10: «compactar… reducir
+            espacios»; antes partía en dos hasta los 78rem). Lo que cede, en
+            orden: el rótulo de arriba del título (debajo de 78rem), el
+            permiso y el puntaje (se compactan contra el ancho del grupo
+            `acciones`, que es contenedor), y por último el título, que se
+            corta con «…» y dice el nombre entero al pasar el mouse.
+            Debajo de 56rem: título y acciones arriba (o acciones en su
+            renglón, en el celular) y las fases en el último renglón, pegadas
+            a las vistas que gobiernan.
             Se mide la BANDA y no la ventana: la barra lateral abierta o
-            cerrada cambia 300 px el ancho real, y un `min-[1800px]` mentía. */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4 lg:gap-x-2 @min-[78rem]/banda:flex-nowrap">
+            cerrada cambia 300 px el ancho real. */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 px-3 py-1 sm:px-4 @min-[56rem]/banda:flex-nowrap">
           {/* Identidad: la misma que usan TODAS las pestañas (titulo-modulo.tsx,
-              Brandon 08-10 «todos iguales, como esta pestaña»). En una banda de
-              menos de 88rem el título baja a 20 px para dejarle lugar al permiso
-              en la misma fila (se pisa la variable, no la regla de globals). */}
+              Brandon 08-10 «todos iguales, como esta pestaña»). */}
           <TituloModulo
             icon={Icon}
             eyebrow={eyebrow}
-            title={title}
-            className="@min-[78rem]/banda:shrink-0"
+            title={
+              tituloCorto ? (
+                <span title={title}>
+                  <span className="@min-[33rem]/banda:@max-[64rem]/banda:hidden">{title}</span>
+                  <span className="hidden @min-[33rem]/banda:@max-[64rem]/banda:inline">{tituloCorto}</span>
+                </span>
+              ) : (
+                title
+              )
+            }
+            truncar
+            className="grow basis-[10rem] @min-[56rem]/banda:grow-0 @min-[56rem]/banda:basis-auto @max-[78rem]/banda:[&>.libro-kicker]:hidden"
           />
-          {/* La FASE del libro comparte fila con el título (misma banda que
-              el resto del panel, Brandon 2026-09-07): las cuatro fases siempre
-              a la vista; las vistas de la activa, en el riel de abajo. Siguen
-              siendo dos rieles — lo que cambió es que el primero ya no gasta
-              una fila propia. */}
+          {/* La FASE del libro comparte fila con el título (Brandon 2026-09-07):
+              las cuatro fases siempre a la vista; las vistas de la activa, en
+              el riel de abajo. Debajo de 56rem bajan al último renglón. */}
           {flat.length > 1 && groups.length > 1 && (
+          <div className="order-last flex min-w-0 basis-full @min-[56rem]/banda:order-none @min-[56rem]/banda:basis-auto @min-[56rem]/banda:shrink-0">
           <div
             role="tablist"
             aria-label="Fase del libro"
-            className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-1 scrollbar-none sm:ml-1 @min-[78rem]/banda:shrink-0"
+            className="flex min-w-0 max-w-full items-center gap-0.5 overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-0.5 scrollbar-none"
             /* `contain: layout paint` (patrón de `StoreDetailClient.tsx`): sin
                esto, el scroll horizontal de ESTE riel se filtraba al
                `document.documentElement.scrollWidth` de toda la página (medido
@@ -276,7 +318,7 @@ export default function LibroChrome({
                   role="tab"
                   aria-selected={activo}
                   onClick={() => !activo && onView?.(g.views[0].key)}
-                  className={`relative inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors @max-[88rem]/banda:px-2 ${
+                  className={`relative inline-flex h-11 shrink-0 items-center gap-1.5 rounded-[10px] px-2.5 text-sm font-bold transition-colors @max-[88rem]/banda:px-2 ${
                     activo
                       ? "bg-[var(--surface-raised)] text-[var(--accent-dark)] shadow-[var(--shadow-sm)] dark:text-[var(--accent)]"
                       : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
@@ -301,66 +343,60 @@ export default function LibroChrome({
               );
             })}
           </div>
+          </div>
           )}
-          {/* Estado · Herramientas · Acciones, en la fila del título. Las
-              herramientas (período, buscar guía, avisos, modo patio, atajos…)
-              van plegadas en UN botón que abre un panel (Brandon 2026-09-07:
-              «un botón que al presionar aparece un modal con esos botones»):
-              sueltas ocupaban una fila entera, y la fila de abajo es de las
-              pestañas. El score y el menú de acciones quedan a la vista: son
-              un vistazo y un clic. */}
-          {/* El grupo `acciones` sólo es contenedor en la fila completa (≥78rem
-              de banda): ahí ocupa lo que sobra (`flex-1 basis-0`) y el chip del
-              permiso, su interruptor y el puntaje se compactan contra SU ancho
-              con `@max-[..]/acciones` —primero el titular, después los
-              rótulos—. En una banda angosta no es contenedor: se ajusta a su
-              contenido, baja de renglón como antes y los `@max` no aplican, así
-              que se ve completo. */}
-          <div className="ml-auto min-w-0 [container-name:acciones] @min-[78rem]/banda:flex-1 @min-[78rem]/banda:basis-0 @min-[78rem]/banda:[container-type:inline-size]">
-            <div className="flex flex-wrap items-center justify-end gap-2 @min-[78rem]/banda:flex-nowrap @max-[36rem]/acciones:gap-1.5">
+          {/* Permiso · puntaje · [período · avisos] · «⋯». El grupo es
+              contenedor (`acciones`) en todos los anchos: el chip del permiso,
+              su interruptor y el puntaje se compactan contra SU ancho con
+              `@max-[..]/acciones` —primero el titular del permiso, después
+              los rótulos—. Nunca baja de 21rem (lo que mide compacto); si al
+              lado del título no entra, baja entero a su renglón.
+              El período y la campana se ven en la fila sólo si el grupo mide
+              56rem o más (pantallas anchas); si no, van al «⋯», con el resto
+              de las herramientas y las acciones del libro. */}
+          <div
+            ref={accionesRef}
+            className="ml-auto min-w-[min(100%,21rem)] flex-1 basis-0 [container-name:acciones] [container-type:inline-size]"
+          >
+            <div className="flex flex-nowrap items-center justify-end gap-2 @max-[36rem]/acciones:gap-1.5">
               {/* El permiso de trabajo va ANTES del estado: es bajo qué papel se
                   está parado, y eso manda sobre cualquier indicador. Lo pasa cada
                   libro (los forestales) en vez de importarlo acá: `shared` no
                   depende de `forestal`. */}
               {contrato}
               {status}
-              {(context || tools) ? (
-                <HerramientasDelLibro>
-                  {context}
-                  {tools}
-                  {flat.length > 1 && <BotonAtajos onClick={abrirAyuda} enPanel />}
-                </HerramientasDelLibro>
-              ) : (
-                flat.length > 1 && <BotonAtajos onClick={abrirAyuda} />
-              )}
-              {actions && actions.length > 0 && (
-                /* `shrink-0`: en la fila sin cortes lo único que cede es el
-                   permiso; el menú se encogía a 23 px (medido a 1600). */
-                <div className="shrink-0">
-                  <ActionMenu label={actionsLabel} title={actionsLabel} actions={actions} soloIcono />
-                </div>
-              )}
+              {herramientasALaVista && context}
+              {herramientasALaVista && avisos}
+              <MasDelLibro acciones={actions} onAtajos={flat.length > 1 ? abrirAyuda : undefined}>
+                {herramientasEnElMas}
+              </MasDelLibro>
             </div>
           </div>
         </div>
 
-        {/* Segundo riel: SÓLO las vistas de la fase activa. Esta fila es de la
-            navegación (Brandon 2026-09-07): las herramientas del libro no
-            entran acá — viven arriba, plegadas en «Herramientas». En angosto
-            se desliza en vez de envolver: con wrap las vistas se pisaban a
-            390px. */}
+        {/* Segundo riel: las vistas de la fase activa y, en la esquina, las
+            ACCIONES de la vista (Brandon 17-10: «los botones … al lado de las
+            pestañas en la esquina»). Cada vista las manda con
+            `<AccionesDeLaVista>` (libro-acciones-vista.tsx) al hueco del final.
+            Se pliega según el ancho del riel, no de la ventana:
+            · ≥80rem  vistas con ícono, acciones con texto;
+            · 60–80   vistas sin ícono, acciones sólo ícono («+ Nuevo» corto);
+            · 40–60   el riel salta de línea y las acciones cierran la última;
+            · <40     el riel se desliza de lado y las acciones van en su fila. */}
         {flat.length > 1 && (
-        <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-2 sm:px-3">
-
+        <div className="@container/riel rounded-b-[15px] border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
+          <div className="flex flex-wrap items-center gap-1 px-2 py-1 sm:px-3 @min-[60rem]/riel:flex-nowrap">
           <div
             role="tablist"
             aria-label={activeGroup?.label}
-            className="flex max-w-full items-center gap-1 overflow-x-auto scrollbar-none sm:flex-wrap"
+            className="flex min-w-0 max-w-full basis-full items-center gap-1 overflow-x-auto scrollbar-none @min-[40rem]/riel:@max-[60rem]/riel:contents @min-[60rem]/riel:flex-1 @min-[60rem]/riel:basis-0"
             /* Mismo aislamiento que el riel de fases de arriba: sin `contain`
                este riel (7 vistas con sus badges) era el que realmente
                empujaba la página entera a 551px de ancho a 400px de viewport
                — medido con Playwright hidiendo subárboles uno por uno hasta
-               aislar ESTE nodo como el único responsable. */
+               aislar ESTE nodo como el único responsable. Entre 40 y 60rem es
+               `contents`: sus vistas envuelven en la fila de afuera y las
+               acciones cierran la última línea en vez de bajar solas. */
             style={{ scrollbarWidth: "none", contain: "layout paint" }}
           >
             {activeGroup?.views.map((v) => {
@@ -380,7 +416,7 @@ export default function LibroChrome({
                       : "font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                   }`}
                 >
-                  <VIcon className="h-4 w-4 shrink-0" />
+                  <VIcon className={`h-4 w-4 shrink-0 ${CLASE_SOLO_ANCHO}`} />
                   <span>{v.label}</span>
                   {/* El aviso de la vista era un punto de 6 px con `aria-hidden`:
                       no decía CUÁNTOS y un lector de pantalla no lo anunciaba
@@ -406,164 +442,26 @@ export default function LibroChrome({
               );
             })}
           </div>
+          {/* El hueco de las acciones de la vista. `relative`: ancla los
+              rótulos `sr-only` de los botones plegados (un `absolute` suelto
+              ensanchaba la página). Vacío no ocupa lugar. */}
+          <div
+            ref={setHueco}
+            data-acciones-riel=""
+            className="relative ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2 empty:hidden @max-[40rem]/riel:basis-full"
+          />
+          </div>
         </div>
         )}
       </section>
 
       <FranjaDelLibro franja={franja} />
 
-      {children}
+      {/* Sin riel (una sola vista) no hay esquina: `undefined` = cada vista
+          pinta sus acciones en su lugar, como siempre. */}
+      <ProveedorAccionesDeLaVista value={flat.length > 1 ? hueco : undefined}>{children}</ProveedorAccionesDeLaVista>
 
     </div>
     </FranjaLibroContext.Provider>
-  );
-}
-
-/** El botón de la hoja de atajos. Dentro del panel se muestra siempre; suelto,
- *  sólo en pantallas grandes (en móvil el atajo de teclado no existe). */
-function BotonAtajos({ onClick, enPanel = false }: { onClick: () => void; enPanel?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title="Atajos del teclado (?)"
-      aria-label="Ver los atajos del teclado"
-      className={`${enPanel ? "inline-flex" : "hidden lg:inline-flex"} h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]`}
-    >
-      <Keyboard className="h-4 w-4" />
-    </button>
-  );
-}
-
-/**
- * «Herramientas» — un botón que abre el panel con los controles del libro.
- *
- * Se dibuja en un PORTAL con posición medida, igual que `ActionMenu`: la
- * cabecera es una `<section class="overflow-hidden">` y un panel `absolute`
- * adentro se recorta. El velo de atrás cierra al tocar afuera; Escape también.
- * Los controles que van adentro pueden abrir lo suyo (el selector de período,
- * la campana de avisos): el panel no tiene overflow que los recorte.
- */
-function HerramientasDelLibro({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const anclaRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
-  /* Mismo patrón que `ActionMenu` (ver su comentario): con la cabina abierta
-     DENTRO de un `AdminModal`, portalear siempre a `body` deja el panel bajo
-     el `pointer-events: none` que Radix le pone al body — se ve, no se toca. */
-  const portalARef = useRef<HTMLElement | null>(null);
-  // Escape ya lo maneja el listener de la ventana de abajo; el hook agrega
-  // la trampa de Tab (sin ella se escapa al resto de la página) y devuelve
-  // el foco al botón que lo abrió.
-  const cerrarHerramientas = useCallback(() => setOpen(false), []);
-  useModalAccesible(panelRef, { onCerrar: cerrarHerramientas, cerrarConEscape: false, activo: open });
-
-  const ubicar = useCallback(() => {
-    const ancla = anclaRef.current;
-    const b = ancla?.getBoundingClientRect();
-    if (!b || !ancla) return;
-    const dialogo = ancla.closest<HTMLElement>('[role="dialog"]');
-    portalARef.current = dialogo;
-    const marco = marcoDeFixed(dialogo);
-    const base = marco ?? { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
-    const bTop = b.top - base.top;
-    const bBottom = b.bottom - base.top;
-    /* Dentro de un diálogo con transform, este panel queda recortado a SU
-       caja (transform + overflow-hidden juntos, como `Dialog.Content` de
-       Radix): si no entra abajo, se abre arriba en vez de cortarse contra el
-       borde inferior. Fuera de un diálogo (el caso de siempre) `base` es el
-       viewport entero y esto nunca dispara. */
-    const entraAbajo = bBottom + 8 + 200 <= base.height;
-    setPos({
-      top: entraAbajo ? bBottom + 8 : Math.max(12, bTop - 8 - 200),
-      right: Math.max(12, base.width - (b.right - base.left)),
-    });
-  }, []);
-
-  useLayoutEffect(() => {
-    if (open) ubicar();
-  }, [open, ubicar]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("scroll", ubicar, true);
-    window.addEventListener("resize", ubicar);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("scroll", ubicar, true);
-      window.removeEventListener("resize", ubicar);
-    };
-  }, [open, ubicar]);
-
-  /* Una herramienta que abre una ventana («Buscar guía», 2026-10-11): el panel
-     (z-61) quedaba flotando ENCIMA de la ventana nueva, y como Radix apaga los
-     clics fuera de ella, ni se podía cerrar. Al aparecer un `AdminModal` en el
-     body, el panel se cierra solo. */
-  useEffect(() => {
-    if (!open) return;
-    const mo = new MutationObserver(() => {
-      if (document.querySelector("[data-modal-variante]")) setOpen(false);
-    });
-    mo.observe(document.body, { childList: true });
-    return () => mo.disconnect();
-  }, [open]);
-
-  const panel = open && pos && (
-    <>
-      <div className="fixed inset-0 z-modal-2" onClick={() => setOpen(false)} aria-hidden="true" />
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-label="Herramientas del libro"
-        tabIndex={-1}
-        /* Sin overflow: los controles de adentro (la campana de avisos, el
-           período) abren sus propios desplegables `absolute`, y un overflow
-           acá los recortaría al tamaño del panel. */
-        style={{ top: pos.top, right: pos.right }}
-        className="fixed z-[61] w-[min(92vw,44rem)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)] outline-none"
-      >
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <Kicker className="block leading-none">Herramientas del libro</Kicker>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="Cerrar herramientas"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">{children}</div>
-      </div>
-    </>
-  );
-
-  return (
-    <>
-      <button
-        ref={anclaRef}
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        title="Herramientas del libro: período, búsqueda, avisos, modo patio y atajos"
-        aria-label="Herramientas del libro"
-        /* Sólo ícono en todos los anchos (Brandon, 2026-09-19: «que los botones
-           no ocupen mucho espacio»). Con el texto puesto, título + fases +
-           botones no entraban en una fila y los botones caían solos a una
-           segunda. Borde de 1 px: el neutro del panel es uno solo (ADR-068). */
-        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${
-          open
-            ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-        }`}
-      >
-        <SlidersHorizontal className="h-4 w-4" aria-hidden />
-      </button>
-      {typeof document !== "undefined" && panel ? createPortal(panel, portalARef.current ?? document.body) : null}
-    </>
   );
 }

@@ -58,9 +58,15 @@ export interface TituloModuloProps {
   ayuda?: ReactNode;
   /** Clases del bloque de texto (no del título). */
   className?: string;
+  /**
+   * El título en UNA línea, cortado con «…» si no entra, y entero al pasar el
+   * mouse. Para una fila que no se parte (la cabecera de los libros, 17-10):
+   * sin esto el título envolvía a dos renglones y la fila crecía.
+   */
+  truncar?: boolean;
 }
 
-export function TituloModulo({ icon: Icon, eyebrow, title, as, ayuda, className }: TituloModuloProps) {
+export function TituloModulo({ icon: Icon, eyebrow, title, as, ayuda, className, truncar = false }: TituloModuloProps) {
   return (
     <>
       {Icon && (
@@ -72,6 +78,7 @@ export function TituloModulo({ icon: Icon, eyebrow, title, as, ayuda, className 
           queda pegado al título, sin otra caja en el medio (rótulo y título
           siguen siendo hermanos, como en el libro). */}
       <div
+        title={truncar && typeof title === "string" ? title : undefined}
         className={cn(
           "min-w-0",
           ayuda && (eyebrow ? TEXTO_CON_ROTULO_Y_AYUDA : "flex flex-wrap items-center gap-x-2"),
@@ -79,7 +86,9 @@ export function TituloModulo({ icon: Icon, eyebrow, title, as, ayuda, className 
         )}
       >
         {eyebrow ? <Kicker className={ROTULO_MODULO}>{eyebrow}</Kicker> : null}
-        <PageTitle as={as} className={TITULO_MODULO}>
+        {/* `py-0.5`: con `overflow: hidden` y el interlineado de 1.12 del
+            título, la cola de la «p» quedaba cortada. */}
+        <PageTitle as={as} className={truncar ? cn(TITULO_MODULO, "max-w-full truncate py-0.5") : TITULO_MODULO}>
           {title}
         </PageTitle>
         {ayuda}

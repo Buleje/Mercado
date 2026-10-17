@@ -24,11 +24,60 @@ export type FiltroRecepcion = "pendiente" | "cerrada" | "";
 export const SUBS_TABLERO = ["movimiento", "produccion", "tendencias", "margen", "rendimiento"] as const;
 export type SubTablero = (typeof SUBS_TABLERO)[number];
 
-export const SUBS_DESPACHO = ["despachos", "lotes-qr"] as const;
+/** `guias` = las Guías emitidas (compactación 17-10: la vista se mudó acá). */
+export const SUBS_DESPACHO = ["despachos", "lotes-qr", "guias"] as const;
 export type SubDespacho = (typeof SUBS_DESPACHO)[number];
 
+/*
+ * Compactación del libro (17-10, plan `.claude/autonomo/ctp-compactar/plan.md`):
+ * seis vistas más se mudan adentro de otra. Las listas van primero, solas, para
+ * que cada vista construya su `?sub=`; el riel, los alias y las teclas
+ * (`CTP_VISTAS_FUSIONADAS`, `TECLAS_FUSIONADAS`) se cambian al final, juntos.
+ */
+
+/** Saldos. `libro` = «Lo que firma el libro»: absorbe los Cuadros SERFOR (`resumenes`). */
+export const SUBS_SALDOS = ["estado", "capacidad", "movimiento", "libro"] as const;
+export type SubSaldos = (typeof SUBS_SALDOS)[number];
+
+/** Lotes de aserrío. `historia` = la Historia del lote (`historia-lote`). */
+export const SUBS_LOTES = ["lotes", "historia"] as const;
+export type SubLotes = (typeof SUBS_LOTES)[number];
+
+/** Volumen disponible. `por-troza` = la vista Trozas (`trozas`), pieza por pieza. */
+export const SUBS_DISPONIBLES = ["volumen", "por-troza"] as const;
+export type SubDisponibles = (typeof SUBS_DISPONIBLES)[number];
+
+/** Cumplimiento. `cerrar` = el Cierre del mes (`cierre`). */
+export const SUBS_CUMPLIMIENTO = ["chequeo", "cerrar"] as const;
+export type SubCumplimiento = (typeof SUBS_CUMPLIMIENTO)[number];
+
+/**
+ * Directorio: los seis roles de `ROLES_PARTE` (lib/forestal/directorio.ts), los
+ * vehículos y `tu-ctp` = la Ficha del CTP (`ficha`), los datos que llenan la guía.
+ * Escrita a mano (no `...ROLES_PARTE`): el guardián de subvistas lee la lista literal.
+ */
+export const SUBS_DIRECTORIO = [
+  "proveedor",
+  "destinatario",
+  "transportista",
+  "conductor",
+  "cliente",
+  "establecimiento",
+  "vehiculos",
+  "tu-ctp",
+] as const;
+export type SubDirectorio = (typeof SUBS_DIRECTORIO)[number];
+
 /** Las vistas del riel que tienen pestañas internas. */
-export type VistaConSubs = "ingresos" | "tablero" | "despacho";
+export type VistaConSubs =
+  | "ingresos"
+  | "tablero"
+  | "despacho"
+  | "saldos"
+  | "lotes"
+  | "disponibles"
+  | "cumplimiento"
+  | "directorio";
 
 export interface DestinoFusionado {
   vista: VistaConSubs;

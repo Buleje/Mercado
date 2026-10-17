@@ -17,6 +17,13 @@
  *  · `<CtpKpisPlegables acciones={…} />`: la fila de siempre, con los botones
  *    de la vista a la derecha en la MISMA fila.
  *
+ * Dentro de un libro con riel de vistas (Brandon 17-10: «los botones… al
+ * lado de las pestañas en la esquina»), `boton` se va solo al riel
+ * (`AccionesDeLaVista`) y el panel queda en la vista: un renglón menos. Con el
+ * riel angosto se pliega a ícono + cuenta (la palabra y el titular quedan en el
+ * `title` y para el lector de pantalla). `enSuLugar` es el mismo botón sin
+ * mudarse, para una sub-sección (lo de la raíz es lo único que va al riel).
+ *
  * Arranca CERRADO y recuerda por vista (`ctp-kpis-v2:<clave>`). Con trabajo
  * abierto abajo (un lote elegido) se repliega solo y, al soltarlo, vuelve como
  * estaba — decide en el momento del cambio, no en cada render.
@@ -25,6 +32,7 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { BarChart3, ChevronDown } from "@buleje/design-system/icons";
 import { SkeletonKPICard } from "@/components/ui-system";
+import { AccionesDeLaVista, CLASE_TEXTO_ACCION, ORDEN_ACCION } from "@/components/admin/shared/libro-acciones-vista";
 
 export interface KpisPlegablesProps {
   claveMemoria: string;
@@ -77,7 +85,17 @@ export interface KpisPlegablesProps {
    * al `title`): para una banda de título que ya va llena a 1280 px.
    */
   soloIcono?: boolean;
+  /**
+   * Dentro de un libro, `boton` va al riel de vistas. `false` = se queda donde
+   * la vista lo pone (una sub-sección, un bloque de la ficha). Fuera de un libro
+   * no cambia nada. Default `true` en `useKpisPlegables`, `false` en
+   * `CtpKpisPlegables` (su fila compone el botón con `antes` y `acciones`).
+   */
+  alRiel?: boolean;
 }
+
+/** El titular se calla con el riel por debajo de 96rem: el botón cabe en la esquina. */
+const CLASE_TITULAR_EN_RIEL = "@max-[96rem]/riel:sr-only";
 
 export function useKpisPlegables({
   claveMemoria,
@@ -94,7 +112,8 @@ export function useKpisPlegables({
   anchoFijo = false,
   compactoEnMovil = false,
   soloIcono = false,
-}: KpisPlegablesProps): { boton: ReactNode; panel: ReactNode; abierto: boolean } {
+  alRiel = true,
+}: KpisPlegablesProps): { boton: ReactNode; enSuLugar: ReactNode; panel: ReactNode; abierto: boolean } {
   /* Clave `v2`: la v1 guardaba «¿está abierta la SEGUNDA fila?», otra pregunta. */
   const [abierto, setAbierto] = useState(abiertoPorDefecto);
   /* Sin nada guardado manda el default de la vista; «0» guardado gana siempre. */
@@ -127,9 +146,11 @@ export function useKpisPlegables({
     trabajoPrevio.current = trabajoActivo;
   }, [trabajoActivo, claveMemoria]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (tarjetas.length === 0) return { boton: null, panel: null, abierto: false };
+  if (tarjetas.length === 0) return { boton: null, enSuLugar: null, panel: null, abierto: false };
 
-  const boton = (
+  /* Las clases `/riel` sólo pesan dentro del riel: en su lugar no hay
+     contenedor con ese nombre y el botón se ve como siempre. */
+  const enSuLugar = (
     <button
       type="button"
       onClick={alternar}
@@ -153,7 +174,9 @@ export function useKpisPlegables({
       }`}
     >
       <BarChart3 className="h-4 w-4 shrink-0" aria-hidden />
-      <span className={`shrink-0 ${soloIcono ? "sr-only" : compactoEnMovil ? "max-sm:sr-only" : ""}`}>Indicadores</span>
+      <span className={`shrink-0 ${soloIcono ? "sr-only" : compactoEnMovil ? "max-sm:sr-only" : ""} ${CLASE_TEXTO_ACCION}`}>
+        Indicadores
+      </span>
       <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 text-sm tabular-nums text-[var(--text-tertiary)]">
         {tarjetas.length}
       </span>
@@ -163,7 +186,7 @@ export function useKpisPlegables({
         <span
           className={`min-w-0 truncate font-mono text-sm font-normal tabular-nums text-[var(--text-secondary)] ${
             soloIcono ? "max-xl:sr-only" : compactoEnMovil ? "max-sm:hidden" : ""
-          }`}
+          } ${CLASE_TITULAR_EN_RIEL}`}
         >
           {resumen}
         </span>
@@ -200,7 +223,15 @@ export function useKpisPlegables({
     </div>
   ) : null;
 
-  return { boton, panel, abierto };
+  const boton = alRiel ? (
+    <AccionesDeLaVista orden={ORDEN_ACCION.indicadores} fueraDelLibro={enSuLugar}>
+      {enSuLugar}
+    </AccionesDeLaVista>
+  ) : (
+    enSuLugar
+  );
+
+  return { boton, enSuLugar, panel, abierto };
 }
 
 /**
@@ -211,6 +242,7 @@ export function useKpisPlegables({
 export function CtpKpisPlegables({
   antes,
   acciones,
+  alRiel = false,
   ...props
 }: KpisPlegablesProps & {
   /** A la izquierda del botón, en la misma fila (el título de la tarjeta). */
@@ -218,7 +250,7 @@ export function CtpKpisPlegables({
   /** A la derecha, en la misma fila: buscador y botones de la vista. */
   acciones?: ReactNode;
 }) {
-  const { boton, panel } = useKpisPlegables({ ...props, alto: props.alto ?? (acciones ? "md" : "sm") });
+  const { boton, panel } = useKpisPlegables({ ...props, alRiel, alto: props.alto ?? (acciones ? "md" : "sm") });
   if (!boton) {
     return antes || acciones ? (
       <div className="flex flex-wrap items-center gap-2">
@@ -226,6 +258,15 @@ export function CtpKpisPlegables({
         {acciones && <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{acciones}</div>}
       </div>
     ) : null;
+  }
+  /* Con `alRiel` y nada más en la fila, la fila no existe (el botón está en el riel). */
+  if (alRiel && !antes && !acciones) {
+    return (
+      <>
+        {boton}
+        {panel}
+      </>
+    );
   }
   return (
     <div className="space-y-2">
