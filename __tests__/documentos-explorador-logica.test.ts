@@ -112,6 +112,9 @@ describe("deshacer", () => {
     const a = api();
     vi.mocked(a.carpetaVacia).mockReturnValue(false);
     await expect(revertir({ tipo: "crear-carpeta", id: "c", nombre: "Nueva" }, a)).rejects.toBeInstanceOf(NoSePuedeDeshacer);
+    // Respuesta del servidor (archivos subidos después, fuera de la carpeta abierta): tampoco borra.
+    vi.mocked(a.carpetaVacia).mockResolvedValue(false);
+    await expect(revertir({ tipo: "crear-carpeta", id: "c", nombre: "Nueva" }, a)).rejects.toBeInstanceOf(NoSePuedeDeshacer);
     expect(a.borrarCarpeta).not.toHaveBeenCalled();
   });
   it("tope de 20 y etiqueta del menú", () => {

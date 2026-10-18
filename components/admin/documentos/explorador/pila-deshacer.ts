@@ -32,7 +32,8 @@ export interface ApiDeshacer {
   renombrarCarpeta: (id: string, nombre: string) => Promise<unknown>;
   restaurar: (ids: string[]) => Promise<unknown>;
   /** ¿Sigue vacía (sin archivos ni subcarpetas)? */
-  carpetaVacia: (id: string) => boolean;
+  /** Puede preguntar al servidor: la lista de la pantalla es sólo la carpeta abierta. */
+  carpetaVacia: (id: string) => boolean | Promise<boolean>;
   borrarCarpeta: (id: string) => Promise<unknown>;
 }
 
@@ -87,7 +88,7 @@ export async function revertir(a: AccionDeshacer, api: ApiDeshacer): Promise<str
       await api.restaurar([...a.docs]);
       return a.docs.length === 1 ? `«${a.nombre}» salió de la papelera` : `${a.docs.length} archivos salieron de la papelera`;
     case "crear-carpeta":
-      if (!api.carpetaVacia(a.id)) throw new NoSePuedeDeshacer(`«${a.nombre}» ya tiene cosas adentro: bórrala a mano si ya no la quieres`);
+      if (!(await api.carpetaVacia(a.id))) throw new NoSePuedeDeshacer(`«${a.nombre}» ya tiene cosas adentro: bórrala a mano si ya no la quieres`);
       await api.borrarCarpeta(a.id);
       return `Se quitó la carpeta «${a.nombre}»`;
   }

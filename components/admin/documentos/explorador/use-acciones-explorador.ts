@@ -51,7 +51,14 @@ export function useAccionesExplorador(dIn: DepsAcciones) {
   // Lo último siempre: el «Deshacer» de un aviso corre minutos después.
   const ref = useRef(dIn);
   ref.current = dIn;
-  const [pila, setPila] = useState<AccionDeshacer[]>([]);
+  // La pila vive en un ref y el estado sólo la dibuja: Ctrl+Z y el «Deshacer»
+  // del aviso (o dos Ctrl+Z antes del re-render) no aplican la misma dos veces.
+  const [pila, setPilaEstado] = useState<AccionDeshacer[]>([]);
+  const pilaRef = useRef<AccionDeshacer[]>([]);
+  const setPila = (cambio: (p: AccionDeshacer[]) => AccionDeshacer[]) => {
+    pilaRef.current = cambio(pilaRef.current);
+    setPilaEstado(pilaRef.current);
+  };
   const [portapapeles, setPortapapeles] = useState<CargaArrastre | null>(null);
   // Dónde estaba y cómo se llamaba lo que cortaste: al pegar en otra carpeta la
   // lista ya es la de allá (sin esto, Deshacer lo devolvería a la raíz).
@@ -75,16 +82,25 @@ export function useAccionesExplorador(dIn: DepsAcciones) {
     renombrarDoc: (id, n) => ref.current.renombrarDoc(id, n),
     renombrarCarpeta: (id, n) => ref.current.updateFolder(id, { name: n }),
     restaurar: async (ids) => { await ref.current.restoreMany(ids); await ref.current.refrescar(); },
-    carpetaVacia: (id) => {
+    // `documentos` es sólo la carpeta abierta y `documentCount` no se refresca al
+    // subir: si no, se borraba con lo subido adentro y el servidor lo soltaba en
+    // la raíz (revisión 18-10). Manda el servidor.
+    carpetaVacia: async (id) => {
       const d = ref.current;
-      return (d.hijos.get(id)?.length ?? 0) === 0 && (d.porId.get(id)?.documentCount ?? 0) === 0 && !d.documentos.some((x) => x.folderId === id);
+      if ((d.hijos.get(id)?.length ?? 0) > 0 || d.documentos.some((x) => x.folderId === id)) return false;
+      const r = await fetch(`/api/admin/documents?folderId=${encodeURIComponent(id)}`, { credentials: "same-origin" });
+      if (!r.ok) return false;
+      const j = (await r.json()) as { documents?: unknown[] };
+      return Array.isArray(j.documents) && j.documents.length === 0;
     },
     borrarCarpeta: (id) => ref.current.deleteFolder(id, { conDocumentos: false }),
   };
 
   const deshacer = async (cual?: AccionDeshacer) => {
-    const a = cual ?? pila[pila.length - 1];
+    const p = pilaRef.current;
+    const a = cual ?? p[p.length - 1];
     if (!a) { toast.info("No hay nada que deshacer."); return; }
+    if (!p.includes(a)) { toast.info("Eso ya se deshizo."); return; }
     setPila((p) => p.filter((x) => x !== a));
     try {
       toast.success(await revertir(a, api));
@@ -107,26 +123,42 @@ export function useAccionesExplorador(dIn: DepsAcciones) {
     if (!v.ok) { toast.info(v.motivo); return false; }
     const real = filtrarQueSeMueven(carga, destino, ctx);
     const d = ref.current;
-    const accion: AccionDeshacer = {
-      tipo: "mover",
-      docs: real.docs.map((id) => ({ id, desde: docEnCarpeta(id) })),
-      carpetas: real.carpetas.map((id) => ({ id, desde: d.porId.get(id)?.parentId ?? null })),
-      nombreDestino: nombreCarpeta(destino),
-    };
+    const desdeDocs = real.docs.map((id) => ({ id, desde: docEnCarpeta(id) }));
+    const desdeCarpetas = new Map(real.carpetas.map((id) => [id, d.porId.get(id)?.parentId ?? null]));
+    let docsMovidos = 0;
+    const carpetasMovidas: string[] = [];
+    let fallo = false;
     try {
-      if (real.docs.length > 0) await d.bulk("move", real.docs, { folderId: destino });
-      for (const c of real.carpetas) await d.moveFolder(c, destino);
-      const n = real.docs.length + real.carpetas.length;
-      const uno = real.docs[0] ? nombreDoc(real.docs[0]) : d.porId.get(real.carpetas[0])?.name;
-      guardar(accion, `Moviste ${cuantos(n, `«${uno ?? "1 elemento"}»`)} a «${accion.nombreDestino}».`);
-      return true;
+      if (real.docs.length > 0) docsMovidos = await d.bulk("move", real.docs, { folderId: destino });
+      for (const c of real.carpetas) {
+        await d.moveFolder(c, destino);
+        carpetasMovidas.push(c);
+      }
     } catch (err) {
+      fallo = true;
       toast.error(`No se pudo mover: ${errorDe(err)}`);
-      return false;
     } finally {
       // Los contadores de las carpetas los recalcula el servidor.
       void d.refrescar();
     }
+    // `bulk` contesta 200 con 0 afectados si el id ya no existe o es ajeno: no
+    // se anuncia ni se apila lo que no pasó. Lo que sí se movió antes de un
+    // error queda en la pila (si sólo se movieron algunos archivos, deshacer
+    // devuelve también los otros a donde ya están: no hace daño).
+    const accion: AccionDeshacer = {
+      tipo: "mover",
+      docs: docsMovidos > 0 ? desdeDocs : [],
+      carpetas: carpetasMovidas.map((id) => ({ id, desde: desdeCarpetas.get(id) ?? null })),
+      nombreDestino: nombreCarpeta(destino),
+    };
+    const n = docsMovidos + carpetasMovidas.length;
+    if (n === 0) {
+      if (!fallo) toast.error("No se movió nada: el servidor no encontró esos archivos. Actualiza y prueba de nuevo.");
+      return false;
+    }
+    const uno = docsMovidos > 0 && real.docs[0] ? nombreDoc(real.docs[0]) : d.porId.get(carpetasMovidas[0])?.name;
+    guardar(accion, `Moviste ${cuantos(n, `«${uno ?? "1 elemento"}»`)} a «${accion.nombreDestino}».`);
+    return !fallo;
   };
 
   const cargaDe = (claves: readonly string[]): CargaArrastre => {
@@ -143,12 +175,15 @@ export function useAccionesExplorador(dIn: DepsAcciones) {
     const d = ref.current;
     if (docs.length > 0) {
       try {
-        await d.bulk("delete", docs);
         const nombre = d.docPorId.get(docs[0])?.name ?? "archivo";
-        guardar(
-          { tipo: "eliminar", docs, nombre },
-          docs.length === 1 ? `«${nombre}» se fue a la papelera.` : `${docs.length} archivos se fueron a la papelera.`,
-        );
+        // Con 0 afectados `bulk` ya dice qué pasó: no se apila un «Deshacer» vacío.
+        const borrados = await d.bulk("delete", docs);
+        if (borrados > 0) {
+          guardar(
+            { tipo: "eliminar", docs, nombre },
+            borrados === 1 && docs.length === 1 ? `«${nombre}» se fue a la papelera.` : `${borrados} archivos se fueron a la papelera.`,
+          );
+        }
       } catch (err) {
         toast.error(`No se pudo eliminar: ${errorDe(err)}`);
       }
