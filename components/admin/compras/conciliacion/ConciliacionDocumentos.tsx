@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Download, MoreHorizontal, RefreshCw } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
+import { FiltrosEnBoton, type ChipFiltroActivo } from "@/components/admin/shared";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { EstadoConciliacion } from "@/lib/compras/conciliacion";
@@ -13,6 +14,7 @@ import { PERIODOS, rangoDe, useConciliacion, type PeriodoConciliacion } from "./
 const CAMPO =
   "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 const POR_PAGINA = 50;
+const PERIODO_BASE: PeriodoConciliacion = "tres-meses";
 type FiltroEstado = EstadoConciliacion | "todas";
 const ESTADOS: Array<{
   id: FiltroEstado;
@@ -73,6 +75,28 @@ export default function ConciliacionDocumentos({
       `conciliacion-compras-${desde}-a-${hasta}`,
     );
 
+  // «Activo» = apartado de su valor por defecto (todos los proveedores · últimos 3 meses).
+  const chips: ChipFiltroActivo[] = [];
+  if (proveedor) {
+    chips.push({
+      id: "proveedor",
+      label: datos?.proveedores.find((p) => p.id === proveedor)?.nombre ?? "Proveedor",
+      onQuitar: () => cambiar(() => setProveedor("")),
+    });
+  }
+  if (periodo !== PERIODO_BASE) {
+    chips.push({
+      id: "periodo",
+      label: PERIODOS.find((p) => p.id === periodo)?.label ?? periodo,
+      onQuitar: () => cambiar(() => setPeriodo(PERIODO_BASE)),
+    });
+  }
+  const limpiar = () =>
+    cambiar(() => {
+      setProveedor("");
+      setPeriodo(PERIODO_BASE);
+    });
+
   const cambiar = (fn: () => void) => {
     fn();
     setAbierta(null);
@@ -103,31 +127,35 @@ export default function ConciliacionDocumentos({
         </div>
         {/* Filtros, ⓘ y «⋯» viajan juntos: si no entran, bajan en grupo (nunca el «⋯» solo en su fila). */}
         <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2">
-          <select
-            value={proveedor}
-            onChange={(e) => cambiar(() => setProveedor(e.target.value))}
-            aria-label="Filtrar por proveedor"
-            className={cn(CAMPO, "w-40 max-w-full truncate")}
-          >
-            <option value="">Todos los proveedores</option>
-            {(datos?.proveedores ?? []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </select>
-          <select
-            value={periodo}
-            onChange={(e) => cambiar(() => setPeriodo(e.target.value as PeriodoConciliacion))}
-            aria-label="Período"
-            className={CAMPO}
-          >
-            {PERIODOS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+          <FiltrosEnBoton activos={chips.length} chips={chips} onLimpiar={limpiar}>
+            <div className="flex flex-col gap-2">
+              <select
+                value={proveedor}
+                onChange={(e) => cambiar(() => setProveedor(e.target.value))}
+                aria-label="Filtrar por proveedor"
+                className={cn(CAMPO, "w-full truncate")}
+              >
+                <option value="">Todos los proveedores</option>
+                {(datos?.proveedores ?? []).map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={periodo}
+                onChange={(e) => cambiar(() => setPeriodo(e.target.value as PeriodoConciliacion))}
+                aria-label="Período"
+                className={cn(CAMPO, "w-full")}
+              >
+                {PERIODOS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </FiltrosEnBoton>
           <InfoTip
             title="Conciliación de documentos"
             what="Pone lado a lado lo que pediste en la orden, lo que llegó y aceptaste al recibir, la factura, la cuenta por pagar y lo que pagaste, y dice qué no cuadra y de qué papel sale. Diferencias de hasta S/ 1 se toman como iguales."
