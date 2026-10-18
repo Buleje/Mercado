@@ -24,7 +24,7 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import {
   Upload, Search, FolderArchive,
-  FileSpreadsheet, File as FileIcon, Download, Trash2,
+  FileSpreadsheet, File as FileIcon, Trash2,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare, Monitor,
   Camera, AlarmClock, Wand2, Tag, MoreHorizontal, FileArchive, Loader2,
   ChevronRight, ChevronDown, ChevronUp, Pencil, MessageCircle, Palette, History, Share2, FolderTree,
@@ -73,7 +73,7 @@ import { CalendarView } from "./CalendarView";
 import { StampModal } from "./StampModal";
 import { DashboardView } from "./DashboardView";
 import { SmartFolderModal } from "./SmartFolderModal";
-import { CameraScanModal } from "./CameraScanModal";
+import { EscanerModal } from "./escaner/EscanerModal";
 import { PageEditorModal } from "./PageEditorModal";
 import { loadSmartFolders, saveSmartFolders, matchesSmartFolder, describeRules, type SmartFolder } from "@/lib/documentos/smart-folders";
 import { AssistantView } from "./AssistantView";
@@ -3009,7 +3009,7 @@ export default function DocumentosModule() {
       )}
 
       {showCameraScan && (
-        <CameraScanModal
+        <EscanerModal
           folderId={filterMode === "folder" ? activeFolderId : null}
           onClose={() => setShowCameraScan(false)}
           onDone={refresh}
