@@ -1,31 +1,28 @@
 "use client";
 
 import { Field } from "@/components/admin/shared/Field";
-import { Plus, Loader2, User, ClipboardList } from "@buleje/design-system/icons";
+import { Plus, Loader2, ClipboardList } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import POSCustomerSearch from "@/components/admin/pos/POSCustomerSearch";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { PagoModal } from "@/components/admin/pos/pago/usePagoModal";
 
-/** Tarjeta Cliente del cobro: buscar, nuevo cliente y lista. */
+/** Cliente del cobro (en «La venta»): buscar, nuevo cliente y lista. Fiado lo exige. */
 export default function PagoCliente({ p }: { p: PagoModal }) {
   const { onRepeatOrder, customerPhone, setCustomerPhone, customerName, setCustomerName, setShowCustomerList, showNewCustomer, setShowNewCustomer, newCustName, setNewCustName, newCustPhone, setNewCustPhone, savingCustomer, setSavingCustomer, isFiado } = p;
   return (
     <>
-            <div className="lg:col-span-3 min-w-0 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-[var(--rule-soft)] flex items-center gap-2.5">
-                <span className="h-8 w-8 rounded-full bg-[var(--data-success-500)]/15 flex items-center justify-center text-[var(--data-success-500)]">
-                  <User className="h-4 w-4" />
-                </span>
-                <Kicker as="h3" className="libro-kicker">Cliente</Kicker>
+            <div className="min-w-0 space-y-2" data-pago-cliente="">
+              <div className="flex items-center gap-2">
+                <Kicker as="h3">Cliente</Kicker>
                 <span className={cn(
-                  "text-[length:var(--ts-2xs)] font-extrabold uppercase",
-                  isFiado ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]",
+                  "text-xs font-semibold",
+                  isFiado ? "text-[var(--data-error-ink)]" : "text-[var(--text-tertiary)]",
                 )}>
-                  {isFiado ? "Requerido" : "Opcional"}
+                  {isFiado ? "· Requerido para fiar" : "· Opcional"}
                 </span>
-                {/* «Nuevo» y «Ver clientes» suben a la cabecera: antes ocupaban una fila propia que repetía «Cliente». */}
+                {/* «Nuevo» y «Ver clientes» en la misma fila del rótulo. */}
                 <div className="ml-auto flex items-center gap-1">
                   <button
                     type="button"
@@ -33,38 +30,31 @@ export default function PagoCliente({ p }: { p: PagoModal }) {
                     aria-label="Nuevo cliente"
                     aria-expanded={showNewCustomer}
                     title="Nuevo cliente"
-                    className="h-9 w-9 rounded-lg inline-flex items-center justify-center text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/10 dark:hover:bg-[var(--data-success-500)]/15 transition-colors"
+                    className="inline-flex h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--accent-soft)] transition-colors"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4" aria-hidden />
+                    <span className="hidden sm:inline">Nuevo</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowCustomerList(true)}
                     aria-label="Ver todos los clientes"
                     title="Ver todos los clientes"
-                    className="h-9 w-9 rounded-lg inline-flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+                    className="h-10 w-10 rounded-lg inline-flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent-ink)] transition-colors"
                   >
                     <ClipboardList className="h-4 w-4" />
                   </button>
                 </div>
               </div>
-              <div className="px-4 py-3 space-y-3 min-w-0">
+              <div className="min-w-0">
 
           {/* Customer search */}
           <div>
 
             {/* Formulario inline nuevo cliente — grande y legible */}
             {showNewCustomer && (
-              <div className="mb-3 p-5 rounded-2xl bg-[var(--data-success-500)]/8 dark:bg-[var(--data-success-500)]/12 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-[var(--data-success-500)]/15 flex items-center justify-center">
-                    <Plus className="h-5 w-5 text-[var(--data-success-500)]" />
-                  </div>
-                  <div>
-                    <p className="text-base font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Nuevo cliente</p>
-                    <p className="text-sm text-[var(--data-success-500)]/80 dark:text-[var(--data-success-500)]/80">Nombre + celular, y listo</p>
-                  </div>
-                </div>
+              <div className="mb-3 p-3 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] space-y-3">
+                <p className="text-sm font-bold text-[var(--text-primary)]">Nuevo cliente <span className="font-normal text-[var(--text-tertiary)]">· nombre y celular</span></p>
 
                 <div className="space-y-3">
                   <Field label="Nombre completo" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
@@ -135,7 +125,7 @@ export default function PagoCliente({ p }: { p: PagoModal }) {
                   </button>
                   <button
                     onClick={() => { setShowNewCustomer(false); setNewCustName(""); setNewCustPhone(""); }}
-                    className="px-5 min-h-11 rounded-xl text-base font-semibold text-[var(--text-secondary)] hover:bg-white dark:hover:bg-[var(--surface-raised)] transition-colors"
+                    className="px-5 min-h-11 rounded-xl text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                   >
                     Cancelar
                   </button>
@@ -143,6 +133,7 @@ export default function PagoCliente({ p }: { p: PagoModal }) {
               </div>
             )}
 
+            <div data-pago-buscar-cliente="">
             <POSCustomerSearch
               selectedPhone={customerPhone}
               selectedName={customerName}
@@ -156,10 +147,11 @@ export default function PagoCliente({ p }: { p: PagoModal }) {
               }}
               onRepeatOrder={onRepeatOrder}
             />
+            </div>
           </div>
 
-              </div>{/* fin contenido card Cliente */}
-            </div>{/* fin Card Cliente */}
+              </div>
+            </div>
     </>
   );
 }

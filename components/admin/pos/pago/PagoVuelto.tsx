@@ -44,7 +44,7 @@ function VueltoVisual({ monto }: { monto: number }) {
   }
   if (pieces.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-1 justify-center mt-2">
+    <div className="mt-2 flex flex-wrap gap-1">
       {pieces.flatMap(({ denom, count }) => {
         const visual = DENOM_VISUAL[denom];
         if (!visual) return [];
@@ -56,7 +56,7 @@ function VueltoVisual({ monto }: { monto: number }) {
               visual.color,
               visual.shape === "rect"
                 ? "w-10 h-5 rounded"
-                : "w-7 h-7 rounded-full"
+                : "h-7 min-w-7 rounded-full px-1"
             )}
           >
             {visual.label}
@@ -67,29 +67,43 @@ function VueltoVisual({ monto }: { monto: number }) {
   );
 }
 
-/** Vuelto grande + billetes y monedas que hay que entregar. */
-export default function PagoVuelto({ vuelto }: { vuelto: number }) {
+/**
+ * Lo que hay que devolver, grande y en color, SIEMPRE a la vista mientras se paga
+ * en efectivo: «S/ 0.00 · exacto» cuando cuadra y «Falta S/ X» en rojo cuando no
+ * alcanza. Antes sólo aparecía con vuelto > 0 y el «Falta» era una caja aparte
+ * al final de la tarjeta. Las cifras salen tal cual de `usePagoModal`.
+ */
+export default function PagoVuelto({ vuelto, pendiente, conVuelto, className }: { vuelto: number; pendiente: number; conVuelto: boolean; className?: string }) {
+  if (pendiente > 0.01) {
+    return (
+      <div
+        aria-live="polite"
+        data-pago-vuelto="falta"
+        className={cn("rounded-2xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] px-4 py-3", className)}
+      >
+        <p className="text-xs font-bold uppercase tracking-wide text-[var(--data-error-ink)]">Falta</p>
+        <p className="text-3xl font-extrabold leading-tight tabular-nums text-[var(--data-error-ink)] sm:text-4xl">{fmt(pendiente)}</p>
+        <p className="mt-1 text-sm text-[var(--data-error-ink)]">Lo recibido no cubre el total.</p>
+      </div>
+    );
+  }
+  if (!conVuelto) return null;
   return (
-    <>
-          {/* Change display */}
-          {vuelto > 0 && (
-            <div className="bg-[var(--data-success-500)]/10 dark:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 text-center">
-              <p className="text-sm text-[var(--data-success-500)] font-semibold uppercase tracking-wide">
-                Vuelto
-              </p>
-              <p className="text-3xl sm:text-4xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1 tabular-nums">
-                {fmt(vuelto)}
-              </p>
-              {vuelto >= 0.2 && (
-                <>
-                  <VueltoVisual monto={vuelto} />
-                  <p className="text-sm text-[var(--data-success-500)]/80 dark:text-[var(--data-success-500)]/80 mt-2 flex items-center justify-center gap-1">
-                    <span>{calcularVuelto(vuelto)}</span>
-                  </p>
-                </>
-              )}
-            </div>
-          )}
-    </>
+    <div
+      aria-live="polite"
+      data-pago-vuelto="vuelto"
+      className={cn("rounded-2xl border border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] px-4 py-3", className)}
+    >
+      <p className="text-xs font-bold uppercase tracking-wide text-[var(--data-success-ink)]">Vuelto</p>
+      <p className="text-3xl font-extrabold leading-tight tabular-nums text-[var(--data-success-ink)] sm:text-4xl">{fmt(vuelto)}</p>
+      {vuelto >= 0.2 ? (
+        <>
+          <VueltoVisual monto={vuelto} />
+          <p className="mt-1.5 text-xs text-[var(--data-success-ink)]">{calcularVuelto(vuelto)}</p>
+        </>
+      ) : vuelto <= 0 ? (
+        <p className="mt-1 text-sm text-[var(--data-success-ink)]">Pago exacto, sin vuelto.</p>
+      ) : null}
+    </div>
   );
 }

@@ -1,70 +1,80 @@
 "use client";
 
-import { Receipt } from "@buleje/design-system/icons";
+import { useState } from "react";
+import { ChevronDown } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { isValidRuc, type ComprobanteTipo } from "@/components/admin/pos/pago/pago-shared";
 import { AVISO_DNI_BOLETA } from "@/lib/sunat/boleta-dni";
 import type { PagoModal } from "@/components/admin/pos/pago/usePagoModal";
 
-/** Tarjeta Comprobante: ticket, boleta, factura (RUC), cotización, proforma. */
+const PRINCIPALES: ComprobanteTipo[] = ["ticket", "boleta", "factura"];
+const OTROS: ComprobanteTipo[] = ["cotizacion", "proforma"];
+const ETIQUETA: Record<ComprobanteTipo, string> = {
+  ticket: "Ticket",
+  boleta: "Boleta",
+  factura: "Factura",
+  cotizacion: "Cotización",
+  proforma: "Proforma",
+};
+
+const SEGMENTO =
+  "flex h-10 min-w-0 items-center justify-center gap-1 rounded-lg px-2 text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary/50";
+const SEGMENTO_ELEGIDO = "bg-[var(--surface-raised)] text-[var(--accent-ink)] shadow-sm ring-1 ring-primary/40";
+const SEGMENTO_LIBRE = "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)]";
+
+/**
+ * Comprobante en una fila segmentada: Ticket · Boleta · Factura · Más ▾
+ * (Cotización y Proforma, que casi no se usan, en una segunda fila que abre
+ * «Más»). Cada tipo pide lo mismo que antes: RUC la factura, DNI la boleta grande.
+ */
 export default function PagoComprobante({ p }: { p: PagoModal }) {
   const { comprobanteTipo, setComprobanteTipo, comprobanteRuc, setComprobanteRuc, rucError, setRucError, comprobanteDni, setComprobanteDni, pideDni } = p;
+  const esOtro = OTROS.includes(comprobanteTipo);
+  const [verOtros, setVerOtros] = useState(esOtro);
+  const elegir = (tipo: ComprobanteTipo) => {
+    setComprobanteTipo(tipo);
+    if (tipo !== "factura") {
+      setComprobanteRuc("");
+      setRucError("");
+    }
+  };
+  const segmento = (tipo: ComprobanteTipo) => (
+    <button
+      key={tipo}
+      type="button"
+      onClick={() => elegir(tipo)}
+      aria-pressed={comprobanteTipo === tipo}
+      className={cn(SEGMENTO, comprobanteTipo === tipo ? SEGMENTO_ELEGIDO : SEGMENTO_LIBRE)}
+    >
+      <span className="truncate">{ETIQUETA[tipo]}</span>
+    </button>
+  );
   return (
     <>
-            <div className="lg:col-span-4 min-w-0 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-[var(--rule-soft)] flex items-center gap-2.5">
-                <span className="h-8 w-8 rounded-full bg-[var(--data-warning-500)]/15 flex items-center justify-center text-[var(--data-warning-500)]">
-                  <Receipt className="h-4 w-4" />
-                </span>
-                <Kicker as="h3" className="libro-kicker">Comprobante</Kicker>
-              </div>
-              <div className="px-4 py-3 space-y-3 min-w-0">
-
-          {/* Tipo de comprobante */}
+            <div className="min-w-0 space-y-2">
+              <Kicker as="h3">Comprobante</Kicker>
           <div>
-            {/*
-              Brandon 2026-05-16 v2: grid 3 columnas fijo en lugar de
-              flex-wrap, así los chips Ticket/Boleta/Factura quedan
-              en la primera fila y Cotización/Proforma en la segunda,
-              sin solaparse aunque la columna sea estrecha.
-            */}
-            <div className="grid grid-cols-3 gap-1.5">
-              {(["ticket", "boleta", "factura", "cotizacion", "proforma"] as ComprobanteTipo[]).map(
-                (tipo) => {
-                  const labels: Record<ComprobanteTipo, string> = {
-                    ticket: "Ticket",
-                    boleta: "Boleta",
-                    factura: "Factura",
-                    cotizacion: "Cotización",
-                    proforma: "Proforma",
-                  };
-                  return (
-                    <button
-                      key={tipo}
-                      onClick={() => {
-                        setComprobanteTipo(tipo);
-                        if (tipo !== "factura") {
-                          setComprobanteRuc("");
-                          setRucError("");
-                        }
-                      }}
-                      className={cn(
-                        "py-2 rounded-xl text-xs font-semibold border transition-all truncate",
-                        comprobanteTipo === tipo
-                          ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-primary/20"
-                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 hover:text-[var(--text-primary)]"
-                      )}
-                    >
-                      {labels[tipo]}
-                    </button>
-                  );
-                }
-              )}
+            <div role="group" aria-label="Tipo de comprobante" className="grid grid-cols-4 gap-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-1">
+              {PRINCIPALES.map(segmento)}
+              <button
+                type="button"
+                onClick={() => setVerOtros((v) => !v)}
+                aria-expanded={verOtros || esOtro}
+                className={cn(SEGMENTO, esOtro ? SEGMENTO_ELEGIDO : SEGMENTO_LIBRE)}
+              >
+                <span className="truncate">{esOtro ? ETIQUETA[comprobanteTipo] : "Más"}</span>
+                <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", (verOtros || esOtro) && "rotate-180")} aria-hidden />
+              </button>
             </div>
+            {(verOtros || esOtro) && (
+              <div role="group" aria-label="Otros documentos" className="mt-1 grid grid-cols-2 gap-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-1">
+                {OTROS.map(segmento)}
+              </div>
+            )}
             {(comprobanteTipo === "cotizacion" || comprobanteTipo === "proforma") && (
               <p className="text-sm text-[var(--data-warning-ink)] mt-2 font-medium">
-                Se generará {comprobanteTipo === "cotizacion" ? "cotización" : "proforma"} con los items del carrito
+                Se generará {comprobanteTipo === "cotizacion" ? "cotización" : "proforma"} con los artículos del carrito
               </p>
             )}
             {comprobanteTipo === "factura" && (
@@ -88,14 +98,14 @@ export default function PagoComprobante({ p }: { p: PagoModal }) {
                   inputMode="numeric"
                   maxLength={11}
                   className={cn(
-                    "w-full px-3 h-11 rounded-xl border text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none transition-colors",
+                    "w-full px-3 h-11 rounded-xl border bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none transition-colors",
                     rucError
                       ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] focus:border-primary"
                   )}
                 />
                 {rucError && (
-                  <p className="text-sm text-[var(--data-error-500)] mt-1.5">{rucError}</p>
+                  <p className="text-sm text-[var(--data-error-ink)] mt-1.5">{rucError}</p>
                 )}
                 {comprobanteRuc.length > 0 &&
                   comprobanteRuc.length < 11 && (
@@ -117,7 +127,7 @@ export default function PagoComprobante({ p }: { p: PagoModal }) {
                   aria-describedby="pos-aviso-dni-boleta"
                   inputMode="numeric"
                   maxLength={8}
-                  className="w-full px-3 h-11 rounded-xl border border-[var(--data-warning-500)] text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-primary"
+                  className="w-full px-3 h-11 rounded-xl border border-[var(--data-warning-500)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-primary"
                 />
                 <p id="pos-aviso-dni-boleta" className="text-sm text-[var(--data-warning-ink)] mt-1.5">
                   {comprobanteDni.length > 0 && comprobanteDni.length < 8
@@ -127,8 +137,7 @@ export default function PagoComprobante({ p }: { p: PagoModal }) {
               </div>
             )}
           </div>
-              </div>{/* fin contenido card Comprobante */}
-            </div>{/* fin Card Comprobante */}
+            </div>
     </>
   );
 }

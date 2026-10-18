@@ -20,9 +20,12 @@ export function usePagoModal({
     try {
       const pref = localStorage.getItem(`customer-payment-pref-${customerPhone}`);
       if (pref && ["efectivo", "yape", "plin", "tarjeta"].includes(pref)) {
-        setPaymentLines(prev => prev.length === 1 ? [{ method: pref as PaymentLineMethod, amount: prev[0].amount }] : prev);
+        // Lo tipeado como «Recibido» es efectivo: con Yape/Plin/Tarjeta el monto es el total.
+        setPaymentLines(prev => prev.length === 1 ? [{ method: pref as PaymentLineMethod, amount: pref === "efectivo" ? prev[0].amount : total }] : prev);
       }
     } catch { /* ignore */ }
+    // Sólo al cambiar de cliente: el total de ese momento basta (el efecto de `total` lo sigue).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerPhone]);
 
   // Tipo de comprobante
@@ -60,18 +63,20 @@ export function usePagoModal({
   const [showCustomerList, setShowCustomerList] = useState(false);
 
   // ── Discount calculations ──────────────────────────────────────────
-  const numDiscountValue = Number(discountValue) || 0;
-  const discountAmount = showDiscount
-    ? discountMode === "percent"
+  // Nunca negativo: `/api/sales` sólo acepta descuentos (descuentoMonto ≥ 0) y uno
+  // negativo no viaja — se veía S/ 42 y se registraba S/ 41,60 (17-10).
+  // Plegar el panel sólo lo oculta; lo anula «Quitar» (antes plegar lo borraba sin aviso).
+  const numDiscountValue = Math.max(0, Number(discountValue) || 0);
+  const discountAmount =
+    discountMode === "percent"
       ? subtotal * (Math.min(numDiscountValue, 100) / 100)
-      : Math.min(numDiscountValue, subtotal)
-    : 0;
-  const discountPercent = showDiscount
-    ? discountMode === "percent"
+      : Math.min(numDiscountValue, subtotal);
+  const discountPercent =
+    discountMode === "percent"
       ? Math.min(numDiscountValue, 100)
-      : subtotal > 0 ? (Math.min(numDiscountValue, subtotal) / subtotal) * 100 : 0
-    : 0;
-  const total = Math.max(0, subtotal - discountAmount);
+      : subtotal > 0 ? (Math.min(numDiscountValue, subtotal) / subtotal) * 100 : 0;
+  // En céntimos: 24,90 −10 % daba 22.409999… en «Recibido» y en el amountPaid enviado.
+  const total = Math.max(0, Math.round((subtotal - discountAmount) * 100) / 100);
 
   // Update payment amount when discount changes
   useEffect(() => {
@@ -220,7 +225,13 @@ export function usePagoModal({
   // Si tocan Yape antes de que llegue Ajustes, se abre apenas llega (si siguen en Yape).
   const qrPorAbrir = useRef<Billetera | null>(null);
   const elegirMetodo = (method: PaymentLineMethod) => {
-    updateMethod(0, method);
+    // Yape/Plin/Tarjeta no dan vuelto: lo recibido en efectivo no viaja con ellos (un Yape de
+    // S/ 50 sobre S/ 41,60 se guardaba con vuelto S/ 8,40 y la caja lo mandaba a «Dar de vuelto»).
+    if (method === "efectivo") updateMethod(0, method);
+    else {
+      setPaymentLines((prev) => prev.map((l, i) => (i === 0 ? { method, amount: total } : l)));
+      setBilletes([]);
+    }
     const billetera = method === "yape" || method === "plin" ? method : null;
     qrPorAbrir.current = billetera && !billeteras ? billetera : null;
     if (billetera && tieneQR(billeteras?.[billetera])) setQrAbierto(billetera);

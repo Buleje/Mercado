@@ -1,35 +1,36 @@
 "use client";
 
-import { Percent, DollarSign, ChevronDown, ChevronUp } from "@buleje/design-system/icons";
+import { Percent, DollarSign, ChevronDown, ChevronUp, Plus } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { fmt } from "@/components/admin/pos/pago/pago-shared";
 import type { PagoModal } from "@/components/admin/pos/pago/usePagoModal";
 
-/** Descuento plegable (porcentaje o monto) dentro del cobro. */
+/** Descuento plegable (porcentaje o monto) dentro del cobro. Subtotal y total con descuento los dice `PagoTotal`. */
 export default function PagoDescuento({ p }: { p: PagoModal }) {
-  const { subtotal, showDiscount, setShowDiscount, discountMode, setDiscountMode, discountValue, setDiscountValue, discountAmount, discountPercent, total, quickDiscountValues, applyQuickDiscount } = p;
+  const { subtotal, showDiscount, setShowDiscount, discountMode, setDiscountMode, discountValue, setDiscountValue, discountAmount, quickDiscountValues, applyQuickDiscount } = p;
   return (
     <>
-          {/* Descuento — collapsible */}
+          {/* «+ Descuento»: una línea que abre el panel en el lugar. Plegarlo sólo lo
+              oculta (el monto sigue en la línea y en el total); lo anula «Quitar». */}
           <div>
             <button
+              type="button"
               onClick={() => setShowDiscount(!showDiscount)}
-              className="flex items-center justify-between w-full text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-3"
+              aria-expanded={showDiscount}
+              className="flex h-10 w-full items-center justify-between gap-2 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
             >
               <span className="flex items-center gap-2">
-                <Percent className="h-4 w-4" />
+                {discountAmount > 0 ? <Percent className="h-4 w-4" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
                 Descuento
                 {discountAmount > 0 && (
-                  <span className="text-[var(--data-error-500)] font-bold">
-                    (-{fmt(discountAmount)})
-                  </span>
+                  <span className="font-bold tabular-nums text-[var(--data-error-ink)]">−{fmt(discountAmount)}</span>
                 )}
               </span>
-              {showDiscount ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {showDiscount ? <ChevronUp className="h-4 w-4" aria-hidden /> : <ChevronDown className="h-4 w-4" aria-hidden />}
             </button>
 
             {showDiscount && (
-              <div className="space-y-3 bg-[var(--surface-sunken)] rounded-xl p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+              <div className="mt-1 space-y-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
                 <div className="flex items-center gap-3">
                   <div className="flex bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg overflow-hidden">
                     <button
@@ -105,22 +106,6 @@ export default function PagoDescuento({ p }: { p: PagoModal }) {
                   ))}
                 </div>
 
-                {discountAmount > 0 && (
-                  <div className="text-sm space-y-1.5 pt-2">
-                    <div className="flex justify-between text-[var(--text-tertiary)] dark:text-muted">
-                      <span>Subtotal</span>
-                      <span className="tabular-nums">{fmt(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between text-[var(--data-error-500)] font-semibold">
-                      <span>Descuento {discountMode === "percent" ? `${discountPercent.toFixed(0)}%` : ""}</span>
-                      <span className="tabular-nums">-{fmt(discountAmount)}</span>
-                    </div>
-                    <div className="flex justify-between text-[var(--text-primary)] dark:text-[var(--text-primary)] font-extrabold border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] pt-2 text-base">
-                      <span>Total</span>
-                      <span className="tabular-nums">{fmt(total)}</span>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>

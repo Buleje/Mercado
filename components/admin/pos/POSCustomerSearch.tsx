@@ -76,6 +76,9 @@ export default function POSCustomerSearch({
 
   // Mejora M-3: Abono rápido de fiado desde POS
   const [fiadoSaldo, setFiadoSaldo] = useState(0);
+  /** Si debía al elegirlo (null = todavía no se sabe). Un fiado anotado en «Me deben»
+   *  no tiene venta: sin esto, quien debía S/ 150 salía como «Primera compra» (17-10). */
+  const [debiaAlElegir, setDebiaAlElegir] = useState<boolean | null>(null);
 
   // Click outside close
   useEffect(() => {
@@ -145,13 +148,18 @@ export default function POSCustomerSearch({
       setRedeemAmount(0);
       setReliabilityScore(null);
       setFiadoSaldo(0);
-       
+      setDebiaAlElegir(null);
       return;
     }
     // Mejora M-3: Fetch fiado balance
+    setDebiaAlElegir(null);
     fetch(`/api/customers/${encodeURIComponent(selectedPhone)}/fiado-resumen`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.montoPendiente) setFiadoSaldo(data.montoPendiente); else setFiadoSaldo(0); })
+      .then(data => {
+        if (data?.montoPendiente) setFiadoSaldo(data.montoPendiente); else setFiadoSaldo(0);
+        // Sin respuesta no se sabe: mejor no decir «Primera compra».
+        if (data) setDebiaAlElegir(Number(data.montoPendiente) > 0);
+      })
       .catch(() => setFiadoSaldo(0));
     // Mejora 11: Fetch reliability score from fiados history
     fetch(`/api/fiados?search=${encodeURIComponent(selectedPhone)}&limit=50`)
@@ -375,7 +383,7 @@ export default function POSCustomerSearch({
             <span className="text-sm text-[var(--text-tertiary)]">Cargando historial...</span>
           </div>
         )}
-        {lastPurchase === null && !loadingLastPurchase && paymentHistory.length === 0 && (
+        {lastPurchase === null && !loadingLastPurchase && paymentHistory.length === 0 && debiaAlElegir === false && (
           <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/10 dark:bg-primary/15 rounded-lg">
             <ShoppingBag className="h-3 w-3 text-[var(--data-success-500)] shrink-0" />
             <span className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">Primera compra de este cliente</span>

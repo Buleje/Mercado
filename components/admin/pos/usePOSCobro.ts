@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePOSOffline } from "@/components/admin/pos/usePOSOffline";
 import type { PaymentLine } from "@/components/admin/pos/POSPaymentModal";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -49,8 +49,13 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
 
   // ── New Payment Modal handler (Upgrade 3) ─────────────────────────────────
 
+  // Guarda SÍNCRONA: `processing` es estado y no cambia hasta el próximo render. Dos Enter
+  // (o Enter + clic) en el mismo tick pasaban los dos, cada uno con su clave de venta → el
+  // servidor no los ve repetidos y registra dos ventas (17-10).
+  const cobrando = useRef(false);
   const handlePaymentConfirm = async (payments: PaymentLine[], phone?: string, extra?: ExtraCobro) => {
-    if (cart.length === 0 || processing) return;
+    if (cart.length === 0 || processing || cobrando.current) return;
+    cobrando.current = true;
     setProcessing(true);
     setSaleError(null);
 
@@ -164,6 +169,7 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
         setSaleError("Error al guardar la venta offline");
       }
     }
+    cobrando.current = false;
     setProcessing(false);
   };
 
