@@ -11,7 +11,7 @@ import { armarMembrete, cierreDelNegocio, conNombreDelNegocio } from "@/lib/admi
 describe("membrete del negocio para los PDF", () => {
   it("con el nombre configurado vacío usa el nombre registrado (caso Blas)", () => {
     const m = armarMembrete({ businessName: "", logoUrl: null }, { name: "Inversiones Agroforestales BLAS sac", logoUrl: null });
-    expect(m).toEqual({ nombre: "Inversiones Agroforestales BLAS sac", logoUrl: null, telefono: null, direccion: null, ruc: null, pie: null });
+    expect(m).toEqual({ nombre: "Inversiones Agroforestales BLAS sac", logoUrl: null, telefono: null, direccion: null, ruc: null, pie: null, razonSocial: null, correo: null });
   });
 
   it("el nombre y el logo configurados ganan a los registrados", () => {
@@ -34,6 +34,8 @@ describe("membrete del negocio para los PDF", () => {
       direccion: null,
       ruc: null,
       pie: null,
+      razonSocial: null,
+      correo: null,
     });
   });
 
@@ -53,7 +55,7 @@ describe("membrete del negocio para los PDF", () => {
   });
 
   it("sin datos de ningún lado, todo null", () => {
-    expect(armarMembrete(null, null)).toEqual({ nombre: null, logoUrl: null, telefono: null, direccion: null, ruc: null, pie: null });
+    expect(armarMembrete(null, null)).toEqual({ nombre: null, logoUrl: null, telefono: null, direccion: null, ruc: null, pie: null, razonSocial: null, correo: null });
   });
 
   it("el pie y el RUC salen de Ajustes (el RUC de SUNAT sólo si no hay otro)", () => {

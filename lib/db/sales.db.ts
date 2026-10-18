@@ -92,6 +92,7 @@ function mapSale(s: Omit<PSale, "idempotencyKey"> & { items: PSaleItem[]; idempo
     // Mejora 1 & 4: new fields
     ...(s.comprobanteTipo != null && { comprobanteTipo: s.comprobanteTipo }),
     ...(s.comprobanteRuc != null && { comprobanteRuc: s.comprobanteRuc }),
+    ...(s.comprobanteNumero != null && { comprobanteNumero: s.comprobanteNumero }),
     ...(s.descuentoMonto != null && { descuentoMonto: Number(s.descuentoMonto) }),
     ...(s.descuentoPorcentaje != null && { descuentoPorcentaje: Number(s.descuentoPorcentaje) }),
     // Pago mixto / fiado
@@ -361,9 +362,17 @@ export const SalesDB = {
     const row = await withRlsTx(tenantId, (tx) => tx.sale.findFirst({
       where: { id, tenantId },
       omit: { idempotencyKey: true },
-      include: { items: true },
+      include: { items: { include: { product: { select: { taxType: true } } } } },
     }));
-    return row ? mapSale(row) : null;
+    if (!row) return null;
+    // La afectación al IGV de cada línea (del producto, igual que el IGV del mes en
+    // libros-contador): sin ella, el recibo reimpreso desglosaba todo como gravado.
+    const sale = mapSale(row);
+    sale.items = sale.items.map((it, i) => {
+      const taxType = row.items[i]?.product?.taxType;
+      return taxType ? { ...it, taxType } : it;
+    });
+    return sale;
   },
   async add(tenantId: string, sale: DbSale): Promise<DbSale> {
     // Pre-validate product IDs to avoid FK violations (products may have been deleted since the sale was queued offline)

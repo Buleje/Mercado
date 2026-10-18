@@ -21,6 +21,10 @@ export interface Membrete {
   ruc: string | null;
   /** El pie que el negocio escribió para sus comprobantes (`Settings.invoiceFooterText`). */
   pie: string | null;
+  /** Razón social con que emite (`Settings.razonSocial`): la pide la boleta/factura. */
+  razonSocial?: string | null;
+  /** Correo del negocio (`Settings.businessEmail`): va en el pie del recibo. */
+  correo?: string | null;
 }
 
 /** El logo ya listo para jsPDF: PNG en data URL y su tamaño en píxeles, para respetar la proporción. */
@@ -42,6 +46,8 @@ export function armarMembrete(
         invoiceFooterText?: string | null;
         ruc?: string | null;
         sunatRuc?: string | null;
+        razonSocial?: string | null;
+        businessEmail?: string | null;
         /** Lo que se configuró para la tienda: `phone`, `whatsapp`, `address`. */
         storeTheme?: Record<string, unknown> | null;
       }
@@ -56,6 +62,8 @@ export function armarMembrete(
     direccion: limpio(settings?.businessAddress) ?? limpio(settings?.storeTheme?.address),
     ruc: limpio(settings?.ruc) ?? limpio(settings?.sunatRuc),
     pie: limpio(settings?.invoiceFooterText),
+    razonSocial: limpio(settings?.razonSocial),
+    correo: limpio(settings?.businessEmail),
   };
 }
 

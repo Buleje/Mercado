@@ -38,6 +38,8 @@ export type Product = Omit<BaseProduct, "id"> & {
   durationLabel?: string;
   /** Cómo se cobra: fijo | hora | dia | m3 | unidad (hora/día = alquiler en la tarjeta). */
   pricingUnit?: string;
+  /** Afectación al IGV (gravado | exonerado | inafecto): el recibo desglosa con ella. */
+  taxType?: string | null;
 };
 
 export interface CartItem {
@@ -104,9 +106,32 @@ export function numeroAPalabras(n: number): string {
     : `${texto} soles`;
 }
 
-/** Lo que se guarda de la última venta para el ticket por WhatsApp. */
+/**
+ * Lo que respondió POST /api/sales: la venta GUARDADA. El recibo sale de acá
+ * (precios netos, total, vuelto, número), no del carrito. Una venta repetida
+ * por la clave de idempotencia trae menos campos y los montos como texto.
+ */
+export interface VentaGuardada {
+  id: string;
+  items?: { productId?: number | string | null; name: string; quantity: number; price: number | string; unit?: string | null; taxType?: string | null }[];
+  total?: number | string;
+  payment?: string;
+  amountPaid?: number | string;
+  change?: number | string;
+  cashierId?: string;
+  createdAt?: string;
+  comprobanteTipo?: string;
+  comprobanteRuc?: string;
+  comprobanteNumero?: string;
+  descuentoMonto?: number | string;
+  paymentDetails?: string;
+  customerPhone?: string;
+}
+
+/** Lo que se guarda de la última venta para el recibo y el mensaje por WhatsApp. */
 export interface LastSaleDetails {
-  items: { name: string; quantity: number; price: number }[];
+  /** Copia del carrito al cobrar: aporta la afectación al IGV y la unidad de cada producto. */
+  items: { name: string; quantity: number; price: number; productId?: number; unit?: string; taxType?: string | null }[];
   total: number;
   payment: string;
   customerPhone?: string;
@@ -114,6 +139,10 @@ export interface LastSaleDetails {
   discountAmount?: number;
   comprobanteTipo?: string;
   comprobanteNumero?: string;
+  /** RUC (factura) o DNI (boleta) que se escribió al cobrar. */
+  comprobanteDoc?: string;
+  /** La respuesta del servidor; falta si la venta quedó en la cola sin conexión. */
+  venta?: VentaGuardada;
 }
 
 /** Aviso flotante de stock (bajo, por vencer) con acción opcional. */

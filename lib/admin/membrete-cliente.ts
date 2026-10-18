@@ -6,7 +6,7 @@
 import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 import type { LogoPdf, Membrete } from "./membrete";
 
-const SIN_MEMBRETE: Membrete = { nombre: null, logoUrl: null, telefono: null, direccion: null, ruc: null, pie: null };
+const SIN_MEMBRETE: Membrete = { nombre: null, logoUrl: null, telefono: null, direccion: null, ruc: null, pie: null, razonSocial: null, correo: null };
 
 /** Si la ruta no responde, el PDF sale igual, sin nombre ni logo. */
 export async function leerMembrete(): Promise<Membrete> {

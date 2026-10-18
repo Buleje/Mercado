@@ -257,7 +257,6 @@ export default function POSView() {
           lastSaleDetails={cobro.lastSaleDetails}
           cartTotal={cartTotal}
           paymentMethod={paymentMethod}
-          cart={cart}
           onNewSale={handleNewSale}
           onClose={() => { setSaleComplete(null); cobro.setLastSaleDetails(null); }}
         />

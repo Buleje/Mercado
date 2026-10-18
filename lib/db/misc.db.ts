@@ -402,6 +402,8 @@ export type DbSaleItem = {
   costPrice?: number;
   quantity: number;
   unit: string;
+  /** `Product.taxType` (gravado | exonerado | inafecto): sólo lo trae `SalesDB.getById` (recibo). */
+  taxType?: string;
 };
 
 export type DbSale = {
@@ -418,6 +420,8 @@ export type DbSale = {
   // Mejora 1: Tipo de comprobante
   comprobanteTipo?: string;
   comprobanteRuc?: string;
+  /** B001-00000001, F001-…, COT-…, PRO-… (el ticket no tiene). Lo lee el recibo al reimprimir. */
+  comprobanteNumero?: string;
   // Mejora 4: Descuento global
   descuentoMonto?: number;
   descuentoPorcentaje?: number;

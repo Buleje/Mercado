@@ -1,141 +1,109 @@
 "use client";
 
 import { toast } from "sonner";
-import { useState } from "react";
-import { Banknote, X, Check, Receipt, Printer, MessageCircle, Send, Smartphone, CreditCard, HandCoins } from "@buleje/design-system/icons";
+import { useMemo, useRef } from "react";
+import { Banknote, X, Check, Receipt, Printer, Smartphone, CreditCard, HandCoins } from "@buleje/design-system/icons";
 import { m } from "@/components/admin/providers";
 import { isThermalPrintSupported, printThermal } from "@/lib/thermal-printer";
-import { formatCurrency, formatDateNumeric, formatTime } from "@/lib/format";
-import { fmt, type CartItem } from "@/components/admin/pos/pos-shared";
+import { fmt, type LastSaleDetails } from "@/components/admin/pos/pos-shared";
 import { SaleConfetti, useCountUp } from "@/components/admin/pos/POSSaleConfetti";
 import QuickAbonoFromSale from "@/components/admin/pos/POSQuickAbono";
-import { useMembrete } from "@/hooks/use-membrete";
-import { cierreDelNegocio, conNombreDelNegocio } from "@/lib/admin/membrete";
+import POSVentaWhatsApp from "@/components/admin/pos/POSVentaWhatsApp";
+import ReciboVistaPrevia from "@/components/admin/pos/recibo/ReciboVistaPrevia";
+import { useHoraDelCobro, useReciboVenta } from "@/components/admin/pos/recibo/use-recibo-venta";
+import { entradaDesdeVenta } from "@/components/admin/pos/recibo/entrada-recibo";
+import { useVendesComo } from "@/components/admin/pos/use-responsable-venta";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { datosTermicos, FORMATOS_RECIBO } from "@/lib/recibo/modelo-recibo";
 
 // ── Sale Complete Modal (Mejora 4: WhatsApp mejorado + Mejora 1: animaciones) ──
+// 17-10: el recibo se ve en el mismo modal (80 mm · 58 mm · A4) y se imprime
+// directo en ese formato. Sus montos son los de la venta GUARDADA, no el carrito
+// (que ya está vacío cuando se abre: el ESC/POS salía sin ítems y en S/ 0).
+
+const METODO_ICONO: Record<string, typeof Banknote> = {
+  efectivo: Banknote,
+  yape: Smartphone,
+  plin: Smartphone,
+  tarjeta: CreditCard,
+  mixto: HandCoins,
+  fiado: HandCoins,
+};
 
 export default function SaleCompleteModal({
   saleComplete,
   lastSaleDetails,
   cartTotal,
   paymentMethod,
-  cart,
   onNewSale,
   onClose,
 }: {
   saleComplete: { id: string; change: number };
-  lastSaleDetails: {
-    items: { name: string; quantity: number; price: number }[];
-    total: number;
-    payment: string;
-    customerPhone?: string;
-    customerName?: string;
-    discountAmount?: number;
-    comprobanteTipo?: string;
-    comprobanteNumero?: string;
-  } | null;
+  lastSaleDetails: LastSaleDetails | null;
   cartTotal: number;
   paymentMethod: string;
-  cart: CartItem[];
   onNewSale: () => void;
   onClose: () => void;
 }) {
-  const [manualPhone, setManualPhone] = useState("");
-  // El nombre, la dirección y el pie de ESTE negocio (no el de la plataforma).
-  const membrete = useMembrete();
-  const displayTotal = lastSaleDetails?.total ?? cartTotal;
+  const caja = useRef<HTMLDivElement>(null);
+  useModalAccesible(caja, { onCerrar: onClose });
+  const atendio = useVendesComo();
+  const hora = useHoraDelCobro();
+  const entrada = useMemo(
+    () =>
+      entradaDesdeVenta({
+        ventaId: saleComplete.id,
+        detalles: lastSaleDetails,
+        atendio,
+        respaldo: { total: cartTotal, metodo: paymentMethod, vuelto: saleComplete.change >= 0 ? saleComplete.change : null, fecha: hora },
+      }),
+    [saleComplete.id, saleComplete.change, lastSaleDetails, atendio, cartTotal, paymentMethod, hora],
+  );
+  const recibo = useReciboVenta(entrada);
+  const { modelo } = recibo;
+  const displayTotal = modelo.totales.total;
   // Fix 2026-07-08 (reporte ventas-caja): el count-up 0→total tardaba 1000ms →
   // un vistazo/captura al abrir el modal "¡Venta completada!" podía leer un
   // monto intermedio (ej. S/4.84 en una venta de S/50). Lo acortamos a 550ms:
   // sigue siendo un "pop" celebratorio pero se estabiliza casi al instante.
   const animatedTotal = useCountUp(displayTotal, 550);
 
-  function buildWhatsAppUrl(phone: string) {
-    const now = new Date();
-    const dateStr = formatDateNumeric(now);
-    const timeStr = formatTime(now);
-
-    const details = lastSaleDetails;
-    const items = details?.items || cart.map(i => ({ name: i.product.name, quantity: i.quantity, price: i.product.price }));
-    const total = details?.total || cartTotal;
-    const payment = details?.payment || paymentMethod;
-    const discount = details?.discountAmount;
-    const comprobante = details?.comprobanteTipo || "ticket";
-
-    const comprobanteLabel = comprobante === "boleta" ? "Boleta"
-      : comprobante === "factura" ? "Factura"
-      : comprobante === "cotizacion" ? "Cotización"
-      : comprobante === "proforma" ? "Proforma"
-      : "Ticket";
-    const comprobanteNum = details?.comprobanteNumero;
-
-    const itemsText = items
-      .map(i => `  ${i.name} x${i.quantity} — ${formatCurrency(i.price * i.quantity)}`)
-      .join("\n");
-
-    const lines = [
-      `🧾 *${conNombreDelNegocio(comprobanteLabel, membrete)}*`,
-      ...(comprobanteNum ? [`📋 N° ${comprobanteNum}`] : []),
-      `📅 ${dateStr} ${timeStr}`,
-      `─────────`,
-      itemsText,
-      `─────────`,
-      `💰 *Total: ${formatCurrency(total)}*`,
-    ];
-
-    if (discount && discount > 0) {
-      lines.push(`🏷 Descuento: -${formatCurrency(discount)}`);
-    }
-
-    lines.push(
-      `💳 Pagado con: ${payment}`,
-      `─────────`,
-      ...cierreDelNegocio(membrete, `¡Gracias por tu compra! 😊`),
-    );
-
-    const text = lines.join("\n");
-    const cleanPhone = phone.replace(/\D/g, "");
-    const fullPhone = cleanPhone.startsWith("51") ? cleanPhone : "51" + cleanPhone;
-    return `https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`;
-  }
-
-  const hasCustomerPhone = lastSaleDetails?.customerPhone;
-  const customerName = lastSaleDetails?.customerName;
-
   // Payment method → icono Lucide (no emojis). Consistente con el design system.
-  const method = (lastSaleDetails?.payment || paymentMethod || "efectivo").toLowerCase();
-  const MethodIcon: Record<string, typeof Banknote> = {
-    efectivo: Banknote,
-    yape: Smartphone,
-    plin: Smartphone,
-    tarjeta: CreditCard,
-    mixto: HandCoins,
-    fiado: HandCoins,
-  };
-  const PayIcon = MethodIcon[method] ?? Banknote;
+  const method = (lastSaleDetails?.venta?.payment || lastSaleDetails?.payment || paymentMethod || "efectivo").toLowerCase();
+  const PayIcon = METODO_ICONO[method] ?? Banknote;
+  const formatoCorto = FORMATOS_RECIBO.find((f) => f.id === recibo.formato)?.corto ?? "";
 
-  const comprobanteLabel = (t?: string) =>
-    t === "boleta" ? "Boleta"
-    : t === "factura" ? "Factura"
-    : t === "cotizacion" ? "Cotización"
-    : t === "proforma" ? "Proforma"
-    : "Ticket";
+  const imprimirTermico = async () => {
+    try {
+      await printThermal(datosTermicos(modelo, saleComplete.id, new Date(lastSaleDetails?.venta?.createdAt ?? hora)));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al imprimir");
+    }
+  };
 
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]">
-        {/* Header — success + titulo + total */}
-        <div className="px-6 pt-8 pb-6 text-center relative overflow-hidden">
-          <SaleConfetti />
+      <div
+        ref={caja}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="venta-completada-titulo"
+        className="relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md lg:max-w-[60rem] w-full max-h-[92vh] flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]"
+      >
+        {/* Boton cerrar (X): del modal entero, también cierra con Escape */}
+        <button
+          onClick={onClose}
+          aria-label="Cerrar"
+          className="absolute top-4 right-4 z-30 p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
+        >
+          <X className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted" />
+        </button>
 
-          {/* Boton cerrar (X) */}
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="absolute top-4 right-4 z-30 p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
-          >
-            <X className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted" />
-          </button>
+        {/* Columna izquierda: lo de siempre. En el celular sus hijos son del modal (contents) para que el recibo quede antes del pie. */}
+        <div className="contents lg:flex lg:flex-col lg:w-[26rem] lg:shrink-0 lg:min-h-0 lg:border-r lg:border-[var(--rule-soft)]">
+        {/* Header — success + titulo + total */}
+        <div className="px-6 pt-8 pb-6 text-center relative overflow-hidden shrink-0">
+          <SaleConfetti />
 
           <m.div
             initial={{ scale: 0, opacity: 0 }}
@@ -146,6 +114,7 @@ export default function SaleCompleteModal({
             <Check className="h-10 w-10 text-[var(--data-success-500)]" strokeWidth={3} />
           </m.div>
           <m.h3
+            id="venta-completada-titulo"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -169,8 +138,8 @@ export default function SaleCompleteModal({
           </div>
         </div>
 
-        {/* Body scrollable */}
-        <div className="flex-1 overflow-y-auto px-6 pb-5 space-y-4">
+        {/* Body (en pantalla ancha, sólo esta parte scrollea) */}
+        <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto px-6 pb-5 space-y-4">
           {saleComplete.change === -1 ? (
             <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)]/30 rounded-xl p-4 text-center">
               <p className="text-sm font-semibold text-[var(--data-warning-ink)] uppercase tracking-wide mb-1">Venta al fiado</p>
@@ -183,15 +152,17 @@ export default function SaleCompleteModal({
             </div>
           ) : null}
 
-          {lastSaleDetails?.comprobanteNumero ? (
+          {modelo.tipo !== "ticket" ? (
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Receipt className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Comprobante</p>
+                <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">
+                  {modelo.pendienteDeEmision ? "Comprobante · pendiente de emisión" : "Comprobante"}
+                </p>
                 <p className="text-base font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                  {comprobanteLabel(lastSaleDetails.comprobanteTipo)} #{lastSaleDetails.comprobanteNumero}
+                  {modelo.nombreCorto} {modelo.numero}
                 </p>
               </div>
             </div>
@@ -199,71 +170,31 @@ export default function SaleCompleteModal({
 
           <QuickAbonoFromSale customerPhone={lastSaleDetails?.customerPhone} customerName={lastSaleDetails?.customerName} />
 
-          <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-4">
-            <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-3">
-              Enviar por WhatsApp
-            </p>
-            {hasCustomerPhone ? (
-              <a
-                href={buildWhatsAppUrl(hasCustomerPhone)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3 rounded-xl bg-[var(--accent-dark)] hover:brightness-110 text-white font-semibold text-base transition-colors flex items-center justify-center gap-2"
-              >
-                <MessageCircle className="h-5 w-5" />
-                <span className="truncate">Enviar a {customerName || hasCustomerPhone}</span>
-              </a>
-            ) : (
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm font-semibold">+51</span>
-                  <input
-                    type="tel"
-                    value={manualPhone}
-                    onChange={(e) => setManualPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                    placeholder="Número del cliente"
-                    className="w-full pl-12 pr-3 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                  />
-                </div>
-                {manualPhone.length >= 9 ? (
-                  <a
-                    href={buildWhatsAppUrl(manualPhone)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-5 py-3 rounded-xl bg-[var(--accent-dark)] text-white font-semibold text-base hover:brightness-110 transition-colors flex items-center gap-2 shrink-0"
-                  >
-                    <Send className="h-4 w-4" />
-                    Enviar
-                  </a>
-                ) : (
-                  <button
-                    disabled
-                    className="px-5 py-3 rounded-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] font-semibold text-base cursor-not-allowed flex items-center gap-2 shrink-0"
-                  >
-                    <Send className="h-4 w-4" />
-                    Enviar
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+          <POSVentaWhatsApp
+            modelo={modelo}
+            firma={modelo.negocio}
+            telefono={lastSaleDetails?.customerPhone}
+            nombre={lastSaleDetails?.customerName}
+          />
         </div>
 
-        {/* Footer — acciones principales */}
-        <div className="px-6 py-5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface/30 space-y-2.5">
+        {/* Footer — acciones principales (en el celular queda pegado abajo, después del recibo) */}
+        <div className="order-2 lg:order-none sticky bottom-0 lg:static z-20 shrink-0 px-6 py-5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] space-y-2.5">
           <div className="grid grid-cols-2 gap-2.5">
-            <a
-              href={`/venta/${saleComplete.id}/recibo`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] font-semibold text-base hover:bg-[var(--surface-sunken)] transition-colors flex items-center justify-center gap-2"
+            <button
+              type="button"
+              onClick={recibo.imprimir}
+              disabled={recibo.cargando}
+              aria-label={`Imprimir el recibo en ${formatoCorto}`}
+              className="min-h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] font-semibold text-base hover:bg-[var(--surface-sunken)] disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
             >
               <Printer className="h-5 w-5" />
-              Imprimir
-            </a>
+              Imprimir <span className="text-sm font-medium text-[var(--text-secondary)]">{formatoCorto}</span>
+            </button>
             <button
+              type="button"
               onClick={onNewSale}
-              className="min-h-11 rounded-xl bg-primary text-white font-semibold text-base hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+              className="min-h-12 rounded-xl bg-primary text-white font-semibold text-base hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
             >
               Nueva venta
               <span aria-hidden>&rarr;</span>
@@ -271,31 +202,21 @@ export default function SaleCompleteModal({
           </div>
           {isThermalPrintSupported() && (
             <button
-              onClick={async () => {
-                try {
-                  await printThermal({
-                    businessName: membrete?.nombre ?? "",
-                    businessAddress: membrete?.direccion ?? undefined,
-                    businessPhone: membrete?.telefono ?? undefined,
-                    footerText: membrete?.pie ?? undefined,
-                    ticketId: saleComplete.id,
-                    date: new Date(),
-                    items: cart.map(i => ({ name: i.product.name, quantity: i.quantity, price: i.product.price, unit: i.product.unit })),
-                    total: cartTotal,
-                    payment: paymentMethod,
-                    amountPaid: cartTotal,
-                    change: saleComplete.change >= 0 ? saleComplete.change : undefined,
-                  });
-                } catch (e) {
-                  toast.error(e instanceof Error ? e.message : "Error al imprimir");
-                }
-              }}
-              className="w-full py-2.5 rounded-xl text-[var(--text-secondary)] dark:text-muted font-semibold text-sm hover:bg-[var(--surface-sunken)] transition-colors flex items-center justify-center gap-2"
+              type="button"
+              onClick={imprimirTermico}
+              className="w-full py-2.5 rounded-xl text-[var(--text-secondary)] dark:text-muted font-semibold text-sm hover:bg-[var(--surface-raised)] transition-colors flex items-center justify-center gap-2"
             >
               <Printer className="h-4 w-4" /> Ticket térmico (ESC/POS)
             </button>
           )}
         </div>
+        </div>
+
+        {/* Columna derecha (debajo y plegada en el celular): el recibo tal como sale */}
+        <ReciboVistaPrevia
+          recibo={recibo}
+          className="order-1 lg:order-none px-6 pb-4 lg:p-6 lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:bg-[var(--surface-sunken)]"
+        />
       </div>
     </div>
   );

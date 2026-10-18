@@ -97,13 +97,14 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
 
     // Save sale details for WhatsApp button
     const saleDetailsForWhatsApp: typeof lastSaleDetails = {
-      items: cart.map(i => ({ name: i.product.name, quantity: i.quantity, price: i.product.price })),
+      items: cart.map(i => ({ name: i.product.name, quantity: i.quantity, price: i.product.price, productId: i.product.id, unit: i.product.unit, taxType: i.product.taxType })),
       total: effectiveTotal,
       payment: effectivePayment,
       customerPhone: phone || customerPhone || undefined,
       customerName: extra?.customerName || customerName || undefined,
       discountAmount: effectiveDiscount > 0 ? effectiveDiscount : undefined,
       comprobanteTipo: extra?.comprobanteTipo || "ticket",
+      comprobanteDoc: extra?.comprobanteRuc || undefined,
     };
 
     try {
@@ -126,6 +127,8 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
         } else {
           console.warn("[POS] La API /api/sales no retorno comprobanteNumero.", { saleId: sale.id, comprobanteTipo: extra?.comprobanteTipo });
         }
+        // El recibo se arma con lo GUARDADO (precios netos, total, vuelto), no con el carrito.
+        saleDetailsForWhatsApp.venta = sale;
         setLastSaleDetails(saleDetailsForWhatsApp);
         setLastSaleInfo({ total: effectiveTotal, time: new Date(), id: sale.id, minutesAgo: 0 });
 
