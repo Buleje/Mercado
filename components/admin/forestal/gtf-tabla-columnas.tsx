@@ -71,12 +71,16 @@ export function filasGtf(gtfs: readonly Gtf[], planes: ReadonlyMap<string, PlanD
 
 /** Las columnas movibles, en su orden de fábrica. «Acciones» queda fija al final. */
 export const ORDEN_GTF_DEFECTO = [
-  "gtf", "origen", "registro", "fecha", "tipoPlan", "permiso", "tipo", "titular", "destino", "volumen", "estado",
+  "gtf", "origen", "registro", "fecha", "tipoPlan", "permiso", "tipo", "titular", "partida", "destino", "transporte", "volumen", "estado",
 ] as const;
 
 /* «permiso» arranca oculta: es la columna más ancha (código de 20+ letras y su
    resolución debajo) y, con un permiso elegido en el libro, repite el mismo
-   valor en todas las filas. «registro» va visible: ya se veía bajo el Origen. */
+   valor en todas las filas. «registro» va visible: ya se veía bajo el Origen.
+   17-10 (compactar el Libro TH): «Transporte» (placa + transportista) y
+   «Punto de partida» se filtran en su cabecera; con ellas la tabla cubre todo
+   lo que buscaba la lupa general, que se fue. La partida arranca oculta: casi
+   siempre es el mismo predio. */
 export const COLUMNAS_GTF: readonly ColumnaElegible[] = [
   { id: "gtf", label: "N° GTF" },
   { id: "origen", label: "Origen" },
@@ -86,7 +90,9 @@ export const COLUMNAS_GTF: readonly ColumnaElegible[] = [
   { id: "permiso", label: "N° de permiso / resolución", ocultaPorDefecto: true },
   { id: "tipo", label: "Tipo" },
   { id: "titular", label: "Titular" },
+  { id: "partida", label: "Punto de partida", ocultaPorDefecto: true },
   { id: "destino", label: "Destino" },
+  { id: "transporte", label: "Transporte" },
   { id: "volumen", label: "Vol. m³" },
   { id: "estado", label: "Estado" },
 ];
@@ -109,7 +115,15 @@ export const FILTROS_GTF: readonly ColumnaFiltro<FilaGtf>[] = [
   },
   { id: "tipo", label: "Tipo", tipo: "multi", valor: (f) => (f.g.tipo === "producto" ? "Producto" : "Trozas") },
   { id: "titular", label: "Titular", tipo: "texto", valor: (f) => f.g.titularName },
+  { id: "partida", label: "Punto de partida", tipo: "texto", valor: (f) => f.g.origen },
   { id: "destino", label: "Destino", tipo: "texto", valor: (f) => f.g.destino },
+  {
+    id: "transporte",
+    label: "Transporte",
+    tipo: "texto",
+    valor: (f) =>
+      [f.g.placaVehiculo, f.g.transportista, f.g.transportistaDoc, f.g.conductor].filter((x): x is string => !!x),
+  },
   {
     id: "volumen",
     label: "Vol. m³",
@@ -165,7 +179,9 @@ export function cabecerasGtf(f: FiltrosTabla<FilaGtf>): Record<string, ReactNode
     permiso: <Th id="permiso" f={f}>N° de permiso / resolución</Th>,
     tipo: <Th id="tipo" f={f}>Tipo</Th>,
     titular: <Th id="titular" f={f}>Titular</Th>,
+    partida: <Th id="partida" f={f}>Punto de partida</Th>,
     destino: <Th id="destino" f={f}>Destino</Th>,
+    transporte: <Th id="transporte" f={f}>Transporte</Th>,
     volumen: <Th id="volumen" f={f} className="text-right">Vol. m³</Th>,
     estado: <Th id="estado" f={f}>Estado</Th>,
   };
@@ -197,7 +213,14 @@ export function celdasGtf({ g, origen, tipoPlan, resolucion, estados }: FilaGtf)
       </td>
     ),
     titular: <td data-label="Titular">{g.titularName ?? "—"}</td>,
+    partida: <td data-label="Punto de partida" className="text-[var(--text-secondary)]">{g.origen ?? "—"}</td>,
     destino: <td data-label="Destino" className="text-[var(--text-secondary)]">{g.destino ?? "—"}</td>,
+    transporte: (
+      <td data-label="Transporte">
+        <span className="block whitespace-nowrap font-mono font-bold text-[var(--text-primary)]">{g.placaVehiculo ?? "—"}</span>
+        {g.transportista && <span className="block text-xs text-[var(--text-tertiary)]">{g.transportista}</span>}
+      </td>
+    ),
     volumen: (
       <td data-label="Vol. m³" className="text-right">
         <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">

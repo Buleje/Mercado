@@ -62,7 +62,6 @@ import { planFichaDesdeApi, type CaratulaFicha, type PlanFichaApi } from "@/lib/
 import LothPlanView from "./LothPlanView";
 import LothGtfView from "./LothGtfView";
 import LothCompliancePanel from "./LothCompliancePanel";
-import LothResumenStrip from "./LothResumenStrip";
 import LothSeccionesRiel from "./LothSeccionesRiel";
 import LothSeccionKpis from "./LothSeccionKpis";
 import LothSeccionBarra, { type FormatoDespacho } from "./LothSeccionBarra";
@@ -101,7 +100,8 @@ import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { formatNumber } from "@/lib/format";
 import { cumplePermiso, PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
 import { LothPermisoContext, useLothLibroPermiso } from "./hooks/use-loth-libro-permiso";
-import LothAtarSinPlan from "./LothAtarSinPlan";
+import { LothAvisosBoton, LothAvisosVentana } from "./LothAvisosLibro";
+import { useLothAvisosLibro } from "./hooks/use-loth-avisos-libro";
 import LothBorrarLineasModal from "./LothBorrarLineasModal";
 import { conColumnaPermiso, mapaDePermisos, mezclaPlanes, opcionBorrarFiltradas } from "./loth-seccion-permiso";
 import { useMiRol } from "@/hooks/use-mi-rol";
@@ -283,6 +283,11 @@ export default function LothLibroOperaciones() {
   const rol = useMiRol();
   /* Los mismos roles que acepta el servidor (`requireAdmin(["admin","owner"])`). */
   const puedeBorrar = rol === "admin" || rol === "owner";
+  /* Atar líneas sin permiso: lo mismo que exige `/loth/atar-plan`. */
+  const puedeAtar = puedeBorrar || rol === "superadmin";
+  /* Bloqueos, alertas y líneas sin permiso → campana de la banda; el embudo →
+     Indicadores de Secciones. Un pedido para las dos cosas. */
+  const avisosLibro = useLothAvisosLibro(reloadSignal, puedeAtar);
   const [showImport, setShowImport] = useState(false);
   /** «Importar guías despachadas» (ADR-461): guías ya salidas → trozas, tala referencial y permiso. */
   const [showImportarGuias, setShowImportarGuias] = useState(false);
@@ -1019,6 +1024,7 @@ export default function LothLibroOperaciones() {
       moduleId={LOTH_MODULE_ID}
       eyebrow="Forestal · LO-TH SERFOR"
       title="Libro de Operaciones · Títulos Habilitantes"
+      tituloCorto="Libro TH"
       icon={TreePine}
       groups={LOTH_GROUPS}
       view={view}
@@ -1094,7 +1100,19 @@ export default function LothLibroOperaciones() {
         </>
       }
       actions={acciones}
+      avisos={<LothAvisosBoton estado={avisosLibro} />}
+      alerts={avisosLibro.alertas}
     >
+      {/* La ventana de la campana va acá y no en el botón: a 1280 el botón
+          cae en el «⋯» del libro, que se desmonta al abrirse una ventana. */}
+      <LothAvisosVentana
+        estado={avisosLibro}
+        planes={permiso.planes}
+        planInicial={permiso.plan?.id ?? null}
+        puedeAtar={puedeAtar}
+        onCumplimiento={() => setView("cumplimiento")}
+        onAtado={() => void refreshAll()}
+      />
 
       {/* Vista Plan de Manejo — base maestra (censo + especies autorizadas) */}
       {view === "plan" && <LothPlanView reloadSignal={reloadSignal} onCambioDelLibro={() => void refreshAll()} />}
@@ -1246,9 +1264,8 @@ export default function LothLibroOperaciones() {
 
       {view === "secciones" && (
         <>
-      {/* Resumen del libro entero (bosque → producto). Se pliega y se recuerda. */}
-      <LothResumenStrip onNavigate={(v) => setView(v)} reloadSignal={reloadSignal} />
-
+      {/* El resumen del libro entero (bosque → producto) es una tarjeta de los
+          Indicadores, y sus avisos van a la campana de la banda (17-10). */}
       {libroTruncado && (
         <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-4 py-3 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
           Se leyeron {formatNumber(libroTruncado.leidas)} de {formatNumber(libroTruncado.total)} líneas del libro. La
@@ -1261,13 +1278,7 @@ export default function LothLibroOperaciones() {
           en el propio TH (§4-6) — dos momentos del MISMO libro, no dos libros. */}
       {/* «Ver libro de» se sacó el 02-10 (Brandon): repetía el chip de la banda, que ya
           filtra todo el libro. */}
-      {/* Líneas sin permiso: cuentan en el saldo de todos. Una línea; «Atarlas» abre el modal. */}
-      <LothAtarSinPlan
-        planes={permiso.planes}
-        planInicial={permiso.plan?.id ?? null}
-        reloadSignal={reloadSignal}
-        onAtado={() => void refreshAll()}
-      />
+      {/* Líneas sin permiso: un renglón de la campana de la banda («Atarlas»). */}
 
       <LothSeccionesRiel
         section={section}
@@ -1287,6 +1298,8 @@ export default function LothLibroOperaciones() {
         lineas={allEntries.length > 0 ? lineasSeccion : entries}
         delLibroEntero={allEntries.length > 0 && !libroTruncado}
         filtros={tabla.f}
+        embudo={avisosLibro.embudo}
+        onVerRentabilidad={() => setView("rentabilidad")}
       />
 
       {/* Columnas elegidas y arrastradas, recordadas por sección: el botón va
@@ -1301,6 +1314,7 @@ export default function LothLibroOperaciones() {
           section === "despacho_troza"
             ? {
                 label: "Despachar con guía",
+                corto: "Despachar",
                 title: "Arma la guía de transporte completa con las trozas que salen y las asienta en el libro",
                 icon: Truck,
                 onClick: () => setShowDespachoGuia(true),

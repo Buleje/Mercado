@@ -18,14 +18,21 @@
  *
  * «Columnas n/m» (y «Restablecer» si se arrastró alguna) vive acá, en la misma
  * fila, como en la vista GTF: el estado es de `LothSeccionColumnas`.
+ *
+ * Dentro del libro (compactación 17-10, Brandon: «botones junto a las
+ * pestañas») la barra no ocupa fila: todo va al riel del libro —formato,
+ * «Opciones» en ícono con Columnas adentro, «Nueva línea» y la principal—.
  */
 
 import type { ComponentType } from "react";
 import { Plus } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { AccionesDeLaVista, ORDEN_ACCION, TextoDeAccion, useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
-import { BotonesColumnasSeccion } from "./loth-seccion-columnas";
+import { CLASE_PRINCIPAL_PLEGABLE, CLASE_PRINCIPAL_RIEL, RotuloPrincipal } from "./ctp-riel-piezas";
+import { BotonesColumnasSeccion, useColumnasRecordadas } from "./loth-seccion-columnas";
 import { registrarHuecoIndicadores } from "./loth-indicadores-slot";
+import { useMenuColumnas } from "./menu-columnas";
 
 /** Despacho de trozas (08-10): una fila por guía o una por troza. */
 export type FormatoDespacho = "guia" | "suelto";
@@ -38,6 +45,11 @@ const PRIMARIO =
   "inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 max-sm:flex-1";
 const SECUNDARIO =
   "inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 max-sm:flex-1";
+/** En el riel: 48 px, y debajo de 80rem sólo el ícono (`TextoDeAccion`). */
+const SECUNDARIO_RIEL =
+  "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] @max-[80rem]/riel:w-12 @max-[80rem]/riel:px-0";
+
+type Principal = { label: string; corto?: string; title?: string; icon: ComponentType<{ className?: string }>; onClick: () => void };
 
 export default function LothSeccionBarra({
   opciones,
@@ -52,10 +64,72 @@ export default function LothSeccionBarra({
    * en Despacho de trozas es «Despachar con guía» (28-09-2026) — la guía y sus
    * líneas en un solo registro. Con ella, «Nueva línea» pasa a secundario.
    */
-  principal?: { label: string; title?: string; icon: ComponentType<{ className?: string }>; onClick: () => void };
+  principal?: Principal;
   /** Despacho de trozas: «Por guía» o «Suelto», recordado. «Columnas» es de la tabla suelta. */
   formato?: { valor: FormatoDespacho; onCambiar: (f: FormatoDespacho) => void };
 }) {
+  const enLibro = useEnElLibro();
+  const columnas = useColumnasRecordadas();
+  const menuColumnas = useMenuColumnas(
+    enLibro && formato?.valor !== "guia" ? columnas : null,
+    "Columnas de la sección",
+  );
+
+  if (enLibro) {
+    return (
+      <>
+        {formato && (
+          <AccionesDeLaVista>
+            <SegmentedControl
+              value={formato.valor}
+              onChange={formato.onCambiar}
+              options={FORMATOS}
+              size="lg"
+              label="Ver el despacho por guía o troza por troza"
+            />
+          </AccionesDeLaVista>
+        )}
+        <AccionesDeLaVista>
+          <ActionMenu
+            label="Opciones"
+            title="Importar, etiquetas QR, descargar y columnas"
+            actions={[...opciones, ...menuColumnas.acciones]}
+            size="md"
+            soloIcono
+            className="w-12!"
+          />
+        </AccionesDeLaVista>
+        <AccionesDeLaVista orden={principal ? ORDEN_ACCION.normal : ORDEN_ACCION.principal}>
+          {principal ? (
+            <button type="button" onClick={onNuevaLinea} aria-label="Nueva línea" title="Nueva línea" className={SECUNDARIO_RIEL}>
+              <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <TextoDeAccion>Nueva línea</TextoDeAccion>
+            </button>
+          ) : (
+            <button type="button" onClick={onNuevaLinea} className={`${CLASE_PRINCIPAL_RIEL} ${CLASE_PRINCIPAL_PLEGABLE}`}>
+              <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <RotuloPrincipal corto="Nueva">Nueva línea</RotuloPrincipal>
+            </button>
+          )}
+        </AccionesDeLaVista>
+        {principal && (
+          <AccionesDeLaVista orden={ORDEN_ACCION.principal}>
+            <button
+              type="button"
+              onClick={principal.onClick}
+              title={principal.title}
+              className={`${CLASE_PRINCIPAL_RIEL} ${CLASE_PRINCIPAL_PLEGABLE}`}
+            >
+              <principal.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <RotuloPrincipal corto={principal.corto ?? principal.label}>{principal.label}</RotuloPrincipal>
+            </button>
+          </AccionesDeLaVista>
+        )}
+        {menuColumnas.ventana}
+      </>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       {formato && (

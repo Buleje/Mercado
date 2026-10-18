@@ -26,23 +26,33 @@ export interface SeccionPlegableProps {
   resumen: ReactNode;
   /** Algo en rojo adentro: sin preferencia guardada, arranca abierto. */
   rojo: boolean;
+  /**
+   * Con rojo y sin preferencia guardada, ¿arranca abierto? (por defecto sí).
+   * El Control lo apaga (17-10): el resumen ya pinta el rojo y la tabla abierta
+   * empujaba las trozas 1.400 px hacia abajo.
+   */
+  abrirSiRojo?: boolean;
+  /** Sin caja propia: va dentro de una tarjeta que ya la pone (línea divisoria arriba). */
+  plano?: boolean;
   children: ReactNode;
 }
 
-export function SeccionPlegable({ clave, titulo, ayuda, resumen, rojo, children }: SeccionPlegableProps) {
+export function SeccionPlegable({ clave, titulo, ayuda, resumen, rojo, abrirSiRojo = true, plano = false, children }: SeccionPlegableProps) {
   const id = useId();
   const [elegido, setElegido] = useLocalStorage<boolean | null>(clave, null);
-  const abierto = elegido ?? rojo;
+  const abierto = elegido ?? (rojo && abrirSiRojo);
 
   return (
     <section
       aria-labelledby={`${id}-titulo`}
-      className={`rounded-2xl border bg-[var(--surface-raised)] ${
-        rojo ? "border-[var(--data-error-500)]/50" : "border-[var(--rule-base)]"
-      }`}
+      className={
+        plano
+          ? "border-t border-[var(--rule-soft)]"
+          : `rounded-2xl border bg-[var(--surface-raised)] ${rojo ? "border-[var(--data-error-500)]/50" : "border-[var(--rule-base)]"}`
+      }
       data-plegable={clave}
     >
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 sm:px-4">
+      <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-3 sm:px-4 ${plano ? "" : "py-2"}`}>
         <div className="flex items-center gap-1">
           <CardTitle as="h3" id={`${id}-titulo`} className="text-sm font-bold text-[var(--text-primary)]">
             {titulo}

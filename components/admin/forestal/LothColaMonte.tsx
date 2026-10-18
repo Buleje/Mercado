@@ -51,7 +51,9 @@ export default function LothColaMonte() {
   /* Sólo lo que no es cero: a 400 px la cifra entra en la fila del título. */
   const meta = [porImprimir && `${porImprimir} por imprimir`, vivos.length - porImprimir && `${vivos.length - porImprimir} por confirmar`].filter(Boolean).join(" · ") || "Al día";
   return (
-    <div className="mx-auto max-w-2xl space-y-4" data-qa="cola-monte">
+    /* Alineada con las pestañas de GTF, no centrada (17-10): es una sección
+       de la vista, y en el celular del monte igual ocupa todo el ancho. */
+    <div className="max-w-3xl space-y-4" data-qa="cola-monte">
       <VistaHeader
         titulo="Por imprimir"
         meta={datos ? meta : undefined}
@@ -65,7 +67,6 @@ export default function LothColaMonte() {
         </Btn>
       </VistaHeader>
       <AvisoImpresionDirecta d={prueba} />
-      <LothMedirCargaMonte />
 
       {error && (
         <p role="alert" className="rounded-xl bg-[var(--data-error-50)] px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">
@@ -84,6 +85,10 @@ export default function LothColaMonte() {
           <TarjetaTrabajoMonte key={t.id} t={t} cambiar={cambiar} resaltado={t.id === foco} />
         ))}
       </div>
+
+      {/* Primero lo que hay que imprimir; después medir la carga (17-10: con la
+          cola vacía, «No hay guías por imprimir» quedaba bajo «Cargas medidas»). */}
+      <LothMedirCargaMonte />
 
       {terminadas.length > 0 && (
         <details className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" data-qa="terminadas-monte">

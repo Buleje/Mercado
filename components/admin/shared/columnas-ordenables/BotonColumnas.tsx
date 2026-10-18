@@ -80,49 +80,63 @@ export function BotonColumnasVisibles({
           <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Columnas visibles
           </p>
-          {vis.columnas.map((c) => {
-            const on = vis.esVisible(c.id);
-            const ultima = on && vis.cuantasVisibles <= 1;
-            return (
-              <label
-                key={c.id}
-                title={ultima ? "Al menos una columna queda a la vista" : undefined}
-                className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] ${
-                  ultima ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-[var(--surface-sunken)]"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={on}
-                  disabled={ultima}
-                  onChange={() => vis.alternar(c.id)}
-                  className="h-4 w-4 accent-[var(--accent)]"
-                />
-                {c.label}
-              </label>
-            );
-          })}
-          <div className="mt-1 flex gap-1 border-t border-[var(--rule-soft)] pt-1">
-            <button
-              type="button"
-              onClick={vis.mostrarTodas}
-              disabled={todas}
-              className="h-12 flex-1 rounded-lg px-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-40"
-            >
-              Mostrar todas
-            </button>
-            {vis.cambiado && (
-              <button
-                type="button"
-                onClick={vis.restablecer}
-                className="inline-flex h-12 flex-1 items-center justify-center gap-1 rounded-lg px-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-              >
-                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Las de siempre
-              </button>
-            )}
-          </div>
+          <CasillasColumnas vis={vis} />
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Las casillas de «Columnas» sin el botón ni el popover: la última visible
+ * queda bloqueada, «Mostrar todas» y «Las de siempre». Para ponerlas dentro de
+ * una ventana cuando el botón vive en un menú (riel del Libro TH, 17-10).
+ */
+export function CasillasColumnas({ vis }: { vis: UseVisibilidadColumnasResult }) {
+  const todas = vis.cuantasVisibles === vis.columnas.length;
+  return (
+    <>
+      {vis.columnas.map((c) => {
+        const on = vis.esVisible(c.id);
+        const ultima = on && vis.cuantasVisibles <= 1;
+        return (
+          <label
+            key={c.id}
+            title={ultima ? "Al menos una columna queda a la vista" : undefined}
+            className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] ${
+              ultima ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-[var(--surface-sunken)]"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={on}
+              disabled={ultima}
+              onChange={() => vis.alternar(c.id)}
+              className="h-4 w-4 accent-[var(--accent)]"
+            />
+            {c.label}
+          </label>
+        );
+      })}
+      <div className="mt-1 flex gap-1 border-t border-[var(--rule-soft)] pt-1">
+        <button
+          type="button"
+          onClick={vis.mostrarTodas}
+          disabled={todas}
+          className="h-12 flex-1 rounded-lg px-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-40"
+        >
+          Mostrar todas
+        </button>
+        {vis.cambiado && (
+          <button
+            type="button"
+            onClick={vis.restablecer}
+            className="inline-flex h-12 flex-1 items-center justify-center gap-1 rounded-lg px-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+          >
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Las de siempre
+          </button>
+        )}
+      </div>
+    </>
   );
 }

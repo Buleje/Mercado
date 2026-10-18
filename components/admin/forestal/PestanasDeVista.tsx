@@ -17,6 +17,7 @@
 
 import type { ReactNode } from "react";
 import type { LucideIcon } from "@buleje/design-system/icons";
+import { formatNumber } from "@/lib/format";
 import Pestanas from "./saldos/Pestanas";
 
 export interface PestanaDeVista<T extends string> {
@@ -24,6 +25,8 @@ export interface PestanaDeVista<T extends string> {
   label: string;
   icon?: LucideIcon;
   hint?: string;
+  /** Cuántas hay adentro, al lado del rótulo («Anuladas y otras 16»). `null` = todavía no se sabe. */
+  cuenta?: number | null;
 }
 
 export default function PestanasDeVista<T extends string>({
@@ -55,6 +58,9 @@ export default function PestanasDeVista<T extends string>({
               <span title={p.hint} className="inline-flex items-center justify-center gap-2">
                 {p.icon && <p.icon className="h-4 w-4 shrink-0 max-sm:hidden" aria-hidden />}
                 {p.label}
+                {p.cuenta != null && (
+                  <span className="font-mono text-xs font-normal tabular-nums text-[var(--text-tertiary)]">{formatNumber(p.cuenta)}</span>
+                )}
               </span>
             ),
           }))}

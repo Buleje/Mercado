@@ -11,4 +11,4 @@ export {
   type ColumnaElegible,
   type UseVisibilidadColumnasResult,
 } from "./use-columnas-visibles";
-export { BotonColumnasVisibles } from "./BotonColumnas";
+export { BotonColumnasVisibles, CasillasColumnas } from "./BotonColumnas";

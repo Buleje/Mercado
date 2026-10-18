@@ -1,27 +1,26 @@
 "use client";
 
 /**
- * LothAtarSinPlan — el aviso de «líneas sin permiso» de la vista Secciones y el
- * modal que las ata (02-10-2026, ADR-459).
+ * La ventana que ata las líneas sin permiso del Libro TH (02-10-2026, ADR-459).
  *
  * Una línea del libro sin plan cuenta en el saldo de TODOS los permisos: las
- * produjo el importador viejo y las líneas antiguas. El aviso es UNA línea y se
- * va solo cuando no queda ninguna. «Atarlas» pide el permiso de las TALAS; el
- * trozado, el despacho y el consumo heredan el de su fuente (tala / troza) y la
- * vista previa dice, por sección, cuántas van a qué permiso — antes de escribir.
+ * produjo el importador viejo y las líneas antiguas. «Atarlas» pide el permiso
+ * de las TALAS; el trozado, el despacho y el consumo heredan el de su fuente
+ * (tala / troza) y la vista previa dice, por sección, cuántas van a qué
+ * permiso — antes de escribir. Los meses cerrados no se tocan y se dicen.
  *
- * Los meses cerrados no se tocan y se dicen. Sólo admin/dueño ven el botón (el
- * servidor lo exige igual): el encargado ve el aviso, no la acción.
+ * El aviso que la abre era una franja arriba de las Secciones; desde el 17-10
+ * es un renglón de la campana de la banda (`LothAvisosLibro`), que la cuenta en
+ * `useLothAvisosLibro` y sólo deja atar al administrador o al dueño (el
+ * servidor lo exige igual).
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Link2, Loader2 } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
-import { useMiRol } from "@/hooks/use-mi-rol";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { leerJson } from "@/lib/errores/sin-dato";
-import { logger } from "@/lib/logger";
-import type { AtarSinPlanConteo, AtarSinPlanResultado } from "@/lib/forestal/loth-atar-sin-plan";
+import type { AtarSinPlanResultado } from "@/lib/forestal/loth-atar-sin-plan";
 import { nombreDelPlan, type PlanTablero } from "@/lib/forestal/loth-tablero-permiso";
 import { SECTION_META } from "./LothEntryForm";
 import type { LothSection } from "@/lib/forestal/loth-constants";
@@ -36,86 +35,7 @@ function rotulo(p: PlanTablero): string {
 
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
-export default function LothAtarSinPlan({
-  planes,
-  planInicial,
-  reloadSignal,
-  onAtado,
-}: {
-  planes: readonly PlanTablero[];
-  /** El permiso con el que se mira el libro, si es un plan real: arranca elegido. */
-  planInicial: string | null;
-  reloadSignal: number;
-  /** Se ataron líneas: la vista relee la lista y los contadores. */
-  onAtado: () => void;
-}) {
-  const rol = useMiRol();
-  const puede = rol === "admin" || rol === "owner" || rol === "superadmin";
-  const [conteo, setConteo] = useState<AtarSinPlanConteo | null>(null);
-  const [abierto, setAbierto] = useState(false);
-
-  useEffect(() => {
-    const ac = new AbortController();
-    (async () => {
-      try {
-        const r = await fetch("/api/admin/forestal/loth/atar-plan", {
-          credentials: "include",
-          signal: ac.signal,
-        });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const j = await leerJson<AtarSinPlanConteo>(r);
-        if (!ac.signal.aborted && j) setConteo(j);
-      } catch (err) {
-        if (ac.signal.aborted) return;
-        /* Sin el conteo no hay aviso: el libro sigue sirviendo. */
-        logger.warn("[loth-atar] no se pudo contar las líneas sin plan", { error: String(err) });
-      }
-    })();
-    return () => ac.abort();
-  }, [reloadSignal]);
-
-  if (!conteo || conteo.total === 0) return null;
-  return (
-    <>
-      <div
-        role="status"
-        className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-4 py-2.5 text-sm"
-      >
-        <AlertTriangle
-          className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-          aria-hidden
-        />
-        <p className="min-w-0 flex-1 font-semibold text-[var(--text-primary)]">
-          {plural(conteo.total, "línea sin permiso", "líneas sin permiso")}: cuentan en el saldo de
-          todos.
-        </p>
-        {puede && (
-          <button
-            type="button"
-            onClick={() => setAbierto(true)}
-            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90"
-          >
-            <Link2 className="h-4 w-4" aria-hidden />
-            Atarlas
-          </button>
-        )}
-      </div>
-      {abierto && (
-        <AtarModal
-          planes={planes}
-          planInicial={planInicial}
-          onClose={() => setAbierto(false)}
-          onAtado={() => {
-            setAbierto(false);
-            onAtado();
-          }}
-        />
-      )}
-    </>
-  );
-}
-
-function AtarModal({
+export function AtarModal({
   planes,
   planInicial,
   onClose,

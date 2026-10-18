@@ -9,6 +9,9 @@
  * La lista llega ENTERA del servidor (`/api/admin/forestal/gtf`, ≤200) y se
  * pagina acá: por eso el autofiltro local de `filtros-tabla-forestal` aplica.
  * Las acciones de cada fila van en un menú ⋯ (`gtf-acciones-menu`, 07-10).
+ * Sin buscador general desde el 17-10: todo lo que buscaba (N°, registro,
+ * titular, partida, destino, placa, transportista, permiso) tiene su filtro
+ * en la cabecera de su columna.
  */
 
 import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
@@ -31,8 +34,6 @@ export interface LothGtfTablaProps {
   gtfs: Gtf[];
   /** Los planes del libro (id → tipo y resolución) para «Tipo de plan» y «Permiso». */
   planes: readonly (PlanDeLaGuia & { id: string })[];
-  /** El buscador general de la vista (no es una columna sola). */
-  busqueda: string;
   /** N° de las guías de trozas que la bandeja del CTP ofrece ingresar. */
   sinIngresar: ReadonlySet<string>;
   focusGtf?: string | null;
@@ -48,35 +49,19 @@ export interface LothGtfTablaProps {
   seleccion?: SeleccionGuias;
 }
 
-/** Minúsculas sin tildes, para el buscador general. */
-const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-
-function buscar(filas: FilaGtf[], q: string): FilaGtf[] {
-  const t = norm(q.trim());
-  if (!t) return filas;
-  return filas.filter(({ g, origen, resolucion }) =>
-    norm(
-      [g.gtfNumber, origen.registro, g.titularName, g.destino, g.transportista, g.placaVehiculo, g.origen, g.tituloHabilitante, resolucion]
-        .filter(Boolean)
-        .join(" "),
-    ).includes(t),
-  );
-}
-
 export default function LothGtfTabla({
-  gtfs, planes, busqueda, sinIngresar, focusGtf, filaEnfocada, orden, vis,
+  gtfs, planes, sinIngresar, focusGtf, filaEnfocada, orden, vis,
   onIngresarCtp, onHoja, onResumen, onAnular, onRecargar, seleccion,
 }: LothGtfTablaProps) {
   const planesPorId = useMemo(() => new Map(planes.map((p) => [p.id, p])), [planes]);
   const filas = useMemo(() => filasGtf(gtfs, planesPorId), [gtfs, planesPorId]);
-  const buscadas = useMemo(() => buscar(filas, busqueda), [filas, busqueda]);
   /* La columna oculta manda su filtro al panel (nunca un filtro huérfano). */
   const { esVisible } = vis;
   const columnasFiltro = useMemo(() => FILTROS_GTF.map((c) => ({ ...c, visible: esVisible(c.id) })), [esVisible]);
-  const f = useFiltrosTabla(buscadas, columnasFiltro);
+  const f = useFiltrosTabla(filas, columnasFiltro);
 
   const [pagina, setPagina] = useState(0);
-  useEffect(() => setPagina(0), [busqueda, f.facetas, f.textos]);
+  useEffect(() => setPagina(0), [f.facetas, f.textos]);
   const filtradas = f.filtradas;
   const totalPaginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
   const pagActual = Math.min(pagina, totalPaginas - 1);
@@ -138,7 +123,7 @@ export default function LothGtfTabla({
               <tr>
                 <td colSpan={columnasTotal} className="text-center text-[var(--text-tertiary)]">
                   <FileText className="mx-auto mb-2 h-8 w-8 opacity-30" />
-                  Sin GTF emitidas. Haz click en &quot;Emitir GTF&quot;.
+                  Sin guías vigentes. Anota una con «Anotar guía» o tráela con Opciones › Importar guías.
                 </td>
               </tr>
             )}

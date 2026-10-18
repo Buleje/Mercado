@@ -98,7 +98,7 @@ const guia = (id: string, extra: Partial<Gtf>): Gtf => ({
 });
 const GUIAS: Gtf[] = [
   guia("1", { planId: "P1", ctp: "por_ingresar", tituloHabilitante: "25-UCA/C-OPP-J-001-20" }),
-  guia("2", { ctp: "ingresada", gtfDatos: { guia: { origenRecurso: "plantacion" } } }),
+  guia("2", { ctp: "ingresada", gtfDatos: { guia: { origenRecurso: "plantacion" } }, placaVehiculo: "AXK-123", transportista: "Transportes Selva" }),
   guia("3", { tipo: "producto", ctp: null }),
   guia("4", { status: "anulada", ctp: null, planId: "P2" }),
 ];
@@ -116,7 +116,7 @@ function Tabla() {
     <>
       <BotonColumnasVisibles vis={vis} />
       <LothGtfTabla
-        gtfs={GUIAS} planes={PLANES} busqueda="" sinIngresar={new Set(["019-001-000001"])} filaEnfocada={ref}
+        gtfs={GUIAS} planes={PLANES} sinIngresar={new Set(["019-001-000001"])} filaEnfocada={ref}
         orden={orden} vis={vis} onIngresarCtp={nada} onHoja={nada} onResumen={nada} onAnular={nada} onRecargar={nada}
       />
     </>
@@ -133,7 +133,7 @@ describe("Tabla GTF", () => {
   it("columnas de fábrica: el permiso arranca oculto y «Mostrar todas» lo trae", () => {
     render(<Tabla />);
     expect(cabeceras()).toEqual([
-      "N° GTF", "Origen", "N° de registro", "Fecha", "Tipo de plan", "Tipo", "Titular", "Destino", "Vol. m³", "Estado", "Acciones",
+      "N° GTF", "Origen", "N° de registro", "Fecha", "Tipo de plan", "Tipo", "Titular", "Destino", "Transporte", "Vol. m³", "Estado", "Acciones",
     ]);
     abrir();
     fireEvent.click(screen.getByRole("button", { name: "Mostrar todas" }));
@@ -157,6 +157,15 @@ describe("Tabla GTF", () => {
     marcar("Tipo de plan: Plantación");
     marcar("Tipo de plan: Sin tipo de plan");
     expect(filas()).toEqual(["019-001-000003"]);
+  });
+
+  it("Transporte: placa y transportista en la celda, y se filtra por cualquiera de los dos", () => {
+    render(<Tabla />);
+    expect(screen.getAllByText("AXK-123").length).toBeGreaterThan(0);
+    const caja = screen.getAllByRole("searchbox", { name: "Buscar en Transporte" })[0];
+    fireEvent.change(caja, { target: { value: "selva" } });
+    fireEvent.keyDown(caja, { key: "Enter" });
+    expect(filas()).toEqual(["019-001-000002"]);
   });
 
   it("ocultar una columna saca su título y sus celdas", () => {

@@ -123,6 +123,15 @@ export function useOrdenSeccion(cols: readonly { key: string }[]): {
   return useOrdenRecordado(deFabrica);
 }
 
+/**
+ * El estado de las columnas de la tabla de adentro (`null` fuera de un
+ * proveedor): dentro del libro, «Columnas» y «Restablecer» van como renglones
+ * de «Opciones» (`menu-columnas`) en vez de botones propios.
+ */
+export function useColumnasRecordadas(): ColumnasRecordadasCtx | null {
+  return useContext(ColumnasCtx);
+}
+
 /** «Columnas n/m» y, si se movió alguna, «Restablecer» — para la barra de la tabla. */
 export function BotonesColumnas({ className = "h-12 rounded-2xl" }: { className?: string } = {}) {
   const ctx = useContext(ColumnasCtx);

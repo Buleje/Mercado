@@ -25,6 +25,12 @@
  * autofiltro de la cabecera (columna Estado / Especie / N° GTF): un solo
  * estado, con su chip para quitarlo. Con un filtro puesto, las cifras son de lo
  * que deja el filtro —la misma cuenta que el pie (`loth-seccion-cifras`)—.
+ *
+ * Dentro del libro (compactación 17-10) el título y su frase no ocupan fila: el
+ * riel de secciones ya dice dónde estás, la frase va a un ⓘ y «Indicadores» al
+ * riel del libro, chico (`loth-seccion-kpis-riel`). Con el libro, una cuarta
+ * tarjeta: el embudo del libro entero (`LothEmbudoKpi`), que era el bloque
+ * «Aprovechamiento» de arriba.
  */
 
 import { useId } from "react";
@@ -32,9 +38,7 @@ import { createPortal } from "react-dom";
 import { SectionTitle } from "@buleje/design-system";
 import {
   AlertCircle,
-  BarChart3,
   Boxes,
-  ChevronDown,
   FileText,
   ShieldAlert,
   ShieldCheck,
@@ -42,6 +46,7 @@ import {
   Truck,
 } from "@buleje/design-system/icons";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import { PLAZO_REGISTRO_DIAS, type LothEntryDTO, type LothSection } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
@@ -50,10 +55,17 @@ import { SECTION_META } from "./LothEntryForm";
 import type { FiltrosTabla } from "./filtros-tabla-forestal";
 import { useHuecoIndicadores } from "./loth-indicadores-slot";
 import { ESTADO_LINEA } from "./loth-seccion-filtros";
+import { BotonIndicadores } from "./loth-boton-indicadores";
 import { alternarSolo, cifrasDeLineas, filtraSolo } from "./loth-seccion-cifras";
+import IndicadoresSeccionEnRiel from "./loth-seccion-kpis-riel";
+import LothEmbudoKpi from "./LothEmbudoKpi";
+import type { EmbudoLibroTh } from "./hooks/use-loth-avisos-libro";
 
 /** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
 export const CLAVE_KPIS_SECCION = "loth:secciones:kpis-abiertos";
+
+/* El mismo botón lo usa el Censo (`LothCensoKpis` lo importa de acá). */
+export { BotonIndicadores };
 
 const fm = (n: number) => formatNumber(n, 2);
 const plural = (n: number, uno: string, varios: string) => `${formatNumber(n)} ${n === 1 ? uno : varios}`;
@@ -65,6 +77,8 @@ export default function LothSeccionKpis({
   lineas,
   delLibroEntero,
   filtros,
+  embudo = null,
+  onVerRentabilidad,
 }: {
   section: LothSection;
   /** Lo que declara la API para la sección (sólo líneas vigentes). */
@@ -77,11 +91,16 @@ export default function LothSeccionKpis({
   delLibroEntero: boolean;
   /** El autofiltro de la tabla (`useLothSeccionTabla`): las tarjetas lo leen y lo escriben. */
   filtros?: FiltrosTabla<LothEntryDTO>;
+  /** El embudo del libro entero: una tarjeta más (`LothEmbudoKpi`). */
+  embudo?: EmbudoLibroTh | null;
+  onVerRentabilidad?: () => void;
 }) {
   const [abierto, setAbierto] = useLocalStorage<boolean>(CLAVE_KPIS_SECCION, false);
   const panelId = useId();
   const meta = SECTION_META[section];
   const hueco = useHuecoIndicadores();
+  const enLibro = useEnElLibro();
+  const conEmbudo = !!embudo?.hayActividad;
 
   /* Sin filtro, las cifras de la API (como siempre). Con filtro, las de lo que
      deja el filtro: las mismas líneas y la misma cuenta que el pie de la tabla. */
@@ -158,6 +177,92 @@ export default function LothSeccionKpis({
     />
   );
 
+  const panel = (
+    <div id={`${panelId}-panel`} hidden={!abierto} className={`grid grid-cols-1 items-start gap-3 ${conEmbudo ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
+      <CtpKpi
+        label={`Líneas · ${meta.short}`}
+        value={formatNumber(count)}
+        subValue={
+          soloVigentes
+            ? "Filtrando: sólo las vigentes"
+            : (deLaSeccion(formatNumber(cur?.count ?? 0)) ?? `${formatNumber(totalLibro)} en el libro · ver sólo vigentes`)
+        }
+        icon={Boxes}
+        emphasis="neutral"
+        onClick={filtros ? () => alternarEstado(ESTADO_LINEA.registrada) : undefined}
+        filtrando={soloVigentes}
+      />
+      <CtpKpi
+        label={segunda.label}
+        value={segunda.value}
+        subValue={
+          (segunda.de && deLaSeccion(segunda.de)) ??
+          (usaVolumen || usaCantidad ? meta.short : `en ${plural(c.guias, "guía", "guías")} · según el trozado`)
+        }
+        icon={segunda.icon}
+        emphasis="success"
+        desglose={
+          usaVolumen || usaCantidad ? (
+            c.porEspecie.length > 0 ? <DesgloseSimple filas={c.porEspecie} onElegir={elegirEspecie} vacio="Sin líneas vigentes" /> : undefined
+          ) : c.porGuia.length > 0 ? (
+            <DesgloseSimple filas={c.porGuia} onElegir={elegirGuia} vacio="Sin guías" />
+          ) : undefined
+        }
+        desgloseLabel={usaVolumen || usaCantidad ? "Por especie" : "Por guía"}
+      />
+      {/* Lo que mira primero una fiscalización: el registro tardío. El CITES
+          va de subtítulo cuando lo hay, en vez de un tercio de fila en cero. */}
+      <CtpKpi
+        label="Fuera de plazo"
+        value={formatNumber(c.tardias)}
+        subValue={
+          soloTardias
+            ? "Filtrando: sólo las fuera de plazo"
+            : c.tardias > 0
+              ? `de ${formatNumber(c.totales.lineas)} ${alcance} · plazo ${PLAZO_REGISTRO_DIAS} días · ver cuáles`
+              : c.cites > 0
+                ? `${plural(c.cites, "línea", "líneas")} con especie CITES`
+                : "todo asentado en plazo"
+        }
+        icon={c.tardias > 0 ? AlertCircle : c.cites > 0 ? ShieldAlert : ShieldCheck}
+        emphasis={c.tardias > 0 ? "warning" : c.cites > 0 ? "error" : "success"}
+        onClick={filtros && (c.tardias > 0 || soloTardias) ? () => alternarEstado(ESTADO_LINEA.fueraDePlazo) : undefined}
+        filtrando={soloTardias}
+      />
+      {conEmbudo && <LothEmbudoKpi embudo={embudo} onVerRentabilidad={onVerRentabilidad} />}
+    </div>
+  );
+
+  /* Dentro del libro: sin fila de título (ver arriba). El h2 queda para el
+     lector de pantalla; la tabla sube lo que medía esa fila. */
+  if (enLibro) {
+    const resumen = [
+      filtrando ? "filtrado" : null,
+      plural(count, "línea", "líneas"),
+      segunda.corto,
+      `${formatNumber(c.tardias)} fuera de plazo`,
+    ].filter(Boolean).join(" · ");
+    return (
+      <>
+        <SectionTitle id={`${panelId}-titulo`} className="sr-only">{meta.label}</SectionTitle>
+        <IndicadoresSeccionEnRiel
+          titulo={meta.label}
+          ayuda={meta.help}
+          abierto={abierto}
+          onAlternar={() => setAbierto(!abierto)}
+          controla={`${panelId}-panel`}
+          tarjetas={conEmbudo ? 4 : 3}
+          resumen={resumen}
+          tardias={c.tardias}
+          filtrando={filtrando}
+        />
+        <section aria-labelledby={`${panelId}-titulo`} hidden={!abierto}>
+          {panel}
+        </section>
+      </>
+    );
+  }
+
   return (
     <section aria-labelledby={`${panelId}-titulo`} className="space-y-3">
       {hueco && createPortal(<>{botonIndicadores}{resumenPlegado}</>, hueco)}
@@ -174,99 +279,7 @@ export default function LothSeccionKpis({
         )}
       </div>
 
-      <div id={`${panelId}-panel`} hidden={!abierto} className="grid grid-cols-1 items-start gap-3 sm:grid-cols-3">
-        <CtpKpi
-          label={`Líneas · ${meta.short}`}
-          value={formatNumber(count)}
-          subValue={
-            soloVigentes
-              ? "Filtrando: sólo las vigentes"
-              : (deLaSeccion(formatNumber(cur?.count ?? 0)) ?? `${formatNumber(totalLibro)} en el libro · ver sólo vigentes`)
-          }
-          icon={Boxes}
-          emphasis="neutral"
-          onClick={filtros ? () => alternarEstado(ESTADO_LINEA.registrada) : undefined}
-          filtrando={soloVigentes}
-        />
-        <CtpKpi
-          label={segunda.label}
-          value={segunda.value}
-          subValue={
-            (segunda.de && deLaSeccion(segunda.de)) ??
-            (usaVolumen || usaCantidad ? meta.short : `en ${plural(c.guias, "guía", "guías")} · según el trozado`)
-          }
-          icon={segunda.icon}
-          emphasis="success"
-          desglose={
-            usaVolumen || usaCantidad ? (
-              c.porEspecie.length > 0 ? <DesgloseSimple filas={c.porEspecie} onElegir={elegirEspecie} vacio="Sin líneas vigentes" /> : undefined
-            ) : c.porGuia.length > 0 ? (
-              <DesgloseSimple filas={c.porGuia} onElegir={elegirGuia} vacio="Sin guías" />
-            ) : undefined
-          }
-          desgloseLabel={usaVolumen || usaCantidad ? "Por especie" : "Por guía"}
-        />
-        {/* Lo que mira primero una fiscalización: el registro tardío. El CITES
-            va de subtítulo cuando lo hay, en vez de un tercio de fila en cero. */}
-        <CtpKpi
-          label="Fuera de plazo"
-          value={formatNumber(c.tardias)}
-          subValue={
-            soloTardias
-              ? "Filtrando: sólo las fuera de plazo"
-              : c.tardias > 0
-                ? `de ${formatNumber(c.totales.lineas)} ${alcance} · plazo ${PLAZO_REGISTRO_DIAS} días · ver cuáles`
-                : c.cites > 0
-                  ? `${plural(c.cites, "línea", "líneas")} con especie CITES`
-                  : "todo asentado en plazo"
-          }
-          icon={c.tardias > 0 ? AlertCircle : c.cites > 0 ? ShieldAlert : ShieldCheck}
-          emphasis={c.tardias > 0 ? "warning" : c.cites > 0 ? "error" : "success"}
-          onClick={filtros && (c.tardias > 0 || soloTardias) ? () => alternarEstado(ESTADO_LINEA.fueraDePlazo) : undefined}
-          filtrando={soloTardias}
-        />
-      </div>
+      {panel}
     </section>
-  );
-}
-
-/**
- * «Indicadores ▾»: pliega y despliega las tarjetas. El mismo botón en las
- * Secciones y en el Censo (08-10): quien lo aprendió en uno lo reconoce en el otro.
- */
-export function BotonIndicadores({
-  abierto,
-  onAlternar,
-  controla,
-  ayudaAbierto,
-  ayudaCerrado,
-  className = "ml-auto",
-}: {
-  abierto: boolean;
-  onAlternar: () => void;
-  /** id del panel que pliega. */
-  controla: string;
-  ayudaAbierto: string;
-  ayudaCerrado: string;
-  /** Dónde cae en su fila: `ml-auto` (a la derecha, de siempre) o nada (a la par de los botones). */
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onAlternar}
-      aria-expanded={abierto}
-      aria-controls={controla}
-      title={abierto ? ayudaAbierto : ayudaCerrado}
-      className={`${className} inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
-        abierto
-          ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-      }`}
-    >
-      <BarChart3 className="h-4 w-4" aria-hidden="true" />
-      Indicadores
-      <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden="true" />
-    </button>
   );
 }

@@ -45,7 +45,11 @@ describe("LothAprovechamientoBanda", () => {
 });
 
 describe("LothPlanCabecera · plantación plegada", () => {
-  it("las cuatro cifras en una línea y la barra fina debajo", () => {
+  /* 17-10 («compactar el Libro TH»): los indicadores del plan son los de todo
+     el libro — botón «Indicadores» con las cifras en una línea, plegado por
+     defecto y recordado; abierto, la banda entera. */
+  it("plegada: las cifras en el botón y sin banda; abierta: la banda", () => {
+    localStorage.clear();
     render(
       <LothPlanCabecera
         plans={[]} planId={null} onPlan={vi.fn()} plan={null} kpis={null} opciones={[]}
@@ -56,10 +60,12 @@ describe("LothPlanCabecera · plantación plegada", () => {
         }}
       />,
     );
-    expect(screen.getByText("Registrado")).toBeTruthy();
-    expect(screen.getByText(/días atrasado/)).toBeTruthy();
-    const barra = screen.getByRole("img");
-    expect(barra.querySelectorAll("[data-tramo]").length).toBeGreaterThan(0);
+    const boton = screen.getByRole("button", { name: /indicadores/i });
+    expect(boton.getAttribute("aria-expanded")).toBe("false");
+    expect(boton.textContent).toMatch(/m³ talados/);
     expect(document.querySelector("[data-aprovechamiento-pct]")).toBeNull();
+    fireEvent.click(boton);
+    expect(document.querySelector("[data-aprovechamiento-pct]")).not.toBeNull();
+    expect(screen.getByText(/días atrasado/)).toBeTruthy();
   });
 });

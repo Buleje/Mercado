@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import LothCupoEspecies from "@/components/admin/forestal/LothCupoEspecies";
 import LothTraceCupo from "@/components/admin/forestal/LothTraceCupo";
+import LothControlPestanas from "@/components/admin/forestal/LothControlPestanas";
 import LothPlanAutorizarLote from "@/components/admin/forestal/LothPlanAutorizarLote";
 import { tomarPedidoAutorizar, urlCargarAutorizado } from "@/components/admin/forestal/loth-autorizar-url";
 import { cupoPorEspecie } from "@/lib/forestal/loth-cupo-especie";
@@ -55,6 +56,21 @@ describe("Cupo por especie → «Cargar lo autorizado»", () => {
     fireEvent.click(screen.getByRole("button", { name: /Cupo por especie/ }));
     fireEvent.click(screen.getByRole("button", { name: "Cargar lo autorizado de Catahua" }));
     expect(onCargar).toHaveBeenCalledWith("Catahua");
+  });
+
+  it("dentro del Control del permiso: «Saldo por especie» lleva a Extracción y «Cargar lo autorizado» queda en la línea", () => {
+    // 17-10, «compactar el Libro TH»: la tabla por especie del libro es UNA, la de Extracción.
+    const onCargar = vi.fn();
+    render(
+      <LothControlPestanas extraccion={<p>tabla de extracción</p>} pedido={null}>
+        {() => <LothTraceCupo filas={FILAS} onCargarAutorizado={onCargar} />}
+      </LothControlPestanas>,
+    );
+    expect(screen.queryByRole("button", { name: /Cupo por especie/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /^Cargar lo autorizado de (Copaiba|Catahua)$/ }));
+    expect(onCargar).toHaveBeenCalledWith(expect.stringMatching(/^(Copaiba|Catahua)$/));
+    fireEvent.click(screen.getByRole("button", { name: /Saldo por especie/ }));
+    expect(screen.getByText("tabla de extracción")).toBeTruthy();
   });
 });
 
