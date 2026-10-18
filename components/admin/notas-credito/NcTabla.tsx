@@ -4,6 +4,7 @@ import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { AnimatePresence } from "@/components/admin/providers";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { ChevronLeft, ChevronRight, AlertTriangle, Copy, Trash2, Send, FileText, Link2 } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import { STATUS_META } from "@/components/admin/notas-credito/nc-compartido";
 import { NCCard } from "@/components/admin/notas-credito/NcPiezas";
@@ -122,20 +123,17 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
                         </td>
                         <td className="text-[var(--text-secondary)] hidden md:table-cell whitespace-nowrap">{formatDate(nc.createdAt)}</td>
                         <td>
-                          <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
-                            {nc.status === "BORRADOR" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Marcar emitida (no se envía a SUNAT)" aria-label="Marcar emitida">
-                                <Send className="h-4 w-4" />
-                              </button>
-                            )}
-                            {nc.status !== "ANULADA" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleAnular(nc); }} className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--data-error-50)] text-[var(--data-error-500)]" title="Anular">
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            )}
-                            <button onClick={(e) => { e.stopPropagation(); handleDuplicate(nc); }} className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="Duplicar">
-                              <Copy className="h-4 w-4" />
-                            </button>
+                          <div onClick={(e) => e.stopPropagation()} className="flex justify-end">
+                            <ActionMenu
+                              label={`Acciones de ${nc.numero}`}
+                              soloIcono
+                              size="xs"
+                              actions={[
+                                ...(nc.status === "BORRADOR" ? [{ id: "emitir", label: "Marcar emitida", hint: "No se envía a SUNAT desde aquí", icon: Send, onSelect: () => handleEmitSunat(nc) }] : []),
+                                { id: "duplicar", label: "Duplicar", icon: Copy, onSelect: () => handleDuplicate(nc) },
+                                ...(nc.status !== "ANULADA" ? [{ id: "anular", label: "Anular", icon: Trash2, tone: "danger" as const, onSelect: () => handleAnular(nc) }] : []),
+                              ]}
+                            />
                           </div>
                         </td>
                       </tr>

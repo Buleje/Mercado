@@ -4,6 +4,7 @@ import { CardTitle } from "@buleje/design-system";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { X, Copy, Trash2, Send, History, MessageCircle, FileDown, Activity, Users, FileText, Link2, AlertTriangle } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import { STATUS_META } from "@/components/admin/notas-credito/nc-compartido";
 import { button } from "@/components/ui-system/button-variants";
@@ -64,20 +65,16 @@ export default function NcDetalle({ nc }: { nc: NotasCreditoVista }) {
                       <Send className="h-4 w-4" aria-hidden />Marcar emitida
                     </button>
                   )}
-                  {selected.status !== "ANULADA" && (
-                    <button onClick={() => handleAnular(selected)} className="flex items-center gap-1.5 px-4 min-h-12 rounded-xl text-sm font-bold bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] transition-colors">
-                      <Trash2 className="h-3.5 w-3.5" />Anular
-                    </button>
-                  )}
-                  <button onClick={() => handleDuplicate(selected)} className="flex items-center gap-1.5 px-4 min-h-12 rounded-xl text-sm font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] transition-colors">
-                    <Copy className="h-3.5 w-3.5" />Duplicar
-                  </button>
-                  <button onClick={() => sendWhatsApp(selected)} className="flex items-center gap-1.5 px-4 min-h-12 rounded-xl text-sm font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors" title="Enviar por WhatsApp">
-                    <MessageCircle className="h-3.5 w-3.5" />WhatsApp
-                  </button>
-                  <button onClick={() => exportPDF(selected)} className="flex items-center gap-1.5 px-4 min-h-12 rounded-xl text-sm font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors" title="Descargar PDF">
-                    <FileDown className="h-3.5 w-3.5" />PDF
-                  </button>
+                  <ActionMenu
+                    label="Más acciones"
+                    size="md"
+                    actions={[
+                      { id: "whatsapp", label: "Enviar por WhatsApp", icon: MessageCircle, onSelect: () => sendWhatsApp(selected) },
+                      { id: "pdf", label: "Descargar PDF", icon: FileDown, onSelect: () => exportPDF(selected) },
+                      { id: "duplicar", label: "Duplicar", icon: Copy, onSelect: () => handleDuplicate(selected) },
+                      ...(selected.status !== "ANULADA" ? [{ id: "anular", label: "Anular", icon: Trash2, tone: "danger" as const, onSelect: () => handleAnular(selected) }] : []),
+                    ]}
+                  />
                 </div>
 
                 <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-3">
