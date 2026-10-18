@@ -1518,9 +1518,9 @@ export default function DocumentosModule() {
           items={[
             {
               label: "Escanear un documento",
-              description: "La IA lo nombra, clasifica y detecta su vencimiento",
+              description: "Recorta, mejora y guarda; la IA lo nombra y clasifica",
               icon: Camera,
-              onClick: () => scanInputRef.current?.click(),
+              onClick: () => setShowCameraScan(true),
             },
             {
               label: "Escanear a PDF",

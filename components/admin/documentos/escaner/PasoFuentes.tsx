@@ -32,15 +32,22 @@ export function PasoFuentes({ onAgregar, onVolver }: { onAgregar: (b: Blob[]) =>
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch((err) => console.warn("[escaner] video play", err));
-      }
       setCamState("on");
     } catch {
       setCamState("denied");
     }
   }, []);
+
+  // El <video> sólo se monta cuando camState === "on". Antes se le asignaba el
+  // stream dentro de startCamera, con el ref aún en null, y la cámara salía en
+  // negro; se le pega recién cuando el elemento ya existe.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (camState === "on" && v && streamRef.current && v.srcObject !== streamRef.current) {
+      v.srcObject = streamRef.current;
+      v.play().catch((err) => console.warn("[escaner] video play", err));
+    }
+  }, [camState]);
 
   const capturar = () => {
     const v = videoRef.current;

@@ -91,7 +91,13 @@ export function EscanerModal({ folderId, onClose, onDone }: { folderId: string |
           {vista === "fuentes" && (
             <PasoFuentes
               onAgregar={(blobs) => {
-                void agregar(blobs);
+                // Al sumar páginas, dejar la pantalla de fuentes y abrir el
+                // editor en la primera nueva (antes se quedaba en «fuentes» y
+                // parecía que «sólo se subía»).
+                void agregar(blobs).then((ids) => {
+                  setAgregando(false);
+                  if (ids.length > 0) setEditandoId(ids[0]);
+                });
               }}
               onVolver={paginas.length > 0 ? () => setAgregando(false) : null}
             />
