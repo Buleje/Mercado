@@ -6,8 +6,9 @@
  * (WhatsApp, duplicar, PDF, guardarla como plantilla).
  */
 import { useState } from "react";
-import { AlertTriangle, Bookmark, Check, Copy, MessageCircle, Printer, Send, ShoppingCart, XCircle } from "@buleje/design-system/icons";
+import { AlertTriangle, Bookmark, Check, Copy, MessageCircle, MoreHorizontal, Printer, Send, ShoppingCart, XCircle } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { cantidadConUnidad } from "@/lib/cotizaciones/disponibilidad";
 import type { DetalleCotizacion } from "./use-detalle-cotizacion";
@@ -32,6 +33,12 @@ export function AccionesCotizacion({ c, detalle, onDuplicar, onImprimir, onGuard
   const [guardada, setGuardada] = useState<string | null>(null);
   const membrete = useMembrete();
   const { actionLoading, cambiarEstado, convertir, faltantes, descartarFaltantes, pedidoCreado, convertirError, estadoError } = detalle;
+
+  const masAcciones: MenuAccion[] = [
+    { id: "duplicar", label: "Duplicar", hint: "Una copia nueva en borrador", icon: Copy, onSelect: onDuplicar },
+    { id: "pdf", label: "Imprimir PDF", icon: Printer, onSelect: onImprimir },
+    { id: "plantilla", label: "Guardar como plantilla", hint: "Para armar otras cotizaciones parecidas", icon: Bookmark, activo: guardando, onSelect: () => { setGuardando((v) => !v); setGuardada(null); } },
+  ];
 
   return (
     <div className="space-y-3">
@@ -59,15 +66,7 @@ export function AccionesCotizacion({ c, detalle, onDuplicar, onImprimir, onGuard
         <button type="button" onClick={() => abrirWhatsApp(textoWhatsApp(c, membrete), c.customerId ?? "")} className={SECUNDARIO}>
           <MessageCircle className="h-4 w-4 text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" aria-hidden /> WhatsApp
         </button>
-        <button type="button" onClick={onDuplicar} className={SECUNDARIO}>
-          <Copy className="h-4 w-4" aria-hidden /> Duplicar
-        </button>
-        <button type="button" onClick={onImprimir} className={SECUNDARIO}>
-          <Printer className="h-4 w-4" aria-hidden /> Imprimir PDF
-        </button>
-        <button type="button" onClick={() => { setGuardando((v) => !v); setGuardada(null); }} aria-expanded={guardando} className={SECUNDARIO}>
-          <Bookmark className="h-4 w-4" aria-hidden /> Guardar como plantilla
-        </button>
+        <ActionMenu label="Más" icon={MoreHorizontal} actions={masAcciones} size="md" title="Duplicar, imprimir y guardar como plantilla" />
       </div>
 
       {/* Recién convertida: el enlace al pedido que se creó (antes había que buscarlo en Pedidos). */}
