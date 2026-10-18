@@ -5,6 +5,7 @@
  * Dice qué la originó, cómo se resuelve, a quién le toca y desde cuándo, y
  * lleva al lugar (o al registro, si es uno solo). Sin enlace cuando este rol
  * no ve esa pestaña: el aviso se ve igual, pero no se ofrece un camino cerrado.
+ * Se dibuja con `FilaAhora` (18-10), igual que las alertas sueltas.
  */
 import type { ElementType } from "react";
 import {
@@ -18,8 +19,8 @@ import {
   Truck,
 } from "@buleje/design-system/icons";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
-import { cn } from "@/lib/utils";
 import type { AccionId } from "./acciones-de-avisos";
+import FilaAhora from "./FilaAhora";
 import { cuandoFue } from "./notificaciones-categorias";
 import type { GrupoConEnlace } from "./use-acciones-de-avisos";
 
@@ -43,51 +44,27 @@ function cuando(fecha: GrupoConEnlace["fecha"]): string {
 }
 
 export function FilaAccion({ grupo, onNavegar }: { grupo: GrupoConEnlace; onNavegar: () => void }) {
-  const Icono = ICONOS[grupo.id];
   const { urgente, href } = grupo;
-  const detalle = grupo.detalle.join(" · ");
   return (
-    <div
-      data-qa={`accion-${grupo.id}`}
-      className={cn(
-        "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-l-4 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2",
-        urgente ? "border-l-[var(--data-error-500)]" : "border-l-[var(--data-warning-500)]",
-      )}
-    >
-      <span
-        className={cn(
-          "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
-          urgente ? "bg-[var(--data-error-500)]/10" : "bg-[var(--data-warning-500)]/10",
-        )}
-        aria-hidden
-      >
-        <Icono className={cn("h-5 w-5", urgente ? "text-[var(--data-error-ink)]" : "text-[var(--data-warning-ink)]")} />
-      </span>
-      {/* `grow basis-48` (no `min-w-*`): en la columna angosta la acción baja de línea. */}
-      <div className="grow basis-48">
-        <p className="text-sm font-bold leading-snug text-[var(--text-primary)]">
-          <span className="sr-only">{urgente ? "Urgente: " : "Atención: "}</span>
-          {grupo.rotulo}
-        </p>
-        {detalle && <p className="text-sm text-[var(--text-secondary)]">{detalle}</p>}
-        <p className="text-xs text-[var(--text-secondary)]">{grupo.como}</p>
-        <p className="text-xs text-[var(--text-secondary)]">
-          {grupo.quien} · {cuando(grupo.fecha)}
-        </p>
-      </div>
-      {href && (
-        <button
-          type="button"
-          onClick={() => {
-            irAEnlace(href);
-            onNavegar();
-          }}
-          className="ml-auto inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-[var(--accent)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] dark:text-[var(--accent)]"
-        >
-          {grupo.registro ? "Abrir" : "Resolver"}
-          <span aria-hidden>→</span>
-        </button>
-      )}
-    </div>
+    <FilaAhora
+      qa={`accion-${grupo.id}`}
+      icono={ICONOS[grupo.id]}
+      urgente={urgente}
+      titulo={grupo.rotulo}
+      detalle={grupo.detalle.join(" · ") || undefined}
+      meta={`${grupo.quien} · ${cuando(grupo.fecha)}`}
+      ayuda={grupo.como}
+      accion={
+        href
+          ? {
+              label: grupo.registro ? "Abrir" : "Resolver",
+              onClick: () => {
+                irAEnlace(href);
+                onNavegar();
+              },
+            }
+          : undefined
+      }
+    />
   );
 }

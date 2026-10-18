@@ -15,17 +15,22 @@
  *  - Arriba «Para atender ahora» (estado de hoy), abajo los avisos por día.
  *  - Cada aviso con su acción de 48 px; «Marcar todas leídas» en la cabecera.
  *  - Amplio (Brandon 10-10: «más amplio y grande»): hasta 72 rem × 88 % del
- *    alto en escritorio, pantalla completa en celular; desde 1280 px «Para
- *    atender ahora» pasa a su columna a la derecha (categorías · avisos · hoy).
+ *    alto en escritorio, pantalla completa en celular.
+ *
+ * Rediseño 18-10 (Brandon: «más minimalista y mejor elaborado»): dos columnas
+ * (categorías · lista), sin tarjetas ni franjas. «Para atender ahora» va ARRIBA
+ * de la lista en un bloque hundido (antes, una tercera columna al costado); los
+ * avisos son filas de bandeja con su nivel (`avisos-juntos.ts`), lo urgente
+ * primero dentro del día y los repetidos en una sola fila: en los 100 avisos
+ * más recientes `main` tenía 19 distintos y Blas 7.
  */
 import { useMemo, useState } from "react";
-import { Bell, CheckCheck, RefreshCw, WifiOff, X } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CheckCheck, RefreshCw, X } from "@buleje/design-system/icons";
 import AdminModal, { CabeceraPropia, MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
-import { useMediaQuery } from "@/hooks/use-media-query";
-import NotificationItem from "./NotificationItem";
+import { juntarRepetidos, ordenarDelDia } from "./avisos-juntos";
+import ListaDeAvisos from "./ListaDeAvisos";
 import PestanasNotificaciones from "./PestanasNotificaciones";
 import SeccionAhora from "./SeccionAhora";
 import {
@@ -51,23 +56,14 @@ type Props = {
   cargaFallida?: boolean;
   filter: NotificationFilter;
   setFilter: (f: NotificationFilter) => void;
-  markAsRead: (id: string) => void;
+  /** Puede devolver la promesa del guardado: los repetidos se marcan de a uno. */
+  markAsRead: (id: string) => void | Promise<void>;
   markAllRead: () => void;
   refetch: () => void;
 };
 
 const BOTON_ICONO =
   "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
-
-function Esqueleto() {
-  return (
-    <div className="space-y-2" aria-hidden>
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="h-24 animate-pulse rounded-xl bg-[var(--surface-sunken)]" />
-      ))}
-    </div>
-  );
-}
 
 export default function NotificationHub({
   open,
@@ -86,18 +82,24 @@ export default function NotificationHub({
   const [recarga, setRecarga] = useState(0);
   const { alertas, cargando: cargandoAlertas } = useAlertasConsolidadas(open, recarga);
   const soloSinLeer = filter === "unread";
-  const ahoraAlLado = useMediaQuery("(min-width: 1280px)");
 
+  // Una fila por aviso distinto (los repetidos juntos): las pestañas cuentan filas.
+  const juntos = useMemo(() => juntarRepetidos(notifications), [notifications]);
   const conteos = useMemo(() => {
-    const c: Record<string, number> = { todas: notifications.length + alertas.length };
-    for (const n of notifications) {
-      const id = categoriaDeTipo(n.type);
+    const c: Record<string, number> = { todas: juntos.length + alertas.length };
+    for (const j of juntos) {
+      const id = categoriaDeTipo(j.aviso.type);
       c[id] = (c[id] ?? 0) + 1;
     }
     for (const a of alertas) c[a.categoria] = (c[a.categoria] ?? 0) + 1;
     return c;
-  }, [notifications, alertas]);
+  }, [juntos, alertas]);
 
+  const enCategoria = useMemo(
+    () => (categoria === "todas" ? juntos : juntos.filter((j) => categoriaDeTipo(j.aviso.type) === categoria)),
+    [juntos, categoria],
+  );
+  // «Para atender ahora» sigue leyendo los avisos tal cual llegaron (M08 cuenta sus copias).
   const avisos = useMemo(
     () =>
       categoria === "todas"
@@ -109,12 +111,22 @@ export default function NotificationHub({
     () => (categoria === "todas" ? alertas : alertas.filter((a) => a.categoria === categoria)),
     [alertas, categoria],
   );
-  const grupos = useMemo(() => agruparPorDia(avisos), [avisos]);
+  const grupos = useMemo(
+    () => agruparPorDia(enCategoria).map((g) => ({ grupo: g.grupo, items: ordenarDelDia(g.items) })),
+    [enCategoria],
+  );
   // M08: lo de ahora, agrupado por acción («Cobrar 3», «Reponer 5»).
   const porAccion = useAccionesDeAvisos({ abierto: open, recarga, alertas: ahora, avisos, categoria });
   const hayAhora = porAccion.grupos.length > 0 || porAccion.sueltas.length > 0;
   const nombreCategoria = categoria === "todas" ? null : etiquetaDeCategoria(categoria);
-  const sinNada = !isLoading && !cargaFallida && avisos.length === 0 && !hayAhora;
+  const estado =
+    cargaFallida && enCategoria.length === 0
+      ? "fallo"
+      : isLoading && enCategoria.length === 0
+        ? "cargando"
+        : enCategoria.length === 0 && !hayAhora
+          ? "vacio"
+          : "lista";
 
   const actualizar = () => {
     refetch();
@@ -133,24 +145,17 @@ export default function NotificationHub({
     >
       {/* Alto fijo del modal (88 % / pantalla completa): la cabecera y las
           categorías quedan fijas y sólo la lista se desliza (a 400 px y con 100
-          avisos, la fila de categorías no se va con el scroll). */}
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="shrink-0 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          avisos, la fila de categorías no se va con el scroll). `h-full`: el
+          cuerpo de AdminModal no es flex, y con `flex-1` solo el bloque crecía
+          con la lista y se deslizaba entero, cabecera incluida (medido 18-10). */}
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="shrink-0 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]">
           <CabeceraPropia
             className={cn("flex items-center justify-between gap-2 py-2", MODAL_GUTTER)}
             acciones={
               <>
-                <button
-                  type="button"
-                  onClick={actualizar}
-                  className={BOTON_ICONO}
-                  aria-label="Actualizar"
-                  title="Actualizar"
-                >
-                  <RefreshCw
-                    className={cn("h-5 w-5", (isLoading || cargandoAlertas) && "animate-spin")}
-                    aria-hidden
-                  />
+                <button type="button" onClick={actualizar} className={BOTON_ICONO} aria-label="Actualizar" title="Actualizar">
+                  <RefreshCw className={cn("h-5 w-5", (isLoading || cargandoAlertas) && "animate-spin")} aria-hidden />
                 </button>
                 <button
                   type="button"
@@ -158,37 +163,24 @@ export default function NotificationHub({
                   aria-disabled={unreadCount === 0}
                   aria-label="Marcar todas como leídas"
                   title="Marcar todas como leídas"
-                  className={cn(
-                    BOTON_ICONO,
-                    "sm:w-auto sm:gap-2 sm:px-3 sm:text-sm sm:font-semibold aria-disabled:opacity-50",
-                  )}
+                  className={cn(BOTON_ICONO, "sm:w-auto sm:gap-2 sm:px-3 sm:text-sm sm:font-semibold aria-disabled:opacity-50")}
                 >
                   <CheckCheck className="h-5 w-5" aria-hidden />
                   <span className="hidden sm:inline">Marcar todas leídas</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className={BOTON_ICONO}
-                  aria-label="Cerrar"
-                  title="Cerrar (Esc)"
-                >
+                <button type="button" onClick={onClose} className={BOTON_ICONO} aria-label="Cerrar" title="Cerrar (Esc)">
                   <X className="h-5 w-5" aria-hidden />
                 </button>
               </>
             }
           >
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 sm:grid text-[var(--accent-ink)] dark:bg-primary/20 dark:text-[var(--accent)]">
-                <Bell className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-              </span>
-              <h2 className="truncate font-display text-lg font-semibold tracking-tight text-[var(--text-primary)]">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <h2 className="truncate font-display text-base font-semibold tracking-tight text-[var(--text-primary)] sm:text-lg">
                 Notificaciones
               </h2>
               {unreadCount > 0 && (
-                <span className="shrink-0 rounded-full bg-[var(--data-error-500)]/10 px-2 py-0.5 text-sm font-bold tabular-nums text-[var(--data-error-ink)]">
-                  {unreadCount > 999 ? "999+" : unreadCount}
-                  <span className="sr-only"> sin leer</span>
+                <span className="shrink-0 text-sm tabular-nums text-[var(--text-tertiary)]">
+                  {unreadCount > 999 ? "999+" : unreadCount} sin leer
                 </span>
               )}
             </div>
@@ -208,74 +200,30 @@ export default function NotificationHub({
                entrar con teclado (tecla N). */
               <InfoTip
                 title="Notificaciones"
-                what="Arriba, lo que hay que atender hoy agrupado por lo que hay que hacer: cuadrar la caja, cobrar, pagar, revisar comprobantes, reponer, atender pedidos (lo que más plata pone en juego, primero). Abajo, los avisos que dejó el sistema, del más nuevo al más viejo."
-                affects="El número rojo son los avisos sin leer de todo el negocio; las pestañas cuentan los 100 más recientes. «Marcar todas leídas» marca todos, no sólo los de la pestaña."
-                example="Un aviso de adelantos vencidos: «Ver cobranza» lo marca leído y te lleva a Mi Plata › Adelantos."
+                what="Arriba, lo que hay que atender hoy agrupado por lo que hay que hacer: cuadrar la caja, cobrar, pagar, revisar comprobantes, reponer, atender pedidos (lo que más plata pone en juego, primero). Abajo, los avisos que dejó el sistema por día: lo urgente y sin leer primero, y un aviso que se repite cada día va en una sola fila."
+                affects="El número de la campana son los avisos sin leer de todo el negocio, con sus repeticiones; las pestañas cuentan avisos distintos entre los 100 más recientes. «Marcar todas leídas» marca todos, no sólo los de la pestaña."
+                example="Un aviso de adelantos vencidos que llegó 5 días: una fila «5 veces · desde lunes 13/10». «Ver cobranza» la marca leída y te lleva a Mi Plata › Adelantos."
                 side="bottom"
               />
             }
           />
 
-          <div className={cn("min-h-0 flex-1 space-y-5 overflow-y-auto py-4", MODAL_GUTTER)}>
-            {!ahoraAlLado && <SeccionAhora {...porAccion} onNavegar={onClose} />}
-
-            {cargaFallida && avisos.length === 0 ? (
-              <div
-                role="alert"
-                className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3"
-              >
-                <WifiOff className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" aria-hidden />
-                <p className="flex-1 text-sm text-[var(--text-primary)]">
-                  No se pudieron traer los avisos.
-                </p>
-                <button
-                  type="button"
-                  onClick={actualizar}
-                  className="h-12 rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]"
-                >
-                  Reintentar
-                </button>
-              </div>
-            ) : isLoading && avisos.length === 0 ? (
-              <Esqueleto />
-            ) : sinNada ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-center">
-                <span
-                  className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--data-success-500)]/10"
-                  aria-hidden
-                >
-                  <CheckCheck className="h-6 w-6 text-[var(--data-success-ink)]" />
-                </span>
-                <p className="text-base font-semibold text-[var(--text-primary)]">Todo al día</p>
-                <p className="text-sm text-[var(--text-secondary)]">
-                  {soloSinLeer ? "No te queda nada sin leer" : "No tienes avisos"}
-                  {nombreCategoria ? ` en ${nombreCategoria}.` : "."}
-                </p>
-              </div>
-            ) : (
-              grupos.map((g) => (
-                <section key={g.grupo} aria-label={g.grupo} className="space-y-2">
-                  <CardTitle className="text-sm font-bold text-[var(--text-secondary)]">
-                    {g.grupo}
-                  </CardTitle>
-                  {g.items.map((n) => (
-                    <NotificationItem
-                      key={n.id}
-                      notification={n}
-                      onMarkRead={markAsRead}
-                      onNavegar={onClose}
-                    />
-                  ))}
-                </section>
-              ))
-            )}
+          <div className={cn("min-h-0 flex-1 space-y-5 overflow-y-auto pb-6 pt-4", MODAL_GUTTER)}>
+            <SeccionAhora {...porAccion} onNavegar={onClose} />
+            <ListaDeAvisos
+              grupos={grupos}
+              estado={estado}
+              soloSinLeer={soloSinLeer}
+              nombreCategoria={nombreCategoria}
+              onReintentar={actualizar}
+              onQuitarFiltros={() => {
+                setCategoria("todas");
+                setFilter("all");
+              }}
+              onMarkRead={markAsRead}
+              onNavegar={onClose}
+            />
           </div>
-
-          {ahoraAlLado && hayAhora && (
-            <div className="w-80 shrink-0 overflow-y-auto border-l border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-4">
-              <SeccionAhora {...porAccion} onNavegar={onClose} />
-            </div>
-          )}
         </div>
       </div>
     </AdminModal>
