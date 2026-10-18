@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, ChevronRight, Layers, SearchX } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { AvisoBandeja, BandejaAvisos } from "@/lib/superadmin/nivel-aviso";
-import type { Filtros, GrupoIncompleto } from "./filtrar";
+import { contarTiendas, filasDeLista, type Filtros, type GrupoIncompleto } from "./filtrar";
 import { CATEGORIA_META, NIVEL_META } from "./meta";
-import { FilaAviso, FilaPedido } from "./FilaAviso";
+import { FilaAviso } from "./FilaAviso";
+import { FilaTienda } from "./FilaTienda";
 
 const PLURAL_NIVEL = { urgente: "urgentes", importante: "importantes", leve: "leves", informativo: "informativos" } as const;
 
@@ -29,11 +30,14 @@ function CabeceraLista({
   f,
   visibles,
   enFiltro,
+  tiendas,
   onIr,
 }: {
   data: BandejaAvisos;
   f: Filtros;
   visibles: number;
+  /** Tiendas con pedidos en la lista (sólo para «Pedidos sin atender»). */
+  tiendas: number;
   enFiltro: number;
   onIr: () => void;
 }) {
@@ -44,7 +48,22 @@ function CabeceraLista({
     <div className="sticky top-0 z-10 flex min-h-11 items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 py-1.5">
       <Icono className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
       <span className="truncate text-sm font-semibold text-[var(--text-primary)]">{meta?.etiqueta ?? "Todas las categorías"}</span>
-      {meta && <InfoTip title={meta.etiqueta} what={meta.descripcion} />}
+      {meta && (
+        <InfoTip
+          title={meta.etiqueta}
+          what={meta.descripcion}
+          affects={
+            f.categoria === "pendingOrders"
+              ? "La lista trae una fila por tienda; los números de los chips cuentan pedidos, no tiendas."
+              : undefined
+          }
+          example={
+            f.categoria === "pendingOrders" && grupo
+              ? `${grupo.count} pedidos${tiendas > 0 ? ` en ${tiendas} ${tiendas === 1 ? "tienda" : "tiendas"}` : ""}.`
+              : undefined
+          }
+        />
+      )}
       <span className="shrink-0 text-xs tabular-nums text-[var(--text-tertiary)]">
         {visibles === enFiltro ? `${visibles}` : `${visibles} de ${enFiltro}`}
         <span className="hidden sm:inline"> · urgente primero</span>
@@ -83,12 +102,19 @@ export function ListaAvisos({
 }) {
   // Acordeón de pedidos: uno abierto a la vez.
   const [pedidoAbierto, setPedidoAbierto] = useState<string | null>(null);
+  // Una tienda abierta a la vez.
+  const [tiendaAbierta, setTiendaAbierta] = useState<string | null>(null);
+  const filas = useMemo(() => filasDeLista(visibles), [visibles]);
+  const tiendas = useMemo(
+    () => contarTiendas(data.buckets.pendingOrders.items),
+    [data],
+  );
   const vacia = visibles.length === 0;
   const Vacio = filtros.q.trim() ? SearchX : CheckCircle2;
 
   return (
     <section aria-label="Avisos" className="min-h-0 flex-1 overflow-y-auto" data-qa="lista-avisos">
-      <CabeceraLista data={data} f={filtros} visibles={visibles.length} enFiltro={enFiltro} onIr={onIr} />
+      <CabeceraLista data={data} f={filtros} visibles={visibles.length} enFiltro={enFiltro} tiendas={tiendas} onIr={onIr} />
       {vacia ? (
         <p className="flex items-center justify-center gap-2 px-6 py-16 text-center text-sm text-[var(--text-secondary)]">
           <Vacio className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
@@ -96,17 +122,19 @@ export function ListaAvisos({
         </p>
       ) : (
         <ul className="divide-y divide-[var(--rule-soft)]">
-          {visibles.map((a) =>
-            a.categoria === "pendingOrders" ? (
-              <FilaPedido
-                key={a.id}
-                aviso={a}
-                abierto={pedidoAbierto === a.id}
-                onAlternar={() => setPedidoAbierto((v) => (v === a.id ? null : a.id))}
+          {filas.map((fila) =>
+            fila.tipo === "tienda" ? (
+              <FilaTienda
+                key={`t-${fila.id}`}
+                grupo={fila}
+                abierto={tiendaAbierta === fila.id}
+                onAlternar={() => setTiendaAbierta((v) => (v === fila.id ? null : fila.id))}
+                pedidoAbierto={pedidoAbierto}
+                onPedido={(id) => setPedidoAbierto((v) => (v === id ? null : id))}
                 onIr={onIr}
               />
             ) : (
-              <FilaAviso key={a.id} aviso={a} onIr={onIr} />
+              <FilaAviso key={fila.aviso.id} aviso={fila.aviso} onIr={onIr} />
             ),
           )}
         </ul>

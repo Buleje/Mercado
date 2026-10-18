@@ -261,6 +261,8 @@ export interface AvisoBandeja {
   subtitle: string;
   /** Nombre de la tienda a la que se refiere, si no es el título mismo. */
   tienda: string | null;
+  /** Id de la tienda (pedidos sin atender): con él la lista agrupa una fila por tienda. */
+  tiendaId?: string;
   status: string;
   /** null = sin fecha propia (negocios en riesgo: la señal es de hoy). */
   createdAt: string | null;

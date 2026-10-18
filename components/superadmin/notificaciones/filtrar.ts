@@ -117,3 +117,55 @@ export function gruposIncompletos(data: BandejaAvisos, f: Filtros): GrupoIncompl
     })
     .filter((x) => x.total > x.enLista);
 }
+
+// ─── Pedidos sin atender: una fila por tienda ──────────────────────────────
+
+/** Los pedidos de una tienda, plegados en una sola fila. */
+export interface GrupoTienda {
+  tipo: "tienda";
+  /** Id de la tienda (o su nombre si el aviso no lo trae). */
+  id: string;
+  tienda: string;
+  /** Sus pedidos, urgente primero y lo más reciente primero. */
+  pedidos: AvisoBandeja[];
+  /** El nivel más alto entre sus pedidos. */
+  nivel: Nivel;
+  /** Fecha del pedido más viejo. */
+  masViejo: string | null;
+  /** Pantalla de pedidos de esa tienda. */
+  href: string;
+}
+
+export type FilaLista = { tipo: "aviso"; aviso: AvisoBandeja } | GrupoTienda;
+
+/**
+ * Pliega los pedidos sin atender en una fila por tienda y deja el resto como
+ * está. Recibe la lista YA ordenada: cada grupo ocupa el lugar de su pedido de
+ * nivel más alto, así el orden general (urgente → informativo, lo más reciente
+ * primero) no cambia.
+ */
+export function filasDeLista(avisos: readonly AvisoBandeja[]): FilaLista[] {
+  const filas: FilaLista[] = [];
+  const grupos = new Map<string, GrupoTienda>();
+  for (const a of avisos) {
+    if (a.categoria !== "pendingOrders") {
+      filas.push({ tipo: "aviso", aviso: a });
+      continue;
+    }
+    const id = a.tiendaId ?? a.tienda ?? a.id;
+    let g = grupos.get(id);
+    if (!g) {
+      g = { tipo: "tienda", id, tienda: a.tienda ?? "Tienda sin nombre", pedidos: [], nivel: a.nivel, masViejo: null, href: a.href };
+      grupos.set(id, g);
+      filas.push(g);
+    }
+    g.pedidos.push(a);
+    if (a.createdAt && (!g.masViejo || a.createdAt < g.masViejo)) g.masViejo = a.createdAt;
+  }
+  return filas;
+}
+
+/** En cuántas tiendas se reparten estos pedidos. */
+export function contarTiendas(pedidos: readonly AvisoBandeja[]): number {
+  return new Set(pedidos.map((a) => a.tiendaId ?? a.tienda ?? a.id)).size;
+}

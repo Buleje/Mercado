@@ -28,8 +28,12 @@ import {
 
 /** Cuántos avisos por grupo viajan al modal (el conteo por nivel es del total). */
 const TOPE_POR_GRUPO = 40;
-/** Los pedidos traen sus artículos: bajan menos. */
-const TOPE_PEDIDOS = 20;
+/**
+ * Pedidos sin atender: bajan TODOS (sin artículos, para agruparlos por tienda
+ * en el modal) hasta este tope; los artículos sólo de los más recientes de cada tienda.
+ */
+const TOPE_PEDIDOS = 400;
+const DETALLE_POR_TIENDA = 5;
 
 const ESTADO_YAPE: Record<string, string> = {
   pending: "pendiente",
@@ -41,12 +45,12 @@ function aIso(d: Date | string): string {
 }
 
 /** Un grupo: ordena por nivel ANTES de recortar, así lo urgente nunca queda afuera. */
-function grupo(count: number, href: string, todos: AvisoBandeja[], niveles?: ConteoNiveles): GrupoBandeja {
+function grupo(count: number, href: string, todos: AvisoBandeja[], niveles?: ConteoNiveles, tope = TOPE_POR_GRUPO): GrupoBandeja {
   return {
     count,
     href,
     niveles: niveles ?? contarNiveles(todos),
-    items: [...todos].sort(compararAvisos).slice(0, TOPE_POR_GRUPO),
+    items: [...todos].sort(compararAvisos).slice(0, tope),
   };
 }
 
@@ -84,7 +88,7 @@ export async function GET(req: NextRequest) {
       pendingOrdersCount,
       ordersEnCurso,
       ordersOlvidados,
-      pendingOrdersTop,
+      pendingOrdersLista,
       rescue,
       panelErrors,
       errorStats,
@@ -122,21 +126,6 @@ export async function GET(req: NextRequest) {
           status: true,
           createdAt: true,
           paymentMethod: true,
-          // Artículos con imagen — el drawer los muestra al expandir el pedido
-          // (Brandon 2026-06-05).
-          items: {
-            select: {
-              id: true,
-              name: true,
-              quantity: true,
-              unit: true,
-              price: true,
-              image: true,
-              // Fallback: pedidos viejos guardaron image="" — usamos la foto
-              // actual del producto para que el drawer siempre muestre algo.
-              product: { select: { image: true } },
-            },
-          },
         },
       }),
       // Señales de soporte proactivo (Brandon 2026-06-20): negocios en riesgo y
@@ -148,8 +137,39 @@ export async function GET(req: NextRequest) {
 
     // Nombre del negocio de cada pedido y de cada Yape detectado
     const orderTenantIds = [
-      ...new Set([...pendingOrdersTop.map((o) => o.tenantId), ...paymentApprovals.map((p) => p.tenantId)].filter(Boolean)),
+      ...new Set([...pendingOrdersLista.map((o) => o.tenantId), ...paymentApprovals.map((p) => p.tenantId)].filter(Boolean)),
     ];
+    // Artículos (con imagen) sólo de los más recientes de cada tienda: el modal
+    // los despliega al abrir el pedido (Brandon 2026-06-05). Los demás son una fila lisa.
+    const porTienda = new Map<string, number>();
+    const idsConDetalle: string[] = [];
+    for (const o of pendingOrdersLista) {
+      const n = porTienda.get(o.tenantId) ?? 0;
+      if (n < DETALLE_POR_TIENDA) idsConDetalle.push(o.id);
+      porTienda.set(o.tenantId, n + 1);
+    }
+    const detalleRows = idsConDetalle.length
+      ? await prisma.order.findMany({
+          where: { id: { in: idsConDetalle } },
+          select: {
+            id: true,
+            items: {
+              select: {
+                id: true,
+                name: true,
+                quantity: true,
+                unit: true,
+                price: true,
+                image: true,
+                // Fallback: pedidos viejos guardaron image="" — usamos la foto
+                // actual del producto para que el modal siempre muestre algo.
+                product: { select: { image: true } },
+              },
+            },
+          },
+        })
+      : [];
+    const itemsPorPedido = new Map(detalleRows.map((r) => [r.id, r.items]));
     const tenantMap = new Map<string, { name: string; slug: string }>();
     if (orderTenantIds.length > 0) {
       const tenants = await prisma.tenant.findMany({
@@ -246,8 +266,9 @@ export async function GET(req: NextRequest) {
       pendingOrders: grupo(
         pendingOrdersCount,
         "/superadmin/orders",
-        pendingOrdersTop.map((o): AvisoBandeja => {
+        pendingOrdersLista.map((o): AvisoBandeja => {
           const t = tenantMap.get(o.tenantId);
+          const items = itemsPorPedido.get(o.id);
           return {
             id: o.id,
             categoria: "pendingOrders",
@@ -255,31 +276,35 @@ export async function GET(req: NextRequest) {
             title: `${o.customerName} · S/${Number(o.total).toFixed(2)}`,
             subtitle: o.status,
             tienda: t?.name ?? o.tenantId,
+            tiendaId: o.tenantId,
             status: o.status,
             createdAt: o.createdAt.toISOString(),
             href: t ? `/superadmin/orders?tenant=${t.slug}` : `/superadmin/orders`,
-            // Detalle expandible en el modal (2026-06-05)
-            order: {
-              customerName: o.customerName,
-              tenantName: t?.name ?? o.tenantId,
-              tenantSlug: t?.slug ?? null,
-              total: Number(o.total),
-              paymentMethod: o.paymentMethod,
-              itemsCount: o.items.reduce((acc, i) => acc + i.quantity, 0),
-              items: o.items.map((i) => ({
-                id: i.id,
-                name: i.name,
-                quantity: i.quantity,
-                unit: i.unit,
-                price: Number(i.price),
-                image: i.image || i.product?.image || null,
-              })),
-            },
+            // Detalle expandible en el modal (2026-06-05): sólo si trajimos sus artículos.
+            order: items
+              ? {
+                  customerName: o.customerName,
+                  tenantName: t?.name ?? o.tenantId,
+                  tenantSlug: t?.slug ?? null,
+                  total: Number(o.total),
+                  paymentMethod: o.paymentMethod,
+                  itemsCount: items.reduce((acc, i) => acc + i.quantity, 0),
+                  items: items.map((i) => ({
+                    id: i.id,
+                    name: i.name,
+                    quantity: i.quantity,
+                    unit: i.unit,
+                    price: Number(i.price),
+                    image: i.image || i.product?.image || null,
+                  })),
+                }
+              : undefined,
           };
         }),
         // Los pedidos son muchos (83 el 18-10): se cuentan por nivel con dos
-        // `count` con los mismos cortes de la regla, no con los 20 que bajan.
+        // `count` con los mismos cortes de la regla, no con los que bajan.
         nivelesDePedidos(pendingOrdersCount, ordersEnCurso, ordersOlvidados),
+        TOPE_PEDIDOS,
       ),
     };
 

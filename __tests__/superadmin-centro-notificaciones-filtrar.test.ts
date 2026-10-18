@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   avisosVisibles,
   conteos,
+  contarTiendas,
+  filasDeLista,
   gruposIncompletos,
   normalizar,
   type Filtros,
@@ -98,5 +100,40 @@ describe("centro de notificaciones · filtrar", () => {
     expect(gruposIncompletos(bandeja(), TODO)).toEqual([{ categoria: "pendingOrders", total: 83, enLista: 2 }]);
     expect(gruposIncompletos(bandeja(), { ...TODO, nivel: "urgente" })).toEqual([]);
     expect(gruposIncompletos(bandeja(), { ...TODO, q: "x" })).toEqual([]);
+  });
+
+  it("pliega los pedidos en una fila por tienda, con el nivel más alto y el más viejo", () => {
+    const ped = (id: string, tiendaId: string, tienda: string, nivel: Nivel, createdAt: string) =>
+      aviso(id, "pendingOrders", nivel, { tiendaId, tienda, createdAt });
+    const data = bandeja();
+    data.buckets.pendingOrders.items = [
+      ped("a1", "A", "Pizzería Daily Fresh", "leve", "2026-10-10T00:00:00Z"),
+      ped("b1", "B", "Frutería Ana", "importante", "2026-10-15T00:00:00Z"),
+      ped("a2", "A", "Pizzería Daily Fresh", "importante", "2026-10-16T00:00:00Z"),
+      ped("a3", "A", "Pizzería Daily Fresh", "informativo", "2026-10-18T00:00:00Z"),
+    ];
+    const filas = filasDeLista(avisosVisibles(data, { ...TODO, categoria: "pendingOrders" }));
+    expect(filas).toHaveLength(2);
+    const [a, b] = filas;
+    expect(a).toMatchObject({ tipo: "tienda", id: "A", nivel: "importante", masViejo: "2026-10-10T00:00:00Z" });
+    expect(a.tipo === "tienda" && a.pedidos.map((p) => p.id)).toEqual(["a2", "a1", "a3"]);
+    expect(b).toMatchObject({ tipo: "tienda", id: "B", nivel: "importante" });
+    expect(contarTiendas(data.buckets.pendingOrders.items)).toBe(2);
+  });
+
+  it("deja sueltos los avisos que no son pedidos y la búsqueda encuentra por tienda o por pedido", () => {
+    const data = bandeja();
+    data.buckets.pendingOrders.items = [
+      aviso("p1", "pendingOrders", "leve", { tiendaId: "A", tienda: "Pizzería Daily", title: "Rosa · S/10.00", createdAt: "2026-10-10T00:00:00Z" }),
+      aviso("p2", "pendingOrders", "leve", { tiendaId: "A", tienda: "Pizzería Daily", title: "Luis · S/20.00", createdAt: "2026-10-11T00:00:00Z" }),
+    ];
+    const todas = filasDeLista(avisosVisibles(data, TODO));
+    expect(todas.filter((f) => f.tipo === "aviso")).toHaveLength(5);
+    expect(todas.filter((f) => f.tipo === "tienda")).toHaveLength(1);
+    const porTienda = filasDeLista(avisosVisibles(data, { ...TODO, q: "pizzeria" }));
+    expect(porTienda[0]).toMatchObject({ tipo: "tienda" });
+    const porPedido = filasDeLista(avisosVisibles(data, { ...TODO, q: "luis" }));
+    expect(porPedido).toHaveLength(1);
+    expect(porPedido[0].tipo === "tienda" && porPedido[0].pedidos.map((p) => p.id)).toEqual(["p2"]);
   });
 });
