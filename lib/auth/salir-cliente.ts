@@ -12,12 +12,18 @@
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { olvidarClienteMe } from "@/lib/cliente-me";
+import { marcarSalida } from "@/lib/tienda-cliente/cuenta-recordada";
+import { desactivarEntradaAutomatica } from "@/lib/tienda-cliente/google-un-toque";
 
 export const RUTA_SALIR_CLIENTE = "/api/auth/customer/logout";
 
 /** Cierra la sesión del cliente en el servidor. Nunca tira: devuelve si el servidor respondió bien. */
 export async function cerrarSesionCliente(): Promise<boolean> {
   olvidarClienteMe();
+  // La cuenta de Google se sigue recordando («Continuar como…»), pero el
+  // globito ya no entra solo hasta que el cliente vuelva a elegirla.
+  marcarSalida();
+  desactivarEntradaAutomatica();
   try {
     const res = await fetch(RUTA_SALIR_CLIENTE, {
       method: "POST",

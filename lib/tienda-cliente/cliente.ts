@@ -31,3 +31,14 @@ export function clienteDesdeUsuario(u: UsuarioSupabaseMinimo | null | undefined)
     proveedor: "google",
   };
 }
+
+/**
+ * El `sub` de Google del usuario de Supabase (lo que Google acepta como
+ * `login_hint`). Supabase lo guarda en `user_metadata` como `provider_id` y
+ * `sub`. Sólo sirve para no volver a elegir la cuenta: no es un token.
+ */
+export function pistaDesdeUsuario(u: UsuarioSupabaseMinimo | null | undefined): string | null {
+  const meta = u?.user_metadata ?? {};
+  const pista = texto(meta.provider_id) ?? texto(meta.sub);
+  return pista && /^[\w.-]{1,255}$/.test(pista) ? pista : null;
+}

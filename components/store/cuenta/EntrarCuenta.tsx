@@ -13,7 +13,7 @@
 import { useEffect, useState } from "react";
 import { Smartphone } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { BotonGoogle } from "@/components/store/cliente/BotonGoogle";
+import { IngresoGoogle } from "@/components/store/cliente/IngresoGoogle";
 import { useClienteTienda } from "@/components/store/cliente/use-cliente-tienda";
 import { primerNombre, rutaEntrar } from "./cuenta-rutas";
 
@@ -42,10 +42,11 @@ export function EntrarCuenta({ titulo, className }: EntrarCuentaProps) {
         {titulo ?? (nombre ? `Hola, ${nombre}. Entra para ver tus pedidos.` : "¡Hola! Entra y sigue tus pedidos.")}
       </p>
       {disponible && !cliente && (
-        <BotonGoogle
+        <IngresoGoogle
           entrar={entrarConGoogle}
           className="border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
           claseError="text-sm text-[var(--data-error-700)]"
+          claseEnlace="text-[var(--text-primary)]"
         />
       )}
       <a href={rutaEntrar(aqui)} className={BOTON_PRINCIPAL}>

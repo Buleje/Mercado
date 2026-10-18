@@ -14,7 +14,8 @@
  * «Hola, Ana · 987 654 321 · Cambiar».
  */
 import { useEffect, useState } from "react";
-import { BotonGoogle, ChipCliente } from "@/components/store/cliente/BotonGoogle";
+import { ChipCliente } from "@/components/store/cliente/BotonGoogle";
+import { IngresoGoogle } from "@/components/store/cliente/IngresoGoogle";
 import {
   useClienteTienda,
   type UsoClienteTienda,
@@ -138,11 +139,12 @@ function Pasos({
           ) : (
             <>
               {ofreceGoogle && google && (
-                <BotonGoogle
+                <IngresoGoogle
                   entrar={google.entrarConGoogle}
                   volverA={typeof window === "undefined" ? undefined : rutaConBolsa()}
                   className={`${SECUNDARIO} rounded-full font-semibold`}
                   claseError={ERROR}
+                  claseEnlace={ENLACE}
                 />
               )}
               <label htmlFor={idNombre} className="sr-only">

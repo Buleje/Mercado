@@ -311,13 +311,34 @@ export function buildCSP(pathname: string, nonce?: string): string {
       }
     : { connect: "", blob: "" };
 
+  /* Entrar con Google en las tiendas (One Tap / FedCM + botón, 17-10) — SÓLO
+     fuera del panel. Los cuatro orígenes son los que publica Google para GIS
+     (developers.google.com/identity/gsi/web/guides/get-google-api-clientid,
+     «Content Security Policy»), acotados a la carpeta /gsi/:
+      · script-src  https://accounts.google.com/gsi/client (el script; en prod
+        lo cubre además 'strict-dynamic' porque lo inserta código con nonce),
+      · frame-src   https://accounts.google.com/gsi/ (el globito y el botón),
+      · connect-src https://accounts.google.com/gsi/ (estado de la sesión),
+      · style-src   https://accounts.google.com/gsi/style (sus estilos).
+     El ID token se canjea en `/api/tienda-cliente/google` ('self'). Admin,
+     superadmin, TV y /t/<slug>/admin quedan como estaban. */
+  const tiendaConGoogle = !isAdminRoute && !/^\/t\/[^/]+\/admin(\/|$)/.test(pathname);
+  const gis = tiendaConGoogle
+    ? {
+        script: " https://accounts.google.com/gsi/client",
+        frame: " https://accounts.google.com/gsi/",
+        connect: " https://accounts.google.com/gsi/",
+        style: " https://accounts.google.com/gsi/style",
+      }
+    : { script: "", frame: "", connect: "", style: "" };
+
   let scriptSrc: string;
   if (isDev) {
-    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com`;
+    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com${gis.script}`;
   } else if (nonce) {
-    scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com`;
+    scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com${gis.script}`;
   } else {
-    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com`;
+    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com${gis.script}`;
   }
 
   // SECURITY 2026-05-12 (audit defensivo P1-1): `img-src *` permitía cargar
@@ -327,10 +348,10 @@ export function buildCSP(pathname: string, nonce?: string): string {
   const directives: Record<string, string> = {
     "default-src":               "'self'",
     "script-src":                scriptSrc,
-    "style-src":                 "'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "style-src":                 "'self' 'unsafe-inline' https://fonts.googleapis.com" + gis.style,
     "img-src":                   "'self' data: blob: https:",
     "font-src":                  "'self' data: https://fonts.gstatic.com",
-    "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com https://us.i.posthog.com https://us-assets.i.posthog.com" + ezviz.connect,
+    "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com https://us.i.posthog.com https://us-assets.i.posthog.com" + ezviz.connect + gis.connect,
     "media-src":                 "'self'" + ezviz.blob,
     // worker-src: sin declararlo cae en `script-src`, y con `'strict-dynamic'`
     // el navegador IGNORA `'self'` ahí — un `new Worker("/tesseract/worker.min.js")`
@@ -342,7 +363,7 @@ export function buildCSP(pathname: string, nonce?: string): string {
     // poder leer el status antes de mostrarlo. Resultado: el navegador
     // bloqueaba el PDF con "Este contenido está bloqueado" (Brandon 2026-07-27).
     // blob:/data: son de la propia app: no agregan superficie externa.
-    "frame-src":                 "'self' blob: data:",
+    "frame-src":                 "'self' blob: data:" + gis.frame,
     "object-src":                "'none'",
     "base-uri":                  "'self'",
     "form-action":               "'self'",

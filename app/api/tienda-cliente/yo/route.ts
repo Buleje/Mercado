@@ -1,7 +1,8 @@
 /**
  * /api/tienda-cliente/yo — ¿quién entró con Google en esta tienda? (2026-10-11)
  *
- * GET    → `{ cliente: { nombre, email, avatar, proveedor } | null }`
+ * GET    → `{ cliente: { nombre, email, avatar, proveedor } | null, pista }`
+ *          (`pista` = `sub` de Google, el `login_hint` de «Continuar como…»)
  * DELETE → cierra la sesión de Google de este navegador (`{ ok: true }`).
  *
  * Por qué un endpoint: la cookie de Supabase (`sb-<proyecto>-auth-token`) es
@@ -15,7 +16,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServer, isSupabaseAuthConfiguredServer } from "@/lib/supabase/server";
-import { clienteDesdeUsuario } from "@/lib/tienda-cliente/cliente";
+import { clienteDesdeUsuario, pistaDesdeUsuario } from "@/lib/tienda-cliente/cliente";
 import { cerrarSesionGoogle, traeSesionSupabase } from "@/lib/tienda-cliente/sesion-google";
 import { logger } from "@/lib/logger";
 
@@ -29,7 +30,10 @@ export async function GET(req: NextRequest) {
     const supabase = await getSupabaseServer();
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) return NextResponse.json({ cliente: null }, { headers: SIN_CACHE });
-    return NextResponse.json({ cliente: clienteDesdeUsuario(data.user) }, { headers: SIN_CACHE });
+    return NextResponse.json(
+      { cliente: clienteDesdeUsuario(data.user), pista: pistaDesdeUsuario(data.user) },
+      { headers: SIN_CACHE },
+    );
   } catch (err) {
     logger.warn("[tienda-cliente/yo] getUser falló", { error: String(err) });
     return NextResponse.json({ cliente: null }, { headers: SIN_CACHE });

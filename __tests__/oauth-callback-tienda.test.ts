@@ -8,7 +8,12 @@ import { describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const getUser = vi.fn(async () => ({
-  data: { user: { email: "ana@gmail.com", user_metadata: { full_name: "Ana Torres", avatar_url: "https://lh3.googleusercontent.com/a" } } },
+  data: {
+    user: {
+      email: "ana@gmail.com",
+      user_metadata: { full_name: "Ana Torres", avatar_url: "https://lh3.googleusercontent.com/a", provider_id: "110248495921238986420" },
+    },
+  },
   error: null,
 }));
 const signOut = vi.fn(async () => ({ error: null }));
@@ -75,10 +80,11 @@ describe("/api/tienda-cliente/yo", () => {
     expect(res.headers.get("cache-control")).toContain("no-store");
   });
 
-  it("con cookie: sólo nombre, correo y foto", async () => {
+  it("con cookie: sólo nombre, correo y foto (+ la pista de Google para «Continuar como…»)", async () => {
     const res = await yo.GET(conCookie());
     expect(await res.json()).toEqual({
       cliente: { nombre: "Ana Torres", email: "ana@gmail.com", avatar: "https://lh3.googleusercontent.com/a", proveedor: "google" },
+      pista: "110248495921238986420",
     });
   });
 

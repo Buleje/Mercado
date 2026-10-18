@@ -21,7 +21,10 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import Link from "next/link";
+import { useState } from "react";
+import { olvidarCuenta } from "@/lib/tienda-cliente/cuenta-recordada";
 import { cn } from "@/lib/utils";
+import { useCuentaRecordada } from "../cliente/use-cuenta-recordada";
 import { EntrarCuenta } from "./EntrarCuenta";
 import { DESTINOS, enlaceAyuda, esDuenoDe, primerNombre, rutaCuenta } from "./cuenta-rutas";
 import type { DatosCuenta } from "./use-datos-cuenta";
@@ -145,14 +148,42 @@ export function PanelCuenta({ datos, onCerrar }: PanelCuentaProps) {
               </span>
             </a>
           )}
-          {conSesion && (
-            <button type="button" onClick={salir} className={cn(FILA, "text-[var(--text-secondary)]")}>
-              <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.9} aria-hidden="true" />
-              Salir
-            </button>
-          )}
+          {conSesion && <SalirCuenta salir={salir} />}
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * «Salir» y, si este equipo recuerda una cuenta de Google, la opción de
+ * olvidarla en el mismo gesto (Ley 29733, security 17-10). Sin marcar, la
+ * cuenta sigue para «Continuar como…» pero ya no entra sola.
+ */
+function SalirCuenta({ salir }: { salir: () => void }) {
+  const recordada = useCuentaRecordada();
+  const [olvidar, setOlvidar] = useState(false);
+  const alSalir = () => {
+    if (recordada && olvidar) olvidarCuenta();
+    salir();
+  };
+  return (
+    <>
+      <button type="button" onClick={alSalir} className={cn(FILA, "text-[var(--text-secondary)]")}>
+        <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.9} aria-hidden="true" />
+        Salir
+      </button>
+      {recordada && (
+        <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-3 text-base text-[var(--text-secondary)]">
+          <input
+            type="checkbox"
+            checked={olvidar}
+            onChange={(e) => setOlvidar(e.target.checked)}
+            className="h-5 w-5 shrink-0 accent-[var(--accent)]"
+          />
+          Olvidar también esta cuenta en este equipo
+        </label>
+      )}
+    </>
   );
 }

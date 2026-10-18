@@ -21,6 +21,8 @@ import { ChevronDown, User } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useSettingsSafe } from "@/contexts/settings-context";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { GoogleUnToque } from "@/components/store/cliente/GoogleUnToque";
+import { CONFIG_PEDIDOS_POR_DEFECTO } from "@/lib/tienda-cliente/contrato";
 import { PanelCuenta } from "./PanelCuenta";
 import { primerNombre } from "./cuenta-rutas";
 import { useDatosCuentaConProveedor, useDatosCuentaSinProveedor, type DatosCuenta } from "./use-datos-cuenta";
@@ -46,16 +48,27 @@ export function MenuCuenta(props: MenuCuentaProps) {
 }
 
 function ConProveedor({ settings, ...props }: MenuCuentaProps & { settings: NonNullable<ReturnType<typeof useSettingsSafe>> }) {
-  return <MenuVista {...props} datos={useDatosCuentaConProveedor(settings, props.whatsapp)} />;
+  const loginGoogle = (settings.storeTheme?.pedidosCliente ?? CONFIG_PEDIDOS_POR_DEFECTO).loginGoogle;
+  return <MenuVista {...props} datos={useDatosCuentaConProveedor(settings, props.whatsapp)} loginGoogle={loginGoogle} />;
 }
 
+/* Sin proveedor (páginas propias) no se conoce el interruptor: el servidor lo
+   revisa al pedir el nonce (`/api/tienda-cliente/google` → 404 si está apagado). */
 function SinProveedor(props: MenuCuentaProps) {
-  return <MenuVista {...props} datos={useDatosCuentaSinProveedor(props.whatsapp)} />;
+  return (
+    <MenuVista {...props} datos={useDatosCuentaSinProveedor(props.whatsapp)} loginGoogle={CONFIG_PEDIDOS_POR_DEFECTO.loginGoogle} />
+  );
 }
 
 const CONSULTA_CELULAR = "(max-width: 639px)";
 
-function MenuVista({ datos, variante = "pastilla", claseBoton, className }: MenuCuentaProps & { datos: DatosCuenta }) {
+function MenuVista({
+  datos,
+  loginGoogle,
+  variante = "pastilla",
+  claseBoton,
+  className,
+}: MenuCuentaProps & { datos: DatosCuenta; loginGoogle: boolean }) {
   const [abierto, setAbierto] = useState(false);
   const [esCelular, setEsCelular] = useState(false);
   const raiz = useRef<HTMLDivElement>(null);
@@ -101,6 +114,8 @@ function MenuVista({ datos, variante = "pastilla", claseBoton, className }: Menu
 
   return (
     <div ref={raiz} className={cn("relative shrink-0", className)}>
+      {/* El globito de Google (One Tap) de toda la tienda: una vez por página y sólo sin sesión. */}
+      <GoogleUnToque activo={loginGoogle && !datos.conSesion} />
       <button
         ref={boton}
         type="button"
