@@ -2,17 +2,64 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/lib/generated/prisma/client";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import { PaymentProofsDB } from "@/lib/db/payment-proofs.db";
 import { getRescueQueue } from "@/lib/db/rescue.db";
 import { getClientErrors, getClientErrorStats } from "@/lib/db/client-errors.db";
 import { logger } from "@/lib/logger";
+import {
+  compararAvisos,
+  contarNiveles,
+  cortesPedido,
+  nivelAprobacionYape,
+  nivelComprobanteApertura,
+  nivelErrorDePanel,
+  nivelesDePedidos,
+  nivelNegocioEnRiesgo,
+  nivelPedidoSinAtender,
+  nivelSolicitudTienda,
+  sumarNiveles,
+  type AvisoBandeja,
+  type BandejaAvisos,
+  type ConteoNiveles,
+  type GrupoBandeja,
+} from "@/lib/superadmin/nivel-aviso";
+
+/** Cuántos avisos por grupo viajan al modal (el conteo por nivel es del total). */
+const TOPE_POR_GRUPO = 40;
+/** Los pedidos traen sus artículos: bajan menos. */
+const TOPE_PEDIDOS = 20;
+
+const ESTADO_YAPE: Record<string, string> = {
+  pending: "pendiente",
+  review_required: "revisar a mano",
+};
+
+function aIso(d: Date | string): string {
+  return d instanceof Date ? d.toISOString() : String(d);
+}
+
+/** Un grupo: ordena por nivel ANTES de recortar, así lo urgente nunca queda afuera. */
+function grupo(count: number, href: string, todos: AvisoBandeja[], niveles?: ConteoNiveles): GrupoBandeja {
+  return {
+    count,
+    href,
+    niveles: niveles ?? contarNiveles(todos),
+    items: [...todos].sort(compararAvisos).slice(0, TOPE_POR_GRUPO),
+  };
+}
+
+/** Pedido de cualquier tienda que nadie terminó de atender. */
+const PEDIDO_SIN_ATENDER = { status: { in: ["pendiente", "confirmado"] }, deletedAt: null } satisfies Prisma.OrderWhereInput;
 
 /**
  * GET /api/superadmin/notifications/inbox
  *
  * Bandeja agregada de items accionables para el superadmin. Cada bucket
- * incluye `count` y los `top` items para previsualizar en el drawer.
+ * incluye `count`, su conteo por nivel (`niveles`) y los primeros items ya
+ * clasificados (`nivel` + `motivo`, reglas en `lib/superadmin/nivel-aviso.ts`)
+ * para el centro de notificaciones (modal de la campana).
  *
  * Buckets:
  *   - vendorApplications  → solicitudes de tienda nuevas
@@ -27,12 +74,16 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   try {
+    const ahora = new Date();
+    const cortes = cortesPedido(ahora);
     const [
       vendorAppsCount,
       vendorAppsTop,
       paymentApprovals,
       paymentProofs,
       pendingOrdersCount,
+      ordersEnCurso,
+      ordersOlvidados,
       pendingOrdersTop,
       rescue,
       panelErrors,
@@ -44,7 +95,7 @@ export async function GET(req: NextRequest) {
       prisma.vendorApplication.findMany({
         where: { status: { in: ["pending", "under_review", "info_requested"] } },
         orderBy: { submittedAt: "desc" },
-        take: 5,
+        take: 200,
         select: {
           id: true,
           businessName: true,
@@ -54,21 +105,15 @@ export async function GET(req: NextRequest) {
           plan: true,
         },
       }),
-      PaymentApprovalDb.listPending({ limit: 50 }).catch(() => []),
+      PaymentApprovalDb.listPending({ limit: 200 }).catch(() => []),
       PaymentProofsDB.listPending().catch(() => []),
-      prisma.order.count({
-        where: {
-          status: { in: ["pendiente", "confirmado"] },
-          deletedAt: null,
-        },
-      }),
+      prisma.order.count({ where: PEDIDO_SIN_ATENDER }),
+      prisma.order.count({ where: { ...PEDIDO_SIN_ATENDER, createdAt: { gte: cortes.enCursoDesde } } }),
+      prisma.order.count({ where: { ...PEDIDO_SIN_ATENDER, createdAt: { lt: cortes.olvidadoAntesDe } } }),
       prisma.order.findMany({
-        where: {
-          status: { in: ["pendiente", "confirmado"] },
-          deletedAt: null,
-        },
+        where: PEDIDO_SIN_ATENDER,
         orderBy: { createdAt: "desc" },
-        take: 5,
+        take: TOPE_PEDIDOS,
         select: {
           id: true,
           tenantId: true,
@@ -97,12 +142,14 @@ export async function GET(req: NextRequest) {
       // Señales de soporte proactivo (Brandon 2026-06-20): negocios en riesgo y
       // errores de panel ahora también aparecen en el bell.
       getRescueQueue().catch(() => ({ queue: [], kpis: { critical: 0, high: 0 } })),
-      getClientErrors(5).catch(() => []),
+      getClientErrors(200).catch(() => []),
       getClientErrorStats().catch(() => ({ groups: 0 })),
     ]);
 
-    // Tenants for top orders → muestra el nombre del negocio en el drawer
-    const orderTenantIds = [...new Set(pendingOrdersTop.map((o) => o.tenantId).filter(Boolean))];
+    // Nombre del negocio de cada pedido y de cada Yape detectado
+    const orderTenantIds = [
+      ...new Set([...pendingOrdersTop.map((o) => o.tenantId), ...paymentApprovals.map((p) => p.tenantId)].filter(Boolean)),
+    ];
     const tenantMap = new Map<string, { name: string; slug: string }>();
     if (orderTenantIds.length > 0) {
       const tenants = await prisma.tenant.findMany({
@@ -119,109 +166,130 @@ export async function GET(req: NextRequest) {
 
     const atRiskRows = rescue.queue.filter((r) => r.riskLevel === "critical" || r.riskLevel === "high");
     const atRiskCount = rescue.kpis.critical + rescue.kpis.high;
-    const nowIso = new Date().toISOString();
 
-    const totalCount =
-      vendorAppsCount + paymentApprovals.length + paymentProofs.length + pendingOrdersCount +
-      atRiskCount + errorStats.groups;
-
-    return NextResponse.json({
-      total: totalCount,
-      buckets: {
-        atRisk: {
-          count: atRiskCount,
-          href: "/superadmin/rescue",
-          items: atRiskRows.slice(0, 5).map((r) => ({
-            id: r.id,
-            title: r.name,
-            subtitle: r.reasons.slice(0, 2).join(" · ") || r.riskLevel,
-            status: r.riskLevel,
-            createdAt: nowIso,
-            href: `/superadmin/tenants/${r.slug}`,
-          })),
-        },
-        panelErrors: {
-          count: errorStats.groups,
+    const buckets: BandejaAvisos["buckets"] = {
+      atRisk: grupo(
+        atRiskCount,
+        "/superadmin/rescue",
+        atRiskRows.map((r) => ({
+          id: r.id,
+          categoria: "atRisk",
+          ...nivelNegocioEnRiesgo(r),
+          title: r.name,
+          subtitle: r.reasons.slice(0, 2).join(" · ") || r.riskLevel,
+          tienda: null,
+          status: r.riskLevel,
+          createdAt: null,
+          href: `/superadmin/tenants/${r.slug}`,
+        })),
+      ),
+      panelErrors: grupo(
+        errorStats.groups,
+        "/superadmin/tenant-errors",
+        panelErrors.map((e) => ({
+          id: e.id,
+          categoria: "panelErrors",
+          ...nivelErrorDePanel(e, ahora),
+          title: e.message.slice(0, 140),
+          subtitle: `${e.count}×`,
+          tienda: e.tenantName,
+          status: "error",
+          createdAt: e.lastSeenAt,
           href: "/superadmin/tenant-errors",
-          items: panelErrors.slice(0, 5).map((e) => ({
-            id: e.id,
-            title: e.message.slice(0, 80),
-            subtitle: `${e.tenantName} · ${e.count}×`,
-            status: "error",
-            createdAt: e.lastSeenAt,
-            href: "/superadmin/tenant-errors",
-          })),
-        },
-        vendorApplications: {
-          count: vendorAppsCount,
-          href: "/superadmin/vendor-applications",
-          items: vendorAppsTop.map((v) => ({
-            id: v.id,
-            title: v.businessName,
-            subtitle: `${v.contactName} · plan ${v.plan}`,
-            status: v.status,
-            createdAt: v.submittedAt.toISOString(),
-            href: `/superadmin/vendor-applications?id=${v.id}`,
-          })),
-        },
-        paymentApprovals: {
-          count: paymentApprovals.length,
+        })),
+      ),
+      vendorApplications: grupo(
+        vendorAppsCount,
+        "/superadmin/vendor-applications",
+        vendorAppsTop.map((v) => ({
+          id: v.id,
+          categoria: "vendorApplications",
+          ...nivelSolicitudTienda(v, ahora),
+          title: v.businessName,
+          subtitle: `${v.contactName} · plan ${v.plan}`,
+          tienda: null,
+          status: v.status,
+          createdAt: v.submittedAt.toISOString(),
+          href: `/superadmin/vendor-applications?id=${v.id}`,
+        })),
+      ),
+      paymentApprovals: grupo(
+        paymentApprovals.length,
+        "/superadmin/pagos-yape",
+        paymentApprovals.map((p) => ({
+          id: p.id,
+          categoria: "paymentApprovals",
+          ...nivelAprobacionYape(p, ahora),
+          title: `Yape · S/${Number(p.expectedAmount).toFixed(2)}`,
+          subtitle: `${p.customerPhone} · ${ESTADO_YAPE[p.status] ?? p.status}`,
+          tienda: tenantMap.get(p.tenantId)?.name ?? null,
+          status: p.status,
+          createdAt: aIso(p.createdAt),
           href: "/superadmin/pagos-yape",
-          items: paymentApprovals.slice(0, 5).map((p) => ({
-            id: p.id,
-            title: `Yape · S/${Number(p.expectedAmount).toFixed(2)}`,
-            subtitle: `${p.customerPhone} · ${p.status}`,
-            status: p.status,
-            createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : String(p.createdAt),
-            href: "/superadmin/pagos-yape",
-          })),
-        },
-        paymentProofs: {
-          count: paymentProofs.length,
+        })),
+      ),
+      paymentProofs: grupo(
+        paymentProofs.length,
+        "/superadmin/pagos-pendientes",
+        paymentProofs.map((p) => ({
+          id: p.id,
+          categoria: "paymentProofs",
+          ...nivelComprobanteApertura(p, ahora),
+          title: `${p.storeName} · S/${Number(p.amountPEN).toFixed(2)}`,
+          subtitle: `${p.ownerName} · ${p.method} · plan ${p.planTier}`,
+          tienda: null,
+          status: "pending",
+          createdAt: aIso(p.createdAt),
           href: "/superadmin/pagos-pendientes",
-          items: paymentProofs.slice(0, 5).map((p) => ({
-            id: p.id,
-            title: `${p.storeName} · S/${Number(p.amountPEN).toFixed(2)}`,
-            subtitle: `${p.ownerName} · ${p.method} · plan ${p.planTier}`,
-            status: "pending",
-            createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : String(p.createdAt),
-            href: "/superadmin/pagos-pendientes",
-          })),
-        },
-        pendingOrders: {
-          count: pendingOrdersCount,
-          href: "/superadmin/orders",
-          items: pendingOrdersTop.map((o) => {
-            const t = tenantMap.get(o.tenantId);
-            return {
-              id: o.id,
-              title: `${o.customerName} · S/${Number(o.total).toFixed(2)}`,
-              subtitle: t ? `${t.name} · ${o.status}` : `${o.tenantId} · ${o.status}`,
-              status: o.status,
-              createdAt: o.createdAt.toISOString(),
-              href: t ? `/superadmin/orders?tenant=${t.slug}` : `/superadmin/orders`,
-              // Detalle expandible en el drawer (2026-06-05)
-              order: {
-                customerName: o.customerName,
-                tenantName: t?.name ?? o.tenantId,
-                tenantSlug: t?.slug ?? null,
-                total: Number(o.total),
-                paymentMethod: o.paymentMethod,
-                itemsCount: o.items.reduce((acc, i) => acc + i.quantity, 0),
-                items: o.items.map((i) => ({
-                  id: i.id,
-                  name: i.name,
-                  quantity: i.quantity,
-                  unit: i.unit,
-                  price: Number(i.price),
-                  image: i.image || i.product?.image || null,
-                })),
-              },
-            };
-          }),
-        },
-      },
-    });
+        })),
+      ),
+      pendingOrders: grupo(
+        pendingOrdersCount,
+        "/superadmin/orders",
+        pendingOrdersTop.map((o): AvisoBandeja => {
+          const t = tenantMap.get(o.tenantId);
+          return {
+            id: o.id,
+            categoria: "pendingOrders",
+            ...nivelPedidoSinAtender(o, ahora),
+            title: `${o.customerName} · S/${Number(o.total).toFixed(2)}`,
+            subtitle: o.status,
+            tienda: t?.name ?? o.tenantId,
+            status: o.status,
+            createdAt: o.createdAt.toISOString(),
+            href: t ? `/superadmin/orders?tenant=${t.slug}` : `/superadmin/orders`,
+            // Detalle expandible en el modal (2026-06-05)
+            order: {
+              customerName: o.customerName,
+              tenantName: t?.name ?? o.tenantId,
+              tenantSlug: t?.slug ?? null,
+              total: Number(o.total),
+              paymentMethod: o.paymentMethod,
+              itemsCount: o.items.reduce((acc, i) => acc + i.quantity, 0),
+              items: o.items.map((i) => ({
+                id: i.id,
+                name: i.name,
+                quantity: i.quantity,
+                unit: i.unit,
+                price: Number(i.price),
+                image: i.image || i.product?.image || null,
+              })),
+            },
+          };
+        }),
+        // Los pedidos son muchos (83 el 18-10): se cuentan por nivel con dos
+        // `count` con los mismos cortes de la regla, no con los 20 que bajan.
+        nivelesDePedidos(pendingOrdersCount, ordersEnCurso, ordersOlvidados),
+      ),
+    };
+
+    const grupos = Object.values(buckets);
+    const respuesta: BandejaAvisos = {
+      total: grupos.reduce((acc, g) => acc + g.count, 0),
+      niveles: sumarNiveles(grupos.map((g) => g.niveles)),
+      buckets,
+    };
+    return NextResponse.json(respuesta);
   } catch (err) {
     logger.error("[superadmin/notifications/inbox] failed", { err: String(err) });
     return NextResponse.json({ error: "server error" }, { status: 500 });
