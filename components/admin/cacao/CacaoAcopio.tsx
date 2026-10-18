@@ -17,7 +17,7 @@ import {
   PackageCheck,
   AlertCircle,
   Download,
-  Filter,
+  RotateCcw,
   AlertTriangle,
   Wallet,
   ArrowUp,
@@ -27,8 +27,9 @@ import {
   Ban,
 } from "@buleje/design-system/icons";
 import { DataTable, StatCard } from "@buleje/design-system";
+import { FiltrosEnBoton } from "@/components/admin/shared";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
-import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
+import { useOrdenColumnas, EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 import LibroChrome, { type LibroAction } from "@/components/admin/shared/libro-chrome";
 import { IconAction, TablaSkeleton } from "@/components/admin/shared/module-primitives";
@@ -133,7 +134,6 @@ export default function CacaoAcopio() {
   // (recorta qué se pide, no algo que ya esté en cada fila cargada).
   const [fFrom, setFFrom] = useState("");
   const [fTo, setFTo] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   // Refinamiento client-side sobre los lotes ya cargados (chips + orden +
   // autofiltro de columna en Variedad y Grado).
   const [quick, setQuick] = useState<Quick>("todos");
@@ -374,9 +374,27 @@ export default function CacaoAcopio() {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
   const activeFilters = [fFrom, fTo].filter(Boolean).length;
+  const limpiarFechas = () => {
+    setFFrom("");
+    setFTo("");
+    load("acopio", { from: "", to: "" });
+  };
+  const chipsFecha = [
+    fFrom && { id: "desde", label: `Desde ${fdate(fFrom)}`, onQuitar: () => { setFFrom(""); load("acopio", { from: "", to: fTo }); } },
+    fTo && { id: "hasta", label: `Hasta ${fdate(fTo)}`, onQuitar: () => { setFTo(""); load("acopio", { from: fFrom, to: "" }); } },
+  ].filter((c): c is { id: string; label: string; onQuitar: () => void } => !!c);
 
   /** Lo que se baja una vez por campaña: plegado, no ocupando la cabecera. */
   const acciones: LibroAction[] = [
+    ...(view === "acopio" && ordenAcopio.cambiado
+      ? [{
+          id: "restablecer-columnas",
+          label: "Restablecer columnas",
+          hint: "Vuelve al orden original de la tabla",
+          icon: RotateCcw,
+          onSelect: ordenAcopio.restablecer,
+        }]
+      : []),
     {
       id: "csv",
       label: "Exportar lotes (CSV)",
@@ -479,32 +497,12 @@ export default function CacaoAcopio() {
                 etiqueta="Buscar en el acopio"
               />
             </div>
-            <button
-              type="button"
-              onClick={() => setShowFilters((s) => !s)}
-              className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-semibold ${showFilters || activeFilters ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"} hover:bg-[var(--surface-canvas)]`}
+            <FiltrosEnBoton
+              activos={activeFilters}
+              chips={chipsFecha}
+              onLimpiar={limpiarFechas}
             >
-              <Filter className="h-4 w-4" />
-              Filtros
-              {activeFilters > 0 && (
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--accent)] text-[length:var(--ts-2xs)] font-bold text-white">
-                  {activeFilters}
-                </span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={exportCsv}
-              disabled={lotes.length === 0}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
-            >
-              <Download className="h-4 w-4" />
-              CSV
-            </button>
-            <BotonRestablecerColumnas cambiado={ordenAcopio.cambiado} onRestablecer={ordenAcopio.restablecer} />
-          </div>
-          {showFilters && (
-            <div className="grid grid-cols-2 gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
+              <div className="grid grid-cols-2 gap-3">
               {/* Variedad y Grado son columnas de la tabla: en desktop su
                   filtro vive en el propio `<th>` (autofiltro instantáneo). En
                   el celular la tabla es tarjetas y no hay `<th>` que lo
@@ -561,30 +559,18 @@ export default function CacaoAcopio() {
                   className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
                 />
               </label>
-              <div className="col-span-2 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => load("acopio")}
-                  className="inline-flex h-10 items-center rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90"
-                >
-                  Aplicar filtros
-                </button>
-                {activeFilters > 0 && (
+                <div className="col-span-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      setFFrom("");
-                      setFTo("");
-                      load("acopio", { from: "", to: "" });
-                    }}
-                    className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                    onClick={() => load("acopio")}
+                    className="inline-flex h-10 items-center rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90"
                   >
-                    Limpiar
+                    Aplicar filtros
                   </button>
-                )}
+                </div>
               </div>
-            </div>
-          )}
+            </FiltrosEnBoton>
+          </div>
           {/* Chips de filtro rápido (client-side sobre el set cargado). */}
           {lotes.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
