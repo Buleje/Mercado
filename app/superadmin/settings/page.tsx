@@ -216,8 +216,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={SETTINGS_TABS} />
-    <AdminTabShell
+    <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={SETTINGS_TABS} />}
       info={{
         what: "Muestra los precios de planes (S//mes) y controla los límites por plan (productos, usuarios, pedidos), la comisión default y controles globales como modo mantenimiento.",
         affects: "El precio de cada plan es uno solo en toda la plataforma (lo que ve el cliente = lo que suma el MRR). Los límites se aplican a cada tienda según su plan. El modo mantenimiento afecta a todos los usuarios.",

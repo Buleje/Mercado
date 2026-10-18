@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PageTitle } from "@buleje/design-system";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
 import {
   FolderOpen,
   Upload,
@@ -241,22 +240,16 @@ export default function SuperAdminDocumentsModule() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <PageTitle className="flex items-center gap-2 whitespace-nowrap text-[var(--text-primary)]">
-              <FolderOpen className="h-6 w-6 text-primary" /> Mis documentos
-            </PageTitle>
-            <InfoTip
-              side="bottom"
-              title="Mis documentos"
-              what="Tu repositorio privado: guarda aquí los documentos de la plataforma."
-              affects="Solo lo ves tú. Acepta PDF, imágenes, Office y texto, hasta 50 MB por archivo."
-            />
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Cabecera en una fila: título + ⓘ y las acciones al final (como todo el superadmin). */}
+      <CabeceraConPestanas
+        icon={FolderOpen}
+        title="Mis documentos"
+        info={{
+          what: "Tu repositorio privado: guarda aquí los documentos de la plataforma.",
+          affects: "Solo lo ves tú. Acepta PDF, imágenes, Office y texto, hasta 50 MB por archivo.",
+        }}
+        acciones={
+          <>
           <button
             type="button"
             onClick={() => setTemplatesOpen(true)}
@@ -316,7 +309,9 @@ export default function SuperAdminDocumentsModule() {
             )}
             Subir documento
           </button>
-        </div>
+          </>
+        }
+      />
         <input
           ref={inputRef}
           type="file"
@@ -338,7 +333,6 @@ export default function SuperAdminDocumentsModule() {
             e.target.value = "";
           }}
         />
-      </div>
 
       {error && (
         <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20 p-3">

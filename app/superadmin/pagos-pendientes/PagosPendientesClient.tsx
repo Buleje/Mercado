@@ -20,7 +20,6 @@
  *  - Atajos: `/` busca · `R` recarga · `Esc` cierra modal/limpia filtros
  */
 
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
@@ -58,12 +57,8 @@ import type { LucideIcon } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import { SuperAdminModuleTabs, FINANZAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
-import {
-  SUPERADMIN_PAGE,
-  SUPERADMIN_HERO,
-  SUPERADMIN_HERO_INNER,
-  SUPERADMIN_CONTENT,
-} from "@/lib/superadmin-layout";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
+import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -537,7 +532,6 @@ export default function PagosPendientesClient() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={FINANZAS_TABS} />
       {/* ─── Toasts ─────────────────────────────────────────── */}
       <Toasts toasts={toasts} />
 
@@ -618,48 +612,26 @@ export default function PagosPendientesClient() {
         </div>
       )}
 
-      {/* ─── Hero canónico ──────────────────────────────────── */}
-      <header className={SUPERADMIN_HERO}>
-        <div className={SUPERADMIN_HERO_INNER}>
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-start gap-3 min-w-0 flex-1">
-              <span className="inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-                <Receipt
-                  className="h-5 w-5 sm:h-6 sm:w-6"
-                  strokeWidth={1.75}
-                  aria-hidden
-                />
-              </span>
-              <div className="w-64 shrink-0">
-                <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                  Tesorería · Aprobaciones
-                </p>
-                <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Pagos pendientes</h1><InfoTip
-                    side="bottom"
-                    title="Pagos pendientes"
-                    what="Capturas de Yape, Plin o transferencia de quienes quieren abrir un negocio."
-                    affects="Al aprobar se crea el negocio solo y se envía el WhatsApp de bienvenida."
-                    example="Atajos: / buscar · R recargar."
-                  /></div>
-              </div>
-            </div>
-
-            <div className="flex items-stretch gap-2 flex-wrap">
-              <StatPill
-                label="Pendientes"
-                value={stats.pending}
-                accent="warning"
-              />
-              <StatPill label="En revisión" value={fmt(stats.sumPending)} />
-              <StatPill
-                label="Aprobados"
-                value={stats.approved}
-                accent="success"
-              />
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* ─── Cabecera de una fila: título + pestañas de Finanzas + cifras ─── */}
+      <CabeceraConPestanas
+        icon={Receipt}
+        title="Pagos pendientes"
+        kicker="Tesorería · Aprobaciones"
+        info={{
+          title: "Pagos pendientes",
+          what: "Capturas de Yape, Plin o transferencia de quienes quieren abrir un negocio.",
+          affects: "Al aprobar se crea el negocio solo y se envía el WhatsApp de bienvenida.",
+          example: "Atajos: / buscar · R recargar.",
+        }}
+        pestanas={<SuperAdminModuleTabs enLinea tabs={FINANZAS_TABS} />}
+        acciones={
+          <>
+            <StatPill label="Pendientes" value={stats.pending} accent="warning" />
+            <StatPill label="En revisión" value={fmt(stats.sumPending)} />
+            <StatPill label="Aprobados" value={stats.approved} accent="success" />
+          </>
+        }
+      />
 
       <div className={cn(SUPERADMIN_CONTENT, "space-y-5 sm:space-y-6")}>
         {/* ─── Action bar ──────────────────────────────────────── */}

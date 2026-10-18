@@ -10,7 +10,8 @@ import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
  * (client) como en /rescue (server component). Fetch best-effort; si falla, no
  * muestra badge (degrada a la barra normal).
  */
-export function RetencionTabs() {
+/** `enLinea`: va en el slot `pestanas` de la cabecera, al lado del título. */
+export function RetencionTabs({ enLinea = false }: { enLinea?: boolean } = {}) {
   const [critical, setCritical] = useState(0);
 
   useEffect(() => {
@@ -40,5 +41,5 @@ export function RetencionTabs() {
   const tabs = RETENCION_TABS.map((t) =>
     t.href === "/superadmin/alerts" ? { ...t, badge: critical } : t,
   );
-  return <SuperAdminModuleTabs tabs={tabs} />;
+  return <SuperAdminModuleTabs tabs={tabs} enLinea={enLinea} />;
 }

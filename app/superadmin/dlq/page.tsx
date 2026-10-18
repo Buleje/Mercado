@@ -2,12 +2,13 @@ import "server-only";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Suspense } from "react";
 import { StatCard } from "@buleje/design-system";
-import { CheckCircle2 } from "@buleje/design-system/icons";
+import { AlertOctagon, CheckCircle2 } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { getDeadLetterDashboard } from "@/lib/db/dlq.db";
 import { DLQExport } from "./DLQExport";
 import { DLQEvents } from "./DLQEvents";
-import { SUPERADMIN_PAGE, SUPERADMIN_HERO, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
+import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 import { SuperAdminModuleTabs, SALUD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 // Next 16 (CLAUDE.md #4): NO usar `force-dynamic`. Dejamos sin "use cache"
@@ -31,26 +32,18 @@ export default async function DLQDashboardPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={SALUD_TABS} />
-      {/* Hero canónico (lib/superadmin-layout) — barra surface-raised + border-b,
-          igual que marca/billing/marketplace. Antes dlq tenía un header inline
-          plano que rompía la continuidad visual al cambiar de tab. */}
-      <header className={SUPERADMIN_HERO}>
-        <div className="flex items-end justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-              Plataforma · Operaciones
-            </p>
-            <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text-primary)] leading-none">Trabajos fallidos</h1><InfoTip
-                side="bottom"
-                title="Trabajos fallidos (Dead Letter Queue)"
-                what="Eventos, crons y webhooks que fallaron tras varios reintentos y no se reintentan solos."
-                affects="Solo monitoreo interno. Si los contadores crecen sin parar, hay un fallo de fondo."
-                example="Si falla el email de bienvenida 3 veces, cae acá para reintentarlo o investigar."
-              /></div>
-          </div>
-        </div>
-      </header>
+      <CabeceraConPestanas
+        icon={AlertOctagon}
+        title="Trabajos fallidos"
+        kicker="Plataforma · Operaciones"
+        info={{
+          title: "Trabajos fallidos (Dead Letter Queue)",
+          what: "Eventos, crons y webhooks que fallaron tras varios reintentos y no se reintentan solos.",
+          affects: "Solo monitoreo interno. Si los contadores crecen sin parar, hay un fallo de fondo.",
+          example: "Si falla el email de bienvenida 3 veces, cae acá para reintentarlo o investigar.",
+        }}
+        pestanas={<SuperAdminModuleTabs enLinea tabs={SALUD_TABS} />}
+      />
 
       {/* Suspense: el shell + header se pintan al instante; el body (query
           cross-tenant pesada) muestra skeleton mientras carga. */}

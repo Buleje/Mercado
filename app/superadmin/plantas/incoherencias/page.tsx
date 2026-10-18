@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { CargaPagina } from "@buleje/design-system/carga-pagina";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { SUPERADMIN_CONTENT, SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
-import { SuperAdminModuleTabs, PLANTAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { CabeceraPlantas } from "@/components/superadmin/plantas/CabeceraPlantas";
 import { IncoherenciasConsola } from "@/components/superadmin/plantas/IncoherenciasConsola";
 
@@ -18,7 +17,6 @@ export default async function IncoherenciasPlantasPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={PLANTAS_TABS} />
       <CabeceraPlantas
         titulo="Incoherencias de volumen"
         what="Las diferencias que muestra el libro de cada planta: saldos negativos, ingresos que no cuadran con su guía, rendimientos fuera de rango y pendientes."

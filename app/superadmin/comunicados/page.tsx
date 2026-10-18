@@ -1,13 +1,8 @@
 import "server-only";
 import { Megaphone } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import {
-  SUPERADMIN_PAGE,
-  SUPERADMIN_HERO,
-  SUPERADMIN_HERO_INNER,
-  SUPERADMIN_CONTENT,
-} from "@/lib/superadmin-layout";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
+import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 import { ComunicadosComposer } from "./ComunicadosComposer";
 import {
   SuperAdminModuleTabs,
@@ -28,28 +23,18 @@ export default async function ComunicadosPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={COMUNICACION_TABS} />
-      <header className={SUPERADMIN_HERO}>
-        <div className={SUPERADMIN_HERO_INNER}>
-          <div className="flex items-start gap-3 min-w-0">
-            <span className="inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-              <Megaphone className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.75} aria-hidden />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                Plataforma · Comunicación
-              </p>
-              <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Comunicados</h1><InfoTip
-                  side="bottom"
-                  title="Comunicados segmentados"
-                  what="Manda un mensaje a un grupo inteligente de negocios de una sola vez: en riesgo, no usan Marketplace/Fiado, trial por vencer, pagados o todos."
-                  affects="Envía un mensaje al chat de cada negocio del segmento (vía el broadcast existente). Reusa la inteligencia de Rescate y Adopción."
-                  example="Eliges 'No usan Marketplace' (3 negocios) y les mandas de una un mensaje ofreciéndoles activarlo."
-                /></div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <CabeceraConPestanas
+        icon={Megaphone}
+        title="Comunicados"
+        kicker="Plataforma · Comunicación"
+        info={{
+          title: "Comunicados segmentados",
+          what: "Manda un mensaje a un grupo inteligente de negocios de una sola vez: en riesgo, no usan Marketplace/Fiado, trial por vencer, pagados o todos.",
+          affects: "Envía un mensaje al chat de cada negocio del segmento (vía el broadcast existente). Reusa la inteligencia de Rescate y Adopción.",
+          example: "Eliges 'No usan Marketplace' (3 negocios) y les mandas de una un mensaje ofreciéndoles activarlo.",
+        }}
+        pestanas={<SuperAdminModuleTabs enLinea tabs={COMUNICACION_TABS} />}
+      />
 
       <div className={SUPERADMIN_CONTENT}>
         <ComunicadosComposer />

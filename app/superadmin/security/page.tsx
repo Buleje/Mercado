@@ -101,8 +101,8 @@ export default function SecurityCenterPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={SEGURIDAD_TABS} />
       <SecurityHero
+        pestanas={<SuperAdminModuleTabs enLinea tabs={SEGURIDAD_TABS} />}
         lastScanLabel={fmtRelativeFromMs(lastRefreshMs)}
         status="healthy"
         onRefresh={handleRefresh}

@@ -1,17 +1,13 @@
 import "server-only";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
+import { ADMIN_TOKENS } from "@/app/admin/_components/_shared/admin-tokens";
 import type { Metadata } from "next";
 import { Smartphone } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import PagosYapeClient from "./PagosYapeClient";
 import { SuperAdminModuleTabs, FINANZAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
-import {
-  SUPERADMIN_PAGE,
-  SUPERADMIN_HERO,
-  SUPERADMIN_HERO_INNER,
-  SUPERADMIN_CONTENT,
-} from "@/lib/superadmin-layout";
+import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 
 export const metadata: Metadata = {
   title: "Pagos Yape — Buleje Platform",
@@ -32,38 +28,28 @@ export default async function PagosYapePage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={FINANZAS_TABS} />
-      <header className={SUPERADMIN_HERO}>
-        <div className={SUPERADMIN_HERO_INNER}>
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-start gap-3 min-w-0 flex-1">
-              <span className="inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-                <Smartphone
-                  className="h-5 w-5 sm:h-6 sm:w-6"
-                  strokeWidth={1.75}
-                  aria-hidden
-                />
-              </span>
-              <div className="w-64 shrink-0">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                  Plataforma · Yape
-                </p>
-                <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Pagos Yape pendientes</h1><InfoTip side="bottom" title="Pagos Yape pendientes" body="La IA lee cada captura: compara monto y operación detectados con los esperados. Atajos: / buscar · J/K navegar · A aprobar." what="Bandeja de comprobantes Yape que esperan tu aprobación manual." affects="Aprobar un comprobante confirma el pago del pedido o suscripción correspondiente." example="Un cliente paga por Yape y sube su captura → la revisas aquí y la apruebas para liberar el pedido." /></div>
-              </div>
-            </div>
-            {initialCount > 0 && (
-              <div className="rounded-xl border-2 border-teal-300/60 bg-teal-50/80 px-3.5 py-2 min-w-[100px] dark:border-teal-700/40 dark:bg-teal-950/30">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:text-teal-300 leading-none">
-                  Pendientes
-                </p>
-                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-teal-700 dark:text-teal-300">
-                  {initialCount}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <CabeceraConPestanas
+        icon={Smartphone}
+        title="Pagos Yape pendientes"
+        kicker="Plataforma · Yape"
+        info={{
+          title: "Pagos Yape pendientes",
+          body: "La IA lee cada captura: compara monto y operación detectados con los esperados. Atajos: / buscar · J/K navegar · A aprobar.",
+          what: "Bandeja de comprobantes Yape que esperan tu aprobación manual.",
+          affects: "Aprobar un comprobante confirma el pago del pedido o suscripción correspondiente.",
+          example: "Un cliente paga por Yape y sube su captura → la revisas aquí y la apruebas para liberar el pedido.",
+        }}
+        /* El conteo de pendientes era un recuadro aparte a la derecha: ahora es el
+           chip pegado al título, como «15 tiendas». */
+        chip={
+          initialCount > 0 ? (
+            <span className={ADMIN_TOKENS.chipAccent}>
+              {initialCount} pendiente{initialCount !== 1 ? "s" : ""}
+            </span>
+          ) : undefined
+        }
+        pestanas={<SuperAdminModuleTabs enLinea tabs={FINANZAS_TABS} />}
+      />
 
       <div className={SUPERADMIN_CONTENT}>
         <PagosYapeClient initialCount={initialCount} />

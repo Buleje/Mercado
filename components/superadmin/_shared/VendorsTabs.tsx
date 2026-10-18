@@ -8,7 +8,8 @@ import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
  * Barra de tabs del hub Vendors con badge en vivo del nº de SOLICITUDES pendientes
  * de revisión. Best-effort: si el fetch falla, degrada a la barra sin badge.
  */
-export function VendorsTabs() {
+/** `enLinea`: va en el slot `pestanas` de la cabecera, al lado del título. */
+export function VendorsTabs({ enLinea = false }: { enLinea?: boolean } = {}) {
   const [pending, setPending] = useState(0);
 
   useEffect(() => {
@@ -27,5 +28,5 @@ export function VendorsTabs() {
   const tabs = VENDORS_TABS.map((t) =>
     t.href === "/superadmin/vendor-applications" ? { ...t, badge: pending } : t,
   );
-  return <SuperAdminModuleTabs tabs={tabs} />;
+  return <SuperAdminModuleTabs tabs={tabs} enLinea={enLinea} />;
 }

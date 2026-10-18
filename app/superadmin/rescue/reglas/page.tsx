@@ -1,8 +1,9 @@
 import "server-only";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
-import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
+import { SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
 import { RetencionTabsConReglas } from "@/components/superadmin/retencion/RetencionTabsConReglas";
 import { ReglasRetencion } from "@/components/superadmin/retencion/ReglasRetencion";
+import { PestanasDelModulo } from "@/components/admin/shared/cabecera-compacta";
 
 export const metadata = {
   title: "Reglas de retención — Buleje",
@@ -20,10 +21,9 @@ export default async function ReglasRetencionPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <RetencionTabsConReglas />
-      <div className={SUPERADMIN_CONTENT}>
+      <PestanasDelModulo pestanas={<RetencionTabsConReglas enLinea />}>
         <ReglasRetencion />
-      </div>
+      </PestanasDelModulo>
     </div>
   );
 }

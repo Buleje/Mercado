@@ -49,6 +49,7 @@ import {
   validateTokens,
 } from "@/lib/design-presets";
 import { SuperAdminModuleTabs, DISENO_TABS } from "@/components/superadmin/_shared/ModuleTabs";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
 
 interface ApiResponse {
   presets: DesignTokens[];
@@ -244,17 +245,13 @@ export default function DesignSystemPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-[var(--surface-canvas)]">
-        <SuperAdminModuleTabs tabs={DISENO_TABS} />
-        <div className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="flex items-center gap-3.5 animate-pulse">
-            <div className="h-12 w-12 rounded-2xl bg-[var(--surface-sunken)]" />
-            <div className="space-y-2">
-              <div className="h-3 w-32 rounded bg-[var(--surface-sunken)]" />
-              <div className="h-6 w-56 rounded bg-[var(--surface-sunken)]" />
-            </div>
-          </div>
-        </div>
-        <div className="px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <CabeceraConPestanas
+          icon={Palette}
+          title="Diseño heredable"
+          kicker="Plataforma · Centro de diseño"
+          pestanas={<SuperAdminModuleTabs enLinea tabs={DISENO_TABS} />}
+        />
+        <div className="grid grid-cols-1 gap-4 pt-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
@@ -268,95 +265,81 @@ export default function DesignSystemPage() {
 
   return (
     <main className="min-h-screen bg-[var(--surface-canvas)]">
-      <SuperAdminModuleTabs tabs={DISENO_TABS} />
-      {/* ── Hero canónico ───────────────────────────────────────── */}
-      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="w-full">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-start gap-3.5 min-w-0 flex-[1_1_20rem]">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-                <Palette className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+      {/* ── Cabecera de una fila: título + preset activo + pestañas + cifras ── */}
+      <CabeceraConPestanas
+        icon={Palette}
+        title="Diseño heredable"
+        kicker="Plataforma · Centro de diseño"
+        info={{
+          title: "Centro de Diseño Heredable",
+          what: "Defines la identidad visual (colores, tipografía, bordes, sombras, botones, animaciones) con un editor en vivo y la guardas como preset.",
+          affects: "Se hereda en VIVO al panel admin de TODOS los negocios (vía DesignTokensProvider). No toca el superadmin ni el storefront público.",
+          example: "Cambias el color primario a coral y el radio de bordes a 'redondo' → todos los botones y tarjetas del admin de los negocios se ven coral y redondeados al instante.",
+        }}
+        chip={
+          activePreset ? (
+            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1">
+              <span
+                className="inline-block h-2 w-2 rounded-full shrink-0"
+                style={{ background: activePreset.colors.accent }}
+              />
+              <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Activo
               </span>
-              <div className="min-w-0">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                  Plataforma · Centro de diseño
-                </p>
-                <div className="flex items-center gap-2">
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                  Diseño heredable
-                </h1>
-                  <InfoTip
-                    side="bottom"
-                    title="Centro de Diseño Heredable"
-                    what="Defines la identidad visual (colores, tipografía, bordes, sombras, botones, animaciones) con un editor en vivo y la guardas como preset."
-                    affects="Se hereda en VIVO al panel admin de TODOS los negocios (vía DesignTokensProvider). No toca el superadmin ni el storefront público."
-                    example="Cambias el color primario a coral y el radio de bordes a 'redondo' → todos los botones y tarjetas del admin de los negocios se ven coral y redondeados al instante."
-                  />
-                </div>
-                {activePreset && (
-                  <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1">
-                    <span
-                      className="inline-block h-2 w-2 rounded-full shrink-0"
-                      style={{ background: activePreset.colors.accent }}
-                    />
-                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-                      Activo
-                    </span>
-                    <span className="text-xs font-extrabold text-[var(--text-primary)] whitespace-nowrap">
-                      {activePreset.meta.name}
-                    </span>
-                    {updatedAt && (
-                      <InfoTip
-                        title="Último cambio"
-                        what={`${new Date(updatedAt).toLocaleString("es-PE", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })}${updatedBy ? ` · ${updatedBy}` : ""}`}
-                        side="bottom"
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-stretch gap-2 flex-wrap shrink-0">
-              {/* StatPills canónicos */}
-              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-                  Oficiales
-                </p>
-                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
-                  {oficialPresets.length}
-                </p>
-              </div>
-              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-                  Mis presets
-                </p>
-                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--accent)]">
-                  {savedPresets.length}
-                </p>
-              </div>
-              {savedFlash && (
-                <span className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-3.5 py-2 text-xs font-extrabold uppercase tracking-wider text-[var(--data-success-500)]">
-                  <Check className="h-3.5 w-3.5" strokeWidth={3} /> {savedFlash}
-                </span>
+              <span className="text-xs font-extrabold text-[var(--text-primary)] whitespace-nowrap">
+                {activePreset.meta.name}
+              </span>
+              {updatedAt && (
+                <InfoTip
+                  title="Último cambio"
+                  what={`${new Date(updatedAt).toLocaleString("es-PE", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}${updatedBy ? ` · ${updatedBy}` : ""}`}
+                  side="bottom"
+                />
               )}
-              <button
-                type="button"
-                onClick={startNew}
-                className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 min-h-10 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/25 transition hover:brightness-110 active:scale-[0.99]"
-              >
-                <Plus className="h-4 w-4" strokeWidth={2.5} />
-                Crear preset
-              </button>
+            </span>
+          ) : undefined
+        }
+        pestanas={<SuperAdminModuleTabs enLinea tabs={DISENO_TABS} />}
+        acciones={
+          <>
+            {/* StatPills canónicos */}
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                Oficiales
+              </p>
+              <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
+                {oficialPresets.length}
+              </p>
             </div>
-          </div>
-        </div>
-      </header>
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                Mis presets
+              </p>
+              <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--accent)]">
+                {savedPresets.length}
+              </p>
+            </div>
+            {savedFlash && (
+              <span className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-3.5 py-2 text-xs font-extrabold uppercase tracking-wider text-[var(--data-success-500)]">
+                <Check className="h-3.5 w-3.5" strokeWidth={3} /> {savedFlash}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={startNew}
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 min-h-10 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/25 transition hover:brightness-110 active:scale-[0.99]"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.5} />
+              Crear preset
+            </button>
+          </>
+        }
+      />
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+      <div className="w-full space-y-6 pt-6">
         {/* Tabs */}
         <nav className="flex flex-wrap items-center gap-1 border-b-2 border-[var(--rule-base)]">
           {(

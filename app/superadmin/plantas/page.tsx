@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { CargaPagina } from "@buleje/design-system/carga-pagina";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { SUPERADMIN_CONTENT, SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
-import { SuperAdminModuleTabs, PLANTAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { CabeceraPlantas } from "@/components/superadmin/plantas/CabeceraPlantas";
 import { PlantasConsola } from "@/components/superadmin/plantas/PlantasConsola";
 
@@ -21,7 +20,6 @@ export default async function PlantasPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={PLANTAS_TABS} />
       <CabeceraPlantas
         titulo="Plantas forestales"
         what="Cada aserradero con el libro forestal activado: cuánta troza y aserrada tiene, qué entró y salió, y si su libro cuadra."

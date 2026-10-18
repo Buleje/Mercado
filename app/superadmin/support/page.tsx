@@ -17,8 +17,7 @@ import {
 export default function SupportPage() {
   return (
     <>
-      <SuperAdminModuleTabs tabs={COMUNICACION_TABS} />
-      <AdminTabShell
+      <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={COMUNICACION_TABS} />}
         info={{
           what: "Bandeja centralizada de tickets de soporte de todas las tiendas. Muestra los mensajes enviados por los dueños de tienda y permite responderlos y cambiar su estado (abierto, en progreso, resuelto).",
           affects:

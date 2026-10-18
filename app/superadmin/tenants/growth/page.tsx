@@ -45,8 +45,7 @@ export default function TenantsGrowthPage() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
-    <AdminTabShell
+    <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={TENANTS_TABS} />}
       info={{
         what: "Muestra el ranking de tiendas ordenado por crecimiento: podio top 3, sparklines de tendencia, delta porcentual y tabla mensual con ingresos y pedidos por tienda.",
         affects: "Solo lectura para el superadmin. No modifica datos de las tiendas. Útil para detectar qué tiendas crecen y cuáles se estancan.",

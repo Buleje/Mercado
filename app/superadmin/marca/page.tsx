@@ -51,11 +51,10 @@ import ImageUploader from "@/components/superadmin/_shared/ImageUploader";
 import { broadcastPlatformBrandUpdate, clearPlatformBrandCache } from "@/lib/use-platform-brand";
 import {
   SUPERADMIN_PAGE,
-  SUPERADMIN_HERO,
-  SUPERADMIN_HERO_INNER,
   SUPERADMIN_CONTENT,
 } from "@/lib/superadmin-layout";
 import { SuperAdminModuleTabs, MARCA_TABS } from "@/components/superadmin/_shared/ModuleTabs";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types (espejo de lib/platform-brand.ts)
@@ -308,18 +307,12 @@ export default function SuperadminMarcaPage() {
   if (loading) {
     return (
       <div className={SUPERADMIN_PAGE}>
-        <SuperAdminModuleTabs tabs={MARCA_TABS} />
-        <header className={SUPERADMIN_HERO}>
-          <div className={SUPERADMIN_HERO_INNER}>
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="h-12 w-12 rounded-2xl bg-[var(--surface-sunken)] animate-pulse" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 w-32 rounded bg-[var(--surface-sunken)] animate-pulse" />
-                <div className="h-6 w-72 rounded bg-[var(--surface-sunken)] animate-pulse" />
-              </div>
-            </div>
-          </div>
-        </header>
+        <CabeceraConPestanas
+          icon={Sparkles}
+          title="Personalización global"
+          kicker="Centro de marca"
+          pestanas={<SuperAdminModuleTabs enLinea tabs={MARCA_TABS} />}
+        />
         <div className={SUPERADMIN_CONTENT}>
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
             <div className="space-y-2">
@@ -344,62 +337,51 @@ export default function SuperadminMarcaPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={MARCA_TABS} />
-      {/* ── Header con preview de marca + stats ─────────────────────── */}
-      <header className={SUPERADMIN_HERO}>
-        <div className={SUPERADMIN_HERO_INNER}>
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-start gap-3.5 min-w-0">
-              <span
-                className="inline-flex h-12 w-12 items-center justify-center rounded-2xl shrink-0 text-white font-display font-extrabold text-xl"
-                style={{ backgroundColor: brand.colors.primary }}
-              >
-                {brand.identity.name.charAt(0).toUpperCase()}
-              </span>
-              <div className="min-w-0">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                  Centro de marca
-                </p>
-                <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                  {brand.identity.name} · Personalización global
-                </h1>
-                  <InfoTip
-                    side="bottom"
-                    title="Marca de la plataforma"
-                    what="Personalización global de la marca del marketplace: nombre, logo, colores y textos."
-                    affects="Se ve en todo el marketplace público y en los correos. Al guardar, las pestañas abiertas se actualizan al instante; los visitantes nuevos lo ven en máximo 5 min."
-                    example="Cambias el logo → aparece el nuevo en la cabecera del marketplace y en los emails."
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-stretch gap-2 flex-wrap">
-              <StatPill label="Logos" value={`${stats.logos}/5`} />
-              <StatPill label="Colores" value={`${stats.colors}/5`} />
-              <StatPill label="Contacto" value={`${stats.contact}/5`} />
-              <StatPill label="Redes" value={`${stats.socials}/5`} />
-              {brand.eventMode.active && (
-                <StatPill
-                  label={`Evento: ${brand.eventMode.name || "activo"}`}
-                  value="ON"
-                  accent="warning"
-                />
-              )}
-              <a
-                href="/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-sunken)] text-[var(--text-primary)] transition-colors"
-                title="Abrir el sitio en una nueva pestaña para verificar los cambios"
-              >
-                <ExternalLink className="h-4 w-4" /> Ver en el sitio
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* ── Cabecera de una fila: letra de la marca + título + pestañas + stats ── */}
+      <CabeceraConPestanas
+        iconoPropio={
+          <span
+            aria-hidden="true"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-display text-xl font-extrabold text-white"
+            style={{ backgroundColor: brand.colors.primary }}
+          >
+            {brand.identity.name.charAt(0).toUpperCase()}
+          </span>
+        }
+        title={`${brand.identity.name} · Personalización global`}
+        kicker="Centro de marca"
+        info={{
+          title: "Marca de la plataforma",
+          what: "Personalización global de la marca del marketplace: nombre, logo, colores y textos.",
+          affects: "Se ve en todo el marketplace público y en los correos. Al guardar, las pestañas abiertas se actualizan al instante; los visitantes nuevos lo ven en máximo 5 min.",
+          example: "Cambias el logo → aparece el nuevo en la cabecera del marketplace y en los emails.",
+        }}
+        pestanas={<SuperAdminModuleTabs enLinea tabs={MARCA_TABS} />}
+        acciones={
+          <>
+            <StatPill label="Logos" value={`${stats.logos}/5`} />
+            <StatPill label="Colores" value={`${stats.colors}/5`} />
+            <StatPill label="Contacto" value={`${stats.contact}/5`} />
+            <StatPill label="Redes" value={`${stats.socials}/5`} />
+            {brand.eventMode.active && (
+              <StatPill
+                label={`Evento: ${brand.eventMode.name || "activo"}`}
+                value="ON"
+                accent="warning"
+              />
+            )}
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-sunken)] text-[var(--text-primary)] transition-colors"
+              title="Abrir el sitio en una nueva pestaña para verificar los cambios"
+            >
+              <ExternalLink className="h-4 w-4" /> Ver en el sitio
+            </a>
+          </>
+        }
+      />
 
       {/* ── 2-column layout ─────────────────────────────────────────── */}
       <div className={SUPERADMIN_CONTENT}>

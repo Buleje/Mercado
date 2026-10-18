@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import { MessageSquare } from "@buleje/design-system/icons";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
 import SuperAdminMessenger from "@/components/superadmin/chat/SuperAdminMessenger";
 import {
   SuperAdminModuleTabs,
@@ -16,7 +18,18 @@ export const metadata = {
 export default function SuperAdminChatPage() {
   return (
     <>
-      <SuperAdminModuleTabs tabs={COMUNICACION_TABS} />
+      <CabeceraConPestanas
+        icon={MessageSquare}
+        title="Chat"
+        kicker="Plataforma · Comunicación"
+        info={{
+          title: "Chat con los negocios",
+          what: "Conversaciones del equipo Buleje con cada negocio, y avisos a varios a la vez (Broadcast).",
+          example: "Un negocio pregunta cómo emitir su boleta → le respondes acá y queda el hilo guardado.",
+        }}
+        pestanas={<SuperAdminModuleTabs enLinea tabs={COMUNICACION_TABS} />}
+        className="mb-4"
+      />
       <Suspense fallback={null}>
         <SuperAdminMessenger />
       </Suspense>

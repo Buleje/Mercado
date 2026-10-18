@@ -11,7 +11,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   Receipt,
   CreditCard,
@@ -58,19 +58,91 @@ export interface ModuleTab {
   badge?: number;
 }
 
-export function SuperAdminModuleTabs({ tabs }: { tabs: ModuleTab[] }) {
+/** Desvanecido del borde que tiene más pestañas escondidas (sólo alfa: sin color). */
+const BORDE_IZQ = "[mask-image:linear-gradient(to_right,transparent,black_2rem)]";
+const BORDE_DER = "[mask-image:linear-gradient(to_right,black_calc(100%_-_2rem),transparent)]";
+const BORDE_AMBOS =
+  "[mask-image:linear-gradient(to_right,transparent,black_2rem,black_calc(100%_-_2rem),transparent)]";
+
+/**
+ * Bordes con pestañas escondidas de una fila con scroll horizontal, y la rueda
+ * vertical convertida en horizontal mientras la fila tenga para dónde moverse
+ * (con mouse no hay otra forma de ver las del final: la barra va oculta).
+ */
+function useBordesDeScroll(navRef: RefObject<HTMLElement | null>, activo: boolean, clave: string) {
+  const [bordes, setBordes] = useState({ izq: false, der: false });
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!activo || !nav) return;
+    const medir = () => {
+      const izq = nav.scrollLeft > 1;
+      const der = nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 1;
+      setBordes((b) => (b.izq === izq && b.der === der ? b : { izq, der }));
+    };
+    const rueda = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      const max = nav.scrollWidth - nav.clientWidth;
+      if (max <= 0) return;
+      const puede = e.deltaY > 0 ? nav.scrollLeft < max - 1 : nav.scrollLeft > 1;
+      if (!puede) return;
+      e.preventDefault();
+      nav.scrollLeft += e.deltaY;
+    };
+    medir();
+    nav.addEventListener("scroll", medir, { passive: true });
+    nav.addEventListener("wheel", rueda, { passive: false });
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(medir) : null;
+    ro?.observe(nav);
+    return () => {
+      nav.removeEventListener("scroll", medir);
+      nav.removeEventListener("wheel", rueda);
+      ro?.disconnect();
+    };
+  }, [navRef, activo, clave]);
+  return bordes;
+}
+
+export function SuperAdminModuleTabs({
+  tabs,
+  enLinea = false,
+}: {
+  tabs: ModuleTab[];
+  /**
+   * Fila en línea para el slot `pestanas` de la cabecera (`CabeceraConPestanas`
+   * o `AdminTabShell`): sin regla ni márgenes propios, al lado del título.
+   */
+  enLinea?: boolean;
+}) {
   const pathname = usePathname();
+  const navRef = useRef<HTMLElement>(null);
   const activeRef = useRef<HTMLAnchorElement>(null);
   // En hubs con varias tabs (mobile/narrow), traer la tab activa a la vista.
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ inline: "center", block: "nearest" });
-  }, [pathname]);
+    const nav = navRef.current;
+    const act = activeRef.current;
+    if (!act) return;
+    if (enLinea && nav) {
+      // Sólo la fila: `scrollIntoView` también movía la página si la fila no
+      // estaba entera a la vista.
+      nav.scrollLeft = act.offsetLeft - (nav.clientWidth - act.offsetWidth) / 2;
+    } else {
+      act.scrollIntoView({ inline: "center", block: "nearest" });
+    }
+  }, [pathname, enLinea]);
+  const bordes = useBordesDeScroll(navRef, enLinea, `${pathname}|${tabs.map((t) => `${t.href}:${t.badge ?? 0}`).join(",")}`);
+  const mascara = bordes.izq && bordes.der ? BORDE_AMBOS : bordes.izq ? BORDE_IZQ : bordes.der ? BORDE_DER : "";
   return (
     // Minimalista: fila flush a la izquierda (sin padding propio — hereda el del
     // <main>, así alinea con el título de abajo) + regla fina inferior para
     // separar del contenido. El tab activo es una pastilla teal sólida.
+    // `enLinea`: va dentro de la banda del título; scroll propio sin barra.
     <nav
-      className="-mt-1 mb-4 flex items-center gap-0.5 overflow-x-auto border-b border-[var(--rule-soft)] pb-2"
+      ref={navRef}
+      className={
+        enLinea
+          ? `relative flex min-w-0 items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${mascara}`
+          : "-mt-1 mb-4 flex items-center gap-0.5 overflow-x-auto border-b border-[var(--rule-soft)] pb-2"
+      }
       aria-label="Secciones del módulo"
     >
       {tabs.map(({ label, href, icon: Icon, badge }) => {

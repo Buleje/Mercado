@@ -300,8 +300,7 @@ export default function AnalyticsPage() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={ANALYTICS_TABS} />
-      <AdminTabShell
+      <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={ANALYTICS_TABS} />}
         info={{
           what: "Muestra MRR, ARR, crecimiento de tenants, pedidos, comisiones y tiendas en riesgo consolidados de toda la plataforma.",
           affects:

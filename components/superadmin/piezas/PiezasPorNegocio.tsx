@@ -85,7 +85,7 @@ export function PiezasPorNegocio({ negocios }: { negocios: NegocioDePieza[] }) {
           Todavía no hay piezas en el código.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="relative overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <table className="w-full text-sm max-sm:block">
             <thead className="bg-[var(--surface-sunken)] text-left max-sm:hidden">
               <tr>

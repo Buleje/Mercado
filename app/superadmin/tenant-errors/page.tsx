@@ -1,13 +1,8 @@
 import "server-only";
 import { ShieldAlert } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import {
-  SUPERADMIN_PAGE,
-  SUPERADMIN_HERO,
-  SUPERADMIN_HERO_INNER,
-  SUPERADMIN_CONTENT,
-} from "@/lib/superadmin-layout";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
+import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 import { TenantErrorsConsole } from "./TenantErrorsConsole";
 import { SuperAdminModuleTabs, SALUD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
@@ -27,28 +22,18 @@ export default async function TenantErrorsPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={SALUD_TABS} />
-      <header className={SUPERADMIN_HERO}>
-        <div className={SUPERADMIN_HERO_INNER}>
-          <div className="flex items-start gap-3 min-w-0">
-            <span className="inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-              <ShieldAlert className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.75} aria-hidden />
-            </span>
-            <div className="min-w-0">
-              <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                Plataforma · Soporte
-              </p>
-              <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Errores en vivo de los negocios</h1><InfoTip
-                  side="bottom"
-                  title="Soporte proactivo"
-                  what="Muestra en vivo los errores que sufre el panel admin de cada negocio (los reporta el error boundary de su panel)."
-                  affects="Solo el superadmin. Te deja entrar a reproducir (impersonar), contactar al dueño y marcar resuelto."
-                  example="Una bodega tropieza con un bug al cargar un producto → lo ves acá antes de que te llame, entras a su panel y la ayudas."
-                /></div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <CabeceraConPestanas
+        icon={ShieldAlert}
+        title="Errores en vivo de los negocios"
+        kicker="Plataforma · Soporte"
+        info={{
+          title: "Soporte proactivo",
+          what: "Muestra en vivo los errores que sufre el panel admin de cada negocio (los reporta el error boundary de su panel).",
+          affects: "Solo el superadmin. Te deja entrar a reproducir (impersonar), contactar al dueño y marcar resuelto.",
+          example: "Una bodega tropieza con un bug al cargar un producto → lo ves acá antes de que te llame, entras a su panel y la ayudas.",
+        }}
+        pestanas={<SuperAdminModuleTabs enLinea tabs={SALUD_TABS} />}
+      />
 
       <div className={SUPERADMIN_CONTENT}>
         <TenantErrorsConsole />

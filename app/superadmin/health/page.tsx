@@ -393,8 +393,7 @@ export default function SystemHealthPage() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={SALUD_TABS} />
-      <AdminTabShell
+      <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={SALUD_TABS} />}
         info={{
           what: "Verifica en vivo que la API, la base de datos, la autenticación y los archivos estáticos respondan correctamente.",
           affects:

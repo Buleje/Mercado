@@ -233,7 +233,7 @@ export default function SuperAdminMessenger() {
       {/* ── Columna izquierda: lista ── */}
       <aside className="flex w-80 shrink-0 flex-col border-r border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[var(--rule-base)]">
-          <h2 className="text-base font-extrabold text-[var(--text-primary)]">Chat</h2>
+          <h2 className="text-base font-extrabold text-[var(--text-primary)]">Conversaciones</h2>
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setShowBroadcast(true)}

@@ -1,8 +1,9 @@
 import "server-only";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
-import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
+import { SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
 import { RescueQueue } from "./RescueQueue";
 import { RetencionTabs } from "@/components/superadmin/_shared/RetencionTabs";
+import { PestanasDelModulo } from "@/components/admin/shared/cabecera-compacta";
 
 export const metadata = {
   title: "Cola de rescate — Buleje",
@@ -19,10 +20,9 @@ export default async function RescuePage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <RetencionTabs />
-      <div className={SUPERADMIN_CONTENT}>
+      <PestanasDelModulo pestanas={<RetencionTabs enLinea />}>
         <RescueQueue />
-      </div>
+      </PestanasDelModulo>
     </div>
   );
 }

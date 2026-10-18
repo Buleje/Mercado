@@ -1,5 +1,6 @@
 import SuppliersQueueClient from "./SuppliersQueueClient";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { Truck } from "@buleje/design-system/icons";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
 
 /**
  * /superadmin/marketplace/suppliers
@@ -10,18 +11,17 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
  */
 export default function SuperAdminSuppliersPage() {
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-6 flex items-center gap-2">
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">
-          Cola de proveedores
-        </h1>
-        <InfoTip
-          side="bottom"
-          title="Cola de proveedores"
-          what="Solicitudes de registro de proveedores: aprueba o rechaza cada una."
-          affects="Al aprobar, se genera una API key única para el proveedor."
-        />
-      </div>
+    <div className="space-y-6">
+      <CabeceraConPestanas
+        icon={Truck}
+        title="Cola de proveedores"
+        kicker="Marketplace · Proveedores"
+        info={{
+          title: "Cola de proveedores",
+          what: "Solicitudes de registro de proveedores: aprueba o rechaza cada una.",
+          affects: "Al aprobar, se genera una API key única para el proveedor.",
+        }}
+      />
       <SuppliersQueueClient />
     </div>
   );

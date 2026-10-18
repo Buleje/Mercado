@@ -22,8 +22,7 @@ import { SuperAdminModuleTabs, DISENO_TABS } from "@/components/superadmin/_shar
 export default function PlantillaPage() {
   return (
     <>
-      <SuperAdminModuleTabs tabs={DISENO_TABS} />
-      <AdminTabShell
+      <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={DISENO_TABS} />}
         info={{
           what: "Define qué módulos del panel admin son visibles para cada dueño de tienda, qué plan requieren y cómo se llaman.",
           affects:

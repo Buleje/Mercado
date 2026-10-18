@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { CargaPagina } from "@buleje/design-system/carga-pagina";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { SUPERADMIN_CONTENT, SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
-import { SuperAdminModuleTabs, PLANTAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { CabeceraPlantas } from "@/components/superadmin/plantas/CabeceraPlantas";
 import { InspeccionesConsola } from "@/components/superadmin/plantas/inspeccion/InspeccionesConsola";
 
@@ -18,7 +17,6 @@ export default async function InspeccionesPlantasPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={PLANTAS_TABS} />
       <CabeceraPlantas
         titulo="Inspecciones de planta"
         what="Cada visita a una planta: qué día, quién fue, cuántas trozas del libro no estaban en el patio y qué se encontró."

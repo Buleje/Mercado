@@ -1,15 +1,10 @@
 import { requirePlatformPage } from "@/lib/superadmin-auth";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { VendorHealthDashboard } from "@/components/superadmin/vendor-health/VendorHealthDashboard";
 import { VendorPipelinePanel } from "@/components/superadmin/vendor-health/VendorPipelinePanel";
 import { HeartPulse } from "@buleje/design-system/icons";
 import { VendorsTabs } from "@/components/superadmin/_shared/VendorsTabs";
-import {
-  SUPERADMIN_PAGE,
-  SUPERADMIN_HERO,
-  SUPERADMIN_HERO_INNER,
-  SUPERADMIN_CONTENT,
-} from "@/lib/superadmin-layout";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
+import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 
 export const metadata = {
   title: "Salud de vendors — Buleje Superadmin",
@@ -23,28 +18,18 @@ export default async function VendorHealthPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <VendorsTabs />
-      <header className={SUPERADMIN_HERO}>
-        <div className={SUPERADMIN_HERO_INNER}>
-          <div className="flex items-start gap-3 min-w-0">
-            <span className="inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-              <HeartPulse className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.75} aria-hidden />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                Marketplace · Compliance
-              </p>
-              <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Salud de vendors</h1><InfoTip
-                  side="bottom"
-                  title="Salud de vendors"
-                  what="Re-verifica el RUC/DNI de los vendors del marketplace contra RENIEC y SUNAT."
-                  affects="Si un vendor pasa a NO HABIDO, sus facturas dejan de ser deducibles para sus clientes."
-                  example="Si la SUNAT marca un RUC como NO HABIDO, aparece una alerta para revisar a ese vendor."
-                /></div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <CabeceraConPestanas
+        icon={HeartPulse}
+        title="Salud de vendors"
+        kicker="Marketplace · Compliance"
+        info={{
+          title: "Salud de vendors",
+          what: "Re-verifica el RUC/DNI de los vendors del marketplace contra RENIEC y SUNAT.",
+          affects: "Si un vendor pasa a NO HABIDO, sus facturas dejan de ser deducibles para sus clientes.",
+          example: "Si la SUNAT marca un RUC como NO HABIDO, aparece una alerta para revisar a ese vendor.",
+        }}
+        pestanas={<VendorsTabs enLinea />}
+      />
 
       <div className={SUPERADMIN_CONTENT}>
         <VendorPipelinePanel />

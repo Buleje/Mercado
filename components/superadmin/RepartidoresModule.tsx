@@ -15,6 +15,7 @@
  *   - Fonts extrabold para titulos, bold para labels.
  */
 
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
 import {
   useEffect,
   useState,
@@ -51,7 +52,6 @@ import {
   StarBadge,
 } from "@/components/delivery/icons";
 import RepartidoresOverview from "./RepartidoresOverview";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -325,58 +325,43 @@ export default function RepartidoresModule() {
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
-      {/* ── Hero canónico ───────────────────────────────────────── */}
-      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="w-full">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-start gap-3.5 min-w-0 flex-1">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-                <MotoIcon className="h-6 w-6" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                  Plataforma · Operaciones
-                </p>
-                <div className="flex items-center gap-2">
-                  <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                    Repartidores
-                  </h1>
-                  <InfoTip
-                    side="bottom"
-                    title="Repartidores"
-                    what="Aprueba inscripciones, verifica documentos y entra directo a sus cuentas."
-                    example="Un repartidor nuevo se inscribe: revisas sus documentos y lo apruebas o rechazas."
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={load}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
-              >
-                <RefreshCw
-                  className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
-                  strokeWidth={2.25}
-                />
-                Actualizar
-              </button>
-              <button
-                type="button"
-                onClick={() => exportCSV(partners)}
-                disabled={partners.length === 0}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/20 transition hover:brightness-110 disabled:opacity-50"
-              >
-                <Download className="h-3.5 w-3.5" strokeWidth={2.25} />
-                Exportar CSV
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* ── Cabecera de una fila (como el resto del superadmin) ───── */}
+      <CabeceraConPestanas
+        icon={MotoIcon}
+        title="Repartidores"
+        kicker="Plataforma · Operaciones"
+        info={{
+          title: "Repartidores",
+          what: "Aprueba inscripciones, verifica documentos y entra directo a sus cuentas.",
+          example: "Un repartidor nuevo se inscribe: revisas sus documentos y lo apruebas o rechazas.",
+        }}
+        acciones={
+          <>
+            <button
+              type="button"
+              onClick={load}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+                strokeWidth={2.25}
+              />
+              Actualizar
+            </button>
+            <button
+              type="button"
+              onClick={() => exportCSV(partners)}
+              disabled={partners.length === 0}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/20 transition hover:brightness-110 disabled:opacity-50"
+            >
+              <Download className="h-3.5 w-3.5" strokeWidth={2.25} />
+              Exportar CSV
+            </button>
+          </>
+        }
+      />
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5">
+      <div className="w-full space-y-5 pt-6">
 
       {/* ── Panorama ejecutivo de la flota (funciones de alto nivel) ── */}
       <RepartidoresOverview />

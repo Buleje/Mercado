@@ -24,6 +24,13 @@ import { ADMIN_TOKENS } from "./admin-tokens";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 import { BANDA_MODULO, FILA_TITULO_MODULO, TituloModulo } from "@/components/admin/shared/titulo-modulo";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
+import {
+  PestanasDelModulo,
+  useCabeceraCompacta,
+  usePestanasDelModulo,
+} from "@/components/admin/shared/cabecera-compacta";
+
 type LucideIcon = ComponentType<{
   className?: string;
   strokeWidth?: number;
@@ -49,6 +56,13 @@ interface AdminTabShellProps {
   stats?: ReactNode;
   /** Ícono de info junto al título con popover (qué hace / a dónde afecta / ejemplo). */
   info?: { title?: string; what: string; affects?: string; example?: string };
+  /**
+   * Pestañas del módulo al lado del título, en la misma fila (Brandon 18-10,
+   * superadmin). Con esto —o dentro del superadmin, que enciende la cabecera
+   * compacta— la banda es `CabeceraConPestanas`: sin rótulo a la vista (va al
+   * ⓘ). Sin pasarlo, en el panel admin la banda queda igual que antes.
+   */
+  pestanas?: ReactNode;
   children: ReactNode;
 }
 
@@ -61,8 +75,12 @@ export default function AdminTabShell({
   actions,
   stats,
   info,
+  pestanas,
   children,
 }: AdminTabShellProps) {
+  const pestanasDelModulo = usePestanasDelModulo();
+  const pestanasFila = pestanas ?? pestanasDelModulo;
+  const compacta = useCabeceraCompacta() || pestanasFila != null;
   const ChipIcon = chip?.icon;
   /* ⓘ del título: el `info` de la pantalla, o la descripción si no trae uno.
      Las 23 pantallas que pasaban los dos repetían lo mismo con otras palabras. */
@@ -71,6 +89,29 @@ export default function AdminTabShell({
     : description
       ? { title, what: description }
       : null;
+  const chipVista = chip ? (
+    <span className={chip.tone === "muted" ? ADMIN_TOKENS.chipMuted : ADMIN_TOKENS.chipAccent}>
+      {ChipIcon && <ChipIcon className="h-3 w-3" aria-hidden />}
+      {chip.label}
+    </span>
+  ) : null;
+
+  if (compacta) {
+    return (
+      <div className={ADMIN_TOKENS.sectionGap}>
+        <CabeceraConPestanas
+          icon={Icon}
+          title={title}
+          kicker={kicker}
+          info={ayuda ?? undefined}
+          chip={chipVista}
+          pestanas={pestanasFila}
+          acciones={stats || actions ? <>{stats}{actions}</> : undefined}
+        />
+        {pestanasDelModulo != null ? <PestanasDelModulo pestanas={null}>{children}</PestanasDelModulo> : children}
+      </div>
+    );
+  }
 
   return (
     <div className={ADMIN_TOKENS.sectionGap}>
@@ -95,18 +136,7 @@ export default function AdminTabShell({
               ayuda || chip ? (
                 <>
                   {ayuda && <InfoTip side="bottom" {...ayuda} />}
-                  {chip && (
-                    <span
-                      className={
-                        chip.tone === "muted"
-                          ? ADMIN_TOKENS.chipMuted
-                          : ADMIN_TOKENS.chipAccent
-                      }
-                    >
-                      {ChipIcon && <ChipIcon className="h-3 w-3" aria-hidden />}
-                      {chip.label}
-                    </span>
-                  )}
+                  {chipVista}
                 </>
               ) : undefined
             }

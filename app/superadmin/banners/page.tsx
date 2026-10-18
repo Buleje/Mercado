@@ -18,7 +18,8 @@
 
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useEffect, useMemo, useState } from "react";
-import { SUPERADMIN_PAGE, SUPERADMIN_HERO } from "@/lib/superadmin-layout";
+import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
 import {
   Save,
   Plus,
@@ -276,7 +277,11 @@ import { SuperAdminModuleTabs, MARCA_TABS } from "@/components/superadmin/_share
 export default function SuperadminBannersPage() {
   return (
     <>
-      <SuperAdminModuleTabs tabs={MARCA_TABS} />
+      {/* En pantalla ancha las pestañas van en la cabecera del editor (una
+          fila con el título); en celular el editor no se abre y quedan acá. */}
+      <div className="lg:hidden">
+        <SuperAdminModuleTabs tabs={MARCA_TABS} />
+      </div>
       <DesktopOnlyGate>
         <SuperadminBannersPageInner />
       </DesktopOnlyGate>
@@ -484,41 +489,30 @@ function SuperadminBannersPageInner() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      {/* ── Hero header ────────────────────────────────────────────────── */}
-      <header className={SUPERADMIN_HERO}>
-        <div className="w-full">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-start gap-3.5">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-                <Megaphone className="h-6 w-6" strokeWidth={1.75} aria-hidden />
-              </span>
-              <div>
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                  Centro de banners
-                </p>
-                <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Banners del Marketplace</h1><InfoTip
-                    side="bottom"
-                    title="Banners del Marketplace"
-                    what="Administra los banners promocionales del marketplace público. Rotan cada 8 segundos."
-                    affects="Se ven en la home del marketplace que visitan los clientes."
-                    example="Creas un banner «2x1 en gaseosas» y queda arriba para todos los visitantes. Usa imágenes 1600×400 (4:1), 1 línea de texto y un botón claro; más de 5 por lugar satura."
-                  /></div>
-              </div>
-            </div>
-
-            {/* Stats compactas */}
-            <div className="flex items-stretch gap-2 flex-wrap">
-              <StatPill label="Total" value={stats.total} />
-              <StatPill label="Activos" value={stats.active} accent="success" />
-              <StatPill label="Con imagen" value={stats.withImage} />
-              <StatPill label="Slots usados" value={`${stats.slots}/${ALL_SLOTS.length}`} />
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* ── Cabecera de una fila: título + pestañas de Marca + cifras ──── */}
+      <CabeceraConPestanas
+        icon={Megaphone}
+        title="Banners del Marketplace"
+        kicker="Centro de banners"
+        info={{
+          title: "Banners del Marketplace",
+          what: "Administra los banners promocionales del marketplace público. Rotan cada 8 segundos.",
+          affects: "Se ven en la home del marketplace que visitan los clientes.",
+          example: "Creas un banner «2x1 en gaseosas» y queda arriba para todos los visitantes. Usa imágenes 1600×400 (4:1), 1 línea de texto y un botón claro; más de 5 por lugar satura.",
+        }}
+        pestanas={<SuperAdminModuleTabs enLinea tabs={MARCA_TABS} />}
+        acciones={
+          <>
+            <StatPill label="Total" value={stats.total} />
+            <StatPill label="Activos" value={stats.active} accent="success" />
+            <StatPill label="Con imagen" value={stats.withImage} />
+            <StatPill label="Slots usados" value={`${stats.slots}/${ALL_SLOTS.length}`} />
+          </>
+        }
+      />
 
       {/* ── 2-column layout ────────────────────────────────────────────── */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className={SUPERADMIN_CONTENT}>
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           {/* Sidebar — slot navigator agrupado */}
           <aside className="lg:sticky lg:top-6 lg:self-start space-y-5">

@@ -127,8 +127,7 @@ export default function TenantsUsagePage() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
-      <AdminTabShell
+      <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={TENANTS_TABS} />}
         info={{
           what: "Tabla de consumo mensual de pedidos vs el límite del plan de cada tienda. Calcula el MRR potencial si las tiendas cercanas al límite suben de plan (upsell).",
           affects: "Solo lectura para el superadmin. El botón de chat pre-rellena un mensaje de oferta de upgrade, pero el cambio de plan real se hace desde /superadmin/tenants.",

@@ -178,8 +178,7 @@ export default function AlertsPage() {
 
   return (
     <>
-      <RetencionTabs />
-      <AdminTabShell
+      <AdminTabShell pestanas={<RetencionTabs enLinea />}
         info={{
           what: "Junta las señales que necesitan tu atención ahora: churn, fallos de pago, caídas de uso y tiendas inactivas, en todas las tiendas.",
           affects:

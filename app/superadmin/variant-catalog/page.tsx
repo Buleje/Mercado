@@ -1,7 +1,7 @@
 import { Layers } from "@buleje/design-system/icons";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import VariantCatalogClient from "./VariantCatalogClient";
-import { SUPERADMIN_PAGE, SUPERADMIN_HERO } from "@/lib/superadmin-layout";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
+import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 
 /**
  * /superadmin/variant-catalog
@@ -18,23 +18,19 @@ import { SUPERADMIN_PAGE, SUPERADMIN_HERO } from "@/lib/superadmin-layout";
 export default function SuperadminVariantCatalogPage() {
   return (
     <div className={SUPERADMIN_PAGE}>
-      <header className={SUPERADMIN_HERO}>
-        <div className="w-full">
-          <div className="flex items-start gap-3.5">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-              <Layers className="h-6 w-6" strokeWidth={1.75} aria-hidden />
-            </span>
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                Marketplace · Personalización
-              </p>
-              <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Catálogo de variaciones</h1><InfoTip side="bottom" title="Catálogo de variaciones" what="Plantillas de variaciones que las tiendas importan a sus productos (talla, color, sabor), sin crearlas una por una." affects="Las tiendas eligen estas variaciones al crear productos, sin escribirlas de cero." example="Una pollería importa «Cremas» con sus imágenes; defines tallas S/M/L/XL una vez y todas las tiendas de ropa las usan." /></div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <CabeceraConPestanas
+        icon={Layers}
+        title="Catálogo de variaciones"
+        kicker="Marketplace · Personalización"
+        info={{
+          title: "Catálogo de variaciones",
+          what: "Plantillas de variaciones que las tiendas importan a sus productos (talla, color, sabor), sin crearlas una por una.",
+          affects: "Las tiendas eligen estas variaciones al crear productos, sin escribirlas de cero.",
+          example: "Una pollería importa «Cremas» con sus imágenes; defines tallas S/M/L/XL una vez y todas las tiendas de ropa las usan.",
+        }}
+      />
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className={SUPERADMIN_CONTENT}>
         <VariantCatalogClient />
       </div>
     </div>

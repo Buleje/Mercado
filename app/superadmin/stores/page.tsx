@@ -94,8 +94,7 @@ export default function StoresPage() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={MARKETPLACE_TABS} />
-      <AdminTabShell
+      <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={MARKETPLACE_TABS} />}
         info={{
           what: "Panel central del marketplace multi-tenant: lista y configura tiendas publicadas, revisa pedidos y operaciones, gestiona cupones globales, analítica de ventas, navegación del catálogo y plantilla del panel.",
           affects:

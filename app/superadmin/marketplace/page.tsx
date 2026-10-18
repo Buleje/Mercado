@@ -17,6 +17,7 @@ import {
 import { MarketplaceAdminDB } from "@/lib/db/marketplace-public.db";
 import { SupplierSignupDB } from "@/lib/db/supplier-signup.db";
 import { SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
 import { SuperAdminModuleTabs, MARKETPLACE_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 /**
@@ -178,98 +179,74 @@ export default async function SuperadminMarketplaceHubPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={MARKETPLACE_TABS} />
-      {/* ── HERO envolvente con accent strip y KPIs grandes ─────────────── */}
-      <header className="relative overflow-hidden border-b border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        {/* Accent strip superior */}
-        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-[var(--accent)] via-[var(--accent)]/60 to-transparent" />
-        {/* Glow decorativo derecho */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute right-0 top-0 hidden h-full w-1/2 bg-linear-to-l from-[var(--accent)]/[0.06] to-transparent lg:block"
-        />
-
-        <div className="relative w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <span className="relative inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-lg shadow-[var(--accent)]/20">
-                <Store className="h-7 w-7" strokeWidth={1.75} aria-hidden />
-                <span className="absolute -right-1 -top-1 inline-flex h-3 w-3 items-center justify-center">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-success-500)]/60" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)] ring-2 ring-[var(--surface-raised)]" />
-                </span>
+      {/* ── Cabecera de una fila: título + Live + pestañas + aviso ──────── */}
+      <CabeceraConPestanas
+        icon={Store}
+        title="Marketplace"
+        kicker="Plataforma multi-vendor"
+        chip={
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)]/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-500)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
+            Live
+          </span>
+        }
+        info={{
+          title: "Marketplace",
+          what: "Centro de control del marketplace multi-vendor: aprobar vendors, gestionar categorías y monitorear el revenue cross-store.",
+          affects: "Cambia el marketplace público (qué vendors y categorías aparecen) que ven todos los clientes.",
+          example: "Apruebas un vendor nuevo → su tienda empieza a aparecer en el marketplace para los compradores.",
+        }}
+        pestanas={<SuperAdminModuleTabs enLinea tabs={MARKETPLACE_TABS} />}
+        acciones={
+          m.pendingSuppliers > 0 ? (
+            <Link
+              href="/superadmin/marketplace/suppliers"
+              className="group inline-flex items-center gap-2.5 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-sm font-bold text-[var(--accent-ink)] transition hover:border-[var(--accent)]/50 hover:bg-primary/15 dark:text-[var(--accent)]"
+            >
+              <AlertCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
+              <span>
+                {m.pendingSuppliers}{" "}
+                {m.pendingSuppliers === 1 ? "proveedor espera" : "proveedores esperan"} revisión
               </span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                    Plataforma multi-vendor
-                  </p>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)]/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-500)]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
-                    Live
-                  </span>
-                </div>
-                <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="mt-1 font-display text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">Marketplace</h1><InfoTip
-                    side="bottom"
-                    title="Marketplace"
-                    what="Centro de control del marketplace multi-vendor: aprobar vendors, gestionar categorías y monitorear el revenue cross-store."
-                    affects="Cambia el marketplace público (qué vendors y categorías aparecen) que ven todos los clientes."
-                    example="Apruebas un vendor nuevo → su tienda empieza a aparecer en el marketplace para los compradores."
-                  /></div>
-              </div>
-            </div>
-
-            {m.pendingSuppliers > 0 && (
-              <Link
-                href="/superadmin/marketplace/suppliers"
-                className="group inline-flex items-center gap-2.5 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] transition hover:border-[#0d9488]/50 hover:bg-primary/15 dark:text-[var(--accent)]"
-              >
-                <AlertCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
-                <span>
-                  {m.pendingSuppliers}{" "}
-                  {m.pendingSuppliers === 1 ? "proveedor espera" : "proveedores esperan"} revisión
-                </span>
-                <ArrowUpRight
-                  className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                  aria-hidden
-                />
-              </Link>
-            )}
-          </div>
-
-          {/* KPI Row — métricas reales */}
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-            <KpiTile
-              label="Tiendas activas"
-              value={NUM.format(m.activeStores)}
-              hint={`de ${m.totalStores} totales`}
-              tone="accent"
-            />
-            <KpiTile
-              label="Pedidos del mes"
-              value={NUM.format(m.monthOrders)}
-              hint={m.pendingOrders > 0 ? `${m.pendingOrders} pendientes` : "Sin pendientes"}
-              tone={m.pendingOrders > 0 ? "warn" : "default"}
-            />
-            <KpiTile
-              label="Ventas del mes"
-              value={PESOS.format(m.monthRevenueSoles)}
-              hint="GMV marketplace"
-              tone="default"
-              trending
-            />
-            <KpiTile
-              label="Comisión del mes"
-              value={PESOS.format(m.monthCommissionSoles)}
-              hint="Generado por plataforma"
-              tone="success"
-            />
-          </div>
-        </div>
-      </header>
+              <ArrowUpRight
+                className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                aria-hidden
+              />
+            </Link>
+          ) : undefined
+        }
+      />
 
       {/* ── Content ─────────────────────────────────────────────────────── */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10">
+      <div className="w-full space-y-10 pt-6">
+        {/* KPI Row — métricas reales */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          <KpiTile
+            label="Tiendas activas"
+            value={NUM.format(m.activeStores)}
+            hint={`de ${m.totalStores} totales`}
+            tone="accent"
+          />
+          <KpiTile
+            label="Pedidos del mes"
+            value={NUM.format(m.monthOrders)}
+            hint={m.pendingOrders > 0 ? `${m.pendingOrders} pendientes` : "Sin pendientes"}
+            tone={m.pendingOrders > 0 ? "warn" : "default"}
+          />
+          <KpiTile
+            label="Ventas del mes"
+            value={PESOS.format(m.monthRevenueSoles)}
+            hint="GMV marketplace"
+            tone="default"
+            trending
+          />
+          <KpiTile
+            label="Comisión del mes"
+            value={PESOS.format(m.monthCommissionSoles)}
+            hint="Generado por plataforma"
+            tone="success"
+          />
+        </div>
         {/* Operaciones activas */}
         <section className="space-y-5">
           <SectionHeading

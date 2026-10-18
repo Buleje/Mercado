@@ -10,9 +10,10 @@ export const REGLAS_HREF = "/superadmin/rescue/reglas";
  * trae la pestaña «Reglas» (receta pendiente en ModuleTabs.tsx), la usa tal cual;
  * si no, la agrega aquí para que la pantalla tenga su pestaña activa.
  */
-export function RetencionTabsConReglas() {
+/** `enLinea`: va en el slot `pestanas` de la cabecera, al lado del título. */
+export function RetencionTabsConReglas({ enLinea = false }: { enLinea?: boolean } = {}) {
   const tabs: ModuleTab[] = RETENCION_TABS.some((t) => t.href === REGLAS_HREF)
     ? RETENCION_TABS
     : [...RETENCION_TABS, { label: "Reglas", href: REGLAS_HREF, icon: ListChecks }];
-  return <SuperAdminModuleTabs tabs={tabs} />;
+  return <SuperAdminModuleTabs tabs={tabs} enLinea={enLinea} />;
 }

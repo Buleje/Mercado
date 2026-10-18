@@ -144,8 +144,8 @@ export default function TenantsPage() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
     <AdminTabShell
+      pestanas={<SuperAdminModuleTabs enLinea tabs={TENANTS_TABS} />}
       info={{
         what: "Lista y gestiona todas las tiendas (tenants) de la plataforma: activarlas, suspenderlas, cambiarles el plan, ver sus pedidos pendientes e impersonarlas para soporte.",
         affects: "Suspender una tienda impide que sus clientes compren. Cambiar el plan modifica los límites de uso en tiempo real.",

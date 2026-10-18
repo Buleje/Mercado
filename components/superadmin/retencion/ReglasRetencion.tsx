@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
 import { BellRing, ChevronDown, Loader2, MoreHorizontal, Plus, RefreshCw } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
+import { usePestanasDelModulo } from "@/components/admin/shared/cabecera-compacta";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -47,6 +49,7 @@ const NUEVA: ValoresRegla = {
 };
 
 export function ReglasRetencion() {
+  const pestanasDelModulo = usePestanasDelModulo();
   const { datos, cargando, error, guardando, cargar, guardar, crear } = useReglasRetencion();
   const [kpisAbiertos, setKpisAbiertos] = useLocalStorage("superadmin:retencion:reglas:kpis-abiertos", true);
   const [creando, setCreando] = useState(false);
@@ -75,35 +78,40 @@ export function ReglasRetencion() {
 
   return (
     <div className="space-y-4">
-      <header className="flex flex-wrap items-center gap-2">
-        <SectionTitle>Reglas de retención</SectionTitle>
-        <InfoTip
-          title="Reglas de retención"
-          what="Qué hace Buleje cuando un negocio da señales de irse: dejó de entrar, cayeron sus pedidos o su prueba gratis vence."
-          affects="El cron de cada madrugada guarda la alerta y, si la regla está activa, manda el correo o WhatsApp una sola vez por alerta."
-          example="«Su prueba gratis vence · desde riesgo Alto» → correo «Tu prueba termina pronto» al dueño."
-        />
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setCreando(true);
-              setErrorNueva(null);
-            }}
-            aria-label="Nueva regla"
-            title="Nueva regla"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-2.5 text-sm font-bold text-white sm:px-3"
-          >
-            <Plus className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Nueva regla</span>
-          </button>
-          <ActionMenu
-            label="Más acciones"
-            icon={MoreHorizontal}
-            soloIcono
-            actions={[{ id: "recargar", label: "Recargar", icon: RefreshCw, onSelect: () => void cargar() }]}
-          />
-        </div>
-      </header>
+      <CabeceraConPestanas
+        icon={BellRing}
+        title="Reglas de retención"
+        kicker="Plataforma · Retención"
+        info={{
+          title: "Reglas de retención",
+          what: "Qué hace Buleje cuando un negocio da señales de irse: dejó de entrar, cayeron sus pedidos o su prueba gratis vence.",
+          affects: "El cron de cada madrugada guarda la alerta y, si la regla está activa, manda el correo o WhatsApp una sola vez por alerta.",
+          example: "«Su prueba gratis vence · desde riesgo Alto» → correo «Tu prueba termina pronto» al dueño.",
+        }}
+        pestanas={pestanasDelModulo}
+        acciones={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setCreando(true);
+                setErrorNueva(null);
+              }}
+              aria-label="Nueva regla"
+              title="Nueva regla"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-2.5 text-sm font-bold text-white sm:px-3"
+            >
+              <Plus className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Nueva regla</span>
+            </button>
+            <ActionMenu
+              label="Más acciones"
+              icon={MoreHorizontal}
+              soloIcono
+              actions={[{ id: "recargar", label: "Recargar", icon: RefreshCw, onSelect: () => void cargar() }]}
+            />
+          </div>
+        }
+      />
 
       {datos && (
         <div className="flex items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">

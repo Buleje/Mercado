@@ -16,7 +16,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AdminPage,
   Kicker,
   cn,
 } from "@buleje/design-system";
@@ -472,7 +471,7 @@ export function ControlCenterClient({
   }, [query]);
 
   return (
-    <AdminPage>
+    <>
       <AdminTabShell
       info={{
         what: "Acceso rápido a todas las consolas (Stripe, Vercel, Supabase…) con el estado de credenciales e info del sistema.",
@@ -734,7 +733,7 @@ export function ControlCenterClient({
           {toast}
         </div>
       )}
-    </AdminPage>
+    </>
   );
 }
 

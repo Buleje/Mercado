@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { listSpecializations } from "@/lib/specializations";
 import SpecializationsClient from "./SpecializationsClient";
 import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
+import { PestanasDelModulo } from "@/components/admin/shared/cabecera-compacta";
 
 export const metadata = {
   title: "Qué tiene cada negocio — Superadmin",
@@ -61,12 +62,11 @@ export default async function SpecializationsPage() {
   const catalog = listSpecializations();
 
   return (
-    <>
-      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
+    <PestanasDelModulo pestanas={<SuperAdminModuleTabs enLinea tabs={TENANTS_TABS} />}>
       <SpecializationsClient
         tenants={tenantsWithFlags}
         catalog={catalog}
       />
-    </>
+    </PestanasDelModulo>
   );
 }

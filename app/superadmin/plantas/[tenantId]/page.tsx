@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { CargaPagina } from "@buleje/design-system/carga-pagina";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { SUPERADMIN_CONTENT, SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
-import { SuperAdminModuleTabs, PLANTAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { CabeceraPlantas } from "@/components/superadmin/plantas/CabeceraPlantas";
 import { PlantaFichaConsola } from "@/components/superadmin/plantas/PlantaFichaConsola";
 
@@ -19,7 +18,6 @@ export default async function PlantaFichaPage({ params }: { params: Promise<{ te
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={PLANTAS_TABS} />
       <CabeceraPlantas
         titulo="Ficha de la planta"
         what="Lo que tiene una planta según su libro: trozas, aserrada por producto, existencia por especie, movimiento del período e incoherencias."

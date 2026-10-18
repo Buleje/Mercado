@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { CargaPagina } from "@buleje/design-system/carga-pagina";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { SUPERADMIN_CONTENT, SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
-import { SuperAdminModuleTabs, PLANTAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { CabeceraPlantas } from "@/components/superadmin/plantas/CabeceraPlantas";
 import { InspeccionConsola } from "@/components/superadmin/plantas/inspeccion/InspeccionConsola";
 
@@ -19,7 +18,6 @@ export default async function InspeccionPlantaPage({ params }: { params: Promise
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={PLANTAS_TABS} />
       <CabeceraPlantas
         titulo="Inspección de planta"
         what="Cuentas en la planta lo que su libro decía al abrir la inspección: trozas del patio, aserrada por producto y lo que encuentres."

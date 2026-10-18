@@ -18,7 +18,6 @@
  *  - Touch targets ≥44px en mobile, focus rings visibles
  */
 
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -41,6 +40,8 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
+import { usePestanasDelModulo } from "@/components/admin/shared/cabecera-compacta";
 import {
   ApplicationDetailsDrawer,
   type VendorApplication,
@@ -351,6 +352,7 @@ function sortApps(
 // ── Main Component ──────────────────────────────────────────────────────────
 
 export default function VendorApplicationsModule() {
+  const pestanasDelModulo = usePestanasDelModulo();
   const [apps, setApps] = useState<VendorApplication[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -747,68 +749,49 @@ export default function VendorApplicationsModule() {
         ))}
       </div>
 
-      {/* ── Hero ─────────────────────────────────────────────── */}
-      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="w-full">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-start gap-3 min-w-0 flex-1">
-              <span className="inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-                <Building2
-                  className="h-5 w-5 sm:h-6 sm:w-6"
-                  strokeWidth={1.75}
-                  aria-hidden
-                />
-              </span>
-              <div className="min-w-0 w-72">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                  Marketplace · Onboarding
-                </p>
-                <div className="flex items-center gap-2">
-                  <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                    Solicitudes de vendedores
-                  </h1>
-                  <InfoTip
-                    side="bottom"
-                    title="Solicitudes de vendedores"
-                    what="Aprueba, rechaza o pide más información a quien quiere vender en el marketplace."
-                    example="Atajos: / buscar · R recargar · Esc cerrar."
-                  />
-                </div>
-              </div>
-            </div>
+      {/* ── Cabecera de una fila: título + pestañas de Vendedores + controles ── */}
+      <CabeceraConPestanas
+        icon={Building2}
+        title="Solicitudes de vendedores"
+        kicker="Marketplace · Onboarding"
+        info={{
+          title: "Solicitudes de vendedores",
+          what: "Aprueba, rechaza o pide más información a quien quiere vender en el marketplace.",
+          example: "Atajos: / buscar · R recargar · Esc cerrar.",
+        }}
+        pestanas={pestanasDelModulo}
+        acciones={
+          <>
+            <button
+              onClick={() => reload()}
+              disabled={refreshing}
+              title="Recargar (R)"
+              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+            >
+              <RefreshCcw
+                className={cn(
+                  "h-4 w-4",
+                  refreshing && "animate-spin",
+                )}
+                aria-hidden
+              />
+              <span className="hidden sm:inline">Recargar</span>
+            </button>
+            <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+              <input
+                type="checkbox"
+                checked={autoRefresh}
+                onChange={(e) => setAutoRefresh(e.target.checked)}
+                className="h-4 w-4 accent-[var(--accent)]"
+              />
+              <span className="hidden sm:inline">Auto 60s</span>
+              <span className="sm:hidden">Auto</span>
+            </label>
+          </>
+        }
+      />
 
-            <div className="flex items-stretch gap-2 flex-wrap shrink-0">
-              <button
-                onClick={() => reload()}
-                disabled={refreshing}
-                title="Recargar (R)"
-                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
-              >
-                <RefreshCcw
-                  className={cn(
-                    "h-4 w-4",
-                    refreshing && "animate-spin",
-                  )}
-                  aria-hidden
-                />
-                <span className="hidden sm:inline">Recargar</span>
-              </button>
-              <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
-                <input
-                  type="checkbox"
-                  checked={autoRefresh}
-                  onChange={(e) => setAutoRefresh(e.target.checked)}
-                  className="h-4 w-4 accent-[var(--accent)]"
-                />
-                <span className="hidden sm:inline">Auto 60s</span>
-                <span className="sm:hidden">Auto</span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5 sm:space-y-6">
+      <div className="w-full space-y-5 pt-6 sm:space-y-6">
         {error && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm font-semibold text-[var(--data-error)]">
             <span>{error}</span>

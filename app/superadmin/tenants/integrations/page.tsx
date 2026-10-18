@@ -119,8 +119,7 @@ export default function IntegrationsPage() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
-      <AdminTabShell
+      <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={TENANTS_TABS} />}
         info={{
           what: "Matriz de integraciones por tienda: muestra si cada una tiene activo WhatsApp (notificaciones), Yape y Plin (cobro) y SUNAT (facturación electrónica). Incluye KPIs de adopción y alertas de riesgo.",
           affects: "Solo lectura para el superadmin. Las tiendas marcadas como 'sin cobros' (sin Yape ni Plin) no pueden recibir pagos digitales — es una alerta de negocio crítica.",

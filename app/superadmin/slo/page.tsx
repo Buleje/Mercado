@@ -297,8 +297,7 @@ export default function SLODashboardPage() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={SALUD_TABS} />
-      <AdminTabShell
+      <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={SALUD_TABS} />}
         info={{
           what: "Muestra el estado de salud de la plataforma: último deploy en Vercel, errores capturados por Sentry en las últimas 24 h, el funnel de checkout de PostHog y los crons programados.",
           affects:

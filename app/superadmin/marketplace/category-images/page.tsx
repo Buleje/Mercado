@@ -1,4 +1,5 @@
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { ImageIcon } from "@buleje/design-system/icons";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
 import CategoryImagesClient from "./CategoryImagesClient";
 
 /**
@@ -13,16 +14,18 @@ import CategoryImagesClient from "./CategoryImagesClient";
  */
 export default function CategoryImagesPage() {
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-6">
-        <div className="inline-flex items-center gap-2"><h1 className="text-2xl font-bold text-[var(--text-primary)]">Imágenes de categorías</h1><InfoTip
-            side="bottom"
-            title="Imágenes de categorías"
-            what="Imagen por defecto de cada categoría para todas las tiendas del marketplace."
-            affects="Si una tienda sube la suya, esa tiene prioridad. Si no hay ninguna, los filtros muestran solo texto."
-            example="Subes la foto de «Bebidas» y todas las tiendas la usan hasta que una ponga la propia."
-          /></div>
-      </div>
+    <div className="space-y-6">
+      <CabeceraConPestanas
+        icon={ImageIcon}
+        title="Imágenes de categorías"
+        kicker="Marketplace · Recursos"
+        info={{
+          title: "Imágenes de categorías",
+          what: "Imagen por defecto de cada categoría para todas las tiendas del marketplace.",
+          affects: "Si una tienda sube la suya, esa tiene prioridad. Si no hay ninguna, los filtros muestran solo texto.",
+          example: "Subes la foto de «Bebidas» y todas las tiendas la usan hasta que una ponga la propia.",
+        }}
+      />
       <CategoryImagesClient />
     </div>
   );

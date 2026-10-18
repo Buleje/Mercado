@@ -143,7 +143,7 @@ export default function ConfiguracionClient() {
 
   if (loading) {
     return (
-      <AdminTabShell
+      <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={SETTINGS_TABS} />}
       info={{
         what: "Ajustes globales de la plataforma: landing pública, registro de tiendas y panel del negocio.",
         affects: "Se aplica en vivo (sin redeploy) en la landing, el registro y el panel admin de los negocios.",
@@ -172,8 +172,7 @@ export default function ConfiguracionClient() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={SETTINGS_TABS} />
-    <AdminTabShell
+    <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={SETTINGS_TABS} />}
       title="Configuración general"
       description="Todo lo que cambia acá se aplica en vivo en landing, registro y panel del negocio — sin redeploy."
       icon={Settings}

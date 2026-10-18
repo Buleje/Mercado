@@ -171,8 +171,7 @@ export default function TenantsOnboardingPage() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
-      <AdminTabShell
+      <AdminTabShell pestanas={<SuperAdminModuleTabs enLinea tabs={TENANTS_TABS} />}
         info={{
           what: "Embudo de activación por tienda: muestra qué hitos completó cada una (logo, productos, primer pedido, primera venta POS). Identifica las estancadas y sugiere mensajes de reactivación.",
           affects: "Marcar una tienda como 'contactada' o 'pospuesta' se guarda en la plataforma. El botón 'Reactivar' abre un chat pre-rellenado con el mensaje sugerido.",
