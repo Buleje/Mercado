@@ -78,9 +78,15 @@ function normTipo(t) {
   return arr ? `${s}[]` : s;
 }
 const ACCION = { cascade: "c", "set null": "n", restrict: "r", "no action": "a", "set default": "d" };
+// Corta solo en las comas de primer nivel: ni dentro de (…), ni de ARRAY[…], ni de '…' (18-10: un
+// DEFAULT ARRAY['a','b']::TEXT[] se partía en tres columnas y daba un ✗ falso).
 const partirComas = (s) => {
-  const out = []; let cur = ""; let p = 0;
-  for (const ch of s) { if (ch === "(") p++; if (ch === ")") p--; if (ch === "," && p === 0) { out.push(cur); cur = ""; } else cur += ch; }
+  const out = []; let cur = ""; let p = 0; let txt = false;
+  for (const ch of s) {
+    if (ch === "'") txt = !txt;
+    if (!txt) { if (ch === "(" || ch === "[") p++; if (ch === ")" || ch === "]") p--; }
+    if (ch === "," && p === 0 && !txt) { out.push(cur); cur = ""; } else cur += ch;
+  }
   if (cur.trim()) out.push(cur);
   return out.map((x) => x.trim()).filter(Boolean);
 };
