@@ -30,6 +30,8 @@ const m = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/superadmin-session", () => ({
   getPlatformSession: m.plataforma,
+  // «Salir» reconoce la sesión por la misma puerta (sin exigir actividad).
+  superadminQueCierraSesion: vi.fn(async (token: string, ua: string | null) => (await m.plataforma(token, { ua }))?.username ?? null),
   createPlatformToken: vi.fn(),
   maybeRotateToken: vi.fn(),
   PLATFORM_SESSION: { COOKIE_NAME: "buleje-platform-sess", MAX_AGE: 28_800 },
@@ -215,7 +217,7 @@ describe("DELETE /api/superadmin/auth · salir cierra las vistas", () => {
     expect(cacheStore.get(`revoked-access:${jtiViejo}`)).toBeNull();
   });
 
-  it("sesión de plataforma vencida por inactividad: el corte sale del superadmin de la vista y la de este navegador se borra", async () => {
+  it("sesión de plataforma inválida (vencida u otro navegador): el corte sale del superadmin de la vista y la de este navegador se borra", async () => {
     m.plataforma.mockResolvedValue(null);
     vistaDe("sa-sin-sesion", 5);
     const res = await logoutSuperadmin(pedido("DELETE", "/api/superadmin/auth"));

@@ -8,6 +8,8 @@
  *   2. Idle timeout — 30 min sin actividad → token inválido.
  *   3. UA fingerprint binding — el token es válido sólo para el user-agent
  *      con el que se emitió. Cambio brusco (sesión robada y replay) → reject.
+ *   4. Cortes por `iat`: «Revocar todas» (global) y «Salir» de cada superadmin
+ *      (lib/superadmin-revocation): una copia del token muere al cerrar sesión.
  */
 
 const PLATFORM_COOKIE = "buleje-platform-sess";
@@ -98,9 +100,10 @@ export async function hashUA(ua: string | null | undefined): Promise<string> {
   return btoa(String.fromCharCode(...new Uint8Array(buf))).slice(0, 16);
 }
 
-// Lazy import — superadmin-revocation es Node only (in-memory). Edge OK,
-// la función getMinIssuedAt() retorna un número simple sin side-effects.
-import { getMinIssuedAt } from "@/lib/superadmin-revocation";
+// superadmin-revocation: corte global en memoria + corte por superadmin al
+// cerrar sesión (cacheStore). Las dos lecturas son síncronas (un Map): el proxy
+// las corre en cada pedido sin sumar una ida a la red.
+import { corteDeSesionesDePlataforma, getMinIssuedAt } from "@/lib/superadmin-revocation";
 
 export async function createPlatformToken(
   username: string,
@@ -112,7 +115,9 @@ export async function createPlatformToken(
     exp: now + DURATION_MS,
     lastSeen: now,
     uaHash: await hashUA(ua),
-    iat: now,
+    // Tras un «Salir» (corte), el login nuevo nace DESPUÉS del corte aunque
+    // caiga en el mismo milisegundo: vale (el corte rechaza iat ≤ corte).
+    iat: Math.max(now, corteDeSesionesDePlataforma(username) + 1),
   };
   const payload = b64e(JSON.stringify(session));
   const sig = await sign(getSecret(), payload);
@@ -124,12 +129,13 @@ interface VerifyOpts {
 }
 
 /**
- * Verifica firma + expiración + idle + UA. Devuelve la sesión si todo
- * pasa. Cualquier fallo silencioso → null.
+ * Verifica firma + expiración + (idle si `exigirActividad`) + cortes + UA.
+ * Cualquier fallo silencioso → null.
  */
-export async function getPlatformSession(
+async function validarToken(
   token: string,
-  opts: VerifyOpts = {},
+  opts: VerifyOpts,
+  exigirActividad: boolean,
 ): Promise<PlatformSession | null> {
   try {
     const dot = token.lastIndexOf(".");
@@ -144,7 +150,7 @@ export async function getPlatformSession(
 
     // 2. Idle timeout (sólo si el campo existe — backward compat con
     // tokens emitidos antes del binding; esos caducan en 8 h por exp).
-    if (typeof data.lastSeen === "number") {
+    if (exigirActividad && typeof data.lastSeen === "number") {
       if (Date.now() - data.lastSeen > IDLE_TIMEOUT_MS) return null;
     }
 
@@ -158,6 +164,15 @@ export async function getPlatformSession(
       if (typeof data.iat !== "number" || data.iat < minIat) return null;
     }
 
+    // 2.6. «Salir» de ESTE superadmin (18-10): toda copia de su sesión emitida
+    // hasta el corte (inclusive: un login en el mismo milisegundo que el «Salir»
+    // también cae) deja de valer, también rotada (la rotación conserva `iat`).
+    // Un login posterior nace con `iat` > corte y vale. Sin `iat`, cae.
+    const corteSuyo = typeof data.username === "string" ? corteDeSesionesDePlataforma(data.username) : 0;
+    if (corteSuyo > 0) {
+      if (typeof data.iat !== "number" || data.iat <= corteSuyo) return null;
+    }
+
     // 3. UA binding (sólo si el campo existe en el token y nos pasaron
     // un UA para comparar). Backward compat con tokens previos.
     if (data.uaHash && typeof opts.ua !== "undefined") {
@@ -169,6 +184,32 @@ export async function getPlatformSession(
   } catch {
     return null;
   }
+}
+
+/**
+ * Verifica firma + expiración + idle + cortes + UA. Devuelve la sesión si todo
+ * pasa. Cualquier fallo silencioso → null.
+ */
+export async function getPlatformSession(
+  token: string,
+  opts: VerifyOpts = {},
+): Promise<PlatformSession | null> {
+  return validarToken(token, opts, true);
+}
+
+/**
+ * SÓLO para «Salir» (DELETE /api/superadmin/auth): de quién es la sesión que
+ * cierra, aunque lleve más de 30 min quieta. Una copia que otro mantuvo viva
+ * rotándola tiene que morir igual cuando el dueño sale con su pestaña dormida.
+ * Exige todo lo demás (firma, `exp`, UA, cortes): una copia ya cortada no puede
+ * volver a cortar y tumbar el login nuevo del dueño.
+ */
+export async function superadminQueCierraSesion(
+  token: string,
+  ua: string | null,
+): Promise<string | null> {
+  const data = await validarToken(token, { ua }, false);
+  return typeof data?.username === "string" && data.username ? data.username : null;
 }
 
 /**
