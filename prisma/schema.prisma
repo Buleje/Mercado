@@ -1943,10 +1943,13 @@ model Note {
   content   String   @default("")
   color     String   @default("yellow")
   pinned    Boolean  @default(false)
+  /// Día de la agenda (ADR-501). NULL = nota sin día. Date-only en hora de Lima.
+  fecha     DateTime? @db.Date
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([tenantId])
+  @@index([tenantId, fecha])
 }
 
 // ─── Contratos (ADR-307) ─────────────────────────────────
@@ -2268,6 +2271,133 @@ model AdminTask {
 
   @@unique([tenantId, id])
   @@index([tenantId, createdAt])
+}
+
+/// Agenda de Administración (ADR-501): lo que se repite en el negocio y cómo se sabe que se hizo.
+/// Listas cerradas (regla, frecuencia, objetivoTipo): CHECK en SQL + z.enum en lib/agenda/schemas.ts.
+/// Fechas date-only en hora de Lima; `hora` = «HH:MM» de pared, sin zona.
+/// Sin relación con Tenant (igual que AdminTask): el aislamiento es el tenantId en cada WHERE.
+model AgendaActividad {
+  id             String    @id @default(cuid())
+  tenantId       String
+  nombre         String
+  /// asistencia | facturas | servicio_aserrio | gastos_ingresos | adelantos | cuenta_tercero | manual
+  regla          String    @default("manual")
+  /// parte (ForestParty, cuenta corriente ADR-322) | beneficiario (AdelantoBeneficiario) | NULL = todas
+  objetivoTipo   String?
+  objetivoId     String?
+  /// Snapshot del nombre: la parte puede darse de baja y la agenda de marzo sigue diciendo con quién era.
+  objetivoNombre String?
+  /// una_vez | diaria | semanal | quincenal | mensual | cada_n_dias
+  frecuencia     String
+  desde          DateTime  @db.Date
+  hasta          DateTime? @db.Date
+  /// 0 = domingo … 6 = sábado (diaria/semanal/quincenal).
+  diasSemana     Int[]     @default([])
+  /// 1-31; 31 = último día del mes (mensual).
+  diaMes         Int?
+  cadaN          Int?
+  hora           String?
+  /// campana | telegram | n8n | reporte_diario | google
+  canales        String[]  @default(["campana"])
+  /// AdminRole que la ve y la marca (NULL = solo admin/owner/manager).
+  responsableRol String?
+  /// Validado por regla (PARAMETROS_POR_REGLA en lib/agenda/schemas.ts).
+  parametros     Json      @default("{}")
+  /// Token del DS: info | success | warning | error | neutral. Nunca hex.
+  color          String    @default("info")
+  nota           String?
+  activo         Boolean   @default(true)
+  creadoPor      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  deletedBy      String?
+
+  ocurrencias AgendaOcurrencia[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, activo])
+}
+
+/// Un día de una actividad con algo dicho A MANO. Lo pendiente no se guarda (se calcula).
+model AgendaOcurrencia {
+  id          String    @id @default(cuid())
+  tenantId    String
+  actividadId String
+  fecha       DateTime  @db.Date
+  /// hecha | omitida | pospuesta
+  estado      String
+  posponerA   DateTime? @db.Date
+  nota        String?
+  marcadoPor  String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  actividad AgendaActividad @relation(fields: [tenantId, actividadId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, actividadId, fecha])
+  @@index([tenantId, fecha])
+}
+
+/// Enlace ICS de solo lectura (Google Calendar / Outlook / Apple se suscriben por URL). Se guarda el
+/// sha256 del token, nunca el token; se busca por hash (única lectura sin tenantId de entrada).
+model AgendaFeedIcs {
+  id         String    @id @default(cuid())
+  tenantId   String
+  nombre     String    @default("Agenda del negocio")
+  tokenHash  String    @unique
+  /// Últimos 4 caracteres, para reconocerlo en la lista.
+  tokenPista String
+  /// actividades | notas | tareas | vencimientos
+  incluye    String[]  @default(["actividades", "notas", "tareas"])
+  creadoPor  String
+  createdAt  DateTime  @default(now())
+  ultimoUso  DateTime?
+  revocadoEn DateTime?
+
+  @@index([tenantId])
+}
+
+/// Google conectado por un usuario del panel (Calendar + Tasks). refresh token cifrado (cripto-secretos).
+model AgendaConexionGoogle {
+  id                  String    @id @default(cuid())
+  tenantId            String
+  adminUserId         String
+  email               String
+  scopes              String[]  @default([])
+  refreshTokenCifrado String
+  calendarId          String?
+  tasklistId          String?
+  /// activa | revocada | error
+  estado              String    @default("activa")
+  ultimoError         String?
+  ultimaSync          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  eventos AgendaGoogleEvento[]
+
+  @@unique([tenantId, adminUserId])
+}
+
+/// Qué evento de Google corresponde a qué actividad (para editar/borrar en vez de duplicar).
+/// El único va por conexionId (que ya es de un tenant); `tenantId` igual en cada WHERE.
+model AgendaGoogleEvento {
+  id            String   @id @default(cuid())
+  tenantId      String
+  conexionId    String
+  actividadId   String
+  googleEventId String?
+  googleTaskId  String?
+  /// sha256 de lo último enviado: si no cambió, no se llama a Google.
+  huella        String
+  updatedAt     DateTime @updatedAt
+
+  conexion AgendaConexionGoogle @relation(fields: [conexionId], references: [id], onDelete: Cascade)
+
+  @@unique([conexionId, actividadId])
+  @@index([tenantId])
 }
 
 /// Plan de la empresa (ADR-497): una fila por sección, `datos` validado por SCHEMAS_SECCION
