@@ -6,6 +6,7 @@ import { Settings, CreditCard, UserCircle, LogOut, ChevronDown } from "@buleje/d
 import { cn } from "@/lib/utils";
 import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
 import { useCodigoNegocio } from "@/hooks/use-codigo-negocio";
+import { BotonSoporte } from "@/components/admin/BotonSoporte";
 
 interface AdminUserDropdownProps {
   userName: string;
@@ -116,6 +117,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
                   </button>
                 );
               })}
+              <BotonSoporte variante="menu" alNavegar={() => setOpen(false)} />
             </div>
 
             {/* Logout divider */}

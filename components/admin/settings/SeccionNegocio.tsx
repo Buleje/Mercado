@@ -11,6 +11,7 @@ import { TicketPie } from "@/components/admin/settings/TicketPie";
 import type { AjustesEstado } from "@/components/admin/settings/use-ajustes";
 import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
 import { useCodigoNegocio } from "@/hooks/use-codigo-negocio";
+import { BotonSoporte } from "@/components/admin/BotonSoporte";
 
 const BOTON_ICONO = "grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--accent-ink)] dark:text-[var(--accent)] hover:border-primary transition-colors";
 const TIPOS = [
@@ -67,14 +68,19 @@ export function SeccionNegocio({ aj }: { aj: AjustesEstado }) {
       <SectionCard
         title="Identidad y contacto"
         desc="Tus datos legales y de contacto. Salen en tus tickets, boletas, cotizaciones y en tu tienda."
-        accion={codigoNegocio && (
-          <div className="flex items-center gap-1">
-            <CodigoTienda codigo={codigoNegocio} etiqueta="ID de tu negocio" etiquetaCorta="ID" tamano="md" />
-            <InfoTip
-              title="ID de tu negocio"
-              what="Es el número único de tu negocio en Buleje. Cuando pidas ayuda, mándaselo a soporte y te ubican al toque."
-              example="«Hola, mi ID es 482-917 y no me sale la boleta»"
-            />
+        accion={(
+          <div className="flex flex-wrap items-center gap-2">
+            <BotonSoporte />
+            {codigoNegocio && (
+              <div className="flex items-center gap-1">
+                <CodigoTienda codigo={codigoNegocio} etiqueta="ID de tu negocio" etiquetaCorta="ID" tamano="md" />
+                <InfoTip
+                  title="ID de tu negocio"
+                  what="Es el número único de tu negocio en Buleje. Cuando pidas ayuda, mándaselo a soporte y te ubican al toque."
+                  example="«Hola, mi ID es 482-917 y no me sale la boleta»"
+                />
+              </div>
+            )}
           </div>
         )}
       >
