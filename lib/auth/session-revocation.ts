@@ -1,7 +1,7 @@
 import "server-only";
 import { cacheStore } from "@/lib/cache";
 import { getMinIssuedAt } from "@/lib/superadmin-revocation";
-import { esSuplantacion } from "@/lib/auth/suplantacion";
+import { VIDA_MAXIMA_SUPLANTACION_S, esSuplantacion, superadminDeSuplantacion } from "@/lib/auth/suplantacion";
 
 /**
  * Revocación masiva de sesiones por admin — "cerrar todas las sesiones" (ADR-133
@@ -43,9 +43,35 @@ export function revokeSessionsBefore(tenantId: string, username: string, beforeM
   cacheStore.set(key(tenantId, username), beforeMs, TTL_SEC);
 }
 
+// ── Vistas de tienda de un superadmin (18-10) ─────────────────────────────────
+// «Salir del superadmin cierra las tiendas abiertas» (pedido de Brandon): al
+// cerrar su sesión de plataforma se anota un corte por superadmin y toda vista
+// `impersonated-by:<él>` emitida antes deja de valer, en este navegador y en
+// cualquier copia. Mismo almacén que la lista negra de jti (memoria del proceso
+// + Redis si hay). Dura lo que la vista más larga (60 min, también tras un
+// «+15») más un minuto de margen: pasado eso ya no puede quedar una viva.
+const PREFIJO_VISTAS = "vistas-revocadas-antes";
+const TTL_VISTAS_SEC = VIDA_MAXIMA_SUPLANTACION_S + 60;
+
+function claveVistas(superadmin: string): string {
+  return `${PREFIJO_VISTAS}:${superadmin}`;
+}
+
+/**
+ * Corta todas las vistas de tienda de `superadmin` emitidas antes de `antesDeMs`.
+ * Nunca retrocede un corte ya anotado (dos logouts seguidos dejan el último).
+ */
+export function revocarVistasDeSuperadmin(superadmin: string, antesDeMs: number = Date.now()): void {
+  const previo = cacheStore.get<number>(claveVistas(superadmin)) ?? 0;
+  cacheStore.set(claveVistas(superadmin), Math.max(previo, antesDeMs), TTL_VISTAS_SEC);
+}
+
 /**
  * `true` si el token (según su jti) fue emitido ANTES del corte registrado para
  * ese admin. Sin corte o sin timestamp en el jti → `false` (no bloquea).
+ * Una vista de tienda además cae con el corte global del superadmin y con el
+ * de su superadmin al cerrar sesión; ahí, sin hora en el jti, cae (no se sabe
+ * si es anterior).
  */
 export function isSessionRevoked(
   jti: string | undefined,
@@ -59,6 +85,14 @@ export function isSessionRevoked(
   if (corteSuperadmin > 0 && esSuplantacion(username)) {
     const emitido = issuedAtFromJti(jti);
     if (emitido == null || emitido < corteSuperadmin) return true;
+  }
+  const superadmin = superadminDeSuplantacion(username);
+  if (superadmin !== null) {
+    const corteVistas = cacheStore.get<number>(claveVistas(superadmin));
+    if (corteVistas) {
+      const emitido = issuedAtFromJti(jti);
+      if (emitido == null || emitido < corteVistas) return true;
+    }
   }
   const cutoff = cacheStore.get<number>(key(tenantId, username));
   if (!cutoff) return false;

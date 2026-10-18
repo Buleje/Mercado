@@ -438,6 +438,10 @@ function AdminPage() {
             minutos={suplantacion.minutos}
             saliendo={suplantacion.saliendo}
             onSalir={suplantacion.salir}
+            puedeExtender={suplantacion.puedeExtender}
+            extendiendo={suplantacion.extendiendo}
+            aviso={suplantacion.aviso}
+            onExtender={suplantacion.extender}
           />
         )}
         <div className={tab === "vendor-dashboard" ? "hidden sm:block" : ""}>

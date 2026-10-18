@@ -7,6 +7,9 @@ import { is2FAEnabled, create2FAChallenge, verify2FACode } from "@/lib/superadmi
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
+import { getSessionPayload, SESSION } from "@/lib/session";
+import { VIDA_MAXIMA_SUPLANTACION_S, esSuplantacion, superadminDeSuplantacion } from "@/lib/auth/suplantacion";
+import { revocarVistasDeSuperadmin } from "@/lib/auth/session-revocation";
 
 function cookieOpts(maxAge: number) {
   return {
@@ -242,7 +245,37 @@ export async function DELETE(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-auth-logout"); if (_rl) return _rl;
   const res = NextResponse.json({ ok: true });
   res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, "", cookieOpts(0));
-  logActivity("logout", "superadmin", "SuperAdmin cerró sesión", undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
+
+  // Salir del superadmin cierra sus vistas de tienda (18-10, pedido de Brandon:
+  // «sales a las 10:00 y Musa también se cierra a las 10:00»). Con su sesión de
+  // plataforma válida (mismo navegador) se anota el corte: toda vista suya
+  // emitida antes cae en el próximo pedido, también una copia en otro equipo.
+  const tokenPlataforma = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
+  const sesion = tokenPlataforma
+    ? await getPlatformSession(tokenPlataforma, { ua: req.headers.get("user-agent") })
+    : null;
+
+  // Y en ESTE navegador la vista se borra ya (sesión de tienda sólo si es una
+  // suplantación: si es la sesión real del dueño en su bodega, no se toca), con
+  // su jti anulado como en «Salir».
+  const tokenPanel = req.cookies.get(SESSION.COOKIE_NAME)?.value;
+  const panel = tokenPanel ? await getSessionPayload(tokenPanel) : null;
+  const vistaCerrada = !!panel && esSuplantacion(panel.username);
+
+  // Sesión de plataforma ya vencida por inactividad (30 min) con una vista viva
+  // (hasta 60): el corte sale del superadmin de la vista. El token está firmado y
+  // ningún usuario real puede llamarse `impersonated-by:` (security 18-10).
+  const quienCorta = sesion?.username ?? (panel && vistaCerrada ? superadminDeSuplantacion(panel.username) : null);
+  if (quienCorta) revocarVistasDeSuperadmin(quienCorta);
+  if (panel && vistaCerrada) {
+    if (panel.jti) cacheStore.set(`revoked-access:${panel.jti}`, true, VIDA_MAXIMA_SUPLANTACION_S);
+    res.cookies.delete(SESSION.COOKIE_NAME);
+    res.cookies.delete("active-tenant");
+    res.cookies.delete("active-tenant-slug");
+  }
+
+  const detalle = `SuperAdmin cerró sesión${quienCorta ? ` (${quienCorta}); sus vistas de tienda abiertas se cerraron` : ""}${vistaCerrada ? ", también la de este navegador" : ""}`;
+  logActivity("logout", "superadmin", detalle, undefined, "superadmin").catch((err) => logger.error("[superadmin/auth] activity log failed", { error: String(err) }));
   return res;
 }
 
