@@ -1,26 +1,23 @@
 "use client";
 
 /**
- * Indicadores del Plan de manejo: las cinco cifras del POA, en tres estados y
- * diciendo cada una contra qué se compara.
+ * Indicadores del Plan de manejo: las cinco cifras del POA, cada una diciendo
+ * contra qué se compara.
  *
- * 1. SE PUEDEN OCULTAR. La ley de la casa dice que plegar no es esconder —un
- *    grupo plegado sigue diciendo sus cifras en una línea—, pero el control
- *    vivía arriba a la derecha, lejos de los números, y «plegado» igual se
- *    comía una fila entera. Brandon pidió poder sacarlas de la pantalla. Ahora
- *    son tres estados, con el control PEGADO al bloque que manda: `detalle`
- *    (las tarjetas), `cifras` (la línea compacta de siempre, el arranque) y
- *    `oculto` (nada, salvo el botón «Ver indicadores» que las trae de vuelta).
- *    La forma y el estar oculto se guardan por SEPARADO en la misma clave: al
- *    volver de «oculto» el bloque aparece como estaba, no en un default.
+ * 1. PLEGABLES COMO EN EL RESTO DEL LIBRO (Brandon 17-10: «compactar el Libro
+ *    TH» como el CTP). Antes eran tres estados propios —tarjetas, cifras en una
+ *    línea u ocultas— con su control en una fila aparte. Ahora son el botón
+ *    «Indicadores» del riel (`useKpisPlegables`): cerrado, las cifras viajan en
+ *    el `title` del botón; abierto, la banda «Aprovechamiento» y las tarjetas.
+ *    Esto sólo arma las tarjetas (`useTarjetasPlan`) y el titular
+ *    (`resumenPlan`); la cabecera decide dónde van.
  *
  * 2. CADA TARJETA DICE CONTRA QUÉ SE COMPARA. Un «1 %» de aprovechamiento no
  *    significa nada solo: significa algo contra el plazo que ya corrió. El
  *    ritmo sale de `analizarZafra` —la MISMA función que dibuja el panel de
  *    Zafra más abajo— y los días que faltan, de `estadoVigencia`, que es de
- *    donde los toma la carátula que está tres centímetros más arriba. Dos
- *    lecturas del mismo dato con dos cuentas distintas se pelean por un día, y
- *    entonces no se le cree a ninguna.
+ *    donde los toma la carátula. Dos lecturas del mismo dato con dos cuentas
+ *    distintas se pelean por un día, y entonces no se le cree a ninguna.
  *
  * Lo que todavía NO se puede decir: CUÁLES especies están fuera del plan (acá
  * sólo llega el conteo) y los m³/ha de lo autorizado —el POA ya publica una
@@ -29,17 +26,12 @@
  * sería una contradicción, no un dato—.
  */
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { StatCard } from "@buleje/design-system";
-import {
-  BarChart3, Eye, EyeOff, FileText, LayoutGrid, Rows3, Scale,
-  ShieldAlert, ShieldCheck, TreePine, TrendingUp, type LucideIcon,
-} from "@buleje/design-system/icons";
+import { FileText, Scale, ShieldAlert, ShieldCheck, TreePine, TrendingUp } from "@buleje/design-system/icons";
 import { estadoVigencia, type EstadoVigencia } from "@/lib/forestal/loth-plan-vigencia";
 import { ZAFRA_ESTADO_LABEL, analizarZafra, type ZafraAnalisis } from "@/lib/forestal/loth-zafra";
-import type { Aprovechamiento } from "@/lib/forestal/loth-aprovechamiento";
 import type { Plan } from "./loth-plan-shared";
-import LothAprovechamientoBanda from "./LothAprovechamientoBanda";
 
 export interface KpisPlan {
   autorizadoTotal: number;
@@ -58,133 +50,29 @@ export interface KpisPlan {
   fueraDelPlan: number;
 }
 
-/** Los tres estados que pidió el dueño. `oculto` es el que antes no existía. */
-export type VistaIndicadores = "detalle" | "cifras" | "oculto";
-export type FormaIndicadores = "detalle" | "cifras";
-
-/** Lo que se recuerda en el navegador: la forma, y si está escondido. */
-export interface PrefIndicadores {
-  forma: FormaIndicadores;
-  oculto: boolean;
-}
-
-export const PREF_INDICADORES_DEFAULT: PrefIndicadores = { forma: "cifras", oculto: false };
-
-/** Un valor viejo —o tocado a mano— no deja el bloque sin estado válido. */
-export function normalizarPref(v: unknown): PrefIndicadores {
-  if (!v || typeof v !== "object") return PREF_INDICADORES_DEFAULT;
-  const o = v as Partial<PrefIndicadores>;
-  return { forma: o.forma === "detalle" ? "detalle" : "cifras", oculto: o.oculto === true };
-}
-
-export const vistaDe = (p: PrefIndicadores): VistaIndicadores => (p.oculto ? "oculto" : p.forma);
-
-const FORMAS: { id: FormaIndicadores; label: string; icon: LucideIcon; titulo: string }[] = [
-  { id: "detalle", label: "Tarjetas", icon: LayoutGrid, titulo: "Una tarjeta por indicador, con contra qué se compara cada cifra" },
-  { id: "cifras", label: "Cifras", icon: Rows3, titulo: "Las mismas cifras, en una sola línea" },
-];
-
-const BTN = "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
-
 /**
- * El control, en la misma fila que los indicadores. Dos preguntas distintas,
- * dos controles: CÓMO se ven (tarjetas o cifras) y SI se ven. Un solo botón
- * que cicla obliga a pasar por el estado que no querés para llegar al que sí.
+ * Las tarjetas del plan, una por indicador. Con la banda «Aprovechamiento»
+ * arriba (`conBanda`), la tarjeta «Aprovechamiento POA» sobra: la banda dice
+ * el mismo % con su barra. Sin plan, ninguna.
  */
-export function ControlIndicadores({ pref, onPref, panel }: {
-  pref: PrefIndicadores;
-  onPref: (p: PrefIndicadores) => void;
-  /** id del bloque que se muestra u oculta (`aria-controls`). */
-  panel: string;
-}) {
-  const oculto = pref.oculto;
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      {!oculto && (
-        <>
-          <span
-            id={`${panel}-label`}
-            className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
-          >
-            <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />
-            Indicadores
-          </span>
-          <div
-            role="group"
-            aria-labelledby={`${panel}-label`}
-            className="inline-flex items-center gap-0.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-0.5"
-          >
-            {FORMAS.map(({ id, label, icon: Icono, titulo }) => {
-              const activo = pref.forma === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => onPref({ forma: id, oculto: false })}
-                  aria-pressed={activo}
-                  aria-controls={panel}
-                  title={titulo}
-                  className={`${BTN} ${activo
-                    ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
-                    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
-                >
-                  <Icono className="h-4 w-4" aria-hidden="true" />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {/* Este botón NO se desmonta al ocultar: cambia de cara. Si desapareciera,
-          quien lo apretó con el teclado se quedaría sin foco en ninguna parte. */}
-      <button
-        type="button"
-        onClick={() => onPref({ ...pref, oculto: !oculto })}
-        aria-expanded={!oculto}
-        aria-controls={panel}
-        title={oculto
-          ? "Vuelve a mostrar los indicadores del plan, como los tenías"
-          : "Saca los indicadores de la pantalla. Se recuerda en este navegador."}
-        className={`${BTN} border px-3 ${oculto
-          ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"}`}
-      >
-        {oculto ? <Eye className="h-4 w-4" aria-hidden="true" /> : <EyeOff className="h-4 w-4" aria-hidden="true" />}
-        {oculto ? "Ver indicadores" : "Ocultar"}
-      </button>
-    </div>
-  );
-}
-
-/**
- * Estado `detalle`: la banda «Aprovechamiento» (el % movilizado con su barra,
- * ritmo en días, exceso y especies) y debajo una tarjeta por cada otro
- * indicador. Sin banda (no llegó el análisis), la tarjeta «Aprovechamiento
- * POA» de siempre ocupa su lugar.
- */
-export function TarjetasIndicadores({ k, plan, aprovechamiento = null }: {
-  k: KpisPlan;
-  plan: Plan | null;
-  aprovechamiento?: Aprovechamiento | null;
-}) {
+export function useTarjetasPlan(k: KpisPlan | null, plan: Plan | null, conBanda: boolean): ReactNode[] {
   const ctx = useContexto(plan, k);
-  const conBanda = aprovechamiento != null;
-  return (
-    <div className="space-y-3">
-      {aprovechamiento && <LothAprovechamientoBanda a={aprovechamiento} especies={k.especies} />}
-      <div className={`grid grid-cols-2 gap-3 ${conBanda ? "lg:grid-cols-4" : "lg:grid-cols-5"}`}>
-        <Tarjetas k={k} ctx={ctx} conBanda={conBanda} />
-      </div>
-    </div>
-  );
+  return k ? tarjetasDe(k, ctx, conBanda) : [];
+}
+
+/** El titular del botón cerrado: las cifras que se miran primero, de las mismas cuentas. */
+export function resumenPlan(k: KpisPlan): string {
+  return [
+    `${pctTxt(k.aprovechamientoPct)} aprovechado`,
+    `saldo ${fx(k.saldoTotal, 1)} m³`,
+    `${ent(k.okCount)}/${ent(k.controlCount)} especies en regla`,
+  ].join(" · ");
 }
 
 interface Contexto { vig: EstadoVigencia; zafra: ZafraAnalisis }
 
 /** El plazo: lo único que convierte un porcentaje suelto en una noticia. */
-function useContexto(plan: Plan | null, k: KpisPlan): Contexto {
+function useContexto(plan: Plan | null, k: KpisPlan | null): Contexto {
   return useMemo(() => {
     const hoy = new Date();
     return {
@@ -192,12 +80,12 @@ function useContexto(plan: Plan | null, k: KpisPlan): Contexto {
       zafra: analizarZafra({
         vigenciaDesde: plan?.vigenciaDesde ?? null,
         vigenciaHasta: plan?.vigenciaHasta ?? null,
-        autorizadoM3: k.autorizadoTotal,
-        movilizadoM3: k.movilizadoTotal,
+        autorizadoM3: k?.autorizadoTotal ?? 0,
+        movilizadoM3: k?.movilizadoTotal ?? 0,
         hoy,
       }),
     };
-  }, [plan, k.autorizadoTotal, k.movilizadoTotal]);
+  }, [plan, k?.autorizadoTotal, k?.movilizadoTotal]);
 }
 
 export const pctTxt = (p: number | null) => (p == null ? "—" : `${p.toFixed(0)}%`);
@@ -227,7 +115,7 @@ function saldoContra(k: KpisPlan, z: ZafraAnalisis, vig: EstadoVigencia): string
 
 /** Qué tanto del censo entra en las cuentas del POA. */
 function censoContra(k: KpisPlan): string {
-  if (k.censoTotal === 0) return "sin censo: importalo desde Opciones";
+  if (k.censoTotal === 0) return "sin censo: impórtalo desde Opciones";
   if (k.censoTruncado) return `el POA se calcula sobre ${ent(k.cargados)}`;
   return "todos entran en el cálculo del POA";
 }
@@ -240,19 +128,23 @@ function especiesContra(k: KpisPlan): string {
   return "sin excesos ni especies fuera";
 }
 
-function Tarjetas({ k, ctx, conBanda }: { k: KpisPlan; ctx: Contexto; conBanda: boolean }) {
+function tarjetasDe(k: KpisPlan, ctx: Contexto, conBanda: boolean): ReactNode[] {
   const pct = k.aprovechamientoPct;
   const ritmo = ritmoDelPoa(ctx.zafra);
   const plural = k.especies === 1 ? "" : "s";
-  return (
-    <>
+  const tarjetas: ReactNode[] = [
       <StatCard
+        key="autorizado"
         density="compact" icon={FileText} emphasis="neutral"
         label="Vol. autorizado" value={`${fx(k.autorizadoTotal, 0)} m³`}
         subValue={`${ent(k.especies)} especie${plural} autorizada${plural}`}
         deltaLabel="techo del POA: no se acumula al vencer"
-      />
-      {!conBanda && <StatCard
+      />,
+  ];
+  if (!conBanda) {
+    tarjetas.push(
+      <StatCard
+        key="aprovechamiento"
         density="compact" icon={TrendingUp}
         emphasis={pct == null ? "neutral" : pct > 100 ? "error" : pct >= 85 ? "warning" : "success"}
         label="Aprovechamiento POA" value={pctTxt(pct)}
@@ -260,29 +152,35 @@ function Tarjetas({ k, ctx, conBanda }: { k: KpisPlan; ctx: Contexto; conBanda: 
         /* Adelantarse al plazo es buena noticia: el saldo que no sale a tiempo
            se pierde. El exceso sobre lo autorizado ya lo grita el color. */
         delta={ritmo.delta} deltaLabel={ritmo.label} deltaPolarity="normal"
-      />}
+      />,
+    );
+  }
+  tarjetas.push(
       <StatCard
+        key="saldo"
         density="compact" icon={Scale}
         emphasis={ctx.zafra.estado === "vencida" && k.saldoTotal > 0 ? "error" : "success"}
         label="Saldo disponible" value={`${fx(k.saldoTotal, 1)} m³`}
         subValue={pct == null ? "sin volumen autorizado" : `${Math.max(0, 100 - pct).toFixed(0)}% del POA sin usar`}
         deltaLabel={saldoContra(k, ctx.zafra, ctx.vig)}
-      />
+      />,
       <StatCard
+        key="censo"
         density="compact" icon={TreePine} emphasis={k.censoTruncado ? "warning" : "neutral"}
         label="Árboles censados" value={ent(k.censoTotal)}
         /* El % de GPS se mide sobre los árboles CARGADOS, que es lo que el pie
            aclara cuando el censo vino cortado. */
         subValue={`${k.georrefPct}% con coordenadas UTM`}
         deltaLabel={censoContra(k)}
-      />
+      />,
       <StatCard
+        key="especies"
         density="compact" icon={k.fueraDelPlan > 0 ? ShieldAlert : ShieldCheck}
         emphasis={k.fueraDelPlan > 0 ? "error" : "success"}
         label="Control de especies" value={`${ent(k.okCount)}/${ent(k.controlCount)}`}
         subValue="cruce censo ↔ autorizado ↔ movilizado"
         deltaLabel={especiesContra(k)}
-      />
-    </>
+      />,
   );
+  return tarjetas;
 }

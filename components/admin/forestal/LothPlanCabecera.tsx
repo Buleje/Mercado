@@ -1,66 +1,45 @@
 "use client";
 
 /**
- * La cabecera del Plan de manejo: el ÚNICO título de la vista, el plan que se
- * está mirando, sus datos de carátula en una línea y los indicadores.
+ * La cabecera del Plan de manejo: qué plan se está mirando, sus datos de
+ * carátula en una línea y los indicadores.
  *
- * Antes el titular del plan era un h3 más entre ocho títulos al mismo peso, la
- * carátula ocupaba una tarjeta de dos filas y los cinco indicadores otra fila
- * entera, siempre abiertos. Ahora:
+ * COMPACTA (Brandon 17-10: «compactar el Libro TH… los botones al lado de las
+ * pestañas, indicadores chicos»). Dentro del libro:
  *
- *   · un `SectionTitle` («Plan de manejo») con el selector del plan al lado;
- *   · los botones de uso ocasional (informe, anexo, importar, nuevo plan)
- *     dentro de «Opciones»;
- *   · los indicadores se muestran como tarjetas, como una línea de cifras o no
- *     se muestran, y la preferencia se RECUERDA en el navegador.
+ *   · el permiso lo elige el CHIP de la banda (`useLothPermiso`): el selector
+ *     propio repetía esa elección una fila más abajo. Con «Todos los permisos»
+ *     la vista muestra la grilla «Varios» (la decide `LothPlanView`);
+ *   · el título, el ⓘ, «Indicadores» y «Opciones» van al riel de las pestañas
+ *     (`VistaHeader` + `useKpisPlegables`): la vista no gasta una fila en
+ *     decir cómo se llama;
+ *   · la carátula, una línea con «Ver ficha» (`LothPlanIdentidadLinea`);
+ *   · los indicadores, plegables y recordados como en el resto del libro.
  *
- * El control de los indicadores vivía acá arriba, en la esquina opuesta y
- * llamándose «Indicadores» al lado de «Opciones»: había que adivinar que ese
- * botón mandaba sobre unos números que estaban dos bloques más abajo. Ahora va
- * pegado a ellos (`LothPlanIndicadores`), que es donde se lo busca.
+ * Fuera del libro (sin chip) queda el selector de siempre, con «Varios».
  *
  * Una PLANTACIÓN (ADR-459) mide otra cosa: no hay censo ni volumen autorizado
- * que cruzar, hay m³ REGISTRADOS y por dónde van. Sus cuatro cifras —registrado
- * · talado · en pie · despachado— salen de la misma cascada que la tabla de la
+ * que cruzar, hay m³ REGISTRADOS y por dónde van. Sus cifras —registrado ·
+ * talado · en pie · despachado— salen de la misma cascada que la tabla de la
  * pestaña «Registro y saldo», y la carátula la pone esa pestaña (con «Editar»),
  * no esta cabecera: dos fichas del mismo registro a dos alturas sobran.
  */
 
-import { SectionTitle } from "@buleje/design-system";
+import type { ReactNode } from "react";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
+import { VistaHeader } from "@/components/admin/shared/module-primitives";
 import { formatNumber } from "@/lib/format";
 import type { Aprovechamiento } from "@/lib/forestal/loth-aprovechamiento";
 import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
 import { permisoConSigla } from "@/lib/forestal/loth-tipos-plan";
 import { agruparPlanesPorTitular } from "@/lib/forestal/loth-planes-por-titular";
 import { type Plan } from "./loth-plan-shared";
+import { useKpisPlegables } from "./kpis-plegables";
 import LothAprovechamientoBanda from "./LothAprovechamientoBanda";
-import LothAprovechamientoBarra from "./LothAprovechamientoBarra";
-import LothPlanIdentidad from "./LothPlanIdentidad";
+import { LothPlanIdentidadLinea } from "./LothPlanIdentidad";
 import { CifraLinea } from "./loth-plan-ui";
-import {
-  ControlIndicadores,
-  PREF_INDICADORES_DEFAULT,
-  TarjetasIndicadores,
-  ent,
-  fx,
-  normalizarPref,
-  pctTxt,
-  tonoPct,
-  vistaDe,
-  type KpisPlan,
-  type PrefIndicadores,
-} from "./LothPlanIndicadores";
-
-/**
- * Clave de la preferencia. Exportada: la prueba en navegador la lee.
- *
- * `-v2` porque lo guardado cambió de forma: antes era un booleano (abierto /
- * plegado) y ahora son dos cosas —qué forma y si está oculto—. Leer el valor
- * viejo con el tipo nuevo daría un estado sin sentido en el primer render.
- */
-export const CLAVE_INDICADORES_PLAN = "loth:plan:indicadores-v2";
+import { resumenPlan, useTarjetasPlan, type KpisPlan } from "./LothPlanIndicadores";
 
 export type { KpisPlan };
 
@@ -79,10 +58,11 @@ export interface KpisPlantacion {
   taladoSinRegistrar?: number;
 }
 
-const PANEL_ID = "loth-plan-indicadores";
-
 /** El valor de «Varios» en el selector: no es un id de plan. */
 const OPCION_VARIOS = "__varios__";
+
+const AYUDA =
+  "El permiso aprobado: lo autorizado por especie, el censo y el avance de la tala. El permiso se elige en el chip de arriba; con «Todos los permisos» ves la grilla de todos los planes.";
 
 export default function LothPlanCabecera({ plans, planId, onPlan, varios = false, onVarios, plan, kpis, kpisPlantacion, aprovechamiento, opciones }: {
   plans: Plan[];
@@ -90,6 +70,7 @@ export default function LothPlanCabecera({ plans, planId, onPlan, varios = false
   onPlan: (id: string | null) => void;
   /** «Varios»: la grilla de todos los planes en vez de uno (la dibuja la vista). */
   varios?: boolean;
+  /** Sólo fuera del libro: dentro, «Varios» es el chip en «Todos». */
   onVarios?: (v: boolean) => void;
   plan: Plan | null;
   kpis: KpisPlan | null;
@@ -99,116 +80,101 @@ export default function LothPlanCabecera({ plans, planId, onPlan, varios = false
   aprovechamiento?: Aprovechamiento | null;
   opciones: MenuAccion[];
 }) {
-  const [guardada, setPref] = useLocalStorage<PrefIndicadores>(CLAVE_INDICADORES_PLAN, PREF_INDICADORES_DEFAULT);
-  const pref = normalizarPref(guardada);
-  const vista = vistaDe(pref);
+  const enLibro = useEnElLibro();
+  const a = aprovechamiento ?? null;
+  const bosque = !varios && !kpisPlantacion ? kpis : null;
+  const tarjetasBosque = useTarjetasPlan(bosque, plan, a != null);
+  const tarjetas: ReactNode[] = varios ? [] : kpisPlantacion ? tarjetasPlantacion(kpisPlantacion, a) : tarjetasBosque;
+  const indicadores = useKpisPlegables({
+    claveMemoria: "loth-plan",
+    tarjetas,
+    resumen: varios ? undefined : kpisPlantacion ? resumenPlantacion(kpisPlantacion) : bosque ? resumenPlan(bosque) : undefined,
+    encabezado: bosque && a ? <LothAprovechamientoBanda a={a} especies={bosque.especies} /> : undefined,
+    compactoEnMovil: true,
+  });
 
   return (
-    <section aria-labelledby="loth-plan-titulo" className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <SectionTitle id="loth-plan-titulo">Plan de manejo</SectionTitle>
-        <select
-          value={varios ? OPCION_VARIOS : planId ?? ""}
-          onChange={(e) => {
-            if (e.target.value === OPCION_VARIOS) return onVarios?.(true);
-            onVarios?.(false);
-            onPlan(e.target.value || null);
-          }}
-          aria-label="Elegir plan de manejo"
-          className="h-10 min-w-0 max-w-full truncate rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 max-sm:basis-full sm:max-w-[26rem]"
-        >
-          {plans.length === 0 && <option value="">Sin planes</option>}
-          {/* Brandon 15-10: «escoger Varios y aparecen recuadros… de todos». */}
-          {onVarios && plans.length > 1 && <option value={OPCION_VARIOS}>Varios — ver los {plans.length} planes</option>}
-          {/* Agrupados por titular: los permisos de una misma comunidad nativa,
-              juntos. El titular va en el rótulo del grupo Y en la opción,
-              porque el select cerrado sólo muestra el texto de la opción. */}
-          {agruparPlanesPorTitular(plans).map((g) => (
-            <optgroup key={g.clave} label={g.planes.length > 1 ? `${g.titular} · ${g.planes.length} planes` : g.titular}>
-              {g.planes.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {/* «Plantación 19-SEC/…» y no «PLANTACION 19-SEC/…»: la sigla como la dice la norma. */}
-                  {permisoConSigla(p.planType, p.planNumber)} — {p.titularName}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          <ActionMenu
-            label="Opciones"
-            title="Informe de ejecución, anexo del POA, importar censo y nuevo plan"
-            actions={opciones}
-            size="sm"
-            compactoEnMovil
-          />
-        </div>
-      </div>
+    <section aria-label="Plan de manejo" className="space-y-3">
+      <VistaHeader titulo="Plan de manejo" meta={varios ? `${plans.length} planes` : undefined} hint={AYUDA}>
+        {!enLibro && <SelectorFueraDelLibro plans={plans} planId={planId} onPlan={onPlan} varios={varios} onVarios={onVarios} />}
+        {indicadores.boton}
+        <ActionMenu
+          label="Opciones"
+          title="Informe de ejecución, anexo del POA, importar censo y nuevo plan"
+          actions={opciones}
+          size="md"
+          compactoEnMovil
+          soloIcono={enLibro}
+          className={enLibro ? "w-12!" : ""}
+        />
+      </VistaHeader>
 
-      {/* Los mismos datos, agrupados por la pregunta que contestan. Sueltos en
-          una línea había que leerla entera para encontrar uno. */}
-      {!varios && plan && !kpisPlantacion && <LothPlanIdentidad plan={plan} />}
+      {/* Los mismos datos, en una línea; «Ver ficha» abre los tres grupos. */}
+      {!varios && plan && !kpisPlantacion && <LothPlanIdentidadLinea plan={plan} />}
 
-      {!varios && (kpis || kpisPlantacion) && (
-        <div className="space-y-2">
-          <ControlIndicadores pref={pref} onPref={setPref} panel={PANEL_ID} />
-          {/* Oculto sigue existiendo en el DOM —`hidden`, no desmontado—: así
-              el `aria-controls` de los botones apunta a algo que existe. */}
-          <div id={PANEL_ID} hidden={vista === "oculto"}>
-            {kpisPlantacion
-              ? <IndicadoresPlantacion k={kpisPlantacion} a={aprovechamiento ?? null} detalle={vista === "detalle"} />
-              : kpis && (vista === "detalle"
-                ? <TarjetasIndicadores k={kpis} plan={plan} aprovechamiento={aprovechamiento ?? null} />
-                : <ResumenEnLinea k={kpis} a={aprovechamiento ?? null} />)}
-          </div>
-        </div>
-      )}
+      {indicadores.panel}
     </section>
   );
 }
 
 /**
- * Estado `cifras`: las mismas cinco de las tarjetas, en el mismo orden y con
- * las mismas cuentas. Cada una en su casilla —etiqueta arriba, número abajo—:
- * ocupa una línea y se encuentra sin leer las otras cuatro.
+ * Fuera del libro no hay chip de permiso: el selector de siempre, agrupado por
+ * titular y con «Varios». Dentro del libro no se pinta (el chip manda).
  */
-function ResumenEnLinea({ k, a }: { k: KpisPlan; a: Aprovechamiento | null }) {
-  const pct = k.aprovechamientoPct;
+function SelectorFueraDelLibro({ plans, planId, onPlan, varios, onVarios }: {
+  plans: Plan[];
+  planId: string | null;
+  onPlan: (id: string | null) => void;
+  varios: boolean;
+  onVarios?: (v: boolean) => void;
+}) {
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        <Casilla etiqueta="Autorizado" valor={`${fx(k.autorizadoTotal, 0)} m³`} nota={`${k.especies} ${k.especies === 1 ? "especie" : "especies"}`} />
-        <Casilla etiqueta="Aprovechado" valor={pctTxt(pct)} nota={`${fx(k.movilizadoTotal, 1)} m³ movilizados`} tono={tonoPct(pct)} />
-        <Casilla etiqueta="Saldo" valor={`${fx(k.saldoTotal, 1)} m³`} nota={pct == null ? "sin volumen autorizado" : `${Math.max(0, 100 - pct).toFixed(0)}% del POA`} />
-        <Casilla
-          etiqueta="Censo"
-          valor={ent(k.censoTotal)}
-          nota={k.censoTruncado ? `calculando sobre ${ent(k.cargados)}` : `${k.georrefPct}% con GPS`}
-          tono={k.censoTruncado ? "warn" : undefined}
-        />
-        <Casilla
-          etiqueta="Especies en regla"
-          valor={`${k.okCount}/${k.controlCount}`}
-          nota={k.fueraDelPlan > 0 ? `${k.fueraDelPlan} fuera del plan` : "todo autorizado"}
-          tono={k.fueraDelPlan > 0 ? "danger" : undefined}
-        />
-      </div>
-      {a && !a.sinDatos && <LothAprovechamientoBarra a={a} compacta />}
-    </div>
+    <select
+      value={varios ? OPCION_VARIOS : planId ?? ""}
+      onChange={(e) => {
+        if (e.target.value === OPCION_VARIOS) return onVarios?.(true);
+        onVarios?.(false);
+        onPlan(e.target.value || null);
+      }}
+      aria-label="Elegir plan de manejo"
+      className="h-12 min-w-0 max-w-full truncate rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 sm:max-w-[26rem]"
+    >
+      {plans.length === 0 && <option value="">Sin planes</option>}
+      {/* Brandon 15-10: «escoger Varios y aparecen recuadros… de todos». */}
+      {onVarios && plans.length > 1 && <option value={OPCION_VARIOS}>Varios — ver los {plans.length} planes</option>}
+      {/* Agrupados por titular: los permisos de una misma comunidad nativa,
+          juntos. El titular va en el rótulo del grupo Y en la opción,
+          porque el select cerrado sólo muestra el texto de la opción. */}
+      {agruparPlanesPorTitular(plans).map((g) => (
+        <optgroup key={g.clave} label={g.planes.length > 1 ? `${g.titular} · ${g.planes.length} planes` : g.titular}>
+          {g.planes.map((p) => (
+            <option key={p.id} value={p.id}>
+              {/* «Plantación 19-SEC/…» y no «PLANTACION 19-SEC/…»: la sigla como la dice la norma. */}
+              {permisoConSigla(p.planType, p.planNumber)} — {p.titularName}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
   );
 }
 
 const m3 = (v: number) => `${formatNumber(v, 3)} m³`;
 
+/** El titular del botón cerrado de una plantación. */
+function resumenPlantacion(k: KpisPlantacion): string {
+  const pct = k.pctTalado == null ? "" : ` (${formatNumber(k.pctTalado, 1)}%)`;
+  return `${formatNumber(k.talado, 1)} de ${formatNumber(k.registrado, 1)} m³ talados${pct} · ${formatNumber(k.enPie, 1)} m³ en pie`;
+}
+
 /**
- * Las cifras de una plantación. En `detalle`, la banda «Aprovechamiento»
- * (registrado, talado, en pie, despachado y patio con su barra, ritmo y
- * especies: lo que antes eran cuatro tarjetas sueltas, ahora con su relación
- * a la vista). En `cifras`, las cuatro en una línea y la barra fina debajo.
+ * Las cifras de una plantación. Con el análisis, UNA tarjeta: la banda
+ * «Aprovechamiento» (registrado, talado, en pie, despachado y patio con su
+ * barra, ritmo y especies). Sin él, las cuatro casillas sueltas.
  * En pie negativo = se taló más de lo registrado: va en rojo y lo dice.
  */
-function IndicadoresPlantacion({ k, a, detalle }: { k: KpisPlantacion; a: Aprovechamiento | null; detalle: boolean }) {
-  if (detalle && a) return <LothAprovechamientoBanda a={a} especies={k.especies} />;
+function tarjetasPlantacion(k: KpisPlantacion, a: Aprovechamiento | null): ReactNode[] {
+  if (a) return [<LothAprovechamientoBanda key="banda" a={a} especies={k.especies} />];
   const especies = `${k.especies} ${k.especies === 1 ? "especie" : "especies"}${k.registrado > 0 ? ` · ≈ ${formatNumber(ptAserrableDeRolliza(k.registrado), 0)} pt` : ""}`;
   const sinReg = k.taladoSinRegistrar ?? 0;
   const pct = sinReg > 0.0001
@@ -218,19 +184,12 @@ function IndicadoresPlantacion({ k, a, detalle }: { k: KpisPlantacion; a: Aprove
   const pt = (v: number) => `≈ ${formatNumber(ptAserrableDeRolliza(v), 0)} pt`;
   const pie = k.enPie < 0 ? `se taló ${formatNumber(-k.enPie, 3)} m³ de más` : k.registrado > 0 ? `${pt(k.enPie)} por talar` : "sin m³ registrados";
   const patio = `${formatNumber(k.enPatio, 3)} m³ en patio`;
-  /* El ritmo, si hay plazo: «vas 12 días atrasado» al pie de lo talado. */
-  const ritmo = a?.ritmo?.diasDesfase != null ? ` · ${a.ritmo.titular.toLowerCase()}` : "";
-  return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Casilla etiqueta="Registrado" valor={m3(k.registrado)} nota={especies} tono={k.especies === 0 ? "warn" : undefined} />
-        <Casilla etiqueta="Talado" valor={m3(k.talado)} nota={pct + ritmo} tono={k.excedido ? "danger" : sinReg > 0.0001 ? "warn" : undefined} />
-        <Casilla etiqueta="En pie" valor={m3(k.enPie)} nota={pie} tono={k.enPie < 0 ? "danger" : undefined} />
-        <Casilla etiqueta="Despachado" valor={m3(k.despachado)} nota={patio} />
-      </div>
-      {a && !a.sinDatos && <LothAprovechamientoBarra a={a} compacta />}
-    </div>
-  );
+  return [
+    <Casilla key="registrado" etiqueta="Registrado" valor={m3(k.registrado)} nota={especies} tono={k.especies === 0 ? "warn" : undefined} />,
+    <Casilla key="talado" etiqueta="Talado" valor={m3(k.talado)} nota={pct} tono={k.excedido ? "danger" : sinReg > 0.0001 ? "warn" : undefined} />,
+    <Casilla key="pie" etiqueta="En pie" valor={m3(k.enPie)} nota={pie} tono={k.enPie < 0 ? "danger" : undefined} />,
+    <Casilla key="despachado" etiqueta="Despachado" valor={m3(k.despachado)} nota={patio} />,
+  ];
 }
 
 /** Una cifra con su etiqueta: lo mínimo para que se pueda encontrar. */

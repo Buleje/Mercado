@@ -10,8 +10,9 @@
  * los precios de UN plan; ahora, con más de un plan, se pide por plan y el
  * margen sale UNA vez, de ese plan.
  *
- * Orden (ley de la vista, rule `ui-components`): título + plan + menú en UNA
- * fila → avisos (veredicto, anomalías) → indicadores plegables → bloques
+ * Orden (ley de la vista): ⓘ, «Indicadores», costos y menú en el riel del
+ * libro; el plan lo elige el chip de permiso de la banda (17-10) → avisos
+ * (veredicto, anomalías) → indicadores plegables → bloques
  * plegables: margen, costo de cada m³, flujo, rendimiento y valor. Nada se
  * borró: las notas de «de dónde sale cada cifra» pasaron a su ⓘ.
  *
@@ -19,14 +20,18 @@
  */
 
 import { useMemo, useState } from "react";
-import { SectionTitle, LoadingState, ErrorAlert, WarningAlert } from "@buleje/design-system";
+import { LoadingState, ErrorAlert, WarningAlert } from "@buleje/design-system";
 import { Axe, Calculator, Download, RefreshCw } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { TextoDeAccion, useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { buildTraceOperations } from "@/lib/forestal/loth-trace";
 import { margenPorArbol, resumirMargenArbol } from "@/lib/forestal/loth-margen-arbol";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
+import { PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
 import { Btn } from "./ctp-shared";
+import { BTN_ACCION_RIEL, CabeceraDeVista } from "./ctp-cabecera-vista";
+import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
 import { useLothRentabilidad } from "./hooks/use-loth-rentabilidad";
 import { FlujoCuerpo, RankingPanel, fm } from "./loth-analitica-piezas";
 import LothRentabilidadArboles, { useKpisArboles } from "./loth-rentabilidad-arboles";
@@ -47,6 +52,38 @@ function Conmutador({ porArbol, onCambiar }: { porArbol: boolean; onCambiar: (v:
       <button type="button" onClick={() => onCambiar(false)} aria-pressed={!porArbol} className={cls(!porArbol)}>Por especie</button>
       <button type="button" onClick={() => onCambiar(true)} aria-pressed={porArbol} className={cls(porArbol)}>Por árbol</button>
     </div>
+  );
+}
+
+const TITULO = "Rentabilidad y rendimiento";
+
+/**
+ * El ⓘ de la vista (va primero en el riel) con el plan del que salen las
+ * cifras. Las «líneas sin plan» eran un aviso propio (42 px): la banda del
+ * libro ya avisa las líneas sin permiso; acá queda su porqué, en el ⓘ.
+ */
+function InfoRentabilidad({ plan = null, sinPlan = 0 }: { plan?: string | null; sinPlan?: number }) {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-1.5">
+      {plan && (
+        <span title={`plan ${plan}`} className="max-w-[14rem] truncate font-mono text-xs text-[var(--text-tertiary)] @max-[60rem]/riel:hidden">
+          plan {plan}
+        </span>
+      )}
+      <InfoTip
+        title={plan ? `${TITULO} · plan ${plan}` : TITULO}
+        what="Cuánto deja el aprovechamiento (margen por especie y por árbol) y cuánto rinde la madera del bosque al producto."
+        affects={
+          <>
+            El margen sale de UN plan: con varios permisos, elige el permiso arriba. Precio = el estimado del plan, no el de cada venta.
+            {sinPlan > 0 &&
+              ` ${sinPlan} ${sinPlan === 1 ? "línea no entra" : "líneas no entran"} en ningún plan (su troza no está en ningún trozado o su árbol está en más de un censo): sus m³ no suman a ningún margen.`}
+          </>
+        }
+        example="Tornillo a S/ 450 el m³ con S/ 282 de costo deja S/ 168 por m³ movilizado."
+        side="bottom"
+      />
+    </span>
   );
 }
 
@@ -85,15 +122,16 @@ export default function LothRentabilidadView({
   const resArboles = useMemo(() => resumirMargenArbol(arboles), [arboles]);
   const kpisArboles = useKpisArboles(arboles, resArboles);
 
-  const titulo = <SectionTitle>Rentabilidad y rendimiento</SectionTitle>;
+  /* El plan lo elige el chip de permiso de la banda (17-10): el selector
+     propio repetía ese chip. Sólo fuera del libro (sin chip) queda el suyo. */
+  const permiso = useLothPermiso();
+  const enLibro = useEnElLibro();
+  const selector = permiso ? null : <SelectorPlan planes={r.planes} planId={r.planId} onElegir={r.elegirPlan} />;
   if (!d) {
-    // Sin cifras PARA ESTE plan (cargando o falló): el selector sigue a la vista para poder cambiar o reintentar.
+    // Sin cifras PARA ESTE plan (cargando o falló).
     return (
       <div className="space-y-3" data-vista-rentabilidad aria-busy={r.cargando}>
-        <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          {titulo}
-          <div className="ml-auto"><SelectorPlan planes={r.planes} planId={r.planId} onElegir={r.elegirPlan} /></div>
-        </header>
+        <CabeceraDeVista titulo={TITULO} info={<InfoRentabilidad />}>{selector}</CabeceraDeVista>
         {r.cargando || !r.error ? (
           <LoadingState message="Calculando rentabilidad y rendimiento..." />
         ) : (
@@ -126,48 +164,31 @@ export default function LothRentabilidadView({
 
   return (
     <div className="space-y-3" data-vista-rentabilidad aria-busy={r.cargando}>
-      <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-          <span className="inline-flex items-center gap-1.5">
-            {titulo}
-            <InfoTip
-              title="Rentabilidad y rendimiento"
-              what="Cuánto deja el aprovechamiento (margen por especie y por árbol) y cuánto rinde la madera del bosque al producto."
-              affects="El margen sale de UN plan: con varios permisos, elige el plan arriba. Precio = el estimado del plan, no el de cada venta."
-              example="Tornillo a S/ 450 el m³ con S/ 282 de costo deja S/ 168 por m³ movilizado."
-              side="bottom"
-            />
-          </span>
-          <p className="text-sm text-[var(--text-secondary)]">
-            {d.hasPlan && nombrePlan ? <>plan <b className="text-[var(--text-primary)]">{nombrePlan}</b></> : "sin plan activo"}
-          </p>
-        </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {kpis.boton}
-          <SelectorPlan planes={r.planes} planId={r.planId} onElegir={r.elegirPlan} />
-          {d.hasPlan && (
-            <Btn variant="secondary" size="sm" onClick={() => setCostosAbierto(true)}><Calculator className="h-4 w-4" /> Costos operativos</Btn>
-          )}
-          <ActionMenu label="Opciones de rentabilidad" actions={acciones} size="md" soloIcono />
-        </div>
-      </header>
+      <CabeceraDeVista
+        titulo={TITULO}
+        info={<InfoRentabilidad plan={d.hasPlan && nombrePlan ? nombrePlan : null} sinPlan={d.sinAtribuir?.lineas ?? 0} />}
+      >
+        {kpis.boton}
+        {selector}
+        {d.hasPlan && (
+          <button type="button" className={BTN_ACCION_RIEL} onClick={() => setCostosAbierto(true)} title="Costos operativos">
+            <Calculator className="h-4 w-4" aria-hidden="true" /> <TextoDeAccion>Costos operativos</TextoDeAccion>
+          </button>
+        )}
+        <ActionMenu label="Opciones de rentabilidad" actions={acciones} size="md" soloIcono className={enLibro ? "w-12!" : ""} />
+      </CabeceraDeVista>
+
+      {/* Con «Todos los permisos» (o sin permiso) y 2+ planes, las cifras son
+          de UN plan: se dice cuál y dónde se cambia. */}
+      {permiso && r.planes.length > 1 && (permiso.planSel == null || permiso.planSel === PERMISO_SIN_PLAN) && (
+        <p data-rentabilidad-plan className="text-sm text-[var(--text-secondary)]">
+          Cifras del plan <b className="text-[var(--text-primary)]">{nombrePlan ?? "vigente"}</b>: para otro, elige su permiso arriba.
+        </p>
+      )}
 
       {r.error && <ErrorAlert title="No se pudo actualizar" description={r.error} />}
 
       {r.veredicto && <LothRentabilidadAvisos veredicto={r.veredicto} anomalias={d.anomalias} fueraDePlan={d.especiesNoAutorizadas ?? []} />}
-
-      {d.sinAtribuir && d.sinAtribuir.lineas > 0 && (
-        <p className="flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
-          {d.sinAtribuir.lineas} {d.sinAtribuir.lineas === 1 ? "línea sin plan" : "líneas sin plan"}: no {d.sinAtribuir.lineas === 1 ? "entra" : "entran"} en ningún plan.
-          <InfoTip
-            title="Líneas sin plan"
-            what="Despachos o consumos cuya troza no está en el trozado de ningún plan, o cuyo árbol está en más de un censo."
-            affects="Sus m³ no suman al margen de este plan ni al de otro: se dejan fuera antes que repartirlos a ciegas."
-            example="Un despacho de la troza 99-XXX-1, que no existe en ningún trozado."
-            side="bottom"
-          />
-        </p>
-      )}
 
       {kpis.panel}
 

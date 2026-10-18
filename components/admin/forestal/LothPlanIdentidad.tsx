@@ -16,10 +16,17 @@
  *
  * De paso entran dos datos que el plan ya guardaba y la pantalla no mostraba:
  * la **ARFFS** que lo aprobó y la **fecha** de la resolución.
+ *
+ * COMPACTA (Brandon 17-10: «compactar el Libro TH»): la ficha de tres grupos
+ * medía 200 px y empujaba las pestañas del plan a la mitad de la pantalla. A la
+ * vista queda UNA línea —titular, título habilitante, resolución, parcela, área
+ * y la vigencia con su punto— y «Ver ficha» abre los tres grupos enteros. A
+ * 400 px la línea se queda con titular y vigencia: el resto está en la ficha.
  */
 
+import { useState } from "react";
 import { Kicker } from "@buleje/design-system";
-import { CalendarClock, FileText, MapPin } from "@buleje/design-system/icons";
+import { CalendarClock, ChevronDown, FileText, MapPin } from "@buleje/design-system/icons";
 import { estadoVigencia } from "@/lib/forestal/loth-plan-vigencia";
 import { fmtFecha, type Plan } from "./loth-plan-shared";
 
@@ -36,6 +43,59 @@ const TONO_PUNTO = {
   danger: "bg-[var(--data-error-500)]",
   neutral: "bg-[var(--text-tertiary)]",
 } as const;
+
+/** La identidad en una línea y, a pedido, la ficha entera debajo. */
+export function LothPlanIdentidadLinea({ plan }: { plan: Plan }) {
+  const [abierta, setAbierta] = useState(false);
+  const vig = estadoVigencia(plan.vigenciaHasta, plan.estado);
+  const datos = [
+    { k: "Título habilitante", v: plan.tituloHabilitante ? `TH ${plan.tituloHabilitante}` : null, mono: true },
+    { k: "Resolución", v: plan.resolucionNumber, mono: false },
+    { k: "Parcela de corta", v: plan.parcelaCorta ? `Parcela ${plan.parcelaCorta}` : null, mono: true },
+    { k: "Área", v: plan.areaHa ? `${Number(plan.areaHa).toFixed(2)} ha` : null, mono: true },
+  ].filter((d): d is { k: string; v: string; mono: boolean } => !!d.v && !!d.v.trim());
+  return (
+    <div className="space-y-2" data-plan-identidad>
+      <div className="flex min-w-0 items-center gap-x-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-3">
+        <p className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5 text-sm">
+          <strong className="min-w-0 truncate font-bold text-[var(--text-primary)]" title={plan.titularName}>
+            {plan.alias?.trim() || plan.titularName}
+          </strong>
+          {datos.map((d) => (
+            <span
+              key={d.k}
+              title={`${d.k}: ${d.v}`}
+              className={`min-w-0 truncate text-[var(--text-secondary)] max-md:hidden ${d.mono ? "font-mono text-xs" : ""}`}
+            >
+              <span className="sr-only">{d.k}: </span>
+              {d.v}
+            </span>
+          ))}
+          <span className={`inline-flex shrink-0 items-center gap-1.5 font-bold ${TONO_TEXTO[vig.tono]}`}>
+            <span className={`h-2 w-2 shrink-0 rounded-full ${TONO_PUNTO[vig.tono]}`} aria-hidden="true" />
+            {vig.texto}
+          </span>
+        </p>
+        <button
+          type="button"
+          onClick={() => setAbierta((v) => !v)}
+          aria-expanded={abierta}
+          aria-controls="loth-plan-ficha"
+          title={abierta ? "Ocultar la ficha del plan" : "Documento, dónde queda y hasta cuándo sirve: todos los datos del plan"}
+          className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+        >
+          {abierta ? "Ocultar ficha" : "Ver ficha"}
+          <ChevronDown className={`h-4 w-4 transition-transform ${abierta ? "rotate-180" : ""}`} aria-hidden="true" />
+        </button>
+      </div>
+      {abierta && (
+        <div id="loth-plan-ficha">
+          <LothPlanIdentidad plan={plan} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function LothPlanIdentidad({ plan }: { plan: Plan }) {
   const vig = estadoVigencia(plan.vigenciaHasta, plan.estado);

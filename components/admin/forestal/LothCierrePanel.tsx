@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * LothCierrePanel — pestaña "Cierre" del Libro TH. Cerrar un mes lo vuelve un
+ * LothCierrePanel — «Cerrar el mes», la segunda pestaña de Cumplimiento del
+ * Libro TH (antes, la vista «Cierre»; 17-10 entró a `LothCompliancePanel`). Cerrar un mes lo vuelve un
  * acta inmutable (invariante P1): las líneas fechadas en él ya no se pueden
  * registrar ni anular hasta reabrir. Es lo #1 que pide OSINFOR de un libro.
  *
@@ -147,28 +148,28 @@ export default function LothCierrePanel({
     <div className="space-y-4">
       {error && <ErrorAlert title="No se pudo completar la acción" description={error} />}
 
-      {/* Cerrar un período */}
+      {/* Cerrar un período. Sin fila de título (17-10): la pestaña ya dice
+          «Cerrar el mes»; el porqué queda en el ⓘ al lado del mes. */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <div className="mb-3 flex items-center gap-2">
-          <Lock className="h-4 w-4 text-[var(--accent-dark)] dark:text-[var(--accent)]" />
-          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Cerrar un período</CardTitle>
-          <InfoTip
-            title="Cerrar un período"
-            what="Vuelve sus líneas inmutables: no se podrán registrar ni anular hasta reabrirlo."
-            affects="Es lo que exige OSINFOR de un libro de operaciones ante una fiscalización."
-            example="Cierras setiembre: desde ese momento ninguna línea de setiembre se puede editar ni anular sin reabrir el mes."
-          />
-        </div>
         <div className="flex flex-wrap items-end gap-3">
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Mes a cerrar</span>
+          <div>
+            <span className="mb-1.5 flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)]">
+              <label htmlFor="loth-cierre-mes">Mes a cerrar</label>
+              <InfoTip
+                title="Cerrar un período"
+                what="Vuelve sus líneas inmutables: no se podrán registrar ni anular hasta reabrirlo."
+                affects="Es lo que exige OSINFOR de un libro de operaciones ante una fiscalización."
+                example="Cierras setiembre: desde ese momento ninguna línea de setiembre se puede editar ni anular sin reabrir el mes."
+              />
+            </span>
             <input
+              id="loth-cierre-mes"
               type="month"
               value={period}
               onChange={(e) => { setPeriod(e.target.value); setConfirmCerrar(false); }}
-              className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
-          </label>
+          </div>
           {!confirmCerrar ? (
             <Btn variant="primary" size="md" onClick={() => setConfirmCerrar(true)} disabled={busy || resumen.lineas === 0}>
               <Lock className="h-4 w-4" /> Cerrar período

@@ -1,11 +1,17 @@
+"use client";
+
 /**
  * LothMapaCabecera — el único título de la vista Mapa del Libro TH y, en una
  * línea, lo que hay en el mapa: operaciones con GPS, árboles del censo, la
  * parcela, cuántos caen fuera y cuántas rutas y puntos tiene el plano. Salió
  * de `LothMapaView` (29-09) cuando entraron las rutas.
+ *
+ * Dentro del libro (17-10, «compactar el Libro TH») el título se calla: el
+ * riel de las pestañas ya dice «Mapa». Queda la línea de lo que hay.
  */
 
 import { SectionTitle } from "@buleje/design-system";
+import { useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import { Loader2 } from "@buleje/design-system/icons";
 import { formatNumber } from "@/lib/format";
 import { areaVsDeclarada } from "./loth-mapa-alcance";
@@ -49,9 +55,10 @@ interface Props {
 
 export default function LothMapaCabecera({ cargando, permiso, operaciones, arboles, areaHa, declaradaHa, heredada = false, areasPermisos = 0, fuera, rutas, puntos }: Props) {
   const vs = areaHa != null && declaradaHa != null ? areaVsDeclarada(areaHa, declaradaHa) : null;
+  const enLibro = useEnElLibro();
   return (
     <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-      <SectionTitle>Mapa del área de aprovechamiento</SectionTitle>
+      {!enLibro && <SectionTitle>Mapa del área de aprovechamiento</SectionTitle>}
       <p className="text-sm tabular-nums text-[var(--text-secondary)]" aria-live="polite">
         {cargando ? (
           <span className="inline-flex items-center gap-1.5">

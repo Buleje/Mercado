@@ -10,8 +10,9 @@
  * nueve bloques en una tirada —4,8 pantallas, 5 tablas, 8 títulos al mismo
  * peso—. Ahora la vista contesta de arriba abajo:
  *
- *   1. ¿Qué plan y cuánto queda?  → cabecera: título, plan, carátula en una
- *      línea e indicadores plegables (recordados).
+ *   1. ¿Qué plan y cuánto queda?  → cabecera: carátula en una línea; título,
+ *      «Indicadores» y «Opciones» en el riel del libro (17-10). El plan lo
+ *      elige el chip de permiso de la banda; con «Todos», la grilla «Varios».
  *   2. ¿Hay algo mal HOY?          → avisos, FUERA de las pestañas.
  *   3. El detalle, por pregunta    → pestañas «Avance y tala» · «Especies» ·
  *      «Censo», con las tablas que hablan de lo mismo juntas.
@@ -30,8 +31,9 @@
  */
 
 import { useCallback, useMemo } from "react";
-import { AlertCircle, FileText, Loader2, Plus } from "@buleje/design-system/icons";
+import { AlertCircle, FileText, LayoutGrid, Loader2, Plus } from "@buleje/design-system/icons";
 import { analizarAprovechamiento } from "@/lib/forestal/loth-aprovechamiento";
+import { PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
 import LothPlanCabecera from "./LothPlanCabecera";
 import LothPlanModales from "./LothPlanModales";
 import LothPlanPaneles from "./LothPlanPaneles";
@@ -39,6 +41,7 @@ import LothPlanesVarios from "./LothPlanesVarios";
 import { usePlanesVarios } from "./hooks/use-loth-planes-varios";
 import { useLothPlanView } from "./hooks/use-loth-plan-view";
 import { useLothAprovechamientoHechos } from "./hooks/use-loth-aprovechamiento-hechos";
+import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
 
 /* Exportadas: la prueba en navegador las lee. */
 export { CLAVE_PESTANA_PLAN, CLAVE_PESTANA_PLANTACION } from "./loth-plan-view-shared";
@@ -53,21 +56,44 @@ export default function LothPlanView({
 } = {}) {
   const v = useLothPlanView(reloadSignal, onCambioDelLibro);
   const { d, trees, plan, cargando, esPlantacion, errorPlan, opciones } = v;
-  /* «Varios» (Brandon 15-10): la grilla de todos los planes. Las opciones que
-     actúan sobre UN plan (informe, editar, eliminar…) no aplican a la grilla:
-     queda «Nuevo plan». Elegir una tarjeta = elegir el plan en el selector. */
-  const [varios, setVarios] = usePlanesVarios();
-  const verVarios = varios && d.plans.length > 0;
+  /* «Varios» (Brandon 15-10): la grilla de todos los planes. Dentro del libro
+     la decide el CHIP de permiso (17-10): «Todos» o «Líneas sin permiso» con
+     más de un plan = la grilla; elegir una tarjeta elige ese permiso para todo
+     el libro (`setPlanId` lo propaga al chip). Fuera del libro, el selector
+     propio con su opción «Varios» (`&planes=varios`). Las opciones que actúan
+     sobre UN plan (informe, editar, eliminar…) no aplican a la grilla: queda
+     «Nuevo plan». */
+  const libro = useLothPermiso();
+  const [variosUrl, setVarios] = usePlanesVarios();
+  const todosEnElLibro = libro != null && libro.listo && (libro.planSel == null || libro.planSel === PERMISO_SIN_PLAN);
+  const verVarios = libro ? todosEnElLibro && d.plans.length > 1 : variosUrl && d.plans.length > 0;
   const { setPlanId } = d;
   const elegirDeVarios = useCallback(
     (id: string) => {
       setPlanId(id);
-      setVarios(false);
+      if (!libro) setVarios(false);
       const vista = document.querySelector("[data-vista-plan]");
       if (vista && vista.getBoundingClientRect().top < 0) vista.scrollIntoView({ block: "start" });
     },
-    [setPlanId, setVarios],
+    [setPlanId, setVarios, libro],
   );
+  /* Con un plan elegido en el chip, la grilla se pide desde «Opciones»: es
+     volver el chip a «Todos». */
+  const elegirTodos = libro?.elegirPlan;
+  const opcionesVista = useMemo(() => {
+    if (verVarios) return opciones.filter((o) => o.id === "nuevo-plan");
+    if (!elegirTodos || d.plans.length < 2) return opciones;
+    return [
+      ...opciones,
+      {
+        id: "ver-todos-los-planes",
+        label: `Ver los ${d.plans.length} planes`,
+        hint: "La grilla con el avance de cada permiso: pone el chip de arriba en «Todos los permisos»",
+        icon: LayoutGrid,
+        onSelect: () => elegirTodos(null),
+      },
+    ];
+  }, [verVarios, opciones, elegirTodos, d.plans.length]);
   /* Lo recibido en el CTP, la edad del patio y las semanas (Extracción del plan):
      sólo se pregunta si el libro ya movió algo de este plan. */
   const tc = d.cascada.total;
@@ -106,9 +132,9 @@ export default function LothPlanView({
         planId={d.planId}
         onPlan={d.setPlanId}
         varios={verVarios}
-        onVarios={setVarios}
+        onVarios={libro ? undefined : setVarios}
         plan={plan}
-        opciones={verVarios ? opciones.filter((o) => o.id === "nuevo-plan") : opciones}
+        opciones={opcionesVista}
         aprovechamiento={aprovechamiento}
         kpis={
           plan
