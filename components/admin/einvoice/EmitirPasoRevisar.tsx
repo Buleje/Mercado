@@ -162,6 +162,24 @@ export function EmitirPasoRevisar({ pedido, datos, setDatos, emisor, falta, onCa
           </span>
           <span className="text-base font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(pedido.total)}</span>
         </div>
+        {datos.tipo === "factura" && (
+          <div className="flex items-start gap-1 border-t border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-primary)]">
+            <label className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 shrink-0 accent-[var(--accent)]"
+                checked={Boolean(datos.detraccionMadera)}
+                onChange={(e) => cambiar({ detraccionMadera: e.target.checked })}
+              />
+              <span>Venta de madera (sujeta a detracción)</span>
+            </label>
+            <InfoTip
+              what="Marca esto cuando la factura es por madera (bien 008 del SPOT). El sistema le calcula la detracción del 4 %."
+              affects="Sólo se aplica si la factura pasa de S/ 700 y tienes cargada la cuenta de detracciones del Banco de la Nación; esa parte el cliente la deposita ahí, no a ti. Si la venta es exonerada por la Amazonía, no se aplica."
+              side="top"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

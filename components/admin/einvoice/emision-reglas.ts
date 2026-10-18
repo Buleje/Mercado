@@ -151,6 +151,9 @@ export interface DatosCliente {
   tipo: TipoComprobante;
   nombre: string;
   documento: string;
+  /** Venta de madera (bien 008 del SPOT): el servidor le calcula la detracción
+   *  del 4 % si la factura pasa de S/ 700 y hay cuenta del Banco de la Nación. */
+  detraccionMadera?: boolean;
 }
 
 /** Lo que falta del cliente, junto al campo; `null` = listo. */

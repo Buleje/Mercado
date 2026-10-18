@@ -19,7 +19,7 @@ export type PasoEmision = "origen" | "revisar" | "resultado";
 
 /** Boleta sin nombre del cliente: SUNAT admite «Clientes varios» por debajo del tope. */
 function datosDe(p: PedidoElegible): DatosCliente {
-  return { tipo: "boleta", nombre: p.cliente || "Clientes varios", documento: "" };
+  return { tipo: "boleta", nombre: p.cliente || "Clientes varios", documento: "", detraccionMadera: false };
 }
 
 export function useEmision(recargar: () => Promise<EDocument[] | null>) {
@@ -82,6 +82,8 @@ export function useEmision(recargar: () => Promise<EDocument[] | null>) {
           clienteNombre: datos.nombre.trim(),
           clienteDocumento: datos.documento.trim() || undefined,
           clienteTipoDocumento: datos.tipo === "factura" ? "RUC" : "DNI",
+          // La detracción sólo existe en factura; el servidor decide si aplica (regla 6).
+          bienSujetoDetraccion: datos.tipo === "factura" && datos.detraccionMadera ? "008" : undefined,
         }),
       });
       httpStatus = res.status;
