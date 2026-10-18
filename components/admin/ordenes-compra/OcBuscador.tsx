@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Search } from "@buleje/design-system/icons";
 import { cn, limaDateKey } from "@/lib/utils";
+import { FiltrosEnBoton } from "@/components/admin/shared";
 import type { FiltroEstado } from "@/hooks/use-filtros-ordenes-compra";
 import type { OrdenesCompra } from "@/components/admin/ordenes-compra/hooks/use-ordenes-compra";
 
@@ -75,6 +76,18 @@ export default function OcBuscador({ oc }: { oc: OrdenesCompra }) {
   ];
   const visibles = chips.filter((c) => c.id === "todas" || c.count > 0 || f.estado === c.id);
 
+  const nombreProveedor = f.proveedorId
+    ? suppliers.find((s) => s.id === f.proveedorId)?.name ?? orders.find((o) => o.supplierId === f.proveedorId)?.supplierName ?? "Otro proveedor"
+    : "";
+  const hayFechas = Boolean(f.desde || f.hasta);
+  const limpiarFiltros = () => { setEligiendo(false); f.limpiar(); };
+  const activos = (f.estado !== "todas" ? 1 : 0) + (f.proveedorId ? 1 : 0) + (hayFechas ? 1 : 0);
+  const chipsActivos = [
+    ...(f.estado !== "todas" ? [{ id: "estado", label: chips.find((c) => c.id === f.estado)?.label ?? f.estado, onQuitar: () => f.setEstado("todas") }] : []),
+    ...(f.proveedorId ? [{ id: "proveedor", label: nombreProveedor, onQuitar: () => f.setProveedorId(null) }] : []),
+    ...(hayFechas ? [{ id: "fecha", label: PERIODOS.find((p) => p.id === periodo)?.label ?? "Fechas", onQuitar: () => { setEligiendo(false); f.setDesde(""); f.setHasta(""); } }] : []),
+  ];
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative min-w-[12rem] flex-1">
@@ -97,68 +110,63 @@ export default function OcBuscador({ oc }: { oc: OrdenesCompra }) {
           </button>
         )}
       </div>
-      <div role="group" aria-label="Estado de la orden" className="flex flex-wrap items-center gap-1.5">
-        {visibles.map((c) => {
-          const activo = f.estado === c.id;
-          return (
-            <button
-              key={c.id}
-              type="button"
-              aria-pressed={activo}
-              onClick={() => f.setEstado(c.id)}
-              className={cn(
-                "inline-flex h-12 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors",
-                activo
-                  ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
-              )}
-            >
-              {c.label}
-              <span className="tabular-nums opacity-80">{c.count}</span>
-            </button>
-          );
-        })}
-      </div>
-      <select
-        value={f.proveedorId ?? ""}
-        onChange={(e) => f.setProveedorId(e.target.value || null)}
-        aria-label="Filtrar por proveedor"
-        className={cn(CAMPO, "min-w-0 flex-1 cursor-pointer sm:w-48 sm:flex-none")}
-      >
-        <option value="">Todos los proveedores</option>
-        {/* Un proveedor que no está en tu lista (borrado, o de otra tienda: 10-10, las automáticas de main
-            apuntan a uno de `demo`) igual se nombra: si no, el select decía «Todos» con el filtro puesto. */}
-        {f.proveedorId && !suppliers.some((s) => s.id === f.proveedorId) && (
-          <option value={f.proveedorId}>{orders.find((o) => o.supplierId === f.proveedorId)?.supplierName ?? "Otro proveedor"}</option>
-        )}
-        {suppliers.map((s) => (
-          <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (${s.ruc})` : ""}</option>
-        ))}
-      </select>
-      <select
-        value={periodo}
-        onChange={(e) => elegirPeriodo(e.target.value as Periodo)}
-        aria-label="Fecha de la orden"
-        className={cn(CAMPO, "min-w-0 flex-1 cursor-pointer sm:w-40 sm:flex-none")}
-      >
-        {PERIODOS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-      </select>
-      {periodo === "elegir" && (
-        <>
-          <input type="date" lang="es-PE" value={f.desde} max={f.hasta || undefined} onChange={(e) => f.setDesde(e.target.value)} aria-label="Desde" title="Desde" className={CAMPO} />
-          <input type="date" lang="es-PE" value={f.hasta} min={f.desde || undefined} onChange={(e) => f.setHasta(e.target.value)} aria-label="Hasta" title="Hasta" className={CAMPO} />
-        </>
-      )}
-      {f.hayFiltros && (
-        <button
-          type="button"
-          onClick={() => { setEligiendo(false); f.limpiar(); }}
-          className="inline-flex h-12 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+      <FiltrosEnBoton activos={activos} chips={chipsActivos} onLimpiar={limpiarFiltros}>
+        <div className="space-y-1.5">
+          <span className="text-xs font-semibold text-[var(--text-secondary)]">Estado</span>
+          <div role="group" aria-label="Estado de la orden" className="flex flex-wrap items-center gap-1.5">
+            {visibles.map((c) => {
+              const activo = f.estado === c.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  aria-pressed={activo}
+                  onClick={() => f.setEstado(c.id)}
+                  className={cn(
+                    "inline-flex h-12 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors",
+                    activo
+                      ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  {c.label}
+                  <span className="tabular-nums opacity-80">{c.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <select
+          value={f.proveedorId ?? ""}
+          onChange={(e) => f.setProveedorId(e.target.value || null)}
+          aria-label="Filtrar por proveedor"
+          className={cn(CAMPO, "w-full cursor-pointer")}
         >
-          <X className="h-4 w-4" aria-hidden /> Limpiar
-          <span className="sr-only">filtros</span>
-        </button>
-      )}
+          <option value="">Todos los proveedores</option>
+          {/* Un proveedor que no está en tu lista (borrado, o de otra tienda: 10-10, las automáticas de main
+              apuntan a uno de `demo`) igual se nombra: si no, el select decía «Todos» con el filtro puesto. */}
+          {f.proveedorId && !suppliers.some((s) => s.id === f.proveedorId) && (
+            <option value={f.proveedorId}>{orders.find((o) => o.supplierId === f.proveedorId)?.supplierName ?? "Otro proveedor"}</option>
+          )}
+          {suppliers.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (${s.ruc})` : ""}</option>
+          ))}
+        </select>
+        <select
+          value={periodo}
+          onChange={(e) => elegirPeriodo(e.target.value as Periodo)}
+          aria-label="Fecha de la orden"
+          className={cn(CAMPO, "w-full cursor-pointer")}
+        >
+          {PERIODOS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+        </select>
+        {periodo === "elegir" && (
+          <>
+            <input type="date" lang="es-PE" value={f.desde} max={f.hasta || undefined} onChange={(e) => f.setDesde(e.target.value)} aria-label="Desde" title="Desde" className={cn(CAMPO, "w-full")} />
+            <input type="date" lang="es-PE" value={f.hasta} min={f.desde || undefined} onChange={(e) => f.setHasta(e.target.value)} aria-label="Hasta" title="Hasta" className={cn(CAMPO, "w-full")} />
+          </>
+        )}
+      </FiltrosEnBoton>
     </div>
   );
 }
