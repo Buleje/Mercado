@@ -12,6 +12,7 @@ import { formatCurrency } from "@/lib/format";
 import CostoEnFila from "@/components/admin/inventario/CostoEnFila";
 import { ChipsDeFiltros } from "@/components/admin/shared/filtros-columna";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
+import InventarioAltaRapida from "@/components/admin/inventario/InventarioAltaRapida";
 import InventarioAccionesProducto from "@/components/admin/inventario/InventarioAccionesProducto";
 
 /** Chips de filtros de columna y la vista en tarjetas. Pieza de InventoryTab: recibe `useInventario` entero. */
@@ -125,11 +126,14 @@ export default function InventarioTarjetas({ inv }: { inv: Inventario }) {
           );
         })}
         {filteredProducts.length === 0 && (
-          <EmptyState
-            illustration={products.length === 0 ? "products" : "search"}
-            title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
-            description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
-          />
+          <>
+            <EmptyState
+              illustration={products.length === 0 ? "products" : "search"}
+              title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
+              description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
+            />
+            <InventarioAltaRapida inv={inv} />
+          </>
         )}
         <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
       </div>

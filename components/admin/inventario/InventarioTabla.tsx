@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Paginator } from "@/hooks/use-pagination";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
+import InventarioAltaRapida from "@/components/admin/inventario/InventarioAltaRapida";
 import InventarioFilasTabla from "@/components/admin/inventario/InventarioFilasTabla";
 
 /** Tabla de productos (cabecera ordenable). Pieza de InventoryTab: recibe `useInventario` entero. */
@@ -56,11 +57,14 @@ export default function InventarioTabla({ inv }: { inv: Inventario }) {
           </DataTable>
         </div>
         {filteredProducts.length === 0 && (
-          <EmptyState
-            illustration={products.length === 0 ? "products" : "search"}
-            title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
-            description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
-          />
+          <>
+            <EmptyState
+              illustration={products.length === 0 ? "products" : "search"}
+              title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
+              description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
+            />
+            <InventarioAltaRapida inv={inv} />
+          </>
         )}
         <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
       </div>

@@ -19,6 +19,7 @@ import { usePOSTamanoLetra } from "@/components/admin/pos/use-pos-tamano-letra";
 import POSCategoryChips from "@/components/admin/pos/POSCategoryChips";
 import POSOfflineBar from "@/components/admin/pos/POSOfflineBar";
 import POSToolbar from "@/components/admin/pos/POSToolbar";
+import POSAltaRapida from "@/components/admin/pos/POSAltaRapida";
 import POSProductGrid from "@/components/admin/pos/POSProductGrid";
 import POSCartPanel, { POSBarraCobroMovil } from "@/components/admin/pos/POSCartPanel";
 import POSNoCajaWarning from "@/components/admin/pos/POSNoCajaWarning";
@@ -69,6 +70,8 @@ export default function POSView() {
   const [showNoCajaWarning, setShowNoCajaWarning] = useState(false);
   const [showWhatsAppOrder, setShowWhatsAppOrder] = useState(false);
   const [showTrueque, setShowTrueque] = useState(false);
+  // Alta rápida: el texto buscado o el código leído que no existe (null = cerrada).
+  const [altaRapida, setAltaRapida] = useState<string | null>(null);
   const paymentMethod: PaymentMethod = "efectivo";
 
   useScrollLock(showPayment || !!saleComplete || expanded);
@@ -79,6 +82,7 @@ export default function POSView() {
     products,
     addToCart: carrito.addToCart,
     playError: sound.playError,
+    onCrearConCodigo: setAltaRapida,
   });
 
   // Gate de cobro: sin caja o sin turno, primero el aviso (null = no se sabe: no se traba).
@@ -166,6 +170,7 @@ export default function POSView() {
         onHistorial={() => setShowHistory(true)}
         onDevolucion={() => setShowReturn(true)}
         onTrueque={() => setShowTrueque(true)}
+        onCrearProducto={setAltaRapida}
       />
       {indicadores.panel}
       {saleError && <POSAvisoDeError mensaje={saleError} onQuitar={() => setSaleError(null)} />}
@@ -204,6 +209,8 @@ export default function POSView() {
           openPaymentModal={openPaymentModal}
         />
       </div>
+
+      <POSAltaRapida texto={altaRapida} onClose={() => setAltaRapida(null)} products={products} fetchProducts={fetchProducts} addToCart={carrito.addToCart} />
 
       {showNoCajaWarning && (
         <POSNoCajaWarning turnoAbierto={turnoAbierto} cashRegisterOpen={cashRegisterOpen} setShowNoCajaWarning={setShowNoCajaWarning} setShowPayment={setShowPayment} />

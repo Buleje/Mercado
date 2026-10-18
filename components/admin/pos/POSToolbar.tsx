@@ -51,6 +51,8 @@ interface POSToolbarProps {
   onHistorial: () => void;
   onDevolucion: () => void;
   onTrueque: () => void;
+  /** Alta rápida de un producto que no existe (texto buscado). */
+  onCrearProducto: (texto: string) => void;
 }
 
 type DetectorDeCodigos = new (opts?: { formats: string[] }) => { detect: (img: ImageBitmap) => Promise<Array<{ rawValue: string }>> };
@@ -187,6 +189,7 @@ export default function POSToolbar(props: POSToolbarProps) {
             <POSSearchBar
               products={products as { id: number; name: string; price: number; image?: string; barcode?: string; stock?: number }[]}
               onAddToCart={carrito.handleAddFromSearch}
+              onCrear={props.onCrearProducto}
             />
           </div>
           <POSVoiceInput

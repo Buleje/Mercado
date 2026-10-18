@@ -86,22 +86,25 @@ interface Opciones {
   products: Product[];
   addToCart: (product: Product) => void;
   playError: () => void;
+  /** Abre el alta rápida con el código leído (botón del aviso «no está en tu inventario»). */
+  onCrearConCodigo?: (codigo: string) => void;
 }
 
-export function usePOSLectorCodigo({ products, addToCart, playError }: Opciones) {
+export function usePOSLectorCodigo({ products, addToCart, playError, onCrearConCodigo }: Opciones) {
   const avisarNoEsta = useCallback((code: string) => {
     playError();
     const id = `pos-codigo-${code}`;
     const titulo = `El código ${code} no está en tu inventario`;
-    toast.error(titulo, { id, description: "Búscalo por nombre o regístralo en Productos con ese código." });
+    const accion = onCrearConCodigo ? { label: "Crear producto", onClick: () => onCrearConCodigo(code) } : undefined;
+    toast.error(titulo, { id, description: "Búscalo por nombre o regístralo en Productos con ese código.", action: accion });
     // /api/barcode-lookup consulta Open Food Facts (no tu inventario): sólo aporta el nombre, sin frenar el aviso.
     fetch(`/api/barcode-lookup?code=${encodeURIComponent(code)}`, { signal: AbortSignal.timeout(4000) })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { found?: boolean; name?: string } | null) => {
-        if (d?.found && d.name) toast.error(titulo, { id, description: `Es «${d.name}». Regístralo en Productos con ese código para venderlo.` });
+        if (d?.found && d.name) toast.error(titulo, { id, description: `Es «${d.name}». Regístralo en Productos con ese código para venderlo.`, action: accion });
       })
       .catch((err) => logger.warn("[pos] barcode-lookup sin respuesta", { error: String(err) }));
-  }, [playError]);
+  }, [playError, onCrearConCodigo]);
 
   /** Cámara o foto: el código llega entero. */
   const handleBarcode = useCallback(async (code: string) => {

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { StockLevelBar } from "@/components/admin/inventario/StockLevelBar";
 import { StockTrackToggle } from "@/components/admin/inventario/StockTrackToggle";
 import { CategorySuggestionInline } from "@/components/admin/inventario/CategorySuggestionInline";
+import { PrecioConIgv } from "@/components/admin/inventario/PrecioConIgv";
 import { Field } from "@/components/admin/shared/Field";
 import { FIELD_INPUT, FIELD_LABEL } from "@/components/admin/inventario/inventario-compartido";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
@@ -40,9 +41,7 @@ export default function EditarProductoDatos({ inv }: { inv: Inventario }) {
             />
           </>)}
         </Field>
-        <Field label="Precio de venta (S/)" labelClassName={FIELD_LABEL}>
-          <input type="number" step="0.01" min="0" value={editForm.price ?? ""} onChange={(e) => setEditForm(f => ({ ...f, price: Number(e.target.value) }))} className={FIELD_INPUT} />
-        </Field>
+        <PrecioConIgv className="sm:col-span-2" valor={editForm.price == null ? "" : String(editForm.price)} onCambio={(v) => setEditForm(f => ({ ...f, price: Number(v) }))} taxType={editForm.taxType} />
         <Field label="Precio de costo (S/)" labelClassName={FIELD_LABEL}>
           <input type="number" step="0.01" min="0" value={editForm.costPrice ?? ""} onChange={(e) => setEditForm(f => ({ ...f, costPrice: Number(e.target.value) || undefined }))} className={FIELD_INPUT} />
         </Field>

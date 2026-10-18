@@ -14,6 +14,7 @@ import InventarioOpciones from "@/components/admin/inventario/InventarioOpciones
 import InventarioTarjetas from "@/components/admin/inventario/InventarioTarjetas";
 import InventarioTabla from "@/components/admin/inventario/InventarioTabla";
 import InventarioSelectorProductos from "@/components/admin/inventario/InventarioSelectorProductos";
+import { useAltaPendiente } from "@/components/admin/inventario/hooks/use-alta-pendiente";
 import ModalNuevoProducto from "@/components/admin/inventario/ModalNuevoProducto";
 import ModalEditarProducto from "@/components/admin/inventario/ModalEditarProducto";
 import InventarioMasivo from "@/components/admin/inventario/InventarioMasivo";
@@ -29,6 +30,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   // El estado y las acciones viven en `useInventario` (inventario/hooks/); cada bloque de la vista,
   // en su pieza de `inventario/`. Partido el 09-10 sin cambiar el DOM.
   const inv = useInventario(headerActions);
+  useAltaPendiente(inv); // un alta rápida del mostrador que pidió el formulario completo
   const {
     loading, view, setEditModalProduct, showScanner, setShowScanner, handleBarcodeScan, catLabelOf,
     filteredProducts, setSearch,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Package } from "@buleje/design-system/icons";
+import { Search, Package, Plus } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { estaAgotado } from "@/lib/pos/stock-vendible";
@@ -26,6 +26,8 @@ interface POSSearchProduct {
 interface POSSearchBarProps {
   products: POSSearchProduct[];
   onAddToCart: (productId: number) => void;
+  /** «Crear "X"» cuando no hay resultados: abre el alta rápida con lo escrito. */
+  onCrear?: (texto: string) => void;
 }
 
 // ── Fuzzy match ────────────────────────────────────────────────────────
@@ -140,6 +142,7 @@ function useFocoAlEntrar() {
 export default function POSSearchBar({
   products,
   onAddToCart,
+  onCrear,
 }: POSSearchBarProps) {
   const inputRef = useFocoAlEntrar();
   const [query, setQuery] = useState("");
@@ -241,6 +244,17 @@ export default function POSSearchBar({
             <div className="flex flex-col items-center justify-center py-6 text-[var(--text-tertiary)] dark:text-muted">
               <Package className="h-5 w-5 mb-1" />
               <p className="text-sm">No se encontraron productos</p>
+              {onCrear && (
+                <button
+                  type="button"
+                  data-qa="pos-crear-producto"
+                  onClick={() => { const t = query.trim(); setShowResults(false); onCrear(t); }}
+                  className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--accent-soft)] dark:text-[var(--accent)]"
+                >
+                  <Plus className="h-4 w-4" strokeWidth={2.5} />
+                  Crear «{query.trim()}»
+                </button>
+              )}
             </div>
           ) : (
             results.map((p, idx) => {
