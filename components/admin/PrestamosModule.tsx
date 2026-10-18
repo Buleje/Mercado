@@ -8,14 +8,14 @@ import ActionMenu from "@/components/admin/shared/action-menu";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
 import { escapeHtml } from "@/lib/safe-html";
-import { m, AnimatePresence } from "@/components/admin/providers";
+import { m } from "@/components/admin/providers";
 import {
   Search, Plus, X, DollarSign, Loader2, AlertTriangle,
   ChevronLeft, ChevronRight, User, Landmark,
   Clock, CheckCircle2, XCircle, Ban, Calculator, FileText, Printer, TrendingUp, BarChart3,
   ArrowUpDown, ArrowDownToLine, ArrowUpFromLine, Building2,
   RefreshCcw, Paperclip, Coins,
-  Filter, ChevronDown, ChevronUp, Trash2, AlertCircle, Bell,
+  ChevronDown, ChevronUp, AlertCircle, Bell,
   RotateCcw, History, Scale, FileDown, MoreHorizontal } from "@buleje/design-system/icons";
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
 import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
@@ -23,6 +23,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
 import { Field } from "@/components/admin/shared/Field";
+import { FiltrosEnBoton } from "@/components/admin/shared";
 import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 import { useOrdenColumnas, EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import type { Rango } from "@/lib/admin/filtros-columna";
@@ -171,7 +172,6 @@ export default function PrestamosModule() {
   // Filtro avanzado colapsable (mejora 7). Monto y Sistema son columnas de la
   // tabla (Monto, Sys): viven en su `<th>` (autofiltro tipo Excel, Brandon
   // 2026-09-24). Lo que no es columna (fecha, tipo, dirección) se queda afuera.
-  const [showFilters, setShowFilters] = useState(false);
   const [filterFechaFrom, setFilterFechaFrom] = useState("");
   const [filterFechaTo, setFilterFechaTo] = useState("");
   const [montoRango, setMontoRango] = useState<Rango<number>>({ min: null, max: null });
@@ -583,6 +583,15 @@ export default function PrestamosModule() {
     + (montoRango.min != null || montoRango.max != null ? 1 : 0)
     + (filterSistema.length > 0 ? 1 : 0);
 
+  const chipsFiltros = [
+    filterFechaFrom && { id: "desde", label: `Desde ${filterFechaFrom}`, onQuitar: () => { setFilterFechaFrom(""); setPage(1); } },
+    filterFechaTo && { id: "hasta", label: `Hasta ${filterFechaTo}`, onQuitar: () => { setFilterFechaTo(""); setPage(1); } },
+    filterTipo && { id: "tipo", label: TIPO_META[filterTipo]?.label ?? filterTipo, onQuitar: () => { setFilterTipo(""); setPage(1); } },
+    filterDireccion && { id: "dir", label: filterDireccion === "DADO" ? "Dado" : "Recibido", onQuitar: () => { setFilterDireccion(""); setPage(1); } },
+    (montoRango.min != null || montoRango.max != null) && { id: "monto", label: `Monto ${montoRango.min ?? "…"}–${montoRango.max ?? "…"}`, onQuitar: () => { setMontoRango({ min: null, max: null }); setPage(1); } },
+    filterSistema.length > 0 && { id: "sis", label: filterSistema.join(", "), onQuitar: () => { setFilterSistema([]); setPage(1); } },
+  ].filter((c): c is { id: string; label: string; onQuitar: () => void } => !!c);
+
   const clearFilters = () => {
     setFilterFechaFrom(""); setFilterFechaTo(""); setMontoRango({ min: null, max: null });
     setFilterTipo(""); setFilterDireccion(""); setFilterSistema([]); setSearchQuery("");
@@ -701,10 +710,28 @@ export default function PrestamosModule() {
                 <option key={st} value={st}>{STATUS_META[st].label} ({prestamos.filter(p => p.status === st).length})</option>
               ))}
             </select>
-            <button type="button" onClick={() => setShowFilters(f => !f)} aria-expanded={showFilters} className={button({ variant: showFilters ? "primary" : "secondary", className: "shrink-0 rounded-xl px-4" })}>
-              <Filter className="h-4 w-4" aria-hidden />
-              Filtros {activeFilterCount > 0 && <span className="rounded-full bg-[var(--accent-soft)] px-1.5 text-sm font-bold text-[var(--accent-ink)]">{activeFilterCount}</span>}
-            </button>
+            <FiltrosEnBoton activos={activeFilterCount} chips={chipsFiltros} onLimpiar={clearFilters}>
+              <div className="grid grid-cols-2 gap-3">
+                    {/* Monto y Sistema ya se filtran en su `<th>` (Monto, Sys) — acá sólo
+                        lo que no es una columna de la tabla: período y tipo/dirección.
+                        Monto y Sistema se repiten abajo, ocultos salvo < sm: en el
+                        celular la tabla es tarjetas y `.admin-mobile-cards` esconde el
+                        `<thead>` ENTERO (no sólo lo que tiene `hidden sm:table-cell`),
+                        así que su único `<th>` deja de ser alcanzable ahí (mismo
+                        estado, no lógica nueva). */}
+                    <Field label="Desde"><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Hasta"><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Tipo"><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></Field>
+                    <Field label="Dirección"><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></Field>
+                    <Field label="Monto (S/)" className="sm:hidden">
+                      <div className="flex items-center gap-1.5">
+                        <input type="number" step={10} min={0} value={montoRango.min ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, min: v })); setPage(1); }} placeholder="Desde" aria-label="Monto desde" className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+                        <input type="number" step={10} min={0} value={montoRango.max ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, max: v })); setPage(1); }} placeholder="Hasta" aria-label="Monto hasta" className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+                      </div>
+                    </Field>
+                    <Field label="Sistema amort." className="sm:hidden"><select value={filterSistema[0] ?? ""} onChange={e => { setFilterSistema(e.target.value ? [e.target.value as SistemaAmortizacion] : []); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></Field>
+              </div>
+            </FiltrosEnBoton>
             <ActionMenu
               label="Más"
               icon={MoreHorizontal}
@@ -725,35 +752,6 @@ export default function PrestamosModule() {
               ]}
             />
           </div>
-          <AnimatePresence>
-            {showFilters && (
-              <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                <div className="bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)] p-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {/* Monto y Sistema ya se filtran en su `<th>` (Monto, Sys) — acá sólo
-                        lo que no es una columna de la tabla: período y tipo/dirección.
-                        Monto y Sistema se repiten abajo, ocultos salvo < sm: en el
-                        celular la tabla es tarjetas y `.admin-mobile-cards` esconde el
-                        `<thead>` ENTERO (no sólo lo que tiene `hidden sm:table-cell`),
-                        así que su único `<th>` deja de ser alcanzable ahí (mismo
-                        estado, no lógica nueva). */}
-                    <Field label="Desde"><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
-                    <Field label="Hasta"><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
-                    <Field label="Tipo"><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></Field>
-                    <Field label="Dirección"><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></Field>
-                    <Field label="Monto (S/)" className="sm:hidden">
-                      <div className="flex items-center gap-1.5">
-                        <input type="number" step={10} min={0} value={montoRango.min ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, min: v })); setPage(1); }} placeholder="Desde" aria-label="Monto desde" className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
-                        <input type="number" step={10} min={0} value={montoRango.max ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, max: v })); setPage(1); }} placeholder="Hasta" aria-label="Monto hasta" className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
-                      </div>
-                    </Field>
-                    <Field label="Sistema amort." className="sm:hidden"><select value={filterSistema[0] ?? ""} onChange={e => { setFilterSistema(e.target.value ? [e.target.value as SistemaAmortizacion] : []); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></Field>
-                    <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] bg-[var(--surface-sunken)] hover:bg-[var(--data-error-50)] transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
-                  </div>
-                </div>
-              </m.div>
-            )}
-          </AnimatePresence>
         </div>
       )}
 
