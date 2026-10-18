@@ -2,7 +2,7 @@
 
 > **Última verificación:** 2026-10-02 (adelgazado para velocidad: el histórico vive en `git log -p CLAUDE.md`, `docs/HISTORY.md` y las memorias) · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
 
-**Idioma:** español. **Estilo de respuesta:** Feynman + tablas, ≤100 palabras de prosa. No narrar deliberación.
+**Idioma:** español. **Estilo de respuesta (Brandon 17-10):** corto y ordenado — 1 línea de qué pasó + tabla de ≤5 filas + 1 línea de lo que sigue; sin jerga ni listas largas. No narrar deliberación.
 
 **Quién pide y cómo (Brandon, 2026-09-11):** dueño-operador que prueba todo en el navegador; un mensaje trae 3-6 pedidos → hacer **todos**; «aplicarlo en general» → buscar las pantallas hermanas; elige **todas** las opciones y agrega texto libre (prioridad 1). Perfil: memoria `perfil-brandon-como-trabaja`.
 
