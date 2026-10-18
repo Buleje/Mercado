@@ -18,6 +18,8 @@ export interface TenantStoreInfo {
 export interface TenantRow {
   id: string;
   slug: string;
+  /** ID de la tienda para soporte (ADR-500): «482917», se muestra «482-917». */
+  codigo?: string | null;
   name: string;
   active: boolean;
   plan: PlanId;

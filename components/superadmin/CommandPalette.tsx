@@ -4,7 +4,7 @@
  * components/superadmin/CommandPalette.tsx
  *
  * Ctrl+K / Cmd+K del superadmin: TODAS las pantallas (fuente única en
- * `command-palette-pantallas.ts`), los negocios por nombre, código, correo,
+ * `command-palette-pantallas.ts`), los negocios por nombre, código, ID, correo,
  * teléfono o RUC (ficha 360 + chat) y acciones rápidas. SUPMKT-4, 2026-10-09.
  *
  * Flechas para moverte, Enter para ir, Esc para cerrar. Se monta una sola
@@ -24,6 +24,7 @@ import {
 } from "@buleje/design-system/icons";
 import { buscarPantallas } from "./command-palette-pantallas";
 import { usePaletteNegocios } from "./use-palette-negocios";
+import { formatearCodigoTienda } from "@/lib/codigo-tienda";
 
 // ─── Command definition ─────────────────────────────────────────────────────
 
@@ -101,7 +102,8 @@ export default function CommandPalette({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const deNegocios: Command[] = negocios.encontrados.flatMap((n) => [
-      { id: `neg-${n.id}`, label: n.name, description: "Ficha 360", icon: Building2, category: "negocios" as const, href: `/superadmin/tenants/${encodeURIComponent(n.slug)}` },
+      // La ficha rápida sobre la lista (ADR-500): el dueño manda su ID y se abre su ficha; de ahí, «Ficha 360».
+      { id: `neg-${n.id}`, label: n.name, description: n.codigo ? `ID ${formatearCodigoTienda(n.codigo)} · Ficha` : "Ficha", icon: Building2, category: "negocios" as const, href: `/superadmin/tenants?ficha=${encodeURIComponent(n.slug)}` },
       { id: `neg-chat-${n.id}`, label: `Chatear con ${n.name}`, description: "Chat", icon: MessageSquare, category: "negocios" as const, href: `/superadmin/chat?tenant=${encodeURIComponent(n.id)}&name=${encodeURIComponent(n.name)}` },
     ]);
     const pantallas: Command[] = buscarPantallas(query).map((p) => ({
@@ -160,7 +162,13 @@ export default function CommandPalette({
       setOpen(false);
       setQuery("");
       if (cmd.href) {
-        router.push(cmd.href);
+        // La lista de Tiendas lee `?ficha=` UNA vez al montar: si ya estás en
+        // ella, un push cambia la URL sin abrir la ficha → navegación entera.
+        if (cmd.href.startsWith("/superadmin/tenants?") && window.location.pathname === "/superadmin/tenants") {
+          window.location.assign(cmd.href);
+        } else {
+          router.push(cmd.href);
+        }
       } else if (cmd.action) {
         cmd.action();
       }
@@ -216,7 +224,7 @@ export default function CommandPalette({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
-            placeholder="Busca una pantalla o un negocio (nombre, teléfono, RUC)…"
+            placeholder="Busca una pantalla o un negocio (nombre, ID, teléfono, RUC)…"
             aria-label="Buscar pantallas, negocios o acciones"
             className="flex-1 bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
           />

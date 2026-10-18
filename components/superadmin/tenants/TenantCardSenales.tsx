@@ -3,6 +3,7 @@
 import { logger } from "@/lib/logger";
 import { ShoppingBag, Bell } from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
+import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
 import { ProductBadge } from "@buleje/design-system";
 import type { DatosDeTarjeta } from "@/components/superadmin/tenants/tenant-card-datos";
 import type { TenantCardProps } from "@/components/superadmin/tenants/TenantCard";
@@ -87,7 +88,10 @@ export function TenantCardSenales({ t, datos, healthProp, setPendingModalOpen }:
                 title={t.active ? "Activo" : "Suspendido"}
               />
             </div>
-            <div className="text-[var(--text-tertiary)] text-xs font-mono">{t.slug}</div>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="min-w-0 truncate text-[var(--text-tertiary)] text-xs font-mono">{t.slug}</span>
+              <CodigoTienda codigo={t.codigo} />
+            </div>
             {t.ownerEmail && (
               <div className="text-[var(--text-tertiary)] text-[length:var(--ts-xs)] truncate mt-0.5">
                 {t.ownerEmail}

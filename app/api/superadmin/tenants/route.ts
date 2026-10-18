@@ -41,7 +41,7 @@ async function getTenantsData() {
   cacheLife({ revalidate: 60, stale: 30, expire: 300 });
   // v2: cuando agregamos pendingOrders necesitamos invalidar el cache.
   // El cambio del tag fuerza un cache-miss garantizado.
-  cacheTag("superadmin:tenants:v4");
+  cacheTag("superadmin:tenants:v5"); // v5: + codigo (ADR-500)
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -52,6 +52,7 @@ async function getTenantsData() {
         select: {
           id: true,
           slug: true,
+          codigo: true,
           name: true,
           active: true,
           plan: true,

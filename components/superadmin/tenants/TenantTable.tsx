@@ -5,6 +5,7 @@ import {
   Users, Eraser, Layers, Clock, MessageSquare,
 } from "@buleje/design-system/icons";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
+import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
 import { PlanBadge, StatusBadge } from "@/components/superadmin/_shared";
 import { MiniUsageBar } from "./MiniUsageBar";
 import { PlanSelect } from "./PlanSelect";
@@ -126,6 +127,7 @@ export function TenantTable({
                         <div className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate max-w-48">{tenant.ownerEmail}</div>
                       )}
                     </button>
+                    <CodigoTienda codigo={tenant.codigo} className="mt-1 flex w-fit" />
                   </td>
 
                   {/* Plan (editable) */}

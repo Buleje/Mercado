@@ -17,6 +17,10 @@ datasource db {
 model Tenant {
   id                     String    @id @default(cuid())
   slug                   String    @unique // subdomain: e.g. "bodega-san-martin"
+  /// ID de la tienda para soporte (ADR-500): 6 dígitos aleatorios «482917»,
+  /// se muestra «ID 482-917». Lo pone la base (función generar_codigo_tienda,
+  /// reintenta si choca) en TODA alta, también las de la app vieja.
+  codigo                 String    @unique @default(dbgenerated("generar_codigo_tienda()"))
   name                   String // E.g. "Buleje"
   plan                   String    @default("free") // free | pro | business
   type                   String    @default("store") // store | supplier | delivery

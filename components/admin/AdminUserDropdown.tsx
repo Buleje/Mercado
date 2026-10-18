@@ -4,6 +4,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { Settings, CreditCard, UserCircle, LogOut, ChevronDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
+import { useCodigoNegocio } from "@/hooks/use-codigo-negocio";
 
 interface AdminUserDropdownProps {
   userName: string;
@@ -15,6 +17,8 @@ interface AdminUserDropdownProps {
 export default function AdminUserDropdown({ userName, userRole, onNavigate, onLogout }: AdminUserDropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  // ID del negocio (ADR-500): lo que el dueño le manda a soporte cuando pide ayuda.
+  const codigoNegocio = useCodigoNegocio();
 
   // Close on click outside
   useEffect(() => {
@@ -93,6 +97,8 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted capitalize">{userRole}</p>
                 </div>
               </div>
+              {/* Fila propia: «ID de tu negocio 525-146» no entra al lado del avatar sin partirse. */}
+              <CodigoTienda codigo={codigoNegocio} etiqueta="ID de tu negocio" className="mt-2.5 flex w-full justify-between" />
             </div>
 
             {/* Menu items */}

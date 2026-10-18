@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { TenantRow } from "@/lib/superadmin-types";
+import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
 import { PlanBadge, StatusBadge } from "@/components/superadmin/_shared";
 import { TenantHealthTab } from "@/components/superadmin/tenants/TenantHealthTab";
 import type { TabDetalle } from "@/components/superadmin/tenants/tenant-detalle-shared";
@@ -121,9 +122,12 @@ export function TenantDetailModal({ tenant, onClose, onUpdated, tabInicial }: Te
                     <Pencil className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] text-xs mt-1 font-mono">
-                  {t.slug}
-                </p>
+                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                  <CodigoTienda codigo={t.codigo} tamano="md" />
+                  <span className="min-w-0 truncate text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] text-xs font-mono">
+                    {t.slug}
+                  </span>
+                </div>
                 {t.ownerEmail && (
                   <p className="text-[var(--text-tertiary)] text-xs mt-0.5 truncate">
                     {t.ownerEmail}

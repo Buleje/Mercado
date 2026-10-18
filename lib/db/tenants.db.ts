@@ -45,6 +45,19 @@ export const TenantsDB = {
     return prisma.tenant.findMany({ select: { id: true, active: true, createdAt: true } });
   },
 
+  /**
+   * El ID de soporte de la tienda (ADR-500, «482917») para el panel del
+   * negocio: el dueño lo dicta y el superadmin lo busca. Lo pone la base al
+   * dar de alta y no cambia nunca → 1 día de caché por tenant. El `tenantId`
+   * sale SIEMPRE de la sesión (nunca de un parámetro del cliente).
+   */
+  async codigoDe(tenantId: string): Promise<string | null> {
+    return getOrSet(`tenant:codigo:${tenantId}`, 86_400, async () => {
+      const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { codigo: true } });
+      return t?.codigo ?? null;
+    });
+  },
+
   /** Datos básicos de un tenant por id (nombre/slug) — para páginas públicas. */
   async getBasicById(
     id: string,

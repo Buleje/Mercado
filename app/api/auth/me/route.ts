@@ -5,6 +5,21 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { TenantsDB } from "@/lib/db/tenants.db";
+
+/**
+ * ID de soporte de la tienda (ADR-500) para el panel: «ID de tu negocio».
+ * Sale del `tenantId` de la sesión. Si la base no responde, sin ID: el panel
+ * no se cae por esto.
+ */
+async function codigoDeLaTienda(tenantId: string): Promise<string | null> {
+  try {
+    return await TenantsDB.codigoDe(tenantId);
+  } catch (err) {
+    logger.warn("[auth/me] el ID de la tienda no cargó", { error: String(err) });
+    return null;
+  }
+}
 
 export async function GET(req: NextRequest) {
   // Retornamos 200 con role:null cuando no hay sesion para evitar ruido 401
@@ -16,16 +31,17 @@ export async function GET(req: NextRequest) {
   // Vista de tienda del superadmin (11-10): el panel pinta la franja «quedan N min»
   // y vuelve al superadmin al vencer. La hora es el `exp` del token (10 min, igual
   // que su cookie), no un reloj del navegador.
+  const tenantCodigo = await codigoDeLaTienda(payload.tenantId);
   if (esSuplantacion(payload.username)) {
     const exp = await vencimientoDeSesion(token);
     if (exp) {
       return NextResponse.json(
-        { ...payload, authenticated: true, suplantacion: { vence: exp } },
+        { ...payload, authenticated: true, tenantCodigo, suplantacion: { vence: exp } },
         { headers: { "Cache-Control": "no-store" } },
       );
     }
   }
-  return NextResponse.json({ ...payload, authenticated: true });
+  return NextResponse.json({ ...payload, authenticated: true, tenantCodigo });
 }
 
 const UpdateProfileSchema = z.object({

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { TenantRow } from "@/lib/superadmin-types";
 import type { TabDetalle, ActivityRow, NoteRow, SecurityInfo } from "@/components/superadmin/tenants/tenant-detalle-shared";
+import { formatearCodigoTienda } from "@/lib/codigo-tienda";
 
 /** Estado y acciones de la ficha rápida de una tienda: edición, prueba, seguridad, actividad y notas (las credenciales van en useCredencialesTienda, detrás del candado). */
 export function useTenantDetalle(t: TenantRow, onUpdated?: () => void, tabInicial: TabDetalle = "resumen") {
@@ -161,7 +162,7 @@ export function useTenantDetalle(t: TenantRow, onUpdated?: () => void, tabInicia
 
   const handleCopyInfo = () => {
     void navigator.clipboard.writeText(
-      [`Tenant: ${t.name} (${t.slug})`, `Email: ${t.ownerEmail ?? "—"}`, `Plan: ${t.plan}`].join(
+      [`Tenant: ${t.name} (${t.slug})`, `ID: ${formatearCodigoTienda(t.codigo) || "—"}`, `Email: ${t.ownerEmail ?? "—"}`, `Plan: ${t.plan}`].join(
         "\n",
       ),
     );

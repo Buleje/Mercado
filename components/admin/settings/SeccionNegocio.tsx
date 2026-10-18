@@ -9,6 +9,8 @@ import { Store, Phone, MapPin, Clock, AlignLeft, ShoppingCart, MessageCircle, Tr
 import { FieldLabel, TextInput, TextArea, SelectInput, SectionCard, Plegable } from "@/components/admin/settings/campos";
 import { TicketPie } from "@/components/admin/settings/TicketPie";
 import type { AjustesEstado } from "@/components/admin/settings/use-ajustes";
+import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
+import { useCodigoNegocio } from "@/hooks/use-codigo-negocio";
 
 const BOTON_ICONO = "grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--accent-ink)] dark:text-[var(--accent)] hover:border-primary transition-colors";
 const TIPOS = [
@@ -28,6 +30,8 @@ export function SeccionNegocio({ aj }: { aj: AjustesEstado }) {
   const { mode, setMode, businessName, setBusinessName, businessPhone, setBusinessPhone, businessAddress, setBusinessAddress, logoUrl, setLogoUrl, coverUrl, setCoverUrl, bannerUrl, setBannerUrl, description, setDescription, hours, setHours, deliveryZone, setDeliveryZone, businessLat, setBusinessLat, businessLon, setBusinessLon, setShowMapPicker, setPickerLat, setPickerLon, razonSocial, setRazonSocial, ruc, setRuc, businessEmail, setBusinessEmail, currency, setCurrency, businessType, setBusinessType, socialLinks, setSocialLinks, invoiceFooterText, setInvoiceFooterText, uploadingField, handleFileUpload } = aj;
   // El nombre del tenant (no «Mi Bodega», que es el rótulo genérico del vertical).
   const { branding } = useTenant();
+  // ID del negocio (ADR-500): sale de la sesión, el mismo que ve soporte en el superadmin.
+  const codigoNegocio = useCodigoNegocio();
   // Las maquetas de «dónde aparece» de logo, portada y banner: un botón para las tres, recordado.
   const [verMaquetas, setVerMaquetas] = useLocalStorage<boolean>("ajustes-ver-maquetas", false);
   const coverImgRef = useRef<HTMLInputElement>(null);
@@ -60,7 +64,20 @@ export function SeccionNegocio({ aj }: { aj: AjustesEstado }) {
 
   return (
     <div className="space-y-4">
-      <SectionCard title="Identidad y contacto" desc="Tus datos legales y de contacto. Salen en tus tickets, boletas, cotizaciones y en tu tienda.">
+      <SectionCard
+        title="Identidad y contacto"
+        desc="Tus datos legales y de contacto. Salen en tus tickets, boletas, cotizaciones y en tu tienda."
+        accion={codigoNegocio && (
+          <div className="flex items-center gap-1">
+            <CodigoTienda codigo={codigoNegocio} etiqueta="ID de tu negocio" etiquetaCorta="ID" tamano="md" />
+            <InfoTip
+              title="ID de tu negocio"
+              what="Es el número único de tu negocio en Buleje. Cuando pidas ayuda, mándaselo a soporte y te ubican al toque."
+              example="«Hola, mi ID es 482-917 y no me sale la boleta»"
+            />
+          </div>
+        )}
+      >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
           <div>
             <div className="flex items-center gap-2">

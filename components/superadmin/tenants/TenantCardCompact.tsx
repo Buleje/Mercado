@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bell, Clock, ExternalLink, ShoppingBag } from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
+import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
 import { etiquetaDePlan } from "@/lib/billing/plan-tiers";
 import { PendingOrdersModal } from "./PendingOrdersModal";
 
@@ -101,10 +102,12 @@ export function TenantCardCompact({
               className={`h-2 w-2 shrink-0 rounded-full ${HEALTH_DOT[health]}`}
               title={HEALTH_TITLE[health]}
             />
-            <span className="truncate text-sm font-bold text-[var(--text-primary)]">{t.name}</span>
+            <span className="truncate text-sm font-bold text-[var(--text-primary)]" title={`${t.name} · ${t.slug}`}>{t.name}</span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
-            <span className="truncate font-mono">{t.slug}</span>
+            {/* Con ID, el slug (cortado a «m…» en la tarjeta compacta) pasa al title del nombre. */}
+            {!t.codigo && <span className="min-w-0 truncate font-mono">{t.slug}</span>}
+            <CodigoTienda codigo={t.codigo} />
             {isOnMarketplace && (
               <ShoppingBag
                 className="h-3 w-3 shrink-0 text-[var(--accent)]"
