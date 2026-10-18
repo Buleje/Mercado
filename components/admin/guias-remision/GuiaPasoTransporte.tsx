@@ -49,6 +49,7 @@ export function GuiaPasoTransporte({ g }: { g: NuevaGuia }) {
         <CampoGuia etiqueta={`Placa${opcional}`} placeholder="ABC-123" maxLength={8} valor={form.vehiculoPlaca} onCambio={(v) => g.campo("vehiculoPlaca", v.toUpperCase())} />
         <CampoGuia etiqueta={`Conductor${opcional}`} placeholder="Nombre del conductor" valor={form.conductorNombre} onCambio={(v) => g.campo("conductorNombre", v)} />
         <CampoGuia etiqueta={`DNI del conductor${opcional}`} soloNumeros maxLength={8} placeholder="8 números" valor={form.conductorDni} onCambio={(v) => g.campo("conductorDni", v)} error={err("conductorDni")} />
+        {g.gtf && <CampoGuia etiqueta="Licencia del conductor" placeholder="Q12345678" maxLength={30} valor={g.gtf.conductorLicencia} onCambio={(v) => g.gtfCampo("conductorLicencia", v.toUpperCase())} />}
       </div>
     </BloqueGuia>
   );

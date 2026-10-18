@@ -43,6 +43,12 @@ export function GuiaPasoDestino({ g }: { g: NuevaGuia }) {
             )}
           </div>
         </div>
+        {g.gtf && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <CampoGuia etiqueta="Ubigeo de partida (6 números)" soloNumeros maxLength={6} valor={g.gtf.ubigeoPartida} onCambio={(v) => g.gtfCampo("ubigeoPartida", v)} />
+            <CampoGuia etiqueta="Ubigeo de llegada (6 números)" soloNumeros maxLength={6} valor={g.gtf.ubigeoLlegada} onCambio={(v) => g.gtfCampo("ubigeoLlegada", v)} />
+          </div>
+        )}
       </BloqueGuia>
     </div>
   );

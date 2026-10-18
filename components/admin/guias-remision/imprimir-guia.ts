@@ -15,7 +15,10 @@ import { getPlaca, MOTIVO_ROTULO, type GuiaRemision } from "./tipos";
 
 const e = (v: unknown) => escapeHtml(v == null ? "" : String(v));
 
-export function printGuiaSunat(g: GuiaRemision, formatDate: (d: string) => string, membrete: Membrete | null = null) {
+/** Lo que la guía lleva cuando nació de una GTF (el tipo de la lista aún no lo declara). */
+type GuiaConGtf = GuiaRemision & { conductorLicencia?: string; ubigeoPartida?: string; ubigeoLlegada?: string };
+
+export function printGuiaSunat(g: GuiaConGtf, formatDate: (d: string) => string, membrete: Membrete | null = null) {
   const items = g.items ?? [];
   const pesoEstimado = items.reduce((sum, it) => sum + it.cantidad * (it.pesoUnitario || 0), 0);
   const rowsHtml = items
@@ -70,11 +73,14 @@ export function printGuiaSunat(g: GuiaRemision, formatDate: (d: string) => strin
     fila("Placa", getPlaca(g)),
     fila("Conductor", g.conductorNombre),
     fila("DNI Conductor", g.conductorDni),
+    fila("Licencia", g.conductorLicencia),
     "</div>",
     '<div class="sep"></div>',
     '<div class="section">',
     fila("Punto de partida", g.puntoPartida),
+    fila("Ubigeo de partida", g.ubigeoPartida),
     fila("Punto de llegada", g.puntoLlegada),
+    fila("Ubigeo de llegada", g.ubigeoLlegada),
     fila("Fecha traslado", formatDate(g.fechaTraslado)),
     fila("Motivo", MOTIVO_ROTULO[g.motivoTraslado] ?? g.motivoTraslado),
     fila("Doc. Referencia", g.documentoRef),
