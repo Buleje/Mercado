@@ -6,6 +6,7 @@
  * lista de tiendas del superadmin (el parámetro del aviso). La duración y el
  * prefijo viven en `lib/auth/suplantacion.ts`.
  */
+import { minutosDeSuplantacion } from "@/lib/auth/suplantacion";
 
 /** Marca que deja «Entrar como esta tienda» (abrir-panel-tienda.ts): el slug suplantado. */
 export const MARCA_SUPLANTACION = "superadmin-impersonate-tenant";
@@ -16,6 +17,30 @@ const MARGEN_MARCA_VIEJA_MS = 6 * 60 * 60 * 1000;
 
 /** Parámetro con que el superadmin recibe el aviso «la vista de <negocio> venció». */
 export const PARAM_VISTA_VENCIDA = "vista-vencida";
+
+/**
+ * Cuántos minutos dura la vista al entrar (18-10): preferencia del navegador del
+ * superadmin, no de la tienda. La leen `suplantarTienda` y «Entrar como esta
+ * tienda» en cada entrada; el servidor vuelve a validar el rango.
+ */
+export const CLAVE_MINUTOS_VISTA = "sa-vista-tienda-minutos";
+/** Aviso a los selectores de la misma pestaña (el `storage` sólo llega a las otras). */
+export const EVENTO_MINUTOS_VISTA = "sa-vista-tienda-minutos";
+
+/** Lo elegido en este navegador, o 10 si no hay nada (o es inválido, o modo privado). */
+export function leerMinutosVistaTienda(): number {
+  return minutosDeSuplantacion(leer(CLAVE_MINUTOS_VISTA));
+}
+
+export function guardarMinutosVistaTienda(minutos: number): void {
+  const valor = minutosDeSuplantacion(minutos);
+  try {
+    localStorage.setItem(CLAVE_MINUTOS_VISTA, String(valor));
+  } catch { /* modo privado: se usa el de por defecto */ }
+  try {
+    window.dispatchEvent(new CustomEvent(EVENTO_MINUTOS_VISTA, { detail: valor }));
+  } catch { /* sin window (SSR): nada que avisar */ }
+}
 
 function leer(clave: string): string | null {
   try {

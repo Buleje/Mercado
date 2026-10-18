@@ -4,7 +4,7 @@ import { getSessionPayload, SESSION } from "@/lib/session";
 import { cacheStore } from "@/lib/cache";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { logger } from "@/lib/logger";
-import { superadminDeSuplantacion } from "@/lib/auth/suplantacion";
+import { VIDA_MAXIMA_SUPLANTACION_S, superadminDeSuplantacion } from "@/lib/auth/suplantacion";
 
 /**
  * POST /api/superadmin/impersonate/exit
@@ -58,8 +58,12 @@ export async function POST(req: NextRequest) {
     // Anular el token, no sólo borrar la cookie (security 11-10): igual que el
     // logout, su jti va a la lista negra que mira requireAdmin. Antes, tras
     // «Salir», una copia del token seguía entrando a /api/admin-users. El TTL
-    // cubre la vida de cualquier token de acceso (15 min) aunque éste viva 10.
-    if (payload.jti) cacheStore.set(`revoked-access:${payload.jti}`, true, SESSION.MAX_AGE);
+    // cubre la vida de cualquier token de acceso (15 min) y la de la vista más
+    // larga (60 min, 18-10): con 15 fijos, una copia de una vista de 1 hora
+    // revivía a los 15 min de haber salido.
+    if (payload.jti) {
+      cacheStore.set(`revoked-access:${payload.jti}`, true, Math.max(SESSION.MAX_AGE, VIDA_MAXIMA_SUPLANTACION_S));
+    }
 
     // Limpiar todas las cookies de sesion admin
     const res = NextResponse.json({ ok: true, impersonator });

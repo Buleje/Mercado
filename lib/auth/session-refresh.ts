@@ -97,7 +97,7 @@ export async function refrescarSesion(opts: RefrescarOpts = {}): Promise<boolean
         anotarCierreInvoluntario(typeof cuerpo?.error === "string" ? cuerpo.error : "401");
         const ruta = window.location.pathname;
         if (ruta.startsWith("/admin") || ruta.startsWith("/t/")) {
-          // Si lo que venció era la vista de tienda del superadmin (10 min), vuelve
+          // Si lo que venció era la vista de tienda del superadmin (5 a 60 min), vuelve
           // a su lista de tiendas con el aviso, no al login del panel (11-10).
           window.location.href = destinoSesionTerminada();
         }

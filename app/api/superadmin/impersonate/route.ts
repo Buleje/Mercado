@@ -3,7 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { createSessionToken, getRefreshPayload, SESSION, REFRESH } from "@/lib/session";
-import { DURACION_SUPLANTACION_S, usuarioDeSuplantacion } from "@/lib/auth/suplantacion";
+import {
+  MINUTOS_SUPLANTACION_DEFECTO,
+  MINUTOS_SUPLANTACION_MAX,
+  MINUTOS_SUPLANTACION_MIN,
+  usuarioDeSuplantacion,
+} from "@/lib/auth/suplantacion";
 import { cerrarRefresh } from "@/lib/auth/refresh-sucesor";
 import { cacheStore } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +20,12 @@ import { respuestaSiCandadoCerrado } from "@/lib/superadmin/candado";
 
 const ImpersonateSchema = z.object({
   slug: z.string().min(1).max(64),
+  /**
+   * Cuánto dura la vista de tienda (18-10): entero de 5 a 60. Fuera de rango o
+   * con decimales → 400 (no se acota callado). Sin el campo, 10 como antes:
+   * los que todavía no lo mandan no cambian.
+   */
+  minutos: z.number().int().min(MINUTOS_SUPLANTACION_MIN).max(MINUTOS_SUPLANTACION_MAX).optional(),
 });
 
 async function requirePlatform(req: NextRequest) {
@@ -69,13 +80,22 @@ export async function POST(req: NextRequest) {
 
   const parsed = ImpersonateSchema.safeParse(body);
   if (!parsed.success) {
+    const porMinutos = parsed.error.issues.some((i) => i.path[0] === "minutos");
     return NextResponse.json(
-      { error: "Datos inválidos", issues: parsed.error.issues },
+      {
+        error: "Datos inválidos",
+        ...(porMinutos
+          ? { message: `El tiempo de la vista va de ${MINUTOS_SUPLANTACION_MIN} a ${MINUTOS_SUPLANTACION_MAX} minutos, en minutos enteros.` }
+          : {}),
+        issues: parsed.error.issues,
+      },
       { status: 400 },
     );
   }
 
   const { slug } = parsed.data;
+  const minutos = parsed.data.minutos ?? MINUTOS_SUPLANTACION_DEFECTO;
+  const duracionS = minutos * 60;
 
   // 3. Buscar el tenant por slug
   let tenant: { id: string; name: string; slug: string } | null = null;
@@ -100,11 +120,12 @@ export async function POST(req: NextRequest) {
   try {
     await logSuperadminAction(
       "impersonate",
-      `Superadmin "${platformSession.username}" impersonó tenant "${tenant.slug}" (${tenant.name})`,
+      `Superadmin "${platformSession.username}" impersonó tenant "${tenant.slug}" (${tenant.name}) por ${minutos} min`,
       {
         targetTenantId: tenant.id,
         targetTenantSlug: tenant.slug,
         targetTenantName: tenant.name,
+        minutos,
         ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null,
         userAgent: req.headers.get("user-agent") || null,
         timestamp: new Date().toISOString(),
@@ -134,8 +155,9 @@ export async function POST(req: NextRequest) {
     usuarioDeSuplantacion(platformSession.username),
     tenant.id,
     `SuperAdmin→${tenant.slug}`,
-    // El token muere con su cookie (10 min): antes vivía 15 (security 11-10).
-    DURACION_SUPLANTACION_S * 1000,
+    // El token muere con su cookie (los minutos elegidos): antes vivía 15 fijos
+    // aunque la cookie durara 10 (security 11-10).
+    duracionS * 1000,
   );
 
   // 5. Escribir la misma cookie que usa /api/auth/login
@@ -147,6 +169,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       tenantName: tenant.name,
       tenantSlug: tenant.slug,
+      minutos,
     },
     {
       headers: {
@@ -161,7 +184,9 @@ export async function POST(req: NextRequest) {
   // superadmin se compromete. 10min cubre operaciones típicas (revisar,
   // ajustar, salir) y fuerza re-impersonate para sesiones largas, que
   // queda logueado en audit trail dando trazabilidad fina.
-  const IMPERSONATE_MAX_AGE = DURACION_SUPLANTACION_S; // 10 min en segundos
+  // 18-10: el superadmin elige de 5 a 60 min (10 sigue siendo el defecto);
+  // cada entrada queda auditada con sus `minutos` y no se renueva.
+  const IMPERSONATE_MAX_AGE = duracionS;
   response.cookies.set(SESSION.COOKIE_NAME, token, {
     httpOnly: true,
     secure: isProd,

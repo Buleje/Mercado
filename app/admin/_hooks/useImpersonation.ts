@@ -86,7 +86,7 @@ export function useImpersonation(): UseImpersonationResult {
     setIsSuperAdminImpersonating(false);
     // Salir de verdad (security 11-10): el servidor borra la cookie y ANULA el
     // token; antes sólo se volvía a /superadmin con la sesión de la tienda viva.
-    // Si el servidor no confirma, se vuelve igual (la cookie vence sola a los 10 min).
+    // Si el servidor no confirma, se vuelve igual (la cookie vence sola a los minutos elegidos).
     void salirDeVistaDeTienda().then((ok) => {
       if (!ok) window.location.href = "/superadmin";
     });

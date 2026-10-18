@@ -3,6 +3,7 @@
  *  - ALTO-1  POST /api/superadmin/impersonate: con candado configurado y cerrado → 423, sin token ni auditoría.
  *  - MEDIO-3 POST /api/superadmin/tenants/[slug]/security: 423 antes del TOTP y sin tocar nada.
  *  - ALTO-2  POST /api/superadmin/settings: las claves `interno:*` se rechazan con 400 (una y en lote).
+ * Tiempo de la vista (18-10): `minutos` entero 5..60; fuera → 400; sin él, 10 como antes.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
@@ -135,5 +136,47 @@ describe("ALTO-2: Ajustes no escribe claves internas", () => {
     const res = await ajustes(pedido("/api/superadmin/settings", { key: "maintenance-mode", value: false }));
     expect(res.status).toBe(200);
     expect(m.set).toHaveBeenCalledWith("maintenance-mode", false, "sa");
+  });
+});
+
+describe("tiempo de la vista de tienda (minutos 5..60, 18-10)", () => {
+  const cookie = (res: Response, nombre: string) => res.headers.getSetCookie().find((c) => c.startsWith(`${nombre}=`)) ?? "";
+
+  it.each([4, 61, 0, 7.5, "30", null])("minutos=%s → 400, sin token, sin auditoría y sin cookies", async (minutos) => {
+    const res = await suplantar(pedido("/api/superadmin/impersonate", { slug: "musa", minutos }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).message).toMatch(/5 a 60 minutos/);
+    expect(m.tenantFind).not.toHaveBeenCalled();
+    expect(m.audit).not.toHaveBeenCalled();
+    expect(m.token).not.toHaveBeenCalled();
+    expect(res.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("minutos=60 → token y las tres cookies por 1 hora; la auditoría anota los minutos", async () => {
+    const res = await suplantar(pedido("/api/superadmin/impersonate", { slug: "musa", minutos: 60 }));
+    expect(res.status).toBe(200);
+    expect(m.token).toHaveBeenCalledWith("admin", "impersonated-by:sa", "t-musa", "SuperAdmin→musa", 3_600_000);
+    for (const nombre of ["buleje-admin-sess", "active-tenant", "active-tenant-slug"]) {
+      expect(cookie(res, nombre)).toMatch(/Max-Age=3600(;|$)/);
+    }
+    expect(m.audit).toHaveBeenCalledWith("impersonate", expect.stringContaining("por 60 min"), expect.objectContaining({ minutos: 60 }), "sa");
+    expect((await res.json()).minutos).toBe(60);
+  });
+
+  it("minutos=5 → 300 s", async () => {
+    const res = await suplantar(pedido("/api/superadmin/impersonate", { slug: "musa", minutos: 5 }));
+    expect(res.status).toBe(200);
+    expect(m.token).toHaveBeenCalledWith("admin", "impersonated-by:sa", "t-musa", "SuperAdmin→musa", 300_000);
+    expect(cookie(res, "buleje-admin-sess")).toMatch(/Max-Age=300(;|$)/);
+  });
+
+  it("sin minutos → 10 min (600 s), como antes", async () => {
+    const res = await suplantar(pedido("/api/superadmin/impersonate", { slug: "musa" }));
+    expect(res.status).toBe(200);
+    expect(m.token).toHaveBeenCalledWith("admin", "impersonated-by:sa", "t-musa", "SuperAdmin→musa", 600_000);
+    for (const nombre of ["buleje-admin-sess", "active-tenant", "active-tenant-slug"]) {
+      expect(cookie(res, nombre)).toMatch(/Max-Age=600(;|$)/);
+    }
+    expect(m.audit).toHaveBeenCalledWith("impersonate", expect.any(String), expect.objectContaining({ minutos: 10 }), "sa");
   });
 });

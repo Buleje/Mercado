@@ -1,5 +1,7 @@
 import "server-only";
 import { cacheStore } from "@/lib/cache";
+import { getMinIssuedAt } from "@/lib/superadmin-revocation";
+import { esSuplantacion } from "@/lib/auth/suplantacion";
 
 /**
  * Revocación masiva de sesiones por admin — "cerrar todas las sesiones" (ADR-133
@@ -51,6 +53,13 @@ export function isSessionRevoked(
   username: string | undefined,
 ): boolean {
   if (!tenantId || !username) return false;
+  // Vista de tienda del superadmin (hasta 60 min): «Revocar todas las sesiones»
+  // del superadmin también la corta (security 18-10). Sin hora en el jti, cae.
+  const corteSuperadmin = getMinIssuedAt();
+  if (corteSuperadmin > 0 && esSuplantacion(username)) {
+    const emitido = issuedAtFromJti(jti);
+    if (emitido == null || emitido < corteSuperadmin) return true;
+  }
   const cutoff = cacheStore.get<number>(key(tenantId, username));
   if (!cutoff) return false;
   const issuedAt = issuedAtFromJti(jti);

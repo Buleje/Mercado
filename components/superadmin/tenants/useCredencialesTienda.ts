@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CredencialesRespuesta, ReauthEntrada, TipoCandado } from "@/lib/superadmin/candado-reglas";
 import { abrirPanelDeTienda } from "@/components/superadmin/tenants/abrir-panel-tienda";
+import { leerMinutosVistaTienda } from "@/lib/auth/suplantacion-vista";
 
 /** Estado del candado tal como llega en el 423 de la ruta de credenciales. */
 export interface CandadoCerrado {
@@ -175,13 +176,16 @@ export function useCredencialesTienda(slug: string) {
     [slug, cargar],
   );
 
-  /** «Entrar como esta tienda» (exige el candado abierto). Devuelve el error o `null`. */
+  /**
+   * «Entrar como esta tienda» (exige el candado abierto) por los minutos elegidos
+   * en este navegador. Devuelve el error o `null`.
+   */
   const entrar = useCallback(async (): Promise<string | null> => {
     const res = await fetch(`/api/superadmin/tenants/${encodeURIComponent(slug)}/credenciales/entrar`, {
       method: "POST",
       credentials: "include",
       headers: JSON_POST(),
-      body: "{}",
+      body: JSON.stringify({ minutos: leerMinutosVistaTienda() }),
     }).catch(() => null);
     if (!res) return "Error de red.";
     if (res.status === 423) {

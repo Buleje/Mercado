@@ -205,10 +205,24 @@ describe("POST credenciales/entrar", () => {
     m.suplantar.mockResolvedValueOnce(NextResponse.json({ ok: true, tenantSlug: "musa" }));
     const res = await entrar(pedido("/api/superadmin/tenants/musa/credenciales/entrar", { method: "POST", body: {} }), params());
     expect(res.status).toBe(200);
-    expect(m.audit).toHaveBeenCalledWith("credenciales_entrar", expect.any(String), { tenantSlug: "musa" }, "sa");
+    expect(m.audit).toHaveBeenCalledWith("credenciales_entrar", expect.any(String), { tenantSlug: "musa", minutos: 10 }, "sa");
     const delegado = m.suplantar.mock.calls[0][0] as NextRequest;
     expect(new URL(delegado.url).pathname).toBe("/api/superadmin/impersonate");
     expect(await delegado.json()).toEqual({ slug: "musa" });
     expect(delegado.headers.get("cookie")).toContain("buleje-platform-sess");
+  });
+
+  it("reenvía los minutos elegidos a la suplantación y los anota", async () => {
+    m.suplantar.mockResolvedValueOnce(NextResponse.json({ ok: true, tenantSlug: "musa" }));
+    const res = await entrar(pedido("/api/superadmin/tenants/musa/credenciales/entrar", { method: "POST", body: { minutos: 30 } }), params());
+    expect(res.status).toBe(200);
+    expect(await (m.suplantar.mock.calls[0][0] as NextRequest).json()).toEqual({ slug: "musa", minutos: 30 });
+    expect(m.audit).toHaveBeenCalledWith("credenciales_entrar", expect.any(String), { tenantSlug: "musa", minutos: 30 }, "sa");
+  });
+
+  it.each([4, 61, 12.5])("minutos=%s → 400 y no suplanta", async (minutos) => {
+    const res = await entrar(pedido("/api/superadmin/tenants/musa/credenciales/entrar", { method: "POST", body: { minutos } }), params());
+    expect(res.status).toBe(400);
+    expect(m.suplantar).not.toHaveBeenCalled();
   });
 });

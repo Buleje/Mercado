@@ -148,7 +148,8 @@ export async function createSessionToken(
   name = "",
   /**
    * Vida del token. Por defecto la de toda sesión (15 min). La suplantación del
-   * superadmin pasa 10 min: su token muere junto con su cookie (security 11-10).
+   * superadmin pasa los minutos elegidos al entrar (5 a 60, 10 por defecto): su
+   * token muere junto con su cookie (security 11-10).
    */
   duracionMs: number = ACCESS_DURATION_MS,
 ): Promise<string> {

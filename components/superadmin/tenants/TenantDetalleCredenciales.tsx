@@ -7,6 +7,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useCredencialesTienda } from "@/components/superadmin/tenants/useCredencialesTienda";
 import { CandadoCredenciales } from "@/components/superadmin/tenants/CandadoCredenciales";
 import { CredencialUsuario } from "@/components/superadmin/tenants/CredencialUsuario";
+import { TiempoVistaTienda, etiquetaMinutosVista, useMinutosVistaTienda } from "@/components/superadmin/tenants/TiempoVistaTienda";
 
 const reloj = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
@@ -23,6 +24,7 @@ export function TenantDetalleCredenciales({ t }: { t: TenantRow }) {
   const [entrando, setEntrando] = useState(false);
   const [errorEntrar, setErrorEntrar] = useState<string | null>(null);
   const [totpActivo, setTotpActivo] = useState<boolean | null>(null);
+  const [minutosVista] = useMinutosVistaTienda();
 
   const abierto = c.estado.fase === "abierto";
   // Si el candado se cierra a mitad de un cambio, al reabrir se vuelve a la lista.
@@ -136,11 +138,12 @@ export function TenantDetalleCredenciales({ t }: { t: TenantRow }) {
         >
           <ExternalLink className="h-4 w-4" />
         </a>
+        <TiempoVistaTienda />
         <button
           type="button"
           onClick={() => void entrar()}
           disabled={entrando || !datos.tienda.activa}
-          title={!datos.tienda.activa ? "La tienda está inactiva" : "Abre su panel en otra pestaña (10 min, queda en la auditoría)"}
+          title={!datos.tienda.activa ? "La tienda está inactiva" : `Abre su panel en otra pestaña por ${etiquetaMinutosVista(minutosVista)} (queda en la auditoría)`}
           className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white disabled:opacity-50"
         >
           {entrando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogIn className="h-3.5 w-3.5" />} Entrar como esta tienda

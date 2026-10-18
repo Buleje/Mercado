@@ -4,6 +4,7 @@
  *  2. Una suplantación cerrada (logout o salir) ya no se confirma en /api/auth/refresh: 401.
  *  3. El token vence a los 10 min, igual que su cookie; /api/auth/me lo informa para la franja.
  *  4. El refresh ajeno que se borra al confirmar la suplantación queda anulado en el servidor.
+ *  5. (18-10) «Salir» y el logout anulan el jti por 60 min: la vista puede durar hasta 1 hora.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
@@ -12,6 +13,7 @@ vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: vi.fn(() => null), getClien
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("@/lib/audit/superadmin-audit", () => ({ logSuperadminAction: vi.fn(async () => undefined) }));
 vi.mock("@/lib/db/admin-users.db", () => ({ AdminUsersDB: { getByUsername: vi.fn(async () => ({ active: true })) } }));
+vi.mock("@/lib/db/tenants.db", () => ({ TenantsDB: { codigoDe: vi.fn(async () => "525146") } }));
 
 import { POST as salir } from "@/app/api/superadmin/impersonate/exit/route";
 import { POST as renovar } from "@/app/api/auth/refresh/route";
@@ -83,5 +85,25 @@ describe("suplantación: vida, salida y renovación", () => {
     // Una copia de ese refresh presentada sola: muerto, no da una sesión de main.
     const copia = await renovar(pedido("/api/auth/refresh", { [REFRESH.COOKIE_NAME]: refreshDeMain }));
     expect(copia.status).toBe(401);
+  });
+
+  it("5. «Salir» y el logout anulan el jti de una vista de 1 hora durante 1 hora, no 15 min", async () => {
+    const espia = vi.spyOn(cacheStore, "set");
+    const ttlDe = (jti: string) => espia.mock.calls.find(([k]) => k === `revoked-access:${jti}`)?.[2];
+    const vista = () => createSessionToken("admin", "impersonated-by:superadmin", "t-musa", "SuperAdmin→musa", 3_600_000);
+
+    const t1 = await vista();
+    await salir(pedido("/api/superadmin/impersonate/exit", { [SESSION.COOKIE_NAME]: t1 }));
+    expect(ttlDe((await getSessionPayload(t1))!.jti!)).toBe(3600);
+
+    const t2 = await vista();
+    await cerrarSesion(pedido("/api/auth/logout", { [SESSION.COOKIE_NAME]: t2 }));
+    expect(ttlDe((await getSessionPayload(t2))!.jti!)).toBe(3600);
+
+    // Una sesión normal sigue con los 15 min de su token.
+    const t3 = await createSessionToken("admin", "duena", "t-musa", "Dueña");
+    await cerrarSesion(pedido("/api/auth/logout", { [SESSION.COOKIE_NAME]: t3 }));
+    expect(ttlDe((await getSessionPayload(t3))!.jti!)).toBe(15 * 60);
+    espia.mockRestore();
   });
 });

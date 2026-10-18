@@ -5,6 +5,7 @@ import { Search, ChevronDown, RefreshCw, LayoutGrid, List, Bomb, Grid3x3, Square
 import { useRouter } from "next/navigation";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import type { SortField, SortDir, ViewMode } from "@/components/superadmin/tenants/types";
+import { accionesTiempoVistaTienda, useMinutosVistaTienda } from "@/components/superadmin/tenants/TiempoVistaTienda";
 
 const inputCls =
   "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40";
@@ -31,6 +32,7 @@ export function TenantsToolbar({
   bulkMode, onToggleBulk, loading, onReload, onNuclear,
 }: TenantsToolbarProps) {
   const router = useRouter();
+  const [minutosVista, elegirMinutosVista] = useMinutosVistaTienda();
   // Brandon 2026-05-21 high-impact: keyboard shortcut "/" focusea search
   // (Linear/Notion/GitHub pattern). Power-user UX: el superadmin trabaja
   // sobre N tenants y necesita filtrar rápido sin tocar el mouse.
@@ -60,6 +62,8 @@ export function TenantsToolbar({
     { id: "crecimiento", label: "Ver crecimiento", icon: TrendingUp, onSelect: () => router.push("/superadmin/tenants/growth") },
     { id: "actualizar", label: "Actualizar la lista", icon: RefreshCw, onSelect: onReload, busy: loading, disabled: loading },
     { id: "reinicio", label: "Mantenimiento: reinicio total", hint: "Acción destructiva, pide confirmación", icon: Bomb, tone: "danger", onSelect: onNuclear },
+    // Cuánto dura el panel de una tienda al entrar como ella (5 min a 1 hora; se recuerda en este navegador).
+    ...accionesTiempoVistaTienda(minutosVista, elegirMinutosVista),
   ];
   const claseVista = (activa: boolean) =>
     `p-1.5 rounded-xl transition-colors ${activa ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`;
@@ -73,8 +77,8 @@ export function TenantsToolbar({
           ref={searchInputRef}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Busca por nombre, correo, teléfono o RUC…"
-          aria-label="Buscar negocios por nombre, correo, teléfono o RUC (atajo: tecla /)"
+          placeholder="Busca por nombre, ID, correo, teléfono o RUC"
+          aria-label="Buscar negocios por nombre, ID, correo, teléfono o RUC (atajo: tecla /)"
           className="w-full h-10 pl-10 pr-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors"
         />
         <kbd

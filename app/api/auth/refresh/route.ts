@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   if (rateLimitResponse) return rateLimitResponse;
 
   // Suplantación del superadmin («Entrar como esta tienda», 11-10): su sesión no
-  // tiene refresh y vive sólo sus 10 min. El panel pide refresh al montar; antes
+  // tiene refresh y vive sólo sus minutos (5 a 60). El panel pide refresh al montar; antes
   // eso daba 401 «no refresh token» → el cliente mandaba a /admin/login. Y si el
   // navegador guardaba el refresh de OTRA sesión (el dueño logueado en su bodega),
   // lo rotaba y la pestaña de Musa quedaba con la sesión de main. Mientras la

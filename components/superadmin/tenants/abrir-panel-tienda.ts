@@ -1,7 +1,7 @@
 "use client";
 
 import { csrfHeaders } from "@/lib/csrf-client";
-import { MARCA_SUPLANTACION } from "@/lib/auth/suplantacion-vista";
+import { MARCA_SUPLANTACION, leerMinutosVistaTienda } from "@/lib/auth/suplantacion-vista";
 
 /**
  * Tras una suplantación aceptada por el servidor (la cookie de sesión de la
@@ -64,6 +64,8 @@ export type ResultadoSuplantar = "ok" | "candado" | "error";
  * Con el candado configurado y cerrado el servidor responde 423: en vez de fallar
  * callado, lleva a la ficha de la tienda en Credenciales para abrirlo (o hace lo
  * que diga `alCandado`, p. ej. abrir la ficha ahí mismo). Con 200 abre su panel.
+ * La vista dura los minutos elegidos en este navegador (`TiempoVistaTienda`;
+ * 10 si nunca se eligió): todas las pantallas que llaman acá los heredan.
  */
 export async function suplantarTienda(
   slug: string,
@@ -77,7 +79,7 @@ export async function suplantarTienda(
       method: "POST",
       credentials: "include",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ slug }),
+      body: JSON.stringify({ slug, minutos: leerMinutosVistaTienda() }),
     });
   } catch {
     return "error";

@@ -8,7 +8,8 @@
  * (`impersonated-by:`). La marca de localStorage la puede dejar cualquiera; la
  * franja no se fía de ella.
  *
- * Con la vista activa: cuenta los minutos que quedan (10 en total), anota tienda
+ * Con la vista activa: cuenta los minutos que quedan (los que eligió el superadmin
+ * al entrar, de 5 a 60; 10 por defecto: sale del `exp` del token), anota tienda
  * y vencimiento (para que `session-refresh` sepa volver al superadmin) y, al
  * llegar a cero, manda a `/superadmin/tenants` con el aviso «la vista venció».
  * Comparte el `/api/auth/me` de useAdminAuth (cachedJson): no suma pedidos.
