@@ -23,6 +23,7 @@ import {
   armarLineasComprobante,
   type LineasComprobante,
 } from "./lineas-comprobante";
+import { SPOT_MADERA, type DetraccionCalculada } from "./detraccion";
 
 // ── Tipos de entrada ──────────────────────────────────────────────────────────
 
@@ -160,6 +161,7 @@ export function buildFactura(
   tenant: BuilderTenant,
   settings: BuilderSettings,
   customer: BuilderCustomer,
+  detraccion?: DetraccionCalculada,
 ): NubefactComprobantePayload {
   if (!/^\d{11}$/.test(customer.ruc)) {
     throw new Error(
@@ -169,13 +171,15 @@ export function buildFactura(
 
   const lineas = lineasDeOrden(order);
   const hoy = todayISO();
+  const aplicaDetraccion = detraccion?.aplica === true;
 
   return {
     operacion: "generar_comprobante",
     tipo_de_comprobante: 1,
     serie: settings.facturaSeries,
     numero: settings.nextFacturaNum,
-    sunat_transaction: 1,
+    // 30 = operación sujeta a detracción (SPOT); si no, igual que hoy (1).
+    sunat_transaction: aplicaDetraccion ? 30 : 1,
     cliente_tipo_de_documento: 6,   // 6 = RUC
     cliente_numero_de_documento: customer.ruc,
     cliente_denominacion: customer.razonSocial,
@@ -191,6 +195,13 @@ export function buildFactura(
     items: lineas.items,
     observaciones: `Orden #${order.id}`,
     formato_de_pdf: "A4",
+    ...(aplicaDetraccion && {
+      detraccion: true,
+      detraccion_tipo: SPOT_MADERA.nubefactTipo,
+      detraccion_porcentaje: detraccion!.porcentaje,
+      detraccion_total: detraccion!.monto,
+      medio_de_pago_detraccion: Number(SPOT_MADERA.medioPago), // "001" -> 1
+    }),
   };
 }
 

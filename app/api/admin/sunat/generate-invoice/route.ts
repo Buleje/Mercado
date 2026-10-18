@@ -28,6 +28,9 @@ const InvoiceSchema = z.object({
   // La UI manda "RUC"/"DNI" o "1"/"6" — lo derivamos de `tipo` + longitud, así
   // que lo aceptamos laxo para no rechazar la request.
   clienteTipoDocumento: z.string().optional(),
+  // Clasificación del bien sujeto a detracción (SPOT): hoy sólo "008" Madera
+  // (venta forestal). El servidor calcula % y monto; el cliente nunca los manda.
+  bienSujetoDetraccion: z.enum(["008"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -106,6 +109,7 @@ async function generateInvoice(
           clienteRazonSocial: parsed.data.clienteNombre,
           items,
           totalCobrado: Number(order.total),
+          bienSujetoDetraccion: parsed.data.bienSujetoDetraccion,
         })
       : await emitirBoleta(auth.tenantId, {
           orderId: order.id,
@@ -130,7 +134,7 @@ async function generateInvoice(
     if (!result.success) {
       // status "retrying" → encolado (202); resto → error gateway (502).
       return NextResponse.json(
-        { ok: false, error: result.error ?? "Error al emitir comprobante", invoiceId: result.invoiceId, status: result.status },
+        { ok: false, error: result.error ?? "Error al emitir comprobante", invoiceId: result.invoiceId, status: result.status, detraccion: result.detraccion },
         { status: result.status === "retrying" ? 202 : 502 },
       );
     }
@@ -149,6 +153,7 @@ async function generateInvoice(
       xmlUrl: result.xml_url ?? null,
       hash: result.hash ?? null,
       sunatAccepted: result.sunat_accepted,
+      detraccion: result.detraccion ?? null,
       invoice: saved
         ? {
             id: saved.id,

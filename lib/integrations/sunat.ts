@@ -27,6 +27,7 @@ import { SunatDB } from "@/lib/db/sunat.db";
 import { sendInvoice, voidInvoice, getInvoiceStatus } from "@/lib/sunat/nubefact-client";
 import { buildBoleta, buildFactura, buildBaja } from "@/lib/sunat/invoice-builder";
 import { armarLineasComprobante, montosParaRegistro } from "@/lib/sunat/lineas-comprobante";
+import { calcularDetraccion, type DetraccionCalculada } from "@/lib/sunat/detraccion";
 import { logger } from "@/lib/logger";
 // PERF 2026-05-05: rate limiter distribuido (Upstash Redis) — reemplaza el
 // Map en-memoria que no compartía estado entre instancias de Vercel.
@@ -70,6 +71,11 @@ const FacturaInputSchema = z.object({
   items: z.array(ItemSchema).min(1, "Debe incluir al menos un item"),
   /** Lo que de verdad se cobró (Order.total). Menor que los items = descuento prorrateado. */
   totalCobrado: z.number().nonnegative().optional(),
+  /**
+   * Bien sujeto a detracción (SPOT). Hoy sólo «008» Madera (venta forestal). El
+   * cliente SÓLO clasifica el bien; el servidor calcula % y monto (regla 6).
+   */
+  bienSujetoDetraccion: z.enum(["008"]).optional(),
 });
 
 const AnulacionInputSchema = z.object({
@@ -118,6 +124,8 @@ export interface SunatResponse {
   error?: string;
   /** Estado del comprobante en nuestra base de datos */
   status?: "pending" | "accepted" | "rejected" | "voided" | "retrying";
+  /** Detracción (SPOT) calculada en el servidor para esta factura. */
+  detraccion?: DetraccionCalculada;
 }
 
 // ── Rate limiter por tenant ───────────────────────────────────────────────────
@@ -405,8 +413,33 @@ export async function emitirFactura(
     };
   }
 
+  // Detracción (SPOT): el servidor la calcula; el cliente sólo clasificó el bien
+  // («008» Madera) — nunca manda % ni monto (regla 6). La base es la parte
+  // GRAVADA con IGV: una venta exonerada por la Amazonía (Ley 27037) sale con
+  // base 0 → motivo "no_gravada" → sin detracción.
+  const lineas = armarLineasComprobante(itemsParaBuilder(data.items), {
+    totalCobrado: data.totalCobrado,
+  });
+  const totalGravadoConIgv =
+    Math.round((lineas.totales.gravada + lineas.totales.igv) * 100) / 100;
+  const detraccion = calcularDetraccion({
+    tipoComprobante: "factura",
+    totalGravadoConIgv,
+    total: lineas.totales.total,
+    bienSujeto: data.bienSujetoDetraccion ?? null,
+  });
+
+  // Sin la cuenta del Banco de la Nación no se puede emitir con detracción.
+  if (detraccion.aplica && !config.cuentaDetracciones) {
+    return {
+      success: false,
+      error: "Falta la cuenta de detracciones del Banco de la Nación",
+      detraccion,
+    };
+  }
+
   const nextNumber = await SunatDB.incrementCorrelativo(tenantId, "factura");
-  const totales = calcularTotalesDesdeItems(data.items, data.totalCobrado);
+  const totales = montosParaRegistro(lineas.totales);
 
   // 5. Crear registro pending
   const invoiceRecord = await SunatDB.createInvoice(tenantId, {
@@ -419,6 +452,10 @@ export async function emitirFactura(
     subtotal: totales.subtotal,
     igv: totales.igv,
     total: totales.total,
+    tipoOperacion: detraccion.aplica ? "1001" : "0101",
+    detraccionCodigo: detraccion.aplica ? detraccion.codigoBien : null,
+    detraccionPorcentaje: detraccion.aplica ? detraccion.porcentaje : null,
+    detraccionMonto: detraccion.aplica ? detraccion.monto : null,
   });
 
   // 6. Construir payload y enviar
@@ -445,7 +482,8 @@ export async function emitirFactura(
       razonSocial: data.clienteRazonSocial,
       direccion: data.clienteDireccion,
       email: data.clienteEmail,
-    }
+    },
+    detraccion,
   );
 
   try {
@@ -481,6 +519,7 @@ export async function emitirFactura(
       cdr_code: response.sunat_description ?? undefined,
       sunat_accepted: response.sunat_accepted,
       status: sunatStatus,
+      detraccion,
       ...(sunatStatus === "rejected" && {
         error: response.sunat_description ?? "SUNAT rechazó la factura",
       }),
@@ -505,6 +544,7 @@ export async function emitirFactura(
       success: false,
       invoiceId: invoiceRecord.id,
       status: "retrying",
+      detraccion,
       error: `Error al comunicar con Nubefact: ${msg}. La factura será reintentada automáticamente.`,
     };
   }

@@ -21,6 +21,7 @@ import {
   type BuilderOrderItem,
 } from "@/lib/sunat/invoice-builder";
 import { montosParaRegistro } from "@/lib/sunat/lineas-comprobante";
+import { calcularDetraccion, type DetraccionCalculada } from "@/lib/sunat/detraccion";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
@@ -206,12 +207,44 @@ async function processInvoice(
     nextFacturaNum: invoice.number,
   };
 
+  // Detracción (SPOT): si el registro quedó como operación sujeta (tipoOperacion
+  // "1001"), hay que reconstruirla desde la orden y mandarla de nuevo; si no, el
+  // reintento saldría como sunat_transaction 1 (sin SPOT) contradiciendo el 1001
+  // guardado. Si no se puede reconstruir, se ABORTA el reintento (no se reenvía
+  // sin SPOT: un comprobante de madera sin detracción es un error tributario).
+  let detraccion: DetraccionCalculada | undefined;
+  if (!isBoleta && invoice.tipoOperacion === "1001") {
+    const totalesFac = lineasDeOrden(builderOrder).totales;
+    const totalGravadoConIgv =
+      Math.round((totalesFac.gravada + totalesFac.igv) * 100) / 100;
+    detraccion = calcularDetraccion({
+      tipoComprobante: "factura",
+      totalGravadoConIgv,
+      total: totalesFac.total,
+      bienSujeto: invoice.detraccionCodigo === "008" ? "008" : null,
+    });
+    if (!detraccion.aplica) {
+      await SunatDB.updateInvoice(tenantId, invoiceId, {
+        sunatStatus: "rejected",
+        errorMessage:
+          "No se puede reintentar: comprobante sujeto a detracción (1001) y no se pudo reconstruir el SPOT desde la orden",
+      });
+      return;
+    }
+  }
+
   const payload = isBoleta
     ? buildBoleta(builderOrder, builderTenant, builderSettings)
-    : buildFactura(builderOrder, builderTenant, builderSettings, {
-        ruc: invoice.customerRuc ?? "",
-        razonSocial: invoice.customerName,
-      });
+    : buildFactura(
+        builderOrder,
+        builderTenant,
+        builderSettings,
+        {
+          ruc: invoice.customerRuc ?? "",
+          razonSocial: invoice.customerName,
+        },
+        detraccion,
+      );
 
   // Marcar como retrying antes de enviar
   await SunatDB.updateInvoice(tenantId, invoiceId, {
