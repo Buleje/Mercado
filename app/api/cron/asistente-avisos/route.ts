@@ -23,7 +23,7 @@ import { logger } from "@/lib/logger";
 import { TenantsDB } from "@/lib/db/tenants.db";
 import { NotificationCenterDB } from "@/lib/db/notification-center.db";
 import { TelegramDB } from "@/lib/db/telegram.db";
-import { calcularAvisos, comoTexto, type Aviso } from "@/lib/asistente/avisos";
+import { avisosDelCanal, calcularAvisos, comoTexto, hayNuevosParaMandar, type Aviso } from "@/lib/asistente/avisos";
 import { botConfigurado, mandarMensaje } from "@/lib/telegram/bot";
 import { getN8nConfig, dispararFlujo } from "@/lib/n8n/flows";
 
@@ -102,8 +102,9 @@ export async function GET(req: NextRequest) {
 
       // 1 · La campana. `createOrReuse` con la clave del aviso como entityId es
       // lo que hace que «el camión N12 gasta más» no aparezca todos los días.
-      let nuevos = 0;
-      for (const a of avisos) {
+      // Cada aviso sale sólo por los canales que trae (`canales`; sin él, por los tres).
+      const creadas = new Set<string>();
+      for (const a of avisosDelCanal(avisos, "campana")) {
         const { created } = await NotificationCenterDB.createOrReuse({
           tenantId: t.id,
           type: "asistente-aviso",
@@ -115,8 +116,11 @@ export async function GET(req: NextRequest) {
           entityId: a.clave,
           dedupWindowHours: DEDUP_HORAS,
         });
-        if (created) nuevos += 1;
+        if (created) creadas.add(a.clave);
       }
+      const nuevos = creadas.size;
+      const paraTelegram = avisosDelCanal(avisos, "telegram");
+      const paraN8n = avisosDelCanal(avisos, "n8n");
 
       /**
        * Telegram y n8n sólo con avisos NUEVOS.
@@ -125,8 +129,8 @@ export async function GET(req: NextRequest) {
        * mensaje al celular no. Repetir el mismo aviso cada mañana es la forma
        * más rápida de que el dueño silencie el bot.
        */
-      const telegram = nuevos > 0 ? await avisarPorTelegram(t.id, avisos) : 0;
-      const n8n = nuevos > 0 ? await avisarPorN8n(t.id, avisos) : false;
+      const telegram = hayNuevosParaMandar(paraTelegram, creadas) ? await avisarPorTelegram(t.id, paraTelegram) : 0;
+      const n8n = hayNuevosParaMandar(paraN8n, creadas) ? await avisarPorN8n(t.id, paraN8n) : false;
 
       resumen.push({ tenant: t.slug, avisos: avisos.length, nuevos, telegram, n8n });
     } catch (err) {

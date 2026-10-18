@@ -67,8 +67,9 @@ describe("puedePedir", () => {
   });
 
   it("almacenero no puede pedir NINGUNA de las 7 rutas del panel (bug reportado 2026-09-14)", () => {
+    // Única excepción: «Hoy» de la agenda (ADR-501), que le devuelve sólo lo de su rol.
     for (const ruta of Object.keys(RUTAS_PANEL) as RutaPanel[]) {
-      expect(puedePedir(ruta, "almacenero")).toBe(false);
+      expect(puedePedir(ruta, "almacenero")).toBe(ruta === "/api/admin/agenda/hoy");
     }
   });
 

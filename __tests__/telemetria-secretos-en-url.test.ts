@@ -26,6 +26,7 @@ describe("las 4 rutas de firma se tachan", () => {
     [`/firmar-contrato/${T}`, "/firmar-contrato/[token]"],
     [`/api/public/adelantos/${T}/firmar`, "/api/public/adelantos/[token]/firmar"],
     [`/api/public/contratos/${T}/pdf`, "/api/public/contratos/[token]/pdf"],
+    [`/api/public/agenda-ics/${T}`, "/api/public/agenda-ics/[token]"],
     [`{"$current_url":"https://x.pe/firmar-adelanto/${T}"}`, '{"$current_url":"https://x.pe/firmar-adelanto/[token]"}'],
   ])("%s", (url, tachada) => {
     expect(haySecretoEnRuta(url)).toBe(true);

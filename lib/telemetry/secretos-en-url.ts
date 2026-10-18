@@ -9,6 +9,7 @@
  *   /firmar-contrato/<token>                    → /firmar-contrato/[token]
  *   /api/public/adelantos/<token>/firmar        → /api/public/adelantos/[token]/firmar
  *   /api/public/contratos/<token>[/firmar|/pdf] → /api/public/contratos/[token]…
+ *   /api/public/agenda-ics/<token>              → /api/public/agenda-ics/[token]   (ADR-501)
  *
  * 2. En la QUERY, todo parámetro cuyo nombre termina en «token» (`token`,
  *    `threadToken` del chat de invitados, `accessToken` de Hik-Connect,
@@ -21,7 +22,7 @@
  */
 
 /* Con `g` para el reemplazo; la prueba usa la de abajo (sin `g`: `.test()` con `g` guarda lastIndex). */
-const RUTAS_CON_SECRETO = String.raw`\/(?:kiosko\/asistencia|firmar-adelanto|firmar-contrato|api\/public\/(?:adelantos|contratos))\/`;
+const RUTAS_CON_SECRETO = String.raw`\/(?:kiosko\/asistencia|firmar-adelanto|firmar-contrato|api\/public\/(?:adelantos|contratos|agenda-ics))\/`;
 const SECRETO_EN_RUTA = new RegExp(String.raw`(${RUTAS_CON_SECRETO})[^/?#"'\s\\]+`, "g");
 const HAY_SECRETO_EN_RUTA = new RegExp(String.raw`${RUTAS_CON_SECRETO}[^/?#"'\s\\[]`);
 /* `\b` + nombre terminado en «token» + `=`: vale en una URL, una query suelta o dentro de JSON. */

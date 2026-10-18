@@ -351,6 +351,13 @@ export const MODULE_INFO: Partial<
     desc: "Tu empresa por escrito: ficha, socios e inversión, FODA y estrategias, objetivos, organigrama, croquis y políticas de atención.",
     tip: "Llénalo de a poco: cada sección se guarda sola y el Resumen te dice qué falta y qué vence.",
   },
+  administracion: {
+    icon: ClipboardCheck,
+    iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    priority: "high",
+    desc: "Tu agenda del negocio: lo que toca hoy, el calendario del mes, lo que se repite (asistencia, aserrío, gastos, adelantos, cuentas, facturas), tareas y notas.",
+    tip: "Prende las actividades que te sirven y el panel te avisa cada día si ya se hicieron.",
+  },
   documentos: {
     icon: FolderArchive,
     iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
@@ -519,6 +526,7 @@ export const BASIC_MODULES: TabCategory[] = [
       "rrhh",
       "documentos",
       "planificacion",
+      "administracion",
     ],
   },
 

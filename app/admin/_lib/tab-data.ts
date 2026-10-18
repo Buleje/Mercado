@@ -121,6 +121,8 @@ export const ALL_TABS = [
   { id: "documentos" as Tab,          label: "Documentos",          icon: FolderArchive },
   // Plan de la empresa (ADR-497): quién es, a dónde va y cómo se organiza.
   { id: "planificacion" as Tab,       label: "Planificación",       icon: Compass },
+  // Agenda del negocio (ADR-501): lo que toca hoy, el calendario y lo que se repite.
+  { id: "administracion" as Tab,      label: "Administración",      icon: ClipboardCheck },
   { id: "cotizaciones" as Tab,        label: "Cotizaciones",        icon: ClipboardList },
   { id: "guias-remision" as Tab,      label: "Guías de Remisión",   icon: Truck },
   { id: "notas-credito" as Tab,       label: "Notas de Crédito",    icon: FileMinus },

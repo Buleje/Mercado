@@ -161,6 +161,8 @@ export const PLAN_BASICO: PlanDefinition = {
     // Plan de la empresa (ADR-497): escribir tu negocio no cuesta storage ni IA,
     // y es lo primero que arma quien recién abre — desde el free.
     "planificacion",
+    // Agenda del negocio (ADR-501): trae Tareas y Notas, que ya eran del free.
+    "administracion",
     // Config (siempre)
     "config",
     "plan",

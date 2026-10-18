@@ -104,6 +104,8 @@ const CORE_BASE: ModuleId[] = [
   /* Plan de la empresa (ADR-497): ficha, socios, FODA, objetivos y políticas
      son de cualquier negocio — bodega, restaurante o aserradero. */
   "planificacion",
+  /* Agenda del negocio (ADR-501): trae Tareas y Notas (universales). */
+  "administracion",
 ];
 
 /** Set extendido — todos los tabs actuales (35). */
@@ -337,6 +339,7 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "dropship", // ADR-298 — tiendas dropshipping (gate real = Settings.dropshipEnabled)
         "rrhh", // ADR-414 — universal; «otro» no hereda CORE_BASE, así que va explícito
         "tareas", // universal, misma razón que rrhh
+        "administracion", // ADR-501 — Tareas y Notas viven ahí desde el 18-10
       ],
       featured: [],
       hidden: [],

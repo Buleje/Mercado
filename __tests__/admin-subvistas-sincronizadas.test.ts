@@ -54,6 +54,8 @@ const MODULOS: Record<string, { archivo: string; extraer: (src: string) => strin
   // Plan de la empresa (ADR-497).
   planificacion: { archivo: "components/admin/unified/PlanificacionModule.tsx", extraer: idsDeTABS, lista: "TABS" },
   "analytics-pro": { archivo: "components/admin/unified/AnalisisHubModule.tsx", extraer: idsDeTABS, lista: "TABS" },
+  // Agenda del negocio (ADR-501, 18-10): Tareas y Notas se mudaron acá desde Equipo.
+  administracion: { archivo: "components/admin/unified/AdministracionModule.tsx", extraer: idsDeTABS, lista: "TABS" },
   rrhh: {
     archivo: "components/admin/unified/RecursosHumanosHubModule.tsx",
     extraer: idsDeLista("TODAS_LAS_VISTAS"),
@@ -105,7 +107,18 @@ function idsDeArray(nombre: string): (src: string) => string[] {
  * sin `origen` la vista hereda el permiso de B: Delivery (Enterprise/Max)
  * dentro de Pedidos (Básico) quedaría para Básico. Sólo cuentan los alias que
  * son pestañas de hoy; un nombre viejo que nunca lo fue no puede ser origen.
+ *
+ * Una vista que ya tenía su propio `origen` y se muda entera de pestaña lleva
+ * ESE permiso, no el de la pestaña de antes: Equipo › Tareas pedía la pestaña
+ * `tareas`, así que en Administración tiene que nombrar `tareas`, no `rrhh`
+ * (nombrar `rrhh` le regalaría Tareas a quien ve Equipo y nunca la tuvo).
  */
+const ORIGEN_ANTES_DE_MUDARSE: Record<string, readonly string[]> = {
+  // ADR-501 (18-10): en Equipo las dos tenían origen `tareas`.
+  "rrhh:tareas": ["tareas"],
+  "rrhh:notas": ["tareas"],
+};
+
 function aliasSinOrigen(
   mapas: MapasDeDestino,
   vistasDe: (tab: string) => readonly SubvistaModulo[],
@@ -117,8 +130,12 @@ function aliasSinOrigen(
     if (!destino?.vista || destino.tab === alias || !pestanas.has(alias)) return;
     const lugar = `${desde} → ${destino.tab}:${destino.vista}`;
     const vista = vistasDe(destino.tab).find((v) => v.key === destino.vista);
+    const pedidos = ORIGEN_ANTES_DE_MUDARSE[desde] ?? [alias];
     if (!vista) fallas.push(`${lugar}: la vista no está registrada`);
-    else if (!origenesDeVista(destino.tab, vista).includes(alias)) fallas.push(`${lugar}: su origen no nombra «${alias}»`);
+    else {
+      const tiene = origenesDeVista(destino.tab, vista);
+      for (const o of pedidos) if (!tiene.includes(o)) fallas.push(`${lugar}: su origen no nombra «${o}»`);
+    }
   };
   for (const id of Object.keys(mapas.alias)) revisar(id, id, resolver(id));
   for (const clave of Object.keys(mapas.vistas)) {

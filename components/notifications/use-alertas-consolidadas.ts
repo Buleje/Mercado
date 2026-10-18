@@ -15,6 +15,8 @@ import { useEffect, useState } from "react";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import { cachedJson, invalidateCachedJson } from "@/lib/client-cache-fetch";
+import { alertasDeAgenda } from "@/lib/agenda/alertas-campana";
+import { logger } from "@/lib/logger";
 import type { CategoriaId } from "./notificaciones-categorias";
 
 export interface AlertaAhora {
@@ -160,6 +162,8 @@ export function useAlertasConsolidadas(abierto: boolean, recarga: number) {
   // el almacenero recibía 403 al abrir las notificaciones.
   const rol = useMiRol();
   const puedeStats = puedePedir("/api/admin/stats", rol);
+  // Agenda de Administración (ADR-501): «Hoy» devuelve sólo lo del rol de quien mira.
+  const puedeAgenda = puedePedir("/api/admin/agenda/hoy", rol);
   const [alertas, setAlertas] = useState<AlertaAhora[]>([]);
   const [cargando, setCargando] = useState(false);
 
@@ -172,7 +176,14 @@ export function useAlertasConsolidadas(abierto: boolean, recarga: number) {
       puedeStats ? leer("/api/admin/stats", fresco) : Promise.resolve(null),
       leer("/api/batches/expiring", fresco),
       leer("/api/reminders", fresco),
-    ]).then(([stats, lotes, recordatorios]) => {
+      // Si la agenda falla, la campana sigue con lo demás.
+      puedeAgenda
+        ? leer("/api/admin/agenda/hoy", fresco).catch((err: unknown) => {
+            logger.warn("[campana] agenda/hoy falló", { error: String(err) });
+            return null;
+          })
+        : Promise.resolve(null),
+    ]).then(([stats, lotes, recordatorios, agenda]) => {
       if (!vivo) return;
       const listaLotes = Array.isArray(lotes)
         ? lotes
@@ -181,6 +192,7 @@ export function useAlertasConsolidadas(abierto: boolean, recarga: number) {
         ...(stats && typeof stats === "object" ? alertasDeStats(stats as Stats) : []),
         ...alertasDeLotes(listaLotes as Array<{ expiryDate?: string }>),
         ...alertasDeRecordatorios(Array.isArray(recordatorios) ? recordatorios : []),
+        ...alertasDeAgenda(agenda),
       ];
       // Urgente primero; dentro de cada nivel, el orden de arriba.
       todas.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "critical" ? -1 : 1));
@@ -190,7 +202,7 @@ export function useAlertasConsolidadas(abierto: boolean, recarga: number) {
     return () => {
       vivo = false;
     };
-  }, [abierto, recarga, puedeStats]);
+  }, [abierto, recarga, puedeStats, puedeAgenda]);
 
   return { alertas, cargando };
 }

@@ -19,6 +19,7 @@
  */
 
 import type { AdminRole } from "@/lib/session";
+import { ROLES_LEER_AGENDA } from "@/lib/admin/agenda-acceso";
 
 /** Espejo de `managementTier` en lib/require-admin.ts — no reordenar sin mirar ahí. */
 const MANAGEMENT_TIER: readonly AdminRole[] = ["admin", "owner", "manager"];
@@ -65,6 +66,9 @@ export const RUTAS_PANEL = {
      `puedeGuardar` con ESTE array: «Agregar al plano» se deshabilita en vez de
      terminar en un 403. */
   "PUT /api/admin/forestal/loth/cartografia": ["admin", "owner"],
+  /* Agenda de Administración (ADR-501): la campana pide «Hoy» con cualquier rol
+     que lee la agenda; cajero/almacenero/analista reciben sólo lo de su rol. */
+  "/api/admin/agenda/hoy": ROLES_LEER_AGENDA,
 } as const satisfies Record<string, readonly AdminRole[]>;
 
 export type RutaPanel = keyof typeof RUTAS_PANEL;

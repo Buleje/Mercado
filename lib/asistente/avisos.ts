@@ -27,6 +27,7 @@ import { AssetsDB } from "@/lib/db/assets.db";
 import { ForestFleteDB } from "@/lib/db/forest-flete.db";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
 import { FiadosDB } from "@/lib/db/fiados.db";
+import { avisosDeAgenda } from "@/lib/agenda/avisos-asistente";
 import { logger } from "@/lib/logger";
 
 export type Severidad = "HIGH" | "MEDIUM" | "LOW";
@@ -41,6 +42,27 @@ export interface Aviso {
   /** Dónde se resuelve. Se usa para el enlace del panel y para el texto del bot. */
   pantalla: string;
   url: string;
+  /**
+   * Por dónde sale. Sin `canales` = por los tres, como siempre (combustible,
+   * fletes, adelantos…). La agenda lo llena con lo que eligió cada actividad.
+   */
+  canales?: readonly CanalAviso[];
+}
+
+export type CanalAviso = "campana" | "telegram" | "n8n";
+
+/** Los avisos que salen por `canal` (un aviso sin `canales` sale por todos). */
+export function avisosDelCanal(avisos: readonly Aviso[], canal: CanalAviso): Aviso[] {
+  return avisos.filter((a) => !a.canales || a.canales.includes(canal));
+}
+
+/**
+ * ¿Hay algo nuevo para mandar al celular? Lo nuevo de la campana (lo que
+ * `createOrReuse` acaba de crear) más lo que no pasa por la campana: eso no
+ * tiene dónde guardar el «ya lo avisé», y su clave ya va por fecha (agenda).
+ */
+export function hayNuevosParaMandar(avisos: readonly Aviso[], creadasEnCampana: ReadonlySet<string>): boolean {
+  return avisos.some((a) => creadasEnCampana.has(a.clave) || (a.canales != null && !a.canales.includes("campana")));
 }
 
 const soles = (n: number) =>
@@ -260,6 +282,7 @@ export async function calcularAvisos(tenantId: string, ahora = new Date()): Prom
     ["adelantos", adelantosVencidos(tenantId, ahora)],
     ["fiados", fiadosViejos(tenantId, ahora)],
     ["maquinas", maquinasQuietas(tenantId)],
+    ["agenda", avisosDeAgenda(tenantId, ahora)],
   ];
 
   const resultados = await Promise.allSettled(chequeos.map(([, p]) => p));

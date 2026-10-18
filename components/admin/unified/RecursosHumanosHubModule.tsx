@@ -2,22 +2,21 @@
 
 /**
  * RecursosHumanosHubModule — «Equipo» (`?tab=rrhh`): el hub de Recursos
- * Humanos (ADR-414 §7) más Tareas y Notas, que vivían en su propia pestaña
- * (plan «panel unificado», ola 2; `?tab=tareas` y `?tab=notas` llegan acá).
+ * Humanos (ADR-414 §7). Tareas y Notas vivieron acá desde la ola 2 y el 18-10
+ * se mudaron a Administración (ADR-501); `?tab=rrhh&vista=tareas|notas` lleva
+ * allá por alias (`VISTA_MIGRATION`).
  *
  * Personal, asistencia del día y del mes, lo ganado de referencia y contratos
  * vinculados, en un solo lugar. El hub NO deduce el rol en el cliente: filtra
  * las sub-pestañas con el `nivel` que devuelve `GET /api/rrhh/resumen` — el
  * servidor vuelve a chequear en cada ruta, esto es sólo para no ofrecer un
  * botón que 403 al tocarlo. Encima, cada vista pasa por el `origen` que declara
- * en `lib/admin/subvistas-modulos.ts` (regla R2): Tareas y Notas declaran
- * `tareas`, así que se ofrecen sólo a quien antes veía esa pestaña. Lo cuida
- * `__tests__/equipo-vistas-origen.test.ts`.
+ * en `lib/admin/subvistas-modulos.ts` (regla R2).
  */
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { CalendarDays, CheckSquare, StickyNote, Users, Wallet, FileSignature, Briefcase } from "@buleje/design-system/icons";
+import { CalendarDays, Users, Wallet, FileSignature, Briefcase } from "@buleje/design-system/icons";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { useRrhhResumen } from "@/hooks/use-rrhh-resumen";
 import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
@@ -32,16 +31,10 @@ const PersonalView = dynamic(() => import("@/components/admin/rrhh/personal/Pers
 const GanadoView = dynamic(() => import("@/components/admin/rrhh/ganado/GanadoView"), { loading: S });
 const ContratosDelPersonalView = dynamic(() => import("@/components/admin/rrhh/contratos/ContratosDelPersonalView"), { loading: S });
 const PuestosView = dynamic(() => import("@/components/admin/rrhh/puestos/PuestosView"), { loading: S });
-const TasksTab = dynamic(() => import("@/components/admin/TasksTab"), { loading: S });
-const QuickNotesTab = dynamic(() => import("@/components/admin/QuickNotesTab"), { loading: S });
 
 const MODULE_ID = "rrhh-hub";
 
-/**
- * `ninguno` = la vista no pide nivel de RRHH: Tareas y Notas tienen su propia
- * API (`/api/tasks`, `/api/notes`) y antes se abrían sin pasar por
- * `/api/rrhh/resumen`. Si ese resumen falla, siguen a mano.
- */
+/** `ninguno` = el resumen de RRHH falló: no se ofrece ninguna vista con datos. */
 type NivelDeVista = NivelRrhh | "ninguno";
 
 const NIVEL_ORDEN: Record<NivelDeVista, number> = { ninguno: -1, marcar: 0, gestion: 1, completo: 2 };
@@ -52,8 +45,6 @@ const TODAS_LAS_VISTAS = [
   { id: "ganado", label: "Lo ganado", icon: Wallet, nivelMin: "completo" as NivelDeVista },
   { id: "contratos", label: "Contratos", icon: FileSignature, nivelMin: "gestion" as NivelDeVista },
   { id: "puestos", label: "Puestos", icon: Briefcase, nivelMin: "gestion" as NivelDeVista },
-  { id: "tareas", label: "Tareas", icon: CheckSquare, nivelMin: "ninguno" as NivelDeVista },
-  { id: "notas", label: "Notas", icon: StickyNote, nivelMin: "ninguno" as NivelDeVista },
 ];
 
 /** Lo que dice la ⓘ del título: para qué es el lugar, sin repetir las pestañas que se ven al lado. */
@@ -64,9 +55,9 @@ const ESPERA_DEL_ROL_MS = 4000;
 
 export default function RecursosHumanosHubModule({ initialTab }: { initialTab?: string } = {}) {
   const { resumen, loading, error, recargar } = useRrhhResumen();
-  /* Las vistas que llegaron de otra pestaña dependen del rol (R2) y
-     `useVistaModulo` valida la vista de la URL UNA vez, al montar: sin esperar
-     al rol, `?tab=tareas` caía en Asistencia. */
+  /* `useVistasPermitidas` filtra por rol (R2) y `useVistaModulo` valida la
+     vista de la URL UNA vez, al montar: se espera al rol para que una vista que
+     declare `origen` no caiga en Asistencia (así le pasaba a `?tab=tareas`). */
   const rolListo = useContextoPermiso() !== null;
   const rolTarde = useEsperaVencida(!rolListo, ESPERA_DEL_ROL_MS);
 
@@ -154,8 +145,6 @@ function HubConNivel({
           {n === "completo" && sub === "ganado" && <GanadoView />}
           {n && sub === "contratos" && <ContratosDelPersonalView />}
           {n && sub === "puestos" && <PuestosView nivel={n} />}
-          {sub === "tareas" && <TasksTab />}
-          {sub === "notas" && <QuickNotesTab />}
         </div>
       </AdminTabBar>
     </div>

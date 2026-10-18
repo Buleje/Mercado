@@ -288,12 +288,18 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "ganado", label: "Lo ganado", hint: "Cuánto ganó cada uno según su asistencia" },
     { key: "contratos", label: "Contratos", hint: "Los contratos del personal y su vencimiento" },
     { key: "puestos", label: "Puestos", hint: "Los puestos del negocio y su sueldo" },
-    // Ola 2: Tareas y Notas vivían en la pestaña `tareas` (hub Equipo, que ya
-    // no registra vistas: el buscador las ofrecía dos veces). Las ve sólo quien
-    // veía esa pestaña (R2). Notas nombra también `notas`: era su tab alias y la
-    // vista adonde lleva un alias tiene que nombrarlo (admin-subvistas-sincronizadas).
+  ],
+  // Agenda del negocio (ADR-501, 18-10). Tareas y Notas se mudaron desde Equipo
+  // con su `origen`: las ve sólo quien veía la pestaña `tareas` (R2). Notas
+  // nombra también `notas`: era su tab alias y la vista adonde lleva un alias
+  // tiene que nombrarlo (admin-subvistas-sincronizadas).
+  administracion: [
+    { key: "hoy", label: "Hoy", hint: "Lo que te toca hoy y lo atrasado, con cuánto ya se hizo y el enlace para hacerlo" },
+    { key: "calendario", label: "Calendario", hint: "El mes y la semana con cada actividad, tarea, vencimiento y nota del día" },
+    { key: "actividades", label: "Actividades", hint: "Lo que se repite: asistencia, aserrío, gastos e ingresos, adelantos, cuentas de terceros y facturas" },
     { key: "tareas", label: "Tareas", hint: "Lo que tiene que hacer el equipo y quién lo hace", origen: ["tareas"] },
-    { key: "notas", label: "Notas", hint: "Apuntes rápidos del negocio", origen: ["tareas", "notas"] },
+    { key: "notas", label: "Notas", hint: "Apuntes rápidos del negocio y notas de un día", origen: ["tareas", "notas"] },
+    { key: "conectar", label: "Conectar", hint: "Ver la agenda en Google Calendar, Outlook o el celular" },
   ],
   // Pedidos y reparto (ola 2): gana `?vista=` y absorbe Delivery como Reparto.
   // Reparto es de quien veía Delivery (Enterprise/Max), no de quien ve Pedidos

@@ -397,6 +397,70 @@
    },
    "porque": "Noche 17-10: pestaña nueva N02 «Seguimiento y pendientes» del PDF de Comprobantes (Codex 15-10): bandeja de rechazados, en cola, notas sin documento, guías sin enviar y cotizaciones por vencer, leída de lo que ya existe. Sólo para los roles que ya ven Comprobantes completo (admin y tienda_owner, medido por esta prueba): si otro rol la gana, la prueba avisa.",
    "aprobo": "Brandon delegó las decisiones de la noche 17-10 («todas tus propuestas, decisiones… implementa todas las mejoras») — coordinador de la noche"
+  },
+  {
+   "par": "administracion:hoy",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Pestaña nueva Administración (ADR-501): agenda del negocio con Hoy, Calendario, Actividades y Conectar. Pantallas nuevas, no se le quita nada a nadie; Tareas y Notas se mudan desde Equipo por alias (rrhh:tareas/notas → administracion). Sólo para los roles que la ganan medidos sin esta lista (admin y tienda_owner): si otro rol la gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-18: «una página en admin de Administración… tipo un Google Calendar con notas y actividades» (y sí a mudar Tareas y Notas)"
+  },
+  {
+   "par": "administracion:calendario",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Pestaña nueva Administración (ADR-501): agenda del negocio con Hoy, Calendario, Actividades y Conectar. Pantallas nuevas, no se le quita nada a nadie; Tareas y Notas se mudan desde Equipo por alias (rrhh:tareas/notas → administracion). Sólo para los roles que la ganan medidos sin esta lista (admin y tienda_owner): si otro rol la gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-18: «una página en admin de Administración… tipo un Google Calendar con notas y actividades» (y sí a mudar Tareas y Notas)"
+  },
+  {
+   "par": "administracion:actividades",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Pestaña nueva Administración (ADR-501): agenda del negocio con Hoy, Calendario, Actividades y Conectar. Pantallas nuevas, no se le quita nada a nadie; Tareas y Notas se mudan desde Equipo por alias (rrhh:tareas/notas → administracion). Sólo para los roles que la ganan medidos sin esta lista (admin y tienda_owner): si otro rol la gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-18: «una página en admin de Administración… tipo un Google Calendar con notas y actividades» (y sí a mudar Tareas y Notas)"
+  },
+  {
+   "par": "administracion:conectar",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Pestaña nueva Administración (ADR-501): agenda del negocio con Hoy, Calendario, Actividades y Conectar. Pantallas nuevas, no se le quita nada a nadie; Tareas y Notas se mudan desde Equipo por alias (rrhh:tareas/notas → administracion). Sólo para los roles que la ganan medidos sin esta lista (admin y tienda_owner): si otro rol la gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-18: «una página en admin de Administración… tipo un Google Calendar con notas y actividades» (y sí a mudar Tareas y Notas)"
+  },
+  {
+   "par": "administracion:hoy",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Pestaña nueva Administración (ADR-501): agenda del negocio con Hoy, Calendario, Actividades y Conectar. Pantallas nuevas, no se le quita nada a nadie; Tareas y Notas se mudan desde Equipo por alias (rrhh:tareas/notas → administracion). Sólo para los roles que la ganan medidos sin esta lista (admin y tienda_owner): si otro rol la gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-18: «una página en admin de Administración… tipo un Google Calendar con notas y actividades» (y sí a mudar Tareas y Notas)"
+  },
+  {
+   "par": "administracion:calendario",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Pestaña nueva Administración (ADR-501): agenda del negocio con Hoy, Calendario, Actividades y Conectar. Pantallas nuevas, no se le quita nada a nadie; Tareas y Notas se mudan desde Equipo por alias (rrhh:tareas/notas → administracion). Sólo para los roles que la ganan medidos sin esta lista (admin y tienda_owner): si otro rol la gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-18: «una página en admin de Administración… tipo un Google Calendar con notas y actividades» (y sí a mudar Tareas y Notas)"
+  },
+  {
+   "par": "administracion:actividades",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Pestaña nueva Administración (ADR-501): agenda del negocio con Hoy, Calendario, Actividades y Conectar. Pantallas nuevas, no se le quita nada a nadie; Tareas y Notas se mudan desde Equipo por alias (rrhh:tareas/notas → administracion). Sólo para los roles que la ganan medidos sin esta lista (admin y tienda_owner): si otro rol la gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-18: «una página en admin de Administración… tipo un Google Calendar con notas y actividades» (y sí a mudar Tareas y Notas)"
+  },
+  {
+   "par": "administracion:conectar",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Pestaña nueva Administración (ADR-501): agenda del negocio con Hoy, Calendario, Actividades y Conectar. Pantallas nuevas, no se le quita nada a nadie; Tareas y Notas se mudan desde Equipo por alias (rrhh:tareas/notas → administracion). Sólo para los roles que la ganan medidos sin esta lista (admin y tienda_owner): si otro rol la gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-18: «una página en admin de Administración… tipo un Google Calendar con notas y actividades» (y sí a mudar Tareas y Notas)"
   }
  ]
 }

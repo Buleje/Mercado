@@ -132,11 +132,11 @@ export const TAB_MIGRATION: Record<string, Tab | DestinoTab> = {
   rendimiento: { tab: "config", vista: "sistema", sub: "velocidad" },
   auditoria: { tab: "config", vista: "sistema", sub: "actividad" },
   colas: { tab: "config", vista: "sistema", sub: "colas" },
-  // Equipo (`rrhh`) absorbe Tareas y Notas; el hub Equipo viejo queda sin montar.
-  tareas: { tab: "rrhh", vista: "tareas" },
-  "proyectos-tareas": { tab: "rrhh", vista: "tareas" },
-  notas: { tab: "rrhh", vista: "notas" },
-  "notas-rapidas": { tab: "rrhh", vista: "notas" },
+  // Tareas y Notas: de Equipo (ola 2) a Administración (ADR-501, 18-10).
+  tareas: { tab: "administracion", vista: "tareas" },
+  "proyectos-tareas": { tab: "administracion", vista: "tareas" },
+  notas: { tab: "administracion", vista: "notas" },
+  "notas-rapidas": { tab: "administracion", vista: "notas" },
   // Tienda online: una sola barra; Canales es «Redes y medición».
   canales: { tab: "pagina-inicio", vista: "redes" },
   "store-customizer": { tab: "pagina-inicio", vista: "apariencia" },
@@ -213,8 +213,11 @@ export const VISTA_MIGRATION: Record<string, DestinoTab> = {
   // Pérdidas → sección de Entradas y salidas (10-10).
   "inventario:mermas": { tab: "inventario", vista: "kardex", sub: "perdidas" },
   // ── Ola 2 (2026-10-10) ──
-  "tareas:tareas": { tab: "rrhh", vista: "tareas" },
-  "tareas:notas": { tab: "rrhh", vista: "notas" },
+  "tareas:tareas": { tab: "administracion", vista: "tareas" },
+  "tareas:notas": { tab: "administracion", vista: "notas" },
+  // Equipo › Tareas / Notas → Administración (ADR-501, 18-10).
+  "rrhh:tareas": { tab: "administracion", vista: "tareas" },
+  "rrhh:notas": { tab: "administracion", vista: "notas" },
   "pagina-inicio:identidad": { tab: "pagina-inicio", vista: "apariencia" },
   "pagina-inicio:pagina": { tab: "pagina-inicio", vista: "contenido" },
   // Las 8 vistas del Delivery suelto → las secciones de Reparto (`?sub=`).

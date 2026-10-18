@@ -39,11 +39,13 @@ const CRMClientesModule       = dynamic(() => import("@/components/admin/unified
 const MetasLogrosModule       = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"),       { loading: TabSpinner });
 // ADR-497 — plan de la empresa: ficha, socios, FODA, objetivos, organización y políticas
 const PlanificacionModule     = dynamic(() => import("@/components/admin/unified/PlanificacionModule"),     { loading: TabSpinner });
+// ADR-501 — agenda del negocio: hoy, calendario, actividades, tareas, notas y conectar
+const AdministracionModule    = dynamic(() => import("@/components/admin/unified/AdministracionModule"),    { loading: TabSpinner });
 // Crecimiento (Marketing & Fidelización) — Ola 1: Campañas + Puntos consolidados
 const CrecimientoHubModule    = dynamic(() => import("@/components/admin/unified/CrecimientoHubModule"),    { loading: TabSpinner });
 // Canales (SalesChannelsTab) es Tienda online › Redes y medición, y Tareas y
 // Notas son vistas de Equipo (ola 2): EquipoHubModule queda sin montar.
-// Equipo (ADR-414): personal, asistencia, lo ganado, contratos, tareas y notas
+// Equipo (ADR-414): personal, asistencia, lo ganado, contratos y puestos
 const RecursosHumanosHubModule = dynamic(() => import("@/components/admin/unified/RecursosHumanosHubModule"), { loading: TabSpinner });
 const MarketplaceModule       = dynamic(() => import("@/components/admin/unified/MarketplaceModule"),       { loading: TabSpinner });
 const DocumentosHubModule     = dynamic(() => import("@/components/admin/unified/DocumentosHubModule"),    { loading: TabSpinner });
@@ -295,6 +297,7 @@ export function TabRouter({
   if (tab === "sugerencias-ia") return <AsistenteIAHubModule key="sugerencias-ia" initialTab="comandos" />;
   if (tab === "metas-logros")   return <MetasLogrosModule />;
   if (tab === "planificacion")  return <PlanificacionModule />;
+  if (tab === "administracion") return <AdministracionModule key="administracion" />;
 
   // ── Crecimiento (Marketing & Fidelización) — hub único ──
   // Absorbe campañas/segmentos/puntos/RFM + los 4 programas (gift cards, socio,
@@ -303,10 +306,10 @@ export function TabRouter({
   if (tab === "puntos")   return <CrecimientoHubModule key="puntos" initialTab="puntos" />;
   if (tab === "canales")  return <MiTiendaHubModule key="pagina-inicio" initialTab="redes" />;
 
-  // ── Equipo (ADR-414; ola 2: suma Tareas y Notas) ──
+  // ── Equipo (ADR-414). Tareas y Notas se mudaron a Administración (ADR-501, 18-10) ──
   if (tab === "rrhh") return <RecursosHumanosHubModule key="rrhh" />;
-  if (tab === "tareas") return <RecursosHumanosHubModule key="rrhh" initialTab="tareas" />;
-  if (tab === "notas")  return <RecursosHumanosHubModule key="rrhh" initialTab="notas" />;
+  if (tab === "tareas") return <AdministracionModule key="administracion" initialTab="tareas" />;
+  if (tab === "notas")  return <AdministracionModule key="administracion" initialTab="notas" />;
 
   // ── Marketplace; Delivery es Pedidos y reparto › Reparto (ola 2) ──
   if (tab === "marketplace")       return <MarketplaceModule key="marketplace" />;

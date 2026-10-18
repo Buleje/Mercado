@@ -61,9 +61,10 @@ const TAB_LOADERS: Record<string, Loader> = {
   "whatsapp-inbox": () => import("@/components/admin/unified/MensajesHubModule"),
   crecimiento: () => import("@/components/admin/unified/CrecimientoHubModule"),
   campanas: () => import("@/components/admin/unified/CrecimientoHubModule"),
-  // Tareas y Notas son vistas de Equipo (`rrhh`) desde la ola 2.
-  tareas: () => import("@/components/admin/unified/RecursosHumanosHubModule"),
-  notas: () => import("@/components/admin/unified/RecursosHumanosHubModule"),
+  // Tareas y Notas son vistas de Administración desde el 18-10 (ADR-501).
+  tareas: () => import("@/components/admin/unified/AdministracionModule"),
+  notas: () => import("@/components/admin/unified/AdministracionModule"),
+  administracion: () => import("@/components/admin/unified/AdministracionModule"),
   rrhh: () => import("@/components/admin/unified/RecursosHumanosHubModule"),
   metas: () => import("@/components/admin/unified/MetasLogrosModule"),
   planificacion: () => import("@/components/admin/unified/PlanificacionModule"),
