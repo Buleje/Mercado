@@ -28,6 +28,7 @@ import { CATEGORIA_SERVICIOS, CATEGORIAS } from "./anuncios";
 import type { CodigosProductos } from "./PedirPorWhatsapp";
 import { esPorEncargo, WHATSAPP_MUSA } from "./pedido-whatsapp";
 import { estadoProducto } from "./preventa";
+import { leerFicha, presentacionDe, type FilaFicha } from "./presentacion";
 
 export interface ProductoSalon {
   id: number;
@@ -52,6 +53,10 @@ export interface ProductoSalon {
   href: string;
   /** Kit o dúo: qué trae y cuánto ahorras frente a comprar cada cosa (null en un producto suelto). */
   kit: KitSalon | null;
+  /** «1000 ml», «Pack × 5», «3 productos»: lo que la tarjeta compara de un vistazo (`presentacionDe`; null = sin cargar). */
+  presentacion: string | null;
+  /** Ficha técnica del panel (Ingredientes, Contenido neto…): la muestran la ficha rápida y la completa. */
+  ficha: FilaFicha[];
 }
 
 /** Lo que trae un kit, con los precios de HOY de la base (nunca escritos a mano). */
@@ -256,12 +261,18 @@ export const cargarVitrina = cache(async (tenantId: string, slug: string): Promi
       duracion: p.durationLabel?.trim() || null,
       href: `${base}/${slugify(p.name)}`,
       kit: null,
+      presentacion: null,
+      ficha: leerFicha(p.specsJson),
     };
   };
 
   const sueltos = propios.map(aSalon);
   // Los kits se arman con los precios de hoy de sus componentes (en el servidor: el cliente no suma).
-  const todos = sueltos.map((p) => (COMPOSICION_KITS[p.codigo ?? ""] ? { ...p, kit: armarKit(p.codigo, p.precio, sueltos) } : p));
+  // La presentación va después del kit: un kit sin ficha técnica dice cuántas cosas trae.
+  const todos = sueltos.map((p) => {
+    const kit = COMPOSICION_KITS[p.codigo ?? ""] ? armarKit(p.codigo, p.precio, sueltos) : null;
+    return { ...p, kit, presentacion: presentacionDe({ ...p, kit }) };
+  });
   const enVenta = todos.filter((p) => p.categoria !== CATEGORIA_SERVICIOS);
   const mayor = Math.max(0, ...enVenta.map((p) => p.descuento ?? 0));
   return {

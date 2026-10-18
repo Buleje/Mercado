@@ -4,12 +4,14 @@
  * Tarjeta de un producto de Musa (minimalista, 16-10): el envase ilustrado
  * sobre un panel gris claro redondeado, sin borde ni sombra de tarjeta (como
  * mi.com o Aesop); insignias (Preventa / Por encargo); categoría y código en
- * gris; nombre; la frase «Ayuda a…»; precio en la sans y «Agregar», que al tocarlo se
- * vuelve el contador `[− n +]` (`BotonAgregar`) y pone «✓ En tu bolsa».
- * Un kit suma la píldora «Ahorras S/ 18», qué trae con sus códigos y «Por
- * separado S/ 167» (cuentas del servidor, `datos.ts`; sin tachar nada).
+ * gris; nombre; la PRESENTACIÓN (1000 ml, Pack × 5, 3 productos); precio en la
+ * sans y «Agregar», que al tocarlo se vuelve el contador `[− n +]`
+ * (`BotonAgregar`) y pone «✓ En tu bolsa». Un kit suma la píldora «Ahorras
+ * S/ 18» y «Por separado S/ 167» (cuentas del servidor, `datos.ts`; sin tachar).
  *
- * La ilustración y el nombre abren la ficha rápida (`EnlaceFicha`); con
+ * 17-10 (Brandon): la tarjeta lleva sólo lo que se compara de un vistazo; la
+ * descripción, qué trae el kit y cómo usarlo viven en la ficha rápida.
+ * Toda la tarjeta la abre (el enlace del nombre, estirado: `EnlaceFicha`); con
  * ctrl/cmd + clic o el clic del medio, la ficha en otra pestaña. Es de cliente
  * para que `p` viaje UNA vez al navegador (no una por enlace).
  *
@@ -22,7 +24,7 @@ import { BotonAgregar, useEnBolsa } from "./BotonAgregar";
 import type { ProductoSalon } from "./datos";
 import { EnlaceFicha } from "./EnlaceFicha";
 import { solesCortos as precio } from "./destinos";
-import { anchosIlustracion, imagenDe, resumenDe, TAMANOS_TARJETA, tinteDe } from "./imagenes";
+import { anchosIlustracion, imagenDe, TAMANOS_TARJETA, tinteDe } from "./imagenes";
 import { Sello } from "./Sello";
 
 const POCAS = 5;
@@ -134,15 +136,11 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
   const n = useEnBolsa(p.id);
   const kit = p.kit && p.kit.ahorro > 0 ? p.kit : null;
   const pocas = p.stock !== null && p.stock > 0 && p.stock <= POCAS;
-  const linea = p.kit ? p.kit.componentes.map((c) => (c.cantidad > 1 ? `${c.cantidad} × ${c.nombre}` : c.nombre)).join(" + ") : resumenDe(p.descripcion);
   const { src } = imagenDe(p);
 
   return (
-    <article
-      data-mu-producto
-      className="group @container relative flex h-full flex-col"
-    >
-      <EnlaceFicha p={p} data-mu-foto tabIndex={-1} aria-hidden="true" className="relative block">
+    <article data-mu-producto className="group @container relative flex h-full flex-col">
+      <div data-mu-foto className="relative">
         {/* Cuadrada como la ilustración: así un kit no pierde los envases de los costados. */}
         <Escenario categoria={p.categoria} className="aspect-square rounded-[var(--mu-radio-tarjeta)]">
           <Ilustracion p={p} prioridad={prioridad} className="origin-bottom transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1.5 group-hover:rotate-2" />
@@ -173,21 +171,37 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
             </span>
           </span>
         )}
-      </EnlaceFicha>
+      </div>
 
       <div className="flex flex-1 flex-col pb-1 pt-3 @min-[15.5rem]:pt-4">
         <p className="flex items-baseline justify-between gap-2">
           <span className="mu-kicker truncate text-[var(--text-tertiary)]">{p.kit ? (p.kit.componentes.length === 1 ? "Dúo" : "Kit") : p.categoria}</span>
           {p.codigo && <span className="shrink-0 text-sm font-medium tabular-nums text-[var(--text-tertiary)]">{p.codigo}</span>}
         </p>
-        <h3 className="mt-1.5 line-clamp-2 min-h-[2.7em] text-[length:var(--mu-t-nombre)] font-medium leading-[1.35] text-[var(--text-primary)]">
-          <EnlaceFicha p={p} className="mu-foco rounded-sm hover:underline hover:underline-offset-4">
+        <h3 className="mt-1.5 line-clamp-2 text-[length:var(--mu-t-nombre)] font-medium leading-[1.35] text-[var(--text-primary)]">
+          {/* El enlace se estira a toda la tarjeta (`after:inset-0`, la tarjeta es `relative`): tocar la foto, el precio o
+              el espacio vacío abre la ficha rápida. «Agregar» va encima (`relative z-[1]`) y no la abre. */}
+          <EnlaceFicha
+            p={p}
+            className="mu-foco rounded-sm after:absolute after:inset-0 after:rounded-[var(--mu-radio-tarjeta)] after:content-[''] hover:underline hover:underline-offset-4"
+          >
             {p.nombre}
           </EnlaceFicha>
         </h3>
-        {linea && <p className="mt-1 line-clamp-2 text-[length:var(--mu-t-chico)] leading-snug text-[var(--text-tertiary)]">{linea}</p>}
-        {p.kit && <p className="mt-1 text-sm text-[var(--text-tertiary)]">Cód. {p.kit.componentes.map((c) => c.codigo).join(", ")}</p>}
-        {pocas && <p className="mt-1 text-sm font-semibold text-[var(--mu-achiote-tinta)]">¡Quedan {p.stock}!</p>}
+        {/* La presentación (1000 ml, Pack × 5, 3 productos) pegada al nombre; su línea queda aunque falte. El precio va al pie (`mt-auto`): en una fila, todas miden igual. */}
+        <p className="mt-1 min-h-[1.4em] truncate text-[length:var(--mu-t-chico)] leading-[1.4] text-[var(--text-secondary)]">
+          {p.presentacion && (
+            <>
+              <span className="sr-only">Presentación: </span>
+              {p.presentacion}
+            </>
+          )}
+          {pocas && (
+            <span className="font-semibold text-[var(--mu-achiote-tinta)]">
+              {p.presentacion ? " · " : ""}¡Quedan {p.stock}!
+            </span>
+          )}
+        </p>
 
         <div className="mt-auto flex flex-col gap-2.5 pt-3 @min-[15.5rem]:flex-row @min-[15.5rem]:items-end @min-[15.5rem]:justify-between">
           <div className="min-w-0">
@@ -202,17 +216,19 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
             </p>
             {kit && <p className="mt-0.5 whitespace-nowrap text-sm text-[var(--text-tertiary)]">Por separado {precio(kit.porSeparado)}</p>}
           </div>
-          <BotonAgregar
-            producto={{
-              id: p.id,
-              name: p.nombre,
-              category: p.categoria,
-              price: p.precio,
-              image: src ?? "",
-              unit: p.unidad,
-              ...(p.stock !== null ? { stock: p.stock } : {}),
-            }}
-          />
+          <div className="relative z-[1]">
+            <BotonAgregar
+              producto={{
+                id: p.id,
+                name: p.nombre,
+                category: p.categoria,
+                price: p.precio,
+                image: src ?? "",
+                unit: p.unidad,
+                ...(p.stock !== null ? { stock: p.stock } : {}),
+              }}
+            />
+          </div>
         </div>
       </div>
     </article>

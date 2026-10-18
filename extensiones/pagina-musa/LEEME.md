@@ -55,7 +55,10 @@ en todas las tiendas `/t/<negocio>` (medido 01-10). No usar `next/font` acá.
 - **Botón**: `BOTON` (lleno, casi negro, `rounded-full`, 48 px de alto) para UNA acción por bloque; `BOTON_BORDE`
   (borde fino) para la segunda; el resto son enlaces con `mu-subrayado`. Sin degradés, sin `hover:scale`, sin sombra.
 - **Tarjeta de producto**: sin borde, sin fondo, sin sombra; la foto sobre el gris claro (`aspect-square`, radio
-  `--mu-radio-tarjeta`); debajo categoría y código en gris terciario, nombre, una línea de «ayuda a», precio y «Agregar».
+  `--mu-radio-tarjeta`); debajo categoría y código en gris terciario, nombre, la presentación (1000 ml, Pack × 5,
+  3 productos: `presentacion.ts`, se carga en Inventario › Editar › Ficha técnica › «Contenido neto»), precio y
+  «Agregar». La descripción NO va en la tarjeta (17-10): vive en la ficha rápida, que se abre tocando cualquier
+  parte de la tarjeta, con «Te ayuda a», la ficha técnica y «Cómo usarlo» (`DetalleProducto.tsx`).
 - **Panel o aviso**: borde `--rule-soft` y radio de tarjeta; fondo blanco o el gris claro, nunca un color.
 - **Título**: `TituloBloque` (`--mu-t-bloque`, peso 600) con una línea gris debajo si hace falta; rótulo arriba con
   `KICKER` (minúsculas, peso 500, gris). Nada en MAYÚSCULAS ni con `tracking` ancho; nunca itálica en un párrafo.

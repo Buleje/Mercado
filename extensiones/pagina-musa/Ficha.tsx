@@ -29,6 +29,7 @@ import { KitsQueLoTraen, NoEncontrado, OtrosServicios, Pasos, QueTrae, Rutina, R
 import { EsqueletoFicha, EstadoPedido, Existencias, Galeria, Migas, Precio, type Miga } from "./FichaPartes";
 import { tarjetaDe } from "./compartir";
 import { CompartirProducto } from "./CompartirProducto";
+import { ChipPresentacion, FichaTecnica, TeAyuda } from "./DetalleProducto";
 import { CARPETA_ILUSTRACIONES, imagenDe } from "./imagenes";
 import type { Opciones } from "./manifest";
 import { ENVIO_GRATIS_DESDE } from "./pedido-whatsapp";
@@ -100,39 +101,6 @@ function JsonLd({ p, m, migas }: { p: ProductoSalon; m: DatosMarco; migas: Miga[
   );
 }
 
-/** «Ayuda a limpiar sin resecar y a alargar el efecto…» → dos viñetas; lo demás (formato, consejo) va aparte. */
-function beneficiosDe(descripcion: string | null): { puntos: string[]; resto: string | null } | null {
-  const frases = (descripcion ?? "").split(/(?<=\.)\s+/).map((f) => f.trim()).filter(Boolean);
-  const m = frases[0] ? /^Ayuda a (.+?)\.?$/i.exec(frases[0]) : null;
-  if (!m?.[1]) return null;
-  const puntos = m[1].split(/\s+y a\s+/).map((x) => x.charAt(0).toUpperCase() + x.slice(1));
-  const resto = frases.slice(1).filter((f) => !/se pide al confirmar/i.test(f)).join(" ");
-  return { puntos, resto: resto || null };
-}
-
-function TeAyuda({ p }: { p: ProductoSalon }) {
-  const b = beneficiosDe(p.descripcion);
-  if (!b) return p.descripcion ? <p className="mt-6 max-w-xl text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--text-secondary)]">{p.descripcion}</p> : null;
-  return (
-    <div className="mt-6">
-      <p className="mu-kicker text-[var(--mu-acento-tinta)]">Te ayuda a</p>
-      <ul className="mt-3 flex flex-col gap-2.5">
-        {b.puntos.map((x) => (
-          <li key={x} className="flex items-start gap-3 text-[length:var(--mu-t-cuerpo)] leading-snug text-[var(--text-primary)]">
-            <span aria-hidden="true" className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--mu-selva-claro)] text-[var(--mu-selva-tinta)]">
-              <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2.5 6.2 5 8.5l4.5-5" />
-              </svg>
-            </span>
-            {x}
-          </li>
-        ))}
-      </ul>
-      {b.resto && <p className="mt-3 text-[length:var(--mu-t-chico)] text-[var(--text-secondary)]">{b.resto}</p>}
-    </div>
-  );
-}
-
 /** Envío, cambio y NSO: lo que da confianza, en una tira debajo del botón. */
 function Confianza() {
   const items = [
@@ -169,9 +137,10 @@ function Resumen({ p, whatsapp }: { p: ProductoSalon; whatsapp: string | null })
         {p.etiqueta && <Insignia texto={p.etiqueta} />}
       </p>
       <h1 className="mu-serif mt-3 text-[length:var(--mu-t-titulo)] leading-[1.1] text-[var(--text-primary)]">{p.nombre}</h1>
-      {p.codigo && (
-        <p className="mt-3">
-          <span className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-3 py-1 text-sm font-medium tabular-nums text-[var(--text-secondary)]">Cód. {p.codigo}</span>
+      {(p.codigo || p.presentacion) && (
+        <p className="mt-3 flex flex-wrap gap-2">
+          {p.codigo && <span className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-3 py-1 text-sm font-medium tabular-nums text-[var(--text-secondary)]">Cód. {p.codigo}</span>}
+          {p.presentacion && <ChipPresentacion texto={p.presentacion} />}
         </p>
       )}
       <Precio p={p} />
@@ -188,6 +157,7 @@ function Resumen({ p, whatsapp }: { p: ProductoSalon; whatsapp: string | null })
         </>
       )}
       {p.kit ? <QueTrae kit={p.kit} /> : <TeAyuda p={p} />}
+      <FichaTecnica filas={p.ficha} />
       {servicio ? (
         <a href={enlaceWhatsapp(whatsapp, mensajeReserva(p))} target="_blank" rel="noopener noreferrer" className={`${BOTON} mt-7 w-full`}>
           <MessageCircle className="h-5 w-5" aria-hidden="true" /> Reservar por WhatsApp

@@ -1,13 +1,14 @@
 "use client";
 
 /**
- * La ficha rápida de Musa: un clic en la ilustración o el nombre de una
- * tarjeta (`EnlaceFicha`) abre el producto en un modal —en el celular, una
+ * La ficha rápida de Musa: un clic en cualquier parte de una tarjeta
+ * (`EnlaceFicha` del nombre, estirado a toda la tarjeta) abre el producto en un modal —en el celular, una
  * hoja desde abajo— con su envase en el arco, precio (y el ahorro real si es
- * kit), preventa o encargo y «Agregar», que se vuelve el contador `[− n +]`
- * sincronizado con la bolsa (`BotonAgregar` grande): así ves cuántos llevas
- * sin cerrar el modal. «Ver bolsa» lo cierra y abre la bolsa; «Ver ficha
- * completa» lleva a la de siempre.
+ * kit), preventa o encargo, la presentación y «Agregar», que se vuelve el
+ * contador `[− n +]` sincronizado con la bolsa (`BotonAgregar` grande): así ves
+ * cuántos llevas sin cerrar el modal. Debajo, lo que la tarjeta ya no dice (17-10):
+ * la descripción entera (o qué trae el kit), la ficha técnica y «Cómo usarlo».
+ * «Ver bolsa» lo cierra y abre la bolsa; «Ver ficha completa» lleva a la de siempre.
  *
  * Se monta UNA vez junto a la bolsa (`PartesBolsa`): sirve en la portada, el
  * catálogo y la ficha. Estado de módulo (`estado-ficha.ts`), como la bolsa.
@@ -23,8 +24,10 @@ import type { ProductoSalon } from "./datos";
 import { reducirMovimiento } from "./efecto-agregar";
 import { abrirBolsa } from "./estado-bolsa";
 import { cerrarFicha, useFichaAbierta, useRegistrarFicha } from "./estado-ficha";
+import { ChipPresentacion, ComoUsarlo, FichaTecnica, TeAyuda } from "./DetalleProducto";
+import { QueTrae } from "./FichaExtras";
 import { EstadoPedido, Existencias, Precio } from "./FichaPartes";
-import { imagenDe, resumenDe } from "./imagenes";
+import { imagenDe } from "./imagenes";
 import { esServicio } from "./rutina";
 import { Escenario, Ilustracion, Insignia } from "./TarjetaProducto";
 import { BOTON, BOTON_BORDE, KICKER } from "./ui";
@@ -57,7 +60,6 @@ function Modal({ p }: { p: ProductoSalon }) {
     cerrarFicha();
     abrirBolsa();
   };
-  const linea = p.kit ? p.kit.componentes.map((c) => (c.cantidad > 1 ? `${c.cantidad} × ${c.nombre}` : c.nombre)).join(" + ") : resumenDe(p.descripcion);
 
   return (
     <div className="fixed inset-0 z-system flex items-end justify-center sm:items-center sm:p-6" data-lenis-prevent>
@@ -101,9 +103,10 @@ function Modal({ p }: { p: ProductoSalon }) {
             <h2 id={titulo} className="mu-serif mt-2 text-[1.625rem] leading-[1.1] text-[var(--text-primary)] sm:pr-12 sm:text-[2rem]">
               {p.nombre}
             </h2>
-            {p.etiqueta && (
-              <p className="mt-3">
-                <Insignia texto={p.etiqueta} />
+            {(p.etiqueta || p.presentacion) && (
+              <p className="mt-3 flex flex-wrap items-center gap-2">
+                {p.etiqueta && <Insignia texto={p.etiqueta} />}
+                {p.presentacion && <ChipPresentacion texto={p.presentacion} />}
               </p>
             )}
             <Precio p={p} />
@@ -119,7 +122,6 @@ function Modal({ p }: { p: ProductoSalon }) {
                 <Existencias stock={p.stock} />
               </>
             )}
-            {linea && <p className="mt-4 line-clamp-3 text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--text-secondary)]">{linea}</p>}
             {!servicio && (
               <div className="mt-6">
                 <BotonAgregar
@@ -129,7 +131,11 @@ function Modal({ p }: { p: ProductoSalon }) {
                 />
               </div>
             )}
-            <a href={p.href} className={`${servicio ? BOTON : BOTON_BORDE} ${servicio ? "mt-7" : "mt-3"} w-full`}>
+            {/* El detalle que la tarjeta ya no muestra (17-10): la descripción entera o lo que trae el kit, la ficha técnica y cómo usarlo. */}
+            {p.kit ? <QueTrae kit={p.kit} /> : <TeAyuda p={p} />}
+            <FichaTecnica filas={p.ficha} />
+            {!servicio && <ComoUsarlo categoria={p.categoria} />}
+            <a href={p.href} className={`${servicio ? BOTON : BOTON_BORDE} mt-6 w-full`}>
               {servicio ? "Ver cómo reservar" : "Ver ficha completa"} <ArrowRight className="h-5 w-5" aria-hidden="true" />
             </a>
           </div>

@@ -1,7 +1,7 @@
 /**
  * Lo que se VE de cada cosa de la tienda, sin React (sirve en servidor y cliente):
  * · las ilustraciones de producto (`imagenDe`), el tinte de su categoría
- *   (`tinteDe`), su textura (`texturaDe`) y la frase «Ayuda a…» (`resumenDe`);
+ *   (`tinteDe`) y su textura (`texturaDe`);
  * · las fotos de ambiente del salón (Unsplash) al tamaño de la pantalla (abajo).
  *
  * Ilustraciones (10-10): los productos de Musa todavía no tienen foto. Cada uno
@@ -90,13 +90,6 @@ const TEXTURAS: Readonly<Record<string, Textura>> = {
 
 export const texturaDe = (codigo: string | null): Textura | null => (codigo && TEXTURAS[codigo]) || null;
 
-/** La primera frase de la descripción («Ayuda a…»), para la línea de la tarjeta. */
-export function resumenDe(descripcion: string | null): string | null {
-  const t = descripcion?.trim();
-  if (!t) return null;
-  const fin = t.search(/\.(\s|$)/);
-  return fin > 0 ? t.slice(0, fin + 1) : t;
-}
 
 
 /** Anchos que se le piden a Unsplash: 400 px ×2 → 828 · 27rem = 432 px → 480 · 432 ×2 → 1080 · banners a pantalla entera → 1600. */
