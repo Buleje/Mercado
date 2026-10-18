@@ -317,6 +317,57 @@
   animation-iteration-count: infinite !important;
 }
 
+/* Cargador de página (`CargaPagina` del DS + NavProgress, Brandon 2026-10-17:
+   «una carga del 1 al 100, minimalista»). Progreso simulado: sube rápido, se
+   frena cerca de 90 y se queda en ~95 hasta que la página llega. Lo cuenta CSS
+   (corre antes de hidratar); el inicio real lo pone el `animation-delay`
+   negativo que calcula el componente. Contar no es moverse: con «reducir
+   movimiento» sigue contando (duración con !important, como .animate-cargando). */
+@property --carga-n {
+  syntax: "<integer>";
+  inherits: true;
+  initial-value: 1;
+}
+@keyframes carga-avanza {
+  0% { --carga-n: 1; }
+  0.333% { --carga-n: 14; } /* 0,2 s */
+  0.833% { --carga-n: 31; } /* 0,5 s */
+  1.667% { --carga-n: 51; } /* 1 s */
+  2.5% { --carga-n: 65; } /* 1,5 s */
+  3.333% { --carga-n: 74; } /* 2 s */
+  5% { --carga-n: 84; } /* 3 s */
+  8.333% { --carga-n: 90; } /* 5 s */
+  16.667% { --carga-n: 92; } /* 10 s */
+  33.333% { --carga-n: 94; } /* 20 s */
+  100% { --carga-n: 95; } /* 60 s: se queda ahí */
+}
+@keyframes carga-aparece {
+  from { opacity: 0; }
+}
+@keyframes carga-sale {
+  to { opacity: 0; }
+}
+.carga-progreso {
+  animation-name: carga-avanza;
+  animation-duration: 60s !important;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+.carga-progreso.carga-completa {
+  animation-name: none;
+  --carga-n: 100;
+  transition: --carga-n 0.18s ease-out;
+}
+.carga-cifra {
+  counter-reset: carga-n var(--carga-n);
+}
+.carga-cifra::before {
+  content: counter(carga-n);
+}
+.carga-barra {
+  width: calc(var(--carga-n) * 1%);
+}
+
 /* Los hijos de flex y grid pueden achicarse (sin esto, un texto largo empuja
    la fila fuera de la pantalla). En @layer base desde 2026-10-17: SIN capa le
    ganaba a TODA utilidad `min-w-*` de Tailwind 4 (viven en @layer utilities)

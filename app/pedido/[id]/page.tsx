@@ -10,6 +10,7 @@ import {
   Star, Send,
 } from "@buleje/design-system/icons";
 import type { OrderStatus, DbOrderItem } from "@/lib/jsondb";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 type PublicOrder = {
   id: string;
@@ -177,14 +178,7 @@ export default function PedidoPage() {
   // ── Loading ──────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(45,106,79,0.06), #d1fae5)" }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <RefreshCw className="h-8 w-8 text-primary animate-spin" />
-          </div>
-          <p className="text-gray-500 font-medium">Cargando tu pedido…</p>
-        </div>
-      </div>
+      <CargaPagina etiqueta="Cargando tu pedido" />
     );
   }
 

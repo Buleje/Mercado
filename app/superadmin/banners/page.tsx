@@ -34,7 +34,6 @@ import {
   Search,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
   ChevronRight,
   Monitor,
   Type as TypeIcon,
@@ -49,6 +48,7 @@ import PromoBannerRenderer, {
 } from "@/components/marketplace/PromoBannerRenderer";
 import BannerPreviewStudio from "@/components/superadmin/banners/BannerPreviewStudio";
 import type { ImageAdjust } from "@/lib/promo-banners";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & taxonomy
@@ -470,12 +470,7 @@ function SuperadminBannersPageInner() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[var(--text-tertiary)]">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Sparkles className="h-4 w-4 animate-pulse" />
-          Cargando banners…
-        </div>
-      </div>
+      <CargaPagina etiqueta="Cargando banners" />
     );
   }
 

@@ -13,6 +13,7 @@ import {
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 // ── Types ──────────────────────────────────────────────────
 type Ingrediente = {
@@ -203,14 +204,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
   // Loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--surface-canvas)] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center">
-            <ChefHat className="h-7 w-7 text-white animate-pulse" />
-          </div>
-          <p className="text-[var(--text-tertiary)] text-sm font-medium">Cargando receta...</p>
-        </div>
-      </div>
+      <CargaPagina etiqueta="Cargando la receta" />
     );
   }
 

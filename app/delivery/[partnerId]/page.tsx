@@ -16,6 +16,7 @@ import {
   LiveSignal,
   EmptyRoadIllustration,
 } from "@/components/delivery/icons";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 interface Assignment {
   id: string;
@@ -115,12 +116,7 @@ export default function DriverDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--surface-canvas)]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 text-[var(--accent)] animate-spin" />
-          <p className="text-base font-bold text-[var(--text-secondary)]">Cargando entregas…</p>
-        </div>
-      </div>
+      <CargaPagina etiqueta="Cargando entregas" />
     );
   }
 

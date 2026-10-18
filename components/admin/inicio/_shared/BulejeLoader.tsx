@@ -21,6 +21,7 @@ import { KPI_GRID_6 } from "./kpi-grid";
 import { m } from "@/components/admin/providers";
 import { BulejeMark } from "@/components/ui-system/illustrations/BulejeLogo";
 import { cn } from "@/lib/utils";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 interface Props {
   variant?: "full" | "inline" | "card";
@@ -37,11 +38,20 @@ export function BulejeLoader({
   className,
   minHeight,
 }: Props) {
+  // Pantalla y tarjeta = el cargador de página del DS (número 1→100, sin texto
+  // a la vista; Brandon 2026-10-17). `inline` sigue siendo el logo chico.
+  if (variant !== "inline") {
+    return (
+      <CargaPagina
+        modo={variant === "full" ? "pantalla" : "bloque"}
+        etiqueta={label.replace(/(\.\.\.|…)$/, "")}
+        className={className}
+      />
+    );
+  }
+
   const wrapperCls = cn(
-    "flex flex-col items-center justify-center gap-4",
-    variant === "full" && "min-h-screen",
-    variant === "card" && "py-12",
-    variant === "inline" && "py-6",
+    "flex flex-col items-center justify-center gap-4 py-6",
     className,
   );
 

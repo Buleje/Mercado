@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { tenantDeVerificacion } from "../../verificar/_componentes/tenant-verificacion";
 import { CacaoDB } from "@/lib/db/cacao.db";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 /**
  * /verificar-cacao/[code] — Trazabilidad pública del lote de cacao (ADR-128).
@@ -30,7 +31,7 @@ export default async function VerificarCacaoPage({ params }: { params: Promise<{
             <div className="mt-1 font-mono text-2xl font-bold">{code}</div>
             <div className="text-sm text-amber-100">Origen y calidad verificados por la bodega</div>
           </div>
-          <Suspense fallback={<div className="px-6 py-14 text-center text-sm text-stone-400">Cargando trazabilidad…</div>}>
+          <Suspense fallback={<CargaPagina modo="bloque" etiqueta="Cargando la trazabilidad" />}>
             <TraceBody code={code} />
           </Suspense>
           <div className="bg-stone-50 px-6 py-3 text-center text-xs text-stone-400">Verificación generada por Buleje · Calidad NTP-ISO 2451/1114/2291</div>

@@ -1,6 +1,6 @@
 import "server-only";
 import { Suspense } from "react";
-import { LoadingState } from "@buleje/design-system";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { SUPERADMIN_CONTENT, SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
 import { SuperAdminModuleTabs, PLANTAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
@@ -27,7 +27,7 @@ export default async function InspeccionPlantaPage({ params }: { params: Promise
         example="Libro: 128 trozas en el patio. Escaneas 121 → faltan 7, agrupadas por especie y por guía."
       />
       <div className={SUPERADMIN_CONTENT}>
-        <Suspense fallback={<LoadingState message="Cargando…" />}>
+        <Suspense fallback={<CargaPagina modo="bloque" />}>
           <InspeccionConsola tenantId={decodeURIComponent(tenantId)} id={decodeURIComponent(id)} />
         </Suspense>
       </div>

@@ -26,6 +26,7 @@ import {
   generateZoneLandingLD,
   generateFAQPageLD, safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
@@ -396,11 +397,7 @@ export default function ZonaCiudadPage({ params }: Props) {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <div className="animate-pulse text-sm text-slate-400">
-            Cargando información de tu zona...
-          </div>
-        </div>
+        <CargaPagina modo="bloque" etiqueta="Cargando información de tu zona" />
       }
     >
       <ZoneContentWrapper params={params} />

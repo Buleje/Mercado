@@ -1,6 +1,6 @@
 import "server-only";
 import { Suspense } from "react";
-import { LoadingState } from "@buleje/design-system";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { SUPERADMIN_CONTENT, SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
 import { SuperAdminModuleTabs, PLANTAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
@@ -26,7 +26,7 @@ export default async function InspeccionesPlantasPage() {
         example="Jueves 16/10 · Aserradero Ucayali · faltaron 7 trozas · 3 hallazgos."
       />
       <div className={SUPERADMIN_CONTENT}>
-        <Suspense fallback={<LoadingState message="Cargando…" />}>
+        <Suspense fallback={<CargaPagina modo="bloque" />}>
           <InspeccionesConsola />
         </Suspense>
       </div>

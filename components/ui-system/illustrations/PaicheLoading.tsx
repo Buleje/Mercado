@@ -1,16 +1,16 @@
 /**
- * PaicheLoading — pantalla/bloque de carga con el aro que gira (LoadingSpinner).
- *
- * Brandon 2026-10-08: el paiche nadando «pareciera que se trabó la página»
- * (con «reducir movimiento» quedaba quieto). Se conserva el nombre y las
- * variantes para no tocar a quienes lo usan.
+ * PaicheLoading — nombre histórico; hoy pantalla/bloque = `CargaPagina` del DS
+ * (número 1→100 + barra fina, sin texto a la vista; Brandon 2026-10-17: «una
+ * carga del 1 al 100 minimalista, aplícalo a todo»). Se conserva el nombre y
+ * las variantes para no tocar a quienes lo usan (BulejeLoader delega acá).
  *
  * Variantes:
- *   - "page"    → pantalla completa: aro grande + texto
+ *   - "page"    → pantalla completa (loading.tsx)
  *   - "section" → bloque medio para fallbacks de Suspense
- *   - "inline"  → aro chico para botones/tarjetas
+ *   - "inline"  → aro chico para botones/tarjetas (carga local, no de página)
  */
 
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 import { LoadingSpinner } from "../LoadingSpinner";
 
 interface Props {
@@ -38,24 +38,13 @@ export function PaicheLoading({ variant = "section", label, className = "" }: Pr
     );
   }
 
+  // `label` sigue llegando de los loading.tsx: ahora sólo lo oye el lector de pantalla.
   return (
-    <div
-      className={`flex flex-col items-center justify-center gap-4 ${
-        variant === "page" ? "min-h-screen bg-[var(--surface-canvas)]" : "py-12 sm:py-16"
-      } ${className}`}
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
-    >
-      <LoadingSpinner size={size} />
-      <p
-        className={`font-semibold text-[var(--text-secondary)] ${
-          variant === "page" ? "text-base" : "text-sm"
-        }`}
-      >
-        {texto}
-      </p>
-    </div>
+    <CargaPagina
+      modo={variant === "page" ? "pantalla" : "bloque"}
+      etiqueta={texto}
+      className={className || undefined}
+    />
   );
 }
 

@@ -7,11 +7,14 @@ cd "$(dirname "$0")/../.."
 D=$(realpath "$CARRILES")/$1
 P=$2; LOG=$D/commit-$P.log
 for intento in $(seq 1 10); do
-  FILES=$(grep -v '^\s*$' $D/files-$P.txt | grep -v '^\.claude/' | while read -r f; do [ -e "$f" ] || git cat-file -e "HEAD:$f" 2>/dev/null && echo "$f"; done | tr '\n' ' ')
-  [ -z "$FILES" ] && { echo "$(date +%H:%M) $1/$P sin archivos"; exit 0; }
-  if [ -z "$(git status --porcelain -- $FILES)" ]; then echo "$(date +%H:%M) $1/$P ya commiteado"; exit 0; fi
-  :
-  HUSKY_SKIP_POSTCOMMIT=1 flock /tmp/bsm-pesado.lock bash -c "git add -N $FILES && git commit -F $D/msg-$P.txt -- $FILES" > $LOG 2>&1
+  # Array + `printf %q` (17-10): `app/(store)/zona/[ciudad]/…` rompía el `bash -c` («syntax error near `('»)
+  # y el commit del cargador reintentó 20 min sin decir por qué; los corchetes además son comodines sin comillas.
+  mapfile -t ARR < <(grep -v '^\s*$' "$D/files-$P.txt" | grep -v '^\.claude/' | while read -r f; do [ -e "$f" ] || git cat-file -e "HEAD:$f" 2>/dev/null && echo "$f"; done)
+  [ ${#ARR[@]} -eq 0 ] && { echo "$(date +%H:%M) $1/$P sin archivos"; exit 0; }
+  if [ -z "$(git status --porcelain -- "${ARR[@]}")" ]; then echo "$(date +%H:%M) $1/$P ya commiteado"; exit 0; fi
+  FILES=$(printf '%q ' "${ARR[@]}")
+  MSG=$(printf '%q' "$D/msg-$P.txt")
+  HUSKY_SKIP_POSTCOMMIT=1 flock /tmp/bsm-pesado.lock bash -c "git add -N $FILES && git commit -F $MSG -- $FILES" > $LOG 2>&1
   r=$?; echo "$(date +%H:%M) $1/$P intento $intento exit $r"
   [ $r -eq 0 ] && { git log --oneline -1; exit 0; }
   sed 's/\x1b\[[0-9;]*m//g' $LOG | grep -hE "error TS|×|FAIL|✗|✖" | head -5
@@ -21,7 +24,7 @@ for intento in $(seq 1 10); do
   OTROS=$(sed 's/\x1b\[[0-9;]*m//g' $LOG | grep '^❌' | grep -vcE 'TypeScript errors detected|Tests related to staged changes failed')
   if [ "$OTROS" = "0" ] && grep -qE "TypeScript errors detected|Tests related to staged changes failed" $LOG; then
     if flock /tmp/bsm-pesado.lock node scripts/dev-helpers/tsc-ajenos.mjs $D/files-$P.txt $LOG; then
-      HUSKY_SKIP_POSTCOMMIT=1 SKIP_TSC_GATE=1 SKIP_VITEST_GATE=1 flock /tmp/bsm-pesado.lock bash -c "git add -N $FILES && git commit -F $D/msg-$P.txt -- $FILES" > $LOG 2>&1 \
+      HUSKY_SKIP_POSTCOMMIT=1 SKIP_TSC_GATE=1 SKIP_VITEST_GATE=1 flock /tmp/bsm-pesado.lock bash -c "git add -N $FILES && git commit -F $MSG -- $FILES" > $LOG 2>&1 \
         && { echo "$(date +%H:%M) $1/$P commit con tipos/tests ajenos rojos"; git log --oneline -1; exit 0; }
     fi
   fi

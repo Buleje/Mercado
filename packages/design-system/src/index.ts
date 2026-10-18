@@ -56,6 +56,7 @@ export {
   type EmptyStateProps,
   type LoadingStateProps,
 } from "./feedback";
+export { CargaPagina, type CargaPaginaProps } from "./carga-pagina";
 
 // ── Canonical data-display (ADR-075) ────────────────────────────────────────
 export {

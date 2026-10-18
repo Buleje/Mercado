@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, Lock } from "@buleje/design-system/icons";
+import { Lock } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { urlCredenciales } from "@/components/superadmin/tenants/abrir-panel-tienda";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 /**
  * /t/[slug]/admin — punto de entrada al panel admin de un tenant.
@@ -73,11 +74,6 @@ export default function TenantAdminGateway() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[var(--surface-canvas)]">
-      <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
-      <p className="text-sm text-[var(--text-tertiary)]">
-        Cargando panel de <strong className="text-[var(--text-secondary)]">{slug}</strong>…
-      </p>
-    </div>
+    <CargaPagina etiqueta={`Cargando el panel de ${slug}`} />
   );
 }

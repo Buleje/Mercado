@@ -1,6 +1,6 @@
 import "server-only";
 import { Suspense } from "react";
-import { LoadingState } from "@buleje/design-system";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { SUPERADMIN_CONTENT, SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
 import { SuperAdminModuleTabs, PLANTAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
@@ -27,7 +27,7 @@ export default async function PlantaFichaPage({ params }: { params: Promise<{ te
         example="Una especie en negativo quiere decir que salió más de lo que entró: falta una guía de ingreso o sobra un despacho."
       />
       <div className={SUPERADMIN_CONTENT}>
-        <Suspense fallback={<LoadingState message="Cargando…" />}>
+        <Suspense fallback={<CargaPagina modo="bloque" />}>
           <PlantaFichaConsola tenantId={decodeURIComponent(tenantId)} />
         </Suspense>
       </div>
