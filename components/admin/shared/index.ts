@@ -22,6 +22,8 @@ export type { BadgeVariant, StatusBadgeProps } from "./StatusBadge";
 export { default as ModuleSkeleton } from "./ModuleSkeleton";
 export { default as ModuleToolbar } from "./ModuleToolbar";
 export { default as FilterChip } from "./FilterChip";
+export { default as FiltrosEnBoton } from "./FiltrosEnBoton";
+export type { ChipFiltroActivo } from "./FiltrosEnBoton";
 export { default as ExportButton } from "./ExportButton";
 export { default as HoldedKPI } from "./HoldedKPI";
 export { default as RevenueChart } from "./RevenueChart";
