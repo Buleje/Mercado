@@ -8,11 +8,12 @@
  * desde el 30-09, por ETAPA: en Blas 61 de 67 tarjetas decían «Censado, en
  * pie» y los dos talados sin trozar quedaban enterrados entre ellas.
  *
- *   h2  Por árbol ─────────────────────────── qué contesta la pantalla
- *   h3  Avance del permiso  [Cuentas]         Censo → Talados → Trozados → Salieron;
- *                                             cada paso filtra la lista
+ *   riel  ⓘ + recorte · Indicadores (los 4 pasos) · Cuentas · orden · modo ·
+ *         columnas · Opciones — desde el 17-10 («compactar el Libro TH») todo
+ *         eso va junto a las pestañas; fuera del libro, en su fila de siempre
+ *   ─     avisos del avance y cupo: una línea, sólo si hay algo
  *   h3  Qué falta hacer                       sólo si hay algo; «Registrar trozado»
- *   h3  Árboles · orden · modo · Opciones     la lista, con sus filtros PEGADOS:
+ *   h3  Árboles N                             la lista, con sus filtros PEGADOS:
  *       el autofiltro en la cabecera de cada columna (tabla) o en «Filtros por
  *       columna» (tarjetas y celular) + las pastillas de lo pendiente
  *       h4 En movimiento  (talados con algo pendiente)  tarjetas
@@ -31,8 +32,9 @@
  */
 
 import { useId } from "react";
-import { SectionTitle } from "@buleje/design-system";
 import type { ReactNode } from "react";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { CabeceraDeVista } from "./ctp-cabecera-vista";
 import { CheckSquare, TreePine } from "@buleje/design-system/icons";
 import type { CupoEspecie } from "@/lib/forestal/loth-cupo-especie";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
@@ -83,16 +85,34 @@ export default function LothTraceView({
   const v = useLothTraceVista({ entries, censo, gtfEmitidas });
   const id = useId();
 
+  /* El recorte que se mira («Tornillo · desde 01/05»): va con el ⓘ de la vista,
+     en el riel dentro del libro (17-10, «compactar el Libro TH»). */
+  const alcance =
+    [v.especieLabel, v.desde && `desde ${fmtFecha(v.desde)}`, v.hasta && `hasta ${fmtFecha(v.hasta)}`].filter(Boolean).join(" · ") || null;
   const cabecera = (
-    <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-      <SectionTitle id={`${id}-vista`}>Por árbol</SectionTitle>
-      <span className="text-sm text-[var(--text-tertiary)]">La historia de cada árbol, del censo al aserradero</span>
-    </div>
+    <CabeceraDeVista
+      titulo="Por árbol"
+      info={
+        <span className="inline-flex min-w-0 items-center gap-1.5">
+          <InfoTip
+            title="Por árbol"
+            what="La historia de cada árbol, del censo al aserradero: cuándo se taló, en qué trozas se partió y con qué guía salió cada una."
+            affects="Los Indicadores filtran la lista por etapa; las pastillas, por lo que pide revisión."
+            example="Árbol 85: talado el 02/05, 2 trozas, las dos salieron con la GTF 001-0001."
+          />
+          {alcance && (
+            <span className="min-w-0 truncate text-sm text-[var(--text-tertiary)] @min-[0px]/riel:max-w-[14rem] @min-[0px]/riel:text-xs" title={alcance}>
+              {alcance}
+            </span>
+          )}
+        </span>
+      }
+    />
   );
 
   if (v.filas.length === 0) {
     return (
-      <section aria-labelledby={`${id}-vista`} className="space-y-4">
+      <section aria-label="Por árbol" className="space-y-4">
         {cabecera}
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-secondary)]">
           <TreePine className="mx-auto mb-3 h-10 w-10 opacity-40" aria-hidden="true" />
@@ -103,8 +123,6 @@ export default function LothTraceView({
     );
   }
 
-  const alcance =
-    [v.especieLabel, v.desde && `desde ${fmtFecha(v.desde)}`, v.hasta && `hasta ${fmtFecha(v.hasta)}`].filter(Boolean).join(" · ") || null;
   const descargar = (nombre: string, csv: string) => {
     const blob = new Blob([String.fromCharCode(0xfeff) + csv], { type: "text/csv;charset=utf-8" }); // BOM → Excel lee UTF-8
     const url = URL.createObjectURL(blob);
@@ -131,7 +149,7 @@ export default function LothTraceView({
   ];
 
   return (
-    <section aria-labelledby={`${id}-vista`} className="space-y-4">
+    <section aria-label="Por árbol" className="space-y-4">
       {cabecera}
 
       <LothTraceAvance
@@ -141,7 +159,6 @@ export default function LothTraceView({
         onPaso={v.elegirPaso}
         cuentasAbiertas={v.resumenAbierto}
         onCuentas={v.setResumenAbierto}
-        alcance={alcance}
         cupoFilas={cupoEspecies}
       />
 

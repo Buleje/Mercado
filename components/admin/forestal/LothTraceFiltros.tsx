@@ -20,9 +20,10 @@
  *     filtra; volver a tocarla quita el filtro.
  */
 
-import { Download, LayoutGrid, Rows3, SlidersHorizontal, X } from "@buleje/design-system/icons";
+import { ArrowUpDown, Download, LayoutGrid, Rows3, SlidersHorizontal, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { AccionesDeLaVista, CLASE_TEXTO_ACCION, useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import { FILTROS_ESTADO, ORDEN_LABEL, type TraceFiltro, type TraceModo, type TraceOrden } from "./loth-trace-ui";
 import { formatNumber } from "@/lib/format";
 import { BotonesColumnas } from "./loth-seccion-columnas";
@@ -31,7 +32,11 @@ const CAMPO =
   "flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]";
 const SELECT = "min-w-0 bg-transparent font-bold text-[var(--text-primary)] outline-none";
 
-/** Título de la lista + cuántos + orden, modo y opciones — una sola fila. */
+/**
+ * Título de la lista + cuántos + orden, modo y opciones — una sola fila.
+ * Dentro del libro (17-10, «compactar el Libro TH») los controles se van al
+ * riel de vistas y acá queda sólo «Árboles N»: la lista arranca una fila antes.
+ */
 export function LothTraceListaCabecera({
   tituloId,
   visibles,
@@ -55,34 +60,62 @@ export function LothTraceListaCabecera({
   onModo: (v: TraceModo) => void;
   opciones: MenuAccion[];
 }) {
+  const enLibro = useEnElLibro();
+  const titulo = (
+    <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+      <CardTitle className="text-sm font-bold" id={tituloId}>Árboles</CardTitle>
+      <span className="text-sm tabular-nums text-[var(--text-tertiary)]" data-contador>
+        {visibles === total ? `${formatNumber(total)}` : `${formatNumber(visibles)} de ${formatNumber(total)}`}
+        {totalPaginas > 1 && ` · página ${pagina + 1} de ${totalPaginas}`}
+      </span>
+    </div>
+  );
+  const alto = enLibro ? "h-12" : "h-10";
+  const controles = (
+    <>
+      <label className={`${CAMPO} ${alto} rounded-xl`} title="Ordenar la lista">
+        <ArrowUpDown className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+        <span className={`shrink-0 text-[var(--text-tertiary)] ${enLibro ? "sr-only" : ""}`}>Ordenar</span>
+        <select value={orden} onChange={(e) => onOrden(e.target.value as TraceOrden)} className={SELECT}>
+          {(Object.keys(ORDEN_LABEL) as TraceOrden[]).map((o) => (
+            <option key={o} value={o}>
+              {ORDEN_LABEL[o]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div
+        role="group"
+        aria-label="Cómo ver la lista"
+        className={`flex ${alto} items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1`}
+      >
+        <ModoBtn activo={modo === "tarjetas"} onClick={() => onModo("tarjetas")} icon={<LayoutGrid className="h-4 w-4" aria-hidden="true" />} label="Tarjetas" enLibro={enLibro} />
+        <ModoBtn activo={modo === "tabla"} onClick={() => onModo("tabla")} icon={<Rows3 className="h-4 w-4" aria-hidden="true" />} label="Tabla" enLibro={enLibro} />
+      </div>
+      {/* Las columnas son de la tabla: en tarjetas no hay qué elegir. */}
+      {modo === "tabla" && <BotonesColumnas className={`${alto} rounded-xl`} />}
+      <ActionMenu
+        label="Opciones"
+        title="Umbrales de merma, descargar y limpiar filtros"
+        actions={opciones}
+        size="md"
+        compactoEnMovil={!enLibro}
+        soloIcono={enLibro}
+      />
+    </>
+  );
+  if (enLibro) {
+    return (
+      <>
+        {titulo}
+        <AccionesDeLaVista fueraDelLibro={null}>{controles}</AccionesDeLaVista>
+      </>
+    );
+  }
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-        <CardTitle className="text-sm font-bold" id={tituloId}>Árboles</CardTitle>
-        <span className="text-sm tabular-nums text-[var(--text-tertiary)]" data-contador>
-          {visibles === total ? `${formatNumber(total)}` : `${formatNumber(visibles)} de ${formatNumber(total)}`}
-          {totalPaginas > 1 && ` · página ${pagina + 1} de ${totalPaginas}`}
-        </span>
-      </div>
-      <div className="ml-auto flex flex-wrap items-center gap-2">
-        <label className={`${CAMPO} h-10 rounded-xl`}>
-          <span className="shrink-0 text-[var(--text-tertiary)]">Ordenar</span>
-          <select value={orden} onChange={(e) => onOrden(e.target.value as TraceOrden)} className={SELECT}>
-            {(Object.keys(ORDEN_LABEL) as TraceOrden[]).map((o) => (
-              <option key={o} value={o}>
-                {ORDEN_LABEL[o]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div role="group" aria-label="Cómo ver la lista" className="flex h-10 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
-          <ModoBtn activo={modo === "tarjetas"} onClick={() => onModo("tarjetas")} icon={<LayoutGrid className="h-4 w-4" aria-hidden="true" />} label="Tarjetas" />
-          <ModoBtn activo={modo === "tabla"} onClick={() => onModo("tabla")} icon={<Rows3 className="h-4 w-4" aria-hidden="true" />} label="Tabla" />
-        </div>
-        {/* Las columnas son de la tabla: en tarjetas no hay qué elegir. */}
-        {modo === "tabla" && <BotonesColumnas className="h-10 rounded-xl" />}
-        <ActionMenu label="Opciones" title="Umbrales de merma, descargar y limpiar filtros" actions={opciones} size="md" compactoEnMovil />
-      </div>
+      {titulo}
+      <div className="ml-auto flex flex-wrap items-center gap-2">{controles}</div>
     </div>
   );
 }
@@ -178,19 +211,33 @@ export function opcionesDeLaLista({
   ];
 }
 
-function ModoBtn({ activo, onClick, icon, label }: { activo: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+function ModoBtn({
+  activo,
+  onClick,
+  icon,
+  label,
+  enLibro,
+}: {
+  activo: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  /** En el riel la palabra se calla por debajo de 80rem (queda el ícono con su nombre). */
+  enLibro: boolean;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={activo}
       title={label}
-      className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors ${
+      aria-label={label}
+      className={`inline-flex ${enLibro ? "h-10" : "h-8"} items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors ${
         activo ? "bg-[var(--brand-ink)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
       }`}
     >
       {icon}
-      <span className="max-sm:sr-only">{label}</span>
+      <span aria-hidden="true" className={enLibro ? CLASE_TEXTO_ACCION : "max-sm:sr-only"}>{label}</span>
     </button>
   );
 }

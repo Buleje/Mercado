@@ -19,13 +19,13 @@ import { AlertTriangle, ArrowRight, CalendarClock } from "@buleje/design-system/
 import {
   construirFichaPermiso,
   type CaratulaFicha,
-  type DondeCompletar,
   type EstadoFicha,
   type PlanFicha,
 } from "@/lib/forestal/loth-ficha-permiso";
-import { primerPasoIncompleto, queFalta, type PasoCaratula } from "@/lib/forestal/loth-caratula-pasos";
+import type { PasoCaratula } from "@/lib/forestal/loth-caratula-pasos";
 import { DIAS_AVISO_VENCIMIENTO } from "@/lib/forestal/loth-plan-vigencia";
 import { formatNumber } from "@/lib/format";
+import { useFaltantesFicha } from "./loth-ficha-permiso-faltantes";
 
 export interface LothFichaPermisoProps {
   caratula: CaratulaFicha | null | undefined;
@@ -87,30 +87,7 @@ export default function LothFichaPermiso({ caratula, plan, onCompletarCaratula, 
   const f = useMemo(() => construirFichaPermiso(caratula, plan), [caratula, plan]);
   const tono = TONO[f.estado];
 
-  /* Un «Completar» por pantalla que lo arregla, no uno por dato: la vigencia y
-     la parcela se cargan en el mismo formulario del plan. */
-  const faltasCaratula = useMemo(() => (caratula ? queFalta(caratula) : []), [caratula]);
-  const grupos = useMemo(() => {
-    const orden: DondeCompletar[] = ["caratula", "plan"];
-    return orden
-      .map((donde) => {
-        const textos = f.faltantes.filter((x) => x.completar === donde).map((x) => x.texto);
-        // Carátula cargada pero incompleta (registro, tomo, RUC…): lo dice y ofrece el paso que falta.
-        if (donde === "caratula" && textos.length === 0 && faltasCaratula.length > 0) {
-          const nombres = faltasCaratula.map((x) => x.texto.replace(/^(el|la) /, ""));
-          const resto = nombres.length - 2;
-          textos.push(`Falta en la carátula: ${nombres.slice(0, 2).join(", ")}${resto > 0 ? ` y ${resto} más` : ""}`);
-        }
-        return { donde, textos };
-      })
-      .filter((g) => g.textos.length > 0);
-  }, [f.faltantes, faltasCaratula]);
-  /* «Completar carátula» cae en el primer paso que falta (título → titular → libro). */
-  const pasoQueFalta = useMemo(() => primerPasoIncompleto(caratula), [caratula]);
-  const accion: Record<DondeCompletar, (() => void) | undefined> = {
-    caratula: onCompletarCaratula ? () => onCompletarCaratula(pasoQueFalta) : undefined,
-    plan: onCompletarPlan,
-  };
+  const grupos = useFaltantesFicha(f, caratula, onCompletarCaratula, onCompletarPlan);
 
   const cifra = f.diasQuedan == null ? null : Math.abs(f.diasQuedan);
   const bajoCifra =
@@ -191,7 +168,7 @@ export default function LothFichaPermiso({ caratula, plan, onCompletarCaratula, 
       {grupos.length > 0 && (
         <ul className="flex flex-col gap-1 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2 sm:flex-row sm:flex-wrap sm:gap-x-6">
           {grupos.map((g) => {
-            const completar = accion[g.donde];
+            const completar = g.completar;
             return (
               <li key={g.donde} className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm">
                 <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden="true" />

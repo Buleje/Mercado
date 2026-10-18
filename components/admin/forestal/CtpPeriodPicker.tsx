@@ -32,6 +32,12 @@ interface CtpPeriodPickerProps {
   period: CtpPeriod;
   onKeyChange: (key: CtpPeriodKey) => void;
   onCustomChange: (range: CtpCustomRange) => void;
+  /**
+   * En el riel de un libro: sólo el rótulo corto («histórico», «oct 2026»);
+   * el largo queda para el lector de pantalla y el `title`. Sin esto mide
+   * ~185 px y parte el riel en dos filas (Libro TH › Extracción, 17-10).
+   */
+  compacto?: boolean;
 }
 
 const DATE_INPUT =
@@ -43,6 +49,7 @@ export default function CtpPeriodPicker({
   period,
   onKeyChange,
   onCustomChange,
+  compacto = false,
 }: CtpPeriodPickerProps) {
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -75,8 +82,8 @@ export default function CtpPeriodPicker({
         }`}
       >
         <CalendarDays className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
-        <span className="font-bold">{opcion?.label ?? "Período"}</span>
-        <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+        <span className={compacto ? "sr-only" : "font-bold"}>{opcion?.label ?? "Período"}</span>
+        <span className={compacto ? "font-bold tabular-nums" : "font-mono text-xs tabular-nums text-[var(--text-tertiary)]"}>
           {ctpPeriodShortLabel(period)}
         </span>
         <ChevronDown className={`h-3.5 w-3.5 opacity-60 transition-transform ${open ? "rotate-180" : ""}`} />

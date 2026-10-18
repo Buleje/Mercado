@@ -1,0 +1,126 @@
+{
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=loth-libro-operaciones&vista=secciones",
+ "pasos": [
+  {
+   "esperar": 7000
+  },
+  {
+   "eval": "(() => {\n  const sec = document.querySelector('section[data-module=\"loth-libro\"]');\n  if (!sec) return JSON.stringify({ err: 'sin banda', url: location.search });\n  const R = (el) => { const b = el.getBoundingClientRect(); return [Math.round(b.top + scrollY), Math.round(b.height)]; };\n  const vis = (el) => { const b = el.getBoundingClientRect(); const cs = getComputedStyle(el); return b.height > 0 && b.width > 0 && cs.visibility !== 'hidden'; };\n  const lab = (c) => (c.getAttribute('aria-label') || c.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 28);\n  const q = new URLSearchParams(location.search);\n  const fila1 = sec.children[0];\n  const hueco = sec.querySelector('[data-acciones-riel]');\n  const enRiel = hueco ? [...hueco.querySelectorAll('button, a, input, select')].filter(vis).map(lab) : [];\n  const finBanda = sec.getBoundingClientRect().bottom + scrollY;\n  const raiz = sec.parentElement;\n  const cont = [...raiz.children].filter((c) => c !== sec && vis(c));\n  const datoSel = 'table tbody tr, [role=row]:not(:first-child), [role=grid], .leaflet-container, canvas, [data-primer-dato], [role=listitem], li[data-fila], svg[role=img]';\n  const datos = [...raiz.querySelectorAll(datoSel)].filter((e) => vis(e) && !sec.contains(e) && !e.closest('[role=dialog]'));\n  const dato = datos[0];\n  const yDato = dato ? R(dato)[0] : null;\n  const limite = yDato ?? (finBanda + 2000);\n  const btns = [...raiz.querySelectorAll('button, a[href], input:not([type=hidden]), select')].filter((b) => vis(b) && !sec.contains(b) && !b.closest('[role=dialog]') && !b.closest('table'));\n  const arriba = btns.filter((b) => R(b)[0] < limite).map((b) => lab(b) + '@' + R(b)[0]);\n  const heads = [...raiz.querySelectorAll('h1,h2,h3,h4,[role=heading]')].filter((h) => vis(h) && !sec.contains(h)).slice(0, 6).map((h) => h.textContent.trim().slice(0, 36) + '@' + R(h)[0]);\n  const tablists = [...raiz.querySelectorAll('[role=tablist],[role=radiogroup]')].filter((t) => vis(t) && !sec.contains(t)).map((t) => (t.getAttribute('aria-label') || '?') + ':' + [...t.querySelectorAll('[role=tab],[role=radio]')].map(lab).join('|') + '@' + R(t)[0]);\n  const bloques = cont.flatMap((c) => (c.children.length === 1 ? [...c.children[0].children] : [...c.children])).filter(vis).slice(0, 10).map((c) => (c.tagName + '.' + String(c.className || '').split(' ').slice(0, 2).join('.')).slice(0, 34) + ' ' + R(c).join('/') + ' «' + (c.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 40) + '»');\n  const txt = document.querySelector('main')?.innerText || '';\n  return JSON.stringify({\n    vista: q.get('vista'), sub: q.get('sub'),\n    err: /excedido el límite|429|Demasiados pedidos/i.test(txt) ? '429' : null,\n    banda: R(sec), fila1: R(fila1), riel: sec.children[1] ? R(sec.children[1]) : null, enRiel,\n    yTabla: (() => { const t = [...raiz.querySelectorAll('table, [role=grid], [role=table]')].find((e) => vis(e) && !sec.contains(e) && !e.closest('[role=dialog]')); return t ? R(t)[0] : null; })(),\n    yDato, dato: dato ? (dato.tagName + ' ' + (dato.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 40)) : null,\n    arriba, nArriba: arriba.length, heads, tablists, bloques,\n    altoDoc: document.documentElement.scrollHeight, pantallas: +(document.documentElement.scrollHeight / innerHeight).toFixed(2), vh: innerHeight,\n    tablistScroll: (() => { const t = sec.querySelector('[role=tablist]:not([aria-label=\"Fase del libro\"])'); return t ? [t.scrollWidth, t.clientWidth] : null; })(),\n  });\n})()\n"
+  },
+  {
+   "click": "[aria-label=\"Fase del libro\"] [role=tab]:has-text(\"Trazabilidad\")"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "click": "section[data-module=\"loth-libro\"] [role=tablist]:not([aria-label=\"Fase del libro\"]) [role=tab]:has-text(\"Control\")"
+  },
+  {
+   "esperar": 6000
+  },
+  {
+   "eval": "(() => {\n  const sec = document.querySelector('section[data-module=\"loth-libro\"]');\n  if (!sec) return JSON.stringify({ err: 'sin banda', url: location.search });\n  const R = (el) => { const b = el.getBoundingClientRect(); return [Math.round(b.top + scrollY), Math.round(b.height)]; };\n  const vis = (el) => { const b = el.getBoundingClientRect(); const cs = getComputedStyle(el); return b.height > 0 && b.width > 0 && cs.visibility !== 'hidden'; };\n  const lab = (c) => (c.getAttribute('aria-label') || c.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 28);\n  const q = new URLSearchParams(location.search);\n  const fila1 = sec.children[0];\n  const hueco = sec.querySelector('[data-acciones-riel]');\n  const enRiel = hueco ? [...hueco.querySelectorAll('button, a, input, select')].filter(vis).map(lab) : [];\n  const finBanda = sec.getBoundingClientRect().bottom + scrollY;\n  const raiz = sec.parentElement;\n  const cont = [...raiz.children].filter((c) => c !== sec && vis(c));\n  const datoSel = 'table tbody tr, [role=row]:not(:first-child), [role=grid], .leaflet-container, canvas, [data-primer-dato], [role=listitem], li[data-fila], svg[role=img]';\n  const datos = [...raiz.querySelectorAll(datoSel)].filter((e) => vis(e) && !sec.contains(e) && !e.closest('[role=dialog]'));\n  const dato = datos[0];\n  const yDato = dato ? R(dato)[0] : null;\n  const limite = yDato ?? (finBanda + 2000);\n  const btns = [...raiz.querySelectorAll('button, a[href], input:not([type=hidden]), select')].filter((b) => vis(b) && !sec.contains(b) && !b.closest('[role=dialog]') && !b.closest('table'));\n  const arriba = btns.filter((b) => R(b)[0] < limite).map((b) => lab(b) + '@' + R(b)[0]);\n  const heads = [...raiz.querySelectorAll('h1,h2,h3,h4,[role=heading]')].filter((h) => vis(h) && !sec.contains(h)).slice(0, 6).map((h) => h.textContent.trim().slice(0, 36) + '@' + R(h)[0]);\n  const tablists = [...raiz.querySelectorAll('[role=tablist],[role=radiogroup]')].filter((t) => vis(t) && !sec.contains(t)).map((t) => (t.getAttribute('aria-label') || '?') + ':' + [...t.querySelectorAll('[role=tab],[role=radio]')].map(lab).join('|') + '@' + R(t)[0]);\n  const bloques = cont.flatMap((c) => (c.children.length === 1 ? [...c.children[0].children] : [...c.children])).filter(vis).slice(0, 10).map((c) => (c.tagName + '.' + String(c.className || '').split(' ').slice(0, 2).join('.')).slice(0, 34) + ' ' + R(c).join('/') + ' «' + (c.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 40) + '»');\n  const txt = document.querySelector('main')?.innerText || '';\n  return JSON.stringify({\n    vista: q.get('vista'), sub: q.get('sub'),\n    err: /excedido el límite|429|Demasiados pedidos/i.test(txt) ? '429' : null,\n    banda: R(sec), fila1: R(fila1), riel: sec.children[1] ? R(sec.children[1]) : null, enRiel,\n    yTabla: (() => { const t = [...raiz.querySelectorAll('table, [role=grid], [role=table]')].find((e) => vis(e) && !sec.contains(e) && !e.closest('[role=dialog]')); return t ? R(t)[0] : null; })(),\n    yDato, dato: dato ? (dato.tagName + ' ' + (dato.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 40)) : null,\n    arriba, nArriba: arriba.length, heads, tablists, bloques,\n    altoDoc: document.documentElement.scrollHeight, pantallas: +(document.documentElement.scrollHeight / innerHeight).toFixed(2), vh: innerHeight,\n    tablistScroll: (() => { const t = sec.querySelector('[role=tablist]:not([aria-label=\"Fase del libro\"])'); return t ? [t.scrollWidth, t.clientWidth] : null; })(),\n  });\n})()\n"
+  },
+  {
+   "eval": "(() => { const r = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return Math.round(b.top + scrollY) + '/' + Math.round(b.height); };\n  return JSON.stringify({ resumen: r('[data-control-resumen]'), ficha: r('[data-ficha-linea]'), saldo: r('[data-saldo-linea]'), pestanasControl: r('[aria-label=\"Pestañas del Control del permiso\"]'), buscar: r('input[aria-label=\"Buscar trozas\"]'), tabla: r('table'), primeraFila: r('[data-troza]'), avance: r('[data-avance]'), fichaTxt: document.querySelector('[data-ficha-linea]')?.innerText.replace(/\\s+/g,' ').slice(0,140), saldoTxt: document.querySelector('[data-saldo-linea]')?.innerText.replace(/\\s+/g,' ').slice(0,160), anchoDoc: document.documentElement.scrollWidth, vw: innerWidth }); })()"
+  },
+  {
+   "captura": "b-trozas"
+  },
+  {
+   "eval": "(() => { const inp = document.querySelector('input[aria-label=\"Buscar trozas\"]'); const fila = document.querySelector('[data-troza]'); if (!inp || !fila) return 'sin input/fila'; const cod = fila.getAttribute('data-troza'); window.__cod = cod; const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; inp.focus(); set.call(inp, cod); inp.dispatchEvent(new Event('input', { bubbles: true })); return 'tipeado ' + cod + ' foco=' + document.activeElement.getAttribute('aria-label'); })()"
+  },
+  {
+   "tecla": "Enter"
+  },
+  {
+   "esperar": 700
+  },
+  {
+   "eval": "(() => { const inp = document.querySelector('input[aria-label=\"Buscar trozas\"]'); const lect = document.getElementById(inp.getAttribute('aria-describedby')); const fila = document.querySelector('[data-troza=\"' + CSS.escape(window.__cod) + '\"]'); return JSON.stringify({ foco: document.activeElement.getAttribute('aria-label'), valor: inp.value, lectura: lect?.innerText.slice(0, 120), filaClase: fila ? String(fila.className).slice(0, 120) : null, filaSel: fila?.getAttribute('aria-selected'), barraSel: (document.body.innerText.match(/\\d+ (troza|trozas) elegidas?[^\\n]*/) || [null])[0] }); })()"
+  },
+  {
+   "captura": "b-pistola"
+  },
+  {
+   "click": "button[aria-label=\"Escanear troza\"]"
+  },
+  {
+   "esperar": 1200
+  },
+  {
+   "eval": "(() => { const d = [...document.querySelectorAll('[role=dialog]')].pop(); return JSON.stringify({ dialogo: d ? (d.getAttribute('aria-label') || d.querySelector('h2,h3')?.textContent || '?').slice(0, 60) : null, foco: document.activeElement?.tagName + ' ' + (document.activeElement?.getAttribute('aria-label') || document.activeElement?.getAttribute('placeholder') || ''), dentro: !!(d && d.contains(document.activeElement)) }); })()"
+  },
+  {
+   "captura": "b-escaner"
+  },
+  {
+   "tecla": "Escape"
+  },
+  {
+   "esperar": 500
+  },
+  {
+   "eval": "(() => JSON.stringify({ dialogos: document.querySelectorAll('[role=dialog]').length, foco: document.activeElement?.tagName + ' ' + (document.activeElement?.getAttribute('aria-label') || '') }))()"
+  },
+  {
+   "eval": "(() => { const b = document.querySelector('[aria-label=\"Cerrar el escáner\"]'); if (b) b.click(); return b ? 'cerrado con su botón' : 'ya cerrado'; })()"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "click": "[aria-label=\"Pestañas del Control del permiso\"] [role=tab]:has-text(\"Kárdex\")"
+  },
+  {
+   "esperar": 6000
+  },
+  {
+   "eval": "(() => {\n  const sec = document.querySelector('section[data-module=\"loth-libro\"]');\n  if (!sec) return JSON.stringify({ err: 'sin banda', url: location.search });\n  const R = (el) => { const b = el.getBoundingClientRect(); return [Math.round(b.top + scrollY), Math.round(b.height)]; };\n  const vis = (el) => { const b = el.getBoundingClientRect(); const cs = getComputedStyle(el); return b.height > 0 && b.width > 0 && cs.visibility !== 'hidden'; };\n  const lab = (c) => (c.getAttribute('aria-label') || c.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 28);\n  const q = new URLSearchParams(location.search);\n  const fila1 = sec.children[0];\n  const hueco = sec.querySelector('[data-acciones-riel]');\n  const enRiel = hueco ? [...hueco.querySelectorAll('button, a, input, select')].filter(vis).map(lab) : [];\n  const finBanda = sec.getBoundingClientRect().bottom + scrollY;\n  const raiz = sec.parentElement;\n  const cont = [...raiz.children].filter((c) => c !== sec && vis(c));\n  const datoSel = 'table tbody tr, [role=row]:not(:first-child), [role=grid], .leaflet-container, canvas, [data-primer-dato], [role=listitem], li[data-fila], svg[role=img]';\n  const datos = [...raiz.querySelectorAll(datoSel)].filter((e) => vis(e) && !sec.contains(e) && !e.closest('[role=dialog]'));\n  const dato = datos[0];\n  const yDato = dato ? R(dato)[0] : null;\n  const limite = yDato ?? (finBanda + 2000);\n  const btns = [...raiz.querySelectorAll('button, a[href], input:not([type=hidden]), select')].filter((b) => vis(b) && !sec.contains(b) && !b.closest('[role=dialog]') && !b.closest('table'));\n  const arriba = btns.filter((b) => R(b)[0] < limite).map((b) => lab(b) + '@' + R(b)[0]);\n  const heads = [...raiz.querySelectorAll('h1,h2,h3,h4,[role=heading]')].filter((h) => vis(h) && !sec.contains(h)).slice(0, 6).map((h) => h.textContent.trim().slice(0, 36) + '@' + R(h)[0]);\n  const tablists = [...raiz.querySelectorAll('[role=tablist],[role=radiogroup]')].filter((t) => vis(t) && !sec.contains(t)).map((t) => (t.getAttribute('aria-label') || '?') + ':' + [...t.querySelectorAll('[role=tab],[role=radio]')].map(lab).join('|') + '@' + R(t)[0]);\n  const bloques = cont.flatMap((c) => (c.children.length === 1 ? [...c.children[0].children] : [...c.children])).filter(vis).slice(0, 10).map((c) => (c.tagName + '.' + String(c.className || '').split(' ').slice(0, 2).join('.')).slice(0, 34) + ' ' + R(c).join('/') + ' «' + (c.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 40) + '»');\n  const txt = document.querySelector('main')?.innerText || '';\n  return JSON.stringify({\n    vista: q.get('vista'), sub: q.get('sub'),\n    err: /excedido el límite|429|Demasiados pedidos/i.test(txt) ? '429' : null,\n    banda: R(sec), fila1: R(fila1), riel: sec.children[1] ? R(sec.children[1]) : null, enRiel,\n    yTabla: (() => { const t = [...raiz.querySelectorAll('table, [role=grid], [role=table]')].find((e) => vis(e) && !sec.contains(e) && !e.closest('[role=dialog]')); return t ? R(t)[0] : null; })(),\n    yDato, dato: dato ? (dato.tagName + ' ' + (dato.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 40)) : null,\n    arriba, nArriba: arriba.length, heads, tablists, bloques,\n    altoDoc: document.documentElement.scrollHeight, pantallas: +(document.documentElement.scrollHeight / innerHeight).toFixed(2), vh: innerHeight,\n    tablistScroll: (() => { const t = sec.querySelector('[role=tablist]:not([aria-label=\"Fase del libro\"])'); return t ? [t.scrollWidth, t.clientWidth] : null; })(),\n  });\n})()\n"
+  },
+  {
+   "eval": "(() => { const r = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return Math.round(b.top + scrollY) + '/' + Math.round(b.height); };\n  return JSON.stringify({ resumen: r('[data-control-resumen]'), ficha: r('[data-ficha-linea]'), saldo: r('[data-saldo-linea]'), pestanasControl: r('[aria-label=\"Pestañas del Control del permiso\"]'), buscar: r('input[aria-label=\"Buscar trozas\"]'), tabla: r('table'), primeraFila: r('[data-troza]'), avance: r('[data-avance]'), fichaTxt: document.querySelector('[data-ficha-linea]')?.innerText.replace(/\\s+/g,' ').slice(0,140), saldoTxt: document.querySelector('[data-saldo-linea]')?.innerText.replace(/\\s+/g,' ').slice(0,160), anchoDoc: document.documentElement.scrollWidth, vw: innerWidth }); })()"
+  },
+  {
+   "captura": "b-kardex"
+  },
+  {
+   "click": "[aria-label=\"Pestañas del Control del permiso\"] [role=tab]:has-text(\"Extracción\")"
+  },
+  {
+   "esperar": 6000
+  },
+  {
+   "eval": "(() => {\n  const sec = document.querySelector('section[data-module=\"loth-libro\"]');\n  if (!sec) return JSON.stringify({ err: 'sin banda', url: location.search });\n  const R = (el) => { const b = el.getBoundingClientRect(); return [Math.round(b.top + scrollY), Math.round(b.height)]; };\n  const vis = (el) => { const b = el.getBoundingClientRect(); const cs = getComputedStyle(el); return b.height > 0 && b.width > 0 && cs.visibility !== 'hidden'; };\n  const lab = (c) => (c.getAttribute('aria-label') || c.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 28);\n  const q = new URLSearchParams(location.search);\n  const fila1 = sec.children[0];\n  const hueco = sec.querySelector('[data-acciones-riel]');\n  const enRiel = hueco ? [...hueco.querySelectorAll('button, a, input, select')].filter(vis).map(lab) : [];\n  const finBanda = sec.getBoundingClientRect().bottom + scrollY;\n  const raiz = sec.parentElement;\n  const cont = [...raiz.children].filter((c) => c !== sec && vis(c));\n  const datoSel = 'table tbody tr, [role=row]:not(:first-child), [role=grid], .leaflet-container, canvas, [data-primer-dato], [role=listitem], li[data-fila], svg[role=img]';\n  const datos = [...raiz.querySelectorAll(datoSel)].filter((e) => vis(e) && !sec.contains(e) && !e.closest('[role=dialog]'));\n  const dato = datos[0];\n  const yDato = dato ? R(dato)[0] : null;\n  const limite = yDato ?? (finBanda + 2000);\n  const btns = [...raiz.querySelectorAll('button, a[href], input:not([type=hidden]), select')].filter((b) => vis(b) && !sec.contains(b) && !b.closest('[role=dialog]') && !b.closest('table'));\n  const arriba = btns.filter((b) => R(b)[0] < limite).map((b) => lab(b) + '@' + R(b)[0]);\n  const heads = [...raiz.querySelectorAll('h1,h2,h3,h4,[role=heading]')].filter((h) => vis(h) && !sec.contains(h)).slice(0, 6).map((h) => h.textContent.trim().slice(0, 36) + '@' + R(h)[0]);\n  const tablists = [...raiz.querySelectorAll('[role=tablist],[role=radiogroup]')].filter((t) => vis(t) && !sec.contains(t)).map((t) => (t.getAttribute('aria-label') || '?') + ':' + [...t.querySelectorAll('[role=tab],[role=radio]')].map(lab).join('|') + '@' + R(t)[0]);\n  const bloques = cont.flatMap((c) => (c.children.length === 1 ? [...c.children[0].children] : [...c.children])).filter(vis).slice(0, 10).map((c) => (c.tagName + '.' + String(c.className || '').split(' ').slice(0, 2).join('.')).slice(0, 34) + ' ' + R(c).join('/') + ' «' + (c.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 40) + '»');\n  const txt = document.querySelector('main')?.innerText || '';\n  return JSON.stringify({\n    vista: q.get('vista'), sub: q.get('sub'),\n    err: /excedido el límite|429|Demasiados pedidos/i.test(txt) ? '429' : null,\n    banda: R(sec), fila1: R(fila1), riel: sec.children[1] ? R(sec.children[1]) : null, enRiel,\n    yTabla: (() => { const t = [...raiz.querySelectorAll('table, [role=grid], [role=table]')].find((e) => vis(e) && !sec.contains(e) && !e.closest('[role=dialog]')); return t ? R(t)[0] : null; })(),\n    yDato, dato: dato ? (dato.tagName + ' ' + (dato.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 40)) : null,\n    arriba, nArriba: arriba.length, heads, tablists, bloques,\n    altoDoc: document.documentElement.scrollHeight, pantallas: +(document.documentElement.scrollHeight / innerHeight).toFixed(2), vh: innerHeight,\n    tablistScroll: (() => { const t = sec.querySelector('[role=tablist]:not([aria-label=\"Fase del libro\"])'); return t ? [t.scrollWidth, t.clientWidth] : null; })(),\n  });\n})()\n"
+  },
+  {
+   "eval": "(() => { const r = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return Math.round(b.top + scrollY) + '/' + Math.round(b.height); };\n  return JSON.stringify({ resumen: r('[data-control-resumen]'), ficha: r('[data-ficha-linea]'), saldo: r('[data-saldo-linea]'), pestanasControl: r('[aria-label=\"Pestañas del Control del permiso\"]'), buscar: r('input[aria-label=\"Buscar trozas\"]'), tabla: r('table'), primeraFila: r('[data-troza]'), avance: r('[data-avance]'), fichaTxt: document.querySelector('[data-ficha-linea]')?.innerText.replace(/\\s+/g,' ').slice(0,140), saldoTxt: document.querySelector('[data-saldo-linea]')?.innerText.replace(/\\s+/g,' ').slice(0,160), anchoDoc: document.documentElement.scrollWidth, vw: innerWidth }); })()"
+  },
+  {
+   "captura": "b-extraccion"
+  },
+  {
+   "click": "[aria-label=\"Fase del libro\"] [role=tab]:has-text(\"Trazabilidad\")"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "click": "section[data-module=\"loth-libro\"] [role=tablist]:not([aria-label=\"Fase del libro\"]) [role=tab]:has-text(\"Por árbol\")"
+  },
+  {
+   "esperar": 6000
+  },
+  {
+   "eval": "(() => {\n  const sec = document.querySelector('section[data-module=\"loth-libro\"]');\n  if (!sec) return JSON.stringify({ err: 'sin banda', url: location.search });\n  const R = (el) => { const b = el.getBoundingClientRect(); return [Math.round(b.top + scrollY), Math.round(b.height)]; };\n  const vis = (el) => { const b = el.getBoundingClientRect(); const cs = getComputedStyle(el); return b.height > 0 && b.width > 0 && cs.visibility !== 'hidden'; };\n  const lab = (c) => (c.getAttribute('aria-label') || c.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 28);\n  const q = new URLSearchParams(location.search);\n  const fila1 = sec.children[0];\n  const hueco = sec.querySelector('[data-acciones-riel]');\n  const enRiel = hueco ? [...hueco.querySelectorAll('button, a, input, select')].filter(vis).map(lab) : [];\n  const finBanda = sec.getBoundingClientRect().bottom + scrollY;\n  const raiz = sec.parentElement;\n  const cont = [...raiz.children].filter((c) => c !== sec && vis(c));\n  const datoSel = 'table tbody tr, [role=row]:not(:first-child), [role=grid], .leaflet-container, canvas, [data-primer-dato], [role=listitem], li[data-fila], svg[role=img]';\n  const datos = [...raiz.querySelectorAll(datoSel)].filter((e) => vis(e) && !sec.contains(e) && !e.closest('[role=dialog]'));\n  const dato = datos[0];\n  const yDato = dato ? R(dato)[0] : null;\n  const limite = yDato ?? (finBanda + 2000);\n  const btns = [...raiz.querySelectorAll('button, a[href], input:not([type=hidden]), select')].filter((b) => vis(b) && !sec.contains(b) && !b.closest('[role=dialog]') && !b.closest('table'));\n  const arriba = btns.filter((b) => R(b)[0] < limite).map((b) => lab(b) + '@' + R(b)[0]);\n  const heads = [...raiz.querySelectorAll('h1,h2,h3,h4,[role=heading]')].filter((h) => vis(h) && !sec.contains(h)).slice(0, 6).map((h) => h.textContent.trim().slice(0, 36) + '@' + R(h)[0]);\n  const tablists = [...raiz.querySelectorAll('[role=tablist],[role=radiogroup]')].filter((t) => vis(t) && !sec.contains(t)).map((t) => (t.getAttribute('aria-label') || '?') + ':' + [...t.querySelectorAll('[role=tab],[role=radio]')].map(lab).join('|') + '@' + R(t)[0]);\n  const bloques = cont.flatMap((c) => (c.children.length === 1 ? [...c.children[0].children] : [...c.children])).filter(vis).slice(0, 10).map((c) => (c.tagName + '.' + String(c.className || '').split(' ').slice(0, 2).join('.')).slice(0, 34) + ' ' + R(c).join('/') + ' «' + (c.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 40) + '»');\n  const txt = document.querySelector('main')?.innerText || '';\n  return JSON.stringify({\n    vista: q.get('vista'), sub: q.get('sub'),\n    err: /excedido el límite|429|Demasiados pedidos/i.test(txt) ? '429' : null,\n    banda: R(sec), fila1: R(fila1), riel: sec.children[1] ? R(sec.children[1]) : null, enRiel,\n    yTabla: (() => { const t = [...raiz.querySelectorAll('table, [role=grid], [role=table]')].find((e) => vis(e) && !sec.contains(e) && !e.closest('[role=dialog]')); return t ? R(t)[0] : null; })(),\n    yDato, dato: dato ? (dato.tagName + ' ' + (dato.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 40)) : null,\n    arriba, nArriba: arriba.length, heads, tablists, bloques,\n    altoDoc: document.documentElement.scrollHeight, pantallas: +(document.documentElement.scrollHeight / innerHeight).toFixed(2), vh: innerHeight,\n    tablistScroll: (() => { const t = sec.querySelector('[role=tablist]:not([aria-label=\"Fase del libro\"])'); return t ? [t.scrollWidth, t.clientWidth] : null; })(),\n  });\n})()\n"
+  },
+  {
+   "eval": "(() => { const r = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return Math.round(b.top + scrollY) + '/' + Math.round(b.height); };\n  return JSON.stringify({ resumen: r('[data-control-resumen]'), ficha: r('[data-ficha-linea]'), saldo: r('[data-saldo-linea]'), pestanasControl: r('[aria-label=\"Pestañas del Control del permiso\"]'), buscar: r('input[aria-label=\"Buscar trozas\"]'), tabla: r('table'), primeraFila: r('[data-troza]'), avance: r('[data-avance]'), fichaTxt: document.querySelector('[data-ficha-linea]')?.innerText.replace(/\\s+/g,' ').slice(0,140), saldoTxt: document.querySelector('[data-saldo-linea]')?.innerText.replace(/\\s+/g,' ').slice(0,160), anchoDoc: document.documentElement.scrollWidth, vw: innerWidth }); })()"
+  },
+  {
+   "captura": "b-arbol"
+  }
+ ]
+}

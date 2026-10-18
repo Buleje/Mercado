@@ -1,13 +1,16 @@
 "use client";
 
 /**
- * Lo que va arriba de «Estado de las trozas» en «Control del permiso», en el
- * orden en que se pregunta:
+ * Lo que va arriba de las trozas en «Control del permiso», en UNA tarjeta y en
+ * el orden en que se pregunta (compactado 17-10, Brandon: «compactar el Libro
+ * TH»; antes eran cuatro bloques y la lista arrancaba a 3 pantallas):
  *
- *   1. Ficha del permiso — ¿con qué papel trabajo y cuánto le queda?
- *      + Planes vivos (sólo si hay 2+): el plan vigente que `?active=1` deja fuera.
- *   2. Saldo por especie (plegable) — ¿cuánto me deja talar todavía cada especie?
- *   3. Cuadre por guía (plegable) — ¿lo que declara cada GTF es lo que salió?
+ *   1. Ficha del permiso en una línea — ¿con qué papel trabajo y cuánto le
+ *      queda? «Ver ficha» despliega la ficha entera y los planes vivos (el plan
+ *      vigente que `?active=1` deja fuera).
+ *   2. Saldo en la misma línea — por talar, en patio, excedido; la tabla por
+ *      especie vive UNA vez, en Control › Extracción («Por especie →»).
+ *   3. Cuadre por guía (plegable, cerrado) — ¿lo que declara cada GTF es lo que salió?
  *
  * No lee nada por su cuenta: la carátula, el plan del libro, el censo y las
  * especies autorizadas los trae el libro; las trozas cruzadas, TODAS las GTF
@@ -24,9 +27,10 @@
  * línea (`planDelControl`).
  */
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { toast } from "sonner";
 import { FileText } from "@buleje/design-system/icons";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import type { CaratulaFicha, PlanFicha } from "@/lib/forestal/loth-ficha-permiso";
 import { cuadreDelControl, planDelControl, trozasDelControl } from "@/lib/forestal/loth-control-del-plan";
@@ -40,17 +44,22 @@ import {
 } from "@/lib/forestal/loth-cuadre-guias";
 import { saldoPorEspecie, type EntradaSaldo } from "@/lib/forestal/loth-saldo-especie";
 import { imprimirInformePermiso } from "@/lib/forestal/loth-informe-permiso-print";
-import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { DatosEncabezadoTablero } from "./LothTableroTrozas";
 import LothFichaPermiso from "./LothFichaPermiso";
+import LothFichaPermisoLinea from "./LothFichaPermisoLinea";
+import { useIrASeccionControl } from "./LothControlPestanas";
 import LothPlanesVivos from "./LothPlanesVivos";
-import LothSaldoEspecies, { AYUDA_SALDO } from "./LothSaldoEspecies";
+import LothSaldoEspecies from "./LothSaldoEspecies";
+import LothControlSaldoLinea from "./LothControlSaldoLinea";
 import { LothCuadreGuias } from "./LothCuadreGuias";
 import { SeccionPlegable } from "./loth-seccion-plegable";
 
-/** Claves de localStorage de las dos plegables (una por bloque). */
+/** Claves de localStorage de lo que se despliega (una por bloque). */
 export const CLAVE_PLEGABLE_SALDO = "loth-control-saldo-abierto-v1";
 export const CLAVE_PLEGABLE_CUADRE = "loth-control-cuadre-abierto-v1";
+export const CLAVE_FICHA_ABIERTA = "loth-control-ficha-abierta-v1";
+
+
 
 export interface LothControlPermisoEncabezadoProps {
   datos: DatosEncabezadoTablero;
@@ -137,7 +146,6 @@ export default function LothControlPermisoEncabezado({
     [saldo, planId],
   );
   const saldoRojo = saldoPlan.filas.some((f) => f.veredicto === "excedido");
-  const tot = saldoPlan.totales;
 
   // Sin la lista de guías no se cuadra: cruzar contra [] acusaría a todas de «citada, sin registrar».
   const cuadre = useMemo(
@@ -147,59 +155,83 @@ export default function LothControlPermisoEncabezado({
   const conteo = useMemo(() => (cuadre ? contarVeredictos(cuadre) : null), [cuadre]);
   const cuadreRojo = conteo != null && VEREDICTOS_ROJOS.some((v) => conteo[v] > 0);
 
+  const irASeccion = useIrASeccionControl();
+  const [verFicha, setVerFicha] = useLocalStorage<boolean>(CLAVE_FICHA_ABIERTA, false);
+  // Fuera de las pestañas del Control no hay Extracción a la que ir: la tabla se abre acá.
+  const [verSaldo, setVerSaldo] = useLocalStorage<boolean>(CLAVE_PLEGABLE_SALDO, false);
+  const idFicha = useId();
+  const idSaldo = useId();
+  // Con «Todos» no hay UN papel que mostrar: se dice cuál se mide (sólo si hay más de uno vivo).
+  const notaPlan =
+    !puntual && vivos.length > 1 && medido
+      ? `Con ${datos.planSel ? "«Líneas sin permiso»" : "«Todos los permisos»"}, la ficha y el saldo son del plan activo del libro. Elige otro arriba para verlo.`
+      : null;
+
   return (
-    <div className="space-y-3">
-      {/* Con «Todos» no hay UN papel que mostrar: se dice cuál se mide (sólo si hay más de uno vivo). */}
-      {!puntual && vivos.length > 1 && medido && (
-        <p className="text-sm text-[var(--text-secondary)]">
-          Con {datos.planSel ? "«Líneas sin permiso»" : "«Todos los permisos»"}, la ficha y el saldo son del plan
-          activo del libro, <b className="font-semibold text-[var(--text-primary)]">{nombreDelPlan(medido)}</b>. Elige
-          otro arriba para verlo.
-        </p>
-      )}
-      {puntual && !pc.plan ? (
-        <p role={datos.cargando ? "status" : "alert"} className="text-sm text-[var(--text-secondary)]">
-          {datos.cargando ? "Leyendo el plan elegido…" : "No se pudo leer el plan elegido. Vuelve a cargar la vista."}
-        </p>
-      ) : (
-        <LothFichaPermiso
-          caratula={caratula}
-          plan={pc.plan}
-          onCompletarCaratula={onCompletarCaratula}
-          onCompletarPlan={onCompletarPlan}
+    <section
+      aria-label="Resumen del permiso"
+      data-control-resumen=""
+      className={`rounded-2xl border bg-[var(--surface-raised)] ${
+        saldoRojo || cuadreRojo ? "border-[var(--data-error-500)]/50" : "border-[var(--rule-base)]"
+      }`}
+    >
+      <div className="flex flex-wrap items-center gap-x-5 px-3 sm:px-4">
+        {puntual && !pc.plan ? (
+          <p role={datos.cargando ? "status" : "alert"} className="py-3 text-sm text-[var(--text-secondary)]">
+            {datos.cargando ? "Leyendo el plan elegido…" : "No se pudo leer el plan elegido. Vuelve a cargar la vista."}
+          </p>
+        ) : (
+          <LothFichaPermisoLinea
+            caratula={caratula}
+            plan={pc.plan}
+            nombrePlan={medido ? nombreDelPlan(medido) : null}
+            notaPlan={notaPlan}
+            planesVivos={vivos.length}
+            abierta={verFicha}
+            panelId={idFicha}
+            onAlternar={() => setVerFicha(!verFicha)}
+            onCompletarCaratula={onCompletarCaratula}
+            onCompletarPlan={onCompletarPlan}
+          />
+        )}
+        <LothControlSaldoLinea
+          saldo={saldoPlan}
+          dondeVacio={puntual ? "el plan elegido" : "el plan del libro"}
+          verTabla={verSaldo}
+          tablaId={idSaldo}
+          onAlternarTabla={() => setVerSaldo(!verSaldo)}
         />
+      </div>
+
+      <div id={idFicha} hidden={!verFicha} className="space-y-3 border-t border-[var(--rule-soft)] px-3 py-3 sm:px-4">
+        {verFicha && !(puntual && !pc.plan) && (
+          <LothFichaPermiso
+            caratula={caratula}
+            plan={pc.plan}
+            onCompletarCaratula={onCompletarCaratula}
+            onCompletarPlan={onCompletarPlan}
+          />
+        )}
+        {verFicha && (
+          <LothPlanesVivos
+            planes={vivos}
+            activoId={planId}
+            etiquetaActivo={puntual ? "el elegido" : undefined}
+            onCompletarPlan={onCompletarPlan}
+          />
+        )}
+      </div>
+      {!irASeccion && (
+        <div id={idSaldo} hidden={!verSaldo} className="border-t border-[var(--rule-soft)] px-3 py-3 sm:px-4">
+          {verSaldo && <LothSaldoEspecies saldo={saldoPlan} sinCabecera />}
+        </div>
       )}
-      <LothPlanesVivos
-        planes={vivos}
-        activoId={planId}
-        etiquetaActivo={puntual ? "el elegido" : undefined}
-        onCompletarPlan={onCompletarPlan}
-      />
 
+      {/* Cerrado aunque traiga rojo (17-10): el resumen ya lo pinta en rojo y
+          la tabla abierta empujaba las trozas 1.400 px hacia abajo. */}
       <SeccionPlegable
-        clave={CLAVE_PLEGABLE_SALDO}
-        titulo="Saldo por especie"
-        ayuda={AYUDA_SALDO}
-        rojo={saldoRojo}
-        resumen={
-          saldoPlan.filas.length === 0 ? (
-            <span>Sin censo ni especies autorizadas en {puntual ? "el plan elegido" : "el plan del libro"}</span>
-          ) : (
-            <span className="tabular-nums">
-              <b className="font-semibold text-[var(--text-primary)]">{fmtM3(tot.saldoPorTalarM3)} m³</b> por talar
-              {" · "}
-              <b className="font-semibold text-[var(--text-primary)]">{fmtM3(tot.enPatioM3)} m³</b> en patio
-              {tot.excesoM3 > 0 && (
-                <b className="font-bold text-[var(--data-error-ink)]"> · excedido +{fmtM3(tot.excesoM3)} m³</b>
-              )}
-            </span>
-          )
-        }
-      >
-        <LothSaldoEspecies saldo={saldoPlan} sinCabecera />
-      </SeccionPlegable>
-
-      <SeccionPlegable
+        plano
+        abrirSiRojo={false}
         clave={CLAVE_PLEGABLE_CUADRE}
         titulo="Cuadre por guía"
         ayuda={AYUDA_CUADRE}
@@ -235,6 +267,6 @@ export default function LothControlPermisoEncabezado({
           </p>
         )}
       </SeccionPlegable>
-    </div>
+    </section>
   );
 }

@@ -3,8 +3,8 @@
 /**
  * La fila de arriba del Control del permiso, en UNA fila (ley de la vista,
  * rule `ui-components`): el título con su ⓘ y las cifras que contesta, y a la
- * derecha «Escanear troza» — en el patio es LA acción (primera y rellena) — y
- * el menú «Opciones».
+ * derecha el menú «Opciones» y «Escanear troza» — en el patio es LA acción
+ * (rellena). Dentro del libro todo eso va al riel de las pestañas.
  *
  * El permiso que se mira NO se elige acá (04-10, Brandon): manda el selector
  * del libro (`LothPermisoChip`, en la banda, al lado de las pestañas) y el
@@ -23,10 +23,10 @@
  */
 
 import { useState } from "react";
-import { SectionTitle } from "@buleje/design-system";
 import { FileSpreadsheet, ScanBarcode } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { cn } from "@/lib/utils";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   UMBRAL_PATIO_DIAS,
@@ -35,6 +35,8 @@ import {
   type TrozaTablero,
 } from "@/lib/forestal/loth-tablero-trozas";
 import type { CaratulaTablero } from "./LothTableroBanda";
+import { CabeceraDeVista } from "./ctp-cabecera-vista";
+import { CLASE_PRINCIPAL_PLEGABLE, CLASE_PRINCIPAL_RIEL, RotuloPrincipal } from "./ctp-riel-piezas";
 
 export default function LothTableroCabecera({
   resumen,
@@ -98,12 +100,35 @@ export default function LothTableroCabecera({
       ? [...conOsinfor, ...accionesExtra]
       : [...conOsinfor.slice(0, iReporte + 1), ...accionesExtra, ...conOsinfor.slice(iReporte + 1)];
 
+  const cifras = (
+    <span
+      title={`${disp?.n ?? 0} en patio · ${fmtM3(disp?.m3 ?? 0)} m³${viejas.n > 0 ? ` · ${viejas.n} con más de ${UMBRAL_PATIO_DIAS.atencion} días` : ""} · ${desp?.n ?? 0} ${desp?.n === 1 ? "despachada" : "despachadas"}`}
+      className="text-sm tabular-nums text-[var(--text-secondary)] @min-[0px]/riel:max-w-[11rem] @min-[0px]/riel:truncate @min-[0px]/riel:text-xs @min-[80rem]/riel:max-w-[18rem] @max-[40rem]/riel:sr-only"
+    >
+      <b className="text-[var(--text-primary)]">{disp?.n ?? 0}</b> en patio ·{" "}
+      <b className="text-[var(--text-primary)]">{fmtM3(disp?.m3 ?? 0)}</b> m³
+      {viejas.n > 0 && (
+        <>
+          {" "}·{" "}
+          <b className={viejas.criticas > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}>
+            {viejas.n}
+          </b>{" "}
+          con más de {UMBRAL_PATIO_DIAS.atencion} días
+        </>
+      )}{" "}
+      · <b className="text-[var(--text-primary)]">{desp?.n ?? 0}</b> {desp?.n === 1 ? "despachada" : "despachadas"}
+    </span>
+  );
+
+  /* Dentro del libro (17-10, «compactar el Libro TH»): el título se calla —el
+     riel ya dice «Control»—, el ⓘ y las cifras van primero en el riel (en el celular, sólo en Indicadores), y el ⋯
+     y «Escanear troza» (LA acción del patio, rellena y al final) detrás. */
   return (
     <>
-      <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-          <span className="inline-flex items-center gap-1.5">
-            <SectionTitle className="text-[var(--text-primary)]">Control del permiso</SectionTitle>
+      <CabeceraDeVista
+        titulo="Control del permiso"
+        info={
+          <span className="inline-flex min-w-0 items-center gap-1.5">
             <InfoTip
               title="Control del permiso"
               what="Qué pasó con cada troza amparada por el título habilitante: la que sigue en el patio, la que salió con GTF y la que se consumió adentro."
@@ -111,40 +136,23 @@ export default function LothTableroCabecera({
               example="Pasa la pistola por la etiqueta de la troza: queda resaltada y elegida. Con «Escanear troza» la lees con la cámara del celular."
               side="bottom"
             />
+            {cifras}
           </span>
-          <p className="text-sm tabular-nums text-[var(--text-secondary)]">
-            <b className="text-[var(--text-primary)]">{disp?.n ?? 0}</b> en patio ·{" "}
-            <b className="text-[var(--text-primary)]">{fmtM3(disp?.m3 ?? 0)}</b> m³
-            {viejas.n > 0 && (
-              <>
-                {" "}·{" "}
-                <b className={viejas.criticas > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}>
-                  {viejas.n}
-                </b>{" "}
-                con más de {UMBRAL_PATIO_DIAS.atencion} días
-              </>
-            )}{" "}
-            · <b className="text-[var(--text-primary)]">{desp?.n ?? 0}</b> {desp?.n === 1 ? "despachada" : "despachadas"}
-          </p>
-        </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {/* Entre 640 y 1280 px la fila no entra con el rótulo: queda el ícono
-              (rellena, sigue siendo LA acción) antes que partir la cabecera. Sin
-              el selector de permiso (04-10) a 1280 sobran ~250 px: va con rótulo. */}
-          <button
-            type="button"
-            onClick={onEscanear}
-            disabled={filas.length === 0}
-            aria-label="Escanear troza"
-            title="Escanear troza: con la cámara del celular, o tipea el código"
-            className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-2.5 text-sm font-bold text-white transition-colors hover:bg-[var(--accent-600)] disabled:cursor-not-allowed disabled:opacity-50 max-sm:px-3.5 xl:px-3.5"
-          >
-            <ScanBarcode className="h-5 w-5" aria-hidden="true" />
-            <span className="hidden max-sm:inline xl:inline">Escanear troza</span>
-          </button>
-          <ActionMenu label="Opciones del control" actions={menu} size="md" soloIcono />
-        </div>
-      </header>
+        }
+      >
+        <ActionMenu label="Opciones del control" actions={menu} size="md" soloIcono />
+        <button
+          type="button"
+          onClick={onEscanear}
+          disabled={filas.length === 0}
+          aria-label="Escanear troza"
+          title="Escanear troza: con la cámara del celular, o tipea el código"
+          className={cn(CLASE_PRINCIPAL_RIEL, CLASE_PRINCIPAL_PLEGABLE, "disabled:cursor-not-allowed disabled:opacity-50")}
+        >
+          <ScanBarcode className="h-5 w-5" aria-hidden="true" />
+          <RotuloPrincipal corto="Escanear">Escanear troza</RotuloPrincipal>
+        </button>
+      </CabeceraDeVista>
       {errorExport && (
         <p role="alert" className="text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           {errorExport}

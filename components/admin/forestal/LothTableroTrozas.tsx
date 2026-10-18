@@ -8,16 +8,9 @@
  * leer tres secciones y cruzar códigos a mano. Acá cada troza aparece una sola
  * vez, con su estado y su color, bajo los códigos del permiso que la ampara.
  *
- * Lo construyeron dos sesiones (unidas en el merge del 04-10):
- *   · ADR-459 (02-10): permiso elegido y recordado, volumen en cascada, patio
- *     viejo en ámbar/rojo, tanda (guía, etiquetas, Excel), reporte, WhatsApp,
- *     la pistola en el buscador y la pestaña Kárdex;
- *   · 30-09/01-10: cada troza cruzada con su GTF (placa, destino) y su plan;
- *     columnas a elegir con orden y Excel para OSINFOR; «Escanear troza» con
- *     la cámara; y el `encabezado` que monta el libro (ficha, saldo, cuadre).
- *
- * Orden (ley de la vista): cabecera en una fila → [escáner] → encabezado (o la
- * banda) → avisos → volumen → Trozas | Kárdex → estados → tabla.
+ * Lo construyeron dos sesiones (merge 04-10: ADR-459 + 30-09/01-10). Orden
+ * (ley de la vista): cabecera (al riel dentro del libro) → [escáner] →
+ * encabezado (o la banda) → avisos → volumen → Trozas | Kárdex → estados → tabla.
  *
  * El estado se deriva del libro (`lib/forestal/loth-tablero-trozas.ts`): no hay
  * un contador aparte que se pueda desincronizar.
@@ -229,15 +222,8 @@ export default function LothTableroTrozas({
         />
       )}
 
-      {/* Lugar para la ficha del permiso, el saldo por especie y el cuadre por
-          guía; sin él, la banda con los códigos que amparan todo lo de abajo. */}
-      {encabezado == null ? (
-        <LothTableroBanda banda={banda} caratula={caratula} />
-      ) : typeof encabezado === "function" ? (
-        encabezado(datosEncabezado)
-      ) : (
-        encabezado
-      )}
+      {/* Ficha, saldo y cuadre (los monta el libro); sin ellos, la banda con los códigos del permiso. */}
+      {encabezado == null ? <LothTableroBanda banda={banda} caratula={caratula} /> : typeof encabezado === "function" ? encabezado(datosEncabezado) : encabezado}
 
       <LothTableroAvisos
         banda={banda}

@@ -7,6 +7,7 @@
  */
 
 import { CardTitle } from "@buleje/design-system";
+import { useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import { Clock } from "@buleje/design-system/icons";
 import { useKpisPlegables } from "./kpis-plegables";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -45,7 +46,8 @@ export default function LothTableroEstados({
       : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12";
   /* Las seis cifras se pliegan (Brandon 05-10); cada una sigue siendo el filtro de su estado. */
   const total = resumen.reduce((a, r) => a + r.n, 0);
-  const { boton, panel } = useKpisPlegables({
+  const enLibro = useEnElLibro();
+  const { boton, panel, abierto } = useKpisPlegables({
     claveMemoria: "loth-tablero-estados",
     resumen: `${total} ${total === 1 ? "troza" : "trozas"}${viejas.n > 0 ? ` · ${viejas.n} con +${UMBRAL_PATIO_DIAS.atencion} días en patio` : ""}`,
     filtrosActivos: estados.length + (soloViejas ? 1 : 0),
@@ -95,14 +97,18 @@ export default function LothTableroEstados({
         </button>,
     ],
   });
+  /* Dentro del libro el botón va al riel (ícono + cuenta): plegado, acá no
+     queda nada —ni el título— y la tabla sube una fila (17-10). */
+  if (enLibro && !abierto) return <>{boton}</>;
   return (
     <section className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           Estado de las trozas
         </CardTitle>
-        {boton}
+        {!enLibro && boton}
       </div>
+      {enLibro && boton}
       {panel}
     </section>
   );

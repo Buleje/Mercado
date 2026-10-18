@@ -7,8 +7,9 @@
  * y cuánto se aserró.
  *
  * Orden (ley de la vista, rule `ui-components`): título con las cifras clave,
- * permiso, período y menú en UNA fila → avisos (una línea + ⓘ) → indicadores
- * plegables → la tabla → los gráficos plegables.
+ * período y menú en UNA fila (dentro del libro, en el riel; el permiso lo elige
+ * el chip de la banda) → avisos (una línea) → indicadores plegables → la tabla
+ * (el saldo por especie del permiso vive acá, una sola vez) → los gráficos.
  *
  * Todas las cifras llegan hechas de `GET /api/admin/forestal/loth/extraccion`;
  * la pantalla no suma (regla «totales en backend»).
@@ -18,7 +19,6 @@
  * vive el saldo contra el censo y la cadena hasta el CTP (ADR-454 §6).
  */
 
-import { SectionTitle } from "@buleje/design-system";
 import { AlertCircle, FileSpreadsheet, Map as MapIcon, RefreshCw, TrendingUp } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
@@ -27,6 +27,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { exportSheetsToExcel } from "@/lib/export-excel";
 import { describirError } from "@/lib/errores/sin-dato";
 import CtpPeriodPicker from "./CtpPeriodPicker";
+import { CabeceraDeVista } from "./ctp-cabecera-vista";
 import { Btn } from "./ctp-shared";
 import { PLAN_SIN_PLAN, useLothExtraccion, type OpcionPlan } from "./hooks/use-loth-extraccion";
 import LothExtraccionAvisos from "./loth-extraccion-avisos";
@@ -59,11 +60,14 @@ export default function LothExtraccionView({
       : []),
   ];
   const elegido = opciones.find((o) => o.id === e.planId) ?? null;
+  /* Dentro del libro no hay lista de planes: el nombre del permiso sale de la respuesta. */
+  const unico = e.planId && d?.permisos.length === 1 ? d.permisos[0] : null;
+  const etiquetaArchivo = elegido?.etiqueta ?? (unico ? nombrePermiso(unico) : null);
 
   const exportar = async () => {
     if (!d) return;
     try {
-      await exportSheetsToExcel(hojasDeExtraccion(d), nombreDeArchivo(elegido?.etiqueta ?? "todos"));
+      await exportSheetsToExcel(hojasDeExtraccion(d), nombreDeArchivo(etiquetaArchivo ?? "todos"));
     } catch (err) {
       toast.error(`No se pudo armar el Excel: ${describirError(err)}`);
     }
@@ -89,59 +93,70 @@ export default function LothExtraccionView({
   const t = d?.total;
   return (
     <div className="space-y-4" data-vista-extraccion>
-      <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-          <span className="inline-flex items-center gap-1.5">
-            <SectionTitle>Extracción</SectionTitle>
+      {/* Dentro del libro (17-10, «compactar el Libro TH»): el título se calla, el
+          ⓘ con las cifras y los controles van al riel, y el permiso lo elige el
+          chip de la banda —el selector propio sólo queda fuera del libro—. */}
+      <CabeceraDeVista
+        titulo="Extracción"
+        info={
+          <span className="inline-flex min-w-0 items-center gap-1.5">
             <InfoTip
               title="Extracción"
               what="Lo aprobado según censo de cada permiso y, contra eso, cuánto se taló, trozó y despachó."
-              affects="Cada saldo es lo aprobado menos esa operación: no se suman entre sí."
+              affects="Cada saldo es lo aprobado menos esa operación: no se suman entre sí. El permiso se elige en el selector de la banda del libro."
               example="Aprobado 400.5 m³, talado 32.9 m³: saldo de tala 367.6 m³."
               side="bottom"
             />
+            {t && (
+              <span
+                title={`aprobado ${fm3(t.censo.aprovechableM3)} · talado ${fm3(t.talado.m3)} · trozado ${fm3(t.trozado.m3)} · despachado ${fm3(t.despachado.m3)} m³`}
+                className="text-sm tabular-nums text-[var(--text-secondary)] @min-[0px]/riel:max-w-[11rem] @min-[0px]/riel:truncate @min-[0px]/riel:text-xs @min-[80rem]/riel:max-w-[18rem] @max-[40rem]/riel:sr-only"
+              >
+                aprobado <b className="text-[var(--text-primary)]">{fm3(t.censo.aprovechableM3)}</b> · talado{" "}
+                <b className="text-[var(--text-primary)]">{fm3(t.talado.m3)}</b> · trozado{" "}
+                <b className="text-[var(--text-primary)]">{fm3(t.trozado.m3)}</b> · despachado{" "}
+                <b className="text-[var(--text-primary)]">{fm3(t.despachado.m3)}</b> m³
+              </span>
+            )}
           </span>
-          {t && (
-            <p className="text-sm tabular-nums text-[var(--text-secondary)]">
-              aprobado <b className="text-[var(--text-primary)]">{fm3(t.censo.aprovechableM3)}</b> · talado{" "}
-              <b className="text-[var(--text-primary)]">{fm3(t.talado.m3)}</b> · trozado{" "}
-              <b className="text-[var(--text-primary)]">{fm3(t.trozado.m3)}</b> · despachado{" "}
-              <b className="text-[var(--text-primary)]">{fm3(t.despachado.m3)}</b> m³
-            </p>
-          )}
-        </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {/* «Indicadores» en la fila de los controles, no en una propia (08-10). */}
-          {d && d.permisos.length > 0 && kpis.boton}
-          <label className="sr-only" htmlFor="extraccion-permiso">
-            Permiso
-          </label>
-          <select
-            id="extraccion-permiso"
-            value={e.planId ?? ""}
-            onChange={(ev) => e.elegirPlan(ev.target.value || null)}
-            title={elegido?.detalle ?? "Todos los planes del libro"}
-            className={`h-10 max-w-[16rem] rounded-xl border-2 bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none ${
-              e.planId ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
-            }`}
-          >
-            <option value="">Todos los permisos</option>
-            {opciones.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.detalle && o.detalle !== o.etiqueta ? `${o.etiqueta} · ${o.detalle}` : o.etiqueta}
-              </option>
-            ))}
-          </select>
-          <CtpPeriodPicker
-            periodKey={e.periodKey}
-            custom={e.custom}
-            period={e.period}
-            onKeyChange={e.elegirPeriodo}
-            onCustomChange={e.elegirRango}
-          />
-          <ActionMenu label="Opciones de la extracción" actions={acciones} size="md" soloIcono />
-        </div>
-      </header>
+        }
+      >
+        {/* «Indicadores» en la fila de los controles, no en una propia (08-10). */}
+        {d && d.permisos.length > 0 && kpis.boton}
+        {!e.enLibro && (
+          <>
+            <label className="sr-only" htmlFor="extraccion-permiso">
+              Permiso
+            </label>
+            <select
+              id="extraccion-permiso"
+              value={e.planId ?? ""}
+              onChange={(ev) => e.elegirPlan(ev.target.value || null)}
+              title={elegido?.detalle ?? "Todos los planes del libro"}
+              className={`h-12 max-w-[16rem] rounded-xl border-2 bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none ${
+                e.planId ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
+              }`}
+            >
+              <option value="">Todos los permisos</option>
+              {opciones.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.detalle && o.detalle !== o.etiqueta ? `${o.etiqueta} · ${o.detalle}` : o.etiqueta}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+        {/* En el riel, sólo el rótulo corto («histórico», «oct 2026»): el largo partía el riel en dos filas. */}
+        <CtpPeriodPicker
+          periodKey={e.periodKey}
+          custom={e.custom}
+          period={e.period}
+          onKeyChange={e.elegirPeriodo}
+          onCustomChange={e.elegirRango}
+          compacto={e.enLibro}
+        />
+        <ActionMenu label="Opciones de la extracción" actions={acciones} size="md" soloIcono />
+      </CabeceraDeVista>
 
       {e.error && (
         <div role="alert" className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/8 px-3 py-2 text-sm">

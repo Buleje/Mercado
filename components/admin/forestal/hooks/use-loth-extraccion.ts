@@ -10,9 +10,9 @@
  *     deja la respuesta vieja pisando a la nueva.
  *   · Permiso y período se recuerdan en este navegador. Un permiso recordado
  *     que ya no existe (404) vuelve a «Todos» en vez de dejar la vista en error.
- *   · La lista de planes para el selector sale de `/api/admin/forestal/plan`:
- *     con un permiso elegido, la respuesta trae sólo ese y el selector no
- *     podría ofrecer los demás.
+ *   · Dentro del libro el permiso lo elige el chip de la banda (17-10). Fuera,
+ *     la lista del selector sale de `/api/admin/forestal/plan`: con un permiso
+ *     elegido, la respuesta trae sólo ese y no podría ofrecer los demás.
  *   · «Sin plan» (`planId=sin-plan`) se ofrece si la vista «Todos» trajo
  *     líneas sin árbol en ningún censo.
  *   · La especie filtra la tabla y los gráficos en pantalla (no pide de nuevo);
@@ -49,6 +49,8 @@ export interface EstadoExtraccion {
   planes: OpcionPlan[];
   /** La última lectura de «Todos» trajo la fila «Sin plan». */
   haySinPlan: boolean;
+  /** Dentro del libro: el permiso lo elige el chip de la banda, sin selector propio. */
+  enLibro: boolean;
   planId: string | null;
   elegirPlan: (id: string | null) => void;
   periodKey: CtpPeriodKey;
@@ -82,13 +84,16 @@ const texto = (v: unknown): string | null => (typeof v === "string" && v.trim() 
 
 export function useLothExtraccion(reloadSignal = 0): EstadoExtraccion {
   const [planLocal, setPlanLocal] = useLocalStorage<string | null>("loth-extraccion:plan", null);
-  /* El permiso del libro (02-10): con uno elegido arriba (un plan o «Sin plan») esta vista mira ése; con «Todos» conserva lo suyo, sin escribir el global. */
+  /* El permiso del libro manda (17-10, «compactar el Libro TH»): dentro del libro
+     esta vista mira el del chip de la banda —un plan, «Sin plan» o «Todos»— y ya
+     no tiene selector propio. Fuera del libro (sin chip) vale el recordado acá. */
   const permiso = useLothPermiso();
+  const enLibro = permiso != null;
   const planGlobal = permiso?.planSel ?? null;
   const permisoListo = permiso?.listo ?? true;
   /* Un plan que el servidor ya no tiene (404): ESTA vista muestra «Todos»; el global no se toca (el aviso «se dio de baja» es del chip). */
   const [planCaido, setPlanCaido] = useState<string | null>(null);
-  const planPedido = planGlobal ?? planLocal;
+  const planPedido = enLibro ? planGlobal : planLocal;
   const planId = planPedido && planPedido === planCaido ? null : planPedido;
   const elegirGlobal = permiso?.elegirPlan;
   const setPlanId = useCallback(
@@ -113,6 +118,8 @@ export function useLothExtraccion(reloadSignal = 0): EstadoExtraccion {
   const query = paramsDeExtraccion(planId, period).toString();
 
   useEffect(() => {
+    /* Dentro del libro no hay selector que llenar: lo elige el chip de la banda. */
+    if (enLibro) return;
     const ac = new AbortController();
     (async () => {
       try {
@@ -132,7 +139,7 @@ export function useLothExtraccion(reloadSignal = 0): EstadoExtraccion {
       }
     })();
     return () => ac.abort();
-  }, [reloadSignal]);
+  }, [reloadSignal, enLibro]);
 
   useEffect(() => {
     /* Con el permiso del libro todavía sin leer, `planId` puede ser el recordado de antes: no se pide aún. */
@@ -197,6 +204,7 @@ export function useLothExtraccion(reloadSignal = 0): EstadoExtraccion {
     reintentar,
     planes,
     haySinPlan,
+    enLibro,
     planId,
     elegirPlan,
     periodKey,

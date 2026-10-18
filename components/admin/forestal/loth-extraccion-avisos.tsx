@@ -3,7 +3,8 @@
 /**
  * Los avisos de «Extracción»: una línea cada uno, con su cifra y el detalle en
  * ⓘ (el texto entero del servidor + qué significa y qué afecta), rojo primero.
- * Se ven tres; el resto se abre con «N más» (ADR-454 §6).
+ * Se ve UNO —el más urgente— y al final de su misma línea «+N avisos» abre el
+ * resto (17-10, «compactar el Libro TH»: eran 3 cajas + un botón, ~190 px).
  *
  * «Plan sin permiso» trae su arreglo en la misma línea: «Unir» con el permiso
  * del mismo código o «Elegir su permiso» (ADR-455, `loth-extraccion-unir`). Los
@@ -18,7 +19,7 @@ import { AYUDA_AVISO } from "./loth-extraccion-ayuda";
 import { fm3, ordenarAvisos } from "./loth-extraccion-shared";
 import LothExtraccionUnir from "./loth-extraccion-unir";
 
-const VISIBLES = 3;
+const VISIBLES = 1;
 
 const ESTILO: Record<AvisoExtraccion["nivel"], { icono: typeof AlertCircle; caja: string; icon: string; nombre: string }> = {
   error: {
@@ -80,21 +81,21 @@ export default function LothExtraccionAvisos({ avisos }: { avisos: readonly Avis
                 side="left"
                 ancho="w-80"
               />
+              {i === 0 && orden.length > VISIBLES && (
+                <button
+                  type="button"
+                  onClick={() => setTodos((v) => !v)}
+                  aria-expanded={todos}
+                  className="inline-flex h-10 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
+                >
+                  {todos ? "Ver menos" : `+${ocultos} ${ocultos === 1 ? "aviso" : "avisos"}`}
+                  <ChevronDown className={`h-4 w-4 transition-transform ${todos ? "rotate-180" : ""}`} aria-hidden />
+                </button>
+              )}
             </li>
           );
         })}
       </ul>
-      {(ocultos > 0 || todos) && orden.length > VISIBLES && (
-        <button
-          type="button"
-          onClick={() => setTodos((v) => !v)}
-          aria-expanded={todos}
-          className="inline-flex h-12 items-center gap-1.5 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
-        >
-          <ChevronDown className={`h-4 w-4 transition-transform ${todos ? "rotate-180" : ""}`} aria-hidden />
-          {todos ? "Ver menos avisos" : `${ocultos} ${ocultos === 1 ? "aviso más" : "avisos más"}`}
-        </button>
-      )}
     </section>
   );
 }

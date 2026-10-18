@@ -9,13 +9,20 @@
  *  · el libro cita la 001-0045678, que no está entre las emitidas → rojo.
  *
  * Lo que prueba: el orden de arriba abajo, que la banda vieja se fue, que el
- * plan vigente no queda fuera, que las plegables abren solas sólo con rojo y
- * se recuerdan, y que sin guías no se acusa a nadie.
+ * plan vigente no queda fuera, que el cuadre arranca cerrado aun con rojo
+ * (17-10, «compactar el Libro TH»: el rojo lo dice el borde y su resumen), que
+ * lo abierto se recuerda, y que sin guías no se acusa a nadie.
+ *
+ * Desde el 17-10 la ficha es una línea («Vigente · N días · Ver ficha») y el
+ * saldo otra; la ficha entera y los planes vivos se abren con «Ver ficha». Acá
+ * el encabezado va SIN las pestañas del Control: el saldo por especie se abre
+ * en su lugar («Ver por especie»); dentro de ellas es un enlace a Extracción.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import LothTableroTrozas from "@/components/admin/forestal/LothTableroTrozas";
 import LothControlPermisoEncabezado, {
+  CLAVE_FICHA_ABIERTA,
   CLAVE_PLEGABLE_CUADRE,
   CLAVE_PLEGABLE_SALDO,
 } from "@/components/admin/forestal/LothControlPermisoEncabezado";
@@ -102,6 +109,8 @@ const panelDe = (titulo: string) => {
   const boton = screen.getByRole("button", { name: new RegExp(`(Ver|Ocultar) ${titulo.toLowerCase()}`) });
   return { boton, panel: document.getElementById(boton.getAttribute("aria-controls") ?? "") as HTMLElement };
 };
+/** «Ver ficha» despliega la ficha entera y los planes vivos. */
+const abrirFicha = () => fireEvent.click(screen.getByRole("button", { name: /Ver ficha/ }));
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -115,9 +124,10 @@ afterEach(() => {
 });
 
 describe("Control del permiso — tablero + ficha + saldo + cuadre (Blas)", () => {
-  it("de arriba abajo: ficha, planes vivos, saldo, cuadre, estado de las trozas; sin la banda vieja", async () => {
+  it("de arriba abajo: línea de la ficha, línea del saldo, ficha y planes vivos al abrir, cuadre, estado de las trozas; sin la banda vieja", async () => {
     vi.stubGlobal("fetch", mockApi());
     const { container } = montar();
+    abrirFicha();
     await waitFor(() => expect(screen.getByLabelText("Planes vivos")).toBeTruthy());
     const html = container.innerHTML;
     const pos = (s: string) => {
@@ -126,9 +136,10 @@ describe("Control del permiso — tablero + ficha + saldo + cuadre (Blas)", () =
       return i;
     };
     const orden = [
+      pos("data-ficha-linea"),
+      pos("data-saldo-linea"),
       pos('aria-label="Ficha del permiso"'),
       pos('aria-label="Planes vivos"'),
-      pos("Saldo por especie"),
       pos("Cuadre por guía"),
       pos("Estado de las trozas"),
     ];
@@ -137,10 +148,21 @@ describe("Control del permiso — tablero + ficha + saldo + cuadre (Blas)", () =
     expect(screen.queryByText("N° registro del libro")).toBeNull();
   });
 
+  it("cerrada, la ficha no se dibuja; la línea ya dice el estado", async () => {
+    vi.stubGlobal("fetch", mockApi());
+    const { container } = montar();
+    expect(screen.queryByLabelText("Ficha del permiso")).toBeNull();
+    expect(screen.queryByLabelText("Planes vivos")).toBeNull();
+    const linea = container.querySelector("[data-ficha-linea]") as HTMLElement;
+    expect(within(linea).getByText("Sin vigencia")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Ver ficha/ }).getAttribute("aria-expanded")).toBe("false");
+  });
+
   it("el plan vigente de Tornillo no queda fuera: una fila por plan vivo, el del libro marcado", async () => {
     vi.stubGlobal("fetch", mockApi());
     const onPlan = vi.fn();
     montar({ onPlan });
+    abrirFicha();
     const lista = await screen.findByLabelText("Planes vivos");
     const filas = within(lista).getAllByRole("listitem");
     expect(filas).toHaveLength(2);
@@ -151,45 +173,49 @@ describe("Control del permiso — tablero + ficha + saldo + cuadre (Blas)", () =
     expect(within(filas[1]).getByText("quedan 537 días")).toBeTruthy();
     expect(filas[1].textContent).toContain("hasta el lunes 20/03/2028");
     expect(filas[1].textContent).toContain("PC-12");
-    // La ficha grande sigue al plan del libro (sin vigencia) y ofrece completarlo.
+    // Con dos planes vivos, la línea lo dice en su «Ver/Ocultar ficha».
+    expect(screen.getByRole("button", { name: /Ocultar ficha\s*· 2 planes vivos/ })).toBeTruthy();
+
     const ficha = screen.getByLabelText("Ficha del permiso");
     expect(within(ficha).getByText("Sin vigencia")).toBeTruthy();
     fireEvent.click(within(ficha).getByRole("button", { name: /^Completar: El plan no tiene vigencia/ }));
     expect(onPlan).toHaveBeenCalledTimes(1);
   });
 
-  it("el cuadre arranca abierto porque tiene rojo; el saldo, plegado pero con sus cifras", async () => {
+  it("el cuadre arranca cerrado aunque tenga rojo: lo dicen su resumen y el borde; el saldo, con sus cifras en la línea", async () => {
     vi.stubGlobal("fetch", mockApi());
-    montar();
-    await waitFor(() => expect(screen.getAllByText("Citada, sin registrar").length).toBeGreaterThan(0));
+    const { container } = montar();
+    await waitFor(() => expect(screen.getAllByText(/Citada, sin registrar/).length).toBeGreaterThan(0));
     const cuadre = panelDe("Cuadre por guía");
-    expect(cuadre.boton.getAttribute("aria-expanded")).toBe("true");
-    expect(cuadre.panel.hidden).toBe(false);
+    expect(cuadre.boton.getAttribute("aria-expanded")).toBe("false");
+    expect(cuadre.panel.hidden).toBe(true);
+    expect((container.querySelector("[data-control-resumen]") as HTMLElement).className).toMatch(/data-error-500/);
+    fireEvent.click(cuadre.boton);
     /* En la fila, no en la lista del autofiltro «Veredicto» (05-10), que también dice «Cuadra». */
     expect(within(cuadre.panel.querySelector("tbody") as HTMLElement).getByText("Cuadra")).toBeTruthy(); // 019-0000002: 4,951 + 1,659 ≈ 6,6102
 
-    const saldo = panelDe("Saldo por especie");
+    const saldo = panelDe("por especie");
     expect(saldo.boton.getAttribute("aria-expanded")).toBe("false");
     expect(saldo.panel.hidden).toBe(true);
-    // Plegado no es esconder: la línea de la cabecera sigue diciendo sus cifras.
-    expect(saldo.boton.parentElement?.textContent).toMatch(/m³ por talar · .* m³ en patio/);
+    // Plegado no es esconder: la línea sigue diciendo sus cifras.
+    expect(container.querySelector("[data-saldo-linea]")?.textContent).toMatch(/m³ por talar · .* m³ en patio/);
   });
 
-  it("abrir el saldo queda recordado en localStorage", async () => {
+  it("abrir el saldo, la ficha y el cuadre queda recordado en localStorage", async () => {
     vi.stubGlobal("fetch", mockApi());
     const { unmount } = montar();
-    fireEvent.click(panelDe("Saldo por especie").boton);
-    expect(panelDe("Saldo por especie").panel.hidden).toBe(false);
+    fireEvent.click(panelDe("por especie").boton);
+    expect(panelDe("por especie").panel.hidden).toBe(false);
     expect(window.localStorage.getItem(CLAVE_PLEGABLE_SALDO)).toBe("true");
-    // Plegar el cuadre aunque tenga rojo también se respeta.
-    await waitFor(() => expect(panelDe("Cuadre por guía").boton.getAttribute("aria-expanded")).toBe("true"));
+    abrirFicha();
+    expect(window.localStorage.getItem(CLAVE_FICHA_ABIERTA)).toBe("true");
     fireEvent.click(panelDe("Cuadre por guía").boton);
-    expect(window.localStorage.getItem(CLAVE_PLEGABLE_CUADRE)).toBe("false");
+    expect(window.localStorage.getItem(CLAVE_PLEGABLE_CUADRE)).toBe("true");
     unmount();
     montar();
-    expect(panelDe("Saldo por especie").panel.hidden).toBe(false);
-    await waitFor(() => expect(screen.getAllByText(/Citada, sin registrar/).length).toBeGreaterThan(0));
-    expect(panelDe("Cuadre por guía").panel.hidden).toBe(true);
+    expect(panelDe("por especie").panel.hidden).toBe(false);
+    expect(await screen.findByLabelText("Planes vivos")).toBeTruthy();
+    expect(panelDe("Cuadre por guía").panel.hidden).toBe(false);
   });
 
   it("sin la lista de guías no acusa a nadie: lo dice y no cuadra contra vacío", async () => {

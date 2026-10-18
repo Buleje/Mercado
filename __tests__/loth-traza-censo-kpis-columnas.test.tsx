@@ -139,6 +139,8 @@ describe("Por árbol · una tabla, su pie y sus columnas", () => {
     expect(document.querySelectorAll("[data-tabla-arbol]")).toHaveLength(1);
     expect([...document.querySelectorAll("tbody[data-grupo]")].map((t) => t.getAttribute("data-grupo"))).toEqual(["movimiento", "terminado"]);
     expect(pie()).toContain("Total · 2 árboles");
+    // Los cuatro pasos son los Indicadores de la vista (17-10): plegados no se dibujan.
+    fireEvent.click(screen.getByRole("button", { name: /Indicadores/ }));
     const talados = document.querySelector('[data-paso="talados"] [data-m3]')!.textContent ?? "";
     expect(talados).toContain(fmtM3(5));
     expect(pie()).toContain(fmtM3(5));

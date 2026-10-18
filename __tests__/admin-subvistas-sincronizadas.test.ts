@@ -412,7 +412,7 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       constante: /export const SECCIONES_POR_PAGAR = \[([^\]]+)\]/,
     },
     "loth-libro-operaciones/tablero": {
-      archivo: "components/admin/forestal/LothControlPestanas.tsx",
+      archivo: "components/admin/forestal/loth-vistas-fusionadas.ts",
       constante: /export const SUBS_CONTROL = \[([^\]]+)\]/,
     },
   };

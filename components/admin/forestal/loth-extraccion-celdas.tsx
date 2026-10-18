@@ -3,7 +3,9 @@
 /**
  * Las celdas de la tabla de «Extracción»: las 12 columnas de cifras de UNA
  * fila (permiso, especie o total), iguales para las tres. El nombre de la fila
- * lo pone la tabla.
+ * lo pone la tabla. Desde el 17-10 es la ÚNICA tabla de saldo por especie del
+ * libro (el Control y «Por árbol» enlazan acá): por eso trae lo que sólo tenía
+ * la del Control —lo consumido en el TH bajo «En el monte» y «N sin m³»—.
  *
  * Todas las cifras en m³ con tres decimales y `tabular-nums` (la columna
  * alinea); la cantidad de árboles o trozas va debajo, en chico. Los saldos
@@ -11,7 +13,7 @@
  * estimado»), nunca en rojo: el rojo es sólo pasar lo AUTORIZADO.
  */
 
-import type { FilaExtraccion, SaldoContra } from "@/lib/forestal/loth-extraccion-tipos";
+import type { FilaExtraccion, SaldoContra, Suma } from "@/lib/forestal/loth-extraccion-tipos";
 import {
   BARRA_TONO,
   NOMBRE_NIVEL,
@@ -36,6 +38,20 @@ function Cifra({ m3, sub, fuerte = false, className = "" }: { m3: number | null;
       </span>
       {sub && <span className="block text-xs text-[var(--text-tertiary)]">{sub}</span>}
     </>
+  );
+}
+
+/**
+ * «N sin m³» debajo de la cantidad: piezas contadas sin volumen declarado (la
+ * cifra se queda corta). Venía de la tabla de saldo del Control, que se fue al
+ * compactar el libro (17-10); corto para no ensanchar la columna.
+ */
+function SinM3({ s }: { s: Suma }) {
+  if (s.sinVolumen <= 0) return null;
+  return (
+    <span className="block text-xs font-semibold text-[var(--data-warning-ink)]" title={`${plural(s.sinVolumen, "pieza", "piezas")} sin volumen: la cifra se queda corta`}>
+      {s.sinVolumen} sin m³
+    </span>
   );
 }
 
@@ -113,24 +129,34 @@ export function CeldasDeFila({ f, fuerte = false }: { f: FilaExtraccion; fuerte?
       </td>
       <td className={`${TD_NUM} ${CORTE}`}>
         <Cifra m3={f.talado.m3} sub={plural(f.talado.n, "árbol", "árboles")} fuerte={fuerte} />
+        <SinM3 s={f.talado} />
       </td>
       <td className={TD_NUM}>
         <Saldo s={f.saldo.tala} sinCenso={sinCenso} />
       </td>
       <td className={`${TD_NUM} ${CORTE}`}>
         <Cifra m3={f.trozado.m3} sub={plural(f.trozado.n, "troza", "trozas")} fuerte={fuerte} />
+        <SinM3 s={f.trozado} />
       </td>
       <td className={TD_NUM}>
         <Saldo s={f.saldo.trozado} sinCenso={sinCenso} />
       </td>
       <td className={`${TD_NUM} ${CORTE}`}>
         <Cifra m3={f.despachado.m3} sub={plural(f.despachado.n, "troza", "trozas")} fuerte={fuerte} />
+        <SinM3 s={f.despachado} />
       </td>
       <td className={TD_NUM}>
         <Saldo s={f.saldo.despacho} sinCenso={sinCenso} />
       </td>
-      <td className={`${TD_NUM} ${CORTE}`}>
+      <td
+        className={`${TD_NUM} ${CORTE}`}
+        title={f.consumidoTh.n > 0 ? `Además, ${fm3(f.consumidoTh.m3)} m³ (${plural(f.consumidoTh.n, "troza", "trozas")}) se consumieron en el TH: no salieron con guía ni siguen en el monte` : undefined}
+      >
         <Cifra m3={f.enElMonte.m3} sub={plural(f.enElMonte.n, "troza", "trozas")} />
+        {f.consumidoTh.n > 0 && (
+          /* Parte en dos líneas antes que ensanchar la columna (la tabla ya entra justa a 1280). */
+          <span className="block whitespace-normal text-xs text-[var(--text-tertiary)]">+{fm3(f.consumidoTh.m3)} consumido</span>
+        )}
       </td>
       <td className={TD_NUM} title={f.recibido.n > 0 ? `La guía dice ${fm3(f.recibido.m3Guia)} m³` : undefined}>
         <Cifra m3={f.recibido.m3} sub={plural(f.recibido.n, "troza", "trozas")} />
