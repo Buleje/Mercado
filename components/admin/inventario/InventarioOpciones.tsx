@@ -3,13 +3,8 @@
 import { AlertTriangle, CheckCircle, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
-import type { Rango } from "@/lib/admin/filtros-columna";
-import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
-
-/** Los desplegables del panel a 48 px. */
-const FILTRO_EN_PANEL = "mt-0! min-w-0 [&_summary]:h-12 [&_summary]:rounded-xl";
 
 /**
  * Lo que abre «Filtros» (estado, stock y vencimiento) y los avisos de la
@@ -23,29 +18,10 @@ const FILTRO_EN_PANEL = "mt-0! min-w-0 [&_summary]:h-12 [&_summary]:rounded-xl";
  */
 export default function InventarioOpciones({ inv }: { inv: Inventario }) {
   const {
-    loading, estadoFiltro, setEstadoFiltro, stockRango, setStockRango, vencRango, setVencRango, showFilters,
-    csvResult, setCsvResult, totalProducts, activeProducts, inconsistentes, openEditModal,
+    loading, csvResult, setCsvResult, inconsistentes, openEditModal,
   } = inv;
   return (
     <>
-      {showFilters && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2">
-          <FiltroColumnaMulti
-            label="Estado"
-            value={estadoFiltro}
-            options={[
-              { value: "Activo", count: activeProducts },
-              { value: "Inactivo", count: totalProducts - activeProducts },
-            ]}
-            onChange={setEstadoFiltro}
-            placeholder="Estado: todos"
-            className={FILTRO_EN_PANEL}
-          />
-          <FiltroColumnaRango label="Stock" paso={1} valor={stockRango} onChange={(r) => setStockRango(r as Rango<number>)} placeholder="Stock: cualquiera" className={FILTRO_EN_PANEL} />
-          <FiltroColumnaRango label="Vence" esFecha valor={vencRango} onChange={(r) => setVencRango(r as Rango<string>)} placeholder="Vence: cuando sea" className={FILTRO_EN_PANEL} />
-        </div>
-      )}
-
       {/* Resultado de «Subir CSV». */}
       {csvResult && (
         <div

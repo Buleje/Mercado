@@ -78,6 +78,8 @@ describe("InventoryTab — autofiltro de cabecera (Categoría, Estado)", () => {
     await montarConProductos();
     expect(tabla().getByText("Gaseosa 1L")).toBeTruthy();
 
+    // Categoría vive ahora dentro del botón «Filtros» (barrido de compactación 18-10).
+    fireEvent.click(screen.getByRole("button", { name: /^Filtros/ }));
     const disparador = screen.getByLabelText(/Filtrar por Categoría/);
     fireEvent.click(disparador);
     const popover = screen.getByRole("group", { name: "Valores de Categoría" });

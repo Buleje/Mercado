@@ -131,7 +131,6 @@ export function useInventarioEstado() {
       setVencRango({ min: hoy, max: en7.toISOString().slice(0, 10) });
     } else if (esFaltaDeCatalogo(valor)) setFaltaDato(valor);
   });
-  const [showFilters, setShowFilters] = useState(false);
   // View mode toggle (table vs cards) — persistido en localStorage
   const [viewMode, setViewMode] = useState<"table" | "cards">(() => {
     if (typeof window === "undefined") return "table";
@@ -462,8 +461,6 @@ export function useInventarioEstado() {
     setNoImageOnly,
     faltaDato,
     setFaltaDato,
-    showFilters,
-    setShowFilters,
     viewMode,
     setViewMode,
     expandedOC,

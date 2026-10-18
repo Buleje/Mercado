@@ -88,6 +88,8 @@ describe("categorías de Productos y stock", () => {
 
   it("«abarrotes» y «Abarrotes» son una sola opción del filtro, con el nombre del catálogo", async () => {
     await montar();
+    // Categoría vive ahora dentro del botón «Filtros» (barrido de compactación 18-10).
+    fireEvent.click(screen.getByRole("button", { name: /^Filtros/ }));
     fireEvent.click(screen.getByLabelText(/Filtrar por Categoría/));
     const grupo = screen.getByRole("group", { name: "Valores de Categoría" });
     const opciones = within(grupo).getAllByRole("checkbox").map((c) => c.getAttribute("aria-label"));

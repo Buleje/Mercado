@@ -1,23 +1,24 @@
 "use client";
 
-import { AlertTriangle, Search, ScanBarcode, X, Camera, Filter, ChevronDown, Eye, EyeOff } from "@buleje/design-system/icons";
+import { AlertTriangle, Search, ScanBarcode, Camera } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
-import { rangoActivo, type FacetaOpcion } from "@/lib/admin/filtros-columna";
-import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { rangoActivo, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
+import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import { FiltrosEnBoton } from "@/components/admin/shared";
+import type { ChipFiltroActivo } from "@/components/admin/shared";
 import { ETIQUETA_FALTA } from "@/lib/inventario/catalogo-incompleto";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 
 const TONO_ACENTO = "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
 const TONO_AVISO = "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 text-[var(--data-warning-ink)]";
-const TONO_NEUTRO = "border-[var(--text-tertiary)] bg-[var(--surface-sunken)] text-[var(--text-primary)]";
 
 /** Chip de filtro: botón secundario del DS (48 px) a 14 px; encendido toma su tono. */
 const chip = (activo: boolean, tono: string = TONO_ACENTO) =>
   button({ variant: "secondary", className: cn("shrink-0 gap-1.5 rounded-xl px-3 text-sm", activo ? tono : "text-[var(--text-secondary)]") });
 
 /** El desplegable de la fila a 48 px (mismo arreglo que Facturas y boletas). */
-const FILTRO_EN_FILA = "mt-0! min-w-0 shrink-0 [&_summary]:h-12 [&_summary]:rounded-xl";
+const FILTRO_EN_FILA = "mt-0! min-w-0 w-full [&_summary]:h-12 [&_summary]:rounded-xl";
 
 /**
  * La fila de filtros de Productos y stock, pegada a la tabla (10-10): buscar
@@ -31,14 +32,25 @@ export default function InventarioBarra({ inv, onBuscarConEscaner }: { inv: Inve
   const {
     search, setSearch, searchPlaceholders, phIndex, catFilter, setCatFilter, dynamicCategories,
     lowOnly, setLowOnly, estadoFiltro, setEstadoFiltro, showInactive, stockRango, setStockRango, vencRango,
-    setVencRango, noImageOnly, setNoImageOnly, faltaDato, setFaltaDato, showFilters, setShowFilters,
-    noImageCount, lowStockCount, filteredProducts, products,
+    setVencRango, noImageOnly, setNoImageOnly, faltaDato, setFaltaDato,
+    noImageCount, lowStockCount, filteredProducts, products, activeProducts, totalProducts,
   } = inv;
   /* Lo que vive dentro de «Filtros»: se cuenta en el botón para que un filtro
      puesto no quede escondido con el panel cerrado. El Estado por defecto
      («Activo») no cuenta: es lo de siempre. */
   const estadoPuesto = !(estadoFiltro.length === 1 && estadoFiltro[0] === "Activo") && !(showInactive && estadoFiltro.length === 0);
   const avanzados = (estadoPuesto ? 1 : 0) + (rangoActivo(stockRango) ? 1 : 0) + (rangoActivo(vencRango) ? 1 : 0);
+  const activos = (lowOnly ? 1 : 0) + (noImageOnly ? 1 : 0) + (faltaDato ? 1 : 0) + (catFilter.length > 0 ? 1 : 0) + avanzados;
+  const textoRango = (r: { min: unknown; max: unknown }) => `${r.min ?? "…"} – ${r.max ?? "…"}`;
+  const chips: ChipFiltroActivo[] = [
+    ...catFilter.map(id => ({ id: `cat-${id}`, label: dynamicCategories.find(c => c.id === id)?.label ?? id, onQuitar: () => setCatFilter(catFilter.filter(x => x !== id)) })),
+    ...(lowOnly ? [{ id: "bajo", label: "Bajo stock", onQuitar: () => setLowOnly(false) }] : []),
+    ...(noImageOnly ? [{ id: "sinfoto", label: "Sin foto", onQuitar: () => setNoImageOnly(false) }] : []),
+    ...(faltaDato ? [{ id: "falta", label: ETIQUETA_FALTA[faltaDato], onQuitar: () => setFaltaDato(null) }] : []),
+    ...(estadoPuesto ? [{ id: "estado", label: showInactive && estadoFiltro.length === 0 ? "Todos los estados" : estadoFiltro.join(" / "), onQuitar: () => setEstadoFiltro(["Activo"]) }] : []),
+    ...(rangoActivo(stockRango) ? [{ id: "stock", label: `Stock ${textoRango(stockRango)}`, onQuitar: () => setStockRango({ min: null, max: null }) }] : []),
+    ...(rangoActivo(vencRango) ? [{ id: "venc", label: `Vence ${textoRango(vencRango)}`, onQuitar: () => setVencRango({ min: null, max: null }) }] : []),
+  ];
   const hayFiltros = lowOnly || showInactive || noImageOnly || Boolean(faltaDato) || catFilter.length > 0 || avanzados > 0;
   const limpiar = () => {
     setLowOnly(false);
@@ -72,63 +84,47 @@ export default function InventarioBarra({ inv, onBuscarConEscaner }: { inv: Inve
           <ScanBarcode className="h-5 w-5" aria-hidden />
         </button>
       </div>
-      {dynamicCategories.length > 1 && (
-        <FiltroColumnaMulti
-          label="Categoría"
-          value={catFilter}
-          options={dynamicCategories.filter(c => c.id !== "todos").map((c): FacetaOpcion => ({ value: c.id, count: c.count }))}
-          etiqueta={(id) => dynamicCategories.find(c => c.id === id)?.label ?? id}
-          onChange={setCatFilter}
-          placeholder="Categoría: todas"
-          className={FILTRO_EN_FILA}
-        />
-      )}
-      <button type="button" aria-pressed={lowOnly} onClick={() => setLowOnly(!lowOnly)} className={chip(lowOnly, TONO_AVISO)}>
-        <AlertTriangle className="h-4 w-4" aria-hidden /> Bajo stock{lowStockCount > 0 ? ` (${lowStockCount})` : ""}
-      </button>
-      <button
-        type="button"
-        aria-pressed={showInactive}
-        // Atajo del filtro de Estado: escribe el MISMO estado, no un segundo filtro.
-        onClick={() => setEstadoFiltro(showInactive ? ["Activo"] : [])}
-        className={chip(showInactive, TONO_NEUTRO)}
-      >
-        {showInactive ? <Eye className="h-4 w-4" aria-hidden /> : <EyeOff className="h-4 w-4" aria-hidden />}
-        Inactivos
-      </button>
-      <button type="button" aria-pressed={noImageOnly} onClick={() => setNoImageOnly(!noImageOnly)} className={chip(noImageOnly)}>
-        <Camera className="h-4 w-4" aria-hidden /> Sin foto ({noImageCount})
-      </button>
-      {faltaDato && (
-        <button type="button" onClick={() => setFaltaDato(null)} aria-label={`Quitar el filtro ${ETIQUETA_FALTA[faltaDato]}`} className={chip(true)}>
-          {ETIQUETA_FALTA[faltaDato]} <X className="h-4 w-4" aria-hidden />
-        </button>
-      )}
-      <button
-        type="button"
-        aria-expanded={showFilters}
-        onClick={() => setShowFilters(!showFilters)}
-        title="Estado, rango de stock y de vencimiento"
-        className={chip(showFilters || avanzados > 0)}
-      >
-        <Filter className="h-4 w-4" aria-hidden />
-        Filtros{avanzados > 0 ? ` (${avanzados})` : ""}
-        <ChevronDown className={cn("h-4 w-4 transition-transform", showFilters && "rotate-180")} aria-hidden />
-      </button>
+      <FiltrosEnBoton activos={activos} chips={chips} onLimpiar={limpiar}>
+        <div className="flex flex-col gap-2">
+          {dynamicCategories.length > 1 && (
+            <FiltroColumnaMulti
+              label="Categoría"
+              value={catFilter}
+              options={dynamicCategories.filter(c => c.id !== "todos").map((c): FacetaOpcion => ({ value: c.id, count: c.count }))}
+              etiqueta={(id) => dynamicCategories.find(c => c.id === id)?.label ?? id}
+              onChange={setCatFilter}
+              placeholder="Categoría: todas"
+              className={FILTRO_EN_FILA}
+            />
+          )}
+          <FiltroColumnaMulti
+            label="Estado"
+            value={estadoFiltro}
+            options={[
+              { value: "Activo", count: activeProducts },
+              { value: "Inactivo", count: totalProducts - activeProducts },
+            ]}
+            onChange={setEstadoFiltro}
+            placeholder="Estado: todos"
+            className={FILTRO_EN_FILA}
+          />
+          <FiltroColumnaRango label="Stock" paso={1} valor={stockRango} onChange={(r) => setStockRango(r as Rango<number>)} placeholder="Stock: cualquiera" className={FILTRO_EN_FILA} />
+          <FiltroColumnaRango label="Vence" esFecha valor={vencRango} onChange={(r) => setVencRango(r as Rango<string>)} placeholder="Vence: cuando sea" className={FILTRO_EN_FILA} />
+          <div className="flex flex-wrap gap-2">
+            <button type="button" aria-pressed={lowOnly} onClick={() => setLowOnly(!lowOnly)} className={chip(lowOnly, TONO_AVISO)}>
+              <AlertTriangle className="h-4 w-4" aria-hidden /> Bajo stock{lowStockCount > 0 ? ` (${lowStockCount})` : ""}
+            </button>
+            <button type="button" aria-pressed={noImageOnly} onClick={() => setNoImageOnly(!noImageOnly)} className={chip(noImageOnly)}>
+              <Camera className="h-4 w-4" aria-hidden /> Sin foto ({noImageCount})
+            </button>
+          </div>
+        </div>
+      </FiltrosEnBoton>
       {/* Con un filtro puesto, cuántos quedan (antes, una fila propia «Mostrando 88 de 89»). */}
       {hayFiltros && (
         <span className="shrink-0 text-sm tabular-nums text-[var(--text-secondary)]" aria-live="polite">
           Mostrando {filteredProducts.length} de {products.length}
         </span>
-      )}
-      {hayFiltros && (
-        <button
-          type="button"
-          onClick={limpiar}
-          className={button({ variant: "ghost", className: "shrink-0 rounded-xl px-3 text-sm text-[var(--data-error-ink)] hover:bg-[var(--data-error-500)]/10" })}
-        >
-          <X className="h-4 w-4" aria-hidden /> Limpiar
-        </button>
       )}
     </div>
   );
