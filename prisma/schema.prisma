@@ -3265,6 +3265,12 @@ model GuiaRemision {
   documentoRef          String? // Factura, boleta u orden que ampara el traslado
   puntoPartida          String
   puntoLlegada          String
+  conductorLicencia     String?
+  ubigeoPartida         String? // 6 dígitos
+  ubigeoLlegada         String? // 6 dígitos
+  modalidadTraslado     String? // "01" público | "02" privado
+  origenTipo            String? // "ctp_salida" | "loth_gtf"
+  origenId              String?
   status                GuiaStatus         @default(BORRADOR)
   pesoTotal             Decimal?           @db.Decimal(10, 3)
   pesoBruto             Decimal?           @db.Decimal(10, 3)
@@ -3278,6 +3284,7 @@ model GuiaRemision {
 
   @@index([tenantId, status])
   @@index([numero])
+  @@index([tenantId, origenTipo, origenId])
 }
 
 model GuiaRemisionItem {
@@ -4085,6 +4092,7 @@ model TenantSunatConfig {
   lastBoletaNum   Int      @default(0)
   lastFacturaNum  Int      @default(0)
   isProduction    Boolean  @default(false) // false = sandbox Nubefact
+  cuentaDetracciones String? // N° cuenta Banco de la Nación
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -4106,6 +4114,10 @@ model SunatInvoice {
   subtotal     Decimal   @db.Decimal(12, 2) // monto gravado (sin IGV)
   igv          Decimal   @db.Decimal(12, 2) // monto IGV
   total        Decimal   @db.Decimal(12, 2) // total con IGV
+  tipoOperacion        String? // "0101" | "1001"
+  detraccionCodigo     String? // "008"
+  detraccionPorcentaje Decimal? @db.Decimal(5, 2)
+  detraccionMonto      Decimal? @db.Decimal(12, 2)
   xmlContent   String? // XML UBL 2.1 generado (texto)
   cdrResponse  String? // CDR XML devuelto por SUNAT
   sunatStatus  String    @default("pending") // pending | accepted | rejected | voided
