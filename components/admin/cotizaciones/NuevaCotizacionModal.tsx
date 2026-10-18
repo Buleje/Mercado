@@ -4,12 +4,14 @@
  * «Nueva cotización» en una ventana (antes era una pestaña): cliente de tu
  * lista (o alta en el mismo flujo) → ítems con el stock de hoy → vista previa
  * de lo que verá el cliente, con «Cambiar» para volver a cada paso.
+ * En los ítems, «Desde foto» lee el pedido escrito del cliente (18-10).
  */
 import { Check, Loader2 } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { button } from "@/components/ui-system/button-variants";
 import type { EmpresaEmisor } from "@/lib/documentos/cotizacion-print";
 import { cn } from "@/lib/utils";
+import { DesdeFotoPedido } from "./DesdeFotoPedido";
 import { PasoCliente } from "./PasoCliente";
 import { PasoItems, TotalesPrevios } from "./PasoItems";
 import { VistaPreviaCotizacion } from "./VistaPreviaCotizacion";
@@ -74,6 +76,7 @@ export function NuevaCotizacionModal({ form, cuantasPlantillas, onElegirPlantill
 
         {step === 2 && (
           <>
+            <DesdeFotoPedido form={form} />
             <PasoItems form={form} cuantasPlantillas={cuantasPlantillas} onElegirPlantilla={onElegirPlantilla} onGestionarPlantillas={onGestionarPlantillas} />
             <TotalesPrevios subtotal={form.subtotal} igv={form.igv} total={form.total} />
           </>

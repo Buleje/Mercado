@@ -9,6 +9,7 @@
  * base = total.
  */
 import { extractIgv, addIgv, IGV_RATE } from "@/lib/tax";
+import { afectacionDe } from "@/lib/sunat/lineas-comprobante";
 
 export type Afectacion = "gravado" | "exonerado" | "inafecto";
 
@@ -20,9 +21,14 @@ export interface DesglosePrecio {
 
 const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-/** Tasa (fracción) que aplica a un producto: 0 si no es gravado o la tienda no cobra IGV. */
+/**
+ * Tasa (fracción) que aplica a un producto: 0 si es exonerado/inafecto o la
+ * tienda no cobra IGV. Usa `afectacionDe` (el criterio del comprobante:
+ * minúsculas y por prefijo, «Exonerado» o «EXONERADO» cuentan) y no una
+ * comparación exacta, para no cobrar IGV por una mayúscula.
+ */
 export function tasaDelProducto(taxType: string | null | undefined, tasaTienda: number = IGV_RATE): number {
-  if (taxType === "exonerado" || taxType === "inafecto") return 0;
+  if (afectacionDe(taxType) !== "gravado") return 0;
   return Number.isFinite(tasaTienda) && tasaTienda > 0 ? tasaTienda : 0;
 }
 

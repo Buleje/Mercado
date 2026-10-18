@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+import { totalesDeCotizacion } from "@/lib/cotizaciones/totales";
 import { emptyItem, fechaEnDias, nombreDeCliente, subtotalDeLinea, type ClienteDeLista, type DraftItem } from "./tipos";
 
 export type PasoNueva = 1 | 2 | 3;
@@ -24,6 +25,8 @@ export interface ProductoSugerido {
   stock?: number | null;
   unit?: string;
   type?: string;
+  /** gravado | exonerado | inafecto (lo trae `/api/products`). */
+  taxType?: string | null;
 }
 
 export interface Precarga {
@@ -128,7 +131,11 @@ export function useNuevaCotizacion(alCrear: () => void) {
   const addItem = () => setItems((prev) => [...prev, emptyItem()]);
   const selectProduct = (idx: number, p: ProductoSugerido) => {
     setItems((prev) =>
-      prev.map((it, i) => (i === idx ? { ...it, descripcion: p.name, precioUnit: String(p.price), productoId: String(p.id) } : it)),
+      prev.map((it, i) =>
+        i === idx
+          ? { ...it, descripcion: p.name, precioUnit: String(p.price), productoId: String(p.id), precioCatalogo: String(p.price), taxType: p.taxType ?? null }
+          : it,
+      ),
     );
     setProductSearch("");
     setProductResults([]);
@@ -141,15 +148,20 @@ export function useNuevaCotizacion(alCrear: () => void) {
     setActiveItemIdx(idx);
   };
 
-  // Vista previa (el servidor recalcula y guarda el suyo).
-  const subtotal = items.reduce((s, i) => s + subtotalDeLinea(i), 0);
-  const igv = subtotal * 0.18;
-  const total = subtotal + igv;
+  // Vista previa con la MISMA cuenta del servidor (IGV por línea según el
+  // producto: exonerado/inafecto = 0). El servidor recalcula y guarda la suya.
+  const { subtotal, igv, total } = totalesDeCotizacion(
+    items.map((i) => ({ subtotal: subtotalDeLinea(i), taxType: i.productoId ? i.taxType : null })),
+  );
 
   const crear = async () => {
     setCreateError(null);
     if (!clienteNombre.trim()) { setCreateError("Elige un cliente de tu lista o escribe su nombre"); return; }
     if (!validoHasta) { setCreateError("Elige hasta cuándo vale la cotización"); return; }
+    // Una línea con nombre y sin precio antes se descartaba callada (p. ej. lo
+    // leído de una foto que no está en el catálogo): ahora se avisa.
+    const sinPrecio = items.find((i) => i.descripcion.trim() && (parseFloat(i.cantidad) || 0) > 0 && !((parseFloat(i.precioUnit) || 0) > 0));
+    if (sinPrecio) { setCreateError(`Falta el precio de «${sinPrecio.descripcion.trim()}» (o quítalo de los ítems)`); return; }
     const parsedItems = items
       .map((i) => ({
         descripcion: i.descripcion,
@@ -157,6 +169,8 @@ export function useNuevaCotizacion(alCrear: () => void) {
         precioUnit: parseFloat(i.precioUnit) || 0,
         descuento: parseFloat(i.descuento) || 0,
         ...(i.productoId && { productoId: i.productoId }),
+        // Precio del catálogo sin tocar: que el servidor ponga el de hoy.
+        ...(i.productoId && i.precioCatalogo !== undefined && i.precioUnit === i.precioCatalogo && { precioDelCatalogo: true }),
       }))
       .filter((i) => i.descripcion.trim() && i.cantidad > 0 && i.precioUnit > 0);
     if (parsedItems.length === 0) { setCreateError("Agrega al menos un ítem con cantidad y precio"); return; }

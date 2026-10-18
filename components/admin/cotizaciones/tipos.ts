@@ -118,7 +118,17 @@ export type ClienteDeLista = {
 export const nombreDeCliente = (c: ClienteDeLista) => c.razonSocial?.trim() || c.nombre;
 
 /** `productoId` = la línea salió del catálogo (se le revisa el stock); escribir encima lo suelta. */
-export type DraftItem = { descripcion: string; cantidad: string; precioUnit: string; descuento: string; productoId?: string };
+export type DraftItem = {
+  descripcion: string;
+  cantidad: string;
+  precioUnit: string;
+  descuento: string;
+  productoId?: string;
+  /** El precio con que llegó del catálogo: si `precioUnit` sigue igual, el servidor pone el de HOY. */
+  precioCatalogo?: string;
+  /** `Product.taxType` (gravado | exonerado | inafecto), para la vista previa del IGV. */
+  taxType?: string | null;
+};
 export const emptyItem = (): DraftItem => ({ descripcion: "", cantidad: "1", precioUnit: "", descuento: "0" });
 
 /** Ítems de una cotización o de una plantilla → filas editables del formulario. */

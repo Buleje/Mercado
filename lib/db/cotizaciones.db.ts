@@ -1,6 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { getOrSet } from "@/lib/cache";
+import { candidatosPorTexto, type Candidato, type ProductoDelCatalogo } from "@/lib/ventas/emparejar-pedido";
 import { CotizacionCambioDeEstadoError } from "@/lib/cotizaciones/estados";
 import type {
   Cotizacion as PCotizacion,
@@ -307,7 +309,7 @@ export const CotizacionesDB = {
     if (unicos.length === 0) return [];
     const filas = await prisma.product.findMany({
       where: { tenantId, id: { in: unicos }, deletedAt: null },
-      select: { id: true, name: true, unit: true, type: true, stock: true, stockMin: true, active: true },
+      select: { id: true, name: true, unit: true, type: true, stock: true, stockMin: true, active: true, price: true, taxType: true },
     });
     return filas.map((p) => ({
       id: p.id,
@@ -317,9 +319,44 @@ export const CotizacionesDB = {
       stock: p.stock,
       stockMin: p.stockMin,
       activo: p.active,
+      precio: Number(p.price),
+      taxType: p.taxType,
     }));
   },
+
+  // ── Venta desde una foto (18-10): el pedido escrito contra el catálogo ────
+
+  /**
+   * Para cada texto leído del papel, los `limite` productos del negocio que más
+   * se le parecen (`lib/ventas/emparejar-pedido.ts`). El catálogo liviano se
+   * guarda 60 s por negocio: una foto con 20 líneas lo lee una vez. Sólo lee;
+   * el precio que vale al guardar lo vuelve a leer `productosParaCotizar`.
+   */
+  async productosPorTexto(tenantId: string, textos: readonly string[], limite = 3): Promise<Candidato[][]> {
+    if (textos.length === 0) return [];
+    const catalogo = await getOrSet<ProductoDelCatalogo[]>(`cotizaciones:catalogo-pedido:${tenantId}`, 60, async () => {
+      const filas = await prisma.product.findMany({
+        where: { tenantId, active: true, deletedAt: null },
+        select: { id: true, name: true, price: true, unit: true, barcode: true, sku: true, taxType: true },
+        // Product no tiene updatedAt: por id, lo último dado de alta primero.
+        orderBy: { id: "desc" },
+        take: MAX_CATALOGO_PEDIDO,
+      });
+      return filas.map((p) => ({
+        id: p.id,
+        nombre: p.name,
+        precio: Number(p.price),
+        unidad: p.unit,
+        codigos: [p.barcode, p.sku].filter((c): c is string => typeof c === "string" && c.trim().length > 0),
+        taxType: p.taxType,
+      }));
+    });
+    return candidatosPorTexto(textos, catalogo, limite);
+  },
 };
+
+/** Tope del catálogo que se compara con una foto (los más tocados primero). */
+const MAX_CATALOGO_PEDIDO = 5000;
 
 export type ClienteParaCotizar = {
   /** Celular normalizado: es la clave a la que apunta `Cotizacion.customerId`. */
@@ -338,6 +375,10 @@ export type ProductoParaCotizar = {
   stock: number | null;
   stockMin: number | null;
   activo: boolean;
+  /** Precio de venta del catálogo, de HOY. */
+  precio: number;
+  /** `Product.taxType`: gravado | exonerado | inafecto (vacío = gravado). */
+  taxType: string | null;
 };
 
 const SELECT_CLIENTE = {

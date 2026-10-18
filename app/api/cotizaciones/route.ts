@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { CotizacionesDB } from "@/lib/db";
+import { CotizacionesDB, SettingsDB } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { vigenciaDesdeEntrada } from "@/lib/cotizaciones/vigencia";
 import { idDeProducto } from "@/lib/cotizaciones/disponibilidad";
+import { totalesDeCotizacion } from "@/lib/cotizaciones/totales";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { igvRateFromSettings } from "@/lib/tax";
 
 const CotizacionItemSchema = z.object({
   descripcion: z.string().min(1).max(500),
@@ -14,6 +17,12 @@ const CotizacionItemSchema = z.object({
   precioUnit: z.number().nonnegative(),
   descuento: z.number().min(0).max(100).optional().default(0),
   productoId: z.string().optional(),
+  /**
+   * La línea lleva el precio del catálogo sin tocar (elegida de la lista o
+   * leída de una foto): el servidor pone el precio de HOY del producto y no
+   * el número que mandó el navegador. Un precio cambiado a mano no lo trae.
+   */
+  precioDelCatalogo: z.boolean().optional(),
 });
 
 const CreateCotizacionSchema = z.object({
@@ -68,27 +77,36 @@ export async function POST(req: NextRequest) {
     // El cliente y los productos se enlazan sólo si son de ESTE negocio:
     // `customerId` apunta a `Customer.phone`, único en toda la plataforma.
     const idsProducto = data.items.map((i) => idDeProducto(i.productoId)).filter((n): n is number => n != null);
-    const [numero, cliente, productos] = await Promise.all([
+    const [numero, cliente, productos, ajustes] = await Promise.all([
       CotizacionesDB.siguienteNumero(auth.tenantId),
       data.customerId ? CotizacionesDB.clienteDelNegocio(auth.tenantId, data.customerId) : Promise.resolve(null),
       CotizacionesDB.productosParaCotizar(auth.tenantId, idsProducto),
+      // IGV del negocio (Settings.taxRate en %, 18 por defecto; 0 = no cobra IGV).
+      SettingsDB.get(auth.tenantId).catch(sinDato("cotizaciones ajustes del negocio para el IGV")),
     ]);
     if (data.customerId && !cliente) {
       logger.warn("[cotizaciones] customerId ajeno al negocio, se guarda sin enlazar", { tenantId: auth.tenantId });
     }
-    const delNegocio = new Set(productos.map((p) => String(p.id)));
+    const delNegocio = new Map(productos.map((p) => [p.id, p]));
 
-    // Calculate totals server-side
-    const items = data.items.map((i) => {
-      const base = i.cantidad * i.precioUnit;
-      const desc = (i.descuento ?? 0) / 100;
-      const subtotal = base * (1 - desc);
-      const productoId = i.productoId && delNegocio.has(String(idDeProducto(i.productoId))) ? i.productoId : undefined;
-      return { ...i, productoId, subtotal };
+    // Los totales los calcula el servidor: precio del catálogo donde la línea
+    // lo pide, e IGV por línea según la afectación del producto (exonerado /
+    // inafecto = 0; antes era 18 % fijo para todo).
+    const lineas = data.items.map((i) => {
+      const producto = delNegocio.get(idDeProducto(i.productoId) ?? -1);
+      const precioUnit = i.precioDelCatalogo && producto ? producto.precio : i.precioUnit;
+      const descuento = i.descuento ?? 0;
+      const subtotal = i.cantidad * precioUnit * (1 - descuento / 100);
+      return {
+        item: { descripcion: i.descripcion, cantidad: i.cantidad, precioUnit, descuento, productoId: producto ? i.productoId : undefined, subtotal },
+        taxType: producto ? producto.taxType : null,
+      };
     });
-    const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
-    const igv = subtotal * 0.18;
-    const total = subtotal + igv;
+    const items = lineas.map((l) => l.item);
+    const { subtotal, igv, total } = totalesDeCotizacion(
+      lineas.map((l) => ({ subtotal: l.item.subtotal, taxType: l.taxType })),
+      igvRateFromSettings(ajustes?.taxRate),
+    );
 
     const cotizacion = await CotizacionesDB.create(auth.tenantId, {
       numero,

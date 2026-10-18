@@ -5,6 +5,7 @@
  * para no colgar en automatización — misma lección que los reportes forestales).
  */
 import { diaDeVigencia } from "@/lib/cotizaciones/vigencia";
+import { IGV_RATE } from "@/lib/tax";
 
 export interface CotizacionPrintItem {
   descripcion: string;
@@ -23,6 +24,8 @@ export interface CotizacionPrintData {
   subtotal: number;
   igv: number;
   total: number;
+  /** Tasa de IGV del negocio (fracción, ej. 0,18). Si falta, se asume `IGV_RATE`. */
+  tasaIgv?: number;
   validoHasta: string;
   notas?: string;
   items: CotizacionPrintItem[];
@@ -106,7 +109,7 @@ export function printCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor
   <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:#999">Sin ítems</td></tr>'}</tbody></table>
   <table class="tot"><tbody>
     <tr><td>Subtotal</td><td class="r">S/ ${money(cot.subtotal)}</td></tr>
-    <tr><td>IGV (18%)</td><td class="r">S/ ${money(cot.igv)}</td></tr>
+    <tr><td>${cot.igv > 0 ? `IGV (${Math.round((cot.tasaIgv ?? IGV_RATE) * 100)}%)` : "IGV"}</td><td class="r">S/ ${money(cot.igv)}</td></tr>
     <tr class="totrow"><td>TOTAL</td><td class="r">S/ ${money(cot.total)}</td></tr>
   </tbody></table>
   ${cot.notas ? `<div class="notas"><b>Notas:</b> ${esc(cot.notas)}</div>` : ""}
