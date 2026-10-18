@@ -108,7 +108,7 @@
    "esperar": 800
   },
   {
-   "click": "section[data-module=\"loth-libro\"] [role=tablist]:not([aria-label=\"Fase del libro\"]) [role=tab]:has-text(\"Por árbol\")"
+   "click": "[aria-label=\"Pestañas del Control del permiso\"] [role=tab]:has-text(\"Por árbol\")"
   },
   {
    "esperar": 6000

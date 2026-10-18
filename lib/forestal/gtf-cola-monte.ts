@@ -360,9 +360,13 @@ export function enlaceWhatsApp(numero: string | null, mensaje: string): string {
   return `https://wa.me/${numero ?? ""}?text=${encodeURIComponent(mensaje)}`;
 }
 
-/** El enlace a la cola del panel, parado en ese trabajo. Exige sesión: el PDF nunca va en un enlace público. */
+/**
+ * El enlace a la cola del panel (GTF › Por imprimir), parado en ese trabajo.
+ * Exige sesión: el PDF nunca va en un enlace público. Los enlaces viejos
+ * (`&vista=monte`, ya mandados por WhatsApp) siguen llegando por el alias del libro.
+ */
 export function enlaceCola(origen: string, trabajoId: string): string {
-  return `${origen.replace(/\/$/, "")}/admin?tab=loth-libro-operaciones&vista=monte&trabajo=${encodeURIComponent(trabajoId)}`;
+  return `${origen.replace(/\/$/, "")}/admin?tab=loth-libro-operaciones&vista=gtf&sub=monte&trabajo=${encodeURIComponent(trabajoId)}`;
 }
 
 /** La ruta de la salida (carril salida, ver `gtf-salida-tipos.ts`). */

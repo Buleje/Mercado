@@ -240,6 +240,10 @@ export const VISTA_MIGRATION: Record<string, DestinoTab> = {
   "ctp-libro-operaciones:ficha": { tab: "ctp-libro-operaciones", vista: "directorio", sub: "tu-ctp" },
   "forestal-herramientas:rendimiento": { tab: "ctp-libro-operaciones", vista: "tablero", sub: "rendimiento" },
   "loth-libro-operaciones:extraccion": { tab: "loth-libro-operaciones", vista: "tablero", sub: "extraccion" },
+  // Libro TH 10 → 7 (compactación 17-10, `loth-vistas-fusionadas`).
+  "loth-libro-operaciones:trazabilidad": { tab: "loth-libro-operaciones", vista: "tablero", sub: "arbol" },
+  "loth-libro-operaciones:cierre": { tab: "loth-libro-operaciones", vista: "cumplimiento", sub: "cerrar" },
+  "loth-libro-operaciones:monte": { tab: "loth-libro-operaciones", vista: "gtf", sub: "monte" },
   // ── Ola 3 (2026-10-10) ──
   "plata:fiados": { tab: "ventas-caja", vista: "cuentas-cobrar" },
   "ventas-caja:arqueo": { tab: "ventas-caja", vista: "caja-registradora", sub: "cuadrar" },

@@ -233,7 +233,7 @@ describe("WhatsApp y enlaces", () => {
 
   it("el mensaje dice la guía, la hoja y el enlace a la cola (con sesión, sin PDF público)", () => {
     const enlace = enlaceCola("https://buleje.test/", "t 1");
-    expect(enlace).toBe("https://buleje.test/admin?tab=loth-libro-operaciones&vista=monte&trabajo=t%201");
+    expect(enlace).toBe("https://buleje.test/admin?tab=loth-libro-operaciones&vista=gtf&sub=monte&trabajo=t%201");
     const m = mensajeAlMonte("025-001-0971772", enlace);
     expect(m).toBe(`Guía 025-001-0971772 — imprimir en la hoja N° 0971772 · ábrela aquí: ${enlace}`);
     expect(mensajeAlMonte("025-001-0971772", enlace, "se mojó")).toBe(`Guía 025-001-0971772 — reimprimir en otra hoja (se mojó) · ábrela aquí: ${enlace}`);

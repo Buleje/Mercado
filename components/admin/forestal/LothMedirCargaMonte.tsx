@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * «Cargas medidas» en la cola del monte (16-10, F3, `?tab=loth-libro-operaciones&vista=monte`):
+ * «Cargas medidas» en la cola del monte (16-10, F3, `?tab=loth-libro-operaciones&vista=gtf&sub=monte`):
  * «Medir una carga» mide por foto y guarda la carga para que la oficina arme
  * la guía con ella. Abajo, las cargas sin usar (se pueden descartar) y lo que
  * pasó con las últimas (usada en tal guía / descartada).

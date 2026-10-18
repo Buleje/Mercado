@@ -31,7 +31,7 @@ consola del navegador sin errores rojos.
 - **Reserva de Juancho** (SL-7, Cachimbo, vencida el 22/09): queda como está,
   por decisión del 30/09.
 
-## Libro TH → «Por árbol» (`?tab=loth-libro-operaciones&vista=trazabilidad`)
+## Libro TH → Control del permiso › «Por árbol» (`?tab=loth-libro-operaciones&vista=tablero&sub=arbol`; el `?vista=trazabilidad` viejo llega igual)
 
 | # | Qué hacer | Qué tiene que pasar (dato real de Blas) |
 |---|---|---|

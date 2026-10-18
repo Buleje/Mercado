@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * «Por imprimir» — la cola del monte en el Libro TH (16-10,
- * `?tab=loth-libro-operaciones&vista=monte`). La abre el celular del
+ * «Por imprimir» — la cola del monte en el Libro TH (16-10; sección de GTF
+ * desde el 17-10, `?tab=loth-libro-operaciones&vista=gtf&sub=monte`). La abre el celular del
  * campamento desde el enlace del WhatsApp: arriba lo que falta imprimir, luego
  * lo impreso por confirmar y lo observado; lo terminado, plegado al final.
  * Arriba, «Cargas medidas» (F3): medir una carga por foto y guardarla para la oficina.

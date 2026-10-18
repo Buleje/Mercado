@@ -415,6 +415,15 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       archivo: "components/admin/forestal/loth-vistas-fusionadas.ts",
       constante: /export const SUBS_CONTROL = \[([^\]]+)\]/,
     },
+    // Compactación del Libro TH (17-10): 10 → 7 vistas.
+    "loth-libro-operaciones/gtf": {
+      archivo: "components/admin/forestal/loth-vistas-fusionadas.ts",
+      constante: /export const SUBS_GTF = \[([^\]]+)\]/,
+    },
+    "loth-libro-operaciones/cumplimiento": {
+      archivo: "components/admin/forestal/loth-vistas-fusionadas.ts",
+      constante: /export const SUBS_CUMPLIMIENTO_TH = \[([^\]]+)\]/,
+    },
   };
 
   it("los destinos anidados existen en el módulo al que apuntan", () => {

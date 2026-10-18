@@ -521,24 +521,29 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
   "loth-libro-operaciones": [
     { vista: "tablero", key: "kardex", label: "Kárdex del permiso", hint: "Cada movimiento de trozas con su saldo" },
     { vista: "tablero", key: "extraccion", label: "Extracción", hint: "Censo − tala, trozado y despacho por permiso" },
+    // Compactación 17-10 (`loth-vistas-fusionadas`): las vistas que dejaron el
+    // riel siguen encontrándose por su nombre.
+    { vista: "tablero", key: "arbol", label: "Por árbol", hint: "La historia de cada árbol, del censo al aserradero" },
+    { vista: "gtf", key: "guias", label: "Guías", hint: "Las guías vigentes del libro, con sus papeles y su ingreso al Libro CTP" },
+    { vista: "gtf", key: "bajas", label: "Anuladas y otras", hint: "Las guías anuladas y las eliminadas, sólo para consulta" },
+    { vista: "gtf", key: "monte", label: "Por imprimir", hint: "Guías que la oficina mandó al monte: imprimir en el talonario, marcar y subir la foto con el N° de la hoja" },
+    { vista: "cumplimiento", key: "cerrar", label: "Cerrar el mes", hint: "Cerrar el mes → acta inmutable (OSINFOR)" },
   ],
 };
 
 /**
- * Libro de Operaciones de Títulos Habilitantes (forestal) — 9 vistas (10 hasta
- * la ola 2 del panel unificado: Extracción es una pestaña interna del Control
- * del permiso). El orden sólo lo lee el buscador; la cabina arma el suyo.
+ * Libro de Operaciones de Títulos Habilitantes (forestal) — 7 vistas (10 hasta
+ * la compactación del 17-10: Por árbol, Cierre y Por imprimir son secciones de
+ * Control del permiso, Cumplimiento y GTF; Extracción lo es desde la ola 2).
+ * El orden sólo lo lee el buscador; la cabina arma el suyo.
  */
 export const LOTH_VISTAS: readonly SubvistaModulo[] = [
   { key: "secciones", label: "Secciones", hint: "Las 6 secciones SERFOR" },
-  { key: "gtf", label: "GTF", hint: "Guías de transporte forestal" },
-  { key: "monte", label: "Por imprimir", hint: "Guías que la oficina mandó al monte: imprimir en el talonario, marcar y subir la foto con el N° de la hoja" },
+  { key: "gtf", label: "GTF", hint: "Guías de transporte forestal: vigentes, dadas de baja y las que esperan imprimirse en el monte" },
   { key: "tablero", label: "Control del permiso", hint: "Por permiso: volumen que le queda, trozas en el patio y su antigüedad, kárdex y extracción (censo − tala, trozado y despacho)" },
   { key: "plan", label: "Plan de Manejo", hint: "Censo + especies autorizadas" },
   { key: "mapa", label: "Mapa", hint: "Dónde se taló cada árbol (GPS de campo)" },
-  { key: "trazabilidad", label: "Por árbol", hint: "Operación completa de un árbol" },
-  { key: "cumplimiento", label: "Cumplimiento", hint: "Veredicto de fiscalización + reporte imprimible" },
-  { key: "cierre", label: "Cierre", hint: "Cerrar el mes → acta inmutable (OSINFOR)" },
+  { key: "cumplimiento", label: "Cumplimiento", hint: "Veredicto de fiscalización, reporte imprimible y el cierre del mes (acta inmutable)" },
   { key: "rentabilidad", label: "Rentabilidad y rendimiento", hint: "Margen por especie y por árbol, flujo bosque→producto, anomalías y valor" },
 ];
 

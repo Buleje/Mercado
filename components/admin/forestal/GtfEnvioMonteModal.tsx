@@ -18,7 +18,7 @@ import type { CambioTrabajo, Respuesta } from "./hooks/use-cola-monte";
 import { PastillaEstadoMonte, cuandoLima, srcFotoHoja } from "./gtf-cola-monte-ui";
 
 export const rutaCola = (trabajoId?: string): string =>
-  `/admin?tab=loth-libro-operaciones&vista=monte${trabajoId ? `&trabajo=${encodeURIComponent(trabajoId)}` : ""}`;
+  `/admin?tab=loth-libro-operaciones&vista=gtf&sub=monte${trabajoId ? `&trabajo=${encodeURIComponent(trabajoId)}` : ""}`;
 
 function Linea({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (

@@ -24,9 +24,7 @@ import {
   Map as MapIcon,
   MapPin,
   Layers,
-  Share2,
   Truck,
-  Lock,
   Coins,
   Scissors,
   Upload,
@@ -90,12 +88,12 @@ import { LINEAS_POR_PAGINA, useLothSeccionTabla } from "./hooks/use-loth-seccion
 import { BarraFiltrosTabla } from "./filtros-tabla-forestal";
 import LothSeccionPaginas from "./LothSeccionPaginas";
 import { LothSeccionColumnas } from "./loth-seccion-columnas";
-import LothCierrePanel from "./LothCierrePanel";
 import LothMapaView from "./LothMapaView";
 import LothRentabilidadView from "./LothRentabilidadView";
 import type { LothNavTarget } from "@/lib/forestal/loth-compliance";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { LOTH_VISTAS } from "@/lib/admin/subvistas-modulos";
+import { ALIAS_FUSIONADAS_TH, destinoFusionadoTh, type VistaThConSubs } from "./loth-vistas-fusionadas";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { formatNumber } from "@/lib/format";
 import { cumplePermiso, PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
@@ -138,22 +136,17 @@ const POR_PAGINA = LINEAS_POR_PAGINA;
 /** Las columnas de cada sección y sus celdas viven en `loth-seccion-cols` (08-10). */
 const COLS = COLS_SECCION;
 
-type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "monte" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
+type LothView = "secciones" | "tablero" | "plan" | "gtf" | "cumplimiento" | "mapa" | "rentabilidad";
 
-/** «Analítica» y «Rentabilidad» se fusionaron en «Rentabilidad y rendimiento» (2026-09-29):
- *  un `?vista=analitica` guardado, o un botón que aún la nombra, llegan a la nueva.
- *  «Extracción» es una pestaña del Control del permiso desde el 2026-10-10 (plan
- *  «panel unificado», ola 2): `?vista=extraccion` abre el Control en esa pestaña. */
-const LOTH_VISTAS_FUSIONADAS = { analitica: "rentabilidad", extraccion: "tablero" } as const satisfies Record<string, LothView>;
+/** Las vistas que dejaron el riel (`loth-vistas-fusionadas`): Analítica → Rentabilidad
+ *  (29-09), Extracción → Control (ola 2) y, con la compactación del 17-10, Por árbol →
+ *  Control › Por árbol, Cierre → Cumplimiento › Cerrar el mes y Por imprimir → GTF ›
+ *  Por imprimir. Un `?vista=` viejo abre la que la absorbió; su sección la elige la
+ *  propia vista al montar, leyendo el nombre viejo antes de que el libro lo reescriba. */
+const LOTH_VISTAS_FUSIONADAS = ALIAS_FUSIONADAS_TH satisfies Readonly<Record<string, LothView>>;
 
 /* «Importar guías despachadas» (ADR-461): se usa de vez en cuando, se baja al abrirlo. */
 const LothImportarGuiasModal = dynamic(() => import("./LothImportarGuiasModal"), { ssr: false });
-
-/* «Por imprimir» (16-10): la cola del monte, sólo cuando se abre. */
-const LothColaMonte = dynamic(() => import("./LothColaMonte"), {
-  ssr: false,
-  loading: () => <p className="p-6 text-sm text-[var(--text-tertiary)]">Abriendo la cola…</p>,
-});
 
 /* «Extracción» (ADR-454) trae recharts: se baja sólo al abrir la vista. */
 const LothExtraccionView = dynamic(() => import("./LothExtraccionView"), {
@@ -161,9 +154,11 @@ const LothExtraccionView = dynamic(() => import("./LothExtraccionView"), {
   loading: () => <p className="p-6 text-sm text-[var(--text-tertiary)]">Abriendo la extracción…</p>,
 });
 
-// Navegación en cabina compartida con el Libro CTP (`libro-chrome`): las nueve
-// vistas (diez hasta la ola 2: Extracción pasó al Control del permiso) agrupadas por fase, con los MISMOS nombres de grupo que el otro libro
-// — quien sabe moverse en uno se mueve en el otro sin volver a aprender.
+// Navegación en cabina compartida con el Libro CTP (`libro-chrome`): siete vistas
+// en tres fases (diez en cuatro hasta la compactación del 17-10: Por árbol, Cierre
+// y Por imprimir son secciones de Control, Cumplimiento y GTF; Rentabilidad pasó a
+// Control), con los MISMOS nombres de grupo que el otro libro — quien sabe
+// moverse en uno se mueve en el otro sin volver a aprender.
 const LOTH_MODULE_ID = "loth-libro";
 /** label y hint salen de `lib/admin/subvistas-modulos` — la MISMA fuente que
  *  indexa el buscador global. Acá sólo se agrega lo visual (icono) y la tecla. */
@@ -175,35 +170,28 @@ const LOTH_GROUPS: LibroGroup[] = [
     label: "Operación",
     views: [
       { key: "secciones", ...LOTH_VISTAS_POR_KEY["secciones"], icon: Layers },
+      /* Con su sección «Por imprimir»: la cola del celular del monte (16-10). */
       { key: "gtf", ...LOTH_VISTAS_POR_KEY["gtf"], icon: Truck },
-      /* 16-10: la cola del celular del monte (talonario + matricial). */
-      { key: "monte", ...LOTH_VISTAS_POR_KEY["monte"], icon: Printer },
     ],
   },
   {
     id: "trazabilidad",
     label: "Trazabilidad",
     views: [
-      /* Primero en su fase (ola 2): con Trozas · Kárdex · Extracción es la
-         pregunta de todos los días —«¿cuánto le queda a este permiso?»—. */
+      /* Primero en su fase (ola 2): con Trozas · Kárdex · Extracción · Por árbol
+         es la pregunta de todos los días —«¿cuánto le queda a este permiso?»—. */
       { key: "tablero", ...LOTH_VISTAS_POR_KEY["tablero"], icon: LayoutGrid },
       { key: "plan", ...LOTH_VISTAS_POR_KEY["plan"], icon: MapIcon },
       { key: "mapa", ...LOTH_VISTAS_POR_KEY["mapa"], icon: MapPin },
-      { key: "trazabilidad", ...LOTH_VISTAS_POR_KEY["trazabilidad"], icon: Share2 },
     ],
   },
   {
     id: "control",
     label: "Control",
     views: [
+      /* Con su sección «Cerrar el mes» (antes la vista Cierre). */
       { key: "cumplimiento", ...LOTH_VISTAS_POR_KEY["cumplimiento"], icon: ShieldCheck },
-      { key: "cierre", ...LOTH_VISTAS_POR_KEY["cierre"], icon: Lock },
-    ],
-  },
-  {
-    id: "gestion",
-    label: "Gestión",
-    views: [
+      /* Sola en «Gestión» hasta el 17-10: una fase de una vista era un salto de más. */
       { key: "rentabilidad", ...LOTH_VISTAS_POR_KEY["rentabilidad"], icon: Coins },
     ],
   },
@@ -237,19 +225,37 @@ export default function LothLibroOperaciones() {
   const [reloadSignal, setReloadSignal] = useState(0);
   const [pending, setPending] = useState<string | null>(null);
   // Misma cabina que el CTP: la vista vive en la URL con memoria de respaldo.
-  const { vista: view, irA } = useVistaModulo<LothView>(LOTH_MODULE_ID, LOTH_VIEW_KEYS_TIPADAS, "secciones", undefined, {
+  const { vista: view, irA: irAVista } = useVistaModulo<LothView>(LOTH_MODULE_ID, LOTH_VIEW_KEYS_TIPADAS, "secciones", undefined, {
     alias: LOTH_VISTAS_FUSIONADAS,
-    /* La pestaña interna del Control (`?sub=`) es suya: al irse, se borra. */
-    paramsDeVista: { tablero: ["sub"] },
+    /* Las secciones de cada vista (`?sub=`) son suyas: al irse, se borran. Sin
+       esto un `&sub=cerrar` quedaba pegado en la vista siguiente. `trabajo` es
+       el de «Por imprimir» (enlace del WhatsApp del monte). */
+    paramsDeVista: { tablero: ["sub"], gtf: ["sub", "trabajo"], cumplimiento: ["sub"] },
   });
+  /** La sección que el libro pide estando YA en esa vista (ver `usePestanaInterna`). */
+  const [pedidoSub, setPedidoSub] = useState<{ vista: VistaThConSubs; sub: string; n: number } | null>(null);
+  const vistaActual = useRef(view);
+  vistaActual.current = view;
+  const irASub = useCallback(
+    (vista: VistaThConSubs, sub: string) => {
+      if (vistaActual.current === vista) setPedidoSub((p) => ({ vista, sub, n: (p?.n ?? 0) + 1 }));
+      else irAVista(vista, { sub });
+    },
+    [irAVista],
+  );
+  /** Cambiar de vista; un nombre viejo (`cierre`, `monte`, `trazabilidad`…) cae en su sección. */
+  const irA = useCallback(
+    (v: string, params?: Readonly<Record<string, string>>) => {
+      const fusion = destinoFusionadoTh(v);
+      if (fusion?.sub && fusion.vista !== "rentabilidad") irASub(fusion.vista, fusion.sub);
+      else irAVista(v, params);
+    },
+    [irASub, irAVista],
+  );
   const setView = irA;
-  /** La pestaña del Control que el libro pide estando YA en el Control (ver `usePestanaInterna`). */
-  const [pedidoControl, setPedidoControl] = useState<{ sub: string; n: number } | null>(null);
+  const pedidoDe = (vista: VistaThConSubs) => (pedidoSub?.vista === vista ? pedidoSub : null);
   /** «Saldo y agotamiento» (Rentabilidad) y los enlaces viejos a Extracción: Control › Extracción. */
-  const irAExtraccion = useCallback(() => {
-    if (view === "tablero") setPedidoControl((p) => ({ sub: "extraccion", n: (p?.n ?? 0) + 1 }));
-    else irA("tablero", { sub: "extraccion" });
-  }, [view, irA]);
+  const irAExtraccion = useCallback(() => irASub("tablero", "extraccion"), [irASub]);
   /* EL permiso del libro (02-10-2026): lo elige el chip de la banda (o «Ver
      libro de» en Secciones, que es el MISMO estado) y lo leen todas las vistas
      por `LothPermisoContext`: tabla, contadores, Excel, impreso, plan de manejo,
@@ -697,13 +703,14 @@ export default function LothLibroOperaciones() {
   }, []);
 
   /**
-   * El libro completo lo necesitan DOS vistas: la trazabilidad por árbol y —desde
+   * El libro completo lo necesitan DOS vistas: el Control (Por árbol) y —desde
    * que la tabla muestra períodos, especies, correcciones y las talas a trozar—
    * también la de secciones. Sin esto, esos controles salían vacíos sin error:
    * la pantalla se veía bien y no tenía datos.
    */
   useEffect(() => {
-    if (view === "trazabilidad" || view === "tablero" || view === "secciones" || view === "cierre" || view === "rentabilidad") loadAll();
+    /* «cumplimiento»: su sección «Cerrar el mes» (antes la vista Cierre) arma la foto del mes con el libro entero. */
+    if (view === "tablero" || view === "secciones" || view === "cumplimiento" || view === "rentabilidad") loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
@@ -714,8 +721,8 @@ export default function LothLibroOperaciones() {
   const planDelCenso = permiso.planSel && permiso.planSel !== PERMISO_SIN_PLAN ? permiso.planSel : null;
   const censoSinPlan = permiso.planSel === PERMISO_SIN_PLAN;
   useEffect(() => {
-    // «tablero» también: el saldo por especie de Control del permiso mide contra el censo.
-    if ((view !== "trazabilidad" && view !== "tablero") || !permiso.listo) return;
+    // El Control: «Por árbol» y el saldo por especie miden contra el censo.
+    if (view !== "tablero" || !permiso.listo) return;
     if (censoSinPlan) {
       setCensoArboles([]);
       return;
@@ -1018,6 +1025,54 @@ export default function LothLibroOperaciones() {
     })].filter((o): o is LibroAction => o != null),
   ];
 
+  /* Control › «Por árbol» (antes la vista «trazabilidad», 17-10). El censo entra
+     a la MISMA vista en vez de vivir en un cuadro aparte: «Censo vs realidad» era
+     esta misma pregunta contestada por segunda vez, con otros decimales. Ahora es
+     el modo Tabla. `nav` es lo que saca a la pantalla del callejón sin salida: la
+     troza abre su cadena, la GTF su guía y el árbol el mapa. El spinner sólo la
+     primera vez, como Trozas: al recargar tras escribir no se pierden los filtros. */
+  const porArbol = (
+    <>
+      {error && (
+        <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+      {loading && allEntries.length === 0 ? (
+        <div className="p-8 text-center text-[var(--text-tertiary)]">
+          <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
+          <p className="mt-2 text-sm">Cargando el historial por árbol...</p>
+        </div>
+      ) : (
+        <LothTraceView
+          entries={entriesDelPermiso}
+          caratula={caratula}
+          censo={censoArboles}
+          cupoEspecies={cupoEspecies}
+          cupoEnPie={(g) => <LothCupoEnPie fila={cupoPorClave.get(g.clave)} />}
+          gtfEmitidas={gtfEmitidas}
+          nav={{
+            onVerCadena: (code) => setCadenaCode(code),
+            onVerGtf: (gtf) => {
+              setFocoGtf(gtf);
+              setView("gtf");
+            },
+            onVerMapa: (tree) => {
+              setFocoArbol(tree);
+              setView("mapa");
+            },
+            // «Qué falta hacer» → el mismo trozado que abre «Trozarlo ahora».
+            onRegistrarTrozado: abrirTrozado,
+            // «Qué falta hacer» → el alta del censo, con código y especie escritos.
+            onAgregarAlCenso: setAltaCenso,
+          }}
+        />
+      )}
+      {/* El alta va al censo que se está mirando (el del chip; con «Todos», el activo), no siempre al activo. */}
+      <LothCensoAltaDesdeTrace planId={planDelControl} arbol={altaCenso} onClose={() => setAltaCenso(null)} onAgregado={refreshAll} />
+    </>
+  );
+
   return (
     <LothPermisoContext.Provider value={permisoDelLibro}>
     <LibroChrome
@@ -1117,9 +1172,10 @@ export default function LothLibroOperaciones() {
       {/* Vista Plan de Manejo — base maestra (censo + especies autorizadas) */}
       {view === "plan" && <LothPlanView reloadSignal={reloadSignal} onCambioDelLibro={() => void refreshAll()} />}
 
-      {/* Vista GTF — guías de transporte forestal */}
+      {/* Vista GTF — guías de transporte forestal, con «Por imprimir» (la cola del monte) */}
       {view === "gtf" && (
         <LothGtfView
+          pedido={pedidoDe("gtf")}
           focusGtf={focoGtf}
           onFocusHandled={() => setFocoGtf(null)}
           onImportarGuias={() => setShowImportarGuias(true)}
@@ -1127,23 +1183,22 @@ export default function LothLibroOperaciones() {
         />
       )}
 
-      {/* Vista «Por imprimir» — la cola del celular del monte (16-10) */}
-      {view === "monte" && <LothColaMonte />}
-
-      {/* Vista Cumplimiento — veredicto de fiscalización OSINFOR + reporte (ADR-305) */}
+      {/* Vista Cumplimiento — veredicto de fiscalización OSINFOR + reporte (ADR-305)
+          y «Cerrar el mes» → acta inmutable (invariante P1; antes la vista Cierre) */}
       {view === "cumplimiento" && (
         <LothCompliancePanel
           totalLineas={totalLines}
           reloadSignal={reloadSignal}
+          entries={allEntries}
+          caratula={caratula}
+          etiquetasPlan={etiquetasPlan}
+          pedido={pedidoDe("cumplimiento")}
           onNavigate={(t: LothNavTarget) => {
             if (t === "caratula") setShowCaratula(true);
             else setView(t);
           }}
         />
       )}
-
-      {/* Vista Cierre — cerrar el mes → acta inmutable (invariante P1) */}
-      {view === "cierre" && <LothCierrePanel entries={allEntries} caratula={caratula} etiquetasPlan={etiquetasPlan} />}
 
       {/* Vista Mapa — dónde se taló cada árbol (GPS de campo, EUDR) */}
       {view === "mapa" && (
@@ -1158,12 +1213,13 @@ export default function LothLibroOperaciones() {
       {/* Vista Rentabilidad y rendimiento — margen, flujo bosque→producto, anomalías y valor (antes: Rentabilidad + Analítica) */}
       {view === "rentabilidad" && <LothRentabilidadView reloadSignal={reloadSignal} entries={allEntries} onIrAExtraccion={irAExtraccion} />}
 
-      {/* Control del permiso — Trozas · Kárdex · Extracción (ola 2 del panel unificado) */}
+      {/* Control del permiso — Trozas · Kárdex · Extracción (ola 2 del panel unificado) · Por árbol (17-10) */}
       {view === "tablero" && (
         <LothControlPestanas
-          pedido={pedidoControl}
+          pedido={pedidoDe("tablero")}
           /* Extracción — el permiso de punta a punta: censo, saldos y cadena (ADR-454) */
           extraccion={<LothExtraccionView reloadSignal={reloadSignal} onIr={setView} />}
+          arbol={porArbol}
         >
           {(pestana, irAPestana) => (
             <>
@@ -1213,53 +1269,6 @@ export default function LothLibroOperaciones() {
             </>
           )}
         </LothControlPestanas>
-      )}
-
-      {view === "trazabilidad" && (
-        <>
-          {error && (
-            <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
-              <strong>Error:</strong> {error}
-            </div>
-          )}
-          {loading ? (
-            <div className="p-8 text-center text-[var(--text-tertiary)]">
-              <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
-              <p className="mt-2 text-sm">Cargando trazabilidad...</p>
-            </div>
-          ) : (
-            /* El censo entra a la MISMA vista en vez de vivir en un cuadro
-               aparte: «Censo vs realidad» era esta misma pregunta contestada
-               por segunda vez, con otros decimales. Ahora es el modo Tabla.
-               `nav` es lo que saca a la pantalla del callejón sin salida: la
-               troza abre su cadena, la GTF su guía y el árbol el mapa. */
-            <LothTraceView
-              entries={entriesDelPermiso}
-              caratula={caratula}
-              censo={censoArboles}
-              cupoEspecies={cupoEspecies}
-              cupoEnPie={(g) => <LothCupoEnPie fila={cupoPorClave.get(g.clave)} />}
-              gtfEmitidas={gtfEmitidas}
-              nav={{
-                onVerCadena: (code) => setCadenaCode(code),
-                onVerGtf: (gtf) => {
-                  setFocoGtf(gtf);
-                  setView("gtf");
-                },
-                onVerMapa: (tree) => {
-                  setFocoArbol(tree);
-                  setView("mapa");
-                },
-                // «Qué falta hacer» → el mismo trozado que abre «Trozarlo ahora».
-                onRegistrarTrozado: abrirTrozado,
-                // «Qué falta hacer» → el alta del censo, con código y especie escritos.
-                onAgregarAlCenso: setAltaCenso,
-              }}
-            />
-          )}
-          {/* El alta va al censo que se está mirando (el del chip; con «Todos», el activo), no siempre al activo. */}
-          <LothCensoAltaDesdeTrace planId={planDelControl} arbol={altaCenso} onClose={() => setAltaCenso(null)} onAgregado={refreshAll} />
-        </>
       )}
 
       {view === "secciones" && (
