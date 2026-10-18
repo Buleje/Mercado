@@ -55,13 +55,10 @@ export function FolderGlyph({
   folder,
   active,
   className,
-  tono,
 }: {
   folder: { icon: string | null; color: string | null; emoji?: string | null };
   active?: boolean;
   className?: string;
-  /** Color cuando la carpeta no tiene uno propio (los íconos grandes del explorador). */
-  tono?: string;
 }) {
   if (folder.emoji?.trim()) {
     return (
@@ -74,7 +71,7 @@ export function FolderGlyph({
   if (imagen) return <ImagenDeCarpeta docId={imagen} className={className} active={active} color={folder.color} />;
   const Icon = (folder.icon && ICON_MAP[folder.icon]) || Folder;
   const style = folder.color ? { color: folder.color } : undefined;
-  const cls = folder.color ? "" : active ? "text-primary" : tono ?? "text-[var(--text-tertiary)]";
+  const cls = folder.color ? "" : active ? "text-primary" : "text-[var(--text-tertiary)]";
   return <Icon className={cn(className, cls)} style={style} />;
 }
 

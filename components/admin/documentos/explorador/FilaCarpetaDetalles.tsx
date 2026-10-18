@@ -12,7 +12,7 @@ import { MoreHorizontal } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import { formatDateShort } from "@/lib/format";
-import { FolderGlyph } from "../folder-visuals";
+import IconoCarpeta from "./IconoCarpeta";
 import { usePulsacionLarga } from "./use-pulsacion-larga";
 import { puntoDeElemento, type PuntoDeMenu } from "./ubicar-menu";
 
@@ -76,7 +76,7 @@ export default function FilaCarpetaDetalles({ carpeta: f, cols, onAbrir, onMenu,
           title="Abrir carpeta"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center">
-            <FolderGlyph folder={f} tono="text-[var(--data-warning-500)]" className="h-6 w-6" />
+            <IconoCarpeta carpeta={f} tam="chico" />
           </span>
           <span className="max-w-[280px] truncate font-bold text-[var(--text-primary)]">{f.name}</span>
         </button>

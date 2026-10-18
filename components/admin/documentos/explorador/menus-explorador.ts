@@ -1,31 +1,22 @@
 /**
- * Qué ofrece el clic derecho del explorador del Archivo según dónde se hizo,
- * como en Windows: una carpeta, el fondo vacío, algo fijado en el Acceso
- * rápido, o un archivo (éste suma sus opciones al menú de siempre,
- * `MenuDocumento`). Sólo lo que funciona contra lo que ya existe.
+ * Qué ofrece el clic derecho del explorador del Archivo sobre una carpeta o
+ * algo fijado en el Acceso rápido, y lo que el explorador le suma al menú de
+ * un archivo. El fondo y los archivos tienen su archivo (`menu-fondo`,
+ * `menu-elemento`). Sólo lo que funciona contra lo que ya existe.
  */
 
 import {
-  ArrowDown, ArrowUp, CheckSquare, Eye, FileArchive, FolderOpen, FolderPlus, ImageOff, ImagePlus,
-  Link2, Palette, Pencil, Pin, PinOff, RefreshCw, Share2, Trash2, Upload,
+  ArrowDown, ArrowUp, CheckSquare, ClipboardPaste, Eye, FileArchive, FolderOpen, FolderPlus, ImageOff, ImagePlus,
+  Info, Link2, Palette, Pencil, Pin, PinOff, Scissors, Share2, Trash2,
 } from "@buleje/design-system/icons";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { esImagenConvertible, esImagenRenderizable } from "@/lib/documents/tipos-archivo";
 import type { ExtraDelMenu } from "../MenuDocumento";
 import { docDeIconoCarpeta } from "../folder-visuals";
-import type { ItemMenu } from "./MenuEnPunto";
+import { SEP, type ItemMenu } from "./item-menu";
 import type { Fijado } from "./use-acceso-rapido";
-import { VISTAS_ARCHIVO, type VistaArchivo } from "./vista-archivo";
 
-export type OrdenArchivo = "recent" | "name" | "size" | "expiry" | "relevancia";
-
-const ORDENES: readonly { id: OrdenArchivo; label: string }[] = [
-  { id: "relevancia", label: "Más parecidos" },
-  { id: "recent", label: "Más recientes" },
-  { id: "name", label: "Nombre A–Z" },
-  { id: "size", label: "Tamaño" },
-  { id: "expiry", label: "Vence primero" },
-];
+export type OrdenArchivo = "recent" | "name" | "type" | "size" | "expiry" | "relevancia";
 
 export interface AccionesCarpeta {
   abrir: (f: DbDocumentFolder) => void;
@@ -40,9 +31,12 @@ export interface AccionesCarpeta {
   copiarEnlace: (f: DbDocumentFolder) => void;
   descargar: (f: DbDocumentFolder) => void;
   eliminar: (f: DbDocumentFolder) => void;
+  cortar: (f: DbDocumentFolder) => void;
+  /** Hay algo cortado: se ofrece «Pegar aquí» (lo mete en esta carpeta). */
+  hayCortado: boolean;
+  pegarEn: (f: DbDocumentFolder) => void;
+  propiedades: (f: DbDocumentFolder) => void;
 }
-
-const SEP = (id: string): ItemMenu => ({ tipo: "separador", id });
 
 export function itemsDeCarpeta(f: DbDocumentFolder, a: AccionesCarpeta): ItemMenu[] {
   const fijada = a.estaFijado(f.id);
@@ -55,6 +49,9 @@ export function itemsDeCarpeta(f: DbDocumentFolder, a: AccionesCarpeta): ItemMen
       Icon: fijada ? PinOff : Pin,
       onSelect: () => a.alternarFijado({ tipo: "carpeta", id: f.id, nombre: f.name }),
     },
+    SEP("s0"),
+    { id: "cortar", label: "Cortar", Icon: Scissors, atajo: "Ctrl+X", onSelect: () => a.cortar(f) },
+    ...(a.hayCortado ? [{ id: "pegar", label: "Pegar aquí", Icon: ClipboardPaste, onSelect: () => a.pegarEn(f) } satisfies ItemMenu] : []),
     SEP("s1"),
     { id: "nueva", label: "Nueva subcarpeta", Icon: FolderPlus, onSelect: () => a.nuevaCarpeta(f.id) },
     { id: "renombrar", label: "Cambiar nombre", Icon: Pencil, atajo: "F2", onSelect: () => a.renombrar(f) },
@@ -79,52 +76,10 @@ export function itemsDeCarpeta(f: DbDocumentFolder, a: AccionesCarpeta): ItemMen
       onSelect: () => a.descargar(f),
     },
     SEP("s3"),
-    { id: "eliminar", label: "Eliminar", Icon: Trash2, peligro: true, onSelect: () => a.eliminar(f) },
+    { id: "eliminar", label: "Eliminar", Icon: Trash2, peligro: true, atajo: "Supr", onSelect: () => a.eliminar(f) },
+    { id: "propiedades", label: "Propiedades", Icon: Info, atajo: "Alt+Entrar", onSelect: () => a.propiedades(f) },
   );
   return items;
-}
-
-export interface AccionesFondo {
-  vista: VistaArchivo;
-  cambiarVista: (v: VistaArchivo) => void;
-  orden: OrdenArchivo;
-  cambiarOrden: (o: OrdenArchivo) => void;
-  /** «Más parecidos» sólo tiene sentido buscando. */
-  hayBusqueda: boolean;
-  /** Sin esto (Favoritos, Recientes…) no se ofrece crear ni subir. */
-  enCarpetas: boolean;
-  nuevaCarpeta: () => void;
-  subir: () => void;
-  actualizar: () => void;
-}
-
-export function itemsDelFondo(a: AccionesFondo): ItemMenu[] {
-  return [
-    { tipo: "titulo", id: "t-ver", label: "Ver" },
-    ...VISTAS_ARCHIVO.map<ItemMenu>((v) => ({
-      id: `ver-${v.id}`,
-      label: v.label,
-      Icon: v.Icon,
-      marcado: a.vista === v.id,
-      onSelect: () => a.cambiarVista(v.id),
-    })),
-    SEP("s1"),
-    { tipo: "titulo", id: "t-orden", label: "Ordenar por" },
-    ...ORDENES.filter((o) => o.id !== "relevancia" || a.hayBusqueda).map<ItemMenu>((o) => ({
-      id: `orden-${o.id}`,
-      label: o.label,
-      marcado: a.orden === o.id,
-      onSelect: () => a.cambiarOrden(o.id),
-    })),
-    SEP("s2"),
-    ...(a.enCarpetas
-      ? [
-          { id: "nueva", label: "Nueva carpeta", Icon: FolderPlus, onSelect: a.nuevaCarpeta },
-          { id: "subir", label: "Subir archivos", Icon: Upload, onSelect: a.subir },
-        ]
-      : []),
-    { id: "actualizar", label: "Actualizar", Icon: RefreshCw, onSelect: a.actualizar },
-  ];
 }
 
 export function itemsDelFijado(

@@ -28,7 +28,7 @@ import {
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare, Monitor,
   Camera, AlarmClock, Wand2, Tag, MoreHorizontal, FileArchive, Loader2,
   ChevronRight, ChevronDown, ChevronUp, Pencil, MessageCircle, Palette, History, Share2, FolderTree,
-  CalendarDays, Combine, LayoutDashboard, Scan, Link2, Copy, Columns3, ArrowUpDown,
+  CalendarDays, Combine, LayoutDashboard, Scan, Link2, Copy, Columns3, ArrowUpDown, PanelLeft,
 } from "@buleje/design-system/icons";
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
@@ -83,12 +83,15 @@ import { BulkTagModal } from "./BulkTagModal";
 import { PapeleraView } from "./PapeleraView";
 import AvisosDelArchivo from "./AvisosDelArchivo";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
-import MenuDocumento, { type EstadoDelMenu, type PuntoDeMenu } from "./MenuDocumento";
+import MenuDocumento, { type AccionesDocumento, type EstadoDelMenu, type PuntoDeMenu } from "./MenuDocumento";
 import { formatBytes, getFileIcon } from "./archivo-visual";
 import DocThumb from "./DocThumb";
 import { ActionMenu } from "@/components/admin/shared/action-menu";
-import { CLAVE_VISTA, VISTAS_ARCHIVO, esVistaIconos, leerVista, type VistaArchivo } from "./explorador/vista-archivo";
+import { CLAVE_VISTA, VISTAS_ARCHIVO, leerVista, type VistaArchivo } from "./explorador/vista-archivo";
 import { useExplorador } from "./explorador/use-explorador";
+import { MIME_EXPLORADOR, arrastreActual, fijarArrastre, hayCargaInterna, leerCarga } from "./explorador/destino-soltar";
+import type { OrdenArchivo } from "./explorador/menus-explorador";
+import { tipoDeArchivo } from "./explorador/orden-agrupar";
 import MigasRuta from "./explorador/MigasRuta";
 import VistaExplorador from "./explorador/VistaExplorador";
 import FilaCarpetaDetalles from "./explorador/FilaCarpetaDetalles";
@@ -322,7 +325,7 @@ export default function DocumentosModule() {
     window.addEventListener("click", close);
     return () => window.removeEventListener("click", close);
   }, [colsMenuOpen]);
-  const [sortBy, setSortBy] = useState<"recent" | "name" | "size" | "expiry" | "relevancia">("recent");
+  const [sortBy, setSortBy] = useState<OrdenArchivo>("recent");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   /** Ver sólo lo que todavía no tiene descripción (lo que no se puede buscar). */
   const [soloSinDescribir, setSoloSinDescribir] = useState(false);
@@ -589,6 +592,8 @@ export default function DocumentosModule() {
           return a.name.localeCompare(b.name, "es", { sensitivity: "base" });
         case "size":
           return b.size - a.size;
+        case "type":
+          return tipoDeArchivo(a).localeCompare(tipoDeArchivo(b), "es") || a.name.localeCompare(b.name, "es", { sensitivity: "base" });
         case "expiry": {
           // Los que vencen primero arriba; los que no vencen, al final.
           const av = a.expiresAt ? new Date(a.expiresAt).getTime() : Infinity;
@@ -960,6 +965,8 @@ export default function DocumentosModule() {
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
+      // Mover dentro del Archivo (soltar en el espacio vacío) no es una subida.
+      if (hayCargaInterna([...e.dataTransfer.types])) { fijarArrastre(null); return; }
       e.preventDefault();
       setDragOver(false);
       // Si lo que soltaron es una CARPETA, `files` trae el directorio como si
@@ -986,8 +993,7 @@ export default function DocumentosModule() {
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     // Drag interno (mover documento o reparentar carpeta) → no es una subida.
-    const t = e.dataTransfer.types;
-    if (t.includes("application/x-doc-id") || t.includes("application/x-folder-id")) return;
+    if (hayCargaInterna([...e.dataTransfer.types])) return;
     e.preventDefault();
     setDragOver(true);
   }, []);
@@ -1191,17 +1197,20 @@ export default function DocumentosModule() {
    * sólo avisaba que los documentos iban a la raíz — y quien borraba la carpeta
    * los veía reaparecer.
    */
-  const [borrandoCarpeta, setBorrandoCarpeta] = useState<DbDocumentFolder | null>(null);
-  const handleDeleteFolder = (f: DbDocumentFolder) => setBorrandoCarpeta(f);
-  const confirmarBorrarCarpeta = async (f: DbDocumentFolder, opciones: BorradoCarpetas) => {
-    const descs = descendantIds(childrenMap, f.id);
-    if (opciones.incluirSubcarpetas && descs.size > 0) {
-      await bulkFolders([f.id, ...descs], { action: "delete", conDocumentos: opciones.conDocumentos });
+  // Una o varias (el explorador borra lo elegido de una vez).
+  const [borrandoCarpeta, setBorrandoCarpeta] = useState<DbDocumentFolder[] | null>(null);
+  const handleDeleteFolder = (f: DbDocumentFolder) => setBorrandoCarpeta([f]);
+  const confirmarBorrarCarpeta = async (fs: DbDocumentFolder[], opciones: BorradoCarpetas) => {
+    const descs = new Set(fs.flatMap((f) => [...descendantIds(childrenMap, f.id)]));
+    const ids = fs.map((f) => f.id);
+    const conSub = opciones.incluirSubcarpetas && descs.size > 0;
+    if (conSub || ids.length > 1) {
+      await bulkFolders(conSub ? [...new Set([...ids, ...descs])] : ids, { action: "delete", conDocumentos: opciones.conDocumentos });
     } else {
-      await deleteFolder(f.id, { conDocumentos: opciones.conDocumentos });
+      await deleteFolder(ids[0], { conDocumentos: opciones.conDocumentos });
     }
     setBorrandoCarpeta(null);
-    if (activeFolderId === f.id || (activeFolderId && descs.has(activeFolderId))) {
+    if (activeFolderId && (ids.includes(activeFolderId) || descs.has(activeFolderId))) {
       setActiveFolderId(null);
       setFilterMode("all");
     }
@@ -1274,7 +1283,7 @@ export default function DocumentosModule() {
     claveMemoria: "documentos-archivo",
     alto: "md",
     compactoEnMovil: true,
-    resumen: `${formatNumber(shownDocCount)} archivos`,
+    resumen: `${formatNumber(shownDocCount)} ${shownDocCount === 1 ? "archivo" : "archivos"}`,
     tarjetas: [
       <StatBlock key="total" label="Total archivos" value={shownDocCount.toString()} icon={FileIcon} tint="text-primary" />,
       <StorageRing key="espacio" usedBytes={totalSize} quotaBytes={STORAGE_QUOTA_BYTES} />,
@@ -1318,6 +1327,38 @@ export default function DocumentosModule() {
     setActiveFolderId(id);
     setExpandedFolders((prev) => new Set(prev).add(id));
   }, [setFilterMode, setActiveFolderId]);
+  const vistasDelPanel = BUILTIN_CATEGORIES.filter((cat) => vistaConDatos[cat.id] || filterMode === cat.id);
+  const irAVista = (id: string) => {
+    setFilterMode(id as typeof filterMode);
+    setActiveFolderId(null);
+  };
+  /** Lo que hace cada opción del menú de un documento (el «⋯», el clic derecho y el explorador). */
+  const accionesDe = (doc: DbDocument): AccionesDocumento => ({
+    status: doc.status,
+    favorite: !!doc.favorite,
+    isPdf: doc.mimeType === "application/pdf",
+    onPreview: () => setPreview(doc),
+    onAnalyze: () => void handleAnalyze(doc),
+    onDownload: () => void handleDownload(doc),
+    onRename: () => startRename(doc),
+    onMove: () => setMovingDoc(doc),
+    onTag: () => setTagDocId(doc.id),
+    onWhatsApp: () => setWhatsappDoc([doc]),
+    onSign: () => setSignDoc(doc),
+    onStamp: () => setStampTarget(doc),
+    onRotate: () => void handleRotate(doc),
+    onSplit: () => void handleSplit(doc),
+    onEditPages: () => setPageEditorDoc(doc),
+    onToggleFav: () => void patch(doc.id, { favorite: !doc.favorite }),
+    onSetStatus: (st) => void patch(doc.id, { status: st }),
+    onDelete: async () => {
+      if (!(await confirm({ title: `¿Eliminar "${doc.name}"?`, intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
+      // Acá había un `patch(doc.id, {})` "para calentar el camino": un PATCH
+      // sin campos que el servidor rechaza, y que reventaba el borrado con un
+      // error en pantalla antes de llegar a borrar nada.
+      await bulk("delete", [doc.id]);
+    },
+  });
   const ex = useExplorador({
     slug: slugDrive,
     vista: view,
@@ -1336,56 +1377,85 @@ export default function DocumentosModule() {
     orden: sortBy,
     setOrden: setSortBy,
     seleccion: selectedIds,
+    setSeleccion: setSelectedIds,
     alternarSeleccion: toggleSelect,
     prompt,
     createFolder,
-    updateFolder,
+    updateFolder: async (id, cambios) => { await updateFolder(id, cambios); },
     renombrarDoc: (id, name) => patch(id, { name }),
     upload: (files, opts) => upload(files, opts),
-    refresh,
+    bulk,
+    moveFolder,
+    deleteFolder,
+    restoreMany,
+    refrescar: () => refresh({ silencioso: true }),
     abrirSubida: () => fileInputRef.current?.click(),
     personalizar: setEditingFolder,
     compartir: setSharingFolder,
-    eliminar: handleDeleteFolder,
+    eliminarCarpetas: (fs) => { if (fs.length > 0) setBorrandoCarpeta(fs); },
     zip: zipAndDownload,
     verDoc: setPreview,
-    menuDoc: (id, punto) => setMenuEn({ id, ...punto }),
+    accionesDoc: accionesDe,
+    estados: ESTADOS_DEL_MENU,
+    lote: {
+      zip: () => void bulkDownloadZip(),
+      whatsapp: () => {
+        const elegidos = documents.filter((d) => selectedIds.has(d.id));
+        if (elegidos.length > 0) setWhatsappDoc(elegidos);
+      },
+      favoritos: (si) => void bulkFavorite(si),
+      estado: (clave) => void bulkStatus(clave as EstadoDoc),
+    },
+    etiquetaEstado: (st) => STATUS_META[st]?.label ?? st,
+    nombreLugar: BUILTIN_CATEGORIES.find((c) => c.id === filterMode)?.label
+      ?? (filterMode === "smart" ? smartFolders.find((f) => f.id === activeSmartId)?.name ?? "Carpeta inteligente" : "Archivo"),
+    lugares: {
+      vistas: vistasDelPanel.map((c) => ({ id: c.id, label: c.label, Icon: c.icon })),
+      vistaActiva: filterMode,
+      irAVista,
+      inteligentes: smartFolders.map((f) => ({ id: f.id, nombre: f.name })),
+      inteligenteActiva: filterMode === "smart" ? activeSmartId : null,
+      abrirInteligente: (id) => { setFilterMode("smart"); setActiveSmartId(id); },
+      nuevaInteligente: () => setSmartModal("new"),
+      etiquetas: () => setShowTags(true),
+    },
   });
-  const docDelMenu = menuEn && ex.explorando && esVistaIconos(view) ? documents.find((d) => d.id === menuEn.id) ?? null : null;
+  // Sin panel sólo donde se ve el explorador: Resumen, Papelera, Calendario…
+  // son otras pantallas y llevan el panel para volver.
+  const enExplorador = ex.explorando && !VISTAS_CON_CONTENIDO_PROPIO.has(filterMode);
+  const sinPanel = ex.sinPanel && enExplorador;
+  const barraExplorador = enExplorador && (filterMode === "all" || filterMode === "folder");
+  // En el explorador va a la derecha de la barra de dirección; en el resto, al frente de la barra.
+  const buscador = (
+    <div className={cn("relative", barraExplorador ? "w-full sm:w-72 sm:flex-none" : "flex-1 min-w-[220px]")}>
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+      <input
+        type="text"
+        // Lo enfoca el acceso «Archivos» de la cabecera (components/admin/header).
+        data-buscar-archivos=""
+        aria-label="Buscar archivos"
+        placeholder={semantic ? "Describe lo que buscas… ej: el contrato del local" : "Buscar por nombre, tag o contenido OCR…"}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className={cn(
+          "w-full pl-9 pr-3 h-12 rounded-xl border-2 bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all",
+          semantic ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
+        )}
+      />
+    </div>
+  );
+  const docDelMenu = menuEn && !ex.propsVista ? documents.find((d) => d.id === menuEn.id) ?? null : null;
 
   const menuDe = (doc: DbDocument, variante: "fila" | "flotante" = "fila", sinBoton = false) => (
     <MenuDocumento
+      {...accionesDe(doc)}
       sinBoton={sinBoton}
       extras={ex.extrasDe(doc)}
       flotante={variante === "flotante"}
       nombre={doc.name}
       estados={ESTADOS_DEL_MENU}
-      status={doc.status}
-      favorite={!!doc.favorite}
-      isPdf={doc.mimeType === "application/pdf"}
       abrirEn={menuEn?.id === doc.id ? menuEn : null}
       onCerrado={() => setMenuEn((m) => (m?.id === doc.id ? null : m))}
-      onPreview={() => setPreview(doc)}
-      onAnalyze={() => handleAnalyze(doc)}
-      onDownload={() => handleDownload(doc)}
-      onRename={() => startRename(doc)}
-      onMove={() => setMovingDoc(doc)}
-      onTag={() => setTagDocId(doc.id)}
-      onWhatsApp={() => setWhatsappDoc([doc])}
-      onSign={() => setSignDoc(doc)}
-      onStamp={() => setStampTarget(doc)}
-      onRotate={() => handleRotate(doc)}
-      onSplit={() => handleSplit(doc)}
-      onEditPages={() => setPageEditorDoc(doc)}
-      onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
-      onSetStatus={(st) => patch(doc.id, { status: st })}
-      onDelete={async () => {
-        if (!(await confirm({ title: `¿Eliminar "${doc.name}"?`, intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
-        // Acá había un `patch(doc.id, {})` "para calentar el camino": un PATCH
-        // sin campos que el servidor rechaza, y que reventaba el borrado con un
-        // error en pantalla antes de llegar a borrar nada.
-        await bulk("delete", [doc.id]);
-      }}
     />
   );
 
@@ -1574,7 +1644,7 @@ export default function DocumentosModule() {
       {error && (
         <div className="flex items-center gap-2 p-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <X className="h-4 w-4 shrink-0" /> {error}
-          <button onClick={refresh} className="ml-auto text-xs underline">Reintentar</button>
+          <button onClick={() => { void refresh(); }} className="ml-auto text-xs underline">Reintentar</button>
         </div>
       )}
 
@@ -1587,12 +1657,18 @@ export default function DocumentosModule() {
           "Subir archivos" — 2026-09-24), acá sólo queda el panel. */}
       {filterMode !== "trash" && kpis.panel}
 
+      {/* Explorador estilo Windows: sin panel lateral (Ver › Panel lateral lo
+          vuelve a mostrar) y en el celular nunca; lo del panel queda en
+          «Lugares», al lado de Atrás. */}
       <div
-        className="grid grid-cols-1 lg:grid-cols-[var(--docs-sidebar-w)_12px_1fr] gap-5 lg:gap-x-0"
+        className={cn("grid grid-cols-1 gap-5", !sinPanel && "lg:grid-cols-[var(--docs-sidebar-w)_12px_1fr] lg:gap-x-0")}
         style={{ "--docs-sidebar-w": `${sidebarWidth}px` } as React.CSSProperties}
       >
         {/* ─── Sidebar ─── */}
-        <aside className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-3 h-fit">
+        <aside
+          className={cn("bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-3 h-fit", sinPanel ? "hidden" : enExplorador && "hidden lg:block")}
+          data-qa="panel-archivo"
+        >
           <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 py-2">
             Vista
           </p>
@@ -1665,6 +1741,13 @@ export default function DocumentosModule() {
           <div
             className={cn("flex items-center justify-between px-3 py-2 rounded-lg transition-all", rootDropActive && "bg-primary/10 ring-2 ring-primary")}
             onDragOver={(e) => {
+              if (e.dataTransfer.types.includes(MIME_EXPLORADOR)) {
+                if (!ex.barra.puedeSoltar(null)) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setRootDropActive(true);
+                return;
+              }
               if (!e.dataTransfer.types.includes("application/x-folder-id")) return;
               if (draggingFolderId && (folderById.get(draggingFolderId)?.parentId ?? null) === null) return;
               e.preventDefault();
@@ -1673,6 +1756,15 @@ export default function DocumentosModule() {
             }}
             onDragLeave={() => setRootDropActive(false)}
             onDrop={(e) => {
+              if (e.dataTransfer.types.includes(MIME_EXPLORADOR)) {
+                e.preventDefault();
+                e.stopPropagation();
+                setRootDropActive(false);
+                const carga = leerCarga(e.dataTransfer) ?? arrastreActual();
+                fijarArrastre(null);
+                if (carga) ex.barra.onSoltar(carga, null);
+                return;
+              }
               if (!e.dataTransfer.types.includes("application/x-folder-id")) return;
               e.preventDefault();
               e.stopPropagation();
@@ -1760,8 +1852,10 @@ export default function DocumentosModule() {
                       e.dataTransfer.setData("application/x-folder-id", f.id);
                       e.dataTransfer.effectAllowed = "move";
                       setDraggingFolderId(f.id);
+                      // Para que las carpetas del explorador y la ruta la reciban.
+                      fijarArrastre({ docs: [], carpetas: [f.id] });
                     }}
-                    onDragEnd={() => { setDraggingFolderId(null); setDragOverFolderId(null); setRootDropActive(false); }}
+                    onDragEnd={() => { setDraggingFolderId(null); setDragOverFolderId(null); setRootDropActive(false); fijarArrastre(null); }}
                     className={cn(
                       "group relative rounded-lg transition-all",
                       dropTarget && "bg-primary/10 ring-2 ring-primary",
@@ -1769,6 +1863,14 @@ export default function DocumentosModule() {
                     )}
                     onDragOver={(e) => {
                       const t = e.dataTransfer.types;
+                      // Lo que viene del explorador (uno o varios) pasa por sus reglas y se deshace con Ctrl+Z.
+                      if (t.includes(MIME_EXPLORADOR)) {
+                        if (!ex.barra.puedeSoltar(f.id)) return;
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                        if (dragOverFolderId !== f.id) setDragOverFolderId(f.id);
+                        return;
+                      }
                       const isDoc = t.includes("application/x-doc-id");
                       const isFolder = t.includes("application/x-folder-id");
                       if (!isDoc && !isFolder) return;
@@ -1781,7 +1883,14 @@ export default function DocumentosModule() {
                     onDragLeave={() => setDragOverFolderId((cur) => (cur === f.id ? null : cur))}
                     onDrop={(e) => {
                       const t = e.dataTransfer.types;
-                      if (t.includes("application/x-folder-id")) {
+                      if (t.includes(MIME_EXPLORADOR)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDragOverFolderId(null);
+                        const carga = leerCarga(e.dataTransfer) ?? arrastreActual();
+                        fijarArrastre(null);
+                        if (carga) ex.barra.onSoltar(carga, f.id);
+                      } else if (t.includes("application/x-folder-id")) {
                         e.preventDefault();
                         e.stopPropagation();
                         dropFolderOnFolder(e.dataTransfer.getData("application/x-folder-id"), f.id);
@@ -1975,35 +2084,37 @@ export default function DocumentosModule() {
           </button>
         </aside>
 
-        <SidebarResizeHandle
+        {!sinPanel && <SidebarResizeHandle
           width={sidebarWidth}
           min={SIDEBAR_MIN_W}
           max={SIDEBAR_MAX_W}
           onChange={setSidebarWidth}
           onCommit={(w) => { try { localStorage.setItem("doc-sidebar-width", String(w)); } catch { /* quota */ } }}
-        />
+        />}
 
         {/* ─── Main list ─── */}
         <div className="space-y-4">
           {/* Toolbar — solo en vistas tipo lista (no en resumen/asistente/actividad/calendario/enlaces) */}
           {!VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && (
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex-1 min-w-[220px] relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-              <input
-                type="text"
-                // Lo enfoca el acceso «Archivos» de la cabecera (components/admin/header).
-                data-buscar-archivos=""
-                aria-label="Buscar archivos"
-                placeholder={semantic ? "Describe lo que buscas… ej: el contrato del local" : "Buscar por nombre, tag o contenido OCR…"}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className={cn(
-                  "w-full pl-9 pr-3 h-12 rounded-xl border-2 bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all",
-                  semantic ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
-                )}
-              />
-            </div>
+            {/* Explorador: Atrás, Adelante, Subir, Lugares y la ruta, como la
+                barra de dirección de Windows; el buscador queda a su derecha. */}
+            {/* Explorador: como Windows, la barra de dirección (Atrás, Adelante,
+                Subir, Lugares y la ruta) y el buscador a su derecha van en una
+                fila propia; los comandos (IA, Filtros, Orden, Ver), debajo. */}
+            {barraExplorador ? (
+              <div className="flex basis-full flex-col gap-2 sm:flex-row sm:items-center">
+                <MigasRuta
+                  {...ex.barra}
+                  ruta={activePath}
+                  raiz="Archivo"
+                  onIr={abrirCarpetaExp}
+                  zip={filterMode === "folder" && displayDocs.length > 0 ? { onClick: () => void downloadFolderZip(), ocupado: zipping } : undefined}
+                  className="min-w-0 flex-1"
+                />
+                {buscador}
+              </div>
+            ) : buscador}
             <button
               onClick={() => setSemantic((s) => !s)}
               aria-pressed={semantic}
@@ -2039,6 +2150,7 @@ export default function DocumentosModule() {
               {terminosBusqueda.length > 0 && <option value="relevancia">Más parecidos</option>}
               <option value="recent">Más recientes</option>
               <option value="name">Nombre A–Z</option>
+              <option value="type">Tipo</option>
               <option value="size">Tamaño</option>
               <option value="expiry">Vence primero</option>
             </select>
@@ -2055,7 +2167,13 @@ export default function DocumentosModule() {
                   size="md"
                   compactoEnMovil
                   title={`Ver: ${actual.label}`}
-                  actions={VISTAS_ARCHIVO.map((v) => ({ id: v.id, label: v.label, icon: v.Icon, activo: v.id === view, onSelect: () => setView(v.id) }))}
+                  actions={[
+                    ...VISTAS_ARCHIVO.map((v) => ({ id: v.id, label: v.label, icon: v.Icon, activo: v.id === view, seccion: "Vista", onSelect: () => ex.elegirVista(v.id) })),
+                    // Como en Windows: el panel de navegación se prende y se apaga desde Ver.
+                    ...(enExplorador
+                      ? [{ id: "panel", label: "Panel lateral", hint: "Carpetas, vistas y etiquetas a la izquierda", icon: PanelLeft, activo: !sinPanel, seccion: "Mostrar", onSelect: ex.alternarPanel }]
+                      : []),
+                  ]}
                 />
               );
             })()}
@@ -2114,20 +2232,6 @@ export default function DocumentosModule() {
               <Sparkles className="h-3.5 w-3.5 shrink-0" />
               Modo IA activo: describe el documento (ej. &ldquo;el contrato del local&rdquo;), no solo palabras exactas.
             </div>
-          )}
-
-          {/* Explorador: Atrás, Subir y la ruta, como la barra de Windows. */}
-          {ex.explorando && (filterMode === "all" || filterMode === "folder") && (
-            <MigasRuta
-              ruta={activePath}
-              raiz="Archivo"
-              onIr={abrirCarpetaExp}
-              puedeAtras={ex.puedeAtras}
-              onAtras={ex.atras}
-              resumen={ex.resumen}
-              onSoltarDoc={(docId, carpetaId) => void dropDocOnFolder(docId, carpetaId)}
-              zip={filterMode === "folder" && displayDocs.length > 0 ? { onClick: () => void downloadFolderZip(), ocupado: zipping } : undefined}
-            />
           )}
 
           {/* Breadcrumbs de la carpeta activa (subcarpetas anidadas) — en
@@ -2492,25 +2596,12 @@ export default function DocumentosModule() {
               onRestoreMany={restoreMany}
               onPurgeMany={purgeMany}
             />
+          ) : ex.propsVista && (ex.enCarpetas || displayDocs.length > 0) ? (
+            // En una carpeta vacía igual va el explorador: clic derecho › Nuevo
+            // y soltar archivos tienen que andar justo ahí.
+            <VistaExplorador key={`${filterMode}:${activeFolderId ?? ""}:${view}`} {...ex.propsVista} />
           ) : displayDocs.length === 0 && !(ex.explorando && ex.contenido.carpetas.length > 0) ? (
             <EmptyState onUpload={() => fileInputRef.current?.click()} />
-          ) : ex.explorando && esVistaIconos(view) ? (
-            <VistaExplorador
-              key={`${filterMode}:${activeFolderId ?? ""}:${view}`}
-              vista={view}
-              carpetas={ex.contenido.carpetas}
-              docs={ex.contenido.docs}
-              seleccion={selectedIds}
-              onAbrirCarpeta={(f) => abrirCarpetaExp(f.id)}
-              onAbrirDoc={setPreview}
-              onMenu={ex.abrirMenu}
-              onAlternarSeleccion={toggleSelect}
-              onRenombrar={ex.renombrar}
-              onSoltarDoc={(docId, carpetaId) => void dropDocOnFolder(docId, carpetaId)}
-              onArrastrarDoc={setDraggingDocId}
-              onAtras={ex.atras}
-              onSubir={ex.subir}
-            />
           ) : view === "grid" ? (
             <div className="space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
@@ -2954,17 +3045,21 @@ export default function DocumentosModule() {
         <FolderShareModal folder={sharingFolder} onClose={() => setSharingFolder(null)} />
       )}
 
-      {borrandoCarpeta && (
-        <ConfirmarBorrarCarpetas
-          nombres={[borrandoCarpeta.name]}
-          subcarpetas={descendantIds(childrenMap, borrandoCarpeta.id).size}
-          documentosDirectos={borrandoCarpeta.documentCount ?? 0}
-          documentosEnSubcarpetas={[...descendantIds(childrenMap, borrandoCarpeta.id)]
-            .reduce((n, id) => n + (folderById.get(id)?.documentCount ?? 0), 0)}
-          onCancelar={() => setBorrandoCarpeta(null)}
-          onConfirmar={(opciones) => confirmarBorrarCarpeta(borrandoCarpeta, opciones)}
-        />
-      )}
+      {borrandoCarpeta && (() => {
+        const marcadas = new Set(borrandoCarpeta.map((f) => f.id));
+        // Las que cuelgan de las marcadas (sin contar las marcadas mismas).
+        const debajo = new Set(borrandoCarpeta.flatMap((f) => [...descendantIds(childrenMap, f.id)]).filter((id) => !marcadas.has(id)));
+        return (
+          <ConfirmarBorrarCarpetas
+            nombres={borrandoCarpeta.map((f) => f.name)}
+            subcarpetas={debajo.size}
+            documentosDirectos={borrandoCarpeta.reduce((n, f) => n + (f.documentCount ?? 0), 0)}
+            documentosEnSubcarpetas={[...debajo].reduce((n, id) => n + (folderById.get(id)?.documentCount ?? 0), 0)}
+            onCancelar={() => setBorrandoCarpeta(null)}
+            onConfirmar={(opciones) => confirmarBorrarCarpeta(borrandoCarpeta, opciones)}
+          />
+        );
+      })()}
 
       {showTags && (
         <TagTaxonomyModal onChanged={() => { refresh(); reloadAllTags(); }} onClose={() => setShowTags(false)} />

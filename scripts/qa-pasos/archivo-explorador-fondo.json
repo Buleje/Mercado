@@ -1,0 +1,12 @@
+{
+  "tenant": "main",
+  "ruta": "/admin?tab=documentos&vista=drive&sub=all#documentos",
+  "pasos": [
+    { "esperar": "[data-qa=explorador] [data-qa=explorador-carpeta]" },
+    { "esperar": 600 },
+    { "eval": "(()=>{document.querySelector('[data-qa=explorador]').scrollIntoView({block:'start',behavior:'instant'});return 'arriba'})()" },
+    { "esperar": 900 },
+    { "eval": "(()=>{const el=document.querySelector('[data-qa=explorador]');const r=el.getBoundingClientRect();el.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,button:2,clientX:Math.round(r.left+r.width*0.55),clientY:Math.round(Math.min(r.bottom,innerHeight)*0.45)}));return 'menu del fondo'})()" },
+    { "esperar": "[data-qa=menu-explorador]" }
+  ]
+}

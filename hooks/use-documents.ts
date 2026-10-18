@@ -81,7 +81,7 @@ export interface UseDocumentsResult {
   folders: DbDocumentFolder[];
   loading: boolean;
   error: string | null;
-  refresh: () => Promise<void>;
+  refresh: (opciones?: { silencioso?: boolean; soloDocumentos?: boolean }) => Promise<void>;
   upload: (files: File[], opts?: OpcionesSubida) => Promise<DbDocument[]>;
   scan: (file: File, opts?: { folderId?: string | null }) => Promise<{ document: DbDocument; scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null } }>;
   patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; status: string; expiresAt: string | null; allowedRoles: string[]; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;

@@ -77,3 +77,23 @@ export function puntoDeElemento(el: Element, alinearDerecha = false): PuntoDeMen
   const r = el.getBoundingClientRect();
   return { x: alinearDerecha ? r.right - ANCHO_MENU : r.left + 8, y: r.bottom, arriba: r.top };
 }
+
+/**
+ * Un submenú (Ver ›, Ordenar por ›, Nuevo ›) al costado de su opción: a la
+ * derecha si entra, si no a la izquierda (como Windows cerca del borde), y
+ * corrido hacia arriba lo que haga falta para que se vea entero.
+ */
+export function ubicarSubmenu(opcion: DOMRect, alto: number, ancho = ANCHO_MENU): { top: number; left: number; maxHeight: number } {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const derecha = opcion.right - 2;
+  const left = derecha + ancho <= vw - MARGEN
+    ? derecha
+    : Math.max(MARGEN, opcion.left - ancho + 2);
+  const maxHeight = vh - 2 * MARGEN;
+  const top = Math.max(MARGEN, Math.min(opcion.top - SEPARACION, vh - MARGEN - Math.min(alto, maxHeight)));
+  return { top, left, maxHeight };
+}
+
+/** En un celular no entran dos menús lado a lado: el submenú se abre adentro. */
+export const submenuEnLinea = () => typeof window !== "undefined" && window.innerWidth < 2 * ANCHO_MENU + 4 * MARGEN;

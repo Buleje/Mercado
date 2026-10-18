@@ -40,7 +40,9 @@ export function contenidoExplorador(e: Entrada): ContenidoExplorador {
   const coincide = (f: DbDocumentFolder) => !q || sinTildes(f.name).includes(q);
 
   if (e.modo === "folder" && e.carpetaId) {
-    return { carpetas: (e.hijos.get(e.carpetaId) ?? []).filter(coincide), docs: e.docs };
+    // Lo que acabas de mover a otra carpeta se va al instante (antes de recargar).
+    const id = e.carpetaId;
+    return { carpetas: (e.hijos.get(id) ?? []).filter(coincide), docs: e.docs.filter((d) => d.folderId === id) };
   }
   if (e.modo !== "all") return { carpetas: [], docs: e.docs };
   if (e.acotado) {

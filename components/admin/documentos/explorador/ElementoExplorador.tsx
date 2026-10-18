@@ -4,25 +4,27 @@
  * Un elemento del explorador del Archivo (carpeta o archivo) en íconos
  * grandes, medianos o lista. Como en Windows:
  *
- * - clic = lo marca (Ctrl/⌘+clic lo suma a la selección si es un archivo);
+ * - clic = sólo ése; Ctrl/⌘+clic lo suma o lo saca; Shift+clic, el tramo;
  * - doble clic = abre (entra a la carpeta o abre el archivo);
+ * - arrastrar = mueve lo elegido; una carpeta recibe lo que le sueltas encima
+ *   (y se pinta sólo si lo puede recibir);
  * - en el celular un toque abre y mantener presionado muestra las opciones;
  * - clic derecho = opciones.
  *
- * El teclado (flechas, Enter, F2, Shift+F10) lo maneja `VistaExplorador`,
- * que es quien sabe cuál es el de al lado.
+ * El teclado lo maneja `use-teclado-explorador`, que sabe cuál es el de al lado.
  */
 
-import { useState, type DragEvent, type MouseEvent as ReactMouseEvent } from "react";
+import { useState, type DragEvent } from "react";
 import { Star } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
-import { formatBytes, getFileIcon } from "../archivo-visual";
-import DocThumb from "../DocThumb";
-import { FolderGlyph, docDeIconoCarpeta } from "../folder-visuals";
-import { urlMiniatura } from "@/lib/documents/miniatura-version";
+import { formatBytes } from "../archivo-visual";
+import { arrastreActual, escribirCarga, fijarArrastre, hayCargaInterna, leerCarga, type CargaArrastre } from "./destino-soltar";
+import IconoArchivo from "./IconoArchivo";
+import IconoCarpeta from "./IconoCarpeta";
 import { usePulsacionLarga } from "./use-pulsacion-larga";
 import type { PuntoDeMenu } from "./ubicar-menu";
+import type { Mods } from "./use-seleccion-explorador";
 import type { VistaIconos } from "./vista-archivo";
 
 type Objeto = { tipo: "carpeta"; carpeta: DbDocumentFolder } | { tipo: "doc"; doc: DbDocument };
@@ -33,58 +35,25 @@ interface Props {
   clave: string;
   /** El que recibe el Tab (uno solo en toda la grilla). */
   enfocable: boolean;
-  /** Marcado con un clic (resaltado suave). */
-  marcado: boolean;
-  /** En la selección del lote (archivos). */
-  seleccionado: boolean;
-  onClic: (e: ReactMouseEvent) => void;
+  /** Resaltado: está en la selección (o es el último que tocaste). */
+  elegido: boolean;
+  /** Cortado (Ctrl+X): se ve apagado hasta que lo pegues. */
+  cortado: boolean;
+  onClic: (m: Mods) => void;
   onAbrir: () => void;
   onMenu: (punto: PuntoDeMenu) => void;
   onFoco: () => void;
-  onSoltarDoc?: (docId: string) => void;
-  onArrastrar?: (arrastrando: boolean) => void;
+  /** Lo que se lleva al arrastrar desde acá (lo elegido, o sólo éste). */
+  cargaAlArrastrar: () => CargaArrastre;
+  /** Carpetas: ¿lo que viene arrastrado puede entrar acá? */
+  puedeSoltar?: () => boolean;
+  onSoltar?: (carga: CargaArrastre) => void;
 }
 
-const TONO_CARPETA = "text-[var(--data-warning-500)]";
-
-function Portada({ objeto, vista }: { objeto: Objeto; vista: VistaIconos }) {
-  const [fallo, setFallo] = useState(false);
-  if (objeto.tipo === "doc") {
-    const { Icon, tint, bg } = getFileIcon(objeto.doc.mimeType, objeto.doc.name);
-    if (vista === "lista") {
-      return (
-        <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", bg)}>
-          <Icon className={cn("h-4 w-4", tint)} aria-hidden />
-        </span>
-      );
-    }
-    return <DocThumb doc={objeto.doc} Icon={Icon} tint={tint} bg={bg} iconClassName={vista === "grandes" ? "h-12 w-12" : "h-8 w-8"} />;
-  }
-  const f = objeto.carpeta;
-  if (vista === "lista") return <FolderGlyph folder={f} tono={TONO_CARPETA} className="h-6 w-6 shrink-0" />;
-  const imagen = docDeIconoCarpeta(f.icon);
-  if (imagen && !fallo) {
-    return (
-      <span className="relative block h-full w-full">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={urlMiniatura(imagen)} alt="" loading="lazy" onError={() => setFallo(true)} className="h-full w-full object-cover" />
-        <span className="absolute bottom-1 left-1 flex h-6 w-6 items-center justify-center rounded-md bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]">
-          <FolderGlyph folder={{ ...f, icon: null, emoji: null }} tono={TONO_CARPETA} className="h-4 w-4" />
-        </span>
-      </span>
-    );
-  }
-  return (
-    <FolderGlyph
-      folder={imagen ? { ...f, icon: null } : f}
-      tono={TONO_CARPETA}
-      className={cn(vista === "grandes" ? "h-20 w-20 text-6xl" : "h-12 w-12 text-4xl", "stroke-[1.5]")}
-    />
-  );
-}
+const TAM = { grandes: "grande", medianos: "mediano", lista: "chico" } as const;
 
 export default function ElementoExplorador({
-  vista, objeto, clave, enfocable, marcado, seleccionado, onClic, onAbrir, onMenu, onFoco, onSoltarDoc, onArrastrar,
+  vista, objeto, clave, enfocable, elegido, cortado, onClic, onAbrir, onMenu, onFoco, cargaAlArrastrar, puedeSoltar, onSoltar,
 }: Props) {
   const pulsacion = usePulsacionLarga(onMenu);
   const [sobre, setSobre] = useState(false);
@@ -96,49 +65,64 @@ export default function ElementoExplorador({
   const n = esCarpeta ? objeto.carpeta.documentCount ?? 0 : 0;
   const meta = esCarpeta ? `${n} ${n === 1 ? "archivo" : "archivos"}` : formatBytes(objeto.doc.size);
 
-  const arrastre = esCarpeta
+  const origen = conMouse
+    ? {
+        draggable: true,
+        onDragStart: (e: DragEvent) => {
+          const carga = cargaAlArrastrar();
+          escribirCarga(e.dataTransfer, carga);
+          fijarArrastre(carga);
+        },
+        onDragEnd: () => fijarArrastre(null),
+      }
+    : {};
+
+  const destino = esCarpeta && onSoltar
     ? {
         onDragOver: (e: DragEvent) => {
-          if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
+          if (!hayCargaInterna([...e.dataTransfer.types])) return;
+          // Sobre sí misma o una de las que se mueven: no se pinta ni se acepta.
+          if (puedeSoltar && !puedeSoltar()) { e.dataTransfer.dropEffect = "none"; return; }
           e.preventDefault();
+          e.stopPropagation();
           e.dataTransfer.dropEffect = "move";
           setSobre(true);
         },
         onDragLeave: () => setSobre(false),
         onDrop: (e: DragEvent) => {
-          if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
+          if (!hayCargaInterna([...e.dataTransfer.types])) return;
           e.preventDefault();
           e.stopPropagation();
           setSobre(false);
-          onSoltarDoc?.(e.dataTransfer.getData("application/x-doc-id"));
+          const carga = leerCarga(e.dataTransfer) ?? arrastreActual();
+          fijarArrastre(null);
+          if (carga) onSoltar(carga);
         },
       }
-    : !conMouse ? {} : {
-        draggable: true,
-        onDragStart: (e: DragEvent) => {
-          e.dataTransfer.setData("application/x-doc-id", objeto.doc.id);
-          e.dataTransfer.effectAllowed = "move";
-          onArrastrar?.(true);
-        },
-        onDragEnd: () => onArrastrar?.(false),
-      };
+    : {};
 
+  const lista = vista === "lista";
   return (
     <div
       role="option"
-      aria-selected={seleccionado || marcado}
+      aria-selected={elegido}
       aria-label={esCarpeta ? `Carpeta ${nombre}, ${meta}` : nombre}
       tabIndex={enfocable ? 0 : -1}
       data-clave={clave}
       data-qa={esCarpeta ? "explorador-carpeta" : "explorador-archivo"}
+      data-cortado={cortado || undefined}
       title={nombre}
       {...pulsacion.handlers}
-      {...arrastre}
-      onFocus={onFoco}
+      {...origen}
+      {...destino}
+      // Sólo el foco del teclado (Tab) marca: con el mouse lo decide el clic
+      // (si no, Ctrl+clic sacaría lo que el foco acaba de marcar).
+      onFocus={(e) => { if (e.currentTarget.matches(":focus-visible")) onFoco(); }}
       onClick={(e) => {
         if (pulsacion.yaDisparo()) return;
-        if (pulsacion.esTactil() && !e.ctrlKey && !e.metaKey) { onAbrir(); return; }
-        onClic(e);
+        const ctrl = e.ctrlKey || e.metaKey;
+        if (pulsacion.esTactil() && !ctrl) { onAbrir(); return; }
+        onClic({ ctrl, shift: e.shiftKey });
       }}
       onDoubleClick={() => { if (!pulsacion.esTactil()) onAbrir(); }}
       onContextMenu={(e) => {
@@ -151,37 +135,30 @@ export default function ElementoExplorador({
         onMenu({ x: e.clientX, y: e.clientY });
       }}
       className={cn(
-        "group relative flex cursor-default select-none rounded-xl border outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
-        vista === "lista" ? "min-h-12 flex-row items-center gap-2.5 px-2" : "flex-col items-center gap-1.5 p-2 text-center",
-        seleccionado
-          ? "border-primary/50 bg-primary/10"
-          : marcado
-            ? "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
-            : "border-transparent hover:bg-[var(--surface-sunken)]",
-        sobre && "border-primary bg-primary/10 ring-2 ring-primary",
+        "group relative flex cursor-default select-none rounded-lg border outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+        lista ? "min-h-12 flex-row items-center gap-2.5 px-2" : "flex-col items-center gap-1 px-1 pb-1.5 pt-2 text-center",
+        elegido
+          ? "border-[var(--accent)]/45 bg-[var(--accent)]/12"
+          : "border-transparent hover:border-[var(--accent)]/20 hover:bg-[var(--accent)]/6",
+        sobre && "border-[var(--accent)] bg-[var(--accent)]/15 ring-2 ring-[var(--accent)]",
+        cortado && "opacity-50",
       )}
     >
-      {vista === "lista" ? (
-        <Portada objeto={objeto} vista={vista} />
+      {lista ? (
+        esCarpeta ? <IconoCarpeta carpeta={objeto.carpeta} tam="chico" /> : <IconoArchivo doc={objeto.doc} tam="chico" />
       ) : (
-        <span
-          className={cn(
-            "relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg",
-            vista === "grandes" ? "aspect-square w-full" : "h-20 w-20",
-            !esCarpeta && "border border-[var(--rule-soft)] bg-[var(--surface-sunken)]",
-          )}
-        >
-          <Portada objeto={objeto} vista={vista} />
+        <span className={cn("relative flex shrink-0 items-center justify-center", vista === "grandes" ? "aspect-square w-full max-w-36" : "h-14 w-14")}>
+          {esCarpeta ? <IconoCarpeta carpeta={objeto.carpeta} tam={TAM[vista]} /> : <IconoArchivo doc={objeto.doc} tam={TAM[vista]} />}
           {!esCarpeta && objeto.doc.favorite && (
-            <Star className="absolute right-1 top-1 h-4 w-4 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" aria-label="Favorito" />
+            <Star className="absolute right-0 top-0 h-4 w-4 fill-yellow-400 text-yellow-500" aria-label="Favorito" />
           )}
         </span>
       )}
       <span
         className={cn(
-          "min-w-0 font-semibold text-[var(--text-primary)]",
-          vista === "lista" ? "flex-1 truncate text-sm" : "line-clamp-2 w-full break-words",
-          vista === "grandes" ? "text-sm" : vista === "medianos" ? "text-xs" : "",
+          "min-w-0 text-[var(--text-primary)]",
+          lista ? "flex-1 truncate text-sm font-semibold" : "line-clamp-3 w-full break-words leading-tight",
+          vista === "grandes" ? "text-sm font-semibold" : vista === "medianos" ? "text-xs font-medium" : "",
         )}
       >
         {nombre}
