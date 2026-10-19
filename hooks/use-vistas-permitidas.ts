@@ -127,6 +127,7 @@ function useCapasDelPanel(): { ctx: ContextoPermiso | null; overrides: AdminTemp
     () =>
       sesion && {
         rol: idsDelRol(sesion.rol, sesion.guardados),
+        rolNombre: sesion.rol,
         plan: idsDelPlan(plan, sinCandado),
         plantilla: isHiddenByTemplate,
         rubro: rubroDelPanel(industry),

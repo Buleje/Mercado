@@ -26,6 +26,8 @@ const MANAGEMENT_TIER: readonly AdminRole[] = ["admin", "owner", "manager"];
 
 export const RUTAS_PANEL = {
   "/api/customers": ["admin"],
+  /** Crear/enviar campañas (POST/GET/PATCH de app/api/campaigns): Mandar mensaje › Automático sólo se ofrece a quien no recibiría un 403. */
+  "/api/campaigns": ["admin"],
   "/api/sales": ["admin", "cajero", "owner", "manager", "tienda_owner"],
   "/api/admin/alerts-summary": ["admin", "manager", "cajero"],
   "/api/admin/stats": ["admin"],

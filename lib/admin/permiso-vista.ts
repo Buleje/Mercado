@@ -65,6 +65,8 @@ export interface ContextoPermiso {
   especialidades: ReadonlySet<string> | null;
   /** Ids de Modo Fácil (`null` = apagado; hoy siempre). */
   modoFacil: ReadonlySet<string> | null;
+  /** Nombre del rol de la sesión, para lo que el servidor decide por rol y no por pestaña (`puedePedir`). Ausente = no se mira. */
+  rolNombre?: string | null;
 }
 
 export const SIN_FILTRO: ContextoPermiso = {

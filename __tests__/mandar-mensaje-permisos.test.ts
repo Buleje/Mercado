@@ -133,6 +133,23 @@ describe("Mandar mensaje: cada modo con el permiso de donde vino", () => {
     expect(destrabados).toBeGreaterThan(0);
   });
 
+  it("tienda_owner con el enlace ?vista=campanas no ve «Automático» (la API de campañas le da 403)", () => {
+    let probados = 0;
+    for (const { donde, ctx } of CONTEXTOS) {
+      if (!donde.includes("·tienda_owner·")) continue;
+      const dueno = { ...ctx, rolNombre: "tienda_owner" };
+      for (const sub of [null, "automatico"]) {
+        expect(modosPermitidos(dueno, sub, "campanas"), donde).not.toContain("automatico");
+      }
+      expect(modosPermitidos(dueno, null, "campanas").length, donde).toBeGreaterThan(0);
+      probados++;
+    }
+    expect(probados).toBeGreaterThan(0);
+    // El administrador sí lo conserva.
+    const admin = CONTEXTOS.find((c) => c.donde === "enterprise·admin·bodega·sin plantilla")!;
+    expect(modosPermitidos({ ...admin.ctx, rolNombre: "admin" }, null, "campanas")).toContain("automatico");
+  });
+
   it("sin ningún modo que pase (llegó por URL), van los dos", () => {
     const nadie: ContextoPermiso = { ...CONTEXTOS[0].ctx, rol: new Set<string>(), plan: new Set<string>() };
     expect(modosPermitidos(nadie, null)).toEqual(["uno-por-uno", "automatico"]);

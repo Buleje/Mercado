@@ -40,7 +40,10 @@ vi.mock("@/lib/queue", () => ({
   enqueueNotification: vi.fn(async () => undefined),
 }));
 vi.mock("@/lib/push-sender", () => ({ sendPushToPhone: vi.fn(async () => undefined) }));
-vi.mock("@/lib/ai/daily-insights", () => ({ generateDailyInsights: m.insights }));
+vi.mock("@/lib/ai/daily-insights", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/ai/daily-insights")>()),
+  generateDailyInsights: m.insights,
+}));
 vi.mock("@/lib/billing/wire-up/ai-metering-middleware", () => ({ reportAICall: vi.fn() }));
 vi.mock("@/lib/inventario/stock-minimo.server", () => ({ minimoGlobalDelNegocio: vi.fn(async () => 0) }));
 

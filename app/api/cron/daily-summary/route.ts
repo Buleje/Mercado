@@ -10,7 +10,7 @@ import { enqueueActivityLog } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
-import { generateDailyInsights } from "@/lib/ai/daily-insights";
+import { generateDailyInsights, soles } from "@/lib/ai/daily-insights";
 import { reportAICall } from "@/lib/billing/wire-up/ai-metering-middleware";
 import { sinDato } from "@/lib/errores/sin-dato";
 import { CajaPorDiaDB } from "@/lib/db/caja-por-dia.db";
@@ -167,6 +167,7 @@ export async function GET(req: NextRequest) {
             // stock puede ser null (ilimitado) — el insight espera number|undefined
             productosStockBajo: productosStockBajo.map((p) => ({ ...p, stock: p.stock ?? undefined })),
             diferenciaCaja,
+            cajasCerradas: cajasContadas(cuadreHoy),
             tenantName: tenant.name,
             fechaTexto,
           },
@@ -233,7 +234,7 @@ export async function GET(req: NextRequest) {
             : null,
           `📦 Stock bajo: ${productosStockBajo.length} productos`,
           // A las 16:07 el día va por la mitad: es la diferencia de las cajas que YA cerraron, no la del día.
-          diferenciaCaja !== null ? `💵 Cajas cerradas hoy (${cajasContadas(cuadreHoy)}): diferencia S/ ${diferenciaCaja.toFixed(2)}` : null,
+          diferenciaCaja !== null ? `💵 Cajas cerradas hoy (${cajasContadas(cuadreHoy)}): diferencia ${soles(diferenciaCaja)}` : null,
           top5Productos.length > 0 ? `🏆 Top: ${top5Productos.slice(0, 3).map((p, i) => `${i + 1}. ${p.nombre} (${p.cantidad})`).join(" | ")}` : null,
           productosStockBajo.length > 0 ? `⚠ Stock crítico: ${productosStockBajo.slice(0, 3).map(p => `${p.name}(${p.stock})`).join(", ")}` : null,
         ].filter((line): line is string => line !== null).join("\n");
