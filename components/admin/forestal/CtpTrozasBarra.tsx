@@ -47,12 +47,15 @@ export interface CtpTrozasBarraProps {
   guia: readonly string[];
   onGuia: (v: string[]) => void;
   guiasFaceta: FacetaOpcion[];
+  /** Especie y permiso ya están en los chips de Volumen: en el teléfono queda sólo la guía. */
+  filtrosDeAfuera?: boolean;
 }
 
 export default function CtpTrozasBarra({
   texto, onTexto, orden, onOrden, leyendo, piezasFiltradas, piezasTotales, m3Filtrados, onExportar,
   sinMedidas, onAnotarMedidas,
   especie, onEspecie, especiesFaceta, titulo, onTitulo, titulosFaceta, guia, onGuia, guiasFaceta,
+  filtrosDeAfuera = false,
 }: CtpTrozasBarraProps) {
   return (
     <>
@@ -118,18 +121,22 @@ export default function CtpTrozasBarra({
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5 border-b border-[var(--rule-soft)] px-3 py-2 md:hidden">
-        <CampoDeFiltro compacto label="Especie" value={especie} options={especiesFaceta} onChange={onEspecie} placeholder="Especie" textoVacio="Sin especies" />
-        <CampoDeFiltro
-          compacto
-          label="Permiso (título habilitante)"
-          value={titulo}
-          options={titulosFaceta}
-          etiqueta={(v) => (v === SIN_TITULO ? "Sin título" : v)}
-          onChange={onTitulo}
-          placeholder="Permiso"
-          textoVacio="Sin permisos"
-        />
+      <div className={`grid gap-1.5 border-b border-[var(--rule-soft)] px-3 py-2 md:hidden ${filtrosDeAfuera ? "grid-cols-1" : "grid-cols-3"}`}>
+        {!filtrosDeAfuera && (
+          <>
+            <CampoDeFiltro compacto label="Especie" value={especie} options={especiesFaceta} onChange={onEspecie} placeholder="Especie" textoVacio="Sin especies" />
+            <CampoDeFiltro
+              compacto
+              label="Permiso (título habilitante)"
+              value={titulo}
+              options={titulosFaceta}
+              etiqueta={(v) => (v === SIN_TITULO ? "Sin título" : v)}
+              onChange={onTitulo}
+              placeholder="Permiso"
+              textoVacio="Sin permisos"
+            />
+          </>
+        )}
         <CampoDeFiltro compacto label="Guía de ingreso" value={guia} options={guiasFaceta} onChange={onGuia} placeholder="Guía" textoVacio="Sin guías" />
       </div>
     </>

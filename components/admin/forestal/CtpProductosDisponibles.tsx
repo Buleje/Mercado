@@ -39,7 +39,6 @@ import {
   type FilaGrupo,
 } from "@/lib/forestal/productos-disponibles-resumen";
 import CtpApartados, { CtpApartadoPanel, useApartado, type Apartado } from "./ctp-apartados";
-import CtpAvisoAlcancePermiso from "./CtpAvisoAlcancePermiso";
 import ReprocesoSugeridoBanda from "./reproceso-sugerido-banda";
 import {
   filtrosEnTexto,
@@ -177,12 +176,7 @@ export default function CtpProductosDisponibles({
         {kpis.panel}
       </div>
 
-      {e.contratoFiltro && e.codigoPermisoActivo && (
-        <CtpAvisoAlcancePermiso
-          codigo={e.codigoPermisoActivo}
-          acotado={["los productos", "los indicadores", "los gráficos"]}
-        />
-      )}
+      {/* El permiso del libro lo dice el chip «Permiso» de Volumen, que la monta (19-10). */}
       {/* Lo que la distribución sugirió reprocesar: de qué corrida sale no se adivina (ADR-404 → 316). */}
       {e.sugerido && (
         <ReprocesoSugeridoBanda

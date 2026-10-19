@@ -207,6 +207,7 @@ export default function CtpTrozasView({ alcance }: { alcance?: AlcanceVolumen } 
         }}
         onApartar={setApartando}
         onAnotar={(ids, inicial) => setMedir({ ids, inicial })}
+        filtrosDeAfuera={Boolean(alcance)}
       />
 
       {ficha && (

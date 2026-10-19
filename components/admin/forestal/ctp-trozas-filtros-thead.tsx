@@ -93,12 +93,15 @@ export function celdasCabeceraTrozas(p: FiltrosCabeceraProps): Record<string, Re
     /* Tres preguntas del mismo eje: «esta guía», «este título habilitante» y
        «este proveedor». El de título ofrece además «Sin título declarado», que
        es como se encuentran las piezas sin origen legal. Lado a lado y no
-       apilados: apilados hacían esta columna el doble de alta que las demás. */
+       apilados: apilados hacían esta columna el doble de alta que las demás.
+       Sin `flex-wrap` (19-10): con él los tres caían en tres renglones (div de
+       134 px contra 42) y la fila de cabecera dejaba ~95 px vacíos sobre la
+       primera troza; así la columna se ensancha (la tabla ya scrollea). */
     guia: (
       <ThTroza
         {...th} campo="guia" col="guia"
         filtro={
-          <div className="flex flex-wrap gap-1">
+          <div className="flex gap-1">
             <span className="min-w-[6.5rem] flex-1">
               <FiltroColumnaMulti label="Guía" value={p.guia} options={p.guiasFaceta} onChange={p.onGuia} placeholder="Guía" />
             </span>

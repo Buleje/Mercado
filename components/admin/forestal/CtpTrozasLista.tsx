@@ -83,12 +83,14 @@ export interface CtpTrozasListaProps {
   onAnotar: (ids: string[], inicial?: string) => void;
   /** Mandar las elegidas a un lote de aserrío. */
   onApartar: (piezas: { id: string; codigo: string | null; especie: string | null }[]) => void;
+  /** Especie y permiso los pinta quien la monta (Volumen › Por troza): acá filtran igual, sin repetir su etiqueta. */
+  filtrosDeAfuera?: boolean;
 }
 
 export default function CtpTrozasLista({
   trozas, cargando, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro,
   especie, onEspecie, guia, onGuia, titulo, onTitulo,
-  onVerFicha, onApartar, onAnotar,
+  onVerFicha, onApartar, onAnotar, filtrosDeAfuera = false,
 }: CtpTrozasListaProps) {
   const [texto, setTexto] = useState("");
   const [orden, setOrden] = useState<OrdenColumnaTroza>(ORDEN_PRESETS.antiguedad);
@@ -174,7 +176,8 @@ export default function CtpTrozasLista({
   }, []);
 
   const limpiar = () => {
-    setTexto(""); onEspecie([]); onEstadoFiltro([]); onTramoFiltro([]); onGuia([]); onTitulo([]); extra.limpiar();
+    setTexto(""); onEstadoFiltro([]); onTramoFiltro([]); onGuia([]); extra.limpiar();
+    if (!filtrosDeAfuera) { onEspecie([]); onTitulo([]); }
   };
 
   const exportar = useCallback(() => exportarTrozasCsv(filtradas, hoy, canchas), [filtradas, hoy, canchas]);
@@ -194,6 +197,7 @@ export default function CtpTrozasLista({
         especie={especie} onEspecie={onEspecie} especiesFaceta={especiesFaceta}
         titulo={titulo} onTitulo={onTitulo} titulosFaceta={titulosFaceta}
         guia={guia} onGuia={onGuia} guiasFaceta={guiasFaceta}
+        filtrosDeAfuera={filtrosDeAfuera}
       />
       <CtpTrozasFiltrosMovil f={extra} estadoFiltro={estadoFiltro} onEstadoFiltro={onEstadoFiltro} estadosFaceta={estadosFaceta} />
 
@@ -201,9 +205,9 @@ export default function CtpTrozasLista({
         texto={texto} onTexto={setTexto}
         estadoFiltro={estadoFiltro} onEstadoFiltro={onEstadoFiltro}
         tramoFiltro={tramoFiltro} onTramoFiltro={onTramoFiltro}
-        especie={especie} onEspecie={onEspecie}
+        especie={filtrosDeAfuera ? [] : especie} onEspecie={onEspecie}
         guia={guia} onGuia={onGuia}
-        titulo={titulo} onTitulo={onTitulo}
+        titulo={filtrosDeAfuera ? [] : titulo} onTitulo={onTitulo}
         extra={extra}
         onLimpiar={limpiar}
       />

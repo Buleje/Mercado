@@ -9,11 +9,17 @@
  * Sólo aparece si hay entre qué elegir: con todo «sin permiso» (o uno solo) no
  * filtra nada. Con algo puesto se queda SIEMPRE: si esa madera se despachó
  * entera, «Todos» es la única salida de una pantalla en cero.
+ *
+ * Un solo lugar para el permiso (Brandon 19-10): con «Solo este permiso» del
+ * libro prendido, la fila de chips lo MUESTRA a él (`usePermisoDelLibro`) en
+ * vez de tener un permiso propio, y la franja de aviso de Volumen se fue a su ⓘ.
  */
 
-import { useState, type KeyboardEvent } from "react";
-import { Check, ChevronDown, Search, X } from "@buleje/design-system/icons";
+import { useCallback, useEffect, useState, type Dispatch, type KeyboardEvent, type SetStateAction } from "react";
+import { Check, ChevronDown, Filter, Search, X } from "@buleje/design-system/icons";
 import { usePopoverCabecera } from "@/components/admin/shared/filtros-columna";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useContratoActivo } from "@/contexts/contrato-activo-context";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { OpcionPermiso } from "@/lib/forestal/volumen-disponible";
 
@@ -25,6 +31,36 @@ const BUSCAR_DESDE = 7;
 export const muestraFiltro = (opciones: readonly OpcionPermiso[], elegidos: readonly string[]) =>
   opciones.length >= 2 || elegidos.length > 0;
 
+/** El permiso que fija el libro («Solo este permiso», ADR-431): el patio ya llega acotado del servidor. */
+export interface PermisoDelLibro {
+  codigo: string;
+  /** Apaga «Solo este permiso» para todo el libro, como «Ver todos» de la franja. */
+  onSoltar: () => void;
+}
+
+/**
+ * La regla de los dos filtros de permiso: el del libro manda. Al prenderse se
+ * sueltan los chips propios, y mientras está prendido no se puede poner otro
+ * (ni desde la tabla «Por permiso» ni desde la columna Título de «Por troza»):
+ * nunca dos permisos a la vez, uno a la vista y otro escondido.
+ */
+export function usePermisoDelLibro(
+  setPermisos: Dispatch<SetStateAction<string[]>>,
+): [PermisoDelLibro | null, Dispatch<SetStateAction<string[]>>] {
+  const { contratoFiltro, activo, setSoloEste } = useContratoActivo();
+  useEffect(() => {
+    if (contratoFiltro) setPermisos([]);
+  }, [contratoFiltro, setPermisos]);
+  const poner = useCallback<Dispatch<SetStateAction<string[]>>>(
+    (p) => {
+      if (!contratoFiltro) setPermisos(p);
+    },
+    [contratoFiltro, setPermisos],
+  );
+  const fijo = contratoFiltro && activo ? { codigo: activo.codigo, onSoltar: () => setSoloEste(false) } : null;
+  return [fijo, poner];
+}
+
 interface Props {
   titulo: string;
   /** «Todos» o «Todas». */
@@ -33,7 +69,11 @@ interface Props {
   elegidos: readonly string[];
   onAlternar: (clave: string) => void;
   onTodos: () => void;
+  /** El permiso del libro: si viene, es lo único que se muestra. */
+  fijo?: PermisoDelLibro | null;
 }
+
+const CHIP = "inline-flex h-12 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-bold transition-colors";
 
 const color = (activo: boolean) =>
   activo
@@ -41,12 +81,35 @@ const color = (activo: boolean) =>
     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]";
 
 export function FiltroDeVolumen(props: Props) {
+  if (props.fijo) return <DelLibro titulo={props.titulo} todos={props.todos} fijo={props.fijo} />;
   if (!muestraFiltro(props.opciones, props.elegidos)) return null;
   return props.opciones.length <= CHIPS_HASTA ? <Chips {...props} /> : <Desplegable {...props} />;
 }
 
+/** «Todos» y el permiso del libro, marcado: tocar cualquiera de los dos lo suelta. */
+function DelLibro({ titulo, todos, fijo }: { titulo: string; todos: string; fijo: PermisoDelLibro }) {
+  return (
+    <div role="group" aria-label={`Filtrar por ${titulo.toLowerCase()}`} className="flex flex-wrap items-center gap-1.5">
+      <span className="text-sm font-bold text-[var(--text-secondary)]">{titulo}</span>
+      <button type="button" onClick={fijo.onSoltar} aria-pressed={false} title="Ver todos: apaga «Solo este permiso» en todo el libro" className={`${CHIP} ${color(false)}`}>
+        {todos}
+      </button>
+      <button type="button" onClick={fijo.onSoltar} aria-pressed title={`${fijo.codigo}: lo fija «Solo este permiso» del libro. Tócalo para ver todos`} className={`${CHIP} ${color(true)}`}>
+        <Filter className="h-4 w-4 shrink-0" aria-hidden />
+        {fijo.codigo}
+      </button>
+      <InfoTip
+        title="Solo este permiso"
+        what="Lo eligió el libro, arriba: las pilas, el total, las tablas y «Por troza» muestran solo lo suyo."
+        affects="«Todos» lo apaga para todo el libro, igual que «Ver todos» de la franja; después puedes elegir otro permiso acá."
+        example="Con un permiso fijado arriba, «Por troza» lista solo sus trozas y la columna Título no ofrece otro."
+      />
+    </div>
+  );
+}
+
 function Chips({ titulo, todos, opciones, elegidos, onAlternar, onTodos }: Props) {
-  const chip = "inline-flex h-10 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-bold transition-colors";
+  const chip = CHIP;
   return (
     <div role="group" aria-label={`Filtrar por ${titulo.toLowerCase()}`} className="flex flex-wrap items-center gap-1.5">
       <span className="text-sm font-bold text-[var(--text-secondary)]">{titulo}</span>

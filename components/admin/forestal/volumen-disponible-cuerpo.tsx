@@ -35,7 +35,6 @@ import {
   type FuentesPedidas,
   type UnidadVolumen,
 } from "@/lib/forestal/volumen-disponible";
-import CtpAvisoAlcancePermiso from "./CtpAvisoAlcancePermiso";
 import CtpProductosDisponibles from "./CtpProductosDisponibles";
 import CtpTrozasDisponibles from "./CtpTrozasDisponibles";
 import CtpTrozasView from "./CtpTrozasView";
@@ -43,7 +42,7 @@ import { CabeceraDeVista } from "./ctp-cabecera-vista";
 import { useFuentesElegidas, useVolumenDisponible } from "./hooks/use-volumen-disponible";
 import { SelectorDePilas } from "./volumen-disponible-chips";
 import { VolumenCombinado } from "./volumen-disponible-combinado";
-import { FiltroDeVolumen, muestraFiltro } from "./volumen-disponible-filtro";
+import { FiltroDeVolumen, muestraFiltro, usePermisoDelLibro } from "./volumen-disponible-filtro";
 import { PilaLotes, PilaPorRecepcionar } from "./volumen-disponible-pilas";
 
 const HREF_REPROCESOS = "/admin?tab=ctp-libro-operaciones&vista=reprocesos";
@@ -69,7 +68,9 @@ export default function VolumenDisponibleCuerpo({
   porTroza?: boolean;
   onPorTroza?: (si: boolean) => void;
 }) {
-  const [permisos, setPermisos] = useState<string[]>([]);
+  const [permisos, setPermisosLibres] = useState<string[]>([]);
+  /* «Solo este permiso» del libro manda sobre los chips: ver usePermisoDelLibro. */
+  const [permisoLibro, setPermisos] = usePermisoDelLibro(setPermisosLibres);
   const [especies, setEspecies] = useState<string[]>([]);
   /* Un salto desde otra pantalla (la ficha de un paquete, una reserva vencida)
      busca algo puntual: arrastrar los filtros de antes lo escondería. */
@@ -115,7 +116,7 @@ export default function VolumenDisponibleCuerpo({
   );
   const alternarEn = (set: typeof setPermisos) => (clave: string) =>
     set((p) => (p.includes(clave) ? p.filter((x) => x !== clave) : [...p, clave]));
-  const alternarPermiso = useCallback((clave: string) => alternarEn(setPermisos)(clave), []);
+  const alternarPermiso = useCallback((clave: string) => alternarEn(setPermisos)(clave), [setPermisos]);
   const alternarEspecie = useCallback((clave: string) => alternarEn(setEspecies)(clave), []);
   const nombres = (elegidos: string[], opciones: typeof v.opcionesPermiso) =>
     elegidos.map((k) => opciones.find((o) => o.clave === k)?.etiqueta ?? k);
@@ -126,7 +127,7 @@ export default function VolumenDisponibleCuerpo({
 
   /* Permiso y especie filtran las cuatro pilas: van pegados a la tabla. */
   const hayFiltros =
-    muestraFiltro(v.opcionesPermiso, permisos) || muestraFiltro(v.opcionesEspecie, especies);
+    Boolean(permisoLibro) || muestraFiltro(v.opcionesPermiso, permisos) || muestraFiltro(v.opcionesEspecie, especies);
   const filtros = (
     <>
       <FiltroDeVolumen
@@ -136,6 +137,7 @@ export default function VolumenDisponibleCuerpo({
         elegidos={permisos}
         onAlternar={alternarPermiso}
         onTodos={() => setPermisos([])}
+        fijo={permisoLibro}
       />
       <FiltroDeVolumen
         titulo="Especie"
@@ -218,15 +220,10 @@ export default function VolumenDisponibleCuerpo({
         />
       </div>
 
-      {/* Trozas y Productos traen su propio aviso de alcance y sus errores. */}
+      {/* Trozas y Productos traen sus errores. El permiso del libro ya no tiene
+          franja propia: lo dice el chip «Permiso» con su ⓘ (19-10). */}
       {una !== "trozas" && una !== "productos" && (
         <>
-          {v.contratoFiltro && v.codigoPermisoActivo && (
-            <CtpAvisoAlcancePermiso
-              codigo={v.codigoPermisoActivo}
-              acotado={["las pilas", "el total", "las tablas"]}
-            />
-          )}
           {v.truncado && (
             <p role="status" className="flex items-center gap-2 rounded-2xl border-2 border-[var(--data-warning-500)] px-4 py-3 text-sm text-[var(--text-primary)]">
               <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-ink)]" aria-hidden />

@@ -27,7 +27,6 @@ import { formatNumber } from "@/lib/format";
 import { especiesDelPermiso } from "@/lib/forestal/trozas-disponibles";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpApartados, { CtpApartadoPanel, useApartado, type Apartado } from "./ctp-apartados";
-import CtpAvisoAlcancePermiso from "./CtpAvisoAlcancePermiso";
 import CtpPatioPorPermiso from "./CtpPatioPorPermiso";
 import { filtrosEnTexto, useTrozasDisponibles } from "./hooks/use-trozas-disponibles";
 import { useKpisTrozasDisponibles } from "./trozas-disponibles-kpis";
@@ -151,12 +150,7 @@ export default function CtpTrozasDisponibles({
         {kpis.panel}
       </div>
 
-      {e.contratoFiltro && e.codigoPermisoActivo && (
-        <CtpAvisoAlcancePermiso
-          codigo={e.codigoPermisoActivo}
-          acotado={["las trozas", "los indicadores", "los gráficos"]}
-        />
-      )}
+      {/* El permiso del libro lo dice el chip «Permiso» de Volumen, que la monta (19-10). */}
       {e.truncado && (
         <p
           role="status"
