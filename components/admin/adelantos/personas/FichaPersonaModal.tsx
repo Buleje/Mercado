@@ -37,6 +37,7 @@ import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
 import { Aviso, Kpi } from "./FichaPiezas";
 import SusAdelantos from "./SusAdelantos";
 import { formatDate } from "@/lib/format";
+import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
 
 const dia = (iso: string) => formatDate(iso);
 
@@ -282,7 +283,8 @@ export default function FichaPersonaModal({
       </div>
 
       {pestana === "cuenta" ? (
-        movimientos.length === 0 ? (
+        <div className="space-y-4">
+          {movimientos.length === 0 ? (
           <p className="py-6 text-center text-base text-[var(--text-tertiary)]">
             Esta persona no tiene movimientos todavía.
           </p>
@@ -333,7 +335,9 @@ export default function FichaPersonaModal({
               </tbody>
             </DataTable>
           </div>
-        )
+          )}
+          <LinkedDocumentsSection entity="tercero" id={persona.id} nombre={persona.nombre} estadoDeCuenta />
+        </div>
       ) : suyos.length === 0 ? (
         <p className="py-6 text-center text-base text-[var(--text-tertiary)]">Nunca le adelantaste plata.</p>
       ) : (

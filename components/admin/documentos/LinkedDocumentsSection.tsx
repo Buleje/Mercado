@@ -1,18 +1,23 @@
 "use client";
 
 /**
- * ADR-119 — Bloque "Documentos" para la ficha de un cliente o proveedor.
- * Lee los documentos vinculados (Document.customerId / supplierId) y permite
- * verlos/descargarlos sin salir de la ficha. Lado inverso del picker del modal.
+ * ADR-119 + ADR-502 — Bloque "Documentos" para la ficha de una entidad.
+ * Cliente/proveedor se enlazan por FK (`Document.customerId/supplierId`); las
+ * entidades del cableado único (tercero/permiso/colaborador/trámite) por TAG
+ * (`tagEntidad`, ver `lib/documentos/enlaces-entidad.ts`). Lado inverso del
+ * picker del modal: ver/descargar sin salir de la ficha, y —en un tercero—
+ * "Guardar estado de cuenta" archiva su cuenta corriente en PDF.
  */
 
-import { useState, useEffect } from "react";
-import { FileText, Download, Clock } from "@buleje/design-system/icons";
+import { useCallback, useEffect, useState } from "react";
+import { FileText, Download, Clock, Plus, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { getSignedDownloadUrl } from "@/hooks/use-documents";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { type TipoEntidad, tagEntidad } from "@/lib/documentos/enlaces-entidad";
 import type { DbDocument } from "@/lib/types/documents";
 
-type Entity = "customer" | "supplier";
+type Entity = "customer" | "supplier" | TipoEntidad;
 
 function fmtBytes(b: number): string {
   if (b < 1024) return `${b} B`;
@@ -25,18 +30,63 @@ function daysUntil(iso: string | null): number | null {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
 }
 
-export function LinkedDocumentsSection({ entity, id }: { entity: Entity; id: string }) {
+/** La URL con la que se listan los documentos de la entidad. */
+function urlDeDocumentos(entity: Entity, id: string): string {
+  if (entity === "customer") return `/api/admin/documents?customerId=${encodeURIComponent(id)}`;
+  if (entity === "supplier") return `/api/admin/documents?supplierId=${encodeURIComponent(id)}`;
+  return `/api/admin/documents?tags=${encodeURIComponent(tagEntidad(entity, id))}`;
+}
+
+export function LinkedDocumentsSection({
+  entity,
+  id,
+  nombre,
+  estadoDeCuenta = false,
+}: {
+  entity: Entity;
+  id: string;
+  /** Nombre de la entidad (para archivar su estado de cuenta). */
+  nombre?: string;
+  /** En un tercero: muestra "Guardar estado de cuenta" (POST a /estado-cuenta). */
+  estadoDeCuenta?: boolean;
+}) {
   const [docs, setDocs] = useState<DbDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [guardando, setGuardando] = useState(false);
+
+  const cargar = useCallback(async () => {
+    try {
+      const r = await fetch(urlDeDocumentos(entity, id), { credentials: "include" });
+      const d = r.ok ? await r.json() : { documents: [] };
+      setDocs(d.documents ?? []);
+    } catch {
+      /* la ficha sigue funcionando sin documentos */
+    } finally {
+      setLoading(false);
+    }
+  }, [entity, id]);
 
   useEffect(() => {
-    const param = entity === "customer" ? "customerId" : "supplierId";
-    fetch(`/api/admin/documents?${param}=${encodeURIComponent(id)}`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : { documents: [] }))
-      .then((d) => setDocs(d.documents ?? []))
-      .catch(() => {/* ficha sigue funcionando sin documentos */})
-      .finally(() => setLoading(false));
-  }, [entity, id]);
+    void cargar();
+  }, [cargar]);
+
+  async function guardarEstadoDeCuenta() {
+    if (guardando || !nombre) return;
+    setGuardando(true);
+    try {
+      const r = await fetch("/api/admin/documents/estado-cuenta", {
+        method: "POST",
+        credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ terceroId: id, nombre }),
+      });
+      if (r.ok) await cargar();
+    } catch {
+      /* la ficha sigue; el usuario puede reintentar */
+    } finally {
+      setGuardando(false);
+    }
+  }
 
   async function download(doc: DbDocument) {
     try {
@@ -54,24 +104,39 @@ export function LinkedDocumentsSection({ entity, id }: { entity: Entity; id: str
     }
   }
 
-  // No mostramos el bloque si no hay nada vinculado (evita ruido en la ficha).
-  if (!loading && docs.length === 0) return null;
+  // Sin documentos y sin acción: no mostramos el bloque (evita ruido en la ficha).
+  if (!loading && docs.length === 0 && !estadoDeCuenta) return null;
 
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
-      <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
-        <FileText className="h-4 w-4 text-[var(--accent)]" /> Documentos
-        {docs.length > 0 && (
-          <span className="text-[length:var(--ts-2xs,11px)] tabular-nums font-bold px-1.5 py-0.5 rounded-md bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
-            {docs.length}
-          </span>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+          <FileText className="h-4 w-4 text-[var(--accent)]" /> Documentos
+          {docs.length > 0 && (
+            <span className="text-[length:var(--ts-2xs,11px)] tabular-nums font-bold px-1.5 py-0.5 rounded-md bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+              {docs.length}
+            </span>
+          )}
+        </p>
+        {estadoDeCuenta && (
+          <button
+            type="button"
+            onClick={guardarEstadoDeCuenta}
+            disabled={guardando || !nombre}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+          >
+            {guardando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+            Guardar estado de cuenta
+          </button>
         )}
-      </p>
+      </div>
 
       {loading ? (
         <div className="animate-pulse space-y-2">
           {[1, 2].map((i) => <div key={i} className="h-9 bg-[var(--surface-sunken)] rounded-lg" />)}
         </div>
+      ) : docs.length === 0 ? (
+        <p className="text-xs text-[var(--text-tertiary)]">Aún no hay documentos archivados. «Guardar estado de cuenta» crea el primero.</p>
       ) : (
         <ul className="space-y-2">
           {docs.map((d) => {
