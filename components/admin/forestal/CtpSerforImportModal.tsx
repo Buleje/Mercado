@@ -26,7 +26,7 @@
  * `serfor-import/use-enviar-libro.ts` (cómo se manda).
  */
 
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AlertTriangle, FileText, Upload } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -37,7 +37,7 @@ import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { armarCadena, mapaCodigoAGuia } from "@/lib/forestal/ctp-cadena-import";
 import { llevaPermiso, revisarEntreArchivos } from "@/lib/forestal/ctp-import-entre-archivos";
-import { armarReporte } from "@/lib/forestal/ctp-reporte-import";
+import { armarReporte, type ReporteImport } from "@/lib/forestal/ctp-reporte-import";
 import AsignarPermisoDeArchivo from "./serfor-import/AsignarPermisoDeArchivo";
 import AvanceDelEnvio from "./serfor-import/AvanceDelEnvio";
 import BajarPlantilla from "./serfor-import/BajarPlantilla";
@@ -46,7 +46,7 @@ import LoQueDeclaraElLibro from "./serfor-import/LoQueDeclaraElLibro";
 import ReporteDeImport from "./serfor-import/ReporteDeImport";
 import RevisionDelLibro from "./serfor-import/RevisionDelLibro";
 import { etiquetaDe, useArchivosDelLibro, type ArchivoCargado } from "./serfor-import/use-archivos-del-libro";
-import { useEnviarLibro } from "./serfor-import/use-enviar-libro";
+import { useEnviarLibro, type ResultadoDeArchivo } from "./serfor-import/use-enviar-libro";
 import ZonaDelLibro from "./serfor-import/ZonaDelLibro";
 
 const MODOS = [
@@ -54,10 +54,46 @@ const MODOS = [
   ["secciones", "Un archivo por sección", "Cada sección en su caja, con su permiso"],
 ] as const;
 
-export default function CtpSerforImportModal({ onClose, onImportado }: { onClose: () => void; onImportado?: () => void }) {
-  const envio = useEnviarLibro({ onImportado });
+/** Lo que el modal le deja al padre al cerrarse tras importar: con esto se avisa y se reabre el mismo reporte. */
+export interface ImportadoDelLibro {
+  reporte: ReporteImport;
+  nombreArchivo: string | null;
+}
+
+export default function CtpSerforImportModal({
+  onClose,
+  onImportado,
+  alImportar,
+  reporteInicial,
+}: {
+  onClose: () => void;
+  /** Recarga los datos del libro (se llama apenas entra algo). */
+  onImportado?: () => void;
+  /** Importó filas: el padre avisa y guarda el reporte; el modal se cierra solo. */
+  alImportar?: (r: ImportadoDelLibro) => void;
+  /** Reabierto desde «Ver detalle»: muestra el reporte de la importación anterior. */
+  reporteInicial?: ImportadoDelLibro | null;
+}) {
+  const [guardado, setGuardado] = useState<ImportadoDelLibro | null>(reporteInicial ?? null);
+  /* Los datos del reporte se leen al terminar el envío, no al crear el hook: van por ref. */
+  const paraReporte = useRef<(r: ResultadoDeArchivo[]) => ImportadoDelLibro>(() => ({ reporte: armarReporte([]), nombreArchivo: null }));
+  const envio = useEnviarLibro({
+    onImportado,
+    alTerminar: (mode, resultados) => {
+      if (mode !== "commit" || !alImportar) return;
+      const hecho = paraReporte.current(resultados);
+      if (!resultados.some((r) => r.respuesta.resumen.creados > 0)) return; // si todo falló, el reporte queda a la vista
+      alImportar(hecho);
+      onClose();
+    },
+  });
   /* Todo cambio de lo cargado invalida el reporte y el error anteriores. */
-  const libro = useArchivosDelLibro({ alCambiar: envio.limpiar });
+  const libro = useArchivosDelLibro({
+    alCambiar: () => {
+      envio.limpiar();
+      setGuardado(null);
+    },
+  });
   /* Una sola lista de permisos para todos los selectores: crear uno en un
      archivo lo deja elegible en los demás sin volver a pedirlo. */
   const catalogo = usePermisosForestal();
@@ -95,6 +131,13 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
       ),
     [ordenados, permisoDe, catalogo.contratos],
   );
+
+  const incompletas = ordenados.flatMap((a) =>
+    a.seccion.parseadas
+      .filter((f) => f.problemas.length > 0)
+      .map((f) => ({ formato: a.formato, fila: f.fila, motivos: f.problemas, archivo: etiquetaDe(a) })),
+  );
+  paraReporte.current = (res) => ({ reporte: armarReporte(res, { incompletas, avisosDeCadena }), nombreArchivo });
 
   const totalListas = ordenados.reduce((s, a) => s + filasQueEntran(a.formato, a.seccion.parseadas).length, 0);
 
@@ -258,21 +301,16 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
         />
 
         {/* ── El reporte: qué entró, qué quedó afuera y qué hacer ─────── */}
-        {envio.resultados && (
+        {envio.resultados ? (
           <ReporteDeImport
-            reporte={armarReporte(envio.resultados, {
-              incompletas: ordenados.flatMap((a) =>
-                a.seccion.parseadas
-                  .filter((f) => f.problemas.length > 0)
-                  .map((f) => ({ formato: a.formato, fila: f.fila, motivos: f.problemas, archivo: etiquetaDe(a) })),
-              ),
-              avisosDeCadena,
-            })}
+            reporte={armarReporte(envio.resultados, { incompletas, avisosDeCadena })}
             nombreArchivo={nombreArchivo}
             escrito={envio.resultados.some((r) => r.respuesta.resumen.creados > 0)}
             commit={envio.modoResultados === "commit"}
           />
-        )}
+        ) : guardado ? (
+          <ReporteDeImport reporte={guardado.reporte} nombreArchivo={guardado.nombreArchivo} escrito commit />
+        ) : null}
       </div>
     </AdminModal>
   );

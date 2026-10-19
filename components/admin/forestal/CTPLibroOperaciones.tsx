@@ -93,7 +93,10 @@ import CtpFletesView from "./CtpFletesView";
 import CtpPatioBandeja from "./CtpPatioBandeja";
 import { usePatioCola } from "@/hooks/use-patio-cola";
 import CtpEudrPanel from "./CtpEudrPanel";
-import CtpSerforImportModal from "./CtpSerforImportModal";
+import CtpSerforImportModal, { type ImportadoDelLibro } from "./CtpSerforImportModal";
+import { toast } from "sonner";
+import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import { textoDelAviso } from "@/lib/forestal/ctp-reporte-import";
 import VaciarLibroModal from "./VaciarLibroModal";
 import CtpTrazaRadar from "./CtpTrazaRadar";
 import CtpPlantaView from "./CtpPlantaView";
@@ -322,6 +325,9 @@ export default function CTPLibroOperaciones() {
   const [showReportes, setShowReportes] = useState(false);
   // Remonta la vista de Ingresos tras importar → re-fetch de la lista.
   const [ingresosKey, setIngresosKey] = useState(0);
+  /* El reporte de la última importación: sobrevive al cierre del modal para el «Ver detalle» del aviso. */
+  const [ultimaImportacion, setUltimaImportacion] = useState<ImportadoDelLibro | null>(null);
+  const [reabrirReporte, setReabrirReporte] = useState(false);
   /** Buscador de guías del libro (atajo `b`): "¿qué pasó con esta GTF?". */
   const [buscarGtf, setBuscarGtf] = useState(false);
   /** Ficha abierta desde el buscador, sin salir de la vista donde estabas. */
@@ -706,6 +712,7 @@ export default function CTPLibroOperaciones() {
         )}
         {view === "lotes" && (
           <CtpLotesView
+            key={`CtpLotesView-${ingresosKey}`}
             onIr={irA}
             pedido={pedidoSub?.vista === "lotes" ? pedidoSub : null}
             loteInicial={loteHistoria}
@@ -726,6 +733,7 @@ export default function CTPLibroOperaciones() {
         )}
         {view === "consumos" && (
           <CtpConsumosView
+            key={`CtpConsumosView-${ingresosKey}`}
             period={period}
             onIr={irA}
             presetLoteId={loteACargar?.id ?? null}
@@ -752,6 +760,7 @@ export default function CTPLibroOperaciones() {
         )}
         {view === "disponibles" && (
           <CtpVolumenDisponible
+            key={`CtpVolumenDisponible-${ingresosKey}`}
             period={period}
             onIr={irA}
             fuentesPedidas={fuentesPedidas}
@@ -763,7 +772,7 @@ export default function CTPLibroOperaciones() {
             }}
           />
         )}
-        {view === "reprocesos" && <CtpReprocesosDeclarados period={period} onIr={irA} />}
+        {view === "reprocesos" && <CtpReprocesosDeclarados key={`CtpReprocesosDeclarados-${ingresosKey}`} period={period} onIr={irA} />}
         {view === "despacho" && (
           <CtpDespachoPestanas
             period={period}
@@ -780,10 +789,11 @@ export default function CTPLibroOperaciones() {
             }
           />
         )}
-        {view === "radar" && <CtpTrazaRadar period={period} onIr={irA} />}
-        {view === "planta" && <CtpPlantaView period={period} />}
+        {view === "radar" && <CtpTrazaRadar key={`CtpTrazaRadar-${ingresosKey}`} period={period} onIr={irA} />}
+        {view === "planta" && <CtpPlantaView key={`CtpPlantaView-${ingresosKey}`} period={period} />}
         {view === "saldos" && (
           <CtpSaldosView
+            key={`saldos-${ingresosKey}`}
             period={period}
             // Cada excepción de existencias sabe en qué pestaña se corrige.
             onIr={irA}
@@ -798,6 +808,7 @@ export default function CTPLibroOperaciones() {
         )}
         {view === "tablero" && (
           <CtpTableroPestanas
+            key={`tablero-${ingresosKey}`}
             period={period}
             onIr={irA}
             pedido={pedidoSub?.vista === "tablero" ? pedidoSub : null}
@@ -848,8 +859,36 @@ export default function CTPLibroOperaciones() {
 
       {showSerforImport && (
         <CtpSerforImportModal
-          onClose={() => setShowSerforImport(false)}
-          onImportado={() => setIngresosKey((k) => k + 1)}
+          onClose={() => {
+            setShowSerforImport(false);
+            setReabrirReporte(false);
+          }}
+          onImportado={() => {
+            /* El caché de 8 s de ctpGet no puede servir lo de antes de importar: se borra,
+               las vistas se remontan (key) y los contadores de pestañas se vuelven a pedir. */
+            invalidarCtp();
+            setIngresosKey((k) => k + 1);
+            pendientes.recargar();
+          }}
+          reporteInicial={reabrirReporte ? ultimaImportacion : null}
+          alImportar={(hecho) => {
+            setUltimaImportacion(hecho);
+            const { texto, conDetalle } = textoDelAviso(hecho.reporte);
+            if (!conDetalle) {
+              toast.success(texto);
+              return;
+            }
+            toast.warning(texto, {
+              duration: 12000,
+              action: {
+                label: "Ver detalle",
+                onClick: () => {
+                  setReabrirReporte(true);
+                  setShowSerforImport(true);
+                },
+              },
+            });
+          }}
         />
       )}
     </>

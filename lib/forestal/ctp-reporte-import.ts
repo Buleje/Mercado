@@ -257,6 +257,56 @@ export function tituloDelReporte(r: ReporteImport): string {
 }
 
 /**
+ * El aviso que queda al cerrarse el modal tras importar (Brandon 19-10):
+ * «Importado con éxito · 40 filas en 2 archivos», y si algo quedó afuera lo
+ * dice en la misma línea. `conDetalle` = hay algo que mirar → el aviso lleva
+ * «Ver detalle», que reabre el modal con este mismo reporte.
+ */
+/**
+ * Qué es un «registro creado» en cada sección, en palabras del aserradero: el
+ * servidor crea una guía por GTF (con todas sus trozas), una corrida por
+ * paquete… «1 fila» para un archivo de 3 trozas de una guía confundía (19-10).
+ */
+const UNIDAD_CREADA: Record<FormatoCtp, [string, string]> = {
+  ingresos: ["guía", "guías"],
+  inventarioTrozas: ["guía", "guías"],
+  inventarioAserrada: ["paquete", "paquetes"],
+  produccion: ["corrida", "corridas"],
+  consumos: ["consumo", "consumos"],
+  retrozado: ["retrozado", "retrozados"],
+  salidas: ["despacho", "despachos"],
+};
+
+export function textoDelAviso(r: ReporteImport): { texto: string; conDetalle: boolean } {
+  const n = (c: number, uno: string, varios: string) => `${c} ${c === 1 ? uno : varios}`;
+  const entraron = r.porArchivo.filter((a) => a.creados > 0).length;
+  const caidos = r.porArchivo.filter((a) => a.error).length;
+  const conflictos = r.porArchivo.reduce((s, a) => s + a.conflictos.length, 0);
+  /* Por unidad, sumando las secciones que comparten una (Sección 1 + patio = guías). */
+  const porUnidad = new Map<string, { c: number; u: [string, string] }>();
+  for (const { formato, cantidad } of r.creados) {
+    const u = UNIDAD_CREADA[formato];
+    const prev = porUnidad.get(u[1]);
+    porUnidad.set(u[1], { c: (prev?.c ?? 0) + cantidad, u });
+  }
+  const creado = [...porUnidad.values()].filter((x) => x.c > 0).map((x) => n(x.c, x.u[0], x.u[1])).join(" y ");
+  const partes = [
+    r.totalCreados > 0 && creado
+      ? `${creado}${entraron > 0 ? ` en ${n(entraron, "archivo", "archivos")}` : ""}`
+      : null,
+  ].filter((x): x is string => x !== null);
+  if (r.totalConError > 0) partes.push(n(r.totalConError, "fila quedó afuera", "filas quedaron afuera"));
+  if (caidos > 0) partes.push(n(caidos, "archivo falló", "archivos fallaron"));
+  if (conflictos > 0) partes.push(n(conflictos, "fila con otro permiso", "filas con otro permiso"));
+  const conDetalle = !r.limpio;
+  if (conDetalle && r.totalConError === 0 && caidos === 0 && conflictos === 0) {
+    const avisos = r.avisosDeFila.length + r.avisosDeCadena.length + r.incompletas.length;
+    if (avisos > 0) partes.push(n(avisos, "aviso para revisar", "avisos para revisar"));
+  }
+  return { texto: `${conDetalle && partes.length > 1 ? "Importado" : "Importado con éxito"} · ${partes.join(" · ")}`, conDetalle };
+}
+
+/**
  * El reporte como CSV, para abrirlo al lado del Excel.
  *
  * Separador `;` porque el Excel es-PE usa la coma como decimal: con `,` las

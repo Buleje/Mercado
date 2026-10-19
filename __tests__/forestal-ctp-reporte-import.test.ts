@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarReporte, causaDe, reporteACsv, tituloDelReporte } from "@/lib/forestal/ctp-reporte-import";
+import { armarReporte, causaDe, reporteACsv, textoDelAviso, tituloDelReporte } from "@/lib/forestal/ctp-reporte-import";
 import type { FormatoCtp } from "@/lib/forestal/ctp-formatos-serfor";
 
 const sec = (formato: FormatoCtp, filas: { fila?: number; codigo: string; accion: string; mensaje: string }[]) => ({
@@ -122,5 +122,43 @@ describe("reporteACsv", () => {
     );
     expect(csv).toContain("Falta Cantidad");
     expect(csv).toContain("Despacha sin producir");
+  });
+});
+
+describe("textoDelAviso · el aviso al cerrarse el modal", () => {
+  const ok = (archivo: string, n: number) => ({
+    ...sec("ingresos", Array.from({ length: n }, (_, i) => ({ fila: i + 2, codigo: `T${i}`, accion: "creado", mensaje: "" }))),
+    archivo,
+  });
+
+  it("todo bien: éxito, filas y archivos en plural, sin detalle", () => {
+    const a = textoDelAviso(armarReporte([ok("a.xlsx", 30), ok("b.xlsx", 10)]));
+    expect(a).toEqual({ texto: "Importado con éxito · 40 guías en 2 archivos", conDetalle: false });
+  });
+
+  it("cuenta en la unidad de cada sección: guías y paquetes", () => {
+    const r = armarReporte([
+      ok("a.xlsx", 2),
+      { ...sec("inventarioAserrada", [{ fila: 2, codigo: "P1", accion: "creado", mensaje: "" }, { fila: 3, codigo: "P2", accion: "creado", mensaje: "" }, { fila: 4, codigo: "P3", accion: "creado", mensaje: "" }]), archivo: "b.xlsx" },
+    ]);
+    expect(textoDelAviso(r).texto).toBe("Importado con éxito · 2 guías y 3 paquetes en 2 archivos");
+  });
+
+  it("singular: 1 guía en 1 archivo", () => {
+    expect(textoDelAviso(armarReporte([ok("a.xlsx", 1)])).texto).toBe("Importado con éxito · 1 guía en 1 archivo");
+  });
+
+  it("algo quedó afuera: lo dice en la misma línea y ofrece el detalle", () => {
+    const r = armarReporte([
+      {
+        ...sec("ingresos", [
+          { fila: 2, codigo: "A", accion: "creado", mensaje: "" },
+          { fila: 3, codigo: "B", accion: "error", mensaje: "Falló algo rarísimo" },
+          { fila: 4, codigo: "C", accion: "error", mensaje: "Falló algo rarísimo" },
+        ]),
+        archivo: "a.xlsx",
+      },
+    ]);
+    expect(textoDelAviso(r)).toEqual({ texto: "Importado · 1 guía en 1 archivo · 2 filas quedaron afuera", conDetalle: true });
   });
 });

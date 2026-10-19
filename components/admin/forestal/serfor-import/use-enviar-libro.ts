@@ -91,7 +91,14 @@ export interface ContextoDelEnvio {
   mapaIngresos: Map<string, string>;
 }
 
-export function useEnviarLibro({ onImportado }: { onImportado?: () => void } = {}) {
+export function useEnviarLibro({
+  onImportado,
+  alTerminar,
+}: {
+  onImportado?: () => void;
+  /** Al terminar un envío, con todos sus resultados (el modal decide si se cierra y qué avisa). */
+  alTerminar?: (mode: "preview" | "commit", resultados: ResultadoDeArchivo[]) => void;
+} = {}) {
   const [cargando, setCargando] = useState(false);
   const [modoEnvio, setModoEnvio] = useState<"preview" | "commit" | null>(null);
   const [paso, setPaso] = useState<string | null>(null);
@@ -196,6 +203,7 @@ export function useEnviarLibro({ onImportado }: { onImportado?: () => void } = {
         setResultados(acumulado);
         setModoResultados(mode);
         if (mode === "commit" && acumulado.some((r) => !r.error)) onImportado?.();
+        alTerminar?.(mode, acumulado);
       } finally {
         setCargando(false);
         setPaso(null);
@@ -204,7 +212,7 @@ export function useEnviarLibro({ onImportado }: { onImportado?: () => void } = {
         setAvance(null);
       }
     },
-    [onImportado],
+    [onImportado, alTerminar],
   );
 
   /** Cómo le fue a un archivo en el último envío: ✓ sólo si se importó de verdad. */
