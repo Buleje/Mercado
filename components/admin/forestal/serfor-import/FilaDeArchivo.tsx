@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 import { CheckCircle, FileText, X, XCircle } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import { etiquetaDe, type ArchivoCargado } from "./use-archivos-del-libro";
+import { filasQueEntran } from "@/lib/forestal/ctp-serfor-a-libro";
 
 export type EstadoDeEnvio = "ok" | "error" | null;
 
@@ -18,18 +19,21 @@ export default function FilaDeArchivo({
   estado,
   onQuitar,
   deshabilitado,
+  linea,
   children,
 }: {
   archivo: ArchivoCargado;
   estado: EstadoDeEnvio;
   onQuitar: (id: string) => void;
   deshabilitado?: boolean;
+  /** Una línea corta de lo que trae (la Rolliza: trozas · m³ · pt). */
+  linea?: string | null;
   /** El selector de permiso, si la sección lo lleva. */
   children?: ReactNode;
 }) {
   const nombre = etiquetaDe(archivo);
-  const listas = archivo.seccion.parseadas.filter((p) => p.problemas.length === 0).length;
-  const malas = archivo.seccion.parseadas.length - listas;
+  const listas = filasQueEntran(archivo.formato, archivo.seccion.parseadas).length;
+  const malas = archivo.seccion.parseadas.filter((p) => p.problemas.length > 0).length;
   const Icono = estado === "ok" ? CheckCircle : estado === "error" ? XCircle : FileText;
 
   return (
@@ -62,6 +66,7 @@ export default function FilaDeArchivo({
               <span className="font-semibold text-[var(--data-warning)]"> · faltan columnas: {archivo.faltantes.join(", ")}</span>
             )}
           </span>
+          {linea && <span className="block text-sm font-semibold tabular-nums text-[var(--text-secondary)]">{linea}</span>}
         </span>
         {!deshabilitado && (
           <button

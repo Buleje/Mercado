@@ -72,6 +72,16 @@ export function estaEnStock(f: FilaParseada): boolean {
   return !e || /stock|disponible/.test(e);
 }
 
+/**
+ * Las filas que de verdad se envían: sin problemas y, en el inventario de patio,
+ * «En Stock». Una sola regla para el botón «Importar N filas», la línea de cada
+ * archivo y el resumen por especie (19-10: el botón contaba la troza despachada
+ * y decía 6 mientras el resumen sumaba 5).
+ */
+export function filasQueEntran(formato: FormatoCtp, parseadas: readonly FilaParseada[]): FilaParseada[] {
+  return parseadas.filter((f) => f.problemas.length === 0 && (formato !== "inventarioTrozas" || estaEnStock(f)));
+}
+
 /** Los contratos de una guía, sin repetir y en el orden en que aparecen. */
 export function contratosDeLaGuia(trozas: readonly FilaParseada[]): string[] {
   const vistos = new Map<string, string>();

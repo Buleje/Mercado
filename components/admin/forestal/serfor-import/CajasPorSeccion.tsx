@@ -25,6 +25,7 @@ import {
   type FormatoCtp,
 } from "@/lib/forestal/ctp-formatos-serfor";
 import type { ArchivoCargado } from "./use-archivos-del-libro";
+import ResumenRollizaPatio, { lineaDeRolliza } from "./ResumenRollizaPatio";
 import FilaDeArchivo, { type EstadoDeEnvio } from "./FilaDeArchivo";
 
 /** Qué trae cada sección, en una línea, para quien no se acuerda cuál es cuál. */
@@ -149,12 +150,14 @@ function Caja({
                 setError(null);
               }}
               deshabilitado={deshabilitado}
+              linea={formato === "inventarioTrozas" ? lineaDeRolliza(a) : null}
             >
               {permiso?.(a, cargados)}
             </FilaDeArchivo>
           ))}
         </ul>
       )}
+      {hay && formato === "inventarioTrozas" && <ResumenRollizaPatio archivos={cargados} />}
 
       <button
         type="button"

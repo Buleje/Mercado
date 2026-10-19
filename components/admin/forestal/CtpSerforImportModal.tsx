@@ -30,6 +30,7 @@ import { useMemo } from "react";
 import { AlertTriangle, FileText, Upload } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { filasQueEntran } from "@/lib/forestal/ctp-serfor-a-libro";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
 import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
@@ -95,7 +96,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
     [ordenados, permisoDe, catalogo.contratos],
   );
 
-  const totalListas = ordenados.reduce((s, a) => s + a.seccion.parseadas.filter((f) => f.problemas.length === 0).length, 0);
+  const totalListas = ordenados.reduce((s, a) => s + filasQueEntran(a.formato, a.seccion.parseadas).length, 0);
 
   const enviar = (mode: "preview" | "commit") =>
     void envio.enviar(mode, { archivos: ordenados, permisoDe, filasDe, mapaIngresos: mapaCodigoAGuia(filasDe("ingresos")) });
