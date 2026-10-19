@@ -37,7 +37,6 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 const ABCAnalysisTab = dynamic(() => import("@/components/admin/ABCAnalysisTab"), { loading: S });
 const BCGMatrixTab = dynamic(() => import("@/components/admin/BCGMatrixTab"), { loading: S });
 const BasketAnalysisTab = dynamic(() => import("@/components/admin/BasketAnalysisTab"), { loading: S });
-const PeakHoursTab = dynamic(() => import("@/components/admin/PeakHoursTab"), { loading: S });
 const SalesTrendChart = dynamic(() => import("@/components/admin/analytics/SalesTrendChart"), { loading: S });
 const VentasHeatmap = dynamic(() => import("@/components/admin/analytics/VentasHeatmap"), { loading: S });
 const MarginWaterfallChart = dynamic(() => import("@/components/admin/analytics/MarginWaterfallChart"), { loading: S });
@@ -63,9 +62,10 @@ function graficosDe(seccion: Seccion, vuelta: number, periodo: PeriodoMetricas):
     case "ventas":
       return [
         { clave: "tendencia", rotulo: "Tendencia", conPeriodo: true, ayuda: "Lo vendido cada día, con la media de 7 días y hacia dónde va si sigues igual.", contenido: <div className="min-h-80"><SalesTrendChart period={periodo} /></div> },
-        { clave: "calor", rotulo: "Mapa de calor", conPeriodo: true, ayuda: "Qué día y a qué hora te compran más: el cuadro más oscuro es tu hora fuerte.", contenido: <div className="min-h-70"><VentasHeatmap period={periodo} /></div> },
-        { clave: "hora", rotulo: "Por hora", conPeriodo: true, ayuda: "Cuántas ventas haces en cada hora del día, para saber cuándo reforzar la atención.", contenido: <div className="min-h-70"><PeakHoursTab period={periodo} vista="horas" /></div> },
-        { clave: "dia", rotulo: "Por día", conPeriodo: true, ayuda: "Cuántas ventas haces cada día de la semana.", contenido: <div className="min-h-70"><PeakHoursTab period={periodo} vista="dias" /></div> },
+        // El «Mapa de calor» (hora × día) ya contiene «Por hora» y «Por día», que
+        // eran sus dos proyecciones: se quitan para no repetir la misma pregunta
+        // tres veces (auditoría del panel, ADR-nada; directiva «fusiona en la más completa»).
+        { clave: "calor", rotulo: "Mapa de calor", conPeriodo: true, ayuda: "Qué día y a qué hora te compran más: el cuadro más oscuro es tu hora fuerte; mira la fila (hora) o la columna (día) para el detalle.", contenido: <div className="min-h-70"><VentasHeatmap period={periodo} /></div> },
         { clave: "alertas", rotulo: "Alertas", ayuda: "Días con ventas muy por encima o por debajo de lo normal. Necesita al menos 10 días con ventas.", contenido: <AnomalyDetectorWrapper refreshKey={vuelta} /> },
       ];
     case "productos":
