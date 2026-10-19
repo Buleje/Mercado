@@ -4,8 +4,10 @@ import { SalesDB } from "@/lib/db/sales.db";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { BatchesDB } from "@/lib/db/batches.db";
 import { KitsDB } from "@/lib/db/kits.db";
+import { SettingsDB } from "@/lib/db/settings.db";
 import { limaDateKey } from "@/lib/utils";
 import type { ProductoPrecio } from "@/lib/admin/comandos-ia/precios";
+import { leerMargenesRebajas, type MargenesRebajas } from "./margenes-rebajas";
 import { armarRebajas, elegirLoteQueVence, REBAJA_VENCE_DIAS, REBAJA_VENTANA_DIAS, type DatosRebaja, type ListaRebajas, type OpcionesRebaja } from "./rebajas";
 
 /**
@@ -40,6 +42,14 @@ export async function leerDatosDeRebaja(
   const hoy = limaDateKey();
   const vence = elegirLoteQueVence([...vencidos, ...porVencer], hoy, new Set(ids));
   return { productos, vendidas, vence, hoy, dias };
+}
+
+/**
+ * El piso sobre el costo y el margen mínimo que el negocio puso en Ajustes
+ * (`featureFlagsJson.margenesRebajas`); sin nada guardado, 5 % y 15 %.
+ */
+export async function leerMargenesDelNegocio(tenantId: string): Promise<MargenesRebajas> {
+  return leerMargenesRebajas(await SettingsDB.getFeatureFlags(tenantId));
 }
 
 /** La lista de rebajas del negocio entero (productos activos). */

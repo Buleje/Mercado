@@ -9,6 +9,7 @@ import { topeCajeroParaGuardar } from "@/lib/pos/descuento-cajero";
 import { button } from "@/components/ui-system/button-variants";
 import { PermisoDe } from "@/components/admin/shared/PermisoDe";
 import { InterruptorCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
+import { MargenesRebajasCampos } from "@/components/admin/settings/MargenesRebajasCampos";
 
 /* La conexión con SUNAT (plan «panel unificado», ola 2): la configuración
    SUNAT estaba partida entre esta sección y Facturación › Conexión SUNAT.
@@ -134,6 +135,11 @@ export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
             <div><FieldLabel htmlFor="settings-taxRate" icon={<Percent className="h-3.5 w-3.5" />}>IGV</FieldLabel><NumberInput id="settings-taxRate" value={taxRate} onChange={setTaxRate} min={0} max={100} step={0.1} suffix="%" /></div>
             <div className="sm:col-span-2"><FieldLabel htmlFor="settings-sunatDenominacion" icon={<FileText className="h-3.5 w-3.5" />}>Denominación</FieldLabel><TextInput id="settings-sunatDenominacion" value={sunatDenominacion} onChange={setSunatDenominacion} placeholder="Inversiones San Martín S.A.C." /></div>
           </div>
+        </SectionCard>
+
+        {/* Se guarda con su botón (flags del negocio): la usan Análisis › Sugerencias de precio y la IA › Precios en bloque. */}
+        <SectionCard title="Precios y rebajas" desc="El piso y el margen mínimo de la lista de rebajas: Análisis y la IA los usan igual. De fábrica: costo + 5 % y 15 % de margen.">
+          <MargenesRebajasCampos />
         </SectionCard>
       </div>
 

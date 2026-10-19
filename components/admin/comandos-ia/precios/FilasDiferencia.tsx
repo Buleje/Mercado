@@ -34,6 +34,8 @@ export interface PropsFilas {
   onPrecio: (productId: number, texto: string) => void;
   /** Filas que cambiaron desde la vista previa (409): su «Hoy» ya es el nuevo. */
   cambiadas: Set<number>;
+  /** Margen mínimo del negocio (fracción, Ajustes); sin él, el de fábrica (0,15). */
+  margenMinimo?: number;
 }
 
 /** Lo que queda de verdad en la fila: el precio editado manda sobre el calculado. */
@@ -41,7 +43,7 @@ export function precioFinal(f: FilaDiferencia, precios: Record<number, string>):
   return leerPrecio(precios[f.productId]) ?? f.precioNuevo;
 }
 
-function Avisos({ f, bajo, cambio }: { f: FilaDiferencia; bajo: boolean; cambio: boolean }) {
+function Avisos({ f, bajo, cambio, minimo }: { f: FilaDiferencia; bajo: boolean; cambio: boolean; minimo: number }) {
   const chip = "inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold";
   if (!cambio && !f.aviso && !bajo) return null;
   return (
@@ -49,7 +51,7 @@ function Avisos({ f, bajo, cambio }: { f: FilaDiferencia; bajo: boolean; cambio:
       {cambio && <span className={`${chip} bg-[var(--surface-raised)] text-[var(--data-error-700)] ring-1 ring-inset ring-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)]`}>cambió: revísalo</span>}
       {f.aviso === "excluido" && <span className={`${chip} bg-[var(--surface-sunken)] text-[var(--text-secondary)]`}>excluido por tu orden</span>}
       {f.aviso === "sin-costo" && <span className={`${chip} bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--surface-sunken)] dark:text-[var(--data-warning-500)]`}>sin costo</span>}
-      {bajo && f.aviso !== "excluido" && <span className={`${chip} bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--surface-sunken)] dark:text-[var(--data-warning-500)]`}>margen bajo 15 %</span>}
+      {bajo && f.aviso !== "excluido" && <span className={`${chip} bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--surface-sunken)] dark:text-[var(--data-warning-500)]`}>margen bajo {pct(minimo)}</span>}
     </span>
   );
 }
@@ -87,9 +89,9 @@ function Queda({ f, valor, onPrecio }: { f: FilaDiferencia; valor: string | unde
   );
 }
 
-function Margen({ f, precio }: { f: FilaDiferencia; precio: number }) {
+function Margen({ f, precio, minimo }: { f: FilaDiferencia; precio: number; minimo: number }) {
   const nuevo = f.aviso === "excluido" ? f.margenHoy : margen(precio, f.costoNuevo);
-  const bajo = nuevo != null && nuevo < MARGEN_MINIMO;
+  const bajo = nuevo != null && nuevo < minimo;
   return (
     <span className="text-sm tabular-nums whitespace-nowrap">
       <span className="text-[var(--text-secondary)]">{pct(f.margenHoy)}</span>
@@ -130,10 +132,10 @@ const Casilla = ({ f, marcada, onMarcar }: { f: FilaDiferencia; marcada: boolean
 );
 
 /** Producto | Hoy | Queda | Margen hoy→queda. A 400 px la tabla pasa a tarjetas. */
-export default function FilasDiferencia({ filas, marcadas, onMarcar, onMarcarTodas, precios, onPrecio, cambiadas }: PropsFilas) {
+export default function FilasDiferencia({ filas, marcadas, onMarcar, onMarcarTodas, precios, onPrecio, cambiadas, margenMinimo = MARGEN_MINIMO }: PropsFilas) {
   const bajoDe = (f: FilaDiferencia) => {
     const m = margen(precioFinal(f, precios), f.costoNuevo);
-    return m != null && m < MARGEN_MINIMO;
+    return m != null && m < margenMinimo;
   };
   const marcables = filas.filter((f) => f.aviso !== "excluido");
   const todas = { total: marcables.length, marcadas: marcables.filter((f) => marcadas.has(f.productId)).length, onMarcarTodas };
@@ -172,11 +174,11 @@ export default function FilasDiferencia({ filas, marcadas, onMarcar, onMarcarTod
               <td className={td}>
                 <span className={`block text-sm font-medium text-[var(--text-primary)] [overflow-wrap:anywhere] ${f.aviso === "excluido" ? "line-through opacity-70" : ""}`}>{f.nombre}</span>
                 <span className="block text-xs text-[var(--text-tertiary)]">{f.categoria}</span>
-                <Avisos f={f} bajo={bajoDe(f)} cambio={cambiadas.has(f.productId)} />
+                <Avisos f={f} bajo={bajoDe(f)} cambio={cambiadas.has(f.productId)} minimo={margenMinimo} />
               </td>
               <td className={`${td} text-right`}><Hoy f={f} /></td>
               <td className={`${td} text-right`}><Queda f={f} valor={precios[f.productId]} onPrecio={onPrecio} /></td>
-              <td className={`${td} text-right`}><Margen f={f} precio={precioFinal(f, precios)} /></td>
+              <td className={`${td} text-right`}><Margen f={f} precio={precioFinal(f, precios)} minimo={margenMinimo} /></td>
             </tr>
           ))}
         </tbody>
@@ -196,13 +198,13 @@ export default function FilasDiferencia({ filas, marcadas, onMarcar, onMarcarTod
               <Casilla f={f} marcada={marcadas.has(f.productId)} onMarcar={onMarcar} />
               <div className="min-w-0 flex-1 space-y-2">
                 <span className={`block text-sm font-semibold text-[var(--text-primary)] [overflow-wrap:anywhere] ${f.aviso === "excluido" ? "line-through opacity-70" : ""}`}>{f.nombre}</span>
-                <Avisos f={f} bajo={bajoDe(f)} cambio={cambiadas.has(f.productId)} />
+                <Avisos f={f} bajo={bajoDe(f)} cambio={cambiadas.has(f.productId)} minimo={margenMinimo} />
                 <div className="flex items-end justify-between gap-2">
                   <Hoy f={f} />
                   <Queda f={f} valor={precios[f.productId]} onPrecio={onPrecio} />
                 </div>
                 <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
-                  margen <Margen f={f} precio={precioFinal(f, precios)} />
+                  margen <Margen f={f} precio={precioFinal(f, precios)} minimo={margenMinimo} />
                 </span>
               </div>
             </div>

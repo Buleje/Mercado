@@ -85,7 +85,7 @@ export const FilaRebajaSchema = z.object({
   precioNuevo: z.number(),
   margenHoy: z.number().nullable(),
   margenNuevo: z.number().nullable(),
-  aviso: z.enum(["margen<15", "sin-costo", "excluido"]).optional(),
+  aviso: z.enum(["margen-bajo", "sin-costo", "excluido"]).optional(),
   motivo: z.enum(["vence", "sin-venta", "rota-poco"]),
   detalle: z.string(),
   pct: z.number(),
@@ -98,6 +98,8 @@ export const RebajasSchema = z.object({
   filas: z.array(FilaRebajaSchema),
   noEntran: z.array(z.object({ productId: z.number(), nombre: z.string(), motivo: z.string() })),
   dias: z.number(),
+  /** Los del negocio (Ajustes › Cobros); un servidor viejo no los manda. */
+  margenes: z.object({ pisoSobreCosto: z.number(), margenMinimoSugerido: z.number() }).optional(),
 });
 
 /** Schema para GET /api/forecasting/price-suggestions */

@@ -22,7 +22,8 @@
  *     «no se mueve»; stock sin controlar (servicios) tampoco: no entran.
  *  3. Rota poco: vendió, pero tiene más de 3 veces lo vendido en la ventana →
  *     10 % a 15 % según el exceso.
- *  Piso: nunca debajo del costo + 5 %. Sin costo cargado no se propone (no hay
+ *  Piso: nunca debajo del costo + X % (del negocio, 5 % de fábrica:
+ *  `margenes-rebajas.ts`). Sin costo cargado no se propone (no hay
  *  cómo saber el piso). Redondeo a 10 céntimos hacia ARRIBA (precio de góndola
  *  que no come margen); si la frase pide otro redondeo, ése.
  */
@@ -37,6 +38,7 @@ import {
   type ProductoPrecio,
   type Redondeo,
 } from "@/lib/admin/comandos-ia/precios";
+import { MARGENES_REBAJAS_POR_DEFECTO, pctTexto, type MargenesRebajas } from "./margenes-rebajas";
 
 export const REBAJA_VENTANA_DIAS = 30;
 export const REBAJA_VENCE_DIAS = 15;
@@ -45,8 +47,6 @@ export const REBAJA_SIN_VENTA_PCT = 15;
 export const REBAJA_ROTA_POCO_PCT = { min: 10, max: 15 } as const;
 /** «Rota poco» = stock de más de 3 veces lo vendido en la ventana. */
 export const REBAJA_ROTA_POCO_VECES = 3;
-/** El piso: costo + 5 %. */
-export const REBAJA_PISO_SOBRE_COSTO = 1.05;
 /** Precio de góndola: a 10 céntimos, hacia arriba. */
 export const REBAJA_REDONDEO: Redondeo = 0.1;
 
@@ -78,6 +78,8 @@ export interface OpcionesRebaja {
   operacion?: Operacion;
   /** 0 = el de la regla (10 céntimos). */
   redondeo?: Redondeo;
+  /** Piso sobre el costo y margen mínimo del negocio (Ajustes); sin ellos, los de fábrica (5 % y 15 %). */
+  margenes?: MargenesRebajas;
 }
 
 export interface FilaRebaja extends FilaDiferencia {
@@ -86,7 +88,7 @@ export interface FilaRebaja extends FilaDiferencia {
   detalle: string;
   /** Lo que baja de verdad, tras piso y redondeo (negativo, en %). */
   pct: number;
-  /** Quedó en el piso (costo + 5 %): no baja todo lo que la regla pedía. */
+  /** Quedó en el piso (costo + X % del negocio): no baja todo lo que la regla pedía. */
   enPiso: boolean;
   stock: number | null;
 }
@@ -101,6 +103,8 @@ export interface ListaRebajas {
   filas: FilaRebaja[];
   noEntran: NoEntraRebaja[];
   dias: number;
+  /** Con los que se armó: la pantalla los muestra («Margen mínimo: 15 % · piso costo + 5 %»). */
+  margenes: MargenesRebajas;
 }
 
 const DIA_MS = 86_400_000;
@@ -202,6 +206,8 @@ const ORDEN: Record<MotivoRebaja, number> = { vence: 0, "sin-venta": 1, "rota-po
 export function armarRebajas(datos: DatosRebaja, opciones: OpcionesRebaja = {}): ListaRebajas {
   const motivos = new Set(opciones.motivos ?? MOTIVOS_REBAJA);
   const paso: Redondeo = opciones.redondeo || REBAJA_REDONDEO;
+  const margenes = opciones.margenes ?? MARGENES_REBAJAS_POR_DEFECTO;
+  const sobreCosto = `costo + ${pctTexto(margenes.pisoSobreCosto)}`;
   const filas: Array<FilaRebaja & { _orden: number; _plata: number; _dias: number }> = [];
   const noEntran: NoEntraRebaja[] = [];
   const no = (p: ProductoPrecio, motivo: string) => noEntran.push({ productId: p.id, nombre: p.name, motivo });
@@ -234,24 +240,24 @@ export function armarRebajas(datos: DatosRebaja, opciones: OpcionesRebaja = {}):
       no(p, "quedaría en S/ 0 o menos");
       continue;
     }
-    const piso = redondear(costo * REBAJA_PISO_SOBRE_COSTO, paso);
+    const piso = redondear(costo * (1 + margenes.pisoSobreCosto / 100), paso);
     const rebajado = redondear(bruto, paso);
     const precio = Math.max(rebajado, piso);
     if (aCentimos(precio) >= aCentimos(p.price)) {
       no(
         p,
         aCentimos(piso) >= aCentimos(p.price)
-          ? `ya está en su piso (costo ${soles(costo)} + 5 %): bajarlo es perder`
+          ? `ya está en su piso (costo ${soles(costo)} + ${pctTexto(margenes.pisoSobreCosto)}): bajarlo es perder`
           : "la rebaja no llega al redondeo: queda igual",
       );
       continue;
     }
     const enPiso = aCentimos(piso) > aCentimos(rebajado);
-    const base = armarFila(p, { precio, costo });
+    const base = armarFila(p, { precio, costo }, false, margenes.margenMinimoSugerido / 100);
     filas.push({
       ...base,
       motivo,
-      detalle: detalleDe(motivo, p, { diasVence, lote, vendidas, dias: datos.dias }) + (enPiso ? " · tope: costo + 5 %" : ""),
+      detalle: detalleDe(motivo, p, { diasVence, lote, vendidas, dias: datos.dias }) + (enPiso ? ` · tope: ${sobreCosto}` : ""),
       pct: Math.round(((precio - p.price) / p.price) * 1000) / 10,
       enPiso,
       stock: p.stock ?? null,
@@ -266,6 +272,7 @@ export function armarRebajas(datos: DatosRebaja, opciones: OpcionesRebaja = {}):
     filas: filas.map(({ _orden, _plata, _dias, ...f }) => f),
     noEntran,
     dias: datos.dias,
+    margenes: { ...margenes },
   };
 }
 
@@ -282,5 +289,6 @@ export function describirRebajas(dias: number, opciones: OpcionesRebaja = {}): s
       ? `Baja ${Math.abs(opciones.operacion.valor)} %`
       : `Baja ${soles(Math.abs(opciones.operacion.valor))}`
     : "Rebajar lo que no se vende";
-  return `${op} · ${quien} · nunca bajo el costo + 5 % · redondea a ${red}`;
+  const piso = (opciones.margenes ?? MARGENES_REBAJAS_POR_DEFECTO).pisoSobreCosto;
+  return `${op} · ${quien} · nunca bajo el costo + ${pctTexto(piso)} · redondea a ${red}`;
 }

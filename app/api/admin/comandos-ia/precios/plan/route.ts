@@ -28,7 +28,8 @@ import {
   type ProductoPrecio,
 } from "@/lib/admin/comandos-ia/precios";
 import { armarRebajas, describirRebajas, type OpcionesRebaja } from "@/lib/precios/rebajas";
-import { leerDatosDeRebaja } from "@/lib/precios/rebajas-servidor";
+import { leerDatosDeRebaja, leerMargenesDelNegocio } from "@/lib/precios/rebajas-servidor";
+import type { MargenesRebajas } from "@/lib/precios/margenes-rebajas";
 
 /**
  * POST /api/admin/comandos-ia/precios/plan — la DIFERENCIA de precios, sin escribir nada.
@@ -43,7 +44,7 @@ import { leerDatosDeRebaja } from "@/lib/precios/rebajas-servidor";
  *  · «Rebaja lo que no se vende» SIN cifra = la lista única de rebajas
  *    (`lib/precios/rebajas.ts`), la MISMA de Análisis › Sugerencias de precio.
  *    «Rebaja 10 % lo que no se vendió en N días» = esa regla con el % de la
- *    frase: mismo criterio, mismo piso (costo + 5 %) y mismo redondeo.
+ *    frase: mismo criterio, mismo piso (costo + X % del negocio) y mismo redondeo.
  * IA por `llamarIa` (lo mismo que Mensajes y Papel): `canSpend` con el precio
  * del modelo que va a responder, gasto anotado con el que respondió, 25 s de
  * tope, y «sin clave» / «tardó» / «falló» separados de «no entendí».
@@ -213,14 +214,14 @@ async function filasDeRebaja(
 }
 
 /** «Rebaja lo que no se vende» (sin cifra): la lista de Análisis, con el filtro de la frase. */
-function filasDePedidoDeRebajas(tenantId: string, pide: PedidoDeRebajas, productos: ProductoPrecio[]) {
+function filasDePedidoDeRebajas(tenantId: string, pide: PedidoDeRebajas, productos: ProductoPrecio[], margenes: MargenesRebajas) {
   const { incluidos, excluidos } = filtrarPorOrden(productos, { categorias: pide.categorias, incluye: [], excluye: pide.excluye });
-  const opciones: OpcionesRebaja = { redondeo: pide.redondeo, ...(pide.soloVence ? { motivos: ["vence"] as const } : {}) };
+  const opciones: OpcionesRebaja = { redondeo: pide.redondeo, margenes, ...(pide.soloVence ? { motivos: ["vence"] as const } : {}) };
   const extra = [...(pide.categorias.length ? [pide.categorias.join(", ")] : []), ...(pide.excluye.length ? [`menos ${pide.excluye.join(", ")}`] : [])];
   return filasDeRebaja(tenantId, incluidos, excluidos, pide.dias, opciones, extra);
 }
 
-async function filasDeOrden(tenantId: string, plan: PlanOrden, productos: ProductoPrecio[]) {
+async function filasDeOrden(tenantId: string, plan: PlanOrden, productos: ProductoPrecio[], margenes: MargenesRebajas) {
   const noAplica: Array<{ nombre: string; motivo: string }> = [];
   const { incluidos, excluidos } = filtrarPorOrden(productos, plan.filtro);
   const dias = plan.filtro.sinVentaDias;
@@ -230,7 +231,7 @@ async function filasDeOrden(tenantId: string, plan: PlanOrden, productos: Produc
     if (esBaja(plan.operacion)) {
       const extra = [...plan.filtro.categorias, ...plan.filtro.incluye];
       const menos = plan.filtro.excluye.length ? [`menos ${plan.filtro.excluye.join(", ")}`] : [];
-      return filasDeRebaja(tenantId, incluidos, excluidos, dias, { motivos: ["sin-venta"], operacion: plan.operacion, redondeo: plan.redondeo }, [
+      return filasDeRebaja(tenantId, incluidos, excluidos, dias, { motivos: ["sin-venta"], operacion: plan.operacion, redondeo: plan.redondeo, margenes }, [
         ...(extra.length ? [extra.join(", ")] : []),
         ...menos,
       ]);
@@ -240,9 +241,9 @@ async function filasDeOrden(tenantId: string, plan: PlanOrden, productos: Produc
     const dentro = separarSinVenta(incluidos, vendidos);
     for (const p of dentro.sinStock) noAplica.push({ nombre: p.name, motivo: "sin stock: no se vende porque no hay" });
     // «menos el arroz» sólo se muestra si el arroz tampoco se vendió (si no, ni entraba).
-    return filasDeOperacion(dentro.quedan, separarSinVenta(excluidos, vendidos).quedan, plan, noAplica);
+    return filasDeOperacion(dentro.quedan, separarSinVenta(excluidos, vendidos).quedan, plan, noAplica, margenes);
   }
-  return filasDeOperacion(incluidos, excluidos, plan, noAplica);
+  return filasDeOperacion(incluidos, excluidos, plan, noAplica, margenes);
 }
 
 function filasDeOperacion(
@@ -250,6 +251,7 @@ function filasDeOperacion(
   excluidos: ProductoPrecio[],
   plan: PlanOrden,
   noAplica: Array<{ nombre: string; motivo: string }>,
+  margenes: MargenesRebajas,
 ) {
   const filas: FilaDiferencia[] = [];
   let sinCambio = 0;
@@ -258,7 +260,7 @@ function filasDeOperacion(
     if (bruto == null) noAplica.push({ nombre: p.name, motivo: "sin costo: no puedo calcular su margen" });
     else if (bruto <= 0) noAplica.push({ nombre: p.name, motivo: "quedaría en S/ 0 o menos" });
     else {
-      const f = armarFila(p, { precio: redondear(bruto, plan.redondeo), costo: p.costPrice ?? null });
+      const f = armarFila(p, { precio: redondear(bruto, plan.redondeo), costo: p.costPrice ?? null }, false, margenes.margenMinimoSugerido / 100);
       if (f.precioNuevo === f.precioHoy) sinCambio++;
       else filas.push(f);
     }
@@ -269,7 +271,7 @@ function filasDeOperacion(
 
 type BodyLista = Extract<z.infer<typeof Body>, { lista: unknown }>;
 
-async function filasDeLista(tenantId: string, b: BodyLista, productos: ProductoPrecio[], gasto: Gasto) {
+async function filasDeLista(tenantId: string, b: BodyLista, productos: ProductoPrecio[], gasto: Gasto, margenes: MargenesRebajas) {
   const noAplica: Array<{ nombre: string; motivo: string }> = [];
   const elegidos = new Map<number, number>(); // productId → costo nuevo
   const ambiguos: Array<{ i: number; nombre: string; candidatos: Array<{ productId: number; nombre: string }> }> = [];
@@ -308,7 +310,7 @@ async function filasDeLista(tenantId: string, b: BodyLista, productos: ProductoP
       b.politica === "mantener-margen"
         ? (precioManteniendoMargen(p.price, p.costPrice ?? null, costo) ?? p.price)
         : (precioParaMargen(costo, b.politica.margen / 100) ?? p.price);
-    const f = armarFila(p, { precio: redondear(bruto, redondeo), costo });
+    const f = armarFila(p, { precio: redondear(bruto, redondeo), costo }, false, margenes.margenMinimoSugerido / 100);
     if (f.precioNuevo === f.precioHoy && f.costoNuevo === f.costoHoy) sinCambio++;
     else filas.push(f);
   }
@@ -328,16 +330,18 @@ export async function POST(req: NextRequest) {
     const productos = (await ProductsDB.getAll(auth.tenantId)).filter((p) => p.active);
     const gasto: Gasto = { usd: 0 };
     const costoIaUsd = () => Math.round(gasto.usd * 1e6) / 1e6;
+    // Piso y margen mínimo del negocio (Ajustes › Cobros): los mismos que Análisis.
+    const margenes = await leerMargenesDelNegocio(auth.tenantId);
 
     if ("orden" in parsed.data) {
       const pide = leerPedidoDeRebajas(parsed.data.orden, [...new Set(productos.map((p) => p.category))]);
-      if (pide) return NextResponse.json({ estado: "plan", origen: "rebajas", ...(await filasDePedidoDeRebajas(auth.tenantId, pide, productos)), costoIaUsd: 0 });
+      if (pide) return NextResponse.json({ estado: "plan", origen: "rebajas", ...(await filasDePedidoDeRebajas(auth.tenantId, pide, productos, margenes)), margenes, costoIaUsd: 0 });
       const r = await planDeOrden(auth.tenantId, parsed.data.orden, productos, gasto);
       if ("tope" in r) {
         return NextResponse.json({ error: "tope-ia", mensaje: "Se acabó la IA de este mes. Escribe la orden como los ejemplos y la entiendo sin IA." }, { status: 402 });
       }
       if ("dudas" in r) return NextResponse.json({ estado: "dudas", dudas: r.dudas, opciones: r.opciones, costoIaUsd: costoIaUsd() });
-      return NextResponse.json({ estado: "plan", origen: r.origen, interpretacion: describirPlan(r.plan), ...(await filasDeOrden(auth.tenantId, r.plan, productos)), costoIaUsd: costoIaUsd() });
+      return NextResponse.json({ estado: "plan", origen: r.origen, interpretacion: describirPlan(r.plan), ...(await filasDeOrden(auth.tenantId, r.plan, productos, margenes)), margenes, costoIaUsd: costoIaUsd() });
     }
 
     const b = parsed.data;
@@ -346,7 +350,8 @@ export async function POST(req: NextRequest) {
       estado: "plan",
       origen: "lista",
       interpretacion: `Costos nuevos de ${b.lista.length} productos · ${politica}`,
-      ...(await filasDeLista(auth.tenantId, b, productos, gasto)),
+      ...(await filasDeLista(auth.tenantId, b, productos, gasto, margenes)),
+      margenes,
       costoIaUsd: costoIaUsd(),
     });
   } catch (e) {

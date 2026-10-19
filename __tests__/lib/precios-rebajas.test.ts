@@ -9,6 +9,8 @@ import {
   type LoteQueVence,
 } from "@/lib/precios/rebajas";
 import { leerPedidoDeRebajas, type ProductoPrecio } from "@/lib/admin/comandos-ia/precios";
+import { leerMargenesRebajas, margenDelPiso, MargenesRebajasSchema } from "@/lib/precios/margenes-rebajas";
+import { leerMargenesDelNegocio } from "@/lib/precios/rebajas-servidor";
 
 const db = vi.hoisted(() => ({
   caja: vi.fn(async () => [] as Array<{ productId: number; quantity: number }>),
@@ -19,6 +21,8 @@ vi.mock("@/lib/db/products.db", () => ({ ProductsDB: { getAll: vi.fn(async () =>
 vi.mock("@/lib/db/sales.db", () => ({ SalesDB: { findSaleItemsByProducts: db.caja } }));
 vi.mock("@/lib/db/orders.db", () => ({ OrdersDB: { findOrderItemsByProducts: db.pedidos } }));
 vi.mock("@/lib/db/kits.db", () => ({ KitsDB: { salidasComoComponente: db.kits } }));
+const flags = vi.hoisted(() => ({ valor: {} as Record<string, unknown> }));
+vi.mock("@/lib/db/settings.db", () => ({ SettingsDB: { getFeatureFlags: vi.fn(async () => flags.valor) } }));
 vi.mock("@/lib/db/batches.db", () => ({ BatchesDB: { getExpiring: vi.fn(async () => []), getExpiredWithStock: vi.fn(async () => []) } }));
 
 const HOY = "2026-10-19";
@@ -227,5 +231,47 @@ describe("leerPedidoDeRebajas: la frase sin cifra arma la lista única", () => {
     expect(leerPedidoDeRebajas("aplica las rebajas sugeridas", CATS)).toMatchObject({ dias: 30, soloVence: false });
     expect(leerPedidoDeRebajas("remata lo que no rota", CATS)).toMatchObject({ dias: 30 });
     expect(leerPedidoDeRebajas("Rebaja las bebidas que vencen", CATS)).toMatchObject({ soloVence: true, categorias: ["Bebidas"] });
+  });
+});
+
+describe("margen mínimo en rebajas: piso y margen del negocio (Ajustes)", () => {
+  // Lentejas sobra margen; Avena queda entre 10 y 15 %; Quinua cae al piso; Fideos queda bajo 10 %.
+  const prods = [p(1, "Lentejas", 10, 5, 20), p(3, "Avena", 10, 7.5, 20), p(2, "Quinua", 6, 5.5, 10), p(4, "Fideos", 10, 8, 20)];
+  const bajos = (l: ReturnType<typeof armarRebajas>) => l.filas.filter((f) => f.aviso === "margen-bajo").map((f) => f.productId);
+
+  it("con piso 10 % ninguna rebaja baja de costo + 10 %, y el texto lo dice", () => {
+    const margenes = { pisoSobreCosto: 10, margenMinimoSugerido: 15 };
+    const l = armarRebajas(datos(prods), { margenes });
+    for (const f of l.filas) expect(f.precioNuevo).toBeGreaterThanOrEqual(Math.ceil((f.costoHoy ?? 0) * 110 - 1e-6) / 100);
+    expect(fila(l, 4)).toMatchObject({ precioNuevo: 8.8, enPiso: true }); // 10 − 15 % = 8,50 < 8 × 1,10
+    expect(fila(l, 4)?.detalle).toContain("tope: costo + 10 %");
+    expect(noEntra(l, 2)).toBe("ya está en su piso (costo S/ 5.50 + 10 %): bajarlo es perder");
+    expect(l.margenes).toEqual(margenes);
+    expect(describirRebajas(30, { margenes })).toContain("nunca bajo el costo + 10 %");
+  });
+
+  it("con margen mínimo 10 % se destildan menos que con 15 %", () => {
+    const con15 = bajos(armarRebajas(datos(prods)));
+    const con10 = bajos(armarRebajas(datos(prods), { margenes: { pisoSobreCosto: 5, margenMinimoSugerido: 10 } }));
+    expect(con15).toEqual(expect.arrayContaining([3, 4]));
+    expect(con10).toContain(4);
+    expect(con10).not.toContain(3); // 8,50 sobre 7,50 = 11,8 % de margen
+    expect(con10.length).toBeLessThan(con15.length);
+  });
+
+  it("sin nada guardado o con algo inválido → 5 % y 15 %; el schema pide 0-90 % y el margen del piso ≤ margen mínimo", async () => {
+    expect(leerMargenesRebajas({})).toEqual({ pisoSobreCosto: 5, margenMinimoSugerido: 15 });
+    expect(leerMargenesRebajas({ margenesRebajas: { pisoSobreCosto: 30, margenMinimoSugerido: 20 } })).toEqual({ pisoSobreCosto: 5, margenMinimoSugerido: 15 });
+    expect(leerMargenesRebajas({ margenesRebajas: { pisoSobreCosto: 8, margenMinimoSugerido: 12 } })).toEqual({ pisoSobreCosto: 8, margenMinimoSugerido: 12 });
+    expect(MargenesRebajasSchema.safeParse({ pisoSobreCosto: 0, margenMinimoSugerido: 90 }).success).toBe(true);
+    expect(MargenesRebajasSchema.safeParse({ pisoSobreCosto: 0, margenMinimoSugerido: 90.5 }).success).toBe(false);
+    // Bases distintas: costo + 16 % deja 13,8 % de margen (entra con 15); costo + 10 % deja 9,1 % (no entra con 9).
+    expect(margenDelPiso(5)).toBeCloseTo(4.76, 2);
+    expect(MargenesRebajasSchema.safeParse({ pisoSobreCosto: 16, margenMinimoSugerido: 15 }).success).toBe(true);
+    expect(MargenesRebajasSchema.safeParse({ pisoSobreCosto: 10, margenMinimoSugerido: 9 }).success).toBe(false);
+    expect(MargenesRebajasSchema.safeParse({ pisoSobreCosto: 10, margenMinimoSugerido: 10 }).success).toBe(true);
+    flags.valor = { margenesRebajas: { pisoSobreCosto: 10, margenMinimoSugerido: 10 } };
+    expect(await leerMargenesDelNegocio("tenant-x")).toEqual({ pisoSobreCosto: 10, margenMinimoSugerido: 10 });
+    flags.valor = {};
   });
 });

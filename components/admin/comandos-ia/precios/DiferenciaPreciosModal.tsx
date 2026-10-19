@@ -6,9 +6,12 @@ import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { usd } from "../papel/formato";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { margen, type FilaDiferencia } from "@/lib/admin/comandos-ia/precios";
+import { MARGEN_MINIMO, margen, type FilaDiferencia } from "@/lib/admin/comandos-ia/precios";
+import { MARGENES_REBAJAS_POR_DEFECTO, pctTexto } from "@/lib/precios/margenes-rebajas";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { LineaMargenes } from "./LineaMargenes";
 import FilasDiferencia, { BTN, leerPrecio, precioFinal } from "./FilasDiferencia";
-import type { FilaAplicar, PlanPrecios, ResultadoAplicar } from "./use-precios-en-bloque";
+import { PUEDEN_CAMBIAR_PRECIOS, type FilaAplicar, type PlanPrecios, type ResultadoAplicar } from "./use-precios-en-bloque";
 
 const ORIGEN: Record<PlanPrecios["origen"], string> = {
   reglas: "Entendí tu orden sin IA",
@@ -36,8 +39,11 @@ export default function DiferenciaPreciosModal({
   /** Al lado del origen: «Ver la lista en Análisis» cuando la diferencia sale de la lista de rebajas. */
   enlace?: ReactNode;
 }) {
+  const rol = useMiRol();
   const [filas, setFilas] = useState<FilaDiferencia[]>(plan.filas);
+  // El aviso «margen-bajo» ya viene con el margen mínimo del negocio (lo arma el servidor): esas filas empiezan sin marcar.
   const [marcadas, setMarcadas] = useState(() => new Set(plan.filas.filter((f) => !f.aviso).map((f) => f.productId)));
+  const minimoPct = (plan.margenes ?? MARGENES_REBAJAS_POR_DEFECTO).margenMinimoSugerido;
   const [precios, setPrecios] = useState<Record<number, string>>({});
   const [cambiadas, setCambiadas] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +77,8 @@ export default function DiferenciaPreciosModal({
     setError(r.error);
     if (!r.rechazadas.length) return;
     // 409: el «Hoy» de esas filas pasa a ser el de ahora y quedan sin marcar para que las revises.
-    const porId = new Map(r.rechazadas.map((x) => [x.productId, x]));
+    // 400 `bajo-piso`: esas filas sólo se desmarcan (el mensaje dice el piso de cada una).
+    const porId = new Map(r.rechazadas.filter((x) => x.motivo !== "bajo-piso").map((x) => [x.productId, x]));
     setFilas((prev) =>
       prev.flatMap((f) => {
         const x = porId.get(f.productId);
@@ -81,7 +88,8 @@ export default function DiferenciaPreciosModal({
       }),
     );
     setCambiadas(new Set(porId.keys()));
-    setMarcadas((prev) => new Set([...prev].filter((id) => !porId.has(id))));
+    const fuera = new Set(r.rechazadas.map((x) => x.productId));
+    setMarcadas((prev) => new Set([...prev].filter((id) => !fuera.has(id))));
   };
 
   return (
@@ -110,13 +118,14 @@ export default function DiferenciaPreciosModal({
             {ORIGEN[plan.origen]}
             <InfoTip
               title="Revisa antes de aplicar"
-              what="Marcadas = las que cambian. Las que tienen aviso (sin costo, margen bajo 15 %) empiezan sin marcar."
+              what={`Marcadas = las que cambian. Las que tienen aviso (sin costo, margen bajo ${pctTexto(minimoPct)}) empiezan sin marcar.`}
               affects="Al aplicar se guarda el historial de precios y te queda un recibo para deshacer."
               example={plan.sinCambio ? `${plan.sinCambio} productos ya tenían ese precio y no aparecen.` : "Toca un precio para corregirlo."}
             />
           </span>
           {enlace && <span className="text-sm">{enlace}</span>}
         </div>
+        {plan.margenes && <LineaMargenes margenes={plan.margenes} puedeCambiar={!rol || PUEDEN_CAMBIAR_PRECIOS.has(rol)} />}
 
         <FilasDiferencia
           filas={filas}
@@ -126,6 +135,7 @@ export default function DiferenciaPreciosModal({
           precios={precios}
           onPrecio={(id, t) => setPrecios((p) => ({ ...p, [id]: t }))}
           cambiadas={cambiadas}
+          margenMinimo={plan.margenes ? plan.margenes.margenMinimoSugerido / 100 : MARGEN_MINIMO}
         />
 
         {plan.noAplica.length > 0 && (

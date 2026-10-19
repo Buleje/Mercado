@@ -10,6 +10,7 @@
  * 26,974999… en float y un redondeo ingenuo lo bajaba a 26,97.
  */
 
+/** El margen mínimo de fábrica (fracción). El del negocio sale de Ajustes (`lib/precios/margenes-rebajas.ts`). */
 export const MARGEN_MINIMO = 0.15;
 
 export type Redondeo = 0 | 0.1 | 0.5 | 1;
@@ -38,7 +39,8 @@ export interface PlanOrden {
 }
 /** "mantener-margen" o el margen objetivo en % (30 = 30 %). */
 export type PoliticaLista = "mantener-margen" | { margen: number };
-export type AvisoFila = "margen<15" | "sin-costo" | "excluido";
+/** `margen-bajo` = queda bajo el margen mínimo del negocio (15 % de fábrica). */
+export type AvisoFila = "margen-bajo" | "sin-costo" | "excluido";
 
 export interface FilaDiferencia {
   productId: number;
@@ -114,11 +116,15 @@ export function redondear(valor: number, paso: Redondeo): number {
   return (Math.ceil(c / p) * p) / 100;
 }
 
-/** La fila de la diferencia, con su aviso (excluido > sin costo > margen bajo 15 %). */
+/**
+ * La fila de la diferencia, con su aviso (excluido > sin costo > margen bajo
+ * `margenMinimo`, fracción: el del negocio; 0,15 de fábrica).
+ */
 export function armarFila(
   p: ProductoPrecio,
   nuevo: { precio: number; costo: number | null },
   excluido = false,
+  margenMinimo: number = MARGEN_MINIMO,
 ): FilaDiferencia {
   const costoHoy = p.costPrice ?? null;
   const precioNuevo = excluido ? p.price : nuevo.precio;
@@ -128,8 +134,8 @@ export function armarFila(
     ? "excluido"
     : costoNuevo == null
       ? "sin-costo"
-      : margenNuevo != null && margenNuevo < MARGEN_MINIMO
-        ? "margen<15"
+      : margenNuevo != null && margenNuevo < margenMinimo
+        ? "margen-bajo"
         : undefined;
   return {
     productId: p.id,

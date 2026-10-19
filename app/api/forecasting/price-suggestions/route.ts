@@ -8,6 +8,7 @@
  * `rebajas` = la lista única «Rebajar lo que no se vende» (`lib/precios/rebajas.ts`,
  * la misma que arma Comandos IA › Precios en bloque); se aplica por
  * `/api/admin/comandos-ia/precios/aplicar` (OK explícito, recibo y deshacer).
+ * Piso sobre el costo y margen mínimo = los del negocio (Ajustes › Cobros).
  *
  * Query params:
  *   reason?: "slow_mover" | "hot_item" | "fefo_urgent"  — filtrar por tipo
@@ -20,7 +21,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { suggestPriceAdjustments } from "@/lib/forecasting/price-optimizer";
 import type { PriceSuggestionReason } from "@/lib/forecasting/price-optimizer";
-import { listaDeRebajas } from "@/lib/precios/rebajas-servidor";
+import { leerMargenesDelNegocio, listaDeRebajas } from "@/lib/precios/rebajas-servidor";
 import { logger } from "@/lib/logger";
 
 const QuerySchema = z.object({
@@ -54,7 +55,8 @@ export async function GET(req: NextRequest) {
 
   // 3. Obtener sugerencias
   try {
-    const rebajas = await listaDeRebajas(auth.tenantId);
+    const margenes = await leerMargenesDelNegocio(auth.tenantId);
+    const rebajas = await listaDeRebajas(auth.tenantId, { margenes });
     let suggestions = await suggestPriceAdjustments(auth.tenantId, rebajas);
 
     // Filtro opcional por tipo de razón

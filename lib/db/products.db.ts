@@ -53,7 +53,15 @@ export type FilaPrecioLote = {
 export type PrecioYCosto = { precio: number; costo: number | null };
 export type ResultadoPreciosLote = {
   aplicadas: Array<{ productId: number; antes: PrecioYCosto; despues: PrecioYCosto }>;
-  rechazadas: Array<{ productId: number; motivo: "cambio" | "no-existe"; precioActual: number | null; costoActual: number | null }>;
+  /** `bajo-piso` trae `nombre` y `piso` (el precio más bajo que se acepta). */
+  rechazadas: Array<{
+    productId: number;
+    motivo: "cambio" | "no-existe" | "bajo-piso";
+    precioActual: number | null;
+    costoActual: number | null;
+    nombre?: string;
+    piso?: number;
+  }>;
   reciboId: string | null;
 };
 
@@ -474,6 +482,14 @@ export const ProductsDB = {
    *  4. el recibo en `ActivityLog` con `antes`/`despues`: sin recibo no hay
    *     deshacer, así que nace en la misma transacción que el cambio.
    *
+   * Con `pisoSobreCosto` (% del negocio, Ajustes › Cobros) también rechaza
+   * (`bajo-piso`) la fila que BAJA el precio por debajo de costo × (1 + piso/100),
+   * con el precio y el costo leídos bajo el candado: el piso no depende de lo
+   * que mande el cliente. El costo es el que queda tras escribir (el nuevo si
+   * la fila lo cambia —lista del proveedor que bajó—; si no, el de la base).
+   * Las subidas y los productos sin costo pasan. Deshacer no lo pasa: vuelve
+   * al precio de antes aunque esté debajo.
+   *
    * Después invalida `tenant:<id>:products` como bulk-price. Las cachés del
    * tablero (dashboard/admin) las invalida la ruta.
    *
@@ -484,6 +500,7 @@ export const ProductsDB = {
     filas: FilaPrecioLote[],
     opts: {
       parcial?: boolean;
+      pisoSobreCosto?: number;
       recibo: { action: string; entityId?: string | null; user: string; detalle: Record<string, unknown> };
     },
   ): Promise<ResultadoPreciosLote> {
@@ -496,13 +513,15 @@ export const ProductsDB = {
 
     const resultado = await prisma.$transaction(
       async (tx) => {
-        const hoy = await tx.$queryRaw<Array<{ id: number; price: unknown; costPrice: unknown }>>`
-          SELECT "id", "price", "costPrice" FROM "Product"
+        const hoy = await tx.$queryRaw<Array<{ id: number; name: string; price: unknown; costPrice: unknown }>>`
+          SELECT "id", "name", "price", "costPrice" FROM "Product"
           WHERE "tenantId" = ${tenantId} AND "id" = ANY(${ids}::int[]) AND "deletedAt" IS NULL
           ORDER BY "id"
           FOR UPDATE
         `;
         const porId = new Map(hoy.map((r) => [r.id, { precio: num(r.price) ?? 0, costo: num(r.costPrice) }]));
+        const nombres = new Map(hoy.map((r) => [r.id, r.name]));
+        const piso = opts.pisoSobreCosto;
         const aplicadas: ResultadoPreciosLote["aplicadas"] = [];
         const rechazadas: ResultadoPreciosLote["rechazadas"] = [];
         for (const f of filas) {
@@ -520,6 +539,21 @@ export const ProductsDB = {
             costo: f.costoNuevo === undefined ? actual.costo : f.costoNuevo === null ? null : cent(f.costoNuevo) / 100,
           };
           if (igual(despues.precio, actual.precio) && igual(despues.costo, actual.costo)) continue;
+          // Rebaja bajo el piso del negocio: en céntimos, el piso redondeado hacia arriba.
+          if (piso != null && despues.costo != null && despues.costo > 0 && cent(despues.precio) < cent(actual.precio)) {
+            const pisoCent = Math.ceil((cent(despues.costo) * (100 + piso)) / 100 - 1e-6);
+            if (cent(despues.precio) < pisoCent) {
+              rechazadas.push({
+                productId: f.productId,
+                motivo: "bajo-piso",
+                precioActual: actual.precio,
+                costoActual: actual.costo,
+                nombre: nombres.get(f.productId) ?? `#${f.productId}`,
+                piso: pisoCent / 100,
+              });
+              continue;
+            }
+          }
           aplicadas.push({ productId: f.productId, antes: actual, despues });
         }
         if ((rechazadas.length > 0 && !opts.parcial) || aplicadas.length === 0) {

@@ -18,6 +18,8 @@ import { useMiRol } from "@/hooks/use-mi-rol";
 import { formatCurrency } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 import { describirRebajas, REBAJA_VENCE_DIAS } from "@/lib/precios/rebajas";
+import { MARGENES_REBAJAS_POR_DEFECTO, pctTexto } from "@/lib/precios/margenes-rebajas";
+import { LineaMargenes } from "@/components/admin/comandos-ia/precios/LineaMargenes";
 import DiferenciaPreciosModal from "@/components/admin/comandos-ia/precios/DiferenciaPreciosModal";
 import { BTN } from "@/components/admin/comandos-ia/precios/FilasDiferencia";
 import {
@@ -79,7 +81,8 @@ export default function RebajasLista({ rebajas }: { rebajas: Rebajas }) {
   const [aplicando, setAplicando] = useState(false);
 
   const filas = useMemo(() => rebajas.filas.filter((f) => !aplicadas.has(f.productId)), [rebajas.filas, aplicadas]);
-  const regla = describirRebajas(rebajas.dias);
+  const margenes = rebajas.margenes ?? MARGENES_REBAJAS_POR_DEFECTO;
+  const regla = describirRebajas(rebajas.dias, { margenes });
   const visibles = todas ? filas : filas.slice(0, VISIBLES);
 
   const abrir = () =>
@@ -90,6 +93,7 @@ export default function RebajasLista({ rebajas }: { rebajas: Rebajas }) {
       noAplica: rebajas.noEntran.map(({ nombre, motivo }) => ({ nombre, motivo })),
       sinCambio: 0,
       costoIaUsd: 0,
+      margenes,
     });
 
   const aplicar = async (elegidas: FilaAplicar[], resumen: string): Promise<ResultadoAplicar> => {
@@ -110,7 +114,7 @@ export default function RebajasLista({ rebajas }: { rebajas: Rebajas }) {
     <div className="flex flex-wrap items-center gap-2">
       <InfoTip
         title="Una sola regla de rebajas"
-        what={`Primero lo que vence en ${REBAJA_VENCE_DIAS} días (20 % a 30 %), después lo que no se vendió en ${rebajas.dias} días (15 %) y lo que rota poco (10 % a 15 %). Nunca baja del costo + 5 % y redondea a 10 céntimos.`}
+        what={`Primero lo que vence en ${REBAJA_VENCE_DIAS} días (20 % a 30 %), después lo que no se vendió en ${rebajas.dias} días (15 %) y lo que rota poco (10 % a 15 %). Nunca baja del costo + ${pctTexto(margenes.pisoSobreCosto)} y redondea a 10 céntimos; las que dejan menos de ${pctTexto(margenes.margenMinimoSugerido)} de margen empiezan sin marcar.`}
         affects="Es la misma lista que arma la IA con «Rebaja lo que no se vende»: aplicar desde aquí o desde allá deja el mismo recibo para deshacer."
         example="Lo vencido no se rebaja (se saca de la venta); lo que no tiene costo o stock no entra."
         side="bottom"
@@ -134,8 +138,9 @@ export default function RebajasLista({ rebajas }: { rebajas: Rebajas }) {
       emptyMsg={rebajas.filas.length ? "Listo: aplicaste toda la lista." : "Nada que rebajar: lo que tienes se está vendiendo."}
       headerExtra={cabecera}
     >
+      <LineaMargenes margenes={margenes} puedeCambiar={puede} />
       {filas.length > 0 && (
-        <div className="space-y-3">
+        <div className="mt-2 space-y-3">
           <ul className="divide-y divide-[var(--rule-soft)]">
             {visibles.map((f) => (
               <FilaLista key={f.productId} f={f} />

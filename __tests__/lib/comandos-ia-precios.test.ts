@@ -67,7 +67,7 @@ describe("aritmética (renace el Análisis viejo)", () => {
 
 describe("filas y avisos", () => {
   it("margen bajo 15 %, sin costo y excluido", () => {
-    expect(armarFila(MAIN[1], { precio: 4, costo: 3.6 }).aviso).toBe("margen<15");
+    expect(armarFila(MAIN[1], { precio: 4, costo: 3.6 }).aviso).toBe("margen-bajo");
     expect(armarFila(MAIN[6], { precio: 26, costo: null }).aviso).toBe("sin-costo");
     const ex = armarFila(MAIN[0], { precio: 30, costo: 18.29 }, true);
     expect(ex).toMatchObject({ aviso: "excluido", precioNuevo: 24.9 });

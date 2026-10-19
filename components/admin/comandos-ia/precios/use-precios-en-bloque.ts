@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { FilaDiferencia, PoliticaLista, Redondeo } from "@/lib/admin/comandos-ia/precios";
+import type { MargenesRebajas } from "@/lib/precios/margenes-rebajas";
 
 /** Los mismos roles que deja pasar `requireAdmin(req, ["admin"])` (management tier) en plan/aplicar/deshacer. */
 export const PUEDEN_CAMBIAR_PRECIOS: ReadonlySet<string> = new Set(["admin", "owner", "manager", "superadmin"]);
@@ -22,12 +23,17 @@ export interface PlanPrecios {
   noAplica: Array<{ nombre: string; motivo: string }>;
   sinCambio: number;
   costoIaUsd: number;
+  /** Piso y margen mínimo del negocio con los que se armó (Ajustes › Cobros); un servidor viejo no los manda. */
+  margenes?: MargenesRebajas;
 }
 export interface Rechazada {
   productId: number;
-  motivo: "cambio" | "no-existe";
+  /** `bajo-piso`: la rebaja deja el precio debajo de costo + piso del negocio (400, no se aplicó nada). */
+  motivo: "cambio" | "no-existe" | "bajo-piso";
   precioActual: number | null;
   costoActual: number | null;
+  nombre?: string;
+  piso?: number;
 }
 export interface FilaAplicar {
   productId: number;
