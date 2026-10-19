@@ -1342,7 +1342,7 @@ async function codigosPlantaQueNoEntran(
         codigo,
         motivo: "otro-permiso",
         detalle: `${otro.codigoPlanta} (permiso ${otro.permiso ?? "?"}, GTF ${otro.gtfNumber})`,
-        aviso: `El código ${codigo} ya existe en el permiso ${otro.permiso ?? "otro"}; se habilita al terminar ADR-504.`,
+        aviso: `El código ${codigo} ya existe en el permiso ${otro.permiso ?? "otro"}.`,
       });
     }
   });
@@ -1392,7 +1392,7 @@ export function esChoqueCodigoPlanta(err: unknown): boolean {
 function traducirChoqueCodigoPlanta(err: unknown): never {
   if (esChoqueCodigoPlanta(err)) {
     throw new CtpInvariantError(
-      "Ese código de planta ya está puesto en otra troza del libro. " +
+      "Ese código de planta ya está puesto en otra troza del mismo permiso (o en una sin permiso). " +
         "El código se pinta sobre la troza: dos piezas con el mismo número no se pueden distinguir en el patio.",
       "CODIGO_PLANTA_DUPLICADO",
       { indice: INDICE_CODIGO_PLANTA_UNICO },

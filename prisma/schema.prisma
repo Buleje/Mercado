@@ -6462,8 +6462,9 @@ model WoodEntryTroza {
   @@index([tenantId, codificacion])
   @@index([tenantId, loteAserrioId])
   @@index([tenantId, loteMixtoId])
-  /// El código de planta es ÚNICO por negocio, garantizado por la base: índice
-  /// único parcial `WoodEntryTroza_tenant_codigoPlanta_unico` sobre
+  /// El código de planta es ÚNICO por (negocio, permiso) desde el 19-10 (ADR-504
+  /// paso 3, migración `20261019e_troza_soltar_codigo_unico_viejo_adr504`). Antes
+  /// era único por negocio con el índice parcial `WoodEntryTroza_tenant_codigoPlanta_unico` sobre
   /// `("tenantId", upper(btrim("codigoPlanta"))) WHERE "codigoPlanta" IS NOT NULL
   /// AND btrim("codigoPlanta") <> ''` (aplicado 2026-09-26, ADR-436; SQL en
   /// `prisma/migrations/adr-436-codigo-planta-unico.sql`). Prisma no sabe
@@ -6473,11 +6474,12 @@ model WoodEntryTroza {
   /// compara igual y existe para decir CUÁL pieza choca; si el índice frena
   /// primero, `traducirChoqueCodigoPlanta` lo vuelve CODIGO_PLANTA_DUPLICADO.
   /// Este btree no único sigue sirviendo la búsqueda exacta (`buscarTrozaPorCodigo`).
-  /// ADR-504 (expand 19-10): convive el único POR PERMISO
-  /// `WoodEntryTroza_tenant_codigoPlanta_permiso_unico` = la misma expresión y el
-  /// mismo WHERE + `COALESCE("contratoId", '')` (migración
-  /// `20261019b_troza_codigo_permiso_unico_adr504`). El de arriba se suelta en
-  /// el paso 3 (`adr-504-paso3-contract-NO-APLICAR.sql`).
+  /// Hoy manda el único POR PERMISO `WoodEntryTroza_tenant_codigoPlanta_permiso_unico`
+  /// = la misma expresión y el mismo WHERE + `COALESCE("contratoId", '')`
+  /// (migración `20261019b_troza_codigo_permiso_unico_adr504`). Ojo: la base NO
+  /// impide que una troza SIN permiso repita el código de una CON permiso
+  /// ('' ≠ id): eso lo frena la app (`chocanTrozas` bajo el candado
+  /// `ctp-codigo-planta:<tenantId>`).
   @@index([tenantId, codigoPlanta])
   @@index([tenantId, contratoId])
   @@index([tenantId, fechaRecepcion])

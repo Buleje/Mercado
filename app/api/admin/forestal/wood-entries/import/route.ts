@@ -1189,8 +1189,8 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
             }
             else if (r.bloqueado === "ya-tiene-lista") completado = " · ya tiene su lista de piezas";
             else if (r.repetidas.length > 0) completado = " · sus piezas ya estaban";
-            /* ADR-504: filas idénticas que entraron igual, códigos que chocan con
-               otro permiso mientras viva el índice viejo. */
+            /* ADR-504: filas idénticas que entraron igual y códigos que chocan
+               dentro del mismo permiso (o con una troza sin permiso). */
             if (r.avisos && r.avisos.length > 0) completado += ` · AVISO: ${r.avisos.join(" · ")}`;
           } catch (e) {
             /* No romper la importación por esto: la guía existe igual y el

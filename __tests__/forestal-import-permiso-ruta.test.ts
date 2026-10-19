@@ -508,7 +508,7 @@ describe("ADR-504 · la guía = N° + permiso al importar («que se importe todo
   });
 
   it("el aviso por troza del alta (código en otro permiso con el índice viejo) llega a la fila, sin error", async () => {
-    const aviso = "El código 12 ya existe en el permiso 017; se habilita al terminar ADR-504.";
+    const aviso = "El código 12 ya existe en el permiso 017.";
     H.createIngreso.mockImplementation(async (_t: string, input: { speciesCommonName: string }) => ({
       id: "w-nuevo",
       speciesCommonName: input.speciesCommonName,
