@@ -399,20 +399,25 @@ export function BloqueEspecie({
                       checked={todoElBloque}
                       ref={(el) => { if (el) el.indeterminate = listasBloque > 0 && !todoElBloque; }}
                       onChange={() => marcar(clavesBloque, !todoElBloque)}
-                      aria-label={`Marcar todo el bloque ${b.bloque.etiqueta || "sin etiqueta"} como registrado en el Libro`}
+                      aria-label={`Marcar todo el bloque ${b.bloque.etiqueta || "sin etiqueta"} como distribuido`}
                       className="h-4 w-4 accent-[var(--data-success-600)]"
                     />
                     {listasBloque}/{clavesBloque.length}
                   </label>
                 )}
+                {/* El papel del bloque lleva SÓLO lo tildado (Brandon, 19-10):
+                    lo sin tildar espera en la pestaña «Sin marcar». */}
                 {onAnexo && b.asignado.length > 0 && (
                   <button
                     type="button"
                     onClick={() => onAnexo(b)}
-                    title="Imprimir el Anexo 04 con las piezas de este bloque"
-                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                    disabled={listasBloque === 0}
+                    title={listasBloque === 0
+                      ? "Tilda como distribuido al menos un tipo de este bloque: el Anexo 04 lleva sólo lo marcado"
+                      : `Anexo 04 con los ${listasBloque} de ${clavesBloque.length} tipos marcados de este bloque`}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-[var(--rule-base)]"
                   >
-                    <FileText className="h-4 w-4" aria-hidden /> Anexo 04
+                    <FileText className="h-4 w-4" aria-hidden /> {listasBloque === 0 ? "Marca al menos un tipo" : "Anexo 04"}
                   </button>
                 )}
                 {libro?.bloque(b)}
@@ -620,8 +625,9 @@ function JornadaBloque({
               <button
                 type="button"
                 onClick={() => onAnexoDia(dia.dia)}
-                title={`Anexo 04 sólo con lo del día ${dia.dia}`}
-                className="ml-1 inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-1.5 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                disabled={listas === 0}
+                title={listas === 0 ? `Tilda al menos un tipo del día ${dia.dia}: el Anexo 04 lleva sólo lo marcado` : `Anexo 04 con lo marcado del día ${dia.dia}`}
+                className="ml-1 inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-1.5 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <FileText className="h-3.5 w-3.5" aria-hidden /> Anexo del día
               </button>
@@ -836,7 +842,7 @@ function AgregarLineaBloque({
  * lectura de «cuánto ampara cada tipo» se pierde. Desplegado se ve el registro
  * que pide el papel — qué 2×8×10 entró acá.
  */
-function FilaConMedidas({
+export function FilaConMedidas({
   a, dim, marcada, onMarcar,
   editable, bloqueId, overrideActual, onEditarLinea, valorTextoLinea, onCambioDecimalLinea, onBlurDecimalLinea,
 }: {

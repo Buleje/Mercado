@@ -17,7 +17,7 @@
  */
 
 import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Trash2, Download, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, ShieldCheck, SlidersHorizontal, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, RefreshCw, Ruler, Target, TreePine } from "@buleje/design-system/icons";
+import { Trash2, Download, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, ShieldCheck, SlidersHorizontal, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, RefreshCw, Ruler, Target, TreePine, Plus } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ModuleActionMenu, type ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
@@ -40,7 +40,10 @@ import { ptDesdeM3, toFeet, unificarPorMedida } from "@/lib/forestal/cubicacion"
 import { margenLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useLibroDelReparto } from "./hooks/use-libro-del-reparto";
-import { ID_SECCION_ANEXO } from "./reparto-registrar-todo";
+import { useSeccionRolliza, PestanasRolliza } from "./reparto-pestanas";
+import { CuentaMarcado, procedenciaDeAnexo, SelectorModoAnexo, useModoAnexo } from "./reparto-anexo-modo";
+import RepartoPorDistribuir from "./reparto-por-distribuir";
+import { cuadreMarcado, marcadoEn, pendienteEn, piezasFiltradasDelBloque, porDistribuir } from "@/lib/forestal/reparto-por-distribuir";
 import { KpiResumen, SeccionResumen } from "./resumen-tabla";
 import { BloqueEspecie } from "./reparto-vistas";
 import { CeldaPermiso } from "./reparto-celda-permiso";
@@ -51,8 +54,6 @@ import {
   alternarClaveAnexo,
   etiquetaSinRecorte,
   leerClaveAnexo,
-  piezasDelBloque,
-  piezasDelDia,
 } from "@/lib/forestal/reparto-anexo";
 import {
   agruparPorOrigen,
@@ -1002,6 +1003,19 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    * bloque.
    */
   const anexosDePermiso = useMemo(() => anexosPorPermiso(dist), [dist]);
+  /**
+   * La casilla «Distribuido» parte el reparto en dos (Brandon, 2026-10-19): lo
+   * tildado y lo que falta tildar. Las dos mitades salen de las casillas cada
+   * vez —no son copias— y suman el todo en milésimos enteros.
+   */
+  const pendienteDeTildar = useMemo(() => porDistribuir(distVista, marcadas), [distVista, marcadas]);
+  const cuadreTildado = useMemo(() => cuadreMarcado(distVista, marcadas), [distVista, marcadas]);
+  const anexosMarcado = useMemo(() => anexosPorPermiso(dist, { incluir: marcadoEn(marcadas) }), [dist, marcadas]);
+  const anexosPendiente = useMemo(() => anexosPorPermiso(dist, { incluir: pendienteEn(marcadas) }), [dist, marcadas]);
+  const [modoAnexo, setModoAnexo] = useModoAnexo(claveLocal("-anexo-permiso-modo"));
+  const anexosVista = modoAnexo === "marcado" ? anexosMarcado : modoAnexo === "pendiente" ? anexosPendiente : anexosDePermiso;
+  /** La pestaña de la distribución (`?sub=`). */
+  const { sub: seccion, irA: irASeccion } = useSeccionRolliza();
   /** El cierre del apartado: qué falta, qué tapan los reprocesos y qué queda. */
   const cuadre = useMemo(
     () =>
@@ -1082,7 +1096,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       .filter((x): x is NonNullable<typeof x> => x != null);
     const piezas = unificarPorMedida(
       elegidos.flatMap(({ b, especie, dia }) =>
-        dia == null ? piezasDelBloque(b, especie) : piezasDelDia(b, dia, especie),
+        /* Sólo lo tildado como distribuido: el papel conjunto no lleva la
+           línea que todavía nadie dio por distribuida (Brandon, 2026-10-19). */
+        piezasFiltradasDelBloque(b, especie, marcadoEn(marcadas), dia ?? undefined),
       ),
     );
     return {
@@ -1115,7 +1131,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       pieTablar: piezas.reduce((a, p) => a + p.pieTablar, 0),
       m3Aserrado: piezas.reduce((a, p) => a + p.m3, 0),
     };
-  }, [bloquesDistribuidos, seleccionAnexo]);
+  }, [bloquesDistribuidos, seleccionAnexo, marcadas]);
   const conCosto = dist.especies.some((e) => e.costoRolliza != null && e.rollizaM3 > 0);
   const juicio = juzgarRendimiento(t.rendimientoPct);
   /** El % aprovechable declarado, ponderado por volumen: lo que se ESPERABA sacar. */
@@ -1508,6 +1524,16 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     { key: "anexo", node: <td /> },
   ];
 
+  /** Sin bloques no hay reparto: se dice en una línea y se lleva a cargarlos. */
+  const sinBloques = (
+    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-3 text-sm text-[var(--text-secondary)]">
+      Todavía no hay bloques: no hay nada que distribuir.
+      <button type="button" onClick={() => irASeccion("entrada")} className={BTN}>
+        <Plus className="h-4 w-4" aria-hidden /> Cargarlos en «Lo que entró»
+      </button>
+    </div>
+  );
+
   return (
     <SeccionResumen
       icon={Share2}
@@ -1687,95 +1713,6 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         </div>
       )}
 
-      {/* Lo que sobra de un tipo puede tapar lo que falta de otro: pasar la
-          comercial por la sierra da paquetería —más piezas, menos m³—. Va
-          pegado al balance porque es la respuesta a «¿y esto que falta?». */}
-      {(reprocesos.length > 0 || imposibles.length > 0) && (
-        <SeccionResumen
-          icon={RefreshCw}
-          titulo="Reprocesos que cuadrarían la distribución"
-          /* La regla —qué se puede reprocesar, cómo se leen las columnas— detrás
-             del ⓘ: se lee una vez y después estorba (Brandon, 2026-09-09). */
-          ayuda={AYUDA_REPROCESOS}
-          hint={
-            <span className="font-mono tabular-nums">
-              {fmtM3(resumenReprocesos.m3EnJuego)} m³{" "}
-              <span className="font-sans">
-                en juego · {gruposReproceso.length}{" "}
-                {gruposReproceso.length === 1 ? "producto" : "productos"} ·{" "}
-                {resumenReprocesos.cuantas} conversion{resumenReprocesos.cuantas === 1 ? "" : "es"}
-              </span>
-            </span>
-          }
-        >
-          <ReprocesosSugeridos
-            grupos={gruposReproceso}
-            cuadre={cuadre}
-            imposibles={imposibles}
-          />
-        </SeccionResumen>
-      )}
-
-      {/* La meta y sus MEDIDAS: se mira haya o no reprocesos que sugerir. */}
-      {metaDelApartado && (
-        <SeccionResumen
-          icon={Target}
-          titulo="La meta, y de qué medidas está hecha"
-          hint={
-            <span>
-              {metaDelApartado.tipo} · hoy{" "}
-              <span className="font-mono tabular-nums">{metaDelApartado.actual} %</span> de{" "}
-              {metaDelApartado.pctMinimo} %
-            </span>
-          }
-        >
-          <MetaConMedidas meta={metaDelApartado} />
-        </SeccionResumen>
-      )}
-
-      {/* El papel por título habilitante: todas las medidas de ese permiso,
-          unificadas y cuadradas (ADR-406). */}
-      {anexosDePermiso.length > 0 && (
-        <SeccionResumen
-          id={ID_SECCION_ANEXO}
-          icon={FileText}
-          titulo="Anexo 04 por permiso"
-          etiqueta={<EtiquetaCuadre control={controlDe(cc, "anexos")} onAbrir={() => cuadreCifras.abrir("anexos")} />}
-          hint={
-            <span>
-              {anexosDePermiso.length} {anexosDePermiso.length === 1 ? "permiso" : "permisos"} ·{" "}
-              <span className="font-mono tabular-nums">
-                {fmtM3(anexosDePermiso.reduce((a, x) => a + x.totalM3, 0))} m³
-              </span>
-            </span>
-          }
-        >
-          <AnexoPorPermiso
-            anexos={anexosDePermiso}
-            precioDe={precioDe}
-            onAbrir={(piezas, etiqueta, especie) =>
-              setAnexoDe({
-                piezas,
-                especie,
-                etiqueta,
-                /* Un permiso puede juntar bloques de troza y de aserrada
-                   directa: el checklist tiene que decir de cuáles salió. */
-                procedencia: {
-                  rolliza: dist.especies
-                    .flatMap((e) => e.bloques)
-                    .filter((b) => !esAserradaDirecta(b.bloque) && (b.bloque.permiso ?? "").trim() === (etiqueta === "Sin permiso declarado" ? "" : etiqueta))
-                    .length,
-                  aserradaDirecta: dist.especies
-                    .flatMap((e) => e.bloques)
-                    .filter((b) => esAserradaDirecta(b.bloque) && (b.bloque.permiso ?? "").trim() === (etiqueta === "Sin permiso declarado" ? "" : etiqueta))
-                    .length,
-                },
-              })
-            }
-          />
-        </SeccionResumen>
-      )}
-
       {revisionAbierta && bloques.length > 0 && (
         <PanelRevision hallazgos={hallazgos} onCerrar={() => setRevisionAbierta(false)} />
       )}
@@ -1791,7 +1728,34 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         />
       )}
 
+      {errorBajar && (
+        <p className="mb-3 rounded-lg border-2 border-[var(--data-error-500)] px-3 py-2 text-sm text-[var(--data-error-600)] dark:text-[var(--data-error-500)]">
+          No se pudo generar el archivo: {errorBajar}
+        </p>
+      )}
+
+      {/* ── Lo que no cruza ────────────────────────────────────────────────── */}
+      {(dist.rollizaHuerfana.length > 0 || dist.aserradaHuerfana.length > 0) && (
+        <ul className="mb-3 space-y-1">
+          {dist.rollizaHuerfana.map((h) => (
+            <li key={`r-${h.especie}`} className="flex items-start gap-2 text-sm text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span><b>{fmtM3(h.m3)} m³ de {h.especie}</b> entraron en troza y no hay aserrada de esa especie.</span>
+            </li>
+          ))}
+          {dist.aserradaHuerfana.map((h) => (
+            <li key={`a-${h.especie}`} className="flex items-start gap-2 text-sm text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span><b>{fmtM3(h.m3)} m³ de {h.especie}</b> aserrados sin rolliza declarada: quedan enteros en el faltante.</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Una cosa a la vez (Brandon, 2026-10-19: «todo compacto y con pestañas»). */}
+      <PestanasRolliza sub={seccion} irA={irASeccion} porDistribuir={pendienteDeTildar.lineas.length} conAnexo={anexosDePermiso.length > 0}>
       {/* ── Lo que entró ───────────────────────────────────────────────────── */}
+      {seccion === "entrada" && (
       <div className="mb-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           {/* Lo que entró → lo que AMPARA DE VERDAD. Antes cerraba con la
@@ -2406,172 +2370,286 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             ))}
           </div>
         )}
-        {/* ── Juntar bloques marcados en un solo Anexo 04 ──────────────────── */}
-        {seleccionAnexo.size > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-primary/5 px-3 py-2 print:hidden">
-            <Combine className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
-            <span className="text-sm font-bold text-[var(--text-primary)]">
-              {combinadoAnexo.cantidad} bloque{combinadoAnexo.cantidad === 1 ? "" : "s"} marcado{combinadoAnexo.cantidad === 1 ? "" : "s"}
-              <span className="ml-1 font-normal text-[var(--text-tertiary)]">
-                ({combinadoAnexo.etiqueta || "sin etiqueta"} · ampara {fmtM3(combinadoAnexo.amparaM3)} m³)
-              </span>
-            </span>
-            {/* Lo YA distribuido de estos bloques — la misma cuenta que va al
-                Anexo 04, para saber de un vistazo cuánto junta antes de abrirlo. */}
-            <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5 whitespace-nowrap font-mono text-xs font-bold tabular-nums text-[var(--text-secondary)]">
-              <span>{fmtPiezas(combinadoAnexo.piezasCant)} <span className="font-sans font-normal text-[var(--text-tertiary)]">piezas</span></span>
-              <span>{fmtPt(combinadoAnexo.pieTablar)} <span className="font-sans font-normal text-[var(--text-tertiary)]">PT</span></span>
-              <span>{fmtM3(combinadoAnexo.m3Aserrado)} <span className="font-sans font-normal text-[var(--text-tertiary)]">m³ aserrados</span></span>
-            </span>
-            <div className="ml-auto flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => guardarSeleccionAnexo(new Set())}
-                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              >
-                <X className="h-3.5 w-3.5" aria-hidden /> Limpiar
-              </button>
-              <button
-                type="button"
-                disabled={combinadoAnexo.piezas.length === 0}
-                title={combinadoAnexo.piezas.length === 0 ? "Los bloques marcados todavía no tienen piezas asignadas" : "Abrir un solo Anexo 04 con las piezas de todos los bloques marcados"}
-                onClick={() => setAnexoDe({
-                  piezas: combinadoAnexo.piezas,
-                  especie: combinadoAnexo.especies.length === 1 ? combinadoAnexo.especies[0] : "",
-                  etiqueta: combinadoAnexo.etiqueta,
-                  procedencia: combinadoAnexo.procedencia,
-                })}
-                className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-40 dark:text-[var(--accent)]"
-              >
-                <FileText className="h-4 w-4" aria-hidden /> Anexo 04 conjunto
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-
-      {errorBajar && (
-        <p className="mb-3 rounded-lg border-2 border-[var(--data-error-500)] px-3 py-2 text-sm text-[var(--data-error-600)] dark:text-[var(--data-error-500)]">
-          No se pudo generar el archivo: {errorBajar}
-        </p>
       )}
 
-      {/* ── Lo que no cruza ────────────────────────────────────────────────── */}
-      {(dist.rollizaHuerfana.length > 0 || dist.aserradaHuerfana.length > 0) && (
-        <ul className="mb-3 space-y-1">
-          {dist.rollizaHuerfana.map((h) => (
-            <li key={`r-${h.especie}`} className="flex items-start gap-2 text-sm text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-              <span><b>{fmtM3(h.m3)} m³ de {h.especie}</b> entraron en troza y no hay aserrada de esa especie.</span>
-            </li>
+      {/* ── Bloques: el reparto, sus casillas y el papel conjunto ───────── */}
+      {seccion === "bloques" && (
+        <>
+          {bloques.length === 0 && sinBloques}
+          {/* ── Juntar bloques marcados en un solo Anexo 04 ──────────────────── */}
+          {seleccionAnexo.size > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-primary/5 px-3 py-2 print:hidden">
+              <Combine className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
+              <span className="text-sm font-bold text-[var(--text-primary)]">
+                {combinadoAnexo.cantidad} bloque{combinadoAnexo.cantidad === 1 ? "" : "s"} marcado{combinadoAnexo.cantidad === 1 ? "" : "s"}
+                <span className="ml-1 font-normal text-[var(--text-tertiary)]">
+                  ({combinadoAnexo.etiqueta || "sin etiqueta"} · ampara {fmtM3(combinadoAnexo.amparaM3)} m³)
+                </span>
+              </span>
+              {/* Lo YA distribuido de estos bloques — la misma cuenta que va al
+                  Anexo 04, para saber de un vistazo cuánto junta antes de abrirlo. */}
+              <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5 whitespace-nowrap font-mono text-xs font-bold tabular-nums text-[var(--text-secondary)]">
+                <span>{fmtPiezas(combinadoAnexo.piezasCant)} <span className="font-sans font-normal text-[var(--text-tertiary)]">piezas</span></span>
+                <span>{fmtPt(combinadoAnexo.pieTablar)} <span className="font-sans font-normal text-[var(--text-tertiary)]">PT</span></span>
+                <span>{fmtM3(combinadoAnexo.m3Aserrado)} <span className="font-sans font-normal text-[var(--text-tertiary)]">m³ aserrados</span></span>
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => guardarSeleccionAnexo(new Set())}
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden /> Limpiar
+                </button>
+                <button
+                  type="button"
+                  disabled={combinadoAnexo.piezas.length === 0}
+                  title={combinadoAnexo.piezas.length === 0 ? "Los bloques elegidos no tienen ningún tipo tildado como distribuido: marca al menos uno" : "Un solo Anexo 04 con lo tildado como distribuido de los bloques elegidos"}
+                  onClick={() => setAnexoDe({
+                    piezas: combinadoAnexo.piezas,
+                    especie: combinadoAnexo.especies.length === 1 ? combinadoAnexo.especies[0] : "",
+                    etiqueta: combinadoAnexo.etiqueta,
+                    procedencia: combinadoAnexo.procedencia,
+                  })}
+                  className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-40 dark:text-[var(--accent)]"
+                >
+                  <FileText className="h-4 w-4" aria-hidden /> {combinadoAnexo.piezas.length === 0 ? "Marca al menos un tipo" : "Anexo 04 conjunto"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* «Registrar toda la producción» (ADR-464): todo lo pendiente al Libro con una confirmación. */}
+          {libroReparto.barra}
+
+          {distVista.especies.map((e) => (
+            <BloqueEspecie
+              key={e.especie}
+              e={e}
+              dim={dim}
+              conCosto={conCosto}
+              indiceBloque={indiceBloque}
+              marcadas={marcadas}
+              marcar={marcar}
+              onAnexo={(b) => setAnexoDe({
+                /* Sólo los tipos tildados como distribuidos (Brandon, 2026-10-19). */
+                piezas: piezasFiltradasDelBloque(b, e.especie, marcadoEn(marcadas)),
+                especie: e.especie,
+                etiqueta: b.bloque.etiqueta || "Sin etiqueta",
+                procedencia: esAserradaDirecta(b.bloque) ? { rolliza: 0, aserradaDirecta: 1 } : { rolliza: 1, aserradaDirecta: 0 },
+              })}
+              /* El papel de UNA jornada: el Libro se registra día por día, así que
+                 el anexo del día 2 no puede traer las piezas del día 1 (ADR-405). */
+              onAnexoDia={(b, dia) => setAnexoDe({
+                piezas: piezasFiltradasDelBloque(b, e.especie, marcadoEn(marcadas), dia),
+                especie: e.especie,
+                etiqueta: `${b.bloque.etiqueta || "Sin etiqueta"} · día ${dia}`,
+                procedencia: esAserradaDirecta(b.bloque) ? { rolliza: 0, aserradaDirecta: 1 } : { rolliza: 1, aserradaDirecta: 0 },
+              })}
+              anexoElegidos={seleccionAnexo}
+              onAlternarAnexo={alternarSeleccionAnexo}
+              editarBloque={editar}
+              valorTexto={valorTexto}
+              onCambioDecimal={onCambioDecimal}
+              onBlurDecimal={onBlurDecimal}
+              onAgregarBloqueSugerido={agregarBloqueSugerido}
+              onEditarLinea={editarLinea}
+              valorTextoLinea={valorTextoLinea}
+              onCambioDecimalLinea={onCambioDecimalLinea}
+              onBlurDecimalLinea={onBlurDecimalLinea}
+              libro={libroReparto.libro}
+            />
           ))}
-          {dist.aserradaHuerfana.map((h) => (
-            <li key={`a-${h.especie}`} className="flex items-start gap-2 text-sm text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-              <span><b>{fmtM3(h.m3)} m³ de {h.especie}</b> aserrados sin rolliza declarada: quedan enteros en el faltante.</span>
-            </li>
-          ))}
-        </ul>
+        </>
       )}
 
-      {/* «Registrar toda la producción» (ADR-464): todo lo pendiente al Libro con una confirmación. */}
-      {libroReparto.barra}
-
-      {distVista.especies.map((e) => (
-        <BloqueEspecie
-          key={e.especie}
-          e={e}
+      {/* ── Por distribuir: lo que nadie tildó, junto y por permiso ─────── */}
+      {seccion === "por-distribuir" && (bloques.length === 0 ? sinBloques : (
+        <RepartoPorDistribuir
+          pd={pendienteDeTildar}
+          anexos={anexosPendiente}
           dim={dim}
-          conCosto={conCosto}
-          indiceBloque={indiceBloque}
-          marcadas={marcadas}
           marcar={marcar}
-          onAnexo={(b) => setAnexoDe({
-            piezas: piezasDelBloque(b, e.especie),
-            especie: e.especie,
-            etiqueta: b.bloque.etiqueta || "Sin etiqueta",
-            procedencia: esAserradaDirecta(b.bloque) ? { rolliza: 0, aserradaDirecta: 1 } : { rolliza: 1, aserradaDirecta: 0 },
+          onAnexo={(a) => setAnexoDe({
+            piezas: a.piezas,
+            especie: a.especies[0] ?? "",
+            etiqueta: `Sin marcar · ${a.label}`,
+            procedencia: procedenciaDeAnexo(a),
           })}
-          /* El papel de UNA jornada: el Libro se registra día por día, así que
-             el anexo del día 2 no puede traer las piezas del día 1 (ADR-405). */
-          onAnexoDia={(b, dia) => setAnexoDe({
-            piezas: piezasDelDia(b, dia, e.especie),
-            especie: e.especie,
-            etiqueta: `${b.bloque.etiqueta || "Sin etiqueta"} · día ${dia}`,
-            procedencia: esAserradaDirecta(b.bloque) ? { rolliza: 0, aserradaDirecta: 1 } : { rolliza: 1, aserradaDirecta: 0 },
-          })}
-          anexoElegidos={seleccionAnexo}
-          onAlternarAnexo={alternarSeleccionAnexo}
-          editarBloque={editar}
-          valorTexto={valorTexto}
-          onCambioDecimal={onCambioDecimal}
-          onBlurDecimal={onBlurDecimal}
-          onAgregarBloqueSugerido={agregarBloqueSugerido}
-          onEditarLinea={editarLinea}
-          valorTextoLinea={valorTextoLinea}
-          onCambioDecimalLinea={onCambioDecimalLinea}
-          onBlurDecimalLinea={onBlurDecimalLinea}
-          libro={libroReparto.libro}
         />
       ))}
-      {libroReparto.nodo}
 
-      {/* ── El diferenciador: lo repartido contra lo que falta ─────────────── */}
-      {(t.aserradaM3 > 0 || t.faltanteM3 > 0) && (
-        <div className="mb-4 space-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
-          <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-            <Scale className="h-4 w-4 text-[var(--accent)]" aria-hidden /> Cuánto falta por distribuir
-          </span>
-          <DiferenciaDistribucion dist={dist} dim={dim} />
-        </div>
-      )}
-
-      {/* ── El cierre general ──────────────────────────────────────────────── */}
-      {(t.rollizaM3 > 0 || t.aserradaM3 > 0) && (
-        <div className={`grid grid-cols-2 gap-2 ${t.aserradaDirectaM3 > 0 ? "sm:grid-cols-3 xl:grid-cols-5" : "sm:grid-cols-4"}`}>
-          <KpiResumen label="Rolliza que entró" value={fmtM3(t.rollizaM3)} unidad="m³" hint={`ampara ${fmtM3(capacidadRollizaM3)} m³`} />
-          {/* Aparece sólo si hay: un KPI en 0 permanente enseña a ignorar la fila. */}
-          {t.aserradaDirectaM3 > 0 && (
-            <KpiResumen
-              label="Aserrada directa"
-              value={fmtM3(t.aserradaDirectaM3)}
-              unidad="m³"
-              hint={`sin troza · ampara ${fmtM3(t.amparadaDirectaM3)} m³`}
+      {/* ── Anexo 04 por permiso: todo, lo tildado o lo que falta tildar ─── */}
+      {seccion === "anexo" && (anexosDePermiso.length === 0 ? (
+        <p className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-4 text-sm text-[var(--text-secondary)]">
+          Todavía ningún bloque tiene medidas asignadas: no hay Anexo 04 que armar.
+        </p>
+      ) : (
+        /* El papel por título habilitante: todas las medidas de ese permiso,
+           unificadas y cuadradas (ADR-406). Una sola sección con interruptor,
+           no una copia por modo: cambia qué líneas entran, no el papel. */
+        <SeccionResumen
+          icon={FileText}
+          titulo="Anexo 04 por permiso"
+          etiqueta={modoAnexo === "todo" ? <EtiquetaCuadre control={controlDe(cc, "anexos")} onAbrir={() => cuadreCifras.abrir("anexos")} /> : undefined}
+          hint={
+            <span>
+              {anexosVista.length} {anexosVista.length === 1 ? "permiso" : "permisos"} ·{" "}
+              <span className="font-mono tabular-nums">
+                {fmtM3(anexosVista.reduce((a, x) => a + Math.round(x.totalM3 * 1000), 0) / 1000)} m³
+              </span>
+            </span>
+          }
+          acciones={<SelectorModoAnexo modo={modoAnexo} onCambiar={setModoAnexo} cuadre={cuadreTildado} />}
+        >
+          <CuentaMarcado cuadre={cuadreTildado} />
+          {anexosVista.length === 0 ? (
+            <p className="text-sm text-[var(--text-secondary)]">
+              {modoAnexo === "marcado"
+                ? "Todavía no tildaste ninguna línea como distribuida."
+                : "Todo está tildado como distribuido: no queda nada sin marcar."}
+            </p>
+          ) : (
+            <AnexoPorPermiso
+              anexos={anexosVista}
+              precioDe={precioDe}
+              onAbrir={(piezas, etiqueta, especie) => {
+                /* Con «Marcado» o «Por distribuir», la procedencia sale de los
+                   bloques que de verdad aportaron líneas a ESTE papel. */
+                const elegido = modoAnexo === "todo" ? undefined : anexosVista.find((a) => a.label === etiqueta);
+                setAnexoDe({
+                  piezas,
+                  especie,
+                  etiqueta,
+                  /* Un permiso puede juntar bloques de troza y de aserrada
+                     directa: el checklist tiene que decir de cuáles salió. */
+                  procedencia: elegido ? procedenciaDeAnexo(elegido) : {
+                    rolliza: dist.especies
+                      .flatMap((e) => e.bloques)
+                      .filter((b) => !esAserradaDirecta(b.bloque) && (b.bloque.permiso ?? "").trim() === (etiqueta === "Sin permiso declarado" ? "" : etiqueta))
+                      .length,
+                    aserradaDirecta: dist.especies
+                      .flatMap((e) => e.bloques)
+                      .filter((b) => esAserradaDirecta(b.bloque) && (b.bloque.permiso ?? "").trim() === (etiqueta === "Sin permiso declarado" ? "" : etiqueta))
+                      .length,
+                  },
+                });
+              }}
             />
           )}
-          <KpiResumen label="Aserrada amparada" value={fmtM3(t.amparadaM3)} unidad="m³" hint={`de ${fmtM3(t.aserradaM3)} m³ producidos`} />
-          <KpiResumen
-            label="Falta por distribuir"
-            value={fmtM3(t.faltanteM3)}
-            unidad="m³"
-            hint={t.faltanteM3 > 0 ? `pide ${fmtM3(t.rollizaFaltanteM3)} m³ de troza` : "todo tiene respaldo"}
-            tono={t.faltanteM3 > 0 ? TONO.warning : TONO.success}
-          />
-          <KpiResumen
-            label="Rendimiento general"
-            value={t.rendimientoPct == null ? "—" : fmtPct(t.rendimientoPct)}
-            unidad={t.rendimientoPct == null ? undefined : "%"}
-            /* El real y el aprovechable declarado son dos números distintos y la
-               pantalla los mostraba sueltos: se lee «22 %, bajo para aserrío»
-               justo debajo de un «50 %» tipeado a mano y parece un error de
-               cuenta. No lo es — sobró troza sin aserrar — pero eso hay que
-               decirlo acá, que es donde se mira. */
-            hint={
-              libreRollizaM3 > 0 && aprovechableEsperado != null
-                ? `esperabas ${fmtPct(aprovechableEsperado)} % · sobran ${fmtM3(libreRollizaM3)} m³ sin aserrar`
-                : t.aserradaDirectaM3 > 0
-                  ? `${juicio.label} · sin contar la aserrada directa`
-                  : juicio.label
-            }
-            tono={TONO[juicio.tono]}
-          />
-        </div>
+        </SeccionResumen>
+      ))}
+
+      {/* ── Faltante y cierre: qué falta, cómo taparlo y el cierre general ── */}
+      {seccion === "cierre" && (
+        <>
+          {/* ── El diferenciador: lo repartido contra lo que falta ─────────────── */}
+          {(t.aserradaM3 > 0 || t.faltanteM3 > 0) && (
+            <div className="mb-4 space-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+              <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+                <Scale className="h-4 w-4 text-[var(--accent)]" aria-hidden /> Cuánto falta por distribuir
+              </span>
+              <DiferenciaDistribucion dist={dist} dim={dim} />
+            </div>
+          )}
+
+          {/* Lo que sobra de un tipo puede tapar lo que falta de otro: pasar la
+              comercial por la sierra da paquetería —más piezas, menos m³—. Va
+              pegado al balance porque es la respuesta a «¿y esto que falta?». */}
+          {(reprocesos.length > 0 || imposibles.length > 0) && (
+            <SeccionResumen
+              icon={RefreshCw}
+              titulo="Reprocesos que cuadrarían la distribución"
+              /* La regla —qué se puede reprocesar, cómo se leen las columnas— detrás
+                 del ⓘ: se lee una vez y después estorba (Brandon, 2026-09-09). */
+              ayuda={AYUDA_REPROCESOS}
+              hint={
+                <span className="font-mono tabular-nums">
+                  {fmtM3(resumenReprocesos.m3EnJuego)} m³{" "}
+                  <span className="font-sans">
+                    en juego · {gruposReproceso.length}{" "}
+                    {gruposReproceso.length === 1 ? "producto" : "productos"} ·{" "}
+                    {resumenReprocesos.cuantas} conversion{resumenReprocesos.cuantas === 1 ? "" : "es"}
+                  </span>
+                </span>
+              }
+            >
+              <ReprocesosSugeridos
+                grupos={gruposReproceso}
+                cuadre={cuadre}
+                imposibles={imposibles}
+              />
+            </SeccionResumen>
+          )}
+
+          {/* La meta y sus MEDIDAS: se mira haya o no reprocesos que sugerir. */}
+          {metaDelApartado && (
+            <SeccionResumen
+              icon={Target}
+              titulo="La meta, y de qué medidas está hecha"
+              hint={
+                <span>
+                  {metaDelApartado.tipo} · hoy{" "}
+                  <span className="font-mono tabular-nums">{metaDelApartado.actual} %</span> de{" "}
+                  {metaDelApartado.pctMinimo} %
+                </span>
+              }
+            >
+              <MetaConMedidas meta={metaDelApartado} />
+            </SeccionResumen>
+          )}
+
+          {/* ── El cierre general ──────────────────────────────────────────────── */}
+          {(t.rollizaM3 > 0 || t.aserradaM3 > 0) && (
+            <div className={`grid grid-cols-2 gap-2 ${t.aserradaDirectaM3 > 0 ? "sm:grid-cols-3 xl:grid-cols-5" : "sm:grid-cols-4"}`}>
+              <KpiResumen label="Rolliza que entró" value={fmtM3(t.rollizaM3)} unidad="m³" hint={`ampara ${fmtM3(capacidadRollizaM3)} m³`} />
+              {/* Aparece sólo si hay: un KPI en 0 permanente enseña a ignorar la fila. */}
+              {t.aserradaDirectaM3 > 0 && (
+                <KpiResumen
+                  label="Aserrada directa"
+                  value={fmtM3(t.aserradaDirectaM3)}
+                  unidad="m³"
+                  hint={`sin troza · ampara ${fmtM3(t.amparadaDirectaM3)} m³`}
+                />
+              )}
+              <KpiResumen label="Aserrada amparada" value={fmtM3(t.amparadaM3)} unidad="m³" hint={`de ${fmtM3(t.aserradaM3)} m³ producidos`} />
+              <KpiResumen
+                label="Falta por distribuir"
+                value={fmtM3(t.faltanteM3)}
+                unidad="m³"
+                hint={t.faltanteM3 > 0 ? `pide ${fmtM3(t.rollizaFaltanteM3)} m³ de troza` : "todo tiene respaldo"}
+                tono={t.faltanteM3 > 0 ? TONO.warning : TONO.success}
+              />
+              <KpiResumen
+                label="Rendimiento general"
+                value={t.rendimientoPct == null ? "—" : fmtPct(t.rendimientoPct)}
+                unidad={t.rendimientoPct == null ? undefined : "%"}
+                /* El real y el aprovechable declarado son dos números distintos y la
+                   pantalla los mostraba sueltos: se lee «22 %, bajo para aserrío»
+                   justo debajo de un «50 %» tipeado a mano y parece un error de
+                   cuenta. No lo es — sobró troza sin aserrar — pero eso hay que
+                   decirlo acá, que es donde se mira. */
+                hint={
+                  libreRollizaM3 > 0 && aprovechableEsperado != null
+                    ? `esperabas ${fmtPct(aprovechableEsperado)} % · sobran ${fmtM3(libreRollizaM3)} m³ sin aserrar`
+                    : t.aserradaDirectaM3 > 0
+                      ? `${juicio.label} · sin contar la aserrada directa`
+                      : juicio.label
+                }
+                tono={TONO[juicio.tono]}
+              />
+            </div>
+          )}
+          {conCosto && t.costoRolliza != null && (
+            <p className="mt-2 text-sm text-[var(--text-tertiary)]">
+              Costo de la rolliza cargada: <b className="text-[var(--text-secondary)]">S/ {fmtSoles(t.costoRolliza)}</b>
+            </p>
+          )}
+        </>
       )}
-      {conCosto && t.costoRolliza != null && (
-        <p className="mt-2 text-sm text-[var(--text-tertiary)]">
-          Costo de la rolliza cargada: <b className="text-[var(--text-secondary)]">S/ {fmtSoles(t.costoRolliza)}</b>
-        </p>
-      )}
+      </PestanasRolliza>
+      {libroReparto.nodo}
       {/* El Anexo 04 del bloque: el mismo papel del cubicador, con las piezas
           que ESTE bloque ampara. Se emite por bloque porque cada uno responde a
           una guía distinta. */}

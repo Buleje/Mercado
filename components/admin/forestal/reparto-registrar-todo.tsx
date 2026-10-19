@@ -36,6 +36,11 @@ import { button } from "@/components/ui-system/button-variants";
 
 /** El `id` de la sección «Anexo 04 por permiso» de la Distribución: el siguiente paso salta ahí. */
 export const ID_SECCION_ANEXO = "reparto-anexo-permiso";
+/**
+ * La Distribución va en pestañas (19-10): el ancla queda en la barra, que
+ * siempre está, y este evento le pide abrir la pestaña del Anexo 04.
+ */
+export const EVENTO_IR_AL_ANEXO = "buleje:reparto-ir-al-anexo";
 
 const BTN =
   button({ variant: "secondary", className: "rounded-xl" });

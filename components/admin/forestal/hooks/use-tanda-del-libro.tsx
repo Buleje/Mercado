@@ -10,7 +10,7 @@ import {
   type PlanDeProduccion,
   type RecorridoDeTanda,
 } from "@/lib/forestal/toda-la-produccion";
-import RepartoRegistrarTodo, { ID_SECCION_ANEXO } from "../reparto-registrar-todo";
+import RepartoRegistrarTodo, { EVENTO_IR_AL_ANEXO, ID_SECCION_ANEXO } from "../reparto-registrar-todo";
 import { BarraRegistrarTodo, BotonRegistrarBloque } from "../reparto-registrar-todo-partes";
 
 /**
@@ -85,6 +85,7 @@ export function useTandaDelLibro({
 
   const irAlAnexo = () => {
     setAbierta(null);
+    window.dispatchEvent(new Event(EVENTO_IR_AL_ANEXO));
     const el = document.getElementById(ID_SECCION_ANEXO);
     const quieto = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     el?.scrollIntoView({ behavior: quieto ? "auto" : "smooth", block: "start" });
