@@ -82,6 +82,8 @@ import {
   leerObservacionGuardada, tomarObservacion, OBSERVACION_MAX, type ObservacionDeCarga,
 } from "@/lib/forestal/observacion-de-pieza";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
+import { useMarcarFilas } from "./hooks/use-marcar-filas";
+import { BarraFilasMarcadas, MarcarFilasPorRango } from "./cubicador-marcar-filas";
 import { AnfitrionDeModales, useModalAislado } from "./hooks/use-modal-aislado";
 import { useImportarFotoPendiente } from "./planillas/importar-pendiente";
 import type { PlanillaId } from "@/lib/forestal/planillas/tipos";
@@ -174,6 +176,8 @@ const ERR_MSG: Record<string, string> = {
 
 const fmtPt = (v: number) => formatNumber(v, 2);
 const fmtM3 = (v: number) => formatNumber(v, 3);
+/** La casilla de la fila cambia en su `onClick` (que sabe si vino con Shift). */
+const SIN_CAMBIO = () => undefined;
 /**
  * Dónde guarda este cubicador su lote.
  *
@@ -1640,6 +1644,15 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       });
   }, [rows, filtroEspecie, filtroTipo, filtroDueno, busqueda]);
   const limpiarFiltros = useCallback(() => { setFiltroEspecie(""); setFiltroTipo(""); setFiltroDueno(""); setBusqueda(""); }, []);
+  /* Marcar filas enteras: Shift+clic, «de la 50 a la 80», la cuenta al pie y
+     Eliminar con Deshacer (Brandon, 2026-10-19). Sobre el MISMO tilde del
+     papel: no hay una segunda selección que se contradiga con la primera. */
+  const marcar = useMarcarFilas({
+    rows, leerFilas: () => rowsRef.current, filasVisibles,
+    numeroDe: (indice) => numeroDeFila(indice, rows.length, ordenFilas),
+    marcadas, setMarcadas, persist, pushToast,
+    alQuitar: (ids) => setLastAdded((prev) => (prev && ids.has(prev.id) ? null : prev)),
+  });
 
   /**
    * Ventaneo de la tabla (memoria `cubicador-freeze-lotes-grandes`): con
@@ -1724,6 +1737,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     envolver: true,
     onEliminarFila: onEliminarFilaVisible,
     onDuplicarFila: onDuplicarFilaVisible,
+    onMarcarFila: marcar.alternarFilaVisible,
   });
   // Totales de la vista (iguales al lote si no hay filtro activo).
   const totalesVisibles = useMemo(() => {
@@ -2503,8 +2517,10 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                     <Truck className="h-3.5 w-3.5 text-[var(--data-8)]" aria-hidden /> Ver trasera · {piezasTrasera} pzas
                   </button>
                 )}
-                {marcadas.size > 0 && (
-                  <button type="button" onClick={() => setMarcadas(new Set())} className="rounded-lg px-2 py-1.5 text-xs font-bold text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]">
+                {/* Fuera del modal lo hace la barra de lo marcado («Quitar marcas»);
+                    dentro de «Producir sin lote» esa barra no se muestra. */}
+                {onLote && marcadas.size > 0 && (
+                  <button type="button" onClick={marcar.quitarMarcas} className="rounded-lg px-2 py-1.5 text-xs font-bold text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]">
                     {marcadas.size === 1 ? "Quitar la marca" : `Quitar las ${marcadas.size} marcas`}
                   </button>
                 )}
@@ -2774,8 +2790,9 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
         ) : (
           <>
             {/* Filtros de la vista — especie · tipo · buscar medida (no alteran los datos) */}
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <div className="relative min-w-[180px] flex-1">
+            <div className="@container mb-3 flex flex-wrap items-center gap-2">
+              {/* 150 y no 180: con «Marcar filas» la banda entra en una fila a 1280. */}
+              <div className="relative min-w-[150px] flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
                 <input
                   type="text"
@@ -2848,6 +2865,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               )}
               {/* Columnas opcionales: ocultar/mostrar, ordenar y restablecer —
                   queda guardado por tenant hasta que se vuelva a tocar. */}
+              <MarcarFilasPorRango total={rows.length} onMarcar={marcar.marcarRango} />
               <MenuColumnas
                 abierto={colsMenuOpen}
                 onAlternar={() => setColsMenuOpen((v) => !v)}
@@ -2981,11 +2999,11 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                         <input
                           type="checkbox"
                           checked={marcada}
-                          onChange={(e) => setMarcadas((prev) => {
-                            const next = new Set(prev);
-                            if (e.target.checked) next.add(r.id); else next.delete(r.id);
-                            return next;
-                          })}
+                          /* El clic hace todo (con Shift, el tramo desde la última
+                             clicada); el mousedown con Shift no pinta texto. */
+                          onClick={(e) => { if (sel.rango) limpiarSeleccion(); marcar.alClicarCasilla(e, r.id); }}
+                          onMouseDown={(e) => { if (e.shiftKey) e.preventDefault(); }}
+                          onChange={SIN_CAMBIO}
                           aria-label={`Marcar la pieza ${r.espesor}×${r.ancho}×${r.largo}`}
                           className="h-4 w-4 accent-[var(--accent)]"
                         />
@@ -3299,6 +3317,10 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       {/* La cuenta de lo marcado, fija al pie como en una planilla: la tabla
           puede tener trescientas filas y la selección quedar fuera de pantalla. */}
       <BarraSeleccion rango={sel.rango} columnas={columnasSel} onLimpiar={sel.limpiar} />
+      {/* Dentro de «Producir sin lote» (un modal) la barra fija quedaría detrás. */}
+      {!onLote && marcadas.size > 0 && !sel.rango && (
+        <BarraFilasMarcadas resumen={marcar.resumen} onEliminar={marcar.eliminar} onQuitar={marcar.quitarMarcas} />
+      )}
 
       {/* Toasts flotantes de acción (agregar / eliminar / guardar / importar…) */}
       <ActionToasts toasts={toasts} onDismiss={dismissToast} />

@@ -95,6 +95,8 @@ export type OpcionesGrilla = {
   onEliminarFila?: (fila: number) => void;
   /** Ctrl/Cmd + D sobre la fila. */
   onDuplicarFila?: (fila: number) => void;
+  /** Shift+Espacio (como en Excel) marca o desmarca la fila. Sólo en celdas de número: en una de texto el espacio se escribe. */
+  onMarcarFila?: (fila: number) => void;
   /**
    * Atajo para grillas de forma conocida y ESTABLE (filas contiguas 0..N-1,
    * mismas columnas en todas): evita `filasDe`/`columnasDe` (querySelectorAll
@@ -127,7 +129,7 @@ const TECLAS_NAV = new Set(["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "
  * - `Escape` suelta el foco.
  */
 export function useTecladoGrilla(op: OpcionesGrilla) {
-  const { grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila, totalFilas, columnas, envolver } = op;
+  const { grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila, onMarcarFila, totalFilas, columnas, envolver } = op;
 
   return useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -150,6 +152,11 @@ export function useTecladoGrilla(op: OpcionesGrilla) {
           e.preventDefault();
           onDuplicarFila(fila);
         }
+        return;
+      }
+      if (e.key === " " && e.shiftKey && onMarcarFila && (el.inputMode === "decimal" || el.inputMode === "numeric")) {
+        e.preventDefault();
+        onMarcarFila(fila);
         return;
       }
       if (e.key === "Escape") { el.blur(); return; }
@@ -229,7 +236,7 @@ export function useTecladoGrilla(op: OpcionesGrilla) {
         }
       }
     },
-    [grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila, totalFilas, columnas, envolver]
+    [grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila, onMarcarFila, totalFilas, columnas, envolver]
   );
 }
 

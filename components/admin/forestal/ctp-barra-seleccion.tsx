@@ -80,6 +80,9 @@ export default function CtpBarraSeleccion({
    */
   accionesSecundarias,
   menu,
+  detalle,
+  accionPeligro,
+  limpiarLabel = "Limpiar",
 }: {
   cifras: CifraSeleccion[];
   onLimpiar: () => void;
@@ -95,6 +98,11 @@ export default function CtpBarraSeleccion({
   accionesSecundarias?: AccionSeleccion[];
   /** Un menú «Más» junto a las secundarias, para lo de vez en cuando (Lotes, 2026-10-02). */
   menu?: ReactNode;
+  /** Una línea entera debajo de las cifras (el desglose por especie del cubicador). */
+  detalle?: ReactNode;
+  /** La acción principal borra: rojo en vez del acento. */
+  accionPeligro?: boolean;
+  limpiarLabel?: string;
 }) {
   /* Los toasts del módulo se apoyan en esta variable para no quedar debajo de
      la barra. Se limpia al desmontar: si quedara puesta, los toasts flotarían
@@ -168,13 +176,15 @@ export default function CtpBarraSeleccion({
             </span>
           )}
 
+          {detalle && <div className="order-last min-w-0 basis-full">{detalle}</div>}
+
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               onClick={onLimpiar}
               className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
             >
-              <X className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Limpiar</span>
+              <X className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">{limpiarLabel}</span>
             </button>
             {accionesSecundarias?.map((a) => (
               <button
@@ -192,7 +202,10 @@ export default function CtpBarraSeleccion({
               type="button"
               disabled={accionDisabled}
               onClick={onAccion}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-50"
+              /* Rojo de peligro en 700: blanco sobre él da 6,5:1 en claro y 4,8:1 en oscuro (el 600 oscuro quedaba en 3,8). */
+              className={`inline-flex h-12 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-50 ${
+                accionPeligro ? "bg-[var(--data-error-700)]" : "bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)]"
+              }`}
             >
               <AccionIcon className="h-4 w-4" aria-hidden /> {accionLabel}
             </button>
