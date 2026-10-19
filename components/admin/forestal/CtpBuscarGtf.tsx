@@ -16,7 +16,7 @@
  * listados que las vistas, con `search`.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ArrowRight, Boxes, Loader2, PackageOpen, Search, Truck } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -24,6 +24,8 @@ import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period"
 import { formatDate, productLabel, StatusBadge, type WoodEntry } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { numerosEnVariosPermisos } from "@/lib/forestal/guia-por-permiso";
+import { NumeroDeGuia } from "./guia-con-permiso";
 
 interface DespachoHit {
   id: string;
@@ -70,6 +72,8 @@ export default function CtpBuscarGtf({
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ingresos, setIngresos] = useState<WoodEntry[]>([]);
+  /* ADR-504: el mismo N° en dos permisos se lee «4 · permiso 017». */
+  const repetidosIng = useMemo(() => numerosEnVariosPermisos(ingresos.map((e) => ({ gtfNumber: e.gtfNumber, contratoId: e.contratoId, permiso: e.originCode }))), [ingresos]);
   const [despachos, setDespachos] = useState<DespachoHit[]>([]);
   /** Paquetes cuyo cartel dice eso (ADR-366). */
   const [paquetes, setPaquetes] = useState<PaqueteHit[]>([]);
@@ -236,7 +240,12 @@ export default function CtpBuscarGtf({
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{e.gtfNumber}</span>
+                          <NumeroDeGuia
+                            gtfNumber={e.gtfNumber}
+                            permiso={e.originCode}
+                            repetidos={repetidosIng}
+                            className="font-mono text-sm font-bold text-[var(--text-primary)]"
+                          />
                           <StatusBadge status={e.status} />
                         </div>
                         <p className="mt-0.5 truncate text-sm text-[var(--text-secondary)]">

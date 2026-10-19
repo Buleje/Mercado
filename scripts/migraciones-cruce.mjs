@@ -63,7 +63,9 @@ const normExpr = (s) =>
     .replace(/("?\w+"?)\s+NOT\s+IN\s*\(([^()]*)\)/gi, "$1 <> ALL (ARRAY[$2])")
     .replace(/("?\w+"?)\s+IN\s*\(([^()]*)\)/gi, "$1 = ANY (ARRAY[$2])")
     .replace(/!=/g, "<>")
-    .replace(/::("[^"]+"|[A-Za-z ]+)(\(\d+(,\d+)?\))?(\[\])?/g, "").toLowerCase().replace(/now\(\)/g, "current_timestamp").replace(/["()\s]/g, "");
+    // El tipo del cast puede ser de varias palabras (`character varying`, `timestamp without time zone`),
+    // pero NO cualquier palabra: con `[A-Za-z ]+` el `'madera'::text AND "x"` se comía el AND (19-10, ADR-504: ✗ falso).
+    .replace(/::("[^"]+"|[A-Za-z_]+(?:\s+(?:varying|precision|with(?:out)?\s+time\s+zone))?)(\(\d+(,\d+)?\))?(\[\])?/g, "").toLowerCase().replace(/now\(\)/g, "current_timestamp").replace(/["()\s]/g, "");
 function normTipo(t) {
   let s = t.trim().replace(/\s+/g, " ");
   const arr = s.endsWith("[]");

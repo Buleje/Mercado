@@ -35,6 +35,11 @@ const H = vi.hoisted(() => {
       aggregate: async () => ({ _max: { libroNro: 10 } }),
       create: async (a: { data: Record<string, unknown> }) => ({ id: "nueva", costoTotal: null, ...a.data }),
       findFirst: async () => null,
+      /* ADR-504: el alta de trozas lee el permiso de cada fila (`trozasConPermiso`). */
+      findMany: async (a: { where: { tenantId: string; id: { in: string[] } } }) =>
+        estado.filas
+          .filter((f) => f.tenantId === a.where.tenantId && a.where.id.in.includes(f.id))
+          .map((f) => ({ id: f.id, contratoId: null })),
     },
     woodEntryTroza: {
       findMany: async (a: { where: { woodEntryId: { in: string[] } } }) =>

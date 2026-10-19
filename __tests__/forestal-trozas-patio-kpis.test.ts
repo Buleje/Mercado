@@ -114,7 +114,21 @@ describe("guiasSinCostoDelPatio — lo que el modal «Cargar costos» lista", ()
       HOY,
     );
     expect(g.map((x) => x.gtfNumber)).toEqual(["002", "001"]);
-    expect(g[1]).toEqual({ gtfNumber: "001", proveedor: "Ríos", especies: ["Cumala", "Tornillo"], piezas: 2, m3Patio: 3.5, diasMax: 10 });
+    expect(g[1]).toEqual({ gtfNumber: "001", contratoId: null, permiso: "CONC-1", proveedor: "Ríos", especies: ["Cumala", "Tornillo"], piezas: 2, m3Patio: 3.5, diasMax: 10 });
+  });
+
+  it("ADR-504: el mismo N° en dos permisos son dos guías, cada una con su permiso", () => {
+    const g = guiasSinCostoDelPatio(
+      [
+        pieza({ id: "a", woodEntryId: "w1", gtfNumber: "4", contratoId: "c17", permiso: "PER-017", volumenM3: 2 }),
+        pieza({ id: "b", woodEntryId: "w2", gtfNumber: "4", contratoId: "c19", permiso: "PER-019", volumenM3: 1 }),
+      ],
+      HOY,
+    );
+    expect(g.map((x) => [x.gtfNumber, x.contratoId, x.permiso, x.m3Patio])).toEqual([
+      ["4", "c17", "PER-017", 2],
+      ["4", "c19", "PER-019", 1],
+    ]);
   });
 });
 

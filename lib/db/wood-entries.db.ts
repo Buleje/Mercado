@@ -9,7 +9,21 @@
  */
 import { prisma } from "@/lib/prisma";
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import {
+  busquedaDeTroza,
+  chocanTrozas,
+  decidirTrozasDelArchivo,
+  GuiaAmbiguaError,
+  mensajeGuiaAmbigua,
+  normalizarCodigoTroza,
+  type AmbitoDeTroza,
+  type BusquedaDeTroza,
+  type FilaDeTroza,
+  type IngresoDeGuia,
+  type ResolucionDeGuia,
+} from "@/lib/forestal/identidad-guia";
 import { esCampoSinDato, marcadorDeAusencia } from "@/lib/forestal/campo-sin-dato";
+import { esProveedorDeRelleno } from "@/lib/forestal/asignar-permiso-import";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { claveDeGuia, resumirGuia, type GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import { resumirIngresosPorGuia, type IngresosPorGuia } from "@/lib/forestal/reporte-diario-ingresos";
@@ -25,6 +39,7 @@ import { detalleDeFotosGuia, diffFotosGuia, motivoSiNoPuedeGuardar } from "@/lib
 import { normalizarFotos, tieneFotos, urlsDeFotos, type FotoCarga } from "@/lib/forestal/fotos-carga";
 import { FotoNoValidaError, resolverFotosEntrantes } from "@/lib/forestal/fotos-carga-firma";
 import { ForestEspeciesDB } from "./forest-especies.db";
+import { trozasConPermiso } from "./troza-permiso.db";
 import { mismaEspecie } from "@/lib/forestal/loth-constants";
 import {
   claveDeLaGuia,
@@ -55,7 +70,7 @@ import { limaDateKey } from "@/lib/utils";
 import type { FiltroPago } from "@/lib/forestal/ingresos-filtros-columna";
 import { GuiaPlataDB } from "./guia-plata.db";
 import { cubicacionQuePagoLaGuia, mensajeGuiaPagadaPorCubicacion } from "./guia-cubicacion.db";
-import { claveCandadoGtf } from "@/lib/forestal/gtf-talonario";
+import { claveCandadoGtf, colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
 import { planearMedida, type CambioMedidaTroza, type PlanMedida } from "@/lib/forestal/medidas-troza";
 import { fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { mensajeApartadasEnMixto, mixtoVivo } from "@/lib/forestal/lote-mixto";
@@ -214,6 +229,13 @@ export function filaDeTrozaDeGuia(tenantId: string, woodEntryId: string, t: Wood
 export const TOPE_TROZAS_POR_INGRESO = 500;
 
 export interface WoodEntryCreateInput {
+  /**
+   * ADR-504: el alta viene del importador del libro. Las piezas entran TODAS
+   * (sólo se salta la que ya estaba en la guía; las idénticas, con aviso) y un
+   * código de planta que no puede repetirse entra SIN él, anotado en la
+   * observación de la pieza. `filas` = N° de fila del archivo de cada pieza.
+   */
+  importacion?: { filas?: readonly (number | null)[] };
   /**
    * Lista de trozas de la guía, cuando se carga a mano o desde un Excel
    * (ADR-320). Se crean en la MISMA transacción que el ingreso: media guía
@@ -1152,6 +1174,19 @@ export interface WoodEntryStats {
   permisos: WoodEntryPermisoFacet[];
 }
 
+/** Lo que `buscarTrozaPorCodigo` trae de cada pieza (ADR-504: con su guía y permiso). */
+export interface TrozaPorCodigo {
+  id: string;
+  codificacion: string | null;
+  codigoPlanta: string | null;
+  volumenM3: Prisma.Decimal | null;
+  consumidaEnId: string | null;
+  trozaOrigenId: string | null;
+  noRecepcionada: boolean;
+  retrozos: { id: string; codificacion: string | null }[];
+  entry: { id: string; gtfNumber: string; libroNro: number | null; contratoId: string | null; originCode: string | null };
+}
+
 /**
  * El código de planta es la marca FÍSICA que alguien pinta sobre la troza: dos
  * piezas con el mismo número son dos piezas que el patio no puede distinguir, y
@@ -1172,67 +1207,146 @@ async function guardCodigoPlantaUnico(
   tenantId: string,
   codigos: (string | null | undefined)[],
   excluirIds: string[] = [],
+  /**
+   * ADR-504: el permiso de las piezas que entran. `null` (o sin pasar) = sin
+   * permiso, que choca con el mismo código en CUALQUIER permiso — la regla de
+   * antes, intacta para quien todavía no lo pasa.
+   */
+  contratoId: string | null = null,
 ): Promise<void> {
-  const limpios = codigos.map((c) => (c ?? "").trim()).filter(Boolean);
-  if (limpios.length === 0) return;
-  /* El mismo candado que `marcarEtiquetadas` y `renumerarCodigosPlanta`
-     (ADR-436): sin él, un alta y una tanda de etiquetas leen a la vez que el
-     número está libre y lo ponen en dos palos. Se suelta con la transacción. */
-  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`ctp-codigo-planta:${tenantId}`}))`;
-
+  const noEntran = await codigosPlantaQueNoEntran(tx, tenantId, codigos, contratoId, excluirIds);
+  if (noEntran.size === 0) return;
+  const lista = [...noEntran.values()];
   // 1 · Repetidos dentro del MISMO pedido. Rechazarlos con "ya existe" sería
   //     mentir: todavía no existe ninguno, vienen los dos en el mismo POST.
-  const vistos = new Set<string>();
-  const repetidos = new Set<string>();
-  for (const c of limpios) {
-    const k = c.toUpperCase();
-    if (vistos.has(k)) repetidos.add(c);
-    else vistos.add(k);
-  }
-  if (repetidos.size > 0) {
+  const repetidos = [...new Set(lista.filter((x) => x.motivo === "lista").map((x) => x.codigo))];
+  if (repetidos.length > 0) {
     throw new CtpInvariantError(
-      `El código de planta ${[...repetidos].join(", ")} está puesto en más de una troza de esta misma lista. ` +
+      `El código de planta ${repetidos.join(", ")} está puesto en más de una troza de esta misma lista. ` +
         "Cada pieza lleva su propio número: usa «Generar códigos» para renumerar.",
       "CODIGO_PLANTA_DUPLICADO",
-      { codigos: [...repetidos] },
+      { codigos: repetidos },
     );
   }
+  // 2 · Contra lo que YA está en el libro: la pieza con la que choca, o la de
+  //     otro permiso que el índice viejo todavía no deja repetir (ADR-504).
+  const otroPermiso = lista.filter((x) => x.motivo === "otro-permiso");
+  if (otroPermiso.length === lista.length) {
+    throw new CtpInvariantError(
+      otroPermiso.map((x) => x.aviso).join(" "),
+      "CODIGO_PLANTA_DUPLICADO",
+      { codigos: otroPermiso.map((x) => x.codigo), motivo: "otro-permiso" },
+    );
+  }
+  const enUso = lista.filter((x) => x.motivo === "libro");
+  throw new CtpInvariantError(
+    `Ese código de planta ya está usado en el libro: ${enUso.map((x) => x.detalle).join("; ")}. ` +
+      "El código se pinta sobre la troza: dos piezas con el mismo número no se pueden distinguir en el patio.",
+    "CODIGO_PLANTA_DUPLICADO",
+    { codigos: enUso.map((x) => x.codigo) },
+  );
+}
 
-  // 2 · Repetidos contra lo que YA está en el libro. Va en SQL y no por Prisma
-  //     porque la comparación tiene que ser insensible a mayúsculas ("13/a" y
-  //     "13/A" son la misma marca sobre la misma madera) y `in` + `mode` no lo
-  //     garantiza. Parametrizado: el código llega del cliente.
-  //     Las piezas de ingresos ANULADOS cuentan: su fila sigue en la tabla y
-  //     el índice único la mira. Desde 2026-09-26 anular/rechazar/borrar
-  //     suelta los códigos (`soltarCodigosPlanta`), así que esto sólo pasa con
-  //     una fila anterior a eso que la limpieza no alcanzó.
+/** Un código de planta que no puede entrar como viene (ADR-504). */
+export interface CodigoPlantaQueNoEntra {
+  /** El código tal como vino. */
+  codigo: string;
+  /**
+   * `lista`: ya vino antes en el MISMO pedido · `libro`: lo tiene una pieza con
+   * la que choca (mismo permiso, o una de las dos sin permiso) · `otro-permiso`:
+   * lo tiene una pieza de OTRO permiso y el índice viejo (ADR-436) todavía no
+   * deja repetirlo — se habilita al terminar ADR-504.
+   */
+  motivo: "lista" | "libro" | "otro-permiso";
+  /** Dónde está («12 (GTF 4, troza 7)»), para el mensaje. */
+  detalle: string;
+  /** Lo que ve el operador. */
+  aviso: string;
+}
+
+/**
+ * Qué códigos de planta de `codigos` NO pueden entrar, por POSICIÓN (la 1.ª
+ * vez que un código viene en el pedido entra; las siguientes, no). No tira:
+ * el import (ADR-504, «que se importe todo») mete la pieza sin código de
+ * planta y lo dice; el guard de arriba sí tira.
+ *
+ * Toma el candado de los códigos (ADR-436), el mismo que `marcarEtiquetadas` y
+ * `renumerarCodigosPlanta`: sin él, un alta y una tanda de etiquetas leen a la
+ * vez que el número está libre y lo ponen en dos palos. Se suelta con la tx.
+ *
+ * Contra la base va en SQL: la comparación es insensible a mayúsculas ("13/a" y
+ * "13/A" son la misma marca) y `in` + `mode` no lo garantiza. Las piezas de
+ * ingresos ANULADOS cuentan: su fila sigue en la tabla y el índice la mira.
+ */
+async function codigosPlantaQueNoEntran(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  codigos: (string | null | undefined)[],
+  contratoId: string | null,
+  excluirIds: string[] = [],
+): Promise<Map<number, CodigoPlantaQueNoEntra>> {
+  const out = new Map<number, CodigoPlantaQueNoEntra>();
+  const normales = codigos.map((c) => normalizarCodigoTroza(c));
+  if (!normales.some(Boolean)) return out;
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`ctp-codigo-planta:${tenantId}`}))`;
+
+  const vistos = new Set<string>();
+  normales.forEach((k, i) => {
+    if (!k) return;
+    if (vistos.has(k)) {
+      const codigo = (codigos[i] ?? "").trim();
+      out.set(i, { codigo, motivo: "lista", detalle: codigo, aviso: `El código de planta ${codigo} ya viene en otra pieza de esta lista.` });
+    } else vistos.add(k);
+  });
+
   const enUso = await tx.$queryRaw<
-    { codigoPlanta: string; codificacion: string | null; gtfNumber: string; anulado: boolean }[]
+    {
+      codigo: string;
+      codigoPlanta: string;
+      codificacion: string | null;
+      gtfNumber: string;
+      anulado: boolean;
+      contratoId: string | null;
+      permiso: string | null;
+      indiceViejo: boolean;
+    }[]
   >`
-    SELECT t."codigoPlanta", t."codificacion", e."gtfNumber",
-           (e."deletedAt" IS NOT NULL OR e."status" IN ('anulado', 'rechazado')) AS anulado
+    SELECT UPPER(BTRIM(t."codigoPlanta")) AS codigo, t."codigoPlanta", t."codificacion", e."gtfNumber",
+           (e."deletedAt" IS NOT NULL OR e."status" IN ('anulado', 'rechazado')) AS anulado,
+           t."contratoId", c."codigo" AS permiso,
+           EXISTS (SELECT 1 FROM pg_class WHERE relname = ${INDICE_CODIGO_PLANTA_UNICO}) AS "indiceViejo"
     FROM "WoodEntryTroza" t
     JOIN "WoodEntry" e ON e."id" = t."woodEntryId"
+    LEFT JOIN "ForestContrato" c ON c."id" = t."contratoId"
     WHERE t."tenantId" = ${tenantId}
       AND UPPER(BTRIM(t."codigoPlanta")) = ANY(${[...vistos]})
       AND NOT (t."id" = ANY(${excluirIds.length > 0 ? excluirIds : [""]}))
-    LIMIT 20
+    LIMIT 200
   `;
-  if (enUso.length > 0) {
-    const detalle = enUso
-      .map(
-        (t) =>
-          `${t.codigoPlanta} (GTF ${t.gtfNumber}${t.codificacion ? `, troza ${t.codificacion}` : ""}` +
-          `${t.anulado ? ", ingreso anulado" : ""})`,
-      )
-      .join("; ");
-    throw new CtpInvariantError(
-      `Ese código de planta ya está usado en el libro: ${detalle}. ` +
-        "El código se pinta sobre la troza: dos piezas con el mismo número no se pueden distinguir en el patio.",
-      "CODIGO_PLANTA_DUPLICADO",
-      { codigos: enUso.map((t) => t.codigoPlanta) },
-    );
-  }
+  if (enUso.length === 0) return out;
+  normales.forEach((k, i) => {
+    if (!k || out.has(i)) return;
+    const codigo = (codigos[i] ?? "").trim();
+    const suyas = enUso.filter((t) => t.codigo === k);
+    const choca = suyas.find((t) => chocanTrozas({ codigo: k, contratoId }, { codigo: t.codigo, contratoId: t.contratoId }));
+    if (choca) {
+      const detalle =
+        `${choca.codigoPlanta} (GTF ${choca.gtfNumber}${choca.codificacion ? `, troza ${choca.codificacion}` : ""}` +
+        `${choca.anulado ? ", ingreso anulado" : ""})`;
+      out.set(i, { codigo, motivo: "libro", detalle, aviso: `El código de planta ${detalle} ya está usado en el libro.` });
+      return;
+    }
+    const otro = suyas.find((t) => t.indiceViejo);
+    if (otro) {
+      out.set(i, {
+        codigo,
+        motivo: "otro-permiso",
+        detalle: `${otro.codigoPlanta} (permiso ${otro.permiso ?? "?"}, GTF ${otro.gtfNumber})`,
+        aviso: `El código ${codigo} ya existe en el permiso ${otro.permiso ?? "otro"}; se habilita al terminar ADR-504.`,
+      });
+    }
+  });
+  return out;
 }
 
 /**
@@ -1242,6 +1356,13 @@ async function guardCodigoPlantaUnico(
  * sabe declarar un índice sobre expresión ni parcial.
  */
 export const INDICE_CODIGO_PLANTA_UNICO = "WoodEntryTroza_tenant_codigoPlanta_unico";
+/**
+ * ADR-504: el mismo candado POR PERMISO (+ `COALESCE("contratoId",'')`,
+ * migración `20261019b_…`). Conviven; el de arriba se suelta en el paso 3 y
+ * desde ahí el choque llega con ESTE nombre — que no contiene al otro.
+ */
+export const INDICE_CODIGO_PLANTA_PERMISO_UNICO = "WoodEntryTroza_tenant_codigoPlanta_permiso_unico";
+const INDICES_CODIGO_PLANTA = [INDICE_CODIGO_PLANTA_UNICO, INDICE_CODIGO_PLANTA_PERMISO_UNICO];
 
 /**
  * ¿Este error es el índice de arriba rechazando un código repetido?
@@ -1260,7 +1381,7 @@ export function esChoqueCodigoPlanta(err: unknown): boolean {
   } catch {
     /* meta circular: con el mensaje alcanza */
   }
-  return texto.includes(INDICE_CODIGO_PLANTA_UNICO);
+  return INDICES_CODIGO_PLANTA.some((nombre) => texto.includes(nombre));
 }
 
 /**
@@ -1535,6 +1656,127 @@ export interface IngresoComparable {
   providerName: string;
 }
 
+/** ADR-504 · el ingreso con su IDENTIDAD de guía (N° + permiso), para `decidirGuiaAlImportar`. */
+export type IngresoParaImportar = IngresoComparable & IngresoDeGuia;
+
+/** Codificación de una pieza para compararla: sin bordes, en mayúsculas; «-» = sin código. */
+const codificacionDeLista = (c: string | null | undefined): string | null => {
+  const k = normalizarCodigoTroza(c);
+  return k === "-" ? null : k;
+};
+
+/** Lo que describe a una pieza además de su código (ADR-504: «filas idénticas»). */
+function firmaDeTroza(t: WoodEntryTrozaInput): string {
+  return [t.especieComun, t.dimensiones, t.largoM, t.diametroCm, t.d1Cm, t.d2Cm, t.volumenM3, t.cantidad, t.codigoPlanta]
+    .map((v) => (v == null ? "" : String(v).trim().toUpperCase()))
+    .join("|");
+}
+
+/**
+ * Las piezas de una lista que llega a UNA guía (ADR-504, Brandon: «que se
+ * importe todo»). Se saltan sólo las que YA estaban en la guía, por CONTEO de
+ * codificación (la guía ya es de un solo permiso): si el archivo trae dos
+ * filas iguales y la guía tiene una, la 2.ª entra. Las demás entran todas; las
+ * idénticas y las que repiten código con otros datos, con aviso.
+ */
+function piezasQueEntranALaGuia(
+  trozas: readonly WoodEntryTrozaInput[],
+  enLaGuia: readonly { id: string; codificacion: string | null }[],
+  contratoId: string | null,
+  filas?: readonly (number | null)[],
+): { nuevas: WoodEntryTrozaInput[]; yaEstaban: Set<WoodEntryTrozaInput>; repetidas: string[]; avisos: string[] } {
+  const filasDeTroza: FilaDeTroza[] = trozas.map((t, i) => ({
+    fila: filas?.[i] ?? t.orden ?? i + 1,
+    codigo: codificacionDeLista(t.codificacion),
+    contratoId,
+    firma: firmaDeTroza(t),
+  }));
+  const decisiones = decidirTrozasDelArchivo(
+    filasDeTroza,
+    enLaGuia.map((t) => ({ id: t.id, codigo: codificacionDeLista(t.codificacion), contratoId })),
+  );
+  const nuevas: WoodEntryTrozaInput[] = [];
+  const yaEstaban = new Set<WoodEntryTrozaInput>();
+  const repetidas: string[] = [];
+  const avisos = new Set<string>();
+  decisiones.forEach((d, i) => {
+    const t = trozas[i]!;
+    if (d.estado === "ya-estaba") {
+      yaEstaban.add(t);
+      repetidas.push(t.codificacion ?? "");
+      return;
+    }
+    nuevas.push(t);
+    if (d.aviso) avisos.add(d.aviso);
+  });
+  return { nuevas, yaEstaban, repetidas, avisos: [...avisos] };
+}
+
+/**
+ * El import no rechaza una guía entera por un código de planta (ADR-504): la
+ * pieza cuyo código no puede repetirse entra SIN él, con el código anotado en
+ * su observación, y se dice por fila. `sinCodigo` = pieza → observación nueva.
+ */
+async function soltarCodigosQueNoEntran(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  piezas: readonly WoodEntryTrozaInput[],
+  contratoId: string | null,
+  filas: readonly (number | null)[],
+): Promise<{ sinCodigo: Map<WoodEntryTrozaInput, string>; avisos: string[] }> {
+  const noEntran = await codigosPlantaQueNoEntran(tx, tenantId, piezas.map((t) => t.codigoPlanta), contratoId);
+  const sinCodigo = new Map<WoodEntryTrozaInput, string>();
+  const avisos: string[] = [];
+  for (const [i, x] of noEntran) {
+    const t = piezas[i]!;
+    const nota = `Código de planta del archivo: ${x.codigo} (no se repitió: ${x.aviso})`;
+    sinCodigo.set(t, [t.recepcionObs?.trim(), nota].filter(Boolean).join(" · ").slice(0, 500));
+    const fila = filas[i] ?? null;
+    const troza = t.codificacion?.trim() ? `La troza ${t.codificacion.trim()}` : "La troza";
+    avisos.push(`${fila != null ? `Fila ${fila}: ` : ""}${x.aviso} ${troza} entró sin código de planta.`);
+  }
+  return { sinCodigo, avisos };
+}
+
+/**
+ * ADR-504: una acción «de la guía» (completar, corregir, fotos) toca los
+ * ingresos de UNA guía. Si el pedido no dice el permiso y el N° vive en dos o
+ * más permisos, no se adivina: 409 GUIA_AMBIGUA con las candidatas.
+ */
+function exigirUnSoloPermiso(
+  gtf: string,
+  asientos: readonly {
+    id: string;
+    contratoId?: string | null;
+    originCode?: string | null;
+    providerName?: string | null;
+    contrato?: { codigo: string; titularNombre: string } | null;
+  }[],
+): void {
+  /* Permiso y titular van en la candidata para que la pantalla pueda decir
+     «GTF 4 · permiso 017 · Fulano» y el operario reconozca cuál es sin abrir
+     nada. Manda el permiso CARGADO (el contrato): el `originCode` escrito en el
+     ingreso puede estar vacío aunque el ingreso ya tenga su permiso. */
+  const porPermiso = new Map<
+    string,
+    { contratoId: string | null; permiso: string | null; titular: string | null; ingresoIds: string[] }
+  >();
+  for (const a of asientos) {
+    const k = a.contratoId ?? "∅";
+    const g = porPermiso.get(k) ?? {
+      contratoId: a.contratoId ?? null,
+      permiso: a.contrato?.codigo?.trim() || a.originCode?.trim() || null,
+      titular: a.contrato?.titularNombre?.trim() || a.providerName?.trim() || null,
+      ingresoIds: [],
+    };
+    g.ingresoIds.push(a.id);
+    porPermiso.set(k, g);
+  }
+  if (porPermiso.size < 2) return;
+  const candidatas = [...porPermiso.values()].map((g) => ({ gtfNumber: gtf, ...g }));
+  throw new GuiaAmbiguaError(gtf, candidatas, mensajeGuiaAmbigua(gtf, candidatas));
+}
+
 export class WoodEntriesDB {
   /**
    * Crea un nuevo ingreso de madera al CTP.
@@ -1612,7 +1854,9 @@ export class WoodEntriesDB {
     if (input.trozas?.length) {
       const serie = (input.gtfSeries ?? "").trim();
       const pendientes = await prisma.woodEntry.findMany({
-        where: { tenantId, deletedAt: null, status: "pendiente", gtfNumber: input.gtfNumber.trim() },
+        /* ADR-504: la misma guía es N° + PERMISO. La GTF 4 del permiso 017 no
+           es hermana de la GTF 4 del permiso 019: otro talonario. */
+        where: { tenantId, deletedAt: null, status: "pendiente", gtfNumber: input.gtfNumber.trim(), contratoId: contratoDelCodigo ?? null },
         select: { id: true, gtfSeries: true, speciesCommonName: true, speciesScientificName: true, entryDate: true },
       });
       for (const h of pendientes) {
@@ -1626,7 +1870,9 @@ export class WoodEntriesDB {
       fueraDeSuFila: { codigo: string | null; especie: string | null; nota: NotaDeColocacion }[];
       /** Iban a una fila hermana que ya las tenía (misma codificación): no entraron. */
       yaEstabanEnSuFila: { codigo: string | null; especie: string | null }[];
-    } = { aOtrasFilas: [], fueraDeSuFila: [], yaEstabanEnSuFila: [] };
+      /** ADR-504: lo que entró pero hay que decir (filas idénticas, código de planta que no se repitió). */
+      avisos: string[];
+    } = { aOtrasFilas: [], fueraDeSuFila: [], yaEstabanEnSuFila: [], avisos: [] };
 
     // MISMA transacción: si se calcula fuera, dos ingresos simultáneos se llevan
     // el mismo número y el libro queda con folios repetidos — lo primero que
@@ -1717,43 +1963,50 @@ export class WoodEntriesDB {
           creado.id,
         );
         /* Una pieza que va a una fila hermana se compara por codificación
-           contra lo que esa fila YA tiene: la lista es de la guía, y cargarla
-           dos veces duplicaría madera. La repetida no entra y se dice. */
-        const codigo = (c: string | null | undefined) => {
-          const k = (c ?? "").trim().toUpperCase();
-          return k === "-" ? "" : k;
-        };
+           contra lo que la guía YA tiene: la lista es de la guía, y cargarla
+           dos veces duplicaría madera. ADR-504: por CONTEO dentro de la guía
+           (que ya es de un solo permiso) — dos filas iguales del archivo
+           entran las dos; sólo se salta lo que ya estaba. */
         const hermanasUsadas = [...new Set(colocadas.map((c) => c.filaId).filter((f) => f !== creado.id))];
-        const yaEnHermana = new Set(
+        const enHermanas =
           hermanasUsadas.length === 0
             ? []
-            : (
-                await tx.woodEntryTroza.findMany({
-                  where: { tenantId, woodEntryId: { in: hermanasUsadas } },
-                  select: { woodEntryId: true, codificacion: true },
-                })
-              )
-                .filter((t) => codigo(t.codificacion))
-                .map((t) => `${t.woodEntryId}|${codigo(t.codificacion)}`),
+            : await tx.woodEntryTroza.findMany({
+                where: { tenantId, woodEntryId: { in: hermanasUsadas } },
+                select: { id: true, codificacion: true },
+              });
+        const haciaHermana = colocadas.filter((c) => c.filaId !== creado.id);
+        const filasArchivo = input.importacion?.filas;
+        const posDe = new Map(input.trozas.map((t, i) => [t, i]));
+        const entranHermana = piezasQueEntranALaGuia(
+          haciaHermana.map((c) => c.troza),
+          enHermanas,
+          contratoDelCodigo ?? null,
+          haciaHermana.map((c) => filasArchivo?.[posDe.get(c.troza) ?? -1] ?? null),
         );
-        const repetidas = colocadas.filter(
-          (c) => c.filaId !== creado.id && codigo(c.troza.codificacion) && yaEnHermana.has(`${c.filaId}|${codigo(c.troza.codificacion)}`),
-        );
+        const repetidas = haciaHermana.filter((c) => entranHermana.yaEstaban.has(c.troza));
         const saltear = new Set(repetidas.map((c) => c.troza));
-        // El código de planta es único en el centro (ADR-336). Se valida DENTRO
-        // de la tx: fuera, dos tablets numerando a la vez pasan las dos. Sobre
-        // lo que de verdad entra: la repetida que se saltea ya tiene el suyo.
-        await guardCodigoPlantaUnico(
-          tx,
-          tenantId,
-          input.trozas.filter((t) => !saltear.has(t)).map((t) => t.codigoPlanta),
-        );
+        const entran = input.trozas.filter((t) => !saltear.has(t));
+        // El código de planta es único en el centro (ADR-336), por permiso
+        // desde ADR-504. Se valida DENTRO de la tx: fuera, dos tablets
+        // numerando a la vez pasan las dos. Sobre lo que de verdad entra.
+        const filasDeEntran = entran.map((t) => filasArchivo?.[posDe.get(t) ?? -1] ?? null);
+        let avisosAlta: string[] = [];
+        let sinCodigo = new Map<WoodEntryTrozaInput, string>();
+        if (input.importacion) {
+          const soltados = await soltarCodigosQueNoEntran(tx, tenantId, entran, contratoDelCodigo ?? null, filasDeEntran);
+          sinCodigo = soltados.sinCodigo;
+          avisosAlta = [...piezasQueEntranALaGuia(entran, [], contratoDelCodigo ?? null, filasDeEntran).avisos, ...soltados.avisos];
+        } else {
+          await guardCodigoPlantaUnico(tx, tenantId, entran.map((t) => t.codigoPlanta), [], contratoDelCodigo ?? null);
+        }
         const filaDe = new Map(colocadas.map((c) => [c.troza, c.filaId]));
         const otras = new Map<string, number>();
         for (const c of colocadas) {
           if (c.filaId !== creado.id && !saltear.has(c.troza)) otras.set(c.filaId, (otras.get(c.filaId) ?? 0) + 1);
         }
         acomodo = {
+          avisos: [...new Set([...entranHermana.avisos, ...avisosAlta])],
           yaEstabanEnSuFila: repetidas.map((c) => ({
             codigo: c.troza.codificacion,
             especie: hermanasQueReciben.find((h) => h.id === c.filaId)?.especie ?? c.troza.especieComun,
@@ -1768,7 +2021,8 @@ export class WoodEntriesDB {
           ),
         };
         await tx.woodEntryTroza.createMany({
-          data: input.trozas.filter((t) => !saltear.has(t)).map((t) => ({
+          /* ADR-504: cada pieza lleva el permiso de SU fila (puede ser una hermana). */
+          data: await trozasConPermiso(tx, tenantId, entran.map((t) => ({
             tenantId,
             woodEntryId: filaDe.get(t) ?? creado.id,
             orden: t.orden,
@@ -1792,14 +2046,15 @@ export class WoodEntriesDB {
             d2Cm: t.d2Cm != null ? new Prisma.Decimal(t.d2Cm) : null,
             cantidad: t.cantidad,
             volumenM3: t.volumenM3 != null ? new Prisma.Decimal(t.volumenM3) : null,
-            codigoPlanta: t.codigoPlanta ?? null,
+            codigoPlanta: sinCodigo.has(t) ? null : (t.codigoPlanta ?? null),
             parcela: t.parcela ?? null,
             // Una pieza que no llegó no puede tener el día en que llegó.
             fechaRecepcion: t.noRecepcionada
               ? null
               : (t.fechaRecepcion ?? input.fechaRecepcion ?? null),
             noRecepcionada: t.noRecepcionada ?? false,
-          })),
+            recepcionObs: sinCodigo.get(t) ?? t.recepcionObs ?? null,
+          }))),
         });
       }
       /* Con costo en una guía ya anotada, el abono `madera` pasa a valer la suma. */
@@ -1982,7 +2237,7 @@ export class WoodEntriesDB {
         /* ADR-450 R2: TODO lo del input (no llegó, su fecha, código de planta,
            su árbol, lo medido en planta), no sólo la parcela. */
         await tx.woodEntryTroza.createMany({
-          data: linea.trozas.map((t) => filaDeTrozaDeGuia(tenantId, entry.id, t)),
+          data: await trozasConPermiso(tx, tenantId, linea.trozas.map((t) => filaDeTrozaDeGuia(tenantId, entry.id, t))),
         });
       }
       salida.push({ entry, trozas: linea.trozas.length });
@@ -2430,7 +2685,7 @@ export class WoodEntriesDB {
       woodEntryId: string;
       especieComun: string | null;
       especieCientifica: string | null;
-      entry: { gtfNumber: string; gtfSeries: string | null };
+      entry: { gtfNumber: string; gtfSeries: string | null; contratoId?: string | null };
     }[],
   ): Promise<Map<string, string>> {
     const out = new Map<string, string>();
@@ -2438,15 +2693,19 @@ export class WoodEntriesDB {
     if (numeros.length === 0) return out;
     const hermanas = await prisma.woodEntry.findMany({
       where: { tenantId, deletedAt: null, gtfNumber: { in: numeros }, status: { notIn: ["anulado", "rechazado"] } },
-      select: { id: true, gtfNumber: true, gtfSeries: true, speciesCommonName: true, speciesScientificName: true },
+      select: { id: true, gtfNumber: true, gtfSeries: true, contratoId: true, speciesCommonName: true, speciesScientificName: true },
     });
+    /* ADR-504: hermanas = misma guía Y mismo permiso; el mismo N° en otro
+       permiso es otra guía y su fila nunca recibe estas trozas. */
+    const contratoDe = new Map(hermanas.map((h) => [h.id, h.contratoId ?? null]));
     const porGuia = new Map<string, { id: string; especie: string | null; cientifico: string | null }[]>();
     for (const h of hermanas) {
-      const k = claveDeLaGuia(h.gtfSeries, h.gtfNumber);
+      const k = `${claveDeLaGuia(h.gtfSeries, h.gtfNumber)}|${h.contratoId ?? "∅"}`;
       porGuia.set(k, [...(porGuia.get(k) ?? []), { id: h.id, especie: h.speciesCommonName, cientifico: h.speciesScientificName }]);
     }
     for (const t of trozas) {
-      const filasGuia = porGuia.get(claveDeLaGuia(t.entry.gtfSeries, t.entry.gtfNumber)) ?? [];
+      const permiso = t.entry.contratoId !== undefined ? t.entry.contratoId : (contratoDe.get(t.woodEntryId) ?? null);
+      const filasGuia = porGuia.get(`${claveDeLaGuia(t.entry.gtfSeries, t.entry.gtfNumber)}|${permiso ?? "∅"}`) ?? [];
       if (filasGuia.length < 2) continue;
       const d = filaDeEspecie(t, filasGuia);
       if (d.fila && d.fila.id !== t.woodEntryId) out.set(t.id, d.fila.id);
@@ -3256,20 +3515,23 @@ export class WoodEntriesDB {
       prisma.$queryRaw<{ valido: boolean }[]>`
         SELECT i.indisvalid AS valido
         FROM pg_class c JOIN pg_index i ON i.indexrelid = c.oid
-        WHERE c.relname = ${INDICE_CODIGO_PLANTA_UNICO}
+        WHERE c.relname = ANY(${INDICES_CODIGO_PLANTA}::text[])
       `,
       prisma.$queryRaw<{ n: bigint }[]>`
         SELECT COUNT(*)::bigint AS n FROM (
-          SELECT UPPER(BTRIM("codigoPlanta"))
+          SELECT UPPER(BTRIM("codigoPlanta")), COALESCE("contratoId", '')
           FROM "WoodEntryTroza"
           WHERE "tenantId" = ${tenantId}
             AND "codigoPlanta" IS NOT NULL AND BTRIM("codigoPlanta") <> ''
-          GROUP BY 1 HAVING COUNT(*) > 1
+          GROUP BY 1, 2 HAVING COUNT(*) > 1
         ) x
       `,
     ]);
     return {
-      creado: idx[0]?.valido === true,
+      // Cualquiera de los dos válido (ADR-504: conviven hasta el paso 3).
+      creado: idx.some((r) => r.valido === true),
+      /* ADR-504: repetido = mismo código EN EL MISMO PERMISO (la clave del
+         índice nuevo); el 12 del permiso 017 y el 12 del 019 no se pisan. */
       duplicadosRestantes: Number(dup[0]?.n ?? 0),
     };
   }
@@ -3929,7 +4191,8 @@ export class WoodEntriesDB {
 
       const fecha = fechaCorte;
       await tx.woodEntryTroza.createMany({
-        data: calculo.retrozos.map((r) => ({
+        /* ADR-504: el pedazo queda en el ingreso de su madre → su permiso. */
+        data: await trozasConPermiso(tx, tenantId, calculo.retrozos.map((r) => ({
           tenantId,
           woodEntryId: madre.woodEntryId,
           trozaOrigenId: madre.id,
@@ -3951,7 +4214,7 @@ export class WoodEntriesDB {
              ficha del pedazo no sabía decir de qué árbol salió. */
           lothTrozadoId: madre.lothTrozadoId,
           arbolCodigo: madre.arbolCodigo,
-        })),
+        }))),
       });
 
       auditCtp({
@@ -4032,25 +4295,48 @@ export class WoodEntriesDB {
 
   /** Las trozas de un ingreso, en el orden en que las lista la guía. */
   /**
-   * Una troza por CUALQUIERA de sus códigos, para el importador del SNIFFS.
+   * Una troza por CUALQUIERA de sus códigos, para el importador del SNIFFS, la
+   * producción importada y el asistente.
    *
    * El reporte del SNIFFS trae el código en una sola columna sin decir cuál de
    * los dos es: puede ser la codificación de la guía o el que este centro marcó
    * sobre la pieza al recibirla. Buscar por uno solo deja la mitad de las filas
    * como «no existe» sobre trozas que sí están en el libro.
    *
-   * Devuelve lo que el importador necesita para DECIDIR: si está libre, si ya
-   * está retrozada y cuánto volumen tiene.
+   * ADR-504: el código solo NO identifica la troza (Blas, 19-10: 24
+   * codificaciones de SERFOR repetidas entre permisos y 5 dentro de un mismo
+   * permiso en dos guías). Devuelve `una` / `ninguna` / `varias` —NUNCA la
+   * primera— y el `ambito` acota: `contratoId` (string = ese permiso, null =
+   * sólo las sin permiso, ausente = todas) y `woodEntryIds` (sólo esos
+   * ingresos). Sin mayúsculas/minúsculas ni bordes, como el índice ADR-436.
+   * Con `varias`, cada troza trae su guía y su permiso para decir cuáles son.
    */
-  static async buscarTrozaPorCodigo(tenantId: string, codigo: string) {
+  static async buscarTrozaPorCodigo(
+    tenantId: string,
+    codigo: string,
+    ambito: AmbitoDeTroza = {},
+  ): Promise<BusquedaDeTroza<TrozaPorCodigo>> {
     if (!tenantId) throw new Error("tenantId is required");
     const c = codigo.trim();
-    if (!c) return null;
-    return prisma.woodEntryTroza.findFirst({
+    if (!c) return { estado: "ninguna" };
+    const ingresos = ambito.woodEntryIds?.filter(Boolean);
+    if (ingresos && ingresos.length === 0) return { estado: "ninguna" };
+    const filas = await prisma.woodEntryTroza.findMany({
       where: {
         tenantId,
-        OR: [{ codificacion: c }, { codigoPlanta: c }],
-        entry: { deletedAt: null },
+        OR: [
+          { codificacion: { equals: c, mode: "insensitive" } },
+          { codigoPlanta: { equals: c, mode: "insensitive" } },
+        ],
+        ...(ingresos ? { woodEntryId: { in: ingresos } } : {}),
+        /* TODO ADR-504-paso-3: filtrar por `WoodEntryTroza.contratoId` (la
+           columna que agrega carril-db) en vez del permiso del INGRESO. */
+        /* Ingreso anulado o rechazado: su troza no es «una de las varias». */
+        entry: {
+          deletedAt: null,
+          status: { notIn: ["anulado", "rechazado"] },
+          ...(ambito.contratoId !== undefined ? { contratoId: ambito.contratoId } : {}),
+        },
       },
       select: {
         id: true,
@@ -4061,8 +4347,13 @@ export class WoodEntriesDB {
         trozaOrigenId: true,
         noRecepcionada: true,
         retrozos: { select: { id: true, codificacion: true } },
+        entry: { select: { id: true, gtfNumber: true, libroNro: true, contratoId: true, originCode: true } },
       },
+      orderBy: { id: "asc" },
+      /* Tope: alcanza para decir «varias» y listarlas sin traer el patio entero. */
+      take: 20,
     });
+    return busquedaDeTroza(filas);
   }
 
   /**
@@ -4556,62 +4847,52 @@ export class WoodEntriesDB {
   }
 
   /**
-   * Qué GTF de la lista YA existen (vivas) para el tenant. Para la importación
-   * idempotente del LO-CTP (ADR-138): un ingreso se identifica por su `gtfNumber`;
-   * re-importar el mismo archivo salta los que ya están, no duplica.
+   * ADR-504 · qué guía es cada GTF que consume la producción importada: N° +
+   * permiso. Con el permiso del archivo, la de ese permiso (o, si no hay, la
+   * única SIN permiso con ese N°: puede ser ésa); sin permiso, la única que
+   * puede ser. Dos o más → `ambigua`, NUNCA «la más reciente» (antes un N°
+   * repetido en dos permisos consumía de cualquiera de los dos).
    */
-  static async existingGtfNumbers(tenantId: string, gtfs: string[]): Promise<Set<string>> {
+  static async guiasDeConsumos(
+    tenantId: string,
+    gtfs: string[],
+    contratoId: string | null,
+  ): Promise<Map<string, ResolucionDeGuia>> {
     if (!tenantId) throw new Error("tenantId is required");
     const clean = [...new Set(gtfs.map((g) => g.trim()).filter(Boolean))];
-    if (clean.length === 0) return new Set();
-    const rows = await prisma.woodEntry.findMany({
-      where: { tenantId, deletedAt: null, gtfNumber: { in: clean } },
-      select: { gtfNumber: true },
-    });
-    return new Set(rows.map((r) => r.gtfNumber));
+    const out = new Map<string, ResolucionDeGuia>();
+    for (const gtf of clean) {
+      let r = await GtfNumeroDB.resolverGuia(prisma, tenantId, { gtfNumber: gtf, contratoId });
+      if (r.estado === "ninguna" && contratoId != null) {
+        const sinPermiso = await GtfNumeroDB.resolverGuia(prisma, tenantId, { gtfNumber: gtf, contratoId: null });
+        if (sinPermiso.estado === "una" && sinPermiso.guia.contratoId == null) r = sinPermiso;
+      }
+      out.set(gtf, r);
+    }
+    return out;
   }
 
   /**
-   * Mapa `gtfNumber → woodEntry.id` (vivos) para el tenant. Para resolver los
-   * consumos importados (que referencian el ingreso por su GTF) al id real que
-   * necesita `setConsumos` (ADR-138 etapa 2). Ante GTF duplicado gana el más
-   * reciente por `entryDate` (raro; un libro sano no repite GTF de ingreso).
-   */
-  static async idByGtf(tenantId: string, gtfs: string[]): Promise<Map<string, string>> {
-    if (!tenantId) throw new Error("tenantId is required");
-    const clean = [...new Set(gtfs.map((g) => g.trim()).filter(Boolean))];
-    if (clean.length === 0) return new Map();
-    const rows = await prisma.woodEntry.findMany({
-      where: { tenantId, deletedAt: null, gtfNumber: { in: clean } },
-      orderBy: { entryDate: "asc" },
-      select: { id: true, gtfNumber: true },
-    });
-    const map = new Map<string, string>();
-    for (const r of rows) map.set(r.gtfNumber, r.id); // asc → el último (más reciente) gana
-    return map;
-  }
-
-  /**
-   * Mapa `gtfNumber → sus ingresos vivos` (con id y los campos comparables) para
-   * la reconciliación del importador (ADR-138): al re-importar el libro, una
-   * fila cuya guía y especie ya existen pero con valores distintos se marca
-   * «difiere» (no se sobrescribe — el importador es insert-only).
+   * Los ingresos de cada guía del archivo, con su IDENTIDAD (ADR-504: N° +
+   * permiso) y los campos que el importador compara (ADR-138: una fila cuya
+   * guía y especie ya existen con otros valores se marca «difiere», no se
+   * sobrescribe). Por N° TAL COMO VINO → todos los ingresos (no anulados por
+   * borrado) con ese N° tramo a tramo, de CUALQUIER permiso: quién es cuál lo
+   * decide `decidirGuiaAlImportar`, no este mapa.
    *
-   * TODOS los ingresos de la guía y no uno: una GTF con N especies son N
-   * ingresos (ADR-312/435). Antes el mapa guardaba el último y la 2.ª especie
-   * caía en «difiere»; y el id venía de `idByGtf`, cargado antes del bucle, así
-   * que la guía que creaba el propio archivo no lo tenía y sus trozas se
-   * perdían (reviewer 19-10, commit 01b26cec7).
+   * TODOS los ingresos y no uno: una GTF con N especies son N ingresos
+   * (ADR-312/435), y el mismo N° en dos permisos son dos guías.
    */
   static async comparablesPorGuia(
     tenantId: string,
     gtfs: string[],
-  ): Promise<Map<string, IngresoComparable[]>> {
+  ): Promise<Map<string, IngresoParaImportar[]>> {
     if (!tenantId) throw new Error("tenantId is required");
     const clean = [...new Set(gtfs.map((g) => g.trim()).filter(Boolean))];
     if (clean.length === 0) return new Map();
+    const colas = [...new Set(clean.map((g) => colaDeGtf(g) ?? g))];
     const rows = await prisma.woodEntry.findMany({
-      where: { tenantId, deletedAt: null, gtfNumber: { in: clean } },
+      where: { tenantId, deletedAt: null, OR: colas.map((c) => ({ gtfNumber: { endsWith: c, mode: "insensitive" as const } })) },
       orderBy: [{ entryDate: "asc" }, { id: "asc" }],
       select: {
         id: true,
@@ -4620,19 +4901,32 @@ export class WoodEntriesDB {
         speciesCommonName: true,
         productType: true,
         providerName: true,
+        contratoId: true,
+        originCode: true,
+        libroNro: true,
       },
     });
-    const map = new Map<string, IngresoComparable[]>();
-    for (const r of rows) {
-      const lista = map.get(r.gtfNumber) ?? [];
-      lista.push({
-        id: r.id,
-        volumeM3: Number(r.volumeM3),
-        speciesCommonName: r.speciesCommonName ?? "",
-        productType: r.productType ?? "",
-        providerName: r.providerName ?? "",
-      });
-      map.set(r.gtfNumber, lista);
+    const map = new Map<string, IngresoParaImportar[]>();
+    for (const gtf of clean) {
+      const suyos = rows.filter((r) => r.gtfNumber.trim() === gtf || mismoNumeroGtf(r.gtfNumber, gtf));
+      if (suyos.length === 0) continue;
+      map.set(
+        gtf,
+        suyos.map((r) => ({
+          id: r.id,
+          gtfNumber: r.gtfNumber,
+          contratoId: r.contratoId ?? null,
+          originCode: r.originCode ?? null,
+          // El relleno del importador («Origen X · GTF») no es un titular: no contradice a nadie.
+          titular: esProveedorDeRelleno(r.providerName, r.gtfNumber) ? null : (r.providerName ?? null),
+          especies: r.speciesCommonName ? [r.speciesCommonName] : [],
+          libroNro: r.libroNro ?? null,
+          volumeM3: Number(r.volumeM3),
+          speciesCommonName: r.speciesCommonName ?? "",
+          productType: r.productType ?? "",
+          providerName: r.providerName ?? "",
+        })),
+      );
     }
     return map;
   }
@@ -5026,6 +5320,56 @@ export class WoodEntriesDB {
    *    responder "¿esto siempre dijo 5.20 m³?".
    */
   /**
+   * ADR-504: de qué permiso habla una acción «de la guía» (completar, corregir,
+   * fotos) cuando la pantalla manda una PISTA en vez del permiso.
+   *
+   *  · `contratoId` dicho (un id, o `null` = «la guía sin permiso») → ése, sin
+   *    ir a la base. Uno de otro tenant no encuentra ningún ingreso después:
+   *    el `where` de la acción filtra por `tenantId`.
+   *  · `ingresoId` → el permiso de ESE ingreso, leído con `tenantId`. Si no
+   *    existe o es de otra guía, 422: no se cae a «cualquiera con ese N°».
+   *  · `lineaId` (una corrida) → el de los ingresos con ese N° que la corrida
+   *    consumió (`ForestCtpConsumo`, de donde sale su `gtfOrigen`). Si son de
+   *    un solo permiso, ése.
+   *
+   * `undefined` = no se pudo decidir: la acción sigue como antes y, si el N°
+   * vive en dos o más permisos, `exigirUnSoloPermiso` responde 409 GUIA_AMBIGUA.
+   */
+  static async permisoDeLaGuia(
+    tenantId: string,
+    gtfNumber: string,
+    pista: { contratoId?: string | null; ingresoId?: string; lineaId?: string },
+  ): Promise<string | null | undefined> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (pista.contratoId !== undefined) return pista.contratoId;
+    const gtf = (gtfNumber ?? "").trim();
+    if (pista.ingresoId) {
+      const ingreso = await prisma.woodEntry.findFirst({
+        where: { id: pista.ingresoId, tenantId, deletedAt: null },
+        select: { gtfNumber: true, contratoId: true },
+      });
+      if (!ingreso || (ingreso.gtfNumber ?? "").trim() !== gtf) {
+        throw new CtpInvariantError(`Ese ingreso no es de la guía ${gtf}.`, "VALIDACION");
+      }
+      return ingreso.contratoId ?? null;
+    }
+    if (pista.lineaId) {
+      const consumos = await prisma.forestCtpConsumo.findMany({
+        where: {
+          tenantId,
+          ctpEntryId: pista.lineaId,
+          ctpEntry: { tenantId },
+          woodEntry: { tenantId, gtfNumber: gtf, deletedAt: null },
+        },
+        select: { woodEntry: { select: { contratoId: true } } },
+      });
+      const permisos = new Set(consumos.map((c) => c.woodEntry.contratoId ?? null));
+      if (permisos.size === 1) return [...permisos][0];
+    }
+    return undefined;
+  }
+
+  /**
    * Completar los campos VACÍOS de una GUÍA entera (ADR-401 §1.2, hermano de
    * `ForestCtpDB.completarLinea`).
    *
@@ -5052,21 +5396,25 @@ export class WoodEntriesDB {
     gtfNumber: string,
     campos: { originCode?: string; speciesScientificName?: string },
     user = "unknown",
+    /** ADR-504: el permiso de la guía. Sin él y con el N° en dos permisos → GUIA_AMBIGUA. */
+    contratoId?: string | null,
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     const gtf = (gtfNumber ?? "").trim();
     if (!gtf) throw new Error("gtfNumber is required");
 
     const asientos = await prisma.woodEntry.findMany({
-      where: { tenantId, gtfNumber: gtf, deletedAt: null },
+      where: { tenantId, gtfNumber: gtf, deletedAt: null, ...(contratoId !== undefined ? { contratoId } : {}) },
       select: {
-        id: true, gtfNumber: true, status: true, entryDate: true,
-        originCode: true, speciesScientificName: true, speciesCommonName: true,
+        id: true, gtfNumber: true, status: true, entryDate: true, contratoId: true,
+        originCode: true, speciesScientificName: true, speciesCommonName: true, providerName: true,
+        contrato: { select: { codigo: true, titularNombre: true } },
       },
     });
     if (asientos.length === 0) {
       throw new CtpInvariantError(`No hay ingresos con la guía ${gtf}.`, "VALIDACION");
     }
+    if (contratoId === undefined) exigirUnSoloPermiso(gtf, asientos);
 
     const aplicados: string[] = [];
     const omitidos: { gtf: string; campo: string; motivo: string }[] = [];
@@ -5142,21 +5490,25 @@ export class WoodEntriesDB {
     gtfNumber: string,
     campos: { originCode?: string; speciesScientificName?: string },
     user = "unknown",
+    /** ADR-504: el permiso de la guía. Sin él y con el N° en dos permisos → GUIA_AMBIGUA. */
+    contratoId?: string | null,
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     const gtf = (gtfNumber ?? "").trim();
     if (!gtf) throw new Error("gtfNumber is required");
 
     const asientos = await prisma.woodEntry.findMany({
-      where: { tenantId, gtfNumber: gtf, deletedAt: null },
+      where: { tenantId, gtfNumber: gtf, deletedAt: null, ...(contratoId !== undefined ? { contratoId } : {}) },
       select: {
-        id: true, gtfNumber: true, status: true, entryDate: true,
-        originCode: true, speciesScientificName: true, speciesCommonName: true,
+        id: true, gtfNumber: true, status: true, entryDate: true, contratoId: true,
+        originCode: true, speciesScientificName: true, speciesCommonName: true, providerName: true,
+        contrato: { select: { codigo: true, titularNombre: true } },
       },
     });
     if (asientos.length === 0) {
       throw new CtpInvariantError(`No hay ingresos con la guía ${gtf}.`, "VALIDACION");
     }
+    if (contratoId === undefined) exigirUnSoloPermiso(gtf, asientos);
 
     const aplicados: string[] = [];
     const omitidos: { gtf: string; campo: string; motivo: string }[] = [];
@@ -5239,6 +5591,8 @@ export class WoodEntriesDB {
     fotos: readonly (FotoCarga | string)[],
     user = "unknown",
     role?: string,
+    /** ADR-504: el permiso de la guía. Sin él y con el N° en dos permisos → GUIA_AMBIGUA. */
+    contratoId?: string | null,
   ): Promise<{ ok: true; asientos: number; fotos: FotoCarga[] }> {
     if (!tenantId) throw new Error("tenantId is required");
     const gtf = (gtfNumber ?? "").trim();
@@ -5250,12 +5604,16 @@ export class WoodEntriesDB {
     }
 
     const asientos = await prisma.woodEntry.findMany({
-      where: { tenantId, gtfNumber: gtf, deletedAt: null },
-      select: { id: true, photos: true },
+      where: { tenantId, gtfNumber: gtf, deletedAt: null, ...(contratoId !== undefined ? { contratoId } : {}) },
+      select: {
+        id: true, photos: true, contratoId: true, originCode: true, providerName: true,
+        contrato: { select: { codigo: true, titularNombre: true } },
+      },
     });
     if (asientos.length === 0) {
       throw new CtpInvariantError(`No hay ingresos con la guía ${gtf}.`, "VALIDACION");
     }
+    if (contratoId === undefined) exigirUnSoloPermiso(gtf, asientos);
 
     /* Las filas de una misma GTF SIEMPRE deberían tener las mismas fotos (se
        escriben todas juntas): la primera manda para calcular el «antes». */
@@ -5274,8 +5632,11 @@ export class WoodEntriesDB {
       return { ok: true, asientos: asientos.length, fotos: previas };
     }
 
+    /* Por id, no por N°: con el mismo N° en dos permisos (ADR-504) el
+       `gtfNumber` solo escribiría estas fotos también en la guía del OTRO
+       permiso. `asientos` ya viene filtrado por el permiso elegido. */
     await prisma.woodEntry.updateMany({
-      where: { tenantId, gtfNumber: gtf, deletedAt: null },
+      where: { tenantId, id: { in: asientos.map((a) => a.id) }, deletedAt: null },
       data: { photos: nuevas as unknown as Prisma.InputJsonValue },
     });
     auditCtp({
@@ -5742,11 +6103,13 @@ export class WoodEntriesDB {
     id: string,
     trozas: WoodEntryTrozaInput[],
     user: string,
-    opts: { desdeImportacion?: boolean } = {},
+    opts: { desdeImportacion?: boolean; filas?: readonly (number | null)[] } = {},
   ): Promise<{
     agregadas: number;
     repetidas: string[];
     m3Agregados: number;
+    /** ADR-504 (import): lo que entró pero hay que decir — filas idénticas, código de planta que no se repitió. */
+    avisos?: string[];
     bloqueado?: "ya-tiene-lista";
     /** Cuántas fueron a cada fila de la guía (ADR-435): cada troza a la de su especie. */
     porFila?: { woodEntryId: string; especie: string; agregadas: number; m3: number }[];
@@ -5765,7 +6128,14 @@ export class WoodEntriesDB {
        lista de la guía, y su deduplicación, son de la guía entera. */
     const hermanas = (
       await prisma.woodEntry.findMany({
-        where: { tenantId, deletedAt: null, gtfNumber: actual.gtfNumber, status: { notIn: ["rechazado", "anulado"] } },
+        /* ADR-504: la guía es N° + permiso — la GTF 4 de otro permiso es otro talonario. */
+        where: {
+          tenantId,
+          deletedAt: null,
+          gtfNumber: actual.gtfNumber,
+          contratoId: actual.contratoId ?? null,
+          status: { notIn: ["rechazado", "anulado"] },
+        },
         select: { id: true, gtfSeries: true, speciesCommonName: true, speciesScientificName: true, status: true, entryDate: true },
       })
     ).filter((h) => h.id === id || (h.gtfSeries ?? "").trim() === (actual.gtfSeries ?? "").trim());
@@ -5815,15 +6185,21 @@ export class WoodEntriesDB {
       // cargado las mismas piezas.
       const existentes = await tx.woodEntryTroza.findMany({
         where: { tenantId, woodEntryId: { in: idsGuia } },
-        select: { codificacion: true, orden: true, woodEntryId: true },
+        select: { id: true, codificacion: true, orden: true, woodEntryId: true },
       });
 
       const clave = (c: string | null | undefined) => (c ?? "").trim().toUpperCase();
       const yaEstan = new Set(existentes.map((t) => clave(t.codificacion)).filter(Boolean));
 
-      const repetidas: string[] = [];
-      const nuevas: WoodEntryTrozaInput[] = [];
-      for (const t of trozas) {
+      /* ADR-504 · import: entra TODO lo que no estaba (por conteo), las
+         idénticas con aviso. A mano sigue la regla de siempre: una codificación
+         que ya está o que se repite en la lista no entra. */
+      const delArchivo = opts.desdeImportacion
+        ? piezasQueEntranALaGuia(trozas, existentes, actual.contratoId ?? null, opts.filas)
+        : null;
+      const repetidas: string[] = delArchivo ? [...delArchivo.repetidas] : [];
+      const nuevas: WoodEntryTrozaInput[] = delArchivo ? [...delArchivo.nuevas] : [];
+      for (const t of delArchivo ? [] : trozas) {
         const k = clave(t.codificacion);
         // Sin codificación no hay con qué deduplicar: entra (es una pieza más),
         // porque descartarla perdería madera declarada de verdad.
@@ -5835,7 +6211,8 @@ export class WoodEntriesDB {
         nuevas.push(t);
       }
 
-      if (nuevas.length === 0) return { agregadas: 0, repetidas, m3Agregados: 0, porFila: [], fueraDeSuFila: [] };
+      if (nuevas.length === 0)
+        return { agregadas: 0, repetidas, m3Agregados: 0, porFila: [], fueraDeSuFila: [], avisos: delArchivo?.avisos ?? [] };
 
       /* Cada troza a la fila de SU especie dentro de la guía (ADR-435). */
       const colocadas = colocarAlCargar(nuevas, filasQueReciben, id);
@@ -5858,11 +6235,27 @@ export class WoodEntriesDB {
       }
 
       /* Completar la lista de una guía también pinta códigos: era la única de
-         las cuatro altas que no pasaba por el guard (ADR-436). */
-      await guardCodigoPlantaUnico(tx, tenantId, nuevas.map((t) => t.codigoPlanta));
+         las cuatro altas que no pasaba por el guard (ADR-436). Por permiso
+         desde ADR-504; el import no rechaza la guía: suelta el código y avisa. */
+      const posDe = new Map(trozas.map((t, i) => [t, i]));
+      let sinCodigo = new Map<WoodEntryTrozaInput, string>();
+      let avisosCodigo: string[] = [];
+      if (opts.desdeImportacion) {
+        const soltados = await soltarCodigosQueNoEntran(
+          tx,
+          tenantId,
+          nuevas,
+          actual.contratoId ?? null,
+          nuevas.map((t) => opts.filas?.[posDe.get(t) ?? -1] ?? null),
+        );
+        sinCodigo = soltados.sinCodigo;
+        avisosCodigo = soltados.avisos;
+      } else {
+        await guardCodigoPlantaUnico(tx, tenantId, nuevas.map((t) => t.codigoPlanta), [], actual.contratoId ?? null);
+      }
 
       await tx.woodEntryTroza.createMany({
-        data: [...porFila].flatMap(([filaId, suyas]) => suyas.map((t, i) => ({
+        data: await trozasConPermiso(tx, tenantId, [...porFila].flatMap(([filaId, suyas]) => suyas.map((t, i) => ({
           tenantId,
           woodEntryId: filaId,
           orden: (desdePorFila.get(filaId) ?? 0) + i + 1,
@@ -5876,15 +6269,17 @@ export class WoodEntriesDB {
           d2Cm: t.d2Cm != null ? new Prisma.Decimal(t.d2Cm) : null,
           cantidad: t.cantidad,
           volumenM3: t.volumenM3 != null ? new Prisma.Decimal(t.volumenM3) : null,
-          codigoPlanta: t.codigoPlanta ?? null,
+          codigoPlanta: sinCodigo.has(t) ? null : (t.codigoPlanta ?? null),
           parcela: t.parcela ?? null,
           noRecepcionada: t.noRecepcionada ?? false,
-        }))),
+          recepcionObs: sinCodigo.get(t) ?? t.recepcionObs ?? null,
+        })))),
       });
 
       return {
         agregadas: nuevas.length,
         repetidas,
+        avisos: [...(delArchivo?.avisos ?? []), ...avisosCodigo],
         // Los m³ que de verdad entraron, no los del archivo: si la mitad eran
         // repetidas, auditar el total del Excel diría que entró el doble.
         m3Agregados: nuevas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0),

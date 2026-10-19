@@ -59,6 +59,8 @@ export interface DatosKpiPatio {
    * `null` = sin ubicar; `undefined` = el endpoint no lo informa (no se cuenta).
    */
   zonaId?: string | null;
+  /** ADR-504: el permiso de la troza (la guía = N° + permiso). */
+  contratoId?: string | null;
 }
 
 export interface PiezaKpi extends PiezaDelPatio, DatosKpiPatio {
@@ -172,6 +174,13 @@ export function valorDelPatio(trozas: readonly PiezaKpi[], hoy?: Date): ValorPat
 /** Una guía con piezas paradas que debería tener factura y no la tiene. */
 export interface GuiaSinCosto {
   gtfNumber: string;
+  /**
+   * ADR-504: la guía es N° + permiso — el 4 del permiso 017 y el 4 del 019
+   * son dos filas. La pantalla manda `contratoId` al poner el costo y muestra
+   * «GTF 4 · permiso 017» con `permiso` (el título escrito en la guía).
+   */
+  contratoId: string | null;
+  permiso: string | null;
   proveedor: string | null;
   especies: string[];
   /** Piezas y m³ de esta guía que siguen en la cancha. */
@@ -191,9 +200,11 @@ export function guiasSinCostoDelPatio(trozas: readonly PiezaKpi[], hoy: Date): G
   const porGuia = new Map<string, GuiaSinCosto & { _esp: Set<string> }>();
   for (const t of enPatio(trozas)) {
     if (t.guiaMaderaDeTercero === true || costoM3DeGuia(t) != null) continue;
-    const clave = claveGuia(t);
+    const clave = `${claveGuia(t)}|${t.contratoId ?? "∅"}`;
     const g = porGuia.get(clave) ?? {
-      gtfNumber: clave,
+      gtfNumber: claveGuia(t),
+      contratoId: t.contratoId ?? null,
+      permiso: t.permiso?.trim() || null,
       proveedor: t.proveedor ?? null,
       especies: [],
       piezas: 0,

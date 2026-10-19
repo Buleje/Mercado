@@ -16,6 +16,7 @@ import { AlertTriangle, CheckCircle, Download } from "@buleje/design-system/icon
 import { TITULO_FORMATO } from "@/lib/forestal/ctp-formatos-serfor";
 import { reporteACsv, tituloDelReporte, type ReporteImport } from "@/lib/forestal/ctp-reporte-import";
 import ResumenPorArchivo from "./ResumenPorArchivo";
+import AvisoDeIdentidad from "./AvisoDeIdentidad";
 
 /** «Rolliza en patio» o «Rolliza en patio (rolliza-a.xlsx)» cuando hubo varios archivos. */
 const donde = (titulo: string, archivo?: string, varios?: boolean) => (varios && archivo ? `${titulo} (${archivo})` : titulo);
@@ -139,7 +140,7 @@ export default function ReporteDeImport({
           <p className="text-base font-extrabold text-[var(--data-error)]">
             {p.filas.length} fila{p.filas.length === 1 ? "" : "s"} · {donde(TITULO_FORMATO[p.formato], p.archivo, varios)}
           </p>
-          <p className="mt-0.5 text-base text-[var(--text-secondary)]">{p.ejemplo}</p>
+          <p className="mt-0.5 text-base text-[var(--text-secondary)]"><AvisoDeIdentidad mensaje={p.ejemplo} /></p>
           {p.filas.length > 0 && (
             <p className="mt-1 text-sm text-[var(--text-tertiary)]">
               {/* Los números de fila son los del Excel: sin ellos hay que
@@ -164,7 +165,7 @@ export default function ReporteDeImport({
           {reporte.avisosDeFila.slice(0, 8).map((a, i) => (
             <p key={i} className="mt-0.5 text-sm text-[var(--text-secondary)]">
               {donde(TITULO_FORMATO[a.formato], a.archivo, varios)}
-              {a.fila != null && <>, fila <span className="tabular-nums">{a.fila}</span></>}: {a.mensaje}
+              {a.fila != null && <>, fila <span className="tabular-nums">{a.fila}</span></>}: <AvisoDeIdentidad mensaje={a.mensaje} />
             </p>
           ))}
           {reporte.avisosDeFila.length > 8 && (
@@ -208,7 +209,7 @@ export default function ReporteDeImport({
               }`}
             >
               {a.lote !== "—" && <strong>Lote {a.lote}: </strong>}
-              {a.mensaje}
+              <AvisoDeIdentidad mensaje={a.mensaje} />
             </p>
           ))}
         </div>

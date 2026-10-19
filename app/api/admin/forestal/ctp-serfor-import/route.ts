@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
+import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
+import type { AmbitoDeTroza } from "@/lib/forestal/identidad-guia";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -59,10 +61,18 @@ const bodySchema = z.object({
   fileName: z.string().trim().max(200).optional(),
   consumos: z.array(consumoSchema).max(MAX_FILAS).optional().default([]),
   retrozado: z.array(retrozoSchema).max(MAX_FILAS).optional().default([]),
+  /** ADR-504: el permiso del archivo. El código de la troza se busca DENTRO de él. */
+  contratoId: z.string().trim().max(40).nullish(),
 });
 
 type Accion = "crear" | "creado" | "existe" | "error";
 type ResultadoFila = { fila?: number; codigo: string; accion: Accion; mensaje: string };
+
+/** «guía 019-001-0000004 (permiso X), guía …» — para decir cuáles trozas comparten el código (ADR-504). */
+function guiasDeTrozas(trozas: readonly { entry: { gtfNumber: string; originCode: string | null } }[]): string {
+  const guias = [...new Set(trozas.map((t) => `guía ${t.entry.gtfNumber}${t.entry.originCode ? ` (${t.entry.originCode})` : ""}`))];
+  return guias.slice(0, 4).join(", ") + (guias.length > 4 ? ` y ${guias.length - 4} más` : "");
+}
 
 /**
  * El formato del SNIFFS imprime los diámetros del retrozado en METROS (0.60) y
@@ -93,14 +103,27 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const { mode, registro, fileName } = parsed.data;
+  const { mode, registro, fileName, contratoId } = parsed.data;
   const escribir = mode === "commit";
+  /* El permiso elegido acota la búsqueda de trozas (ADR-504: el 12 del permiso
+     017 y el 12 del 019 son dos piezas). Tiene que ser del negocio. */
+  let ambito: AmbitoDeTroza = {};
+  if (contratoId) {
+    const c = await ForestContratoDB.get(auth.tenantId, contratoId);
+    if (!c) {
+      return NextResponse.json(
+        { error: "permiso_invalido", message: "Ese permiso no está en tu lista de permisos. Elígelo de nuevo." },
+        { status: 422 },
+      );
+    }
+    ambito = { contratoId: c.id };
+  }
 
   try {
     const filas: ResultadoFila[] =
       registro === "retrozado"
-        ? await procesarRetrozado(auth.tenantId, auth.username, parsed.data.retrozado, escribir)
-        : await procesarConsumos(auth.tenantId, parsed.data.consumos, escribir);
+        ? await procesarRetrozado(auth.tenantId, auth.username, parsed.data.retrozado, escribir, ambito)
+        : await procesarConsumos(auth.tenantId, parsed.data.consumos, escribir, ambito);
 
     const resumen = {
       creados: filas.filter((f) => f.accion === "creado").length,
@@ -146,6 +169,7 @@ async function procesarRetrozado(
   usuario: string,
   filas: z.infer<typeof retrozoSchema>[],
   escribir: boolean,
+  ambito: AmbitoDeTroza = {},
 ): Promise<ResultadoFila[]> {
   const out: ResultadoFila[] = [];
   const porMadre = new Map<string, typeof filas>();
@@ -155,13 +179,19 @@ async function procesarRetrozado(
   }
 
   for (const [codigoMadre, pedazos] of porMadre) {
-    const madre = await WoodEntriesDB.buscarTrozaPorCodigo(tenantId, codigoMadre);
-    if (!madre) {
+    /* ADR-504: con varias piezas con ese código no se adivina cuál es la madre. */
+    const buscada = await WoodEntriesDB.buscarTrozaPorCodigo(tenantId, codigoMadre, ambito);
+    if (buscada.estado !== "una") {
+      const mensaje =
+        buscada.estado === "varias"
+          ? `El código ${codigoMadre} está en ${buscada.trozas.length} trozas del libro (${guiasDeTrozas(buscada.trozas)}): no se sabe cuál es la madre.`
+          : `No existe la troza ${codigoMadre} en el libro.`;
       for (const p of pedazos) {
-        out.push({ fila: p.fila, codigo: p.codigoRetrozo, accion: "error", mensaje: `No existe la troza ${codigoMadre} en el libro.` });
+        out.push({ fila: p.fila, codigo: p.codigoRetrozo, accion: "error", mensaje });
       }
       continue;
     }
+    const madre = buscada.troza;
     if (madre.consumidaEnId) {
       for (const p of pedazos) {
         out.push({ fila: p.fila, codigo: p.codigoRetrozo, accion: "error", mensaje: `La troza ${codigoMadre} ya se consumió: no se puede retrozar.` });
@@ -236,17 +266,24 @@ async function procesarConsumos(
   tenantId: string,
   filas: z.infer<typeof consumoSchema>[],
   escribir: boolean,
+  ambito: AmbitoDeTroza = {},
 ): Promise<ResultadoFila[]> {
   const out: ResultadoFila[] = [];
 
   for (const f of filas) {
     const codigo = f.codigoOrigen.trim();
-    const troza = await WoodEntriesDB.buscarTrozaPorCodigo(tenantId, codigo);
+    const buscada = await WoodEntriesDB.buscarTrozaPorCodigo(tenantId, codigo, ambito);
 
-    if (!troza) {
+    if (buscada.estado === "varias") {
+      /* ADR-504: el mismo código en dos guías o permisos — no se consume «la primera». */
+      out.push({ fila: f.fila, codigo, accion: "error", mensaje: `Ese código está en ${buscada.trozas.length} trozas del libro (${guiasDeTrozas(buscada.trozas)}): no se sabe cuál es.` });
+      continue;
+    }
+    if (buscada.estado === "ninguna") {
       out.push({ fila: f.fila, codigo, accion: "error", mensaje: "Ese código no existe en el libro: carga primero el ingreso." });
       continue;
     }
+    const troza = buscada.troza;
     if (troza.noRecepcionada) {
       out.push({ fila: f.fila, codigo, accion: "error", mensaje: "La guía la declara pero no llegó al patio (ADR-325)." });
       continue;

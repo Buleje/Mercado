@@ -145,6 +145,8 @@ export interface WoodEntry {
   providerDocumentType: string | null;
   originType: string;
   originCode: string | null;
+  /** ADR-504: el permiso de la guía (el N° solo no la identifica). */
+  contratoId?: string | null;
   /** (5) N° Fuente de origen/procedencia. */
   originSourceNumber: string | null;
   /** (9) Código de CTP de procedencia (si vino de otro centro). */

@@ -12,7 +12,7 @@
 
 import { Leaf, Ruler, TreePine } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import type { CandidatoDeCapacidad } from "@/lib/forestal/capacidad-a-bloques";
+import { partesDeCandidato, type CandidatoDeCapacidad } from "@/lib/forestal/capacidad-a-bloques";
 
 const norm = (v: string) =>
   v.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -28,30 +28,61 @@ function etiquetaVisible(etiqueta: string, especie: string): string {
   return norm(etiqueta.slice(i + 3)) === norm(especie) ? etiqueta.slice(0, i) : etiqueta;
 }
 
-/** La especie como chip; vacía se dice en tono de aviso, no se esconde. */
-export function ChipEspecie({ especie, bloques }: { especie: string; bloques?: number }) {
+/**
+ * La especie como chip; vacía se dice en tono de aviso, no se esconde. Con
+ * `permiso`, el bloque dice también de qué título es (2026-10-19): «Tornillo ·
+ * PLT-2021-017». `bloques` se dice sólo si son más de uno con lo mismo.
+ */
+export function ChipEspecie({
+  especie,
+  bloques,
+  permiso,
+  permisoCompleto,
+}: {
+  especie: string;
+  bloques?: number;
+  /** El permiso en corto, o «Sin permiso» / «Permisos mezclados». */
+  permiso?: string;
+  /** El código entero, para el globo. */
+  permisoCompleto?: string | null;
+}) {
   const nombre = especie.trim();
+  const cola = (
+    <>
+      {permiso ? <span className="shrink-0 font-normal">· {permiso}</span> : null}
+      {bloques && bloques > 1 ? <span className="shrink-0 font-mono tabular-nums">× {bloques}</span> : null}
+    </>
+  );
+  const dePermiso = permiso ? ` · ${permisoCompleto || permiso}` : "";
   if (!nombre) {
     return (
       <span
-        title="Llega sin especie: vas a tener que elegirla en la tabla de la distribución"
+        title={`Llega sin especie${dePermiso}: vas a tener que elegirla en la tabla de la distribución`}
         className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-warning-500)]/15 px-2 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
       >
         <Leaf className="h-3 w-3" aria-hidden /> Sin especie
-        {bloques ? <span className="font-mono tabular-nums">· {bloques}</span> : null}
+        {cola}
       </span>
     );
   }
   return (
     <span
-      title={`Especie ${nombre}: así llega a la distribución`}
+      title={`Especie ${nombre}${dePermiso}: así llega a la distribución`}
       className="inline-flex max-w-full shrink-0 items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
     >
       <Leaf className="h-3 w-3 shrink-0" aria-hidden />
       <span className="truncate">{nombre}</span>
-      {bloques ? <span className="font-mono tabular-nums">· {bloques}</span> : null}
+      {cola}
     </span>
   );
+}
+
+/** El permiso de la línea en palabras: el código, «3 permisos», «sin permiso»… */
+function permisoDeLinea(c: CandidatoDeCapacidad): string {
+  const partes = partesDeCandidato(c);
+  if (partes.length > 1) return `${partes.length} permisos`;
+  const p = partes[0]!;
+  return p.permiso ?? (p.mezclado ? "permisos mezclados" : "sin permiso");
 }
 
 export default function FilaCandidato({
@@ -82,7 +113,7 @@ export default function FilaCandidato({
           <ChipEspecie especie={c.especie} />
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
             {c.fuenteLabel}
-            {c.permiso ? ` · ${c.permiso}` : ""}
+            {` · ${permisoDeLinea(c)}`}
             {c.piezas > 0 ? ` · ${c.piezas} ${c.piezas === 1 ? "pieza" : "piezas"}` : ""}
           </span>
         </span>

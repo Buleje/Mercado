@@ -43,6 +43,16 @@ import { formatDateNumeric } from "@/lib/format";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
+import GuiaAmbiguaElegir, { GuiaAmbiguaCliente, guiaAmbiguaDe, type CandidataGuia } from "./GuiaAmbiguaElegir";
+
+/** Una guía que el servidor no supo ubicar (ADR-504) y espera que el operario elija su permiso. */
+type GuiaPorElegir = {
+  gtf: string;
+  accion: "completar_guia" | "corregir_guia";
+  /** El permiso escrito al guardar: si el campo cambia después, se reintenta con éste. */
+  permisoNuevo: string;
+  candidatas: CandidataGuia[];
+};
 
 /** Lo que el modal necesita saber de la fila. */
 export interface LineaEditable {
@@ -146,6 +156,8 @@ export default function CtpEditarLineaModal({
   const [error, setError] = useState<string | null>(null);
   /** Lo que el servidor NO aplicó, con su motivo. Se muestra y no se cierra. */
   const [sinAplicar, setSinAplicar] = useState<string[]>([]);
+  /** ADR-504: guías cuyo N° vive en dos permisos y la corrida no alcanzó para decidir. */
+  const [porElegir, setPorElegir] = useState<GuiaPorElegir[]>([]);
 
   const bloqueado = (c: DefCampoEditable) => c.registro && !!linea.atadaPorque;
   const reparto = partirCambios(actual, valores);
@@ -169,12 +181,16 @@ export default function CtpEditarLineaModal({
       | {
           message?: string;
           error?: string;
+          gtfNumber?: string;
+          candidatas?: unknown;
           aplicados?: string[];
           cambios?: string[];
           omitidos?: { campo: string; motivo: string }[];
           rechazados?: { campo: string; motivo: string }[];
         }
       | null;
+    const ambigua = guiaAmbiguaDe(r.status, j);
+    if (ambigua) throw ambigua;
     if (!r.ok) throw new Error(j?.message ?? j?.error ?? `HTTP ${r.status}`);
     return {
       hechos: [...(j?.aplicados ?? []), ...(j?.cambios ?? [])],
@@ -189,8 +205,10 @@ export default function CtpEditarLineaModal({
     setGuardando(true);
     setError(null);
     setSinAplicar([]);
+    setPorElegir([]);
     const hechos: string[] = [];
     const faltaron: string[] = [];
+    const quedanPorElegir: GuiaPorElegir[] = [];
     try {
       if (Object.keys(reparto.completar).length > 0) {
         const r = await pedir("/api/admin/forestal/ctp", {
@@ -215,27 +233,67 @@ export default function CtpEditarLineaModal({
          en blanco) y corregir (decía otra cosa) son dos acciones distintas
          porque dejan dos rastros distintos. */
       if (permisoCambio && !permisoEnAsiento) {
+        const accion = permisoActual ? "corregir_guia" : "completar_guia";
         for (const gtf of guias) {
-          const r = await pedir("/api/admin/forestal/wood-entries", {
-            action: permisoActual ? "corregir_guia" : "completar_guia",
-            gtfNumber: gtf,
-            campos: { originCode: permisoNuevo },
-          });
-          hechos.push(...r.hechos);
-          faltaron.push(...r.faltaron);
+          /* ADR-504: el N° solo no dice la guía si vive en dos permisos. Va la
+             corrida y el servidor toma el permiso de la madera que ELLA
+             consumió; si ni así se sabe (409), el operario elige abajo. */
+          try {
+            const r = await pedir("/api/admin/forestal/wood-entries", {
+              action: accion,
+              gtfNumber: gtf,
+              lineaId: linea.id,
+              campos: { originCode: permisoNuevo },
+            });
+            hechos.push(...r.hechos);
+            faltaron.push(...r.faltaron);
+          } catch (e) {
+            if (!(e instanceof GuiaAmbiguaCliente)) throw e;
+            quedanPorElegir.push({ gtf, accion, permisoNuevo, candidatas: e.candidatas });
+          }
         }
       }
 
-      onListo(
-        hechos.length > 0
-          ? `Corrida N° ${linea.lineNo ?? "—"} · ${hechos.length} ${hechos.length === 1 ? "cambio guardado" : "cambios guardados"}.`
-          : `Corrida N° ${linea.lineNo ?? "—"}: no se aplicó ningún cambio.`,
-      );
-      /* Con algo sin aplicar el modal NO se cierra: cerrar y que el operario
-         descubra después que 2 de 5 campos no entraron es peor que no tener la
-         función (ADR-401 §5.2). */
+      const hayQueElegir = quedanPorElegir.length > 0;
+      if (hechos.length > 0 || !hayQueElegir) {
+        onListo(
+          hechos.length > 0
+            ? `Corrida N° ${linea.lineNo ?? "—"} · ${hechos.length} ${hechos.length === 1 ? "cambio guardado" : "cambios guardados"}.`
+            : `Corrida N° ${linea.lineNo ?? "—"}: no se aplicó ningún cambio.`,
+        );
+      }
+      /* Con algo sin aplicar —o una guía que espera que elijan su permiso— el
+         modal NO se cierra: cerrar y que el operario descubra después que 2 de
+         5 campos no entraron es peor que no tener la función (ADR-401 §5.2). */
       if (faltaron.length > 0) setSinAplicar(faltaron);
-      else onCerrar();
+      if (hayQueElegir) setPorElegir(quedanPorElegir);
+      if (faltaron.length === 0 && !hayQueElegir) onCerrar();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  /** Reintenta UNA guía ambigua con el permiso que eligió el operario. */
+  const elegirPermiso = async (p: GuiaPorElegir, c: CandidataGuia) => {
+    if (guardando) return;
+    setGuardando(true);
+    setError(null);
+    try {
+      const r = await pedir("/api/admin/forestal/wood-entries", {
+        action: p.accion,
+        gtfNumber: p.gtf,
+        contratoId: c.contratoId,
+        campos: { originCode: p.permisoNuevo },
+      });
+      const resto = porElegir.filter((x) => x.gtf !== p.gtf);
+      setPorElegir(resto);
+      if (r.faltaron.length > 0) setSinAplicar((prev) => [...prev, ...r.faltaron]);
+      onListo(
+        `Guía ${p.gtf} (${c.permiso ?? "sin permiso"}) · ${r.hechos.length} ${r.hechos.length === 1 ? "cambio guardado" : "cambios guardados"}.`,
+      );
+      if (resto.length === 0 && r.faltaron.length === 0 && sinAplicar.length === 0) onCerrar();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -482,6 +540,16 @@ export default function CtpEditarLineaModal({
             </ul>
           </div>
         )}
+
+        {porElegir.map((p) => (
+          <GuiaAmbiguaElegir
+            key={p.gtf}
+            gtfNumber={p.gtf}
+            candidatas={p.candidatas}
+            disabled={guardando}
+            onElegir={(c) => void elegirPermiso(p, c)}
+          />
+        ))}
 
         {error && (
           <p className="mt-4 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">

@@ -6271,6 +6271,16 @@ model WoodEntryTroza {
   woodEntryId String
   entry       WoodEntry @relation(fields: [woodEntryId], references: [id], onDelete: Cascade)
 
+  /// El permiso de la troza (ADR-504): la troza = código de planta + permiso
+  /// («permiso 1 código 12» y «permiso 2 código 12» son dos piezas). Es COPIA de
+  /// `WoodEntry.contratoId` de su ingreso — un índice no ve otra tabla. La
+  /// escriben `trozasConPermiso` (todas las altas) y `TituloGuiaDB.declarar`;
+  /// `scripts/backfill-troza-contrato-adr504.mjs` alinea lo viejo. NULL = sin
+  /// permiso: el único parcial cae a la regla de un código por centro (falla
+  /// segura, nunca mezcla).
+  contratoId String?
+  contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
+
   /// Orden en que la GTF lista la troza. Se conserva para poder reimprimir la
   /// lista igual que el documento.
   orden Int @default(0)
@@ -6463,7 +6473,13 @@ model WoodEntryTroza {
   /// compara igual y existe para decir CUÁL pieza choca; si el índice frena
   /// primero, `traducirChoqueCodigoPlanta` lo vuelve CODIGO_PLANTA_DUPLICADO.
   /// Este btree no único sigue sirviendo la búsqueda exacta (`buscarTrozaPorCodigo`).
+  /// ADR-504 (expand 19-10): convive el único POR PERMISO
+  /// `WoodEntryTroza_tenant_codigoPlanta_permiso_unico` = la misma expresión y el
+  /// mismo WHERE + `COALESCE("contratoId", '')` (migración
+  /// `20261019b_troza_codigo_permiso_unico_adr504`). El de arriba se suelta en
+  /// el paso 3 (`adr-504-paso3-contract-NO-APLICAR.sql`).
   @@index([tenantId, codigoPlanta])
+  @@index([tenantId, contratoId])
   @@index([tenantId, fechaRecepcion])
   @@index([tenantId, consumidaEnId])
   @@index([tenantId, despachadaEnId])
@@ -7440,6 +7456,10 @@ model ForestGuiaGuardada {
   /// Título habilitante (`19-SEC/REG-PLT-2021-017`) = `WoodEntry.originCode`.
   permisoCodigo String?
   /// Referencia suelta a `ForestContrato` (mismo criterio que `ForestLoteMixto`).
+  /// Únicos parciales en SQL (Prisma no los expresa): `…_tenantId_gtf_vivo_key`
+  /// (tenantId, gtfNumber) WHERE vivo (ADR-442) y, desde ADR-504 (expand 19-10),
+  /// `ForestGuiaGuardada_tenantId_gtf_contrato_vivo_key` (+ `COALESCE(contratoId,'')`,
+  /// migración `20261019d_…`); el primero se suelta en el paso 3.
   contratoId    String?
 
   /// La ficha OFICIAL tal como la devolvió SERFOR al servidor. Nunca la que
@@ -7886,7 +7906,10 @@ model ForestCuentaMov {
   /// WHERE concepto = 'madera' AND gtfNumber IS NOT NULL AND deletedAt IS NULL`,
   /// migración `20260926_guia_plata_adr437`), que Prisma no expresa — no
   /// borrarlo por no verlo acá. Los pagos imputados a una guía también la
-  /// llevan y pueden ser varios.
+  /// llevan y pueden ser varios. ADR-504 (expand 19-10): la guía = N° + permiso;
+  /// convive `ForestCuentaMov_tenantId_gtf_contrato_madera_vivo_key` (mismo WHERE
+  /// + `COALESCE("contratoId", '')`, migración `20261019c_…`); el viejo se
+  /// suelta en el paso 3 (`adr-504-paso3-contract-NO-APLICAR.sql`).
   gtfNumber     String?
 
   notas     String?
@@ -7984,6 +8007,7 @@ model ForestContrato {
   adelantos    Adelanto[]
   fletes       ForestFlete[]
   movimientos  ForestCuentaMov[]
+  trozas       WoodEntryTroza[]
 
   /// El unique va como índice PARCIAL en SQL (`WHERE "deletedAt" IS NULL`), que
   /// Prisma no sabe expresar — mismo caso que `ForestLoteAserrio` (ADR-396). Un

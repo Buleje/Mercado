@@ -1,0 +1,37 @@
+-- ════════════════════════════════════════════════════════════════════════════
+-- NO APLICAR hasta que el código de ADR-504 esté en uso (en producción).
+-- ════════════════════════════════════════════════════════════════════════════
+--
+-- ADR-504 · paso 3 (CONTRACT): soltar el índice único por CÓDIGO de troza que
+-- ADR-504 reemplaza por «código + permiso» (creado en el paso 1). Archivo
+-- suelto a propósito (sin carpeta): Prisma no lo cuenta como migración y nadie
+-- lo aplica por accidente con un resolve.
+--
+-- SÓLO la troza. La plata por permiso está EN PAUSA (Brandon 19-10, ADR-504
+-- «Plata por permiso: PAUSADA»): los índices viejos por N° del abono `madera`
+-- (ForestCuentaMov_tenantId_gtf_madera_vivo_key) y de la guía guardada
+-- (ForestGuiaGuardada_tenantId_gtf_vivo_key) SE QUEDAN: son el freno por N°.
+-- Los nuevos con COALESCE del permiso conviven sin efecto (el viejo es más
+-- estricto). No los sueltes acá.
+--
+-- Precondiciones (todas, medidas el mismo día):
+--   1. El código de ADR-504 (troza = código + permiso) está desplegado en
+--      producción: si no, el código viejo confía en este índice para frenar
+--      códigos repetidos y quedaría sin freno.
+--   2. Re-correr el backfill y que el ensayo dé «0 pendientes»:
+--        node -r dotenv/config scripts/backfill-troza-contrato-adr504.mjs dotenv_config_path=.env.local
+--        node -r dotenv/config scripts/backfill-troza-contrato-adr504.mjs --ensayo dotenv_config_path=.env.local
+--   3. Los guards de la app ya cuentan por permiso; si no, soltar el índice no
+--      cambia nada (el guard frena antes): `guardCodigoPlantaUnico` y
+--      `estadoCandadoCodigoPlanta.duplicadosRestantes` (wood-entries.db.ts).
+--   4. El índice nuevo existe y está válido (indisvalid = true):
+--        WoodEntryTroza_tenant_codigoPlanta_permiso_unico
+--
+-- Aplicar (CONCURRENTLY no va en transacción):
+--   node -r dotenv/config scripts/aplicar-migracion-sesion.mjs prisma/migrations/adr-504-paso3-contract-NO-APLICAR.sql --sin-tx dotenv_config_path=.env.local
+--
+-- Vuelta atrás: re-crear el viejo con su SQL original (adr-436-codigo-planta-unico.sql:41).
+--   Fallará si ya hay «permiso 1 código 12» y «permiso 2 código 12» vivos,
+--   que es justamente lo que ADR-504 permite.
+
+DROP INDEX CONCURRENTLY IF EXISTS "WoodEntryTroza_tenant_codigoPlanta_unico";

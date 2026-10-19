@@ -8,6 +8,7 @@ import { CtpInvariantError } from "./forest-ctp-consumo.db";
 import { planearTitulo, type IngresoParaTitulo, type PlanTitulo } from "@/lib/forestal/titulo-de-guia";
 import { ForestContratoDB } from "./forest-contrato.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { arrastrarPermisoATrozas } from "./troza-permiso.db";
 import { esProveedorDeRelleno, rescatarFuenteDelRelleno } from "@/lib/forestal/asignar-permiso-import";
 
 /**
@@ -36,6 +37,12 @@ export interface PedidoTituloGuia {
   originSourceNumber?: string | null;
   /** De dónde salió el dato, para el rastro («la ficha SERFOR (registro 1-19-0313629)»). */
   origen?: string | null;
+  /**
+   * ADR-504: los ingresos de ESTA guía, ya decididos por quien llama
+   * (`decidirGuiaAlImportar`). Sin esto se leen todos los del N°, y el mismo
+   * N° en otro permiso es otra guía: declararle el título la pisaría.
+   */
+  ingresoIds?: readonly string[];
 }
 
 export interface ResultadoTituloGuia {
@@ -84,7 +91,9 @@ export class TituloGuiaDB {
 
     const [filas, cierres] = await Promise.all([
       prisma.woodEntry.findMany({
-        where: { tenantId, gtfNumber: gtf },
+        /* Con los ingresos ya decididos, ésos (su N° puede estar escrito con
+           otros ceros: «19-1-4» y «019-001-0000004» son la misma guía). */
+        where: pedido.ingresoIds ? { tenantId, id: { in: [...pedido.ingresoIds] } } : { tenantId, gtfNumber: gtf },
         select: {
           id: true, speciesCommonName: true, status: true, deletedAt: true, entryDate: true,
           originCode: true, originSourceNumber: true, contratoId: true,
@@ -144,6 +153,12 @@ export class TituloGuiaDB {
           `;
           if (n > 0) escritos.add(p.id);
         }
+        /* ADR-504: la troza = código + permiso. Si el ingreso ganó permiso, sus
+           trozas lo siguen en la MISMA tx (si el índice por permiso chocara, no
+           queda la guía con permiso y las trozas sin él). */
+        await arrastrarPermisoATrozas(tx, tenantId, [...escritos]);
+        /* La plata de la guía NO se mueve con el permiso: sigue por N° (ADR-504,
+           «Plata por permiso: PAUSADA», Brandon 19-10). */
       });
     }
 

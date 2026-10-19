@@ -85,6 +85,7 @@ async function filasDelAlcance(db: Cliente, tenantId: string, alcance: AlcanceAc
     pieces: true,
     status: true,
     entryDate: true,
+    contratoId: true,
   } as const;
 
   if ("todas" in alcance) {
@@ -97,29 +98,46 @@ async function filasDelAlcance(db: Cliente, tenantId: string, alcance: AlcanceAc
     "woodEntryId" in alcance
       ? await db.woodEntry.findMany({
           where: { tenantId, id: alcance.woodEntryId, deletedAt: null },
-          select: { gtfNumber: true, gtfSeries: true },
+          select: { id: true, gtfNumber: true, gtfSeries: true },
         })
       : "woodEntryIds" in alcance
         ? await db.woodEntry.findMany({
             where: { tenantId, id: { in: alcance.woodEntryIds }, deletedAt: null },
-            select: { gtfNumber: true, gtfSeries: true },
+            select: { id: true, gtfNumber: true, gtfSeries: true },
           })
         : await db.woodEntry.findMany({
             where: { tenantId, contratoId: alcance.contratoId, deletedAt: null },
-            select: { gtfNumber: true, gtfSeries: true },
+            select: { id: true, gtfNumber: true, gtfSeries: true },
           });
   /* Pedir guías con nombre y no encontrar NINGUNA en este libro es un 404 (id
      ajeno o borrado); con varias, alcanza con que una exista. */
   if (("woodEntryId" in alcance || "woodEntryIds" in alcance) && semilla.length === 0) throw new AlcanceNoEncontrado();
   if (semilla.length === 0) return [];
 
-  const claves = new Set(semilla.map((s) => claveDeLaGuia(s.gtfSeries, s.gtfNumber)));
   const numeros = [...new Set(semilla.map((s) => s.gtfNumber))];
   const filas = await db.woodEntry.findMany({
     where: { tenantId, deletedAt: null, gtfNumber: { in: numeros } },
     select,
   });
-  return filas.filter((f) => claves.has(claveDeLaGuia(f.gtfSeries, f.gtfNumber)));
+  /* ADR-504: la guía es serie|N°|PERMISO; el mismo N° en otro permiso es otra
+     guía y sus filas no entran al alcance. */
+  const guias = guiasConPermiso(filas);
+  const claves = new Set(semilla.map((s) => guias.get(s.id)?.clave).filter((c): c is string => !!c));
+  return filas.filter((f) => claves.has(guias.get(f.id)?.clave ?? ""));
+}
+
+/**
+ * ADR-504: la guía es N° + PERMISO. La clave de cada fila es serie|N°|permiso,
+ * y «sin permiso» es OTRA guía (no se junta con la del mismo N° que sí lo
+ * tiene: eso lo decide el operador al ponerle el permiso). `contratoId` = el
+ * permiso de la fila, el que lleva la troza que llega a ella.
+ */
+function guiasConPermiso<F extends { id: string; gtfSeries: string | null; gtfNumber: string; contratoId: string | null }>(
+  filas: readonly F[],
+): Map<string, { clave: string; contratoId: string | null }> {
+  return new Map(
+    filas.map((f) => [f.id, { clave: `${claveDeLaGuia(f.gtfSeries, f.gtfNumber)}|${f.contratoId ?? "∅"}`, contratoId: f.contratoId }] as const),
+  );
 }
 
 /**
@@ -127,13 +145,16 @@ async function filasDelAlcance(db: Cliente, tenantId: string, alcance: AlcanceAc
  * mover. Va ANTES de leer trozas y de bloquearlas — con `todas`, sin esto el
  * `FOR UPDATE` tomaba todas las trozas del negocio (auditoría 25-09).
  */
-function deGuiasDeVariasFilas<F extends { gtfSeries: string | null; gtfNumber: string }>(filas: readonly F[]): F[] {
+function deGuiasDeVariasFilas<F extends { id: string; gtfSeries: string | null; gtfNumber: string; contratoId: string | null }>(
+  filas: readonly F[],
+): F[] {
+  const guias = guiasConPermiso(filas);
   const porGuia = new Map<string, number>();
   for (const f of filas) {
-    const k = claveDeLaGuia(f.gtfSeries, f.gtfNumber);
+    const k = guias.get(f.id)?.clave ?? "";
     porGuia.set(k, (porGuia.get(k) ?? 0) + 1);
   }
-  return filas.filter((f) => (porGuia.get(claveDeLaGuia(f.gtfSeries, f.gtfNumber)) ?? 0) >= 2);
+  return filas.filter((f) => (porGuia.get(guias.get(f.id)?.clave ?? "") ?? 0) >= 2);
 }
 
 /** «La guía cambió desde la vista previa»: se tira DENTRO de la tx y se deshace todo. */
@@ -172,7 +193,10 @@ async function loteAbiertoDe(
 async function leerYPlanear(db: Cliente, tenantId: string, alcance: AlcanceAcomodo, loteLibre: string | null = null) {
   const filas = deGuiasDeVariasFilas(await filasDelAlcance(db, tenantId, alcance));
   const ids = filas.map((f) => f.id);
-  if (ids.length === 0) return { plan: planearAcomodo([], []), ids };
+  const guias = guiasConPermiso(filas);
+  /* El permiso de cada fila: el que lleva la troza que llega a ella. */
+  const permisos = new Map([...guias].map(([id, g]) => [id, g.contratoId] as const));
+  if (ids.length === 0) return { plan: planearAcomodo([], []), ids, permisos };
 
   const cierres = await ForestCtpCierreDB.list(tenantId);
   const mesCerrado = (d: Date) => closedPeriodOf(cierres, d) != null;
@@ -204,7 +228,9 @@ async function leerYPlanear(db: Cliente, tenantId: string, alcance: AlcanceAcomo
   const congeladas = new Set(congelados.filter((c) => vivaLinea(c.ctpEntry)).map((c) => c.woodEntryId));
 
   const plan = planearAcomodo(
-    filas.map((f) => filaDesdeRegistro(f, { mesCerrado, congeladas })),
+    /* La guía del plan es serie|N°|permiso (ADR-504): nunca se mueve una troza
+       a la fila del mismo N° de otro permiso. */
+    filas.map((f) => ({ ...filaDesdeRegistro(f, { mesCerrado, congeladas }), guia: guias.get(f.id)?.clave ?? f.id })),
     trozas.map((t) =>
       trozaDesdeRegistro(
         {
@@ -220,7 +246,7 @@ async function leerYPlanear(db: Cliente, tenantId: string, alcance: AlcanceAcomo
       ),
     ),
   );
-  return { plan, ids };
+  return { plan, ids, permisos };
 }
 
 /**
@@ -290,7 +316,7 @@ export const AcomodarTrozasDB = {
       }
 
       /* 2 · El plan, releído con las piezas ya bloqueadas. */
-      const { plan } = await leerYPlanear(tx, tenantId, alcance, loteLibre);
+      const { plan, permisos } = await leerYPlanear(tx, tenantId, alcance, loteLibre);
 
       let movidas = 0;
       let yaNoSePudieron = 0;
@@ -307,7 +333,9 @@ export const AcomodarTrozasDB = {
           const familia = [m.trozaId, ...m.pedazos];
           const r = await tx.woodEntryTroza.updateMany({
             where: { tenantId, id: { in: familia }, woodEntryId: { in: idsGuia } },
-            data: { woodEntryId: m.hacia.id },
+            /* La troza lleva el permiso de su ingreso (ADR-504): el de la
+               fila destino, que es el de la guía. */
+            data: { woodEntryId: m.hacia.id, contratoId: permisos.get(m.hacia.id) ?? null },
           });
           /* La familia va entera o no va: una parte movida y otra no partiría
              el retrozado en dos filas. Tirar acá deshace toda la tanda. */

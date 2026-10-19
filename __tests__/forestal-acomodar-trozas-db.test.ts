@@ -21,7 +21,7 @@ const H = vi.hoisted(() => {
     pieces,
     status: "validado",
     entryDate: new Date("2026-09-08T00:00:00Z"),
-    contratoId: "ctr-10hua",
+    contratoId: "ctr-10hua" as string | null,
   });
   const troza = (id: string, woodEntryId: string, especieComun: string, volumenM3: number) => ({
     id,
@@ -172,7 +172,8 @@ describe("AcomodarTrozasDB.aplicar", () => {
     for (const u of H.estado.updates) {
       expect(u.where.tenantId).toBe("t-blas");
       expect((u.where.woodEntryId as { in: string[] }).in.sort()).toEqual(["cachimbo", "copal", "shimbillo"]);
-      expect(Object.keys(u.data)).toEqual(["woodEntryId"]);
+      // ADR-504: la troza que se muda lleva el permiso de su fila nueva (la guía es una sola: el mismo).
+      expect(Object.keys(u.data)).toEqual(["woodEntryId", "contratoId"]);
     }
     const porFila = (id: string) => H.estado.trozas.filter((t) => t.woodEntryId === id).length;
     expect([porFila("cachimbo"), porFila("shimbillo"), porFila("copal")]).toEqual([5, 1, 1]);
@@ -228,6 +229,13 @@ describe("AcomodarTrozasDB.aplicar", () => {
     H.estado.filas.push({ ...H.fila("sola", "Tornillo", 1, 1), gtfNumber: "010-001-0000099" });
     await AcomodarTrozasDB.aplicar("t-blas", { todas: true }, "qa");
     expect([...H.estado.bloqueadas].sort()).toEqual(["cachimbo", "copal", "shimbillo"]);
+  });
+
+  it("ADR-504: la fila SIN permiso es otra guía, no se junta con la del permiso del mismo N°", async () => {
+    H.estado.filas.find((f) => f.id === "copal")!.contratoId = null;
+    const r = await AcomodarTrozasDB.aplicar("t-blas", { todas: true }, "qa");
+    expect(r.movidas).toBe(0);
+    expect([...H.estado.bloqueadas].sort()).toEqual(["cachimbo", "shimbillo"]);
   });
 
   it("otro negocio: la guía no existe en su libro (404) y el permiso ajeno da un plan vacío", async () => {

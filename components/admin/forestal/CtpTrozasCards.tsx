@@ -21,6 +21,8 @@ import { puntoDeTono } from "./ctp-trozas-ui";
 import EspecieFoto from "./EspecieFoto";
 import type { UbicacionDeCarga } from "./hooks/use-planta-ubicacion";
 import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
+import { numerosEnVariosPermisos } from "@/lib/forestal/guia-por-permiso";
+import { NumeroDeGuia } from "./guia-con-permiso";
 
 export interface CtpTrozasCardsProps {
   visibles: readonly TrozaPatioAPI[];
@@ -37,6 +39,8 @@ export interface CtpTrozasCardsProps {
 export default function CtpTrozasCards({
   visibles, elegidas, onAlternar, onVerFicha, hoy, canchas, fotosEspecie, altoClase,
 }: CtpTrozasCardsProps) {
+  /* ADR-504: dos guías con el mismo N° (dos talonarios) se leen con su permiso. */
+  const repetidos = numerosEnVariosPermisos(visibles);
   return (
     <div className={`overflow-y-auto md:hidden ${altoClase}`}>
       <ul className="divide-y divide-[var(--rule-soft)]">
@@ -75,7 +79,8 @@ export default function CtpTrozasCards({
                   </span>
                   <span className={`font-mono font-bold ${claseDias(d)}`} title={tituloDias(d)}>{d == null ? "sin fecha" : `${d} d en el patio`}</span>
                   <span className="font-mono text-[var(--text-secondary)]">
-                    {cm(medidasDePieza(t).d1)}·{cm(medidasDePieza(t).d2)} cm · {n(t.largoM)} m · {t.gtfNumber ?? "—"}
+                    {cm(medidasDePieza(t).d1)}·{cm(medidasDePieza(t).d2)} cm · {n(t.largoM)} m ·{" "}
+                    <NumeroDeGuia gtfNumber={t.gtfNumber} permiso={t.permiso} repetidos={repetidos} className="font-mono" />
                   </span>
                   {canchas[t.woodEntryId] && (
                     <span className="text-[var(--text-secondary)]">en {canchas[t.woodEntryId].nombre}</span>

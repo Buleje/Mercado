@@ -300,6 +300,9 @@ function serializar(t: {
   recibidaD2Cm?: unknown;
   recibidaLargoM?: unknown;
   recibidaVolumenM3?: unknown;
+  /** ADR-504: el permiso de la troza (su código es único DENTRO del permiso). */
+  contratoId?: string | null;
+  contrato?: { codigo: string | null } | null;
 }) {
   const num = (v: unknown) => (v == null ? null : Number(v));
   return {
@@ -318,6 +321,10 @@ function serializar(t: {
     // Recepción física (ADR-325): son datos del CENTRO, no del documento.
     parcela: t.parcela ?? null,
     codigoPlanta: t.codigoPlanta ?? null,
+    /* ADR-504: whitelist — sin esto la pantalla no distingue el 12 del permiso
+       017 del 12 del 019. El código del permiso, si la lectura lo trajo. */
+    contratoId: t.contratoId ?? null,
+    ...(t.contrato !== undefined ? { permisoCodigo: t.contrato?.codigo ?? null } : {}),
     noRecepcionada: Boolean(t.noRecepcionada),
     recepcionObs: t.recepcionObs ?? null,
     /* Cuándo bajó ESTA pieza (ADR-336). Va en la whitelist o la pantalla muestra

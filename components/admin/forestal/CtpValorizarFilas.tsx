@@ -16,6 +16,8 @@ import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatDateShort, formatNumber } from "@/lib/format";
+import { numerosEnVariosPermisos } from "@/lib/forestal/guia-por-permiso";
+import { NumeroDeGuia } from "./guia-con-permiso";
 
 /** Sólo lo que la tabla necesita del ingreso — no el WoodEntry entero. */
 export interface IngresoValorizable {
@@ -28,6 +30,9 @@ export interface IngresoValorizable {
   costoTotal: number | string | null;
   moneda: string | null;
   status: string;
+  /** ADR-504: el permiso de la guía, para distinguir dos GTF con el mismo N°. */
+  originCode?: string | null;
+  contratoId?: string | null;
 }
 
 const API = "/api/admin/forestal/wood-entries";
@@ -51,6 +56,8 @@ export default function CtpValorizarFilas({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const pendientes = Object.keys(draft).length;
+  /* ADR-504: dos guías con el mismo N° (dos talonarios) se leen con su permiso. */
+  const repetidos = numerosEnVariosPermisos(filas.map((e) => ({ gtfNumber: e.gtfNumber, contratoId: e.contratoId, permiso: e.originCode })));
 
   // Igual que el panel de ventas: un número a medio tipear no debe convertirse
   // en el costo del mes, pero perderlo por cambiar de pestaña tampoco.
@@ -144,7 +151,7 @@ export default function CtpValorizarFilas({
                   {e.speciesCommonName} · {m3De(vol)}
                 </p>
                 <p className="text-xs text-[var(--text-tertiary)]">
-                  <span className="font-mono">{e.gtfNumber}</span> · {e.providerName} · {dia(e.entryDate)}
+                  <NumeroDeGuia gtfNumber={e.gtfNumber} permiso={e.originCode} repetidos={repetidos} className="font-mono" /> · {e.providerName} · {dia(e.entryDate)}
                 </p>
               </div>
               <div className="flex items-center gap-1.5">

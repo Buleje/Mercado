@@ -1,0 +1,3747 @@
+# ADR-504 · plata por permiso EN PAUSA (Brandon 19-10-2026).
+# Se aplica sobre el árbol con lo FORESTAL de ADR-504 y la plata vuelta a HEAD:
+#   git apply .claude/autonomo/adr-504-plata-pausada.patch
+# Antes de reaplicar: cerrar el CRÍTICO de security (guía 4 con permiso Z ajeno da «libre» → pago doble)
+# y la ALTA del reviewer (moverPlataAlPermiso movía el abono de otro titular).
+diff --git a/lib/db/forest-cuenta.db.ts b/lib/db/forest-cuenta.db.ts
+--- a/lib/db/forest-cuenta.db.ts
++++ b/lib/db/forest-cuenta.db.ts
+@@ -12,9 +12,29 @@
+   mensajeCargoDeCorrida,
+ } from "@/lib/forestal/aserrio-cobro";
+ import { RELACIONES_PARTE, type RelacionParte, type SaldoConsolidado } from "@/lib/forestal/vinculos-parte";
+-import { claveCandadoGtf, puedeSerLaMismaGtf } from "@/lib/forestal/gtf-talonario";
++import { claveCandadoGtf, mismoNumeroGtf, puedeSerLaMismaGtf } from "@/lib/forestal/gtf-talonario";
++import type { GuiaRef } from "@/lib/forestal/identidad-guia";
+ import { exigirParteDelTenant } from "./forest-parte-tarifa.db";
+-import { bloquearLineasDeDespachoEnTx, cubicacionQueVendioLaGuia, despachosDeLaGuiaDeSalida, filtroMismaGuia } from "./guia-cubicacion.db";
++import {
++  PlataEnOtroPermisoError,
++  bloquearLineasDeDespachoEnTx,
++  cubicacionQueVendioLaGuia,
++  despachosDeLaGuiaDeSalida,
++  esChoqueDeUnico,
++  filtroMismaGuia,
++} from "./guia-cubicacion.db";
++
++/**
++ * Cómo se nombra la guía de COMPRA a las primitivas de su plata (ADR-504):
++ * el N° solo = todas las filas con ese N°, como siempre (lo que pasa
++ * `refDePlata` cuando el N° entró con un solo permiso); `GuiaRef` = sólo las
++ * filas de ESA guía (N° + permiso).
++ */
++export type GuiaDeCuenta = string | GuiaRef;
++
++function partirGuia(g: GuiaDeCuenta): { gtf: string; ref: GuiaRef | null } {
++  return typeof g === "string" ? { gtf: g.trim(), ref: null } : { gtf: (g.gtfNumber ?? "").trim(), ref: g };
++}
+ 
+ /**
+  * ForestCuentaDB — la cuenta corriente con las partes del directorio (ADR-322).
+@@ -681,16 +701,20 @@
+   /**
+    * Lo que ya se pagó imputado a una guía: los cargos vivos que la nombran
+    * (`gtfNumber`), de la parte indicada o de cualquiera. Sumado en la base.
++   * Con `GuiaRef` de un permiso: los cargos de ese permiso y los que no tienen
++   * permiso (no se sabe de cuál son: cuentan, para no soltar un abono pagado).
+    */
+   async pagosImputadosEnTx(
+     tx: Prisma.TransactionClient,
+     tenantId: string,
+-    gtfNumber: string,
++    guia: GuiaDeCuenta,
+     parteId?: string,
+   ): Promise<number> {
+     if (!tenantId) throw new Error("tenantId is required");
++    const { gtf: gtfNumber, ref } = partirGuia(guia);
++    const delPermiso = ref?.contratoId ? { OR: [{ contratoId: ref.contratoId }, { contratoId: null }] } : {};
+     const agg = await tx.forestCuentaMov.aggregate({
+-      where: { tenantId, gtfNumber, tipo: "cargo", deletedAt: null, ...(parteId ? { parteId } : {}) },
++      where: { tenantId, gtfNumber, tipo: "cargo", deletedAt: null, ...(parteId ? { parteId } : {}), ...delPermiso },
+       _sum: { monto: true },
+     });
+     return Math.round(Number(agg._sum.monto ?? 0) * 100) / 100;
+@@ -714,6 +738,12 @@
+       /** Día de la guía (date-only, UTC). */
+       fecha: Date;
+       contratoId: string | null;
++      /**
++       * ADR-504: el N° entró en más de un permiso → sólo el abono de ESTE
++       * permiso es el de la guía (`!PlataDeGuia.unica`). Sin esto, el de
++       * cualquier permiso (como siempre).
++       */
++      soloDelPermiso?: boolean;
+     },
+     usuario: string,
+   ): Promise<{ movimiento: MovimientoCuenta; antes: { parteId: string; monto: number } | null }> {
+@@ -721,11 +751,12 @@
+     const gtf = input.gtfNumber.trim();
+     if (!gtf) throw new Error("La guía tiene que tener número para anotarse en la cuenta.");
+     if (!(input.monto > 0)) throw new Error("La madera de la guía tiene que valer más de cero para anotarse.");
++    const guia: GuiaDeCuenta = input.soloDelPermiso ? { gtfNumber: gtf, contratoId: input.contratoId } : gtf;
+     const actual = await tx.forestCuentaMov.findFirst({
+-      where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null },
++      where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null, ...(input.soloDelPermiso ? { contratoId: input.contratoId } : {}) },
+     });
+     if (actual && actual.parteId !== input.parteId) {
+-      const pagado = await this.pagosImputadosEnTx(tx, tenantId, gtf, actual.parteId);
++      const pagado = await this.pagosImputadosEnTx(tx, tenantId, guia, actual.parteId);
+       if (pagado > 0) throw new GuiaConPagosError(gtf, pagado);
+     }
+     const datos = {
+@@ -741,9 +772,15 @@
+       contratoId: input.contratoId,
+       notas: `Madera de la guía ${gtf}`,
+     };
+-    const row = actual
+-      ? await tx.forestCuentaMov.update({ where: { id: actual.id }, data: datos })
+-      : await tx.forestCuentaMov.create({ data: { tenantId, ...datos, createdBy: usuario || "unknown" } });
++    /* Mientras viva el índice viejo (un abono por N°, paso 3 de ADR-504), la
++       misma guía de otro permiso choca: 409 con mensaje, no un 500. */
++    const row = await (actual
++      ? tx.forestCuentaMov.update({ where: { id: actual.id }, data: datos })
++      : tx.forestCuentaMov.create({ data: { tenantId, ...datos, createdBy: usuario || "unknown" } })
++    ).catch((e: unknown) => {
++      if (esChoqueDeUnico(e)) throw new PlataEnOtroPermisoError(gtf);
++      throw e;
++    });
+     return {
+       movimiento: aMov(row),
+       antes: actual ? { parteId: actual.parteId, monto: Number(actual.monto) } : null,
+@@ -758,18 +795,18 @@
+   async bajaMaderaDeGuiaEnTx(
+     tx: Prisma.TransactionClient,
+     tenantId: string,
+-    gtfNumber: string,
++    guia: GuiaDeCuenta,
+     opts: { exigirSinPagos: boolean },
+   ): Promise<number> {
+     if (!tenantId) throw new Error("tenantId is required");
+-    const gtf = gtfNumber.trim();
++    const { gtf, ref } = partirGuia(guia);
+     if (!gtf) return 0;
+     if (opts.exigirSinPagos) {
+-      const pagado = await this.pagosImputadosEnTx(tx, tenantId, gtf);
++      const pagado = await this.pagosImputadosEnTx(tx, tenantId, guia);
+       if (pagado > 0) throw new GuiaConPagosError(gtf, pagado);
+     }
+     const { count } = await tx.forestCuentaMov.updateMany({
+-      where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null },
++      where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null, ...(ref ? { contratoId: ref.contratoId ?? null } : {}) },
+       data: { deletedAt: new Date() },
+     });
+     return count;
+@@ -792,19 +829,48 @@
+   async resincronizarMaderaDeGuiaEnTx(
+     tx: Prisma.TransactionClient,
+     tenantId: string,
+-    gtfNumber: string,
++    guia: GuiaDeCuenta,
+   ): Promise<"sin_cuenta" | "actualizada" | "baja"> {
+     if (!tenantId) throw new Error("tenantId is required");
+-    const gtf = gtfNumber.trim();
++    const { gtf, ref } = partirGuia(guia);
++    if (!gtf) return "sin_cuenta";
++    /* Un solo abono vivo por N° mientras viva el índice viejo; con `GuiaRef`,
++       el de ESE permiso. (Paso 3 de ADR-504, índice N° + permiso: quien llame
++       por N° pelado tendrá que pasar la `GuiaRef`.) */
+     const mov = await tx.forestCuentaMov.findFirst({
+-      where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null },
++      where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null, ...(ref ? { contratoId: ref.contratoId ?? null } : {}) },
+     });
+     if (!mov) return "sin_cuenta";
++    /* ADR-504 (pago cruzado): el abono vale lo de SU guía = los asientos de su
++       permiso, nunca los de otro permiso con el mismo N°. Si el N° no tiene
++       asientos en otro permiso, todo el N° (como siempre). `{ not: x }` deja
++       afuera los NULL en SQL: lo «de otro permiso» se arma con el OR explícito. */
++    const delNumero = { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: ["anulado", "rechazado"] } } satisfies Prisma.WoodEntryWhereInput;
++    const deOtroPermiso = (c: string | null): Prisma.WoodEntryWhereInput =>
++      c == null ? { contratoId: { not: null } } : { OR: [{ contratoId: { not: c } }, { contratoId: null }] };
++    const delAbono = mov.contratoId ?? null;
++    let alcance: Prisma.WoodEntryWhereInput = {};
++    const ajenos = await tx.woodEntry.count({ where: { ...delNumero, ...deOtroPermiso(delAbono) } });
++    if (ajenos > 0) {
++      const propios = await tx.woodEntry.count({ where: { ...delNumero, contratoId: delAbono } });
++      if (propios > 0) {
++        alcance = { contratoId: delAbono };
++      } else {
++        const ajeno = await tx.woodEntry.findFirst({ where: { ...delNumero, ...deOtroPermiso(delAbono) }, select: { contratoId: true } });
++        /* El abono quedó con otro permiso que sus asientos (se anotó antes de
++           declararle el permiso a la guía): si TODOS los asientos del N° son de
++           un solo permiso, son los suyos — como siempre. Si son de dos o más, no
++           se sabe de cuál es: ni se suma lo ajeno ni se da de baja. */
++        const terceros = await tx.woodEntry.count({ where: { ...delNumero, ...deOtroPermiso(ajeno?.contratoId ?? null) } });
++        if (terceros > 0) {
++          logger.warn("[forest-cuenta] abono madera sin asientos de su permiso: no se toca", { tenantId, gtfNumber: gtf, movimientoId: mov.id });
++          return "sin_cuenta";
++        }
++      }
++    }
+     const vivos = {
+-      tenantId,
+-      gtfNumber: gtf,
+-      deletedAt: null,
+-      status: { notIn: ["anulado", "rechazado"] },
++      ...delNumero,
++      ...alcance,
+       maderaDeTercero: false,
+       costoTotal: { not: null },
+     } satisfies Prisma.WoodEntryWhereInput;
+@@ -831,6 +897,80 @@
+     return "baja";
+   },
+ 
++  /**
++   * ADR-504 paso 2 — al declararle el permiso a una guía que entró SIN permiso
++   * (`TituloGuiaDB.declarar`), su plata la sigue: el abono `madera` y los
++   * cargos de la cuenta (menos `venta`, que es de guías de salida), las
++   * cubicaciones de COMPRA, los fletes de ingreso y los gastos con ese N° y sin
++   * permiso pasan a `contratoId`. SÓLO cambia el permiso: ningún monto, fecha
++   * ni persona se toca. Dentro de la tx del que declara y bajo el candado de la
++   * guía (lo toma acá; si el que llama ya lo tiene, es reentrante). Después del
++   * commit, el que llama invalida (`ForestCuentaDB.invalidar`) y audita.
++   */
++  async moverPlataAlPermiso(
++    tx: Prisma.TransactionClient,
++    tenantId: string,
++    ref: GuiaRef,
++    contratoId: string,
++  ): Promise<{ movimientos: number; cubicaciones: number; fletes: number; gastos: number }> {
++    if (!tenantId) throw new Error("tenantId is required");
++    const gtf = (ref.gtfNumber ?? "").trim();
++    const destino = contratoId.trim();
++    const nada = { movimientos: 0, cubicaciones: 0, fletes: 0, gastos: 0 };
++    if (!gtf || !destino) throw new Error("Para mover la plata de la guía hacen falta su N° y el permiso.");
++    if (ref.contratoId === destino) return nada;
++    if (ref.contratoId != null) throw new Error("moverPlataAlPermiso mueve la plata de una guía SIN permiso.");
++    const contrato = await tx.forestContrato.findFirst({ where: { id: destino, tenantId, deletedAt: null }, select: { id: true } });
++    if (!contrato) throw new Error("Ese permiso no es de este negocio.");
++    await this.bloquearGuiasEnTx(tx, tenantId, [gtf]);
++    const filtro = filtroMismaGuia(gtf) ?? gtf;
++    const esLaGuia = (g: string | null) => g != null && (g.trim() === gtf || mismoNumeroGtf(g, gtf));
++    const ids = <T extends { id: string; gtfNumber: string | null }>(filas: T[]) => filas.filter((f) => esLaGuia(f.gtfNumber)).map((f) => f.id);
++
++    const movs = await tx.forestCuentaMov.findMany({
++      where: { tenantId, gtfNumber: filtro, contratoId: null, deletedAt: null, NOT: { concepto: "venta" } },
++      select: { id: true, gtfNumber: true, concepto: true, tipo: true },
++    });
++    const movIds = ids(movs);
++    /* La guía del permiso ya tiene su propio abono: dos abonos de la misma guía no. */
++    if (movs.some((m) => movIds.includes(m.id) && m.concepto === "madera" && m.tipo === "abono")) {
++      const delPermiso = await tx.forestCuentaMov.findMany({
++        where: { tenantId, gtfNumber: filtro, contratoId: destino, concepto: "madera", deletedAt: null },
++        select: { id: true, gtfNumber: true },
++      });
++      if (ids(delPermiso).length > 0) throw new PlataEnOtroPermisoError(gtf);
++    }
++    const cubIds = ids(
++      await tx.forestCubicacionTrozas.findMany({
++        where: { tenantId, gtfNumber: filtro, contratoId: null, deletedAt: null, sentido: "compra" },
++        select: { id: true, gtfNumber: true },
++      }),
++    );
++    const fleteIds = ids(
++      await tx.forestFlete.findMany({
++        where: { tenantId, gtfNumber: filtro, contratoId: null, deletedAt: null, tipo: "ingreso" },
++        select: { id: true, gtfNumber: true },
++      }),
++    );
++    const gastoIds = ids(
++      await tx.expense.findMany({ where: { tenantId, gtfNumber: filtro, contratoId: null }, select: { id: true, gtfNumber: true } }),
++    );
++    const data = { contratoId: destino };
++    const sinPermiso = { tenantId, contratoId: null };
++    try {
++      const r = {
++        movimientos: movIds.length ? (await tx.forestCuentaMov.updateMany({ where: { ...sinPermiso, id: { in: movIds } }, data })).count : 0,
++        cubicaciones: cubIds.length ? (await tx.forestCubicacionTrozas.updateMany({ where: { ...sinPermiso, id: { in: cubIds } }, data })).count : 0,
++        fletes: fleteIds.length ? (await tx.forestFlete.updateMany({ where: { ...sinPermiso, id: { in: fleteIds } }, data })).count : 0,
++        gastos: gastoIds.length ? (await tx.expense.updateMany({ where: { ...sinPermiso, id: { in: gastoIds } }, data })).count : 0,
++      };
++      return r;
++    } catch (e) {
++      if (esChoqueDeUnico(e)) throw new PlataEnOtroPermisoError(gtf);
++      throw e;
++    }
++  },
++
+   invalidar(tenantId: string): void {
+     try {
+       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+diff --git a/lib/db/guia-cubicacion.db.ts b/lib/db/guia-cubicacion.db.ts
+--- a/lib/db/guia-cubicacion.db.ts
++++ b/lib/db/guia-cubicacion.db.ts
+@@ -1,6 +1,7 @@
+ import "server-only";
+ import type { Prisma } from "@/lib/generated/prisma/client";
+ import { colaDeGtf, mismoNumeroGtf, puedeSerLaMismaGtf } from "@/lib/forestal/gtf-talonario";
++import { GuiaAmbiguaError, SIN_PERMISO, decidirPlataDeGuia, mensajeGuiaAmbigua, type GuiaRef } from "@/lib/forestal/identidad-guia";
+ 
+ /**
+  * Una guía, una sola plata (ADR-478 §7) — la regla al revés, en UN lugar. Si la
+@@ -37,25 +38,299 @@
+   return cola ? { endsWith: cola, mode: "insensitive" } : null;
+ }
+ 
+-/** La cubicación APLICADA que ya pagó la madera de esa guía, o `null`. */
++/**
++ * La cubicación APLICADA que ya pagó la madera de esa guía, o `null`.
++ *
++ * Con el N° solo (texto) frena cualquier cubicación con ese número, como
++ * siempre. Con `GuiaRef` (ADR-504: el N° entró en más de un permiso, ver
++ * `refDePlata`) sólo frena la de ESE permiso y la que no tiene permiso: una
++ * cubicación del permiso 1 ya no frena la guía 4 del permiso 2.
++ */
+ export async function cubicacionQuePagoLaGuia(
+-  db: Pick<Prisma.TransactionClient, "forestCubicacionTrozas">,
++  db: Pick<Prisma.TransactionClient, "forestCubicacionTrozas" | "woodEntry">,
+   tenantId: string,
+-  gtf: string | null | undefined,
++  guia: string | GuiaRef | null | undefined,
+   exceptoId?: string,
+ ): Promise<{ codigo: string } | null> {
+   if (!tenantId) throw new Error("tenantId is required");
++  const ref = guia != null && typeof guia === "object" ? guia : null;
++  const gtf = ref ? ref.gtfNumber : (guia as string | null | undefined);
+   const filtro = filtroMismaGuia(gtf);
+   if (!filtro) return null;
+   const filas = await db.forestCubicacionTrozas.findMany({
+     where: { tenantId, gtfNumber: filtro, estado: "aplicada", deletedAt: null, ...(exceptoId ? { NOT: { id: exceptoId } } : {}) },
+-    select: { codigo: true, gtfNumber: true },
++    select: { codigo: true, gtfNumber: true, contratoId: true },
+     take: 200,
+   });
+-  const igual = filas.find((f) => puedeSerLaMismaGtf(f.gtfNumber, gtf));
++  /* El permiso de la ref sólo acota si alguna guía con ese N° lo tiene
++     (security 19-10): con un permiso que no es de la guía, frena todo el N°. */
++  const permiso = ref?.contratoId != null && filas.length > 0 && (await existeGuiaDelPermiso(db, tenantId, gtf, ref.contratoId)) ? ref.contratoId : null;
++  const delPermiso = (c: string | null) => permiso == null || c == null || c === permiso;
++  const igual = filas.find((f) => puedeSerLaMismaGtf(f.gtfNumber, gtf) && delPermiso(f.contratoId));
+   return igual ? { codigo: igual.codigo } : null;
+ }
+ 
++// ── La plata de UNA guía = N° + permiso (ADR-504 paso 2) ──────────────────────
++
++const ESTADOS_SIN_INGRESO = ["anulado", "rechazado"] as const;
++
++/** Un ingreso con ese N°, visto como guía: N° + permiso (y cómo nombrarlo en la pantalla). */
++export interface GuiaDelNumero extends GuiaRef {
++  /** El ingreso (`WoodEntry.id`): con éstos la pantalla abre la guía («Asignar permiso»). */
++  id: string;
++  gtfNumber: string;
++  contratoId: string | null;
++  /** Código del permiso (`null` = sin permiso). */
++  permiso: string | null;
++  titular: string | null;
++}
++
++/**
++ * Los ingresos que pueden ser ESA guía (cola del N° + `puedeSerLaMismaGtf`, la
++ * regla de los frenos de plata), con su permiso. Los vivos; si no queda
++ * ninguno vivo, los anulados (una guía anulada se lee igual).
++ */
++export async function guiasDelNumero(
++  db: Pick<Prisma.TransactionClient, "woodEntry">,
++  tenantId: string,
++  gtf: string | null | undefined,
++): Promise<GuiaDelNumero[]> {
++  if (!tenantId) throw new Error("tenantId is required");
++  const numero = (gtf ?? "").trim();
++  const filtro = filtroMismaGuia(numero);
++  if (!filtro) return [];
++  const filas = await db.woodEntry.findMany({
++    where: { tenantId, gtfNumber: filtro, deletedAt: null },
++    select: {
++      id: true,
++      gtfNumber: true,
++      contratoId: true,
++      status: true,
++      providerName: true,
++      contrato: { select: { tenantId: true, codigo: true, titularNombre: true } },
++    },
++    take: 2000,
++  });
++  const mias = filas.filter((f) => f.gtfNumber != null && (f.gtfNumber.trim() === numero || puedeSerLaMismaGtf(f.gtfNumber, numero)));
++  const vivas = mias.filter((f) => !(ESTADOS_SIN_INGRESO as readonly string[]).includes(f.status));
++  return (vivas.length > 0 ? vivas : mias).map((f) => {
++    /* El código y el titular del permiso sólo si es de ESTE negocio: van a la
++       respuesta (candidatas del 409) y un FK cruzado no debe filtrar datos ajenos. */
++    const contrato = f.contrato?.tenantId === tenantId ? f.contrato : null;
++    return {
++      id: f.id,
++      gtfNumber: (f.gtfNumber ?? "").trim(),
++      contratoId: f.contratoId ?? null,
++      permiso: contrato?.codigo ?? null,
++      titular: contrato?.titularNombre ?? f.providerName ?? null,
++    };
++  });
++}
++
++/** ¿Alguna guía con ese N° (la vara de los frenos) es de ese permiso? Los frenos sólo acotan por permiso si es así. */
++export async function existeGuiaDelPermiso(
++  db: Pick<Prisma.TransactionClient, "woodEntry">,
++  tenantId: string,
++  gtf: string | null | undefined,
++  contratoId: string,
++): Promise<boolean> {
++  if (!tenantId) throw new Error("tenantId is required");
++  return (await guiasDelNumero(db, tenantId, gtf)).some((g) => g.contratoId === contratoId);
++}
++
++/** La guía cuya plata se toca, ya resuelta (`resolverPlataDeGuia`). */
++export interface PlataDeGuia {
++  gtfNumber: string;
++  /** El permiso de la guía; `null` = sin permiso. */
++  contratoId: string | null;
++  /**
++   * El N° entró con UN solo permiso (o ninguno): la plata se lee y se escribe
++   * por N°, como siempre — sin esto, un abono viejo sin permiso de una guía
++   * que después se declaró quedaba fuera de su propia guía.
++   */
++  unica: boolean;
++  /** Sólo al LEER: las guías sin permiso con ese N° que frenan esta plata. */
++  frenadaPor: GuiaDelNumero[] | null;
++}
++
++/** ADR-504: una guía sin permiso con ese N° frena la plata de cualquier permiso (podría ser la misma y pagarse dos veces). */
++export const mensajeGuiaSinPermisoFrena = (gtf: string): string =>
++  `La guía N° ${gtf.trim()} también entró SIN permiso: puede ser la misma y pagarse dos veces. Declárale su permiso (Libro TH › la guía) y después anota su plata.`;
++
++export class GuiaSinPermisoFrenaError extends Error {
++  readonly codigo = "GUIA_SIN_PERMISO_FRENA" as const;
++  readonly status = 409 as const;
++  /** Las guías sin permiso que frenan, una por N° (dos solo si el N° corto calza en dos series), con sus ingresos. */
++  readonly guiasSinPermiso: GuiaSinPermisoQueFrena[];
++  constructor(
++    readonly gtfNumber: string,
++    readonly guias: GuiaDelNumero[],
++  ) {
++    super(mensajeGuiaSinPermisoFrena(gtfNumber));
++    this.name = "GuiaSinPermisoFrenaError";
++    this.guiasSinPermiso = guiasSinPermisoQueFrenan(guias);
++  }
++}
++
++/** Una guía sin permiso que frena la plata: su N° como está en el libro y sus ingresos (para abrirla y declararle el permiso). */
++export interface GuiaSinPermisoQueFrena {
++  gtfNumber: string;
++  woodEntryIds: string[];
++  titular: string | null;
++}
++
++/** Agrupa por N° exacto los ingresos sin permiso que frenan (los con permiso no entran). */
++export function guiasSinPermisoQueFrenan(guias: readonly GuiaDelNumero[]): GuiaSinPermisoQueFrena[] {
++  const porNumero = new Map<string, GuiaSinPermisoQueFrena>();
++  for (const g of guias) {
++    if (g.contratoId != null) continue;
++    const previa = porNumero.get(g.gtfNumber);
++    if (previa) {
++      if (!previa.woodEntryIds.includes(g.id)) previa.woodEntryIds.push(g.id);
++      previa.titular ??= g.titular;
++    } else {
++      porNumero.set(g.gtfNumber, { gtfNumber: g.gtfNumber, woodEntryIds: [g.id], titular: g.titular });
++    }
++  }
++  return [...porNumero.values()];
++}
++
++/**
++ * Mientras viva el índice viejo (UN abono `madera` por N°, sin permiso — se
++ * borra en el paso 3 de ADR-504), la misma guía de OTRO permiso no puede
++ * anotarse en la cuenta: la base lo rechaza. Mensaje claro en vez de un 500.
++ */
++export class PlataEnOtroPermisoError extends Error {
++  readonly codigo = "GUIA_EN_OTRO_PERMISO" as const;
++  readonly status = 409 as const;
++  constructor(readonly gtfNumber: string) {
++    super(
++      `La guía N° ${gtfNumber.trim()} ya tiene su madera anotada en la cuenta con otro permiso. Todavía no se pueden anotar dos guías con el mismo N°: quita la anotación de la otra o anota ésta sin la cuenta.`,
++    );
++    this.name = "PlataEnOtroPermisoError";
++  }
++}
++
++/**
++ * La respuesta HTTP de los tres «no» de la guía por permiso (ADR-504), igual en
++ * todas las rutas de plata: 409 con el código y, si es ambigua, las candidatas
++ * para que la pantalla pregunte de qué permiso es. `null` = no es de éstos.
++ */
++export function respuestaGuiaPorPermiso(e: unknown): { status: 409; body: RespuestaGuiaPorPermiso } | null {
++  if (e instanceof GuiaAmbiguaError) {
++    return { status: 409, body: { error: "GUIA_AMBIGUA", message: e.message, candidatas: e.candidatas } };
++  }
++  if (e instanceof GuiaSinPermisoFrenaError) {
++    /* La guía que frena, para que «Asignar permiso» la abra: su N° y sus ingresos
++       (la primera; `guias` trae todas si el N° corto calza en dos series). */
++    const primera = e.guiasSinPermiso[0];
++    return {
++      status: 409,
++      body: {
++        error: e.codigo,
++        message: e.message,
++        gtfNumber: primera?.gtfNumber ?? e.gtfNumber,
++        woodEntryIds: primera?.woodEntryIds ?? [],
++        guias: e.guiasSinPermiso,
++      },
++    };
++  }
++  if (e instanceof PlataEnOtroPermisoError) {
++    return { status: 409, body: { error: e.codigo, message: e.message } };
++  }
++  return null;
++}
++
++/** El cuerpo del 409 de `respuestaGuiaPorPermiso`. */
++export interface RespuestaGuiaPorPermiso {
++  error: string;
++  message: string;
++  /** `GUIA_AMBIGUA`: las guías entre las que elegir el permiso. */
++  candidatas?: unknown[];
++  /** `GUIA_SIN_PERMISO_FRENA`: el N° de la guía sin permiso que frena… */
++  gtfNumber?: string;
++  /** …sus ingresos… */
++  woodEntryIds?: string[];
++  /** …y todas, si son más de una. */
++  guias?: GuiaSinPermisoQueFrena[];
++}
++
++/** ¿Es el «ya existe» de la base (P2002)? Sin importar el cliente de Prisma: este archivo sólo usa sus tipos. */
++export function esChoqueDeUnico(e: unknown): boolean {
++  return typeof e === "object" && e != null && (e as { code?: unknown }).code === "P2002";
++}
++
++/**
++ * La guía cuya plata se toca, con la regla estricta de ADR-504
++ * (`decidirPlataDeGuia`): N° solo con dos permisos → `GuiaAmbiguaError` (409
++ * con las candidatas); una guía SIN permiso con ese N° → al escribir
++ * `GuiaSinPermisoFrenaError`, al leer `frenadaPor`. Dentro de la tx del que
++ * escribe, bajo el candado de la guía.
++ */
++export async function resolverPlataDeGuia(
++  db: Pick<Prisma.TransactionClient, "woodEntry">,
++  tenantId: string,
++  ref: GuiaRef,
++  uso: "leer" | "escribir",
++): Promise<PlataDeGuia> {
++  if (!tenantId) throw new Error("tenantId is required");
++  const gtf = (ref.gtfNumber ?? "").trim();
++  const crudo = ref.contratoId?.trim() || null;
++  const guias = await guiasDelNumero(db, tenantId, gtf);
++  if (crudo === SIN_PERMISO) return plataDeLaGuiaSinPermiso(gtf, guias);
++  const pedido = crudo;
++  const d = decidirPlataDeGuia({ gtfNumber: gtf, contratoId: pedido }, guias);
++  if (d.estado === "ambigua") throw new GuiaAmbiguaError(gtf, d.candidatas, mensajeGuiaAmbigua(gtf, d.candidatas));
++  if (d.estado === "bloquea-por-guia-sin-permiso") {
++    if (uso === "escribir") throw new GuiaSinPermisoFrenaError(gtf, d.guias);
++    return { gtfNumber: gtf, contratoId: pedido, unica: false, frenadaPor: d.guias };
++  }
++  const permisos = new Set(guias.map((g) => g.contratoId ?? ""));
++  const unica = permisos.size === 0 || (permisos.size === 1 && (guias[0]?.contratoId ?? null) === d.contratoId);
++  return { gtfNumber: gtf, contratoId: d.contratoId, unica, frenadaPor: null };
++}
++
++/**
++ * «∅» pedido a propósito (la ventana «¿De qué permiso?», opción «sin permiso»):
++ * la guía SIN permiso con ese N°, aunque el N° esté también en otro permiso.
++ * Ella no se frena a sí misma; sus frenos de doble pago siguen en las
++ * primitivas (`cubicacionQuePagoLaGuia` con permiso `null` mira todo el N°; el
++ * índice viejo, un solo abono por N°). Sin guía sin permiso con ese N° y con
++ * otras → 409 `GUIA_AMBIGUA` (la ventana quedó vieja: que elija de nuevo);
++ * dos sin permiso de series distintas → también ambigua.
++ */
++function plataDeLaGuiaSinPermiso(gtf: string, guias: GuiaDelNumero[]): PlataDeGuia {
++  const sinPermiso = guias.filter((g) => g.contratoId == null);
++  if (sinPermiso.length === 0 && guias.length > 0) {
++    const candidatas = [...new Map(guias.map((g) => [`${g.gtfNumber}|${g.contratoId}`, g])).values()];
++    const cuales = candidatas.map((g) => g.permiso ?? g.titular ?? "otro permiso").join(" · ");
++    throw new GuiaAmbiguaError(gtf, candidatas, `La guía N° ${gtf} ya no está sin permiso (${cuales}). Elige su permiso.`);
++  }
++  const d = decidirPlataDeGuia({ gtfNumber: gtf, contratoId: null }, sinPermiso);
++  if (d.estado === "ambigua") throw new GuiaAmbiguaError(gtf, d.candidatas, mensajeGuiaAmbigua(gtf, d.candidatas));
++  const unica = guias.every((g) => g.contratoId == null);
++  return { gtfNumber: gtf, contratoId: null, unica, frenadaPor: null };
++}
++
++/**
++ * Cómo volver a pedir la MISMA guía después de escribir (releer la plata):
++ * su permiso, o «∅» si es la sin permiso de un N° que también está en otro
++ * permiso (`null` ahí sería «elige» → 409 sobre algo ya guardado).
++ */
++export function pedidoDePlata(p: PlataDeGuia): string | null {
++  return p.contratoId ?? (p.unica ? null : SIN_PERMISO);
++}
++
++/** Cómo nombrar la guía a las primitivas de la cuenta y al freno: el N° si es la única (como siempre), N° + permiso si no. */
++export function refDePlata(p: PlataDeGuia): string | GuiaRef {
++  return p.unica ? p.gtfNumber : { gtfNumber: p.gtfNumber, contratoId: p.contratoId };
++}
++
++/** El `where` extra de las filas de plata de la guía (asientos, abono, fletes, gastos): nada si es la única, su permiso si no. */
++export function filtroPermisoDePlata(p: PlataDeGuia): { contratoId?: string | null } {
++  return p.unica ? {} : { contratoId: p.contratoId };
++}
++
+ /**
+  * Las líneas de despacho vivas con esa GTF de salida (la cola del N° y
+  * `mismoNumeroGtf`), con el N° como está en el libro: la guía puede juntar
+diff --git a/lib/db/guia-plata.db.ts b/lib/db/guia-plata.db.ts
+--- a/lib/db/guia-plata.db.ts
++++ b/lib/db/guia-plata.db.ts
+@@ -47,7 +47,17 @@
+ import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+ import { ingresosConCostoCongelado, mensajeCostoCongelado } from "./costo-congelado.db";
+ import { AdelantosDB } from "./adelantos.db";
+-import { cubicacionQuePagoLaGuia, mensajeGuiaPagadaPorCubicacion } from "./guia-cubicacion.db";
++import {
++  cubicacionQuePagoLaGuia,
++  filtroPermisoDePlata,
++  mensajeGuiaPagadaPorCubicacion,
++  guiasSinPermisoQueFrenan,
++  mensajeGuiaSinPermisoFrena,
++  pedidoDePlata,
++  refDePlata,
++  resolverPlataDeGuia,
++  type PlataDeGuia,
++} from "./guia-cubicacion.db";
+ import { ForestDirectorioDB } from "./forest-directorio.db";
+ 
+ /**
+@@ -150,13 +160,24 @@
+  * antes el modal tomaba sólo la guía y la liquidación sólo la persona, y un
+  * pago podía validarse contra un abono que se estaba cambiando.
+  */
+-async function lockGuia(tx: Tx, tenantId: string, gtfNumber: string, partes: ReadonlyArray<string | null | undefined> = []): Promise<void> {
++async function lockGuia(
++  tx: Tx,
++  tenantId: string,
++  gtfNumber: string,
++  contratoId: string | null | undefined,
++  partes: ReadonlyArray<string | null | undefined> = [],
++  uso: "leer" | "escribir" = "escribir",
++): Promise<PlataDeGuia> {
+   await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [gtfNumber]);
++  /* ADR-504: la guía = N° + permiso, resuelta bajo el candado (la regla
++     estricta: una guía sin permiso con ese N° frena la plata de cualquiera). */
++  const plata = await resolverPlataDeGuia(tx, tenantId, { gtfNumber, contratoId: contratoId ?? null }, uso);
+   const abono = await tx.forestCuentaMov.findFirst({
+-    where: { tenantId, gtfNumber, concepto: "madera", deletedAt: null },
++    where: { tenantId, gtfNumber, concepto: "madera", deletedAt: null, ...filtroPermisoDePlata(plata) },
+     select: { parteId: true },
+   });
+   await ForestCuentaDB.bloquearPartesEnTx(tx, tenantId, [abono?.parteId, ...partes]);
++  return plata;
+ }
+ 
+ /** Optimistic check: lo que el usuario vio sigue siendo lo que hay. */
+@@ -294,13 +315,16 @@
+    * Todo lo que el modal necesita de UNA guía. `null` si la guía no existe en
+    * este tenant (ningún asiento vivo con ese número).
+    */
+-  async leer(tenantId: string, gtfNumber: string): Promise<PlataDeGuiaDTO | null> {
++  async leer(tenantId: string, gtfNumber: string, contratoIdPedido?: string | null): Promise<PlataDeGuiaDTO | null> {
+     if (!tenantId) throw new Error("tenantId is required");
+     const gtf = gtfNumber.trim();
+     if (!gtf) return null;
+ 
++    /* ADR-504: N° + permiso. N° solo en dos permisos → `GuiaAmbiguaError` (409). */
++    const plata = await resolverPlataDeGuia(prisma, tenantId, { gtfNumber: gtf, contratoId: contratoIdPedido ?? null }, "leer");
++    const delPermiso = filtroPermisoDePlata(plata);
+     const asientos = await prisma.woodEntry.findMany({
+-      where: { tenantId, gtfNumber: gtf, deletedAt: null },
++      where: { tenantId, gtfNumber: gtf, deletedAt: null, ...delPermiso },
+       orderBy: [{ entryDate: "asc" }, { id: "asc" }],
+     });
+     if (asientos.length === 0) return null;
+@@ -322,9 +346,9 @@
+         select: { id: true, nombre: true, activo: true, condicionPago: true, diasCredito: true },
+         take: 5000,
+       }),
+-      prisma.forestCuentaMov.findFirst({ where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null } }),
+-      prisma.forestFlete.findMany({ where: { tenantId, gtfNumber: gtf, deletedAt: null }, orderBy: { fecha: "asc" } }),
+-      prisma.expense.findMany({ where: { tenantId, gtfNumber: gtf }, orderBy: [{ date: "asc" }, { createdAt: "asc" }] }),
++      prisma.forestCuentaMov.findFirst({ where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null, ...delPermiso } }),
++      prisma.forestFlete.findMany({ where: { tenantId, gtfNumber: gtf, deletedAt: null, ...delPermiso }, orderBy: { fecha: "asc" } }),
++      prisma.expense.findMany({ where: { tenantId, gtfNumber: gtf, ...delPermiso }, orderBy: [{ date: "asc" }, { createdAt: "asc" }] }),
+       ptVigentePorLinea(prisma, tenantId, base),
+     ]);
+ 
+@@ -406,7 +430,7 @@
+     let pago: PlataDeGuiaDTO["pago"] = null;
+     if (cuenta && !servicio) {
+       const { estados } = await estadosDePagoDeTodasLasGuias(tenantId, [cuenta.parteId]);
+-      pago = estados.find((e) => e.gtfNumber === gtf) ?? null;
++      pago = estados.find((e) => e.gtfNumber === gtf && (plata.unica || (e.contratoId ?? null) === plata.contratoId)) ?? null;
+     }
+ 
+     const personaParteId = cuenta?.parteId ?? (proveedor?.seguro ? proveedor.parteId : null);
+@@ -444,11 +468,19 @@
+     /* Todos sus asientos anulados o rechazados: se muestran para leer, pero
+        nada se guarda (el PUT respondería NO_ENCONTRADA y el modal ofrecía
+        «Guardar el costo» sobre una guía muerta — QA 26-09). */
++    /* ADR-504: la guía sin permiso que frena, para que «Asignar permiso» la abra. */
++    const frena = plata.frenadaPor ? guiasSinPermisoQueFrenan(plata.frenadaPor)[0] : undefined;
+     const bloqueo: PlataDeGuiaDTO["bloqueo"] = vivos.length === 0
+       ? {
+           codigo: "GUIA_ANULADA",
+           mensaje: "Esta guía está anulada: su plata se puede ver, pero no cambiar.",
+         }
++      : plata.frenadaPor
++      ? {
++          codigo: "GUIA_SIN_PERMISO_FRENA",
++          mensaje: mensajeGuiaSinPermisoFrena(gtf),
++          ...(frena ? { guiaSinPermiso: { gtfNumber: frena.gtfNumber, woodEntryIds: frena.woodEntryIds } } : {}),
++        }
+       : cerrada
+       ? {
+           codigo: "PERIODO_CERRADO",
+@@ -487,12 +519,14 @@
+    * sólo si TODAS sus líneas vivas lo son; si no, Σ ≈ estimado. `null` si la
+    * guía no tiene asientos vivos en este tenant. `db` = la tx del que escribe.
+    */
+-  async ptDeGuia(tenantId: string, gtfNumber: string, db: LectorPt = prisma): Promise<PtParaPagar | null> {
++  async ptDeGuia(tenantId: string, gtfNumber: string, db: LectorPt = prisma, contratoId?: string | null): Promise<PtParaPagar | null> {
+     if (!tenantId) throw new Error("tenantId is required");
+     const gtf = gtfNumber.trim();
+     if (!gtf) return null;
++    /* ADR-504: el PT de ESA guía (N° + permiso), nunca el de las dos. */
++    const plata = await resolverPlataDeGuia(db, tenantId, { gtfNumber: gtf, contratoId: contratoId ?? null }, "leer");
+     const asientos = await db.woodEntry.findMany({
+-      where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] } },
++      where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] }, ...filtroPermisoDePlata(plata) },
+       select: { id: true, speciesCommonName: true, speciesScientificName: true, volumeM3: true, productType: true },
+     });
+     if (asientos.length === 0) return null;
+@@ -555,10 +589,14 @@
+   async guardar(tenantId: string, input: GuardarPlataGuiaInput, auth: ActorPlata): Promise<PlataDeGuiaDTO> {
+     if (!tenantId) throw new Error("tenantId is required");
+     if (input.tipo === "servicio") {
+-      return this.marcarServicio(tenantId, { gtfNumber: input.gtfNumber, duenoParteId: input.duenoParteId, vistos: input.vistos }, auth);
++      return this.marcarServicio(
++        tenantId,
++        { gtfNumber: input.gtfNumber, contratoId: input.contratoId, duenoParteId: input.duenoParteId, vistos: input.vistos },
++        auth,
++      );
+     }
+     if (input.tipo === "quitar_servicio") {
+-      return this.quitarServicio(tenantId, { gtfNumber: input.gtfNumber, vistos: input.vistos }, auth);
++      return this.quitarServicio(tenantId, { gtfNumber: input.gtfNumber, contratoId: input.contratoId, vistos: input.vistos }, auth);
+     }
+     return this.guardarCompra(tenantId, input, auth);
+   },
+@@ -585,14 +623,15 @@
+     }
+ 
+     const r = await prisma.$transaction(async (tx) => {
+-      await lockGuia(tx, tenantId, gtf, [proveedor?.id]);
++      const plata = await lockGuia(tx, tenantId, gtf, input.contratoId, [proveedor?.id]);
+       /* Una guía, una sola plata (ADR-478 §6): si su madera ya se pagó con una
+          cubicación de trozas aplicada, ponerle costo la pagaría dos veces. Bajo
+-         el lock de la guía, el mismo que toma «aplicar» antes de mirar acá. */
+-      const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, gtf);
++         el lock de la guía, el mismo que toma «aplicar» antes de mirar acá.
++         ADR-504: la de ESTA guía (N° + permiso), no la de otro permiso. */
++      const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, refDePlata(plata));
+       if (porCubicacion) throw new PlataGuiaError("GUIA_PAGADA_POR_CUBICACION", mensajeGuiaPagadaPorCubicacion(gtf, porCubicacion.codigo));
+       const asientos = await tx.woodEntry.findMany({
+-        where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] } },
++        where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] }, ...filtroPermisoDePlata(plata) },
+         orderBy: [{ entryDate: "asc" }, { id: "asc" }],
+       });
+       if (asientos.length === 0) throw new PlataGuiaError("NO_ENCONTRADA", `La guía ${gtf} no tiene asientos vivos.`);
+@@ -677,16 +716,17 @@
+             parteNombre: proveedor.nombre,
+             monto: total,
+             fecha: asientos[0].entryDate,
+-            contratoId: asientos.find((a) => a.contratoId)?.contratoId ?? null,
++            contratoId: plata.unica ? (asientos.find((a) => a.contratoId)?.contratoId ?? null) : plata.contratoId,
++            soloDelPermiso: !plata.unica,
+           },
+           usuario,
+         );
+         cuenta = antes ? "actualizada" : "anotada";
+       } else {
+-        const bajas = await ForestCuentaDB.bajaMaderaDeGuiaEnTx(tx, tenantId, gtf, { exigirSinPagos: true });
++        const bajas = await ForestCuentaDB.bajaMaderaDeGuiaEnTx(tx, tenantId, refDePlata(plata), { exigirSinPagos: true });
+         if (bajas > 0) cuenta = "quitada";
+       }
+-      return { asientos, total, cuenta, cambian, detalles: sello.detalles };
++      return { asientos, total, cuenta, cambian, detalles: sello.detalles, contratoId: plata.contratoId, pedido: pedidoDePlata(plata) };
+     }, OPCIONES_TX);
+ 
+     const porId = new Map(r.asientos.map((a) => [a.id, a]));
+@@ -723,7 +763,7 @@
+       });
+     }
+     invalidar(tenantId);
+-    const dto = await this.leer(tenantId, gtf);
++    const dto = await this.leer(tenantId, gtf, r.pedido);
+     if (!dto) throw new PlataGuiaError("NO_ENCONTRADA", `La guía ${gtf} no existe.`);
+     return dto;
+   },
+@@ -739,7 +779,7 @@
+    */
+   async marcarServicio(
+     tenantId: string,
+-    input: { gtfNumber: string; duenoParteId: string; vistos?: Visto[] },
++    input: { gtfNumber: string; contratoId?: string | null; duenoParteId: string; vistos?: Visto[] },
+     auth?: ActorPlata,
+   ): Promise<PlataDeGuiaDTO> {
+     if (!tenantId) throw new Error("tenantId is required");
+@@ -753,18 +793,19 @@
+     const cierres = await ForestCtpCierreDB.list(tenantId);
+ 
+     const r = await prisma.$transaction(async (tx) => {
+-      await lockGuia(tx, tenantId, gtf, [dueno.id]);
++      const plata = await lockGuia(tx, tenantId, gtf, input.contratoId, [dueno.id]);
++      const delPermiso = filtroPermisoDePlata(plata);
+       const asientos = await tx.woodEntry.findMany({
+-        where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] } },
++        where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] }, ...delPermiso },
+         select: { id: true, entryDate: true, costoTotal: true, maderaDeTercero: true, duenoParteId: true, speciesCommonName: true },
+       });
+       if (asientos.length === 0) throw new PlataGuiaError("NO_ENCONTRADA", `La guía ${gtf} no tiene asientos vivos.`);
+       exigirVistos(input.vistos ?? [], asientos);
+       const conCosto = asientos.filter((a) => a.costoTotal != null);
+       if (conCosto.length > 0) await exigirCostoEditable(tx, tenantId, gtf, conCosto, cierres);
+-      const bajas = await ForestCuentaDB.bajaMaderaDeGuiaEnTx(tx, tenantId, gtf, { exigirSinPagos: true });
++      const bajas = await ForestCuentaDB.bajaMaderaDeGuiaEnTx(tx, tenantId, refDePlata(plata), { exigirSinPagos: true });
+       const { count } = await tx.woodEntry.updateMany({
+-        where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] } },
++        where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] }, ...delPermiso },
+         data: {
+           maderaDeTercero: true,
+           duenoParteId: dueno.id,
+@@ -776,7 +817,7 @@
+       });
+       if (count !== asientos.length) throw new Error(`La guía ${gtf} cambió durante el guardado; no se marcó.`);
+       const yaEra = asientos.every((a) => a.maderaDeTercero && a.duenoParteId === dueno.id);
+-      return { asientos, bajas, conCosto, yaEra };
++      return { asientos, bajas, conCosto, yaEra, contratoId: plata.contratoId, pedido: pedidoDePlata(plata) };
+     }, OPCIONES_TX);
+ 
+     if (!r.yaEra || r.bajas > 0 || r.conCosto.length > 0) {
+@@ -797,7 +838,7 @@
+       );
+     }
+     invalidar(tenantId);
+-    const dto = await this.leer(tenantId, gtf);
++    const dto = await this.leer(tenantId, gtf, r.pedido);
+     if (!dto) throw new PlataGuiaError("NO_ENCONTRADA", `La guía ${gtf} no existe.`);
+     return dto;
+   },
+@@ -807,14 +848,19 @@
+    * costo: se valoriza después como cualquier compra. No escribe costo, así que
+    * no la frena el mes cerrado.
+    */
+-  async quitarServicio(tenantId: string, input: { gtfNumber: string; vistos?: Visto[] }, auth?: ActorPlata): Promise<PlataDeGuiaDTO> {
++  async quitarServicio(
++    tenantId: string,
++    input: { gtfNumber: string; contratoId?: string | null; vistos?: Visto[] },
++    auth?: ActorPlata,
++  ): Promise<PlataDeGuiaDTO> {
+     if (!tenantId) throw new Error("tenantId is required");
+     const gtf = input.gtfNumber.trim();
+     const usuario = usuarioDe(auth);
+     const r = await prisma.$transaction(async (tx) => {
+-      await lockGuia(tx, tenantId, gtf);
++      const plata = await lockGuia(tx, tenantId, gtf, input.contratoId);
++      const delPermiso = filtroPermisoDePlata(plata);
+       const asientos = await tx.woodEntry.findMany({
+-        where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] } },
++        where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] }, ...delPermiso },
+         select: { id: true, costoTotal: true, maderaDeTercero: true, duenoNombre: true, speciesCommonName: true },
+       });
+       if (asientos.length === 0) throw new PlataGuiaError("NO_ENCONTRADA", `La guía ${gtf} no tiene asientos vivos.`);
+@@ -823,13 +869,13 @@
+       }
+       exigirVistos(input.vistos ?? [], asientos);
+       await tx.woodEntry.updateMany({
+-        where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] } },
++        where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] }, ...delPermiso },
+         data: { maderaDeTercero: false, duenoParteId: null, duenoNombre: null },
+       });
+-      return asientos;
++      return { asientos, contratoId: plata.contratoId, pedido: pedidoDePlata(plata) };
+     }, OPCIONES_TX);
+     await Promise.all(
+-      r.map((a) =>
++      r.asientos.map((a) =>
+         auditCtpEsperando({
+           tenantId,
+           action: "ctp_ingreso_update",
+@@ -841,17 +887,18 @@
+       ),
+     );
+     invalidar(tenantId);
+-    const dto = await this.leer(tenantId, gtf);
++    const dto = await this.leer(tenantId, gtf, r.pedido);
+     if (!dto) throw new PlataGuiaError("NO_ENCONTRADA", `La guía ${gtf} no existe.`);
+     return dto;
+   },
+ 
+   // ── Gastos de la guía (estiba, descarga…): `Expense` con `gtfNumber` ──
+ 
+-  async listarGastos(tenantId: string, gtfNumber: string): Promise<GastoGuia[]> {
++  async listarGastos(tenantId: string, gtfNumber: string, contratoId?: string | null): Promise<GastoGuia[]> {
+     if (!tenantId) throw new Error("tenantId is required");
++    const plata = await resolverPlataDeGuia(prisma, tenantId, { gtfNumber, contratoId: contratoId ?? null }, "leer");
+     const rows = await prisma.expense.findMany({
+-      where: { tenantId, gtfNumber: gtfNumber.trim() },
++      where: { tenantId, gtfNumber: gtfNumber.trim(), ...filtroPermisoDePlata(plata) },
+       orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+     });
+     return rows.map(aGasto);
+@@ -866,8 +913,10 @@
+     if (!tenantId) throw new Error("tenantId is required");
+     const gtf = input.gtfNumber.trim();
+     const usuario = usuarioDe(auth);
++    /* ADR-504: el gasto es de ESA guía (N° + permiso); N° solo en dos permisos → 409. */
++    const plata = await resolverPlataDeGuia(prisma, tenantId, { gtfNumber: gtf, contratoId: input.contratoId ?? null }, "leer");
+     const guia = await prisma.woodEntry.findFirst({
+-      where: { tenantId, gtfNumber: gtf, deletedAt: null },
++      where: { tenantId, gtfNumber: gtf, deletedAt: null, ...filtroPermisoDePlata(plata) },
+       select: { id: true, contratoId: true },
+       orderBy: { entryDate: "asc" },
+     });
+@@ -926,7 +975,7 @@
+     if (res.count !== 1) return false;
+     const g = aGasto(actual);
+     const guia = await prisma.woodEntry.findFirst({
+-      where: { tenantId, gtfNumber: g.gtfNumber, deletedAt: null },
++      where: { tenantId, gtfNumber: g.gtfNumber, deletedAt: null, ...(actual.contratoId ? { contratoId: actual.contratoId } : {}) },
+       select: { id: true },
+     });
+     await auditCtpEsperando({
+@@ -962,7 +1011,15 @@
+   async estadoPagoPorGuia(tenantId: string): Promise<Map<string, EstadoPago>> {
+     if (!tenantId) throw new Error("tenantId is required");
+     const { estados } = await estadosDePagoDeTodasLasGuias(tenantId);
+-    return new Map(estados.map((e) => [e.gtfNumber, e.estado]));
++    /* ADR-504: dos guías con el mismo N° (dos permisos) → el filtro por N°
++       muestra la peor: «sin pagar» si alguna lo está. */
++    const peor: Record<EstadoPago, number> = { pendiente: 2, parcial: 1, pagada: 0 };
++    const mapa = new Map<string, EstadoPago>();
++    for (const e of estados) {
++      const antes = mapa.get(e.gtfNumber);
++      if (!antes || peor[e.estado] > peor[antes]) mapa.set(e.gtfNumber, e.estado);
++    }
++    return mapa;
+   },
+ 
+   /**
+@@ -1057,7 +1114,7 @@
+   const [movs, partes] = await Promise.all([
+     prisma.forestCuentaMov.findMany({
+       where: { tenantId, parteId: { in: parteIds }, deletedAt: null },
+-      select: { parteId: true, tipo: true, concepto: true, monto: true, gtfNumber: true, fecha: true },
++      select: { parteId: true, tipo: true, concepto: true, monto: true, gtfNumber: true, contratoId: true, fecha: true },
+     }),
+     prisma.forestParty.findMany({
+       where: { tenantId, id: { in: parteIds } },
+@@ -1070,10 +1127,11 @@
+     concepto: m.concepto,
+     monto: Number(m.monto),
+     gtfNumber: m.gtfNumber,
++    contratoId: m.contratoId ?? null,
+     fecha: dia(m.fecha),
+   }));
+   const guias = lista
+     .filter((m) => m.concepto === "madera" && m.tipo === "abono" && m.gtfNumber)
+-    .map((m) => ({ gtfNumber: m.gtfNumber!, parteId: m.parteId, fecha: m.fecha, monto: m.monto }));
++    .map((m) => ({ gtfNumber: m.gtfNumber!, contratoId: m.contratoId, parteId: m.parteId, fecha: m.fecha, monto: m.monto }));
+   return { estados: estadoDePagoDeGuias(guias, lista), partes };
+ }
+diff --git a/lib/forestal/plata-de-guia.ts b/lib/forestal/plata-de-guia.ts
+--- a/lib/forestal/plata-de-guia.ts
++++ b/lib/forestal/plata-de-guia.ts
+@@ -36,6 +36,7 @@
+ import { mismaEntidadPorNombre, normalizarNombre } from "./directorio-desde-guias";
+ import type { MovimientoCuenta } from "./cuenta-corriente";
+ import type { DuenoSugerido } from "./madera-de-servicio";
++import { SIN_PERMISO } from "./identidad-guia";
+ 
+ // ── Vocabulario ─────────────────────────────────────────────────────────────
+ 
+@@ -87,6 +88,17 @@
+ 
+ const idCorto = z.string().trim().min(1).max(40);
+ const gtfNumber = z.string().trim().min(1, "Falta el número de guía").max(80);
++/**
++ * ADR-504: la guía = N° + permiso. Opcional: con el N° en un solo permiso no
++ * hace falta; con el N° en dos, sin él responde 409 `GUIA_AMBIGUA` con las
++ * candidatas. `null`/vacío = la guía sin permiso (o «el que sea»).
++ */
++/**
++ * El permiso de la guía en las rutas de plata (ADR-504): su id, o «∅» = la
++ * guía SIN permiso elegida a propósito (la ventana «¿De qué permiso?»). Vacío o
++ * ausente = no se eligió (N° en dos permisos → 409 `GUIA_AMBIGUA`).
++ */
++export const contratoDeGuia = z.union([z.literal(SIN_PERMISO), z.string().trim().max(40)]).nullish();
+ 
+ /** Lo que el usuario VIO antes de guardar: si otro lo cambió en el medio, 409. */
+ const vistos = z
+@@ -128,6 +140,7 @@
+ const servicioSchema = z.object({
+   tipo: z.literal("servicio"),
+   gtfNumber,
++  contratoId: contratoDeGuia,
+   duenoParteId: idCorto,
+   vistos,
+ });
+@@ -136,12 +149,14 @@
+ const quitarServicioSchema = z.object({
+   tipo: z.literal("quitar_servicio"),
+   gtfNumber,
++  contratoId: contratoDeGuia,
+   vistos,
+ });
+ 
+ const compraSchema = z.object({
+   tipo: z.literal("compra"),
+   gtfNumber,
++  contratoId: contratoDeGuia,
+   proveedorParteId: idCorto.nullable(),
+   totalFactura: solesPositivos,
+   lineas: z.array(lineaCompraSchema).min(1).max(50),
+@@ -213,6 +228,7 @@
+ export const gastoGuiaSchema = z.object({
+   id: idCorto.optional(),
+   gtfNumber,
++  contratoId: contratoDeGuia,
+   categoria: z.enum(CATEGORIAS_GASTO_GUIA),
+   monto: solesPositivos,
+   fecha: fechaDia,
+@@ -332,7 +348,13 @@
+   /** El PT de la guía entera para cobrar por pt (flete): Oxapampa sólo si TODAS sus líneas lo son. */
+   ptGuia: PtParaPagar;
+   /** Por qué no se puede guardar el costo, si no se puede. */
+-  bloqueo: { codigo: "GUIA_ANULADA" | "PERIODO_CERRADO" | "COSTO_CONGELADO"; mensaje: string } | null;
++  /** `GUIA_SIN_PERMISO_FRENA` (ADR-504): el mismo N° entró también sin permiso; hasta declararlo, nada se guarda. */
++  bloqueo: {
++    codigo: "GUIA_ANULADA" | "PERIODO_CERRADO" | "COSTO_CONGELADO" | "GUIA_SIN_PERMISO_FRENA";
++    mensaje: string;
++    /** `GUIA_SIN_PERMISO_FRENA`: la guía sin permiso que frena (N° e ingresos), para que «Asignar permiso» la abra. */
++    guiaSinPermiso?: { gtfNumber: string; woodEntryIds: string[] };
++  } | null;
+ }
+ 
+ // ── pt de una línea ─────────────────────────────────────────────────────────
+@@ -919,6 +941,8 @@
+ 
+ export interface GuiaParaPago {
+   gtfNumber: string;
++  /** ADR-504: el permiso de la guía (la guía = N° + permiso). Sin él, la guía es el N°. */
++  contratoId?: string | null;
+   parteId: string;
+   /** `AAAA-MM-DD` o ISO: define el orden «por antigüedad». */
+   fecha: string;
+@@ -928,6 +952,8 @@
+ 
+ export interface EstadoPagoGuia {
+   gtfNumber: string;
++  /** El permiso de la guía (ADR-504), tal como vino en `GuiaParaPago`. */
++  contratoId?: string | null;
+   parteId: string;
+   fecha: string;
+   monto: number;
+@@ -1009,8 +1035,13 @@
+  */
+ export function estadoDePagoDeGuias(
+   guias: readonly GuiaParaPago[],
+-  movimientos: ReadonlyArray<Pick<MovimientoCuenta, "parteId" | "tipo" | "monto" | "gtfNumber"> & { concepto: string }>,
++  movimientos: ReadonlyArray<Pick<MovimientoCuenta, "parteId" | "tipo" | "monto" | "gtfNumber"> & { concepto: string; contratoId?: string | null }>,
+ ): EstadoPagoGuia[] {
++  /* ADR-504: la guía es N° + permiso. Un movimiento cae en la guía de su N° y
++     su permiso; si el N° tiene UNA sola guía en la parte, en ésa (como
++     siempre); un cargo sin permiso con el N° en dos guías va a la sin permiso
++     o, si no hay, al pozo (no se sabe cuál pagó). */
++  const clave = (gtf: string, contratoId: string | null | undefined) => `${gtf}\u0000${contratoId ?? ""}`;
+   const porParte = new Map<string, GuiaParaPago[]>();
+   for (const g of guias) {
+     const l = porParte.get(g.parteId) ?? [];
+@@ -1019,8 +1050,21 @@
+   }
+   const salida: EstadoPagoGuia[] = [];
+   for (const [parteId, lista] of porParte) {
+-    const ordenadas = [...lista].sort((a, b) => a.fecha.localeCompare(b.fecha) || a.gtfNumber.localeCompare(b.gtfNumber));
+-    const gtfs = new Set(ordenadas.map((g) => g.gtfNumber));
++    const ordenadas = [...lista].sort(
++      (a, b) => a.fecha.localeCompare(b.fecha) || a.gtfNumber.localeCompare(b.gtfNumber) || (a.contratoId ?? "").localeCompare(b.contratoId ?? ""),
++    );
++    const claves = new Set(ordenadas.map((g) => clave(g.gtfNumber, g.contratoId)));
++    const porNumero = new Map<string, string[]>();
++    for (const g of ordenadas) porNumero.set(g.gtfNumber, [...(porNumero.get(g.gtfNumber) ?? []), clave(g.gtfNumber, g.contratoId)]);
++    /** La guía de la lista a la que pertenece un movimiento con N°, o `null`. */
++    const guiaDe = (gtf: string | null | undefined, contratoId: string | null | undefined): string | null => {
++      if (!gtf) return null;
++      const delNumero = porNumero.get(gtf);
++      if (!delNumero) return null;
++      if (delNumero.length === 1) return delNumero[0];
++      const exacta = clave(gtf, contratoId);
++      return claves.has(exacta) ? exacta : null;
++    };
+     const directoC = new Map<string, Bolsa>();
+     const pozo = bolsaVacia();
+     /* Lo que se le debe por algo que NO es la madera de estas guías. */
+@@ -1028,22 +1072,23 @@
+     for (const m of movimientos) {
+       if (m.parteId !== parteId) continue;
+       const c = aCentimos(m.monto);
++      const suya = guiaDe(m.gtfNumber, m.contratoId);
+       if (m.tipo === "abono") {
+-        const esMaderaDeLaLista = m.concepto === "madera" && Boolean(m.gtfNumber) && gtfs.has(m.gtfNumber ?? "");
++        const esMaderaDeLaLista = m.concepto === "madera" && suya != null;
+         if (!esMaderaDeLaLista) otraDeudaC += c;
+         continue;
+       }
+       if (m.tipo !== "cargo") continue;
+       const k = parteDe(m.concepto);
+-      if (m.gtfNumber && gtfs.has(m.gtfNumber)) {
+-        const b = directoC.get(m.gtfNumber) ?? bolsaVacia();
++      if (suya != null) {
++        const b = directoC.get(suya) ?? bolsaVacia();
+         b[k] += c;
+-        directoC.set(m.gtfNumber, b);
++        directoC.set(suya, b);
+       } else pozo[k] += c;
+     }
+     const filas = ordenadas.map((g) => {
+       const montoC = aCentimos(g.monto);
+-      const dir = directoC.get(g.gtfNumber) ?? bolsaVacia();
++      const dir = directoC.get(clave(g.gtfNumber, g.contratoId)) ?? bolsaVacia();
+       const cubre = Math.min(totalBolsa(dir), montoC);
+       const cubreB = sacar(dir, cubre, ORDEN_GUIA);
+       // Lo que sobra de SUS cargos (ya sin lo que cubrió) pasa al pozo común.
+@@ -1060,6 +1105,7 @@
+       const pendienteC = f.montoC - pagadoC;
+       salida.push({
+         gtfNumber: f.g.gtfNumber,
++        ...(f.g.contratoId !== undefined ? { contratoId: f.g.contratoId } : {}),
+         parteId,
+         fecha: f.g.fecha,
+         monto: deCentimos(f.montoC),
+diff --git a/lib/db/wood-entries-precio.db.ts b/lib/db/wood-entries-precio.db.ts
+--- a/lib/db/wood-entries-precio.db.ts
++++ b/lib/db/wood-entries-precio.db.ts
+@@ -26,7 +26,14 @@
+ import { ingresosConCostoCongelado } from "./costo-congelado.db";
+ import { ForestCuentaDB } from "./forest-cuenta.db";
+ import { CtpInvariantError } from "./forest-ctp-consumo.db";
+-import { cubicacionQuePagoLaGuia, mensajeGuiaPagadaPorCubicacion } from "./guia-cubicacion.db";
++import {
++  GuiaSinPermisoFrenaError,
++  cubicacionQuePagoLaGuia,
++  mensajeGuiaPagadaPorCubicacion,
++  refDePlata,
++  resolverPlataDeGuia,
++} from "./guia-cubicacion.db";
++import { GuiaAmbiguaError, type GuiaRef } from "@/lib/forestal/identidad-guia";
+ import { claveCandadoGtf } from "@/lib/forestal/gtf-talonario";
+ 
+ /**
+@@ -56,6 +63,7 @@
+   moneda: true,
+   status: true,
+   maderaDeTercero: true,
++  contratoId: true,
+   contrato: { select: { codigo: true } },
+ } satisfies Prisma.WoodEntrySelect;
+ 
+@@ -301,11 +309,40 @@
+           tambienConPrecio: input.tambienConPrecio,
+           vistos: input.vistos,
+         });
++        /* ADR-504: la guía es N° + permiso. Cada guía tocada se resuelve bajo
++           su candado: con el N° en UN permiso es la de siempre (por N°); con dos,
++           la plata y el freno son los de SU permiso; una guía sin permiso con ese
++           N° frena a todas (no se sabe de quién es su plata). */
++        const contratoDe = new Map(rows.map((r) => [r.id, r.contratoId ?? null] as const));
++        const refsTocadas = new Map<string, GuiaRef>();
++        for (const c of p.cambios) {
++          const ref = { gtfNumber: c.gtfNumber.trim(), contratoId: contratoDe.get(c.id) ?? null };
++          refsTocadas.set(`${ref.gtfNumber}\u0000${ref.contratoId ?? ""}`, ref);
++        }
++        const plataTocada = new Map<string, { gtf: string; ref: string | GuiaRef }>();
++        for (const [, ref] of [...refsTocadas].sort(([a], [b]) => a.localeCompare(b))) {
++          let ref504: string | GuiaRef;
++          try {
++            ref504 = refDePlata(await resolverPlataDeGuia(tx, tenantId, ref, "escribir"));
++          } catch (e) {
++            if (e instanceof GuiaSinPermisoFrenaError || e instanceof GuiaAmbiguaError) {
++              throw new CtpInvariantError(e.message, "ESTADO_NO_EDITABLE", {
++                motivo: e.codigo,
++                gtfNumber: ref.gtfNumber,
++                /* La guía sin permiso que frena: la pantalla la abre con «Asignar permiso». */
++                ...(e instanceof GuiaSinPermisoFrenaError ? { woodEntryIds: e.guiasSinPermiso[0]?.woodEntryIds ?? [] } : {}),
++              });
++            }
++            throw e;
++          }
++          const clave = typeof ref504 === "string" ? ref504 : `${ref504.gtfNumber}\u0000${ref504.contratoId ?? ""}`;
++          plataTocada.set(clave, { gtf: ref.gtfNumber, ref: ref504 });
++        }
+         /* Una guía, una sola plata (ADR-478 §7): una guía cuya madera ya se pagó
+            con una cubicación de trozas no recibe costo (se valorizaría dos
+            veces). Bajo el lock de la guía, el mismo que toma «aplicar». */
+-        for (const gtf of [...new Set(p.cambios.map((c) => c.gtfNumber.trim()))].sort()) {
+-          const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, gtf);
++        for (const { gtf, ref } of plataTocada.values()) {
++          const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, ref);
+           if (porCubicacion) {
+             throw new CtpInvariantError(mensajeGuiaPagadaPorCubicacion(gtf, porCubicacion.codigo), "ESTADO_NO_EDITABLE", {
+               motivo: "GUIA_PAGADA_POR_CUBICACION",
+@@ -338,8 +375,8 @@
+            precio» cambiaba el costo y la cuenta del proveedor seguía diciendo el
+            monto viejo (revisión 2026-09-26). Una guía no anotada no se toca. */
+         const cuentas: { gtfNumber: string; cuenta: "actualizada" | "baja" }[] = [];
+-        for (const gtf of [...new Set(p.cambios.map((c) => c.gtfNumber.trim()))].sort()) {
+-          const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, gtf);
++        for (const { gtf, ref } of plataTocada.values()) {
++          const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, ref);
+           if (cuenta !== "sin_cuenta") cuentas.push({ gtfNumber: gtf, cuenta });
+         }
+         return { ...p, cuentas };
+diff --git a/lib/db/forest-flete.db.ts b/lib/db/forest-flete.db.ts
+--- a/lib/db/forest-flete.db.ts
++++ b/lib/db/forest-flete.db.ts
+@@ -4,6 +4,7 @@
+ import { invalidateByPrefix } from "@/lib/cache";
+ import { logger } from "@/lib/logger";
+ import { contratoPropio } from "./contrato-propio.db";
++import { SIN_PERMISO } from "@/lib/forestal/identidad-guia";
+ import { auditCtp } from "@/lib/forestal/ctp-audit";
+ import { normalizarPlaca } from "@/lib/forestal/directorio";
+ import {
+@@ -125,9 +126,10 @@
+    * El PT de una guía para cobrar un viaje por pt (la vista previa del modal):
+    * el MISMO que usa `guardar`. `null` si la guía no existe en este tenant.
+    */
+-  async ptDeGuia(tenantId: string, gtfNumber: string): Promise<PtParaPagar | null> {
++  async ptDeGuia(tenantId: string, gtfNumber: string, contratoId?: string | null): Promise<PtParaPagar | null> {
+     if (!tenantId) throw new Error("tenantId is required");
+-    return GuiaPlataDB.ptDeGuia(tenantId, gtfNumber);
++    /* ADR-504: el PT de ESA guía (N° + permiso). N° solo en dos permisos → `GuiaAmbiguaError`. */
++    return GuiaPlataDB.ptDeGuia(tenantId, gtfNumber, undefined, contratoId);
+   },
+ 
+   /**
+@@ -155,7 +157,7 @@
+       if (input.tipo !== "ingreso" || !gtf) {
+         throw new FleteError("SIN_GUIA", 422, "Para cobrar por pie tablar el viaje tiene que traer madera de una guía: pon el N° de guía.");
+       }
+-      const vigente = await GuiaPlataDB.ptDeGuia(tenantId, gtf);
++      const vigente = await GuiaPlataDB.ptDeGuia(tenantId, gtf, undefined, vacioANull(input.contratoId));
+       if (!vigente) {
+         throw new FleteError("SIN_GUIA", 422, `No encuentro la guía ${gtf} entre tus ingresos: cobra este viaje por monto.`);
+       }
+@@ -201,7 +203,8 @@
+       // Marcar pagado sin fecha deja la deuda saldada "algún día": se asume hoy.
+       fechaPago: pagado ? (fechaUtc(input.fechaPago) ?? new Date()) : null,
+       notas: vacioANull(input.notas),
+-      contratoId: await contratoPropio(tenantId, vacioANull(input.contratoId)),
++      /* «∅» = la guía sin permiso (ADR-504): el viaje va sin permiso, no es un id. */
++      contratoId: input.contratoId?.trim() === SIN_PERMISO ? null : await contratoPropio(tenantId, vacioANull(input.contratoId)),
+       ...(cobro ?? {}),
+     };
+ 
+@@ -251,14 +254,28 @@
+         deletedAt: null,
+         gtfNumber: { in: [...new Set(vigentes.map((e) => e.gtfNumber as string))] },
+       },
+-      select: { gtfNumber: true },
++      select: { gtfNumber: true, contratoId: true },
+     });
+-    const yaAnotados = new Set(anotados.map((f) => f.gtfNumber));
++    /* ADR-504: la guía es N° + permiso. Si el N° entró con UN solo permiso, el
++       viaje anotado con ese N° la cubre (como siempre); con dos, sólo el viaje
++       de su permiso o uno sin permiso (que no se sabe de cuál es: no se duplica). */
++    const permisosDelNumero = new Map<string, Set<string>>();
++    for (const e of vigentes) {
++      const set = permisosDelNumero.get(e.gtfNumber as string) ?? new Set<string>();
++      set.add(e.contratoId ?? "");
++      permisosDelNumero.set(e.gtfNumber as string, set);
++    }
++    const cubierta = (gtf: string | null, contratoId: string | null): boolean =>
++      anotados.some(
++        (f) =>
++          f.gtfNumber === gtf &&
++          ((permisosDelNumero.get(gtf ?? "")?.size ?? 0) <= 1 || f.contratoId == null || f.contratoId === contratoId),
++      );
+ 
+     /* Un candidato por GUÍA: el detalle y el porqué, en `agruparCandidatosPorGuia`. */
+     const candidatos: CandidatoFlete[] = [];
+     for (const e of vigentes) {
+-      if (yaAnotados.has(e.gtfNumber)) continue;
++      if (cubierta(e.gtfNumber, e.contratoId ?? null)) continue;
+       const c = candidatoDesdeIngreso({
+         gtfNumber: e.gtfNumber,
+         entryDate: e.entryDate,
+diff --git a/lib/db/forest-cubicacion-trozas.db.ts b/lib/db/forest-cubicacion-trozas.db.ts
+--- a/lib/db/forest-cubicacion-trozas.db.ts
++++ b/lib/db/forest-cubicacion-trozas.db.ts
+@@ -8,7 +8,14 @@
+ import { auditCtp, auditCtpEsperando, type CtpAuditAction } from "@/lib/forestal/ctp-audit";
+ import { AdelantosDB, IdempotenciaDistintaError } from "@/lib/db/adelantos.db";
+ import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
+-import { bloquearLineasDeDespachoEnTx, cubicacionQuePagoLaGuia, cubicacionQueVendioLaGuia, despachosDeLaGuiaDeSalida, filtroMismaGuia } from "@/lib/db/guia-cubicacion.db";
++import {
++  bloquearLineasDeDespachoEnTx,
++  cubicacionQuePagoLaGuia,
++  cubicacionQueVendioLaGuia,
++  despachosDeLaGuiaDeSalida,
++  filtroMismaGuia,
++  resolverPlataDeGuia,
++} from "@/lib/db/guia-cubicacion.db";
+ import { mismoNumeroGtf, puedeSerLaMismaGtf } from "@/lib/forestal/gtf-talonario";
+ import {
+   EspecieConVariosPreciosError,
+@@ -718,14 +725,28 @@
+ }
+ 
+ /** Una guía, una sola plata (§6): ni abono `madera`, ni costo, ni otra cubicación aplicada. Bajo el lock de la guía; compara con `puedeSerLaMismaGtf` (la regla del candado). */
+-async function exigirGuiaSinPlata(tx: Tx, tenantId: string, gtf: string, id: string): Promise<void> {
++async function exigirGuiaSinPlata(tx: Tx, tenantId: string, gtf: string, id: string, contratoId: string | null = null): Promise<void> {
++  /* ADR-504: la guía es N° + permiso. Con el N° en dos permisos (y ninguna
++     guía sin permiso con ese N°), la plata del OTRO permiso no frena ésta; lo
++     sin permiso sigue frenando (no se sabe de cuál es). Si no, como siempre:
++     cualquier plata con ese N° frena. */
++  let soloPermiso: string | null = null;
++  if (contratoId) {
++    const plata = await resolverPlataDeGuia(tx, tenantId, { gtfNumber: gtf, contratoId }, "leer");
++    if (!plata.unica && !plata.frenadaPor) soloPermiso = plata.contratoId;
++  }
++  const delPermiso = soloPermiso ? { OR: [{ contratoId: soloPermiso }, { contratoId: null }] } : {};
+   const filtro = filtroMismaGuia(gtf) ?? gtf;
+   const esLaGuia = (f: { gtfNumber: string | null }) => f.gtfNumber === gtf || puedeSerLaMismaGtf(f.gtfNumber, gtf);
+-  const abonos = await tx.forestCuentaMov.findMany({ where: { tenantId, gtfNumber: filtro, concepto: "madera", deletedAt: null }, select: { gtfNumber: true }, take: 500 });
++  const abonos = await tx.forestCuentaMov.findMany({
++    where: { tenantId, gtfNumber: filtro, concepto: "madera", deletedAt: null, ...delPermiso },
++    select: { gtfNumber: true },
++    take: 500,
++  });
+   let pagada = abonos.some(esLaGuia);
+   if (!pagada) {
+     const costos = await tx.woodEntry.findMany({
+-      where: { tenantId, gtfNumber: filtro, deletedAt: null, costoTotal: { not: null }, status: { notIn: [...ESTADOS_GUIA_MUERTA] } },
++      where: { tenantId, gtfNumber: filtro, deletedAt: null, costoTotal: { not: null }, status: { notIn: [...ESTADOS_GUIA_MUERTA] }, ...delPermiso },
+       select: { gtfNumber: true },
+       take: 500,
+     });
+@@ -734,7 +755,7 @@
+   if (pagada) {
+     throw new CubicacionTrozasError("GUIA_YA_VALORIZADA", `La madera de la guía ${gtf} ya tiene su costo o su pago anotado: no se puede pagar otra vez con la cubicación.`);
+   }
+-  const otra = await cubicacionQuePagoLaGuia(tx, tenantId, gtf, id);
++  const otra = await cubicacionQuePagoLaGuia(tx, tenantId, soloPermiso ? { gtfNumber: gtf, contratoId: soloPermiso } : gtf, id);
+   if (otra) throw new CubicacionTrozasError("GUIA_YA_VALORIZADA", `La guía ${gtf} ya se pagó con la cubicación ${otra.codigo}.`);
+ }
+ 
+@@ -997,7 +1018,7 @@
+         }
+         const otraConClave = await tx.forestCubicacionTrozas.findFirst({ where: { tenantId, idempotencyKey: clave, NOT: { id } }, select: { codigo: true } });
+         if (otraConClave) throw new CubicacionTrozasError("IDEMPOTENCIA_DISTINTA", `Esa clave ya se usó para ${otraConClave.codigo}: vuelve a abrir la cubicación.`);
+-        if (cub.gtfNumber) await exigirGuiaSinPlata(tx, tenantId, cub.gtfNumber, id);
++        if (cub.gtfNumber) await exigirGuiaSinPlata(tx, tenantId, cub.gtfNumber, id, cub.contratoId ?? null);
+         /* La guía que el despacho recibió DESPUÉS de guardar también frena (D8). */
+         if (guiaHoy && !(cub.gtfNumber && (cub.gtfNumber === guiaHoy || mismoNumeroGtf(cub.gtfNumber, guiaHoy)))) {
+           await exigirGuiaSinPlata(tx, tenantId, guiaHoy, id);
+diff --git a/app/api/admin/forestal/fletes/route.ts b/app/api/admin/forestal/fletes/route.ts
+--- a/app/api/admin/forestal/fletes/route.ts
++++ b/app/api/admin/forestal/fletes/route.ts
+@@ -6,7 +6,9 @@
+ import { logger } from "@/lib/logger";
+ import { withApiHandler } from "@/lib/api-handler";
+ import { FleteError, ForestFleteDB } from "@/lib/db/forest-flete.db";
++import { respuestaGuiaPorPermiso } from "@/lib/db/guia-cubicacion.db";
+ import { ESTADOS_PAGO, fleteInputSchema, type EstadoPago } from "@/lib/forestal/fletes";
++import { contratoDeGuia } from "@/lib/forestal/plata-de-guia";
+ 
+ /**
+  * /api/admin/forestal/fletes — los viajes del CTP (ADR-318).
+@@ -55,10 +57,15 @@
+   const ptGuia = (sp.get("ptGuia") ?? "").trim();
+   if (ptGuia) {
+     if (ptGuia.length > 80) return NextResponse.json({ error: "gtf_invalida" }, { status: 400 });
++    /* ADR-504: la guía = N° + permiso; sin permiso y con el N° en dos → 409 GUIA_AMBIGUA. */
++    const contrato = contratoDeGuia.safeParse(sp.get("contratoId"));
++    if (!contrato.success) return NextResponse.json({ error: "contrato_invalido" }, { status: 400 });
+     try {
+-      const pt = await ForestFleteDB.ptDeGuia(auth.tenantId, ptGuia);
++      const pt = await ForestFleteDB.ptDeGuia(auth.tenantId, ptGuia, contrato.data || null);
+       return NextResponse.json({ pt });
+     } catch (err) {
++      const g = respuestaGuiaPorPermiso(err);
++      if (g) return NextResponse.json(g.body, { status: g.status });
+       logger.error("[fletes.GET ptGuia] failed", { error: String(err), tenantId: auth.tenantId });
+       return NextResponse.json({ error: "internal_error" }, { status: 500 });
+     }
+@@ -125,6 +132,10 @@
+     if (err instanceof FleteError) {
+       return NextResponse.json({ error: err.code, message: err.message }, { status: err.status });
+     }
++    const g = respuestaGuiaPorPermiso(err);
++    if (g) {
++      return NextResponse.json(g.body, { status: g.status });
++    }
+     // Fecha mal formada es dato del operador, no fallo del server.
+     if (err instanceof Error && err.message.startsWith("La fecha")) {
+       return NextResponse.json({ error: "fecha_invalida", message: err.message }, { status: 422 });
+diff --git a/app/api/admin/forestal/guias/plata/route.ts b/app/api/admin/forestal/guias/plata/route.ts
+--- a/app/api/admin/forestal/guias/plata/route.ts
++++ b/app/api/admin/forestal/guias/plata/route.ts
+@@ -7,14 +7,17 @@
+ import { withApiHandler } from "@/lib/api-handler";
+ import { GuiaPlataDB, PlataGuiaError } from "@/lib/db/guia-plata.db";
+ import { GuiaConPagosError } from "@/lib/db/forest-cuenta.db";
+-import { esNoCierra, guardarPlataGuiaSchema } from "@/lib/forestal/plata-de-guia";
++import { respuestaGuiaPorPermiso } from "@/lib/db/guia-cubicacion.db";
++import { contratoDeGuia, esNoCierra, guardarPlataGuiaSchema } from "@/lib/forestal/plata-de-guia";
+ import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
+ 
+ /**
+  * /api/admin/forestal/guias/plata — la plata de UNA guía de ingreso (ADR-437).
+  *
+- * GET `?gtf=`        → `PlataDeGuiaDTO` (costo por especie, a quién se le paga,
++ * GET `?gtf=[&contratoId=]` → `PlataDeGuiaDTO` (costo por especie, a quién se le paga,
+  *                      estado de pago, fletes, gastos, costo puesto en patio).
++ *                      ADR-504: la guía = N° + permiso; el N° en dos permisos sin
++ *                      `contratoId` → 409 `GUIA_AMBIGUA` con las candidatas.
+  * GET `?sinPagar=1`  → `{ porParte: GuiasSinPagarDeParte[] }` (aviso de la tira).
+  * PUT                → `guardarPlataGuiaSchema` (servicio | compra | quitar_servicio).
+  *
+@@ -43,6 +46,8 @@
+   if (err instanceof GuiaConPagosError) {
+     return NextResponse.json({ error: "TIENE_PAGOS", message: err.message, pagado: err.pagado }, { status: 409 });
+   }
++  const porPermiso = respuestaGuiaPorPermiso(err);
++  if (porPermiso) return NextResponse.json(porPermiso.body, { status: porPermiso.status });
+   logger.error(`[guias/plata.${ctx}] failed`, { error: String(err), tenantId });
+   return NextResponse.json({ error: "internal_error" }, { status: 500 });
+ }
+@@ -65,7 +70,11 @@
+     if (!gtf || gtf.length > 80) {
+       return NextResponse.json({ error: "missing_gtf", message: "Falta el número de guía (?gtf=)." }, { status: 400 });
+     }
+-    const dto = await GuiaPlataDB.leer(auth.tenantId, gtf);
++    const contrato = contratoDeGuia.safeParse(sp.get("contratoId"));
++    if (!contrato.success) {
++      return NextResponse.json({ error: "contrato_invalido", message: "El permiso (?contratoId=) no es válido." }, { status: 400 });
++    }
++    const dto = await GuiaPlataDB.leer(auth.tenantId, gtf, contrato.data || null);
+     if (!dto) return NextResponse.json({ error: "not_found", message: `La guía ${gtf} no existe.` }, { status: 404 });
+     return NextResponse.json(dto, { headers: { "Cache-Control": "private, no-store" } });
+   } catch (err) {
+diff --git a/app/api/admin/forestal/guias/plata/gastos/route.ts b/app/api/admin/forestal/guias/plata/gastos/route.ts
+--- a/app/api/admin/forestal/guias/plata/gastos/route.ts
++++ b/app/api/admin/forestal/guias/plata/gastos/route.ts
+@@ -6,6 +6,7 @@
+ import { logger } from "@/lib/logger";
+ import { withApiHandler } from "@/lib/api-handler";
+ import { GuiaPlataDB, PlataGuiaError } from "@/lib/db/guia-plata.db";
++import { respuestaGuiaPorPermiso } from "@/lib/db/guia-cubicacion.db";
+ import { gastoGuiaSchema } from "@/lib/forestal/plata-de-guia";
+ import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
+ 
+@@ -62,6 +63,9 @@
+     if (err instanceof PlataGuiaError) {
+       return NextResponse.json({ error: err.code, message: err.message }, { status: err.status });
+     }
++    /* ADR-504: el N° en dos permisos sin `contratoId` → 409 GUIA_AMBIGUA con las candidatas. */
++    const porPermiso = respuestaGuiaPorPermiso(err);
++    if (porPermiso) return NextResponse.json(porPermiso.body, { status: porPermiso.status });
+     logger.error("[guias/plata/gastos.POST] failed", { error: String(err), tenantId: auth.tenantId });
+     return NextResponse.json({ error: "internal_error" }, { status: 500 });
+   }
+diff --git a/hooks/use-plata-de-guia.ts b/hooks/use-plata-de-guia.ts
+--- a/hooks/use-plata-de-guia.ts
++++ b/hooks/use-plata-de-guia.ts
+@@ -19,6 +19,7 @@
+ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+ import { csrfHeaders } from "@/lib/csrf-client";
+ import { logger } from "@/lib/logger";
++import { fetchConPermisoDeGuia } from "@/components/admin/forestal/hooks/use-elegir-permiso-de-guia";
+ import type { FotoCarga } from "@/lib/forestal/fotos-carga";
+ import type { CandidatoFlete, FleteInput } from "@/lib/forestal/fletes";
+ import {
+@@ -41,6 +42,14 @@
+ const API = "/api/admin/forestal/guias/plata";
+ const JSON_CSRF = () => csrfHeaders({ "Content-Type": "application/json" });
+ const r2 = (n: number) => Math.round(n * 100) / 100;
++/** El cuerpo con el permiso elegido (ADR-504), si se eligió uno. */
++const conPermiso = <T extends object>(cuerpo: T, contratoId?: string) =>
++  JSON.stringify(contratoId ? { ...cuerpo, contratoId } : cuerpo);
++/** Si el servidor preguntó y se eligió, el elegido queda para lo que siga. */
++function recordar(ref: { current: string | undefined }, elegido?: string): string | undefined {
++  if (elegido) ref.current = elegido;
++  return ref.current;
++}
+ 
+ /** Lo que el servidor contesta cuando algo no se puede, dicho para el patio. */
+ const MENSAJES: Record<string, string> = {
+@@ -71,22 +80,36 @@
+   b.plata ??
+   (typeof b.gtfNumber === "string" && Array.isArray(b.lineas) ? (b as PlataDeGuiaDTO) : null);
+ 
+-export type Resultado = { ok: true } | { ok: false; mensaje: string };
++/** `codigo` = el `error` del servidor (p. ej. `GUIA_SIN_PERMISO_FRENA`): la pantalla decide si es aviso. */
++export type Resultado = { ok: true } | { ok: false; mensaje: string; codigo?: string };
+ 
+-export function usePlataDeGuia(gtf: string) {
++/**
++ * `contratoConocido` (ADR-504): el permiso de la guía cuando la pantalla ya lo
++ * sabe (todas sus líneas lo dicen). Viaja en la lectura y en cada escritura:
++ * así la plata cae en la guía de ESE permiso sin preguntar.
++ */
++export function usePlataDeGuia(gtf: string, contratoConocido?: string | null) {
+   const [dto, setDto] = useState<PlataDeGuiaDTO | null>(null);
+   const [cargando, setCargando] = useState(true);
+   const [error, setError] = useState<string | null>(null);
+   /** Sólo la última lectura escribe: una vieja que vuelve tarde no pisa lo recién guardado. */
+   const ultima = useRef(0);
++  /* ADR-504: si el N° está en dos permisos, el que se eligió al leer viaja en
++     cada escritura (gasto, flete, plata): todo cae en la MISMA guía. */
++  const conocido = contratoConocido?.trim() || undefined;
++  const contrato = useRef<string | undefined>(conocido);
+ 
+   const cargar = useCallback(async () => {
+     const mia = ++ultima.current;
+     setCargando(true);
+     try {
+-      const r = await fetch(`${API}?gtf=${encodeURIComponent(gtf)}`, {
+-        credentials: "include",
+-        cache: "no-store",
++      const r = await fetchConPermisoDeGuia((elegido) => {
++        const id = recordar(contrato, elegido);
++        const qs = id ? `&contratoId=${encodeURIComponent(id)}` : "";
++        return fetch(`${API}?gtf=${encodeURIComponent(gtf)}${qs}`, {
++          credentials: "include",
++          cache: "no-store",
++        });
+       });
+       const b = await leer(r);
+       if (mia !== ultima.current) return;
+@@ -102,6 +125,11 @@
+     }
+   }, [gtf]);
+ 
++  /* Otra guía: el permiso elegido para la anterior no vale (vuelve el conocido). */
++  useEffect(() => {
++    contrato.current = conocido;
++  }, [gtf, conocido]);
++
+   useEffect(() => {
+     void cargar();
+   }, [cargar]);
+@@ -109,15 +137,17 @@
+   const guardar = useCallback(
+     async (input: GuardarPlataGuiaInput): Promise<Resultado> => {
+       try {
+-        const r = await fetch(API, {
+-          method: "PUT",
+-          credentials: "include",
+-          headers: JSON_CSRF(),
+-          body: JSON.stringify(input),
+-        });
++        const r = await fetchConPermisoDeGuia((elegido) =>
++          fetch(API, {
++            method: "PUT",
++            credentials: "include",
++            headers: JSON_CSRF(),
++            body: conPermiso(input, recordar(contrato, elegido)),
++          }),
++        );
+         const b = await leer(r);
+         if (!r.ok)
+-          return { ok: false, mensaje: motivo(b, "No se pudo guardar la plata de la guía.") };
++          return { ok: false, mensaje: motivo(b, "No se pudo guardar la plata de la guía."), codigo: b.error };
+         ultima.current++;
+         const d = dtoDe(b);
+         if (d) setDto(d);
+@@ -134,14 +164,16 @@
+   const agregarGasto = useCallback(
+     async (g: Omit<GastoGuiaInput, "gtfNumber">): Promise<Resultado> => {
+       try {
+-        const r = await fetch(`${API}/gastos`, {
+-          method: "POST",
+-          credentials: "include",
+-          headers: JSON_CSRF(),
+-          body: JSON.stringify({ ...g, gtfNumber: gtf }),
+-        });
++        const r = await fetchConPermisoDeGuia((elegido) =>
++          fetch(`${API}/gastos`, {
++            method: "POST",
++            credentials: "include",
++            headers: JSON_CSRF(),
++            body: conPermiso({ ...g, gtfNumber: gtf }, recordar(contrato, elegido)),
++          }),
++        );
+         const b = await leer(r);
+-        if (!r.ok) return { ok: false, mensaje: motivo(b, "No se pudo anotar el gasto.") };
++        if (!r.ok) return { ok: false, mensaje: motivo(b, "No se pudo anotar el gasto."), codigo: b.error };
+         await cargar();
+         return { ok: true };
+       } catch (e) {
+@@ -161,7 +193,7 @@
+           headers: csrfHeaders(),
+         });
+         const b = await leer(r);
+-        if (!r.ok) return { ok: false, mensaje: motivo(b, "No se pudo quitar el gasto.") };
++        if (!r.ok) return { ok: false, mensaje: motivo(b, "No se pudo quitar el gasto."), codigo: b.error };
+         await cargar();
+         return { ok: true };
+       } catch (e) {
+@@ -175,14 +207,17 @@
+   /** El flete se guarda por la MISMA ruta que la pestaña Fletes (ADR-318). */
+   const guardarFlete = useCallback(
+     async (input: FleteInput & { id?: string }): Promise<void> => {
+-      const r = await fetch("/api/admin/forestal/fletes", {
+-        method: "POST",
+-        credentials: "include",
+-        headers: JSON_CSRF(),
+-        body: JSON.stringify(input),
+-      });
++      const r = await fetchConPermisoDeGuia((elegido) =>
++        fetch("/api/admin/forestal/fletes", {
++          method: "POST",
++          credentials: "include",
++          headers: JSON_CSRF(),
++          body: conPermiso(input, recordar(contrato, elegido)),
++        }),
++      );
+       const b = await leer(r);
+-      if (!r.ok) throw new Error(motivo(b, "No se pudo guardar el flete."));
++      /* `codigo` va pegado al Error: quien lo atrape puede distinguir el aviso de permiso (ADR-504). */
++      if (!r.ok) throw Object.assign(new Error(motivo(b, "No se pudo guardar el flete.")), { codigo: b.error });
+       await cargar();
+     },
+     [cargar],
+diff --git a/hooks/use-fletes-forestales.ts b/hooks/use-fletes-forestales.ts
+--- a/hooks/use-fletes-forestales.ts
++++ b/hooks/use-fletes-forestales.ts
+@@ -10,6 +10,7 @@
+ import { useCallback, useEffect, useMemo, useState } from "react";
+ import { csrfHeaders } from "@/lib/csrf-client";
+ import { resumirFletes, type CandidatoFlete, type EstadoPago, type Flete, type FleteInput } from "@/lib/forestal/fletes";
++import { cuerpoConPermiso, fetchConPermisoDeGuia } from "@/components/admin/forestal/hooks/use-elegir-permiso-de-guia";
+ 
+ /** Con el token CSRF: sin él el servidor rechaza la mutación con 403. */
+ const jsonConCsrf = () => csrfHeaders({ "Content-Type": "application/json" });
+@@ -64,12 +65,14 @@
+   }, [cargar, cargarCandidatos]);
+ 
+   const guardar = useCallback(async (input: FleteInput & { id?: string }): Promise<Flete> => {
+-    const r = await fetch("/api/admin/forestal/fletes", {
+-      method: "POST",
+-      credentials: "include",
+-      headers: jsonConCsrf(),
+-      body: JSON.stringify(input),
+-    });
++    const r = await fetchConPermisoDeGuia((contratoId) =>
++      fetch("/api/admin/forestal/fletes", {
++        method: "POST",
++        credentials: "include",
++        headers: jsonConCsrf(),
++        body: cuerpoConPermiso(JSON.stringify(input), contratoId),
++      }),
++    );
+     const j = (await r.json().catch(() => ({}))) as { flete?: Flete; message?: string };
+     if (!r.ok || !j.flete) throw new Error(j.message ?? "No se pudo guardar el flete.");
+     const flete = j.flete;
+diff --git a/components/admin/forestal/hooks/use-cubicaciones-trozas.ts b/components/admin/forestal/hooks/use-cubicaciones-trozas.ts
+--- a/components/admin/forestal/hooks/use-cubicaciones-trozas.ts
++++ b/components/admin/forestal/hooks/use-cubicaciones-trozas.ts
+@@ -23,6 +23,7 @@
+ } from "@/lib/forestal/cubicacion-comercial-tipos";
+ import type { TrozaCubicada } from "@/lib/forestal/cubicacion-trozas";
+ import { diametroUnico, type DiametrosPorTroza } from "@/lib/forestal/cubicacion-trozas-formula";
++import { cuerpoConPermiso, fetchConPermisoDeGuia } from "./use-elegir-permiso-de-guia";
+ 
+ export const RUTA_CUBICACIONES_TROZAS = "/api/admin/forestal/cubicaciones-trozas";
+ 
+@@ -102,7 +103,10 @@
+ 
+ export async function pedir<T>(url: string, init: RequestInit, leer: (j: unknown) => T): Promise<Resultado<T>> {
+   try {
+-    const res = await fetch(url, { credentials: "include", ...init });
++    /* ADR-504: la cubicación o el pago de una guía cuyo N° está en dos permisos pregunta cuál. */
++    const res = await fetchConPermisoDeGuia((contratoId) =>
++      fetch(url, { credentials: "include", ...init, body: cuerpoConPermiso(init.body, contratoId) }),
++    );
+     const j: unknown = res.status === 204 ? null : await res.json().catch(() => null);
+     if (res.ok) return { ok: true, data: leer(j) };
+     /* Las rutas responden `{ error: CODIGO, message, ...extra }` (ADR-478 §3.4). */
+diff --git a/components/admin/forestal/hooks/use-vincular-cubicacion.ts b/components/admin/forestal/hooks/use-vincular-cubicacion.ts
+--- a/components/admin/forestal/hooks/use-vincular-cubicacion.ts
++++ b/components/admin/forestal/hooks/use-vincular-cubicacion.ts
+@@ -15,6 +15,7 @@
+ import { csrfHeaders } from "@/lib/csrf-client";
+ import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
+ import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
++import { cuerpoConPermiso, fetchConPermisoDeGuia } from "./use-elegir-permiso-de-guia";
+ 
+ /** Las corridas a las que ya está atada (lo viejo guardaba un solo id). */
+ export function corridasDeLaCubicacion(
+@@ -76,12 +77,14 @@
+       setGuardando(true);
+       setError(null);
+       try {
+-        const r = await fetch("/api/admin/forestal/cubicaciones", {
+-          method: "POST",
+-          headers: csrfHeaders({ "Content-Type": "application/json" }),
+-          credentials: "include",
+-          body: JSON.stringify(cuerpoDelVinculo(c, corridas)),
+-        });
++        const r = await fetchConPermisoDeGuia((contratoId) =>
++          fetch("/api/admin/forestal/cubicaciones", {
++            method: "POST",
++            headers: csrfHeaders({ "Content-Type": "application/json" }),
++            credentials: "include",
++            body: cuerpoConPermiso(JSON.stringify(cuerpoDelVinculo(c, corridas)), contratoId),
++          }),
++        );
+         const j = (await r.json().catch(() => ({}))) as { message?: string; error?: string };
+         /* Nunca se reintenta con lo que se tenía: quien llama relee la lista. */
+         if (esDesactualizada(r.status, j)) {
+diff --git a/components/admin/forestal/ficha-guia/BloquePlata.tsx b/components/admin/forestal/ficha-guia/BloquePlata.tsx
+--- a/components/admin/forestal/ficha-guia/BloquePlata.tsx
++++ b/components/admin/forestal/ficha-guia/BloquePlata.tsx
+@@ -12,6 +12,7 @@
+ import { fmtPt } from "@/lib/forestal/cubicacion-formato";
+ import { textoFuentePt, type PlataDeGuiaDTO, type PtParaPagar } from "@/lib/forestal/plata-de-guia";
+ import { formatNumber } from "@/lib/format";
++import AvisoPlataPorPermiso, { esAvisoDePermiso } from "../AvisoPlataPorPermiso";
+ import { ChipPago, soles } from "../costo-guia/comun";
+ import { BOTON_BLOQUE, BloqueCargando, BloqueFicha, Cifra } from "./comun";
+ 
+@@ -256,8 +257,16 @@
+                 Sin proveedor enlazado para pagarle.
+               </p>
+             )}
+-            {dto.bloqueo && (
+-              <p className="text-xs text-[var(--text-tertiary)]">{dto.bloqueo.mensaje}</p>
++            {/* ADR-504: la guía sin permiso que frena el pago, con su salida. */}
++            {dto.bloqueo && esAvisoDePermiso(dto.bloqueo.codigo) ? (
++              <AvisoPlataPorPermiso
++                gtf={dto.gtfNumber}
++                codigo={dto.bloqueo.codigo}
++                mensaje={dto.bloqueo.mensaje}
++                onAsignado={onReintentar}
++              />
++            ) : (
++              dto.bloqueo && <p className="text-xs text-[var(--text-tertiary)]">{dto.bloqueo.mensaje}</p>
+             )}
+           </div>
+         ) : null}
+diff --git a/components/admin/forestal/CtpCostoGuiaModal.tsx b/components/admin/forestal/CtpCostoGuiaModal.tsx
+--- a/components/admin/forestal/CtpCostoGuiaModal.tsx
++++ b/components/admin/forestal/CtpCostoGuiaModal.tsx
+@@ -43,6 +43,7 @@
+ import SeccionPago from "./costo-guia/SeccionPago";
+ import SeccionPuesto from "./costo-guia/SeccionPuesto";
+ import SeccionServicio from "./costo-guia/SeccionServicio";
++import AvisoPlataPorPermiso, { FRENA_SIN_PERMISO, esAvisoDePermiso } from "./AvisoPlataPorPermiso";
+ 
+ /** Lo que se necesita de la guía para abrir el modal (el resto lo trae el GET). */
+ export interface GuiaACostear {
+@@ -55,6 +56,8 @@
+   fecha?: string | null;
+   /** Código del permiso de origen, para que el flete sugiera su contrato. */
+   originCode?: string | null;
++  /** El permiso de la guía si todas sus líneas lo dicen (ADR-504): la plata va a ESA guía. */
++  contratoId?: string | null;
+ }
+ 
+ type Tipo = "compra" | "servicio";
+@@ -72,7 +75,7 @@
+   onGuardado: (mensaje: string) => void;
+   onClose: () => void;
+ }) {
+-  const plata = usePlataDeGuia(guia.gtfNumber);
++  const plata = usePlataDeGuia(guia.gtfNumber, guia.contratoId);
+   const { dto } = plata;
+   const dir = useDirectorioForestal();
+   const partes = useMemo(() => dir.partes.filter((p) => p.activo !== false), [dir.partes]);
+@@ -92,6 +95,8 @@
+   const [guardando, setGuardando] = useState(false);
+   const [error, setError] = useState<string | null>(null);
+   const [aviso, setAviso] = useState<string | null>(null);
++  /** Un «no» del servidor que es aviso de permiso (ADR-504), no un error. */
++  const [porPermiso, setPorPermiso] = useState<{ codigo: string; mensaje: string } | null>(null);
+   /** El flete se anota en SU modal; éste se esconde mientras (dos diálogos apilados se pisan). */
+   const [flete, setFlete] = useState<CandidatoFlete | null>(null);
+   /* Vive acá y no en la sección: mientras se anota el flete este modal se
+@@ -112,10 +117,13 @@
+   /* Era de servicio y ahora dice «la compré»: primero se le quita la marca
+      (queda sin costo) y, si el precio ya está, se guarda en el mismo acto. */
+   const quitaServicio = dto?.tipo === "servicio" && tipo === "compra";
++  /* El aviso de permiso: lo que contestó el último guardar, o el bloqueo que ya trae la lectura. */
++  const avisoPermiso = porPermiso ?? (dto?.bloqueo && esAvisoDePermiso(dto.bloqueo.codigo) ? dto.bloqueo : null);
+   const puedeGuardar =
+     !!dto &&
+     !guardando &&
+     dto.bloqueo?.codigo !== "GUIA_ANULADA" &&
++    dto.bloqueo?.codigo !== FRENA_SIN_PERMISO &&
+     (tipo === "servicio" ? Boolean(duenoId) : quitaServicio || (Boolean(b.cuerpo) && !dto.bloqueo));
+ 
+   async function quitarYGuardar() {
+@@ -130,6 +138,7 @@
+     setGuardando(true);
+     setError(null);
+     setAviso(null);
++    setPorPermiso(null);
+     const r =
+       tipo === "servicio"
+         ? await plata.guardar({
+@@ -144,6 +153,8 @@
+             ? await plata.guardar(b.cuerpo)
+             : { ok: false as const, mensaje: "Falta completar el precio." };
+     setGuardando(false);
++    if (!r.ok && "codigo" in r && esAvisoDePermiso(r.codigo))
++      return setPorPermiso({ codigo: r.codigo, mensaje: r.mensaje });
+     if (!r.ok) return setError(r.mensaje);
+     const msg =
+       tipo === "servicio"
+@@ -274,7 +285,19 @@
+                   iguales.
+                 </p>
+               )}
+-              {dto.bloqueo && (tipo === "compra" || dto.bloqueo.codigo === "GUIA_ANULADA") && (
++              {avisoPermiso ? (
++                <AvisoPlataPorPermiso
++                  gtf={dto.gtfNumber}
++                  codigo={avisoPermiso.codigo}
++                  mensaje={avisoPermiso.mensaje}
++                  onAsignado={(m) => {
++                    setPorPermiso(null);
++                    setAviso(m);
++                    onGuardado(m);
++                    void plata.cargar();
++                  }}
++                />
++              ) : dto.bloqueo && (tipo === "compra" || dto.bloqueo.codigo === "GUIA_ANULADA") && (
+                 <p className="flex items-start gap-2 text-sm font-bold text-[var(--data-warning-ink)]">
+                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />{" "}
+                   {dto.bloqueo.mensaje}
+diff --git a/components/admin/forestal/CtpVentaDeLaGuia.tsx b/components/admin/forestal/CtpVentaDeLaGuia.tsx
+--- a/components/admin/forestal/CtpVentaDeLaGuia.tsx
++++ b/components/admin/forestal/CtpVentaDeLaGuia.tsx
+@@ -39,6 +39,7 @@
+ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+ import { Btn } from "./ctp-shared";
+ import { formatCurrency } from "@/lib/format";
++import { cuerpoConPermiso, fetchConPermisoDeGuia } from "./hooks/use-elegir-permiso-de-guia";
+ 
+ const soles = (n: number) => `${formatCurrency(n)}`;
+ 
+@@ -121,11 +122,11 @@
+           docNumero: cliente.doc || undefined,
+         }));
+ 
+-      const r = await fetch("/api/admin/forestal/cuenta", {
++      const r = await fetchConPermisoDeGuia((contratoId) => fetch("/api/admin/forestal/cuenta", {
+         method: "POST",
+         credentials: "include",
+         headers: csrfHeaders({ "Content-Type": "application/json" }),
+-        body: JSON.stringify({
++        body: cuerpoConPermiso(JSON.stringify({
+           accion: "venta_guia",
+           parteId: parte.id,
+           parteNombre: parte.nombre,
+@@ -134,8 +135,8 @@
+           total,
+           cobrado: Math.min(cobrado, total),
+           notas: `Guía ${gtfNumber} · ${filas.length} producto${filas.length === 1 ? "" : "s"}`,
+-        }),
+-      });
++        }), contratoId),
++      }));
+       const j = (await r.json().catch(() => ({}))) as { saldoDeLaGuia?: number; message?: string };
+       if (!r.ok) throw new Error(j.message ?? `El servidor respondió ${r.status}`);
+       setListo({ saldo: j.saldoDeLaGuia ?? saldo, nombre: parte.nombre });
+diff --git a/components/admin/forestal/CtpGuiaFichaModal.tsx b/components/admin/forestal/CtpGuiaFichaModal.tsx
+--- a/components/admin/forestal/CtpGuiaFichaModal.tsx
++++ b/components/admin/forestal/CtpGuiaFichaModal.tsx
+@@ -22,6 +22,7 @@
+ import AdminModal from "@/components/admin/shared/AdminModal";
+ import { useDocumentosGuia } from "@/hooks/use-documentos-guia";
+ import { usePlataDeGuia } from "@/hooks/use-plata-de-guia";
++import { contratoComun } from "@/lib/forestal/guia-por-permiso";
+ import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
+ import { trozasPorFila } from "@/lib/forestal/acomodar-trozas";
+ import { mensajeDeVencida, vencimientoDeGuia, yaRecibida } from "@/lib/forestal/fecha-de-llegada";
+@@ -118,7 +119,7 @@
+   onCubicar?: () => void;
+   onClose: () => void;
+ }) {
+-  const plata = usePlataDeGuia(guia.gtfNumber);
++  const plata = usePlataDeGuia(guia.gtfNumber, contratoComun(guia.lineas));
+   const docs = useDocumentosGuia(guia.gtfNumber);
+ 
+   const secciones = useMemo(
+diff --git a/components/admin/forestal/CtpIngresosView.tsx b/components/admin/forestal/CtpIngresosView.tsx
+--- a/components/admin/forestal/CtpIngresosView.tsx
++++ b/components/admin/forestal/CtpIngresosView.tsx
+@@ -39,6 +39,7 @@
+ import { CSS_GTF_SERFOR, documentoGtfSerfor, trozasDesdeSerfor } from "@/lib/forestal/ctp-gtf-desde-serfor";
+ import { CSS_GTF_OFICIAL, fechaGtf } from "@/lib/forestal/ctp-gtf-formato";
+ import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
++import { contratoComun } from "@/lib/forestal/guia-por-permiso";
+ import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-trozas";
+ import { CSS_LEGAJO, portadaLegajo } from "@/lib/forestal/ctp-legajo";
+ import { metaArchivado, papelesDeGuia, papelesDeIngreso } from "@/lib/forestal/ctp-documentos-ingreso";
+@@ -162,6 +163,7 @@
+   lineas: guia.lineas.map((l) => ({ id: l.id, volumeM3: l.volumeM3 })),
+   fecha: guia.lineas[0]?.entryDate?.slice(0, 10) ?? null,
+   originCode: guia.lineas[0]?.originCode ?? null,
++  contratoId: contratoComun(guia.lineas),
+ });
+ 
+ /** La fecha de hoy como se escribe en el papel. */
+diff --git a/components/admin/forestal/CTPLibroOperaciones.tsx b/components/admin/forestal/CTPLibroOperaciones.tsx
+--- a/components/admin/forestal/CTPLibroOperaciones.tsx
++++ b/components/admin/forestal/CTPLibroOperaciones.tsx
+@@ -124,6 +124,9 @@
+ } from "./ctp-shared";
+ import { CTP_VISTAS } from "@/lib/admin/subvistas-modulos";
+ 
++/* ADR-504: «¿de qué permiso es la GTF X?» cuando una guardada vuelve 409 GUIA_AMBIGUA. */
++const ElegirPermisoDeGuia = dynamic(() => import("./ElegirPermisoDeGuia"), { ssr: false });
++
+ /* Reportes diarios por correo/WhatsApp (ADR-439): se baja sólo al abrirlo desde Opciones. */
+ const CtpReportesDiariosModal = dynamic(() => import("./CtpReportesDiariosModal"), { ssr: false });
+ 
+@@ -891,6 +894,7 @@
+           }}
+         />
+       )}
++      <ElegirPermisoDeGuia />
+     </>
+   );
+ }
+diff --git a/components/admin/forestal/ForestLotesModule.tsx b/components/admin/forestal/ForestLotesModule.tsx
+--- a/components/admin/forestal/ForestLotesModule.tsx
++++ b/components/admin/forestal/ForestLotesModule.tsx
+@@ -27,6 +27,10 @@
+ import LoteCard, { type LoteRow, type LoteStatus } from "./LoteCard";
+ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+ import { formatNumber } from "@/lib/format";
++import dynamic from "next/dynamic";
++
++/* ADR-504: «¿de qué permiso es la GTF X?» cuando una guardada vuelve 409 GUIA_AMBIGUA. */
++const ElegirPermisoDeGuia = dynamic(() => import("./ElegirPermisoDeGuia"), { ssr: false });
+ 
+ interface Stats { total: number; abiertos: number; cerrados: number; despachados: number; cantidadTotal: number }
+ 
+@@ -257,6 +261,7 @@
+       tools={botonNuevo("h-10")}
+     >
+       {cuerpo}
++      <ElegirPermisoDeGuia />
+     </LibroChrome>
+   );
+ }
+diff --git a/components/admin/forestal/LothLibroOperaciones.tsx b/components/admin/forestal/LothLibroOperaciones.tsx
+--- a/components/admin/forestal/LothLibroOperaciones.tsx
++++ b/components/admin/forestal/LothLibroOperaciones.tsx
+@@ -105,6 +105,9 @@
+ import { useMiRol } from "@/hooks/use-mi-rol";
+ import { CLAVE_PLAN_TABLERO } from "./hooks/use-loth-tablero-permiso";
+ 
++/* ADR-504: «¿de qué permiso es la GTF X?» cuando una guardada vuelve 409 GUIA_AMBIGUA. */
++const ElegirPermisoDeGuia = dynamic(() => import("./ElegirPermisoDeGuia"), { ssr: false });
++
+ type LothEntry = LothEntryDTO;
+ 
+ /** `?arbol=113`: el mapa llega parado en ese árbol. Lo escribe `urlDelArbolEnElMapa` (tarjeta-troza). */
+@@ -1789,6 +1792,7 @@
+         />
+       )}
+       {cadenaCode && <LothCadenaModal code={cadenaCode} onClose={() => setCadenaCode(null)} />}
++      <ElegirPermisoDeGuia />
+     </LibroChrome>
+     </LothPermisoContext.Provider>
+   );
+diff --git a/components/admin/forestal/ForestalHerramientas.tsx b/components/admin/forestal/ForestalHerramientas.tsx
+--- a/components/admin/forestal/ForestalHerramientas.tsx
++++ b/components/admin/forestal/ForestalHerramientas.tsx
+@@ -41,6 +41,9 @@
+ import { useForestTramites } from "@/hooks/use-forest-tramites";
+ import { tramitesSinRespuesta } from "@/lib/forestal/tramites-registro";
+ 
++/* ADR-504: «¿de qué permiso es la GTF X?» cuando una guardada vuelve 409 GUIA_AMBIGUA. */
++const ElegirPermisoDeGuia = dynamic(() => import("./ElegirPermisoDeGuia"), { ssr: false });
++
+ /**
+  * El punto de «Expediente» antes de la primera visita a Trámites: lee sólo la
+  * lista (sin montar formularios ni avisos). Al entrar a Trámites lo sigue
+@@ -188,6 +191,7 @@
+           )}
+         </div>
+       )}
++      <ElegirPermisoDeGuia />
+     </LibroChrome>
+   );
+ }
+diff --git a/components/admin/forestal/WoodEntryForm.tsx b/components/admin/forestal/WoodEntryForm.tsx
+--- a/components/admin/forestal/WoodEntryForm.tsx
++++ b/components/admin/forestal/WoodEntryForm.tsx
+@@ -332,6 +332,7 @@
+ import CtpIngresoDesdeLibroTh from "./CtpIngresoDesdeLibroTh";
+ import type { GuiaThAlistada } from "@/lib/forestal/guias-th-por-ingresar";
+ import type { FotoCarga } from "@/lib/forestal/fotos-carga";
++import { cuerpoConPermiso, fetchConPermisoDeGuia } from "./hooks/use-elegir-permiso-de-guia";
+ 
+ export default function WoodEntryForm({
+   onClose,
+@@ -1605,12 +1606,15 @@
+ 
+       let res: Response;
+       try {
+-        res = await fetch("/api/admin/forestal/wood-entries", {
+-          method: "POST",
+-          headers: csrfHeaders({ "Content-Type": "application/json" }),
+-          credentials: "include",
+-          body: JSON.stringify(payload),
+-        });
++        /* ADR-504: si el N° ya está en dos permisos y el alta no dijo cuál, se pregunta. */
++        res = await fetchConPermisoDeGuia((contratoId) =>
++          fetch("/api/admin/forestal/wood-entries", {
++            method: "POST",
++            headers: csrfHeaders({ "Content-Type": "application/json" }),
++            credentials: "include",
++            body: cuerpoConPermiso(JSON.stringify(payload), contratoId),
++          }),
++        );
+       } catch (netErr) {
+         // Sin señal en el patio: la guía queda anotada en el equipo y sube sola.
+         // Es esto o el cuaderno (que después se tipea tarde y fuera de plazo).
+diff --git a/components/admin/forestal/hooks/use-medidas-trozas.ts b/components/admin/forestal/hooks/use-medidas-trozas.ts
+--- a/components/admin/forestal/hooks/use-medidas-trozas.ts
++++ b/components/admin/forestal/hooks/use-medidas-trozas.ts
+@@ -18,6 +18,7 @@
+ import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+ import type { CambioMedidaTroza } from "@/lib/forestal/medidas-troza";
+ import type { EstadoGuiaMedidas, RespuestaMedidasGuia } from "@/lib/forestal/medidas-desde-guia";
++import { cuerpoConPermiso, fetchConPermisoDeGuia } from "./use-elegir-permiso-de-guia";
+ 
+ export interface ResultadoMedidas {
+   /** Las trozas releídas después de guardar: con su PT del servidor. */
+@@ -89,16 +90,19 @@
+     const texto = (p.registroOEnlace ?? "").trim();
+     const esEnlace = /^https?:\/\//i.test(texto) || /nuRegistroGuia=/i.test(texto);
+     try {
+-      const r = await fetch(URL_MEDIDAS_GUIA, {
+-        method: "POST",
+-        credentials: "include",
+-        headers: csrfHeaders({ "Content-Type": "application/json" }),
+-        body: JSON.stringify({
+-          gtfNumber: p.gtfNumber,
+-          ...(texto ? (esEnlace ? { enlaceQr: texto } : { numeroRegistro: texto }) : {}),
+-          aplicar: p.aplicar === true,
+-        }),
++      const cuerpo = JSON.stringify({
++        gtfNumber: p.gtfNumber,
++        ...(texto ? (esEnlace ? { enlaceQr: texto } : { numeroRegistro: texto }) : {}),
++        aplicar: p.aplicar === true,
+       });
++      const r = await fetchConPermisoDeGuia((contratoId) =>
++        fetch(URL_MEDIDAS_GUIA, {
++          method: "POST",
++          credentials: "include",
++          headers: csrfHeaders({ "Content-Type": "application/json" }),
++          body: cuerpoConPermiso(cuerpo, contratoId),
++        }),
++      );
+       const j = (await r.json().catch(() => ({}))) as Partial<RespuestaMedidasGuia> & { message?: string; error?: string };
+       if (!r.ok) throw new Error(j.message ?? j.error ?? `El servidor respondió ${r.status}`);
+       if (p.aplicar) invalidarCtp("trozas");
+diff --git a/hooks/use-guias-guardadas.ts b/hooks/use-guias-guardadas.ts
+--- a/hooks/use-guias-guardadas.ts
++++ b/hooks/use-guias-guardadas.ts
+@@ -24,6 +24,7 @@
+   GuiaGuardadaVista,
+   ListaGuiasGuardadas,
+ } from "@/lib/forestal/guias-guardadas";
++import { cuerpoConPermiso, fetchConPermisoDeGuia } from "@/components/admin/forestal/hooks/use-elegir-permiso-de-guia";
+ 
+ const RUTA = "/api/admin/forestal/guias/guardadas";
+ 
+@@ -70,12 +71,14 @@
+   input: GuiaGuardadaInput,
+ ): Promise<ResultadoGuiaGuardada> {
+   try {
+-    const res = await fetch(url, {
+-      method,
+-      credentials: "include",
+-      headers: csrfHeaders({ "Content-Type": "application/json" }),
+-      body: JSON.stringify(input),
+-    });
++    const res = await fetchConPermisoDeGuia((contratoId) =>
++      fetch(url, {
++        method,
++        credentials: "include",
++        headers: csrfHeaders({ "Content-Type": "application/json" }),
++        body: cuerpoConPermiso(JSON.stringify(input), contratoId),
++      }),
++    );
+     const j = await leerCuerpo<
+       CuerpoDeError & { guia?: GuiaGuardadaDetalle; corregidos?: string[]; aviso?: string | null }
+     >(res);
+diff --git a/__tests__/forestal-set-costo-congelado.test.ts b/__tests__/forestal-set-costo-congelado.test.ts
+--- a/__tests__/forestal-set-costo-congelado.test.ts
++++ b/__tests__/forestal-set-costo-congelado.test.ts
+@@ -18,6 +18,9 @@
+   consultasCongelado: [] as unknown[],
+   /* La guía que se lee DENTRO de la tx (`select: { gtfNumber }`): `null` = la misma de afuera. */
+   gtfEnTx: null as string | null,
++  /* ADR-504: los ingresos vivos con el mismo N° (de cualquier permiso) y si la guía está anotada en una cuenta. */
++  mismoNumero: [] as Record<string, unknown>[],
++  anotada: null as { parteNombre: string } | null,
+ }));
+ 
+ vi.mock("server-only", () => ({}));
+@@ -36,6 +39,7 @@
+         return { count: 1 };
+       }),
+       findFirstOrThrow: vi.fn(async () => H.entry),
++      findMany: vi.fn(async () => H.mismoNumero),
+     },
+     forestCtpConsumo: {
+       findMany: vi.fn(async (args: unknown) => {
+@@ -44,7 +48,7 @@
+       }),
+     },
+     /* La guía no está anotada en ninguna cuenta: la re-sincronización no hace nada. */
+-    forestCuentaMov: { findFirst: vi.fn(async () => null) },
++    forestCuentaMov: { findFirst: vi.fn(async () => H.anotada) },
+     forestCubicacionTrozas: { findMany: vi.fn(async () => H.cubicaciones) },
+     $executeRaw: vi.fn(async (s: TemplateStringsArray, ...vals: unknown[]) => {
+       if (s.join("?").includes("pg_advisory_xact_lock")) H.locks.push(String(vals[0]));
+@@ -92,6 +96,8 @@
+   H.updates = [];
+   H.consultasCongelado = [];
+   H.gtfEnTx = null;
++  H.mismoNumero = [];
++  H.anotada = null;
+ });
+ 
+ describe("ForestCuentaDB.bloquearGuiasEnTx — un candado por guía normalizada", () => {
+@@ -194,3 +200,51 @@
+     expect(H.updates).toEqual([]);
+   });
+ });
++
++describe("ADR-504 · setCosto no mezcla dos guías con el mismo N°", () => {
++  const otra = (contratoId: string | null, extra: Record<string, unknown> = {}) => ({
++    id: "w9", gtfNumber: "001-0000201", contratoId, originCode: contratoId ? "PER-017" : null, libroNro: 7, ...extra,
++  });
++  const motivo = async (p: Promise<unknown>) => {
++    const e = await p.then(() => null, (err: unknown) => err);
++    expect(e).toBeInstanceOf(CtpInvariantError);
++    return (e as CtpInvariantError).detail?.motivo;
++  };
++
++  it("cada permiso con su guía y la cuenta sin anotar → escribe sólo la suya", async () => {
++    H.entry = guia({ contratoId: "c1" });
++    H.mismoNumero = [{ id: "w1", gtfNumber: "001-0000201", contratoId: "c1", originCode: "PER-012", libroNro: 3 }, otra("c2")];
++    await WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: 1000 }, "qaadmin");
++    expect(H.updates).toHaveLength(1);
++    expect(H.updates[0]).toMatchObject({ where: { id: "w1", tenantId: "tenant-qa" } });
++  });
++
++  it("la otra guía con ese N° está SIN permiso → no se sabe de cuál es la plata: frena sin escribir", async () => {
++    H.entry = guia({ contratoId: "c1" });
++    H.mismoNumero = [otra(null)];
++    expect(await motivo(WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: 1000 }, "qaadmin"))).toBe("GUIA_SIN_PERMISO");
++    expect(H.updates).toHaveLength(0);
++  });
++
++  it("este ingreso SIN permiso y otra guía con permiso → ambigua: frena sin escribir", async () => {
++    H.entry = guia({ contratoId: null });
++    H.mismoNumero = [otra("c2")];
++    expect(await motivo(WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: 1000 }, "qaadmin"))).toBe("GUIA_AMBIGUA");
++    expect(H.updates).toHaveLength(0);
++  });
++
++  it("dos permisos y la madera anotada en la cuenta POR N° → frena: sumaría la plata de las dos", async () => {
++    H.entry = guia({ contratoId: "c1" });
++    H.mismoNumero = [otra("c2")];
++    H.anotada = { parteNombre: "Aserradero QA" };
++    expect(await motivo(WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: 1000 }, "qaadmin"))).toBe("CUENTA_POR_NUMERO");
++    expect(H.updates).toHaveLength(0);
++  });
++
++  it("un N° que sólo TERMINA igual (…10201) no es la misma guía", async () => {
++    H.entry = guia({ contratoId: "c1" });
++    H.mismoNumero = [otra(null, { gtfNumber: "001-0010201" })];
++    await WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: 1000 }, "qaadmin");
++    expect(H.updates).toHaveLength(1);
++  });
++});
+diff --git a/lib/db/wood-entries.db.ts b/lib/db/wood-entries.db.ts
+--- a/lib/db/wood-entries.db.ts
++++ b/lib/db/wood-entries.db.ts
+@@ -12,6 +12,7 @@
+ import {
+   busquedaDeTroza,
+   chocanTrozas,
++  decidirPlataDeGuia,
+   decidirTrozasDelArchivo,
+   GuiaAmbiguaError,
+   mensajeGuiaAmbigua,
+@@ -1739,6 +1740,77 @@
+ }
+ 
+ /**
++ * ADR-504 · ¿se le puede poner costo a este ingreso sin mezclar su plata con
++ * la de OTRA guía del mismo N°? Con `decidirPlataDeGuia` (la vara de los
++ * frenos de plata, `puedeSerLaMismaGtf`):
++ *  - una guía SIN permiso con ese N° frena a la del permiso (no se sabe de
++ *    cuál es la plata) → que le pongan su permiso;
++ *  - este ingreso SIN permiso y otra guía con ese N° → lo mismo, al revés;
++ *  - dos guías de permisos distintos, cada una lo suyo: el costo del ingreso
++ *    es suyo, pero el abono `madera` de la cuenta del proveedor todavía suma
++ *    por N° (`ForestCuentaDB.resincronizarMaderaDeGuiaEnTx`): si la guía ya
++ *    está anotada ahí, se frena en vez de sumar las dos.
++ * Va DENTRO de la tx, después del candado de la guía (que es por N°).
++ */
++async function exigirPlataDeUnaSolaGuia(
++  tx: Prisma.TransactionClient,
++  tenantId: string,
++  ingreso: { id: string; gtfNumber: string; contratoId: string | null },
++): Promise<void> {
++  const cola = colaDeGtf(ingreso.gtfNumber);
++  if (!cola) return;
++  const vivos = await tx.woodEntry.findMany({
++    where: {
++      tenantId,
++      deletedAt: null,
++      status: { notIn: ["anulado", "rechazado"] },
++      gtfNumber: { endsWith: cola, mode: "insensitive" },
++    },
++    select: { id: true, gtfNumber: true, contratoId: true, originCode: true, libroNro: true },
++  });
++  /* `endsWith` de la cola trae también otros números (…0004 y …00004 sí, pero
++     un 14 que termina igual no): sólo cuenta el MISMO número. */
++  const guias = vivos
++    .filter((v) => mismoNumeroGtf(v.gtfNumber, ingreso.gtfNumber))
++    .map((v) => ({ id: v.id, gtfNumber: v.gtfNumber, contratoId: v.contratoId ?? null, permiso: v.originCode, libroNro: v.libroNro }));
++  const otras = guias.filter((g) => g.id !== ingreso.id);
++  const decision = decidirPlataDeGuia({ gtfNumber: ingreso.gtfNumber, contratoId: ingreso.contratoId }, otras);
++  const gtf = ingreso.gtfNumber.trim();
++  if (decision.estado === "bloquea-por-guia-sin-permiso") {
++    const folios = decision.guias.map((g) => (g.libroNro != null ? `N° ${g.libroNro}` : "s/n")).join(", ");
++    throw new CtpInvariantError(
++      `La guía ${gtf} tiene otro ingreso SIN permiso con el mismo número (${folios}): no se sabe si es esta guía u otra. ` +
++        "Ponle su permiso a ese ingreso y vuelve a valorizar: si no, su madera se pagaría dos veces.",
++      "VALIDACION",
++      { motivo: "GUIA_SIN_PERMISO", gtfNumber: gtf, ids: decision.guias.map((g) => g.id) },
++    );
++  }
++  const deOtroPermiso = otras.filter((g) => g.contratoId !== ingreso.contratoId);
++  if (decision.estado === "ambigua" || (ingreso.contratoId == null && deOtroPermiso.length > 0)) {
++    const candidatas = decision.estado === "ambigua" ? decision.candidatas : deOtroPermiso;
++    throw new CtpInvariantError(
++      `${mensajeGuiaAmbigua(gtf, [{ permiso: null }, ...candidatas])} Este ingreso no tiene permiso: pónselo antes de valorizarlo.`,
++      "VALIDACION",
++      { motivo: "GUIA_AMBIGUA", gtfNumber: gtf, ids: candidatas.map((g) => g.id) },
++    );
++  }
++  if (deOtroPermiso.length === 0) return;
++  const anotada = await tx.forestCuentaMov.findFirst({
++    where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null },
++    select: { parteNombre: true },
++  });
++  if (anotada) {
++    const permisos = [...new Set(deOtroPermiso.map((g) => g.permiso?.trim() || "otro permiso"))].join(", ");
++    throw new CtpInvariantError(
++      `La guía ${gtf} también está en ${permisos} y su madera está anotada en la cuenta de ${anotada.parteNombre} por número de guía: ` +
++        "valorizar esta sumaría la plata de las dos. Se habilita cuando la cuenta separe la guía por permiso (ADR-504).",
++      "VALIDACION",
++      { motivo: "CUENTA_POR_NUMERO", gtfNumber: gtf },
++    );
++  }
++}
++
++/**
+  * ADR-504: una acción «de la guía» (completar, corregir, fotos) toca los
+  * ingresos de UNA guía. Si el pedido no dice el permiso y el N° vive en dos o
+  * más permisos, no se adivina: 409 GUIA_AMBIGUA con las candidatas.
+@@ -5933,6 +6005,9 @@
+       if (input.costoTotal != null) {
+         const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, gtf);
+         if (porCubicacion) throw guiaPagadaPorCubicacion(gtf, porCubicacion.codigo);
++        /* ADR-504 · la guía es N° + permiso: el costo de ÉSTA no se suma con
++           el de otra guía del mismo N° (bajo el mismo candado, que es por N°). */
++        await exigirPlataDeUnaSolaGuia(tx, tenantId, { id, gtfNumber: gtf, contratoId: actual.contratoId ?? null });
+       }
+       const res = await tx.woodEntry.updateMany({
+         where: { id, tenantId, deletedAt: null, ...FILTRO_REQUIERE_COSTO },
+diff --git a/lib/db/forest-titulo-guia.db.ts b/lib/db/forest-titulo-guia.db.ts
+--- a/lib/db/forest-titulo-guia.db.ts
++++ b/lib/db/forest-titulo-guia.db.ts
+@@ -9,6 +9,7 @@
+ import { ForestContratoDB } from "./forest-contrato.db";
+ import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+ import { arrastrarPermisoATrozas } from "./troza-permiso.db";
++import { ForestCuentaDB } from "./forest-cuenta.db";
+ import { esProveedorDeRelleno, rescatarFuenteDelRelleno } from "@/lib/forestal/asignar-permiso-import";
+ 
+ /**
+@@ -130,11 +131,12 @@
+     usuario = "unknown",
+     planPrevio?: PlanTituloGuia,
+   ): Promise<ResultadoTituloGuia> {
+-    const { gtf, originCode, originSourceNumber, contratoId, planes } =
++    const { gtf, originCode, originSourceNumber, contratoId, ingresos, planes } =
+       planPrevio && planPrevio.gtf === pedido.gtfNumber.trim() ? planPrevio : await TituloGuiaDB.planear(tenantId, pedido);
+ 
+     const aEscribir = planes.filter((p): p is PlanTitulo & { escribir: NonNullable<PlanTitulo["escribir"]> } => p.escribir != null);
+     const escritos = new Set<string>();
++    const movida: { plata: Awaited<ReturnType<typeof ForestCuentaDB.moverPlataAlPermiso>> | null } = { plata: null };
+     if (aEscribir.length > 0) {
+       await prisma.$transaction(async (tx) => {
+         for (const p of aEscribir) {
+@@ -157,17 +159,34 @@
+            trozas lo siguen en la MISMA tx (si el índice por permiso chocara, no
+            queda la guía con permiso y las trozas sin él). */
+         await arrastrarPermisoATrozas(tx, tenantId, [...escritos]);
+-        /* La plata de la guía NO se mueve con el permiso: sigue por N° (ADR-504,
+-           «Plata por permiso: PAUSADA», Brandon 19-10). */
++        /* ADR-504: si la guía era SIN permiso y lo ganó entera, su plata (abono,
++           cargos, cubicaciones de compra, fletes, gastos) la sigue en la MISMA
++           tx: si no, queda «sin permiso» y frena a todos los permisos con ese N°.
++           Sólo cambia el permiso, ningún monto. Si algún ingreso vivo sigue sin
++           permiso (mes cerrado, otra pantalla), la plata se queda: no se sabe de
++           cuál de las dos es. */
++        const cid = contratoId?.trim();
++        const antes = new Map(ingresos.map((i) => [i.id, i]));
++        const gano = aEscribir.some((p) => escritos.has(p.id) && p.escribir.contratoId === cid && antes.has(p.id) && antes.get(p.id)?.contratoId == null);
++        const quedan = ingresos.some((i) => !i.anulado && i.contratoId == null && !escritos.has(i.id));
++        if (cid && gano && !quedan) {
++          movida.plata = await ForestCuentaDB.moverPlataAlPermiso(tx, tenantId, { gtfNumber: gtf, contratoId: null }, cid);
++        }
+       });
+     }
++    const plataMovida = movida.plata;
++    const fraseDePlata =
++      plataMovida && plataMovida.movimientos + plataMovida.cubicaciones + plataMovida.fletes + plataMovida.gastos > 0
++        ? ` · su plata pasó al permiso (${plataMovida.movimientos} mov. de cuenta, ${plataMovida.cubicaciones} cubicación(es), ${plataMovida.fletes} flete(s), ${plataMovida.gastos} gasto(s); los montos no cambian)`
++        : "";
++    if (plataMovida) ForestCuentaDB.invalidar(tenantId);
+ 
+     const actualizados = aEscribir.filter((p) => escritos.has(p.id)).map((p) => ({ id: p.id, especie: p.especie }));
+     const omitidos = planes
+       .filter((p) => !escritos.has(p.id))
+       .map((p) => ({ id: p.id, especie: p.especie, motivo: p.motivo ?? "otra pantalla lo completó antes" }));
+ 
+-    for (const a of actualizados) {
++    for (const [n, a] of actualizados.entries()) {
+       auditCtp({
+         tenantId,
+         action: "ctp_ingreso_titulo_declarado",
+@@ -177,7 +196,8 @@
+           `Declaró el título ${originCode}${originSourceNumber ? ` (Res. ${originSourceNumber})` : ""} ` +
+           `en el ingreso de ${a.especie ?? "—"} de la guía ${gtf}, que no lo traía` +
+           `${contratoId ? " · vinculado al permiso de la lista" : ""}` +
+-          `${pedido.origen?.trim() ? ` · tomado de ${pedido.origen.trim()}` : ""}.`,
++          `${pedido.origen?.trim() ? ` · tomado de ${pedido.origen.trim()}` : ""}` +
++          `${n === 0 ? fraseDePlata : ""}.`,
+         user: usuario,
+       });
+     }
+diff --git a/lib/forestal/identidad-guia.ts b/lib/forestal/identidad-guia.ts
+--- a/lib/forestal/identidad-guia.ts
++++ b/lib/forestal/identidad-guia.ts
+@@ -10,13 +10,12 @@
+  *   troza = código (`upper(btrim(..))`, como el índice ADR-436) + permiso
+  *
+  * Sin permiso (`contratoId` null) se escribe «∅» en la clave. Las reglas que
+- * DECIDEN con esa identidad viven acá, puras (sin prisma), para que importar
+- * y pantalla digan lo mismo:
++ * DECIDEN con esa identidad viven acá, puras (sin prisma), para que los tres
++ * carriles —importar, plata y pantalla— digan lo mismo:
+  *
+  *   - `decidirGuiaAlImportar`: misma / otra / asignar-permiso / crear-con-aviso / ambigua.
+- *   - La PLATA (pagos, abonos, cubicaciones, fletes) sigue por N° con freno
+- *     estricto: la parte «por permiso» está en pausa (ADR-504, Brandon 19-10;
+- *     parche en `.claude/autonomo/adr-504-plata-pausada.patch`).
++ *   - `decidirPlataDeGuia`: más estricta — una guía SIN permiso con ese N°
++ *     frena la plata de cualquier permiso.
+  *   - `resolverGuiaEntre`: lectura de una `GuiaRef` (la usa `GtfNumeroDB.resolverGuia`).
+  *   - `chocanTrozas` / `decidirTrozasDelArchivo`: el choque de códigos y las
+  *     filas repetidas dentro de un mismo archivo.
+@@ -26,7 +25,7 @@
+  *
+  * NO importar nada de `lib/db/*` ni `@/lib/prisma` acá.
+  */
+-import { claveNumeroGtf, mismoNumeroGtf } from "./gtf-talonario";
++import { claveNumeroGtf, mismoNumeroGtf, puedeSerLaMismaGtf } from "./gtf-talonario";
+ import { claveEspecie } from "./loth-constants";
+ import { elegirGuiaDelDueno, mismoDuenoDeGuia, mismoPermiso, type IdentidadDeGuiaBuscada } from "./loth-talonario";
+ 
+@@ -297,6 +296,71 @@
+   return contiene(ka, kb) || contiene(kb, ka);
+ }
+ 
++// ── Decisión de PLATA (más estricta) ─────────────────────────────────────────
++
++/** Una guía como la ve el freno de plata: su N° y su permiso. */
++export interface GuiaParaPlata extends GuiaRef {
++  id?: string;
++  permiso?: string | null;
++}
++
++export interface OpcionesPlataDeGuia {
++  /**
++   * El que llama sacó de `guias` la guía pedida porque ES un ingreso real con
++   * ese permiso (valorizar un ingreso contra «las otras»). Sólo entonces el
++   * permiso pedido vale sin verlo en la lista. Nunca con un permiso que llega
++   * del pedido HTTP.
++   */
++  pedidaFueraDeLaLista?: boolean;
++}
++
++export type DecisionPlataDeGuia<G extends GuiaParaPlata = GuiaParaPlata> =
++  /** Se puede ligar plata; `contratoId` = el permiso al que va (el de la ref, o el de la única guía con ese N°). */
++  | { estado: "libre"; contratoId: string | null }
++  /** Hay una guía SIN permiso con ese N°: frena a cualquier permiso hasta que se le ponga el suyo. */
++  | { estado: "bloquea-por-guia-sin-permiso"; guias: G[] }
++  /** Dos o más guías pueden ser ésta: 409 `GUIA_AMBIGUA`. */
++  | { estado: "ambigua"; candidatas: G[] };
++
++/**
++ * ¿Se puede ligar plata (cubicación, abono, pago) a esta guía? La regla de
++ * «una guía, una sola plata», más estricta que el import:
++ *
++ * - El N° se compara con `puedeSerLaMismaGtf` (la vara de los frenos de plata:
++ *   `065` ≡ `019-001-0000065`), no tramo a tramo.
++ * - Con permiso P: una guía SIN permiso con ese N° frena (`bloquea-por-guia-sin-permiso`):
++ *   no se sabe si es la de P y pagar las dos sería cobrar la misma madera dos
++ *   veces. Dos guías de P que pueden ser el mismo N° (un N° corto que calza en
++ *   dos series) → `ambigua`.
++ * - Sin permiso: con una sola guía que puede ser ésa, va a esa (y a su
++ *   permiso); con dos o más (otro permiso, otra serie) → `ambigua`.
++ */
++export function decidirPlataDeGuia<G extends GuiaParaPlata>(
++  ref: GuiaRef,
++  guias: readonly G[],
++  opciones: OpcionesPlataDeGuia = {},
++): DecisionPlataDeGuia<G> {
++  const pueden = guias.filter((g) => puedeSerLaMismaGtf(g.gtfNumber, ref.gtfNumber));
++  if (ref.contratoId != null) {
++    const sinPermiso = pueden.filter((g) => g.contratoId == null);
++    if (sinPermiso.length > 0) return { estado: "bloquea-por-guia-sin-permiso", guias: sinPermiso };
++    const delPermiso = unaPorClave(pueden.filter((g) => g.contratoId === ref.contratoId));
++    if (delPermiso.length > 1) return { estado: "ambigua", candidatas: delPermiso };
++    /* Ninguna guía con ese N° es de ese permiso (security 19-10): nunca «libre»
++       con el id del pedido — un permiso cualquiera del negocio esquivaría los
++       frenos de la plata ya anotada con el permiso real (pago doble). Las guías
++       reales van de candidatas; sin ninguna, no hay permiso al que ligarla. */
++    if (delPermiso.length === 0 && !opciones.pedidaFueraDeLaLista) {
++      const reales = unaPorClave(pueden);
++      return reales.length > 0 ? { estado: "ambigua", candidatas: reales } : { estado: "libre", contratoId: null };
++    }
++    return { estado: "libre", contratoId: ref.contratoId };
++  }
++  const distintas = unaPorClave(pueden);
++  if (distintas.length > 1) return { estado: "ambigua", candidatas: distintas };
++  return { estado: "libre", contratoId: distintas[0]?.contratoId ?? null };
++}
++
+ // ── 409 GUIA_AMBIGUA ─────────────────────────────────────────────────────────
+ 
+ /** El texto del 409: qué permisos tienen ese N° y qué hacer. */
+@@ -539,6 +603,16 @@
+   return [...new Set(ingresos.map((i) => limpio(i.titular) ?? "sin titular"))].join(", ");
+ }
+ 
++function unaPorClave<G extends GuiaRef>(guias: readonly G[]): G[] {
++  const vistas = new Set<string>();
++  return guias.filter((g) => {
++    const k = claveDeGuiaRef(g);
++    if (vistas.has(k)) return false;
++    vistas.add(k);
++    return true;
++  });
++}
++
+ function enLista(nums: readonly number[]): string {
+   return nums.length <= 1 ? nums.join("") : `${nums.slice(0, -1).join(", ")} y ${nums[nums.length - 1]}`;
+ }
+diff --git a/lib/forestal/guia-por-permiso.ts b/lib/forestal/guia-por-permiso.ts
+--- a/lib/forestal/guia-por-permiso.ts
++++ b/lib/forestal/guia-por-permiso.ts
+@@ -16,6 +16,14 @@
+ 
+ import { claveNumeroGtf } from "./gtf-talonario";
+ 
++/**
++ * Lo que viaja como `contratoId` para elegir la guía SIN permiso: el mismo
++ * «∅» que `identidad-guia.ts` escribe en la clave (el test lo compara). Copia
++ * y no import: esto entra al bundle del cliente y `identidad-guia` arrastra
++ * el talonario del LO-TH entero.
++ */
++export const SIN_PERMISO = "∅";
++
+ // ── Cómo se nombra ───────────────────────────────────────────────────────────
+ 
+ /**
+@@ -47,7 +55,7 @@
+ function llaveDePermiso(g: { contratoId?: string | null; permiso?: string | null }): string {
+   if (g.contratoId) return `id:${g.contratoId}`;
+   const p = (g.permiso ?? "").trim().toUpperCase().replace(/\s+/g, "");
+-  return p ? `cod:${p}` : "∅";
++  return p ? `cod:${p}` : SIN_PERMISO;
+ }
+ 
+ /**
+@@ -76,7 +84,60 @@
+   return claveNumeroGtf(t) ?? t.toUpperCase();
+ }
+ 
+-// ── El permiso del libro ─────────────────────────────────────────────────────
++// ── 409 GUIA_AMBIGUA ─────────────────────────────────────────────────────────
++
++/** Una guía que puede ser la pedida: lo que hace falta para elegirla. */
++export interface CandidataDeGuia {
++  /** `null` = la guía SIN permiso (se reintenta con `SIN_PERMISO`). */
++  contratoId: string | null;
++  gtfNumber: string;
++  /** El código del permiso, tal como está escrito. */
++  permiso: string | null;
++  titular: string | null;
++  especies: string[];
++}
++
++export interface GuiaAmbigua {
++  gtfNumber: string;
++  /** El texto del servidor (`mensajeGuiaAmbigua`), para el ⓘ. */
++  mensaje: string | null;
++  candidatas: CandidataDeGuia[];
++}
++
++const texto = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
++
++/**
++ * ¿La respuesta es un 409 `GUIA_AMBIGUA`? Tolera el código en `codigo`,
++ * `code` o `error` y los nombres de campo de las candidatas que usan las
++ * distintas rutas (`permiso`/`originCode`/`codigo`, `titular`/`titularName`/
++ * `providerName`). `null` si no lo es o si no trae al menos dos candidatas
++ * con permiso distinguible: sin eso no hay nada que elegir.
++ */
++export function leerGuiaAmbigua(status: number, body: unknown): GuiaAmbigua | null {
++  if (status !== 409 || !body || typeof body !== "object") return null;
++  const b = body as Record<string, unknown>;
++  const esAmbigua = [b.codigo, b.code, b.error].some((v) => v === "GUIA_AMBIGUA");
++  if (!esAmbigua || !Array.isArray(b.candidatas)) return null;
++  const candidatas: CandidataDeGuia[] = [];
++  for (const crudo of b.candidatas) {
++    if (!crudo || typeof crudo !== "object") continue;
++    const c = crudo as Record<string, unknown>;
++    const especies = Array.isArray(c.especies) ? c.especies.map(texto).filter((e): e is string => !!e) : [];
++    candidatas.push({
++      contratoId: texto(c.contratoId),
++      gtfNumber: texto(c.gtfNumber) ?? texto(b.gtfNumber) ?? "",
++      permiso: texto(c.permiso) ?? texto(c.originCode) ?? texto(c.codigo),
++      titular: texto(c.titular) ?? texto(c.titularName) ?? texto(c.providerName),
++      especies,
++    });
++  }
++  if (candidatas.length < 2) return null;
++  return {
++    gtfNumber: texto(b.gtfNumber) ?? candidatas[0]!.gtfNumber,
++    mensaje: texto(b.message) ?? texto(b.mensaje) ?? (typeof b.error === "string" && b.error !== "GUIA_AMBIGUA" ? b.error : null),
++    candidatas,
++  };
++}
+ 
+ /** El permiso del libro (el del chip, ADR-431): su id y su código escrito. */
+ export interface PermisoDelLibro {
+@@ -104,6 +165,18 @@
+   return { suya: suyas[0]!, resto: lista.filter((x) => x !== suyas[0]) };
+ }
+ 
++/**
++ * Las candidatas con la del permiso del libro («Solo este permiso») primero.
++ * `delLibro` = su índice en la lista nueva (0) o `null` si ninguna lo es.
++ */
++export function ordenarPorPermisoDelLibro(
++  candidatas: readonly CandidataDeGuia[],
++  delLibro: PermisoDelLibro | null,
++): { candidatas: CandidataDeGuia[]; delLibro: number | null } {
++  const { suya, resto } = separarPorPermisoDelLibro(candidatas, delLibro);
++  return suya ? { candidatas: [suya, ...resto], delLibro: 0 } : { candidatas: resto, delLibro: null };
++}
++
+ // ── Un código en varias trozas (el escáner) ─────────────────────────────────
+ 
+ /** «el permiso 020» · «los permisos 020 y 031» — los permisos de una lista, sin repetir. */
+@@ -164,6 +237,11 @@
+   };
+ }
+ 
++/** Lo que viaja en el reintento: el id del permiso, o `SIN_PERMISO` para la guía sin permiso. */
++export function contratoDeCandidata(c: CandidataDeGuia): string {
++  return c.contratoId ?? SIN_PERMISO;
++}
++
+ // ── Avisos del importador, en corto ─────────────────────────────────────────
+ 
+ /** Un aviso de identidad (ADR-504) leído en una línea; el texto entero va al ⓘ. */
+@@ -219,3 +297,15 @@
+   }
+   return null;
+ }
++
++/**
++ * El permiso de una guía cuando la pantalla ya lo sabe: todas sus líneas
++ * dicen el mismo `contratoId`. Si alguna no tiene permiso o hay dos permisos
++ * mezclados, `undefined`: que el servidor decida (y pregunte si hace falta).
++ */
++export function contratoComun(lineas: readonly { contratoId?: string | null }[]): string | undefined {
++  const ids = new Set(lineas.map((l) => l.contratoId?.trim() || null));
++  if (ids.size !== 1) return undefined;
++  const [id] = ids;
++  return id ?? undefined;
++}
+diff --git a/__tests__/forestal-guia-por-permiso.test.ts b/__tests__/forestal-guia-por-permiso.test.ts
+--- a/__tests__/forestal-guia-por-permiso.test.ts
++++ b/__tests__/forestal-guia-por-permiso.test.ts
+@@ -4,12 +4,16 @@
+  */
+ import { describe, expect, it } from "vitest";
+ import {
++  SIN_PERMISO,
+   elegirTrozaPorPermiso,
+   etiquetaGuiaConPermiso,
+   leerAvisoDeIdentidad,
++  leerGuiaAmbigua,
+   numeroDePermiso,
+   numerosEnVariosPermisos,
++  ordenarPorPermisoDelLibro,
+ } from "@/lib/forestal/guia-por-permiso";
++import { SIN_PERMISO as SIN_PERMISO_SERVIDOR } from "@/lib/forestal/identidad-guia";
+ 
+ const P017 = "19-SEC/REG-PLT-2021-017";
+ const P020 = "19-SEC/REG-PLT-2021-020";
+@@ -21,6 +25,9 @@
+     expect(etiquetaGuiaConPermiso("4", P017)).toBe("GTF 4 · permiso 017");
+     expect(etiquetaGuiaConPermiso("4", null)).toBe("GTF 4 · sin permiso");
+   });
++  it("el «sin permiso» que viaja es el mismo que escribe el servidor", () => {
++    expect(SIN_PERMISO).toBe(SIN_PERMISO_SERVIDOR);
++  });
+ });
+ 
+ describe("numerosEnVariosPermisos", () => {
+@@ -35,6 +42,32 @@
+   });
+ });
+ 
++describe("leerGuiaAmbigua (409 GUIA_AMBIGUA)", () => {
++  const cuerpo = {
++    codigo: "GUIA_AMBIGUA",
++    gtfNumber: "4",
++    message: "La guía N° 4 está en 2 permisos (017, 020). Elige el permiso del archivo para saber cuál es.",
++    candidatas: [
++      { contratoId: "c17", gtfNumber: "4", permiso: P017, titular: "Blas", especies: ["Tornillo"] },
++      { contratoId: "c20", gtfNumber: "4", permiso: P020, titular: "Blas", especies: ["Cumala"] },
++    ],
++  };
++  it("lee las candidatas", () => {
++    const a = leerGuiaAmbigua(409, cuerpo);
++    expect(a?.candidatas.map((c) => c.contratoId)).toEqual(["c17", "c20"]);
++    expect(a?.mensaje).toMatch(/2 permisos/);
++  });
++  it("otro 409 no es ambigüedad", () => {
++    expect(leerGuiaAmbigua(409, { error: "cubicacion_desactualizada" })).toBeNull();
++    expect(leerGuiaAmbigua(400, cuerpo)).toBeNull();
++  });
++  it("el permiso del libro va primero; si ninguna es suya, el orden del servidor", () => {
++    const a = leerGuiaAmbigua(409, cuerpo)!;
++    expect(ordenarPorPermisoDelLibro(a.candidatas, { id: "c20" })).toMatchObject({ delLibro: 0, candidatas: [{ contratoId: "c20" }, { contratoId: "c17" }] });
++    expect(ordenarPorPermisoDelLibro(a.candidatas, { id: "otro" }).delLibro).toBeNull();
++  });
++});
++
+ describe("elegirTrozaPorPermiso (escáner, código en dos permisos)", () => {
+   const trozas = [
+     { id: "t17", permiso: P017 },
+diff --git a/__tests__/forestal-identidad-guia.test.ts b/__tests__/forestal-identidad-guia.test.ts
+--- a/__tests__/forestal-identidad-guia.test.ts
++++ b/__tests__/forestal-identidad-guia.test.ts
+@@ -3,8 +3,8 @@
+  * «permiso 1 GTF 4 / permiso 2 GTF 4 (dos talonarios)… permiso 1 código 12 /
+  * permiso 2 código 12… sólo diferenciará según el número de permiso»).
+  *
+- * Tabla de casos de las reglas puras que usan importar y pantalla (la plata
+- * sigue por N°: ADR-504 en pausa): `lib/forestal/identidad-guia.ts`.
++ * Tabla de casos de las reglas puras que usan los tres carriles (importar,
++ * plata, pantalla): `lib/forestal/identidad-guia.ts`.
+  */
+ import { describe, expect, it } from "vitest";
+ import {
+@@ -13,6 +13,7 @@
+   claveDeGuiaRef,
+   claveDeTroza,
+   decidirGuiaAlImportar,
++  decidirPlataDeGuia,
+   decidirTrozasDelArchivo,
+   especiesCoinciden,
+   mensajeGuiaAmbigua,
+@@ -152,6 +153,49 @@
+   });
+ });
+ 
++describe("ADR-504 · decidirPlataDeGuia (más estricta)", () => {
++  it("una guía SIN permiso con ese N° frena la plata de cualquier permiso", () => {
++    const r = decidirPlataDeGuia({ gtfNumber: "019-001-0000004", contratoId: "c1" }, [
++      { id: "g1", gtfNumber: "19-1-4", contratoId: null },
++      { id: "g2", gtfNumber: "19-1-4", contratoId: "c1" },
++    ]);
++    expect(r).toMatchObject({ estado: "bloquea-por-guia-sin-permiso", guias: [{ id: "g1" }] });
++  });
++  it("con la vara de los frenos: un N° corto frena igual", () => {
++    const r = decidirPlataDeGuia({ gtfNumber: "065", contratoId: "c1" }, [{ gtfNumber: "019-001-0000065", contratoId: null }]);
++    expect(r.estado).toBe("bloquea-por-guia-sin-permiso");
++  });
++  it("otro permiso con el mismo N° no frena (otro talonario)", () => {
++    expect(decidirPlataDeGuia({ gtfNumber: "19-1-4", contratoId: "c1" }, [{ gtfNumber: "19-1-4", contratoId: "c2" }])).toEqual({
++      estado: "libre",
++      contratoId: "c1",
++    });
++  });
++  it("un N° corto que calza en dos series del mismo permiso: ambigua", () => {
++    const r = decidirPlataDeGuia({ gtfNumber: "65", contratoId: "c1" }, [
++      { gtfNumber: "019-001-0000065", contratoId: "c1" },
++      { gtfNumber: "019-002-0000065", contratoId: "c1" },
++    ]);
++    expect(r.estado).toBe("ambigua");
++  });
++  it("sin permiso: una sola guía = va a su permiso; dos = ambigua", () => {
++    expect(decidirPlataDeGuia({ gtfNumber: "19-1-4", contratoId: null }, [{ gtfNumber: "19-1-4", contratoId: "c2" }])).toEqual({
++      estado: "libre",
++      contratoId: "c2",
++    });
++    expect(decidirPlataDeGuia({ gtfNumber: "19-1-4", contratoId: null }, [{ gtfNumber: "19-1-4", contratoId: null }])).toEqual({
++      estado: "libre",
++      contratoId: null,
++    });
++    expect(
++      decidirPlataDeGuia({ gtfNumber: "19-1-4", contratoId: null }, [
++        { gtfNumber: "19-1-4", contratoId: null },
++        { gtfNumber: "19-1-4", contratoId: "c2" },
++      ]).estado,
++    ).toBe("ambigua");
++  });
++});
++
+ describe("ADR-504 · troza = código + permiso", () => {
+   it("claveDeTroza compara como el índice ADR-436 (sin bordes, mayúsculas)", () => {
+     expect(claveDeTroza(" 13/a ", "c1")).toBe("13/A|c1");
+diff --git a/__tests__/troza-permiso-adr504.test.ts b/__tests__/troza-permiso-adr504.test.ts
+--- a/__tests__/troza-permiso-adr504.test.ts
++++ b/__tests__/troza-permiso-adr504.test.ts
+@@ -18,6 +18,9 @@
+ vi.mock("@/lib/db/forest-contrato.db", () => ({ ForestContratoDB: {} }));
+ vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({ ForestCtpCierreDB: {} }));
+ vi.mock("@/lib/db/forest-ctp-consumo.db", () => ({ CtpInvariantError: class extends Error {} }));
++const moverPlata = vi.fn();
++const invalidarCuenta = vi.fn();
++vi.mock("@/lib/db/forest-cuenta.db", () => ({ ForestCuentaDB: { moverPlataAlPermiso: moverPlata, invalidar: invalidarCuenta } }));
+ 
+ const { ponerPermisoDelIngreso, trozasConPermiso, arrastrarPermisoATrozas } = await import("@/lib/db/troza-permiso.db");
+ const { TituloGuiaDB } = await import("@/lib/db/forest-titulo-guia.db");
+@@ -126,6 +129,51 @@
+   });
+ });
+ 
++describe("ADR-504 · TituloGuiaDB.declarar arrastra la PLATA de la guía sin permiso", () => {
++  const ingreso = (id: string, contratoId: string | null = null) => ({
++    id, especie: "Tornillo", status: "validado", anulado: false, originCode: null, originSourceNumber: null, contratoId, periodoCerrado: null,
++  });
++  const escribe = (id: string) => ({ id, especie: "Tornillo", escribir: { originCode: "19-SEC/REG-PLT-2021-017", contratoId: "ctr_1" }, motivo: null, razon: null });
++  const plan = (ingresos: ReturnType<typeof ingreso>[], planes: ReturnType<typeof escribe>[]) => ({
++    gtf: "019-001-0000004", originCode: "19-SEC/REG-PLT-2021-017", originSourceNumber: null, contratoId: "ctr_1", ingresos, planes,
++  });
++  const pedido = { gtfNumber: "019-001-0000004", contratoId: "ctr_1" };
++  let tx: { $executeRaw: ReturnType<typeof vi.fn> };
++  beforeEach(() => {
++    tx = { $executeRaw: vi.fn().mockResolvedValue(1) };
++    transaction.mockReset();
++    transaction.mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
++    moverPlata.mockReset().mockResolvedValue({ movimientos: 1, cubicaciones: 1, fletes: 0, gastos: 2 });
++    invalidarCuenta.mockReset();
++  });
++
++  it("la guía entera gana el permiso → su plata lo sigue en la MISMA tx, sólo el permiso (sin montos)", async () => {
++    await TituloGuiaDB.declarar("t1", pedido, "qa", plan([ingreso("we1"), ingreso("we2")], [escribe("we1"), escribe("we2")]));
++    expect(moverPlata).toHaveBeenCalledTimes(1);
++    expect(moverPlata).toHaveBeenCalledWith(tx, "t1", { gtfNumber: "019-001-0000004", contratoId: null }, "ctr_1");
++    // Ni un UPDATE de plata en la tx del título: sólo WoodEntry y sus trozas.
++    expect(tx.$executeRaw.mock.calls.every((c) => /"WoodEntry(Troza)?"/.test(sqlDe(c)))).toBe(true);
++    expect(invalidarCuenta).toHaveBeenCalledWith("t1");
++  });
++
++  it("si un ingreso vivo sigue SIN permiso (mes cerrado), la plata se queda: no se sabe de cuál es", async () => {
++    const p = plan([ingreso("we1"), ingreso("we3")], [escribe("we1")]);
++    await TituloGuiaDB.declarar("t1", pedido, "qa", p);
++    expect(moverPlata).not.toHaveBeenCalled();
++  });
++
++  it("si la guía YA tenía el permiso (sólo faltaba el código), no hay plata que mover", async () => {
++    await TituloGuiaDB.declarar("t1", pedido, "qa", plan([ingreso("we1", "ctr_1")], [escribe("we1")]));
++    expect(moverPlata).not.toHaveBeenCalled();
++  });
++
++  it("si la plata no puede pasar (el permiso ya tiene su abono), falla la tx entera", async () => {
++    moverPlata.mockRejectedValueOnce(new Error("La guía ya tiene plata en ese permiso"));
++    await expect(TituloGuiaDB.declarar("t1", pedido, "qa", plan([ingreso("we1")], [escribe("we1")]))).rejects.toThrow(/ya tiene plata/);
++    expect(invalidarCuenta).not.toHaveBeenCalled();
++  });
++});
++
+ describe("ADR-504 · aplicar-migracion-sesion reconoce índices sobre EXPRESIONES", () => {
+   it("columnas con paréntesis y comas internas; sin eso no miraba indisvalid", async () => {
+     const { leerIndiceConcurrente, partirColumnas } = await import("../scripts/aplicar-migracion-sesion.mjs");
+diff --git a/components/admin/forestal/AvisoPlataPorPermiso.tsx b/components/admin/forestal/AvisoPlataPorPermiso.tsx
+new file mode 100644
+--- /dev/null
++++ b/components/admin/forestal/AvisoPlataPorPermiso.tsx
+@@ -0,0 +1,136 @@
++"use client";
++
++/**
++ * ADR-504 · Los dos «no» de la plata por permiso, dichos como aviso con salida
++ * y no como error genérico:
++ *
++ * - `GUIA_SIN_PERMISO_FRENA`: el mismo N° entró también SIN permiso. Puede ser
++ *   la misma guía y pagarse dos veces, así que nada se paga hasta asignarle su
++ *   permiso. El botón abre «Declarar título» de esa guía (el mismo del libro:
++ *   sólo llena los casilleros vacíos, los ingresos con permiso no se tocan).
++ * - `GUIA_EN_OTRO_PERMISO`: choque con el índice viejo (ya hay un abono o una
++ *   guía guardada con ese N° en otro permiso). Se habilita cuando la cuenta se
++ *   separe por permiso; no hay nada que el usuario pueda corregir hoy.
++ *
++ * Con cualquier otro código no pinta nada: la pantalla muestra su error.
++ */
++
++import { useEffect, useState } from "react";
++import { AlertTriangle, ShieldAlert } from "@buleje/design-system/icons";
++import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
++import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
++import { button } from "@/components/ui-system/button-variants";
++import type { Contrato } from "@/lib/forestal/contratos";
++import { ctpGet } from "@/lib/forestal/ctp-fetch";
++import { logger } from "@/lib/logger";
++import CtpTrozasDeclararTitulo from "./ctp-trozas-declarar-titulo";
++
++export const FRENA_SIN_PERMISO = "GUIA_SIN_PERMISO_FRENA";
++export const EN_OTRO_PERMISO = "GUIA_EN_OTRO_PERMISO";
++
++/** ¿Este código del servidor es uno de los avisos de permiso? */
++export const esAvisoDePermiso = (codigo: string | null | undefined): codigo is string =>
++  codigo === FRENA_SIN_PERMISO || codigo === EN_OTRO_PERMISO;
++
++export default function AvisoPlataPorPermiso({
++  gtf,
++  codigo,
++  mensaje,
++  onAsignado,
++}: {
++  gtf: string;
++  codigo: string | null | undefined;
++  /** El texto entero del servidor: va en el ⓘ. */
++  mensaje: string;
++  /** Se le asignó el permiso: la pantalla relee la plata (y su bandeja). */
++  onAsignado: (aviso: string) => void;
++}) {
++  const [asignando, setAsignando] = useState(false);
++  if (!esAvisoDePermiso(codigo)) return null;
++  const frena = codigo === FRENA_SIN_PERMISO;
++
++  return (
++    <div
++      role="status"
++      data-aviso-plata-permiso={codigo}
++      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 dark:bg-[var(--data-warning-500)]/10"
++    >
++      <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-ink)]" aria-hidden />
++      {/* Texto corrido (no flex): el ⓘ sigue a la última palabra en vez de bajar a su propia línea. */}
++      <span className="flex-[1_1_14rem] text-sm font-bold text-[var(--data-warning-ink)]">
++        {frena
++          ? `La GTF ${gtf} sin permiso frena el pago: asígnale su permiso primero `
++          : `La GTF ${gtf} ya está anotada con otro permiso: se habilita cuando la cuenta se separe por permiso `}
++        <InfoTip
++          title={frena ? "Una guía sin permiso con el mismo N°" : "El mismo N° ya anotado en otro permiso"}
++          what={mensaje}
++          affects={
++            frena
++              ? "Mientras haya una GTF con este N° sin permiso, ningún pago de ese N° se guarda: podría ser la misma guía y pagarse dos veces."
++              : "La cuenta todavía guarda un abono o una guía por N°, sin permiso. Cuando se separe por permiso (ADR-504) podrás anotarla. Nada se perdió."
++          }
++          example={
++            frena
++              ? "La GTF 4 del permiso 017 y una GTF 4 sin permiso: le asignas el permiso a la segunda y ya puedes pagar."
++              : undefined
++          }
++        />
++      </span>
++      {frena && (
++        <button
++          type="button"
++          onClick={() => setAsignando(true)}
++          className={button({ variant: "primary", className: "ml-auto" })}
++          data-asignar-permiso
++        >
++          <ShieldAlert className="h-4 w-4" aria-hidden /> Asignar permiso
++        </button>
++      )}
++      {asignando && (
++        <AsignarPermiso
++          gtf={gtf}
++          onCerrar={() => setAsignando(false)}
++          onDeclarado={(aviso) => {
++            setAsignando(false);
++            onAsignado(aviso);
++          }}
++        />
++      )}
++    </div>
++  );
++}
++
++/** «Declarar título» de la guía sin permiso, sobre la ventana de la plata. */
++function AsignarPermiso({
++  gtf,
++  onCerrar,
++  onDeclarado,
++}: {
++  gtf: string;
++  onCerrar: () => void;
++  onDeclarado: (aviso: string) => void;
++}) {
++  /* Los permisos del negocio para elegir de la lista; si no se leen, queda el código a mano. */
++  const [contratos, setContratos] = useState<Contrato[]>([]);
++  useEffect(() => {
++    ctpGet<{ contratos?: Contrato[] }>("/api/admin/forestal/contratos")
++      .then((j) => setContratos(j.contratos ?? []))
++      .catch((err) => logger.warn("[plata-permiso] no se pudo leer los permisos", { error: String(err) }));
++  }, []);
++
++  return (
++    <AdminModal
++      open
++      onClose={onCerrar}
++      title="Asignar permiso"
++      description={`GTF ${gtf} · la que entró sin permiso`}
++      icon={ShieldAlert}
++      size="md"
++      aboveModals
++    >
++      <div className={MODAL_BODY}>
++        <CtpTrozasDeclararTitulo gtf={gtf} contratos={contratos} onDeclarado={onDeclarado} onCancelar={onCerrar} />
++      </div>
++    </AdminModal>
++  );
++}
+diff --git a/components/admin/forestal/ElegirPermisoDeGuia.tsx b/components/admin/forestal/ElegirPermisoDeGuia.tsx
+new file mode 100644
+--- /dev/null
++++ b/components/admin/forestal/ElegirPermisoDeGuia.tsx
+@@ -0,0 +1,104 @@
++"use client";
++
++/**
++ * «¿De qué permiso es la GTF X?» — la ventana que se abre cuando el servidor
++ * contesta 409 `GUIA_AMBIGUA` (ADR-504): el mismo N° de guía está en dos
++ * talonarios y la pantalla no dijo cuál. Se elige el permiso y el pedido se
++ * reintenta solo (`fetchConPermisoDeGuia`).
++ *
++ * La montan las raíces del módulo forestal, una sola vez; si hay dos montadas,
++ * pinta la primera. Va SIEMPRE `aboveModals`: el 409 llega casi siempre desde
++ * otra ventana (el alta del ingreso, el costo de la guía, el flete).
++ *
++ * El permiso del libro (el del chip, ADR-431) va primero y se marca: es el
++ * que la pantalla usaría, pero lo confirma quien guarda — nunca «la primera».
++ */
++
++import { Check, FileText } from "@buleje/design-system/icons";
++import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
++import { ModalFooter } from "@/components/admin/shared/ModalFooter";
++import { button } from "@/components/ui-system/button-variants";
++import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
++import { useContratoActivo } from "@/contexts/contrato-activo-context";
++import { etiquetaPermiso, ordenarPorPermisoDelLibro, type CandidataDeGuia } from "@/lib/forestal/guia-por-permiso";
++import { usePedidoDePermiso } from "./hooks/use-elegir-permiso-de-guia";
++
++export default function ElegirPermisoDeGuia() {
++  const pedido = usePedidoDePermiso();
++  const { activo } = useContratoActivo();
++  const abierto = pedido != null;
++  const { candidatas, delLibro } = pedido
++    ? ordenarPorPermisoDelLibro(pedido.ambigua.candidatas, activo)
++    : { candidatas: [] as CandidataDeGuia[], delLibro: null };
++  const gtf = pedido?.ambigua.gtfNumber ?? "";
++
++  return (
++    <AdminModal
++      open={abierto}
++      onClose={() => pedido?.elegir(null)}
++      /* Corto: los controles de ventana le quitan ~64 px al título y en `md`
++         «¿De qué permiso es la GTF 019-001-000123?» salía cortado justo en el N°.
++         El N° va en la línea de abajo y en cada opción. */
++      title="¿De qué permiso?"
++      description={gtf ? `GTF ${gtf} · está en ${candidatas.length} permisos` : undefined}
++      icon={FileText}
++      size="md"
++      aboveModals
++      footer={
++        <ModalFooter
++          nota={
++            <span className="inline-flex items-center gap-1">
++              Se guarda en el que elijas
++              <InfoTip
++                title="Dos talonarios, el mismo N°"
++                what="Cada permiso tiene su propio talonario de guías: la GTF 4 de un permiso y la GTF 4 de otro son dos guías distintas."
++                affects="Lo que ibas a guardar se guarda en la guía del permiso que elijas. Si cierras sin elegir, no se guarda nada."
++                example={pedido?.ambigua.mensaje ?? "La GTF 4 está en el permiso 017 y en el 020: eliges el 017 y se guarda ahí."}
++                side="top"
++              />
++            </span>
++          }
++        >
++          <button type="button" onClick={() => pedido?.elegir(null)} className={button({ variant: "secondary" })}>
++            Cancelar
++          </button>
++        </ModalFooter>
++      }
++    >
++      <ul className={`${MODAL_BODY} space-y-2`} data-elegir-permiso-guia>
++        {candidatas.map((c, i) => (
++          <li key={`${c.contratoId ?? "sin"}-${i}`}>
++            <button
++              type="button"
++              onClick={() => pedido?.elegir(c)}
++              title={c.permiso ?? "Sin permiso"}
++              className={`flex min-h-12 w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] focus-visible:border-[var(--accent)] ${
++                delLibro === i
++                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
++                  : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
++              }`}
++              data-candidata={c.contratoId ?? "sin-permiso"}
++            >
++              <span className="min-w-0 flex-1">
++                <span className="flex flex-wrap items-baseline gap-x-2">
++                  <span className="text-base font-bold text-[var(--text-primary)]">
++                    GTF {c.gtfNumber || gtf} · {etiquetaPermiso(c.permiso)}
++                  </span>
++                  {delLibro === i && (
++                    <span className="rounded-full bg-[var(--accent-dark)] px-2 py-0.5 text-xs font-bold text-white">
++                      el del libro
++                    </span>
++                  )}
++                </span>
++                <span className="block truncate text-sm text-[var(--text-secondary)]">
++                  {[c.permiso, c.titular, c.especies.join(", ")].filter(Boolean).join(" · ") || "Sin permiso ni titular"}
++                </span>
++              </span>
++              {delLibro === i && <Check className="h-5 w-5 shrink-0 text-[var(--accent)]" aria-hidden />}
++            </button>
++          </li>
++        ))}
++      </ul>
++    </AdminModal>
++  );
++}
+diff --git a/components/admin/forestal/hooks/use-elegir-permiso-de-guia.ts b/components/admin/forestal/hooks/use-elegir-permiso-de-guia.ts
+new file mode 100644
+--- /dev/null
++++ b/components/admin/forestal/hooks/use-elegir-permiso-de-guia.ts
+@@ -0,0 +1,140 @@
++"use client";
++
++/**
++ * ¿De qué permiso es la GTF X? — el pedido que cualquier pantalla hace cuando
++ * el servidor contesta 409 `GUIA_AMBIGUA` (ADR-504: el mismo N° de guía en
++ * dos talonarios, dos permisos).
++ *
++ * Un store de módulo y no un estado por pantalla: el 409 llega a formularios,
++ * a modales y a hooks sin JSX (`usePlataDeGuia`, `useFletesForestales`). Las
++ * raíces del módulo forestal montan UNA ventana (`ElegirPermisoDeGuia`) y
++ * cualquiera la pide con `fetchConPermisoDeGuia`:
++ *
++ *   const r = await fetchConPermisoDeGuia((contratoId) =>
++ *     fetch(url, { method: "POST", body: JSON.stringify({ ...cuerpo, ...(contratoId ? { contratoId } : {}) }) }));
++ *
++ * 1. Manda sin permiso. 2. Si vuelve 409 `GUIA_AMBIGUA`, abre la ventana con
++ * las candidatas. 3. Elegida una, reintenta con su `contratoId`. Si nadie
++ * montó la ventana o se cierra sin elegir, devuelve el 409 tal cual: la
++ * pantalla muestra el mensaje del servidor («está en 2 permisos…») como
++ * cualquier error. Nunca se elige «la primera».
++ */
++
++import { useEffect, useId, useSyncExternalStore } from "react";
++import {
++  contratoDeCandidata,
++  leerGuiaAmbigua,
++  type CandidataDeGuia,
++  type GuiaAmbigua,
++} from "@/lib/forestal/guia-por-permiso";
++
++export interface PedidoDePermiso {
++  n: number;
++  ambigua: GuiaAmbigua;
++  elegir: (c: CandidataDeGuia | null) => void;
++}
++
++let pedido: PedidoDePermiso | null = null;
++let contador = 0;
++/** Las ventanas montadas, en orden: pinta sólo la primera (dos raíces no abren dos). */
++let anfitriones: string[] = [];
++const oyentes = new Set<() => void>();
++const avisar = () => {
++  for (const o of oyentes) o();
++};
++
++/** Abre la ventana y espera la elección. `null` = no hay ventana montada o se cerró sin elegir. */
++export function pedirPermisoDeGuia(ambigua: GuiaAmbigua): Promise<CandidataDeGuia | null> {
++  if (anfitriones.length === 0) return Promise.resolve(null);
++  /* Un pedido que seguía abierto (dos guardados seguidos) se cierra sin elegir. */
++  pedido?.elegir(null);
++  const n = ++contador;
++  return new Promise((resolve) => {
++    pedido = {
++      n,
++      ambigua,
++      elegir: (c) => {
++        if (pedido?.n === n) {
++          pedido = null;
++          avisar();
++        }
++        resolve(c);
++      },
++    };
++    avisar();
++  });
++}
++
++/**
++ * `fetch` que sabe preguntar el permiso. `hacer(contratoId?)` arma el pedido:
++ * sin argumento la primera vez; con el id elegido (o `SIN_PERMISO`) en el
++ * reintento. Devuelve la última respuesta.
++ */
++export async function fetchConPermisoDeGuia(
++  hacer: (contratoId?: string) => Promise<Response>,
++): Promise<Response> {
++  const r = await hacer();
++  if (r.status !== 409) return r;
++  let cuerpo: unknown = null;
++  try {
++    cuerpo = await r.clone().json();
++  } catch {
++    return r;
++  }
++  const ambigua = leerGuiaAmbigua(r.status, cuerpo);
++  if (!ambigua) return r;
++  const elegida = await pedirPermisoDeGuia(ambigua);
++  if (!elegida) return r;
++  return hacer(contratoDeCandidata(elegida));
++}
++
++/**
++ * El cuerpo JSON de un pedido con el permiso elegido adentro. Sin permiso, o si
++ * el cuerpo no es un objeto JSON, va tal cual: así cualquier `fetch` se
++ * envuelve sin rearmar su cuerpo —
++ * `fetchConPermisoDeGuia((id) => fetch(url, { ...init, body: cuerpoConPermiso(init.body, id) }))`.
++ */
++export function cuerpoConPermiso<B extends BodyInit | null | undefined>(body: B, contratoId?: string): B | string {
++  if (!contratoId || typeof body !== "string") return body;
++  try {
++    const o: unknown = JSON.parse(body);
++    if (!o || typeof o !== "object" || Array.isArray(o)) return body;
++    return JSON.stringify({ ...o, contratoId });
++  } catch {
++    return body;
++  }
++}
++
++function suscribir(o: () => void) {
++  oyentes.add(o);
++  return () => oyentes.delete(o);
++}
++const leer = () => pedido;
++const leerAnfitriones = () => anfitriones;
++
++/**
++ * Para la ventana: el pedido abierto, si esta instancia es la que pinta.
++ * Al desmontarse la última, el pedido pendiente se cierra sin elegir.
++ */
++export function usePedidoDePermiso(): PedidoDePermiso | null {
++  const id = useId();
++  useEffect(() => {
++    anfitriones = [...anfitriones, id];
++    avisar();
++    return () => {
++      anfitriones = anfitriones.filter((x) => x !== id);
++      if (anfitriones.length === 0) pedido?.elegir(null);
++      avisar();
++    };
++  }, [id]);
++  const actual = useSyncExternalStore(suscribir, leer, () => null);
++  const lista = useSyncExternalStore(suscribir, leerAnfitriones, () => anfitriones);
++  return lista[0] === id ? actual : null;
++}
++
++/** Sólo para tests: vuelve el store a cero. */
++export function reiniciarPedidoDePermiso() {
++  pedido = null;
++  anfitriones = [];
++  avisar();
++}
+diff --git a/__tests__/plata-guia-por-permiso-adr504.test.ts b/__tests__/plata-guia-por-permiso-adr504.test.ts
+new file mode 100644
+--- /dev/null
++++ b/__tests__/plata-guia-por-permiso-adr504.test.ts
+@@ -0,0 +1,367 @@
++/**
++ * ADR-504 paso 2 — la plata de una guía es la de SU guía (N° + permiso).
++ *
++ * Dos guías GTF N° 4 de permisos distintos (P1 y P2) son dos guías: el abono
++ * de una no suma la madera de la otra (pago cruzado), la cubicación de una no
++ * frena a la otra (freno falso), una guía 4 SIN permiso frena a las dos (doble
++ * pago), el N° pelado con dos permisos es ambiguo (409) y `moverPlataAlPermiso`
++ * sólo cambia el permiso, nunca un monto.
++ *
++ * Por la DB class real contra una base en memoria: lo que importa es qué se
++ * LEE y qué se ESCRIBE, no la función pura.
++ */
++import { beforeEach, describe, expect, it, vi } from "vitest";
++
++vi.mock("server-only", () => ({}));
++vi.mock("@/lib/prisma", () => ({ prisma: {} }));
++vi.mock("@/lib/cache", () => ({ invalidateByPrefix: vi.fn(), invalidate: vi.fn() }));
++vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
++vi.mock("@/lib/forestal/ctp-audit", () => ({ auditCtp: vi.fn(), auditCtpEsperando: vi.fn(async () => {}) }));
++
++import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
++import {
++  GuiaSinPermisoFrenaError,
++  PlataEnOtroPermisoError,
++  cubicacionQuePagoLaGuia,
++  filtroPermisoDePlata,
++  pedidoDePlata,
++  refDePlata,
++  resolverPlataDeGuia,
++  respuestaGuiaPorPermiso,
++} from "@/lib/db/guia-cubicacion.db";
++import { GuiaAmbiguaError, SIN_PERMISO } from "@/lib/forestal/identidad-guia";
++import { contratoDeGuia, estadoDePagoDeGuias } from "@/lib/forestal/plata-de-guia";
++
++// ── Base en memoria: lo justo de Prisma que usan estas funciones ─────────────
++
++type Fila = Record<string, unknown> & { id: string };
++type Where = Record<string, unknown>;
++
++function cumple(row: Fila, where: Where | undefined): boolean {
++  if (!where) return true;
++  for (const [k, v] of Object.entries(where)) {
++    if (k === "OR") {
++      if (!(v as Where[]).some((w) => cumple(row, w))) return false;
++      continue;
++    }
++    if (k === "NOT") {
++      const lista = Array.isArray(v) ? (v as Where[]) : [v as Where];
++      if (lista.some((w) => cumple(row, w))) return false;
++      continue;
++    }
++    const val = row[k];
++    if (v === null) {
++      if (val != null) return false;
++      continue;
++    }
++    if (typeof v === "object" && v !== null && !(v instanceof Date)) {
++      const o = v as Record<string, unknown>;
++      if ("in" in o && !(o.in as unknown[]).includes(val)) return false;
++      if ("notIn" in o && (o.notIn as unknown[]).includes(val)) return false;
++      if ("not" in o && (o.not === null ? val == null : val === o.not)) return false;
++      if ("endsWith" in o && (val == null || !String(val).toLowerCase().endsWith(String(o.endsWith).toLowerCase()))) return false;
++      continue;
++    }
++    if (val !== v) return false;
++  }
++  return true;
++}
++
++function tabla(filas: Fila[], extra?: (f: Fila) => Record<string, unknown>) {
++  const ver = (f: Fila) => ({ ...f, ...(extra ? extra(f) : {}) });
++  return {
++    filas,
++    findMany: vi.fn(async (a: { where?: Where } = {}) => filas.filter((f) => cumple(f, a.where)).map(ver)),
++    findFirst: vi.fn(async (a: { where?: Where } = {}) => {
++      const f = filas.find((x) => cumple(x, a.where));
++      return f ? ver(f) : null;
++    }),
++    aggregate: vi.fn(async (a: { where?: Where; _sum: Record<string, true> }) => {
++      const [campo] = Object.keys(a._sum);
++      return { _sum: { [campo]: filas.filter((f) => cumple(f, a.where)).reduce((s, f) => s + Number(f[campo] ?? 0), 0) } };
++    }),
++    count: vi.fn(async (a: { where?: Where } = {}) => filas.filter((f) => cumple(f, a.where)).length),
++    update: vi.fn(async (a: { where: { id: string }; data: Record<string, unknown> }) => {
++      const f = filas.find((x) => x.id === a.where.id)!;
++      Object.assign(f, a.data);
++      return ver(f);
++    }),
++    updateMany: vi.fn(async (a: { where?: Where; data: Record<string, unknown> }) => {
++      const tocadas = filas.filter((f) => cumple(f, a.where));
++      for (const f of tocadas) Object.assign(f, a.data);
++      return { count: tocadas.length };
++    }),
++    create: vi.fn(async (a: { data: Record<string, unknown> }) => {
++      const f = { id: `nuevo-${filas.length + 1}`, deletedAt: null, ...a.data } as Fila;
++      filas.push(f);
++      return ver(f);
++    }),
++  };
++}
++
++const T = "tenant-qa";
++const N4 = "019-001-0000004";
++const CONTRATOS: Record<string, { codigo: string; titularNombre: string }> = {
++  P1: { codigo: "PERMISO-UNO", titularNombre: "Titular Uno" },
++  P2: { codigo: "PERMISO-DOS", titularNombre: "Titular Dos" },
++};
++
++function base(datos: {
++  ingresos?: Fila[];
++  movs?: Fila[];
++  cubicaciones?: Fila[];
++  fletes?: Fila[];
++  gastos?: Fila[];
++}) {
++  const woodEntry = tabla(
++    (datos.ingresos ?? []).map((f) => ({ tenantId: T, deletedAt: null, status: "registrado", moneda: "PEN", maderaDeTercero: false, providerName: null, ...f })),
++    (f) => ({ contrato: f.contratoId ? (CONTRATOS[f.contratoId as string] ?? null) : null }),
++  );
++  const forestCuentaMov = tabla((datos.movs ?? []).map((f) => ({ tenantId: T, deletedAt: null, ...f })));
++  const forestCubicacionTrozas = tabla((datos.cubicaciones ?? []).map((f) => ({ tenantId: T, deletedAt: null, sentido: "compra", ...f })));
++  const forestFlete = tabla((datos.fletes ?? []).map((f) => ({ tenantId: T, deletedAt: null, tipo: "ingreso", ...f })));
++  const expense = tabla((datos.gastos ?? []).map((f) => ({ tenantId: T, ...f })));
++  const forestContrato = tabla(Object.keys(CONTRATOS).map((id) => ({ id, tenantId: T, deletedAt: null })));
++  const candados: string[] = [];
++  const tx = {
++    woodEntry,
++    forestCuentaMov,
++    forestCubicacionTrozas,
++    forestFlete,
++    expense,
++    forestContrato,
++    $executeRaw: vi.fn(async (_s: TemplateStringsArray, ...valores: unknown[]) => {
++      candados.push(String(valores[0]));
++      return 1;
++    }),
++  };
++  return { tx, candados };
++}
++
++type TxFalso = ReturnType<typeof base>["tx"];
++const comoTx = (tx: TxFalso) => tx as unknown as Parameters<typeof ForestCuentaDB.resincronizarMaderaDeGuiaEnTx>[0];
++
++const ingreso = (id: string, contratoId: string | null, costoTotal: number | null) => ({ id, gtfNumber: N4, contratoId, costoTotal });
++
++beforeEach(() => vi.clearAllMocks());
++
++describe("(a) pago cruzado — el abono de la guía 4 de P1 no suma la madera de la 4 de P2", () => {
++  const datos = () => ({
++    ingresos: [ingreso("we-p1", "P1", 1000), ingreso("we-p2", "P2", 700)],
++    movs: [{ id: "abono-p1", gtfNumber: N4, contratoId: "P1", tipo: "abono", concepto: "madera", monto: 500, parteId: "parte-1" }],
++  });
++
++  it("con la ref de P1: el abono vale 1000 (sus asientos), no 1700", async () => {
++    const { tx } = base(datos());
++    const r = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(comoTx(tx), T, { gtfNumber: N4, contratoId: "P1" });
++    expect(r).toBe("actualizada");
++    expect(Number(tx.forestCuentaMov.filas[0].monto)).toBe(1000);
++  });
++
++  it("llamada vieja por N° (sin permiso): igual cuenta sólo los asientos del permiso del abono", async () => {
++    const { tx } = base(datos());
++    await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(comoTx(tx), T, N4);
++    expect(Number(tx.forestCuentaMov.filas[0].monto)).toBe(1000);
++  });
++
++  it("los pagos imputados a la 4 de P2 no cuentan como pagos de la 4 de P1", async () => {
++    const { tx } = base({
++      movs: [
++        { id: "pago-p1", gtfNumber: N4, contratoId: "P1", tipo: "cargo", concepto: "pago", monto: 300, parteId: "parte-1" },
++        { id: "pago-p2", gtfNumber: N4, contratoId: "P2", tipo: "cargo", concepto: "pago", monto: 900, parteId: "parte-1" },
++      ],
++    });
++    expect(await ForestCuentaDB.pagosImputadosEnTx(comoTx(tx), T, { gtfNumber: N4, contratoId: "P1" })).toBe(300);
++    expect(await ForestCuentaDB.pagosImputadosEnTx(comoTx(tx), T, N4)).toBe(1200); // la llamada vieja: como siempre
++  });
++
++  it("el N° en un solo permiso se lee y escribe por N°, como siempre (sin filtro)", async () => {
++    const { tx } = base({ ingresos: [ingreso("we-p1", "P1", 1000)] });
++    const plata = await resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: "P1" }, "escribir");
++    expect(plata.unica).toBe(true);
++    expect(refDePlata(plata)).toBe(N4);
++  });
++});
++
++describe("(b) freno falso — una cubicación de P1 no frena la guía 4 de P2", () => {
++  const datos = () => ({
++    ingresos: [ingreso("we-p1", "P1", null), ingreso("we-p2", "P2", null)],
++    cubicaciones: [{ id: "cub-1", codigo: "CUB-0001", gtfNumber: N4, contratoId: "P1", estado: "aplicada" }],
++  });
++
++  it("P2 libre, P1 frenada", async () => {
++    const { tx } = base(datos());
++    const p2 = await resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: "P2" }, "escribir");
++    expect(p2.unica).toBe(false);
++    expect(await cubicacionQuePagoLaGuia(comoTx(tx), T, refDePlata(p2))).toBeNull();
++    const p1 = await resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: "P1" }, "escribir");
++    expect(await cubicacionQuePagoLaGuia(comoTx(tx), T, refDePlata(p1))).toEqual({ codigo: "CUB-0001" });
++  });
++
++  it("una cubicación SIN permiso frena a las dos (no se sabe de cuál es)", async () => {
++    const { tx } = base({ ...datos(), cubicaciones: [{ id: "cub-2", codigo: "CUB-0002", gtfNumber: N4, contratoId: null, estado: "aplicada" }] });
++    expect(await cubicacionQuePagoLaGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: "P1" })).toEqual({ codigo: "CUB-0002" });
++    expect(await cubicacionQuePagoLaGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: "P2" })).toEqual({ codigo: "CUB-0002" });
++  });
++
++  it("la llamada vieja por N° frena con cualquier permiso (como siempre)", async () => {
++    const { tx } = base(datos());
++    expect(await cubicacionQuePagoLaGuia(comoTx(tx), T, N4)).toEqual({ codigo: "CUB-0001" });
++  });
++});
++
++describe("(c) doble pago — una guía 4 SIN permiso frena a las de P1 y P2", () => {
++  const datos = () => ({ ingresos: [ingreso("we-p1", "P1", null), ingreso("we-p2", "P2", null), ingreso("we-sin", null, null)] });
++
++  it.each(["P1", "P2"])("escribir en la 4 de %s → GuiaSinPermisoFrenaError (409)", async (permiso) => {
++    const { tx } = base(datos());
++    const err = await resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: permiso }, "escribir").catch((e: unknown) => e);
++    expect(err).toBeInstanceOf(GuiaSinPermisoFrenaError);
++    expect(respuestaGuiaPorPermiso(err)).toMatchObject({ status: 409, body: { error: "GUIA_SIN_PERMISO_FRENA" } });
++  });
++
++  it("el 409 trae la guía que frena: su N° y sus ingresos (para «Asignar permiso»)", async () => {
++    const { tx } = base({ ingresos: [...datos().ingresos, ingreso("we-sin-2", null, null)] });
++    const err = await resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: "P1" }, "escribir").catch((e: unknown) => e);
++    const r = respuestaGuiaPorPermiso(err);
++    expect(r?.body).toMatchObject({ error: "GUIA_SIN_PERMISO_FRENA", gtfNumber: N4, woodEntryIds: ["we-sin", "we-sin-2"] });
++    expect(r?.body.guias).toEqual([{ gtfNumber: N4, woodEntryIds: ["we-sin", "we-sin-2"], titular: null }]);
++    expect(r?.body.woodEntryIds).not.toContain("we-p1");
++  });
++
++  it("leer no falla: devuelve quién la frena (la pantalla lo muestra)", async () => {
++    const { tx } = base(datos());
++    const p = await resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: "P1" }, "leer");
++    expect(p.frenadaPor?.map((g) => g.contratoId)).toEqual([null]);
++    expect(p.unica).toBe(false);
++  });
++});
++
++describe("ambigua — el N° pelado con dos permisos → 409 GUIA_AMBIGUA con las candidatas", () => {
++  it("sin contratoId", async () => {
++    const { tx } = base({ ingresos: [ingreso("we-p1", "P1", null), ingreso("we-p2", "P2", null)] });
++    const err = await resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: null }, "leer").catch((e: unknown) => e);
++    expect(err).toBeInstanceOf(GuiaAmbiguaError);
++    const r = respuestaGuiaPorPermiso(err);
++    expect(r?.status).toBe(409);
++    expect(r?.body.error).toBe("GUIA_AMBIGUA");
++    expect((r?.body.candidatas as { permiso: string }[]).map((c) => c.permiso).sort()).toEqual(["PERMISO-DOS", "PERMISO-UNO"]);
++  });
++
++  it("con contratoId elegido ya no es ambigua", async () => {
++    const { tx } = base({ ingresos: [ingreso("we-p1", "P1", null), ingreso("we-p2", "P2", null)] });
++    await expect(resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: "P2" }, "leer")).resolves.toMatchObject({ contratoId: "P2" });
++  });
++});
++
++describe("«∅» = la guía SIN permiso elegida a propósito (ventana «¿De qué permiso?»)", () => {
++  it("el Zod de las rutas acepta «∅», un id o nada; no un texto largo", () => {
++    expect(contratoDeGuia.safeParse(SIN_PERMISO)).toMatchObject({ success: true, data: SIN_PERMISO });
++    expect(contratoDeGuia.safeParse(" P1 ")).toMatchObject({ success: true, data: "P1" });
++    expect(contratoDeGuia.safeParse(null).success).toBe(true);
++    expect(contratoDeGuia.safeParse(undefined).success).toBe(true);
++    expect(contratoDeGuia.safeParse("x".repeat(41)).success).toBe(false);
++  });
++
++  it("con P1, P2 y la sin permiso: «∅» es la sin permiso — no ambigua, no frenada, y nunca un id literal", async () => {
++    const { tx } = base({ ingresos: [ingreso("we-p1", "P1", null), ingreso("we-p2", "P2", null), ingreso("we-sin", null, null)] });
++    const p = await resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: SIN_PERMISO }, "escribir");
++    expect(p).toEqual({ gtfNumber: N4, contratoId: null, unica: false, frenadaPor: null });
++    expect(refDePlata(p)).toEqual({ gtfNumber: N4, contratoId: null });
++    expect(filtroPermisoDePlata(p)).toEqual({ contratoId: null });
++    /* Releer después de escribir pide la MISMA guía (null sería «elige» → 409). */
++    expect(pedidoDePlata(p)).toBe(SIN_PERMISO);
++    await expect(resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: pedidoDePlata(p) }, "leer")).resolves.toMatchObject({ contratoId: null });
++  });
++
++  it("la sin permiso sigue frenada por una cubicación de cualquier permiso con ese N° (doble pago)", async () => {
++    const { tx } = base({
++      ingresos: [ingreso("we-p1", "P1", null), ingreso("we-sin", null, null)],
++      cubicaciones: [{ id: "cub-1", codigo: "CUB-0001", gtfNumber: N4, contratoId: "P1", estado: "aplicada" }],
++    });
++    const p = await resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: SIN_PERMISO }, "escribir");
++    expect(await cubicacionQuePagoLaGuia(comoTx(tx), T, refDePlata(p))).toEqual({ codigo: "CUB-0001" });
++  });
++
++  it("si ya no hay guía sin permiso con ese N° → 409 GUIA_AMBIGUA con las que hay (la ventana quedó vieja)", async () => {
++    const { tx } = base({ ingresos: [ingreso("we-p1", "P1", null), ingreso("we-p2", "P2", null)] });
++    const err = await resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: SIN_PERMISO }, "escribir").catch((e: unknown) => e);
++    expect(err).toBeInstanceOf(GuiaAmbiguaError);
++    const r = respuestaGuiaPorPermiso(err);
++    expect(r?.body.error).toBe("GUIA_AMBIGUA");
++    expect((r?.body.candidatas as { contratoId: string }[]).map((c) => c.contratoId).sort()).toEqual(["P1", "P2"]);
++  });
++
++  it("el N° sólo sin permiso: «∅» = como siempre (por N°), y releer no necesita «∅»", async () => {
++    const { tx } = base({ ingresos: [ingreso("we-sin", null, null)] });
++    const p = await resolverPlataDeGuia(comoTx(tx), T, { gtfNumber: N4, contratoId: SIN_PERMISO }, "escribir");
++    expect(p).toMatchObject({ contratoId: null, unica: true });
++    expect(refDePlata(p)).toBe(N4);
++    expect(pedidoDePlata(p)).toBeNull();
++  });
++});
++
++describe("moverPlataAlPermiso — sólo cambia el permiso, nunca un monto", () => {
++  const datos = () => ({
++    movs: [
++      { id: "abono", gtfNumber: N4, contratoId: null, tipo: "abono", concepto: "madera", monto: 1234.56, parteId: "parte-1" },
++      { id: "pago", gtfNumber: "19-1-4", contratoId: null, tipo: "cargo", concepto: "pago", monto: 200, parteId: "parte-1" },
++      { id: "venta", gtfNumber: N4, contratoId: null, tipo: "cargo", concepto: "venta", monto: 50, parteId: "parte-2" },
++      { id: "otra-guia", gtfNumber: "019-001-0000044", contratoId: null, tipo: "abono", concepto: "madera", monto: 99, parteId: "parte-1" },
++    ],
++    cubicaciones: [
++      { id: "cub", codigo: "CUB-1", gtfNumber: N4, contratoId: null, estado: "aplicada", monto: 800 },
++      { id: "cub-venta", codigo: "CUB-2", gtfNumber: N4, contratoId: null, estado: "aplicada", sentido: "venta", monto: 70 },
++    ],
++    fletes: [{ id: "flete", gtfNumber: N4, contratoId: null, monto: 150 }],
++    gastos: [{ id: "gasto", gtfNumber: N4, contratoId: null, amount: 40 }],
++  });
++  const montos = (tx: TxFalso) =>
++    JSON.stringify([tx.forestCuentaMov, tx.forestCubicacionTrozas, tx.forestFlete, tx.expense].map((t) => t.filas.map((f) => [f.id, f.monto ?? f.amount, f.parteId ?? null])));
++
++  it("mueve abono, pagos, cubicación de compra, flete y gasto; no la venta ni otra guía; montos idénticos", async () => {
++    const { tx, candados } = base(datos());
++    const antes = montos(tx);
++    const r = await ForestCuentaDB.moverPlataAlPermiso(comoTx(tx), T, { gtfNumber: N4, contratoId: null }, "P1");
++    expect(r).toEqual({ movimientos: 2, cubicaciones: 1, fletes: 1, gastos: 1 });
++    expect(montos(tx)).toBe(antes);
++    const permiso = (t: { filas: Fila[] }, id: string) => t.filas.find((f) => f.id === id)?.contratoId;
++    expect(permiso(tx.forestCuentaMov, "abono")).toBe("P1");
++    expect(permiso(tx.forestCuentaMov, "pago")).toBe("P1");
++    expect(permiso(tx.forestCuentaMov, "venta")).toBeNull();
++    expect(permiso(tx.forestCuentaMov, "otra-guia")).toBeNull();
++    expect(permiso(tx.forestCubicacionTrozas, "cub")).toBe("P1");
++    expect(permiso(tx.forestCubicacionTrozas, "cub-venta")).toBeNull();
++    expect(permiso(tx.forestFlete, "flete")).toBe("P1");
++    expect(permiso(tx.expense, "gasto")).toBe("P1");
++    expect(candados.some((c) => c.startsWith(`guia-plata:${T}:`))).toBe(true);
++  });
++
++  it("si el permiso destino ya tiene el abono de esa guía → PlataEnOtroPermisoError y no mueve nada", async () => {
++    const d = datos();
++    d.movs.push({ id: "abono-p1", gtfNumber: N4, contratoId: "P1", tipo: "abono", concepto: "madera", monto: 10, parteId: "parte-1" } as never);
++    const { tx } = base(d);
++    await expect(ForestCuentaDB.moverPlataAlPermiso(comoTx(tx), T, { gtfNumber: N4, contratoId: null }, "P1")).rejects.toBeInstanceOf(PlataEnOtroPermisoError);
++    expect(tx.forestCuentaMov.updateMany).not.toHaveBeenCalled();
++  });
++
++  it("un permiso de otro negocio no se acepta", async () => {
++    const { tx } = base(datos());
++    await expect(ForestCuentaDB.moverPlataAlPermiso(comoTx(tx), T, { gtfNumber: N4, contratoId: null }, "P-AJENO")).rejects.toThrow(/no es de este negocio/);
++  });
++});
++
++describe("estadoDePagoDeGuias — el pago de la 4 de P2 no cubre la 4 de P1", () => {
++  it("cada guía con su permiso", () => {
++    const estados = estadoDePagoDeGuias(
++      [
++        { gtfNumber: N4, contratoId: "P1", parteId: "parte-1", fecha: "2026-10-01", monto: 1000 },
++        { gtfNumber: N4, contratoId: "P2", parteId: "parte-1", fecha: "2026-10-02", monto: 700 },
++      ],
++      [{ parteId: "parte-1", tipo: "cargo", concepto: "pago", monto: 700, gtfNumber: N4, contratoId: "P2" }],
++    );
++    const de = (c: string) => estados.find((e) => e.contratoId === c)!;
++    expect(de("P2").estado).toBe("pagada");
++    expect(de("P1").cubiertoDirecto).toBe(0);
++  });
++});
+diff --git a/__tests__/forestal-aviso-plata-por-permiso.test.tsx b/__tests__/forestal-aviso-plata-por-permiso.test.tsx
+new file mode 100644
+--- /dev/null
++++ b/__tests__/forestal-aviso-plata-por-permiso.test.tsx
+@@ -0,0 +1,53 @@
++/**
++ * ADR-504 · Los 409 de plata por permiso se ven como aviso: FRENA dice qué
++ * hacer y abre «Asignar permiso»; EN_OTRO_PERMISO avisa sin botón; cualquier
++ * otro código no pinta nada. Y el permiso «conocido» de una guía sólo cuando
++ * todas sus líneas lo dicen.
++ */
++import { describe, expect, it, vi } from "vitest";
++import { fireEvent, render, screen } from "@testing-library/react";
++
++vi.mock("@/lib/forestal/ctp-fetch", () => ({
++  ctpGet: vi.fn(async () => ({ contratos: [] })),
++  invalidarCtp: vi.fn(),
++}));
++
++import AvisoPlataPorPermiso from "@/components/admin/forestal/AvisoPlataPorPermiso";
++import { contratoComun } from "@/lib/forestal/guia-por-permiso";
++
++const MSJ = "La guía N° 4 también entró SIN permiso: puede ser la misma y pagarse dos veces.";
++
++describe("AvisoPlataPorPermiso", () => {
++  it("FRENA: la línea clara y el botón abre «Asignar permiso» de esa guía", async () => {
++    render(<AvisoPlataPorPermiso gtf="4" codigo="GUIA_SIN_PERMISO_FRENA" mensaje={MSJ} onAsignado={() => {}} />);
++    expect(screen.getByText(/La GTF 4 sin permiso frena el pago: asígnale su permiso primero/)).toBeTruthy();
++    fireEvent.click(screen.getByRole("button", { name: /Asignar permiso/ }));
++    expect(await screen.findByText("GTF 4 · la que entró sin permiso")).toBeTruthy();
++    expect(screen.getByRole("button", { name: /Declarar en la guía/ })).toBeTruthy();
++  });
++
++  it("EN_OTRO_PERMISO: aviso sin botón", () => {
++    render(<AvisoPlataPorPermiso gtf="4" codigo="GUIA_EN_OTRO_PERMISO" mensaje="ya existe" onAsignado={() => {}} />);
++    expect(document.querySelector('[data-aviso-plata-permiso="GUIA_EN_OTRO_PERMISO"]')?.textContent).toContain(
++      "La GTF 4 ya está anotada con otro permiso",
++    );
++    expect(screen.queryByRole("button", { name: /Asignar permiso/ })).toBeNull();
++  });
++
++  it("otro código: no pinta nada (la pantalla muestra su error)", () => {
++    const { container } = render(<AvisoPlataPorPermiso gtf="4" codigo="PERIODO_CERRADO" mensaje="x" onAsignado={() => {}} />);
++    expect(container.innerHTML).toBe("");
++  });
++});
++
++describe("contratoComun", () => {
++  it("todas las líneas con el mismo permiso → ese", () => {
++    expect(contratoComun([{ contratoId: "c17" }, { contratoId: "c17" }])).toBe("c17");
++  });
++  it("mezcla, sin permiso o vacío → undefined (decide el servidor)", () => {
++    expect(contratoComun([{ contratoId: "c17" }, { contratoId: "c20" }])).toBeUndefined();
++    expect(contratoComun([{ contratoId: "c17" }, { contratoId: null }])).toBeUndefined();
++    expect(contratoComun([{}])).toBeUndefined();
++    expect(contratoComun([])).toBeUndefined();
++  });
++});
+diff --git a/__tests__/forestal-elegir-permiso-de-guia.test.tsx b/__tests__/forestal-elegir-permiso-de-guia.test.tsx
+new file mode 100644
+--- /dev/null
++++ b/__tests__/forestal-elegir-permiso-de-guia.test.tsx
+@@ -0,0 +1,110 @@
++/**
++ * ADR-504 · «¿De qué permiso es la GTF X?» — el 409 GUIA_AMBIGUA abre la
++ * ventana, se elige el permiso y el pedido se reintenta con su `contratoId`.
++ * Cerrar sin elegir (o sin ventana montada) devuelve el 409 tal cual.
++ */
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
++import ElegirPermisoDeGuia from "@/components/admin/forestal/ElegirPermisoDeGuia";
++import {
++  cuerpoConPermiso,
++  fetchConPermisoDeGuia,
++  reiniciarPedidoDePermiso,
++} from "@/components/admin/forestal/hooks/use-elegir-permiso-de-guia";
++
++const AMBIGUA = {
++  codigo: "GUIA_AMBIGUA",
++  gtfNumber: "4",
++  message: "La guía N° 4 está en 2 permisos (017, 020). Elige el permiso del archivo para saber cuál es.",
++  candidatas: [
++    { contratoId: "c17", gtfNumber: "4", permiso: "19-SEC/REG-PLT-2021-017", titular: "Blas", especies: ["Tornillo"] },
++    { contratoId: null, gtfNumber: "4", permiso: null, titular: "Blas", especies: ["Cumala"] },
++  ],
++};
++
++const respuesta = (status: number, body: unknown) =>
++  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
++
++/** Un `fetch` simulado: sin permiso contesta 409 ambigua; con permiso, 200. */
++function servidor() {
++  const cuerpos: Record<string, unknown>[] = [];
++  const f = vi.fn(async (_url: string, init?: RequestInit) => {
++    const cuerpo = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
++    cuerpos.push(cuerpo);
++    return cuerpo.contratoId ? respuesta(200, { ok: true }) : respuesta(409, AMBIGUA);
++  });
++  const guardar = () =>
++    fetchConPermisoDeGuia((contratoId) =>
++      f("/api/admin/forestal/guias/plata/gastos", { method: "POST", body: cuerpoConPermiso(JSON.stringify({ gtfNumber: "4", monto: 50 }), contratoId) }),
++    );
++  return { f, cuerpos, guardar };
++}
++
++afterEach(() => {
++  act(() => reiniciarPedidoDePermiso());
++});
++
++describe("ElegirPermisoDeGuia · 409 → elegir → reintento", () => {
++  it("elegido el permiso, reintenta con su contratoId y devuelve el 200", async () => {
++    render(<ElegirPermisoDeGuia />);
++    const { f, cuerpos, guardar } = servidor();
++    const fin: { r?: Response } = {};
++    const enCurso = guardar().then((x) => (fin.r = x));
++
++    expect(await screen.findByText("¿De qué permiso?")).toBeTruthy();
++    expect(screen.getByText("GTF 4 · está en 2 permisos")).toBeTruthy();
++    expect(screen.getByText("GTF 4 · permiso 017")).toBeTruthy();
++    expect(screen.getByText("GTF 4 · sin permiso")).toBeTruthy();
++    fireEvent.click(document.querySelector('[data-candidata="c17"]')!);
++    await act(async () => {
++      await enCurso;
++    });
++
++    expect(f).toHaveBeenCalledTimes(2);
++    expect(cuerpos[1]).toEqual({ gtfNumber: "4", monto: 50, contratoId: "c17" });
++    expect(fin.r?.status).toBe(200);
++    await waitFor(() => expect(screen.queryByText("¿De qué permiso?")).toBeNull());
++  });
++
++  it("la guía sin permiso viaja como «∅»", async () => {
++    render(<ElegirPermisoDeGuia />);
++    const { cuerpos, guardar } = servidor();
++    const enCurso = guardar();
++    await screen.findByText("¿De qué permiso?");
++    fireEvent.click(document.querySelector('[data-candidata="sin-permiso"]')!);
++    await act(async () => {
++      await enCurso;
++    });
++    expect(cuerpos[1]?.contratoId).toBe("∅");
++  });
++
++  it("Cancelar no reintenta: vuelve el 409 para que la pantalla muestre el mensaje", async () => {
++    render(<ElegirPermisoDeGuia />);
++    const { f, guardar } = servidor();
++    const enCurso = guardar();
++    await screen.findByText("¿De qué permiso?");
++    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
++    const fin: { r?: Response } = {};
++    await act(async () => {
++      fin.r = await enCurso;
++    });
++    expect(f).toHaveBeenCalledTimes(1);
++    expect(fin.r?.status).toBe(409);
++  });
++
++  it("sin la ventana montada no pregunta: devuelve el 409", async () => {
++    const { f, guardar } = servidor();
++    const r = await guardar();
++    expect(f).toHaveBeenCalledTimes(1);
++    expect(r.status).toBe(409);
++  });
++
++  it("otro 409 (no ambigua) pasa de largo", async () => {
++    render(<ElegirPermisoDeGuia />);
++    const f = vi.fn(async () => respuesta(409, { error: "cubicacion_desactualizada" }));
++    const r = await fetchConPermisoDeGuia(() => f());
++    expect(f).toHaveBeenCalledTimes(1);
++    expect(r.status).toBe(409);
++    expect(screen.queryByText(/De qué permiso/)).toBeNull();
++  });
++});

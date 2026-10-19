@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
-import { WoodEntriesDB, type WoodOriginType, type WoodProductType } from "@/lib/db/wood-entries.db";
+import { WoodEntriesDB, type IngresoParaImportar, type WoodOriginType, type WoodProductType } from "@/lib/db/wood-entries.db";
 import { ForestCtpDB, produccionKey, produccionKeyBase, despachoKey } from "@/lib/db/forest-ctp.db";
 import { ActivityLogDB } from "@/lib/db/activity-log.db";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
@@ -24,6 +24,13 @@ import {
   type PermisoParaImport,
 } from "@/lib/forestal/asignar-permiso-import";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
+import {
+  claveDeGuiaRef,
+  decidirGuiaAlImportar,
+  mensajeGuiaAmbigua,
+  type DecisionGuiaAlImportar,
+  type ResolucionDeGuia,
+} from "@/lib/forestal/identidad-guia";
 import { fraseDeColocacion } from "@/lib/forestal/acomodar-trozas";
 import { logger } from "@/lib/logger";
 import type { IngresoParaTitulo, PlanTitulo } from "@/lib/forestal/titulo-de-guia";
@@ -110,10 +117,17 @@ const ingresoSchema = z.object({
    * cargada y CERO trozas — justo el detalle que el fiscalizador pide.
    */
   trozas: z.array(trozaSchema).max(TOPE_TROZAS).optional().default([]),
+  /** ADR-504: el permiso de ESTA fila (pisa al del archivo). La guía es N° + permiso. */
+  contratoId: z.string().trim().max(40).nullish(),
   row: z.number().optional(),
 });
 
-const consumoSchema = z.object({ gtfIngreso: z.string().trim().min(1), volumeM3: z.number().positive().max(MAX_VOL_12_4) });
+const consumoSchema = z.object({
+  gtfIngreso: z.string().trim().min(1),
+  volumeM3: z.number().positive().max(MAX_VOL_12_4),
+  /** ADR-504: el permiso de la guía consumida (si no, el del archivo). */
+  contratoId: z.string().trim().max(40).nullish(),
+});
 const produccionSchema = z.object({
   entryDate: z.string().trim().nullable().optional(),
   productType: z.string().trim().min(1, "Sin tipo de producto").max(120),
@@ -377,16 +391,21 @@ interface FilaIngreso {
   pos: number;
   row: number | undefined;
   d: IngresoValido;
+  /** ADR-504: el permiso de la guía de esta fila (fila › archivo › código de origen). */
+  contratoId: string | null;
 }
 
 /** UN ingreso: la guía + especie + producto, con todas las filas del archivo que lo forman. */
 interface GrupoIngreso {
   /** La cabecera: la de la 1.ª fila, con el volumen de todas y lo que la 1.ª no traía. */
   d: IngresoValido;
-  /** Las piezas de todas sus filas, sin repetir el código. */
+  /** El permiso de la guía (ADR-504): parte de la clave del grupo. */
+  contratoId: string | null;
+  /** Las piezas de TODAS sus filas, también las repetidas (ADR-504: todo entra). */
   piezas: PiezaDelIngreso[] | undefined;
-  /** `repetidaDe` = la fila trae una troza que ya venía en esa fila (null si no tiene N°). */
-  filas: { pos: number; row: number | undefined; repetidaDe?: number | null }[];
+  /** La fila del archivo de cada pieza, en el mismo orden (para «filas N y M idénticas»). */
+  filasDePiezas: (number | null)[];
+  filas: { pos: number; row: number | undefined }[];
 }
 
 /** Decimal(12,4): se suma en diezmilésimas enteras, nunca en float acumulado. */
@@ -400,39 +419,38 @@ const TOPE_NOTAS_JUNTAS = 1_900;
  * La Sección 1 del libro trae una fila por PIEZA: dos trozas de 0,8 m³ de la
  * guía 001 son dos filas. Antes la 1.ª creaba el ingreso y la 2.ª caía en «ya
  * existe» sin su troza ni sus m³ (QA: 0,8 m³ y 1 troza donde el archivo decía
- * 1,6 y 2). La clave es guía + especie + producto: la 2.ª especie de la guía es
- * otro ingreso (ADR-312/435). Una fila cuya troza ya vino en el grupo es la
- * misma pieza dos veces: no suma.
+ * 1,6 y 2). La clave es GUÍA (N° + permiso, ADR-504) + especie + producto: la
+ * 2.ª especie de la guía es otro ingreso (ADR-312/435) y el mismo N° en otro
+ * permiso es otra guía.
+ *
+ * Una fila repetida YA NO se descarta (ADR-504, Brandon 19-10: «que se importe
+ * todo»): entra con su troza y sus m³, y el alta avisa «filas N y M idénticas».
+ * Lo único que no entra es lo que ya estaba en la base.
  */
 function agruparIngresos(filas: readonly FilaIngreso[]): GrupoIngreso[] {
-  type Acc = { g: GrupoIngreso; diezmilesimas: number; codigos: Map<string, number | null>; notas: string[]; aportan: number; piezas: PiezaDelIngreso[] };
+  type Acc = { g: GrupoIngreso; diezmilesimas: number; notas: string[]; piezas: PiezaDelIngreso[]; filasDePiezas: (number | null)[] };
   const porClave = new Map<string, Acc>();
   const primerValor = <T,>(a: T | null | undefined, b: T | null | undefined): T | null =>
     a != null && String(a).trim() !== "" ? a : (b ?? null);
   for (const f of filas) {
     const d = f.d;
-    const clave = `${d.gtfNumber}|${normCmp(d.speciesCommonName)}|${normCmp(d.productType)}`;
+    const clave = `${claveDeGuiaRef({ gtfNumber: d.gtfNumber, contratoId: f.contratoId })}|${normCmp(d.speciesCommonName)}|${normCmp(d.productType)}`;
     let acc = porClave.get(clave);
     if (!acc) {
-      acc = { g: { d: { ...d }, piezas: undefined, filas: [] }, diezmilesimas: 0, codigos: new Map(), notas: [], aportan: 0, piezas: [] };
+      acc = {
+        g: { d: { ...d }, contratoId: f.contratoId, piezas: undefined, filasDePiezas: [], filas: [] },
+        diezmilesimas: 0,
+        notas: [],
+        piezas: [],
+        filasDePiezas: [],
+      };
       porClave.set(clave, acc);
     }
-    const codigos = acc.codigos;
-    const propias = piezasDelIngreso(d) ?? [];
-    const codigoDe = (p: PiezaDelIngreso) => normCmp(p.codificacion);
-    const todasYaVinieron = propias.length > 0 && propias.every((p) => codigoDe(p) && codigos.has(codigoDe(p)));
-    if (todasYaVinieron) {
-      acc.g.filas.push({ pos: f.pos, row: f.row, repetidaDe: codigos.get(codigoDe(propias[0])) ?? null });
-      continue;
-    }
-    for (const p of propias) {
-      const c = codigoDe(p);
-      if (c && codigos.has(c)) continue;
-      if (c) codigos.set(c, f.row ?? null);
+    for (const p of piezasDelIngreso(d) ?? []) {
       acc.piezas.push(p);
+      acc.filasDePiezas.push(f.row ?? null);
     }
     acc.g.filas.push({ pos: f.pos, row: f.row });
-    acc.aportan++;
     acc.diezmilesimas += Math.round(d.volumeM3 * DIEZMILESIMAS);
     if (d.notes) acc.notas.push(d.notes);
     const h = acc.g.d;
@@ -446,14 +464,15 @@ function agruparIngresos(filas: readonly FilaIngreso[]): GrupoIngreso[] {
   return [...porClave.values()].map((acc) => {
     const d = acc.g.d;
     d.volumeM3 = acc.diezmilesimas / DIEZMILESIMAS;
-    if (acc.aportan > 1) {
+    const varias = acc.g.filas.length > 1;
+    if (varias) {
       /* Las notas de cada pieza («Código CTP X · Origen Y») sin repetir lo común. */
       const partes = [...new Set(acc.notas.flatMap((n) => n.split(" · ").map((s) => s.trim()).filter(Boolean)))];
       const juntas = partes.join(" · ");
       d.notes = juntas.length > TOPE_NOTAS_JUNTAS ? `${juntas.slice(0, TOPE_NOTAS_JUNTAS - 1)}…` : juntas || null;
     }
-    const varias = acc.aportan > 1;
     acc.g.piezas = acc.piezas.length === 0 ? undefined : varias ? acc.piezas.map((p, i) => ({ ...p, orden: i + 1 })) : acc.piezas;
+    acc.g.filasDePiezas = acc.piezas.length === 0 ? [] : acc.filasDePiezas;
     return acc.g;
   });
 }
@@ -505,8 +524,22 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
   // ── Registro: PRODUCCIÓN (etapa 2) ──────────────────────────────────────
   if (registro === "produccion") {
     // Resolver GTF de ingreso → woodEntryId (los ingresos deben existir ya).
-    const allGtfs = produccion.flatMap((r) => (Array.isArray(r.consumos) ? (r.consumos as { gtfIngreso?: unknown }[]).map((c) => String(c.gtfIngreso ?? "").trim()) : []));
-    const idByGtf = await WoodEntriesDB.idByGtf(auth.tenantId, allGtfs);
+    /* ADR-504: la guía es N° + PERMISO. El consumo busca su guía con el permiso
+       de su fila o el del archivo; con el N° en dos permisos y sin permiso NO
+       elige una (antes ganaba la más reciente): la fila lo dice. */
+    const permisoDeConsumo = (c: { contratoId?: unknown }): string | null =>
+      (typeof c.contratoId === "string" && c.contratoId.trim()) || permiso?.contratoId || null;
+    const gtfsPorPermiso = new Map<string, string[]>();
+    for (const r of produccion) {
+      for (const c of Array.isArray(r.consumos) ? (r.consumos as { gtfIngreso?: unknown; contratoId?: unknown }[]) : []) {
+        const k = permisoDeConsumo(c) ?? "";
+        gtfsPorPermiso.set(k, [...(gtfsPorPermiso.get(k) ?? []), String(c.gtfIngreso ?? "").trim()]);
+      }
+    }
+    const guiaDeConsumo = new Map<string, ResolucionDeGuia>();
+    for (const [k, gtfs] of gtfsPorPermiso) {
+      for (const [gtf, r] of await WoodEntriesDB.guiasDeConsumos(auth.tenantId, gtfs, k || null)) guiaDeConsumo.set(`${k}|${gtf}`, r);
+    }
     const existingKeys = await ForestCtpDB.existingProduccionKeys(auth.tenantId);
     /* Los códigos de paquete YA usados en la planta. El índice es único por
        tenant, así que un inventario que repite el código ("d1" en ocho filas,
@@ -553,11 +586,27 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         // Resolver consumos; si un GTF de ingreso falta, es error (importá ingresos primero).
         const resolved: { woodEntryId: string; volumeM3: number }[] = [];
         const missing: string[] = [];
+        const ambiguas: string[] = [];
+        const permisosDeLaCorrida = new Set<string | null>();
         for (const c of d.consumos) {
-          const id = idByGtf.get(c.gtfIngreso);
-          if (id) resolved.push({ woodEntryId: id, volumeM3: c.volumeM3 });
+          const r = guiaDeConsumo.get(`${permisoDeConsumo(c) ?? ""}|${c.gtfIngreso}`);
+          if (r?.estado === "una") {
+            /* La guía de varias especies son varios ingresos: el consumo va al
+               último del libro, como antes. */
+            resolved.push({ woodEntryId: r.guia.ingresoIds[r.guia.ingresoIds.length - 1], volumeM3: c.volumeM3 });
+            permisosDeLaCorrida.add(r.guia.contratoId ?? null);
+          } else if (r?.estado === "ambigua") ambiguas.push(mensajeGuiaAmbigua(c.gtfIngreso, r.candidatas));
           else missing.push(c.gtfIngreso);
         }
+        if (ambiguas.length) {
+          errores++;
+          detalle.push({ row, gtf: label, action: "error", message: `${[...new Set(ambiguas)].join(" ")} Esta corrida no se cargó.` });
+          continue;
+        }
+        /* Las trozas de la corrida se buscan en el permiso de sus guías (si es
+           uno solo) o en el del archivo: el código solo no identifica la pieza. */
+        const unPermiso = permisosDeLaCorrida.size === 1 ? [...permisosDeLaCorrida][0] : null;
+        const permisoDeLaCorrida = unPermiso ?? permiso?.contratoId ?? null;
         if (missing.length) {
           errores++;
           detalle.push({ row, gtf: label, action: "error", message: `GTF de ingreso no encontrado: ${[...new Set(missing)].join(", ")} — importa los ingresos primero` });
@@ -670,9 +719,18 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
             try {
               const ids: string[] = [];
               const noEncontradas: string[] = [];
+              const repetidas: string[] = [];
               for (const codigo of d.trozasConsumidas) {
-                const t = await WoodEntriesDB.buscarTrozaPorCodigo(auth.tenantId, codigo);
-                if (t?.id) ids.push(t.id);
+                /* ADR-504: el código solo no identifica la troza: se busca en el
+                   permiso de la corrida. Con varias piezas igual NO se marca la
+                   primera: se avisa. */
+                const r = await WoodEntriesDB.buscarTrozaPorCodigo(
+                  auth.tenantId,
+                  codigo,
+                  permisoDeLaCorrida ? { contratoId: permisoDeLaCorrida } : {},
+                );
+                if (r.estado === "una") ids.push(r.troza.id);
+                else if (r.estado === "varias") repetidas.push(codigo);
                 else noEncontradas.push(codigo);
               }
               /* El código que no está en el patio se DICE (reviewer 19-10): antes
@@ -680,6 +738,9 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
                  que nadie supiera cuál faltó. */
               if (noEncontradas.length > 0) {
                 avisoPiezas = ` · AVISO: ${noEncontradas.length} troza${noEncontradas.length === 1 ? "" : "s"} no se encontr${noEncontradas.length === 1 ? "ó" : "aron"} en el patio: ${noEncontradas.join(", ")} (no se marcaron consumidas)`;
+              }
+              if (repetidas.length > 0) {
+                avisoPiezas += ` · AVISO: ${repetidas.length === 1 ? "el código" : "los códigos"} ${repetidas.join(", ")} ${repetidas.length === 1 ? "está" : "están"} en más de una troza del patio (otra guía o permiso): no se marcaron consumidas, elígelas a mano`;
               }
               if (ids.length > 0) {
                 await WoodEntriesDB.marcarTrozasConsumidas(auth.tenantId, corrida.id, ids, {
@@ -844,34 +905,113 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
       porPosicion[pos] = { row, gtf: String(raw.gtfNumber ?? "").trim() || null, action: "error", message: v.error.issues.map((i) => i.message).join(" · ") };
       return;
     }
-    validas.push({ pos, row, d: v.data });
+    validas.push({ pos, row, d: v.data, contratoId: null });
   });
+
+  /* ── El permiso de cada fila (ADR-504: la guía es N° + PERMISO) ──
+     El que trae la fila (sólo admin/dueño, como el del archivo, y validado
+     contra los permisos del negocio), el del archivo si la fila no lo
+     contradice, o el contrato de su código de origen: el mismo que `create` le
+     escribiría. */
+  const pedidosPorFila = [...new Set(validas.map((f) => f.d.contratoId).filter((c): c is string => !!c))];
+  if (pedidosPorFila.length > 0) {
+    const rol = soloAdminODueno(auth.role, "elegir el permiso de una fila al importar el libro");
+    if (rol) return rol;
+  }
+  const contratoValido = new Map<string, boolean>();
+  for (const id of pedidosPorFila) {
+    const c = await ForestContratoDB.get(auth.tenantId, id);
+    contratoValido.set(id, !!c && c.isActive);
+  }
+  const contratoPorCodigo = new Map<string, Promise<string | null>>();
+  const contratoDeCodigo = (codigo: string | null | undefined): Promise<string | null> => {
+    const k = (codigo ?? "").trim().toUpperCase();
+    if (!k) return Promise.resolve(null);
+    let p = contratoPorCodigo.get(k);
+    if (!p) {
+      p = ForestContratoDB.idPorCodigo(auth.tenantId, codigo);
+      contratoPorCodigo.set(k, p);
+    }
+    return p;
+  };
+  const conPermiso: FilaIngreso[] = [];
+  for (const f of validas) {
+    if (f.d.contratoId && !contratoValido.get(f.d.contratoId)) {
+      errores++;
+      porPosicion[f.pos] = {
+        row: f.row,
+        gtf: f.d.gtfNumber,
+        action: "error",
+        message: "El permiso de esta fila no está en tu lista de permisos (o se dio de baja). Elígelo de nuevo.",
+      };
+      continue;
+    }
+    const delArchivo =
+      permiso && decidirPermisoFila({ codigo: f.d.originCode, resolucion: f.d.originSourceNumber }, permiso).estado !== "conflicto"
+        ? permiso.contratoId
+        : null;
+    conPermiso.push({ ...f, contratoId: f.d.contratoId || delArchivo || (await contratoDeCodigo(f.d.originCode)) });
+  }
 
   /* UN ingreso por guía + especie + producto (reviewer 19-10, bug de 01b26cec7).
      La Sección 1 manda una fila por PIEZA: antes la 2.ª fila de una guía que
      creaba el propio archivo caía en «ya existe» y su troza y sus m³ se perdían
      (QA: 0,8 m³ y 1 troza donde el archivo decía 1,6 y 2). Se juntan ANTES del
      alta; la 2.ª especie de la guía es otro ingreso (ADR-312/435). */
-  const grupos = agruparIngresos(validas);
+  const grupos = agruparIngresos(conPermiso);
 
   /* Idempotencia + reconciliación: los ingresos vivos de esas guías, con su id.
      Es la foto de ANTES del import: lo que crea este archivo no entra, porque
      cada grupo ya es un ingreso distinto (otra especie u otro producto). */
   const existentes = await WoodEntriesDB.comparablesPorGuia(auth.tenantId, grupos.map((g) => g.d.gtfNumber));
-  /* Las especies que la base YA tenía de cada guía, y las que trae el archivo:
-     una especie nueva de una guía guardada se carga sólo si el archivo trae
+  /* ── Qué guía del libro es cada guía del archivo (ADR-504) ──
+     Una decisión por GUÍA (N° + permiso), la misma para todas sus especies:
+     `misma`/`asignar-permiso` → sus ingresos; `otra`/`crear-con-aviso` → se
+     crea aunque el N° exista en otro permiso; `ambigua` → no se escribe. */
+  const refDe = (g: GrupoIngreso) => ({ gtfNumber: g.d.gtfNumber, contratoId: g.contratoId });
+  const especiesDelArchivo = new Map<string, Set<string>>();
+  const especiesCrudas = new Map<string, string[]>();
+  for (const g of grupos) {
+    const clave = claveDeGuiaRef(refDe(g));
+    const s = especiesDelArchivo.get(clave) ?? new Set<string>();
+    s.add(normCmp(g.d.speciesCommonName));
+    especiesDelArchivo.set(clave, s);
+    especiesCrudas.set(clave, [...(especiesCrudas.get(clave) ?? []), g.d.speciesCommonName]);
+  }
+  const decisiones = new Map<string, DecisionGuiaAlImportar>();
+  for (const g of grupos) {
+    const clave = claveDeGuiaRef(refDe(g));
+    if (decisiones.has(clave)) continue;
+    const d = g.d;
+    const delArchivo = permiso != null && g.contratoId === permiso.contratoId ? permiso : null;
+    decisiones.set(
+      clave,
+      decidirGuiaAlImportar(
+        {
+          gtfNumber: d.gtfNumber,
+          contratoId: g.contratoId,
+          permiso: d.originCode ?? delArchivo?.codigo ?? null,
+          titular: delArchivo?.titular ?? (esProveedorDeRelleno(d.providerName, d.gtfNumber) ? null : d.providerName),
+          especies: especiesCrudas.get(clave) ?? [],
+        },
+        existentes.get(d.gtfNumber) ?? [],
+      ),
+    );
+  }
+  /** Los ingresos que YA tiene la guía de este grupo (vacío si es una guía nueva). */
+  const ingresosDeLaGuia = (g: GrupoIngreso): IngresoParaImportar[] => {
+    const dec = decisiones.get(claveDeGuiaRef(refDe(g)));
+    if (!dec || (dec.estado !== "misma" && dec.estado !== "asignar-permiso")) return [];
+    const ids = new Set(dec.ids);
+    return (existentes.get(g.d.gtfNumber) ?? []).filter((e) => ids.has(e.id));
+  };
+  /* Una especie nueva de una guía guardada se carga sólo si el archivo trae
      también todas las que ya estaban. Si no, lo más probable es el MISMO
      ingreso con otro nombre de especie, y crearlo duplicaría su madera. */
-  const especiesDeLaBase = new Map<string, Set<string>>();
-  for (const [gtf, lista] of existentes) especiesDeLaBase.set(gtf, new Set(lista.map((e) => normCmp(e.speciesCommonName))));
-  const especiesDelArchivo = new Map<string, Set<string>>();
-  for (const g of grupos) {
-    const s = especiesDelArchivo.get(g.d.gtfNumber) ?? new Set<string>();
-    s.add(normCmp(g.d.speciesCommonName));
-    especiesDelArchivo.set(g.d.gtfNumber, s);
-  }
-  const archivoCubreLaBase = (gtf: string) =>
-    [...(especiesDeLaBase.get(gtf) ?? [])].every((e) => especiesDelArchivo.get(gtf)?.has(e));
+  const archivoCubreLaBase = (g: GrupoIngreso) => {
+    const delArchivo = especiesDelArchivo.get(claveDeGuiaRef(refDe(g)));
+    return ingresosDeLaGuia(g).every((e) => delArchivo?.has(normCmp(e.speciesCommonName)));
+  };
 
   /* ── Permiso del archivo (ADR-503) ──
      La guía nueva lo recibe en el alta. La que YA estaba se completa con
@@ -889,12 +1029,14 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
     p: PermisoParaImport,
     d: IngresoValido,
     resolucionFila: string | null,
+    /** La guía (ADR-504): su clave N° + permiso y sus ingresos. Nunca el N° pelado. */
+    guia: { clave: string; ids: readonly string[] },
   ): Promise<PermisoDeFila & { proveedor?: ProveedorCambiado[] }> => {
     /* La fila del archivo que declara OTRO permiso (u otra resolución) manda
        sobre el del archivo: no se le escribe a la guía lo que el libro contradice. */
     const propia = decidirPermisoFila({ codigo: d.originCode, resolucion: resolucionFila }, p);
     if (propia.estado === "conflicto") return permisoDeLaDecision(propia);
-    let leida = guiasLeidas.get(d.gtfNumber);
+    let leida = guiasLeidas.get(guia.clave);
     if (!leida) {
       leida = (async (): Promise<GuiaLeida> => {
         try {
@@ -902,6 +1044,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
             gtfNumber: d.gtfNumber,
             contratoId: p.contratoId,
             originSourceNumber: resolucionFila,
+            ingresoIds: guia.ids,
           });
           if (mode !== "commit") {
             /* La vista previa dice lo mismo que hará el commit, sin escribir:
@@ -923,6 +1066,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
                 gtfNumber: d.gtfNumber,
                 contratoId: p.contratoId,
                 originSourceNumber: resolucionFila,
+                ingresoIds: guia.ids,
                 origen: fileName ? `la importación del libro («${fileName}»)` : "la importación del libro",
               },
               auth.username ?? "import",
@@ -949,7 +1093,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
           return { error: e instanceof Error ? e.message : String(e) };
         }
       })();
-      guiasLeidas.set(d.gtfNumber, leida);
+      guiasLeidas.set(guia.clave, leida);
     }
     const g = await leida;
     if ("error" in g) return { estado: "conflicto", delArchivo: null, motivo: `no se pudo declarar: ${g.error}` };
@@ -966,17 +1110,6 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
     if (permisoFila) permisos.push(permisoFila);
     for (const f of g.filas.slice(1)) {
       if (permisoFila) permisos.push(permisoFila);
-      if (f.repetidaDe !== undefined) {
-        saltados++;
-        porPosicion[f.pos] = {
-          row: f.row,
-          gtf: g.d.gtfNumber,
-          action: "existe",
-          message: `Duplicada en el archivo (la misma troza que la fila ${f.repetidaDe ?? "anterior"}) — no se suma dos veces`,
-          permiso: permisoFila,
-        };
-        continue;
-      }
       agrupadas++;
       porPosicion[f.pos] = {
         row: f.row,
@@ -991,13 +1124,40 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
   try {
     for (const g of grupos) {
       const d = g.d;
-      const juntas = g.filas.length - g.filas.filter((f) => f.repetidaDe !== undefined).length;
+      const clave = claveDeGuiaRef(refDe(g));
+      const dec: DecisionGuiaAlImportar = decisiones.get(clave) ?? { estado: "otra" };
+      const juntas = g.filas.length;
       const deVarias = juntas > 1 ? ` · ${juntas} filas del archivo juntas (${d.volumeM3} m³)` : "";
-      const enBase = existentes.get(d.gtfNumber) ?? [];
+      if (dec.estado === "ambigua") {
+        /* El N° está en dos o más permisos y la fila no dice cuál: no se adivina
+           ni se escribe nada de esta guía; el resto del archivo sigue. */
+        errores++;
+        anotarGrupo(
+          g,
+          {
+            row: g.filas[0].row,
+            gtf: d.gtfNumber,
+            action: "error",
+            message: `${mensajeGuiaAmbigua(d.gtfNumber, dec.candidatas)} Esta guía no se cargó.`,
+          },
+          undefined,
+        );
+        continue;
+      }
+      const ponePermiso = permiso != null && g.contratoId === permiso.contratoId;
+      const guiaDelLibro = dec.estado === "misma" || dec.estado === "asignar-permiso" ? { clave, ids: dec.ids } : { clave, ids: [] };
+      /* Lo que la fila tiene que saber de la identidad de su guía. */
+      const avisoGuia =
+        dec.estado === "crear-con-aviso"
+          ? ` · AVISO: ${dec.aviso}`
+          : dec.estado === "asignar-permiso" && !ponePermiso
+            ? ` · AVISO: la guía ${d.gtfNumber} ya estaba sin permiso: elige su permiso como permiso del archivo para ponérselo`
+            : "";
+      const enBase = ingresosDeLaGuia(g);
       const prev =
         enBase.find((e) => normCmp(e.speciesCommonName) === normCmp(d.speciesCommonName) && normCmp(e.productType) === normCmp(d.productType)) ??
         enBase.find((e) => normCmp(e.speciesCommonName) === normCmp(d.speciesCommonName)) ??
-        (enBase.length > 0 && !archivoCubreLaBase(d.gtfNumber) ? enBase[enBase.length - 1] : undefined);
+        (enBase.length > 0 && !archivoCubreLaBase(g) ? enBase[enBase.length - 1] : undefined);
       if (prev) {
         /* La guía ya está, pero puede faltarle el DETALLE. El inventario de patio
            trae una fila por troza: si el ingreso entró sin piezas, se completan
@@ -1007,7 +1167,10 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         const piezas = g.piezas;
         if (mode === "commit" && piezas && piezas.length > 0) {
           try {
-            const r = await WoodEntriesDB.agregarTrozas(auth.tenantId, prev.id, piezas, auth.username ?? "import", { desdeImportacion: true });
+            const r = await WoodEntriesDB.agregarTrozas(auth.tenantId, prev.id, piezas, auth.username ?? "import", {
+              desdeImportacion: true,
+              filas: g.filasDePiezas,
+            });
             if (r.agregadas > 0) {
               /* La guía de varias especies son varias filas: cada troza fue a
                  la de su especie (ADR-435), y lo que no tenía fila se dice. */
@@ -1026,6 +1189,9 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
             }
             else if (r.bloqueado === "ya-tiene-lista") completado = " · ya tiene su lista de piezas";
             else if (r.repetidas.length > 0) completado = " · sus piezas ya estaban";
+            /* ADR-504: filas idénticas que entraron igual, códigos que chocan con
+               otro permiso mientras viva el índice viejo. */
+            if (r.avisos && r.avisos.length > 0) completado += ` · AVISO: ${r.avisos.join(" · ")}`;
           } catch (e) {
             /* No romper la importación por esto: la guía existe igual y el
                operador tiene que saber por qué no entró el detalle. */
@@ -1038,10 +1204,10 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         /* El permiso: la guía ya estaba en la base → se completa sólo lo vacío. */
         let permisoFila: PermisoDeFila | undefined;
         if (permiso) {
-          const { proveedor: cambiados = [], ...suyo } = await permisoDeGuiaGuardada(permiso, d, d.originSourceNumber ?? null);
+          const { proveedor: cambiados = [], ...suyo } = await permisoDeGuiaGuardada(permiso, d, d.originSourceNumber ?? null, guiaDelLibro);
           permisoFila = suyo;
-          if (cambiados.length > 0 && permiso.titular && !guiasConProveedorDicho.has(d.gtfNumber)) {
-            guiasConProveedorDicho.add(d.gtfNumber);
+          if (cambiados.length > 0 && permiso.titular && !guiasConProveedorDicho.has(clave)) {
+            guiasConProveedorDicho.add(clave);
             const fuentes = [...new Set(cambiados.map((c) => c.fuente).filter((f): f is string => !!f))];
             completado +=
               ` · proveedor${mode === "commit" ? "" : " pasará a ser"}: ${permiso.titular} (titular del permiso) en ${cambiados.length} ingreso${cambiados.length === 1 ? "" : "s"}` +
@@ -1056,10 +1222,10 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
           : "";
         if (diff) {
           difieren++;
-          anotarGrupo(g, { row: g.filas[0].row, gtf: d.gtfNumber, action: "difiere", message: `Ya existe con datos distintos (no se sobrescribe): ${diff}${deVarias}${completado}${otraEspecie}`, permiso: permisoFila }, permisoFila);
+          anotarGrupo(g, { row: g.filas[0].row, gtf: d.gtfNumber, action: "difiere", message: `Ya existe con datos distintos (no se sobrescribe): ${diff}${deVarias}${completado}${otraEspecie}${avisoGuia}`, permiso: permisoFila }, permisoFila);
         } else {
           saltados++;
-          anotarGrupo(g, { row: g.filas[0].row, gtf: d.gtfNumber, action: "existe", message: `Ya existe, idéntico — se salta${deVarias}${completado}`, permiso: permisoFila }, permisoFila);
+          anotarGrupo(g, { row: g.filas[0].row, gtf: d.gtfNumber, action: "existe", message: `Ya existe, idéntico — se salta${deVarias}${completado}${avisoGuia}`, permiso: permisoFila }, permisoFila);
         }
         continue;
       }
@@ -1069,7 +1235,11 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
          la Sección 1 («Origen X · GTF») pasa a ser el titular del permiso, con
          SU RUC; la marca del inventario de patio y un nombre real quedan como
          vienen. */
-      const decision = permiso ? decidirPermisoFila({ codigo: d.originCode, resolucion: d.originSourceNumber }, permiso) : null;
+      /* La fila que eligió OTRO permiso que el del archivo no recibe el del archivo. */
+      const decision =
+        permiso && !(d.contratoId && d.contratoId !== permiso.contratoId)
+          ? decidirPermisoFila({ codigo: d.originCode, resolucion: d.originSourceNumber }, permiso)
+          : null;
       const permisoFila: PermisoDeFila | undefined = decision ? permisoDeLaDecision(decision) : undefined;
       const proveedor = permiso && decision ? proveedorDelPermiso(d.providerName, d.gtfNumber, permiso, decision.estado) : null;
       const originCode = decision?.escribir?.originCode ?? d.originCode ?? null;
@@ -1096,10 +1266,22 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
       const otraEspecieDeLaGuia = enBase.length > 0 ? ` · otra especie de la guía ${d.gtfNumber}, que ya estaba con ${[...new Set(enBase.map((e) => e.speciesCommonName))].join(", ")}` : "";
       if (mode === "preview") {
         creables++;
-        anotarGrupo(g, { row: g.filas[0].row, gtf: d.gtfNumber, action: "crear", message: `${d.speciesCommonName} · ${d.volumeM3} m³${d.speciesCites ? " · CITES" : ""}${deVarias}${otraEspecieDeLaGuia}${proveedor ? ` · proveedor: ${proveedor.providerName}` : ""}${fraseFuente}`, permiso: permisoFila }, permisoFila);
+        anotarGrupo(g, { row: g.filas[0].row, gtf: d.gtfNumber, action: "crear", message: `${d.speciesCommonName} · ${d.volumeM3} m³${d.speciesCites ? " · CITES" : ""}${deVarias}${otraEspecieDeLaGuia}${proveedor ? ` · proveedor: ${proveedor.providerName}` : ""}${fraseFuente}${avisoGuia}`, permiso: permisoFila }, permisoFila);
         continue;
       }
+      /* Si el alta falla después, el permiso ya puesto a la guía vieja se
+         queda (es la misma guía: un reintento la encuentra `misma` y la
+         especie entra en ella) y la fila lo dice. No va en la tx del alta:
+         `permisoDeGuiaGuardada` se memoriza por guía y la comparten sus filas. */
+      let permisoPuesto = false;
       try {
+        /* La guía sin permiso que ES ésta (`asignar-permiso`) recibe el permiso
+           del archivo ANTES del alta de su otra especie: si no, quedarían dos
+           guías (la vieja sin permiso y la especie nueva con él). */
+        if (dec.estado === "asignar-permiso" && permiso && ponePermiso) {
+          const puesto = await permisoDeGuiaGuardada(permiso, d, d.originSourceNumber ?? null, guiaDelLibro);
+          permisoPuesto = puesto.estado === "asignado";
+        }
         const creado = await WoodEntriesDB.create(auth.tenantId, {
           entryDate: d.entryDate ? new Date(d.entryDate) : undefined,
           gtfNumber: d.gtfNumber,
@@ -1111,7 +1293,9 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
           originRegion: d.originRegion ?? null,
           originCode,
           originSourceNumber,
-          ...(decision?.escribir ? { contratoId: decision.escribir.contratoId } : {}),
+          /* ADR-504: el permiso de la guía es parte de su identidad (fila ›
+             archivo › código de origen); `create` lo valida contra el negocio. */
+          ...(g.contratoId ? { contratoId: g.contratoId } : {}),
           speciesCommonName: d.speciesCommonName,
           speciesScientificName: d.speciesScientificName ?? null,
           speciesCites: d.speciesCites,
@@ -1126,6 +1310,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
               · la Sección 1 del libro declara una fila por pieza, así que su
                 «Código de CTP» ES la troza. */
           trozas: g.piezas,
+          importacion: { filas: g.filasDePiezas },
           createdBy: auth.username ?? "import",
         });
 
@@ -1176,14 +1361,19 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
               ) +
               (creado.acomodo.yaEstabanEnSuFila.length > 0
                 ? ` · AVISO: ${creado.acomodo.yaEstabanEnSuFila.length} troza(s) ya estaban en la fila de su especie: no se duplicaron`
-                : ""),
+                : "") +
+              (creado.acomodo.avisos.length > 0 ? ` · AVISO: ${creado.acomodo.avisos.join(" · ")}` : "") +
+              avisoGuia,
           },
           permisoFila,
         );
       } catch (e) {
         errores++;
         logger.error("[wood-entries.import] row failed", { gtf: d.gtfNumber, error: String(e) });
-        anotarGrupo(g, { row: g.filas[0].row, gtf: d.gtfNumber, action: "error", message: e instanceof Error ? e.message : String(e) }, undefined);
+        const yaPuesto = permisoPuesto
+          ? ` · La guía ${d.gtfNumber} que ya estaba sin permiso SÍ quedó con el permiso: vuelve a subir el archivo y esta especie entra en ella.`
+          : "";
+        anotarGrupo(g, { row: g.filas[0].row, gtf: d.gtfNumber, action: "error", message: `${e instanceof Error ? e.message : String(e)}${yaPuesto}` }, undefined);
       }
     }
   } finally {

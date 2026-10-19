@@ -511,6 +511,19 @@ const recepcionGuiaSchema = z.object({
 });
 
 /**
+ * ADR-504: con el mismo N° de GTF en dos permisos, «la guía» no se sabe por el
+ * número solo. Cada acción de la guía acepta el permiso (`contratoId`; `null` =
+ * la guía sin permiso) o una pista para que el SERVIDOR lo deduzca: el ingreso
+ * que la pantalla tiene abierto (`ingresoId`) o la corrida que consumió esa
+ * madera (`lineaId`). Sin nada y con dos permisos → 409 GUIA_AMBIGUA.
+ */
+const pistaDePermisoSchema = {
+  contratoId: z.string().trim().min(1).max(40).nullable().optional(),
+  ingresoId: z.string().trim().min(1).max(40).optional(),
+  lineaId: z.string().trim().min(1).max(40).optional(),
+};
+
+/**
  * Completar los campos VACÍOS de una guía (ADR-401 §1.2). Va por `gtfNumber` y
  * no por id porque **el permiso es de la guía**: una GTF con tres especies son
  * tres asientos que comparten origen.
@@ -518,6 +531,7 @@ const recepcionGuiaSchema = z.object({
 const completarGuiaSchema = z.object({
   action: z.literal("completar_guia"),
   gtfNumber: z.string().trim().min(1).max(60),
+  ...pistaDePermisoSchema,
   campos: z
     .object({
       originCode: z.string().trim().max(120).optional(),
@@ -536,6 +550,7 @@ const completarGuiaSchema = z.object({
 const corregirGuiaSchema = z.object({
   action: z.literal("corregir_guia"),
   gtfNumber: z.string().trim().min(1).max(60),
+  ...pistaDePermisoSchema,
   campos: z
     .object({
       originCode: z.string().trim().max(120).optional(),
@@ -559,6 +574,7 @@ const buildFotosGuiaSchema = (tenantId: string) =>
     action: z.literal("fotos_guia"),
     gtfNumber: z.string().trim().min(1).max(60),
     fotos: fotosDelTenantSchema(tenantId, 10),
+    ...pistaDePermisoSchema,
   });
 
 const buildPatchBodySchema = (tenantId: string) =>
@@ -584,12 +600,23 @@ export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: N
   }
 
   try {
+    /* El permiso de la guía se resuelve UNA vez, antes de la acción: con la
+       pista que trajo el pedido, siempre con el tenant de la sesión. */
+    const permiso =
+      parsed.data.action === "recepcionar_guia"
+        ? undefined
+        : await WoodEntriesDB.permisoDeLaGuia(auth.tenantId, parsed.data.gtfNumber, {
+            contratoId: parsed.data.contratoId,
+            ingresoId: parsed.data.ingresoId,
+            lineaId: parsed.data.lineaId,
+          });
     if (parsed.data.action === "corregir_guia") {
       const r = await WoodEntriesDB.corregirGuia(
         auth.tenantId,
         parsed.data.gtfNumber,
         parsed.data.campos,
         auth.username ?? "unknown",
+        permiso,
       );
       return NextResponse.json(r);
     }
@@ -599,6 +626,7 @@ export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: N
         parsed.data.gtfNumber,
         parsed.data.campos,
         auth.username ?? "unknown",
+        permiso,
       );
       return NextResponse.json(r);
     }
@@ -609,6 +637,7 @@ export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: N
         parsed.data.fotos,
         auth.username ?? "unknown",
         auth.role,
+        permiso,
       );
       return NextResponse.json(r);
     }

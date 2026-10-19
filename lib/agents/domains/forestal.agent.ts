@@ -119,13 +119,28 @@ async function buscarTroza(task: AgentTask, ctx: AgentContext): Promise<AgentRes
   if (!codigo) return { success: false, error: "Dime el código de la troza (el pintado en la testa)." };
   log.info("Buscando troza", { codigo });
 
-  const troza = await WoodEntriesDB.buscarTrozaPorCodigo(task.tenantId, codigo);
-  if (!troza) {
+  const buscada = await WoodEntriesDB.buscarTrozaPorCodigo(task.tenantId, codigo);
+  if (buscada.estado === "ninguna") {
     return {
       success: true,
       data: { encontrada: false, codigo, mensaje: "Ninguna troza del patio tiene ese código." },
     };
   }
+  if (buscada.estado === "varias") {
+    /* ADR-504: el mismo código en dos guías o permisos — no se elige «la primera». */
+    const guias = [...new Set(buscada.trozas.map((t) => `${t.entry.gtfNumber}${t.entry.originCode ? ` (permiso ${t.entry.originCode})` : ""}`))];
+    return {
+      success: true,
+      data: {
+        encontrada: false,
+        ambigua: true,
+        codigo,
+        guias,
+        mensaje: `Hay ${buscada.trozas.length} trozas con ese código, de las guías ${guias.join(", ")}. Dime de qué guía o permiso es.`,
+      },
+    };
+  }
+  const troza = buscada.troza;
 
   const ficha = await WoodEntriesDB.fichaDeTroza(task.tenantId, troza.id).catch(sinDato("agente forestal ficha de la troza"));
   return {

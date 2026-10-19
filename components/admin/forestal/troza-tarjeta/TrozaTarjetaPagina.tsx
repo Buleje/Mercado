@@ -48,6 +48,7 @@ import {
   TarjetaEsqueleto,
   TarjetaNoEncontrada,
 } from "./TarjetaEstados";
+import { etiquetaPermiso } from "@/lib/forestal/guia-por-permiso";
 
 /** «jueves 10/09», o por qué no hay fecha de llegada. */
 function llegada(f: FichaTrozaTarjeta): string {
@@ -63,7 +64,8 @@ function datosDe(f: FichaTrozaTarjeta): DatoTarjeta[] {
   const enPlanta = f.troza.noRecepcionada ? null : fraseDeMedidaEnPlanta(f.troza.recibida, f.troza.volumenM3);
   return [
     { rotulo: "N° de registro", valor: f.ingreso.libroNro != null ? String(f.ingreso.libroNro) : null, codigo: true },
-    { rotulo: "GTF", valor: f.ingreso.gtfNumber, codigo: true },
+    /* ADR-504: la GTF es N° + permiso («4 · permiso 017»); el código entero va abajo. */
+    { rotulo: "GTF", valor: f.ingreso.gtfNumber ? (f.ingreso.permiso ? `${f.ingreso.gtfNumber} · ${etiquetaPermiso(f.ingreso.permiso)}` : f.ingreso.gtfNumber) : null, codigo: true },
     { rotulo: "Constancia SNIFFS", valor: f.ingreso.constanciaSniffs ?? null, codigo: true },
     { rotulo: "Llegó al patio", valor: llegada(f) },
     { rotulo: "Titular", valor: f.ingreso.proveedor ?? null, ancho: true },

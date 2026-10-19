@@ -18,6 +18,8 @@ import { useCallback, useId, useRef, useState } from "react";
 import { Camera, ScanBarcode } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useContratoActivo } from "@/contexts/contrato-activo-context";
+import { elegirTrozaPorPermiso } from "@/lib/forestal/guia-por-permiso";
 import {
   VENTANA_FICHA_MS,
   buscarTrozaEscaneada,
@@ -94,13 +96,17 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
   /** Hasta cuándo lo que llega es el resto de una ficha que la pistola sigue tipeando. */
   const fichaHastaRef = useRef(0);
 
-  const avisar = useCallback((tono: Tono, mensaje: string, candidatas?: T[]) => {
+  /* ADR-504: un código en dos permisos se resuelve con el permiso del libro. */
+  const { activo: permisoDelLibro, soloEste } = useContratoActivo();
+
+  const avisar = useCallback((tono: Tono, mensaje: string, candidatas?: T[], delLibroId?: string | null) => {
     contador.current += 1;
-    setAviso({ tono, mensaje, candidatas, n: contador.current });
+    setAviso({ tono, mensaje, candidatas, delLibroId, n: contador.current });
   }, []);
 
   const aplicar = useCallback(
-    (t: T) => {
+    /** `por` = por qué se tomó ésta y no otra con el mismo código («la del permiso 017…»). */
+    (t: T, por?: string | null) => {
       const nombre = nombreDeTroza(t);
       /* Sin `yaElegidas` (recepción), «ya estaba» es lo escaneado en esta tanda. */
       if ((yaElegidas ?? escaneadas).has(t.id)) return avisar("ya", `Troza ${nombre}: ya estaba.`);
@@ -114,8 +120,9 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
       ultimaRef.current = { id: t.id, en: Date.now() };
       setEscaneadas((prev) => new Set(prev).add(t.id));
       const propio = avisoAlTomar?.(t);
-      if (propio) return avisar(propio.tono, propio.mensaje);
-      avisar("ok", `Troza ${nombre} ${accion}.`);
+      const cola = por ? ` Es ${por}.` : "";
+      if (propio) return avisar(propio.tono, `${propio.mensaje}${cola}`);
+      avisar("ok", `Troza ${nombre} ${accion}.${cola}`);
     },
     [yaElegidas, escaneadas, bloqueo, onTroza, accion, avisar, avisoAlTomar],
   );
@@ -151,11 +158,12 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
       if (r.estado === "varias" && r.trozas.some((t) => esEcoDeEtiqueta(ultima, t.id, ahora))) return;
       if (r.estado === "una") return aplicar(r.troza);
       if (r.estado === "varias") {
-        return avisar(
-          "varias",
-          `El código ${lectura.tipo === "codigo" ? lectura.codigo : ""} está en ${r.trozas.length} trozas: elige cuál.`,
-          r.trozas,
-        );
+        const e = elegirTrozaPorPermiso(lectura.tipo === "codigo" ? lectura.codigo : "", r.trozas, {
+          activo: permisoDelLibro,
+          soloEste,
+        });
+        if (e.tomar) return aplicar(e.tomar, e.nota);
+        return avisar("varias", e.mensaje, e.candidatas, e.delLibroId);
       }
       /* El resto de una ficha tipeada sin sus íconos: no es un código perdido.
          Pero OTRA ficha (`TROZA 115-B`) o un QR con dirección (`/verificar/115-B`,
@@ -175,7 +183,7 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
             : `Ninguna troza con el código ${lectura.codigo} en esta lista.`),
       );
     },
-    [trozas, aplicar, avisar, onDesconocido],
+    [trozas, aplicar, avisar, onDesconocido, permisoDelLibro, soloEste],
   );
 
   const cerrarCamara = useCallback(() => {
@@ -256,7 +264,7 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
       )}
 
       <div role="status" aria-live="polite" className="space-y-2">
-        {aviso && <LineaResultado key={aviso.n} aviso={aviso} onElegir={aplicar} />}
+        {aviso && <LineaResultado key={aviso.n} aviso={aviso} onElegir={(t) => aplicar(t)} />}
         {mostrarCuenta && escaneadas.size > 0 && (
           <p className="text-sm font-bold tabular-nums text-[var(--text-secondary)]">
             {cuenta} escaneada{escaneadas.size === 1 ? "" : "s"}
@@ -273,7 +281,7 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
             <div className="space-y-1">
               {pieCamara}
               {aviso ? (
-                <LineaResultado key={aviso.n} aviso={aviso} onElegir={aplicar} />
+                <LineaResultado key={aviso.n} aviso={aviso} onElegir={(t) => aplicar(t)} />
               ) : (
                 <p className="text-sm text-[var(--text-secondary)]">
                   Apunta a la etiqueta de la troza.

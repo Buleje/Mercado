@@ -14,6 +14,7 @@ import { usePanelTokens } from "@/components/admin/shared/use-panel-tokens";
 import { LABEL_BLOQUEO, motivoBloqueo, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { claveDeCodigo, type TrozaEscaneable } from "@/lib/forestal/leer-escaneo-troza";
+import { etiquetaPermiso } from "@/lib/forestal/guia-por-permiso";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 
@@ -22,11 +23,22 @@ export type TrozaDelEscaner = TrozaEscaneable & {
   /** Para distinguir dos candidatas con el mismo código: de qué guía y cuánto. */
   gtfNumber?: string | null;
   volumenM3?: number | null;
+  /** ADR-504: troza = código + permiso. El código del permiso, tal como está escrito. */
+  permiso?: string | null;
+  contratoId?: string | null;
 };
 
-/** Lo que separa a dos trozas con el mismo código: el otro código, la guía, el volumen. */
+/** El renglón grande de una candidata: «12 · permiso 017» (si la lista trae el permiso). */
+function rotuloDeCandidata(t: TrozaDelEscaner): string {
+  const codigo = t.codigoPlanta?.trim() || t.codificacion?.trim() || t.id.slice(-6);
+  return t.permiso !== undefined || t.contratoId !== undefined ? `${codigo} · ${etiquetaPermiso(t.permiso)}` : codigo;
+}
+
+/** Lo que separa a dos trozas con el mismo código: la guía, la especie, el otro código, el volumen. */
 function senasDeCandidata(t: TrozaDelEscaner): string {
   const senas: string[] = [];
+  if (t.gtfNumber) senas.push(`GTF ${t.gtfNumber}`);
+  if (t.especieComun) senas.push(t.especieComun);
   if (
     t.codificacion &&
     t.codigoPlanta &&
@@ -34,7 +46,6 @@ function senasDeCandidata(t: TrozaDelEscaner): string {
   ) {
     senas.push(t.codificacion);
   }
-  if (t.gtfNumber) senas.push(`guía ${t.gtfNumber}`);
   if (t.volumenM3 != null) senas.push(`${fmtM3(Number(t.volumenM3))} m³`);
   return senas.join(" · ");
 }
@@ -45,6 +56,8 @@ export interface Aviso<T> {
   tono: Tono;
   mensaje: string;
   candidatas?: T[];
+  /** La candidata del permiso del libro: va primero y se marca (ADR-504). */
+  delLibroId?: string | null;
   /** Para que dos lecturas iguales seguidas se anuncien igual (aria-live). */
   n: number;
 }
@@ -96,21 +109,38 @@ export function LineaResultado<T extends TrozaDelEscaner>({
       </p>
       {aviso.candidatas && aviso.candidatas.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
-          {aviso.candidatas.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => onElegir(t)}
-              className="inline-flex min-h-12 flex-col items-start justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-left text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
-            >
-              {nombreDeTroza(t)}
-              {senasDeCandidata(t) && (
-                <span className="font-normal text-[var(--text-secondary)]">
-                  {senasDeCandidata(t)}
+          {aviso.candidatas.map((t) => {
+            const delLibro = aviso.delLibroId === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => onElegir(t)}
+                title={t.permiso ?? undefined}
+                data-candidata-troza={t.id}
+                className={cn(
+                  "inline-flex min-h-12 flex-col items-start justify-center rounded-xl border px-3 py-1.5 text-left text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]",
+                  delLibro
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)]",
+                )}
+              >
+                <span className="inline-flex flex-wrap items-center gap-x-2">
+                  {rotuloDeCandidata(t)}
+                  {delLibro && (
+                    <span className="rounded-full bg-[var(--accent-dark)] px-2 py-0.5 text-xs font-bold text-white">
+                      el del libro
+                    </span>
+                  )}
                 </span>
-              )}
-            </button>
-          ))}
+                {senasDeCandidata(t) && (
+                  <span className="font-normal text-[var(--text-secondary)]">
+                    {senasDeCandidata(t)}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

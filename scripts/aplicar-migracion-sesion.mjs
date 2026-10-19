@@ -98,8 +98,60 @@ export function partirSentencias(texto) {
   return out.map((x) => x.trim()).filter(Boolean);
 }
 
-const RE_INDICE_CONC =
-  /^CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?"(\w+)"\s+ON\s+"(\w+)"\s*\(([^)]*)\)\s*(?:WHERE\s+([\s\S]+))?$/i;
+const RE_INDICE_CONC_CABEZA =
+  /^CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?"(\w+)"\s+ON\s+"(\w+)"\s*\(/i;
+
+/**
+ * Lee un `CREATE [UNIQUE] INDEX CONCURRENTLY "i" ON "T" (…) [WHERE …]` →
+ * `[sentencia, nombre, tabla, columnas, where]` (la misma forma que tenía el
+ * regex) o null. Las columnas pueden ser EXPRESIONES con paréntesis
+ * (`upper(btrim("x"))`, `COALESCE("c", '')`, ADR-504): el regex viejo cortaba
+ * en el primer `)`, no reconocía el índice y entonces NO miraba `indisvalid`
+ * (un INVALID quedaba y la 2.ª corrida lo daba por «ya estaba»).
+ */
+export function leerIndiceConcurrente(s) {
+  const cab = RE_INDICE_CONC_CABEZA.exec(s);
+  if (!cab) return null;
+  let nivel = 1;
+  let comilla = null;
+  let i = cab[0].length;
+  for (; i < s.length && nivel > 0; i++) {
+    const ch = s[i];
+    if (comilla) {
+      if (ch === comilla) comilla = null;
+    } else if (ch === "'" || ch === '"') comilla = ch;
+    else if (ch === "(") nivel += 1;
+    else if (ch === ")") nivel -= 1;
+  }
+  if (nivel !== 0) return null;
+  const cols = s.slice(cab[0].length, i - 1);
+  const resto = /^\s*(?:WHERE\s+([\s\S]+))?$/i.exec(s.slice(i));
+  if (!resto) return null;
+  return [s, cab[1], cab[2], cols, resto[1]];
+}
+
+/** Parte la lista de columnas por las comas de primer nivel (no las de `COALESCE(a, b)`). */
+export function partirColumnas(cols) {
+  const out = [];
+  let nivel = 0;
+  let comilla = null;
+  let cur = "";
+  for (const ch of cols) {
+    if (comilla) {
+      if (ch === comilla) comilla = null;
+    } else if (ch === "'" || ch === '"') comilla = ch;
+    else if (ch === "(") nivel += 1;
+    else if (ch === ")") nivel -= 1;
+    else if (ch === "," && nivel === 0) {
+      out.push(cur.trim());
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
 
 /** null = no existe · true/false = pg_index.indisvalid */
 async function indiceValido(k, nombre) {
@@ -205,9 +257,9 @@ async function sinTransaccion(url, sentencias, ensayo, maxSeg) {
       for (const [i, s] of sentencias.entries()) {
         await c.query(`SAVEPOINT e${i}`);
         try {
-          const m = RE_INDICE_CONC.exec(s);
+          const m = leerIndiceConcurrente(s);
           if (m) {
-            const cols = m[3].split(",").map((x) => x.trim().replace(/\s+(ASC|DESC)\b[\s\S]*$/i, "").replace(/\s+NULLS\s+(FIRST|LAST)$/i, ""));
+            const cols = partirColumnas(m[3]).map((x) => x.trim().replace(/\s+(ASC|DESC)\b[\s\S]*$/i, "").replace(/\s+NULLS\s+(FIRST|LAST)$/i, ""));
             const where = m[4] ? ` WHERE ${m[4]}` : "";
             await c.query(`SELECT ${cols.join(", ")} FROM "${m[2]}"${where} LIMIT 0`);
             const n = (await c.query(`SELECT count(*)::int AS n FROM "${m[2]}"${where}`)).rows[0].n;
@@ -244,7 +296,7 @@ async function sinTransaccion(url, sentencias, ensayo, maxSeg) {
     let yaEstaban = 0;
     try {
       for (const s of sentencias) {
-        const m = RE_INDICE_CONC.exec(s);
+        const m = leerIndiceConcurrente(s);
         const conc = /\bCONCURRENTLY\b/i.test(s);
         avisos.length = 0;
         const val = /VALIDATE CONSTRAINT "(\w+)"/i.exec(s)?.[1];

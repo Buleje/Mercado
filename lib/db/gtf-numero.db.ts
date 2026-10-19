@@ -5,6 +5,7 @@ import { claveNumeroGtf, colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-ta
 import { foliosEnTexto, mensajeGuiaYaRecibida, mismaGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { mismoDuenoDeGuia, puedeSerDelDueno, type IdentidadDeGuiaBuscada } from "@/lib/forestal/loth-talonario";
+import { resolverGuiaEntre, type GuiaRef, type ResolucionDeGuia } from "@/lib/forestal/identidad-guia";
 
 /**
  * GtfNumeroDB — «¿esta guía ya entró al libro?» con UNA sola regla de N°
@@ -61,6 +62,8 @@ export interface IngresoVivoDeGuia {
   /** Permiso y titular del ingreso: dicen si es la MISMA guía que otra con su N°. */
   originCode: string | null;
   providerName: string;
+  /** El permiso del catálogo (ADR-504: la guía es N° + permiso). */
+  contratoId: string | null;
 }
 
 /** El permiso y el titular de una guía, para no confundirla con otra de igual N°. */
@@ -121,7 +124,7 @@ export const GtfNumeroDB = {
       },
       select: {
         id: true, libroNro: true, gtfNumber: true, serforNumeroRegistro: true, speciesCommonName: true,
-        originCode: true, providerName: true,
+        originCode: true, providerName: true, contratoId: true,
       },
       orderBy: { libroNro: "asc" },
     });
@@ -129,6 +132,36 @@ export const GtfNumeroDB = {
       (c) =>
         mismoNumeroGtf(c.gtfNumber, gtfNumber) &&
         puedeSerDelDueno({ titular: c.providerName, permiso: c.originCode }, opts.identidad),
+    );
+  },
+
+  /**
+   * ADR-504 · ¿Qué guía es esta ref (N° + permiso)? Entre los ingresos vivos
+   * con ese N° (tramo a tramo), con la regla pura `resolverGuiaEntre`:
+   * con permiso, sólo los de ese permiso; sin permiso, la única que puede ser
+   * o «ambigua» con las candidatas (→ 409 `GUIA_AMBIGUA`). NUNCA la primera.
+   * `identidad` (titular / permiso escrito) descarta las que la contradicen.
+   */
+  async resolverGuia(
+    db: Db,
+    tenantId: string,
+    ref: GuiaRef,
+    opts: { identidad?: IdentidadDeGuiaBuscada | null } = {},
+  ): Promise<ResolucionDeGuia> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const vivos = await GtfNumeroDB.ingresosVivos(db, tenantId, ref.gtfNumber);
+    return resolverGuiaEntre(
+      ref,
+      vivos.map((v) => ({
+        id: v.id,
+        gtfNumber: v.gtfNumber,
+        contratoId: v.contratoId ?? null,
+        originCode: v.originCode,
+        titular: v.providerName,
+        especies: [v.speciesCommonName],
+        libroNro: v.libroNro,
+      })),
+      opts.identidad,
     );
   },
 

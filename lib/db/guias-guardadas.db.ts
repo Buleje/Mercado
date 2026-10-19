@@ -238,6 +238,7 @@ export class GuiasGuardadasDB {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
         const otra = await GuiasGuardadasDB.choques(tenantId, gtf, claveRegistro(d.numeroRegistro), undefined, d);
         if (otra) return otra;
+        return GuiasGuardadasDB.choqueDeIndice(gtf);
       }
       throw e;
     }
@@ -317,6 +318,7 @@ export class GuiasGuardadasDB {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
         const otra = await GuiasGuardadasDB.choques(tenantId, gtf, reg, id, d);
         if (otra) return otra;
+        return GuiasGuardadasDB.choqueDeIndice(gtf);
       }
       throw e;
     }
@@ -576,7 +578,7 @@ export class GuiasGuardadasDB {
       where: { tenantId, ...INGRESO_VIVO, serforNumeroRegistro: f.numeroRegistro },
       select: {
         id: true, libroNro: true, gtfNumber: true, serforNumeroRegistro: true, speciesCommonName: true,
-        originCode: true, providerName: true,
+        originCode: true, providerName: true, contratoId: true,
       },
     });
     const ids = new Set(porNumero.map((e) => e.id));
@@ -667,6 +669,21 @@ export class GuiasGuardadasDB {
       status: 400,
       error: "contrato_invalido",
       message: "Ese permiso no está en tu lista de permisos. Elígelo de nuevo.",
+    };
+  }
+
+  /**
+   * El índice único por N° (anterior a ADR-504: una guía = N° + permiso) chocó
+   * con una fila que `choques` no ve (otra guardada con el mismo N° que no está
+   * viva, u otra serie): 409 con un mensaje claro, nunca un 500. Se va cuando
+   * el índice pase a N° + permiso (paso 3).
+   */
+  private static choqueDeIndice(gtf: string): Extract<ResultadoEscritura, { ok: false }> {
+    return {
+      ok: false,
+      status: 409,
+      error: "ya_guardada",
+      message: `Ya hay una guía guardada con el N° ${gtf} (quizá de otro permiso o borrada). Todavía no se pueden guardar dos guías con el mismo N°: revisa la otra en «Guías guardadas».`,
     };
   }
 

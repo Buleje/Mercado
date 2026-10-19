@@ -3,6 +3,7 @@ import type { z } from "zod";
 import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 import { logger } from "@/lib/logger";
 import { esChoqueDeLocks } from "@/lib/forestal/choque-de-locks";
+import { GuiaAmbiguaError } from "@/lib/forestal/identidad-guia";
 
 /**
  * 400 de schema CON `message` legible.
@@ -48,6 +49,15 @@ export { esChoqueDeLocks } from "@/lib/forestal/choque-de-locks";
  * endpoints entre sí y los route de Next son módulos con semántica especial.
  */
 export function ctpErrorResponse(err: unknown, ctx: string, tenantId: string): NextResponse {
+  /* ADR-504: el mismo N° de GTF en dos o más permisos y el pedido no dijo
+     cuál. No es un dato que no cuadra (422) sino un recurso que hay que
+     elegir: 409 con las candidatas, para que la pantalla ofrezca el permiso. */
+  if (err instanceof GuiaAmbiguaError) {
+    return NextResponse.json(
+      { error: err.codigo, message: err.message, gtfNumber: err.gtfNumber, candidatas: err.candidatas },
+      { status: 409 },
+    );
+  }
   if (err instanceof CtpInvariantError) {
     /* Una foto rechazada es un pedido mal formado (firma que no cuadra, foto de
        otra guía), no un dato del libro que no cuadra: 400, como el Zod. Un

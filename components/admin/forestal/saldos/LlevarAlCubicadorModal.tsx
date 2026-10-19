@@ -25,8 +25,8 @@ import { ArrowRight, Loader2 } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import {
-  bloqueDeCandidato,
-  especiesDeCandidatos,
+  bloquesDeCandidato,
+  llegadasDeCandidatos,
   totalesDeCandidatos,
   type CandidatoDeCapacidad,
 } from "@/lib/forestal/capacidad-a-bloques";
@@ -58,10 +58,13 @@ export default function LlevarAlCubicadorModal({
     [candidatos, elegidos],
   );
   const totales = useMemo(() => totalesDeCandidatos(seleccion), [seleccion]);
-  /* Con qué especie llega cada bloque — de lo tildado; sin nada tildado, de
-     todo el modal, para que se vea igual qué madera hay. */
-  const especies = useMemo(
-    () => especiesDeCandidatos(seleccion.length > 0 ? seleccion : candidatos),
+  /* Un bloque por permiso de cada línea (Brandon, 2026-10-19): «Trozas en el
+     patio» de tres permisos son tres bloques, no uno. */
+  const bloques = useMemo(() => seleccion.flatMap(bloquesDeCandidato), [seleccion]);
+  /* Con qué especie y permiso llega cada bloque — de lo tildado; sin nada
+     tildado, de todo el modal, para que se vea igual qué madera hay. */
+  const llegadas = useMemo(
+    () => llegadasDeCandidatos(seleccion.length > 0 ? seleccion : candidatos),
     [seleccion, candidatos],
   );
   const pct = Math.round(RENDIMIENTO_META * 100);
@@ -75,14 +78,12 @@ export default function LlevarAlCubicadorModal({
     });
 
   const llevar = () => {
-    if (seleccion.length === 0 || yendo) return;
+    if (bloques.length === 0 || yendo) return;
     setYendo(true);
-    /* Cada bloque lleva SU especie (`bloqueDeCandidato`): la distribución
-       agrupa por ella y no hay que volver a elegirla en la tabla. */
-    sembrarBloques(
-      seleccion.map(bloqueDeCandidato),
-      "capacidad",
-    );
+    /* Cada bloque lleva SU especie y SU permiso (`bloquesDeCandidato`): la
+       distribución agrupa por especie y separa por permiso sin volver a
+       elegirlos en la tabla. */
+    sembrarBloques(bloques, "capacidad");
     abrirResumenesDelCubicador();
   };
 
@@ -104,11 +105,11 @@ export default function LlevarAlCubicadorModal({
           <button
             type="button"
             onClick={llevar}
-            disabled={seleccion.length === 0 || yendo}
+            disabled={bloques.length === 0 || yendo}
             className={button({ variant: "accent" })}
           >
             {yendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-            Llevar {seleccion.length} {seleccion.length === 1 ? "bloque" : "bloques"} al cubicador
+            Llevar {bloques.length} {bloques.length === 1 ? "bloque" : "bloques"} al cubicador
           </button>
         </ModalFooter>
       }
@@ -121,7 +122,7 @@ export default function LlevarAlCubicadorModal({
             intentar.
           </p>
         ) : (
-          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_30rem] lg:items-start">
             {/* Resumen: arriba en móvil (plegable), al lado en escritorio. */}
             <div className="order-first lg:order-last lg:sticky lg:top-0">
               <ResumenLlevarAlCubicador seleccion={seleccion} candidatos={candidatos} />
@@ -171,8 +172,14 @@ export default function LlevarAlCubicadorModal({
               </p>
               <p className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-[var(--rule-soft)] pt-2 text-[var(--text-secondary)]">
                 <span>{seleccion.length > 0 ? "Llegan a la distribución como" : "Especies en el modal"}</span>
-                {especies.map((e) => (
-                  <ChipEspecie key={e.especie || "sin-especie"} especie={e.especie} bloques={e.bloques} />
+                {llegadas.map((e) => (
+                  <ChipEspecie
+                    key={e.clave}
+                    especie={e.especie}
+                    permiso={e.permiso}
+                    permisoCompleto={e.permisoCompleto}
+                    bloques={e.bloques}
+                  />
                 ))}
               </p>
             </div>

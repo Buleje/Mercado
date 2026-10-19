@@ -28,8 +28,11 @@ const H = vi.hoisted(() => {
   return {
     contrato,
     auth: { tenantId: "t1", role: "admin", username: "qa" } as { tenantId: string; role: string; username: string },
-    existentes: new Map<string, { id: string; volumeM3: number; speciesCommonName: string; productType: string; providerName: string }[]>(),
-    idPorGtf: new Map<string, string>(),
+    /** Lo que devuelve `comparablesPorGuia`: los ingresos con ese N° de CUALQUIER permiso (ADR-504). */
+    existentes: new Map<string, Record<string, unknown>[]>(),
+    /** Lo que devuelve `guiasDeConsumos` por N° (sin entrada = «ninguna»). */
+    guiaConsumo: new Map<string, Record<string, unknown>>(),
+    idPorCodigo: vi.fn(),
     requireAdmin: vi.fn(),
     getContrato: vi.fn(),
     createIngreso: vi.fn(),
@@ -39,6 +42,7 @@ const H = vi.hoisted(() => {
     completar: vi.fn(),
     agregarTrozas: vi.fn(),
     buscarTroza: vi.fn(),
+    marcarConsumidas: vi.fn(),
     audit: vi.fn(),
   };
 });
@@ -52,17 +56,17 @@ vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: vi.fn(async (
 vi.mock("@/lib/forestal/ctp-audit", () => ({ auditCtp: H.audit }));
 vi.mock("@/lib/forestal/acomodar-trozas", () => ({ fraseDeColocacion: () => "" }));
 vi.mock("@/lib/db/activity-log.db", () => ({ ActivityLogDB: { list: vi.fn(async () => []) } }));
-vi.mock("@/lib/db/forest-contrato.db", () => ({ ForestContratoDB: { get: H.getContrato } }));
+vi.mock("@/lib/db/forest-contrato.db", () => ({ ForestContratoDB: { get: H.getContrato, idPorCodigo: H.idPorCodigo } }));
 vi.mock("@/lib/db/forest-titulo-guia.db", () => ({ TituloGuiaDB: { planear: H.planear, declarar: H.declarar, completarProveedorDeRelleno: H.completar } }));
 vi.mock("@/lib/db/wood-entries.db", () => ({
   WoodEntriesDB: {
     comparablesPorGuia: vi.fn(async () => H.existentes),
-    idByGtf: vi.fn(async () => H.idPorGtf),
+    guiasDeConsumos: vi.fn(async (_t: string, gtfs: string[]) => new Map(gtfs.map((g) => [g, H.guiaConsumo.get(g) ?? { estado: "ninguna" }]))),
     create: H.createIngreso,
     validate: vi.fn(),
     agregarTrozas: H.agregarTrozas,
     buscarTrozaPorCodigo: H.buscarTroza,
-    marcarTrozasConsumidas: vi.fn(),
+    marcarTrozasConsumidas: H.marcarConsumidas,
   },
 }));
 vi.mock("@/lib/db/forest-ctp.db", async () => {
@@ -101,24 +105,28 @@ beforeEach(() => {
   vi.clearAllMocks();
   H.auth = { tenantId: "t1", role: "admin", username: "qa" };
   H.existentes.clear();
-  H.idPorGtf.clear();
+  H.guiaConsumo.clear();
+  H.idPorCodigo.mockResolvedValue(null);
   H.requireAdmin.mockImplementation(async () => H.auth);
   H.getContrato.mockImplementation(async (t: string, id: string) => (t === "t1" && id === "c1" ? H.contrato : null));
   H.createIngreso.mockImplementation(async (_t: string, input: { speciesCommonName: string }) => ({
     id: "w-nuevo",
     speciesCommonName: input.speciesCommonName,
-    acomodo: { aOtrasFilas: [], fueraDeSuFila: [], yaEstabanEnSuFila: [] },
+    acomodo: { aOtrasFilas: [], fueraDeSuFila: [], yaEstabanEnSuFila: [], avisos: [] },
   }));
   H.createCorrida.mockImplementation(async () => ({ id: "p-nueva" }));
   H.completar.mockResolvedValue([]);
   H.agregarTrozas.mockResolvedValue({ agregadas: 0, repetidas: [] });
-  H.buscarTroza.mockImplementation(async () => ({ id: "tz1" }));
+  H.buscarTroza.mockImplementation(async () => ({ estado: "una", troza: { id: "tz1" } }));
 });
 
 /** El ingreso que ya está en la base, como lo devuelve `comparablesPorGuia`. */
 const enLaBase = (gtf: string, p: Record<string, unknown> = {}) => {
   const lista = H.existentes.get(gtf) ?? [];
-  lista.push({ id: "w1", volumeM3: 3.2, speciesCommonName: "Tornillo", productType: "rolliza", providerName: "x", ...p });
+  const i = { id: "w1", gtfNumber: gtf, contratoId: null, originCode: null, volumeM3: 3.2, speciesCommonName: "Tornillo", productType: "rolliza", providerName: "x", ...p };
+  // El relleno «Origen X · GTF» no es un titular (como `comparablesPorGuia`).
+  const titular = /^Origen .+ · .+$/.test(String(i.providerName)) ? null : i.providerName;
+  lista.push({ titular, especies: [i.speciesCommonName], libroNro: null, ...i });
   H.existentes.set(gtf, lista);
 };
 const planDe = (escribir: Record<string, string> | null) => ({
@@ -253,15 +261,16 @@ describe("ingresos (Sección 1 / patio)", () => {
     expect(H.createIngreso.mock.calls[0][1].volumeM3).toBe(0.3);
   });
 
-  it("la misma troza dos veces en el archivo → una sola vez, sin sumar sus m³", async () => {
+  it("ADR-504: la misma troza dos veces en el archivo → entran las dos (el aviso lo da el alta con sus filas)", async () => {
     const j = await (
       await llamar({ mode: "commit", ingresos: [ingreso({ row: 1, volumeM3: 0.8, codigoCtp: "QA1" }), ingreso({ row: 2, volumeM3: 0.8, codigoCtp: "QA1" })] })
     ).json();
     const input = H.createIngreso.mock.calls[0][1];
-    expect(input.volumeM3).toBe(0.8);
-    expect(input.trozas).toHaveLength(1);
-    expect(j.detalle[1]).toMatchObject({ row: 2, action: "existe" });
-    expect(j.detalle[1].message).toContain("la misma troza que la fila 1");
+    expect(input.volumeM3).toBe(1.6);
+    expect(input.trozas).toHaveLength(2);
+    expect(input.importacion).toEqual({ filas: [1, 2] });
+    expect(j.detalle[1]).toMatchObject({ row: 2, action: "creado" });
+    expect(j.detalle[1].message).toContain("mismo ingreso que la fila 1");
   });
 
   it("la misma guía con 2 especies → 2 ingresos (ADR-312/435)", async () => {
@@ -312,7 +321,7 @@ describe("ingresos (Sección 1 / patio)", () => {
   });
 
   it("guía que YA estaba → declarar con el plan ya leído (una vez por guía) y el relleno pasa al titular", async () => {
-    enLaBase("019-0000101", { volumeM3: 6.4 });
+    enLaBase("019-0000101", { volumeM3: 6.4, providerName: "Origen X · 019-0000101" });
     const plan = planDe({ originCode: "PER-FMP-2024-0012", contratoId: "c1" });
     H.planear.mockResolvedValue(plan);
     H.declarar.mockResolvedValue({ actualizados: [{ id: "w1" }] });
@@ -341,7 +350,7 @@ describe("ingresos (Sección 1 / patio)", () => {
   });
 
   it("guía que YA tenía el permiso → no se declara, pero el relleno igual pasa al titular", async () => {
-    enLaBase("019-0000101");
+    enLaBase("019-0000101", { contratoId: "c1", originCode: "PER-FMP-2024-0012", providerName: "Origen X · 019-0000101" });
     H.planear.mockResolvedValue(planDe(null));
     await llamar({ mode: "commit", ingresos: [ingreso()], asignacion: { contratoId: "c1" } });
     expect(H.declarar).not.toHaveBeenCalled();
@@ -385,7 +394,7 @@ describe("ingresos (Sección 1 / patio)", () => {
   });
 
   it("guía guardada con mes cerrado → conflicto con motivo, sin declarar", async () => {
-    enLaBase("019-0000101");
+    enLaBase("019-0000101", { providerName: "Origen X · 019-0000101" });
     H.planear.mockResolvedValue({
       gtf: "019-0000101", originCode: "PER-FMP-2024-0012", originSourceNumber: null, contratoId: "c1",
       ingresos: [{ id: "w1", especie: "Tornillo", status: "validado", anulado: false, originCode: null, originSourceNumber: null, contratoId: null, periodoCerrado: "setiembre 2026" }],
@@ -408,7 +417,7 @@ describe("producción / aserrada (Sección 3 e inventario de depósito)", () => 
   });
 
   it("con consumo de guía o de trozas → hereda: no se le escribe el permiso", async () => {
-    H.idPorGtf.set("019-0000101", "w1");
+    H.guiaConsumo.set("019-0000101", { estado: "una", guia: { clave: "0000101|∅", gtfNumber: "019-0000101", contratoId: null, permiso: null, titular: null, ingresoIds: ["w1"], libroNros: [1], especies: ["Tornillo"], tienePlata: false } });
     const j = await (
       await llamar({
         mode: "commit",
@@ -428,11 +437,87 @@ describe("producción / aserrada (Sección 3 e inventario de depósito)", () => 
   });
 
   it("el código de troza que no está en el patio se dice en la fila (antes se saltaba en silencio)", async () => {
-    H.buscarTroza.mockImplementation(async (_t: string, c: string) => (c === "3012264" ? { id: "tz1" } : null));
+    H.buscarTroza.mockImplementation(async (_t: string, c: string) =>
+      c === "3012264" ? { estado: "una", troza: { id: "tz1" } } : { estado: "ninguna" },
+    );
     const j = await (
       await llamar({ mode: "commit", registro: "produccion", produccion: [corrida({ trozasConsumidas: ["3012264", "NO-EXISTE"] })] })
     ).json();
     expect(j.detalle[0].message).toContain("1 troza");
     expect(j.detalle[0].message).toContain(" · AVISO: 1 troza no se encontró en el patio: NO-EXISTE");
+  });
+
+  it("ADR-504: un código que está en dos trozas no marca «la primera»: avisa y no la consume", async () => {
+    H.buscarTroza.mockImplementation(async (_t: string, c: string) =>
+      c === "12" ? { estado: "varias", trozas: [{ id: "tzA" }, { id: "tzB" }] } : { estado: "una", troza: { id: "tz1" } },
+    );
+    const j = await (
+      await llamar({ mode: "commit", registro: "produccion", produccion: [corrida({ trozasConsumidas: ["3012264", "12"] })] })
+    ).json();
+    expect(j.detalle[0].message).toContain("el código 12 está en más de una troza del patio");
+    const marcadas = H.marcarConsumidas.mock.calls.flatMap((call: unknown[]) => call[2] as string[]);
+    expect(marcadas).toEqual(["tz1"]);
+  });
+});
+
+describe("ADR-504 · la guía = N° + permiso al importar («que se importe todo»)", () => {
+  const c2 = { ...H.contrato, id: "c2", codigo: "PER-017", titularNombre: "Forestal Dos" };
+  const delPermiso1 = { contratoId: "c1", originCode: "PER-FMP-2024-0012", providerName: "Comunidad Nativa Santa Rosa" };
+  beforeEach(() => {
+    H.getContrato.mockImplementation(async (t: string, id: string) => (t !== "t1" ? null : id === "c1" ? H.contrato : id === "c2" ? c2 : null));
+  });
+
+  it("GTF 4 ya guardada en el permiso 1 + archivo del permiso 2 con la troza 12 → OTRA guía: se crea con su permiso", async () => {
+    enLaBase("019-0000004", delPermiso1);
+    const j = await (
+      await llamar({ mode: "commit", ingresos: [ingreso({ gtfNumber: "019-0000004", codigoCtp: "12", row: 3 })], asignacion: { contratoId: "c2" } })
+    ).json();
+    expect(H.agregarTrozas).not.toHaveBeenCalled();
+    expect(H.createIngreso).toHaveBeenCalledTimes(1);
+    expect(H.createIngreso.mock.calls[0][1]).toMatchObject({ gtfNumber: "019-0000004", contratoId: "c2", importacion: { filas: [3] } });
+    expect(j.detalle[0].action).toBe("creado");
+  });
+
+  it("re-subida del mismo archivo y permiso → la MISMA guía: no se crea; las trozas van con sus filas", async () => {
+    enLaBase("019-0000004", delPermiso1);
+    H.agregarTrozas.mockResolvedValue({ agregadas: 0, repetidas: ["12"], avisos: [] });
+    const j = await (
+      await llamar({ mode: "commit", ingresos: [ingreso({ gtfNumber: "019-0000004", codigoCtp: "12", row: 3 })], asignacion: { contratoId: "c1" } })
+    ).json();
+    expect(H.createIngreso).not.toHaveBeenCalled();
+    expect(H.agregarTrozas).toHaveBeenCalledWith("t1", "w1", expect.any(Array), "qa", { desdeImportacion: true, filas: [3] });
+    expect(j.detalle[0]).toMatchObject({ action: "existe" });
+    expect(j.detalle[0].message).toContain("sus piezas ya estaban");
+  });
+
+  it("archivo SIN permiso y el N° en 2 permisos → ambigua: no escribe nada y pide elegir el permiso", async () => {
+    enLaBase("019-0000004", delPermiso1);
+    enLaBase("019-0000004", { id: "w2", contratoId: "c2", originCode: "PER-017", providerName: "Forestal Dos" });
+    const j = await (await llamar({ mode: "commit", ingresos: [ingreso({ gtfNumber: "019-0000004", codigoCtp: "12" })] })).json();
+    expect(H.createIngreso).not.toHaveBeenCalled();
+    expect(H.agregarTrozas).not.toHaveBeenCalled();
+    expect(j.detalle[0].action).toBe("error");
+    expect(j.detalle[0].message).toContain("Elige el permiso del archivo para saber cuál es. Esta guía no se cargó.");
+  });
+
+  it("guía SIN permiso de OTRO titular con ese N° → se crea aparte y la fila lo avisa", async () => {
+    enLaBase("019-0000004", { providerName: "Juan Pérez" });
+    const j = await (await llamar({ mode: "commit", ingresos: [ingreso({ gtfNumber: "019-0000004" })], asignacion: { contratoId: "c1" } })).json();
+    expect(H.createIngreso).toHaveBeenCalledTimes(1);
+    expect(j.detalle[0].message).toContain("AVISO: Ya hay una guía N° 019-0000004 sin permiso");
+  });
+
+  it("el aviso por troza del alta (código en otro permiso con el índice viejo) llega a la fila, sin error", async () => {
+    const aviso = "El código 12 ya existe en el permiso 017; se habilita al terminar ADR-504.";
+    H.createIngreso.mockImplementation(async (_t: string, input: { speciesCommonName: string }) => ({
+      id: "w-nuevo",
+      speciesCommonName: input.speciesCommonName,
+      acomodo: { aOtrasFilas: [], fueraDeSuFila: [], yaEstabanEnSuFila: [], avisos: [aviso] },
+    }));
+    const j = await (
+      await llamar({ mode: "commit", ingresos: [ingreso({ gtfNumber: "019-0000004", codigoCtp: "12" })], asignacion: { contratoId: "c1" } })
+    ).json();
+    expect(j.detalle[0].action).toBe("creado");
+    expect(j.detalle[0].message).toContain(`AVISO: ${aviso}`);
   });
 });

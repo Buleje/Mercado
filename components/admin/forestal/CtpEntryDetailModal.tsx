@@ -102,7 +102,7 @@ export default function CtpEntryDetailModal({
     setFotos(nuevas);
     setGuardandoFotos(true);
     try {
-      const guardadas = await guardarFotosDeGuia(entry.gtfNumber, nuevas);
+      const guardadas = await guardarFotosDeGuia(entry.gtfNumber, nuevas, { ingresoId: entry.id });
       setFotos(guardadas);
       onCambio?.();
     } catch (e) {

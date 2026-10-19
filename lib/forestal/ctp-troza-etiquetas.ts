@@ -42,6 +42,7 @@ import { fmtPt } from "./cubicacion-formato";
 import { esc, openCtpReport } from "./ctp-print-shared";
 import { PARAM_TROZA, TAB_LIBRO_CTP, urlCortaDeTroza } from "./ctp-troza-url";
 import { codigoDeEtiqueta, medidasDeFicha, partesDeMedidas, textoFichaDeTroza } from "./ficha-texto-troza";
+import { numeroDePermiso } from "./guia-por-permiso";
 
 export { PARAM_TROZA, codigoDeEtiqueta, urlCortaDeTroza };
 
@@ -273,6 +274,9 @@ export function htmlEtiqueta(
      lugar, el «…» se coma el permiso (que igual está en la ficha del QR). */
   const ptOx = t.oxPt != null && Number.isFinite(Number(t.oxPt)) && Number(t.oxPt) > 0 ? `${fmtPt(Number(t.oxPt))} PT` : null;
   const dos = Boolean(opts.qrChicoSvg);
+  /* ADR-504: troza = código + permiso. Donde el permiso entero no entra (rollo
+     50×30 con ficha), la GTF lleva el N° corto del permiso: «001-0004521·017». */
+  const permisoCorto = t.permiso ? numeroDePermiso(t.permiso) : null;
   return `<div class="etq${dos ? " dos" : ""}">
     <div class="txt">
       <div class="cod" style="font-size:${tamanoCodigoPt(codigo, opts.formato)}pt">${esc(codigo)}</div>
@@ -284,7 +288,7 @@ export function htmlEtiqueta(
     ${barras ? `<div class="bar">${barras}</div>` : ""}
     <div class="qr" role="img" aria-label="${dos ? `Ficha de la troza ${esc(codigo)}` : `QR ${esc(codigo)}`}">${qrSvg}</div>
     ${dos ? `<div class="chico" role="img" aria-label="Troza ${esc(codigo)} en el sistema">${opts.qrChicoSvg}</div>` : ""}
-    <div class="pie"><span>${esc(t.gtfNumber ?? "sin GTF")}</span>${ptOx ? `<b class="ptox">${esc(ptOx)}</b>` : ""}${t.permiso ? `<span class="perm">${esc(t.permiso)}</span>` : ""}</div>
+    <div class="pie"><span>${esc(t.gtfNumber ?? "sin GTF")}${permisoCorto ? `<span class="pn">·${esc(permisoCorto)}</span>` : ""}</span>${ptOx ? `<b class="ptox">${esc(ptOx)}</b>` : ""}${t.permiso ? `<span class="perm">${esc(t.permiso)}</span>` : ""}</div>
   </div>`;
 }
 
@@ -319,6 +323,7 @@ export function cssEtiquetas(formato: FormatoEtiqueta): string {
     .pie span { overflow: hidden; text-overflow: ellipsis; }
     .pie > :first-child, .pie .ptox { white-space: nowrap; flex-shrink: 0; }
     .pie .perm { min-width: 0; }
+    .pie .pn { display: none; }
   `;
   switch (formato) {
     case "a4-3x7":
@@ -362,6 +367,7 @@ export function cssEtiquetas(formato: FormatoEtiqueta): string {
            Va la GTF entera; el permiso está en la ficha del QR grande. */
         .etq.dos .pie { border-top: 0; padding-top: 0; }
         .etq.dos .pie .perm { display: none; }
+        .etq.dos .pie .pn { display: inline; }
         .etq.dos .bar { align-self: end; }`;
     case "rollo-100x50":
       return `${comun}

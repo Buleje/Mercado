@@ -11,6 +11,7 @@ import { CheckCircle, XCircle } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { TITULO_FORMATO } from "@/lib/forestal/ctp-formatos-serfor";
 import type { ResumenDeArchivo } from "@/lib/forestal/ctp-reporte-import";
+import { avisoCorto } from "./AvisoDeIdentidad";
 
 const cuenta = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
@@ -73,7 +74,7 @@ export default function ResumenPorArchivo({ porArchivo, escrito }: { porArchivo:
             <p className="ml-6 text-[var(--data-warning)]">
               {a.conflictos
                 .slice(0, 6)
-                .map((c) => `fila ${c.fila ?? "?"}${c.delArchivo ? ` (${c.delArchivo})` : ""}${c.motivo ? `: ${c.motivo}` : ""}`)
+                .map((c) => `fila ${c.fila ?? "?"}${c.delArchivo ? ` (${c.delArchivo})` : ""}${c.motivo ? `: ${avisoCorto(c.motivo)}` : ""}`)
                 .join(" · ")}
               {a.conflictos.length > 6 && ` y ${a.conflictos.length - 6} más — están en el CSV`}
             </p>

@@ -110,7 +110,7 @@ export default function CtpRecepcionTrozas({
     setGuardandoFotos(true);
     setErrorFotos(null);
     try {
-      const guardadas = await guardarFotosDeGuia(gtfNumber, nuevas);
+      const guardadas = await guardarFotosDeGuia(gtfNumber, nuevas, { ingresoId: entryId });
       setFotos(guardadas);
       onFotosGuardadas?.(guardadas);
     } catch (e) {

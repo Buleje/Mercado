@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { arrastrarPermisoDelContrato } from "./troza-permiso.db";
 import { normalizarFotos, type FotoCarga } from "@/lib/forestal/fotos-carga";
 import { FILTRO_REQUIERE_COSTO } from "@/lib/forestal/madera-de-servicio";
 import { direccionDe } from "@/lib/adelantos/direccion";
@@ -466,6 +467,9 @@ export class ForestContratoDB {
         where: { tenantId, contratoId: null, permiso: { in: codigos } },
         data: { contratoId },
       }),
+      // ADR-504: la troza = código + permiso → las de esos ingresos lo siguen
+      // (va DESPUÉS del updateMany de madera: el lote corre en orden).
+      arrastrarPermisoDelContrato(tenantId, contratoId),
     ]);
     await invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     auditCtp({
