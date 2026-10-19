@@ -60,8 +60,14 @@ export function slugKey(sufijo = "") {
   return `buleje-cubicacion-${slug}${sufijo}`;
 }
 
-/** Un bloque listo para sembrar, sin `id`: se lo pone esta función. */
-export type BloqueSembrable = Omit<BloqueRolliza, "id">;
+/**
+ * Un bloque listo para sembrar, sin `id`: se lo pone esta función.
+ * `partidoDe` (no se guarda): la etiqueta de la línea ENTERA de la que este
+ * bloque es una parte por permiso (Saldos → «Llevar al cubicador», 2026-10-19).
+ * `etiquetaPrevia` (no se guarda): el nombre que esa parte tuvo antes; la hoja
+ * que ya la tiene así la renombra en vez de sumarla otra vez.
+ */
+export type BloqueSembrable = Omit<BloqueRolliza, "id"> & { partidoDe?: string; etiquetaPrevia?: string };
 
 export interface ResultadoSiembra {
   sembrados: number;
@@ -129,7 +135,51 @@ export function unirSiembra(
   let sembrados = 0;
   let conEspecie = 0;
   let conTrozas = 0;
+  /* Partido por permiso (2026-10-19): la hoja puede tener de antes el bloque
+     ENTERO («Trozas en el patio · TORNILLO», 96.957 m³, sin permiso). Si sus
+     partes suman la MISMA madera, el entero sale y entran las partes; si la
+     madera cambió, se respeta como siempre (las partes cuentan como repetidas).
+     Nunca las dos versiones juntas: sería la misma madera dos veces. */
+  const sumaDePartes = new Map<string, number>();
   for (const c of candidatos) {
+    if (!c.partidoDe) continue;
+    const k = `${c.partidoDe}::${c.especie}`;
+    sumaDePartes.set(k, (sumaDePartes.get(k) ?? 0) + (Number(c.m3) || 0));
+  }
+  const enteroQueSigue = new Set<string>();
+  for (const [k, m3] of sumaDePartes) {
+    /* Con o sin permiso: el entero de una especie de UN solo permiso también
+       lo traía en su campo, y su parte ya se llama distinto («… · PLT-…»). */
+    const i = lista.findIndex((b) => !b.paqueteId && !b.loteId && huella(b) === k);
+    if (i < 0) continue;
+    if (Math.abs((Number(lista[i]!.m3) || 0) - m3) <= MISMO_M3) {
+      lista.splice(i, 1);
+      if (!lista.some((b) => huella(b) === k)) yaEstan.delete(k);
+    } else {
+      enteroQueSigue.add(k);
+    }
+  }
+  /* Partes sembradas con el nombre de antes («Trozas en el patio · TORNILLO ·
+     PLT-…», 19-10): la MISMA madera toma el nombre de hoy (el permiso
+     adelante, lo que se lee en la casilla); si cambió, se respeta y la parte
+     no entra. Nunca las dos. */
+  const previaQueSigue = new Set<string>();
+  for (const c of candidatos) {
+    if (!c.etiquetaPrevia) continue;
+    const kPrevia = `${c.etiquetaPrevia}::${c.especie}`;
+    const b = lista.find((x) => !x.paqueteId && !x.loteId && huella(x) === kPrevia);
+    if (!b) continue;
+    if (Math.abs((Number(b.m3) || 0) - (Number(c.m3) || 0)) <= MISMO_M3) {
+      b.etiqueta = c.etiqueta;
+      if (!lista.some((x) => huella(x) === kPrevia)) yaEstan.delete(kPrevia);
+      yaEstan.add(huella(b));
+    } else {
+      previaQueSigue.add(kPrevia);
+    }
+  }
+  for (const { partidoDe, etiquetaPrevia, ...c } of candidatos) {
+    if (partidoDe && enteroQueSigue.has(`${partidoDe}::${c.especie}`)) continue;
+    if (etiquetaPrevia && previaQueSigue.has(`${etiquetaPrevia}::${c.especie}`)) continue;
     /* El mismo bloque, cargado antes sin especie: se le pone, no se duplica.
        Va ANTES de la huella: por `paqueteId` la huella ya coincide y lo daría
        por repetido sin completarlo. */

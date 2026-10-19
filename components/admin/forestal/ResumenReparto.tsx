@@ -43,6 +43,7 @@ import { useLibroDelReparto } from "./hooks/use-libro-del-reparto";
 import { ID_SECCION_ANEXO } from "./reparto-registrar-todo";
 import { KpiResumen, SeccionResumen } from "./resumen-tabla";
 import { BloqueEspecie } from "./reparto-vistas";
+import { CeldaPermiso } from "./reparto-celda-permiso";
 import { DiferenciaDistribucion } from "./reparto-diferencia";
 import { AlertaDescuadre, OpcionesExportacion } from "./reparto-opciones";
 import { diagnosticarReparto } from "@/lib/forestal/cubicacion-reparto-diagnostico";
@@ -2084,7 +2085,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                       key: "permiso",
                       node: (
                         <td>
-                          <input value={b.permiso ?? ""} onChange={(e) => editar(b.id, "permiso", e.target.value)} placeholder="19-SEC/REG-…" aria-label="N° de permiso de origen del bloque" title="Título habilitante de origen — dos permisos de la misma especie nunca se combinan en el desglose de abajo" className="h-10 w-full min-w-[130px] rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 font-mono text-sm text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]" />
+                          {/* En reposo muestra la cola que distingue («…PLT-2021-017»); al entrar, el código entero. */}
+                          <CeldaPermiso valor={b.permiso ?? ""} onCambiar={(v) => editar(b.id, "permiso", v)} />
                         </td>
                       ),
                     },

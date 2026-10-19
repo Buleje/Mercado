@@ -12,9 +12,9 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  bloqueDeCandidato,
+  bloquesDeCandidato,
   bloquesDesdeCapacidad,
-  especiesDeCandidatos,
+  llegadasDeCandidatos,
   totalesDeCandidatos,
 } from "@/lib/forestal/capacidad-a-bloques";
 import { unirSiembra } from "@/lib/forestal/sembrar-reparto";
@@ -98,8 +98,13 @@ describe("bloquesDesdeCapacidad", () => {
     /* La especie ya viaja con la grafía del catálogo del cubicador. */
     const tornillo = todo.find((c) => c.fuente === "patio" && c.especie === "Tornillo")!;
     const capirona = todo.find((c) => c.fuente === "patio" && c.especie === "Capirona")!;
-    // Tornillo libre viene de P-1 y P-2: no se inventa un permiso.
+    // Tornillo libre viene de P-1 y P-2: no se inventa un permiso para la línea…
     expect(tornillo.permiso).toBeNull();
+    // …pero viaja partida por el permiso de cada troza (Brandon, 2026-10-19).
+    expect(tornillo.partes).toEqual([
+      { permiso: "P-1", mezclado: false, m3: 10, piezas: 1, trozaIds: ["A"] },
+      { permiso: "P-2", mezclado: false, m3: 6, piezas: 1, trozaIds: ["C"] },
+    ]);
     expect(capirona).toMatchObject({ permiso: "P-1", m3: 4, piezas: 1 });
   });
 
@@ -124,7 +129,11 @@ describe("bloquesDesdeCapacidad", () => {
   it("cada corrida viaja como aserrada con su ref, para no sembrarla dos veces", () => {
     const todo = bloquesDesdeCapacidad(ENTRADA, {});
     const c1 = todo.find((c) => c.clave === "productos:c1")!;
-    expect(c1).toMatchObject({ tipo: "aserrada", m3: 10, paqueteId: "corrida:c1", permiso: null });
+    // Su permiso es el ÚNICO de lo que la alimentó (el mismo que usa el filtro).
+    expect(c1).toMatchObject({ tipo: "aserrada", m3: 10, paqueteId: "corrida:c1", permiso: "P-1" });
+    const c2 = todo.find((c) => c.clave === "productos:c2")!;
+    expect(c2.permiso).toBeNull();
+    expect(c2.partes).toEqual([{ permiso: null, mezclado: true, m3: 3, piezas: 0 }]);
     expect(c1.etiqueta).toContain("15-2026");
   });
 
@@ -190,7 +199,7 @@ describe("la especie viaja del modal a la distribución", () => {
   };
 
   it("cada lote y cada producto llega al bloque con su especie", () => {
-    const bloques = bloquesDesdeCapacidad(conLotes, {}).map(bloqueDeCandidato);
+    const bloques = bloquesDesdeCapacidad(conLotes, {}).flatMap(bloquesDeCandidato);
     const por = (etq: string) => bloques.find((b) => b.etiqueta.includes(etq))?.especie;
     expect(por("Lote 20-2026")).toBe("Panguana");
     expect(por("Lote LA-2026-002")).toBe("Copal");
@@ -216,13 +225,21 @@ describe("la especie viaja del modal a la distribución", () => {
     expect(todo.find((c) => c.clave === "apartado:M")?.especie).toBe("");
   });
 
-  it("el resumen de especies agrupa sin mirar mayúsculas ni tildes", () => {
+  it("el resumen de llegadas agrupa sin mirar mayúsculas ni tildes, y separa por permiso", () => {
+    const c = (especie: string, permiso: string | null = null) => ({ especie, m3: 1, piezas: 0, permiso });
     expect(
-      especiesDeCandidatos([{ especie: "Copal" }, { especie: "COPAL" }, { especie: "Azúcar huayo" }, { especie: "Azucar huayo" }, { especie: "" }]),
+      llegadasDeCandidatos([c("Copal"), c("COPAL"), c("Azúcar huayo"), c("Azucar huayo"), c(""), c("Copal", "19-SEC/REG-PLT-2021-017")]),
     ).toEqual([
-      { especie: "Copal", bloques: 2 },
-      { especie: "Azúcar huayo", bloques: 2 },
-      { especie: "", bloques: 1 },
+      { clave: "copal|sin-permiso", especie: "Copal", permiso: "Sin permiso", permisoCompleto: null, bloques: 2 },
+      { clave: "azucar huayo|sin-permiso", especie: "Azúcar huayo", permiso: "Sin permiso", permisoCompleto: null, bloques: 2 },
+      { clave: "|sin-permiso", especie: "", permiso: "Sin permiso", permisoCompleto: null, bloques: 1 },
+      {
+        clave: "copal|p:19-SEC/REG-PLT-2021-017",
+        especie: "Copal",
+        permiso: "PLT-2021-017",
+        permisoCompleto: "19-SEC/REG-PLT-2021-017",
+        bloques: 1,
+      },
     ]);
   });
 });
@@ -306,24 +323,30 @@ describe("unirSiembra", () => {
 });
 
 describe("ADR-464 — el bloque recuerda sus trozas", () => {
-  it("el patio viaja con SUS trozas (no las que no llegaron) y el lote con su id", () => {
+  it("el patio viaja con SUS trozas, un bloque por permiso, y el lote con su id", () => {
     const todo = bloquesDesdeCapacidad(ENTRADA, {});
     const tornillo = todo.find((c) => c.fuente === "patio" && c.especie === "Tornillo")!;
     expect(tornillo.trozaIds?.sort()).toEqual(["A", "C"]);
-    const bloque = bloqueDeCandidato(tornillo);
-    expect(bloque.trozaIds?.sort()).toEqual(["A", "C"]);
-    expect(bloque.loteId).toBeUndefined();
+    const bloques = bloquesDeCandidato(tornillo);
+    expect(bloques.map((b) => [b.etiqueta, b.permiso, b.m3, b.trozaIds])).toEqual([
+      ["P-1 · Tornillo · patio", "P-1", 10, ["A"]],
+      ["P-2 · Tornillo · patio", "P-2", 6, ["C"]],
+    ]);
+    expect(bloques.every((b) => b.loteId === undefined && b.partidoDe === tornillo.etiqueta)).toBe(true);
 
     const apartado = todo.find((c) => c.clave === "apartado:L-1")!;
-    expect(bloqueDeCandidato(apartado)).toMatchObject({ loteId: "L-1" });
-    expect(bloqueDeCandidato(apartado).trozaIds).toBeUndefined();
+    const [delLote, ...otros] = bloquesDeCandidato(apartado);
+    expect(otros).toEqual([]);
+    expect(delLote).toMatchObject({ loteId: "L-1", permiso: "P-1" });
+    expect(delLote!.trozaIds).toBeUndefined();
+    expect(delLote!.partidoDe).toBeUndefined();
   });
 
   it("con más de 500 trozas no se pega la lista (no se podría guardar)", () => {
     const muchas = Array.from({ length: 501 }, (_, i) => troza({ id: `x${i}`, volumenM3: 0.1 }));
     const [c] = bloquesDesdeCapacidad({ ...ENTRADA, patio: muchas, lotes: [], corridas: [] }, {});
     expect(c!.trozaIds).toHaveLength(501);
-    expect(bloqueDeCandidato(c!).trozaIds).toBeUndefined();
+    expect(bloquesDeCandidato(c!)[0]!.trozaIds).toBeUndefined();
   });
 
   it("volver a traer un bloque viejo (sin trozas) se las pone si es el MISMO m³; si cambió, no", () => {

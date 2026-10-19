@@ -1,8 +1,10 @@
 "use client";
 
 /**
- * «Lo que se va al cubicador»: resumen en vivo de lo tildado, por especie y
- * tipo (Brandon, 2026-10-03). Al lado de la lista, para ver cuántos m³ salen.
+ * «Lo que se va al cubicador»: resumen en vivo de lo tildado, por permiso,
+ * especie y tipo (Brandon, 2026-10-03 y 2026-10-19: «que sólo separe según el
+ * permiso, no irá todo unificado»). Al lado de la lista, para ver cuántos m³
+ * salen y de qué título. Cada fila es un bloque del cubicador.
  */
 
 import { useMemo, useState } from "react";
@@ -10,9 +12,13 @@ import { ChevronDown } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { CandidatoDeCapacidad } from "@/lib/forestal/capacidad-a-bloques";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { etiquetaCortaDePermiso, etiquetaDePermiso } from "@/lib/forestal/capacidad-por-permiso";
 import { resumenDeLlevar } from "./resumen-llevar-agrupar";
 
-const FILA = "grid grid-cols-[minmax(0,1fr)_5.5rem_3rem_4.5rem] items-baseline gap-x-3";
+/* A 400 px el permiso va debajo de la especie (no entran 5 columnas); desde
+   `sm` tiene su columna, la primera: las filas de un mismo título se leen juntas. */
+const FILA =
+  "grid grid-cols-[minmax(0,1fr)_5.5rem_2.5rem_4.5rem] sm:grid-cols-[6.5rem_minmax(0,1fr)_5.5rem_2.5rem_4.5rem] items-baseline gap-x-2";
 const TH =
   "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
@@ -53,7 +59,7 @@ export default function ResumenLlevarAlCubicador({
         <InfoTip
           icono="ayuda"
           title="Cómo se arma el resumen"
-          what="Agrupa lo que tildaste por especie y tipo. Cada fila suma sus líneas y se redondea una vez a 3 decimales; el total suma las filas."
+          what="Separa lo que tildaste por permiso, especie y tipo: cada fila llega al cubicador como su propio bloque. Cada fila suma sus trozas y se redondea una vez a 3 decimales; el total suma las filas."
           affects="La rolliza y la ya aserrada no se miden igual: la rolliza pasa por el % antes de amparar. Aquí se ve el volumen tal cual sale."
         />
       </div>
@@ -66,8 +72,9 @@ export default function ResumenLlevarAlCubicador({
         ) : (
           /* Tabla con roles y grilla, NO <table>: `.admin-mobile-cards table` la
              volvía tarjetas a 400 px y un resumen de 4 columnas se leía peor. */
-          <div role="table" aria-label="m³ por especie y tipo">
+          <div role="table" aria-label="m³ por permiso, especie y tipo">
             <div role="row" className={`${FILA} ${TH}`}>
+              <span role="columnheader" className="hidden sm:block">Permiso</span>
               <span role="columnheader">Especie</span>
               <span role="columnheader">Tipo</span>
               <span role="columnheader" className="text-right">Piezas</span>
@@ -75,8 +82,18 @@ export default function ResumenLlevarAlCubicador({
             </div>
             {r.filas.map((f) => (
               <div key={f.clave} role="row" className={`${FILA} ${TD} border-t border-[var(--rule-soft)]`}>
-                <span role="cell" className="min-w-0 truncate font-bold text-[var(--text-primary)]">
-                  {f.especie || "Sin especie"}
+                <span
+                  role="cell"
+                  title={etiquetaDePermiso(f)}
+                  className={`hidden min-w-0 truncate font-mono text-xs sm:block ${f.permiso ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
+                >
+                  {etiquetaCortaDePermiso(f)}
+                </span>
+                <span role="cell" className="min-w-0">
+                  <span className="block truncate font-bold text-[var(--text-primary)]">{f.especie || "Sin especie"}</span>
+                  <span title={etiquetaDePermiso(f)} className="block truncate font-mono text-xs text-[var(--text-tertiary)] sm:hidden">
+                    {etiquetaCortaDePermiso(f)}
+                  </span>
                 </span>
                 <span role="cell">{f.tipo === "rolliza" ? "Rolliza" : "Ya aserrada"}</span>
                 <span role="cell" className={NUM}>{f.piezas > 0 ? f.piezas : "—"}</span>
@@ -84,7 +101,12 @@ export default function ResumenLlevarAlCubicador({
               </div>
             ))}
             <div role="row" className={`${FILA} ${TD} border-t border-[var(--rule-strong)] font-bold text-[var(--text-primary)]`}>
-              <span role="cell" className="col-span-2">Total que se va</span>
+              <span role="cell" className="col-span-2 sm:col-span-3">
+                Total que se va
+                {r.permisos > 1 && (
+                  <span className="ml-1 font-normal text-[var(--text-secondary)]">· {r.permisos} permisos</span>
+                )}
+              </span>
               <span role="cell" className="text-right font-mono tabular-nums">{r.totalPiezas > 0 ? r.totalPiezas : "—"}</span>
               <span role="cell" className="text-right font-mono tabular-nums">{fmtM3(r.totalM3)}</span>
             </div>

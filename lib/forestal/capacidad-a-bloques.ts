@@ -41,7 +41,17 @@ import {
 } from "@/lib/forestal/capacidad-de-planta";
 import type { BloqueSembrable } from "@/lib/forestal/sembrar-reparto";
 import { MAX_TROZAS_POR_BLOQUE } from "@/lib/forestal/cubicacion-reparto";
-import { m3OficialDeFila, totalizarGTF } from "@/lib/forestal/gtf-redondeo";
+import { totalizarGTF } from "@/lib/forestal/gtf-redondeo";
+import {
+  agruparPorPermiso,
+  claveDePermiso,
+  codigoCortoDePermiso,
+  etiquetaCortaDePermiso,
+  partirPorPermiso,
+  permisoDeVarios,
+  type ItemPorPermiso,
+  type ParteDePermiso,
+} from "@/lib/forestal/capacidad-por-permiso";
 
 const r4 = (v: number) => Math.round(v * 10000) / 10000;
 const txt = (v: unknown) => String(v ?? "").trim();
@@ -61,6 +71,13 @@ export interface CandidatoDeCapacidad {
   tipo: "rolliza" | "aserrada";
   /** Sólo cuando TODA la madera de la línea viene del mismo título. */
   permiso: string | null;
+  /**
+   * La línea partida por permiso (Brandon, 2026-10-19): cada parte es UN
+   * bloque. Las trozas del patio de una especie se parten por el permiso de
+   * cada troza; un lote o una corrida es una sola parte (su permiso, «sin
+   * permiso» o «mezclados»). Sin `partes`, la línea entera es una parte.
+   */
+  partes?: ParteDePermiso[];
   /** `null` en aserrada directa: ahí no hay porcentaje que aplicar. */
   aprovechablePct: number | null;
   /** Piezas declaradas, si se saben. Es el tope del bloque de aserrada. */
@@ -129,22 +146,23 @@ function especieDeLote(l: Pick<LoteDeCapacidad, "especie" | "trozas">): string {
   return deLasPiezas.size === 1 ? especieDelCatalogo([...deLasPiezas.values()][0]!) : "";
 }
 
+type TrozaDeLinea = { id: string; especieComun?: string | null; volumenM3?: number | string | null; permiso?: string | null };
+
 /** Agrupa trozas por especie; la especie vacía queda junta y se dice. */
-function porEspecie(
-  trozas: readonly { id: string; especieComun?: string | null; volumenM3?: number | string | null; permiso?: string | null }[],
-) {
+function porEspecie(trozas: readonly TrozaDeLinea[]) {
   const grupos = new Map<
     string,
-    { especie: string; m3: number; piezas: number; permisos: (string | null)[]; trozaIds: string[] }
+    { especie: string; m3: number; piezas: number; permisos: (string | null)[]; trozaIds: string[]; trozas: TrozaDeLinea[] }
   >();
   for (const t of trozas) {
     const especie = txt(t.especieComun);
     const clave = especie.toUpperCase();
-    const g = grupos.get(clave) ?? { especie, m3: 0, piezas: 0, permisos: [], trozaIds: [] };
+    const g = grupos.get(clave) ?? { especie, m3: 0, piezas: 0, permisos: [], trozaIds: [], trozas: [] };
     g.m3 = r4(g.m3 + (Number(t.volumenM3 ?? 0) || 0));
     g.piezas += 1;
     g.permisos.push(t.permiso ?? null);
     g.trozaIds.push(t.id);
+    g.trozas.push(t);
     grupos.set(clave, g);
   }
   return [...grupos.values()].sort((a, b) => b.m3 - a.m3);
@@ -182,6 +200,9 @@ export function bloquesDesdeCapacidad(
         m3: g.m3,
         tipo: "rolliza",
         permiso: unicoONull(g.permisos),
+        /* Una parte por el permiso de CADA troza: tres permisos de Tornillo
+           son tres bloques, no uno de 96.957 m³ sin dueño. */
+        partes: partirPorPermiso(g.trozas),
         aprovechablePct: PCT_TARJETA,
         piezasManual: null,
         piezas: g.piezas,
@@ -211,6 +232,7 @@ export function bloquesDesdeCapacidad(
       m3: r4(l.apartadoM3),
       tipo: "rolliza",
       permiso: unicoONull(l.permisos),
+      partes: [{ ...permisoDeVarios(l.permisos), m3: r4(l.apartadoM3), piezas: l.piezas }],
       aprovechablePct: PCT_TARJETA,
       piezasManual: null,
       piezas: l.piezas,
@@ -234,6 +256,9 @@ export function bloquesDesdeCapacidad(
       m3: r4(admite),
       tipo: "aserrada",
       permiso: unicoONull(l.permisos),
+      /* Un lote que juntó dos permisos es «Permisos mezclados», su propio
+         grupo: partirlo exigiría saber de qué título salió cada tabla. */
+      partes: [{ ...permisoDeVarios(l.permisos), m3: r4(admite), piezas: 0 }],
       aprovechablePct: null,
       piezasManual: null,
       piezas: 0,
@@ -261,9 +286,11 @@ export function bloquesDesdeCapacidad(
         especieDelCatalogo(txt(c.especie)) || (especiePorLote.get(txt(c.lote).toUpperCase()) ?? ""),
       m3: r4(c.disponible),
       tipo: "aserrada",
-      /* Igual que el picker de paquetes: el payload trae GTF y titular, no el
-         título habilitante, y un permiso inventado es peor que uno vacío. */
-      permiso: null,
+      /* `titularOrigen` es el permiso (`originCode`) de las guías que la
+         alimentaron —el mismo que filtra el desplegable de permisos—: uno solo
+         viaja; varios son «mezclados» y ninguno es «sin permiso». */
+      permiso: unicoONull(c.titularOrigen),
+      partes: [{ ...permisoDeVarios(c.titularOrigen), m3: r4(c.disponible), piezas }],
       aprovechablePct: null,
       piezasManual: null,
       paqueteId: `corrida:${c.id}`,
@@ -278,20 +305,40 @@ export function bloquesDesdeCapacidad(
   return out;
 }
 
+/** Las partes de una línea: las suyas, o la línea entera como una sola. */
+export function partesDeCandidato(
+  c: Pick<CandidatoDeCapacidad, "permiso" | "m3" | "piezas" | "trozaIds"> & { partes?: ParteDePermiso[] },
+): ParteDePermiso[] {
+  if (c.partes && c.partes.length > 0) return c.partes;
+  return [{ permiso: c.permiso ?? null, mezclado: false, m3: c.m3, piezas: c.piezas, trozaIds: c.trozaIds }];
+}
+
+/** Cada parte de cada línea, con su especie y tipo: lo que agrupa el resumen. */
+export function itemsPorPermiso(
+  candidatos: readonly (Pick<CandidatoDeCapacidad, "especie" | "tipo" | "m3" | "piezas"> &
+    Partial<Pick<CandidatoDeCapacidad, "permiso" | "partes" | "trozaIds">>)[],
+): ItemPorPermiso[] {
+  return candidatos.flatMap((c) =>
+    partesDeCandidato({ ...c, permiso: c.permiso ?? null }).map((p) => ({
+      permiso: p.permiso,
+      mezclado: p.mezclado,
+      especie: c.especie,
+      tipo: c.tipo,
+      m3: p.m3,
+      piezas: p.piezas,
+    })),
+  );
+}
+
 /** m³ de rolliza y de aserrada de una selección — nunca sumados entre sí. */
 export function totalesDeCandidatos(candidatos: readonly CandidatoDeCapacidad[]) {
-  /* Regla GTF (2026-10-03): cada especie es una fila redondeada UNA vez a 3
-     decimales y el total suma esas filas — lo mismo que la tabla «Lo que se va
-     al cubicador» de al lado; con la suma cruda decían 8,148 y 8,149. */
-  const deTipo = (tipo: CandidatoDeCapacidad["tipo"]) => {
-    const porEspecie = new Map<string, number[]>();
-    for (const c of candidatos) {
-      if (c.tipo !== tipo) continue;
-      const k = c.especie.trim().toLowerCase();
-      porEspecie.set(k, [...(porEspecie.get(k) ?? []), c.m3]);
-    }
-    return totalizarGTF([...porEspecie.values()].map((vs) => ({ m3: m3OficialDeFila(vs) }))).m3;
-  };
+  /* Regla GTF (2026-10-03): cada fila (permiso × especie × tipo, 2026-10-19)
+     se redondea UNA vez a 3 decimales y el total suma esas filas — las MISMAS
+     filas de la tabla «Lo que se va al cubicador» de al lado; con la suma
+     cruda decían 8,148 y 8,149. */
+  const filas = agruparPorPermiso(itemsPorPermiso(candidatos));
+  const deTipo = (tipo: CandidatoDeCapacidad["tipo"]) =>
+    totalizarGTF(filas.filter((f) => f.tipo === tipo)).m3;
   const rolliza = deTipo("rolliza");
   const aserrada = deTipo("aserrada");
   return {
@@ -303,57 +350,95 @@ export function totalesDeCandidatos(candidatos: readonly CandidatoDeCapacidad[])
 }
 
 /**
- * El candidato tal como se siembra en la distribución. La ESPECIE viaja
- * siempre con él (Brandon, 2026-10-02: «que se pase a distribución con la
- * especie asignada»): es lo que agrupa el reparto, y un bloque que llega vacío
- * obliga a elegirla otra vez en la tabla.
+ * Los bloques de una línea, UNO POR PERMISO (Brandon, 2026-10-19: «al llevarlo
+ * al bloque cubicador se pondrá así separado por permiso»). La ESPECIE viaja
+ * siempre con cada uno (Brandon, 2026-10-02): es lo que agrupa el reparto, y
+ * un bloque que llega vacío obliga a elegirla otra vez en la tabla.
  *
- * La etiqueta va LIMPIA: es la columna «GTF / lote» del cubicador y lo que
- * imprime el papel. Meterle el recorte del filtro —«(permisos A, B · especie
- * TORNILLO)»— la volvía ilegible y mostraba dos permisos sobre un bloque que
- * declara uno solo (Brandon, 2026-09-09). El permiso viaja en su campo.
+ * El permiso viaja en su campo (`permiso`, lo que el cubicador separa en
+ * `porPermiso`), y en las trozas sueltas también en la etiqueta —es la columna
+ * «GTF / lote» y lo que imprime el papel—, PRIMERO y en corto: «PLT-2021-017 ·
+ * Tornillo · patio». Primero porque la casilla de la tabla corta el final y lo
+ * que distingue a un bloque de otro es el permiso. Sin él, los tres bloques se
+ * llamarían igual y la huella del cubicador (`etiqueta::especie`) sembraría uno
+ * y daría los otros por repetidos — por eso, si dos permisos comparten el
+ * código corto, va el código entero.
+ * La etiqueta NO lleva el recorte del filtro (Brandon, 2026-09-09: la volvía
+ * ilegible). Un lote o una corrida ya se nombran solos: una parte, su nombre.
+ *
+ * `partidoDe`: la etiqueta de la línea entera. Si la hoja ya tiene ESE bloque
+ * de antes (todo junto, sin permiso) y es la misma madera, el cubicador lo
+ * cambia por sus partes en vez de dejar las dos versiones (`unirSiembra`).
+ * `etiquetaPrevia`: cómo se llamó la parte el 19-10 antes de poner el permiso
+ * adelante («Trozas en el patio · TORNILLO · PLT-…»): la hoja que ya la tenga
+ * la renombra en vez de sumarla otra vez.
  */
-export function bloqueDeCandidato(c: CandidatoDeCapacidad): BloqueSembrable {
-  return {
-    etiqueta: c.etiqueta,
-    especie: c.especie,
-    m3: c.m3,
-    permiso: c.permiso,
-    origen: "manual",
-    tipo: c.tipo,
-    aprovechablePct: c.aprovechablePct,
-    piezasManual: c.piezasManual,
-    costoM3: null,
-    /* Qué tipo de madera es, cuando el Libro lo dice: es lo que permite
-       sugerir el reproceso del lado del cubicador (ADR-404). */
-    ...(c.tipoProducto ? { tipoProducto: c.tipoProducto } : {}),
-    ...(c.piezas > 0 ? { piezasOrigen: c.piezas } : {}),
-    ...(c.paqueteId ? { paqueteId: c.paqueteId } : {}),
-    /* ADR-464: las trozas reales viajan con el bloque (sin ellas no puede
-       crear su lote) y el lote de origen también — así la Distribución no
-       ofrece armar otro lote ni vuelve a ofrecer ese mismo lote como bloque. */
-    ...(c.trozaIds && c.trozaIds.length > 0 && c.trozaIds.length <= MAX_TROZAS_POR_BLOQUE
-      ? { trozaIds: [...c.trozaIds] }
-      : {}),
-    ...(c.loteId ? { loteId: c.loteId } : {}),
-  };
+export function bloquesDeCandidato(c: CandidatoDeCapacidad): BloqueSembrable[] {
+  const partes = partesDeCandidato(c);
+  const deTrozas = c.fuente === "patio" || c.fuente === "porRecepcionar";
+  const cortos = partes.map((p) => codigoCortoDePermiso(p.permiso));
+  const fuente = c.fuente === "patio" ? "patio" : "por recepcionar";
+  return partes.map((p, i) => {
+    const corto = cortos[i]!;
+    /* Dos títulos con la misma cola (`…PLT-2021-017` de dos regiones) no
+       pueden llamarse igual: la huella descartaría el segundo. */
+    const nombre = corto && cortos.indexOf(corto) !== cortos.lastIndexOf(corto) ? p.permiso! : corto;
+    const ids = deTrozas ? p.trozaIds : c.trozaIds;
+    return {
+      etiqueta: deTrozas
+        ? `${nombre || "Sin permiso"} · ${c.especie || "Sin especie"} · ${fuente}`
+        : c.etiqueta,
+      especie: c.especie,
+      m3: p.m3,
+      permiso: p.permiso,
+      origen: "manual",
+      tipo: c.tipo,
+      aprovechablePct: c.aprovechablePct,
+      piezasManual: c.piezasManual,
+      costoM3: null,
+      /* Qué tipo de madera es, cuando el Libro lo dice: es lo que permite
+         sugerir el reproceso del lado del cubicador (ADR-404). */
+      ...(c.tipoProducto ? { tipoProducto: c.tipoProducto } : {}),
+      ...(p.piezas > 0 ? { piezasOrigen: p.piezas } : {}),
+      ...(c.paqueteId ? { paqueteId: c.paqueteId } : {}),
+      /* ADR-464: las trozas reales viajan con el bloque (sin ellas no puede
+         crear su lote) y el lote de origen también — así la Distribución no
+         ofrece armar otro lote ni vuelve a ofrecer ese mismo lote como bloque. */
+      ...(ids && ids.length > 0 && ids.length <= MAX_TROZAS_POR_BLOQUE ? { trozaIds: [...ids] } : {}),
+      ...(c.loteId ? { loteId: c.loteId } : {}),
+      ...(deTrozas ? { partidoDe: c.etiqueta, etiquetaPrevia: `${c.etiqueta} · ${corto || "sin permiso"}` } : {}),
+    };
+  });
 }
 
 /**
- * Las especies de una selección, en el orden en que aparecen, con cuántos
- * bloques lleva cada una. `""` = sin especie (se dice, no se esconde). Sin m³:
- * troza y tabla no se suman entre sí, y un total por especie las mezclaría.
+ * Cómo llegan a la distribución: especie × permiso, con cuántos bloques lleva
+ * cada uno, en el orden en que aparecen. `""` = sin especie (se dice, no se
+ * esconde). Sin m³: troza y tabla no se suman entre sí.
  */
-export function especiesDeCandidatos(
-  candidatos: readonly Pick<CandidatoDeCapacidad, "especie">[],
-): { especie: string; bloques: number }[] {
-  const grupos = new Map<string, { especie: string; bloques: number }>();
+export function llegadasDeCandidatos(
+  candidatos: readonly (Pick<CandidatoDeCapacidad, "especie" | "m3" | "piezas"> &
+    Partial<Pick<CandidatoDeCapacidad, "permiso" | "partes" | "trozaIds">>)[],
+): { clave: string; especie: string; permiso: string; permisoCompleto: string | null; bloques: number }[] {
+  const norm = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const grupos = new Map<
+    string,
+    { clave: string; especie: string; permiso: string; permisoCompleto: string | null; bloques: number }
+  >();
   for (const c of candidatos) {
     const especie = txt(c.especie);
-    const clave = especie.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    const g = grupos.get(clave) ?? { especie, bloques: 0 };
-    g.bloques += 1;
-    grupos.set(clave, g);
+    for (const p of partesDeCandidato({ ...c, permiso: c.permiso ?? null })) {
+      const clave = `${norm(especie)}|${claveDePermiso(p)}`;
+      const g = grupos.get(clave) ?? {
+        clave,
+        especie,
+        permiso: etiquetaCortaDePermiso(p),
+        permisoCompleto: p.permiso,
+        bloques: 0,
+      };
+      g.bloques += 1;
+      grupos.set(clave, g);
+    }
   }
   return [...grupos.values()];
 }
