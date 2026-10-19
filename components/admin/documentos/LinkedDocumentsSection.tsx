@@ -47,6 +47,7 @@ export function LinkedDocumentsSection({
   id,
   nombre,
   estadoDeCuenta = false,
+  reloadSignal,
 }: {
   entity: Entity;
   id: string;
@@ -54,6 +55,9 @@ export function LinkedDocumentsSection({
   nombre?: string;
   /** En un tercero: muestra "Guardar estado de cuenta" (POST a /estado-cuenta). */
   estadoDeCuenta?: boolean;
+  /** Al cambiar, vuelve a leer: para cuando algo de AFUERA archiva un documento
+   *  de esta entidad (p. ej. «PDF al Drive» del trámite). */
+  reloadSignal?: number;
 }) {
   const [docs, setDocs] = useState<DbDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +77,7 @@ export function LinkedDocumentsSection({
 
   useEffect(() => {
     void cargar();
-  }, [cargar]);
+  }, [cargar, reloadSignal]);
 
   async function guardarEstadoDeCuenta() {
     if (guardando || !nombre) return;

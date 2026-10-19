@@ -19,7 +19,9 @@ const PatchBody = z.object({
   name: z.string().min(1).max(255).optional(),
   folderId: z.string().nullable().optional(),
   category: z.string().max(40).optional(),
-  tags: z.array(z.string().min(1).max(40)).max(20).optional(),
+  // 64 y no 40: los tags de máquina del cableado documento↔entidad (ADR-502),
+  // p. ej. `tramite:tra-relacion-guias-serfor-175524763`, pasan de 40.
+  tags: z.array(z.string().min(1).max(64)).max(20).optional(),
   favorite: z.boolean().optional(),
   status: z.enum(ESTADOS_DOC).optional(),
   expiresAt: z.string().nullable().optional(),

@@ -60,6 +60,8 @@ import {
   type LogoTramite,
 } from "@/lib/forestal/tramites-logo";
 import { Btn, MesaPartesBanner } from "./ctp-shared";
+import { tagEntidad } from "@/lib/documentos/enlaces-entidad";
+import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
 import TramiteArchivadorOffscreen, { type TramiteArchivadorHandle } from "./TramiteArchivadorOffscreen";
 import TramiteCamposPanel from "./TramiteCamposPanel";
 import TramiteDocumentoModal from "./TramiteDocumentoModal";
@@ -175,6 +177,9 @@ export default function TramiteFormulario({
    * iba sin id. Se adopta el que devolvió el servidor.
    */
   const [idGuardado, setIdGuardado] = useState<string | null>(existente?.id ?? null);
+  /** Ref espejo del id (ADR-502): el archivado al Drive corre tras guardar en
+   *  silencio y necesita el id FRESCO en la misma llamada (el estado llega tarde). */
+  const idTramiteRef = useRef<string | null>(existente?.id ?? null);
   /** N° de documento correlativo (ADR-364 ronda 3) — `null` hasta el primer
    *  "Presentado"; lo asigna el servidor, acá sólo se refleja. */
   const [numeroDocumento, setNumeroDocumento] = useState<string | null>(existente?.numeroDocumento ?? null);
@@ -188,6 +193,8 @@ export default function TramiteFormulario({
   const [modalDocumento, setModalDocumento] = useState(false);
   const [archivando, setArchivando] = useState(false);
   const [descargando, setDescargando] = useState(false);
+  /** Bump tras archivar: refresca el bloque de documentos del trámite (ADR-502). */
+  const [docsReload, setDocsReload] = useState(0);
   const archivadorRef = useRef<TramiteArchivadorHandle>(null);
   /** Logo del membrete (ADR-364 ronda 6) — por tenant, no por trámite: se
    *  sube una vez y queda para todos los documentos que se emitan después. */
@@ -311,6 +318,7 @@ export default function TramiteFormulario({
   /** Lo que devolvió el servidor manda: id, código, N° y estado (lo usan guardar e imprimir). */
   function adoptar(r: TramiteRegistro) {
     setIdGuardado(r.id);
+    idTramiteRef.current = r.id;
     setEstado(r.estado);
     setExpediente(r.expedienteAutoridad ?? "");
     setFechaPresentacion(r.fechaPresentacion ?? "");
@@ -438,12 +446,16 @@ export default function TramiteFormulario({
     }
     const pdf = await armarPdfActual(codigo);
     const folderId = await carpetaAnidada(carpetaRuta);
+    // ADR-502: atar el documento al trámite (`tramite:<id>`) para que aparezca
+    // en su expediente del Archivo. El id está fresco en el ref tras el guardado
+    // silencioso de `asegurarCodigoInterno`.
+    const tramiteId = idTramiteRef.current ?? existente?.id ?? null;
     await archivarEnDrive({
       archivo: pdf,
       nombreArchivo: nombre,
       carpeta: carpetaDrive,
       folderId,
-      etiquetas: [autoridad.corto, formato.nombre, codigo],
+      etiquetas: [autoridad.corto, formato.nombre, codigo, ...(tramiteId ? [tagEntidad("tramite", tramiteId)] : [])],
       descripcion: asuntoDe(formato, datos),
     });
     return `Guardado en el Drive · carpeta "${carpetaDrive}".`;
@@ -454,6 +466,7 @@ export default function TramiteFormulario({
     setAviso(null);
     try {
       setAviso(await archivarDocumentoActual());
+      setDocsReload((n) => n + 1);
     } catch (err) {
       setAviso(err instanceof Error ? err.message : String(err));
     } finally {
@@ -740,6 +753,11 @@ export default function TramiteFormulario({
             `panelCampos` arriba: nunca dos copias vivas a la vez). ── */}
         <div className={`space-y-4 ${panelMovil === "documento" ? "max-xl:hidden" : ""}`}>
           {!modalDocumento && panelCampos}
+          {/* ADR-502: los papeles de ESTE trámite en el Archivo (su PDF al Drive
+              y lo que se le adjunte), por `tramite:<id>`. Sólo con el trámite guardado. */}
+          {(idGuardado ?? existente?.id) && (
+            <LinkedDocumentsSection entity="tramite" id={(idGuardado ?? existente?.id)!} reloadSignal={docsReload} />
+          )}
         </div>
 
         {/* ── Columna 2: el papel, pegado mientras se hace scroll ── */}

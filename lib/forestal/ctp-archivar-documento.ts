@@ -187,8 +187,9 @@ export async function archivarEnDrive(o: ArchivarDocumento): Promise<ResultadoAr
         credentials: "include",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          // El tope del endpoint es 20 etiquetas de 40 caracteres.
-          ...(o.etiquetas?.length ? { tags: o.etiquetas.slice(0, 20).map((t) => t.slice(0, 40)) } : {}),
+          // El tope del endpoint es 20 etiquetas de 64 caracteres (ADR-502: el
+          // tag de máquina `tramite:<id>` pasa de 40).
+          ...(o.etiquetas?.length ? { tags: o.etiquetas.slice(0, 20).map((t) => t.slice(0, 64)) } : {}),
           ...(o.descripcion ? { descripcion: o.descripcion.slice(0, 2000) } : {}),
         }),
       });
