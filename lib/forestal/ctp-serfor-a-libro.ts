@@ -14,7 +14,9 @@
 
 import { armarCadena, consumosDeCorrida, mapaCodigoAGuia, repartirConsumos } from "./ctp-cadena-import";
 import { medidasDeTexto } from "./medidas-paquete";
+import { tipoDesdeCodigo } from "./contratos";
 import type { FilaParseada, FormatoCtp } from "./ctp-formatos-serfor";
+import type { PermisoDeFila, ResumenPermisoImport } from "./asignar-permiso-import";
 import { ORIGEN_INVENTARIO_APERTURA } from "@/lib/forestal/lotes-aserrio";
 
 /**
@@ -61,6 +63,33 @@ const sinGuion = (v: unknown): string => {
 const num = (v: unknown): number => (typeof v === "number" ? v : Number(v) || 0);
 
 /**
+ * ¿La troza del inventario es existencia HOY? «En Stock» (o sin estado) sí; una
+ * ya consumida o despachada sigue en la lista pero no es existencia. Exportado
+ * para que la revisión entre archivos mire las mismas trozas que se envían.
+ */
+export function estaEnStock(f: FilaParseada): boolean {
+  const e = txt(f.datos.estado).toLowerCase();
+  return !e || /stock|disponible/.test(e);
+}
+
+/** Los contratos de una guía, sin repetir y en el orden en que aparecen. */
+export function contratosDeLaGuia(trozas: readonly FilaParseada[]): string[] {
+  const vistos = new Map<string, string>();
+  for (const t of trozas) {
+    const c = sinGuion(t.datos.contrato);
+    if (c && !vistos.has(c.toUpperCase())) vistos.set(c.toUpperCase(), c);
+  }
+  return [...vistos.values()];
+}
+
+/** La nota con los contratos que NO son el de la primera troza, o "". */
+function otrosContratosDeLaGuia(trozas: readonly FilaParseada[]): string {
+  const primero = sinGuion(trozas[0]?.datos.contrato).toUpperCase();
+  const otros = contratosDeLaGuia(trozas).filter((c) => c.toUpperCase() !== primero);
+  return otros.length > 0 ? `Otras trozas de esta guía traen el contrato ${otros.join(", ")}` : "";
+}
+
+/**
  * Qué tipo de producto es, en el vocabulario del schema.
  *
  * El formato escribe «MADERA EN ROLLO» y «MADERA ASERRADA (PAQUETERIA CORTA)»;
@@ -103,6 +132,16 @@ export function proveedorDesdeFormato(datos: Record<string, unknown>): string {
 }
 
 /**
+ * El «Código de origen» de la Sección 1 como código de PERMISO, o `null` si no
+ * tiene forma de permiso (PER-FMP, REG-PLT, CON-25-…, DEMA, PMFI…): el código
+ * de un árbol o un texto suelto no se declara como título habilitante.
+ */
+export function codigoDePermisoDe(v: unknown): string | null {
+  const c = txt(v);
+  return c && tipoDesdeCodigo(c) !== "otro" ? c : null;
+}
+
+/**
  * Traduce las filas al cuerpo que espera el endpoint de esa sección.
  *
  * Sólo las filas SIN problemas: una fila incompleta se reporta en la pantalla
@@ -140,6 +179,14 @@ export function aCuerpoDelLibro(
            mismo libro. Se sigue copiando a las notas porque ahí lo lee un
            humano que abre la ficha del ingreso. */
         codigoCtp: txt(f.datos.codigoCtp) || null,
+        /* (5) «N° de fuente de origen»: la resolución de la ARFFS. Antes sólo
+           viajaba dentro del proveedor de relleno y la ficha la perdía. */
+        originSourceNumber: txt(f.datos.fuenteOrigen) || null,
+        /* (9) «Código de origen» sólo si es un PERMISO reconocible: en el
+           SNIFFS esa columna suele traer el código del ÁRBOL (33/B (0000010)),
+           y mandarlo como permiso haría que el import lo cuente como «otro
+           permiso» frente al que eligió el operador. Si no, queda en notas. */
+        originCode: codigoDePermisoDe(f.datos.codigoOrigen),
         notes: [
           txt(f.datos.codigoCtp) && `Código CTP ${txt(f.datos.codigoCtp)}`,
           txt(f.datos.codigoOrigen) && `Origen ${txt(f.datos.codigoOrigen)}`,
@@ -232,10 +279,7 @@ export function aCuerpoDelLibro(
       /* Sólo lo que está EN STOCK. Una troza ya consumida o despachada sigue en
          la lista con su estado, pero cargarla como existencia la haría aparecer
          disponible dos veces: una acá y otra en el libro que ya la movió. */
-      const enStock = listas.filter((f) => {
-        const e = txt(f.datos.estado).toLowerCase();
-        return !e || /stock|disponible/.test(e);
-      });
+      const enStock = listas.filter(estaEnStock);
 
       /* AGRUPADAS POR GUÍA. Varias trozas del inventario comparten su GTF —en el
          archivo real, tres seguidas traen la misma— y el importador es
@@ -318,6 +362,10 @@ export function aCuerpoDelLibro(
           }),
           notes: [
             `${ORIGEN_INVENTARIO_APERTURA} · ${trozas.length} troza${trozas.length === 1 ? "" : "s"}`,
+            /* La guía guarda UN contrato (el de su primera troza). Si otra troza
+               de la misma GTF trae otro, se anota acá en vez de perderlo en
+               silencio; la revisión previa del modal también lo avisa (19-10). */
+            otrosContratosDeLaGuia(trozas),
             /* La madre se conserva: sin ella un retrozo importado pierde de qué
                troza salió, que es la mitad de su trazabilidad. */
             ...trozas
@@ -398,9 +446,22 @@ export function aCuerpoDelLibro(
 
 /** Normaliza la respuesta de los dos endpoints a una sola forma para la UI. */
 export type ResumenImport = { creados: number; porCrear: number; existen: number; errores: number };
-export type FilaResultado = { fila?: number; codigo: string; accion: string; mensaje: string };
+export type FilaResultado = {
+  fila?: number;
+  codigo: string;
+  accion: string;
+  mensaje: string;
+  /** Qué pasó con el permiso de la fila, si el archivo llevó uno (ADR-503). */
+  permiso?: PermisoDeFila;
+};
+export type RespuestaImport = {
+  resumen: ResumenImport;
+  filas: FilaResultado[];
+  /** El resumen del permiso asignado al archivo, o `null` si no llevó (ADR-503). */
+  permiso?: ResumenPermisoImport | null;
+};
 
-export function normalizarRespuesta(cuerpo: unknown): { resumen: ResumenImport; filas: FilaResultado[] } {
+export function normalizarRespuesta(cuerpo: unknown): RespuestaImport {
   const c = (cuerpo ?? {}) as Record<string, unknown>;
 
   /* `ctp-serfor-import` ya devuelve esta forma. */
@@ -415,6 +476,7 @@ export function normalizarRespuesta(cuerpo: unknown): { resumen: ResumenImport; 
     gtf?: string | null;
     action: string;
     message: string;
+    permiso?: PermisoDeFila;
   }[];
   const filas: FilaResultado[] = rows.map((r) => ({
     fila: r.row,
@@ -423,7 +485,9 @@ export function normalizarRespuesta(cuerpo: unknown): { resumen: ResumenImport; 
        importador es insert-only y tampoco lo va a tocar. */
     accion: r.action === "difiere" ? "existe" : r.action,
     mensaje: r.message,
+    ...(r.permiso ? { permiso: r.permiso } : {}),
   }));
+  const resumenServidor = (c.resumen ?? {}) as { permiso?: ResumenPermisoImport | null };
   /* Se cuenta desde las filas y no desde su `resumen`: son dos nomenclaturas
      distintas y una sola fuente evita que el titular y la lista se
      contradigan. */
@@ -435,5 +499,6 @@ export function normalizarRespuesta(cuerpo: unknown): { resumen: ResumenImport; 
       errores: filas.filter((f) => f.accion === "error").length,
     },
     filas,
+    permiso: resumenServidor.permiso ?? null,
   };
 }

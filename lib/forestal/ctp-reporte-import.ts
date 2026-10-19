@@ -12,16 +12,44 @@
  */
 
 import { TITULO_FORMATO, type FormatoCtp } from "./ctp-formatos-serfor";
+import type { PermisoDeFila, ResumenPermisoImport } from "./asignar-permiso-import";
 
-export type FilaDeResultado = { fila?: number; codigo: string; accion: string; mensaje: string };
+export type FilaDeResultado = { fila?: number; codigo: string; accion: string; mensaje: string; permiso?: PermisoDeFila };
 export type ResultadoDeSeccion = {
   formato: FormatoCtp;
   respuesta: { resumen: { creados: number; porCrear: number; existen: number; errores: number }; filas: FilaDeResultado[] };
+  /**
+   * El archivo de donde salió (19-10: varios archivos por sección). Con él, el
+   * reporte dice «archivo · fila» — sin él, la fila 12 de dos Excel distintos
+   * era la misma fila 12.
+   */
+  archivo?: string;
+  /** Lo que el servidor hizo con el permiso del archivo (ADR-503). */
+  permiso?: ResumenPermisoImport | null;
+  /** El archivo entero falló (HTTP ≠ 2xx): no hay filas que contar. */
+  error?: string | null;
+};
+
+/** Una línea por archivo enviado: qué entró y qué pasó con su permiso. */
+export type ResumenDeArchivo = {
+  archivo: string;
+  formato: FormatoCtp;
+  creados: number;
+  /** Sólo en la revisión: lo que entraría. */
+  porCrear: number;
+  existen: number;
+  errores: number;
+  error: string | null;
+  permiso: ResumenPermisoImport | null;
+  /** Filas que traían OTRO permiso (se respetó el suyo), o cuya guía no se pudo tocar (`motivo`). */
+  conflictos: { fila?: number; delArchivo: string | null; motivo: string | null }[];
 };
 
 /** Un problema y todas las filas donde aparece. */
 export type ProblemaAgrupado = {
   formato: FormatoCtp;
+  /** De qué archivo son las filas (varios archivos por sección). */
+  archivo?: string;
   /** El mensaje, sin los datos variables: es lo que agrupa. */
   causa: string;
   /** Un ejemplo completo, con su dato, para que se entienda. */
@@ -42,7 +70,7 @@ export type ReporteImport = {
   totalConError: number;
   problemas: ProblemaAgrupado[];
   /** Filas incompletas detectadas en el archivo, antes de mandar nada. */
-  incompletas: { formato: FormatoCtp; fila: number; motivos: string[] }[];
+  incompletas: { formato: FormatoCtp; fila: number; motivos: string[]; archivo?: string }[];
   /** Avisos de la cadena (rendimientos raros, despachos sin respaldo). */
   avisosDeCadena: { lote: string; nivel: "error" | "aviso"; mensaje: string }[];
   /**
@@ -55,7 +83,9 @@ export type ReporteImport = {
    * los comía enteros: el código renombrado o el paquete perdido no se veían
    * en ningún lado.
    */
-  avisosDeFila: { formato: FormatoCtp; fila?: number; codigo: string; mensaje: string }[];
+  avisosDeFila: { formato: FormatoCtp; fila?: number; codigo: string; mensaje: string; archivo?: string }[];
+  /** Por archivo, cuando los resultados traen su nombre (vacío si no). */
+  porArchivo: ResumenDeArchivo[];
   /** true si no hay nada que arreglar. */
   limpio: boolean;
 };
@@ -121,7 +151,7 @@ function consejoPara(mensaje: string, formato: FormatoCtp): string {
 export function armarReporte(
   resultados: readonly ResultadoDeSeccion[],
   extras: {
-    incompletas?: { formato: FormatoCtp; fila: number; motivos: string[] }[];
+    incompletas?: { formato: FormatoCtp; fila: number; motivos: string[]; archivo?: string }[];
     avisosDeCadena?: { lote: string; nivel: "error" | "aviso"; mensaje: string }[];
   } = {},
 ): ReporteImport {
@@ -130,17 +160,37 @@ export function armarReporte(
   let totalConError = 0;
   const porCausa = new Map<string, ProblemaAgrupado>();
   const avisosDeFila: ReporteImport["avisosDeFila"] = [];
+  const porArchivo: ResumenDeArchivo[] = [];
 
   for (const r of resultados) {
+    /* Creados por SECCIÓN, aunque vengan de varios archivos: la tabla de lo que
+       entró se cuadra contra el libro, que no sabe de archivos. */
     if (r.respuesta.resumen.creados > 0) {
-      creados.push({ formato: r.formato, cantidad: r.respuesta.resumen.creados });
+      const previo = creados.find((c) => c.formato === r.formato);
+      if (previo) previo.cantidad += r.respuesta.resumen.creados;
+      else creados.push({ formato: r.formato, cantidad: r.respuesta.resumen.creados });
+    }
+    if (r.archivo) {
+      porArchivo.push({
+        archivo: r.archivo,
+        formato: r.formato,
+        creados: r.respuesta.resumen.creados,
+        porCrear: r.respuesta.resumen.porCrear,
+        existen: r.respuesta.resumen.existen,
+        errores: r.respuesta.resumen.errores,
+        error: r.error ?? null,
+        permiso: r.permiso ?? null,
+        conflictos: r.respuesta.filas
+          .filter((f) => f.permiso?.estado === "conflicto")
+          .map((f) => ({ fila: f.fila, delArchivo: f.permiso?.delArchivo ?? null, motivo: f.permiso?.motivo ?? null })),
+      });
     }
     for (const f of r.respuesta.filas) {
       /* Se saca ANTES de mirar la acción: una fila "creado" con avisos sigue
          siendo un éxito para el conteo, pero el aviso tiene que salir igual. */
       const { limpio, avisos } = extraerAvisos(f.mensaje);
       for (const aviso of avisos) {
-        avisosDeFila.push({ formato: r.formato, fila: f.fila, codigo: f.codigo, mensaje: aviso });
+        avisosDeFila.push({ formato: r.formato, fila: f.fila, codigo: f.codigo, mensaje: aviso, archivo: r.archivo });
       }
 
       if (f.accion === "existe") {
@@ -151,7 +201,7 @@ export function armarReporte(
       totalConError += 1;
 
       const causa = causaDe(limpio);
-      const clave = `${r.formato}::${causa}`;
+      const clave = `${r.archivo ?? ""}::${r.formato}::${causa}`;
       const previo = porCausa.get(clave);
       if (previo) {
         if (f.fila != null) previo.filas.push(f.fila);
@@ -159,6 +209,7 @@ export function armarReporte(
       } else {
         porCausa.set(clave, {
           formato: r.formato,
+          ...(r.archivo ? { archivo: r.archivo } : {}),
           causa,
           ejemplo: limpio,
           filas: f.fila != null ? [f.fila] : [],
@@ -183,7 +234,13 @@ export function armarReporte(
     incompletas,
     avisosDeCadena,
     avisosDeFila,
-    limpio: totalConError === 0 && incompletas.length === 0 && avisosDeCadena.length === 0 && avisosDeFila.length === 0,
+    porArchivo,
+    limpio:
+      totalConError === 0 &&
+      incompletas.length === 0 &&
+      avisosDeCadena.length === 0 &&
+      avisosDeFila.length === 0 &&
+      !porArchivo.some((a) => a.error),
   };
 }
 
@@ -192,9 +249,10 @@ export function tituloDelReporte(r: ReporteImport): string {
   if (r.totalCreados === 0 && r.totalConError === 0) {
     return r.totalExistentes > 0 ? "Todo esto ya estaba en el libro" : "No entró nada";
   }
-  const partes = [`${r.totalCreados} filas importadas`];
-  if (r.totalExistentes > 0) partes.push(`${r.totalExistentes} ya estaban`);
-  if (r.totalConError > 0) partes.push(`${r.totalConError} quedaron afuera`);
+  const n = (c: number, uno: string, varios: string) => `${c} ${c === 1 ? uno : varios}`;
+  const partes = [n(r.totalCreados, "fila importada", "filas importadas")];
+  if (r.totalExistentes > 0) partes.push(n(r.totalExistentes, "ya estaba", "ya estaban"));
+  if (r.totalConError > 0) partes.push(n(r.totalConError, "quedó afuera", "quedaron afuera"));
   return partes.join(" · ");
 }
 
@@ -218,12 +276,44 @@ export function reporteACsv(r: ReporteImport, nombreArchivo?: string): string {
     ["Sección", "Filas creadas"],
     ...r.creados.map((c) => [TITULO_FORMATO[c.formato], String(c.cantidad)]),
   ];
+  /* «Sección (archivo)» cuando hay varios archivos: mantiene las columnas de
+     siempre y aun así dice de cuál Excel es la fila. */
+  const donde = (formato: FormatoCtp, archivo?: string) =>
+    archivo ? `${TITULO_FORMATO[formato]} (${archivo})` : TITULO_FORMATO[formato];
+
+  if (r.porArchivo.length > 0) {
+    lineas.push([], ["Por archivo"], ["Archivo", "Sección", "Entraron", "Ya estaban", "Afuera", "Permiso", "Asignadas", "Ya tenían", "Con otro permiso", "Heredan", "Falló"]);
+    for (const a of r.porArchivo) {
+      lineas.push([
+        a.archivo,
+        TITULO_FORMATO[a.formato],
+        String(a.creados),
+        String(a.existen),
+        String(a.errores),
+        a.permiso?.codigo ?? "",
+        a.permiso ? String(a.permiso.asignadas) : "",
+        a.permiso ? String(a.permiso.yaTenian) : "",
+        a.permiso ? String(a.permiso.conflictos) : "",
+        a.permiso ? String(a.permiso.heredan) : "",
+        a.error ?? "",
+      ]);
+    }
+  }
+  /* Las filas que conservaron OTRO permiso, una por una: son las que alguien
+     tiene que mirar, y en pantalla sólo entran las primeras. */
+  const conOtro = r.porArchivo.flatMap((a) => a.conflictos.map((c) => ({ a, c })));
+  if (conOtro.length > 0) {
+    lineas.push([], ["Filas con otro permiso (se respetó el suyo)"], ["Archivo", "Sección", "Fila", "Su permiso", "Motivo"]);
+    for (const { a, c } of conOtro) {
+      lineas.push([a.archivo, TITULO_FORMATO[a.formato], c.fila != null ? String(c.fila) : "", c.delArchivo ?? "", c.motivo ?? ""]);
+    }
+  }
 
   if (r.problemas.length > 0) {
     lineas.push([], ["Qué quedó afuera"], ["Sección", "Filas", "Códigos", "Problema", "Cómo arreglarlo"]);
     for (const p of r.problemas) {
       lineas.push([
-        TITULO_FORMATO[p.formato],
+        donde(p.formato, p.archivo),
         p.filas.join(" "),
         p.codigos.slice(0, 20).join(" "),
         p.ejemplo,
@@ -235,14 +325,14 @@ export function reporteACsv(r: ReporteImport, nombreArchivo?: string): string {
   if (r.incompletas.length > 0) {
     lineas.push([], ["Filas incompletas en el archivo"], ["Sección", "Fila", "Qué falta"]);
     for (const i of r.incompletas) {
-      lineas.push([TITULO_FORMATO[i.formato], String(i.fila), i.motivos.join(" · ")]);
+      lineas.push([donde(i.formato, i.archivo), String(i.fila), i.motivos.join(" · ")]);
     }
   }
 
   if (r.avisosDeFila.length > 0) {
     lineas.push([], ["Entraron, pero revisa esto"], ["Sección", "Fila", "Código", "Aviso"]);
     for (const a of r.avisosDeFila) {
-      lineas.push([TITULO_FORMATO[a.formato], a.fila != null ? String(a.fila) : "", a.codigo, a.mensaje]);
+      lineas.push([donde(a.formato, a.archivo), a.fila != null ? String(a.fila) : "", a.codigo, a.mensaje]);
     }
   }
 

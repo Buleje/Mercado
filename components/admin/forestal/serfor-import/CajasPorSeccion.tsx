@@ -1,31 +1,31 @@
 "use client";
 
 /**
- * Una caja de arrastre por sección del libro.
+ * Una caja de arrastre por sección del libro, y en cada caja los archivos que
+ * quieras (Brandon 19-10: «de 1 hasta más archivos, y en cada archivo poner
+ * por separado a qué permiso pertenece»).
  *
  * El libro del SNIFFS se puede bajar entero —un Excel con cinco hojas— o
- * sección por sección, que es como trabaja quien consulta el SNIFFS de a poco.
- * Con una sola caja, ese operador tenía que subir cinco veces y en el orden
- * correcto, o perdía la cadena entre secciones.
+ * sección por sección. Acá cada archivo va a su casilla, se ve cuáles ya
+ * entraron, y recién con todo a la vista se importa una vez. El orden de
+ * escritura lo sigue decidiendo `ctp-serfor-secuencia.ts`: la caja no es el
+ * orden, es la bandeja.
  *
- * Acá suelta cada archivo en su casilla, ve cuáles ya cargó, y recién cuando
- * están todas las que necesita importa una vez. El orden de escritura lo sigue
- * decidiendo `ctp-serfor-secuencia.ts`: la caja no es el orden, es la bandeja.
- *
- * NO acepta un archivo en la casilla equivocada. Si soltás Consumos en la caja
- * de Ingresos, lo dice — cargarlo igual «porque se reconoce solo» dejaría al
- * operador creyendo que puso una sección que en realidad reemplazó otra.
+ * NO acepta un archivo en la casilla equivocada: si sueltas Consumos en la
+ * caja de Ingresos, lo dice.
  */
 
-import { useRef, useState } from "react";
-import { AlertTriangle, CheckCircle, Upload, X } from "@buleje/design-system/icons";
+import { useRef, useState, type ReactNode } from "react";
+import { AlertTriangle, CheckCircle, Plus, Upload } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
 import {
   FORMATOS_INVENTARIO,
   FORMATOS_LIBRO,
   TITULO_FORMATO,
   type FormatoCtp,
 } from "@/lib/forestal/ctp-formatos-serfor";
-import type { SeccionDelLibro } from "@/lib/forestal/ctp-serfor-secuencia";
+import type { ArchivoCargado } from "./use-archivos-del-libro";
+import FilaDeArchivo, { type EstadoDeEnvio } from "./FilaDeArchivo";
 
 /** Qué trae cada sección, en una línea, para quien no se acuerda cuál es cuál. */
 const QUE_ES: Record<FormatoCtp, string> = {
@@ -38,28 +38,23 @@ const QUE_ES: Record<FormatoCtp, string> = {
   inventarioAserrada: "Los paquetes que hay HOY en el depósito",
 };
 
-export type ArchivoDeSeccion = {
-  nombre: string;
-  seccion: SeccionDelLibro;
-};
-
-export default function CajasPorSeccion({
-  cargadas,
-  onArchivo,
-  onQuitar,
-  deshabilitado,
-}: {
-  cargadas: Map<FormatoCtp, ArchivoDeSeccion>;
-  /** Devuelve el error a mostrar en esa caja, o `null` si entró bien. */
-  onArchivo: (formato: FormatoCtp, file: File) => Promise<string | null>;
-  onQuitar: (formato: FormatoCtp) => void;
+interface PropsComunes {
+  /** Devuelve el error a mostrar en esa caja, o `null` si todo entró. */
+  onAgregar: (formato: FormatoCtp, files: File[]) => Promise<string | null>;
+  onQuitar: (id: string) => void;
   deshabilitado?: boolean;
-}) {
+  /** Cómo le fue a cada archivo en el último envío. */
+  estadoDe?: (id: string) => EstadoDeEnvio;
+  /** El selector de permiso de un archivo; `null` en las secciones que no lo llevan. */
+  permiso?: (archivo: ArchivoCargado, deLaSeccion: readonly ArchivoCargado[]) => ReactNode;
+}
+
+export default function CajasPorSeccion({ archivos, ...resto }: PropsComunes & { archivos: readonly ArchivoCargado[] }) {
   return (
     <div className="space-y-4">
       {/* El libro y el inventario responden preguntas distintas —qué pasó vs.
-          qué hay hoy— y mezclarlos en una sola grilla hacía que el inventario
-          pareciera una sección más del libro, que no lo es. */}
+          qué hay hoy—: en una sola grilla el inventario parecía una sección
+          más del libro, que no lo es. */}
       {(
         [
           ["Las cinco secciones del libro", "Lo que pasó: entradas, aserrío y salidas", FORMATOS_LIBRO],
@@ -69,16 +64,9 @@ export default function CajasPorSeccion({
         <div key={titulo}>
           <p className="text-base font-extrabold text-[var(--text-primary)]">{titulo}</p>
           <p className="mb-2 text-sm text-[var(--text-tertiary)]">{sub}</p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid items-start gap-3 sm:grid-cols-2">
             {lista.map((f) => (
-              <Caja
-                key={f}
-                formato={f as FormatoCtp}
-                cargada={cargadas.get(f as FormatoCtp)}
-                onArchivo={onArchivo}
-                onQuitar={onQuitar}
-                deshabilitado={deshabilitado}
-              />
+              <Caja key={f} formato={f} cargados={archivos.filter((a) => a.formato === f)} {...resto} />
             ))}
           </div>
         </div>
@@ -89,39 +77,36 @@ export default function CajasPorSeccion({
 
 function Caja({
   formato,
-  cargada,
-  onArchivo,
+  cargados,
+  onAgregar,
   onQuitar,
   deshabilitado,
-}: {
-  formato: FormatoCtp;
-  cargada?: ArchivoDeSeccion;
-  onArchivo: (formato: FormatoCtp, file: File) => Promise<string | null>;
-  onQuitar: (formato: FormatoCtp) => void;
-  deshabilitado?: boolean;
-}) {
+  estadoDe,
+  permiso,
+}: PropsComunes & { formato: FormatoCtp; cargados: readonly ArchivoCargado[] }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [encima, setEncima] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [leyendo, setLeyendo] = useState(false);
 
-  const tomar = async (file: File | undefined) => {
-    if (!file) return;
+  const tomar = async (files: FileList | null | undefined) => {
+    const lista = files ? Array.from(files) : [];
+    if (lista.length === 0) return;
     setLeyendo(true);
     setError(null);
     try {
-      setError(await onArchivo(formato, file));
+      setError(await onAgregar(formato, lista));
     } finally {
       setLeyendo(false);
       setEncima(false);
     }
   };
 
-  const listas = cargada ? cargada.seccion.parseadas.filter((p) => p.problemas.length === 0).length : 0;
-  const malas = cargada ? cargada.seccion.parseadas.length - listas : 0;
+  const hay = cargados.length > 0;
 
   return (
     <div
+      data-caja={formato}
       onDragOver={(e) => {
         e.preventDefault();
         if (!deshabilitado) setEncima(true);
@@ -129,65 +114,64 @@ function Caja({
       onDragLeave={() => setEncima(false)}
       onDrop={(e) => {
         e.preventDefault();
-        if (!deshabilitado) void tomar(e.dataTransfer.files?.[0]);
+        if (!deshabilitado) void tomar(e.dataTransfer.files);
       }}
-      className={`rounded-xl border-2 p-3 transition-colors ${
+      /* Con archivos cargados la caja lleva el permiso de cada uno: en media
+         grilla quedaba apretada y la otra mitad vacía (QA 19-10). */
+      className={`rounded-xl border-2 p-3 transition-colors ${hay ? "sm:col-span-2 " : ""}${
         error
           ? "border-[var(--data-error)] bg-[var(--data-error)]/5"
-          : cargada
-            ? "border-[var(--data-success)] bg-[var(--data-success)]/5"
-            : encima
-              ? "border-primary bg-primary/10"
+          : encima
+            ? "border-primary bg-primary/10"
+            : hay
+              ? "border-[var(--data-success)] bg-[var(--data-success)]/5"
               : "border-dashed border-[var(--rule-base)]"
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-base font-extrabold text-[var(--text-primary)]">
-            {cargada && <CheckCircle className="h-4 w-4 shrink-0 text-[var(--data-success)]" aria-hidden />}
-            {TITULO_FORMATO[formato]}
-          </p>
-          <p className="text-sm text-[var(--text-tertiary)]">{QUE_ES[formato]}</p>
-        </div>
-        {cargada && !deshabilitado && (
-          <button
-            onClick={() => {
-              onQuitar(formato);
-              setError(null);
-            }}
-            aria-label={`Quitar el archivo de ${TITULO_FORMATO[formato]}`}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
+      <p className="flex items-center gap-1.5 text-base font-extrabold text-[var(--text-primary)]">
+        {hay && <CheckCircle className="h-4 w-4 shrink-0 text-[var(--data-success)]" aria-hidden />}
+        {TITULO_FORMATO[formato]}
+        {cargados.length > 1 && (
+          <span className="text-sm font-semibold text-[var(--text-tertiary)]">· {cargados.length} archivos</span>
         )}
-      </div>
+      </p>
+      <p className="text-sm text-[var(--text-tertiary)]">{QUE_ES[formato]}</p>
 
-      {cargada ? (
-        <p className="mt-2 text-sm text-[var(--text-secondary)]">
-          <span className="block truncate font-semibold text-[var(--text-primary)]">{cargada.nombre}</span>
-          <strong className="tabular-nums">{listas}</strong> filas listas
-          {malas > 0 && (
-            <span className="font-semibold text-[var(--data-warning)]">
-              {" · "}
-              <span className="tabular-nums">{malas}</span> incompleta{malas === 1 ? "" : "s"}
-            </span>
-          )}
-        </p>
-      ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={deshabilitado || leyendo}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[var(--text-tertiary)] transition-colors hover:text-primary disabled:opacity-50"
-        >
-          <Upload className="h-4 w-4" aria-hidden />
-          {leyendo ? "Leyendo…" : "Suelta el archivo o toca acá"}
-        </button>
+      {hay && (
+        <ul className="mt-2 space-y-2">
+          {cargados.map((a) => (
+            <FilaDeArchivo
+              key={a.id}
+              archivo={a}
+              estado={estadoDe?.(a.id) ?? null}
+              onQuitar={(id) => {
+                onQuitar(id);
+                setError(null);
+              }}
+              deshabilitado={deshabilitado}
+            >
+              {permiso?.(a, cargados)}
+            </FilaDeArchivo>
+          ))}
+        </ul>
       )}
 
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={deshabilitado || leyendo}
+        className={
+          hay
+            ? button({ variant: "ghost", className: "mt-2 w-full" })
+            : "mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-[var(--text-tertiary)] transition-colors hover:text-primary disabled:opacity-50"
+        }
+      >
+        {hay ? <Plus className="h-5 w-5" aria-hidden /> : <Upload className="h-4 w-4" aria-hidden />}
+        {leyendo ? "Leyendo…" : hay ? "Agregar otro archivo" : "Suelta los archivos o toca acá"}
+      </button>
+
       {error && (
-        <p className="mt-2 flex items-start gap-1.5 text-sm font-semibold text-[var(--data-error)]">
+        <p role="alert" className="mt-2 flex items-start gap-1.5 text-sm font-semibold text-[var(--data-error)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {error}
         </p>
       )}
@@ -195,10 +179,12 @@ function Caja({
       <input
         ref={inputRef}
         type="file"
+        multiple
         accept=".xlsx,.xls,.csv"
         className="hidden"
+        aria-label={`Archivos de ${TITULO_FORMATO[formato]}`}
         onChange={(e) => {
-          void tomar(e.target.files?.[0]);
+          void tomar(e.target.files);
           e.target.value = "";
         }}
       />

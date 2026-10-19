@@ -15,16 +15,23 @@ import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, CheckCircle, Download } from "@buleje/design-system/icons";
 import { TITULO_FORMATO } from "@/lib/forestal/ctp-formatos-serfor";
 import { reporteACsv, tituloDelReporte, type ReporteImport } from "@/lib/forestal/ctp-reporte-import";
+import ResumenPorArchivo from "./ResumenPorArchivo";
+
+/** «Rolliza en patio» o «Rolliza en patio (rolliza-a.xlsx)» cuando hubo varios archivos. */
+const donde = (titulo: string, archivo?: string, varios?: boolean) => (varios && archivo ? `${titulo} (${archivo})` : titulo);
 
 export default function ReporteDeImport({
   reporte,
   nombreArchivo,
   escrito,
+  commit,
 }: {
   reporte: ReporteImport;
   nombreArchivo?: string | null;
   /** true si fue una importación de verdad; false si sólo se revisó. */
   escrito: boolean;
+  /** Fue un import de verdad (no «Sólo revisar»): cada archivo dice «entraron», aunque no haya entrado nada nuevo. */
+  commit?: boolean;
 }) {
   const [bajando, setBajando] = useState(false);
 
@@ -41,6 +48,9 @@ export default function ReporteDeImport({
       setBajando(false);
     }
   };
+
+  /* Con un solo archivo, nombrarlo en cada línea es ruido. */
+  const varios = new Set(reporte.porArchivo.map((a) => a.archivo)).size > 1;
 
   const hayQueRevisar =
     reporte.problemas.length > 0 ||
@@ -121,11 +131,13 @@ export default function ReporteDeImport({
         </p>
       )}
 
+      <ResumenPorArchivo porArchivo={reporte.porArchivo} escrito={commit ?? escrito} />
+
       {/* ── Lo que quedó afuera, agrupado por causa ─────────────────────── */}
       {reporte.problemas.map((p, i) => (
         <div key={`${p.formato}-${i}`} className="rounded-lg bg-[var(--data-error)]/5 p-3">
           <p className="text-base font-extrabold text-[var(--data-error)]">
-            {p.filas.length} fila{p.filas.length === 1 ? "" : "s"} · {TITULO_FORMATO[p.formato]}
+            {p.filas.length} fila{p.filas.length === 1 ? "" : "s"} · {donde(TITULO_FORMATO[p.formato], p.archivo, varios)}
           </p>
           <p className="mt-0.5 text-base text-[var(--text-secondary)]">{p.ejemplo}</p>
           {p.filas.length > 0 && (
@@ -151,7 +163,7 @@ export default function ReporteDeImport({
           </p>
           {reporte.avisosDeFila.slice(0, 8).map((a, i) => (
             <p key={i} className="mt-0.5 text-sm text-[var(--text-secondary)]">
-              {TITULO_FORMATO[a.formato]}
+              {donde(TITULO_FORMATO[a.formato], a.archivo, varios)}
               {a.fila != null && <>, fila <span className="tabular-nums">{a.fila}</span></>}: {a.mensaje}
             </p>
           ))}
@@ -172,7 +184,7 @@ export default function ReporteDeImport({
           </p>
           {reporte.incompletas.slice(0, 8).map((inc, i) => (
             <p key={i} className="mt-0.5 text-sm text-[var(--text-secondary)]">
-              {TITULO_FORMATO[inc.formato]}, fila <span className="tabular-nums">{inc.fila}</span>:{" "}
+              {donde(TITULO_FORMATO[inc.formato], inc.archivo, varios)}, fila <span className="tabular-nums">{inc.fila}</span>:{" "}
               {inc.motivos.join(" · ")}
             </p>
           ))}

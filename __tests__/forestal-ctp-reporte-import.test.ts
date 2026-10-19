@@ -89,8 +89,8 @@ describe("tituloDelReporte", () => {
         { fila: 8, codigo: "B", accion: "error", mensaje: "Sin especie" },
       ]),
     ]);
-    expect(tituloDelReporte(r)).toContain("1 filas importadas");
-    expect(tituloDelReporte(r)).toContain("1 quedaron afuera");
+    expect(tituloDelReporte(r)).toContain("1 fila importada");
+    expect(tituloDelReporte(r)).toContain("1 quedó afuera");
   });
 
   it("no dice «0 importadas» cuando todo ya estaba", () => {

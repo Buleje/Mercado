@@ -3,6 +3,7 @@ import { detectarSeparador, leerCsv, partirLineaCsv, ubicarCabecera } from "@/li
 import { esPieDelReporte } from "@/lib/forestal/ctp-formatos-serfor";
 import {
   aCuerpoDelLibro,
+  codigoDePermisoDe,
   normalizarRespuesta,
   proveedorDesdeFormato,
   tipoDeProducto,
@@ -164,6 +165,21 @@ describe("aCuerpoDelLibro", () => {
     ]);
     expect(String(r.notes)).toContain("3012263");
     expect(r.volumeM3).toBe(3.01);
+  });
+
+  it("la fuente de origen viaja en su campo; el código de origen, sólo si es un permiso", () => {
+    // Antes la resolución sólo iba dentro del proveedor «Origen X · GTF» y se perdía.
+    const [conPermiso, conArbol] = aCuerpoDelLibro("ingresos", [
+      fila({ numeroDocumento: "019-2", especieComun: "Copaiba", cantidad: 3, fuenteOrigen: "R.D. 123-2024", codigoOrigen: "17-UCA/PER-FMP-2019-003" }),
+      fila({ numeroDocumento: "019-3", especieComun: "Copaiba", cantidad: 2, fuenteOrigen: "R.D. 123-2024", codigoOrigen: "33/B (0000010)" }),
+    ]);
+    expect(conPermiso.originSourceNumber).toBe("R.D. 123-2024");
+    expect(conPermiso.originCode).toBe("17-UCA/PER-FMP-2019-003");
+    // El código de un árbol no es un permiso: mandarlo lo contaría como «otro permiso».
+    expect(conArbol.originSourceNumber).toBe("R.D. 123-2024");
+    expect(conArbol.originCode).toBeNull();
+    expect(String(conArbol.notes)).toContain("Origen 33/B (0000010)");
+    expect(codigoDePermisoDe("")).toBeNull();
   });
 
   it("las filas con problemas NO se mandan: el server las rechazaría con peor mensaje", () => {
