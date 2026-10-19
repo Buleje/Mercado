@@ -178,3 +178,10 @@ Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
 - **Sugerencia:** Files [components/superadmin/banners/BannerImageAdjuster.tsx, components/superadmin/banners/BannerPreviewStudio.tsx] are always edited together. Consider creating a skill that pre-loads all 2 files.
 - **Last seen:** 2026-04-27T01:43:48.118Z
 
+
+## Weekly health 2026-10-19
+- tsc: verde (0 errores).
+- tests: 52 fallos / 18 archivos al inicio (3952 pass). Arreglado `api-message-templates` (9). **Quedan ~43 rojos**, incl. 5 en `__tests__/whatsapp/` (approve-reject, payment-approval.db `review_required` vs `pending`, yape-capture) — [pending], requieren humano (guardrail 143 tests whatsapp/delivery roto).
+- lint: `npm run lint` aborta por config (plugin `react-hooks` no definido en eslint.config.mjs) — [pending].
+- deps: 95 outdated; `npm audit --omit=dev` reporta 1 HIGH (revisar; no tocado esta semana).
+- acción: fix de mock stale (`getClientIp` + cache) en `__tests__/api-message-templates.test.ts`.

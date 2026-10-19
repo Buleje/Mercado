@@ -52,11 +52,13 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-vi.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/rate-limit", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/rate-limit")>()),
   applyRateLimit: vi.fn(() => null),
 }));
 
 import { GET, POST, PATCH, DELETE } from "@/app/api/message-templates/route";
+import { invalidateAll } from "@/lib/cache";
 
 const AUTH = { tenantId: "main", role: "admin", username: "test" };
 const UNAUTH = NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -81,7 +83,10 @@ const VALID_BODY = { name: "Bienvenida", channel: "whatsapp", category: "ventas"
 // ── GET ──────────────────────────────────────────────────────────────────────
 
 describe("GET /api/message-templates", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    invalidateAll();
+  });
 
   it("returns 401 when unauthenticated", async () => {
     mockRequireAdmin.mockResolvedValue(UNAUTH);
