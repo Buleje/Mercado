@@ -294,6 +294,9 @@ if (sesionSa) await ctx.addCookies(sesionSa.cookies);
 await ctx.addInitScript((slug) => {
   try {
     if (!localStorage.getItem("active-tenant-slug")) localStorage.setItem("active-tenant-slug", slug);
+    /* Dueño del caché (19-10): sin él, `lib/tenant-cache.ts` cree que cambiaste de negocio y borra
+       todo `admin-*`, así que lo sembrado con `--ls` (p. ej. `admin-uso-pestanas`) nunca llegaba. */
+    if (!localStorage.getItem("__tenant-cache-owner")) localStorage.setItem("__tenant-cache-owner", slug);
     localStorage.setItem(`onboarding-completed-${slug}`, "1");
     localStorage.setItem("onboarding-completed-main", "1");
     /* El TOUR es otra clave: sin ella, cargar /admin sin ?tab (retomar admin_active_tab)
