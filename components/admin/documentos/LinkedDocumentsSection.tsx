@@ -10,7 +10,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { FileText, Download, Clock, Plus, Loader2 } from "@buleje/design-system/icons";
+import { FileText, Download, Clock, Plus, Loader2, ArrowUpRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { getSignedDownloadUrl } from "@/hooks/use-documents";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -48,24 +48,48 @@ export function LinkedDocumentsSection({
   nombre,
   estadoDeCuenta = false,
   reloadSignal,
+  tag,
+  titulo,
+  abrirEnArchivo = true,
 }: {
-  entity: Entity;
-  id: string;
-  /** Nombre de la entidad (para archivar su estado de cuenta). */
+  entity?: Entity;
+  id?: string;
+  /** Nombre de la entidad (para archivar su estado de cuenta y el deep-link). */
   nombre?: string;
   /** En un tercero: muestra "Guardar estado de cuenta" (POST a /estado-cuenta). */
   estadoDeCuenta?: boolean;
   /** Al cambiar, vuelve a leer: para cuando algo de AFUERA archiva un documento
    *  de esta entidad (p. ej. «PDF al Drive» del trámite). */
   reloadSignal?: number;
+  /** Modo tag crudo: lista por un tag arbitrario (p. ej. la semana de pagos del
+   *  equipo). Mutuamente excluyente con entity/id. */
+  tag?: string;
+  /** Encabezado del bloque (por defecto «Documentos»). */
+  titulo?: string;
+  /** Muestra «Abrir en el Archivo» (deep-link al drive filtrado por el tag). */
+  abrirEnArchivo?: boolean;
 }) {
   const [docs, setDocs] = useState<DbDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
 
+  /** El tag que define qué documentos son de esta entidad/semana (ADR-502):
+   *  lista inversa + deep-link al Archivo. Cliente/proveedor van por FK, no tag. */
+  const tagActivo =
+    tag ?? (entity && entity !== "customer" && entity !== "supplier" && id ? tagEntidad(entity, id) : null);
+
   const cargar = useCallback(async () => {
+    const u = tag
+      ? `/api/admin/documents?tags=${encodeURIComponent(tag)}`
+      : entity && id
+        ? urlDeDocumentos(entity, id)
+        : null;
+    if (!u) {
+      setLoading(false);
+      return;
+    }
     try {
-      const r = await fetch(urlDeDocumentos(entity, id), { credentials: "include" });
+      const r = await fetch(u, { credentials: "include" });
       const d = r.ok ? await r.json() : { documents: [] };
       setDocs(d.documents ?? []);
     } catch {
@@ -73,14 +97,22 @@ export function LinkedDocumentsSection({
     } finally {
       setLoading(false);
     }
-  }, [entity, id]);
+  }, [tag, entity, id]);
 
   useEffect(() => {
     void cargar();
   }, [cargar, reloadSignal]);
 
+  function abrirEnElArchivo() {
+    if (!tagActivo) return;
+    const q = new URLSearchParams({ tab: "documentos", sub: "all", etiqueta: tagActivo });
+    const label = titulo || nombre;
+    if (label) q.set("et", label);
+    window.location.href = `/admin?${q.toString()}`;
+  }
+
   async function guardarEstadoDeCuenta() {
-    if (guardando || !nombre) return;
+    if (guardando || !nombre || !id) return;
     setGuardando(true);
     try {
       const r = await fetch("/api/admin/documents/estado-cuenta", {
@@ -120,11 +152,21 @@ export function LinkedDocumentsSection({
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between gap-2">
         <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
-          <FileText className="h-4 w-4 text-[var(--accent)]" /> Documentos
+          <FileText className="h-4 w-4 text-[var(--accent)]" /> {titulo ?? "Documentos"}
           {docs.length > 0 && (
             <span className="text-[length:var(--ts-2xs,11px)] tabular-nums font-bold px-1.5 py-0.5 rounded-md bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
               {docs.length}
             </span>
+          )}
+          {abrirEnArchivo && tagActivo && docs.length > 0 && (
+            <button
+              type="button"
+              onClick={abrirEnElArchivo}
+              className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--accent)] hover:underline"
+              title="Ver todos estos documentos en el Archivo, con buscador y vista previa"
+            >
+              Abrir en el Archivo <ArrowUpRight className="h-3 w-3" />
+            </button>
           )}
         </p>
         {estadoDeCuenta && (

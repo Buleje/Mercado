@@ -274,6 +274,39 @@ function escribirCarpetaEnUrl(id: string | null) {
   }
 }
 
+/**
+ * Filtro por ETIQUETA del Archivo-hub (ADR-502): el deep-link «ver todo de esta
+ * entidad». `etiqueta` es el tag (de máquina —`tercero:<id>`, `permiso:<titulo>`,
+ * `colaborador:<id>`, `tramite:<id>`— o una semana) que trae TODOS los documentos
+ * con ese tag cruzando carpetas; `et` es el rótulo humano para el cartel. Vive en
+ * la URL igual que la carpeta para poder compartirse.
+ */
+function leerEtiquetaDeUrl(): { tag: string; label: string } | null {
+  if (typeof window === "undefined") return null;
+  const p = new URLSearchParams(window.location.search);
+  const tag = p.get("etiqueta");
+  if (!tag) return null;
+  return { tag, label: p.get("et") || tag };
+}
+
+function escribirEtiquetaEnUrl(filtro: { tag: string; label: string } | null) {
+  if (typeof window === "undefined") return;
+  try {
+    const url = new URL(window.location.href);
+    if (filtro) {
+      url.searchParams.set("etiqueta", filtro.tag);
+      if (filtro.label && filtro.label !== filtro.tag) url.searchParams.set("et", filtro.label);
+      else url.searchParams.delete("et");
+    } else {
+      url.searchParams.delete("etiqueta");
+      url.searchParams.delete("et");
+    }
+    window.history.replaceState(null, "", url.toString());
+  } catch {
+    // history no disponible
+  }
+}
+
 /** Ancho de la barra lateral del drive, arrastrable — clamp para que nunca quede ilegible ni tape el contenido. */
 const SIDEBAR_MIN_W = 180;
 const SIDEBAR_MAX_W = 400;
@@ -372,9 +405,21 @@ export default function DocumentosModule() {
     escribirCarpetaEnUrl(id);
   }, []);
 
-  /** Atrás/adelante: la carpeta la dicta la URL, igual que el modo. */
+  /** Filtro por etiqueta del Archivo-hub (ADR-502), en estado + URL, siempre juntos. */
+  const [etiquetaFiltro, setEtiquetaFiltroRaw] = useState<{ tag: string; label: string } | null>(
+    () => leerEtiquetaDeUrl(),
+  );
+  const setEtiquetaFiltro = useCallback((f: { tag: string; label: string } | null) => {
+    setEtiquetaFiltroRaw(f);
+    escribirEtiquetaEnUrl(f);
+  }, []);
+
+  /** Atrás/adelante: la carpeta y la etiqueta las dicta la URL, igual que el modo. */
   useEffect(() => {
-    const onPop = () => setActiveFolderIdRaw(leerCarpetaDeUrl());
+    const onPop = () => {
+      setActiveFolderIdRaw(leerCarpetaDeUrl());
+      setEtiquetaFiltroRaw(leerEtiquetaDeUrl());
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
@@ -494,15 +539,27 @@ export default function DocumentosModule() {
   }, [search]);
 
   const filters = useMemo(
-    () => ({
-      folderId: filterMode === "folder" ? activeFolderId : undefined,
-      q: searchDebounced.trim() || undefined,
-      favorite: filterMode === "favorites" ? true : undefined,
-      expiring: filterMode === "expiring" ? 30 : undefined,
-      semantic: semantic && !!searchDebounced.trim(),
-      deletedOnly: filterMode === "trash" ? true : undefined,
-    }),
-    [filterMode, activeFolderId, searchDebounced, semantic]
+    () =>
+      etiquetaFiltro
+        ? {
+            // Filtro de SERVIDOR por tag (Archivo-hub, ADR-502): trae TODOS los
+            // documentos con ese tag cruzando carpetas (`folderId: undefined`).
+            // Va aparte del chip cliente `filtros.tags`: lo que se ve es lo que
+            // trajo el servidor por esta etiqueta.
+            folderId: undefined,
+            tags: [etiquetaFiltro.tag],
+            q: searchDebounced.trim() || undefined,
+            semantic: semantic && !!searchDebounced.trim(),
+          }
+        : {
+            folderId: filterMode === "folder" ? activeFolderId : undefined,
+            q: searchDebounced.trim() || undefined,
+            favorite: filterMode === "favorites" ? true : undefined,
+            expiring: filterMode === "expiring" ? 30 : undefined,
+            semantic: semantic && !!searchDebounced.trim(),
+            deletedOnly: filterMode === "trash" ? true : undefined,
+          },
+    [etiquetaFiltro, filterMode, activeFolderId, searchDebounced, semantic]
   );
 
   const {
@@ -581,9 +638,13 @@ export default function DocumentosModule() {
       const sf = smartFolders.find((f) => f.id === activeSmartId);
       if (sf) list = list.filter((d) => matchesSmartFolder(d, sf.rules));
     }
-    if (statusFilter) list = list.filter((d) => d.status === statusFilter);
-    if (soloSinDescribir) list = list.filter((d) => !tieneDescripcion(d));
-    if (cuantosFiltrosActivos(filtros) > 0) list = list.filter((d) => cumpleFiltros(d, filtros));
+    // Con el filtro por etiqueta activo lo que se ve es EXACTO lo que trajo el
+    // servidor por ese tag: no se le superponen los chips cliente.
+    if (!etiquetaFiltro) {
+      if (statusFilter) list = list.filter((d) => d.status === statusFilter);
+      if (soloSinDescribir) list = list.filter((d) => !tieneDescripcion(d));
+      if (cuantosFiltrosActivos(filtros) > 0) list = list.filter((d) => cumpleFiltros(d, filtros));
+    }
     if (sortBy === "relevancia") return ordenarPorRelevancia(list, terminosBusqueda);
     const sorted = [...list];
     sorted.sort((a, b) => {
@@ -606,7 +667,7 @@ export default function DocumentosModule() {
       }
     });
     return sorted;
-  }, [documents, filterMode, sortBy, statusFilter, activeSmartId, smartFolders, soloSinDescribir, terminosBusqueda, filtros]);
+  }, [documents, filterMode, sortBy, statusFilter, activeSmartId, smartFolders, soloSinDescribir, terminosBusqueda, filtros, etiquetaFiltro]);
 
   const statusCounts = useMemo(() => {
     const m: Record<string, number> = { draft: 0, review: 0, approved: 0, archived: 0 };
@@ -1422,8 +1483,13 @@ export default function DocumentosModule() {
   });
   // Sin panel sólo donde se ve el explorador: Resumen, Papelera, Calendario…
   // son otras pantallas y llevan el panel para volver.
-  const enExplorador = ex.explorando && !VISTAS_CON_CONTENIDO_PROPIO.has(filterMode);
-  const sinPanel = ex.sinPanel && enExplorador;
+  // Con el filtro por etiqueta (Archivo-hub) se ve la lista PLANA de los
+  // documentos de esa entidad: se apaga el explorador/árbol de carpetas y el
+  // panel lateral, y el contenido pasa a las vistas de tarjetas/lista de abajo.
+  const etiquetaActiva = !!etiquetaFiltro;
+  const enExplorador = ex.explorando && !VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && !etiquetaActiva;
+  const explorandoVista = ex.explorando && !etiquetaActiva;
+  const sinPanel = (ex.sinPanel && enExplorador) || etiquetaActiva;
   const barraExplorador = enExplorador && (filterMode === "all" || filterMode === "folder");
   // En el explorador va a la derecha de la barra de dirección; en el resto, al frente de la barra.
   const buscador = (
@@ -1656,6 +1722,30 @@ export default function DocumentosModule() {
           El botón que los muestra vive arriba, en el header (alineado con
           "Subir archivos" — 2026-09-24), acá sólo queda el panel. */}
       {filterMode !== "trash" && kpis.panel}
+
+      {/* Cartel del filtro por etiqueta (Archivo-hub, ADR-502): «ver todo de
+          esta entidad». Mientras está activo se muestra la lista plana de los
+          documentos con ese tag (cruza carpetas) y el panel/árbol de carpetas
+          queda oculto; «Quitar» vuelve al drive normal. */}
+      {etiquetaFiltro && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-4 py-3">
+          <Tag className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
+          <p className="min-w-0 text-sm font-semibold text-[var(--text-primary)]">
+            Mostrando los documentos de:{" "}
+            <span className="font-bold text-[var(--accent)]">{etiquetaFiltro.label}</span>
+          </p>
+          <span className="shrink-0 text-sm tabular-nums text-[var(--text-tertiary)]">
+            {loading ? "…" : `${displayDocs.length} ${displayDocs.length === 1 ? "documento" : "documentos"}`}
+          </span>
+          <button
+            type="button"
+            onClick={() => setEtiquetaFiltro(null)}
+            className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          >
+            <X className="h-3.5 w-3.5" /> Quitar
+          </button>
+        </div>
+      )}
 
       {/* Explorador estilo Windows: sin panel lateral (Ver › Panel lateral lo
           vuelve a mostrar) y en el celular nunca; lo del panel queda en
@@ -2596,11 +2686,11 @@ export default function DocumentosModule() {
               onRestoreMany={restoreMany}
               onPurgeMany={purgeMany}
             />
-          ) : ex.propsVista && (ex.enCarpetas || displayDocs.length > 0) ? (
+          ) : explorandoVista && ex.propsVista && (ex.enCarpetas || displayDocs.length > 0) ? (
             // En una carpeta vacía igual va el explorador: clic derecho › Nuevo
             // y soltar archivos tienen que andar justo ahí.
             <VistaExplorador key={`${filterMode}:${activeFolderId ?? ""}:${view}`} {...ex.propsVista} />
-          ) : displayDocs.length === 0 && !(ex.explorando && ex.contenido.carpetas.length > 0) ? (
+          ) : displayDocs.length === 0 && !(explorandoVista && ex.contenido.carpetas.length > 0) ? (
             <EmptyState onUpload={() => fileInputRef.current?.click()} />
           ) : view === "grid" ? (
             <div className="space-y-3">
@@ -2710,7 +2800,7 @@ export default function DocumentosModule() {
                 </thead>
                 <tbody className="divide-y divide-[var(--rule-soft,#f1f5f9)]">
                   {/* Detalles = explorador: las carpetas de acá arriba de los archivos. */}
-                  {ex.explorando && ex.contenido.carpetas.map((f) => (
+                  {explorandoVista && ex.contenido.carpetas.map((f) => (
                     <FilaCarpetaDetalles
                       key={f.id}
                       carpeta={f}
@@ -2720,7 +2810,7 @@ export default function DocumentosModule() {
                       onSoltarDoc={(docId) => void dropDocOnFolder(docId, f.id)}
                     />
                   ))}
-                  {(ex.explorando ? ex.contenido.docs : displayDocs).map((doc) => {
+                  {(explorandoVista ? ex.contenido.docs : displayDocs).map((doc) => {
                     const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
                     return (
                       <tr

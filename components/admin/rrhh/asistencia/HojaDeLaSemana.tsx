@@ -25,6 +25,7 @@ import { useRrhhGanado } from "@/hooks/use-rrhh-ganado";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { sinDato } from "@/lib/errores/sin-dato";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
 import { rangoDeDias, semanaDe, sumarDias } from "@/lib/rrhh/fechas";
 import { limaDateKey } from "@/lib/utils";
 import { AvisoRrhh, BOTON } from "../rrhh-form";
@@ -243,6 +244,9 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
 
         <LeyendaEstados />
         {conPlata && <p className="text-sm text-[var(--text-tertiary)]">{COPY_REFERENCIA}</p>}
+        {/* ADR-502: los pagos de ESTA semana ya archivados (todos juntos, por el
+            tag de la semana); «Abrir en el Archivo» lleva a su carpeta. */}
+        {conPlata && <LinkedDocumentsSection tag={`${desde} a ${hasta}`} titulo="Pagos de la semana" />}
       </>
     );
   }
