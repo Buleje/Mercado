@@ -8,12 +8,23 @@ import {
   VISTAS_LOCALES_POR_MODULO,
   VISTAS_POR_MODULO,
   vistasDelModulo,
+  type SubvistaAnidada,
   type SubvistaModulo,
 } from "@/lib/admin/subvistas-modulos";
 import { crearResolverDestino, type DestinoTab, type MapasDeDestino } from "@/lib/admin/destino-tab";
-import { origenesDeVista } from "@/lib/admin/permiso-vista";
+import {
+  SIN_FILTRO,
+  estadoDelOrigen,
+  idsDelPlan,
+  idsDelRol,
+  origenesDeVista,
+  vistaPermitida,
+  type ContextoPermiso,
+} from "@/lib/admin/permiso-vista";
+import type { PlanTier } from "@/lib/billing/plan-tiers";
 import { TAB_MIGRATION, VISTA_MIGRATION } from "@/app/admin/_lib/tab-migration";
-import { VALID_TABS } from "@/app/admin/_lib/tabs.types";
+import { PLANES, ROLES } from "../scripts/matriz-pestanas.mjs";
+import { VALID_TABS, type Tab } from "@/app/admin/_lib/tabs.types";
 import { ALL_TABS } from "@/app/admin/_lib/tab-data";
 
 /**
@@ -119,28 +130,56 @@ const ORIGEN_ANTES_DE_MUDARSE: Record<string, readonly string[]> = {
   "rrhh:notas": ["tareas"],
 };
 
+/** Rol × plan del panel (los de `matriz-pestanas.mjs`), sin plantilla ni rubro. */
+const COMBINACIONES: { nombre: string; ctx: ContextoPermiso }[] = ROLES.flatMap((rol: string) =>
+  PLANES.map((plan: string) => ({
+    nombre: `${rol}/${plan}`,
+    ctx: { ...SIN_FILTRO, rol: idsDelRol(rol, null), plan: idsDelPlan(plan as PlanTier) },
+  })),
+);
+
 function aliasSinOrigen(
   mapas: MapasDeDestino,
   vistasDe: (tab: string) => readonly SubvistaModulo[],
   pestanas: ReadonlySet<string>,
+  anidadasDe: (tab: string) => readonly SubvistaAnidada[] = (tab) => ANIDADAS_POR_MODULO[tab] ?? [],
 ): string[] {
   const resolver = crearResolverDestino(mapas);
   const fallas: string[] = [];
   const revisar = (desde: string, alias: string, destino: DestinoTab | null) => {
     if (!destino?.vista || destino.tab === alias || !pestanas.has(alias)) return;
-    const lugar = `${desde} → ${destino.tab}:${destino.vista}`;
+    const lugar = `${desde} → ${destino.tab}:${destino.vista}${destino.sub ? `:${destino.sub}` : ""}`;
     const vista = vistasDe(destino.tab).find((v) => v.key === destino.vista);
     const pedidos = ORIGEN_ANTES_DE_MUDARSE[desde] ?? [alias];
-    if (!vista) fallas.push(`${lugar}: la vista no está registrada`);
-    else {
-      const tiene = origenesDeVista(destino.tab, vista);
-      for (const o of pedidos) if (!tiene.includes(o)) fallas.push(`${lugar}: su origen no nombra «${o}»`);
+    if (!vista) {
+      fallas.push(`${lugar}: la vista no está registrada`);
+      return;
+    }
+    const deLaVista = origenesDeVista(destino.tab, vista);
+    const seccion = destino.sub ? anidadasDe(destino.tab).find((a) => a.vista === destino.vista && a.key === destino.sub) : undefined;
+    if (!seccion?.origen?.length) {
+      for (const o of pedidos) if (!deLaVista.includes(o)) fallas.push(`${lugar}: su origen no nombra «${o}»`);
+      return;
+    }
+    /* Un alias que entra a una SECCIÓN (`?sub=`) con origen propio (18-10:
+       `plata:cierres` → Caja › Cierres del día) tiene que cumplir DOS cosas:
+       la sección nombra el permiso viejo (si no, se la escondemos a quien la
+       tenía) y quien tenía ese permiso llega a la vista que la contiene (si no,
+       la sección existe pero nadie de ellos puede abrirla). Lo segundo se mira
+       en cada rol × plan, porque el origen de la vista puede no nombrarlo. */
+    for (const o of pedidos) if (!(seccion.origen as readonly string[]).includes(o)) fallas.push(`${lugar}: la sección no nombra «${o}»`);
+    for (const { nombre, ctx } of COMBINACIONES) {
+      const loTenia = pedidos.some((o) => estadoDelOrigen(ctx, o) === "visible");
+      if (loTenia && !vistaPermitida(ctx, deLaVista)) {
+        fallas.push(`${lugar}: ${nombre} tenía «${pedidos.join("», «")}» y no llega a ${destino.tab}:${destino.vista}`);
+      }
     }
   };
   for (const id of Object.keys(mapas.alias)) revisar(id, id, resolver(id));
+  /* También las claves finas `tab:vista:sub` (una sección que se muda sola). */
   for (const clave of Object.keys(mapas.vistas)) {
-    const [tab, vista] = clave.split(":");
-    revisar(clave, tab, resolver(tab, vista));
+    const [tab, vista, sub] = clave.split(":");
+    revisar(clave, tab, resolver(tab, vista, sub));
   }
   return fallas;
 }
@@ -236,6 +275,21 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
     expect(aliasSinOrigen(mudada, con([lista, reparto]), new Set(["pedidos", "plata"]))).toEqual([
       "plata:fiados → pedidos:reparto: su origen no nombra «plata»",
     ]);
+    // Una clave fina `tab:vista:sub` que entra a una sección con origen propio: las dos condiciones.
+    const fina: MapasDeDestino = { alias: {}, vistas: { "plata:cobrar:ruta": { tab: "pedidos", vista: "reparto", sub: "ruta" } }, validas: VALID_TABS };
+    const ruta = (origen: Tab[]) => (tab: string): SubvistaAnidada[] =>
+      tab === "pedidos" ? [{ vista: "reparto", key: "ruta", label: "Ruta", hint: "Por dónde va", origen }] : [];
+    const ambas = new Set(["pedidos", "plata"]);
+    // La sección no nombra el permiso viejo.
+    expect(aliasSinOrigen(fina, con([lista, reparto]), ambas, ruta(["pedidos"]))).toContain(
+      "plata:cobrar:ruta → pedidos:reparto:ruta: la sección no nombra «plata»",
+    );
+    // La sección lo nombra, pero la vista que la contiene pide un permiso que nadie tiene.
+    const sinLlegar = aliasSinOrigen(fina, con([lista, { ...reparto, origen: ["no-existe" as Tab] }]), ambas, ruta(["plata"]));
+    expect(sinLlegar.length).toBeGreaterThan(0);
+    for (const f of sinLlegar) expect(f).toMatch(/^plata:cobrar:ruta → pedidos:reparto:ruta: \S+ tenía «plata» y no llega a pedidos:reparto$/);
+    // Las dos: la sección lo nombra y la vista lo deja pasar.
+    expect(aliasSinOrigen(fina, con([lista, { ...reparto, origen: ["pedidos", "plata"] }]), ambas, ruta(["plata"]))).toEqual([]);
   });
 
   /**
@@ -424,9 +478,10 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       archivo: "components/admin/compras/ProveedoresVista.tsx",
       constante: /export const SECCIONES_PROVEEDORES = \[([^\]]+)\]/,
     },
-    "compras/cuentas-por-pagar": {
-      archivo: "components/admin/PayablesTab.tsx",
-      constante: /export const SECCIONES_POR_PAGAR = \[([^\]]+)\]/,
+    // Compras › Por pagar se mudó a Mi Plata › Lo que debo (18-10).
+    "plata/por-pagar": {
+      archivo: "components/admin/unified/finanzas/por-pagar/secciones-lo-que-debo.ts",
+      constante: /export const SECCIONES_LO_QUE_DEBO = \[([^\]]+)\]/,
     },
     "loth-libro-operaciones/tablero": {
       archivo: "components/admin/forestal/loth-vistas-fusionadas.ts",
@@ -440,6 +495,11 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
     "loth-libro-operaciones/cumplimiento": {
       archivo: "components/admin/forestal/loth-vistas-fusionadas.ts",
       constante: /export const SUBS_CUMPLIMIENTO_TH = \[([^\]]+)\]/,
+    },
+    // Clientes › Opiniones (19-10): «Moderar» era Marketplace › Reseñas.
+    "clientes/resenas": {
+      archivo: "components/admin/NPSTab.tsx",
+      constante: /export const SECCIONES_OPINIONES = \[([^\]]+)\]/,
     },
   };
 

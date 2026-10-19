@@ -10,7 +10,7 @@
  * queda sin pantallas propias (regla R5: mover = montar en la casa nueva) y
  * deja el enlace a donde se mudó cada una (R6):
  *
- *   Cuentas x Pagar     → Compras › Por pagar (la misma PayablesTab)
+ *   Cuentas x Pagar     → Mi Plata › Lo que debo (la misma PayablesTab)
  *   Impuestos + Oblig.  → Mi Plata › Impuestos y reportes (TaxTab + ObligacionesTab)
  *   Conexión SUNAT      → Configuración › Cobros y comprobantes (SunatConexionTab):
  *                         su enlace va en la línea de estado SUNAT de EInvoiceTab
@@ -44,10 +44,12 @@ interface Mudanza {
   icon: LucideIcon;
   tab: Tab;
   vista: string;
+  /** Id fijo: el acceso fijado en Comprobantes (`FIJABLES`) sobrevive a una segunda mudanza. */
+  id?: string;
 }
 
 const MUDANZAS: readonly Mudanza[] = [
-  { titulo: "Cuentas por pagar", donde: "Antes estaba aquí: Compras › Por pagar", icon: CreditCard, tab: "compras", vista: "cuentas-por-pagar" },
+  { titulo: "Cuentas por pagar", donde: "Antes estaba aquí: Mi Plata › Lo que debo", icon: CreditCard, tab: "plata", vista: "por-pagar", id: "ir-compras-cuentas-por-pagar" },
   { titulo: "Impuestos y obligaciones", donde: "Antes estaba aquí: Mi Plata › Impuestos y reportes", icon: Calculator, tab: "plata", vista: "impuestos" },
 ];
 
@@ -66,7 +68,7 @@ function useMudanzasVisibles(): readonly Mudanza[] {
 export default function FacturacionModule() {
   const mudanzas = useMudanzasVisibles();
   const acciones: MenuAccion[] = mudanzas.map((m) => ({
-    id: `ir-${m.tab}-${m.vista}`,
+    id: m.id ?? `ir-${m.tab}-${m.vista}`,
     label: m.titulo,
     hint: m.donde,
     icon: m.icon,

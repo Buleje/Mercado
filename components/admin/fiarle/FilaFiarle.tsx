@@ -35,7 +35,7 @@ export default function FilaFiarle({ fila: f }: { fila: Fila }) {
   const acciones: MenuAccion[] = [
     { id: "ficha", label: "Ver su ficha", hint: "Compras, fiados y su límite de crédito, en Mis clientes", icon: CircleUser, onSelect: () => irAlOrigen({ tab: "clientes", params: { vista: "crm", cliente: f.telefono } }) },
     ...(f.deuda > 0
-      ? [{ id: "cobrar", label: "Cobrarle", hint: "En Ventas y caja › Me deben", icon: HandCoins, onSelect: () => irAlOrigen({ tab: ME_DEBEN.tab, params: { ...ME_DEBEN.params } }) }]
+      ? [{ id: "cobrar", label: "Cobrarle", hint: "En Ventas y caja › Me deben", icon: HandCoins, onSelect: () => irAlOrigen({ tab: ME_DEBEN.tab, params: { ...ME_DEBEN.params, sub: "cobranza", q: f.telefono || f.nombre } }) }]
       : []),
     ...(wa ? [{ id: "wa", label: "Escribirle por WhatsApp", hint: f.telefono, icon: MessageCircle, onSelect: () => { window.open(wa, "_blank", "noopener,noreferrer"); } }] : []),
   ];

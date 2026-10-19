@@ -21,8 +21,10 @@
  * Patrón del panel (11-10): título + ⓘ, Indicadores plegables (la cifra de
  * cada tipo) y «⋯» en una fila; buscador y tipos en otra, pegada a la tabla;
  * en cada fila Cobrar (o Liquidar) a 48 px y «⋯». La tarjeta de los fiados que
- * repetía la cifra de su chip se fue: su cifra está en los Indicadores y el
- * salto a Me deben, en el «⋯». Lo propio de esta vista frente a Me deben,
+ * repetía la cifra de su chip se fue: su cifra está en los Indicadores, con
+ * «Cobrar fiados» (18-10). El «Cobrar» de la fila de un fiado abre Me deben ›
+ * Quién me debe con esa persona buscada (`?q=`), y «A quién fiarle» también
+ * vive en Me deben (antes era una sección de Mi Plata). Lo propio de esta vista frente a Me deben,
  * Adelantos y Préstamos es el total de TODAS las fuentes y el orden de cobro
  * (lo vencido primero): las listas de cada módulo siguen en su módulo.
  */
@@ -68,6 +70,11 @@ const DONDE_SE_COBRA: Record<PorCobrarTipo, string> = {
   madera: "en la cuenta del Libro CTP",
 };
 
+/* El servidor llama así al fiado sin cliente (`lib/db/por-cobrar.db.ts`):
+   buscar ese texto en Me deben deja la lista vacía, así que abre la cobranza
+   entera. */
+const FIADO_SIN_NOMBRE = "Cliente sin nombre";
+
 export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) => void } = {}) {
   const { data, loading, error, recargar } = usePorCobrar();
   const [filtro, setFiltro] = useState<PorCobrarTipo | "todo">("todo");
@@ -99,6 +106,13 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
     else goTab(destino);
   };
 
+  /* Los fiados se cobran en Ventas y caja › Me deben (18-10): «Cobrar» abre
+     «Quién me debe» con el cliente ya buscado (`?q=`), y «A quién fiarle»
+     también vive ahí. */
+  const cobrarFiado = (quien?: string) =>
+    irAlOrigen({ tab: ME_DEBEN.tab, params: { ...ME_DEBEN.params, sub: "cobranza", ...(quien && quien !== FIADO_SIN_NOMBRE ? { q: quien } : {}) } });
+  const aQuienFiarle = () => irAlOrigen({ tab: ME_DEBEN.tab, params: { ...ME_DEBEN.params, sub: "fiarle" } });
+
   const kpis = useKpisPlegables({
     claveMemoria: "plata-por-cobrar",
     alto: "md",
@@ -116,6 +130,13 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
           valor={enMonedas(deTipo(tipo).map((x) => ({ moneda: x.moneda, monto: x.total })))}
           detalle={`${cuantosDe(tipo)} ${cuantosDe(tipo) === 1 ? "cuenta" : "cuentas"} · se cobra ${DONDE_SE_COBRA[tipo]}`}
           icono={ICONO_TIPO[tipo]}
+          accion={
+            tipo === "fiado" ? (
+              <button type="button" onClick={() => cobrarFiado()} className={button({ variant: "secondary", className: "w-full gap-1.5 rounded-xl" })}>
+                <HandCoins className="h-4 w-4" aria-hidden="true" /> Cobrar fiados
+              </button>
+            ) : undefined
+          }
         />
       )),
       ...(data.cruzable.length > 0
@@ -125,10 +146,10 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
   });
 
   const acciones: MenuAccion[] = [
-    { id: "me-deben", label: "Ver los fiados", hint: "Ventas y caja › Me deben, donde se cobran", icon: HandCoins, onSelect: () => irAlOrigen({ tab: ME_DEBEN.tab, params: { ...ME_DEBEN.params } }) },
+    { id: "me-deben", label: "Cobrar fiados", hint: "Ventas y caja › Me deben, donde se cobran", icon: HandCoins, onSelect: () => cobrarFiado() },
     { id: "adelantos", label: "Ver los adelantos", hint: "Mi Plata › Adelantos", icon: DollarSign, onSelect: () => irASeccion("adelantos") },
     { id: "prestamos", label: "Ver los préstamos", hint: "Mi Plata › Préstamos", icon: Landmark, onSelect: () => irASeccion("prestamos") },
-    { id: "fiarle", label: "A quién fiarle", hint: "Sí, con cuidado o no, cliente por cliente", icon: Gauge, onSelect: () => irASeccion("scoring") },
+    { id: "fiarle", label: "A quién fiarle", hint: "Ventas y caja › Me deben: sí, con cuidado o no, cliente por cliente", icon: Gauge, onSelect: aQuienFiarle },
     { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: recargar },
   ];
 
@@ -222,8 +243,8 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
                   fila={f}
                   hoy={hoy}
                   cruce={(f.cruce && crucePorClave.get(f.cruce)) || null}
-                  onCobrar={() => irASeccion(TIPOS[f.tipo].destino, TIPOS[f.tipo].externo, TIPOS[f.tipo].vista)}
-                  onScoring={() => irASeccion("scoring")}
+                  onCobrar={() => (f.tipo === "fiado" ? cobrarFiado(f.quien) : irASeccion(TIPOS[f.tipo].destino, TIPOS[f.tipo].externo, TIPOS[f.tipo].vista))}
+                  onScoring={aQuienFiarle}
                   onLiquidar={irALiquidar}
                 />
               ))}

@@ -33,6 +33,7 @@ import {
   contraparteDelContrato,
 } from "@/lib/contratos/plantillas";
 import type { ContractTemplate } from "@/lib/contratos/plantillas";
+import { AvisoContratoParaPersona, useContratoParaPersona } from "@/components/admin/contratos/contrato-para-persona";
 import {
   TIPO_LABELS,
   ESTADO_VISIBLE_LABELS,
@@ -186,6 +187,9 @@ export default function ContratosModule() {
     // ahora vive en «Indicadores». `?sub=dashboard` sigue llevando al resumen.
     "contratos",
   );
+  // «Hacer contrato» desde Equipo › Personal llega con `?colaborador=<id>`:
+  // sus datos se precargan en la plantilla y el contrato queda ligado a ella.
+  const paraPersona = useContratoParaPersona();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -431,6 +435,12 @@ export default function ContratosModule() {
       autoKeys.add("CIUDAD");
     }
 
+    // La persona que vino de Equipo › Personal: nombre, documento, domicilio y cargo.
+    for (const [clave, valor] of Object.entries(paraPersona.camposDe(tpl))) {
+      autoData[clave] = valor;
+      autoKeys.add(clave);
+    }
+
     setWizardData(autoData);
     setAutoFilledFields(autoKeys);
     setWizardStep(0);
@@ -500,6 +510,8 @@ export default function ContratosModule() {
           fecha,
           fechaVencimiento,
           plantillaId: selectedTemplate.id,
+          // Hecho desde Equipo › Personal: queda en la ficha de esa persona.
+          ...(paraPersona.persona ? { colaboradorId: paraPersona.persona.id } : {}),
           lugarFirma: wizardData["CIUDAD"] || "Pucallpa",
           // El texto y los datos del asistente ahora viajan al servidor: antes
           // vivían sólo en el localStorage del navegador que creó el contrato.
@@ -526,6 +538,7 @@ export default function ContratosModule() {
       // Ahora se abre la ficha recién creada, que es donde están el revisor,
       // los firmantes y el envío por WhatsApp, todo seguido.
       setSelected(creado);
+      paraPersona.quitar();
     } catch (e) {
       setCreateError(e instanceof Error ? e.message : "Error desconocido");
     } finally {
@@ -751,6 +764,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
             {/* ═══ PLANTILLAS ═══ */}
             {activeTab === "plantillas" && (
               <div className="space-y-6">
+                {paraPersona.persona && <AvisoContratoParaPersona persona={paraPersona.persona} onQuitar={paraPersona.quitar} />}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {PLANTILLAS.map(tpl => (
                     <m.div
@@ -951,6 +965,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
             {/* ═══ CREAR CONTRATO (WIZARD) ═══ */}
             {activeTab === "crear" && (
               <div className="space-y-6">
+                {paraPersona.persona && <AvisoContratoParaPersona persona={paraPersona.persona} onQuitar={paraPersona.quitar} />}
                 {!selectedTemplate ? (
                   <div className="text-center py-16">
                     <BookOpen className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />

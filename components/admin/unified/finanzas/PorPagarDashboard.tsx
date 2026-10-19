@@ -14,12 +14,13 @@
  *
  * Patrón del panel (11-10): título + ⓘ, Indicadores plegables y «⋯» en una
  * fila; buscador y fuentes en otra, pegada a la tabla; Pagar (o Liquidar) a
- * 48 px. Frente a Compras › Por pagar (las facturas de cada proveedor) lo
- * propio de esta vista es el total de TODAS las fuentes por acreedor y lo
- * vencido primero: la lista de facturas sigue allá, enlazada desde el «⋯».
+ * 48 px. Es la sección «Todo» de Lo que debo (`LoQueDebo`, 18-10): las facturas
+ * de cada proveedor (lo que era Compras › Por pagar) son la sección
+ * «Proveedores», en la misma barra; el «Pagar» de un proveedor lleva ahí,
+ * filtrado por su nombre.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { AlertTriangle, MoreHorizontal, ReceiptText, RefreshCw, Scale, Search, Truck } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,16 @@ import { ENLACE_FUENTE, ETIQUETA_FUENTE, FUENTES_POR_PAGAR, type EnlacePorPagar,
 import FilaPorPagar from "./por-pagar/FilaPorPagar";
 import { BUSCADOR, CHIP, CHIP_OFF, CHIP_ON, ESTILO, enMonedas } from "./por-pagar/estilo";
 
-export default function PorPagarDashboard({ onIr }: { onIr?: (vista: string) => void } = {}) {
+interface Props {
+  /** Cambia de vista dentro de Mi Plata, sin recargar. */
+  onIr?: (vista: string) => void;
+  /** Las secciones de Lo que debo, en la fila del título. */
+  barra?: ReactNode;
+  /** Cambia de sección dentro de Lo que debo (Proveedores, Calendario…). */
+  onSeccion?: (sub: string) => void;
+}
+
+export default function PorPagarDashboard({ onIr, barra, onSeccion }: Props = {}) {
   const { data, loading, error, recargar } = usePorPagar();
   const [filtro, setFiltro] = useState<FuentePorPagar | "todo">("todo");
   const [q, setQ] = useState("");
@@ -61,7 +71,21 @@ export default function PorPagarDashboard({ onIr }: { onIr?: (vista: string) => 
   const cruzable = data.totales.filter((t) => t.cruzable > 0).map((t) => ({ moneda: t.moneda, monto: t.cruzable }));
 
   /** Sección de Mi Plata → cambio de vista sin recargar; otro módulo → `admin:navigate`. */
-  const abrir = (e: EnlacePorPagar) => {
+  const abrir = (e: EnlacePorPagar, quien?: string) => {
+    if (e.tab === "plata" && e.vista === "por-pagar" && onSeccion) {
+      /* Proveedores es una sección de esta misma vista: la lista abre filtrada
+         por ese proveedor (`?q=`, la lee al montar) y se cambia de sección. */
+      try {
+        const url = new URL(window.location.href);
+        if (quien) url.searchParams.set("q", quien);
+        else url.searchParams.delete("q");
+        window.history.replaceState(window.history.state, "", url.toString());
+      } catch {
+        /* sin history: abre la lista entera */
+      }
+      onSeccion(e.sub ?? "cuentas");
+      return;
+    }
     if (e.tab === "plata" && e.vista && onIr) {
       /* La sub-vista del módulo anidado (Adelantos) viaja en `?sub=`: se deja
          escrita ANTES de cambiar de vista, que es cuando ese módulo la lee. */
@@ -105,7 +129,9 @@ export default function PorPagarDashboard({ onIr }: { onIr?: (vista: string) => 
   });
 
   const acciones: MenuAccion[] = [
-    { id: "proveedores", label: "Facturas de proveedores", hint: "Compras › Por pagar, factura por factura", icon: Truck, onSelect: () => abrir(ENLACE_FUENTE.cuenta_por_pagar) },
+    ...(barra
+      ? []
+      : [{ id: "proveedores", label: "Facturas de proveedores", hint: "Lo que debo › Proveedores, factura por factura", icon: Truck, onSelect: () => abrir(ENLACE_FUENTE.cuenta_por_pagar) } satisfies MenuAccion]),
     { id: "liquidar", label: "Cuenta por persona", hint: "Liquidar a quien te debe y le debes (Adelantos › Resumen)", icon: Scale, onSelect: () => abrir(ENLACE_FUENTE.cuenta_forestal) },
     { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: recargar },
   ];
@@ -122,9 +148,10 @@ export default function PorPagarDashboard({ onIr }: { onIr?: (vista: string) => 
             example="Si alguien te adelantó S/ 3 000 y a la vez te debe un aserrío de S/ 500, verás su neto (le debes S/ 2 500) y el botón Liquidar."
           />
         </div>
+        {barra && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto">{barra}</div>}
         <div className="ml-auto flex min-w-0 items-center gap-2">
           {kpis.boton}
-          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Facturas de proveedores, cuenta por persona y actualizar" />
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title={barra ? "Cuenta por persona y actualizar" : "Facturas de proveedores, cuenta por persona y actualizar"} />
         </div>
       </div>
 

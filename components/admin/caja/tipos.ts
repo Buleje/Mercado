@@ -38,9 +38,10 @@ export interface CashRegister {
  * (`?vista=arqueo`) hasta la ola 3 del panel unificado: el link viejo llega
  * por VISTA_MIGRATION. `movimientos` y `medios` eran bloques apilados de «Hoy»
  * hasta el 10-10; `historial` dejó de ser la tabla de cajas cerradas (repetía
- * la de los cuadres) y ahora ES la de los cuadres.
+ * la de los cuadres) y ahora ES la de los cuadres. `cierres` (los cierres del
+ * día) vino de Mi Plata › Impuestos y reportes el 18-10.
  */
-export const SUBS_CAJA = ["hoy", "movimientos", "medios", "cuadrar", "historial", "reconciliacion", "auditoria"] as const;
+export const SUBS_CAJA = ["hoy", "movimientos", "medios", "cuadrar", "historial", "reconciliacion", "auditoria", "cierres"] as const;
 export type VistaCaja = (typeof SUBS_CAJA)[number];
 export type MethodFilter = "all" | "efectivo" | "yape" | "plin" | "tarjeta" | "transferencia";
 export type ModalCaja = "abrir" | "cerrar" | "ingreso" | "egreso" | "arqueo" | "guiado" | "tolerancia" | null;

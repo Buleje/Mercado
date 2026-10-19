@@ -41,7 +41,7 @@ const MOTIVO_OMITIDO_LABEL: Record<string, string> = {
   es_empresa: "es una empresa, no se trae como persona",
 };
 
-/** Salta a Asistencia › Día sin remontar el hub (mismo patrón que `FichaCuenta`/`ContratosDelPersonalView`). */
+/** Salta a Asistencia › Día sin remontar el hub (mismo patrón que `FichaCuenta`). */
 function irAAsistenciaDeHoy() {
   window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { tab: "rrhh", vista: "asistencia" } }));
 }

@@ -11,8 +11,8 @@
  * una sola sección:
  *
  *   Anotados     la lista del período (ExpensesTab), con «Anotar gasto».
- *   Presupuesto  el techo por rubro del mes (PresupuestoMensualTab).
- *   Metas        meta de ventas y máximo de gastos contra lo real (BudgetVsRealTab).
+ *   Presupuesto  el techo por rubro del mes (PresupuestoMensualTab) y, debajo,
+ *                la meta del mes y el tope de gastos de Metas y logros.
  *   Fijos        el catálogo de gastos fijos (llegó de Compras › Comprar).
  *   Con compras  el historial de gastos y compras recibidas (llegó de Compras).
  *
@@ -26,6 +26,11 @@
  *
  * `?vista=presupuesto` (dirección vieja, ver `estructura.ts`) abre en la
  * sección Presupuesto.
+ *
+ * «Metas» se fue (19-10, «una sola meta»): guardaba otra meta de ventas y
+ * otro tope en el navegador (BudgetVsRealTab). La meta es la de Metas y logros
+ * (`/api/goals`) y se ve en Presupuesto (`LineaMetaDelMes`); `?sub=metas`
+ * abre Presupuesto.
  */
 
 import dynamic from "next/dynamic";
@@ -39,19 +44,18 @@ import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { usePermisoDe } from "@/hooks/use-vistas-permitidas";
 
 const ExpensesTab = dynamic(() => import("@/components/admin/ExpensesTab"), { loading: S });
-const BudgetVsRealTab = dynamic(() => import("@/components/admin/BudgetVsRealTab"), { loading: S });
+const LineaMetaDelMes = dynamic(() => import("./gastos/LineaMetaDelMes"), { ssr: false });
 const PresupuestoMensualTab = dynamic(() => import("@/components/admin/finanzas/PresupuestoMensualTab"), { loading: S });
 const CatalogoDeGastosFijos = dynamic(() => import("./gastos/CatalogoDeGastosFijos"), { loading: S });
 const HistorialGastosTab = dynamic(() => import("@/components/admin/compras/HistorialGastosTab"), { loading: S });
 
 /** Las secciones de la vista (`?sub=`), en el orden de la barra. */
-export const SUBS_GASTOS = ["anotados", "presupuesto", "metas", "fijos", "historial"] as const;
+export const SUBS_GASTOS = ["anotados", "presupuesto", "fijos", "historial"] as const;
 export type SubGastos = (typeof SUBS_GASTOS)[number];
 
 const ROTULO: Record<SubGastos, string> = {
   anotados: "Anotados",
   presupuesto: "Presupuesto",
-  metas: "Metas",
   fijos: "Fijos",
   historial: "Compras",
 };
@@ -59,6 +63,8 @@ const ROTULO: Record<SubGastos, string> = {
 const DE_COMPRAS: readonly SubGastos[] = ["fijos", "historial"];
 
 const MODULE_ID = "plata-gastos";
+/** La sección «Metas» que se fue (19-10): su meta se ve en Presupuesto. */
+const ALIAS_GASTOS = { metas: "presupuesto" } as const;
 const ID_PANEL = "panel-plata-gastos";
 /** Quién ve los gastos y el presupuesto propios: el mismo `origen` del resto de Mi Plata. */
 const ORIGEN_PROPIO = ["plata", "activos"] as const;
@@ -95,6 +101,7 @@ export default function GastosConPresupuesto({ pedidoPorUrl, hayPresupuesto }: P
     SUBS_GASTOS,
     "anotados",
     pedidoPorUrl ? "presupuesto" : undefined,
+    { alias: ALIAS_GASTOS },
   );
   const sub: SubGastos = secciones.some((s) => s.clave === pedida) ? pedida : (secciones[0]?.clave ?? "anotados");
 
@@ -115,8 +122,12 @@ export default function GastosConPresupuesto({ pedidoPorUrl, hayPresupuesto }: P
       {sub === "anotados" && (
         <ExpensesTab barra={barra} accionCompacta={secciones.length > 3} recarga={vuelta} onVerCatalogo={veCompras ? verCatalogo : undefined} />
       )}
-      {sub === "presupuesto" && <PresupuestoMensualTab barra={barra} hayPresupuesto={hayPresupuesto} />}
-      {sub === "metas" && <BudgetVsRealTab barra={barra} />}
+      {sub === "presupuesto" && (
+        <>
+          <PresupuestoMensualTab barra={barra} hayPresupuesto={hayPresupuesto} />
+          <LineaMetaDelMes />
+        </>
+      )}
       {sub === "fijos" && (
         <>
           <CabeceraVista

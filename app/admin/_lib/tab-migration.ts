@@ -166,7 +166,8 @@ export const TAB_MIGRATION: Record<string, Tab | DestinoTab> = {
   activos: { tab: "plata", vista: "activos" },
   adelantos: { tab: "plata", vista: "adelantos" },
   prestamos: { tab: "plata", vista: "prestamos" },
-  scoring: { tab: "plata", vista: "scoring" },
+  // «A quién fiarle» vive en Ventas y caja › Me deben, junto a la cobranza (18-10).
+  scoring: { tab: "ventas-caja", vista: "cuentas-cobrar", sub: "fiarle" },
   "por-cobrar": { tab: "plata", vista: "por-cobrar" },
   "cuentas-cobrar": { tab: "plata", vista: "por-cobrar" },
   // TaxTab y ObligacionesTab vivían en Comprobantes: hoy son Mi Plata › Impuestos.
@@ -253,6 +254,14 @@ export const VISTA_MIGRATION: Record<string, DestinoTab> = {
   "compras:recepcion": { tab: "compras", vista: "ordenes-compra", sub: "recibir" },
   "compras:comparador": { tab: "compras", vista: "proveedores", sub: "comparar" },
   "compras:historial-gastos": { tab: "plata", vista: "gastos" },
+  // Deudas en un solo lugar (18-10): se cobra en Me deben (con «A quién fiarle»),
+  // se paga en Mi Plata › Lo que debo y los cierres quedan sólo en Caja.
+  "plata:scoring": { tab: "ventas-caja", vista: "cuentas-cobrar", sub: "fiarle" },
+  "plata:cierres": { tab: "ventas-caja", vista: "caja-registradora", sub: "cierres" },
+  "compras:cuentas-por-pagar": { tab: "plata", vista: "por-pagar", sub: "cuentas" },
+  "compras:cuentas-por-pagar:calendario": { tab: "plata", vista: "por-pagar", sub: "calendario" },
+  "compras:cuentas-por-pagar:propuesta": { tab: "plata", vista: "por-pagar", sub: "propuesta" },
+  "compras:cuentas-por-pagar:conciliacion": { tab: "plata", vista: "por-pagar", sub: "conciliacion" },
   "productos:categorias": { tab: "inventario", vista: "categorias" },
   "productos:promociones": { tab: "inventario", vista: "ofertas", sub: "ofertas" },
   "productos:cupones": { tab: "inventario", vista: "ofertas", sub: "cupones" },
@@ -264,4 +273,9 @@ export const VISTA_MIGRATION: Record<string, DestinoTab> = {
   // Asistente IA (10-10): «Sugerencias IA» se fundió en Comandos IA (lo que no
   // se vende → Precios en bloque; a quién ofrecerle → A quién escribir).
   "asistente-ia:sugerencias": { tab: "asistente-ia", vista: "comandos" },
+  // 19-10 «pestañas gemelas»: Fidelidad → la ficha de Puntos, Reseñas → Opiniones › Moderar,
+  // Equipo › Contratos → Personal (columna Contrato).
+  "marketplace:fidelidad": { tab: "campanas", vista: "puntos" },
+  "marketplace:resenas": { tab: "clientes", vista: "resenas", sub: "moderar" },
+  "rrhh:contratos": { tab: "rrhh", vista: "personal" },
 };

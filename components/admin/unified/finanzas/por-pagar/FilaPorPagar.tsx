@@ -14,7 +14,7 @@ import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import { ETIQUETA_FUENTE, type EnlacePorPagar, type PersonaPorPagar } from "@/lib/finance/por-pagar";
 import { BOTON_FILA, ESTILO, PARTIDA, TIPO, diasEntre, enMonedas, leerNeto } from "./estilo";
 
-export default function FilaPorPagar({ persona: p, hoy, onAbrir }: { persona: PersonaPorPagar; hoy: string; onAbrir: (e: EnlacePorPagar) => void }) {
+export default function FilaPorPagar({ persona: p, hoy, onAbrir }: { persona: PersonaPorPagar; hoy: string; onAbrir: (e: EnlacePorPagar, quien?: string) => void }) {
   const atraso = p.vence ? diasEntre(p.vence, hoy) : 0;
   const neto = leerNeto(p);
   const primera = p.partidas[0];
@@ -36,7 +36,7 @@ export default function FilaPorPagar({ persona: p, hoy, onAbrir }: { persona: Pe
             return (
               <li key={`${x.fuente}-${x.id}`}>
                 <button
-                  onClick={() => onAbrir(x.enlace)}
+                  onClick={() => onAbrir(x.enlace, p.nombre)}
                   aria-label={`Abrir ${ETIQUETA_FUENTE[x.fuente].label.toLowerCase()} de ${p.nombre}: ${montoEnMoneda(x.monto, x.moneda)}`}
                   className={PARTIDA}
                 >
@@ -68,7 +68,7 @@ export default function FilaPorPagar({ persona: p, hoy, onAbrir }: { persona: Pe
             <Scale className="h-4 w-4" aria-hidden="true" /> Liquidar
           </button>
         ) : primera ? (
-          <button onClick={() => onAbrir(primera.enlace)} aria-label={`Ir a pagarle a ${p.nombre}`} className={BOTON_FILA}>
+          <button onClick={() => onAbrir(primera.enlace, p.nombre)} aria-label={`Ir a pagarle a ${p.nombre}`} className={BOTON_FILA}>
             Pagar <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         ) : null}

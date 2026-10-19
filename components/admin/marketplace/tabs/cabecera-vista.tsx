@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * Piezas comunes de las vistas Comisiones, Precios, Cupones, Reseñas y
- * Fidelidad del Marketplace (patrón del panel, 11-10).
+ * Piezas comunes de las vistas Comisiones, Precios y Cupones del Marketplace
+ * (patrón del panel, 11-10). También las usan Clientes › Opiniones › Moderar
+ * y el historial de la ficha de Puntos, que se mudaron de acá el 19-10.
  *
  * El título de la vista es la pestaña del hub y «⋯ Más» es el del hub
  * (`useAccionesDeVista`): la vista no repite ninguno de los dos. Arriba de la

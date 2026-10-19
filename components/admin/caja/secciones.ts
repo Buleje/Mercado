@@ -9,6 +9,7 @@
  * columna (1,7 pantallas a 1280 px y 4 a 400 px con la caja abierta). Brandon:
  * «organizar tipo en pestaña, hacer sección para pasar de una a otra».
  */
+import { origenDeSeccion } from "@/lib/admin/subvistas-modulos";
 import type { VistaCaja } from "./tipos";
 
 export type GrupoCaja = "hoy" | "historial";
@@ -86,9 +87,21 @@ export const SECCIONES: Record<GrupoCaja, { rotulo: string; titulo: string; secc
           example: "Si falta plata, acá ves quién retiró S/ 50 a mano y a qué hora; la venta que la explica la buscas en Movimientos por su código.",
         },
       },
+      {
+        clave: "cierres",
+        rotulo: "Cierres del día",
+        ayuda: {
+          what: "Cada día que cerraste: lo vendido y si el efectivo contado cuadró con lo esperado. Toca una fila para ver fiados, stock bajo y notas.",
+          affects: "El conteo de cada caja está en «Por caja»; acá va el resumen del día entero. Antes estaba en Mi Plata › Impuestos y reportes.",
+          example: "Sábado 10/10: S/ 850 vendidos, contaste S/ 420 y esperabas S/ 422 → −S/ 2.00.",
+        },
+      },
     ],
   },
 };
+
+/** «Cierres del día» vino de Mi Plata (18-10): la ve quien veía Mi Plata, no todo el que abre Caja. */
+export const ORIGEN_CIERRES = origenDeSeccion("ventas-caja", "caja-registradora", "cierres");
 
 export const GRUPOS: readonly GrupoCaja[] = ["hoy", "historial"];
 

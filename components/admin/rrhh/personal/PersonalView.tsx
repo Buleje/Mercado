@@ -18,30 +18,37 @@
  * se tipea) vive aparte de `q` (lo que llega al hook), con 250ms de debounce
  * entre ambos; y el `LoadingState` de pantalla entera sólo corre en la
  * primera carga — en recargas la barra queda montada y la tabla se atenúa.
+ *
+ * 19-10 («juntar pestañas gemelas»): la pestaña Equipo › Contratos se mudó
+ * acá. La tabla (`TablaPersonal`) suma la columna «Contrato» con su
+ * vencimiento, el chip «Contrato por vencer» filtra a quienes vencen en 30
+ * días, y una línea avisa los contratos de trabajo que no están ligados a
+ * nadie. Crear sigue en Documentos › Contratos, con la persona precargada.
  */
 
 import { useEffect, useMemo, useState } from "react";
 import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
-import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
-import { abreLaFicha } from "@/lib/admin/enlaces-panel";
-import { LayoutList, Plus, QrCode, Search, UserPlus, Users } from "@buleje/design-system/icons";
-import { DataTable, EmptyState, LoadingState } from "@buleje/design-system";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { FileSignature, LayoutList, Plus, QrCode, Search, UserPlus, Users } from "@buleje/design-system/icons";
+import { EmptyState, LoadingState } from "@buleje/design-system";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import EncabezadoDeVista from "../EncabezadoDeVista";
 import { useRrhhColaboradores } from "@/hooks/use-rrhh-colaboradores";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { useRrhhDesdeAdelantos } from "@/hooks/use-rrhh-desde-adelantos";
-import { BOTON, CLASE_CAMPO, CLASE_CHIP, claseChipFiltro } from "../rrhh-form";
-import { CLASE_FOCUS_FILA, COLABORADOR_ESTADO_META, filaClicableProps, formatearFecha } from "../rrhh-ui";
+import { BOTON, CLASE_CAMPO, claseChipFiltro } from "../rrhh-form";
+import { pluralizar } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
 import ColaboradorFormModal from "./ColaboradorFormModal";
 import FotochecksVista from "./FotochecksVista";
 import FichaColaboradorModal from "./FichaColaboradorModal";
 import TraerDesdeAdelantosModal from "./TraerDesdeAdelantosModal";
+import TablaPersonal from "./TablaPersonal";
+import { useContratosDelPersonal } from "./use-contratos-del-personal";
 import type { EstadoColaborador, NivelRrhh } from "@/lib/rrhh/tipos";
 
-/** ¿El nombre de la fila es enlace a la ficha? (`EnlacePanel`, según la tabla de hipervínculos). */
-const NOMBRE_ES_ENLACE = abreLaFicha("colaborador");
+/** Los contratos que no están ligados a nadie se arreglan en la lista de Documentos. */
+const HREF_CONTRATOS = "/admin?tab=documentos&vista=contratos&sub=contratos";
 
 const CHIPS_ESTADO: { id: EstadoColaborador | "TODOS"; label: string }[] = [
   { id: "TODOS", label: "Todos" },
@@ -57,6 +64,7 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   const [q, setQ] = useState("");
   const [puestoId, setPuestoId] = useState("");
   const [chip, setChip] = useState<EstadoColaborador | "TODOS">("ACTIVO");
+  const [soloPorVencer, setSoloPorVencer] = useState(false);
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [traerAbierta, setTraerAbierta] = useState(false);
   // La ficha abierta vive en `?persona=<id>`: la abre el QR del fotocheck
@@ -91,8 +99,12 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
     return base;
   }, [colaboradores]);
 
-  const filtrados = chip === "TODOS" ? colaboradores : colaboradores.filter((c) => c.estado === chip);
   const puedeEditar = nivel === "gestion" || nivel === "completo";
+  const contratos = useContratosDelPersonal(puedeEditar);
+  const porVencer = (id: string) => contratos.porPersona?.get(id)?.estado === "POR_VENCER";
+  const cuantosPorVencer = contratos.porPersona ? colaboradores.filter((c) => porVencer(c.id)).length : 0;
+  const porEstado = chip === "TODOS" ? colaboradores : colaboradores.filter((c) => c.estado === chip);
+  const filtrados = soloPorVencer ? porEstado.filter((c) => porVencer(c.id)) : porEstado;
   // Un cesado no lleva fotocheck: se excluye de la vista y del PDF, aunque el chip lo muestre.
   const paraFotocheck = filtrados.filter((c) => c.estado !== "CESADO");
   const enFotocheck = modoFotocheck && paraFotocheck.length > 0;
@@ -180,8 +192,29 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
               {c.label} <span className="tabular-nums opacity-80">{c.id === "TODOS" ? colaboradores.length : kpis[c.id]}</span>
             </button>
           ))}
+          {(cuantosPorVencer > 0 || soloPorVencer) && (
+            <button type="button" aria-pressed={soloPorVencer} onClick={() => setSoloPorVencer((v) => !v)} className={claseChipFiltro(soloPorVencer)}>
+              Contrato por vencer <span className="tabular-nums opacity-80">{cuantosPorVencer}</span>
+            </button>
+          )}
         </div>
       </div>
+      {contratos.sinPersona > 0 && (
+        <p className="flex flex-wrap items-center gap-x-2 text-sm text-[var(--text-secondary)]">
+          <FileSignature className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          {pluralizar(contratos.sinPersona, "contrato de trabajo sin persona", "contratos de trabajo sin persona")}
+          <a
+            href={HREF_CONTRATOS}
+            onClick={(e) => {
+              e.preventDefault();
+              irAEnlace(HREF_CONTRATOS);
+            }}
+            className="inline-flex min-h-12 items-center font-semibold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
+          >
+            Verlos en Documentos › Contratos
+          </a>
+        </p>
+      )}
 
       {filtrados.length === 0 ? (
         <EmptyState
@@ -216,49 +249,7 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
         />
       ) : (
         <div aria-busy={recargando} className={cn("transition-opacity", recargando && "opacity-60")}>
-          <DataTable zebra>
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Puesto</th>
-                <th>Estado</th>
-                <th>Documento</th>
-                <th>Celular</th>
-                <th>Ingreso</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.map((c) => {
-                const meta = COLABORADOR_ESTADO_META[c.estado];
-                return (
-                  <tr
-                    key={c.id}
-                    onClick={() => ficha.abrir(c.id)}
-                    /* El nombre ya es el enlace a la ficha (teclado y lector de
-                       pantalla llegan por ahí): la fila sólo es atajo del mouse.
-                       Una fila-botón con un enlace adentro = dos paradas de Tab
-                       y un enlace que el lector no anuncia (nested-interactive). */
-                    {...(NOMBRE_ES_ENLACE
-                      ? {}
-                      : { ...filaClicableProps(() => ficha.abrir(c.id)), "aria-label": `Abrir la ficha de ${c.nombre}` })}
-                    className={cn("cursor-pointer", !NOMBRE_ES_ENLACE && CLASE_FOCUS_FILA)}
-                  >
-                    <td className="font-semibold">
-                      <EnlacePanel cosa="colaborador" id={c.id} apariencia="heredada">
-                        {c.nombre}
-                      </EnlacePanel>
-                      {c.apodo && <span className="ml-1 font-normal text-[var(--text-tertiary)]">«{c.apodo}»</span>}
-                    </td>
-                    <td>{c.puesto?.nombre ?? <span className="text-[var(--text-tertiary)]">Sin puesto</span>}</td>
-                    <td><span className={cn(CLASE_CHIP, meta.claseChip)}>{meta.label}</span></td>
-                    <td className="whitespace-nowrap font-mono">{c.documento ? `${c.tipoDocumento ?? ""} ${c.documento}`.trim() : <span className="font-sans text-[var(--text-tertiary)]">—</span>}</td>
-                    <td>{c.celular ?? <span className="text-[var(--text-tertiary)]">—</span>}</td>
-                    <td>{c.fechaIngreso ? formatearFecha(c.fechaIngreso) : <span className="text-[var(--text-tertiary)]">No se sabe</span>}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </DataTable>
+          <TablaPersonal filas={filtrados} onAbrir={ficha.abrir} contratos={contratos.porPersona} puedeHacerContrato={puedeEditar} />
         </div>
       )}
 
@@ -284,7 +275,10 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
           colaboradorId={ficha.id}
           onClose={ficha.cerrar}
           nivel={nivel}
-          onCambio={recargar}
+          onCambio={() => {
+            recargar();
+            contratos.recargar();
+          }}
         />
       )}
     </div>

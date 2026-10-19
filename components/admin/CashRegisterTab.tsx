@@ -10,7 +10,8 @@
  * Desde el 10-10 son DOS pestañas con sus secciones (`caja/secciones.ts`),
  * cada sección un valor de `?sub=` (`SUBS_CAJA`):
  *   Hoy:       Resumen (`hoy`) · Movimientos · Medios de pago · Cuadrar
- *   Historial: Por caja (`historial`, los cuadres) · Por día · Quién la tocó
+ *   Historial: Por caja (`historial`, los cuadres) · Por día · Quién la tocó ·
+ *              Cierres del día (`cierres`, desde Mi Plata el 18-10)
  * Antes eran cinco pestañas y «Hoy» apilaba todo en una columna. La tabla de
  * cajas cerradas se fue: repetía la de los cuadres (misma fila por caja, 5 de
  * 7 columnas iguales); su tendencia pasó a «Por día» y su parte del día se
@@ -25,12 +26,14 @@ import { cn } from "@/lib/utils";
 import { useTenant } from "@/contexts/tenant-context";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import { usePermisoDe } from "@/hooks/use-vistas-permitidas";
 import { formatTime } from "@/lib/format";
 import { diasCalendarioLima, fechaCortaLima } from "@/lib/caja/caja-abierta";
 /* Estático, no `next/dynamic`: en Historial › Por caja la fila de la cabecera
    la completa el módulo de cuadres; si bajara aparte, la barra de secciones
    desaparecía mientras cargaba el chunk. */
 import CashAuditTab, { type PartesCabeceraCuadres } from "./CashAuditTab";
+import HistorialCierresTab from "./HistorialCierresTab";
 import { CajaActual } from "./caja/CajaActual";
 import { CajaAuditoria } from "./caja/CajaAuditoria";
 import { CajaCabecera, MenuMasCaja } from "./caja/CajaCabecera";
@@ -44,7 +47,7 @@ import { ModalDetalleCaja } from "./caja/ModalDetalleCaja";
 import { ModalMovimientoCaja } from "./caja/ModalMovimientoCaja";
 import { ModalToleranciaCaja } from "./caja/ModalToleranciaCaja";
 import { accionesDeCaja } from "./caja/acciones-caja";
-import { grupoDe, recordarSeccion, seccionRecordada } from "./caja/secciones";
+import { ORIGEN_CIERRES, grupoDe, recordarSeccion, seccionRecordada } from "./caja/secciones";
 import { useAtajosCaja } from "./caja/use-atajos-caja";
 import { useCajaRegistradora } from "./caja/use-caja-registradora";
 import { useParteDelDia } from "./caja/use-parte-del-dia";
@@ -80,9 +83,12 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
   /* Caja abre siempre en «Hoy» (la URL manda: `?sub=cuadrar` abre Cuadrar), en
      la sección de «Hoy» que usaste último. Cada pestaña recuerda la suya. */
   const [porDefecto] = useState(() => seccionRecordada("hoy"));
-  const { vista, irA } = useSubvistaModulo("ventas-caja-caja", SUBS_CAJA, porDefecto, subInicial, {
+  const { vista: vistaPedida, irA } = useSubvistaModulo("ventas-caja-caja", SUBS_CAJA, porDefecto, subInicial, {
     recordar: false,
   });
+  /* «Cierres del día» es de quien veía Mi Plata: un enlace sin ese permiso abre «Por caja». */
+  const veCierres = usePermisoDe(ORIGEN_CIERRES);
+  const vista: VistaCaja = vistaPedida === "cierres" && !veCierres ? "historial" : vistaPedida;
   /* Al salir de Cuadrar se relee la caja: un conteo guardado ahí deja un movimiento
      «arqueo» que el resto de «Hoy» no vería hasta su refresco de 30 s. */
   const setVista = useCallback(
@@ -215,13 +221,16 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
     else toast.error("No pudimos abrir esa caja.");
   };
 
+  /* «Por caja» y «Cierres del día» completan la fila de la cabecera con lo suyo. */
+  const cabeceraPropia = vista === "historial" || vista === "cierres";
+
   return (
     <div ref={raizRef} className="space-y-4" data-caja-raiz>
-      {vista !== "historial" && cabecera()}
+      {!cabeceraPropia && cabecera()}
 
       {/* El contenido de la sección es el `tabpanel` de la barra de secciones
           (en «Por caja» lo pone CashAuditTab, que arma su propia cabecera). */}
-      {vista !== "historial" && (
+      {!cabeceraPropia && (
         <div {...panel}>
           {grupoDe(vista) === "hoy" && (
             <CajaActual
@@ -252,6 +261,7 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
           panel={panel}
         />
       )}
+      {vista === "cierres" && <HistorialCierresTab cabecera={cabecera} panel={panel} />}
 
       {modal === "abrir" && <ModalAbrirCaja onCerrar={cerrar} onHecho={alHacer} />}
       {modal === "tolerancia" && <ModalToleranciaCaja valor={datos.cashTolerance} onGuardar={datos.setCashTolerance} onCerrar={cerrar} />}

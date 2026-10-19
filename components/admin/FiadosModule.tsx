@@ -4,8 +4,9 @@
  * «Me deben» (Fiados): quién te debe, cuánto y desde cuándo; cobrar y
  * recordar en un toque. Casa única: Ventas y caja › Me deben (plan «panel
  * unificado», ola 3), donde el cajero cobra el fiado a la caja abierta. Mi
- * Plata muestra el total y enlaza acá; el riesgo de cada cliente («A quién
- * fiarle») vive en Mi Plata y el menú «Más» enlaza allá.
+ * Plata muestra el total y enlaza acá. Desde el 18-10 el riesgo de cada
+ * cliente («A quién fiarle») es una sección más de acá (antes, Mi Plata):
+ * cobras y decides a quién fiarle en el mismo lugar.
  *
  * 10-10 (Brandon: «cada pestaña cumple su tarea, sin repeticiones»; «sección
  * para pasar de una a otra»): las cuatro pestañas (Resumen, Deudores,
@@ -17,7 +18,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { SectionTitle } from "@buleje/design-system";
-import { Download, FileText, Gauge, MapPin, MoreHorizontal, Plus, RefreshCw, Rows3, Settings2, Store, Target } from "@buleje/design-system/icons";
+import { Download, FileText, MapPin, MoreHorizontal, Plus, RefreshCw, Rows3, Settings2, Store, Target, Users } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
@@ -28,6 +29,7 @@ import { usePermisoDe } from "@/hooks/use-vistas-permitidas";
 import { escapeDeLaPaginaConFijado } from "@/hooks/use-ventana-de-modal";
 import { formatCurrency } from "@/lib/format";
 import { logger } from "@/lib/logger";
+import { origenDeSeccion } from "@/lib/admin/subvistas-modulos";
 import { tenantCacheKey } from "@/lib/tenant-cache";
 import { deudoresDeCobranza, ordenarPorUrgencia, type DeudorCobranza } from "@/lib/fiados/urgencia-cobranza";
 import ClienteFormModal from "./clientes/ClienteFormModal";
@@ -62,6 +64,7 @@ const FiadoDetalleSheet = dynamic(() => import("./fiados/FiadoDetalleSheet"), { 
 const PagoFiadoModal = dynamic(() => import("./fiados/PagoFiadoModal"), { ssr: false });
 const PlantillasModal = dynamic(() => import("./fiados/cobranza/PlantillasModal"), { ssr: false });
 const MetaModal = dynamic(() => import("./fiados/cobranza/MetaModal"), { ssr: false });
+const ScoringCrediticioTab = dynamic(() => import("./ScoringCrediticioTab"), { ssr: false });
 
 const DENSIDADES: { id: Densidad; label: string }[] = [
   { id: "compact", label: "Compacta" },
@@ -69,8 +72,8 @@ const DENSIDADES: { id: Densidad; label: string }[] = [
   { id: "wide", label: "Amplia" },
 ];
 
-/** Dónde vivía «A quién fiarle» antes de mudarse a Mi Plata › Por cobrar y pagar (plan, §2.2). */
-const ORIGEN_A_QUIEN_FIARLE = ["plata", "scoring", "analytics-pro"] as const;
+/** Quién ve «A quién fiarle»: el `origen` de su anidada (las pestañas donde se veía antes de llegar acá). */
+const ORIGEN_A_QUIEN_FIARLE = origenDeSeccion("ventas-caja", "cuentas-cobrar", "fiarle");
 
 export default function FiadosModule() {
   const estado = useFiados();
@@ -85,7 +88,9 @@ export default function FiadosModule() {
   const veAQuienFiarle = usePermisoDe(ORIGEN_A_QUIEN_FIARLE);
 
   // La sección vive en `?sub=` (el hub ya usa `?vista=`); la memoria es por negocio.
-  const { vista: activeTab, irA: setTab } = useSubvistaModulo<FiadoTab>(tenantCacheKey("fiados"), FIADO_VISTAS, "cobranza", undefined, { alias: FIADO_VISTAS_ALIAS });
+  const { vista: subPedida, irA: setTab } = useSubvistaModulo<FiadoTab>(tenantCacheKey("fiados"), FIADO_VISTAS, "cobranza", undefined, { alias: FIADO_VISTAS_ALIAS });
+  /* «A quién fiarle» sólo para quien la veía antes; al resto un enlace viejo lo deja en «Quién debe». */
+  const activeTab: FiadoTab = subPedida === "fiarle" && !veAQuienFiarle ? "cobranza" : subPedida;
   const seccion = seccionMeDeben(activeTab);
 
   const [showQuickClient, setShowQuickClient] = useState(false);
@@ -134,7 +139,7 @@ export default function FiadosModule() {
 
   const deudores = useMemo(() => ordenarPorUrgencia(deudoresDeCobranza(fiados.filter(estaAbierto))), [fiados]);
   const rotas = [...cob.promesas.values()].filter((p) => p.estado === "incumplio").length;
-  const secciones = SECCIONES_ME_DEBEN.map((s) => ({ clave: s.clave, rotulo: s.rotulo, cuenta: s.clave === "agenda" ? rotas : undefined }));
+  const secciones = SECCIONES_ME_DEBEN.filter((s) => s.clave !== "fiarle" || veAQuienFiarle).map((s) => ({ clave: s.clave, rotulo: s.rotulo, cuenta: s.clave === "agenda" ? rotas : undefined }));
   const cobrarCliente = (d: DeudorCobranza) => acc.abrirCobro({ tipo: "cliente", telefono: d.telefono, nombre: d.nombre, saldo: d.saldo });
   const nuevoFiado = () => { acc.setCreateError(null); acc.setShowNew(true); };
 
@@ -143,8 +148,8 @@ export default function FiadosModule() {
     { id: "mensajes", label: "Mensajes por tramo", hint: "Qué se le escribe a cada tramo de atraso", icon: Settings2, onSelect: () => cob.setVerPlantillas(true), seccion: "Cobrar" },
     { id: "meta", label: "Meta de cobro del mes", hint: "La barra de «Cobrado este mes» en Indicadores", icon: Target, meta: cob.meta > 0 ? formatCurrency(cob.meta) : undefined, onSelect: () => cob.setVerMeta(true), seccion: "Cobrar" },
     { id: "mapa", label: "Mapa de deudores", hint: "Dónde viven los que te deben", icon: MapPin, onSelect: () => setShowDebtorsMap(true), seccion: "Ver" },
-    ...(veAQuienFiarle
-      ? [{ id: "fiarle", label: "A quién fiarle", hint: "En Mi Plata: qué tan seguro es fiarle a cada cliente", icon: Gauge, onSelect: () => { irAEnlace("/admin?tab=plata&vista=scoring"); }, seccion: "Ver" } satisfies MenuAccion]
+    ...(activeTab === "fiarle"
+      ? [{ id: "limites", label: "Límites de crédito", hint: "Se ponen por cliente en Mis clientes", icon: Users, onSelect: () => { irAEnlace("/admin?tab=clientes&vista=crm"); }, seccion: "Ver" } satisfies MenuAccion]
       : []),
     { id: "excel", label: "Exportar deudores", hint: "Excel con saldos y días", icon: Download, onSelect: () => exportarDeudores(fiados), seccion: "Ver" },
     {
@@ -210,6 +215,7 @@ export default function FiadosModule() {
             selectedIds={masivo.selectedIds} toggleSelect={masivo.toggleSelect} openDetail={acc.openDetail}
             onNuevo={nuevoFiado} onRecordado={fetchFiados} gestiones={cob.gestiones} />
         )}
+        {activeTab === "fiarle" && <ScoringCrediticioTab enMeDeben />}
       </div>
 
       <FiadoDetalleSheet selected={acc.selected} onCerrar={() => acc.setSelected(null)} fiados={fiados} detailLoading={acc.detailLoading}

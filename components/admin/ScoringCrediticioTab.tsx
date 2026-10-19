@@ -1,7 +1,11 @@
 "use client";
 
 /**
- * Mi Plata › Por cobrar y pagar › Fiarle — «A quién fiarle».
+ * Ventas y caja › Me deben › A quién fiarle (`?sub=fiarle`). Hasta el 18-10 era
+ * Mi Plata › Por cobrar y pagar › Fiarle: ahora cobras y decides a quién
+ * fiarle en el mismo lugar. Dentro de Me deben (`enMeDeben`) el título, las
+ * secciones, los Indicadores y «Más» son los de Me deben: acá va sólo el
+ * buscador, los filtros y la tabla.
  *
  * Una fila por cliente con la respuesta (Sí · Con cuidado · No) y el motivo en
  * una línea; primero a quién NO fiarle. El veredicto, las sumas y el orden
@@ -37,7 +41,7 @@ import { ORDEN_VEREDICTOS, VEREDICTO } from "./fiarle/estilo";
 
 const soles = (n: number) => montoEnMoneda(n, "PEN");
 
-export default function ScoringCrediticioTab() {
+export default function ScoringCrediticioTab({ enMeDeben = false }: { enMeDeben?: boolean } = {}) {
   const { data, loading, error, recargar } = useAQuienFiarle();
   const [filtro, setFiltro] = useState<Veredicto | "todos">("todos");
   const [q, setQ] = useState("");
@@ -73,23 +77,25 @@ export default function ScoringCrediticioTab() {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">A quién fiarle</SectionTitle>
-          <InfoTip
-            title="A quién fiarle"
-            what="Cada cliente con la respuesta: Sí, Con cuidado o No, y por qué. «No» es lo mismo que la caja ya rechaza al fiar: 3 fiados vencidos, un fiado vencido hace más de 60 días o la deuda que llegó a su límite."
-            affects="«Con cuidado» = debe algo vencido o ya usó el 80 % de su límite. El límite se pone por cliente en Mis clientes; sin límite, la caja no le pone tope."
-            example="Si Rosa debe S/ 150 que venció hace 71 días, sale «No le fíes» aunque tenga un solo fiado."
-          />
+      {!enMeDeben && (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">A quién fiarle</SectionTitle>
+            <InfoTip
+              title="A quién fiarle"
+              what="Cada cliente con la respuesta: Sí, Con cuidado o No, y por qué. «No» es lo mismo que la caja ya rechaza al fiar: 3 fiados vencidos, un fiado vencido hace más de 60 días o la deuda que llegó a su límite."
+              affects="«Con cuidado» = debe algo vencido o ya usó el 80 % de su límite. El límite se pone por cliente en Mis clientes; sin límite, la caja no le pone tope."
+              example="Si Rosa debe S/ 150 que venció hace 71 días, sale «No le fíes» aunque tenga un solo fiado."
+            />
+          </div>
+          <div className="ml-auto flex min-w-0 items-center gap-2">
+            {kpis.boton}
+            <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Cobrar fiados, límites de crédito y actualizar" />
+          </div>
         </div>
-        <div className="ml-auto flex min-w-0 items-center gap-2">
-          {kpis.boton}
-          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Cobrar fiados, límites de crédito y actualizar" />
-        </div>
-      </div>
+      )}
 
-      {kpis.panel}
+      {!enMeDeben && kpis.panel}
 
       {error && (
         <p className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-ink)]">

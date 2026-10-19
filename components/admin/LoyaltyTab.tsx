@@ -45,6 +45,8 @@ export default function LoyaltyTab() {
   const [busqueda, setBusqueda] = useState("");
   const [soloConPuntos, setSoloConPuntos] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  /* El celular buscado en TODOS los clientes (no sólo los cargados) no existe. */
+  const [sinCliente, setSinCliente] = useState<string | null>(null);
   const kpis = useIndicadoresPuntos(p.metricas, p.loading);
   const elegidoTel = p.elegido?.phone ?? null;
   const s = useSellos(elegidoTel);
@@ -68,6 +70,13 @@ export default function LoyaltyTab() {
   };
 
   const q = busqueda.trim().toLowerCase();
+  /* La lista filtra sólo los clientes ya cargados (de a 100): un celular que no
+     aparece se pide al servidor, como hacía Marketplace › Fidelidad. */
+  const telBuscado = q.replace(/\D/g, "");
+  const buscarEnTodos = async () => {
+    setSinCliente(null);
+    if (!(await p.elegir(telBuscado))) setSinCliente(telBuscado);
+  };
   const conPuntos = p.clientes.filter((c) => c.loyaltyPoints > 0);
   const filtrados = (soloConPuntos ? conPuntos : p.clientes).filter(
     (c) => !q || c.name.toLowerCase().includes(q) || c.phone.includes(q),
@@ -105,7 +114,7 @@ export default function LoyaltyTab() {
           <InfoTip
             title="Puntos"
             what={`Cada compra con celular suma puntos; 1 punto vale ${formatCurrency(VALOR_PUNTO)} de descuento al canjear. El nivel (bronce, plata, oro, diamante) sube con lo que el cliente gastó.`}
-            affects="Los VIP de Campañas son los de nivel oro y diamante. La tarjeta de sellos (en Más) cuenta compras, no soles: compra 10 veces y la siguiente tiene premio."
+            affects="Los VIP de Campañas son los de nivel oro y diamante. En la ficha de cada cliente ves su historial y le sumas puntos a mano. La tarjeta de sellos (en Más) cuenta compras, no soles: compra 10 veces y la siguiente tiene premio."
             example={`Rosa tiene 120 puntos: puede descontar ${formatCurrency(120 * VALOR_PUNTO)} en su próxima compra.`}
           />
         </div>
@@ -157,7 +166,15 @@ export default function LoyaltyTab() {
             {p.loading && p.clientes.length === 0 ? (
               <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Cargando clientes…</p>
             ) : filtrados.length === 0 ? (
-              <p className="p-6 text-center text-sm text-[var(--text-secondary)]">{q || soloConPuntos ? "Nadie con ese filtro." : "Aún no tienes clientes."}</p>
+              <div className="flex flex-col items-center gap-2 p-6 text-center">
+                <p className="text-sm text-[var(--text-secondary)]">{q || soloConPuntos ? "Nadie con ese filtro." : "Aún no tienes clientes."}</p>
+                {telBuscado.length >= 6 && (
+                  <button type="button" onClick={() => void buscarEnTodos()} className={button({ variant: "secondary", className: "gap-1.5 rounded-xl text-sm" })}>
+                    <Search className="h-4 w-4" aria-hidden /> Buscar {telBuscado} en todos tus clientes
+                  </button>
+                )}
+                {sinCliente && sinCliente === telBuscado && <p role="status" className="text-sm text-[var(--text-secondary)]">No hay un cliente con ese celular.</p>}
+              </div>
             ) : (
               <div className="max-h-[36rem] overflow-y-auto">
                 <ListaPuntos clientes={filtrados} elegido={elegidoTel} onElegir={elegir} premios={s.premios} />

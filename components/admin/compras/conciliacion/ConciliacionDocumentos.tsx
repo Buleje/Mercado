@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Download, MoreHorizontal, RefreshCw } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { FiltrosEnBoton, type ChipFiltroActivo } from "@/components/admin/shared";
@@ -28,19 +28,23 @@ const ESTADOS: Array<{
 ];
 
 /**
- * Por pagar › Conciliación (N04): por orden de compra, lo pedido, lo que llegó
- * y se aceptó, la factura, la cuenta y lo pagado, lado a lado, con qué no
- * cuadra y de qué papel sale. Todo lo calcula el servidor; acá se elige el
- * período, el proveedor y qué ver. No paga ni une nada: «Vincular a su orden»
- * abre la ventana de Por pagar, que pide confirmar.
+ * Mi Plata › Lo que debo › Conciliación (N04; hasta el 18-10 era una sección
+ * de Compras › Por pagar y se mudó con ella): por orden de compra, lo pedido, lo que llegó y se
+ * aceptó, la factura, la cuenta y lo pagado, lado a lado, con qué no cuadra y
+ * de qué papel sale. Todo lo calcula el servidor; acá se elige el período, el
+ * proveedor y qué ver. No paga ni une nada: «Vincular a su orden» abre la
+ * ventana que pide confirmar.
  */
 export default function ConciliacionDocumentos({
   marca,
   onVerCuenta,
   onVincular,
+  cabecera,
 }: {
-  /** Cambia cuando Por pagar recarga sus cuentas: la conciliación se vuelve a pedir. */
+  /** Cambia cuando se recargan las cuentas por pagar: la conciliación se vuelve a pedir. */
   marca: unknown;
+  /** El título y la barra de secciones de quien la monta, al inicio de la misma fila que los filtros. */
+  cabecera?: ReactNode;
   onVerCuenta: (cuentaId: string) => void;
   onVincular: (cuentaId: string) => void;
 }) {
@@ -106,6 +110,7 @@ export default function ConciliacionDocumentos({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
+        {cabecera}
         <div role="group" aria-label="Qué ver" className="flex flex-wrap gap-2">
           {ESTADOS.map((e) => (
             <button

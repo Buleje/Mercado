@@ -16,7 +16,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { CalendarDays, Users, Wallet, FileSignature, Briefcase } from "@buleje/design-system/icons";
+import { CalendarDays, Users, Wallet, Briefcase } from "@buleje/design-system/icons";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { useRrhhResumen } from "@/hooks/use-rrhh-resumen";
 import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
@@ -29,7 +29,6 @@ import type { NivelRrhh } from "@/lib/rrhh/tipos";
 const AsistenciaView = dynamic(() => import("@/components/admin/rrhh/asistencia/AsistenciaView"), { loading: S });
 const PersonalView = dynamic(() => import("@/components/admin/rrhh/personal/PersonalView"), { loading: S });
 const GanadoView = dynamic(() => import("@/components/admin/rrhh/ganado/GanadoView"), { loading: S });
-const ContratosDelPersonalView = dynamic(() => import("@/components/admin/rrhh/contratos/ContratosDelPersonalView"), { loading: S });
 const PuestosView = dynamic(() => import("@/components/admin/rrhh/puestos/PuestosView"), { loading: S });
 
 const MODULE_ID = "rrhh-hub";
@@ -43,7 +42,7 @@ const TODAS_LAS_VISTAS = [
   { id: "asistencia", label: "Asistencia", icon: CalendarDays, nivelMin: "marcar" as NivelDeVista },
   { id: "personal", label: "Personal", icon: Users, nivelMin: "gestion" as NivelDeVista },
   { id: "ganado", label: "Lo ganado", icon: Wallet, nivelMin: "completo" as NivelDeVista },
-  { id: "contratos", label: "Contratos", icon: FileSignature, nivelMin: "gestion" as NivelDeVista },
+  /* «Contratos» se fue (19-10): cada persona lleva el suyo en Personal; `?vista=contratos` cae ahí (VISTA_MIGRATION). */
   { id: "puestos", label: "Puestos", icon: Briefcase, nivelMin: "gestion" as NivelDeVista },
 ];
 
@@ -143,7 +142,6 @@ function HubConNivel({
           {n && sub === "asistencia" && <AsistenciaView nivel={n} onCambioPersonal={onCambioPersonal} />}
           {n && sub === "personal" && <PersonalView nivel={n} />}
           {n === "completo" && sub === "ganado" && <GanadoView />}
-          {n && sub === "contratos" && <ContratosDelPersonalView />}
           {n && sub === "puestos" && <PuestosView nivel={n} />}
         </div>
       </AdminTabBar>

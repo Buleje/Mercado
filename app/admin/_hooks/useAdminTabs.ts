@@ -181,7 +181,7 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
       // esto, navegar a un id viejo dejaba el panel en blanco: el router no
       // tiene rama para él (08-10, candado de `a-medida` → «inicio»). Un id que
       // no existe ya no deja el panel en blanco: avisa y va a Inicio.
-      let destino = resolverDestino(pedido, vistaPedida);
+      let destino = resolverDestino(pedido, vistaPedida, subPedido);
       if (!destino) {
         avisarDesconocido(pedido, "navigateTab");
         destino = { tab: INICIO };

@@ -52,9 +52,12 @@ const HOJAS: readonly { id: string; label: string }[] = VISTAS.map((id) => {
  * a la vista siguiente. Tampoco la sección interna de las hojas que tienen la
  * suya (`CON_SUB_PROPIO`: Resumen, Rentabilidad, Gastos, Proyección; 2026-10-11).
  */
-const PARAMS_DE_VISTA: ParamsDeVista<string> = Object.fromEntries(
-  [...CON_PESTANAS_PROPIAS, ...CON_SUB_PROPIO].map((t) => [t, ["sub"]]),
-);
+const PARAMS_DE_VISTA: ParamsDeVista<string> = {
+  ...Object.fromEntries([...CON_PESTANAS_PROPIAS, ...CON_SUB_PROPIO].map((t) => [t, ["sub"]])),
+  /* Lo que debo: el `?q=` del «Pagar» de un proveedor (o de Compras) filtra
+     Proveedores al llegar; al salir de la vista no viaja. */
+  "por-pagar": ["sub", "q"],
+};
 
 export default function FinanzasModule({ initialTab }: { initialTab?: string } = {}) {
   /* Qué vistas se ven depende del plan, la plantilla y el rol (regla R2), y
@@ -127,7 +130,7 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
       }).map((t) =>
         /* Sin «Impuestos del mes» a la vista (en `main` la plantilla esconde
            facturación y documentos, su origen) la pestaña sólo abre reportes:
-           que no se llame «Impuestos» (medido 2026-10-11 en vista=cierres). */
+           que no se llame «Impuestos» (medido 2026-10-11 en vista=cierres, que hoy vive en Caja). */
         t.id === "impuestos-reportes" && !permitidas.has("impuestos")
           ? { ...t, label: "Reportes", shortLabel: undefined }
           : SECCIONES[t.id] ? t : { ...t, label: rotulo.get(t.id) ?? t.label },

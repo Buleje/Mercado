@@ -16,6 +16,7 @@ export default function TarjetaIndicador({
   icono: Icono,
   tono = "normal",
   ayuda,
+  accion,
 }: {
   rotulo: string;
   valor: string;
@@ -24,6 +25,8 @@ export default function TarjetaIndicador({
   /** `alerta` = vencido o bloqueado (rojo); `destacado` = la cifra que se mira primero. */
   tono?: "normal" | "destacado" | "alerta";
   ayuda?: ReactNode;
+  /** Un botón que lleva a donde se resuelve esa cifra (el «Cobrar» de los fiados). */
+  accion?: ReactNode;
 }) {
   return (
     <div
@@ -48,6 +51,7 @@ export default function TarjetaIndicador({
         {valor}
       </p>
       {detalle && <p className="text-sm text-[var(--text-secondary)]">{detalle}</p>}
+      {accion && <div className="mt-2">{accion}</div>}
     </div>
   );
 }

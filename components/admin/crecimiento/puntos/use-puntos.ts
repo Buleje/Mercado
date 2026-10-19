@@ -100,11 +100,12 @@ export function usePuntos() {
    * antes la caja arrancaba vacía aunque hubiera notas guardadas —guardar
    * encima las borraba—.
    */
-  const elegir = async (phone: string) => {
+  /** `true` si el cliente existe (también uno que no está entre los cargados: el buscador lo pide por celular). */
+  const elegir = async (phone: string): Promise<boolean> => {
     const deLaLista = clientes.find((c) => c.phone === phone) ?? null;
     if (deLaLista) setElegido(deLaLista);
     const res = await fetch(`/api/loyalty/${encodeURIComponent(phone)}`);
-    if (!res.ok) return;
+    if (!res.ok) return !!deLaLista;
     const d = (await res.json()) as Partial<ClientePuntos> & { tiers?: NivelPuntos[] };
     setElegido({
       phone: d.phone ?? phone,
@@ -116,6 +117,7 @@ export function usePuntos() {
       referralCode: d.referralCode ?? null,
     });
     if (d.tiers) setNiveles(d.tiers);
+    return true;
   };
 
   const canjear = async (puntos: number): Promise<boolean> => {
@@ -132,6 +134,12 @@ export function usePuntos() {
     setClientes((prev) => prev.map((c) => (c.phone === phone ? { ...c, loyaltyPoints: c.loyaltyPoints - puntos } : c)));
     await elegir(phone);
     return true;
+  };
+
+  /** Se sumaron puntos a mano (historial de la ficha): la lista y la ficha leen el saldo nuevo. */
+  const anotarSuma = async (phone: string, puntos: number) => {
+    setClientes((prev) => prev.map((c) => (c.phone === phone ? { ...c, loyaltyPoints: c.loyaltyPoints + puntos } : c)));
+    await elegir(phone);
   };
 
   const guardarNotas = async (privateNotes: string): Promise<boolean> => {
@@ -163,7 +171,7 @@ export function usePuntos() {
   return {
     clientes, loading, error, hayMas: !!cursor, cargandoMas, metricas, elegido, niveles,
     recargar: () => { void cargar(); },
-    cargarMas, elegir, canjear, guardarNotas, generarReferido,
+    cargarMas, elegir, canjear, anotarSuma, guardarNotas, generarReferido,
   };
 }
 

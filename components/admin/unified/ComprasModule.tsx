@@ -1,15 +1,19 @@
 "use client";
 
 /**
- * Compras (`?tab=compras`): 7 vistas (plan «panel unificado», ola 3).
+ * Compras (`?tab=compras`): 6 vistas (plan «panel unificado», ola 3).
  *
  *   Comprar ← punto-compra · Órdenes y recepción ← ordenes-compra + recepcion
  *   (2.ª sección «Recibir», con o sin orden) · Sugerencias ← sugerencias +
  *   Predicción (reorden) + Sugerencias IA › Compras: UN solo «qué reponer» ·
  *   Proveedores ← proveedores + comparador (2.ª sección «Comparar», con los
- *   precios del mercado) · Por pagar ← cuentas-por-pagar (casa única de
- *   PayablesTab; Comprobantes y Mi Plata enlazan acá) · Devoluciones ·
- *   Dropship ← dropship (sólo donde dropship se ve: rubro y plan, por origen).
+ *   precios del mercado) · Devoluciones · Dropship ← dropship (sólo donde
+ *   dropship se ve: rubro y plan, por origen).
+ *
+ * Por pagar se mudó a Mi Plata › Lo que debo (18-10, «deudas en un solo
+ * lugar»): el «⋯» de la cabecera deja «Ver lo que debes» y
+ * `?vista=cuentas-por-pagar` llega allá (VISTA_MIGRATION). Su sección
+ * «Conciliación» se quedó acá, en Órdenes y recepción.
  *
  * Gastos fijos e Historial de gastos se mudaron a Mi Plata › Gastos y
  * presupuesto: Comprar deja el enlace y `?vista=historial-gastos` llega allá
@@ -21,7 +25,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
-  Lightbulb, ClipboardList, Users, PackagePlus, ShoppingBasket, RotateCcw, CreditCard, Truck,
+  Lightbulb, ClipboardList, Users, PackagePlus, ShoppingBasket, RotateCcw, Truck,
 } from "@buleje/design-system/icons";
 import { LoadingState } from "@buleje/design-system";
 import { useVistaModulo, type AliasDeVista } from "@/hooks/use-vista-modulo";
@@ -38,7 +42,6 @@ const SugerenciasVista = dynamic(() => import("@/components/admin/compras/Sugere
 const ProveedoresVista = dynamic(() => import("@/components/admin/compras/ProveedoresVista"), { loading: S });
 /* La cabecera prometía «cuentas por pagar» y ninguna sub-vista las mostraba:
    vivían sólo en Facturación (09-10). Desde la ola 3 ésta es su casa única. */
-const PayablesTab = dynamic(() => import("@/components/admin/PayablesTab"), { loading: S });
 const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: S });
 const DropshipModule = dynamic(() => import("@/components/admin/unified/DropshipModule"), { loading: S });
 
@@ -53,7 +56,6 @@ const TABS: AdminTab[] = [
   { id: "ordenes-compra", label: "Órdenes y recepción", shortLabel: "Órdenes", icon: ClipboardList },
   { id: "sugerencias", label: "Sugerencias", icon: Lightbulb },
   { id: "proveedores", label: "Proveedores", icon: Users },
-  { id: "cuentas-por-pagar", label: "Por pagar", icon: CreditCard },
   { id: "devoluciones", label: "Devoluciones", icon: RotateCcw },
   { id: "dropship", label: "Dropship", icon: Truck },
 ];
@@ -114,7 +116,7 @@ function ComprasConVistas({ initialTab }: { initialTab?: string }) {
   // (`?reponer=1`) son de UNA vista: se borran al salir.
   const [entrada, setEntrada] = useState(() => seccionPorNombreViejo(initialTab));
   const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, ids, ids[0] ?? "punto-compra", initialTab, {
-    paramsDeVista: { "punto-compra": ["reponer"], "ordenes-compra": ["oc", "sub"], proveedores: ["proveedor", "sub"], "cuentas-por-pagar": ["sub", "q"], devoluciones: ["q"] },
+    paramsDeVista: { "punto-compra": ["reponer"], "ordenes-compra": ["oc", "sub"], proveedores: ["proveedor", "sub"], devoluciones: ["q"] },
     alias: ALIAS,
   });
   // La sección del nombre viejo vale sólo para la primera vista: al salir, se olvida.
@@ -170,11 +172,12 @@ function ComprasConVistas({ initialTab }: { initialTab?: string }) {
   }, [setSub]);
 
   // Escuchar navegación desde adentro: «Ver en Órdenes» del Punto de Compra,
-  // el aviso de crédito de una recepción (Por pagar, Devoluciones).
+  // el aviso de crédito de una recepción (Por pagar → Mi Plata › Lo que debo, Devoluciones).
   useEffect(() => {
     const handler = (e: Event) => {
       const tabId = (e as CustomEvent).detail;
-      if (typeof tabId === "string" && (TABS.some((t) => t.id === tabId) || tabId in SECCION_AL_IR)) irAVista(tabId);
+      if (tabId === "cuentas-por-pagar") irAEnlace("/admin?tab=plata&vista=por-pagar&sub=cuentas");
+      else if (typeof tabId === "string" && (TABS.some((t) => t.id === tabId) || tabId in SECCION_AL_IR)) irAVista(tabId);
     };
     window.addEventListener("compras-navigate-tab", handler);
     return () => window.removeEventListener("compras-navigate-tab", handler);
@@ -209,7 +212,7 @@ function ComprasConVistas({ initialTab }: { initialTab?: string }) {
       <AdminTabBar
         heading={{
           title: "Compras",
-          description: "Comprar, órdenes y recepción, qué reponer, proveedores, lo que debes y devoluciones.",
+          description: "Comprar, órdenes y recepción, qué reponer, proveedores y devoluciones.",
           icon: PackagePlus,
           actions: <BarraCompras onIr={irDesdeLaBarra} onNuevaOrdenA={nuevaOrdenA} onNuevaCompra={nuevaCompra} />,
         }}
@@ -231,7 +234,6 @@ function ComprasConVistas({ initialTab }: { initialTab?: string }) {
             onCrearOC={nuevaOrdenA}
           />
         )}
-        {sub === "cuentas-por-pagar" && <PayablesTab />}
         {sub === "devoluciones" && <DevolucionesProveedorModule />}
         {sub === "dropship" && <DropshipModule enCompras />}
         </Fragment>

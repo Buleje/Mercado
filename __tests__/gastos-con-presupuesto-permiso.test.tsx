@@ -29,8 +29,8 @@ vi.mock("next/dynamic", () => ({
     const fuente = String(cargar);
     const nombre = fuente.includes("ExpensesTab")
       ? "gastos"
-      : fuente.includes("BudgetVsRealTab")
-        ? "presupuesto-real"
+      : fuente.includes("LineaMetaDelMes")
+        ? "meta-del-mes"
         : fuente.includes("PresupuestoMensualTab")
           ? "presupuesto-mes"
           : fuente.includes("CatalogoDeGastosFijos")
@@ -77,7 +77,8 @@ afterEach(() => {
 
 /** Las secciones que la barra le ofrece. */
 const secciones = () => screen.queryAllByRole("tab").map((t) => t.textContent?.trim() ?? "");
-const SECCIONES_PROPIAS = ["Anotados", "Presupuesto", "Metas"];
+/* «Metas» se fue (19-10, una sola meta): la meta del mes se ve en Presupuesto. */
+const SECCIONES_PROPIAS = ["Anotados", "Presupuesto"];
 
 function contexto(rol: string, plan: PlanTier, idsReales: boolean): ContextoPermiso {
   const ids = tabsDelRol(rol, null, { idsReales });
@@ -101,7 +102,7 @@ function montados(ctx: ContextoPermiso): string[] {
     .sort();
 }
 
-const PROPIOS = ["bloque-gastos", "bloque-presupuesto-real", "bloque-presupuesto-mes"];
+const PROPIOS = ["bloque-gastos", "bloque-meta-del-mes", "bloque-presupuesto-mes"];
 
 describe.each([true, false])("Gastos y presupuesto por rol (ids reales: %s)", (idsReales) => {
   it.each<PlanTier>(["enterprise", "max"])("almacenero en %s: sólo lo que llegó de Compras", (plan) => {

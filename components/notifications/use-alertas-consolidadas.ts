@@ -73,7 +73,7 @@ function alertasDeStats(stats: Stats): AlertaAhora[] {
       severity: "warning",
       title: `${pagos} ${plural(pagos, "pago a proveedor vencido", "pagos a proveedores vencidos")}`,
       description: "Deudas con proveedores que ya pasaron su fecha.",
-      action: { label: "Ver por pagar", href: "/admin?tab=compras&vista=cuentas-por-pagar" },
+      action: { label: "Ver por pagar", href: "/admin?tab=plata&vista=por-pagar&sub=cuentas" },
     });
   }
   return out;

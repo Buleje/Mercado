@@ -4,7 +4,9 @@ import {
   Users, Star, MapPin, MessageSquare,
   UserPlus,
 } from "@buleje/design-system/icons";
+import { useMemo } from "react";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import { useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -25,15 +27,19 @@ const TABS = [
   { id: "mensajes" as const, label: "Mensajes masivos", icon: MessageSquare },
 ];
 
-/** Los ids, estables: el hook los usa como dependencia. */
-const TAB_IDS = TABS.map((t) => t.id);
+type Vista = (typeof TABS)[number]["id"];
 
 export default function CRMClientesModule({ initialTab }: { initialTab?: string } = {}) {
   // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
   // destino del buscador global. `initialTab` gana cuando el módulo se abre
   // desde un tab alias (ver useVistaModulo).
   // El cliente abierto (`?cliente=`) es de «Mis clientes»: se borra al salir de esa vista.
-  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab, {
+  // Opiniones también es de Marketplace (19-10, Reseñas se mudó acá): quien sólo
+  // tiene Marketplace (la plantilla global oculta Clientes) entra a esta pestaña
+  // por esa vista y no ve Mis clientes, Interesados, Mapa ni Mensajes masivos.
+  const tabs = useVistasPermitidas(MODULE_ID, TABS);
+  const tabIds = useMemo(() => tabs.map((t) => t.id), [tabs]);
+  const { vista: sub, irA: setSub } = useVistaModulo<Vista>(MODULE_ID, tabIds, tabIds[0] ?? "crm", initialTab, {
     paramsDeVista: { crm: ["cliente"] },
   });
 
@@ -55,9 +61,9 @@ export default function CRMClientesModule({ initialTab }: { initialTab?: string 
           description: "Tus clientes y lo que compran, los interesados que todavía no compran, sus opiniones, dónde viven y los mensajes masivos.",
           icon: Users,
         }}
-        tabs={TABS}
+        tabs={tabs}
         activeTab={sub}
-        onTabChange={(id) => setSub(id as typeof sub)}
+        onTabChange={(id) => setSub(id as Vista)}
         moduleId="crm"
       >
         {sub === "crm" && <CRMTab />}

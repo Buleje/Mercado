@@ -4,10 +4,11 @@
  * Accesos de la cabecera de Compras (C57, C63, C64): «Buscar» (o «/») para
  * encontrar cualquier orden, proveedor, cuenta, recepción o devolución;
  * «Revisar» con cuántos casos esperan una mano; y en «Más», recibir
- * mercadería (R), compra nueva (N), la hoja de atajos y apagarlos.
+ * mercadería (R), compra nueva (N), «Ver lo que debes» (Mi Plata › Lo que
+ * debo, donde quedó Por pagar), la hoja de atajos y apagarlos.
  */
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Keyboard, ListChecks, MoreHorizontal, PackageCheck, Search, ShoppingBasket } from "@buleje/design-system/icons";
+import { CreditCard, Keyboard, ListChecks, MoreHorizontal, PackageCheck, Search, ShoppingBasket } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import Kbd from "@/components/admin/shared/kbd";
 import { button } from "@/components/ui-system/button-variants";
@@ -47,6 +48,8 @@ export default function BarraCompras({
   const acciones: MenuAccion[] = [
     { id: "recibir", label: "Recibir mercadería", hint: atajos.activos ? "Atajo: R" : "Elige la orden que llegó", icon: PackageCheck, onSelect: recibir },
     { id: "nueva", label: "Compra nueva", hint: atajos.activos ? "Atajo: N" : "Ir a Comprar con el buscador listo", icon: ShoppingBasket, onSelect: onNuevaCompra },
+    /* Por pagar se mudó a Mi Plata › Lo que debo (18-10): pagas en un solo lugar. */
+    { id: "lo-que-debo", label: "Ver lo que debes", hint: "Mi Plata › Lo que debo: proveedores, calendario y propuesta de pagos", icon: CreditCard, onSelect: () => onIr("/admin?tab=plata&vista=por-pagar") },
     { id: "ayuda", label: "Atajos de teclado", hint: "La hoja con todas las teclas", icon: Keyboard, onSelect: abrirAyuda },
     {
       id: "atajos",
@@ -91,7 +94,7 @@ export default function BarraCompras({
           </span>
         )}
       </button>
-      <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Recibir, compra nueva y atajos" />
+      <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Recibir, compra nueva, lo que debes y atajos" />
 
       <BuscarComprasModal
         key={busqueda.vez}

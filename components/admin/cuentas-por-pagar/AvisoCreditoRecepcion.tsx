@@ -2,6 +2,7 @@
 
 import { BadgePercent, X } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { formatCurrency } from "@/lib/format";
 
 /** Lo que devuelve `POST /api/compras/recepciones` en `credito`. */
@@ -14,7 +15,8 @@ export type CreditoDeRecepcion = {
   detalle: string;
 };
 
-/** Pide a ComprasModule cambiar de sub-vista (lo escucha desde Punto de Compra). */
+/** Pide a ComprasModule cambiar de sub-vista (lo escucha desde Punto de Compra). La cuenta
+    por pagar ya no es de Compras (18-10): va directo a Mi Plata › Lo que debo. */
 function irA(vista: string) {
   window.dispatchEvent(new CustomEvent("compras-navigate-tab", { detail: vista }));
 }
@@ -42,7 +44,7 @@ export default function AvisoCreditoRecepcion({ credito, proveedor, onCerrar }: 
         {credito.descontado > 0 && (
           <p>
             Bajamos <strong className="tabular-nums">{formatCurrency(credito.descontado)}</strong> de tu cuenta con {proveedor}.{" "}
-            <button type="button" onClick={() => irA("cuentas-por-pagar")} className="font-semibold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]">
+            <button type="button" onClick={() => irAEnlace(`/admin?tab=plata&vista=por-pagar&sub=cuentas&q=${encodeURIComponent(proveedor)}`)} className="font-semibold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]">
               Ver la cuenta
             </button>
           </p>

@@ -28,7 +28,7 @@ type SourceFilter = "all" | "whatsapp" | "review";
 
 const FUENTE: Record<SupportInboxItem["source"], { rotulo: string; donde: string; href: string }> = {
   whatsapp: { rotulo: "WhatsApp", donde: "Responder", href: "/admin?tab=whatsapp-inbox&vista=whatsapp" },
-  review: { rotulo: "Reseña", donde: "Moderar", href: "/admin?tab=marketplace&vista=resenas" },
+  review: { rotulo: "Reseña", donde: "Moderar", href: "/admin?tab=clientes&vista=resenas&sub=moderar" },
 };
 
 const CHIP = "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors";

@@ -1,30 +1,25 @@
 "use client";
 
 /**
- * Marketplace › Reseñas: aprobar, rechazar y responder las reseñas de tu
- * tienda y del marketplace (`/api/reviews?all=1`, todas las del negocio menos
- * los comentarios de producto). Antes filtraba por `storeId`, que esa ruta no
- * devuelve: la lista salía siempre vacía (11-10).
+ * Clientes › Opiniones › Moderar: aprobar, rechazar y responder las reseñas de
+ * tu tienda y del marketplace (`/api/reviews?all=1`, todas las del negocio
+ * menos los comentarios de producto).
  *
- * No duplica a Clientes › Opiniones: aquélla lee el mismo endpoint pero sólo
- * para el análisis (promedio, tendencia, sin acciones); ésta es la de
- * moderar. Patrón del panel (11-10): cabecera en una fila con Indicadores
- * (antes, un héroe con las mismas cifras que los chips de abajo), estados
- * como chips pegados a la lista y, por reseña, la acción que toca a la vista
+ * Era Marketplace › Reseñas (19-10, «juntar pestañas gemelas»): leía el mismo
+ * endpoint que Opiniones, una para el análisis y otra para moderar. Ahora es
+ * una sección de Opiniones. Sus cifras propias (por moderar y respondidas)
+ * van en la fila del filtro; promedio y satisfacción ya están en los
+ * indicadores de Opiniones. Por reseña, la acción que toca a la vista
  * (Aprobar si espera, Responder si no) y el resto en «⋯».
  */
-import { MessageSquare, MoreHorizontal, Star, ThumbsUp, Check, X, BarChart3 } from "@buleje/design-system/icons";
+import { ErrorAlert } from "@buleje/design-system";
+import { Check, MessageSquare, MoreHorizontal, Star, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
-import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
-import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { useMarketplaceReviews, type ReviewItem } from "@/components/admin/marketplace/hooks/use-marketplace-reviews";
 import { TableSkeleton } from "@/components/admin/marketplace/shared";
+import { diaDe, SelectFiltro, VacioDeUnaFrase, type OpcionFiltro } from "@/components/admin/marketplace/tabs/cabecera-vista";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
-import { useAccionesDeVista } from "@/components/admin/marketplace/acciones-de-vista";
-import { StatCard } from "@buleje/design-system";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { diaDe, FilaDeVista, SelectFiltro, VacioDeUnaFrase, type OpcionFiltro } from "./cabecera-vista";
 
 type Filtro = "all" | "pending" | "approved" | "rejected";
 
@@ -33,8 +28,6 @@ const ESTADO: Record<string, { rotulo: string; clase: string }> = {
   approved: { rotulo: "Aprobada", clase: "bg-[var(--data-success-100)] text-[var(--data-success-ink)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]" },
   rejected: { rotulo: "Rechazada", clase: "bg-[var(--data-error-100)] text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]" },
 };
-const HREF_OPINIONES = "/admin?tab=clientes&vista=resenas";
-
 function Estrellas({ n }: { n: number }) {
   return (
     <span className="inline-flex items-center gap-0.5" role="img" aria-label={`${n} de 5 estrellas`}>
@@ -45,35 +38,29 @@ function Estrellas({ n }: { n: number }) {
   );
 }
 
-export function MarketplaceResenasTab() {
+interface Props {
+  /** Se aprobó, rechazó o respondió una: el resumen de Opiniones vuelve a leer. */
+  onCambio?: () => void;
+}
+
+export default function ModerarResenas({ onCambio }: Props) {
   const r = useMarketplaceReviews();
-  const { reviews, filtered, loading, filter, setFilter, replyingTo, setReplyingTo, replyText, setReplyText, saving, pendingCount, handleStatusChange, handleReply } = r;
+  const { reviews, filtered, loading, filter, setFilter, replyingTo, setReplyingTo, replyText, setReplyText, saving, pendingCount, error } = r;
 
   const total = reviews.length;
-  const promedio = total > 0 ? reviews.reduce((s, x) => s + x.rating, 0) / total : 0;
   const aprobadas = reviews.filter((x) => x.status === "approved");
   const respondidas = aprobadas.filter((x) => x.adminReply).length;
   const cuenta = (s: string) => reviews.filter((x) => x.status === s).length;
 
-  const kpis = useKpisPlegables({
-    claveMemoria: "marketplace-resenas",
-    alto: "md",
-    compactoEnMovil: true,
-    anchoFijo: true,
-    sinDatosAun: loading && total === 0,
-    resumen: total > 0 ? `${promedio.toFixed(1)} ★ · ${pendingCount} por moderar` : "Sin reseñas",
-    tarjetas: [
-      <StatCard density="compact" key="p" label="Promedio" value={total > 0 ? `${promedio.toFixed(1)} de 5` : "—"} icon={Star} info={<InfoTip what={`De ${total} reseñas de tu puesto, también las que esperan.`} />} />,
-      <StatCard density="compact" key="m" label="Por moderar" value={pendingCount} icon={MessageSquare} highlight={pendingCount > 0} info={<InfoTip what="No se ven en tu tienda hasta que las apruebes." />} />,
-      <StatCard density="compact" key="r" label="Respondidas" value={aprobadas.length > 0 ? `${respondidas} de ${aprobadas.length}` : "—"} icon={ThumbsUp} info={<InfoTip what="De las aprobadas, cuántas tienen tu respuesta." />} />,
-    ],
-  });
+  const handleStatusChange = async (id: string, status: string) => {
+    await r.handleStatusChange(id, status);
+    onCambio?.();
+  };
+  const handleReply = async (id: string) => {
+    await r.handleReply(id);
+    onCambio?.();
+  };
 
-  const acciones: MenuAccion[] = [
-    { id: "opiniones", label: "Análisis de opiniones", hint: "Clientes › Opiniones: promedio y tendencia de todas", icon: BarChart3, onSelect: () => irAEnlace(HREF_OPINIONES) },
-  ];
-  /* Al «⋯ Más» del hub; «Actualizar» ya lo pone el hub. */
-  useAccionesDeVista(acciones);
   const opciones: OpcionFiltro<Filtro>[] = [
     { valor: "all", rotulo: "Todos los estados", cuenta: total },
     { valor: "pending", rotulo: "Por moderar", cuenta: cuenta("pending") },
@@ -92,24 +79,22 @@ export function MarketplaceResenasTab() {
   ];
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      <FilaDeVista
-        titulo="Reseñas"
-        ayuda={{
-          what: "Lo que opinan quienes te compraron, en tu tienda o por el marketplace. Aquí las apruebas, las rechazas y las respondes.",
-          affects: "Sólo las aprobadas se ven en tu tienda, con tu respuesta debajo. El promedio y la tendencia de todas están en Clientes › Opiniones.",
-          example: "«Faltó una lata de leche» → respondes «Ya quedó corregido» y la apruebas.",
-        }}
-        derecha={kpis.boton}
-      >
-        {total > 0 && <SelectFiltro opciones={opciones} activo={filter} onCambiar={setFilter} etiqueta="Estado de la reseña" />}
-      </FilaDeVista>
-      {kpis.panel}
+    <div className="space-y-3">
+      {error && <ErrorAlert title="No se pudo completar" description={error} />}
+      {total > 0 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <SelectFiltro opciones={opciones} activo={filter} onCambiar={setFilter} etiqueta="Estado de la reseña" />
+          <p className="text-sm text-[var(--text-secondary)]">
+            <span className={cn("font-semibold tabular-nums", pendingCount > 0 && "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]")}>{pendingCount} por moderar</span>
+            {aprobadas.length > 0 && <> · {respondidas} de {aprobadas.length} aprobadas con tu respuesta</>}
+          </p>
+        </div>
+      )}
 
       {loading && total === 0 ? (
         <TableSkeleton />
       ) : filtered.length === 0 ? (
-        <VacioDeUnaFrase>{total === 0 ? "Sin reseñas todavía: aparecen cuando un cliente califica tu tienda." : "Ninguna reseña en ese estado."}</VacioDeUnaFrase>
+        error && total === 0 ? null : <VacioDeUnaFrase>{total === 0 ? "Sin reseñas todavía: aparecen cuando un cliente califica tu tienda." : "Ninguna reseña en ese estado."}</VacioDeUnaFrase>
       ) : (
         <ul className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           {filtered.map((x) => {

@@ -19,7 +19,7 @@
  */
 
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Store, Package, ShoppingCart, DollarSign, RefreshCw, TrendingUp, Star, BarChart3, Gift, MoreHorizontal } from "@buleje/design-system/icons";
+import { Store, Package, ShoppingCart, DollarSign, RefreshCw, TrendingUp, BarChart3, MoreHorizontal } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
@@ -27,9 +27,7 @@ import { useVistaModulo, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import { Spinner, MODULE_ID } from "@/components/admin/marketplace/shared";
 import { AccionesDeVistaProvider } from "@/components/admin/marketplace/acciones-de-vista";
-import { MarketplaceFidelidadTab } from "@/components/admin/marketplace/tabs/FidelidadTab";
 import { MarketplaceComisionesTab } from "@/components/admin/marketplace/tabs/ComisionesTab";
-import { MarketplaceResenasTab } from "@/components/admin/marketplace/tabs/ResenasTab";
 import { MarketplaceTiendaTab } from "@/components/admin/marketplace/tabs/TiendaTab";
 import { MarketplaceProductosTab } from "@/components/admin/marketplace/tabs/ProductosTab";
 import { MarketplaceOrdenesTab } from "@/components/admin/marketplace/tabs/OrdenesTab";
@@ -38,9 +36,12 @@ const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitiveP
 const MarketplaceDashboardTab = lazy(() => import("@/components/admin/marketplace/MarketplaceDashboard"));
 
 // Los programas de crecimiento (suscripciones, gift cards, socio, lives) viven
-// en el hub Crecimiento desde 2026-06-21: acá queda la tienda.
+// en el hub Crecimiento desde 2026-06-21: acá queda la tienda. Reseñas y
+// Fidelidad se fueron el 19-10 a sus gemelas: moderar a Clientes › Opiniones
+// (`?sub=moderar`) y el historial + sumar puntos a mano a la ficha de Campañas
+// › Puntos (VISTA_MIGRATION lleva los enlaces viejos).
 
-type Vista = "resumen" | "tienda" | "productos" | "ordenes" | "comisiones" | "precios" | "resenas" | "fidelidad";
+type Vista = "resumen" | "tienda" | "productos" | "ordenes" | "comisiones" | "precios";
 
 const TABS: readonly (AdminTab & { id: Vista })[] = [
   { id: "resumen",      label: "Resumen",      icon: BarChart3 },
@@ -49,15 +50,13 @@ const TABS: readonly (AdminTab & { id: Vista })[] = [
   { id: "ordenes",      label: "Órdenes",      icon: ShoppingCart },
   { id: "comisiones",   label: "Comisiones",   icon: DollarSign },
   { id: "precios",      label: "Precios",      icon: TrendingUp },
-  { id: "resenas",      label: "Reseñas",      icon: Star },
-  { id: "fidelidad",    label: "Fidelidad",    icon: Gift },
 ];
 
 /** Mi Tienda Personal lleva su sección en `?sub=`: al salir, no viaja a la vista siguiente. */
 const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { tienda: ["sub"] };
 
 const AYUDA_DEL_HUB =
-  "Tu tienda dentro del marketplace de Buleje: cómo te va, qué publicas, los pedidos que entran por ahí, lo que cobra la plataforma y los premios para tus compradores.";
+  "Tu tienda dentro del marketplace de Buleje: cómo te va, qué publicas, los pedidos que entran por ahí y lo que cobra la plataforma.";
 
 /** Cuánto se espera al rol antes de abrir igual (con las vistas propias del hub). */
 const ESPERA_DEL_ROL_MS = 4000;
@@ -135,8 +134,6 @@ function HubMarketplace({ initialTab }: { initialTab?: string }) {
                 <CompetitivePricingTab />
               </Suspense>
             )}
-            {vista === "resenas" && <MarketplaceResenasTab />}
-            {vista === "fidelidad" && <MarketplaceFidelidadTab />}
           </div>
         </AccionesDeVistaProvider>
       </AdminTabBar>

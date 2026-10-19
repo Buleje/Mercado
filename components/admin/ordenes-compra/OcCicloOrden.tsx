@@ -12,7 +12,7 @@ import { TONO_TEXTO, quienLee, type OrdenOC } from "@/components/admin/ordenes-c
 import OcAnotarComprobante from "@/components/admin/ordenes-compra/OcAnotarComprobante";
 import type { OrdenesCompra } from "@/components/admin/ordenes-compra/hooks/use-ordenes-compra";
 
-const HREF_POR_PAGAR = "/admin?tab=compras&vista=cuentas-por-pagar";
+const HREF_POR_PAGAR = "/admin?tab=plata&vista=por-pagar&sub=cuentas";
 const HREF_RECEPCIONES = "/admin?tab=compras&vista=ordenes-compra&sub=recibir";
 
 const ACCION = {

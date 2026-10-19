@@ -81,6 +81,16 @@ describe("resolverDestino — los mapas del panel", () => {
     }
   });
 
+  it("una sección mudada aparte de su vista llega a su lugar con `tab:vista:sub`", () => {
+    // 19-10: Por pagar se fue a Mi Plata › Lo que debo, conciliación incluida (5.ª sección).
+    expect(resolverDestino("compras", "cuentas-por-pagar", "calendario")).toEqual({ tab: "plata", vista: "por-pagar", sub: "calendario" });
+    expect(resolverDestino("compras", "cuentas-por-pagar", "conciliacion")).toEqual({ tab: "plata", vista: "por-pagar", sub: "conciliacion" });
+    // Sin clave propia, la sección del link no cambia el par de la vista.
+    expect(resolverDestino("compras", "cuentas-por-pagar", "zzz")).toEqual({ tab: "plata", vista: "por-pagar", sub: "cuentas" });
+    const url = new URL(destinoDeUrl("https://x.pe/admin?tab=compras&vista=cuentas-por-pagar&sub=propuesta")?.url ?? "");
+    expect([url.searchParams.get("tab"), url.searchParams.get("vista"), url.searchParams.get("sub")]).toEqual(["plata", "por-pagar", "propuesta"]);
+  });
+
   it("los pares de VISTA_MIGRATION son `tab:vista` y resuelven", () => {
     for (const clave of Object.keys(VISTA_MIGRATION)) {
       const [tab, vista] = clave.split(":");

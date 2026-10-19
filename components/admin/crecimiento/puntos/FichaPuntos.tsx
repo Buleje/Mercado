@@ -2,18 +2,33 @@
 
 /**
  * La ficha del cliente elegido en Puntos: sus cifras, avisarle por WhatsApp y
- * canjear a la vista; notas, referido y niveles plegados (antes: siete
+ * canjear a la vista; historial + sumar a mano (lo que era Marketplace ›
+ * Fidelidad, 19-10), notas, referido y niveles plegados (antes: siete
  * tarjetas apiladas, una con un vencimiento inventado y otra con la lista de
  * TODOS los clientes, que no era de esta ficha).
  */
+import dynamic from "next/dynamic";
 import { useState, type ReactNode } from "react";
 import { Award, ChevronDown, Copy, MessageCircle } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
+import { usePermisoDe } from "@/hooks/use-vistas-permitidas";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ChipNivel } from "./ListaPuntos";
 import { enlaceWhatsApp, mensajeDePuntos, mensajeDeReferido, solesDePuntos, VALOR_PUNTO } from "./mensajes";
 import type { Puntos } from "./use-puntos";
+
+/* Llegó de Marketplace › Fidelidad (19-10): se pide sólo al abrir su plegable. */
+/**
+ * El historial y «sumar a mano» eran Marketplace › Fidelidad (19-10): los ve
+ * quien tenía Marketplace, no todo el que entra a Puntos (la API de puntos del
+ * marketplace es la misma de antes).
+ */
+const ORIGEN_HISTORIAL = ["marketplace"] as const;
+
+const HistorialDePuntos = dynamic(() => import("./HistorialDePuntos"), {
+  loading: () => <p className="text-sm text-[var(--text-tertiary)]">Cargando el historial…</p>,
+});
 
 const CAMPO = "h-12 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary";
 
@@ -32,6 +47,7 @@ function Plegable({ titulo, abierto: inicial = false, children }: { titulo: Reac
 
 export function FichaPuntos({ p, negocio, onCopiar, sellos }: { p: Puntos; negocio: string; onCopiar: (texto: string) => void; /** La tarjeta de sellos, si está activa. */ sellos?: ReactNode }) {
   const c = p.elegido;
+  const veHistorial = usePermisoDe(ORIGEN_HISTORIAL);
   const [canje, setCanje] = useState("");
   const [notas, setNotas] = useState(c?.privateNotes ?? "");
   const [guardando, setGuardando] = useState(false);
@@ -97,6 +113,12 @@ export function FichaPuntos({ p, negocio, onCopiar, sellos }: { p: Puntos; negoc
           {canjeValido ? `Descuento: ${formatCurrency(pts * VALOR_PUNTO)}` : `1 punto = ${formatCurrency(VALOR_PUNTO)} de descuento`}
         </p>
       </div>
+
+      {veHistorial && (
+        <Plegable titulo="Historial y sumar puntos a mano">
+          <HistorialDePuntos phone={c.phone} onSumado={(n) => void p.anotarSuma(c.phone, n)} />
+        </Plegable>
+      )}
 
       <Plegable titulo={`Notas privadas${c.privateNotes ? " · con notas" : ""}`} abierto={!!c.privateNotes}>
         <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={3} aria-label="Notas privadas" placeholder="Sólo las ve tu equipo, no el cliente." className={cn(CAMPO, "h-auto w-full resize-none py-2")} />

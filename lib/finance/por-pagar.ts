@@ -89,10 +89,10 @@ export interface EnlacePorPagar {
 export const ENLACE_FUENTE: Record<FuentePorPagar, EnlacePorPagar> = {
   adelanto_recibido: { tab: "plata", vista: "adelantos", sub: "lista" },
   adelanto_excedido: { tab: "plata", vista: "adelantos", sub: "lista" },
-  /* Las cuentas de proveedores viven en Compras › Por pagar desde la ola 3 del
-     panel (10-10). Antes: `facturacion` + `sub=cxp`, que ya abría Facturas y
+  /* Las cuentas de proveedores viven en Mi Plata › Lo que debo › Proveedores
+     desde el 18-10 (antes Compras › Por pagar, ola 3 del panel, 10-10). Antes: `facturacion` + `sub=cxp`, que ya abría Facturas y
      boletas — el «Pagar» de un proveedor caía en la pantalla equivocada. */
-  cuenta_por_pagar: { tab: "compras", vista: "cuentas-por-pagar" },
+  cuenta_por_pagar: { tab: "plata", vista: "por-pagar", sub: "cuentas" },
   prestamo_recibido: { tab: "plata", vista: "prestamos" },
   /* La cuenta de la parte, con sus movimientos y el botón Liquidar, vive en
      «Cuenta por persona» (Adelantos → Resumen). */

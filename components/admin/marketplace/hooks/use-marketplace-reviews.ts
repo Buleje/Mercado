@@ -16,6 +16,12 @@ export interface ReviewItem {
   adminReplyDate?: string | null;
 }
 
+function errorAlGuardar(status: number): string {
+  return status === 403
+    ? "Tu rol no puede moderar reseñas: pídeselo al dueño o al encargado."
+    : "No se pudo guardar el cambio. Intenta de nuevo.";
+}
+
 export function useMarketplaceReviews() {
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,11 +29,21 @@ export function useMarketplaceReviews() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
+  /* Antes un 403 o una caída se tragaban: «Aprobar» no hacía nada y la lista
+     salía vacía como si no hubiera reseñas (revisión 19-10). */
+  const [error, setError] = useState<string | null>(null);
 
   const loadReviews = useCallback(() => {
     setLoading(true);
     fetch("/api/reviews?all=1")
-      .then((r) => (r.ok ? r.json() : []))
+      .then((r) => {
+        if (!r.ok) {
+          setError(r.status === 403 ? "Tu rol no puede ver las reseñas para moderarlas." : "No se pudieron cargar las reseñas. Intenta de nuevo.");
+          return [];
+        }
+        setError(null);
+        return r.json();
+      })
       .then((data: ReviewItem[]) => {
         /* Todas las reseñas de TU negocio (el servidor ya filtra por el tenant
            del JWT), menos los comentarios de producto, que reusan la tabla con
@@ -38,7 +54,7 @@ export function useMarketplaceReviews() {
            — la tienda sólo muestra las aprobadas (11-10). */
         setReviews(Array.isArray(data) ? data.filter((r) => r.status !== "comment") : []);
       })
-      .catch((err) => { /* fire-and-forget */ void err; })
+      .catch(() => setError("No se pudieron cargar las reseñas: revisa tu conexión."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -54,8 +70,13 @@ export function useMarketplaceReviews() {
       });
       if (res.ok) {
         setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+        setError(null);
+      } else {
+        setError(errorAlGuardar(res.status));
       }
-    } catch { /* silencioso */ }
+    } catch {
+      setError("No se pudo guardar: revisa tu conexión.");
+    }
     setSaving(null);
   };
 
@@ -77,8 +98,13 @@ export function useMarketplaceReviews() {
 
         setReplyingTo(null);
         setReplyText("");
+        setError(null);
+      } else {
+        setError(errorAlGuardar(res.status));
       }
-    } catch { /* silencioso */ }
+    } catch {
+      setError("No se pudo guardar: revisa tu conexión.");
+    }
     setSaving(null);
   };
 
@@ -88,7 +114,7 @@ export function useMarketplaceReviews() {
   return {
     reviews, filtered, loading, filter, setFilter,
     replyingTo, setReplyingTo, replyText, setReplyText,
-    saving, pendingCount, loadReviews,
+    saving, pendingCount, loadReviews, error,
     handleStatusChange, handleReply,
   };
 }

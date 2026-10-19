@@ -9,7 +9,9 @@
  */
 
 import { useState } from "react";
-import { FileSignature, Link2, Loader2 } from "@buleje/design-system/icons";
+import { FileSignature, Link2, Loader2, Plus } from "@buleje/design-system/icons";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { hrefHacerContrato } from "@/lib/rrhh/contratos-por-persona";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import { ESTADO_VISIBLE_LABELS, type EstadoVisible } from "@/lib/types/contracts";
@@ -31,11 +33,11 @@ const CLASE_ESTADO: Partial<Record<EstadoVisible, string>> = {
   PENDIENTE_FIRMA: "bg-[var(--data-info-500)]/10 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]",
 };
 
-function claseDe(estado: string): string {
+export function claseEstadoContrato(estado: string): string {
   return CLASE_ESTADO[estado as EstadoVisible] ?? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
 }
 
-function etiquetaDe(estado: string): string {
+export function etiquetaEstadoContrato(estado: string): string {
   return ESTADO_VISIBLE_LABELS[estado as EstadoVisible] ?? estado;
 }
 
@@ -69,7 +71,7 @@ export default function FichaContratos({ colaboradorId, contratos, sugeridos, on
     <div className="space-y-4">
       {contratos.length === 0 ? (
         <AvisoRrhh tono="neutro" icono={FileSignature}>
-          Sin contratos vinculados. Se crean en Documentos › Contratos.
+          Sin contratos vinculados.
         </AvisoRrhh>
       ) : (
         <ul className="space-y-2.5">
@@ -91,7 +93,7 @@ export default function FichaContratos({ colaboradorId, contratos, sugeridos, on
                   {c.firmantesPendientes > 0 && ` · ${pluralizar(c.firmantesPendientes, "firma pendiente", "firmas pendientes")}`}
                 </p>
               </div>
-              <span className={cn(CLASE_CHIP, "shrink-0", claseDe(c.estadoVisible))}>{etiquetaDe(c.estadoVisible)}</span>
+              <span className={cn(CLASE_CHIP, "shrink-0", claseEstadoContrato(c.estadoVisible))}>{etiquetaEstadoContrato(c.estadoVisible)}</span>
             </li>
           ))}
         </ul>
@@ -114,6 +116,17 @@ export default function FichaContratos({ colaboradorId, contratos, sugeridos, on
           </ul>
         </div>
       )}
+      {/* Crear sigue en Documentos › Contratos (un solo creador), con esta persona ya puesta. */}
+      <a
+        href={hrefHacerContrato(colaboradorId)}
+        onClick={(e) => {
+          e.preventDefault();
+          irAEnlace(hrefHacerContrato(colaboradorId));
+        }}
+        className={BOTON.chico}
+      >
+        <Plus className="h-4 w-4" aria-hidden /> Hacer contrato
+      </a>
       {error && <AvisoRrhh tono="error">{error}</AvisoRrhh>}
     </div>
   );

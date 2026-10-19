@@ -69,7 +69,7 @@ export const ACCIONES: readonly DefAccion[] = [
     rotulo: (n) => `Pagar ${n} ${plural(n, "deuda", "deudas")}`,
     como: "Paga o acuerda otra fecha con el proveedor.",
     quien: "El dueño o el encargado",
-    destino: { tab: "compras", vista: "cuentas-por-pagar" },
+    destino: { tab: "plata", vista: "por-pagar", sub: "cuentas" },
     tipos: ["PROVEEDOR_VENCIDO"],
     alertas: ["pagos-vencidos"],
   },

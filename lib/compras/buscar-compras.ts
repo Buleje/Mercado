@@ -120,7 +120,7 @@ const ESTADO_RECEPCION: Record<string, string> = {
   programada: "Programada", "en-proceso": "En revisión", aceptada: "Aceptada", parcial: "Parcial", rechazada: "Rechazada",
 };
 
-export const HREF_POR_PAGAR = "/admin?tab=compras&vista=cuentas-por-pagar&sub=cuentas";
+export const HREF_POR_PAGAR = "/admin?tab=plata&vista=por-pagar&sub=cuentas";
 export const HREF_DEVOLUCIONES = "/admin?tab=compras&vista=devoluciones";
 export const HREF_RECEPCIONES = "/admin?tab=compras&vista=ordenes-compra&sub=recibir";
 const conConsulta = (base: string, q: string) => `${base}&q=${encodeURIComponent(q)}`;

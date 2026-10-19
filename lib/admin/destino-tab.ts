@@ -35,7 +35,8 @@ export interface DestinoTab {
   sub?: string;
 }
 
-export type ResolverDestino = (id: string, vista?: string | null) => DestinoTab | null;
+/** `sub` = la sección que traía el link: sólo cuenta para una clave `tab:vista:sub` de `VISTA_MIGRATION`. */
+export type ResolverDestino = (id: string, vista?: string | null, sub?: string | null) => DestinoTab | null;
 
 export interface MapasDeDestino {
   alias: Readonly<Record<string, Tab | DestinoTab>>;
@@ -43,7 +44,12 @@ export interface MapasDeDestino {
   validas: readonly Tab[];
 }
 
-/** Clave de `VISTA_MIGRATION`: `"<tab>:<vista>"`, la notación `vieneDe` del plan (§2.2). */
+/**
+ * Clave de `VISTA_MIGRATION`: `"<tab>:<vista>"`, la notación `vieneDe` del plan (§2.2).
+ * Una sección que se mudó a otro lugar que su vista lleva su propia clave
+ * `"<tab>:<vista>:<sub>"` (19-10: `compras:cuentas-por-pagar&sub=calendario` caía
+ * en Proveedores porque el par de la vista fija `sub: "cuentas"`).
+ */
 export function claveDeVista(tab: string, vista: string): string {
   return `${tab}:${vista}`;
 }
@@ -69,18 +75,22 @@ function tabsConocidas({ alias, vistas, validas }: MapasDeDestino): ReadonlySet<
 /** El resolvedor con mapas propios: el del panel es `resolverDestino`; los tests arman el suyo. */
 export function crearResolverDestino(mapas: MapasDeDestino): ResolverDestino {
   const conocidas = tabsConocidas(mapas);
-  return (id, vistaPedida) => {
+  return (id, vistaPedida, subPedido) => {
     let tab = id.trim().toLowerCase();
     if (!tab) return null;
     let vista = vistaPedida?.trim() || undefined;
     let sub: string | undefined;
+    // La sección del link sólo decide en el primer salto: después el `sub` es el del destino.
+    let subDelLink = subPedido?.trim() || undefined;
     const vistos = new Set<string>();
     for (;;) {
       const estado = `${tab}|${vista ?? ""}|${sub ?? ""}`;
       // Un alias que vuelve sobre sí mismo: lo frena el test; acá, a Inicio.
       if (vistos.has(estado)) return null;
       vistos.add(estado);
-      const par = vista === undefined ? undefined : propio(mapas.vistas, claveDeVista(tab, vista));
+      const fino = vista === undefined || subDelLink === undefined ? undefined : propio(mapas.vistas, `${claveDeVista(tab, vista)}:${subDelLink}`);
+      subDelLink = undefined;
+      const par = fino ?? (vista === undefined ? undefined : propio(mapas.vistas, claveDeVista(tab, vista)));
       if (par) {
         tab = par.tab;
         vista = par.vista;
@@ -174,6 +184,6 @@ export function destinoDeUrl(href: string, resolver: ResolverDestino = resolverD
   const crudo = deQuery || url.hash.slice(1);
   if (!crudo) return null;
   const fuente = deQuery ? "query" : "hash";
-  const destino = resolver(crudo, url.searchParams.get("vista"));
+  const destino = resolver(crudo, url.searchParams.get("vista"), url.searchParams.get("sub"));
   return { crudo, fuente, destino, url: destino ? urlConDestino(href, destino, crudo) : null };
 }

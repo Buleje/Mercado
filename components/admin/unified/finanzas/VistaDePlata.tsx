@@ -23,7 +23,6 @@ const Rentabilidad = dynamic(() => import("./resultado/Rentabilidad"), { loading
 const ReportsTab = dynamic(() => import("@/components/admin/ReportsTab"), { loading: S });
 const ImportExportTab = dynamic(() => import("@/components/admin/ImportExportTab"), { loading: S });
 const CashflowRollingTable = dynamic(() => import("@/components/admin/finance/CashflowRollingTable"), { loading: S });
-const HistorialCierresTab = dynamic(() => import("@/components/admin/HistorialCierresTab"), { loading: S });
 const ReporteMensualTab = dynamic(() => import("@/components/admin/ReporteMensualTab"), { loading: S });
 // Comparador de períodos: estaba huérfano (0 imports); real (/api/admin/dashboard),
 // read-only, distinto del dashboard. Montado tras verificar. Brandon 2026-06-20.
@@ -35,8 +34,7 @@ const PrestamosModule = dynamic(() => import("@/components/admin/PrestamosModule
 const AdelantosModule = dynamic(() => import("@/components/admin/adelantos/AdelantosModule"), { loading: S });
 const ActivosModule = dynamic(() => import("@/components/admin/activos/ActivosModule"), { loading: S });
 const PorCobrarDashboard = dynamic(() => import("@/components/admin/PorCobrarDashboard"), { loading: S });
-const PorPagarDashboard = dynamic(() => import("./PorPagarDashboard"), { loading: S });
-const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCrediticioTab"), { loading: S });
+const LoQueDebo = dynamic(() => import("./por-pagar/LoQueDebo"), { loading: S });
 
 // ── Llegaron de otra pestaña (ola 3) ──
 /* Análisis › Inteligencia › Comparativo: la otra lectura de «comparar períodos». */
@@ -99,17 +97,13 @@ export default function VistaDePlata({ vista, seccion, datos, irA }: Props) {
         </Suspense>
       );
 
-    /* ── Por cobrar y pagar: quién me debe, a quién le debo y a quién fiarle ── */
+    /* ── Por cobrar y pagar: quién me debe y a quién le debo ── */
     case "por-cobrar":
       return <PorCobrarDashboard onIr={irA} />;
     case "por-pagar":
-      return <PorPagarDashboard onIr={irA} />;
-    case "scoring":
-      /* Sin el bloque mudado «Quién te debe» (2026-10-11, pedido del carril de
-         Por cobrar): la lista de fiados con vencidos y el recordatorio ya viven
-         en Ventas y caja › Me deben, y su cifra en «Todo lo que me deben». Sigue
-         montado en Análisis («ia-fiados»). */
-      return <ScoringCrediticioTab />;
+      /* Todo · Proveedores · Calendario · Propuesta (18-10: Compras › Por pagar
+         se mudó acá). «A quién fiarle» se fue a Ventas y caja › Me deben. */
+      return <LoQueDebo onIr={irA} />;
 
     /* ── Pestañas con su propio segundo nivel (`?sub=`) ── */
     case "prestamos":
@@ -130,8 +124,6 @@ export default function VistaDePlata({ vista, seccion, datos, irA }: Props) {
       return <ReportsTab />;
     case "importar":
       return <ImportExportTab />;
-    case "cierres":
-      return <HistorialCierresTab />;
 
     default:
       /* Gastos y su presupuesto comparten hoja: `presupuesto` vive adentro. */

@@ -2,7 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { Megaphone, Heart, Target, Gift, HeartHandshake, Repeat, Radio } from "@buleje/design-system/icons";
+import { useMemo } from "react";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import { useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -40,9 +42,6 @@ const TABS = [
   { id: "lives",         label: "En Vivo", icon: Radio },
 ];
 
-/** Los ids, estables: el hook los usa como dependencia. */
-const TAB_IDS = TABS.map((t) => t.id);
-
 /** Vistas fundidas: el link viejo llega a la que hoy lo cubre. */
 const ALIAS = { segmentos: "campanas" } as const;
 
@@ -50,7 +49,12 @@ export default function CrecimientoHubModule({ initialTab }: { initialTab?: stri
   // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
   // destino del buscador global. `initialTab` gana cuando el módulo se abre
   // desde un tab alias (ver useVistaModulo).
-  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab, { alias: ALIAS });
+  // Puntos también es de Marketplace (19-10, Fidelidad se mudó a su ficha): quien
+  // sólo tiene Marketplace entra por esa vista y no ve el resto de Crecimiento.
+  // El registro de vistas lo lleva la pestaña (`campanas`), no el id del hub.
+  const tabs = useVistasPermitidas("campanas", TABS);
+  const tabIds = useMemo(() => tabs.map((t) => t.id), [tabs]);
+  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, tabIds, tabIds[0] ?? "campanas", initialTab, { alias: ALIAS });
 
   return (
     <div className="space-y-4">
@@ -58,7 +62,7 @@ export default function CrecimientoHubModule({ initialTab }: { initialTab?: stri
           Brandon 2026-09-07): identidad a la izquierda, pestañas a la derecha,
           una sola regla. */}
       <AdminTabBar
-        heading={{ title: "Crecimiento", description: "Campañas, puntos y programas para que el cliente vuelva.", icon: Megaphone }} tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
+        heading={{ title: "Crecimiento", description: "Campañas, puntos y programas para que el cliente vuelva.", icon: Megaphone }} tabs={tabs} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "campanas" && <CampanasTab />}
         {sub === "puntos" && <LoyaltyTab />}
         {sub === "rfm" && <RFMTab />}

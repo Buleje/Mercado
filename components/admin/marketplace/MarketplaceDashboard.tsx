@@ -36,6 +36,7 @@ import {
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useAccionesDeVista } from "@/components/admin/marketplace/acciones-de-vista";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 
 const T = CHART_TOKENS;
@@ -165,10 +166,11 @@ export default function MarketplaceDashboard({ onIrA }: { onIrA?: (vista: string
       sublabel: `${p.qty} vendido${p.qty === 1 ? "" : "s"}`,
     }));
 
-  const pendientes: { vista: string; rotulo: string; Icon: typeof ShoppingCart }[] = [
+  /* Moderar reseñas vive en Clientes › Opiniones desde el 19-10: ese salta de pestaña. */
+  const pendientes: { vista: string; rotulo: string; Icon: typeof ShoppingCart; href?: string }[] = [
     ...(data.pendingOrders > 0 ? [{ vista: "ordenes", rotulo: "Pedidos por confirmar", Icon: ShoppingCart }] : []),
     ...(data.products.lowStock > 0 ? [{ vista: "productos", rotulo: "Productos con stock bajo", Icon: AlertCircle }] : []),
-    ...(data.pendingReviews > 0 ? [{ vista: "resenas", rotulo: "Reseñas por moderar", Icon: MessageSquare }] : []),
+    ...(data.pendingReviews > 0 ? [{ vista: "resenas", rotulo: "Reseñas por moderar", Icon: MessageSquare, href: "/admin?tab=clientes&vista=resenas&sub=moderar" }] : []),
   ];
 
   return (
@@ -181,7 +183,7 @@ export default function MarketplaceDashboard({ onIrA }: { onIrA?: (vista: string
           <InfoTip
             title="Cómo te va en el marketplace"
             what="Sólo los pedidos que entraron a tu tienda por el marketplace, en los últimos 30 días contando hoy."
-            affects="La calificación está en Reseñas, lo publicado en Productos y lo que cobra la plataforma en Comisiones: aquí no se repiten."
+            affects="La calificación está en Clientes › Opiniones, lo publicado en Productos y lo que cobra la plataforma en Comisiones: aquí no se repiten."
             example="Ventas S/ 3 120 con 41 pedidos = ticket promedio S/ 76."
           />
         </div>
@@ -193,11 +195,11 @@ export default function MarketplaceDashboard({ onIrA }: { onIrA?: (vista: string
       {pendientes.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-semibold text-[var(--text-secondary)]">Para atender:</span>
-          {pendientes.map(({ vista, rotulo, Icon }) => (
+          {pendientes.map(({ vista, rotulo, Icon, href }) => (
             <button
               key={vista}
               type="button"
-              onClick={() => onIrA?.(vista)}
+              onClick={() => (href ? irAEnlace(href) : onIrA?.(vista))}
               className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
             >
               <Icon className="h-4 w-4 text-[var(--data-warning-ink)]" aria-hidden />

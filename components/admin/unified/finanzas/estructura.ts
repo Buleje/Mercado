@@ -40,8 +40,8 @@ import {
   TrendingUp, TrendingDown, PieChart as PieChartIcon,
   FileBarChart, Waves, GitCompareArrows, ArrowRightLeft,
   BarChart3, CreditCard,
-  Landmark, Banknote, Coins, Construction, Gauge, ReceiptText,
-  Calculator, Archive, Briefcase, ArrowUpDown,
+  Landmark, Banknote, Coins, Construction, ReceiptText,
+  Calculator, Briefcase, ArrowUpDown,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -74,12 +74,12 @@ export const CON_PESTANAS_PROPIAS: readonly TabId[] = ["prestamos", "adelantos",
  * Las HOJAS cuyo contenido tiene sus propias secciones en `?sub=` (2026-10-11,
  * «todo parejo»): el Resumen, Rentabilidad, Gastos y presupuesto
  * (`GastosConPresupuesto`), la Proyección de caja (`CashflowRollingTable`) e
- * Impuestos del mes (`TaxTab`: El mes · El año). Al
- * dejar una, su `?sub=` no viaja a la vista siguiente — igual que el de
+ * Impuestos del mes (`TaxTab`: El mes · El año) y Lo que debo (`LoQueDebo`:
+ * Todo · Proveedores · Calendario · Propuesta, 18-10). Al dejar una, su `?sub=` no viaja a la vista siguiente — igual que el de
  * Préstamos, Adelantos y Activos. No son pestañas: su segundo nivel sigue
  * siendo el de Mi Plata, por eso no van en `CON_PESTANAS_PROPIAS`.
  */
-export const CON_SUB_PROPIO: readonly string[] = ["resumen", "rentabilidad", "gastos", "presupuesto", "flujo-caja", "impuestos"];
+export const CON_SUB_PROPIO: readonly string[] = ["resumen", "rentabilidad", "gastos", "presupuesto", "flujo-caja", "impuestos", "por-pagar"];
 
 export type TabId = (typeof TABS)[number]["id"];
 
@@ -128,13 +128,14 @@ export const SECCIONES: Partial<Record<TabId, Seccion[]>> = {
     { id: "tesoreria",  label: "Tesorería",                             icon: Landmark,     dato: "tesoreria" },
   ],
   "por-cobrar": [
-    { id: "por-cobrar", label: "Todo lo que me deben", corto: "Todo", icon: CreditCard },
+    { id: "por-cobrar", label: "Todo lo que me deben", corto: "Me deben", icon: CreditCard },
     /* F10 (2026-09-29): el otro lado de la misma pregunta. Va pegada a «Todo»
-       porque una persona puede estar en las dos con su neto, y va plegada si
-       no le debes a nadie: se mide con el endpoint, no con una lista. */
-    { id: "por-pagar",  label: "Lo que debo",          corto: "Debo", icon: ReceiptText, dato: "porPagar" },
-    /* El scoring y «Quién te debe» de Análisis: a quién conviene fiarle. */
-    { id: "scoring",    label: "A quién fiarle",       corto: "Fiarle", icon: Gauge },
+       porque una persona puede estar en las dos con su neto. Desde el 18-10 es
+       la casa de las cuentas de proveedores (antes Compras › Por pagar, con
+       sus secciones en `?sub=`): se ofrece siempre, aunque hoy no debas nada,
+       porque ahí se carga la primera cuenta. «A quién fiarle» se fue a Ventas
+       y caja › Me deben, junto a la cobranza. */
+    { id: "por-pagar",  label: "Lo que debo",          corto: "Debo", icon: ReceiptText },
   ],
   /* Antes «Reportes» apilaba cuatro pantallas en una (4 títulos, ~6 pantallas
      de scroll). Cada una es una sección, y los impuestos —contabilidad, no
@@ -145,7 +146,8 @@ export const SECCIONES: Partial<Record<TabId, Seccion[]>> = {
     { id: "reportes",  label: "Reporte mensual",     corto: "Mensual",   icon: FileBarChart },
     { id: "contador",  label: "Para el contador",    corto: "Contador",  icon: Briefcase },
     { id: "importar",  label: "Importar y exportar", corto: "Importar",  icon: ArrowUpDown },
-    { id: "cierres",   label: "Cierres del día",     corto: "Cierres",   icon: Archive },
+    /* «Cierres del día» se fue a Ventas y caja › Caja › Historial (18-10): los
+       cierres quedan sólo en Caja. `?vista=cierres` llega allá (VISTA_MIGRATION). */
   ],
 };
 
@@ -186,6 +188,9 @@ const ALIAS: Record<string, string> = {
   /* Fiados vive en Ventas y caja › Me deben; un nombre viejo que todavía llegue
      acá cae donde está su cifra y su enlace. */
   fiados: "por-cobrar",
+  /* «A quién fiarle» también se fue a Me deben (18-10, VISTA_MIGRATION lo
+     lleva allá); si un nombre viejo llega igual, cae junto a la cifra de fiados. */
+  scoring: "por-cobrar",
   /* Llegaron de Comprobantes con otro nombre. */
   obligaciones: "impuestos",
   "importar-exportar": "importar",

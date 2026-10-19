@@ -17,8 +17,12 @@ import {
 const VISTAS_VIEJAS = [
   "resumen", "pl", "rentabilidad", "comparador", "gastos", "presupuesto",
   "flujo-caja", "tesoreria", "activos", "por-cobrar", "prestamos",
-  "adelantos", "scoring", "reportes",
+  "adelantos", "reportes",
 ] as const;
+/* Se mudaron fuera de Mi Plata el 18-10 («Deudas en un solo lugar»): «A quién
+   fiarle» a Ventas y caja › Me deben y «Cierres» a Caja › Historial. Sus
+   enlaces viejos los lleva VISTA_MIGRATION (`plata:scoring`, `plata:cierres`). */
+const VISTAS_MUDADAS = ["scoring", "cierres"] as const;
 
 /** Las que se sumaron DESPUÉS del rediseño, cada una con su motivo. */
 const VISTAS_NUEVAS = [
@@ -26,7 +30,7 @@ const VISTAS_NUEVAS = [
   "por-pagar",
   /* Ola 3 (2026-10-10): Impuestos llegó de Comprobantes, y Reportes dejó de
      apilar cuatro pantallas (`reportes` sigue siendo el reporte mensual). */
-  "impuestos", "contador", "importar", "cierres",
+  "impuestos", "contador", "importar",
 ] as const;
 
 /** Los nombres por los que el menú del panel entra al módulo (`?tab=…`). */
@@ -47,6 +51,7 @@ describe("estructura de Mi Plata", () => {
     expect([...VISTAS].sort()).toEqual([...VISTAS_VIEJAS, ...VISTAS_NUEVAS].sort());
     // `VISTAS` es lo que `useVistaModulo` valida: lo que no está acá, no se puede linkear.
     for (const vieja of VISTAS_VIEJAS) expect(VISTAS).toContain(vieja);
+    for (const mudada of VISTAS_MUDADAS) expect(VISTAS).not.toContain(mudada);
   });
 
   it("cada vista vieja aterriza en contenido, no en el default", () => {
@@ -61,7 +66,7 @@ describe("estructura de Mi Plata", () => {
     expect(ubicar("prestamos")).toMatchObject({ tab: "prestamos", vista: "prestamos" });
     expect(ubicar("adelantos")).toMatchObject({ tab: "adelantos", vista: "adelantos" });
     expect(ubicar("activos")).toMatchObject({ tab: "activos", vista: "activos" });
-    expect(ubicar("scoring")).toMatchObject({ tab: "por-cobrar", vista: "scoring" });
+    expect(ubicar("scoring")).toMatchObject({ tab: "por-cobrar", vista: "por-cobrar" });
     expect(ubicar("por-cobrar")).toMatchObject({ tab: "por-cobrar", vista: "por-cobrar" });
     for (const atajo of ATAJOS_DEL_MENU) expect(DONDE_VIVE[atajo]).toBeDefined();
   });
@@ -79,9 +84,9 @@ describe("estructura de Mi Plata", () => {
     }
   });
 
-  it("Impuestos y reportes: cinco secciones y la pestaña abre en los impuestos", () => {
+  it("Impuestos y reportes: cuatro secciones y la pestaña abre en los impuestos", () => {
     expect((SECCIONES["impuestos-reportes"] ?? []).map((s) => s.id)).toEqual([
-      "impuestos", "reportes", "contador", "importar", "cierres",
+      "impuestos", "reportes", "contador", "importar",
     ]);
     expect(ubicar("impuestos-reportes")).toMatchObject({ tab: "impuestos-reportes", vista: "impuestos" });
     expect(ubicar("reportes")).toMatchObject({ tab: "impuestos-reportes", vista: "reportes" });
@@ -101,11 +106,14 @@ describe("estructura de Mi Plata", () => {
     expect(donde).toMatchObject({ tab: "movimientos", vista: "presupuesto", seccion: "gastos" });
   });
 
-  it("«Lo que debo» vive en Por cobrar, pegada a «Todo lo que me deben», y se pliega sin acreedores", () => {
+  it("«Lo que debo» vive en Por cobrar, pegada a «Todo lo que me deben», y se ve siempre", () => {
     expect(ubicar("por-pagar")).toMatchObject({ tab: "por-cobrar", vista: "por-pagar", seccion: "por-pagar" });
     const ids = (SECCIONES["por-cobrar"] ?? []).map((s) => s.id);
     expect(ids.indexOf("por-pagar")).toBe(ids.indexOf("por-cobrar") + 1);
-    expect(SECCIONES["por-cobrar"]?.find((s) => s.id === "por-pagar")?.dato).toBe("porPagar");
+    /* Desde el 18-10 junta las cuentas de proveedores (antes Compras › Por
+       pagar): ahí se anota la primera, así que no se pliega sin acreedores. */
+    expect(SECCIONES["por-cobrar"]?.find((s) => s.id === "por-pagar")?.dato).toBeUndefined();
+    expect((SECCIONES["por-cobrar"] ?? []).map((s) => s.id)).toEqual(["por-cobrar", "por-pagar"]);
   });
 
   it("un nombre desconocido cae en Resumen y no rompe", () => {

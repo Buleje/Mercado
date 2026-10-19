@@ -93,7 +93,7 @@ export const COMANDOS_PANEL: readonly ComandoPanel[] = [
     palabras: ["orden de compra", "oc", "pedir al proveedor", "pedido al proveedor"] },
   { id: "recibir-mercaderia", accion: "Recibir mercadería", entidad: "Recepción", tab: "compras", vista: "ordenes-compra", sub: "recibir", icono: "recepcion",
     palabras: ["recibir", "recepcion", "llego", "llegada", "mercaderia", "ingreso"] },
-  { id: "pagar-proveedor", accion: "Pagar a un proveedor", entidad: "Pago", tab: "compras", vista: "cuentas-por-pagar", icono: "pago",
+  { id: "pagar-proveedor", accion: "Pagar a un proveedor", entidad: "Pago", tab: "plata", vista: "por-pagar", sub: "cuentas", icono: "pago",
     palabras: ["pagar", "pago", "debo", "proveedor", "por pagar", "cuentas por pagar"] },
   { id: "que-reponer", accion: "Ver qué reponer", entidad: "Producto", tab: "compras", vista: "sugerencias", icono: "reponer",
     palabras: ["reponer", "reposicion", "falta", "se acaba", "sugerencias", "pedir"] },

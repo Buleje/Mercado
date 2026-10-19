@@ -1,5 +1,5 @@
 /**
- * Cómo se recorre Ventas y caja › Me deben: cuatro secciones en una fila, cada
+ * Cómo se recorre Ventas y caja › Me deben: cinco secciones en una fila, cada
  * una un valor de `?sub=` (`FIADO_VISTAS`). La última que usaste se recuerda
  * por negocio (`useSubvistaModulo`).
  *
@@ -8,7 +8,8 @@
  * cobrar, en tres franjas de cifras; la antigüedad de la deuda, con tramos
  * distintos en Análisis (0-7/8-30/31-60/+60) y en Cobranza (al día/1-30/31-60/
  * 61-90/+90). Ahora cada sección contesta UNA pregunta y las cifras van en
- * «Indicadores».
+ * «Indicadores». «A quién fiarle» era una pestaña de Mi Plata hasta el 18-10:
+ * sólo sale a quien antes la veía (`origen` de la anidada).
  */
 import type { FiadoTab } from "./tipos";
 
@@ -51,6 +52,15 @@ export const SECCIONES_ME_DEBEN: readonly Seccion[] = [
     rotulo: "Cada fiado",
     ayuda: {
       what: "Todos los fiados uno por uno, también los pagados y cancelados: ordénalos, búscalos y marca varios para cobrarlos juntos.",
+    },
+  },
+  {
+    clave: "fiarle",
+    rotulo: "A quién fiarle",
+    ayuda: {
+      what: "Cada cliente con la respuesta: Sí, Con cuidado o No, y por qué. «No» es lo mismo que la caja ya rechaza al fiar: 3 fiados vencidos, un fiado vencido hace más de 60 días o la deuda que llegó a su límite.",
+      affects: "«Con cuidado» = debe algo vencido o ya usó el 80 % de su límite. El límite se pone por cliente en Mis clientes; sin límite, la caja no le pone tope.",
+      example: "Si Rosa debe S/ 150 que venció hace 71 días, sale «No le fíes» aunque tenga un solo fiado.",
     },
   },
 ];

@@ -48,12 +48,14 @@ export const PER_PAGE = 10;
  * Las secciones de «Me deben», cada una un valor de `?sub=` (10-10: de cuatro
  * pestañas que repetían la lista de deudores y las cifras a cuatro secciones
  * que no se pisan). `cobranza` es «Quién debe»; `deudores`, «Cada fiado».
+ * `fiarle` («A quién fiarle») llegó de Mi Plata el 18-10: cobras y decides a
+ * quién fiarle en el mismo lugar.
  */
-export const FIADO_VISTAS = ["cobranza", "agenda", "cobrado", "deudores"] as const;
+export const FIADO_VISTAS = ["cobranza", "agenda", "cobrado", "deudores", "fiarle"] as const;
 export type FiadoTab = (typeof FIADO_VISTAS)[number];
 
 /** Los nombres de antes siguen llevando a su lugar (enlaces guardados, la memoria de la vista). */
-export const FIADO_VISTAS_ALIAS: Readonly<Record<string, FiadoTab>> = { resumen: "cobranza", analisis: "cobrado" };
+export const FIADO_VISTAS_ALIAS: Readonly<Record<string, FiadoTab>> = { resumen: "cobranza", analisis: "cobrado", scoring: "fiarle" };
 
 export type ColumnaOrden = "name" | "total" | "saldo" | "fecha";
 export type Densidad = "compact" | "normal" | "wide";

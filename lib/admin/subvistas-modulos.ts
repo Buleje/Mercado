@@ -124,8 +124,10 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "flujo-caja", label: "Proyección de caja", hint: "Flujo de caja de las próximas semanas", origen: ["plata", "activos"] },
     { key: "tesoreria", label: "Tesorería", hint: "Cuentas bancarias y saldos", origen: ["plata", "activos"] },
     { key: "por-cobrar", label: "Todo lo que me deben", hint: "Fiados, préstamos, adelantos y madera por cobrar, en una lista", origen: ["plata", "por-cobrar", "activos"] },
-    { key: "por-pagar", label: "Lo que debo", hint: "Adelantos recibidos, proveedores y cuentas a favor de otro", origen: ["plata", "activos"] },
-    { key: "scoring", label: "A quién fiarle", hint: "El scoring de cada cliente y quién te debe, con su riesgo", origen: ["plata", "scoring", "analytics-pro", "activos"] },
+    // Lo que debo (18-10): también la casa de Compras › Por pagar (cuentas de
+    // proveedores, calendario y propuesta): la ve quien veía cualquiera de las dos.
+    // «A quién fiarle» se fue a Ventas y caja › Me deben (ANIDADAS, abajo).
+    { key: "por-pagar", label: "Lo que debo", hint: "Proveedores, adelantos recibidos y cuentas a favor de otro: cuándo vence y pagar", origen: ["plata", "activos", "compras", "documentos"] },
     { key: "prestamos", label: "Préstamos", hint: "Plata prestada, cuotas, cobros y la calculadora", origen: ["plata", "prestamos", "activos"] },
     { key: "adelantos", label: "Adelantos", hint: "Adelantos dados y recibidos, por persona, y su cobranza", origen: ["plata", "adelantos", "activos"] },
     { key: "activos", label: "Activos", hint: "Tu maquinaria: alquileres, gastos, alquileres por cobrar, calendario y ranking", origen: ["plata", "activos"] },
@@ -133,7 +135,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "reportes", label: "Reporte mensual", hint: "El resumen del mes para imprimir o mandar en PDF", origen: ["plata", "activos"] },
     { key: "contador", label: "Para el contador", hint: "Cada reporte (ventas, compras, inventario, clientes…) en una fila para bajarlo en CSV o PDF", origen: ["plata", "activos"] },
     { key: "importar", label: "Importar y exportar", hint: "Subir o descargar tus datos en Excel o CSV", origen: ["plata", "activos"] },
-    { key: "cierres", label: "Cierres", hint: "El historial de cierres de caja", origen: ["plata", "activos"] },
+    // «Cierres» se fue a Ventas y caja › Caja › Historial (18-10, ANIDADAS abajo).
   ],
   // Compras (ola 3): de 9 a 7 vistas. Recepción es una sección de Órdenes y el
   // Comparador, una de Proveedores (`?sub=`); el historial de gastos se fue a
@@ -144,7 +146,6 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "ordenes-compra", label: "Órdenes y recepción", hint: "Órdenes de compra emitidas y recibir la mercadería que llegó, con o sin orden", origen: ["compras"] },
     { key: "sugerencias", label: "Sugerencias", hint: "Qué reponer: el cálculo de Compras arriba; la predicción (con auto-reorden) y lo que se acaba esta semana, plegados", origen: ["compras", "forecasting", "sugerencias-ia"] },
     { key: "proveedores", label: "Proveedores", hint: "A quién le compras; comparar proveedores, precio por producto y precios del mercado", origen: ["compras"] },
-    { key: "cuentas-por-pagar", label: "Por pagar", hint: "Lo que le debes a cada proveedor y cuándo vence", origen: ["compras", "documentos"] },
     { key: "devoluciones", label: "Devoluciones", hint: "Devolver al proveedor y reclamar la nota de crédito o la reposición", origen: ["compras"] },
     { key: "dropship", label: "Dropship", hint: "Envíos que el proveedor despacha directo al cliente cuando se paga un pedido", origen: ["dropship"] },
   ],
@@ -185,7 +186,8 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   clientes: [
     { key: "crm", label: "Mis clientes", hint: "Ficha de cada cliente" },
     { key: "leads", label: "Interesados", hint: "Leads: negocios que pidieron probar Buleje y todavía no pagan" },
-    { key: "resenas", label: "Opiniones", hint: "Qué dicen los clientes" },
+    // 19-10 «pestañas gemelas»: la moderación de reseñas llegó de Marketplace › Reseñas (sección «Moderar»).
+    { key: "resenas", label: "Opiniones", hint: "Qué dicen los clientes y moderar sus reseñas", origen: ["clientes", "marketplace"] },
     { key: "mapa", label: "Mapa", hint: "Dónde viven los clientes" },
     { key: "mensajes", label: "Mensajes masivos", hint: "Conversaciones con clientes" },
   ],
@@ -233,7 +235,8 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   ],
   campanas: [
     { key: "campanas", label: "Campañas", hint: "Mensajes y ofertas a un grupo de clientes" },
-    { key: "puntos", label: "Puntos", hint: "Puntos por compra y premios para que el cliente vuelva" },
+    // 19-10 «pestañas gemelas»: el historial y sumar a mano llegaron de Marketplace › Fidelidad (en la ficha del cliente).
+    { key: "puntos", label: "Puntos", hint: "Puntos por compra y premios; en la ficha, su historial y sumar a mano", origen: ["campanas", "marketplace"] },
     { key: "rfm", label: "Mejores clientes", hint: "Quién compra seguido, hace poco y gasta más" },
     { key: "gift-cards", label: "Tarjetas de regalo", hint: "Vender y canjear tarjetas de regalo" },
     { key: "socio", label: "Socio Buleje", hint: "Programa de socios con beneficios" },
@@ -284,9 +287,9 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   // con nivel «marcar» sólo existe Asistencia y una vista más alta cae ahí.
   rrhh: [
     { key: "asistencia", label: "Asistencia", hint: "Quién vino hoy y a qué hora marcó" },
-    { key: "personal", label: "Personal", hint: "Los datos de cada persona del equipo" },
+    // 19-10 «pestañas gemelas»: Equipo › Contratos se mudó acá (columna Contrato + chip «Contrato por vencer»).
+    { key: "personal", label: "Personal", hint: "Los datos de cada persona del equipo, su contrato y cuándo vence" },
     { key: "ganado", label: "Lo ganado", hint: "Cuánto ganó cada uno según su asistencia" },
-    { key: "contratos", label: "Contratos", hint: "Los contratos del personal y su vencimiento" },
     { key: "puestos", label: "Puestos", hint: "Los puestos del negocio y su sueldo" },
   ],
   // Agenda del negocio (ADR-501, 18-10). Tareas y Notas se mudaron desde Equipo
@@ -334,8 +337,6 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "ordenes", label: "Órdenes", hint: "Los pedidos que entraron por el marketplace" },
     { key: "comisiones", label: "Comisiones", hint: "Lo que cobra la plataforma por cada venta" },
     { key: "precios", label: "Precios", hint: "Tus precios al lado de los de otras tiendas" },
-    { key: "resenas", label: "Reseñas", hint: "Aprobar y responder las reseñas de tu tienda y del marketplace" },
-    { key: "fidelidad", label: "Fidelidad", hint: "Historial de puntos de un cliente y sumar puntos a mano; el programa entero está en Campañas › Puntos" },
   ],
 };
 
@@ -380,7 +381,6 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
   plata: [
     { vista: "gastos", key: "anotados", label: "Gastos anotados", hint: "Lo que gastaste en el mes, uno por fila", origen: ["plata"] },
     { vista: "gastos", key: "presupuesto", label: "Presupuesto", hint: "Cuánto pensabas gastar por tipo contra lo gastado", origen: ["plata"] },
-    { vista: "gastos", key: "metas", label: "Metas del mes", hint: "Ventas y gastos contra la meta", origen: ["plata"] },
     { vista: "gastos", key: "fijos", label: "Gastos fijos", hint: "Alquiler, luz, sueldos: lo que se repite cada mes", origen: ["plata", "compras"] },
     { vista: "gastos", key: "historial", label: "Compras del mes", hint: "Lo comprado a proveedores, como gasto", origen: ["plata", "compras"] },
     { vista: "flujo-caja", key: "semanas", label: "Lo que viene", hint: "Entradas y salidas de las próximas semanas", origen: ["plata"] },
@@ -388,6 +388,12 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "flujo-caja", key: "caja-del-mes", label: "Caja del mes", hint: "Cómo cerró la caja cada día del mes", origen: ["plata"] },
     { vista: "impuestos", key: "mes", label: "Impuestos: el mes", hint: "IGV y renta del mes", origen: ["plata"] },
     { vista: "impuestos", key: "anio", label: "Impuestos: el año", hint: "Lo pagado y por pagar mes a mes en el año", origen: ["plata"] },
+    // Lo que debo (18-10): Compras › Por pagar se mudó acá; sus secciones, a un nivel.
+    { vista: "por-pagar", key: "todo", label: "Todo lo que debo", hint: "Cada acreedor con el total de todas las fuentes, lo vencido primero", origen: ["plata", "activos"] },
+    { vista: "por-pagar", key: "cuentas", label: "Cuentas por pagar a proveedores", hint: "Cada deuda con su proveedor, de qué factura u orden viene y cuándo vence", origen: ["compras", "documentos", "plata"] },
+    { vista: "por-pagar", key: "calendario", label: "Calendario de pagos", hint: "Qué vence cada semana y la antigüedad del saldo por tramos", origen: ["compras", "documentos", "plata"] },
+    { vista: "por-pagar", key: "propuesta", label: "Propuesta de pagos", hint: "Las vencidas y las de la semana ya marcadas, con el total y en CSV", origen: ["compras", "documentos", "plata"] },
+    { vista: "por-pagar", key: "conciliacion", label: "Conciliación", hint: "Orden, recepción, factura, cuenta y pago lado a lado: qué no cuadra y de qué papel sale", origen: ["compras", "documentos", "plata"] },
   ],
   documentos: [
     { vista: "contratos", key: "plantillas", label: "Plantillas de contrato", hint: "Modelos para generar contratos", origen: ["contratos", "documentos"] },
@@ -416,6 +422,12 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "seguimiento", key: "pendientes", label: "Papeles pendientes", hint: "Rechazados y sin respuesta de SUNAT, notas y guías en borrador, cotizaciones por vencer y pedidos sin comprobante", origen: ["facturacion", "documentos"] },
     { vista: "seguimiento", key: "conciliacion", label: "Conciliación documental", hint: "Por período: pedidos sin comprobante, comprobantes sin pedido, notas por motivo; emitido y aceptado por separado", origen: ["facturacion", "documentos"] },
   ],
+  // Clientes › Opiniones (19-10): «Moderar» era Marketplace › Reseñas y sigue
+  // siendo de quien tenía Marketplace (ni el plan Pro sin Marketplace ni el
+  // cajero la ganan por ver Opiniones; la API de reseñas les da 403).
+  clientes: [
+    { vista: "resenas", key: "moderar", label: "Moderar reseñas", hint: "Aprobar, rechazar y responder las reseñas de tu tienda", origen: ["marketplace"] },
+  ],
   // Ventas y caja › Caja (con «Cuadrar caja», que era la vista `arqueo`) y
   // Ventas y caja › Me deben (las pestañas del módulo de fiados).
   "ventas-caja": [
@@ -428,10 +440,14 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "caja-registradora", key: "historial", label: "Historial de cajas", hint: "Cada caja con quién la abrió, el esperado, lo contado y la diferencia" },
     { vista: "caja-registradora", key: "reconciliacion", label: "Caja por día", hint: "Esperado contra real por día, la tendencia de las diferencias y el flujo de la semana" },
     { vista: "caja-registradora", key: "auditoria", label: "Quién tocó la caja", hint: "Aperturas, cierres, ingresos y retiros con quién los hizo" },
+    // Venían de Mi Plata (18-10, «deudas en un solo lugar»): los cierres quedan
+    // sólo en Caja y «A quién fiarle», junto a la cobranza.
+    { vista: "caja-registradora", key: "cierres", label: "Cierres del día", hint: "El cierre de cada día: ventas, efectivo esperado y contado, y la diferencia", origen: ["plata", "activos"] },
     { vista: "cuentas-cobrar", key: "cobranza", label: "Quién me debe", hint: "Cada cliente con lo que te debe, por tramos de atraso: cobrar y recordar", origen: ["ventas-caja", "plata", "fiados"] },
     { vista: "cuentas-cobrar", key: "agenda", label: "Fiados por vencer", hint: "Promesas de pago sin cumplir y lo que vence hoy, esta semana y después", origen: ["ventas-caja", "plata", "fiados"] },
     { vista: "cuentas-cobrar", key: "cobrado", label: "Fiados cobrados", hint: "Quién te pagó, cuánto y con qué; la tendencia de cobro del semestre", origen: ["ventas-caja", "plata", "fiados"] },
     { vista: "cuentas-cobrar", key: "deudores", label: "Cada fiado", hint: "Todos los fiados uno por uno, también los pagados, con filtros y cobro de varios", origen: ["ventas-caja", "plata", "fiados"] },
+    { vista: "cuentas-cobrar", key: "fiarle", label: "A quién fiarle", hint: "El scoring de cada cliente: sí, con cuidado o no, con su riesgo", origen: ["plata", "scoring", "analytics-pro", "activos"] },
   ],
   // Productos e inventario › Conteo físico (era un modal) y › Ofertas y cupones.
   inventario: [
@@ -453,10 +469,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "ordenes-compra", key: "presupuesto", label: "Presupuesto", hint: "Lo comprado en el mes contra lo que pensabas comprar, en total y por proveedor, con lo que te queda", origen: ["compras"] },
     { vista: "proveedores", key: "lista", label: "Lista de proveedores", hint: "Tus proveedores, sus datos, pagos y la ficha de cada uno", origen: ["compras"] },
     { vista: "proveedores", key: "comparar", label: "Comparar proveedores", hint: "Puntaje de cada proveedor, cómo te entrega, precio por producto y precios del mercado", origen: ["compras"] },
-    { vista: "cuentas-por-pagar", key: "cuentas", label: "Cuentas por pagar", hint: "Cada deuda con su proveedor, de qué factura u orden viene y cuándo vence", origen: ["compras"] },
-    { vista: "cuentas-por-pagar", key: "calendario", label: "Calendario de pagos", hint: "Qué vence cada semana y la antigüedad del saldo por tramos", origen: ["compras"] },
-    { vista: "cuentas-por-pagar", key: "propuesta", label: "Propuesta de pagos", hint: "Las vencidas y las de la semana ya marcadas, con el total y en CSV", origen: ["compras"] },
-    { vista: "cuentas-por-pagar", key: "conciliacion", label: "Conciliación", hint: "Orden, recepción, factura, cuenta y pago lado a lado: qué no cuadra y de qué papel sale", origen: ["compras"] },
+    // La conciliación era una sección de Por pagar; Por pagar se fue a Mi Plata (18-10).
   ],
   "pagina-inicio": [
     { vista: "apariencia", key: "identidad", label: "Identidad", hint: "Nombre, logo, lema y cómo sale en Google" },
@@ -536,6 +549,19 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "cumplimiento", key: "cerrar", label: "Cerrar el mes", hint: "Cerrar el mes → acta inmutable (OSINFOR)" },
   ],
 };
+
+/**
+ * El permiso de una sección (`?sub=`), tal como lo declara `ANIDADAS_POR_MODULO`.
+ * Sin candado propio, el de la vista que la contiene (y si tampoco tiene, la
+ * pestaña), como `origenesDeVista`. Las pantallas que filtran sus secciones lo
+ * leen de acá (single source), no de una copia del array.
+ */
+export function origenDeSeccion(tab: string, vista: string, seccion: string): readonly string[] {
+  const anidada = (ANIDADAS_POR_MODULO[tab] ?? []).find((a) => a.vista === vista && a.key === seccion);
+  if (anidada?.origen && anidada.origen.length > 0) return anidada.origen;
+  const contenedora = vistasDelModulo(tab).find((v) => v.key === vista);
+  return contenedora?.origen && contenedora.origen.length > 0 ? contenedora.origen : [tab];
+}
 
 /**
  * Libro de Operaciones de Títulos Habilitantes (forestal) — 7 vistas (10 hasta
