@@ -14,8 +14,7 @@
  */
 import { Fragment, useEffect, useRef, type KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
-import { usePermisoDe } from "@/hooks/use-vistas-permitidas";
-import { GRUPOS, ORIGEN_CIERRES, SECCIONES, grupoDe, seccionRecordada, type GrupoCaja } from "./secciones";
+import { GRUPOS, SECCIONES, grupoDe, seccionRecordada, type GrupoCaja } from "./secciones";
 import type { VistaCaja } from "./tipos";
 
 interface Props {
@@ -52,7 +51,6 @@ let enfocarActiva = false;
 export function CajaSecciones({ vista, onVista, hoyConSecciones }: Props) {
   const carril = useRef<HTMLDivElement>(null);
   const grupo = grupoDe(vista);
-  const veCierres = usePermisoDe(ORIGEN_CIERRES);
 
   const pestanas: Pestana[] = [];
   const separadores = new Set<number>();
@@ -61,7 +59,6 @@ export function CajaSecciones({ vista, onVista, hoyConSecciones }: Props) {
     if (pestanas.length > 0) separadores.add(pestanas.length);
     if (expandido) {
       for (const s of SECCIONES[g].secciones) {
-        if (s.clave === "cierres" && !veCierres) continue;
         pestanas.push({ clave: s.clave, rotulo: s.rotulo, activa: s.clave === vista, ir: s.clave });
       }
     } else {

@@ -5,14 +5,21 @@
  * recaudado» y su día salía «OK». Y +5 en una caja y −5 en otra del mismo día
  * daban 0 de neto: «OK» también. Además, la tolerancia del negocio en la tabla
  * de cuadres (Historial › Por caja), que se perdió al borrar CajaHistorial.
+ *
+ * Desde el 19-10 la tabla del día viene del servidor (`/api/cash-registers/por-dia`):
+ * acá el fetch devuelve lo que arma `armarDiasDeCaja` con las mismas cajas.
  */
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
 import { CajaReconciliacion } from "@/components/admin/caja/CajaReconciliacion";
 import { CajaTendencia } from "@/components/admin/caja/CajaTendencia";
 import { dentroDeTolerancia } from "@/components/admin/arqueo/arqueo-shared";
 import type { CashRegister } from "@/components/admin/caja/tipos";
+import { armarDiasDeCaja } from "@/lib/caja/cierres-por-dia";
+
+const permiso = vi.hoisted(() => ({ ventas: false }));
+vi.mock("@/hooks/use-vistas-permitidas", () => ({ usePermisoDe: () => permiso.ventas }));
 
 /* El gráfico va por next/dynamic: acá, un div que muestra las diferencias que recibió. */
 vi.mock("next/dynamic", () => ({
@@ -22,7 +29,32 @@ vi.mock("next/dynamic", () => ({
     },
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
+beforeEach(() => {
+  permiso.ventas = false;
+});
+
+/** El servidor: las mismas cajas por `armarDiasDeCaja` (más ventas si se pasan). */
+function servidor(cerradas: CashRegister[], ventas: Array<{ createdAt: string; total: number }> = []) {
+  const armado = armarDiasDeCaja({
+    cajas: cerradas.map((c) => ({
+      openedAt: c.openedAt,
+      closedAt: c.closedAt ?? null,
+      expectedAmount: c.expectedAmount ?? null,
+      closingAmount: c.closingAmount ?? null,
+      difference: c.difference ?? null,
+      notes: c.notes ?? null,
+    })),
+    ventas,
+    pedidos: [],
+    resumenes: [],
+    desde: "2026-01-01",
+  });
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ desde: "2026-01-01", ...armado }), { status: 200 })));
+}
 
 /* Mediodía UTC: el mismo día local en cualquier zona del runner. */
 function caja(id: string, dia: string, p: Partial<CashRegister>): CashRegister {
@@ -32,16 +64,21 @@ function caja(id: string, dia: string, p: Partial<CashRegister>): CashRegister {
 const automatica = (id: string, dia: string) =>
   caja(id, dia, { expectedAmount: 320, closingAmount: 320, difference: 0, notes: "Cierre automático por inactividad" });
 
-function filaDe(texto: RegExp) {
-  return screen.getAllByRole("row").find((r) => texto.test(r.textContent ?? ""))!;
+async function filaDe(texto: RegExp) {
+  return (await screen.findAllByRole("row")).find((r) => texto.test(r.textContent ?? ""))!;
 }
 
 describe("Caja › Por día", () => {
   const props = (cerradas: CashRegister[]): ComponentProps<typeof CajaReconciliacion> => ({ cerradas, tolerancia: 1 });
 
-  it("una caja cerrada sin conteo: su día dice «Sin conteo», no «OK», y no suma a lo recaudado", () => {
-    render(<CajaReconciliacion {...props([automatica("a", "2026-10-08")])} />);
-    const fila = filaDe(/1 caja/);
+  function montar(cerradas: CashRegister[]) {
+    servidor(cerradas);
+    render(<CajaReconciliacion {...props(cerradas)} />);
+  }
+
+  it("una caja cerrada sin conteo: su día dice «Sin conteo», no «OK», y no suma a lo recaudado", async () => {
+    montar([automatica("a", "2026-10-08")]);
+    const fila = await filaDe(/1 caja/);
     expect(fila.textContent).toContain("Sin conteo");
     expect(within(fila).queryByText("OK")).toBeNull();
     // Esperado, real y diferencia: nadie contó, no hay cifra que mostrar.
@@ -50,16 +87,12 @@ describe("Caja › Por día", () => {
     expect(screen.getByText("Cerradas sin conteo").textContent).toContain("1");
   });
 
-  it("dos cajas del mismo día, +5 y −5: el neto da 0 pero el día no sale «OK»", () => {
-    render(
-      <CajaReconciliacion
-        {...props([
-          caja("b", "2026-10-07", { expectedAmount: 200, closingAmount: 205, difference: 5 }),
-          caja("c", "2026-10-07", { expectedAmount: 300, closingAmount: 295, difference: -5 }),
-        ])}
-      />,
-    );
-    const fila = filaDe(/2 cajas/);
+  it("dos cajas del mismo día, +5 y −5: el neto da 0 pero el día no sale «OK»", async () => {
+    montar([
+      caja("b", "2026-10-07", { expectedAmount: 200, closingAmount: 205, difference: 5 }),
+      caja("c", "2026-10-07", { expectedAmount: 300, closingAmount: 295, difference: -5 }),
+    ]);
+    const fila = await filaDe(/2 cajas/);
     expect(within(fila).queryByText("OK")).toBeNull();
     expect(fila.textContent).toContain("Alerta");
     expect(fila.textContent).toContain("faltó S/ 5.00 · sobró S/ 5.00");
@@ -67,16 +100,33 @@ describe("Caja › Por día", () => {
     expect(screen.getByText(/Diferencia acumulada/).textContent).toContain("S/ 10.00");
   });
 
-  it("un día con una caja contada que cuadra y otra sin conteo: «Sin conteo», y sólo suma la contada", () => {
-    render(
-      <CajaReconciliacion
-        {...props([caja("d", "2026-10-06", { expectedAmount: 150, closingAmount: 150, difference: 0 }), automatica("e", "2026-10-06")])}
-      />,
-    );
-    const fila = filaDe(/2 cajas · 1 sin conteo/);
+  it("un día con una caja contada que cuadra y otra sin conteo: «Sin conteo», y sólo suma la contada", async () => {
+    montar([caja("d", "2026-10-06", { expectedAmount: 150, closingAmount: 150, difference: 0 }), automatica("e", "2026-10-06")]);
+    const fila = await filaDe(/2 cajas · 1 sin conteo/);
     expect(fila.textContent).toContain("Sin conteo");
     expect(within(fila).queryByText("OK")).toBeNull();
     expect(screen.getByText("Total recaudado").textContent).toContain("S/ 150.00");
+  });
+
+  it("lo vendido del día (de los cierres de Mi Plata) sólo lo ve quien veía Mi Plata", async () => {
+    const cerradas = [caja("f", "2026-10-05", { expectedAmount: 55, closingAmount: 0, difference: -55 })];
+    servidor(cerradas, [
+      { createdAt: "2026-10-05T15:00:00.000Z", total: 30 },
+      { createdAt: "2026-10-04T15:00:00.000Z", total: 12 },
+    ]);
+    const { unmount } = render(<CajaReconciliacion {...props(cerradas)} />);
+    const fila = await filaDe(/1 caja/);
+    expect(fila.textContent).toContain("S/ -55.00");
+    expect(screen.queryByText("Vendido")).toBeNull();
+    // El día sin cajas (sólo ventas) no hace fila vacía.
+    expect(screen.queryByText("Sin caja cerrada")).toBeNull();
+    unmount();
+
+    permiso.ventas = true;
+    render(<CajaReconciliacion {...props(cerradas)} />);
+    expect(await screen.findByText("Vendido")).toBeTruthy();
+    expect((await filaDe(/1 caja/)).textContent).toContain("1 venta · ticket S/ 30.00");
+    expect(screen.getByText("Sin caja cerrada")).toBeTruthy();
   });
 });
 

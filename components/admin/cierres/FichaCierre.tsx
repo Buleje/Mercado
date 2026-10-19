@@ -25,10 +25,14 @@ function Bloque({ titulo, children }: { titulo: string; children: React.ReactNod
   );
 }
 
-function alertasDeStock(texto: string): Array<{ nombre: string; stock: number; stockMin: number }> | null {
+type AlertaGuardada = { nombre?: string; name?: string; stock?: number; stockMin?: number };
+
+/** El cierre a mano guarda `{nombre, stock, stockMin}`; el cron, `{id, name, stock}`. */
+function alertasDeStock(texto: string): Array<{ nombre: string; stock: number; stockMin: number | null }> | null {
   try {
     const v = JSON.parse(texto) as unknown;
-    return Array.isArray(v) ? (v as Array<{ nombre: string; stock: number; stockMin: number }>) : null;
+    if (!Array.isArray(v)) return null;
+    return (v as AlertaGuardada[]).map((a) => ({ nombre: a.nombre ?? a.name ?? "—", stock: a.stock ?? 0, stockMin: a.stockMin ?? null }));
   } catch {
     return null;
   }
@@ -61,21 +65,23 @@ export default function FichaCierre({ cierre, onClose }: { cierre: CierreDelDia;
             <Dato rotulo="Diferencia" valor={dif.texto} clase={dif.clase} />
           </dl>
         </Bloque>
-        <Bloque titulo="Fiados">
-          <dl className="grid grid-cols-3 gap-3">
-            <Dato rotulo="Cobrados" valor={formatCurrency(Number(cierre.fiadosCobrados))} />
-            <Dato rotulo="Nuevos" valor={formatCurrency(Number(cierre.fiadosNuevos))} />
-            <Dato rotulo="Vencidos" valor={String(cierre.fiadosVencidos)} clase={cierre.fiadosVencidos > 0 ? "text-[var(--data-error-ink)]" : undefined} />
-          </dl>
-        </Bloque>
+        {!cierre.sinResumen && (
+          <Bloque titulo="Fiados">
+            <dl className="grid grid-cols-3 gap-3">
+              <Dato rotulo="Cobrados" valor={formatCurrency(Number(cierre.fiadosCobrados))} />
+              <Dato rotulo="Nuevos" valor={formatCurrency(Number(cierre.fiadosNuevos))} />
+              <Dato rotulo="Vencidos" valor={String(cierre.fiadosVencidos)} clase={cierre.fiadosVencidos > 0 ? "text-[var(--data-error-ink)]" : undefined} />
+            </dl>
+          </Bloque>
+        )}
         {cierre.stockAlertas && (
           <Bloque titulo="Stock bajo al cerrar">
             {alertas ? (
               <ul className="space-y-1 text-sm">
-                {alertas.map((a) => (
-                  <li key={a.nombre} className="flex justify-between gap-2">
+                {alertas.map((a, i) => (
+                  <li key={`${a.nombre}-${i}`} className="flex justify-between gap-2">
                     <span className="truncate text-[var(--text-primary)]">{a.nombre}</span>
-                    <span className="shrink-0 font-bold tabular-nums text-[var(--data-error-ink)]">{a.stock}/{a.stockMin}</span>
+                    <span className="shrink-0 font-bold tabular-nums text-[var(--data-error-ink)]">{a.stockMin != null ? `${a.stock}/${a.stockMin}` : a.stock}</span>
                   </li>
                 ))}
               </ul>
@@ -89,7 +95,12 @@ export default function FichaCierre({ cierre, onClose }: { cierre: CierreDelDia;
             <p className="whitespace-pre-wrap text-sm text-[var(--text-primary)]">{cierre.notas}</p>
           </Bloque>
         )}
-        <p className="text-sm text-[var(--text-secondary)]">Cerró {cierre.creadoPor} · {formatDateTime(cierre.createdAt)}</p>
+        {/* Sin resumen guardado no hay quién «cerró»; el del cron no lo hizo una persona. */}
+        {cierre.creadoPor && (
+          <p className="text-sm text-[var(--text-secondary)]">
+            {cierre.creadoPor === "cron" ? "Resumen automático" : `Cerró ${cierre.creadoPor}`} · {formatDateTime(cierre.createdAt)}
+          </p>
+        )}
       </div>
     </AdminModal>
   );

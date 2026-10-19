@@ -2,66 +2,74 @@
 
 /**
  * Caja › Historial › Por día: la tendencia de las diferencias, el flujo de
- * EFECTIVO de los últimos 7 días y, por cada
- * día con cierres, esperado contra real. Salió de CashRegisterTab.
+ * EFECTIVO de los últimos 7 días y, por cada día, lo vendido contra el cuadre
+ * de sus cajas cerradas (esperado, contado, diferencia). Salió de
+ * CashRegisterTab; el 19-10 absorbió «Cierres del día» (venía de Mi Plata y
+ * leía un resumen con esperado 0 y contado vacío siempre): la fila del día
+ * abre su ficha con fiados, stock bajo y notas.
  *
- * Un cierre sin conteo (`close(null)`: el cron o «Cerrar turno» sin contar)
- * guarda contado = esperado y diferencia 0. No suma a «Real» ni a «Total
- * recaudado» y su día no sale «OK»: sale «Sin conteo». Y el día se juzga por
- * la PEOR caja: +5 en una y −5 en otra dan 0 de neto y el día no cuadró.
+ * La tabla del día se arma en el servidor (`/api/cash-registers/por-dia`);
+ * la tendencia y el flujo de la semana siguen con las cajas ya cargadas.
  */
-import { CardTitle, DataTable, EmptyState } from "@buleje/design-system";
-import { AlertTriangle, Check, History, MinusCircle } from "@buleje/design-system/icons";
+import { useState, type ReactNode } from "react";
+import { CardTitle } from "@buleje/design-system";
+import { CalendarClock, ChevronDown, Download, RefreshCw } from "@buleje/design-system/icons";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
+import TableSkeleton from "@/components/admin/shared/TableSkeleton";
+import { button } from "@/components/ui-system/button-variants";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { usePermisoDe } from "@/hooks/use-vistas-permitidas";
+import { abrirCierreDiario } from "@/lib/admin/abrir-cierre-diario";
+import { exportToExcel } from "@/lib/export-excel";
 import { diaLocal, ultimosDiasLocales } from "@/lib/fechas/dia-local";
-import { esCierreAutomatico } from "@/lib/caja/arqueo-veredicto";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
-import { formatDateShort, formatWeekday } from "@/lib/format";
+import type { DiaDeCaja } from "@/lib/caja/cierres-por-dia";
+import { formatWeekday } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { PartesCabeceraCuadres } from "../CashAuditTab";
+import { cierreDeDia, type CierreDelDia } from "../cierres/cierres";
+import FichaCierre from "../cierres/FichaCierre";
+import { CajaPorDiaTabla } from "./CajaPorDiaTabla";
 import { CajaTendencia } from "./CajaTendencia";
+import { ORIGEN_VENTAS_DEL_DIA } from "./secciones";
 import { fmt, type CashRegister } from "./tipos";
+import { useCajaPorDia } from "./use-caja-por-dia";
 
-type FilaDia = {
-  date: string;
-  count: number;
-  /** Cajas cerradas sin conteo: no suman a esperado, real ni diferencia. */
-  sinConteo: number;
-  totalExpected: number;
-  totalClosing: number;
-  /** Neto del día: lo que sobró menos lo que faltó en las cajas contadas. */
-  totalDiff: number;
-  faltante: number;
-  sobrante: number;
-  /** La diferencia más grande de UNA caja: con ella se juzga el día. */
-  peor: number;
-};
+interface Props {
+  cerradas: CashRegister[];
+  tolerancia: number;
+  /** La cabecera de Caja (título, secciones, «Más»): con ella no va la fila propia. */
+  cabecera?: (partes: PartesCabeceraCuadres) => ReactNode;
+  /** Los atributos del `tabpanel` de la barra de secciones de Caja. */
+  panel?: Record<string, string>;
+}
 
-type EstadoDia = "ok" | "sin_conteo" | "menor" | "alerta";
+/** Una fila por día para Excel: lo mismo que se ve, sin cuentas nuevas. */
+function filaExcel(d: DiaDeCaja, veVentas: boolean): Record<string, unknown> {
+  const c = d.cuadre;
+  const contadas = c.cajas - c.sinConteo;
+  return {
+    Fecha: d.dia,
+    ...(veVentas && { Vendido: d.ventas.total, Ventas: d.ventas.cantidad, "Ticket promedio": d.ventas.ticket }),
+    Cajas: c.cajas,
+    "Sin conteo": c.sinConteo,
+    Esperado: contadas > 0 ? c.esperado : "",
+    Contado: contadas > 0 ? c.contado : "Sin contar",
+    Diferencia: contadas > 0 ? c.diferencia : "",
+    Faltante: c.faltante,
+    Sobrante: c.sobrante,
+    ...(veVentas && {
+      "Fiados cobrados": d.resumen?.fiadosCobrados ?? "",
+      "Fiados nuevos": d.resumen?.fiadosNuevos ?? "",
+      Notas: d.resumen?.notas ?? "",
+    }),
+  };
+}
 
-export function CajaReconciliacion({ cerradas, tolerancia }: { cerradas: CashRegister[]; tolerancia: number }) {
-  const porDia = new Map<string, FilaDia>();
-  for (const r of cerradas) {
-    // Día local: con el ISO crudo, un cierre de las 20:00 caía en la fila del día siguiente.
-    const day = diaLocal(r.closedAt ?? r.openedAt);
-    const f = porDia.get(day) ?? { date: day, count: 0, sinConteo: 0, totalExpected: 0, totalClosing: 0, totalDiff: 0, faltante: 0, sobrante: 0, peor: 0 };
-    porDia.set(day, f);
-    f.count++;
-    if (esCierreAutomatico(r.notes)) {
-      f.sinConteo++;
-      continue;
-    }
-    const d = r.difference ?? 0;
-    f.totalExpected += r.expectedAmount ?? 0;
-    f.totalClosing += r.closingAmount ?? 0;
-    f.totalDiff += d;
-    if (d < 0) f.faltante -= d;
-    else f.sobrante += d;
-    f.peor = Math.max(f.peor, Math.abs(d));
-  }
-  const filas = Array.from(porDia.values()).sort((a, b) => b.date.localeCompare(a.date));
-  // Por caja: un faltante y un sobrante del mismo día no se anulan.
-  const discrepancia = filas.reduce((s, r) => s + r.faltante + r.sobrante, 0);
-  const sinConteo = filas.reduce((s, r) => s + r.sinConteo, 0);
+export function CajaReconciliacion({ cerradas, tolerancia, cabecera, panel }: Props) {
+  const veVentas = usePermisoDe(ORIGEN_VENTAS_DEL_DIA);
+  const { data, cargando, error, recargar, masDias } = useCajaPorDia();
+  const [ficha, setFicha] = useState<CierreDelDia | null>(null);
 
   /* Flujo de EFECTIVO de 7 días: día local (no UTC), sin sumar el fondo de
      apertura como ingreso y sin las ventas de Yape/tarjeta (no pasan por el cajón). */
@@ -79,9 +87,57 @@ export function CajaReconciliacion({ cerradas, tolerancia }: { cerradas: CashReg
   const sale = semana.reduce((s, d) => s + d.expenses, 0);
   const maxBar = Math.max(...semana.map((d) => Math.max(d.income, d.expenses)), 1);
 
+  const exportar = () => {
+    if (!data?.dias.length) return;
+    exportToExcel(data.dias.map((d) => filaExcel(d, veVentas)), `caja-por-dia-desde-${data.desde}`, "Caja por día");
+  };
+  const acciones: MenuAccion[] = [
+    { id: "excel", label: "Bajar a Excel", hint: `${data?.dias.length ?? 0} días`, icon: Download, disabled: !data?.dias.length, onSelect: exportar },
+    { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: recargar },
+  ];
+  const cuantos = data && <span className="whitespace-nowrap text-sm text-[var(--text-secondary)]">desde {data.desde.split("-").reverse().join("/")}</span>;
+  /* «Cerrar el día» (el resumen a mano con notas) venía con los cierres de Mi Plata. */
+  const cerrarElDia = veVentas && (
+    <button type="button" onClick={abrirCierreDiario} className={button({ variant: "primary", className: "rounded-xl px-4" })}>
+      <CalendarClock className="h-4 w-4" aria-hidden /> Cerrar el día
+    </button>
+  );
+
   return (
     <div className="space-y-4">
-      <CajaTendencia cerradas={cerradas} />
+      {cabecera ? (
+        cabecera({ titulo: null, indicadores: <>{cuantos}{cerrarElDia}</>, acciones })
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Caja por día</CardTitle>
+          {cuantos}
+          <span className="ml-auto">{cerrarElDia}</span>
+        </div>
+      )}
+      <div {...panel} className="space-y-4">
+        {cargando && !data ? (
+          <TableSkeleton rows={6} cols={5} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" />
+        ) : error && !data ? (
+          <p role="alert" className="flex items-center gap-2 py-6 text-sm text-[var(--data-error-ink)]">
+            No se pudo armar la caja por día.
+            <button type="button" onClick={recargar} className={button({ variant: "secondary", className: "rounded-xl" })}>Reintentar</button>
+          </p>
+        ) : data ? (
+          <CajaPorDiaTabla
+            dias={data.dias}
+            totales={data.totales}
+            tolerancia={tolerancia}
+            veVentas={veVentas}
+            onVer={veVentas ? (d) => setFicha(cierreDeDia(d)) : undefined}
+            cargando={cargando}
+          />
+        ) : null}
+        {data && masDias && (
+          <button type="button" onClick={masDias} disabled={cargando} className={button({ variant: "ghost", className: "w-full rounded-xl" })}>
+            <ChevronDown className="h-4 w-4" aria-hidden /> Ver más días
+          </button>
+        )}
+        <CajaTendencia cerradas={cerradas} />
       <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4">
         <div className="flex flex-wrap items-center gap-2 mb-3">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Flujo de efectivo de la semana</CardTitle>
@@ -110,84 +166,8 @@ export function CajaReconciliacion({ cerradas, tolerancia }: { cerradas: CashReg
         </div>
       </section>
 
-      <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
-        <div className="px-4 sm:px-5 py-3 border-b border-[var(--rule-soft)] flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Por día</CardTitle>
-          <span className="text-[var(--text-secondary)]">Días con cierres <b className="text-[var(--text-primary)] tabular-nums">{filas.length}</b></span>
-          {sinConteo > 0 && (
-            <span className="text-[var(--text-secondary)]">Cerradas sin conteo <b className="text-[var(--text-primary)] tabular-nums">{sinConteo}</b></span>
-          )}
-          <span className="text-[var(--text-secondary)]">Total recaudado <b className="text-[var(--text-primary)] tabular-nums">{fmt(filas.reduce((s, r) => s + r.totalClosing, 0))}</b></span>
-          <span className="text-[var(--text-secondary)]">
-            Diferencia acumulada{" "}
-            <b className={cn("tabular-nums", discrepancia > 10 ? "text-[var(--data-error-500)]" : discrepancia > 0 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]")}>{fmt(discrepancia)}</b>
-          </span>
-        </div>
-        {filas.length === 0 ? (
-          <EmptyState icon={History} title="Sin cajas cerradas" description="No hay cierres en el rango seleccionado." className="p-6" />
-        ) : (
-          <DataTable>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th className="text-right">Esperado</th>
-                <th className="text-right">Real</th>
-                <th className="text-right">Diferencia</th>
-                <th className="text-center">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filas.map((row) => {
-                const contadas = row.count - row.sinConteo;
-                const ok = row.peor <= tolerancia;
-                const menor = !ok && row.peor <= tolerancia * 2;
-                const estado: EstadoDia = !ok ? (menor ? "menor" : "alerta") : row.sinConteo > 0 ? "sin_conteo" : "ok";
-                const compensa = row.faltante > 0.005 && row.sobrante > 0.005;
-                return (
-                  <tr key={row.date} className={!ok ? "bg-[var(--data-error-50)]/30" : undefined}>
-                    <td>
-                      <p className="font-bold text-[var(--text-primary)]">{formatWeekday(row.date + "T12:00:00")} {formatDateShort(row.date + "T12:00:00")}</p>
-                      <p className="text-sm text-[var(--text-secondary)]">
-                        {row.count} caja{row.count > 1 ? "s" : ""}
-                        {row.sinConteo > 0 && ` · ${row.sinConteo} sin conteo`}
-                      </p>
-                    </td>
-                    {contadas === 0 ? (
-                      <>
-                        <td className="text-right text-[var(--text-tertiary)]">—</td>
-                        <td className="text-right text-[var(--text-tertiary)]">—</td>
-                        <td className="text-right text-[var(--text-tertiary)]">—</td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="text-right text-[var(--text-secondary)] font-semibold tabular-nums">{fmt(row.totalExpected)}</td>
-                        <td className="text-right font-bold tabular-nums">{fmt(row.totalClosing)}</td>
-                        <td className={cn("text-right font-extrabold tabular-nums", ok ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : menor ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
-                          {row.totalDiff > 0 ? "+" : ""}
-                          {fmt(row.totalDiff)}
-                          {/* Faltó en una caja y sobró en otra: el neto los esconde. */}
-                          {compensa && <span className="block text-sm font-semibold text-[var(--text-secondary)]">faltó {fmt(row.faltante)} · sobró {fmt(row.sobrante)}</span>}
-                        </td>
-                      </>
-                    )}
-                    <td className="text-center">
-                      {estado === "ok" ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-sm font-semibold"><Check className="h-4 w-4" aria-hidden />OK</span>
-                      ) : estado === "sin_conteo" ? (
-                        <span className="inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-sm font-semibold"><MinusCircle className="h-4 w-4" aria-hidden />Sin conteo</span>
-                      ) : estado === "menor" ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)] text-sm font-semibold"><AlertTriangle className="h-4 w-4" aria-hidden />Menor</span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)] text-sm font-semibold"><AlertTriangle className="h-4 w-4" aria-hidden />Alerta</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </DataTable>
-        )}
-      </section>
+      </div>
+      {ficha && <FichaCierre cierre={ficha} onClose={() => setFicha(null)} />}
     </div>
   );
 }

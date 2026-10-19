@@ -125,7 +125,6 @@ export const PRISMA_DIRECT_LEGACY = [
   "app/api/changelog/route.ts",
   "app/api/chat/marketplace/route.ts",
   "app/api/chat/public/route.ts",
-  "app/api/cierre-diario/history/route.ts",
   "app/api/cierre-diario/preview/route.ts",
   "app/api/cierre-diario/route.ts",
   "app/api/commission-rules/route.ts",

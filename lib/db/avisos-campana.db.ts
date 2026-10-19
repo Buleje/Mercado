@@ -131,20 +131,6 @@ export const AvisosCampanaDB = {
       .map((r) => ({ id: r.id, difference: toNumOrZero(r.difference), closedAt: r.closedAt }));
   },
 
-  async resumenesDiariosDesde(
-    tenantId: string,
-    desde: Date,
-    take = 5,
-  ): Promise<Array<{ id: string; diferenciaCaja: number; fecha: Date; creadoPor: string }>> {
-    const rows = await prisma.dailySummary.findMany({
-      where: { tenantId, createdAt: { gte: desde } },
-      select: { id: true, diferenciaCaja: true, fecha: true, creadoPor: true },
-      orderBy: { createdAt: "desc" },
-      take,
-    });
-    return rows.map((s) => ({ ...s, diferenciaCaja: toNumOrZero(s.diferenciaCaja) }));
-  },
-
   /**
    * Clientes que más gastaron, con su última compra EN ESTE negocio: dos
    * `groupBy` por teléfono en vez de 2 consultas por cliente (antes 100 idas a

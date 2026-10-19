@@ -9,7 +9,6 @@
  * columna (1,7 pantallas a 1280 px y 4 a 400 px con la caja abierta). Brandon:
  * «organizar tipo en pestaña, hacer sección para pasar de una a otra».
  */
-import { origenDeSeccion } from "@/lib/admin/subvistas-modulos";
 import type { VistaCaja } from "./tipos";
 
 export type GrupoCaja = "hoy" | "historial";
@@ -76,7 +75,11 @@ export const SECCIONES: Record<GrupoCaja, { rotulo: string; titulo: string; secc
       {
         clave: "reconciliacion",
         rotulo: "Por día",
-        ayuda: { what: "Esperado contra real por día, la tendencia de las diferencias y el flujo de efectivo de la semana." },
+        ayuda: {
+          what: "Cada día en una fila: lo vendido, el efectivo esperado y el contado de las cajas cerradas y la diferencia. Toca un día para ver fiados, stock bajo y notas.",
+          affects: "Sale de las cajas cerradas: una caja cerrada sin contar no suma y el día dice «Sin conteo». El detalle de cada caja está en «Por caja».",
+          example: "Domingo 28/09: se esperaban S/ 55 y se contaron S/ 0 → faltan S/ 55.",
+        },
       },
       {
         clave: "auditoria",
@@ -87,21 +90,16 @@ export const SECCIONES: Record<GrupoCaja, { rotulo: string; titulo: string; secc
           example: "Si falta plata, acá ves quién retiró S/ 50 a mano y a qué hora; la venta que la explica la buscas en Movimientos por su código.",
         },
       },
-      {
-        clave: "cierres",
-        rotulo: "Cierres del día",
-        ayuda: {
-          what: "Cada día que cerraste: lo vendido y si el efectivo contado cuadró con lo esperado. Toca una fila para ver fiados, stock bajo y notas.",
-          affects: "El conteo de cada caja está en «Por caja»; acá va el resumen del día entero. Antes estaba en Mi Plata › Impuestos y reportes.",
-          example: "Sábado 10/10: S/ 850 vendidos, contaste S/ 420 y esperabas S/ 422 → −S/ 2.00.",
-        },
-      },
     ],
   },
 };
 
-/** «Cierres del día» vino de Mi Plata (18-10): la ve quien veía Mi Plata, no todo el que abre Caja. */
-export const ORIGEN_CIERRES = origenDeSeccion("ventas-caja", "caja-registradora", "cierres");
+/**
+ * Lo vendido del día en «Por día» (columnas Vendido/Ventas/Ticket y la ficha):
+ * venía de «Cierres del día» de Mi Plata (18-10, fundido el 19-10). Lo ve quien
+ * veía Mi Plata, no todo el que abre Caja.
+ */
+export const ORIGEN_VENTAS_DEL_DIA = ["plata", "activos"] as const;
 
 export const GRUPOS: readonly GrupoCaja[] = ["hoy", "historial"];
 

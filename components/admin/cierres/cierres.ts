@@ -6,6 +6,7 @@
  * sábado 10/10 decía «vie 09 oct».
  */
 import { diaConNombre } from "@/components/admin/inventario/movimientos/tipos";
+import { camposDeCajaDelResumen, type DiaDeCaja } from "@/lib/caja/cierres-por-dia";
 import { formatCurrency } from "@/lib/format";
 
 export type CierreDelDia = {
@@ -26,7 +27,36 @@ export type CierreDelDia = {
   notas: string | null;
   creadoPor: string;
   createdAt: string;
+  /** El día no tiene resumen guardado (nadie cerró el día ni corrió el cron): sin fiados que mostrar. */
+  sinResumen?: boolean;
 };
+
+/**
+ * La ficha de un día de Caja › Historial › Por día: ventas y cuadre del
+ * servidor (cajas cerradas), fiados/stock/notas del resumen guardado. Sin
+ * cuentas: todo viene armado de `/api/cash-registers/por-dia`.
+ */
+export function cierreDeDia(d: DiaDeCaja): CierreDelDia {
+  const r = d.resumen;
+  return {
+    id: r?.id ?? d.dia,
+    fecha: `${d.dia}T00:00:00.000Z`,
+    totalVentas: d.ventas.total,
+    cantidadVentas: d.ventas.cantidad,
+    ticketPromedio: d.ventas.ticket,
+    ...camposDeCajaDelResumen(d.cuadre),
+    fiadosCobrados: r?.fiadosCobrados ?? 0,
+    fiadosNuevos: r?.fiadosNuevos ?? 0,
+    fiadosVencidos: r?.fiadosVencidos ?? 0,
+    mejorHora: r?.mejorHora ?? null,
+    productoTop: r?.productoTop ?? null,
+    stockAlertas: r?.stockAlertas ?? null,
+    notas: r?.notas ?? null,
+    creadoPor: r?.creadoPor ?? "",
+    createdAt: r ? String(r.createdAt) : "",
+    sinResumen: !r,
+  };
+}
 
 /** «sábado 10/10», con el año si no es el de hoy («sábado 10/10/2025»). */
 export function fechaDelCierre(fecha: string, anioActual = new Date().getUTCFullYear()): string {

@@ -167,20 +167,10 @@ export async function generateNotifications(
         entityId: r.id,
       });
     }
-    for (const s of await AvisosCampanaDB.resumenesDiariosDesde(tenantId, desde)) {
-      const diff = s.diferenciaCaja;
-      if (Math.abs(diff) <= DIFERENCIA_CAJA_MINIMA) continue;
-      await avisar({
-        type: "DIFERENCIA_CAJA",
-        severity: Math.abs(diff) > DIFERENCIA_CAJA_GRAVE ? "HIGH" : "MEDIUM",
-        title: `Cierre del día: ${diff < 0 ? "faltan" : "sobran"} ${soles(Math.abs(diff))}`,
-        body: `Resumen del ${fechaDia(s.fecha)}, lo hizo ${s.creadoPor}.`,
-        // El resumen diario vive en Mi Plata › Reportes (Historial de cierres).
-        actionUrl: "/admin?tab=plata&vista=reportes",
-        actionLabel: "Ver resumen",
-        entityId: s.id,
-      });
-    }
+    /* El resumen diario (cron o «Cerrar el día») ya no avisa (19-10): su
+       diferencia es la suma de las cajas, que avisaron una por una arriba, y el
+       del cierre a mano antes salía de una cuenta del navegador (contado −
+       ventas en efectivo, sin fondo ni retiros) que Caja › Por día no muestra. */
   });
 
   // Los 10 que más gastan van como urgentes.

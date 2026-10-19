@@ -17,7 +17,6 @@ const { db, createOrReuse, cuotas } = vi.hoisted(() => ({
     turnosAbiertosAntesDe: vi.fn(),
     cuentasPorPagarHasta: vi.fn(),
     cajasCerradasConDiferencia: vi.fn(),
-    resumenesDiariosDesde: vi.fn(),
     clientesVipConUltimaActividad: vi.fn(),
     bajadasDePrecio: vi.fn(),
     ventasYGastos: vi.fn(),
@@ -42,7 +41,6 @@ function sinNada() {
   db.turnosAbiertosAntesDe.mockResolvedValue([]);
   db.cuentasPorPagarHasta.mockResolvedValue([]);
   db.cajasCerradasConDiferencia.mockResolvedValue([]);
-  db.resumenesDiariosDesde.mockResolvedValue([]);
   db.clientesVipConUltimaActividad.mockResolvedValue([]);
   db.bajadasDePrecio.mockResolvedValue([]);
   db.ventasYGastos.mockResolvedValue({ ventas: 0, gastos: 0 });
@@ -137,12 +135,21 @@ describe("generateNotifications", () => {
     expect(avisos()[0]).toMatchObject({ type: "MARGEN_NEGATIVO", entityId: "9" });
   });
 
-  it("el cierre del día guardado como medianoche UTC dice SU día, no el anterior", async () => {
-    db.resumenesDiariosDesde.mockResolvedValue([
-      { fecha: new Date("2026-10-09T00:00:00.000Z"), diferenciaCaja: -30, creadoPor: "Ana" },
+  it("el cierre a mano no avisa una diferencia que Caja por día no muestra", async () => {
+    // Fondo 100 + 300 vendidos, se cuentan 400: el navegador guardaba «sobran S/ 100»
+    // (contado − ventas en efectivo). Las cajas avisan solas; el resumen diario ni se lee.
+    const resumenes = vi.fn(async () => [
+      { id: "r1", fecha: new Date("2026-10-09T00:00:00.000Z"), diferenciaCaja: 100, creadoPor: "dueno" },
     ]);
-    await generateNotifications("t-1", { ahora: AHORA });
-    expect(avisos()[0].body).toBe("Resumen del 9/10/2026, lo hizo Ana.");
+    const conResumen = db as unknown as Record<string, unknown>;
+    conResumen.resumenesDiariosDesde = resumenes;
+    try {
+      await generateNotifications("t-1", { ahora: AHORA });
+    } finally {
+      delete conResumen.resumenesDiariosDesde;
+    }
+    expect(avisos().filter((a) => a.type === "DIFERENCIA_CAJA")).toHaveLength(0);
+    expect(resumenes).not.toHaveBeenCalled();
   });
 
   it("cuota: fecha de calendario en UTC; un instante con hora, en Lima", async () => {
