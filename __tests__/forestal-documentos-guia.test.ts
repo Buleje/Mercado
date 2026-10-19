@@ -102,6 +102,16 @@ describe("casilleros de la guía (ADR-438)", () => {
     expect(etiquetasDeBusqueda(["QA-1", " "])).toEqual(["gtf:QA-1", "gtf:qa-1", "QA-1"]);
   });
 
+  it("con permiso suma el tag `permiso:<id>` (ADR-502) sin mover el casillero", () => {
+    const tags = etiquetasDeDocumentoGuia(G, "gtf", " 19-SEC/REG-PLT-2021-017 ");
+    expect(tags).toContain("permiso:19-SEC/REG-PLT-2021-017");
+    // el papel sigue cayendo en su casillero: el tag nuevo no lo confunde
+    expect(casilleroDeDocumento(tags, G)).toBe("gtf");
+    // sin permiso (o vacío) no se agrega un tag colgado
+    expect(etiquetasDeDocumentoGuia(G, "gtf").some((t) => t.startsWith("permiso:"))).toBe(false);
+    expect(etiquetasDeDocumentoGuia(G, "gtf", "   ").some((t) => t.startsWith("permiso:"))).toBe(false);
+  });
+
   it("carpeta del titular › su permiso › la guía (ADR-442); la / del permiso no abre carpetas", () => {
     expect(
       carpetaGuiaPorTitular({

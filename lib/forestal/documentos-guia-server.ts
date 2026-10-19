@@ -131,7 +131,7 @@ export async function guardarDocumentoDeGuia(o: GuardarDocGuia): Promise<DbDocum
     size: archivo.buffer.length,
     storagePath: "pending",
     category: o.casillero === "factura" ? "facturas" : "otros",
-    tags: etiquetasDeDocumentoGuia(o.guia.gtfNumber, o.casillero),
+    tags: etiquetasDeDocumentoGuia(o.guia.gtfNumber, o.casillero, o.guia.permiso),
     uploadedById: o.user,
     /* La carpeta del titular hereda los roles de su raíz (vacíos): sin esto el
        cajero veía la factura en el Drive general aunque la ruta le diera 403. */

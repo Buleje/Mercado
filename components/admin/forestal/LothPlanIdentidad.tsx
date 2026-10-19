@@ -28,6 +28,7 @@ import { useState } from "react";
 import { Kicker } from "@buleje/design-system";
 import { CalendarClock, ChevronDown, FileText, MapPin } from "@buleje/design-system/icons";
 import { estadoVigencia } from "@/lib/forestal/loth-plan-vigencia";
+import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
 import { fmtFecha, type Plan } from "./loth-plan-shared";
 
 const TONO_TEXTO = {
@@ -99,8 +100,11 @@ export function LothPlanIdentidadLinea({ plan }: { plan: Plan }) {
 
 export default function LothPlanIdentidad({ plan }: { plan: Plan }) {
   const vig = estadoVigencia(plan.vigenciaHasta, plan.estado);
+  /* ADR-502: el título habilitante ata a este permiso las GTF del Archivo. */
+  const permiso = plan.tituloHabilitante?.trim();
 
   return (
+    <div className="space-y-3">
     <div className="grid gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 lg:grid-cols-3">
       <Grupo titulo="Documento" icon={FileText}>
         {/* Los datos de identidad (ADR-426) aparecen SÓLO si se cargaron: una
@@ -142,6 +146,10 @@ export default function LothPlanIdentidad({ plan }: { plan: Plan }) {
           {vig.texto}
         </p>
       </Grupo>
+    </div>
+    {/* Las GTF de ESTE permiso (por tag `permiso:<id>`, ADR-502): se listan
+        solas si hay papeles; vacío = no se pinta nada (sin ruido). */}
+    {permiso && <LinkedDocumentsSection entity="permiso" id={permiso} nombre={plan.alias?.trim() || plan.titularName} />}
     </div>
   );
 }

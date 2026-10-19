@@ -22,6 +22,8 @@
  * guardado.
  */
 
+import { tagEntidad } from "@/lib/documentos/enlaces-entidad";
+
 export const CASILLEROS_GUIA = [
   { clave: "factura", label: "Factura", hint: "La factura o boleta de la madera" },
   {
@@ -95,10 +97,18 @@ export const tagCasillero = (c: CasilleroGuia) => `${PREFIJO_TAG_CASILLERO}${c}`
  * Las etiquetas de un documento de la guía. Las humanas (`forestal`, el N°,
  * el nombre del casillero) son para buscarlo en el Drive; las de máquina
  * (`gtf:`, `casillero:`) son las que lo ponen en su casillero.
+ *
+ * Con `permiso` (el título habilitante de la guía) suma el tag `permiso:<id>`
+ * del cableado único (ADR-502): así el Archivo lista TODAS las GTF de un
+ * permiso sin tocar la carpeta (titular › permiso › guía ya existe, ADR-442).
  */
-export function etiquetasDeDocumentoGuia(gtf: string, casillero: CasilleroGuia): string[] {
+export function etiquetasDeDocumentoGuia(
+  gtf: string,
+  casillero: CasilleroGuia,
+  permiso?: string | null,
+): string[] {
   const n = gtf.trim();
-  return [
+  const tags = [
     "forestal",
     "documento de guía",
     labelDeCasillero(casillero).toLowerCase(),
@@ -106,6 +116,9 @@ export function etiquetasDeDocumentoGuia(gtf: string, casillero: CasilleroGuia):
     tagGtf(n),
     tagCasillero(casillero),
   ];
+  const p = permiso?.trim();
+  if (p) tags.push(tagEntidad("permiso", p));
+  return tags;
 }
 
 /**

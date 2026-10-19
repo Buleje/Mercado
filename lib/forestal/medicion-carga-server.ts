@@ -157,7 +157,7 @@ export async function pasarFotosALaGuia(
         out.fallidas++;
         continue;
       }
-      const tags = [...new Set([...doc.tags, ...etiquetasDeDocumentoGuia(gtf, "otros")])];
+      const tags = [...new Set([...doc.tags, ...etiquetasDeDocumentoGuia(gtf, "otros", guia.permiso)])];
       const ok = await DocumentsDB.update(tenantId, f.docId, { tags, ...(folderId ? { folderId } : {}) });
       if (!ok) {
         out.fallidas++;
