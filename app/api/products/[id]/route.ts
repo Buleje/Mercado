@@ -9,6 +9,8 @@ import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { MENSAJE_MOTIVO, limpiarMotivo, motivoSuficiente } from "@/lib/validations/motivo";
+import { revisarPisoDePrecios } from "@/lib/precios/piso-servidor";
+import { respuestaBajoPiso, textoBajoPisoConfirmado, type AvisoBajoPiso } from "@/lib/precios/piso";
 
 const ProductUpdateSchema = z.object({
   name: z.string().min(1).max(150).optional(),
@@ -37,6 +39,9 @@ const ProductUpdateSchema = z.object({
   // F2 + b-9 (Brandon 17-10, «Motivo siempre»): razón exigida cuando el stock
   // cambia a mano (≥3 letras o números; sin ella → 400 antes de escribir).
   adjustReason: z.string().max(500).optional(),
+  // Piso de rebajas (Brandon 19-10): bajar el precio por debajo de costo +
+  // piso del negocio responde 409 con el aviso; `true` = «Guardar igual».
+  confirmarBajoPiso: z.boolean().optional(),
   // ── Producto/servicio completo (2026-06) — fluyen via ...body al upsert.
   // Sin .nullable() para mantener compatibilidad de tipos con DbProduct
   // (campos string|undefined). Para "limpiar" se envía "" desde la UI. ──
@@ -109,7 +114,7 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
 
     // specs/richContent salen del body y se convierten a JSON aparte (el upsert
     // espera specsJson/richContentJson string, no los arrays crudos).
-    const { specs, richContent, ...body } = parsed.data;
+    const { specs, richContent, confirmarBajoPiso, ...body } = parsed.data;
 
     // b-9: si el stock cambia (de un número a otro), el porqué va primero. El
     // kardex lo guarda en `notes`; antes quedaba «Ajuste manual sin razón documentada».
@@ -117,13 +122,32 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
     if (cambiaStock && !motivoSuficiente(body.adjustReason)) {
       return NextResponse.json({ error: MENSAJE_MOTIVO, campo: "adjustReason" }, { status: 400 });
     }
+    // null explícito = quitar el costo (casilla vacía en la fila del
+    // inventario); sin enviar o 0 = conservar. Con `??` el null no limpiaba.
+    const costPrice = "costPrice" in body && body.costPrice !== 0 ? body.costPrice : existing.costPrice;
+
+    // Piso de rebajas: precio y costo de HOY leídos acá, el costo que queda
+    // tras guardar (el nuevo si viene). Sin confirmar → 409 y no se escribe.
+    let avisosPiso: AvisoBajoPiso[] = [];
+    if (body.price != null) {
+      const { pisoSobreCosto, avisos } = await revisarPisoDePrecios(auth.tenantId, [{
+        productId: numId,
+        nombre: existing.name,
+        precioActual: Number(existing.price ?? 0),
+        precioNuevo: body.price,
+        costo: costPrice == null ? null : Number(costPrice),
+      }]);
+      if (avisos.length > 0 && confirmarBajoPiso !== true) {
+        return NextResponse.json(respuestaBajoPiso(avisos, pisoSobreCosto), { status: 409 });
+      }
+      avisosPiso = avisos;
+    }
+
     const updated = await ProductsDB.upsert({
       ...existing,
       ...body,
       id: numId,
-      // null explícito = quitar el costo (casilla vacía en la fila del
-      // inventario); sin enviar o 0 = conservar. Con `??` el null no limpiaba.
-      costPrice: "costPrice" in body && body.costPrice !== 0 ? body.costPrice : existing.costPrice,
+      costPrice,
       badge: body.badge ?? existing.badge,
       barcode: body.barcode ?? existing.barcode,
       // Brandon 2026-06-06: distinguir null (stock ILIMITADO — el admin lo
@@ -160,14 +184,20 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
     }
 
     const requestId = req.headers.get("x-request-id") ?? undefined;
+    const usuario = auth.username ?? "admin";
     logActivity(
       "Editar",
       "producto",
       `Producto actualizado: ${updated.name} (S/${updated.price})`,
       String(updated.id),
-      "admin",
+      usuario,
       requestId,
+      auth.tenantId,
     ).catch((err) => logger.error("[products/id] logActivity update failed", { error: String(err) }));
+    if (avisosPiso.length > 0) {
+      logActivity("Precio bajo piso", "producto", textoBajoPisoConfirmado(avisosPiso, usuario), String(updated.id), usuario, requestId, auth.tenantId)
+        .catch((err) => logger.error("[products/id] logActivity bajo piso failed", { error: String(err) }));
+    }
     invalidate(`dashboard:${auth.tenantId}`);
     // Fase 4 perf (2026-05-16): KPIs admin refrescan al instante tras update.
     try {

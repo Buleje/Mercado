@@ -1,6 +1,8 @@
 import { toast } from "sonner";
 import { exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { dialogoBajoPiso, esRespuestaBajoPiso } from "@/lib/precios/piso";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
 import { useInventarioCarga } from "@/components/admin/inventario/hooks/use-inventario-carga";
 import { useInventarioImagenes } from "@/components/admin/inventario/hooks/use-inventario-imagenes";
@@ -12,6 +14,7 @@ export function useInventarioMasivo(previo: ReturnType<typeof useInventarioEstad
     setBulkSaving, setBulkDeleteConfirm, setBulkDeleting, setBulkClearImagesConfirm,
     setBulkClearingImages, load,
   } = previo;
+  const { confirm } = useConfirm();
 
   // ── Bulk operations  ─────────────────────────────────────────────────────
 
@@ -49,11 +52,22 @@ export function useInventarioMasivo(previo: ReturnType<typeof useInventarioEstad
       // que falle sin decir nada es la peor combinación posible. Antes el
       // modal se cerraba y la selección se limpiaba igual, así que ni siquiera
       // quedaba a mano para reintentar.
-      const res = await fetch("/api/products/bulk", {
+      const enviar = (confirmarBajoPiso?: true) => fetch("/api/products/bulk", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ ids, fields }),
+        body: JSON.stringify({ ids, fields, ...(confirmarBajoPiso ? { confirmarBajoPiso } : {}) }),
       });
+      let res = await enviar();
+      // Piso de rebajas (Brandon 19-10): si algún precio baja bajo costo + piso
+      // del negocio, el servidor no escribe nada (409) hasta «Guardar igual».
+      // «Corregir» deja el modal abierto con la selección intacta.
+      if (res.status === 409) {
+        const aviso: unknown = await res.clone().json().catch(() => null);
+        if (esRespuestaBajoPiso(aviso)) {
+          if (!(await confirm(dialogoBajoPiso(aviso)))) return; // el `finally` suelta el botón
+          res = await enviar(true);
+        }
+      }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         toast.error(

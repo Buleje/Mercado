@@ -16,6 +16,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { dialogoBajoPiso, esRespuestaBajoPiso } from "@/lib/precios/piso";
 import {
   InventoryForecastSchema,
   PriceResponseSchema,
@@ -54,6 +56,7 @@ function pedirJson(url: string): Promise<unknown> {
 export function useForecasting(paneles: readonly PanelForecast[] = TODOS_LOS_PANELES): Forecasting {
   /* En texto: quien llama suele pasar un array literal nuevo en cada render. */
   const clave = paneles.join("|");
+  const { confirm } = useConfirm();
 
   const [state, setState] = useState<DashboardState>({
     forecast: null,
@@ -209,11 +212,20 @@ export function useForecasting(paneles: readonly PanelForecast[] = TODOS_LOS_PAN
   const aplicarPrecio = async (suggestion: PriceSuggestion) => {
     setApplyingPrice(suggestion.productId);
     try {
-      const res = await fetch(`/api/products/${suggestion.productId}`, {
+      const enviar = (confirmarBajoPiso?: true) => fetch(`/api/products/${suggestion.productId}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ price: suggestion.suggestedPrice }),
+        body: JSON.stringify({ price: suggestion.suggestedPrice, ...(confirmarBajoPiso ? { confirmarBajoPiso } : {}) }),
       });
+      let res = await enviar();
+      // Piso de rebajas: el costo pudo cambiar desde la sugerencia → 409 y se pregunta.
+      if (res.status === 409) {
+        const aviso: unknown = await res.clone().json().catch(() => null);
+        if (esRespuestaBajoPiso(aviso)) {
+          if (!(await confirm(dialogoBajoPiso(aviso)))) return; // el `finally` suelta el botón
+          res = await enviar(true);
+        }
+      }
       if (res.ok) {
         setAppliedPrices((prev) => new Set([...prev, suggestion.productId]));
       }

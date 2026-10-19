@@ -12,6 +12,7 @@ import type { DbProduct } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { resolveTenantSlugToId } from "@/lib/resolve-tenant";
+import { chequearPiso } from "@/lib/precios/piso";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -539,20 +540,18 @@ export const ProductsDB = {
             costo: f.costoNuevo === undefined ? actual.costo : f.costoNuevo === null ? null : cent(f.costoNuevo) / 100,
           };
           if (igual(despues.precio, actual.precio) && igual(despues.costo, actual.costo)) continue;
-          // Rebaja bajo el piso del negocio: en céntimos, el piso redondeado hacia arriba.
-          if (piso != null && despues.costo != null && despues.costo > 0 && cent(despues.precio) < cent(actual.precio)) {
-            const pisoCent = Math.ceil((cent(despues.costo) * (100 + piso)) / 100 - 1e-6);
-            if (cent(despues.precio) < pisoCent) {
-              rechazadas.push({
-                productId: f.productId,
-                motivo: "bajo-piso",
-                precioActual: actual.precio,
-                costoActual: actual.costo,
-                nombre: nombres.get(f.productId) ?? `#${f.productId}`,
-                piso: pisoCent / 100,
-              });
-              continue;
-            }
+          // Rebaja bajo el piso del negocio (la regla única de `lib/precios/piso.ts`).
+          const chequeo = chequearPiso({ precioActual: actual.precio, precioNuevo: despues.precio, costo: despues.costo, pisoSobreCosto: piso });
+          if (!chequeo.ok) {
+            rechazadas.push({
+              productId: f.productId,
+              motivo: "bajo-piso",
+              precioActual: actual.precio,
+              costoActual: actual.costo,
+              nombre: nombres.get(f.productId) ?? `#${f.productId}`,
+              piso: chequeo.piso,
+            });
+            continue;
           }
           aplicadas.push({ productId: f.productId, antes: actual, despues });
         }

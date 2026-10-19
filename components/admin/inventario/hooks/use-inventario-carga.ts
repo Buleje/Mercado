@@ -4,13 +4,14 @@ import { useAbrirFichaAlLlegar } from "@/hooks/use-abrir-ficha-al-llegar";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { motivoSuficiente } from "@/lib/validations/motivo";
+import { dialogoBajoPiso, esRespuestaBajoPiso } from "@/lib/precios/piso";
 import type { DbProduct } from "@/lib/jsondb";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
 import { claveCategoria, textoDeCategoria } from "@/components/admin/inventario/inventario-compartido";
 
 /** Carga del catálogo, base nacional, importar CSV y editar un producto. Parte de `useInventario`. */
 export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado>) {
-  const { prompt } = useConfirm();
+  const { prompt, confirm } = useConfirm();
   const {
     setProducts, setMovements, setLoading, editModalProduct, setEditModalProduct, editForm,
     setEditForm, setSaving, setAddForm, editSpecs, setEditSpecs, editRich, setEditRich, setImgInfo,
@@ -240,11 +241,26 @@ export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado
         body.adjustReason = motivo.trim().slice(0, 500);
       }
 
-      const res = await fetch(`/api/products/${editModalProduct.id}`, {
+      const enviar = () => fetch(`/api/products/${editModalProduct.id}`, {
         method: "PUT",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
+      let res = await enviar();
+      // Piso de rebajas (Brandon 19-10): bajar bajo costo + piso del negocio
+      // responde 409; «Guardar igual» reenvía con la confirmación, «Corregir»
+      // deja la ficha abierta sin guardar.
+      if (res.status === 409) {
+        const aviso: unknown = await res.clone().json().catch(() => null);
+        if (esRespuestaBajoPiso(aviso)) {
+          if (!(await confirm(dialogoBajoPiso(aviso)))) {
+            setImgError(`No se guardó: ${aviso.error}`);
+            return; // el `finally` suelta el botón
+          }
+          body.confirmarBajoPiso = true;
+          res = await enviar();
+        }
+      }
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({})) as { error?: string; issues?: string[] };
         const detail = (errBody.issues ?? []).join(", ");
