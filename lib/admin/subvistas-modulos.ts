@@ -189,7 +189,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     // 19-10 «pestañas gemelas»: la moderación de reseñas llegó de Marketplace › Reseñas (sección «Moderar»).
     { key: "resenas", label: "Opiniones", hint: "Qué dicen los clientes y moderar sus reseñas", origen: ["clientes", "marketplace"] },
     { key: "mapa", label: "Mapa", hint: "Dónde viven los clientes" },
-    { key: "mensajes", label: "Mensajes masivos", hint: "Conversaciones con clientes" },
+    // «Mensajes masivos» se mudó a Crecimiento › Mandar mensaje, sección «Uno por uno» (19-10).
   ],
   // Configuración (ola 2 del panel unificado, 2026-10-10): absorbe Plan
   // (`plan`) y Sistema (`rendimiento`, `auditoria`, `colas`). Las secciones de
@@ -234,7 +234,9 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "bot", label: "Números y bot", hint: "Qué contesta solo el número del negocio" },
   ],
   campanas: [
-    { key: "campanas", label: "Campañas", hint: "Mensajes y ofertas a un grupo de clientes" },
+    // 19-10 «un solo lugar para mandar mensajes»: Campañas + Clientes › Mensajes masivos.
+    // Cada modo lleva su permiso en ANIDADAS_POR_MODULO.campanas.
+    { key: "campanas", label: "Mandar mensaje", hint: "Un mensaje a un grupo de clientes: uno por uno por tu WhatsApp o automático", origen: ["campanas", "clientes"] },
     // 19-10 «pestañas gemelas»: el historial y sumar a mano llegaron de Marketplace › Fidelidad (en la ficha del cliente).
     { key: "puntos", label: "Puntos", hint: "Puntos por compra y premios; en la ficha, su historial y sumar a mano", origen: ["campanas", "marketplace"] },
     { key: "rfm", label: "Mejores clientes", hint: "Quién compra seguido, hace poco y gasta más" },
@@ -428,6 +430,12 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
   clientes: [
     { vista: "resenas", key: "moderar", label: "Moderar reseñas", hint: "Aprobar, rechazar y responder las reseñas de tu tienda", origen: ["marketplace"] },
   ],
+  // Crecimiento › Mandar mensaje (19-10): cada modo, con el permiso de la pantalla
+  // de la que vino («Uno por uno» era Clientes › Mensajes masivos).
+  campanas: [
+    { vista: "campanas", key: "uno-por-uno", label: "Uno por uno (WhatsApp)", hint: "El mensaje escrito en tu WhatsApp, cliente por cliente", origen: ["clientes"] },
+    { vista: "campanas", key: "automatico", label: "Automático", hint: "Sale solo del WhatsApp del negocio, ahora o programado", origen: ["campanas"] },
+  ],
   // Ventas y caja › Caja (con «Cuadrar caja», que era la vista `arqueo`) y
   // Ventas y caja › Me deben (las pestañas del módulo de fiados).
   "ventas-caja": [
@@ -438,11 +446,12 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "caja-registradora", key: "medios", label: "Ventas por medio de pago", hint: "Efectivo, Yape, Plin y tarjeta de la caja de hoy, el cruce con la app y las ventas por hora" },
     { vista: "caja-registradora", key: "cuadrar", label: "Cuadrar caja", hint: "Contar billetes y monedas contra lo que debería haber en la caja abierta" },
     { vista: "caja-registradora", key: "historial", label: "Historial de cajas", hint: "Cada caja con quién la abrió, el esperado, lo contado y la diferencia" },
-    { vista: "caja-registradora", key: "reconciliacion", label: "Caja por día", hint: "Esperado contra real por día, la tendencia de las diferencias y el flujo de la semana" },
+    // «Cierres del día» (vino de Mi Plata el 18-10) se fundió acá el 19-10: la ve
+    // el de Caja y el que veía Mi Plata; lo vendido del día, sólo este último.
+    { vista: "caja-registradora", key: "reconciliacion", label: "Caja por día", hint: "Cada día: lo vendido, el efectivo esperado y contado, la diferencia y el flujo de la semana", origen: ["ventas-caja", "plata", "activos"] },
     { vista: "caja-registradora", key: "auditoria", label: "Quién tocó la caja", hint: "Aperturas, cierres, ingresos y retiros con quién los hizo" },
-    // Venían de Mi Plata (18-10, «deudas en un solo lugar»): los cierres quedan
-    // sólo en Caja y «A quién fiarle», junto a la cobranza.
-    { vista: "caja-registradora", key: "cierres", label: "Cierres del día", hint: "El cierre de cada día: ventas, efectivo esperado y contado, y la diferencia", origen: ["plata", "activos"] },
+    // Venía de Mi Plata (18-10, «deudas en un solo lugar»): «A quién fiarle»,
+    // junto a la cobranza.
     { vista: "cuentas-cobrar", key: "cobranza", label: "Quién me debe", hint: "Cada cliente con lo que te debe, por tramos de atraso: cobrar y recordar", origen: ["ventas-caja", "plata", "fiados"] },
     { vista: "cuentas-cobrar", key: "agenda", label: "Fiados por vencer", hint: "Promesas de pago sin cumplir y lo que vence hoy, esta semana y después", origen: ["ventas-caja", "plata", "fiados"] },
     { vista: "cuentas-cobrar", key: "cobrado", label: "Fiados cobrados", hint: "Quién te pagó, cuánto y con qué; la tendencia de cobro del semestre", origen: ["ventas-caja", "plata", "fiados"] },

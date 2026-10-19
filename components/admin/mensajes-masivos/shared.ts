@@ -11,6 +11,10 @@ export interface Destinatario {
   /** Última compra (pedido o venta de mostrador), como la calcula «Mis clientes». */
   lastOrderDate: string | null;
   orderCount: number;
+  /** Nivel de puntos (`loyaltyTier`): «VIP» = oro o diamante, como lo arma el servidor. */
+  tier?: string | null;
+  /** Cumpleaños en ISO (`birthday`): sólo importa el mes. */
+  birthday?: string | null;
 }
 
 /** Las mismas reglas de «Mis clientes» (activo = compró en los últimos 30 días; segmentos de `inferSegment`). */
@@ -20,22 +24,13 @@ export type Segmento =
   | "inactivos-30"
   | "deuda"
   | "alto-valor"
+  | "vip"
+  | "cumpleanos"
   | SegmentoCrm
   | "rfm-preset";
 
-export const ETIQUETA_SEGMENTO: Record<Exclude<Segmento, "rfm-preset">, string> = {
-  todos: "Todos los clientes",
-  "activos-30": "Compraron en los últimos 30 días",
-  "inactivos-30": "No compran hace más de 30 días",
-  deuda: "Con deuda pendiente",
-  "alto-valor": "Alto valor (S/ 200 o más)",
-  frecuente: "Frecuentes (5 compras o más)",
-  ocasional: "Ocasionales (2 a 4 compras)",
-  nuevo: "Nuevos (0 o 1 compra)",
-  perdido: "Perdidos (más de 90 días)",
-};
-
-export const ORDEN_SEGMENTOS = Object.keys(ETIQUETA_SEGMENTO) as Array<Exclude<Segmento, "rfm-preset">>;
+/* Los rótulos y el orden del selector viven en `lib/admin/grupos-mensaje.ts`
+   (un solo «Para quién» para «Uno por uno» y «Automático»). */
 
 export const PLANTILLAS = [
   { clave: "oferta", rotulo: "Oferta", texto: "Hola {nombre}, tenemos ofertas especiales para ti esta semana. Ven a visitarnos o escríbenos para más info." },
@@ -72,6 +67,13 @@ export function perteneceAlSegmento(c: Destinatario, segmento: Segmento, telefon
       return c.debt > 0;
     case "alto-valor":
       return c.totalSpent >= 200;
+    case "vip":
+      return c.tier === "oro" || c.tier === "diamante";
+    case "cumpleanos": {
+      /* El mes del ISO tal cual (sin pasar por Date: un 1/10 a medianoche UTC sería 30/09 en Lima). */
+      const mes = c.birthday?.slice(5, 7);
+      return Boolean(mes) && Number(mes) === new Date(ahora).getMonth() + 1;
+    }
     case "rfm-preset": {
       const d = soloDigitos(c.phone);
       return Boolean(telefonosDelPreset && d && telefonosDelPreset.has(d));
@@ -89,10 +91,16 @@ export function aplicarPlantilla(plantilla: string, c: Destinatario): string {
     .replace(/\{deuda\}/g, formatCurrency(c.debt));
 }
 
+/** El número con el código del Perú una sola vez (un celular guardado con «51» no sale «5151…»); `null` sin número. */
+export function numeroWhatsApp(tel: string | null | undefined): string | null {
+  const d = soloDigitos(tel);
+  if (!d) return null;
+  return d.startsWith("51") ? d : `51${d}`;
+}
+
 /** Enlace de WhatsApp con el mensaje ya escrito (el único «envío»: lo abre la persona, uno por uno). */
 export function enlaceWhatsApp(c: Destinatario, mensaje: string): string | null {
-  const d = soloDigitos(c.phone);
-  if (!d) return null;
-  const completo = d.startsWith("51") ? d : `51${d}`;
+  const completo = numeroWhatsApp(c.phone);
+  if (!completo) return null;
   return `https://wa.me/${completo}?text=${encodeURIComponent(mensaje)}`;
 }

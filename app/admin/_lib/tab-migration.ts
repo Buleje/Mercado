@@ -207,6 +207,8 @@ export const VISTA_MIGRATION: Record<string, DestinoTab> = {
   "marketplace:cupones": { tab: "inventario", vista: "ofertas", sub: "cupones" },
   // Campañas › Segmentos se fundió en Campañas (fila «Para quién», 11-10).
   "campanas:segmentos": { tab: "campanas", vista: "campanas" },
+  // Clientes › Mensajes masivos → Crecimiento › Mandar mensaje, «Uno por uno» (19-10).
+  "clientes:mensajes": { tab: "campanas", vista: "campanas", sub: "uno-por-uno" },
   // Recetas › Resumen repetía Producción (lotes del mes y gráfico semanal) → se fundió ahí (11-10).
   "recetas:dashboard": { tab: "recetas", vista: "produccion" },
   // Segmentos → los Indicadores de Mis clientes (10-10): repetía su faceta «Segmento».
@@ -257,7 +259,10 @@ export const VISTA_MIGRATION: Record<string, DestinoTab> = {
   // Deudas en un solo lugar (18-10): se cobra en Me deben (con «A quién fiarle»),
   // se paga en Mi Plata › Lo que debo y los cierres quedan sólo en Caja.
   "plata:scoring": { tab: "ventas-caja", vista: "cuentas-cobrar", sub: "fiarle" },
-  "plata:cierres": { tab: "ventas-caja", vista: "caja-registradora", sub: "cierres" },
+  "plata:cierres": { tab: "ventas-caja", vista: "caja-registradora", sub: "reconciliacion" },
+  // «Cierres del día» se fundió en «Caja por día» (19-10): una fila por día con
+  // ventas, esperado, contado y diferencia de las cajas cerradas.
+  "ventas-caja:caja-registradora:cierres": { tab: "ventas-caja", vista: "caja-registradora", sub: "reconciliacion" },
   "compras:cuentas-por-pagar": { tab: "plata", vista: "por-pagar", sub: "cuentas" },
   "compras:cuentas-por-pagar:calendario": { tab: "plata", vista: "por-pagar", sub: "calendario" },
   "compras:cuentas-por-pagar:propuesta": { tab: "plata", vista: "por-pagar", sub: "propuesta" },

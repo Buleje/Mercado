@@ -16,11 +16,15 @@ type Segment = "todos" | "vip" | "inactivos" | "cumpleanos" | "deudores";
 interface CreateData {
   name: string;
   message: string;
-  segment: Segment;
+  /** Un `Segment` en las que despacha el cron; un envío `manual` (uno por uno) puede traer otro grupo. */
+  segment: string;
   channel: string;
   status: string;
   scheduledAt: string | null | undefined;
   totalAudience: number;
+  /** Sólo el envío `manual`: ya salió (lo abrió la persona en su WhatsApp). */
+  sentAt?: Date;
+  delivered?: number;
 }
 
 interface UpdateData {
@@ -179,6 +183,8 @@ export const CampaignsDB = {
         status: data.status,
         scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
         totalAudience: data.totalAudience,
+        ...(data.sentAt && { sentAt: data.sentAt }),
+        ...(data.delivered !== undefined && { delivered: data.delivered }),
       },
     });
     revalidateTag(`tenant:${tenantId}:campaigns`, "max");

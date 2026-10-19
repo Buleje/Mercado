@@ -1,6 +1,8 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { History } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import { PLANTILLAS, VARIABLES } from "./shared";
 
@@ -9,11 +11,16 @@ interface Props {
   claveElegida: string;
   onTexto: (texto: string) => void;
   onElegirPlantilla: (clave: string, texto: string) => void;
+  /** Las que este modo sabe cambiar (en «Automático» el servidor sólo cambia {nombre}). */
+  variables?: readonly string[];
+  /** Mensajes que ya mandaste (de cualquier modo), para volver a usarlos. */
+  anteriores?: readonly { id: string; rotulo: string; texto: string }[];
 }
 
 const CHIP = "inline-flex h-12 items-center rounded-xl border px-3 text-sm font-semibold transition-colors";
 
-export function EditorMensaje({ plantilla, claveElegida, onTexto, onElegirPlantilla }: Props) {
+/** Las plantillas fijas + lo que ya mandaste: UNA lista para «Uno por uno» y «Automático». */
+export function EditorMensaje({ plantilla, claveElegida, onTexto, onElegirPlantilla, variables = VARIABLES, anteriores = [] }: Props) {
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <CardTitle className="mb-3 text-sm font-bold text-[var(--text-primary)]">Mensaje</CardTitle>
@@ -34,6 +41,21 @@ export function EditorMensaje({ plantilla, claveElegida, onTexto, onElegirPlanti
             {p.rotulo}
           </button>
         ))}
+        {anteriores.length > 0 && (
+          <ActionMenu
+            label="Ya mandados"
+            icon={History}
+            title="Volver a usar un mensaje que ya mandaste"
+            actions={anteriores.map((a) => ({
+              id: a.id,
+              label: a.rotulo,
+              hint: a.texto.length > 70 ? `${a.texto.slice(0, 70)}…` : a.texto,
+              icon: History,
+              activo: claveElegida === `anterior:${a.id}`,
+              onSelect: () => onElegirPlantilla(`anterior:${a.id}`, a.texto),
+            }))}
+          />
+        )}
       </div>
       <textarea
         value={plantilla}
@@ -44,7 +66,7 @@ export function EditorMensaje({ plantilla, claveElegida, onTexto, onElegirPlanti
       />
       <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
         <span className="text-[var(--text-secondary)]">Agregar:</span>
-        {VARIABLES.map((v) => (
+        {variables.map((v) => (
           <button
             key={v}
             type="button"

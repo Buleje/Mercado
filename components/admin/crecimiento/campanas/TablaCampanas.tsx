@@ -4,17 +4,27 @@
  * Las campañas, una por fila: qué dice, a quién, por dónde, cuándo y cómo le
  * fue. Cancelar y Eliminar van en el «⋯» de la fila (antes: un botón de texto
  * y un ícono de 24 px sueltos). En el celular sale en tarjetas
- * (useMobileTableCards del shell lee las cabeceras).
+ * (useMobileTableCards del shell lee las cabeceras). Los envíos «Uno por
+ * uno» quedan acá con canal «Tu WhatsApp, uno por uno».
  */
 import { DataTable } from "@buleje/design-system";
 import { Ban, Loader2, MoreHorizontal, Trash2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { rotuloDeGrupo } from "@/lib/admin/grupos-mensaje";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { CHANNEL_META, SEGMENT_LABELS, STATUS_META, cuandoCorto, sePuedeCancelar, type Campaign } from "./tipos";
+import { CHANNEL_META, STATUS_META, cuandoCorto, sePuedeCancelar, type Campaign } from "./tipos";
 
 function Resultado({ c }: { c: Campaign }) {
   if (!c.sentAt) return <span className="text-[var(--text-tertiary)]">—</span>;
+  /* Uno por uno: el panel sólo sabe a cuántos les abriste el chat; si le diste enviar, lo sabe tu WhatsApp. */
+  if (c.channel === "manual") {
+    return (
+      <span className="tabular-nums">
+        {formatNumber(c.delivered || 0)} de {formatNumber(c.totalAudience || 0)} chats abiertos
+      </span>
+    );
+  }
   const entregados = c.delivered || 0;
   const abiertos = c.opened || 0;
   const pct = entregados > 0 ? ` (${Math.round((abiertos / entregados) * 100)} %)` : "";
@@ -68,7 +78,7 @@ export function TablaCampanas({
                 <p className="truncate text-sm text-[var(--text-secondary)]" title={c.message}>{c.message}</p>
               </td>
               <td className="whitespace-nowrap text-[var(--text-secondary)]">
-                {SEGMENT_LABELS[c.segment] ?? c.segment} · <span className="tabular-nums">{c.totalAudience}</span>
+                {rotuloDeGrupo(c.segment)} · <span className="tabular-nums">{c.totalAudience}</span>
               </td>
               <td className="whitespace-nowrap text-[var(--text-secondary)]">{canal.label}</td>
               <td>

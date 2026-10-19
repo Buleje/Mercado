@@ -1,5 +1,8 @@
 /**
- * __tests__/carga-vieja-marketing-automation-tab.test.tsx
+ * __tests__/carga-vieja-mandar-mensaje.test.tsx
+ *
+ * Crecimiento › Mandar mensaje › «Lo que ya mandaste» (19-10; antes
+ * MarketingAutomationTab): la tabla de `useCampanas` montada como en la pantalla.
  *
  * El mismo bug medido en Tareas el 2026-09-14: al montar salen dos GET (doble
  * montaje) y, si el primero vuelve DESPUÉS de Eliminar, la lista vieja pisa la
@@ -18,7 +21,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/csrf-client", () => ({ csrfHeaders: (h: Record<string, string> = {}) => h }));
 
-import MarketingAutomationTab from "@/components/admin/MarketingAutomationTab";
+import { HistorialEnvios } from "@/components/admin/mandar-mensaje/HistorialEnvios";
+import { useCampanas } from "@/components/admin/crecimiento/campanas/use-campanas";
+
+function LoQueYaMandaste() {
+  const c = useCampanas();
+  return <HistorialEnvios c={c} />;
+}
 
 const ARROZ = {
   id: "c1",
@@ -74,12 +83,12 @@ async function resolver(p: Pendiente | undefined, cuerpo: unknown) {
 function montar() {
   render(
     <StrictMode>
-      <MarketingAutomationTab />
+      <LoQueYaMandaste />
     </StrictMode>,
   );
 }
 
-describe("MarketingAutomationTab — una carga vieja no pisa lo que ya cambió", () => {
+describe("Mandar mensaje › Lo que ya mandaste — una carga vieja no pisa lo que ya cambió", () => {
   it("la campaña eliminada no reaparece cuando el GET del doble montaje vuelve tarde", async () => {
     montar();
     await waitFor(() => expect(gets()).toHaveLength(2));
@@ -97,7 +106,7 @@ describe("MarketingAutomationTab — una carga vieja no pisa lo que ya cambió",
     // El GET que salió en el montaje llega ahora, con la lista de antes del borrado.
     await resolver(gets()[0], [ARROZ]);
     expect(screen.queryByText("Oferta de arroz")).toBeNull();
-    expect(screen.getByText("Aún no tienes campañas")).toBeTruthy();
+    expect(screen.getByText("Aún no has mandado mensajes")).toBeTruthy();
     // Sin recarga tras Eliminar: el caché del GET la traería de vuelta.
     expect(gets()).toHaveLength(2);
   });

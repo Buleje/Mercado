@@ -501,6 +501,11 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       archivo: "components/admin/NPSTab.tsx",
       constante: /export const SECCIONES_OPINIONES = \[([^\]]+)\]/,
     },
+    // Crecimiento › Mandar mensaje (19-10): uno por uno y automático.
+    "campanas/campanas": {
+      archivo: "components/admin/mandar-mensaje/use-modos-mandar-mensaje.ts",
+      constante: /export const MODOS_MANDAR_MENSAJE = \[([^\]]+)\]/,
+    },
   };
 
   it("los destinos anidados existen en el módulo al que apuntan", () => {

@@ -1,9 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import {
-  Users, Star, MapPin, MessageSquare,
-  UserPlus,
-} from "@buleje/design-system/icons";
+import { Users, Star, MapPin, UserPlus } from "@buleje/design-system/icons";
 import { useMemo } from "react";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
@@ -13,7 +10,6 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 const CRMTab = dynamic(() => import("@/components/admin/CRMTab"), { loading: S });
 const NPSTab = dynamic(() => import("@/components/admin/NPSTab"), { loading: S });
 const CustomerGeoMap = dynamic(() => import("@/components/admin/CustomerGeoMap"), { ssr: false, loading: () => <div className="flex items-center justify-center h-96"><div className="h-6 w-6 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div> });
-const MassMessageSender = dynamic(() => import("@/components/admin/MassMessageSender"), { loading: S });
 // Funnel de leads consolidado como sub-tab (era entrada top-level "leads-funnel")
 const LeadsFunnelModule = dynamic(() => import("@/components/admin/unified/LeadsFunnelModule"), { loading: S });
 
@@ -24,7 +20,6 @@ const TABS = [
   { id: "leads" as const, label: "Interesados", icon: UserPlus },
   { id: "resenas" as const, label: "Opiniones", icon: Star },
   { id: "mapa" as const, label: "Mapa", icon: MapPin },
-  { id: "mensajes" as const, label: "Mensajes masivos", icon: MessageSquare },
 ];
 
 type Vista = (typeof TABS)[number]["id"];
@@ -36,7 +31,9 @@ export default function CRMClientesModule({ initialTab }: { initialTab?: string 
   // El cliente abierto (`?cliente=`) es de «Mis clientes»: se borra al salir de esa vista.
   // Opiniones también es de Marketplace (19-10, Reseñas se mudó acá): quien sólo
   // tiene Marketplace (la plantilla global oculta Clientes) entra a esta pestaña
-  // por esa vista y no ve Mis clientes, Interesados, Mapa ni Mensajes masivos.
+  // por esa vista y no ve Mis clientes, Interesados ni Mapa.
+  // «Mensajes masivos» se mudó a Crecimiento › Mandar mensaje (19-10, modo «Uno
+  // por uno»): `?vista=mensajes` llega allá por VISTA_MIGRATION.
   const tabs = useVistasPermitidas(MODULE_ID, TABS);
   const tabIds = useMemo(() => tabs.map((t) => t.id), [tabs]);
   const { vista: sub, irA: setSub } = useVistaModulo<Vista>(MODULE_ID, tabIds, tabIds[0] ?? "crm", initialTab, {
@@ -58,7 +55,7 @@ export default function CRMClientesModule({ initialTab }: { initialTab?: string 
           /* «Clientes», como el hub en el menú (10-10): con «Mis Clientes» la banda
              decía CLIENTES · Mis Clientes y la primera pestaña, otra vez, «Mis clientes». */
           title: "Clientes",
-          description: "Tus clientes y lo que compran, los interesados que todavía no compran, sus opiniones, dónde viven y los mensajes masivos.",
+          description: "Tus clientes y lo que compran, los interesados que todavía no compran, sus opiniones y dónde viven.",
           icon: Users,
         }}
         tabs={tabs}
@@ -70,7 +67,6 @@ export default function CRMClientesModule({ initialTab }: { initialTab?: string 
         {sub === "leads" && <LeadsFunnelModule />}
         {sub === "resenas" && <NPSTab />}
         {sub === "mapa" && <CustomerGeoMap />}
-        {sub === "mensajes" && <MassMessageSender />}
       </AdminTabBar>
     </div>
   );

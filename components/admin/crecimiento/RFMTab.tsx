@@ -63,9 +63,9 @@ export default function RFMTab() {
     {
       id: "masivos",
       label: "Escribirles",
-      hint: "Clientes › Mensajes masivos: el mensaje redactado, uno por uno en tu WhatsApp",
+      hint: "Crecimiento › Mandar mensaje: el mensaje redactado, uno por uno en tu WhatsApp",
       icon: MessageCircle,
-      onSelect: () => { irAEnlace(hrefDeDestino({ tab: "clientes", params: { vista: "mensajes" } })); },
+      onSelect: () => { irAEnlace(hrefDeDestino({ tab: "campanas", params: { vista: "campanas", sub: "uno-por-uno" } })); },
     },
     { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: () => { void load(); } },
   ];

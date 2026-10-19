@@ -1,10 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Megaphone, Heart, Target, Gift, HeartHandshake, Repeat, Radio } from "@buleje/design-system/icons";
+import { Megaphone, Heart, Target, Gift, HeartHandshake, Repeat, Radio, Send } from "@buleje/design-system/icons";
 import { useMemo } from "react";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
-import { useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
+import { useParamPedido, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -18,7 +18,10 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 //        conteos y el mismo «crear campaña» en un toque); `?vista=segmentos`
 //        cae ahí. «Análisis RFM» pasa a llamarse «Mejores clientes» y sus
 //        grupos dejan de llamarse como los segmentos de Mis clientes.
-const CampanasTab = dynamic(() => import("@/components/admin/MarketingAutomationTab"), { loading: S });
+// 19-10: «Campañas» pasa a ser «Mandar mensaje» (uno por uno o automático, un
+//        solo «Para quién» y las mismas plantillas); se le suma lo que era
+//        Clientes › Mensajes masivos. La vista sigue siendo `campanas`.
+const MandarMensaje = dynamic(() => import("@/components/admin/mandar-mensaje/MandarMensaje"), { loading: S });
 const LoyaltyTab  = dynamic(() => import("@/components/admin/LoyaltyTab"), { loading: S });
 const RFMTab      = dynamic(() => import("@/components/admin/crecimiento/RFMTab"), { loading: S });
 // Programas de crecimiento absorbidos desde MarketplaceModule (4→1, single home).
@@ -32,7 +35,7 @@ const MODULE_ID = "crecimiento-hub";
 // `shortLabel` = lo que se ve en la banda (siempre): con los nombres largos
 // las 7 pestañas medían 841 px y al lado del título entran 719 (1280 px).
 const TABS = [
-  { id: "campanas",      label: "Campañas", icon: Megaphone },
+  { id: "campanas",      label: "Mandar mensaje", icon: Send },
   { id: "puntos",        label: "Puntos", icon: Heart },
   { id: "rfm",           label: "Mejores clientes", shortLabel: "Mejores", icon: Target },
   // ── Programas de crecimiento ──
@@ -53,6 +56,8 @@ export default function CrecimientoHubModule({ initialTab }: { initialTab?: stri
   // sólo tiene Marketplace entra por esa vista y no ve el resto de Crecimiento.
   // El registro de vistas lo lleva la pestaña (`campanas`), no el id del hub.
   const tabs = useVistasPermitidas("campanas", TABS);
+  // La `?vista=` del enlace, leída ANTES de que useVistaModulo escriba la suya (ver use-modos-mandar-mensaje).
+  const vistaPedida = useParamPedido("vista");
   const tabIds = useMemo(() => tabs.map((t) => t.id), [tabs]);
   const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, tabIds, tabIds[0] ?? "campanas", initialTab, { alias: ALIAS });
 
@@ -62,8 +67,8 @@ export default function CrecimientoHubModule({ initialTab }: { initialTab?: stri
           Brandon 2026-09-07): identidad a la izquierda, pestañas a la derecha,
           una sola regla. */}
       <AdminTabBar
-        heading={{ title: "Crecimiento", description: "Campañas, puntos y programas para que el cliente vuelva.", icon: Megaphone }} tabs={tabs} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
-        {sub === "campanas" && <CampanasTab />}
+        heading={{ title: "Crecimiento", description: "Mensajes, puntos y programas para que el cliente vuelva.", icon: Megaphone }} tabs={tabs} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
+        {sub === "campanas" && <MandarMensaje vistaPedida={vistaPedida} />}
         {sub === "puntos" && <LoyaltyTab />}
         {sub === "rfm" && <RFMTab />}
         {sub === "gift-cards" && <GiftCardsAdminModule />}

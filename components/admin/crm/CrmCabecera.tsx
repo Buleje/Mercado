@@ -2,7 +2,7 @@
 
 import { useRef, type ReactNode } from "react";
 import { SectionTitle } from "@buleje/design-system";
-import { BarChart3, Columns3, Download, MoreHorizontal, RefreshCw, UserPlus } from "@buleje/design-system/icons";
+import { BarChart3, Columns3, Download, MoreHorizontal, RefreshCw, Send, UserPlus } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
@@ -13,6 +13,8 @@ import { SEGMENT_CONFIG } from "@/components/admin/crm/crm-compartido";
 import type { Crm } from "@/components/admin/crm/use-crm";
 import { useParamDeEntrada } from "@/hooks/use-param-de-entrada";
 import { MenuVistasGuardadas } from "@/components/admin/shared/MenuVistasGuardadas";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
 import { useVistasCrm } from "@/components/admin/crm/use-vistas-crm";
 
 /**
@@ -33,7 +35,17 @@ export default function CrmCabecera({ crm, indicadores }: { crm: Crm; indicadore
     menuRef.current?.querySelector("button")?.focus({ preventScroll: true });
     accion();
   };
+  /* Crecimiento › Mandar mensaje (era la vista «Mensajes masivos» de acá), uno
+     por uno y con el segmento filtrado si hay uno solo. */
+  const grupo = crm.filterSegment.length === 1 ? crm.filterSegment[0] : null;
   const acciones: MenuAccion[] = [
+    {
+      id: "mandar-mensaje",
+      label: "Mandar mensaje",
+      hint: grupo ? `Uno por uno por WhatsApp, a los «${SEGMENT_CONFIG[grupo].label}»` : "Uno por uno por WhatsApp, a un grupo de tus clientes",
+      icon: Send,
+      onSelect: () => irAEnlace(hrefDeDestino({ tab: "campanas", params: { vista: "campanas", sub: "uno-por-uno", ...(grupo ? { grupo } : {}) } })),
+    },
     { id: "actualizar", label: "Actualizar", hint: "Vuelve a traer los clientes y sus compras", icon: RefreshCw, onSelect: load },
     {
       id: "csv",
