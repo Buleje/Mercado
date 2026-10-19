@@ -461,6 +461,114 @@
    },
    "porque": "Pestaña nueva Administración (ADR-501): agenda del negocio con Hoy, Calendario, Actividades y Conectar. Pantallas nuevas, no se le quita nada a nadie; Tareas y Notas se mudan desde Equipo por alias (rrhh:tareas/notas → administracion). Sólo para los roles que la ganan medidos sin esta lista (admin y tienda_owner): si otro rol la gana, la prueba avisa.",
    "aprobo": "Brandon, pedido del 2026-10-18: «una página en admin de Administración… tipo un Google Calendar con notas y actividades» (y sí a mudar Tareas y Notas)"
+  },
+  {
+   "par": "campanas:campanas",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "campanas:campanas",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "campanas:gift-cards",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "campanas:gift-cards",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "campanas:lives",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "campanas:lives",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "campanas:rfm",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "campanas:rfm",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "campanas:socio",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "campanas:socio",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "campanas:subscriptions",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "campanas:subscriptions",
+   "superficie": "barra",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
+   "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
   }
  ]
 }

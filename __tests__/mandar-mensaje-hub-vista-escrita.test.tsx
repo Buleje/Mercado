@@ -4,7 +4,7 @@
  * El hub abre su vista por defecto y escribe `?vista=campanas` en la URL al
  * montar; Mandar mensaje (`next/dynamic`) carga después. Si la pantalla leía
  * la URL por su cuenta, tomaba esa escritura por un enlace a la vista y le
- * abría «Automático» a toda bodega (el rubro esconde `campanas`). El hub lee
+ * abría «Automático» a todo negocio (un rubro sin Campañas la esconde `campanas`). El hub lee
  * la vista pedida antes de escribir y se la pasa por prop.
  *
  * El `dynamic` de mentira monta la pantalla un render DESPUÉS del hub, como
@@ -30,12 +30,13 @@ vi.mock("next/dynamic", () => ({
   },
 }));
 
-/** Main: bodega, enterprise, administrador, sin plantilla. */
+/** Maderería, enterprise, administrador, sin plantilla: el rubro que SIGUE sin Campañas
+ *  (desde el 19-10 la bodega de main sí la tiene, plan Pro). */
 const BODEGA: ContextoPermiso = {
   rol: idsDelRol("admin", null),
   plan: idsDelPlan("enterprise"),
   plantilla: null,
-  rubro: rubroDelPanel("bodega"),
+  rubro: rubroDelPanel("madereria"),
   especialidades: SPEC_GATED_MODULE_IDS,
   modoFacil: null,
 };
@@ -75,7 +76,7 @@ async function abrir(url: string) {
 }
 
 describe("Mandar mensaje en su hub: la vista que escribe el hub no es un enlace", () => {
-  it("/admin?tab=campanas en una bodega: sin «Automático», aunque la URL ya diga vista=campanas", async () => {
+  it("/admin?tab=campanas en una maderería: sin «Automático», aunque la URL ya diga vista=campanas", async () => {
     // Recordado de otra sesión: tampoco abre un modo que no le toca.
     localStorage.setItem("admin-last-tab-mandar-mensaje", "automatico");
     await abrir("/admin?tab=campanas");

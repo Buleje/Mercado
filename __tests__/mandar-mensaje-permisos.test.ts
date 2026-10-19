@@ -95,12 +95,25 @@ describe("Mandar mensaje: cada modo con el permiso de donde vino", () => {
     }
   });
 
-  it("bodega · enterprise · administrador sin enlace: sin «Automático» (el rubro esconde Campañas)", () => {
+  it("bodega · enterprise (Pro) · administrador sin enlace: tiene «Uno por uno» y «Automático» (Campañas para el plan Pro, 19-10)", () => {
     const bodega = CONTEXTOS.find((c) => c.donde === "enterprise·admin·bodega·sin plantilla");
     expect(bodega, "falta el contexto de main").toBeDefined();
-    expect(modosPermitidos(bodega!.ctx, null, null)).toEqual(["uno-por-uno"]);
-    // Ni con la memoria del modo: `sub` sin enlace es lo que escribió la pantalla, no se pide nada.
-    expect(modosPermitidos(bodega!.ctx, null, null)).not.toContain("automatico");
+    expect(modosPermitidos(bodega!.ctx, null, null)).toEqual(["uno-por-uno", "automatico"]);
+  });
+
+  it("bodega · pro (Starter) · administrador: sin Campañas ni «Automático» (el plan manda)", () => {
+    const starter = CONTEXTOS.find((c) => c.donde === "pro·admin·bodega·sin plantilla");
+    expect(starter, "falta el contexto Starter").toBeDefined();
+    expect(vistaPermitida(starter!.ctx, ["campanas"])).toBe(false);
+    expect(modosPermitidos(starter!.ctx, null, null)).not.toContain("automatico");
+    const basico = CONTEXTOS.find((c) => c.donde === "basico·admin·bodega·sin plantilla");
+    expect(basico && vistaPermitida(basico.ctx, ["campanas"])).toBe(false);
+  });
+
+  it("maderería · enterprise · administrador: el rubro sigue sin Campañas", () => {
+    const m = CONTEXTOS.find((c) => c.donde === "enterprise·admin·maderera·sin plantilla" || c.donde === "enterprise·admin·madereria·sin plantilla");
+    expect(m, "falta el contexto de maderería").toBeDefined();
+    expect(vistaPermitida(m!.ctx, ["campanas"])).toBe(false);
   });
 
   // Sólo con un enlace EXPLÍCITO a la vista: la `?vista=` que escribe el hub al

@@ -131,6 +131,11 @@ const ALL_CURRENT: ModuleId[] = [
   "pagina-inicio",
   "auditoria",
   "colas",
+  /* Campañas (Brandon 19-10, plan Pro): mandar una oferta a un grupo de clientes
+     (uno por uno o automático) sirve a todo negocio que vende al público. Va a mano
+     en cada rubro y NO en CORE_BASE: la maderería vende B2B por cotización. El
+     plan sigue mandando (plan-tiers: sólo enterprise/max). */
+  "campanas",
 ];
 
 // ─── Registry ──────────────────────────────────────────────────────────────────
@@ -172,6 +177,7 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "pagina-inicio",
         "auditoria",
         "colas",
+        "campanas", // Brandon 19-10: ofertas a clientes por WhatsApp (plan Pro); el plan manda
         "recetas",        // futuro — Receta model ya existe
       ],
       featured: ["recetas", "ventas-caja", "inventario", "mesas", "comandas", "cocina-kds"],
@@ -236,6 +242,7 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "auditoria",
         "store-customizer",
         "pagina-inicio",
+        "campanas", // Brandon 19-10: ofertas a clientes (plan Pro)
       ],
       // "auditoria" ya no es entrada propia del sidebar (colapsada dentro de
       // SistemaHubModule, auditoría 2026-08-02) — el destacado apunta a
@@ -277,6 +284,7 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "forecasting",
         "store-customizer",
         "pagina-inicio",
+        "campanas", // Brandon 19-10: ofertas a clientes (plan Pro)
       ],
       // "fiados" ya no es entrada propia del sidebar (colapsada dentro de
       // FinanzasModule, auditoría 2026-08-02) — el destacado apunta a "plata".
@@ -303,6 +311,7 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "store-customizer",
         "pagina-inicio",
         "recetas",
+        "campanas", // Brandon 19-10: ofertas a clientes (plan Pro)
       ],
       featured: ["recetas", "ventas-caja", "inventario", "produccion-lote", "compras"],
       hidden: ["cotizaciones", "guias-remision", "contratos", "prestamos"],
@@ -340,6 +349,7 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "rrhh", // ADR-414 — universal; «otro» no hereda CORE_BASE, así que va explícito
         "tareas", // universal, misma razón que rrhh
         "administracion", // ADR-501 — Tareas y Notas viven ahí desde el 18-10
+        "campanas", // Brandon 19-10: ofertas a clientes (plan Pro)
       ],
       featured: [],
       hidden: [],
