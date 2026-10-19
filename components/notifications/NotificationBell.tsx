@@ -9,6 +9,7 @@ import { useMiRol } from "@/hooks/use-mi-rol";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import { useNotificationCenter } from "./useNotificationCenter";
 import NotificationHub from "./NotificationHub";
+import { AvisosDeLaFranja, useAvisosEscondidos } from "@/components/admin/avisos-de-la-franja";
 
 // ── Fetch critical alert count silently ──────────────────────────────────────
 
@@ -181,6 +182,9 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
   }, [handleKeydown]);
 
   const toggle = () => setOpen((prev) => !prev);
+  /* Avisos ámbar de la franja que fuera de Inicio no se dibujan arriba: un punto acá. */
+  const avisos = useAvisosEscondidos().length;
+  const textoAvisos = avisos > 0 ? ` · ${avisos} aviso${avisos === 1 ? "" : "s"}` : "";
 
   return (
     <>
@@ -189,10 +193,10 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
         onClick={toggle}
         // 48 px como el resto de la cabecera (eran 32): el centro ahora es un
         // modal (`aria-haspopup="dialog"`) y el nombre accesible dice cuántos hay.
-        aria-label={`Notificaciones${totalBadge > 0 ? `, ${totalBadge} pendientes` : ""}`}
+        aria-label={`Notificaciones${totalBadge > 0 ? `, ${totalBadge} pendientes` : ""}${textoAvisos}`}
         aria-haspopup="dialog"
         aria-expanded={open}
-        title={`Notificaciones${totalBadge > 0 ? ` (${totalBadge} pendientes)` : ""} — tecla N`}
+        title={`Notificaciones${totalBadge > 0 ? ` (${totalBadge} pendientes)` : ""}${textoAvisos} — tecla N`}
         className={cn(
           "relative flex items-center justify-center h-12 w-12 shrink-0 rounded-xl transition-colors",
           open && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
@@ -218,6 +222,12 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
             {totalBadge > 9 ? "9+" : totalBadge}
           </span>
         )}
+        {avisos > 0 && (
+          <span
+            aria-hidden
+            className="absolute right-1.5 bottom-1.5 h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)] ring-2 ring-[var(--surface-raised)]"
+          />
+        )}
       </button>
 
       <NotificationHub
@@ -232,6 +242,7 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
         markAsRead={markAsRead}
         markAllRead={markAllRead}
         refetch={refetch}
+        avisosArriba={<AvisosDeLaFranja alIr={() => setOpen(false)} />}
       />
     </>
   );

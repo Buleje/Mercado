@@ -28,6 +28,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type KeyboardEvent as TeclaReact,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -80,6 +81,8 @@ export interface ActionMenuProps {
   size?: "xs" | "sm" | "md";
   /** Número al lado del label (pendientes, seleccionados). */
   badge?: number;
+  /** `alerta` = rojo, como los contadores de las pestañas (el «Más» que esconde uno). */
+  tonoBadge?: "acento" | "alerta";
   disabled?: boolean;
   title?: string;
   /** En móvil el botón se encoge a cuadrado y deja el label como `sr-only`. */
@@ -180,6 +183,7 @@ export default function ActionMenu({
   variant = "outline",
   size = "md",
   badge,
+  tonoBadge = "acento",
   disabled,
   title,
   compactoEnMovil = false,
@@ -192,6 +196,8 @@ export default function ActionMenu({
   const anclaRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState<{ top: number; right: number; maxHeight: number; width: number } | null>(null);
   const listaRef = useRef<HTMLDivElement>(null);
+  /** Se abrió con Enter/Espacio: el foco entra a la primera opción (patrón de menú de ARIA). */
+  const porTecladoRef = useRef(false);
   /**
    * Dónde se portalea el panel (ADR "menú de fila sin clics dentro del
    * libro"): DENTRO del `[role=dialog]` más cercano si el botón vive en uno,
@@ -289,7 +295,12 @@ export default function ActionMenu({
     if (!open) return;
     ubicar();
     /* Después del layout: antes de pintar, `scrollHeight` todavía es 0. */
-    requestAnimationFrame(medirCorte);
+    requestAnimationFrame(() => {
+      medirCorte();
+      if (!porTecladoRef.current) return;
+      porTecladoRef.current = false;
+      listaRef.current?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus();
+    });
   }, [open, ubicar, medirCorte]);
 
   useEffect(() => {
@@ -307,6 +318,8 @@ export default function ActionMenu({
       if (e.key !== "Escape") return;
       e.preventDefault();
       setOpen(false);
+      /* El foco vuelve al botón: si se quedara en el menú que se desmonta, caería al <body>. */
+      anclaRef.current?.focus({ preventScroll: true });
     };
     /* Al scrollear o redimensionar hay que re-ubicarlo: el menú está en
        coordenadas de viewport y el botón se movió. `capture` para enterarse
@@ -343,6 +356,32 @@ export default function ActionMenu({
     setOpen(true);
   }, [abrirSignal]);
 
+  /* Flechas, Inicio y Fin entre las opciones; Tab cierra y vuelve al botón (patrón de menú de ARIA). */
+  const teclasDelMenu = (e: TeclaReact<HTMLDivElement>) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      setOpen(false);
+      anclaRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+    const items = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)'));
+    if (items.length === 0) return;
+    e.preventDefault();
+    const i = items.indexOf(document.activeElement as HTMLElement);
+    const j =
+      e.key === "Home"
+        ? 0
+        : e.key === "End"
+          ? items.length - 1
+          : e.key === "ArrowDown"
+            ? (i + 1) % items.length
+            : i <= 0
+              ? items.length - 1
+              : i - 1;
+    items[j].focus();
+  };
+
   const menu = open && pos && (
     <>
       {/* Velo y menú comparten z-modal-2 (mismo nombre a propósito): el menú
@@ -364,6 +403,7 @@ export default function ActionMenu({
           role="menu"
           ref={listaRef}
           onScroll={medirCorte}
+          onKeyDown={teclasDelMenu}
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
         >
           {actions.length === 0 && vacio && (
@@ -469,7 +509,11 @@ export default function ActionMenu({
         type="button"
         disabled={disabled}
         title={title}
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => {
+          /* `detail === 0`: lo disparó el teclado (Enter/Espacio), no el mouse. */
+          porTecladoRef.current = !open && e.detail === 0;
+          setOpen((v) => !v);
+        }}
         aria-expanded={open}
         aria-haspopup="menu"
         /* Con texto visible (o `sr-only` en móvil) el nombre accesible sale de
@@ -491,7 +535,11 @@ export default function ActionMenu({
         {badge != null && badge > 0 && (
           <span
             className={`rounded-full px-1.5 text-xs font-bold tabular-nums ${
-              variant === "primary" ? "bg-white/25 text-white" : "bg-[var(--accent)] text-white"
+              variant === "primary"
+                ? "bg-white/25 text-white"
+                : tonoBadge === "alerta"
+                  ? "bg-[var(--data-error-600)] text-white"
+                  : "bg-[var(--accent)] text-white"
             }`}
           >
             {badge}

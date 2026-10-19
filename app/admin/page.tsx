@@ -445,7 +445,7 @@ function AdminPage() {
           />
         )}
         <div className={tab === "vendor-dashboard" ? "hidden sm:block" : ""}>
-          <AdminAlertsBanner userRole={userRole} authReady={authReady} />
+          <AdminAlertsBanner userRole={userRole} authReady={authReady} soloUrgentes={tab !== "vendor-dashboard"} />
         </div>
 
         {/* «Ver todas en vivo» de Cámaras, a nivel del panel (2026-10-07): se

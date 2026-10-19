@@ -1,11 +1,21 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect, useId, useCallback, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { useRef, useEffect, useId, useSyncExternalStore, type ReactNode } from "react";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
-import { ChevronLeft, ChevronRight, GripVertical } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { insertarFaltantes, leerOrdenGuardado } from "./orden-pestanas";
 import type { LucideIcon } from "lucide-react";
+import { elegirLugar, repartirPestanas } from "@/lib/admin/pestanas-que-entran";
+import {
+  anchoConSeparacion,
+  anchoUtil,
+  leerMedidor,
+  paddingX,
+  separacionDe,
+  useConMedidor,
+  usePestanasQueEntran,
+} from "@/hooks/use-pestanas-que-entran";
+import { ContenidoPestana, MedidorDePestanas, PestanasMas } from "./pestanas-mas";
+import { useOrdenDeLaBarra } from "./use-orden-de-la-barra";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
 import { ModuleDepthProvider, useModuleDepth } from "@/components/admin/shared/module-depth";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -18,14 +28,16 @@ import { rotuloDelMenu } from "./rotulo-del-menu";
  * al lado del título si entra y en su propia fila debajo si no.
  */
 type EstiloPestana = "linea" | "fase";
-const PESTANA: Record<EstiloPestana, { base: string; activa: string; inactiva: string }> = {
+const PESTANA: Record<EstiloPestana, { base: string; activa: string; inactiva: string; fila: string }> = {
   linea: {
+    fila: "gap-0.5 sm:gap-1",
     // Mobile: tap target accesible (min ~44px alto via py-2.5 + texto sm).
     base: "flex shrink-0 items-center gap-2 whitespace-nowrap border-b-[3px] px-3 py-2.5 text-sm transition-all duration-[var(--dur-base)] sm:gap-1.5 sm:px-4 sm:py-2.5 sm:text-sm",
     activa: "border-primary bg-primary/5 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]",
     inactiva: "border-transparent font-normal text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]",
   },
   fase: {
+    fila: "gap-0.5",
     base: "relative inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-sm font-bold transition-colors duration-[var(--dur-base)]",
     activa: "bg-[var(--surface-raised)] text-[var(--accent-dark)] shadow-[var(--shadow-sm)] dark:text-[var(--accent)]",
     inactiva: "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
@@ -43,34 +55,19 @@ const PESTANA: Record<EstiloPestana, { base: string; activa: string; inactiva: s
 const TEXTO_TITULO_EN_GRILLA = "grid grid-cols-[auto_1fr] justify-items-start [&>:first-child]:col-span-2";
 
 /**
- * ¿Entran título · pestañas · acciones en UNA fila de la banda?
+ * Pestañas en UNA fila con «Más ▾» (priority+, Brandon 19-10 «Más espacio
+ * arriba»): a 1280 px diez secciones bajaban sus pestañas a una 2.ª fila
+ * (barra de 114-122 px contra 66) y a 400 px 47 pestañas quedaban fuera de la
+ * pantalla tras un desliz. Ahora las que no entran van al «Más» de la misma
+ * fila; la activa siempre se ve.
  *
- * Suma anchos NATURALES —el bloque del título, cada pestaña (`shrink-0`,
- * `whitespace-nowrap`), el chip del `rightSlot` y las acciones (`shrink-0`)—
- * y los compara con el ancho útil de la fila. Ninguno de esos anchos cambia
- * con la respuesta: bajar las pestañas sólo les cambia el `order` y el
- * `flex-basis` a ellas, no a sus botones. Por eso no oscila, a diferencia de
- * medir el ALTO de la banda o si el riel desborda (eso sí depende de dónde
- * quedaron). Margen del riel: los 4 px de `sm:ml-1`, fijo, para que tampoco
- * dependa de la respuesta.
+ * Con título: al lado si entran al menos `MINIMO_AL_LADO` (o todas); si no,
+ * en su fila debajo, igual de una sola fila. El ancho se suma con anchos
+ * NATURALES (medidor escondido) y cajas que no cambian con la respuesta: no
+ * oscila. `MARGEN_AL_LADO` = el `sm:ml-1` del riel al lado del título.
  */
-function entranAlLado(fila: HTMLElement, riel: HTMLElement, titulo: HTMLElement | null, acciones: HTMLElement | null) {
-  const px = (valor: string) => Number.parseFloat(valor) || 0;
-  const f = getComputedStyle(fila);
-  const r = getComputedStyle(riel);
-  const libre = fila.clientWidth - px(f.paddingLeft) - px(f.paddingRight);
-  const separacion = px(f.columnGap);
-  const hijos = Array.from(riel.children);
-  const anchoRiel =
-    hijos.reduce((suma, hijo) => suma + hijo.getBoundingClientRect().width, 0) +
-    px(r.columnGap) * Math.max(0, hijos.length - 1) +
-    px(r.paddingLeft) +
-    px(r.paddingRight) +
-    4;
-  const anchoTitulo = titulo ? titulo.getBoundingClientRect().width : 0;
-  const anchoAcciones = acciones ? separacion + acciones.getBoundingClientRect().width : 0;
-  return anchoTitulo + separacion + anchoRiel + anchoAcciones <= libre + 0.5;
-}
+const MINIMO_AL_LADO = 2;
+const MARGEN_AL_LADO = 4;
 
 /** La pestaña del panel (`?tab=`), para el rótulo. Cambia de pestaña = otro módulo montado. */
 const suscribirUrl = (avisar: () => void) => {
@@ -99,11 +96,9 @@ interface AdminTabBarProps {
   draggable?: boolean;
   className?: string;
   vertical?: boolean;
-  /** Las tabs envuelven a 2+ filas cuando superan el ancho, en vez de scroll
-      horizontal con chevrons. Útil para módulos con muchas sub-tabs (ej. Finanzas
-      con 14) donde el scroll esconde opciones. Default `true` (Brandon 2026-06-18:
-      coherencia admin — ninguna pestaña queda oculta tras scroll). Pasar
-      `wrap={false}` para forzar scroll horizontal en contextos angostos. */
+  /** Padding compacto de la pestaña en el celular (`linea`). Desde el 19-10
+      las pestañas no envuelven ni se deslizan: van en UNA fila y lo que no
+      entra, al «Más ▾» (ninguna queda escondida tras un desliz). */
   wrap?: boolean;
   children?: ReactNode;
   onTabHover?: (id: string) => void;
@@ -177,23 +172,6 @@ export default function AdminTabBar({
   const profundidad = useModuleDepth();
   const bandaConTitulo = Boolean(heading) && profundidad === 0;
   const estilo: EstiloPestana = bandaConTitulo ? "fase" : "linea";
-  /**
-   * ¿Las pestañas van al lado del título o en su propia fila debajo?
-   *
-   * Brandon 10-10: «en Ventas las secciones están debajo y quiero que estén al
-   * lado del título como en todas mis demás páginas». Antes decidían la
-   * CANTIDAD (≤5 pestañas, ≤3 con acciones) y una container query fija de
-   * 60rem: a 1280 px con el sidebar la banda mide 964 px y Ventas & Caja
-   * (título ~210 px + pestañas 690 px) bajaba aunque entraba.
-   *
-   * Ahora se suman los anchos naturales (`entranAlLado`) y se compara con la
-   * fila: al lado si entra, abajo si no. Nunca dos filas de pestañas al lado
-   * del título (el riel al lado no envuelve), que es lo que dejaba al título
-   * como un pie de la segunda fila (Compras, 8 pestañas). `null` = sin medir
-   * todavía (servidor, primer render, jsdom): rige la container query de antes.
-   */
-  const [pestanasAlLado, setPestanasAlLado] = useState<boolean | null>(null);
-  const pestanasAbajo = estilo === "fase" && pestanasAlLado === false;
   const filaRef = useRef<HTMLDivElement>(null);
   const accionesRef = useRef<HTMLDivElement>(null);
   const tabDeLaUrl = useSyncExternalStore(suscribirUrl, leerTabDeUrl, sinTabEnServidor);
@@ -214,6 +192,67 @@ export default function AdminTabBar({
   const idDeTab = (id: string) => `${barraId}-tab-${id}`;
   const idDelPanel = `${barraId}-panel`;
 
+  /* El orden: el arrastrado a mano y, en la barra del módulo, «Menú en tu orden». */
+  const orden = useOrdenDeLaBarra({ tabs, moduleId, activeTab, conUso: profundidad === 0 && !vertical });
+  const arrastrable = draggable && !orden.ordenPorUsoPuesto;
+  const porId = new Map(tabs.map((t) => [t.id, t]));
+  const tabsBarra = orden.idsBarra.map((id) => porId.get(id)).filter((t): t is AdminTab => Boolean(t));
+
+  /* ── Qué pestañas entran (priority+) ── */
+  const conMedidor = useConMedidor();
+  const medidorRef = useRef<HTMLDivElement>(null);
+  const rielRef = useRef<HTMLDivElement>(null);
+  const tituloRef = useRef<HTMLDivElement>(null);
+  const slotRef = useRef<HTMLDivElement>(null);
+  const conSlot = Boolean(rightSlot || accionesEnRiel);
+  const reparto = usePestanasQueEntran(
+    () => {
+      const medidas = leerMedidor(medidorRef.current);
+      const riel = rielRef.current;
+      if (!medidas || !riel) return null;
+      const base = {
+        ids: orden.idsBarra,
+        anchos: medidas.anchos,
+        anchoMas: medidas.anchoMas,
+        separacion: medidas.separacion,
+        activa: activeTab,
+        aMas: orden.aMas,
+        conMas: orden.masFijo,
+      };
+      const slot = anchoConSeparacion(slotRef.current, medidas.separacion);
+      if (!bandaConTitulo) {
+        const ancho = anchoUtil(riel);
+        return ancho > 0 ? { ...repartirPestanas({ ...base, disponible: ancho - slot }), lugar: 0 } : null;
+      }
+      const fila = filaRef.current;
+      const libre = anchoUtil(fila);
+      if (libre <= 0) return null;
+      const sep = separacionDe(fila);
+      const caja = paddingX(riel);
+      const titulo = tituloRef.current?.getBoundingClientRect().width ?? 0;
+      const conAcciones = anchoConSeparacion(accionesRef.current, sep);
+      return elegirLugar(
+        [
+          { ancho: libre - titulo - sep - MARGEN_AL_LADO - caja - slot - conAcciones, minimo: MINIMO_AL_LADO },
+          { ancho: libre - caja - slot, minimo: 0 },
+        ],
+        base,
+      );
+    },
+    () => [filaRef.current, tituloRef.current, accionesRef.current, slotRef.current, medidorRef.current, bandaConTitulo ? null : rielRef.current],
+    [conMedidor, bandaConTitulo, orden.idsBarra.join(","), orden.aMas.join(","), activeTab, orden.masFijo, conSlot, Boolean(acciones)].join("|"),
+  );
+  const visibles = reparto ? reparto.visibles.map((id) => porId.get(id)).filter((t): t is AdminTab => Boolean(t)) : tabsBarra;
+  const escondidas = reparto ? reparto.escondidas.map((id) => porId.get(id)).filter((t): t is AdminTab => Boolean(t)) : [];
+  const mostrarMas = escondidas.length > 0 || orden.masFijo;
+  const pestanasAbajo = bandaConTitulo && reparto?.lugar === 1;
+
+  /** Elegir una del «Más»: pasa a verse (es la activa) y el foco la sigue. */
+  const elegirDelMas = (id: string) => {
+    onTabChange(id);
+    requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById(idDeTab(id))?.focus()));
+  };
+
   /**
    * Flechas dentro de la barra, como manda el patrón de tabs de ARIA.
    *
@@ -229,7 +268,8 @@ export default function AdminTabBar({
     const anterior = vertical ? "ArrowUp" : "ArrowLeft";
     const siguiente = vertical ? "ArrowDown" : "ArrowRight";
     if (!["Home", "End", anterior, siguiente].includes(e.key)) return;
-    const usables = orderedTabs.filter((t) => !t.disabled);
+    // Sólo las que se ven: las del «Más» se eligen desde su menú.
+    const usables = visibles.filter((t) => !t.disabled);
     if (usables.length < 2) return;
     const i = usables.findIndex((t) => t.id === activeTab);
     if (i === -1) return;
@@ -291,144 +331,6 @@ export default function AdminTabBar({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  const tabsRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-  /* Con título en la banda, la flecha derecha va a la altura del riel y no
-     de toda la banda: si no, su degradé tapaba las acciones y el borde del
-     título en el celular (08-10, Inicio a 400 px). */
-  const [riel, setRiel] = useState<{ top: number; alto: number; derecha: number } | null>(null);
-  const [draggedTab, setDraggedTab] = useState<string | null>(null);
-  const [dragOverTab, setDragOverTab] = useState<string | null>(null);
-
-  /**
-   * El orden COMPLETO: el guardado tal cual —con las pestañas que todavía no
-   * llegaron (una que el usuario movió y aparece tarde conserva su lugar)— más
-   * las de ahora que no estaban guardadas.
-   */
-  const [tabOrder, setTabOrder] = useState<string[]>(() => {
-    const deFabrica = tabs.map((tab) => tab.id);
-    if (typeof window === "undefined") return deFabrica;
-    let guardado: string[] | null = null;
-    try {
-      guardado = leerOrdenGuardado(localStorage.getItem(`tab-order-${moduleId}`));
-    } catch {}
-    return guardado ? insertarFaltantes(guardado, deFabrica) : deFabrica;
-  });
-
-  /**
-   * El orden de verdad: el guardado (o el de fábrica) MÁS las pestañas que
-   * aparecieron después de montar. `tabOrder` se arma una sola vez, y una
-   * pestaña que llega tarde —gateada por algo que se lee async: el rol, las
-   * especializaciones, el plan— no estaba en él y no se dibujaba NUNCA (08-10:
-   * «Forestal» del Inicio desaparecía al esperar el rol). La nueva entra detrás
-   * de la que la precede en `tabs`, no al final.
-   */
-  const ordenIds = useMemo(
-    () =>
-      insertarFaltantes(
-        tabOrder.filter((id) => tabs.some((tab) => tab.id === id)),
-        tabs.map((tab) => tab.id),
-      ),
-    [tabOrder, tabs],
-  );
-
-  const orderedTabs = ordenIds
-    .map((id) => tabs.find((tab) => tab.id === id))
-    .filter(Boolean) as AdminTab[];
-
-  const checkScroll = useCallback(() => {
-    const element = tabsRef.current;
-    if (!element) return;
-    setCanScrollLeft(element.scrollLeft > 2);
-    setCanScrollRight(element.scrollLeft + element.clientWidth < element.scrollWidth - 2);
-    const banda = element.offsetParent as HTMLElement | null;
-    const top = element.offsetTop;
-    const alto = element.offsetHeight;
-    const derecha = banda ? Math.max(0, banda.clientWidth - element.offsetLeft - element.offsetWidth) : 0;
-    setRiel((prev) =>
-      prev && prev.top === top && prev.alto === alto && prev.derecha === derecha ? prev : { top, alto, derecha },
-    );
-  }, []);
-
-  useEffect(() => {
-    checkScroll();
-    window.addEventListener("resize", checkScroll);
-    // La banda cambia de alto sin que cambie la ventana (cargan las acciones,
-    // se pliega el sidebar): la flecha sigue al riel.
-    const banda = tabsRef.current?.parentElement;
-    const ro = banda && typeof ResizeObserver !== "undefined" ? new ResizeObserver(checkScroll) : null;
-    if (banda) ro?.observe(banda);
-    return () => {
-      window.removeEventListener("resize", checkScroll);
-      ro?.disconnect();
-    };
-  }, [checkScroll]);
-
-  const scrollTabs = (direction: "left" | "right") => {
-    tabsRef.current?.scrollBy({
-      left: direction === "left" ? -200 : 200,
-      behavior: "smooth",
-    });
-    setTimeout(checkScroll, 350);
-  };
-
-  const handleDrop = (targetId: string) => {
-    if (!draggedTab || draggedTab === targetId) return;
-
-    const newOrder = [...ordenIds];
-    const fromIndex = newOrder.indexOf(draggedTab);
-    const toIndex = newOrder.indexOf(targetId);
-
-    newOrder.splice(fromIndex, 1);
-    newOrder.splice(toIndex, 0, draggedTab);
-    /* Las que hoy no se ven (llegan tarde o el rol las esconde) vuelven a su
-       lugar relativo: reordenar sin ellas no puede borrarles el sitio. */
-    const completo = insertarFaltantes(newOrder, tabOrder);
-
-    setTabOrder(completo);
-
-    try {
-      localStorage.setItem(`tab-order-${moduleId}`, JSON.stringify(completo));
-    } catch {}
-
-    setDraggedTab(null);
-    setDragOverTab(null);
-  };
-
-  const resetOrder = () => {
-    const defaultOrder = tabs.map((tab) => tab.id);
-    setTabOrder(defaultOrder);
-    try {
-      localStorage.removeItem(`tab-order-${moduleId}`);
-    } catch {}
-  };
-
-  const isReordered = JSON.stringify(ordenIds) !== JSON.stringify(tabs.map((tab) => tab.id));
-
-  /**
-   * Mide si las pestañas entran al lado del título (ver `pestanasAlLado`).
-   * `useLayoutEffect`: corre antes de pintar, así el primer cuadro ya sale
-   * con las pestañas en su lugar. Observa la fila (cambia el ancho de la
-   * ventana o se pliega el sidebar), el título (carga la fuente), cada
-   * pestaña (aparece un contador) y las acciones (llegan datos).
-   */
-  const clavePestanas = `${ordenIds.join("|")}|${isReordered}|${Boolean(rightSlot)}|${Boolean(heading?.actions)}`;
-  useLayoutEffect(() => {
-    const fila = filaRef.current;
-    const rielActual = tabsRef.current;
-    if (estilo !== "fase" || !fila || !rielActual || typeof ResizeObserver === "undefined") return;
-    const titulo = fila.firstElementChild instanceof HTMLElement ? fila.firstElementChild : null;
-    const accionesActuales = accionesRef.current;
-    const medir = () => setPestanasAlLado(entranAlLado(fila, rielActual, titulo, accionesActuales));
-    medir();
-    const ro = new ResizeObserver(medir);
-    for (const el of [fila, titulo, accionesActuales, ...Array.from(rielActual.children)]) {
-      if (el) ro.observe(el);
-    }
-    return () => ro.disconnect();
-  }, [estilo, clavePestanas]);
-
   if (vertical) {
     return (
       <div data-admin-tabbar="" className={cn("flex flex-col gap-3 lg:flex-row lg:items-stretch lg:gap-0", className)}>
@@ -452,7 +354,7 @@ export default function AdminTabBar({
             onKeyDown={teclasDeBarra}
             className="grid grid-cols-2 gap-0.5 sm:grid-cols-3 lg:grid-cols-1 lg:pt-0"
           >
-            {orderedTabs.map((tab) => {
+            {tabsBarra.map((tab) => {
               const Icon = tab.icon;
 
               return (
@@ -494,9 +396,9 @@ export default function AdminTabBar({
             })}
           </div>
 
-          {isReordered && (
+          {orden.isReordered && (
             <button
-              onClick={resetOrder}
+              onClick={orden.resetOrder}
               className="mt-1.5 w-full border-t border-[var(--rule-soft)] px-3 pt-1.5 text-left text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] transition-colors hover:text-primary "
             >
               Restablecer orden
@@ -524,118 +426,96 @@ export default function AdminTabBar({
   }
 
   const rielDePestanas = (
-    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- ver el comentario de la rama vertical: el foco va en las pestañas, no acá.
+    <div
+      ref={rielRef}
+      className={cn(
+        "flex",
+        // Con `heading` las pestañas van DENTRO de la banda, como en el Libro
+        // TH (referencia de Brandon 08-10): en la caja hundida de las fases, al
+        // lado del título si entran y en su fila de abajo si no. Sin
+        // `heading`, la línea de siempre. Nunca envuelven ni se deslizan: lo
+        // que no entra va al «Más».
+        estilo === "fase"
+          ? cn(
+              "order-1 min-w-0 max-w-full flex-none items-center gap-0.5 rounded-xl bg-[var(--surface-sunken)] p-1",
+              reparto === null
+                ? "sm:ml-1 @max-[60rem]/banda:order-3 @max-[60rem]/banda:basis-full"
+                : pestanasAbajo
+                  ? "order-3 basis-full"
+                  : "sm:ml-1",
+            )
+          : "-mx-1 gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1",
+        // Sin medir todavía (primer cuadro, servidor): todas, recortadas a la
+        // fila. Nunca empujan el ancho de la página.
+        reparto === null && "overflow-hidden",
+      )}
+    >
+      {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- ver el comentario de la rama vertical: el foco va en las pestañas, no acá. */}
       <div
-        ref={tabsRef}
-        onScroll={checkScroll}
         role="tablist"
         aria-orientation="horizontal"
         onKeyDown={teclasDeBarra}
-        className={cn(
-          "flex",
-          // Con `heading` las pestañas van DENTRO de la banda, como en el
-          // Libro TH (referencia de Brandon 08-10): en la caja hundida de las
-          // fases, al lado del título si entran (`pestanasAlLado`) y en su
-          // fila de abajo si no. Sin `heading`, la línea de siempre.
-          estilo === "fase"
-            ? cn(
-                "order-1 min-w-0 max-w-full flex-none items-center gap-0.5 rounded-xl bg-[var(--surface-sunken)] p-1",
-                pestanasAlLado === null
-                  ? "sm:ml-1 @max-[60rem]/banda:order-3 @max-[60rem]/banda:basis-full"
-                  : pestanasAbajo
-                    ? "order-3 basis-full"
-                    : "sm:ml-1",
-              )
-            : "-mx-1 gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1",
-          // Angosto: una sola fila que se desliza (recupera ~90px verticales
-          // que las 3 filas del wrap le robaban al contenido). Desde 48rem de
-          // CONTENEDOR —no de viewport, que ignora el ancho del sidebar—
-          // vuelve el wrap de siempre.
-          // Al lado del título el riel NUNCA envuelve por dentro: si
-          // envolviera, el título (alineado al fondo de la banda) quedaría
-          // junto a la segunda fila de pestañas. Envuelve sólo en su fila.
-          wrap && (estilo === "linea" || pestanasAbajo)
-            ? "overflow-x-auto scroll-smooth scrollbar-none @min-[48rem]:flex-wrap @min-[48rem]:gap-y-1 @min-[48rem]:overflow-x-visible"
-            : "overflow-x-auto scroll-smooth scrollbar-none",
-        )}
-        /* `contain`: el desliz de la caja hundida no se filtra al ancho de la
-           página a 400 px (mismo arreglo que la fila de fases del libro). */
-        style={estilo === "fase" ? { scrollbarWidth: "none", contain: "layout paint" } : { scrollbarWidth: "none" }}
+        className={cn("flex min-w-0", PESTANA[estilo].fila)}
       >
-        {orderedTabs.map((tab) => {
-          const Icon = tab.icon;
-
-          return (
-            <button
-              key={tab.id}
-              draggable={draggable}
-              onDragStart={() => setDraggedTab(tab.id)}
-              onDragOver={(event) => {
-                event.preventDefault();
-                setDragOverTab(tab.id);
-              }}
-              onDragLeave={() => setDragOverTab(null)}
-              onDrop={() => handleDrop(tab.id)}
-              onDragEnd={() => {
-                setDraggedTab(null);
-                setDragOverTab(null);
-              }}
-              onClick={() => !tab.disabled && onTabChange(tab.id)}
-              role="tab"
-              id={idDeTab(tab.id)}
-              aria-selected={activeTab === tab.id}
-              aria-controls={children ? idDelPanel : undefined}
-              tabIndex={activeTab === tab.id ? 0 : -1}
-              onMouseEnter={() => onTabHover?.(tab.id)}
-              disabled={tab.disabled}
-              title={tab.title ?? tab.label}
-              className={cn(
-                PESTANA[estilo].base,
-                // El `grow` de antes (tabs estiradas para justificar las filas
-                // en móvil) ya no aplica: en angosto la barra es una sola fila
-                // deslizable, no un wrap de varias filas. Se conserva sólo el
-                // padding compacto.
-                wrap && estilo === "linea" && "max-sm:px-2",
-                draggable && "cursor-grab active:cursor-grabbing",
-                activeTab === tab.id ? PESTANA[estilo].activa : PESTANA[estilo].inactiva,
-                tab.disabled && "cursor-not-allowed opacity-40",
-                draggedTab === tab.id && "scale-95 opacity-40",
-                dragOverTab === tab.id && draggedTab !== tab.id && "rounded-t-lg ring-2 ring-primary ring-offset-1",
-              )}
-            >
-              {/* El handle de reorden por drag solo aplica en desktop (en touch
-                  el drag de sub-tabs no es un gesto usable y el ⋮⋮ es ruido). */}
-              {draggable && estilo === "linea" && <GripVertical className="hidden lg:inline-block h-3 w-3 shrink-0 opacity-30" />}
-              {Icon && <Icon className="h-4 w-4 shrink-0 sm:h-3.5 sm:w-3.5" />}
-              <span>{tab.shortLabel || tab.label}</span>
-              {tab.badge != null && (
-                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--data-error-500)] px-1 text-[length:var(--ts-2xs)] font-bold text-white">
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-
-        {isReordered && (
+        {visibles.map((tab) => (
           <button
-            onClick={resetOrder}
-            className="ml-1 shrink-0 whitespace-nowrap px-2 py-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] transition-colors hover:text-primary"
-            title="Restablecer orden de tabs"
+            key={tab.id}
+            draggable={arrastrable}
+            onDragStart={() => orden.setDraggedTab(tab.id)}
+            onDragOver={(event) => {
+              event.preventDefault();
+              orden.setDragOverTab(tab.id);
+            }}
+            onDragLeave={() => orden.setDragOverTab(null)}
+            onDrop={() => orden.handleDrop(tab.id)}
+            onDragEnd={() => {
+              orden.setDraggedTab(null);
+              orden.setDragOverTab(null);
+            }}
+            onClick={() => !tab.disabled && onTabChange(tab.id)}
+            role="tab"
+            id={idDeTab(tab.id)}
+            aria-selected={activeTab === tab.id}
+            aria-controls={children ? idDelPanel : undefined}
+            tabIndex={activeTab === tab.id ? 0 : -1}
+            onMouseEnter={() => onTabHover?.(tab.id)}
+            disabled={tab.disabled}
+            title={tab.title ?? tab.label}
+            className={cn(
+              PESTANA[estilo].base,
+              wrap && estilo === "linea" && "max-sm:px-2",
+              arrastrable && "cursor-grab active:cursor-grabbing",
+              activeTab === tab.id ? PESTANA[estilo].activa : PESTANA[estilo].inactiva,
+              tab.disabled && "cursor-not-allowed opacity-40",
+              orden.draggedTab === tab.id && "scale-95 opacity-40",
+              orden.dragOverTab === tab.id && orden.draggedTab !== tab.id && "rounded-t-lg ring-2 ring-primary ring-offset-1",
+            )}
           >
-            Restablecer
+            <ContenidoPestana tab={tab} conAsa={arrastrable && estilo === "linea"} />
           </button>
-        )}
-
-        {/* Slot derecho — status chip u otras acciones contextuales.
-            ml-auto empuja todo a la derecha, pr-2 margen del borde. */}
-        {(rightSlot || accionesEnRiel) && (
-          <div className="ml-auto flex shrink-0 items-center gap-2 pr-2">
-            {accionesEnRiel}
-            {rightSlot}
-          </div>
-        )}
+        ))}
       </div>
+
+      {/* «Más ▾»: las que no entran, el orden por uso y «Restablecer orden». */}
+      {mostrarMas && (
+        <PestanasMas
+          estilo={estilo}
+          escondidas={escondidas}
+          onElegir={elegirDelMas}
+          orden={orden.orden}
+          restablecer={orden.isReordered ? orden.resetOrder : null}
+        />
+      )}
+
+      {/* Slot derecho — status chip u otras acciones contextuales.
+          ml-auto empuja todo a la derecha, pr-2 margen del borde. */}
+      {conSlot && (
+        <div ref={slotRef} className="ml-auto flex shrink-0 items-center gap-2 pr-2">
+          {accionesEnRiel}
+          {rightSlot}
+        </div>
+      )}
+    </div>
   );
 
   return (
@@ -647,20 +527,30 @@ export default function AdminTabBar({
       data-admin-tabbar=""
       className={cn(
         // Con `heading`, la identidad del módulo y las pestañas comparten la
-        // MISMA tarjeta que la banda del Libro TH (titulo-modulo.tsx). Los
-        // chevrons de scroll son `absolute`: el tablist puede ir en cualquier
-        // fila mientras `relative` siga en esta caja.
+        // MISMA tarjeta que la banda del Libro TH (titulo-modulo.tsx).
+        // `relative`: ancla el medidor escondido.
         bandaConTitulo ? cn(BANDA_MODULO, "relative") : "@container relative",
         className,
       )}
     >
+      {conMedidor && (
+        <MedidorDePestanas
+          medidorRef={medidorRef}
+          tabs={tabsBarra}
+          claseTab={cn(PESTANA[estilo].base, wrap && estilo === "linea" && "max-sm:px-2", PESTANA[estilo].activa)}
+          claseFila={PESTANA[estilo].fila}
+          estiloMas={estilo}
+          conAsa={arrastrable && estilo === "linea"}
+          conContador={tabs.some((t) => t.badge != null)}
+        />
+      )}
       {bandaConTitulo && heading && (
         // Fila de identidad, igual a la del libro: título · pestañas · acciones.
         // Si no entra todo: las acciones se quedan junto al título y las
         // pestañas bajan a su fila. La descripción va al ⓘ, no debajo
         // (regla «explicar con ⓘ», Brandon 09-24 y 01-10).
         <div ref={filaRef} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4">
-          <div className={FILA_TITULO_MODULO}>
+          <div ref={tituloRef} className={FILA_TITULO_MODULO}>
             <TituloModulo
               icon={heading.icon}
               eyebrow={rotulo}
@@ -678,33 +568,7 @@ export default function AdminTabBar({
           {acciones}
         </div>
       )}
-      {!bandaConTitulo && canScrollLeft && (
-        <button
-          onClick={() => scrollTabs("left")}
-          className="absolute left-0 top-0 bottom-0 z-10 flex w-10 items-center bg-linear-to-r from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
-          aria-label="Ver tabs anteriores"
-        >
-          <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
-        </button>
-      )}
-
       {estilo === "linea" && rielDePestanas}
-
-      {canScrollRight && (
-        <button
-          onClick={() => scrollTabs("right")}
-          style={bandaConTitulo && riel ? { top: riel.top, height: riel.alto, right: riel.derecha } : undefined}
-          className={cn(
-            "absolute right-0 top-0 bottom-0 z-10 flex w-10 items-center justify-end bg-linear-to-l to-transparent transition-opacity duration-[var(--dur-base)]",
-            estilo === "fase"
-              ? "rounded-r-xl from-[var(--surface-sunken)] via-[var(--surface-sunken)]/90"
-              : "from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90",
-          )}
-          aria-label="Ver más tabs"
-        >
-          <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
-        </button>
-      )}
     </div>
     {/* El panel de la barra horizontal es hermano, no hijo: `aria-labelledby`
         ata el par por id, así que no necesitan ser contiguos en el árbol. */}

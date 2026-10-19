@@ -24,7 +24,7 @@
  * primero dentro del día y los repetidos en una sola fila: en los 100 avisos
  * más recientes `main` tenía 19 distintos y Blas 7.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { CheckCheck, RefreshCw, X } from "@buleje/design-system/icons";
 import AdminModal, { CabeceraPropia, MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -60,6 +60,8 @@ type Props = {
   markAsRead: (id: string) => void | Promise<void>;
   markAllRead: () => void;
   refetch: () => void;
+  /** Lo que va arriba de la lista (los avisos ámbar de la franja fuera de Inicio). */
+  avisosArriba?: ReactNode;
 };
 
 const BOTON_ICONO =
@@ -77,6 +79,7 @@ export default function NotificationHub({
   markAsRead,
   markAllRead,
   refetch,
+  avisosArriba,
 }: Props) {
   const [categoria, setCategoria] = useState<FiltroCategoria>("todas");
   const [recarga, setRecarga] = useState(0);
@@ -185,6 +188,7 @@ export default function NotificationHub({
               )}
             </div>
           </CabeceraPropia>
+          {avisosArriba ? <div className={MODAL_GUTTER}>{avisosArriba}</div> : null}
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">

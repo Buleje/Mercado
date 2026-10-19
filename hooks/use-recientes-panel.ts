@@ -30,6 +30,7 @@ import {
 } from "@/lib/admin/recientes-panel";
 import { escribirGuardado, leerGuardado, useClaveDeUsuario } from "@/hooks/use-clave-de-usuario";
 import { leerDelServidor, subirAlServidor } from "@/lib/admin/guardado-servidor";
+import { iniciarUsoDePestanas } from "@/hooks/use-uso-de-pestanas";
 
 const PREFIJO = "admin-recientes";
 /** Avisa a los que leen (menú y buscador) que la lista cambió en esta pestaña. */
@@ -68,6 +69,8 @@ export function useRegistrarRecientes(): void {
   useEffect(() => {
     if (!clave) return;
     let vivo = true;
+    /* «Menú en tu orden» cuenta por la misma persona (y se junta con el servidor igual). */
+    iniciarUsoDePestanas(quienDe(clave));
     /* Los de otra computadora se juntan con los de acá (una vez por carga). */
     void leerDelServidor(quienDe(clave), EN_SERVIDOR).then((valor) => {
       if (!vivo || valor === undefined) return;

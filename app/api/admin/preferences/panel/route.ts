@@ -19,20 +19,22 @@ import { logger } from "@/lib/logger";
  * sesión, nunca del cuerpo.
  *
  * GET → { guardado: { [clave]: lista } }   (clave ausente = nunca guardó: el cliente sube lo suyo)
- * PUT → body { clave: "recientes" | "vistas:<pantalla>", valor: lista }
+ * PUT → body { clave: "recientes" | "vistas:<pantalla>" | "uso-pestanas", valor: lista }
  */
 
 const ROLES = ["admin", "cajero", "almacenero", "manager"] as const;
 /** Más que lo que muestra el menú (10 recientes, 12 vistas): margen para versiones futuras. */
 const TOPE_RECIENTES = 15;
 const TOPE_VISTAS = 20;
+/** «Menú en tu orden»: una fila por vista abierta (`plata:gastos`), igual que `TOPE_USO` del cliente. */
+const TOPE_USO = 120;
 /** Una lista entera, en texto: `featureFlagsJson` lo comparte todo el negocio. */
 const TOPE_TEXTO = 32_000;
 
 const CLAVE_VISTAS = /^vistas:[A-Za-z0-9._-]{1,48}$/;
 /** `encodeURIComponent` no deja `:` en el usuario: el prefijo de uno nunca es el de otro. */
 const prefijoDe = (username: string) => `panel:${encodeURIComponent(username)}:`;
-const claveValida = (c: string) => c === "recientes" || CLAVE_VISTAS.test(c);
+const claveValida = (c: string) => c === "recientes" || c === "uso-pestanas" || CLAVE_VISTAS.test(c);
 
 const RecienteSchema = z.object({
   href: z.string().startsWith("/admin?").max(600),
@@ -47,8 +49,14 @@ const VistaSchema = z.object({
   estado: z.unknown(),
   en: z.number(),
 });
+const UsoSchema = z.object({
+  k: z.string().min(1).max(120),
+  n: z.number().int().min(0).max(1_000_000),
+  u: z.number(),
+});
 const PutSchema = z
   .union([
+    z.object({ clave: z.literal("uso-pestanas"), valor: z.array(UsoSchema).max(TOPE_USO) }),
     z.object({ clave: z.literal("recientes"), valor: z.array(RecienteSchema).max(TOPE_RECIENTES) }),
     z.object({ clave: z.string().regex(CLAVE_VISTAS), valor: z.array(VistaSchema).max(TOPE_VISTAS) }),
   ])

@@ -26,6 +26,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { fijarAvisosEscondidos } from "@/components/admin/avisos-de-la-franja";
 import {
   AlertTriangle,
   Clock,
@@ -104,9 +105,14 @@ function writeDismissed(id: string) {
 interface AdminAlertsBannerProps {
   userRole?: AdminRole | null;
   authReady?: boolean;
+  /**
+   * Fuera de Inicio sólo lo rojo (Brandon 19-10, «Más espacio arriba»): lo
+   * ámbar va a la campanita (`avisos-de-la-franja.tsx`), con los mismos datos.
+   */
+  soloUrgentes?: boolean;
 }
 
-export default function AdminAlertsBanner({ userRole = null, authReady = false }: AdminAlertsBannerProps) {
+export default function AdminAlertsBanner({ userRole = null, authReady = false, soloUrgentes = false }: AdminAlertsBannerProps) {
   const puede = authReady && puedePedir(RUTA, userRole);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
@@ -132,7 +138,7 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false }
     });
   }, [puede]);
 
-  const alerts = useMemo<Alert[]>(() => {
+  const todas = useMemo<Alert[]>(() => {
     if (!summary) return [];
     const list: Alert[] = [];
 
@@ -209,6 +215,18 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false }
     writeDismissed(id);
     setDismissedIds((prev) => new Set(prev).add(id));
   }, []);
+
+  const alerts = useMemo(() => (soloUrgentes ? todas.filter((a) => a.severity === "urgent") : todas), [todas, soloUrgentes]);
+
+  /* Lo que no se dibuja acá lo muestra la campanita (punto + lista en el centro). */
+  useEffect(() => {
+    const escondidas = soloUrgentes ? todas.filter((a) => a.severity !== "urgent") : [];
+    fijarAvisosEscondidos(
+      escondidas.map(({ id, label, resumen, count, cta, href }) => ({ id, label, resumen, count, cta, href })),
+      handleDismiss,
+    );
+  }, [todas, soloUrgentes, handleDismiss]);
+  useEffect(() => () => fijarAvisosEscondidos([], null), []);
 
   if (alerts.length === 0) return null;
 

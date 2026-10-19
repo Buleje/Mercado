@@ -250,15 +250,13 @@ describe("panel — encabezado del módulo en la misma banda que las pestañas",
     // entran de ancho: Ventas & Caja (5 pestañas) bajaba a 1280 px aunque
     // entraba. Se suman anchos naturales —que no dependen de la respuesta—,
     // nunca el alto de la banda (ese lazo oscila).
-    expect(bar, "se perdió la medición de si las pestañas entran al lado").toContain(
-      "setPestanasAlLado(entranAlLado(",
-    );
+    // 19-10 («Más espacio arriba»): las pestañas ya no envuelven ni se
+    // deslizan; lo que no entra va al «Más» (priority+), medido con copias.
+    expect(bar, "se perdió la medición de qué pestañas entran").toContain("usePestanasQueEntran(");
+    expect(bar, "se perdió la elección entre al lado del título o en su fila").toContain("elegirLugar(");
+    expect(bar, "sin «Más» las que no entran se pierden").toContain("<PestanasMas");
     expect(bar, "volvió a decidir por cantidad de pestañas").not.toMatch(/tabs\.length <= /);
-    // Al lado del título el riel no envuelve por dentro: la clase de wrap
-    // sólo se aplica cuando las pestañas tienen su fila.
-    expect(bar, "el riel volvió a envolver con el título al lado").toContain(
-      'wrap && (estilo === "linea" || pestanasAbajo)',
-    );
+    expect(bar, "el riel volvió a deslizarse en vez de llevar las que sobran al «Más»").not.toContain("overflow-x-auto");
     expect(bar, "sin `basis-full` las pestañas no se llevan su fila").toContain("order-3 basis-full");
   });
 
