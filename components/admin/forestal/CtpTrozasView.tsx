@@ -22,8 +22,9 @@
  * recibe ⓘ, «Indicadores», «Sin título declarado», «Plan del día», el último
  * conteo y actualizar (`CtpTrozasCabecera`). La vista arranca en el escáner y
  * «Buscar en el libro»; «Sin título» abre su tabla en un modal y D1/D2 se
- * anotan desde la tabla cuando ninguna fuente los trae. También es la pestaña
- * «Por troza» de Volumen disponible: el mismo componente, sin copia.
+ * anotan desde la tabla cuando ninguna fuente los trae. También es el apartado
+ * «Por troza» de Volumen disponible (19-10): con `alcance`, lista sólo las
+ * trozas que suman al volumen elegido y su permiso/especie son los de Volumen.
  */
 
 import { useMemo, useState } from "react";
@@ -46,32 +47,23 @@ import { useIndicadoresPatio } from "./CtpTrozasPatio";
 import CtpTrozasSinTituloModal from "./CtpTrozasSinTituloModal";
 import { usePlantaUbicacion } from "./hooks/use-planta-ubicacion";
 import { useTrozasPatio } from "./hooks/use-trozas-patio";
+import { AvisoFueraDelVolumen, useTrozasEnVolumen, type AlcanceVolumen } from "./trozas-en-volumen";
 
 /** El escáner de fichas no marca nada: todas se pueden volver a mirar. */
 const SIN_MARCAR: ReadonlySet<string> = new Set();
 
-export default function CtpTrozasView() {
-  const { trozas, meta, cargando, error, recargar } = useTrozasPatio();
-  /* Los filtros viven acá porque los tocan las dos pantallas: se elige un estado
-     en el panel de arriba y la lista de abajo tiene que obedecer. */
-  /* Listas y no un valor suelto (Brandon, 2026-09-10): «libre Y apartada» es la
-     pregunta de todos los días —qué hay parado— y con uno solo había que mirar
-     el patio dos veces y sumar a mano. */
+export default function CtpTrozasView({ alcance }: { alcance?: AlcanceVolumen } = {}) {
+  /* `trozas` = todo el patio (escáner, sin título, plan del día); `vista` = lo
+     que muestran la lista y los indicadores, recortada por Volumen si viene. */
+  const { trozas, meta, cargando, error, recargar } = useTrozasPatio(alcance?.contratoId);
+  /* Los filtros viven acá porque los tocan las dos pantallas (el panel de
+     arriba y la lista); listas, no un valor suelto: «libre Y apartada» es la
+     pregunta de todos los días (Brandon, 2026-09-10). Especie, guía y título
+     también recortan el panorama (ADR-400); estado y tramo no: son su desglose. */
   const [estadoFiltro, setEstadoFiltro] = useState<EstadoTroza[]>([]);
   const [tramoFiltro, setTramoFiltro] = useState<string[]>([]);
-  /**
-   * Especie, guía y título suben acá con estado y tramo (ADR-400).
-   *
-   * Vivían adentro de la lista, así que el panorama de arriba contaba TODA la
-   * pila mientras la tabla mostraba una especie: dos números que se
-   * contradicen en la misma pantalla. Ahora los dos miran el mismo conjunto.
-   *
-   * Estado y tramo NO recortan el panorama: son su propio desglose, y filtrar
-   * las tarjetas por lo que se elige EN las tarjetas las dejaría en cero.
-   */
-  const [especie, setEspecie] = useState<string[]>([]);
+  const { trozas: vista, especie, setEspecie, titulo, setTitulo, ...fuera } = useTrozasEnVolumen(trozas, alcance);
   const [guia, setGuia] = useState<string[]>([]);
-  const [titulo, setTitulo] = useState<string[]>([]);
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
   /**
    * La pieza cuya historia se está mirando. Arranca con `?troza=<id>` si la
@@ -110,7 +102,7 @@ export default function CtpTrozasView() {
   const hoy = useMemo(() => new Date(), [trozas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { boton: botonKpis, panel: panelKpis } = useIndicadoresPatio({
-    trozas, meta, cargando, estadoFiltro, onEstadoFiltro: setEstadoFiltro,
+    trozas: vista, meta, cargando, estadoFiltro, onEstadoFiltro: setEstadoFiltro,
     tramoFiltro, onTramoFiltro: setTramoFiltro, especie, guia, titulo,
     onImprimirEtiquetas: setEtiquetando,
     onAnotarMedidas: (ids) => setMedir({ ids }),
@@ -137,6 +129,7 @@ export default function CtpTrozasView() {
         onVerSinTitulo={() => setVerSinTitulo(true)}
         onVerPlan={() => setVerPlan(true)}
         onRecargar={() => void recargar()}
+        sinInfo={Boolean(alcance)}
       />
 
       {panelKpis && (
@@ -194,8 +187,9 @@ export default function CtpTrozasView() {
         </div>
       )}
 
+      <AvisoFueraDelVolumen fuera={fuera.fuera} verFuera={fuera.verFuera} onVerFuera={fuera.setVerFuera} />
       <CtpTrozasLista
-        trozas={trozas}
+        trozas={vista}
         cargando={cargando}
         estadoFiltro={estadoFiltro}
         onEstadoFiltro={setEstadoFiltro}

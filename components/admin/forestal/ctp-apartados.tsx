@@ -78,6 +78,7 @@ export default function CtpApartados({
   onIr,
   idBase,
   etiqueta,
+  columnas = 2,
 }: {
   apartados: readonly Apartado[];
   activo: string;
@@ -86,6 +87,8 @@ export default function CtpApartados({
   idBase: string;
   /** Nombre del grupo de pestañas, para el lector de pantalla. */
   etiqueta: string;
+  /** Columnas a 400 px: tres apartados cortos entran en una fila (Volumen, 19-10). */
+  columnas?: 2 | 3;
 }) {
   const refs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
@@ -111,7 +114,7 @@ export default function CtpApartados({
     {/* A 400 px las pestañas van en dos columnas y el texto envuelve: con
         `whitespace-nowrap` la segunda se salía de la pantalla (medido: borde
         derecho en 450 px). */}
-    <div role="tablist" aria-label={etiqueta} className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-stretch">
+    <div role="tablist" aria-label={etiqueta} className={`grid ${columnas === 3 ? "grid-cols-3" : "grid-cols-2"} gap-2 sm:flex sm:flex-wrap sm:items-stretch`}>
       {apartados.map((a, i) => {
         const esActivo = a.id === activo;
         const cuenta = contadorConUnidad(a);

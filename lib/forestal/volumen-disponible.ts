@@ -111,6 +111,8 @@ export interface PartidaVolumen {
    * disponibles dice «5 paquetes» y no 6 por ella).
    */
   unidad: string | null;
+  /** La troza de la que sale (sólo las partidas del patio): lo que cuenta «N° trozas». */
+  pieza?: string;
 }
 
 /** A qué pila va una troza viva. `null` = no está disponible (consumida, bloqueada). */
@@ -141,10 +143,34 @@ export function partidasDeTrozas(trozas: readonly TrozaConsumible[]): PartidaVol
           : fuente === "recepcion"
             ? `guia:${t.woodEntryId}`
             : `troza:${t.id}`,
+      pieza: t.id,
     });
   }
   return out;
 }
+
+/**
+ * ¿Esta troza suma al volumen elegido? La MISMA regla que «N° trozas» de la
+ * tabla (`partidasDeTrozas` + el filtro): «Volumen › Por troza» lista justo
+ * las piezas que esa columna cuenta, ni una más.
+ */
+export function trozaEnVolumen(
+  t: TrozaConsumible,
+  fuentes: readonly FuenteVolumen[],
+  permisos: readonly string[],
+  especies: readonly string[],
+): boolean {
+  const f = fuenteDeTroza(t);
+  return f != null && fuentes.includes(f) && trozaDelFiltro(t, permisos, especies);
+}
+
+/** Sólo el permiso y la especie elegidos, sin mirar la pila. */
+export const trozaDelFiltro = (
+  t: Pick<TrozaConsumible, "permiso" | "especieComun">,
+  permisos: readonly string[],
+  especies: readonly string[],
+): boolean =>
+  entraPorPermiso(clavePermiso(t.permiso), permisos) && entraPorEspecie(claveEspecie(t.especieComun), especies);
 
 /** Lo aserrado con saldo. El m³ es el del LIBRO repartido, igual que Productos disponibles. */
 export function partidasDeProductos(filas: readonly FilaProducto[]): PartidaVolumen[] {
@@ -286,6 +312,8 @@ export interface ResumenVolumen {
   total: { m3: number; pt: number };
   /** Permisos con nombre entre las partidas (una corrida de dos cuenta los dos). */
   permisos: number;
+  /** Trozas (piezas) entre las partidas: las de Productos y del sobrante de lotes no tienen. */
+  trozas: number;
 }
 
 const cero = (): Record<FuenteVolumen, number> => ({ trozas: 0, productos: 0, lotes: 0, recepcion: 0 });
@@ -311,8 +339,10 @@ export function resumenVolumen(partidas: readonly PartidaVolumen[]): ResumenVolu
   const r = repartoVacio();
   const unidades = new Map<FuenteVolumen, Set<string>>(FUENTES_VOLUMEN.map((f) => [f, new Set()]));
   const permisos = new Set<string>();
+  const piezas = new Set<string>();
   for (const p of partidas) {
     sumar(r, p);
+    if (p.pieza) piezas.add(p.pieza);
     if (p.unidad) unidades.get(p.fuente)?.add(p.unidad);
     for (const k of partesDePermiso(p.permisoClave)) permisos.add(k);
   }
@@ -330,6 +360,7 @@ export function resumenVolumen(partidas: readonly PartidaVolumen[]): ResumenVolu
     porFuente,
     total: { m3: r4(sumaDe(r.rolliza) + sumaDe(r.aserrada)), pt: ptDeReparto(r) },
     permisos: permisos.size,
+    trozas: piezas.size,
   };
 }
 
@@ -345,6 +376,8 @@ export interface FilaVolumen {
   pt: number;
   /** Cuánto del m³ de la tabla es de este grupo (0-100, un decimal). */
   pct: number;
+  /** N° de trozas (piezas) del grupo en las pilas elegidas: lo aserrado no tiene. */
+  trozas: number;
 }
 
 /**
@@ -355,11 +388,12 @@ export function volumenPorGrupo(
   partidas: readonly PartidaVolumen[],
   dim: DimensionVolumen,
 ): FilaVolumen[] {
-  const acc = new Map<string, { r: Reparto; grafias: Map<string, number> }>();
+  const acc = new Map<string, { r: Reparto; grafias: Map<string, number>; piezas: Set<string> }>();
   for (const p of partidas) {
     const k = dim === "permiso" ? p.permisoClave : p.especieClave;
-    const a = acc.get(k) ?? { r: repartoVacio(), grafias: new Map<string, number>() };
+    const a = acc.get(k) ?? { r: repartoVacio(), grafias: new Map<string, number>(), piezas: new Set<string>() };
     sumar(a.r, p);
+    if (p.pieza) a.piezas.add(p.pieza);
     const g = dim === "permiso" ? p.permiso : p.especie;
     if (g) a.grafias.set(g, (a.grafias.get(g) ?? 0) + 1);
     acc.set(k, a);
@@ -379,6 +413,7 @@ export function volumenPorGrupo(
         m3: r4(m3),
         pt: ptDeReparto(a.r),
         pct: total > 0 ? Math.round((m3 / total) * 1000) / 10 : 0,
+        trozas: a.piezas.size,
       };
     })
     .sort((a, b) => (a.clave === "" ? 1 : b.clave === "" ? -1 : b.m3 - a.m3));
@@ -591,6 +626,7 @@ export function hojasDeVolumen(args: {
   const { resumen, fuentes } = args;
   const fila = (nombre: string, g: FilaVolumen) => ({
     [nombre]: g.etiqueta,
+    "N° trozas": g.trozas,
     ...Object.fromEntries(fuentes.map((f) => [`${ETIQUETA_FUENTE[f]} (m³)`, g.porFuente[f]])),
     "Total (m³)": g.m3,
     "pt aprovechables (estimado)": g.pt,

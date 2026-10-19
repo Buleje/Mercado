@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { TrozaPatio } from "@/lib/forestal/trozas-patio";
 import type { DatosKpiPatio } from "@/lib/forestal/trozas-patio-kpis";
+import { urlDelPatio } from "./use-lotes-aserrio";
 
 /** La pieza tal como la devuelve `/api/admin/forestal/trozas/patio`. */
 export interface TrozaPatioAPI extends TrozaPatio, DatosKpiPatio {
@@ -54,7 +55,12 @@ export interface PatioMeta {
   rendimientoLibro?: { pct: number; entradaM3: number; corridas: number } | null;
 }
 
-export function useTrozasPatio() {
+/**
+ * @param contratoId «Solo este permiso» (ADR-431), sólo desde Volumen › Por
+ *   troza: pide la MISMA URL que Volumen, para contar las mismas piezas.
+ */
+export function useTrozasPatio(contratoId?: string | null) {
+  const url = urlDelPatio(contratoId);
   const [trozas, setTrozas] = useState<TrozaPatioAPI[]>([]);
   const [meta, setMeta] = useState<PatioMeta>({ total: 0, devueltas: 0, truncado: false });
   const [cargando, setCargando] = useState(true);
@@ -64,7 +70,7 @@ export function useTrozasPatio() {
     setCargando(true);
     setError(null);
     try {
-      const r = await fetch("/api/admin/forestal/trozas/patio", { credentials: "include" });
+      const r = await fetch(url, { credentials: "include" });
       if (!r.ok) {
         const j = (await r.json().catch(() => ({}))) as { error?: string };
         throw new Error(j.error ?? `HTTP ${r.status}`);
@@ -88,7 +94,7 @@ export function useTrozasPatio() {
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [url]);
 
   useEffect(() => {
     void recargar();

@@ -48,7 +48,11 @@ export type SubSaldos = (typeof SUBS_SALDOS)[number];
 export const SUBS_LOTES = ["lotes", "historia"] as const;
 export type SubLotes = (typeof SUBS_LOTES)[number];
 
-/** Volumen disponible. `por-troza` = la vista Trozas (`trozas`), pieza por pieza. */
+/**
+ * Volumen disponible. `volumen` = las tablas Por permiso / Por especie;
+ * `por-troza` = su apartado «Por troza» (19-10; antes, pestaña de arriba), que
+ * era la vista Trozas (`trozas`): el patio pieza por pieza con el filtro de Volumen.
+ */
 export const SUBS_DISPONIBLES = ["volumen", "por-troza"] as const;
 export type SubDisponibles = (typeof SUBS_DISPONIBLES)[number];
 

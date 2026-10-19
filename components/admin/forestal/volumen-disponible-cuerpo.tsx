@@ -9,7 +9,7 @@
  * de «Todo» no cuenta dos veces la troza que está en un lote.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, FileDown, Scissors } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
@@ -30,12 +30,15 @@ import {
   entraPorEspecie,
   entraPorPermiso,
   fuenteDeTroza,
+  TODAS_LAS_FUENTES,
+  type FuenteVolumen,
   type FuentesPedidas,
   type UnidadVolumen,
 } from "@/lib/forestal/volumen-disponible";
 import CtpAvisoAlcancePermiso from "./CtpAvisoAlcancePermiso";
 import CtpProductosDisponibles from "./CtpProductosDisponibles";
 import CtpTrozasDisponibles from "./CtpTrozasDisponibles";
+import CtpTrozasView from "./CtpTrozasView";
 import { CabeceraDeVista } from "./ctp-cabecera-vista";
 import { useFuentesElegidas, useVolumenDisponible } from "./hooks/use-volumen-disponible";
 import { SelectorDePilas } from "./volumen-disponible-chips";
@@ -52,6 +55,8 @@ export default function VolumenDisponibleCuerpo({
   fuentesPedidas = null,
   onFuentesUsadas,
   onAbrirLote,
+  porTroza = false,
+  onPorTroza,
 }: {
   period: CtpPeriod;
   onIr?: (vista: string) => void;
@@ -60,6 +65,9 @@ export default function VolumenDisponibleCuerpo({
   onFuentesUsadas?: () => void;
   /** Clic en un lote de aserrío: abre su historia (Lotes › Historia del lote). */
   onAbrirLote?: (loteId: string) => void;
+  /** El apartado «Por troza» (`?sub=por-troza`): el patio pieza por pieza, con este filtro. */
+  porTroza?: boolean;
+  onPorTroza?: (si: boolean) => void;
 }) {
   const [permisos, setPermisos] = useState<string[]>([]);
   const [especies, setEspecies] = useState<string[]>([]);
@@ -76,6 +84,16 @@ export default function VolumenDisponibleCuerpo({
   const [unidad, setUnidad] = useLocalStorage<UnidadVolumen>("ctp-volumen-disponible:unidad", "m3");
   const una = fuentes.length === 1 ? fuentes[0] : null;
   const enLibro = useEnElLibro();
+  /* «Por troza» vive en la vista sumada (19-10). Un link viejo o un QR (`?sub=por-troza`)
+     con una pila sola recordada abre «Todo»; elegir una pila sola desde las
+     tarjetas, en cambio, es querer su detalle: se sale de «Por troza». */
+  useEffect(() => {
+    if (porTroza && una) setFuentes([...TODAS_LAS_FUENTES]);
+  }, [porTroza, una, setFuentes]);
+  const elegirFuentes = (f: FuenteVolumen[]) => {
+    if (porTroza && f.length === 1) onPorTroza?.(false);
+    setFuentes(f);
+  };
 
   /* Las vistas de adentro, recortadas a su pila y al permiso de arriba.
      Identidad estable: cambiarla recalcula toda la vista de abajo. */
@@ -163,7 +181,7 @@ export default function VolumenDisponibleCuerpo({
             <InfoTip
               title="Volumen disponible"
               what="Cuánta madera hay para trabajar, en cuatro pilas que no se pisan: trozas libres, lo que sobra en los lotes, lo por recepcionar y los productos aserrados."
-              affects="Toca una tarjeta para ver su pila con todo su detalle (la flecha la deja sola); dos o más se suman. «Todo» suma las cuatro, con su estimado en pt aprovechables (troza al 56 %, aserrado a m³ × 424). La pestaña «Por troza» es el patio pieza por pieza."
+              affects="Toca una tarjeta para ver su pila con todo su detalle (la flecha la deja sola); dos o más se suman. «Todo» suma las cuatro, con su estimado en pt aprovechables (troza al 56 %, aserrado a m³ × 424). «Por troza», al lado de «Por especie», es el patio pieza por pieza con el mismo filtro."
               example="Elige Trozas y Lotes para ver toda la madera en troza que puede ir a la sierra."
             />
           }
@@ -195,8 +213,8 @@ export default function VolumenDisponibleCuerpo({
           porPila={v.porPila}
           unidad={unidad}
           cargando={v.sinDatosAun}
-          onAlternar={(f) => setFuentes(alternarFuente(fuentes, f))}
-          onSolo={(f) => setFuentes([f])}
+          onAlternar={(f) => elegirFuentes(alternarFuente(fuentes, f))}
+          onSolo={(f) => elegirFuentes([f])}
         />
       </div>
 
@@ -254,6 +272,22 @@ export default function VolumenDisponibleCuerpo({
           filtros={hayFiltros ? filtros : undefined}
           onElegirPermiso={alternarPermiso}
           onElegirEspecie={alternarEspecie}
+          porTroza={porTroza}
+          onPorTroza={onPorTroza}
+          panelPorTroza={
+            onPorTroza && (
+              <CtpTrozasView
+                alcance={{
+                  fuentes,
+                  permisos,
+                  especies,
+                  onPermisos: setPermisos,
+                  onEspecies: setEspecies,
+                  contratoId: v.contratoFiltro,
+                }}
+              />
+            )
+          }
         />
       )}
     </div>

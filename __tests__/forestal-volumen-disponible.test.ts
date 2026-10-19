@@ -28,6 +28,7 @@ import {
   fuenteDeTroza,
   fuenteDeVistaVieja,
   guiasPorRecepcionar,
+  trozaEnVolumen,
   leerFuentes,
   lotesConSobrante,
   opcionesDeEspecie,
@@ -215,6 +216,25 @@ describe("tablas combinadas", () => {
     expect(p1?.ptPorFuente).toEqual({ trozas: ptRolliza(1.5), lotes: ptRolliza(4.5), recepcion: ptRolliza(5), productos: 0 });
     const p2 = filas.find((f) => f.clave === P2);
     expect(p2?.ptPorFuente.productos).toBe(ptAserrada(2));
+  });
+
+  it("«N° trozas» cuenta piezas vivas, y «Por troza» lista justo esas (19-10)", () => {
+    const filas = volumenPorGrupo(partidas(), "permiso");
+    // P1: libre-1, lote-1, lote-2, mixto-1, pend-1, pend-2; la consumida no.
+    expect(filas.find((f) => f.clave === P1)?.trozas).toBe(6);
+    expect(filas.find((f) => f.clave === P2)?.trozas).toBe(1);
+    // La corrida de dos permisos es aserrado: no tiene trozas.
+    expect(filas.find((f) => f.clave.includes(" · "))?.trozas).toBe(0);
+    expect(resumenVolumen(partidas()).trozas).toBe(7);
+    const todas = [...FUENTES_VOLUMEN];
+    expect(TROZAS.filter((t) => trozaEnVolumen(t, todas, [P1], [])).map((t) => t.id)).toEqual([
+      "libre-1", "lote-1", "lote-2", "mixto-1", "pend-1", "pend-2",
+    ]);
+    // Con la pila de Trozas sola, la columna y la lista bajan juntas.
+    const soloTrozas = partidasDeTrozas(TROZAS).filter((p) => p.fuente === "trozas");
+    expect(volumenPorGrupo(soloTrozas, "permiso").find((f) => f.clave === P1)?.trozas).toBe(
+      TROZAS.filter((t) => trozaEnVolumen(t, ["trozas"], [P1], [])).length,
+    );
   });
 
   it("por especie usa la especie de la troza y la de la corrida", () => {

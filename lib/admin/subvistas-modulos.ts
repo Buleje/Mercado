@@ -532,7 +532,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     // Compactación 17-10: seis vistas del riel pasaron a ser pestañas internas.
     { vista: "despacho", key: "guias", label: "Guías emitidas", hint: "Las GTF de salida del CTP y cuáles quedaron a medio llenar" },
     { vista: "lotes", key: "historia", label: "Historia del lote", hint: "Todo lo que pasó con una pila: qué trozas se apartaron, qué corrida se las comió, qué salió y con qué guía se fue" },
-    { vista: "disponibles", key: "por-troza", label: "Trozas", hint: "Buscar una pieza por su codificación: su ficha, D1/D2 y los días en el patio" },
+    { vista: "disponibles", key: "por-troza", label: "Trozas", hint: "Volumen › Por troza: buscar una pieza por su codificación, su ficha, D1/D2 y los días en el patio" },
     { vista: "saldos", key: "libro", label: "Cuadros SERFOR", hint: "Lo que firma el libro: los 3 cuadros resumen del formato oficial" },
     { vista: "cumplimiento", key: "cerrar", label: "Cierre del mes", hint: "Cerrar mes · bloquear el acta" },
     { vista: "directorio", key: "tu-ctp", label: "Ficha CTP", hint: "Identidad legal SERFOR: razón social, RUC, títulos y ubicación" },

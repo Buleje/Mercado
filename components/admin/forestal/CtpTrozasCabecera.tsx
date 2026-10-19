@@ -26,6 +26,7 @@ export default function CtpTrozasCabecera({
   onVerSinTitulo,
   onVerPlan,
   onRecargar,
+  sinInfo = false,
 }: {
   /** Piezas paradas sin título habilitante (de TODO el patio, no del recorte). */
   sinTitulo: number;
@@ -34,13 +35,15 @@ export default function CtpTrozasCabecera({
   onVerSinTitulo: () => void;
   onVerPlan: () => void;
   onRecargar: () => void;
+  /** Dentro de Volumen › Por troza el ⓘ del apartado ya lo explica: uno solo. */
+  sinInfo?: boolean;
 }) {
   const fraseSinTitulo = `Sin título declarado: ${sinTitulo} ${sinTitulo === 1 ? "pieza" : "piezas"}, ${n2(m3SinTitulo)} m³. Ver cuáles y de qué guía`;
   return (
     <CabeceraDeVista
       titulo="El patio, troza por troza"
       info={
-        <InfoTip
+        sinInfo ? undefined : <InfoTip
           title="El patio, troza por troza"
           what="Qué hay parado hoy, qué se puede llevar a la sierra y qué lleva demasiado tiempo esperando."
           affects="Consumos cuenta m³ por guía; acá la unidad es la pieza. Toca una fila para ver su ficha y recorrer las demás con ‹ ›."

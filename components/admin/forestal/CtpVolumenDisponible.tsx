@@ -9,36 +9,27 @@
  * saber cuánto se puede aprovechar. Que se filtre por permiso y que se puedan
  * elegir solo 2, 3 o 4».
  *
- * Dos pestañas internas desde la compactación del libro (17-10, plan
- * `.claude/autonomo/ctp-compactar/plan.md`):
- *   · Volumen: las cuatro pilas (`volumen-disponible-cuerpo`). UNA pila
- *     elegida → su detalle completo; dos o más → la vista SUMADA.
- *   · Por troza: el patio pieza por pieza, que era la vista «Trozas»
- *     (`CtpTrozasView`): ficha con ‹ ›, D1/D2 desde SERFOR y «Anotar», los
- *     indicadores, «Sin título», el filtro tipo Excel en cada columna y ahora
- *     también «Días en el patio» y ≈pt, que sólo tenía la tabla de aquí.
- * Las dos leen el mismo patio; cada pestaña monta el componente de antes.
+ * Las cuatro pilas (`volumen-disponible-cuerpo`): UNA pila elegida → su
+ * detalle completo; dos o más → la vista SUMADA, con sus apartados «Por
+ * permiso | Por especie | Por troza».
+ *
+ * «Por troza» era una pestaña de arriba (compactación 17-10) y desde el 19-10
+ * es el tercer apartado (Brandon: «la pestaña Por troza se pasará a la pestaña
+ * Volumen al lado de Por especie, y cambiará según lo puesto en Por permiso»):
+ * el mismo `CtpTrozasView` —ficha con ‹ ›, D1/D2, «Sin título», plan del día,
+ * escáner—, recortado por las pilas, el permiso y la especie elegidos.
+ *
+ * `?sub=` sigue siendo el contrato de la URL: `volumen` = las tablas,
+ * `por-troza` = el apartado. Así los links viejos, `?vista=trozas`, la tecla
+ * `g t` y los QR impresos (`urlFichaDeTroza`) caen en él sin migrar nada.
  */
 
 import { useState } from "react";
-import { Axe, Trees } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { FuentesPedidas } from "@/lib/forestal/volumen-disponible";
-import CtpTrozasView from "./CtpTrozasView";
-import PestanasDeVista, { type PestanaDeVista } from "./PestanasDeVista";
 import { usePestanaInterna } from "./hooks/use-pestana-interna";
 import { SUBS_DISPONIBLES, subPedidoPorVistaVieja, type SubDisponibles } from "./ctp-vistas-fusionadas";
 import VolumenDisponibleCuerpo from "./volumen-disponible-cuerpo";
-
-const PESTANAS: readonly PestanaDeVista<SubDisponibles>[] = [
-  { id: "volumen", label: "Volumen", icon: Trees, hint: "Las cuatro pilas: trozas, lotes, por recepcionar y productos" },
-  {
-    id: "por-troza",
-    label: "Por troza",
-    icon: Axe,
-    hint: "El patio pieza por pieza: su ficha, D1/D2, días en el patio y el plan del día",
-  },
-];
 
 export default function CtpVolumenDisponible({
   period,
@@ -60,7 +51,7 @@ export default function CtpVolumenDisponible({
 }) {
   /* La URL vieja (`?vista=trozas`) se lee UNA vez, al montar. */
   const [forzada] = useState(() => subPedidoPorVistaVieja("disponibles"));
-  /* Pedir una pila es mirar el volumen: gana sobre la pestaña recordada. */
+  /* Pedir una pila es mirar el volumen: gana sobre el apartado recordado. */
   const { sub, irA } = usePestanaInterna<SubDisponibles>({
     moduleId: "ctp-disponibles",
     validas: SUBS_DISPONIBLES,
@@ -70,23 +61,14 @@ export default function CtpVolumenDisponible({
   });
 
   return (
-    <PestanasDeVista
-      prefijo="ctp-disponibles"
-      etiqueta="Pestañas de Volumen disponible"
-      items={PESTANAS}
-      activa={sub}
-      onCambiar={irA}
-    >
-      {sub === "volumen" && (
-        <VolumenDisponibleCuerpo
-          period={period}
-          onIr={onIr}
-          fuentesPedidas={fuentesPedidas}
-          onFuentesUsadas={onFuentesUsadas}
-          onAbrirLote={onAbrirLote}
-        />
-      )}
-      {sub === "por-troza" && <CtpTrozasView />}
-    </PestanasDeVista>
+    <VolumenDisponibleCuerpo
+      period={period}
+      onIr={onIr}
+      fuentesPedidas={fuentesPedidas}
+      onFuentesUsadas={onFuentesUsadas}
+      onAbrirLote={onAbrirLote}
+      porTroza={sub === "por-troza"}
+      onPorTroza={(si) => irA(si ? "por-troza" : "volumen")}
+    />
   );
 }
