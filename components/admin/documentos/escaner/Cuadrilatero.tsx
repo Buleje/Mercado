@@ -26,6 +26,9 @@ export function Cuadrilatero({
 
   const puntos = tiradores(quad);
   const poligono = quad.map((p) => `${p.x * 100},${p.y * 100}`).join(" ");
+  // Path del cuadrilátero para recortar la máscara con fill-rule evenodd:
+  // oscurece lo de AFUERA y deja el documento transparente/nítido adentro.
+  const dentro = quad.map((p, i) => `${i === 0 ? "M" : "L"}${p.x * 100} ${p.y * 100}`).join(" ") + " Z";
 
   const normalizar = (clientX: number, clientY: number) => {
     const r = cajaRef.current?.getBoundingClientRect();
@@ -52,9 +55,13 @@ export function Cuadrilatero({
       <img src={src} alt="Página a recortar" className="pointer-events-none h-full w-full object-contain" draggable={false} />
 
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+        {/* Oscurece SOLO lo que se va a descartar (fuera del cuadrilátero) y deja
+            el documento a recortar transparente/nítido adentro, para ver dónde
+            cae cada punto. Antes el relleno tapaba el área a conservar. */}
+        <path d={`M0 0 H100 V100 H0 Z ${dentro}`} fill="black" fillOpacity={0.5} fillRule="evenodd" />
         <polygon
           points={poligono}
-          fill="var(--accent-muted)"
+          fill="none"
           stroke="var(--accent)"
           strokeWidth={2}
           vectorEffect="non-scaling-stroke"
