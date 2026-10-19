@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { candadoDelNegocio } from "@/lib/db/candado";
 
 /**
@@ -44,6 +45,38 @@ interface CamposDeCaja {
   efectivoEsperado: number;
   efectivoContado: number | null;
   diferenciaCaja: number;
+}
+
+/** Un cambio de los campos de caja de una fila: se escribe `despues` sólo si la fila sigue en `antes`. */
+export interface CambioDeCaja {
+  id: string;
+  antes: CamposDeCaja;
+  despues: CamposDeCaja;
+}
+
+/** Filas por sentencia del arreglo en lote (cada ida a Supabase son ~119 ms; sin transacción entre lotes). */
+const LOTE = 50;
+
+const aNumero = (v: Prisma.Decimal | null) => (v == null ? null : Number(v));
+
+/**
+ * El UPDATE de un lote de `cambiarCajaDelCron` (exportado para validarlo con
+ * `EXPLAIN` dentro de `BEGIN READ ONLY` sin escribir): compara-y-cambia en el
+ * WHERE, con `tenantId`.
+ */
+export function sentenciaDeCambioDeCaja(tenantId: string, lote: readonly CambioDeCaja[]): Prisma.Sql {
+  const filas = lote.map(
+    (c) => Prisma.sql`(${c.id}::text, ${c.despues.efectivoEsperado}::numeric, ${c.despues.efectivoContado}::numeric, ${c.despues.diferenciaCaja}::numeric,
+      ${c.antes.efectivoEsperado}::numeric, ${c.antes.efectivoContado}::numeric, ${c.antes.diferenciaCaja}::numeric)`,
+  );
+  return Prisma.sql`
+    UPDATE "DailySummary" AS d
+    SET "efectivoEsperado" = v.esp, "efectivoContado" = v.cont, "diferenciaCaja" = v.dif
+    FROM (VALUES ${Prisma.join(filas)}) AS v(id, esp, cont, dif, esp_antes, cont_antes, dif_antes)
+    WHERE d."id" = v.id AND d."tenantId" = ${tenantId} AND d."creadoPor" = ${"cron"}
+      AND d."efectivoEsperado" = v.esp_antes
+      AND d."efectivoContado" IS NOT DISTINCT FROM v.cont_antes
+      AND d."diferenciaCaja" = v.dif_antes`;
 }
 
 /** Clave del candado de un resumen: el mismo día y el mismo autor (cron / a mano) van en fila. */
@@ -106,5 +139,52 @@ export const DailySummaryDB = {
       const fila = await tx.dailySummary.create({ data: { tenantId, fecha, ...data }, select: { id: true } });
       return { id: fila.id, creado: true };
     });
+  },
+
+  /**
+   * Mantenimiento (`scripts/recalcular-cierres-viejos.ts`): los negocios con
+   * resúmenes del cron SIN cuadre (esperado 0, contado vacío, diferencia 0)
+   * de antes de `antesDe`. Es el único método sin `tenantId`: enumera negocios.
+   */
+  async negociosConCronSinCuadre(antesDe: Date): Promise<Array<{ tenantId: string; slug: string }>> {
+    const tenants = await prisma.tenant.findMany({
+      where: { dailySummaries: { some: { creadoPor: "cron", efectivoEsperado: 0, efectivoContado: null, diferenciaCaja: 0, fecha: { lt: antesDe } } } },
+      select: { id: true, slug: true },
+      orderBy: { slug: "asc" },
+    });
+    return tenants.map((t) => ({ tenantId: t.id, slug: t.slug }));
+  },
+
+  /** Los resúmenes del cron SIN cuadre de un negocio, de antes de `antesDe` (del más viejo al más nuevo). */
+  async cronSinCuadre(tenantId: string, antesDe: Date) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.dailySummary.findMany({
+      where: { tenantId, creadoPor: "cron", efectivoEsperado: 0, efectivoContado: null, diferenciaCaja: 0, fecha: { lt: antesDe } },
+      select: { id: true, tenantId: true, fecha: true, creadoPor: true, efectivoEsperado: true, efectivoContado: true, diferenciaCaja: true },
+      orderBy: { fecha: "asc" },
+    });
+    return filas.map((f) => ({
+      ...f,
+      efectivoEsperado: Number(f.efectivoEsperado),
+      efectivoContado: aNumero(f.efectivoContado),
+      diferenciaCaja: Number(f.diferenciaCaja),
+    }));
+  },
+
+  /**
+   * Cambia los campos de caja de resúmenes del cron, en lotes de 50 por
+   * sentencia y sin transacción entre lotes. Cada fila se escribe SÓLO si sigue
+   * como dice `antes` (comparar-y-cambiar en el WHERE, con `tenantId`): correrlo
+   * dos veces no cambia nada la segunda, y nunca pisa una fila que el cron ya
+   * completó. Sirve para aplicar el arreglo y para revertirlo (antes ↔ después).
+   * Devuelve cuántas filas cambió.
+   */
+  async cambiarCajaDelCron(tenantId: string, cambios: readonly CambioDeCaja[]): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    let total = 0;
+    for (let i = 0; i < cambios.length; i += LOTE) {
+      total += await prisma.$executeRaw(sentenciaDeCambioDeCaja(tenantId, cambios.slice(i, i + LOTE)));
+    }
+    return total;
   },
 };

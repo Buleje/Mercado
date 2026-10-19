@@ -12,6 +12,7 @@ import {
 } from "@/lib/caja/cierres-por-dia";
 import { limaDateKey } from "@/lib/utils";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { cuadresPorDia } from "@/lib/caja/recalcular-cierres-viejos";
 
 /**
  * CajaPorDiaDB — el cierre de cada día con el conteo real (Caja › Historial ›
@@ -39,6 +40,15 @@ function aCaja(r: FilaCaja): CajaCerradaDelDia {
     difference: montoONull(r.difference),
     notes: r.notes,
   };
+}
+
+/** Las cajas cerradas cuyo día (el de su cierre, o el de su apertura si no lo tiene) cae en `[gte, lt)`. */
+async function cajasCerradasEntre(tenantId: string, gte: Date, lt: Date): Promise<CajaCerradaDelDia[]> {
+  const cajas = await prisma.cashRegister.findMany({
+    where: { tenantId, status: "cerrada", OR: [{ closedAt: { gte, lt } }, { closedAt: null, openedAt: { gte, lt } }] },
+    select: SELECT_CAJA,
+  });
+  return cajas.map(aCaja);
 }
 
 export const CajaPorDiaDB = {
@@ -84,11 +94,19 @@ export const CajaPorDiaDB = {
     if (!tenantId) throw new Error("tenantId is required");
     const gte = inicioDelDiaLima(dia);
     const lt = new Date(gte.getTime() + DIA_MS);
-    const cajas = await prisma.cashRegister.findMany({
-      where: { tenantId, status: "cerrada", OR: [{ closedAt: { gte, lt } }, { closedAt: null, openedAt: { gte, lt } }] },
-      select: SELECT_CAJA,
-    });
-    return cuadreDeCajas(cajas.map(aCaja));
+    return cuadreDeCajas(await cajasCerradasEntre(tenantId, gte, lt));
+  },
+
+  /**
+   * El cuadre de cada día de Lima entre `desde` y `hasta` (`YYYY-MM-DD`, ambos
+   * incluidos) en UNA consulta: el mismo de `cuadreDelDia`, día por día. Los
+   * días sin cajas cerradas no vienen. Lo usa el arreglo de los resúmenes viejos.
+   */
+  async cuadresDelRango(tenantId: string, desde: string, hasta: string): Promise<Map<string, CuadreDelDia>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gte = inicioDelDiaLima(desde);
+    const lt = new Date(inicioDelDiaLima(hasta).getTime() + DIA_MS);
+    return cuadresPorDia(await cajasCerradasEntre(tenantId, gte, lt));
   },
 
   /**
