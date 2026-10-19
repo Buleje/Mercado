@@ -288,7 +288,7 @@ export default function VendorDashboardModule() {
             <>
               {tab !== "marketplace" && (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <ChartsVisibilityButton />
+                  <ChartsVisibilityButton soloIcono />
                   <DashboardDateRange value={dateRange} onChange={setDateRange} />
                 </div>
               )}

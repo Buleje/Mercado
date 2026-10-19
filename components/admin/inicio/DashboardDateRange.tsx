@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Calendar, CalendarDays, ChevronDown } from "@buleje/design-system/icons";
+import { Calendar, CalendarDays } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import { formatDate, formatDateShort } from "@/lib/format";
 
@@ -83,6 +84,8 @@ const PRESETS: { id: Exclude<DatePreset, "personalizado" | "especifica">; label:
   { id: "mensual", label: "Mes",      short: "Mes" },
   { id: "anual",   label: "Año",      short: "Año" },
 ];
+/** A la vista van los tres períodos de todos los días; Año, Día y Rango, en «Más» (19-10: la banda del Inicio bajó de 122 a ~66 px). */
+const PRESETS_A_LA_VISTA = PRESETS.slice(0, 3);
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -171,11 +174,22 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
         ? `${formatDateShort(value.from)} — ${formatDateShort(value.to)}`
         : null;
 
+  const anualActivo = value.preset === "anual" && mode === "none";
+  const diaActivo = mode === "specific" || value.preset === "especifica";
+  const rangoActivo = mode === "range" || value.preset === "personalizado";
+  const extraActivo = anualActivo || diaActivo || rangoActivo;
+  const etiquetaMas = anualActivo ? "Año" : diaActivo ? "Día" : rangoActivo ? "Rango" : "Más";
+  const accionesMas: MenuAccion[] = [
+    { id: "anual", label: "Este año", icon: Calendar, activo: anualActivo, onSelect: () => handlePreset("anual") },
+    { id: "dia", label: "Un día", hint: "Elige la fecha exacta", icon: Calendar, activo: diaActivo, onSelect: handleSpecificToggle },
+    { id: "rango", label: "Rango de fechas", hint: "Desde y hasta", icon: CalendarDays, activo: rangoActivo, onSelect: handleRangeToggle },
+  ];
+
   return (
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
       {/* Preset pills */}
       <div className="flex items-center gap-0.5 rounded-xl bg-[var(--surface-sunken)]">
-        {PRESETS.map((p) => (
+        {PRESETS_A_LA_VISTA.map((p) => (
           <button
             key={p.id}
             onClick={() => handlePreset(p.id)}
@@ -190,41 +204,18 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             <span className="sm:hidden">{p.short}</span>
           </button>
         ))}
-        {/* Específica (un solo día) */}
-        <button
-          onClick={handleSpecificToggle}
-          className={cn(
-            "flex h-12 min-w-12 items-center justify-center gap-1.5 px-3 rounded-xl text-sm font-semibold transition-all",
-            mode === "specific" || value.preset === "especifica"
-              ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-sm"
-              : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] ",
-          )}
-          title="Día específico"
-        >
-          <Calendar className="h-4 w-4" />
-          <span className="hidden sm:inline">Día</span>
-        </button>
-        {/* Rango personalizado */}
-        <button
-          onClick={handleRangeToggle}
-          className={cn(
-            "flex h-12 min-w-12 items-center justify-center gap-1.5 px-3 rounded-xl text-sm font-semibold transition-all",
-            mode === "range" || value.preset === "personalizado"
-              ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-sm"
-              : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] ",
-          )}
-          title="Rango personalizado"
-        >
-          <CalendarDays className="h-4 w-4" />
-          <span className="hidden sm:inline">Rango</span>
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 transition-transform",
-              (mode === "range" || mode === "specific") && "rotate-180",
-            )}
-          />
-        </button>
       </div>
+
+      {/* Año, un día y un rango: menos usados, en un menú. El botón dice cuál rige. */}
+      <ActionMenu
+        label={etiquetaMas}
+        icon={CalendarDays}
+        size="md"
+        variant="outline"
+        title="Más períodos: año, un día o un rango"
+        className={cn(extraActivo && "border-[var(--accent)]")}
+        actions={accionesMas}
+      />
 
       {/* Specific date input */}
       {mode === "specific" && (

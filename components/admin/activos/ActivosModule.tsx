@@ -140,13 +140,15 @@ export default function ActivosModule() {
   const acciones = (
     <>
       {/* Importar y exportar se usan de vez en cuando: al menú (ley de Brandon 2026-10-01). */}
-      {kpis.boton}
+      {/* A 400 px la fila es «Nuevo activo» + «⋯»: el botón de Indicadores se va al menú (19-10: 3 filas de botones → 1). */}
+      <span className="contents max-sm:hidden">{kpis.boton}</span>
       <ActionMenu
         label="Más acciones"
         soloIcono
         size="md"
         className="w-12 shrink-0"
         actions={[
+          { id: "indicadores", label: kpis.abierto ? "Ocultar indicadores" : "Ver indicadores", hint: "Máquinas, ingresos, gastos, ganancia y por cobrar", icon: BarChart3, activo: kpis.abierto, onSelect: kpis.alternar },
           { id: "importar", label: "Importar flota", hint: "Sube un Excel/CSV y crea varias máquinas de una", icon: Upload, onSelect: () => setShowImport(true) },
           { id: "exportar", label: "Exportar reporte", hint: "Descarga la rentabilidad de cada máquina", icon: Download, onSelect: exportReport },
         ]}

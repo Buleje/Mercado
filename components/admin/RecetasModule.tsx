@@ -86,7 +86,7 @@ export default function RecetasModule() {
                   soloIcono
                   size="md"
                   className="w-12 shrink-0"
-                  title="Actualizar"
+                  title="Más acciones"
                   actions={[{ id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: recargar }]}
                 />
               )}

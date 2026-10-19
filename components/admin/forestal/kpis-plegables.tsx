@@ -86,6 +86,12 @@ export interface KpisPlegablesProps {
    */
   soloIcono?: boolean;
   /**
+   * El titular nunca se dibuja en el botón (queda en el `title`, al pasar el
+   * mouse): para una banda de título a 1280 px donde ícono + cuenta + titular
+   * empujan las pestañas a una segunda fila (Recetas, 19-10: 122 → 66 px).
+   */
+  sinTitular?: boolean;
+  /**
    * Dentro de un libro, `boton` va al riel de vistas. `false` = se queda donde
    * la vista lo pone (una sub-sección, un bloque de la ficha). Fuera de un libro
    * no cambia nada. Default `true` en `useKpisPlegables`, `false` en
@@ -112,8 +118,9 @@ export function useKpisPlegables({
   anchoFijo = false,
   compactoEnMovil = false,
   soloIcono = false,
+  sinTitular = false,
   alRiel = true,
-}: KpisPlegablesProps): { boton: ReactNode; enSuLugar: ReactNode; panel: ReactNode; abierto: boolean } {
+}: KpisPlegablesProps): { boton: ReactNode; enSuLugar: ReactNode; panel: ReactNode; abierto: boolean; alternar: () => void } {
   /* Clave `v2`: la v1 guardaba «¿está abierta la SEGUNDA fila?», otra pregunta. */
   const [abierto, setAbierto] = useState(abiertoPorDefecto);
   /* Sin nada guardado manda el default de la vista; «0» guardado gana siempre. */
@@ -146,7 +153,7 @@ export function useKpisPlegables({
     trabajoPrevio.current = trabajoActivo;
   }, [trabajoActivo, claveMemoria]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (tarjetas.length === 0) return { boton: null, enSuLugar: null, panel: null, abierto: false };
+  if (tarjetas.length === 0) return { boton: null, enSuLugar: null, panel: null, abierto: false, alternar };
 
   /* Las clases `/riel` sólo pesan dentro del riel: en su lugar no hay
      contenedor con ese nombre y el botón se ve como siempre.
@@ -188,7 +195,7 @@ export function useKpisPlegables({
       {!compacto && !abierto && resumen && (
         <span
           className={`min-w-0 truncate font-mono text-sm font-normal tabular-nums text-[var(--text-secondary)] ${
-            soloIcono ? "max-xl:sr-only" : compactoEnMovil ? "max-sm:hidden" : ""
+            sinTitular ? "sr-only" : soloIcono ? "max-xl:sr-only" : compactoEnMovil ? "max-sm:hidden" : ""
           } ${CLASE_TITULAR_EN_RIEL}`}
         >
           {resumen}
@@ -241,7 +248,7 @@ export function useKpisPlegables({
     enSuLugar
   );
 
-  return { boton, enSuLugar, panel, abierto };
+  return { boton, enSuLugar, panel, abierto, alternar };
 }
 
 /**

@@ -17,6 +17,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { FileText, MoreHorizontal, Wallet } from "@buleje/design-system/icons";
 
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -164,6 +165,8 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
 
   /** Dónde dibujan su segundo nivel Préstamos, Adelantos y Activos. */
   const [ranura, setRanura] = useState<HTMLElement | null>(null);
+  /* A menos de 640 px la banda parte en filas: el segundo nivel va DEBAJO de las pestañas del hub (título → pestañas → segundo nivel), no encima. */
+  const angosto = useMediaQuery("(max-width: 639px)");
   const enElHub = useMemo(() => ({ ranura }), [ranura]);
 
   return (
@@ -179,7 +182,7 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
           icon: Wallet,
           actions: (
             <>
-              {secciones && secciones.length > 1 && (
+              {!angosto && secciones && secciones.length > 1 && (
                 <SeccionesNav
                   secciones={secciones}
                   activa={seccion}
@@ -189,7 +192,7 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
                 />
               )}
               {/* `contents`: lo que el módulo dibuja acá es parte de esta fila. */}
-              <div ref={setRanura} className="contents" data-ranura-segundo-nivel="" />
+              {!angosto && <div ref={setRanura} className="contents" data-ranura-segundo-nivel="" />}
               {/* El reporte bancario se pide una vez al mes: al «⋯», con su
                   explicación de una línea (un «Opciones» con texto ocupaba
                   145 px de la banda para una sola opción). */}
@@ -220,6 +223,20 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
         moduleId="finanzas"
       >
         <RanuraDelSegundoNivel.Provider value={enElHub}>
+          {angosto && (
+            <div className="mb-3 space-y-2">
+              {secciones && secciones.length > 1 && (
+                <SeccionesNav
+                  secciones={secciones}
+                  activa={seccion}
+                  onIr={irA}
+                  datos={datos}
+                  etiqueta={`Secciones de ${nombreDeLaPestana}`}
+                />
+              )}
+              <div ref={setRanura} className="contents" data-ranura-segundo-nivel="" />
+            </div>
+          )}
           {conSegundoNivel ? (
             /* Lo que controla la barra de secciones de la banda. En Préstamos,
                Adelantos y Activos la pestaña activa la sabe el módulo: el panel

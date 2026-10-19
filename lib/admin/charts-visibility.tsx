@@ -258,7 +258,7 @@ export function useChartsVisibilityManager() {
 
 // ── Button + Modal UI ──────────────────────────────────────────────────────
 
-export function ChartsVisibilityButton({ label = "Gráficos" }: { label?: string }) {
+export function ChartsVisibilityButton({ label = "Gráficos", soloIcono = false }: { label?: string; soloIcono?: boolean }) {
   const [open, setOpen] = useState(false);
   const { charts, setVisible, visibleCount, totalCount, sinDatosCount } = useChartsVisibilityManager();
   const resumen =
@@ -280,8 +280,8 @@ export function ChartsVisibilityButton({ label = "Gráficos" }: { label?: string
         {/* En la banda angosta (celular) queda sólo el ícono (texto y cuenta
             van al tooltip): así entra en la fila del rango de fechas (08-10:
             con la cuenta faltaban 13 px y eran dos filas). */}
-        <span className="@max-[30rem]:sr-only">{label}</span>
-        {totalCount > 0 && (
+        <span className={soloIcono ? "sr-only" : "@max-[30rem]:sr-only"}>{label}</span>
+        {totalCount > 0 && !soloIcono && (
           <span className="inline-flex @max-[30rem]:hidden items-center justify-center min-w-7 h-6 px-1.5 rounded-full bg-[var(--surface-sunken)] text-sm font-extrabold tabular-nums text-[var(--text-secondary)]">
             {visibleCount}/{totalCount}
           </span>
