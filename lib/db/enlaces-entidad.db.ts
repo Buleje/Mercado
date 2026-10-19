@@ -2,8 +2,16 @@ import "server-only";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { buildStoragePath, uploadToStorage } from "@/lib/documents/storage";
 import { CARPETA_ENTIDAD, ROLES_ENTIDAD_SENSIBLE, etiquetasDeEntidad, rutaCarpetaEntidad, tagEntidad, type TipoEntidad } from "@/lib/documentos/enlaces-entidad";
+import { ROL_CANDADO_DUENO } from "@/lib/documents/doc-access";
 
 const TIPOS_SENSIBLES: ReadonlySet<TipoEntidad> = new Set<TipoEntidad>(["tercero", "colaborador"]);
+
+/**
+ * allowedRoles de lo sensible: dueño/admin + el candado que impide que
+ * `manager`/`tienda_owner` lo vean en el Drive general (ADR-502). Sin el
+ * candado, los privilegiados saltan el `allowedRoles` (ver `doc-access.ts`).
+ */
+const ALLOWED_SENSIBLE: readonly string[] = [...ROLES_ENTIDAD_SENSIBLE, ROL_CANDADO_DUENO];
 
 type Entidad = { id: string; nombre: string; periodo?: string };
 
@@ -38,13 +46,13 @@ export const EnlacesEntidadDB = {
   async cerrarARolesSensibles(tenantId: string, tipo: TipoEntidad, carpetaEntidadId: string, rol?: string): Promise<void> {
     const raizRuta = CARPETA_ENTIDAD[tipo].join("/");
     const { idPorRuta } = await DocumentsDB.createFolderTree(tenantId, { parentId: null, rutas: [raizRuta] }, rol);
-    const objetivo = [...ROLES_ENTIDAD_SENSIBLE].sort().join(",");
+    const objetivo = [...ALLOWED_SENSIBLE].sort().join(",");
     const carpetas = await DocumentsDB.listFolders(tenantId);
     for (const id of [idPorRuta[raizRuta], carpetaEntidadId]) {
       const f = carpetas.find((c) => c.id === id);
       if (!id || !f) continue;
       if ([...(f.allowedRoles ?? [])].sort().join(",") !== objetivo) {
-        await DocumentsDB.updateFolder(tenantId, id, { allowedRoles: [...ROLES_ENTIDAD_SENSIBLE] });
+        await DocumentsDB.updateFolder(tenantId, id, { allowedRoles: [...ALLOWED_SENSIBLE] });
       }
     }
   },
@@ -73,7 +81,13 @@ export const EnlacesEntidadDB = {
       tags: etiquetasDeEntidad(tipo, entidad.id, entidad.nombre, papel.extraTags),
       uploadedById,
       viewerRole: rol,
-      allowedRoles: papel.allowedRoles ? [...papel.allowedRoles] : [],
+      // Un papel sensible lleva SIEMPRE el candado de dueño (aunque la ruta no
+      // lo pida): si no, un `manager` lo vería en el Drive general (ADR-502).
+      allowedRoles: TIPOS_SENSIBLES.has(tipo)
+        ? [...ALLOWED_SENSIBLE]
+        : papel.allowedRoles
+          ? [...papel.allowedRoles]
+          : [],
     });
     const storagePath = buildStoragePath({ tenantId, documentId: draft.id, versionLabel: "v1", originalName: archivo });
     const up = await uploadToStorage(storagePath, papel.pdf, "application/pdf");

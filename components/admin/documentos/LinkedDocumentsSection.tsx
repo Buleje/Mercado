@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { getSignedDownloadUrl } from "@/hooks/use-documents";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { type TipoEntidad, tagEntidad } from "@/lib/documentos/enlaces-entidad";
+import { TAG_FOTO_ASISTENCIA } from "@/lib/rrhh/asistencia-fotos";
 import type { DbDocument } from "@/lib/types/documents";
 
 type Entity = "customer" | "supplier" | TipoEntidad;
@@ -34,7 +35,11 @@ function daysUntil(iso: string | null): number | null {
 function urlDeDocumentos(entity: Entity, id: string): string {
   if (entity === "customer") return `/api/admin/documents?customerId=${encodeURIComponent(id)}`;
   if (entity === "supplier") return `/api/admin/documents?supplierId=${encodeURIComponent(id)}`;
-  return `/api/admin/documents?tags=${encodeURIComponent(tagEntidad(entity, id))}`;
+  const base = `/api/admin/documents?tags=${encodeURIComponent(tagEntidad(entity, id))}`;
+  // Colaborador comparte su tag (`colaborador:<id>`) con las fotos de asistencia
+  // (una sola identidad, ADR-502): acá queremos sus PAGOS, no cada selfie diario.
+  if (entity === "colaborador") return `${base}&excluir=${encodeURIComponent(TAG_FOTO_ASISTENCIA)}`;
+  return base;
 }
 
 export function LinkedDocumentsSection({

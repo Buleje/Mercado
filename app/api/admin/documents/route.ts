@@ -23,6 +23,7 @@ const ListQuery = z.object({
   category: z.string().optional(),
   q: z.string().optional(),
   tags: z.string().optional(), // CSV
+  excluir: z.string().optional(), // CSV — deja fuera lo que tenga alguno de estos tags
   favorite: z.enum(["1", "0", "true", "false"]).optional(),
   customerId: z.string().optional(),
   orderId: z.string().optional(),
@@ -74,6 +75,7 @@ export async function GET(req: NextRequest) {
     q: qAny ? undefined : f.q,
     qAny,
     tags: f.tags?.split(",").map((s) => s.trim()).filter(Boolean),
+    sinTags: f.excluir?.split(",").map((s) => s.trim()).filter(Boolean),
     favorite: f.favorite ? f.favorite === "1" || f.favorite === "true" : undefined,
     customerId: f.customerId,
     orderId: f.orderId,

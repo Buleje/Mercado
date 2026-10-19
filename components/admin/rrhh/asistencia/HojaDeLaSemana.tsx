@@ -17,13 +17,14 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, Download, Users } from "@buleje/design-system/icons";
+import { AlertTriangle, Archive, Download, Users } from "@buleje/design-system/icons";
 import { EmptyState, LoadingState, StatCard } from "@buleje/design-system";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { avisarFallos, useRrhhAsistencia } from "@/hooks/use-rrhh-asistencia";
 import { useRrhhGanado } from "@/hooks/use-rrhh-ganado";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { sinDato } from "@/lib/errores/sin-dato";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { rangoDeDias, semanaDe, sumarDias } from "@/lib/rrhh/fechas";
 import { limaDateKey } from "@/lib/utils";
 import { AvisoRrhh, BOTON } from "../rrhh-form";
@@ -62,6 +63,7 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
   const { puestos } = useRrhhPuestos();
   const [historial, setHistorial] = useState<{ colaborador: ColaboradorMinDTO; fecha: string } | null>(null);
   const [descargando, setDescargando] = useState(false);
+  const [archivando, setArchivando] = useState(false);
 
   const dias = useMemo(() => rangoDeDias(desde, hasta), [desde, hasta]);
   const hoy = hoja?.hoy ?? limaDateKey();
@@ -159,6 +161,32 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
     }
   };
 
+  // ADR-502: archiva en el Drive (Equipo/Pagos) el comprobante de pago de cada
+  // persona de ESTA semana, con los montos que el backend ya calculó (no se
+  // recalcula acá). Queda en la ficha de cada colaborador.
+  const archivarPagos = async () => {
+    setArchivando(true);
+    try {
+      const r = await fetch("/api/admin/rrhh/pago-semanal/archivar", {
+        method: "POST",
+        credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ desde, hasta }),
+      });
+      const d = r.ok ? await r.json() : null;
+      if (d?.ok) {
+        toast.success(`Pagos archivados en el Archivo: ${d.archivados} comprobante(s)${d.fallidas ? ` · ${d.fallidas} falló(aron)` : ""}.`);
+      } else {
+        toast.error("No se pudieron archivar los pagos. Reintenta.");
+      }
+    } catch (err) {
+      sinDato("RRHH archivar pagos de la semana")(err);
+      toast.error("No se pudieron archivar los pagos. Reintenta.");
+    } finally {
+      setArchivando(false);
+    }
+  };
+
   let contenido: ReactNode;
   if (loading) {
     contenido = <LoadingState message="Cargando la hoja de la semana..." />;
@@ -225,10 +253,18 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
         vista="asistencia"
         secciones={selectorModo}
         acciones={
-          <button type="button" onClick={descargar} disabled={!hoja || filas.length === 0 || descargando} className={BOTON.secundario} title="La hoja de la semana para firmar">
-            <Download className="h-4 w-4" aria-hidden />
-            {descargando ? "Armando el PDF…" : "Descargar PDF"}
-          </button>
+          <>
+            <button type="button" onClick={descargar} disabled={!hoja || filas.length === 0 || descargando} className={BOTON.secundario} title="La hoja de la semana para firmar">
+              <Download className="h-4 w-4" aria-hidden />
+              {descargando ? "Armando el PDF…" : "Descargar PDF"}
+            </button>
+            {conPlata && (
+              <button type="button" onClick={archivarPagos} disabled={!hoja || filas.length === 0 || archivando} className={BOTON.secundario} title="Guarda en el Archivo (Equipo/Pagos) el comprobante de pago de cada persona de esta semana">
+                <Archive className="h-4 w-4" aria-hidden />
+                {archivando ? "Archivando…" : "Archivar pagos"}
+              </button>
+            )}
+          </>
         }
       />
       <div {...(selectorModo ? propsPanelAsistencia("semana") : {})} className="space-y-3">

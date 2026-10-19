@@ -21,6 +21,22 @@ export function isPrivilegedRole(role: string | undefined | null): boolean {
 }
 
 /**
+ * Candado «solo dueños» (ADR-502): un pseudo-rol reservado —no es un rol real
+ * de nadie— que se pone en `allowedRoles` del papel/carpeta SENSIBLE (nómina,
+ * cuentas de terceros). Con él, ni `manager` ni `tienda_owner` (que en el Drive
+ * general ven todo) pueden verlo: sólo dueño/admin. No cambia el resto del
+ * Drive: un documento sin este candado sigue como siempre.
+ */
+export const ROL_CANDADO_DUENO = "candado:solo-duenos";
+
+/** Roles que ven un papel con candado de dueño (los verdaderos dueños, no el encargado). */
+const VEN_CON_CANDADO: readonly string[] = ["superadmin", "admin", "owner"];
+
+function tieneCandadoDueno(docAllowed: string[], cadena: string[][]): boolean {
+  return docAllowed.includes(ROL_CANDADO_DUENO) || cadena.some((roles) => roles.includes(ROL_CANDADO_DUENO));
+}
+
+/**
  * ¿Puede un rol ver un documento?
  *  - roles privilegiados (dueño/admin/manager) → siempre sí
  *  - si allowedRoles del doc Y de su carpeta están vacíos → sí (todos los admins)
@@ -31,7 +47,11 @@ export function canRoleSeeDoc(
   docAllowed: string[] = [],
   folderAllowed: string[] = [],
 ): boolean {
-  if (isPrivilegedRole(role)) return true;
+  const conCandado = tieneCandadoDueno(docAllowed, folderAllowed.length ? [folderAllowed] : []);
+  // Con candado de dueño, el paso libre de los privilegiados NO aplica a
+  // manager/tienda_owner: sólo dueño/admin (y roles listados) ven el papel.
+  if (!conCandado && isPrivilegedRole(role)) return true;
+  if (conCandado && VEN_CON_CANDADO.includes(role ?? "")) return true;
   if (!role) return false;
   const docOk = docAllowed.length === 0 || docAllowed.includes(role);
   const folderOk = folderAllowed.length === 0 || folderAllowed.includes(role);
@@ -87,7 +107,10 @@ export function canRoleSeeEnCadena(
   docAllowed: string[] = [],
   cadena: string[][] = [],
 ): boolean {
-  if (isPrivilegedRole(role)) return true;
+  const conCandado = tieneCandadoDueno(docAllowed, cadena);
+  // Con candado de dueño (ADR-502), manager/tienda_owner NO saltan: sólo dueño/admin.
+  if (!conCandado && isPrivilegedRole(role)) return true;
+  if (conCandado && VEN_CON_CANDADO.includes(role ?? "")) return true;
   if (!role) return false;
   if (docAllowed.length > 0 && !docAllowed.includes(role)) return false;
   return cadena.every((roles) => roles.includes(role));

@@ -21,6 +21,7 @@ import BotonFotocheck from "./BotonFotocheck";
 import ColaboradorFormModal from "./ColaboradorFormModal";
 import CesarColaboradorModal from "./CesarColaboradorModal";
 import FichaCambioEstado from "./FichaCambioEstado";
+import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
 import FichaContratos from "./FichaContratos";
 import FichaCuenta from "./FichaCuenta";
 import FichaDatos from "./FichaDatos";
@@ -238,6 +239,11 @@ export default function FichaColaboradorModal({ open, onClose, colaboradorId, ni
                     onCambio={avisar}
                   />
                   <FichaUsuarioPanel adminUser={ficha.vinculo.adminUser} guardando={guardando} accion={accion} onCambio={avisar} />
+                  {/* ADR-502: sus pagos semanales archivados (carpeta Equipo/Pagos),
+                      sólo admin/dueño; excluye las fotos de asistencia del mismo tag. */}
+                  <div className="lg:col-span-2">
+                    <LinkedDocumentsSection entity="colaborador" id={colaboradorId} nombre={c.nombre} />
+                  </div>
                 </div>
               )}
             </div>
