@@ -5,9 +5,10 @@ import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { closedPeriodOf } from "@/lib/forestal/ctp-cierre-types";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
-import { planearTitulo, type PlanTitulo } from "@/lib/forestal/titulo-de-guia";
+import { planearTitulo, type IngresoParaTitulo, type PlanTitulo } from "@/lib/forestal/titulo-de-guia";
 import { ForestContratoDB } from "./forest-contrato.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { esProveedorDeRelleno, rescatarFuenteDelRelleno } from "@/lib/forestal/asignar-permiso-import";
 
 /**
  * TituloGuiaDB — declarar el título habilitante de una guía ya asentada
@@ -43,8 +44,23 @@ export interface ResultadoTituloGuia {
   omitidos: { id: string; especie: string | null; motivo: string }[];
 }
 
+/** El plan de una guía SIN escribir: lo que `declarar` haría (vista previa del import, ADR-503). */
+export interface PlanTituloGuia {
+  gtf: string;
+  originCode: string;
+  originSourceNumber: string | null;
+  contratoId: string | null;
+  ingresos: IngresoParaTitulo[];
+  planes: PlanTitulo[];
+}
+
 export class TituloGuiaDB {
-  static async declarar(tenantId: string, pedido: PedidoTituloGuia, usuario = "unknown"): Promise<ResultadoTituloGuia> {
+  /**
+   * Lee la guía y arma el plan con `planearTitulo`, sin escribir nada. Es la
+   * mitad de lectura de `declarar`; el importador del libro la usa para la
+   * vista previa y para saber qué estado darle a cada fila (ADR-503).
+   */
+  static async planear(tenantId: string, pedido: PedidoTituloGuia): Promise<PlanTituloGuia> {
     if (!tenantId) throw new Error("tenantId is required");
     const gtf = pedido.gtfNumber.trim();
     if (!gtf) throw new CtpInvariantError("Falta la guía.", "VALIDACION");
@@ -66,7 +82,7 @@ export class TituloGuiaDB {
     }
     if (!originCode) throw new CtpInvariantError("Elige un permiso o escribe el código del título.", "VALIDACION");
 
-    const [ingresos, cierres] = await Promise.all([
+    const [filas, cierres] = await Promise.all([
       prisma.woodEntry.findMany({
         where: { tenantId, gtfNumber: gtf },
         select: {
@@ -77,21 +93,36 @@ export class TituloGuiaDB {
       }),
       ForestCtpCierreDB.list(tenantId),
     ]);
-    if (ingresos.length === 0) throw new CtpInvariantError(`No hay ingresos con la guía ${gtf}.`, "VALIDACION");
+    if (filas.length === 0) throw new CtpInvariantError(`No hay ingresos con la guía ${gtf}.`, "VALIDACION");
 
-    const planes = planearTitulo(
-      ingresos.map((i) => ({
-        id: i.id,
-        especie: i.speciesCommonName,
-        status: i.status,
-        anulado: i.deletedAt != null,
-        originCode: i.originCode,
-        originSourceNumber: i.originSourceNumber,
-        contratoId: i.contratoId,
-        periodoCerrado: closedPeriodOf(cierres, i.entryDate)?.label ?? null,
-      })),
-      { originCode, originSourceNumber, contratoId },
-    );
+    const ingresos: IngresoParaTitulo[] = filas.map((i) => ({
+      id: i.id,
+      especie: i.speciesCommonName,
+      status: i.status,
+      anulado: i.deletedAt != null,
+      originCode: i.originCode,
+      originSourceNumber: i.originSourceNumber,
+      contratoId: i.contratoId,
+      periodoCerrado: closedPeriodOf(cierres, i.entryDate)?.label ?? null,
+    }));
+    const planes = planearTitulo(ingresos, { originCode, originSourceNumber, contratoId });
+    return { gtf, originCode, originSourceNumber, contratoId, ingresos, planes };
+  }
+
+  /**
+   * `planPrevio` = el que el llamador ya leyó con `planear` para ESTA guía (el
+   * importador lo lee para la vista previa): se reusa en vez de releer la guía,
+   * el permiso y los cierres (reviewer 19-10: ~8 idas por guía). Es seguro
+   * aunque haya quedado viejo: el UPDATE repite la condición «vacío».
+   */
+  static async declarar(
+    tenantId: string,
+    pedido: PedidoTituloGuia,
+    usuario = "unknown",
+    planPrevio?: PlanTituloGuia,
+  ): Promise<ResultadoTituloGuia> {
+    const { gtf, originCode, originSourceNumber, contratoId, planes } =
+      planPrevio && planPrevio.gtf === pedido.gtfNumber.trim() ? planPrevio : await TituloGuiaDB.planear(tenantId, pedido);
 
     const aEscribir = planes.filter((p): p is PlanTitulo & { escribir: NonNullable<PlanTitulo["escribir"]> } => p.escribir != null);
     const escritos = new Set<string>();
@@ -143,5 +174,75 @@ export class TituloGuiaDB {
       }
     }
     return { originCode, actualizados, omitidos };
+  }
+
+  /**
+   * El TITULAR del permiso en lugar del proveedor de RELLENO de los ingresos ya
+   * guardados de una guía (ADR-503, reviewer 19-10: la guía que ya estaba se
+   * quedaba con «QA-503-003» de proveedor). La misma regla que el alta:
+   *   · sólo el relleno del importador (`esProveedorDeRelleno`): un nombre real
+   *     o la marca del inventario no se tocan;
+   *   · su fuente («Origen X · GTF») se guarda antes de borrarla, en la
+   *     resolución si está vacía o en las notas (`rescatarFuenteDelRelleno`);
+   *   · `ids` = los ingresos que el plan deja con ESTE permiso (escritos o que ya
+   *     lo tenían): el mes cerrado y lo anulado ya quedaron afuera ahí;
+   *   · el WHERE repite proveedor, resolución y notas leídos: si otra pantalla
+   *     los cambió en el medio, queda lo suyo.
+   */
+  static async completarProveedorDeRelleno(
+    tenantId: string,
+    gtfNumber: string,
+    ids: readonly string[],
+    titular: { nombre: string; ruc: string | null; codigo: string },
+    usuario = "unknown",
+  ): Promise<{ id: string; especie: string | null; fuente: string | null }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gtf = gtfNumber.trim();
+    const nombre = titular.nombre.trim();
+    if (!gtf || !nombre || ids.length === 0) return [];
+    const filas = await prisma.woodEntry.findMany({
+      where: { tenantId, gtfNumber: gtf, id: { in: [...ids] }, deletedAt: null },
+      select: { id: true, speciesCommonName: true, providerName: true, originCode: true, originSourceNumber: true, notes: true },
+      orderBy: { id: "asc" },
+    });
+    const hechos: { id: string; especie: string | null; fuente: string | null }[] = [];
+    for (const f of filas) {
+      if (!esProveedorDeRelleno(f.providerName, gtf)) continue;
+      const r = rescatarFuenteDelRelleno(f);
+      const n = await prisma.woodEntry.updateMany({
+        where: {
+          tenantId, id: f.id, deletedAt: null,
+          providerName: f.providerName, originSourceNumber: f.originSourceNumber, notes: f.notes,
+        },
+        data: {
+          providerName: nombre,
+          ...(titular.ruc ? { providerDocument: titular.ruc, providerDocumentType: "RUC" as const } : {}),
+          ...(r.guardadaEn === "resolucion" ? { originSourceNumber: r.originSourceNumber } : {}),
+          ...(r.guardadaEn === "notas" ? { notes: r.notes } : {}),
+        },
+      });
+      if (n.count === 0) continue;
+      hechos.push({ id: f.id, especie: f.speciesCommonName, fuente: r.fuente });
+      auditCtp({
+        tenantId,
+        action: "ctp_ingreso_titular_del_permiso",
+        entity: "WoodEntry",
+        entityId: f.id,
+        detail:
+          `Puso al titular del permiso ${titular.codigo} (${nombre}${titular.ruc ? `, RUC ${titular.ruc}` : ""}) como proveedor ` +
+          `del ingreso de ${f.speciesCommonName ?? "—"} de la guía ${gtf}, en lugar de «${f.providerName}» (relleno del importador)` +
+          `${r.guardadaEn === "resolucion" ? ` · su fuente «${r.fuente}» quedó como N° de fuente de origen` : ""}` +
+          `${r.guardadaEn === "notas" ? ` · su fuente «${r.fuente}» quedó en las notas` : ""}.`,
+        user: usuario,
+      });
+    }
+    if (hechos.length > 0) {
+      try {
+        invalidateByPrefix(`${CACHE_WOOD_ENTRIES}:${tenantId}`);
+      } catch (err) {
+        logger.error("[titulo-guia] invalidar caché failed", { error: String(err) });
+      }
+    }
+    return hechos;
   }
 }

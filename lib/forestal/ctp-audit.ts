@@ -339,6 +339,13 @@ export type CtpAuditAction =
   | "ctp_gtf_datos"
   // Importación del libro desde el Excel LO-CTP (ADR-138) — evento por lote
   | "ctp_import"
+  /** El permiso que el operador eligió para un archivo del import (ADR-503):
+   *  cuál, de qué archivo y cuántas filas lo recibieron, ya lo tenían, traían
+   *  otro (no se pisó) o heredan. Va contra el permiso (`ForestContrato`). */
+  | "ctp_import_permiso"
+  /** El titular del permiso del archivo reemplazó el proveedor de RELLENO de
+   *  un ingreso que ya estaba (ADR-503); la fuente del relleno quedó guardada. */
+  | "ctp_ingreso_titular_del_permiso"
   // Cierre de período fiscal del libro (ADR-139) — congela + bloquea el mes
   | "ctp_periodo_cerrar"
   | "ctp_periodo_reabrir"

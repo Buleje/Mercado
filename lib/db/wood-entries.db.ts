@@ -1526,6 +1526,15 @@ const SELECT_TROZA_DE_TROZADO = {
   },
 } satisfies Prisma.WoodEntryTrozaSelect;
 
+/** Un ingreso vivo de una guía, con lo que el importador compara (ADR-138). */
+export interface IngresoComparable {
+  id: string;
+  volumeM3: number;
+  speciesCommonName: string;
+  productType: string;
+  providerName: string;
+}
+
 export class WoodEntriesDB {
   /**
    * Crea un nuevo ingreso de madera al CTP.
@@ -4583,27 +4592,29 @@ export class WoodEntriesDB {
   }
 
   /**
-   * Mapa `gtfNumber → campos comparables` (vivos) para la vista de reconciliación
-   * del importador (ADR-138): al re-importar el libro, una fila cuyo GTF ya existe
-   * pero con valores distintos se marca «difiere» (no se sobrescribe — el importador
-   * es insert-only). Solo los campos que un libro corregido cambiaría de verdad.
+   * Mapa `gtfNumber → sus ingresos vivos` (con id y los campos comparables) para
+   * la reconciliación del importador (ADR-138): al re-importar el libro, una
+   * fila cuya guía y especie ya existen pero con valores distintos se marca
+   * «difiere» (no se sobrescribe — el importador es insert-only).
+   *
+   * TODOS los ingresos de la guía y no uno: una GTF con N especies son N
+   * ingresos (ADR-312/435). Antes el mapa guardaba el último y la 2.ª especie
+   * caía en «difiere»; y el id venía de `idByGtf`, cargado antes del bucle, así
+   * que la guía que creaba el propio archivo no lo tenía y sus trozas se
+   * perdían (reviewer 19-10, commit 01b26cec7).
    */
-  static async comparableByGtf(
+  static async comparablesPorGuia(
     tenantId: string,
     gtfs: string[],
-  ): Promise<
-    Map<
-      string,
-      { volumeM3: number; speciesCommonName: string; productType: string; providerName: string }
-    >
-  > {
+  ): Promise<Map<string, IngresoComparable[]>> {
     if (!tenantId) throw new Error("tenantId is required");
     const clean = [...new Set(gtfs.map((g) => g.trim()).filter(Boolean))];
     if (clean.length === 0) return new Map();
     const rows = await prisma.woodEntry.findMany({
       where: { tenantId, deletedAt: null, gtfNumber: { in: clean } },
-      orderBy: { entryDate: "asc" },
+      orderBy: [{ entryDate: "asc" }, { id: "asc" }],
       select: {
+        id: true,
         gtfNumber: true,
         volumeM3: true,
         speciesCommonName: true,
@@ -4611,17 +4622,17 @@ export class WoodEntriesDB {
         providerName: true,
       },
     });
-    const map = new Map<
-      string,
-      { volumeM3: number; speciesCommonName: string; productType: string; providerName: string }
-    >();
+    const map = new Map<string, IngresoComparable[]>();
     for (const r of rows) {
-      map.set(r.gtfNumber, {
+      const lista = map.get(r.gtfNumber) ?? [];
+      lista.push({
+        id: r.id,
         volumeM3: Number(r.volumeM3),
         speciesCommonName: r.speciesCommonName ?? "",
         productType: r.productType ?? "",
         providerName: r.providerName ?? "",
       });
+      map.set(r.gtfNumber, lista);
     }
     return map;
   }
