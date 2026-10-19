@@ -256,6 +256,19 @@ export const ProductsDB = {
     return rows.map(mapProduct);
   },
   /**
+   * Productos vivos del negocio con alguno de esos códigos de barras, en una
+   * sola consulta. Subir productos los usa para no duplicar (barcode no es
+   * único en la base: dos altas con el mismo código entran sin error).
+   */
+  async listByBarcodes(tenantId: string, barcodes: string[]): Promise<Array<{ id: number; name: string; barcode: string }>> {
+    if (barcodes.length === 0) return [];
+    const rows = await prisma.product.findMany({
+      where: { tenantId, barcode: { in: barcodes }, deletedAt: null },
+      select: { id: true, name: true, barcode: true },
+    });
+    return rows.flatMap((r) => (r.barcode ? [{ id: r.id, name: r.name, barcode: r.barcode }] : []));
+  },
+  /**
    * Cuenta cuantos de los productIds dados pertenecen al tenant
    * (active + deletedAt:null). Util para ownership checks bulk
    * (ej. recetas que referencian multiples productos).

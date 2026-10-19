@@ -8,7 +8,10 @@
  *  · la ficha del producto (PUT/PATCH /api/products/[id]) y los precios en
  *    lote del inventario (POST /api/products/bulk, PATCH/PUT
  *    /api/products/bulk-price): 409 con la lista y se guarda sólo con
- *    `confirmarBajoPiso: true` (queda en el registro de actividad).
+ *    `confirmarBajoPiso: true` (queda en el registro de actividad);
+ *  · Subir productos (POST /api/products/import): una fila que CREA un
+ *    producto con su costo y un precio bajo el piso cuenta como bajar desde
+ *    nada (`precioActual: null`): 409 con las filas e «Importar igual».
  *
  * En céntimos enteros, con el piso redondeado hacia ARRIBA (costo 3,80 + 5 %
  * = 3,99, no 3,98). Las subidas, los precios iguales y los productos sin costo
@@ -30,9 +33,10 @@ export type ChequeoPiso = { ok: true } | { ok: false; bajoPiso: true; piso: numb
  * ¿El precio nuevo baja por debajo del piso? `piso` = el precio más bajo que se
  * acepta (soles). `costo` es el que queda tras guardar (el nuevo si el cambio
  * también lo trae); null, 0 o negativo = sin costo conocido → pasa.
+ * `precioActual` null = producto nuevo: no hay de dónde bajar, se mide igual.
  */
 export function chequearPiso(c: {
-  precioActual: number;
+  precioActual: number | null;
   precioNuevo: number;
   costo: number | null | undefined;
   pisoSobreCosto: number | null | undefined;
@@ -40,7 +44,7 @@ export function chequearPiso(c: {
   const { precioActual, precioNuevo, costo, pisoSobreCosto } = c;
   if (pisoSobreCosto == null || costo == null || !Number.isFinite(costo) || costo <= 0) return { ok: true };
   const nuevo = centimosDe(precioNuevo);
-  if (nuevo >= centimosDe(precioActual)) return { ok: true };
+  if (precioActual != null && nuevo >= centimosDe(precioActual)) return { ok: true };
   const pisoCent = Math.ceil((centimosDe(costo) * (100 + pisoSobreCosto)) / 100 - 1e-6);
   return nuevo < pisoCent ? { ok: false, bajoPiso: true, piso: pisoCent / 100 } : { ok: true };
 }
@@ -57,9 +61,13 @@ export function textoBajoPiso(nombre: string, piso: number, pisoSobreCosto: numb
 
 /** Un producto cuyo precio nuevo queda bajo el piso. */
 export interface AvisoBajoPiso {
-  productId: number;
+  /** null = fila de un archivo que todavía no es producto. */
+  productId: number | null;
+  /** Fila del archivo (Subir productos), contando el encabezado como 1. */
+  fila?: number;
   nombre: string;
-  precioActual: number;
+  /** null = producto nuevo. */
+  precioActual: number | null;
   precioNuevo: number;
   costo: number;
   /** El precio más bajo que se acepta sin confirmar. */
@@ -104,8 +112,11 @@ export function detalleBajoPiso(avisos: AvisoBajoPiso[]): string {
   return lineas.join("\n");
 }
 
-/** El diálogo «Guardar igual / Corregir» (ConfirmDialog del panel) para un 409 del piso. */
-export function dialogoBajoPiso(r: RespuestaBajoPiso): {
+/**
+ * El diálogo «Guardar igual / Corregir» (ConfirmDialog del panel) para un 409
+ * del piso; al subir un archivo, «Importar igual / Volver al archivo».
+ */
+export function dialogoBajoPiso(r: RespuestaBajoPiso, modo: "guardar" | "importar" = "guardar"): {
   title: string;
   description: string;
   intent: "warning";
@@ -113,12 +124,14 @@ export function dialogoBajoPiso(r: RespuestaBajoPiso): {
   cancelLabel: string;
 } {
   const n = r.avisos.length;
+  const importar = modo === "importar";
+  const cosa = importar ? (n === 1 ? "Esta fila queda" : `${n} filas quedan`) : n === 1 ? "Este precio queda" : `${n} precios quedan`;
   return {
-    title: n === 1 ? "Este precio queda bajo tu piso" : `${n} precios quedan bajo tu piso`,
-    description: `${detalleBajoPiso(r.avisos)}\n\nTu piso es costo + ${pctTexto(r.pisoSobreCosto)} (Ajustes › Cobros). Si guardas igual, queda anotado con tu nombre.`,
+    title: `${cosa} bajo tu piso`,
+    description: `${detalleBajoPiso(r.avisos)}\n\nTu piso es costo + ${pctTexto(r.pisoSobreCosto)} (Ajustes › Cobros). Si ${importar ? "importas" : "guardas"} igual, queda anotado con tu nombre.`,
     intent: "warning",
-    confirmLabel: "Guardar igual",
-    cancelLabel: "Corregir",
+    confirmLabel: importar ? "Importar igual" : "Guardar igual",
+    cancelLabel: importar ? "Volver al archivo" : "Corregir",
   };
 }
 

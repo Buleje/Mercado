@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import ExcelJS from "exceljs";
 import { requireAdmin } from "@/lib/require-admin";
@@ -6,6 +7,9 @@ import { ProductsDB } from "@/lib/db/products.db";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { parsearCsv } from "@/lib/documentos/hoja-calculo";
+import { revisarPisoDePrecios } from "@/lib/precios/piso-servidor";
+import { respuestaBajoPiso, textoBajoPisoConfirmado } from "@/lib/precios/piso";
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -21,6 +25,17 @@ const RowSchema = z.object({
 });
 
 type RowInput = z.infer<typeof RowSchema>;
+
+/** «Importar igual» del aviso del piso: el cliente reenvía el archivo con este campo. */
+const ConfirmarBajoPisoSchema = z.literal("true");
+
+/** Tope del archivo (el modal dice «hasta 10 MB»): se corta antes de leerlo. */
+const TOPE_BYTES = 10_000_000;
+const archivoMuyGrande = (bytes: number) =>
+  NextResponse.json(
+    { error: `El archivo pesa ${(bytes / 1_000_000).toFixed(1).replace(".", ",")} MB: el tope es 10 MB` },
+    { status: 413 },
+  );
 
 // ── Column aliases ─────────────────────────────────────────────────────────────
 // Normaliza variantes comunes de nombres de columna al nombre canónico esperado.
@@ -82,6 +97,19 @@ function toNumber(val: unknown): number | undefined {
   return isNaN(n) ? undefined : n;
 }
 
+/** Filas de la primera hoja de un .xlsx; null = el libro no tiene hojas. */
+async function filasDeExcel(arrayBuffer: ArrayBuffer): Promise<Record<string, unknown>[] | null> {
+  const workbook = new ExcelJS.Workbook();
+  // exceljs internamente acepta cualquier dato binario (Buffer, ArrayBuffer,
+  // Uint8Array) via toBuffer(), pero sus @types exportan la firma vieja
+  // `load(buffer: Buffer)` que choca con el `Buffer<ArrayBufferLike>` del
+  // @types/node reciente. Cast pragmático para evitar el mismatch estructural.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await workbook.xlsx.load(Buffer.from(arrayBuffer) as any);
+  if (workbook.worksheets.length === 0) return null;
+  return workbookToJson(workbook);
+}
+
 /**
  * Lee un workbook de exceljs y devuelve filas como objetos {header: value}.
  * Toma la primera hoja, asume que la primera fila son headers.
@@ -124,6 +152,24 @@ function workbookToJson(workbook: ExcelJS.Workbook): Record<string, unknown>[] {
   return rows;
 }
 
+/**
+ * CSV → filas {encabezado: valor}. Hasta el 19-10 la ruta leía todo como
+ * .xlsx y un .csv (lo que la ventana ofrece primero) caía en 503 «Error
+ * procesando el archivo». Separador `;` (Excel en español), tab o `,`;
+ * UTF-8 o Windows-1252 (el CSV que guarda Excel en Windows).
+ */
+function csvAFilas(buffer: ArrayBuffer): Record<string, unknown>[] {
+  let texto = new TextDecoder("utf-8").decode(buffer);
+  if (texto.includes("\uFFFD")) texto = new TextDecoder("windows-1252").decode(buffer);
+  texto = texto.replace(/^\uFEFF/, "");
+  const primera = texto.split(/\r?\n/, 1)[0] ?? "";
+  const sep = [";", "\t"].reduce((mejor, s) => (primera.split(s).length > primera.split(mejor).length ? s : mejor), ",");
+  const matriz = parsearCsv(texto, sep).filter((f) => f.some((c) => c.trim() !== ""));
+  if (matriz.length === 0) return [];
+  const headers = matriz[0].map((h) => h.trim());
+  return matriz.slice(1).map((f) => Object.fromEntries(headers.map((h, i) => [h, f[i]?.trim() ?? ""])));
+}
+
 // ── Handler ────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -134,6 +180,10 @@ export async function POST(req: NextRequest) {
   const requestId = req.headers.get("x-request-id") ?? undefined;
 
   try {
+    // Un cuerpo de más de 10 MB ni se parsea (el multipart suma unos bytes de
+    // cabecera, de ahí el margen); el tamaño exacto se mira en el archivo.
+    const largo = Number(req.headers.get("content-length") ?? 0);
+    if (largo > TOPE_BYTES + 64_000) return archivoMuyGrande(largo);
     const formData = await req.formData();
     const file = formData.get("file");
 
@@ -149,20 +199,16 @@ export async function POST(req: NextRequest) {
       size: (file as File).size,
     });
 
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = new ExcelJS.Workbook();
-    // exceljs internamente acepta cualquier dato binario (Buffer, ArrayBuffer,
-    // Uint8Array) via toBuffer(), pero sus @types exportan la firma vieja
-    // `load(buffer: Buffer)` que choca con el `Buffer<ArrayBufferLike>` del
-    // @types/node reciente. Cast pragmático para evitar el mismatch estructural.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await workbook.xlsx.load(Buffer.from(arrayBuffer) as any);
+    if ((file as File).size > TOPE_BYTES) return archivoMuyGrande((file as File).size);
 
-    if (workbook.worksheets.length === 0) {
+    const confirmarBajoPiso = ConfirmarBajoPisoSchema.safeParse(formData.get("confirmarBajoPiso")).success;
+    const arrayBuffer = await file.arrayBuffer();
+    const nombreArchivo = (file as File).name.toLowerCase();
+    const esCsv = nombreArchivo.endsWith(".csv") || (file as File).type === "text/csv";
+    const rawRows = esCsv ? csvAFilas(arrayBuffer) : await filasDeExcel(arrayBuffer);
+    if (rawRows === null) {
       return NextResponse.json({ error: "El archivo no contiene hojas" }, { status: 400 });
     }
-
-    const rawRows = workbookToJson(workbook);
 
     if (rawRows.length === 0) {
       logger.warn("[products/import] Archivo vacío", { requestId, user: auth.username });
@@ -179,13 +225,8 @@ export async function POST(req: NextRequest) {
 
     logger.info("[products/import] Procesando filas", { requestId, rows: rawRows.length });
 
-    // Obtener el ID más alto actual para asignar IDs secuenciales
-    const existingProducts = await ProductsDB.getAll(auth.tenantId);
-    let nextId = existingProducts.length > 0
-      ? Math.max(...existingProducts.map((p) => p.id)) + 1
-      : 1;
-
     const errors: { row: number; message: string }[] = [];
+    const validas: { fila: number; data: RowInput }[] = [];
     let created = 0;
 
     for (let i = 0; i < rawRows.length; i++) {
@@ -212,11 +253,65 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      const data = parsed.data;
+      validas.push({ fila: rowNum, data: parsed.data });
+    }
 
+    // Código de barras repetido (reviewer 19-10): barcode no es único en la
+    // base, así que subir dos veces el mismo archivo duplicaba todo. Una fila
+    // cuyo código ya tiene un producto vivo del negocio, o que repite el de
+    // una fila anterior del archivo, se salta con su aviso; sin código se crea.
+    const codigos = [...new Set(validas.flatMap(({ data }) => (data.codigo_barras ? [data.codigo_barras] : [])))];
+    const yaExisten = new Map(
+      (await ProductsDB.listByBarcodes(auth.tenantId, codigos)).map((p) => [p.barcode, p.name] as const),
+    );
+    const vistos = new Map<string, { fila: number; nombre: string }>();
+    const aCrear = validas.filter(({ fila, data }) => {
+      const codigo = data.codigo_barras;
+      if (!codigo) return true;
+      const existente = yaExisten.get(codigo);
+      if (existente !== undefined) {
+        errors.push({ row: fila, message: `Fila ${fila} · ya existe un producto con ese código (${existente})` });
+        return false;
+      }
+      const anterior = vistos.get(codigo);
+      if (anterior) {
+        errors.push({ row: fila, message: `Fila ${fila} · ese código ya está en la fila ${anterior.fila} del archivo (${anterior.nombre})` });
+        return false;
+      }
+      vistos.set(codigo, { fila, nombre: data.nombre });
+      return true;
+    });
+
+    // Piso de rebajas (Brandon 19-10, «Piso en lo que falta»): una fila con su
+    // costo y un precio bajo costo + piso del negocio no se crea sin el OK del
+    // dueño. Sin confirmar = 409 con las filas y NO se crea ninguna.
+    const usuario = auth.username ?? "admin";
+    const { pisoSobreCosto, avisos } = await revisarPisoDePrecios(
+      auth.tenantId,
+      aCrear.map(({ fila, data }) => ({
+        productId: null,
+        fila,
+        nombre: data.nombre,
+        precioActual: null,
+        precioNuevo: data.precio,
+        costo: data.precio_costo != null && data.precio_costo > 0 ? data.precio_costo : null,
+      })),
+    );
+    if (avisos.length > 0 && !confirmarBajoPiso) {
+      logger.info("[products/import] Filas bajo el piso sin confirmar", { requestId, filas: avisos.length });
+      return NextResponse.json({ ...respuestaBajoPiso(avisos, pisoSobreCosto), errors }, { status: 409 });
+    }
+
+    // Altas con `create` (id que da la base). Hasta el 19-10 se calculaba
+    // max(id de los productos VIVOS del negocio) + 1 y se hacía upsert: el id
+    // caía sobre un producto ya borrado del mismo negocio (la fila se «creaba»
+    // borrada: «2 productos creados» que no aparecían; medido en main) o sobre
+    // el de otro negocio (la fila fallaba con «Error al guardar»).
+    const filasCreadas = new Set<number>();
+
+    for (const { fila: rowNum, data } of aCrear) {
       try {
-        await ProductsDB.upsert({
-          id: nextId++,
+        await ProductsDB.create({
           name: data.nombre,
           category: data.categoria,
           price: data.precio,
@@ -230,6 +325,7 @@ export async function POST(req: NextRequest) {
           tenantId: auth.tenantId,
         });
         created++;
+        filasCreadas.add(rowNum);
       } catch (dbErr) {
         logger.error("[products/import] Error guardando fila", {
           requestId,
@@ -239,6 +335,10 @@ export async function POST(req: NextRequest) {
         errors.push({ row: rowNum, message: "Error al guardar en base de datos" });
       }
     }
+
+    // `create` revalida con "max" (la 1.ª lectura todavía es la lista vieja):
+    // el inventario tiene que mostrar lo subido al cerrar la ventana.
+    if (created > 0) revalidateTag(`tenant:${auth.tenantId}:products`, { expire: 0 });
 
     logger.info("[products/import] Importación completada", {
       requestId,
@@ -258,6 +358,12 @@ export async function POST(req: NextRequest) {
     ).catch((err) => {
       logger.error("[products/import] logActivity failed", { requestId, error: String(err) });
     });
+
+    const confirmados = avisos.filter((a) => a.fila != null && filasCreadas.has(a.fila));
+    if (confirmados.length > 0) {
+      logActivity("Precio bajo piso", "producto", textoBajoPisoConfirmado(confirmados, usuario), undefined, usuario, requestId, auth.tenantId)
+        .catch((err) => logger.error("[products/import] log del piso falló", { requestId, error: String(err) }));
+    }
 
     return NextResponse.json({ created, errors }, { status: 201 });
   } catch (err) {

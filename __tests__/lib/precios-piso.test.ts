@@ -48,6 +48,12 @@ describe("chequearPiso", () => {
     expect(chequearPiso({ ...base, pisoSobreCosto: null, precioNuevo: 1 })).toEqual({ ok: true });
   });
 
+  it("producto nuevo (precioActual null): se mide igual, no hay de dónde bajar", () => {
+    expect(chequearPiso({ precioActual: null, precioNuevo: 3.5, costo: 3.8, pisoSobreCosto: 5 })).toEqual({ ok: false, bajoPiso: true, piso: 3.99 });
+    expect(chequearPiso({ precioActual: null, precioNuevo: 3.99, costo: 3.8, pisoSobreCosto: 5 })).toEqual({ ok: true });
+    expect(chequearPiso({ precioActual: null, precioNuevo: 1, costo: null, pisoSobreCosto: 5 })).toEqual({ ok: true });
+  });
+
   it("piso 0 = no vender bajo costo", () => {
     expect(chequearPiso({ ...base, pisoSobreCosto: 0, precioNuevo: 3.79 })).toEqual({ ok: false, bajoPiso: true, piso: 3.8 });
     expect(chequearPiso({ ...base, pisoSobreCosto: 0, precioNuevo: 3.8 })).toEqual({ ok: true });
@@ -79,6 +85,15 @@ describe("textos del aviso", () => {
     expect(d.confirmLabel).toBe("Guardar igual");
     expect(d.cancelLabel).toBe("Corregir");
     expect(d.description).toContain("Leche Gloria: queda bajo costo + 5 % (S/ 3,99) — pusiste S/ 3,50");
+  });
+
+  it("al subir un archivo: «Importar igual» / «Volver al archivo» y cuenta filas", () => {
+    const fila = { ...aviso, productId: null, precioActual: null, fila: 3 };
+    const d = dialogoBajoPiso(respuestaBajoPiso([fila, { ...fila, fila: 4 }], 5), "importar");
+    expect(d.title).toBe("2 filas quedan bajo tu piso");
+    expect(d.confirmLabel).toBe("Importar igual");
+    expect(d.cancelLabel).toBe("Volver al archivo");
+    expect(d.description).toContain("Si importas igual");
   });
 
   it("la línea del registro nombra a quien confirmó", () => {
