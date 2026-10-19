@@ -67,7 +67,7 @@ export default function CrecimientoHubModule({ initialTab }: { initialTab?: stri
           Brandon 2026-09-07): identidad a la izquierda, pestañas a la derecha,
           una sola regla. */}
       <AdminTabBar
-        heading={{ title: "Crecimiento", description: "Mensajes, puntos y programas para que el cliente vuelva.", icon: Megaphone }} tabs={tabs} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
+        heading={{ title: "Campañas", description: "Mensajes, puntos y programas para que el cliente vuelva.", icon: Megaphone }} tabs={tabs} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "campanas" && <MandarMensaje vistaPedida={vistaPedida} />}
         {sub === "puntos" && <LoyaltyTab />}
         {sub === "rfm" && <RFMTab />}

@@ -481,10 +481,13 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: [
       "clientes",
       "whatsapp-inbox",
+      // Campañas (19-10, Brandon «Campañas dentro de Clientes»): era un grupo
+      // propio, «Crecimiento», con una sola pestaña → una línea menos en el menú.
+      "campanas",
     ],
   },
 
-  // ── 05b · CRECIMIENTO (Marketing & Fidelización) ──
+  // ── 05b · CRECIMIENTO → dentro de Clientes desde el 19-10 (historia abajo) ──
   // Hub único que reúne TODO lo que hace volver al cliente. Antes estaba
   // disperso y/o invisible: campañas/puntos/segmentos/RFM eran huérfanos (sin
   // entrada en el sidebar) y los 4 programas (gift cards, socio, suscripciones,
@@ -495,14 +498,6 @@ export const BASIC_MODULES: TabCategory[] = [
   // socio, subscriptions, lives) abrían el MISMO CrecimientoHubModule con un
   // initialTab distinto — atajo redundante (auditoría 2026-08-02, 6→1). Siguen
   // a 1 click desde la barra de sub-tabs del hub.
-  {
-    id: "crecimiento",
-    label: "Crecimiento",
-    icon: Megaphone,
-    tabs: [
-      "campanas",
-    ],
-  },
 
   // ── 06 · GESTIÓN (ola 3 del panel unificado, 2026-10-10) ──
   // Brandon eligió el GRUPO (2026-10-09): Mi Plata, Equipo y Documentos en un
@@ -660,7 +655,7 @@ export const CONFIG_MODULE: TabCategory = {
 //
 //   Inicio            (sin encabezado: es el punto de entrada)
 //   Operaciones       ventas · compras («Abastecimiento») · camaras
-//   Clientes          clientes · crecimiento
+//   Clientes          clientes (Mis clientes · WhatsApp · Campañas, desde el 19-10)
 //   Gestión           finanzas («Gestión»: Mi Plata, Equipo, Documentos) · graficos · a-medida
 //   Canales           marketplace-ops (Tienda online + Marketplace)
 //   Especializaciones forestal · agricultura
@@ -698,8 +693,7 @@ export const TAB_CATEGORIES: TabCategory[] = [
   // Lo que pasa en el local o el patio (ADR-411): de todos los días.
   CAMARAS_MODULE,
   // Clientes — quién compra y qué lo hace volver
-  byId("clientes"),
-  byId("crecimiento"),
+  byId("clientes"), // Mis clientes · WhatsApp · Campañas
   // Gestión — la plata, el equipo, los documentos y los números
   byId("finanzas"), // «Gestión»: Mi Plata · Equipo · Documentos · Planificación
   byId("graficos"),
