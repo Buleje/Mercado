@@ -233,7 +233,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
                           required={promptParams.required}
                           placeholder={promptParams.placeholder}
                           onChange={(e) => setValue(e.target.value)}
-                          className={cn(FIELD, "h-11")}
+                          className={cn(FIELD, "h-12")}
                         />
                       )}
                     </div>
@@ -246,7 +246,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
                   <AlertDialog.Cancel asChild>
                     <button
                       type="button"
-                      className="min-h-10 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)]"
+                      className="min-h-12 rounded-xl px-5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)]"
                     >
                       {(params as ConfirmParams | undefined)?.cancelLabel ?? "Cancelar"}
                     </button>
@@ -258,7 +258,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
                   type="submit"
                   disabled={blocked}
                   className={cn(
-                    "min-h-10 rounded-xl px-4 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                    "min-h-12 rounded-xl px-5 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                     styles.btn,
                   )}
                 >
