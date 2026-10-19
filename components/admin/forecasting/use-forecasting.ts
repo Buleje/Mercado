@@ -59,6 +59,7 @@ export function useForecasting(paneles: readonly PanelForecast[] = TODOS_LOS_PAN
     forecast: null,
     reorder: [],
     prices: [],
+    rebajas: null,
     loading: false,
     errors: { forecast: null, reorder: null, prices: null },
   });
@@ -148,6 +149,7 @@ export function useForecasting(paneles: readonly PanelForecast[] = TODOS_LOS_PAN
 
     // Procesar precios con safeParse
     let prices: PriceSuggestion[] = [];
+    let rebajas: DashboardState["rebajas"] = null;
     let errorPrices: string | null = null;
     if (!pide.has("prices")) {
       // Panel no pedido.
@@ -155,6 +157,7 @@ export function useForecasting(paneles: readonly PanelForecast[] = TODOS_LOS_PAN
       const parsed = PriceResponseSchema.safeParse(pricesRes.value);
       if (parsed.success) {
         prices = parsed.data.suggestions;
+        rebajas = parsed.data.rebajas ?? null;
       } else {
         errorPrices = "Datos de precios inválidos";
       }
@@ -166,6 +169,7 @@ export function useForecasting(paneles: readonly PanelForecast[] = TODOS_LOS_PAN
       forecast,
       reorder,
       prices,
+      rebajas,
       loading: false,
       errors: {
         forecast: errorForecast,

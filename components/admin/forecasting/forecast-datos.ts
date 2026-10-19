@@ -74,11 +74,38 @@ export const PriceSuggestionSchema = z.object({
   costPrice: z.number(),
 });
 
+/** Una fila de la lista única de rebajas (`lib/precios/rebajas.ts`, FilaRebaja). */
+export const FilaRebajaSchema = z.object({
+  productId: z.number(),
+  nombre: z.string(),
+  categoria: z.string(),
+  costoHoy: z.number().nullable(),
+  costoNuevo: z.number().nullable(),
+  precioHoy: z.number(),
+  precioNuevo: z.number(),
+  margenHoy: z.number().nullable(),
+  margenNuevo: z.number().nullable(),
+  aviso: z.enum(["margen<15", "sin-costo", "excluido"]).optional(),
+  motivo: z.enum(["vence", "sin-venta", "rota-poco"]),
+  detalle: z.string(),
+  pct: z.number(),
+  enPiso: z.boolean(),
+  stock: z.number().nullable(),
+});
+
+/** La lista única de rebajas: la misma que arma «Rebaja lo que no se vende» en Precios en bloque. */
+export const RebajasSchema = z.object({
+  filas: z.array(FilaRebajaSchema),
+  noEntran: z.array(z.object({ productId: z.number(), nombre: z.string(), motivo: z.string() })),
+  dias: z.number(),
+});
+
 /** Schema para GET /api/forecasting/price-suggestions */
 export const PriceResponseSchema = z.object({
   total: z.number(),
   note: z.string(),
   suggestions: z.array(PriceSuggestionSchema),
+  rebajas: RebajasSchema.optional(),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,6 +115,7 @@ export const PriceResponseSchema = z.object({
 export type InventoryForecast = z.infer<typeof InventoryForecastSchema>;
 export type ReorderSuggestion = z.infer<typeof ReorderSuggestionSchema>;
 export type PriceSuggestion = z.infer<typeof PriceSuggestionSchema>;
+export type Rebajas = z.infer<typeof RebajasSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Estado del dashboard
@@ -97,6 +125,8 @@ export interface DashboardState {
   forecast: InventoryForecast | null;
   reorder: ReorderSuggestion[];
   prices: PriceSuggestion[];
+  /** La lista de rebajas (null = no se pidió o vino de un servidor viejo). */
+  rebajas: Rebajas | null;
   loading: boolean;
   errors: {
     forecast: string | null;

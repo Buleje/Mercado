@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Check, Loader2, Tags } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
@@ -8,19 +8,18 @@ import { usd } from "../papel/formato";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { margen, type FilaDiferencia } from "@/lib/admin/comandos-ia/precios";
 import FilasDiferencia, { BTN, leerPrecio, precioFinal } from "./FilasDiferencia";
-import type { FilaAplicar, PlanPrecios, Rechazada } from "./use-precios-en-bloque";
+import type { FilaAplicar, PlanPrecios, ResultadoAplicar } from "./use-precios-en-bloque";
 
 const ORIGEN: Record<PlanPrecios["origen"], string> = {
   reglas: "Entendí tu orden sin IA",
   ia: "La IA entendió tu orden",
   lista: "Lista del proveedor",
+  rebajas: "La lista de rebajas de Análisis",
 };
 
 export function costoIaTexto(n: number): string {
   return `IA ${usd(n)}`;
 }
-
-type ResultadoAplicar = { ok: true } | { ok: false; error: string; rechazadas: Rechazada[] };
 
 /** La diferencia Hoy → Queda, con casilla y precio editable por fila; nada se guarda sin «Aplicar». */
 export default function DiferenciaPreciosModal({
@@ -28,11 +27,14 @@ export default function DiferenciaPreciosModal({
   aplicando,
   onCerrar,
   onAplicar,
+  enlace,
 }: {
   plan: PlanPrecios;
   aplicando: boolean;
   onCerrar: () => void;
   onAplicar: (filas: FilaAplicar[], resumen: string) => Promise<ResultadoAplicar>;
+  /** Al lado del origen: «Ver la lista en Análisis» cuando la diferencia sale de la lista de rebajas. */
+  enlace?: ReactNode;
 }) {
   const [filas, setFilas] = useState<FilaDiferencia[]>(plan.filas);
   const [marcadas, setMarcadas] = useState(() => new Set(plan.filas.filter((f) => !f.aviso).map((f) => f.productId)));
@@ -113,6 +115,7 @@ export default function DiferenciaPreciosModal({
               example={plan.sinCambio ? `${plan.sinCambio} productos ya tenían ese precio y no aparecen.` : "Toca un precio para corregirlo."}
             />
           </span>
+          {enlace && <span className="text-sm">{enlace}</span>}
         </div>
 
         <FilasDiferencia

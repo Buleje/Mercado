@@ -5,8 +5,8 @@ import { AlertCircle, Loader2, Sparkles } from "@buleje/design-system/icons";
 import { BTN } from "./FilasDiferencia";
 
 const EJEMPLOS = [
-  // 10-10: lo que antes era «Bajar precio» (sin acción) en Sugerencias › Qué vender.
-  "Rebaja 10 % lo que no se vendió en 30 días",
+  // La lista de rebajas de Análisis › Sugerencias de precio: la MISMA regla (nunca bajo el costo + 5 %).
+  "Rebaja lo que no se vende",
   "Sube 5 % Abarrotes menos el arroz y redondea a 10 céntimos",
   "Lleva a 30 % de margen las Bebidas",
   "Baja 10 céntimos los Snacks",
@@ -64,13 +64,16 @@ export default function EntradaOrden({
   dudas,
   error,
   onPedir,
+  inicial,
 }: {
   pensando: boolean;
   dudas: { dudas: string[]; opciones: string[] } | null;
   error: string | null;
   onPedir: (orden: string) => void;
+  /** La orden que llegó desde otra pantalla (Análisis › «Aplicar con la IA»). */
+  inicial?: string;
 }) {
-  const [orden, setOrden] = useState("");
+  const [orden, setOrden] = useState(inicial ?? "");
   // Las opciones de «¿Quisiste decir…?» desaparecen al elegir una: el foco pasa al
   // botón para que, al cerrar la diferencia, vuelva ahí y no a <body>.
   const boton = useRef<HTMLButtonElement>(null);

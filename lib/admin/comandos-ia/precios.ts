@@ -330,6 +330,14 @@ const SIN_VENTA = new RegExp(
     "(?:\\s+(?:en|hace|desde\\s+hace|por|durante)?\\s*(?:(?:los|las)\\s+)?(?:ultim[oa]s?\\s+)?(\\d{1,4}|" + Object.keys(CIFRA_EN_LETRAS).join("|") + ")\\s*(dias?|semanas?|mes(?:es)?)\\b)?",
 );
 
+/** Las categorías reales que nombra el texto (ya normalizado), como palabra entera. */
+function categoriasNombradas(texto: string, categorias: string[]): string[] {
+  return categorias.filter((c) => {
+    const n = normalizar(c);
+    return n.length > 0 && new RegExp(`(?:^|\\s)${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`).test(texto);
+  });
+}
+
 /** Lo que viene detrás saca productos del plan («menos el arroz»). */
 const EXCLUYE = /\b(?:menos|excepto|salvo|sin contar|pero no)\b/;
 
@@ -386,10 +394,7 @@ export function interpretarOrdenConReglas(orden: string, categorias: string[]): 
   if (operacion.tipo === "pct" && (operacion.valor <= -90 || operacion.valor > 300)) return null;
   if (operacion.tipo === "margen" && (operacion.valor <= 0 || operacion.valor >= 95)) return null;
   const antesDelMenos = resto.split(EXCLUYE)[0];
-  const cats = categorias.filter((c) => {
-    const n = normalizar(c);
-    return n.length > 0 && new RegExp(`(?:^|\\s)${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`).test(antesDelMenos);
-  });
+  const cats = categoriasNombradas(antesDelMenos, categorias);
   const todo = /\btodo el catalogo\b|\btodos los productos\b|\btoda la tienda\b/.test(antesDelMenos);
   // «Rebaja 10 % lo que no se vendió en 30 días» ya dice a quién: todo lo que no se movió.
   if (cats.length === 0 && !todo && !sv.dias) return null;
@@ -415,4 +420,78 @@ export function describirPlan(p: PlanOrden): string {
   const menos = p.filtro.excluye.length ? ` · menos ${p.filtro.excluye.join(", ")}` : "";
   const red = p.redondeo ? ` · redondea a ${p.redondeo < 1 ? `${Math.round(p.redondeo * 100)} céntimos` : "S/ 1"}` : "";
   return `${op} · ${[quien, sinVenta].filter(Boolean).join(" · ")}${menos}${red}`;
+}
+
+// ── «Rebaja lo que no se vende»: la lista única ─────────────────────────────
+
+const VERBO_REBAJA_LISTA = /\b(?:baja|bajar|bajale|rebaja|rebajar|rebajale|rebajas|reduce|reducir|descuenta|descontar|liquida|liquidar|remata|rematar)\b/;
+const NO_ROTA = /\b(?:no\s+rota\w*|rota\s+poco|no\s+sale\w*|se\s+mueve\s+poco)\b/;
+const POR_VENCER = /\b(?:venc\w*|vence\w*)\b/;
+const LA_LISTA = /\b(?:rebajas\s+sugeridas|lista\s+de\s+rebajas)\b/;
+/** Una cifra dicha en letras o en plata («diez por ciento», «un sol», «a margen veinte»): la frase trae su propia rebaja. */
+const CIFRA_O_PLATA = new RegExp(
+  `\\b(?:por\\s*ciento|porcentaje|soles?|centimos?|margen|mitad|medio|media|${[
+    ...Object.keys(CIFRA_EN_LETRAS),
+    "cuarenta", "cincuenta", "setenta", "ochenta", "cien", "ciento", "mil",
+  ].join("|")})\\b`,
+);
+/**
+ * Las únicas palabras que caben en el pedido de la lista (además de las
+ * categorías que nombra). Cualquier otra es contenido —un producto, una marca,
+ * una cifra— que la lista no sabe leer: la frase sigue a la IA.
+ */
+const PALABRAS_DE_LA_LISTA = new Set(
+  (
+    "baja bajar bajale rebaja rebajar rebajale rebajas reduce reducir descuenta descontar liquida liquidar remata rematar " +
+    "aplica aplicar aplicame aplicale haz hazme arma armame pon ponle quiero dame muestra muestrame " +
+    "lo la las los el del de al a en y e con que se me le les mi mis por favor porfa ya ahora pronto " +
+    "todo toda todos todas cosas productos producto articulos mercaderia stock inventario tienda catalogo " +
+    "no rota rotan poco sale salen mueve mueven nada esta estan punto proximo proxima proximos proximas " +
+    "sugeridas sugerida sugerencias lista"
+  ).split(" "),
+);
+const esPalabraDeLaLista = (w: string) => PALABRAS_DE_LA_LISTA.has(w) || w.startsWith("venc");
+
+export interface PedidoDeRebajas {
+  /** La ventana de «no se vende» (30 si no la dice). */
+  dias: number;
+  /** «Rebaja lo que vence» sin hablar de lo quieto: sólo el motivo vence. */
+  soloVence: boolean;
+  redondeo: Redondeo;
+  categorias: string[];
+  excluye: string[];
+}
+
+/**
+ * «Rebaja lo que no se vende», «remata lo que no rota», «baja lo que vence»,
+ * «aplica las rebajas sugeridas» SIN cifra = la lista única de rebajas (la
+ * misma de Análisis › Sugerencias de precio), no una orden con su %. → null
+ * (orden normal o IA) si trae cifra, en números o en letras («Rebaja 10 %…»,
+ * «diez por ciento», «un sol», «a margen veinte»), o una palabra que no es del
+ * pedido ni una categoría («Rebaja la leche que vence»).
+ */
+export function leerPedidoDeRebajas(orden: string, categorias: string[]): PedidoDeRebajas | null {
+  const base = ` ${normalizar(orden)} `;
+  if (!VERBO_REBAJA_LISTA.test(base)) return null;
+  const r = leerRedondeo(base);
+  if (!r) return null;
+  const sv = leerSinVenta(r.resto);
+  if (!sv) return null;
+  const antesDelMenos = sv.resto.split(EXCLUYE)[0];
+  if (/\d/.test(antesDelMenos) || CIFRA_O_PLATA.test(antesDelMenos)) return null;
+  const cats = categoriasNombradas(antesDelMenos, categorias);
+  // «Rebaja la leche que vence»: «leche» no es categoría ni palabra del pedido → a la IA.
+  let sinCategorias = ` ${antesDelMenos} `;
+  for (const c of cats) sinCategorias = sinCategorias.split(` ${normalizar(c)} `).join(" ");
+  if (!sinCategorias.split(/[^a-z]+/).filter(Boolean).every(esPalabraDeLaLista)) return null;
+  const quieto = sv.dias != null || NO_ROTA.test(sv.resto) || LA_LISTA.test(sv.resto);
+  const vence = POR_VENCER.test(antesDelMenos);
+  if (!quieto && !vence) return null;
+  return {
+    dias: sv.dias ?? SIN_VENTA_DIAS_POR_DEFECTO,
+    soloVence: vence && !quieto,
+    redondeo: r.redondeo,
+    categorias: cats,
+    excluye: leerExcluidos(sv.resto),
+  };
 }

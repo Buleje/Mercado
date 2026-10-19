@@ -3,8 +3,6 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ProductsDB } from "@/lib/db/products.db";
-import { SalesDB } from "@/lib/db/sales.db";
-import { OrdersDB } from "@/lib/db/orders.db";
 import { aiCostGuard } from "@/lib/ai/cost-control";
 import { estimadoIaUsd, llamarIa } from "@/lib/admin/comandos-ia/ia-llamada";
 import { logger } from "@/lib/logger";
@@ -16,6 +14,7 @@ import {
   extraerJson,
   filtrarPorOrden,
   interpretarOrdenConReglas,
+  leerPedidoDeRebajas,
   normalizar,
   precioManteniendoMargen,
   precioParaMargen,
@@ -23,9 +22,13 @@ import {
   separarSinVenta,
   SIN_VENTA_MAX_DIAS,
   type FilaDiferencia,
+  type Operacion,
+  type PedidoDeRebajas,
   type PlanOrden,
   type ProductoPrecio,
 } from "@/lib/admin/comandos-ia/precios";
+import { armarRebajas, describirRebajas, type OpcionesRebaja } from "@/lib/precios/rebajas";
+import { leerDatosDeRebaja } from "@/lib/precios/rebajas-servidor";
 
 /**
  * POST /api/admin/comandos-ia/precios/plan — la DIFERENCIA de precios, sin escribir nada.
@@ -37,9 +40,10 @@ import {
  *    aplica a ciegas.
  *  · `{lista, politica}`: emparejado por nombre sin IA; IA `cheap` sólo
  *    para las líneas ambiguas.
- *  · «lo que no se vendió en N días» (`filtro.sinVentaDias`): las ventas de
- *    caja y los pedidos no cancelados de esa ventana se leen AQUÍ; lo que no
- *    tiene stock no entra (no es que no se mueva: no hay qué vender).
+ *  · «Rebaja lo que no se vende» SIN cifra = la lista única de rebajas
+ *    (`lib/precios/rebajas.ts`), la MISMA de Análisis › Sugerencias de precio.
+ *    «Rebaja 10 % lo que no se vendió en N días» = esa regla con el % de la
+ *    frase: mismo criterio, mismo piso (costo + 5 %) y mismo redondeo.
  * IA por `llamarIa` (lo mismo que Mensajes y Papel): `canSpend` con el precio
  * del modelo que va a responder, gasto anotado con el que respondió, 25 s de
  * tope, y «sin clave» / «tardó» / «falló» separados de «no entendí».
@@ -178,32 +182,75 @@ async function planDeOrden(tenantId: string, orden: string, productos: ProductoP
   return { plan: p, origen: "ia" as const };
 }
 
+/** «Baja 10 %» / «baja 50 céntimos»: lo que la regla de rebajas acepta como su %. */
+const esBaja = (op: Operacion) => (op.tipo === "pct" || op.tipo === "monto") && op.valor < 0;
+
 /**
- * Los productos (de `ids`) que se vendieron desde hace `dias`: caja (Sale) y
- * pedidos no cancelados (Order), como el EOQ. Sólo se piden los que tocó la orden.
+ * Las filas desde la regla única de rebajas. Lo que saca un «menos …» se
+ * muestra tachado sólo si también estaba en la lista (si no, ni entraba).
  */
-async function vendidosEn(tenantId: string, ids: number[], dias: number): Promise<Set<number>> {
-  if (ids.length === 0) return new Set();
-  const desde = new Date(Date.now() - dias * 86_400_000);
-  const [caja, pedidos] = await Promise.all([
-    SalesDB.findSaleItemsByProducts(tenantId, ids, desde),
-    OrdersDB.findOrderItemsByProducts(tenantId, ids, desde),
-  ]);
-  return new Set([...caja, ...pedidos].map((i) => Number(i.productId)));
+async function filasDeRebaja(
+  tenantId: string,
+  incluidos: ProductoPrecio[],
+  excluidos: ProductoPrecio[],
+  dias: number,
+  opciones: OpcionesRebaja,
+  extra: string[],
+) {
+  const datos = await leerDatosDeRebaja(tenantId, [...incluidos, ...excluidos], dias);
+  const lista = armarRebajas({ ...datos, productos: incluidos }, opciones);
+  const porId = new Map(excluidos.map((p) => [p.id, p]));
+  const tachadas = armarRebajas({ ...datos, productos: excluidos }, opciones).filas.flatMap((f) => {
+    const p = porId.get(f.productId);
+    return p ? [armarFila(p, { precio: p.price, costo: p.costPrice ?? null }, true)] : [];
+  });
+  return {
+    interpretacion: [describirRebajas(dias, opciones), ...extra].join(" · "),
+    filas: [...lista.filas, ...tachadas] as FilaDiferencia[],
+    noAplica: lista.noEntran.map(({ nombre, motivo }) => ({ nombre, motivo })),
+    sinCambio: 0,
+  };
+}
+
+/** «Rebaja lo que no se vende» (sin cifra): la lista de Análisis, con el filtro de la frase. */
+function filasDePedidoDeRebajas(tenantId: string, pide: PedidoDeRebajas, productos: ProductoPrecio[]) {
+  const { incluidos, excluidos } = filtrarPorOrden(productos, { categorias: pide.categorias, incluye: [], excluye: pide.excluye });
+  const opciones: OpcionesRebaja = { redondeo: pide.redondeo, ...(pide.soloVence ? { motivos: ["vence"] as const } : {}) };
+  const extra = [...(pide.categorias.length ? [pide.categorias.join(", ")] : []), ...(pide.excluye.length ? [`menos ${pide.excluye.join(", ")}`] : [])];
+  return filasDeRebaja(tenantId, incluidos, excluidos, pide.dias, opciones, extra);
 }
 
 async function filasDeOrden(tenantId: string, plan: PlanOrden, productos: ProductoPrecio[]) {
   const noAplica: Array<{ nombre: string; motivo: string }> = [];
-  let { incluidos, excluidos } = filtrarPorOrden(productos, plan.filtro);
+  const { incluidos, excluidos } = filtrarPorOrden(productos, plan.filtro);
   const dias = plan.filtro.sinVentaDias;
-  const vendidos = dias ? await vendidosEn(tenantId, [...incluidos, ...excluidos].map((p) => p.id), dias) : null;
-  if (vendidos) {
+  if (dias) {
+    // Bajar lo quieto = la regla de rebajas con el % de la frase (piso y redondeo de la regla).
+    // Subirlo o llevarlo a un margen no es una rebaja: pasa por la regla de siempre, sólo con el filtro.
+    if (esBaja(plan.operacion)) {
+      const extra = [...plan.filtro.categorias, ...plan.filtro.incluye];
+      const menos = plan.filtro.excluye.length ? [`menos ${plan.filtro.excluye.join(", ")}`] : [];
+      return filasDeRebaja(tenantId, incluidos, excluidos, dias, { motivos: ["sin-venta"], operacion: plan.operacion, redondeo: plan.redondeo }, [
+        ...(extra.length ? [extra.join(", ")] : []),
+        ...menos,
+      ]);
+    }
+    const { vendidas } = await leerDatosDeRebaja(tenantId, [...incluidos, ...excluidos], dias);
+    const vendidos = new Set([...vendidas].filter(([, n]) => n > 0).map(([id]) => id));
     const dentro = separarSinVenta(incluidos, vendidos);
-    incluidos = dentro.quedan;
-    // «menos el arroz» sólo se muestra si el arroz tampoco se vendió (si no, ni entraba).
-    excluidos = separarSinVenta(excluidos, vendidos).quedan;
     for (const p of dentro.sinStock) noAplica.push({ nombre: p.name, motivo: "sin stock: no se vende porque no hay" });
+    // «menos el arroz» sólo se muestra si el arroz tampoco se vendió (si no, ni entraba).
+    return filasDeOperacion(dentro.quedan, separarSinVenta(excluidos, vendidos).quedan, plan, noAplica);
   }
+  return filasDeOperacion(incluidos, excluidos, plan, noAplica);
+}
+
+function filasDeOperacion(
+  incluidos: ProductoPrecio[],
+  excluidos: ProductoPrecio[],
+  plan: PlanOrden,
+  noAplica: Array<{ nombre: string; motivo: string }>,
+) {
   const filas: FilaDiferencia[] = [];
   let sinCambio = 0;
   for (const p of incluidos) {
@@ -283,6 +330,8 @@ export async function POST(req: NextRequest) {
     const costoIaUsd = () => Math.round(gasto.usd * 1e6) / 1e6;
 
     if ("orden" in parsed.data) {
+      const pide = leerPedidoDeRebajas(parsed.data.orden, [...new Set(productos.map((p) => p.category))]);
+      if (pide) return NextResponse.json({ estado: "plan", origen: "rebajas", ...(await filasDePedidoDeRebajas(auth.tenantId, pide, productos)), costoIaUsd: 0 });
       const r = await planDeOrden(auth.tenantId, parsed.data.orden, productos, gasto);
       if ("tope" in r) {
         return NextResponse.json({ error: "tope-ia", mensaje: "Se acabó la IA de este mes. Escribe la orden como los ejemplos y la entiendo sin IA." }, { status: 402 });

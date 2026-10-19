@@ -344,6 +344,22 @@ export const KitsDB = {
   },
 
   /**
+   * Unidades de cada producto que salieron como COMPONENTE de un kit desde
+   * `desde` (kardex `venta` marcado `[kit #<id>]`). Al vender un kit, el
+   * componente no tiene SaleItem propio: sin esto la regla de rebajas lo
+   * tomaría por «no se vende» aunque salga todos los días.
+   */
+  async salidasComoComponente(tenantId: string, productIds: number[], desde: Date): Promise<Array<{ productId: number; quantity: number }>> {
+    if (productIds.length === 0) return [];
+    const filas = await prisma.inventoryMovement.groupBy({
+      by: ["productId"],
+      where: { tenantId, type: "venta", notes: { contains: "[kit #" }, createdAt: { gte: desde }, productId: { in: productIds } },
+      _sum: { quantity: true },
+    });
+    return filas.map((f) => ({ productId: f.productId, quantity: f._sum.quantity ?? 0 }));
+  },
+
+  /**
    * Repone los componentes de los kits devueltos, en orden de `productId`.
    * Devuelve las filas de kardex para que quien llama las inserte junto con las
    * suyas (un solo INSERT). Un componente que hoy no lleva control de stock no
