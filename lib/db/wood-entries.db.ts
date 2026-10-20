@@ -41,6 +41,7 @@ import { FotoNoValidaError, resolverFotosEntrantes } from "@/lib/forestal/fotos-
 import { ForestEspeciesDB } from "./forest-especies.db";
 import { trozasConPermiso } from "./troza-permiso.db";
 import { mismaEspecie } from "@/lib/forestal/loth-constants";
+import { diametrosParaCompletar, type TrozaDelArchivo } from "@/lib/forestal/diametros-al-reimportar";
 import {
   claveDeLaGuia,
   colocarAlCargar,
@@ -3305,8 +3306,12 @@ export class WoodEntriesDB {
     tenantId: string,
     cambios: CambioMedidaTroza[],
     usuario = "unknown",
+    /** «archivo» = lo declaró el inventario del SNIFFS al re-subirlo (20-10): no
+     *  se marca «medido en planta» y se audita aparte. Sin esto, «planta». */
+    opts: { fuente?: "planta" | "archivo" } = {},
   ): Promise<{ trozas: TrozaConsumible[]; rechazadas: { id: string; motivo: string }[] }> {
     if (!tenantId) throw new Error("tenantId is required");
+    const desdeArchivo = opts.fuente === "archivo";
     /* La misma pieza dos veces en el pedido: vale la última (la que se tipeó después). */
     const porId = new Map<string, CambioMedidaTroza>();
     for (const c of cambios) {
@@ -3419,8 +3424,9 @@ export class WoodEntriesDB {
               THEN round((COALESCE(t."d1Cm", v.d1) + COALESCE(t."d2Cm", v.d2)) / 2, 2)
               ELSE t."diametroCm" END,
             "d1d2MedidoEnPlanta" = t."d1d2MedidoEnPlanta"
-              OR (t."d1Cm" IS NULL AND v.d1 IS NOT NULL)
-              OR (t."d2Cm" IS NULL AND v.d2 IS NOT NULL)
+              OR (NOT ${desdeArchivo}::boolean AND (
+                (t."d1Cm" IS NULL AND v.d1 IS NOT NULL)
+                OR (t."d2Cm" IS NULL AND v.d2 IS NOT NULL)))
           FROM (VALUES ${Prisma.join(valores)})
             AS v(id, set_ox, ox_d1, ox_d2, ox_l, ox_pt, d1, d2)
           WHERE t."id" = v.id AND t."tenantId" = ${tenantId}
@@ -3460,11 +3466,13 @@ export class WoodEntriesDB {
     if (conCm.length > 0) {
       auditCtp({
         tenantId,
-        action: "ctp_troza_d1d2_planta",
+        action: desdeArchivo ? "ctp_troza_d1d2_archivo" : "ctp_troza_d1d2_planta",
         entity: "WoodEntryTroza",
         entityId: conCm[0].id,
         detail:
-          `Cargó en planta D1/D2 que la guía no traía en ${conCm.length} troza(s): ` +
+          (desdeArchivo
+            ? `Completó con el inventario re-subido D1/D2 vacíos en ${conCm.length} troza(s): `
+            : `Cargó en planta D1/D2 que la guía no traía en ${conCm.length} troza(s): `) +
           conCm
             .slice(0, 40)
             .map((p) => `${nombre(p.id)} ${p.cm?.d1 ?? "—"}×${p.cm?.d2 ?? "—"} cm`)
@@ -3490,6 +3498,44 @@ export class WoodEntriesDB {
       trozas,
       rechazadas: planes.flatMap((p) => p.rechazos.map((motivo) => ({ id: p.id, motivo }))),
     };
+  }
+
+  /**
+   * Re-subir el inventario del SNIFFS completa los D1/D2 VACÍOS de las trozas
+   * que ya están en la guía (20-10). Antes, la guía con lista respondía «ya
+   * tiene su lista de piezas» y los diámetros del archivo nuevo no entraban.
+   *
+   * Empareja con `diametrosParaCompletar` (pura: código planta → código troza,
+   * mismo largo ±30 cm) y escribe por `guardarMedidasTrozas` con fuente
+   * «archivo»: sólo sobre NULL bajo lock, mes cerrado y guía anulada frenan,
+   * auditado aparte. `simular` sólo cuenta (vista previa: no escribe nada).
+   */
+  static async completarDiametrosDesdeArchivo(
+    tenantId: string,
+    woodEntryIds: readonly string[],
+    piezas: readonly TrozaDelArchivo[],
+    usuario = "import",
+    opts: { simular?: boolean } = {},
+  ): Promise<{ completadas: number; rechazadas: number; largoDistinto: number; ambiguas: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = [...new Set(woodEntryIds.filter(Boolean))];
+    const nada = { completadas: 0, rechazadas: 0, largoDistinto: 0, ambiguas: 0 };
+    if (ids.length === 0 || !piezas.some((p) => (p.d1Cm ?? 0) > 0 || (p.d2Cm ?? 0) > 0)) return nada;
+    const libro = await prisma.woodEntryTroza.findMany({
+      where: { tenantId, woodEntryId: { in: ids } },
+      select: { id: true, codigoPlanta: true, codificacion: true, d1Cm: true, d2Cm: true, largoM: true },
+    });
+    const num = (v: unknown) => (v == null ? null : Number(v));
+    const plan = diametrosParaCompletar(
+      libro.map((t) => ({ ...t, d1Cm: num(t.d1Cm), d2Cm: num(t.d2Cm), largoM: num(t.largoM) })),
+      piezas,
+    );
+    const base = { ...nada, largoDistinto: plan.largoDistinto.length, ambiguas: plan.ambiguas.length };
+    if (plan.completar.length === 0) return base;
+    if (opts.simular) return { ...base, completadas: plan.completar.length };
+    const r = await WoodEntriesDB.guardarMedidasTrozas(tenantId, plan.completar, usuario, { fuente: "archivo" });
+    const conRechazo = new Set(r.rechazadas.map((x) => x.id)).size;
+    return { ...base, completadas: plan.completar.length - conRechazo, rechazadas: conRechazo };
   }
 
   /**

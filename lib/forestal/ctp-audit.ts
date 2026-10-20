@@ -253,6 +253,10 @@ export type CtpAuditAction =
    *  abierto y si la ficha es de ESA guía; si la ficha vino recién de SERFOR,
    *  queda guardada en el ingreso. */
   | "ctp_troza_d1d2_guia"
+  /** Re-subir el inventario «Rolliza en patio» del SNIFFS completó los D1/D2
+   *  vacíos de trozas que ya estaban en el libro (20-10). Sólo sobre vacío, con
+   *  el mes abierto y el mismo largo (±30 cm): es lo que el CTP declaró. */
+  | "ctp_troza_d1d2_archivo"
   /** Declaró el título habilitante (código de origen, resolución, permiso) de
    *  un ingreso ya asentado que no lo traía (05-10). Sólo sobre vacío y con el
    *  mes abierto: llena un hueco, no corrige lo declarado. */

@@ -120,6 +120,28 @@ describe.skipIf(!HAS_DB)("WoodEntriesDB.guardarMedidasTrozas (base real)", () =>
     expect(r.rechazadas).toEqual([{ id: g.conCm, motivo: "D1 ya tiene 73 cm cargado: no se pisa." }]);
   }, 30_000);
 
+  it("re-subir el inventario: completa sólo lo vacío, sin marcar planta; simular no escribe (20-10)", async () => {
+    const g = await guiaDePrueba();
+    const archivo = [
+      { codificacion: `${P}-A`, d1Cm: 61, d2Cm: 57, largoM: 6.5 },
+      { codificacion: `${P}-B`, d1Cm: 99, d2Cm: 99, largoM: 5 },
+    ];
+    const sim = await WoodEntriesDB.completarDiametrosDesdeArchivo(TENANT, [g.entryId], archivo, `${P}-user`, { simular: true });
+    expect(sim.completadas).toBe(1);
+    expect((await leer(g.sinCm)).d1Cm).toBeNull();
+
+    const r = await WoodEntriesDB.completarDiametrosDesdeArchivo(TENANT, [g.entryId], archivo, `${P}-user`);
+    expect(r).toEqual({ completadas: 1, rechazadas: 0, largoDistinto: 0, ambiguas: 0 });
+    const sin = await leer(g.sinCm);
+    expect([Number(sin.d1Cm), Number(sin.d2Cm), Number(sin.diametroCm)]).toEqual([61, 57, 59]);
+    expect(sin.d1d2MedidoEnPlanta).toBe(false);
+    expect(Number((await leer(g.conCm)).d1Cm)).toBe(73);
+    /* Otra vez el mismo archivo: ya no hay nada vacío. */
+    expect((await WoodEntriesDB.completarDiametrosDesdeArchivo(TENANT, [g.entryId], archivo, `${P}-user`)).completadas).toBe(0);
+    /* Desde otro negocio, los mismos ingresos no se ven. */
+    expect((await WoodEntriesDB.completarDiametrosDesdeArchivo("otro-tenant-x", [g.entryId], archivo, `${P}-user`)).completadas).toBe(0);
+  }, 30_000);
+
   it("mes cerrado: frena los cm (del libro) pero NO la Oxapampa (comercial)", async () => {
     const g = await guiaDePrueba();
     /* Los cierres se leen UNA vez con `list` y se miran pieza por pieza con la

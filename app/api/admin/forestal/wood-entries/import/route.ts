@@ -1200,6 +1200,28 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         } else if (mode === "preview" && piezas && piezas.length > 0) {
           completado = ` · trae ${piezas.length} troza${piezas.length === 1 ? "" : "s"} para completar`;
         }
+        /* 20-10: el archivo re-subido trae D1/D2 que el libro no tiene → se
+           completan SÓLO las puntas vacías de las trozas que ya estaban (nunca
+           se pisa un diámetro cargado). Aparte: un error acá no tumba la fila. */
+        if (piezas && piezas.length > 0) {
+          try {
+            const dm = await WoodEntriesDB.completarDiametrosDesdeArchivo(
+              auth.tenantId,
+              enBase.map((e) => e.id),
+              piezas,
+              auth.username ?? "import",
+              { simular: mode !== "commit" },
+            );
+            const n = dm.completadas;
+            if (n > 0) completado += ` · ${n} troza${n === 1 ? "" : "s"} ${mode === "commit" ? (n === 1 ? "completó" : "completaron") : (n === 1 ? "completará" : "completarán")} su diámetro`;
+            if (dm.rechazadas > 0) completado += ` · ${dm.rechazadas} no tomaron su diámetro (mes cerrado, guía anulada o troza no recibida)`;
+            if (dm.largoDistinto > 0) completado += ` · AVISO: ${dm.largoDistinto} con otro largo en el archivo: su diámetro no se tomó`;
+            if (dm.ambiguas > 0) completado += ` · AVISO: ${dm.ambiguas} con código repetido: su diámetro no se tomó`;
+          } catch (e) {
+            logger.error("[import] completar diámetros", { error: String(e), gtf: d.gtfNumber });
+            completado += ` · no se pudieron completar los diámetros: ${e instanceof Error ? e.message : String(e)}`;
+          }
+        }
 
         /* El permiso: la guía ya estaba en la base → se completa sólo lo vacío. */
         let permisoFila: PermisoDeFila | undefined;

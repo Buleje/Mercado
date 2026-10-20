@@ -31,6 +31,7 @@ import { Btn, ModalBody } from "./ctp-shared";
 import CtpTrozasMedirFila, { leerCm, medidaInvalida, type ValoresMedida } from "./ctp-trozas-medir-fila";
 import CtpTrozasMedirPegar, { repartirPegado } from "./ctp-trozas-medir-pegar";
 import CtpTrozasMedirGuia, { guiasSinMedidas } from "./ctp-trozas-medir-guia";
+import CtpTrozasMedirCopiar, { TODAS_LAS_GUIAS, copiarALasVacias, deLaGuia } from "./ctp-trozas-medir-copiar";
 import { useGuardarMedidas } from "./hooks/use-medidas-trozas";
 import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
 
@@ -51,12 +52,19 @@ export default function CtpTrozasMedirModal({
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [aviso, setAviso] = useState<string | null>(null);
   const [pegado, setPegado] = useState<string | null>(null);
+  /* La guía a la vista (20-10): la planilla es de TODO el patio; una guía a la
+     vez es como se tiene el papel en la mano. */
+  const [guia, setGuia] = useState(TODAS_LAS_GUIAS);
   const { guardar, guardando, error } = useGuardarMedidas();
 
-  const filas = useMemo(() => {
+  const todas = useMemo(() => {
     const i = piezas.findIndex((p) => p.id === inicialId);
     return i > 0 ? [piezas[i], ...piezas.slice(0, i), ...piezas.slice(i + 1)] : [...piezas];
   }, [piezas, inicialId]);
+  /* Lo tipeado en otra guía no se pierde al cambiar de guía (`cambios` mira
+     todas). Guardada la última de esa guía, se va de la lista: vuelve a «todas». */
+  const guiaVista = todas.some((t) => deLaGuia(t, guia)) ? guia : TODAS_LAS_GUIAS;
+  const filas = useMemo(() => todas.filter((t) => deLaGuia(t, guiaVista)), [todas, guiaVista]);
   /* Con guías para traer (QR), el foco inicial no salta a la tabla: el modal
      bajaría hasta ella y en el celular abriría el teclado. Si se abrió desde
      una pieza, esa pieza manda. */
@@ -66,7 +74,7 @@ export default function CtpTrozasMedirModal({
      falta (la que ya está no viaja: el servidor no la pisaría igual). */
   const cambios = useMemo(() => {
     const out: CambioMedidaTroza[] = [];
-    for (const t of filas) {
+    for (const t of todas) {
       const v = valores[t.id];
       if (!v) continue;
       const ya = medidasDePieza(t);
@@ -76,16 +84,22 @@ export default function CtpTrozasMedirModal({
       out.push({ id: t.id, ...(d1 != null ? { d1Cm: d1 } : {}), ...(d2 != null ? { d2Cm: d2 } : {}) });
     }
     return out;
-  }, [filas, valores]);
-  const hayInvalidas = filas.some((t) => {
+  }, [todas, valores]);
+  const hayInvalidas = todas.some((t) => {
     const v = valores[t.id];
     return v && (medidaInvalida(leerCm(v.d1)) || medidaInvalida(leerCm(v.d2)));
   });
 
   const repartir = (texto: string) => {
-    const r = repartirPegado(texto, filas, valores);
+    const r = repartirPegado(texto, todas, valores);
     setValores(r.valores);
     setPegado(r.resumen);
+  };
+
+  const copiar = (cm: string) => {
+    const r = copiarALasVacias(filas, valores, cm);
+    setValores(r.valores);
+    setPegado(`${cm} cm en ${r.tocadas} ${r.tocadas === 1 ? "pieza" : "piezas"}: corrige las que difieren y mira «Cuadra»`);
   };
 
   const enviar = async () => {
@@ -134,7 +148,12 @@ export default function CtpTrozasMedirModal({
           />
         </p>
         {filas.length > 0 && <CtpTrozasMedirGuia piezas={filas} onGuardado={onGuardado} />}
-        {filas.length > 0 && <CtpTrozasMedirPegar onRepartir={repartir} resultado={pegado} />}
+        {todas.length > 0 && (
+          <div className="flex flex-wrap items-start gap-2">
+            <CtpTrozasMedirCopiar piezas={todas} guia={guiaVista} onGuia={setGuia} onCopiar={copiar} />
+            <CtpTrozasMedirPegar onRepartir={repartir} resultado={pegado} />
+          </div>
+        )}
         {filas.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-secondary)]">
             Todas las piezas de la lista tienen sus dos puntas.

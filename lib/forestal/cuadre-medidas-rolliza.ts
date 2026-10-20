@@ -19,7 +19,7 @@
 
 import type { BloqueRolliza, Distribucion } from "./cubicacion-reparto";
 import { claveEspecie, esAserradaDirecta } from "./cubicacion-reparto";
-import { respaldoDe, revisarPieza, type AvisoMedida, type PiezaMedida, type RespaldoTrozas, type TrozaMedida } from "./medida-cabe-en-troza";
+import { medidaDeTroza, respaldoDe, revisarPieza, type AvisoMedida, type PiezaMedida, type RespaldoTrozas, type TrozaConMedidasAPI, type TrozaMedida } from "./medida-cabe-en-troza";
 
 export {
   TOLERANCIA_DIAMETRO_CM,
@@ -108,8 +108,12 @@ export function cuadrarBloque(e: EntradaCuadre): CuadreBloqueMedidas {
 
 // ── De qué trozas sale cada bloque ─────────────────────────────────────────────
 
-/** Una troza que sabe de dónde viene (patio o lote del Libro). */
-export interface TrozaConOrigen extends TrozaMedida {
+/**
+ * Una troza que sabe de dónde viene (patio o lote del Libro). Puede traer las
+ * puntas medidas al recibirla y las de Oxapampa (`TrozaConMedidasAPI`): las lee
+ * `medidaDeTroza` en `conPuntas`.
+ */
+export interface TrozaConOrigen extends TrozaMedida, Omit<TrozaConMedidasAPI, keyof TrozaMedida> {
   id: string;
   especieComun?: string | null;
   permiso?: string | null;
@@ -153,17 +157,25 @@ export function trozasDelBloque(b: BloqueRolliza, f: FuentesDeTrozas): { trozas:
   return trozasDeLasFuentes(b, f);
 }
 
+/**
+ * La troza del Libro con sus puntas leídas como las lee el patio
+ * (`medidaDeTroza` → `medidasDePieza`): una pieza medida al recibirla o
+ * cubicada en Oxapampa también tiene Ø para el cuadre, no sólo la que trae
+ * `d1Cm`/`d2Cm`.
+ */
+const conPuntas = <T extends TrozaConOrigen>(t: T): T => ({ ...t, ...(medidaDeTroza(t) ?? {}) });
+
 /** Lo mismo sin mirar la copia: de dónde se completa una hoja vieja. */
 export function trozasDeLasFuentes(b: BloqueRolliza, f: FuentesDeTrozas): { trozas: TrozaMedida[]; fuente: string | null } {
   const ids = b.trozaIds ?? [];
   if (ids.length > 0) {
     const set = new Set(ids);
     const t = f.libro.filter((x) => set.has(x.id));
-    if (t.length > 0) return { trozas: t, fuente: `sus ${t.length} ${t.length === 1 ? "troza" : "trozas"}` };
+    if (t.length > 0) return { trozas: t.map(conPuntas), fuente: `sus ${t.length} ${t.length === 1 ? "troza" : "trozas"}` };
   }
   if (b.loteId) {
     const lote = f.lotes.get(b.loteId);
-    if (lote && lote.trozas.length > 0) return { trozas: [...lote.trozas], fuente: `las trozas del lote ${lote.code}` };
+    if (lote && lote.trozas.length > 0) return { trozas: lote.trozas.map(conPuntas), fuente: `las trozas del lote ${lote.code}` };
   }
   if (b.origen === "trozas") {
     const t = f.cubicador
@@ -178,7 +190,7 @@ export function trozasDeLasFuentes(b: BloqueRolliza, f: FuentesDeTrozas): { troz
       vistos.add(x.id);
       return true;
     });
-    if (t.length > 0) return { trozas: t, fuente: `el Libro, ${t.length} ${t.length === 1 ? "troza" : "trozas"} de ese permiso` };
+    if (t.length > 0) return { trozas: t.map(conPuntas), fuente: `el Libro, ${t.length} ${t.length === 1 ? "troza" : "trozas"} de ese permiso` };
   }
   return { trozas: [], fuente: null };
 }

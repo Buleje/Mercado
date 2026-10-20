@@ -23,6 +23,7 @@
  */
 
 import { CM_POR_PULGADA, M_POR_PIE } from "./escuadria-del-paquete";
+import { medidasDePieza } from "./trozas-patio-medidas";
 
 /**
  * 15 cm de holgura en el largo. Una pieza «de 20 pies» mide 6,096 m en la
@@ -65,15 +66,43 @@ const numPositivo = (v: unknown): number | null => {
   return Number.isFinite(n) && n > 0 ? n : null;
 };
 
+/** Lo que una troza del patio puede traer para medirla (la API: Decimal como texto o número). */
+export interface TrozaConMedidasAPI {
+  largoM?: unknown;
+  d1Cm?: unknown;
+  d2Cm?: unknown;
+  diametroCm?: unknown;
+  volumenM3?: unknown;
+  /** Lo medido al recibirla (ADR-450 L1) y la cubicación Oxapampa en pulgadas (ADR-440). */
+  recibidaD1Cm?: unknown;
+  recibidaD2Cm?: unknown;
+  oxD1Pulg?: unknown;
+  oxD2Pulg?: unknown;
+}
+
 /**
  * La copia de una troza que se guarda con la hoja (ADR-505): sólo números
  * (la API puede traer un Decimal como texto) y sin id ni permiso. `null` si no
  * trae ni largo ni Ø: no hay nada que comparar.
+ *
+ * Las puntas salen de `medidasDePieza` —la MISMA que dibuja D1/D2 en el patio—:
+ * guía o planta, después lo medido al recibirla y al final Oxapampa (pulgadas
+ * → cm). Antes sólo se leían `d1Cm`/`d2Cm` y una troza con sus puntas cubicadas
+ * en Oxapampa se veía medida en el patio y «diámetro sin comprobar» en la
+ * distribución (20-10).
  */
-export function medidaDeTroza(t: { largoM?: unknown; d1Cm?: unknown; d2Cm?: unknown; diametroCm?: unknown; volumenM3?: unknown }): TrozaMedida | null {
+export function medidaDeTroza(t: TrozaConMedidasAPI): TrozaMedida | null {
   const largoM = numPositivo(t.largoM);
-  const d1Cm = numPositivo(t.d1Cm);
-  const d2Cm = numPositivo(t.d2Cm);
+  const puntas = medidasDePieza({
+    d1Cm: numPositivo(t.d1Cm),
+    d2Cm: numPositivo(t.d2Cm),
+    recibidaD1Cm: numPositivo(t.recibidaD1Cm),
+    recibidaD2Cm: numPositivo(t.recibidaD2Cm),
+    oxD1Pulg: numPositivo(t.oxD1Pulg),
+    oxD2Pulg: numPositivo(t.oxD2Pulg),
+  });
+  const d1Cm = puntas.d1;
+  const d2Cm = puntas.d2;
   const diametroCm = numPositivo(t.diametroCm);
   if (largoM == null && d1Cm == null && d2Cm == null && diametroCm == null) return null;
   const volumenM3 = numPositivo(t.volumenM3);
