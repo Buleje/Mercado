@@ -156,3 +156,74 @@ export function guardarRegistro(almacen: Almacen | null | undefined, clave: stri
     /* quota: vale para esta visita */
   }
 }
+
+/**
+ * Junta el registro del servidor (`base`, manda) con el que trae un
+ * dispositivo (`entrante`), para que la oficina y el celular vean los mismos
+ * códigos (Brandon, 2026-10-19).
+ *
+ * · Lo que el servidor ya numeró no se mueve, aunque el dispositivo diga otra cosa.
+ * · Lo nuevo del dispositivo conserva su número si está libre.
+ * · Si choca —dos dispositivos dieron «1-03» a líneas distintas sin verse—, el
+ *   que llega segundo toma el siguiente libre: un código dado nunca se repite.
+ *
+ * Sin nada nuevo devuelve `base` (`===`), para que quien guarda no escriba.
+ */
+export function fusionarRegistros(base: RegistroCodigos, entrante: RegistroCodigos | null | undefined): RegistroCodigos {
+  if (!entrante || entrante === base) return base;
+  const out: RegistroCodigos = {
+    v: 1,
+    bloques: { ...base.bloques },
+    sigBloque: base.sigBloque,
+    lineas: { ...base.lineas },
+    sigLinea: { ...base.sigLinea },
+  };
+  let cambio = false;
+
+  /* Bloques: primero los que no chocan (conservan su número), después los que sí. */
+  const numerosUsados = new Set(Object.values(out.bloques));
+  const bloquesNuevos = Object.entries(entrante.bloques)
+    .filter(([id]) => out.bloques[id] == null)
+    .sort((a, b) => a[1] - b[1]);
+  const bloquesQueChocan: string[] = [];
+  for (const [id, n] of bloquesNuevos) {
+    if (numerosUsados.has(n)) { bloquesQueChocan.push(id); continue; }
+    out.bloques[id] = n;
+    numerosUsados.add(n);
+    out.sigBloque = Math.max(out.sigBloque, n);
+    cambio = true;
+  }
+  for (const id of bloquesQueChocan) {
+    out.sigBloque += 1;
+    out.bloques[id] = out.sigBloque;
+    cambio = true;
+  }
+
+  /* Líneas: el número de bloque del código entrante se traduce por su id (el
+     bloque pudo cambiar de número arriba). Mismo orden: libres, después choques. */
+  const idPorNumero = new Map(Object.entries(entrante.bloques).map(([id, n]) => [n, id]));
+  const usados = new Set(Object.values(out.lineas));
+  const lineasNuevas = Object.entries(entrante.lineas)
+    .filter(([clave]) => !out.lineas[clave])
+    .sort((a, b) => compararCodigos(a[1], b[1]));
+  const lineasQueChocan: [string, string][] = [];
+  for (const [clave, codigo] of lineasNuevas) {
+    const p = partesCodigo(codigo);
+    const id = p ? idPorNumero.get(p[0]) : undefined;
+    const nb = id != null ? out.bloques[id] : undefined;
+    if (!p || id == null || nb == null) continue; // huérfana: `asignarCodigos` le da uno al dibujar
+    const propio = formatoCodigo(nb, p[1]);
+    if (usados.has(propio)) { lineasQueChocan.push([clave, id]); continue; }
+    out.lineas[clave] = propio;
+    usados.add(propio);
+    out.sigLinea[id] = Math.max(out.sigLinea[id] ?? 0, p[1]);
+    cambio = true;
+  }
+  for (const [clave, id] of lineasQueChocan) {
+    const k = (out.sigLinea[id] ?? 0) + 1;
+    out.sigLinea[id] = k;
+    out.lineas[clave] = formatoCodigo(out.bloques[id]!, k);
+    cambio = true;
+  }
+  return cambio ? out : base;
+}

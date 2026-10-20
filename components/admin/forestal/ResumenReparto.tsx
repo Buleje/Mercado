@@ -50,6 +50,7 @@ import { CuentaMarcado, procedenciaDeAnexo, SelectorModoAnexo, useModoAnexo } fr
 import RepartoPorDistribuir from "./reparto-por-distribuir";
 import { cuadreMarcado, lineasDelReparto, marcadoEn, pendienteEn, piezasFiltradasDelBloque, porDistribuir } from "@/lib/forestal/reparto-por-distribuir";
 import { useCodigosReparto } from "./hooks/use-codigos-reparto";
+import { useFirmaReparto, useMarcasReparto, useRepartoServidor } from "./hooks/use-reparto-servidor";
 import { KpiResumen, SeccionResumen } from "./resumen-tabla";
 import { BloqueEspecie } from "./reparto-vistas";
 import { CeldaPermiso } from "./reparto-celda-permiso";
@@ -452,10 +453,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    * aserradero registra de a poco: se marca lo que se pasó hoy y mañana se sigue
    * desde ahí — si se perdiera al recargar, no serviría para nada.
    */
-  const [marcadas, setMarcadas] = useState<Set<string>>(new Set());
+  /* Guardadas por negocio en el servidor (oficina y monte ven lo mismo, Brandon
+     2026-10-19); localStorage pinta al instante y queda sin señal. */
+  const reparto = useRepartoServidor(claveLocal(""));
+  const { marcadas, marcar } = useMarcasReparto(claveLocal(""), reparto);
   /** Quién firma el PDF. Se persiste: es la misma persona semana a semana. */
-  const [firmaNombre, setFirmaNombre] = useState("");
-  const [firmaCargo, setFirmaCargo] = useState("");
+  const { firmaNombre, firmaCargo, guardarFirmaNombre, guardarFirmaCargo } = useFirmaReparto(claveLocal(""), reparto);
   /** Especies a exportar. Vacío = todas — filtrar es la excepción, no la regla. */
   const [soloEspecies, setSoloEspecies] = useState<Set<string>>(new Set());
   const [opcionesAbiertas, setOpcionesAbiertas] = useState(false);
@@ -559,48 +562,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           try { localStorage.setItem(claveLocal("-rolliza"), JSON.stringify(limpios)); } catch { /* quota */ }
         }
       }
-      const m = localStorage.getItem(claveLocal("-rolliza-marcas"));
-      if (m) setMarcadas(new Set(JSON.parse(m) as string[]));
       const s = localStorage.getItem(claveLocal("-rolliza-anexo-sel"));
       if (s) setSeleccionAnexo(new Set(JSON.parse(s) as string[]));
-      const f = localStorage.getItem(claveLocal("-rolliza-firma"));
-      if (f) {
-        const j = JSON.parse(f) as { nombre?: string; cargo?: string };
-        setFirmaNombre(j.nombre ?? "");
-        setFirmaCargo(j.cargo ?? "");
-      }
     } catch { /* ignore */ }
     setHayTrozas(leerTrozas().length);
   }, []);
 
-  /**
-   * Escribe la firma al tiro del cambio, no desde un efecto que mira
-   * `[firmaNombre, firmaCargo]`: ese efecto corría también en el MISMO commit
-   * del mount (antes de que el `setFirmaNombre` del efecto de lectura llegara
-   * a pintar), así que pisaba lo recién leído con `""` — la firma no
-   * sobrevivía un F5 (auditoría 2026-08-17). Mismo patrón que `marcar`/`guardar`.
-   */
-  const guardarFirmaNombre = (v: string) => {
-    setFirmaNombre(v);
-    try { localStorage.setItem(claveLocal("-rolliza-firma"), JSON.stringify({ nombre: v, cargo: firmaCargo })); } catch { /* quota */ }
-  };
-  const guardarFirmaCargo = (v: string) => {
-    setFirmaCargo(v);
-    try { localStorage.setItem(claveLocal("-rolliza-firma"), JSON.stringify({ nombre: firmaNombre, cargo: v })); } catch { /* quota */ }
-  };
-
-  /** Marca o desmarca líneas; `estado` fuerza el valor (para «todo el día»). */
-  const marcar = useCallback((claves: string[], estado?: boolean) => {
-    setMarcadas((prev) => {
-      const next = new Set(prev);
-      const encender = estado ?? !claves.every((k) => prev.has(k));
-      for (const k of claves) {
-        if (encender) next.add(k); else next.delete(k);
-      }
-      try { localStorage.setItem(claveLocal("-rolliza-marcas"), JSON.stringify([...next])); } catch { /* quota */ }
-      return next;
-    });
-  }, []);
   const guardar = useCallback((next: BloqueRolliza[]) => {
     setBloques(next);
     try { localStorage.setItem(claveLocal("-rolliza"), JSON.stringify(next)); } catch { /* quota */ }
@@ -1029,12 +996,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    */
   const lineasDeLaHoja = useMemo(() => lineasDelReparto(dist), [dist]);
   const ordenBloques = useMemo(() => bloques.map((b) => b.id), [bloques]);
-  const codigos = useCodigosReparto(claveLocal("-rolliza-codigos"), ordenBloques, lineasDeLaHoja);
+  const codigos = useCodigosReparto(claveLocal("-rolliza-codigos"), ordenBloques, lineasDeLaHoja, reparto);
   /** El permiso elegido en «Lo que entró» (sólo filtra la vista) y el cuadre de medidas pieza ↔ troza. */
   const permisoRolliza = usePermisoDeRolliza(bloques);
   const cuadreMedidas = useCuadreMedidas(dist, estadoLotes);
   /** Cómo se llama el bloque de lo sin tildar (se guarda con las casillas). */
-  const [nombreSinMarcar, setNombreSinMarcar] = useNombreSinMarcar(claveLocal("-rolliza-sin-marcar-nombre"));
+  const [nombreSinMarcar, setNombreSinMarcar] = useNombreSinMarcar(claveLocal("-rolliza-sin-marcar-nombre"), reparto);
   /** El cierre del apartado: qué falta, qué tapan los reprocesos y qué queda. */
   const cuadre = useMemo(
     () =>
