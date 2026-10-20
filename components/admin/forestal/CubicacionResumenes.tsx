@@ -7,12 +7,13 @@
  * ── Organización (2026-08-05) ───────────────────────────────────────────────
  * Antes era UN scroll de nueve secciones: ~5 700 px de alto donde la pregunta
  * que traías —«¿cuánto tengo de 2×8×10?»— quedaba a cuatro pantallas de la
- * respuesta. Ahora la cabecera es fija y el resto se reparte en cuatro vistas
+ * respuesta. Ahora la cabecera es fija y el resto se reparte en vistas
  * que responden una pregunta cada una:
  *
  *   · **Panorama** — qué tengo y qué me dice: lectura del lote + dónde está el volumen.
  *   · **Tablas**   — el detalle: especie × tipo, generales y agrupado libre.
- *   · **Rolliza**  — de qué troza salió cada pieza (respaldo para el Libro).
+ *   · **Cubicación de rolliza** — las trozas del patio (Smalian SERFOR).
+ *   · **Distribución** (clave `rolliza`) — de qué troza salió cada pieza (respaldo para el Libro).
  *   · **Metas**    — qué buscaba y si mejoré respecto del lote anterior.
  *
  * Al imprimir se renderizan TODAS: el papel no tiene pestañas.
@@ -58,12 +59,15 @@ import { cn } from "@/lib/utils";
 /** Botón de acción de la cabecera: mismo alto y peso que los filtros del admin. */
 const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
-type Vista = "panorama" | "tablas" | "rolliza" | "metas";
-const VISTAS: { value: Vista; label: string; icon: typeof Compass }[] = [
-  { value: "panorama", label: "Panorama", icon: Compass },
-  { value: "tablas", label: "Tablas", icon: Table },
-  { value: "rolliza", label: "Rolliza", icon: Share2 },
-  { value: "metas", label: "Metas", icon: Target },
+/* La clave «rolliza» se queda (es la que ya guardan los navegadores): hoy rotula
+   «Distribución». «Cubicación» es el resumen de trozas del patio (Smalian). */
+type Vista = "panorama" | "tablas" | "cubicacion" | "rolliza" | "metas";
+const VISTAS: { value: Vista; label: string; corto: string; icon: typeof Compass }[] = [
+  { value: "panorama", label: "Panorama", corto: "Panorama", icon: Compass },
+  { value: "tablas", label: "Tablas", corto: "Tablas", icon: Table },
+  { value: "cubicacion", label: "Cubicación de rolliza", corto: "Trozas", icon: Layers },
+  { value: "rolliza", label: "Distribución", corto: "Distrib.", icon: Share2 },
+  { value: "metas", label: "Metas", corto: "Metas", icon: Target },
 ];
 
 /* La clave vive en `lib/forestal/sembrar-reparto.ts`: la escriben también las
@@ -333,7 +337,7 @@ export default function CubicacionResumenes() {
                 onChange={cambiarVista}
                 size="sm"
                 label="Vista del resumen"
-                options={VISTAS.map((v) => ({ value: v.value, label: v.label }))}
+                options={VISTAS.map((v) => ({ value: v.value, label: v.corto }))}
               />
             </div>
             <div className="hidden sm:block print:hidden">
@@ -352,7 +356,7 @@ export default function CubicacionResumenes() {
             <button type="button" onClick={recargar} title="Volver a leer el lote del cubicador" className={cn(BTN, `print:hidden`)}>
               <RefreshCw className="h-4 w-4" /> Actualizar
             </button>
-            <button type="button" onClick={() => setImprimiendo(true)} title="Imprime las cuatro vistas, no sólo la que estás viendo" className={cn(BTN, `print:hidden`)}>
+            <button type="button" onClick={() => setImprimiendo(true)} title="Imprime todas las vistas, no sólo la que estás viendo" className={cn(BTN, `print:hidden`)}>
               <Printer className="h-4 w-4" /> Imprimir
             </button>
             <button type="button" onClick={exportarCSV} className={cn(BTN, `print:hidden`)}>
@@ -515,13 +519,15 @@ export default function CubicacionResumenes() {
         </>
       )}
 
-      {/* ── Rolliza ─────────────────────────────────────────────────────────── */}
-      {ver("rolliza") && (
-        <>
-          <ResumenTrozas />
-          <ResumenReparto rows={rows} precioDe={precioDe} />
-        </>
-      )}
+      {/* ── Cubicación de rolliza (trozas del patio) ────────────────────────── */}
+      {ver("cubicacion") && (trozasCubicadas > 0 ? <ResumenTrozas /> : (
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-10 text-center text-sm text-[var(--text-tertiary)]">
+          Todavía no hay trozas cubicadas. Cubícalas en <b>Cubicador de trozas</b> y vuelve acá.
+        </div>
+      ))}
+
+      {/* ── Distribución (antes «Rolliza») ──────────────────────────────────── */}
+      {ver("rolliza") && <ResumenReparto rows={rows} precioDe={precioDe} />}
 
       {/* ── Metas ───────────────────────────────────────────────────────────── */}
       {ver("metas") && (
