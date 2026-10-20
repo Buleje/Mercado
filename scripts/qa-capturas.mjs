@@ -41,6 +41,10 @@
  *   {"elegirPrimera": ["<sel select>", "<regex a excluir>"]} → espera hasta 10 s una opción con value ≠ "" que no
  *                                   matchee el regex y la elige (setter nativo + input/change: React controlado la toma)
  *   {"captura": "nombre"}         → la matriz de capturas de ESTE estado
+ *   {"pdf": "nombre"}             → lo que saldría en el PAPEL (media print + page.pdf A4) → <salida>/<nombre>.pdf,
+ *                                   sólo en el 1.er ancho/tema; contalo con `pdfinfo` + `pdftotext - | wc -w` (20-10:
+ *                                   «Imprimir no hace nada» = 5 hojas sin una letra). Para probar un botón que llama a
+ *                                   print(): stub `window.print=()=>{}` en un eval antes, y el estado queda montado.
  *   {"subir": ["<sel input[type=file]>", "/ruta/archivo.pdf"]} → elige el archivo (03-10: importar el PDF del croquis)
  *   {"fallar": "/api/settings"}   → ese GET responde 500 (o ["/api/x", 503]); {"fallar": null} lo
  *                                   quita. Para probar «la carga falló» (04-10: sin esto fue un
@@ -718,6 +722,18 @@ async function recorrido(t, primero) {
           if (primero) evals.push({ paso: i, reglas: v });
         }
         else if (tipo === "captura") { await matriz(page, valor, t); huboCaptura = true; }
+        else if (tipo === "pdf") {
+          /* {"pdf": "nombre"} (20-10): lo que saldría en el PAPEL (media print + page.pdf de
+             Chromium) → <salida>/<nombre>.pdf y su texto. «Imprimir no hace nada» era el papel,
+             no el handler: window.print sí se llamaba. */
+          if (primero) {
+            await page.emulateMedia({ media: "print" });
+            const archivo = path.join(salida, `${valor}.pdf`);
+            await page.pdf({ path: archivo, format: "A4", printBackground: false });
+            await page.emulateMedia({ media: "screen" });
+            evals.push({ paso: i, pdf: archivo });
+          }
+        }
         else throw new Error(`paso desconocido «${tipo}»`);
       } catch (e) {
         // El estado en el que se trabó se captura: sin eso el reporte sólo

@@ -24,8 +24,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import {
-  RefreshCw, Download, Printer, Layers, Boxes, Lightbulb, Target,
-  ArrowLeftRight, SlidersHorizontal, Share2, Compass, Table, FileText,
+  Download, Layers, Boxes, Lightbulb, ArrowLeftRight, SlidersHorizontal, FileText,
 } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
@@ -52,9 +51,9 @@ import { useMarcasEspecie } from "./resumen-tabla-marcas";
 import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
 import { leerPreciosGuardados, useResolverDePrecio, type PreciosGuardados } from "./hooks/use-precio-cubicador";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
+import { CSS_IMPRESION_RESUMEN, ID_RESUMEN_LOTE, useExportarResumen } from "./hooks/use-exportar-resumen";
 import { formatDateLong } from "@/lib/format";
 import { button } from "@/components/ui-system/button-variants";
-import { cn } from "@/lib/utils";
 
 /** Botón de acción de la cabecera: mismo alto y peso que los filtros del admin. */
 const BTN = button({ variant: "secondary", className: "rounded-xl" });
@@ -62,12 +61,13 @@ const BTN = button({ variant: "secondary", className: "rounded-xl" });
 /* La clave «rolliza» se queda (es la que ya guardan los navegadores): hoy rotula
    «Distribución». «Cubicación» es el resumen de trozas del patio (Smalian). */
 type Vista = "panorama" | "tablas" | "cubicacion" | "rolliza" | "metas";
-const VISTAS: { value: Vista; label: string; corto: string; icon: typeof Compass }[] = [
-  { value: "panorama", label: "Panorama", corto: "Panorama", icon: Compass },
-  { value: "tablas", label: "Tablas", corto: "Tablas", icon: Table },
-  { value: "cubicacion", label: "Cubicación de rolliza", corto: "Trozas", icon: Layers },
-  { value: "rolliza", label: "Distribución", corto: "Distrib.", icon: Share2 },
-  { value: "metas", label: "Metas", corto: "Metas", icon: Target },
+/* Sin ícono en las pestañas: con ícono la cabecera de 1280 no entraba en una fila. */
+const VISTAS: { value: Vista; label: string; corto: string }[] = [
+  { value: "panorama", label: "Panorama", corto: "Panorama" },
+  { value: "tablas", label: "Tablas", corto: "Tablas" },
+  { value: "cubicacion", label: "Cubicación de rolliza", corto: "Trozas" },
+  { value: "rolliza", label: "Distribución", corto: "Distrib." },
+  { value: "metas", label: "Metas", corto: "Metas" },
 ];
 
 /* La clave vive en `lib/forestal/sembrar-reparto.ts`: la escriben también las
@@ -238,51 +238,17 @@ export default function CubicacionResumenes() {
   const insights = useMemo(() => analizarLote(lote, precioDe), [lote, precioDe]);
   const total = porEspecie.total;
 
-  /**
-   * Imprimir/PDF: se pintan TODAS las vistas y recién ahí se abre el diálogo —
-   * el papel no tiene pestañas, y sin esto salía sólo la que estaba abierta.
-   * Dos `requestAnimationFrame` porque `window.print()` fotografía lo que YA
-   * está pintado, no lo que React acaba de agendar.
-   */
-  const [imprimiendo, setImprimiendo] = useState(false);
-  useEffect(() => {
-    if (!imprimiendo) return;
-    let cancelado = false;
-    const id = requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (cancelado) return;
-      window.print();
-      setImprimiendo(false);
-    }));
-    return () => { cancelado = true; cancelAnimationFrame(id); };
-  }, [imprimiendo]);
-  const ver = (v: Vista) => imprimiendo || vista === v;
+  /* Imprimir (la vista abierta o todas) y el CSV: menú «Exportar» de la cabecera. */
+  const vistaLabel = VISTAS.find((v) => v.value === vista)?.label ?? "Panorama";
+  const { imprimiendo, acciones: exportar } = useExportarResumen({ bloques, total, conValor, vistaLabel });
+  /* «Imprimir todo» monta las cinco vistas: el papel no tiene pestañas. */
+  const ver = (v: Vista) => imprimiendo === "todo" || vista === v;
 
   /** CSV de la vista libre (la de especie×tipo tiene su propio export). */
   const exportarDimCSV = () => {
     const url = URL.createObjectURL(new Blob([resumenACsv(porDim, dim, conValor)], { type: "text/csv;charset=utf-8;" }));
     const a = document.createElement("a");
     a.href = url; a.download = `resumen-${dim}-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
-  };
-
-  /**
-   * El CSV baja con la precisión COMPLETA aunque la pantalla redondee: es el
-   * archivo con el que el contador recalcula, y ahí el centésimo de pie sí
-   * importa. `Number(...)` porque el lote viene de localStorage — un string
-   * colado rompería el `.toFixed` sin avisar.
-   */
-  const exportarCSV = () => {
-    const lineas: string[] = ["Especie,Tipo,Piezas,PieTablar,m3" + (conValor ? ",ValorS/" : "")];
-    for (const b of bloques) {
-      for (const t of b.tipos) {
-        lineas.push([b.especie, t.label, t.cantidad, Number(t.pieTablar).toFixed(2), Number(t.m3).toFixed(4), ...(conValor ? [Number(t.valor).toFixed(2)] : [])].join(","));
-      }
-    }
-    lineas.push(["TOTAL", "", total.cantidad, Number(total.pieTablar).toFixed(2), Number(total.m3).toFixed(4), ...(conValor ? [Number(total.valor).toFixed(2)] : [])].join(","));
-    const csv = "﻿" + lineas.join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
-    const a = document.createElement("a");
-    a.href = url; a.download = `resumenes-cubicacion-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
 
@@ -293,22 +259,9 @@ export default function CubicacionResumenes() {
   }
 
   return (
-    <div className="space-y-4" id="resumen-lote">
-      {/* Al imprimir queda sólo el resumen: el admin alrededor no aporta al papel. */}
-      <style>{`@media print {
-        body * { visibility: hidden; }
-        #resumen-lote, #resumen-lote * { visibility: visible; }
-        #resumen-lote { position: absolute; left: 0; top: 0; width: 100%; }
-        #resumen-lote section { break-inside: avoid; }
-        @page { size: A4 portrait; margin: 12mm; }
-      }`}</style>
-
-      {variado.des && variado.des.grupos.length > 0 && (
-        <p className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] print:hidden">
-          <Boxes className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
-          Los {fmtPiezas(variado.paquetes)} paq. 6×6 Variado se cuentan abiertos: sus medidas con su tipo y especie, por proporción.
-        </p>
-      )}
+    <div className="space-y-4" id={ID_RESUMEN_LOTE}>
+      {/* Al imprimir queda sólo el resumen, en claro: el admin alrededor no aporta al papel. */}
+      <style>{CSS_IMPRESION_RESUMEN}</style>
       <HeroResumen
         total={total}
         renglones={rows.length}
@@ -317,51 +270,20 @@ export default function CubicacionResumenes() {
         porMedida={porMedida}
         conValor={conValor}
         fecha={formatDateLong(new Date())}
-        acciones={
+        enPapel={imprimiendo === "todo" ? "Todas las vistas" : vistaLabel}
+        variadoPaquetes={variado.des && variado.des.grupos.length > 0 ? variado.paquetes : 0}
+        exportar={exportar}
+        pestanas={
           <>
-            {/*
-              El selector de vista va PEGADO a las acciones (Brandon,
-              2026-09-02: «a lado izquierdo del botón actualizar, las secciones
-              para cambiar a panorama, tablas, rolliza y metas»). Antes vivía en
-              una barra propia debajo del encabezado: una fila entera de
-              pantalla para cuatro botones, y había que bajar la vista para
-              cambiar de vista.
-
-              Dual-render medido: en 390 px los cuatro rótulos con ícono piden
-              más ancho del que hay y «Metas» sale cortado. Mobile lleva la
-              versión chica sin íconos; de `sm` para arriba, la completa.
-            */}
-            <div className="sm:hidden print:hidden">
-              <SegmentedControl
-                value={vista}
-                onChange={cambiarVista}
-                size="sm"
-                label="Vista del resumen"
-                options={VISTAS.map((v) => ({ value: v.value, label: v.corto }))}
-              />
+            {/* A 400 px los rótulos cortos; de `sm` para arriba, los enteros y
+                sin ícono: con ícono la fila de 1280 se partía en dos. */}
+            <div className="sm:hidden">
+              {/* A lo ancho y con px-2: con el px-3 de `sm` los cinco cortos pedían 350 px de 342. */}
+              <SegmentedControl value={vista} onChange={cambiarVista} size="sm" label="Vista del resumen" className="flex w-full [&>button]:flex-1 [&>button]:justify-center [&>button]:px-2" options={VISTAS.map((v) => ({ value: v.value, label: v.corto }))} />
             </div>
-            <div className="hidden sm:block print:hidden">
-              <SegmentedControl
-                value={vista}
-                onChange={cambiarVista}
-                size="sm"
-                label="Vista del resumen"
-                options={VISTAS.map((v) => ({
-                  value: v.value,
-                  label: v.label,
-                  icon: <v.icon className="h-4 w-4" aria-hidden />,
-                }))}
-              />
+            <div className="hidden sm:block">
+              <SegmentedControl value={vista} onChange={cambiarVista} size="sm" label="Vista del resumen" options={VISTAS.map((v) => ({ value: v.value, label: v.label }))} />
             </div>
-            <button type="button" onClick={recargar} title="Volver a leer el lote del cubicador" className={cn(BTN, `print:hidden`)}>
-              <RefreshCw className="h-4 w-4" /> Actualizar
-            </button>
-            <button type="button" onClick={() => setImprimiendo(true)} title="Imprime todas las vistas, no sólo la que estás viendo" className={cn(BTN, `print:hidden`)}>
-              <Printer className="h-4 w-4" /> Imprimir
-            </button>
-            <button type="button" onClick={exportarCSV} className={cn(BTN, `print:hidden`)}>
-              <Download className="h-4 w-4" /> CSV
-            </button>
           </>
         }
       />
