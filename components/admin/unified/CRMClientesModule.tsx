@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import { Users, Star, MapPin, UserPlus } from "@buleje/design-system/icons";
+import { Users, Star, MapPin, UserPlus, Store } from "@buleje/design-system/icons";
 import { useMemo } from "react";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
@@ -12,6 +12,8 @@ const NPSTab = dynamic(() => import("@/components/admin/NPSTab"), { loading: S }
 const CustomerGeoMap = dynamic(() => import("@/components/admin/CustomerGeoMap"), { ssr: false, loading: () => <div className="flex items-center justify-center h-96"><div className="h-6 w-6 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div> });
 // Funnel de leads consolidado como sub-tab (era entrada top-level "leads-funnel")
 const LeadsFunnelModule = dynamic(() => import("@/components/admin/unified/LeadsFunnelModule"), { loading: S });
+// Revendedoras (ADR-507): clientas que compran con descuento por nivel y revenden.
+const RevendedorasVista = dynamic(() => import("@/components/admin/crm/revendedoras/RevendedorasVista"), { loading: S });
 
 const MODULE_ID = "clientes";
 
@@ -20,6 +22,7 @@ const TABS = [
   { id: "leads" as const, label: "Interesados", icon: UserPlus },
   { id: "resenas" as const, label: "Opiniones", icon: Star },
   { id: "mapa" as const, label: "Mapa", icon: MapPin },
+  { id: "revendedoras" as const, label: "Revendedoras", icon: Store },
 ];
 
 type Vista = (typeof TABS)[number]["id"];
@@ -55,7 +58,7 @@ export default function CRMClientesModule({ initialTab }: { initialTab?: string 
           /* «Clientes», como el hub en el menú (10-10): con «Mis Clientes» la banda
              decía CLIENTES · Mis Clientes y la primera pestaña, otra vez, «Mis clientes». */
           title: "Clientes",
-          description: "Tus clientes y lo que compran, los interesados que todavía no compran, sus opiniones y dónde viven.",
+          description: "Tus clientes y lo que compran, los interesados que todavía no compran, sus opiniones, dónde viven y tus revendedoras.",
           icon: Users,
         }}
         tabs={tabs}
@@ -67,6 +70,7 @@ export default function CRMClientesModule({ initialTab }: { initialTab?: string 
         {sub === "leads" && <LeadsFunnelModule />}
         {sub === "resenas" && <NPSTab />}
         {sub === "mapa" && <CustomerGeoMap />}
+        {sub === "revendedoras" && <RevendedorasVista />}
       </AdminTabBar>
     </div>
   );

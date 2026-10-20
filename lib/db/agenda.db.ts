@@ -23,6 +23,8 @@ import { checkPermission, type Role } from "@/lib/auth/role-permissions";
 import { ActivityLogDB } from "@/lib/db/activity-log.db";
 import { NotesDB } from "@/lib/db/notes.db";
 import { AgendaFuentesDB } from "@/lib/db/agenda-fuentes.db";
+import { SeguimientoClientasDB } from "@/lib/db/seguimiento-clientas.db";
+import type { SeguimientoClienta } from "@/lib/agenda/seguimiento-clientas";
 import { puedeVerActividad } from "@/lib/admin/agenda-acceso";
 import {
   calcularOcurrencias,
@@ -163,6 +165,26 @@ const esUnicoDuplicado = (err: unknown): boolean =>
 
 /** Las notas del calendario: los mismos roles que `/api/notes` (+ el bypass de gestión de requireAdmin). */
 const ROLES_NOTAS: readonly AdminRole[] = ["admin", "owner", "manager", "cajero", "almacenero"];
+
+/**
+ * Seguimiento a clientes (ADR-508) sólo para quien puede ver clientes. Si la
+ * consulta falla, la agenda sale igual (sin la lista) y queda en el log.
+ */
+async function seguimientosPara(
+  tenantId: string,
+  rol: AdminRole,
+  desde: FechaKey,
+  hasta: FechaKey,
+  hoy: FechaKey,
+): Promise<SeguimientoClienta[] | undefined> {
+  if (!checkPermission(rol as Role, "customers", "read")) return undefined;
+  try {
+    return await SeguimientoClientasDB.delRango(tenantId, desde, hasta, hoy);
+  } catch (err) {
+    logger.error("[agenda] seguimiento a clientes falló", { tenantId, error: String(err) });
+    return undefined;
+  }
+}
 
 export const AgendaDB = {
   // ── Actividades ────────────────────────────────────────────────────────────
@@ -422,13 +444,26 @@ export const AgendaDB = {
     return calcularOcurrencias({ actividades: activas, desde, hasta, hoy, marcas, fuentes });
   },
 
-  /** «Hoy»: lo de hoy + atrasadas de los últimos 7 días + alertas de la campana. */
-  async resumenHoy(tenantId: string, rol: AdminRole, ahora: Date = new Date()): Promise<ResumenAgendaHoy> {
+  /**
+   * «Hoy»: lo de hoy + atrasadas de los últimos 7 días + alertas de la campana.
+   * `conSeguimientos` (sólo la pantalla, no los crons de Telegram/push): suma a
+   * quién escribirle hoy (ADR-508), fuera de `cuenta` y de las alertas.
+   */
+  async resumenHoy(
+    tenantId: string,
+    rol: AdminRole,
+    ahora: Date = new Date(),
+    opciones: { conSeguimientos?: boolean } = {},
+  ): Promise<ResumenAgendaHoy> {
     exigirTenant(tenantId);
     const hoy = limaDateKey(ahora);
     const { desde, hasta } = rangoDeHoy(hoy);
-    const ocurrencias = await AgendaDB.ocurrenciasCalculadas(tenantId, rol, desde, hasta, hoy);
-    return resumirHoy(ocurrencias, hoy, horaDeLima(ahora));
+    const [ocurrencias, seguimientos] = await Promise.all([
+      AgendaDB.ocurrenciasCalculadas(tenantId, rol, desde, hasta, hoy),
+      opciones.conSeguimientos ? seguimientosPara(tenantId, rol, hoy, hoy, hoy) : Promise.resolve(undefined),
+    ]);
+    const resumen = resumirHoy(ocurrencias, hoy, horaDeLima(ahora));
+    return seguimientos ? { ...resumen, seguimientos } : resumen;
   },
 
   /** Un `DiaAgenda` por cada día del rango (los vacíos también: la grilla los dibuja). */
@@ -436,7 +471,7 @@ export const AgendaDB = {
     exigirTenant(tenantId);
     const hoy = limaDateKey(ahora);
     const veAdelantos = checkPermission(rol as Role, "adelantos", "read");
-    const [ocurrencias, notas, tareas, vencimientos] = await Promise.all([
+    const [ocurrencias, notas, tareas, vencimientos, seguimientos] = await Promise.all([
       AgendaDB.ocurrenciasCalculadas(tenantId, rol, desde, hasta, hoy),
       ROLES_NOTAS.includes(rol) ? NotesDB.delRango(tenantId, desde, hasta) : Promise.resolve([]),
       prisma.adminTask.findMany({
@@ -445,6 +480,7 @@ export const AgendaDB = {
         orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
       }),
       AgendaFuentesDB.vencimientosDelRango(tenantId, desde, hasta),
+      seguimientosPara(tenantId, rol, desde, hasta, hoy),
     ]);
 
     const dias = new Map<FechaKey, DiaAgenda>();
@@ -473,6 +509,18 @@ export const AgendaDB = {
       if (v.origen !== "recordatorio" && !veAdelantos) continue;
       dias.get(v.fecha)?.vencimientos.push(v);
     }
+    // ADR-508: uno por día («Escribir a 3 clientes»), no uno por cliente: la lista está en «Hoy».
+    const porDia = new Map<FechaKey, number>();
+    for (const sg of seguimientos ?? []) porDia.set(sg.fecha, (porDia.get(sg.fecha) ?? 0) + 1);
+    for (const [fecha, n] of porDia) {
+      dias.get(fecha)?.vencimientos.push({
+        id: `seguimiento:${fecha}`,
+        origen: "seguimiento_clienta",
+        titulo: n === 1 ? "Escribir a 1 cliente (seguimiento)" : `Escribir a ${n} clientes (seguimiento)`,
+        fecha,
+        href: "/admin?tab=administracion&vista=hoy",
+      });
+    }
     return [...dias.values()];
   },
 
@@ -481,5 +529,6 @@ export const AgendaDB = {
     exigirTenant(tenantId);
     invalidateByPrefix(prefijo(tenantId));
     AgendaFuentesDB.olvidar(tenantId);
+    SeguimientoClientasDB.olvidar(tenantId);
   },
 };

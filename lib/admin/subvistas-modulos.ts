@@ -190,6 +190,8 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "resenas", label: "Opiniones", hint: "Qué dicen los clientes y moderar sus reseñas", origen: ["clientes", "marketplace"] },
     { key: "mapa", label: "Mapa", hint: "Dónde viven los clientes" },
     // «Mensajes masivos» se mudó a Crecimiento › Mandar mensaje, sección «Uno por uno» (19-10).
+    // 20-10 (Musa §11): módulo para todos los negocios.
+    { key: "revendedoras", label: "Revendedoras", hint: "Clientas de otros pueblos que compran con descuento y revenden: nivel, ventas del mes y reglas" },
   ],
   // Configuración (ola 2 del panel unificado, 2026-10-10): absorbe Plan
   // (`plan`) y Sistema (`rendimiento`, `auditoria`, `colas`). Las secciones de
@@ -266,6 +268,8 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   ],
   "metas-logros": [
     { key: "metas", label: "Metas", hint: "Tus metas de cada área, cuánto llevas y el período anterior como vara" },
+    // 20-10 (Musa §21, ADR-508): para todos los negocios.
+    { key: "semaforo", label: "Semáforo", hint: "Verde, amarillo o rojo de tus números con qué hacer" },
     { key: "hoy", label: "Hoy", hint: "Cuánto te falta hoy para la meta, a qué ritmo llegas y con cuánto cierras" },
     { key: "calendario", label: "Calendario", hint: "Cada día de la semana y del mes contra su meta" },
     { key: "logros", label: "Logros", hint: "Lo que ganaste, lo próximo por ganar y tus récords" },

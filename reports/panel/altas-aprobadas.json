@@ -569,6 +569,16 @@
    },
    "porque": "Campañas para el plan Pro: el plan ya la desbloqueaba (enterprise/max, plan-tiers) pero el rubro la escondía de la barra de escritorio en silencio (campanas no estaba en ninguna lista enabled de lib/verticals/registry.ts). Ahora la traen bodega, restaurante, panadería, farmacia, ferretería y otro; maderería no. El menú del celular ya la mostraba: no se gana pantalla, se alinea la barra. Los planes basico/pro no la ganan.",
    "aprobo": "Brandon 19-10: Campañas para el plan Pro (bodega)"
+  },
+  {
+   "par": "clientes:revendedoras",
+   "porque": "Módulo nuevo para todos los negocios (ADR-507). Brandon 20-10, pedido de Musa: «si hay cosas que no se pueden poner porque no hay los módulos quiero que las crees (eso aplicará a todos los panel admin)». Vive dentro de Clientes, sólo dueño/admin/manager (la ruta da 403 al resto).",
+   "aprobo": "Brandon 2026-10-20"
+  },
+  {
+   "par": "metas-logros:semaforo",
+   "porque": "Módulo nuevo para todos los negocios (ADR-508): semáforo de números dentro de Metas. Mismo pedido de Brandon del 20-10 («créalos; aplicará a todos los panel admin»). La ruta da 403 a cajero/almacenero.",
+   "aprobo": "Brandon 2026-10-20"
   }
  ]
 }

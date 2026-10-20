@@ -17,7 +17,7 @@
  * del navegador. Los ids viejos (`mis-metas`, `semana-mes`) siguen llegando.
  */
 import dynamic from "next/dynamic";
-import { CalendarDays, Sun, Target, Trophy } from "@buleje/design-system/icons";
+import { CalendarDays, Gauge, Sun, Target, Trophy } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { useVistaModulo, type AliasDeVista } from "@/hooks/use-vista-modulo";
 import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
@@ -41,15 +41,21 @@ const LogrosVista = dynamic(() => import("@/components/admin/metas/logros/Logros
   loading: Cargando,
 });
 
+const SemaforoVista = dynamic(() => import("@/components/admin/metas/semaforo/SemaforoVista").then((m) => m.SemaforoVista), {
+  ssr: false,
+  loading: Cargando,
+});
+
 const MODULE_ID = "metas-logros";
 
-type VistaId = "metas" | "hoy" | "calendario" | "logros";
-const VISTAS: readonly VistaId[] = ["metas", "hoy", "calendario", "logros"];
+type VistaId = "metas" | "semaforo" | "hoy" | "calendario" | "logros";
+const VISTAS: readonly VistaId[] = ["metas", "semaforo", "hoy", "calendario", "logros"];
 /** Links y memoria de antes del 09-10. */
 const ALIAS: AliasDeVista<VistaId> = { "mis-metas": "metas", "semana-mes": "calendario" };
 
 const TABS = [
   { id: "metas", label: "Metas", icon: Target },
+  { id: "semaforo", label: "Semáforo", icon: Gauge },
   { id: "hoy", label: "Hoy", icon: Sun },
   { id: "calendario", label: "Calendario", icon: CalendarDays },
   { id: "logros", label: "Logros", icon: Trophy },
@@ -67,7 +73,8 @@ export default function MetasLogrosModule() {
           description: (
             <span>
               Metas: créalas y síguelas en todas las áreas del negocio (Ventas, Compras, Marketplace, Aserradero, Bosque…),
-              con su avance sacado de tus datos y el período anterior como vara. Hoy: cuánto te falta para la meta del día y
+              con su avance sacado de tus datos y el período anterior como vara. Semáforo: tus números en verde, amarillo o
+              rojo con qué hacer. Hoy: cuánto te falta para la meta del día y
               con cuánto cierras. Calendario: cada día del mes contra tu meta. Logros: lo que ganaste, lo próximo y tus récords.
             </span>
           ),
@@ -79,6 +86,7 @@ export default function MetasLogrosModule() {
       >
         <div>
           {vista === "metas" && <MetasVista />}
+          {vista === "semaforo" && <SemaforoVista />}
           {vista === "hoy" && <DailyGoalTracker />}
           {vista === "calendario" && <CalendarioMes />}
           {vista === "logros" && <LogrosVista />}

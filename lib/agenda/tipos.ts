@@ -6,6 +6,7 @@
  * `prisma/migrations/20261018_agenda_administracion/migration.sql`: cambiar una = cambiar las dos.
  */
 import type { AdminRole } from "@/lib/session";
+import type { SeguimientoClienta } from "./seguimiento-clientas";
 
 export const REGLAS_AGENDA = [
   "asistencia",
@@ -118,7 +119,8 @@ export interface TareaDelDia {
 
 export interface VencimientoDelDia {
   id: string;
-  origen: "adelanto" | "entrega_pactada" | "promesa_adelanto" | "recordatorio";
+  /** `seguimiento_clienta` (ADR-508): «escribir a N clientes», uno por día, sólo lectura. */
+  origen: "adelanto" | "entrega_pactada" | "promesa_adelanto" | "recordatorio" | "seguimiento_clienta";
   titulo: string;
   fecha: FechaKey;
   href: string;
@@ -148,6 +150,11 @@ export interface ResumenAgendaHoy {
   atrasadas: OcurrenciaDTO[];
   cuenta: { total: number; hechas: number; pendientes: number; atrasadas: number };
   alertas: AlertaAgenda[];
+  /**
+   * A quién escribirle hoy (ADR-508, seguimiento a los 3/15/30 días). Opcional:
+   * no entra en `cuenta` (no son actividades) y falta en roles sin clientes.
+   */
+  seguimientos?: SeguimientoClienta[];
 }
 
 export interface FeedIcsDTO {

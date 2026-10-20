@@ -163,7 +163,8 @@ function Centro(p: Props) {
       porHacerDensa
     ) : vista === "todas" ? (
       <div className="space-y-5">
-        {porHacer > 0 && porHacerDensa}
+        {/* «Escribir a clientes» (ADR-508) va dentro de porHacerDensa aunque no falte nada. */}
+        {(porHacer > 0 || (hoy.seguimientos?.length ?? 0) > 0) && porHacerDensa}
         <AvisosDeLaFranja alIr={() => alIr?.()} />
         {listaAvisos}
       </div>

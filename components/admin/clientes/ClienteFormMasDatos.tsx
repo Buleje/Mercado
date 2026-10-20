@@ -35,6 +35,9 @@ export default function ClienteFormMasDatos({ form, set }: { form: CustomerFormD
               <option value="general">General</option>
               <option value="mayorista">Mayorista</option>
               <option value="especial">Especial</option>
+              {/* Se marca en Clientes › Revendedoras (guarda la fecha de alta y los meses sin fiado);
+                  acá sólo se muestra para que una revendedora no aparezca como «General». */}
+              <option value="revendedora" disabled>Revendedora (se marca en Clientes › Revendedoras)</option>
             </select>
           </Field>
           <Field label="Vendedor asignado" labelClassName={labelCls}>

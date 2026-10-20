@@ -71,6 +71,10 @@ export const RUTAS_PANEL = {
   /* Agenda de Administración (ADR-501): la campana pide «Hoy» con cualquier rol
      que lee la agenda; cajero/almacenero/analista reciben sólo lo de su rol. */
   "/api/admin/agenda/hoy": ROLES_LEER_AGENDA,
+  /* Semáforo del negocio (ADR-508, Metas › Semáforo): ventas, ganancia, caja.
+     Plata del negocio → dueño, admin, dueño de tienda y encargado; cajero,
+     almacenero y analista reciben 403 y la vista muestra «sin permiso». */
+  "/api/admin/semaforo": ["admin", "owner", "tienda_owner", "manager"],
 } as const satisfies Record<string, readonly AdminRole[]>;
 
 export type RutaPanel = keyof typeof RUTAS_PANEL;

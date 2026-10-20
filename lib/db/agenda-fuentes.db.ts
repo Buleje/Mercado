@@ -333,6 +333,8 @@ export const AgendaFuentesDB = {
         entrega_pactada: "/admin?tab=plata&vista=adelantos",
         promesa_adelanto: "/admin?tab=plata&vista=adelantos",
         recordatorio: "/admin?tab=administracion&vista=hoy",
+        // ADR-508: no sale de esta consulta (lo arma AgendaDB.calendario); está para que el mapa siga completo.
+        seguimiento_clienta: "/admin?tab=administracion&vista=hoy",
       };
       return filas.map((f) => ({ id: f.id, origen: f.origen, titulo: f.titulo, fecha: f.dia, href: HREF[f.origen] }));
     });

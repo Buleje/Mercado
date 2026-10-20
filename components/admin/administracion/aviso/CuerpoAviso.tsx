@@ -5,6 +5,7 @@
  * de hoy y lo atrasado con «Hecha» e «Ir a hacerlo» (`ListaOcurrencias`) y
  * «Ponerme al día». Los conteos van en el título de cada bloque. `densa`
  * (la barra del costado y el resumen de «Todas»): filas bajas.
+ * Abajo, «Escribir a clientes» (ADR-508): no suma a «Te faltan N» ni dispara el aviso.
  */
 import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
@@ -15,6 +16,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { useAgenda } from "@/hooks/use-agenda";
 import type { OcurrenciaDTO } from "@/lib/agenda/tipos";
 import { ListaOcurrencias } from "../comun/ListaOcurrencias";
+import { ListaSeguimientos } from "../hoy/SeguimientoClientas";
 
 const PonermeAlDia = dynamic(() => import("./PonermeAlDia"), { ssr: false });
 
@@ -42,7 +44,8 @@ function Titulo({ texto, n, children }: { texto: string; n: number; children?: R
 }
 
 export function CuerpoAviso({ falta, densa, alDia, onAlDia, alIr }: Props) {
-  const { cargando, error, refrescar } = useAgenda();
+  const { hoy, cargando, error, refrescar } = useAgenda();
+  const seguimientos = hoy.seguimientos ?? [];
   const total = falta.hoy.length + falta.atrasadas.length;
 
   if (alDia) {
@@ -70,7 +73,7 @@ export function CuerpoAviso({ falta, densa, alDia, onAlDia, alIr }: Props) {
       )}
       {cargando ? (
         <LoadingState message="Mirando lo de hoy…" />
-      ) : total === 0 ? (
+      ) : total + seguimientos.length === 0 ? (
         <EmptyState icon={CheckCircle2} title="Estás al día" description="No te falta nada de hoy ni de los días anteriores." />
       ) : (
         <>
@@ -109,6 +112,12 @@ export function CuerpoAviso({ falta, densa, alDia, onAlDia, alIr }: Props) {
                 </button>
               </Titulo>
               <ListaOcurrencias etiqueta="Lo atrasado" ocurrencias={falta.atrasadas} conFecha densa={densa} />
+            </section>
+          )}
+          {seguimientos.length > 0 && (
+            <section data-qa="aviso-seguimiento">
+              <Titulo texto="Escribir a clientes" n={seguimientos.length} />
+              <ListaSeguimientos seguimientos={seguimientos} densa={densa} />
             </section>
           )}
         </>

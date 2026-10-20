@@ -25,6 +25,7 @@ const ORIGEN_VENCIMIENTO: Record<string, string> = {
   entrega_pactada: "Entrega pactada",
   promesa_adelanto: "Promesa de pago",
   recordatorio: "Recordatorio",
+  seguimiento_clienta: "Seguimiento a clientes",
 };
 
 function irSinRecargar(e: MouseEvent<HTMLAnchorElement>, href: string) {

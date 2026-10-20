@@ -21,6 +21,7 @@ import { EncabezadoAgenda } from "../comun/EncabezadoAgenda";
 import { ESTILO_ESTADO } from "../comun/estado-ocurrencia";
 import { fechaLarga } from "../comun/fechas";
 import { CLASE_CHIP_ESTADO, ListaOcurrencias } from "../comun/ListaOcurrencias";
+import { ListaSeguimientos } from "./SeguimientoClientas";
 
 const ActividadModal = dynamic(() => import("../actividades/ActividadModal").then((m) => m.ActividadModal), { ssr: false });
 const PonermeAlDia = dynamic(() => import("../aviso/PonermeAlDia"), { ssr: false });
@@ -92,6 +93,17 @@ export default function HoyVista({ irA }: { irA: (vista: string) => void }) {
 
   const { cuenta } = hoy;
   const sinActividades = actividades.length === 0 && hoy.hoy.length === 0 && hoy.atrasadas.length === 0;
+  const seguimientos = hoy.seguimientos ?? [];
+  /* ADR-508: a quién escribirle hoy; sale aunque no haya actividades prendidas. */
+  const bloqueSeguimiento = seguimientos.length > 0 && (
+    <section className={cn(TARJETA, "px-4 py-3")} data-qa="hoy-seguimiento">
+      <CardTitle className="flex items-baseline gap-1.5">
+        Escribir a clientes
+        <span className="text-sm font-semibold tabular-nums text-[var(--text-tertiary)]">{seguimientos.length}</span>
+      </CardTitle>
+      <ListaSeguimientos seguimientos={seguimientos} />
+    </section>
+  );
 
   return (
     <div className="space-y-4">
@@ -110,11 +122,14 @@ export default function HoyVista({ irA }: { irA: (vista: string) => void }) {
       )}
 
       {sinActividades && !error ? (
-        <EmptyState
-          title="Todavía no tienes actividades"
-          description="Prende las que te sirven (asistencia, aserrío, gastos, adelantos, cuentas, facturas) y aquí verás cada día lo que falta."
-          action={{ label: "Ver las sugeridas", node: <button type="button" className={button({ variant: "primary" })} onClick={() => irA("actividades")}>Ver las sugeridas</button> }}
-        />
+        <>
+          {bloqueSeguimiento}
+          <EmptyState
+            title="Todavía no tienes actividades"
+            description="Prende las que te sirven (asistencia, aserrío, gastos, adelantos, cuentas, facturas) y aquí verás cada día lo que falta."
+            action={{ label: "Ver las sugeridas", node: <button type="button" className={button({ variant: "primary" })} onClick={() => irA("actividades")}>Ver las sugeridas</button> }}
+          />
+        </>
       ) : (
         <>
           <Avance hechas={cuenta.hechas} total={cuenta.total} pendientes={cuenta.pendientes} atrasadas={cuenta.atrasadas} />
@@ -138,6 +153,7 @@ export default function HoyVista({ irA }: { irA: (vista: string) => void }) {
               <ListaOcurrencias etiqueta="Lo atrasado" ocurrencias={hoy.atrasadas} conFecha />
             </section>
           )}
+          {bloqueSeguimiento}
         </>
       )}
 
