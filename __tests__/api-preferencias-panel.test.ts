@@ -121,7 +121,7 @@ describe("qué se acepta", () => {
   });
 
   it("el aviso en pantalla de la agenda se guarda por persona", async () => {
-    const mio = { ...AVISO_POR_DEFECTO, cadaMin: 30, sonido: true };
+    const mio = { ...AVISO_POR_DEFECTO, cadaMin: 30, sonido: "gota" as const };
     expect((await guardar({ clave: "aviso-agenda", valor: [mio] })).status).toBe(200);
     expect((await leer()).body.guardado?.["aviso-agenda"]).toEqual([mio]);
     como("beto");

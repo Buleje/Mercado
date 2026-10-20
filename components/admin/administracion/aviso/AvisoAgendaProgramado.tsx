@@ -19,6 +19,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { leerHoy } from "@/components/admin/administracion/agenda-api";
 import { alPedirAbrirAviso, useConfigAviso } from "@/hooks/use-aviso-agenda";
+import { registrarCentro, type VistaCentro } from "@/components/notifications/centro-unificado";
 import { diaLima, loQueFalta, proximoAviso, textoNotificacion, tocaMirar, type ModoAviso } from "@/lib/agenda/aviso-pantalla";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import { logger } from "@/lib/logger";
@@ -56,6 +57,8 @@ export default function AvisoAgendaProgramado({ rol }: { rol: AdminRole }) {
   /** En qué forma está abierto (`null` = cerrado). */
   const [abierto, setAbierto] = useState<ModoAviso | null>(null);
   const [minimizado, setMinimizado] = useState(false);
+  /** Qué pestaña del centro único se ve («Por hacer», «Todas» o una categoría). */
+  const [vista, setVista] = useState<VistaCentro>("todas");
   /** Ancho de la barra del costado (este navegador); `null` = de fábrica. */
   const [ancho, setAncho] = useState<number | null>(null);
   const [configurando, setConfigurando] = useState(false);
@@ -63,18 +66,20 @@ export default function AvisoAgendaProgramado({ rol }: { rol: AdminRole }) {
   const [restaurado, setRestaurado] = useState(false);
   const estado = useRef({ abierto, minimizado, configurando });
   estado.current = { abierto, minimizado, configurando };
+  const vistaRef = useRef(vista);
+  vistaRef.current = vista;
   const mirando = useRef(false);
   const alVolver = useRef(false);
   const esperas = useRef(0);
 
   const abrir = useCallback(
     (conSonido: boolean, modo?: ModoAviso) => {
-      if (conSonido && config.sonido) sonarAviso();
+      if (conSonido) sonarAviso(config.sonido, config.volumen);
       setMinimizado(false);
       /* El panel fijo ya abierto no se cambia por un aviso: sólo se despliega. */
       setAbierto((actual) => (actual === "fija" && !modo ? "fija" : (modo ?? config.modo)));
     },
-    [config.sonido, config.modo],
+    [config.sonido, config.volumen, config.modo],
   );
 
   const mirar = useCallback(async () => {
@@ -152,7 +157,32 @@ export default function AvisoAgendaProgramado({ rol }: { rol: AdminRole }) {
   }, [restaurado, abierto, minimizado, leerReloj, escribirReloj]);
 
   /* «Probar ahora», «Ver el aviso» y «Al costado» de Hoy lo abren aunque esté apagado. */
-  useEffect(() => (puede ? alPedirAbrirAviso((modo) => abrir(false, modo)) : undefined), [puede, abrir]);
+  useEffect(
+    () =>
+      puede
+        ? alPedirAbrirAviso((modo) => {
+            setVista("por-hacer");
+            abrir(false, modo);
+          })
+        : undefined,
+    [puede, abrir],
+  );
+
+  /* La campana y el atajo N abren este mismo centro (`centro-unificado.ts`); con la
+     ventana del centro ya abierta en esa pestaña, otro toque la cierra (como antes). */
+  useEffect(() => {
+    if (!puede) return;
+    return registrarCentro((v = "todas") => {
+      const { abierto: forma } = estado.current;
+      if (forma === "ventana" && v === vistaRef.current) {
+        setAbierto(null);
+        return;
+      }
+      setVista(v);
+      if (forma === null) abrir(false);
+      else setMinimizado(false);
+    });
+  }, [puede, abrir]);
 
   const guardarAncho = (px: number | null) => {
     setAncho(px);
@@ -189,6 +219,8 @@ export default function AvisoAgendaProgramado({ rol }: { rol: AdminRole }) {
           ancho={ancho}
           onAncho={guardarAncho}
           onCambiarModo={cambiarModo}
+          vista={vista}
+          onVista={setVista}
           onCerrar={cerrar}
           onRecordarEn={recordarEn}
           onNoMasHoy={noMasHoy}

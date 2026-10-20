@@ -35,16 +35,23 @@ interface Props {
   conFecha?: boolean;
   vacio?: ReactNode;
   etiqueta: string;
+  /**
+   * Filas bajas para la barra del costado (Brandon 20-10: «más compacta y que se
+   * aproveche mejor»): nombre y hora en una línea, el detalle chico debajo y los
+   * botones sólo con ícono a la derecha, sin bajar a otra línea. El estado sale
+   * sólo cuando dice algo («A medias», «Atrasada»), no «Por hacer».
+   */
+  densa?: boolean;
 }
 
-export function ListaOcurrencias({ ocurrencias, conFecha = false, vacio, etiqueta }: Props) {
+export function ListaOcurrencias({ ocurrencias, conFecha = false, vacio, etiqueta, densa = false }: Props) {
   const [abierta, setAbierta] = useState<{ o: OcurrenciaDTO; modo: EstadoManual } | null>(null);
   if (ocurrencias.length === 0) return <>{vacio ?? null}</>;
   return (
     <>
       <ul aria-label={etiqueta} className="divide-y divide-[var(--rule-soft)]">
         {ocurrencias.map((o) => (
-          <FilaOcurrencia key={`${o.actividadId}-${o.fecha}`} o={o} conFecha={conFecha} onModal={(modo) => setAbierta({ o, modo })} />
+          <FilaOcurrencia key={`${o.actividadId}-${o.fecha}`} o={o} conFecha={conFecha} densa={densa} onModal={(modo) => setAbierta({ o, modo })} />
         ))}
       </ul>
       {abierta && <MarcarModal ocurrencia={abierta.o} modo={abierta.modo} onCerrar={() => setAbierta(null)} />}
@@ -58,7 +65,7 @@ function irSinRecargar(e: MouseEvent<HTMLAnchorElement>, href: string) {
   void irAEnlace(href);
 }
 
-function FilaOcurrencia({ o, conFecha, onModal }: { o: OcurrenciaDTO; conFecha: boolean; onModal: (modo: EstadoManual) => void }) {
+function FilaOcurrencia({ o, conFecha, densa, onModal }: { o: OcurrenciaDTO; conFecha: boolean; densa: boolean; onModal: (modo: EstadoManual) => void }) {
   const { colorDe, marcar, desmarcar } = useAgenda();
   const [ocupada, setOcupada] = useState(false);
   const hoy = hoyKey();
@@ -89,6 +96,49 @@ function FilaOcurrencia({ o, conFecha, onModal }: { o: OcurrenciaDTO; conFecha: 
   }
   if (o.origen === "manual") {
     menu.push({ id: "deshacer", label: "Deshacer la marca", hint: "Vuelve a lo que diga la fuente", icon: Undo2, onSelect: () => void correr(() => desmarcar(o.actividadId, o.fecha)) });
+  }
+
+  if (densa) {
+    return (
+      <li className={cn("flex items-center gap-2 py-2", ocupada && "opacity-60")} aria-busy={ocupada}>
+        <Icono className={cn("size-4 shrink-0", estilo.texto)} aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-baseline gap-1.5">
+            <span className={cn("inline-block size-1.5 shrink-0 self-center rounded-full", PUNTO_COLOR[colorDe(o.actividadId)])} aria-hidden="true" />
+            <span className="min-w-0 truncate text-sm font-semibold text-[var(--text-primary)]" title={o.nombre}>
+              {o.nombre}
+            </span>
+            {o.hora && <span className="shrink-0 text-xs tabular-nums text-[var(--text-tertiary)]">{o.hora}</span>}
+          </div>
+          <DetalleDenso o={o} conFecha={conFecha} hoy={hoy} />
+        </div>
+        <div className="flex shrink-0 items-center">
+          {puedeHecha && (
+            <button
+              type="button"
+              data-qa="agenda-hecha"
+              className={button({ variant: "ghost", size: "icon", className: "size-10 text-[var(--accent-ink)] dark:text-[var(--accent)]" })}
+              onClick={() => void hecha()}
+              disabled={ocupada}
+              title={`Marcar «${o.nombre}» como hecha`}
+              aria-label={`Marcar «${o.nombre}» como hecha`}
+            >
+              <Check className="size-5" aria-hidden="true" />
+            </button>
+          )}
+          <a
+            href={o.href}
+            onClick={(e) => irSinRecargar(e, o.href)}
+            className={button({ variant: "ghost", size: "icon", className: "size-10" })}
+            aria-label={`Ir a hacerlo: ${o.nombre}`}
+            title="Ir a hacerlo"
+          >
+            <ArrowUpRight className="size-5" aria-hidden="true" />
+          </a>
+          {menu.length > 0 && <ActionMenu label="Más" icon={MoreHorizontal} actions={menu} soloIcono size="sm" title={`Más de «${o.nombre}»`} />}
+        </div>
+      </li>
+    );
   }
 
   /* Sin lugar (el panel del día, el celular) los botones bajan a su propia
@@ -136,6 +186,37 @@ function FilaOcurrencia({ o, conFecha, onModal }: { o: OcurrenciaDTO; conFecha: 
         )}
       </div>
     </li>
+  );
+}
+
+/** Una línea chica: el estado si dice algo, el día (atrasadas), lo que dice la fuente y su barra. */
+function DetalleDenso({ o, conFecha, hoy }: { o: OcurrenciaDTO; conFecha: boolean; hoy: FechaKey }) {
+  const estilo = ESTILO_ESTADO[o.estado];
+  const pct = o.avance && o.avance.total > 0 ? Math.min(100, Math.round((o.avance.hecho / o.avance.total) * 100)) : null;
+  const habla = o.estado !== "pendiente";
+  if (!habla && !conFecha && !o.detalle && pct === null) return null;
+  return (
+    <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+      {habla && <span className={cn(CLASE_CHIP_ESTADO, "shrink-0 px-1.5 py-0 text-xs", estilo.chip)}>{estilo.label}</span>}
+      {conFecha && <span className="shrink-0 text-[var(--text-tertiary)]">{fechaRelativa(o.fecha, hoy)}</span>}
+      {o.detalle && (
+        <span className="min-w-0 truncate" title={o.detalle}>
+          {o.detalle}
+        </span>
+      )}
+      {pct !== null && o.avance && (
+        <span
+          role="progressbar"
+          aria-label={`${o.avance.hecho} de ${o.avance.total}`}
+          aria-valuemin={0}
+          aria-valuemax={o.avance.total}
+          aria-valuenow={o.avance.hecho}
+          className="block h-1 w-12 shrink-0 overflow-hidden rounded-full bg-[var(--surface-sunken)]"
+        >
+          <span className={cn("block h-full rounded-full", estilo.punto)} style={{ width: `${pct}%` }} />
+        </span>
+      )}
+    </div>
   );
 }
 

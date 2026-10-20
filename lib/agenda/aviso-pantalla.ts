@@ -22,6 +22,14 @@ const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 export const MODOS_AVISO = ["ventana", "lateral", "fija"] as const;
 export type ModoAviso = (typeof MODOS_AVISO)[number];
 
+/**
+ * El sonido que suena con el aviso de la agenda y con cada notificación flotante
+ * (Brandon 20-10: «un sonido que se podrá escoger y configurar»). Las recetas
+ * (notas de WebAudio, sin archivos) viven en `lib/agenda/sonidos.ts`.
+ */
+export const SONIDOS_AVISO = ["ninguno", "campanita", "gota", "doble", "suave", "alerta"] as const;
+export type SonidoAviso = (typeof SONIDOS_AVISO)[number];
+
 export const AvisoPantallaSchema = z
   .object({
     activo: z.boolean(),
@@ -36,7 +44,11 @@ export const AvisoPantallaSchema = z
     atrasadas: z.boolean(),
     /** Aviso del sistema (Windows/Android) cuando el panel está en otra pestaña o minimizado. */
     notificacion: z.boolean(),
-    sonido: z.boolean(),
+    sonido: z.enum(SONIDOS_AVISO),
+    /** 0-100. */
+    volumen: z.number().int().min(0).max(100),
+    /** Una notificación flotante (toast) por cada aviso nuevo de la campana. */
+    flotantes: z.boolean(),
     modo: z.enum(MODOS_AVISO),
   })
   .refine((c) => c.desde < c.hasta, { message: "La hora de inicio va antes que la de fin", path: ["hasta"] });
@@ -52,14 +64,20 @@ export const AVISO_POR_DEFECTO: AvisoPantalla = {
   aSuHora: true,
   atrasadas: true,
   notificacion: false,
-  sonido: false,
+  /* Brandon pidió escuchar los avisos: de fábrica suena (se apaga en Recordatorios). */
+  sonido: "campanita",
+  volumen: 60,
+  flotantes: true,
   modo: "ventana",
 };
 
 /** Lo guardado (navegador o servidor) sobre lo de fábrica: un campo nuevo o roto no tumba el aviso. */
 export function normalizarAviso(guardado: unknown): AvisoPantalla {
   if (!guardado || typeof guardado !== "object") return AVISO_POR_DEFECTO;
-  const r = AvisoPantallaSchema.safeParse({ ...AVISO_POR_DEFECTO, ...(guardado as object) });
+  const viejo = guardado as { sonido?: unknown };
+  /* Hasta el 20-10 el sonido era sí/no: «sí» pasa a la campanita y «no» queda callado. */
+  const sonido = viejo.sonido === true ? "campanita" : viejo.sonido === false ? "ninguno" : viejo.sonido;
+  const r = AvisoPantallaSchema.safeParse({ ...AVISO_POR_DEFECTO, ...(guardado as object), ...(sonido === undefined ? {} : { sonido }) });
   return r.success ? r.data : AVISO_POR_DEFECTO;
 }
 

@@ -1,34 +1,18 @@
 /**
- * Lo que el aviso en pantalla de la agenda le pide al navegador: un sonido
- * corto (sin archivo: dos notas de WebAudio) y el aviso del sistema cuando el
- * panel está escondido. Nada de esto rompe si el navegador no deja.
+ * Lo que el aviso en pantalla de la agenda le pide al navegador: el sonido
+ * elegido (`lib/agenda/sonidos.ts`) y el aviso del sistema cuando el panel está
+ * escondido. Nada de esto rompe si el navegador no deja.
  */
 import { logger } from "@/lib/logger";
+import { tocarSonido } from "@/lib/agenda/sonidos";
+import type { SonidoAviso } from "@/lib/agenda/aviso-pantalla";
 
 const DESTINO = "/admin?tab=administracion&vista=hoy";
 const ICONO = "/icons/icon-192x192.png";
 
-/** Dos notas suaves (la–mi) de un tercio de segundo. */
-export function sonarAviso(): void {
-  try {
-    const ctx = new window.AudioContext();
-    [660, 880].forEach((hz, i) => {
-      const t = ctx.currentTime + i * 0.18;
-      const nota = ctx.createOscillator();
-      const volumen = ctx.createGain();
-      nota.type = "sine";
-      nota.frequency.value = hz;
-      volumen.gain.setValueAtTime(0.0001, t);
-      volumen.gain.exponentialRampToValueAtTime(0.12, t + 0.02);
-      volumen.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
-      nota.connect(volumen).connect(ctx.destination);
-      nota.start(t);
-      nota.stop(t + 0.35);
-    });
-    setTimeout(() => void ctx.close(), 1000);
-  } catch (err) {
-    logger.warn("[agenda] el aviso no pudo sonar", { error: String(err) });
-  }
+/** El sonido elegido (`lib/agenda/sonidos.ts`); «ninguno» no suena. */
+export function sonarAviso(sonido: SonidoAviso, volumen: number): void {
+  tocarSonido(sonido, volumen);
 }
 
 export const puedeNotificar = (): boolean => typeof Notification !== "undefined" && Notification.permission === "granted";

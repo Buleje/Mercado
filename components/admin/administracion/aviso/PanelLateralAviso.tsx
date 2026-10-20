@@ -24,8 +24,10 @@ interface Props {
   modo: Exclude<ModoAviso, "ventana">;
   titulo: string;
   descripcion: string;
-  /** Lo que falta (para la burbuja minimizada). */
-  pendientes: number;
+  /** El texto de la burbuja minimizada («Te faltan 6 · 3 sin leer»). */
+  burbuja: string;
+  /** Lo que va fijo arriba, entre la cabecera y lo que se desliza (las pestañas del centro). */
+  arriba?: ReactNode;
   minimizado: boolean;
   onMinimizar: (v: boolean) => void;
   onCambiarModo: (m: ModoAviso) => void;
@@ -65,7 +67,7 @@ function useAnchoVisible(pedido: number | null): number {
   return anchoPanel(pedido, ventana);
 }
 
-export function PanelLateralAviso({ modo, titulo, descripcion, pendientes, minimizado, onMinimizar, onCambiarModo, onCerrar, ancho, onAncho, pie, children }: Props) {
+export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, minimizado, onMinimizar, onCambiarModo, onCerrar, ancho, onAncho, pie, children }: Props) {
   const tituloId = useId();
   const fija = modo === "fija";
   /* Mientras arrastras, el ancho vive acá (se ve al instante); al soltar se guarda una vez. */
@@ -107,7 +109,7 @@ export function PanelLateralAviso({ modo, titulo, descripcion, pendientes, minim
         title="Abrir lo que te falta hacer"
       >
         <BellRing className="size-5 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden="true" />
-        {pendientes > 0 ? `Te faltan ${pendientes}` : "Al día"}
+        {burbuja}
       </button>
     );
   }
@@ -151,7 +153,7 @@ export function PanelLateralAviso({ modo, titulo, descripcion, pendientes, minim
           arrastre !== null && "after:bg-[var(--accent)]",
         )}
       />
-      <header className="flex items-start gap-2 border-b border-[var(--rule-soft)] px-4 py-3">
+      <header className="flex items-start gap-2 border-b border-[var(--rule-soft)] py-2 pl-4 pr-2">
         <div className="min-w-0 flex-1">
           <CardTitle as="h2" id={tituloId} className="truncate">
             {titulo}
@@ -181,10 +183,11 @@ export function PanelLateralAviso({ modo, titulo, descripcion, pendientes, minim
           </button>
         </div>
       </header>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4" data-lenis-prevent>
+      {arriba}
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3" data-lenis-prevent>
         {children}
       </div>
-      <footer className="border-t border-[var(--rule-soft)] px-4 py-3">{pie}</footer>
+      <footer className="border-t border-[var(--rule-soft)] px-3 py-2">{pie}</footer>
     </aside>
   );
 }

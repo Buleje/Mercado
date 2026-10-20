@@ -18,6 +18,7 @@ import { abrirAvisoAgenda, useConfigAviso } from "@/hooks/use-aviso-agenda";
 import { AvisoPantallaSchema, CADA_MINUTOS, textoCada, type AvisoPantalla, type ModoAviso } from "@/lib/agenda/aviso-pantalla";
 import { BotonesDias } from "../comun/BotonesDias";
 import { SeccionCelular } from "./SeccionCelular";
+import { SeccionSonido } from "./SeccionSonido";
 import { SeccionTelegram } from "./SeccionTelegram";
 import { DIAS_LARGOS, ORDEN_SEMANA } from "../comun/fechas";
 
@@ -155,10 +156,17 @@ export default function ConfigAvisoModal({ onCerrar }: { onCerrar: () => void })
               titulo="Aviso del sistema"
               texto="Te avisa aunque estés en otra ventana o con el navegador minimizado"
             />
-            <Opcion marcado={b.sonido} onCambiar={(v) => cambiar("sonido", v)} titulo="Con sonido" texto="Dos notas cortas cuando sale" />
           </div>
         </fieldset>
 
+        <SeccionSonido
+          sonido={b.sonido}
+          volumen={b.volumen}
+          flotantes={b.flotantes}
+          onCambiar={(parcial) => {
+            for (const [k, v] of Object.entries(parcial)) cambiar(k as keyof typeof parcial, v as never);
+          }}
+        />
         <SeccionCelular />
         <SeccionTelegram />
       </div>

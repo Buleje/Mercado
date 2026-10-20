@@ -24,23 +24,16 @@
  * primero dentro del día y los repetidos en una sola fila: en los 100 avisos
  * más recientes `main` tenía 19 distintos y Blas 7.
  */
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { CheckCheck, RefreshCw, X } from "@buleje/design-system/icons";
 import AdminModal, { CabeceraPropia, MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
-import { juntarRepetidos, ordenarDelDia } from "./avisos-juntos";
 import ListaDeAvisos from "./ListaDeAvisos";
 import PestanasNotificaciones from "./PestanasNotificaciones";
 import SeccionAhora from "./SeccionAhora";
-import {
-  agruparPorDia,
-  categoriaDeTipo,
-  etiquetaDeCategoria,
-  type FiltroCategoria,
-} from "./notificaciones-categorias";
-import { useAlertasConsolidadas } from "./use-alertas-consolidadas";
-import { useAccionesDeAvisos } from "./use-acciones-de-avisos";
+import type { FiltroCategoria } from "./notificaciones-categorias";
+import { useAvisosDelCentro } from "./use-avisos-del-centro";
 import type {
   NotificationItem as NotificationItemType,
   NotificationFilter,
@@ -82,59 +75,15 @@ export default function NotificationHub({
   avisosArriba,
 }: Props) {
   const [categoria, setCategoria] = useState<FiltroCategoria>("todas");
-  const [recarga, setRecarga] = useState(0);
-  const { alertas, cargando: cargandoAlertas } = useAlertasConsolidadas(open, recarga);
-  const soloSinLeer = filter === "unread";
-
-  // Una fila por aviso distinto (los repetidos juntos): las pestañas cuentan filas.
-  const juntos = useMemo(() => juntarRepetidos(notifications), [notifications]);
-  const conteos = useMemo(() => {
-    const c: Record<string, number> = { todas: juntos.length + alertas.length };
-    for (const j of juntos) {
-      const id = categoriaDeTipo(j.aviso.type);
-      c[id] = (c[id] ?? 0) + 1;
-    }
-    for (const a of alertas) c[a.categoria] = (c[a.categoria] ?? 0) + 1;
-    return c;
-  }, [juntos, alertas]);
-
-  const enCategoria = useMemo(
-    () => (categoria === "todas" ? juntos : juntos.filter((j) => categoriaDeTipo(j.aviso.type) === categoria)),
-    [juntos, categoria],
-  );
-  // «Para atender ahora» sigue leyendo los avisos tal cual llegaron (M08 cuenta sus copias).
-  const avisos = useMemo(
-    () =>
-      categoria === "todas"
-        ? notifications
-        : notifications.filter((n) => categoriaDeTipo(n.type) === categoria),
-    [notifications, categoria],
-  );
-  const ahora = useMemo(
-    () => (categoria === "todas" ? alertas : alertas.filter((a) => a.categoria === categoria)),
-    [alertas, categoria],
-  );
-  const grupos = useMemo(
-    () => agruparPorDia(enCategoria).map((g) => ({ grupo: g.grupo, items: ordenarDelDia(g.items) })),
-    [enCategoria],
-  );
-  // M08: lo de ahora, agrupado por acción («Cobrar 3», «Reponer 5»).
-  const porAccion = useAccionesDeAvisos({ abierto: open, recarga, alertas: ahora, avisos, categoria });
-  const hayAhora = porAccion.grupos.length > 0 || porAccion.sueltas.length > 0;
-  const nombreCategoria = categoria === "todas" ? null : etiquetaDeCategoria(categoria);
-  const estado =
-    cargaFallida && enCategoria.length === 0
-      ? "fallo"
-      : isLoading && enCategoria.length === 0
-        ? "cargando"
-        : enCategoria.length === 0 && !hayAhora
-          ? "vacio"
-          : "lista";
-
-  const actualizar = () => {
-    refetch();
-    setRecarga((k) => k + 1);
-  };
+  const { conteos, grupos, porAccion, estado, nombreCategoria, actualizar, cargandoAlertas, soloSinLeer } = useAvisosDelCentro({
+    abierto: open,
+    categoria,
+    notifications,
+    filter,
+    isLoading,
+    cargaFallida,
+    refetch,
+  });
 
   return (
     <AdminModal
@@ -194,7 +143,7 @@ export default function NotificationHub({
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
           <PestanasNotificaciones
             categoria={categoria}
-            onCategoria={setCategoria}
+            onCategoria={(c) => setCategoria(c as FiltroCategoria)}
             conteos={conteos}
             soloSinLeer={soloSinLeer}
             onSoloSinLeer={(v) => setFilter(v ? "unread" : "all")}

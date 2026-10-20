@@ -132,6 +132,9 @@ describe("lo guardado", () => {
     expect(normalizarAviso({ cadaMin: 30 })).toEqual({ ...AVISO_POR_DEFECTO, cadaMin: 30 });
     expect(normalizarAviso({ modo: "costado" }).modo).toBe("ventana");
     expect(normalizarAviso({ modo: "fija" }).modo).toBe("fija");
+    expect(normalizarAviso({ sonido: true }).sonido).toBe("campanita");
+    expect(normalizarAviso({ sonido: false }).sonido).toBe("ninguno");
+    expect(normalizarAviso({ sonido: "trompeta" }).sonido).toBe("campanita");
   });
 
   it("el reloj viejo (sin panel fijo) se lee con el panel cerrado", () => {

@@ -82,7 +82,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/ToastContainer";
 import NetworkErrorListener from "@/components/NetworkErrorListener";
-import { Toaster as SonnerToaster } from "sonner";
+import { ToasterConTema } from "@/components/ToasterConTema";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { LocaleProvider } from "@/contexts/locale-context";
 import { CurrencyProvider } from "@/contexts/currency-context";
@@ -443,19 +443,7 @@ export default function RootLayout({
         {children}
         <ToastContainer position="bottom-right" />
         <NetworkErrorListener />
-        <SonnerToaster
-          richColors
-          closeButton
-          position="bottom-right"
-          duration={3800}
-          toastOptions={{
-            classNames: {
-              toast: "rounded-xl border border-gray-200 dark:border-gray-800",
-              title: "text-sm font-bold",
-              description: "text-xs text-gray-500 dark:text-gray-400",
-            },
-          }}
-        />
+        <ToasterConTema />
         {/* Solo en producción: en dev local pegan a /_vercel/insights/* que no
             existe → 403 rojo en consola. En Vercel funcionan normal. */}
         {process.env.NODE_ENV === "production" && <MedicionVercel />}

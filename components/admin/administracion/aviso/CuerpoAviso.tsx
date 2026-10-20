@@ -1,22 +1,20 @@
 "use client";
 
 /**
- * CuerpoAviso — lo de adentro del aviso de la agenda, igual en la ventana del
- * centro que en el panel del costado (`AvisoAgendaModal` elige el marco): lo
- * que falta de hoy y lo atrasado con «Hecha» e «Ir a hacerlo» (`ListaOcurrencias`),
- * «Ponerme al día» y, en la ventana, los botones para pasarla al costado.
+ * CuerpoAviso — «Por hacer» del centro único (`AvisoAgendaModal`): lo que falta
+ * de hoy y lo atrasado con «Hecha» e «Ir a hacerlo» (`ListaOcurrencias`) y
+ * «Ponerme al día». Los conteos van en el título de cada bloque. `densa`
+ * (la barra del costado y el resumen de «Todas»): filas bajas.
  */
+import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { ArrowUpRight, CheckCircle2, ListChecks, PanelRight, Pin, RefreshCw } from "@buleje/design-system/icons";
+import { ArrowUpRight, CheckCircle2, ListChecks, RefreshCw } from "@buleje/design-system/icons";
 import { CardTitle, EmptyState, ErrorAlert, LoadingState } from "@buleje/design-system";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { button } from "@/components/ui-system/button-variants";
 import { useAgenda } from "@/hooks/use-agenda";
-import type { ModoAviso } from "@/lib/agenda/aviso-pantalla";
 import type { OcurrenciaDTO } from "@/lib/agenda/tipos";
-import { cn } from "@/lib/utils";
-import { ESTILO_ESTADO } from "../comun/estado-ocurrencia";
-import { CLASE_CHIP_ESTADO, ListaOcurrencias } from "../comun/ListaOcurrencias";
+import { ListaOcurrencias } from "../comun/ListaOcurrencias";
 
 const PonermeAlDia = dynamic(() => import("./PonermeAlDia"), { ssr: false });
 
@@ -24,18 +22,28 @@ const HOY_EN_ADMINISTRACION = "/admin?tab=administracion&vista=hoy";
 
 interface Props {
   falta: { hoy: OcurrenciaDTO[]; atrasadas: OcurrenciaDTO[] };
-  modo: ModoAviso;
+  densa: boolean;
   alDia: boolean;
   onAlDia: (v: boolean) => void;
-  onCambiarModo: (m: ModoAviso) => void;
-  onCerrar: () => void;
+  /** Ir a otra pestaña cierra la ventana del centro; la barra del costado se queda (`undefined`). */
+  alIr?: () => void;
 }
 
-export function CuerpoAviso({ falta, modo, alDia, onAlDia, onCambiarModo, onCerrar }: Props) {
+function Titulo({ texto, n, children }: { texto: string; n: number; children?: ReactNode }) {
+  return (
+    <div className="flex items-center gap-2">
+      <CardTitle className="flex items-baseline gap-1.5">
+        {texto}
+        <span className="text-sm font-semibold tabular-nums text-[var(--text-tertiary)]">{n}</span>
+      </CardTitle>
+      <div className="ml-auto flex items-center gap-1">{children}</div>
+    </div>
+  );
+}
+
+export function CuerpoAviso({ falta, densa, alDia, onAlDia, alIr }: Props) {
   const { cargando, error, refrescar } = useAgenda();
   const total = falta.hoy.length + falta.atrasadas.length;
-  /* En la ventana del centro «Ir a hacerlo» la cierra para no tapar; al costado se queda: para eso está. */
-  const alIr = modo === "ventana" ? onCerrar : undefined;
 
   if (alDia) {
     return <PonermeAlDia ocurrencias={falta.atrasadas} onCerrar={() => (alIr ? alIr() : onAlDia(false))} onIr={alIr ?? (() => undefined)} />;
@@ -43,7 +51,7 @@ export function CuerpoAviso({ falta, modo, alDia, onAlDia, onCambiarModo, onCerr
 
   return (
     <div
-      className="space-y-4"
+      className={densa ? "space-y-3" : "space-y-4"}
       onClickCapture={(e) => {
         if (alIr && (e.target as HTMLElement).closest("a[href]")) alIr();
       }}
@@ -66,56 +74,41 @@ export function CuerpoAviso({ falta, modo, alDia, onAlDia, onCambiarModo, onCerr
         <EmptyState icon={CheckCircle2} title="Estás al día" description="No te falta nada de hoy ni de los días anteriores." />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-2">
-            {falta.hoy.length > 0 && (
-              <span className={cn(CLASE_CHIP_ESTADO, "text-sm", ESTILO_ESTADO.pendiente.chip)}>{falta.hoy.length} por hacer hoy</span>
-            )}
-            {falta.atrasadas.length > 0 && (
-              <span className={cn(CLASE_CHIP_ESTADO, "text-sm", ESTILO_ESTADO.atrasada.chip)}>
-                {falta.atrasadas.length} {falta.atrasadas.length === 1 ? "atrasada" : "atrasadas"}
-              </span>
-            )}
-            {falta.atrasadas.length > 0 && (
-              <button type="button" data-qa="aviso-poner-al-dia" className={button({ variant: "secondary" })} onClick={() => onAlDia(true)}>
-                <ListChecks className="size-4" aria-hidden="true" />
-                Ponerme al día
-              </button>
-            )}
-            <div className="ml-auto flex items-center gap-1">
-              {modo === "ventana" && (
-                <>
-                  <button type="button" data-qa="aviso-al-costado" className={button({ variant: "ghost", size: "icon" })} onClick={() => onCambiarModo("lateral")} title="Al costado: barra a la derecha, la página se achica para hacerle lugar" aria-label="Poner al costado">
-                    <PanelRight className="size-5" aria-hidden="true" />
-                  </button>
-                  <button type="button" data-qa="aviso-fijar" className={button({ variant: "ghost", size: "icon" })} onClick={() => onCambiarModo("fija")} title="Fija al costado: igual, y vuelve al recargar" aria-label="Fijar al costado">
-                    <Pin className="size-5" aria-hidden="true" />
-                  </button>
-                </>
-              )}
-              <a
-                href={HOY_EN_ADMINISTRACION}
-                onClick={(e) => {
-                  if (e.button !== 0 || e.metaKey || e.ctrlKey) return;
-                  e.preventDefault();
-                  void irAEnlace(HOY_EN_ADMINISTRACION);
-                }}
-                className={button({ variant: "ghost" })}
-              >
-                Ver todo
-                <ArrowUpRight className="size-4" aria-hidden="true" />
-              </a>
-            </div>
-          </div>
           {falta.hoy.length > 0 && (
             <section>
-              <CardTitle>Hoy</CardTitle>
-              <ListaOcurrencias etiqueta="Lo que falta hoy" ocurrencias={falta.hoy} />
+              <Titulo texto="Por hacer hoy" n={falta.hoy.length}>
+                <a
+                  href={HOY_EN_ADMINISTRACION}
+                  onClick={(e) => {
+                    if (e.button !== 0 || e.metaKey || e.ctrlKey) return;
+                    e.preventDefault();
+                    void irAEnlace(HOY_EN_ADMINISTRACION);
+                  }}
+                  className={button({ variant: "ghost", size: "icon", className: "size-10" })}
+                  title="Ver todo en Administración › Hoy"
+                  aria-label="Ver todo en Administración"
+                >
+                  <ArrowUpRight className="size-5" aria-hidden="true" />
+                </a>
+              </Titulo>
+              <ListaOcurrencias etiqueta="Lo que falta hoy" ocurrencias={falta.hoy} densa={densa} />
             </section>
           )}
           {falta.atrasadas.length > 0 && (
             <section>
-              <CardTitle>Atrasadas</CardTitle>
-              <ListaOcurrencias etiqueta="Lo atrasado" ocurrencias={falta.atrasadas} conFecha />
+              <Titulo texto="Atrasadas" n={falta.atrasadas.length}>
+                <button
+                  type="button"
+                  data-qa="aviso-poner-al-dia"
+                  className={button({ variant: "secondary", size: densa ? "md" : undefined })}
+                  onClick={() => onAlDia(true)}
+                  title="Pasar lo atrasado de una en una"
+                >
+                  <ListChecks className="size-4" aria-hidden="true" />
+                  Ponerme al día
+                </button>
+              </Titulo>
+              <ListaOcurrencias etiqueta="Lo atrasado" ocurrencias={falta.atrasadas} conFecha densa={densa} />
             </section>
           )}
         </>

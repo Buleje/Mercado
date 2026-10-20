@@ -9,6 +9,11 @@ import { useMiRol } from "@/hooks/use-mi-rol";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import { useNotificationCenter } from "./useNotificationCenter";
 import NotificationHub from "./NotificationHub";
+import { EVENTO_RELEER_CAMPANA, useAvisosFlotantes } from "./use-avisos-flotantes";
+import { useConfigAviso } from "@/hooks/use-aviso-agenda";
+import { tocarSonido } from "@/lib/agenda/sonidos";
+import type { SonidoAviso } from "@/lib/agenda/aviso-pantalla";
+import { abrirCentro } from "./centro-unificado";
 import { AvisosDeLaFranja, useAvisosEscondidos } from "@/components/admin/avisos-de-la-franja";
 
 // ── Fetch critical alert count silently ──────────────────────────────────────
@@ -76,7 +81,7 @@ if (typeof window !== "undefined") {
 
 // ── Sound & vibration helper ─────────────────────────────────────────────────
 
-function alertFeedback() {
+function alertFeedback(sonido: SonidoAviso, volumen: number) {
   // Short vibration (mobile) — only after real user interaction to avoid [Intervention] warning
   try {
     if (
@@ -89,26 +94,10 @@ function alertFeedback() {
     }
   } catch { /* ignore — blocked by permissions policy */ }
 
-  // Soft notification beep using Web Audio API — requires prior user gesture
-  try {
-    if (typeof window !== "undefined" && typeof AudioContext !== "undefined") {
-      const ctx = new AudioContext();
-      if (ctx.state === "suspended") {
-        void ctx.close();
-        return;
-      }
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 880;
-      gain.gain.value = 0.1;
-      osc.start();
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-      osc.stop(ctx.currentTime + 0.3);
-      setTimeout(() => void ctx.close(), 500);
-    }
-  } catch { /* ignore — some browsers block AudioContext */ }
+  // El sonido que eligió la persona (`lib/agenda/sonidos.ts`, 20-10): respeta
+  // «Sin sonido», reusa un solo AudioContext y no suena dos veces si coincide
+  // con un aviso flotante (anti-ráfaga).
+  tocarSonido(sonido, volumen);
 }
 
 interface NotificationBellProps {
@@ -133,6 +122,15 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
     refetch,
   } = useNotificationCenter(open);
 
+  useAvisosFlotantes(unreadCount, isLoading);
+  const { config: aviso } = useConfigAviso();
+  const avisoRef = useRef(aviso);
+  avisoRef.current = aviso;
+  /* Un aviso flotante marcado leído: el total baja ya, no en el próximo sondeo. */
+  useEffect(() => {
+    window.addEventListener(EVENTO_RELEER_CAMPANA, refetch);
+    return () => window.removeEventListener(EVENTO_RELEER_CAMPANA, refetch);
+  }, [refetch]);
   const criticalCount = useCriticalAlertCount();
   const totalBadge = unreadCount + criticalCount;
 
@@ -146,7 +144,7 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
       setPulse(true);
       // Sound/vibration only for new critical alerts
       if (criticalCount > prevCritical.current) {
-        alertFeedback();
+        alertFeedback(avisoRef.current.sonido, avisoRef.current.volumen);
       }
       const timeout = setTimeout(() => setPulse(false), 2000);
       prevCount.current = unreadCount;
@@ -172,7 +170,7 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
     if (e.key !== "n" && e.key !== "N") return;
     if (shouldIgnoreShortcut(e)) return;
     window.setTimeout(() => {
-      if (!e.defaultPrevented) setOpen((prev) => !prev);
+      if (!e.defaultPrevented && !abrirCentro("todas")) setOpen((prev) => !prev);
     }, 0);
   }, []);
 
@@ -181,7 +179,11 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
     return () => document.removeEventListener("keydown", handleKeydown);
   }, [handleKeydown]);
 
-  const toggle = () => setOpen((prev) => !prev);
+  /* Con el centro único de «lo que falta hacer» + avisos (20-10) la campana abre
+     ése; sin él (negocio sin Administración, rol sin agenda) abre el de siempre. */
+  const toggle = () => {
+    if (!abrirCentro("todas")) setOpen((prev) => !prev);
+  };
   /* Avisos ámbar de la franja que fuera de Inicio no se dibujan arriba: un punto acá. */
   const avisos = useAvisosEscondidos().length;
   const textoAvisos = avisos > 0 ? ` · ${avisos} aviso${avisos === 1 ? "" : "s"}` : "";
