@@ -348,6 +348,15 @@ const RUBRO_TEMPLATES: RubroTemplate[] = [
     heroSubtitle: "Encarga tu torta o pan caliente con delivery a tu mesa.",
     slogan: "Recién salido del horno",
   },
+  {
+    // ADR-509: negro + nude, la paleta del manual de Musa (primera tienda del rubro).
+    id: "rubro-belleza", industry: "belleza", name: "Belleza y cuidado personal", vibe: "Elegante y cercano",
+    primaryColor: "#1A1A1A", secondaryColor: "#D9B8A3", accentColor: "#8A6F5E", fontFamily: "raleway",
+    darkModeDefault: false, borderRadius: 16, buttonStyle: "pill",
+    heroTitle: "Productos de salón para tu cabello, rostro y piel",
+    heroSubtitle: "Originales y con registro sanitario. Te asesoramos gratis por WhatsApp y te lo llevamos rápido.",
+    slogan: "Belleza profesional, cerca de ti",
+  },
 ];
 
 // ── Plantillas de PÁGINA COMPLETA (Brandon 2026-06-27) ──────────────────

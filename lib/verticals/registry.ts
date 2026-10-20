@@ -25,6 +25,7 @@ export type Industry =
   | "farmacia"
   | "ferreteria"
   | "panaderia"
+  | "belleza"
   | "otro";
 
 export type ModuleId = Tab | string; // string = comingSoon ids no en Tab union aún
@@ -321,6 +322,33 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
       sidebarTitle: "Mi Panadería",
       customCopy: {
         producto: "producto horneado",
+      },
+    },
+  },
+
+  /* Belleza y cuidado personal (ADR-509, Brandon 2026-10-20): tiendas de
+     cosmética, cabello y piel — Musa. Ve lo mismo que una bodega (medido con el
+     guardián del panel: 0 pares perdidos para un negocio que sale de «bodega»)
+     menos Préstamos, que nadie de este rubro usa y cuya vista vive igual en Mi
+     Plata. Cotizaciones (venta a salones) y Guías de Remisión (envíos por
+     agencia) se quedan. Lo forestal no entra por el rubro: lo prenden sus
+     especializaciones. */
+  belleza: {
+    industry: "belleza",
+    label: "Belleza y cuidado personal",
+    icon: "Sparkles",
+    description: "Tiendas de belleza y cosmética — catálogo con fichas, revendedoras, tienda online y seguimiento de clientas.",
+    modules: {
+      enabled: ALL_CURRENT.filter((id) => id !== "prestamos"),
+      featured: ["productos", "ventas-caja", "clientes", "canales", "metas-logros"],
+      hidden: ["prestamos"],
+      comingSoon: [],
+    },
+    branding: {
+      sidebarTitle: "Mi Tienda de Belleza",
+      customCopy: {
+        cliente: "clienta",
+        clientes: "clientas",
       },
     },
   },

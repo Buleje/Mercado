@@ -328,8 +328,8 @@ async function sellos() {
     cambios.push({ area: "sellos", campo: "tarjeta", antes: cur, despues: deseada });
     if (!SIMULACRO) await SellosDB.guardarConfig(TENANT, deseada);
   }
-  pendientes.push("Referidas «Trae a una amiga» (S/ 10 + S/ 10, mínimo S/ 59): el sistema (ReferralsDB) tiene fijo 10 % al referido y S/ 10 a quien refiere, sin mínimo ni configuración por negocio; NO se cargó. La plantilla del mensaje sí está");
-  pendientes.push("Rubro: el enum Industry no tiene «belleza»; Tenant.industry sigue «bodega» (muestra todas las pestañas). Settings.businessType ya dice «belleza»");
+  // Referidas (ADR-510): ya son configurables; las carga `scripts/musa/cargar-referidas.ts`.
+  // Rubro «belleza» (ADR-509): existe, pero Musa se cambia después de publicar el Prisma nuevo (`poner-rubro-belleza.ts --prod-al-dia`).
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

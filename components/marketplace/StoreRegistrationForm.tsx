@@ -53,6 +53,7 @@ const VERTICAL_ICON: Record<Industry, ComponentType<{ className?: string; stroke
   farmacia: Pill,
   ferreteria: Wrench,
   panaderia: Croissant,
+  belleza: Sparkles,
   otro: Building2,
 };
 

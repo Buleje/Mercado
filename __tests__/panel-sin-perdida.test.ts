@@ -206,6 +206,45 @@ describe("panel sin pérdida: después ⊇ antes", () => {
   });
 });
 
+/**
+ * Rubros nacidos después de la línea base (que mide 7): cada uno contra el rubro
+ * del que salen sus negocios, con la regla de HOY en los dos lados. Cambiar de
+ * rubro no puede quitar un par (pestaña, vista); lo que gane va aprobado en
+ * `altas-aprobadas.json` con el rubro nuevo en el contexto.
+ */
+const RUBROS_NUEVOS: Record<string, string> = {
+  // ADR-509: Musa salía como «bodega» porque el enum no tenía su rubro.
+  belleza: "bodega",
+};
+
+describe("rubro nuevo sin pérdida contra el rubro del que sale", () => {
+  it("los rubros nuevos están en el registro de verticales", () => {
+    for (const nuevo of Object.keys(RUBROS_NUEVOS)) expect(rubroDelPanel(nuevo).habilitados.size).toBeGreaterThan(20);
+  });
+
+  it.each(Object.entries(RUBROS_NUEVOS))("%s ⊇ %s en barra y celular, en todo plan × rol × plantilla", (nuevo, deDonde) => {
+    const perdidas: string[] = [];
+    const sinAprobar: string[] = [];
+    for (const c of antes.contextos) {
+      if (c.rubro !== deDonde) continue;
+      const base = despuesDe(c);
+      const conNuevo = { ...c, rubro: nuevo };
+      const hoy = despuesDe(conNuevo);
+      for (const superficie of ["barra", "celular", "menu"] as const) {
+        const donde = `${c.plan}·${c.rol}·${c.plantilla}·${superficie}`;
+        const ahora = new Set(hoy[superficie]);
+        const antesSet = new Set(base[superficie]);
+        for (const p of base[superficie]) if (!ahora.has(p)) perdidas.push(`${donde}: ${p}`);
+        for (const p of hoy[superficie]) {
+          if (!antesSet.has(p) && !altaAprobada(altas, { contexto: conNuevo, superficie, par: p })) sinAprobar.push(`${donde}: ${p}`);
+        }
+      }
+    }
+    expect(perdidas.slice(0, 20), `${perdidas.length} pares perdidos al pasar de ${deDonde} a ${nuevo}`).toEqual([]);
+    expect(sinAprobar.slice(0, 20), `${sinAprobar.length} pares nuevos sin aprobar en ${nuevo}`).toEqual([]);
+  });
+});
+
 describe("la comparación detecta lo que tiene que detectar", () => {
   const conFusion = crearResolverDestino({
     alias: { fiados: { tab: "ventas-caja", vista: "cuentas-cobrar" } },

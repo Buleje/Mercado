@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
+import type { Industry } from "@/lib/generated/prisma/client";
 
 /**
  * TenantsDB
@@ -99,6 +100,29 @@ export const TenantsDB = {
   /** Olvida el negocio público cacheado (todos los slugs: es barato y el slug pudo cambiar). */
   olvidarPublico(): void {
     invalidateByPrefix(PREFIJO_TENANT_PUBLICO);
+  },
+
+  /**
+   * Cambia el rubro (`Tenant.industry`) y devuelve el de antes y el de ahora
+   * (`null` si el negocio no existe). Idempotente: con el mismo rubro no
+   * escribe. Olvida el negocio público cacheado: `/api/tenants/resolve` lo
+   * devuelve.
+   *
+   * OJO con un valor de enum NUEVO (ADR-509): un proceso con el cliente de
+   * Prisma de antes del `generate` tira «Value '<x>' not found in enum» al
+   * LEER esta fila. Escribirlo sólo con el dev server reiniciado y producción
+   * desplegada con el cliente nuevo.
+   */
+  async cambiarRubro(
+    tenantId: string,
+    industry: Industry,
+  ): Promise<{ antes: Industry; despues: Industry; cambio: boolean } | null> {
+    const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { industry: true } });
+    if (!t) return null;
+    if (t.industry === industry) return { antes: t.industry, despues: industry, cambio: false };
+    await prisma.tenant.update({ where: { id: tenantId }, data: { industry }, select: { id: true } });
+    invalidateByPrefix(PREFIJO_TENANT_PUBLICO);
+    return { antes: t.industry, despues: industry, cambio: true };
   },
 };
 
