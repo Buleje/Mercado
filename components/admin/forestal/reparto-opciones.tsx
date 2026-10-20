@@ -12,6 +12,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { AlertTriangle, ChevronDown, ChevronRight, Lightbulb } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { DiagnosticoReparto, HuecoBloque } from "@/lib/forestal/cubicacion-reparto-diagnostico";
 
 /**
@@ -109,36 +110,53 @@ export function AlertaDescuadre({
   const excesoM3 = pasados.reduce((a, h) => a - h.libreM3, 0);
   if (libreM3 <= LIBRE_ALERTA_M3 && faltanteM3 <= 0 && pasados.length === 0) return null;
   const recuperable = diagnostico?.recuperableM3 ?? 0;
+  const hayLibre = libreM3 > LIBRE_ALERTA_M3;
+  /* Una línea con las cifras (2026-10-20, Brandon: «una línea + ⓘ con el detalle»);
+     las frases enteras viven en el ⓘ y los huecos, en «Por qué». */
+  const partes = [
+    hayLibre && <>{fmtM3(libreM3)} m³ de capacidad libre</>,
+    faltanteM3 > 0 && (
+      <>
+        {fmtM3(faltanteM3)} m³ sin bloque
+        {recuperable > 0 && <> (<b>{fmtM3(recuperable)} se pueden acomodar</b>)</>}
+      </>
+    ),
+    excesoM3 > 0 && <><b>{pasados.map((h) => h.etiqueta).join(", ")}</b>: {fmtM3(excesoM3)} m³ de más</>,
+  ].filter(Boolean);
   return (
-    <div className="mb-4 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10 dark:text-[var(--data-warning-500)]">
-      <div className="flex flex-wrap items-start gap-2 text-sm">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-        <span>
-          <b>Antes de exportar, revisa:</b>{" "}
-          {/* «De capacidad», no «de rolliza»: un bloque de aserrada directa
-              también puede quedar con volumen sin usar, y ahí no hay troza. */}
-          {libreM3 > LIBRE_ALERTA_M3 && <>{fmtM3(libreM3)} m³ de capacidad quedaron libres (sin usar) en los bloques cargados.</>}
-          {libreM3 > LIBRE_ALERTA_M3 && faltanteM3 > 0 && " · "}
-          {faltanteM3 > 0 && <>{fmtM3(faltanteM3)} m³ de lo aserrado no tienen bloque que los ampare (abajo, en «Falta por distribuir»).</>}
-          {recuperable > 0 && (
-            <>
-              {" "}
-              <b>{fmtM3(recuperable)} m³ de eso se pueden acomodar</b> con los bloques que ya cargaste.
-            </>
-          )}
-          {excesoM3 > 0 && (
-            <>
-              {libreM3 > LIBRE_ALERTA_M3 || faltanteM3 > 0 ? " · " : ""}
-              {pasados.length === 1 ? "El bloque " : "Los bloques "}
-              <b>{pasados.map((h) => h.etiqueta).join(", ")}</b> {pasados.length === 1 ? "ampara" : "amparan"}{" "}
-              <b>{fmtM3(excesoM3)} m³ de más</b> que lo declarado: era eso o dejar madera real sin ningún bloque que la ampare.
-            </>
-          )}
+    <div className="mb-3 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10 dark:text-[var(--data-warning-500)]">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+        {/* Ícono y ⓘ DENTRO del texto: como hermanos del flex-wrap, a 400 px caían cada uno en su renglón. */}
+        <span className="min-w-0 flex-[1_1_16rem]">
+          <AlertTriangle className="mr-1.5 inline h-4 w-4 align-[-3px]" aria-hidden />
+          <b>Antes de exportar:</b>{" "}
+          {partes.map((p, k) => <span key={k}>{k > 0 && " · "}{p}</span>)}{" "}
+          <InfoTip
+            title="Antes de exportar, revisa"
+            side="bottom"
+            what={
+              <span>
+                {/* «De capacidad», no «de rolliza»: un bloque de aserrada directa también puede quedar con volumen sin usar. */}
+                {hayLibre && <>{fmtM3(libreM3)} m³ de capacidad quedaron libres (sin usar) en los bloques cargados. </>}
+                {faltanteM3 > 0 && <>{fmtM3(faltanteM3)} m³ de lo aserrado no tienen bloque que los ampare (abajo, en «Falta por distribuir»). </>}
+                {recuperable > 0 && <>{fmtM3(recuperable)} m³ de eso se pueden acomodar con los bloques que ya cargaste. </>}
+                {excesoM3 > 0 && (
+                  <>
+                    {pasados.length === 1 ? "El bloque " : "Los bloques "}{pasados.map((h) => h.etiqueta).join(", ")}{" "}
+                    {pasados.length === 1 ? "ampara" : "amparan"} {fmtM3(excesoM3)} m³ de más que lo declarado: era eso o dejar madera real sin ningún bloque que la ampare.
+                  </>
+                )}
+              </span>
+            }
+            affects="El papel sale igual, pero su Anexo 04 no va a cuadrar con lo cubicado."
+            example={huecos.length > 0 ? "«Por qué» explica cada hueco y trae las medidas que lo cerrarían." : undefined}
+          />
         </span>
         {huecos.length > 0 && (
           <button
             type="button"
             onClick={() => setAbierto((v) => !v)}
+            aria-expanded={abierto}
             className="ml-auto inline-flex items-center gap-1 rounded-lg border-2 border-[var(--data-warning-500)]/50 px-2.5 py-1 text-sm font-bold transition-colors hover:bg-[var(--data-warning-500)]/15"
           >
             {abierto ? <ChevronDown className="h-4 w-4" aria-hidden /> : <ChevronRight className="h-4 w-4" aria-hidden />}

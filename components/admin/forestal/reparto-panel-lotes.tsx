@@ -29,22 +29,12 @@ import { BTN_PRIMARIO } from "./reparto-panel-lotes-ui";
 
 type Vista = "patio" | "libro" | "trozas";
 
-/** El botón de la barra de la Distribución + su modal (se monta sólo abierto). */
-export default function RepartoPanelLotes(props: PanelLotesProps) {
-  const [abierto, setAbierto] = useState(false);
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setAbierto(true)}
-        title="Crear lotes del patio, usar uno del Libro o elegir las trozas de un bloque"
-        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-      >
-        <Boxes className="h-3.5 w-3.5" aria-hidden /> Lotes
-      </button>
-      {abierto && <PanelLotesModal {...props} onCerrar={() => setAbierto(false)} />}
-    </>
-  );
+/**
+ * El panel «Lotes» (sugeridos del patio, lotes del Libro, trozas del bloque).
+ * Lo abre el menú «Más» de «Lo que entró» (2026-10-20); se monta sólo abierto.
+ */
+export default function RepartoPanelLotes(props: PanelLotesProps & { onCerrar: () => void }) {
+  return <PanelLotesModal {...props} />;
 }
 
 function PanelLotesModal({ onCerrar, ...props }: PanelLotesProps & { onCerrar: () => void }) {

@@ -45,6 +45,8 @@
  *                                   sólo en el 1.er ancho/tema; contalo con `pdfinfo` + `pdftotext - | wc -w` (20-10:
  *                                   «Imprimir no hace nada» = 5 hojas sin una letra). Para probar un botón que llama a
  *                                   print(): stub `window.print=()=>{}` en un eval antes, y el estado queda montado.
+ *   {"bajar": "<sel>"}            → clic + espera la descarga → <salida>/<nombre sugerido> (bytes en el reporte): PDF/Excel/CSV
+ *                                   de VERDAD (20-10: jsPDF/exceljs bajan por <a download>, el paso {"pdf"} no los ve)
  *   {"subir": ["<sel input[type=file]>", "/ruta/archivo.pdf"]} → elige el archivo (03-10: importar el PDF del croquis)
  *   {"fallar": "/api/settings"}   → ese GET responde 500 (o ["/api/x", 503]); {"fallar": null} lo
  *                                   quita. Para probar «la carga falló» (04-10: sin esto fue un
@@ -104,7 +106,7 @@
  * Tres agentes de «Plantas forestales» armaron eso a mano con Playwright el mismo día.
  */
 import { chromium } from "playwright";
-import { mkdirSync, readFileSync, existsSync, writeFileSync, unlinkSync, readdirSync, readlinkSync } from "node:fs";
+import { mkdirSync, readFileSync, existsSync, writeFileSync, unlinkSync, readdirSync, readlinkSync, statSync } from "node:fs";
 import path from "node:path";
 import { execSync, spawn } from "node:child_process";
 import { resolverChromium } from "./dev-helpers/chromium-path.mjs";
@@ -732,6 +734,16 @@ async function recorrido(t, primero) {
             await page.pdf({ path: archivo, format: "A4", printBackground: false });
             await page.emulateMedia({ media: "screen" });
             evals.push({ paso: i, pdf: archivo });
+          }
+        }
+        else if (tipo === "bajar") {
+          /* {"bajar": "<sel>"} (20-10): clic + espera la DESCARGA y la guarda en <salida>/<nombre sugerido>.
+             «PDF/Excel funcionan» = el archivo existe y se lee (pdftotext, unzip -l), no que el botón respondió. */
+          const [descarga] = await Promise.all([page.waitForEvent("download", { timeout: 60_000 }), visible(page, valor).click()]);
+          if (primero) {
+            const archivo = path.join(salida, descarga.suggestedFilename());
+            await descarga.saveAs(archivo);
+            evals.push({ paso: i, bajado: archivo, bytes: statSync(archivo).size });
           }
         }
         else throw new Error(`paso desconocido «${tipo}»`);

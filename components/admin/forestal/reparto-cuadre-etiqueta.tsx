@@ -54,10 +54,12 @@ export function IconoEstado({ estado, className = "h-3 w-3" }: { estado: EstadoC
  * El chip. Con `onAbrir` es un botón (abre el modal en ese control); sin él,
  * un rótulo. `control` puede faltar mientras la distribución no tiene bloques.
  */
-export default function EtiquetaCuadre({ control, onAbrir, className = "" }: {
+export default function EtiquetaCuadre({ control, onAbrir, className = "", compacto = false }: {
   control: Pick<ControlCuadre, "estado" | "peor" | "titulo" | "relacion"> | undefined;
   onAbrir?: () => void;
   className?: string;
+  /** Si cuadra, sólo el tilde (la palabra queda en el tooltip): para una fila que ya no entra (2026-10-20). Redondeo y Difiere siguen escritos. */
+  compacto?: boolean;
 }) {
   if (!control) return null;
   const e = ESTADO_CUADRE[control.estado];
@@ -65,10 +67,11 @@ export default function EtiquetaCuadre({ control, onAbrir, className = "" }: {
   const texto = control.estado === "difiere" && dif
     ? `${control.relacion === "tope" ? "Se pasa" : "Difiere"} ${dif.replace(/^[+−]/, "")}`
     : e.label;
-  const clase = `inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-bold normal-case tracking-normal ${e.clase} ${className}`;
+  const soloTilde = compacto && control.estado === "exacto";
+  const clase = `inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border ${soloTilde ? "px-1 py-1" : "px-2 py-0.5"} text-xs font-bold normal-case tracking-normal ${e.clase} ${className}`;
   const titulo = `${control.titulo}: ${texto}. Clic para ver el cuadre.`;
   if (!onAbrir) {
-    return <span className={clase} title={control.titulo}><IconoEstado estado={control.estado} />{texto}</span>;
+    return <span className={clase} title={control.titulo}><IconoEstado estado={control.estado} />{soloTilde ? <span className="sr-only">{texto}</span> : texto}</span>;
   }
   return (
     <button
@@ -79,7 +82,7 @@ export default function EtiquetaCuadre({ control, onAbrir, className = "" }: {
       className={`${clase} transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] print:hidden`}
     >
       <IconoEstado estado={control.estado} />
-      {texto}
+      {!soloTilde && texto}
     </button>
   );
 }

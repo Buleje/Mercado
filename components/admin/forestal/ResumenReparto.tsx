@@ -17,14 +17,14 @@
  */
 
 import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Trash2, Download, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, ShieldCheck, SlidersHorizontal, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, RefreshCw, Ruler, Target, TreePine, Plus, Inbox } from "@buleje/design-system/icons";
+import { Trash2, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, RefreshCw, Ruler, Target, TreePine, Plus, Inbox } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ModuleActionMenu, type ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import {
-  agruparPor, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION, type DimensionResumen, type PrecioPt,
+  agruparPor, ETIQUETA_DIMENSION, type DimensionResumen, type PrecioPt,
 } from "@/lib/forestal/cubicacion-resumen";
 import {
   APROVECHABLE_DEFAULT, aprovechableDe, bloquesDesdeTrozas, claveOverrideLinea, distribucionACsv,
@@ -58,6 +58,8 @@ import { BloqueEspecie } from "./reparto-vistas";
 import { CeldaPermiso } from "./reparto-celda-permiso";
 import { DiferenciaDistribucion } from "./reparto-diferencia";
 import { AlertaDescuadre, OpcionesExportacion } from "./reparto-opciones";
+import { CifraBalance } from "./reparto-balance";
+import { AccionesDistribucion, MasDeLoQueEntro } from "./reparto-cabecera";
 import { diagnosticarReparto } from "@/lib/forestal/cubicacion-reparto-diagnostico";
 import {
   alternarClaveAnexo,
@@ -79,7 +81,6 @@ import { evaluarMeta, medidasDeMeta, META_DEFAULT, type MetaMix } from "@/lib/fo
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
 import ReprocesosSugeridos, { AYUDA_REPROCESOS } from "./reparto-reprocesos";
-import CifraExplicada, { type FilaDeCuenta } from "./cifra-explicada";
 import { FiltroLargoCelda } from "./reparto-filtro-largo";
 import { FiltroGruposCelda } from "./reparto-filtro-grupos";
 import { contarRevision, revisarDistribucion } from "@/lib/forestal/reparto-revision";
@@ -88,8 +89,6 @@ import { useContextoRevision } from "./hooks/use-contexto-revision";
 import { ColumnasMenu, useColumnasVisibles } from "./ctp-shared";
 import { colorDeBloque, indicesDeBloques } from "./reparto-colores";
 import DistribucionesGuardadas from "./DistribucionesGuardadas";
-import RepartoLotesSugeridos from "./reparto-lotes-sugeridos";
-import RepartoPanelLotes from "./reparto-panel-lotes";
 import { trozaIdsLibresDelLote } from "@/lib/forestal/panel-lotes-reparto";
 import { marcarLotesEnLaGuardada } from "./reparto-lotes-sugeridos-api";
 import { logger } from "@/lib/logger";
@@ -111,7 +110,6 @@ import { agruparPiezasIguales, desglosarVariado, esVariado } from "@/lib/foresta
 import { distConVolumenOficial, repartoOficial } from "@/lib/forestal/reparto-oficial";
 import { DataTable } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
-import { cn } from "@/lib/utils";
 import { recubicarLoteSmalian } from "@/lib/forestal/cubicacion-trozas-formula";
 
 
@@ -253,67 +251,6 @@ function RealDeBloque({ valor, unidad, alerta, titulo }: { valor: string; unidad
       {valor}
       {unidad && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">{unidad}</span>}
     </span>
-  );
-}
-
-/**
- * Una mitad del balance: m³ · PT · piezas, la misma cifra en las tres unidades
- * con las que se declara. Los tres números juntos y no sólo el m³ porque el
- * que va a cubrir el faltante necesita saber CUÁNTAS piezas le faltan, no sólo
- * cuánto volumen.
- */
-function CifraBalance({ titulo, ayuda, m3, pt, piezas, tono, cuenta, etiqueta }: {
-  titulo: string;
-  /** El chip del cuadre de esta cifra (2026-10-03). */
-  etiqueta?: ReactNode;
-  ayuda: string;
-  m3: number;
-  pt: number;
-  piezas: number;
-  tono: "ok" | "falta";
-  /** De qué está hecho este número — el «¿por qué dice esto?» (2026-09-09). */
-  cuenta?: { formula: string; filas: FilaDeCuenta[]; vacio?: string };
-}) {
-  const alerta = tono === "falta";
-  return (
-    <div className={`rounded-xl border px-3 py-2.5 ${alerta
-      ? "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/8"
-      : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]"}`}
-    >
-      <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-        {titulo}
-        <AdminTooltip content={ayuda} className="max-w-[280px] text-sm font-normal normal-case leading-relaxed tracking-normal">
-          <button type="button" aria-label={`Qué es «${titulo}»`} className="text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent)] print:hidden">
-            <Info className="h-3.5 w-3.5" aria-hidden />
-          </button>
-        </AdminTooltip>
-        {/* El ⓘ dice QUÉ es; la calculadora dice DE QUÉ ESTÁ HECHO. */}
-        {cuenta && (
-          <CifraExplicada
-            titulo={titulo}
-            formula={cuenta.formula}
-            filas={cuenta.filas}
-            total={`${fmtM3(m3)} m³`}
-            vacio={cuenta.vacio}
-          />
-        )}
-        {etiqueta && <span className="ml-auto">{etiqueta}</span>}
-      </div>
-      <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono tabular-nums">
-        <span className={`flex items-baseline gap-1 text-xl font-extrabold leading-none ${alerta
-          ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-          : "text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
-        >
-          {fmtM3(m3)}<span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">m³</span>
-        </span>
-        <span className="flex items-baseline gap-1 text-base font-bold leading-none text-[var(--text-secondary)]">
-          {fmtPt(pt)}<span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">PT</span>
-        </span>
-        <span className="flex items-baseline gap-1 text-base font-bold leading-none text-[var(--text-secondary)]">
-          {fmtPiezas(piezas)}<span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">pzas</span>
-        </span>
-      </div>
-    </div>
   );
 }
 
@@ -1479,7 +1416,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       titulo="Distribución de rolliza sobre lo aserrado"
       etiqueta={bloques.length > 0 ? (
         <EtiquetaCuadre
-          control={{ estado: cc.estado, relacion: "igual", titulo: "Cuadre de la distribución", peor: cc.controles.find((x) => x.estado === cc.estado)?.peor ?? { piezas: 0, pt: 0, m3: 0 } }}
+          /* El contador del viejo botón «Cuadre» (abría lo mismo que este chip) vive en el tooltip. */
+          control={{ estado: cc.estado, relacion: "igual", titulo: cc.difieren > 0 ? `Cuadre de la distribución (${cc.difieren} ${cc.difieren === 1 ? "control difiere" : "controles difieren"})` : "Cuadre de la distribución", peor: cc.controles.find((x) => x.estado === cc.estado)?.peor ?? { piezas: 0, pt: 0, m3: 0 } }}
           onAbrir={() => cuadreCifras.abrir()}
         />
       ) : undefined}
@@ -1503,96 +1441,16 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         </>
       }
       acciones={
-        <>
-          {/* Con el label visible al lado, no hay que abrir el desplegable para
-              saber qué controla — antes sólo lo decía el aria-label, invisible. */}
-          <label className="flex items-center gap-1.5">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Agrupar</span>
-            <select
-              value={dim}
-              onChange={(e) => setDim(e.target.value as DimensionResumen)}
-              aria-label="Cómo agrupar la aserrada"
-              className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-            >
-              {DIMENSIONES_RESUMEN.filter((d) => d !== "especie").map((d) => (
-                <option key={d} value={d}>{ETIQUETA_DIMENSION[d]}</option>
-              ))}
-            </select>
-          </label>
-          {/* Separador — agrupar es una cosa (cómo se lee la tabla), exportar
-              es otra (qué te llevas); antes las cuatro cosas se leían como un
-              solo racimo de controles sueltos. */}
-          <div className="h-6 w-px shrink-0 bg-[var(--rule-base)]" aria-hidden />
-          {/* Tres salidas para tres usos: el PDF se firma y se archiva, el
-              Excel se cruza contra la planilla del contador, el CSV es el
-              pegado rápido. Los tres bajan hasta la MEDIDA. */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => void bajar("pdf")} disabled={bloques.length === 0 || bajando !== null} className={BTN}>
-              <FileText className="h-4 w-4" /> {bajando === "pdf" ? "Generando…" : "PDF"}
-            </button>
-            <button type="button" onClick={() => void bajar("excel")} disabled={bloques.length === 0 || bajando !== null} className={BTN}>
-              <FileSpreadsheet className="h-4 w-4" /> {bajando === "excel" ? "Generando…" : "Excel"}
-            </button>
-            <button type="button" onClick={exportar} disabled={bloques.length === 0} className={BTN}>
-              <Download className="h-4 w-4" /> CSV
-            </button>
-            <button
-              type="button"
-              onClick={() => setOpcionesAbiertas((v) => !v)}
-              disabled={bloques.length === 0}
-              aria-expanded={opcionesAbiertas}
-              title="Firma del responsable y qué especies incluir en el papel"
-              className={cn(BTN, `${soloEspecies.size > 0 || firmaNombre.trim() ? "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`)}
-            >
-              <SlidersHorizontal className="h-4 w-4" /> Opciones
-            </button>
-            {/* Esconder columnas es de PANTALLA, no de papel: va al lado de
-                «Opciones» pero no lo toca — el PDF/Excel/CSV siguen saliendo
-                completos. Le pasamos el alto de esta barra (`h-9`), que no es
-                el `h-12` de las barras de filtro del Libro. */}
-            <ColumnasMenu columnas={COLUMNAS_REPARTO} visibles={cols} onChange={setCols} className="h-9 rounded-xl" />
-            {/* El repaso antes de registrar: qué renglón no cuadra y por qué.
-                El contador va en el botón porque un panel plegado sin número
-                no se abre nunca. */}
-            <button
-              type="button"
-              onClick={() => setRevisionAbierta((v) => !v)}
-              disabled={bloques.length === 0}
-              aria-expanded={revisionAbierta}
-              title={hallazgos.length === 0 ? "Todo cuadra: no hay nada que revisar" : `${cuenta.errores} sin resolver · ${cuenta.avisos} para mirar`}
-              className={cn(BTN, `${cuenta.errores > 0
-                ? "border-[var(--data-error-500)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]"
-                : cuenta.avisos > 0
-                  ? "border-[var(--data-warning-500)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                  : "border-[var(--data-success-500)] text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"}`)}
-            >
-              {hallazgos.length === 0 ? <ShieldCheck className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-              Revisar
-              {hallazgos.length > 0 && (
-                <span className="rounded-full bg-current/15 px-1.5 font-mono text-xs tabular-nums">{hallazgos.length}</span>
-              )}
-            </button>
-            {/* «Revisar» mira los DATOS (GTF, guía repetida); «Cuadre» mira las
-                CIFRAS: que todas las vistas sumen lo mismo. */}
-            <button
-              type="button"
-              onClick={() => cuadreCifras.abrir()}
-              disabled={bloques.length === 0}
-              title={cc.estado === "exacto" ? "Todas las vistas dan las mismas cifras" : cc.estado === "redondeo" ? "Cuadra con redondeo" : `${cc.difieren} ${cc.difieren === 1 ? "control difiere" : "controles difieren"}`}
-              className={cn(BTN, `${cc.estado === "difiere"
-                ? "border-[var(--data-error-500)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]"
-                : cc.estado === "redondeo"
-                  ? "border-[var(--data-warning-500)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                  : "border-[var(--data-success-500)] text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"}`)}
-            >
-              <Scale className="h-4 w-4" />
-              Cuadre
-              {cc.difieren > 0 && (
-                <span className="rounded-full bg-current/15 px-1.5 font-mono text-xs tabular-nums">{cc.difieren}</span>
-              )}
-            </button>
-          </div>
-        </>
+        <AccionesDistribucion
+          dim={dim}
+          onDim={setDim}
+          vacio={bloques.length === 0}
+          bajando={bajando}
+          onBajar={(que) => void bajar(que)}
+          onCsv={exportar}
+          papel={{ abierto: opcionesAbiertas, onAlternar: () => setOpcionesAbiertas((v) => !v), firma: firmaNombre, especies: soloEspecies.size }}
+          revision={{ abierta: revisionAbierta, onAlternar: () => setRevisionAbierta((v) => !v), total: hallazgos.length, errores: cuenta.errores, avisos: cuenta.avisos }}
+        />
       }
     >
 
@@ -1600,7 +1458,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
 
       {/* ── Balance del reparto: lo hecho y lo que falta, en las tres unidades ── */}
       {bloques.length > 0 && (
-        <div className="mb-4 grid gap-2 sm:grid-cols-2">
+        <div className="mb-3 grid gap-2 sm:grid-cols-2">
           <CifraBalance
             titulo="Distribuido"
             ayuda="Lo que los bloques respaldan de verdad — es lo que se imprime en los Anexos 04."
@@ -1608,7 +1466,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             pt={balance.hechoPt}
             piezas={balance.hechoPiezas}
             tono="ok"
-            etiqueta={<EtiquetaCuadre control={estadoDeControles(cc, ["medidas", "anexos"])} onAbrir={() => cuadreCifras.abrir(estadoDeControles(cc, ["medidas", "anexos"])?.id)} />}
+            etiqueta={<EtiquetaCuadre compacto control={estadoDeControles(cc, ["medidas", "anexos"])} onAbrir={() => cuadreCifras.abrir(estadoDeControles(cc, ["medidas", "anexos"])?.id)} />}
             /* De qué está hecho: bloque por bloque, lo que cada uno ampara. */
             cuenta={{
               formula: "Suma de lo que cada bloque ampara de verdad (m³ A)",
@@ -1647,7 +1505,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               vacio: "Todo lo cubicado tiene respaldo.",
             }}
             tono={balance.faltaM3 > TOL_M3 ? "falta" : "ok"}
-            etiqueta={<EtiquetaCuadre control={controlDe(cc, "lote")} onAbrir={() => cuadreCifras.abrir("lote")} />}
+            etiqueta={<EtiquetaCuadre compacto control={controlDe(cc, "lote")} onAbrir={() => cuadreCifras.abrir("lote")} />}
           />
         </div>
       )}
@@ -1748,22 +1606,27 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               </>
             )}
           </span>
-          <div className="flex flex-wrap gap-2 print:hidden">
-            <button type="button" onClick={catalogoEspecies.abrir} title="Especies del aserradero: crear, renombrar, quitar" className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-              <TreePine className="h-3.5 w-3.5" /> Especies
-            </button>
-            <button type="button" onClick={traerDeTrozas} disabled={hayTrozas === 0} title={hayTrozas === 0 ? "No hay trozas cubicadas en este dispositivo" : `Traer ${hayTrozas} trozas ya cubicadas`} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-40">
-              <Layers className="h-3.5 w-3.5" /> Traer del cubicador de trozas{hayTrozas > 0 ? ` (${hayTrozas})` : ""}
-            </button>
+          {/* Columnas = de esta tabla (ley 5: el filtro pegado a lo que filtra); lo de
+              uso ocasional, en «Más» (20-10: eran ocho botones en dos renglones). */}
+          <div className="flex flex-wrap items-center gap-2 print:hidden">
+            <ColumnasMenu columnas={COLUMNAS_REPARTO} visibles={cols} onChange={setCols} className="h-8 rounded-lg text-xs" />
             <ModuleActionMenu
               label="Agregar bloque"
               align="end"
-              className="h-auto rounded-lg border-2 px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="h-8 rounded-lg border-2 px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               items={[
                 { label: "Rolliza nueva", icon: TreePine, description: "La forma de siempre: m³ (R) de troza × % aprovechable", onClick: agregarBloqueManual },
                 { label: "Madera ya aserrada", icon: Ruler, description: "Sin troza de origen: cargas m³ (A) y piezas, y se le reparten las medidas", onClick: agregarBloqueAserrada },
                 { label: "Paquete ya declarado…", icon: Boxes, description: "Elegilo del Libro: baja con su m³ y sus piezas, sin retipear", onClick: () => setMostrarPaquetes(true) },
                 { label: "Importar planilla…", icon: FileSpreadsheet, description: "Pega el rango de Excel o sube el .xlsx/.csv: una fila, un bloque", onClick: () => setMostrarImportar(true) },
+                /* Antes era un botón suelto de la fila: también agrega bloques (20-10). */
+                {
+                  label: `Del cubicador de trozas${hayTrozas > 0 ? ` (${hayTrozas})` : ""}`,
+                  icon: Layers,
+                  description: hayTrozas === 0 ? "No hay trozas cubicadas en este dispositivo" : `Trae ${hayTrozas} trozas ya cubicadas; reemplaza las que vinieron de ahí y conserva lo cargado a mano`,
+                  disabled: hayTrozas === 0,
+                  onClick: traerDeTrozas,
+                },
                 ...(lotesConRolliza.length > 0
                   ? lotesConRolliza.map(
                       (x, i): ModuleActionItem => ({
@@ -1777,36 +1640,22 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                   : [{ label: "Sin lotes con volumen restante", icon: Boxes, disabled: true, dividerBefore: true } satisfies ModuleActionItem]),
               ]}
             />
-            {/* ADR-464: un lote por bloque traído del Libro, con sus trozas. */}
-            <RepartoLotesSugeridos
+            <MasDeLoQueEntro
               bloques={bloques}
-              codigoDeLote={(id) => lotesAserrio.find((l) => l.id === id)?.code ?? null}
-              onCreados={asignarLotesCreados}
-              lotesCargados={!cargandoLotes}
-              onQuitarLote={(id) => guardar(bloques.map((b) => (b.id === id ? { ...b, loteId: null } : b)))}
+              guardada={distribucionActual?.nombre ?? null}
+              onGuardar={() => setMostrarGuardar((v) => !v)}
+              onGuardadas={() => setMostrarGuardadas((v) => !v)}
+              onEspecies={catalogoEspecies.abrir}
+              /* ADR-464: un lote por bloque traído del Libro, con sus trozas. */
+              lotesSugeridos={{
+                codigoDeLote: (id) => lotesAserrio.find((l) => l.id === id)?.code ?? null,
+                onCreados: asignarLotesCreados,
+                lotesCargados: !cargandoLotes,
+                onQuitarLote: (id) => guardar(bloques.map((b) => (b.id === id ? { ...b, loteId: null } : b))),
+              }}
+              /* Panel «Lotes» (03-10): sugeridos del patio, lotes del Libro y trozas del bloque. */
+              panelLotes={{ onGuardar: guardar, estadoLotes, distribucionId: distribucionActual?.id ?? null }}
             />
-            {/* Panel «Lotes» (03-10): sugeridos del patio, lotes del Libro y trozas del bloque. */}
-            <RepartoPanelLotes bloques={bloques} onGuardar={guardar} estadoLotes={estadoLotes} distribucionId={distribucionActual?.id ?? null} />
-            {/* Guardar/abrir la distribución de bloques (Brandon, 2026-09-01):
-                mismo patrón que "Guardadas" en el Cubicador de madera — vive
-                en el servidor para verse desde otro lado después. */}
-            <button
-              type="button"
-              onClick={() => setMostrarGuardar((v) => !v)}
-              disabled={bloques.length === 0}
-              title={bloques.length === 0 ? "Carga al menos un bloque para guardar" : distribucionActual ? `Actualizar «${distribucionActual.nombre}»` : "Guardar esta distribución con un nombre"}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-40"
-            >
-              <Save className="h-3.5 w-3.5" /> {distribucionActual ? "Actualizar" : "Guardar"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMostrarGuardadas((v) => !v)}
-              title="Ver las distribuciones guardadas"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            >
-              <FolderOpen className="h-3.5 w-3.5" /> Guardadas
-            </button>
           </div>
         </div>
 

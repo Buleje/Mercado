@@ -45,26 +45,16 @@ type Props = {
   onQuitarLote?: (bloqueId: string) => void;
 };
 
-/** El botón de la barra de la Distribución + su modal. */
-export default function RepartoLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, onQuitarLote }: Props) {
-  const [abierto, setAbierto] = useState(false);
-  const pedibles = bloques.filter((b) => estadoLocalDelBloque(b) === "pedible").length;
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setAbierto(true)}
-        disabled={bloques.length === 0}
-        title={pedibles > 0 ? `Armar un lote por cada bloque traído del Libro (${pedibles})` : "Ningún bloque traído del Libro está sin lote"}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-40"
-      >
-        <PackagePlus className="h-3.5 w-3.5" aria-hidden /> Crear lotes{pedibles > 0 ? ` (${pedibles})` : ""}
-      </button>
-      {abierto && (
-        <ModalLotesSugeridos bloques={bloques} codigoDeLote={codigoDeLote} onCreados={onCreados} lotesCargados={lotesCargados} onQuitarLote={onQuitarLote} onCerrar={() => setAbierto(false)} />
-      )}
-    </>
-  );
+/** Cuántos bloques traídos del Libro todavía no tienen lote: el número del menú «Más». */
+export const pediblesDe = (bloques: BloqueRolliza[]): number =>
+  bloques.filter((b) => estadoLocalDelBloque(b) === "pedible").length;
+
+/**
+ * El modal «Crear lotes sugeridos». Lo abre el menú «Más» de «Lo que entró»
+ * (2026-10-20: el botón suelto era uno de ocho en la fila); se monta sólo abierto.
+ */
+export default function RepartoLotesSugeridos(props: Props & { onCerrar: () => void }) {
+  return <ModalLotesSugeridos {...props} />;
 }
 
 function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, onQuitarLote, onCerrar }: Props & { onCerrar: () => void }) {
