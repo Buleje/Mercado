@@ -1059,6 +1059,13 @@ function FilaFaltanteConMedidas({ f, dim }: { f: FaltanteGrupo; dim: DimensionRe
               </span>
             )}
           </span>
+          {/* ADR-505: lo que ninguna troza da no se reparte; se dice por qué. */}
+          {(f.sinTroza ?? []).map((s) => (
+            <span key={s.clave} className="mt-1 flex max-w-[34rem] items-start gap-1.5 whitespace-normal text-xs text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
+              <Ruler className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span>{s.piezas} {s.piezas === 1 ? "pieza" : "piezas"}: {s.texto}</span>
+            </span>
+          ))}
         </td>
         <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]"><CifraCopiable valor={f.piezas} tipo="piezas" /></td>
         <td className="text-right font-mono font-bold tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"><CifraCopiable valor={f.m3} tipo="m3" /></td>

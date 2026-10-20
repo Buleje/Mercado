@@ -161,9 +161,17 @@ describe("revisarDistribucion · el rendimiento no inventa rojos", () => {
     // 1 m³ de rolliza «amparando» 10 m³ a mano, con 10 m³ de aserrada.
     const b = [bloque("a", "Tornillo", 1, { amparaManualM3: 10 })];
     const h = revisar(b, [pieza("p", "Tornillo", 10)]);
+    // La especie lo dice como ERROR; el bloque (topado en su rolliza) avisa que rinde 99,9 %.
     const r = h.find((x) => x.id === "esp:Tornillo:rendimiento");
     expect(r?.severidad).toBe("error");
     expect(r?.que).toContain("imposible");
+    expect(h.find((x) => x.id === "a:rendimiento")?.severidad).toBe("aviso");
+  });
+
+  it("la aserrada directa no tiene rendimiento por bloque: no salió de ninguna troza", () => {
+    const b = [bloque("a", "Tornillo", 1, { amparaManualM3: 10, tipo: "aserrada" })];
+    const h = revisar(b, [pieza("p", "Tornillo", 10)]);
+    expect(ids(h)).not.toContain("a:rendimiento");
   });
 });
 

@@ -22,6 +22,7 @@ import { CalendarDays, ChevronDown, Layers, Ruler, Scale } from "@buleje/design-
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
+import type { TrozaMedida } from "@/lib/forestal/medida-cabe-en-troza";
 import { recubicarPiezas } from "@/lib/forestal/cubicacion";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import {
@@ -45,6 +46,8 @@ export interface TrozaParaReparto {
   etiqueta: string;
   especie: string;
   m3: number;
+  /** Largo y Ø de la troza (ADR-505): lo que no sale de ella va a otra o queda en «Falta por distribuir». */
+  medidas?: TrozaMedida | null;
 }
 
 export default function CtpCubicacionParaConsumo({
@@ -97,6 +100,9 @@ export default function CtpCubicacionParaConsumo({
         origen: "trozas",
         aprovechablePct: aprovechable,
         dias,
+        /* ADR-505: la tabla que no sale de ESTA troza no se le carga; va a
+           otra que la dé o queda afuera con su porqué. Sin medidas, como antes. */
+        ...(t.medidas ? { trozasMedidas: [t.medidas] } : {}),
       })),
     [trozas, aprovechable, dias],
   );
@@ -255,6 +261,12 @@ export default function CtpCubicacionParaConsumo({
               Quedan {fmtM3(distribucion.totales.faltanteM3)} m³ de aserrada que ninguna troza elegida puede
               amparar (harían falta {fmtM3(distribucion.totales.rollizaFaltanteM3)} m³ de rolliza al{" "}
               {aprovechable} %). Tilda más trozas o revisa el aprovechable.
+              {/* ADR-505: lo que no sale de ninguna troza elegida, con su porqué. */}
+              {distribucion.especies.flatMap((e) => (e.faltante.flatMap((f) => f.sinTroza ?? [])).map((st) => (
+                <span key={`${e.especie}|${st.clave}`} className="mt-1 block font-normal">
+                  {formatNumber(st.piezas)} {st.piezas === 1 ? "pieza" : "piezas"}: {st.texto}
+                </span>
+              )))}
             </p>
           )}
         </div>

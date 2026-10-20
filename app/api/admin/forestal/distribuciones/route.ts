@@ -67,6 +67,21 @@ const bloqueSchema = z.object({
      Sin declararlos, Zod los borra y al reabrir la distribución el bloque
      «traído del Libro» queda como uno cargado a mano: no puede crear su lote. */
   trozaIds: z.array(z.string().trim().max(40)).max(MAX_TROZAS_POR_BLOQUE).nullish(),
+  /* ADR-505: las medidas de sus trozas viajan con la hoja (Zod descarta lo no declarado). */
+  trozasMedidas: z
+    .array(
+      z.object({
+        largoM: z.number().finite().nonnegative().max(100).nullish(),
+        d1Cm: z.number().finite().nonnegative().max(1000).nullish(),
+        d2Cm: z.number().finite().nonnegative().max(1000).nullish(),
+        diametroCm: z.number().finite().nonnegative().max(1000).nullish(),
+        volumenM3: z.number().finite().nonnegative().max(1000).nullish(),
+        llegaISO: z.string().trim().max(40).nullish(),
+      }),
+    )
+    .max(MAX_TROZAS_POR_BLOQUE)
+    .nullish(),
+  ignorarMedidas: z.boolean().nullish(),
   corridaIds: z.array(z.string().trim().max(40)).max(MAX_TROZAS_POR_BLOQUE).nullish(),
   /* Fases 3 y 4: qué jornada quedó en qué corrida y qué líneas se completaron.
      Sin declararlos, Zod los borra y al reabrir la distribución los botones
@@ -157,6 +172,8 @@ export const POST = withApiHandler("forestal-distribuciones-post", async (req: N
           loteId: b.loteId ?? undefined,
           paqueteId: b.paqueteId ?? undefined,
           trozaIds: b.trozaIds ?? undefined,
+          trozasMedidas: b.trozasMedidas ?? undefined,
+          ignorarMedidas: b.ignorarMedidas ?? undefined,
           corridaIds: b.corridaIds ?? undefined,
           jornadasLibro: b.jornadasLibro ?? undefined,
           complementos: b.complementos ?? undefined,

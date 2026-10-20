@@ -213,6 +213,7 @@ export function unirSiembra(
       conEspecie += 1;
       if (puedeRecibirTrozas(vacio, c)) {
         vacio.trozaIds = [...c.trozaIds!];
+        if (c.trozasMedidas?.length) vacio.trozasMedidas = [...c.trozasMedidas];
         conTrozas += 1;
       }
       continue;
@@ -231,6 +232,7 @@ export function unirSiembra(
       const previo = lista.find((b) => puedeRecibirTrozas(b, c));
       if (previo) {
         previo.trozaIds = [...c.trozaIds!];
+        if (c.trozasMedidas?.length) previo.trozasMedidas = [...c.trozasMedidas];
         conTrozas += 1;
       }
       continue;

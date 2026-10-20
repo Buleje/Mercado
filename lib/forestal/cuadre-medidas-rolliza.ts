@@ -5,71 +5,40 @@
  * esa pieza como advertencia o que no cuadra porque la troza no hay de esas
  * medidas; también aplica eso en diámetros»).
  *
- * Es una ADVERTENCIA, nunca un bloqueo: el reparto asigna volumen, no corta
- * tablas, y una troza mal medida en la guía no puede frenar el papel. Lo que
- * dice es «esta pieza no pudo salir de ninguna troza de ese bloque».
- *
- * Reglas (todas con su tolerancia en la UNIDAD DEL NEGOCIO, no en el epsilon):
- *  · LARGO: el largo de la pieza (pies → m) ≤ la troza más larga + 15 cm.
- *  · DIÁMETRO: el lado mayor de la pieza (ancho o espesor, pulgadas → cm) ≤ el
- *    Ø de la troza más gruesa + 1 cm. El Ø de una troza es el MENOR de sus dos
- *    puntas (D1/D2): la punta delgada es la que limita lo que se puede sacar.
- *  · LA MISMA TROZA: si hay trozas largas y trozas gruesas pero ninguna es las
- *    dos cosas a la vez, la pieza tampoco pudo salir.
+ * La regla vive en `medida-cabe-en-troza.ts` (ADR-505) y el reparto ya la
+ * respeta al distribuir: con la regla activa, lo que queda acá son las entradas
+ * a mano y los bloques que se marcaron «sin respetar medidas». Sigue siendo una
+ * ADVERTENCIA: dice «esta pieza no pudo salir de ninguna troza de ese bloque».
  *
  * Puro: sin React, sin red, sin localStorage.
+ *
+ * `trozasDelBloque` lee primero la copia guardada con la hoja
+ * (`BloqueRolliza.trozasMedidas`): es la misma que usó el reparto, así lo que
+ * se reparte y lo que se revisa no pueden discrepar.
  */
 
 import type { BloqueRolliza, Distribucion } from "./cubicacion-reparto";
 import { claveEspecie, esAserradaDirecta } from "./cubicacion-reparto";
-import { CM_POR_PULGADA, M_POR_PIE } from "./escuadria-del-paquete";
+import { respaldoDe, revisarPieza, type AvisoMedida, type PiezaMedida, type RespaldoTrozas, type TrozaMedida } from "./medida-cabe-en-troza";
 
-/**
- * 15 cm de holgura en el largo. Una pieza «de 20 pies» mide 6,096 m en la
- * cuenta, pero el aserradero la corta de una troza de 6,00 m: el pie comercial
- * se redondea a 30 cm y la wincha del patio mide al centímetro. 15 cm ≈ medio
- * pie, y es el 2,5 % de una troza de 6 m.
- */
-export const TOLERANCIA_LARGO_M = 0.15;
-/** 1 cm de holgura en el Ø: lo que se equivoca la cinta diamétrica en una troza con corteza. */
-export const TOLERANCIA_DIAMETRO_CM = 1;
-
-export interface TrozaMedida {
-  largoM?: number | null;
-  d1Cm?: number | null;
-  d2Cm?: number | null;
-  diametroCm?: number | null;
-}
-
-/** Una medida aserrada (la `AsignacionMedida` del reparto encaja tal cual). */
-export interface PiezaMedida {
-  medida: string;
-  espesor: number;
-  ancho: number;
-  largo: number;
-  uEspesor: string;
-  uAncho: string;
-  uLargo: string;
-  piezas: number;
-}
-
-export type MotivoMedida = "largo" | "diametro" | "misma-troza";
-
-export interface AvisoMedida {
-  medida: string;
-  piezas: number;
-  largoM: number;
-  ladoCm: number;
-  motivos: MotivoMedida[];
-  texto: string;
-}
-
-export interface RespaldoTrozas {
-  /** Trozas con al menos una medida útil (largo o Ø). */
-  trozas: number;
-  largoMaxM: number | null;
-  diametroMaxCm: number | null;
-}
+export {
+  TOLERANCIA_DIAMETRO_CM,
+  TOLERANCIA_LARGO_M,
+  aCm,
+  aMetros,
+  diametroUtilCm,
+  elegibilidad,
+  holguraM,
+  respaldoDe,
+  revisarPieza,
+  subcapacidadM3,
+  type AvisoMedida,
+  type Elegibilidad,
+  type MotivoMedida,
+  type PiezaMedida,
+  type RespaldoTrozas,
+  type TrozaMedida,
+} from "./medida-cabe-en-troza";
 
 export type EstadoCuadreMedidas = "cuadra" | "advertencia" | "sin-medidas" | "sin-piezas";
 
@@ -85,6 +54,8 @@ export interface CuadreBloqueMedidas {
   avisos: AvisoMedida[];
   piezas: number;
   piezasConAviso: number;
+  /** Piezas que se repartieron a este bloque sin trozas con medidas para comprobarlas. */
+  piezasSinComprobar: number;
 }
 
 export interface CuadreMedidas {
@@ -92,113 +63,7 @@ export interface CuadreMedidas {
   /** Líneas (medidas) con advertencia: el número de la pestaña. */
   avisos: number;
   piezasConAviso: number;
-}
-
-const positivo = (v: number | null | undefined): number | null =>
-  typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null;
-
-/** Largo a metros. Unidad desconocida = `null` (no se adivina). */
-export function aMetros(valor: number, unidad: string): number | null {
-  const v = positivo(valor);
-  if (v == null) return null;
-  if (unidad === "pies") return v * M_POR_PIE;
-  if (unidad === "m") return v;
-  if (unidad === "cm") return v / 100;
-  if (unidad === "pulg") return (v * CM_POR_PULGADA) / 100;
-  return null;
-}
-
-/** Ancho o espesor a centímetros. */
-export function aCm(valor: number, unidad: string): number | null {
-  const v = positivo(valor);
-  if (v == null) return null;
-  if (unidad === "pulg") return v * CM_POR_PULGADA;
-  if (unidad === "cm") return v;
-  if (unidad === "m") return v * 100;
-  if (unidad === "pies") return v * M_POR_PIE * 100;
-  return null;
-}
-
-/** El Ø que limita: el MENOR de las dos puntas; sin puntas, el Ø declarado. */
-export function diametroUtilCm(t: TrozaMedida): number | null {
-  const puntas = [positivo(t.d1Cm), positivo(t.d2Cm)].filter((d): d is number => d != null);
-  if (puntas.length > 0) return Math.min(...puntas);
-  return positivo(t.diametroCm);
-}
-
-export function respaldoDe(trozas: readonly TrozaMedida[]): RespaldoTrozas {
-  let n = 0;
-  let largoMaxM: number | null = null;
-  let diametroMaxCm: number | null = null;
-  for (const t of trozas) {
-    const l = positivo(t.largoM);
-    const d = diametroUtilCm(t);
-    if (l == null && d == null) continue;
-    n++;
-    if (l != null) largoMaxM = Math.max(largoMaxM ?? 0, l);
-    if (d != null) diametroMaxCm = Math.max(diametroMaxCm ?? 0, d);
-  }
-  return { trozas: n, largoMaxM, diametroMaxCm };
-}
-
-const fmt = (v: number, dec: number) => v.toLocaleString("es-PE", { minimumFractionDigits: dec, maximumFractionDigits: dec });
-const fmtNat = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 2 });
-const unidadCorta = (u: string) => (u === "pulg" ? "″" : u === "pies" ? " pies" : ` ${u}`);
-const nPiezas = (n: number) => `${fmtNat(n)} ${n === 1 ? "pieza" : "piezas"}`;
-
-/**
- * Revisa UNA medida contra las trozas del bloque. `null` = cuadra (o no hay
- * con qué compararla). `ref` es como se nombra al bloque en el texto.
- */
-export function revisarPieza(p: PiezaMedida, trozas: readonly TrozaMedida[], ref: string): AvisoMedida | null {
-  const largoM = aMetros(p.largo, p.uLargo);
-  const anchoCm = aCm(p.ancho, p.uAncho);
-  const espesorCm = aCm(p.espesor, p.uEspesor);
-  if (largoM == null && anchoCm == null && espesorCm == null) return null;
-  const ladoCm = Math.max(anchoCm ?? 0, espesorCm ?? 0);
-  const esAncho = (anchoCm ?? 0) >= (espesorCm ?? 0);
-  const r = respaldoDe(trozas);
-  if (r.trozas === 0) return null;
-
-  const pideL = largoM != null ? largoM - TOLERANCIA_LARGO_M : null;
-  const pideD = ladoCm > 0 ? ladoCm - TOLERANCIA_DIAMETRO_CM : null;
-  const faltaLargo = pideL != null && r.largoMaxM != null && r.largoMaxM < pideL;
-  const faltaDiam = pideD != null && r.diametroMaxCm != null && r.diametroMaxCm < pideD;
-
-  const piezaLargo = largoM != null ? `${fmtNat(p.largo)}${unidadCorta(p.uLargo)}${p.uLargo === "m" ? "" : ` (${fmt(largoM, 2)} m)`}` : "";
-  const lado = esAncho ? p.ancho : p.espesor;
-  const uLado = esAncho ? p.uAncho : p.uEspesor;
-  const piezaLado = `${fmtNat(lado)}${unidadCorta(uLado)} de ${esAncho ? "ancho" : "espesor"}${uLado === "cm" ? "" : ` (${fmt(ladoCm, 1)} cm)`}`;
-
-  const motivos: MotivoMedida[] = [];
-  let texto = "";
-  if (faltaLargo && faltaDiam) {
-    motivos.push("largo", "diametro");
-    texto = `${nPiezas(p.piezas)} de ${piezaLargo} y ${piezaLado}: la troza más larga de ${ref} mide ${fmt(r.largoMaxM!, 2)} m y la más gruesa ${fmt(r.diametroMaxCm!, 0)} cm de Ø`;
-  } else if (faltaLargo) {
-    motivos.push("largo");
-    texto = `${nPiezas(p.piezas)} de ${piezaLargo} y la troza más larga de ${ref} mide ${fmt(r.largoMaxM!, 2)} m`;
-  } else if (faltaDiam) {
-    motivos.push("diametro");
-    texto = `${nPiezas(p.piezas)} de ${piezaLado} y la troza más gruesa de ${ref} mide ${fmt(r.diametroMaxCm!, 0)} cm de Ø en la punta`;
-  } else if (pideL != null && pideD != null) {
-    /* Cada medida por separado alcanza: ¿alguna troza alcanza en las DOS? Sólo
-       se juzga con trozas que traen las dos medidas. */
-    const completas = trozas
-      .map((t) => ({ l: positivo(t.largoM), d: diametroUtilCm(t) }))
-      .filter((t): t is { l: number; d: number } => t.l != null && t.d != null);
-    if (completas.length > 0 && !completas.some((t) => t.l >= pideL && t.d >= pideD)) {
-      const largas = completas.filter((t) => t.l >= pideL);
-      const dMax = largas.length > 0 ? Math.max(...largas.map((t) => t.d)) : null;
-      motivos.push("misma-troza");
-      texto =
-        dMax != null
-          ? `${nPiezas(p.piezas)} de ${piezaLargo} y ${piezaLado}: las trozas de ${ref} que llegan a ese largo no pasan de ${fmt(dMax, 0)} cm de Ø`
-          : `${nPiezas(p.piezas)} de ${piezaLargo} y ${piezaLado}: ninguna troza de ${ref} es tan larga y tan gruesa a la vez`;
-    }
-  }
-  if (motivos.length === 0) return null;
-  return { medida: p.medida, piezas: p.piezas, largoM: largoM ?? 0, ladoCm, motivos, texto };
+  piezasSinComprobar: number;
 }
 
 export interface EntradaCuadre {
@@ -209,6 +74,8 @@ export interface EntradaCuadre {
   fuente: string | null;
   trozas: readonly TrozaMedida[];
   piezas: readonly PiezaMedida[];
+  /** Piezas que el reparto puso acá sin poder comprobarlas (bloque sin medidas). */
+  sinComprobar?: number;
 }
 
 /** Una medida una sola vez (el reparto la puede repartir en dos grupos o días). */
@@ -227,7 +94,7 @@ export function cuadrarBloque(e: EntradaCuadre): CuadreBloqueMedidas {
   const piezas = unirMedidas(e.piezas);
   const respaldo = respaldoDe(e.trozas);
   const totalPiezas = piezas.reduce((s, p) => s + p.piezas, 0);
-  const base = { bloqueId: e.bloqueId, etiqueta: e.etiqueta, especie: e.especie, permiso: e.permiso, fuente: e.fuente, respaldo, piezas: totalPiezas };
+  const base = { bloqueId: e.bloqueId, etiqueta: e.etiqueta, especie: e.especie, permiso: e.permiso, fuente: e.fuente, respaldo, piezas: totalPiezas, piezasSinComprobar: e.sinComprobar ?? 0 };
   if (piezas.length === 0) return { ...base, estado: "sin-piezas", avisos: [], piezasConAviso: 0 };
   if (respaldo.trozas === 0) return { ...base, estado: "sin-medidas", avisos: [], piezasConAviso: 0 };
   const ref = e.permiso?.trim() || (e.etiqueta.trim() ? `«${e.etiqueta.trim()}»` : e.especie || "este bloque");
@@ -280,6 +147,14 @@ const mismaEspecie = (a: string | null | undefined, b: string | null | undefined
  * vino) → las del patio y lotes de SU permiso y especie. Ninguna = `[]`.
  */
 export function trozasDelBloque(b: BloqueRolliza, f: FuentesDeTrozas): { trozas: TrozaMedida[]; fuente: string | null } {
+  /* La copia guardada con la hoja manda (ADR-505): es la que usó el reparto. */
+  const copia = b.trozasMedidas ?? [];
+  if (copia.length > 0) return { trozas: [...copia], fuente: copia.length === 1 ? "su troza (guardada con la hoja)" : `sus ${copia.length} trozas (guardadas con la hoja)` };
+  return trozasDeLasFuentes(b, f);
+}
+
+/** Lo mismo sin mirar la copia: de dónde se completa una hoja vieja. */
+export function trozasDeLasFuentes(b: BloqueRolliza, f: FuentesDeTrozas): { trozas: TrozaMedida[]; fuente: string | null } {
   const ids = b.trozaIds ?? [];
   if (ids.length > 0) {
     const set = new Set(ids);
@@ -316,6 +191,7 @@ export function cuadrarMedidasDelReparto(dist: Distribucion, f: FuentesDeTrozas)
       const b = bd.bloque;
       if (esAserradaDirecta(b)) continue;
       const { trozas, fuente } = trozasDelBloque(b, f);
+      const medidas = bd.asignado.flatMap((g) => g.medidas);
       bloques.push(
         cuadrarBloque({
           bloqueId: b.id,
@@ -324,7 +200,8 @@ export function cuadrarMedidasDelReparto(dist: Distribucion, f: FuentesDeTrozas)
           permiso: b.permiso?.trim() || null,
           fuente,
           trozas,
-          piezas: bd.asignado.flatMap((g) => g.medidas),
+          piezas: medidas,
+          sinComprobar: medidas.reduce((s, m) => s + (m.sinComprobar ? m.piezas : 0), 0),
         }),
       );
     }
@@ -333,5 +210,6 @@ export function cuadrarMedidasDelReparto(dist: Distribucion, f: FuentesDeTrozas)
     bloques,
     avisos: bloques.reduce((s, b) => s + b.avisos.length, 0),
     piezasConAviso: bloques.reduce((s, b) => s + b.piezasConAviso, 0),
+    piezasSinComprobar: bloques.reduce((s, b) => s + b.piezasSinComprobar, 0),
   };
 }

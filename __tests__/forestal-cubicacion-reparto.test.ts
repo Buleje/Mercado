@@ -14,6 +14,7 @@ import {
   type BloqueRolliza,
 } from "@/lib/forestal/cubicacion-reparto";
 import { PT_POR_M3 as PT_M3_TEST, cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { umbralRendimientoAlto } from "@/lib/forestal/ctp-rendimiento";
 
 /**
  * Un RENGLÓN con el m³ pedido, repartido en piezas de verdad.
@@ -886,8 +887,14 @@ describe("claveEspecie", () => {
 });
 
 describe("juzgarRendimiento", () => {
-  it("40–65 % es lo normal del aserrío", () => {
+  it("40 % hasta el referencial SERFOR + tolerancia es lo normal del aserrío", () => {
     expect(juzgarRendimiento(55).tono).toBe("success");
+    expect(juzgarRendimiento(umbralRendimientoAlto()).tono).toBe("success");
+  });
+  it("60 % ya es alto: el mismo techo que «Revisar» (59 %), no el 65 % de antes", () => {
+    const j = juzgarRendimiento(60);
+    expect(j.tono).toBe("warning");
+    expect(j.label).toContain("referencial SERFOR");
   });
   it("más de 100 % es imposible, no «muy bueno»", () => {
     expect(juzgarRendimiento(160).label).toContain("imposible");

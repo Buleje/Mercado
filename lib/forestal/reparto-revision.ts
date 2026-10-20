@@ -26,6 +26,13 @@ import {
   esAserradaDirecta, juzgarRendimiento,
   type BloqueRolliza, type Distribucion,
 } from "./cubicacion-reparto";
+import { RENDIMIENTO_REF_ASERRADA, RENDIMIENTO_TOLERANCIA_PP, umbralRendimientoAlto } from "./ctp-rendimiento";
+import {
+  revisarMedidasImposibles, revisarRendimientoDeBloques, revisarTrozasDeBloques,
+  type ContextoTrozasRevision,
+} from "./reparto-revision-condiciones";
+
+export type { ContextoTrozasRevision, TrozaRevision } from "./reparto-revision-condiciones";
 
 /**
  * Diez litros. Debajo de esto, una diferencia de volumen es el redondeo del
@@ -60,6 +67,11 @@ export interface HallazgoRevision {
   que: string;
   /** Qué hacer para resolverlo. */
   comoArreglar: string;
+  /**
+   * El detalle para el ⓘ: de dónde sale la regla y un ejemplo. Va aparte para
+   * que la fila diga sólo dónde, qué y cómo (ley de Brandon 2026-09-24).
+   */
+  info?: { what: string; example?: string };
 }
 
 const rotulo = (b: BloqueRolliza) => b.etiqueta.trim() || "Bloque sin etiqueta";
@@ -94,8 +106,19 @@ export function revisarDistribucion(
     /** Por qué no se puede, para no repetir la regla en la pantalla. */
     porque?: string;
   }[] = [],
+  /**
+   * Las trozas que la pantalla ya tiene (patio + lotes del Libro), para las
+   * condiciones que miran la troza: llegada, especie, repetida, Ø. Sin ellas
+   * esas condiciones callan — no se adivina.
+   */
+  trozas: ContextoTrozasRevision | null = null,
 ): HallazgoRevision[] {
   const out: HallazgoRevision[] = [];
+  /* Lo que se mira bloque por bloque (2026-10-20): rendimiento contra SERFOR,
+     trozas que llegan tarde, de otra especie, repetidas, sin Ø, y piezas con
+     medidas imposibles. Viven en `reparto-revision-condiciones.ts`. */
+  const rendimientoPorBloque = revisarRendimientoDeBloques(dist);
+  const conRendimiento = new Set(rendimientoPorBloque.map((h) => h.bloqueId));
 
   // ── Por bloque: los datos que el papel necesita sí o sí ────────────────
   /* Una GTF declarada dos veces es la misma madera amparada dos veces: se
@@ -249,9 +272,11 @@ export function revisarDistribucion(
     }
 
     /*
-     * El rendimiento se juzga con la MISMA función que pinta el KPI
-     * (`juzgarRendimiento`): dos criterios para el mismo número serían dos
-     * verdades distintas.
+     * El techo «alto» es el referencial SERFOR (`ctp-rendimiento.ts`: 56 % +
+     * 3 pp, RDE D000259-2024) — el mismo que juzga cada bloque. Hasta el
+     * 2026-10-20 se usaba el 65 % de `juzgarRendimiento`: dos techos para el
+     * mismo número eran dos verdades. «Bajo» (<40 %) e «imposible» (>100 %)
+     * siguen saliendo de `juzgarRendimiento`.
      *
      * Dos condiciones que se ganaron mirando la lista real:
      *
@@ -265,19 +290,32 @@ export function revisarDistribucion(
      *    bajo o alto es para MIRAR: se declara igual, y marcarlo en rojo junto
      *    a los datos que de verdad faltan enseña a ignorar el rojo.
      */
-    const j = juzgarRendimiento(e.rendimientoPct);
-    const hayQueJuzgar = e.rollizaM3 > TOL_REVISION_M3 && e.aserradaM3 > TOL_REVISION_M3;
-    if (hayQueJuzgar && (j.tono === "error" || j.tono === "warning")) {
-      const imposible = (e.rendimientoPct ?? 0) > 100;
+    const pct = e.rendimientoPct;
+    const j = juzgarRendimiento(pct);
+    const hayQueJuzgar = e.rollizaM3 > TOL_REVISION_M3 && e.aserradaM3 > TOL_REVISION_M3 && pct != null;
+    const umbral = umbralRendimientoAlto();
+    const imposible = (pct ?? 0) > 100;
+    const alto = !imposible && (pct ?? 0) > umbral;
+    const bajo = j.tono === "error" && !imposible;
+    /* Si un bloque de la especie ya dijo «alto», la especie no lo repite: el
+       aviso útil es el que apunta al bloque. «Bajo» no tiene versión por
+       bloque, y «imposible» se dice siempre: el bloque sólo ampara hasta su
+       rolliza, así que el exceso de la especie no lo ve ningún bloque. */
+    const yaPorBloque = e.bloques.some((d) => conRendimiento.has(d.bloque.id));
+    if (hayQueJuzgar && (bajo || imposible || (alto && !yaPorBloque))) {
       out.push({
         id: `esp:${nombre}:rendimiento`,
         severidad: imposible ? "error" : "aviso",
         bloqueId: null,
         donde: nombre,
-        que: `Rendimiento ${e.rendimientoPct == null ? "—" : `${e.rendimientoPct.toFixed(1)} %`} — ${j.label}.`,
+        que: `Rendimiento ${pct.toFixed(1)} % — ${alto ? `sobre el referencial SERFOR (${RENDIMIENTO_REF_ASERRADA} % + ${RENDIMIENTO_TOLERANCIA_PP})` : j.label}.`,
         comoArreglar: imposible
           ? "De una troza no sale más madera aserrada que la troza misma: revisa el m³ de rolliza cargado o el «ampara» dicho a mano."
           : "Verifica el m³ de rolliza cargado y que esté cubicada toda la madera que salió de esa troza.",
+        info: {
+          what: `Rendimiento = aserrada cubicada ÷ rolliza de la especie. SERFOR (RDE D000259-2024) da ${RENDIMIENTO_REF_ASERRADA} % de referencial; se marca alto desde ${umbral} % y bajo debajo de 40 %.`,
+          example: `10 m³ de rolliza con 6,5 m³ de aserrada = 65 %: pasa el ${umbral} %.`,
+        },
       });
     }
   }
@@ -376,6 +414,9 @@ export function revisarDistribucion(
         : "Declara el reproceso en el Libro (Productos disponibles → Reprocesar) o marca el bloque con «Lleva sólo» para que no ampare otro tipo.",
     });
   }
+
+  // 6. Bloque por bloque: rendimiento, trozas y medidas (2026-10-20).
+  out.push(...rendimientoPorBloque, ...revisarTrozasDeBloques(bloques, dist, trozas), ...revisarMedidasImposibles(dist));
 
   // Errores primero: es el orden en que hay que resolverlos.
   return out.sort((a, b) => (a.severidad === b.severidad ? 0 : a.severidad === "error" ? -1 : 1));

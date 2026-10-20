@@ -7,8 +7,9 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import type { Distribucion } from "@/lib/forestal/cubicacion-reparto";
-import { cuadrarMedidasDelReparto, type FuentesDeTrozas, type TrozaConOrigen } from "@/lib/forestal/cuadre-medidas-rolliza";
+import { esAserradaDirecta, MAX_TROZAS_POR_BLOQUE, type BloqueRolliza, type Distribucion } from "@/lib/forestal/cubicacion-reparto";
+import { cuadrarMedidasDelReparto, trozasDeLasFuentes, type FuentesDeTrozas, type TrozaConOrigen } from "@/lib/forestal/cuadre-medidas-rolliza";
+import { medidaDeTroza, type TrozaMedida } from "@/lib/forestal/medida-cabe-en-troza";
 import { claveLoteTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
 import type { EstadoLotesAserrio } from "./use-lotes-aserrio";
 
@@ -29,7 +30,37 @@ function leerCubicador(): Cubicador {
   }
 }
 
-export function useCuadreMedidas(dist: Distribucion, estado: Pick<EstadoLotesAserrio, "lotes" | "trozas" | "cargando">) {
+/**
+ * ADR-505: una hoja de antes del 20-10 no guardó las medidas de sus trozas.
+ * Se completan UNA vez, desde las mismas fuentes que mira el cuadre; desde ahí
+ * viajan con el bloque. `null` = no hay nada que completar.
+ *
+ * Una hoja que ya escribió jornadas en el Libro (`jornadasLibro`/`corridaIds`
+ * en algún bloque) NO cambia sola al abrirla: lo completado entra con
+ * «sin respetar medidas» y el reparto queda idéntico al registrado. El
+ * operario lo prende desde «Ver antes/después», viendo qué se movería.
+ */
+export function completarMedidas(bloques: readonly BloqueRolliza[], f: FuentesDeTrozas): BloqueRolliza[] | null {
+  const yaRegistrada = bloques.some((b) => (b.jornadasLibro?.length ?? 0) > 0 || (b.corridaIds?.length ?? 0) > 0);
+  let cambio = false;
+  const next = bloques.map((b) => {
+    if (esAserradaDirecta(b) || (b.trozasMedidas?.length ?? 0) > 0) return b;
+    const copia = trozasDeLasFuentes(b, f).trozas.flatMap((t) => {
+      const m = medidaDeTroza(t);
+      return m ? [m] : [];
+    });
+    if (copia.length === 0 || copia.length > MAX_TROZAS_POR_BLOQUE) return b;
+    cambio = true;
+    return { ...b, trozasMedidas: copia as TrozaMedida[], ...(yaRegistrada ? { ignorarMedidas: true } : {}) };
+  });
+  return cambio ? next : null;
+}
+
+export function useCuadreMedidas(
+  dist: Distribucion,
+  estado: Pick<EstadoLotesAserrio, "lotes" | "trozas" | "cargando">,
+  completar?: { bloques: BloqueRolliza[]; guardar: (next: BloqueRolliza[]) => void },
+) {
   const [cubicador, setCubicador] = useState<Cubicador>([]);
   useEffect(() => {
     const releer = () => setCubicador(leerCubicador());
@@ -47,8 +78,17 @@ export function useCuadreMedidas(dist: Distribucion, estado: Pick<EstadoLotesAse
     };
   }, [estado.lotes, estado.trozas, cubicador]);
 
+  /* Con el Libro todavía cargando, las fuentes están a medias: se espera. */
+  const bloquesACompletar = completar?.bloques;
+  const guardarCompletos = completar?.guardar;
+  useEffect(() => {
+    if (estado.cargando || !bloquesACompletar || !guardarCompletos) return;
+    const next = completarMedidas(bloquesACompletar, fuentes);
+    if (next) guardarCompletos(next);
+  }, [estado.cargando, bloquesACompletar, guardarCompletos, fuentes]);
+
   const cuadre = useMemo(() => cuadrarMedidasDelReparto(dist, fuentes), [dist, fuentes]);
-  return { cuadre, cargando: estado.cargando };
+  return { cuadre, cargando: estado.cargando, fuentes };
 }
 
 export type CuadreMedidasEstado = ReturnType<typeof useCuadreMedidas>;

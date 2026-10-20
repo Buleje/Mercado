@@ -19,6 +19,7 @@ import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { recubicarLoteSmalian } from "@/lib/forestal/cubicacion-trozas-formula";
 import { formatNumber } from "@/lib/format";
+import { umbralRendimientoAlto } from "@/lib/forestal/ctp-rendimiento";
 
 /** Totales de lo que ya está cubicado en las otras herramientas (localStorage). */
 function totalesCubicador(): { aserradoPt: number; trozasM3: number } {
@@ -33,11 +34,14 @@ function totalesCubicador(): { aserradoPt: number; trozasM3: number } {
   };
 }
 
+/** Techo de lo normal = el MISMO de la distribución y de «Revisar»: referencial SERFOR (56 %) + 3 pp. */
+const TECHO_NORMAL = umbralRendimientoAlto();
+
 /** Rangos orientativos del aserrío peruano (coeficiente output/input). */
 const RANGOS = [
   { hasta: 40, label: "bajo para aserrío", tono: "error" },
-  { hasta: 65, label: "normal de aserrío (40–65%)", tono: "success" },
-  { hasta: 85, label: "alto — ¿reaserrado o producto poco escuadrado?", tono: "warning" },
+  { hasta: TECHO_NORMAL, label: `normal de aserrío (40–${TECHO_NORMAL}%)`, tono: "success" },
+  { hasta: 85, label: "alto: sobre el referencial SERFOR — ¿reaserrado o producto poco escuadrado?", tono: "warning" },
   { hasta: Infinity, label: "imposible: salió más de lo que entró", tono: "error" },
 ] as const;
 

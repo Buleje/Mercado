@@ -41,6 +41,7 @@ import {
   type LoteDeCapacidad,
 } from "@/lib/forestal/capacidad-de-planta";
 import type { BloqueSembrable } from "@/lib/forestal/sembrar-reparto";
+import { medidaDeTroza, type TrozaMedida } from "@/lib/forestal/medida-cabe-en-troza";
 import { MAX_TROZAS_POR_BLOQUE } from "@/lib/forestal/cubicacion-reparto";
 import { totalizarGTF } from "@/lib/forestal/gtf-redondeo";
 import {
@@ -93,6 +94,8 @@ export interface CandidatoDeCapacidad {
    * lote en el Libro. Un lote o una corrida ya tienen su propia referencia.
    */
   trozaIds?: string[];
+  /** Medidas de esas trozas por id (ADR-505): el bloque las guarda para repartir respetándolas. */
+  medidasDeTrozas?: Record<string, TrozaMedida>;
   /** El lote de donde sale la línea (apartado o margen): ya tiene lote, no se arma otro. */
   loteId?: string;
   /**
@@ -149,7 +152,27 @@ function especieDeLote(l: Pick<LoteDeCapacidad, "especie" | "trozas">): string {
   return deLasPiezas.size === 1 ? especieDelCatalogo([...deLasPiezas.values()][0]!) : "";
 }
 
-type TrozaDeLinea = { id: string; especieComun?: string | null; volumenM3?: number | string | null; permiso?: string | null };
+type TrozaDeLinea = {
+  id: string;
+  especieComun?: string | null;
+  volumenM3?: number | string | null;
+  permiso?: string | null;
+  /* ADR-505: las medidas viajan con el bloque para que el reparto las respete. */
+  largoM?: number | null;
+  d1Cm?: number | null;
+  d2Cm?: number | null;
+  diametroCm?: number | null;
+};
+
+/** Las medidas de cada troza por id; sin largo ni Ø no hay nada que comparar. */
+function medidasDeTrozas(trozas: readonly TrozaDeLinea[]): Record<string, TrozaMedida> {
+  const out: Record<string, TrozaMedida> = {};
+  for (const t of trozas) {
+    const med = medidaDeTroza(t);
+    if (med) out[t.id] = med;
+  }
+  return out;
+}
 
 /** Agrupa trozas por especie; la especie vacía queda junta y se dice. */
 function porEspecie(trozas: readonly TrozaDeLinea[]) {
@@ -251,6 +274,7 @@ export function bloquesDesdeCapacidad(
         piezasManual: null,
         piezas: g.piezas,
         trozaIds: g.trozaIds,
+        medidasDeTrozas: medidasDeTrozas(g.trozas),
       });
     }
   }
@@ -436,6 +460,7 @@ export function bloquesDeCandidato(c: CandidatoDeCapacidad): BloqueSembrable[] {
        pueden llamarse igual: la huella descartaría el segundo. */
     const nombre = corto && cortos.indexOf(corto) !== cortos.lastIndexOf(corto) ? p.permiso! : corto;
     const ids = deTrozas ? p.trozaIds : c.trozaIds;
+    const medidas = (ids ?? []).flatMap((id) => (c.medidasDeTrozas?.[id] ? [c.medidasDeTrozas[id]] : []));
     return {
       etiqueta: deTrozas
         ? `${nombre || "Sin permiso"} · ${c.especie || "Sin especie"} · ${fuente}`
@@ -459,6 +484,8 @@ export function bloquesDeCandidato(c: CandidatoDeCapacidad): BloqueSembrable[] {
          crear su lote) y el lote de origen también — así la Distribución no
          ofrece armar otro lote ni vuelve a ofrecer ese mismo lote como bloque. */
       ...(ids && ids.length > 0 && ids.length <= MAX_TROZAS_POR_BLOQUE ? { trozaIds: [...ids] } : {}),
+      /* ADR-505: y sus medidas, para que el reparto no le pida una pieza que ninguna da. */
+      ...(medidas.length > 0 && medidas.length <= MAX_TROZAS_POR_BLOQUE ? { trozasMedidas: medidas } : {}),
       ...(c.loteId ? { loteId: c.loteId } : {}),
       ...(deTrozas ? { partidoDe: c.etiqueta, etiquetaPrevia: `${c.etiqueta} · ${corto || "sin permiso"}` } : {}),
       /* El bloque entero de antes (mismo lote o misma corrida, sin partir) se

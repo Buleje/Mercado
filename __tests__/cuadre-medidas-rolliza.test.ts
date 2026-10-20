@@ -56,8 +56,17 @@ describe("revisarPieza", () => {
   it("ancho 12″ contra un Ø de 25 cm es advertencia por diámetro", () => {
     const a = revisarPieza(pieza(8, 12, 3), [{ largoM: 4, d1Cm: 25, d2Cm: 27 }], "PLT-9");
     expect(a?.motivos).toEqual(["diametro"]);
-    expect(a?.texto).toContain("12″ de ancho (30.5 cm)");
+    expect(a?.texto).toContain("2×12″ (pide 30.9 cm de Ø)");
     expect(a?.texto).toContain("mide 25 cm de Ø en la punta");
+  });
+
+  it("el Ø se mide contra la diagonal de la sección (ADR-505): 6×12″ pide 34 cm, no 30,5", () => {
+    const troza = [{ largoM: 4, d1Cm: 32, d2Cm: 34 }];
+    /* Con el lado mayor solo (30,5 cm) cabía; con la diagonal (34,1 cm) no. */
+    const a = revisarPieza(pieza(8, 12, 2, 6), troza, "PLT-9");
+    expect(a?.motivos).toEqual(["diametro"]);
+    expect(a?.diagonalCm).toBeCloseTo(34.08, 1);
+    expect(revisarPieza(pieza(8, 12, 2, 2), [{ largoM: 4, d1Cm: 31, d2Cm: 33 }], "PLT-9")).toBeNull();
   });
 
   it("largo y Ø alcanzan por separado pero no en la misma troza", () => {

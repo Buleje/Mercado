@@ -21,12 +21,14 @@ import {
 } from "@/lib/forestal/cubicacion-reparto";
 import { cubicarPieza, type PiezaCubicada, type Unidad } from "@/lib/forestal/cubicacion";
 import { claveYLabel } from "@/lib/forestal/cubicacion-resumen";
+import { cuadrarMedidasDelReparto } from "@/lib/forestal/cuadre-medidas-rolliza";
+import { elegibilidad, subcapacidadM3, type TrozaMedida } from "@/lib/forestal/medida-cabe-en-troza";
 
 const ESPECIES = ["TORNILLO", "CUMALA", "CAPIRONA", ""];
 const DIMS = ["tipo", "largo", "medida", "espesor", "ancho", "dueno"] as const;
 
 /** Un escenario completo: lote, bloques y la vista con la que se agrupa. */
-function generar(rnd: () => number) {
+function generar(rnd: () => number, largosPies: readonly number[] = [6, 8, 10, 11, 12, 14]) {
   const especies = ESPECIES.slice(0, 1 + Math.floor(rnd() * 4));
   const lote: PiezaCubicada[] = [];
   for (let i = 0; i < 1 + Math.floor(rnd() * 10); i++) {
@@ -36,7 +38,7 @@ function generar(rnd: () => number) {
       cantidad: 1 + Math.floor(rnd() * 100),
       espesor: uE === "pulg" ? [1, 1.5, 2, 3, 4][Math.floor(rnd() * 5)] : [3, 5, 8][Math.floor(rnd() * 3)],
       ancho: uE === "pulg" ? [3, 4, 6, 8, 10, 12][Math.floor(rnd() * 6)] : [10, 15, 20, 25][Math.floor(rnd() * 4)],
-      largo: uL === "pies" ? [6, 8, 10, 11, 12, 14][Math.floor(rnd() * 6)] : [2, 2.5, 3, 4][Math.floor(rnd() * 4)],
+      largo: uL === "pies" ? largosPies[Math.floor(rnd() * largosPies.length)] : [2, 2.5, 3, 4][Math.floor(rnd() * 4)],
       uEspesor: uE as Unidad, uAncho: uE as Unidad, uLargo: uL as Unidad,
     };
     const { pieTablar, m3 } = cubicarPieza(base);
@@ -239,5 +241,118 @@ describe("reparto — escenarios donde la partición EXISTE", () => {
     for (const x of porSemilla) expect(x.cerraron / N).toBeGreaterThanOrEqual(0.9);
     // Cuando no cierra, lo que queda afuera es marginal, nunca un lote entero.
     expect(peorPct).toBeLessThan(0.02);
+  }, 120_000);
+});
+
+/**
+ * ADR-505 · los mismos escenarios, ahora con las medidas de las trozas en los
+ * bloques de rolliza (largos de 1,5 a 5 m, Ø de 18 a 60 cm). Con la regla
+ * activa, nada se pierde ni se fabrica y «¿Cuadran las medidas?» queda en 0:
+ * sólo lo dicho a mano (overrides) o un bloque marcado «sin respetar medidas»
+ * puede dejar avisos.
+ */
+describe("reparto respetando medidas — invariantes al azar", () => {
+  it("600 escenarios: conservación, capacidad y 0 avisos fuera de lo dicho a mano", () => {
+    let semilla = 424242;
+    const rnd = () => (semilla = (semilla * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const fallas: string[] = [];
+    const sinFuentes = { libro: [], lotes: new Map(), cubicador: [] };
+    let conRegla = 0;
+    let maxMs = 0;
+    for (let n = 0; n < 600; n++) {
+      const { lote, bloques, dim, totalPz } = generar(rnd);
+      for (const b of bloques) {
+        if (b.tipo === "aserrada" || rnd() < 0.2) continue;
+        const k = 1 + Math.floor(rnd() * 6);
+        b.trozasMedidas = Array.from({ length: k }, () => {
+          const d1 = 18 + Math.floor(rnd() * 42);
+          return { largoM: Math.round((1.5 + rnd() * 3.5) * 100) / 100, d1Cm: d1, d2Cm: d1 + Math.floor(rnd() * 6) };
+        });
+        if (rnd() < 0.1) b.ignorarMedidas = true;
+      }
+      const t0 = performance.now();
+      const d = distribuirPorCapacidad(bloques, lote, dim);
+      maxMs = Math.max(maxMs, performance.now() - t0);
+      if (d.especies.some((e) => e.medidas?.aplicado)) conRegla++;
+
+      let pzAsig = 0;
+      let pzFalt = 0;
+      for (const esp of d.especies) {
+        for (const b of esp.bloques) {
+          const conOverride = Object.values(b.bloque.overridesLinea ?? {}).some((o) => o?.piezas != null || o?.m3 != null);
+          pzAsig += b.asignado.reduce((a, g) => a + g.medidas.reduce((x, m) => x + m.piezas, 0), 0);
+          if (!conOverride && b.usadoM3 > b.capacidadM3 + 0.0501) fallas.push(`n=${n} capacidad: ${b.bloque.etiqueta}`);
+          const tope = b.bloque.piezasManual;
+          const pz = b.asignado.reduce((a, g) => a + g.piezas, 0);
+          if (tope != null && !conOverride && pz > Number(tope)) fallas.push(`n=${n} tope: ${b.bloque.etiqueta}`);
+        }
+        for (const f of esp.faltante) {
+          pzFalt += f.piezas;
+          const st = (f.sinTroza ?? []).reduce((a, x) => a + x.piezas, 0);
+          if (st > f.piezas) fallas.push(`n=${n} sinTroza>faltante: ${f.label}`);
+        }
+      }
+      if (pzAsig + pzFalt !== totalPz) fallas.push(`n=${n} conservación piezas: ${pzAsig}+${pzFalt}≠${totalPz}`);
+
+      const cuadre = cuadrarMedidasDelReparto(d, sinFuentes);
+      for (const c of cuadre.bloques) {
+        if (c.avisos.length === 0) continue;
+        const b = bloques.find((x) => x.id === c.bloqueId)!;
+        const conOverride = Object.values(b.overridesLinea ?? {}).some((o) => o?.piezas != null || o?.m3 != null);
+        if (!conOverride && !b.ignorarMedidas) fallas.push(`n=${n} aviso en ${c.etiqueta}: ${c.avisos[0].texto}`);
+      }
+    }
+    expect(fallas.slice(0, 10)).toEqual([]);
+    expect(conRegla).toBeGreaterThan(300);
+    expect(maxMs).toBeLessThan(1500);
+  }, 120_000);
+});
+
+/**
+ * ADR-505 · subcapacidad (revisión 20-10): una medida que algún bloque rechaza
+ * no puede pasar, en el bloque que sí la acepta, de la parte de su capacidad que
+ * rinden las trozas que la dan — ni al llenar, ni al intercambiar para cerrar,
+ * ni al cerrar con tolerancia. Largos hasta 24 pies y trozas de 1,5 a 7 m para
+ * que haya muchas medidas exigentes.
+ */
+describe("reparto respetando medidas — subcapacidad de las exigentes", () => {
+  it("1500 escenarios: cada exigente ≤ su subcapacidad y el total exigente ≤ la mayor", () => {
+    let semilla = 24680;
+    const rnd = () => (semilla = (semilla * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const fallas: string[] = [];
+    let conExigentes = 0;
+    for (let n = 0; n < 1500; n++) {
+      const { lote, bloques, dim } = generar(rnd, [6, 8, 10, 12, 14, 16, 18, 20, 24]);
+      for (const b of bloques) {
+        if (b.tipo === "aserrada" || rnd() < 0.2) continue;
+        const k = 1 + Math.floor(rnd() * 6);
+        b.trozasMedidas = Array.from({ length: k }, () => {
+          const d1 = 18 + Math.floor(rnd() * 42);
+          return { largoM: Math.round((1.5 + rnd() * 5.5) * 100) / 100, d1Cm: d1, d2Cm: d1 + Math.floor(rnd() * 6) };
+        });
+      }
+      const d = distribuirPorCapacidad(bloques, lote, dim);
+      for (const e of d.especies) {
+        if ((e.medidas?.exigentes ?? 0) > 0) conExigentes++;
+        const activos = e.bloques.filter((b) => b.bloque.tipo !== "aserrada" && !b.bloque.ignorarMedidas && (b.bloque.trozasMedidas?.length ?? 0) > 0);
+        for (const b of activos) {
+          if (Object.values(b.bloque.overridesLinea ?? {}).some((o) => o?.piezas != null || o?.m3 != null)) continue;
+          const trozas = b.bloque.trozasMedidas as TrozaMedida[];
+          let exig = 0;
+          let mayor = 0;
+          for (const g of b.asignado) for (const m of g.medidas) {
+            if (m.piezas <= 0) continue;
+            if (!activos.some((o) => !elegibilidad(m, o.bloque.trozasMedidas as TrozaMedida[], "").cabe)) continue;
+            const sub = subcapacidadM3(m, trozas, b.capacidadM3);
+            exig += m.m3;
+            mayor = Math.max(mayor, sub);
+            if (m.m3 > sub + 1e-6) fallas.push(`n=${n} ${b.bloque.id} ${m.medida} ${m.m3.toFixed(4)}>${sub.toFixed(4)}`);
+          }
+          if (exig > mayor + 1e-6) fallas.push(`n=${n} ${b.bloque.id} total ${exig.toFixed(4)}>${mayor.toFixed(4)}`);
+        }
+      }
+    }
+    expect(fallas.slice(0, 6)).toEqual([]);
+    expect(conExigentes).toBeGreaterThan(100);
   }, 120_000);
 });

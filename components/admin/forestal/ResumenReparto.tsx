@@ -45,6 +45,8 @@ import RepartoFiltroPermiso from "./reparto-filtro-permiso";
 import RepartoCuadreMedidas from "./reparto-cuadre-medidas";
 import { usePermisoDeRolliza } from "./hooks/use-permiso-de-rolliza";
 import { useCuadreMedidas } from "./hooks/use-cuadre-medidas";
+import { useRepartoMedidas } from "./hooks/use-reparto-medidas";
+import RepartoMedidasAntesDespues from "./reparto-medidas-antes-despues";
 import { useNombreSinMarcar } from "./hooks/use-nombre-sin-marcar";
 import { CuentaMarcado, procedenciaDeAnexo, SelectorModoAnexo, useModoAnexo } from "./reparto-anexo-modo";
 import RepartoPorDistribuir from "./reparto-por-distribuir";
@@ -80,7 +82,9 @@ import ReprocesosSugeridos, { AYUDA_REPROCESOS } from "./reparto-reprocesos";
 import CifraExplicada, { type FilaDeCuenta } from "./cifra-explicada";
 import { FiltroLargoCelda } from "./reparto-filtro-largo";
 import { FiltroGruposCelda } from "./reparto-filtro-grupos";
-import { contarRevision, revisarDistribucion, type HallazgoRevision } from "@/lib/forestal/reparto-revision";
+import { contarRevision, revisarDistribucion } from "@/lib/forestal/reparto-revision";
+import { PanelRevision } from "./reparto-revision-panel";
+import { useContextoRevision } from "./hooks/use-contexto-revision";
 import { ColumnasMenu, useColumnasVisibles } from "./ctp-shared";
 import { colorDeBloque, indicesDeBloques } from "./reparto-colores";
 import DistribucionesGuardadas from "./DistribucionesGuardadas";
@@ -309,62 +313,6 @@ function CifraBalance({ titulo, ayuda, m3, pt, piezas, tono, cuenta, etiqueta }:
           {fmtPiezas(piezas)}<span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">pzas</span>
         </span>
       </div>
-    </div>
-  );
-}
-
-/**
- * El repaso antes de registrar: qué renglón no cuadra y qué hacer con él.
- *
- * Cada hallazgo dice DÓNDE, QUÉ pasa y CÓMO se arregla — un aviso que sólo
- * dice «hay un problema» obliga a adivinar, y adivinar sobre un papel que se
- * presenta ante SERFOR es exactamente lo que esta pantalla existe para evitar.
- */
-function PanelRevision({ hallazgos, onCerrar }: { hallazgos: HallazgoRevision[]; onCerrar: () => void }) {
-  const errores = hallazgos.filter((h) => h.severidad === "error");
-  return (
-    <div className="mb-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 print:hidden">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-          {hallazgos.length === 0
-            ? <><ShieldCheck className="h-4 w-4 text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" aria-hidden /> Todo cuadra: no hay nada que corregir antes de registrar.</>
-            : <><AlertTriangle className="h-4 w-4 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden /> Repaso antes de registrar</>}
-        </span>
-        <button type="button" onClick={onCerrar} aria-label="Cerrar el repaso" className="rounded-xl p-1 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      {hallazgos.length > 0 && (
-        <>
-          <p className="mb-2 text-sm text-[var(--text-tertiary)]">
-            {errores.length > 0
-              ? <><b className="text-[var(--data-error-600)] dark:text-[var(--data-error-500)]">{errores.length}</b> no debería declararse así; el resto conviene mirarlo.</>
-              : "Nada impide declarar: son cosas para mirar antes de firmar."}
-          </p>
-          <ul className="space-y-1.5">
-            {hallazgos.map((h) => (
-              <li
-                key={h.id}
-                className={`rounded-lg border-l-[3px] bg-[var(--surface-raised)] px-3 py-2 ${h.severidad === "error"
-                  ? "border-l-[var(--data-error-500)]"
-                  : "border-l-[var(--data-warning-500)]"}`}
-              >
-                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                  <span className={`text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide ${h.severidad === "error"
-                    ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]"
-                    : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}`}
-                  >
-                    {h.severidad === "error" ? "Falta" : "Mirar"}
-                  </span>
-                  <b className="text-sm text-[var(--text-primary)]">{h.donde}</b>
-                  <span className="text-sm text-[var(--text-secondary)]">{h.que}</span>
-                </div>
-                <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">{h.comoArreglar}</p>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
     </div>
   );
 }
@@ -999,7 +947,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   const codigos = useCodigosReparto(claveLocal("-rolliza-codigos"), ordenBloques, lineasDeLaHoja, reparto);
   /** El permiso elegido en «Lo que entró» (sólo filtra la vista) y el cuadre de medidas pieza ↔ troza. */
   const permisoRolliza = usePermisoDeRolliza(bloques);
-  const cuadreMedidas = useCuadreMedidas(dist, estadoLotes);
+  const cuadreMedidas = useCuadreMedidas(dist, estadoLotes, { bloques, guardar });
+  /** ADR-505: el interruptor «Repartir respetando medidas» y su antes/después. */
+  const repartoMedidas = useRepartoMedidas({ bloques, piezas, dim, precioDe, distVista, fuentes: cuadreMedidas.fuentes, marcadas, guardar });
   /** Cómo se llama el bloque de lo sin tildar (se guarda con las casillas). */
   const [nombreSinMarcar, setNombreSinMarcar] = useNombreSinMarcar(claveLocal("-rolliza-sin-marcar-nombre"), reparto);
   /** El cierre del apartado: qué falta, qué tapan los reprocesos y qué queda. */
@@ -1228,7 +1178,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    */
   /* La revisión cruza también los reprocesos que el respaldo da por hecho: un
      bloque de comercial amparando paquetería es un reproceso que el Libro no
-     tiene, y eso se mira ANTES de firmar (ADR-404 · ADR-405). */
+     tiene, y eso se mira ANTES de firmar (ADR-404 · ADR-405). Con las trozas
+     del patio y los lotes mira además llegada, especie, repetidas y Ø. */
+  const trozasRevision = useContextoRevision(estadoLotes);
   const hallazgos = useMemo(
     () =>
       revisarDistribucion(
@@ -1254,8 +1206,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             porque: i.porque,
           })),
         ],
+        trozasRevision,
       ),
-    [bloques, dist, reprocesos, imposibles],
+    [bloques, dist, reprocesos, imposibles, trozasRevision],
   );
   const cuenta = contarRevision(hallazgos);
   const [revisionAbierta, setRevisionAbierta] = useState(false);
@@ -2391,6 +2344,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       {seccion === "bloques" && (
         <>
           {bloques.length === 0 && sinBloques}
+          <RepartoMedidasAntesDespues medidas={repartoMedidas} avisosAhora={cuadreMedidas.cuadre.avisos} />
+
           {/* ── Juntar bloques marcados en un solo Anexo 04 ──────────────────── */}
           {seleccionAnexo.size > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-primary/5 px-3 py-2 print:hidden">

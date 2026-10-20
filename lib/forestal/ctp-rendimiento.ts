@@ -34,6 +34,17 @@ export function rendimientoReferencial(productType: string | null | undefined): 
   return null;
 }
 
+/**
+ * Desde qué rendimiento (%) se marca «alto»: el referencial del producto más
+ * el margen de medición. Sin referencial propio (carbón, «Comercial»,
+ * «Paquetería»…) vale el de aserrada, que es lo que sale de una sierra.
+ * Es la MISMA cuenta que `evaluarRendimiento`, dicha como número para quien
+ * tiene que mostrar el techo (el reparto de rolliza, ADR-404).
+ */
+export function umbralRendimientoAlto(productType?: string | null): number {
+  return (rendimientoReferencial(productType) ?? RENDIMIENTO_REF_ASERRADA) + RENDIMIENTO_TOLERANCIA_PP;
+}
+
 export type RendimientoEstado = "ok" | "alto" | "sin_referencia";
 
 /** Evalúa un rendimiento contra el referencial SERFOR del producto. */

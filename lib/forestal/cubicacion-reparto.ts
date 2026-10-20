@@ -43,6 +43,9 @@
  */
 import { toFeet, type PiezaCubicada, type Unidad } from "./cubicacion";
 import { agruparPor, claveYLabel, type DimensionResumen, type GrupoResumen, type PrecioPt } from "./cubicacion-resumen";
+/* La regla única de «la pieza cabe en la troza» (ADR-505): no importa este archivo, así no hay ciclo. */
+import { elegibilidad, holguraM, motivoSinTroza, subcapacidadM3, type MotivoMedida, type PiezaMedida, type TrozaMedida } from "./medida-cabe-en-troza";
+import { umbralRendimientoAlto } from "./ctp-rendimiento";
 
 /**
  * Aprovechamiento supuesto cuando el bloque no lo trae.
@@ -147,6 +150,15 @@ export interface BloqueRolliza {
    * un lote ya creado tampoco: su referencia es `loteId`.
    */
   trozaIds?: string[] | null;
+  /**
+   * Las medidas de SUS trozas (largo, D1/D2), copiadas con la hoja (ADR-505,
+   * tope `MAX_TROZAS_POR_BLOQUE`). Con ellas el reparto sólo le pone piezas
+   * que caben en alguna de sus trozas. Sin copia el bloque toma de todo, como
+   * siempre, y lo que reciba de las medidas exigentes sale «sin comprobar».
+   */
+  trozasMedidas?: TrozaMedida[] | null;
+  /** `true` = este bloque reparte sin mirar las medidas (el interruptor «Repartir respetando medidas» apagado). */
+  ignorarMedidas?: boolean | null;
   /**
    * Las corridas del Libro que ya se escribieron desde este bloque (ADR-464,
    * fase 3: cada jornada del bloque es una producción). Sirve para apagar el
@@ -306,6 +318,11 @@ export interface AsignacionMedida {
   pieTablar: number;
   /** Piezas ENTERAS de esta medida que ampara el bloque. */
   piezas: number;
+  /**
+   * La medida no cabe en las trozas del resto y fue a parar a un bloque SIN
+   * medidas para comprobarla (ADR-505): no bloquea, pero se dice.
+   */
+  sinComprobar?: boolean;
 }
 
 /** Cuánto de un grupo de aserrada ampara un bloque, y con qué medidas. */
@@ -377,6 +394,20 @@ export interface FaltanteGrupo {
   medidas: AsignacionMedida[];
   /** Rolliza que haría falta para ampararlo, al aprovechamiento vigente. */
   rollizaNecesariaM3: number;
+  /** Medidas que NINGUNA troza de la especie da (ADR-505), con el porqué. */
+  sinTroza?: { clave: string; piezas: number; motivos: MotivoMedida[]; texto: string }[];
+}
+
+/** Lo que hizo la regla de medidas en una especie (ADR-505). */
+export interface ResumenMedidasEspecie {
+  /** Algún bloque de la especie trae medidas y no las ignora. */
+  aplicado: boolean;
+  /** Medidas que algún bloque con medidas rechaza: se repartieron primero, a la troza más justa. */
+  exigentes: number;
+  /** Piezas que quedaron en «Falta por distribuir» porque ninguna troza las da. */
+  sinTrozaPiezas: number;
+  /** Piezas exigentes que terminaron en un bloque sin medidas. */
+  sinComprobarPiezas: number;
 }
 
 export type EstadoEspecie = "ok" | "sin-rolliza" | "sin-aserrada";
@@ -413,6 +444,8 @@ export interface EspecieDistribucion {
   rendimientoPct: number | null;
   imposible: boolean;
   costoRolliza: number | null;
+  /** Sólo si algún bloque de la especie trae medidas de troza (ADR-505). */
+  medidas?: ResumenMedidasEspecie;
   /**
    * `bloques` agrupados por su `permiso` (Brandon, 2026-09-01) — SOLO para
    * mostrar. El llenado sigue siendo uno solo por especie, en el orden en
@@ -786,6 +819,13 @@ export function distribuirPorCapacidad(
     // vez de acumularse: así asignado + faltante da EXACTO el m³ del grupo.
     const pendientes: Pendiente[] = resumen.grupos.map((g) => pendienteDeGrupo(g, b.piezas, dimInterna));
 
+    /* ADR-505: con medidas de troza, lo que ninguna troza da sale del reparto
+       y lo exigente va primero a la troza más justa. Sin medidas, `null` y
+       todo sigue exactamente como antes. */
+    const med = prepararMedidas(distribuidos, pendientes, dimInterna, b.label);
+    if (med) repartirExigentes(distribuidos, pendientes, dimInterna, med);
+    const exigentes = med?.exigentes;
+
     for (const d of distribuidos) {
       /*
        * Un bloque con capacidad 0 (rolliza en blanco, "Rolliza nueva" recién
@@ -800,7 +840,7 @@ export function distribuirPorCapacidad(
         (ov) => ov?.piezas != null || ov?.m3 != null,
       );
       if (d.libreM3 <= EPS && !tieneOverrides) continue;
-      llenarBloque(d, pendientes, dimInterna);
+      llenarBloque(d, pendientes, dimInterna, false, exigentes);
     }
 
     /*
@@ -820,7 +860,7 @@ export function distribuirPorCapacidad(
       const antes = distribuidos.reduce((a, d) => a + d.usadoM3, 0);
       for (const d of distribuidos) {
         if (d.libreM3 <= EPS) continue;
-        llenarBloque(d, pendientes, dimInterna, true);
+        llenarBloque(d, pendientes, dimInterna, true, exigentes);
       }
       /* Y si con agregar no alcanza, INTERCAMBIAR: un bloque que llegó a su
          tope de piezas con volumen libre no necesita una pieza más, necesita
@@ -830,10 +870,10 @@ export function distribuirPorCapacidad(
          pieza de un lado al otro—, así que se le da la repesca inmediatamente
          después para que materialice lo que liberó. El progreso se mide al
          final de la vuelta: si el amparado no subió, no hay más que hacer. */
-      if (intercambiarParaCerrar(distribuidos, pendientes, dimInterna)) {
+      if (intercambiarParaCerrar(distribuidos, pendientes, dimInterna, exigentes)) {
         for (const d of distribuidos) {
           if (d.libreM3 <= EPS) continue;
-          llenarBloque(d, pendientes, dimInterna, true);
+          llenarBloque(d, pendientes, dimInterna, true, exigentes);
         }
       }
       if (distribuidos.reduce((a, d) => a + d.usadoM3, 0) <= antes + EPS) break;
@@ -846,11 +886,16 @@ export function distribuirPorCapacidad(
        el trabajo al intercambio—. El exceso queda a la vista en el bloque (su
        `libreM3` en negativo): dejar una tabla real fuera de todo papel por
        cuatro litros era peor. */
-    cerrarConTolerancia(distribuidos, pendientes, dimInterna, aserradaM3);
+    cerrarConTolerancia(distribuidos, pendientes, dimInterna, aserradaM3, exigentes);
 
+    const cierreMed = med ? cerrarMedidas(distribuidos, pendientes, med) : null;
     const faltante: FaltanteGrupo[] = pendientes
       .filter((p) => piezasDe(p) > 0)
-      .map((p) => faltanteDePendiente(p, distribuidos));
+      .map((p) => {
+        const f = faltanteDePendiente(p, distribuidos);
+        const sinTroza = cierreMed?.sinTroza.get(p.clave);
+        return sinTroza ? { ...f, sinTroza } : f;
+      });
 
     for (const d of distribuidos) {
       d.costoPorM3Aserrada =
@@ -915,6 +960,9 @@ export function distribuirPorCapacidad(
       rendimientoPct,
       imposible: rendimientoPct != null && rendimientoPct > 100,
       costoRolliza,
+      ...(med && cierreMed
+        ? { medidas: { aplicado: true, exigentes: med.exigentes.size, sinTrozaPiezas: cierreMed.sinTrozaPiezas, sinComprobarPiezas: cierreMed.sinComprobarPiezas } }
+        : {}),
       porPermiso,
     });
   }
@@ -999,17 +1047,267 @@ function cupoDeBloque(d: BloqueDistribuido): number {
   return Math.max(0, Number(tope) - d.asignado.reduce((a, g) => a + g.piezas, 0));
 }
 
-/** ¿Este bloque admite esa medida? (filtros de grupo y de largo, overrides). */
+/** ¿Este bloque admite esa medida? (filtros de grupo y de largo, overrides, medidas de troza). */
 function admisorDeBloque(d: BloqueDistribuido, dim: DimensionResumen) {
   const gruposOk = gruposAdmitidos(d.bloque, dim);
   const filtroLargo = sanearFiltroLargo(d.bloque.largoFiltro);
-  return (claveGrupo: string, largo: number, uLargo: string): boolean => {
+  return (claveGrupo: string, m: MedidaBase): boolean => {
     if (gruposOk && !gruposOk.has(claveGrupo)) return false;
     if (d.bloque.overridesLinea?.[claveOverrideLinea(dim, claveGrupo)]) return false;
+    if (!cabeEnBloque(d.bloque, m)) return false;
     if (!filtroLargo) return true;
-    const pies = toFeet(largo, uLargo as Unidad);
+    const pies = toFeet(m.largo, m.uLargo as Unidad);
     return filtroLargo.some((f) => Math.abs(pies - f.largo) < 0.05);
   };
+}
+
+// ── Medidas de troza (ADR-505) ─────────────────────────────────────────────────
+
+/** Lo físico de una medida: lo que la regla de `medida-cabe-en-troza` mira. */
+type MedidaBase = Pick<MedidaPendiente, "medida" | "espesor" | "ancho" | "largo" | "uEspesor" | "uAncho" | "uLargo">;
+
+/**
+ * Las medidas de troza que el bloque hace valer. `null` = toma de todo, como
+ * siempre: sin copia guardada, con «sin respetar medidas» o aserrada directa
+ * (no sale de una troza).
+ */
+function trozasActivasDe(b: BloqueRolliza): readonly TrozaMedida[] | null {
+  if (b.ignorarMedidas || esAserradaDirecta(b)) return null;
+  const t = b.trozasMedidas;
+  return Array.isArray(t) && t.length > 0 ? t : null;
+}
+
+const claveFisica = (m: MedidaBase): string => `${m.espesor}${m.uEspesor}|${m.ancho}${m.uAncho}|${m.largo}${m.uLargo}`;
+
+const comoPieza = (m: MedidaBase, piezas = 0): PiezaMedida => ({
+  medida: m.medida, espesor: m.espesor, ancho: m.ancho, largo: m.largo,
+  uEspesor: m.uEspesor, uAncho: m.uAncho, uLargo: m.uLargo, piezas,
+});
+
+/** La regla se pregunta miles de veces por reparto (intercambio): una vez por troza-copia y medida. */
+const cacheCabe = new WeakMap<readonly TrozaMedida[], Map<string, boolean>>();
+
+/** ¿La medida sale de alguna troza de este bloque? Un bloque sin medidas dice que sí. */
+function cabeEnBloque(b: BloqueRolliza, m: MedidaBase): boolean {
+  const trozas = trozasActivasDe(b);
+  if (!trozas) return true;
+  let c = cacheCabe.get(trozas);
+  if (!c) { c = new Map(); cacheCabe.set(trozas, c); }
+  const k = claveFisica(m);
+  let v = c.get(k);
+  if (v === undefined) { v = elegibilidad(comoPieza(m), trozas, "").cabe; c.set(k, v); }
+  return v;
+}
+
+/** Medida que ninguna troza de la especie da: fuera del reparto, con su porqué. */
+interface MedidaBloqueada { p: Pendiente; m: MedidaPendiente; piezas: number; motivos: MotivoMedida[]; texto: string }
+
+interface MedidasDeEspecie {
+  /** `claveFisica` de las medidas que algún bloque con medidas rechaza. */
+  exigentes: Set<string>;
+  bloqueadas: MedidaBloqueada[];
+  /**
+   * Medidas que ninguna troza da pero que NO salen del reparto porque una
+   * línea a mano las puede tomar. Lo que esa línea no se lleve cae a «Falta
+   * por distribuir» con su porqué (`piezas` se cuenta al cerrar).
+   */
+  porMano: MedidaBloqueada[];
+  /** Grupos con una línea a mano en algún bloque: no se adelantan (lo dicho a mano gana). */
+  gruposAMano: Set<string>;
+  /** Bloques que recibieron exigentes antes del llenado (se les reordena la salida). */
+  tocados: Set<BloqueDistribuido>;
+}
+
+const tieneOverridesActivos = (b: BloqueRolliza): boolean =>
+  Object.values(b.overridesLinea ?? {}).some((ov) => ov?.piezas != null || ov?.m3 != null);
+
+/**
+ * Antes del llenado: qué medidas son exigentes y cuáles no tienen troza en
+ * NINGÚN bloque. Las bloqueadas salen del pendiente (sus piezas vuelven al
+ * final, a «Falta por distribuir»): ni el llenado, ni la repesca, ni el cierre
+ * con tolerancia las ven.
+ *
+ * Lo dicho a mano gana, pero SÓLO en el bloque donde se dijo: la línea con
+ * override toma lo suyo sin mirar trozas (su fase 0 va `sinFiltro`), y en los
+ * demás bloques ese grupo sigue la regla como cualquier otro. Por eso una
+ * medida de ese grupo que ninguna troza da no se bloquea (la línea a mano la
+ * puede querer), pero lo que la línea no se lleve sale con su porqué.
+ */
+function prepararMedidas(distribuidos: readonly BloqueDistribuido[], pendientes: readonly Pendiente[], dim: DimensionResumen, especie: string): MedidasDeEspecie | null {
+  const conMedidas = distribuidos.filter((d) => trozasActivasDe(d.bloque));
+  if (conMedidas.length === 0) return null;
+  const hayLibre = distribuidos.some((d) => !trozasActivasDe(d.bloque));
+  const todas = conMedidas.flatMap((d) => [...(trozasActivasDe(d.bloque) ?? [])]);
+  const exigentes = new Set<string>();
+  const bloqueadas: MedidaBloqueada[] = [];
+  const porMano: MedidaBloqueada[] = [];
+  const gruposAMano = new Set<string>();
+  for (const p of pendientes) {
+    const aMano = distribuidos.some((d) => {
+      const ov = d.bloque.overridesLinea?.[claveOverrideLinea(dim, p.clave)];
+      return ov != null && (ov.piezas != null || ov.m3 != null);
+    });
+    if (aMano) gruposAMano.add(p.clave);
+    for (const m of p.medidas) {
+      if (m.piezas <= 0) continue;
+      const rechazan = conMedidas.filter((d) => !cabeEnBloque(d.bloque, m)).length;
+      if (rechazan === 0) continue;
+      if (!hayLibre && rechazan === conMedidas.length) {
+        const { motivos, texto } = motivoSinTroza(comoPieza(m), todas, especie);
+        if (aMano) {
+          porMano.push({ p, m, piezas: 0, motivos, texto });
+          continue;
+        }
+        bloqueadas.push({ p, m, piezas: m.piezas, motivos, texto });
+        m.piezas = 0;
+        continue;
+      }
+      exigentes.add(claveFisica(m));
+    }
+  }
+  return { exigentes, bloqueadas, porMano, gruposAMano, tocados: new Set() };
+}
+
+/** Mete N piezas de esa medida en el bloque, con el m³ de las N juntas (sin redondeo acumulado). */
+function ponerPiezas(d: BloqueDistribuido, grupo: { clave: string; label: string }, m: MedidaPendiente, n: number): void {
+  let g = d.asignado.find((x) => x.clave === grupo.clave);
+  if (!g) {
+    g = { clave: grupo.clave, label: grupo.label, m3: 0, pieTablar: 0, piezas: 0, medidas: [] };
+    d.asignado.push(g);
+  }
+  let a = g.medidas.find((x) => x.clave === m.clave);
+  if (!a) {
+    a = {
+      clave: m.clave, medida: m.medida, espesor: m.espesor, ancho: m.ancho, largo: m.largo,
+      uEspesor: m.uEspesor, uAncho: m.uAncho, uLargo: m.uLargo, m3: 0, pieTablar: 0, piezas: 0,
+    };
+    g.medidas.push(a);
+  }
+  a.piezas += n;
+  a.m3 = r4(a.piezas * m.m3Unit);
+  a.pieTablar = r2(a.piezas * m.ptUnit);
+  g.piezas += n;
+  g.m3 = r4(g.medidas.reduce((s, x) => s + x.m3, 0));
+  g.pieTablar = r2(g.medidas.reduce((s, x) => s + x.pieTablar, 0));
+}
+
+/** m³ de medidas exigentes que el bloque ya tiene: lo que ya se comió de sus trozas largas. */
+const m3Exigente = (d: BloqueDistribuido, exigentes: ReadonlySet<string>): number =>
+  d.asignado.reduce((s, g) => s + g.medidas.reduce((t, m) => t + (exigentes.has(claveFisica(m)) ? m.m3 : 0), 0), 0);
+
+/** ¿Es exigente esta medida? (sin regla prendida, ninguna lo es). */
+const esExigente = (m: MedidaBase, exigentes: ReadonlySet<string> | undefined): boolean =>
+  exigentes != null && exigentes.has(claveFisica(m));
+
+/**
+ * ADR-505 · Cuánto m³ de esa medida exigente le cabe todavía al bloque: la
+ * parte de la capacidad que dan SUS trozas que la alcanzan, menos lo exigente
+ * que el bloque conserva (`ya`). El tope es UNO para todo lo exigente del
+ * bloque —sale de las mismas trozas largas—, así que lo usan igual el llenado,
+ * el intercambio y el cierre con tolerancia. `Infinity` = sin tope (medida que
+ * cabe en cualquier troza, o bloque sin medidas).
+ */
+function margenExigente(d: BloqueDistribuido, m: MedidaBase, ya: number, exigentes: ReadonlySet<string> | undefined): number {
+  if (!esExigente(m, exigentes)) return Number.POSITIVE_INFINITY;
+  const trozas = trozasActivasDe(d.bloque);
+  if (!trozas) return Number.POSITIVE_INFINITY;
+  return subcapacidadM3(comoPieza(m), trozas, d.capacidadM3) - ya;
+}
+
+/**
+ * ADR-505 · Las EXIGENTES antes que el resto: la más larga primero (después la
+ * de lado mayor), cada una al bloque cuya troza le queda MÁS JUSTA —así no se
+ * gasta una troza de 9,75 m en una tabla de 8 pies que salía de cualquiera—, y
+ * nunca más que la parte de la capacidad que dan SUS trozas que la alcanzan
+ * (`subcapacidadM3`). Un bloque sin medidas es el último recurso: no frena,
+ * pero lo que reciba sale «sin comprobar».
+ *
+ * Se saltean los bloques con líneas a mano (overrides): su fase 0 tiene que
+ * ver la capacidad entera, y lo dicho a mano gana. Por lo mismo no se adelanta
+ * un grupo que tiene una línea a mano en algún bloque: entra en el llenado de
+ * siempre, con su tope por medidas en los demás bloques.
+ */
+function repartirExigentes(distribuidos: readonly BloqueDistribuido[], pendientes: readonly Pendiente[], dim: DimensionResumen, med: MedidasDeEspecie): void {
+  const { exigentes } = med;
+  const lista = pendientes
+    .filter((p) => !med.gruposAMano.has(p.clave))
+    .flatMap((p) => p.medidas.filter((m) => m.piezas > 0 && exigentes.has(claveFisica(m))).map((m) => ({ p, m })));
+  if (lista.length === 0) return;
+  const largoDe = (m: MedidaPendiente) => toFeet(m.largo, m.uLargo as Unidad);
+  const ladoDe = (m: MedidaPendiente) => Math.max(toFeet(m.ancho, m.uAncho as Unidad), toFeet(m.espesor, m.uEspesor as Unidad));
+  lista.sort((a, b) => largoDe(b.m) - largoDe(a.m) || ladoDe(b.m) - ladoDe(a.m));
+  const admisores = new Map(distribuidos.map((d) => [d, admisorDeBloque(d, dim)] as const));
+  for (const { p, m } of lista) {
+    const pies = largoDe(m);
+    const candidatos = distribuidos
+      .map((d, i) => ({ d, i, trozas: trozasActivasDe(d.bloque) }))
+      .filter(({ d }) =>
+        d.capacidadM3 > EPS && d.libreM3 > EPS && cupoDeBloque(d) > 0 && !tieneOverridesActivos(d.bloque) &&
+        admisores.get(d)!(p.clave, m) &&
+        !(sanearFiltroLargo(d.bloque.largoFiltro) ?? []).some((f) => f.pct < 100 && Math.abs(pies - f.largo) < 0.05))
+      .map((c) => ({ ...c, h: c.trozas ? holguraM(comoPieza(m), c.trozas) : Number.POSITIVE_INFINITY }))
+      .sort((a, b) => (a.trozas ? 0 : 1) - (b.trozas ? 0 : 1) || a.h - b.h || a.i - b.i);
+    for (const { d, trozas } of candidatos) {
+      if (m.piezas <= 0) break;
+      let n = Math.min(m.piezas, cupoDeBloque(d), Math.floor(d.libreM3 / m.m3Unit + 1e-9));
+      if (trozas) {
+        const sub = subcapacidadM3(comoPieza(m), trozas, d.capacidadM3) - m3Exigente(d, exigentes);
+        n = Math.min(n, Math.floor(sub / m.m3Unit + 1e-9));
+      }
+      if (n <= 0) continue;
+      ponerPiezas(d, p, m, n);
+      m.piezas -= n;
+      recalcularBloque(d);
+      med.tocados.add(d);
+    }
+  }
+}
+
+/**
+ * Al cerrar la especie: las bloqueadas vuelven a «Falta por distribuir» con su
+ * porqué, lo exigente que cayó en un bloque de troza sin medidas se marca «sin
+ * comprobar», y el bloque recupera el orden de grupos del resumen (las
+ * exigentes entraron primero).
+ */
+function cerrarMedidas(
+  distribuidos: readonly BloqueDistribuido[],
+  pendientes: readonly Pendiente[],
+  med: MedidasDeEspecie,
+): { sinTrozaPiezas: number; sinComprobarPiezas: number; sinTroza: Map<string, NonNullable<FaltanteGrupo["sinTroza"]>> } {
+  const sinTroza = new Map<string, NonNullable<FaltanteGrupo["sinTroza"]>>();
+  for (const b of med.bloqueadas) {
+    b.m.piezas += b.piezas;
+    const arr = sinTroza.get(b.p.clave) ?? [];
+    arr.push({ clave: b.m.clave, piezas: b.piezas, motivos: b.motivos, texto: b.texto });
+    sinTroza.set(b.p.clave, arr);
+  }
+  /* Lo que ninguna troza da y la línea a mano no se llevó: afuera, con su porqué. */
+  for (const b of med.porMano) {
+    b.piezas = Math.max(0, b.m.piezas);
+    if (b.piezas <= 0) continue;
+    const arr = sinTroza.get(b.p.clave) ?? [];
+    arr.push({ clave: b.m.clave, piezas: b.piezas, motivos: b.motivos, texto: b.texto });
+    sinTroza.set(b.p.clave, arr);
+  }
+  const orden = new Map(pendientes.map((p, i) => [p.clave, i] as const));
+  let sinComprobarPiezas = 0;
+  for (const d of distribuidos) {
+    if (med.tocados.has(d)) {
+      d.asignado.sort((a, b) => (orden.get(a.clave) ?? 0) - (orden.get(b.clave) ?? 0));
+      for (const g of d.asignado) g.medidas.sort((a, b) => b.m3 - a.m3);
+    }
+    if (trozasActivasDe(d.bloque) || esAserradaDirecta(d.bloque)) continue;
+    for (const g of d.asignado) {
+      for (const m of g.medidas) {
+        if (m.piezas > 0 && med.exigentes.has(claveFisica(m))) {
+          m.sinComprobar = true;
+          sinComprobarPiezas += m.piezas;
+        }
+      }
+    }
+  }
+  const sinTrozaPiezas = [...med.bloqueadas, ...med.porMano].reduce((s, b) => s + b.piezas, 0);
+  return { sinTrozaPiezas, sinComprobarPiezas, sinTroza };
 }
 
 /** Vuelve a calcular lo que el bloque ampara después de tocarle las filas. */
@@ -1074,6 +1372,8 @@ function cerrarConTolerancia(
   dim: DimensionResumen,
   /** Todo lo aserrado de la especie: la referencia para saber si el resto es ruido. */
   aserradaM3: number,
+  /** ADR-505: medidas exigentes de la especie (el cierre tampoco pasa la subcapacidad). */
+  exigentes?: ReadonlySet<string>,
 ): boolean {
   /*
    * SÓLO para el resto final: **a lo sumo tres piezas sueltas**. Más que eso no
@@ -1106,7 +1406,7 @@ function cerrarConTolerancia(
         let mejor: { d: BloqueDistribuido; exceso: number } | null = null;
         for (const d of distribuidos) {
           if (cupoDeBloque(d) <= 0) continue;
-          if (!admisores.get(d)!(p.clave, m.largo, m.uLargo)) continue;
+          if (!admisores.get(d)!(p.clave, m)) continue;
           const pies = toFeet(m.largo, m.uLargo as Unidad);
           if (reservados.get(d)!.some((f) => Math.abs(pies - f.largo) < 0.05)) continue;
           /* Cuánto se le permite pasarse a ESTE bloque: 50 litros, pero nunca
@@ -1118,6 +1418,9 @@ function cerrarConTolerancia(
           // Y jamás una fracción grande del propio bloque: 50 litros sobre un
           // paquete de medio metro cúbico ya no es «diferencia de medición».
           if (d.capacidadM3 > EPS && exceso > d.capacidadM3 * TOL_CIERRE_PCT_BLOQUE) continue;
+          /* La tolerancia es de medición, no de trozas: una exigente no pasa la
+             parte de la capacidad que dan las trozas que la alcanzan (ADR-505). */
+          if (exigentes && esExigente(m, exigentes) && m.m3Unit > margenExigente(d, m, m3Exigente(d, exigentes), exigentes) + 1e-9) continue;
           // El que menos se pasa; a igualdad, el primero cargado.
           if (!mejor || exceso < mejor.exceso - EPS) mejor = { d, exceso };
         }
@@ -1155,7 +1458,17 @@ function intercambiarParaCerrar(
   distribuidos: readonly BloqueDistribuido[],
   pendientes: readonly Pendiente[],
   dim: DimensionResumen,
+  /**
+   * ADR-505: medidas exigentes de la especie. Admitir la medida (`admisorDeBloque`)
+   * no alcanza: lo exigente del bloque − la pieza que sale + la que entra tiene
+   * que seguir dentro de la subcapacidad (`margenExigente`).
+   */
+  exigentes?: ReadonlySet<string>,
 ): boolean {
+  /** Lo exigente que el bloque tiene ahora (0 sin regla prendida). */
+  const exigDe = (d: BloqueDistribuido): number => (exigentes ? m3Exigente(d, exigentes) : 0);
+  /** Lo exigente que suelta una pieza que sale. */
+  const sueltaExig = (m: MedidaBase, unit: number): number => (esExigente(m, exigentes) ? unit : 0);
   /** Saca UNA pieza de una fila ya asignada. Devuelve su volumen unitario. */
   const sacar = (d: BloqueDistribuido, g: AsignacionGrupo, m: AsignacionMedida): { m3: number; pt: number } => {
     const m3Unit = m.m3 / m.piezas;
@@ -1228,6 +1541,7 @@ function intercambiarParaCerrar(
     const admite = admisorDeBloque(d, dim);
     for (let intento = 0; intento < SWAP_MAX_POR_BLOQUE; intento++) {
       let mejor: { g: AsignacionGrupo; m: AsignacionMedida; p: Pendiente; f: MedidaPendiente; gana: number } | null = null;
+      const yaExig = exigDe(d);
       for (const g of d.asignado) {
         if (g.m3Declarado || d.bloque.overridesLinea?.[claveOverrideLinea(dim, g.clave)]) continue;
         for (const m of g.medidas) {
@@ -1236,8 +1550,9 @@ function intercambiarParaCerrar(
           for (const p of pendientes) {
             for (const f of p.medidas) {
               if (f.piezas <= 0 || f.m3Unit <= unitSale + EPS) continue;
-              if (!admite(p.clave, f.largo, f.uLargo)) continue;
+              if (!admite(p.clave, f)) continue;
               if (d.usadoM3 - unitSale + f.m3Unit > d.capacidadM3 + TOL_REDONDEO_M3) continue;
+              if (f.m3Unit > margenExigente(d, f, yaExig - sueltaExig(m, unitSale), exigentes) + 1e-9) continue;
               const gana = f.m3Unit - unitSale;
               if (!mejor || gana > mejor.gana) mejor = { g, m, p, f, gana };
             }
@@ -1281,22 +1596,24 @@ function intercambiarParaCerrar(
         // Un bloque con cupo no necesita intercambiar: le alcanza con recibir.
         if (a.libreM3 <= EPS || cupoDeBloque(a) > 0 || !puedeCerrar(a)) continue;
         const admiteA = admisorDeBloque(a, dim);
+        const exigA = exigDe(a);
         for (const b of distribuidos) {
           if (a === b || cupoDeBloque(b) <= 0) continue; // el que tiene cupo de piezas
           const admiteB = admisorDeBloque(b, dim);
+          const exigB = exigDe(b);
           for (const gb of b.asignado) {
             if (gb.m3Declarado || b.bloque.overridesLinea?.[claveOverrideLinea(dim, gb.clave)]) continue;
             for (const mb of gb.medidas) {
               if (mb.piezas <= 0 || mb.m3 <= 0) continue;
               const unitB = mb.m3 / mb.piezas;
-              if (!admiteA(gb.clave, mb.largo, mb.uLargo)) continue;
+              if (!admiteA(gb.clave, mb)) continue;
               for (const ga of a.asignado) {
                 if (ga.m3Declarado || a.bloque.overridesLinea?.[claveOverrideLinea(dim, ga.clave)]) continue;
                 for (const ma of ga.medidas) {
                   if (ma.piezas <= 0 || ma.m3 <= 0) continue;
                   const unitA = ma.m3 / ma.piezas;
                   if (unitB <= unitA + EPS) continue; // tiene que ser MÁS grande
-                  if (!admiteB(ga.clave, ma.largo, ma.uLargo)) continue;
+                  if (!admiteB(ga.clave, ma)) continue;
                   const dif = unitB - unitA;
                   if (a.usadoM3 + dif > a.capacidadM3 + TOL_REDONDEO_M3) continue;
                   /* Sólo vale la pena si lo que se libera en `b` deja entrar algo
@@ -1305,6 +1622,9 @@ function intercambiarParaCerrar(
                      -0,0001 y por esa cienmilésima se descartaba el intercambio
                      que destrababa 88 piezas. */
                   if (b.libreM3 + dif < menorPendiente - TOL_REDONDEO_M3 * 2) continue;
+                  // ADR-505: ninguno de los dos se pasa de lo que dan sus trozas largas.
+                  if (unitB > margenExigente(a, mb, exigA - sueltaExig(ma, unitA), exigentes) + 1e-9) continue;
+                  if (unitA > margenExigente(b, ma, exigB - sueltaExig(mb, unitB), exigentes) + 1e-9) continue;
                   const baseA = { clave: ma.clave, medida: ma.medida, espesor: ma.espesor, ancho: ma.ancho, largo: ma.largo, uEspesor: ma.uEspesor, uAncho: ma.uAncho, uLargo: ma.uLargo };
                   const baseB = { clave: mb.clave, medida: mb.medida, espesor: mb.espesor, ancho: mb.ancho, largo: mb.largo, uEspesor: mb.uEspesor, uAncho: mb.uAncho, uLargo: mb.uLargo };
                   const grupoA = { clave: ga.clave, label: ga.label };
@@ -1353,6 +1673,7 @@ function intercambiarParaCerrar(
       const cupo = cupoDeBloque(d);
       if (cupo <= 0) break;
       let mejor: { g: AsignacionGrupo; m: AsignacionMedida; p: Pendiente; f: MedidaPendiente; k: number } | null = null;
+      const yaExig = exigDe(d);
       for (const g of d.asignado) {
         if (g.m3Declarado || d.bloque.overridesLinea?.[claveOverrideLinea(dim, g.clave)]) continue;
         for (const m of g.medidas) {
@@ -1361,10 +1682,12 @@ function intercambiarParaCerrar(
           for (const p of pendientes) {
             for (const f of p.medidas) {
               if (f.piezas <= 0 || f.m3Unit >= unitSale - EPS) continue; // tiene que ser MÁS chica
-              if (!admite(p.clave, f.largo, f.uLargo)) continue;
+              if (!admite(p.clave, f)) continue;
               // Cuántas chicas entran en el hueco que deja la grande.
               const espacio = d.libreM3 + unitSale;
-              const k = Math.min(f.piezas, cupo + 1, Math.floor((espacio + TOL_REDONDEO_M3) / f.m3Unit));
+              // ADR-505: y no más chicas exigentes que las que dan sus trozas largas.
+              const kExig = Math.floor(margenExigente(d, f, yaExig - sueltaExig(m, unitSale), exigentes) / f.m3Unit + 1e-9);
+              const k = Math.min(f.piezas, cupo + 1, Math.floor((espacio + TOL_REDONDEO_M3) / f.m3Unit), kExig);
               // Tiene que ganar piezas y no perder volumen.
               if (k < 2 || k * f.m3Unit < unitSale - EPS) continue;
               if (!mejor || k > mejor.k) mejor = { g, m, p, f, k };
@@ -2163,14 +2486,63 @@ function llenarBloque(
    * agrega como filas nuevas.
    */
   repesca = false,
+  /** ADR-505: medidas exigentes de la especie (las topa la parte de las trozas que las dan). */
+  exigentes?: ReadonlySet<string>,
 ): void {
   /* Tope de piezas dicho a mano: el bloque deja de cargar al llegar, aunque le
-     sobre capacidad. `0` es un tope legítimo (un bloque que todavía no dio nada). */
+     sobre capacidad. `0` es un tope legítimo (un bloque que todavía no dio nada).
+     Lo ya puesto se descuenta SIEMPRE: en la 1ª vuelta sólo hay algo si
+     entraron exigentes antes (ADR-505); sin medidas es 0, como siempre. */
   const yaPuestas = d.asignado.reduce((a, g) => a + g.piezas, 0);
   const topePiezas =
     d.bloque.piezasManual != null && Number.isFinite(Number(d.bloque.piezasManual))
-      ? Math.max(0, Math.floor(Number(d.bloque.piezasManual)) - (repesca ? yaPuestas : 0))
+      ? Math.max(0, Math.floor(Number(d.bloque.piezasManual)) - yaPuestas)
       : null;
+  /**
+   * ADR-505 · La regla de medidas: una medida que no cabe en ninguna troza del
+   * bloque no se ve (`null`); una exigente, hasta la parte de la capacidad que
+   * dan sus trozas que la alcanzan. Bloque sin medidas = sin límite.
+   */
+  const trozasMed = trozasActivasDe(d.bloque);
+  const conSubcapacidad = trozasMed != null && exigentes != null && exigentes.size > 0;
+  /* Lo exigente que el bloque ya tiene. Se actualiza tras CADA pasada (ver
+     `toparExigentes`): la fase 0, la pasada libre y el complemento comparten
+     las mismas trozas largas. */
+  let yaExigente = conSubcapacidad ? m3Exigente(d, exigentes) : 0;
+  const porMedidas = (m: MedidaPendiente, tope: number | null): number | null => {
+    if (tope == null || !trozasMed) return tope;
+    if (!cabeEnBloque(d.bloque, m)) return null;
+    const margen = margenExigente(d, m, yaExigente, exigentes);
+    if (margen === Number.POSITIVE_INFINITY) return tope;
+    return Math.max(0, Math.min(tope, Math.floor(margen / m.m3Unit + 1e-9)));
+  };
+  /**
+   * El tope de lo exigente es UNO para todo el bloque, pero `porMedidas` se lo
+   * ofrece entero a cada medida exigente de la pasada: dos de ellas juntas lo
+   * pasaban. Después de cada pasada se recorta en orden de la más justa (menor
+   * subcapacidad: la que menos trozas dan) y se suma a `yaExigente`. Lo dicho a
+   * mano (fase 0) no se recorta —gana—, pero cuenta. Devuelve el m³ soltado.
+   */
+  const toparExigentes = (vivas: readonly Viva[], aMano: boolean): number => {
+    if (!conSubcapacidad) return 0;
+    const exig = vivas
+      .map((v, i) => ({ v, i }))
+      .filter(({ v }) => v.asignadas > 0 && esExigente(v.m, exigentes))
+      .map((x) => ({ ...x, sub: margenExigente(d, x.v.m, 0, exigentes) }))
+      .sort((a, b) => a.sub - b.sub || a.i - b.i);
+    let soltado = 0;
+    for (const { v, sub } of exig) {
+      if (!aMano) {
+        const max = Math.max(0, Math.floor((sub - yaExigente) / v.m.m3Unit + 1e-9));
+        if (v.asignadas > max) {
+          soltado += (v.asignadas - max) * v.m.m3Unit;
+          v.asignadas = max;
+        }
+      }
+      yaExigente += v.asignadas * v.m.m3Unit;
+    }
+    return soltado;
+  };
   const filtroLargo = sanearFiltroLargo(d.bloque.largoFiltro);
   /**
    * Los grupos que este bloque admite («sólo Comercial»). EXCLUYENTE: si el
@@ -2184,12 +2556,12 @@ function llenarBloque(
    * parcial, recorta cuántas piezas del pendiente ACTUAL puede tomar. */
   const topeConFiltro = (m: MedidaPendiente, p: Pendiente): number | null => {
     if (!pasaGrupo(p)) return null;
-    if (!filtroLargo) return m.piezas;
+    if (!filtroLargo) return porMedidas(m, m.piezas);
     const largoM = toFeet(m.largo, m.uLargo as Unidad);
     const entrada = filtroLargo.find((f) => Math.abs(largoM - f.largo) < 0.05);
     if (!entrada) return null;
-    if (entrada.pct >= 100) return m.piezas;
-    return Math.min(m.piezas, Math.floor((m.piezas * entrada.pct) / 100 + 1e-9));
+    if (entrada.pct >= 100) return porMedidas(m, m.piezas);
+    return porMedidas(m, Math.min(m.piezas, Math.floor((m.piezas * entrada.pct) / 100 + 1e-9)));
   };
   /**
    * La 2ª pasada (complemento, sin filtro) puede tomar CUALQUIER medida que
@@ -2204,11 +2576,11 @@ function llenarBloque(
    */
   const complemento = (m: MedidaPendiente, p: Pendiente): number | null => {
     if (!pasaGrupo(p)) return null;
-    if (!filtroLargo) return m.piezas;
+    if (!filtroLargo) return porMedidas(m, m.piezas);
     const largoM = toFeet(m.largo, m.uLargo as Unidad);
     const entrada = filtroLargo.find((f) => Math.abs(largoM - f.largo) < 0.05);
     if (entrada && entrada.pct < 100) return null;
-    return m.piezas;
+    return porMedidas(m, m.piezas);
   };
   /**
    * Una línea con override ve TODAS sus medidas: los filtros del bloque (largo
@@ -2245,7 +2617,8 @@ function llenarBloque(
     ignorarCapacidadBloque = false,
   ) => {
     const capEfectiva = ignorarCapacidadBloque ? capPasada : Math.min(capPasada, cap - usado);
-    const { vivas, usado: usadoPasada } = pasadaDeLlenado(pendientesPasada, topeDe, capEfectiva, topePiezasResto);
+    const { vivas, usado: usadoBruto } = pasadaDeLlenado(pendientesPasada, topeDe, capEfectiva, topePiezasResto);
+    const usadoPasada = usadoBruto - toparExigentes(vivas, topeDe === sinFiltro);
     // Descontar YA lo que usó esta pasada: la siguiente (si hay) tiene que
     // ver el pendiente REAL, no el de antes de repartir.
     for (const v of vivas) {
@@ -2534,13 +2907,20 @@ function faltanteDePendiente(p: Pendiente, bloques: readonly BloqueDistribuido[]
   };
 }
 
-/** Rangos del aserrío peruano, para juzgar un rendimiento sin inventar precisión. */
+/**
+ * Rangos del aserrío peruano, para juzgar un rendimiento sin inventar precisión.
+ *
+ * El techo es UNO solo con «Revisar» (`umbralRendimientoAlto`: referencial
+ * SERFOR + tolerancia, hoy 59 %): con el 65 % de antes la tarjeta pintaba
+ * verde un 62 % que «Revisar» marcaba como alto, en la misma pantalla.
+ */
 export function juzgarRendimiento(pct: number | null): { label: string; tono: "success" | "warning" | "error" | "neutral" } {
   if (pct == null) return { label: "sin rolliza que comparar", tono: "neutral" };
   if (pct > 100) return { label: "imposible: salió más de lo que entró", tono: "error" };
   if (pct < 40) return { label: "bajo para aserrío", tono: "error" };
-  if (pct <= 65) return { label: "normal de aserrío (40–65 %)", tono: "success" };
-  return { label: "alto — ¿reaserrado o poco escuadrado?", tono: "warning" };
+  const techo = umbralRendimientoAlto();
+  if (pct <= techo) return { label: `normal de aserrío (40–${techo} %)`, tono: "success" };
+  return { label: "alto: sobre el referencial SERFOR", tono: "warning" };
 }
 
 /**

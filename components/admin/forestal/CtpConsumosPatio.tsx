@@ -22,6 +22,7 @@ import { AccionesDeLaVista, useEnElLibro } from "@/components/admin/shared/libro
 import type { AgrupacionPatio } from "@/lib/forestal/consumo-trozas";
 import { ETIQUETA_TRAMO_DIAS, TRAMOS_DIAS, type TramoDias } from "@/lib/forestal/patio-resumen";
 import { formatNumber } from "@/lib/format";
+import { medidaDeTroza } from "@/lib/forestal/medida-cabe-en-troza";
 import CtpConsumosPatioResumen from "./CtpConsumosPatioResumen";
 import CtpConsumosPatioAccion from "./CtpConsumosPatioAccion";
 import CtpPatioFiltros from "./CtpPatioFiltros";
@@ -217,6 +218,7 @@ export default function CtpConsumosPatio({
               etiqueta: t.codigoPlanta ?? t.codificacion ?? t.id.slice(-6),
               especie: t.especieComun ?? "",
               m3: Number(t.volumenM3 ?? 0),
+              medidas: medidaDeTroza(t),
             }))}
           lote={loteElegido ? { id: loteElegido.id, code: loteElegido.code } : null}
           fecha={fechaConsumo}

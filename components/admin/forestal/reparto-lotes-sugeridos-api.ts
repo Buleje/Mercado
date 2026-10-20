@@ -70,7 +70,10 @@ export async function anotarLoteEnLaGuardada(
 ): Promise<void> {
   await reescribirLaGuardada(id, (b) => {
     const c = cambios.get(b.id);
-    return c ? { ...b, loteId: c.loteId ?? null, trozaIds: c.trozaIds ?? null } : null;
+    if (!c) return null;
+    /* ADR-505: otras trozas = otras medidas; la copia vieja no las describe. */
+    const otras = (c.trozaIds ?? []).join() !== (b.trozaIds ?? []).join();
+    return { ...b, loteId: c.loteId ?? null, trozaIds: c.trozaIds ?? null, ...(otras ? { trozasMedidas: null } : {}) };
   });
 }
 
