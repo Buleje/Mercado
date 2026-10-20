@@ -17,7 +17,7 @@
  */
 
 import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Trash2, Download, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, ShieldCheck, SlidersHorizontal, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, RefreshCw, Ruler, Target, TreePine, Plus } from "@buleje/design-system/icons";
+import { Trash2, Download, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, ShieldCheck, SlidersHorizontal, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, RefreshCw, Ruler, Target, TreePine, Plus, Inbox } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ModuleActionMenu, type ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
@@ -41,6 +41,7 @@ import { margenLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useLibroDelReparto } from "./hooks/use-libro-del-reparto";
 import { useSeccionRolliza, PestanasRolliza } from "./reparto-pestanas";
+import { useNombreSinMarcar } from "./hooks/use-nombre-sin-marcar";
 import { CuentaMarcado, procedenciaDeAnexo, SelectorModoAnexo, useModoAnexo } from "./reparto-anexo-modo";
 import RepartoPorDistribuir from "./reparto-por-distribuir";
 import { cuadreMarcado, marcadoEn, pendienteEn, piezasFiltradasDelBloque, porDistribuir } from "@/lib/forestal/reparto-por-distribuir";
@@ -1016,6 +1017,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   const anexosVista = modoAnexo === "marcado" ? anexosMarcado : modoAnexo === "pendiente" ? anexosPendiente : anexosDePermiso;
   /** La pestaña de la distribución (`?sub=`). */
   const { sub: seccion, irA: irASeccion } = useSeccionRolliza();
+  /** Cómo se llama el bloque de lo sin tildar (se guarda con las casillas). */
+  const [nombreSinMarcar, setNombreSinMarcar] = useNombreSinMarcar(claveLocal("-rolliza-sin-marcar-nombre"));
   /** El cierre del apartado: qué falta, qué tapan los reprocesos y qué queda. */
   const cuadre = useMemo(
     () =>
@@ -1753,7 +1756,30 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       )}
 
       {/* Una cosa a la vez (Brandon, 2026-10-19: «todo compacto y con pestañas»). */}
-      <PestanasRolliza sub={seccion} irA={irASeccion} porDistribuir={pendienteDeTildar.lineas.length} conAnexo={anexosDePermiso.length > 0}>
+      <PestanasRolliza
+        sub={seccion}
+        irA={irASeccion}
+        porDistribuir={pendienteDeTildar.lineas.length}
+        conAnexo={anexosDePermiso.length > 0}
+        nombreSinMarcar={nombreSinMarcar}
+        acciones={
+          /* Lo sin tildar se junta solo en su pestaña: en Bloques, un atajo en la fila de las pestañas. */
+          seccion === "bloques" && pendienteDeTildar.lineas.length > 0 ? (
+            <>
+              <button
+                type="button"
+                onClick={() => irASeccion("por-distribuir")}
+                title={`Lleva a «${nombreSinMarcar}»: se arma solo con lo que no tildaste (al tildar una fila sale de ahí); allí le cambias el nombre y sacas su Anexo 04 por permiso`}
+                className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--accent-soft)]"
+              >
+                <Inbox className="h-5 w-5 text-[var(--accent)]" aria-hidden />
+                Juntar {pendienteDeTildar.lineas.length} sin marcar
+              </button>
+              
+            </>
+          ) : undefined
+        }
+      >
       {/* ── Lo que entró ───────────────────────────────────────────────────── */}
       {seccion === "entrada" && (
       <div className="mb-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
@@ -2471,10 +2497,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           anexos={anexosPendiente}
           dim={dim}
           marcar={marcar}
+          nombre={nombreSinMarcar}
+          onNombre={setNombreSinMarcar}
           onAnexo={(a) => setAnexoDe({
             piezas: a.piezas,
             especie: a.especies[0] ?? "",
-            etiqueta: `Sin marcar · ${a.label}`,
+            etiqueta: `${nombreSinMarcar} · ${a.label}`,
             procedencia: procedenciaDeAnexo(a),
           })}
         />

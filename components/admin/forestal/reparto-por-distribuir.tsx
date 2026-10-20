@@ -22,6 +22,7 @@ import type { AnexoDePermiso } from "@/lib/forestal/anexo-por-permiso";
 import { sumarLineas, type BloquePendiente, type PorDistribuir } from "@/lib/forestal/reparto-por-distribuir";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { FilaConMedidas } from "./reparto-vistas";
+import NombreEditable from "./reparto-nombre-editable";
 
 const BTN =
   "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50";
@@ -40,7 +41,12 @@ export default function RepartoPorDistribuir({
   dim,
   marcar,
   onAnexo,
+  nombre,
+  onNombre,
 }: {
+  /** Cómo se llama este bloque (por defecto «Sin marcar»). */
+  nombre: string;
+  onNombre: (n: string) => void;
   pd: PorDistribuir;
   /** El Anexo 04 de lo pendiente, uno por permiso (`anexosPorPermiso` con `pendienteEn`). */
   anexos: readonly AnexoDePermiso[];
@@ -70,10 +76,10 @@ export default function RepartoPorDistribuir({
       {/* Cabecera en una fila: qué es, cuánto suma y su papel. */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--rule-soft)] px-3 py-2">
         <span className="inline-flex items-center gap-1.5 text-base font-bold text-[var(--text-primary)]">
-          <Inbox className="h-4 w-4 text-[var(--accent)]" aria-hidden /> Sin marcar
+          <Inbox className="h-4 w-4 text-[var(--accent)]" aria-hidden /> <NombreEditable nombre={nombre} onGuardar={onNombre} />
           <InfoTip
-            title="Sin marcar"
-            what={<span>Las líneas de los bloques que todavía no tildaste como distribuidas, juntas y separadas por permiso. Se arma solo con las casillas: tildar una línea la saca de acá, destildarla la devuelve.</span>}
+            title={nombre}
+            what={<span>Se arma solo con lo que no tildaste; al tildar una fila sale de acá. Las líneas de los bloques que todavía no tildaste como distribuidas, juntas y separadas por permiso. Se arma solo con las casillas: tildar una línea la saca de acá, destildarla la devuelve.</span>}
             affects={<span>Su Anexo 04 va por permiso y lleva sólo estas líneas. Lo de acá sí tiene bloque y permiso, sólo falta tildarlo (no es la tarjeta «Falta por distribuir», que es aserrada que ningún bloque alcanzó a amparar).</span>}
             example={<span>Bloque 1: Comercial y Corta tildadas, Larga angosta sin tildar. La Larga angosta aparece acá, en su permiso, con sus 2 medidas.</span>}
           />
@@ -128,7 +134,7 @@ export default function RepartoPorDistribuir({
             type="button"
             onClick={() => anexo && onAnexo(anexo)}
             disabled={!anexo || anexo.piezas.length === 0}
-            title={`Anexo 04 de ${actual.label} con sólo lo que falta tildar`}
+            title={`Anexo 04 «${nombre}» de ${actual.label}: sólo lo que falta tildar`}
             className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3 text-sm font-bold text-white transition-colors hover:brightness-110 disabled:opacity-50"
           >
             <FileText className="h-4 w-4" aria-hidden /> Anexo 04 de este permiso

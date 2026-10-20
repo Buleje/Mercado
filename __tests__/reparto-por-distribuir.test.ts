@@ -205,3 +205,29 @@ describe("jornadas", () => {
     expect(c.cuadra).toBe(true);
   });
 });
+
+describe("nombre del bloque «Sin marcar»", () => {
+  const memoria = () => {
+    const m = new Map<string, string>();
+    return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) };
+  };
+  it("por defecto es «Sin marcar» y limpia espacios, vacío y tope de 60", async () => {
+    const { normalizarNombreSinMarcar, NOMBRE_SIN_MARCAR } = await import("@/lib/forestal/reparto-por-distribuir");
+    expect(NOMBRE_SIN_MARCAR).toBe("Sin marcar");
+    expect(normalizarNombreSinMarcar("   ")).toBe("Sin marcar");
+    expect(normalizarNombreSinMarcar("  Resto   del   monte ")).toBe("Resto del monte");
+    expect(normalizarNombreSinMarcar("x".repeat(90))).toHaveLength(60);
+  });
+  it("guarda y lee; el nombre por defecto borra la clave; un almacén roto no tumba", async () => {
+    const { guardarNombreSinMarcar, leerNombreSinMarcar } = await import("@/lib/forestal/reparto-por-distribuir");
+    const a = memoria();
+    expect(leerNombreSinMarcar(a, "k")).toBe("Sin marcar");
+    expect(guardarNombreSinMarcar(a, "k", "Pendiente de guía")).toBe("Pendiente de guía");
+    expect(leerNombreSinMarcar(a, "k")).toBe("Pendiente de guía");
+    guardarNombreSinMarcar(a, "k", "");
+    expect(a.getItem("k")).toBeNull();
+    const roto = { getItem: () => { throw new Error("x"); }, setItem: () => { throw new Error("x"); }, removeItem: () => { throw new Error("x"); } };
+    expect(leerNombreSinMarcar(roto, "k")).toBe("Sin marcar");
+    expect(() => guardarNombreSinMarcar(roto, "k", "A")).not.toThrow();
+  });
+});

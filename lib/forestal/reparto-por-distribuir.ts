@@ -219,3 +219,35 @@ export function cuadreMarcado(dist: Distribucion, marcadas: ReadonlySet<string>)
       igual(marcado.m3 + pendiente.m3, todo.m3, 1000),
   };
 }
+
+/** Cómo se llama el bloque especial de lo que nadie tildó, mientras no se le ponga otro nombre. */
+export const NOMBRE_SIN_MARCAR = "Sin marcar";
+export const MAX_NOMBRE_SIN_MARCAR = 60;
+
+/** Espacios juntos y a los lados fuera, tope de 60; vacío = el nombre de siempre. */
+export function normalizarNombreSinMarcar(crudo: unknown): string {
+  if (typeof crudo !== "string") return NOMBRE_SIN_MARCAR;
+  const limpio = crudo.replace(/\s+/g, " ").trim().slice(0, MAX_NOMBRE_SIN_MARCAR).trim();
+  return limpio || NOMBRE_SIN_MARCAR;
+}
+
+type Almacen = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+
+/** Lee el nombre guardado junto a las casillas «Distribuido»; si falla o no hay, el de siempre. */
+export function leerNombreSinMarcar(almacen: Almacen | null | undefined, clave: string): string {
+  try {
+    return normalizarNombreSinMarcar(almacen?.getItem(clave) ?? "");
+  } catch {
+    return NOMBRE_SIN_MARCAR;
+  }
+}
+
+/** Guarda el nombre; el de siempre borra la clave en vez de dejar un valor suelto. */
+export function guardarNombreSinMarcar(almacen: Almacen | null | undefined, clave: string, nombre: string): string {
+  const limpio = normalizarNombreSinMarcar(nombre);
+  try {
+    if (limpio === NOMBRE_SIN_MARCAR) almacen?.removeItem(clave);
+    else almacen?.setItem(clave, limpio);
+  } catch { /* quota */ }
+  return limpio;
+}

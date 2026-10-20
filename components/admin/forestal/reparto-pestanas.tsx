@@ -49,8 +49,14 @@ export function PestanasRolliza({
   irA,
   porDistribuir,
   conAnexo,
+  nombreSinMarcar,
+  acciones,
   children,
 }: {
+  /** Atajos de la pestaña activa, a la derecha de las pestañas (misma fila). */
+  acciones?: ReactNode;
+  /** El nombre que le pusieron al bloque de lo sin tildar. */
+  nombreSinMarcar?: string;
   sub: SeccionRolliza;
   irA: (s: SeccionRolliza) => void;
   /** Líneas sin tildar: el número de la pestaña «Sin marcar». */
@@ -61,19 +67,24 @@ export function PestanasRolliza({
 }) {
   const secciones = SECCIONES_ROLLIZA.map((clave) => ({
     clave,
-    rotulo: ROTULO[clave],
+    rotulo: clave === "por-distribuir" && nombreSinMarcar ? nombreSinMarcar : ROTULO[clave],
     cuenta: clave === "por-distribuir" && porDistribuir > 0 ? porDistribuir : undefined,
   }));
   return (
     <>
-      <div id={conAnexo ? ID_SECCION_ANEXO : undefined} className="mb-3 scroll-mt-4 print:hidden">
-        <BarraDeSecciones
-          secciones={secciones}
-          activa={sub}
-          onCambiar={irA}
-          etiqueta="Secciones de la distribución de rolliza"
-          idPanel={ID_PANEL}
-        />
+      {/* Pestañas y atajo en UNA fila desde sm: la barra toma lo que sobra (min-w-0 flex-1)
+          y esconde en «Más» lo que no entra; en el celular el atajo baja. */}
+      <div id={conAnexo ? ID_SECCION_ANEXO : undefined} className="mb-3 flex scroll-mt-4 flex-wrap items-center gap-2 print:hidden sm:flex-nowrap">
+        <div className="min-w-0 max-w-full sm:flex-1">
+          <BarraDeSecciones
+            secciones={secciones}
+            activa={sub}
+            onCambiar={irA}
+            etiqueta="Secciones de la distribución de rolliza"
+            idPanel={ID_PANEL}
+          />
+        </div>
+        {acciones && <div className="flex shrink-0 items-center gap-2">{acciones}</div>}
       </div>
       <div role="tabpanel" id={ID_PANEL} aria-labelledby={idPestanaDeSeccion(ID_PANEL, sub)}>
         {children}
