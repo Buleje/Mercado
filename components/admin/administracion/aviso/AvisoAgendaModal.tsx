@@ -4,8 +4,8 @@
  * AvisoAgendaModal — el aviso que sale solo (`AvisoAgendaProgramado`): lo que te
  * falta de hoy y lo atrasado (`CuerpoAviso`), cuándo vuelve a salir y cómo
  * callarlo un rato. Se pinta en una de tres formas (Brandon, 20-10): ventana al
- * centro (`AdminModal`), al costado o fijo al costado (`PanelLateralAviso`, que
- * no bloquea la página). Trae su propio `AgendaProvider`: se abre desde
+ * centro (`AdminModal`), o barra al costado, suelta o fija (`PanelLateralAviso`:
+ * no bloquea, la página se achica para hacerle lugar y su ancho se arrastra). Trae su propio `AgendaProvider`: se abre desde
  * cualquier pestaña del panel.
  */
 import { useEffect, useState } from "react";
@@ -30,6 +30,9 @@ interface Props {
   proximo: number;
   minimizado: boolean;
   onMinimizar: (v: boolean) => void;
+  /** Ancho de la barra del costado en px (`null` = de fábrica). */
+  ancho: number | null;
+  onAncho: (px: number | null) => void;
   onCambiarModo: (m: ModoAviso) => void;
   onCerrar: () => void;
   onRecordarEn: (min: number) => void;
@@ -45,7 +48,7 @@ export default function AvisoAgendaModal(props: Props) {
   );
 }
 
-function Marco({ config, modo, proximo, minimizado, onMinimizar, onCambiarModo, onCerrar, onRecordarEn, onNoMasHoy, onConfigurar }: Props) {
+function Marco({ config, modo, proximo, minimizado, onMinimizar, ancho, onAncho, onCambiarModo, onCerrar, onRecordarEn, onNoMasHoy, onConfigurar }: Props) {
   const { hoy, recargando, refrescar } = useAgenda();
   const [alDia, setAlDia] = useState(false);
   const falta = loQueFalta(hoy, config);
@@ -99,6 +102,8 @@ function Marco({ config, modo, proximo, minimizado, onMinimizar, onCambiarModo, 
         pendientes={falta.hoy.length + falta.atrasadas.length}
         minimizado={minimizado}
         onMinimizar={onMinimizar}
+        ancho={ancho}
+        onAncho={onAncho}
         onCambiarModo={onCambiarModo}
         onCerrar={onCerrar}
         pie={pie}

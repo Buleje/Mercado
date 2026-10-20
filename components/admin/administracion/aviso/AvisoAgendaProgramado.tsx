@@ -56,6 +56,8 @@ export default function AvisoAgendaProgramado({ rol }: { rol: AdminRole }) {
   /** En qué forma está abierto (`null` = cerrado). */
   const [abierto, setAbierto] = useState<ModoAviso | null>(null);
   const [minimizado, setMinimizado] = useState(false);
+  /** Ancho de la barra del costado (este navegador); `null` = de fábrica. */
+  const [ancho, setAncho] = useState<number | null>(null);
   const [configurando, setConfigurando] = useState(false);
   /** Ya se leyó si el panel fijo quedó abierto: recién ahí se guarda lo que cambie. */
   const [restaurado, setRestaurado] = useState(false);
@@ -133,6 +135,7 @@ export default function AvisoAgendaProgramado({ rol }: { rol: AdminRole }) {
   useEffect(() => {
     if (!listo || restaurado) return;
     const r = leerReloj();
+    setAncho(r.ancho);
     if (puede && r.fijaAbierta) {
       setAbierto("fija");
       setMinimizado(r.minimizado);
@@ -151,6 +154,10 @@ export default function AvisoAgendaProgramado({ rol }: { rol: AdminRole }) {
   /* «Probar ahora», «Ver el aviso» y «Al costado» de Hoy lo abren aunque esté apagado. */
   useEffect(() => (puede ? alPedirAbrirAviso((modo) => abrir(false, modo)) : undefined), [puede, abrir]);
 
+  const guardarAncho = (px: number | null) => {
+    setAncho(px);
+    escribirReloj({ ...leerReloj(), ancho: px });
+  };
   const cerrar = () => {
     setAbierto(null);
     setMinimizado(false);
@@ -179,6 +186,8 @@ export default function AvisoAgendaProgramado({ rol }: { rol: AdminRole }) {
           proximo={leerReloj().proximo}
           minimizado={minimizado}
           onMinimizar={setMinimizado}
+          ancho={ancho}
+          onAncho={guardarAncho}
           onCambiarModo={cambiarModo}
           onCerrar={cerrar}
           onRecordarEn={recordarEn}

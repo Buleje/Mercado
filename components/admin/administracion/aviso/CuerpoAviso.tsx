@@ -84,10 +84,10 @@ export function CuerpoAviso({ falta, modo, alDia, onAlDia, onCambiarModo, onCerr
             <div className="ml-auto flex items-center gap-1">
               {modo === "ventana" && (
                 <>
-                  <button type="button" data-qa="aviso-al-costado" className={button({ variant: "ghost", size: "icon" })} onClick={() => onCambiarModo("lateral")} title="Al costado: sin tapar la página" aria-label="Poner al costado">
+                  <button type="button" data-qa="aviso-al-costado" className={button({ variant: "ghost", size: "icon" })} onClick={() => onCambiarModo("lateral")} title="Al costado: barra a la derecha, la página se achica para hacerle lugar" aria-label="Poner al costado">
                     <PanelRight className="size-5" aria-hidden="true" />
                   </button>
-                  <button type="button" data-qa="aviso-fijar" className={button({ variant: "ghost", size: "icon" })} onClick={() => onCambiarModo("fija")} title="Fija al costado: sigue mientras trabajas y al recargar" aria-label="Fijar al costado">
+                  <button type="button" data-qa="aviso-fijar" className={button({ variant: "ghost", size: "icon" })} onClick={() => onCambiarModo("fija")} title="Fija al costado: igual, y vuelve al recargar" aria-label="Fijar al costado">
                     <Pin className="size-5" aria-hidden="true" />
                   </button>
                 </>

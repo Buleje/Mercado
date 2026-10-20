@@ -15,9 +15,9 @@ export const CADA_MINUTOS = [15, 30, 60, 120, 180, 240] as const;
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /**
- * Dónde se abre: `ventana` al centro (tapa la página hasta cerrarla), `lateral` al
- * costado sin bloquear nada (sigue al cambiar de pestaña), `fija` al costado y la
- * página se corre para que no tape nada; queda abierta al recargar hasta soltarla.
+ * Dónde se abre: `ventana` al centro (tapa la página hasta cerrarla); `lateral` al
+ * costado, sin bloquear nada: la página se achica para hacerle lugar y sigue al
+ * cambiar de pestaña; `fija` igual, y además vuelve al recargar hasta soltarla.
  */
 export const MODOS_AVISO = ["ventana", "lateral", "fija"] as const;
 export type ModoAviso = (typeof MODOS_AVISO)[number];
@@ -72,18 +72,35 @@ export interface RelojAviso {
   /** El panel fijo al costado quedó abierto (vuelve al recargar) y si estaba minimizado. */
   fijaAbierta: boolean;
   minimizado: boolean;
+  /** Ancho del panel del costado en px (lo arrastras); `null` = el de fábrica. */
+  ancho: number | null;
 }
 
-export const RELOJ_INICIAL: RelojAviso = { proximo: 0, silencioDia: null, fijaAbierta: false, minimizado: false };
+export const RELOJ_INICIAL: RelojAviso = { proximo: 0, silencioDia: null, fijaAbierta: false, minimizado: false, ancho: null };
+
+/** Ancho del panel del costado: de fábrica, y cuánto se deja angostar o ensanchar al arrastrarlo. */
+export const ANCHO_PANEL = { fabrica: 416, min: 320, max: 900 } as const;
+
+/**
+ * El ancho pedido dentro de lo que se deja: a la página le quedan al menos
+ * ~600 px al lado del menú (260): más angosta, su cabecera monta los íconos
+ * (medido 20-10 a 1280 con la barra en 602 px). 1280 → hasta 420; 1920 → 900.
+ */
+const RESTO_PAGINA = 860;
+export function anchoPanel(pedido: number | null, ventana: number): number {
+  const tope = Math.max(ANCHO_PANEL.min, Math.min(ANCHO_PANEL.max, ventana - RESTO_PAGINA));
+  return Math.round(Math.min(tope, Math.max(ANCHO_PANEL.min, pedido ?? ANCHO_PANEL.fabrica)));
+}
 
 export function normalizarReloj(guardado: unknown): RelojAviso {
   if (!guardado || typeof guardado !== "object") return RELOJ_INICIAL;
-  const { proximo, silencioDia, fijaAbierta, minimizado } = guardado as Partial<RelojAviso>;
+  const { proximo, silencioDia, fijaAbierta, minimizado, ancho } = guardado as Partial<RelojAviso>;
   return {
     proximo: typeof proximo === "number" && Number.isFinite(proximo) ? proximo : 0,
     silencioDia: typeof silencioDia === "string" ? silencioDia : null,
     fijaAbierta: fijaAbierta === true,
     minimizado: minimizado === true,
+    ancho: typeof ancho === "number" && Number.isFinite(ancho) ? ancho : null,
   };
 }
 

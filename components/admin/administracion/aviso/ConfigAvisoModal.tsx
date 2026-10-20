@@ -23,8 +23,8 @@ import { DIAS_LARGOS, ORDEN_SEMANA } from "../comun/fechas";
 
 const MODOS: readonly { id: ModoAviso; label: string; hint: string }[] = [
   { id: "ventana", label: "Ventana al centro", hint: "Tapa la página hasta que la cierres" },
-  { id: "lateral", label: "Al costado", hint: "No tapa la página y sigue al cambiar de pestaña" },
-  { id: "fija", label: "Fija al costado", hint: "Corre la página para no tapar nada y vuelve al recargar" },
+  { id: "lateral", label: "Al costado", hint: "Barra a la derecha: la página se achica para hacerle lugar y sigue al cambiar de pestaña" },
+  { id: "fija", label: "Fija al costado", hint: "Igual que al costado, y vuelve al recargar hasta que la sueltes" },
 ];
 
 type Cambiar = <K extends keyof AvisoPantalla>(campo: K, valor: AvisoPantalla[K]) => void;

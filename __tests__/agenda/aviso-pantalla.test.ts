@@ -10,6 +10,7 @@ import {
   loQueFalta,
   normalizarAviso,
   normalizarReloj,
+  anchoPanel,
   proximoAviso,
   textoNotificacion,
   tocaMirar,
@@ -111,6 +112,18 @@ describe("qué muestra", () => {
   });
 });
 
+describe("ancho del panel del costado", () => {
+  it("de fábrica 416; se arrastra entre 320 y 900 dejando ~600 px a la página", () => {
+    expect(anchoPanel(null, 1920)).toBe(416);
+    expect(anchoPanel(200, 1920)).toBe(320);
+    expect(anchoPanel(1500, 1920)).toBe(900);
+    expect(anchoPanel(800, 1280)).toBe(420);
+    expect(anchoPanel(800, 1440)).toBe(580);
+    expect(anchoPanel(null, 1024)).toBe(320);
+    expect(anchoPanel(500, 400)).toBe(320);
+  });
+});
+
 describe("lo guardado", () => {
   it("lo roto o viejo cae a lo de fábrica; lo parcial se completa", () => {
     expect(normalizarAviso(null)).toEqual(AVISO_POR_DEFECTO);
@@ -122,7 +135,7 @@ describe("lo guardado", () => {
   });
 
   it("el reloj viejo (sin panel fijo) se lee con el panel cerrado", () => {
-    expect(normalizarReloj({ proximo: 5, silencioDia: null })).toEqual({ proximo: 5, silencioDia: null, fijaAbierta: false, minimizado: false });
+    expect(normalizarReloj({ proximo: 5, silencioDia: null })).toEqual({ proximo: 5, silencioDia: null, fijaAbierta: false, minimizado: false, ancho: null });
     expect(normalizarReloj({ proximo: 5, fijaAbierta: true, minimizado: "si" })).toMatchObject({ fijaAbierta: true, minimizado: false });
   });
 });
