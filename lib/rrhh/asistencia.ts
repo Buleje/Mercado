@@ -158,7 +158,7 @@ export function revisarMarca(input: MarcaInput, ctx: RevisarMarcaCtx): RevisionM
     return {
       ok: false,
       motivo: "despues_del_cese",
-      message: `Cesó el ${etiquetaCorta(fechaCese)}: no se le puede marcar el ${etiquetaCorta(input.fecha)}.`,
+      message: `Se retiró el ${etiquetaCorta(fechaCese)}: no se le puede marcar el ${etiquetaCorta(input.fecha)}.`,
     };
   }
 

@@ -18,7 +18,7 @@
  */
 
 import { useState, type ReactNode } from "react";
-import { AlertTriangle, Clock, History, Loader2, MoreHorizontal, StickyNote } from "@buleje/design-system/icons";
+import { AlertTriangle, Clock, History, Loader2, MoreHorizontal, StickyNote, UserMinus } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { tardanzaDe } from "@/lib/rrhh/asistencia";
 import { cn } from "@/lib/utils";
@@ -46,9 +46,11 @@ interface Props {
   onVerHistorial: () => void;
   /** La foto de la cámara de esta marca («Marcar con foto», 2026-10-09). */
   foto?: ReactNode;
+  /** «Retirado…»: ya no trabaja acá (sólo gestión y completo). */
+  onRetirar?: () => void;
 }
 
-export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, errorMsg, soloLectura, horario, onMarcar, onVerHistorial, foto }: Props) {
+export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, errorMsg, soloLectura, horario, onMarcar, onVerHistorial, foto, onRetirar }: Props) {
   const [notaAbierta, setNotaAbierta] = useState(false);
   const estadoActual = marca?.estado ?? null;
   const metaActual = estadoActual ? ESTADO_ASISTENCIA_META[estadoActual] : null;
@@ -102,12 +104,15 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
           soloIcono
           size="md"
           className="w-12 shrink-0"
-          title="Nota del día e historial"
+          title="Nota del día, historial y retirar"
           actions={[
             ...(estadoActual && !soloLectura
               ? [{ id: "nota", label: notaAbierta ? "Ocultar la nota" : marca?.nota ? "Editar la nota del día" : "Anotar algo del día", icon: StickyNote, onSelect: () => setNotaAbierta((v) => !v) }]
               : []),
             { id: "historial", label: "Historial de correcciones", hint: "Quién cambió esta marca y por qué", icon: History, onSelect: onVerHistorial },
+            ...(onRetirar
+              ? [{ id: "retirar", label: "Retirado…", hint: "Ya no trabaja acá: desde qué día deja de salir", icon: UserMinus, tone: "danger" as const, onSelect: onRetirar }]
+              : []),
           ]}
         />
       </div>

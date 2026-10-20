@@ -24,6 +24,7 @@ import { AvisoRrhh, BOTON } from "../rrhh-form";
 import { dentroDeVentana, estaIncluidoEseDia, motivoFueraDeVentana, motivoNoIncluido, pluralizar } from "../rrhh-ui";
 import AvisoDiasAbiertos from "./AvisoDiasAbiertos";
 import FilaMarcaDelDia from "./FilaMarcaDelDia";
+import { useRetirarPersona } from "./use-retirar-persona";
 import { BarraFotoDeCamara, FotoDeLaMarca } from "./FotoDeCamara";
 import { useFotosAsistencia } from "./use-fotos-asistencia";
 import HistorialMarcaModal from "./HistorialMarcaModal";
@@ -49,6 +50,10 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
   const { hoja, loading, error, guardando, pendientes, erroresPorCelda, marcar, masivo, guardarAhora, recargar } = useRrhhAsistencia(fecha, fecha);
   const { confirm } = useConfirm();
   const [historialDe, setHistorialDe] = useState<ColaboradorMinDTO | null>(null);
+  const retirar = useRetirarPersona(nivel, () => {
+    recargar();
+    onCambioPersonal?.();
+  });
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [traerAbierta, setTraerAbierta] = useState(false);
   // «Estrenar RRHH con tu gente» (Brandon 2026-09-14) — mismo criterio de nivel que en PersonalView.
@@ -195,6 +200,7 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
                 }}
                 onVerHistorial={() => setHistorialDe(c)}
                 foto={<FotoDeLaMarca fotos={fotosCam.fotosDe(c.id)} />}
+                onRetirar={retirar.abrir ? () => retirar.abrir?.(c, fecha) : undefined}
               />
             );
           })}
@@ -273,6 +279,7 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
       </div>
 
       {historialDe && <HistorialMarcaModal open onClose={() => setHistorialDe(null)} colaborador={historialDe} fecha={fecha} />}
+      {retirar.modal}
       {altaAbierta && <ColaboradorFormModal open={altaAbierta} onClose={() => setAltaAbierta(false)} nivel={nivel} onGuardado={alAgregar} />}
       {traerAbierta && (
         <TraerDesdeAdelantosModal

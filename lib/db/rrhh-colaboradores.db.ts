@@ -116,7 +116,7 @@ export class EstadoInvalidoError extends Error {
 }
 export class NoEstaCesadoError extends Error {
   constructor() {
-    super("Esta persona no está cesada.");
+    super("Esta persona no está retirada.");
     this.name = "NoEstaCesadoError";
   }
 }

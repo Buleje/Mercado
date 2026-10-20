@@ -76,8 +76,8 @@ describe("FotochecksVista", () => {
     expect(screen.getByText(/sin foto: el fotocheck sale con las iniciales/)).toBeTruthy();
   });
 
-  it("los cesados que el filtro dejó fuera se dicen, no se esconden", () => {
+  it("los retirados que el filtro dejó fuera se dicen, no se esconden", () => {
     render(<FotochecksVista colaboradores={[persona("1", "Rosa Huamán")]} cesadosOmitidos={2} onVolver={() => {}} />);
-    expect(screen.getByText(/2 cesados fuera/)).toBeTruthy();
+    expect(screen.getByText(/2 retirados fuera/)).toBeTruthy();
   });
 });

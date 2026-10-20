@@ -170,7 +170,7 @@ export default function FichaColaboradorModal({ open, onClose, colaboradorId, ni
                       <RefreshCw className="h-4 w-4" /> Cambiar estado
                     </button>
                     <button type="button" onClick={() => setCesarAbierto(true)} className={BOTON.chicoPeligro}>
-                      <Ban className="h-4 w-4" /> Cesar
+                      <Ban className="h-4 w-4" /> Retirar
                     </button>
                   </>
                 )}

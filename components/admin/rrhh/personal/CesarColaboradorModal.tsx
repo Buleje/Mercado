@@ -18,13 +18,16 @@ import { cn, limaDateKey } from "@/lib/utils";
 import { etiquetaCorta } from "@/lib/rrhh/fechas";
 import { AvisoRrhh, BOTON, CLASE_AREA, CLASE_CAMPO, CLASE_CHIP } from "../rrhh-form";
 import { COLABORADOR_ESTADO_META, etiquetaModalidad, formatearFecha, iniciales, pluralizar } from "../rrhh-ui";
-import type { ColaboradorDTO, Modalidad, NivelRrhh } from "@/lib/rrhh/tipos";
+import type { ColaboradorMinDTO, FechaKey, Modalidad, NivelRrhh } from "@/lib/rrhh/tipos";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   colaboradorId: string;
-  colaborador: ColaboradorDTO;
+  /** Lo mínimo alcanza (nombre, puesto, estado, fechas): lo abre también la fila de Asistencia. */
+  colaborador: ColaboradorMinDTO;
+  /** El día que se propone (Asistencia propone el día que estás mirando). Sin él, hoy. */
+  fechaInicial?: FechaKey;
   nivel: NivelRrhh;
   aboveModals?: boolean;
   onGuardado: () => void;
@@ -34,13 +37,13 @@ const FORM_ID = "rrhh-form-cese";
 type ModalidadPagada = Exclude<Modalidad, "SIN_PAGO">;
 const MODALIDADES: ModalidadPagada[] = ["HORA", "DIA", "SEMANA", "MES"];
 
-export default function CesarColaboradorModal({ open, onClose, colaboradorId, colaborador, nivel, aboveModals, onGuardado }: Props) {
+export default function CesarColaboradorModal({ open, onClose, colaboradorId, colaborador, fechaInicial, nivel, aboveModals, onGuardado }: Props) {
   const cesando = colaborador.estado !== "CESADO";
   // Poner una tarifa nueva en el reingreso pide nivel completo en el servidor
   // (`app/api/rrhh/colaboradores/[id]/route.ts`: `reingresar` con `tarifa`).
   // Reingresar SIN tarifa es gestion — eso ya lo permite el caller (ficha).
   const puedeTarifa = nivel === "completo";
-  const [fecha, setFecha] = useState(() => limaDateKey());
+  const [fecha, setFecha] = useState(() => fechaInicial ?? limaDateKey());
   const [motivo, setMotivo] = useState("");
   const [conTarifa, setConTarifa] = useState(false);
   const [modalidad, setModalidad] = useState<ModalidadPagada>("DIA");
@@ -74,12 +77,12 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
           setAviso({ n: e.n, primera: e.primera });
           return;
         }
-        setError("No se pudo cesar a la persona.");
+        setError("No se pudo retirar a la persona.");
         return;
       }
       if (!res.ok) {
         const e = (await res.json().catch(() => ({}))) as { message?: string };
-        setError(e.message ?? "No se pudo cesar a la persona.");
+        setError(e.message ?? "No se pudo retirar a la persona.");
         return;
       }
       onGuardado();
@@ -147,7 +150,7 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
   const detalle = [
     colaborador.puesto?.nombre,
     colaborador.fechaIngreso && `ingresó el ${formatearFecha(colaborador.fechaIngreso)}`,
-    !cesando && colaborador.fechaCese && `cesó el ${formatearFecha(colaborador.fechaCese)}`,
+    !cesando && colaborador.fechaCese && `se retiró el ${formatearFecha(colaborador.fechaCese)}`,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -156,7 +159,7 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
     <AdminModal
       open={open}
       onClose={onClose}
-      title={cesando ? "Cesar a una persona" : "Reingresar a una persona"}
+      title={cesando ? "Retirar a una persona" : "Reingresar a una persona"}
       icon={cesando ? Ban : RotateCcw}
       aboveModals={aboveModals}
       footer={
@@ -166,7 +169,7 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
           </button>
           <button type="submit" form={FORM_ID} disabled={guardando} className={cesando ? BOTON.peligro : BOTON.primario}>
             {guardando && <Loader2 className="h-4 w-4 animate-spin" />}
-            {cesando ? (aviso ? "Cesar igual" : "Cesar") : "Reingresar"}
+            {cesando ? (aviso ? "Retirar igual" : "Retirar") : "Reingresar"}
           </button>
         </ModalFooter>
       }
@@ -189,7 +192,7 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
         <Field
           label={cesando ? "Último día de trabajo" : "Día en que vuelve"}
           required
-          hint={cesando ? "Desde el día siguiente ya no entra en la asistencia ni suma en lo ganado." : "Desde ese día vuelve a entrar en la asistencia."}
+          hint={cesando ? "Desde el día siguiente ya no sale en Asistencia ni suma en lo ganado. Lo de antes queda." : "Desde ese día vuelve a salir en Asistencia."}
         >
           {(id) => <input id={id} type="date" value={fecha} onChange={(e) => cambiarFecha(e.target.value)} className={CLASE_CAMPO} />}
         </Field>
@@ -218,7 +221,7 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
                 className="row-span-2 mt-0.5 h-4 w-4 accent-[var(--accent)]"
               />
               <span className="text-sm font-semibold text-[var(--text-primary)]">Vuelve con otra tarifa</span>
-              <span className="mt-0.5 text-xs leading-relaxed text-[var(--text-tertiary)]">Sin marcar, sigue con la última tarifa que tenía antes del cese.</span>
+              <span className="mt-0.5 text-xs leading-relaxed text-[var(--text-tertiary)]">Sin marcar, sigue con la última tarifa que tenía antes de retirarse.</span>
             </label>
             {conTarifa && (
               <div className="grid grid-cols-2 gap-3">
@@ -259,7 +262,7 @@ export default function CesarColaboradorModal({ open, onClose, colaboradorId, co
             )}
           </div>
         ) : (
-          <AvisoRrhh tono="neutro">Sigue con la última tarifa que tenía antes del cese. Sólo un administrador puede ponerle una nueva.</AvisoRrhh>
+          <AvisoRrhh tono="neutro">Sigue con la última tarifa que tenía antes de retirarse. Sólo un administrador puede ponerle una nueva.</AvisoRrhh>
         )}
 
         {aviso && (

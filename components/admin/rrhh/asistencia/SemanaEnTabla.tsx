@@ -19,6 +19,8 @@ import { formatearDias, nombreCortoDelDia, type HorarioDelPuesto } from "./seman
 import type { FilaSemana } from "./semana-pdf";
 import type { ColaboradorMinDTO, EstadoAsistencia, FechaKey } from "@/lib/rrhh/tipos";
 import { formatNumber } from "@/lib/format";
+import { MoreHorizontal, UserMinus } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
 
 interface Props {
   filas: FilaSemana[];
@@ -34,16 +36,18 @@ interface Props {
   onMarcar: (colaboradorId: string, fecha: FechaKey, estado: EstadoAsistencia | null) => void;
   onAceptarTardanza: (colaboradorId: string, fecha: FechaKey) => void;
   onVerHistorial: (colaborador: ColaboradorMinDTO, fecha: FechaKey) => void;
+  /** «Retirado…» al lado del nombre (sólo gestión y completo). */
+  onRetirar?: (colaborador: ColaboradorMinDTO) => void;
 }
 
-export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pendientes, erroresPorCelda, conPlata, totales, onMarcar, onAceptarTardanza, onVerHistorial }: Props) {
+export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pendientes, erroresPorCelda, conPlata, totales, onMarcar, onAceptarTardanza, onVerHistorial, onRetirar }: Props) {
   return (
     <div className="hidden sm:block">
       <DataTable zebra stickyHeader wrapperClassName="max-h-[70vh] rounded-2xl">
         <thead>
           <tr>
             <th className="sticky left-0 z-10">
-              <span className="block w-44">Persona</span>
+              <span className="block w-52">Persona</span>
             </th>
             {dias.map((d) => (
               <th key={d} title={etiquetaDia(d, hoy)} className={cn("text-center", d === hoy && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]")}>
@@ -69,10 +73,24 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
           {filas.map(({ c, marcasDeLaPersona, conteo, sinMarcar, trabajados, plata }) => (
             <tr key={c.id}>
               <td className="sticky left-0 z-10 bg-[var(--surface-raised)] font-semibold">
-                <span className="block w-44 truncate" title={c.nombre}>
-                  {c.nombre}
-                </span>
-                {c.puesto && <span className="block w-44 truncate text-sm font-normal text-[var(--text-tertiary)]">{c.puesto.nombre}</span>}
+                <div className="flex w-52 items-center gap-1">
+                  <div className="min-w-0 flex-1">
+                    <span className="block truncate" title={c.nombre}>
+                      {c.nombre}
+                    </span>
+                    {c.puesto && <span className="block truncate text-sm font-normal text-[var(--text-tertiary)]">{c.puesto.nombre}</span>}
+                  </div>
+                  {onRetirar && (
+                    <ActionMenu
+                      label={`Más de ${c.nombre}`}
+                      icon={MoreHorizontal}
+                      soloIcono
+                      size="sm"
+                      title="Retirar"
+                      actions={[{ id: "retirar", label: "Retirado…", hint: "Ya no trabaja acá: desde qué día deja de salir", icon: UserMinus, tone: "danger", onSelect: () => onRetirar(c) }]}
+                    />
+                  )}
+                </div>
               </td>
               {dias.map((d) => {
                 const editable = dentroDeVentana(d, ventana);

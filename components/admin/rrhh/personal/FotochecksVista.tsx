@@ -124,7 +124,7 @@ export default function FotochecksVista({
           <strong className="tabular-nums text-[var(--text-primary)]">{elegidos.length}</strong> de {colaboradores.length}
           {elegidos.length > 0 && <span className="text-[var(--text-tertiary)]"> · {hojas} hoja{hojas === 1 ? "" : "s"} A4</span>}
           {cesadosOmitidos > 0 && (
-            <span className="text-[var(--text-tertiary)]"> · {cesadosOmitidos} cesado{cesadosOmitidos === 1 ? "" : "s"} fuera</span>
+            <span className="text-[var(--text-tertiary)]"> · {cesadosOmitidos} retirado{cesadosOmitidos === 1 ? "" : "s"} fuera</span>
           )}
         </p>
 

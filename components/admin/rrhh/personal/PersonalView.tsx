@@ -56,7 +56,7 @@ const CHIPS_ESTADO: { id: EstadoColaborador | "TODOS"; label: string }[] = [
   { id: "VACACIONES", label: "Vacaciones" },
   { id: "LICENCIA", label: "Licencia" },
   { id: "SUSPENDIDO", label: "Suspendidos" },
-  { id: "CESADO", label: "Cesados" },
+  { id: "CESADO", label: "Retirados" },
 ];
 
 export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {

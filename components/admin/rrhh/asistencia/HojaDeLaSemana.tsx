@@ -37,6 +37,7 @@ import { propsPanelAsistencia } from "./panel-asistencia";
 import EncabezadoDeVista from "../EncabezadoDeVista";
 import SemanaEnCelular from "./SemanaEnCelular";
 import SemanaEnTabla from "./SemanaEnTabla";
+import { useRetirarPersona } from "./use-retirar-persona";
 import { conteoDelMes, diasTrabajados } from "./conteo-mes";
 import { etiquetaSemana, formatearDias, horariosPorColaborador, marcaConTardanza, resumenTardanzas, tardanzasSinMarcar } from "./semana";
 import { descargarPdfDeLaSemana, type FilaSemana } from "./semana-pdf";
@@ -63,6 +64,8 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
   // comparar la hora marcada, y la semana se revisa a mano, como antes.
   const { puestos } = useRrhhPuestos();
   const [historial, setHistorial] = useState<{ colaborador: ColaboradorMinDTO; fecha: string } | null>(null);
+  /* Desde la semana se propone el último día de esa semana (u hoy, si la semana sigue). */
+  const retirar = useRetirarPersona(nivel, recargar);
   const [descargando, setDescargando] = useState(false);
   const [archivando, setArchivando] = useState(false);
 
@@ -224,7 +227,9 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
           onMarcar={(colaboradorId, fecha, estado) => marcar({ colaboradorId, fecha, estado })}
           onAceptarTardanza={aceptarTardanza}
           onVerHistorial={(colaborador, fecha) => setHistorial({ colaborador, fecha })}
+          onRetirar={retirar.abrir ? (c) => retirar.abrir?.(c, hasta < hoy ? hasta : hoy) : undefined}
         />
+        {retirar.modal}
 
         <SemanaEnCelular
           filas={filas}

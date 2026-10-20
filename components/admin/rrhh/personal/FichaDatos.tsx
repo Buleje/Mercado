@@ -41,7 +41,7 @@ export default function FichaDatos({ colaborador: c, mostrarTarifa }: { colabora
         <dl>
           <Dato k="Puesto" v={c.puesto?.nombre ?? "Sin puesto"} />
           <Dato k="Ingreso" v={formatearFecha(c.fechaIngreso) || null} numeros />
-          {c.fechaCese && <Dato k="Cese" v={`${formatearFecha(c.fechaCese)}${c.motivoCese ? ` · ${c.motivoCese}` : ""}`} />}
+          {c.fechaCese && <Dato k="Retiro" v={`${formatearFecha(c.fechaCese)}${c.motivoCese ? ` · ${c.motivoCese}` : ""}`} />}
           {mostrarTarifa && (
             <Dato k="Tarifa vigente" v={c.tarifaVigente ? `${formatearPEN(c.tarifaVigente.monto)} ${etiquetaModalidad(c.tarifaVigente.modalidad)}` : "Sin tarifa"} />
           )}

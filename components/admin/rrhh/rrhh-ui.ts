@@ -120,7 +120,7 @@ export const COLABORADOR_ESTADO_META: Record<EstadoColaborador, ColaboradorEstad
     claseChip: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
   },
   CESADO: {
-    label: "Cesado",
+    label: "Retirado",
     claseChip: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   },
 };
@@ -164,7 +164,7 @@ export function estaIncluidoEseDia(c: ColaboradorMinDTO, fecha: FechaKey): boole
 /** Por qué un colaborador NO está incluido hoy — para el texto de «No incluidos». */
 export function motivoNoIncluido(c: ColaboradorMinDTO, fecha: FechaKey): string {
   if (c.fechaIngreso && c.fechaIngreso > fecha) return `Ingresa el ${c.fechaIngreso.slice(8, 10)}/${c.fechaIngreso.slice(5, 7)}`;
-  if (c.fechaCese && c.fechaCese < fecha) return `Cesó el ${c.fechaCese.slice(8, 10)}/${c.fechaCese.slice(5, 7)}`;
+  if (c.fechaCese && c.fechaCese < fecha) return `Se retiró el ${c.fechaCese.slice(8, 10)}/${c.fechaCese.slice(5, 7)}`;
   return COLABORADOR_ESTADO_META[c.estado].label;
 }
 

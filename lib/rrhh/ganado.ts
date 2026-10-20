@@ -180,7 +180,7 @@ export function calcularGanado(input: CalcularGanadoInput): GanadoPersona {
     fueraDePeriodo.sort();
     const n = fueraDePeriodo.length;
     avisos.push(
-      `Tiene ${n} marca${n === 1 ? "" : "s"} fuera de su período (antes de ingresar o después de cesar) desde el ${fueraDePeriodo[0]}: se guardan, pero no suman.`,
+      `Tiene ${n} marca${n === 1 ? "" : "s"} fuera de su período (antes de ingresar o después de retirarse) desde el ${fueraDePeriodo[0]}: se guardan, pero no suman.`,
     );
   }
 
