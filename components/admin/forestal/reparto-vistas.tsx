@@ -23,6 +23,7 @@ import {
 import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import { colorDeBloque } from "./reparto-colores";
 import { TipoBadge } from "./tipo-badge";
+import { CifraCopiable, CodigoCopiable, Copiable, textoParaCopiar } from "./cifra-copiable";
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 
 /**
@@ -48,9 +49,13 @@ export function BloqueEspecie({
   e, dim, conCosto, marcadas, marcar, onAnexo, onAnexoDia, anexoElegidos, onAlternarAnexo,
   editarBloque, valorTexto, onCambioDecimal, onBlurDecimal, onAgregarBloqueSugerido,
   onEditarLinea, valorTextoLinea, onCambioDecimalLinea, onBlurDecimalLinea,
-  indiceBloque, libro,
+  indiceBloque, libro, codigoDe, numeroDe,
 }: {
   e: EspecieDistribucion;
+  /** El código único de cada línea («1-03», `use-codigos-reparto`). Sin esto no sale la columna Código. */
+  codigoDe?: (clave: string) => string | null;
+  /** El número de bloque de esos códigos (único en la hoja, no «N de M» de la especie). */
+  numeroDe?: (bloqueId: string) => number | undefined;
   /**
    * El Libro desde la distribución (ADR-464, fases 3 y 4): la acción del
    * bloque («Completar»), su aviso y el botón de cada jornada. Lo arma
@@ -171,10 +176,10 @@ export function BloqueEspecie({
         </span>
         <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono tabular-nums">
           <span className="flex items-baseline gap-1 text-lg font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]" title="Lo que el reparto asignó de verdad a los bloques de esta especie">
-            {fmtM3(e.amparadaM3)}<span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">m³ amparados</span>
+            <CifraCopiable valor={e.amparadaM3} tipo="m3" /><span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">m³ amparados</span>
           </span>
           <span className="flex items-baseline gap-1 text-lg font-extrabold text-[var(--text-primary)]" title="Las piezas realmente asignadas — las que salen en el Anexo 04">
-            {fmtPiezas(e.bloques.reduce((a, bl) => a + bl.asignado.reduce((x, g) => x + g.piezas, 0), 0))}
+            <CifraCopiable valor={e.bloques.reduce((a, bl) => a + bl.asignado.reduce((x, g) => x + g.piezas, 0), 0)} tipo="piezas" />
             <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">pzas</span>
           </span>
           <b className={`text-sm ${TONO[j.tono]}`} title={`Rendimiento real — ${j.label}`}>
@@ -198,8 +203,8 @@ export function BloqueEspecie({
           <ul className="flex flex-wrap gap-x-4 gap-y-0.5 font-mono text-xs tabular-nums text-[var(--text-secondary)]">
             {e.porPermiso.map((p) => (
               <li key={p.permiso ?? "—"}>
-                <b className="text-[var(--text-primary)]">{p.permiso ?? "Sin permiso"}</b>: {fmtM3(p.rollizaM3)} m³ rolliza ·
-                ampara {fmtM3(p.amparadaM3)} m³ ({fmtPt(p.amparadaPt)} PT)
+                <b className="text-[var(--text-primary)]">{p.permiso ?? "Sin permiso"}</b>: <CifraCopiable valor={p.rollizaM3} tipo="m3" /> m³ rolliza ·
+                ampara <CifraCopiable valor={p.amparadaM3} tipo="m3" /> m³ ({fmtPt(p.amparadaPt)} PT)
               </li>
             ))}
           </ul>
@@ -215,13 +220,15 @@ export function BloqueEspecie({
 
         DOS POR FILA de `xl` para arriba (Brandon, tercera vuelta: «en los
         bloques distribuidos quiero que sea en una fila dos bloques bien
-        hechas y separadas»). Sólo desde 1280 px: cada tarjeta lleva adentro
-        una tabla de cinco columnas con números, y a la mitad del ancho en un
-        portátil chico quedaría con scroll horizontal propio — que es peor que
-        apilarlas. `items-start` para que dos bloques de distinto alto no se
-        estiren al del más largo.
+        hechas y separadas»). Dos por fila SÓLO si cada tarjeta mide ≥45rem: la
+        tabla de adentro (Distribuido · Código · tipo · Piezas · Ampara · Pie
+        tablar) pide ~700 px, y con `xl:grid-cols-2` a 1280 la tarjeta medía
+        440 y escondía Ampara y Pie tablar tras un scroll propio (medido
+        19-10). En una pantalla de 1920 entran dos; en una de 1366, una.
+        `items-start` para que dos bloques de distinto alto no se estiren al
+        del más largo.
       */}
-      <div className="grid grid-cols-1 items-start gap-4 bg-[var(--surface-canvas)] p-3 xl:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,45rem),1fr))] items-start gap-4 bg-[var(--surface-canvas)] p-3">
       {e.bloques.map((b, iBloque) => {
         // Todas las claves del bloque, cruzando días × grupos — es lo mismo que
         // recorre el papel: si se tildan todas ahí, se tildan todas acá de un
@@ -284,6 +291,14 @@ export function BloqueEspecie({
               <span className="mr-2 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-0.5 align-middle text-xs font-bold text-[var(--text-secondary)]">
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} aria-hidden />
                 Bloque {iBloque + 1} de {e.bloques.length}
+                {numeroDe?.(b.bloque.id) != null && (
+                  <span
+                    className="border-l border-[var(--rule-base)] pl-1.5 font-mono"
+                    title="El número de este bloque en los códigos de sus líneas (1-01, 1-02…): único en toda la hoja"
+                  >
+                    N.º {numeroDe(b.bloque.id)}
+                  </span>
+                )}
               </span>
               {directa && (
                 <span
@@ -341,10 +356,10 @@ export function BloqueEspecie({
             <span className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
               <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono tabular-nums">
                 <span className="flex items-baseline gap-1 text-lg font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]" title="Los m³ que el reparto asignó de verdad a este bloque">
-                  {fmtM3(b.usadoM3)}<span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">m³</span>
+                  <CifraCopiable valor={b.usadoM3} tipo="m3" /><span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">m³</span>
                 </span>
                 <span className="flex items-baseline gap-1 text-lg font-extrabold text-[var(--text-primary)]" title="Las piezas realmente asignadas — las que salen en el Anexo 04 de este bloque">
-                  {fmtPiezas(piezasDelBloque)}<span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">pzas</span>
+                  <CifraCopiable valor={piezasDelBloque} tipo="piezas" /><span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">pzas</span>
                 </span>
               </span>
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
@@ -450,6 +465,7 @@ export function BloqueEspecie({
                 anexoElegido={anexoElegidos?.has(`${b.bloque.id}#${dia.dia}`)}
                 onAlternarAnexo={onAlternarAnexo ? (d) => onAlternarAnexo(`${b.bloque.id}#${d}`) : undefined}
                 libro={libro?.dia(b, dia.dia)}
+                codigoDe={codigoDe}
               />
             ))
           )}
@@ -503,8 +519,8 @@ export function BloqueEspecie({
                 <tr className="border-[var(--data-warning-500)]/40 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                   <th scope="col">{etiquetaCol}</th>
                   <th scope="col" className="w-28 text-right">Piezas</th>
-                  <th scope="col" className="w-32 text-right">Pie tablar</th>
                   <th scope="col" className="w-36 text-right">Sin amparar (m³)</th>
+                  <th scope="col" className="w-32 text-right">Pie tablar</th>
                   <th scope="col" className="w-36 text-right">Rolliza que pide</th>
                 </tr>
               </thead>
@@ -514,10 +530,10 @@ export function BloqueEspecie({
               <tfoot>
                 <tr className="border-t-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/15 font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                   <th scope="row" className="text-left">Total sin distribuir</th>
-                  <td className="text-right font-mono tabular-nums">{fmtPiezas(e.faltante.reduce((a, f) => a + f.piezas, 0))}</td>
+                  <td className="text-right font-mono tabular-nums"><CifraCopiable valor={e.faltante.reduce((a, f) => a + f.piezas, 0)} tipo="piezas" /></td>
+                  <td className="text-right font-mono tabular-nums"><CifraCopiable valor={e.faltanteM3} tipo="m3" /></td>
                   <td className="text-right font-mono tabular-nums">{fmtPt(e.faltante.reduce((a, f) => a + f.pieTablar, 0))}</td>
-                  <td className="text-right font-mono tabular-nums">{fmtM3(e.faltanteM3)}</td>
-                  <td className="text-right font-mono tabular-nums">{fmtM3(e.rollizaFaltanteM3)}</td>
+                  <td className="text-right font-mono tabular-nums"><CifraCopiable valor={e.rollizaFaltanteM3} tipo="m3" /></td>
                 </tr>
               </tfoot>
             </DataTable>
@@ -543,9 +559,11 @@ export function BloqueEspecie({
 function JornadaBloque({
   bloque, dia, dias, dim, etiquetaCol, marcadas, marcar,
   editableLinea, onEditarLinea, valorTextoLinea, onCambioDecimalLinea, onBlurDecimalLinea,
-  onAnexoDia, anexoElegido, onAlternarAnexo, libro,
+  onAnexoDia, anexoElegido, onAlternarAnexo, libro, codigoDe,
 }: {
   bloque: BloqueRolliza;
+  /** Con esto sale la columna Código (`use-codigos-reparto`). */
+  codigoDe?: (clave: string) => string | null;
   dia: DiaDistribuido;
   /** El botón «Registrar en el Libro» de ESTA jornada (ADR-464, fase 3). */
   libro?: ReactNode;
@@ -595,7 +613,7 @@ function JornadaBloque({
             {dia.piezas === 0 ? (
               <span className="text-[var(--text-tertiary)]">sin producción de este bloque</span>
             ) : (
-              <>{dia.piezas} pzas · {fmtPt(dia.pieTablar)} PT · {fmtM3(dia.m3)} m³</>
+              <><CifraCopiable valor={dia.piezas} tipo="piezas" /> pzas · <CifraCopiable valor={dia.m3} tipo="m3" /> m³ · {fmtPt(dia.pieTablar)} PT</>
             )}
             {claves.length > 0 && (
               <span className={`ml-2 rounded-full px-2 py-0.5 text-sm font-bold ${todas
@@ -653,15 +671,22 @@ function JornadaBloque({
             columna recta al bajar la pantalla. Con el mismo ancho en las
             tres tablas de esta sección (acá y en `BloqueEspecie` más abajo),
             las cifras SIEMPRE caen una debajo de la otra.
+
+            Orden Piezas · Ampara (m³) · Pie tablar (Brandon, 2026-10-19:
+            «acomoda el pie tablar al lado derecho de Ampara»), el mismo de
+            «Sin marcar» y del faltante de abajo.
           */}
-          <DataTable className="w-full min-w-[620px] table-fixed">
+          <DataTable className={`w-full table-fixed ${codigoDe ? "min-w-[700px]" : "min-w-[620px]"}`}>
             <thead>
               <tr>
                 <th scope="col" className="w-24" title="Tilda la línea cuando ya la distribuiste y la pasaste al Libro de Operaciones">Distribuido</th>
+                {codigoDe && (
+                  <th scope="col" className="w-20" title="Código único de la línea: n.º de bloque y correlativo (1-01, 1-02…). No cambia al tildar ni al filtrar">Código</th>
+                )}
                 <th scope="col">{etiquetaCol}</th>
                 <th scope="col" className="w-28 text-right">Piezas</th>
-                <th scope="col" className="w-32 text-right">Pie tablar</th>
                 <th scope="col" className="w-32 text-right">Ampara (m³)</th>
+                <th scope="col" className="w-32 text-right">Pie tablar</th>
               </tr>
             </thead>
             <tbody>
@@ -685,6 +710,7 @@ function JornadaBloque({
                     valorTextoLinea={valorTextoLinea}
                     onCambioDecimalLinea={onCambioDecimalLinea}
                     onBlurDecimalLinea={onBlurDecimalLinea}
+                    codigo={codigoDe ? codigoDe(k) : undefined}
                   />
                 );
               })}
@@ -694,10 +720,10 @@ function JornadaBloque({
             <tfoot>
               <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <td />
-                <th scope="row" className="text-left">Total del día {dia.dia}</th>
-                <td className="text-right font-mono tabular-nums">{fmtPiezas(dia.piezas)}</td>
+                <th scope="row" colSpan={codigoDe ? 2 : 1} className="text-left">Total del día {dia.dia}</th>
+                <td className="text-right font-mono tabular-nums"><CifraCopiable valor={dia.piezas} tipo="piezas" /></td>
+                <td className="text-right font-mono tabular-nums"><CifraCopiable valor={dia.m3} tipo="m3" /></td>
                 <td className="text-right font-mono tabular-nums">{fmtPt(dia.pieTablar)}</td>
-                <td className="text-right font-mono tabular-nums">{fmtM3(dia.m3)}</td>
               </tr>
             </tfoot>
           </DataTable>
@@ -845,8 +871,15 @@ function AgregarLineaBloque({
 export function FilaConMedidas({
   a, dim, marcada, onMarcar,
   editable, bloqueId, overrideActual, onEditarLinea, valorTextoLinea, onCambioDecimalLinea, onBlurDecimalLinea,
+  codigo, permiso, nota,
 }: {
   a: AsignacionGrupo;
+  /** El código único de la línea («1-03»). `undefined` = la tabla no tiene columna Código. */
+  codigo?: string | null;
+  /** El permiso de la línea. `undefined` = la tabla no tiene columna Permiso. */
+  permiso?: string | null;
+  /** Una nota corta al lado del tipo (de qué especie o día viene). */
+  nota?: string;
   dim: DimensionResumen;
   /** Ya se registró en el Libro: la fila se pinta y se corre al final del ojo. */
   marcada: boolean;
@@ -882,6 +915,10 @@ export function FilaConMedidas({
             className="h-5 w-5 accent-[var(--data-success-600)]"
           />
         </td>
+        {codigo !== undefined && <td><CodigoCopiable codigo={codigo} /></td>}
+        {permiso !== undefined && (
+          <td className="truncate font-mono text-xs text-[var(--text-secondary)]" title={permiso ?? undefined}>{permiso ?? "—"}</td>
+        )}
         <td>
           <span className="inline-flex items-center gap-1.5">
             {hayDetalle && (
@@ -902,6 +939,7 @@ export function FilaConMedidas({
                 {a.medidas.length} {a.medidas.length === 1 ? "medida" : "medidas"}
               </span>
             )}
+            {nota && <span className="truncate text-xs text-[var(--text-tertiary)]">· {nota}</span>}
             {a.m3Declarado && (
               <span
                 title="m³ declarado a mano — no es la suma de las medidas reales de esta línea. Puede amparar más de lo que estas piezas dieron físicamente: verificar antes de declarar ante SERFOR."
@@ -914,6 +952,7 @@ export function FilaConMedidas({
         </td>
         <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
           {editable ? (
+            <span className="inline-flex items-center justify-end gap-1">
             <input
               value={overrideActual?.piezas ?? ""}
               onChange={(ev) => onEditarLinea!(bloqueId, a.clave, "piezas", ev.target.value)}
@@ -922,13 +961,16 @@ export function FilaConMedidas({
               placeholder={fmtPiezas(a.piezas)}
               aria-label={`Piezas de ${a.label}, editable`}
               title="Piezas declaradas a mano para ESTA línea. Vacío = lo que reparte el cálculo — el resto del bloque se reparte de nuevo con lo que sobre."
-              className={`h-8 w-20 rounded-xl border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-sm tabular-nums outline-none focus:border-[var(--accent)] ${overrideActual?.piezas == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
+              className={`h-8 w-14 rounded-xl border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-sm tabular-nums outline-none focus:border-[var(--accent)] ${overrideActual?.piezas == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
             />
-          ) : fmtPiezas(a.piezas)}
+            {/* El campo se escribe: copiar va en el ícono de al lado. */}
+            <Copiable soloIcono texto={textoParaCopiar(a.piezas, "piezas")} etiqueta={`${fmtPiezas(a.piezas)} piezas de ${a.label}`} />
+            </span>
+          ) : <CifraCopiable valor={a.piezas} tipo="piezas" />}
         </td>
-        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(a.pieTablar)}</td>
         <td className="text-right font-mono font-bold tabular-nums">
           {editable ? (
+            <span className="inline-flex items-center justify-end gap-1">
             <input
               /*
                * Con override puesto, al perder foco muestra `a.m3` (lo REAL
@@ -950,19 +992,24 @@ export function FilaConMedidas({
               placeholder={fmtM3(a.m3)}
               aria-label={`Ampara m³ de ${a.label}, editable`}
               title="Tope de m³ dicho a mano para ESTA línea — el número que queda es el real que lograron las piezas que entraron, nunca más del tope. Vacío = lo reparte el cálculo."
-              className={`h-8 w-24 rounded-xl border-2 bg-[var(--surface-raised)] px-1.5 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${overrideActual?.m3 == null ? "border-dashed border-[var(--rule-base)] text-[var(--accent)]" : "border-[var(--accent)] text-[var(--accent)]"}`}
+              className={`h-8 w-18 rounded-xl border-2 bg-[var(--surface-raised)] px-1.5 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${overrideActual?.m3 == null ? "border-dashed border-[var(--rule-base)] text-[var(--accent)]" : "border-[var(--accent)] text-[var(--accent)]"}`}
             />
-          ) : fmtM3(a.m3)}
+            <Copiable soloIcono texto={textoParaCopiar(a.m3, "m3")} etiqueta={`${fmtM3(a.m3)} m³ de ${a.label}`} />
+            </span>
+          ) : <CifraCopiable valor={a.m3} tipo="m3" />}
         </td>
+        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(a.pieTablar)}</td>
       </tr>
       {abierto &&
         a.medidas.map((m) => (
           <tr key={m.clave} className="border-l-2 border-[var(--accent)]/30 bg-[var(--surface-sunken)]">
             <td />
+            {codigo !== undefined && <td />}
+            {permiso !== undefined && <td />}
             <td className="pl-9 pr-3 font-mono text-[var(--text-secondary)]">{m.medida}</td>
-            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPiezas(m.piezas)}</td>
+            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]"><CifraCopiable valor={m.piezas} tipo="piezas" /></td>
+            <td className="text-right font-mono tabular-nums"><CifraCopiable valor={m.m3} tipo="m3" /></td>
             <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(m.pieTablar)}</td>
-            <td className="text-right font-mono tabular-nums">{fmtM3(m.m3)}</td>
           </tr>
         ))}
     </>
@@ -1013,19 +1060,19 @@ function FilaFaltanteConMedidas({ f, dim }: { f: FaltanteGrupo; dim: DimensionRe
             )}
           </span>
         </td>
-        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPiezas(f.piezas)}</td>
+        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]"><CifraCopiable valor={f.piezas} tipo="piezas" /></td>
+        <td className="text-right font-mono font-bold tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"><CifraCopiable valor={f.m3} tipo="m3" /></td>
         <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(f.pieTablar)}</td>
-        <td className="text-right font-mono font-bold tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{fmtM3(f.m3)}</td>
-        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(f.rollizaNecesariaM3)}</td>
+        <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]"><CifraCopiable valor={f.rollizaNecesariaM3} tipo="m3" /></td>
       </tr>
       {abierto &&
         f.medidas.map((m) => (
           <tr key={m.clave} className="border-l-2 border-[var(--data-warning-500)]/40 bg-[var(--surface-sunken)]">
             <td className="pl-9 pr-3 font-mono text-[var(--text-secondary)]">{m.medida}</td>
-            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPiezas(m.piezas)}</td>
+            <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]"><CifraCopiable valor={m.piezas} tipo="piezas" /></td>
+            <td className="text-right font-mono tabular-nums"><CifraCopiable valor={m.m3} tipo="m3" /></td>
             <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(m.pieTablar)}</td>
-            <td className="text-right font-mono tabular-nums">{fmtM3(m.m3)}</td>
-            <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(m.m3 * razonRolliza)}</td>
+            <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]"><CifraCopiable valor={m.m3 * razonRolliza} tipo="m3" /></td>
           </tr>
         ))}
     </>

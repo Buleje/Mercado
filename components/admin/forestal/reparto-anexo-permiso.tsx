@@ -40,6 +40,7 @@ import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import { formatNumber } from "@/lib/format";
 import AnexoAlLibro from "./reparto-anexo-al-libro";
 import BotonResumenPapel from "./reparto-anexo-resumen-papel";
+import { CifraCopiable } from "./cifra-copiable";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { DataTable } from "@buleje/design-system";
 
@@ -259,8 +260,8 @@ export default function AnexoPorPermiso({
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
             <span className="text-sm font-bold text-[var(--text-primary)]">{actual.label}</span>
             <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-              {fmtPiezas(actual.totalPiezas)} pzas · {fmtPt(actual.totalPt)} PT ·{" "}
-              <b className="text-[var(--text-primary)]">{fmtM3(actual.totalM3)} m³</b>
+              <CifraCopiable valor={actual.totalPiezas} tipo="piezas" /> pzas · {fmtPt(actual.totalPt)} PT ·{" "}
+              <b className="text-[var(--text-primary)]"><CifraCopiable valor={actual.totalM3} tipo="m3" /> m³</b>
             </span>
             <span className="text-xs text-[var(--text-tertiary)]">
               {actual.especies.join(" · ")} · {actual.tipos.length}{" "}
@@ -367,8 +368,8 @@ export default function AnexoPorPermiso({
                           · {r.medidas} {r.medidas === 1 ? "medida" : "medidas"}
                         </span>
                       </td>
-                      <td className={NUM}>{fmtPiezas(r.piezas)}</td>
-                      <td className={`${NUM} font-bold`}>{fmtM3(r.m3)}</td>
+                      <td className={NUM}><CifraCopiable valor={r.piezas} tipo="piezas" /></td>
+                      <td className={`${NUM} font-bold`}><CifraCopiable valor={r.m3} tipo="m3" /></td>
                       <td className={NUM}>{fmtPt(r.pieTablar)}</td>
                       {conValor && (
                         <td className={`${TD} text-right`}>
@@ -408,10 +409,10 @@ export default function AnexoPorPermiso({
                       Total del permiso
                     </td>
                     <td className={`${NUM} font-bold`}>
-                      {fmtPiezas(actual.totalPiezas)}
+                      <CifraCopiable valor={actual.totalPiezas} tipo="piezas" />
                     </td>
                     <td className={`${NUM} font-bold`}>
-                      {fmtM3(actual.totalM3)}
+                      <CifraCopiable valor={actual.totalM3} tipo="m3" />
                     </td>
                     <td className={`${NUM} font-bold`}>
                       {fmtPt(actual.totalPt)}
@@ -493,8 +494,8 @@ export default function AnexoPorPermiso({
                         especie: <td className={TD}>{f.especie}</td>,
                         tipo: <td className={TD}>{f.tipo}</td>,
                         medida: <td className={`${TD} font-mono`}>{f.medida}</td>,
-                        piezas: <td className={NUM}>{fmtPiezas(f.piezas)}</td>,
-                        m3: <td className={`${NUM} font-bold`}>{fmtM3(f.m3)}</td>,
+                        piezas: <td className={NUM}><CifraCopiable valor={f.piezas} tipo="piezas" /></td>,
+                        m3: <td className={`${NUM} font-bold`}><CifraCopiable valor={f.m3} tipo="m3" /></td>,
                         pieTablar: <td className={NUM}>{fmtPt(f.pieTablar)}</td>,
                         /* Acá el precio NO se edita: es el de su especie·tipo, que
                            se pone arriba. Dos casillas para el mismo número son dos
@@ -565,9 +566,9 @@ export default function AnexoPorPermiso({
                           )}
                         </td>
                       ),
-                      piezas: <td className={`${NUM} font-bold`}>{fmtPiezas(actual.totalPiezas)}</td>,
+                      piezas: <td className={`${NUM} font-bold`}><CifraCopiable valor={actual.totalPiezas} tipo="piezas" /></td>,
                       /* El pie del detalle suma lo que se VE: cada medida a 3 decimales. */
-                      m3: <td className={`${NUM} font-bold`}>{fmtM3(actual.totalMedidasM3)}</td>,
+                      m3: <td className={`${NUM} font-bold`}><CifraCopiable valor={actual.totalMedidasM3} tipo="m3" /></td>,
                       pieTablar: <td className={`${NUM} font-bold`}>{fmtPt(actual.totalPt)}</td>,
                       precio: conValor && (
                         <td className={`${NUM} font-bold`}>

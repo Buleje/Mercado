@@ -50,11 +50,14 @@ export function PestanasRolliza({
   porDistribuir,
   conAnexo,
   nombreSinMarcar,
+  avisosCierre = 0,
   acciones,
   children,
 }: {
   /** Atajos de la pestaña activa, a la derecha de las pestañas (misma fila). */
   acciones?: ReactNode;
+  /** Medidas de piezas que ninguna troza del bloque alcanza: el número de «Faltante y cierre». */
+  avisosCierre?: number;
   /** El nombre que le pusieron al bloque de lo sin tildar. */
   nombreSinMarcar?: string;
   sub: SeccionRolliza;
@@ -68,7 +71,12 @@ export function PestanasRolliza({
   const secciones = SECCIONES_ROLLIZA.map((clave) => ({
     clave,
     rotulo: clave === "por-distribuir" && nombreSinMarcar ? nombreSinMarcar : ROTULO[clave],
-    cuenta: clave === "por-distribuir" && porDistribuir > 0 ? porDistribuir : undefined,
+    cuenta:
+      clave === "por-distribuir" && porDistribuir > 0
+        ? porDistribuir
+        : clave === "cierre" && avisosCierre > 0
+          ? avisosCierre
+          : undefined,
   }));
   return (
     <>

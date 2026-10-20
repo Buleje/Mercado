@@ -41,10 +41,15 @@ import { margenLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useLibroDelReparto } from "./hooks/use-libro-del-reparto";
 import { useSeccionRolliza, PestanasRolliza } from "./reparto-pestanas";
+import RepartoFiltroPermiso from "./reparto-filtro-permiso";
+import RepartoCuadreMedidas from "./reparto-cuadre-medidas";
+import { usePermisoDeRolliza } from "./hooks/use-permiso-de-rolliza";
+import { useCuadreMedidas } from "./hooks/use-cuadre-medidas";
 import { useNombreSinMarcar } from "./hooks/use-nombre-sin-marcar";
 import { CuentaMarcado, procedenciaDeAnexo, SelectorModoAnexo, useModoAnexo } from "./reparto-anexo-modo";
 import RepartoPorDistribuir from "./reparto-por-distribuir";
-import { cuadreMarcado, marcadoEn, pendienteEn, piezasFiltradasDelBloque, porDistribuir } from "@/lib/forestal/reparto-por-distribuir";
+import { cuadreMarcado, lineasDelReparto, marcadoEn, pendienteEn, piezasFiltradasDelBloque, porDistribuir } from "@/lib/forestal/reparto-por-distribuir";
+import { useCodigosReparto } from "./hooks/use-codigos-reparto";
 import { KpiResumen, SeccionResumen } from "./resumen-tabla";
 import { BloqueEspecie } from "./reparto-vistas";
 import { CeldaPermiso } from "./reparto-celda-permiso";
@@ -1017,6 +1022,17 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   const anexosVista = modoAnexo === "marcado" ? anexosMarcado : modoAnexo === "pendiente" ? anexosPendiente : anexosDePermiso;
   /** La pestaña de la distribución (`?sub=`). */
   const { sub: seccion, irA: irASeccion } = useSeccionRolliza();
+  /**
+   * El código único de cada línea («1-03», Brandon 2026-10-19): sale de la hoja
+   * COMPLETA (no de la vista filtrada) y se guarda junto a las casillas, así no
+   * cambia al tildar, filtrar ni reordenar.
+   */
+  const lineasDeLaHoja = useMemo(() => lineasDelReparto(dist), [dist]);
+  const ordenBloques = useMemo(() => bloques.map((b) => b.id), [bloques]);
+  const codigos = useCodigosReparto(claveLocal("-rolliza-codigos"), ordenBloques, lineasDeLaHoja);
+  /** El permiso elegido en «Lo que entró» (sólo filtra la vista) y el cuadre de medidas pieza ↔ troza. */
+  const permisoRolliza = usePermisoDeRolliza(bloques);
+  const cuadreMedidas = useCuadreMedidas(dist, estadoLotes);
   /** Cómo se llama el bloque de lo sin tildar (se guarda con las casillas). */
   const [nombreSinMarcar, setNombreSinMarcar] = useNombreSinMarcar(claveLocal("-rolliza-sin-marcar-nombre"));
   /** El cierre del apartado: qué falta, qué tapan los reprocesos y qué queda. */
@@ -1760,6 +1776,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         sub={seccion}
         irA={irASeccion}
         porDistribuir={pendienteDeTildar.lineas.length}
+        avisosCierre={cuadreMedidas.cuadre.avisos}
         conAnexo={anexosDePermiso.length > 0}
         nombreSinMarcar={nombreSinMarcar}
         acciones={
@@ -1962,6 +1979,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           />
         )}
 
+        <RepartoFiltroPermiso permiso={permisoRolliza} />
+
         {bloques.length === 0 ? (
           <p className="flex items-center justify-center gap-1.5 py-3 text-center text-sm text-[var(--text-tertiary)]">
             Carga la rolliza que entró, o un bloque ya aserrado.
@@ -1997,7 +2016,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                 </tr>
               </thead>
               <tbody>
-                {bloques.map((b) => {
+                {bloques.filter(permisoRolliza.incluye).map((b) => {
                   const ap = aprovechableDe(b);
                   /** Madera que ya vino aserrada: su m³ ES el amparado, sin % de por medio. */
                   const directa = esAserradaDirecta(b);
@@ -2331,6 +2350,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                       corría el total medio ancho de columna. */}
                   <th scope="row" colSpan={colSpanIdentidad} className="border-l-[5px] border-l-transparent pl-2 pr-3 text-left">
                     Total · {bloques.length} bloque{bloques.length === 1 ? "" : "s"}
+                    {/* Con un permiso elegido las filas son sólo las suyas, pero el total y el reparto siguen siendo de todos. */}
+                    {permisoRolliza.elegido && <span className="block text-xs font-normal text-[var(--text-secondary)]">de todos los permisos</span>}
                   </th>
                   {pieCeldas.filter((c) => cols[c.key]).map((c) => <Fragment key={c.key}>{c.node}</Fragment>)}
                   <td />
@@ -2485,6 +2506,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               onCambioDecimalLinea={onCambioDecimalLinea}
               onBlurDecimalLinea={onBlurDecimalLinea}
               libro={libroReparto.libro}
+              codigoDe={codigos.codigoDe}
+              numeroDe={codigos.numeroDe}
             />
           ))}
         </>
@@ -2499,12 +2522,26 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           marcar={marcar}
           nombre={nombreSinMarcar}
           onNombre={setNombreSinMarcar}
-          onAnexo={(a) => setAnexoDe({
-            piezas: a.piezas,
-            especie: a.especies[0] ?? "",
-            etiqueta: `${nombreSinMarcar} · ${a.label}`,
-            procedencia: procedenciaDeAnexo(a),
-          })}
+          codigoDe={codigos.codigoDe}
+          /* Un solo papel con todo lo sin marcar, de todos los permisos (Brandon,
+             2026-10-19: «el anexo 4 se pondrá de todo en uno solo»). La misma
+             medida de dos bloques se junta en una fila, como el anexo conjunto. */
+          onAnexo={() => {
+            const especies = [...new Set(anexosPendiente.flatMap((a) => a.especies))];
+            setAnexoDe({
+              piezas: unificarPorMedida(anexosPendiente.flatMap((a) => a.piezas)),
+              especie: especies.length === 1 ? especies[0] : "",
+              etiqueta: nombreSinMarcar,
+              procedencia: anexosPendiente.map(procedenciaDeAnexo).reduce(
+                (t, p) => ({ rolliza: t.rolliza + p.rolliza, aserradaDirecta: t.aserradaDirecta + p.aserradaDirecta }),
+                { rolliza: 0, aserradaDirecta: 0 },
+              ),
+            });
+          }}
+          onPorPermiso={() => {
+            setModoAnexo("pendiente");
+            irASeccion("anexo");
+          }}
         />
       ))}
 
@@ -2581,6 +2618,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               <DiferenciaDistribucion dist={dist} dim={dim} />
             </div>
           )}
+
+          {/* Cada pieza contra las trozas de su bloque (largo y Ø): avisa, no frena. */}
+          {bloques.length > 0 && <RepartoCuadreMedidas estado={cuadreMedidas} permiso={permisoRolliza} />}
 
           {/* Lo que sobra de un tipo puede tapar lo que falta de otro: pasar la
               comercial por la sierra da paquetería —más piezas, menos m³—. Va
