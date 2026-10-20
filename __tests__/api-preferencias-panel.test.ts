@@ -33,6 +33,7 @@ vi.mock("@/lib/db/admin-preferences.db", () => ({
 }));
 
 import { GET, PUT } from "@/app/api/admin/preferences/panel/route";
+import { AVISO_POR_DEFECTO } from "@/lib/agenda/aviso-pantalla";
 
 const URL = "http://localhost/api/admin/preferences/panel";
 const como = (username: string, tenantId = "t1") => {
@@ -111,9 +112,20 @@ describe("qué se acepta", () => {
     ["más de 20 vistas", { clave: "vistas:crm-clientes", valor: Array.from({ length: 21 }, (_, i) => vista(`v${i}`)) }],
     ["vista sin nombre", { clave: "vistas:crm-clientes", valor: [vista("   ")] }],
     ["demasiado grande", { clave: "vistas:crm-clientes", valor: [vista("Gorda", { q: "x".repeat(33_000) })] }],
+    ["aviso de la agenda cada 7 min", { clave: "aviso-agenda", valor: [{ ...AVISO_POR_DEFECTO, cadaMin: 7 }] }],
+    ["aviso de la agenda que termina antes de empezar", { clave: "aviso-agenda", valor: [{ ...AVISO_POR_DEFECTO, desde: "20:00", hasta: "08:00" }] }],
+    ["dos configuraciones del aviso", { clave: "aviso-agenda", valor: [AVISO_POR_DEFECTO, AVISO_POR_DEFECTO] }],
   ])("400: %s", async (_caso, body) => {
     expect((await guardar(body)).status).toBe(400);
     expect(H.store.size).toBe(0);
+  });
+
+  it("el aviso en pantalla de la agenda se guarda por persona", async () => {
+    const mio = { ...AVISO_POR_DEFECTO, cadaMin: 30, sonido: true };
+    expect((await guardar({ clave: "aviso-agenda", valor: [mio] })).status).toBe(200);
+    expect((await leer()).body.guardado?.["aviso-agenda"]).toEqual([mio]);
+    como("beto");
+    expect((await leer()).body.guardado?.["aviso-agenda"]).toBeUndefined();
   });
 
   it("una lista vacía sí vale (borraste todo)", async () => {

@@ -32,6 +32,14 @@ const OnboardingWizard = dynamic(
   { ssr: false },
 );
 
+// Aviso en pantalla de la agenda (Brandon 2026-10-20): «Lo que te falta hacer»
+// sale solo cada tanto, en cualquier pestaña. Sólo con Administración a la vista
+// y fuera del modo presentación (no se le muestra al cliente).
+const AvisoAgendaProgramado = dynamic(
+  () => import("@/components/admin/administracion/aviso/AvisoAgendaProgramado"),
+  { ssr: false },
+);
+
 // Burbuja flotante de chat con clientes (estilo FB) — lazy, solo aparece
 // cuando hay mensajes sin leer (unreadForSeller > 0).
 const AdminChatHead = dynamic(
@@ -116,6 +124,10 @@ export function AdminOverlaysLayer({
       {/* Burbuja flotante de chat (Brandon 2026-06-06): cliente escribe →
           avatar + badge abajo-derecha; responde sin salir del tab actual. */}
       <AdminChatHead />
+
+      {authReady && !presentationMode && filteredTabs.some((t) => t.id === "administracion") && (
+        <AvisoAgendaProgramado rol={userRole} />
+      )}
 
       {showOnboarding && (
         <OnboardingWizard

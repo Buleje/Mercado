@@ -8,11 +8,13 @@
  */
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { CalendarDays, Plus, RefreshCw, Sparkles } from "@buleje/design-system/icons";
+import { BellOff, BellRing, CalendarDays, Play, Plus, RefreshCw, Sparkles } from "@buleje/design-system/icons";
 import { CardTitle, EmptyState, ErrorAlert, LoadingState } from "@buleje/design-system";
-import { TARJETA } from "@/components/admin/planificacion/piezas/clases";
+import { TARJETA, claseChip } from "@/components/admin/planificacion/piezas/clases";
 import { button } from "@/components/ui-system/button-variants";
 import { useAgenda } from "@/hooks/use-agenda";
+import { abrirAvisoAgenda, useConfigAviso } from "@/hooks/use-aviso-agenda";
+import { textoCada } from "@/lib/agenda/aviso-pantalla";
 import { cn } from "@/lib/utils";
 import { EncabezadoAgenda } from "../comun/EncabezadoAgenda";
 import { ESTILO_ESTADO } from "../comun/estado-ocurrencia";
@@ -20,6 +22,7 @@ import { fechaLarga } from "../comun/fechas";
 import { CLASE_CHIP_ESTADO, ListaOcurrencias } from "../comun/ListaOcurrencias";
 
 const ActividadModal = dynamic(() => import("../actividades/ActividadModal").then((m) => m.ActividadModal), { ssr: false });
+const ConfigAvisoModal = dynamic(() => import("../aviso/ConfigAvisoModal"), { ssr: false });
 
 const AYUDA = {
   what: "Lo que tienes que hacer hoy en tu negocio y lo que quedó atrasado de la semana, según las actividades que prendiste.",
@@ -29,13 +32,24 @@ const AYUDA = {
 
 export default function HoyVista({ irA }: { irA: (vista: string) => void }) {
   const { hoy, actividades, cargando, recargando, error, refrescar } = useAgenda();
+  const { config: aviso } = useConfigAviso();
   const [nueva, setNueva] = useState(false);
+  const [configAviso, setConfigAviso] = useState(false);
+  const IconoAviso = aviso.activo ? BellRing : BellOff;
 
   const encabezado = (
     <EncabezadoAgenda
       titulo="Lo que te toca hoy"
       ayuda={AYUDA}
-      secciones={<span className="text-sm font-semibold capitalize text-[var(--text-secondary)]">{fechaLarga(hoy.fecha)}</span>}
+      secciones={
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-semibold capitalize text-[var(--text-secondary)]">{fechaLarga(hoy.fecha)}</span>
+          <button type="button" data-qa="aviso-agenda-config" className={claseChip(aviso.activo)} onClick={() => setConfigAviso(true)} title="La ventana que sale sola con lo que te falta">
+            <IconoAviso className="size-4" aria-hidden="true" />
+            {aviso.activo ? `Aviso cada ${textoCada(aviso.cadaMin)}` : "Aviso apagado"}
+          </button>
+        </div>
+      }
       acciones={
         <button type="button" className={button({ variant: "primary", className: "max-sm:w-12 max-sm:px-0" })} onClick={() => setNueva(true)} title="Nueva actividad">
           <Plus className="size-4" aria-hidden="true" />
@@ -46,6 +60,8 @@ export default function HoyVista({ irA }: { irA: (vista: string) => void }) {
         { id: "actualizar", label: "Actualizar", hint: "Vuelve a mirar las fuentes", icon: RefreshCw, onSelect: refrescar, busy: recargando },
         { id: "calendario", label: "Ver el calendario", icon: CalendarDays, onSelect: () => irA("calendario") },
         { id: "sugeridas", label: "Actividades sugeridas", icon: Sparkles, onSelect: () => irA("actividades") },
+        { id: "aviso", label: "Configurar el aviso", hint: "Cada cuánto sale solo", icon: BellRing, onSelect: () => setConfigAviso(true) },
+        { id: "ver-aviso", label: "Ver el aviso ahora", icon: Play, onSelect: abrirAvisoAgenda },
       ]}
     />
   );
@@ -105,6 +121,7 @@ export default function HoyVista({ irA }: { irA: (vista: string) => void }) {
       )}
 
       {nueva && <ActividadModal actividad={null} onCerrar={() => setNueva(false)} />}
+      {configAviso && <ConfigAvisoModal onCerrar={() => setConfigAviso(false)} />}
     </div>
   );
 }

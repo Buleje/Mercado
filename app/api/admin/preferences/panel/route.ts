@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { AdminPreferencesDB } from "@/lib/db/admin-preferences.db";
 import { logger } from "@/lib/logger";
+import { AvisoPantallaSchema } from "@/lib/agenda/aviso-pantalla";
 
 /**
  * Lo que cada persona guarda para sí en el panel — «Abriste hace poco» (M06)
@@ -19,7 +20,11 @@ import { logger } from "@/lib/logger";
  * sesión, nunca del cuerpo.
  *
  * GET → { guardado: { [clave]: lista } }   (clave ausente = nunca guardó: el cliente sube lo suyo)
- * PUT → body { clave: "recientes" | "vistas:<pantalla>" | "uso-pestanas", valor: lista }
+ * PUT → body { clave: "recientes" | "vistas:<pantalla>" | "uso-pestanas" | "aviso-agenda", valor: lista }
+ *
+ * `aviso-agenda` es la configuración del aviso en pantalla de la agenda
+ * (`lib/agenda/aviso-pantalla.ts`): una lista de UNO, para viajar por el mismo
+ * camino que las listas (`lib/admin/guardado-servidor`).
  */
 
 const ROLES = ["admin", "cajero", "almacenero", "manager"] as const;
@@ -34,7 +39,7 @@ const TOPE_TEXTO = 32_000;
 const CLAVE_VISTAS = /^vistas:[A-Za-z0-9._-]{1,48}$/;
 /** `encodeURIComponent` no deja `:` en el usuario: el prefijo de uno nunca es el de otro. */
 const prefijoDe = (username: string) => `panel:${encodeURIComponent(username)}:`;
-const claveValida = (c: string) => c === "recientes" || c === "uso-pestanas" || CLAVE_VISTAS.test(c);
+const claveValida = (c: string) => c === "recientes" || c === "uso-pestanas" || c === "aviso-agenda" || CLAVE_VISTAS.test(c);
 
 const RecienteSchema = z.object({
   href: z.string().startsWith("/admin?").max(600),
@@ -57,6 +62,7 @@ const UsoSchema = z.object({
 const PutSchema = z
   .union([
     z.object({ clave: z.literal("uso-pestanas"), valor: z.array(UsoSchema).max(TOPE_USO) }),
+    z.object({ clave: z.literal("aviso-agenda"), valor: z.array(AvisoPantallaSchema).max(1) }),
     z.object({ clave: z.literal("recientes"), valor: z.array(RecienteSchema).max(TOPE_RECIENTES) }),
     z.object({ clave: z.string().regex(CLAVE_VISTAS), valor: z.array(VistaSchema).max(TOPE_VISTAS) }),
   ])

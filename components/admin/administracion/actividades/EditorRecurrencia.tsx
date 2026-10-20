@@ -10,7 +10,7 @@ import { CAMPO_ALTO, claseChip } from "@/components/admin/planificacion/piezas/c
 import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 import type { FrecuenciaAgenda, Recurrencia } from "@/lib/agenda/tipos";
-import { DIAS_INICIAL, DIAS_LARGOS, ORDEN_SEMANA } from "../comun/fechas";
+import { BotonesDias } from "../comun/BotonesDias";
 import { textoRecurrencia } from "../comun/recurrencia-texto";
 import { cambiarFrecuencia } from "./use-actividad-form";
 
@@ -70,30 +70,7 @@ export function EditorRecurrencia({ valor: r, hora, onCambiar }: Props) {
           <span id={`${id}-dias`} className="block text-sm font-semibold text-[var(--text-secondary)]">
             Qué días
           </span>
-          <div role="group" aria-labelledby={`${id}-dias`} className="flex flex-wrap gap-1.5">
-            {ORDEN_SEMANA.map((d) => {
-              const activo = r.diasSemana.includes(d);
-              return (
-                <button
-                  key={d}
-                  type="button"
-                  aria-pressed={activo}
-                  aria-label={DIAS_LARGOS[d]}
-                  title={DIAS_LARGOS[d]}
-                  onClick={() => alternarDia(d)}
-                  className={cn(
-                    "inline-flex size-12 items-center justify-center rounded-full border text-sm font-bold transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40",
-                    activo
-                      ? "border-[var(--accent)] bg-[var(--accent-ink)] text-white dark:bg-[var(--accent)] dark:text-[var(--surface-canvas)]"
-                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]",
-                  )}
-                >
-                  {DIAS_INICIAL[d]}
-                </button>
-              );
-            })}
-          </div>
+          <BotonesDias dias={r.diasSemana} onAlternar={alternarDia} rotuloId={`${id}-dias`} />
           {modo === "dias" && (
             <div className="flex flex-wrap gap-x-3 gap-y-1">
               {ATAJOS_DIAS.map((a) => (
