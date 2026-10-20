@@ -108,9 +108,19 @@ export function ConexionGoogle() {
       ) : conexion === null ? (
         <div className="flex flex-wrap items-center gap-3">
           <p className={cn("min-w-0 flex-[1_1_16rem] text-sm", error ? "text-[var(--data-error-ink)]" : "text-[var(--text-secondary)]")}>
-            {sinConfigurar
-              ? "Falta activar Google en el servidor: lo hace quien administra el sistema. Mientras tanto, usa el enlace de calendario de abajo."
-              : (error ?? "Todavía no conectaste tu cuenta de Google.")}
+            {sinConfigurar ? (
+              <>
+                Falta activar Google en este servidor: son 5 pasos en Google Cloud, una sola vez.{" "}
+                <InfoTip
+                  what="1) En console.cloud.google.com crea un proyecto. 2) Activa «Google Calendar API» y «Google Tasks API». 3) En «Pantalla de consentimiento» elige Externo y agrega tu Gmail como usuario de prueba. 4) En «Credenciales» crea un «ID de cliente de OAuth» de tipo Aplicación web con la dirección de abajo como URI de redireccionamiento. 5) Pega el ID y el secreto en GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET de .env.local."
+                  affects="Sin esto el botón queda apagado. Mientras tanto, el enlace de calendario de abajo sirve en otra computadora."
+                  example={`${typeof window === "undefined" ? "" : window.location.origin}/api/public/agenda-google/callback`}
+                  side="bottom"
+                />
+              </>
+            ) : (
+              (error ?? "Todavía no conectaste tu cuenta de Google.")
+            )}
           </p>
           <button
             type="button"

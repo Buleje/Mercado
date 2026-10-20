@@ -23,6 +23,7 @@ import {
   normalizarAviso,
   normalizarReloj,
   type AvisoPantalla,
+  type ModoAviso,
   type RelojAviso,
 } from "@/lib/agenda/aviso-pantalla";
 
@@ -31,14 +32,18 @@ const EN_SERVIDOR = "aviso-agenda";
 const EVENTO_CONFIG = "agenda-aviso:config";
 const EVENTO_ABRIR = "agenda-aviso:abrir";
 
-/** Abre el aviso ya («Probar ahora», «Ver el aviso»): lo escucha `AvisoAgendaProgramado`. */
-export function abrirAvisoAgenda(): void {
-  window.dispatchEvent(new Event(EVENTO_ABRIR));
+/**
+ * Abre el aviso ya («Probar ahora», «Ver el aviso», «Al costado» de Hoy): lo
+ * escucha `AvisoAgendaProgramado`. Sin `modo`, en la forma que eligió la persona.
+ */
+export function abrirAvisoAgenda(modo?: ModoAviso): void {
+  window.dispatchEvent(new CustomEvent<{ modo?: ModoAviso }>(EVENTO_ABRIR, { detail: { modo } }));
 }
 
-export function alPedirAbrirAviso(fn: () => void): () => void {
-  window.addEventListener(EVENTO_ABRIR, fn);
-  return () => window.removeEventListener(EVENTO_ABRIR, fn);
+export function alPedirAbrirAviso(fn: (modo?: ModoAviso) => void): () => void {
+  const oyente = (e: Event) => fn((e as CustomEvent<{ modo?: ModoAviso }>).detail?.modo);
+  window.addEventListener(EVENTO_ABRIR, oyente);
+  return () => window.removeEventListener(EVENTO_ABRIR, oyente);
 }
 
 function json(texto: string | null): unknown {

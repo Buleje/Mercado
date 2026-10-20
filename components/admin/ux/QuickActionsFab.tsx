@@ -204,6 +204,7 @@ export function QuickActionsFab() {
       <AnimatePresence>
         {open && (
           <m.div
+            data-fab-rapido
             className="fixed right-6 bottom-24 z-50 flex flex-col items-end gap-2 sm:bottom-28"
             initial="hidden"
             animate="show"
@@ -270,6 +271,7 @@ export function QuickActionsFab() {
         /* Minimizado: asa discreta en la esquina. Click = restaurar el botón. */
         <button
           type="button"
+          data-fab-rapido
           onClick={() => setHiddenPersist(false)}
           className={cn(
             "fixed right-0 bottom-24 z-50 flex items-center gap-1 rounded-l-full py-1.5 pl-2.5 pr-2 shadow-lg transition-all",
@@ -284,6 +286,7 @@ export function QuickActionsFab() {
       ) : (
         /* FAB button */
         <m.button
+          data-fab-rapido
           onFocus={() => setEnfocado(true)}
           onBlur={() => setEnfocado(false)}
           type="button"

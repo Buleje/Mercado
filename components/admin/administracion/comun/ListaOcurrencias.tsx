@@ -139,7 +139,7 @@ function FilaOcurrencia({ o, conFecha, onModal }: { o: OcurrenciaDTO; conFecha: 
   );
 }
 
-function Detalle({ o }: { o: OcurrenciaDTO }) {
+export function Detalle({ o }: { o: OcurrenciaDTO }) {
   const estilo = ESTILO_ESTADO[o.estado];
   const pct = o.avance && o.avance.total > 0 ? Math.min(100, Math.round((o.avance.hecho / o.avance.total) * 100)) : null;
   const pie: string[] = [];

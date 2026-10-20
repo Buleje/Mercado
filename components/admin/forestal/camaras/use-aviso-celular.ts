@@ -4,14 +4,14 @@
  * «Avisarme en el celular» de una cámara (2026-10-10): qué dispositivos
  * reciben el push, si ESTE navegador es uno, y prenderlo/apagarlo/probarlo.
  *
- * El navegador se suscribe con un service worker propio (`/sw-avisos.js`,
- * alcance `/sw-avisos/`): el de la tienda se desregistra en desarrollo y en
- * localhost, y la suscripción moriría con él. Ver el comentario del archivo.
+ * El navegador se suscribe con el service worker de avisos que comparte con
+ * la agenda (`lib/push/avisos-navegador.ts`).
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { idDeEndpoint, type CelularVisible, type CuandoCelular } from "@/lib/camaras/avisar-push";
+import { hayPush, suscribirEsteNavegador, suscripcionActual } from "@/lib/push/avisos-navegador";
 
 export type CelularDeLaLista = CelularVisible & { tuyo: boolean };
 
@@ -22,44 +22,6 @@ interface Datos {
 }
 
 export type MensajeCelular = { tono: "ok" | "alerta"; texto: string } | null;
-
-const SW = "/sw-avisos.js";
-const ALCANCE = "/sw-avisos/";
-
-function bytesDeClave(base64url: string): Uint8Array<ArrayBuffer> {
-  const relleno = "=".repeat((4 - (base64url.length % 4)) % 4);
-  const crudo = atob((base64url + relleno).replace(/-/g, "+").replace(/_/g, "/"));
-  const out = new Uint8Array(new ArrayBuffer(crudo.length));
-  for (let i = 0; i < crudo.length; i++) out[i] = crudo.charCodeAt(i);
-  return out;
-}
-
-function hayPush(): boolean {
-  return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-}
-
-/** Espera a que el service worker recién registrado quede activo (sin eso `subscribe` falla). */
-async function registroActivo(): Promise<ServiceWorkerRegistration> {
-  const reg = await navigator.serviceWorker.register(SW, { scope: ALCANCE });
-  if (reg.active) return reg;
-  const w = reg.installing ?? reg.waiting;
-  if (w) {
-    await new Promise<void>((ok) => {
-      const mirar = () => {
-        if (w.state === "activated") ok();
-      };
-      w.addEventListener("statechange", mirar);
-      mirar();
-    });
-  }
-  return reg;
-}
-
-async function suscripcionActual(): Promise<PushSubscription | null> {
-  if (!hayPush()) return null;
-  const reg = await navigator.serviceWorker.getRegistration(ALCANCE);
-  return (await reg?.pushManager.getSubscription()) ?? null;
-}
 
 const MOTIVOS: Record<string, string> = {
   sin_claves: "El servidor no tiene las claves de avisos (VAPID): pídeselas al soporte.",
@@ -120,16 +82,7 @@ export function useAvisoCelular(camaraId: string) {
             texto: "El navegador no dio permiso de notificaciones. Actívalo en el candado de la barra de direcciones.",
           });
         }
-        const reg = await registroActivo();
-        const clave = bytesDeClave(datos.clavePublica);
-        let sub = await reg.pushManager.getSubscription();
-        try {
-          sub ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: clave });
-        } catch {
-          /* Suscripción vieja con otra clave del servidor: se rehace una vez. */
-          await sub?.unsubscribe();
-          sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: clave });
-        }
+        const sub = await suscribirEsteNavegador(datos.clavePublica);
         const res = await enviar("PUT", { subscription: sub.toJSON(), cuando });
         if (!res.ok) return setMensaje({ tono: "alerta", texto: await leerError(res) });
         setDatos((await res.json()) as Datos);

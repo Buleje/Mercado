@@ -14,6 +14,14 @@ export const CADA_MINUTOS = [15, 30, 60, 120, 180, 240] as const;
 
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+/**
+ * Dónde se abre: `ventana` al centro (tapa la página hasta cerrarla), `lateral` al
+ * costado sin bloquear nada (sigue al cambiar de pestaña), `fija` al costado y la
+ * página se corre para que no tape nada; queda abierta al recargar hasta soltarla.
+ */
+export const MODOS_AVISO = ["ventana", "lateral", "fija"] as const;
+export type ModoAviso = (typeof MODOS_AVISO)[number];
+
 export const AvisoPantallaSchema = z
   .object({
     activo: z.boolean(),
@@ -29,6 +37,7 @@ export const AvisoPantallaSchema = z
     /** Aviso del sistema (Windows/Android) cuando el panel está en otra pestaña o minimizado. */
     notificacion: z.boolean(),
     sonido: z.boolean(),
+    modo: z.enum(MODOS_AVISO),
   })
   .refine((c) => c.desde < c.hasta, { message: "La hora de inicio va antes que la de fin", path: ["hasta"] });
 
@@ -44,6 +53,7 @@ export const AVISO_POR_DEFECTO: AvisoPantalla = {
   atrasadas: true,
   notificacion: false,
   sonido: false,
+  modo: "ventana",
 };
 
 /** Lo guardado (navegador o servidor) sobre lo de fábrica: un campo nuevo o roto no tumba el aviso. */
@@ -59,16 +69,21 @@ export interface RelojAviso {
   proximo: number;
   /** «No más por hoy»: el día de Lima silenciado. */
   silencioDia: FechaKey | null;
+  /** El panel fijo al costado quedó abierto (vuelve al recargar) y si estaba minimizado. */
+  fijaAbierta: boolean;
+  minimizado: boolean;
 }
 
-export const RELOJ_INICIAL: RelojAviso = { proximo: 0, silencioDia: null };
+export const RELOJ_INICIAL: RelojAviso = { proximo: 0, silencioDia: null, fijaAbierta: false, minimizado: false };
 
 export function normalizarReloj(guardado: unknown): RelojAviso {
   if (!guardado || typeof guardado !== "object") return RELOJ_INICIAL;
-  const { proximo, silencioDia } = guardado as Partial<RelojAviso>;
+  const { proximo, silencioDia, fijaAbierta, minimizado } = guardado as Partial<RelojAviso>;
   return {
     proximo: typeof proximo === "number" && Number.isFinite(proximo) ? proximo : 0,
     silencioDia: typeof silencioDia === "string" ? silencioDia : null,
+    fijaAbierta: fijaAbierta === true,
+    minimizado: minimizado === true,
   };
 }
 
@@ -125,7 +140,7 @@ export function proximoAviso(c: AvisoPantalla, ahora: number, pendientesHoy: rea
 }
 
 /** ¿Toca mirar si hay algo pendiente? */
-export function tocaMirar(c: AvisoPantalla, reloj: RelojAviso, ahora: number): boolean {
+export function tocaMirar(c: AvisoPantalla, reloj: Pick<RelojAviso, "proximo" | "silencioDia">, ahora: number): boolean {
   if (!c.activo || reloj.silencioDia === diaLima(ahora) || ahora < reloj.proximo) return false;
   return dentroDelHorario(c, ahora) === ahora;
 }

@@ -9,6 +9,7 @@ import {
   dentroDelHorario,
   loQueFalta,
   normalizarAviso,
+  normalizarReloj,
   proximoAviso,
   textoNotificacion,
   tocaMirar,
@@ -116,5 +117,12 @@ describe("lo guardado", () => {
     expect(normalizarAviso({ cadaMin: 7 })).toEqual(AVISO_POR_DEFECTO);
     expect(normalizarAviso({ desde: "20:00", hasta: "08:00" })).toEqual(AVISO_POR_DEFECTO);
     expect(normalizarAviso({ cadaMin: 30 })).toEqual({ ...AVISO_POR_DEFECTO, cadaMin: 30 });
+    expect(normalizarAviso({ modo: "costado" }).modo).toBe("ventana");
+    expect(normalizarAviso({ modo: "fija" }).modo).toBe("fija");
+  });
+
+  it("el reloj viejo (sin panel fijo) se lee con el panel cerrado", () => {
+    expect(normalizarReloj({ proximo: 5, silencioDia: null })).toEqual({ proximo: 5, silencioDia: null, fijaAbierta: false, minimizado: false });
+    expect(normalizarReloj({ proximo: 5, fijaAbierta: true, minimizado: "si" })).toMatchObject({ fijaAbierta: true, minimizado: false });
   });
 });

@@ -19,7 +19,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { leerHoy } from "@/components/admin/administracion/agenda-api";
 import { alPedirAbrirAviso, useConfigAviso } from "@/hooks/use-aviso-agenda";
-import { diaLima, loQueFalta, proximoAviso, textoNotificacion, tocaMirar } from "@/lib/agenda/aviso-pantalla";
+import { diaLima, loQueFalta, proximoAviso, textoNotificacion, tocaMirar, type ModoAviso } from "@/lib/agenda/aviso-pantalla";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import { logger } from "@/lib/logger";
 import type { AdminRole } from "@/lib/session";
@@ -52,31 +52,39 @@ function ocupado(conCampo: boolean): boolean {
 
 export default function AvisoAgendaProgramado({ rol }: { rol: AdminRole }) {
   const puede = puedePedir("/api/admin/agenda/hoy", rol);
-  const { config, listo, leerReloj, escribirReloj } = useConfigAviso();
-  const [abierto, setAbierto] = useState(false);
+  const { config, listo, guardar, leerReloj, escribirReloj } = useConfigAviso();
+  /** En qué forma está abierto (`null` = cerrado). */
+  const [abierto, setAbierto] = useState<ModoAviso | null>(null);
+  const [minimizado, setMinimizado] = useState(false);
   const [configurando, setConfigurando] = useState(false);
-  const abiertoRef = useRef(false);
+  /** Ya se leyó si el panel fijo quedó abierto: recién ahí se guarda lo que cambie. */
+  const [restaurado, setRestaurado] = useState(false);
+  const estado = useRef({ abierto, minimizado, configurando });
+  estado.current = { abierto, minimizado, configurando };
   const mirando = useRef(false);
   const alVolver = useRef(false);
   const esperas = useRef(0);
-  abiertoRef.current = abierto || configurando;
 
   const abrir = useCallback(
-    (conSonido: boolean) => {
+    (conSonido: boolean, modo?: ModoAviso) => {
       if (conSonido && config.sonido) sonarAviso();
-      setAbierto(true);
+      setMinimizado(false);
+      /* El panel fijo ya abierto no se cambia por un aviso: sólo se despliega. */
+      setAbierto((actual) => (actual === "fija" && !modo ? "fija" : (modo ?? config.modo)));
     },
-    [config.sonido],
+    [config.sonido, config.modo],
   );
 
   const mirar = useCallback(async () => {
-    if (mirando.current || abiertoRef.current) return;
+    const { abierto: forma, minimizado: chico, configurando: editando } = estado.current;
+    /* Con la ventana o el costado suelto abiertos no hay nada que avisar; el fijo minimizado sí se despliega. */
+    if (mirando.current || editando || (forma !== null && !(forma === "fija" && chico))) return;
     const ahora = Date.now();
     const escondida = document.visibilityState !== "visible";
     const reloj = leerReloj();
     if (!tocaMirar(config, { ...reloj, proximo: reloj.proximo + (escondida ? ESPERA_ESCONDIDA_MS : 0) }, ahora)) return;
     escribirReloj({ ...reloj, proximo: ahora + RESERVA_MS });
-    if (!escondida && ocupado(esperas.current < ESPERAS_AL_CAMPO)) {
+    if (!escondida && forma === null && ocupado(esperas.current < ESPERAS_AL_CAMPO)) {
       esperas.current += 1;
       return;
     }
@@ -121,16 +129,45 @@ export default function AvisoAgendaProgramado({ rol }: { rol: AdminRole }) {
     };
   }, [puede, listo, config.activo, mirar, abrir]);
 
-  /* «Probar ahora» y «Ver el aviso» lo abren aunque esté apagado. */
-  useEffect(() => (puede ? alPedirAbrirAviso(() => setAbierto(true)) : undefined), [puede]);
+  /* El panel fijo vuelve al recargar, como lo dejaste (abierto o en burbuja). */
+  useEffect(() => {
+    if (!listo || restaurado) return;
+    const r = leerReloj();
+    if (puede && r.fijaAbierta) {
+      setAbierto("fija");
+      setMinimizado(r.minimizado);
+    }
+    setRestaurado(true);
+  }, [listo, restaurado, puede, leerReloj]);
 
+  useEffect(() => {
+    if (!restaurado) return;
+    const r = leerReloj();
+    const fijaAbierta = abierto === "fija";
+    const chico = fijaAbierta && minimizado;
+    if (r.fijaAbierta !== fijaAbierta || r.minimizado !== chico) escribirReloj({ ...r, fijaAbierta, minimizado: chico });
+  }, [restaurado, abierto, minimizado, leerReloj, escribirReloj]);
+
+  /* «Probar ahora», «Ver el aviso» y «Al costado» de Hoy lo abren aunque esté apagado. */
+  useEffect(() => (puede ? alPedirAbrirAviso((modo) => abrir(false, modo)) : undefined), [puede, abrir]);
+
+  const cerrar = () => {
+    setAbierto(null);
+    setMinimizado(false);
+  };
   const recordarEn = (min: number) => {
     escribirReloj({ ...leerReloj(), proximo: Date.now() + min * 60_000 });
-    setAbierto(false);
+    cerrar();
   };
   const noMasHoy = () => {
     escribirReloj({ ...leerReloj(), silencioDia: diaLima(Date.now()) });
-    setAbierto(false);
+    cerrar();
+  };
+  /* La forma que eliges queda como la tuya: el próximo aviso sale igual. */
+  const cambiarModo = (modo: ModoAviso) => {
+    setAbierto(modo);
+    setMinimizado(false);
+    if (modo !== config.modo) guardar({ ...config, modo });
   };
 
   return (
@@ -138,12 +175,16 @@ export default function AvisoAgendaProgramado({ rol }: { rol: AdminRole }) {
       {abierto && (
         <AvisoAgendaModal
           config={config}
+          modo={abierto}
           proximo={leerReloj().proximo}
-          onCerrar={() => setAbierto(false)}
+          minimizado={minimizado}
+          onMinimizar={setMinimizado}
+          onCambiarModo={cambiarModo}
+          onCerrar={cerrar}
           onRecordarEn={recordarEn}
           onNoMasHoy={noMasHoy}
           onConfigurar={() => {
-            setAbierto(false);
+            if (abierto !== "fija") cerrar();
             setConfigurando(true);
           }}
         />

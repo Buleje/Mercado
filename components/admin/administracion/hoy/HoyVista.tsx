@@ -8,8 +8,9 @@
  */
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { BellOff, BellRing, CalendarDays, Play, Plus, RefreshCw, Sparkles } from "@buleje/design-system/icons";
+import { BellOff, BellRing, CalendarDays, ListChecks, PanelRightOpen, Play, Plus, RefreshCw, Sparkles } from "@buleje/design-system/icons";
 import { CardTitle, EmptyState, ErrorAlert, LoadingState } from "@buleje/design-system";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { TARJETA, claseChip } from "@/components/admin/planificacion/piezas/clases";
 import { button } from "@/components/ui-system/button-variants";
 import { useAgenda } from "@/hooks/use-agenda";
@@ -22,6 +23,7 @@ import { fechaLarga } from "../comun/fechas";
 import { CLASE_CHIP_ESTADO, ListaOcurrencias } from "../comun/ListaOcurrencias";
 
 const ActividadModal = dynamic(() => import("../actividades/ActividadModal").then((m) => m.ActividadModal), { ssr: false });
+const PonermeAlDia = dynamic(() => import("../aviso/PonermeAlDia"), { ssr: false });
 const ConfigAvisoModal = dynamic(() => import("../aviso/ConfigAvisoModal"), { ssr: false });
 
 const AYUDA = {
@@ -35,6 +37,7 @@ export default function HoyVista({ irA }: { irA: (vista: string) => void }) {
   const { config: aviso } = useConfigAviso();
   const [nueva, setNueva] = useState(false);
   const [configAviso, setConfigAviso] = useState(false);
+  const [alDia, setAlDia] = useState(false);
   const IconoAviso = aviso.activo ? BellRing : BellOff;
 
   const encabezado = (
@@ -51,10 +54,22 @@ export default function HoyVista({ irA }: { irA: (vista: string) => void }) {
         </div>
       }
       acciones={
-        <button type="button" className={button({ variant: "primary", className: "max-sm:w-12 max-sm:px-0" })} onClick={() => setNueva(true)} title="Nueva actividad">
-          <Plus className="size-4" aria-hidden="true" />
-          <span className="max-sm:sr-only">Nueva actividad</span>
-        </button>
+        <>
+          <button
+            type="button"
+            data-qa="hoy-al-costado"
+            className={button({ variant: "secondary", className: "max-sm:w-12 max-sm:px-0" })}
+            onClick={() => abrirAvisoAgenda("fija")}
+            title="Lo que falta, fijo al costado: sigue mientras vas a hacerlo en otras pestañas"
+          >
+            <PanelRightOpen className="size-4" aria-hidden="true" />
+            <span className="max-sm:sr-only">Al costado</span>
+          </button>
+          <button type="button" className={button({ variant: "primary", className: "max-sm:w-12 max-sm:px-0" })} onClick={() => setNueva(true)} title="Nueva actividad">
+            <Plus className="size-4" aria-hidden="true" />
+            <span className="max-sm:sr-only">Nueva actividad</span>
+          </button>
+        </>
       }
       menu={[
         { id: "actualizar", label: "Actualizar", hint: "Vuelve a mirar las fuentes", icon: RefreshCw, onSelect: refrescar, busy: recargando },
@@ -113,7 +128,13 @@ export default function HoyVista({ irA }: { irA: (vista: string) => void }) {
           </section>
           {hoy.atrasadas.length > 0 && (
             <section className={cn(TARJETA, "px-4 py-3")}>
-              <CardTitle>Atrasadas</CardTitle>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <CardTitle>Atrasadas</CardTitle>
+                <button type="button" data-qa="hoy-poner-al-dia" className={button({ variant: "secondary" })} onClick={() => setAlDia(true)}>
+                  <ListChecks className="size-4" aria-hidden="true" />
+                  Ponerme al día
+                </button>
+              </div>
               <ListaOcurrencias etiqueta="Lo atrasado" ocurrencias={hoy.atrasadas} conFecha />
             </section>
           )}
@@ -121,6 +142,13 @@ export default function HoyVista({ irA }: { irA: (vista: string) => void }) {
       )}
 
       {nueva && <ActividadModal actividad={null} onCerrar={() => setNueva(false)} />}
+      {alDia && (
+        <AdminModal open onClose={() => setAlDia(false)} title="Ponerme al día" description="Lo atrasado, de una en una" icon={ListChecks} size="lg">
+          <div className={MODAL_BODY}>
+            <PonermeAlDia ocurrencias={hoy.atrasadas} onCerrar={() => setAlDia(false)} />
+          </div>
+        </AdminModal>
+      )}
       {configAviso && <ConfigAvisoModal onCerrar={() => setConfigAviso(false)} />}
     </div>
   );

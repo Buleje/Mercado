@@ -15,9 +15,17 @@ import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { CAMPO_ALTO, claseChip } from "@/components/admin/planificacion/piezas/clases";
 import { button } from "@/components/ui-system/button-variants";
 import { abrirAvisoAgenda, useConfigAviso } from "@/hooks/use-aviso-agenda";
-import { AvisoPantallaSchema, CADA_MINUTOS, textoCada, type AvisoPantalla } from "@/lib/agenda/aviso-pantalla";
+import { AvisoPantallaSchema, CADA_MINUTOS, textoCada, type AvisoPantalla, type ModoAviso } from "@/lib/agenda/aviso-pantalla";
 import { BotonesDias } from "../comun/BotonesDias";
+import { SeccionCelular } from "./SeccionCelular";
+import { SeccionTelegram } from "./SeccionTelegram";
 import { DIAS_LARGOS, ORDEN_SEMANA } from "../comun/fechas";
+
+const MODOS: readonly { id: ModoAviso; label: string; hint: string }[] = [
+  { id: "ventana", label: "Ventana al centro", hint: "Tapa la página hasta que la cierres" },
+  { id: "lateral", label: "Al costado", hint: "No tapa la página y sigue al cambiar de pestaña" },
+  { id: "fija", label: "Fija al costado", hint: "Corre la página para no tapar nada y vuelve al recargar" },
+];
 
 type Cambiar = <K extends keyof AvisoPantalla>(campo: K, valor: AvisoPantalla[K]) => void;
 
@@ -71,8 +79,8 @@ export default function ConfigAvisoModal({ onCerrar }: { onCerrar: () => void })
     <AdminModal
       open
       onClose={onCerrar}
-      title="Aviso en pantalla"
-      description="Sale sola con lo que te falta hacer"
+      title="Recordatorios"
+      description="Cuándo y por dónde te avisa lo que falta hacer"
       icon={BellRing}
       size="md"
       footer={
@@ -100,6 +108,19 @@ export default function ConfigAvisoModal({ onCerrar }: { onCerrar: () => void })
               {CADA_MINUTOS.map((m) => (
                 <button key={m} type="button" role="radio" aria-checked={b.cadaMin === m} className={claseChip(b.cadaMin === m)} onClick={() => cambiar("cadaMin", m)}>
                   {textoCada(m)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <span id={`${id}-modo`} className="block text-sm font-semibold text-[var(--text-secondary)]">
+              Dónde sale
+            </span>
+            <div role="radiogroup" aria-labelledby={`${id}-modo`} className="flex flex-wrap gap-2">
+              {MODOS.map((m) => (
+                <button key={m.id} type="button" role="radio" aria-checked={b.modo === m.id} className={claseChip(b.modo === m.id)} onClick={() => cambiar("modo", m.id)} title={m.hint}>
+                  {m.label}
                 </button>
               ))}
             </div>
@@ -137,6 +158,9 @@ export default function ConfigAvisoModal({ onCerrar }: { onCerrar: () => void })
             <Opcion marcado={b.sonido} onCambiar={(v) => cambiar("sonido", v)} titulo="Con sonido" texto="Dos notas cortas cuando sale" />
           </div>
         </fieldset>
+
+        <SeccionCelular />
+        <SeccionTelegram />
       </div>
     </AdminModal>
   );

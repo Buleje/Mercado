@@ -89,8 +89,13 @@ export async function mandarPush(
   }
 }
 
-/** 404/410 = el navegador se desuscribió (borró datos, quitó el permiso): se olvida. Igual un endpoint no permitido. */
-const MUERTO = (e: Pick<EnvioPush, "status" | "error">) => e.status === 404 || e.status === 410 || e.error === ENDPOINT_NO_PERMITIDO;
+/**
+ * 404/410 = el navegador se desuscribió (borró datos, quitó el permiso): se olvida. Igual un endpoint no permitido.
+ * Exportado para el aviso de la agenda (20-10), que reusa `mandarPush`.
+ */
+export const esPushMuerto = (e: Pick<EnvioPush, "status" | "error">): boolean =>
+  e.status === 404 || e.status === 410 || e.error === ENDPOINT_NO_PERMITIDO;
+const MUERTO = esPushMuerto;
 
 /** Se quedan sólo los dispositivos de usuarios activos del negocio con un rol que ve las fotos. */
 async function soloUsuariosVigentes(tenantId: string, dispositivos: CelularSuscrito[]): Promise<CelularSuscrito[]> {

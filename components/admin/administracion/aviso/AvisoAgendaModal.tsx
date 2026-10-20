@@ -1,32 +1,36 @@
 "use client";
 
 /**
- * AvisoAgendaModal — la ventana que sale sola (`AvisoAgendaProgramado`): lo
- * que te falta de hoy y lo atrasado, con «Hecha» e «Ir a hacerlo» igual que en
- * Hoy (`ListaOcurrencias`), cuándo vuelve a salir y cómo callarla un rato.
- * Trae su propio `AgendaProvider`: se abre desde cualquier pestaña del panel.
+ * AvisoAgendaModal — el aviso que sale solo (`AvisoAgendaProgramado`): lo que te
+ * falta de hoy y lo atrasado (`CuerpoAviso`), cuándo vuelve a salir y cómo
+ * callarlo un rato. Se pinta en una de tres formas (Brandon, 20-10): ventana al
+ * centro (`AdminModal`), al costado o fijo al costado (`PanelLateralAviso`, que
+ * no bloquea la página). Trae su propio `AgendaProvider`: se abre desde
+ * cualquier pestaña del panel.
  */
-import type { MouseEvent } from "react";
-import { AlarmClock, ArrowUpRight, BellOff, BellRing, CheckCircle2, RefreshCw, Settings } from "@buleje/design-system/icons";
-import { CardTitle, EmptyState, ErrorAlert, LoadingState } from "@buleje/design-system";
+import { useEffect, useState } from "react";
+import { AlarmClock, ArrowLeft, BellOff, BellRing, ListChecks, Settings } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
-import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
 import { AgendaProvider, useAgenda } from "@/hooks/use-agenda";
-import { cuandoVuelve, loQueFalta, proximoAviso, textoCada, type AvisoPantalla } from "@/lib/agenda/aviso-pantalla";
-import { cn } from "@/lib/utils";
-import { ESTILO_ESTADO } from "../comun/estado-ocurrencia";
+import { cuandoVuelve, loQueFalta, proximoAviso, textoCada, type AvisoPantalla, type ModoAviso } from "@/lib/agenda/aviso-pantalla";
 import { fechaLarga } from "../comun/fechas";
-import { CLASE_CHIP_ESTADO, ListaOcurrencias } from "../comun/ListaOcurrencias";
+import { CuerpoAviso } from "./CuerpoAviso";
+import { PanelLateralAviso } from "./PanelLateralAviso";
 
-const HOY_EN_ADMINISTRACION = "/admin?tab=administracion&vista=hoy";
+/** Al costado queda abierto horas: lo que marcó la fuente (la asistencia, un gasto) se vuelve a mirar cada 5 min. */
+const REFRESCO_AL_COSTADO_MS = 5 * 60_000;
 
 interface Props {
   config: AvisoPantalla;
+  modo: ModoAviso;
   /** ms del próximo aviso según el reloj (puede estar vencido si se abrió a mano). */
   proximo: number;
+  minimizado: boolean;
+  onMinimizar: (v: boolean) => void;
+  onCambiarModo: (m: ModoAviso) => void;
   onCerrar: () => void;
   onRecordarEn: (min: number) => void;
   onNoMasHoy: () => void;
@@ -36,106 +40,78 @@ interface Props {
 export default function AvisoAgendaModal(props: Props) {
   return (
     <AgendaProvider>
-      <Contenido {...props} />
+      <Marco {...props} />
     </AgendaProvider>
   );
 }
 
-function Contenido({ config, proximo, onCerrar, onRecordarEn, onNoMasHoy, onConfigurar }: Props) {
-  const { hoy, cargando, recargando, error, refrescar } = useAgenda();
+function Marco({ config, modo, proximo, minimizado, onMinimizar, onCambiarModo, onCerrar, onRecordarEn, onNoMasHoy, onConfigurar }: Props) {
+  const { hoy, recargando, refrescar } = useAgenda();
+  const [alDia, setAlDia] = useState(false);
   const falta = loQueFalta(hoy, config);
-  const total = falta.hoy.length + falta.atrasadas.length;
   const ahora = Date.now();
   const vuelve = config.activo
     ? `Vuelve ${cuandoVuelve(proximo > ahora ? proximo : proximoAviso(config, ahora, falta.hoy), ahora)}`
     : "El aviso automático está apagado";
 
-  /* «Ir a hacerlo» lleva a otra pestaña: la ventana se cierra para no taparla. */
-  const cerrarAlIr = (e: MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest("a[href]")) onCerrar();
-  };
+  useEffect(() => {
+    if (modo === "ventana") return;
+    const t = setInterval(refrescar, REFRESCO_AL_COSTADO_MS);
+    return () => clearInterval(t);
+  }, [modo, refrescar]);
+
+  const titulo = alDia ? "Ponerme al día" : "Lo que te falta hacer";
+  const descripcion = alDia ? "Lo atrasado, de una en una" : `${fechaLarga(hoy.fecha)} · ${hoy.cuenta.hechas} de ${hoy.cuenta.total} hechas hoy`;
 
   const recordar: MenuAccion[] = [
     ...[15, 30, 60, 120].map((min) => ({ id: `en-${min}`, label: `En ${textoCada(min)}`, icon: AlarmClock, onSelect: () => onRecordarEn(min) })),
     { id: "hoy-no", label: "No más por hoy", hint: "Vuelve mañana al empezar tu horario", icon: BellOff, onSelect: onNoMasHoy },
   ];
 
+  const pie = alDia ? (
+    <ModalFooter>
+      <button type="button" data-qa="poner-al-dia-volver" className={button({ variant: "ghost" })} onClick={() => setAlDia(false)}>
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        Volver a la lista
+      </button>
+    </ModalFooter>
+  ) : (
+    <ModalFooter nota={modo === "ventana" ? vuelve : undefined}>
+      <button type="button" className={button({ variant: "ghost", className: "max-sm:w-12 max-sm:px-0" })} onClick={onConfigurar} title="Configurar los recordatorios">
+        <Settings className="size-4" aria-hidden="true" />
+        <span className="max-sm:sr-only">Configurar</span>
+      </button>
+      <ActionMenu label="Recordarme" icon={AlarmClock} actions={recordar} compactoEnMovil title={`Volver a avisarme más tarde · ${vuelve}`} />
+      <button type="button" data-qa="aviso-agenda-entendido" className={button({ variant: "primary" })} onClick={onCerrar}>
+        Entendido
+      </button>
+    </ModalFooter>
+  );
+
+  const cuerpo = <CuerpoAviso falta={falta} modo={modo} alDia={alDia} onAlDia={setAlDia} onCambiarModo={onCambiarModo} onCerrar={onCerrar} />;
+
+  if (modo !== "ventana") {
+    return (
+      <PanelLateralAviso
+        modo={modo}
+        titulo={titulo}
+        descripcion={descripcion}
+        pendientes={falta.hoy.length + falta.atrasadas.length}
+        minimizado={minimizado}
+        onMinimizar={onMinimizar}
+        onCambiarModo={onCambiarModo}
+        onCerrar={onCerrar}
+        pie={pie}
+      >
+        {cuerpo}
+      </PanelLateralAviso>
+    );
+  }
+
   return (
-    <AdminModal
-      open
-      onClose={onCerrar}
-      title="Lo que te falta hacer"
-      description={`${fechaLarga(hoy.fecha)} · ${hoy.cuenta.hechas} de ${hoy.cuenta.total} hechas hoy`}
-      icon={BellRing}
-      size="lg"
-      footer={
-        <ModalFooter nota={vuelve}>
-          <button type="button" className={button({ variant: "ghost", className: "max-sm:w-12 max-sm:px-0" })} onClick={onConfigurar} title="Configurar el aviso">
-            <Settings className="size-4" aria-hidden="true" />
-            <span className="max-sm:sr-only">Configurar</span>
-          </button>
-          <ActionMenu label="Recordarme" icon={AlarmClock} actions={recordar} compactoEnMovil title="Volver a avisarme más tarde" />
-          <button type="button" data-qa="aviso-agenda-entendido" className={button({ variant: "primary" })} onClick={onCerrar}>
-            Entendido
-          </button>
-        </ModalFooter>
-      }
-    >
-      <div className={cn(MODAL_BODY, "space-y-4")} onClickCapture={cerrarAlIr} aria-busy={recargando}>
-        {error && (
-          <ErrorAlert
-            title="No se pudo traer la agenda"
-            description={error}
-            action={
-              <button type="button" className={button({ variant: "secondary" })} onClick={refrescar}>
-                <RefreshCw className="size-4" aria-hidden="true" />
-                Reintentar
-              </button>
-            }
-          />
-        )}
-        {cargando ? (
-          <LoadingState message="Mirando lo de hoy…" />
-        ) : total === 0 ? (
-          <EmptyState icon={CheckCircle2} title="Estás al día" description="No te falta nada de hoy ni de los días anteriores." />
-        ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-2">
-              {falta.hoy.length > 0 && (
-                <span className={cn(CLASE_CHIP_ESTADO, "text-sm", ESTILO_ESTADO.pendiente.chip)}>{falta.hoy.length} por hacer hoy</span>
-              )}
-              {falta.atrasadas.length > 0 && (
-                <span className={cn(CLASE_CHIP_ESTADO, "text-sm", ESTILO_ESTADO.atrasada.chip)}>
-                  {falta.atrasadas.length} {falta.atrasadas.length === 1 ? "atrasada" : "atrasadas"}
-                </span>
-              )}
-              <a
-                href={HOY_EN_ADMINISTRACION}
-                onClick={(e) => {
-                  if (e.button !== 0 || e.metaKey || e.ctrlKey) return;
-                  e.preventDefault();
-                  void irAEnlace(HOY_EN_ADMINISTRACION);
-                }}
-                className={button({ variant: "ghost", className: "ml-auto" })}
-              >
-                Ver todo
-                <ArrowUpRight className="size-4" aria-hidden="true" />
-              </a>
-            </div>
-            {falta.hoy.length > 0 && (
-              <section>
-                <CardTitle>Hoy</CardTitle>
-                <ListaOcurrencias etiqueta="Lo que falta hoy" ocurrencias={falta.hoy} />
-              </section>
-            )}
-            {falta.atrasadas.length > 0 && (
-              <section>
-                <CardTitle>Atrasadas</CardTitle>
-                <ListaOcurrencias etiqueta="Lo atrasado" ocurrencias={falta.atrasadas} conFecha />
-              </section>
-            )}
-          </>
-        )}
+    <AdminModal open onClose={onCerrar} title={titulo} description={descripcion} icon={alDia ? ListChecks : BellRing} size="lg" footer={pie}>
+      <div className={`${MODAL_BODY} space-y-4`} aria-busy={recargando}>
+        {cuerpo}
       </div>
     </AdminModal>
   );
