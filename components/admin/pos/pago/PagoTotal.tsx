@@ -6,6 +6,7 @@ import { Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { fmt, type POSPaymentModalProps } from "@/components/admin/pos/pago/pago-shared";
 import type { PagoModal } from "@/components/admin/pos/pago/usePagoModal";
+import PagoPrecioCliente from "@/components/admin/pos/pago/PagoPrecioCliente";
 
 type Articulo = NonNullable<POSPaymentModalProps["cartItems"]>[number];
 
@@ -29,12 +30,15 @@ export default function PagoTotal({ p, articulos, className }: { p: PagoModal; a
   const [verArticulos, setVerArticulos] = useState(false);
   const redondeos = opcionesDeRedondeo(total);
   const hayLista = !!articulos && articulos.length > 0;
+  // «S/ 159.68» a 5xl no entra al lado de «N artículos» y se partía en dos renglones (20-10:
+  // el pedido de una revendedora siempre pasa los S/ 100): desde 3 cifras enteras va a 4xl.
+  const totalLargo = fmt(total).length > 8;
   return (
     <section aria-label="Total a cobrar" className={cn("px-4 py-3 sm:px-5 md:pt-4", className)}>
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
           <Kicker as="p">Total a cobrar</Kicker>
-          <p data-pago-total className="text-3xl font-extrabold leading-none tabular-nums text-[var(--text-primary)] md:text-4xl lg:text-5xl">
+          <p data-pago-total className={cn("text-3xl font-extrabold leading-none tabular-nums text-[var(--text-primary)] md:text-4xl", !totalLargo && "lg:text-5xl")}>
             {fmt(total)}
           </p>
           {discountAmount > 0 && (
@@ -45,6 +49,7 @@ export default function PagoTotal({ p, articulos, className }: { p: PagoModal; a
               </span>
             </p>
           )}
+          <PagoPrecioCliente p={p} />
         </div>
         <button
           type="button"

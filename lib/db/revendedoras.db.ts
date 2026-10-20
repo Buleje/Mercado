@@ -21,6 +21,8 @@ import {
   type ResumenRevendedoras,
   type RevendedoraFila,
 } from "@/lib/revendedoras/reglas";
+import { precioDeCaja, type PrecioRevendedoraCaja } from "@/lib/pos/precio-revendedora";
+import { formatosDelCelular } from "@/lib/pos/celular-de-caja";
 
 /**
  * Revendedoras (ADR-507): clientas con `listaPrecio = "revendedora"` y las
@@ -73,12 +75,14 @@ async function comprasPorCelular(tenantId: string, celulares: string[], desde: D
   /* Sólo lo que entra como ingreso (como el semáforo y las metas) y no borrado:
      un pedido web pendiente sin pagar subía a la revendedora al 25 % (revisión 20-10). */
   const pedidoQueCuenta = { status: { in: [...ESTADOS_PEDIDO_QUE_ENTRAN] }, deletedAt: null };
-  const [ventas, pedidos, ventasUltima, pedidosUltima] = await withRlsTx(tenantId, (tx) =>
+  const [ventas, pedidos, ventasUltima, pedidosUltima, devoluciones] = await withRlsTx(tenantId, (tx) =>
     Promise.all([
       tx.sale.groupBy({ by: ["customerPhone"], where: { ...deEllas, ...enElMes }, _count: { _all: true }, _sum: { total: true } }),
       tx.order.groupBy({ by: ["customerPhone"], where: { ...deEllas, ...enElMes, ...pedidoQueCuenta }, _count: { _all: true }, _sum: { total: true } }),
       tx.sale.groupBy({ by: ["customerPhone"], where: deEllas, _max: { createdAt: true } }),
       tx.order.groupBy({ by: ["customerPhone"], where: { ...deEllas, ...pedidoQueCuenta }, _max: { createdAt: true } }),
+      /* Lo devuelto en el mes resta: una venta devuelta no sube de nivel (security 20-10). */
+      tx.return.groupBy({ by: ["customerPhone"], where: { ...deEllas, ...enElMes }, _sum: { total: true } }),
     ]),
   );
   const de = (tel: string | null) => {
@@ -91,6 +95,10 @@ async function comprasPorCelular(tenantId: string, celulares: string[], desde: D
   for (const r of [...ventas, ...pedidos]) {
     const a = de(r.customerPhone);
     if (a) { a.centimos += centimos(r._sum.total); a.compras += r._count._all; }
+  }
+  for (const r of devoluciones) {
+    const a = de(r.customerPhone);
+    if (a) a.centimos = Math.max(0, a.centimos - centimos(r._sum.total));
   }
   for (const r of [...ventasUltima, ...pedidosUltima]) {
     const a = de(r.customerPhone);
@@ -319,5 +327,43 @@ export const RevendedorasDB = {
       faltan: ids.filter((id) => !porId.has(id)),
       revendedora: clienta ? { nombre: clienta.name, celular: clienta.phone } : null,
     };
+  },
+
+  /**
+   * La clienta de este negocio con ese celular (exacto, como lo guarda la ficha)
+   * y su grupo de precio. El dueño va en el WHERE: un celular de otro negocio da `null`.
+   */
+  async clientaDeLaCaja(tenantId: string, celular: string): Promise<{ id: string; phone: string; listaPrecio: string | null } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const formatos = formatosDelCelular(celular);
+    if (formatos.length === 0) return null;
+    return withRlsTx(tenantId, (tx) =>
+      tx.customer.findFirst({ where: { phone: { in: formatos }, tenantId }, select: { id: true, phone: true, listaPrecio: true } }),
+    );
+  },
+
+  /**
+   * Lo que cobra la CAJA a una revendedora (POS, 20-10): reglas frescas, nivel
+   * del mes y pedido mínimo. `null` = no es revendedora de este negocio. Con el
+   * módulo apagado no se cotiza (la venta va a precio normal).
+   */
+  async cotizarEnCaja(
+    tenantId: string,
+    customerId: string,
+    items: { productId: number; quantity: number }[],
+    ahora: Date = new Date(),
+  ): Promise<PrecioRevendedoraCaja | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const config = await RevendedorasDB.configFresca(tenantId);
+    if (!config.activo) {
+      return { aplica: false, motivo: "inactivo", nivel: 0, subeDeNivel: false, total: 0, catalogo: 0, pedidoMinimo: config.pedidoMinimo, faltaMinimo: 0, lineas: [], avisos: [] };
+    }
+    const r = await RevendedorasDB.cotizar(
+      tenantId,
+      { customerId, items: items.map((i) => ({ productId: i.productId, cantidad: i.quantity })) },
+      ahora,
+    );
+    if (r === "no-es-revendedora") return null;
+    return precioDeCaja(config, r.cotizacion);
   },
 };

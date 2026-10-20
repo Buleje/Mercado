@@ -5,6 +5,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import type { LastSaleDetails, ExtraCobro } from "@/components/admin/pos/pos-shared";
 import type { POSCarrito } from "@/components/admin/pos/usePOSCarrito";
 import { claveDeVenta } from "@/components/admin/pos/cola-offline";
+import { usePrecioCliente } from "@/components/admin/pos/use-precio-cliente";
 
 interface UsePOSCobroOpciones {
   carrito: POSCarrito;
@@ -22,6 +23,13 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
   // debe (POSFiadoPanel) y para que cerrar el cobro no lo borre. Antes nadie lo llenaba.
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
+  // Revendedora elegida → su precio (vista previa; lo que se cobra lo calcula /api/sales).
+  const { precioCliente, cargandoPrecio } = usePrecioCliente(
+    customerPhone,
+    cart.map((i) => ({ productId: i.product.id, quantity: i.quantity })),
+  );
+  // Lo que se cobra: con revendedora, su total menos el descuento global (carrito, barra y cobro dicen igual).
+  const totalACobrar = precioCliente?.aplica ? Math.max(0, precioCliente.total - globalDiscount.monto) : carrito.cartTotal;
   const [processing, setProcessing] = useState(false);
   const [saleComplete, setSaleComplete] = useState<{ id: string; change: number } | null>(null);
   const [saleError, setSaleError] = useState<string | null>(null);
@@ -61,7 +69,9 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
 
     const effectiveDiscount = extra?.discountAmount || globalDiscount.monto;
     const effectiveDiscountPct = extra?.discountPercent || globalDiscount.porcentaje;
-    const effectiveTotal = Math.max(0, cartSubtotal - effectiveDiscount);
+    // Con precio de revendedora el servidor no usa el precio ni el descuento por ítem del carrito.
+    const baseDelCobro = precioCliente?.aplica ? precioCliente.total : cartSubtotal;
+    const effectiveTotal = Math.max(0, baseDelCobro - effectiveDiscount);
 
     const effectivePayment = payments.length > 1
       ? "MIXTO"
@@ -85,6 +95,8 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
       payment: effectivePayment,
       amountPaid: effectivePaid,
       customerPhone: phone || customerPhone || undefined,
+      // Sólo cuenta si el celular es nuevo en el negocio: la venta da de alta a la clienta.
+      customerName: (extra?.customerName || customerName).trim() || undefined,
       paymentDetails: payments.length > 1 ? JSON.stringify(payments) : undefined,
       // Comprobante
       comprobanteTipo: extra?.comprobanteTipo || "ticket",
@@ -179,5 +191,6 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
   return {
     showPayment, setShowPayment, customerPhone, setCustomerPhone, customerName, setCustomerName, processing, saleComplete, setSaleComplete, saleError, setSaleError,
     metricsRefreshKey, lastSaleInfo, lastSaleDetails, setLastSaleDetails, handlePaymentConfirm,
+    precioCliente, cargandoPrecio, totalACobrar,
   };
 }

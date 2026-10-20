@@ -1,5 +1,6 @@
 import { Banknote, Smartphone, CreditCard, HandCoins } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/format";
+import type { PrecioDeCliente } from "@/lib/pos/precio-revendedora";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -36,6 +37,10 @@ export interface POSPaymentModalProps {
   customerName: string;
   onCustomerPhone: (phone: string) => void;
   onCustomerName: (name: string) => void;
+  /** Precio de la clienta elegida (revendedora: nivel y total del servidor). Sólo vista previa: cobra /api/sales. */
+  precioCliente?: PrecioDeCliente | null;
+  /** Mientras se consulta ese precio no se cobra (el total podría cambiar). */
+  cargandoPrecio?: boolean;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────

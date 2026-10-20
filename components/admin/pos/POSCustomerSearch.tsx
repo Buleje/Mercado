@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, UserPlus, X, User, ShoppingBag, RotateCcw, Loader2, Star, StarOff, ShoppingCart } from "@buleje/design-system/icons";
+import { Search, UserPlus, X, User, ShoppingBag, RotateCcw, Loader2, Star, StarOff, ShoppingCart, Smartphone } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { formatCurrency } from "@/lib/format";
 import POSAbonoRapido from "./POSAbonoRapido";
 import { VALOR_PUNTO } from "@/components/admin/crecimiento/puntos/mensajes";
+import { celularDeCaja, celularLegible } from "@/lib/pos/celular-de-caja";
 
 const ClienteFormModal = dynamic(
   () => import("@/components/admin/clientes/ClienteFormModal"),
@@ -120,6 +121,19 @@ export default function POSCustomerSearch({
   const handleSelect = useCallback(
     (customer: CustomerResult) => {
       onSelect(customer.phone, customer.name);
+      setQuery("");
+      setShowResults(false);
+    },
+    [onSelect]
+  );
+
+  // Tipeó un celular que no está entre los resultados (o el cajero, que no puede
+  // buscar clientes, 403): «Usar el celular» lo elige y la venta da de alta a la clienta.
+  const celularTipeado = /^[\d\s+()-]+$/.test(query.trim()) ? celularDeCaja(query) : null;
+  const clienteDelCelular = celularTipeado ? results.find((c) => celularDeCaja(c.phone) === celularTipeado) : undefined;
+  const usarCelular = useCallback(
+    (celular: string) => {
+      onSelect(celular, "");
       setQuery("");
       setShowResults(false);
     },
@@ -448,7 +462,24 @@ export default function POSCustomerSearch({
             setShowResults(true);
           }}
           onFocus={() => setShowResults(true)}
-          placeholder="Buscar cliente por nombre o teléfono..."
+          onBlur={(e) => {
+            // Tipeó el celular y fue directo a «Cobrar»: el celular queda en la venta igual
+            // (20-10: se perdía y la venta salía sin celular). Un clic dentro del buscador
+            // (un resultado, «Crear nuevo cliente») decide ese clic.
+            if (!celularTipeado || containerRef.current?.contains(e.relatedTarget as Node | null)) return;
+            if (clienteDelCelular) handleSelect(clienteDelCelular);
+            else usarCelular(celularTipeado);
+          }}
+          onKeyDown={(e) => {
+            // Enter con un celular completo: elige a la clienta de ese celular o lo usa tal cual.
+            // Sin esperar a la búsqueda (20-10: tardó y el Enter se perdía; la venta salió sin
+            // celular): si ya es clienta, el servidor la reconoce por el celular igual.
+            if (e.key !== "Enter" || !celularTipeado) return;
+            e.preventDefault();
+            if (clienteDelCelular) handleSelect(clienteDelCelular);
+            else usarCelular(celularTipeado);
+          }}
+          placeholder="Buscar cliente por nombre o celular..."
           className="w-full pl-12 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           autoComplete="off"
         />
@@ -457,13 +488,29 @@ export default function POSCustomerSearch({
       {/* Dropdown resultados */}
       {showResults && query.trim().length >= 3 && (
         <div className="absolute z-40 left-0 right-0 mt-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl shadow-lg max-h-80 overflow-y-auto">
+          {celularTipeado && !clienteDelCelular && (
+            <button
+              type="button"
+              data-pos-usar-celular=""
+              onClick={() => usarCelular(celularTipeado)}
+              className="w-full flex items-center gap-3 px-4 min-h-11 py-2 hover:bg-[var(--surface-sunken)] transition-colors text-left border-b border-[var(--rule-base)]"
+            >
+              <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <Smartphone className="h-4 w-4 text-primary" aria-hidden />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-semibold text-[var(--text-primary)] tabular-nums">Usar el celular {celularLegible(celularTipeado)}</p>
+                <p className="text-sm text-[var(--text-tertiary)]">Se guarda con la venta · Enter</p>
+              </div>
+            </button>
+          )}
           {loading ? (
             <div className="py-6 text-center text-sm font-semibold text-[var(--text-tertiary)] dark:text-muted flex items-center justify-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
               Buscando...
             </div>
           ) : results.length === 0 ? (
-            <div className="py-6 text-center text-[var(--text-tertiary)] dark:text-muted">
+            celularTipeado ? null : <div className="py-6 text-center text-[var(--text-tertiary)] dark:text-muted">
               <p className="text-base font-semibold">No se encontraron clientes</p>
               <p className="text-sm mt-1">Puedes continuar sin cliente registrado</p>
             </div>

@@ -21,7 +21,7 @@ function motivoBloqueo(p: PagoModal): { texto: string; tono: "error" | "aviso" }
  * celular); repetirlo en el botón era la tercera copia de la misma cifra.
  */
 export default function PagoPie({ p }: { p: PagoModal }) {
-  const { processing, handleConfirm, isFiado, canConfirm, showCustomerList } = p;
+  const { processing, handleConfirm, isFiado, canConfirm, esperandoPrecio, showCustomerList } = p;
   const motivo = motivoBloqueo(p);
   return (
     <div
@@ -44,7 +44,9 @@ export default function PagoPie({ p }: { p: PagoModal }) {
       <button
         type="button"
         onClick={handleConfirm}
-        disabled={!canConfirm}
+        // Esperando el precio de la clienta queda prendido: el clic cobra apenas llega (usePagoModal).
+        disabled={!canConfirm && !esperandoPrecio}
+        aria-busy={esperandoPrecio || undefined}
         data-pago-cobrar=""
         className={cn(
           "flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl px-5 text-lg font-bold text-white shadow-[var(--shadow-md)] transition disabled:cursor-not-allowed disabled:opacity-40",

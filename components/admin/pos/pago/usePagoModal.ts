@@ -7,9 +7,13 @@ import { isValidRuc, type PaymentLine, type PaymentLineMethod, type ComprobanteT
 
 /** Estado del modal de cobro del POS (pago, descuento, cliente, comprobante, billetes). */
 export function usePagoModal({
-  total: subtotal, cartCount, onConfirm, onCancel, processing = false, onRepeatOrder,
+  total: totalDelCarrito, cartCount, onConfirm, onCancel, processing = false, onRepeatOrder,
   customerPhone, customerName, onCustomerPhone: setCustomerPhone, onCustomerName: setCustomerName,
+  precioCliente = null, cargandoPrecio = false,
 }: POSPaymentModalProps) {
+  // Revendedora con su precio vigente: la base del cobro es su total (el servidor
+  // lo recalcula al cobrar y no usa el precio ni el descuento por ítem del carrito).
+  const subtotal = precioCliente?.aplica ? precioCliente.total : totalDelCarrito;
   const [paymentLines, setPaymentLines] = useState<PaymentLine[]>([
     { method: "efectivo", amount: subtotal },
   ]);
@@ -160,8 +164,12 @@ export function usePagoModal({
     []
   );
 
+  const cobrarAlSaberPrecio = useRef(false);
   const handleConfirm = () => {
-    if (!canConfirm) return;
+    if (!canConfirm) {
+      if (esperandoPrecio) cobrarAlSaberPrecio.current = true;
+      return;
+    }
     // Mejora QW-10a: Guardar método de pago frecuente del cliente
     if (customerPhone && paymentLines.length === 1 && paymentLines[0].method !== "fiado") {
       try { localStorage.setItem(`customer-payment-pref-${customerPhone}`, paymentLines[0].method); } catch { /* ignore */ }
@@ -250,16 +258,28 @@ export function usePagoModal({
   const pideDni = boletaPideDni(comprobanteTipo, total);
   const faltaDni = faltaDniEnBoleta(comprobanteTipo, total, comprobanteDni);
 
-  const canConfirm =
+  // Todo listo salvo el precio de la clienta, que se está consultando: «Cobrar» sigue prendido
+  // y cobra apenas llega si el total no cambió (20-10: tipear el celular e ir directo a
+  // «Cobrar» se tragaba el clic). Si cambió (revendedora), se ve el total nuevo y se vuelve a cobrar.
+  const listoSalvoPrecio =
     (isFiado ? !!customerPhone : pendiente <= 0.01) &&
     !processing &&
     (comprobanteTipo !== "factura" || isValidRuc(comprobanteRuc)) &&
     !faltaDni;
+  const canConfirm = listoSalvoPrecio && !cargandoPrecio;
+  const esperandoPrecio = listoSalvoPrecio && cargandoPrecio;
+  useEffect(() => {
+    if (cargandoPrecio || !cobrarAlSaberPrecio.current) return;
+    cobrarAlSaberPrecio.current = false;
+    if (!precioCliente?.aplica) handleConfirm();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cargandoPrecio]);
 
   return {
     subtotal, cartCount, onCancel, processing, onRepeatOrder, paymentLines, setPaymentLines, customerPhone, setCustomerPhone, customerName, setCustomerName, comprobanteTipo, setComprobanteTipo, comprobanteRuc, setComprobanteRuc, rucError, setRucError, showSplit, setShowSplit, voiceEnabled, setVoiceEnabled, showDiscount, setShowDiscount, discountMode, setDiscountMode, discountValue, setDiscountValue, showCustomerList, setShowCustomerList, yapeNumber, setYapeNumber, plinNumber, setPlinNumber, qrDataUrl, setQrDataUrl, showNewCustomer, setShowNewCustomer, newCustName, setNewCustName, newCustPhone, setNewCustPhone, savingCustomer, setSavingCustomer, billetes, setBilletes, numDiscountValue, discountAmount, discountPercent, total, linesTotal, pendiente, lastLine, vuelto, currentMethod, showQR, addLine, removeLine, updateMethod, updateAmount, handleConfirm, handleSplitConfirm, quickPercent, quickFixed, quickDiscountValues, applyQuickDiscount, totalBilletes, addBillete, limpiarBilletes, quickAmounts, isSinglePayment, isFiado, canConfirm,
     billeteras, qrAbierto, setQrAbierto, elegirMetodo, deuda,
     comprobanteDni, setComprobanteDni, pideDni, faltaDni,
+    precioCliente, cargandoPrecio, esperandoPrecio,
   };
 }
 

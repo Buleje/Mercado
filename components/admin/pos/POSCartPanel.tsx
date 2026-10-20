@@ -2,7 +2,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { ShoppingBasket, Banknote, X, Trash2, User } from "@buleje/design-system/icons";
+import { ShoppingBasket, Banknote, X, Trash2, User, Tag } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { extractIgv } from "@/lib/tax";
 import POSFiadoPanel from "@/components/admin/pos/POSFiadoPanel";
@@ -15,6 +15,7 @@ import { useTopeDescuentoCajero } from "@/components/admin/pos/useTopeDescuentoC
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
 import type { POSCarrito } from "@/components/admin/pos/usePOSCarrito";
+import type { PrecioDeCliente } from "@/lib/pos/precio-revendedora";
 
 interface POSCartPanelProps {
   carrito: POSCarrito;
@@ -25,12 +26,16 @@ interface POSCartPanelProps {
   customerName?: string;
   onQuitarCliente?: () => void;
   openPaymentModal: () => void;
+  /** Precio de la clienta (revendedora): el carrito muestra su total, el mismo que el cobro. */
+  precioCliente?: PrecioDeCliente | null;
+  totalACobrar?: number;
 }
 
 /** Columna del carrito: cola de clientes, líneas, total y Cobrar. */
-export default function POSCartPanel({ carrito, customerPhone, customerName, onQuitarCliente, openPaymentModal }: POSCartPanelProps) {
+export default function POSCartPanel({ carrito, customerPhone, customerName, onQuitarCliente, openPaymentModal, precioCliente, totalACobrar }: POSCartPanelProps) {
+  const cartTotal = totalACobrar ?? carrito.cartTotal;
   const {
-    cart, cartCount, cartTotal, clientQueues, enqueueClient, loadFromQueue, removeFromQueue, clearCart,
+    cart, cartCount, clientQueues, enqueueClient, loadFromQueue, removeFromQueue, clearCart,
     handlePauseCart, handleResumeCart, handleAddFromSearch, lastAddedId, updateQuantity, updateDiscount, removeFromCart,
   } = carrito;
   const [showQueueDropdown, setShowQueueDropdown] = useState(false);
@@ -198,6 +203,12 @@ export default function POSCartPanel({ carrito, customerPhone, customerName, onQ
                   <User className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
                   <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{customerName || customerPhone}</span>
                   {customerName && <span className="text-sm text-[var(--text-tertiary)] tabular-nums shrink-0">{customerPhone}</span>}
+                  {precioCliente?.aplica && (
+                    <span data-pos-precio-revendedora className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[var(--accent-ink)]">
+                      <Tag className="h-3.5 w-3.5" aria-hidden />
+                      Revendedora · {precioCliente.nivel} %
+                    </span>
+                  )}
                   {onQuitarCliente && (
                     <button
                       type="button"

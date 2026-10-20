@@ -29,6 +29,10 @@ import { desglosarPago, type LineaDePago } from "@/lib/caja/desglosar-pago";
 import { anotarVentaEnCaja, type MotivoSinAnotar } from "@/lib/caja/anotar-venta";
 import { sinDato } from "@/lib/errores/sin-dato";
 import { MAX_RECIBIDO, notaTrueque } from "@/lib/pos/trueque";
+import { RevendedorasDB } from "@/lib/db/revendedoras.db";
+import { LISTA_REVENDEDORA } from "@/lib/revendedoras/reglas";
+import { preciosQueRigen } from "@/lib/pos/precio-revendedora";
+import { celularDeCaja } from "@/lib/pos/celular-de-caja";
 import {
   excedeTopeCajero,
   excedeTopeItemCajero,
@@ -53,6 +57,8 @@ const SaleSchema = z.object({
   payment: z.enum(["efectivo", "yape", "plin", "tarjeta", "MIXTO", "fiado"]).optional().default("efectivo"),
   amountPaid: z.number().nonnegative().optional(),
   customerPhone: z.string().max(20).optional(),
+  /** Nombre de la clienta para el alta rápida desde el cobro (sólo si su celular no está en el negocio). */
+  customerName: z.string().trim().max(80).optional(),
   paymentDetails: z.string().optional(),
   // Mejora 1: Tipo de comprobante
   comprobanteTipo: z.enum(["ticket", "boleta", "factura", "cotizacion", "proforma"]).optional().default("ticket"),
@@ -110,6 +116,25 @@ function esChoqueDeUnico(err: unknown): boolean {
   const code = (err as { code?: unknown } | null)?.code;
   if (code === "P2002" || code === "23505") return true;
   return err instanceof Error && /P2002|Unique constraint/i.test(err.message);
+}
+
+/**
+ * Alta rápida de la clienta con el celular tipeado en el cobro (20-10): sólo
+ * el celular, el nombre es opcional. Va por la venta y no por `/api/customers`
+ * porque esa ruta es sólo de administración (el cajero recibe 403). Celular de
+ * otra tienda (`Customer.phone` único en toda la plataforma) o un error → la
+ * venta sigue sin celular, como antes.
+ */
+async function altaDesdeLaCaja(tenantId: string, tipeado: string, nombre?: string): Promise<string | undefined> {
+  const phone = celularDeCaja(tipeado);
+  if (!phone) return undefined;
+  try {
+    const alta = await CustomersDB.altaSinPisar(tenantId, { phone, name: nombre?.trim() || `Cliente ${phone.slice(-4)}` });
+    return alta.estado === "otra_tienda" ? undefined : alta.cliente.phone;
+  } catch (err) {
+    logger.warn("[sales] alta rápida de la clienta falló", { err: String(err), tenantId });
+    return undefined;
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -278,6 +303,27 @@ async function salesHandler(
       });
     }
   }
+  // La clienta de la venta (si viene su celular) y, si es revendedora, su
+  // precio (ADR-507 en la caja, 20-10). Se lee ANTES de armar los precios: la
+  // cotización la hace el servidor con precio y costo de la base y lo comprado
+  // en el mes; el precio y el descuento por ítem que mande el POS no cuentan.
+  // `Sale.customerPhone` es FK a `Customer.phone`: se guarda si existe (o si
+  // el alta rápida de abajo la crea). SECURITY 2026-05-07 (B1): `phone` es único GLOBAL; findFirst con tenantId
+  // garantiza que la clienta sea de este negocio.
+  const clienteDeLaVenta = data.customerPhone ? await RevendedorasDB.clientaDeLaCaja(auth.tenantId, data.customerPhone) : null;
+  const precioDeLista = clienteDeLaVenta?.id && clienteDeLaVenta.listaPrecio === LISTA_REVENDEDORA
+    ? await RevendedorasDB.cotizarEnCaja(
+        auth.tenantId,
+        clienteDeLaVenta.id,
+        data.items.filter(i => priceCostMap.has(i.productId)).map(i => ({ productId: i.productId, quantity: i.quantity })),
+      ).catch((err) => {
+        // Sin cotización se cobra el precio normal (nunca uno inventado).
+        logger.warn("[sales] precio de revendedora no disponible", { err: String(err), tenantId: auth.tenantId });
+        return null;
+      })
+    : null;
+  const preciosDeLista = preciosQueRigen(precioDeLista);
+
   // P0 fix (2026-06-04): cap de descuento por ítem alineado con el cap global —
   // cajero hasta el tope de Ajustes (15 % de fábrica), admin/owner hasta 100%.
   // El % viene del cliente pero el precio BASE siempre es el de DB (el cliente
@@ -303,7 +349,9 @@ async function salesHandler(
         : Math.min(rawDiscount, topePct);
       // Precio neto por unidad = precio DB × (1 − descuento%). Es lo que se cobra
       // y lo que se persiste en SaleItem.price (sin columna nueva ni migración).
-      const netUnit = dbPrice.price * (1 - clampedDiscount / 100);
+      // Revendedora: su precio REEMPLAZA al descuento por ítem (no se suman).
+      const precioLista = preciosDeLista?.get(i.productId);
+      const netUnit = precioLista ?? dbPrice.price * (1 - clampedDiscount / 100);
       return {
         ...i,
         price: netUnit, // ⚠ neto sobre precio DB (NO se confía en el precio del cliente)
@@ -376,18 +424,13 @@ async function salesHandler(
       ? JSON.stringify({ tipo: "TRUEQUE", recibido: data.trueque.recibido, valor: data.trueque.valor, nota: notaDeTrueque })
       : undefined);
 
-  // Validate customerPhone: only set it if the customer actually exists in DB
-  // (the Sale.customerPhone is a FK → Customer.phone; passing an unknown phone throws a FK error)
-  let resolvedCustomerPhone: string | undefined = undefined;
-  if (data.customerPhone) {
-    // SECURITY 2026-05-07 (B1): findUnique({where:{phone}}) es @unique global
-    // y puede traer un Customer de otro tenant. findFirst con tenantId garantiza
-    // aislamiento multi-tenant.
-    const existingCustomer = await prisma.customer.findFirst({
-      where: { phone: data.customerPhone, tenantId: auth.tenantId },
-      select: { phone: true },
-    });
-    resolvedCustomerPhone = existingCustomer?.phone ?? undefined;
+  // customerPhone sólo si la clienta existe en este negocio (leída arriba): es
+  // FK → Customer.phone y un celular desconocido rompería la venta.
+  let resolvedCustomerPhone: string | undefined = clienteDeLaVenta?.phone ?? undefined;
+  // Celular nuevo tipeado en el cobro (20-10): alta rápida para que la venta
+  // quede con su celular (seguimiento de clientas, ADR-508). El fiado tiene la suya abajo.
+  if (!resolvedCustomerPhone && data.customerPhone && data.payment !== "fiado") {
+    resolvedCustomerPhone = await altaDesdeLaCaja(auth.tenantId, data.customerPhone, data.customerName);
   }
 
   // ── Fiado: pre-validar antes de la transacción ────────────────────────────

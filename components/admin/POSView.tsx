@@ -207,6 +207,9 @@ export default function POSView() {
           customerName={cobro.customerName}
           onQuitarCliente={() => { cobro.setCustomerPhone(""); cobro.setCustomerName(""); }}
           openPaymentModal={openPaymentModal}
+          // Revendedora: el carrito dice su precio y su nivel, no el de lista.
+          precioCliente={cobro.precioCliente}
+          totalACobrar={cobro.totalACobrar}
         />
       </div>
 
@@ -218,7 +221,7 @@ export default function POSView() {
 
       {isIdle && <POSIdleScreen onWake={() => setIsIdle(false)} />}
 
-      {cart.length > 0 && <POSBarraCobroMovil cartCount={cartCount} cartTotal={cartTotal} onCobrar={openPaymentModal} />}
+      {cart.length > 0 && <POSBarraCobroMovil cartCount={cartCount} cartTotal={cobro.totalACobrar} onCobrar={openPaymentModal} />}
 
       <POSWhatsAppOrderModal
         showWhatsAppOrder={showWhatsAppOrder}
@@ -255,6 +258,8 @@ export default function POSView() {
           customerName={cobro.customerName}
           onCustomerPhone={cobro.setCustomerPhone}
           onCustomerName={cobro.setCustomerName}
+          precioCliente={cobro.precioCliente}
+          cargandoPrecio={cobro.cargandoPrecio}
         />
       )}
 

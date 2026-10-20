@@ -1,16 +1,23 @@
 "use client";
 
 import { Field } from "@/components/admin/shared/Field";
-import { Plus, Loader2, ClipboardList } from "@buleje/design-system/icons";
+import { Plus, ClipboardList } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import POSCustomerSearch from "@/components/admin/pos/POSCustomerSearch";
-import { csrfHeaders } from "@/lib/csrf-client";
+import { celularDeCaja } from "@/lib/pos/celular-de-caja";
 import type { PagoModal } from "@/components/admin/pos/pago/usePagoModal";
 
-/** Cliente del cobro (en «La venta»): buscar, nuevo cliente y lista. Fiado lo exige. */
+/**
+ * Cliente del cobro (en «La venta»): buscar, nuevo cliente y lista. Opcional
+ * (deja la venta con su celular para el seguimiento); Fiado lo exige. Un
+ * celular nuevo se da de alta CON la venta (`/api/sales`): sólo el celular,
+ * el nombre es opcional, y una venta que no se cobra no deja clientes sueltos
+ * (además `/api/customers` es sólo de administración: el cajero no podía darlas de alta).
+ */
 export default function PagoCliente({ p }: { p: PagoModal }) {
-  const { onRepeatOrder, customerPhone, setCustomerPhone, customerName, setCustomerName, setShowCustomerList, showNewCustomer, setShowNewCustomer, newCustName, setNewCustName, newCustPhone, setNewCustPhone, savingCustomer, setSavingCustomer, isFiado } = p;
+  const { onRepeatOrder, customerPhone, setCustomerPhone, customerName, setCustomerName, setShowCustomerList, showNewCustomer, setShowNewCustomer, newCustName, setNewCustName, newCustPhone, setNewCustPhone, isFiado } = p;
+  const celularNuevo = celularDeCaja(newCustPhone);
   return (
     <>
             <div className="min-w-0 space-y-2" data-pago-cliente="">
@@ -20,7 +27,7 @@ export default function PagoCliente({ p }: { p: PagoModal }) {
                   "text-xs font-semibold",
                   isFiado ? "text-[var(--data-error-ink)]" : "text-[var(--text-tertiary)]",
                 )}>
-                  {isFiado ? "· Requerido para fiar" : "· Opcional"}
+                  {isFiado ? "· Requerido para fiar" : "· Opcional · para el seguimiento"}
                 </span>
                 {/* «Nuevo» y «Ver clientes» en la misma fila del rótulo. */}
                 <div className="ml-auto flex items-center gap-1">
@@ -54,18 +61,9 @@ export default function PagoCliente({ p }: { p: PagoModal }) {
             {/* Formulario inline nuevo cliente — grande y legible */}
             {showNewCustomer && (
               <div className="mb-3 p-3 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] space-y-3">
-                <p className="text-sm font-bold text-[var(--text-primary)]">Nuevo cliente <span className="font-normal text-[var(--text-tertiary)]">· nombre y celular</span></p>
+                <p className="text-sm font-bold text-[var(--text-primary)]">Nuevo cliente <span className="font-normal text-[var(--text-tertiary)]">· se guarda con la venta</span></p>
 
                 <div className="space-y-3">
-                  <Field label="Nombre completo" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
-                    <input
-                      type="text"
-                      value={newCustName}
-                      onChange={e => setNewCustName(e.target.value)}
-                      placeholder="Ej: Maria Rodriguez"
-                      className="w-full px-4 h-11 text-base border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] transition-all"
-                    />
-                  </Field>
                   <Field label="Celular (9 dígitos)" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
                     {(id) => (
                     <>
@@ -80,50 +78,42 @@ export default function PagoCliente({ p }: { p: PagoModal }) {
                     {newCustPhone.length > 0 && newCustPhone.length < 9 && (
                       <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Faltan {9 - newCustPhone.length} dígitos</p>
                     )}
+                    {newCustPhone.length === 9 && !celularNuevo && (
+                      <p className="text-sm text-[var(--data-warning-ink)] mt-1.5">Un celular empieza con 9</p>
+                    )}
                     </>
                     )}
+                  </Field>
+                  <Field label="Nombre (opcional)" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
+                    <input
+                      type="text"
+                      value={newCustName}
+                      onChange={e => setNewCustName(e.target.value)}
+                      placeholder="Ej: Maria Rodriguez"
+                      className="w-full px-4 h-11 text-base border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] transition-all"
+                    />
                   </Field>
                 </div>
 
                 <div className="flex gap-3 pt-1">
                   <button
-                    disabled={!newCustName.trim() || newCustPhone.length < 9 || savingCustomer}
-                    onClick={async () => {
-                      setSavingCustomer(true);
-                      try {
-                        // `siExiste=usar`: si el celular ya es de un cliente, se elige ése
-                        // tal cual (el alta ya no lo pisa) con su nombre y su celular guardado.
-                        const res = await fetch("/api/customers?siExiste=usar", {
-                          method: "POST",
-                          headers: csrfHeaders({ "Content-Type": "application/json" }),
-                          body: JSON.stringify({ name: newCustName.trim(), phone: newCustPhone }),
-                        });
-                        if (res.ok) {
-                          const guardado = (await res.json().catch(() => null)) as { phone?: string; name?: string } | null;
-                          setCustomerPhone(guardado?.phone || newCustPhone);
-                          setCustomerName(guardado?.name || newCustName.trim());
-                          setShowNewCustomer(false);
-                          setNewCustName("");
-                          setNewCustPhone("");
-                        }
-                      } catch { /* ignore */ }
-                      setSavingCustomer(false);
+                    type="button"
+                    disabled={!celularNuevo}
+                    onClick={() => {
+                      if (!celularNuevo) return;
+                      setCustomerPhone(celularNuevo);
+                      setCustomerName(newCustName.trim());
+                      setShowNewCustomer(false);
+                      setNewCustName("");
+                      setNewCustPhone("");
                     }}
                     className="flex-1 min-h-11 rounded-xl bg-[var(--accent-dark)] text-white text-base font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-colors flex items-center justify-center gap-2"
                   >
-                    {savingCustomer ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-5 w-5" />
-                        Guardar y seleccionar
-                      </>
-                    )}
+                    <Plus className="h-5 w-5" />
+                    Usar en esta venta
                   </button>
                   <button
+                    type="button"
                     onClick={() => { setShowNewCustomer(false); setNewCustName(""); setNewCustPhone(""); }}
                     className="px-5 min-h-11 rounded-xl text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                   >

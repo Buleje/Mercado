@@ -95,6 +95,13 @@ vi.mock("@/lib/caja/invalidar-ventas-overview", () => ({
   tagVentasOverview: (t: string) => `ventas-overview-${t}`,
 }));
 
+// La clienta de la venta se lee por la clase (20-10); acá sigue respondiendo el mismo simulacro.
+vi.mock("@/lib/db/revendedoras.db", () => ({
+  RevendedorasDB: {
+    clientaDeLaCaja: (_tenantId: string, celular: string) => mockCustomerFindFirst({ where: { phone: { in: [celular] } } }),
+    cotizarEnCaja: vi.fn(async () => null),
+  },
+}));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     customer: { findFirst: mockCustomerFindFirst },
