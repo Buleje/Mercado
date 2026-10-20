@@ -64,5 +64,6 @@ export async function metadatosDePaginaPropia(
       locale: "es_PE",
     },
     twitter: { card: "summary_large_image", title: m.titulo, description: m.descripcion, ...(imagen ? { images: [imagen.url] } : {}) },
+    ...(m.iconos ? { icons: { icon: [{ url: m.iconos.icono }], ...(m.iconos.apple ? { apple: [{ url: m.iconos.apple }] } : {}) } } : {}),
   };
 }

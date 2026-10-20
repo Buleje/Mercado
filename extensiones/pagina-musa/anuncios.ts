@@ -158,6 +158,25 @@ export const PROTEGIDA = [
   { icono: "original", titulo: "Productos originales", texto: "Todos con su Notificación Sanitaria Obligatoria (NSO) a la vista." },
 ] as const;
 
+/**
+ * Políticas de envío y de datos, con las palabras del manual (§1 «Envío», §18 «Del pedido a la
+ * entrega», «Datos de las clientas»). El «24 a 72 h» es el plazo del paso «Entregar»; los pagos y
+ * el «sin tu sí no se envía» son los pasos 4 y 5. Nada más: lo que el manual no dice, no se promete.
+ */
+export const POLITICAS = {
+  envios: [
+    { titulo: "Gratis en Ciudad Constitución", texto: "Te lo llevamos en moto o lo recoges en el salón, normalmente en 24 a 72 horas." },
+    { titulo: "Fuera de Constitución", texto: "Por agencia, con código de seguimiento. Gratis desde S/ 99; con menos, tú pagas la agencia (Villa Rica, Oxapampa, Puerto Bermúdez)." },
+    { titulo: "Cómo se paga", texto: "En Constitución, contraentrega o Yape. Fuera, por adelantado (Yape, Plin o transferencia). Lo que va por encargo se paga 100 % adelantado." },
+    { titulo: "Antes de enviar", texto: "Drucila te confirma tu pedido por WhatsApp y sin tu «sí» no sale." },
+  ],
+  datos: [
+    { titulo: "Solo lo necesario", texto: "Pedimos nombre, celular, dirección y referencia. El DNI, solo si tu pedido va por agencia o tu boleta pasa S/ 700." },
+    { titulo: "Tu permiso", texto: "Solo te escribimos ofertas si tú lo aceptas. Si dices que no, te escribimos únicamente por tu pedido." },
+    { titulo: "No se comparten", texto: "Tus datos no se comparten con nadie fuera del negocio y, si pides que se borren, se borran." },
+  ],
+} as const;
+
 export const BENEFICIOS = [
   { icono: "camion", titulo: "Envío gratis en Constitución", texto: "Fuera de Constitución, gratis desde S/ 99 (Villa Rica, Oxapampa, Puerto Bermúdez)." },
   { icono: "pago", titulo: "Paga como prefieras", texto: "Yape, Plin, transferencia o contraentrega en Constitución." },

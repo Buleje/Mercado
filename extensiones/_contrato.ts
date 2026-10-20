@@ -200,6 +200,12 @@ export interface MetadatosPagina {
   readonly descripcion: string;
   /** La tarjeta para compartir: ruta de `public/` y su tamaño real (1200 × 630 recomendado). */
   readonly imagen?: { readonly ruta: string; readonly ancho: number; readonly alto: number; readonly alt: string } | null;
+  /**
+   * El ícono de la pestaña y del celular (rutas de `public/`). Va en los metadatos
+   * de la página, no en el cuerpo: un `<link rel="icon">` dibujado adentro quedaba
+   * detrás de los de Buleje y el navegador elegía esos (20-10, Musa).
+   */
+  readonly iconos?: { readonly icono: string; readonly apple?: string } | null;
 }
 
 export interface PiezaPagina<O = unknown> {

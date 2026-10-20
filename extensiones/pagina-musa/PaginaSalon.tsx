@@ -35,6 +35,7 @@ import { PorPrecio } from "./PorPrecio";
 import { Portada } from "./Portada";
 import { valoresCampana } from "./preventa";
 import { RutinaCoreana } from "./RutinaCoreana";
+import { Politicas } from "./Politicas";
 import { Confianza, Mejorar } from "./Salon";
 import { cssTema, ID_PAGINA } from "./tema";
 import { ANCHO, BOTON } from "./ui";
@@ -130,6 +131,7 @@ async function Vitrina({ tenantId, slug, marco: m }: { tenantId: string; slug: s
       )}
       <Mejorar slug={slug} productos={d.productos} whatsapp={d.whatsapp} />
       <Confianza whatsapp={d.whatsapp} />
+      <Politicas slug={slug} />
     </>
   );
 }

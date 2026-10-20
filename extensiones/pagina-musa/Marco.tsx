@@ -88,7 +88,11 @@ async function BolsaDelMarco({ tenantId }: { tenantId: string }) {
 
 export function marco({ ctx }: PropsMarco<Opciones>): MarcoTienda {
   return {
-    tema: <style dangerouslySetInnerHTML={{ __html: CSS_GLOBAL + CSS_TEMA }} />,
+    tema: (
+      <>
+        <style dangerouslySetInnerHTML={{ __html: CSS_GLOBAL + CSS_TEMA }} />
+      </>
+    ),
     encabezado: <Encabezado tenantId={ctx.tenantId} slug={ctx.slug} />,
     esqueletoEncabezado: <EsqueletoEncabezado />,
     pie: <PieDelMarco tenantId={ctx.tenantId} slug={ctx.slug} />,

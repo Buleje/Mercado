@@ -27,8 +27,10 @@ export const PREVENTA_NAVIDAD = {
   separaCon: 20,
   /** Últimos envíos a provincia. */
   enviosProvinciaHasta: "2026-12-18",
-  /** Último día de entregas: después, el bloque no se muestra. */
+  /** Último día de entregas (calendario del manual): después, el bloque no se muestra. */
   entregasHasta: "2026-12-24",
+  /** Lo que se le PROMETE a la clienta: el mensaje listo del manual dice «hasta el 23 de diciembre» (el 24 queda de margen). */
+  entregaPrometidaHasta: "2026-12-23",
 } as const;
 
 /** «antes» (se anuncia la fecha), «abierta» (se separa) o null (terminó). */

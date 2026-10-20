@@ -214,7 +214,7 @@ export function Precio({ p }: { p: ProductoSalon }) {
 
 /**
  * Preventa o por encargo: qué significa para quien compra, con lo que dice el manual
- * (preventa de Navidad: se separa con S/ 20, entregas hasta el 24 dic). «En stock» y los
+ * (preventa de Navidad: se separa con S/ 20, entregas hasta el 23 dic, como dice el manual). «En stock» y los
  * demás badges no llevan explicación (las existencias las cuenta `Existencias`).
  */
 export function EstadoPedido({ etiqueta }: { etiqueta: string | null }) {
@@ -227,7 +227,7 @@ export function EstadoPedido({ etiqueta }: { etiqueta: string | null }) {
         <strong className="font-semibold">{encargo ? "Por encargo." : "Preventa de Navidad."}</strong>{" "}
         {encargo
           ? "Se pide al proveedor cuando confirmas tu pago (100 % adelantado)."
-          : `Sepáralo con S/ ${PREVENTA_NAVIDAD.separaCon} por WhatsApp. Entregas hasta el ${diaCorto(PREVENTA_NAVIDAD.entregasHasta)}.`}
+          : `Sepáralo con S/ ${PREVENTA_NAVIDAD.separaCon} por WhatsApp. Entregas hasta el ${diaCorto(PREVENTA_NAVIDAD.entregaPrometidaHasta)}.`}
       </span>
     </p>
   );

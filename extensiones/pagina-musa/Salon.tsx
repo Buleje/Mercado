@@ -4,15 +4,14 @@
  *   compactos que llevan al catálogo filtrado, con cuántos productos hay DE VERDAD
  *   (la MISMA búsqueda de `filtros.ts`); con 0, a Drucila por WhatsApp.
  * · `Confianza` — las 3 señales del manual (originales con NSO, asesoría de
- *   Drucila, entrega en Constitución), cómo se paga y la garantía entera a un
- *   toque (`<details>`, sin JavaScript). Reemplaza a la carta «Hola, linda», al
+ *   Drucila, entrega en Constitución), cómo se paga y un enlace a `Politicas` (`#politicas`). Reemplaza a la carta «Hola, linda», al
  *   banner del diagnóstico, a «Tu compra está protegida» y a los beneficios,
  *   que repetían lo mismo en cuatro pantallas.
  * Sin hex: colores, fuentes y escalas salen de `tema.ts` (`--mu-*`, `.mu-*`).
  */
-import { ArrowRight, ChevronDown, Droplets, Gift, MapPin, MessageCircle, Moon, ShieldCheck } from "@buleje/design-system/icons";
+import { ArrowRight, Droplets, Gift, MapPin, MessageCircle, Moon, ShieldCheck } from "@buleje/design-system/icons";
 import { Smile, Sparkles, Sun, User, Waves, Wind } from "@buleje/design-system/icons";
-import { CARTA, CONFIANZA, MEJORAR, PAGOS, PROTEGIDA } from "./anuncios";
+import { CARTA, CONFIANZA, MEJORAR, PAGOS } from "./anuncios";
 import type { ProductoSalon } from "./datos";
 import { enlaceWhatsapp, hrefDestino } from "./destinos";
 import { coincide } from "./filtros";
@@ -120,23 +119,10 @@ export function Confianza({ whatsapp }: { whatsapp: string | null }) {
             <span className="font-semibold text-[var(--text-primary)]">Pagas como prefieras: </span>
             {PAGOS.map((p) => p.texto).join(" · ")}.
           </p>
-          <details className="group lg:max-w-[36rem]">
-            <summary className="mu-foco inline-flex min-h-12 cursor-pointer list-none items-center gap-2 rounded-lg font-semibold text-[var(--text-primary)] [&::-webkit-details-marker]:hidden">
-              Tu compra está protegida: ver la garantía
-              <ChevronDown className="h-4 w-4 transition-transform duration-[var(--mu-dur-corto)] group-open:rotate-180" aria-hidden="true" />
-            </summary>
-            <ul className="mt-2 grid gap-2">
-              {PROTEGIDA.map((g) => (
-                <li key={g.titulo} className="flex gap-2 leading-relaxed text-[var(--text-secondary)]">
-                  <ArrowRight className="mt-1.5 h-3.5 w-3.5 shrink-0 text-[var(--mu-acento-tinta)]" aria-hidden="true" />
-                  <span>
-                    <span className="font-semibold text-[var(--text-primary)]">{g.titulo}. </span>
-                    {g.texto}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </details>
+          <a href="#politicas" className="mu-subrayado mu-foco inline-flex min-h-12 items-center gap-2 font-semibold text-[var(--text-primary)] [--mu-subrayado-abajo:.55rem]">
+            Envíos, cambios y devoluciones
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </a>
         </div>
       </div>
     </section>

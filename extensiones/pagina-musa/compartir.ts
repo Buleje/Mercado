@@ -55,5 +55,6 @@ export async function metadatosPagina({ ctx, searchParams, vista }: PropsPagina<
     ...(categoria ? { consulta: `?categoria=${encodeURIComponent(categoria.nombre)}` } : {}),
     descripcion: categoria ? `${categoria.texto} Asesoría gratis por WhatsApp y envío gratis en Ciudad Constitución.` : DESCRIPCION,
     imagen: TARJETA_PORTADA,
+    iconos: { icono: "/musa/logo/musa-icono-192.png", apple: "/musa/logo/musa-apple-touch-180.png" },
   };
 }

@@ -156,8 +156,8 @@ export function Pie({
               </a>
             </li>
             <li>
-              <a href={`${r.base}#protegida`} className={enlace}>
-                Compra protegida
+              <a href={`${r.base}#politicas`} className={enlace}>
+                Envíos, cambios y devoluciones
               </a>
             </li>
             <li>
