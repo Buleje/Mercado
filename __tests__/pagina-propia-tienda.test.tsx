@@ -24,6 +24,8 @@ const H = vi.hoisted(() => ({
 vi.mock("@/lib/store-metadata", () => ({ resolveStoreContext: async () => H.tienda }));
 vi.mock("@/lib/tenant", () => ({ findTenantByIdOrSlug: async () => H.negocio }));
 vi.mock("@/lib/extensiones/resolver", () => ({ resolverPiezas: (...a: unknown[]) => H.resolverPiezas(...a) }));
+// ADR-511: sin página propia va la plantilla, salvo «Clásico». Estos casos son los de antes: el negocio eligió Clásico.
+vi.mock("@/lib/db/settings.db", () => ({ SettingsDB: { get: async () => ({ storeTheme: { tiendaPlantilla: { formato: "clasico" } } }) } }));
 vi.mock("@/lib/extensiones/tope", async (real) => ({
   ...(await real<typeof import("@/lib/extensiones/tope")>()),
   reportarFalloPieza: (...a: unknown[]) => H.reportar(...a),
@@ -94,6 +96,7 @@ describe("paginaPropiaDeLaTienda", () => {
       ctx: { tenantId: "cuid-1", slug: "salon", enchufe: "tienda.pagina" },
       opciones: { tono: "vino" },
       pieza,
+      origen: "propia",
     });
   });
 
@@ -120,6 +123,7 @@ describe("paginaPropiaDeLaTienda", () => {
 describe("marcoDeLaTienda", () => {
   const propia = (marco?: (p: unknown) => unknown) => ({
     piezaId: "pagina-salon",
+    origen: "propia" as const,
     ctx: { tenantId: "cuid-1", slug: "salon", enchufe: "tienda.pagina" as const },
     opciones: { tono: "vino" },
     pieza: { Pagina, ...(marco ? { marco } : {}) } as never,

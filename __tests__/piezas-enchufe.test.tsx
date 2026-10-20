@@ -28,6 +28,8 @@ vi.mock("@/extensiones/registro.servidor", async () => {
     <p>{`${opciones.titulo}:${String(datos)}`}</p>
   );
   return {
+    // ADR-511: la plantilla de tienda no entra en estos casos (son de la portada).
+    PLANTILLA_TIENDA: null,
     PIEZAS_SERVIDOR: [
       { manifiesto: manifiesto("portada-buena"), portada: { modo: "reemplaza", cargar: async () => 7, Vista } },
       { manifiesto: manifiesto("portada-tira"), portada: { modo: "reemplaza", cargar: async () => { throw new Error("boom"); }, Vista } },

@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { unstable_rethrow } from "next/navigation";
 import { ENCHUFE_PAGINA, type ContextoPieza, type ParametrosDeBusqueda } from "@/extensiones/_contrato";
 import { BordeDePieza } from "./BordeDePieza";
+import { elegirPaginaDeLaTienda } from "./elegir-pagina";
 import { RecargarSinPiezas } from "./RecargarSinPiezas";
-import { resolverPiezas } from "./resolver";
 import { conTope, reportarFalloPieza } from "./tope";
 
 /**
@@ -31,6 +31,9 @@ import { conTope, reportarFalloPieza } from "./tope";
  * Exclusiva: una página propia es de UN negocio (lo hace cumplir el guardado
  * del superadmin). Si por un error quedaran dos prendidas, gana la primera por
  * `orden` — nunca se dibujan dos páginas enteras una debajo de la otra.
+ *
+ * ADR-511: sin página propia, la plantilla `pagina-tienda` (salvo «Clásico»),
+ * con las mismas garantías. Quién gana lo decide `elegirPaginaDeLaTienda`.
  */
 export interface EnchufePaginaProps {
   nombre: typeof ENCHUFE_PAGINA;
@@ -44,16 +47,15 @@ export interface EnchufePaginaProps {
 
 export async function EnchufePagina({ tenantId, slug, fallback, searchParams }: EnchufePaginaProps): Promise<ReactNode> {
   const ctx: ContextoPieza = { tenantId, slug, enchufe: ENCHUFE_PAGINA };
-  const pieza = (await resolverPiezas(tenantId, ENCHUFE_PAGINA)).find((p) => p.entrada.pagina);
-  const cargarPagina = pieza?.entrada.pagina;
-  if (!pieza || !cargarPagina) return fallback;
+  const pieza = await elegirPaginaDeLaTienda(tenantId);
+  if (!pieza) return fallback;
 
   let pagina: ReactNode;
   try {
     // `.then` y no una llamada directa: un `throw` síncrono también cae en el catch.
     pagina = await conTope(
       Promise.resolve()
-        .then(cargarPagina)
+        .then(pieza.cargar)
         .then(({ Pagina }) => Pagina({ ctx, opciones: pieza.opciones, searchParams })),
       undefined,
       `la página propia ${pieza.piezaId}`,

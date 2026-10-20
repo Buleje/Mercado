@@ -10,6 +10,7 @@ import { withDbRetry } from "@/lib/db-retry";
 import { invalidateByPrefix } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { esTenantPorDefecto } from "@/lib/tenancy/negocio-por-defecto";
+import { PlantillaSchema } from "@/extensiones/pagina-tienda/config";
 import {
   resolveTenantSlugToId,
   syncBrandingToTenant,
@@ -45,6 +46,14 @@ function sanitizeStoreThemeInput(theme: Record<string, unknown>): Record<string,
   const fu = out.customFontUrl;
   if (typeof fu === "string" && fu.trim() !== "" && !SAFE_THEME_FONT_URL_RE.test(fu.trim())) {
     delete out.customFontUrl;
+  }
+  // ADR-511 · formato de la tienda: sólo lo que pasa el Zod de la plantilla
+  // (Nuevo/Clásico, checkout/WhatsApp, bloques conocidos); lo demás se omite
+  // y el merge conserva lo guardado.
+  if ("tiendaPlantilla" in out) {
+    const plantilla = PlantillaSchema.safeParse(out.tiendaPlantilla);
+    if (plantilla.success) out.tiendaPlantilla = plantilla.data;
+    else delete out.tiendaPlantilla;
   }
   return out;
 }

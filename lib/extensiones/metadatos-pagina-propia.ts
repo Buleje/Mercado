@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
 import { ENCHUFE_PAGINA, pideSinPiezas, type MetadatosPagina, type ParametrosDeBusqueda, type VistaCompartible } from "@/extensiones/_contrato";
 import { origenDeLaPeticion } from "@/lib/seo/origen-de-la-peticion";
+import { metadatosDeLaPlantilla } from "./metadatos-plantilla";
 import { paginaPropiaDeLaTienda } from "./pagina-propia-tienda";
 import { conTope, reportarFalloPieza } from "./tope";
 
@@ -17,13 +18,18 @@ import { conTope, reportarFalloPieza } from "./tope";
  *
  * `alternates` se declara entero (con `languages`): re-declararlo en una página
  * PISA el del layout, que apunta a buleje.pe.
+ *
+ * ADR-511: la plantilla `pagina-tienda` sin `metadatosPagina` propios usa los
+ * de `metadatosDeLaPlantilla` (nombre, imagen y logo de ESE negocio). Imagen e
+ * íconos pueden venir como ruta (`/musa/og.jpg`, se le pone el dominio) o como
+ * URL completa (el logo subido al almacenamiento), que se deja tal cual.
  */
 export async function metadatosDePaginaPropia(
   vista: VistaCompartible,
   searchParams: Promise<ParametrosDeBusqueda> | ParametrosDeBusqueda,
 ): Promise<Metadata | undefined> {
   const propia = await paginaPropiaDeLaTienda();
-  const armar = propia?.pieza.metadatosPagina;
+  const armar = propia?.pieza.metadatosPagina ?? (propia?.origen === "plantilla" ? metadatosDeLaPlantilla : undefined);
   if (!propia || !armar) return undefined;
   const busqueda = await searchParams;
   if (pideSinPiezas(busqueda)) return undefined;
@@ -47,7 +53,8 @@ export async function metadatosDePaginaPropia(
   const base = porRuta ? `/t/${encodeURIComponent(propia.ctx.slug)}` : "";
   const consulta = m.consulta?.startsWith("?") ? m.consulta : "";
   const url = `${origen}${vista === "portada" ? base || "/" : `${base}/tienda`}${consulta}`;
-  const imagen = m.imagen ? { url: `${origen}${m.imagen.ruta}`, width: m.imagen.ancho, height: m.imagen.alto, alt: m.imagen.alt } : null;
+  const absoluta = (ruta: string) => (/^https?:\/\//i.test(ruta) ? ruta : `${origen}${ruta}`);
+  const imagen = m.imagen ? { url: absoluta(m.imagen.ruta), width: m.imagen.ancho, height: m.imagen.alto, alt: m.imagen.alt } : null;
 
   return {
     metadataBase: new URL(origen),
@@ -64,6 +71,8 @@ export async function metadatosDePaginaPropia(
       locale: "es_PE",
     },
     twitter: { card: "summary_large_image", title: m.titulo, description: m.descripcion, ...(imagen ? { images: [imagen.url] } : {}) },
-    ...(m.iconos ? { icons: { icon: [{ url: m.iconos.icono }], ...(m.iconos.apple ? { apple: [{ url: m.iconos.apple }] } : {}) } } : {}),
+    ...(m.iconos
+      ? { icons: { icon: [{ url: absoluta(m.iconos.icono) }], ...(m.iconos.apple ? { apple: [{ url: absoluta(m.iconos.apple) }] } : {}) } }
+      : {}),
   };
 }

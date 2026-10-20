@@ -4,7 +4,7 @@ import { ENCHUFE_PAGINA, type ContextoPieza, type MarcoTienda, type PiezaPagina 
 import { getOrSet } from "@/lib/cache";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { resolveStoreContext } from "@/lib/store-metadata";
-import { resolverPiezas } from "./resolver";
+import { elegirPaginaDeLaTienda, type OrigenPagina } from "./elegir-pagina";
 import { conTope, reportarFalloPieza } from "./tope";
 
 /**
@@ -13,9 +13,13 @@ import { conTope, reportarFalloPieza } from "./tope";
  * el catálogo (`/tienda`). Una lectura por pedido (`cache` de React): el
  * layout y la página comparten el resultado.
  *
+ * ADR-511: «página propia» acá es lo que elige `elegirPaginaDeLaTienda` — la
+ * propia prendida del negocio o, si no tiene, la plantilla `pagina-tienda`
+ * (salvo «Clásico»). `origen` dice cuál de las dos.
+ *
  * `null` (= la tienda con el diseño general, el árbol de siempre) si:
  * · no es una tienda individual (el marketplace nunca lleva marco);
- * · el negocio no existe o no tiene página propia prendida;
+ * · el negocio no existe, o no tiene página propia y eligió «Clásico»;
  * · el código de la página no carga: tira o pasa el tope de 2 s (se avisa).
  *
  * OJO: en `(store)` el header `x-tenant-id` trae el SLUG (`/t/<slug>/…`) o lo
@@ -24,6 +28,8 @@ import { conTope, reportarFalloPieza } from "./tope";
  */
 export interface PaginaPropiaTienda {
   piezaId: string;
+  /** `propia` (la del negocio) o `plantilla` (la de todos, ADR-511). */
+  origen: OrigenPagina;
   /** El negocio de verdad (id + slug), armado acá desde el host; nunca lo elige la pieza. */
   ctx: ContextoPieza;
   /** Ya pasaron el Zod `.strict()` del manifiesto (lo hace `resolverPiezas`). */
@@ -43,15 +49,15 @@ export const paginaPropiaDeLaTienda = cache(async (): Promise<PaginaPropiaTienda
   });
   if (!negocio) return null;
 
-  const propia = (await resolverPiezas(negocio.id, ENCHUFE_PAGINA)).find((p) => p.entrada.pagina);
-  const cargar = propia?.entrada.pagina;
-  if (!propia || !cargar) return null;
+  const propia = await elegirPaginaDeLaTienda(negocio.id);
+  if (!propia) return null;
 
   try {
     // `.then` y no una llamada directa: un `throw` síncrono también cae en el catch.
-    const pieza = await conTope(Promise.resolve().then(cargar), undefined, `el código de la página propia ${propia.piezaId}`);
+    const pieza = await conTope(Promise.resolve().then(propia.cargar), undefined, `el código de la página propia ${propia.piezaId}`);
     return {
       piezaId: propia.piezaId,
+      origen: propia.origen,
       ctx: { tenantId: negocio.id, slug: negocio.slug, enchufe: ENCHUFE_PAGINA },
       opciones: propia.opciones,
       pieza,

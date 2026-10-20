@@ -33,6 +33,20 @@ import { manifiesto as gtfHojaDeControl } from "./gtf-hoja-de-control/manifest";
 import { manifiesto as paginaBodegaBulejeTest } from "./pagina-bodega-buleje-test/manifest";
 import { manifiesto as paginaMusa } from "./pagina-musa/manifest";
 
+// ── plantilla de tienda (imports) ──
+import { manifiesto as paginaTienda } from "./pagina-tienda/manifest";
+
+/**
+ * ADR-511 · la plantilla de tienda nacida de Musa: la página de TODOS los
+ * negocios sin página propia (salvo los que eligieron «Clásico»). Va FUERA de
+ * `PIEZAS_SERVIDOR` a propósito: no se prende negocio por negocio (no sale en
+ * el catálogo del superadmin ni pasa por `guardarPaginaPropia`). La elige
+ * `lib/extensiones/elegir-pagina.ts`.
+ */
+export const PLANTILLA_TIENDA: EntradaServidor | null = piezaServidor(paginaTienda, {
+  pagina: () => import("./pagina-tienda/servidor").then((m) => m.pagina),
+});
+
 export const PIEZAS_SERVIDOR: readonly EntradaServidor[] = [
   // ── piezas de la tienda ──
   piezaServidor(paginaPorBloques, { portada: paginaPorBloquesPortada }),

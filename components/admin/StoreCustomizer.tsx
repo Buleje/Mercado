@@ -21,6 +21,8 @@ import { CabeceraApariencia, ID_PANEL_APARIENCIA, SECCIONES_APARIENCIA, type Sec
 import { cambiosDe, cuantos } from "@/components/admin/store-customizer/cambios";
 import { saludDeLaTienda } from "@/components/admin/store-customizer/salud";
 import { SeccionPedidosCliente } from "@/components/admin/store-customizer/SeccionPedidosCliente";
+import { SeccionFormatoTienda } from "@/components/admin/store-customizer/SeccionFormatoTienda";
+import { leerPlantilla, type PlantillaTienda } from "@/extensiones/pagina-tienda/config";
 import { leerConfigPedidos, conConfigPedidos } from "@/lib/tienda-cliente/config";
 import type { ConfigPedidosCliente } from "@/lib/tienda-cliente/contrato";
 import { button } from "@/components/ui-system/button-variants";
@@ -44,6 +46,8 @@ import { Field } from "@/components/admin/shared/Field";
 export interface StoreTheme {
   /** Cómo te piden (Google, celular, ubicación, imagen): sección Pedidos. */
   pedidosCliente?: ConfigPedidosCliente;
+  /** Formato de la tienda (Nuevo/Clásico) y por dónde llegan los pedidos (ADR-511): Identidad. */
+  tiendaPlantilla?: PlantillaTienda;
   logo: string;
   storeName: string;
   slogan: string;
@@ -1796,6 +1800,11 @@ export default function StoreCustomizer() {
                 tienda + resultado de Google) mientras tipea. */}
             {activeTab === "identidad" && (
               <div className="space-y-3">
+              <SeccionFormatoTienda
+                valor={leerPlantilla(theme)}
+                whatsapp={theme.whatsapp}
+                onChange={(p) => setTheme((prev) => ({ ...prev, tiendaPlantilla: p }))}
+              />
               <div className="grid grid-cols-1 items-start gap-6 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 lg:grid-cols-[1fr_400px]">
                 {/* ── Columna form ── */}
                 <div className="space-y-6 min-w-0">

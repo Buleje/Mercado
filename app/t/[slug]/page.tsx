@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { Enchufe } from "@/lib/extensiones/Enchufe";
-import { resolverPiezas } from "@/lib/extensiones/resolver";
+import { elegirPaginaDeLaTienda } from "@/lib/extensiones/elegir-pagina";
 import { metadatosDePaginaPropia } from "@/lib/extensiones/metadatos-pagina-propia";
 import { ENCHUFE_PAGINA, pideSinPiezas, type ParametrosDeBusqueda } from "@/extensiones/_contrato";
 import { PaginaGeneral, loadPageData } from "@/components/store/pagina-publica/PaginaGeneral";
@@ -135,13 +135,14 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   if (!acceso) notFound();
   const { tenant } = acceso.datos;
 
+  // ADR-511 · propia del negocio → plantilla `pagina-tienda` (salvo «Clásico») → general.
   // `?sinPiezas=1`: la general pura (a donde recarga el navegador si una pieza falló al dibujarse).
-  const propias = pideSinPiezas(busqueda) ? [] : await resolverPiezas(tenant.id, ENCHUFE_PAGINA);
-  // Sin página propia, la general se ARMA acá mismo (llamada, no `<PaginaGeneral>`):
+  const elegida = pideSinPiezas(busqueda) ? null : await elegirPaginaDeLaTienda(tenant.id);
+  // Sin página elegida, la general se ARMA acá mismo (llamada, no `<PaginaGeneral>`):
   // así esta ruta entrega el mismo árbol que antes de ADR-458 y el HTML sale en
   // los mismos pedazos. Como elemento aparte, React lo partía en 10 segmentos
   // más (medido 01-10: mismo DOM final, más HTML).
-  if (!propias.some((p) => p.entrada.pagina)) return PaginaGeneral({ slug, searchParams: busqueda });
+  if (!elegida) return PaginaGeneral({ slug, searchParams: busqueda });
   return (
     <Enchufe
       nombre={ENCHUFE_PAGINA}

@@ -19,6 +19,8 @@ vi.mock("next/headers", () => ({ headers: async () => H.cabeceras }));
 vi.mock("@/lib/store-metadata", () => ({ resolveStoreContext: async () => ({ name: "Musa", tenantId: "musa", isTenant: true }) }));
 vi.mock("@/lib/tenant", () => ({ findTenantByIdOrSlug: async () => ({ id: "cuid-musa", slug: "musa" }) }));
 vi.mock("@/lib/extensiones/resolver", () => ({ resolverPiezas: async () => H.piezas }));
+// ADR-511: sin página propia va la plantilla, salvo «Clásico». Estos casos son los de antes: el negocio eligió Clásico.
+vi.mock("@/lib/db/settings.db", () => ({ SettingsDB: { get: async () => ({ storeTheme: { tiendaPlantilla: { formato: "clasico" } } }) } }));
 vi.mock("@/lib/extensiones/tope", async (real) => ({
   ...(await real<typeof import("@/lib/extensiones/tope")>()),
   reportarFalloPieza: (...a: unknown[]) => H.reportar(...a),
