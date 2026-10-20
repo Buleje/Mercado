@@ -21,7 +21,7 @@
  */
 import { useRef, useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
-import { AlertTriangle, Copy, MoreHorizontal, RefreshCw, Search, Stamp } from "@buleje/design-system/icons";
+import { AlertTriangle, Copy, HeartHandshake, MoreHorizontal, RefreshCw, Search, Stamp } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
@@ -36,6 +36,8 @@ import { usePuntos } from "@/components/admin/crecimiento/puntos/use-puntos";
 import { useSellos } from "@/components/admin/crecimiento/puntos/use-sellos";
 import { TarjetaSellos } from "@/components/admin/crecimiento/puntos/TarjetaSellos";
 import { ModalSellos } from "@/components/admin/crecimiento/puntos/ModalSellos";
+import { ModalReferidas } from "@/components/admin/crecimiento/puntos/ModalReferidas";
+import { useReferidas } from "@/components/admin/crecimiento/puntos/use-referidas";
 
 const ID_FICHA = "ficha-puntos";
 
@@ -51,6 +53,8 @@ export default function LoyaltyTab() {
   const elegidoTel = p.elegido?.phone ?? null;
   const s = useSellos(elegidoTel);
   const [configSellos, setConfigSellos] = useState(false);
+  const referidas = useReferidas();
+  const [verReferidas, setVerReferidas] = useState(false);
   /* El foco vuelve al «Más» al cerrar la ventana: el menú se cierra antes y sin esto quedaba en <body>. */
   const menuRef = useRef<HTMLDivElement>(null);
   const conPremio = Object.keys(s.premios).length;
@@ -103,6 +107,16 @@ export default function LoyaltyTab() {
         setConfigSellos(true);
       },
     },
+    {
+      id: "referidas",
+      label: "Trae a una amiga",
+      hint: "Premio para quien recomienda y para su amiga; quién trajo a quién",
+      icon: HeartHandshake,
+      onSelect: () => {
+        menuRef.current?.querySelector("button")?.focus({ preventScroll: true });
+        setVerReferidas(true);
+      },
+    },
     { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: p.recargar },
   ];
 
@@ -114,14 +128,14 @@ export default function LoyaltyTab() {
           <InfoTip
             title="Puntos"
             what={`Cada compra con celular suma puntos; 1 punto vale ${formatCurrency(VALOR_PUNTO)} de descuento al canjear. El nivel (bronce, plata, oro, diamante) sube con lo que el cliente gastó.`}
-            affects="Los VIP de Campañas son los de nivel oro y diamante. En la ficha de cada cliente ves su historial y le sumas puntos a mano. La tarjeta de sellos (en Más) cuenta compras, no soles: compra 10 veces y la siguiente tiene premio."
+            affects="Los VIP de Campañas son los de nivel oro y diamante. En la ficha de cada cliente ves su historial y le sumas puntos a mano. La tarjeta de sellos (en Más) cuenta compras, no soles: compra 10 veces y la siguiente tiene premio. «Trae a una amiga» (en Más) premia a quien recomienda y a su amiga con un cupón."
             example={`Rosa tiene 120 puntos: puede descontar ${formatCurrency(120 * VALOR_PUNTO)} en su próxima compra.`}
           />
         </div>
         <div className="ml-auto flex min-w-0 items-center gap-2">
           {kpis.boton}
           <div ref={menuRef} className="shrink-0">
-            <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Avisos, tarjeta de sellos y actualizar" />
+            <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Avisos, tarjeta de sellos, trae a una amiga y actualizar" />
           </div>
         </div>
       </div>
@@ -210,6 +224,7 @@ export default function LoyaltyTab() {
       )}
 
       <ModalSellos open={configSellos} config={s.config} onClose={() => setConfigSellos(false)} onGuardar={s.guardar} />
+      <ModalReferidas open={verReferidas} onClose={() => setVerReferidas(false)} r={referidas} onCopiar={(t) => copiar(t, "Cupón copiado")} />
     </div>
   );
 }
