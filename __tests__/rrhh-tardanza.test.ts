@@ -103,6 +103,7 @@ const PERSONA: ColaboradorMinDTO = {
   estado: "ACTIVO",
   fechaIngreso: null,
   fechaCese: null,
+  eventual: false,
 };
 
 const HORARIO = { horaEntrada: "07:30", toleranciaMin: 10 };

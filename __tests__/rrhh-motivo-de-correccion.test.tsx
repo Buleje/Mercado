@@ -58,10 +58,11 @@ function hojaDe(marcas: AsistenciaDTO[]): HojaAsistenciaDTO {
     hasta: FECHA,
     ventana: { desde: null, hasta: FECHA },
     colaboradores: [
-      { id: "c1", nombre: "Ana", apodo: null, puesto: null, estado: "ACTIVO", fechaIngreso: null, fechaCese: null },
-      { id: "c2", nombre: "Beto", apodo: null, puesto: null, estado: "ACTIVO", fechaIngreso: null, fechaCese: null },
+      { id: "c1", nombre: "Ana", apodo: null, puesto: null, estado: "ACTIVO", fechaIngreso: null, fechaCese: null, eventual: false },
+      { id: "c2", nombre: "Beto", apodo: null, puesto: null, estado: "ACTIVO", fechaIngreso: null, fechaCese: null, eventual: false },
     ],
     marcas,
+    ultimaVino: {},
   };
 }
 

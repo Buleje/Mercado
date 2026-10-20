@@ -15,6 +15,7 @@
  *
  * Una pospuesta deja «pospuesta» en su día y aparece de nuevo en `posponerA`.
  */
+import { feriadoDe } from "@/lib/feriados-peru";
 import { armarAlertasAgenda } from "./alertas-campana";
 import { fechasEnRango, sumarDias } from "./recurrencia";
 import type {
@@ -101,6 +102,8 @@ interface Evaluacion {
   parcial: boolean;
   detalle: string | null;
   avance: { hecho: number; total: number } | null;
+  /** El día no tocaba (feriado sin marcas): no cuenta como pendiente ni atrasado. */
+  noTocaba?: boolean;
 }
 
 const SIN_EVALUAR: Evaluacion = { hecho: false, parcial: false, detalle: null, avance: null };
@@ -109,6 +112,11 @@ function evaluarFuente(a: ActividadDTO, fecha: FechaKey, f: FuentesDelRango): Ev
   switch (a.regla) {
     case "asistencia": {
       const dia = f.asistencia?.[fecha] ?? { marcados: 0, total: 0 };
+      const feriado = feriadoDe(fecha);
+      // Feriado sin marcas: ese día no se cuenta ni pide marca. Si alguien marcó igual, se evalúa normal.
+      if (feriado && dia.marcados === 0) {
+        return { hecho: false, parcial: false, detalle: `Feriado: ${feriado.nombre}`, avance: null, noTocaba: true };
+      }
       if (dia.total === 0) {
         return { hecho: false, parcial: false, detalle: "No hay colaboradores activos ese día", avance: null };
       }
@@ -181,7 +189,14 @@ function ocurrencia(
 ): OcurrenciaDTO {
   const conFuente = REGLAS_CON_FUENTE.has(a.regla);
   const futura = fecha > hoy;
-  const ev = futura ? SIN_EVALUAR : conFuente ? evaluarFuente(a, fecha, fuentes) : SIN_EVALUAR;
+  const feriadoFuturo = futura && a.regla === "asistencia" ? feriadoDe(fecha) : null;
+  const ev = futura
+    ? feriadoFuturo
+      ? { ...SIN_EVALUAR, detalle: `Feriado: ${feriadoFuturo.nombre}` }
+      : SIN_EVALUAR
+    : conFuente
+      ? evaluarFuente(a, fecha, fuentes)
+      : SIN_EVALUAR;
   const apoyo = fecha === hoy ? fuentes.apoyoHoy?.[a.id] : undefined;
 
   let estado: EstadoOcurrencia;
@@ -192,6 +207,9 @@ function ocurrencia(
   } else if (futura) {
     estado = "futura";
     origen = conFuente ? "fuente" : "sin_fuente";
+  } else if (ev.noTocaba) {
+    estado = "omitida";
+    origen = "fuente";
   } else if (ev.hecho) {
     estado = "hecha";
     origen = "fuente";

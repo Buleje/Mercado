@@ -25,6 +25,7 @@ function colaborador(over: Partial<ColaboradorDTO> & { id: string; nombre: strin
     estado: "ACTIVO",
     fechaIngreso: null,
     fechaCese: null,
+    eventual: false,
     tipoDocumento: null,
     documento: null,
     celular: null,

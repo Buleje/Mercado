@@ -39,6 +39,7 @@ const colaboradorRow = (p: Partial<ColaboradorRow> = {}): ColaboradorRow => ({
   estado: "ACTIVO",
   fechaIngreso: new Date("2026-01-01T00:00:00.000Z"),
   fechaCese: null,
+  eventual: false,
   motivoCese: null,
   observaciones: "Nota interna",
   beneficiarioId: "b1",
@@ -87,6 +88,7 @@ describe("aColaboradorMinDTO — nivel marcar: sin ningún dato sensible", () =>
       estado: "ACTIVO",
       fechaIngreso: "2026-01-01",
       fechaCese: null,
+      eventual: false,
     });
   });
 });

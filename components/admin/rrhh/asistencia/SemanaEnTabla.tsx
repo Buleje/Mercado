@@ -19,6 +19,7 @@ import { formatearDias, nombreCortoDelDia, type HorarioDelPuesto } from "./seman
 import type { FilaSemana } from "./semana-pdf";
 import type { ColaboradorMinDTO, EstadoAsistencia, FechaKey } from "@/lib/rrhh/tipos";
 import { formatNumber } from "@/lib/format";
+import { feriadoDe } from "@/lib/feriados-peru";
 import { MoreHorizontal, UserMinus } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 
@@ -49,12 +50,17 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
             <th className="sticky left-0 z-10">
               <span className="block w-52">Persona</span>
             </th>
-            {dias.map((d) => (
-              <th key={d} title={etiquetaDia(d, hoy)} className={cn("text-center", d === hoy && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]")}>
-                <span className="block text-sm font-semibold">{nombreCortoDelDia(d)}</span>
-                <span className="block tabular-nums">{d.slice(8, 10)}</span>
-              </th>
-            ))}
+            {dias.map((d) => {
+              /* Feriado del Perú: se avisa en la columna; ese día no se pide marca. */
+              const feriado = feriadoDe(d);
+              return (
+                <th key={d} title={feriado ? `${etiquetaDia(d, hoy)} · Feriado: ${feriado.nombre}` : etiquetaDia(d, hoy)} className={cn("text-center", d === hoy && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]")}>
+                  <span className="block text-sm font-semibold">{nombreCortoDelDia(d)}</span>
+                  <span className="block tabular-nums">{d.slice(8, 10)}</span>
+                  {feriado && <span className="block text-xs font-semibold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">Feriado</span>}
+                </th>
+              );
+            })}
             <th className="text-center">Días trab.</th>
             <th className="text-center">Faltas</th>
             {conPlata && (

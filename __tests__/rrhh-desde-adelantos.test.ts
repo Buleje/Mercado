@@ -72,6 +72,7 @@ function crearFalso({ data }: { data: Record<string, unknown> }) {
     estado: data.estado,
     fechaIngreso: data.fechaIngreso ?? null,
     fechaCese: null,
+    eventual: false,
     motivoCese: null,
     observaciones: null,
     beneficiarioId: data.beneficiarioId,

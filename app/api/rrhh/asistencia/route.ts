@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const { colaboradores, marcas } = await AsistenciaDB.hoja(auth.tenantId, desde, hasta);
+    const { colaboradores, marcas, ultimaVino } = await AsistenciaDB.hoja(auth.tenantId, desde, hasta);
     const body: HojaAsistenciaDTO = {
       nivel,
       hoy,
@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
       hasta,
       ventana: ventanaDeMarcado(nivel, auth.role, hoy),
       colaboradores: colaboradores.map(aColaboradorMinDTO),
+      ultimaVino,
       marcas: marcas.map((m) => aAsistenciaDTO(m)),
     };
     return NextResponse.json(body, { headers: { "Cache-Control": "private, no-store" } });

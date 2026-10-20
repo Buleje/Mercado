@@ -20,6 +20,7 @@ const ANA: ColaboradorDTO = {
   estado: "ACTIVO",
   fechaIngreso: "2026-09-01",
   fechaCese: null,
+  eventual: false,
   tipoDocumento: "DNI",
   documento: "70123456",
   celular: null,

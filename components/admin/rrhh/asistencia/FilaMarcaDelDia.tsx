@@ -18,12 +18,12 @@
  */
 
 import { useState, type ReactNode } from "react";
-import { AlertTriangle, Clock, History, Loader2, MoreHorizontal, StickyNote, UserMinus } from "@buleje/design-system/icons";
+import { AlertTriangle, CalendarClock, CalendarDays, Clock, History, Loader2, MoreHorizontal, StickyNote, UserMinus } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { tardanzaDe } from "@/lib/rrhh/asistencia";
 import { cn } from "@/lib/utils";
 import { BOTON, CLASE_CAMPO, CLASE_CHIP } from "../rrhh-form";
-import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA } from "../rrhh-ui";
+import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA, loQueFaltaALaFicha } from "../rrhh-ui";
 import type { AsistenciaDTO, ColaboradorMinDTO, EstadoAsistencia, FechaKey } from "@/lib/rrhh/tipos";
 
 const LLEVA_HORAS: ReadonlySet<EstadoAsistencia> = new Set(["PRESENTE", "TARDANZA", "MEDIO_DIA"]);
@@ -48,9 +48,14 @@ interface Props {
   foto?: ReactNode;
   /** «Retirado…»: ya no trabaja acá (sólo gestión y completo). */
   onRetirar?: () => void;
+  /** Le falta puesto o fecha de ingreso: abre la ficha corta (sólo gestión y completo). */
+  onCompletar?: () => void;
+  /** Eventual (ADR-506): sale sólo el día que viene (sólo gestión y completo). */
+  onEventual?: (eventual: boolean) => void;
 }
 
-export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, errorMsg, soloLectura, horario, onMarcar, onVerHistorial, foto, onRetirar }: Props) {
+export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, errorMsg, soloLectura, horario, onMarcar, onVerHistorial, foto, onRetirar, onCompletar, onEventual }: Props) {
+  const faltaFicha = loQueFaltaALaFicha(colaborador);
   const [notaAbierta, setNotaAbierta] = useState(false);
   const estadoActual = marca?.estado ?? null;
   const metaActual = estadoActual ? ESTADO_ASISTENCIA_META[estadoActual] : null;
@@ -84,11 +89,23 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
           {colaborador.nombre}
           {colaborador.apodo && <span className="ml-1 font-normal text-[var(--text-tertiary)]">«{colaborador.apodo}»</span>}
         </p>
-        <p className="mt-1 flex min-w-0 items-center gap-2 text-sm text-[var(--text-tertiary)]">
+        <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--text-tertiary)]">
           <span className={cn(CLASE_CHIP, "py-0", metaActual ? metaActual.claseChip : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
             {metaActual?.label ?? "Sin marcar"}
           </span>
           {colaborador.puesto && <span className="truncate">{colaborador.puesto.nombre}</span>}
+          {colaborador.eventual && <span className="shrink-0 text-[var(--text-tertiary)]">· eventual</span>}
+          {onCompletar && faltaFicha.length > 0 && (
+            <button
+              type="button"
+              data-qa="rrhh-completar-ficha"
+              onClick={onCompletar}
+              title={`Falta: ${faltaFicha.join(" y ")}. Sin puesto no hay horario y la tardanza no se marca sola`}
+              className={cn(CLASE_CHIP, "py-0 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] underline-offset-2 hover:underline dark:text-[var(--data-warning-500)]")}
+            >
+              Completar
+            </button>
+          )}
         </p>
       </div>
 
@@ -104,12 +121,19 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
           soloIcono
           size="md"
           className="w-12 shrink-0"
-          title="Nota del día, historial y retirar"
+          title="Nota del día, historial, eventual y retirar"
           actions={[
             ...(estadoActual && !soloLectura
               ? [{ id: "nota", label: notaAbierta ? "Ocultar la nota" : marca?.nota ? "Editar la nota del día" : "Anotar algo del día", icon: StickyNote, onSelect: () => setNotaAbierta((v) => !v) }]
               : []),
             { id: "historial", label: "Historial de correcciones", hint: "Quién cambió esta marca y por qué", icon: History, onSelect: onVerHistorial },
+            ...(onEventual
+              ? [
+                  colaborador.eventual
+                    ? { id: "fijo", label: "Viene todos los días", hint: "Deja de ser eventual: sale siempre en la lista", icon: CalendarDays, onSelect: () => onEventual(false) }
+                    : { id: "eventual", label: "Es eventual (viene por día)", hint: "Sale en la lista sólo el día que viene", icon: CalendarClock, onSelect: () => onEventual(true) },
+                ]
+              : []),
             ...(onRetirar
               ? [{ id: "retirar", label: "Retirado…", hint: "Ya no trabaja acá: desde qué día deja de salir", icon: UserMinus, tone: "danger" as const, onSelect: onRetirar }]
               : []),

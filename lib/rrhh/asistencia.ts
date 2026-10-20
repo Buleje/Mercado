@@ -76,7 +76,7 @@ export function tardanzaDe(entrada: string | null, horaEntrada: string | null, t
 
 // ── Revisar una marca ────────────────────────────────────────────────────────
 
-const ESTADOS_CON_HORAS: readonly EstadoAsistencia[] = ["PRESENTE", "TARDANZA", "MEDIO_DIA"];
+export const ESTADOS_CON_HORAS: readonly EstadoAsistencia[] = ["PRESENTE", "TARDANZA", "MEDIO_DIA"];
 
 /** Lo que manda la pantalla para UNA celda. `estado: null` = quitar la marca del día. */
 export interface MarcaInput {
@@ -255,12 +255,14 @@ export interface ColaboradorParaMasivo {
   nombre: string;
   estado: EstadoColaborador;
   fechaIngreso: FechaKey | null;
+  /** Personal de paso (ADR-506): «Todos presentes» no lo marca. */
+  eventual?: boolean;
 }
 
 export interface OmitidoMasivo {
   colaboradorId: string;
   nombre: string;
-  motivo: "ya_marcado" | "no_activo" | "no_ingresado" | "cesado";
+  motivo: "ya_marcado" | "no_activo" | "no_ingresado" | "cesado" | "eventual";
 }
 
 /**
@@ -293,6 +295,10 @@ export function incluidosEnMasivo(
     }
     if (c.fechaIngreso != null && c.fechaIngreso > fecha) {
       omitidos.push({ colaboradorId: c.id, nombre: c.nombre, motivo: "no_ingresado" });
+      continue;
+    }
+    if (c.eventual) {
+      omitidos.push({ colaboradorId: c.id, nombre: c.nombre, motivo: "eventual" });
       continue;
     }
     if (!opts.sobrescribir && vivas.has(c.id)) {

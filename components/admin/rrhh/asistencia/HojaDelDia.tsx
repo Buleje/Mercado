@@ -10,8 +10,9 @@
  * pide confirmar con el número (nunca pisa lo cargado sin avisar, ADR-412).
  */
 
-import { useMemo, useState, type ReactNode } from "react";
-import { CheckCheck, ChevronRight, Lock, Plus, UserPlus, Users } from "@buleje/design-system/icons";
+import dynamic from "next/dynamic";
+import { useState, type ReactNode } from "react";
+import { CheckCheck, Lock, Plus, UserPlus, Users } from "@buleje/design-system/icons";
 import { LoadingState, EmptyState } from "@buleje/design-system";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -21,10 +22,17 @@ import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { etiquetaDia, mesDe, sumarDias } from "@/lib/rrhh/fechas";
 import { limaDateKey } from "@/lib/utils";
 import { AvisoRrhh, BOTON } from "../rrhh-form";
-import { dentroDeVentana, estaIncluidoEseDia, motivoFueraDeVentana, motivoNoIncluido, pluralizar } from "../rrhh-ui";
+import { dentroDeVentana, motivoFueraDeVentana, pluralizar } from "../rrhh-ui";
 import AvisoDiasAbiertos from "./AvisoDiasAbiertos";
 import FilaMarcaDelDia from "./FilaMarcaDelDia";
 import { useRetirarPersona } from "./use-retirar-persona";
+import ListaDelDia from "./ListaDelDia";
+import { useCuentasDelDia } from "./use-cuentas-del-dia";
+import { editarColaborador } from "./editar-colaborador";
+import { feriadoDe } from "@/lib/feriados-peru";
+import { toast } from "sonner";
+
+const CompletarFichaModal = dynamic(() => import("./CompletarFichaModal"), { ssr: false });
 import { BarraFotoDeCamara, FotoDeLaMarca } from "./FotoDeCamara";
 import { useFotosAsistencia } from "./use-fotos-asistencia";
 import HistorialMarcaModal from "./HistorialMarcaModal";
@@ -35,7 +43,7 @@ import ResumenDelDia from "./ResumenDelDia";
 import EncabezadoDeVista from "../EncabezadoDeVista";
 import ColaboradorFormModal from "../personal/ColaboradorFormModal";
 import TraerDesdeAdelantosModal from "../personal/TraerDesdeAdelantosModal";
-import type { ColaboradorMinDTO, EstadoAsistencia, NivelRrhh } from "@/lib/rrhh/tipos";
+import type { ColaboradorMinDTO, NivelRrhh } from "@/lib/rrhh/tipos";
 
 interface Props {
   fecha: string;
@@ -50,6 +58,7 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
   const { hoja, loading, error, guardando, pendientes, erroresPorCelda, marcar, masivo, guardarAhora, recargar } = useRrhhAsistencia(fecha, fecha);
   const { confirm } = useConfirm();
   const [historialDe, setHistorialDe] = useState<ColaboradorMinDTO | null>(null);
+  const [completarDe, setCompletarDe] = useState<ColaboradorMinDTO | null>(null);
   const retirar = useRetirarPersona(nivel, () => {
     recargar();
     onCambioPersonal?.();
@@ -72,28 +81,42 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
   const editable = hoja ? dentroDeVentana(fecha, hoja.ventana) : true;
   const fotosCam = useFotosAsistencia(fecha, esHoy && editable);
 
-  const { incluidos, noIncluidos, marcasDelDia, marcadosIncluidos, sinMarcar, conteo } = useMemo(() => {
-    const colaboradores = hoja?.colaboradores ?? [];
-    const marcasDelDia = (hoja?.marcas ?? []).filter((m) => m.fecha === fecha);
-    const incluidos = colaboradores.filter((c) => estaIncluidoEseDia(c, fecha));
-    const noIncluidos = colaboradores.filter((c) => !estaIncluidoEseDia(c, fecha));
-    const marcadosIncluidos = incluidos.filter((c) => marcasDelDia.some((m) => m.colaboradorId === c.id));
-    const sinMarcar = incluidos.filter((c) => !marcasDelDia.some((m) => m.colaboradorId === c.id));
-    const conteo: Record<EstadoAsistencia, number> = { PRESENTE: 0, TARDANZA: 0, MEDIO_DIA: 0, FALTA: 0, PERMISO: 0, DESCANSO: 0, VACACIONES: 0 };
-    for (const c of incluidos) {
-      const m = marcasDelDia.find((x) => x.colaboradorId === c.id);
-      if (m) conteo[m.estado] += 1;
-    }
-    return { incluidos, noIncluidos, marcasDelDia, marcadosIncluidos, sinMarcar, conteo };
-  }, [hoja, fecha]);
+  const { incluidos, noIncluidos, eventualesSinMarca, marcasDelDia, marcadosIncluidos, sinMarcar, conteo, horarioPorPuesto } = useCuentasDelDia(hoja, fecha, puestos);
 
-  const horarioPorPuesto = useMemo(() => {
-    const mapa = new Map<string, { horaEntrada: string; toleranciaMin: number }>();
-    for (const p of puestos) {
-      if (p.horaEntrada) mapa.set(p.id, { horaEntrada: p.horaEntrada, toleranciaMin: p.toleranciaMin });
-    }
-    return mapa;
-  }, [puestos]);
+  const feriado = feriadoDe(fecha);
+  const fijos = incluidos;
+
+  const fila = (c: ColaboradorMinDTO) => {
+    const marca = marcasDelDia.find((m) => m.colaboradorId === c.id);
+    return (
+      <FilaMarcaDelDia
+        key={c.id}
+        colaborador={c}
+        fecha={fecha}
+        marca={marca}
+        pendiente={pendientes.has(`${c.id}|${fecha}`)}
+        errorMsg={erroresPorCelda.get(`${c.id}|${fecha}`)}
+        soloLectura={!editable}
+        horario={c.puesto ? (horarioPorPuesto.get(c.puesto.id) ?? null) : null}
+        onMarcar={(input) => {
+          marcar({ colaboradorId: c.id, fecha, ...input });
+          void fotosCam.alMarcar(c.id, marca?.estado ?? null, input.estado);
+        }}
+        onVerHistorial={() => setHistorialDe(c)}
+        foto={<FotoDeLaMarca fotos={fotosCam.fotosDe(c.id)} />}
+        onRetirar={retirar.abrir ? () => retirar.abrir?.(c, fecha) : undefined}
+        onCompletar={puedeGestionar ? () => setCompletarDe(c) : undefined}
+        onEventual={puedeGestionar ? (v) => void cambiarEventual(c, v) : undefined}
+      />
+    );
+  };
+
+  const cambiarEventual = async (c: ColaboradorMinDTO, eventual: boolean) => {
+    const ok = await editarColaborador(c.id, { eventual });
+    if (!ok) return;
+    toast.success(eventual ? `${c.nombre} es eventual: sale sólo el día que viene` : `${c.nombre} sale todos los días`);
+    recargar();
+  };
 
   const irAFecha = async (destino: string) => {
     if (destino === fecha || destino > hoy) return;
@@ -180,56 +203,19 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
 
         <BarraFotoDeCamara f={fotosCam} />
 
-        {/* Una lista, no una tarjeta por persona: filas separadas por una raya. */}
-        <div className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          {incluidos.map((c) => {
-            const marca = marcasDelDia.find((m) => m.colaboradorId === c.id);
-            return (
-              <FilaMarcaDelDia
-                key={c.id}
-                colaborador={c}
-                fecha={fecha}
-                marca={marca}
-                pendiente={pendientes.has(`${c.id}|${fecha}`)}
-                errorMsg={erroresPorCelda.get(`${c.id}|${fecha}`)}
-                soloLectura={!editable}
-                horario={c.puesto ? (horarioPorPuesto.get(c.puesto.id) ?? null) : null}
-                onMarcar={(input) => {
-                  marcar({ colaboradorId: c.id, fecha, ...input });
-                  void fotosCam.alMarcar(c.id, marca?.estado ?? null, input.estado);
-                }}
-                onVerHistorial={() => setHistorialDe(c)}
-                foto={<FotoDeLaMarca fotos={fotosCam.fotosDe(c.id)} />}
-                onRetirar={retirar.abrir ? () => retirar.abrir?.(c, fecha) : undefined}
-              />
-            );
-          })}
-        </div>
-
-        {noIncluidos.length > 0 && (
-          <details className="group rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-            <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-[var(--text-secondary)] [&::-webkit-details-marker]:hidden">
-              <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
-              No trabajan este día ({noIncluidos.length})
-            </summary>
-            <ul className="space-y-1 border-t border-[var(--rule-soft)] px-4 py-2">
-              {noIncluidos.map((c) => (
-                <li key={c.id} className="flex min-h-10 flex-wrap items-center justify-between gap-2 text-sm">
-                  <span className="text-[var(--text-primary)]">
-                    {c.nombre} <span className="text-[var(--text-tertiary)]">— {motivoNoIncluido(c, fecha)}</span>
-                  </span>
-                  {/* Sólo VACACIONES tiene un mapeo directo a un estado de asistencia
-                      (ADR-414 §7). LICENCIA/SUSPENDIDO se corrigen desde la ficha. */}
-                  {c.estado === "VACACIONES" && (
-                    <button type="button" disabled={!editable} onClick={() => marcar({ colaboradorId: c.id, fecha, estado: "VACACIONES" })} className={BOTON.chico}>
-                      Marcar vacaciones
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
+        <ListaDelDia
+          fecha={fecha}
+          esHoy={esHoy}
+          feriado={feriado}
+          fijos={fijos}
+          eventualesSinMarca={eventualesSinMarca}
+          noIncluidos={noIncluidos}
+          ultimaVino={hoja.ultimaVino}
+          editable={editable}
+          fila={fila}
+          onMarcarVacaciones={(c) => marcar({ colaboradorId: c.id, fecha, estado: "VACACIONES" })}
+          onRetirar={retirar.abrir}
+        />
 
         <LeyendaEstados />
       </>
@@ -280,6 +266,18 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
 
       {historialDe && <HistorialMarcaModal open onClose={() => setHistorialDe(null)} colaborador={historialDe} fecha={fecha} />}
       {retirar.modal}
+      {completarDe && (
+        <CompletarFichaModal
+          colaborador={completarDe}
+          puestos={puestos}
+          onClose={() => setCompletarDe(null)}
+          onGuardado={() => {
+            setCompletarDe(null);
+            recargar();
+            onCambioPersonal?.();
+          }}
+        />
+      )}
       {altaAbierta && <ColaboradorFormModal open={altaAbierta} onClose={() => setAltaAbierta(false)} nivel={nivel} onGuardado={alAgregar} />}
       {traerAbierta && (
         <TraerDesdeAdelantosModal

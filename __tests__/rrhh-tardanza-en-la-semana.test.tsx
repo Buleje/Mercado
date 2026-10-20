@@ -48,6 +48,7 @@ const VICTOR: ColaboradorMinDTO = {
   estado: "ACTIVO",
   fechaIngreso: null,
   fechaCese: null,
+  eventual: false,
 };
 const ANA: ColaboradorMinDTO = { ...VICTOR, id: "c2", nombre: "Ana Ríos", puesto: { id: "p2", nombre: "Ayudante" } };
 
@@ -84,6 +85,7 @@ const hojaDe = (over: Partial<HojaAsistenciaDTO> = {}): HojaAsistenciaDTO => ({
   ventana: { desde: null, hasta: HOY },
   colaboradores: [ANA, VICTOR],
   marcas: MARCAS,
+  ultimaVino: {},
   ...over,
 });
 

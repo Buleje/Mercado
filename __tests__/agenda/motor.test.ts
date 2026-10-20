@@ -82,6 +82,42 @@ describe("calcularOcurrencias", () => {
     expect(o.detalle).toBe("No hay colaboradores activos ese día");
   });
 
+  it("asistencia en feriado sin marcas: no toca (ni pendiente ni atrasada); con marcas se evalúa normal", () => {
+    const a = act({ id: "asis", regla: "asistencia", parametros: { minimo: "todos" } });
+    // 2026-10-08 Combate de Angamos (pasado), 2026-12-08 Inmaculada (futuro), 2026-10-09 día común
+    const os = calcularOcurrencias({
+      actividades: [a],
+      desde: "2026-10-08",
+      hasta: "2026-10-09",
+      hoy: HOY,
+      marcas: [],
+      fuentes: { asistencia: { "2026-10-08": { marcados: 0, total: 4 }, "2026-10-09": { marcados: 0, total: 4 } } },
+    });
+    expect(os.map((o) => [o.fecha, o.estado, o.detalle])).toEqual([
+      ["2026-10-08", "omitida", "Feriado: Combate de Angamos"],
+      ["2026-10-09", "atrasada", "0 de 4 marcados"],
+    ]);
+    const [marcado] = calcularOcurrencias({
+      actividades: [a],
+      desde: "2026-10-08",
+      hasta: "2026-10-08",
+      hoy: HOY,
+      marcas: [],
+      fuentes: { asistencia: { "2026-10-08": { marcados: 2, total: 4 } } },
+    });
+    expect(marcado.estado).toBe("parcial");
+    const [futuro] = calcularOcurrencias({
+      actividades: [a],
+      desde: "2026-12-08",
+      hasta: "2026-12-08",
+      hoy: HOY,
+      marcas: [],
+      fuentes: {},
+    });
+    expect(futuro.estado).toBe("futura");
+    expect(futuro.detalle).toBe("Feriado: Inmaculada Concepción");
+  });
+
   it("la marca manual manda sobre la fuente", () => {
     const a = act({ id: "aserrio", regla: "servicio_aserrio", parametros: { soloTerceros: false } });
     const [o] = calcularOcurrencias({

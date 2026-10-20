@@ -232,3 +232,39 @@ export function iniciales(nombre: string): string {
   if (partes.length === 0) return "?";
   return partes.slice(0, 2).map((p) => p[0]!.toUpperCase()).join("");
 }
+
+/**
+ * Qué le falta a la ficha para que Asistencia funcione entera (Brandon 20-10,
+ * «Completar la ficha»): sin puesto no hay horario y la tardanza no se juzga
+ * sola; sin ingreso no se sabe desde cuándo marca. `[]` = nada.
+ */
+export function loQueFaltaALaFicha(c: { puesto: unknown; fechaIngreso: string | null }): string[] {
+  return [!c.puesto && "puesto", !c.fechaIngreso && "fecha de ingreso"].filter((x): x is string => Boolean(x));
+}
+
+/** Cuántos días sin venir hacen preguntar «¿se retiró?» (Brandon 20-10). */
+export const DIAS_SIN_VENIR = 14;
+
+/**
+ * Quiénes llevan `DIAS_SIN_VENIR` o más sin venir al día `fecha` (Brandon 20-10:
+ * «¿se retiró?»). Cuenta desde su último día trabajado (`ultimaVino`, toda la
+ * historia) o, si nunca vino, desde su ingreso. Los eventuales no entran: vienen
+ * algunos días por definición. Sin último día ni ingreso no se sabe: no se pregunta.
+ */
+export function noVienenHace(
+  personas: readonly { id: string; eventual: boolean; fechaIngreso: string | null }[],
+  ultimaVino: Readonly<Record<string, string>>,
+  fecha: string,
+): { id: string; desde: string; dias: number; nunca: boolean }[] {
+  const dia = (k: string) => Date.parse(`${k}T12:00:00Z`) / 86_400_000;
+  const out: { id: string; desde: string; dias: number; nunca: boolean }[] = [];
+  for (const p of personas) {
+    if (p.eventual) continue;
+    const ultima = ultimaVino[p.id] ?? null;
+    const desde = ultima ?? p.fechaIngreso;
+    if (!desde || desde > fecha) continue;
+    const dias = Math.round(dia(fecha) - dia(desde));
+    if (dias >= DIAS_SIN_VENIR) out.push({ id: p.id, desde, dias, nunca: ultima === null });
+  }
+  return out.sort((a, b) => b.dias - a.dias);
+}

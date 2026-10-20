@@ -17,7 +17,7 @@ import type { ColaboradorMinDTO } from "@/lib/rrhh/tipos";
 const HOY = "2026-09-15"; // martes
 
 function persona(id: string, fechaIngreso: string | null = "2026-08-01"): ColaboradorMinDTO {
-  return { id, nombre: `Persona ${id}`, apodo: null, puesto: null, estado: "ACTIVO", fechaIngreso, fechaCese: null };
+  return { id, nombre: `Persona ${id}`, apodo: null, puesto: null, estado: "ACTIVO", fechaIngreso, fechaCese: null, eventual: false };
 }
 
 const EQUIPO = [persona("c1"), persona("c2")];

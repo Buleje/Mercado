@@ -177,6 +177,15 @@ describe("incluidosEnMasivo", () => {
     );
   });
 
+  it("eventual: nunca entra a «Todos presentes», sale omitido con motivo eventual (aun con sobrescribir)", () => {
+    const con: ColaboradorParaMasivo[] = [...gente, { id: "paso", nombre: "Chofer de paso", estado: "ACTIVO", fechaIngreso: null, eventual: true }];
+    for (const sobrescribir of [false, true]) {
+      const { incluidos, omitidos } = incluidosEnMasivo(con, "2026-09-11", new Set(), { sobrescribir });
+      expect(incluidos).toEqual(["activo"]);
+      expect(omitidos).toEqual(expect.arrayContaining([expect.objectContaining({ colaboradorId: "paso", motivo: "eventual" })]));
+    }
+  });
+
   it("ya marcado y sobrescribir=false (default): se omite con ya_marcado", () => {
     const { incluidos, omitidos } = incluidosEnMasivo(gente, "2026-09-11", new Set(["activo"]), { sobrescribir: false });
     expect(incluidos).toEqual([]);

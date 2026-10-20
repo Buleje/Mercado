@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { dateDeFechaKey, fechaKeyDeDate } from "@/lib/rrhh/fechas";
+import { ESTADOS_CON_HORAS } from "@/lib/rrhh/asistencia";
 import {
   esIgualALaViva,
   incluidosEnMasivo,
@@ -195,6 +196,7 @@ function mapColaborador(row: ColaboradorMinPrismaRow) {
     estado: row.estado,
     fechaIngreso: row.fechaIngreso,
     fechaCese: row.fechaCese,
+    eventual: row.eventual,
     motivoCese: row.motivoCese,
     observaciones: row.observaciones,
     beneficiarioId: row.beneficiarioId,
@@ -208,9 +210,9 @@ type ColaboradorRow = ReturnType<typeof mapColaborador>;
 // ── API ──────────────────────────────────────────────────────────────────────
 
 export const AsistenciaDB = {
-  async hoja(tenantId: string, desde: FechaKey, hasta: FechaKey): Promise<{ colaboradores: ColaboradorRow[]; marcas: AsistenciaRow[] }> {
+  async hoja(tenantId: string, desde: FechaKey, hasta: FechaKey): Promise<{ colaboradores: ColaboradorRow[]; marcas: AsistenciaRow[]; ultimaVino: Record<string, FechaKey> }> {
     if (!tenantId) throw new Error("tenantId is required");
-    const [colaboradores, marcas] = await Promise.all([
+    const [colaboradores, marcas, ultimas] = await Promise.all([
       prisma.colaborador.findMany({
         where: {
           tenantId,
@@ -224,10 +226,19 @@ export const AsistenciaDB = {
       prisma.asistencia.findMany({
         where: { tenantId, deletedAt: null, fecha: { gte: dateDeFechaKey(desde), lte: dateDeFechaKey(hasta) } },
       }),
+      // Una sola query agrupada: última marca de TRABAJO de toda la historia (ADR-506).
+      prisma.asistencia.groupBy({
+        by: ["colaboradorId"],
+        where: { tenantId, deletedAt: null, estado: { in: [...ESTADOS_CON_HORAS] } },
+        _max: { fecha: true },
+      }),
     ]);
+    const ultimaVino: Record<string, FechaKey> = {};
+    for (const u of ultimas) if (u._max.fecha) ultimaVino[u.colaboradorId] = fechaKeyDeDate(u._max.fecha);
     return {
       colaboradores: colaboradores.map(mapColaborador),
       marcas: marcas.map(mapAsistencia),
+      ultimaVino,
     };
   },
 
@@ -333,13 +344,14 @@ export const AsistenciaDB = {
 
     const colaboradores = await prisma.colaborador.findMany({
       where: { tenantId, deletedAt: null },
-      select: { id: true, nombre: true, estado: true, fechaIngreso: true },
+      select: { id: true, nombre: true, estado: true, fechaIngreso: true, eventual: true },
     });
     const paraMasivo: ColaboradorParaMasivo[] = colaboradores.map((c) => ({
       id: c.id,
       nombre: c.nombre,
       estado: c.estado as EstadoColaborador,
       fechaIngreso: c.fechaIngreso ? fechaKeyDeDate(c.fechaIngreso) : null,
+      eventual: c.eventual,
     }));
 
     const vivasHoy = await prisma.asistencia.findMany({

@@ -95,6 +95,8 @@ export interface ColaboradorMinDTO {
   estado: EstadoColaborador;
   fechaIngreso: FechaKey | null;
   fechaCese: FechaKey | null;
+  /** Personal de paso (ADR-506): en la hoja sólo sale el día que tiene marca. */
+  eventual: boolean;
 }
 
 /** Niveles gestion y completo. */
@@ -181,6 +183,8 @@ export interface HojaAsistenciaDTO {
   /** `desde: null` = sin límite hacia atrás. */
   ventana: { desde: FechaKey | null; hasta: FechaKey };
   colaboradores: ColaboradorMinDTO[]; // vigentes en algún día del rango, orden por nombre
+  /** Por colaborador: la fecha más reciente con marca de trabajo (PRESENTE/TARDANZA/MEDIO_DIA) en TODA su historia. Sin clave = nunca vino. */
+  ultimaVino: Record<string, FechaKey>;
   marcas: AsistenciaDTO[]; // sólo vivas
 }
 

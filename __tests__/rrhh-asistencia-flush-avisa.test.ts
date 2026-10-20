@@ -27,9 +27,9 @@ function hojaDe(desde: string, hasta: string): HojaAsistenciaDTO {
     hasta,
     ventana: { desde: null, hasta: "2026-09-11" },
     colaboradores: [
-      { id: "c1", nombre: "Ana", apodo: null, puesto: null, estado: "ACTIVO", fechaIngreso: null, fechaCese: null },
+      { id: "c1", nombre: "Ana", apodo: null, puesto: null, estado: "ACTIVO", fechaIngreso: null, fechaCese: null, eventual: false },
     ],
-    marcas: [],
+    marcas: [], ultimaVino: {},
   };
 }
 

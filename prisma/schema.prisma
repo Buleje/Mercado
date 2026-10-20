@@ -2154,6 +2154,8 @@ model Colaborador {
   /// Lista cerrada A+ … O-; `null` = no se sabe (no se inventa).
   grupoSanguineo            String?
   alergias                  String?
+  /// Personal de paso (ADR-506): en la hoja de asistencia sólo sale el día que tiene marca.
+  eventual                  Boolean           @default(false)
   /// `AdelantoBeneficiario.id` — texto sin FK, siempre leído con tenantId.
   beneficiarioId            String?
   /// `AdminUser.id` — texto sin FK, siempre leído con tenantId.

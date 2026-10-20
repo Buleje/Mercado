@@ -68,6 +68,7 @@ export interface ColaboradorRow {
   fotoUrl: string | null;
   grupoSanguineo: string | null;
   alergias: string | null;
+  eventual: boolean;
   beneficiarioId: string | null;
   adminUserId: string | null;
   createdAt: Date;
@@ -146,7 +147,7 @@ export function aPuestoDTO(row: PuestoRow, nivel: NivelRrhh, personas: number): 
 /** Nivel `marcar`: sólo lo que hace falta para marcar asistencia. */
 /** Sólo los campos que usa: la hoja de asistencia trae personas con un select mínimo (sin foto ni contacto). */
 export function aColaboradorMinDTO(
-  row: Pick<ColaboradorRow, "id" | "nombre" | "apodo" | "puesto" | "estado" | "fechaIngreso" | "fechaCese">,
+  row: Pick<ColaboradorRow, "id" | "nombre" | "apodo" | "puesto" | "estado" | "fechaIngreso" | "fechaCese" | "eventual">,
 ): ColaboradorMinDTO {
   return {
     id: row.id,
@@ -156,6 +157,7 @@ export function aColaboradorMinDTO(
     estado: row.estado as EstadoColaborador,
     fechaIngreso: row.fechaIngreso ? fechaKeyDeDate(row.fechaIngreso) : null,
     fechaCese: row.fechaCese ? fechaKeyDeDate(row.fechaCese) : null,
+    eventual: row.eventual,
   };
 }
 

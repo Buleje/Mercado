@@ -43,6 +43,8 @@ const camposColaborador = {
   /** Lo que se lee en una emergencia (ADR-417): lista cerrada, nunca texto libre. */
   grupoSanguineo: z.enum(GRUPOS_SANGUINEOS).nullable(),
   alergias: texto(200).nullable(),
+  /** Personal de paso (ADR-506). */
+  eventual: z.boolean(),
 };
 
 export const colaboradorCrearSchema = z.object({
@@ -60,6 +62,7 @@ export const colaboradorCrearSchema = z.object({
   fotoUrl: camposColaborador.fotoUrl.optional(),
   grupoSanguineo: camposColaborador.grupoSanguineo.optional(),
   alergias: camposColaborador.alergias.optional(),
+  eventual: camposColaborador.eventual.default(false),
   estado: z.enum(["ACTIVO", "VACACIONES", "LICENCIA", "SUSPENDIDO"]).default("ACTIVO"),
   beneficiarioId: id.nullable().optional(), // sólo completo
   tarifaInicial: tarifaInput.nullable().optional(), // sólo completo
