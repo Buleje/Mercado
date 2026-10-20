@@ -35,6 +35,7 @@ import {
   lotesDeFuente,
   trozasDeFuente,
   type ClaveFuente,
+  type CorridaDisponible,
   type EntradaCapacidad,
   type FiltrosCapacidad,
   type LoteDeCapacidad,
@@ -49,6 +50,7 @@ import {
   etiquetaCortaDePermiso,
   partirPorPermiso,
   permisoDeVarios,
+  repartirPorAporte,
   type ItemPorPermiso,
   type ParteDePermiso,
 } from "@/lib/forestal/capacidad-por-permiso";
@@ -74,8 +76,9 @@ export interface CandidatoDeCapacidad {
   /**
    * La línea partida por permiso (Brandon, 2026-10-19): cada parte es UN
    * bloque. Las trozas del patio de una especie se parten por el permiso de
-   * cada troza; un lote o una corrida es una sola parte (su permiso, «sin
-   * permiso» o «mezclados»). Sin `partes`, la línea entera es una parte.
+   * cada troza; un lote o una corrida de UN permiso es una sola parte, y uno
+   * que juntó varios se parte por lo que aportó cada uno (`partesDeLote`,
+   * `partesDeCorrida`). Sin `partes`, la línea entera es una parte.
    */
   partes?: ParteDePermiso[];
   /** `null` en aserrada directa: ahí no hay porcentaje que aplicar. */
@@ -169,6 +172,47 @@ function porEspecie(trozas: readonly TrozaDeLinea[]) {
 }
 
 /**
+ * Las partes por permiso de lo que sale de un lote (Brandon, 2026-10-19: «lote
+ * con dos permisos»). Si TODA su madera es de un título —o de ninguno—, una
+ * sola parte, la de siempre. Si juntó varios, cada permiso se lleva lo que
+ * aportaron SUS piezas: lo apartado, por las piezas que siguen enteras (exacto,
+ * pieza por pieza); el margen, en proporción a las piezas que entraron a la
+ * sierra (`base` = lo consumido: lo que las piezas no explican queda «Sin
+ * permiso», nunca se le carga a otro título).
+ */
+function partesDeLote(
+  l: LoteDeCapacidad,
+  de: "libres" | "consumidas",
+  m3: number,
+  piezas: number,
+): ParteDePermiso[] {
+  const p = permisoDeVarios(l.permisos);
+  if (!p.mezclado) return [{ ...p, m3, piezas }];
+  const trozas = l.trozas.filter((t) => (de === "libres" ? !t.consumida : t.consumida));
+  const partes = repartirPorAporte(
+    m3,
+    trozas.map((t) => ({ permiso: t.permiso, m3: t.m3, piezas: de === "libres" ? 1 : 0 })),
+    de === "libres" ? l.apartadoM3 : l.consumidoM3,
+  );
+  return partes.length > 0 ? partes : [{ ...p, m3, piezas }];
+}
+
+/**
+ * Las partes por permiso de una corrida: su permiso, o —si consumió madera de
+ * varios— en proporción a lo que consumió de cada uno (`origenPorPermiso`, los
+ * m³ de `ForestCtpConsumo` por guía). Sin ese desglose no se puede saber: todo
+ * va a «Sin permiso» y la tabla lo dice.
+ */
+function partesDeCorrida(c: CorridaDisponible, m3: number, piezas: number): ParteDePermiso[] {
+  const p = permisoDeVarios(c.titularOrigen);
+  if (!p.mezclado) return [{ ...p, m3, piezas }];
+  const partes = repartirPorAporte(m3, c.origenPorPermiso ?? []);
+  /* Las piezas de un paquete de madera mezclada no son de un título ni de
+     otro: la línea las dice; las partes, no. */
+  return partes.length > 0 ? partes.map((x) => ({ ...x, piezas: 0 })) : [{ ...p, m3, piezas }];
+}
+
+/**
  * Los bloques que salen de la capacidad tal como está filtrada.
  *
  * Un renglón por especie en las fuentes de patio (es lo que hace que el reparto
@@ -232,7 +276,7 @@ export function bloquesDesdeCapacidad(
       m3: r4(l.apartadoM3),
       tipo: "rolliza",
       permiso: unicoONull(l.permisos),
-      partes: [{ ...permisoDeVarios(l.permisos), m3: r4(l.apartadoM3), piezas: l.piezas }],
+      partes: partesDeLote(l, "libres", r4(l.apartadoM3), l.piezas),
       aprovechablePct: PCT_TARJETA,
       piezasManual: null,
       piezas: l.piezas,
@@ -256,9 +300,9 @@ export function bloquesDesdeCapacidad(
       m3: r4(admite),
       tipo: "aserrada",
       permiso: unicoONull(l.permisos),
-      /* Un lote que juntó dos permisos es «Permisos mezclados», su propio
-         grupo: partirlo exigiría saber de qué título salió cada tabla. */
-      partes: [{ ...permisoDeVarios(l.permisos), m3: r4(admite), piezas: 0 }],
+      /* Un lote que juntó dos permisos se parte por lo que cada uno metió a
+         la sierra; lo que sus piezas no explican, «Sin permiso». */
+      partes: partesDeLote(l, "consumidas", r4(admite), 0),
       aprovechablePct: null,
       piezasManual: null,
       piezas: 0,
@@ -288,9 +332,10 @@ export function bloquesDesdeCapacidad(
       tipo: "aserrada",
       /* `titularOrigen` es el permiso (`originCode`) de las guías que la
          alimentaron —el mismo que filtra el desplegable de permisos—: uno solo
-         viaja; varios son «mezclados» y ninguno es «sin permiso». */
+         viaja; varios se parten por lo consumido de cada uno y ninguno es
+         «sin permiso». */
       permiso: unicoONull(c.titularOrigen),
-      partes: [{ ...permisoDeVarios(c.titularOrigen), m3: r4(c.disponible), piezas }],
+      partes: partesDeCorrida(c, r4(c.disponible), piezas),
       aprovechablePct: null,
       piezasManual: null,
       paqueteId: `corrida:${c.id}`,
@@ -322,6 +367,7 @@ export function itemsPorPermiso(
     partesDeCandidato({ ...c, permiso: c.permiso ?? null }).map((p) => ({
       permiso: p.permiso,
       mezclado: p.mezclado,
+      ...(p.sinAtribuir ? { sinAtribuir: true } : {}),
       especie: c.especie,
       tipo: c.tipo,
       m3: p.m3,
@@ -364,7 +410,10 @@ export function totalesDeCandidatos(candidatos: readonly CandidatoDeCapacidad[])
  * y daría los otros por repetidos — por eso, si dos permisos comparten el
  * código corto, va el código entero.
  * La etiqueta NO lleva el recorte del filtro (Brandon, 2026-09-09: la volvía
- * ilegible). Un lote o una corrida ya se nombran solos: una parte, su nombre.
+ * ilegible). Un lote o una corrida de UN permiso ya se nombran solos: una
+ * parte, su nombre de siempre. Uno que juntó varios (2026-10-19) se nombra
+ * igual que las trozas, permiso primero: «PLT-2021-017 · Tornillo · lote 7 ·
+ * margen» y «PLT-2025-167 · Tornillo · lote 7 · margen».
  *
  * `partidoDe`: la etiqueta de la línea entera. Si la hoja ya tiene ESE bloque
  * de antes (todo junto, sin permiso) y es la misma madera, el cubicador lo
@@ -376,6 +425,9 @@ export function totalesDeCandidatos(candidatos: readonly CandidatoDeCapacidad[])
 export function bloquesDeCandidato(c: CandidatoDeCapacidad): BloqueSembrable[] {
   const partes = partesDeCandidato(c);
   const deTrozas = c.fuente === "patio" || c.fuente === "porRecepcionar";
+  /* Un lote o una corrida partidos por permiso: cada parte su nombre, o la
+     huella daría la segunda por repetida (misma etiqueta, mismo `paqueteId`). */
+  const partido = !deTrozas && partes.length > 1;
   const cortos = partes.map((p) => codigoCortoDePermiso(p.permiso));
   const fuente = c.fuente === "patio" ? "patio" : "por recepcionar";
   return partes.map((p, i) => {
@@ -387,7 +439,9 @@ export function bloquesDeCandidato(c: CandidatoDeCapacidad): BloqueSembrable[] {
     return {
       etiqueta: deTrozas
         ? `${nombre || "Sin permiso"} · ${c.especie || "Sin especie"} · ${fuente}`
-        : c.etiqueta,
+        : partido
+          ? `${nombre || "Sin permiso"} · ${c.especie || "Sin especie"} · ${c.etiqueta.replace(/^Lote /, "lote ")}`
+          : c.etiqueta,
       especie: c.especie,
       m3: p.m3,
       permiso: p.permiso,
@@ -407,6 +461,9 @@ export function bloquesDeCandidato(c: CandidatoDeCapacidad): BloqueSembrable[] {
       ...(ids && ids.length > 0 && ids.length <= MAX_TROZAS_POR_BLOQUE ? { trozaIds: [...ids] } : {}),
       ...(c.loteId ? { loteId: c.loteId } : {}),
       ...(deTrozas ? { partidoDe: c.etiqueta, etiquetaPrevia: `${c.etiqueta} · ${corto || "sin permiso"}` } : {}),
+      /* El bloque entero de antes (mismo lote o misma corrida, sin partir) se
+         cambia por sus partes si es la misma madera (`unirSiembra`). */
+      ...(partido ? { partidoDe: c.etiqueta } : {}),
     };
   });
 }

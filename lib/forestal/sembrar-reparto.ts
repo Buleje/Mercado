@@ -131,7 +131,6 @@ export function unirSiembra(
      sin aserrar) y el «margen» (aserrada que admite) del mismo lote son madera
      distinta y van los dos. */
   const deLote = (b: Pick<BloqueRolliza, "loteId" | "tipo">) => (b.loteId ? `${b.loteId}|${b.tipo ?? "rolliza"}` : null);
-  const lotes = new Set(lista.map(deLote).filter((k): k is string => k !== null));
   let sembrados = 0;
   let conEspecie = 0;
   let conTrozas = 0;
@@ -140,21 +139,32 @@ export function unirSiembra(
      partes suman la MISMA madera, el entero sale y entran las partes; si la
      madera cambió, se respeta como siempre (las partes cuentan como repetidas).
      Nunca las dos versiones juntas: sería la misma madera dos veces. */
-  const sumaDePartes = new Map<string, number>();
+  const sumaDePartes = new Map<string, { m3: number; de: BloqueSembrable }>();
   for (const c of candidatos) {
     if (!c.partidoDe) continue;
     const k = `${c.partidoDe}::${c.especie}`;
-    sumaDePartes.set(k, (sumaDePartes.get(k) ?? 0) + (Number(c.m3) || 0));
+    const g = sumaDePartes.get(k) ?? { m3: 0, de: c };
+    g.m3 += Number(c.m3) || 0;
+    sumaDePartes.set(k, g);
   }
+  /* El entero de un LOTE partido por permiso es el bloque de ese lote y tipo
+     con la etiqueta de la línea entera; el de una CORRIDA, el de su
+     `paqueteId` (2026-10-19). Uno armado desde la Distribución se llama
+     distinto y no se toca: sigue frenando las partes como siempre. */
+  const esEntero = (b: BloqueRolliza, k: string, de: BloqueSembrable) =>
+    de.paqueteId
+      ? b.paqueteId === de.paqueteId
+      : !b.paqueteId && huella(b) === k && (de.loteId ? deLote(b) === deLote(de) : !b.loteId);
   const enteroQueSigue = new Set<string>();
-  for (const [k, m3] of sumaDePartes) {
+  for (const [k, { m3, de }] of sumaDePartes) {
     /* Con o sin permiso: el entero de una especie de UN solo permiso también
        lo traía en su campo, y su parte ya se llama distinto («… · PLT-…»). */
-    const i = lista.findIndex((b) => !b.paqueteId && !b.loteId && huella(b) === k);
+    const i = lista.findIndex((b) => esEntero(b, k, de));
     if (i < 0) continue;
     if (Math.abs((Number(lista[i]!.m3) || 0) - m3) <= MISMO_M3) {
-      lista.splice(i, 1);
-      if (!lista.some((b) => huella(b) === k)) yaEstan.delete(k);
+      const [entero] = lista.splice(i, 1);
+      const hEntero = huella(entero!);
+      if (!lista.some((b) => huella(b) === hEntero)) yaEstan.delete(hEntero);
     } else {
       enteroQueSigue.add(k);
     }
@@ -177,6 +187,13 @@ export function unirSiembra(
       previaQueSigue.add(kPrevia);
     }
   }
+  /* Después de sacar los enteros: un lote que sólo estaba en su bloque entero
+     ya no frena a sus partes. */
+  const lotes = new Set(lista.map(deLote).filter((k): k is string => k !== null));
+  /* Hermanas del mismo envío: las partes de UN lote o UNA corrida comparten
+     lote o `paqueteId` y entran todas; lo que ya estaba en la hoja, no. */
+  const loteDeLaParte = new Map<string, string>();
+  const refDeLaParte = new Map<string, string>();
   for (const { partidoDe, etiquetaPrevia, ...c } of candidatos) {
     if (partidoDe && enteroQueSigue.has(`${partidoDe}::${c.especie}`)) continue;
     if (etiquetaPrevia && previaQueSigue.has(`${etiquetaPrevia}::${c.especie}`)) continue;
@@ -201,9 +218,14 @@ export function unirSiembra(
       continue;
     }
     const kLote = deLote(c);
-    if (kLote && lotes.has(kLote)) continue;
+    if (kLote && lotes.has(kLote) && !(partidoDe && loteDeLaParte.get(kLote) === partidoDe)) continue;
     const h = huella(c);
-    if (yaEstan.has(h)) {
+    /* Las partes de una corrida comparten `paqueteId`: entre ellas se
+       distinguen por la etiqueta (el permiso adelante). */
+    const hParte = partidoDe && c.paqueteId ? `${h}::${c.etiqueta}` : null;
+    const hermana = hParte !== null && refDeLaParte.get(h) === partidoDe;
+    if (hParte && yaEstan.has(hParte)) continue;
+    if (yaEstan.has(h) && !hermana) {
       /* Sembrado antes de que el bloque guardara sus trozas (ADR-464): volver
          a traerlo del Libro se las pone, en vez de dejarlo apagado para siempre. */
       const previo = lista.find((b) => puedeRecibirTrozas(b, c));
@@ -214,7 +236,14 @@ export function unirSiembra(
       continue;
     }
     yaEstan.add(h);
-    if (kLote) lotes.add(kLote);
+    if (hParte) {
+      yaEstan.add(hParte);
+      refDeLaParte.set(h, partidoDe!);
+    }
+    if (kLote) {
+      if (partidoDe && !lotes.has(kLote)) loteDeLaParte.set(kLote, partidoDe);
+      lotes.add(kLote);
+    }
     lista.push({ ...c, id: `${prefijo}-${marca}-${sembrados}` });
     sembrados += 1;
   }

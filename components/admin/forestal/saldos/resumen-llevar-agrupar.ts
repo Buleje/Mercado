@@ -2,7 +2,8 @@
  * Agrupa lo tildado en «Llevar al cubicador» por PERMISO × especie × tipo
  * (Brandon, 2026-10-19: «que sólo separe según el permiso, no irá todo
  * unificado»). Las trozas del patio se parten por el permiso de cada troza;
- * un lote o una corrida es una sola parte. Cada fila = Σ exacta de sus partes
+ * un lote o una corrida de varios permisos, por lo que aportó cada uno (lo que
+ * no se puede atribuir queda «Sin permiso»). Cada fila = Σ exacta de sus partes
  * redondeada UNA vez a 3 decimales; el total = Σ de las filas ya redondeadas
  * (regla GTF 2026-10-03, `lib/forestal/gtf-redondeo.ts`). La agrupación vive
  * en `lib/forestal/capacidad-por-permiso.ts`: la misma que usan los totales

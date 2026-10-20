@@ -240,7 +240,9 @@ describe("nada se inventa", () => {
     expect(bloques[1]).toMatchObject({ etiqueta: "Sin permiso · Tornillo · patio", permiso: null, m3: 2.5 });
   });
 
-  it("un lote que juntó dos permisos es «Permisos mezclados»: no se elige uno ni se parte", () => {
+  it("un lote de dos permisos SIN el detalle de sus piezas: todo «Sin permiso», no se elige uno", () => {
+    /* El detalle por pieza es lo que permite partirlo (ver
+       capacidad-lote-dos-permisos.test.ts); sin él no se adivina. */
     const candidatos = bloquesDesdeCapacidad(
       entrada({
         lotes: [
@@ -251,10 +253,11 @@ describe("nada se inventa", () => {
       {},
     );
     const filas = agruparPorPermiso(itemsPorPermiso(candidatos)).filter((f) => f.tipo === "rolliza");
-    expect(filas.map((f) => [etiquetaCortaDePermiso(f), f.m3])).toEqual([
-      ["PLT-2021-017", 2],
-      [PERMISOS_MEZCLADOS, 3],
+    expect(filas.map((f) => [etiquetaCortaDePermiso(f), f.m3, Boolean(f.sinAtribuir)])).toEqual([
+      ["PLT-2021-017", 2, false],
+      [SIN_PERMISO, 3, true],
     ]);
+    expect(filas.some((f) => etiquetaCortaDePermiso(f) === PERMISOS_MEZCLADOS)).toBe(false);
     const l7 = candidatos.find((c) => c.clave === "apartado:L-7")!;
     expect(bloquesDeCandidato(l7)).toHaveLength(1);
     expect(bloquesDeCandidato(l7)[0]).toMatchObject({ loteId: "L-7", permiso: null, etiqueta: "Lote L-7 · apartado" });

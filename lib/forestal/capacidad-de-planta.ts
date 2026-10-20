@@ -161,6 +161,13 @@ export interface CorridaDisponible {
   disponible: number;
   /** Títulos habilitantes de la madera que la alimentó. >1 = mezcla; 0 = sin origen. */
   titularOrigen: string[];
+  /**
+   * Cuántos m³ consumió de cada permiso (Σ `ForestCtpConsumo.volumeM3` por el
+   * `originCode` de su guía; `null` = guía sin permiso). Es lo que deja partir
+   * por permiso una corrida que mezcló títulos (2026-10-19). Opcional: sin él,
+   * la parte mezclada queda «Sin permiso».
+   */
+  origenPorPermiso?: { permiso: string | null; m3: number }[];
   /** Guías de ingreso de esa madera. */
   gtfOrigen: string[];
   /** `cantidad` = piezas del paquete; opcional porque no todo consumidor la pide. */

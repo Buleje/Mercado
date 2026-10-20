@@ -133,7 +133,8 @@ describe("bloquesDesdeCapacidad", () => {
     expect(c1).toMatchObject({ tipo: "aserrada", m3: 10, paqueteId: "corrida:c1", permiso: "P-1" });
     const c2 = todo.find((c) => c.clave === "productos:c2")!;
     expect(c2.permiso).toBeNull();
-    expect(c2.partes).toEqual([{ permiso: null, mezclado: true, m3: 3, piezas: 0 }]);
+    // Dos permisos sin el desglose de lo consumido: «Sin permiso», no se elige uno.
+    expect(c2.partes).toEqual([{ permiso: null, mezclado: false, sinAtribuir: true, m3: 3, piezas: 0 }]);
     expect(c1.etiqueta).toContain("15-2026");
   });
 

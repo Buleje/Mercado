@@ -80,7 +80,13 @@ export function ChipEspecie({
 /** El permiso de la línea en palabras: el código, «3 permisos», «sin permiso»… */
 function permisoDeLinea(c: CandidatoDeCapacidad): string {
   const partes = partesDeCandidato(c);
-  if (partes.length > 1) return `${partes.length} permisos`;
+  if (partes.length > 1) {
+    /* «Sin permiso» no es un permiso: un lote de dos títulos con un resto sin
+       atribuir dice «2 permisos + sin permiso», no «3 permisos». */
+    const con = partes.filter((p) => p.permiso).length;
+    const resto = partes.length > con ? " + sin permiso" : "";
+    return con === 0 ? "sin permiso" : `${con} ${con === 1 ? "permiso" : "permisos"}${resto}`;
+  }
   const p = partes[0]!;
   return p.permiso ?? (p.mezclado ? "permisos mezclados" : "sin permiso");
 }

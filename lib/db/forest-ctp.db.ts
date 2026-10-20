@@ -4062,6 +4062,13 @@ export class ForestCtpDB {
            mostraría dos orígenes distintos según quién la lea. */
         const propio = (c.originCode ?? "").trim();
         const titularOrigen = heredados.length > 0 ? heredados : propio ? [propio] : [];
+        /* Cuánto consumió de cada permiso: con dos títulos, «Llevar al
+           cubicador» parte la corrida en proporción (2026-10-19). */
+        const m3PorPermiso = new Map<string, number>();
+        for (const x of c.consumos) {
+          const k = (x.woodEntry?.originCode ?? "").trim();
+          m3PorPermiso.set(k, (m3PorPermiso.get(k) ?? 0) + Number(x.volumeM3 ?? 0));
+        }
         /* La reserva de la FILA SIN PAQUETE (ADR-418). Las reservas de los
            paquetes cuelgan de la misma corrida, así que se distingue por
            `paqueteId: null` — es lo que la pantalla dibuja en la fila madre. */
@@ -4083,6 +4090,11 @@ export class ForestCtpDB {
           gtfOrigen: gtfOrigen.length > 0 ? gtfOrigen : c.gtfIngreso ? [c.gtfIngreso] : [],
           /** Título habilitante / plan de manejo del que salió esa madera. */
           titularOrigen,
+          /** m³ consumidos por permiso (`null` = guía sin permiso). */
+          origenPorPermiso: [...m3PorPermiso].map(([permiso, m3]) => ({
+            permiso: permiso || null,
+            m3: Math.round(m3 * 10_000) / 10_000,
+          })),
           /** El declarado a mano en el asiento, si lo tiene (ADR-402): la
            *  pantalla necesita saber si el valor que muestra es de la guía o
            *  del propio asiento, porque no se corrigen en el mismo lugar. */

@@ -13,16 +13,37 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { CandidatoDeCapacidad } from "@/lib/forestal/capacidad-a-bloques";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { etiquetaCortaDePermiso, etiquetaDePermiso } from "@/lib/forestal/capacidad-por-permiso";
-import { resumenDeLlevar } from "./resumen-llevar-agrupar";
+import { resumenDeLlevar, type FilaResumenLlevar } from "./resumen-llevar-agrupar";
 
 /* A 400 px el permiso va debajo de la especie (no entran 5 columnas); desde
    `sm` tiene su columna, la primera: las filas de un mismo título se leen juntas. */
 const FILA =
-  "grid grid-cols-[minmax(0,1fr)_5.5rem_2.5rem_4.5rem] sm:grid-cols-[6.5rem_minmax(0,1fr)_5.5rem_2.5rem_4.5rem] items-baseline gap-x-2";
+  "grid grid-cols-[minmax(0,1fr)_5.5rem_2.5rem_4.5rem] sm:grid-cols-[7.5rem_minmax(0,1fr)_5.5rem_2.5rem_4.5rem] items-baseline gap-x-2";
 const TH =
   "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = "text-right font-mono tabular-nums";
+
+/**
+ * La ⓘ de «Sin permiso» (2026-10-19): un lote de dos permisos ya se parte por
+ * lo que aportó cada uno; lo que queda acá es lo que el libro no atribuye.
+ */
+function PorQueSinPermiso({ f }: { f: FilaResumenLlevar }) {
+  if (f.permiso) return null;
+  return (
+    <InfoTip
+      title="Sin permiso"
+      className="-my-1 shrink-0"
+      ariaLabel="Por qué dice sin permiso"
+      what={
+        f.sinAtribuir
+          ? "No se pudo saber de qué permiso es. Sale de un lote o un producto que juntó madera de varios permisos: lo de cada permiso ya va en su fila, y esto es lo que el libro no atribuye (piezas sin permiso o consumos sin guía)."
+          : "No se pudo saber de qué permiso es: la troza o el lote no lo dicen."
+      }
+      affects="Llega al cubicador como su propio bloque «Sin permiso»: no se le carga a ningún permiso."
+    />
+  );
+}
 
 export default function ResumenLlevarAlCubicador({
   seleccion,
@@ -84,15 +105,18 @@ export default function ResumenLlevarAlCubicador({
               <div key={f.clave} role="row" className={`${FILA} ${TD} border-t border-[var(--rule-soft)]`}>
                 <span
                   role="cell"
-                  title={etiquetaDePermiso(f)}
-                  className={`hidden min-w-0 truncate font-mono text-xs sm:block ${f.permiso ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
+                  className={`hidden min-w-0 items-center gap-0.5 font-mono text-xs sm:flex ${f.permiso ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
                 >
-                  {etiquetaCortaDePermiso(f)}
+                  <span title={etiquetaDePermiso(f)} className="min-w-0 truncate">{etiquetaCortaDePermiso(f)}</span>
+                  <PorQueSinPermiso f={f} />
                 </span>
                 <span role="cell" className="min-w-0">
                   <span className="block truncate font-bold text-[var(--text-primary)]">{f.especie || "Sin especie"}</span>
-                  <span title={etiquetaDePermiso(f)} className="block truncate font-mono text-xs text-[var(--text-tertiary)] sm:hidden">
-                    {etiquetaCortaDePermiso(f)}
+                  {/* Usa también el hueco bajo «Tipo» (vacío en esta línea): en la
+                      columna sola «Sin permiso» + ⓘ se cortaba a «Sin perm…». */}
+                  <span className="flex w-[calc(100%+6rem)] min-w-0 items-center gap-0.5 font-mono text-xs text-[var(--text-tertiary)] sm:hidden">
+                    <span title={etiquetaDePermiso(f)} className="min-w-0 truncate">{etiquetaCortaDePermiso(f)}</span>
+                    <PorQueSinPermiso f={f} />
                   </span>
                 </span>
                 <span role="cell">{f.tipo === "rolliza" ? "Rolliza" : "Ya aserrada"}</span>

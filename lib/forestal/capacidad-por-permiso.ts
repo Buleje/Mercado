@@ -13,9 +13,11 @@
  * Tres casos, y ninguno se inventa:
  *  · un permiso → su código;
  *  · ninguno → «Sin permiso» (la troza o el lote no lo dicen);
- *  · varios dentro de lo mismo (un lote que juntó madera de dos títulos) →
- *    «Permisos mezclados», su propio grupo. Partir un lote mezclado exigiría
- *    saber de qué permiso salió cada tabla, y eso el libro no lo dice.
+ *  · varios dentro de lo mismo (un lote o una corrida que juntó madera de dos
+ *    títulos) → una parte por permiso con lo que APORTÓ cada uno
+ *    (`repartirPorAporte`, Brandon 2026-10-19 «lote con dos permisos»). Lo que
+ *    no se puede atribuir va a «Sin permiso» marcado `sinAtribuir`: nunca se
+ *    le carga a un permiso que no lo amparó (regla forestal-serfor: siempre ≤).
  *
  * PURO: sin React ni red.
  */
@@ -36,6 +38,12 @@ export interface PermisoDeParte {
   permiso: string | null;
   /** Junta madera de más de un permiso: no se elige uno. */
   mezclado: boolean;
+  /**
+   * Lo que quedó «Sin permiso» al partir algo de varios títulos: el libro no
+   * dice de qué permiso es esa porción (piezas sin permiso, consumos sin guía
+   * o volumen que las piezas no explican). Se dice en la tabla con su ⓘ.
+   */
+  sinAtribuir?: boolean;
 }
 
 /** Una porción de una línea del modal: lo que va a ser UN bloque. */
@@ -109,6 +117,95 @@ export function partirPorPermiso(
   return [...grupos.values()].sort(ordenPermiso);
 }
 
+/** Lo que un permiso aportó a algo que junta varios: m³ y, si se saben, piezas. */
+export interface AporteDePermiso {
+  permiso?: string | null;
+  m3: number;
+  piezas?: number;
+}
+
+/** Diezmilésimas de m³: la precisión del libro (`Decimal(12,4)`). */
+const UNIDAD = 10_000;
+
+/**
+ * Parte `total` por permiso en proporción a lo que APORTÓ cada uno (Brandon,
+ * 2026-10-19: un lote de Tornillo con 2 m³ del 017 y 1 m³ del 167 son dos
+ * bloques, 2 y 1). Se parte, no se recalcula: Σ partes = `total` exacto en
+ * diezmilésimas (resto mayor).
+ *
+ * `base` = el volumen del que salieron los aportes (lo consumido del lote, lo
+ * apartado). Si los aportes CON permiso no lo explican entero —piezas sin
+ * permiso, consumos sin guía, piezas que ya no cuelgan del lote— esa porción
+ * va a «Sin permiso» con `sinAtribuir`: siempre ≤, nunca se adivina el dueño.
+ * Sin ningún aporte con permiso, todo es `sinAtribuir`. Un solo permiso que lo
+ * explica todo = una sola parte, la misma de siempre.
+ */
+export function repartirPorAporte(
+  total: number,
+  aportes: readonly AporteDePermiso[],
+  base?: number,
+): ParteDePermiso[] {
+  const totalU = Math.round(Math.max(0, Number(total) || 0) * UNIDAD);
+  if (totalU === 0) return [];
+  const grupos = new Map<string, { permiso: string; m3: number; piezas: number }>();
+  let conPermiso = 0;
+  let todo = 0;
+  let piezasSin = 0;
+  for (const a of aportes) {
+    const m3 = Math.max(0, Number(a.m3) || 0);
+    const piezas = Math.max(0, Math.trunc(Number(a.piezas) || 0));
+    todo += m3;
+    const permiso = txt(a.permiso);
+    if (!permiso) {
+      piezasSin += piezas;
+      continue;
+    }
+    const k = permiso.toUpperCase();
+    const g = grupos.get(k) ?? { permiso, m3: 0, piezas: 0 };
+    g.m3 += m3;
+    g.piezas += piezas;
+    grupos.set(k, g);
+    conPermiso += m3;
+  }
+  const sinAtribuir = (m3: number): ParteDePermiso => ({
+    permiso: null,
+    mezclado: false,
+    sinAtribuir: true,
+    m3,
+    piezas: piezasSin,
+  });
+  const divisor = Math.max(Number(base) || 0, todo);
+  if (!(divisor > 0) || !(conPermiso > 0)) return [sinAtribuir(totalU / UNIDAD)];
+
+  /* Resto mayor: cada cuota en diezmilésimas enteras y lo que sobra del
+     redondeo, a las de mayor fracción. El `1e-9` absorbe 1999,9999999 → 2000. */
+  const cuotas = [
+    ...[...grupos.values()].map((g) => ({ g, peso: g.m3 })),
+    { g: null, peso: Math.max(0, divisor - conPermiso) },
+  ].map((c) => {
+    const exacto = (totalU * c.peso) / divisor;
+    const piso = Math.floor(exacto + 1e-9);
+    return { ...c, u: piso, fraccion: exacto - piso };
+  });
+  let resto = totalU - cuotas.reduce((a, c) => a + c.u, 0);
+  for (const c of [...cuotas].sort((a, b) => b.fraccion - a.fraccion || b.peso - a.peso)) {
+    if (resto <= 0) break;
+    if (!(c.peso > 0)) continue;
+    c.u += 1;
+    resto -= 1;
+  }
+  const partes: ParteDePermiso[] = [];
+  for (const c of cuotas) {
+    if (c.u <= 0) continue;
+    partes.push(
+      c.g
+        ? { permiso: c.g.permiso, mezclado: false, m3: c.u / UNIDAD, piezas: c.g.piezas }
+        : sinAtribuir(c.u / UNIDAD),
+    );
+  }
+  return partes.sort(ordenPermiso);
+}
+
 /** Lo que el resumen necesita de cada parte. */
 export interface ItemPorPermiso extends PermisoDeParte {
   especie: string;
@@ -141,6 +238,9 @@ export function agruparPorPermiso(items: readonly ItemPorPermiso[]): FilaPorPerm
     const p: PermisoDeParte = { permiso: it.permiso ? txt(it.permiso) : null, mezclado: it.mezclado };
     const clave = `${claveDePermiso(p)}|${sinTildes(especie)}|${it.tipo}`;
     const g = grupos.get(clave) ?? { clave, ...p, especie, tipo: it.tipo, piezas: 0, m3: [] };
+    /* La fila «Sin permiso» dice si parte de ella salió de partir algo de
+       varios títulos: es lo que su ⓘ explica. */
+    if (it.sinAtribuir) g.sinAtribuir = true;
     g.m3.push(it.m3);
     g.piezas += it.piezas > 0 ? it.piezas : 0;
     grupos.set(clave, g);
