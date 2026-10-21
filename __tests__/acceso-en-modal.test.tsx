@@ -6,8 +6,12 @@
  *  - el módulo de adentro recibe su vista por contexto, no por `?vista=`, y
  *    cambiar de vista adentro no toca la URL de la pantalla de atrás;
  *  - Escape, la X y un enlace a otra pantalla (`admin:navigate`) lo cierran.
+ *
+ * 20-10 (Brandon: «solo pon el de cámara y de accesos directos»): en la barra
+ * sólo queda Cámaras, los anclados viejos (v1) no se leen, y «Recientes» vive
+ * dentro del menú.
  */
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useVistaEmbebida, useVistaModulo } from "@/hooks/use-vista-modulo";
 
@@ -50,7 +54,22 @@ vi.mock("@/hooks/use-vistas-permitidas", async () => {
   return { useContextoPermiso: () => SIN_FILTRO };
 });
 
+const recientes = vi.hoisted(() => ({
+  borrar: () => {},
+  lista: [
+    { href: "/admin?tab=pedidos", titulo: "Pedidos", camino: "Ventas & Caja › Pedidos", tipo: null, en: Date.now() },
+    { href: "/admin?tab=vendor-dashboard&vista=resumen", titulo: "Inicio", camino: "Inicio", tipo: null, en: Date.now() },
+  ],
+}));
+vi.mock("@/hooks/use-recientes-panel", () => ({
+  useRecientes: () => ({ recientes: recientes.lista, listo: true, borrar: recientes.borrar }),
+  useRegistrarRecientes: () => {},
+}));
+
 import AccesosRapidos from "@/components/admin/header/AccesosRapidos";
+import { CLAVE_ANCLADOS } from "@/components/admin/header/use-accesos-rapidos";
+import { etiquetaDeTab } from "@/components/admin/buscador/indice-modulos";
+import { entradaDeUrl } from "@/lib/admin/recientes-panel";
 import AccesoEnModal from "@/components/admin/header/AccesoEnModal";
 import { ACCESOS } from "@/components/admin/header/accesos-rapidos";
 
@@ -96,7 +115,7 @@ describe("AccesoEnModal", () => {
 describe("AccesosRapidos", () => {
   it("un acceso del menú abre su modal ahí mismo: la URL de la pantalla no cambia", () => {
     render(<AccesosRapidos />);
-    fireEvent.click(screen.getByRole("button", { name: "Accesos rápidos" }));
+    fireEvent.click(screen.getByRole("button", { name: "Accesos directos" }));
     fireEvent.click(screen.getByRole("menuitem", { name: /Asistencia/ }));
     expect(screen.getByRole("dialog", { name: "Asistencia" })).toBeInTheDocument();
     expect(screen.getByTestId("modulo")).toHaveTextContent("vista=asistencia");
@@ -105,7 +124,7 @@ describe("AccesosRapidos", () => {
 
   it("«Elegir los de la barra» ancla y quita, y se recuerda", () => {
     render(<AccesosRapidos />);
-    fireEvent.click(screen.getByRole("button", { name: "Accesos rápidos" }));
+    fireEvent.click(screen.getByRole("button", { name: "Accesos directos" }));
     fireEvent.click(screen.getByRole("menuitem", { name: /Elegir los de la barra/ }));
     const vender = screen.getByRole("menuitemcheckbox", { name: /Vender/ });
     expect(vender).toHaveAttribute("aria-checked", "false");
@@ -114,6 +133,36 @@ describe("AccesosRapidos", () => {
       "aria-checked",
       "true",
     );
-    expect(JSON.parse(localStorage.getItem("admin_header_accesos") ?? "[]")).toContain("vender");
+    expect(JSON.parse(localStorage.getItem(CLAVE_ANCLADOS) ?? "[]")).toContain("vender");
+  });
+});
+
+describe("AccesosRapidos (20-10): barra con sólo Cámaras", () => {
+  it("los anclados viejos (Archivos, Asistencia, Caja) no vuelven a la barra y quedan en el menú", () => {
+    localStorage.setItem("admin_header_accesos", JSON.stringify(["camaras", "archivos", "asistencia", "caja"]));
+    render(<AccesosRapidos />);
+    const barra = screen.getByRole("list", { name: "Accesos anclados" });
+    expect(within(barra).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(barra).queryByRole("button", { name: "Asistencia" })).toBeNull();
+    expect(within(barra).queryByRole("button", { name: "Caja" })).toBeNull();
+    // La preferencia vieja no se borra (otra versión del panel la puede leer).
+    expect(localStorage.getItem("admin_header_accesos")).toContain("asistencia");
+
+    fireEvent.click(screen.getByRole("button", { name: "Accesos directos" }));
+    const menu = screen.getByRole("menu", { name: "Accesos directos" });
+    expect(within(menu).getByRole("menuitem", { name: /Asistencia/ })).toBeInTheDocument();
+    expect(within(menu).getByRole("menuitem", { name: /^Caja/ })).toBeInTheDocument();
+  });
+
+  it("«Recientes» va dentro del menú, sin la pantalla donde estás", () => {
+    const aca = entradaDeUrl(window.location.pathname + window.location.search, etiquetaDeTab);
+    expect(aca).not.toBeNull();
+    recientes.lista[1] = { ...recientes.lista[1], href: aca!.href };
+    render(<AccesosRapidos />);
+    fireEvent.click(screen.getByRole("button", { name: "Accesos directos" }));
+    const grupo = screen.getByRole("group", { name: "Recientes" });
+    expect(within(grupo).getByRole("menuitem", { name: /Pedidos/ })).toBeInTheDocument();
+    expect(within(grupo).queryByRole("menuitem", { name: /^Inicio/ })).toBeNull();
+    expect(within(grupo).getByRole("menuitem", { name: /Borrar la lista/ })).toBeInTheDocument();
   });
 });

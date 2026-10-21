@@ -1,6 +1,6 @@
 /**
- * Pie del buscador del panel: los atajos de teclado. Salió de
- * `GlobalSearch.tsx` (17-10) para dejarlo en menos de 300 líneas.
+ * Pie del desplegable del buscador de la cabecera: los atajos de teclado.
+ * Salió de `GlobalSearch.tsx` (17-10) para dejarlo en menos de 300 líneas.
  */
 
 import { AtajoMod } from "@/components/admin/shared/AtajoMod";
@@ -24,7 +24,7 @@ export function PieBuscador() {
       </div>
       <span className="hidden sm:flex items-center gap-1 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">
         <kbd className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-1.5 rounded font-mono font-semibold"><AtajoMod tecla="K" /></kbd>
-        <span>abrir/cerrar</span>
+        <span>ir al buscador</span>
       </span>
     </div>
   );

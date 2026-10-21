@@ -5,8 +5,8 @@
  *
  * Header sticky del panel admin (escritorio + mobile). Contiene:
  *  - Botón hamburger (mobile)
- *  - Search bar global con shortcut Ctrl+K
- *  - Accesos rápidos al lado del buscador (abren su módulo en un modal)
+ *  - Buscador EN LÍNEA (`GlobalSearch`: resultados debajo del campo, Ctrl+K lo enfoca)
+ *  - Cámaras + «Accesos directos» (abren su módulo en un modal; adentro, «Recientes»)
  *  - NotificationBell (todos los anchos; abre el centro como modal central)
  *  - Botón "Cerrar día"
  *  - Toggle focus mode (desktop only)
@@ -20,16 +20,16 @@
  */
 
 import { memo, useEffect, useState } from "react";
-import { Menu, Search, Store as StoreIcon, ExternalLink } from "@buleje/design-system/icons";
+import { Menu, Store as StoreIcon, ExternalLink } from "@buleje/design-system/icons";
 import Link from "next/link";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import AdminMensajesMenu from "@/components/admin/AdminMensajesMenu";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
+import GlobalSearch from "@/components/admin/GlobalSearch";
 import AccesosRapidos from "@/components/admin/header/AccesosRapidos";
-import MenuRecientes from "@/components/admin/header/MenuRecientes";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
-import { AtajoMod } from "@/components/admin/shared/AtajoMod";
+import { useRegistrarRecientes } from "@/hooks/use-recientes-panel";
 import { cn } from "@/lib/utils";
 
 type HeaderThemingEvent = {
@@ -68,7 +68,8 @@ export interface AdminTopHeaderProps {
   userRole: string;
   tenantSlug?: string | null;
   onOpenMobileNav: () => void;
-  onOpenSearch: () => void;
+  /** @deprecated 20-10: el buscador es el campo de la cabecera; Ctrl+K lo enfoca solo. */
+  onOpenSearch?: () => void;
   onOpenCierreDiario: () => void;
   onToggleFocus: () => void;
   onTogglePresentation: () => void;
@@ -90,7 +91,6 @@ export const AdminTopHeader = memo(function AdminTopHeader({
   userRole,
   tenantSlug,
   onOpenMobileNav,
-  onOpenSearch,
   onOpenCierreDiario,
   onToggleFocus,
   onTogglePresentation,
@@ -98,6 +98,9 @@ export const AdminTopHeader = memo(function AdminTopHeader({
   onNavigate,
   onLogout,
 }: AdminTopHeaderProps) {
+  /* Anota cada lugar que abres para «Recientes» (menú de accesos directos). */
+  useRegistrarRecientes();
+
   // Theming reactivo desde el sidebar
   const [theming, setTheming] = useState<HeaderThemingEvent>(readInitialHeaderTheming);
 
@@ -132,8 +135,7 @@ export const AdminTopHeader = memo(function AdminTopHeader({
 
   return (
     <header
-      // Marca de anclaje: GlobalSearch se posiciona justo debajo del borde real
-      // de este header en vez de asumir una altura fija (ver GlobalSearch.tsx).
+      // Marca de anclaje del header (la buscan otras piezas para medir su borde).
       data-admin-header=""
       className={cn(
         // Brandon 2026-05-28: en MOBILE forzamos fondo CLARO (surface-raised)
@@ -168,53 +170,15 @@ export const AdminTopHeader = memo(function AdminTopHeader({
           </button>
         </AdminTooltip>
 
-        <button
-          onClick={onOpenSearch}
-          aria-label="Búsqueda global (atajo Ctrl+K)"
-          className={cn(
-            // MOBILE = botón lupa cuadrado branded (teal-soft + accent), igual
-            // que la hamburguesa. En sm+ = pill de búsqueda con placeholder y
-            // atajo ⌘K.
-            //
-            // El ancho va en un token propio: `sm:max-w-xl` valía 1440px acá
-            // (hasta 2026-10-09 globals.css doblaba `--container-xl`), así que el
-            // pill se estiraba hasta comerse el espacio de los botones de la derecha.
-            // `--panel-search-max` sube de 30 a 36/44rem en monitores grandes
-            // — 480px fijos contra 2248px de contenido lo dejaban raquítico.
-            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-[var(--panel-search-max,30rem)] sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer shrink-0 sm:shrink sm:min-w-11",
-            "transition-[background-color,border-color,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-editorial)]",
-            "max-sm:bg-primary/10! max-sm:text-[var(--accent)]! max-sm:ring-1 max-sm:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]! max-sm:border-0!",
-            // Un solo juego de clases para los dos temas: la superficie y la
-            // regla ya son tokens que cambian con `.dark`. Antes había dos
-            // ramas por `isAutoDarkTheme` con `white/[0.04]` hardcodeado, y la
-            // rama oscura escribía `color-mix(in oklab, …)` CON ESPACIOS —
-            // Tailwind corta la clase en el primer espacio, así que ese borde
-            // nunca se aplicó.
-            "sm:border sm:bg-[var(--surface-sunken)] sm:border-[var(--rule-base)]",
-            "sm:hover:bg-[var(--surface-raised)] sm:hover:border-[color-mix(in_oklab,var(--accent)_45%,var(--rule-base))] sm:hover:shadow-[var(--shadow-sm)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-muted)] focus-visible:border-[var(--accent)]"
-          )}
-        >
-          <Search
-            className="h-5 w-5 sm:h-4 sm:w-4 shrink-0 transition-colors max-sm:text-[var(--accent)]! sm:text-[var(--text-tertiary)] sm:group-hover:text-[var(--accent)]"
-            strokeWidth={2.25}
-          />
-          {/* `--text-secondary`, no `--text-tertiary`: medido con getComputedStyle
-              + conversión oklch→rgb, terciario sobre `--surface-sunken` daba
-              3.51:1 en tema claro (AA pide 4.5:1 para texto normal). El kbd
-              tenía el mismo problema (3.94:1). */}
-          <span className="hidden sm:block flex-1 text-left text-sm font-medium truncate text-[var(--text-secondary)] transition-colors group-hover:text-[var(--text-primary)]">
-            Buscar módulos, productos, clientes…
-          </span>
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border text-[var(--text-secondary)] bg-[var(--surface-raised)] border-[var(--rule-base)] transition-colors group-hover:border-[color-mix(in_oklab,var(--accent)_35%,var(--rule-base))]">
-            <AtajoMod tecla="K" claseSimbolo="text-base leading-none" />
-          </kbd>
-        </button>
+        {/* Brandon 20-10: el campo busca ahí mismo, sin ventana. En celular es
+            una lupa que despliega el campo sobre esta misma cabecera.
+            El ancho va en un token propio (`--panel-search-max`, 30 → 36/44 rem
+            en monitores grandes): `sm:max-w-xl` valía 1440 px acá. */}
+        <GlobalSearch />
 
-        {/* Brandon 2026-10-10: «accesos directos al lado de Buscar módulos». */}
+        {/* Brandon 2026-10-10: «accesos directos al lado de Buscar módulos».
+            20-10: a la vista sólo Cámaras y el botón; «Recientes» va en su menú. */}
         <AccesosRapidos onDarkHeader={isAutoDarkTheme} />
-        {/* M06 (17-10): lo último que abriste, para volver con un clic. */}
-        <MenuRecientes onDarkHeader={isAutoDarkTheme} />
       </div>
 
       {/* Right: actions */}

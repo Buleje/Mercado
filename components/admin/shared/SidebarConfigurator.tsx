@@ -35,6 +35,8 @@ import {
 import { cn } from "@/lib/utils";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
+import type { ModoMenu } from "@/components/admin/layout/sidebar-enlaces";
+import { SelectorModoMenu } from "@/components/admin/shared/SelectorModoMenu";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -53,6 +55,8 @@ export interface SidebarExtendedConfig {
   density: Density;
   iconStyle: IconStyle;
   applyToHeader: boolean;
+  /** Por categorías (acordeón) o todos los enlaces a la vista (2026-10-20). */
+  navMode: ModoMenu;
 }
 
 type SidebarConfiguratorProps = {
@@ -65,6 +69,7 @@ type SidebarConfiguratorProps = {
   density?: Density;
   iconStyle?: IconStyle;
   applyToHeader?: boolean;
+  navMode?: ModoMenu;
   allTabs: readonly { id: Tab; label: string; icon: React.ElementType }[];
   allowedTabs: Tab[];
   onSave: (config: SidebarExtendedConfig) => void;
@@ -384,6 +389,7 @@ export default function SidebarConfigurator({
   density: initialDensity = "normal",
   iconStyle: initialIconStyle = "colored",
   applyToHeader: initialApplyToHeader = false,
+  navMode: initialNavMode = "categorias",
   allTabs,
   allowedTabs,
   onSave,
@@ -404,6 +410,7 @@ export default function SidebarConfigurator({
     density: initialDensity,
     iconStyle: initialIconStyle,
     applyToHeader: initialApplyToHeader,
+    navMode: initialNavMode,
   });
 
   // ── Draft state ──
@@ -419,6 +426,7 @@ export default function SidebarConfigurator({
   const [draftDensity, setDraftDensity] = React.useState<Density>(initialDensity);
   const [draftIconStyle, setDraftIconStyle] = React.useState<IconStyle>(initialIconStyle);
   const [draftApplyToHeader, setDraftApplyToHeader] = React.useState<boolean>(initialApplyToHeader);
+  const [draftNavMode, setDraftNavMode] = React.useState<ModoMenu>(initialNavMode);
   const [expandedCats, setExpandedCats] = React.useState<Set<string>>(new Set());
   const [query, setQuery] = React.useState("");
 
@@ -465,10 +473,11 @@ export default function SidebarConfigurator({
       density: draftDensity,
       iconStyle: draftIconStyle,
       applyToHeader: draftApplyToHeader,
+      navMode: draftNavMode,
     });
   }, [
     draftHidden, draftHiddenSubs, draftOrder, draftTheme, draftAccent,
-    draftDensity, draftIconStyle, draftApplyToHeader, onLiveDraftChange,
+    draftDensity, draftIconStyle, draftApplyToHeader, draftNavMode, onLiveDraftChange,
   ]);
 
   const isDirty = React.useMemo(() => {
@@ -485,6 +494,7 @@ export default function SidebarConfigurator({
     if (draftDensity !== base.density) return true;
     if (draftIconStyle !== base.iconStyle) return true;
     if (draftApplyToHeader !== base.applyToHeader) return true;
+    if (draftNavMode !== base.navMode) return true;
     if (draftOrder.join(",") !== base.order.join(",")) return true;
     if (draftHidden.size !== base.hiddenCategories.size) return true;
     if (draftHiddenSubs.size !== base.hiddenSubTabs.size) return true;
@@ -494,7 +504,7 @@ export default function SidebarConfigurator({
      
   }, [
     draftHidden, draftHiddenSubs, draftOrder, draftTheme, draftAccent, draftDensity,
-    draftIconStyle, draftApplyToHeader,
+    draftIconStyle, draftApplyToHeader, draftNavMode,
   ]);
 
   const sensors = useSensors(
@@ -574,6 +584,7 @@ export default function SidebarConfigurator({
     setDraftDensity("normal");
     setDraftIconStyle("colored");
     setDraftApplyToHeader(false);
+    setDraftNavMode("categorias");
   };
 
   const handleShowAll = () => {
@@ -591,6 +602,7 @@ export default function SidebarConfigurator({
       density: draftDensity,
       iconStyle: draftIconStyle,
       applyToHeader: draftApplyToHeader,
+      navMode: draftNavMode,
     });
   };
 
@@ -716,6 +728,7 @@ export default function SidebarConfigurator({
         {/* ── Sección: Módulos ── */}
         <div className="px-4 py-4 border-b border-zinc-800">
           <SectionHeader icon={Layout} title="Módulos y orden" hint="Activa, oculta o reordena los módulos de tu navegación." />
+          <SelectorModoMenu value={draftNavMode} onChange={setDraftNavMode} />
           <div className="space-y-1">
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext

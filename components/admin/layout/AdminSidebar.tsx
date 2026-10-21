@@ -25,7 +25,10 @@ import { useEnabledSpecs } from "@/hooks/use-enabled-specs";
 import { PillPronto, SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
-import type { SidebarTheme, AccentColor, Density, IconStyle } from "@/components/admin/shared/SidebarConfigurator";
+import type { SidebarTheme, AccentColor, Density, IconStyle, SidebarExtendedConfig } from "@/components/admin/shared/SidebarConfigurator";
+import { gruposDeEnlaces, guardarModoMenu, leerModoMenu, type ModoMenu } from "@/components/admin/layout/sidebar-enlaces";
+import { SidebarEnlacesSueltos } from "@/components/admin/layout/SidebarEnlacesSueltos";
+import { coloresDeIconos } from "@/components/admin/layout/sidebar-colores-iconos";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useTenant } from "@/contexts/tenant-context";
 import { SIDEBAR_STYLE_PRESETS, type DefaultSidebarStyle } from "@/lib/admin-template";
@@ -259,6 +262,9 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     try { return localStorage.getItem("admin-sidebar-apply-to-header") === "true"; } catch { return false; }
   });
 
+  // ── Forma del menú: por categorías o todos los enlaces a la vista (persisted) ──
+  const [navMode, setNavMode] = React.useState<ModoMenu>(leerModoMenu);
+
   // Propagar apply-to-header + accent al header via evento
   React.useEffect(() => {
     try {
@@ -420,30 +426,12 @@ export const AdminSidebar = React.memo(function AdminSidebar({
   }, []);
 
   // ── Snapshot del estado committed al entrar a configMode (para revertir) ──
-  const [configSnapshot, setConfigSnapshot] = React.useState<{
-    theme: SidebarTheme;
-    accent: AccentColor;
-    density: Density;
-    iconStyle: IconStyle;
-    applyToHeader: boolean;
-    hiddenCategories: Set<string>;
-    hiddenSubTabs: Set<Tab>;
-    categoryOrder: string[];
-  } | null>(null);
+  const [configSnapshot, setConfigSnapshot] = React.useState<SidebarExtendedConfig | null>(null);
 
   /* Live preview: cada cambio en el Configurator se aplica inmediatamente
      al sidebar (para que el usuario vea cómo queda). Si cancela, usamos
      el snapshot para revertir. Si guarda, persistimos a localStorage. */
-  const handleLiveDraft = React.useCallback((draft: {
-    hiddenCategories: Set<string>;
-    hiddenSubTabs: Set<Tab>;
-    categoryOrder: string[];
-    theme: SidebarTheme;
-    accent: AccentColor;
-    density: Density;
-    iconStyle: IconStyle;
-    applyToHeader: boolean;
-  }) => {
+  const handleLiveDraft = React.useCallback((draft: SidebarExtendedConfig) => {
     setHiddenCategories(draft.hiddenCategories);
     setHiddenSubTabs(draft.hiddenSubTabs);
     setCategoryOrder(draft.categoryOrder);
@@ -452,18 +440,10 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     setDensity(draft.density);
     setIconStyle(draft.iconStyle);
     setApplyToHeader(draft.applyToHeader);
+    setNavMode(draft.navMode);
   }, []);
 
-  const handleConfigSave = React.useCallback((config: {
-    hiddenCategories: Set<string>;
-    hiddenSubTabs: Set<Tab>;
-    categoryOrder: string[];
-    theme: SidebarTheme;
-    accent: AccentColor;
-    density: Density;
-    iconStyle: IconStyle;
-    applyToHeader: boolean;
-  }) => {
+  const handleConfigSave = React.useCallback((config: SidebarExtendedConfig) => {
     /* Live preview ya aplicó los cambios al state; aquí solo persistimos. */
     try {
       localStorage.setItem("admin-sidebar-hidden", JSON.stringify([...config.hiddenCategories]));
@@ -475,6 +455,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
       localStorage.setItem("admin-sidebar-icon-style", config.iconStyle);
       localStorage.setItem("admin-sidebar-apply-to-header", config.applyToHeader ? "true" : "false");
     } catch { /* ignore */ }
+    guardarModoMenu(config.navMode);
     setConfigSnapshot(null);
     setConfigModeSynced(false);
   }, [setConfigModeSynced]);
@@ -490,9 +471,10 @@ export const AdminSidebar = React.memo(function AdminSidebar({
       hiddenCategories: new Set(hiddenCategories),
       hiddenSubTabs: new Set(hiddenSubTabs),
       categoryOrder: [...categoryOrder],
+      navMode,
     });
     setConfigModeSynced(true);
-  }, [sidebarTheme, accent, density, iconStyle, applyToHeader, hiddenCategories, hiddenSubTabs, categoryOrder, setConfigModeSynced]);
+  }, [sidebarTheme, accent, density, iconStyle, applyToHeader, hiddenCategories, hiddenSubTabs, categoryOrder, navMode, setConfigModeSynced]);
 
   /* Cancel: revertir al snapshot tomado al entrar a configMode. */
   const handleConfigCancel = React.useCallback(() => {
@@ -505,6 +487,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
       setDensity(configSnapshot.density);
       setIconStyle(configSnapshot.iconStyle);
       setApplyToHeader(configSnapshot.applyToHeader);
+      setNavMode(configSnapshot.navMode);
     }
     setConfigSnapshot(null);
     setConfigModeSynced(false);
@@ -537,6 +520,12 @@ export const AdminSidebar = React.memo(function AdminSidebar({
   // ya se dibuja como enlace directo más abajo, así que los tenants chicos
   // siguen viendo enlaces sueltos — pero ahora bajo su sección.
   const navCategories = orderedVisibleCategories;
+  // «Sin categorías» (2026-10-20): las MISMAS categorías y la misma regla
+  // (`tabsDeCategoria`), sin acordeón ni pseudo-categorías.
+  const gruposSueltos = React.useMemo(
+    () => (navMode === "enlaces" ? gruposDeEnlaces(navCategories, tabsDeCategoria, (id) => id in SECTION_BEFORE) : []),
+    [navMode, navCategories, tabsDeCategoria],
+  );
 
   /* 3 temas editoriales del sidebar:
      - cristal: slate-900 profundo con acento teal (inspirado en iOS/Linear)
@@ -724,47 +713,9 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     };
   }, []);
 
-  /* Colores por categoría — le dan personalidad al sidebar sin saturar.
-     Si iconStyle = "monochrome" → todos grises. Si "colored" → por categoría. */
   const isDarkTheme = sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded" || sidebarTheme === "buleje";
-  const MONOCHROME_ICON_COLOR = isDarkTheme ? "text-white/60" : "text-[var(--text-tertiary)]";
-  const ICON_COLORS_COLORED: Record<string, string> = isDarkTheme
-    ? {
-        dashboard: "text-primary/90",
-        ventas: "text-sky-300/90",
-        productos: "text-[var(--accent)]/90",
-        inventario: "text-amber-300/90",
-        compras: "text-orange-300/90",
-        finanzas: "text-emerald-300/90",
-        clientes: "text-[var(--data-error-500)]/90",
-        "marketplace-ops": "text-[var(--accent)]/90",
-        analytics: "text-cyan-300/90",
-        comunicacion: "text-teal-300/90",
-        documentos: "text-slate-300/90",
-        "mi-tienda": "text-[var(--accent)]/90",
-        metas: "text-yellow-300/90",
-      }
-    : {
-        dashboard: "text-primary",
-        // sky-600 y --data-info-600 son el mismo #0284c7: se usa el token.
-        ventas: "text-[var(--data-info-600)]",
-        productos: "text-[var(--accent)]",
-        inventario: "text-[var(--data-warning-600)]",
-        compras: "text-[var(--nav-cat-compras)]",
-        finanzas: "text-[var(--data-success-600)]",
-        clientes: "text-[var(--data-error-500)]",
-        "marketplace-ops": "text-[var(--accent)]",
-        analytics: "text-[var(--nav-cat-analytics)]",
-        comunicacion: "text-[var(--accent-dark)] dark:text-[var(--accent)]",
-        documentos: "text-[var(--text-secondary)]",
-        "mi-tienda": "text-[var(--accent)]",
-        metas: "text-[var(--nav-cat-metas)]",
-      };
-
-  const ICON_COLORS: Record<string, string> =
-    iconStyle === "colored"
-      ? ICON_COLORS_COLORED
-      : Object.fromEntries(Object.keys(ICON_COLORS_COLORED).map((k) => [k, MONOCHROME_ICON_COLOR]));
+  // Colores por categoría (o todos en un tono si iconStyle = "monochrome").
+  const ICON_COLORS = coloresDeIconos(isDarkTheme, iconStyle);
 
   // Density → paddings dinámicos
   const densityPad = density === "compact" ? "px-2.5 py-1.5" : density === "spacious" ? "px-3 py-3" : "px-3 py-2.5";
@@ -932,8 +883,29 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               veces. Favoritos y los atajos personalizados cubren el mismo
               atajo sin cambiar de posición. */}
 
+          {navMode === "enlaces" && (
+            <SidebarEnlacesSueltos
+              grupos={gruposSueltos}
+              compacto={effectiveCompact}
+              tab={tab}
+              allTabs={allTabs}
+              resolveLabel={resolveLabel}
+              navigateTab={navigateTab}
+              alerts={alerts}
+              destacados={verticalFeaturedSet}
+              estilo={themeClasses}
+              isDarkTheme={isDarkTheme}
+              densityPad={densityPad}
+              densityGap={densityGap}
+              accentBarStyle={accentBarStyle}
+              colorDeIcono={(id) => ICON_COLORS[id] ?? "text-[var(--text-tertiary)]"}
+              onHoverCompacto={handleCompactHover}
+              onLeaveCompacto={handleCompactLeave}
+            />
+          )}
+
           {/* ── Main modules (expanded mode) ── */}
-          {!effectiveCompact && navCategories.map((category, catIdx) => {
+          {navMode === "categorias" && !effectiveCompact && navCategories.map((category, catIdx) => {
             // RBAC + ocultos del usuario + plantilla + tipo de negocio + especialización.
             const { visible: verticalVisible, comingSoon: catComingSoon } = tabsDeCategoria(category);
             const catTabs = verticalVisible;
@@ -955,6 +927,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               ? tab === catTabs[0]
               : (catTabs as string[]).includes(tab as string);
             const totalAlerts = catTabs.reduce((sum, t) => sum + (alerts[t] || 0), 0);
+            const abierta = expandedCategories.has(category.id);
 
             // Resolve display info — aplica label custom de la plantilla.
             // Branded (alwaysGroup, ej. Agricultura): aunque sea link directo
@@ -984,6 +957,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                     <button
                       ref={(el) => { categoryRefs.current[category.id] = el; }}
                       data-tour-tab={isSingleTab ? catTabs[0] : category.id}
+                      aria-expanded={isSingleTab ? undefined : abierta}
                       onMouseEnter={(e) => {
                         if (!isSingleTab) handleCategoryMouseEnter(category.id);
                         // Precarga el chunk del tab (link directo o 1er sub-tab) → clic instantáneo.
@@ -1044,9 +1018,12 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                       )}
 
                       {!isSingleTab && (
-                        <m.div
-                          animate={{ rotate: expandedCategories.has(category.id) ? 90 : 0 }}
-                          transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "inline-flex transition-[rotate] duration-[var(--dur-base)] ease-[var(--ease-editorial)] motion-reduce:transition-none",
+                            abierta && "rotate-90",
+                          )}
                         >
                           <ChevronRight className={cn(
                             "h-3.5 w-3.5 shrink-0 transition-colors",
@@ -1054,7 +1031,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                               ? (isDarkTheme ? "text-[color-mix(in_oklab,var(--accent)_60%,white)]" : "text-[var(--data-success-500)]")
                               : (isDarkTheme ? "text-white/35 group-hover:text-white/60" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] group-hover:text-[var(--text-tertiary)]")
                           )} />
-                        </m.div>
+                        </span>
                       )}
                     </button>
 
@@ -1077,14 +1054,29 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                     })()}
                     </div>
 
-                    {/* Animated sub-tabs for multi-tab categories */}
+                    {/* Sub-tabs: la altura va de 0fr a 1fr (sin medir) con la curva
+                        editorial del DS, y los hijos entran con opacidad y un leve
+                        desplazamiento. Al cerrar se apagan antes de que la altura
+                        termine (no se ven cortados). Abrir una y cerrar otra corren
+                        juntas con la misma curva: el total no salta. Reduced motion:
+                        instantáneo. `inert` cerrado: Tab no entra en lo que no se ve. */}
                     {!isSingleTab && (
                       <div
-                        className="grid transition-[grid-template-rows] duration-[var(--dur-base)] ease-in-out"
-                        style={{ gridTemplateRows: expandedCategories.has(category.id) ? "1fr" : "0fr" }}
+                        data-acordeon={abierta ? "abierto" : "cerrado"}
+                        inert={!abierta}
+                        className={cn(
+                          "grid transition-[grid-template-rows] duration-[var(--dur-base)] ease-[var(--ease-editorial)] motion-reduce:transition-none",
+                          abierta ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                        )}
                       >
-                        <div className="overflow-hidden">
-                          <div className={cn("ml-4 pl-3 border-l-2 space-y-0.5 py-1", themeClasses.border)}>
+                        <div className="min-h-0 overflow-hidden">
+                          <div className={cn(
+                            "ml-4 pl-3 border-l-2 space-y-0.5 py-1 transition-[opacity,translate] ease-[var(--ease-editorial)] motion-reduce:transition-none",
+                            abierta
+                              ? "opacity-100 translate-y-0 duration-[var(--dur-base)] delay-[40ms]"
+                              : "opacity-0 -translate-y-1.5 duration-[var(--dur-fast)]",
+                            themeClasses.border,
+                          )}>
                             {catTabs.map(subTabId => {
                               const subTabInfo = allTabs.find(t => t.id === subTabId);
                               if (!subTabInfo) return null;
@@ -1171,7 +1163,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               categoría tiene un solo tab visible navega directo, y si tiene
               varios, el hover abre el flyout con la lista completa — las
               mismas opciones que al desplegar. */}
-          {effectiveCompact && navCategories.map((category) => {
+          {navMode === "categorias" && effectiveCompact && navCategories.map((category) => {
             const { visible: catTabs } = tabsDeCategoria(category);
             if (catTabs.length === 0) return null;
             const single = catTabs.length === 1;
@@ -1324,6 +1316,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
             density={density}
             iconStyle={iconStyle}
             applyToHeader={applyToHeader}
+            navMode={navMode}
             allTabs={allTabs}
             allowedTabs={allowedTabs}
             onSave={handleConfigSave}
@@ -1417,7 +1410,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
       })()}
 
       {/* Sidebar flyout panel — expanded mode hover (Holded-style) */}
-      {!effectiveCompact && hoveredCategory && flyoutPosition && (() => {
+      {!effectiveCompact && hoveredCategory && flyoutPosition && !expandedCategories.has(hoveredCategory) && (() => {
         const cat = visibleCategories.find(c => c.id === hoveredCategory);
         if (!cat) return null;
         const { visible: catTabs, comingSoon: catProximos } = tabsDeCategoria(cat);

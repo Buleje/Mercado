@@ -21,7 +21,7 @@ const globales = (mod: TeclaMod): ShortcutSection[] => [
   {
     title: "Navegación del panel",
     items: [
-      { keys: [mod, "K"], description: "Buscar en todo el panel" },
+      { keys: [mod, "K"], description: "Ir al buscador de la cabecera" },
       { keys: ["?"], description: "Abrir / cerrar esta ayuda" },
       { keys: ["F"], description: "Modo enfoque (ocultar sidebar)" },
       { keys: ["Esc"], description: "Cerrar modal / deseleccionar" },

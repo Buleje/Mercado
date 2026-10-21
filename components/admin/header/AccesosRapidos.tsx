@@ -1,37 +1,42 @@
 "use client";
 
 /**
- * Accesos rápidos al lado de «Buscar módulos» (Brandon 2026-10-10).
+ * Accesos directos de la cabecera, al lado del buscador (Brandon 2026-10-10;
+ * barra recortada el 20-10: «quita los íconos de asistencia, caja y abierto
+ * hace poco y solo pon el de cámara y de accesos directos»).
  *
- * - Con lugar (cabecera ≥ 56 rem) los anclados van a la vista, ícono de 48 px
- *   con tooltip y nombre accesible. La consulta de contenedor mide la caja SIN
- *   el padding: a 1280 px con la barra lateral son 956 px, y con 60 rem
- *   (960) la fila no salía nunca (medido 10-10).
- * - Siempre hay un botón «Accesos» con TODOS los que el rol ve; a 400 px es
- *   lo único que se ve (no amontona la cabecera). Desde ahí se eligen los de
- *   la barra («Elegir los de la barra»).
- * - Sin ningún acceso permitido (rol sin confirmar, o un rol que no ve
- *   ninguno), no se dibuja nada.
+ * - A la vista: Cámaras (si el rol la ve) y el botón «Accesos directos». Los
+ *   demás anclados que la persona elija vuelven a la barra sólo con lugar
+ *   (cabecera ≥ 56 rem: la consulta de contenedor mide la caja SIN el padding,
+ *   956 px a 1280 con la barra lateral; medido 10-10).
+ * - El botón abre un menú con TODOS los accesos del rol (`PanelAccesos`), las
+ *   opciones de Cámaras cuando Cámaras no está en la barra, «Recientes» (lo que
+ *   antes era el reloj suelto de la cabecera) y «Elegir los de la barra».
+ * - Sin accesos ni recientes que mostrar (rol sin confirmar), no se dibuja nada.
  * - Cada acceso abre su módulo EN UN MODAL sobre la pantalla actual
  *   (`AccesoEnModal`, Brandon 10-10): no se navega. El módulo se baja recién
  *   al abrirlo (`next/dynamic` dentro de `AccesoEnModal`).
  * - Cámaras lleva un contador de avisos de movimiento sin ver (la burbuja que
  *   mira en segundo plano, `use-avisos-camaras.ts`); abrir Cámaras los da por
- *   vistos. Si Cámaras no está a la vista, el contador va sobre «Accesos».
- * - En la barra, Cámaras es un menú que se abre al pasar el mouse
- *   (`MenuCamaras`: ver todas en vivo, visitantes de hoy, sonido…); sin la
- *   barra, esas mismas opciones van debajo de la grilla del panel.
+ *   vistos. Si Cámaras no está a la vista, el contador va sobre el botón.
+ * - En la barra, Cámaras es un menú (`MenuCamaras`: ver todas en vivo,
+ *   visitantes de hoy, sonido…).
  */
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, LayoutGrid, Pin } from "@buleje/design-system/icons";
+import { LayoutGrid } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { useRecientes } from "@/hooks/use-recientes-panel";
+import { entradaDeUrl } from "@/lib/admin/recientes-panel";
 import { cn } from "@/lib/utils";
+import { etiquetaDeTab } from "@/components/admin/buscador/indice-modulos";
 import type { AccesoRapido } from "./accesos-rapidos";
 import { useAccesosRapidos } from "./use-accesos-rapidos";
-import { ContadorAvisos, FilasCamarasAccesos, TONO_CONTADOR } from "./AvisosCamarasUI";
+import { ContadorAvisos } from "./AvisosCamarasUI";
 import MenuCamaras from "./MenuCamaras";
 import type { OpcionCamaras } from "./opciones-camaras";
+import PanelAccesos from "./PanelAccesos";
 import { marcarVistosAvisosCamaras } from "./use-avisos-camaras";
 import { useCamarasCabecera } from "./use-camaras-cabecera";
 
@@ -50,10 +55,16 @@ const CLARO =
 // En celular la cabecera es SIEMPRE clara (AdminTopHeader): el tono oscuro sólo desde sm.
 const OSCURO = cn(CLARO, "sm:text-white/70 sm:hover:bg-white/10 sm:hover:text-white");
 
+/** El lugar donde estás, para no ofrecerlo entre los recientes. */
+const lugarActual = () =>
+  entradaDeUrl(window.location.pathname + window.location.search, etiquetaDeTab)?.href ?? null;
+
 export default function AccesosRapidos({ onDarkHeader = false }: Props) {
   const { permitidos, enLaBarra, anclados, alternarAnclado } = useAccesosRapidos();
+  const { recientes, listo, borrar } = useRecientes();
   const [abierto, setAbierto] = useState(false);
   const [eligiendo, setEligiendo] = useState(false);
+  const [aca, setAca] = useState<string | null>(null);
   const [enModal, setEnModalCrudo] = useState<AccesoRapido | null>(null);
   const cerrarModal = useCallback(() => setEnModalCrudo(null), []);
   /* Abrir Cámaras = mirar: los avisos sin ver quedan vistos. */
@@ -63,7 +74,7 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
   }, []);
   const camaras = permitidos.find((a) => a.id === "camaras") ?? null;
   const cam = useCamarasCabecera(camaras, setEnModal);
-  /* El contador va sobre «Accesos» si Cámaras no está en la barra, o la barra no entra (< 56 rem). */
+  /* Cámaras va a la vista en todo ancho: si está en la barra, el contador es suyo. */
   const camarasEnBarra = enLaBarra.some((a) => a.id === "camaras");
   const raizRef = useRef<HTMLDivElement>(null);
   const botonRef = useRef<HTMLButtonElement>(null);
@@ -87,31 +98,48 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
     };
   }, [abierto]);
 
-  if (permitidos.length === 0) return null;
+  if (permitidos.length === 0 && !listo) return null;
   const tono = onDarkHeader ? OSCURO : CLARO;
 
-  /* Desde el menú: el foco vuelve al botón «Accesos» ANTES de abrir, así el
-     modal lo devuelve ahí al cerrar (el ítem del menú ya no existe). */
-  const abrirDesdeMenu = (a: AccesoRapido) => {
+  /* Desde el menú: el foco vuelve al botón ANTES de abrir, así el modal lo
+     devuelve ahí al cerrar (el ítem del menú ya no existe). */
+  const cerrarMenu = () => {
     setAbierto(false);
     botonRef.current?.focus();
+  };
+  const abrirDesdeMenu = (a: AccesoRapido) => {
+    cerrarMenu();
     setEnModal(a);
   };
   const elegirDeCamaras = (o: OpcionCamaras) => {
-    setAbierto(false);
-    botonRef.current?.focus();
+    cerrarMenu();
     o.accion();
   };
+  /* Volver sin recargar: la pantalla de donde sales conserva su búsqueda y filtros. */
+  const volverA = (href: string) => {
+    setAbierto(false);
+    irAEnlace(href);
+  };
+  const borrarRecientes = () => {
+    borrar();
+    cerrarMenu();
+  };
+  const etiqueta =
+    cam.sinVer > 0 && !camarasEnBarra
+      ? `Accesos directos, ${cam.sinVer} ${cam.sinVer === 1 ? "aviso" : "avisos"} de cámaras sin ver`
+      : "Accesos directos";
 
   return (
     <div className="flex shrink-0 items-center gap-1">
       {enLaBarra.length > 0 && (
-        <ul className="hidden items-center gap-1 @min-[56rem]:flex" aria-label="Accesos anclados">
-          {enLaBarra.map((a) => (
-            <li key={a.id}>
-              {a.id === "camaras" ? (
+        <ul className="flex items-center gap-1" aria-label="Accesos anclados">
+          {enLaBarra.map((a) =>
+            a.id === "camaras" ? (
+              <li key={a.id}>
                 <MenuCamaras acceso={a} cam={cam} className={BOTON} tono={tono} />
-              ) : (
+              </li>
+            ) : (
+              <li key={a.id} className="hidden @min-[56rem]:block">
                 <AdminTooltip content={`${a.label} · ${a.hint}`} side="bottom" className="text-sm">
                   <button
                     type="button"
@@ -123,29 +151,26 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
                     <a.icon className="h-5 w-5" aria-hidden />
                   </button>
                 </AdminTooltip>
-              )}
-            </li>
-          ))}
+              </li>
+            ),
+          )}
         </ul>
       )}
 
       {/* `max-sm:static`: en celular el menú se ancla a la cabecera entera (borde a borde), no al botón. */}
       <div ref={raizRef} className="relative max-sm:static">
-        <AdminTooltip content="Accesos rápidos" side="bottom" className="text-sm">
+        <AdminTooltip content="Accesos directos" side="bottom" className="text-sm">
           <button
             ref={botonRef}
             type="button"
             onClick={() => {
               setEligiendo(false);
+              if (!abierto) setAca(lugarActual());
               setAbierto((v) => !v);
             }}
             aria-haspopup="menu"
             aria-expanded={abierto}
-            aria-label={
-              cam.sinVer > 0
-                ? `Accesos rápidos, ${cam.sinVer} ${cam.sinVer === 1 ? "aviso" : "avisos"} de cámaras sin ver`
-                : "Accesos rápidos"
-            }
+            aria-label={etiqueta}
             className={cn(
               BOTON,
               "relative",
@@ -155,97 +180,27 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
             )}
           >
             <LayoutGrid className="h-5 w-5" aria-hidden />
-            <ContadorAvisos n={cam.sinVer} className={cn(camarasEnBarra && "@min-[56rem]:hidden")} />
+            {!camarasEnBarra && <ContadorAvisos n={cam.sinVer} />}
           </button>
         </AdminTooltip>
 
         {abierto && (
-          <div
-            role="menu"
-            aria-label="Accesos rápidos"
-            className={cn(
-              "absolute left-0 top-full z-50 mt-2 w-80 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]",
-              "max-sm:left-3 max-sm:right-3 max-sm:w-auto",
-            )}
-          >
-            <p className="px-2 pb-2 pt-1 text-sm font-bold text-[var(--text-primary)]">
-              {eligiendo ? "Elige los de la barra" : "Accesos rápidos"}
-            </p>
-            <div className="grid grid-cols-2 gap-1">
-              {permitidos.map((a) => {
-                const anclado = anclados.has(a.id);
-                return (
-                  <button
-                    key={a.id}
-                    type="button"
-                    role={eligiendo ? "menuitemcheckbox" : "menuitem"}
-                    aria-checked={eligiendo ? anclado : undefined}
-                    title={a.hint}
-                    onClick={() => (eligiendo ? alternarAnclado(a.id) : abrirDesdeMenu(a))}
-                    className={cn(
-                      "relative flex min-h-14 items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm font-semibold text-[var(--text-primary)] transition-colors",
-                      "hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
-                      eligiendo &&
-                        anclado &&
-                        "bg-[var(--accent)]/10 ring-1 ring-[var(--accent)]/40",
-                    )}
-                  >
-                    <a.icon
-                      className="h-5 w-5 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                      aria-hidden
-                    />
-                    <span className="min-w-0 flex-1 leading-tight">{a.label}</span>
-                    {a.id === "camaras" && !eligiendo && cam.sinVer > 0 && (
-                      <span className={cn("shrink-0 rounded-full px-1.5 text-sm font-bold tabular-nums", TONO_CONTADOR)}>
-                        {cam.sinVer > 9 ? "9+" : cam.sinVer}
-                        <span className="sr-only"> sin ver</span>
-                      </span>
-                    )}
-                    {eligiendo ? (
-                      <span
-                        aria-hidden
-                        className={cn(
-                          "grid h-5 w-5 shrink-0 place-items-center rounded-md border",
-                          anclado
-                            ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                            : "border-[var(--rule-strong)]",
-                        )}
-                      >
-                        {anclado && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
-                      </span>
-                    ) : (
-                      anclado && (
-                        <Pin
-                          className="h-4 w-4 shrink-0 text-[var(--text-secondary)]"
-                          aria-label="En la barra"
-                        />
-                      )
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {camaras && !eligiendo && (
-              <FilasCamarasAccesos
-                cam={cam}
-                alElegir={elegirDeCamaras}
-                className={cn(camarasEnBarra && "@min-[56rem]:hidden")}
-              />
-            )}
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => setEligiendo((v) => !v)}
-              className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-            >
-              {eligiendo ? (
-                <Check className="h-4 w-4" aria-hidden />
-              ) : (
-                <Pin className="h-4 w-4" aria-hidden />
-              )}
-              {eligiendo ? "Listo" : "Elegir los de la barra"}
-            </button>
-          </div>
+          <PanelAccesos
+            permitidos={permitidos}
+            anclados={anclados}
+            eligiendo={eligiendo}
+            onAlternarEligiendo={() => setEligiendo((v) => !v)}
+            onAlternarAnclado={alternarAnclado}
+            onAbrir={abrirDesdeMenu}
+            cam={cam}
+            opcionesDeCamaras={camaras !== null && !camarasEnBarra}
+            onElegirDeCamaras={elegirDeCamaras}
+            recientes={
+              listo ? { lista: recientes.filter((r) => r.href !== aca), hayGuardados: recientes.length > 0 } : null
+            }
+            onVolverA={volverA}
+            onBorrarRecientes={borrarRecientes}
+          />
         )}
       </div>
       {enModal && <AccesoEnModal acceso={enModal} onCerrar={cerrarModal} />}

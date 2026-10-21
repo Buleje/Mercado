@@ -9,7 +9,7 @@
 import type { ElementType } from "react";
 import { ArrowRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { ResultadoEnlazable } from "@/components/admin/shared/ResultadoEnlazable";
+import { ResultadoEnlazable, type AtributosDeFila } from "@/components/admin/shared/ResultadoEnlazable";
 import type { SearchResult } from "./indice-modulos";
 
 // ── Highlight de texto coincidente ───────────────────────────────────────────
@@ -60,14 +60,17 @@ interface FilaResultadoProps {
   iconoGrupo: ElementType;
   color: string;
   onElegir: () => void;
+  /** `role="option"`, `id`, `aria-selected`… (buscador en línea de la cabecera). */
+  atributos?: AtributosDeFila;
 }
 
-export function FilaResultado({ r, query, href, seleccionado, iconoGrupo, color, onElegir }: FilaResultadoProps) {
+export function FilaResultado({ r, query, href, seleccionado, iconoGrupo, color, onElegir, atributos }: FilaResultadoProps) {
   const Icon = r.icono ?? iconoGrupo;
   return (
     <ResultadoEnlazable
       href={href}
       onElegir={onElegir}
+      atributos={atributos}
       className={cn(
         // Separador `--rule-soft`: con `--rule-base` cada fila quedaba
         // subrayada y la lista se leía como una tabla rayada.

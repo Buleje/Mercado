@@ -9,23 +9,27 @@
  * con su propio callback) es un botón.
  */
 
-import type { MouseEvent, ReactNode } from "react";
+import type { HTMLAttributes, MouseEvent, ReactNode } from "react";
+
+/** Atributos extra de la fila: `role="option"` + `id` en el buscador en línea, `role="menuitem"` en un menú. */
+export type AtributosDeFila = Omit<HTMLAttributes<HTMLElement>, "className" | "onClick" | "children">;
 
 interface ResultadoEnlazableProps {
   href: string | null;
   onElegir: () => void;
   className?: string;
   children: ReactNode;
+  atributos?: AtributosDeFila;
 }
 
 /** ¿Clic que el navegador tiene que manejar solo? (otra pestaña, ventana, descarga, botón no principal). */
 const esClicDelNavegador = (e: MouseEvent<HTMLAnchorElement>) =>
   e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
 
-export function ResultadoEnlazable({ href, onElegir, className, children }: ResultadoEnlazableProps) {
+export function ResultadoEnlazable({ href, onElegir, className, children, atributos }: ResultadoEnlazableProps) {
   if (!href) {
     return (
-      <button type="button" onClick={onElegir} className={className}>
+      <button type="button" {...atributos} onClick={onElegir} className={className}>
         {children}
       </button>
     );
@@ -36,7 +40,7 @@ export function ResultadoEnlazable({ href, onElegir, className, children }: Resu
     onElegir();
   };
   return (
-    <a href={href} onClick={alClic} className={className}>
+    <a href={href} {...atributos} onClick={alClic} className={className}>
       {children}
     </a>
   );

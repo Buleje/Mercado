@@ -53,7 +53,7 @@ describe("accesos rápidos: destinos", () => {
     },
   );
 
-  it("los anclados por defecto son los medidos: Cámaras, Archivos, Asistencia y Caja", () => {
-    expect(ANCLADOS_POR_DEFECTO).toEqual(["camaras", "archivos", "asistencia", "caja"]);
+  it("en la barra, por defecto, sólo Cámaras (Brandon 20-10: «solo pon el de cámara y de accesos directos»)", () => {
+    expect(ANCLADOS_POR_DEFECTO).toEqual(["camaras"]);
   });
 });

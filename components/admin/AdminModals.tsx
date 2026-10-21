@@ -26,7 +26,7 @@ const SHORTCUT_SECTIONS = [
   {
     title: "General",
     shortcuts: [
-      ["Ctrl + K", "Búsqueda global"],
+      ["Ctrl + K", "Ir al buscador del encabezado"],
       ["Alt + ?", "Panel de atajos"],
       ["Alt + T", "Cambiar tema (claro/oscuro)"],
       ["Alt + S", "Buscar módulo"],

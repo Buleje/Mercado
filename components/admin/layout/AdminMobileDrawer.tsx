@@ -22,6 +22,7 @@ import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import { SECTION_BEFORE, type TabCategory } from "@/app/admin/_lib/tab-categories";
+import { useModoMenuGuardado } from "@/components/admin/layout/sidebar-enlaces";
 import type { AllTabsItem, ResolvedShortcut } from "@/app/admin/_hooks/useSidebarShortcuts";
 
 // Re-exportamos AllTabsItem como TabItem para legibilidad
@@ -114,6 +115,10 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
   useAdminTemplateOverlay();
   const drawerRef = React.useRef<HTMLElement>(null);
   useModalAccesible(drawerRef, { onCerrar: onClose, activo: open });
+  // «Sin categorías» de Personaliza tu navegación: los mismos enlaces, sin
+  // títulos de sección ni de categoría; una línea fina entre grupos (2026-10-20).
+  const sinCategorias = useModoMenuGuardado() === "enlaces";
+  let gruposDibujados = 0;
   return (
     <>
       {/* Mobile nav overlay */}
@@ -151,7 +156,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
             onClick={onClose}
             className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"
           >
-            <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
+            <X className="h-5 w-5 text-[var(--text-secondary)]" />
           </button>
         </div>
 
@@ -190,7 +195,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
           {/* Favorite tabs section */}
           {(favoriteTabItems.length > 0 || customShortcutItems.length > 0) && (
             <div className="mb-2">
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted px-4 mb-1 flex items-center gap-1">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] px-4 mb-1 flex items-center gap-1">
                 <Star className="h-3 w-3" /> Favoritos
               </p>
               {favoriteTabItems.map(({ id, label, icon: Icon }) => (
@@ -201,7 +206,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                     "w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
                       ? "bg-primary text-white "
-                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
+                      : "text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
@@ -223,7 +228,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                   <span className="truncate">{label}</span>
                 </button>
               ))}
-              <div className="h-px bg-[var(--rule-soft)] dark:bg-card-border mx-2 my-1.5" />
+              <div className="h-px bg-[var(--rule-soft)] mx-2 my-1.5" />
             </div>
           )}
 
@@ -232,7 +237,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
             <div className="mb-2">
               <button
                 onClick={onToggleRecentCollapsed}
-                className="w-full text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted px-4 mb-1 flex items-center gap-1 hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] transition-colors"
+                className="w-full text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] px-4 mb-1 flex items-center gap-1 hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] transition-colors"
               >
                 <Clock className="h-3 w-3" /> Recientes
                 {recentCollapsed
@@ -247,14 +252,14 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                     "w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
                       ? "bg-primary text-white "
-                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
+                      : "text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="truncate">{label}</span>
                 </button>
               ))}
-              <div className="h-px bg-[var(--rule-soft)] dark:bg-card-border mx-2 my-1.5" />
+              <div className="h-px bg-[var(--rule-soft)] mx-2 my-1.5" />
             </div>
           )}
 
@@ -272,10 +277,12 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
             );
             if (catTabs.length === 0) return null;
             const sectionLabel = SECTION_BEFORE[category.id];
+            const conLinea = sinCategorias && gruposDibujados++ > 0;
             return (
-              <div key={`cat-${category.id}`} className="mb-2">
-                {sectionLabel && (
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-muted px-4 mt-3 mb-1.5">
+              <div key={`cat-${category.id}`} className={sinCategorias ? "mb-1" : "mb-2"}>
+                {conLinea && <div aria-hidden className="h-px bg-[var(--rule-soft)] mx-4 mb-1.5" />}
+                {sectionLabel && !sinCategorias && (
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] px-4 mt-3 mb-1.5">
                     {sectionLabel}
                   </p>
                 )}
@@ -284,8 +291,8 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                     quedaban dos encabezados apilados sobre un único enlace
                     ("INICIO" → "Inicio" → Inicio) y en 390px eso come toda la
                     pantalla. */}
-                {catTabs.length > 1 && (
-                  <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted px-4 mb-1 flex items-center gap-1.5">
+                {catTabs.length > 1 && !sinCategorias && (
+                  <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] px-4 mb-1 flex items-center gap-1.5">
                     <CategoryIcon className="h-3 w-3 shrink-0" />
                     {category.label}
                   </p>
@@ -298,7 +305,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                 "group w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold transition-all mb-1",
                 tab === id
                   ? "bg-primary text-white "
-                  : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
+                  : "text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "
               )}
             >
               <Icon className="h-5 w-5 shrink-0" />
@@ -393,7 +400,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                     "flex-1 flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium transition-all",
                     tab === s.id
                       ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
+                      : "text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "
                   )}
                 >
                   <s.icon className="h-4 w-4 shrink-0" />

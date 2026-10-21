@@ -13,6 +13,12 @@
  * Vender, Pedidos, Ingresos de madera y el Asistente quedan en el menú
  * «Accesos»; cada uno se ancla o se quita desde ahí (se recuerda por navegador).
  *
+ * Desde el 20-10 (Brandon: «quita los íconos de asistencia, caja y abrir hace
+ * poco y solo pon el de cámara y de accesos directos») a la vista va SÓLO
+ * Cámaras; Archivos, Asistencia, Caja y los demás siguen en el menú, y quien
+ * quiera alguno en la barra lo ancla desde ahí. La preferencia guardada se
+ * migró una vez (`use-accesos-rapidos`, clave v2).
+ *
  * Cada acceso abre su módulo EN UN MODAL sobre la pantalla donde estás
  * (`AccesoEnModal`), no navega: Brandon 10-10, «que salga su versión modal
  * ahí mismo… no que se vaya a la página».
@@ -129,12 +135,7 @@ export const ACCESOS: readonly AccesoRapido[] = [
   },
 ];
 
-export const ANCLADOS_POR_DEFECTO: readonly AccesoId[] = [
-  "camaras",
-  "archivos",
-  "asistencia",
-  "caja",
-];
+export const ANCLADOS_POR_DEFECTO: readonly AccesoId[] = ["camaras"];
 
 const IDS: ReadonlySet<string> = new Set(ACCESOS.map((a) => a.id));
 export const esAccesoId = (x: unknown): x is AccesoId => typeof x === "string" && IDS.has(x);

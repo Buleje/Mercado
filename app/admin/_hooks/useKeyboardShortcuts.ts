@@ -102,11 +102,13 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig): void {
         return;
       }
 
-      // Alt + S → enfocar input de búsqueda
+      // Alt + S → enfocar el buscador de la PANTALLA. El de la cabecera
+      // (`data-buscador-panel`, 20-10) va primero en el DOM y se lo llevaría:
+      // ése tiene su Ctrl+K.
       if (e.key === "s" && e.altKey) {
         e.preventDefault();
         const searchInput = document.querySelector(
-          'input[type="text"][placeholder*="Buscar"], input[type="search"]'
+          'input[type="text"][placeholder*="Buscar"]:not([data-buscador-panel]), input[type="search"]:not([data-buscador-panel])'
         ) as HTMLInputElement | null;
         searchInput?.focus();
         return;
