@@ -213,7 +213,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   // los editaba Mi Tienda (Básico); lo demás de Canales va con <PermisoDe>.
   "pagina-inicio": [
     { key: "apariencia", label: "Apariencia", hint: "Logo, colores, tipografía, portada, contacto y ajustes finos de tu tienda", origen: ["pagina-inicio", "store-customizer"] },
-    { key: "contenido", label: "Contenido", hint: "Secciones, banners y promociones del inicio; tu marca en el marketplace", origen: ["pagina-inicio"] },
+    { key: "contenido", label: "Contenido", hint: "Secciones y promociones del inicio de tu tienda; tu marca y banners en el marketplace", origen: ["pagina-inicio"] },
     { key: "paginas", label: "Páginas", hint: "Crear, editar y publicar páginas propias (Ofertas, Nosotros…) armadas con bloques", origen: ["pagina-inicio"] },
     { key: "redes", label: "Redes y medición", hint: "Meta, TikTok y Google Analytics, y de dónde llegan las visitas de tu tienda", origen: ["canales", "pagina-inicio"] },
   ],
@@ -338,7 +338,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   // `VISTAS_LOCALES_POR_MODULO`: el buscador ya puede ofrecer sus vistas.
   marketplace: [
     { key: "resumen", label: "Resumen", hint: "Cómo te va en el marketplace" },
-    { key: "tienda", label: "Mi Tienda Personal", hint: "Cómo se ve tu tienda dentro del marketplace" },
+    { key: "tienda", label: "Ficha de tu tienda", hint: "Nombre, logo, zonas y horario de tu tienda dentro del marketplace (antes «Mi Tienda Personal»)" },
     { key: "productos", label: "Productos", hint: "Qué productos tuyos están publicados" },
     { key: "ordenes", label: "Órdenes", hint: "Los pedidos que entraron por el marketplace" },
     { key: "comisiones", label: "Comisiones", hint: "Lo que cobra la plataforma por cada venta" },
@@ -494,7 +494,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "apariencia", key: "avanzado", label: "Avanzado", hint: "Tipografía fina, favicon, CSS propio y cómo sales en Google" },
     { vista: "contenido", key: "sections", label: "Secciones", hint: "El orden de los bloques de la página" },
     { vista: "contenido", key: "branding", label: "Marca en el marketplace", hint: "Logo y banner de tu tienda en el directorio del marketplace" },
-    { vista: "contenido", key: "banners", label: "Banners", hint: "Las imágenes grandes del inicio" },
+    { vista: "contenido", key: "banners", label: "Banners en el marketplace", hint: "Las imágenes de la franja de tu ficha en el marketplace (tu tienda propia no las muestra)" },
     { vista: "contenido", key: "promotions", label: "Promociones del inicio", hint: "Qué ofertas se destacan" },
   ],
   // Configuración › Sistema (ola 2): lo que antes eran las pestañas

@@ -62,7 +62,7 @@ export function SeccionPedidosCliente({
       )}
       <Bloque
         icon={<MessageSquare className="text-primary" />}
-        title="Cómo te piden"
+        title="Qué datos te dejan al pedir"
         abierto
         resumen={`${activas} de ${OPCIONES.length} activadas`}
         description="Lo que tu cliente ve y hace en tu tienda al pedirte. Apaga lo que no necesites; se aplica al guardar."

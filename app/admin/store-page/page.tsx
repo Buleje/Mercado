@@ -72,8 +72,10 @@ type TabConfig = {
 const TABS: TabConfig[] = [
   { id: "sections",    label: "Secciones",               shortLabel: "Secciones", icon: Layers },
   // Se queda acá hasta la ola 4, que la lleva a Marketplace › Mi tienda en el marketplace.
-  { id: "branding",    label: "Marca en el marketplace", shortLabel: "Marca",   icon: Sparkles },
-  { id: "banners",     label: "Banners",                 shortLabel: "Banners", icon: Images },
+  // 20-10: sin `shortLabel` («Marca», «Banners» solos parecían de tu tienda): el riel dice
+  // que van al marketplace (medido en lib/admin/alcance-tienda) y «Más ▾» recoge lo que no entre.
+  { id: "branding",    label: "Marca en el marketplace", icon: Sparkles },
+  { id: "banners",     label: "Banners en el marketplace", icon: Images },
   { id: "promotions",  label: "Promociones del inicio",  shortLabel: "Promociones", icon: Megaphone },
 ];
 

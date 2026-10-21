@@ -89,16 +89,16 @@ describe("SeccionFormatoTienda", () => {
   it("con propia: avisa arriba con su nombre y las opciones siguen elegibles", async () => {
     conRespuesta({ id: "pagina-musa", nombre: "Musa — belleza profesional" });
     const onChange = vi.fn();
-    render(<SeccionFormatoTienda valor={{ formato: "tienda", pedido: "checkout" }} whatsapp="" onChange={onChange} />);
+    render(<SeccionFormatoTienda valor={{ formato: "tienda" }} onChange={onChange} />);
     const aviso = await screen.findByTestId("formato-pagina-propia");
     expect(aviso.textContent).toContain("Tu tienda usa su página propia (Musa — belleza profesional). Este formato se usa si la apagas.");
     await userEvent.click(screen.getByRole("radio", { name: /Clásico/ }));
-    expect(onChange).toHaveBeenCalledWith({ formato: "clasico", pedido: "checkout" });
+    expect(onChange).toHaveBeenCalledWith({ formato: "clasico" });
   });
 
   it("sin propia (o si la consulta falla): sin aviso, como antes", async () => {
     conRespuesta(null);
-    render(<SeccionFormatoTienda valor={{ formato: "tienda", pedido: "checkout" }} whatsapp="" onChange={vi.fn()} />);
+    render(<SeccionFormatoTienda valor={{ formato: "tienda" }} onChange={vi.fn()} />);
     await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/admin/store-customizer/pagina-propia", expect.anything()));
     expect(screen.queryByTestId("formato-pagina-propia")).toBeNull();
   });

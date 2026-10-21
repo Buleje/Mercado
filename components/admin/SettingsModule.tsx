@@ -36,6 +36,7 @@ import type { StoreMode } from "@/lib/jsondb";
 import dynamic from "next/dynamic";
 import { AlertTriangle, SlidersHorizontal } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { EtiquetaAlcance } from "@/components/admin/shared/EtiquetaAlcance";
 import Plegable from "@/components/admin/shared/Plegable";
 import { PermisoDe } from "@/components/admin/shared/PermisoDe";
 import { TABS, IDS_AJUSTES, filtrarSecciones, type SeccionAjustes } from "@/components/admin/settings/secciones";
@@ -168,11 +169,15 @@ export default function SettingsModule({
             description: "Tu negocio, cobros, delivery, tienda, plan, usuarios, tu panel y el sistema",
             icon: SlidersHorizontal,
             actions: (
-              <BuscadorAjustes
-                valor={searchQuery}
-                onCambiar={setSearchQuery}
-                onIrAPrimera={() => { if (encontradas[0]) irASeccion(encontradas[0].id); }}
-              />
+              <>
+                {/* 20-10: a quién le cambia la sección (lib/admin/alcance-tienda); Plan, Usuarios, Mi panel y Sistema no llevan. */}
+                <EtiquetaAlcance tab="config" vista={activeSection} />
+                <BuscadorAjustes
+                  valor={searchQuery}
+                  onCambiar={setSearchQuery}
+                  onIrAPrimera={() => { if (encontradas[0]) irASeccion(encontradas[0].id); }}
+                />
+              </>
             ),
           }}
           tabs={[]}

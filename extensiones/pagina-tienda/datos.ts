@@ -102,7 +102,8 @@ const cargar = cache(async (tenantId: string, slug: string): Promise<DatosTienda
       heroe: armarHeroe(pagina, negocio),
       circulos: armarCirculos(categorias, lista, st.categoryBanners, ajustes?.categoryOrder),
       confianza: armarConfianza(negocio, st.trustChips),
-      pedido: plantilla.pedido,
+      // Única fuente (20-10): `Settings.mode`, el mismo de la tienda clásica (Ajustes › Datos del negocio y la tarjeta «Cómo te piden tus clientes»).
+      pedido: ajustes?.mode === "whatsapp" ? "whatsapp" : "checkout",
       bloques: plantilla.bloques ?? BLOQUES_POR_DEFECTO,
     },
     productos: lista,

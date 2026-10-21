@@ -22,6 +22,7 @@ import { cambiosDe, cuantos } from "@/components/admin/store-customizer/cambios"
 import { saludDeLaTienda } from "@/components/admin/store-customizer/salud";
 import { SeccionPedidosCliente } from "@/components/admin/store-customizer/SeccionPedidosCliente";
 import { SeccionFormatoTienda } from "@/components/admin/store-customizer/SeccionFormatoTienda";
+import { TarjetaComoTePiden } from "@/components/admin/store-customizer/TarjetaComoTePiden";
 import { leerPlantilla, type PlantillaTienda } from "@/extensiones/pagina-tienda/config";
 import { leerConfigPedidos, conConfigPedidos } from "@/lib/tienda-cliente/config";
 import type { ConfigPedidosCliente } from "@/lib/tienda-cliente/contrato";
@@ -1800,9 +1801,10 @@ export default function StoreCustomizer() {
                 tienda + resultado de Google) mientras tipea. */}
             {activeTab === "identidad" && (
               <div className="space-y-3">
+              {/* 20-10: «Cómo te piden» arriba de todo, a la vista (Settings.mode, se guarda al elegir). */}
+              <TarjetaComoTePiden whatsapp={theme.whatsapp} />
               <SeccionFormatoTienda
                 valor={leerPlantilla(theme)}
-                whatsapp={theme.whatsapp}
                 onChange={(p) => setTheme((prev) => ({ ...prev, tiendaPlantilla: p }))}
               />
               <div className="grid grid-cols-1 items-start gap-6 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 lg:grid-cols-[1fr_400px]">
@@ -2043,11 +2045,14 @@ export default function StoreCustomizer() {
             )}
 
             {activeTab === "pedidos" && (
-              <SeccionPedidosCliente
-                config={leerConfigPedidos(theme)}
-                whatsapp={theme.whatsapp}
-                onChange={(c) => setTheme((prev) => conConfigPedidos(prev as unknown as Record<string, unknown>, c) as unknown as StoreTheme)}
-              />
+              <div className="space-y-3">
+                <TarjetaComoTePiden whatsapp={theme.whatsapp} enPedidos />
+                <SeccionPedidosCliente
+                  config={leerConfigPedidos(theme)}
+                  whatsapp={theme.whatsapp}
+                  onChange={(c) => setTheme((prev) => conConfigPedidos(prev as unknown as Record<string, unknown>, c) as unknown as StoreTheme)}
+                />
+              </div>
             )}
 
             {/* ── TAB: COLORES ───────────────────────────────────────── */}

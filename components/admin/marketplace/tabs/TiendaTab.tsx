@@ -15,7 +15,7 @@ import { TiendaComisionImagen } from "@/components/admin/marketplace/tienda/Tien
 import { TiendaAside } from "@/components/admin/marketplace/tienda/TiendaAside";
 
 // ─────────────────────────────────────────────
-// Sub-tab: Mi Tienda Personal — la ficha de tu tienda DENTRO del marketplace
+// Sub-tab: Ficha de tu tienda (antes «Mi Tienda Personal») — la ficha de tu tienda DENTRO del marketplace
 // (modelo Store: nombre, descripción, logo, categoría, zonas, horario,
 // vacaciones, publicada). No es Tienda online › Apariencia: esa edita los
 // colores y la portada de tu web propia (/t/tu-negocio).

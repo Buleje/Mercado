@@ -23,6 +23,7 @@ import { Store, Package, ShoppingCart, DollarSign, RefreshCw, TrendingUp, BarCha
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { EtiquetaAlcance } from "@/components/admin/shared/EtiquetaAlcance";
 import { useVistaModulo, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import { Spinner, MODULE_ID } from "@/components/admin/marketplace/shared";
@@ -45,14 +46,14 @@ type Vista = "resumen" | "tienda" | "productos" | "ordenes" | "comisiones" | "pr
 
 const TABS: readonly (AdminTab & { id: Vista })[] = [
   { id: "resumen",      label: "Resumen",      icon: BarChart3 },
-  { id: "tienda",       label: "Mi Tienda Personal",    icon: Store },
+  { id: "tienda",       label: "Ficha de tu tienda",    icon: Store },
   { id: "productos",    label: "Productos",    icon: Package },
   { id: "ordenes",      label: "Órdenes",      icon: ShoppingCart },
   { id: "comisiones",   label: "Comisiones",   icon: DollarSign },
   { id: "precios",      label: "Precios",      icon: TrendingUp },
 ];
 
-/** Mi Tienda Personal lleva su sección en `?sub=`: al salir, no viaja a la vista siguiente. */
+/** Ficha de tu tienda (antes «Mi Tienda Personal») lleva su sección en `?sub=`: al salir, no viaja a la vista siguiente. */
 const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { tienda: ["sub"] };
 
 const AYUDA_DEL_HUB =
@@ -102,15 +103,18 @@ function HubMarketplace({ initialTab }: { initialTab?: string }) {
           description: AYUDA_DEL_HUB,
           icon: Store,
           actions: (
-            <ActionMenu
-              label="Más"
-              icon={MoreHorizontal}
-              actions={acciones}
-              soloIcono
-              size="md"
-              className="w-12 shrink-0"
-              title={accionesVista.length > 0 ? `${accionesVista.map((a) => a.label).join(", ")} y actualizar` : "Actualizar"}
-            />
+            <>
+              <EtiquetaAlcance tab="marketplace" vista={vista} />
+              <ActionMenu
+                label="Más"
+                icon={MoreHorizontal}
+                actions={acciones}
+                soloIcono
+                size="md"
+                className="w-12 shrink-0"
+                title={accionesVista.length > 0 ? `${accionesVista.map((a) => a.label).join(", ")} y actualizar` : "Actualizar"}
+              />
+            </>
           ),
         }}
         tabs={tabs}

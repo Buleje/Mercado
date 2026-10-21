@@ -6,6 +6,7 @@ import { Palette, Globe, FileText, Share2, Store } from "@buleje/design-system/i
 import { useVistaModulo, type AliasDeVista, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { EtiquetaAlcance } from "@/components/admin/shared/EtiquetaAlcance";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 // ── Tienda online (panel unificado, ola 2 — 10-10) ───────────────────────────
@@ -90,6 +91,8 @@ function HubTienda({ initialTab }: { initialTab?: string }) {
           title: "Tienda online",
           description: "Cómo se ve tu tienda, qué muestra, sus páginas y de dónde llegan tus visitas.",
           icon: Store,
+          // 20-10: a quién le cambia esta pantalla (tu tienda, el marketplace o los dos); medido en lib/admin/alcance-tienda.
+          actions: <EtiquetaAlcance tab="pagina-inicio" vista={vista} />,
         }}
         tabs={tabs}
         activeTab={vista}

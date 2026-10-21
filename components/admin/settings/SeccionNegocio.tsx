@@ -57,7 +57,7 @@ export function SeccionNegocio({ aj }: { aj: AjustesEstado }) {
 
   const redes = [socialLinks.facebook && "Facebook", socialLinks.instagram && "Instagram", socialLinks.tiktok && "TikTok"].filter(Boolean);
   const resumenTienda = [
-    mode === "whatsapp" ? "Pedidos por WhatsApp" : "Checkout en la tienda",
+    mode === "whatsapp" ? "Pedidos por WhatsApp" : "Pedidos con formulario de compra",
     TIPOS.find((t) => t.value === businessType)?.label,
     currency === "USD" ? "Dólares" : "Soles",
     hours.trim() || "sin horario",
@@ -216,7 +216,7 @@ export function SeccionNegocio({ aj }: { aj: AjustesEstado }) {
                     : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]",
                 )}>
                   {m === "whatsapp" ? <MessageCircle className="h-4 w-4 shrink-0" /> : <ShoppingCart className="h-4 w-4 shrink-0" />}
-                  <span className="truncate">{m === "whatsapp" ? "WhatsApp" : "Checkout"}</span>
+                  <span className="min-w-0 text-center leading-tight">{m === "whatsapp" ? "WhatsApp" : "Formulario de compra"}</span>
                 </button>
               ))}
             </div>
