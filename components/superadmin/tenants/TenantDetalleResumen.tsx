@@ -1,125 +1,130 @@
 "use client";
 
-import { Loader2, Copy, KeyRound, ShoppingBag, Clock, Lock } from "@buleje/design-system/icons";
+import type { ReactNode } from "react";
+import { Loader2, Copy, Lock, Clock, ShoppingBag, Globe, Mail, CreditCard, Timer, ArrowRight } from "@buleje/design-system/icons";
+import { CardTitle, StatCard } from "@buleje/design-system";
+import { button } from "@/components/ui-system/button-variants";
 import type { TenantRow } from "@/lib/superadmin-types";
-import { fmtD, fmtMoney } from "@/components/superadmin/tenants/tenant-detalle-shared";
+import { PlanBadge } from "@/components/superadmin/_shared";
+import { ChipEstado } from "@/components/superadmin/tenants/TenantDetalleChip";
+import { diasHasta, fmtDia, fmtMoney } from "@/components/superadmin/tenants/tenant-detalle-shared";
 import type { TenantDetalle } from "@/components/superadmin/tenants/useTenantDetalle";
 
-/** Pestaña «Resumen» de la ficha rápida: cifras del mes, prueba, marketplace y credenciales. */
-export function TenantDetalleResumen({ t, d }: { t: TenantRow; d: TenantDetalle }) {
-  const {
-    storeInfo, trialBusy, handleExtendTrial, handleCopyInfo, credCopied, setTab,
-  } = d;
+/** Una fila de «Estado de la cuenta»: etiqueta a la izquierda (arriba a 400 px), valor y acción a la derecha. */
+function Fila({ icon: Icon, etiqueta, children }: { icon: typeof Clock; etiqueta: string; children: ReactNode }) {
   return (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                {[
-                  {
-                    value: t._count.AdminUser,
-                    label: "Usuarios",
-                    color: "text-[var(--text-primary)]",
-                  },
-                  {
-                    value: t.usage?.products ?? 0,
-                    label: "Productos",
-                    color: "text-[var(--text-primary)]",
-                  },
-                  {
-                    value: t.monthOrders ?? t.usage?.ordersThisMonth ?? 0,
-                    label: "Pedidos/mes",
-                    color: "text-[var(--data-success-500)]",
-                  },
-                  {
-                    value: fmtMoney(t.monthRevenue ?? 0),
-                    label: "Ventas/mes",
-                    color: "text-[var(--data-success-500)]",
-                  },
-                  {
-                    value: fmtMoney(t.monthProfit ?? 0),
-                    label: "Ganancia",
-                    color:
-                      (t.monthProfit ?? 0) >= 0
-                        ? "text-[var(--accent-dark)] dark:text-[var(--accent)]"
-                        : "text-[var(--data-error-500)]",
-                  },
-                ].map(({ value, label, color }) => (
-                  <div
-                    key={label}
-                    className="bg-[var(--surface-sunken)]/50 rounded-xl p-3 text-center"
-                  >
-                    <div className={`text-lg font-bold ${color}`}>{value}</div>
-                    <div className="text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] text-[length:var(--ts-xs)] mt-0.5">
-                      {label}
-                    </div>
-                  </div>
-                ))}
-              </div>
+    <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <dt className="flex shrink-0 items-center gap-2 text-sm text-[var(--text-secondary)]">
+        <Icon className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden="true" /> {etiqueta}
+      </dt>
+      <dd className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">{children}</dd>
+    </div>
+  );
+}
 
-              {/* Trial + extender (C3) */}
-              <div className="flex items-center justify-between gap-2 bg-[var(--surface-sunken)]/50 rounded-xl px-3 py-2.5">
-                <span className="text-sm text-[var(--text-secondary)]">
-                  Trial:{" "}
-                  <strong className="text-[var(--text-primary)]">{fmtD(t.trialEndsAt)}</strong>
-                </span>
-                <div className="flex items-center gap-1.5">
-                  {[7, 14, 30].map((d) => (
-                    <button
-                      key={d}
-                      onClick={() => handleExtendTrial(d)}
-                      disabled={trialBusy}
-                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 h-8 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent-600)] disabled:opacity-50"
-                    >
-                      {trialBusy ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Clock className="h-3 w-3" />
-                      )}{" "}
-                      +{d}d
-                    </button>
-                  ))}
-                </div>
-              </div>
+function textoPrueba(iso: string | null): string {
+  const dias = diasHasta(iso);
+  if (dias === null) return "Sin prueba";
+  if (dias > 1) return `${fmtDia(iso)} · quedan ${dias} días`;
+  if (dias === 1) return `${fmtDia(iso)} · queda 1 día`;
+  if (dias === 0) return `${fmtDia(iso)} · vence hoy`;
+  return `${fmtDia(iso)} · venció hace ${-dias} ${dias === -1 ? "día" : "días"}`;
+}
 
-              {storeInfo && (
-                <div className="bg-[var(--surface-sunken)]/50 rounded-xl p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ShoppingBag className="w-4 h-4 text-[var(--accent)]" />
-                    <span className="text-sm font-semibold text-[var(--text-secondary)]">
-                      Marketplace
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-semibold ${storeInfo.isPublished ? "bg-teal-100 dark:bg-teal-900/40 text-[var(--accent)]" : "bg-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"}`}
-                    >
-                      {storeInfo.isPublished ? "Publicada" : "No publicada"}
-                    </span>
-                  </div>
-                </div>
-              )}
+/** Resumen de `t.avisosCorreo` en una frase + su tono. */
+function resumenAvisos(t: TenantRow): { texto: string; tono: "ok" | "alerta" | "neutro" } | null {
+  const a = t.avisosCorreo;
+  if (!a) return null;
+  if (!a.correo?.trim()) return { texto: "Sin correo: no salen", tono: "alerta" };
+  if (a.pausado) return { texto: "Pausados", tono: "alerta" };
+  return { texto: `${a.activos} de ${a.total} activos`, tono: a.activos > 0 ? "ok" : "neutro" };
+}
 
-              {/* Credenciales */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-[var(--text-tertiary)] flex items-center gap-2">
-                  <KeyRound className="w-4 h-4 text-[var(--accent)]" /> Credenciales y Acceso
-                </h3>
-                <div className="bg-[var(--surface-sunken)]/60 border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button
-                      type="button"
-                      onClick={handleCopyInfo}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-primary)] text-xs font-semibold"
-                    >
-                      <Copy className="w-3.5 h-3.5" /> {credCopied ? "¡Copiado!" : "Copiar info"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTab("credenciales")}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-teal-50 dark:bg-teal-500/40 border border-teal-500 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-semibold"
-                    >
-                      <Lock className="w-3.5 h-3.5" /> Usuarios y contraseñas
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
+/** Pestaña «Resumen» de la ficha rápida: cifras del mes, estado de la cuenta y acceso. */
+export function TenantDetalleResumen({ t, d }: { t: TenantRow; d: TenantDetalle }) {
+  const { storeInfo, trialBusy, handleExtendTrial, handleCopyInfo, credCopied, setTab } = d;
+  const ganancia = t.monthProfit ?? 0;
+  const avisos = resumenAvisos(t);
+  const diasPrueba = diasHasta(t.trialEndsAt);
+
+  return (
+    <div className="space-y-6">
+      <section className="space-y-3">
+        <CardTitle>Este mes</CardTitle>
+        <div className="@container">
+          <div className="grid grid-cols-2 gap-2 @min-[34rem]:grid-cols-3 @min-[52rem]:grid-cols-6 sm:gap-3">
+            <StatCard density="compact" label="Ventas" value={fmtMoney(t.monthRevenue ?? 0)} />
+            <StatCard density="compact" label="Gastos" value={fmtMoney(t.monthExpenses ?? 0)} />
+            <StatCard density="compact" label="Ganancia" value={fmtMoney(ganancia)} emphasis={ganancia < 0 ? "error" : "neutral"} highlight />
+            <StatCard density="compact" label="Pedidos" value={(t.monthOrders ?? t.usage?.ordersThisMonth ?? 0).toLocaleString("es-PE")} />
+            <StatCard density="compact" label="Usuarios" value={t._count.AdminUser.toLocaleString("es-PE")} />
+            <StatCard density="compact" label="Productos" value={(t.usage?.products ?? 0).toLocaleString("es-PE")} />
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <CardTitle>Estado de la cuenta</CardTitle>
+        <dl className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:divide-[var(--rule-base)]">
+          <Fila icon={CreditCard} etiqueta="Plan">
+            <PlanBadge plan={t.plan} />
+            {t.cancelAtPeriodEnd && <ChipEstado tono="alerta">Cancela al cierre del periodo</ChipEstado>}
+          </Fila>
+          <Fila icon={Timer} etiqueta="Prueba">
+            <span className={`text-sm font-semibold ${diasPrueba !== null && diasPrueba <= 3 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-primary)]"}`}>
+              {textoPrueba(t.trialEndsAt)}
+            </span>
+            <span className="flex gap-1.5" role="group" aria-label="Extender la prueba">
+              {[7, 14, 30].map((dias) => (
+                <button
+                  key={dias}
+                  type="button"
+                  onClick={() => void handleExtendTrial(dias)}
+                  disabled={trialBusy}
+                  title={`Extender la prueba ${dias} días`}
+                  className={button({ variant: "secondary", size: "md", className: "px-3.5" })}
+                >
+                  {trialBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Clock className="h-3.5 w-3.5" />}+{dias}d
+                </button>
+              ))}
+            </span>
+          </Fila>
+          <Fila icon={ShoppingBag} etiqueta="Marketplace">
+            {storeInfo ? (
+              <>
+                <ChipEstado tono={storeInfo.isPublished ? "ok" : "neutro"}>{storeInfo.isPublished ? "Publicada" : "No publicada"}</ChipEstado>
+                <span className="text-xs text-[var(--text-secondary)]">{storeInfo._count.products.toLocaleString("es-PE")} productos</span>
+              </>
+            ) : (
+              <span className="text-sm text-[var(--text-secondary)]">Sin tienda en el marketplace</span>
+            )}
+          </Fila>
+          <Fila icon={Mail} etiqueta="Avisos por correo">
+            {avisos && <ChipEstado tono={avisos.tono}>{avisos.texto}</ChipEstado>}
+            {t.avisosCorreo?.esGmail && <ChipEstado tono="acento">Gmail</ChipEstado>}
+            <button type="button" onClick={() => setTab("avisos")} className={button({ variant: "ghost", size: "md", className: "px-3" })}>
+              Ver avisos <ArrowRight className="h-4 w-4" />
+            </button>
+          </Fila>
+          {t.customDomain && (
+            <Fila icon={Globe} etiqueta="Dominio propio">
+              <span className="truncate text-sm font-semibold text-[var(--text-primary)]">{t.customDomain}</span>
+            </Fila>
+          )}
+        </dl>
+      </section>
+
+      <section className="space-y-3">
+        <CardTitle>Acceso</CardTitle>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button type="button" onClick={handleCopyInfo} className={button({ variant: "secondary" })}>
+            <Copy className="h-4 w-4" /> {credCopied ? "¡Copiado!" : "Copiar info"}
+          </button>
+          <button type="button" onClick={() => setTab("credenciales")} className={button({ variant: "secondary" })}>
+            <Lock className="h-4 w-4" /> Usuarios y contraseñas
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }

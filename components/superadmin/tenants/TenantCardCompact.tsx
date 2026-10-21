@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Clock, ExternalLink, ShoppingBag } from "@buleje/design-system/icons";
+import { Bell, Clock, ExternalLink, Eye, ClipboardList, Mail, ShoppingBag } from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
 import { etiquetaDePlan } from "@/lib/billing/plan-tiers";
 import { PendingOrdersModal } from "./PendingOrdersModal";
+import type { TenantCardProps } from "./TenantCard";
+import { TenantCardModal } from "./TenantCardModal";
 
 /**
  * Vista compacta de tenant — Brandon 2026-06-05:
@@ -35,17 +37,19 @@ const HEALTH_TITLE: Record<Health, string> = {
 interface TenantCardCompactProps {
   tenant: TenantRow;
   health: Health;
-  onDetail: (t: TenantRow) => void;
-  onImpersonate: (slug: string) => void;
+  /** Las mismas acciones de la tarjeta completa: «Detalles» las abre en una ventana. */
+  acciones: Omit<TenantCardProps, "tenant" | "health">;
 }
 
 export function TenantCardCompact({
   tenant,
   health,
-  onDetail,
-  onImpersonate,
+  acciones,
 }: TenantCardCompactProps) {
   const t = tenant;
+  const { onDetail, onImpersonate } = acciones;
+  const [tarjetaAbierta, setTarjetaAbierta] = useState(false);
+  const correo = t.avisosCorreo;
   const initials = t.name.slice(0, 2).toUpperCase();
   const pendingCount = t.pendingOrders ?? 0;
   const revenue = t.monthRevenue ?? 0;
@@ -61,17 +65,18 @@ export function TenantCardCompact({
       : null;
 
   return (
+    <>
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onDetail(t)}
+      onClick={() => setTarjetaAbierta(true)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onDetail(t);
+          setTarjetaAbierta(true);
         }
       }}
-      title={`${t.name} — click para ver detalle`}
+      title={`${t.name} — click para ver los detalles`}
       className="group relative cursor-pointer rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-sm)] transition-all hover:-translate-y-0.5 hover:border-[var(--rule-strong)] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
     >
       {/* Identidad: logo + nombre + estado */}
@@ -143,6 +148,15 @@ export function TenantCardCompact({
           S/{revenue.toLocaleString("es-PE", { maximumFractionDigits: 0 })}
         </span>
         <span className="flex-1" />
+        {correo && correo.correo && (
+          <span
+            className={`inline-flex shrink-0 items-center ${correo.pausado ? "text-[var(--text-tertiary)] opacity-60" : "text-[var(--accent)]"}`}
+            title={`${correo.correo} — avisos por correo ${correo.pausado ? "pausados" : `activos (${correo.activos} de ${correo.total})`}`}
+          >
+            <Mail className="h-3.5 w-3.5" aria-label={correo.pausado ? "Avisos por correo pausados" : "Avisos por correo activos"} />
+            {correo.pausado && <span aria-hidden className="-ml-3.5 h-px w-4 rotate-45 bg-current" />}
+          </span>
+        )}
         {daysLeft !== null && (
           <span
             className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums ${
@@ -174,6 +188,26 @@ export function TenantCardCompact({
         )}
       </div>
 
+      {/* Dos botones parejos: la tarjeta completa y la ficha rápida */}
+      <div className="mt-2.5 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setTarjetaAbierta(true); }}
+          title={`Ver la tarjeta completa de ${t.name}`}
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          <Eye className="h-3.5 w-3.5" aria-hidden /> Detalles
+        </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDetail(t); }}
+          title={`Abrir la ficha de ${t.name}`}
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          <ClipboardList className="h-3.5 w-3.5" aria-hidden /> Ficha
+        </button>
+      </div>
+
       {pendingModalOpen && (
         <PendingOrdersModal
           tenantSlug={t.slug}
@@ -182,5 +216,10 @@ export function TenantCardCompact({
         />
       )}
     </div>
+    {/* Fuera de la tarjeta: su clic y su transform (hover) romperían la ventana fija */}
+    {tarjetaAbierta && (
+      <TenantCardModal tenant={t} health={health} acciones={acciones} onClose={() => setTarjetaAbierta(false)} />
+    )}
+    </>
   );
 }

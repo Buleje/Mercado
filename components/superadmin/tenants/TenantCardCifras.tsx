@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { CheckCircle2, Package, Users, Store, AlertTriangle } from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { StatCard } from "@buleje/design-system";
@@ -11,10 +12,12 @@ interface TenantCardCifrasProps {
   t: TenantRow;
   datos: DatosDeTarjeta;
   onViewProducts?: TenantCardProps["onViewProducts"];
+  /** Fila de avisos por correo, entre «Panel con información» y «Uso del plan». */
+  correo?: ReactNode;
 }
 
 /** Cifras del mes, recursos, estado del panel y uso del plan de una tienda. */
-export function TenantCardCifras({ t, datos, onViewProducts }: TenantCardCifrasProps) {
+export function TenantCardCifras({ t, datos, onViewProducts, correo }: TenantCardCifrasProps) {
   const { health, totalUsagePct, fmtMoney, storeInfo, revenue, expenses, profit, hasVisibleAdminData } = datos;
   return (
     <>
@@ -133,6 +136,8 @@ export function TenantCardCifras({ t, datos, onViewProducts }: TenantCardCifrasP
             </div>
           );
         })()}
+
+        {correo}
 
         {/* Plan usage bar */}
         {t.usage && t.limits && (

@@ -1,16 +1,15 @@
 "use client";
 
-import { X, Building2, Loader2, Pencil, Check, MessageSquare } from "@buleje/design-system/icons";
-import Link from "next/link";
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { TenantRow } from "@/lib/superadmin-types";
-import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
-import { PlanBadge, StatusBadge } from "@/components/superadmin/_shared";
 import { TenantHealthTab } from "@/components/superadmin/tenants/TenantHealthTab";
 import type { TabDetalle } from "@/components/superadmin/tenants/tenant-detalle-shared";
 import { useTenantDetalle } from "@/components/superadmin/tenants/useTenantDetalle";
+import { TenantDetalleCabecera } from "@/components/superadmin/tenants/TenantDetalleCabecera";
+import { TenantDetalleNav, etiquetaDeTab } from "@/components/superadmin/tenants/TenantDetalleNav";
 import { TenantDetalleResumen } from "@/components/superadmin/tenants/TenantDetalleResumen";
+import { TenantDetalleAvisos } from "@/components/superadmin/tenants/TenantDetalleAvisos";
 import { TenantDetalleSeguridad } from "@/components/superadmin/tenants/TenantDetalleSeguridad";
 import { TenantDetalleCredenciales } from "@/components/superadmin/tenants/TenantDetalleCredenciales";
 import { TenantDetalleUso, TenantDetalleFacturacion, TenantDetalleActividad, TenantDetalleNotas } from "@/components/superadmin/tenants/TenantDetallePestanas";
@@ -18,18 +17,30 @@ import { TenantDetalleUso, TenantDetalleFacturacion, TenantDetalleActividad, Ten
 interface TenantDetailModalProps {
   tenant: TenantRow;
   onClose: () => void;
-  /** Refresca la lista del padre tras un inline edit / extend trial. */
+  /** Refresca la lista del padre tras un inline edit / extend trial / avisos. */
   onUpdated?: () => void;
   /** Pestaña con que abre (p. ej. «credenciales» al llegar por el candado cerrado). */
   tabInicial?: TabDetalle;
+  /** «Panel admin» con la suplantación de la página (toasts + candado). Sin esto, la ficha suplanta sola. */
+  onImpersonate?: (slug: string) => void | Promise<void>;
 }
 
-export function TenantDetailModal({ tenant, onClose, onUpdated, tabInicial }: TenantDetailModalProps) {
+/** Punto en la pestaña «Avisos por correo» cuando no salen (sin correo o pausados). */
+function avisoDeAvisos(t: TenantRow): Partial<Record<TabDetalle, string>> | undefined {
+  const a = t.avisosCorreo;
+  if (!a) return undefined;
+  if (!a.correo?.trim()) return { avisos: "sin correo" };
+  if (a.pausado) return { avisos: "pausados" };
+  return undefined;
+}
+
+export function TenantDetailModal({ tenant, onClose, onUpdated, tabInicial, onImpersonate }: TenantDetailModalProps) {
   const t = tenant;
   const d = useTenantDetalle(t, onUpdated, tabInicial);
-  const { tab, setTab, editing, setEditing, nameInput, setNameInput, emailInput, setEmailInput, savingEdit, handleSaveEdit } = d;
+  const { tab, setTab, editing, setEditing, setNameInput, setEmailInput, setEnfocarCorreo } = d;
   const cancelarEdicion = () => {
     setEditing(false);
+    setEnfocarCorreo(false);
     setNameInput(t.name);
     setEmailInput(t.ownerEmail ?? "");
   };
@@ -38,165 +49,41 @@ export function TenantDetailModal({ tenant, onClose, onUpdated, tabInicial }: Te
   // cerrando la ficha); sin edición, cierra.
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: () => (editing ? cancelarEdicion() : onClose()) });
-
-  // Ocho pestañas: sólo texto y la ficha a 768 px (con ícono, a 672 px, no entraban y el ícono se aplastaba a 0).
-  const TABS: { id: TabDetalle; label: string }[] = [
-    { id: "resumen", label: "Resumen" },
-    { id: "salud", label: "Salud" },
-    { id: "uso", label: "Uso" },
-    { id: "facturacion", label: "Facturación" },
-    { id: "seguridad", label: "Seguridad" },
-    { id: "credenciales", label: "Credenciales" },
-    { id: "actividad", label: "Actividad" },
-    { id: "notas", label: "Notas" },
-  ];
+  const tituloId = useId();
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- backdrop modal (cierra al click; Escape lo cierra useModalAccesible)
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 backdrop-blur-sm sm:p-4" onClick={onClose}>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- contenedor del modal: stopPropagation, no interactivo */}
       <div
         ref={cajaRef}
         role="dialog"
         aria-modal="true"
-        aria-label={`Ficha de ${t.name}`}
+        aria-labelledby={editing ? undefined : tituloId}
+        aria-label={editing ? `Ficha de ${t.name}` : undefined}
         tabIndex={-1}
-        className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-[var(--shadow-xl)] outline-none"
+        // Alto FIJO: cambiar de pestaña no hace saltar la ventana.
+        className="flex h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] outline-none sm:h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header con inline edit */}
-        <div className="flex items-start justify-between p-5 border-b border-[var(--rule-base)]">
-          <div className="min-w-0 flex-1">
-            {editing ? (
-              <div className="space-y-2">
-                <input
-                  value={nameInput}
-                  onChange={(e) => setNameInput(e.target.value)}
-                  className="w-full h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-                />
-                <input
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="email del dueño"
-                  className="w-full h-8 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleSaveEdit}
-                    disabled={savingEdit}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 h-8 text-xs font-bold text-white disabled:opacity-50"
-                  >
-                    {savingEdit ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Check className="h-3.5 w-3.5" />
-                    )}{" "}
-                    Guardar
-                  </button>
-                  <button
-                    onClick={cancelarEdicion}
-                    className="rounded-lg px-3 h-8 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* El lápiz va AL LADO del título, nunca dentro (ley de la vista). */}
-                <div className="flex items-center gap-2 min-w-0">
-                  <h2 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2 min-w-0">
-                    <Building2 className="w-5 h-5 text-[var(--accent)] shrink-0" aria-hidden="true" />
-                    <span className="truncate">{t.name}</span>
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => setEditing(true)}
-                    title="Editar nombre / email"
-                    aria-label="Editar nombre y email"
-                    className="text-[var(--text-tertiary)] hover:text-[var(--accent)] shrink-0"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
-                  <CodigoTienda codigo={t.codigo} tamano="md" />
-                  <span className="min-w-0 truncate text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] text-xs font-mono">
-                    {t.slug}
-                  </span>
-                </div>
-                {t.ownerEmail && (
-                  <p className="text-[var(--text-tertiary)] text-xs mt-0.5 truncate">
-                    {t.ownerEmail}
-                  </p>
-                )}
-              </>
+        <TenantDetalleCabecera t={t} d={d} tituloId={tituloId} onClose={onClose} cancelarEdicion={cancelarEdicion} onImpersonate={onImpersonate} />
+
+        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+          <TenantDetalleNav tab={tab} setTab={setTab} conAviso={avisoDeAvisos(t)} />
+
+          <section aria-label={etiquetaDeTab(tab)} className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+            {tab === "resumen" && <TenantDetalleResumen t={t} d={d} />}
+            {tab === "salud" && <TenantHealthTab slug={t.slug} />}
+            {tab === "uso" && <TenantDetalleUso t={t} />}
+            {tab === "facturacion" && <TenantDetalleFacturacion t={t} />}
+            {tab === "avisos" && (
+              <TenantDetalleAvisos slug={t.slug} onEditarCorreo={d.editarCorreo} onUpdated={onUpdated} recargarCon={d.guardados} />
             )}
-          </div>
-          <div className="flex items-center gap-2 shrink-0 ml-2">
-            <PlanBadge plan={t.plan} />
-            <StatusBadge active={t.active} />
-            <Link
-              href={`/superadmin/tenants/${t.slug}`}
-              title="Ficha 360 del negocio"
-              className="inline-flex h-8 items-center rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--accent)] hover:bg-primary/10"
-            >
-              Ficha 360
-            </Link>
-            <Link
-              href={`/superadmin/chat?tenant=${t.id}&name=${encodeURIComponent(t.name)}`}
-              title="Chatear con este negocio"
-              className="p-1.5 rounded-lg text-[var(--accent)] hover:bg-primary/10"
-            >
-              <MessageSquare className="w-4 h-4" />
-            </Link>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Cerrar"
-              title="Cerrar (Esc)"
-              className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Tab bar */}
-        <div className="flex gap-0.5 px-3 pt-3 border-b border-[var(--rule-base)] overflow-x-auto">
-          {TABS.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTab(id)}
-              aria-current={tab === id ? "page" : undefined}
-              className={`shrink-0 px-2.5 py-2 text-sm font-bold rounded-t-lg border-b-2 transition-colors whitespace-nowrap ${tab === id ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab content */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5">
-          {tab === "resumen" && <TenantDetalleResumen t={t} d={d} />}
-
-          {tab === "salud" && <TenantHealthTab slug={t.slug} />}
-
-          {tab === "uso" && <TenantDetalleUso t={t} />}
-
-          {tab === "facturacion" && <TenantDetalleFacturacion t={t} />}
-
-          {tab === "seguridad" && <TenantDetalleSeguridad d={d} />}
-
-          {tab === "credenciales" && <TenantDetalleCredenciales t={t} />}
-
-          {tab === "actividad" && <TenantDetalleActividad activity={d.activity} />}
-
-          {tab === "notas" && <TenantDetalleNotas d={d} />}
+            {tab === "seguridad" && <TenantDetalleSeguridad d={d} />}
+            {tab === "credenciales" && <TenantDetalleCredenciales t={t} />}
+            {tab === "actividad" && <TenantDetalleActividad activity={d.activity} />}
+            {tab === "notas" && <TenantDetalleNotas d={d} />}
+          </section>
         </div>
       </div>
     </div>

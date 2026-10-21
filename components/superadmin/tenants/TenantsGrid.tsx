@@ -126,8 +126,7 @@ export function TenantsGrid({
                       <TenantCardCompact
                         tenant={tenant}
                         health={getHealth(tenant)}
-                        onDetail={acciones.onDetail}
-                        onImpersonate={acciones.onImpersonate}
+                        acciones={acciones}
                       />
                     </div>
                   </div>

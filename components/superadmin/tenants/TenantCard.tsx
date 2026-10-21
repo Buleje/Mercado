@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { TenantRow } from "@/lib/superadmin-types";
+import type { AvisosCorreoDetalle } from "@/lib/avisos-correo-tipos";
+import { TenantCardCorreo } from "@/components/superadmin/tenants/TenantCardCorreo";
 import { PendingOrdersModal } from "./PendingOrdersModal";
 import { datosDeTarjeta } from "@/components/superadmin/tenants/tenant-card-datos";
 import { TenantCardSenales } from "@/components/superadmin/tenants/TenantCardSenales";
@@ -23,6 +25,9 @@ export interface TenantCardProps {
   onPurge: (slug: string, name: string) => void;
   onViewProducts?: (tenant: TenantRow) => void;
   onAddProduct?: (tenant: TenantRow) => void;
+  /** Avisos por correo: la lista guarda el resumen nuevo y avisa con el toast de la página. */
+  onCorreoCambiado?: (slug: string, avisos: AvisosCorreoDetalle) => void;
+  onToast?: (msg: string, ok?: boolean) => void;
 }
 
 export function TenantCard({
@@ -39,6 +44,8 @@ export function TenantCard({
   onPurge,
   onViewProducts,
   onAddProduct,
+  onCorreoCambiado,
+  onToast,
 }: TenantCardProps) {
   const t = tenant;
   const [pendingModalOpen, setPendingModalOpen] = useState(false);
@@ -60,7 +67,7 @@ export function TenantCard({
             de señales baja a una fila de chips uniforme bajo el nombre. */}
         <TenantCardSenales t={t} datos={datos} healthProp={healthProp} setPendingModalOpen={setPendingModalOpen} />
 
-        <TenantCardCifras t={t} datos={datos} onViewProducts={onViewProducts} />
+        <TenantCardCifras t={t} datos={datos} onViewProducts={onViewProducts} correo={<TenantCardCorreo t={t} onCorreoCambiado={onCorreoCambiado} onToast={onToast} />} />
 
         <TenantCardAcciones
           t={t}

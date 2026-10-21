@@ -17,6 +17,10 @@ export function useTenantDetalle(t: TenantRow, onUpdated?: () => void, tabInicia
   const [nameInput, setNameInput] = useState(t.name);
   const [emailInput, setEmailInput] = useState(t.ownerEmail ?? "");
   const [savingEdit, setSavingEdit] = useState(false);
+  // «Agregar correo» desde Avisos abre la edición con el foco en el correo.
+  const [enfocarCorreo, setEnfocarCorreo] = useState(false);
+  // Sube con cada guardado del nombre/correo: Avisos lo usa para recargar el correo vinculado.
+  const [guardados, setGuardados] = useState(0);
   const [trialBusy, setTrialBusy] = useState(false);
 
   // ── Actividad ──
@@ -118,6 +122,8 @@ export function useTenantDetalle(t: TenantRow, onUpdated?: () => void, tabInicia
       });
       if (res.ok) {
         setEditing(false);
+        setEnfocarCorreo(false);
+        setGuardados((n) => n + 1);
         onUpdated?.();
       }
     } finally {
@@ -160,6 +166,11 @@ export function useTenantDetalle(t: TenantRow, onUpdated?: () => void, tabInicia
     }
   }, [noteInput, savingNote, t.slug]);
 
+  const editarCorreo = () => {
+    setEnfocarCorreo(true);
+    setEditing(true);
+  };
+
   const handleCopyInfo = () => {
     void navigator.clipboard.writeText(
       [`Tenant: ${t.name} (${t.slug})`, `ID: ${formatearCodigoTienda(t.codigo) || "—"}`, `Email: ${t.ownerEmail ?? "—"}`, `Plan: ${t.plan}`].join(
@@ -172,6 +183,7 @@ export function useTenantDetalle(t: TenantRow, onUpdated?: () => void, tabInicia
   return {
     tab, setTab, storeInfo,
     editing, setEditing, nameInput, setNameInput, emailInput, setEmailInput, savingEdit, handleSaveEdit,
+    enfocarCorreo, setEnfocarCorreo, editarCorreo, guardados,
     trialBusy, handleExtendTrial,
     credCopied, handleCopyInfo,
     security, secBusy, secAction,

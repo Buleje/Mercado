@@ -140,6 +140,8 @@ export default function TenantsPage() {
     onAddProduct: (t) => setAddProductTarget({ slug: t.slug, name: t.name }),
     onDelete: (slug, name) => setDeleteTarget({ slug, name }),
     onPurge: (slug, name) => void handlePurgeTenant(slug, name),
+    onCorreoCambiado: (slug, avisos) => setTenants((prev) => prev.map((x) => (x.slug === slug ? { ...x, avisosCorreo: avisos } : x))),
+    onToast: (msg, ok) => showToast(msg, ok),
   };
 
   return (
@@ -259,7 +261,8 @@ export default function TenantsPage() {
           }}
         />
       )}
-      {detailTarget && <TenantDetailModal key={`${detailTarget.slug}-${detailTab ?? ""}`} tenant={detailTarget} tabInicial={detailTab} onClose={() => setDetailTarget(null)} onUpdated={() => void loadTenants()} />}
+      {/* La fila VIVA de la lista (no la foto de cuando se abrió): tras +7d, editar el nombre o pausar avisos, la ficha muestra lo nuevo. */}
+      {detailTarget && <TenantDetailModal key={`${detailTarget.slug}-${detailTab ?? ""}`} tenant={tenants.find((x) => x.slug === detailTarget.slug) ?? detailTarget} tabInicial={detailTab} onClose={() => setDetailTarget(null)} onUpdated={() => void loadTenants()} onImpersonate={(slug) => handleImpersonate(slug)} />}
       {productsTarget && (
         <TenantProductsModal
           open={Boolean(productsTarget)}
