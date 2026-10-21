@@ -1,6 +1,9 @@
 import "server-only";
 import nodemailer from "nodemailer";
 import { escapeHtml } from "@/lib/email/escape-html";
+import { logger } from "@/lib/logger";
+import { AvisosCorreoDB } from "@/lib/db/avisos-correo.db";
+import { avisoCorreoActivo, registrarEnvioCorreo } from "@/lib/avisos-correo";
 import { lineaFueraDelCajon } from "@/lib/caja/saldo-esperado";
 import type { ResumenCierreDeCaja } from "@/lib/caja/resumen-cierre";
 
@@ -25,19 +28,27 @@ export async function sendOrderNotification(order: {
   const smtpPass = process.env.SMTP_PASS;
   if (!smtpUser || !smtpPass) return; // silently skip if not configured
 
-  // Buscar email del dueño del tenant (si existe)
+  // Buscar email del dueño del tenant (si existe). `order.tenantId` llega como
+  // cuid o slug según el negocio: antes se buscaba sólo por slug y un negocio
+  // con cuid (Musa) mandaba sus pedidos a NOTIFY_EMAIL.
   let tenantEmail: string | null = null;
   let tenantName = "Mi Tienda";
+  let tenantCuid: string | null = null;
   if (order.tenantId) {
     try {
-      const { prisma } = await import("@/lib/prisma");
-      const tenant = await prisma.tenant.findUnique({
-        where: { slug: order.tenantId },
-        select: { ownerEmail: true, name: true },
-      });
-      tenantEmail = tenant?.ownerEmail ?? null;
+      const tenant = await AvisosCorreoDB.tienda(order.tenantId);
+      tenantEmail = tenant?.ownerEmail?.trim() || null;
       tenantName = tenant?.name ?? tenantName;
-    } catch { /* fallback a NOTIFY_EMAIL */ }
+      tenantCuid = tenant?.id ?? null;
+    } catch (err) {
+      logger.warn("[mailer] no se pudo leer el negocio del pedido: va a NOTIFY_EMAIL", { tenantId: order.tenantId, error: String(err).slice(0, 200) });
+    }
+  }
+  // Interruptor del superadmin (21-10): «Pedidos y clientes» apagado o la tienda pausada = no le
+  // sale al dueño. Sin correo de dueño la copia va a la plataforma y el interruptor no la toca.
+  if (tenantCuid && tenantEmail && !(await avisoCorreoActivo(tenantCuid, "pedidos"))) {
+    logger.info("[mailer] aviso de pedido omitido: avisos por correo apagados", { tenantId: tenantCuid, orderId: order.id });
+    return;
   }
 
   const notifyEmail = tenantEmail || process.env.NOTIFY_EMAIL || smtpUser;
@@ -53,7 +64,7 @@ export async function sendOrderNotification(order: {
     .map(
       (i) =>
         `<tr>
-          <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.quantity}× ${i.name} (${i.unit})</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.quantity}× ${escapeHtml(i.name)} (${escapeHtml(i.unit)})</td>
           <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">S/${(i.price * i.quantity).toFixed(2)}</td>
         </tr>`
     )
@@ -110,6 +121,9 @@ export async function sendOrderNotification(order: {
       </div>
     `,
   });
+  if (tenantCuid && tenantEmail) {
+    await registrarEnvioCorreo(tenantCuid, "pedidos", tenantEmail, true, `Pedido ${order.id} — S/${order.total.toFixed(2)}`);
+  }
 }
 
 const fmtSolesCorreo = (n: number) => `S/${n.toFixed(2)}`;

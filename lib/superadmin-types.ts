@@ -1,5 +1,7 @@
 // ─── SuperAdmin shared types (importable from client AND server) ─────────────
 
+import type { AvisosCorreoResumen } from "@/lib/avisos-correo-tipos";
+
 export type PlanId = "free" | "pro" | "business" | "enterprise";
 
 export interface TenantStoreInfo {
@@ -50,6 +52,8 @@ export interface TenantRow {
   pendingOrders?: number;
   /** Salud/churn del tenant (merge desde /api/superadmin/churn). Brandon 2026-06-14. */
   risk?: TenantRisk | null;
+  /** Correo que recibe los avisos automáticos y si están pausados (21-10). */
+  avisosCorreo?: AvisosCorreoResumen;
 }
 
 /** Health score + riesgo de churn de un tenant (fuente: TenantHealthScore). */

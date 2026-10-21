@@ -6,6 +6,7 @@ import { SuperadminChurnSignalsDB } from "@/lib/db/superadmin-churn-signals.db";
 import type { ChurnSignalDetected } from "./health-scorer";
 import { ORDEN_SEVERIDAD, type Severidad } from "./playbook-catalog";
 import { fueAccionReal } from "./intervencion";
+import { avisoCorreoActivo, registrarEnvioCorreo } from "@/lib/avisos-correo";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -66,6 +67,11 @@ async function sendChurnEmail(
     logger.warn("[churn/email] Tenant sin ownerEmail", { slug: tenant.slug });
     return false;
   }
+  // Interruptor del superadmin (21-10): «Cuenta y plan» apagado o la tienda pausada.
+  if (!(await avisoCorreoActivo(tenant.id, "cuenta"))) {
+    logger.info("[churn/email] omitido: avisos por correo apagados", { slug: tenant.slug });
+    return false;
+  }
 
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
@@ -82,6 +88,7 @@ async function sendChurnEmail(
   });
 
   logger.info("[churn/email] Email enviado", { slug: tenant.slug, subject });
+  await registrarEnvioCorreo(tenant.id, "cuenta", to, true, subject);
   return true;
 }
 
@@ -260,7 +267,7 @@ export async function executePlaybook(
           const { subject, html } = buildEmailHtml(playbook.templateId, tenant);
           const sent = await sendChurnEmail(tenant, subject, html);
           if (sent) interventionDescription = `Email enviado: ${playbook.templateId}`;
-          else motivoSinAccion = "correo sin configurar o negocio sin email";
+          else motivoSinAccion = "correo sin configurar, negocio sin email o avisos por correo apagados";
         }
         break;
       }

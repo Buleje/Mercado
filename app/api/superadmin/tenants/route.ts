@@ -11,6 +11,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { resumenAvisosCorreo } from "@/lib/avisos-correo";
 
 type SettingsContacto = {
   tenantId: string;
@@ -204,6 +205,21 @@ async function getTenantsData() {
     return rows;
 }
 
+/**
+ * Avisos por correo de cada tienda (21-10), FUERA de la caché de `getTenantsData`:
+ * pausar desde el superadmin tiene que verse al recargar, no a los 60 s. Son 5
+ * consultas en lote (sin N+1). Si fallan, la lista sale igual, sin el bloque.
+ */
+async function conAvisosCorreo<T extends { id: string; slug: string; ownerEmail: string | null }>(rows: T[]) {
+  try {
+    const resumen = await resumenAvisosCorreo(rows);
+    return rows.map((r) => ({ ...r, avisosCorreo: resumen.get(r.id) }));
+  } catch (err) {
+    logger.warn("[superadmin/tenants] avisos por correo no disponibles", { error: String(err).slice(0, 200) });
+    return rows;
+  }
+}
+
 // GET /api/superadmin/tenants
 // Returns all tenants with plan, billing, usage, store, and financial data
 export async function GET(req: NextRequest) {
@@ -211,7 +227,7 @@ export async function GET(req: NextRequest) {
     const session = await requirePlatform(req);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-    const rows = await getTenantsData();
+    const rows = await conAvisosCorreo(await getTenantsData());
     // Brandon 2026-05-21 audit blindaje batch 3 perf: cache private 60s
     // + SWR 300s. getTenantsData es query pesada (findMany tenants con
     // joins de orders/products/users); cachear evita re-ejecutar en cada

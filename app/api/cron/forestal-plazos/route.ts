@@ -10,6 +10,7 @@ import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
 import { describirEnvioWhatsApp, sufijoDeFallo } from "@/lib/whatsapp/aviso-plantilla";
 import { sendAvisoPlazosCtp } from "@/lib/email/resend";
+import { avisoCorreoActivo } from "@/lib/avisos-correo";
 import { construirAviso, fraseLote, frasePlazo } from "@/lib/forestal/ctp-aviso-plazos";
 import { construirAvisoTh } from "@/lib/forestal/loth-aviso-plazos";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
@@ -172,6 +173,7 @@ export const GET = withCronAuth("forestal-plazos", async () => {
   let correosEnviados = 0;
   let correosFallidos = 0;
   let sinCorreo = 0;
+  let correosOmitidos = 0;
   let whatsappEnviados = 0;
   let whatsappFallidos = 0;
   let sinTelefono = 0;
@@ -268,7 +270,11 @@ export const GET = withCronAuth("forestal-plazos", async () => {
          escrito y se reenvía al contador o al regente, que es a quién termina
          llegando un vencimiento del libro. No frena el resto si falla. */
       const correo = tenant?.ownerEmail?.trim();
-      if (correo) {
+      // Interruptor del superadmin (21-10): sólo el correo; la campana y el WhatsApp siguen.
+      if (correo && tenant && !(await avisoCorreoActivo(tenant.id, "forestal"))) {
+        correosOmitidos += 1;
+        logger.info("[cron/forestal-plazos] correo omitido: avisos por correo apagados", { tenantId: tenant.id });
+      } else if (correo) {
         const lineas = [
           ...aviso.guias
             .filter((g) => g.estado !== "en_plazo")
@@ -341,5 +347,6 @@ export const GET = withCronAuth("forestal-plazos", async () => {
     correosEnviados,
     correosFallidos,
     sinCorreo,
+    correosOmitidos,
   });
 });

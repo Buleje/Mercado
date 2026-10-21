@@ -10,7 +10,9 @@ import { NextRequest } from "next/server";
 const h = vi.hoisted(() => ({
   broadcastPush: vi.fn().mockResolvedValue(undefined),
   logAdd: vi.fn().mockResolvedValue(undefined),
-  email: vi.fn().mockResolvedValue(undefined),
+  email: vi.fn().mockResolvedValue(true),
+  activo: vi.fn(async (tenantId: string) => tenantId !== "tenant-b"),
+  registrarCorreo: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -19,6 +21,16 @@ vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: vi.fn().mockResolvedValue(n
 vi.mock("@/lib/push-sender", () => ({ broadcastPush: h.broadcastPush }));
 vi.mock("@/lib/mailer-stock", () => ({ sendStockAlertEmail: h.email }));
 vi.mock("@/lib/db/notifications.db", () => ({ NotificationLogsDB: { add: h.logAdd } }));
+vi.mock("@/lib/avisos-correo", () => ({ avisoCorreoActivo: h.activo, registrarEnvioCorreo: h.registrarCorreo }));
+vi.mock("@/lib/db/avisos-correo.db", () => ({
+  AvisosCorreoDB: {
+    tiendas: vi.fn().mockResolvedValue([
+      { id: "tenant-a", slug: "a", name: "Tienda <A>", ownerEmail: "duena@gmail.com" },
+      // B tiene correo pero apagó «Stock bajo» (h.activo → false)
+      { id: "tenant-b", slug: "b", name: "Tienda B", ownerEmail: "b@b.pe" },
+    ]),
+  },
+}));
 vi.mock("@/lib/inventario/stock-minimo.server", () => ({
   minimosGlobalesPorNegocio: vi.fn(async (ids: Iterable<string>) => new Map([...ids].map((t) => [t, 5]))),
 }));
@@ -47,6 +59,8 @@ describe("cron de stock bajo: cada negocio sólo ve lo suyo", () => {
     process.env.CRON_SECRET = "s3cr3t";
     h.broadcastPush.mockClear();
     h.logAdd.mockClear();
+    h.email.mockClear();
+    h.registrarCorreo.mockClear();
   });
 
   it("sin el secreto del cron responde 401 y no avisa", async () => {
@@ -80,5 +94,26 @@ describe("cron de stock bajo: cada negocio sólo ve lo suyo", () => {
     const logA = logs.find(([, t]) => t === "tenant-a")?.[0].message ?? "";
     expect(logA).toContain("Arroz de A");
     expect(logA).not.toContain("Aceite de B");
+  });
+
+  it("correo de stock a cada tienda con lo suyo; la que lo apagó no recibe (21-10)", async () => {
+    const res = await GET(
+      new NextRequest("http://x/api/stock-alerts", { headers: { authorization: "Bearer s3cr3t" } }),
+    );
+    const body = (await res.json()) as { correosTiendas: number };
+    expect(body.correosTiendas).toBe(1);
+
+    type Llamada = [{ name: string }[], { destino?: { to: string; negocio: string }; pronto?: { name: string }[] }?];
+    const llamadas = h.email.mock.calls as unknown as Llamada[];
+    const deTienda = llamadas.filter(([, o]) => o?.destino);
+    expect(deTienda).toHaveLength(1);
+    const [productos, opciones] = deTienda[0];
+    expect(opciones?.destino).toEqual({ to: "duena@gmail.com", negocio: "Tienda <A>" });
+    expect(productos.map((p) => p.name)).toEqual(["Arroz de A"]);
+    expect(opciones?.pronto ?? []).toEqual([]);
+    // B (apagado) no recibe nada; el resumen de la plataforma sigue saliendo.
+    expect(deTienda.some(([, o]) => o?.destino?.to === "b@b.pe")).toBe(false);
+    expect(llamadas.filter(([, o]) => !o?.destino)).toHaveLength(1);
+    expect(h.registrarCorreo).toHaveBeenCalledWith("tenant-a", "stock", "duena@gmail.com", true, expect.any(String));
   });
 });

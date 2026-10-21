@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { ESTADOS_PEDIDO_QUE_ENTRAN, rangoDelMesLima } from "@/lib/finance/ingresos-del-periodo";
 import nodemailer from "nodemailer";
+import { avisoCorreoActivo, registrarEnvioCorreo } from "@/lib/avisos-correo";
 
 /**
  * GET /api/cron/monthly-report
@@ -327,12 +328,12 @@ async function sendReportEmail(
   toEmail:    string,
   report:     ReportData,
   pdfBuffer:  Buffer,
-): Promise<void> {
+): Promise<boolean> {
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
   if (!smtpUser || !smtpPass) {
     logger.warn("[cron/monthly-report] SMTP no configurado — email omitido");
-    return;
+    return false;
   }
 
   const transporter = nodemailer.createTransport({
@@ -378,6 +379,7 @@ async function sendReportEmail(
       },
     ],
   });
+  return true;
 }
 
 // ── Route Handler ────────────────────────────────────────────────────────────
@@ -448,9 +450,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Este negocio no tiene correo del dueño: agrégalo en Configuración › Datos del negocio." }, { status: 422 });
     }
 
-    if (ownerEmail) {
-      await sendReportEmail(ownerEmail, report, pdfBuffer);
-      logger.info("[cron/monthly-report] Email enviado", { to: ownerEmail });
+    /* Interruptor del superadmin (21-10): sólo frena el envío AUTOMÁTICO (el cron, sin
+       `enviar`). «Mandármelo por correo» del panel llega con `enviar=1` y es un pedido a mano. */
+    const automatico = url.searchParams.get("enviar") === null;
+    const omitidoPorInterruptor = !!ownerEmail && automatico && !(await avisoCorreoActivo(tenantId, "reportes"));
+    if (omitidoPorInterruptor) {
+      logger.info("[cron/monthly-report] omitido: avisos por correo apagados", { tenantId });
+    } else if (ownerEmail) {
+      if (await sendReportEmail(ownerEmail, report, pdfBuffer)) {
+        logger.info("[cron/monthly-report] Email enviado", { to: ownerEmail });
+        await registrarEnvioCorreo(tenantId, "reportes", ownerEmail, true, `Reporte mensual ${report.period}`);
+      }
     }
 
     logActivity(
@@ -468,7 +478,8 @@ export async function GET(req: NextRequest) {
       ingresos:   report.ingresos,
       gastos:     report.gastos,
       utilidad:   report.utilidad,
-      emailSent:  !!ownerEmail,
+      emailSent:  !!ownerEmail && !omitidoPorInterruptor,
+      ...(omitidoPorInterruptor ? { emailOmitido: "avisos por correo apagados desde la plataforma" } : {}),
       pdfSize:    pdfBuffer.byteLength,
     });
   } catch (err) {
