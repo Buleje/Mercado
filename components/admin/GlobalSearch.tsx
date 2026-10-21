@@ -53,7 +53,7 @@ export default function GlobalSearch({ onNavigate }: Props) {
       onBlur={b.alSalirDelFoco}
       data-buscador-panel-raiz=""
       className={cn(
-        "relative flex shrink-0 items-center sm:min-w-11 sm:flex-1 sm:shrink sm:max-w-[var(--panel-search-max,30rem)]",
+        "relative flex shrink-0 items-center sm:min-w-[15rem] sm:flex-1 sm:shrink sm:max-w-[var(--panel-search-max,30rem)]",
         // Celular desplegado: el campo tapa la cabecera entera (que es `sticky`, su caja de referencia).
         b.expandido && "max-sm:absolute max-sm:inset-0 max-sm:z-20 max-sm:gap-2 max-sm:bg-[var(--surface-raised)] max-sm:px-3",
       )}
@@ -77,7 +77,7 @@ export default function GlobalSearch({ onNavigate }: Props) {
           b.inputRef.current?.focus();
         }}
         className={cn(
-          "group min-w-0 flex-1 cursor-text items-center gap-2.5 rounded-xl border px-3.5 h-11 sm:h-10",
+          "group @container min-w-0 flex-1 cursor-text items-center gap-2.5 rounded-xl border px-3.5 h-11 sm:h-10",
           b.expandido ? "flex" : "hidden sm:flex",
           // `[color:…]` y no `bg-[var(--surface-sunken)]`/`border-[var(--rule-base)]`:
           // globals.css fija esas dos clases exactas con !important en oscuro, y
@@ -120,7 +120,7 @@ export default function GlobalSearch({ onNavigate }: Props) {
           // `text-base` en celular: con menos de 16 px Safari agranda la página al enfocar.
           // El foco lo marca el borde del campo: sin el `!`, el anillo global de
           // `[data-admin-shell] input:focus-visible` dibuja un segundo anillo adentro.
-          className="min-w-0 flex-1 bg-transparent text-base font-medium text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)] focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! sm:text-sm"
+          className="min-w-0 flex-1 text-ellipsis bg-transparent text-base font-medium text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)] focus-visible:outline-none! focus-visible:ring-0! focus-visible:ring-offset-0! sm:text-sm"
         />
         {b.query ? (
           <button
@@ -133,7 +133,7 @@ export default function GlobalSearch({ onNavigate }: Props) {
           </button>
         ) : (
           /* `--text-secondary`: terciario sobre `--surface-sunken` daba 3,51:1 en claro (AA pide 4,5). */
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-secondary)] transition-colors group-hover:border-[color-mix(in_oklab,var(--accent)_35%,var(--rule-base))]">
+          <kbd className="hidden @[17rem]:inline-flex items-center gap-0.5 rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-secondary)] transition-colors group-hover:border-[color-mix(in_oklab,var(--accent)_35%,var(--rule-base))]">
             <AtajoMod tecla="K" claseSimbolo="text-base leading-none" />
           </kbd>
         )}

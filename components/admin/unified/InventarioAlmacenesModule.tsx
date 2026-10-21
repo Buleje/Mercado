@@ -26,6 +26,7 @@ import {
 import { useVistaModulo, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { EtiquetaAlcance } from "@/components/admin/shared/EtiquetaAlcance";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import type { ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -136,6 +137,8 @@ function HubInventario({ initialTab }: { initialTab?: string }) {
           description:
             "Tus productos con su stock, las entradas y salidas, vencimientos, pérdidas y el conteo físico; además sus categorías, el historial de precios y las ofertas y cupones.",
           icon: Boxes,
+          /* 20-10: Stock y Cupones cambian tu tienda y el marketplace (lib/admin/alcance-tienda); las demás vistas no llevan. */
+          actions: <EtiquetaAlcance tab="inventario" vista={vista} />,
         }}
         tabs={tabs}
         activeTab={vista}

@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { EtiquetaAlcance } from "@/components/admin/shared/EtiquetaAlcance";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const CRMTab = dynamic(() => import("@/components/admin/CRMTab"), { loading: S });
@@ -60,6 +61,8 @@ export default function CRMClientesModule({ initialTab }: { initialTab?: string 
           title: "Clientes",
           description: "Tus clientes y lo que compran, los interesados que todavía no compran, sus opiniones, dónde viven y tus revendedoras.",
           icon: Users,
+          /* 20-10: sólo Opiniones › Moderar lleva etiqueta (marketplace); el resto no está en el mapa. */
+          actions: <EtiquetaAlcance tab="clientes" vista={sub} />,
         }}
         tabs={tabs}
         activeTab={sub}

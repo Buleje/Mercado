@@ -22,6 +22,7 @@ export const GROUP_META: Record<keyof GroupedResults, { label: string; icon: Ele
   productos: { label: "Productos",         icon: Package,       color: "text-[var(--data-success-500)]" },
   clientes:  { label: "Clientes",          icon: Users,         color: "text-[var(--text-secondary)]" },
   pedidos:   { label: "Pedidos",           icon: ShoppingCart,  color: "text-[var(--data-warning-500)]" },
+  relacionados: { label: "Relacionados",  icon: LayoutDashboard, color: "text-[var(--text-secondary)]" },
   acciones:  { label: "Hacer",             icon: Zap,           color: "text-[var(--data-success-500)]" },
 };
 

@@ -31,6 +31,7 @@ import { ICONOS_COMANDO } from "./iconos-comandos";
 import {
   SIN_RESULTADOS,
   etiquetaDeTab,
+  nivelDeNombre,
   searchModules,
   type GroupedResults,
   type SearchResult,
@@ -38,9 +39,10 @@ import {
 
 export type GrupoBusqueda = keyof GroupedResults;
 
-const ORDEN_NORMAL: GrupoBusqueda[] = ["recientes", "modulos", "acciones", "productos", "clientes", "pedidos"];
+/** Regla 20-10: nombre que coincide → acciones → lo abierto hace poco → el resto. */
+const ORDEN_NORMAL: GrupoBusqueda[] = ["modulos", "acciones", "recientes", "relacionados", "productos", "clientes", "pedidos"];
 /** «cobrar a Juan», «nueva cotización»: lo que se pide HACER va primero. */
-const ORDEN_ACCION: GrupoBusqueda[] = ["acciones", "clientes", "recientes", "modulos", "productos", "pedidos"];
+const ORDEN_ACCION: GrupoBusqueda[] = ["acciones", "clientes", "recientes", "modulos", "relacionados", "productos", "pedidos"];
 
 function resultadoDeComando(c: ComandoPanel, persona?: string): SearchResult {
   const verbo = c.accion.split(" ")[0];
@@ -78,16 +80,18 @@ function localesDe(
   q: string,
   ctx: ReturnType<typeof useContextoPermiso>,
   recientes: readonly Reciente[],
-): Pick<GroupedResults, "acciones" | "modulos" | "recientes"> {
+): Pick<GroupedResults, "acciones" | "modulos" | "recientes" | "relacionados"> {
   const conPersona = comandoConPersona(q);
   const permitidos = buscarComandos(q, (c) => comandoPermitido(ctx, c));
   const acciones = [
     ...(conPersona && comandoPermitido(ctx, conPersona.comando) ? [resultadoDeComando(conPersona.comando, conPersona.persona)] : []),
     ...permitidos.map((c) => resultadoDeComando(c)),
   ].slice(0, 6);
-  const modulos = searchModules(q, ctx ? (tab, vista, sub) => destinoPermitido(ctx, tab, vista, sub) : undefined);
+  const todos = searchModules(q, ctx ? (tab, vista, sub) => destinoPermitido(ctx, tab, vista, sub) : undefined);
+  const modulos = todos.filter((m) => nivelDeNombre(m.title, q) > 0).slice(0, 5);
+  const relacionados = todos.filter((m) => nivelDeNombre(m.title, q) === 0).slice(0, 3);
   const vistos = recientes.filter((r) => recienteCoincide(r, q)).slice(0, 3).map(resultadoDeReciente);
-  return { acciones, modulos, recientes: vistos };
+  return { acciones, modulos, relacionados, recientes: vistos };
 }
 
 export function useBusquedaPanel(open: boolean) {

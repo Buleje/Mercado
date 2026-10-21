@@ -47,9 +47,13 @@ export interface GroupedResults {
   clientes: SearchResult[];
   pedidos: SearchResult[];
   acciones: SearchResult[];
+  /** Módulos que salen por una palabra clave o sinónimo, no por su nombre: van al final. */
+  relacionados: SearchResult[];
 }
 
-export const SIN_RESULTADOS: GroupedResults = { recientes: [], modulos: [], productos: [], clientes: [], pedidos: [], acciones: [] };
+export const SIN_RESULTADOS: GroupedResults = {
+  recientes: [], modulos: [], productos: [], clientes: [], pedidos: [], acciones: [], relacionados: [],
+};
 
 // ── Índice de módulos ─────────────────────────────────────────────────────────
 // Se DERIVA de ALL_TABS (el catálogo que arma el sidebar), no de una lista
@@ -151,7 +155,21 @@ export const MODULE_INDEX: ModuleEntry[] = ALL_TABS.map((t) => {
 // ── Búsqueda local en módulos ─────────────────────────────────────────────────
 
 /**
- * Módulos, vistas y secciones que coinciden (máx. 5). `permitido` decide si
+ * Qué tan bien coincide el NOMBRE con lo escrito (20-10: «pedidos» mostraba
+ * «Bodega al Mes» primero): 4 exacto · 3 empieza con · 2 palabra completa ·
+ * 1 contiene · 0 no está en el nombre (salió por sinónimo o descripción).
+ */
+export function nivelDeNombre(nombre: string, q: string): 0 | 1 | 2 | 3 | 4 {
+  const n = sinTildes(nombre).trim();
+  const l = sinTildes(q).trim();
+  if (!l || !n.includes(l)) return 0;
+  if (n === l) return 4;
+  if (n.startsWith(l)) return 3;
+  return n.split(/[^a-z0-9]+/).includes(l) ? 2 : 1;
+}
+
+/**
+ * Módulos, vistas y secciones que coinciden, los de mejor nombre primero. `permitido` decide si
  * ESTA persona ve ese destino (la misma regla que los comandos); sin él, todo
  * (rol sin confirmar todavía: el TabRouter igual frena al entrar).
  */
@@ -225,7 +243,17 @@ export function searchModules(
     }
   }
 
-  return results.slice(0, 5);
+  /* Primero el nombre que más se parece; un módulo entero pesa 3 más que una
+     vista suya (el módulo «Pedidos y reparto» antes que la vista «Pedidos» de
+     otro). Entre iguales, el orden del índice (sort estable). */
+  const peso = (r: SearchResult) => {
+    const n = nivelDeNombre(r.title, lower);
+    return n === 0 ? 0 : n * 2 + (r.subtitle === "Módulo" ? 3 : 0);
+  };
+  return results
+    .map((r) => ({ r, n: peso(r) }))
+    .sort((a, b) => b.n - a.n)
+    .map((x) => x.r);
 }
 
 /** El rótulo de la barra de un tab (para el destino de un comando). */
