@@ -5,13 +5,7 @@ import Link from "next/link";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import Image from "next/image";
 import { m } from "@/components/admin/providers";
-import {
-  ChevronRight,
-  Store,
-  PanelLeftClose,
-  PanelLeft,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ChevronRight, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 // resolveSessionStorefrontTarget removed — use activeTenantSlug directly
 import { useModuleTabs } from "@/contexts/module-tabs-context";
@@ -29,6 +23,9 @@ import type { SidebarTheme, AccentColor, Density, IconStyle, SidebarExtendedConf
 import { gruposDeEnlaces, guardarModoMenu, leerModoMenu, type ModoMenu } from "@/components/admin/layout/sidebar-enlaces";
 import { SidebarEnlacesSueltos } from "@/components/admin/layout/SidebarEnlacesSueltos";
 import { coloresDeIconos } from "@/components/admin/layout/sidebar-colores-iconos";
+import { COLOR_DE_ACENTO, DENSIDADES, estiloDeTema, guardarTema, leerTema } from "@/components/admin/layout/sidebar-temas";
+import { PieDeBarra } from "@/components/admin/layout/PieDeBarra";
+import { TiradorAncho } from "@/components/admin/layout/TiradorAncho";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useTenant } from "@/contexts/tenant-context";
 import { SIDEBAR_STYLE_PRESETS, type DefaultSidebarStyle } from "@/lib/admin-template";
@@ -48,6 +45,9 @@ import {
 // 2026-05-29: en la barra solo queda "Ver tiendas" (lista del marketplace).
 // Cambiar a true para reactivar el link al storefront propio.
 const SHOW_MI_TIENDA_LINK = false;
+
+/** Última plantilla del superadmin ya aplicada a este navegador (2026-10-20). */
+const CLAVE_PLANTILLA_APLICADA = "admin-sidebar-plantilla-aplicada";
 
 // ─── Tipos del tab-item que se usa en esta pantalla ───────────────────────────
 type TabItem = {
@@ -217,14 +217,11 @@ export const AdminSidebar = React.memo(function AdminSidebar({
   // o el storage event de otra pestaña.
   const { resolveLabel, isHiddenByTemplate, template } = useAdminTemplateOverlay();
 
-  const [sidebarTheme, setSidebarTheme] = React.useState<SidebarTheme>(() => {
-    if (typeof window === "undefined") return "buleje";
-    try {
-      const stored = localStorage.getItem("admin-sidebar-theme");
-      if (stored === "light" || stored === "dark" || stored === "cristal" || stored === "shaded" || stored === "buleje") return stored;
-    } catch { /* ignore */ }
-    return "buleje";
-  });
+  // Diseño guardado: la clave vieja trae la familia (la lee la barra superior) y
+  // la variante aparte (Mínimo/Bosque/Noche/Vibrante) — ver sidebar-temas.ts.
+  const [sidebarTheme, setSidebarTheme] = React.useState<SidebarTheme>(() =>
+    typeof window === "undefined" ? "buleje" : leerTema(),
+  );
 
   // ── Accent color (persisted) ──
   const [accent, setAccent] = React.useState<AccentColor>(() => {
@@ -270,7 +267,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     try {
       window.dispatchEvent(
         new CustomEvent("admin-sidebar-theming-change", {
-          detail: { applyToHeader, theme: sidebarTheme, accent },
+          detail: { applyToHeader, theme: estiloDeTema(sidebarTheme).familia, accent },
         }),
       );
     } catch { /* ignore */ }
@@ -287,14 +284,25 @@ export const AdminSidebar = React.memo(function AdminSidebar({
   // provocaba que superadmin mostrara "Personalizado" seleccionado pero admin
   // se viera "Estilo Buleje". Ahora "personalizado" mapea al preset buleje
   // como base — el cliente puede ajustar después desde el panel admin.
+  //
+  // 2026-10-20: «puede ajustar después» no se cumplía — el efecto corría en
+  // CADA montaje y pisaba el diseño que el dueño eligió en «Personaliza tu
+  // navegación» (medido: Sereno guardado → recarga → Ejecutivo). Ahora la
+  // plantilla se aplica cuando CAMBIA (la última aplicada queda anotada):
+  // lo que el superadmin cambie sigue llegando, y lo que el dueño elija después
+  // sobrevive a la recarga.
   React.useEffect(() => {
     const style = template.defaultSidebarStyle ?? "buleje";
     const presetKey = (style === "personalizado" ? "buleje" : style) as Exclude<DefaultSidebarStyle, "personalizado">;
     const preset = SIDEBAR_STYLE_PRESETS[presetKey];
     if (!preset) return;
+    try {
+      if (localStorage.getItem(CLAVE_PLANTILLA_APLICADA) === style) return;
+      localStorage.setItem(CLAVE_PLANTILLA_APLICADA, style);
+    } catch { /* sin almacenamiento: se aplica igual */ }
     if (sidebarTheme !== preset.theme) {
       setSidebarTheme(preset.theme);
-      try { localStorage.setItem("admin-sidebar-theme", preset.theme); } catch { /* ignore */ }
+      guardarTema(preset.theme);
     }
     if (accent !== preset.accent) {
       setAccent(preset.accent);
@@ -311,15 +319,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
   React.useEffect(() => {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
-    const ACCENT_VARS: Record<AccentColor, string> = {
-      teal: "var(--accent-buleje, #00A29C)",
-      emerald: "#10B981",
-      sky: "#0EA5E9",
-      violet: "#8B5CF6",
-      amber: "#ff6b5b",
-      rose: "#F43F5E",
-    };
-    const hex = ACCENT_VARS[accent];
+    const hex = COLOR_DE_ACENTO[accent];
     // teal usa el accent original del tema → limpiar overrides para que
     // herede del theme global; las otras opciones sobreescriben.
     if (accent === "teal") {
@@ -449,12 +449,12 @@ export const AdminSidebar = React.memo(function AdminSidebar({
       localStorage.setItem("admin-sidebar-hidden", JSON.stringify([...config.hiddenCategories]));
       localStorage.setItem("admin-sidebar-hidden-tabs", JSON.stringify([...config.hiddenSubTabs]));
       localStorage.setItem("admin-sidebar-order", JSON.stringify(config.categoryOrder));
-      localStorage.setItem("admin-sidebar-theme", config.theme);
       localStorage.setItem("admin-sidebar-accent", config.accent);
       localStorage.setItem("admin-sidebar-density", config.density);
       localStorage.setItem("admin-sidebar-icon-style", config.iconStyle);
       localStorage.setItem("admin-sidebar-apply-to-header", config.applyToHeader ? "true" : "false");
     } catch { /* ignore */ }
+    guardarTema(config.theme);
     guardarModoMenu(config.navMode);
     setConfigSnapshot(null);
     setConfigModeSynced(false);
@@ -527,57 +527,10 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     [navMode, navCategories, tabsDeCategoria],
   );
 
-  /* 3 temas editoriales del sidebar:
-     - cristal: slate-900 profundo con acento teal (inspirado en iOS/Linear)
-     - dark:    zinc-950 minimalista con texto zinc-300
-     - light:   blanco neutro con bordes rule-soft
-     Paleta cristal rediseñada — es oscura pero con tinte teal en bordes
-     y highlights, NO un bloque de teal plano que se veia saturado. */
-  const themeClasses = React.useMemo(() => {
-    switch (sidebarTheme) {
-      // Theme Buleje editorial v2 — gradient slate-deep + halo teal sutil al inicio.
-      // Active state premium: pill con gradient teal + texto blanco BRILLANTE +
-      // glow exterior + ring teal-bright + barra inset 4px. Reemplaza el active
-      // anterior que tenía bg teal/18 plano + texto teal-300 apagado.
-      case "buleje":
-      case "shaded": // alias legacy → buleje
-      case "cristal":
-        // Halo y bordes derivados de var(--accent) vía color-mix → cambian con el preset.
-        // El gradient navy base se mantiene (es la identidad oscura del sidebar buleje),
-        // pero el HALO superior, los bordes y el active state respetan el accent activo.
-        return {
-          // Halo radial accent en el top + gradient slate-deep base.
-          bg: "bg-[radial-gradient(ellipse_120%_60%_at_50%_0%,color-mix(in_oklab,var(--accent)_18%,transparent)_0%,transparent_60%),linear-gradient(180deg,#0b1f2b_0%,#0a1922_50%,#091621_100%)] dark:bg-[radial-gradient(ellipse_120%_60%_at_50%_0%,color-mix(in_oklab,var(--accent)_14%,transparent)_0%,transparent_60%),linear-gradient(180deg,#050e15_0%,#040a10_50%,#03070d_100%)]",
-          // 70% white sobre slate-900 ≈ 9:1 AAA body.
-          text: "text-white/70",
-          // Hover gradient horizontal sutil — sensación de luz al pasar mouse.
-          hover: "hover:bg-linear-to-r hover:from-white/[0.06] hover:to-white/[0.02] hover:text-white",
-          // Borde accent hairline — separa del shell respetando el preset.
-          border: "border-[color-mix(in_oklab,var(--accent)_25%,transparent)]",
-          // Active premium: gradient pill + texto blanco + ring accent + glow + barra inset 4px.
-          activeItem: "bg-linear-to-r from-[color-mix(in_oklab,var(--accent)_42%,transparent)] via-[color-mix(in_oklab,var(--accent)_28%,transparent)] to-[color-mix(in_oklab,var(--accent)_10%,transparent)] text-white font-semibold shadow-[inset_4px_0_0_var(--accent),0_2px_16px_-2px_color-mix(in_oklab,var(--accent)_55%,transparent)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_35%,transparent)]",
-          headerBorder: "border-[color-mix(in_oklab,var(--accent)_30%,transparent)]",
-        };
-      case "dark":
-        return {
-          bg: "bg-zinc-950",
-          text: "text-zinc-300",
-          hover: "hover:bg-white/[0.08] hover:text-white hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]",
-          border: "border-white/[0.06]",
-          activeItem: "bg-white/[0.12] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]",
-          headerBorder: "border-white/[0.06]",
-        };
-      default: // light
-        return {
-          bg: "bg-[var(--surface-raised)]",
-          text: "text-[var(--text-secondary)]",
-          hover: "hover:bg-primary/10 hover:text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]",
-          border: "border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
-          activeItem: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold shadow-[inset_0_0_0_1px_color-mix(in oklab, var(--accent) 20%, transparent)]",
-          headerBorder: "border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
-        };
-    }
-  }, [sidebarTheme]);
+  /* Clases de cada diseño en un solo mapa (sidebar-temas.ts): fondo, texto,
+     hover, activo con su texto, íconos y chevrons. Antes eran 20 ternarios
+     `isDarkTheme ? … : …` y un tema nuevo no tenía dónde entrar. */
+  const themeClasses = estiloDeTema(sidebarTheme);
 
   // ── Compact mode toggle (persisted in localStorage) ──
   const [isCompact, setIsCompact] = React.useState<boolean>(() => {
@@ -713,28 +666,25 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     };
   }, []);
 
-  const isDarkTheme = sidebarTheme === "cristal" || sidebarTheme === "dark" || sidebarTheme === "shaded" || sidebarTheme === "buleje";
+  const isDarkTheme = themeClasses.oscuro;
   // Colores por categoría (o todos en un tono si iconStyle = "monochrome").
   const ICON_COLORS = coloresDeIconos(isDarkTheme, iconStyle);
 
-  // Density → paddings dinámicos
-  const densityPad = density === "compact" ? "px-2.5 py-1.5" : density === "spacious" ? "px-3 py-3" : "px-3 py-2.5";
-  const densityGap = density === "compact" ? "gap-2" : density === "spacious" ? "gap-3.5" : "gap-3";
+  // Densidad → alto de fila Y separación entre filas (sidebar-temas.ts).
+  const densidad = DENSIDADES[density];
+  const densityPad = densidad.fila;
+  const densityGap = densidad.gap;
 
-  /* Accent color → active bar hex (para drop-shadow glow).
-     Los classes Tailwind con arbitrary values aceptan hex literal. */
-  const ACCENT_HEX: Record<AccentColor, string> = {
-    teal:    "var(--accent)",
-    emerald: "#10B981",
-    sky:     "#0EA5E9",
-    violet:  "#8B5CF6",
-    amber:   "#ff6b5b",
-    rose:    "#F43F5E",
-  };
-  const accentHex = ACCENT_HEX[accent];
+  /* El acento elegido se acota a la barra (y a sus menús flotantes): un
+     envoltorio del panel fija su propio `--accent` (el de la marca) y tapaba el
+     de :root, así que elegir «Coral» o «Violeta» no cambiaba la barra (medido
+     2026-10-20: aside → #00A29C con «amber» guardado). */
+  const estiloAcento = (accent === "teal" ? {} : { "--accent": COLOR_DE_ACENTO[accent] }) as React.CSSProperties;
+  /* Rayita del activo. Antes el halo era `${hex}80` y con teal quedaba
+     «var(--accent)80» — una sombra inválida que el navegador descartaba. */
   const accentBarStyle: React.CSSProperties = {
-    background: accentHex,
-    boxShadow: `0 0 8px ${accentHex}80`,
+    background: "var(--accent)",
+    boxShadow: themeClasses.barraBrillo ? "0 0 8px color-mix(in oklab, var(--accent) 50%, transparent)" : undefined,
   };
 
   // Section headers keyed by the first category id in each group
@@ -779,8 +729,10 @@ export const AdminSidebar = React.memo(function AdminSidebar({
       {/* Desktop permanent sidebar — siempre desde top:0 para abarcar
           toda la altura. Banner de impersonation fue removido. */}
       <aside
+        data-barra-lateral
         className={cn(
-          "hidden md:flex fixed top-0 bottom-0 z-40 flex-col transition-all duration-[var(--dur-base)] ease-in-out overflow-hidden border-r",
+          // `group/barra`: el pie (Compactar/Configurar) aparece con el mouse o el foco adentro.
+          "group/barra hidden md:flex fixed top-0 bottom-0 z-40 flex-col transition-all duration-[var(--dur-base)] ease-in-out overflow-hidden border-r",
           themeClasses.bg,
           themeClasses.border,
           /* Anchos desde los tokens del shell (globals.css §PANEL SHELL):
@@ -792,6 +744,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
           presentationMode && "hidden!"
         )}
         style={{
+          ...estiloAcento,
           /* Cuando configMode activo, el sidebar real se mueve a la derecha del
              panel de configuración para que el usuario vea naturalmente de
              izquierda → derecha: edita en el Configurator y el resultado aparece
@@ -894,9 +847,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               alerts={alerts}
               destacados={verticalFeaturedSet}
               estilo={themeClasses}
-              isDarkTheme={isDarkTheme}
-              densityPad={densityPad}
-              densityGap={densityGap}
+              densidad={densidad}
               accentBarStyle={accentBarStyle}
               colorDeIcono={(id) => ICON_COLORS[id] ?? "text-[var(--text-tertiary)]"}
               onHoverCompacto={handleCompactHover}
@@ -950,7 +901,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                     el label sigue siendo single source (`SECTION_BEFORE`)
                     para el drawer mobile, que sí lo muestra. */}
                 {sectionLabel && catIdx > 0 && (
-                  <div className={cn("my-2 border-t", themeClasses.border)} />
+                  <div className={cn(densidad.separador, "border-t", themeClasses.border)} />
                 )}
 
                 <div className="group/cat relative">
@@ -958,6 +909,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                       ref={(el) => { categoryRefs.current[category.id] = el; }}
                       data-tour-tab={isSingleTab ? catTabs[0] : category.id}
                       aria-expanded={isSingleTab ? undefined : abierta}
+                      aria-current={isActive ? (isSingleTab ? "page" : "true") : undefined}
                       onMouseEnter={(e) => {
                         if (!isSingleTab) handleCategoryMouseEnter(category.id);
                         // Precarga el chunk del tab (link directo o 1er sub-tab) → clic instantáneo.
@@ -983,12 +935,10 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                         }
                       }}
                       className={cn(
-                        "group relative w-full flex items-center rounded-xl text-[length:var(--ts-sm)] font-medium transition-all duration-[var(--dur-fast)] mb-px",
+                        "group relative w-full flex items-center rounded-xl text-[length:var(--ts-sm)] font-medium transition-all duration-[var(--dur-fast)]",
                         densityPad,
                         densityGap,
-                        isActive
-                          ? cn(themeClasses.activeItem, isDarkTheme ? "text-white font-semibold" : "text-[var(--text-primary)] font-semibold")
-                          : cn(themeClasses.text, themeClasses.hover, isDarkTheme ? "hover:text-white" : "hover:text-[var(--text-primary)] dark:hover:text-gray-200")
+                        isActive ? themeClasses.activeItem : cn(themeClasses.text, themeClasses.hover),
                       )}
                     >
                       {/* Active indicator bar — gradient inset bar with accent glow */}
@@ -1002,7 +952,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                       <DisplayIcon className={cn(
                         "h-[18px] w-[18px] shrink-0 transition-all duration-[var(--dur-base)] group-hover:scale-110",
                         isActive
-                          ? (isDarkTheme ? "text-[color-mix(in_oklab,var(--accent)_60%,white)] drop-shadow-[0_0_6px_color-mix(in oklab, var(--accent) 50%, transparent)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]")
+                          ? themeClasses.iconoActivo
                           : iconColor
                       )} />
 
@@ -1027,9 +977,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                         >
                           <ChevronRight className={cn(
                             "h-3.5 w-3.5 shrink-0 transition-colors",
-                            isActive
-                              ? (isDarkTheme ? "text-[color-mix(in_oklab,var(--accent)_60%,white)]" : "text-[var(--data-success-500)]")
-                              : (isDarkTheme ? "text-white/35 group-hover:text-white/60" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] group-hover:text-[var(--text-tertiary)]")
+                            isActive ? themeClasses.iconoActivo : themeClasses.chevron
                           )} />
                         </span>
                       )}
@@ -1071,10 +1019,11 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                       >
                         <div className="min-h-0 overflow-hidden">
                           <div className={cn(
-                            "ml-4 pl-3 border-l-2 space-y-0.5 py-1 transition-[opacity,translate] ease-[var(--ease-editorial)] motion-reduce:transition-none",
+                            "ml-4 pl-3 border-l-2 py-1 transition-[opacity,translate] ease-[var(--ease-editorial)] motion-reduce:transition-none",
                             abierta
                               ? "opacity-100 translate-y-0 duration-[var(--dur-base)] delay-[40ms]"
                               : "opacity-0 -translate-y-1.5 duration-[var(--dur-fast)]",
+                            densidad.subEspacio,
                             themeClasses.border,
                           )}>
                             {catTabs.map(subTabId => {
@@ -1092,10 +1041,9 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                                   onMouseEnter={() => preloadTab(subTabId)}
                                   onFocus={() => preloadTab(subTabId)}
                                   className={cn(
-                                    "group relative w-full flex items-center gap-2.5 px-3 min-h-10 rounded-xl text-[length:var(--ts-sm)] transition-all",
-                                    isSubActive
-                                      ? cn(themeClasses.activeItem, isDarkTheme ? "text-white font-semibold" : "text-[var(--text-primary)] font-semibold")
-                                      : cn(themeClasses.text, themeClasses.hover, "font-medium")
+                                    "group relative w-full flex items-center gap-2.5 px-3 rounded-xl text-[length:var(--ts-sm)] transition-all",
+                                    densidad.sub,
+                                    isSubActive ? themeClasses.activeItem : cn(themeClasses.text, themeClasses.hover, "font-medium")
                                   )}
                                 >
                                   {isSubActive && (
@@ -1103,9 +1051,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                                   )}
                                   <SubIcon className={cn(
                                     "h-4 w-4 shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110",
-                                    isSubActive
-                                      ? (isDarkTheme ? "text-[color-mix(in_oklab,var(--accent)_60%,white)]" : "text-[var(--data-success-500)]")
-                                      : (isDarkTheme ? "text-white/45" : "text-[var(--text-tertiary)]")
+                                    isSubActive ? themeClasses.iconoActivo : themeClasses.iconoSub
                                   )} />
                                   <span className="truncate">{subTabLabel}</span>
                                   <ScopeBadge tabId={subTabId} variant="dot" />
@@ -1181,6 +1127,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               <div key={category.id} className="relative">
                 <button
                   data-tour-tab={id}
+                  aria-current={isActive ? (single ? "page" : "true") : undefined}
                   onClick={(e) => {
                     if (single) { navigateTab(id); return; }
                     const r = e.currentTarget.getBoundingClientRect();
@@ -1208,7 +1155,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                     isActive ? cn(themeClasses.activeItem) : cn(themeClasses.text, themeClasses.hover),
                   )}
                 >
-                  {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-white/70" />}
+                  {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={accentBarStyle} />}
                   <Icon className="h-5 w-5 shrink-0 transition-transform duration-[var(--dur-base)]" />
                   {!single && (
                     <span className="absolute bottom-1 right-1.5 h-1 w-1 rounded-full bg-current opacity-50" aria-hidden />
@@ -1228,17 +1175,17 @@ export const AdminSidebar = React.memo(function AdminSidebar({
 
         </nav>
 
-        {/* ── Footer: mode toggle + external links + compact toggle ── */}
-        <div className={cn(
-          "py-3 border-t space-y-0.5 transition-all duration-[var(--dur-base)]",
-          themeClasses.headerBorder,
-          effectiveCompact ? "px-1.5" : "px-2.5"
-        )}>
-          {/* "Ver tiendas ↗" (lista del marketplace) salió del pie del sidebar
-              — Brandon 2026-08-02. Sacaba al dueño del panel hacia una vista
-              pública que no es suya. El storefront propio sigue accesible
-              desde Mi Tienda. */}
-          {SHOW_MI_TIENDA_LINK && isRealTenant && (
+        {/* ── Pie: Compactar + Configurar, a la vista sólo con el mouse o el
+            foco de teclado en la barra (PieDeBarra.tsx). "Ver tiendas ↗" salió
+            del pie — Brandon 2026-08-02. ── */}
+        <PieDeBarra
+          estilo={themeClasses}
+          compacto={effectiveCompact}
+          focusMode={focusMode}
+          isCompact={isCompact}
+          onCompactar={toggleCompact}
+          onConfigurar={openConfig}
+          enlaceTienda={SHOW_MI_TIENDA_LINK && isRealTenant ? (
             <Link
               href={storeHref}
               target="_blank"
@@ -1252,46 +1199,9 @@ export const AdminSidebar = React.memo(function AdminSidebar({
             >
               <Store className="h-[18px] w-[18px] shrink-0" /> {!effectiveCompact && "Ver mi tienda ↗"}
             </Link>
-          )}
-
-          {/* ── Compactar + Configurar — una sola fila, solo ícono (Brandon
-              2026-08-28): eran 2 filas completas con texto ("Compactar" /
-              "Configurar barra lateral"); con el pie ya angosto no hace
-              falta el label, el título (tooltip) alcanza para quien no se
-              sabe los íconos de memoria. El toggle de compactar se oculta en
-              modo foco (que ya fuerza compacto), Configurar queda solo. */}
-          <div className={cn("my-1.5 border-t", themeClasses.border)} />
-          <div className="flex items-center gap-1">
-            {!focusMode && (
-              <button
-                onClick={toggleCompact}
-                title={isCompact ? "Expandir sidebar" : "Compactar sidebar"}
-                aria-label={isCompact ? "Expandir sidebar" : "Compactar sidebar"}
-                className={cn(
-                  "flex flex-1 items-center justify-center rounded-xl py-2.5 transition-all",
-                  themeClasses.text, themeClasses.hover
-                )}
-              >
-                {isCompact ? (
-                  <PanelLeft className="h-[18px] w-[18px] shrink-0" />
-                ) : (
-                  <PanelLeftClose className="h-[18px] w-[18px] shrink-0" />
-                )}
-              </button>
-            )}
-            <button
-              onClick={openConfig}
-              title="Configurar barra lateral"
-              aria-label="Configurar barra lateral"
-              className={cn(
-                "flex flex-1 items-center justify-center rounded-xl py-2.5 transition-all",
-                themeClasses.text, themeClasses.hover
-              )}
-            >
-              <SlidersHorizontal className="h-[18px] w-[18px] shrink-0" />
-            </button>
-          </div>
-        </div>
+          ) : undefined}
+        />
+        <TiradorAncho oculto={effectiveCompact} />
         </>
       </aside>
 
@@ -1363,7 +1273,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
             // El sidebar compacto mide 60px (l.859); el 264 hardcodeado era el
             // ancho del EXPANDIDO, así que el panel habría aparecido flotando a
             // 200px del icono.
-            style={{ position: "fixed", top: sidebarFlyout.top, left: 68, zIndex: 50 }}
+            style={{ ...estiloAcento, position: "fixed", top: sidebarFlyout.top, left: 68, zIndex: 50 }}
             onMouseEnter={() => { if (flyoutTimerRef.current) clearTimeout(flyoutTimerRef.current); }}
             onMouseLeave={() => { flyoutTimerRef.current = setTimeout(() => onSidebarFlyoutChange(null), 150); }}
             className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl py-2 w-60 max-h-[80vh] overflow-y-auto"
@@ -1422,6 +1332,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
             .map(t => ({ id: t.id as string, label: resolveLabel(t.id, t.label), icon: t.icon as React.ComponentType<{ className?: string }> }));
         const flyoutTabs = aFila(catTabs);
         return (
+          <div className="contents" style={estiloAcento}>
           <SidebarFlyout
             key={hoveredCategory}
             category={{ id: cat.id, label: cat.label, tabs: catTabs as string[] }}
@@ -1433,8 +1344,9 @@ export const AdminSidebar = React.memo(function AdminSidebar({
             onClose={() => setHoveredCategory(null)}
             onMouseEnter={handleFlyoutMouseEnter}
             onMouseLeave={handleFlyoutMouseLeave}
-            theme={sidebarTheme === "shaded" ? "cristal" : sidebarTheme === "dark" ? "dark" : sidebarTheme === "light" ? "light" : "cristal"}
+            theme={themeClasses.flyout}
           />
+          </div>
         );
       })()}
 

@@ -6,6 +6,7 @@
  * del sidebar — acá no se decide qué se ve, sólo cómo se dibuja — y separa los
  * grupos con una línea fina sin título. Funciona igual desplegado (ícono +
  * nombre + avisos) y compacto (sólo íconos, el nombre sale en el tooltip).
+ * Colores y separación: los del diseño elegido (sidebar-temas.ts).
  */
 import React from "react";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,7 @@ import { preloadTab } from "@/app/admin/_lib/tab-preload";
 import { PillPronto } from "@/components/admin/shared/SidebarFlyout";
 import { ScopeBadge } from "@/components/admin/layout/ScopeBadge";
 import type { GrupoDeEnlaces } from "@/components/admin/layout/sidebar-enlaces";
+import type { Densidad, EstiloBarra } from "@/components/admin/layout/sidebar-temas";
 
 type TabItem = { id: Tab; label: string; icon: React.ElementType };
 
@@ -27,10 +29,8 @@ export interface SidebarEnlacesSueltosProps {
   navigateTab: (tab: Tab) => void;
   alerts: Record<string, number>;
   destacados: Set<string>;
-  estilo: { text: string; hover: string; activeItem: string; border: string };
-  isDarkTheme: boolean;
-  densityPad: string;
-  densityGap: string;
+  estilo: EstiloBarra;
+  densidad: Densidad;
   accentBarStyle: React.CSSProperties;
   colorDeIcono: (categoriaId: string) => string;
   onHoverCompacto: (el: HTMLElement | null, label: string, tip?: string) => void;
@@ -44,7 +44,7 @@ export function SidebarEnlacesSueltos(p: SidebarEnlacesSueltosProps) {
       {p.grupos.map((g) => (
         <React.Fragment key={g.categoriaId}>
           {g.separadorAntes && (
-            <div aria-hidden className={cn("border-t", p.compacto ? "mx-1.5 my-1.5" : "my-2", p.estilo.border)} />
+            <div aria-hidden className={cn("border-t", p.compacto ? "mx-1.5 my-1.5" : p.densidad.separador, p.estilo.border)} />
           )}
           {g.visibles.map((id) => {
             const info = porId.get(id);
@@ -65,9 +65,9 @@ export function SidebarEnlacesSueltos(p: SidebarEnlacesSueltosProps) {
                   key={`pronto-${id}`}
                   title="Módulo disponible pronto"
                   className={cn(
-                    "relative w-full flex items-center rounded-xl text-[length:var(--ts-sm)] opacity-50 cursor-not-allowed select-none mb-px",
-                    p.densityPad,
-                    p.densityGap,
+                    "relative w-full flex items-center rounded-xl text-[length:var(--ts-sm)] opacity-50 cursor-not-allowed select-none",
+                    p.densidad.fila,
+                    p.densidad.gap,
                     p.estilo.text,
                   )}
                 >
@@ -97,12 +97,10 @@ function EnlaceDesplegado({ p, id, label, Icono, categoriaId }: EnlaceProps & { 
       onMouseEnter={() => preloadTab(id)}
       onFocus={() => preloadTab(id)}
       className={cn(
-        "group relative w-full flex items-center rounded-xl text-[length:var(--ts-sm)] font-medium transition-all duration-[var(--dur-fast)] mb-px",
-        p.densityPad,
-        p.densityGap,
-        activo
-          ? cn(p.estilo.activeItem, p.isDarkTheme ? "text-white font-semibold" : "text-[var(--text-primary)] font-semibold")
-          : cn(p.estilo.text, p.estilo.hover, p.isDarkTheme ? "hover:text-white" : "hover:text-[var(--text-primary)] dark:hover:text-gray-200"),
+        "group relative w-full flex items-center rounded-xl text-[length:var(--ts-sm)] font-medium transition-all duration-[var(--dur-fast)]",
+        p.densidad.fila,
+        p.densidad.gap,
+        activo ? p.estilo.activeItem : cn(p.estilo.text, p.estilo.hover),
       )}
     >
       {activo && (
@@ -111,11 +109,7 @@ function EnlaceDesplegado({ p, id, label, Icono, categoriaId }: EnlaceProps & { 
       <Icono
         className={cn(
           "h-[18px] w-[18px] shrink-0 transition-all duration-[var(--dur-base)] group-hover:scale-110",
-          activo
-            ? p.isDarkTheme
-              ? "text-[color-mix(in_oklab,var(--accent)_60%,white)]"
-              : "text-[var(--data-success-500)]"
-            : p.colorDeIcono(categoriaId),
+          activo ? p.estilo.iconoActivo : p.colorDeIcono(categoriaId),
         )}
       />
       <span className="truncate flex-1 text-left">{label}</span>
@@ -160,7 +154,7 @@ function EnlaceCompacto({ p, id, label, Icono }: EnlaceProps) {
         activo ? p.estilo.activeItem : cn(p.estilo.text, p.estilo.hover),
       )}
     >
-      {activo && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-white/70" />}
+      {activo && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={p.accentBarStyle} />}
       <Icono className="h-5 w-5 shrink-0" />
       {avisos > 0 && (
         <span

@@ -110,9 +110,10 @@ export function SidebarFlyout({
       style={{
         position: "fixed",
         top: position.top - 8,
-        /* Pegado al sidebar (sin gap) — left: 260 = sidebar width exacto.
-           El borde izquierdo del flyout queda touching con el border del sidebar. */
-        left: 260,
+        /* Pegado al borde de la barra, que ahora cambia de ancho (tirador,
+           2026-10-20): lee la misma variable. Con 260 fijo se metía 16 px
+           dentro de la barra de 276 y tapaba el chevron. */
+        left: "calc(var(--libre-izq, 0px) + var(--admin-sidebar-w, 276px))",
         zIndex: 100,
       }}
       className={cn(
