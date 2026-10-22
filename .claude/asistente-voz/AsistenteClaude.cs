@@ -2,12 +2,12 @@
 //
 // Escucha siempre con el reconocedor de Windows (es-ES, sin internet, sólo frases fijas) y usa
 // Handy para el dictado de verdad (mejor oído que el de Windows):
-//   «Oye Clod»      → enfoca la ventana de Claude y Handy empieza a dictar
+//   «Hola asistente» o «Hola Nova» → enfoca la ventana de Claude y Handy empieza a dictar
 //   (pausa ~1,6 s)  → Handy para y escribe el texto en el campo del chat
 //   «Enviar»        → Enter: Claude recibe la consulta (Karla lee la respuesta con el hook Stop)
 //                     También vale terminar el dictado con «… enviar»: se borra esa palabra y se envía.
 //   «Sigue» agrega más · «Borra» borra lo dictado · «Cancela» lo deja escrito sin enviar
-//   «Clod envía» manda lo que ya esté escrito · «Clod descansa» / «Clod despierta» pausan
+//   «Asistente envía» manda lo que ya esté escrito · «Asistente descansa» / «Asistente despierta» pausan
 //
 // C# 5 a propósito: lo compila el csc.exe que ya trae Windows (.NET Framework 4), sin instalar nada.
 // Compilar, instalar y arrancar: .claude/asistente-voz/instalar.sh · Registro: %LOCALAPPDATA%\AsistenteClaude\registro.txt
@@ -29,15 +29,17 @@ static class AsistenteClaude
 {
     enum Estado { Esperando, Dictando, Escribiendo, Confirmando, Pausado }
 
-    // «Clod» va escrito como se pronuncia: el reconocedor es español y lee letra por letra.
-    static readonly string[] Despertar = { "oye clod", "oye claude", "hola clod", "hola claude", "oye cloud" };
-    static readonly string[] EnviarYa = { "clod envía", "clod enviar", "clod manda" };
+    // 22-10 Brandon eligió «Hola asistente» y «Hola Nova» («Oye Clod» le sonaba raro). Medido con 2 voces:
+    // 0,52-0,64 y ninguna de 12 frases trampa los despierta. Otros nombres se agregan acá, escritos como
+    // se pronuncian (también medidos: «oye yarvis» 0,56-0,58, «okey asistente» 0,51-0,59, «oye selva» 0,45-0,54).
+    static readonly string[] Despertar = { "hola asistente", "oye asistente", "hola nova", "oye nova" };
+    static readonly string[] EnviarYa = { "asistente envía", "asistente enviar", "asistente manda" };
     static readonly string[] Enviar = { "enviar", "envía", "envíalo", "envíala", "manda", "mándalo" };
     static readonly string[] Seguir = { "sigue", "agrega", "continúa", "sigue dictando" };
     static readonly string[] Borrar = { "borra", "borrar", "bórralo", "borra todo" };
     static readonly string[] Cancelar = { "cancela", "cancelar", "déjalo" };
-    static readonly string[] Descansar = { "clod descansa", "clod pausa" };
-    static readonly string[] Reanudar = { "clod despierta", "clod vuelve" };
+    static readonly string[] Descansar = { "asistente descansa", "asistente pausa" };
+    static readonly string[] Reanudar = { "asistente despierta", "asistente vuelve" };
 
     // Dictado que termina en «enviar»: Handy lo escribe, se borra esa palabra y se envía.
     static readonly Regex FinConEnviar = new Regex(@"[\s,.;:]*\b(enviar|envía|envíalo|envíala)\s*[.!]?\s*$", RegexOptions.IgnoreCase);
@@ -46,7 +48,7 @@ static class AsistenteClaude
     const float ConfianzaComando = 0.35f;
     const int SilencioParaTerminarMs = 1600;  // pausa que cierra el dictado
     const int IgnorarAlEmpezarMs = 900;       // el sonido de inicio de Handy no cuenta como voz
-    const int SinVozMaxMs = 8000;             // dijo «Oye Clod» y no habló
+    const int SinVozMaxMs = 8000;             // lo despertó y no habló
     const int DictadoMaxMs = 120000;
     const int EsperarTextoMaxMs = 20000;
     const int ConfirmarMaxMs = 20000;         // ventana para decir «enviar»
@@ -116,7 +118,7 @@ static class AsistenteClaude
         menu.Items.Add("Ver registro", null, delegate { Process.Start("notepad.exe", registro); });
         menu.Items.Add("Salir", null, delegate { icono.Visible = false; Application.Exit(); });
         icono.ContextMenuStrip = menu;
-        Icono("Claude: di «Oye Clod»");
+        Icono("Claude: di «Hola asistente»");
         reloj = new System.Threading.Timer(delegate { Tic(); }, null, 100, 100);
         Anotar("listo: escuchando con " + info.Name + " (" + info.Culture.Name + ")");
     }
@@ -165,7 +167,7 @@ static class AsistenteClaude
             {
                 case Estado.Esperando:
                     if (despertar) EmpezarDictado(true);
-                    else if (g == "enviarYa" && seguro) EnviarAhora("«clod envía»");
+                    else if (g == "enviarYa" && seguro) EnviarAhora("«asistente envía»");
                     else if (g == "descansar" && seguro) Pausar();
                     break;
                 case Estado.Escribiendo:
@@ -330,7 +332,7 @@ static class AsistenteClaude
     {
         estado = Estado.Pausado;
         Sonar("Speech Sleep.wav");
-        Icono("En pausa: di «Clod despierta»");
+        Icono("En pausa: di «Asistente despierta»");
         Anotar("→ en pausa");
     }
 
@@ -340,7 +342,7 @@ static class AsistenteClaude
         marca = DateTime.Now;
         listoParaEnviar = DateTime.MinValue;
         enviarPendiente = false;
-        Icono("Claude: di «Oye Clod»");
+        Icono("Claude: di «Hola asistente»");
         Anotar("→ esperando: " + motivo);
     }
 
