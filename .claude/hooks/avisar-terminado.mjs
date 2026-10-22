@@ -11,7 +11,7 @@
  * que no suena no puede además romper el cierre del turno.
  */
 import { execFile, spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -77,6 +77,13 @@ const UVX = join(homedir(), ".local", "bin", "uvx");
 // Ava (multilingüe, la de Copilot): Brandon la eligió el 09-10 entre 4 muestras por ser la más
 // natural y cálida; lee el español con acento neutro. Antes: es-PE-CamilaNeural.
 const VOZ = "en-US-AvaMultilingualNeural";
+// 22-10: Brandon pidió una voz más natural → primero Karla (peruana, ElevenLabs, la misma de su
+// asistente de voz); si ElevenLabs falla (sin permiso text_to_speech, sin saldo, sin internet)
+// habla Ava. El motivo del último fallo queda en ~/.claude/voz-karla-error.txt.
+const ELEVEN_CLAVE = join(homedir(), ".config", "elevenlabs", "api_key");
+const ELEVEN_ULTIMO_ERROR = join(homedir(), ".claude", "voz-karla-error.txt");
+const VOZ_KARLA = "saqk76H0L3GCnuHtLDw6";
+const MODELO_KARLA = "eleven_v4";
 const CARPETA_VOZ_WSL = "/mnt/c/Users/Public/claude-voz";
 const CARPETA_VOZ_WIN = "C:\\Users\\Public\\claude-voz";
 // Dos sesiones que terminan juntas no deben hablar encima: la reproducción hace fila.
@@ -158,15 +165,43 @@ function textoParaLeer(input) {
   return salida ? recortar(salida) : "Terminé.";
 }
 
+/** Karla con ElevenLabs; null si no hay clave o falla (sin permiso, sin saldo): sigue Ava. */
+async function generarVozKarla(texto, nombre) {
+  if (!existsSync(ELEVEN_CLAVE)) return null;
+  try {
+    const res = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${VOZ_KARLA}?output_format=mp3_44100_128`,
+      {
+        method: "POST",
+        headers: { "xi-api-key": readFileSync(ELEVEN_CLAVE, "utf8").trim(), "Content-Type": "application/json" },
+        body: JSON.stringify({ text: texto, model_id: MODELO_KARLA }),
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+    if (!res.ok) {
+      writeFileSync(ELEVEN_ULTIMO_ERROR, `${new Date().toISOString()} ${res.status} ${(await res.text()).slice(0, 300)}\n`);
+      return null;
+    }
+    writeFileSync(`${CARPETA_VOZ_WSL}/${nombre}`, Buffer.from(await res.arrayBuffer()));
+    rmSync(ELEVEN_ULTIMO_ERROR, { force: true });
+    return `${CARPETA_VOZ_WIN}\\${nombre}`;
+  } catch (err) {
+    writeFileSync(ELEVEN_ULTIMO_ERROR, `${new Date().toISOString()} ${String(err)}\n`);
+    return null;
+  }
+}
+
 /** Genera el mp3 con la voz; null si está apagada o falla (sin internet, uvx ausente). */
-function generarVoz(texto) {
-  if (existsSync(VOZ_APAGADA) || !existsSync(UVX)) return Promise.resolve(null);
+async function generarVoz(texto) {
+  if (existsSync(VOZ_APAGADA)) return null;
   try {
     mkdirSync(CARPETA_VOZ_WSL, { recursive: true });
   } catch {
-    return Promise.resolve(null);
+    return null;
   }
   const nombre = `voz-${process.pid}-${Date.now()}.mp3`;
+  const karla = await generarVozKarla(texto, nombre);
+  if (karla || !existsSync(UVX)) return karla;
   return new Promise((ok) => {
     execFile(
       UVX,
