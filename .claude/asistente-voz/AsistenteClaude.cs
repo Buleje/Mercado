@@ -3,10 +3,11 @@
 // Escucha siempre con el reconocedor de Windows (es-ES, sin internet, sólo frases fijas) y usa
 // Handy para el dictado de verdad (mejor oído que el de Windows):
 //   «Hola asistente» o «Hola Nova» → enfoca la ventana de Claude y Handy empieza a dictar
-//   (pausa ~1,6 s)  → Handy para y escribe el texto en el campo del chat
-//   «Enviar»        → Enter: Claude recibe la consulta (Karla lee la respuesta con el hook Stop)
-//                     También vale terminar el dictado con «… enviar»: se borra esa palabra y se envía.
-//   «Sigue» agrega más · «Borra» borra lo dictado · «Cancela» lo deja escrito sin enviar
+//   (pensar y hablar sin apuro: el dictado sigue abierto mientras tanto)
+//   «Enviar»        → Handy para, escribe el texto en el chat (sin la palabra «enviar») y Enter:
+//                     Claude recibe la consulta y Karla lee la respuesta (hook Stop)
+//   «Listo»         → para y lo deja escrito; después «enviar», «sigue», «borra» o «cancela»
+//   «Cancela» mientras dicta lo descarta · 1 min callado después de hablar = «listo»
 //   «Asistente envía» manda lo que ya esté escrito · «Asistente descansa» / «Asistente despierta» pausan
 //
 // C# 5 a propósito: lo compila el csc.exe que ya trae Windows (.NET Framework 4), sin instalar nada.
@@ -40,18 +41,26 @@ static class AsistenteClaude
     static readonly string[] Cancelar = { "cancela", "cancelar", "déjalo" };
     static readonly string[] Descansar = { "asistente descansa", "asistente pausa" };
     static readonly string[] Reanudar = { "asistente despierta", "asistente vuelve" };
+    static readonly string[] Terminar = { "listo", "lista", "ya está", "termina", "terminé" };  // «lista»: así oyó «listo» en voz de mujer
 
-    // Dictado que termina en «enviar»: Handy lo escribe, se borra esa palabra y se envía.
+    // La orden que cerró el dictado también la oyó Handy: se borra del final antes de enviar.
+    static readonly Regex FinOrdenEnviar = new Regex(@"[\s,.;:¡!]*\b(enviar|env[ií]a|env[ií]alo|env[ií]ala|manda|m[aá]ndalo)\s*[.!]?\s*$", RegexOptions.IgnoreCase);
+    static readonly Regex FinOrdenListo = new Regex(@"[\s,.;:¡!]*\b(list[oa]|ya est[aá]|termina|termin[eé])\s*[.!]?\s*$", RegexOptions.IgnoreCase);
+    // Cerrado por silencio: sólo un «enviar» claro al final cuenta como orden de enviar.
     static readonly Regex FinConEnviar = new Regex(@"[\s,.;:]*\b(enviar|envía|envíalo|envíala)\s*[.!]?\s*$", RegexOptions.IgnoreCase);
 
     const float ConfianzaDespertar = 0.40f;
     const float ConfianzaComando = 0.35f;
-    const int SilencioParaTerminarMs = 1600;  // pausa que cierra el dictado
+    // 22-10: con 1,6 s de pausa cortaba mientras Brandon pensaba (y su micrófono le llega con nivel
+    // 3-5 de 100, así que el silencio no se puede medir por volumen): ahora cierra él con la voz.
     const int IgnorarAlEmpezarMs = 900;       // el sonido de inicio de Handy no cuenta como voz
-    const int SinVozMaxMs = 8000;             // lo despertó y no habló
-    const int DictadoMaxMs = 120000;
+    const int SinVozMaxMs = 60000;            // lo despertó y nunca habló → se descarta
+    const int PausaLargaMs = 60000;           // habló y después 1 min callado → queda escrito
+    const int DictadoMaxMs = 300000;
     const int EsperarTextoMaxMs = 20000;
-    const int ConfirmarMaxMs = 20000;         // ventana para decir «enviar»
+    const int ConfirmarMaxMs = 60000;         // ventana para decir «enviar» después de «listo»
+
+    enum Orden { Ninguna, Enviar, Listo }
 
     static readonly object candado = new object();
     static readonly object candadoRegistro = new object();
@@ -66,12 +75,10 @@ static class AsistenteClaude
     static readonly string handyExe = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Handy", "handy.exe");
     static readonly string historialHandy = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "com.pais.handy", "history.db");
 
-    // Nivel de audio 0-100 del reconocedor; el piso es el ruido de la habitación.
-    static readonly Queue<int> nivelesReposo = new Queue<int>();
-    static int piso = 3;
-    static DateTime marca, ultimoSonido, listoParaEnviar;
-    static int seguidosConVoz, nivelMax, letrasEscritas;
-    static bool haHablado, enviarPendiente;
+    static DateTime marca, ultimaVoz, listoParaEnviar;
+    static int letrasEscritas;
+    static bool haHablado;
+    static Orden ordenAlTerminar;
     static long idHandyAntes;
     static string textoUltimo = "";
 
@@ -109,7 +116,7 @@ static class AsistenteClaude
         motor.SetInputToDefaultAudioDevice();
         motor.SpeechRecognized += AlReconocer;
         motor.SpeechDetected += AlDetectarVoz;
-        motor.AudioLevelUpdated += AlNivel;
+        motor.SpeechRecognitionRejected += AlRechazar;
         motor.RecognizeAsync(RecognizeMode.Multiple);
 
         icono = new NotifyIcon { Icon = SystemIcons.Information, Visible = true };
@@ -133,6 +140,7 @@ static class AsistenteClaude
         Agregar(m, info, "cancelar", Cancelar);
         Agregar(m, info, "descansar", Descansar);
         Agregar(m, info, "reanudar", Reanudar);
+        Agregar(m, info, "terminar", Terminar);
         // Dictado libre como «todo lo demás»: «Oye, cobra la deuda» cae acá en vez de despertar.
         Grammar libre = new DictationGrammar();
         libre.Name = "libre";
@@ -156,12 +164,13 @@ static class AsistenteClaude
     static void AlReconocer(object s, SpeechRecognizedEventArgs e)
     {
         string g = e.Result.Grammar.Name;
-        if (g == "libre") return;  // conversación de la casa: ni se usa ni se anota
-        float c = e.Result.Confidence;
-        bool despertar = g == "despertar" && c >= ConfianzaDespertar;
-        bool seguro = c >= ConfianzaComando;
         lock (candado)
         {
+            // Conversación de la casa o la consulta misma: no se usa ni se anota, sólo marca que hay voz.
+            if (g == "libre") { MarcarVoz(); return; }
+            float c = e.Result.Confidence;
+            bool despertar = g == "despertar" && c >= ConfianzaDespertar;
+            bool seguro = c >= ConfianzaComando;
             Anotar(string.Format("oí «{0}» ({1}, {2:0.00}) estando {3}", e.Result.Text, g, c, estado));
             switch (estado)
             {
@@ -170,8 +179,14 @@ static class AsistenteClaude
                     else if (g == "enviarYa" && seguro) EnviarAhora("«asistente envía»");
                     else if (g == "descansar" && seguro) Pausar();
                     break;
+                case Estado.Dictando:
+                    if (g == "enviar" && seguro) TerminarDictado(Orden.Enviar);
+                    else if (g == "terminar" && seguro) TerminarDictado(Orden.Listo);
+                    else if (g == "cancelar" && seguro) { Handy("--cancel"); Sonar("Speech Sleep.wav"); Volver("dictado cancelado"); }
+                    else MarcarVoz();
+                    break;
                 case Estado.Escribiendo:
-                    if (g == "enviar" && seguro) enviarPendiente = true;
+                    if (g == "enviar" && seguro) ordenAlTerminar = Orden.Enviar;
                     break;
                 case Estado.Confirmando:
                     if (g == "enviar" && seguro) EnviarAhora("dijo enviar");
@@ -188,42 +203,20 @@ static class AsistenteClaude
 
     static void AlDetectarVoz(object s, SpeechDetectedEventArgs e)
     {
-        lock (candado)
-        {
-            if (estado == Estado.Dictando && (DateTime.Now - marca).TotalMilliseconds >= IgnorarAlEmpezarMs)
-            {
-                haHablado = true;
-                ultimoSonido = DateTime.Now;
-            }
-        }
+        lock (candado) { MarcarVoz(); }
     }
 
-    static void AlNivel(object s, AudioLevelUpdatedEventArgs e)
+    static void AlRechazar(object s, SpeechRecognitionRejectedEventArgs e)
     {
-        int n = e.AudioLevel;
-        lock (candado)
-        {
-            if (estado == Estado.Esperando || estado == Estado.Pausado)
-            {
-                nivelesReposo.Enqueue(n);
-                if (nivelesReposo.Count > 150) nivelesReposo.Dequeue();
-                if (nivelesReposo.Count >= 30)
-                {
-                    List<int> orden = nivelesReposo.OrderBy(x => x).ToList();
-                    piso = orden[orden.Count / 5];
-                }
-            }
-            else if (estado == Estado.Dictando)
-            {
-                if (n > nivelMax) nivelMax = n;
-                if ((DateTime.Now - marca).TotalMilliseconds < IgnorarAlEmpezarMs) return;
-                if (n >= piso + 8) { if (++seguidosConVoz >= 3) haHablado = true; }
-                else seguidosConVoz = 0;
-                // El umbral de silencio sigue a la voz: un micrófono bajo no corta a mitad de frase.
-                int umbralSilencio = piso + Math.Max(3, (nivelMax - piso) / 4);
-                if (n >= umbralSilencio) ultimoSonido = DateTime.Now;
-            }
-        }
+        lock (candado) { MarcarVoz(); }
+    }
+
+    /// <summary>Mientras dicta, cualquier voz (empieza o termina una frase) reinicia la cuenta del silencio.</summary>
+    static void MarcarVoz()
+    {
+        if (estado != Estado.Dictando || (DateTime.Now - marca).TotalMilliseconds < IgnorarAlEmpezarMs) return;
+        haHablado = true;
+        ultimaVoz = DateTime.Now;
     }
 
     static void Tic()
@@ -235,9 +228,9 @@ static class AsistenteClaude
             switch (estado)
             {
                 case Estado.Dictando:
-                    double silencio = (ahora - ultimoSonido).TotalMilliseconds;
-                    if (!haHablado && ms >= SinVozMaxMs) TerminarDictado(false);
-                    else if ((haHablado && silencio >= SilencioParaTerminarMs) || ms >= DictadoMaxMs) TerminarDictado(true);
+                    if (!haHablado && ms >= SinVozMaxMs) { Handy("--cancel"); Sonar("Speech Sleep.wav"); Volver("no te oí en 1 minuto"); }
+                    else if (haHablado && (ahora - ultimaVoz).TotalMilliseconds >= PausaLargaMs) TerminarDictado(Orden.Ninguna);
+                    else if (ms >= DictadoMaxMs) TerminarDictado(Orden.Ninguna);
                     break;
                 case Estado.Escribiendo:
                     if (listoParaEnviar == DateTime.MinValue)
@@ -250,7 +243,7 @@ static class AsistenteClaude
                             textoUltimo = texto;
                             letrasEscritas += texto.Length;
                             listoParaEnviar = ahora.AddMilliseconds(Math.Min(400 + texto.Length * 12, 8000));
-                            Anotar("Handy escribió «" + texto + "»");
+                            Anotar("Handy escribió " + texto.Length + " letras");
                         }
                         else if (ms >= EsperarTextoMaxMs) { Sonar("Speech Misrecognition.wav"); Volver("Handy no devolvió texto"); }
                     }
@@ -273,38 +266,39 @@ static class AsistenteClaude
         Handy("--toggle-transcription");
         estado = Estado.Dictando;
         marca = DateTime.Now;
-        ultimoSonido = marca;
+        ultimaVoz = marca;
         haHablado = false;
-        enviarPendiente = false;
-        seguidosConVoz = 0;
-        nivelMax = 0;
-        Icono("Te escucho… (una pausa termina)");
-        Anotar("→ dictando (piso de ruido " + piso + ")");
+        ordenAlTerminar = Orden.Ninguna;
+        Icono("Te escucho: al terminar di «enviar» o «listo»");
+        Anotar("→ dictando");
     }
 
-    static void TerminarDictado(bool huboVoz)
+    static void TerminarDictado(Orden orden)
     {
-        Anotar(string.Format("fin del dictado: voz={0}, nivel máx {1}, piso {2}", huboVoz, nivelMax, piso));
-        if (!huboVoz) { Handy("--cancel"); Sonar("Speech Sleep.wav"); Volver("no te oí"); return; }
+        Anotar(string.Format("fin del dictado ({0}, {1:0} s)", orden, (DateTime.Now - marca).TotalSeconds));
         EnfocarClaude();
         Handy("--toggle-transcription");
         estado = Estado.Escribiendo;
         marca = DateTime.Now;
         listoParaEnviar = DateTime.MinValue;
+        ordenAlTerminar = orden;
         Icono("Escribiendo…");
     }
 
     static void TextoEscrito()
     {
-        Match m = FinConEnviar.Match(textoUltimo);
-        if (m.Success && EnfocarClaude())
+        Regex fin = ordenAlTerminar == Orden.Enviar ? FinOrdenEnviar : ordenAlTerminar == Orden.Listo ? FinOrdenListo : FinConEnviar;
+        Match m = fin.Match(textoUltimo);
+        if (m.Success && m.Length > 0 && EnfocarClaude())
         {
             Teclas(VK_BACK, m.Length);
             letrasEscritas -= m.Length;
-            EnviarAhora("terminó con «enviar»");
+        }
+        if (ordenAlTerminar == Orden.Enviar || (ordenAlTerminar == Orden.Ninguna && m.Success))
+        {
+            EnviarAhora("dijo enviar");
             return;
         }
-        if (enviarPendiente) { EnviarAhora("dijo enviar mientras escribía"); return; }
         estado = Estado.Confirmando;
         marca = DateTime.Now;
         Icono("Di «enviar», «sigue», «borra» o «cancela»");
@@ -341,7 +335,7 @@ static class AsistenteClaude
         estado = Estado.Esperando;
         marca = DateTime.Now;
         listoParaEnviar = DateTime.MinValue;
-        enviarPendiente = false;
+        ordenAlTerminar = Orden.Ninguna;
         Icono("Claude: di «Hola asistente»");
         Anotar("→ esperando: " + motivo);
     }
