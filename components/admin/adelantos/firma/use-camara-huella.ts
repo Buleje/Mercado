@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { aGris, cajaGuia, debeTomar, nitidez, realzarHuella } from "@/lib/adelantos/huella-imagen";
 import { logger } from "@/lib/logger";
 
-/** `bloqueada` = la cabecera Permissions-Policy de la página no deja usar la cámara (hoy `camera=()` en /admin). */
+/** `bloqueada` = la cabecera Permissions-Policy de la página no deja usar la cámara (desde el 23-10 el admin tiene `camera=(self)`; el superadmin todavía no: sale por proxy.ts antes de los headers). */
 export type EstadoCamara = "pidiendo" | "viva" | "sin-camara" | "denegada" | "bloqueada";
 
 type ConPolitica = Document & { featurePolicy?: { allowsFeature: (f: string) => boolean } };

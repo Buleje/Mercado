@@ -53,19 +53,24 @@ export function applySecurityHeaders(
   // /marketplace/registrar. microphone=(self) SOLO en superficies admin
   // (cubicador forestal por voz, ADR-124) — es el default del navegador
   // (first-party, igual gatea el permiso del usuario); en storefront/checkout
-  // queda bloqueado (microphone=()). camera bloqueada en todos lados.
+  // queda bloqueado (microphone=()). camera: ver abajo.
   // OJO: el admin del tenant vive en /t/<slug>/admin, no solo /admin.
   const isAdminSurface =
     pathname.startsWith("/admin") ||
     pathname.startsWith("/superadmin") ||
     /^\/t\/[^/]+\/admin/.test(pathname);
-  // camera=(self) SOLO en el kiosko de asistencia (2026-10-10): la tablet del
-  // local lee el QR del fotocheck y saca la foto de la marca con su cámara.
+  // camera=(self) en el kiosko de asistencia (2026-10-10: la tablet lee el QR
+  // del fotocheck y saca la foto de la marca) y en las superficies admin
+  // (2026-10-23, Brandon: escanear la huella y tomar la foto del recibo con la
+  // cámara; también la usan el lector de códigos, el escáner de trozas y el de
+  // documentos, que hasta hoy caían a «subir foto»). Igual que el micrófono:
+  // first-party, el navegador sigue pidiendo permiso al usuario; tienda y
+  // checkout siguen con camera=().
   // Esta cabecera es la que llega (pisa la de next.config.ts).
   const esKiosko = pathname.startsWith("/kiosko/");
   response.headers.set(
     "Permissions-Policy",
-    `camera=(${esKiosko ? "self" : ""}), microphone=(${isAdminSurface ? "self" : ""}), geolocation=(self)`,
+    `camera=(${esKiosko || isAdminSurface ? "self" : ""}), microphone=(${isAdminSurface ? "self" : ""}), geolocation=(self)`,
   );
 
   return response;
