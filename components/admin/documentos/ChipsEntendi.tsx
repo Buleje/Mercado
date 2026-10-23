@@ -11,7 +11,7 @@
  */
 
 import { useMemo } from "react";
-import { CalendarClock, FileText, Folder, Hash, MessageCircle, Search, Star, Upload, X, type LucideIcon } from "lucide-react";
+import { CalendarClock, FileText, Folder, Hash, MessageCircle, Search, Star, Upload, X, type LucideIcon } from "@buleje/design-system/icons";
 import {
   entendioAlgo,
   interpretarBusqueda,
