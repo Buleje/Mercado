@@ -2,7 +2,6 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "language": "spanish",
   "bashOutputMaxChars": 24000,
-  "taskOutputMaxChars": 24000,
   "bashEditDiffEnabled": true,
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "0",
@@ -12,7 +11,8 @@
     "SLASH_COMMAND_TOOL_CHAR_BUDGET": "20000",
     "CLAUDE_CODE_RESUME_INTERRUPTED_TURN": "1",
     "CLAUDE_CODE_TOOL_MEMORY_LIMIT": "13G",
-    "CLAUDE_CODE_TOOL_MEMORY_CGROUP_EXCLUDE": "mcp,lsp,hooks"
+    "CLAUDE_CODE_TOOL_MEMORY_CGROUP_EXCLUDE": "mcp,lsp,hooks",
+    "CLAUDE_CODE_GLOB_NO_IGNORE": "false"
   },
   "hooks": {
     "PreToolUse": [
