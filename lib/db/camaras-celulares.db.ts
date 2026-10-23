@@ -44,8 +44,21 @@ function estadoDe(valor: unknown): EstadoCelulares {
     : [];
   const ultimoPush =
     v.ultimoPush && typeof v.ultimoPush === "object" && !Array.isArray(v.ultimoPush) ? { ...v.ultimoPush } : {};
-  return { dispositivos: dispositivos.map((d) => ({ ...d, camaras: { ...(d.camaras ?? {}) } })), ultimoPush };
+  return { dispositivos: dispositivos.map((d) => ({ ...d, camaras: { ...(d.camaras ?? {}) }, fotoEnAviso: aceptoFoto(d) })), ultimoPush };
 }
+
+/**
+ * La aceptación de la foto en el aviso vale sólo si la dio el dueño actual del
+ * dispositivo: si el navegador pasó a otro usuario, se cae sola.
+ */
+function aceptoFoto(d: CelularSuscrito): { por: string; en: string } | null {
+  const f = d.fotoEnAviso;
+  return f && typeof f === "object" && f.por === d.usuario && typeof f.en === "string" ? { por: f.por, en: f.en } : null;
+}
+
+export type ResultadoFotoEnAviso =
+  | { ok: true; estado: EstadoCelulares; cambio: boolean }
+  | { ok: false; motivo: "no_existe" | "no_es_tuyo" };
 
 function exigirTenant(tenantId: string): void {
   if (!tenantId) throw new Error("tenantId is required");
@@ -57,6 +70,50 @@ export const CamarasCelularesDB = {
   async listar(tenantId: string): Promise<EstadoCelulares> {
     exigirTenant(tenantId);
     return estadoDe(await PlatformSettingsDB.get<unknown>(CLAVE(tenantId)));
+  },
+
+  /**
+   * Sin caché (la de `listar` dura 5 min): para MANDAR, así un celular que se
+   * quitó, se apagó o retiró la foto deja de recibir al instante.
+   */
+  async listarFresco(tenantId: string): Promise<EstadoCelulares> {
+    exigirTenant(tenantId);
+    return estadoDe(await PlatformSettingsDB.getFresco<unknown>(CLAVE(tenantId)));
+  },
+
+  /**
+   * Prende o apaga la foto en el aviso con el celular bloqueado (Ley 29733).
+   * Prenderla la acepta SÓLO el dueño del dispositivo (nadie acepta por otro);
+   * apagarla, el dueño o quien puede quitar dispositivos ajenos (`puedeOtros`).
+   * La condición va dentro del candado, no en un `if` antes.
+   */
+  async fijarFotoEnAviso(
+    tenantId: string,
+    id: string,
+    quien: { usuario: string; puedeOtros: boolean },
+    prender: boolean,
+    ahora: Date = new Date(),
+  ): Promise<ResultadoFotoEnAviso> {
+    exigirTenant(tenantId);
+    return PlatformSettingsDB.actualizar<unknown, ResultadoFotoEnAviso>(
+      CLAVE(tenantId),
+      (actual) => {
+        const estado = estadoDe(actual);
+        const d = estado.dispositivos.find((x) => x.id === id);
+        if (!d) return { resultado: { ok: false, motivo: "no_existe" } };
+        const esSuyo = d.usuario === quien.usuario;
+        if (prender ? !esSuyo : !esSuyo && !quien.puedeOtros) return { resultado: { ok: false, motivo: "no_es_tuyo" } };
+        if (!!d.fotoEnAviso === prender) return { resultado: { ok: true, estado, cambio: false } };
+        const fotoEnAviso = prender ? { por: quien.usuario, en: ahora.toISOString() } : null;
+        const siguiente: EstadoCelulares = {
+          ...estado,
+          dispositivos: estado.dispositivos.map((x) => (x.id === id ? { ...x, fotoEnAviso } : x)),
+        };
+        return { valor: siguiente, resultado: { ok: true, estado: siguiente, cambio: true } };
+      },
+      quien.usuario,
+      TX,
+    );
   },
 
   /**
@@ -103,6 +160,8 @@ export const CamarasCelularesDB = {
           dispositivo: entrada.dispositivo,
           camaras: { ...(previo?.camaras ?? {}), [camaraId]: entrada.cuando },
           creadoEn: previo?.creadoEn ?? ahora.toISOString(),
+          /* La foto en el aviso la aceptó una persona: pasa a otro usuario sin ella. */
+          fotoEnAviso: previo && previo.usuario === entrada.usuario ? (previo.fotoEnAviso ?? null) : null,
         };
         const siguiente: EstadoCelulares = {
           ...estado,

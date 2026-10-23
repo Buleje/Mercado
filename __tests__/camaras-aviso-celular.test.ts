@@ -22,10 +22,30 @@ const H = vi.hoisted(() => ({
   codigo: new Map<string, number>(),
   usuarios: new Map<string, { active: boolean; role: string }>(),
   auth: null as unknown,
+  /** Lo que quedó en el registro de actividad; `registroFalla` = la base no lo anota. */
+  registro: [] as { accion: string; entityId?: string; user: string; detalle: string; tenantId?: string }[],
+  registroFalla: false,
 }));
 
 vi.mock("@/lib/logger", () => ({ logger: { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} } }));
-vi.mock("@/lib/activity-logger", () => ({ logActivity: async () => undefined }));
+vi.mock("@/lib/activity-logger", () => ({
+  logActivity: async (
+    accion: string,
+    _entidad: string,
+    detalle: string,
+    entityId: string | undefined,
+    user: string,
+    _requestId: string | undefined,
+    tenantId: string | undefined,
+    opts: { tirar?: boolean } = {},
+  ) => {
+    if (H.registroFalla) {
+      if (opts.tirar) throw new Error("registro caído");
+      return;
+    }
+    H.registro.push({ accion, entityId, user, detalle, tenantId });
+  },
+}));
 vi.mock("@/lib/db/platform-settings.db", () => ({
   PlatformSettingsDB: {
     get: async (key: string) => structuredClone(H.kv.get(key) ?? null),
@@ -124,6 +144,8 @@ const llegaron = () => H.enviados.map((e) => e.endpoint).sort();
 
 beforeEach(() => {
   H.kv.clear();
+  H.registro.length = 0;
+  H.registroFalla = false;
   H.enviados.length = 0;
   H.codigo.clear();
   H.usuarios.clear();
@@ -357,5 +379,80 @@ describe("ruta /api/admin/camaras/[id]/celular", () => {
     const res = await ruta.POST(req("POST", { id: idDeEndpointServidor(FCM("dueno")) }), ctx());
     expect(await res.json()).toMatchObject({ ok: true, status: 201 });
     expect(H.enviados[0].carga.title).toBe("📷 Patio de trozas · prueba");
+  });
+
+  describe("«Foto en el aviso» (Ley 29733: se ve con el celular bloqueado)", () => {
+    const guardados = (t = T) => (H.kv.get(`interno:camaras-celulares:${t}`) as { dispositivos: CelularSuscrito[] }).dispositivos;
+
+    it("apagada por defecto; la prende SÓLO el dueño del dispositivo y queda quién aceptó en el registro", async () => {
+      sembrar(T, [camara()], [celular(FCM("alm"), "almacen", { "cam-patio": "siempre" })]);
+      const id = idDeEndpointServidor(FCM("alm"));
+      sesion(T, "almacen", "almacenero");
+      expect((await (await ruta.GET(req("GET"), ctx())).json()).dispositivos[0].fotoEnAviso).toBe(false);
+      /* El dueño del negocio no la acepta por otra persona. */
+      sesion(T, "dueno", "owner");
+      expect((await ruta.PATCH(req("PATCH", { id, fotoEnAviso: true }), ctx())).status).toBe(403);
+      expect(guardados()[0].fotoEnAviso ?? null).toBeNull();
+      expect(H.registro).toEqual([]);
+
+      sesion(T, "almacen", "almacenero");
+      const res = await ruta.PATCH(req("PATCH", { id, fotoEnAviso: true }), ctx());
+      expect(res.status).toBe(200);
+      expect((await res.json()).dispositivos[0]).toMatchObject({ id, fotoEnAviso: true, tuyo: true });
+      expect(guardados()[0].fotoEnAviso).toEqual({ por: "almacen", en: expect.any(String) });
+      expect(H.registro).toEqual([
+        {
+          accion: "camara.foto_en_aviso_aceptada",
+          entityId: id,
+          user: "almacen",
+          tenantId: T,
+          detalle: expect.stringContaining("La foto se verá aunque el celular esté bloqueado."),
+        },
+      ]);
+    });
+
+    it("apagarla: el dueño del negocio sí puede (y queda anotado); otro almacenero no", async () => {
+      const d = { ...celular(FCM("alm"), "almacen", { "cam-patio": "siempre" }), fotoEnAviso: { por: "almacen", en: "2026-10-23T12:00:00Z" } };
+      sembrar(T, [camara()], [d]);
+      H.usuarios.set(`${T}:otro`, { active: true, role: "almacenero" });
+      sesion(T, "otro", "almacenero");
+      expect((await ruta.PATCH(req("PATCH", { id: d.id, fotoEnAviso: false }), ctx())).status).toBe(403);
+      sesion(T, "dueno", "owner");
+      expect((await ruta.PATCH(req("PATCH", { id: d.id, fotoEnAviso: false }), ctx())).status).toBe(200);
+      expect(guardados()[0].fotoEnAviso).toBeNull();
+      expect(H.registro.map((r) => r.accion)).toEqual(["camara.foto_en_aviso_retirada"]);
+    });
+
+    it("si el registro no anota la aceptación: 503 y la foto sigue apagada", async () => {
+      sembrar(T, [camara()], [celular(FCM("alm"), "almacen", { "cam-patio": "siempre" })]);
+      H.registroFalla = true;
+      sesion(T, "almacen", "almacenero");
+      const res = await ruta.PATCH(req("PATCH", { id: idDeEndpointServidor(FCM("alm")), fotoEnAviso: true }), ctx());
+      expect(res.status).toBe(503);
+      expect(guardados()[0].fotoEnAviso ?? null).toBeNull();
+    });
+
+    it("el dispositivo de otro negocio es 404 y no se toca", async () => {
+      sembrar(OTRO, [camara()], [celular(FCM("alm"), "almacen", { "cam-patio": "siempre" })]);
+      sembrar(T, [camara()], []);
+      sesion(T, "almacen", "almacenero");
+      expect((await ruta.PATCH(req("PATCH", { id: idDeEndpointServidor(FCM("alm")), fotoEnAviso: true }), ctx())).status).toBe(404);
+      expect(guardados(OTRO)[0].fotoEnAviso ?? null).toBeNull();
+    });
+
+    it("el navegador pasa a otro usuario: la aceptación se cae; el mismo usuario la conserva", async () => {
+      const d = { ...celular(FCM("pc"), "almacen", { "cam-patio": "siempre" }), fotoEnAviso: { por: "almacen", en: "2026-10-23T12:00:00Z" } };
+      sembrar(T, [camara(), camara({ id: "cam-porton", nombre: "Portón" })], [d]);
+      sesion(T, "almacen", "almacenero");
+      await ruta.PUT(req("PUT", { subscription: sub("pc"), cuando: "noche" }), ctx("cam-porton"));
+      expect(guardados()[0].fotoEnAviso).toEqual({ por: "almacen", en: "2026-10-23T12:00:00Z" });
+      sesion(T, "dueno", "owner");
+      await ruta.PUT(req("PUT", { subscription: sub("pc"), cuando: "siempre" }), ctx());
+      expect(guardados()[0]).toMatchObject({ usuario: "dueno", fotoEnAviso: null });
+      /* Una aceptación guardada a nombre de otro no vale aunque esté en la base. */
+      H.kv.set(`interno:camaras-celulares:${T}`, { dispositivos: [{ ...d, fotoEnAviso: { por: "dueno", en: "x" } }], ultimoPush: {} });
+      sesion(T, "almacen", "almacenero");
+      expect((await (await ruta.GET(req("GET"), ctx())).json()).dispositivos[0].fotoEnAviso).toBe(false);
+    });
   });
 });

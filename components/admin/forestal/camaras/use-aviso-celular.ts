@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { idDeEndpoint, type CelularVisible, type CuandoCelular } from "@/lib/camaras/avisar-push";
+import { idDeEndpoint, TEXTO_FOTO_EN_AVISO, type CelularVisible, type CuandoCelular } from "@/lib/camaras/avisar-push";
 import { hayPush, suscribirEsteNavegador, suscripcionActual } from "@/lib/push/avisos-navegador";
 
 export type CelularDeLaLista = CelularVisible & { tuyo: boolean };
@@ -28,6 +28,7 @@ const MOTIVOS: Record<string, string> = {
   datos_invalidos: "Este navegador dio una suscripción que el servidor no acepta.",
   forbidden: "Ese dispositivo es de otra persona: sólo el administrador o el dueño lo quita.",
   not_found: "Ese dispositivo ya no está en la lista.",
+  sin_registro: "No se pudo anotar que lo aceptaste: la foto sigue apagada. Prueba de nuevo.",
 };
 
 async function leerError(res: Response): Promise<string> {
@@ -64,7 +65,7 @@ export function useAvisoCelular(camaraId: string) {
   }, [url]);
 
   const enviar = useCallback(
-    async (metodo: "PUT" | "DELETE" | "POST", cuerpo: object): Promise<Response> =>
+    async (metodo: "PUT" | "DELETE" | "POST" | "PATCH", cuerpo: object): Promise<Response> =>
       fetch(url, { method: metodo, headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(cuerpo) }),
     [url],
   );
@@ -128,6 +129,29 @@ export function useAvisoCelular(camaraId: string) {
     }
   }, [enviar, esteId]);
 
+  /** La foto en el aviso con el celular bloqueado: la prende sólo el dueño de ESTE dispositivo (queda anotado). */
+  const fotoEnAviso = useCallback(
+    async (prenderla: boolean) => {
+      if (!esteId) return;
+      setOcupado(true);
+      setMensaje(null);
+      try {
+        const res = await enviar("PATCH", { id: esteId, fotoEnAviso: prenderla });
+        if (!res.ok) return setMensaje({ tono: "alerta", texto: await leerError(res) });
+        setDatos((await res.json()) as Datos);
+        setMensaje({
+          tono: "ok",
+          texto: prenderla
+            ? `Listo: ${TEXTO_FOTO_EN_AVISO.toLowerCase()} Quedó anotado que lo aceptaste.`
+            : "Listo: el aviso sale sin foto; «Ver foto» la abre en el panel.",
+        });
+      } finally {
+        setOcupado(false);
+      }
+    },
+    [enviar, esteId],
+  );
+
   const este = datos?.dispositivos.find((d) => d.id === esteId) ?? null;
-  return { datos, soporte, este, ocupado, mensaje, prender, quitar, probar };
+  return { datos, soporte, este, ocupado, mensaje, prender, quitar, probar, fotoEnAviso };
 }

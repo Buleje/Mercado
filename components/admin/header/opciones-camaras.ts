@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   ShieldOff,
   SlidersHorizontal,
+  Smartphone,
   Users,
   VolumeX,
   type LucideIcon,
@@ -24,13 +25,33 @@ import { nombresDe, sinDeteccion } from "@/lib/camaras/movimientos-nube";
 import { logger } from "@/lib/logger";
 import type { CamarasCabecera } from "./use-camaras-cabecera";
 import { reactivarAvisosCamaras, silenciarAlarmasCamaras, verCamaras } from "./use-avisos-camaras";
-import { fijarAvisosNube, prenderDeteccion, verFotoUltimoMovimiento } from "./use-movimientos-nube";
+import {
+  fijarAvisosNube,
+  fijarMovimientoCelular,
+  prenderDeteccion,
+  silenciarCelular,
+  verFotoUltimoMovimiento,
+} from "./use-movimientos-nube";
 
 const lanzarPrenderDeteccion = () => {
   prenderDeteccion().catch((err: unknown) =>
     logger.warn("[camaras] prender la detección desde la cabecera falló", { error: String(err) }),
   );
 };
+
+const lanzarCelular = (p: Promise<void>) => {
+  p.catch((err: unknown) =>
+    logger.warn("[camaras] cambiar el aviso al celular desde la cabecera falló", { error: String(err) }),
+  );
+};
+
+/** «Llega a 2 celulares · también a la campana» / lo que falta para que llegue. */
+function detalleCelular(c: NonNullable<CamarasCabecera["nube"]["celular"]>): string {
+  if (!c.prendido) return "Apagado: no llega al celular ni a la campana";
+  if (!c.conClaves) return "El servidor no tiene las claves de avisos: no sale";
+  if (c.dispositivos === 0) return "Ningún celular lo recibe: prende «Avisarme en este celular» en la cámara";
+  return `Llega a ${c.dispositivos === 1 ? "1 celular" : `${c.dispositivos} celulares`} · también a la campana`;
+}
 
 /** «Prendidos · revisado a las 07:30» / «Apagados: sólo avisa con el mosaico abierto». */
 function detalleNube(n: CamarasCabecera["nube"]): string {
@@ -134,6 +155,28 @@ export function opcionesCamaras(cam: CamarasCabecera, ahora = Date.now()): Opcio
       detalle: detalleNube(cam.nube),
       accion: () => fijarAvisosNube(!cam.nube.prendido),
     });
+  }
+  const celular = cam.nube.vinculado ? cam.nube.celular : null;
+  if (celular) {
+    lista.push({
+      id: "movimiento-celular",
+      icon: Smartphone,
+      label: celular.prendido ? "Aviso al celular: prendido" : "Aviso al celular: apagado",
+      detalle: detalleCelular(celular),
+      ocupado: cam.nube.cambiandoCelular,
+      accion: () => lanzarCelular(fijarMovimientoCelular(!celular.prendido)),
+    });
+    if (celular.prendido && celular.dispositivos > 0) {
+      const callado = celular.silencioHasta > ahora;
+      lista.push({
+        id: "silencio-celular",
+        icon: callado ? BellRing : BellOff,
+        label: callado ? "Reactivar mi celular" : "Silenciar mi celular 1 h",
+        detalle: callado ? `Callado hasta las ${horaLima(celular.silencioHasta)}` : undefined,
+        ocupado: cam.nube.cambiandoCelular,
+        accion: () => lanzarCelular(silenciarCelular(!callado)),
+      });
+    }
   }
   lista.push(
     silenciado

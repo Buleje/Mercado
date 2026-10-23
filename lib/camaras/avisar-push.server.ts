@@ -26,12 +26,13 @@ import {
   endpointDePushValido,
   fueraDeLaPausa,
   textoDelPush,
+  ROLES_VEN_CAMARAS,
   type CelularSuscrito,
 } from "./avisar-push";
 import type { MetaFotoPersona } from "./personas";
 
-/** Quiénes pueden recibir: los que ven el video y las fotos (y `manager`, que `requireAdmin` deja pasar siempre). */
-export const ROLES_AVISO_CELULAR: readonly string[] = ["admin", "owner", "almacenero", "manager"];
+/** Quiénes pueden recibir: los que ven el video y las fotos (`ROLES_VEN_CAMARAS`, la misma lista que la campana). */
+export const ROLES_AVISO_CELULAR: readonly string[] = ROLES_VEN_CAMARAS;
 
 export interface ClavesVapid {
   publicKey: string;
@@ -67,7 +68,11 @@ export type EnvioPush = { id: string; endpoint: string; status: number | null; e
 export async function mandarPush(
   vapid: ClavesVapid,
   d: Pick<CelularSuscrito, "id" | "endpoint" | "keys">,
-  carga: { title: string; body: string; url: string; tag: string },
+  /**
+   * `foto` = ruta propia de la foto del movimiento; el service worker la baja
+   * con la sesión y la pone en el aviso sólo con `fotoEnAviso` (lo aceptó el dueño del celular).
+   */
+  carga: { title: string; body: string; url: string; tag: string; foto?: string | null; fotoEnAviso?: boolean },
   topic: string,
 ): Promise<EnvioPush> {
   /* Se vuelve a mirar justo antes del POST (revisión de seguridad 10-10): la
@@ -97,8 +102,8 @@ export const esPushMuerto = (e: Pick<EnvioPush, "status" | "error">): boolean =>
   e.status === 404 || e.status === 410 || e.error === ENDPOINT_NO_PERMITIDO;
 const MUERTO = esPushMuerto;
 
-/** Se quedan sólo los dispositivos de usuarios activos del negocio con un rol que ve las fotos. */
-async function soloUsuariosVigentes(tenantId: string, dispositivos: CelularSuscrito[]): Promise<CelularSuscrito[]> {
+/** Se quedan sólo los dispositivos de usuarios activos del negocio con un rol que ve las fotos. También el vigía de movimientos. */
+export async function soloUsuariosVigentes(tenantId: string, dispositivos: CelularSuscrito[]): Promise<CelularSuscrito[]> {
   const usuarios = [...new Set(dispositivos.map((d) => d.usuario))];
   const vigentes = new Set<string>();
   await Promise.all(

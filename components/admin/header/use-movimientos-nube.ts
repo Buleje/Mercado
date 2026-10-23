@@ -26,6 +26,7 @@ import {
   CADA_MS_SIN_CAMARAS,
   CLAVE_AVISOS_NUBE,
   CLAVE_AVISOS_NUBE_VISTOS,
+  leerCelularMovimiento,
   leerRespuestaMovimientos,
   leerVistos,
   movimientosNuevos,
@@ -35,6 +36,7 @@ import {
   type DeteccionCamara,
   type MovimientoNube,
 } from "@/lib/camaras/movimientos-nube";
+import type { CelularMovimiento } from "@/lib/camaras/vigia-movimientos";
 
 export const API_MOVIMIENTOS = "/api/admin/camaras/movimientos";
 const ESPERA_CUPO_MS = 2 * 60_000;
@@ -55,6 +57,9 @@ export interface EstadoNube {
   ultimo: MovimientoNube | null;
   prendiendo: boolean;
   aviso: string | null;
+  /** El aviso de movimiento al celular (lo manda el vigía del servidor); `null` = no se sabe. */
+  celular: CelularMovimiento | null;
+  cambiandoCelular: boolean;
 }
 
 const INICIAL: EstadoNube = {
@@ -66,6 +71,8 @@ const INICIAL: EstadoNube = {
   ultimo: null,
   prendiendo: false,
   aviso: null,
+  celular: null,
+  cambiandoCelular: false,
 };
 
 let estado: EstadoNube = INICIAL;
@@ -144,6 +151,7 @@ export async function revisarMovimientos(ahora = Date.now()): Promise<void> {
       consultadoAt: d.consultadoAt,
       ultimo: nuevos.at(-1) ?? estado.ultimo ?? d.eventos[0] ?? null,
       aviso: d.aviso,
+      celular: d.celular === undefined ? estado.celular : d.celular,
     });
   } catch (err) {
     proxima = ESPERA_ERROR_MS;
@@ -256,6 +264,59 @@ export async function prenderDeteccion(): Promise<void> {
   } finally {
     fijar({ prendiendo: false });
   }
+}
+
+const ID_TOAST_CELULAR = "camaras-celular";
+
+async function cambiarCelular(cuerpo: { prendido?: boolean; silenciar?: boolean }, listo: string): Promise<void> {
+  if (estado.cambiandoCelular) return;
+  fijar({ cambiandoCelular: true });
+  try {
+    const r = await fetch(`${API_MOVIMIENTOS}/celular`, {
+      method: "PUT",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(cuerpo),
+    });
+    let j: unknown = null;
+    try {
+      j = await r.json();
+    } catch {
+      j = null;
+    }
+    const celular = r.ok ? leerCelularMovimiento(j) : null;
+    if (!celular) {
+      const m = (j as { message?: unknown } | null)?.message;
+      toast.error("No se pudo cambiar el aviso al celular", {
+        id: ID_TOAST_CELULAR,
+        description: typeof m === "string" ? m : `HTTP ${r.status}`,
+      });
+      return;
+    }
+    fijar({ celular });
+    toast.success(listo, { id: ID_TOAST_CELULAR });
+  } catch (err) {
+    logger.warn("[camaras.nube] cambiar el aviso al celular falló", { error: String(err) });
+    toast.error("No se pudo cambiar el aviso al celular", {
+      id: ID_TOAST_CELULAR,
+      description: "Revisa la conexión y vuelve a intentar",
+    });
+  } finally {
+    fijar({ cambiandoCelular: false });
+  }
+}
+
+/** «Aviso al celular»: prende o apaga, para todo el negocio, el movimiento al celular y a la campana. */
+export async function fijarMovimientoCelular(prendido: boolean): Promise<void> {
+  if (!estado.puedeConfigurar) {
+    toast.info("El aviso al celular lo prende o apaga el dueño o un administrador", { id: ID_TOAST_CELULAR });
+    return;
+  }
+  await cambiarCelular({ prendido }, prendido ? "Aviso al celular prendido" : "Aviso al celular apagado");
+}
+
+/** Calla 1 h (o reactiva) el aviso al celular de quien lo pide. */
+export async function silenciarCelular(callar: boolean): Promise<void> {
+  await cambiarCelular({ silenciar: callar }, callar ? "Tu celular calla 1 hora" : "Tu celular vuelve a avisar");
 }
 
 /** La foto del último movimiento, en otra pestaña (la baja nuestro servidor). */

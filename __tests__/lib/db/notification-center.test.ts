@@ -12,10 +12,12 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-const { mockCreate, mockFindFirst, mockUpdateMany } = vi.hoisted(() => ({
+const { mockCreate, mockFindFirst, mockUpdateMany, mockFindMany, mockCount } = vi.hoisted(() => ({
   mockCreate: vi.fn(),
   mockFindFirst: vi.fn(),
   mockUpdateMany: vi.fn(),
+  mockFindMany: vi.fn(),
+  mockCount: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -24,13 +26,16 @@ vi.mock("@/lib/prisma", () => ({
       create: mockCreate,
       findFirst: mockFindFirst,
       updateMany: mockUpdateMany,
+      findMany: mockFindMany,
+      count: mockCount,
     },
   },
 }));
 
 const haceHoras = (h: number) => new Date(Date.now() - h * 60 * 60 * 1000);
 
-import { NotificationCenterDB } from "@/lib/db/notification-center.db";
+import { NotificationCenterDB, filtroVisible, visibilidadDeRol } from "@/lib/db/notification-center.db";
+import { TIPOS_AVISO_PLAN } from "@/lib/planificacion/avisos";
 
 describe("NotificationCenterDB.create", () => {
   beforeEach(() => {
@@ -169,5 +174,51 @@ describe("NotificationCenterDB.createOrReuse — un aviso por problema (OPER-1)"
     const result = await NotificationCenterDB.createOrReuse(base);
     expect(result).toEqual({ id: "nuevo", created: true, refreshed: false });
     expect(mockUpdateMany).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("campana por rol: los avisos de Cámaras sólo para quien ve las fotos (revisión 23-10)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+    mockUpdateMany.mockResolvedValue({ count: 0 });
+  });
+
+  it("cajero: sin HIGH, sin los del plan y sin Cámaras; almacenero ve Cámaras; gestión, todo", () => {
+    expect(filtroVisible("t1", visibilidadDeRol("cashier"))).toEqual({
+      tenantId: "t1",
+      severity: { not: "HIGH" },
+      type: { notIn: [...TIPOS_AVISO_PLAN, "camaras"] },
+    });
+    expect(filtroVisible("t1", visibilidadDeRol("almacenero"))).toEqual({
+      tenantId: "t1",
+      severity: { not: "HIGH" },
+      type: { notIn: [...TIPOS_AVISO_PLAN] },
+    });
+    for (const rol of ["admin", "owner", "manager"]) expect(filtroVisible("t1", visibilidadDeRol(rol))).toEqual({ tenantId: "t1" });
+    /* Sin rol y sin ser gestión: lo más cerrado (tampoco Cámaras). */
+    expect(filtroVisible("t1", { canSeeHigh: false }).type).toEqual({ notIn: [...TIPOS_AVISO_PLAN, "camaras"] });
+  });
+
+  it("listar y contar usan el mismo filtro del rol", async () => {
+    await NotificationCenterDB.listForAdmin("t1", { ...visibilidadDeRol("cashier"), unread: true });
+    const filtro = filtroVisible("t1", visibilidadDeRol("cashier"));
+    expect(mockFindMany.mock.calls[0][0].where).toEqual({ ...filtro, readAt: null });
+    expect(mockCount.mock.calls[0][0].where).toEqual({ ...filtro, readAt: null });
+  });
+
+  it("marcar como leída (una o todas) sólo lo que ese rol ve, con el negocio en el WHERE", async () => {
+    mockUpdateMany.mockResolvedValueOnce({ count: 0 });
+    expect(await NotificationCenterDB.marcarLeida("t1", "n-camaras", visibilidadDeRol("cashier"))).toBe(0);
+    expect(mockUpdateMany.mock.calls[0][0].where).toEqual({ ...filtroVisible("t1", visibilidadDeRol("cashier")), id: "n-camaras" });
+    mockUpdateMany.mockResolvedValueOnce({ count: 3 });
+    expect(await NotificationCenterDB.marcarTodasLeidas("t1", visibilidadDeRol("cashier"))).toBe(3);
+    expect(mockUpdateMany.mock.calls[1][0].where).toEqual({
+      tenantId: "t1",
+      severity: { not: "HIGH" },
+      type: { notIn: [...TIPOS_AVISO_PLAN, "camaras"] },
+      readAt: null,
+    });
   });
 });

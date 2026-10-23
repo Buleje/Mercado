@@ -8,15 +8,16 @@
 
 import { BellRing, Send, Smartphone, X } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { Interruptor } from "@/components/ui-system/Interruptor";
 import { cn } from "@/lib/utils";
-import type { CuandoCelular } from "@/lib/camaras/avisar-push";
+import { TEXTO_FOTO_EN_AVISO, type CuandoCelular } from "@/lib/camaras/avisar-push";
 import { BTN } from "./camaras-ui";
 import { useAvisoCelular } from "./use-aviso-celular";
 
 const FRANJA: Record<CuandoCelular, string> = { noche: "de noche", siempre: "siempre" };
 
 export default function FilaAvisoCelular({ camaraId, nombre }: { camaraId: string; nombre: string }) {
-  const { datos, soporte, este, ocupado, mensaje, prender, quitar, probar } = useAvisoCelular(camaraId);
+  const { datos, soporte, este, ocupado, mensaje, prender, quitar, probar, fotoEnAviso } = useAvisoCelular(camaraId);
   const valor: CuandoCelular | "no" = este?.cuando ?? "no";
   const sinClaves = datos !== null && !datos.clavePublica;
   const lista = datos?.dispositivos ?? [];
@@ -30,7 +31,7 @@ export default function FilaAvisoCelular({ camaraId, nombre }: { camaraId: strin
           <InfoTip
             title="Avisos al celular"
             what="Cuando el video en vivo ve aparecer a alguien en esta cámara, te llega una notificación a este celular o PC, aunque el panel esté cerrado. Sale de la PC que tiene el mosaico abierto."
-            affects="Como mucho un aviso cada 10 minutos por cámara. No lleva la foto: al tocarlo abre «Personas» en el panel, con tu sesión. En iPhone, primero agrega el panel a la pantalla de inicio."
+            affects="Como mucho un aviso cada 10 minutos por cámara. Sin foto salvo que prendas «Foto en el aviso» en este celular: al tocarlo abre el panel con tu sesión. En iPhone, primero agrega el panel a la pantalla de inicio."
             example="Prende «sólo de noche» en el portón y a las 23:40 te llega «Portón · 23:40 — Apareció una persona»."
           />
         </div>
@@ -60,6 +61,20 @@ export default function FilaAvisoCelular({ camaraId, nombre }: { camaraId: strin
           <Send className="h-4 w-4" aria-hidden /> Probar
         </button>
       </div>
+
+      {este?.tuyo && (
+        <Interruptor
+          enabled={este.fotoEnAviso}
+          onChange={(v) => void fotoEnAviso(v)}
+          disabled={ocupado}
+          label="Foto en el aviso de este celular"
+          desc={
+            este.fotoEnAviso
+              ? `${TEXTO_FOTO_EN_AVISO} Lo aceptaste tú; apágalo cuando quieras.`
+              : `Apagado: el aviso sale sin foto y «Ver foto» la abre en el panel. Si lo prendes, ${TEXTO_FOTO_EN_AVISO.toLowerCase()}`
+          }
+        />
+      )}
 
       {soporte === false ? (
         <p className="text-xs text-[var(--text-tertiary)]">Este navegador no recibe notificaciones. En iPhone: Compartir › Agregar a inicio, y abre el panel desde ahí.</p>

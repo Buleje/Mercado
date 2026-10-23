@@ -5,12 +5,15 @@ import type { AdminRole } from "@/lib/session";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
+import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 import { CamarasDB } from "@/lib/db/camaras.db";
 import { CamarasCelularesDB } from "@/lib/db/camaras-celulares.db";
 import {
   celularesDeLaCamara,
   endpointDePushValido,
   etiquetaDispositivo,
+  TEXTO_FOTO_EN_AVISO,
   type CelularVisible,
   type EstadoCelulares,
 } from "@/lib/camaras/avisar-push";
@@ -26,6 +29,11 @@ import { clavesVapid, probarCelular } from "@/lib/camaras/avisar-push.server";
  *            dispositivo entero). El propio, cualquiera; el de otro, admin/dueño.
  *   POST   → { id } manda un push de prueba a ese dispositivo y devuelve el
  *            código del servicio de push (201 = aceptado).
+ *   PATCH  → { id, fotoEnAviso } la foto del movimiento en el aviso, que se ve
+ *            con el celular bloqueado (Ley 29733). Apagada por defecto; la
+ *            prende SÓLO el dueño del dispositivo, y queda en el registro de
+ *            actividad quién la aceptó (si el registro falla, no se prende).
+ *            Apagarla: el dueño o admin/dueño del negocio.
  *
  * Mismos roles que ven el video y las fotos del detector. La cámara se busca
  * en la lista del negocio de la sesión: una de otro negocio es 404, y la lista
@@ -43,6 +51,8 @@ const suscribirSchema = z.object({
   cuando: z.enum(["siempre", "noche"]),
 });
 const idDispositivoSchema = z.object({ id: z.string().regex(/^[0-9a-f]{16}$/), todo: z.boolean().optional() });
+const fotoEnAvisoSchema = z.object({ id: z.string().regex(/^[0-9a-f]{16}$/), fotoEnAviso: z.boolean() });
+const ACCION_FOTO_EN_AVISO = { prender: "camara.foto_en_aviso_aceptada", apagar: "camara.foto_en_aviso_retirada" } as const;
 
 type Ctx = { params: Promise<{ id: string }> };
 type Auth = Exclude<Awaited<ReturnType<typeof requireAdmin>>, NextResponse>;
@@ -148,4 +158,53 @@ export const POST = withApiHandler("camaras-celular", async (req: NextRequest, c
   if (permiso === "ajeno") return falla("forbidden", 403);
   const r = await probarCelular(auth.tenantId, body.data.id, { id: camara.id, nombre: camara.nombre });
   return NextResponse.json(r, { status: r.ok ? 200 : r.motivo === "sin_claves" ? 503 : 502 });
+});
+
+export const PATCH = withApiHandler("camaras-celular", async (req: NextRequest, ctx: Ctx) => {
+  const auth = await requireAdmin(req, ROLES);
+  if (auth instanceof NextResponse) return auth;
+  const csrf = assertCsrf(req);
+  if (csrf) return csrf;
+  const rl = applyRateLimit(req, "MODERATE", "camaras-celular");
+  if (rl) return rl;
+  const camara = await camaraDe(auth.tenantId, ctx);
+  if (!camara) return falla("not_found", 404);
+  const body = fotoEnAvisoSchema.safeParse(await req.json().catch(() => null));
+  if (!body.success) return falla("datos_invalidos", 400);
+
+  const usuario = auth.username ?? "alguien";
+  const prender = body.data.fotoEnAviso;
+  const quien = { usuario, puedeOtros: ROLES_QUE_QUITAN_OTROS.has(auth.role) };
+  const r = await CamarasCelularesDB.fijarFotoEnAviso(auth.tenantId, body.data.id, quien, prender);
+  if (!r.ok) return r.motivo === "no_existe" ? falla("not_found", 404) : falla("forbidden", 403);
+  if (r.cambio) {
+    const d = r.estado.dispositivos.find((x) => x.id === body.data.id);
+    const detalle = JSON.stringify({
+      rol: auth.role,
+      dispositivo: d?.dispositivo ?? null,
+      dueno: d?.usuario ?? null,
+      ...(prender ? { acepto: TEXTO_FOTO_EN_AVISO } : {}),
+    });
+    try {
+      await logActivity(
+        ACCION_FOTO_EN_AVISO[prender ? "prender" : "apagar"],
+        "camara",
+        detalle,
+        body.data.id,
+        usuario,
+        undefined,
+        auth.tenantId,
+        { tirar: prender },
+      );
+    } catch (err) {
+      /* Sin constancia de quién aceptó, la foto no queda prendida. */
+      logger.error("[camaras.celular] no se anotó la aceptación de la foto en el aviso: se deshace", {
+        tenantId: auth.tenantId,
+        error: String(err),
+      });
+      await CamarasCelularesDB.fijarFotoEnAviso(auth.tenantId, body.data.id, quien, false);
+      return falla("sin_registro", 503);
+    }
+  }
+  return respuesta(r.estado, camara.id, auth);
 });

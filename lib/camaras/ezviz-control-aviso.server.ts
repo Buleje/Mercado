@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import { errorSinDatos } from "@/lib/error-sin-datos";
 import { enlaceAlPanelDeCamaras, mandarWhatsAppDeCamara } from "@/lib/camaras/avisar";
 import type { AvisosCamara } from "@/lib/camaras/camaras";
+import { TIPO_AVISO_CAMARAS } from "@/lib/camaras/avisar-push";
 
 /**
  * Avisar al dueño cuando alguien DESARMA una cámara (security 05-10, ADR-472):
@@ -64,7 +65,7 @@ export async function avisarDesarme(
 
   const panel = NotificationCenterDB.create({
     tenantId,
-    type: "camaras",
+    type: TIPO_AVISO_CAMARAS,
     severity: "HIGH",
     title: titulo,
     body: cuerpo,

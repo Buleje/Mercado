@@ -28,6 +28,17 @@ import type { MetaFotoPersona } from "./personas";
 export type CuandoCelular = "siempre" | "noche";
 export const CUANDO_CELULAR: readonly CuandoCelular[] = ["siempre", "noche"];
 
+/**
+ * Quiénes ven el video y las fotos: reciben el aviso al celular y ven los
+ * avisos de Cámaras de la campana (y `manager`, que `requireAdmin` deja pasar
+ * siempre). El cajero, no.
+ */
+export const ROLES_VEN_CAMARAS: readonly string[] = ["admin", "owner", "almacenero", "manager"];
+/** Lo que acepta quien prende la foto en el aviso: el mismo texto en la pantalla y en el registro de actividad. */
+export const TEXTO_FOTO_EN_AVISO = "La foto se verá aunque el celular esté bloqueado.";
+/** El `type` de los avisos de Cámaras en la campana (`Notification`): sólo los ven `ROLES_VEN_CAMARAS`. */
+export const TIPO_AVISO_CAMARAS = "camaras";
+
 export interface ClavesPush {
   p256dh: string;
   auth: string;
@@ -46,6 +57,13 @@ export interface CelularSuscrito {
   /** cámara → franja. */
   camaras: Record<string, CuandoCelular>;
   creadoEn: string;
+  /**
+   * La foto del movimiento se ve en el aviso aunque el celular esté bloqueado
+   * (Ley 29733, revisión 23-10): apagado salvo que SU dueño lo acepte; quién y
+   * cuándo quedan acá y en el registro de actividad. Sin aceptar, el aviso sale
+   * sin foto y con «Ver foto», que abre el panel con la sesión.
+   */
+  fotoEnAviso?: { por: string; en: string } | null;
 }
 
 export interface EstadoCelulares {
@@ -61,6 +79,8 @@ export interface CelularVisible {
   dispositivo: string;
   cuando: CuandoCelular;
   creadoEn: string;
+  /** El dueño aceptó ver la foto en el aviso con el celular bloqueado. */
+  fotoEnAviso: boolean;
 }
 
 /** Tope de dispositivos por negocio: cada aviso es un envío por dispositivo. */
@@ -178,6 +198,7 @@ export function celularesDeLaCamara(estado: EstadoCelulares, camaraId: string): 
       dispositivo: d.dispositivo,
       cuando: d.camaras[camaraId],
       creadoEn: d.creadoEn,
+      fotoEnAviso: !!d.fotoEnAviso,
     }));
 }
 

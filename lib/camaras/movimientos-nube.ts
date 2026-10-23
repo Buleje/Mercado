@@ -24,6 +24,7 @@
  * sonido y el aviso del sistema con la pestaña oculta.
  */
 import { z } from "zod";
+import type { CelularMovimiento } from "@/lib/camaras/vigia-movimientos";
 
 /** Cada cuánto pregunta la cabecera (el servidor igual no va a Hik-Connect más de 1 vez cada 20 s). */
 export const CADA_MS_CLIENTE = 45_000;
@@ -71,6 +72,21 @@ export interface RespuestaMovimientos {
   consultadoAt: number;
   /** Hik-Connect no contestó esta vez: lo guardado igual va. */
   aviso: string | null;
+  /** El aviso al celular del vigía (`vigia-movimientos.ts`); ausente = el servidor no lo dijo. */
+  celular?: CelularMovimiento | null;
+}
+
+const ESQUEMA_CELULAR = z.object({
+  prendido: z.boolean(),
+  silencioHasta: z.number(),
+  dispositivos: z.number().int().min(0),
+  conClaves: z.boolean(),
+});
+
+/** Lo que devolvió `PUT …/movimientos/celular` → tipado, o `null`. */
+export function leerCelularMovimiento(raw: unknown): CelularMovimiento | null {
+  const r = ESQUEMA_CELULAR.safeParse(raw);
+  return r.success ? r.data : null;
 }
 
 const ESQUEMA = z.object({
@@ -92,6 +108,7 @@ const ESQUEMA = z.object({
   puedeConfigurar: z.boolean(),
   consultadoAt: z.number(),
   aviso: z.string().nullable(),
+  celular: ESQUEMA_CELULAR.nullish(),
 });
 
 /** Lo que contestó el servidor → la respuesta tipada, o `null` si no tiene esa forma. */

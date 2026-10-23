@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { NotificationCenterDB } from "@/lib/db/notification-center.db";
+import { NotificationCenterDB, visibilidadDeRol } from "@/lib/db/notification-center.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -32,11 +32,12 @@ export async function GET(req: NextRequest) {
   const unread = url.searchParams.get("unread") === "true";
   const severity = url.searchParams.get("severity");
 
-  // HIGH-severity notifications are restricted to privileged roles.
+  // HIGH-severity notifications are restricted to privileged roles, y los
+  // avisos de Cámaras a los roles que ven las fotos (`visibilidadDeRol`).
   // When targetRole field is added to the schema this filter can be made
-  // per-notification; for now we gate the entire HIGH bucket.
-  const HIGH_SEVERITY_ROLES = ["admin", "owner", "manager"];
-  const canSeeHigh = HIGH_SEVERITY_ROLES.includes(auth.role);
+  // per-notification; for now we gate by bucket.
+  const visibilidad = visibilidadDeRol(auth.role);
+  const canSeeHigh = visibilidad.canSeeHigh;
 
   try {
     // RBAC explicit: HIGH-severity con severity param requiere role privilegiado.
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
     // Audit project-wide 2026-05-19: migrado a NotificationCenterDB.listForAdmin.
     const { items: notifications, unreadCount } = await NotificationCenterDB.listForAdmin(
       tenantId,
-      { unread, severity, canSeeHigh, limit },
+      { ...visibilidad, unread, severity, limit },
     );
 
     const res = NextResponse.json(notifications);

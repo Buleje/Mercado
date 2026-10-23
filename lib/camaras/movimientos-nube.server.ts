@@ -24,7 +24,9 @@ import { llamarConToken, type CredencialesHik } from "@/lib/camaras/hik-connect-
 import type { Leido } from "@/lib/camaras/hik-connect-api";
 import { estadoDelAparato } from "@/lib/camaras/ezviz-control.server";
 import { decodificarFotoHik, estaCifrada } from "@/lib/camaras/ezviz-foto";
+import { CamarasDB } from "@/lib/db/camaras.db";
 import { CamarasHikConnectDB } from "@/lib/db/camaras-hik-connect.db";
+import type { Camara } from "@/lib/camaras/camaras";
 import {
   aMovimientos,
   esUrlDeFotoAlarma,
@@ -38,6 +40,7 @@ import {
   type MovimientoGuardado,
 } from "@/lib/camaras/alarmas-hik";
 import type { DeteccionCamara } from "@/lib/camaras/movimientos-nube";
+import type { OrigenFoto } from "@/lib/camaras/vigia-movimientos";
 
 export const CADA_SERVIDOR_MS = 20_000;
 /** Lotes por vuelta: la cola da ~10 por lote; más de 30 de golpe es una ráfaga que ya avisó igual. */
@@ -80,6 +83,32 @@ async function leerGuardado(tenantId: string): Promise<Guardado> {
   return g && Array.isArray(g.movimientos)
     ? g
     : { movimientos: [], consultadoAt: 0, aviso: null };
+}
+
+export type FuenteMovimientos =
+  | { ok: true; camaras: CamaraEnlazada[]; lista: Camara[]; cred: CredencialesHik }
+  /** `motivo` = por qué no hay credenciales; `null` = no hay cámaras enlazadas. */
+  | { ok: false; motivo: string | null };
+
+/**
+ * Las cámaras del negocio enlazadas a Hik-Connect y las credenciales para
+ * vaciar su cola. Lo usan la ruta de la cabecera y el vigía (`vigia-movimientos.server.ts`).
+ */
+export async function fuenteDeMovimientos(tenantId: string): Promise<FuenteMovimientos> {
+  const [cuenta, lista] = await Promise.all([CamarasHikConnectDB.leer(tenantId), CamarasDB.list(tenantId)]);
+  const enlaces = cuenta?.enlaces ?? {};
+  const camaras: CamaraEnlazada[] = lista
+    .filter((c) => enlaces[c.id])
+    .map((c) => ({
+      id: c.id,
+      nombre: c.nombre,
+      resourceId: enlaces[c.id].resourceId,
+      deviceSerial: enlaces[c.id].deviceSerial,
+    }));
+  if (camaras.length === 0) return { ok: false, motivo: null };
+  const cred = await CamarasHikConnectDB.credenciales(tenantId);
+  if (!cred.ok) return { ok: false, motivo: cred.motivo };
+  return { ok: true, camaras, lista, cred: cred.valor };
 }
 
 /** Un lote de la cola; si la cuenta no está suscrita (OPEN000016), se suscribe y repite una vez. */
@@ -260,12 +289,14 @@ export async function registrarFotoVista(
   tenantId: string,
   quien: { usuario: string; rol: string },
   m: Pick<MovimientoGuardado, "id" | "camaraId" | "nombre" | "at">,
+  /** `aviso` = la bajó el service worker del celular para mostrarla en el aviso. */
+  origen: OrigenFoto = "panel",
 ): Promise<void> {
   try {
     await logActivity(
       ACCION_FOTO_MOVIMIENTO,
       "camara",
-      JSON.stringify({ rol: quien.rol, camara: m.nombre, movimiento: m.id, at: new Date(m.at).toISOString() }),
+      JSON.stringify({ rol: quien.rol, camara: m.nombre, movimiento: m.id, at: new Date(m.at).toISOString(), origen }),
       m.camaraId,
       quien.usuario,
       undefined,

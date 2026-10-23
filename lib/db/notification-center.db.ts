@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { TIPOS_AVISO_PLAN } from "@/lib/planificacion/avisos";
+import { ROLES_VEN_CAMARAS, TIPO_AVISO_CAMARAS } from "@/lib/camaras/avisar-push";
 
 /**
  * NotificationCenterDB
@@ -12,10 +13,20 @@ import { TIPOS_AVISO_PLAN } from "@/lib/planificacion/avisos";
  * Audit project-wide 2026-05-19 — migracion de /api/notification-center.
  */
 
-interface ListOpts {
+/**
+ * Qué parte de la campana ve quien pide: la gestión ve todo; el resto, sin HIGH
+ * ni los tipos de gestión, y los avisos de Cámaras sólo si su rol ve las fotos
+ * (`ROLES_VEN_CAMARAS`: el cajero no, revisión 23-10). Sin `rol`, lo más
+ * cerrado para quien no es gestión (tampoco ve Cámaras).
+ */
+export interface VisibilidadCampana {
+  canSeeHigh: boolean;
+  rol?: string;
+}
+
+interface ListOpts extends VisibilidadCampana {
   unread?: boolean;
   severity?: string | null;
-  canSeeHigh: boolean;
   limit?: number;
 }
 
@@ -66,6 +77,25 @@ export interface ResultadoSincronizar {
  */
 const TIPOS_SOLO_GESTION: readonly string[] = TIPOS_AVISO_PLAN;
 
+/** Los roles que ven HIGH y los tipos de gestión. */
+const ROLES_VEN_HIGH: readonly string[] = ["admin", "owner", "manager"];
+
+/** La visibilidad de la campana para un rol de la sesión (lo usan las 3 rutas de la campana). */
+export function visibilidadDeRol(rol: string): VisibilidadCampana {
+  return { canSeeHigh: ROLES_VEN_HIGH.includes(rol), rol };
+}
+
+/** El `where` de lo que ese rol ve: el mismo para listar, contar y marcar como leído. */
+export function filtroVisible(tenantId: string, v: VisibilidadCampana): Record<string, unknown> {
+  const ocultos: string[] = v.canSeeHigh ? [] : [...TIPOS_SOLO_GESTION];
+  const veCamaras = v.rol !== undefined ? ROLES_VEN_CAMARAS.includes(v.rol) : v.canSeeHigh;
+  if (!veCamaras) ocultos.push(TIPO_AVISO_CAMARAS);
+  const where: Record<string, unknown> = { tenantId };
+  if (!v.canSeeHigh) where.severity = { not: "HIGH" };
+  if (ocultos.length > 0) where.type = { notIn: ocultos };
+  return where;
+}
+
 export const NotificationCenterDB = {
   /**
    * Lista notificaciones admin filtradas por severity + unread + role.
@@ -79,11 +109,9 @@ export const NotificationCenterDB = {
     opts: ListOpts,
   ): Promise<{ items: unknown[]; unreadCount: number }> {
     const limit = Math.min(100, Math.max(1, opts.limit ?? 50));
-    // Lo que este rol puede ver: sin HIGH ni los tipos de gestión si no es gestión.
-    // El contador usa el mismo filtro: antes contaba los HIGH que el cajero no ve.
-    const visibles: Record<string, unknown> = opts.canSeeHigh
-      ? { tenantId }
-      : { tenantId, severity: { not: "HIGH" }, type: { notIn: [...TIPOS_SOLO_GESTION] } };
+    // Lo que este rol puede ver (`filtroVisible`). El contador usa el mismo
+    // filtro: antes contaba los HIGH que el cajero no ve.
+    const visibles = filtroVisible(tenantId, opts);
     const where: Record<string, unknown> = { ...visibles };
     if (opts.unread) where.readAt = null;
 
@@ -102,6 +130,28 @@ export const NotificationCenterDB = {
       }),
     ]);
     return { items, unreadCount };
+  },
+
+  /**
+   * Marca una como leída sólo si quien pide la ve (mismo filtro que la lista):
+   * el cajero no puede marcar un aviso de Cámaras o de gestión que no ve.
+   * Devuelve cuántas cambió (0 = no existe o no es suya → 404 en la ruta).
+   */
+  async marcarLeida(tenantId: string, id: string, v: VisibilidadCampana): Promise<number> {
+    const r = await prisma.notification.updateMany({
+      where: { ...filtroVisible(tenantId, v), tenantId, id },
+      data: { readAt: new Date() },
+    });
+    return r.count;
+  },
+
+  /** «Marcar todas»: sólo las que ese rol ve; las del dueño siguen sin leer para él. */
+  async marcarTodasLeidas(tenantId: string, v: VisibilidadCampana): Promise<number> {
+    const r = await prisma.notification.updateMany({
+      where: { ...filtroVisible(tenantId, v), tenantId, readAt: null },
+      data: { readAt: new Date() },
+    });
+    return r.count;
   },
 
   /**

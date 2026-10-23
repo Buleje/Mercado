@@ -28,6 +28,7 @@ import { useHikConnect, type HikConnect } from "./use-hik-connect";
 import { useMosaicoGlobal } from "./MosaicoGlobalContexto";
 import MosaicoNube from "./MosaicoNube";
 import VisorNube from "./VisorNube";
+import FotoDelAviso from "./FotoDelAviso";
 
 type CamaraAbierta = { id: string; nombre: string };
 
@@ -137,6 +138,8 @@ export function VisorNubeProvider({
   return (
     <Ctx.Provider value={valor}>
       {children}
+      {/* «Ver foto» del aviso al celular: `?movimiento=<id>` abre esa foto. */}
+      <FotoDelAviso />
       {abierta && (
         <VisorNube
           key={abierta.id}

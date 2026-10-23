@@ -3,12 +3,12 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { createDistributedRateLimiter } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
-import { CamarasDB } from "@/lib/db/camaras.db";
-import { CamarasHikConnectDB } from "@/lib/db/camaras-hik-connect.db";
 import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
-import { paraCliente, type CamaraEnlazada } from "@/lib/camaras/alarmas-hik";
+import { paraCliente } from "@/lib/camaras/alarmas-hik";
 import type { RespuestaMovimientos } from "@/lib/camaras/movimientos-nube";
-import { deteccionDe, movimientosRecientes } from "@/lib/camaras/movimientos-nube.server";
+import { deteccionDe, fuenteDeMovimientos, movimientosRecientes } from "@/lib/camaras/movimientos-nube.server";
+import { celularParaCabecera } from "@/lib/camaras/vigia-movimientos.server";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/admin/camaras/movimientos?desde=<epoch ms>
@@ -68,29 +68,22 @@ export const GET = withApiHandler("camaras-movimientos", async (req: NextRequest
     );
   const puedeConfigurar = soloAdminODueno(auth.role) === null;
 
-  const [cuenta, lista] = await Promise.all([
-    CamarasHikConnectDB.leer(auth.tenantId),
-    CamarasDB.list(auth.tenantId),
-  ]);
-  const enlaces = cuenta?.enlaces ?? {};
-  const camaras: CamaraEnlazada[] = lista
-    .filter((c) => enlaces[c.id])
-    .map((c) => ({
-      id: c.id,
-      nombre: c.nombre,
-      resourceId: enlaces[c.id].resourceId,
-      deviceSerial: enlaces[c.id].deviceSerial,
-    }));
-  if (camaras.length === 0)
-    return NextResponse.json(sinCamaras(null, puedeConfigurar), { headers: SIN_CACHE });
+  const fuente = await fuenteDeMovimientos(auth.tenantId);
+  if (!fuente.ok)
+    return NextResponse.json(sinCamaras(fuente.motivo, puedeConfigurar), { headers: SIN_CACHE });
 
-  const cred = await CamarasHikConnectDB.credenciales(auth.tenantId);
-  if (!cred.ok)
-    return NextResponse.json(sinCamaras(cred.motivo, puedeConfigurar), { headers: SIN_CACHE });
-
-  const [recientes, deteccion] = await Promise.all([
-    movimientosRecientes(auth.tenantId, cred.valor, camaras),
-    deteccionDe(auth.tenantId, cred.valor, camaras),
+  const [recientes, deteccion, celular] = await Promise.all([
+    movimientosRecientes(auth.tenantId, fuente.cred, fuente.camaras),
+    deteccionDe(auth.tenantId, fuente.cred, fuente.camaras),
+    /* Lo del celular no tumba la cabecera: sin esto, igual van los movimientos. */
+    celularParaCabecera(
+      auth.tenantId,
+      auth.username,
+      fuente.camaras.map((c) => c.id),
+    ).catch((err: unknown) => {
+      logger.warn("[camaras.movimientos] no se pudo leer el aviso al celular", { error: String(err) });
+      return null;
+    }),
   ]);
   const desde = q.data.desde ?? 0;
   const cuerpo: RespuestaMovimientos = {
@@ -103,6 +96,7 @@ export const GET = withApiHandler("camaras-movimientos", async (req: NextRequest
     puedeConfigurar,
     consultadoAt: recientes.consultadoAt,
     aviso: recientes.aviso,
+    celular,
   };
   return NextResponse.json(cuerpo, { headers: SIN_CACHE });
 });

@@ -78,6 +78,8 @@ vi.mock("@/lib/db/camaras-hik-connect.db", () => ({
 vi.mock("@/lib/db/camaras.db", () => ({
   CamarasDB: { list: async (t: string) => H.camarasPorTenant[t] ?? [] },
 }));
+/* El aviso al celular lee la base (ajustes + dispositivos): acá no interesa. */
+vi.mock("@/lib/camaras/vigia-movimientos.server", () => ({ celularParaCabecera: async () => null }));
 vi.mock("@/lib/session", async (real) => ({
   ...(await real<typeof import("@/lib/session")>()),
   getSessionPayload: async () => H.payload,
