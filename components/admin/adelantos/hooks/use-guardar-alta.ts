@@ -16,6 +16,9 @@
  *    vuelve a dar la plata.
  *  - `registrado`: quedó algo guardado. Cerrar con la X o Escape tiene que
  *    recargar la lista; si no, se vuelve a cargar y queda duplicado.
+ *  - `sinRespuesta` (23-10): el envío salió y no volvió una respuesta clara
+ *    (corte de red o 5xx). Pudo quedar guardado sin que lo sepamos: al cerrar
+ *    la lista se recarga en silencio, así se ve si entró antes de cargarlo otra vez.
  *  - (ADR-491 V) La foto tomada con la cámara en el alta llega como data URL (no
  *    se subió): no viaja en el alta; con el adelanto ya creado va PRIVADA por
  *    `POST /api/adelantos/<id>/voucher`. En un abono va privada por
@@ -95,10 +98,18 @@ async function subirFotoLocal(adelantoId: string, body: Record<string, unknown>)
 export function useGuardarAlta({
   camposPendientes,
   onCreated: avisarCreado,
+  onRegistrado,
 }: {
   camposPendientes: PendientesCampos;
   /** Con el id del adelanto creado; `null` en un abono (no hay adelanto nuevo). */
   onCreated: (adelantoId: string | null) => void;
+  /**
+   * Apenas el servidor dice que guardó, aunque la ventana siga abierta con un
+   * aviso («no había caja abierta…»): la lista de atrás se pone al día ya.
+   * Antes recargaba sólo al cerrar, y el adelanto no se veía en la tabla
+   * (23-10, ADL-2026-0057).
+   */
+  onRegistrado?: (adelantoId: string | null) => void;
 }) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -106,6 +117,7 @@ export function useGuardarAlta({
   const [hecho, setHecho] = useState<string | null>(null);
   const [camposPorReintentar, setCamposPorReintentar] = useState(false);
   const [registrado, setRegistrado] = useState(false);
+  const [sinRespuesta, setSinRespuesta] = useState(false);
   const adelantoCreadoRef = useRef<string | null>(null);
   const onCreated = () => avisarCreado(adelantoCreadoRef.current);
   const clave = useRef<string>("");
@@ -123,10 +135,13 @@ export function useGuardarAlta({
   const fallo = (r: Extract<Envio<unknown>, { ok: false }>) => {
     if (r.codigo === "idempotencia_distinta") {
       setRegistrado(true);
+      onRegistrado?.(null);
       setHecho(INTENTO_DISTINTO);
       return;
     }
     if (puedeCambiarDeClave(r)) clave.current = idAleatorio();
+    // Sin status = no hubo respuesta; un 5xx tampoco dice si se guardó.
+    if (r.status == null || r.status >= 500) setSinRespuesta(true);
     setErr(r.error);
   };
 
@@ -149,6 +164,7 @@ export function useGuardarAlta({
         setRegistrado(true);
         const id = r.data.id ?? null;
         if (id) adelantoCreadoRef.current = id;
+        onRegistrado?.(id);
         const repetido = r.data.repetido
           ? `Ya estaba registrado ${r.data.codigoOperacion ?? "ese adelanto"} por ${fmtMon(Number(r.data.montoAdelantado) || 0, String(e.body.moneda ?? "PEN"))}: no se volvió a dar la plata.${
               Math.abs((Number(r.data.montoAdelantado) || 0) - enviado) > 0.005 ? " El monto nuevo no se guardó." : ""
@@ -184,6 +200,7 @@ export function useGuardarAlta({
           : await abonarRepartido(e.beneficiarioId, e.intencion, clave.current);
       if (!r.ok) return fallo(r);
       setRegistrado(true);
+      onRegistrado?.(e.tipo === "abono-uno" ? e.adelantoId : null);
       const sinCaja = "sinCaja" in r.data ? r.data.sinCaja : r.data.caja?.sinCaja;
       terminar([r.data.repetido && "Ese abono ya estaba registrado: no se volvió a anotar.", e.moverCaja && sinCaja && SIN_CAJA]);
     } finally {
@@ -211,5 +228,5 @@ export function useGuardarAlta({
     return false;
   };
 
-  return { saving, err, setErr, hecho, registrado, camposPorReintentar, ejecutar, continuar };
+  return { saving, err, setErr, hecho, registrado, sinRespuesta, camposPorReintentar, ejecutar, continuar };
 }

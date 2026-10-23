@@ -10,20 +10,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Ban,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  Ruler,
-  ArrowDownToLine,
-} from "@buleje/design-system/icons";
+import { ArrowDownToLine, ChevronLeft, ChevronRight, Plus, Ruler } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import {
@@ -37,9 +24,16 @@ import {
 import { ETIQUETA_CONCEPTO, quienDebe } from "@/lib/adelantos/direccion";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
 import { MODALIDAD_LABEL, PT_TIPO_LABEL, STATUS_BADGE, fmtMon, fmtPt } from "../shared";
-import AnularAdelantoModal from "./AnularAdelantoModal";
-import EditarNotasModal from "./EditarNotasModal";
 import { formatDate } from "@/lib/format";
+import { logger } from "@/lib/logger";
+import { ESTADO_VACIO, puedeMandarRecibo } from "@/lib/adelantos/recibo-whatsapp";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { imprimirComprobante } from "../detalle/comprobante-del-adelanto";
+import CeldaRecibo from "./CeldaRecibo";
+import FilaAcciones, { type AccionFila } from "./FilaAcciones";
+import ModalesDeLaFila, { type AccionAbierta } from "./ModalesDeLaFila";
+import { BotonPagina, IconoOrden, ariaSort } from "./tabla-controles";
+import { useEstadoRecibos } from "./use-estado-recibos";
 
 /** Cómo se abrevia cada modalidad en una celda. El título largo va en `title`. */
 const MODALIDAD_CHIP: Record<string, string> = {
@@ -78,8 +72,19 @@ export default function TablaAdelantos({
   const pag = paginar(ordenados, pagina, porPagina);
 
   /** Cuál fila tiene abierto qué acción — un solo modal a la vez. */
-  const [anulando, setAnulando] = useState<DbAdelanto | null>(null);
-  const [editandoNotas, setEditandoNotas] = useState<DbAdelanto | null>(null);
+  const [abierta, setAbierta] = useState<AccionAbierta | null>(null);
+  /** Firma, huella, foto y envío por WhatsApp de cada fila (columna «Recibo», 23-10). */
+  const { estados, carga, recargar } = useEstadoRecibos();
+  /* El encargado no entra a la carpeta privada de la persona: «Enviar recibo» le sale apagado con el motivo. */
+  const rol = useMiRol();
+  const mandaRecibo = rol == null || puedeMandarRecibo(rol);
+  const alElegir = (a: DbAdelanto, accion: AccionFila) => {
+    if (accion === "pdf") {
+      void imprimirComprobante(a).catch((err: unknown) => logger.error("[adelantos] no se pudo armar el recibo PDF", { error: String(err) }));
+      return;
+    }
+    setAbierta({ accion, adelanto: a });
+  };
 
   /**
    * Mismo patrón que AdminTabBar (checkScroll + canScrollLeft/Right), pero acá
@@ -170,11 +175,12 @@ export default function TablaAdelantos({
               <col style={{ width: 148 }} />
               <col />
               <col style={{ width: 96 }} />
-              <col className="hidden xl:table-column" style={{ width: 128 }} />
+              <col className="hidden 2xl:table-column" style={{ width: 128 }} />
               <col style={{ width: 98 }} />
               <col style={{ width: 88 }} />
               <col style={{ width: 98 }} />
               <col style={{ width: 72 }} />
+              <col style={{ width: 112 }} />
               <col style={{ width: 96 }} />
             </colgroup>
             <thead>
@@ -182,11 +188,12 @@ export default function TablaAdelantos({
                 {th("codigo", "Código")}
                 {th("persona", "Persona")}
                 {th("fecha", "Fecha")}
-                <th className="hidden xl:table-cell">Motivo</th>
+                <th className="hidden 2xl:table-cell">Motivo</th>
                 {th("monto", "Adelantado", "right")}
                 {th("avance", "Avance", "right")}
                 {th("saldo", "Saldo", "right")}
                 {th("estado", "Estado")}
+                <th className="text-left">Recibo</th>
                 <th />
               </tr>
             </thead>
@@ -267,7 +274,8 @@ export default function TablaAdelantos({
                       </span>
                     </td>
                     <td>
-                      <span className="block truncate font-bold text-[var(--text-primary)]" title={a.beneficiario?.nombre ?? undefined}>
+                      {/* El motivo también en el `title`: su columna sólo entra desde 2xl (la de Recibo le ganó el lugar). */}
+                      <span className="block truncate font-bold text-[var(--text-primary)]" title={[a.beneficiario?.nombre, a.notas].filter(Boolean).join(" — ") || undefined}>
                         {a.beneficiario?.nombre ?? "—"}
                       </span>
                       {a.beneficiario?.telefono && (
@@ -282,7 +290,7 @@ export default function TablaAdelantos({
                         (≥1280px) — es el dato menos urgente de la fila, y forzar
                         su ancho en pantallas normales era lo que empujaba a la
                         tabla entera al scroll horizontal. */}
-                    <td className="hidden max-w-[130px] xl:table-cell">
+                    <td className="hidden max-w-[130px] 2xl:table-cell">
                       <span className="block truncate text-sm text-[var(--text-secondary)]" title={a.notas ?? undefined}>
                         {a.notas || <span className="text-[var(--text-tertiary)]">—</span>}
                       </span>
@@ -309,6 +317,9 @@ export default function TablaAdelantos({
                         {badge?.label ?? a.status}
                       </span>
                     </td>
+                    <td>
+                      <CeldaRecibo adelanto={a} estado={estados[a.id] ?? ESTADO_VACIO} carga={carga} />
+                    </td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                         {a.status === "ABIERTO" && (
@@ -324,11 +335,7 @@ export default function TablaAdelantos({
                             <Plus className="h-4 w-4" />
                           </button>
                         )}
-                        <FilaAcciones
-                          adelanto={a}
-                          onEditarNotas={() => setEditandoNotas(a)}
-                          onAnular={() => setAnulando(a)}
-                        />
+                        <FilaAcciones adelanto={a} mandaRecibo={mandaRecibo} onAccion={(accion) => alElegir(a, accion)} />
                       </div>
                     </td>
                   </tr>
@@ -372,122 +379,7 @@ export default function TablaAdelantos({
         </div>
       )}
 
-      {anulando && (
-        <AnularAdelantoModal
-          adelantoId={anulando.id}
-          persona={anulando.beneficiario?.nombre ?? "—"}
-          monto={anulando.montoAdelantado}
-          moneda={anulando.moneda}
-          recibido={leerDireccion(anulando).direccion === "RECIBIDO"}
-          onClose={() => setAnulando(null)}
-          onAnulado={() => { setAnulando(null); onChange(); }}
-        />
-      )}
-      {editandoNotas && (
-        <EditarNotasModal
-          adelantoId={editandoNotas.id}
-          notasActuales={editandoNotas.notas ?? null}
-          onClose={() => setEditandoNotas(null)}
-          onGuardado={() => { setEditandoNotas(null); onChange(); }}
-        />
-      )}
+      <ModalesDeLaFila abierta={abierta} onCerrar={() => setAbierta(null)} onCambio={onChange} onRecibo={recargar} />
     </div>
-  );
-}
-
-/** Menú de "otros útiles" por fila — editar el motivo y anular, que ya vivían
- *  en el backend (`PATCH /api/adelantos/[id]`) sin ninguna pantalla que los
- *  llamara fuera del detalle. `stopPropagation` en el trigger: la fila entera
- *  es clickeable (abre el detalle) y el menú no puede competir con eso. */
-function FilaAcciones({
-  adelanto,
-  onEditarNotas,
-  onAnular,
-}: {
-  adelanto: DbAdelanto;
-  onEditarNotas: () => void;
-  onAnular: () => void;
-}) {
-  /* Mismo criterio que `AdelantosDB.cancel` (ADR-413): uno liquidado ya salió
-     por una liquidación y se corrige anulando ESA liquidación, no el adelanto. */
-  const bloqueado = adelanto.status === "CANCELADO" || adelanto.status === "LIQUIDADO";
-  return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <button
-          type="button"
-          onClick={(e) => e.stopPropagation()}
-          aria-label="Más acciones"
-          title="Más acciones"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-        >
-          <MoreHorizontal className="h-4.5 w-4.5" />
-        </button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="end"
-          sideOffset={4}
-          onClick={(e) => e.stopPropagation()}
-          className="z-50 min-w-[12rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-xl)]"
-        >
-          <DropdownMenu.Item
-            onSelect={onEditarNotas}
-            className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-semibold text-[var(--text-primary)] outline-none data-[highlighted]:bg-[var(--surface-sunken)]"
-          >
-            <Pencil className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" /> Editar motivo / notas
-          </DropdownMenu.Item>
-          {!bloqueado && (
-            <DropdownMenu.Item
-              onSelect={onAnular}
-              className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-semibold text-[var(--data-error)] outline-none data-[highlighted]:bg-[var(--data-error)]/10"
-            >
-              <Ban className="h-4 w-4 shrink-0" /> Anular adelanto
-            </DropdownMenu.Item>
-          )}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
-  );
-}
-
-function ariaSort(
-  orden: { columna: ColumnaOrden; direccion: Direccion },
-  columna: ColumnaOrden,
-): "ascending" | "descending" | "none" {
-  if (orden.columna !== columna) return "none";
-  return orden.direccion === "asc" ? "ascending" : "descending";
-}
-
-function IconoOrden({ activo, direccion }: { activo: boolean; direccion: Direccion }) {
-  if (!activo) return <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-40" aria-hidden />;
-  return direccion === "asc" ? (
-    <ArrowUp className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-  ) : (
-    <ArrowDown className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-  );
-}
-
-function BotonPagina({
-  onClick,
-  disabled,
-  label,
-  children,
-}: {
-  onClick: () => void;
-  disabled: boolean;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
-    >
-      {children}
-    </button>
   );
 }

@@ -9,7 +9,8 @@
  */
 
 import { leerMembrete } from "@/lib/admin/membrete-cliente";
-import { descargarComprobante, type DatosComprobante, type FirmaEnPapel } from "@/lib/adelantos/comprobante";
+import { armarComprobante, type DatosComprobante, type FirmaEnPapel } from "@/lib/adelantos/comprobante";
+import { momentoDeLaFoto } from "@/lib/adelantos/recibo-whatsapp";
 import type { FirmaRegistrada, RegistroFirmasRespuesta } from "@/lib/adelantos/entregar-tipos";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
 import { esComprobantePdf, esReciboFirmado, fechaHoraLima, limpiarDocumento, srcDelComprobante } from "@/lib/adelantos/recibo-firmado";
@@ -80,6 +81,26 @@ function comoJpeg(src: string, que: string): Promise<string | undefined> {
  * queda en el rastro y el papel sale igual.
  */
 export async function imprimirComprobante(a: DbAdelanto): Promise<void> {
+  const doc = await armarReciboDelAdelanto(a);
+  doc.save(nombreDelRecibo(a));
+}
+
+/** «adelanto-adl-2026-0057.pdf» */
+export function nombreDelRecibo(a: Pick<DbAdelanto, "codigoOperacion">): string {
+  return `adelanto-${(a.codigoOperacion ?? "sin-codigo").toLowerCase()}.pdf`;
+}
+
+/**
+ * El mismo recibo como archivo, para mandarlo por WhatsApp (23-10): la copia
+ * que sale del negocio, con el DNI tapado («****5678», Ley 29733). La ruta
+ * rechaza una copia que lo lleve entero.
+ */
+export async function reciboComoArchivo(a: DbAdelanto): Promise<File> {
+  const doc = await armarReciboDelAdelanto(a, { taparDocumento: true });
+  return new File([doc.output("blob")], nombreDelRecibo(a), { type: "application/pdf" });
+}
+
+async function armarReciboDelAdelanto(a: DbAdelanto, copia: { taparDocumento?: boolean } = {}) {
   const [membrete, firmas] = await Promise.all([leerMembrete(), leerRegistro(a.id)]);
   const { firma, huella } = vigentesDelRegistro(firmas ?? []);
   const recibo = esReciboFirmado(a.comprobanteUrl);
@@ -92,13 +113,16 @@ export async function imprimirComprobante(a: DbAdelanto): Promise<void> {
     /* Un voucher en PDF (10-10) no se pinta en el papel: se abre aparte. */
     !recibo && foto && !esComprobantePdf(a.comprobanteUrl) ? comoJpeg(foto, "el voucher") : undefined,
   ]);
-  await descargarComprobante({
+  const tomada = momentoDeLaFoto(a.comprobanteUrl);
+  return armarComprobante({
     ...datosDelComprobante(a, membrete.nombre),
+    taparDocumento: copia.taparDocumento,
     ...(firma && imgFirma
       ? { firma: firmaEnPapelDelRegistro(firma, imgFirma), montoFirmado: firma.monedaFirmada === a.moneda ? firma.montoFirmado : null }
       : {}),
-    ...(imgHuella ? { huella: { imagen: imgHuella } } : {}),
+    ...(imgHuella && huella ? { huella: { imagen: imgHuella, fechaHora: fechaHoraLima(new Date(huella.creadoEn)).replace(/^\S+\s/, "") } } : {}),
     hojaFirmada,
     voucher,
+    ...(voucher && tomada ? { voucherFechaHora: fechaHoraLima(tomada) } : {}),
   });
 }

@@ -125,6 +125,12 @@ interface OpcionesAdelantoEnUrl {
   setFiltro: (f: string) => void;
   setQ: (q: string) => void;
   setPagina: (p: number) => void;
+  /**
+   * Un adelanto a ubicar SIN abrir su ficha: el recién dado. Limpia el filtro
+   * si lo escondía, salta a su página y lo resalta, igual que una llegada por
+   * `?adelanto=` (23-10: lo dado no aparecía en la tabla a la vista).
+   */
+  ubicarId?: string | null;
 }
 
 export interface AdelantoEnUrl {
@@ -147,6 +153,7 @@ export function useAdelantoEnUrl({
   setFiltro,
   setQ,
   setPagina,
+  ubicarId = null,
 }: OpcionesAdelantoEnUrl): AdelantoEnUrl {
   useLimpiarAlSalirDeAdelantos();
   const ficha = useFichaEnUrl(PARAM_ADELANTO);
@@ -156,22 +163,36 @@ export function useAdelantoEnUrl({
     [pedido, adelantos],
   );
   const [resaltadoId, setResaltadoId] = useState<string | null>(null);
-  /** El último adelanto ya ubicado: el filtro y la página se tocan UNA vez por llegada. */
-  const ubicado = useRef<string | null>(null);
+  /* El filtro y la página se tocan UNA vez por llegada, con un registro para
+     cada cosa: la ficha abierta y el recién dado. Con uno solo (revisión 23-10),
+     al cerrar cualquier ficha el recién dado — que sigue en `ubicarId` — volvía
+     a «llegar»: borraba la búsqueda y saltaba de página. */
+  const fichaUbicada = useRef<string | null>(null);
+  const recienUbicado = useRef<string | null>(null);
+  const recien = useMemo(() => (ubicarId ? adelantos.find((a) => a.id === ubicarId) ?? null : null), [ubicarId, adelantos]);
 
   useEffect(() => {
-    if (!abierto || ubicado.current === abierto.id) return;
-    if (!filtrados.some((a) => a.id === abierto.id)) {
+    // Cerrada la ficha, volver a abrirla (desde un enlace) la ubica de nuevo.
+    if (!abierto) fichaUbicada.current = null;
+    /* La ficha abierta manda; si no hay, el recién dado (cuando ya llegó en la recarga). */
+    const pendiente =
+      abierto && fichaUbicada.current !== abierto.id
+        ? { a: abierto, ref: fichaUbicada }
+        : !abierto && recien && recienUbicado.current !== recien.id
+          ? { a: recien, ref: recienUbicado }
+          : null;
+    if (!pendiente) return;
+    if (!filtrados.some((a) => a.id === pendiente.a.id)) {
       // El filtro o la búsqueda lo escondían: el render siguiente lo vuelve a intentar.
       setFiltro("TODOS");
       setQ("");
       return;
     }
-    ubicado.current = abierto.id;
-    setResaltadoId(abierto.id);
-    const i = ordenarAdelantos(filtrados, orden.columna, orden.direccion).findIndex((a) => a.id === abierto.id);
+    pendiente.ref.current = pendiente.a.id;
+    setResaltadoId(pendiente.a.id);
+    const i = ordenarAdelantos(filtrados, orden.columna, orden.direccion).findIndex((a) => a.id === pendiente.a.id);
     if (i >= 0) setPagina(Math.floor(i / porPagina) + 1);
-  }, [abierto, filtrados, orden.columna, orden.direccion, porPagina, setFiltro, setQ, setPagina]);
+  }, [abierto, recien, filtrados, orden.columna, orden.direccion, porPagina, setFiltro, setQ, setPagina]);
 
   const noEncontrado = pedido && !loading && adelantos.length > 0 && !abierto ? pedido : null;
 

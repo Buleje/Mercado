@@ -465,6 +465,7 @@ export {
   // ── Additional pass 7 (documentos DS sweep 2026-08-23) ──
   CornerUpLeft,
   FileWarning,
+  Fingerprint,
   FolderX,
   ImagePlus,
   HardDriveDownload,

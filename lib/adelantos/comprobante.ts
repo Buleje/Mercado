@@ -23,6 +23,12 @@ export interface DatosComprobante {
   reciboManual?: string | null;
   persona: string;
   documento?: string | null;
+  /**
+   * La copia que sale del negocio (WhatsApp, 23-10): el DNI va tapado
+   * («****5678») en la línea «Documento» y debajo de la firma (Ley 29733). El
+   * papel que se imprime en el mostrador lo lleva entero.
+   */
+  taparDocumento?: boolean;
   telefono?: string | null;
   monto: number;
   moneda?: string | null;
@@ -62,6 +68,8 @@ export interface DatosComprobante {
   montoFirmado?: number | null;
   /** (ADR-491) La foto del voucher (data URL JPEG), en una página aparte «Comprobante de pago». */
   voucher?: string;
+  /** (23-10) Cuándo se tomó esa foto, ya escrita («jueves 23/10/2026 · 14:05»): va en el título de su página. */
+  voucherFechaHora?: string;
 }
 
 /** Una imagen para el papel: data URL PNG o JPEG (jsPDF no lee webp). */
@@ -69,6 +77,8 @@ export interface ImagenEnPapel {
   imagen: string;
   /** Ancho ÷ alto; si falta, se lee de la imagen. */
   relacion?: number;
+  /** (23-10) Cuándo quedó en el registro, ya escrita: la huella la lleva debajo de su casilla. */
+  fechaHora?: string;
 }
 
 export interface FirmaEnPapel extends ImagenEnPapel {
@@ -100,10 +110,17 @@ export function ladoDeFirma(direccion?: string | null): "izquierda" | "derecha" 
   return direccionDe(direccion) === "RECIBIDO" ? "izquierda" : "derecha";
 }
 
-/** «DNI 12345678» si son 8 números; si no, «Doc. X» (carné de extranjería, pasaporte). */
-export function rotuloDocumento(documento: string): string {
+/** «****5678»: sólo los 4 últimos, para la copia que se comparte. */
+export function documentoTapado(documento: string): string {
   const d = documento.trim();
-  return /^\d{8}$/.test(d) ? `DNI ${d}` : `Doc. ${d}`;
+  return `****${d.length > 4 ? d.slice(-4) : ""}`;
+}
+
+/** «DNI 12345678» si son 8 números; si no, «Doc. X» (carné de extranjería, pasaporte). Con `tapar`, «DNI ****5678». */
+export function rotuloDocumento(documento: string, tapar = false): string {
+  const d = documento.trim();
+  const v = tapar ? documentoTapado(d) : d;
+  return /^\d{8}$/.test(d) ? `DNI ${v}` : `Doc. ${v}`;
 }
 
 /** La casilla de la huella (ADR-491): 22 × 28 mm, el tamaño de un dedo entintado. */
@@ -265,9 +282,10 @@ export async function armarComprobante(d: DatosComprobante): Promise<Pdf> {
   };
   linea("Fecha", fecha(d.fecha));
   linea("Recibí de", t.recibiDe);
-  if (d.documento && t.recibiDe === d.persona) linea("Documento", d.documento);
+  const documento = d.documento && d.taparDocumento ? documentoTapado(d.documento) : d.documento;
+  if (documento && t.recibiDe === d.persona) linea("Documento", documento);
   linea(t.recibiDe === d.persona ? "Recibe" : "Nombre", t.nombre);
-  if (d.documento && t.nombre === d.persona) linea("Documento", d.documento);
+  if (documento && t.nombre === d.persona) linea("Documento", documento);
   if (t.concepto) linea("Por", t.concepto);
   linea("Modalidad", MODALIDAD_LABEL[d.modalidad] ?? d.modalidad);
 
@@ -303,10 +321,10 @@ export async function armarComprobante(d: DatosComprobante): Promise<Pdf> {
   doc.setFontSize(8);
   doc.text(t.firmaIzquierda, 46, yFirma + 5, { align: "center" });
   doc.text(t.firmaDerecha, W - 46, yFirma + 5, { align: "center" });
-  if (d.firma) pintarFirma(doc, d.firma, ladoDeFirma(d.direccion) === "izquierda" ? 46 : W - 46, yFirma);
+  if (d.firma) pintarFirma(doc, d.firma, ladoDeFirma(d.direccion) === "izquierda" ? 46 : W - 46, yFirma, !!d.taparDocumento);
   pintarCasillaHuella(doc, casillaDeHuella(d.direccion, W, yFirma), d.huella);
   if (d.hojaFirmada) agregarHoja(doc, d.hojaFirmada, "Recibo firmado guardado en el adelanto");
-  if (d.voucher) agregarHoja(doc, d.voucher, "Comprobante de pago");
+  if (d.voucher) agregarHoja(doc, d.voucher, d.voucherFechaHora ? `Comprobante de pago · foto del ${d.voucherFechaHora} (hora de Lima)` : "Comprobante de pago");
   return doc;
 }
 
@@ -324,13 +342,13 @@ function relacionDe(doc: Pdf, img: ImagenEnPapel): number {
 type Pdf = InstanceType<(typeof import("jspdf"))["default"]>;
 
 /** La firma sobre su línea (60 mm de ancho, hasta 16 mm de alto) y quién firmó debajo. */
-function pintarFirma(doc: Pdf, f: FirmaEnPapel, centro: number, yLinea: number): void {
+function pintarFirma(doc: Pdf, f: FirmaEnPapel, centro: number, yLinea: number, taparDocumento: boolean): void {
   const relacion = relacionDe(doc, f);
   const alto = Math.min(16, 56 / Math.max(relacion, 0.1));
   const ancho = alto * relacion;
   doc.addImage(f.imagen, formatoDe(f.imagen), centro - ancho / 2, yLinea - alto - 1, ancho, alto);
   doc.setFontSize(7);
-  doc.text(`${f.nombre} · ${rotuloDocumento(f.documento)}`.slice(0, 60), centro, yLinea + 9, { align: "center" });
+  doc.text(`${f.nombre} · ${rotuloDocumento(f.documento, taparDocumento)}`.slice(0, 60), centro, yLinea + 9, { align: "center" });
   doc.text(`Firmó el ${f.fechaHora} (hora de Lima)`, centro, yLinea + 13, { align: "center" });
 }
 
@@ -352,6 +370,10 @@ function pintarCasillaHuella(doc: Pdf, c: ReturnType<typeof casillaDeHuella>, hu
   }
   doc.setFontSize(7);
   doc.text("Huella", c.x + c.ancho / 2, c.y + c.alto + 3.5, { align: "center" });
+  if (huella?.fechaHora) {
+    doc.setFontSize(6);
+    doc.text(huella.fechaHora, c.x + c.ancho / 2, c.y + c.alto + 6.5, { align: "center" });
+  }
 }
 
 /** Una página aparte con una foto entera y sin deformar (la hoja firmada vieja o el voucher). */

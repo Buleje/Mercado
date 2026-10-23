@@ -44,6 +44,7 @@ export default function PersonasView({
   admiteRecibido,
   loading,
   onChange,
+  onRegistrado,
   onEntregar,
 }: {
   beneficiarios: BeneficiarioConSaldo[];
@@ -51,6 +52,8 @@ export default function PersonasView({
   admiteRecibido: boolean;
   loading: boolean;
   onChange: () => void;
+  /** Adelanto guardado con la ventana abierta: el saldo de la fila se pone al día ya. */
+  onRegistrado?: (id: string | null) => void;
   /** «Entregar» (ADR-491) con la persona ya elegida. */
   onEntregar?: (b: BeneficiarioConSaldo) => void;
 }) {
@@ -320,6 +323,7 @@ export default function PersonasView({
           admiteRecibido={admiteRecibido}
           initialBeneficiarioId={adelantoPara}
           onPersonaCreada={onChange}
+          onRegistrado={onRegistrado}
           onClose={() => setAdelantoPara(null)}
           onCreated={() => { setAdelantoPara(null); onChange(); }}
         />

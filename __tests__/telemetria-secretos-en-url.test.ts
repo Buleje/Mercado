@@ -27,6 +27,8 @@ describe("las 4 rutas de firma se tachan", () => {
     [`/api/public/adelantos/${T}/firmar`, "/api/public/adelantos/[token]/firmar"],
     [`/api/public/contratos/${T}/pdf`, "/api/public/contratos/[token]/pdf"],
     [`/api/public/agenda-ics/${T}`, "/api/public/agenda-ics/[token]"],
+    [`https://bodega.buleje.pe/d/${T}`, "https://bodega.buleje.pe/d/[token]"],
+    [`/api/public/documents/${T}/raw?x=1`, "/api/public/documents/[token]/raw?x=1"],
     [`{"$current_url":"https://x.pe/firmar-adelanto/${T}"}`, '{"$current_url":"https://x.pe/firmar-adelanto/[token]"}'],
   ])("%s", (url, tachada) => {
     expect(haySecretoEnRuta(url)).toBe(true);

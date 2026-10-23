@@ -14,6 +14,7 @@ import { PATRON_DIA } from "@/lib/adelantos/control-edicion";
 import { randomBytes } from "crypto";
 import { esErrorImagen, leerMultipartFirma, normalizarImagen } from "@/lib/adelantos/imagen-firma.server";
 import { esReciboFirmado, PREFIJO_PRIVADO, rutaFirmaPrivada } from "@/lib/adelantos/recibo-firmado";
+import { AdelantosReciboDB } from "@/lib/db/adelantos-recibo.db";
 import { borrarFirmaPrivada, subirFirmaPrivada } from "@/lib/adelantos/firma-storage";
 
 const PatchSchema = z.object({
@@ -86,6 +87,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
+/**
+ * Anulado el adelanto, los enlaces de su recibo por WhatsApp se cortan (23-10,
+ * Ley 29733: el PDF lleva firma, huella y foto de algo que ya no vale). Si
+ * falla, la anulación queda igual y el enlace vence solo a las 72 h.
+ */
+async function cortarEnlacesDelRecibo(tenantId: string, adelantoId: string): Promise<void> {
+  try {
+    const n = await AdelantosReciboDB.revocarEnlaces(tenantId, adelantoId);
+    if (n > 0) logger.info("[adelantos] enlaces del recibo cortados al anular", { adelantoId, enlaces: n });
+  } catch (err) {
+    logger.error("[adelantos] no se pudieron cortar los enlaces del recibo al anular", { adelantoId, error: String(err) });
+  }
+}
+
 // PATCH /api/adelantos/[id] — editar notas, cancelar, poner vencimiento / permiso, corregir la dirección o adjuntar el recibo firmado
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
@@ -133,6 +148,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       : await AdelantosDB.updateNotas(auth.tenantId, id, parsed.data.notas ?? null);
     if (!updated) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     logActivity(parsed.data.cancelar ? "Cancelar" : "Editar", "adelanto", `Adelanto ${id}`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    if (parsed.data.cancelar) await cortarEnlacesDelRecibo(auth.tenantId, id);
     return NextResponse.json(updated);
   } catch (e) {
     /* Ya anulado o ya liquidado: no hay saldo que devolver. El modal muestra `error` tal cual. */
@@ -381,6 +397,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const cancelled = await AdelantosDB.cancel(auth.tenantId, id);
     if (!cancelled) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     logActivity("Cancelar", "adelanto", `Adelanto ${id} cancelado`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    await cortarEnlacesDelRecibo(auth.tenantId, id);
     return NextResponse.json({ ok: true });
   } catch (e) {
     if (e instanceof AdelantoNoCancelableError) return NextResponse.json({ error: e.message }, { status: 409 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
@@ -157,8 +157,19 @@ export default function AdelantosModule() {
   /** «Entregar adelanto» abierto, con la persona ya elegida si vino en la URL. */
   const [entregando, setEntregando] = useState<{ persona: PersonaEntregar | null } | null>(null);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
+  /** El adelanto recién dado: la lista lo ubica y lo resalta (23-10). */
+  const [recienId, setRecienId] = useState<string | null>(null);
+  /** Sólo la última carga escribe: una vieja que llega tarde no pisa a la nueva. */
+  const turno = useRef(0);
+
+  /**
+   * `silencioso`: sin el esqueleto de carga. Es la recarga de «acaba de quedar
+   * guardado» con la ventana todavía abierta: la tabla de atrás se pone al día
+   * sin parpadear.
+   */
+  const cargar = useCallback(async (silencioso: boolean) => {
+    const mio = ++turno.current;
+    if (!silencioso) setLoading(true);
     setError(null);
     try {
       const [r, a, b] = await Promise.all([
@@ -171,14 +182,24 @@ export default function AdelantosModule() {
         fetch("/api/adelantos?direccion=todas", { credentials: "include" }).then((x) => (x.ok ? x.json() : [])),
         fetch("/api/adelantos/beneficiarios", { credentials: "include" }).then((x) => (x.ok ? x.json() : [])),
       ]);
+      if (mio !== turno.current) return;
       setResumen(r);
       setAdelantos(Array.isArray(a) ? a : []);
       setBeneficiarios(Array.isArray(b) ? b : []);
     } catch {
-      setError("No se pudo cargar los adelantos");
+      if (mio === turno.current) setError("No se pudo cargar los adelantos");
     }
-    setLoading(false);
+    if (mio === turno.current) setLoading(false);
   }, []);
+  const reload = useCallback(() => cargar(false), [cargar]);
+  /** Guardado en el servidor: la lista lo muestra ya, aunque la ventana siga abierta. */
+  const alRegistrar = useCallback(
+    (id: string | null) => {
+      if (id) setRecienId(id);
+      void cargar(true);
+    },
+    [cargar],
+  );
 
   useEffect(() => {
     reload();
@@ -244,7 +265,7 @@ export default function AdelantosModule() {
     <VistasDeAdelantos
       tab={tab} setTab={setTab} error={error} resumen={resumen} adelantos={adelantos} dados={dados}
       recibidos={recibidos} beneficiarios={beneficiarios} admiteRecibido={admiteRecibido} loading={loading}
-      reload={reload} creando={creando} setCreando={setCreando}
+      reload={reload} creando={creando} setCreando={setCreando} recienId={recienId} onRegistrado={alRegistrar}
       onEntregar={(persona) => setEntregando({ persona })}
     />
   );
@@ -275,7 +296,7 @@ export default function AdelantosModule() {
         </AdminTabBar>
       )}
       {entregando && (
-        <EntregarAdelantoModal personaInicial={entregando.persona} onClose={() => setEntregando(null)} onEntregado={() => void reload()} />
+        <EntregarAdelantoModal personaInicial={entregando.persona} onClose={() => setEntregando(null)} onEntregado={(r) => alRegistrar(r?.adelanto?.id ?? null)} />
       )}
     </div>
   );
@@ -283,7 +304,7 @@ export default function AdelantosModule() {
 
 /** Las siete vistas de Adelantos (dentro o fuera de Mi Plata, son las mismas). */
 function VistasDeAdelantos({
-  tab, setTab, error, resumen, adelantos, dados, recibidos, beneficiarios, admiteRecibido, loading, reload, creando, setCreando, onEntregar,
+  tab, setTab, error, resumen, adelantos, dados, recibidos, beneficiarios, admiteRecibido, loading, reload, creando, setCreando, recienId, onRegistrado, onEntregar,
 }: {
   tab: string;
   setTab: (v: string) => void;
@@ -298,6 +319,8 @@ function VistasDeAdelantos({
   reload: () => Promise<void>;
   creando: boolean;
   setCreando: React.Dispatch<React.SetStateAction<boolean>>;
+  recienId: string | null;
+  onRegistrado: (id: string | null) => void;
   /** Abre «Entregar» (ADR-491) con esa persona ya elegida. */
   onEntregar: (persona: PersonaEntregar) => void;
 }) {
@@ -321,11 +344,14 @@ function VistasDeAdelantos({
               onChange={reload}
               creando={creando}
               onCreando={setCreando}
+              recienId={recienId}
+              onRegistrado={onRegistrado}
             />
           )}
           {tab === "personas" && (
             <PersonasView
               beneficiarios={beneficiarios} adelantos={adelantos} admiteRecibido={admiteRecibido} loading={loading} onChange={reload}
+              onRegistrado={onRegistrado}
               onEntregar={(b) => onEntregar(personaParaEntregar(b, adelantos))}
             />
           )}
@@ -357,6 +383,8 @@ function AdelantosView({
   onChange,
   creando,
   onCreando,
+  recienId,
+  onRegistrado,
 }: {
   adelantos: DbAdelanto[];
   beneficiarios: BeneficiarioConSaldo[];
@@ -366,6 +394,9 @@ function AdelantosView({
   /** El alta la controla el módulo: la abre el botón de la barra de pestañas. */
   creando: boolean;
   onCreando: (v: boolean) => void;
+  /** El recién dado (alta o «Entregar»): la lista salta a su página y lo resalta. */
+  recienId: string | null;
+  onRegistrado: (id: string | null) => void;
 }) {
   /** Los descuentos de planilla del período, en una pasada. */
   const [planilla, setPlanilla] = useState(false);
@@ -412,7 +443,7 @@ function AdelantosView({
 
   /* La ficha abierta vive en `?adelanto=` (el «atrás» la cierra; el Resultado
      del negocio la abre): va DESPUÉS del `setPagina(1)` de arriba. */
-  const ficha = useAdelantoEnUrl({ adelantos, filtrados, loading, orden, porPagina: POR_PAGINA, setFiltro, setQ, setPagina });
+  const ficha = useAdelantoEnUrl({ adelantos, filtrados, loading, orden, porPagina: POR_PAGINA, setFiltro, setQ, setPagina, ubicarId: recienId });
 
   // Totales de la vista filtrada — segmentados por moneda (ADR-118). Lo
   // RECIBIDO va aparte (ADR-448): sumado a «por recuperar» contaría como por
@@ -588,7 +619,9 @@ function AdelantosView({
           porPagina={POR_PAGINA}
           onVerDetalle={ficha.abrir}
           resaltadoId={ficha.resaltadoId}
-          onChange={onChange}
+          /* Relectura SIN esqueleto: con `reload` la tabla se desmontaba y se llevaba
+             el modal de la fila abierto (mandar para firmar, WhatsApp). */
+          onChange={() => onRegistrado(null)}
         />
       )}
 
@@ -598,6 +631,7 @@ function AdelantosView({
           adelantos={adelantos}
           admiteRecibido={admiteRecibido}
           onPersonaCreada={onChange}
+          onRegistrado={onRegistrado}
           onClose={() => onCreando(false)}
           onCreated={() => {
             onCreando(false);

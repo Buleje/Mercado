@@ -49,6 +49,7 @@ export function useAltaAdelanto({
   initialBeneficiarioId,
   admiteRecibido,
   onCreated,
+  onRegistrado,
 }: {
   beneficiarios: BeneficiarioConSaldo[];
   adelantos: DbAdelanto[];
@@ -57,6 +58,8 @@ export function useAltaAdelanto({
   admiteRecibido: boolean;
   /** Con el id del adelanto creado (null en un abono): el alta puede seguir a «Firmar recibo». */
   onCreated: (adelantoId: string | null) => void;
+  /** Guardado en el servidor, con la ventana todavía abierta (ver `useGuardarAlta`). */
+  onRegistrado?: (adelantoId: string | null) => void;
 }) {
   const [modo, setModoRaw] = useState<ModoAlta>("dar");
   /* Por defecto la primera persona ACTIVA: una dada de baja «se deja de
@@ -88,7 +91,7 @@ export function useAltaAdelanto({
   const [cuota, setCuota] = useState<string | null>(null);
   const [camposPendientes, setCamposPendientes] = useState<PendientesCampos>(() => camposVacios(FORMULARIO_ADELANTO));
   const [confirmandoTope, setConfirmandoTope] = useState(false);
-  const guardar = useGuardarAlta({ camposPendientes, onCreated });
+  const guardar = useGuardarAlta({ camposPendientes, onCreated, onRegistrado });
 
   const def = MODO[modo];
   const persona = beneficiarios.find((b) => b.id === beneficiarioId);
@@ -287,7 +290,7 @@ export function useAltaAdelanto({
     camposPendientes, setCamposPendientes, credito, excedeTope, confirmandoTope,
     cuenta, proyeccion, caja, problema, submit,
     err: guardar.err, saving: guardar.saving, hecho: guardar.hecho, registrado: guardar.registrado,
-    camposPorReintentar: guardar.camposPorReintentar,
+    sinRespuesta: guardar.sinRespuesta, camposPorReintentar: guardar.camposPorReintentar,
   };
 }
 

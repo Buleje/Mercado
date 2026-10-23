@@ -3,6 +3,7 @@ import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { esPapelDeAdelanto } from "@/lib/adelantos/recibo-whatsapp";
 import { applySignature } from "@/lib/documents/sign-document";
 import {
   estadoDeRonda, firmantePorToken, registrarFirma, type Ronda,
@@ -34,6 +35,14 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
     const found = await DocumentsDB.findByShareToken(token);
     if (!found) return NextResponse.json({ error: "not_found_or_expired" }, { status: 404 });
+
+    // El recibo de un adelanto (23-10) se comparte por WhatsApp para VERLO: su
+    // firma va por el registro del adelanto (`/firmar-adelanto`, ADR-491). Sin
+    // esto, cualquiera con el mensaje reenviado lo firmaba con cualquier nombre
+    // y `addVersion` dejaba esa versión como la vigente.
+    if (esPapelDeAdelanto(found.doc.tags)) {
+      return NextResponse.json({ error: "no_firmable", mensaje: "Este documento es para ver: no se firma por este enlace." }, { status: 403 });
+    }
 
     // Si el share tiene contraseña, exigirla también para firmar.
     if (found.share.hasPassword) {

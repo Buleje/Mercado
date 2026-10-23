@@ -44,6 +44,7 @@ export default function CrearAdelantoModal({
   admiteRecibido = false,
   onClose,
   onCreated,
+  onRegistrado,
   onPersonaCreada,
 }: {
   beneficiarios: BeneficiarioConSaldo[];
@@ -58,6 +59,8 @@ export default function CrearAdelantoModal({
   admiteRecibido?: boolean;
   onClose: () => void;
   onCreated: () => void;
+  /** Apenas quedó guardado (la ventana puede seguir abierta con un aviso): la lista se pone al día y lo marca. */
+  onRegistrado?: (adelantoId: string | null) => void;
   /** Para que el módulo recargue la lista de personas cuando se crea una acá. */
   onPersonaCreada?: () => void;
 }) {
@@ -66,17 +69,38 @@ export default function CrearAdelantoModal({
      el lienzo; cerrarlo termina el alta como siempre. */
   const [firmar, setFirmar] = useLocalStorage<boolean>("buleje:adelantos-alta-firmar", false);
   const [porFirmar, setPorFirmar] = useState<string | null>(null);
+  /* La persona y su cuenta, congeladas en el momento en que queda registrado
+     (revisión 23-10). «Quedó guardado» recarga la lista de atrás, y «La
+     cuenta», «Así queda» y el tope salen de `beneficiarios` y `adelantos`: sin
+     congelar, si debe S/ 1.000 y le das S/ 500 sin caja abierta, el aviso
+     mostraba «debe 1.500 → queda 2.000». Antes de guardar siguen vivos (una
+     persona creada acá tiene que aparecer). El cierre del callback trae los
+     del clic de «Guardar»: los de antes de la recarga. */
+  const [congelado, setCongelado] = useState<{ beneficiarios: BeneficiarioConSaldo[]; adelantos: DbAdelanto[] } | null>(null);
+  const vista = congelado ?? { beneficiarios, adelantos };
   const alta = useAltaAdelanto({
-    beneficiarios,
-    adelantos,
+    beneficiarios: vista.beneficiarios,
+    adelantos: vista.adelantos,
     initialBeneficiarioId,
     admiteRecibido,
     onCreated: (id) => (firmar && id ? setPorFirmar(id) : onCreated()),
+    onRegistrado: (id) => {
+      setCongelado((c) => c ?? { beneficiarios, adelantos });
+      onRegistrado?.(id);
+    },
   });
   /* Si ya quedó algo guardado (con un aviso a la vista), cerrar con la X o
      Escape también recarga la lista: sin eso el adelanto no aparecía, se volvía
-     a cargar y quedaba duplicado (revisión 28-09). */
-  const cerrar = alta.registrado ? onCreated : onClose;
+     a cargar y quedaba duplicado (revisión 28-09). Si el envío se cortó sin
+     respuesta, pudo quedar guardado igual: la lista se recarga en silencio. */
+  const cerrar = alta.registrado
+    ? onCreated
+    : alta.sinRespuesta
+      ? () => {
+          onRegistrado?.(null);
+          onClose();
+        }
+      : onClose;
 
   /* Con la persona ya elegida, el foco va al monto — sin `autoFocus`
      (jsx-a11y/no-autofocus). En un rAF: el hook del modal enfoca la X en el
@@ -96,7 +120,7 @@ export default function CrearAdelantoModal({
           arriba mientras se baja. */}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-5">
         <QuienPone modo={alta.modo} onCambiar={alta.setModo} />
-        <BloquePersona alta={alta} beneficiarios={beneficiarios} onPersonaCreada={onPersonaCreada} />
+        <BloquePersona alta={alta} beneficiarios={vista.beneficiarios} onPersonaCreada={onPersonaCreada} />
         <aside aria-label="La cuenta de la persona" className="lg:sticky lg:top-0 lg:col-start-2 lg:row-span-5 lg:row-start-1 lg:self-start">
           <PanelCuenta alta={alta} />
         </aside>
