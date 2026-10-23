@@ -33,7 +33,6 @@ import {
   type ApartadosAsignados, type NombresApartado,
 } from "@/lib/forestal/cubicacion-apartados";
 import ApartadosPanel, { colorClaseApartado } from "./cubicacion-apartados";
-import CubicacionesGuardadas from "./CubicacionesGuardadas";
 import ImportarCubicacionModal from "./ImportarCubicacionModal";
 import LiquidacionModal from "./LiquidacionModal";
 import EnviarLibroModal from "./EnviarLibroModal";
@@ -93,7 +92,11 @@ import { useTraseraCamion } from "./hooks/use-trasera-camion";
 import { TraseraCamionModal } from "./cubicador-trasera-camion";
 import { segmentosDelPie } from "@/lib/forestal/cubicador-orden-columnas";
 import { BloqueGrabaciones, TiraPlegada } from "./cubicador-bloques";
-import { IndiceDelCubicador, NumeroDeBloque, SCROLL_MT_BLOQUE } from "./cubicador-indice";
+import { BarraDelCubicador, UltimasDelLote, useSeccionDelCubicador, panelDeSeccion } from "./cubicador-secciones";
+import { GuardadasDelCubicador } from "./cubicador-guardadas";
+import { useCambiosSinGuardar } from "./hooks/use-cambios-sin-guardar";
+import { PapelDelCubicador } from "@/components/admin/forestal/cubicador-papel/PapelDelCubicador";
+import { VistaEmbebidaProvider } from "@/hooks/use-vista-modulo";
 import { CELDAS_FLEX_EN_FILA, HOJA_MOVIL } from "./loth-tablero-estilos";
 import { PIE_COMO_TABLA } from "./loth-kardex-estilos";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -574,6 +577,12 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
   const [guardadoOk, setGuardadoOk] = useState<string | null>(null);
   const [historialToken, setHistorialToken] = useState(0);
   const [form, setForm] = useState({ nombre: "", fecha: hoyISO(), cliente: "", notas: "" });
+  /** La sección que se ve (`?sub=`). Dentro de «Producir sin lote» no hay
+   *  secciones: el envoltorio le da una URL propia y se apila como antes. */
+  const { seccion, irA, visitadas } = useSeccionDelCubicador();
+  const enSecciones = !onLote;
+  const { hayCambios, marcarGuardado } = useCambiosSinGuardar(rows, Boolean(cubicacionActual));
+  const estadoGuardado = !cubicacionActual ? "Sin guardar" : hayCambios ? "Cambios sin guardar" : "Guardada";
   /** El precio del lote (ADR-430): modo Aserrío/Venta/A mano, lo puesto a mano
    *  y el trato de cada dueño del Directorio, vigente el día del lote. */
   const precios = usePrecioCubicador({
@@ -2050,6 +2059,8 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       //    pieza (el Libro guarda especie y volumen, no E·A·L). Se guarda sola
       //    la cubicación si todavía no estaba guardada.
       if (entryId) {
+        /* Lo que se vincula es lo que queda marcado como guardado (la firma de «cambios sin guardar»). */
+        const filasVinculadas = rowsRef.current;
         void fetch("/api/admin/forestal/cubicaciones", {
           method: "POST",
           headers: { "content-type": "application/json", ...csrfHeaders() },
@@ -2065,13 +2076,16 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
             /* El código de la troza es interno del cubicado: no sale al servidor. */
             /* En el orden del papel, no el de la tabla: con «más nuevas
                primero» el Anexo 04 saldría al revés (`piezasParaVincular`). */
-            piezas: piezasParaVincular(rowsRef.current, ordenRef.current),
+            piezas: piezasParaVincular(filasVinculadas, ordenRef.current),
             ctpEntryId: entryId,
           }),
         })
           .then((res) => res.json().catch(() => ({})))
           .then((jc: { cubicacion?: { id: string; nombre: string } }) => {
-            if (jc?.cubicacion) setCubicacionActual({ id: jc.cubicacion.id, nombre: jc.cubicacion.nombre });
+            if (jc?.cubicacion) {
+              setCubicacionActual({ id: jc.cubicacion.id, nombre: jc.cubicacion.nombre });
+              marcarGuardado(filasVinculadas);
+            }
             setHistorialToken((t) => t + 1);
           })
           .catch((err) => setErrMsg(`Quedó en el Libro, pero no se pudo vincular la cubicación: ${String(err).slice(0, 80)}`));
@@ -2128,6 +2142,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       }
       const { cubicacion } = (await r.json()) as { cubicacion: CubicacionRegistro };
       setCubicacionActual({ id: cubicacion.id, nombre: cubicacion.nombre });
+      marcarGuardado(rows);
       setShowGuardar(false);
       setHistorialToken((v) => v + 1);
       if (!silencioso) {
@@ -2148,13 +2163,19 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
 
   /** Carga una cubicación guardada en la tabla para seguir o re-exportar. */
   const abrirCubicacion = async (c: CubicacionRegistro) => {
-    if (rows.length > 0 && !cubicacionActual && !(await confirm({
+    /* Antes sólo avisaba si el lote nunca se había guardado: una guardada con
+       cambios encima se reemplazaba sin preguntar. */
+    if (hayCambios && !(await confirm({
       title: "Vas a reemplazar el lote que tienes en pantalla",
-      description: "No está guardado. ¿Seguir?",
+      description: cubicacionActual
+        ? `«${cubicacionActual.nombre}» tiene cambios sin guardar y se pierden. ¿Seguir?`
+        : "No está guardado. ¿Seguir?",
       intent: "warning",
       confirmLabel: "Sí, reemplazar",
     }))) return;
-    persist(recubicarPiezas(c.piezas));
+    const filas = recubicarPiezas(c.piezas);
+    persist(filas);
+    marcarGuardado(filas);
     /* Sin trasera guardada (cubicaciones viejas) se vacía: no arrastra la del lote anterior. */
     trasera.restaurar(c.trasera?.ids ?? [], c.trasera?.anchoM);
     setEspecie(c.especie ?? "");
@@ -2164,12 +2185,18 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     setShowHistorial(false);
     setLastAdded(null);
     setEnviado(false);
+    irA("lote");
+  };
+
+  /** Se borró una guardada: si era la abierta, el lote queda en pantalla pero ya sin guardar. */
+  const olvidarSiEraLaAbierta = (id: string) => {
+    if (cubicacionActual?.id === id) setCubicacionActual(null);
   };
 
   /** Arranca un lote en blanco (lo guardado queda en el historial). */
   const nuevaCubicacion = async () => {
-    if (rows.length > 0 && !cubicacionActual && !(await confirm({
-      title: "El lote actual no está guardado y se va a borrar",
+    if (hayCambios && !(await confirm({
+      title: cubicacionActual ? `Los cambios de «${cubicacionActual.nombre}» no están guardados y se van a borrar` : "El lote actual no está guardado y se va a borrar",
       description: "¿Seguir?",
       intent: "danger",
       confirmLabel: "Sí, borrar",
@@ -2217,36 +2244,34 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
 
   return (
     <div ref={cubicadorRootRef} className="group relative space-y-4">
-      {/* Índice pegajoso (Brandon 23-10): tres bloques numerados y una barra que
-          lleva a cada uno. Dentro de «Producir sin lote» (onLote) no va: el
-          modal tiene su propio scroll y sólo carga piezas. */}
-      {!onLote && (
-        <IndiceDelCubicador
-          bloques={[
-            { id: "cub-bloque-cargar", numero: 1, etiqueta: "Dictar y cargar", corta: "Cargar", plegado: plegados.voz, onMostrar: () => setPlegados((v) => ({ ...v, voz: false })) },
-            { id: "cub-tabla-ancla", numero: 2, etiqueta: "Lote cubicado", corta: "Lote", cifra: rows.length > 0 ? `${formatNumber(totales.piezas)} pzas` : undefined },
-            { id: "cub-bloque-grabaciones", numero: 3, etiqueta: "Grabaciones de voz", corta: "Grabaciones", plegado: plegados.grabaciones, onMostrar: () => setPlegados((v) => ({ ...v, grabaciones: false })) },
-          ]}
+      {/* Secciones (Brandon 23-10: «ir en sección y sección; que no estén todas
+          visibles en una pantalla»): Cargar · Lote · Guardadas · Grabaciones, una
+          a la vez y en `?sub=`. Cargar y Lote no se desmontan al cambiar (sólo se
+          ocultan): el dictado, la lectura, el teclado de celdas y el scroll de la
+          tabla siguen donde estaban. Dentro de «Producir sin lote» (onLote) no
+          hay barra: el modal sólo carga piezas y va apilado como siempre. */}
+      {enSecciones && (
+        <BarraDelCubicador
+          seccion={seccion}
+          onCambiar={irA}
+          piezasDelLote={totales.piezas}
           resumen={rows.length > 0 ? (
             <>
               {fmtM3(totales.m3)} <span className="font-sans text-xs text-[var(--text-tertiary)]">m³</span>
-              <span className="hidden sm:inline">
-                <span aria-hidden className="px-1.5 text-[var(--rule-base)]">·</span>
-                {fmtPt(totales.pt)} <span className="font-sans text-xs text-[var(--text-tertiary)]">PT</span>
-              </span>
+              <span aria-hidden className="px-1.5 text-[var(--rule-base)]">·</span>
+              {fmtPt(totales.pt)} <span className="font-sans text-xs text-[var(--text-tertiary)]">PT</span>
             </>
           ) : undefined}
         />
       )}
 
-      {/* 1 · Dictar y cargar. El contenedor con el id no se desmonta al plegar:
-          el índice lo observa para saber qué bloque estás mirando. */}
-      <div id="cub-bloque-cargar" className={SCROLL_MT_BLOQUE}>
+      <div {...(enSecciones ? panelDeSeccion(seccion) : {})} className="space-y-4">
+      {/* Cargar: dictar y cargar, con lo último que entró al lote debajo. */}
+      <div id="cub-bloque-cargar" hidden={enSecciones && seccion !== "cargar"} className="space-y-3">
         {/* Panel de voz. Plegado deja una tira con su nombre y el botón para
             traerlo de vuelta: si desapareciera del todo, la función se perdería. */}
-        {plegados.voz ? (
+        {plegados.voz && !enSecciones ? (
           <TiraPlegada
-            numero={onLote ? undefined : 1}
             icono={<Mic className="h-4 w-4 text-[var(--accent)]" aria-hidden />}
             onMostrar={() => setPlegados((v) => ({ ...v, voz: false }))}
           >
@@ -2254,8 +2279,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
           </TiraPlegada>
         ) : (
         <PanelEntradaVoz
-          onPlegar={() => setPlegados((v) => ({ ...v, voz: true }))}
-          numero={onLote ? undefined : 1}
+          onPlegar={enSecciones ? undefined : () => setPlegados((v) => ({ ...v, voz: true }))}
           grillaId={GRILLA_CARGA}
           onPresent={onPresent}
           onImportar={() => modales.abrir("importar")}
@@ -2306,6 +2330,21 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
           }}
         />
         )}
+        {enSecciones && (
+          <UltimasDelLote
+            rows={rows}
+            totales={totales}
+            fmtPt={fmtPt}
+            fmtM3={fmtM3}
+            onVerLote={() => irA("lote")}
+            apartado={totalCandidatasAp.piezas > 0 ? {
+              letra: String(siguienteApartado(asignados)),
+              piezas: totalCandidatasAp.piezas,
+              pt: totalCandidatasAp.pieTablar,
+              onCerrar: cerrarApartado,
+            } : undefined}
+          />
+        )}
       </div>
 
       {/* Tabla acumulada. Expandida se despega del flujo y toma la pantalla:
@@ -2313,16 +2352,16 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
           dos veces (la página y la tabla) para leer una columna entera. */}
       <div
         id="cub-tabla-ancla"
+        hidden={enSecciones && seccion !== "lote"}
         className={
           tablaExpandida
             ? "fixed inset-0 z-system overflow-auto bg-[var(--surface-raised)] p-4 sm:p-5"
-            : `${SCROLL_MT_BLOQUE} rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5`
+            : "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5"
         }
       >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-              {!onLote && <NumeroDeBloque n={2} />}
               <Table className="h-4 w-4 text-[var(--accent)]" /> {cubicacionActual ? cubicacionActual.nombre : "Lote cubicado"} ({rows.length})
               {/* Va pegado al título y no dentro de un menú: se usa para LEER, y
                   buscar el botón en un desplegable rompe justo eso. */}
@@ -2343,10 +2382,10 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
             </CardTitle>
             {/* El estado en dos palabras y el porqué en el ⓘ (ley de la vista, regla 9). */}
             <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
-              {cubicacionActual ? "Guardada" : "Sin guardar"}
+              {estadoGuardado}
               <InfoTip
                 side="bottom"
-                title={cubicacionActual ? "Guardada" : "Sin guardar"}
+                title={estadoGuardado}
                 ariaLabel="Dónde vive este lote"
                 body={cubicacionActual ? "Al tocar «Actualizar» se reemplaza esta misma cubicación en tu cuenta." : "Vive sólo en este dispositivo hasta que la guardes. Guardada, la ves desde cualquier celular o computadora."}
               />
@@ -2521,6 +2560,16 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
             {/* El lote a la cuenta de una persona (ADR-478/483): el mismo camino que el
                 patio de trozas. Dentro de «Producir sin lote» (`onLote`) no va: ahí
                 las piezas son del libro, no de una cuenta. */}
+            {/* El formato de papel y el papel vinculado de ESTA cubicación
+                (carril «cubicador-papel»): sin guardar, sólo el formato. */}
+            {!onLote && (
+              <PapelDelCubicador
+                tipo="aserrada"
+                cubicacionId={cubicacionActual?.id ?? null}
+                etiqueta={cubicacionActual?.nombre ?? (form.nombre.trim() || undefined)}
+                variante="barra"
+              />
+            )}
             {!onLote && (
               <CuentaDeMadera
                 rows={rows}
@@ -2556,7 +2605,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                   hint: "Cinco hojas del formato oficial sin datos, para un día de campo",
                   onClick: () => descargarConAviso(descargarAnexo04EnBlanco(5), "Anexo 04 en blanco (5 hojas) descargado", "No se pudo generar el PDF."),
                 },
-                { key: "guardadas", label: "Cubicaciones guardadas", Icono: FileText, activo: showHistorial, onClick: () => setShowHistorial((v) => !v) },
+                { key: "guardadas", label: "Cubicaciones guardadas", Icono: FileText, activo: !enSecciones && showHistorial, onClick: () => (enSecciones ? irA("guardadas") : setShowHistorial((v) => !v)) },
                 ...(variadoActivo
                   ? [{ key: "variado", label: "Variado (paquetes 6×6)", Icono: Layers, hint: "Qué medidas entran en el paquete y qué especies no aplican", onClick: () => modales.abrir("variado") }]
                   : []),
@@ -2634,10 +2683,17 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
           />
         )}
 
-        {/* Historial de cubicaciones guardadas */}
-        {showHistorial && (
-          <div className="mb-3">
-            <CubicacionesGuardadas onAbrir={abrirCubicacion} onCerrar={() => setShowHistorial(false)} recargarToken={historialToken} />
+        {/* Las guardadas debajo del lote: sólo dentro de «Producir sin lote»,
+            que no tiene secciones (en el cubicador son su propia sección). */}
+        {!enSecciones && showHistorial && (
+          <div className="mb-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+            <GuardadasDelCubicador
+              onAbrir={abrirCubicacion}
+              onCerrar={() => setShowHistorial(false)}
+              onBorrada={olvidarSiEraLaAbierta}
+              abiertaId={cubicacionActual?.id}
+              recargarToken={historialToken}
+            />
           </div>
         )}
 
@@ -2710,7 +2766,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
             <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
               <Check className="h-4 w-4" /> Guardada como «{guardadoOk}».
             </span>
-            <button type="button" onClick={() => { setShowHistorial(true); setGuardadoOk(null); }} className="rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95 dark:text-[var(--data-success-500)]">
+            <button type="button" onClick={() => { if (enSecciones) irA("guardadas"); else setShowHistorial(true); setGuardadoOk(null); }} className="rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95 dark:text-[var(--data-success-500)]">
               Ver guardadas
             </button>
           </div>
@@ -3242,17 +3298,28 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
 
       </div>
 
-      {/* Grabaciones de voz (Brandon 23-10): notas habladas del lote. Dentro de
-          «Producir sin lote» (onLote) no va: ese modal sólo carga piezas. */}
-      {!onLote && (
-        <BloqueGrabaciones
-          id="cub-bloque-grabaciones"
-          className={SCROLL_MT_BLOQUE}
-          plegado={plegados.grabaciones}
-          onPlegado={(v) => setPlegados((prev) => ({ ...prev, grabaciones: v }))}
-          contexto={cubicacionActual ? cubicacionActual.nombre : rows.length > 0 ? `Lote sin guardar · ${rows.length} ${rows.length === 1 ? "pieza" : "piezas"}` : ""}
+      {/* Guardadas: las cubicaciones del negocio en tarjetas grandes. Se monta
+          al entrar (lista fresca, y no pide nada mientras dictas). */}
+      {enSecciones && seccion === "guardadas" && (
+        <GuardadasDelCubicador
+          onAbrir={abrirCubicacion}
+          onBorrada={olvidarSiEraLaAbierta}
+          abiertaId={cubicacionActual?.id}
+          recargarToken={historialToken}
         />
       )}
+
+      {/* Grabaciones de voz (Brandon 23-10): notas habladas del lote. Montadas
+          desde la primera visita: cambiar de sección no corta una grabación. */}
+      {enSecciones && visitadas.has("grabaciones") && (
+        <div hidden={seccion !== "grabaciones"}>
+          <BloqueGrabaciones
+            id="cub-bloque-grabaciones"
+            contexto={cubicacionActual ? cubicacionActual.nombre : rows.length > 0 ? `Lote sin guardar · ${rows.length} ${rows.length === 1 ? "pieza" : "piezas"}` : ""}
+          />
+        </div>
+      )}
+      </div>
 
       {/* Acá vivía una SEGUNDA copia del panel de entrada, para no tener que
           volver a subir después de mirar la tabla. Se fue (Brandon, 2026-09-08):
@@ -3616,4 +3683,18 @@ function Dim({ v, u, estandar, onEstandar, onV, etiqueta, fila, col, onKeyDown }
  * (medido 23-09: ~0,9 s por apertura en desarrollo). Las props que le pasan son
  * estables; si una deja de serlo, esto deja de ahorrar pero no rompe nada.
  */
-export default memo(CubicadorMadera);
+/**
+ * Dentro de «Producir sin lote» (`onLote`) la URL es del libro que está detrás:
+ * las secciones del cubicador no la tocan (no hay barra; se apila como antes).
+ */
+const SIN_URL = { sub: "cargar" } as const;
+function CubicadorMaderaEnSuLugar(props: Parameters<typeof CubicadorMadera>[0]) {
+  if (!props.onLote) return <CubicadorMadera {...props} />;
+  return (
+    <VistaEmbebidaProvider value={SIN_URL}>
+      <CubicadorMadera {...props} />
+    </VistaEmbebidaProvider>
+  );
+}
+
+export default memo(CubicadorMaderaEnSuLugar);

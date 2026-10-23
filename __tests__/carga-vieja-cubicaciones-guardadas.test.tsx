@@ -8,18 +8,14 @@
  * al vincularla con el Libro) mientras puedes estar borrando otra.
  *
  * Cada pedido queda pendiente hasta que el test lo resuelve: el orden de
- * llegada lo decide el test, no la red. StrictMode reproduce los dos GET.
+ * llegada lo decide el test, no la red. `recargar()` reproduce el segundo GET.
  */
-import { StrictMode } from "react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/csrf-client", () => ({ csrfHeaders: (h: Record<string, string> = {}) => h }));
-vi.mock("@/components/admin/shared/ConfirmDialog", () => ({
-  useConfirm: () => ({ confirm: async () => true }),
-}));
 
-import CubicacionesGuardadas from "@/components/admin/forestal/CubicacionesGuardadas";
+import { useGuardadasDelCubicador } from "@/components/admin/forestal/hooks/use-guardadas-del-cubicador";
 
 const API = "/api/admin/forestal/cubicaciones";
 
@@ -72,73 +68,79 @@ async function resolver(p: Pendiente | undefined, cuerpo: unknown) {
   });
 }
 
-const noop = () => {};
-const vista = (recargarToken: number) => (
-  <StrictMode>
-    <CubicacionesGuardadas onAbrir={noop} onCerrar={noop} recargarToken={recargarToken} />
-  </StrictMode>
-);
+/* La regla vive en el hook de la sección «Guardadas» (antes, dentro de la
+   lista `CubicacionesGuardadas`): se prueba directo, sin el menú «⋯». */
+/* Dos GET al montar, como en el doble montaje de StrictMode (el cubicador
+   real lo vive así en dev y cuando `recargarToken` sube en segundo plano):
+   acá el segundo sale de `recargar()`, para que el número no dependa de React. */
+const montar = () => {
+  const h = renderHook(({ token }: { token: number }) => useGuardadasDelCubicador(token), { initialProps: { token: 0 } });
+  act(() => h.result.current.recargar());
+  return h;
+};
+type Montado = ReturnType<typeof montar>;
+const nombres = (h: Montado) => h.result.current.lista.map((c) => c.nombre);
 
-async function borrar(nombre: string) {
+async function borrar(h: Montado, id: string) {
   await act(async () => {
-    screen.getByRole("button", { name: `Borrar ${nombre}` }).click();
+    void h.result.current.borrar(id);
   });
-  await waitFor(() => expect(pedido("DELETE", `${API}?id=c1`)).toBeTruthy());
+  await waitFor(() => expect(pedido("DELETE", `${API}?id=${id}`)).toBeTruthy());
 }
 
-describe("CubicacionesGuardadas — una carga vieja no devuelve lo borrado", () => {
+describe("Guardadas del cubicador — una carga vieja no devuelve lo borrado", () => {
   it("la cubicación borrada no reaparece cuando el GET del doble montaje vuelve tarde", async () => {
-    render(vista(0));
+    const h = montar();
     await waitFor(() => expect(gets()).toHaveLength(2));
 
     await resolver(gets()[1], { cubicaciones: [TORNILLO] });
-    expect(await screen.findByText(TORNILLO.nombre)).toBeTruthy();
+    await waitFor(() => expect(nombres(h)).toContain(TORNILLO.nombre));
 
-    await borrar(TORNILLO.nombre);
+    await borrar(h, "c1");
     await resolver(pedido("DELETE", `${API}?id=c1`), { ok: true });
-    expect(screen.queryByText(TORNILLO.nombre)).toBeNull();
+    expect(nombres(h)).not.toContain(TORNILLO.nombre);
 
     // El GET que salió en el montaje llega ahora, con la lista de antes del borrado.
     await resolver(gets()[0], { cubicaciones: [TORNILLO] });
-    expect(screen.queryByText(TORNILLO.nombre)).toBeNull();
+    expect(nombres(h)).not.toContain(TORNILLO.nombre);
 
     // La carga silenciosa que sigue al borrado trae lo guardado.
     await waitFor(() => expect(gets()).toHaveLength(3));
     await resolver(gets()[2], { cubicaciones: [] });
-    expect(screen.queryByText(TORNILLO.nombre)).toBeNull();
+    expect(nombres(h)).not.toContain(TORNILLO.nombre);
   });
 
   it("si se guarda otra mientras se borra, la recarga de `recargarToken` no devuelve la borrada y lo nuevo aparece", async () => {
-    const { rerender } = render(vista(0));
+    const h = montar();
     await waitFor(() => expect(gets()).toHaveLength(2));
     await resolver(gets()[1], { cubicaciones: [TORNILLO, CAPIRONA] });
     await resolver(gets()[0], { cubicaciones: [TORNILLO, CAPIRONA] });
-    expect(await screen.findByText(TORNILLO.nombre)).toBeTruthy();
+    await waitFor(() => expect(nombres(h)).toContain(TORNILLO.nombre));
 
     // Con el DELETE en vuelo, el cubicador guarda otra y sube el token.
-    await borrar(TORNILLO.nombre);
-    rerender(vista(1));
+    await borrar(h, "c1");
+    h.rerender({ token: 1 });
     await waitFor(() => expect(gets()).toHaveLength(3));
 
     await resolver(pedido("DELETE", `${API}?id=c1`), { ok: true });
     // Esa recarga leyó la base antes del borrado.
     await resolver(gets()[2], { cubicaciones: [SHIHUAHUACO, TORNILLO, CAPIRONA] });
-    expect(screen.queryByText(TORNILLO.nombre)).toBeNull();
+    expect(nombres(h)).not.toContain(TORNILLO.nombre);
 
     await waitFor(() => expect(gets()).toHaveLength(4));
     await resolver(gets()[3], { cubicaciones: [SHIHUAHUACO, CAPIRONA] });
-    expect(screen.getByText(SHIHUAHUACO.nombre)).toBeTruthy();
-    expect(screen.queryByText(TORNILLO.nombre)).toBeNull();
+    expect(nombres(h)).toContain(SHIHUAHUACO.nombre);
+    expect(nombres(h)).not.toContain(TORNILLO.nombre);
   });
 
   it("CONTROL: sin cambios de por medio, la carga más nueva gana aunque la vieja llegue después", async () => {
-    render(vista(0));
+    const h = montar();
     await waitFor(() => expect(gets()).toHaveLength(2));
 
     await resolver(gets()[1], { cubicaciones: [TORNILLO] });
-    expect(await screen.findByText(TORNILLO.nombre)).toBeTruthy();
+    await waitFor(() => expect(nombres(h)).toContain(TORNILLO.nombre));
 
     await resolver(gets()[0], { cubicaciones: [] });
-    expect(screen.getByText(TORNILLO.nombre)).toBeTruthy();
+    expect(nombres(h)).toContain(TORNILLO.nombre);
   });
 });

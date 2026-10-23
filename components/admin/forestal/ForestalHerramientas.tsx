@@ -82,6 +82,8 @@ export default function ForestalHerramientas({ initialTab }: { initialTab?: stri
     "cubicador",
     /* `?tab=forestal-tramites` (alias) entra por acá con `catalogo`. */
     initialTab,
+    /* Las secciones del cubicador de madera (`?sub=`) no viajan a las otras herramientas. */
+    { paramsDeVista: { cubicador: ["sub"] } },
   );
   const ctx = useContextoPermiso();
   const verHerramientas = usePermisoDe(["forestal-herramientas"]);
