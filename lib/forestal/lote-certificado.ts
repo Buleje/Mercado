@@ -17,6 +17,7 @@ import { CSS_CERTIFICADO_TRAZABILIDAD } from "@/lib/forestal/ctp-certificado-css
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { urlVerificarLote } from "@/lib/tenant-url-publica";
 import { obtenerBaseVerificacion } from "@/lib/base-verificacion-cliente";
+import { marcaDelNegocio } from "./membrete-forestal";
 
 const esc = (v: unknown) =>
   String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -80,6 +81,7 @@ export async function printCertificadoLote(
     throw new Error("La cadena de custodia del lote no está completa: no se puede emitir el certificado.");
   }
   const { url, dataUrl } = await qrPara(lote.id);
+  const marca = await marcaDelNegocio();
   const emitido = new Date();
   const fecha = emitido.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
   const hora = emitido.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
@@ -127,7 +129,8 @@ export async function printCertificadoLote(
   <style>${CSS_CERTIFICADO_TRAZABILIDAD}</style></head><body>
     <div class="head">
       <div>
-        <div class="emp">${esc(emisor.businessName || "Centro de Transformación Primaria")}</div>
+        ${marca.logoHtml}
+        <div class="emp">${esc(emisor.businessName || marca.nombre || "Centro de Transformación Primaria")}</div>
         ${emisor.ruc ? `<div class="ruc">RUC ${esc(emisor.ruc)}</div>` : ""}
       </div>
       <div class="nro">Lote N°<b>${esc(lote.loteCode)}</b>${esc(fecha)} · ${esc(hora)}</div>

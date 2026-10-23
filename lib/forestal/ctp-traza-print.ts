@@ -11,6 +11,7 @@
  */
 
 import type { TrazaGrafo } from "@/lib/db/forest-ctp.db";
+import { completarMembrete, MBR_HUECO_CABECERA, MBR_HUECO_PIE } from "./membrete-forestal";
 
 const esc = (s: unknown) =>
   String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
@@ -81,7 +82,8 @@ export function printCadenaCustodia(g: TrazaGrafo, periodLabel: string): void {
     .row-bad { background: #fef2f2; }
     .foot { margin-top: 20px; font-size: 9px; color: #9ca3af; text-align: center; }
   </style></head><body>
-    <h1>Cadena de custodia — Centro de Transformación Primaria</h1>
+    ${MBR_HUECO_CABECERA}
+    <h1>Cadena de custodia</h1>
     <p class="sub">Período: ${esc(periodLabel)} · Documento interno de trazabilidad (no reemplaza al LO-CTP oficial SERFOR)</p>
     <div class="cards">
       <div class="card ok"><div class="n">${completos}</div><div class="l">Despachos con cadena completa</div></div>
@@ -95,12 +97,13 @@ export function printCadenaCustodia(g: TrazaGrafo, periodLabel: string): void {
       <tbody>${filasDespacho || '<tr><td colspan="6">Sin despachos en el período.</td></tr>'}</tbody>
     </table>
     ${seccionHuerfanas}
-    <p class="foot">Generado desde el Libro de Operaciones CTP · Buleje</p>
-    <script>setTimeout(function(){ window.print(); }, 400);</script>
+    <p class="foot">Generado desde el Libro de Operaciones CTP</p>
+    ${MBR_HUECO_PIE}
   </body></html>`;
 
   const w = window.open("", "_blank", "width=1100,height=800");
   if (!w) return;
   w.document.write(html);
   w.document.close();
+  completarMembrete(w, { tipo: "Cadena de custodia", extra: periodLabel }, { imprimirAlTerminar: true });
 }

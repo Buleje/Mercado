@@ -3,6 +3,7 @@
 import type { DdsData } from "@/lib/forestal/eudr-types";
 import { buildEudrMapFigure, eudrMapFigureCss } from "./eudr-map-figure";
 import { geoJsonPolygonToRing } from "./loth-geo";
+import { completarMembrete, MBR_HUECO_CABECERA, MBR_HUECO_PIE } from "./membrete-forestal";
 
 /**
  * eudr-print — Declaración de Diligencia Debida (DDS) imprimible (ADR-140).
@@ -103,6 +104,7 @@ export function buildDdsHtml(dds: DdsData, emisor?: DdsEmisor): string {
     @media print{body{margin:12mm} .printbtn{display:none}}
   </style></head><body>
     <button class="printbtn" id="ctp-print">Imprimir / Guardar como PDF</button>
+    ${MBR_HUECO_CABECERA}
     <div class="hdr">
       <div>
         <h1>Declaración de Diligencia Debida (DDS)</h1>
@@ -145,6 +147,7 @@ export function buildDdsHtml(dds: DdsData, emisor?: DdsEmisor): string {
       <div>Fecha y lugar</div>
     </div>
     <div class="foot">Documento generado por el módulo Libro de Operaciones CTP (ADR-140). Este DDS acompaña la colocación en el mercado de la UE; los datos de geolocalización deben corresponder a la parcela de cosecha real.</div>
+    ${MBR_HUECO_PIE}
   </body></html>`;
 }
 
@@ -156,4 +159,5 @@ export function imprimirDds(dds: DdsData, emisor?: DdsEmisor): void {
      `openCtpReport`: el reporte no debe ejecutar script propio). */
   w.document.close();
   w.document.getElementById("ctp-print")?.addEventListener("click", () => w.print());
+  completarMembrete(w, { tipo: "Declaración de diligencia debida", codigo: dds.gtfSalida ?? null });
 }

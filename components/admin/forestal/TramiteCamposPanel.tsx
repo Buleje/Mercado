@@ -132,8 +132,7 @@ export default function TramiteCamposPanel({
   notas,
   setNotas,
   logo,
-  onLogoArchivo,
-  onLogoQuitar,
+  logoDeAjustes,
   ficha,
   tramites,
 }: {
@@ -159,8 +158,7 @@ export default function TramiteCamposPanel({
   setNotas: (v: string) => void;
   /** Logo del membrete (ADR-364 ronda 6) — vive por tenant, no en `datos`. */
   logo: LogoTramite | null;
-  onLogoArchivo: (f?: File) => void;
-  onLogoQuitar: () => void;
+  logoDeAjustes: boolean;
   /** La Ficha CTP: el permiso sólo hereda su RUC/representante si el titular es el propio CTP. */
   ficha: FichaDelOficio | null;
   /** Todo el expediente: de la última carta del mismo permiso sale su N° de expediente (ADR-487). */
@@ -259,7 +257,7 @@ export default function TramiteCamposPanel({
             </div>
             {g.id === "firma" && (
               <div className="mt-4 border-t-2 border-[var(--rule-soft)] pt-4">
-                <TramiteLogoMembrete logo={logo} onArchivo={onLogoArchivo} onQuitar={onLogoQuitar} />
+                <TramiteLogoMembrete logo={logo} deAjustes={logoDeAjustes} />
               </div>
             )}
           </section>

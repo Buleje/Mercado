@@ -127,8 +127,8 @@ export interface TramitePrintOpts {
   lugar?: string;
   /** N° de documento propio del CTP, si el titular numera sus oficios. */
   numeroDocumento?: string;
-  /** Logo del membrete (ADR-364 ronda 6) — se sube una vez y queda por
-   *  tenant (`tramites-logo.ts`), no viaja en `datos`. */
+  /** Logo del membrete (ADR-514) — el de Ajustes › Negocio;
+   *  no viaja en `datos`. */
   logo?: { src: string; aspect: number } | null;
   /**
    * Marca los datos RELLENABLES (membrete, destinatario, asunto/referencia,

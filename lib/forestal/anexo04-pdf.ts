@@ -241,9 +241,30 @@ async function agregarTrasera(doc: jsPDF, trasera: TraseraParaPdf | null | undef
   dibujarTraseraEnDoc(doc, autoTable, trasera.piezas, trasera.anchoM, trasera.catalogo ?? []);
 }
 
+/**
+ * Si el anexo no trae logo propio (el de «Papelería»), usa el de Ajustes ›
+ * Negocio › Logo (ADR-514). Sólo llena la caja del logo que el formato ya
+ * tiene: no cambia ni un casillero. Nunca falla: sin logo sale como antes.
+ */
+async function conLogoDeAjustes(datos: DatosAnexo04): Promise<DatosAnexo04> {
+  if (datos.logo || typeof window === "undefined") return datos;
+  try {
+    const { marcaDelNegocio } = await import("./membrete-forestal");
+    const m = await marcaDelNegocio();
+    if (!m.logo) return datos;
+    const img = new window.Image();
+    img.src = m.logo;
+    await img.decode();
+    return { ...datos, logo: m.logo, logoAspect: img.width / Math.max(1, img.height) };
+  } catch {
+    return datos;
+  }
+}
+
 /** Construye el documento (compartido por descarga y cualquier otra salida). */
-async function construirDoc(rows: PiezaCubicada[], datos: DatosAnexo04, opts: Anexo04Opts = {}, extras: ExtrasPdfAnexo = {}) {
+async function construirDoc(rows: PiezaCubicada[], datosBase: DatosAnexo04, opts: Anexo04Opts = {}, extras: ExtrasPdfAnexo = {}) {
   const { jsPDF: JsPDF } = await import("jspdf");
+  const datos = await conLogoDeAjustes(datosBase);
   const doc = new JsPDF({ unit: "pt", format: "a4" });
   agregarAnexo(doc, rows, datos, opts, true);
   await agregarTrasera(doc, extras.trasera);
@@ -283,7 +304,7 @@ export async function construirDocDeVarios(
   const { jsPDF: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "pt", format: "a4" });
   for (const [i, it] of items.entries()) {
-    agregarAnexo(doc, it.piezas, it.datos, { especieGlobal: it.especieGlobal, totalManualM3: it.totalManualM3 }, i === 0);
+    agregarAnexo(doc, it.piezas, await conLogoDeAjustes(it.datos), { especieGlobal: it.especieGlobal, totalManualM3: it.totalManualM3 }, i === 0);
     await agregarTrasera(doc, it.trasera);
   }
   return doc;

@@ -52,13 +52,10 @@ import {
   relacionesDelFormato,
 } from "@/lib/forestal/tramites-relacion-guias";
 import {
-  borrarLogoTramite,
-  guardarLogoTramite,
-  leerArchivoLogo,
   leerLogoTramite,
-  LOGO_MAX_BYTES,
   type LogoTramite,
 } from "@/lib/forestal/tramites-logo";
+import { marcaDelNegocio } from "@/lib/forestal/membrete-forestal";
 import { Btn, MesaPartesBanner } from "./ctp-shared";
 import { tagEntidad } from "@/lib/documentos/enlaces-entidad";
 import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
@@ -196,29 +193,22 @@ export default function TramiteFormulario({
   /** Bump tras archivar: refresca el bloque de documentos del trámite (ADR-502). */
   const [docsReload, setDocsReload] = useState(0);
   const archivadorRef = useRef<TramiteArchivadorHandle>(null);
-  /** Logo del membrete (ADR-364 ronda 6) — por tenant, no por trámite: se
-   *  sube una vez y queda para todos los documentos que se emitan después. */
+  /** Logo del membrete (ADR-514): el de Ajustes › Negocio; mientras no haya, el
+   *  viejo de este navegador. Ya no se sube desde el trámite. */
   const [logo, setLogo] = useState<LogoTramite | null>(() => leerLogoTramite());
-
-  async function onLogoArchivo(file?: File) {
-    if (!file) return;
-    if (file.size > LOGO_MAX_BYTES) {
-      setAviso("La imagen pesa demasiado — prueba con una más liviana.");
-      return;
-    }
-    try {
-      const leido = await leerArchivoLogo(file);
-      guardarLogoTramite(leido);
-      setLogo(leido);
-    } catch (err) {
-      setAviso(err instanceof Error ? err.message : String(err));
-    }
-  }
-
-  function onLogoQuitar() {
-    borrarLogoTramite();
-    setLogo(null);
-  }
+  const [logoDeAjustes, setLogoDeAjustes] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    void marcaDelNegocio().then((m) => {
+      if (vivo && m.logo) {
+        setLogo({ src: m.logo, aspect: 1 });
+        setLogoDeAjustes(true);
+      }
+    });
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   // Al abrir: lo guardado (si se edita), lo de un trámite viejo (si se
   // duplica) o lo que el sistema puede completar solo.
@@ -578,8 +568,7 @@ export default function TramiteFormulario({
       notas={notas}
       setNotas={setNotas}
       logo={logo}
-      onLogoArchivo={onLogoArchivo}
-      onLogoQuitar={onLogoQuitar}
+      logoDeAjustes={logoDeAjustes}
       ficha={auto.ficha}
       tramites={tramites}
     />

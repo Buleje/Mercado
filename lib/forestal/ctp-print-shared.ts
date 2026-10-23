@@ -11,6 +11,9 @@
  */
 
 import { GEO_PLACENAME } from "@/lib/geo";
+import { membreteDelDocumento } from "@/lib/documentos/membrete-cargar";
+import { logger } from "@/lib/logger";
+import { completarMembrete, MBR_HUECO_CABECERA, MBR_HUECO_PIE } from "./membrete-forestal";
 
 /** Identidad del CTP (subconjunto de `CtpFicha`) para el encabezado del reporte. */
 export interface CtpReportFicha {
@@ -25,6 +28,8 @@ export interface CtpReportFicha {
   distrito?: string;
   /** Jefe / representante legal del titular (comunidad, empresa) ante SERFOR. */
   representante?: string;
+  /** Logo cargado a propósito en la ficha del CTP (data URL). Sin él sale el de Ajustes › Datos del negocio (ADR-514). */
+  logo?: string;
 }
 
 export function esc(s: unknown): string {
@@ -64,7 +69,21 @@ export function ctpIdentityBlock(
     idRow("Dirección:", f.direccion),
     ...extraRows,
   ].filter(Boolean);
-  return `<div class="id">${rows.join("")}</div>`;
+  // El logo: el de la ficha si se cargó a propósito; si no, el de Ajustes, que `openCtpReport` pone al abrir (ADR-514).
+  const propio = (f.logo ?? "").startsWith("data:image/") ? ` src="${esc(f.logo)}"` : ` hidden data-logo-ajustes`;
+  return `<div class="id-wrap"><img class="id-logo" alt=""${propio}><div class="id">${rows.join("")}</div></div>`;
+}
+
+/** Pone el logo de Ajustes en los `<img data-logo-ajustes>` del reporte ya abierto. Sin logo, el bloque queda como estaba. */
+async function ponerLogoDeAjustes(w: Window): Promise<void> {
+  const imgs = Array.from(w.document.querySelectorAll<HTMLImageElement>("img[data-logo-ajustes]"));
+  if (!imgs.length) return;
+  const m = await membreteDelDocumento();
+  if (!m.logo?.dataUrl) return;
+  for (const img of imgs) {
+    img.src = m.logo.dataUrl;
+    img.hidden = false;
+  }
 }
 
 /** Firma (Responsable CTP / Sello ARFFS) + nota legal al pie del reporte. */
@@ -112,6 +131,10 @@ export const CTP_REPORT_BASE_CSS = `
   h2::before{content:"";flex-shrink:0;width:4px;height:14px;border-radius:2px;background:#0f5132}
   .sub{color:#5c6864;font-size:12.5px;margin:0 0 16px}
   .id{display:grid;grid-template-columns:1fr 1fr;gap:5px 22px;background:#f5f8f6;border:1px solid #e2e9e5;border-left:4px solid #0f5132;border-radius:4px 10px 10px 4px;padding:15px 19px;font-size:12.5px}
+  .id-wrap{display:flex;gap:16px;align-items:center}
+  .id-wrap .id{flex:1;min-width:0}
+  .id-logo{max-height:88px;max-width:132px;object-fit:contain;flex:none}
+  .id-logo[hidden]{display:none}
   .id .k{color:#7a8580;display:inline-block;min-width:120px;font-weight:600}
   table{width:100%;border-collapse:collapse;margin-top:8px}
   th,td{padding:8px 10px;border:1px solid #e2e9e5;text-align:left;vertical-align:top}
@@ -136,6 +159,8 @@ export function openCtpReport(opts: {
   /** Ventana abierta en el MISMO clic, antes de esperar al servidor: después de
    *  un `await` el navegador la trata como pop-up y la bloquea (ADR-436). */
   ventana?: Window | null;
+  /** Membrete común del negocio (logo + nombre + tipo/código/fecha, pie paginado; ADR-514). Sin esto el reporte sale como siempre. */
+  membrete?: { tipo: string; codigo?: string | null; fecha?: string | null; extra?: string | null };
 }): void {
   // Barra con botón de impresión en vez de auto-disparar `window.print()`: el
   // auto-print bloqueaba la ventana en entornos sin manejador de diálogo (headless/
@@ -159,7 +184,7 @@ export function openCtpReport(opts: {
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${esc(opts.title)}</title>
 <style>${CTP_REPORT_BASE_CSS}${barCss}${opts.css ?? ""}</style></head><body>
 <div class="print-bar"><button type="button" id="ctp-print">Imprimir / Guardar como PDF</button></div>
-${opts.body}
+${opts.membrete ? MBR_HUECO_CABECERA : ""}${opts.body}${opts.membrete ? MBR_HUECO_PIE : ""}
 </body></html>`;
   const w = opts.ventana ?? window.open("", "_blank", "width=980,height=760");
   if (!w)
@@ -168,5 +193,7 @@ ${opts.body}
   w.document.write(html);
   w.document.close();
   w.document.getElementById("ctp-print")?.addEventListener("click", () => w.print());
+  if (opts.membrete) completarMembrete(w, opts.membrete);
+  ponerLogoDeAjustes(w).catch((err) => logger.warn("[ctp-print] el logo de Ajustes no cargó: el reporte sale sin él", { error: String(err) }));
   w.focus();
 }

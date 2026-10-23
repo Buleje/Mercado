@@ -25,13 +25,13 @@
  */
 
 import type { HistoriaLote } from "./historia-lote";
+import { abrirPdfForestal } from "./membrete-forestal";
 
 const n4 = (v: number | null | undefined) => (v == null ? "" : Number(v).toFixed(4));
 const n2 = (v: number | null | undefined) => (v == null ? "" : Number(v).toFixed(2));
 const fecha = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }) : "";
 const unidad = (u: string | null | undefined) => (!u || u === "m3" ? "m³" : u);
-const hoy = () => new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 /** Nombre de archivo: un lote lleva su código, varios llevan el conteo. */
 function nombreArchivo(historias: readonly HistoriaLote[], ext: string): string {
@@ -62,18 +62,37 @@ const RGB_ETAPA: Record<1 | 2 | 3 | 4, [number, number, number]> = {
 
 export async function exportarHistoriasPDF(historias: readonly HistoriaLote[]): Promise<void> {
   if (historias.length === 0) return;
-  const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pdf = await abrirPdfForestal({
+    tipo: "Historia del lote",
+    codigo: historias.length === 1 ? historias[0].lote.code : `${historias.length} lotes`,
+  });
+  const { doc } = pdf;
+  /* La aclaración de siempre, en cada página, sobre el pie común. */
+  const alPagina: typeof pdf.alDibujarPagina = (d) => {
+    pdf.alDibujarPagina(d);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(107, 114, 128);
+    const ls = doc.splitTextToSize(
+      "Documento de referencia del Libro de Operaciones del CTP. No reemplaza el registro en el MC-SNIFFS. Lo atribuido a un lote no se prorratea: cuando una corrida se comparte, se declara como techo.",
+      pdf.ancho - 2 * pdf.margen,
+    ) as string[];
+    doc.text(ls, pdf.margen, pdf.alto - 44 - (ls.length - 1) * 8);
+  };
   const finalY = () => (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 100;
 
   historias.forEach((h, i) => {
-    if (i > 0) doc.addPage();
+    let yTop = pdf.y;
+    if (i > 0) {
+      doc.addPage();
+      yTop = pdf.breve(`Historia del lote ${h.lote.code}`);
+    }
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(15);
-    doc.setTextColor(20);
-    doc.text(`Historia del lote ${h.lote.code}`, 40, 46);
+    doc.setFontSize(13);
+    doc.setTextColor(31, 41, 51);
+    doc.text(`Lote ${h.lote.code}`, pdf.margen, yTop);
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
@@ -84,18 +103,17 @@ export async function exportarHistoriasPDF(historias: readonly HistoriaLote[]): 
         h.lote.speciesScientific ?? null,
         `estado: ${h.lote.status}`,
         `armado el ${fecha(h.armado.fecha)}`,
-        `emitido ${hoy()}`,
       ]
         .filter(Boolean)
         .join(" · "),
-      40,
-      62,
+      pdf.margen,
+      yTop + 14,
     );
 
     /* El recorrido en una fila, con la franja de color de cada etapa: el que
        hojea veinte páginas encuentra el tramo por el color, no leyendo. */
     autoTable(doc, {
-      startY: 76,
+      startY: yTop + 24,
       head: [["1 · Se apartó", "2 · Entró a la sierra", "3 · Salió aserrado", "4 · Se despachó"]],
       body: [
         [
@@ -121,7 +139,8 @@ export async function exportarHistoriasPDF(historias: readonly HistoriaLote[]): 
         if (data.section !== "head") return;
         data.cell.styles.fillColor = RGB_ETAPA[(data.column.index + 1) as 1 | 2 | 3 | 4];
       },
-      margin: { left: 40, right: 40 },
+      margin: pdf.margenTabla,
+      didDrawPage: alPagina,
     });
 
     if (h.huecos.length > 0) {
@@ -132,7 +151,8 @@ export async function exportarHistoriasPDF(historias: readonly HistoriaLote[]): 
         theme: "plain",
         styles: { fontSize: 8, textColor: [146, 64, 14], cellPadding: 3 },
         headStyles: { fontStyle: "bold", textColor: [146, 64, 14] },
-        margin: { left: 40, right: 40 },
+        margin: pdf.margenTabla,
+      didDrawPage: alPagina,
       });
     }
 
@@ -158,8 +178,9 @@ export async function exportarHistoriasPDF(historias: readonly HistoriaLote[]): 
       headStyles: { fillColor: RGB_ETAPA[1], textColor: 255, fontStyle: "bold" },
       footStyles: { fontStyle: "bold", fillColor: [245, 245, 245], textColor: 20 },
       columnStyles: { 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" } },
-      margin: { left: 40, right: 40 },
-      didDrawPage: () => pieDePagina(doc),
+      margin: pdf.margenTabla,
+      didDrawPage: alPagina,
+      
     });
 
     // ② Consumo
@@ -179,7 +200,8 @@ export async function exportarHistoriasPDF(historias: readonly HistoriaLote[]): 
       styles: { fontSize: 8, cellPadding: 3 },
       headStyles: { fillColor: RGB_ETAPA[2], textColor: 255, fontStyle: "bold" },
       columnStyles: { 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
-      margin: { left: 40, right: 40 },
+      margin: pdf.margenTabla,
+      didDrawPage: alPagina,
     });
 
     // ③ Producción
@@ -203,7 +225,8 @@ export async function exportarHistoriasPDF(historias: readonly HistoriaLote[]): 
       styles: { fontSize: 8, cellPadding: 3 },
       headStyles: { fillColor: RGB_ETAPA[3], textColor: 255, fontStyle: "bold" },
       columnStyles: { 4: { halign: "right" }, 5: { halign: "right" } },
-      margin: { left: 40, right: 40 },
+      margin: pdf.margenTabla,
+      didDrawPage: alPagina,
     });
 
     // ④ Salida
@@ -226,21 +249,13 @@ export async function exportarHistoriasPDF(historias: readonly HistoriaLote[]): 
       styles: { fontSize: 7.5, cellPadding: 3 },
       headStyles: { fillColor: RGB_ETAPA[4], textColor: 255, fontStyle: "bold" },
       columnStyles: { 3: { halign: "right" }, 4: { halign: "right" }, 6: { textColor: [146, 64, 14] } },
-      margin: { left: 40, right: 40 },
+      margin: pdf.margenTabla,
+      didDrawPage: alPagina,
     });
   });
 
+  pdf.cerrar();
   doc.save(nombreArchivo(historias, "pdf"));
-}
-
-function pieDePagina(doc: { setFontSize: (n: number) => void; setTextColor: (n: number) => void; text: (s: string, x: number, y: number) => void; internal: { pageSize: { getHeight: () => number } } }): void {
-  doc.setFontSize(7);
-  doc.setTextColor(150);
-  doc.text(
-    "Documento de referencia del Libro de Operaciones del CTP. No reemplaza el registro en el MC-SNIFFS. Lo atribuido a un lote no se prorratea: cuando una corrida se comparte, se declara como techo.",
-    40,
-    doc.internal.pageSize.getHeight() - 22,
-  );
 }
 
 // ── Excel ───────────────────────────────────────────────────────────────────

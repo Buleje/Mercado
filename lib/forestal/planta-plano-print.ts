@@ -12,6 +12,7 @@
 
 import { ZONA_TIPOS, zonaTipoMeta, type PlantaZona, type ZonaTipo } from "@/lib/forestal/planta-zona-types";
 import { BRAND_GEO, GEO_PLACENAME } from "@/lib/geo";
+import { completarMembrete, MBR_HUECO_CABECERA, MBR_HUECO_PIE } from "./membrete-forestal";
 
 export interface PlanoZonaInv { trozas: number; m3: number; productos: number; despachos: number }
 
@@ -156,7 +157,8 @@ export function printPlantaPlano(opts: {
   .foot{margin-top:24px;color:#999;font-size:10.5px;border-top:1px solid #eee;padding-top:10px}
   @media print{body{padding:12px}}
 </style></head><body>
-  <h1>Plano de planta — Centro de Transformación Primaria</h1>
+  ${MBR_HUECO_CABECERA}
+  <h1>Plano de planta</h1>
   <p class="sub">${esc(GEO_PLACENAME)} · Período: ${esc(periodLabel)} · Generado: ${esc(fecha)}</p>
   <div class="map"><img src="${imgUrl}" alt="Satélite de la planta" /><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${svgShapes}</svg></div>
   ${zonas.length === 0 ? '<p style="text-align:center;color:#999">Todavía no hay zonas dibujadas en el mapa.</p>' : `
@@ -167,7 +169,7 @@ export function printPlantaPlano(opts: {
   <div class="tot"><b>${zonas.length}</b> zona(s) · Área total mapeada: <b>${esc(fmtArea(areaTotalM2))}</b>${porTipo ? ` · ${porTipo}` : ""}</div>`}
   <div class="firma"><div>Responsable del CTP</div><div>Sello y recepción ARFFS</div></div>
   <p class="foot">Plano de referencia generado desde el mapa de planta del Libro de Operaciones del CTP. Las zonas son un gemelo espacial declarado por el titular; el inventario ubicado coincide con el panel de Planta. No reemplaza el registro oficial en el MC-SNIFFS de SERFOR.</p>
-  <script>setTimeout(function(){ window.print(); }, 900);</script>
+  ${MBR_HUECO_PIE}
 </body></html>`;
 
   const w = window.open("", "_blank", "width=1000,height=760");
@@ -175,4 +177,5 @@ export function printPlantaPlano(opts: {
   w.document.write(html);
   w.document.close();
   w.focus();
+  completarMembrete(w, { tipo: "Plano de planta", extra: periodLabel }, { imprimirAlTerminar: true });
 }

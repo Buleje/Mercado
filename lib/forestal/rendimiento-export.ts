@@ -70,7 +70,6 @@ export function imprimirRendimiento(d: RendimientoAserraderoDTO, nombreCtp?: str
     )
     .join("");
   const body = `
-  <h1>Rendimiento del aserradero</h1>
   <p class="sub">${esc(nombreCtp || "Centro de Transformación Primaria")} · Al ${esc(d.hoy)} · Libro CTP</p>
   <div class="id">
     <div><span class="k">Corridas:</span> ${t.corridas}${t.enProceso ? ` (${t.enProceso} en proceso: rendimiento parcial)` : ""}</div>
@@ -86,7 +85,7 @@ export function imprimirRendimiento(d: RendimientoAserraderoDTO, nombreCtp?: str
   ${ctpReportFooter(
     "Documento interno. Rendimiento = m³ aserrados ÷ m³ de troza del Libro CTP, ponderado por m³. «Parcial»: el lote sigue en proceso y su producción todavía no está toda declarada. «≈»: PT pagado estimado del m³ × 424 × 0,624, o PT aserrado estimado del m³ × 424 (paquetes sin PT medido). Ningún costo faltante se cuenta como cero.",
   )}`;
-  openCtpReport({ title: "Rendimiento del aserradero — Libro CTP", css: CSS, body });
+  openCtpReport({ title: "Rendimiento del aserradero — Libro CTP", css: CSS, body, membrete: { tipo: "Rendimiento del aserradero", extra: `Al ${d.hoy}` } });
 }
 
 /* ── Excel ───────────────────────────────────────────────────────────────── */

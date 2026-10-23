@@ -14,6 +14,7 @@
 import { useCallback, useState } from "react";
 import { useFichaCtp, type FichaCtp } from "@/hooks/use-ficha-ctp";
 import { logger } from "@/lib/logger";
+import { membreteDelDocumento } from "@/lib/documentos/membrete-cargar";
 import type { ContenidoZona } from "@/lib/forestal/planta-croquis";
 import { croquisDocumento, type EmpresaCroquis } from "@/lib/forestal/planta-croquis-print";
 import type { PlantaCroquis, PlantaZona } from "@/lib/forestal/planta-zona-types";
@@ -66,7 +67,16 @@ export function useCroquisImprimir(p: { croquis: PlantaCroquis | null; zonas: Pl
           return null;
         }) ?? croquis.imagenUrl;
       }
-      setDoc(croquisDocumento({ croquis, zonas, contenido, imagen, empresa: empresaDeFicha(ficha), fecha: new Date() }));
+      const empresa = empresaDeFicha(ficha);
+      // Sin logo cargado a propósito en la ficha del CTP, el de Ajustes › Datos del negocio (ADR-514).
+      if (!empresa.logo) {
+        const m = await membreteDelDocumento().catch((err: unknown) => {
+          logger.warn("[croquis-imprimir] el logo de Ajustes no cargó", { error: String(err) });
+          return null;
+        });
+        empresa.logo = m?.logo?.dataUrl ?? null;
+      }
+      setDoc(croquisDocumento({ croquis, zonas, contenido, imagen, empresa, fecha: new Date() }));
       return null;
     } finally {
       setArmando(false);

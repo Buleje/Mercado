@@ -445,7 +445,7 @@ export default function Anexo04Campos({
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <span className={`${LABEL} flex items-center gap-1`}>
               Logo, firma y sello del emisor
-              <InfoTip icono="ayuda" title="Logo, firma y sello" what="Se guardan en este equipo y salen en todos los anexos que emitas." example="PNG con fondo transparente es lo que mejor imprime." />
+              <InfoTip icono="ayuda" title="Logo, firma y sello" what="Se guardan en este equipo y salen en todos los anexos que emitas. Si no subes un logo aquí, sale el de Ajustes › Negocio › Logo." example="PNG con fondo transparente es lo que mejor imprime." />
             </span>
             <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
               {[datos.logo, datos.firma, datos.sello].filter(Boolean).length}/3 guardados

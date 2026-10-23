@@ -17,6 +17,7 @@ import { applyCtpPeriodParams, type CtpPeriod } from "./ctp-period";
 import { estadoVencimiento, type CtpFicha } from "./ctp-ficha-types";
 import { evaluarRendimiento } from "./ctp-rendimiento";
 import { fmtM3 } from "./cubicacion-formato";
+import { marcaDelNegocio } from "./membrete-forestal";
 
 const TITULO_LABEL_INF: Record<string, string> = {
   concesion: "Concesión forestal", permiso: "Permiso forestal", autorizacion: "Autorización",
@@ -70,6 +71,11 @@ export async function printInformePeriodo(period: CtpPeriod): Promise<void> {
     getJson<{ entries?: CtpRow[] }>(withPeriod("/api/admin/forestal/ctp", { section: "despacho" }, period), {}),
   ]);
   const ficha = fic.ficha ?? null;
+  const marca = await marcaDelNegocio();
+  // El logo cargado a propósito en la ficha del CTP manda; si no, el de Ajustes (ADR-514).
+  const logoHtml = (ficha?.logo ?? "").startsWith("data:image/")
+    ? `<img src="${esc(ficha?.logo)}" alt="" style="display:block;height:15mm;max-width:44mm;object-fit:contain;margin-bottom:6px">`
+    : marca.logoHtml;
   const stats = wood.stats ?? null;
   const saldos = sal.saldos ?? null;
   const traza = trz.traza ?? null;
@@ -155,7 +161,8 @@ export async function printInformePeriodo(period: CtpPeriod): Promise<void> {
   </style></head><body>
     <div class="head">
       <div>
-        <div class="emp">${esc(ficha?.nombreCtp || ficha?.razonSocial || "Centro de Transformación Primaria")}</div>
+        ${logoHtml}
+        <div class="emp">${esc(ficha?.nombreCtp || ficha?.razonSocial || marca.nombre || "Centro de Transformación Primaria")}</div>
         <div class="meta">${ficha?.razonSocial ? `${esc(ficha.razonSocial)} · ` : ""}${ficha?.ruc ? `RUC ${esc(ficha.ruc)}` : ""}</div>
         <div class="meta">Código de CTP: <b>${esc(ficha?.codigoCtp || "—")}</b>${ficha?.arffs ? ` · ${esc(ficha.arffs)}` : ""}</div>
         ${direccion ? `<div class="meta">${direccion}</div>` : ""}

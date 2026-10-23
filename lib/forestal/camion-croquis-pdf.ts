@@ -8,6 +8,7 @@
 import { acomodarCroquis, formatoTrasera, pulgAMetros, type Croquis } from "./camion-croquis";
 import type { PiezaCubicada } from "./cubicacion";
 import { fmtM3 } from "./cubicacion-formato";
+import { abrirPdfForestal } from "./membrete-forestal";
 
 /**
  * La paleta del croquis en RGB, en el MISMO orden que `COLORES_ESPECIE` de la
@@ -90,20 +91,21 @@ export function dibujarTraseraEnDoc(
   piezas: readonly PiezaCubicada[],
   anchoM: number,
   catalogo: readonly string[] = [],
+  /** Si ya hay membrete arriba (el PDF propio de la trasera): dónde empieza la hoja y la tabla puede seguir en otra. */
+  conMembrete?: { y: number; margenTabla: { top: number; left: number; right: number; bottom: number }; alDibujarPagina: (d: { pageNumber: number }) => void },
 ): void {
   const croquis = acomodarCroquis(piezas, { anchoM, catalogo });
   const formato = formatoTrasera(piezas, catalogo);
   const W = doc.internal.pageSize.getWidth();
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
-  doc.text("Parte trasera del camión", 40, 44);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(110);
+  if (!conMembrete) { doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("Parte trasera del camión", 40, 44); }
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(conMembrete ? 75 : 110, conMembrete ? 85 : 110, conMembrete ? 99 : 110);
   doc.text(
-    `Fecha: ${fecha()} · ${formato.totales.piezas} piezas · ${pt2(formato.totales.pt)} PT · ${fmtM3(formato.totales.m3)} m³ · vista desde la compuerta`,
-    40, 60,
+    `${conMembrete ? "" : `Fecha: ${fecha()} · `}${formato.totales.piezas} piezas · ${pt2(formato.totales.pt)} PT · ${fmtM3(formato.totales.m3)} m³ · vista desde la compuerta`,
+    40, conMembrete ? conMembrete.y : 60,
   );
 
-  let y = 76;
+  let y = (conMembrete ? conMembrete.y : 60) + 16;
   y += dibujarCroquis(doc, croquis, 40, y, W - 80, 330);
   const avisos = [
     croquis.sinDibujar > 0 ? `+${croquis.sinDibujar} piezas más que no se dibujan` : "",
@@ -131,6 +133,7 @@ export function dibujarTraseraEnDoc(
     body: formato.filas.map((f) => [String(f.n), `    ${f.especie}`, f.medida, f.tipo, String(f.piezas), pt2(f.pt), fmtM3(f.m3)]),
     foot: [["", "TOTAL", "", "", String(formato.totales.piezas), pt2(formato.totales.pt), fmtM3(formato.totales.m3)]],
     startY: y,
+    ...(conMembrete ? { margin: conMembrete.margenTabla, didDrawPage: conMembrete.alDibujarPagina } : {}),
     showFoot: "lastPage",
     styles: { fontSize: 8, cellPadding: 3.5 },
     headStyles: { fillColor: [0, 128, 96], textColor: 255 },
@@ -149,9 +152,10 @@ export function dibujarTraseraEnDoc(
 }
 
 export async function exportarTraseraPDF(piezas: readonly PiezaCubicada[], anchoM: number, catalogo: readonly string[] = []): Promise<void> {
-  const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
-  const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
-  dibujarTraseraEnDoc(doc, autoTable, piezas, anchoM, catalogo);
+  const pdf = await abrirPdfForestal({ tipo: "Parte trasera del camión", unit: "pt" });
+  const { doc } = pdf;
+  dibujarTraseraEnDoc(doc, autoTable, piezas, anchoM, catalogo, pdf);
+  pdf.cerrar();
   doc.save(`trasera-camion-${fecha()}.pdf`);
 }

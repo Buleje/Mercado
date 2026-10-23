@@ -17,6 +17,7 @@
 
 import type { PoaAnalisis } from "./loth-poa";
 import { fmtM3 } from "./cubicacion-formato";
+import { completarMembrete, MBR_HUECO_CABECERA, MBR_HUECO_PIE } from "./membrete-forestal";
 
 export interface PoaPrintMeta {
   titular: string | null;
@@ -102,6 +103,7 @@ export function printLothPoa(analisis: PoaAnalisis, meta: PoaPrintMeta): void {
   .nota { margin-top: 14px; font-size: 9px; color: #64748b; line-height: 1.5; border-top: .5px solid #e2e8f0; padding-top: 8px; }
   @media print { body { padding: 0; } }
 </style></head><body>
+  ${MBR_HUECO_CABECERA}
   <h1>Anexo del Plan Operativo — aprovechamiento por especie</h1>
   <p class="sub">
     ${dash(meta.titular)}${meta.tituloHabilitante ? ` · Título habilitante ${esc(meta.tituloHabilitante)}` : ""}
@@ -161,7 +163,7 @@ export function printLothPoa(analisis: PoaAnalisis, meta: PoaPrintMeta): void {
     a la tala. Documento de referencia interno generado desde el Libro de Operaciones del Titular: no reemplaza el plan de manejo
     aprobado ni sus anexos oficiales.
   </p>
-  <script>setTimeout(function(){ window.print(); }, 300);</script>
+  ${MBR_HUECO_PIE}
 </body></html>`;
 
   const w = window.open("", "_blank", "width=1000,height=900");
@@ -169,4 +171,5 @@ export function printLothPoa(analisis: PoaAnalisis, meta: PoaPrintMeta): void {
   w.document.write(html);
   w.document.close();
   w.focus();
+  completarMembrete(w, { tipo: "Anexo del Plan Operativo", codigo: meta.planNumber ?? null }, { imprimirAlTerminar: true });
 }

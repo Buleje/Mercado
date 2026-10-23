@@ -24,6 +24,7 @@
 import type { Workbook, Worksheet } from "exceljs";
 import { toInches, toFeet, type Unidad } from "./cubicacion";
 import { claveMarca, esAserradaDirecta, type Distribucion, type EspecieDistribucion } from "./cubicacion-reparto";
+import { abrirPdfForestal } from "./membrete-forestal";
 
 const TEAL = "FF008060";
 const GRIS = "FFE6F4F0";
@@ -315,37 +316,44 @@ export interface FirmaResponsable {
 
 /** `nota`: una línea extra bajo el encabezado (p. ej. que el Variado se repartió por proporción). */
 export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: string, marcadas?: ReadonlySet<string>, firma?: FirmaResponsable, soloEspecies?: ReadonlySet<string>, nota?: string): Promise<void> {
-  const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
-  const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
+  const pdf = await abrirPdfForestal({ tipo: "Distribución de rolliza", extra: "sobre lo aserrado", orientation: "landscape", unit: "pt" });
+  const { doc } = pdf;
   d = filtrarPorEspecies(d, soloEspecies);
   const t = d.totales;
   const dimCol = titulo(etiquetaDim);
   const finalY = () => (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 100;
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
-  doc.text("Distribución de rolliza sobre lo aserrado", 40, 44);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(110);
-  doc.text(
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(75, 85, 99);
+  const ancho = pdf.ancho - 2 * pdf.margen;
+  const parrafo = (texto: string, y: number): number => {
+    const ls = doc.splitTextToSize(texto, ancho) as string[];
+    doc.text(ls, pdf.margen, y);
+    return y + ls.length * 11;
+  };
+  let yCab = pdf.y;
+  yCab = parrafo(
     /* «ampara» acá es lo que ampara LA ROLLIZA: la capacidad de un bloque de
        aserrada directa es su propio m³ y se declara aparte, en la frase
        siguiente. Sumarlas decía «9 m³ de rolliza amparan 6.450» cuando
        amparan 4.950 y el resto ya venía aserrado. */
-    `Fecha: ${fecha()} · Agrupado: ${etiquetaDim} · Rolliza ${m3(t.rollizaM3)} m³ · ampara ${m3(t.capacidadM3 - t.aserradaDirectaM3)} m³ · amparado ${m3(t.amparadaM3)} m³ de ${m3(t.aserradaM3)} producidos` +
+    `Agrupado: ${etiquetaDim} · Rolliza ${m3(t.rollizaM3)} m³ · ampara ${m3(t.capacidadM3 - t.aserradaDirectaM3)} m³ · amparado ${m3(t.amparadaM3)} m³ de ${m3(t.aserradaM3)} producidos` +
     (t.aserradaDirectaM3 > EPS_FILTRO ? ` · Aserrada directa ${m3(t.aserradaDirectaM3)} m³ (A), sin troza de origen, ampara ${m3(t.amparadaDirectaM3)} m³` : "") +
     (soloEspecies && soloEspecies.size > 0 ? ` · Filtrado a: ${[...soloEspecies].join(", ")}` : ""),
-    40, 62,
+    yCab,
   );
-  doc.text(
+  yCab = parrafo(
     "Cada bloque ampara hasta su capacidad (m³ × % aprovechable) y reparte PIEZAS ENTERAS entre los tipos pendientes, en proporción al volumen." +
     (t.aserradaDirectaM3 > EPS_FILTRO ? " Los bloques de aserrada directa amparan su propio m³ (A) y no cuentan como rolliza ni en el rendimiento." : ""),
-    40, 76,
+    yCab,
   );
-  if (nota) doc.text(nota, 40, 88);
+  if (nota) yCab = parrafo(nota, yCab);
 
   // ── 1. Resumen por bloque: qué entró y qué amparó cada uno ───────────────
   const bloques = resumenDeBloques(d);
   autoTable(doc, {
+    margin: pdf.margenTabla,
+    didDrawPage: pdf.alDibujarPagina,
     head: [["Bloque (GTF / lote)", "Cargado como", "Especie", "Días", "Fecha", "Rolliza m³", "% aprov.", "Ampara m³", "Usa m³", "Libre m³", "Piezas", "Pie tablar"]],
     body: bloques.map((b) => [
       b.bloque, b.cargadoComo, b.especie, String(b.dias), b.fecha ?? "", m3Opt(b.rollizaM3),
@@ -354,7 +362,7 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
     ]),
     foot: [["TOTAL", "", "", "", "", m3(t.rollizaM3), "", m3(t.capacidadM3), m3(t.amparadaM3), m3(t.libreM3),
       piezasTxt(bloques.reduce((a, b) => a + b.piezas, 0)), t.amparadaPt.toFixed(2)]],
-    startY: nota ? 98 : 90,
+    startY: yCab + 4,
     // Sin esto el pie se repite en cada página y el TOTAL aparece ANTES de las
     // filas que suma — se lee como si la tabla ya hubiera terminado.
     showFoot: "lastPage",
@@ -370,7 +378,7 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
   // cuánto de cada tipo comercial amparó — sin bajar a espesor·ancho·largo.
   const porTipo = filasPorBloqueYTipo(d);
   doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(0, 96, 72);
-  doc.text("Distribución por bloque y tipo", 40, finalY() + 24);
+  doc.text("Distribución por bloque y tipo", pdf.margen, finalY() + 24);
 
   const bodyTipo: string[][] = [];
   const subtotalesTipo = new Set<number>();
@@ -394,6 +402,8 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
   if (bodyTipo.length === 0) bodyTipo.push(["", "", "Ningún bloque amparó aserrada todavía.", "", "", "", ""]);
 
   autoTable(doc, {
+    margin: pdf.margenTabla,
+    didDrawPage: pdf.alDibujarPagina,
     head: [["Bloque (GTF / lote)", "m³ (R)", "Especie", etiquetaDim.replace("Por ", "").replace(/^./, (c) => c.toUpperCase()), "Piezas", "Pie tablar", "m³"]],
     body: bodyTipo,
     foot: [["", m3(t.rollizaM3), "TOTAL AMPARADO", "", piezasTxt(porTipo.reduce((a, f) => a + f.piezas, 0)), t.amparadaPt.toFixed(2), m3(t.amparadaM3)]],
@@ -414,7 +424,7 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
   // ── 3. Medidas distribuidas: el detalle que pide el papel ────────────────
   const filas = filasDeMedidas(d, marcadas);
   doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(0, 96, 72);
-  doc.text("Medidas distribuidas", 40, finalY() + 24);
+  doc.text("Medidas distribuidas", pdf.margen, finalY() + 24);
 
   const body: string[][] = [];
   const subtotales = new Set<number>();
@@ -458,6 +468,8 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
   if (body.length === 0) body.push(["", "Ningún bloque amparó aserrada todavía.", "", "", "", "", "", "", "", "", "", ""]);
 
   autoTable(doc, {
+    margin: pdf.margenTabla,
+    didDrawPage: pdf.alDibujarPagina,
     head: [["N°", "Bloque", "Día", "Especie", dimCol, "Piezas", 'Espesor "', 'Ancho "', "Largo '", "Pie tablar", "m³", "Reg."]],
     body,
     foot: [["", "TOTAL AMPARADO", "", "", "", piezasTxt(filas.reduce((a, f) => a + f.piezas, 0)), "", "", "", t.amparadaPt.toFixed(2), m3(t.amparadaM3), ""]],
@@ -479,8 +491,10 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
   const faltante = filasDeFaltante(d);
   if (faltante.length > 0) {
     doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(150, 60, 20);
-    doc.text(`Falta por distribuir · ${m3(t.faltanteM3)} m³ sin respaldo — pide ${m3(t.rollizaFaltanteM3)} m³ de troza`, 40, finalY() + 24);
+    doc.text(`Falta por distribuir · ${m3(t.faltanteM3)} m³ sin respaldo — pide ${m3(t.rollizaFaltanteM3)} m³ de troza`, pdf.margen, finalY() + 24);
     autoTable(doc, {
+    margin: pdf.margenTabla,
+    didDrawPage: pdf.alDibujarPagina,
       head: [["N°", "Especie", dimCol, "Piezas", 'Espesor "', 'Ancho "', "Largo '", "Pie tablar", "m³ sin amparar", "Rolliza que pide"]],
       body: faltante.map((f) => [
         String(f.n), f.especie, f.tipo, piezasTxt(f.piezas),
@@ -499,7 +513,7 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
   }
 
   doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(120);
-  doc.text("Medidas en pulgadas y pies (espesor · ancho · largo), como las mide SERFOR. Las piezas se reparten enteras: ninguna se parte entre dos bloques.", 40, finalY() + 18);
+  doc.text("Medidas en pulgadas y pies (espesor · ancho · largo), como las mide SERFOR. Las piezas se reparten enteras: ninguna se parte entre dos bloques.", pdf.margen, finalY() + 18);
 
   // ── Firma del responsable ─────────────────────────────────────────────
   // Si la última tabla dejó poco margen, la firma pasa a una página nueva en
@@ -507,16 +521,17 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
   // la línea cortada.
   const pageH = doc.internal.pageSize.getHeight();
   let yFirma = finalY() + 60;
-  if (yFirma > pageH - 50) { doc.addPage(); yFirma = 70; }
+  if (yFirma > pageH - 90) { doc.addPage(); yFirma = pdf.breve() + 20; }
   doc.setDrawColor(150);
-  doc.line(40, yFirma, 280, yFirma);
+  doc.line(pdf.margen, yFirma, pdf.margen + 240, yFirma);
   doc.line(340, yFirma, 500, yFirma);
   doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(40);
-  doc.text(firma?.nombre || "Nombre y firma", 40, yFirma + 13);
+  doc.text(firma?.nombre || "Nombre y firma", pdf.margen, yFirma + 13);
   doc.text(`Fecha: ${fecha()}`, 340, yFirma + 13);
   doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(130);
-  doc.text(firma?.cargo ? `Responsable de la distribución · ${firma.cargo}` : "Responsable de la distribución", 40, yFirma + 24);
+  doc.text(firma?.cargo ? `Responsable de la distribución · ${firma.cargo}` : "Responsable de la distribución", pdf.margen, yFirma + 24);
 
+  pdf.cerrar();
   doc.save(`distribucion-rolliza-${fecha()}.pdf`);
 }
 

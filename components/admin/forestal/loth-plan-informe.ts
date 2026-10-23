@@ -17,6 +17,7 @@
  */
 
 import { esc, openCtpReport } from "@/lib/forestal/ctp-print-shared";
+import { completarMembrete, MBR_HUECO_CABECERA, MBR_HUECO_PIE } from "@/lib/forestal/membrete-forestal";
 import { informePlantacionHtml } from "@/lib/forestal/loth-informe-plantacion";
 import { esPlanDePlantacion } from "@/lib/forestal/loth-poa";
 import type { Balance, CensusStat, Plan, Species } from "./loth-plan-shared";
@@ -52,6 +53,7 @@ export async function printInforme(plan: Plan, species: Species[], censusStat: C
       openCtpReport({
         ...informePlantacionHtml({ plan, species, balance, censo: censusStat, movimientos: lothStats, emitido: new Date() }),
         ventana,
+        membrete: { tipo: "Informe del registro de plantación", codigo: plan.planNumber ?? null },
       });
       return null;
     } catch (e) {
@@ -68,8 +70,8 @@ export async function printInforme(plan: Plan, species: Species[], censusStat: C
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>Informe de ejecución — ${esc(plan.planNumber ?? plan.planType)}</title>
   <style>body{font-family:Arial,sans-serif;color:#111;padding:30px;font-size:12px}h1{font-size:16px;margin:0}h2{font-size:13px;border-bottom:1px solid #999;padding-bottom:3px;margin:18px 0 6px}.sub{color:#555;font-size:11px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 24px;margin-top:8px}.k{color:#666}.v{font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:6px;font-size:11px}th,td{border:1px solid #ccc;padding:4px 7px}th{background:#f0f0f0;text-align:left}.tot{text-align:right;margin-top:6px;font-size:12px}</style>
-  </head><body onload="window.print()">
-  <h1>INFORME DE EJECUCIÓN DEL PLAN DE MANEJO</h1>
+  </head><body>
+  ${MBR_HUECO_CABECERA}
   <div class="sub">Documento interno de gestión — base para el informe a ARFFS / SERFOR / OSINFOR al cierre del POA</div>
   <h2>Datos del título habilitante</h2>
   <div class="grid">
@@ -91,9 +93,11 @@ export async function printInforme(plan: Plan, species: Species[], censusStat: C
   <table><thead><tr><th>Sección</th><th>N° líneas</th><th>Volumen m³</th></tr></thead><tbody>${secRows || '<tr><td colspan="3">Sin movimientos</td></tr>'}</tbody></table>
   <div class="tot">Volumen total autorizado en el plan: <b>${autorizadoTotal.toFixed(2)} m³</b></div>
   <div style="margin-top:34px;display:flex;justify-content:space-between"><div>______________________<br>Titular / Regente forestal</div><div>______________________<br>Fecha</div></div>
+  ${MBR_HUECO_PIE}
   </body></html>`;
   ventana.document.open(); // reemplaza el «Generando…»
   ventana.document.write(html);
   ventana.document.close();
+  completarMembrete(ventana, { tipo: "Informe de ejecución del plan de manejo", codigo: plan.planNumber ?? null }, { imprimirAlTerminar: true });
   return null;
 }

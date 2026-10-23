@@ -285,7 +285,6 @@ export function informePlantacionHtml(d: DatosInformePlantacion): { title: strin
   const p = d.plan;
   const codigo = p.planNumber?.trim() || "sin código";
   const body = `
-    <h1>Informe del registro de plantación</h1>
     <p class="sub">Lo registrado por especie y dónde está hoy ese volumen según el Libro de Operaciones del título habilitante (LO-TH). Documento interno de gestión.</p>
     ${datosDelRegistro(p, d.emitido)}
     <h2>Volumen por especie</h2>

@@ -11,7 +11,7 @@ import { tipoDePieza, ordenTipo } from "./cubicacion-tipo";
 import type { PrecioPt, ResumenLote } from "./cubicacion-resumen";
 import { agruparOficial } from "./cubicacion-resumen";
 import type { DatosLiquidacion, Liquidacion } from "./cubicacion-liquidacion";
-import { fechaLarga } from "./cubicacion-liquidacion";
+import { abrirPdfForestal } from "./membrete-forestal";
 import type { ApartadosAsignados, NombresApartado } from "./cubicacion-apartados";
 import { resumenApartados, etiquetaApartado } from "./cubicacion-apartados";
 import { fmtM3 } from "./cubicacion-formato";
@@ -104,19 +104,20 @@ function descargar(blob: Blob, nombre: string) {
  * PT · m³ · valor) con subtotal por tipo y total general.
  */
 export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Promise<void> {
-  const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pdf = await abrirPdfForestal({ tipo: "Cubicación de madera" });
+  const { doc } = pdf;
   const t = totales(rows);
   const conPrecio = tieneValor(rows, opts);
   const totalValor = rows.reduce((a, r) => a + r.pieTablar * precioPieza(r, opts), 0);
   const precioTxt = opts.precioDe ? "por especie" : `S/ ${opts.precioPt.toFixed(2)}/PT`;
   const { grupos } = agruparDetallePorTipo(rows, opts);
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
-  doc.text("Cubicación de madera", 40, 44);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(110);
-  doc.text(`Fecha: ${fecha()}${opts.especieGlobal ? ` · Especie: ${opts.especieGlobal}` : ""}${conPrecio ? ` · Precio: ${precioTxt}` : ""}`, 40, 62);
+  const detalleCab = [opts.especieGlobal ? `Especie: ${opts.especieGlobal}` : "", conPrecio ? `Precio: ${precioTxt}` : ""].filter(Boolean).join(" · ");
+  if (detalleCab) {
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(75, 85, 99);
+    doc.text(detalleCab, pdf.margen, pdf.y);
+  }
 
   const val = (v: number) => (conPrecio ? [v.toFixed(2)] : []);
   // Apartado (función EXTRA): sólo aparece la columna si el lote tiene algo
@@ -145,7 +146,9 @@ export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Prom
 
   autoTable(doc, {
     head, body, foot,
-    startY: 78,
+    startY: pdf.y + (detalleCab ? 4 : -2),
+    margin: pdf.margenTabla,
+    didDrawPage: pdf.alDibujarPagina,
     styles: { fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: [0, 128, 96], textColor: 255 },
     footStyles: { fillColor: [0, 128, 96], textColor: 255, fontStyle: "bold" },
@@ -162,8 +165,9 @@ export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Prom
     },
   });
   const y = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 100;
-  doc.setFontSize(9); doc.setTextColor(120);
-  doc.text(`1 m³ = ${PT_POR_M3} pie tablar · medidas en pulgadas y pies · generado por el cubicador de Buleje.`, 40, y + 20);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(107, 114, 128);
+  doc.text(`1 m³ = ${PT_POR_M3} pie tablar · medidas en pulgadas y pies.`, pdf.margen, y + 7);
+  pdf.cerrar();
 
   doc.save(`cubicacion-${fecha()}.pdf`);
 }
@@ -265,18 +269,16 @@ export async function descargarPlantillaImport(headers: string[]): Promise<void>
 
 /** PDF de la liquidación por especie (comprobante para el comprador). */
 export async function exportarLiquidacionPDF(datos: DatosLiquidacion, liq: Liquidacion): Promise<void> {
-  const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pdf = await abrirPdfForestal({ tipo: "Liquidación de madera", fecha: datos.fecha });
+  const { doc } = pdf;
   const conValor = liq.total > 0;
   const s = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(18);
-  doc.text("Liquidación de madera", 40, 46);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(110);
-  if (datos.emisor) doc.text(datos.emisor, 40, 62);
-  doc.text(`Cliente: ${datos.cliente || "—"}${datos.documento ? ` · ${datos.documento}` : ""}`, 40, datos.emisor ? 78 : 62);
-  doc.text(`Fecha: ${fechaLarga(datos.fecha)}`, 400, datos.emisor ? 78 : 62);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(75, 85, 99);
+  let yc = pdf.y;
+  if (datos.emisor) { doc.text(datos.emisor, pdf.margen, yc); yc += 5.5; }
+  doc.text(`Cliente: ${datos.cliente || "—"}${datos.documento ? ` · ${datos.documento}` : ""}`, pdf.margen, yc);
 
   const head = [["Especie", "Piezas", "Pie tablar", ...(conValor ? ["S/ / PT", "Subtotal"] : [])]];
   const body = liq.lineas.map((l) => [
@@ -287,19 +289,23 @@ export async function exportarLiquidacionPDF(datos: DatosLiquidacion, liq: Liqui
 
   autoTable(doc, {
     head, body, foot,
-    startY: datos.emisor ? 92 : 78,
-    styles: { fontSize: 10, cellPadding: 6 },
+    startY: yc + 4,
+    margin: pdf.margenTabla,
+    didDrawPage: pdf.alDibujarPagina,
+    styles: { fontSize: 10, cellPadding: 2 },
     headStyles: { fillColor: [0, 128, 96], textColor: 255 },
     footStyles: { fillColor: [230, 244, 240], textColor: 20, fontStyle: "bold" },
     columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
   });
   let y = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 120;
   if (datos.nota) {
-    doc.setFontSize(10); doc.setTextColor(80);
-    doc.text(doc.splitTextToSize(datos.nota, 515), 40, y + 22); y += 22 + datos.nota.split("\n").length * 12;
+    doc.setFontSize(10); doc.setTextColor(75, 85, 99);
+    const lineasNota = doc.splitTextToSize(datos.nota, pdf.ancho - 2 * pdf.margen) as string[];
+    doc.text(lineasNota, pdf.margen, y + 8); y += 8 + lineasNota.length * 4.6;
   }
-  doc.setFontSize(9); doc.setTextColor(120);
-  doc.text(`${s(liq.totalM3)} m³ · documento generado por el cubicador de Buleje.`, 40, y + 24);
+  doc.setFontSize(9); doc.setTextColor(107, 114, 128);
+  doc.text(`${s(liq.totalM3)} m³ en total.`, pdf.margen, y + 8);
+  pdf.cerrar();
   doc.save(`liquidacion-${datos.cliente ? datos.cliente.toLowerCase().replace(/\s+/g, "-").slice(0, 24) : fecha()}.pdf`);
 }
 

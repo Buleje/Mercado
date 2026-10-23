@@ -16,6 +16,7 @@
 import { CSS_CERTIFICADO_TRAZABILIDAD } from "@/lib/forestal/ctp-certificado-css";
 import { urlVerificarDespacho } from "@/lib/tenant-url-publica";
 import { obtenerBaseVerificacion } from "@/lib/base-verificacion-cliente";
+import { marcaDelNegocio } from "./membrete-forestal";
 
 const esc = (v: unknown) =>
   String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -72,9 +73,10 @@ export async function printCertificadoTrazabilidad(
   const QR = (await import("qrcode")).default;
   const qrDataUrl = await QR.toDataURL(verifyUrl, { margin: 1, width: 180, errorCorrectionLevel: "M" });
 
+  const marca = await marcaDelNegocio();
   const emitido = new Date();
   const fecha = emitido.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
-  const hora = emitido.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+  const hora = emitido.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "America/Lima" });
   const nroCert = `CTP-D${despacho.lineNo}-${emitido.getFullYear()}${String(emitido.getMonth() + 1).padStart(2, "0")}${String(emitido.getDate()).padStart(2, "0")}`;
   // timeZone UTC: entryDate es date-only a medianoche UTC — sin esto el
   // certificado decía "28" cuando el libro registró "29" (off-by-one Lima).
@@ -95,7 +97,8 @@ export async function printCertificadoTrazabilidad(
   <style>${CSS_CERTIFICADO_TRAZABILIDAD}</style></head><body>
     <div class="head">
       <div>
-        <div class="emp">${esc(emisor.businessName || "Centro de Transformación Primaria")}</div>
+        ${marca.logoHtml}
+        <div class="emp">${esc(emisor.businessName || marca.nombre || "Centro de Transformación Primaria")}</div>
         ${emisor.ruc ? `<div class="ruc">RUC ${esc(emisor.ruc)}</div>` : ""}
         ${emisor.codigoCtp ? `<div class="ruc">Código de CTP: ${esc(emisor.codigoCtp)}${emisor.arffs ? ` · ${esc(emisor.arffs)}` : ""}</div>` : ""}
         ${emisor.direccion ? `<div class="ruc">${esc(emisor.direccion)}</div>` : ""}
