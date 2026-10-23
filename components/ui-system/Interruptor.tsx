@@ -33,13 +33,15 @@ export interface InterruptorProps {
   /** Encendido en rojo: para lo que corta algo (modo mantenimiento). */
   danger?: boolean;
   disabled?: boolean;
+  /** Estado intermedio (`aria-checked="mixed"`): algunas opciones sí y otras no. Si `enabled`, manda `enabled`. */
+  parcial?: boolean;
   /** `fila` (por defecto): la tarjeta de Ajustes. `solo`: sólo el interruptor. */
   variante?: "fila" | "solo";
   id?: string;
   className?: string;
 }
 
-function Riel({ enabled, danger }: { enabled: boolean; danger?: boolean }) {
+function Riel({ enabled, danger, parcial }: { enabled: boolean; danger?: boolean; parcial?: boolean }) {
   return (
     <span
       aria-hidden="true"
@@ -50,7 +52,9 @@ function Riel({ enabled, danger }: { enabled: boolean; danger?: boolean }) {
           ? danger
             ? "bg-[var(--data-error-500)]"
             : "bg-primary"
-          : "bg-[var(--surface-raised)] ring-1 ring-inset ring-[var(--text-tertiary)]",
+          : parcial
+            ? "bg-[var(--accent-muted)] ring-1 ring-inset ring-[var(--accent)]"
+            : "bg-[var(--surface-raised)] ring-1 ring-inset ring-[var(--text-tertiary)]",
       )}
     >
       <span
@@ -58,7 +62,9 @@ function Riel({ enabled, danger }: { enabled: boolean; danger?: boolean }) {
           "absolute left-0.5 rounded-full transition-[transform,width,height,background-color] duration-[var(--dur-fast)] ease-[var(--ease-editorial)]",
           enabled
             ? "h-5 w-5 translate-x-5 bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
-            : "ml-0.5 h-4 w-4 bg-[var(--text-tertiary)]",
+            : parcial
+              ? "ml-0.5 h-4 w-4 translate-x-2.5 bg-[var(--accent-dark)]"
+              : "ml-0.5 h-4 w-4 bg-[var(--text-tertiary)]",
         )}
       />
     </span>
@@ -72,6 +78,7 @@ export function Interruptor({
   desc,
   danger,
   disabled,
+  parcial,
   variante = "fila",
   id,
   className,
@@ -85,7 +92,7 @@ export function Interruptor({
       id={idBoton}
       type="button"
       role="switch"
-      aria-checked={enabled}
+      aria-checked={enabled ? true : parcial ? "mixed" : false}
       aria-label={label}
       aria-describedby={variante === "fila" ? idDesc : undefined}
       disabled={disabled}
@@ -97,7 +104,7 @@ export function Interruptor({
         variante === "fila" ? "-my-3" : className,
       )}
     >
-      <Riel enabled={enabled} danger={danger} />
+      <Riel enabled={enabled} danger={danger} parcial={parcial} />
     </button>
   );
 

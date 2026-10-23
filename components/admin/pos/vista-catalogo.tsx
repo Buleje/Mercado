@@ -7,7 +7,7 @@
  */
 import { LayoutGrid, List } from "@buleje/design-system/icons";
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { cn } from "@/lib/utils";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
 
 export type VistaCatalogo = "tarjetas" | "lista";
 
@@ -15,32 +15,22 @@ export function useVistaCatalogo() {
   return useLocalStorage<VistaCatalogo>("pos:vista-catalogo", "tarjetas");
 }
 
-const OPCIONES: { id: VistaCatalogo; label: string; Icono: typeof List }[] = [
-  { id: "tarjetas", label: "Ver en tarjetas", Icono: LayoutGrid },
-  { id: "lista", label: "Ver en lista", Icono: List },
+const OPCIONES = [
+  { value: "tarjetas" as const, label: "Ver en tarjetas", icon: <LayoutGrid className="h-5 w-5" />, dataQa: "pos-vista-tarjetas" },
+  { value: "lista" as const, label: "Ver en lista", icon: <List className="h-5 w-5" />, dataQa: "pos-vista-lista" },
 ];
 
 export function VistaCatalogoToggle() {
   const [vista, setVista] = useVistaCatalogo();
   return (
-    <div role="group" aria-label="Cómo ver el catálogo" className="flex shrink-0 rounded-xl bg-[var(--surface-sunken)]">
-      {OPCIONES.map(({ id, label, Icono }) => (
-        <button
-          key={id}
-          type="button"
-          aria-pressed={vista === id}
-          aria-label={label}
-          title={label}
-          data-qa={`pos-vista-${id}`}
-          onClick={() => setVista(id)}
-          className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-xl transition-colors",
-            vista === id ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)] ring-1 ring-[var(--rule-base)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-          )}
-        >
-          <Icono className="h-5 w-5" aria-hidden />
-        </button>
-      ))}
-    </div>
+    <SegmentedControl<VistaCatalogo>
+      soloIcono
+      size="xl"
+      label="Cómo ver el catálogo"
+      value={vista}
+      onChange={setVista}
+      options={OPCIONES}
+      className="shrink-0"
+    />
   );
 }

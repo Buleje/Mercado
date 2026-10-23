@@ -6,6 +6,9 @@
 # Misma búsqueda que scripts/pre-commit-gates.sh («GUARDIAS»).
 cd "$(dirname "$0")/.." || exit 1
 G=$(grep -lE "readdirSync|globSync|fast-glob|from \"glob\"|git ls-files|walk\(|recorrer\(" __tests__/*.ts __tests__/*.tsx 2>/dev/null | tr '\n' ' ')
+# El trinquete del diseño (ADR-489) mide TODO el panel con el censo: si un carril
+# suma piezas a mano, tumba commits ajenos (23-10 quedó rojo sin que nadie lo viera).
+G="$G __tests__/censo-ds-trinquete.test.ts"
 set -f
 # shellcheck disable=SC2086
 exec npx vitest run $G --passWithNoTests

@@ -10,7 +10,7 @@
  * reparto vuelve a ser el de antes, con sus avisos.
  */
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertTriangle, ArrowRight, Ruler } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
@@ -21,35 +21,28 @@ import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import type { CifrasPermiso, DiffRepartoMedidas } from "@/lib/forestal/reparto-medidas-diff";
 import { cn } from "@/lib/utils";
 import type { RepartoMedidas } from "./hooks/use-reparto-medidas";
+import { Casilla } from "@/components/ui-system/Casilla";
+import { Interruptor } from "@/components/ui-system/Interruptor";
 
 const avisos = (n: number) => `${n} ${n === 1 ? "aviso" : "avisos"}`;
 const piezas = (n: number) => `${fmtPiezas(n)} ${n === 1 ? "pieza" : "piezas"}`;
 
-function Interruptor({ prendido, parcial, onClick }: { prendido: boolean; parcial: boolean; onClick: () => void }) {
+function InterruptorMedidas({ prendido, parcial, onClick }: { prendido: boolean; parcial: boolean; onClick: () => void }) {
+  const id = useId();
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={prendido ? true : parcial ? "mixed" : false}
-      onClick={onClick}
-      className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-xl px-1 text-sm font-bold text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-    >
-      <span
-        aria-hidden
-        className={cn(
-          "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border transition-colors",
-          prendido || parcial ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[var(--rule-strong)] bg-[var(--surface-sunken)]",
-        )}
-      >
-        <span
-          className={cn(
-            "absolute h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow-[var(--shadow-sm)] transition-[left]",
-            prendido ? "left-5" : parcial ? "left-3" : "left-1",
-          )}
-        />
-      </span>
-      Repartir respetando medidas
-    </button>
+    <span className="inline-flex shrink-0 items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+      <Interruptor
+        id={id}
+        variante="solo"
+        label="Repartir respetando medidas"
+        enabled={prendido}
+        parcial={parcial}
+        onChange={onClick}
+      />
+      <label htmlFor={id} className="cursor-pointer">
+        Repartir respetando medidas
+      </label>
+    </span>
   );
 }
 
@@ -143,7 +136,7 @@ function PorBloque({ m }: { m: RepartoMedidas }) {
       {m.bloques.map((b) => (
         <li key={b.id}>
           <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-2 hover:bg-[var(--surface-sunken)]">
-            <input type="checkbox" checked={b.respeta} onChange={(e) => m.fijar(e.target.checked, b.id)} className="h-5 w-5 accent-[var(--accent)]" />
+            <Casilla checked={b.respeta} onChange={(e) => m.fijar(e.target.checked, b.id)} />
             <span className="min-w-0 flex-1 truncate text-sm">
               <b className="text-[var(--text-primary)]">{b.etiqueta}</b>
               <span className="text-[var(--text-secondary)]">
@@ -167,7 +160,7 @@ export default function RepartoMedidasAntesDespues({ medidas: m, avisosAhora }: 
   return (
     <>
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1 print:hidden">
-        <Interruptor prendido={m.prendido} parcial={alguno && !m.prendido} onClick={() => m.fijar(!alguno)} />
+        <InterruptorMedidas prendido={m.prendido} parcial={alguno && !m.prendido} onClick={() => m.fijar(!alguno)} />
         <InfoTip
           title="Repartir respetando medidas"
           what="Cada pieza va sólo a un bloque que tenga una troza donde quepa: largo de la pieza ≤ troza + 15 cm y la diagonal de la sección ≤ Ø de la punta delgada + 1 cm."

@@ -1,57 +1,57 @@
 {
-  "medido": "2026-10-09T23:45:43.084Z",
+  "medido": "2026-10-23T18:08:15.221Z",
   "nota": "Línea base del trinquete (ADR-489). baja = lo hecho a mano, no puede subir; sube = Button, Kicker, DataTable y AdminModal, no pueden bajar; info = no se exige. Se aprieta con: node scripts/censo-ds-admin.mjs --escribir",
-  "archivos": 2750,
+  "archivos": 3885,
   "familias": {
     "titulos": {
       "SectionTitle": {
-        "n": 150,
+        "n": 125,
         "sentido": "info"
       },
       "CardTitle": {
-        "n": 565,
+        "n": 507,
         "sentido": "info"
       },
       "BlockTitle": {
-        "n": 68,
+        "n": 90,
         "sentido": "info"
       },
       "Kicker": {
-        "n": 84,
+        "n": 90,
         "sentido": "sube"
       },
       "InfoTip": {
-        "n": 742,
+        "n": 1101,
         "sentido": "info"
       },
       "rotuloAMano": {
-        "n": 1121,
+        "n": 755,
         "sentido": "baja"
       },
       "h4AMano": {
-        "n": 24,
+        "n": 16,
         "sentido": "baja"
       },
       "titulosLocales": {
-        "n": 23,
+        "n": 13,
         "sentido": "baja"
       },
       "subtituloProps": {
-        "n": 442,
+        "n": 512,
         "sentido": "info"
       }
     },
     "botones": {
       "Button": {
-        "n": 0,
+        "n": 959,
         "sentido": "sube"
       },
       "buttonAMano": {
-        "n": 5236,
+        "n": 4514,
         "sentido": "baja"
       },
       "constantesBtn": {
-        "n": 170,
+        "n": 73,
         "sentido": "baja"
       },
       "botonesLocales": {
@@ -59,13 +59,13 @@
         "sentido": "baja"
       },
       "alturasBoton": {
-        "n": 28,
+        "n": 25,
         "sentido": "info"
       }
     },
     "filtros": {
       "filtrosLocales": {
-        "n": 28,
+        "n": 27,
         "sentido": "baja"
       },
       "alturasInput": {
@@ -73,37 +73,37 @@
         "sentido": "baja"
       },
       "inputs": {
-        "n": 1846,
+        "n": 1990,
         "sentido": "info"
       },
       "selects": {
-        "n": 495,
+        "n": 569,
         "sentido": "info"
       },
       "filtrosColumna": {
-        "n": 91,
+        "n": 87,
         "sentido": "info"
       },
       "SegmentedControl": {
-        "n": 37,
+        "n": 62,
         "sentido": "info"
       }
     },
     "tablas": {
       "DataTable": {
-        "n": 212,
+        "n": 316,
         "sentido": "sube"
       },
       "tableAMano": {
-        "n": 54,
+        "n": 6,
         "sentido": "baja"
       },
       "thEstilos": {
-        "n": 29,
+        "n": 18,
         "sentido": "baja"
       },
       "tablasLocales": {
-        "n": 34,
+        "n": 1,
         "sentido": "baja"
       },
       "AdminTable": {
@@ -113,11 +113,11 @@
     },
     "checks": {
       "checkboxNativo": {
-        "n": 250,
+        "n": 242,
         "sentido": "baja"
       },
       "switchAMano": {
-        "n": 20,
+        "n": 17,
         "sentido": "baja"
       },
       "checksLocales": {
@@ -125,21 +125,21 @@
         "sentido": "baja"
       },
       "Interruptor": {
-        "n": 35,
+        "n": 49,
         "sentido": "info"
       },
       "Casilla": {
-        "n": 18,
+        "n": 67,
         "sentido": "info"
       }
     },
     "modales": {
       "AdminModal": {
-        "n": 251,
+        "n": 434,
         "sentido": "sube"
       },
       "overlayAMano": {
-        "n": 123,
+        "n": 43,
         "sentido": "baja"
       },
       "ModalViejo": {
@@ -151,17 +151,17 @@
         "sentido": "baja"
       },
       "ModalFooter": {
-        "n": 103,
+        "n": 245,
         "sentido": "info"
       },
       "useModalAccesible": {
-        "n": 141,
+        "n": 54,
         "sentido": "info"
       }
     },
     "kpis": {
       "StatCard": {
-        "n": 258,
+        "n": 257,
         "sentido": "info"
       },
       "KpiTile": {
@@ -169,29 +169,29 @@
         "sentido": "baja"
       },
       "kpisLocales": {
-        "n": 46,
+        "n": 41,
         "sentido": "baja"
       }
     },
     "graficos": {
       "hexEnGraficos": {
-        "n": 114,
+        "n": 92,
         "sentido": "baja"
       },
       "paletasLocales": {
-        "n": 99,
+        "n": 30,
         "sentido": "baja"
       },
       "tooltipsPropios": {
-        "n": 32,
+        "n": 31,
         "sentido": "baja"
       },
       "ejesDistintos": {
-        "n": 7,
+        "n": 6,
         "sentido": "baja"
       },
       "recharts": {
-        "n": 47,
+        "n": 45,
         "sentido": "info"
       },
       "COLOR_CONCEPTO": {
@@ -205,65 +205,69 @@
     },
     "estructura": {
       "AdminTabBar": {
-        "n": 37,
+        "n": 34,
         "sentido": "info"
       },
       "AdminModuleHeader": {
-        "n": 45,
+        "n": 13,
         "sentido": "info"
       },
       "VistaHeader": {
-        "n": 10,
-        "sentido": "baja"
+        "n": 17,
+        "sentido": "info"
       },
       "tabsLocales": {
-        "n": 4,
+        "n": 3,
         "sentido": "baja"
       },
+      "PestanasDeVista": {
+        "n": 9,
+        "sentido": "info"
+      },
       "detailsNativo": {
-        "n": 54,
+        "n": 48,
         "sentido": "baja"
       },
       "Plegable": {
-        "n": 6,
+        "n": 47,
         "sentido": "info"
       },
       "useVistaModulo": {
-        "n": 16,
+        "n": 9,
         "sentido": "info"
       },
       "spinnerBloqueAMano": {
-        "n": 51,
+        "n": 45,
         "sentido": "baja"
       }
     },
     "movimiento": {
       "duracionesLiterales": {
-        "n": 72,
+        "n": 58,
         "sentido": "baja"
       },
       "easingsLiterales": {
-        "n": 1,
+        "n": 0,
         "sentido": "baja"
       },
       "durationSinToken": {
-        "n": 20,
+        "n": 15,
         "sentido": "baja"
       },
       "transitionAll": {
-        "n": 478,
+        "n": 364,
         "sentido": "baja"
       },
       "durationToken": {
-        "n": 118,
+        "n": 123,
         "sentido": "info"
       },
       "mTags": {
-        "n": 147,
+        "n": 86,
         "sentido": "info"
       },
       "motionTags": {
-        "n": 8,
+        "n": 10,
         "sentido": "info"
       }
     }

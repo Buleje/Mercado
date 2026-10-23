@@ -98,6 +98,18 @@ Todos aceptan `--seco` (imprimen cuántos cambios harían por carpeta, sin escri
 - [ ] Variante `accent` de `button()` (hoy sin usos; el codemod de la ola 5 le manda los botones turquesa): blanco sobre `#00A0A0` = 3,21:1 y sobre `#14C2C2` (oscuro) = 2,20:1, bajo el 4,5:1. Decide Brandon antes de la ola 5: fondo `--accent-dark` (4,86:1) o texto oscuro (6,16:1 · 8,58:1 en oscuro)
 - [ ] Ola 5: codemods aplicados por carpeta con censo antes/después
 
+## Adenda 2026-10-23 — el censo mira el cuerpo, no el nombre
+
+**Por qué:** el censo contaba los locales por el NOMBRE (`*Tabla`, `*Filtros`, `COLOR*`…). Eso invitaba a renombrar piezas que ya usaban el DS para que dejaran de contar (`GuiasTabla`→`GuiasLista`, `COLOR`→`TINTA`, `Casilla` reexportada con otro nombre). Esos renombres se deshicieron. **Renombrar para esquivar el censo no vale.**
+
+**Cómo cuenta ahora** (`scripts/censo-ds-admin.mjs`, `localesPorCuerpo`):
+- Un local de una familia **no cuenta** si su cuerpo compone el canónico (`DataTable`, `CardTitle`/`SectionTitle`/`Field`, `StatCard`, `Casilla`/`Interruptor`, `Button`/`button()`, `SegmentedControl`/`ActionMenu`/`CampoBuscar`) y no tiene markup propio de la familia. Resuelve alias (`Casilla as CasillaDS`), el import por defecto (por el nombre del archivo) y el envoltorio transitivo (`LothEmbudoKpi` → `CtpKpi` → `StatCard`).
+- Lo hecho a mano **cuenta igual**: un `<table>` crudo, un `<input type="checkbox">` o `role="switch"`, controles `<input>`/`<select>`/`<button>` en un filtro, un mapa de colores con hex/rgb/paleta cruda de Tailwind. El que no compone nada, también.
+- Las paletas cuentan sólo si escriben color a mano. Un mapa de `var(--…)` o de nombres («Verde») no cuenta.
+- `CANONICOS`: los canónicos propios del panel, con su porqué. Son `AdminTabBar`, `CabeceraConPestanas` (`shared/cabecera-con-pestanas.tsx`), `MedidorDePestanas` (`shared/pestanas-mas.tsx`), `FiltrosEnBoton` y `VistaHeader` (la cabecera del riel de los libros forestales, Brandon 17-10). Desde esta adenda, `VistaHeader` es `info`, ya no `baja`.
+- `NO_ES_DE_LA_FAMILIA`: lo que el nombre manda a una familia pero no es de ella, también con su porqué. Son `FilasDeLaTabla` (mm de la GTF impresa), `PieBuscador` y `ResultadosBuscador` (piezas de Ctrl+K: el buscador se cuenta una vez, en `GlobalSearch`). Una excepción nueva se agrega acá, a la vista en el diff, nunca con un renombre.
+- `comparar()` manda con el sentido que declara el script hoy. Cada cambio de sentido sale como `RECLASIFICADA` en `--comparar` hasta que `--escribir` lo asiente.
+
 ## 6. Referencias
 - `docs/panel/plan-unificacion-2026-10.md` §1 (R4), §5, §7.5
 - ADR-069…075 · `.claude/rules/ui-components.md` (ley de la vista) · `.claude/skills/bsm-design-system`

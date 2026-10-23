@@ -107,47 +107,231 @@ const etiqueta = (nombre) => cuenta(new RegExp(`<${nombre}\\b`, "g"));
 
 /** Definiciones de componentes cuyo nombre cumple `re` (function X( / const X = (…) =>). */
 const DEF = /(?:^|\n)\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function\s+([A-Z]\w*)\s*[(<]|const\s+([A-Z]\w*)\s*(?::\s*[\w.<>, ]+)?=\s*(?:React\.)?(?:memo\(|forwardRef|\(|function|async\s*\())/g;
-const defs = (re) => (t) => {
-  let n = 0;
-  for (const x of t.matchAll(DEF)) if (re.test(x[1] || x[2])) n++;
-  return n;
-};
-/**
- * Como `defs`, pero no cuenta el archivo que sólo COMPONE un canónico de la
- * familia (rinde `<PestanasDeVista>`, `<ActionMenu>`…) sin armar controles
- * propios: ahí lo delataba el nombre, no lo hecho a mano. Ola 2 (10-10):
- * `CtpDespachoPestanas` envuelve `PestanasDeVista` y `CtpRecepcionFiltro` es
- * el `ActionMenu` que ya estaba dentro de Ingresos, sacado a su archivo.
+
+/*
+ * ─── «local» = hecho a mano, mirado por el CUERPO (23-10) ──────────────────────
+ * Antes se contaba por NOMBRE (`*Tabla`, `*Toggle`, `*Kpi`…): una `XTabla` que
+ * sólo rinde `<DataTable>` contaba igual que una con `<table>` crudo, y la salida
+ * fácil era renombrarla («Lista», «Listado») — el censo bajaba y la pantalla
+ * seguía igual. Ahora una definición con nombre de la familia NO cuenta si su
+ * cuerpo COMPONE el canónico (directo, por alias `Casilla as CasillaDS`, o a
+ * través de un envoltorio que a su vez lo compone: `LothEmbudoKpi` → `CtpKpi` →
+ * `StatCard`) y no trae nada hecho a mano de esa familia (`<table>`, checkbox
+ * nativo, `role="switch"`, `<button>` con clases propias…). Lo que no compone
+ * nada sigue contando: una grilla de `<div>` llamada `XTabla` es una tabla a mano.
  */
+
+/** Las implementaciones canónicas COMPARTIDAS que viven en el panel (ADR-489, adenda 23-10). */
+export const CANONICOS = [
+  {
+    ruta: "components/admin/shared/AdminTabBar.tsx",
+    nombre: "AdminTabBar",
+    familias: ["estructura"],
+    porque: "ADR-489 §2: es EL canónico de estructura de pestaña; su tablist es el único permitido",
+  },
+  {
+    ruta: "components/admin/shared/cabecera-con-pestanas.tsx",
+    nombre: "CabeceraConPestanas",
+    familias: ["estructura", "titulos"],
+    porque: "la cabecera única título + pestañas del panel (32 usos): componerla es usar el canónico",
+  },
+  {
+    ruta: "components/admin/shared/pestanas-mas.tsx",
+    nombre: "MedidorDePestanas",
+    familias: ["estructura"],
+    porque: "mide qué pestañas caben y manda el resto a «Más»; lo comparten AdminTabBar y la cabecera",
+  },
+  {
+    ruta: "components/admin/shared/FiltrosEnBoton.tsx",
+    nombre: "FiltrosEnBoton",
+    familias: ["filtros", "botones"],
+    porque: "la barra de filtros plegada en un botón (5 pantallas): el filtro compartido, no uno local",
+  },
+  {
+    ruta: "components/admin/shared/module-primitives.tsx",
+    nombre: "VistaHeader",
+    familias: ["estructura", "titulos"],
+    porque: "la cabecera del riel de los libros forestales que pidió Brandon el 17-10 (11+ usos)",
+  },
+];
+
+/**
+ * Lo que el nombre manda a una familia pero NO es de ella (con su porqué, a la
+ * vista en el diff). Va acá en vez de renombrarlo para esquivar el censo.
+ */
+export const NO_ES_DE_LA_FAMILIA = [
+  {
+    ruta: "components/admin/forestal/gtf-matricial-filas.tsx",
+    nombre: "FilasDeLaTabla",
+    familias: ["tablas"],
+    porque: "ajusta en mm las filas de la tabla IMPRESA de la GTF (campos numéricos); no dibuja una tabla",
+  },
+  {
+    ruta: "components/admin/buscador/PieBuscador.tsx",
+    nombre: "PieBuscador",
+    familias: ["filtros"],
+    porque: "pie de atajos de teclado del buscador global (Ctrl+K), partido de GlobalSearch; el buscador se cuenta una vez, en GlobalSearch",
+  },
+  {
+    ruta: "components/admin/buscador/ResultadosBuscador.tsx",
+    nombre: "ResultadosBuscador",
+    familias: ["filtros"],
+    porque: "lista de resultados del buscador global (Ctrl+K), partida de GlobalSearch; no es una barra de filtros",
+  },
+];
+
+/** Las definiciones de un archivo con su cuerpo (hasta la próxima declaración de nivel superior). */
+const LIMITE = /\n(?=(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function|const|let|var|class|interface|type|enum)\b)/g;
+const cacheDefs = new Map();
+function definiciones(t) {
+  let out = cacheDefs.get(t);
+  if (out) return out;
+  const cortes = [...t.matchAll(LIMITE)].map((x) => x.index);
+  out = [];
+  for (const x of t.matchAll(DEF)) {
+    const inicio = x.index;
+    const fin = cortes.find((c) => c > inicio + 1) ?? t.length;
+    const cuerpo = t.slice(inicio, fin);
+    out.push({
+      nombre: x[1] || x[2],
+      cuerpo,
+      exportada: /\bexport\b/.test(x[0]),
+      porDefecto: /\bdefault\b/.test(x[0]),
+      tags: [...cuerpo.matchAll(/<([A-Z]\w*)/g)].map((y) => y[1]),
+    });
+  }
+  cacheDefs.set(t, out);
+  return out;
+}
+
+/** `import { A as B }` → B→A; `import X from "…/Y"` → X→Y (el nombre del archivo). */
+function aliasDe(t) {
+  const out = new Map();
+  for (const x of t.matchAll(/import\s*(?:type\s+)?\{([^}]*)\}\s*from/g)) {
+    for (const parte of x[1].split(",")) {
+      const [a, b] = parte.trim().split(/\s+as\s+/);
+      if (a && b) out.set(b.trim(), a.trim());
+    }
+  }
+  for (const x of t.matchAll(/import\s+([A-Z]\w*)\s*(?:,\s*\{[^}]*\})?\s*from\s*["']([^"']+)["']/g)) {
+    out.set(x[1], x[2].split("/").pop().replace(/\.(tsx?|mjs|js)$/, ""));
+  }
+  return out;
+}
+
+const listaDe = (lista, familia) => new Set(lista.filter((x) => x.familias.includes(familia)).map((x) => `${x.ruta}#${x.nombre}`));
+
+/**
+ * Locales de una familia mirando el cuerpo. `canonicos` = nombres (regex) de los
+ * canónicos; `aMano(cuerpo, texto)` = lo hecho a mano de la familia; `compone`
+ * (opcional) = otra forma de componer el canónico (la función `button()`).
+ */
+function localesPorCuerpo(familia, re, { canonicos, aMano, compone }) {
+  const propios = CANONICOS.filter((x) => x.familias.includes(familia)).map((x) => x.nombre);
+  const canon = new RegExp(`^(?:${[...canonicos, ...propios].join("|")})$`);
+  const exentos = new Set([...listaDe(CANONICOS, familia), ...listaDe(NO_ES_DE_LA_FAMILIA, familia)]);
+  let componen = new Map();
+  return {
+    preparar(textos) {
+      componen = new Map();
+      const globales = new Set();
+      const info = textos.map(([rel, t]) => ({ rel, t, ds: definiciones(t), alias: aliasDe(t), base: rel.split("/").pop().replace(/\.(tsx?)$/, "") }));
+      for (const { rel } of info) componen.set(rel, new Set());
+      for (let vuelta = 0, cambio = true; cambio && vuelta < 8; vuelta++) {
+        cambio = false;
+        for (const { rel, t, ds, alias, base } of info) {
+          const locales = componen.get(rel);
+          const definidas = new Set(ds.map((d) => d.nombre));
+          for (const d of ds) {
+            if (locales.has(d.nombre) || aMano(d.cuerpo, t)) continue;
+            const usaCanonico = d.tags.some((crudo) => {
+              if (crudo === d.nombre) return false;
+              if (definidas.has(crudo)) return locales.has(crudo); // un local que tapa al canónico
+              const n = alias.get(crudo) ?? crudo;
+              /* `import ActionMenu from "…/action-menu"`: el default se llama como su archivo. */
+              const mismoArchivo = canon.test(crudo) && n.replace(/[-_]/g, "").toLowerCase() === crudo.toLowerCase();
+              return canon.test(n) || globales.has(n) || mismoArchivo;
+            });
+            if (!usaCanonico && !compone?.(d.cuerpo, t)) continue;
+            locales.add(d.nombre);
+            if (d.exportada) globales.add(d.nombre);
+            if (d.porDefecto) globales.add(base);
+            cambio = true;
+          }
+        }
+      }
+    },
+    porArchivo(t, rel) {
+      const set = componen.get(rel);
+      return definiciones(t).filter((d) => re.test(d.nombre) && !set?.has(d.nombre) && !exentos.has(`${rel}#${d.nombre}`)).length;
+    },
+  };
+}
+
 const CONTROLES_A_MANO = /<(?:input|select|textarea|button)\b|role=["']tablist["']/;
-const defsLocales = (re, canonicos) => {
-  const usaCanonico = new RegExp(`<(?:${canonicos.join("|")})\\b`);
-  const contar = defs(re);
-  return (t) => (usaCanonico.test(t) && !CONTROLES_A_MANO.test(t) ? 0 : contar(t));
-};
 /** Constantes de clase (`const BTN = "…"`). */
 const constantesTexto = (re) => (t) => {
   let n = 0;
   for (const x of t.matchAll(/(?:^|\n)\s*(?:export\s+)?const\s+([A-Za-z_]\w*)\s*=\s*["'`]/g)) if (re.test(x[1])) n++;
   return n;
 };
-/** Constantes de objeto/array con nombre de paleta (`const COLORS = [ … ]`). */
+/** Desde `{`/`[` en `i`, el bloque balanceado (ignora lo que hay entre comillas). */
+function bloque(t, i) {
+  let d = 0;
+  let q = null;
+  for (let k = i; k < t.length; k++) {
+    const c = t[k];
+    if (q) {
+      if (c === q && t[k - 1] !== "\\") q = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") q = c;
+    else if (c === "{" || c === "[") d++;
+    else if (c === "}" || c === "]") {
+      d--;
+      if (d === 0) return t.slice(i, k + 1);
+    }
+  }
+  return t.slice(i);
+}
+/**
+ * Color escrito a mano: hex, rgb()/hsl()/oklch() o la paleta cruda de Tailwind
+ * (`bg-emerald-100`). Un `var(--data-*)`, `--accent`… o `SERIES[0]` es token.
+ */
+const COLOR_A_MANO =
+  /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\(|\b(?:bg|text|border|ring|fill|stroke|from|via|to|outline|decoration|shadow|accent|caret|divide|placeholder)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/;
+/**
+ * Constantes de objeto/array con nombre de paleta (`const COLORS = [ … ]`) que
+ * escriben colores a mano. Por el CUERPO (23-10): un mapa de puros tokens o de
+ * nombres («Azul», «Verde») no es una paleta local, se llame como se llame.
+ */
 const constantesPaleta = (re) => (t) => {
   let n = 0;
-  for (const x of t.matchAll(/(?:^|\n)\s*(?:export\s+)?const\s+([A-Za-z_]\w*)\s*(?::[^=\n]+)?=\s*[[{]/g)) if (re.test(x[1])) n++;
+  for (const x of t.matchAll(/(?:^|\n)\s*(?:export\s+)?const\s+([A-Za-z_]\w*)\s*(?::[^=\n]+)?=\s*[[{]/g)) {
+    if (re.test(x[1]) && COLOR_A_MANO.test(bloque(t, x.index + x[0].length - 1))) n++;
+  }
   return n;
 };
 const usaRecharts = (t) => /from\s+["']recharts["']/.test(t);
 
 /** `<button>` hecho a mano: su clase no sale de `button(…)` ni de una constante armada con `button(…)`. */
-function botonesAMano(t) {
-  const deFuncion = new Set([...t.matchAll(/const\s+(\w+)\s*=\s*button\(/g)].map((x) => x[1]));
+function botonesAMano(t, contexto = t) {
+  const deFuncion = new Set([...contexto.matchAll(/const\s+(\w+)\s*=\s*button\(/g)].map((x) => x[1]));
   let n = 0;
   for (const tag of etiquetas(t, "button")) {
     const c = claseDe(tag) ?? "";
     if (/(?<![.\w])button\(/.test(c)) continue;
     if ([...deFuncion].some((nombre) => new RegExp(`\\b${nombre}\\b`).test(c))) continue;
     n++;
+  }
+  return n;
+}
+
+/** Cadenas de clase con uppercase + tracking-* (un Kicker hecho a mano). */
+function rotulosAMano(t) {
+  let n = 0;
+  for (const x of t.matchAll(/"[^"\n]*"|'[^'\n]*'|`[^`]*`/g)) {
+    if (/\buppercase\b/.test(x[0]) && /\btracking-/.test(x[0])) n++;
   }
   return n;
 }
@@ -161,18 +345,15 @@ export const FAMILIAS = {
     BlockTitle: m("info", { porArchivo: etiqueta("BlockTitle") }),
     Kicker: m("sube", { porArchivo: etiqueta("Kicker") }),
     InfoTip: m("info", { porArchivo: etiqueta("InfoTip") }),
-    rotuloAMano: m("baja", {
-      nota: "clases con uppercase + tracking-* (un Kicker hecho a mano)",
-      porArchivo: (t) => {
-        let n = 0;
-        for (const x of t.matchAll(/"[^"\n]*"|'[^'\n]*'|`[^`]*`/g)) {
-          if (/\buppercase\b/.test(x[0]) && /\btracking-/.test(x[0])) n++;
-        }
-        return n;
-      },
-    }),
+    rotuloAMano: m("baja", { nota: "clases con uppercase + tracking-* (un Kicker hecho a mano)", porArchivo: rotulosAMano }),
     h4AMano: m("baja", { porArchivo: (t) => etiquetas(t, "h4").filter((x) => x.includes("className=")).length }),
-    titulosLocales: m("baja", { porArchivo: defs(/(Title|Titulo|Header|Encabezado|Heading|Rotulo)$/) }),
+    titulosLocales: m("baja", {
+      nota: "no cuenta el que compone SectionTitle/CardTitle/BlockTitle/Kicker/Field sin <h*> ni rótulo a mano",
+      ...localesPorCuerpo("titulos", /(Title|Titulo|Header|Encabezado|Heading|Rotulo)$/, {
+        canonicos: ["PageTitle", "SectionTitle", "CardTitle", "BlockTitle", "Kicker", "Field", "AdminTabBar", "AdminModuleHeader"],
+        aMano: (c) => etiquetas(c, "h[1-6]").some((x) => x.includes("className=")) || rotulosAMano(c) > 0,
+      }),
+    }),
     subtituloProps: m("info", { porArchivo: cuenta(/\b(?:subtitle|description|subtitulo)=/g) }),
   },
   botones: {
@@ -180,12 +361,20 @@ export const FAMILIAS = {
       nota: "<Button> del DS + llamadas a button()",
       porArchivo: (t) => etiqueta("Button")(t) + (t.match(/(?<![.\w])button\((?:\{|\))/g) || []).length,
     }),
-    buttonAMano: m("baja", { porArchivo: botonesAMano }),
+    buttonAMano: m("baja", { porArchivo: (t) => botonesAMano(t) }),
     constantesBtn: m("baja", {
       nota: "const BTN_*/BOTON_*/btn… = \"clases\"",
       porArchivo: constantesTexto(/^(BTN\w*|\w+_BTN\w*|btn\w*|\w+Btn\w*|BOTON\w*|boton\w*|\w*BUTTON\w*)$/),
     }),
-    botonesLocales: m("baja", { porArchivo: defs(/(Button|Boton|Btn)$/) }),
+    botonesLocales: m("baja", {
+      nota: "no cuenta el que compone Button/button()/IconAction/ActionMenu sin <button> con clases propias",
+      ...localesPorCuerpo("botones", /(Button|Boton|Btn)$/, {
+        canonicos: ["Button", "IconAction", "BotonIconoTip", "ActionMenu"],
+        aMano: (c, t) => botonesAMano(c, t) > 0,
+        /* sin <button> a mano: los que hay salen de button() (o de una constante armada con button()) */
+        compone: (c) => /(?<![.\w])button\(/.test(c) || etiquetas(c, "button").length > 0,
+      }),
+    }),
     alturasBoton: m("info", {
       nota: "alturas h-* distintas en <button> a mano",
       valores: (t) =>
@@ -194,14 +383,12 @@ export const FAMILIAS = {
   },
   filtros: {
     filtrosLocales: m("baja", {
-      nota: "no cuenta el que sólo compone la barra canónica (SegmentedControl/ActionMenu/CampoBuscar/FiltroColumna*) sin controles propios",
-      porArchivo: defsLocales(/(Filter|Filters|FilterBar|Filtro|Filtros|Search|SearchBar|Buscador|Busqueda)$/, [
-        "SegmentedControl",
-        "ActionMenu",
+      nota: "no cuenta el que compone la barra canónica (SegmentedControl/ActionMenu/CampoBuscar/FiltroColumna*/FiltrosEnBoton) sin controles propios",
+      ...localesPorCuerpo("filtros", /(Filter|Filters|FilterBar|Filtro|Filtros|Search|SearchBar|Buscador|Busqueda)$/, {
         /* ADR-489 §2: la barra única es buscador + SegmentedControl + filtro de fecha + filtros-columna. */
-        "CampoBuscar",
-        "FiltroColumna\\w*",
-      ]),
+        canonicos: ["SegmentedControl", "ActionMenu", "CampoBuscar", "FiltroColumna\\w*"],
+        aMano: (c) => CONTROLES_A_MANO.test(c),
+      }),
     }),
     alturasInput: m("baja", {
       nota: "alturas h-* distintas en <input>/<select> a mano",
@@ -229,13 +416,27 @@ export const FAMILIAS = {
           return `${elegir(tk, /^text-(xs|sm|base|\[)/)}+${elegir(tk, /^(uppercase|normal-case)$/)}+${elegir(tk, /^font-/)}`;
         }),
     }),
-    tablasLocales: m("baja", { porArchivo: defs(/(Table|Tabla)$/) }),
+    tablasLocales: m("baja", {
+      nota: "no cuenta el que compone DataTable (o sólo rinde filas/celdas de una tabla de otro lado) sin <table> propio",
+      ...localesPorCuerpo("tablas", /(Table|Tabla)$/, {
+        canonicos: ["DataTable"],
+        aMano: (c) => /<table\b|role=["'](?:table|grid)["']/.test(c),
+        /* filas y celdas sueltas: la tabla que las aloja se mide donde está (tableAMano). */
+        compone: (c) => /<t(?:r|d|h|head|body|foot)\b/.test(c),
+      }),
+    }),
     AdminTable: m("info", { porArchivo: etiqueta("AdminTable") }),
   },
   checks: {
     checkboxNativo: m("baja", { porArchivo: cuenta(/type=["{]?["']?checkbox/g) }),
     switchAMano: m("baja", { porArchivo: cuenta(/role=["']switch["']/g) }),
-    checksLocales: m("baja", { porArchivo: defs(/(Switch|Toggle|Checkbox|Interruptor|Casilla)$/) }),
+    checksLocales: m("baja", {
+      nota: "no cuenta el que compone Casilla/Interruptor sin checkbox nativo ni role=switch propio",
+      ...localesPorCuerpo("checks", /(Switch|Toggle|Checkbox|Interruptor|Casilla)$/, {
+        canonicos: ["Casilla", "Interruptor", "Toggle"],
+        aMano: (c) => /type=["{]?["']?checkbox|role=["'](?:switch|checkbox)["']/.test(c),
+      }),
+    }),
     Interruptor: m("info", { porArchivo: (t) => etiqueta("Interruptor")(t) + etiqueta("Toggle")(t) }),
     Casilla: m("info", { porArchivo: etiqueta("Casilla") }),
   },
@@ -256,7 +457,13 @@ export const FAMILIAS = {
   kpis: {
     StatCard: m("info", { porArchivo: etiqueta("StatCard") }),
     KpiTile: m("baja", { nota: "decisión 09-10: los KpiTile pasan a StatCard", porArchivo: etiqueta("KpiTile") }),
-    kpisLocales: m("baja", { porArchivo: defs(/(Kpi|KPI|Stat|Stats|Metric|Metrica|Indicador|Tile|Cifra)$/) }),
+    kpisLocales: m("baja", {
+      nota: "no cuenta el que compone StatCard (directo o por un envoltorio como CtpKpi)",
+      ...localesPorCuerpo("kpis", /(Kpi|KPI|Stat|Stats|Metric|Metrica|Indicador|Tile|Cifra)$/, {
+        canonicos: ["StatCard"],
+        aMano: (c) => /<KpiTile\b/.test(c),
+      }),
+    }),
   },
   graficos: {
     hexEnGraficos: m("baja", {
@@ -285,10 +492,16 @@ export const FAMILIAS = {
   estructura: {
     AdminTabBar: m("info", { porArchivo: etiqueta("AdminTabBar") }),
     AdminModuleHeader: m("info", { porArchivo: etiqueta("AdminModuleHeader") }),
-    VistaHeader: m("baja", { porArchivo: etiqueta("VistaHeader") }),
+    VistaHeader: m("info", {
+      nota: "canónica de los libros forestales desde el 23-10 (ADR-489, adenda): era «baja»",
+      porArchivo: etiqueta("VistaHeader"),
+    }),
     tabsLocales: m("baja", {
-      nota: "no cuenta el que sólo compone AdminTabBar/PestanasDeVista sin tablist propio",
-      porArchivo: defsLocales(/(Tabs|TabBar|Pestanas|Pestañas|Subtabs|SubTabs)$/, ["AdminTabBar", "PestanasDeVista"]),
+      nota: "no cuenta el que compone AdminTabBar/PestanasDeVista/CabeceraConPestanas sin tablist propio",
+      ...localesPorCuerpo("estructura", /(Tabs|TabBar|Pestanas|Pestañas|Subtabs|SubTabs)$/, {
+        canonicos: ["AdminTabBar", "PestanasDeVista"],
+        aMano: (c) => /role=["']tablist["']/.test(c),
+      }),
     }),
     PestanasDeVista: m("info", { nota: "2.º nivel de los libros forestales (regla R4)", porArchivo: etiqueta("PestanasDeVista") }),
     detailsNativo: m("baja", { nota: "<details> → Plegable", porArchivo: etiqueta("details") }),
@@ -315,16 +528,17 @@ export const FAMILIAS = {
 
 // ─── censo ────────────────────────────────────────────────────────────────────
 /**
- * @param {{ raiz?: string, detalle?: boolean }} [opciones]
- * @returns {{ medido: string, archivos: number, familias: Record<string, Record<string, { n: number, sentido: string, top?: string[] }>> }}
+ * El censo sobre textos ya leídos (`[[ruta relativa, texto]]`): lo usa `censar`
+ * y los tests del trinquete con archivos de juguete.
+ * @param {Array<[string, string]>} textos
+ * @param {{ detalle?: boolean }} [opciones]
  */
-export function censar({ raiz = RAIZ, detalle = false } = {}) {
-  const archivos = CARPETAS.flatMap((c) => recorrer(path.join(raiz, c)));
-  const textos = archivos.map((f) => [path.relative(raiz, f).split(path.sep).join("/"), fs.readFileSync(f, "utf8")]);
+export function censarTextos(textos, { detalle = false } = {}) {
   const familias = {};
   for (const [familia, metricas] of Object.entries(FAMILIAS)) {
     familias[familia] = {};
     for (const [nombre, def] of Object.entries(metricas)) {
+      def.preparar?.(textos);
       const fila = { n: 0, sentido: def.sentido };
       const porArchivo = [];
       if (def.valores) {
@@ -351,31 +565,46 @@ export function censar({ raiz = RAIZ, detalle = false } = {}) {
       familias[familia][nombre] = fila;
     }
   }
-  return { medido: new Date().toISOString(), archivos: archivos.length, familias };
+  return { medido: new Date().toISOString(), archivos: textos.length, familias };
 }
 
 /**
- * Lo que empeoró (o desapareció) entre la línea base y ahora, según el sentido
- * de cada métrica en la BASE. Las métricas nuevas no se exigen hasta que entren
- * a la base con `--escribir`.
+ * @param {{ raiz?: string, detalle?: boolean }} [opciones]
+ * @returns {{ medido: string, archivos: number, familias: Record<string, Record<string, { n: number, sentido: string, top?: string[] }>> }}
+ */
+export function censar({ raiz = RAIZ, detalle = false } = {}) {
+  const archivos = CARPETAS.flatMap((c) => recorrer(path.join(raiz, c)));
+  const textos = archivos.map((f) => [path.relative(raiz, f).split(path.sep).join("/"), fs.readFileSync(f, "utf8")]);
+  return censarTextos(textos, { detalle });
+}
+
+/**
+ * Lo que empeoró (o desapareció) entre la línea base y ahora. Manda el sentido
+ * que el script declara HOY (una métrica que pasó a `info` con su nota, p. ej.
+ * VistaHeader al volverse canónica); cada cambio de sentido sale en
+ * `reclasificadas` para que se vea en la revisión. Las métricas nuevas no se
+ * exigen hasta que entren a la base con `--escribir`.
  */
 export function comparar(antes, ahora) {
   const empeoro = [];
   const mejoro = [];
+  const reclasificadas = [];
   for (const [familia, metricas] of Object.entries(antes.familias)) {
     for (const [nombre, base] of Object.entries(metricas)) {
       const actual = ahora.familias[familia]?.[nombre];
-      const fila = { familia, metrica: nombre, sentido: base.sentido, antes: base.n, ahora: actual?.n ?? null };
       if (!actual) {
-        empeoro.push({ ...fila, motivo: "la métrica ya no se mide" });
+        empeoro.push({ familia, metrica: nombre, sentido: base.sentido, antes: base.n, ahora: null, motivo: "la métrica ya no se mide" });
         continue;
       }
-      if (base.sentido === "baja" && actual.n > base.n) empeoro.push({ ...fila, motivo: "lo hecho a mano subió" });
-      else if (base.sentido === "sube" && actual.n < base.n) empeoro.push({ ...fila, motivo: "el canónico bajó" });
-      else if ((base.sentido === "baja" && actual.n < base.n) || (base.sentido === "sube" && actual.n > base.n)) mejoro.push(fila);
+      const sentido = actual.sentido ?? base.sentido;
+      const fila = { familia, metrica: nombre, sentido, antes: base.n, ahora: actual.n };
+      if (sentido !== base.sentido) reclasificadas.push({ ...fila, era: base.sentido, nota: actual.nota ?? "" });
+      if (sentido === "baja" && actual.n > base.n) empeoro.push({ ...fila, motivo: "lo hecho a mano subió" });
+      else if (sentido === "sube" && actual.n < base.n) empeoro.push({ ...fila, motivo: "el canónico bajó" });
+      else if ((sentido === "baja" && actual.n < base.n) || (sentido === "sube" && actual.n > base.n)) mejoro.push(fila);
     }
   }
-  return { empeoro, mejoro };
+  return { empeoro, mejoro, reclasificadas };
 }
 
 export function leerBase(raiz = RAIZ) {
@@ -449,7 +678,8 @@ function principal(argv) {
       console.error(`\nNo hay base (${RUTA_BASE}): corré --escribir.`);
       return 1;
     }
-    const { empeoro, mejoro } = comparar(base, censo);
+    const { empeoro, mejoro, reclasificadas } = comparar(base, censo);
+    for (const x of reclasificadas) console.log(`\nRECLASIFICADA: ${x.familia}.${x.metrica} ${x.era}→${x.sentido} (${x.nota || FAMILIAS[x.familia]?.[x.metrica]?.nota || "sin nota"})`);
     console.log(`\nMejoró: ${mejoro.map((x) => `${x.familia}.${x.metrica} ${x.antes}→${x.ahora}`).join(", ") || "nada"}`);
     if (empeoro.length) {
       console.log(`EMPEORÓ: ${empeoro.map((x) => `${x.familia}.${x.metrica} ${x.antes}→${x.ahora} (${x.motivo})`).join(", ")}`);
