@@ -3,6 +3,8 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { PlatformChatDB } from "@/lib/db/platform-chat.db";
 import { logger } from "@/lib/logger";
+import { actorVisibleParaNegocio } from "@/lib/superadmin/actor-visible";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { leerJson } from "@/lib/errores/sin-dato";
 
 const listSchema = z.object({
@@ -63,14 +65,15 @@ export async function POST(req: NextRequest) {
       tenantName: parsed.data.tenantName ?? negocio.name,
       subject: parsed.data.subject,
       priority: parsed.data.priority,
-      createdBy: auth.username,
+      createdBy: actorVisibleParaNegocio(),
     });
+    logSuperadminAction("platform_chat_create", `Abrió chat con ${negocio.name}`, { tenantId: negocio.id, conversationId: conv.id }, auth.username).catch((err) => logger.error("[superadmin] auditoría de plataforma falló", { error: String(err) }));
     if (parsed.data.firstMessage?.trim()) {
       await PlatformChatDB.sendMessage({
         conversationId: conv.id,
         senderType: "platform",
-        senderName: auth.username,
-        senderId: auth.username,
+        senderName: actorVisibleParaNegocio(),
+        senderId: actorVisibleParaNegocio(),
         body: parsed.data.firstMessage.trim(),
       });
     }

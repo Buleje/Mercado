@@ -8,6 +8,8 @@ import {
   buildBroadcastVars,
 } from "@/lib/chat/broadcast-templates";
 import { logger } from "@/lib/logger";
+import { actorVisibleParaNegocio } from "@/lib/superadmin/actor-visible";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { leerJson } from "@/lib/errores/sin-dato";
 
 interface SegmentTenant {
@@ -93,8 +95,9 @@ export async function POST(req: NextRequest) {
       })),
       body: text,
       subject,
-      createdBy: auth.username,
+      createdBy: actorVisibleParaNegocio(),
     });
+    logSuperadminAction("platform_chat_broadcast", `Difusión a ${tenants.length} negocios`, { asunto: subject }, auth.username).catch((err) => logger.error("[superadmin] auditoría de plataforma falló", { error: String(err) }));
     return NextResponse.json(result, { status: 201 });
   } catch (e) {
     logger.error("[superadmin/chat] broadcast error", { err: e instanceof Error ? e.message : String(e) });

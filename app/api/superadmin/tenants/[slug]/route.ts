@@ -5,6 +5,8 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { TenantsDB } from "@/lib/db/tenants.db";
 import { logger } from "@/lib/logger";
+import { actorVisibleParaNegocio } from "@/lib/superadmin/actor-visible";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 
@@ -110,10 +112,12 @@ export async function PATCH(
         // usan tenant.id) y no joineaba contra Tenant.id.
         entityId: tenant.id,
         detail: details.join(", "),
-        user: `superadmin:${session.username}`,
+        user: actorVisibleParaNegocio(),
         tenantId: tenant.id,
       },
     }).catch((err) => logger.error("[superadmin/tenants/[slug]] operation failed", { error: String(err) }));
+
+    logSuperadminAction("tenant_updated", `${details.join(", ")} (${slug})`, { tenantId: tenant.id }, session.username).catch((err) => logger.error("[superadmin] auditoría de plataforma falló", { error: String(err) }));
 
     // Audit P0 #3 (2026-05-19): invalidar el cache de analytics cuando cambia
     // plan o estado activo. Antes el MRR mostraba datos hasta 30 min stale

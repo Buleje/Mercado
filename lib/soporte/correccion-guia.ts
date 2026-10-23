@@ -86,7 +86,7 @@ export const ESTADO_GENERAL_ETIQUETA: Record<EstadoGeneral, string> = {
  * actividad). El usuario real del superadmin es su usuario de ENTRADA: sólo va
  * en la bandeja del superadmin y en su registro (revisión de seguridad 23-10).
  */
-export const EQUIPO_BULEJE = "Equipo Buleje";
+export { EQUIPO_BULEJE } from "@/lib/superadmin/actor-visible";
 
 /** Abierta = todavía espera que alguien haga algo (cuenta para «ya hay una»). */
 export const ESTADOS_CORRECCION_ABIERTOS: readonly EstadoCorreccion[] = ["open", "in_review"];

@@ -232,13 +232,13 @@ describe("PUT /api/superadmin/piezas/asignacion", () => {
     expect(tenantId).toBe("main");
     expect(input).toMatchObject({ piezaId: "gtf-hoja-de-control", enchufe: "forestal.guia-impresa", prendida: true, version: "1.0.0" });
     expect(input.opciones).toMatchObject({ nota: "Avisar antes de salir", mostrarOrigen: true });
-    expect(actor).toBe("superadmin:root");
+    expect(actor).toBe("Equipo Buleje");
     expect(H.logActivity).toHaveBeenCalledWith(
       "pieza_prendida",
       "TenantPieza",
       expect.stringContaining("slug-main"),
       "f1",
-      "superadmin:root",
+      "Equipo Buleje",
       undefined,
       "main",
     );

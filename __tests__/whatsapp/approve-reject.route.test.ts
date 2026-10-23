@@ -81,6 +81,7 @@ vi.mock("@/lib/whatsapp/notify-yape-result", () => ({
 
 import { POST as approveHandler } from "@/app/api/superadmin/payment-approvals/[id]/approve/route";
 import { POST as rejectHandler } from "@/app/api/superadmin/payment-approvals/[id]/reject/route";
+import { EQUIPO_BULEJE } from "@/lib/superadmin/actor-visible";
 
 // ─── Factories ────────────────────────────────────────────────────────────────
 
@@ -170,7 +171,8 @@ describe("POST /api/superadmin/payment-approvals/[id]/approve", () => {
     expect(res.status).toBe(200);
     expect(data.ok).toBe(true);
     expect(data.ordersUpdated).toBe(1);
-    expect(mockApprove).toHaveBeenCalledWith("pap_test_001", "superadmin_juan");
+    // El negocio ve «Equipo Buleje», nunca el usuario de entrada del superadmin.
+    expect(mockApprove).toHaveBeenCalledWith("pap_test_001", EQUIPO_BULEJE);
     expect(mockOrdersUpdate).toHaveBeenCalledWith(
       "test-tenant-1",
       "order-001",
@@ -363,7 +365,7 @@ describe("POST /api/superadmin/payment-approvals/[id]/reject", () => {
     expect(data.ordersUpdated).toBe(1);
     expect(mockReject).toHaveBeenCalledWith(
       "pap_test_001",
-      "superadmin_juan",
+      EQUIPO_BULEJE,
       "El monto detectado no coincide con el esperado",
     );
     // Solo `cancelarConReposicion` (cancelado + cancelledAt + una sola

@@ -5,6 +5,8 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { actorVisibleParaNegocio } from "@/lib/superadmin/actor-visible";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { PaginaDeOtroNegocioError, TenantPiezaDB } from "@/lib/db/tenant-pieza.db";
 import { TenantsDB } from "@/lib/db/tenants.db";
 import { REGISTRO_SERVIDOR, validarApagado, validarAsignacion } from "@/lib/extensiones/resolver";
@@ -80,7 +82,8 @@ export async function PUT(req: NextRequest) {
     const tenant = await TenantsDB.getBasicById(tenantId);
     if (!tenant) return NextResponse.json({ error: "tenant_not_found" }, { status: 404 });
 
-    const actor = `superadmin:${auth.username}`;
+    const actor = actorVisibleParaNegocio();
+    logSuperadminAction(prendida ? "pieza_prendida" : "pieza_apagada", `${piezaId} en ${enchufe} para ${tenant.slug}`, { tenantId, piezaId, enchufe }, auth.username).catch((err) => logger.error("[superadmin] auditoría de plataforma falló", { error: String(err) }));
     const fila = await TenantPiezaDB.guardar(
       tenantId,
       { piezaId, enchufe, prendida, opciones: opcionesAGuardar, version: v.manifiesto.version, orden },
@@ -161,7 +164,8 @@ export async function DELETE(req: NextRequest) {
     const tenant = await TenantsDB.getBasicById(tenantId);
     if (!tenant) return NextResponse.json({ error: "tenant_not_found" }, { status: 404 });
 
-    const actor = `superadmin:${auth.username}`;
+    const actor = actorVisibleParaNegocio();
+    logSuperadminAction("pieza_liberada", `${piezaId} en ${enchufe} de ${tenant.slug}`, { tenantId, piezaId, enchufe }, auth.username).catch((err) => logger.error("[superadmin] auditoría de plataforma falló", { error: String(err) }));
     const r = await TenantPiezaDB.liberar(tenantId, piezaId, enchufe, actor);
     if (!r.ok) {
       return r.motivo === "prendida"

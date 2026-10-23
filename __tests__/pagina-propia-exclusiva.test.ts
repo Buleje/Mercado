@@ -258,7 +258,7 @@ describe("DELETE /api/superadmin/piezas/asignacion", () => {
     expect(r.status).toBe(200);
     expect(await r.json()).toEqual({ ok: true });
     const [accion, entidad, texto, , actor, , tenantId] = H.logActivity.mock.calls[0];
-    expect([accion, entidad, actor, tenantId]).toEqual(["pieza_liberada", "TenantPieza", "superadmin:root", "main"]);
+    expect([accion, entidad, actor, tenantId]).toEqual(["pieza_liberada", "TenantPieza", "Equipo Buleje", "main"]);
     expect(texto).toMatch(/^Liberó la página «pagina-de-prueba»/);
   });
 

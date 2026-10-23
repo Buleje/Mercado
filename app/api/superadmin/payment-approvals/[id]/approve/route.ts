@@ -6,6 +6,8 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { actorVisibleParaNegocio } from "@/lib/superadmin/actor-visible";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 
 // Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
@@ -36,8 +38,11 @@ export async function POST(
   const { id } = await params;
   // Round 10 M004: envolver TODO el handler para que las escrituras a Order
   // (state machine confirmado) y PaymentApproval queden con superadmin actor.
-  return runWithAuditContext(req, `superadmin:${auth.username}`, () =>
-    handleApprove(req, id, auth.username),
+  // El negocio ve «Equipo Buleje» (audit y reviewedBy); el usuario real queda en la plataforma.
+  const visible = actorVisibleParaNegocio();
+  logSuperadminAction("payment_approval_approve", `Aprobó el pago ${id}`, { approvalId: id }, auth.username).catch((err) => logger.error("[superadmin] auditoría de plataforma falló", { error: String(err) }));
+  return runWithAuditContext(req, visible, () =>
+    handleApprove(req, id, visible),
   );
 }
 
