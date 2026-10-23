@@ -46,6 +46,8 @@ export function useIndicadoresArchivados(c: CifrasArchivados) {
   return useKpisPlegables({
     claveMemoria: "pedidos-archivados",
     alto: "md",
+    soloIcono: true,
+    sinTitular: true,
     compactoEnMovil: true,
     anchoFijo: true,
     resumen:

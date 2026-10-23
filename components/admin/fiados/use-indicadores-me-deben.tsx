@@ -95,6 +95,8 @@ export function useIndicadoresMeDeben(fiados: readonly Fiado[], cob: Cobranza, c
   return useKpisPlegables({
     claveMemoria: "fiados-me-deben",
     alto: "md",
+    soloIcono: true,
+    sinTitular: true,
     compactoEnMovil: true,
     anchoFijo: true,
     sinDatosAun: cargando && fiados.length === 0,

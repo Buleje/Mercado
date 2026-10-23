@@ -63,6 +63,8 @@ export function useIndicadoresOc(oc: OrdenesCompra) {
   return useKpisPlegables({
     claveMemoria: "compras-ordenes",
     alto: "md",
+    soloIcono: true,
+    sinTitular: true,
     compactoEnMovil: true,
     anchoFijo: true,
     sinDatosAun: loading && orders.length === 0,

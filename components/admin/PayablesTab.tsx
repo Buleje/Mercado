@@ -94,16 +94,16 @@ export default function PayablesTab({ seccion: vista = "cuentas", irA = sinNaveg
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <SectionTitle className="text-[var(--text-primary)]">Lo que debo</SectionTitle>
+      <div className="flex flex-wrap items-center gap-2 xl:flex-nowrap">
+        <SectionTitle className="shrink-0 whitespace-nowrap text-[var(--text-primary)]">Lo que debo</SectionTitle>
         <InfoTip
           title="Lo que debo a proveedores"
           what="Lo que le debes a cada proveedor: las compras a crédito crean su cuenta sola y también puedes cargar una a mano con su factura u orden. Arriba van las vencidas y las que vencen primero."
           affects="Al recibir con productos dañados, vencidos o faltantes, la cuenta de esa orden baja sola. Si pagas en efectivo puedes marcar «Sale de la caja» y el pago queda como egreso de la caja abierta."
           example="Orden de S/ 140 a 15 días con Distribuidora Ucayali: vence el jueves 23/10; si pagas S/ 100 hoy te faltan S/ 40."
         />
-        {barra && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto">{barra(marcadas)}</div>}
-        <div className="ml-auto flex items-center gap-2">
+        {barra && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-[1_1_8rem] xl:shrink">{barra(marcadas)}</div>}
+        <div className="ml-auto flex items-center gap-2 xl:shrink-0">
           {conDatos && kpis.boton}
           <button type="button" onClick={() => setNueva(true)} aria-haspopup="dialog" title="Nueva cuenta" className={button({ variant: "primary", className: "shrink-0 gap-1.5 rounded-xl px-4 max-2xl:w-12 max-2xl:px-0" })}>
             <Plus className="h-4 w-4" aria-hidden /> <span className="max-2xl:sr-only">Nueva cuenta</span>

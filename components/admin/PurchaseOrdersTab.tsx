@@ -68,9 +68,10 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
           <button
             type="button"
             onClick={() => setShowCreate((v) => !v)}
-            className={button({ variant: "primary", className: "shrink-0 rounded-xl px-4" })}
+            title="Nueva orden"
+            className={button({ variant: "primary", className: "shrink-0 rounded-xl px-4 max-2xl:w-12 max-2xl:px-0" })}
           >
-            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden /> Nueva orden
+            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden /> <span className="max-2xl:sr-only">Nueva orden</span>
           </button>
         }
         acciones={menu.acciones}

@@ -38,6 +38,8 @@ export default function AnalisisPedidos() {
   const kpis = useKpisPlegables({
     claveMemoria: "pedidos-analisis",
     alto: "md",
+    soloIcono: true,
+    sinTitular: true,
     compactoEnMovil: true,
     anchoFijo: true,
     abiertoPorDefecto: true,
@@ -70,8 +72,8 @@ export default function AnalisisPedidos() {
 
   return (
     <div className="space-y-3" data-qa="vista-analisis-pedidos">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-        <div className="order-last w-full min-w-0 sm:order-none sm:w-auto">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2 xl:flex-nowrap">
+        <div className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-[1_1_8rem]">
           <BarraDeSecciones secciones={secciones} activa={seccion} onCambiar={setSeccion} etiqueta="Secciones del análisis" idPanel={ID_PANEL} />
         </div>
         <InfoTip
@@ -80,7 +82,7 @@ export default function AnalisisPedidos() {
           affects="«Lo normal» es la mediana: la mitad de los pedidos tardó menos. Con menos de 5 pedidos medidos sale «muestra chica»."
           example="Si «Empezar a preparar» dice 40 min, la mitad de los confirmados esperó menos de 40 min para empezar."
         />
-        <div className="ml-auto flex min-w-0 items-center gap-2">
+        <div className="ml-auto flex min-w-0 items-center gap-2 xl:shrink-0">
           <select value={periodo} onChange={(e) => setPeriodo(e.target.value as PeriodoAnalisis)} aria-label="Período" className={SELECT}>
             {PERIODOS_ANALISIS.map((p) => (
               <option key={p.clave} value={p.clave}>

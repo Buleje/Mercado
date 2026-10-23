@@ -148,6 +148,24 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
                 />
               )}
               {enMarchaVisible && p.kpis.boton}
+              {/* «Imprimir la lista» vive en la cabecera (antes bajaba solo a una fila
+                  propia a 1280 px); con pedidos elegidos, sus acciones siguen en la
+                  fila de filtros. */}
+              {vista === "lista" && p.elegidosVisibles.length === 0 && (
+                <OrdersBulkActions
+                  selectedCount={0}
+                  bulkStatusTarget={bulk.bulkStatusTarget}
+                  bulkUpdating={bulk.bulkUpdating}
+                  onBulkStatusChange={bulk.setBulkStatusTarget}
+                  onExecuteBulkStatus={() =>
+                    bulk.revisar(p.enMarchaFiltrados.filter((o) => bulk.selectedOrderIds.has(o.id)))
+                  }
+                  onClearSelection={bulk.clearOrderSelection}
+                  onShowPrint={() => p.setImpresionAbierta(true)}
+                  onImprimirLista={p.imprimirLista}
+                  puedeMover={p.permisos.mover}
+                />
+              )}
             </>
           ),
         }}
@@ -192,7 +210,7 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
                 onAbrirFiltros={() => p.setFiltrosAbiertos(true)}
                 conCuentas={vista === "lista"}
                 extremo={
-                  vista === "lista" ? (
+                  vista === "lista" && p.elegidosVisibles.length > 0 ? (
                     <div className="ml-auto flex flex-wrap items-center gap-2">
                       <OrdersBulkActions
                         selectedCount={p.elegidosVisibles.length}

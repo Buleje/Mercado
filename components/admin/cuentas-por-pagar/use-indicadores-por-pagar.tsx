@@ -25,6 +25,8 @@ export function useIndicadoresPorPagar(r: ResumenCuentas, cargada: boolean) {
   return useKpisPlegables({
     claveMemoria: "compras:por-pagar",
     alto: "md",
+    soloIcono: true,
+    sinTitular: true,
     compactoEnMovil: true,
     sinDatosAun: !cargada,
     /* Corto a propósito: en la fila del título el botón deja ~15 caracteres antes del «…». */

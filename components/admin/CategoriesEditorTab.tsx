@@ -31,6 +31,8 @@ export default function CategoriesEditorTab() {
     [ed.cats, q],
   );
 
+  const mostrarBuscador = !ed.cargando && !ed.errorCarga && ed.cats.length > 6;
+
   const alternarSeo = (clave: string) =>
     setSeoAbierto((prev) => {
       const next = new Set(prev);
@@ -66,6 +68,21 @@ export default function CategoriesEditorTab() {
             example="«Abarrotes · 11 productos»: la renombras «Despensa» y guardas → los 11 productos pasan a Despensa."
           />
         </div>
+        {mostrarBuscador && (
+          <div className="relative order-last min-w-0 basis-full sm:order-none sm:flex-[1_1_10rem] sm:basis-auto sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+            <input
+              type="search"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar categoría…"
+              aria-label="Buscar categoría"
+              title={q ? `${visibles.length} de ${ed.cats.length}` : `${ed.cats.length} categorías`}
+              className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-12 pr-4 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
+            />
+            <span className="sr-only" aria-live="polite">{q ? `${visibles.length} de ${ed.cats.length}` : `${ed.cats.length} categorías`}</span>
+          </div>
+        )}
         <div className="ml-auto flex min-w-0 items-center gap-2">
           {kpis.boton}
           {mostrarGuardar && (
@@ -83,10 +100,11 @@ export default function CategoriesEditorTab() {
             type="button"
             onClick={() => setNuevaAbierta(true)}
             aria-label="Nueva categoría"
-            className={button({ variant: mostrarGuardar ? "secondary" : "primary", className: "gap-1.5 rounded-xl px-3 sm:px-4" })}
+            title="Nueva categoría"
+            className={button({ variant: mostrarGuardar ? "secondary" : "primary", className: "w-12 gap-1.5 rounded-xl px-0 2xl:w-auto 2xl:px-4" })}
           >
             <Plus className="h-4 w-4" aria-hidden />
-            <span className="hidden sm:inline">Nueva categoría</span>
+            <span className="hidden 2xl:inline">Nueva categoría</span>
           </button>
           <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Auto-generar SEO y actualizar" />
         </div>
@@ -120,24 +138,6 @@ export default function CategoriesEditorTab() {
         </div>
       ) : (
         <>
-          {ed.cats.length > 6 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative min-w-0 flex-1 sm:max-w-md">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
-                <input
-                  type="search"
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar categoría…"
-                  aria-label="Buscar categoría"
-                  className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-12 pr-4 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
-                />
-              </div>
-              <span className="text-sm text-[var(--text-secondary)]" aria-live="polite">
-                {q ? `${visibles.length} de ${ed.cats.length}` : `${ed.cats.length} categorías`}
-              </span>
-            </div>
-          )}
           {visibles.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-6 py-8 text-center text-sm text-[var(--text-secondary)]">
               Ninguna categoría coincide con «{busqueda}».

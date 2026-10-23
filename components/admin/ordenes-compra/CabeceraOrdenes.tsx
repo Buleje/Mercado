@@ -46,13 +46,13 @@ export default function CabeceraOrdenes({
     },
   }));
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-2 xl:flex-nowrap">
       <div className="flex shrink-0 items-center gap-2">
         <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Órdenes de compra</SectionTitle>
         <InfoTip {...ayuda} />
       </div>
-      {barra && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto">{barra}</div>}
-      <div className="ml-auto flex min-w-0 items-center gap-2">
+      {barra && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-[1_1_8rem]">{barra}</div>}
+      <div className="ml-auto flex min-w-0 items-center gap-2 xl:shrink-0">
         {indicadores}
         {principal}
         <div ref={menuRef} className="contents">

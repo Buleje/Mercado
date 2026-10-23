@@ -106,6 +106,8 @@ export default function PorPagarDashboard({ onIr, barra, onSeccion }: Props = {}
   const kpis = useKpisPlegables({
     claveMemoria: "plata-por-pagar",
     alto: "md",
+    soloIcono: true,
+    sinTitular: true,
     compactoEnMovil: true,
     anchoFijo: true,
     sinDatosAun: loading && data.personas.length === 0,
@@ -138,8 +140,8 @@ export default function PorPagarDashboard({ onIr, barra, onSeccion }: Props = {}
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-0 items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 xl:flex-nowrap">
+        <div className="flex shrink-0 items-center gap-2">
           <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Lo que debo</SectionTitle>
           <InfoTip
             title="Lo que debes"
@@ -148,8 +150,8 @@ export default function PorPagarDashboard({ onIr, barra, onSeccion }: Props = {}
             example="Si alguien te adelantó S/ 3 000 y a la vez te debe un aserrío de S/ 500, verás su neto (le debes S/ 2 500) y el botón Liquidar."
           />
         </div>
-        {barra && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto">{barra}</div>}
-        <div className="ml-auto flex min-w-0 items-center gap-2">
+        {barra && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-[1_1_8rem] xl:shrink">{barra}</div>}
+        <div className="ml-auto flex min-w-0 items-center gap-2 xl:shrink-0">
           {kpis.boton}
           <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title={barra ? "Cuenta por persona y actualizar" : "Facturas de proveedores, cuenta por persona y actualizar"} />
         </div>

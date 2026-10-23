@@ -132,18 +132,7 @@ export default function LoyaltyTab() {
             example={`Rosa tiene 120 puntos: puede descontar ${formatCurrency(120 * VALOR_PUNTO)} en su próxima compra.`}
           />
         </div>
-        <div className="ml-auto flex min-w-0 items-center gap-2">
-          {kpis.boton}
-          <div ref={menuRef} className="shrink-0">
-            <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Avisos, tarjeta de sellos, trae a una amiga y actualizar" />
-          </div>
-        </div>
-      </div>
-
-      {kpis.panel}
-
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative h-12 min-w-0 grow basis-full sm:basis-64">
+        <div className="relative order-last h-12 min-w-0 basis-full sm:order-none sm:flex-[1_1_16rem] sm:basis-auto sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
           <input
             type="search"
@@ -160,13 +149,21 @@ export default function LoyaltyTab() {
           onClick={() => setSoloConPuntos((v) => !v)}
           className={button({
             variant: "secondary",
-            className: cn("shrink-0 rounded-xl px-3 text-sm", soloConPuntos ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)]"),
+            className: cn("shrink-0 rounded-xl px-3 text-sm max-sm:order-last", soloConPuntos ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)]"),
           })}
         >
           Con puntos ({conPuntos.length})
         </button>
-        {aviso && <span role="status" className="text-sm font-semibold text-[var(--data-success-ink)]">{aviso}</span>}
+        {aviso && <span role="status" className="max-sm:order-last text-sm font-semibold text-[var(--data-success-ink)]">{aviso}</span>}
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {kpis.boton}
+          <div ref={menuRef} className="shrink-0">
+            <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Avisos, tarjeta de sellos, trae a una amiga y actualizar" />
+          </div>
+        </div>
       </div>
+
+      {kpis.panel}
 
       {p.error && p.clientes.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">

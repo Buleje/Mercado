@@ -176,10 +176,10 @@ export default function FiadosModule() {
           <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Me deben</SectionTitle>
           <InfoTip title={seccion.rotulo} what={seccion.ayuda.what} affects={seccion.ayuda.affects} example={seccion.ayuda.example} />
         </div>
-        <div className="order-last w-full min-w-0 sm:order-none sm:w-auto xl:shrink-0">
+        <div className="order-last w-full min-w-0 sm:order-none sm:w-auto xl:shrink">
           <BarraDeSecciones secciones={secciones} activa={activeTab} onCambiar={setTab} etiqueta="Secciones de Me deben" idPanel={ID_PANEL_ME_DEBEN} />
         </div>
-        <div className="ml-auto flex min-w-0 items-center gap-2">
+        <div className="ml-auto flex min-w-0 items-center gap-2 xl:shrink-0">
           {kpis.boton}
           {/* Hasta 2xl, sólo el ícono (el nombre va en title y al lector de pantalla). */}
           <button type="button" onClick={nuevoFiado} title="Nuevo fiado" className={button({ variant: "primary", className: "shrink-0 rounded-xl max-2xl:w-12 max-2xl:px-0" })}>
