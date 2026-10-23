@@ -1,6 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { TenantsDB } from "@/lib/db/tenants.db";
+import { MembreteDB } from "@/lib/db/membrete.db";
+import { invalidateByPrefix } from "@/lib/cache";
 
 /**
  * SuperadminStoresHealthDB
@@ -27,6 +29,7 @@ export const SuperadminStoresHealthDB = {
       data: { logoUrl },
     });
     TenantsDB.olvidarPublico(); // portada y /api/tenants/resolve
+    MembreteDB.olvidar(tenantId); // el logo de respaldo de los papeles (ADR-514)
     return t;
   },
 
@@ -51,10 +54,13 @@ export const SuperadminStoresHealthDB = {
   },
 
   async upsertSettings(tenantId: string, data: Record<string, unknown>) {
-    return prisma.settings.upsert({
+    const fila = await prisma.settings.upsert({
       where: { tenantId },
       create: { tenantId, mode: "checkout", ...data },
       update: data,
     });
+    // Ajustes y el membrete de los papeles (`settings:<id>:membrete`) cacheados.
+    invalidateByPrefix(`settings:${tenantId}`);
+    return fila;
   },
 };

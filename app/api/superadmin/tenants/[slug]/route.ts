@@ -4,6 +4,7 @@ import { revalidateTag } from "next/cache";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { TenantsDB } from "@/lib/db/tenants.db";
+import { MembreteDB } from "@/lib/db/membrete.db";
 import { logger } from "@/lib/logger";
 import { actorVisibleParaNegocio } from "@/lib/superadmin/actor-visible";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
@@ -98,6 +99,8 @@ export async function PATCH(
     // Suspender/reactivar o cambiar plan: la portada y /api/tenants/resolve
     // leen `active`/`plan` cacheados 60 s.
     TenantsDB.olvidarPublico();
+    // El nombre registrado es el respaldo del título de los papeles (ADR-514).
+    if (updates.name !== undefined) MembreteDB.olvidar(tenant.id);
 
     // Log activity
     const details: string[] = [];

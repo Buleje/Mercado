@@ -11,7 +11,7 @@ import { armarMembrete, cierreDelNegocio, conNombreDelNegocio } from "@/lib/admi
 describe("membrete del negocio para los PDF", () => {
   it("con el nombre configurado vacío usa el nombre registrado (caso Blas)", () => {
     const m = armarMembrete({ businessName: "", logoUrl: null }, { name: "Inversiones Agroforestales BLAS sac", logoUrl: null });
-    expect(m).toEqual({ nombre: "Inversiones Agroforestales BLAS sac", logoUrl: null, telefono: null, direccion: null, ruc: null, pie: null, razonSocial: null, correo: null });
+    expect(m).toEqual({ nombre: "Inversiones Agroforestales BLAS sac", logoUrl: null, telefono: null, direccion: null, ruc: null, pie: null, razonSocial: null, correo: null, nombreComercial: null, whatsapp: null, fuenteLogo: null, logoPngUrl: null });
   });
 
   it("el nombre y el logo configurados ganan a los registrados", () => {
@@ -36,6 +36,10 @@ describe("membrete del negocio para los PDF", () => {
       pie: null,
       razonSocial: null,
       correo: null,
+      nombreComercial: null,
+      whatsapp: null,
+      fuenteLogo: null,
+      logoPngUrl: null,
     });
   });
 
@@ -55,7 +59,7 @@ describe("membrete del negocio para los PDF", () => {
   });
 
   it("sin datos de ningún lado, todo null", () => {
-    expect(armarMembrete(null, null)).toEqual({ nombre: null, logoUrl: null, telefono: null, direccion: null, ruc: null, pie: null, razonSocial: null, correo: null });
+    expect(armarMembrete(null, null)).toEqual({ nombre: null, logoUrl: null, telefono: null, direccion: null, ruc: null, pie: null, razonSocial: null, correo: null, nombreComercial: null, whatsapp: null, fuenteLogo: null, logoPngUrl: null });
   });
 
   it("el pie y el RUC salen de Ajustes (el RUC de SUNAT sólo si no hay otro)", () => {
@@ -64,6 +68,40 @@ describe("membrete del negocio para los PDF", () => {
       ruc: "20605859438",
     });
     expect(armarMembrete({ ruc: "", sunatRuc: "10456789012" }, null).ruc).toBe("10456789012");
+  });
+
+  // ADR-514 (23-10): el título es nombre comercial › razón social › nombre registrado.
+  it("título: con nombre comercial vacío va la razón social antes que el nombre registrado (Blas medido 23-10)", () => {
+    const m = armarMembrete(
+      { businessName: "", razonSocial: "INVERSIONES AGROFORESTALES BLAS SOCIEDAD ANONIMA CERRADA" },
+      { name: "Inversiones Agroforestales BLAS sac" },
+    );
+    expect(m).toMatchObject({ nombre: "INVERSIONES AGROFORESTALES BLAS SOCIEDAD ANONIMA CERRADA", nombreComercial: null });
+    expect(armarMembrete({ businessName: "Aserradero Blas", razonSocial: "INVERSIONES BLAS SAC" }, { name: "x" }).nombre).toBe("Aserradero Blas");
+    expect(armarMembrete({ razonSocial: "", sunatDenominacion: " BLAS SAC " }, { name: "x" })).toMatchObject({ nombre: "BLAS SAC", razonSocial: "BLAS SAC" });
+  });
+
+  it("nunca pone el nombre de la plataforma: sin dato, null", () => {
+    const m = armarMembrete({ businessName: "", razonSocial: "  " }, { name: "", logoUrl: "" });
+    expect(m.nombre).toBeNull();
+    expect(JSON.stringify(m)).not.toMatch(/buleje/i);
+  });
+
+  it("de dónde sale el logo y su versión en PNG (cambia con el logo)", () => {
+    const a = armarMembrete({ logoUrl: "https://x/a.webp" }, { logoUrl: "https://x/t.png" });
+    expect(a.fuenteLogo).toBe("ajustes");
+    expect(a.logoPngUrl).toMatch(/^\/api\/admin\/membrete\/logo\?v=[a-z0-9]+$/);
+    const t = armarMembrete({ logoUrl: "" }, { logoUrl: "https://x/t.png" });
+    expect(t.fuenteLogo).toBe("registro");
+    expect(t.logoPngUrl).not.toBe(a.logoPngUrl);
+    expect(armarMembrete({}, {})).toMatchObject({ fuenteLogo: null, logoPngUrl: null });
+  });
+
+  it("el WhatsApp de la tienda sale aparte del teléfono", () => {
+    expect(armarMembrete({ businessPhone: "961 222 333", storeTheme: { whatsapp: " 987 000 111 " } }, null)).toMatchObject({
+      telefono: "961 222 333",
+      whatsapp: "987 000 111",
+    });
   });
 });
 

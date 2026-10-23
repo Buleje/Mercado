@@ -52,7 +52,9 @@ export function printGuiaSunat(g: GuiaConGtf, formatDate: (d: string) => string,
     `<h2>N. ${e(g.numero)}</h2>`,
     '<div class="sep-double"></div>',
     '<div class="section"><div class="section-title">Remitente</div>',
-    fila("Nombre/Razon Social", membrete?.nombre || "Buleje"),
+    // La guía es de SUNAT: va la razón social; si no hay, el título del
+    // membrete. Sin dato, la fila no sale (nunca el nombre de la plataforma).
+    fila("Nombre/Razon Social", membrete?.razonSocial || membrete?.nombre),
     fila("RUC", membrete?.ruc),
     fila("Direccion", g.puntoPartida),
     "</div>",

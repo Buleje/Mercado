@@ -6,7 +6,20 @@
 import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 import type { LogoPdf, Membrete } from "./membrete";
 
-const SIN_MEMBRETE: Membrete = { nombre: null, logoUrl: null, telefono: null, direccion: null, ruc: null, pie: null, razonSocial: null, correo: null };
+const SIN_MEMBRETE: Membrete = {
+  nombre: null,
+  logoUrl: null,
+  telefono: null,
+  direccion: null,
+  ruc: null,
+  pie: null,
+  razonSocial: null,
+  correo: null,
+  nombreComercial: null,
+  whatsapp: null,
+  fuenteLogo: null,
+  logoPngUrl: null,
+};
 
 /** Si la ruta no responde, el PDF sale igual, sin nombre ni logo. */
 export async function leerMembrete(): Promise<Membrete> {
@@ -50,4 +63,14 @@ export async function logoParaPdf(url: string | null): Promise<LogoPdf | null> {
     // Sin CORS o imagen rota: el PDF sale con el nombre solo.
     return null;
   }
+}
+
+/**
+ * El logo del membrete listo para jsPDF: primero el PNG que sirve el panel
+ * (mismo sitio, sin CORS, ya convertido si se subió en WebP o SVG); si no
+ * carga, el original. `null` si ninguno.
+ */
+export async function logoDelMembrete(m: Pick<Membrete, "logoUrl" | "logoPngUrl"> | null | undefined): Promise<LogoPdf | null> {
+  if (!m) return null;
+  return (await logoParaPdf(m.logoPngUrl ?? null)) ?? (await logoParaPdf(m.logoUrl));
 }

@@ -11,6 +11,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { esTenantPorDefecto } from "@/lib/tenancy/negocio-por-defecto";
 import { PlantillaSchema } from "@/extensiones/pagina-tienda/config";
+import { validarLogoUrl } from "@/lib/admin/membrete-logo.server";
 import {
   resolveTenantSlugToId,
   syncBrandingToTenant,
@@ -209,6 +210,14 @@ export async function PUT(req: NextRequest) {
       }
     }
     const current = await SettingsDB.get(tenantId);
+    // El logo sale en todos los papeles y el servidor lo baja para pasarlo a PNG
+    // (ADR-514): sólo una URL corta de un lugar propio (bucket del negocio,
+    // public/). Se mira sólo si cambió: un valor viejo no traba guardar lo demás.
+    if (body.logoUrl !== undefined && body.logoUrl !== current.logoUrl) {
+      const logo = validarLogoUrl(tenantId, body.logoUrl);
+      if (!logo.ok) return NextResponse.json({ error: logo.error }, { status: 400 });
+      if (logo.valor !== null) body.logoUrl = logo.valor; // recortado; null (borrar) sigue como venía
+    }
 
     // Si SOLO viene storeTheme, guardar solo eso (no todo el objeto settings)
     // [BUG FIX 2026-05-05] MERGE en vez de REEMPLAZAR. Antes este path
