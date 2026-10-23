@@ -33,7 +33,7 @@ import CeldaRecibo from "./CeldaRecibo";
 import FilaAcciones, { type AccionFila } from "./FilaAcciones";
 import ModalesDeLaFila, { type AccionAbierta } from "./ModalesDeLaFila";
 import { BotonPagina, IconoOrden, ariaSort } from "./tabla-controles";
-import { useEstadoRecibos } from "./use-estado-recibos";
+import type { useEstadoRecibos } from "./use-estado-recibos";
 
 /** Cómo se abrevia cada modalidad en una celda. El título largo va en `title`. */
 const MODALIDAD_CHIP: Record<string, string> = {
@@ -52,6 +52,7 @@ export default function TablaAdelantos({
   pagina,
   onPagina,
   porPagina,
+  recibos,
   onVerDetalle,
   resaltadoId = null,
   onChange,
@@ -62,6 +63,8 @@ export default function TablaAdelantos({
   pagina: number;
   onPagina: (p: number) => void;
   porPagina: number;
+  /** Firma, huella y envío de cada fila: los lee el módulo (también los usan los filtros). */
+  recibos: ReturnType<typeof useEstadoRecibos>;
   onVerDetalle: (a: DbAdelanto) => void;
   /** La fila que se vino a ver (`?adelanto=`, `use-adelanto-en-url`): marcada y traída a la vista. */
   resaltadoId?: string | null;
@@ -74,7 +77,7 @@ export default function TablaAdelantos({
   /** Cuál fila tiene abierto qué acción — un solo modal a la vez. */
   const [abierta, setAbierta] = useState<AccionAbierta | null>(null);
   /** Firma, huella, foto y envío por WhatsApp de cada fila (columna «Recibo», 23-10). */
-  const { estados, carga, recargar } = useEstadoRecibos();
+  const { estados, carga, recargar } = recibos;
   /* El encargado no entra a la carpeta privada de la persona: «Enviar recibo» le sale apagado con el motivo. */
   const rol = useMiRol();
   const mandaRecibo = rol == null || puedeMandarRecibo(rol);

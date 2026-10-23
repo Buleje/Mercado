@@ -20,6 +20,7 @@ import type { EnlaceFirmaAdmin, EstadoEnlace } from "@/lib/adelantos/entregar-ti
 import { fechaHoraLima } from "@/lib/adelantos/recibo-firmado";
 import { logger } from "@/lib/logger";
 import { useEnlaceFirma } from "./use-enlace-firma";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 /* `primary` (negro en claro, blanco en oscuro) y no turquesa: blanco sobre turquesa da 3,2:1 a 14 px. */
 const PRIMARIO = button({ variant: "primary", className: "rounded-xl px-4" });
@@ -125,7 +126,7 @@ export default function EnviarEnlaceFirma({
           <Link2 className="h-4 w-4" aria-hidden /> {creado || pendiente ? "Generar otro enlace" : "Generar enlace para firmar"}
         </button>
         <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
-          <input type="checkbox" checked={pideHuella} onChange={(ev) => setPideHuella(ev.target.checked)} className="h-5 w-5 accent-[var(--accent)]" />
+          <Casilla checked={pideHuella} onChange={(ev) => setPideHuella(ev.target.checked)} />
           Pedir también la huella
         </label>
       </div>

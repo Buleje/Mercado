@@ -203,7 +203,7 @@ export function Field({
     return (
       <div role="group" aria-label={label} className="space-y-1.5">
         {info ? (
-          <span className="flex items-center gap-1.5">
+          <span className="flex h-5 items-center gap-1.5">
             {titulo}
             <InfoTip title={label} {...info} />
           </span>

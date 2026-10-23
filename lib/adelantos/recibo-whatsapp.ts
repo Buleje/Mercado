@@ -66,6 +66,17 @@ export function celularParaRecibo(texto: string | null | undefined): { ok: true;
   return { ok: true, nueve: d };
 }
 
+/**
+ * El aviso del campo «Celular» de una persona: vacío no avisa (es opcional, sólo
+ * sugerido); con algo escrito, la MISMA regla del envío del recibo. No bloquea
+ * el guardado: la ficha acepta un fijo, pero con un fijo el recibo no se manda.
+ */
+export function avisoCelular(texto: string | null | undefined): string | null {
+  if (!(texto ?? "").trim()) return null;
+  const r = celularParaRecibo(texto);
+  return r.ok ? null : `${r.error.replace(/\.$/, "")}. Sin un celular no se le puede mandar el recibo por WhatsApp.`;
+}
+
 /** «987 654 321»: como se dicta. */
 export function celularLegible(nueve: string): string {
   return /^\d{9}$/.test(nueve) ? `${nueve.slice(0, 3)} ${nueve.slice(3, 6)} ${nueve.slice(6)}` : nueve;

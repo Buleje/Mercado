@@ -35,6 +35,10 @@ import CrearAdelantoModal from "./CrearAdelantoModal";
 import DescuentoPlanillaModal from "./DescuentoPlanillaModal";
 import DetalleAdelantoModal from "./detalle/DetalleAdelantoModal";
 import TablaAdelantos from "./lista/TablaAdelantos";
+import FiltrosRecibo from "./lista/FiltrosRecibo";
+import { useEstadoRecibos } from "./lista/use-estado-recibos";
+import { useFiltroRecibos } from "./lista/use-filtro-recibos";
+import { SIN_FILTRO_RECIBOS, contarRecibos, pasaFiltroRecibos } from "@/lib/adelantos/filtro-recibos";
 import PersonasView from "./personas/PersonasView";
 import CobranzaView from "./cobranza/CobranzaView";
 import ResumenView from "./resumen/ResumenView";
@@ -415,7 +419,11 @@ function AdelantosView({
   }, {});
   const estadosPresentes = (["ABIERTO", "LIQUIDADO", "EXCEDIDO", "CANCELADO"] as const).filter((e) => counts[e]);
 
-  const filtrados = adelantos.filter((a) => {
+  /* Firma, huella y envío de cada fila: UNA llamada para la tabla y para los chips «Sin firma» / «Sin enviar». */
+  const recibos = useEstadoRecibos();
+  const [filtroRecibos, cambiarFiltroRecibos] = useFiltroRecibos();
+
+  const conEstadoYBusqueda = adelantos.filter((a) => {
     const okEstado = filtro === "TODOS" || a.status === filtro;
     const texto = q.trim().toLowerCase();
     /**
@@ -434,16 +442,27 @@ function AdelantosView({
         : (a.codigoOperacion ?? "").toLowerCase().includes(texto));
     return okEstado && okQ;
   });
+  const cuentaRecibos = contarRecibos(conEstadoYBusqueda, recibos.estados, filtroRecibos);
+  const filtrados = conEstadoYBusqueda.filter((a) => pasaFiltroRecibos(a, recibos.estados, filtroRecibos));
 
   /**
    * Filtrar o buscar vuelve a la página 1: quedarse en la 4 después de achicar
    * el resultado a 12 filas muestra una tabla vacía que parece un error.
    */
-  useEffect(() => setPagina(1), [filtro, q, orden.columna, orden.direccion]);
+  useEffect(() => setPagina(1), [filtro, filtroRecibos, q, orden.columna, orden.direccion]);
+
+  /* Si la ficha pedida estaba escondida, se limpian también los chips de recibo (estable: el hook lo usa como dependencia). */
+  const alLimpiarFiltros = useCallback(
+    (v: string) => {
+      setFiltro(v);
+      cambiarFiltroRecibos(SIN_FILTRO_RECIBOS);
+    },
+    [cambiarFiltroRecibos],
+  );
 
   /* La ficha abierta vive en `?adelanto=` (el «atrás» la cierra; el Resultado
      del negocio la abre): va DESPUÉS del `setPagina(1)` de arriba. */
-  const ficha = useAdelantoEnUrl({ adelantos, filtrados, loading, orden, porPagina: POR_PAGINA, setFiltro, setQ, setPagina, ubicarId: recienId });
+  const ficha = useAdelantoEnUrl({ adelantos, filtrados, loading, orden, porPagina: POR_PAGINA, setFiltro: alLimpiarFiltros, setQ, setPagina, ubicarId: recienId });
 
   // Totales de la vista filtrada — segmentados por moneda (ADR-118). Lo
   // RECIBIDO va aparte (ADR-448): sumado a «por recuperar» contaría como por
@@ -577,6 +596,7 @@ function AdelantosView({
                 {STATUS_BADGE[e].label} {counts[e]}
               </button>
             ))}
+            <FiltrosRecibo filtro={filtroRecibos} onCambio={cambiarFiltroRecibos} cuenta={cuentaRecibos} carga={recibos.carga} chipCls={chipCls} />
             {/* min-w-* es clase muerta acá (memoria min-width-utilities-muertas) — inline style. */}
             <div className="relative ml-auto flex-1 sm:flex-none" style={{ minWidth: 220 }}>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
@@ -617,6 +637,7 @@ function AdelantosView({
           pagina={pagina}
           onPagina={setPagina}
           porPagina={POR_PAGINA}
+          recibos={recibos}
           onVerDetalle={ficha.abrir}
           resaltadoId={ficha.resaltadoId}
           /* Relectura SIN esqueleto: con `reload` la tabla se desmontaba y se llevaba

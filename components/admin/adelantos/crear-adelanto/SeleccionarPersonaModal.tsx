@@ -19,7 +19,8 @@ import { AlertTriangle, Plus, Search, UserPlus, X } from "@buleje/design-system/
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
-import { ModalShell, fmtMonedas, inputCls, sinTildes } from "../shared";
+import { avisoCelular } from "@/lib/adelantos/recibo-whatsapp";
+import { Field, ModalShell, fmtMonedas, inputCls, sinTildes } from "../shared";
 import type { BeneficiarioConSaldo } from "./tipos";
 
 const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
@@ -257,14 +258,21 @@ function NuevaPersonaInline({
         className={inputCls}
       />
       <div className="grid gap-2 sm:grid-cols-2">
-        <input
-          value={telefono}
-          onChange={(e) => setTelefono(e.target.value)}
-          placeholder="Teléfono"
-          inputMode="tel"
-          aria-label="Teléfono"
-          className={`${inputCls} tabular-nums`}
-        />
+        <Field
+          label="Celular"
+          grupo
+          hint={avisoCelular(telefono) ?? undefined}
+          info={{ what: "Para mandarle el recibo del adelanto por WhatsApp.", affects: "Es opcional. Si no lo pones, te lo pedimos al mandar el primer recibo y queda guardado." }}
+        >
+          <input
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+            placeholder="9XX XXX XXX"
+            inputMode="tel"
+            aria-label="Celular"
+            className={`${inputCls} tabular-nums ${avisoCelular(telefono) ? "border-[var(--data-warning)]" : ""}`}
+          />
+        </Field>
         <input
           value={limite}
           onChange={(e) => setLimite(e.target.value)}

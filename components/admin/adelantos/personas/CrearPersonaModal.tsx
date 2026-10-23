@@ -27,8 +27,8 @@ import {
   avisoDeDuplicado,
   buscarDuplicado,
   revisarDocumento,
-  revisarTelefono,
 } from "@/lib/adelantos/persona-validacion";
+import { avisoCelular } from "@/lib/adelantos/recibo-whatsapp";
 import { useLookupDocumento } from "@/hooks/use-lookup-documento";
 import { Field, ModalActions, ModalShell, inputCls } from "../shared";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
@@ -99,7 +99,7 @@ export default function CrearPersonaModal({
   const { estado, reintentar } = useLookupDocumento(documento, rellenar);
 
   const avisoDoc = revisarDocumento(documento);
-  const avisoTel = revisarTelefono(telefono);
+  const avisoTel = avisoCelular(telefono);
   const duplicado = useMemo(
     () => buscarDuplicado({ nombre, documento, telefono }, personasExistentes, persona?.id),
     [nombre, documento, telefono, personasExistentes, persona?.id],
@@ -214,8 +214,14 @@ export default function CrearPersonaModal({
           {duplicado && <Aviso>{avisoDeDuplicado(duplicado)}</Aviso>}
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Teléfono" hint={avisoTel ?? undefined}>
+            <Field
+              label="Celular"
+              grupo
+              hint={avisoTel ?? undefined}
+              info={{ what: "Para mandarle el recibo del adelanto por WhatsApp.", affects: "Es opcional. Si no lo pones, te lo pedimos al mandar el primer recibo y queda guardado." }}
+            >
               <input
+                aria-label="Celular"
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value)}
                 inputMode="tel"

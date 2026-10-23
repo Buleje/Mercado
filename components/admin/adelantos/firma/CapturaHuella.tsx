@@ -21,6 +21,7 @@ import { MAX_BYTES_HUELLA, TEXTO_CONSENTIMIENTO_HUELLA } from "@/lib/adelantos/e
 import { logger } from "@/lib/logger";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const LADO_MAXIMO = 1600;
 
@@ -164,15 +165,13 @@ export default function CapturaHuella({
 
       {valor && (
         <label htmlFor={idCasilla} className="flex min-h-12 cursor-pointer items-start gap-3 rounded-xl bg-[var(--surface-sunken)] px-3 py-3">
-          <input
+          <Casilla
             id={idCasilla}
-            type="checkbox"
             checked={consentido}
             onChange={(e) => onConsentir(e.target.checked)}
             disabled={deshabilitado}
-            className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--accent)]"
-            data-consentimiento-huella
-          />
+            className="mt-0.5"
+            data-consentimiento-huella />
           <span className="text-sm text-[var(--text-primary)]">{TEXTO_CONSENTIMIENTO_HUELLA}</span>
         </label>
       )}
