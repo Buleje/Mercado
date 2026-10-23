@@ -15,6 +15,9 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { claveDeGuia, lineasPorGuia, type EstadoGuia, type GuiaEmitida } from "@/lib/forestal/guias-emitidas";
 import { CasillaGuia, CasillaTodasGuias } from "./gtf-seleccion-casillas";
 import type { SeleccionGuias } from "./hooks/use-seleccion-guias";
+import { useCorreccionesDeGuias } from "./hooks/use-correcciones-de-guias";
+import { CorreccionesGuiasProvider } from "./correccion-guia/contexto";
+import CorreccionGuiaCtp from "./correccion-guia/CorreccionGuiaCtp";
 
 const fecha = (iso: string) =>
   formatDateShort(iso, { soloFecha: true });
@@ -40,7 +43,12 @@ export default function CtpGuiasEmitidasLista({
   const lineasDe = (g: GuiaEmitida) => porGuia.get(claveDeGuia(g)) ?? [g.despachoId];
   const claves = new Set(guias.map(claveDeGuia));
   const ids = [...new Set(guias.flatMap(lineasDe))];
+  /* ADR-512: el pedido de corrección de cada guía, en UNA llamada; la fila ofrece las líneas de su guía. */
+  const correcciones = useCorreccionesDeGuias("ctp_despacho", guias.length > 0);
+  const filasDe = new Map<string, GuiaEmitida[]>();
+  for (const x of todas) filasDe.set(claveDeGuia(x), [...(filasDe.get(claveDeGuia(x)) ?? []), x]);
   return (
+    <CorreccionesGuiasProvider value={correcciones}>
     <div className="space-y-1.5">
       <div className="flex items-center gap-1 pl-1 text-sm text-[var(--text-secondary)]">
         <CasillaTodasGuias ids={ids} sel={sel} etiqueta={`Elegir las ${claves.size} guías de la lista`} />
@@ -107,9 +115,11 @@ export default function CtpGuiasEmitidasLista({
                 {g.unidad === "m3" ? fmtM3(g.sinOrigen) : g.sinOrigen.toFixed(4)} {g.unidad ?? ""} sin origen
               </span>
             )}
+            <CorreccionGuiaCtp g={g} lineas={filasDe.get(claveDeGuia(g)) ?? [g]} />
           </li>
         ))}
       </ul>
     </div>
+    </CorreccionesGuiasProvider>
   );
 }

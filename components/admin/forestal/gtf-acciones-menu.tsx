@@ -25,6 +25,8 @@
  *   · Ver ingresos    → la guía ya entró al Libro CTP
  *   · Asignar permiso → viva, de trozas y sin permiso (15-10: las trozas a mano
  *     nacen sin él); además va a la vista como botón, igual que «Ingresar al CTP»
+ *   · Pedir corrección → viva (ADR-512): la guía emitida no se edita; el pedido va
+ *     a la plataforma. Con uno abierto queda deshabilitada y la fila lleva su chip
  *   · Deshacer la importación → viva e importada
  *   · Anular          → viva
  * `soloLectura` (la pestaña «Anuladas y otras»): sólo Datos, Hoja, Resumen y
@@ -34,7 +36,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Ban, CheckCircle2, Eye, FileText, FolderOpen, Link2, LogIn, Printer, ReceiptText, Ruler, Send, Undo2 } from "@buleje/design-system/icons";
+import { Ban, CheckCircle2, Eye, FileText, FileWarning, FolderOpen, Link2, LogIn, Printer, ReceiptText, Ruler, Send, Undo2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
 import { fichaDeGuiaImportada } from "@/lib/forestal/loth-importar-guia-ficha";
@@ -50,6 +52,9 @@ import GtfMatricialModal from "./GtfMatricialModal";
 import GtfEnviarAlMonteModal from "./GtfEnviarAlMonteModal";
 import { useColaMonteCtx } from "./cola-monte-contexto";
 import { etiquetaMonteImpresa } from "./gtf-monte-ya-impresa";
+import { useCorreccionDeLaFila } from "./correccion-guia/use-correccion-de-la-fila";
+import CorreccionChip from "./correccion-guia/CorreccionChip";
+import PedirCorreccionLoth from "./correccion-guia/PedirCorreccionLoth";
 
 /** La guía salió sin permiso y todavía se le puede asignar uno (viva y de trozas). */
 export const pideAsignarPermiso = (g: Pick<Gtf, "planId" | "status" | "deletedAt" | "tipo">): boolean =>
@@ -84,6 +89,8 @@ export function opcionesGtf(
     abrirPermiso,
     abrirTalonario,
     abrirMonte,
+    abrirCorreccion,
+    correccionAbierta = false,
     monteImpresa = null,
     onHoja,
     onResumen,
@@ -97,6 +104,9 @@ export function opcionesGtf(
     abrirPermiso?: () => void;
     abrirTalonario?: () => void;
     abrirMonte?: () => void;
+    abrirCorreccion?: () => void;
+    /** Ya hay un pedido de corrección abierto (Pendiente o En revisión): no se pide otro. */
+    correccionAbierta?: boolean;
     /** «Ya impresa en la hoja N° …» si la guía ya salió del talonario (`etiquetaMonteImpresa`). */
     monteImpresa?: string | null;
     onHoja: (g: Gtf) => void;
@@ -170,6 +180,18 @@ export function opcionesGtf(
   if (viva && g.ctp === "ingresada") {
     a.push({ id: "ingresos", label: "Ver sus ingresos en el CTP", hint: "Abre Ingresos del Libro CTP", icon: LogIn, onSelect: verIngresosDelCtp });
   }
+  if (viva && abrirCorreccion) {
+    a.push({
+      id: "correccion",
+      label: "Pedir corrección",
+      hint: correccionAbierta
+        ? "Ya tiene un pedido abierto: espera la respuesta de la plataforma"
+        : "La guía emitida no se edita: la plataforma revisa tu pedido y, si corresponde, la anula y la emite de nuevo",
+      icon: FileWarning,
+      disabled: correccionAbierta,
+      onSelect: abrirCorreccion,
+    });
+  }
   if (viva && importacionDeLaGuia(g.observations)) {
     a.push({
       id: "deshacer",
@@ -192,6 +214,8 @@ export default function AccionesGtf({
   const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | "cubicar" | "permiso" | "talonario" | "monte" | null>(null);
   /* La pastilla de la fila (vivo o, si no hay, la última confirmada): ya impresa = otro envío gastaría otra hoja. */
   const monteImpresa = etiquetaMonteImpresa(useColaMonteCtx()?.porGuia.get(g.id));
+  /* ADR-512: el pedido de corrección de la guía (una sola llamada para toda la lista, en el proveedor). */
+  const corr = useCorreccionDeLaFila(g.id, !soloLectura && g.status !== "anulada" && !g.deletedAt);
   const acciones = useMemo(
     () =>
       opcionesGtf(g, {
@@ -203,12 +227,14 @@ export default function AccionesGtf({
         abrirPermiso: () => setAbierto("permiso"),
         abrirTalonario: () => setAbierto("talonario"),
         abrirMonte: () => setAbierto("monte"),
+        abrirCorreccion: corr.puede ? () => corr.abrir("fila") : undefined,
+        correccionAbierta: corr.abierta,
         monteImpresa,
         onHoja,
         onResumen,
         onAnular,
       }),
-    [g, soloLectura, monteImpresa, onHoja, onResumen, onAnular],
+    [g, soloLectura, monteImpresa, corr.puede, corr.abierta, corr.abrir, onHoja, onResumen, onAnular],
   );
   return (
     <div className="flex items-center justify-end gap-2">
@@ -232,9 +258,14 @@ export default function AccionesGtf({
           <Link2 className="h-3.5 w-3.5" aria-hidden /> Asignar permiso
         </button>
       )}
+      {corr.solicitud && <CorreccionChip s={corr.solicitud} />}
       <ActionMenu label={`Acciones de la GTF ${g.gtfNumber}`} title="Más acciones" actions={acciones} soloIcono size="xs" />
       {abierto === "datos" && (
-        <ModalFichaImportada gtfDatos={g.gtfDatos} gtfNumber={g.gtfNumber} items={g.items} onClose={() => setAbierto(null)} />
+        <ModalFichaImportada gtfDatos={g.gtfDatos} gtfNumber={g.gtfNumber} items={g.items} onClose={() => setAbierto(null)}
+          onPedirCorreccion={corr.puede && !corr.abierta ? () => corr.abrir("ventana") : undefined} />
+      )}
+      {corr.desde && (
+        <PedirCorreccionLoth g={g} aboveModals={corr.desde === "ventana" && abierto === "datos"} onClose={corr.cerrar} />
       )}
       {abierto === "documentos" && (
         <GtfDocumentosModal planId={g.planId ?? null} permiso={permisoDeLaGuiaGtf(g)} gtfNumber={g.gtfNumber} sinPapeles={g.status === "anulada" || !!g.deletedAt} onClose={() => setAbierto(null)} />

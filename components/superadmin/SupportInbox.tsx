@@ -5,11 +5,12 @@ import { LoadingState } from "@buleje/design-system";
 import { MailOpen, RotateCcw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useSupportTickets } from "./support/use-support-tickets";
-import { computeKpis } from "./support/shared";
+import { computeKpis, esCorreccion } from "./support/shared";
 import type { KpiFilter, TicketStatus, TicketPriority } from "./support/shared";
 import SupportKpis from "./support/SupportKpis";
 import TicketList from "./support/TicketList";
 import TicketDetail from "./support/TicketDetail";
+import CorreccionDetalle from "./support/CorreccionDetalle";
 
 /**
  * SupportInbox — Bandeja de soporte del superadmin.
@@ -28,6 +29,7 @@ export default function SupportInbox() {
     templates,
     loadTemplates,
     saveTemplate,
+    aplicarCorreccion,
   } = useSupportTickets();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -104,7 +106,14 @@ export default function SupportInbox() {
         </div>
 
         {/* Detalle del ticket seleccionado */}
-        {selected ? (
+        {selected && esCorreccion(selected) ? (
+          <CorreccionDetalle
+            ticket={selected}
+            onClose={() => setSelectedId(null)}
+            onAplicar={aplicarCorreccion}
+            onRecargar={reload}
+          />
+        ) : selected ? (
           <TicketDetail
             ticket={selected}
             onClose={() => setSelectedId(null)}

@@ -4060,7 +4060,10 @@ model SupportTicket {
   subject   String
   message   String
   priority  String    @default("medium") // low, medium, high
-  status    String    @default("open") // open, replied, closed
+  /// TEXTO, no enum (un valor nuevo de enum rompe al Prisma viejo de producción).
+  /// general: open | replied | closed · correccion_guia: open | in_review | closed | rejected.
+  /// Lista y etiquetas: `lib/soporte/correccion-guia.ts`.
+  status    String    @default("open")
   reply     String?
   repliedAt DateTime?
   tenantId  String
@@ -4068,11 +4071,30 @@ model SupportTicket {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  /// ADR-512 — «Pedir corrección» de una guía EMITIDA. general = formulario de
+  /// contacto / ticket libre; correccion_guia = pedido ordenado desde el panel.
+  kind       String    @default("general")
+  /// loth_gtf (ForestGtf) | ctp_despacho (ForestCtpEntry del despacho). null en general.
+  entityType String?
+  entityId   String?
+  /// `DetalleCorreccion` (número de la guía + cambios con lo que DICE, siempre
+  /// leído por el servidor desde la guía, nunca enviado por el navegador).
+  detalle    Json?
+  /// Qué se hizo (p. ej. «anulé la 001-123 y emití la 001-124») o por qué se rechazó.
+  resolucion String?
+  resolvedBy String?
+  resolvedAt DateTime?
+
   @@index([tenantId])
   @@index([status])
   @@index([tenantId, createdAt])
   // TD-020 / ADR-017 — aplicado en prod 2026-04-09 via scripts/apply-ola1-indices.ts
   @@index([tenantId, status], map: "SupportTicket_tenantId_status_idx")
+  // ADR-512: «mis solicitudes» del panel y «¿esta guía ya tiene una abierta?».
+  @@index([tenantId, kind, createdAt])
+  @@index([tenantId, entityType, entityId])
+  // Bandeja del superadmin: cruza tiendas a propósito (sin tenantId adelante).
+  @@index([kind, status, createdAt])
 }
 
 // ══════════════════════════════════════════════════════════

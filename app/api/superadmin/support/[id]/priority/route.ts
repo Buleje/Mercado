@@ -2,7 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
-import { prisma } from "@/lib/prisma";
+import { SupportTicketsDB } from "@/lib/db/support-tickets.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
@@ -29,13 +29,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!parsed.success) return NextResponse.json({ error: "Prioridad inválida" }, { status: 400 });
 
   try {
-    const exists = await prisma.supportTicket.findUnique({
-      where: { id },
-      select: { id: true, tenantId: true },
-    });
+    const exists = await SupportTicketsDB.cambiarPrioridad(id, parsed.data.priority);
     if (!exists) return NextResponse.json({ error: "Ticket no encontrado" }, { status: 404 });
-
-    await prisma.supportTicket.update({ where: { id }, data: { priority: parsed.data.priority } });
     logSuperadminAction(
       "support_priority",
       `Ticket ${id} -> ${parsed.data.priority}`,

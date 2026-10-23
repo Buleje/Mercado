@@ -33,6 +33,8 @@ import { usePapelesGtf } from "./hooks/use-papeles-gtf";
 import { useLothGtfKpis } from "./hooks/use-loth-gtf-kpis";
 import LothGtfCabecera from "./LothGtfCabecera";
 import { AvisoFocoAusente, AvisoGuiasSinEmitir } from "./LothGtfAvisos";
+import { useCorreccionesDeGuias } from "./hooks/use-correcciones-de-guias";
+import { CorreccionesGuiasProvider } from "./correccion-guia/contexto";
 
 type PlanDeLaGuiaConId = PlanDeLaGuia & { id: string };
 const SIN_PLANES: readonly PlanDeLaGuiaConId[] = [];
@@ -141,6 +143,8 @@ export default function LothGtfGuias({
   /* Las cuatro fichas se pliegan (Brandon 05-10); cerradas dicen lo esencial en el botón (que va solo al riel). */
   const kpis = useLothGtfKpis({ vigentes, bajas: bajas.bajas.length, sinIngresar, sinFichas: loading || gtfs.length === 0 });
   const conTabla = !loading && gtfs.length > 0 && seccion === "guias";
+  /* ADR-512: el estado de los pedidos de corrección de TODAS las filas, en una llamada. */
+  const correcciones = useCorreccionesDeGuias("loth_gtf", conTabla);
 
   return (
     <div className="space-y-3">
@@ -200,6 +204,7 @@ export default function LothGtfGuias({
       {loading && <div className="p-6 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
 
       {!loading && seccion === "guias" && (
+        <CorreccionesGuiasProvider value={correcciones}>
         <LothGtfTabla
           gtfs={vigentes}
           planes={permiso?.planes ?? SIN_PLANES}
@@ -215,6 +220,7 @@ export default function LothGtfGuias({
           onRecargar={() => { void load(); tras(); }}
           seleccion={seleccion}
         />
+        </CorreccionesGuiasProvider>
       )}
       {!loading && seccion === "bajas" && (
         <LothGtfBajas

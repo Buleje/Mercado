@@ -15,7 +15,7 @@ import {
   AlertTriangle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { PRIORITY_CONFIG, timeAgo } from "./shared";
+import { PRIORITY_CONFIG, STATUS_CONFIG, timeAgo } from "./shared";
 import type { SupportTicket, TicketStatus, TicketPriority, ReplyTemplate } from "./shared";
 
 interface Props {
@@ -140,7 +140,7 @@ export default function TicketDetail({
               className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:opacity-80 transition-opacity"
             >
               <Clock className="w-4 h-4" aria-hidden="true" />
-              En progreso
+              Marcar {STATUS_CONFIG.in_progress.label.toLowerCase()}
             </button>
           )}
 
@@ -151,7 +151,7 @@ export default function TicketDetail({
               className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:opacity-80 transition-opacity"
             >
               <Mail className="w-4 h-4" aria-hidden="true" />
-              Reabrir como en progreso
+              Reabrir como {STATUS_CONFIG.in_progress.label.toLowerCase()}
             </button>
           )}
 

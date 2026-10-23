@@ -2,7 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
-import { prisma } from "@/lib/prisma";
+import { SupportTicketsDB } from "@/lib/db/support-tickets.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
@@ -29,13 +29,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!parsed.success) return NextResponse.json({ error: "Respuesta inválida" }, { status: 400 });
 
   try {
-    const ticket = await prisma.supportTicket.findUnique({ where: { id }, select: { id: true, tenantId: true, subject: true } });
+    const ticket = await SupportTicketsDB.responder(id, parsed.data.body);
     if (!ticket) return NextResponse.json({ error: "Ticket no encontrado" }, { status: 404 });
-
-    await prisma.supportTicket.update({
-      where: { id },
-      data: { reply: parsed.data.body, repliedAt: new Date(), status: "replied" },
-    });
 
     logSuperadminAction("support_reply", `Respuesta a ticket "${ticket.subject}" (${id})`, { ticketId: id, tenantId: ticket.tenantId }, session.username).catch((err) => logger.warn("[support/reply] audit failed", { error: String(err) }));
     // Avisar al dueño que tiene respuesta de soporte (fire-and-forget).

@@ -8,6 +8,8 @@ import { PaymentProofsDB } from "@/lib/db/payment-proofs.db";
 import { getRescueQueue } from "@/lib/db/rescue.db";
 import { getClientErrors, getClientErrorStats } from "@/lib/db/client-errors.db";
 import { logger } from "@/lib/logger";
+import { SupportTicketsDB } from "@/lib/db/support-tickets.db";
+import { ENTITY_TYPE_ETIQUETA } from "@/lib/soporte/correccion-guia";
 import {
   compararAvisos,
   contarNiveles,
@@ -18,6 +20,7 @@ import {
   nivelesDePedidos,
   nivelNegocioEnRiesgo,
   nivelPedidoSinAtender,
+  nivelSolicitudCorreccion,
   nivelSolicitudTienda,
   sumarNiveles,
   type AvisoBandeja,
@@ -67,6 +70,7 @@ const PEDIDO_SIN_ATENDER = { status: { in: ["pendiente", "confirmado"] }, delete
  *
  * Buckets:
  *   - vendorApplications  → solicitudes de tienda nuevas
+ *   - supportCorrections  → negocios que piden corregir una guía emitida (ADR-512)
  *   - paymentApprovals    → aprobaciones Yape pendientes verificación (raw SQL)
  *   - paymentProofs       → comprobantes de apertura de tienda (raw SQL)
  *   - pendingOrders       → pedidos cross-tenant sin entregar
@@ -92,6 +96,7 @@ export async function GET(req: NextRequest) {
       rescue,
       panelErrors,
       errorStats,
+      correcciones,
     ] = await Promise.all([
       prisma.vendorApplication.count({
         where: { status: { in: ["pending", "under_review", "info_requested"] } },
@@ -133,6 +138,10 @@ export async function GET(req: NextRequest) {
       getRescueQueue().catch(() => ({ queue: [], kpis: { critical: 0, high: 0 } })),
       getClientErrors(200).catch(() => []),
       getClientErrorStats().catch(() => ({ groups: 0 })),
+      SupportTicketsDB.correccionesAbiertasPlataforma(200).catch((err) => {
+        logger.warn("[superadmin/notifications/inbox] correcciones no leídas", { error: String(err) });
+        return { count: 0, filas: [] };
+      }),
     ]);
 
     // Nombre del negocio de cada pedido y de cada Yape detectado
@@ -231,6 +240,21 @@ export async function GET(req: NextRequest) {
           status: v.status,
           createdAt: v.submittedAt.toISOString(),
           href: `/superadmin/vendor-applications?id=${v.id}`,
+        })),
+      ),
+      supportCorrections: grupo(
+        correcciones.count,
+        "/superadmin/support?kind=correccion_guia",
+        correcciones.filas.map((c) => ({
+          id: c.id,
+          categoria: "supportCorrections",
+          ...nivelSolicitudCorreccion(c, ahora),
+          title: `Guía ${c.guiaNumero}`,
+          subtitle: `${ENTITY_TYPE_ETIQUETA[c.entityType]} · ${c.cambios.length} cambio${c.cambios.length === 1 ? "" : "s"} · pidió ${c.createdBy}`,
+          tienda: c.tenantName || null,
+          status: c.estado,
+          createdAt: c.createdAt,
+          href: `/superadmin/support?kind=correccion_guia&id=${encodeURIComponent(c.id)}`,
         })),
       ),
       paymentApprovals: grupo(

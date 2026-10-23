@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
-import { Search, MailOpen, AlertTriangle, Filter, Mail } from "@buleje/design-system/icons";
+import { useMemo, useState } from "react";
+import { Search, MailOpen, AlertTriangle, Filter, Mail, FileWarning } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { STATUS_CONFIG, PRIORITY_CONFIG, timeAgo } from "./shared";
-import type { SupportTicket, TicketStatus, TicketPriority, KpiFilter } from "./shared";
+import { STATUS_CONFIG, STATUS_ORDEN, PRIORITY_CONFIG, esCorreccion, etiquetaDelTicket, etiquetaPlural, timeAgo } from "./shared";
+import type { Bandeja, SupportTicket, TicketStatus, TicketPriority, KpiFilter } from "./shared";
+import BandejaPestanas from "./BandejaPestanas";
 
 const INPUT_CLASS =
   "h-10 text-sm border border-[var(--rule-base)] rounded-2xl bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
@@ -38,8 +39,11 @@ export default function TicketList({
   onSelect,
   activeCount,
 }: Props) {
+  /* ADR-512: los pedidos de corrección de guía van en su propia pestaña (no se mezclan con los mensajes). */
+  const [bandeja, setBandeja] = useState<Bandeja>("mensajes");
   const filtered = useMemo(() => {
     return tickets.filter((t) => {
+      if (esCorreccion(t) !== (bandeja === "correcciones")) return false;
       // KPI filter tiene prioridad
       if (kpiFilter === "urgent") {
         if (t.priority !== "high" || t.status === "closed") return false;
@@ -66,7 +70,7 @@ export default function TicketList({
 
       return true;
     });
-  }, [tickets, kpiFilter, statusFilter, priorityFilter, search]);
+  }, [tickets, bandeja, kpiFilter, statusFilter, priorityFilter, search]);
 
   return (
     <div className="flex flex-col h-full">
@@ -83,6 +87,13 @@ export default function TicketList({
             {activeCount}
           </span>
         </div>
+
+        <BandejaPestanas
+          valor={bandeja}
+          onCambiar={setBandeja}
+          mensajes={tickets.filter((t) => !esCorreccion(t) && t.status !== "closed").length}
+          correcciones={tickets.filter((t) => esCorreccion(t) && t.status !== "closed").length}
+        />
 
         {/* Búsqueda */}
         <div className="relative">
@@ -114,9 +125,11 @@ export default function TicketList({
               className={cn(INPUT_CLASS, "pl-9 w-full")}
             >
               <option value="all">Todos los estados</option>
-              <option value="open">Abiertos</option>
-              <option value="in_progress">En progreso</option>
-              <option value="closed">Cerrados</option>
+              {STATUS_ORDEN.map((s) => (
+                <option key={s} value={s}>
+                  {etiquetaPlural(s)}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -138,11 +151,14 @@ export default function TicketList({
       <div className="flex-1 overflow-y-auto" role="list" aria-label="Lista de tickets">
         {filtered.length === 0 ? (
           <div className="p-6 text-center">
-            <MailOpen
-              className="w-8 h-8 mx-auto mb-2 text-[var(--text-tertiary)] opacity-50"
-              aria-hidden="true"
-            />
-            <p className="text-sm text-[var(--text-secondary)]">No hay tickets</p>
+            {bandeja === "correcciones" ? (
+              <FileWarning className="w-8 h-8 mx-auto mb-2 text-[var(--text-tertiary)] opacity-50" aria-hidden="true" />
+            ) : (
+              <MailOpen className="w-8 h-8 mx-auto mb-2 text-[var(--text-tertiary)] opacity-50" aria-hidden="true" />
+            )}
+            <p className="text-sm text-[var(--text-secondary)]">
+              {bandeja === "correcciones" ? "No hay pedidos de corrección de guía" : "No hay tickets"}
+            </p>
           </div>
         ) : (
           filtered.map((ticket) => {
@@ -186,10 +202,12 @@ export default function TicketList({
                     <span
                       className={cn(
                         "text-xs font-semibold px-1.5 py-0.5 rounded-full",
-                        statusCfg.badgeClass,
+                        ticket.rawStatus === "rejected"
+                          ? "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]"
+                          : statusCfg.badgeClass,
                       )}
                     >
-                      {statusCfg.label}
+                      {etiquetaDelTicket(ticket)}
                     </span>
                   </div>
                 </div>

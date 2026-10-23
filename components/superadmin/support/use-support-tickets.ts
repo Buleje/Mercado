@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import type { SolicitudCorreccionDTO } from "@/lib/soporte/correccion-guia";
 import type { SupportTicket, TicketStatus, TicketPriority, ReplyTemplate } from "./shared";
+
+/** Estado de una corrección → el de la lista (el mismo mapeo que `toUiStatus` del GET). */
+const ESTADO_EN_LISTA: Record<SolicitudCorreccionDTO["estado"], TicketStatus> = {
+  open: "open",
+  in_review: "in_progress",
+  closed: "closed",
+  rejected: "closed",
+};
 
 const API = "/api/superadmin/support";
 
@@ -14,6 +23,8 @@ export interface UseSupportTickets {
   reply: (id: string, body: string) => Promise<void>;
   setStatus: (id: string, status: TicketStatus) => void;
   setPriority: (id: string, priority: TicketPriority) => void;
+  /** Una corrección de guía que cambió de estado (respuesta del PATCH): se pinta sin recargar. */
+  aplicarCorreccion: (s: SolicitudCorreccionDTO) => void;
   templates: ReplyTemplate[];
   loadTemplates: () => Promise<void>;
   saveTemplate: (name: string, body: string) => Promise<void>;
@@ -151,6 +162,22 @@ export function useSupportTickets(): UseSupportTickets {
     [loadTemplates],
   );
 
+  const aplicarCorreccion = useCallback((s: SolicitudCorreccionDTO) => {
+    setTickets((prev) =>
+      prev.map((t) =>
+        t.id === s.id
+          ? {
+              ...t,
+              status: ESTADO_EN_LISTA[s.estado],
+              rawStatus: s.estado,
+              lastMessage: s.resolucion ?? t.lastMessage,
+              correccion: t.correccion ? { ...t.correccion, ...s } : t.correccion,
+            }
+          : t,
+      ),
+    );
+  }, []);
+
   return {
     tickets,
     loading,
@@ -159,6 +186,7 @@ export function useSupportTickets(): UseSupportTickets {
     reply,
     setStatus,
     setPriority,
+    aplicarCorreccion,
     templates,
     loadTemplates,
     saveTemplate,

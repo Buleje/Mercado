@@ -39,6 +39,7 @@ export type CategoriaAviso =
   | "paymentProofs"
   | "paymentApprovals"
   | "vendorApplications"
+  | "supportCorrections"
   | "pendingOrders";
 
 export const CATEGORIAS: readonly CategoriaAviso[] = [
@@ -47,6 +48,7 @@ export const CATEGORIAS: readonly CategoriaAviso[] = [
   "paymentProofs",
   "paymentApprovals",
   "vendorApplications",
+  "supportCorrections",
   "pendingOrders",
 ];
 
@@ -149,6 +151,21 @@ export function nivelSolicitudTienda(v: { status: string; submittedAt: Date | st
   if (ms > UMBRALES.solicitudViejaDias * DIA) return { nivel: "leve", motivo: `Solicitud vieja: lleva ${hace}` };
   if (ms >= UMBRALES.solicitudUrgenteDias * DIA) return { nivel: "urgente", motivo: `Lleva ${hace} sin respuesta` };
   return { nivel: "importante", motivo: "Nueva: contéstala hoy" };
+}
+
+/**
+ * Un negocio pidió corregir una guía EMITIDA (ADR-512). Mientras espera, la
+ * guía sigue mal en el monte: Pendiente de más de 2 días es urgente.
+ */
+export function nivelSolicitudCorreccion(c: { estado: string; createdAt: Date | string }, ahora: Date): NivelConMotivo {
+  const ms = msDesde(c.createdAt, ahora);
+  const hace = duracionCorta(ms);
+  if (c.estado === "open") {
+    if (ms > 2 * DIA) return { nivel: "urgente", motivo: `Lleva ${hace} sin que nadie la mire` };
+    return { nivel: "importante", motivo: "Nueva: revisa la guía y contesta" };
+  }
+  if (ms > 7 * DIA) return { nivel: "importante", motivo: `En revisión hace ${hace}` };
+  return { nivel: "informativo", motivo: "En revisión" };
 }
 
 /** Yape detectado por Yape Vision que espera revisión. La plata nunca es «leve». */

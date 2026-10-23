@@ -2,7 +2,7 @@
 
 import { Mail, Clock, CheckCircle2, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import type { SupportKpiData, KpiFilter } from "./shared";
+import { etiquetaPlural, type SupportKpiData, type KpiFilter } from "./shared";
 import type { LucideIcon } from "@buleje/design-system/icons";
 
 interface KpiCardDef {
@@ -27,7 +27,7 @@ export default function SupportKpis({ kpis, active, onPick }: Props) {
   const cards: KpiCardDef[] = [
     {
       key: "open",
-      label: "Abiertos",
+      label: etiquetaPlural("open"),
       value: kpis.open,
       color: "text-[var(--data-error-500)]",
       bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10",
@@ -36,7 +36,7 @@ export default function SupportKpis({ kpis, active, onPick }: Props) {
     },
     {
       key: "in_progress",
-      label: "En progreso",
+      label: etiquetaPlural("in_progress"),
       value: kpis.inProgress,
       color: "text-[var(--accent)]",
       bg: "bg-primary/10 dark:bg-[var(--accent)]/10",
@@ -45,7 +45,7 @@ export default function SupportKpis({ kpis, active, onPick }: Props) {
     },
     {
       key: "closed",
-      label: "Cerrados",
+      label: etiquetaPlural("closed"),
       value: kpis.closed,
       color: "text-[var(--data-success-500)]",
       bg: "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/10",

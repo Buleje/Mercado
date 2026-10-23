@@ -40,7 +40,7 @@
 
 import { useId, useMemo, useState, useSyncExternalStore } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { FileText, Fullscreen, PanelRightClose, PanelRightOpen, X } from "@buleje/design-system/icons";
+import { FileText, FileWarning, Fullscreen, PanelRightClose, PanelRightOpen, X } from "@buleje/design-system/icons";
 import AdminModal, { CabeceraPropia } from "@/components/admin/shared/AdminModal";
 import { BOTON_VENTANA } from "@/components/admin/shared/modal-controles-ventana";
 import { button } from "@/components/ui-system/button-variants";
@@ -93,11 +93,14 @@ export default function ModalFichaImportada({
   gtfNumber,
   items,
   onClose,
+  onPedirCorreccion,
 }: {
   gtfDatos: unknown;
   gtfNumber: string;
   items: unknown;
   onClose: () => void;
+  /** Guía emitida y viva: «Pedir corrección» (ADR-512) se abre encima de esta ventana. */
+  onPedirCorreccion?: () => void;
 }) {
   const leida = useMemo(() => fichaDeGuiaImportada(gtfDatos), [gtfDatos]);
   const piezas = useMemo(() => piezasDeItems(items), [items]);
@@ -166,9 +169,22 @@ export default function ModalFichaImportada({
         <CabeceraPropia
           className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--rule-base)] px-4 py-2.5 sm:px-6 lg:flex-nowrap"
           acciones={
-            <button type="button" onClick={onClose} aria-label="Cerrar" className={BOTON_VENTANA}>
-              <X className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-            </button>
+            <>
+              {onPedirCorreccion && (
+                <button
+                  type="button"
+                  onClick={onPedirCorreccion}
+                  aria-label="Pedir corrección de esta guía"
+                  title="Pedir corrección: la plataforma revisa tu pedido y, si corresponde, la anula y la emite de nuevo"
+                  className={BOTON_VENTANA}
+                >
+                  <FileWarning className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                </button>
+              )}
+              <button type="button" onClick={onClose} aria-label="Cerrar" className={BOTON_VENTANA}>
+                <X className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              </button>
+            </>
           }
         >
           <div className="flex min-w-0 flex-1 items-center gap-3 lg:min-w-[12rem]">

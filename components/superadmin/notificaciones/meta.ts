@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   ArrowDownCircle,
   CreditCard,
+  FileWarning,
   HeartHandshake,
   Info,
   ReceiptText,
@@ -107,6 +108,13 @@ export const CATEGORIA_META: Record<CategoriaAviso, MetaCategoria> = {
     corta: "Pedido",
     descripcion: "Pedidos de cualquier tienda en pendiente o confirmado.",
     icon: ShoppingBag,
+  },
+  supportCorrections: {
+    etiqueta: "Soporte / correcciones",
+    corta: "Corrección",
+    descripcion: "Negocios que piden corregir una guía emitida.",
+    // FileWarning y no FilePen: FilePen no está en el barril de íconos del DS (el mismo de la bandeja).
+    icon: FileWarning,
   },
 };
 
