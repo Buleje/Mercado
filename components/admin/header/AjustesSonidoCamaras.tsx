@@ -19,6 +19,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { Interruptor } from "@/components/ui-system/Interruptor";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { horaLima } from "@/lib/camaras/avisos-segundo-plano";
+import { CLAVE_AVISOS_NUBE } from "@/lib/camaras/movimientos-nube";
 import { logger } from "@/lib/logger";
 import {
   CLAVE_ALARMA_CON_SONIDO,
@@ -73,6 +74,8 @@ export default function AjustesSonidoCamaras({ open, onClose, silencioHasta, sil
   const [prefs, cambiar] = usePreferenciasSonido();
   const [conSonido, setConSonido] = useLocalStorage<boolean>(CLAVE_ALARMA_CON_SONIDO, true);
   const [sinPausa, setSinPausa] = useLocalStorage<boolean>(CLAVE_VIGILAR_SIN_PAUSA, false);
+  /* Lo lee `use-movimientos-nube` (escucha el mismo «local-storage»). */
+  const [conNube, setConNube] = useLocalStorage<boolean>(CLAVE_AVISOS_NUBE, true);
   const [permiso, setPermiso] = useState<PermisoAvisos>(() => permisoAvisos());
   const [resultado, setResultado] = useState<string | null>(null);
   const silenciado = silencioHasta > Date.now();
@@ -116,7 +119,7 @@ export default function AjustesSonidoCamaras({ open, onClose, silencioHasta, sil
         <InfoTip
           title="Sonido y avisos de Cámaras"
           what="Cómo te avisa el panel cuando el mosaico ve a alguien: la alarma suena en una sola pestaña aunque tengas varias abiertas."
-          affects="Se guarda en este navegador. Sin el mosaico abierto (o con las cámaras en pausa) no hay alarma."
+          affects="Se guarda en este navegador. Con «Avisos de movimiento en segundo plano», la cámara te avisa aunque no la tengas abierta (tarda hasta 1 min); la alarma de personas necesita el mosaico abierto."
           example="Con «Avisos del sistema», si estás en otra pestaña te sale el aviso en la esquina de la pantalla."
         />
       }
@@ -211,6 +214,12 @@ export default function AjustesSonidoCamaras({ open, onClose, silencioHasta, sil
             enabled={prefs.sistema && permiso === "granted"}
             disabled={permiso === "no-soportado"}
             onChange={alternarSistema}
+          />
+          <Interruptor
+            label="Avisos de movimiento en segundo plano"
+            desc="La cámara te avisa aunque no la tengas abierta, en cualquier pestaña del panel"
+            enabled={conNube}
+            onChange={setConNube}
           />
           <Interruptor
             label="Vigilar sin pausa"

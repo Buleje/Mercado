@@ -142,6 +142,16 @@ export interface ControlesCamara {
   microfono: boolean | null;
 }
 
+/** Sólo `device/info` (detección armada, en línea): lo pregunta la cabecera cada 5 min. */
+export async function estadoDelAparato(
+  tenantId: string,
+  c: CredencialesHik,
+  serie: string,
+): Promise<LeidoEzviz<EstadoAparato>> {
+  const r = await conPermiso(tenantId, c, pedidoInfo(serie));
+  return r.ok ? { ok: true, valor: leerEstado(r.valor) } : r;
+}
+
 /** Qué sabe hacer la cámara (guardado 30 min) y su estado de ahora (detección, en línea). */
 export async function controlesDe(
   tenantId: string,

@@ -57,6 +57,11 @@ export interface SenalCamara {
   personas: number;
   /** Quien mira lo tiene a la vista (mosaico expandido o visor, pestaña visible). */
   aLaVista: boolean;
+  /**
+   * `"nube"`: la alarma de la propia cámara por Hik-Connect (`movimientos-nube.ts`).
+   * La cámara ya descartó los parpadeos: una sola cuenta como movimiento.
+   */
+  origen?: "nube";
 }
 
 export type TipoAvisoCamara = "movimiento" | "persona";
@@ -129,14 +134,15 @@ export function registrarSenal(
   const seguidas = hueco <= HUECO_SEGUIDAS_MS ? previo.seguidas + 1 : 1;
   let cam: EstadoCamara = {
     ...previo,
-    ultimaSenal: s.at,
+    /* La de la nube llega hasta ~1 min tarde: no hace retroceder la última señal del mosaico. */
+    ultimaSenal: Math.max(previo.ultimaSenal, s.at),
     seguidas,
     enCurso: calma ? false : previo.enCurso,
   };
 
   let tipo: TipoAvisoCamara | null = null;
   if (s.aparicion) tipo = "persona";
-  else if (!cam.enCurso && seguidas >= SEGUIDAS_MOVIMIENTO) tipo = "movimiento";
+  else if (!cam.enCurso && (seguidas >= SEGUIDAS_MOVIMIENTO || s.origen === "nube")) tipo = "movimiento";
   if (tipo) cam = { ...cam, enCurso: true };
 
   const camaras = { ...estado.camaras, [s.camaraId]: cam };

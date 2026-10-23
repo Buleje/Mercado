@@ -32,6 +32,7 @@ import { registrarControl } from "@/lib/camaras/ezviz-control-registro.server";
 import { avisarDesarme } from "@/lib/camaras/ezviz-control-aviso.server";
 import { ImagenNoPermitida, sharpSeguro, verificarImagen } from "@/lib/camaras/imagen-segura";
 import { guardarFoto } from "@/lib/camaras/ingesta.server";
+import { olvidarDeteccion } from "@/lib/camaras/movimientos-nube.server";
 
 /**
  * /api/admin/camaras/[id]/control — mover, detección, alarma y foto de una
@@ -277,6 +278,12 @@ export const POST = withApiHandler("camaras-control", async (req: NextRequest, c
     if (!r.ok) return errorHik(r.error);
     anotar({ accion: "deteccion", activa: p.activa });
     avisarSiDesarma("deteccion", p.activa);
+    /* La cabecera guarda 5 min si la detección está armada: que vea el cambio en su próxima vuelta. */
+    after(() =>
+      olvidarDeteccion(auth.tenantId).catch((err) =>
+        logger.error("[camaras] olvidar la detección guardada falló", { error: String(err) }),
+      ),
+    );
     return NextResponse.json({ ok: true, deteccion: r.valor });
   }
 

@@ -71,7 +71,10 @@ let vista: Vista = VISTA_INICIAL;
 let silencioLeido = false;
 const oyentes = new Set<() => void>();
 /** Lo que hace «Ver» cuando no hay mosaico que expandir: lo pone la cabecera. */
-const config: { abrirCamaras: (() => void) | null } = { abrirCamaras: null };
+const config: { abrirCamaras: (() => void) | null; verEnVivo: (() => void) | null } = {
+  abrirCamaras: null,
+  verEnVivo: null,
+};
 let conexiones = 0;
 
 /* Con movimiento llega una señal por segundo y por cámara: el estado interno
@@ -143,11 +146,17 @@ export const reactivarAvisosCamaras = () => {
   guardarSilencio("silencioMovimientoHasta", 0);
 };
 
-/** «Ver»: el mosaico minimizado se expande (ahí está lo que se movió); si no hay, se abre Cámaras. */
+/**
+ * «Ver»: el mosaico minimizado se expande (ahí está lo que se movió). Sin
+ * mosaico (el aviso vino de la nube, con la cámara cerrada) se abren todas en
+ * vivo; si la cabecera no sabe hacerlo, Cámaras.
+ */
 export function verCamaras() {
   marcarVistosAvisosCamaras();
   if (document.querySelector("[data-mosaico-panel]")) {
     window.dispatchEvent(new Event(EVENTO_EXPANDIR_MOSAICO));
+  } else if (config.verEnVivo) {
+    config.verEnVivo();
   } else {
     config.abrirCamaras?.();
   }
@@ -237,13 +246,15 @@ const leerEnServidor = () => VISTA_INICIAL;
 /**
  * @param activo Sólo quien puede ver Cámaras escucha (sin permiso: ni cuenta ni avisa).
  * @param abrirCamaras «Ver» sin mosaico abierto: abrir Cámaras (el modal de accesos).
+ * @param verEnVivo «Ver» sin mosaico abierto, si se puede: abrir todas en vivo.
  */
-export function useAvisosCamaras(activo: boolean, abrirCamaras: () => void) {
+export function useAvisosCamaras(activo: boolean, abrirCamaras: () => void, verEnVivo?: () => void) {
   const { sinVer, silencioHasta, silencioMovimientoHasta } = useSyncExternalStore(suscribir, leer, leerEnServidor);
 
   useEffect(() => {
     config.abrirCamaras = abrirCamaras;
-  }, [abrirCamaras]);
+    config.verEnVivo = verEnVivo ?? null;
+  }, [abrirCamaras, verEnVivo]);
 
   useEffect(() => {
     if (!activo) return;

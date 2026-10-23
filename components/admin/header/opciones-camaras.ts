@@ -8,16 +8,36 @@ import {
   BellOff,
   BellRing,
   Camera,
+  ImageIcon,
   LayoutGrid,
   Play,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldOff,
   SlidersHorizontal,
   Users,
   VolumeX,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { horaLima } from "@/lib/camaras/avisos-segundo-plano";
+import { nombresDe, sinDeteccion } from "@/lib/camaras/movimientos-nube";
+import { logger } from "@/lib/logger";
 import type { CamarasCabecera } from "./use-camaras-cabecera";
 import { reactivarAvisosCamaras, silenciarAlarmasCamaras, verCamaras } from "./use-avisos-camaras";
+import { fijarAvisosNube, prenderDeteccion, verFotoUltimoMovimiento } from "./use-movimientos-nube";
+
+const lanzarPrenderDeteccion = () => {
+  prenderDeteccion().catch((err: unknown) =>
+    logger.warn("[camaras] prender la detección desde la cabecera falló", { error: String(err) }),
+  );
+};
+
+/** «Prendidos · revisado a las 07:30» / «Apagados: sólo avisa con el mosaico abierto». */
+function detalleNube(n: CamarasCabecera["nube"]): string {
+  if (!n.prendido) return "Apagados: sólo avisa con el mosaico abierto";
+  if (n.aviso) return "La nube de las cámaras no contestó: reintenta sola";
+  return n.consultadoAt > 0 ? `Prendidos · revisado a las ${horaLima(n.consultadoAt)}` : "Prendidos";
+}
 
 export interface OpcionCamaras {
   id: string;
@@ -57,6 +77,20 @@ export function opcionesCamaras(cam: CamarasCabecera, ahora = Date.now()): Opcio
       accion: cam.seguirVigilando,
     });
   }
+  const apagadas = cam.nube.prendido ? sinDeteccion(cam.nube.deteccion) : [];
+  if (apagadas.length > 0) {
+    lista.push({
+      id: "prender-deteccion",
+      icon: ShieldAlert,
+      label: "Prender detección",
+      detalle: cam.nube.puedeConfigurar
+        ? `Apagada en ${nombresDe(apagadas)}: no avisa movimiento`
+        : `Apagada en ${nombresDe(apagadas)}: la prende el dueño`,
+      aviso: true,
+      ocupado: cam.nube.prendiendo,
+      accion: lanzarPrenderDeteccion,
+    });
+  }
   lista.push(
     { id: "en-vivo", icon: LayoutGrid, label: "Ver todas en vivo", ocupado: cam.abriendoMosaico, accion: cam.verTodas },
     { id: "visitantes", icon: Users, label: "Visitantes de hoy", abreVentana: true, accion: cam.visitantes },
@@ -72,17 +106,36 @@ export function opcionesCamaras(cam: CamarasCabecera, ahora = Date.now()): Opcio
       accion: verCamaras,
     });
   }
+  const ultimoNube = cam.nube.ultimo;
+  if (ultimoNube?.conFoto) {
+    lista.push({
+      id: "foto-movimiento",
+      icon: ImageIcon,
+      label: "Foto del último movimiento",
+      detalle: `${ultimoNube.nombre} · a las ${horaLima(ultimoNube.at)}`,
+      accion: verFotoUltimoMovimiento,
+    });
+  }
   const silenciado = cam.silencioHasta > ahora;
   const movimientoCallado = cam.silencioMovimientoHasta > ahora;
+  lista.push({
+    id: "ajustes",
+    icon: SlidersHorizontal,
+    label: "Sonido y avisos",
+    separar: true,
+    abreVentana: true,
+    accion: cam.abrirAjustes,
+  });
+  if (cam.nube.vinculado) {
+    lista.push({
+      id: "avisos-nube",
+      icon: cam.nube.prendido ? ShieldCheck : ShieldOff,
+      label: "Avisos de movimiento en segundo plano",
+      detalle: detalleNube(cam.nube),
+      accion: () => fijarAvisosNube(!cam.nube.prendido),
+    });
+  }
   lista.push(
-    {
-      id: "ajustes",
-      icon: SlidersHorizontal,
-      label: "Sonido y avisos",
-      separar: true,
-      abreVentana: true,
-      accion: cam.abrirAjustes,
-    },
     silenciado
       ? {
           id: "silencio",

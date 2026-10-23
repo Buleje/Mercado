@@ -83,6 +83,46 @@ export async function kvEscribir(
   return true;
 }
 
+/**
+ * Dónde quedó lo escrito: `upstash` (lo ven todas las instancias), `memoria`
+ * (no hay Upstash: una sola instancia, es lo previsto en dev) o `respaldo`
+ * (Upstash está configurado pero falló: otra instancia NO lo ve). Para quien
+ * no debe dar algo por guardado si cayó al respaldo (la cola de alarmas).
+ */
+export type DondeQuedo = "upstash" | "memoria" | "respaldo";
+
+export async function kvEscribirDonde(clave: string, valor: unknown, segundos: number): Promise<DondeQuedo> {
+  const r = await getRedis();
+  if (r) {
+    try {
+      await r.set(clave, valor, { ex: segundos });
+      return "upstash";
+    } catch (err) {
+      logger.warn("[camaras.kv] set falló, guardo en memoria", { error: String(err) });
+    }
+  }
+  memoria.set(clave, { valor, vence: Date.now() + segundos * 1000 });
+  return r ? "respaldo" : "memoria";
+}
+
+/* Borrar sólo si el valor sigue siendo el mío, en un solo paso (si no, se borra un candado ajeno). */
+const BORRAR_SI_ES = 'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end';
+
+/** Candado con dueño: borra `clave` sólo si todavía vale `valor` (un texto). */
+export async function kvBorrarSiEs(clave: string, valor: string): Promise<boolean> {
+  const r = await getRedis();
+  if (r) {
+    try {
+      return Number(await r.eval(BORRAR_SI_ES, [clave], [valor])) > 0;
+    } catch (err) {
+      logger.warn("[camaras.kv] borrar-si-es falló, miro la memoria", { error: String(err) });
+    }
+  }
+  if (deMemoria(clave) !== valor) return false;
+  memoria.delete(clave);
+  return true;
+}
+
 /** Borra y dice si ESTE pedido fue el que la borró: es lo que hace «un solo uso» atómico. */
 export async function kvBorrar(clave: string): Promise<boolean> {
   const r = await getRedis();

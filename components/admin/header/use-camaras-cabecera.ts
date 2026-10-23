@@ -11,6 +11,8 @@
  *   pantalla) y le pasa las enlazadas. Ya abierto, sólo lo expande.
  * - «Visitantes de hoy» abre Cámaras › Personas en el modal de accesos, que
  *   arranca en el día de hoy (hora de Lima).
+ * - Los movimientos que la cámara manda a la nube avisan aunque el mosaico
+ *   esté cerrado (`use-movimientos-nube`); su «Ver» abre todas en vivo.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +23,7 @@ import { API_HIK } from "@/components/admin/forestal/camaras/use-hik-connect";
 import type { AccesoRapido } from "./accesos-rapidos";
 import { camarasEnlazadas } from "./camaras-enlazadas";
 import { useAvisosCamaras } from "./use-avisos-camaras";
+import { useMovimientosNube, type EstadoNube } from "./use-movimientos-nube";
 import { useSonidoCamaras, type SonidoCamaras } from "./use-sonido-camaras";
 
 const ID_MOSAICO = "camaras-abrir-mosaico";
@@ -41,6 +44,8 @@ export interface CamarasCabecera extends SonidoCamaras {
   ajustesAbiertos: boolean;
   abrirAjustes: () => void;
   cerrarAjustes: () => void;
+  /** Avisos de movimiento desde la nube (sin la cámara abierta). */
+  nube: EstadoNube;
 }
 
 const avisarFallo = (err: unknown) =>
@@ -64,14 +69,16 @@ export function useCamarasCabecera(
   const abrir = useCallback(() => {
     if (camaras) abrirEnModal(camaras);
   }, [camaras, abrirEnModal]);
-  const avisos = useAvisosCamaras(activo, abrir);
+  /* El «Reintentar» del mensaje y el «Ver» de un aviso de la nube llaman a la versión vigente. */
+  const reintentar = useRef<() => void>(() => undefined);
+  const verEnVivo = useCallback(() => reintentar.current(), []);
+  const avisos = useAvisosCamaras(activo, abrir, verEnVivo);
+  const nube = useMovimientosNube(activo);
   const global = useMosaicoGlobal();
   /* Algo puede sonar: el mosaico abierto (también en la burbuja) o avisos sin ver. */
   const sonido = useSonidoCamaras(activo, global?.abierto === true || avisos.sinVer > 0);
   const [abriendoMosaico, setAbriendo] = useState(false);
   const [ajustesAbiertos, setAjustes] = useState(false);
-  /* El «Reintentar» del mensaje llama a la versión vigente. */
-  const reintentar = useRef<() => void>(() => undefined);
 
   const visitantes = useCallback(() => {
     if (camaras) abrirEnModal({ ...camaras, vista: "personas", label: "Visitantes de hoy" });
@@ -127,5 +134,6 @@ export function useCamarasCabecera(
     ajustesAbiertos,
     abrirAjustes: () => setAjustes(true),
     cerrarAjustes: () => setAjustes(false),
+    nube,
   };
 }
