@@ -70,6 +70,8 @@ export interface DepsExplorador {
   personalizar: (f: DbDocumentFolder) => void;
   compartir: (f: DbDocumentFolder) => void;
   armarExpediente?: (f: DbDocumentFolder) => void;
+  /** «Vincular a un tercero…»: la carpeta pasa a verse en la pestaña Terceros (ADR-502, por etiqueta). */
+  vincularTercero?: (f: DbDocumentFolder) => void;
   eliminarCarpetas: (fs: DbDocumentFolder[]) => void;
   zip: (docs: DbDocument[], nombre: string) => Promise<void>;
   verDoc: (d: DbDocument) => void;
@@ -180,7 +182,7 @@ export function useExplorador(d: DepsExplorador) {
   const menus = useMenusExplorador({
     acceso, acc, sel, porId, hijos, totalCarpetas: carpetas.length, docPorId,
     irACarpeta: d.irACarpeta, verDoc: d.verDoc, updateFolder: d.updateFolder, upload: d.upload, zip: d.zip,
-    personalizar: d.personalizar, compartir: d.compartir, armarExpediente: d.armarExpediente, accionesDoc: d.accionesDoc, estados: d.estados, lote: d.lote,
+    personalizar: d.personalizar, compartir: d.compartir, armarExpediente: d.armarExpediente, vincularTercero: d.vincularTercero, accionesDoc: d.accionesDoc, estados: d.estados, lote: d.lote,
     etiquetaEstado, seleccionDocs: d.seleccion, alternarSeleccion: d.alternarSeleccion,
     fondo: () => ({
       vista: d.vista,

@@ -407,6 +407,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "contratos", key: "crear", label: "Crear Contrato", hint: "Redactar un contrato nuevo", origen: ["contratos", "documentos"] },
     // Modos del drive. No están todos: se declaran los que alguien buscaría por
     // nombre, no los catorce estados internos del componente.
+    { vista: "drive", key: "terceros", label: "Documentos de terceros", hint: "Las carpetas vinculadas a una persona, proveedor, cliente, colaborador o comunidad" },
     { vista: "drive", key: "favorites", label: "Documentos favoritos", hint: "Los archivos marcados" },
     { vista: "drive", key: "expiring", label: "Documentos por vencer", hint: "Lo que caduca pronto" },
     { vista: "drive", key: "trash", label: "Papelera de documentos", hint: "Archivos borrados, para restaurar" },

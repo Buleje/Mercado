@@ -7,10 +7,11 @@
 
 import {
   ArrowDown, ArrowUp, CheckSquare, ClipboardPaste, Eye, FileArchive, FolderArchive, FolderOpen, FolderPlus, ImageOff, ImagePlus,
-  Info, Link2, Palette, Pencil, Pin, PinOff, Scissors, Share2, Trash2,
+  Info, Link2, Palette, Pencil, Pin, PinOff, Scissors, Share2, Trash2, UserPlus,
 } from "@buleje/design-system/icons";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { esImagenConvertible, esImagenRenderizable } from "@/lib/documents/tipos-archivo";
+import { esTagDeVinculo } from "@/lib/documentos/terceros-vinculo";
 import type { ExtraDelMenu } from "../MenuDocumento";
 import { docDeIconoCarpeta } from "../folder-visuals";
 import { SEP, type ItemMenu } from "./item-menu";
@@ -32,6 +33,8 @@ export interface AccionesCarpeta {
   descargar: (f: DbDocumentFolder) => void;
   /** «Armar expediente»: la carpeta (y sus subcarpetas, si quieres) en UN PDF con portada e índice. */
   armarExpediente?: (f: DbDocumentFolder) => void;
+  /** «Vincular a un tercero…» (o «Terceros vinculados…» si ya tiene): sólo si el rol puede etiquetar carpetas. */
+  vincularTercero?: (f: DbDocumentFolder) => void;
   eliminar: (f: DbDocumentFolder) => void;
   cortar: (f: DbDocumentFolder) => void;
   /** Hay algo cortado: se ofrece «Pegar aquí» (lo mete en esta carpeta). */
@@ -79,6 +82,14 @@ export function itemsDeCarpeta(f: DbDocumentFolder, a: AccionesCarpeta): ItemMen
     },
     ...(a.armarExpediente
       ? [{ id: "expediente", label: "Armar expediente (PDF)", Icon: FolderArchive, onSelect: () => a.armarExpediente?.(f) } satisfies ItemMenu]
+      : []),
+    ...(a.vincularTercero
+      ? [{
+          id: "tercero",
+          label: (f.tags ?? []).some(esTagDeVinculo) ? "Terceros vinculados…" : "Vincular a un tercero…",
+          Icon: UserPlus,
+          onSelect: () => a.vincularTercero?.(f),
+        } satisfies ItemMenu]
       : []),
     SEP("s3"),
     { id: "eliminar", label: "Eliminar", Icon: Trash2, peligro: true, atajo: "Supr", onSelect: () => a.eliminar(f) },

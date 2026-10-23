@@ -2340,6 +2340,47 @@ export class DocumentsDB {
     return logs.map(mapAuditLog);
   }
 
+  /**
+   * Cuántas veces se abrió algo de cada carpeta en los últimos `dias` (eventos
+   * `view` del registro) y cuándo fue la última. Es el «lo más usado» de la
+   * pestaña Terceros del Archivo: 370 aperturas en `main` y 310 en Blas al
+   * 23-10, que ya estaban anotadas y nadie leía. Sólo carpetas que el rol ve,
+   * y sólo documentos que el rol ve (doc + cadena de carpetas).
+   */
+  static async vistasPorCarpeta(
+    tenantId: string,
+    dias = 90,
+    viewerRole?: string,
+  ): Promise<Record<string, { vistas: number; ultima: string | null }>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const desde = new Date(Date.now() - Math.max(1, dias) * 86_400_000);
+    const grupos = await prisma.documentAuditLog.groupBy({
+      by: ["documentId"],
+      where: { tenantId, action: "view", createdAt: { gte: desde } },
+      _count: { _all: true },
+      _max: { createdAt: true },
+    });
+    if (grupos.length === 0) return {};
+    const docs = await prisma.document.findMany({
+      where: { tenantId, id: { in: grupos.map((g) => g.documentId) }, deletedAt: null, folderId: { not: null } },
+      select: { id: true, folderId: true, allowedRoles: true },
+    });
+    const visibles = filtraPorRol(viewerRole) ? await soloVisibles(tenantId, docs, viewerRole) : docs;
+    const carpetaDe = new Map(visibles.map((d) => [d.id, d.folderId as string]));
+    const uso: Record<string, { vistas: number; ultima: string | null }> = {};
+    for (const g of grupos) {
+      const carpeta = carpetaDe.get(g.documentId);
+      if (!carpeta) continue;
+      const ultima = g._max.createdAt?.toISOString() ?? null;
+      const previo = uso[carpeta] ?? { vistas: 0, ultima: null };
+      uso[carpeta] = {
+        vistas: previo.vistas + g._count._all,
+        ultima: previo.ultima && ultima ? (previo.ultima > ultima ? previo.ultima : ultima) : (previo.ultima ?? ultima),
+      };
+    }
+    return uso;
+  }
+
   /** Feed de actividad global del tenant (cross-documento), con nombre del doc. */
   static async recentActivity(tenantId: string, limit = 40, viewerRole?: string): Promise<DbDocumentActivity[]> {
     const take = Math.min(200, Math.max(1, limit));

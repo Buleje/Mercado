@@ -394,7 +394,7 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       constante: /export const SECCIONES_SEGUIMIENTO = \[([^\]]+)\]/,
     },
     "documentos/drive": {
-      archivo: "components/admin/documentos/DocumentosModule.tsx",
+      archivo: "components/admin/documentos/archivo/compartido.tsx",
       constante: /const DRIVE_MODOS = \[([\s\S]*?)\] as const;/,
     },
     // Acá los ids no están en un array literal sino en `const TABS = [...]`
