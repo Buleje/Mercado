@@ -56,6 +56,11 @@ export type RegistrarFirmaInput = {
   consentimiento?: string | null;
   trazos?: unknown;
   idempotencyKey?: string | null;
+  /** (ADR-513) "passkey" = huella del celular; null = se lee por el canal. */
+  metodo?: string | null;
+  credentialId?: string | null;
+  /** (ADR-513) Lo que firmó el celular (`ConstanciaPasskey`). */
+  constancia?: unknown;
 };
 
 /** Interno: no sale a la red (lleva ids). */
@@ -63,6 +68,8 @@ export type EnlaceResuelto = {
   enlaceId: string;
   tenantId: string;
   adelantoId: string;
+  /** (ADR-513) La persona del adelanto: sus passkeys se buscan por acá. */
+  beneficiarioId: string;
   estado: EstadoEnlace;
   pideHuella: boolean;
   /** `limpiarDocumento` de la ficha al crear el enlace; null = la ficha no tenía. */
@@ -86,9 +93,19 @@ const SELECT_FIRMA = {
   codigoOperacion: true,
   pedidoPor: true,
   sha256: true,
+  metodo: true,
+  constancia: true,
   createdAt: true,
 } satisfies Prisma.AdelantoFirmaSelect;
 type FilaFirma = Prisma.AdelantoFirmaGetPayload<{ select: typeof SELECT_FIRMA }>;
+
+/** (ADR-513) De la constancia v2 sólo sale de dónde vino la llave; la constancia no viaja al panel. */
+function llaveDeConstancia(c: unknown): FirmaRegistrada["llave"] {
+  const r = c && typeof c === "object" ? (c as { registro?: unknown }).registro : null;
+  if (!r || typeof r !== "object") return null;
+  const { mismoEnlace, registradaEn } = r as { mismoEnlace?: unknown; registradaEn?: unknown };
+  return { mismoEnlace: typeof mismoEnlace === "boolean" ? mismoEnlace : null, registradaEn: typeof registradaEn === "string" ? registradaEn : null };
+}
 
 function mapFirma(f: FilaFirma, vigente: boolean): FirmaRegistrada {
   return {
@@ -103,6 +120,8 @@ function mapFirma(f: FilaFirma, vigente: boolean): FirmaRegistrada {
     pedidoPor: f.pedidoPor,
     creadoEn: f.createdAt.toISOString(),
     sha256: f.sha256,
+    metodo: f.metodo,
+    llave: f.metodo ? llaveDeConstancia(f.constancia) : null,
     vigente,
     src: `/api/adelantos/${encodeURIComponent(f.adelantoId)}/firmas/${encodeURIComponent(f.id)}/imagen`,
   };
@@ -164,8 +183,14 @@ function dataDeFirma(tenantId: string, input: RegistrarFirmaInput): Prisma.Adela
     consentimiento: input.consentimiento ?? null,
     ...(input.trazos != null ? { trazos: input.trazos as Prisma.InputJsonValue } : {}),
     idempotencyKey: input.idempotencyKey?.trim() || null,
+    metodo: input.metodo ?? null,
+    credentialId: input.credentialId ?? null,
+    ...(input.constancia != null ? { constancia: input.constancia as Prisma.InputJsonValue } : {}),
   };
 }
+
+/** (ADR-513) El contador de la passkey no subió como se esperaba (otra confirmación ganó, o un clon): se deshace todo. */
+class ContadorPasskeyError extends Error {}
 
 export const AdelantoFirmasDB = {
   /**
@@ -334,13 +359,14 @@ export const AdelantoFirmasDB = {
     if (!TOKEN_RE.test(token)) return null;
     const e = await prisma.adelantoEnlaceFirma.findUnique({
       where: { tokenHash: hashToken(token) },
-      include: { adelanto: { select: { status: true, montoAdelantado: true, moneda: true, codigoOperacion: true } } },
+      include: { adelanto: { select: { status: true, montoAdelantado: true, moneda: true, codigoOperacion: true, beneficiarioId: true } } },
     });
     if (!e) return null;
     return {
       enlaceId: e.id,
       tenantId: e.tenantId,
       adelantoId: e.adelantoId,
+      beneficiarioId: e.adelanto.beneficiarioId,
       estado: estadoDeEnlace(e, e.adelanto.status),
       pideHuella: e.pideHuella,
       documentoEsperado: e.firmanteDocumento ? limpiarDocumento(e.firmanteDocumento) || null : null,
@@ -413,11 +439,31 @@ export const AdelantoFirmasDB = {
    * adelanto no anulado) y los INSERT van en UNA transacción. Dos POST a la vez:
    * el segundo espera el lock de la fila, ve `usadoEn` y vuelve «usado» — quien
    * llama borra lo que subió.
+   *
+   * (ADR-513) Con `contador` (huella por passkey), el contador de la llave sube
+   * en LA MISMA transacción y sólo si sigue valiendo lo que se leyó al
+   * verificar: dos confirmaciones a la vez con la misma llave → una sola anota y
+   * la otra vuelve «contador_bajo» sin dejar nada.
    */
   async firmarPorEnlace(
     tenantId: string,
     enlaceId: string,
     filas: RegistrarFirmaInput[],
+    contador?: { passkeyId: string; anterior: number; nuevo: number },
+  ): Promise<"ok" | "usado" | "vencido" | "revocado" | "anulado" | "contador_bajo"> {
+    try {
+      return await AdelantoFirmasDB.firmarPorEnlaceTx(tenantId, enlaceId, filas, contador);
+    } catch (e) {
+      if (e instanceof ContadorPasskeyError) return "contador_bajo";
+      throw e;
+    }
+  },
+
+  async firmarPorEnlaceTx(
+    tenantId: string,
+    enlaceId: string,
+    filas: RegistrarFirmaInput[],
+    contador?: { passkeyId: string; anterior: number; nuevo: number },
   ): Promise<"ok" | "usado" | "vencido" | "revocado" | "anulado"> {
     return prisma.$transaction(async (tx) => {
       const ahora = new Date();
@@ -439,6 +485,13 @@ export const AdelantoFirmasDB = {
         if (!e.usadoEn && e.intentosFallidos >= MAX_INTENTOS_DNI_ENLACE) return "revocado" as const;
         const estado = estadoDeEnlace(e, e.adelanto.status, ahora);
         return estado === "pendiente" ? ("usado" as const) : estado;
+      }
+      if (contador) {
+        const sube = await tx.adelantoPasskey.updateMany({
+          where: { tenantId, id: contador.passkeyId, revokedAt: null, counter: BigInt(contador.anterior) },
+          data: { counter: BigInt(contador.nuevo), lastUsedAt: ahora },
+        });
+        if (sube.count !== 1) throw new ContadorPasskeyError("el contador de la passkey cambió");
       }
       for (const f of filas) {
         await tx.adelantoFirma.create({ data: dataDeFirma(tenantId, { ...f, canal: "ENLACE", enlaceId }), select: { id: true } });

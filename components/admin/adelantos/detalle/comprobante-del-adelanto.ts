@@ -8,13 +8,22 @@
  * decía «— declara haber recibido…».
  */
 
-import { leerMembrete } from "@/lib/admin/membrete-cliente";
-import { armarComprobante, metodoDeHuella, type DatosComprobante, type FirmaEnPapel } from "@/lib/adelantos/comprobante";
+import {
+  armarComprobante,
+  diaYHoraCortos,
+  metodoDeHuella,
+  type DatosComprobante,
+  type FirmaEnPapel,
+  type FormatoComprobante,
+  type HuellaEnPapel,
+} from "@/lib/adelantos/comprobante";
+import { METODO_PASSKEY, textoLlavePasskey } from "@/lib/adelantos/passkey-tipos";
 import { momentoDeLaFoto } from "@/lib/adelantos/recibo-whatsapp";
 import type { FirmaRegistrada, RegistroFirmasRespuesta } from "@/lib/adelantos/entregar-tipos";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
 import { esComprobantePdf, esReciboFirmado, fechaHoraLima, limpiarDocumento, srcDelComprobante } from "@/lib/adelantos/recibo-firmado";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
+import { membreteDelDocumento } from "@/lib/documentos/membrete-cargar";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { logger } from "@/lib/logger";
 import { imagenComoJpeg } from "../firma/hoja-firma";
@@ -35,6 +44,17 @@ export function datosDelComprobante(a: DbAdelanto, negocio?: string | null): Dat
     negocio: negocio?.trim() || undefined,
     direccion,
     conceptoRecibido: concepto,
+    vence: a.fechaVencimiento ?? null,
+    liquidado: a.totalEntregado,
+    saldo: a.saldoPendiente,
+    piesTablares: a.piesTablares ?? null,
+    entregasPactadas: (a.entregasPactadas ?? []).map((p) => ({
+      numero: p.numero,
+      descripcion: p.descripcionEsperada,
+      valor: p.valorEsperado,
+      fecha: p.fechaEsperada ?? null,
+      cumplida: !!p.cumplidaEn,
+    })),
   };
 }
 
@@ -80,8 +100,8 @@ function comoJpeg(src: string, que: string): Promise<string | undefined> {
  * registro, la hoja firmada vieja (legado) como antes. Lo que no se pueda leer
  * queda en el rastro y el papel sale igual.
  */
-export async function imprimirComprobante(a: DbAdelanto): Promise<void> {
-  const doc = await armarReciboDelAdelanto(a);
+export async function imprimirComprobante(a: DbAdelanto, formato?: FormatoComprobante): Promise<void> {
+  const doc = await armarReciboDelAdelanto(a, { formato });
   doc.save(nombreDelRecibo(a));
 }
 
@@ -100,14 +120,33 @@ export async function reciboComoArchivo(a: DbAdelanto): Promise<File> {
   return new File([doc.output("blob")], nombreDelRecibo(a), { type: "application/pdf" });
 }
 
-async function armarReciboDelAdelanto(a: DbAdelanto, copia: { taparDocumento?: boolean } = {}) {
-  const [membrete, firmas] = await Promise.all([leerMembrete(), leerRegistro(a.id)]);
+/** La casilla de la huella: la foto, o (ADR-513) el texto de la passkey y de dónde salió su llave. */
+function huellaEnPapel(huella: FirmaRegistrada | null, imagen: string | undefined): HuellaEnPapel | undefined {
+  if (!huella) return undefined;
+  const cuando = fechaHoraLima(new Date(huella.creadoEn));
+  if (huella.metodo === METODO_PASSKEY) {
+    return { passkey: true, confirmadaEn: diaYHoraCortos(cuando), metodo: "passkey", ...(huella.llave ? { llave: textoLlavePasskey(huella.llave) } : {}) };
+  }
+  return imagen ? { imagen, metodo: metodoDeHuella(huella.canal), fechaHora: cuando.replace(/^\S+\s/, "") } : undefined;
+}
+
+/** Sin membrete (la ruta no respondió), el papel sale igual: nombre vacío y monograma. */
+function membreteONulo() {
+  return membreteDelDocumento().catch((e: unknown) => {
+    logger.warn("[adelantos] el recibo sale sin membrete", { error: String(e) });
+    return null;
+  });
+}
+
+async function armarReciboDelAdelanto(a: DbAdelanto, copia: { taparDocumento?: boolean; formato?: FormatoComprobante } = {}) {
+  const [membrete, firmas] = await Promise.all([membreteONulo(), leerRegistro(a.id)]);
   const { firma, huella } = vigentesDelRegistro(firmas ?? []);
   const recibo = esReciboFirmado(a.comprobanteUrl);
   const foto = srcDelComprobante(a);
   const [imgFirma, imgHuella, hojaFirmada, voucher] = await Promise.all([
     firma ? comoJpeg(firma.src, "la firma") : undefined,
-    huella ? comoJpeg(huella.src, "la huella") : undefined,
+    /* (ADR-513) La huella por passkey no tiene imagen: no se pide. */
+    huella && huella.metodo !== METODO_PASSKEY ? comoJpeg(huella.src, "la huella") : undefined,
     /* La hoja es privada: pasa por `GET /api/adelantos/<id>/comprobante`. */
     !firma && recibo && foto ? comoJpeg(foto, "la hoja firmada") : undefined,
     /* Un voucher en PDF (10-10) no se pinta en el papel: se abre aparte. */
@@ -115,12 +154,14 @@ async function armarReciboDelAdelanto(a: DbAdelanto, copia: { taparDocumento?: b
   ]);
   const tomada = momentoDeLaFoto(a.comprobanteUrl);
   return armarComprobante({
-    ...datosDelComprobante(a, membrete.nombre),
+    ...datosDelComprobante(a, membrete?.nombre),
+    membrete,
+    formato: copia.formato,
     taparDocumento: copia.taparDocumento,
     ...(firma && imgFirma
       ? { firma: firmaEnPapelDelRegistro(firma, imgFirma), montoFirmado: firma.monedaFirmada === a.moneda ? firma.montoFirmado : null }
       : {}),
-    ...(imgHuella && huella ? { huella: { imagen: imgHuella, metodo: metodoDeHuella(huella.canal), fechaHora: fechaHoraLima(new Date(huella.creadoEn)).replace(/^\S+\s/, "") } } : {}),
+    ...(huellaEnPapel(huella, imgHuella) ? { huella: huellaEnPapel(huella, imgHuella) } : {}),
     hojaFirmada,
     voucher,
     ...(voucher && tomada ? { voucherFechaHora: fechaHoraLima(tomada) } : {}),

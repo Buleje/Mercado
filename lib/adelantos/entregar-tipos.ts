@@ -79,6 +79,10 @@ export interface FirmaRegistrada {
   /** ISO. */
   creadoEn: string;
   sha256: string;
+  /** (ADR-513) "passkey" = huella confirmada con el celular (no hay imagen); null/ausente = se lee por el canal. */
+  metodo?: string | null;
+  /** (ADR-513, revisión 23-10) De dónde salió la llave de la passkey: con este mismo enlace (prueba más débil) u otro, y cuándo. */
+  llave?: { mismoEnlace: boolean | null; registradaEn: string | null } | null;
   vigente: boolean;
   /** `/api/adelantos/<id>/firmas/<firmaId>/imagen` */
   src: string;

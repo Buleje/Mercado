@@ -15,11 +15,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { FileSignature, RefreshCw, Stamp } from "@buleje/design-system/icons";
+import { FileSignature, Fingerprint, RefreshCw, Stamp } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { rotuloDocumento } from "@/lib/adelantos/comprobante";
 import type { CanalFirma, FirmaRegistrada, RegistroFirmasRespuesta } from "@/lib/adelantos/entregar-tipos";
 import { fechaHoraLima } from "@/lib/adelantos/recibo-firmado";
+import { METODO_PASSKEY, TEXTO_CONFIRMADO_PASSKEY, textoLlavePasskey } from "@/lib/adelantos/passkey-tipos";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { logger } from "@/lib/logger";
 import { fmtMon } from "../shared";
@@ -118,22 +119,30 @@ export default function RegistroFirmas({
 
 function FilaFirma({ f, monto, moneda }: { f: FirmaRegistrada; monto: number; moneda: string }) {
   const huella = f.tipo === "HUELLA";
+  /* (ADR-513) La passkey no tiene imagen: la confirmó el aparato registrado para la persona. */
+  const passkey = f.metodo === METODO_PASSKEY;
   const otroMonto = f.monedaFirmada !== moneda || Math.abs(f.montoFirmado - monto) >= 0.005;
   return (
     <li className="flex items-start gap-3 rounded-2xl border border-[var(--rule-soft)] px-3 py-2.5" data-firma={f.id} data-vigente={f.vigente || undefined}>
-      <a href={f.src} target="_blank" rel="noopener noreferrer" title={`Ver la ${huella ? "huella" : "firma"} completa`} className="shrink-0">
-        {/* eslint-disable-next-line @next/next/no-img-element -- imagen privada servida por la API, con sesión */}
-        <img
-          src={f.src}
-          alt={`${huella ? "Huella" : "Firma"} de ${f.firmanteNombre}`}
-          className={`${huella ? "h-14 w-11" : "h-12 w-20"} rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] object-contain`}
-        />
-      </a>
+      {passkey ? (
+        <span className="flex h-14 w-11 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)]" title={TEXTO_CONFIRMADO_PASSKEY}>
+          <Fingerprint className="h-6 w-6 text-[var(--accent-dark)]" aria-hidden />
+        </span>
+      ) : (
+        <a href={f.src} target="_blank" rel="noopener noreferrer" title={`Ver la ${huella ? "huella" : "firma"} completa`} className="shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element -- imagen privada servida por la API, con sesión */}
+          <img
+            src={f.src}
+            alt={`${huella ? "Huella" : "Firma"} de ${f.firmanteNombre}`}
+            className={`${huella ? "h-14 w-11" : "h-12 w-20"} rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] object-contain`}
+          />
+        </a>
+      )}
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-[var(--text-primary)]">
           {huella ? <Stamp className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden /> : <FileSignature className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />}
           <span className="min-w-0 truncate">
-            {huella ? "Huella" : "Firma"} · {f.firmanteNombre}
+            {passkey ? TEXTO_CONFIRMADO_PASSKEY : huella ? "Huella" : "Firma"} · {f.firmanteNombre}
           </span>
           <span
             className={
@@ -148,6 +157,9 @@ function FilaFirma({ f, monto, moneda }: { f: FirmaRegistrada; monto: number; mo
         <p className="text-sm text-[var(--text-secondary)]">
           {CANAL[f.canal]} · {fechaHoraLima(new Date(f.creadoEn))}
           {f.firmanteDocumento ? ` · ${rotuloDocumento(f.firmanteDocumento)}` : ""}
+          {passkey && f.llave ? (
+            <span className={f.llave.mismoEnlace ? "font-semibold text-[var(--data-warning-ink)]" : undefined}> · {textoLlavePasskey(f.llave)}</span>
+          ) : null}
         </p>
         <p className="text-xs text-[var(--text-tertiary)]">
           <span className="font-mono" title={`sha256 ${f.sha256}`}>

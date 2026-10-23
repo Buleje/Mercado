@@ -9,6 +9,10 @@ import { limpiarDocumento } from "@/lib/adelantos/recibo-firmado";
 import { imagenesDeFirma, jsonDe, leerMultipartFirma } from "@/lib/adelantos/imagen-firma.server";
 import { borrarSubidas, subirParaRegistro, type Subida } from "@/lib/adelantos/guardar-en-registro.server";
 import { AdelantoFirmasDB, type RegistrarFirmaInput } from "@/lib/db/adelanto-firmas.db";
+import { comoConfirmacion, PasskeyAlFirmarSchema } from "@/lib/adelantos/passkey-schema";
+import { contextoDe, fallaPasskey, rpDelPedido } from "@/lib/adelantos/passkey-enlace.server";
+import { filaDeConstancia, verificarConfirmacion, type ConfirmacionPasskey } from "@/lib/adelantos/passkey.server";
+import { METODO_PASSKEY, VERSION_CONSENTIMIENTO_PASSKEY } from "@/lib/adelantos/passkey-tipos";
 
 /**
  * POST /api/public/adelantos/[token]/firmar — la persona firma el recibo del
@@ -20,6 +24,11 @@ import { AdelantoFirmasDB, type RegistrarFirmaInput } from "@/lib/db/adelanto-fi
  *
  * La respuesta nunca lleva ids (ni del adelanto ni del negocio): un token no
  * abre la puerta a otro adelanto.
+ *
+ * (ADR-513) La huella puede llegar como foto (`huella`) o como la confirmación
+ * de la passkey del celular (`passkey`, JSON): se verifica acá, contra el reto
+ * de un uso atado a este adelanto y monto, y el contador de la llave sube en la
+ * misma transacción que la firma. Nunca las dos a la vez.
  */
 const MENSAJES: Record<CodigoErrorPublico, string> = {
   no_encontrado: "Este enlace no existe. Pide uno nuevo a quien te dio el adelanto.",
@@ -56,7 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   if (!enlace) return falla("no_encontrado", 404);
   if (enlace.estado !== "pendiente") return falla(enlace.estado, STATUS_ESTADO[enlace.estado]);
 
-  const leido = await leerMultipartFirma(req, { archivos: ["firma", "huella"], textos: ["datos"] });
+  const leido = await leerMultipartFirma(req, { archivos: ["firma", "huella"], textos: ["datos", "passkey"] });
   if (!leido.ok) return NextResponse.json({ error: leido.error, ...(leido.issues ? { issues: leido.issues } : {}) }, { status: leido.status });
   const parsed = FirmarPublicoDatosSchema.safeParse(jsonDe(leido.textos.datos));
   if (!parsed.success) {
@@ -74,8 +83,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     return falla("dni_no_coincide", 422, revocado ? `${MENSAJES.dni_no_coincide} El enlace se bloqueó: pide uno nuevo.` : undefined);
   }
   if (!leido.archivos.firma) return NextResponse.json({ error: "Falta tu firma." }, { status: 400 });
-  if (enlace.pideHuella && !leido.archivos.huella) return falla("falta_huella", 422);
+  const conPasskey = typeof leido.textos.passkey === "string" && leido.textos.passkey.length > 0;
+  if (conPasskey && leido.archivos.huella) {
+    return NextResponse.json({ error: "Manda la foto de tu huella o la confirmación del celular, no las dos." }, { status: 400 });
+  }
+  if (enlace.pideHuella && !leido.archivos.huella && !conPasskey) return falla("falta_huella", 422);
   if (leido.archivos.huella && !d.consentimientoHuella) return falla("falta_consentimiento", 422);
+
+  /* La passkey se verifica ANTES de subir nada: el reto se consume acá. */
+  let pk: ConfirmacionPasskey | null = null;
+  if (conPasskey) {
+    const pp = PasskeyAlFirmarSchema.safeParse(jsonDe(leido.textos.passkey));
+    if (!pp.success) return fallaPasskey("datos_invalidos", 400);
+    const rp = rpDelPedido(req);
+    if (!rp) return fallaPasskey("origen_no_permitido", 403);
+    let v: Awaited<ReturnType<typeof verificarConfirmacion>>;
+    try {
+      v = await verificarConfirmacion(contextoDe(enlace, rp), comoConfirmacion(pp.data.respuesta));
+    } catch (e) {
+      logger.error("[public/adelantos/firmar] passkey error", { error: e instanceof Error ? e.message : String(e) });
+      return NextResponse.json({ error: "No se pudo verificar la huella del celular. Prueba de nuevo." }, { status: 503 });
+    }
+    if (!v.ok) return fallaPasskey(v.code, v.status);
+    pk = v;
+  }
 
   const imgs = await imagenesDeFirma(leido.archivos);
   if ("error" in imgs) return falla(imgs.code, imgs.status, imgs.error);
@@ -94,6 +125,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || null;
   const userAgent = req.headers.get("user-agent")?.slice(0, 400) ?? null;
+  const base = {
+    adelantoId: enlace.adelantoId,
+    canal: "ENLACE" as const,
+    firmanteNombre: d.firmante.nombre,
+    firmanteDocumento: documento,
+    montoFirmado: enlace.montoAdelantado,
+    monedaFirmada: enlace.moneda,
+    codigoOperacion: enlace.codigoOperacion,
+    pedidoPor: enlace.creadoPor,
+    enlaceId: enlace.enlaceId,
+    ip,
+    userAgent,
+  };
   const filas: RegistrarFirmaInput[] = aSubir.map((s, i) => {
     const sub = subidas[i] as Subida;
     return {
@@ -119,10 +163,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       idempotencyKey: `enlace:${enlace.enlaceId}:${s.tipo}`,
     };
   });
+  if (pk) {
+    filas.push({
+      ...base,
+      tipo: "HUELLA",
+      ...filaDeConstancia(enlace.tenantId, enlace.adelantoId, pk.constancia),
+      consentimiento: VERSION_CONSENTIMIENTO_PASSKEY,
+      metodo: METODO_PASSKEY,
+      credentialId: pk.passkey.credentialId,
+      constancia: pk.constancia,
+      idempotencyKey: `enlace:${enlace.enlaceId}:HUELLA`,
+    });
+  }
 
   let r: Awaited<ReturnType<typeof AdelantoFirmasDB.firmarPorEnlace>>;
   try {
-    r = await AdelantoFirmasDB.firmarPorEnlace(enlace.tenantId, enlace.enlaceId, filas);
+    r = await AdelantoFirmasDB.firmarPorEnlace(
+      enlace.tenantId,
+      enlace.enlaceId,
+      filas,
+      pk ? { passkeyId: pk.passkey.id, anterior: pk.passkey.counter, nuevo: pk.contadorNuevo } : undefined,
+    );
   } catch (e) {
     await borrarSubidas(subidas);
     logger.error("[public/adelantos/firmar] firmar error", { err: e instanceof Error ? e.message : String(e) });
@@ -130,13 +191,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   }
   if (r !== "ok") {
     await borrarSubidas(subidas);
+    if (r === "contador_bajo") return fallaPasskey("contador_bajo", 409);
     return falla(r, STATUS_ESTADO[r]);
   }
 
   logActivity(
     "Firmar",
     "adelanto",
-    `Adelanto ${enlace.codigoOperacion ?? enlace.adelantoId}: firmado por enlace en el celular${imgs.huella ? " (con huella)" : ""}`,
+    `Adelanto ${enlace.codigoOperacion ?? enlace.adelantoId}: firmado por enlace en el celular${pk ? ` (lo confirmó el aparato registrado para la persona, passkey; ${pk.constancia.registro.mismoEnlace ? "llave registrada con este mismo enlace" : "llave registrada con otro enlace"})` : imgs.huella ? " (con huella)" : ""}`,
     enlace.adelantoId,
     "enlace de firma",
     undefined,

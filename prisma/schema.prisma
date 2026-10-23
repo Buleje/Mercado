@@ -85,6 +85,7 @@ model Tenant {
   /// ADR-491: registro de firmas/huellas (solo de agregar) y enlaces de firma.
   adelantoFirmas         AdelantoFirma[]
   adelantoEnlacesFirma   AdelantoEnlaceFirma[]
+  adelantoPasskeys       AdelantoPasskey[]
   stores                 Store[]
   featureFlags           TenantFeatureFlag[]
   piezas                 TenantPieza[]
@@ -5622,6 +5623,8 @@ model AdelantoBeneficiario {
   adelantos          Adelanto[]
   recurrentes        AdelantoRecurrente[]
   gestiones          AdelantoGestion[]
+  /// ADR-513: las passkeys de su celular (huella con la que desbloquea el teléfono).
+  passkeys           AdelantoPasskey[]
 
   @@index([tenantId])
   @@index([tenantId, nombre])
@@ -5802,6 +5805,16 @@ model AdelantoFirma {
   /// Trazos normalizados de la firma (`Trazo[]`), solo en FIRMA.
   trazos            Json?
   idempotencyKey    String?
+  /// (ADR-513) Cómo se tomó: null = se lee por el canal (cámara/celular/hoja);
+  /// "passkey" = la huella con la que se desbloquea el celular de la persona.
+  /// Texto y no enum: un valor nuevo de enum rompe al Prisma viejo de producción.
+  metodo            String?
+  /// (ADR-513) La passkey (base64url) que firmó; sólo con metodo "passkey" (CHECK).
+  credentialId      String?
+  /// (ADR-513) Lo que firmó el celular (clientDataJSON, authenticatorData,
+  /// signature, contador, rpId, origen): se puede volver a verificar con la llave
+  /// pública de `AdelantoPasskey`. `sha256`/`bytes` son de este JSON.
+  constancia        Json?
   createdAt         DateTime             @default(now())
   tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   adelanto          Adelanto             @relation(fields: [tenantId, adelantoId], references: [tenantId, id], onDelete: NoAction)
@@ -5838,6 +5851,43 @@ model AdelantoEnlaceFirma {
 
   @@unique([tenantId, id])
   @@index([tenantId, adelantoId, createdAt(sort: Desc)])
+}
+
+/// ADR-513: la passkey (WebAuthn) del celular de la persona que recibe un
+/// adelanto. Prueba que quien confirma es el DUEÑO DE ESE CELULAR (lo desbloqueó
+/// con su huella o su PIN); la web nunca recibe la imagen de la huella.
+/// Vale para UN dominio (`rpId`): si el panel cambia de dominio, se registra de
+/// nuevo. Nunca se borra desde la app: revocar = `revokedAt` (las huellas ya
+/// firmadas se siguen pudiendo verificar con `publicKey`).
+model AdelantoPasskey {
+  id             String               @id @default(cuid())
+  tenantId       String
+  beneficiarioId String
+  /// base64url, como lo devuelve el celular.
+  credentialId   String
+  /// Llave pública COSE.
+  publicKey      Bytes
+  /// Contador de firmas del autenticador: nunca baja (si baja, es un clon). CHECK >= 0.
+  counter        BigInt               @default(0)
+  transports     String[]             @default([])
+  rpId           String
+  /// Legado (filas de QA del 23-10): el nombre que mandaba el navegador. Las nuevas lo dejan en null.
+  deviceName     String?
+  /// (ADR-513, revisión 23-10) El enlace de firma con que se registró: firmar con el MISMO enlace es prueba más débil.
+  enlaceId          String?
+  /// IP del pedido que la registró (rastro de auditoría; no sale a la ficha).
+  registroIp        String?
+  /// Navegador que la registró: la ficha muestra el sistema que él declara, rotulado así.
+  registroUserAgent String?
+  createdAt      DateTime             @default(now())
+  lastUsedAt     DateTime?
+  revokedAt      DateTime?
+  revokedBy      String?
+  tenant         Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  beneficiario   AdelantoBeneficiario @relation(fields: [beneficiarioId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, credentialId])
+  @@index([tenantId, beneficiarioId, rpId])
 }
 
 enum AdelantoFirmaTipo {

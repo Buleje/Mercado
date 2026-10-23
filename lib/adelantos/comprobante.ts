@@ -18,6 +18,9 @@
 import { formatCurrency } from "@/lib/currency";
 import { direccionDe, ETIQUETA_CONCEPTO, type AdelantoConceptoRecibido } from "@/lib/adelantos/direccion";
 import type { CanalFirma } from "@/lib/adelantos/entregar-tipos";
+import { TEXTO_CONFIRMADO_PASSKEY } from "@/lib/adelantos/passkey-tipos";
+import type { MembreteDocumento } from "@/lib/documentos/membrete-pdf";
+import { logger } from "@/lib/logger";
 
 export interface DatosComprobante {
   codigoOperacion?: string | null;
@@ -71,6 +74,34 @@ export interface DatosComprobante {
   voucher?: string;
   /** (23-10) Cuándo se tomó esa foto, ya escrita («jueves 23/10/2026 · 14:05»): va en el título de su página. */
   voucherFechaHora?: string;
+  /** (23-10) Cuándo vence (date-only o ISO): va en el detalle. */
+  vence?: string | null;
+  /** (23-10) Lo ya liquidado y lo que falta: el detalle los dice sólo si ya hubo entregas. */
+  liquidado?: number | null;
+  saldo?: number | null;
+  /** (23-10) Pies tablares pactados (forestal), en el detalle. */
+  piesTablares?: number | null;
+  /** (23-10) Las entregas pactadas, en una tabla chica debajo del detalle. */
+  entregasPactadas?: EntregaPactadaEnPapel[];
+  /**
+   * (23-10) El membrete del negocio: logo (o monograma), nombre, RUC y datos.
+   * `undefined` = `descargarComprobante` lo trae solo; `null` = sin membrete
+   * (sale el nombre de `negocio` con el monograma).
+   */
+  membrete?: MembreteDocumento | null;
+  /** (23-10) A4 vertical (por defecto) o media hoja (A5 apaisado, para el mostrador). */
+  formato?: FormatoComprobante;
+}
+
+export type FormatoComprobante = "a4" | "media-hoja";
+
+export interface EntregaPactadaEnPapel {
+  numero: number;
+  descripcion: string;
+  valor: number;
+  fecha?: string | null;
+  /** Ya se entregó: en vez de la fecha dice «Cumplida». */
+  cumplida?: boolean;
 }
 
 /** Una imagen para el papel: data URL PNG o JPEG (jsPDF no lee webp). */
@@ -83,8 +114,39 @@ export interface ImagenEnPapel {
 }
 
 /** (23-10) La huella dice CÓMO se tomó: debajo de su casilla, «Huella (cámara)». */
-export interface HuellaEnPapel extends ImagenEnPapel {
+export interface HuellaConImagen extends ImagenEnPapel {
   metodo?: string;
+  passkey?: undefined;
+}
+
+/**
+ * (ADR-513) La passkey del celular no tiene imagen: la casilla lleva el texto
+ * «Lo confirmó el aparato registrado para esta persona (passkey) el 23/10 14:05»
+ * y, debajo, de dónde salió la llave («llave registrada con este mismo enlace»).
+ */
+export interface HuellaPorPasskey {
+  passkey: true;
+  /** «23/10 14:05», hora de Lima. */
+  confirmadaEn: string;
+  /** `textoLlavePasskey(...)`; ausente en las firmas de antes de la constancia v2. */
+  llave?: string;
+  metodo?: string;
+  fechaHora?: string;
+  imagen?: undefined;
+  relacion?: undefined;
+}
+
+export type HuellaEnPapel = HuellaConImagen | HuellaPorPasskey;
+
+/** El texto de la casilla de una passkey: lo que prueba, sin decir «su huella». */
+export function textoHuellaPasskey(confirmadaEn: string): string {
+  return `${TEXTO_CONFIRMADO_PASSKEY} el ${confirmadaEn}`;
+}
+
+/** «jueves 23/10/2026 · 14:05» → «23/10 14:05» (lo corto que entra en la casilla). */
+export function diaYHoraCortos(fechaHora: string): string {
+  const m = /(\d{2}\/\d{2})\/\d{4} · (\d{2}:\d{2})/.exec(fechaHora);
+  return m ? `${m[1]} ${m[2]}` : fechaHora;
 }
 
 /**
@@ -198,15 +260,6 @@ export function textosDelComprobante(d: DatosComprobante): TextosComprobante {
   };
 }
 
-const MODALIDAD_LABEL: Record<string, string> = {
-  CUENTA_CORRIENTE: "Cuenta corriente (se liquida con entregas)",
-  ENTREGAS_PACTADAS: "Entregas pactadas",
-  DESCUENTO_PLANILLA: "Descuento por planilla",
-};
-
-const fecha = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
-
 /**
  * Monto en letras — lo que hace que un recibo no se pueda alterar con un cero.
  *
@@ -258,147 +311,34 @@ export function montoEnLetras(n: number): string {
   return `${texto} con ${String(centavos).padStart(2, "0")}/100`;
 }
 
-/** Arma y descarga el comprobante. */
+/**
+ * Arma y descarga el comprobante. Sin `membrete` en los datos, trae el del
+ * negocio (logo incluido); si no llega, el papel sale igual con el monograma.
+ */
 export async function descargarComprobante(d: DatosComprobante): Promise<void> {
-  const doc = await armarComprobante(d);
+  const membrete =
+    d.membrete !== undefined
+      ? d.membrete
+      : await import("@/lib/documentos/membrete-cargar")
+          .then((m) => m.membreteDelDocumento())
+          .catch((e: unknown) => {
+            logger.warn("[adelantos] el recibo sale sin membrete", { error: String(e) });
+            return null;
+          });
+  const doc = await armarComprobante({ ...d, membrete });
   doc.save(`adelanto-${(d.codigoOperacion ?? "sin-codigo").toLowerCase()}.pdf`);
-}
-
-/** El PDF sin bajarlo (así se prueba fuera del navegador). Carga jsPDF en demanda: pesa. */
-export async function armarComprobante(d: DatosComprobante): Promise<Pdf> {
-  const { default: jsPDF } = await import("jspdf");
-  // A5 apaisado: entra en media hoja A4, que es como se imprime en el mostrador.
-  const doc = new jsPDF({ format: "a5", orientation: "landscape" });
-  const W = doc.internal.pageSize.getWidth();
-  const t = textosDelComprobante(d);
-  let y = 14;
-
-  doc.setFontSize(9);
-  doc.text((d.negocio ?? "").toUpperCase(), 12, y);
-  doc.setFontSize(15);
-  doc.text(t.titulo, 12, (y += 8));
-
-  // El código, grande y a la derecha: es lo que se busca cuando aparece el papel.
-  doc.setFontSize(13);
-  doc.text(d.codigoOperacion ?? "—", W - 12, 22, { align: "right" });
-  if (d.reciboManual) {
-    doc.setFontSize(9);
-    doc.text(`Recibo ${d.reciboManual}`, W - 12, 28, { align: "right" });
-  }
-
-  doc.setLineWidth(0.4);
-  doc.line(12, (y += 4), W - 12, y);
-
-  doc.setFontSize(10);
-  const linea = (etiqueta: string, valor: string) => {
-    y += 7;
-    doc.text(`${etiqueta}:`, 12, y);
-    doc.text(valor, 45, y);
-  };
-  linea("Fecha", fecha(d.fecha));
-  linea("Recibí de", t.recibiDe);
-  const documento = d.documento && d.taparDocumento ? documentoTapado(d.documento) : d.documento;
-  if (documento && t.recibiDe === d.persona) linea("Documento", documento);
-  linea(t.recibiDe === d.persona ? "Recibe" : "Nombre", t.nombre);
-  if (documento && t.nombre === d.persona) linea("Documento", documento);
-  if (t.concepto) linea("Por", t.concepto);
-  linea("Modalidad", MODALIDAD_LABEL[d.modalidad] ?? d.modalidad);
-
-  y += 9;
-  doc.setFontSize(14);
-  doc.text(montoConMoneda(d.monto, d.moneda), 12, y);
-  doc.setFontSize(9);
-  doc.text(`(${montoEnLetras(d.monto)} ${monedaEnLetras(d.moneda)})`, 12, (y += 5));
-  const aviso = avisoMontoFirmado(d);
-  if (aviso) {
-    doc.setFontSize(8);
-    doc.text(aviso, 12, (y += 5));
-  }
-
-  if (d.notas) {
-    doc.setFontSize(9);
-    doc.text(`Concepto: ${d.notas}`.slice(0, 110), 12, (y += 7));
-  }
-
-  // La declaración: sin esto el papel es un recibo, no un compromiso.
-  y += 8;
-  doc.setFontSize(8);
-  doc.text(
-    doc.splitTextToSize(t.declaracion, W - 24) as string[],
-    12,
-    y,
-  );
-
-  // Dos firmas: quien entrega y quien recibe.
-  const yFirma = doc.internal.pageSize.getHeight() - 22;
-  doc.line(16, yFirma, 76, yFirma);
-  doc.line(W - 76, yFirma, W - 16, yFirma);
-  doc.setFontSize(8);
-  doc.text(t.firmaIzquierda, 46, yFirma + 5, { align: "center" });
-  doc.text(t.firmaDerecha, W - 46, yFirma + 5, { align: "center" });
-  if (d.firma) pintarFirma(doc, d.firma, ladoDeFirma(d.direccion) === "izquierda" ? 46 : W - 46, yFirma, !!d.taparDocumento);
-  pintarCasillaHuella(doc, casillaDeHuella(d.direccion, W, yFirma), d.huella);
-  if (d.hojaFirmada) agregarHoja(doc, d.hojaFirmada, "Recibo firmado guardado en el adelanto");
-  if (d.voucher) agregarHoja(doc, d.voucher, d.voucherFechaHora ? `Comprobante de pago · foto del ${d.voucherFechaHora} (hora de Lima)` : "Comprobante de pago");
-  return doc;
-}
-
-/** El formato que jsPDF necesita, leído del data URL. */
-function formatoDe(dataUrl: string): "PNG" | "JPEG" {
-  return /^data:image\/jpe?g/i.test(dataUrl) ? "JPEG" : "PNG";
-}
-
-function relacionDe(doc: Pdf, img: ImagenEnPapel): number {
-  if (img.relacion && img.relacion > 0) return img.relacion;
-  const p = doc.getImageProperties(img.imagen);
-  return p.height > 0 ? p.width / p.height : 1;
 }
 
 type Pdf = InstanceType<(typeof import("jspdf"))["default"]>;
 
-/** La firma sobre su línea (60 mm de ancho, hasta 16 mm de alto) y quién firmó debajo. */
-function pintarFirma(doc: Pdf, f: FirmaEnPapel, centro: number, yLinea: number, taparDocumento: boolean): void {
-  const relacion = relacionDe(doc, f);
-  const alto = Math.min(16, 56 / Math.max(relacion, 0.1));
-  const ancho = alto * relacion;
-  doc.addImage(f.imagen, formatoDe(f.imagen), centro - ancho / 2, yLinea - alto - 1, ancho, alto);
-  doc.setFontSize(7);
-  doc.text(`${f.nombre} · ${rotuloDocumento(f.documento, taparDocumento)}`.slice(0, 60), centro, yLinea + 9, { align: "center" });
-  doc.text(`Firmó el ${f.fechaHora} (hora de Lima)`, centro, yLinea + 13, { align: "center" });
-}
-
 /**
- * La casilla «Huella», SIEMPRE: vacía es para entintar el dedo en el mostrador
- * (quien no sabe firmar); con la foto del registro, la foto adentro sin deformar.
+ * El PDF sin bajarlo (así se prueba fuera del navegador). Carga jsPDF y el
+ * dibujo en demanda: pesan. A4 vertical; «media hoja» = A5 apaisado, que entra
+ * en medio A4 y es como se imprime en el mostrador.
  */
-function pintarCasillaHuella(doc: Pdf, c: ReturnType<typeof casillaDeHuella>, huella?: HuellaEnPapel): void {
-  doc.setLineWidth(0.3);
-  doc.rect(c.x, c.y, c.ancho, c.alto);
-  if (huella) {
-    const r = relacionDe(doc, huella);
-    const margen = 1;
-    const anchoUtil = c.ancho - margen * 2;
-    const altoUtil = c.alto - margen * 2;
-    const ancho = Math.min(anchoUtil, altoUtil * r);
-    const alto = ancho / r;
-    doc.addImage(huella.imagen, formatoDe(huella.imagen), c.x + (c.ancho - ancho) / 2, c.y + (c.alto - alto) / 2, ancho, alto);
-  }
-  doc.setFontSize(7);
-  doc.text(huella?.metodo ? `Huella (${huella.metodo})` : "Huella", c.x + c.ancho / 2, c.y + c.alto + 3.5, { align: "center" });
-  if (huella?.fechaHora) {
-    doc.setFontSize(6);
-    doc.text(huella.fechaHora, c.x + c.ancho / 2, c.y + c.alto + 6.5, { align: "center" });
-  }
-}
-
-/** Una página aparte con una foto entera y sin deformar (la hoja firmada vieja o el voucher). */
-function agregarHoja(doc: Pdf, imagen: string, titulo: string): void {
-  doc.addPage("a5", "portrait");
-  const W = doc.internal.pageSize.getWidth();
-  const H = doc.internal.pageSize.getHeight();
-  const props = doc.getImageProperties(imagen);
-  const escala = Math.min((W - 20) / props.width, (H - 24) / props.height);
-  doc.setFontSize(9);
-  doc.text(titulo, 10, 10);
-  doc.addImage(imagen, formatoDe(imagen), (W - props.width * escala) / 2, 14, props.width * escala, props.height * escala);
+export async function armarComprobante(d: DatosComprobante): Promise<Pdf> {
+  const [{ default: jsPDF }, { dibujarComprobante }] = await Promise.all([import("jspdf"), import("./comprobante-pdf")]);
+  const doc = d.formato === "media-hoja" ? new jsPDF({ format: "a5", orientation: "landscape" }) : new jsPDF({ format: "a4", orientation: "portrait" });
+  dibujarComprobante(doc, d);
+  return doc;
 }

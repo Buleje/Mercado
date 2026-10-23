@@ -107,10 +107,11 @@ describe("Trozado · la ficha con el detalle de la tala", () => {
     extra = [{ ...linea({ section: "trozado", lineNo: 1, treeCode: "85-TOR", trozaCode: "85-TOR-E", volumeM3: "0.0500" }), id: "otra-caratula" }];
     const errores = vi.spyOn(console, "error");
     render(<LothEntryForm section="trozado" arbolInicial="85-TOR" onClose={() => {}} onSaved={() => {}} />);
-    await waitFor(() => expect(codigoTroza().value).toBe("85-TOR-F"));
+    // Con la suite entera (1.950 archivos) el primer render tarda más que el 1 s por defecto de waitFor.
+    await waitFor(() => expect(codigoTroza().value).toBe("85-TOR-F"), { timeout: 5_000 });
     expect(within(ficha()).getByText("85-TOR-E")).toBeTruthy();
     expect(errores.mock.calls.filter((c) => String(c[0]).includes("same key"))).toHaveLength(0);
-  });
+  }, 20_000);
 
   it("una troza que se pasa de lo talado se avisa mientras se mide", async () => {
     render(<LothEntryForm section="trozado" arbolInicial="85-TOR" onClose={() => {}} onSaved={() => {}} />);

@@ -41,5 +41,5 @@ describe("roles de las rutas de Metas y logros", () => {
     expect(H.roles).toEqual([ROLES_AVANCE]);
     // La misma constante, no una copia que pueda abrirse sola.
     expect(H.roles[0]).toBe(ROLES_AVANCE);
-  });
+  }, 30_000); // import en frío de la ruta: con la suite entera pasa los 15 s
 });

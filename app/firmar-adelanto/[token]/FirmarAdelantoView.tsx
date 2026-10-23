@@ -3,10 +3,12 @@
 /**
  * Página donde el trabajador firma su adelanto desde SU celular (ADR-491).
  * Pensada para 360-400 px y para quien lee poco: monto grande, pocas palabras,
- * un botón. El único fetch es el POST de firmar; los datos vienen del servidor.
+ * un botón. El único fetch es el POST de firmar (y, si confirma con la huella
+ * del celular, los dos de la passkey — ADR-513); los datos vienen del servidor.
  */
 
 import { useState } from "react";
+import type { AuthenticationResponseJSON } from "@simplewebauthn/browser";
 import { CheckCircle2, AlertTriangle } from "@buleje/design-system/icons";
 import LienzoFirma from "@/components/ui-system/LienzoFirma";
 import { firmaEnCanvas } from "@/components/admin/adelantos/firma/hoja-firma";
@@ -21,14 +23,35 @@ import {
   type FirmarPublicoRespuesta,
   type VistaPublicaFirma,
 } from "@/lib/adelantos/entregar-tipos";
+import { VERSION_CONSENTIMIENTO_PASSKEY } from "@/lib/adelantos/passkey-tipos";
 import HuellaPublica from "./HuellaPublica";
+import PasskeyPublica from "./PasskeyPublica";
 
-const AVISOS: Record<Exclude<EstadoEnlace, "pendiente"> | "no_encontrado", { titulo: string; cuerpo: string }> = {
-  usado: { titulo: "Este recibo ya fue firmado", cuerpo: "No tienes que hacer nada más. Si crees que es un error, avisa a quien te mandó el enlace." },
-  vencido: { titulo: "Este enlace venció", cuerpo: "Pídele a quien te lo mandó que te envíe uno nuevo." },
-  revocado: { titulo: "Este enlace ya no sirve", cuerpo: "Fue reemplazado por otro. Pídele a quien te lo mandó el enlace nuevo." },
-  anulado: { titulo: "Este adelanto fue anulado", cuerpo: "Ya no hay nada que firmar. Si tienes dudas, consulta con el negocio." },
-  no_encontrado: { titulo: "No encontramos este enlace", cuerpo: "Revisa que esté completo o pídele a quien te lo mandó que te envíe otro." },
+const AVISOS: Record<
+  Exclude<EstadoEnlace, "pendiente"> | "no_encontrado",
+  { titulo: string; cuerpo: string }
+> = {
+  usado: {
+    titulo: "Este recibo ya fue firmado",
+    cuerpo:
+      "No tienes que hacer nada más. Si crees que es un error, avisa a quien te mandó el enlace.",
+  },
+  vencido: {
+    titulo: "Este enlace venció",
+    cuerpo: "Pídele a quien te lo mandó que te envíe uno nuevo.",
+  },
+  revocado: {
+    titulo: "Este enlace ya no sirve",
+    cuerpo: "Fue reemplazado por otro. Pídele a quien te lo mandó el enlace nuevo.",
+  },
+  anulado: {
+    titulo: "Este adelanto fue anulado",
+    cuerpo: "Ya no hay nada que firmar. Si tienes dudas, consulta con el negocio.",
+  },
+  no_encontrado: {
+    titulo: "No encontramos este enlace",
+    cuerpo: "Revisa que esté completo o pídele a quien te lo mandó que te envíe otro.",
+  },
 };
 
 const TEXTO_ERROR: Record<CodigoErrorPublico, string> = {
@@ -45,6 +68,15 @@ const TEXTO_ERROR: Record<CodigoErrorPublico, string> = {
 };
 
 const CODIGOS = Object.keys(TEXTO_ERROR);
+/* Errores de la passkey al firmar: hay que volver a confirmar con el celular. */
+const RECONFIRMAR = [
+  "reto_vencido",
+  "reto_usado",
+  "no_verificada",
+  "contador_bajo",
+  "credencial_ajena",
+  "origen_no_permitido",
+];
 
 function Marco({ children }: { children: React.ReactNode }) {
   return (
@@ -58,8 +90,14 @@ function Aviso({ titulo, cuerpo, ok }: { titulo: string; cuerpo: string; ok?: bo
   const Icono = ok ? CheckCircle2 : AlertTriangle;
   return (
     <Marco>
-      <div role={ok ? "status" : "alert"} className="space-y-3 rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">
-        <Icono className={`mx-auto h-12 w-12 ${ok ? "text-[var(--data-success-ink,var(--data-success))]" : "text-[var(--data-warning-ink,var(--data-warning))]"}`} aria-hidden />
+      <div
+        role={ok ? "status" : "alert"}
+        className="space-y-3 rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center"
+      >
+        <Icono
+          className={`mx-auto h-12 w-12 ${ok ? "text-[var(--data-success-ink,var(--data-success))]" : "text-[var(--data-warning-ink,var(--data-warning))]"}`}
+          aria-hidden
+        />
         <h1 className="text-2xl font-extrabold">{titulo}</h1>
         <p className="text-base text-[var(--text-secondary)]">{cuerpo}</p>
       </div>
@@ -72,12 +110,24 @@ const dinero = (n: number, moneda: string) =>
 
 /** «3:40 p. m.» en hora de Lima (el celular puede tener otra zona). */
 const horaLima = (iso: string) =>
-  new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(iso));
+  new Intl.DateTimeFormat("es-PE", {
+    timeZone: "America/Lima",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(iso));
 
-export function FirmarAdelantoView({ token, vista }: { token: string; vista: VistaPublicaFirma | null }) {
+export function FirmarAdelantoView({
+  token,
+  vista,
+}: {
+  token: string;
+  vista: VistaPublicaFirma | null;
+}) {
   const [trazos, setTrazos] = useState<Trazo[]>([]);
   const [documento, setDocumento] = useState("");
   const [huella, setHuella] = useState<Blob | null>(null);
+  const [passkey, setPasskey] = useState<AuthenticationResponseJSON | null>(null);
   const [consiente, setConsiente] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,12 +139,15 @@ export function FirmarAdelantoView({ token, vista }: { token: string; vista: Vis
     return (
       <Aviso
         ok
-        titulo={`Listo, firmaste el recibo${hecho.codigoOperacion ?? vista.codigoOperacion ? ` ${hecho.codigoOperacion ?? vista.codigoOperacion}` : ""} a las ${horaLima(hecho.firmadoEn)}`}
+        titulo={`Listo, firmaste el recibo${(hecho.codigoOperacion ?? vista.codigoOperacion) ? ` ${hecho.codigoOperacion ?? vista.codigoOperacion}` : ""} a las ${horaLima(hecho.firmadoEn)}`}
         cuerpo="Ya puedes cerrar esta página. Gracias."
       />
     );
   }
-  const estado: EstadoEnlace | "no_encontrado" = cerrado && cerrado !== "dni_no_coincide" && cerrado in AVISOS ? (cerrado as keyof typeof AVISOS) : vista.estado;
+  const estado: EstadoEnlace | "no_encontrado" =
+    cerrado && cerrado !== "dni_no_coincide" && cerrado in AVISOS
+      ? (cerrado as keyof typeof AVISOS)
+      : vista.estado;
   if (estado !== "pendiente") return <Aviso {...AVISOS[estado]} />;
 
   const recibe = vista.direccion === "DADO";
@@ -111,30 +164,55 @@ export function FirmarAdelantoView({ token, vista }: { token: string; vista: Vis
     });
     if (!parsed.success) {
       const doc = parsed.error.issues.find((i) => i.path.includes("documento"));
-      return setError(doc ? "Escribe tu DNI completo (8 números)." : "Revisa tus datos y vuelve a intentar.");
+      return setError(
+        doc ? "Escribe tu DNI completo (8 números)." : "Revisa tus datos y vuelve a intentar.",
+      );
     }
-    if (vista.pideHuella && !huella) return setError(TEXTO_ERROR.falta_huella);
+    if (vista.pideHuella && !huella && !passkey)
+      return setError("Falta tu huella: confírmala con tu celular o saca una foto.");
     if (huella && !consiente) return setError(TEXTO_ERROR.falta_consentimiento);
 
     setEnviando(true);
     try {
-      const png = await new Promise<Blob | null>((ok) => firmaEnCanvas(trazos).toBlob(ok, "image/png"));
+      const png = await new Promise<Blob | null>((ok) =>
+        firmaEnCanvas(trazos).toBlob(ok, "image/png"),
+      );
       if (!png) throw new Error("sin_firma");
       const cuerpo = new FormData();
       cuerpo.append("datos", JSON.stringify(parsed.data));
       cuerpo.append("firma", png, "firma.png");
-      if (huella) cuerpo.append("huella", huella, "huella.jpg");
-      const res = await fetch(`/api/public/adelantos/${encodeURIComponent(token)}/firmar`, { method: "POST", body: cuerpo });
+      if (passkey)
+        cuerpo.append(
+          "passkey",
+          JSON.stringify({ respuesta: passkey, consentimiento: VERSION_CONSENTIMIENTO_PASSKEY }),
+        );
+      else if (huella) cuerpo.append("huella", huella, "huella.jpg");
+      const res = await fetch(`/api/public/adelantos/${encodeURIComponent(token)}/firmar`, {
+        method: "POST",
+        body: cuerpo,
+      });
       const json: Record<string, unknown> = await res.json().catch(() => ({}));
       if (res.ok) return setHecho(json as unknown as FirmarPublicoRespuesta);
-      const codigo = [json.code, json.codigo, json.error].find((c): c is CodigoErrorPublico => typeof c === "string" && CODIGOS.includes(c));
-      if (res.status === 429) return setError("Hiciste muchos intentos. Espera unos minutos y vuelve a probar.");
+      const codigo = [json.code, json.codigo, json.error].find(
+        (c): c is CodigoErrorPublico => typeof c === "string" && CODIGOS.includes(c),
+      );
+      if (res.status === 429)
+        return setError("Hiciste muchos intentos. Espera unos minutos y vuelve a probar.");
+      if (typeof json.code === "string" && RECONFIRMAR.includes(json.code)) {
+        setPasskey(null);
+        return setError(
+          typeof json.error === "string" ? json.error : "Vuelve a confirmar con tu huella.",
+        );
+      }
       if (!codigo) return setError("No se pudo firmar. Revisa tu internet y vuelve a intentar.");
       if (codigo === "dni_no_coincide") {
         const q = Number(json.intentosRestantes);
-        return setError(`${TEXTO_ERROR.dni_no_coincide}${Number.isFinite(q) ? ` Te quedan ${q} ${q === 1 ? "intento" : "intentos"}.` : ""}`);
+        return setError(
+          `${TEXTO_ERROR.dni_no_coincide}${Number.isFinite(q) ? ` Te quedan ${q} ${q === 1 ? "intento" : "intentos"}.` : ""}`,
+        );
       }
-      if (["vencido", "usado", "revocado", "anulado", "no_encontrado"].includes(codigo)) return setCerrado(codigo);
+      if (["vencido", "usado", "revocado", "anulado", "no_encontrado"].includes(codigo))
+        return setCerrado(codigo);
       setError(TEXTO_ERROR[codigo]);
     } catch {
       setError("No se pudo firmar. Revisa tu internet y vuelve a intentar.");
@@ -149,13 +227,24 @@ export function FirmarAdelantoView({ token, vista }: { token: string; vista: Vis
         <p className="text-base font-semibold text-[var(--text-secondary)]">{vista.negocio}</p>
         <h1 className="text-2xl font-extrabold">
           Firma tu recibo
-          {vista.codigoOperacion && <span className="block whitespace-nowrap text-lg font-bold text-[var(--text-secondary)]">{vista.codigoOperacion}</span>}
+          {vista.codigoOperacion && (
+            <span className="block whitespace-nowrap text-lg font-bold text-[var(--text-secondary)]">
+              {vista.codigoOperacion}
+            </span>
+          )}
         </h1>
       </header>
 
-      <section aria-label="Datos del adelanto" className="space-y-2 rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <p className="text-base text-[var(--text-secondary)]">{recibe ? `Recibí de ${vista.negocio}` : `Entregué a ${vista.negocio}`}</p>
-        <p className="whitespace-nowrap text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">{dinero(vista.monto, vista.moneda)}</p>
+      <section
+        aria-label="Datos del adelanto"
+        className="space-y-2 rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5"
+      >
+        <p className="text-base text-[var(--text-secondary)]">
+          {recibe ? `Recibí de ${vista.negocio}` : `Entregué a ${vista.negocio}`}
+        </p>
+        <p className="whitespace-nowrap text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">
+          {dinero(vista.monto, vista.moneda)}
+        </p>
         <p className="text-base text-[var(--text-secondary)]">{vista.montoEnLetras}</p>
         <p className="border-t border-[var(--rule-base)] pt-2 text-base">{vista.fechaAdelanto}</p>
         <p className="text-base font-semibold">{vista.persona}</p>
@@ -164,7 +253,9 @@ export function FirmarAdelantoView({ token, vista }: { token: string; vista: Vis
 
       <div className="space-y-2">
         <label htmlFor="dni-firma" className="block text-lg font-bold">
-          {vista.pideDocumento ? "Escribe tu DNI" : "Escribe tu DNI completo para confirmar que eres tú"}
+          {vista.pideDocumento
+            ? "Escribe tu DNI"
+            : "Escribe tu DNI completo para confirmar que eres tú"}
         </label>
         <input
           id="dni-firma"
@@ -181,20 +272,41 @@ export function FirmarAdelantoView({ token, vista }: { token: string; vista: Vis
 
       <div className="space-y-2">
         <h2 className="text-lg font-bold">Tu firma</h2>
-        <LienzoFirma trazos={trazos} onCambio={setTrazos} etiqueta={`Firma de ${vista.persona}`} deshabilitado={enviando} />
+        <LienzoFirma
+          trazos={trazos}
+          onCambio={setTrazos}
+          etiqueta={`Firma de ${vista.persona}`}
+          deshabilitado={enviando}
+        />
       </div>
 
-      <HuellaPublica
-        obligatoria={vista.pideHuella}
-        huella={huella}
-        onHuella={setHuella}
-        consiente={consiente}
-        onConsiente={setConsiente}
+      <PasskeyPublica
+        token={token}
+        documento={limpiarDocumento(documento)}
+        confirmada={!!passkey}
+        onConfirmada={(r) => {
+          setPasskey(r);
+          if (r) setHuella(null);
+        }}
         deshabilitado={enviando}
       />
 
+      {!passkey && (
+        <HuellaPublica
+          obligatoria={vista.pideHuella}
+          huella={huella}
+          onHuella={setHuella}
+          consiente={consiente}
+          onConsiente={setConsiente}
+          deshabilitado={enviando}
+        />
+      )}
+
       {error && (
-        <p role="alert" className="rounded-xl border border-[var(--data-error-500)] bg-[var(--surface-raised)] p-3 text-base font-semibold text-[var(--data-error-ink,var(--data-error-700))]">
+        <p
+          role="alert"
+          className="rounded-xl border border-[var(--data-error-500)] bg-[var(--surface-raised)] p-3 text-base font-semibold text-[var(--data-error-ink,var(--data-error-700))]"
+        >
           {error}
         </p>
       )}
@@ -207,7 +319,9 @@ export function FirmarAdelantoView({ token, vista }: { token: string; vista: Vis
       >
         {enviando ? "Firmando…" : "Firmar"}
       </button>
-      <p className="pb-4 text-center text-base text-[var(--text-secondary)]">Este enlace sirve una sola vez.</p>
+      <p className="pb-4 text-center text-base text-[var(--text-secondary)]">
+        Este enlace sirve una sola vez.
+      </p>
     </Marco>
   );
 }
