@@ -352,23 +352,24 @@ function bashGuard(toolInput) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. DANGER ZONE — archivos críticos (warn-only salvo BSM_DZ_BLOCK=1)
-//    Actualizado 2026-09-19: los 5 agentes que nombraba (checkout-squad,
+//    Actualizado 2026-09-19: los 5 agentes que nombraba (squad de checkout,
 //    security-squad, database-engineer, frontend-engineer,
 //    backend-platform-engineer) NO EXISTEN desde el harness del 09-14.
 //    Ahora nombra los 8 reales y los skills reales de .claude/skills/.
+//    2026-10-22: «Guía» = la regla .claude/rules/danger-zone.md o una skill real (/migrar-esquema).
 // ─────────────────────────────────────────────────────────────────────────────
 const DANGER_ZONES = [
-  { pattern: /CheckoutModal\.tsx/, instrucciones: "checkout-flow", skill: "audit-first", label: "CheckoutModal (pagos, cupones, reservas)", agente: "backend + security", reason: "Zona crítica de pagos: totales en backend, idempotency." },
-  { pattern: /components\/checkout\//, instrucciones: "checkout-flow", skill: "audit-first", label: "components/checkout/** (flujo de pago completo)", agente: "frontend + security", reason: "Sub-componentes del checkout — auditá antes de tocar." },
-  { pattern: /role-permissions\.ts/, instrucciones: "security-auth", skill: "multi-tenant-guard", label: "role-permissions.ts (RBAC 26 recursos × 6 roles)", agente: "security", reason: "Cambiar permisos puede bloquear módulos enteros." },
-  { pattern: /lib\/db\/orders\.db\.ts/, instrucciones: "database-migrations", skill: "audit-first", label: "orders.db.ts (state machine, idempotency)", agente: "database", reason: "State machine de órdenes — requiere migration-planner si toca datos." },
-  { pattern: /schema\.prisma/, instrucciones: "prisma-schema", skill: "migration-planner", label: "schema.prisma (189 modelos, requiere DIRECT_URL)", agente: "database", reason: "Cambio de schema requiere plan expand→migrate→contract." },
-  { pattern: /cart-context\.tsx/, instrucciones: "state-management", skill: "audit-first", label: "cart-context.tsx (BroadcastChannel + localStorage multi-tab)", agente: "frontend", reason: "Estado compartido multi-tab — riesgo de races." },
-  { pattern: /api\/batches/, instrucciones: "fefo-inventory", skill: "audit-first", label: "API batches (FEFO, expiryDate vs expiresAt)", agente: "backend", reason: "Lógica FEFO crítica para inventario." },
-  { pattern: /proxy\.ts/, instrucciones: "security-auth", skill: "multi-tenant-guard", label: "proxy.ts (auth + CSP + tenant + rate limit)", agente: "security", reason: "Middleware central — cualquier error expone toda la app." },
-  { pattern: /lib\/middleware\//, instrucciones: "security-auth", skill: "multi-tenant-guard", label: "lib/middleware/** (auth, CSP, rate limit, tenant guard)", agente: "security", reason: "Middleware central — cualquier error expone toda la app." },
-  { pattern: /lib\/db\/marketplace\.db\.ts|lib\/commissions/, instrucciones: "database-migrations", skill: "audit-first", label: "marketplace.db.ts / commissions (dinero cross-vendor)", agente: "backend + security", reason: "Plata entre vendors — los totales salen del backend." },
-  { pattern: /CartSidebar\.tsx/, instrucciones: "state-management", skill: "audit-first", label: "CartSidebar.tsx (BroadcastChannel multi-tab sync)", agente: "frontend", reason: "Sincronización de carrito multi-tab." },
+  { pattern: /CheckoutModal\.tsx/, instrucciones: "checkout-flow", skill: "regla .claude/rules/danger-zone.md", label: "CheckoutModal (pagos, cupones, reservas)", agente: "backend + security", reason: "Zona crítica de pagos: totales en backend, idempotency." },
+  { pattern: /components\/checkout\//, instrucciones: "checkout-flow", skill: "regla .claude/rules/danger-zone.md", label: "components/checkout/** (flujo de pago completo)", agente: "frontend + security", reason: "Sub-componentes del checkout — auditá antes de tocar." },
+  { pattern: /role-permissions\.ts/, instrucciones: "security-auth", skill: "/multi-tenant-guard", label: "role-permissions.ts (RBAC 26 recursos × 6 roles)", agente: "security", reason: "Cambiar permisos puede bloquear módulos enteros." },
+  { pattern: /lib\/db\/orders\.db\.ts/, instrucciones: "database-migrations", skill: "regla .claude/rules/danger-zone.md", label: "orders.db.ts (state machine, idempotency)", agente: "database", reason: "State machine de órdenes — requiere /migrar-esquema si toca datos." },
+  { pattern: /schema\.prisma/, instrucciones: "prisma-schema", skill: "/migrar-esquema", label: "schema.prisma (272 modelos; base compartida = producción)", agente: "database", reason: "Cambio de schema: usar /migrar-esquema (la base es la de producción)." },
+  { pattern: /cart-context\.tsx/, instrucciones: "state-management", skill: "regla .claude/rules/danger-zone.md", label: "cart-context.tsx (BroadcastChannel + localStorage multi-tab)", agente: "frontend", reason: "Estado compartido multi-tab — riesgo de races." },
+  { pattern: /api\/batches/, instrucciones: "fefo-inventory", skill: "regla .claude/rules/danger-zone.md", label: "API batches (FEFO, expiryDate vs expiresAt)", agente: "backend", reason: "Lógica FEFO crítica para inventario." },
+  { pattern: /proxy\.ts/, instrucciones: "security-auth", skill: "/multi-tenant-guard", label: "proxy.ts (auth + CSP + tenant + rate limit)", agente: "security", reason: "Middleware central — cualquier error expone toda la app." },
+  { pattern: /lib\/middleware\//, instrucciones: "security-auth", skill: "/multi-tenant-guard", label: "lib/middleware/** (auth, CSP, rate limit, tenant guard)", agente: "security", reason: "Middleware central — cualquier error expone toda la app." },
+  { pattern: /lib\/db\/marketplace\.db\.ts|lib\/commissions/, instrucciones: "database-migrations", skill: "regla .claude/rules/danger-zone.md", label: "marketplace.db.ts / commissions (dinero cross-vendor)", agente: "backend + security", reason: "Plata entre vendors — los totales salen del backend." },
+  { pattern: /CartSidebar\.tsx/, instrucciones: "state-management", skill: "regla .claude/rules/danger-zone.md", label: "CartSidebar.tsx (BroadcastChannel multi-tab sync)", agente: "frontend", reason: "Sincronización de carrito multi-tab." },
 ];
 
 function consumirBypass(clave) {
@@ -404,7 +405,7 @@ function dangerZone(toolInput) {
     const cuerpo =
       `⚠️ ZONA DE PELIGRO: ${zona.label}\n` +
       `   📖 Instrucciones: ${instrPath}${falta ? " (NO EXISTE)" : ""}\n` +
-      `   🧰 Skill: /${zona.skill}\n` +
+      `   🧰 Guía: ${zona.skill}\n` +
       `   🤖 Agente sugerido: ${zona.agente}\n` +
       `   💡 ${zona.reason}${nota}\n`;
 

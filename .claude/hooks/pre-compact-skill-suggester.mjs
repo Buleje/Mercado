@@ -25,26 +25,23 @@ const TELEMETRY_FILE = path.join(PROJECT_ROOT, ".claude", ".skill-usage.jsonl");
 // Keywords → skill mapping (top mappings, mantener corto)
 const KEYWORD_HINTS = {
   // dominio
-  checkout: ["audit-first"],
-  pago: ["audit-first"],
-  yape: ["audit-first"],
   fiado: ["multi-tenant-guard"],
-  marketplace: ["bsm-typography-rules", "bsm-design-system"],
+  marketplace: ["bsm-design-system"],
   pedido: ["bsm-design-system"],
   // database
-  database: ["migration-planner"],
-  prisma: ["migration-planner"],
-  schema: ["migration-planner", "audit-first"],
-  migration: ["migration-planner"],
+  database: ["migrar-esquema"],
+  prisma: ["migrar-esquema"],
+  schema: ["migrar-esquema"],
+  migration: ["migrar-esquema"],
   // seguridad
   security: ["multi-tenant-guard"],
-  auth: ["multi-tenant-guard", "audit-first"],
+  auth: ["multi-tenant-guard"],
   // ui
-  dark: ["bsm-design-system", "bsm-typography-rules"],
-  responsive: ["bsm-design-system", "bsm-typography-rules"],
-  ui: ["bsm-design-system", "bsm-typography-rules"],
+  dark: ["bsm-design-system"],
+  responsive: ["bsm-design-system"],
+  ui: ["bsm-design-system"],
   // memoria
-  memory: ["dreaming"],
+  memory: ["podar-memoria"],
 };
 
 function readPayload() {

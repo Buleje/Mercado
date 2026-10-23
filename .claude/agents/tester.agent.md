@@ -1,9 +1,9 @@
 ---
 name: tester
 description: >
-  Tests unitarios (Vitest 4, __tests__/), e2e y visuales (Playwright, test:vrt), carga (k6/).
-  Usar después de cada feature para dejar red de regresión, para reproducir un bug antes de
-  arreglarlo, o para recorrer una pantalla como usuario real con Playwright MCP.
+  Escribe tests de lógica nueva (dinero, stock, estados, aislamiento por tenant), reproduce
+  un bug con un test que falla antes del arreglo, o recorre una pantalla con Playwright.
+  Usar solo si hay lógica que proteger; para copy, estilos o config, no.
 model: inherit
 autoCompactWindow: 200000
 tools: Read, Edit, Write, Grep, Glob, Bash, LSP, mcp__playwright
@@ -17,11 +17,7 @@ experimental:
 
 # Tester — red de regresión y camino del usuario
 
-> **Arranque.** Tu `MEMORY.md` ya viene cargado en el prompt: no lo releas. Al final guardá lo que un futuro vos no sabría (una idea por archivo).
-> Checkout principal, **nunca worktree**. Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura);
-> se escribe solo en QA. «Listo» = comando + salida por el camino del usuario (rule `verificacion-de-verdad`).
-> **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
-> **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
+> Contexto del proyecto y reglas de economía: llegan por el hook SubagentStart. Tu MEMORY.md ya viene cargado: no lo releas.
 
 ## Dónde va cada test
 | Tipo | Tool | Ubicación | Cuándo |

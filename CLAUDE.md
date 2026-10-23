@@ -55,7 +55,7 @@ Testing: Vitest 4 · Playwright 1.59 · axe · k6 · Storybook 8 · ESLint 9 + P
 | 9 | `requireAdmin(req, roles[])` en rutas protegidas | RBAC |
 | 10 | Sin secrets hardcodeados (`.env*` + `lib/env.ts`) | — |
 | 11 | Raw SQL solo con `$1 $2`, nunca interpolación | SQLi |
-| 12 | ADR nuevo para arquitectura/contratos/schema → `/adr [título]` | — |
+| 12 | ADR nuevo para arquitectura/contratos/schema → skill `adr` (`/adr [título]`) | — |
 | 13 | Self-heal: 3 intentos y escalar (`healer`) | — |
 | 14 | Deploy: SLO healthy + canary 5→25→100 % + DR drill <35 d | — |
 
@@ -74,7 +74,7 @@ Detalle de agentes y frontmatter: `AGENTS.md`. 8 defs en `.claude/agents/` (`arc
 
 ## 6. Zona de peligro
 
-`components/checkout/**`, `components/CheckoutModal.tsx` (pagos, idempotencia) · `lib/db/orders.db.ts` (state machine) · `lib/auth/role-permissions.ts` · `proxy.ts`, `lib/middleware/**` · `prisma/schema.prisma` (DIRECT_URL) · `contexts/cart-context.tsx` (BroadcastChannel) · `lib/db/marketplace.db.ts`, `commissions.ts` (dinero cross-vendor). Antes de tocar: skill `audit-first` y/o `migration-planner` si afecta schema.
+`components/checkout/**`, `components/CheckoutModal.tsx` (pagos, idempotencia) · `lib/db/orders.db.ts` (state machine) · `lib/auth/role-permissions.ts` · `proxy.ts`, `lib/middleware/**` · `prisma/schema.prisma` (base compartida = producción) · `contexts/cart-context.tsx` (BroadcastChannel) · `lib/db/marketplace.db.ts`, `commissions.ts` (dinero cross-vendor). Antes de tocar: regla `.claude/rules/danger-zone.md` (carga sola al editar esos paths) y, si afecta schema, skill `migrar-esquema`.
 
 ## 7. Comandos
 

@@ -19,11 +19,7 @@ experimental:
 
 # Security — auditar y explotar, con evidencia
 
-> **Arranque.** Tu `MEMORY.md` ya viene cargado en el prompt: no lo releas. No tenés Edit/Write: lo que un futuro vos no sabría va al final del reporte bajo «Para memoria».
-> Checkout principal, **nunca worktree**. Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura);
-> se escribe solo en QA. «Listo» = comando + salida por el camino del usuario (rule `verificacion-de-verdad`).
-> **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
-> **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
+> Contexto y economía: hook SubagentStart. Tu MEMORY.md ya viene cargado: no lo releas. Sin Edit/Write: lo nuevo va al reporte bajo «Para memoria».
 
 ## Modo audit (default, solo lectura)
 | Vulnerabilidad | Qué buscar | Lección real del repo |

@@ -15,11 +15,7 @@ experimental:
 
 # Backend — servidor, datos y contratos
 
-> **Arranque.** Tu `MEMORY.md` ya viene cargado en el prompt: no lo releas. Al final guardá lo que un futuro vos no sabría (una idea por archivo).
-> Checkout principal, **nunca worktree**. Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura);
-> se escribe solo en QA. «Listo» = comando + salida por el camino del usuario (rule `verificacion-de-verdad`).
-> **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
-> **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
+> Contexto y economía: hook SubagentStart. Tu MEMORY.md ya viene cargado (no lo releas); tope 8 KB, lo viejo va a _archivo.md (no se carga).
 
 Stack: Next.js 16 (App Router, `"use cache"` + `cacheLife`/`cacheTag`, sin segment configs),
 TypeScript 5 strict, Prisma 7 + Supabase Postgres (pooler), Zod 4, BullMQ, Upstash.

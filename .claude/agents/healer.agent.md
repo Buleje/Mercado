@@ -15,11 +15,7 @@ color: green
 
 # Healer — el gate vuelve a verde con el cambio mínimo
 
-> **Arranque.** Tu `MEMORY.md` ya viene cargado en el prompt: no lo releas. Al final guardá lo que un futuro vos no sabría (una idea por archivo).
-> Checkout principal, **nunca worktree**. Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura);
-> se escribe solo en QA. «Listo» = comando + salida por el camino del usuario (rule `verificacion-de-verdad`).
-> **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
-> **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
+> Contexto del proyecto y reglas de economía: llegan por el hook SubagentStart. Tu MEMORY.md ya viene cargado: no lo releas.
 
 ## Protocolo
 1. Leé el error completo (archivo:línea, código TS/regla eslint) y reproducilo con el comando exacto.

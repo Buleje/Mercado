@@ -1,99 +1,20 @@
 ---
 name: multi-tenant-guard
-description: Patron de aislamiento multi-tenant de Buleje. NO es Postgres RLS — es app-level via middleware + tenantId 1er param + Prisma extension. Usar ANTES de crear endpoints, DB classes o queries.
+description: "Checklist de aislamiento por tenant (en la app, sin RLS): tenantId como 1.er parámetro, auth.tenantId del JWT, doble filtro en update/delete. Usar cuando vayas a crear o revisar un endpoint, una DB class o una query, o a buscar una fuga entre tenants."
 user-invocable: true
 model: sonnet
 allowed-tools: Read, Grep, Glob
 argument-hint: "[check|audit|new-endpoint|new-db-class]"
 ---
 
-# Multi-Tenant Guard — Patron Real de Aislamiento
+# Multi-tenant guard
 
-## Arquitectura (3 capas)
+Aislamiento en la app: `proxy.ts` resuelve el tenant, `requireAdmin()` lo saca del JWT y `lib/db/*.db.ts` filtra por `tenantId`; la extensión de `lib/tenant.ts` (`TENANT_MODELS`) lo inyecta como red de seguridad.
 
-```
-Request → proxy.ts (resuelve tenant de Host/JWT/Cookie)
-  → x-tenant-id header inyectado
-    → requireAdmin() extrae tenantId del JWT (CANONICAL)
-      → lib/db/*.db.ts recibe tenantId como 1er param
-        → Prisma Extension auto-inyecta WHERE en los ~153 de TENANT_MODELS
-```
-
-**Regla de oro:** JWT siempre gana sobre headers. El header puede tener slug, el JWT tiene CUID.
-
-## Patron DB Class (obligatorio)
-
-```typescript
-// lib/db/ejemplo.db.ts
-import "server-only";
-import { prisma } from "@/lib/prisma";
-
-export const EjemploDB = {
-  // tenantId SIEMPRE es el primer parametro, NUNCA opcional
-  async getAll(tenantId: string, limit = 200) {
-    return prisma.ejemplo.findMany({
-      where: { tenantId },  // SIEMPRE en WHERE
-      orderBy: { createdAt: "desc" },
-      take: limit,
-    });
-  },
-
-  async create(tenantId: string, data: CreateInput) {
-    return prisma.ejemplo.create({
-      data: { tenantId, ...data },  // SIEMPRE en data
-    });
-  },
-};
-```
-
-## Patron API Route (obligatorio)
-
-```typescript
-// app/api/ejemplo/route.ts
-export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "owner"]); // roles por ruta: lib/auth/roles-rutas-panel.ts (regla 9)
-  if (auth instanceof NextResponse) return auth;
-
-  // USAR auth.tenantId del JWT, nunca del header
-  const data = await EjemploDB.getAll(auth.tenantId);
-  return NextResponse.json(data);
-}
-```
-
-## Prisma Extension automatica
-
-`lib/tenant.ts` → `prismaForTenant(tenantId)` → auto-inyecta `WHERE { tenantId }` en los ~153 modelos de TENANT_MODELS (los items que se leen por su padre, como OrderItem, quedan fuera a propósito).
-
-**Modelos NO tenant-scoped (por diseno):** Tenant, SuperadminUser, AdminUser, Settings globales.
-**Modelos indirectos:** OrderItem, SaleItem, BundleItem → aislados via FK del padre.
-
-## Middleware chain (proxy.ts)
-
-1. Slug routing `/t/[slug]/*`
-2. Tenant resolution (Host → Cookie → JWT)
-3. Cross-tenant header mismatch audit (fire-and-forget)
-4. Header bundle: `x-tenant-id`, `x-request-id`, `x-nonce`
-5. Rate limit (Redis)
-6. CSRF double-submit
-7. Auth guards (superadmin → admin → public)
-
-## Gaps conocidos (vigilar)
-
-| Gap | Riesgo | Donde |
-|---|---|---|
-| `tenantId = "main"` como default en algunos DB classes | Escritura accidental a tenant principal | customers.db, orders.db, notifications.db |
-| OrderItem/SaleItem no estan en TENANT_MODELS | Leak si se consultan directo (sin pasar por OrdersDB) | Prisma queries directas |
-| Slug vs CUID mismatch | Endpoints publicos sin requireAdmin podrian usar slug | Storefront endpoints |
-
-## Checklist para nuevo codigo
-
-Al crear un nuevo endpoint o DB class:
-
-- [ ] `tenantId` es el 1er parametro de TODA funcion DB (no opcional, no default)
-- [ ] API route usa `auth.tenantId` del JWT (via `requireAdmin`)
-- [ ] Queries usan `where: { tenantId }` explicito
-- [ ] Creates usan `data: { tenantId, ...data }`
-- [ ] Updates/deletes incluyen `where: { tenantId, id }` (doble filtro)
-- [ ] Endpoints publicos (sin auth) usan `getTenantIdFromRequest()`
-- [ ] Audit trail: `logActivity()` con tenantId
-- [ ] NO usar `prisma.model.findMany()` directo — usar DB class
+- [ ] `tenantId` = 1.er parámetro de toda función DB, sin default ni `"main"`.
+- [ ] Ruta: `auth.tenantId` del JWT con `requireAdmin(req, roles)` (roles en `lib/auth/roles-rutas-panel.ts`); nunca el header ni el slug.
+- [ ] Lecturas con `where: { tenantId }`; creates con `data: { tenantId, ... }`.
+- [ ] update/delete con doble filtro: `where: { id, tenantId }`.
+- [ ] Items que se leen por su padre (`OrderItem`, `SaleItem`): fuera de `TENANT_MODELS` a propósito; se consultan siempre vía el padre.
+- [ ] Públicas sin auth: `getTenantIdFromRequest(req)`.
+- [ ] `logActivity()` con tenantId; nunca `prisma.*` directo, solo la DB class.

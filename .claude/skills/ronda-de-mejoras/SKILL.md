@@ -1,6 +1,6 @@
 ---
 name: ronda-de-mejoras
-description: Arma el menú de mejoras/funciones/integraciones de un módulo o pantalla PASANDO PRIMERO las 8 lentes (datos reales del tenant, capacidades sin estrenar, pantalla hermana, unidad/vocabulario, accesibilidad real, cifra declarada, lo que entra sin tipear, capstone+quick win) y devuelve un AskUserQuestion de 3-4 opciones independientes con evidencia medida. Usar al cerrar una entrega, cuando Brandon diga "dame opciones", "qué mejoras", "reforzar funciones", "nuevas funciones", "ideas", "integraciones", o al entrar a un módulo sin pedido concreto.
+description: "Menú de mejoras de un módulo o pantalla: pasa primero 8 lentes con datos reales y devuelve 3-4 opciones independientes con evidencia medida. Usar al cerrar una entrega o cuando Brandon diga «dame opciones», «qué mejoras», «ideas», «nuevas funciones» o «integraciones»."
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash
 argument-hint: "[módulo | pantalla | URL del admin | 'todo']"
@@ -20,7 +20,7 @@ argument-hint: "[módulo | pantalla | URL del admin | 'todo']"
 
 | # | Lente | Cómo se mide (comando o gesto) |
 |---|---|---|
-| 1 | **Datos reales del tenant real** | `DOTENV_CONFIG_PATH=.env.local node -r dotenv/config <script pg>`; contar filas/estados del módulo en `inversiones-agroforestales-blas-sociedad-anonima` (nunca `main`) |
+| 1 | **Datos reales del tenant real** | `node scripts/sql-lectura.mjs "select … $1" <param>` (READ ONLY, 1 llamada); contar filas/estados del módulo en Blas (`inversiones-agroforestales-blas-sociedad-anonima`, por `tenantId` exacto: memoria `blas-tenant-id-exacto`; nunca `main`) |
 | 2 | **Construido sin estrenar** | grep de features/props/endpoints del módulo × uso real (llamadas, registros). Memoria `ctp-capacidades-construidas-sin-usar` |
 | 3 | **Pantalla hermana** | grep de la sección/patrón (`"Fecha de"`, `type="date"`, `<CtpX`) en `components/admin/**` — dónde falta lo que acá ya existe |
 | 4 | **Unidad y vocabulario** | leer el copy como aserradero/bodeguero: PT antes que m³; «corrida», «jornada», «permiso», «cobrar», «fiado» |

@@ -17,11 +17,7 @@ experimental:
 
 # Frontend — UI al estándar del DS, verificada en navegador
 
-> **Arranque.** Tu `MEMORY.md` ya viene cargado en el prompt: no lo releas. Al final guardá lo que un futuro vos no sabría (una idea por archivo).
-> Checkout principal, **nunca worktree**. Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura);
-> se escribe solo en QA. «Listo» = comando + salida por el camino del usuario (rule `verificacion-de-verdad`).
-> **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
-> **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
+> Contexto y economía: hook SubagentStart. Tu MEMORY.md ya viene cargado (no lo releas); tope 8 KB, lo viejo va a _archivo.md (no se carga).
 
 Stack: React 19.2, Next.js 16 (App Router, Turbopack), Tailwind 4 (`@theme` tokens),
 `@buleje/design-system`, Framer Motion 12 (`import { m as motion }` bajo `LazyMotion` — un
@@ -56,6 +52,6 @@ Stack: React 19.2, Next.js 16 (App Router, Turbopack), Tailwind 4 (`@theme` toke
   captura leída son ~2-3 K tokens que se releen en todos los turnos siguientes.
 - Copy, lógica o datos sin cambio visual: sin capturas; basta el typecheck o el curl del endpoint.
 - `getComputedStyle` para afirmar contraste o tamaño, no a ojo. Tab/Escape/foco solo si tocaste un modal.
-- Tipografía del storefront/marketplace: skill `bsm-typography-rules` (ya no viene precargada).
+- Tipografía del storefront/marketplace: la regla `.claude/rules/ui-components.md` («Tipografía y tamaños»).
 - **Pasos que ESCRIBEN** (guardar, agregar a la bolsa, togglear) → `--anchos 1280 --temas claro`: qa-capturas repite los pasos en cada ancho y tema y deshace o duplica lo escrito (11-10: la bolsa pasó de 3 a 6, un toggle se revirtió solo).
 - **Antes de medir o rediseñar un componente**, `grep -rn "<Nombre>" app components extensiones` para confirmar que alguien lo importa (11-10: se midió `Header.tsx`, 2.055 líneas que nadie usaba desde hacía meses).

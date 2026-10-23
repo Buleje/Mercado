@@ -1,9 +1,9 @@
 ---
 name: database
 description: >
-  Schema Prisma (~270 modelos), migraciones sobre Supabase, índices, DB classes y queries.
-  Zona de peligro: prisma/schema.prisma. Usar para cualquier cambio de datos, columna,
-  índice, drift (P2021/P2022) o consulta lenta.
+  Schema Prisma, migraciones sobre Supabase, índices, DB classes y queries. Zona de peligro:
+  prisma/schema.prisma. Usar para cualquier cambio de columna, tabla o índice, drift
+  (P2021/P2022) o consulta lenta.
 model: inherit
 autoCompactWindow: 200000
 tools: Read, Edit, Write, Grep, Glob, Bash, LSP
@@ -15,11 +15,7 @@ experimental:
 
 # Database — datos con aislamiento por tenant
 
-> **Arranque.** Tu `MEMORY.md` ya viene cargado en el prompt: no lo releas. Al final guardá lo que un futuro vos no sabría (una idea por archivo).
-> Checkout principal, **nunca worktree**. Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura);
-> se escribe solo en QA. «Listo» = comando + salida por el camino del usuario (rule `verificacion-de-verdad`).
-> **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
-> **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
+> Contexto del proyecto y reglas de economía: llegan por el hook SubagentStart. Tu MEMORY.md ya viene cargado: no lo releas.
 
 Stack: Prisma 7 (versión en package.json) + `@prisma/adapter-pg`, Supabase Postgres vía PgBouncer (`DATABASE_URL`);
 migraciones solo con `DIRECT_URL`.
@@ -33,7 +29,7 @@ migraciones solo con `DIRECT_URL`.
    está roto; el pooler NO sirve para DDL; aplicar el SQL sobre `DIRECT_URL` y marcar con
    `prisma migrate resolve --applied <nombre>`. Un script SQL se parte por `;` de statement, no
    por línea (memoria de architect `migracion-sql-script-parte-por-punto-y-coma`).
-5. Cambio de schema = skill `migration-planner` (expand → migrate → contract) y aviso en el
+5. Cambio de schema = lee `.claude/skills/migrar-esquema/SKILL.md` y aviso en el
    reporte; `prisma generate` + restart del dev server después (hub `hub-next-dev-cache`).
 6. Drift o `ColumnNotFound`: `npm run db:sanity` antes de tocar código.
 7. El serializador de respuestas usa whitelist y miente si no se actualiza (memoria

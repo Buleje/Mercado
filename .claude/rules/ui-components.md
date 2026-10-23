@@ -9,8 +9,8 @@ paths:
 
 # Reglas al tocar UI visible
 
-- Sin hex hardcodeados — tokens del DS (`@buleje/design-system`). Paleta oficial: primary `#00A0A0`, coral `#FF6B5B`, texto sobre claro `#007F7F` (solo vía tokens).
-- Tipografía storefront: body `text-base` mínimo, filtros `h-12 border-2 rounded-2xl` (skill `bsm-typography-rules`).
+- Sin hex hardcodeados — tokens del DS (`@buleje/design-system`). Paleta por token: turquesa del logo = `--accent` (hover `-600`, texto sobre claro `-dark`, texto sobre tinte `-ink`) o, en clases de Tailwind, `bg-primary`/`text-primary` (`--color-primary`: familia paralela casi igual y la más usada), coral = `--data-warning-*`. Los valores cambian por tema: `rg -n -- '--accent|--color-primary' app/globals.css`.
+- Tipografía y filtros: ver «Tipografía y tamaños» más abajo.
 - `gray-*` siempre con variante `dark:`. Rojo = `--data-error-*` (NO existe `--data-danger-*`).
 - Tokens dark reales: `--color-card/foreground/muted` (no `--card`).
 - NO emojis genéricos en UI — Lucide icons o SVG custom.
@@ -24,6 +24,17 @@ paths:
 - `overflow:hidden` en un ancestro rompe `position:sticky`.
 - Páginas `(store)` NO renderean su propio nav/footer (el layout lo da).
 - Next metadata: re-declarar `robots`/`alternates` en una page PISA el root (no merge) — heredar robots, re-declarar alternates completo.
+
+## Tipografía y tamaños (regla blindada de Brandon, 2026-04-28)
+
+«Evita a toda costa letras diminutas… Filtros: cuadrados, más visibles, más grandes.» Escala oficial: ADR-070.
+
+- **Jerarquía**: `PageTitle` (la página) › `SectionTitle` (la vista) › `CardTitle` (un bloque). Nunca `<h1>`/`<h2>`/`<h3>` con clases a mano.
+- **Tienda y marketplace**: body y CTA `text-base` mínimo, CTA a `h-12`; nunca `text-xs` en texto corrido.
+- **Panel**: body `text-sm`; `text-xs` solo para etiquetas, fechas y meta de tablas; íconos de cifras `h-4`/`h-5`, nunca `h-3`.
+- **Diminuto**: prohibido `text-[10px]` (y `[9px]`, `[11px]`, `[13px]`). Los 10 px solo con el token (`text-[length:var(--ts-2xs)]`) y solo en `Kicker`, sparklines, badges y pills numéricos (`1/12`); en el panel ese token ya vale 12 px.
+- **Filtros de tienda** (buscador, orden, toggles): `h-12 text-base border-2 rounded-2xl` (en móvil `max-md:rounded-none`), ícono `h-5 w-5`, foco `focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]`; toggles de vista cuadrados `h-12 w-12`. Receta: `components/marketplace/store-detail/StoreCatalog.tsx`.
+- Si pasas por un componente con `text-xs` en texto corrido, `h-8` en un filtro o un `border` de 1 px, súbelo aunque no sea el foco.
 
 ## Organización de una vista — la ley de Brandon (2026-09-19)
 
