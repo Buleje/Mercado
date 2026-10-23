@@ -201,7 +201,9 @@ function leerPreset(n, vistos = new Set()) {
   const lista = Array.isArray(crudo) ? crudo : crudo?.pasos;
   if (!Array.isArray(lista)) throw new Error(`el preset ${n} no es un array ni trae "pasos"`);
   const pasos = lista.flatMap((p) => (p && typeof p === "object" && typeof p.preset === "string" ? leerPreset(p.preset, new Set([...vistos, n])).pasos : [p]));
-  return { tenant: Array.isArray(crudo) ? undefined : crudo.tenant, ruta: Array.isArray(crudo) ? undefined : crudo.ruta, pasos };
+  /* `ls` (22-10): localStorage que el recorrido necesita, como `--ls`. El del explorador del Archivo
+     fallaba en el paso 0 porque la vista recordada era la grilla, no los íconos. */
+  return { tenant: Array.isArray(crudo) ? undefined : crudo.tenant, ruta: Array.isArray(crudo) ? undefined : crudo.ruta, ls: Array.isArray(crudo) ? undefined : crudo.ls, pasos };
 }
 const presetsPedidos = (arg("preset", "") || "").split(",").map((x) => x.trim()).filter(Boolean);
 const primerPreset = presetsPedidos.length ? leerPreset(presetsPedidos[0]) : null;
@@ -312,7 +314,7 @@ await ctx.addInitScript((slug) => {
 }, tenant);
 /* `--ls '{"clave":"valor"}'` (08-10): siembra localStorage ANTES de cargar; evitaba un eval con
    `location.href=location.href` que a 1280 dejaba la captura en blanco. Valores no-string van como JSON. */
-const sembrarLs = arg("ls", null);
+const sembrarLs = arg("ls", primerPreset?.ls ? JSON.stringify(primerPreset.ls) : null);
 if (sembrarLs) {
   let pares;
   try { pares = JSON.parse(sembrarLs); } catch (e) { console.error(`[qa-capturas] --ls no es JSON: ${e.message}`); process.exit(1); }

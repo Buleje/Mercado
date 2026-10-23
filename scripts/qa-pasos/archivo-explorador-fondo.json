@@ -1,6 +1,7 @@
 {
   "tenant": "main",
   "ruta": "/admin?tab=documentos&vista=drive&sub=all#documentos",
+  "ls": { "doc-view-mode": "grandes" },
   "pasos": [
     { "esperar": "[data-qa=explorador] [data-qa=explorador-carpeta]" },
     { "esperar": 600 },
