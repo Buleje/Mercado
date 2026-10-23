@@ -1,6 +1,7 @@
 import "server-only";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
+import { prisma } from "@/lib/prisma";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import {
   construirRegistro,
@@ -52,6 +53,58 @@ export class CubicacionVinculoError extends Error {
     super(message);
     this.name = "CubicacionVinculoError";
   }
+}
+
+/** Una línea VIVA del Libro que la cubicación ampara (la que el Anexo 04 lee con sus medidas). */
+export interface LineaDelLibro {
+  id: string;
+  lineNo: number;
+  /** YYYY-MM-DD (date-only, en UTC). */
+  fecha: string;
+}
+
+/** Por qué no se borra: dice qué línea y el camino para sacarla del Libro. */
+export function motivoEnLibro(lineas: readonly LineaDelLibro[]): string {
+  const orden = [...lineas].sort((a, b) => a.lineNo - b.lineNo);
+  const nums = orden.map((l) => `N° ${l.lineNo}`);
+  const cuales =
+    nums.length === 1
+      ? `la línea ${nums[0]} del ${orden[0]?.fecha.split("-").reverse().join("/") ?? ""}`
+      : `las líneas ${nums.slice(0, -1).join(", ")} y ${nums[nums.length - 1]}`;
+  const esa = nums.length === 1 ? "esa línea" : "esas líneas";
+  return (
+    `Está en el Libro (Producción, ${cuales}) y sus medidas pieza por pieza son las del Anexo 04. ` +
+    `Para borrarla, primero anula ${esa} en el Libro › Producción (⋯ › Anular la línea); si solo quieres cambiarla, ábrela o duplícala.`
+  );
+}
+
+/**
+ * No se borra una cubicación que ampara líneas vivas del Libro (HTTP 409): la
+ * línea queda, pero sus medidas pieza por pieza —las del Anexo 04 y el cuadre
+ * contra el asiento (ADR-368/369/405)— no están en ningún otro lado.
+ */
+export class CubicacionEnLibroError extends Error {
+  constructor(readonly lineas: LineaDelLibro[]) {
+    super(motivoEnLibro(lineas));
+    this.name = "CubicacionEnLibroError";
+  }
+}
+
+type LectorDeLineas = Pick<Prisma.TransactionClient, "forestCtpEntry">;
+
+/**
+ * Las líneas del Libro que siguen VIVAS entre `ids`: del tenant (ownership en el
+ * WHERE), sin borrar y sin anular. Se mira el estado, nunca el id pelado: una
+ * cubicación cuya línea se anuló o se purgó ya no está en el Libro y se borra.
+ * Cualquier estado que no sea «anulado» cuenta como vivo (lo seguro es frenar).
+ */
+async function lineasVivas(db: LectorDeLineas, tenantId: string, ids: readonly string[]): Promise<LineaDelLibro[]> {
+  if (ids.length === 0) return [];
+  const filas = await db.forestCtpEntry.findMany({
+    where: { tenantId, id: { in: [...ids] }, deletedAt: null, status: { not: "anulado" } },
+    select: { id: true, lineNo: true, entryDate: true },
+  });
+  return filas.map((f) => ({ id: f.id, lineNo: f.lineNo, fecha: f.entryDate.toISOString().slice(0, 10) }));
 }
 
 const esRegistro = (c: unknown): c is CubicacionRegistro =>
@@ -241,16 +294,43 @@ export const ForestCubicacionesDB = {
     return registro;
   },
 
-  /** Borra una cubicación por id. Devuelve true si existía. */
+  /**
+   * Las cubicaciones que hoy están EN el Libro (con al menos una línea viva), con
+   * esas líneas y el motivo por el que no se borran. UNA lectura del Libro para
+   * toda la lista. Las que no aparecen se pueden borrar.
+   */
+  async enLibro(
+    tenantId: string,
+    lista: readonly CubicacionRegistro[],
+  ): Promise<Record<string, { lineas: LineaDelLibro[]; motivo: string }>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = [...new Set(lista.flatMap((c) => corridasDeCubicacion(c)))];
+    const vivas = new Map((await lineasVivas(prisma, tenantId, ids)).map((l) => [l.id, l]));
+    const out: Record<string, { lineas: LineaDelLibro[]; motivo: string }> = {};
+    for (const c of lista) {
+      const lineas = corridasDeCubicacion(c).flatMap((id) => vivas.get(id) ?? []);
+      if (lineas.length > 0) out[c.id] = { lineas, motivo: motivoEnLibro(lineas) };
+    }
+    return out;
+  },
+
+  /**
+   * Borra una cubicación por id. Devuelve true si existía. Si ampara líneas
+   * vivas del Libro, `CubicacionEnLibroError` y no se toca: se mira DENTRO del
+   * mismo lock del guardado, así nadie la liga entre la consulta y el borrado.
+   */
   async remove(tenantId: string, id: string, user = "unknown"): Promise<boolean> {
     if (!tenantId) throw new Error("tenantId is required");
     if (!id) return false;
     const registro = await PlatformSettingsDB.actualizar<unknown[], CubicacionRegistro | null>(
       `${KEY_PREFIX}${tenantId}`,
-      (actual) => {
+      async (actual, tx) => {
         const list = (Array.isArray(actual) ? actual : []).filter(esRegistro);
         const hallado = list.find((c) => c.id === id);
-        return hallado ? { valor: list.filter((c) => c.id !== id), resultado: hallado } : { resultado: null };
+        if (!hallado) return { resultado: null };
+        const vivas = await lineasVivas(tx, tenantId, corridasDeCubicacion(hallado));
+        if (vivas.length > 0) throw new CubicacionEnLibroError(vivas);
+        return { valor: list.filter((c) => c.id !== id), resultado: hallado };
       },
       user,
     );

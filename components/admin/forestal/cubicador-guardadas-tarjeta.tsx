@@ -7,6 +7,8 @@
  *
  * A la vista: nombre, día, especies, PT · m³ · piezas, dueños y si ya está en
  * el Libro; una acción grande («Abrir en el cubicador») y el resto en «⋯».
+ * «En el Libro» lo dice el SERVIDOR (líneas vivas, no el id pelado): con eso
+ * «Borrar» queda apagado y el ⓘ dice qué línea y el camino para sacarla.
  * El papel de la hoja se despliega en la tarjeta: montado siempre, cada tarjeta
  * pediría sus papeles al Archivo (una lista de 40 = 40 pedidos al abrir).
  */
@@ -14,6 +16,8 @@ import { useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { BookOpen, ChevronDown, Copy, FileText, FolderOpen, Loader2, Trash2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import type { EnLibroDeGuardada } from "@/components/admin/forestal/hooks/use-guardadas-del-cubicador";
 import { PapelDelCubicador } from "@/components/admin/forestal/cubicador-papel/PapelDelCubicador";
 import { codigoDeHoja } from "@/components/admin/forestal/cubicador-papel/papel-cubicador";
 import { corridasDeCubicacion, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
@@ -46,8 +50,10 @@ export const duenosDe = (c: CubicacionRegistro): string[] => distintos([...c.pie
 const BOTON_ABRIR =
   "inline-flex min-h-12 flex-[1_1_auto] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-4 text-base font-bold text-white transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2";
 
-export function TarjetaGuardada({ c, abierta, papeles, borrando, copiado, onAbrir, onDuplicar, onCopiarCodigo, onBorrar }: {
+export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiado, onAbrir, onDuplicar, onCopiarCodigo, onBorrar }: {
   c: CubicacionRegistro;
+  /** Las líneas vivas del Libro que ampara (del servidor). Ausente = no está en el Libro. */
+  enLibro?: EnLibroDeGuardada;
   /** Es la que está cargada en el cubicador ahora. */
   abierta: boolean;
   /** Papeles vinculados (foto/PDF de la hoja llena), de una sola lectura para toda la lista. */
@@ -60,7 +66,9 @@ export function TarjetaGuardada({ c, abierta, papeles, borrando, copiado, onAbri
   onBorrar: () => void;
 }) {
   const [conPapel, setConPapel] = useState(false);
-  const enLibro = corridasDeCubicacion(c).length > 0;
+  /* Ligada a líneas que hoy están anuladas o ya no existen: ya no está en el Libro. */
+  const yaNoEsta = !enLibro && corridasDeCubicacion(c).length > 0;
+  const lineas = enLibro ? [...enLibro.lineas].sort((a, b) => a.lineNo - b.lineNo).map((l) => `N° ${l.lineNo}`).join(", ") : "";
   const especies = especiesDe(c);
   const duenos = duenosDe(c);
   const pt = c.totales.pieTablar;
@@ -74,7 +82,16 @@ export function TarjetaGuardada({ c, abierta, papeles, borrando, copiado, onAbri
       icon: Copy,
       onSelect: onCopiarCodigo,
     },
-    { id: "borrar", label: "Borrar", hint: enLibro ? "La línea del Libro queda; se pierden las medidas pieza por pieza" : undefined, icon: Trash2, tone: "danger", busy: borrando, onSelect: onBorrar },
+    {
+      id: "borrar",
+      label: "Borrar",
+      hint: enLibro ? "No se borra: está en el Libro. Primero anula su línea en el Libro › Producción" : undefined,
+      icon: Trash2,
+      tone: "danger",
+      busy: borrando,
+      disabled: Boolean(enLibro),
+      onSelect: onBorrar,
+    },
   ];
 
   return (
@@ -108,8 +125,15 @@ export function TarjetaGuardada({ c, abierta, papeles, borrando, copiado, onAbri
           }`}
         >
           {enLibro && <BookOpen className="h-4 w-4" aria-hidden />}
-          {enLibro ? "En el Libro" : "Sin enviar al Libro"}
+          {enLibro ? `En el Libro · ${lineas}` : yaNoEsta ? "Su línea del Libro ya no está" : "Sin enviar al Libro"}
         </span>
+        {enLibro && (
+          <InfoTip
+            ariaLabel="Por qué no se puede borrar"
+            what={enLibro.motivo}
+            example="Abrir y Duplicar siguen andando: la copia sale sin la línea del Libro."
+          />
+        )}
         {abierta && (
           <span className="inline-flex items-center rounded-lg bg-primary/10 px-2 py-1 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
             Abierta ahora

@@ -58,7 +58,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const gets = () => pendientes.filter((p) => p.metodo === "GET" && p.url === API);
+const gets = () => pendientes.filter((p) => p.metodo === "GET" && p.url.split("?")[0] === API);
 const pedido = (metodo: string, url: string) => pendientes.find((p) => p.metodo === metodo && p.url === url);
 
 async function resolver(p: Pendiente | undefined, cuerpo: unknown) {

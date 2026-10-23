@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import {
   CubicacionDesactualizadaError,
+  CubicacionEnLibroError,
   CubicacionVinculoError,
   ForestCubicacionesDB,
 } from "@/lib/db/forest-cubicaciones.db";
@@ -21,9 +22,12 @@ import { esVariado } from "@/lib/forestal/variado-desglose";
 /**
  * /api/admin/forestal/cubicaciones — historial de cubicaciones del aserradero.
  *
- * GET     — lista las guardadas (más reciente primero).
+ * GET     — lista las guardadas (más reciente primero). Con `?enLibro=1`, además
+ *           `enLibro`: las que amparan líneas vivas del Libro y por qué no se borran.
  * POST    — guarda una nueva o actualiza por `id`.
- * DELETE  — borra por `?id=`.
+ * DELETE  — borra por `?id=` · 409 `en_libro` si ampara líneas vivas del Libro
+ *           (sus medidas pieza por pieza son las del Anexo 04): primero se anula
+ *           la línea en el Libro › Producción.
  *
  * Guard: requireAdmin → rate limit → spec:forestal:herramientas. Los totales
  * NUNCA se toman del cliente: la capa de datos los recalcula desde las piezas.
@@ -112,6 +116,11 @@ export const GET = withApiHandler("forestal-cubicaciones-get", async (req: NextR
         .map((c) => c.id);
       return NextResponse.json({ cubicaciones, sugeridas });
     }
+    /* ?enLibro=1 (las Guardadas): una lectura más del Libro, sólo para quien la usa. */
+    if (new URL(req.url).searchParams.get("enLibro") === "1") {
+      const enLibro = await ForestCubicacionesDB.enLibro(auth.tenantId, cubicaciones);
+      return NextResponse.json({ cubicaciones, enLibro });
+    }
     return NextResponse.json({ cubicaciones });
   } catch (err) {
     logger.error("[cubicaciones.GET] failed", { error: String(err), tenantId: auth.tenantId });
@@ -185,6 +194,9 @@ export const DELETE = withApiHandler("forestal-cubicaciones-delete", async (req:
     const ok = await ForestCubicacionesDB.remove(auth.tenantId, id, auth.username ?? "unknown");
     return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "not_found" }, { status: 404 });
   } catch (err) {
+    if (err instanceof CubicacionEnLibroError) {
+      return NextResponse.json({ error: "en_libro", message: err.message, lineas: err.lineas }, { status: 409 });
+    }
     logger.error("[cubicaciones.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

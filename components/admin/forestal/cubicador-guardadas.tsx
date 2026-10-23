@@ -40,7 +40,7 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
   /** Sólo dentro de otra ventana (producir sin lote): la lista va debajo del lote y se cierra. */
   onCerrar?: () => void;
 }) {
-  const { lista, cargando, error, borrando, recargar, borrar } = useGuardadasDelCubicador(recargarToken);
+  const { lista, enLibro, cargando, error, borrando, recargar, borrar } = useGuardadasDelCubicador(recargarToken);
   const { porId: papeles } = usePapelesDeCubicaciones(true);
   const { confirm } = useConfirm();
   const [busqueda, setBusqueda] = useState("");
@@ -69,11 +69,13 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
   };
 
   const pedirBorrar = async (c: CubicacionRegistro) => {
-    const enLibro = corridasDeCubicacion(c).length > 0;
+    /* En el Libro no se borra (el menú ya lo apaga; el servidor responde 409 igual). */
+    if (enLibro[c.id]) return;
+    const ligadaVieja = corridasDeCubicacion(c).length > 0;
     const ok = await confirm({
       title: `¿Borrar «${c.nombre}»?`,
-      description: enLibro
-        ? "Ya está en el Libro: esa línea queda, pero se pierden sus medidas pieza por pieza (las que usa el Anexo 04). No se puede deshacer."
+      description: ligadaVieja
+        ? "Su línea del Libro ya se anuló o no existe: se borran sus medidas pieza por pieza. No se puede deshacer."
         : "No se puede deshacer.",
       intent: "danger",
       confirmLabel: "Sí, borrar",
@@ -159,6 +161,7 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
               <TarjetaGuardada
                 key={c.id}
                 c={c}
+                enLibro={enLibro[c.id]}
                 abierta={Boolean(abiertaId) && abiertaId === c.id}
                 papeles={papeles.get(c.id) ?? 0}
                 borrando={borrando === c.id}

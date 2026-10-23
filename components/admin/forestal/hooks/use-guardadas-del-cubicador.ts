@@ -10,6 +10,10 @@
  * tarjeta reaparecía (mismo bug medido en Tareas el 2026-09-14)—. Sólo aplica
  * su lista la carga más nueva, y sólo si no hubo cambios mientras viajaba;
  * cada borrado termina con una carga silenciosa.
+ *
+ * `enLibro` (del servidor): las que amparan líneas vivas del Libro, con el
+ * motivo por el que no se borran. El servidor frena igual con 409 si alguien
+ * llama la API a mano o la lista quedó vieja; su mensaje es el que se muestra.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -17,8 +21,16 @@ import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 
 const URL_CUBICACIONES = "/api/admin/forestal/cubicaciones";
 
+/** Por qué una guardada no se borra (está en el Libro): lo arma el servidor. */
+export interface EnLibroDeGuardada {
+  lineas: { id: string; lineNo: number; fecha: string }[];
+  motivo: string;
+}
+
 export function useGuardadasDelCubicador(recargarToken?: number): {
   lista: CubicacionRegistro[];
+  /** id → líneas vivas del Libro que ampara y el motivo. Ausente = se puede borrar. */
+  enLibro: Record<string, EnLibroDeGuardada>;
   cargando: boolean;
   error: string | null;
   /** id que se está borrando (para su spinner). */
@@ -28,6 +40,7 @@ export function useGuardadasDelCubicador(recargarToken?: number): {
   borrar: (id: string) => Promise<boolean>;
 } {
   const [lista, setLista] = useState<CubicacionRegistro[]>([]);
+  const [enLibro, setEnLibro] = useState<Record<string, EnLibroDeGuardada>>({});
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [borrando, setBorrando] = useState<string | null>(null);
@@ -42,14 +55,15 @@ export function useGuardadasDelCubicador(recargarToken?: number): {
       setError(null);
     }
     try {
-      const r = await fetch(URL_CUBICACIONES, { credentials: "include", cache: "no-store" });
+      const r = await fetch(`${URL_CUBICACIONES}?enLibro=1`, { credentials: "include", cache: "no-store" });
       if (!r.ok) {
         const j = (await r.json().catch(() => ({}))) as { message?: string };
         throw new Error(j?.message ?? `No se pudieron cargar las guardadas (HTTP ${r.status})`);
       }
-      const j = (await r.json()) as { cubicaciones?: CubicacionRegistro[] };
+      const j = (await r.json()) as { cubicaciones?: CubicacionRegistro[]; enLibro?: Record<string, EnLibroDeGuardada> };
       if (esta === cargasRef.current.ultima && cambiosAlSalir === cargasRef.current.cambios) {
         setLista(j.cubicaciones ?? []);
+        setEnLibro(j.enLibro ?? {});
       }
     } catch (e) {
       if (esta === cargasRef.current.ultima && !opciones?.silenciosa) {
@@ -71,6 +85,11 @@ export function useGuardadasDelCubicador(recargarToken?: number): {
       });
       if (!r.ok) {
         const j = (await r.json().catch(() => ({}))) as { message?: string };
+        /* 409 = está en el Libro: el mensaje del servidor ya dice qué línea y el camino. */
+        if (r.status === 409 && j?.message) {
+          setError(j.message);
+          return false;
+        }
         throw new Error(j?.message ?? `HTTP ${r.status}`);
       }
       setLista((prev) => prev.filter((x) => x.id !== id));
@@ -86,5 +105,5 @@ export function useGuardadasDelCubicador(recargarToken?: number): {
 
   const recargar = useCallback(() => { void cargar(); }, [cargar]);
 
-  return { lista, cargando, error, borrando, recargar, borrar };
+  return { lista, enLibro, cargando, error, borrando, recargar, borrar };
 }

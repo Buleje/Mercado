@@ -30,6 +30,10 @@ vi.mock("recharts", () => {
   };
 });
 
+// Relativas a hoy: la vista filtra por defecto los últimos 30 días.
+const HACE_5_DIAS = new Date(Date.now() - 5 * 86_400_000).toISOString();
+const HACE_2_DIAS = new Date(Date.now() - 2 * 86_400_000).toISOString();
+
 /** Un DbAdelanto mínimo (los campos que estas dos vistas leen), con overrides. */
 function ad(overrides: Partial<DbAdelanto> & { id: string }): DbAdelanto {
   return {
@@ -42,7 +46,7 @@ function ad(overrides: Partial<DbAdelanto> & { id: string }): DbAdelanto {
     montoAdelantado: 1731,
     contratoId: null,
     moneda: "PEN",
-    fechaAdelanto: "2026-09-20T12:00:00.000Z",
+    fechaAdelanto: HACE_5_DIAS,
     fechaVencimiento: null,
     status: "ABIERTO",
     saldoPendiente: 1731,
@@ -55,8 +59,8 @@ function ad(overrides: Partial<DbAdelanto> & { id: string }): DbAdelanto {
     conceptoRecibido: null,
     entregas: [],
     entregasPactadas: [],
-    createdAt: "2026-09-20T12:00:00.000Z",
-    updatedAt: "2026-09-20T12:00:00.000Z",
+    createdAt: HACE_5_DIAS,
+    updatedAt: HACE_5_DIAS,
     ...overrides,
   } as DbAdelanto;
 }
@@ -89,7 +93,7 @@ describe("ActividadView — lo dado y lo recibido en el mismo feed", () => {
       conceptoRecibido: "PRESTAMO",
       saldoPendiente: 500,
       entregas: [
-        { id: "e1", adelantoId: "3", fecha: "2026-09-25T12:00:00.000Z", tipo: "PRODUCTO", descripcion: null, productId: null, cantidad: null, valor: 300, sumadoAStock: false, notas: null, comprobanteUrl: null } as never,
+        { id: "e1", adelantoId: "3", fecha: HACE_2_DIAS, tipo: "PRODUCTO", descripcion: null, productId: null, cantidad: null, valor: 300, sumadoAStock: false, notas: null, comprobanteUrl: null } as never,
       ],
     });
     render(<ActividadView adelantos={[recibido]} loading={false} />);
