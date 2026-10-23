@@ -11,6 +11,9 @@ paths:
 
 > Norte: cada línea debe ser **legible, tipada, testeable y consistente** con el código vecino. Imita el estilo del archivo que tocás (densidad de comentarios, naming, idioma). Calidad > velocidad cuando hay dinero/datos/compliance de por medio.
 
+## 0. API de Next: la doc de la versión instalada manda
+- Antes de usar una API de Next que no sea rutina (config, caché, `"use cache"`, rutas, proxy), `rg` en `node_modules/next/dist/docs/` (3,8 MB, misma versión del `package.json`): gana a la memoria del modelo y a context7, que pueden ser de otra versión.
+
 ## 1. TypeScript
 - **Cero `any`.** Tipos explícitos en params/retornos públicos. `unknown` + narrowing antes que `any`.
 - Validar entrada externa con **Zod `safeParse`** (nunca `.parse()`); tipá desde el schema (`z.infer`).
