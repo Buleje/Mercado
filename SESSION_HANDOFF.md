@@ -1,3 +1,15 @@
+# SESSION HANDOFF — 2026-10-22/23: Archivo (Documentos) — 3 rondas de mejoras + Blas ordenado + revisión del deploy
+
+**Estado:** commits `b8f7267c9` → `5052206df` (10 commits), **sin subir** (deploy bloqueado, ver abajo). Memoria: `archivo-papeles-vencimientos-expediente-whatsapp-2026-10-22` (todo el detalle).
+
+**Hecho:** fotos de cámara escondidas, vencimientos por OCR local (DNI por MRZ), expediente PDF, papeles por WhatsApp, Ctrl+K con papeles, buscar como hablas, Archivo al instante (caché por usuario), Ordenar mi Archivo, preguntarle al Archivo por WhatsApp, candado del encargado (`veTodoElDrive`), centro de tareas (pedido directo de Brandon; su imagen no llegó). Blas ordenado con datos reales: 14/15 papeles con texto, DNI jefe vence 2030-01-31, 6 renombres + basura a papelera (respaldo y deshacer en `.claude/autonomo/respaldos/archivo-blas-2026-10-22-*.json`).
+
+**A MEDIAS (sin commitear, compila y dibuja bien, sin verificar entero):** «Archivo más liviano» — `DocumentosModule.tsx` partido en `components/admin/documentos/archivo/**` (el módulo quedó en ~36 líneas). Quedan: `tmp-DocumentosOrig.tsx` (el original, borrar al terminar), `__tests__/tmp-archivo-mismo-dom.test.tsx`, `scripts/partir-en-piezas.mjs`, `scripts/qa-pasos/archivo-medir-apertura.json` y el cambio de ruta en `__tests__/admin-subvistas-sincronizadas.test.ts`. Falta: recorrido completo (menús, modales, expediente, ordenar, preview) + medir antes/después + commit. Si algo falla: `git checkout HEAD -- components/admin/documentos/DocumentosModule.tsx __tests__/admin-subvistas-sincronizadas.test.ts` y borrar `archivo/`.
+
+**Decide Brandon (para publicar):** build = (a) Vercel Pro US$ 20/mes + Enhanced (~US$ 0,40/build; también da el canario 5→25→100 y el uso comercial) o (c) GitHub Actions gratis (logs públicos); respaldo = Supabase Pro US$ 25/mes o bucket propio (`backup-offsite.yml` 0/194); `vercel login` con su cuenta; token de WhatsApp en Meta; los 2 crons en pausa; cerrar a mano la caja de Blas del 11-06; OK al ensayo DR (~20 min, Postgres local). Plan completo: `/tmp/claude-1000/-home-usuario-proyectos-Mercado/96bf00cd-145b-4a75-8c72-7bd36b898e23/scratchpad/deploy/propuesta.md` (copiado en `.claude/autonomo/deploy-propuesta-2026-10-22.md`). También: la IA propone «GTF 3 CHIVIS vence 26/08/2021» (no aplicado).
+
+---
+
 # SESSION HANDOFF — 2026-10-17 (día): Superadmin › Plantas forestales (control e inspección de aserraderos)
 
 **Estado:** commits `4c0f2b85e` (tabla `ForestInspeccionPlanta`, ADR-498, migración APLICADA) · `13373829e` (lista, ficha, incoherencias) · `065a7c7fb` (inspección) · `9a5d3ec0f` (arreglos de security) · `68c2c0001` (architect a la llamada 30) · qa-capturas `--superadmin`. Sin subir. Dos pasadas de security: la segunda cerró una ALTA (la planta reescribía el conteo del inspector) y quedó sin veto.
