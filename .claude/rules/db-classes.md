@@ -17,4 +17,4 @@ paths:
 - Prisma `upsert` con `id: 0` inserta id=0 literal → usar `create()` para altas.
 - `applyRateLimit` es SÍNCRONO (no es bug llamarlo sin await).
 - Campo nuevo en schema → la migración NO corre con `prisma migrate` (pooler): SQL idempotente + script pg con DIRECT_URL + `prisma generate` + REINICIAR dev server.
-- Checklist completo y gaps conocidos (DB classes con default `"main"`, OrderItem/SaleItem fuera de TENANT_MODELS): skill `multi-tenant-guard`. Rubrics en `.claude/rubrics/` (ya no los corre un hook, 02-10).
+- Checklist completo: skill `multi-tenant-guard` (OrderItem/SaleItem quedan fuera de TENANT_MODELS a propósito: se leen por su padre; el default `"main"` en DB classes ya no existe). Rubrics en `.claude/rubrics/` (ya no los corre un hook, 02-10).

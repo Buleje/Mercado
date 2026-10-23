@@ -81,7 +81,7 @@ if (recentCommits) {
 
 if (testFailedFlag) {
   lines.push("");
-  lines.push("⚠️ **TESTS FALLANDO** en ultimo post-commit. Correr `/self-heal test`.");
+  lines.push("⚠️ **TESTS FALLANDO** en ultimo post-commit. Pasarlo al agente `healer`.");
 }
 
 // ── Pendiente real = la PRIMERA entrada de SESSION_HANDOFF.md ────
@@ -113,7 +113,7 @@ try {
 
 if (filesDirty > 5) {
   lines.push("");
-  lines.push(`⚠️ ${filesDirty} archivos sin commitear. Considerar \`/commit\`.`);
+  lines.push(`⚠️ ${filesDirty} archivos sin commitear. Guardar con \`git commit -F <msg> -- <archivos>\`.`);
 }
 
 if (evolutionLog?.evolutions?.length > 0) {

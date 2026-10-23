@@ -38,7 +38,7 @@ Testing: Vitest 4 · Playwright 1.59 · axe · k6 · Storybook 8 · ESLint 9 + P
 
 - `app/`: `(store)` · `admin/` · `marketplace/` · `superadmin/` · `t/[tenantSlug]/` white-label · `api/` (~1.230 endpoints) · `checkout/`,`pedido/`,`tracking/`,`venta/` · `delivery/`,`supplier/`,`cms/`.
 - `lib/db/*.db.ts` (~279 clases) = **única vía a Prisma** (cache + audit + `tenantId`). `lib/auth/` RBAC (26 recursos × 6 roles) · `proxy.ts` + `lib/middleware/` = auth/CSP/rate-limit/tenant guard · `lib/env.ts` valida secrets.
-- `prisma/schema.prisma` (~254 modelos) · `contexts/` · `components/` (`ui-system/` = primitivos DS) · ADRs en `docs/adr/`.
+- `prisma/schema.prisma` (~272 modelos) · `contexts/` · `components/` (`ui-system/` = primitivos DS) · ADRs en `docs/adr/`.
 
 ## 4. Reglas críticas (NO negociables)
 

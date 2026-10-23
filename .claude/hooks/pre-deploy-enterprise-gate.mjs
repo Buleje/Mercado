@@ -53,7 +53,7 @@ function block(reason, details) {
         `─────────────────────────\n` +
         `${reason}\n\n` +
         `Detalles:\n${details}\n\n` +
-        `Solución: corregir los errores y volver a intentar /deploy.\n` +
+        `Solución: corregir los errores y volver a intentar el deploy.\n` +
         `Bypass de emergencia: SKIP_DEPLOY_GATE=1 (solo hotfixes críticos).`
     }
   };

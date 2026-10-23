@@ -123,7 +123,7 @@ const slowChecks = results.filter(
 if (failures.length >= 2) {
   process.stderr.write(
     `\n🔴 SENTINEL ALERT: ${failures.length}/${CHECK_ATTEMPTS} health checks fallidos!\n` +
-    `   Acción recomendada: ejecutar /self-heal o considerar rollback\n` +
+    `   Acción recomendada: agente healer o considerar rollback\n` +
     `   Comando rollback: vercel rollback\n\n`
   );
 } else if (failures.length === 1) {

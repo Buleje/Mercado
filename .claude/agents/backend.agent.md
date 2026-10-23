@@ -32,7 +32,7 @@ TypeScript 5 strict, Prisma 7 + Supabase Postgres (pooler), Zod 4, BullMQ, Upsta
 4. `requireAdmin(req, ["admin", ...])` con roles explícitos en toda ruta protegida; sin auth
    **siempre 401** (un 404 sacaba del panel: memoria `logout-fantasma-por-404`).
 5. Totales y dinero se calculan en backend; el cliente solo previsualiza.
-6. Fire-and-forget con `.catch(() => {})`. Raw SQL solo `$1 $2 $3`.
+6. Fire-and-forget con `.catch((err) => logger.error("[ctx] … falló", { error: String(err) }))` (el pre-commit bloquea `.catch(() => {})` nuevo). Raw SQL solo `$1 $2 $3`.
 7. Tras cada write: `invalidate(key)` / `invalidateByPrefix(prefix)`.
 8. Un IDOR se cierra con ownership por `tenantId` en el WHERE, no con un `if` después
    (memoria `adelantos-idor-beneficiario-ajeno`). Carreras: `updateMany` con condición en el WHERE
@@ -49,4 +49,4 @@ avisá en el reporte y pedí pasada del agente `security` antes del merge.
   (si no existe el env, `node scripts/dev-helpers/admin-auth.mjs`). Rutas frías compilan
   10-60 s: primer curl con `--max-time 120`.
 - `npx vitest run <tests del área>`; un caso multi-tenant (tenant ajeno → 401/404) por endpoint nuevo.
-- Un 500 `P2021/P2022` = schema drift: `npm run db:sanity` (skill `db-sanity`).
+- Un 500 `P2021/P2022` = schema drift: `npm run db:sanity`.

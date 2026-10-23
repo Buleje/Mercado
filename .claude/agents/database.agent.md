@@ -1,7 +1,7 @@
 ---
 name: database
 description: >
-  Schema Prisma (254 modelos), migraciones sobre Supabase, índices, DB classes y queries.
+  Schema Prisma (~270 modelos), migraciones sobre Supabase, índices, DB classes y queries.
   Zona de peligro: prisma/schema.prisma. Usar para cualquier cambio de datos, columna,
   índice, drift (P2021/P2022) o consulta lenta.
 model: inherit
@@ -21,7 +21,7 @@ experimental:
 > **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
 > **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
 
-Stack: Prisma 7.4 + `@prisma/adapter-pg`, Supabase Postgres vía PgBouncer (`DATABASE_URL`);
+Stack: Prisma 7 (versión en package.json) + `@prisma/adapter-pg`, Supabase Postgres vía PgBouncer (`DATABASE_URL`);
 migraciones solo con `DIRECT_URL`.
 
 ## Reglas críticas

@@ -16,7 +16,7 @@ Request → proxy.ts (resuelve tenant de Host/JWT/Cookie)
   → x-tenant-id header inyectado
     → requireAdmin() extrae tenantId del JWT (CANONICAL)
       → lib/db/*.db.ts recibe tenantId como 1er param
-        → Prisma Extension auto-inyecta WHERE en 161 modelos
+        → Prisma Extension auto-inyecta WHERE en los ~153 de TENANT_MODELS
 ```
 
 **Regla de oro:** JWT siempre gana sobre headers. El header puede tener slug, el JWT tiene CUID.
@@ -51,7 +51,7 @@ export const EjemploDB = {
 ```typescript
 // app/api/ejemplo/route.ts
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "owner"]); // roles por ruta: lib/auth/roles-rutas-panel.ts (regla 9)
   if (auth instanceof NextResponse) return auth;
 
   // USAR auth.tenantId del JWT, nunca del header
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
 ## Prisma Extension automatica
 
-`lib/tenant.ts` → `prismaForTenant(tenantId)` → auto-inyecta `WHERE { tenantId }` en 161 modelos.
+`lib/tenant.ts` → `prismaForTenant(tenantId)` → auto-inyecta `WHERE { tenantId }` en los ~153 modelos de TENANT_MODELS (los items que se leen por su padre, como OrderItem, quedan fuera a propósito).
 
 **Modelos NO tenant-scoped (por diseno):** Tenant, SuperadminUser, AdminUser, Settings globales.
 **Modelos indirectos:** OrderItem, SaleItem, BundleItem → aislados via FK del padre.
