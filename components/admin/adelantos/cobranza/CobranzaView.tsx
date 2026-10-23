@@ -228,19 +228,10 @@ export default function CobranzaView({
   };
 
   const exportarPdf = async () => {
-    const { default: jsPDF } = await import("jspdf");
-    const autoTable = (await import("jspdf-autotable")).default;
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Lista de cobranza", 14, 18);
-    doc.setFontSize(10);
-    doc.text(
-      `Por cobrar: ${fmtMonedas(totalPorCobrar)} · ${deudores.length} deudores · ${formatDateNumeric(new Date())}`,
-      14,
-      25,
-    );
-    autoTable(doc, {
-      startY: 31,
+    const { abrirPapel } = await import("@/lib/documentos/membrete-papel");
+    const papel = await abrirPapel({ tipo: "Lista de cobranza" });
+    papel.linea(`Por cobrar: ${fmtMonedas(totalPorCobrar)} · ${deudores.length} deudores`, { tam: 10, alto: 6 });
+    papel.tabla({
       head: [["Persona", "Saldo", "Atraso", "Última gestión", "Prometió", "Teléfono"]],
       /* Mismo orden que la pantalla: el papel que se lleva el cobrador no puede
          priorizar distinto que la lista que se acaba de mirar. */
@@ -257,7 +248,7 @@ export default function CobranzaView({
         ];
       }),
     });
-    doc.save(`cobranza-${new Date().toISOString().slice(0, 10)}.pdf`);
+    papel.cerrar(`cobranza-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   /* Indicadores plegables (patrón del panel, 11-10): las cuatro tarjetas

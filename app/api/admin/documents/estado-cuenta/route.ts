@@ -5,7 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
-import { MembreteDB } from "@/lib/db/membrete.db";
+import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
 import { CarpetaAjenaError } from "@/lib/db/documents.db";
 import { EnlacesEntidadDB, SubidaFallidaError } from "@/lib/db/enlaces-entidad.db";
 import { ROLES_ENTIDAD_SENSIBLE } from "@/lib/documentos/enlaces-entidad";
@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
       })),
       forestales,
     );
-    const membrete = await MembreteDB.del(auth.tenantId);
-    const pdf = await pdfEstadoDeCuenta(membrete, tercero.nombre || nombre, movimientos);
+    const { membrete, logo } = await membreteParaPdf(auth.tenantId);
+    const pdf = await pdfEstadoDeCuenta(membrete, tercero.nombre || nombre, movimientos, logo);
 
     const documentId = await EnlacesEntidadDB.archivar(
       auth.tenantId,

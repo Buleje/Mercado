@@ -1,7 +1,7 @@
 import "server-only";
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import type { Membrete } from "@/lib/admin/membrete";
-import { sanearParaFuente } from "@/lib/forestal/gtf-salida-pdf";
+import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { fechaDelDocumento, type MembreteDocumento } from "@/lib/documentos/membrete-pdf";
+import { crearMembrete, dibujarMembrete, dibujarPies, limiteInferior, margenPdfLib, type LogoServidor } from "@/lib/documentos/membrete-pdflib";
 
 /**
  * El pago semanal de UN colaborador como PDF A4 (ADR-502, Archivo como hub). NO
@@ -20,14 +20,16 @@ import { sanearParaFuente } from "@/lib/forestal/gtf-salida-pdf";
 const NEGRO = rgb(0, 0, 0);
 const GRIS = rgb(0.4, 0.4, 0.4);
 const A4: [number, number] = [595.28, 841.89];
-const M = 40;
+const M = margenPdfLib();
 
 const num = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 /** "YYYY-MM-DD" → "DD/MM/YYYY" sin construir Date (sin deriva de huso). */
 const diaKey = (key: string) => `${key.slice(8, 10)}/${key.slice(5, 7)}/${key.slice(0, 4)}`;
 
 export interface DatosPagoSemanal {
-  membrete: Membrete;
+  membrete: MembreteDocumento;
+  /** El logo en PNG (`MembreteDB.logoPng`); sin él, sale el monograma. */
+  logo?: LogoServidor | null;
   nombre: string;
   puesto: string | null;
   /** Lunes de la semana (date-only "YYYY-MM-DD"). */
@@ -63,15 +65,17 @@ const ETIQUETA_ESTADO: Record<string, string> = {
 
 export async function pdfPagoSemanal(d: DatosPagoSemanal): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
+  const mb = await crearMembrete(doc, d.membrete, d.logo, {
+    tipo: "Comprobante de pago semanal",
+    fecha: fechaDelDocumento(new Date().toISOString()),
+    extra: `Semana del ${diaKey(d.desde)} al ${diaKey(d.hasta)}`,
+  });
   doc.setTitle(`Pago semanal — ${d.nombre}`);
-  doc.setCreator("Buleje");
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const set = new Set(font.getCharacterSet());
-  const t = (s: string) => sanearParaFuente(s, (cp) => set.has(cp));
+  doc.setCreator(mb.datos.titulo);
+  const { font, bold, t } = mb;
 
   const page: PDFPage = doc.addPage(A4);
-  let y = A4[1] - M;
+  let y = dibujarMembrete(mb, page);
   const texto = (s: string, x: number, size = 9, f: PDFFont = font, color = NEGRO) => page.drawText(t(s), { x, y, size, font: f, color });
   const derecha = (s: string, xDer: number, size = 9, f: PDFFont = font, color = NEGRO) => {
     const txt = t(s);
@@ -86,24 +90,12 @@ export async function pdfPagoSemanal(d: DatosPagoSemanal): Promise<Uint8Array> {
     page.drawLine({ start: { x: M, y }, end: { x: A4[0] - M, y }, thickness: 0.6, color: NEGRO });
   };
 
-  const m = d.membrete;
-  texto(m.razonSocial || m.nombre || "Pago semanal", M, 14, bold);
-  y -= 14;
-  for (const l of [m.ruc ? `RUC ${m.ruc}` : "", m.direccion ?? "", m.telefono ?? ""].filter(Boolean)) {
-    texto(l, M, 8.5, font, GRIS);
-    y -= 11;
-  }
-  y -= 8;
-  texto("COMPROBANTE DE PAGO SEMANAL", M, 12, bold);
-  y -= 15;
-  texto(d.nombre, M, 11, bold);
+  texto(d.nombre, M, 12, bold);
   if (d.puesto) {
     y -= 12;
     texto(d.puesto, M, 9, font, GRIS);
   }
-  y -= 12;
-  texto(`Semana del ${diaKey(d.desde)} al ${diaKey(d.hasta)}`, M, 9, font, GRIS);
-  y -= 22;
+  y -= 20;
 
   // Total ganado del período — el número grande del comprobante.
   linea();
@@ -119,7 +111,7 @@ export async function pdfPagoSemanal(d: DatosPagoSemanal): Promise<Uint8Array> {
     texto("Como sale", M, 9.5, bold);
     y -= 14;
     for (const l of d.comoSale) {
-      if (y < M + 120) break;
+      if (y < limiteInferior() + 80) break;
       texto(recorta(l, A4[0] - 2 * M, 9), M + 10, 9);
       y -= 13;
     }
@@ -163,15 +155,9 @@ export async function pdfPagoSemanal(d: DatosPagoSemanal): Promise<Uint8Array> {
     y -= 16;
   }
 
-  // Emitido + disclaimer obligatorio (referencia, no boleta).
-  if (y < M + 40) y = M + 40;
-  y = M + 30;
-  texto(`Emitido el ${diaKey(new Date().toISOString().slice(0, 10))}`, M, 8, font, GRIS);
-  y -= 12;
+  // Disclaimer obligatorio (referencia, no boleta), sobre el pie del membrete.
+  y = Math.max(y, limiteInferior() + 20);
   texto(recorta(COPY_REFERENCIA, A4[0] - 2 * M, 7.5), M, 7.5, font, GRIS);
-  if (m.pie) {
-    y -= 11;
-    texto(recorta(m.pie, A4[0] - 2 * M, 7.5), M, 7.5, font, GRIS);
-  }
+  dibujarPies(mb);
   return doc.save();
 }

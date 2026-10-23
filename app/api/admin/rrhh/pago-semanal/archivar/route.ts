@@ -5,7 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
 import { limaDateKey } from "@/lib/utils";
-import { MembreteDB } from "@/lib/db/membrete.db";
+import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
 import { GanadoDB } from "@/lib/db/rrhh-ganado.db";
 import { CarpetaAjenaError } from "@/lib/db/documents.db";
 import { EnlacesEntidadDB, SubidaFallidaError } from "@/lib/db/enlaces-entidad.db";
@@ -49,9 +49,9 @@ export async function POST(req: NextRequest) {
     }
 
     const hoy = limaDateKey();
-    const [ganado, membrete] = await Promise.all([
+    const [ganado, { membrete, logo }] = await Promise.all([
       GanadoDB.periodo(auth.tenantId, { desde, hasta, hoy, colaboradorId }),
-      MembreteDB.del(auth.tenantId),
+      membreteParaPdf(auth.tenantId),
     ]);
 
     // Carpeta «…/<semana>» y tag buscable: el período sortable, no "DD/MM".
@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
         const queda = calcularQuedaPorPagar({ total: persona.total, adelantos: persona.adelantos });
         const pdf = await pdfPagoSemanal({
           membrete,
+          logo,
           nombre: persona.nombre,
           puesto: persona.puesto,
           desde,

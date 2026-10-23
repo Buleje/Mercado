@@ -1,5 +1,6 @@
 "use client";
 
+import { imprimirEstadoCuentaCliente } from "@/components/admin/imprimir-estado-cuenta-cliente";
 import { CardTitle, DataTable, LoadingState, BlockTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useId, useRef } from "react";
 import {
@@ -164,7 +165,9 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
     window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
   };
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    if (data) void imprimirEstadoCuentaCliente(data, STATUS_LABELS);
+  };
 
   const modalRef = useRef<HTMLDivElement>(null);
   const titleId = useId();

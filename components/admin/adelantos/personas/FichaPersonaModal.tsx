@@ -36,6 +36,7 @@ import { ModalShell, fmtMon, fmtMonedas } from "../shared";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
 import { Aviso, Kpi } from "./FichaPiezas";
 import SusAdelantos from "./SusAdelantos";
+import PasskeysDeLaPersona from "./PasskeysDeLaPersona";
 import { formatDate } from "@/lib/format";
 import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
 
@@ -88,18 +89,13 @@ export default function FichaPersonaModal({
   const waCuenta = enlaceWhatsAppConTexto(persona.telefono, textoEstadoDeCuenta(persona.nombre, movimientos));
 
   const exportarPdf = async () => {
-    const { default: jsPDF } = await import("jspdf");
-    const autoTable = (await import("jspdf-autotable")).default;
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Estado de cuenta", 14, 18);
-    doc.setFontSize(11);
-    doc.text(persona.nombre, 14, 26);
-    let y = 32;
-    if (persona.documento) { doc.text(`Doc: ${persona.documento}`, 14, y); y += 6; }
-    if (persona.telefono) { doc.text(`Tel: ${persona.telefono}`, 14, y); y += 6; }
-    autoTable(doc, {
-      startY: y + 4,
+    const { abrirPapel } = await import("@/lib/documentos/membrete-papel");
+    const papel = await abrirPapel({ tipo: "Estado de cuenta" });
+    papel.linea(persona.nombre, { tam: 12, negrita: true, alto: 6 });
+    if (persona.documento) papel.linea(`Doc: ${persona.documento}`, { tam: 9, alto: 5 });
+    if (persona.telefono) papel.linea(`Tel: ${persona.telefono}`, { tam: 9, alto: 5 });
+    papel.y += 2;
+    papel.tabla({
       head: [["Fecha", "Concepto", "Monto", "Saldo"]],
       body: movimientos.map((m) => [
         dia(m.fecha),
@@ -109,7 +105,7 @@ export default function FichaPersonaModal({
       ]),
       foot: [["", "", "Saldo pendiente", fmtMonedas(saldoDeLaCuenta(movimientos))]],
     });
-    doc.save(`estado-cuenta-${persona.nombre.replace(/\s+/g, "-")}.pdf`);
+    papel.cerrar(`estado-cuenta-${persona.nombre.replace(/\s+/g, "-")}.pdf`);
   };
 
   return (
@@ -337,6 +333,7 @@ export default function FichaPersonaModal({
           </div>
           )}
           <LinkedDocumentsSection entity="tercero" id={persona.id} nombre={persona.nombre} estadoDeCuenta />
+          <PasskeysDeLaPersona personaId={persona.id} nombre={persona.nombre} />
         </div>
       ) : suyos.length === 0 ? (
         <p className="py-6 text-center text-base text-[var(--text-tertiary)]">Nunca le adelantaste plata.</p>

@@ -24,6 +24,7 @@ import { STATUS_META, estaAbierto, type Fiado, type ReciboData } from "./tipos";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import type { Gestion, PromesaVigente } from "@/lib/fiados/gestion-cobranza";
 import CuentaCliente from "./CuentaCliente";
+import { imprimirFiado } from "./imprimir-fiado";
 
 export const PESTANAS_FICHA = ["Detalle", "Cuenta", "Pagos", "Acciones"] as const;
 export type PestanaFicha = (typeof PESTANAS_FICHA)[number];
@@ -265,7 +266,7 @@ export default function FiadoDetalleSheet({ selected, onCerrar, fiados, detailLo
                       </>
                     )}
                     <button
-                      onClick={() => window.print()}
+                      onClick={() => void imprimirFiado(selected)}
                       className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
                     >
                       <Printer className="h-4 w-4" />

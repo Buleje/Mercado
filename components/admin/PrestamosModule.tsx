@@ -7,7 +7,7 @@ import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
-import { escapeHtml } from "@/lib/safe-html";
+import { imprimirCronograma, imprimirResumenDeuda } from "@/components/admin/prestamos/imprimir-prestamo";
 import { m } from "@/components/admin/providers";
 import {
   Search, Plus, X, DollarSign, Loader2, AlertTriangle,
@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";
 import ClienteFormModal from "./clientes/ClienteFormModal";
-import { formatCurrency, formatDate, formatDateShort, formatDateNumeric, formatDateLong } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateShort } from "@/lib/format";
 import { capitalPendiente, tablaDeAmortizacion } from "@/lib/prestamos/amortizacion";
 import { cuerpoRefinanciar } from "@/lib/prestamos/refinanciar";
 
@@ -104,7 +104,6 @@ export default function PrestamosModule() {
   const storeName = (storeTheme as { storeName?: string } | null)?.storeName?.trim()
     || businessName?.trim()
     || "Tu Tienda";
-  const storeLocation = (storeTheme as { address?: string } | null)?.address || "Pucallpa, Perú";
   // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
   // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
   const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<PrestamosVista>("prestamos", PRESTAMOS_VISTAS, "dashboard");
@@ -1517,143 +1516,13 @@ export default function PrestamosModule() {
                       {/* Print buttons */}
                       <div className="flex gap-2 mt-3">
                         <button
-                          onClick={() => {
-                            const cuotas = selected.cuotas;
-                            let saldo = selected.monto;
-                            const totalPagar = cuotas.reduce((s, c) => s + c.monto, 0);
-                            const w = window.open("", "_blank");
-                            if (!w) return;
-                            w.document.write(`<!DOCTYPE html><html><head><title>Cronograma de Préstamo</title>
-<style>
-  @media print { @page { margin: 1.5cm; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  body { font-family: Arial, sans-serif; color: #333; padding: 20px; }
-  h1 { color: var(--accent); font-size: 16px; margin-bottom: 4px; text-align: center; }
-  .sub { text-align: center; color: #666; font-size: 12px; margin-bottom: 20px; }
-  .info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; font-size: 13px; }
-  .info b { color: var(--accent); }
-  table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  th { background: var(--accent); color: white; padding: 8px; text-align: left; }
-  td { padding: 6px 8px; border-bottom: 1px solid #eee; }
-  tr:nth-child(even) { background: #f9f9f9; }
-  .paid { color: var(--accent); font-weight: bold; }
-  .pending { color: #f0503f; }
-  .total-row { background: #f0fdf4 !important; font-weight: bold; }
-  .right { text-align: right; }
-  .footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px; display: flex; justify-content: space-between; font-size: 12px; }
-  .firma { border-top: 1px solid #333; width: 200px; text-align: center; padding-top: 4px; margin-top: 40px; }
-</style></head><body>
-<h1>CRONOGRAMA DE AMORTIZACIÓN</h1>
-<p class="sub">${escapeHtml(String(storeName ?? ""))}</p>
-<div class="info">
-  <div><b>Cliente:</b> ${escapeHtml(String(selected.customerId || selected.entidadNombre || "—"))}</div>
-  <div><b>Monto:</b> ${selected.moneda === "USD" ? "$" : "S/"}${Number(selected.monto).toFixed(2)}</div>
-  <div><b>Tasa:</b> ${selected.tasaInteres}% mensual${selected.tea ? ` (TEA ${selected.tea}%)` : ""}</div>
-  <div><b>Sistema:</b> ${SISTEMA_LABELS[selected.sistemaAmortizacion]}</div>
-  <div><b>N° Cuotas:</b> ${selected.numeroCuotas}</div>
-  <div><b>Fecha:</b> ${formatDate(selected.createdAt)}</div>
-  ${selected.entidadNombre ? `<div><b>Entidad:</b> ${escapeHtml(String(selected.entidadNombre))}</div>` : ""}
-  <div><b>Estado:</b> ${escapeHtml(String(selected.status ?? ""))}</div>
-</div>
-<table>
-<thead><tr><th>#</th><th>Fecha vence</th><th class="right">Capital</th><th class="right">Interés</th><th class="right">Cuota</th><th class="right">Saldo</th><th>Estado</th><th>Pago</th></tr></thead>
-<tbody>
-${cuotas.map(c => { const row = `<tr>
-  <td>${c.numeroCuota}</td>
-  <td>${formatDateNumeric(c.fechaVence)}</td>
-  <td class="right">${formatCurrency(c.capital)}</td>
-  <td class="right">${formatCurrency(c.interes)}</td>
-  <td class="right"><b>${formatCurrency(c.monto)}</b></td>
-  <td class="right">${formatCurrency((saldo = Math.max(0, saldo - c.capital)))}</td>
-  <td class="${c.pagadoEn ? "paid" : "pending"}">${c.pagadoEn ? "Pagado" : "Pendiente"}</td>
-  <td>${formatDateNumeric(c.pagadoEn)}</td>
-</tr>`; return row; }).join("")}
-<tr class="total-row"><td colspan="2"><b>TOTAL</b></td><td class="right"><b>${formatCurrency(cuotas.reduce((s,c)=>s+c.capital,0))}</b></td><td class="right"><b>${formatCurrency(cuotas.reduce((s,c)=>s+c.interes,0))}</b></td><td class="right"><b>${formatCurrency(totalPagar)}</b></td><td colspan="3"></td></tr>
-</tbody></table>
-<div class="footer">
-  <div class="firma">Firma del deudor</div>
-  <div class="firma">Firma de la bodega</div>
-</div>
-</body></html>`);
-                            w.document.close();
-                            setTimeout(() => w.print(), 300);
-                          }}
+                          onClick={() => void imprimirCronograma(selected, SISTEMA_LABELS)}
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors"
                         >
                           <Printer className="h-3.5 w-3.5" /> Cronograma
                         </button>
                         <button
-                          onClick={() => {
-                            const cuotas = selected.cuotas;
-                            const pagadas = cuotas.filter(c => c.pagadoEn);
-                            const pendientes = cuotas.filter(c => !c.pagadoEn);
-                            const saldoPendiente = pendientes.reduce((s, c) => s + c.monto, 0);
-                            const hoy = formatDateLong(new Date());
-                            const w = window.open("", "_blank");
-                            if (!w) return;
-                            w.document.write(`<!DOCTYPE html><html><head><title>Resumen de Deuda</title>
-<style>
-  @media print { @page { margin: 1.5cm; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  body { font-family: 'Courier New', monospace; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; }
-  .header { text-align: center; border-top: 3px double var(--accent); border-bottom: 3px double var(--accent); padding: 12px 0; margin-bottom: 20px; }
-  .header h1 { color: var(--accent); font-size: 16px; margin: 0; }
-  .header p { color: #666; font-size: 11px; margin: 4px 0 0; }
-  .section { border-top: 1px dashed #999; padding: 12px 0; font-size: 13px; }
-  .row { display: flex; justify-content: space-between; margin: 4px 0; }
-  .row b { color: var(--accent); }
-  table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 10px 0; }
-  th { background: #f0f0f0; padding: 6px; text-align: left; border: 1px solid #ddd; }
-  td { padding: 5px 6px; border: 1px solid #eee; }
-  .paid { color: var(--accent); }
-  .pend { color: #f0503f; }
-  .right { text-align: right; }
-  .firma-section { margin-top: 50px; }
-  .firma-line { border-top: 1px solid #333; width: 250px; margin-top: 40px; padding-top: 4px; text-align: center; font-size: 11px; }
-  .footer-text { text-align: center; font-size: 10px; color: #999; margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 10px; }
-</style></head><body>
-<div class="header">
-  <h1>RESUMEN DE DEUDA</h1>
-  <p>${storeName} — ${storeLocation}</p>
-</div>
-<div class="section">
-  <div class="row"><span>Cliente:</span><b>${selected.customerId || selected.entidadNombre || "—"}</b></div>
-  <div class="row"><span>Fecha del documento:</span><b>${hoy}</b></div>
-  ${selected.entidadNombre ? `<div class="row"><span>Entidad:</span><b>${selected.entidadNombre}</b></div>` : ""}
-  ${selected.nroOperacion ? `<div class="row"><span>N° Operación:</span><b>${selected.nroOperacion}</b></div>` : ""}
-</div>
-<div class="section">
-  <div class="row"><span>Monto prestado:</span><b>${selected.moneda === "USD" ? "$" : "S/"} ${Number(selected.monto).toFixed(2)}</b></div>
-  <div class="row"><span>Tasa de interes:</span><b>${selected.tasaInteres}% mensual</b></div>
-  ${selected.tea ? `<div class="row"><span>TEA:</span><b>${selected.tea}%</b></div>` : ""}
-  <div class="row"><span>Amortización:</span><b>${SISTEMA_LABELS[selected.sistemaAmortizacion]}</b></div>
-  <div class="row"><span>Número de cuotas:</span><b>${selected.numeroCuotas}</b></div>
-  <div class="row"><span>Cuotas pagadas:</span><b>${pagadas.length}</b></div>
-  <div class="row"><span>Cuotas pendientes:</span><b>${pendientes.length}</b></div>
-  <div class="row" style="font-size:15px;margin-top:8px;"><span>Monto pendiente:</span><b style="color:#dc2626;">${selected.moneda === "USD" ? "$" : "S/"} ${saldoPendiente.toFixed(2)}</b></div>
-</div>
-<div class="section">
-  <p style="font-weight:bold;margin-bottom:8px;">TABLA DE CUOTAS</p>
-  <table>
-  <thead><tr><th>#</th><th>Fecha vence</th><th class="right">Capital</th><th class="right">Interés</th><th class="right">Monto</th><th>Estado</th><th>Fecha pago</th></tr></thead>
-  <tbody>
-  ${cuotas.map(c => `<tr>
-    <td>${c.numeroCuota}</td>
-    <td>${formatDateNumeric(c.fechaVence)}</td>
-    <td class="right">${formatCurrency(c.capital)}</td>
-    <td class="right">${formatCurrency(c.interes)}</td>
-    <td class="right"><b>${formatCurrency(c.monto)}</b></td>
-    <td class="${c.pagadoEn ? "paid" : "pend"}">${c.pagadoEn ? "PAGADO" : "PEND."}</td>
-    <td>${formatDateNumeric(c.pagadoEn)}</td>
-  </tr>`).join("")}
-  </tbody></table>
-</div>
-<div class="firma-section">
-  <div class="firma-line">Firma del deudor</div>
-</div>
-<p class="footer-text">${storeName} — ${storeLocation} — ${hoy}</p>
-</body></html>`);
-                            w.document.close();
-                            setTimeout(() => w.print(), 300);
-                          }}
+                          onClick={() => void imprimirResumenDeuda(selected, SISTEMA_LABELS)}
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-[var(--accent)] bg-primary/10 hover:bg-primary/10 transition-colors"
                         >
                           <FileText className="h-3.5 w-3.5" /> Resumen Deuda

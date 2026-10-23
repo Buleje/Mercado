@@ -13,66 +13,63 @@
 import { formatCurrency } from "@/lib/currency";
 import { leerNeto } from "@/lib/adelantos/cuenta-unificada";
 import { montoEnLetras } from "@/lib/adelantos/comprobante";
+import { fechaDelDocumento } from "@/lib/documentos/membrete-pdf";
 import type { EntregaPlaneada } from "@/lib/cuentas/liquidacion";
 import type { LiquidacionDTO } from "@/lib/db/liquidacion-cuenta.db";
 
 export interface DatosLiquidacionPdf {
+  /** Nombre de respaldo si el negocio no tiene uno en Datos del negocio. */
   negocio?: string | null;
   liquidacion: LiquidacionDTO;
 }
 
-const fechaUtc = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
-
 export async function descargarComprobanteLiquidacion(d: DatosLiquidacionPdf): Promise<void> {
-  const { default: jsPDF } = await import("jspdf");
-  const doc = new jsPDF(); // A4 vertical por defecto
-  const W = doc.internal.pageSize.getWidth();
+  const { abrirPapel } = await import("@/lib/documentos/membrete-papel");
   const { liquidacion: liq } = d;
   const det = liq.detalle;
+  const papel = await abrirPapel(
+    { tipo: "Liquidación de cuenta", codigo: liq.codigo, fecha: fechaDelDocumento(liq.fecha) },
+    { nombreRespaldo: d.negocio },
+  );
+  const { doc, margen } = papel;
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
 
-  doc.setFontSize(9);
-  doc.text((d.negocio ?? "").toUpperCase(), 14, 14);
-  doc.setFontSize(16);
-  doc.text("LIQUIDACIÓN DE CUENTA", 14, 23);
-  doc.setFontSize(15);
-  doc.text(liq.codigo, W - 14, 23, { align: "right" });
-
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  let y = 33;
-  doc.text(liq.persona.nombre, 14, y);
+  let y = papel.y;
+  doc.text(liq.persona.nombre, margen, y);
+  doc.setFont("helvetica", "normal");
   if (liq.persona.documento) {
     y += 6;
     doc.setFontSize(9);
-    doc.text(`Documento: ${liq.persona.documento}`, 14, y);
+    doc.text(`Documento: ${liq.persona.documento}`, margen, y);
   }
-  y += 6;
-  doc.setFontSize(9);
-  doc.text(`Fecha: ${fechaUtc(liq.fecha)}`, 14, y);
 
   // 3) Lo que se cruzó. ADR-449: también lo que la persona adelantó, contra sus aserríos.
   const cruceRecibido = det.cruceRecibido ?? 0;
   if (det.compensado > 0 || cruceRecibido > 0) {
     y += 10;
     doc.setFontSize(11);
-    doc.text("Lo que se cruzó", 14, y);
+    doc.text("Lo que se cruzó", margen, y);
     doc.setFontSize(9);
     for (const e of det.entregas.filter((x: EntregaPlaneada) => x.paso === "cruce")) {
       y += 6;
       const deQuien = e.lado === "recibido" ? "Su adelanto " : "";
-      doc.text(`${deQuien}${e.codigo ?? e.adelantoId} — ${e.descripcion}: ${formatCurrency(e.valor)}`, 16, y);
+      doc.text(`${deQuien}${e.codigo ?? e.adelantoId} — ${e.descripcion}: ${formatCurrency(e.valor)}`, margen + 2, y);
     }
     if (det.compensado > 0) {
       y += 6;
-      doc.text(`Contra la cuenta forestal: ${formatCurrency(det.compensado)}`, 16, y);
+      doc.text(`Contra la cuenta forestal: ${formatCurrency(det.compensado)}`, margen + 2, y);
     }
     if (cruceRecibido > 0) {
       y += 6;
-      doc.text(`Contra sus aserríos (cuenta forestal): ${formatCurrency(cruceRecibido)}`, 16, y);
+      doc.text(`Contra sus aserríos (cuenta forestal): ${formatCurrency(cruceRecibido)}`, margen + 2, y);
     }
     if (!det.pago) {
       y += 6;
-      doc.text("No mueve la caja.", 16, y);
+      doc.text("No mueve la caja.", margen + 2, y);
     }
   }
 
@@ -80,46 +77,46 @@ export async function descargarComprobanteLiquidacion(d: DatosLiquidacionPdf): P
   if (det.pago) {
     y += 10;
     doc.setFontSize(11);
-    doc.text("Lo que se pagó", 14, y);
+    doc.text("Lo que se pagó", margen, y);
     doc.setFontSize(9);
     y += 6;
     const quien = det.pago.direccion === "recibido" ? `${liq.persona.nombre} pagó` : `Se le pagó a ${liq.persona.nombre}`;
-    doc.text(`${quien} — ${det.pago.metodo} — ${formatCurrency(det.pago.monto)}`, 16, y);
+    doc.text(`${quien} — ${det.pago.metodo} — ${formatCurrency(det.pago.monto)}`, margen + 2, y);
     y += 5;
-    doc.text(`(${montoEnLetras(det.pago.monto)} soles)`, 16, y);
+    doc.text(`(${montoEnLetras(det.pago.monto)} soles)`, margen + 2, y);
   }
 
   // 5) Antes → Después.
   y += 10;
   doc.setFontSize(11);
-  doc.text("Antes → Después", 14, y);
+  doc.text("Antes → Después", margen, y);
   doc.setFontSize(9);
   y += 6;
-  doc.text(`Adelantos: ${formatCurrency(det.antes.adelantosTeDebe)} → ${formatCurrency(det.despues.adelantosTeDebe)}`, 16, y);
+  doc.text(`Adelantos: ${formatCurrency(det.antes.adelantosTeDebe)} → ${formatCurrency(det.despues.adelantosTeDebe)}`, margen + 2, y);
   y += 5;
-  doc.text(`Cuenta forestal: ${formatCurrency(det.antes.maderaSaldo)} → ${formatCurrency(det.despues.maderaSaldo)}`, 16, y);
+  doc.text(`Cuenta forestal: ${formatCurrency(det.antes.maderaSaldo)} → ${formatCurrency(det.despues.maderaSaldo)}`, margen + 2, y);
   /* ADR-448/449: lo que te adelantó es parte de la cuenta; el cruce lo baja. */
   if ((det.antes.recibidoLeDebes ?? 0) > 0) {
     y += 5;
     doc.text(
       `Lo que te adelantó: ${formatCurrency(det.antes.recibidoLeDebes ?? 0)} → ${formatCurrency(det.despues.recibidoLeDebes ?? det.antes.recibidoLeDebes ?? 0)}`,
-      16,
+      margen + 2,
       y,
     );
   }
   y += 5;
   const netoIgual = Math.abs(det.antes.neto - det.despues.neto) < 0.005;
-  doc.text(`${leerNeto(det.despues.neto, liq.persona.nombre)}${netoIgual ? " (sin cambio)" : ""}`, 16, y);
+  doc.text(`${leerNeto(det.despues.neto, liq.persona.nombre)}${netoIgual ? " (sin cambio)" : ""}`, margen + 2, y);
 
   // 6) Queda fuera.
   if (det.fuera.length > 0) {
     y += 9;
     doc.setFontSize(11);
-    doc.text("Queda fuera", 14, y);
+    doc.text("Queda fuera", margen, y);
     doc.setFontSize(9);
     for (const f of det.fuera) {
       y += 6;
-      doc.text(`${f.etiqueta} (${formatCurrency(f.monto)}${f.moneda !== "PEN" ? ` ${f.moneda}` : ""}) — ${f.motivo}`, 16, y);
+      doc.text(`${f.etiqueta} (${formatCurrency(f.monto)}${f.moneda !== "PEN" ? ` ${f.moneda}` : ""}) — ${f.motivo}`, margen + 2, y);
     }
   }
 
@@ -127,11 +124,16 @@ export async function descargarComprobanteLiquidacion(d: DatosLiquidacionPdf): P
   y += 12;
   doc.setFontSize(9);
   doc.text(
-    doc.splitTextToSize("Ambas partes están conformes con los saldos que figuran después de esta liquidación.", W - 28) as string[],
-    14,
+    doc.splitTextToSize("Ambas partes están conformes con los saldos que figuran después de esta liquidación.", W - 2 * margen) as string[],
+    margen,
     y,
   );
-  const yFirma = doc.internal.pageSize.getHeight() - 30;
+  if (y > H - 62) {
+    papel.y = y;
+    papel.espacio(1000); // no queda lugar para las firmas: hoja nueva con la cabecera breve
+    y = papel.y;
+  }
+  const yFirma = Math.max(y + 16, H - 44);
   doc.line(20, yFirma, 90, yFirma);
   doc.line(W - 90, yFirma, W - 20, yFirma);
   doc.setFontSize(8);
@@ -146,5 +148,5 @@ export async function descargarComprobanteLiquidacion(d: DatosLiquidacionPdf): P
     doc.setTextColor(0, 0, 0);
   }
 
-  doc.save(`${liq.codigo.toLowerCase()}.pdf`);
+  papel.cerrar(`${liq.codigo.toLowerCase()}.pdf`);
 }

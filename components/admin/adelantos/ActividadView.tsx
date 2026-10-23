@@ -133,13 +133,10 @@ export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[];
   }
 
   const exportarPdf = async () => {
-    const { default: jsPDF } = await import("jspdf");
-    const autoTable = (await import("jspdf-autotable")).default;
-    const doc = new jsPDF();
-    doc.setFontSize(16); doc.text("Historial de actividad", 14, 18);
-    doc.setFontSize(10); doc.text(`${filtrados.length} movimientos · +${fmtMonedas(resumen.diste)} diste · −${fmtMonedas(resumen.recuperado)} recuperado`, 14, 25);
-    autoTable(doc, {
-      startY: 31,
+    const { abrirPapel } = await import("@/lib/documentos/membrete-papel");
+    const papel = await abrirPapel({ tipo: "Historial de actividad" });
+    papel.linea(`${filtrados.length} movimientos · +${fmtMonedas(resumen.diste)} diste · −${fmtMonedas(resumen.recuperado)} recuperado`, { tam: 10, alto: 6 });
+    papel.tabla({
       head: [["Fecha", "Movimiento", "Persona", "Detalle", "Monto"]],
       body: filtrados.map((e) => {
         const movimiento = e.tipo === "adelanto" ? cajaAlCrear(e.direccion) : cajaAlDevolver(e.direccion);
@@ -150,7 +147,7 @@ export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[];
         return [formatDateNumeric(e.fecha), label, e.persona, e.desc ?? "", `${signo}${fmtMon(e.monto, e.moneda)}`];
       }),
     });
-    doc.save(`actividad-${new Date().toISOString().slice(0, 10)}.pdf`);
+    papel.cerrar(`actividad-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   if (loading) return <SkeletonGrid />;

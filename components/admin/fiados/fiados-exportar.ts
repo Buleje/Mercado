@@ -38,16 +38,11 @@ export async function exportarListaDeCobro(
   promesas: ReadonlyMap<string, PromesaVigente>,
 ): Promise<void> {
   if (deudores.length === 0) return;
-  const { default: jsPDF } = await import("jspdf");
-  const autoTable = (await import("jspdf-autotable")).default;
-  const doc = new jsPDF();
+  const { abrirPapel } = await import("@/lib/documentos/membrete-papel");
+  const papel = await abrirPapel({ tipo: "Lista de cobro" });
   const total = deudores.reduce((s, d) => s + d.saldo, 0);
-  doc.setFontSize(16);
-  doc.text("Lista de cobro", 14, 18);
-  doc.setFontSize(10);
-  doc.text(`Por cobrar: ${formatCurrency(total)} · ${deudores.length} clientes · ${formatDateNumeric(new Date())}`, 14, 25);
-  autoTable(doc, {
-    startY: 31,
+  papel.linea(`Por cobrar: ${formatCurrency(total)} · ${deudores.length} clientes`, { tam: 10, alto: 6 });
+  papel.tabla({
     head: [["Cliente", "Saldo", "Atraso", "Última gestión", "Prometió", "Celular", "Cobrado"]],
     body: deudores.map((d) => {
       const u = ultimas.get(d.id);
@@ -63,7 +58,7 @@ export async function exportarListaDeCobro(
       ];
     }),
   });
-  doc.save(`lista-de-cobro-${new Date().toISOString().slice(0, 10)}.pdf`);
+  papel.cerrar(`lista-de-cobro-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 export function exportarDeudores(fiados: Fiado[]): void {
