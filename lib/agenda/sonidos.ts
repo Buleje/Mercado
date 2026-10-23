@@ -6,7 +6,8 @@
  * - UN `AudioContext` para toda la página (Chrome tope ~6 vivos; crear uno por
  *   aviso los iba gastando). Si nació «suspendido» (sin un clic todavía), se
  *   despierta con el primer clic o tecla.
- * - Anti-ráfaga: 5 avisos que llegan juntos suenan UNA vez (`tocarSonido`).
+ * - Anti-ráfaga: 5 avisos que llegan juntos suenan UNA vez (`tocarSonido`); con
+ *   un sonido largo, la ventana dura lo que el sonido (no se corta a la mitad).
  *   `probarSonido` (la configuración) no la mira: elegir otro suena siempre.
  * - Un sonido nuevo apaga en 40 ms el que seguía sonando: no se montan.
  */
@@ -20,6 +21,13 @@ export const SONIDOS_UI: Record<SonidoAviso, string> = {
   doble: "Doble tono",
   suave: "Suave",
   alerta: "Alerta",
+  arpa: "Arpa",
+  marimba: "Marimba",
+  cristal: "Cristal",
+  amanecer: "Amanecer",
+  sonar: "Sonar",
+  fanfarria: "Fanfarria",
+  acorde: "Acorde",
 };
 
 /** Una nota: frecuencia (Hz), cuándo empieza y cuánto dura (s), y su peso. */
@@ -35,31 +43,98 @@ export interface Nota {
   ataque?: number;
 }
 
-/** Las recetas. Ninguna pasa de 0,8 s; «alerta» insiste con tres toques. */
+/**
+ * Las recetas (Brandon 22-10: «más variedad y más largas»). Duran entre 1,2 y
+ * 3 s: lo bastante para oírse con ruido de fondo (una bodega con la radio
+ * puesta) sin volverse una sirena. La suma de lo que suena a la vez queda
+ * bajo 1,5 para que al 100 % no sature.
+ */
 export const RECETAS: Readonly<Record<Exclude<SonidoAviso, "ninguno">, readonly Nota[]>> = {
-  /* Mi6 con su octava apagándose antes: un «ding» de campanita. */
+  /* Mi6 con su octava apagándose antes: un «ding» de campanita, dos veces (la segunda más suave). */
   campanita: [
-    { f: 1318.5, t: 0, d: 0.7, g: 1, tipo: "sine", ataque: 0.005 },
-    { f: 2637, t: 0, d: 0.3, g: 0.22, tipo: "sine", ataque: 0.005 },
-    { f: 3951, t: 0, d: 0.12, g: 0.08, tipo: "sine", ataque: 0.003 },
+    { f: 1318.5, t: 0, d: 1.5, g: 1, tipo: "sine", ataque: 0.005 },
+    { f: 2637, t: 0, d: 0.7, g: 0.22, tipo: "sine", ataque: 0.005 },
+    { f: 3951, t: 0, d: 0.25, g: 0.08, tipo: "sine", ataque: 0.003 },
+    { f: 1318.5, t: 1.05, d: 1.4, g: 0.6, tipo: "sine", ataque: 0.005 },
+    { f: 2637, t: 1.05, d: 0.6, g: 0.14, tipo: "sine", ataque: 0.005 },
   ],
-  /* Un «plip» que sube rápido, como una gota en el agua. */
-  gota: [{ f: 520, fFin: 1480, t: 0, d: 0.26, g: 1, tipo: "sine", ataque: 0.004 }],
-  /* La5 → Mi6: el «ding-dong» de un timbre. */
+  /* Tres «plip» que bajan de volumen, como gotas en el agua. */
+  gota: [
+    { f: 520, fFin: 1480, t: 0, d: 0.34, g: 1, tipo: "sine", ataque: 0.004 },
+    { f: 620, fFin: 1650, t: 0.5, d: 0.34, g: 0.75, tipo: "sine", ataque: 0.004 },
+    { f: 440, fFin: 1250, t: 1.05, d: 0.5, g: 0.5, tipo: "sine", ataque: 0.004 },
+  ],
+  /* La5 → Mi6: el «ding-dong» de un timbre, dos veces. */
   doble: [
-    { f: 880, t: 0, d: 0.32, g: 0.9, tipo: "triangle", ataque: 0.006 },
-    { f: 1318.5, t: 0.17, d: 0.45, g: 0.9, tipo: "triangle", ataque: 0.006 },
+    { f: 880, t: 0, d: 0.5, g: 0.9, tipo: "triangle", ataque: 0.006 },
+    { f: 1318.5, t: 0.25, d: 0.75, g: 0.9, tipo: "triangle", ataque: 0.006 },
+    { f: 880, t: 1.2, d: 0.5, g: 0.9, tipo: "triangle", ataque: 0.006 },
+    { f: 1318.5, t: 1.45, d: 1.1, g: 0.9, tipo: "triangle", ataque: 0.006 },
   ],
-  /* Sol4 + Re5 que entran despacio: se oye sin sobresaltar. */
+  /* Sol4 + Re5 + Sol5 que entran despacio y se abren: se oye sin sobresaltar. */
   suave: [
-    { f: 392, t: 0, d: 0.65, g: 0.8, tipo: "sine", ataque: 0.06 },
-    { f: 587.3, t: 0.08, d: 0.6, g: 0.55, tipo: "sine", ataque: 0.06 },
+    { f: 392, t: 0, d: 1.7, g: 0.8, tipo: "sine", ataque: 0.15 },
+    { f: 587.3, t: 0.12, d: 1.6, g: 0.55, tipo: "sine", ataque: 0.15 },
+    { f: 784, t: 0.3, d: 1.4, g: 0.3, tipo: "sine", ataque: 0.2 },
   ],
-  /* Tres toques cortos que suben: para lo que no puede esperar. */
+  /* Tres toques que suben, dos veces: para lo que no puede esperar. */
   alerta: [
     { f: 987.8, t: 0, d: 0.13, g: 1, tipo: "square", ataque: 0.003 },
     { f: 987.8, t: 0.17, d: 0.13, g: 1, tipo: "square", ataque: 0.003 },
     { f: 1318.5, t: 0.34, d: 0.32, g: 1, tipo: "square", ataque: 0.003 },
+    { f: 987.8, t: 1.0, d: 0.13, g: 1, tipo: "square", ataque: 0.003 },
+    { f: 987.8, t: 1.17, d: 0.13, g: 1, tipo: "square", ataque: 0.003 },
+    { f: 1318.5, t: 1.34, d: 0.5, g: 1, tipo: "square", ataque: 0.003 },
+  ],
+  /* Do mayor que sube nota por nota, como pasar los dedos por un arpa. */
+  arpa: [
+    { f: 523.3, t: 0, d: 1.3, g: 0.7, tipo: "triangle", ataque: 0.008 },
+    { f: 659.3, t: 0.16, d: 1.3, g: 0.7, tipo: "triangle", ataque: 0.008 },
+    { f: 784, t: 0.32, d: 1.3, g: 0.7, tipo: "triangle", ataque: 0.008 },
+    { f: 1046.5, t: 0.48, d: 1.4, g: 0.7, tipo: "triangle", ataque: 0.008 },
+    { f: 1318.5, t: 0.64, d: 1.6, g: 0.6, tipo: "triangle", ataque: 0.008 },
+  ],
+  /* Una melodita de marimba, notas cortas y secas que se repiten. */
+  marimba: [
+    { f: 784, t: 0, d: 0.4, g: 0.9, tipo: "triangle", ataque: 0.004 },
+    { f: 659.3, t: 0.22, d: 0.4, g: 0.9, tipo: "triangle", ataque: 0.004 },
+    { f: 523.3, t: 0.44, d: 0.4, g: 0.9, tipo: "triangle", ataque: 0.004 },
+    { f: 659.3, t: 0.66, d: 0.4, g: 0.9, tipo: "triangle", ataque: 0.004 },
+    { f: 784, t: 0.88, d: 0.4, g: 0.9, tipo: "triangle", ataque: 0.004 },
+    { f: 1046.5, t: 1.1, d: 1.0, g: 0.9, tipo: "triangle", ataque: 0.004 },
+  ],
+  /* Tres golpecitos de copa de cristal, agudos y con mucha cola. */
+  cristal: [
+    { f: 2349.3, t: 0, d: 1.9, g: 0.7, tipo: "sine", ataque: 0.003 },
+    { f: 3136, t: 0.2, d: 1.8, g: 0.5, tipo: "sine", ataque: 0.003 },
+    { f: 2793.8, t: 0.42, d: 2.2, g: 0.6, tipo: "sine", ataque: 0.003 },
+  ],
+  /* Cuatro notas que suben despacio, como cuando sale el sol. */
+  amanecer: [
+    { f: 523.3, t: 0, d: 1.0, g: 0.8, tipo: "sine", ataque: 0.05 },
+    { f: 659.3, t: 0.4, d: 1.0, g: 0.8, tipo: "sine", ataque: 0.05 },
+    { f: 784, t: 0.8, d: 1.1, g: 0.8, tipo: "sine", ataque: 0.05 },
+    { f: 1046.5, t: 1.2, d: 1.8, g: 0.9, tipo: "sine", ataque: 0.06 },
+  ],
+  /* Un «ping» de sonar con su eco que se va apagando. */
+  sonar: [
+    { f: 1568, t: 0, d: 1.3, g: 1, tipo: "sine", ataque: 0.004 },
+    { f: 1568, t: 0.6, d: 1.0, g: 0.35, tipo: "sine", ataque: 0.004 },
+    { f: 1568, t: 1.2, d: 0.8, g: 0.14, tipo: "sine", ataque: 0.004 },
+  ],
+  /* Do-Do-Do-Mi-Sol: una fanfarria corta de trompeta, la más fuerte de oír. */
+  fanfarria: [
+    { f: 523.3, t: 0, d: 0.18, g: 0.9, tipo: "sawtooth", ataque: 0.01 },
+    { f: 523.3, t: 0.2, d: 0.18, g: 0.9, tipo: "sawtooth", ataque: 0.01 },
+    { f: 523.3, t: 0.4, d: 0.18, g: 0.9, tipo: "sawtooth", ataque: 0.01 },
+    { f: 659.3, t: 0.6, d: 0.4, g: 0.9, tipo: "sawtooth", ataque: 0.01 },
+    { f: 784, t: 1.0, d: 1.4, g: 1, tipo: "sawtooth", ataque: 0.015 },
+  ],
+  /* La menor que se abre en tres voces y se queda sonando: el más largo y tranquilo. */
+  acorde: [
+    { f: 440, t: 0, d: 2.6, g: 0.6, tipo: "sine", ataque: 0.35 },
+    { f: 523.3, t: 0.5, d: 2.3, g: 0.5, tipo: "sine", ataque: 0.35 },
+    { f: 659.3, t: 1.0, d: 2.0, g: 0.45, tipo: "sine", ataque: 0.35 },
   ],
 };
 
@@ -83,13 +158,20 @@ export function gananciaDeVolumen(volumen: number): number {
   return GANANCIA_MAX * v * v;
 }
 
-/** Dos avisos a menos de esto suenan una sola vez. */
+/** Dos avisos a menos de esto suenan una sola vez (si el sonido dura más, dura lo que él). */
 export const RAFAGA_MS = 1500;
+
+/** Mientras un sonido sigue sonando, otro aviso no lo corta a la mitad: su ventana es lo que dura. */
+export function ventanaDe(id: SonidoAviso): number {
+  return Math.max(RAFAGA_MS, Math.round(duracionDe(id) * 1000));
+}
 /** Un sonido pedido con el audio dormido que despierta después de esto ya no sale (llegaría a destiempo). */
 const VENCE_MS = 1200;
 
 let ctx: AudioContext | null = null;
 let ultimo = -Infinity;
+/** Cuánto dura la ventana anti-ráfaga del último sonido que sonó. */
+let ventanaUltimo = RAFAGA_MS;
 let vozAnterior: GainNode | null = null;
 let desbloqueoPuesto = false;
 
@@ -179,19 +261,26 @@ function sonar(id: SonidoAviso, volumen: number): boolean {
 /** El sonido de un aviso: si otro sonó hace menos de 1,5 s, éste se calla. */
 export function tocarSonido(id: SonidoAviso, volumen: number): void {
   const ahora = Date.now();
-  if (ahora - ultimo < RAFAGA_MS) return;
-  if (sonar(id, volumen)) ultimo = ahora;
+  if (ahora - ultimo < ventanaUltimo) return;
+  if (sonar(id, volumen)) {
+    ultimo = ahora;
+    ventanaUltimo = ventanaDe(id);
+  }
 }
 
 /** «Escuchar» y elegir en la configuración: suena siempre (sin anti-ráfaga). */
 export function probarSonido(id: SonidoAviso, volumen: number): void {
-  if (sonar(id, volumen)) ultimo = Date.now();
+  if (sonar(id, volumen)) {
+    ultimo = Date.now();
+    ventanaUltimo = ventanaDe(id);
+  }
 }
 
 /** Sólo tests: vuelve al estado de la página recién abierta. */
 export function _reiniciarSonidosParaTest(): void {
   ctx = null;
   ultimo = -Infinity;
+  ventanaUltimo = RAFAGA_MS;
   vozAnterior = null;
   desbloqueoPuesto = false;
 }

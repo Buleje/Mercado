@@ -31,6 +31,27 @@ export function filtrarTareas<T extends TareaBuscable>(tareas: readonly T[], est
   });
 }
 
+const PESO_PRIORIDAD: Record<string, number> = { urgente: 0, alta: 1, media: 2, baja: 3 };
+
+/**
+ * Lo abierto, lo más urgente primero: la que vence antes (las que no tienen
+ * fecha, al final) y, a igual fecha, la de más prioridad. No muta la lista y
+ * respeta el orden que ya traía en los empates.
+ */
+export function ordenarPorUrgencia<T extends { dueDate?: string | null; priority?: string }>(tareas: readonly T[]): T[] {
+  return tareas
+    .map((t, i) => ({ t, i }))
+    .sort((a, b) => {
+      const fa = a.t.dueDate || "9999-99-99";
+      const fb = b.t.dueDate || "9999-99-99";
+      if (fa !== fb) return fa < fb ? -1 : 1;
+      const pa = PESO_PRIORIDAD[a.t.priority ?? ""] ?? 4;
+      const pb = PESO_PRIORIDAD[b.t.priority ?? ""] ?? 4;
+      return pa - pb || a.i - b.i;
+    })
+    .map((x) => x.t);
+}
+
 /**
  * Los nombres para elegir encargado: el personal (sin repetir, en orden
  * alfabético). Si la tarea ya tenía alguien que no está en la lista (otra

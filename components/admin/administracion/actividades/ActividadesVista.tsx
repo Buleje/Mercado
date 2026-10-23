@@ -10,18 +10,18 @@ import { MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from "@buleje/design-
 import { DataTable, EmptyState, ErrorAlert, LoadingState } from "@buleje/design-system";
 import { toast } from "sonner";
 import ActionMenu from "@/components/admin/shared/action-menu";
-import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { button } from "@/components/ui-system/button-variants";
 import { useAgenda } from "@/hooks/use-agenda";
 import { cn } from "@/lib/utils";
 import type { PlantillaAgenda } from "@/lib/agenda/plantillas";
 import type { ActividadDTO } from "@/lib/agenda/tipos";
-import { borrarActividad, editarActividad } from "../agenda-api";
+import { editarActividad } from "../agenda-api";
 import { EncabezadoAgenda } from "../comun/EncabezadoAgenda";
 import { PUNTO_COLOR } from "../comun/estado-ocurrencia";
 import { textoRecurrencia } from "../comun/recurrencia-texto";
 import { CANAL_UI, REGLA_UI, ROL_UI } from "../comun/reglas";
 import { ActividadModal } from "./ActividadModal";
+import { useBorrarActividad } from "./use-borrar-actividad";
 import { PlantillasSugeridas } from "./PlantillasSugeridas";
 import { borradorDePlantilla, type Borrador } from "./use-actividad-form";
 
@@ -99,7 +99,6 @@ export default function ActividadesVista() {
 
 function FilaActividad({ a, onEditar }: { a: ActividadDTO; onEditar: () => void }) {
   const { refrescar } = useAgenda();
-  const { confirm } = useConfirm();
   const [ocupada, setOcupada] = useState(false);
   const ui = REGLA_UI[a.regla];
   const Icono = ui.icon;
@@ -113,20 +112,11 @@ function FilaActividad({ a, onEditar }: { a: ActividadDTO; onEditar: () => void 
     refrescar();
   };
 
+  const borrarConfirmado = useBorrarActividad();
   const borrar = async () => {
-    const ok = await confirm({
-      title: `¿Borrar «${a.nombre}»?`,
-      description: "Deja de salir en Hoy y en el calendario. Lo que ya marcaste se queda en el historial.",
-      intent: "danger",
-      confirmLabel: "Borrar",
-    });
-    if (!ok) return;
     setOcupada(true);
-    const r = await borrarActividad(a.id);
+    await borrarConfirmado(a);
     setOcupada(false);
-    if (!r.ok && r.status !== 404) return void toast.error(r.error);
-    toast.success(`«${a.nombre}» se borró`);
-    refrescar();
   };
 
   return (

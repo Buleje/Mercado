@@ -12,7 +12,7 @@ import { Play, Volume2, VolumeX } from "@buleje/design-system/icons";
 import { claseChip } from "@/components/admin/planificacion/piezas/clases";
 import { button } from "@/components/ui-system/button-variants";
 import { SONIDOS_AVISO, type AvisoPantalla } from "@/lib/agenda/aviso-pantalla";
-import { probarSonido, SONIDOS_UI } from "@/lib/agenda/sonidos";
+import { duracionDe, probarSonido, SONIDOS_UI } from "@/lib/agenda/sonidos";
 
 type Parcial = Partial<Pick<AvisoPantalla, "sonido" | "volumen" | "flotantes">>;
 
@@ -43,6 +43,7 @@ export function SeccionSonido(props: Pick<AvisoPantalla, "sonido" | "volumen" | 
             type="button"
             role="radio"
             aria-checked={sonido === s}
+            title={s === "ninguno" ? "No suena nada" : `Dura ${duracionDe(s).toFixed(1).replace(".", ",")} s`}
             className={claseChip(sonido === s)}
             onClick={() => {
               onCambiar({ sonido: s });

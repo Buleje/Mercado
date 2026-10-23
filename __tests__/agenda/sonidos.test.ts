@@ -5,7 +5,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SONIDOS_AVISO } from "@/lib/agenda/aviso-pantalla";
-import { _reiniciarSonidosParaTest, duracionDe, gananciaDeVolumen, probarSonido, RAFAGA_MS, RECETAS, tocarSonido } from "@/lib/agenda/sonidos";
+import { _reiniciarSonidosParaTest, duracionDe, gananciaDeVolumen, probarSonido, RAFAGA_MS, RECETAS, SONIDOS_UI, tocarSonido, ventanaDe } from "@/lib/agenda/sonidos";
 
 const param = () => ({
   value: 0,
@@ -56,14 +56,32 @@ afterEach(() => {
 });
 
 describe("recetas", () => {
-  it("cada sonido dura menos de 0,8 s y «ninguno» no tiene notas", () => {
-    for (const s of SONIDOS_AVISO) expect(duracionDe(s)).toBeLessThan(0.8);
+  it("cada sonido dura entre 1,2 y 3 s (largos, pero no una sirena) y «ninguno» no tiene notas", () => {
+    for (const s of SONIDOS_AVISO.filter((x) => x !== "ninguno")) {
+      expect(duracionDe(s)).toBeGreaterThanOrEqual(1.2);
+      expect(duracionDe(s)).toBeLessThanOrEqual(3);
+    }
     expect(duracionDe("ninguno")).toBe(0);
   });
-  it("son distintos entre sí y «alerta» insiste con más toques", () => {
-    const firmas = Object.values(RECETAS).map((notas) => JSON.stringify(notas));
-    expect(new Set(firmas).size).toBe(firmas.length);
-    expect(RECETAS.alerta.length).toBeGreaterThanOrEqual(3);
+  it("hay variedad: 12 sonidos, todos con receta y con nombre", () => {
+    const sonidos = SONIDOS_AVISO.filter((x) => x !== "ninguno");
+    expect(sonidos.length).toBeGreaterThanOrEqual(12);
+    for (const s of SONIDOS_AVISO) expect(SONIDOS_UI[s]).toBeTruthy();
+    for (const s of sonidos) expect(RECETAS[s].length).toBeGreaterThan(0);
+  });
+  it("al 100 % ninguno suma tanto como para saturar (la envolvente real, cada 10 ms, < 1,5)", () => {
+    const nivel = (n: (typeof RECETAS)["campanita"][number], t: number) => {
+      const ataque = n.ataque ?? 0.01;
+      if (t < n.t || t > n.t + n.d) return 0;
+      if (t < n.t + ataque) return n.g * ((t - n.t) / ataque);
+      /* Baja exponencial hasta 0,0001 al final, como la rampa del audio. */
+      return n.g * Math.pow(0.0001 / n.g, (t - n.t - ataque) / (n.d - ataque));
+    };
+    for (const [id, notas] of Object.entries(RECETAS)) {
+      let mayor = 0;
+      for (let t = 0; t < 3.2; t += 0.01) mayor = Math.max(mayor, notas.reduce((suma, n) => suma + nivel(n, t), 0));
+      expect(mayor, id).toBeLessThan(1.5);
+    }
   });
 });
 
@@ -81,7 +99,7 @@ describe("tocarSonido", () => {
   it("crea los osciladores de la receta en UN AudioContext reutilizado", () => {
     tocarSonido("campanita", 60);
     expect(osciladores).toBe(RECETAS.campanita.length);
-    vi.setSystemTime(Date.now() + RAFAGA_MS + 1);
+    vi.setSystemTime(Date.now() + ventanaDe("campanita") + 1);
     tocarSonido("doble", 60);
     expect(osciladores).toBe(RECETAS.campanita.length + RECETAS.doble.length);
     expect(creados).toBe(1);
@@ -89,6 +107,15 @@ describe("tocarSonido", () => {
   it("5 avisos juntos suenan una vez", () => {
     for (let i = 0; i < 5; i++) tocarSonido("gota", 80);
     expect(osciladores).toBe(RECETAS.gota.length);
+  });
+  it("con un sonido largo, otro aviso que llega mientras suena no lo corta", () => {
+    tocarSonido("acorde", 80);
+    vi.setSystemTime(Date.now() + RAFAGA_MS + 200);
+    tocarSonido("gota", 80);
+    expect(osciladores).toBe(RECETAS.acorde.length);
+    vi.setSystemTime(Date.now() + ventanaDe("acorde"));
+    tocarSonido("gota", 80);
+    expect(osciladores).toBe(RECETAS.acorde.length + RECETAS.gota.length);
   });
   it("«Escuchar» no mira la ráfaga: elegir otro suena ya", () => {
     tocarSonido("gota", 80);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filtrarTareas, nombresDelEquipo, normalizarBusqueda } from "@/lib/admin/tareas-buscar";
+import { filtrarTareas, nombresDelEquipo, normalizarBusqueda, ordenarPorUrgencia } from "@/lib/admin/tareas-buscar";
 
 const T = [
   { id: "1", title: "Contar el aceite", assignedTo: "Jhon Pérez", status: "pendiente" },
@@ -29,5 +29,22 @@ describe("nombresDelEquipo", () => {
   });
   it("normalizarBusqueda quita tildes", () => {
     expect(normalizarBusqueda("  Ríos ÑANDÚ ")).toBe("rios nandu");
+  });
+});
+
+describe("ordenarPorUrgencia", () => {
+  it("la que vence antes primero; sin fecha al final; a igual fecha, la de más prioridad", () => {
+    const lista = [
+      { id: "sin", priority: "urgente" },
+      { id: "viernes-baja", dueDate: "2026-10-23", priority: "baja" },
+      { id: "jueves", dueDate: "2026-10-22", priority: "media" },
+      { id: "viernes-alta", dueDate: "2026-10-23", priority: "alta" },
+    ];
+    expect(ordenarPorUrgencia(lista).map((t) => t.id)).toEqual(["jueves", "viernes-alta", "viernes-baja", "sin"]);
+  });
+  it("no muta la lista y respeta el orden en los empates", () => {
+    const lista = [{ id: "a", priority: "media" }, { id: "b", priority: "media" }, { id: "c", priority: "media" }];
+    expect(ordenarPorUrgencia(lista).map((t) => t.id)).toEqual(["a", "b", "c"]);
+    expect(lista.map((t) => t.id)).toEqual(["a", "b", "c"]);
   });
 });

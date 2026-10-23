@@ -27,7 +27,21 @@ export type ModoAviso = (typeof MODOS_AVISO)[number];
  * (Brandon 20-10: «un sonido que se podrá escoger y configurar»). Las recetas
  * (notas de WebAudio, sin archivos) viven en `lib/agenda/sonidos.ts`.
  */
-export const SONIDOS_AVISO = ["ninguno", "campanita", "gota", "doble", "suave", "alerta"] as const;
+export const SONIDOS_AVISO = [
+  "ninguno",
+  "campanita",
+  "gota",
+  "doble",
+  "suave",
+  "alerta",
+  "arpa",
+  "marimba",
+  "cristal",
+  "amanecer",
+  "sonar",
+  "fanfarria",
+  "acorde",
+] as const;
 export type SonidoAviso = (typeof SONIDOS_AVISO)[number];
 
 export const AvisoPantallaSchema = z

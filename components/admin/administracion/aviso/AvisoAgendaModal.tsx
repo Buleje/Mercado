@@ -16,20 +16,7 @@
  * Trae su propio `AgendaProvider`: se abre desde cualquier pestaña del panel.
  */
 import { useEffect, useState } from "react";
-import {
-  AlarmClock,
-  ArrowLeft,
-  BellOff,
-  BellRing,
-  CheckCheck,
-  ListChecks,
-  ClipboardList,
-  PanelRight,
-  Pin,
-  RefreshCw,
-  Settings,
-  X,
-} from "@buleje/design-system/icons";
+import { AlarmClock, BellOff, BellRing, ListChecks, ClipboardList, Settings } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import AdminModal, { CabeceraPropia, MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
@@ -43,16 +30,23 @@ import { useAvisosDelCentro } from "@/components/notifications/use-avisos-del-ce
 import { useNotificationCenter } from "@/components/notifications/useNotificationCenter";
 import { button } from "@/components/ui-system/button-variants";
 import { AgendaProvider, useAgenda } from "@/hooks/use-agenda";
+import { useTareas } from "@/hooks/use-tareas";
 import { cuandoVuelve, loQueFalta, proximoAviso, textoCada, type AvisoPantalla, type ModoAviso } from "@/lib/agenda/aviso-pantalla";
 import { cn } from "@/lib/utils";
 import { fechaLarga } from "../comun/fechas";
+import { AccionesDeLaVentana, PieDelCostado, VolverALaLista } from "./BotonesDelCentro";
 import { CuerpoAviso } from "./CuerpoAviso";
 import { PanelLateralAviso } from "./PanelLateralAviso";
+import { esAbierta, TareasDelCentro } from "./TareasDelCentro";
+import { useVentanasDelCentro } from "./ventanas-del-centro";
 
 /** Al costado queda abierto horas: lo que marcó la fuente (la asistencia, un gasto) se vuelve a mirar cada 5 min. */
 const REFRESCO_AL_COSTADO_MS = 5 * 60_000;
-const PESTANA_POR_HACER = [{ id: "por-hacer", label: "Por hacer", icon: ClipboardList }] as const;
-const ICONO = "size-5";
+/* «Por hacer» (la agenda) y «Tareas» (las del equipo, con todo: agregar, editar, eliminar) van antes de «Todas». */
+const PESTANAS_PRIMERAS = [
+  { id: "por-hacer", label: "Por hacer", icon: ClipboardList },
+  { id: "tareas", label: "Tareas", icon: ListChecks },
+] as const;
 
 interface Props {
   config: AvisoPantalla;
@@ -92,7 +86,9 @@ function Centro(p: Props) {
   const alIr = enVentana ? onCerrar : undefined;
 
   const centro = useNotificationCenter(!minimizado);
-  const categoria: FiltroCategoria = vista === "por-hacer" ? "todas" : (vista as FiltroCategoria);
+  const tareas = useTareas(!minimizado);
+  const { abrirTarea, agregar, ventanas } = useVentanasDelCentro(tareas, { alCrearTarea: () => onVista("tareas") });
+  const categoria: FiltroCategoria = vista === "por-hacer" || vista === "tareas" ? "todas" : (vista as FiltroCategoria);
   const avisos = useAvisosDelCentro({
     abierto: !minimizado,
     categoria,
@@ -120,7 +116,9 @@ function Centro(p: Props) {
   const actualizar = () => {
     refrescar();
     avisos.actualizar();
+    void tareas.recargar();
   };
+  const marcarLeidas = () => centro.unreadCount > 0 && centro.markAllRead();
 
   const recordar: MenuAccion[] = [
     ...[15, 30, 60, 120].map((min) => ({ id: `en-${min}`, label: `En ${textoCada(min)}`, icon: AlarmClock, onSelect: () => p.onRecordarEn(min) })),
@@ -129,10 +127,10 @@ function Centro(p: Props) {
 
   const pestanas = alDia ? null : (
     <PestanasNotificaciones
-      primeras={PESTANA_POR_HACER}
+      primeras={PESTANAS_PRIMERAS}
       categoria={vista}
       onCategoria={onVista}
-      conteos={{ ...avisos.conteos, "por-hacer": porHacer }}
+      conteos={{ ...avisos.conteos, "por-hacer": porHacer, tareas: tareas.tareas.filter(esAbierta).length }}
       soloSinLeer={avisos.soloSinLeer}
       onSoloSinLeer={(v) => centro.setFilter(v ? "unread" : "all")}
       enFila={!enVentana}
@@ -161,6 +159,8 @@ function Centro(p: Props) {
   const contenido =
     alDia || vista === "por-hacer" ? (
       porHacerDensa
+    ) : vista === "tareas" ? (
+      <TareasDelCentro api={tareas} onNueva={() => abrirTarea(null)} onEditar={abrirTarea} />
     ) : vista === "todas" ? (
       <div className="space-y-5">
         {/* «Escribir a clientes» (ADR-508) va dentro de porHacerDensa aunque no falte nada. */}
@@ -174,127 +174,105 @@ function Centro(p: Props) {
 
   if (!enVentana) {
     return (
-      <PanelLateralAviso
-        modo={modo}
-        titulo={titulo}
-        descripcion={descripcion}
-        burbuja={porHacer > 0 ? `Te faltan ${porHacer}${sinLeer}` : centro.unreadCount > 0 ? `${centro.unreadCount} sin leer` : "Al día"}
-        minimizado={minimizado}
-        onMinimizar={p.onMinimizar}
-        ancho={p.ancho}
-        onAncho={p.onAncho}
-        onCambiarModo={p.onCambiarModo}
-        onCerrar={onCerrar}
-        arriba={pestanas}
-        pie={
-          alDia ? (
-            <VolverALaLista onVolver={() => setAlDia(false)} />
-          ) : (
-            <div className="flex items-center gap-1">
-              <button type="button" className={button({ variant: "ghost", size: "icon" })} onClick={p.onConfigurar} title="Configurar los recordatorios" aria-label="Configurar">
-                <Settings className={ICONO} aria-hidden="true" />
-              </button>
-              <ActionMenu label="Recordarme" icon={AlarmClock} actions={recordar} soloIcono title={`Volver a avisarme más tarde · ${vuelve}`} />
-              <button type="button" className={button({ variant: "ghost", size: "icon" })} onClick={() => centro.unreadCount > 0 && centro.markAllRead()} title="Marcar todas las notificaciones leídas" aria-label="Marcar todas leídas">
-                <CheckCheck className={ICONO} aria-hidden="true" />
-              </button>
-              <button type="button" className={button({ variant: "ghost", size: "icon" })} onClick={actualizar} title="Actualizar" aria-label="Actualizar">
-                <RefreshCw className={cn(ICONO, centro.isLoading && "animate-spin")} aria-hidden="true" />
-              </button>
-              <button type="button" data-qa="aviso-agenda-entendido" className={button({ variant: "primary", className: "ml-auto" })} onClick={onCerrar}>
-                Entendido
-              </button>
-            </div>
-          )
-        }
-      >
-        {contenido}
-      </PanelLateralAviso>
+      <>
+        <PanelLateralAviso
+          modo={modo}
+          titulo={titulo}
+          descripcion={descripcion}
+          burbuja={porHacer > 0 ? `Te faltan ${porHacer}${sinLeer}` : centro.unreadCount > 0 ? `${centro.unreadCount} sin leer` : "Al día"}
+          minimizado={minimizado}
+          onMinimizar={p.onMinimizar}
+          ancho={p.ancho}
+          onAncho={p.onAncho}
+          onCambiarModo={p.onCambiarModo}
+          onCerrar={onCerrar}
+          arriba={pestanas}
+          pie={
+            alDia ? (
+              <VolverALaLista onVolver={() => setAlDia(false)} />
+            ) : (
+              <PieDelCostado
+                agregar={agregar}
+                recordar={recordar}
+                vuelve={vuelve}
+                actualizando={centro.isLoading}
+                onActualizar={actualizar}
+                onMarcarLeidas={marcarLeidas}
+                onCerrar={onCerrar}
+                onConfigurar={p.onConfigurar}
+              />
+            )
+          }
+        >
+          {contenido}
+        </PanelLateralAviso>
+        {ventanas}
+      </>
     );
   }
 
   return (
-    <AdminModal
-      open
-      onClose={onCerrar}
-      variant="wide"
-      className="h-[100dvh] max-h-[100dvh] rounded-none sm:h-[88vh] sm:max-h-[88vh] sm:max-w-[min(72rem,94vw)] sm:rounded-2xl"
-      hideCloseButton
-      /* Sin los botones de ventana (agrandar/fijar): el alfiler de acá es «fijar al costado». */
-      ventana={false}
-      footer={
-        alDia ? (
-          <ModalFooter>
-            <VolverALaLista onVolver={() => setAlDia(false)} />
-          </ModalFooter>
-        ) : (
-          <ModalFooter nota={vuelve}>
-            <button type="button" className={button({ variant: "ghost", className: "max-sm:w-12 max-sm:px-0" })} onClick={p.onConfigurar} title="Configurar los recordatorios">
-              <Settings className="size-4" aria-hidden="true" />
-              <span className="max-sm:sr-only">Configurar</span>
-            </button>
-            <ActionMenu label="Recordarme" icon={AlarmClock} actions={recordar} compactoEnMovil title="Volver a avisarme más tarde" />
-            <button type="button" data-qa="aviso-agenda-entendido" className={button({ variant: "primary" })} onClick={onCerrar}>
-              Entendido
-            </button>
-          </ModalFooter>
-        )
-      }
-    >
-      <div className="flex h-full min-h-0 flex-col">
-        <CabeceraPropia
-          className={cn("flex shrink-0 items-center justify-between gap-2 border-b border-[var(--rule-soft)] py-2", MODAL_GUTTER)}
-          acciones={
-            <>
-              <button type="button" onClick={actualizar} className={button({ variant: "ghost", size: "icon" })} aria-label="Actualizar" title="Actualizar">
-                <RefreshCw className={cn(ICONO, (centro.isLoading || avisos.cargandoAlertas) && "animate-spin")} aria-hidden="true" />
+    <>
+      <AdminModal
+        open
+        onClose={onCerrar}
+        variant="wide"
+        className="h-[100dvh] max-h-[100dvh] rounded-none sm:h-[88vh] sm:max-h-[88vh] sm:max-w-[min(72rem,94vw)] sm:rounded-2xl"
+        hideCloseButton
+        /* Sin los botones de ventana (agrandar/fijar): el alfiler de acá es «fijar al costado». */
+        ventana={false}
+        footer={
+          alDia ? (
+            <ModalFooter>
+              <VolverALaLista onVolver={() => setAlDia(false)} />
+            </ModalFooter>
+          ) : (
+            <ModalFooter nota={vuelve}>
+              <button type="button" className={button({ variant: "ghost", className: "max-sm:w-12 max-sm:px-0" })} onClick={p.onConfigurar} title="Configurar los recordatorios">
+                <Settings className="size-4" aria-hidden="true" />
+                <span className="max-sm:sr-only">Configurar</span>
               </button>
-              <button
-                type="button"
-                onClick={() => centro.unreadCount > 0 && centro.markAllRead()}
-                aria-disabled={centro.unreadCount === 0}
-                className={button({ variant: "ghost", size: "icon", className: "aria-disabled:opacity-50" })}
-                aria-label="Marcar todas las notificaciones leídas"
-                title="Marcar todas las notificaciones leídas"
-              >
-                <CheckCheck className={ICONO} aria-hidden="true" />
+              <ActionMenu label="Recordarme" icon={AlarmClock} actions={recordar} compactoEnMovil title="Volver a avisarme más tarde" />
+              <button type="button" data-qa="aviso-agenda-entendido" className={button({ variant: "primary" })} onClick={onCerrar}>
+                Entendido
               </button>
-              <button type="button" data-qa="aviso-al-costado" className={button({ variant: "ghost", size: "icon" })} onClick={() => p.onCambiarModo("lateral")} title="Al costado: barra a la derecha, la página se achica para hacerle lugar" aria-label="Poner al costado">
-                <PanelRight className={ICONO} aria-hidden="true" />
-              </button>
-              <button type="button" data-qa="aviso-fijar" className={button({ variant: "ghost", size: "icon" })} onClick={() => p.onCambiarModo("fija")} title="Fija al costado: igual, y vuelve al recargar" aria-label="Fijar al costado">
-                <Pin className={ICONO} aria-hidden="true" />
-              </button>
-              <button type="button" onClick={onCerrar} className={button({ variant: "ghost", size: "icon" })} aria-label="Cerrar" title="Cerrar (Esc)">
-                <X className={ICONO} aria-hidden="true" />
-              </button>
-            </>
-          }
-        >
-          <div className="flex min-w-0 items-center gap-2">
-            {alDia ? <ListChecks className="size-5 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden="true" /> : <BellRing className="size-5 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden="true" />}
-            <div className="min-w-0">
-              <h2 className="truncate font-display text-base font-semibold tracking-tight text-[var(--text-primary)] sm:text-lg">{titulo}</h2>
-              <p className="truncate text-sm text-[var(--text-tertiary)]">{descripcion}</p>
+            </ModalFooter>
+          )
+        }
+      >
+        <div className="flex h-full min-h-0 flex-col">
+          <CabeceraPropia
+            /* A 400 px los 6 botones no dejan lugar al título: baja la fila de botones a su propia línea, a la derecha. */
+            className={cn("flex shrink-0 items-center justify-between gap-2 border-b border-[var(--rule-soft)] py-2 max-sm:flex-wrap max-sm:[&>div:last-child]:ml-auto", MODAL_GUTTER)}
+            acciones={
+              <AccionesDeLaVentana
+                agregar={agregar}
+                sinLeer={centro.unreadCount}
+                actualizando={centro.isLoading || avisos.cargandoAlertas}
+                onActualizar={actualizar}
+                onMarcarLeidas={marcarLeidas}
+                onCambiarModo={p.onCambiarModo}
+                onCerrar={onCerrar}
+              />
+            }
+          >
+            <div className="flex min-w-0 items-center gap-2">
+              {alDia ? <ListChecks className="size-5 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden="true" /> : <BellRing className="size-5 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden="true" />}
+              <div className="min-w-0">
+                <h2 className="truncate font-display text-base font-semibold tracking-tight text-[var(--text-primary)] sm:text-lg">{titulo}</h2>
+                <p className="truncate text-sm text-[var(--text-tertiary)]">{descripcion}</p>
+              </div>
+            </div>
+          </CabeceraPropia>
+          <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+            {pestanas}
+            <div className={cn("min-h-0 flex-1 overflow-y-auto pb-6 pt-4", MODAL_GUTTER)} data-lenis-prevent>
+              {contenido}
             </div>
           </div>
-        </CabeceraPropia>
-        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-          {pestanas}
-          <div className={cn("min-h-0 flex-1 overflow-y-auto pb-6 pt-4", MODAL_GUTTER)} data-lenis-prevent>
-            {contenido}
-          </div>
         </div>
-      </div>
-    </AdminModal>
-  );
-}
-
-function VolverALaLista({ onVolver }: { onVolver: () => void }) {
-  return (
-    <button type="button" data-qa="poner-al-dia-volver" className={button({ variant: "ghost" })} onClick={onVolver}>
-      <ArrowLeft className="size-4" aria-hidden="true" />
-      Volver a la lista
-    </button>
+      </AdminModal>
+    {ventanas}
+    </>
   );
 }

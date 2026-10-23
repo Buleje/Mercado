@@ -25,11 +25,13 @@ interface Props {
   /** Borrador de una sugerida (la de la cuenta de un tercero). */
   inicial?: Borrador;
   onCerrar: () => void;
+  /** Se abre desde otra ventana (el centro «Pendientes y avisos»): va por encima de ella. */
+  encima?: boolean;
 }
 
 const BLOQUE = "space-y-3 border-t border-[var(--rule-soft)] pt-4";
 
-export function ActividadModal({ actividad, inicial, onCerrar }: Props) {
+export function ActividadModal({ actividad, inicial, onCerrar, encima = false }: Props) {
   const formId = useId();
   const { b, cambiar, cambiarRegla, guardar, error, guardando } = useActividadForm(actividad, inicial, onCerrar);
 
@@ -37,6 +39,7 @@ export function ActividadModal({ actividad, inicial, onCerrar }: Props) {
     <AdminModal
       open
       onClose={onCerrar}
+      aboveModals={encima}
       title={actividad ? "Editar actividad" : "Nueva actividad"}
       description={actividad ? actividad.nombre : "Lo que se repite en tu negocio y quieres que te recuerde"}
       icon={Repeat}

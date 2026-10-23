@@ -7,6 +7,7 @@
  * tocaba, deshacer) va en «⋯». La usan Hoy y el panel del día del calendario.
  */
 import { useState, type MouseEvent, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import {
   ArrowUpRight,
   Ban,
@@ -14,18 +15,26 @@ import {
   Check,
   MoreHorizontal,
   Pencil,
+  Repeat,
   SkipForward,
+  Trash2,
   Undo2,
 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { button } from "@/components/ui-system/button-variants";
 import { useAgenda } from "@/hooks/use-agenda";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedeEscribirAgenda } from "@/lib/admin/agenda-acceso";
 import { cn } from "@/lib/utils";
-import type { EstadoManual, FechaKey, OcurrenciaDTO } from "@/lib/agenda/tipos";
+import type { ActividadDTO, EstadoManual, FechaKey, OcurrenciaDTO } from "@/lib/agenda/tipos";
+import { useBorrarActividad } from "../actividades/use-borrar-actividad";
 import { ESTILO_ESTADO, PUNTO_COLOR, estaResuelta } from "./estado-ocurrencia";
 import { fechaLarga, fechaRelativa, hoyKey } from "./fechas";
 import { MarcarModal, diaParaPosponer } from "./MarcarModal";
+
+/* La ventana de editar una actividad pesa (reglas, recurrencia): sólo se baja si alguien la abre. */
+const ActividadModal = dynamic(() => import("../actividades/ActividadModal").then((m) => ({ default: m.ActividadModal })), { ssr: false });
 
 export const CLASE_CHIP_ESTADO = "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold";
 
@@ -46,15 +55,17 @@ interface Props {
 
 export function ListaOcurrencias({ ocurrencias, conFecha = false, vacio, etiqueta, densa = false }: Props) {
   const [abierta, setAbierta] = useState<{ o: OcurrenciaDTO; modo: EstadoManual } | null>(null);
+  const [editando, setEditando] = useState<ActividadDTO | null>(null);
   if (ocurrencias.length === 0) return <>{vacio ?? null}</>;
   return (
     <>
       <ul aria-label={etiqueta} className="divide-y divide-[var(--rule-soft)]">
         {ocurrencias.map((o) => (
-          <FilaOcurrencia key={`${o.actividadId}-${o.fecha}`} o={o} conFecha={conFecha} densa={densa} onModal={(modo) => setAbierta({ o, modo })} />
+          <FilaOcurrencia key={`${o.actividadId}-${o.fecha}`} o={o} conFecha={conFecha} densa={densa} onModal={(modo) => setAbierta({ o, modo })} onEditarActividad={setEditando} />
         ))}
       </ul>
       {abierta && <MarcarModal ocurrencia={abierta.o} modo={abierta.modo} onCerrar={() => setAbierta(null)} />}
+      {editando && <ActividadModal actividad={editando} onCerrar={() => setEditando(null)} encima />}
     </>
   );
 }
@@ -65,8 +76,19 @@ function irSinRecargar(e: MouseEvent<HTMLAnchorElement>, href: string) {
   void irAEnlace(href);
 }
 
-function FilaOcurrencia({ o, conFecha, densa, onModal }: { o: OcurrenciaDTO; conFecha: boolean; densa: boolean; onModal: (modo: EstadoManual) => void }) {
-  const { colorDe, marcar, desmarcar } = useAgenda();
+interface PropsFila {
+  o: OcurrenciaDTO;
+  conFecha: boolean;
+  densa: boolean;
+  onModal: (modo: EstadoManual) => void;
+  onEditarActividad: (a: ActividadDTO) => void;
+}
+
+function FilaOcurrencia({ o, conFecha, densa, onModal, onEditarActividad }: PropsFila) {
+  const { colorDe, marcar, desmarcar, actividades } = useAgenda();
+  const puedeEscribir = puedeEscribirAgenda(useMiRol());
+  const borrarActividadConfirmada = useBorrarActividad();
+  const actividad = puedeEscribir ? actividades.find((a) => a.id === o.actividadId) : undefined;
   const [ocupada, setOcupada] = useState(false);
   const hoy = hoyKey();
   const estilo = ESTILO_ESTADO[o.estado];
@@ -96,6 +118,11 @@ function FilaOcurrencia({ o, conFecha, densa, onModal }: { o: OcurrenciaDTO; con
   }
   if (o.origen === "manual") {
     menu.push({ id: "deshacer", label: "Deshacer la marca", hint: "Vuelve a lo que diga la fuente", icon: Undo2, onSelect: () => void correr(() => desmarcar(o.actividadId, o.fecha)) });
+  }
+  /* Quien escribe la agenda arregla la actividad desde donde la ve, sin ir a Administración › Actividades. */
+  if (actividad) {
+    menu.push({ id: "editar-actividad", label: "Editar la actividad…", hint: "Nombre, cuándo se repite, cómo avisa", icon: Repeat, seccion: "Actividad", onSelect: () => onEditarActividad(actividad) });
+    menu.push({ id: "borrar-actividad", label: "Borrar la actividad", icon: Trash2, tone: "danger", seccion: "Actividad", onSelect: () => void correr(async () => borrarActividadConfirmada(actividad)) });
   }
 
   if (densa) {
