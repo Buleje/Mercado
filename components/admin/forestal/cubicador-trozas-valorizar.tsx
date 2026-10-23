@@ -24,6 +24,7 @@ import MedidasCongeladas from "./cubicador-trozas-medidas";
 import ValorizarPrecios from "./cubicador-trozas-precios";
 import ValorizarPreciosDelLote from "./cubicador-trozas-precios-del-lote";
 import { ACuentaHecha } from "./cubicador-trozas-a-cuenta";
+import { PapelDelCubicador } from "./cubicador-papel/PapelDelCubicador";
 import type { PreciosSugeridos } from "@/lib/forestal/cubicacion-madera-cuenta";
 import { anularCubicacionTrozas, borrarCubicacionTrozas, ESTADO_CUB, medidasDe, useCubicacionTrozas, type CubicacionTrozas } from "./hooks/use-cubicaciones-trozas";
 
@@ -224,6 +225,8 @@ export default function ValorizarCubicacionModal({
                 </div>
               </details>
             ) : null}
+            {/* La hoja de campo de esta CUB: su formato con el código y la foto del papel lleno. */}
+            <PapelDelCubicador tipo={aserrada ? "aserrada" : "trozas"} cubicacionId={cub.id} etiqueta={cub.personaNombre ?? undefined} variante="tarjeta" />
           </>
         )}
       </div>

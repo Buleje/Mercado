@@ -4,7 +4,8 @@
  * Cabecera de la tabla del patio, en UNA fila a 1280 (como la del cubicador de
  * aserrada, `cubicador-acciones`): título · «Guardar en la cuenta» destacado ·
  * orden · columnas · leer en voz alta · menú «Patio» (Guardadas, la CUB de este
- * lote, Importar, Especies, CSV y Vaciar al fondo, en rojo). Hasta el 15-10 la
+ * lote, Importar, Especies, CSV y Vaciar al fondo, en rojo) · «Papel» (formato
+ * para imprimir + la foto de la hoja de la CUB de este lote). Hasta el 15-10 la
  * cuenta vivía al fondo de la tarjeta y la cabecera ocupaba 3 renglones (132 px)
  * con botones de 30 y 48 px mezclados. Las columnas opcionales (Especie, el
  * volumen de la fórmula y su equivalente en la otra) quedan guardadas por tenant.
@@ -17,6 +18,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { MenuAcciones, type AccionMenu } from "./cubicador-acciones";
 import { BotonGuardarEnLaCuenta, type CuentaDelPatio } from "./cubicador-trozas-guardadas";
+import { PapelDelCubicador } from "./cubicador-papel/PapelDelCubicador";
 
 export type ColOpcionalTroza = "especie" | "m3" | "equiv";
 export const COLS_DEFAULT_TROZA: Record<ColOpcionalTroza, boolean> = { especie: true, m3: true, equiv: true };
@@ -80,6 +82,8 @@ export default function BarraPatioTrozas({
       </CardTitle>
       <div className="flex flex-wrap items-center gap-2">
         <BotonGuardarEnLaCuenta cuenta={cuenta} />
+        {/* El formato de papel y, si este patio ya se guardó, la foto de su hoja llena. */}
+        <PapelDelCubicador tipo="trozas" cubicacionId={cuenta.esteLote?.id ?? null} variante="barra" />
         {hayQueOrdenar && (
           <select
             value={ordenFilas}

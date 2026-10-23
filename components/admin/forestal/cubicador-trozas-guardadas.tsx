@@ -10,7 +10,7 @@
  * Un modal a la vez: abrir una guardada CIERRA la lista (no se apilan).
  */
 import { useEffect, useRef, useState } from "react";
-import { FolderOpen, Loader2, Save } from "@buleje/design-system/icons";
+import { FileText, FolderOpen, Loader2, Save, Search } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
@@ -28,6 +28,8 @@ import type { FilaTroza } from "./cubicador-trozas-tabla";
 import GuardarEnLaCuentaModal from "./cubicador-trozas-guardar";
 import ValorizarCubicacionModal from "./cubicador-trozas-valorizar";
 import { ESTADO_CUB, useCubicacionesTrozas, type CubicacionTrozas, type EstadoCubicacion } from "./hooks/use-cubicaciones-trozas";
+import { filtrarPorHoja } from "./cubicador-papel/papel-cubicador";
+import { usePapelesDeCubicaciones } from "./cubicador-papel/use-papel";
 
 
 interface Recuerdo { id: string; codigo: string }
@@ -63,7 +65,7 @@ export interface CuentaDelPatio {
   guardar: () => void;
   verGuardadas: () => void;
   /** La CUB que salió de ESTE lote (si sigue viva), para reabrirla. */
-  esteLote: { codigo: string; abrir: () => void } | null;
+  esteLote: { id: string; codigo: string; abrir: () => void } | null;
   hayFilas: boolean;
   /** Ventanas y avisos: se montan una vez, donde sea (van en portal). */
   ventanas: React.ReactNode;
@@ -127,7 +129,7 @@ export function useCuentaDelPatio({
   return {
     guardar: () => setGuardando(true),
     verGuardadas: () => setViendoLista(true),
-    esteLote: recuerdo && rows.length > 0 ? { codigo: recuerdo.codigo, abrir: () => setAbierta(recuerdo.id) } : null,
+    esteLote: recuerdo && rows.length > 0 ? { id: recuerdo.id, codigo: recuerdo.codigo, abrir: () => setAbierta(recuerdo.id) } : null,
     hayFilas: rows.length > 0,
     ventanas,
   };
@@ -159,6 +161,10 @@ const FILTROS: { valor: EstadoCubicacion | undefined; label: string }[] = [
 export function ListaGuardadasModal({ onAbrir, onCerrar, material }: { onAbrir: (id: string) => void; onCerrar: () => void; material?: MaterialCubicacion }) {
   const [estado, setEstado] = useState<EstadoCubicacion | undefined>(undefined);
   const { lista, cargando, error } = useCubicacionesTrozas({ estado, ...(material ? { material } : {}) });
+  const [q, setQ] = useState("");
+  /* Buscar por el código impreso en la hoja (ver «Papel»), la persona o la guía. */
+  const vista = lista ? filtrarPorHoja(lista, q, (c) => ({ codigos: [c.codigo, c.gtfNumber], textos: [c.personaNombre, c.notas] })) : null;
+  const { porId: papeles } = usePapelesDeCubicaciones(true);
   return (
     <AdminModal open onClose={onCerrar} title={material === "aserrada" ? "Madera a cuenta" : "Cubicaciones guardadas"} icon={FolderOpen}
       claveVentana={material === "aserrada" ? "cubicador-madera-a-cuenta" : "cubicador-trozas-guardadas"}
@@ -172,16 +178,26 @@ export function ListaGuardadasModal({ onAbrir, onCerrar, material }: { onAbrir: 
             </button>
           ))}
         </div>
+        <label className="relative block">
+          <span className="sr-only">Buscar por el código de la hoja, la persona o la guía</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Código de la hoja, persona o guía"
+            data-entrada="buscar-por-hoja"
+            className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-3 text-base text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]" />
+        </label>
         {cargando ? (
           <p className="flex items-center gap-2 py-6 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</p>
         ) : error ? (
           <p role="alert" className="py-6 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>
         ) : !lista?.length ? (
           <p className="py-6 text-center text-sm text-[var(--text-tertiary)]">Todavía no guardaste ninguna{estado ? " así" : ""}.</p>
+        ) : !vista?.length ? (
+          <p className="py-6 text-center text-sm text-[var(--text-tertiary)]">Ninguna con «{q.trim()}».</p>
         ) : (
           <ul className="divide-y divide-[var(--rule-soft)] rounded-2xl border border-[var(--rule-soft)]">
-            {lista.map((c) => {
+            {vista.map((c) => {
               const e = ESTADO_CUB[c.estado];
+              const nPapel = papeles.get(c.id) ?? 0;
               return (
                 <li key={c.id}>
                   {/* Fila clicable sin `<button>`: adentro va el enlace a la cuenta de la
@@ -202,6 +218,11 @@ export function ListaGuardadasModal({ onAbrir, onCerrar, material }: { onAbrir: 
                       {c.material === "aserrada" ? (c.nTrozas > 0 ? `${c.nTrozas} piezas · ` : "") : `${c.nTrozas} trozas · `}{fmtVolumen(c.volumen, c.formula)}
                       {c.monto != null && ` · ${formatCurrency(c.monto)}`}
                     </span>
+                    {nPapel > 0 && (
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]" title={`Tiene ${nPapel === 1 ? "su papel" : `${nPapel} hojas`} en el Archivo`}>
+                        <FileText className="h-4 w-4" aria-hidden /> {nPapel === 1 ? "papel" : `${nPapel} hojas`}
+                      </span>
+                    )}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${e.clase}`}>{e.label}</span>
                   </div>
                 </li>
