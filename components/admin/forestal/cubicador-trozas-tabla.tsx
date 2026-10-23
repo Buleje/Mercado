@@ -27,6 +27,8 @@ import type { TrozaCubicada } from "@/lib/forestal/cubicacion-trozas";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 import { formatNumber } from "@/lib/format";
 import { useTecladoGrilla } from "./celdas-excel";
+/* En el celular sigue siendo planilla, como la de aserrada (CubicadorMadera). */
+import { CELDAS_FLEX_EN_FILA, HOJA_MOVIL } from "./loth-tablero-estilos";
 
 export interface FilaTroza extends TrozaCubicada {
   sospechosa?: boolean;
@@ -82,7 +84,7 @@ export default function TablaPatioTrozas({
   const TH = "px-3 py-2";
 
   return (
-    <DataTable planilla className="w-full min-w-[640px] text-sm" wrapperProps={propsTabla}>
+    <DataTable planilla className={`w-full min-w-[640px] text-sm ${HOJA_MOVIL} ${CELDAS_FLEX_EN_FILA}`} wrapperProps={propsTabla}>
       <thead>
         <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
           <th className={TH}>#</th>

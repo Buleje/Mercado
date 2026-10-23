@@ -56,13 +56,13 @@ const props = (extra: Partial<Props> = {}): Props => ({
 
 const caja = () => screen.getByRole("region", { name: "Dictar o importar piezas" });
 const barraDelTitulo = () => {
-  const barra = screen.getByRole("heading", { name: /Cargar piezas/ }).parentElement;
+  const barra = screen.getByRole("heading", { name: /Dictar y cargar/ }).parentElement;
   if (!barra) throw new Error("sin barra del título");
   return barra;
 };
 const antes = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 
-describe("PanelEntradaVoz — disposición de «Cargar piezas»", () => {
+describe("PanelEntradaVoz — disposición de «Dictar y cargar»", () => {
   it("Importar Excel y la voz viven DENTRO de la caja de dictado, agrupados", () => {
     render(<PanelEntradaVoz {...props()} />);
     const entrada = within(caja()).getByRole("group", { name: "Entrada" });

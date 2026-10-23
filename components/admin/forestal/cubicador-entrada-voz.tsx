@@ -28,6 +28,7 @@ import {
 import type { CubicadorConfig } from "@/lib/forestal/cubicador-config";
 import { CeldaNum, useTecladoGrilla } from "./celdas-excel";
 import AjustesDeVoz from "./cubicador-ajustes-voz";
+import { NumeroDeBloque } from "./cubicador-indice";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 import CampoCodigoDeTroza from "./cubicador-codigo-troza";
 import type { TrozaParaCodigo } from "@/lib/forestal/codigo-de-troza";
@@ -53,6 +54,8 @@ interface PanelEntradaVozProps {
   onPresent?: () => void;
   /** Pliega el panel entero. Sin esto, el botón «Ocultar» no se dibuja. */
   onPlegar?: () => void;
+  /** Número del bloque en el índice del cubicador (Brandon 23-10); sin él, el título va solo. */
+  numero?: number;
   onImportar: () => void;
   showAjustes: boolean;
   onToggleAjustes: () => void;
@@ -118,7 +121,7 @@ interface PanelEntradaVozProps {
 }
 
 export default function PanelEntradaVoz({
-  grillaId, onPresent, onPlegar, onImportar, showAjustes, onToggleAjustes,
+  grillaId, onPresent, onPlegar, numero, onImportar, showAjustes, onToggleAjustes,
   config, onUpdateConfig, voices, onProbarVoz,
   supported, listening, onToggleListen, paused, onTogglePausa,
   fijas, onAplicarFijas, especie, onEspecieChange, especies = ESPECIES, onAbrirEspecies,
@@ -139,7 +142,8 @@ export default function PanelEntradaVoz({
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-          <Calculator className="h-4 w-4 text-[var(--accent)]" /> Cargar piezas
+          {numero != null && <NumeroDeBloque n={numero} />}
+          <Calculator className="h-4 w-4 text-[var(--accent)]" /> Dictar y cargar
         </CardTitle>
         {/* En la barra del título queda lo que es del PANEL: el catálogo, la
             presentación y plegar. Importar Excel, la voz y sus ajustes se

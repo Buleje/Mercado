@@ -32,3 +32,10 @@ export const TONO_ESTADO: Record<EstadoTroza, { chip: string; punto: string }> =
 
 /** Tabla también en el celular: el padding que `hoja-grilla` aplasta a 3 px vuelve (memoria `tabla-ancha-hoja-grilla`). */
 export const HOJA_MOVIL = "hoja-grilla max-sm:[&_tbody_td]:px-2! max-sm:[&_tbody_td]:py-2! max-sm:[&_tbody_td]:whitespace-nowrap";
+/**
+ * Planilla con controles en la celda (selects, chips): globals.css manda todo
+ * `.flex` de una celda a la derecha y en varias líneas, y a 400 px cada fila del
+ * cubicador medía 135 px (memoria `hoja-grilla-flex-y-pie-oculto`). Esto los deja en una línea.
+ */
+export const CELDAS_FLEX_EN_FILA =
+  "max-sm:[&_td_.flex]:flex-nowrap! max-sm:[&_td_.flex]:justify-start! max-sm:[&_td_.inline-flex]:flex-nowrap! max-sm:[&_td_.inline-flex]:justify-start!";

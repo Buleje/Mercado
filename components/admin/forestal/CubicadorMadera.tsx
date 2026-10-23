@@ -9,7 +9,7 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Truck, ChevronDown, Maximize2, Minimize2, ArrowUp, UserCheck } from "@buleje/design-system/icons";
+import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Truck, Maximize2, Minimize2, ArrowUp, UserCheck } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -92,6 +92,11 @@ import { useArrastreColumnas, useOrdenColumnas, type PropsThArrastrable } from "
 import { useTraseraCamion } from "./hooks/use-trasera-camion";
 import { TraseraCamionModal } from "./cubicador-trasera-camion";
 import { segmentosDelPie } from "@/lib/forestal/cubicador-orden-columnas";
+import { BloqueGrabaciones, TiraPlegada } from "./cubicador-bloques";
+import { IndiceDelCubicador, NumeroDeBloque, SCROLL_MT_BLOQUE } from "./cubicador-indice";
+import { CELDAS_FLEX_EN_FILA, HOJA_MOVIL } from "./loth-tablero-estilos";
+import { PIE_COMO_TABLA } from "./loth-kardex-estilos";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 /** Los modales del cubicador que se abren sin redibujar la tabla. */
 type ModalDelCubicador = "importar" | "especies" | "duenos" | "liquidacion" | "anexo" | "enviar" | "variado" | "trasera";
@@ -624,8 +629,9 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
    */
   /* `precio` (Brandon, 2026-09-23: «poder ocultar la sección de precio»):
      plegado sigue diciendo el valor del lote en una línea. */
-  const [plegados, setPlegados] = useState<{ kpis: boolean; voz: boolean; precio: boolean }>(() => {
-    const base = { kpis: false, voz: false, precio: false };
+  /* `grabaciones` (Brandon 23-10): el bloque de notas habladas también se pliega y se recuerda. */
+  const [plegados, setPlegados] = useState<{ kpis: boolean; voz: boolean; precio: boolean; grabaciones: boolean }>(() => {
+    const base = { kpis: false, voz: false, precio: false, grabaciones: false };
     const raw = leerGuardado("-plegados", espacio);
     if (!raw) return base;
     try {
@@ -2211,119 +2217,96 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
 
   return (
     <div ref={cubicadorRootRef} className="group relative space-y-4">
-      {/* Lo que llevás medido, antes del micrófono: los tres números que decide
-          el módulo (m³, pie tablar, piezas) estaban sólo abajo de la tabla o
-          detrás del panel de Resumen, y se carga mirando acá arriba. */}
-      <CubicadorKpis
-        oculto={plegados.kpis}
-        onOcultar={() => setPlegados((v) => ({ ...v, kpis: true }))}
-        onMostrar={() => setPlegados((v) => ({ ...v, kpis: false }))}
-        rows={rows}
-        totales={totales}
-        totalesVisibles={totalesVisibles}
-        filtrando={filtrando}
-        valorLote={valorLote}
-        conValor={conValor}
-        hayPreciosEspecie={precioVariable}
-        precio={precio}
-        rotuloPrecio={rotuloPrecio}
-        avisarRaras={avisarRaras}
-        fmtPt={fmtPt}
-        fmtM3={fmtM3}
-        /* Tocar un tipo del mix filtra la tabla por él: la pregunta que sigue a
-           «el 60 % es Comercial» es «¿cuáles?». */
-        onFiltrarTipo={(t) => {
-          setFiltroTipo((actual) => (actual === t ? "" : t));
-          document.getElementById(`cub-tabla-ancla`)?.scrollIntoView({ block: "start", behavior: "smooth" });
-        }}
-      />
-
-      {/* Panel de voz. Plegado deja una tira con su nombre y el botón para
-          traerlo de vuelta: si desapareciera del todo, la función se perdería. */}
-      {plegados.voz ? (
-        <button
-          type="button"
-          onClick={() => setPlegados((v) => ({ ...v, voz: false }))}
-          className="flex w-full items-center justify-between gap-2 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-left transition-colors hover:border-[var(--accent)]"
-        >
-          <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-secondary)]">
-            <Mic className="h-4 w-4 text-[var(--accent)]" aria-hidden /> Cargar piezas
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            <ChevronDown className="h-3.5 w-3.5" aria-hidden /> Mostrar
-          </span>
-        </button>
-      ) : (
-      <PanelEntradaVoz
-        onPlegar={() => setPlegados((v) => ({ ...v, voz: true }))}
-        grillaId={GRILLA_CARGA}
-        onPresent={onPresent}
-        onImportar={() => modales.abrir("importar")}
-        showAjustes={showAjustes}
-        onToggleAjustes={() => setShowAjustes((v) => !v)}
-        config={config}
-        onUpdateConfig={updateConfig}
-        voices={voices}
-        onProbarVoz={() => decir("dos, seis, ocho", config)}
-        supported={supported}
-        listening={listening}
-        onToggleListen={toggleListen}
-        paused={paused}
-        onTogglePausa={alternarPausa}
-        fijas={fijas}
-        onAplicarFijas={aplicarFijas}
-        especie={especie}
-        onEspecieChange={setEspecie}
-        especies={especiesDelSelector}
-        onAbrirEspecies={() => modales.abrir("especies")}
-        dueno={dueno}
-        duenoDelDirectorio={Boolean(dueno && duenoParteId)}
-        onDuenoChange={aplicarDueno}
-        duenosConocidos={duenosParaElegir}
-        onAbrirDuenos={() => modales.abrir("duenos")}
-        liveGroups={liveGroups}
-        errMsg={errMsg}
-        lastAdded={lastAdded}
-        addedFlash={addedFlash}
-        onDeshacer={deshacer}
-        fmtPt={fmtPt}
-        manual={manual}
-        onManualChange={setManualSync}
-        onConfirmarCarga={confirmarCarga}
-        codigoTroza={codigoDeTroza ? {
-          valor: codigoTroza,
-          onValor: cambiarCodigo,
-          onElegir: elegirTroza,
-          trozas: codigoDeTroza.trozas,
-          cargando: codigoDeTroza.cargando,
-          error: codigoDeTroza.error,
-        } : undefined}
-        observacion={{
-          texto: observacion.texto,
-          fija: observacion.fija,
-          onTexto: (v) => ponerObservacion({ ...observacionRef.current, texto: v }),
-          onFijar: () => ponerObservacion({ ...observacionRef.current, fija: !observacionRef.current.fija }),
-        }}
-      />
-      )}
-
-      {/* El precio del lote (ADR-430): con qué se valoriza cada pieza —el trato
-          de su dueño del Directorio o lo puesto a mano— y de dónde salió. Arriba
-          de la tabla: es lo que se mira antes de liquidar o mandar el papel. */}
-      {rows.length > 0 && (
-        <CubicadorPrecio
-          precios={precios}
-          especiesLote={especiesLote}
-          fecha={form.fecha}
-          nombreDe={nombreDeCliente}
-          sinDirectorio={sinDirectorio}
-          vinculables={vinculables}
-          onVincular={vincularConFichas}
-          onAbrirDirectorio={() => modales.abrir("duenos")}
-          plegado={plegados.precio}
-          onPlegado={(v) => setPlegados((prev) => ({ ...prev, precio: v }))}
+      {/* Índice pegajoso (Brandon 23-10): tres bloques numerados y una barra que
+          lleva a cada uno. Dentro de «Producir sin lote» (onLote) no va: el
+          modal tiene su propio scroll y sólo carga piezas. */}
+      {!onLote && (
+        <IndiceDelCubicador
+          bloques={[
+            { id: "cub-bloque-cargar", numero: 1, etiqueta: "Dictar y cargar", corta: "Cargar", plegado: plegados.voz, onMostrar: () => setPlegados((v) => ({ ...v, voz: false })) },
+            { id: "cub-tabla-ancla", numero: 2, etiqueta: "Lote cubicado", corta: "Lote", cifra: rows.length > 0 ? `${formatNumber(totales.piezas)} pzas` : undefined },
+            { id: "cub-bloque-grabaciones", numero: 3, etiqueta: "Grabaciones de voz", corta: "Grabaciones", plegado: plegados.grabaciones, onMostrar: () => setPlegados((v) => ({ ...v, grabaciones: false })) },
+          ]}
+          resumen={rows.length > 0 ? (
+            <>
+              {fmtM3(totales.m3)} <span className="font-sans text-xs text-[var(--text-tertiary)]">m³</span>
+              <span className="hidden sm:inline">
+                <span aria-hidden className="px-1.5 text-[var(--rule-base)]">·</span>
+                {fmtPt(totales.pt)} <span className="font-sans text-xs text-[var(--text-tertiary)]">PT</span>
+              </span>
+            </>
+          ) : undefined}
         />
       )}
+
+      {/* 1 · Dictar y cargar. El contenedor con el id no se desmonta al plegar:
+          el índice lo observa para saber qué bloque estás mirando. */}
+      <div id="cub-bloque-cargar" className={SCROLL_MT_BLOQUE}>
+        {/* Panel de voz. Plegado deja una tira con su nombre y el botón para
+            traerlo de vuelta: si desapareciera del todo, la función se perdería. */}
+        {plegados.voz ? (
+          <TiraPlegada
+            numero={onLote ? undefined : 1}
+            icono={<Mic className="h-4 w-4 text-[var(--accent)]" aria-hidden />}
+            onMostrar={() => setPlegados((v) => ({ ...v, voz: false }))}
+          >
+            Dictar y cargar
+          </TiraPlegada>
+        ) : (
+        <PanelEntradaVoz
+          onPlegar={() => setPlegados((v) => ({ ...v, voz: true }))}
+          numero={onLote ? undefined : 1}
+          grillaId={GRILLA_CARGA}
+          onPresent={onPresent}
+          onImportar={() => modales.abrir("importar")}
+          showAjustes={showAjustes}
+          onToggleAjustes={() => setShowAjustes((v) => !v)}
+          config={config}
+          onUpdateConfig={updateConfig}
+          voices={voices}
+          onProbarVoz={() => decir("dos, seis, ocho", config)}
+          supported={supported}
+          listening={listening}
+          onToggleListen={toggleListen}
+          paused={paused}
+          onTogglePausa={alternarPausa}
+          fijas={fijas}
+          onAplicarFijas={aplicarFijas}
+          especie={especie}
+          onEspecieChange={setEspecie}
+          especies={especiesDelSelector}
+          onAbrirEspecies={() => modales.abrir("especies")}
+          dueno={dueno}
+          duenoDelDirectorio={Boolean(dueno && duenoParteId)}
+          onDuenoChange={aplicarDueno}
+          duenosConocidos={duenosParaElegir}
+          onAbrirDuenos={() => modales.abrir("duenos")}
+          liveGroups={liveGroups}
+          errMsg={errMsg}
+          lastAdded={lastAdded}
+          addedFlash={addedFlash}
+          onDeshacer={deshacer}
+          fmtPt={fmtPt}
+          manual={manual}
+          onManualChange={setManualSync}
+          onConfirmarCarga={confirmarCarga}
+          codigoTroza={codigoDeTroza ? {
+            valor: codigoTroza,
+            onValor: cambiarCodigo,
+            onElegir: elegirTroza,
+            trozas: codigoDeTroza.trozas,
+            cargando: codigoDeTroza.cargando,
+            error: codigoDeTroza.error,
+          } : undefined}
+          observacion={{
+            texto: observacion.texto,
+            fija: observacion.fija,
+            onTexto: (v) => ponerObservacion({ ...observacionRef.current, texto: v }),
+            onFijar: () => ponerObservacion({ ...observacionRef.current, fija: !observacionRef.current.fija }),
+          }}
+        />
+        )}
+      </div>
 
       {/* Tabla acumulada. Expandida se despega del flujo y toma la pantalla:
           un lote de 700 filas dentro de una caja de 600 px obliga a scrollear
@@ -2333,12 +2316,13 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
         className={
           tablaExpandida
             ? "fixed inset-0 z-system overflow-auto bg-[var(--surface-raised)] p-4 sm:p-5"
-            : "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5"
+            : `${SCROLL_MT_BLOQUE} rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5`
         }
       >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              {!onLote && <NumeroDeBloque n={2} />}
               <Table className="h-4 w-4 text-[var(--accent)]" /> {cubicacionActual ? cubicacionActual.nombre : "Lote cubicado"} ({rows.length})
               {/* Va pegado al título y no dentro de un menú: se usa para LEER, y
                   buscar el botón en un desplegable rompe justo eso. */}
@@ -2353,12 +2337,19 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                 {tablaExpandida ? (
                   <><Minimize2 className="h-3.5 w-3.5" aria-hidden /> Salir</>
                 ) : (
-                  <><Maximize2 className="h-3.5 w-3.5" aria-hidden /> Pantalla completa</>
+                  <><Maximize2 className="h-3.5 w-3.5" aria-hidden /> <span className="hidden sm:inline">Pantalla completa</span></>
                 )}
               </button>
             </CardTitle>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-              {cubicacionActual ? "Guardada — al tocar «Guardar» se actualiza esta misma cubicación." : "Sin guardar — vive sólo en este dispositivo hasta que la guardes."}
+            {/* El estado en dos palabras y el porqué en el ⓘ (ley de la vista, regla 9). */}
+            <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
+              {cubicacionActual ? "Guardada" : "Sin guardar"}
+              <InfoTip
+                side="bottom"
+                title={cubicacionActual ? "Guardada" : "Sin guardar"}
+                ariaLabel="Dónde vive este lote"
+                body={cubicacionActual ? "Al tocar «Actualizar» se reemplaza esta misma cubicación en tu cuenta." : "Vive sólo en este dispositivo hasta que la guardes. Guardada, la ves desde cualquier celular o computadora."}
+              />
             </p>
           </div>
           {/* Dos acciones a la vista y tres menús (ver `cubicador-acciones`):
@@ -2579,6 +2570,59 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
             />
           </div>
         </div>
+
+        {/* Las cifras y el precio del lote viven DENTRO de su bloque (Brandon
+            23-10): antes eran dos tarjetas sueltas, una sobre el micrófono y
+            otra entre la carga y la tabla. En pantalla completa no van: esa
+            vista es para leer la tabla y su alto ya está contado. */}
+        {!tablaExpandida && (
+          <div className="mb-3 space-y-3">
+          {/* Lo que llevás medido, antes del micrófono: los tres números que decide
+              el módulo (m³, pie tablar, piezas) estaban sólo abajo de la tabla o
+              detrás del panel de Resumen, y se carga mirando acá arriba. */}
+          <CubicadorKpis
+            oculto={plegados.kpis}
+            onOcultar={() => setPlegados((v) => ({ ...v, kpis: true }))}
+            onMostrar={() => setPlegados((v) => ({ ...v, kpis: false }))}
+            rows={rows}
+            totales={totales}
+            totalesVisibles={totalesVisibles}
+            filtrando={filtrando}
+            valorLote={valorLote}
+            conValor={conValor}
+            hayPreciosEspecie={precioVariable}
+            precio={precio}
+            rotuloPrecio={rotuloPrecio}
+            avisarRaras={avisarRaras}
+            fmtPt={fmtPt}
+            fmtM3={fmtM3}
+            /* Tocar un tipo del mix filtra la tabla por él: la pregunta que sigue a
+               «el 60 % es Comercial» es «¿cuáles?». */
+            onFiltrarTipo={(t) => {
+              setFiltroTipo((actual) => (actual === t ? "" : t));
+              document.getElementById(`cub-tabla-ancla`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+            }}
+          />
+
+          {/* El precio del lote (ADR-430): con qué se valoriza cada pieza —el trato
+              de su dueño del Directorio o lo puesto a mano— y de dónde salió. Arriba
+              de la tabla: es lo que se mira antes de liquidar o mandar el papel. */}
+          {rows.length > 0 && (
+            <CubicadorPrecio
+              precios={precios}
+              especiesLote={especiesLote}
+              fecha={form.fecha}
+              nombreDe={nombreDeCliente}
+              sinDirectorio={sinDirectorio}
+              vinculables={vinculables}
+              onVincular={vincularConFichas}
+              onAbrirDirectorio={() => modales.abrir("duenos")}
+              plegado={plegados.precio}
+              onPlegado={(v) => setPlegados((prev) => ({ ...prev, precio: v }))}
+            />
+          )}
+          </div>
+        )}
 
         {variado.hay && (
           <AvisoVariado
@@ -2901,9 +2945,12 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
              * corrige la posición para compensarlo, peleando contra el cálculo
              * de la ventana. Es requisito de toda lista virtualizada a mano.
              */}
+            {/* En el celular sigue siendo planilla (`hoja-grilla`), no tarjetas:
+                como tarjeta cada pieza medía 767 px (15 casilleros apilados) y
+                24 piezas eran 25 pantallas (medido 23-10). */}
             <DataTable
               planilla
-              className="w-full min-w-[960px] text-sm"
+              className={`w-full min-w-[960px] text-sm ${HOJA_MOVIL} ${CELDAS_FLEX_EN_FILA} ${PIE_COMO_TABLA}`}
               wrapperClassName="rounded-xl"
               wrapperProps={propsTabla}
             >
@@ -3194,6 +3241,18 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
         )}
 
       </div>
+
+      {/* Grabaciones de voz (Brandon 23-10): notas habladas del lote. Dentro de
+          «Producir sin lote» (onLote) no va: ese modal sólo carga piezas. */}
+      {!onLote && (
+        <BloqueGrabaciones
+          id="cub-bloque-grabaciones"
+          className={SCROLL_MT_BLOQUE}
+          plegado={plegados.grabaciones}
+          onPlegado={(v) => setPlegados((prev) => ({ ...prev, grabaciones: v }))}
+          contexto={cubicacionActual ? cubicacionActual.nombre : rows.length > 0 ? `Lote sin guardar · ${rows.length} ${rows.length === 1 ? "pieza" : "piezas"}` : ""}
+        />
+      )}
 
       {/* Acá vivía una SEGUNDA copia del panel de entrada, para no tener que
           volver a subir después de mirar la tabla. Se fue (Brandon, 2026-09-08):
