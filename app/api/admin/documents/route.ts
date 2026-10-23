@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -235,9 +235,13 @@ export async function POST(req: NextRequest) {
     if (isAnalyzableMime(mime)) {
       // En cola: subir una carpeta de 30 fotos disparaba 30 análisis a la vez
       // y con un modelo local eso tumba la máquina (ver `cola-analisis`).
-      enColaDeAnalisis(draft.id, () =>
-        analyzeDocumentContent(auth.tenantId, draft.id, auth.username, auth.role),
-      ).catch((err) => logger.warn("documents.autoanalyze_fail", { err: String(err) }));
+      // `after`: en Vercel la función puede congelarse apenas sale la respuesta
+      // y el análisis (OCR incluido) quedaba a medias hasta el cron nocturno.
+      after(() =>
+        enColaDeAnalisis(draft.id, () =>
+          analyzeDocumentContent(auth.tenantId, draft.id, auth.username, auth.role),
+        ).catch((err) => logger.warn("documents.autoanalyze_fail", { err: String(err) })),
+      );
     }
 
     // La carita del archivo se dibuja ahora, no cuando alguien abra la carpeta.

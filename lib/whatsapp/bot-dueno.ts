@@ -257,6 +257,58 @@ export async function mandarBotones(
   });
 }
 
+/** Por qué no salió un archivo: cada motivo se le explica distinto al dueño. */
+export type MotivoArchivoNoEnviado = "conexion" | "tipo" | "rechazo" | "red";
+
+/**
+ * Manda un ARCHIVO (no un enlace) por el número del negocio: lo sube a Meta y
+ * lo manda como foto o como documento con su nombre. Mismo camino de dos pasos
+ * que `POST /api/admin/whatsapp/send-document`, con las credenciales del
+ * número que recibió el mensaje.
+ *
+ * Las fotos que WhatsApp muestra como foto son jpeg/png/webp; todo lo demás
+ * viaja como documento (un HEIC como foto lo rechaza).
+ */
+export async function mandarArchivo(
+  cred: CredencialesMeta,
+  telefono: string,
+  archivo: { bytes: Buffer; mime: string; nombre: string; pie?: string },
+): Promise<{ ok: true } | { ok: false; motivo: MotivoArchivoNoEnviado }> {
+  const esImagen = /^image\/(jpeg|png|webp)$/.test(archivo.mime);
+  try {
+    const subida = new FormData();
+    subida.append("file", new Blob([new Uint8Array(archivo.bytes)], { type: archivo.mime }), archivo.nombre);
+    subida.append("type", archivo.mime);
+    subida.append("messaging_product", "whatsapp");
+    const up = await fetch(`${API}/${cred.phoneNumberId}/media`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${cred.token}` },
+      body: subida,
+    });
+    const subido = (await up.json().catch(() => ({}))) as { id?: string; error?: { message?: string; code?: number } };
+    if (!up.ok || !subido.id) {
+      logger.warn("[whatsapp/dueño] Meta rechazó el archivo", {
+        status: up.status,
+        metaCode: subido.error?.code,
+        mime: archivo.mime,
+      });
+      if (up.status === 401 || subido.error?.code === 190) return { ok: false, motivo: "conexion" };
+      if (/type|format|unsupported|mime/i.test(subido.error?.message ?? "")) return { ok: false, motivo: "tipo" };
+      return { ok: false, motivo: "rechazo" };
+    }
+
+    const kind = esImagen ? "image" : "document";
+    const contenido: Record<string, unknown> = { id: subido.id };
+    if (archivo.pie) contenido.caption = archivo.pie.slice(0, 1024);
+    if (kind === "document") contenido.filename = archivo.nombre;
+    const ok = await enviar(cred, { messaging_product: "whatsapp", to: telefono, type: kind, [kind]: contenido });
+    return ok ? { ok: true } : { ok: false, motivo: "rechazo" };
+  } catch (err) {
+    logger.warn("[whatsapp/dueño] no se pudo mandar el archivo", { error: String(err) });
+    return { ok: false, motivo: "red" };
+  }
+}
+
 /** WhatsApp corta los textos largos; mejor recortar avisando que perder el final. */
 function recortar(texto: string, tope = 4000): string {
   const limpio = texto.trim();

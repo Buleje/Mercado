@@ -8,6 +8,24 @@ const bundleAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
 });
 
+// OCR en el servidor (22-10, `lib/documents/ocr-servidor.ts`): el worker y el
+// idioma se cargan por ruta de disco (process.cwd()), así que el trazado de
+// archivos no los ve solo. Sin esto el análisis sigue, pero sin OCR. ~13 MB.
+const ARCHIVOS_OCR = [
+  "./node_modules/tesseract.js/package.json",
+  "./node_modules/tesseract.js/src/**/*",
+  "./node_modules/tesseract.js-core/package.json",
+  "./node_modules/tesseract.js-core/tesseract-core-*lstm.js",
+  "./node_modules/tesseract.js-core/tesseract-core-*lstm.wasm",
+  "./node_modules/@tesseract.js-data/spa/4.0.0_best_int/*",
+  "./node_modules/wasm-feature-detect/**/*",
+  "./node_modules/is-url/**/*",
+  "./node_modules/node-fetch/**/*",
+  "./node_modules/regenerator-runtime/**/*",
+  "./node_modules/bmp-js/**/*",
+  "./node_modules/next/dist/compiled/@vercel/og/*.ttf",
+];
+
 const nextConfig: NextConfig = {
   // TypeScript gate: tsc validation runs in pre-commit hook (husky) and CI.
   // Build-time tsc disabled because it OOMs on Vercel 8GB (131 Prisma models + 3000+ files).
@@ -65,6 +83,13 @@ const nextConfig: NextConfig = {
     "/api/admin/documents/[id]/thumbnail": [
       "./node_modules/next/dist/compiled/@vercel/og/*.ttf",
     ],
+    "/api/admin/documents": ARCHIVOS_OCR,
+    "/api/admin/documents/[id]/analyze": ARCHIVOS_OCR,
+    "/api/admin/documents/indexar-pendientes": ARCHIVOS_OCR,
+    "/api/cron/documentos-indexar": ARCHIVOS_OCR,
+    "/api/whatsapp/webhook": ARCHIVOS_OCR,
+    "/api/admin/forestal/guias/documentos": ARCHIVOS_OCR,
+    "/api/admin/forestal/loth/medicion-carga/[id]/fotos": ARCHIVOS_OCR,
   },
   serverExternalPackages: [
     "@prisma/client",

@@ -28,10 +28,11 @@ import "server-only";
 
 import { logger } from "@/lib/logger";
 import { transcribirAudio } from "@/lib/ai/transcribir";
-import { conversar } from "@/lib/asistente/conversar";
+import { conversar, errorParaLaPersona } from "@/lib/asistente/conversar";
 import { olvidar, anotarHecho } from "@/lib/asistente/memoria";
 import { nombreDelNegocio } from "@/lib/asistente/negocio";
 import { WhatsAppDuenosDB } from "@/lib/db/whatsapp-duenos.db";
+import type { Role } from "@/lib/auth/role-permissions";
 import { TenantsDB } from "@/lib/db/tenants.db";
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
 import { getPendingApproval, removePendingApproval } from "@/lib/agents/pending-approvals";
@@ -45,15 +46,18 @@ import {
   mensajeMovido,
   ordenDeGuardar,
 } from "./archivar-papel";
+import { leerPreguntaDePapeles } from "./preguntar-archivo";
 
 /**
- * El rol con el que corre lo que entra por WhatsApp.
- *
- * Vincular un teléfono es una acción que sólo se hace desde el panel con un
- * código de 15 minutos: quien está del otro lado ya tiene, en los hechos, su
- * negocio. Mismo criterio que Telegram.
+ * El rol con el que corre lo que entra por WhatsApp: el ACTUAL de quien vinculó
+ * el teléfono (`WhatsAppDuenosDB.rolActual`), resuelto una vez por mensaje y
+ * usado en TODAS las ramas — buscar papeles, `conversar` (que también tiene
+ * herramientas del Archivo) y el Confirmar. Antes era «admin» fijo: un
+ * encargado vinculado veía por el asistente los papeles con candado de dueños.
  */
-const ROL = "admin" as const;
+const VOLVER_A_VINCULAR =
+  "🔒 Este teléfono necesita volver a vincularse. Pídele un código nuevo a quien " +
+  "administra el negocio (en el panel: Ajustes › WhatsApp).";
 
 /**
  * Cuántos mensajes por minuto aguanta un teléfono.
@@ -103,6 +107,9 @@ export const AYUDA_DUENO =
   "*Para guardar papeles*\n" +
   "• Reenvíame la foto o el PDF (un DNI, un contrato, una boleta) y queda en tu *Archivo*. " +
   "Si le pones un texto, ese es su nombre: «DNI de Juan».\n\n" +
+  "*Para buscar papeles*\n" +
+  "• «¿qué está vencido?» · «¿qué vence este año?»\n" +
+  "• «¿dónde está el DNI del jefe?» · «mándame el contrato del local»\n\n" +
   "Puedes decirme *varias cosas en un mismo audio* y las anoto todas. Antes de " +
   "guardar te muestro qué se va a anotar y por cuánto: recién cuando tocas " +
   "*Confirmar* queda en los libros.\n\n" +
@@ -136,8 +143,17 @@ const BOTON_NO = "anotar-no";
 // ── Entrada principal ────────────────────────────────────────────────────────
 
 export async function manejarMensajeDeDueno(entrada: MensajeDueno): Promise<void> {
+  // Quien vinculó el teléfono, HOY: si la desactivaron, el teléfono no hace nada.
+  const quien = await WhatsAppDuenosDB.rolActual(entrada.tenantId, entrada.telefono);
+  if ("revocado" in quien) {
+    logger.info("[whatsapp/dueño] vínculo sin autor activo", { tenantId: entrada.tenantId });
+    await mandarTexto(entrada.cred, entrada.telefono, VOLVER_A_VINCULAR);
+    return;
+  }
+  const rol = quien.rol;
+
   if (entrada.botonId) {
-    await manejarBoton(entrada);
+    await manejarBoton(entrada, rol);
     return;
   }
 
@@ -223,6 +239,21 @@ export async function manejarMensajeDeDueno(entrada: MensajeDueno): Promise<void
     return;
   }
 
+  // ── Preguntas por papeles: el Archivo contesta sin pasar por el modelo ────
+  // Antes que `conversar` y después del audio (una nota de voz también
+  // pregunta). Plata y agenda nunca caen acá: `leerPreguntaDePapeles` las deja
+  // pasar (ver su cabecera). El pie de una foto («DNI de Juan») es su NOMBRE,
+  // no una pregunta: con adjunto no se busca nada.
+  const pregunta = entrada.archivo ? null : leerPreguntaDePapeles(dictado);
+  if (pregunta) {
+    const { responderPreguntaDePapeles } = await import("./responder-archivo");
+    await responderPreguntaDePapeles({ tenantId, telefono, rol, pregunta, cred });
+    WhatsAppDuenosDB.marcarUso(tenantId, telefono).catch((err) =>
+      logger.warn("[whatsapp/dueño] no se pudo marcar el uso", { error: String(err) }),
+    );
+    return;
+  }
+
   // ── Entender y proponer ──────────────────────────────────────────────────
   const r = await conversar({
     tenantId,
@@ -230,7 +261,7 @@ export async function manejarMensajeDeDueno(entrada: MensajeDueno): Promise<void
     // de los dos?» signifique algo.
     sesionId: sesionDe(telefono),
     texto: dictado,
-    actorRole: ROL,
+    actorRole: rol,
     solicitante: `whatsapp:${msg.nombre}`,
     canal: "whatsapp",
   });
@@ -347,7 +378,7 @@ async function guardarEnElArchivo(msg: MensajeDueno, archivo: NonNullable<Mensaj
 
 // ── Botones ──────────────────────────────────────────────────────────────────
 
-async function manejarBoton(msg: MensajeDueno): Promise<void> {
+async function manejarBoton(msg: MensajeDueno, rol: Role): Promise<void> {
   const { tenantId, telefono, cred } = msg;
   const [accion, aprobacionId] = (msg.botonId ?? "").split(":");
   const pendiente = aprobacionId ? getPendingApproval(aprobacionId) : null;
@@ -380,12 +411,12 @@ async function manejarBoton(msg: MensajeDueno): Promise<void> {
     action: pendiente.action,
     payload: pendiente.payload,
     tenantId,
-    actorRole: ROL,
+    actorRole: rol,
   });
   removePendingApproval(aprobacionId);
 
   if (!res.success) {
-    await mandarTexto(cred, telefono, `⚠️ No se pudo anotar: ${res.error ?? "error desconocido"}`);
+    await mandarTexto(cred, telefono, `⚠️ No se pudo anotar: ${errorParaLaPersona(res.error)}`);
     return;
   }
 
@@ -481,7 +512,14 @@ export async function intentarVincular(params: {
     return true;
   }
 
-  await WhatsAppDuenosDB.vincular(canje.tenantId, { telefono, nombre, ultimoUso: null });
+  await WhatsAppDuenosDB.vincular(canje.tenantId, {
+    telefono,
+    nombre,
+    ultimoUso: null,
+    // Quién lo pidió: su rol se relee en cada mensaje (si lo desactivan, se corta).
+    pedidoPor: canje.pedidoPor,
+    ...(canje.rol ? { rol: canje.rol } : {}),
+  });
   const negocio = await TenantsDB.getBasicById(canje.tenantId);
   await mandarTexto(
     cred,

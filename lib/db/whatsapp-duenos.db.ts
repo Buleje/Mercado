@@ -26,6 +26,8 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import type { AdminRole } from "@/lib/session";
+import { AdminUsersDB } from "./admin-users.db";
 
 export interface DuenoVinculado {
   /** Sólo dígitos, como llega de Meta (`wa_id`). Ver `normalizarTelefono`. */
@@ -35,6 +37,38 @@ export interface DuenoVinculado {
   vinculadoEn: string;
   /** Última vez que ese teléfono anotó algo. */
   ultimoUso?: string | null;
+  /**
+   * El `username` de quien pidió el código en el panel. Con él se resuelve, EN
+   * CADA MENSAJE, el rol ACTUAL de esa persona (`rolActual`): si le bajan el
+   * rol o la desactivan, el teléfono cambia con ella. Los vínculos de antes del
+   * 22-10 no lo tienen.
+   */
+  pedidoPor?: string;
+  /** El rol que tenía al vincular. Sólo informativo: el que manda es el actual. */
+  rol?: string;
+}
+
+/**
+ * Con qué rol se atiende un teléfono. `revocado` = quien lo vinculó ya no está
+ * activo en este negocio (o el vínculo desapareció): no se contesta nada.
+ */
+export type RolDelTelefono = { rol: AdminRole } | { revocado: true };
+
+/**
+ * Vínculos sin `pedidoPor` (anteriores al 22-10): no se sabe quién los pidió,
+ * así que no ven lo que tiene candado de dueños. Plata y agenda siguen igual:
+ * el encargado tiene en el asistente los mismos permisos que el admin.
+ */
+export const ROL_DE_VINCULO_SIN_AUTOR: AdminRole = "manager";
+
+/** Todos los roles del panel: un `role` de la base que no esté acá no se usa. */
+const ROLES_DEL_PANEL: Record<AdminRole, true> = {
+  superadmin: true, admin: true, cajero: true, almacenero: true, proveedor: true, delivery: true,
+  tienda_owner: true, owner: true, manager: true, analista: true,
+};
+
+function esRolDelPanel(r: string): r is AdminRole {
+  return Object.prototype.hasOwnProperty.call(ROLES_DEL_PANEL, r);
 }
 
 const CLAVE = "whatsappDuenos";
@@ -139,6 +173,22 @@ export const WhatsAppDuenosDB = {
     // o sea la abrumadora mayoría de los mensajes que entran.
     cache.set(llave, { puede, expira: Date.now() + TTL_MS });
     return puede;
+  },
+
+  /**
+   * El rol ACTUAL con que se atiende ese teléfono EN ESTE NEGOCIO: el de quien
+   * lo vinculó, leído hoy (no el del día del vínculo). Si esa persona ya no
+   * existe o está desactivada en este negocio → `revocado`.
+   */
+  async rolActual(tenantIdDelNumero: string, telefonoCrudo: string): Promise<RolDelTelefono> {
+    const telefono = normalizarTelefono(telefonoCrudo);
+    if (!telefono) return { revocado: true };
+    const dueno = (await this.listar(tenantIdDelNumero)).find((d) => d.telefono === telefono);
+    if (!dueno) return { revocado: true };
+    if (!dueno.pedidoPor) return { rol: ROL_DE_VINCULO_SIN_AUTOR };
+    const quien = await AdminUsersDB.getByUsername(tenantIdDelNumero, dueno.pedidoPor);
+    if (!quien || !quien.active || !esRolDelPanel(quien.role)) return { revocado: true };
+    return { rol: quien.role };
   },
 
   /** Vincula un teléfono a un negocio. Idempotente: revincular sólo actualiza. */

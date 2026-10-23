@@ -40,6 +40,12 @@ interface CodigoVivo {
   tenantId: string;
   /** Quién lo pidió — queda en el log del vínculo. */
   pedidoPor: string;
+  /**
+   * Con qué rol lo pidió. El teléfono vinculado ve el Archivo con ESTE rol: un
+   * encargado que vincula su celular no tiene por qué ver por WhatsApp los
+   * papeles con candado que el panel le esconde.
+   */
+  rol?: string;
   expira: number;
 }
 
@@ -70,6 +76,7 @@ export function crearCodigo(
   tenantId: string,
   pedidoPor: string,
   canal: CanalVinculable = "telegram",
+  rol?: string,
 ): { codigo: string; expiraEn: number } {
   limpiarVencidos();
   // Un negocio tiene UN código vivo por canal a la vez: dos códigos válidos al
@@ -81,7 +88,7 @@ export function crearCodigo(
   }
 
   const codigo = generar();
-  vivos.set(llaveDe(canal, codigo), { canal, tenantId, pedidoPor, expira: Date.now() + VIGENCIA_MS });
+  vivos.set(llaveDe(canal, codigo), { canal, tenantId, pedidoPor, ...(rol ? { rol } : {}), expira: Date.now() + VIGENCIA_MS });
   logger.info("[asistente] código de vinculación emitido", {
     tenantId,
     canal,
@@ -100,7 +107,7 @@ export function crearCodigo(
 export function canjearCodigo(
   codigoCrudo: string,
   canal: CanalVinculable = "telegram",
-): { tenantId: string; pedidoPor: string } | null {
+): { tenantId: string; pedidoPor: string; rol?: string } | null {
   limpiarVencidos();
   const codigo = codigoCrudo.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (codigo.length === 0) return null;
@@ -117,7 +124,8 @@ export function canjearCodigo(
   if (!encontrado) return null;
 
   vivos.delete(encontrado.llave);
-  return { tenantId: encontrado.valor.tenantId, pedidoPor: encontrado.valor.pedidoPor };
+  const { tenantId, pedidoPor, rol } = encontrado.valor;
+  return { tenantId, pedidoPor, ...(rol ? { rol } : {}) };
 }
 
 /** Si hay un código vivo para este negocio en este canal, cuánto le queda. Para la pantalla. */

@@ -18,6 +18,7 @@ import "server-only";
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { esSuplantacion } from "@/lib/auth/suplantacion";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -75,7 +76,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { codigo, expiraEn } = crearCodigo(auth.tenantId, auth.username, "whatsapp");
+  // La vista de tienda del superadmin dura minutos y su usuario no existe en el
+  // negocio: un teléfono vinculado desde ahí quedaría pidiendo volver a vincularse.
+  if (esSuplantacion(auth.username)) {
+    return NextResponse.json(
+      { error: "Desde la vista de tienda no se vincula un teléfono: que lo haga un usuario del negocio." },
+      { status: 403 },
+    );
+  }
+
+  const { codigo, expiraEn } = crearCodigo(auth.tenantId, auth.username, "whatsapp", auth.role);
   enqueueActivityLog({
     action: "Crear", resource: "whatsapp-anotar-codigo", resourceId: auth.tenantId,
     userId: auth.username, tenantId: auth.tenantId,

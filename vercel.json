@@ -13,6 +13,18 @@
     "app/api/admin/documents/expediente/route.ts": {
       "maxDuration": 300
     },
+    "app/api/admin/documents/*/analyze/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/whatsapp/webhook/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/admin/forestal/guias/documentos/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/admin/forestal/loth/medicion-carga/*/fotos/route.ts": {
+      "maxDuration": 300
+    },
     "app/api/admin/forestal/ctp/vincular-trozas/route.ts": {
       "maxDuration": 300
     },

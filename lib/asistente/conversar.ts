@@ -36,6 +36,20 @@ const MAX_RONDAS = 3;
 /** Cuántas herramientas se ejecutan por vuelta. */
 const MAX_POR_RONDA = 5;
 
+/**
+ * Lo que vuelve al modelo (y a la persona) cuando una herramienta falla. El
+ * orquestador niega con `FORBIDDEN: role "x" lacks write:expenses`: dicho así,
+ * el modelo lo reintenta o lo cuenta como un error raro. Es el mismo «no
+ * autorizado» que daría el panel con ese rol.
+ */
+export function errorParaLaPersona(error: string | undefined): string {
+  if (!error) return "error desconocido";
+  if (/^FORBIDDEN/.test(error)) {
+    return "No autorizado: tu usuario no tiene permiso para esto (en el panel tampoco). Pídeselo a quien administra el negocio.";
+  }
+  return error;
+}
+
 const SISTEMA = (hoy: string, contexto: string) => `Eres el asistente de Buleje, una empresa familiar de
 Pucallpa, Perú: bodega, aserradero y maquinaria. Trabajas para el dueño, que te
 habla por chat o te manda audios desde la calle, el patio o el camión.
@@ -226,7 +240,7 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
         if (!ensayo.success) {
           // El error vuelve al modelo, que puede corregir en la vuelta siguiente
           // (buscar bien la máquina, preguntar por el monto que no cuadra).
-          mensajes.push({ role: "tool", tool_call_id: llamada.id, content: JSON.stringify({ error: ensayo.error }) });
+          mensajes.push({ role: "tool", tool_call_id: llamada.id, content: JSON.stringify({ error: errorParaLaPersona(ensayo.error) }) });
           continue;
         }
         const resumen = (ensayo.data as { resumen?: string } | undefined)?.resumen ?? "Operación lista para confirmar.";
@@ -263,7 +277,7 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
         mensajes.push({
           role: "tool",
           tool_call_id: llamada.id,
-          content: JSON.stringify(escritura.success ? datos : { error: escritura.error }),
+          content: JSON.stringify(escritura.success ? datos : { error: errorParaLaPersona(escritura.error) }),
         });
         continue;
       }
@@ -276,7 +290,7 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
       mensajes.push({
         role: "tool",
         tool_call_id: llamada.id,
-        content: JSON.stringify(lectura.success ? lectura.data : { error: lectura.error }),
+        content: JSON.stringify(lectura.success ? lectura.data : { error: errorParaLaPersona(lectura.error) }),
       });
     }
 

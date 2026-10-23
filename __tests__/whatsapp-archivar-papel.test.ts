@@ -106,7 +106,11 @@ vi.mock("@/lib/asistente/conversar", () => ({ conversar: H.conversar }));
 vi.mock("@/lib/asistente/memoria", () => ({ olvidar: vi.fn(), anotarHecho: vi.fn() }));
 vi.mock("@/lib/asistente/negocio", () => ({ nombreDelNegocio: vi.fn().mockResolvedValue("Bodega") }));
 vi.mock("@/lib/db/whatsapp-duenos.db", () => ({
-  WhatsAppDuenosDB: { marcarUso: vi.fn().mockResolvedValue(undefined), desvincular: vi.fn() },
+  WhatsAppDuenosDB: {
+    marcarUso: vi.fn().mockResolvedValue(undefined),
+    desvincular: vi.fn(),
+    rolActual: vi.fn().mockResolvedValue({ rol: "admin" }),
+  },
 }));
 vi.mock("@/lib/db/tenants.db", () => ({ TenantsDB: { getBasicById: vi.fn().mockResolvedValue({ name: "Bodega" }) } }));
 vi.mock("@/lib/agents", () => ({ orchestrator: { executeSync: vi.fn() }, ensureAgentsRegistered: vi.fn() }));

@@ -14,14 +14,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-const { mockFindMany, mockFindUnique, mockUpsert } = vi.hoisted(() => ({
+const { mockFindMany, mockFindUnique, mockUpsert, mockAdminFind } = vi.hoisted(() => ({
   mockFindMany: vi.fn(),
   mockFindUnique: vi.fn(),
   mockUpsert: vi.fn(),
+  mockAdminFind: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: { settings: { findMany: mockFindMany, findUnique: mockFindUnique, upsert: mockUpsert } },
+  prisma: {
+    settings: { findMany: mockFindMany, findUnique: mockFindUnique, upsert: mockUpsert },
+    adminUser: { findFirst: mockAdminFind },
+  },
 }));
 
 const { WhatsAppDuenosDB, normalizarTelefono } = await import("@/lib/db/whatsapp-duenos.db");
@@ -111,5 +115,53 @@ describe("el código de vinculación es por canal", () => {
     const segundo = crearCodigo("t4", "brandon", "whatsapp");
     expect(canjearCodigo(primero.codigo, "whatsapp")).toBeNull();
     expect(canjearCodigo(segundo.codigo, "whatsapp")).not.toBeNull();
+  });
+});
+
+describe("el rol del teléfono es el ACTUAL de quien lo vinculó", () => {
+  const TEL = "51987000111";
+  const conAutor = (pedidoPor?: string) => ({
+    featureFlagsJson: JSON.stringify({
+      whatsappDuenos: [{ telefono: TEL, nombre: "x", vinculadoEn: "2026-10-22", rol: "admin", ...(pedidoPor ? { pedidoPor } : {}) }],
+    }),
+  });
+
+  beforeEach(() => {
+    mockFindUnique.mockReset();
+    mockAdminFind.mockReset();
+  });
+
+  it("lee el rol de HOY en el negocio que recibió el mensaje (no el guardado al vincular)", async () => {
+    mockFindUnique.mockResolvedValueOnce(conAutor("enc"));
+    mockAdminFind.mockResolvedValueOnce({ id: "u1", name: "Enc", role: "manager", active: true });
+    expect(await WhatsAppDuenosDB.rolActual("t-a", "+51 987 000 111")).toEqual({ rol: "manager" });
+    expect(mockAdminFind.mock.calls[0][0].where).toEqual({ tenantId: "t-a", username: "enc" });
+  });
+
+  it("si le bajaron el rol, el teléfono baja con ella", async () => {
+    mockFindUnique.mockResolvedValueOnce(conAutor("enc"));
+    mockAdminFind.mockResolvedValueOnce({ id: "u1", name: "Enc", role: "cajero", active: true });
+    expect(await WhatsAppDuenosDB.rolActual("t-a", TEL)).toEqual({ rol: "cajero" });
+  });
+
+  it.each([
+    ["desactivada", { id: "u1", name: "Enc", role: "admin", active: false }],
+    ["borrada (o de otro negocio)", null],
+    ["con un rol que el panel no conoce", { id: "u1", name: "Enc", role: "jefe", active: true }],
+  ])("quien lo vinculó está %s → revocado", async (_caso, fila) => {
+    mockFindUnique.mockResolvedValueOnce(conAutor("enc"));
+    mockAdminFind.mockResolvedValueOnce(fila);
+    expect(await WhatsAppDuenosDB.rolActual("t-a", TEL)).toEqual({ revocado: true });
+  });
+
+  it("un vínculo de antes (sin quién lo pidió) → encargado: no ve el candado de dueños", async () => {
+    mockFindUnique.mockResolvedValueOnce(conAutor(undefined));
+    expect(await WhatsAppDuenosDB.rolActual("t-a", TEL)).toEqual({ rol: "manager" });
+    expect(mockAdminFind).not.toHaveBeenCalled();
+  });
+
+  it("un teléfono que no está en la lista de ESTE negocio → revocado", async () => {
+    mockFindUnique.mockResolvedValueOnce(settingsCon(["51900000000"]));
+    expect(await WhatsAppDuenosDB.rolActual("t-b", TEL)).toEqual({ revocado: true });
   });
 });
