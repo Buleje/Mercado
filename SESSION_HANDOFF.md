@@ -1,3 +1,15 @@
+# SESSION HANDOFF — 2026-10-23: 31 commits — correos, cubicador, cámaras, GTF, adelantos, membrete, panel
+
+**Estado:** commits `bc4d88f12` → `e1c9d494e` (31), **sin subir** (deploy bloqueado). Árbol limpio salvo `.claude/workflows/panel-ola.js` (ajeno). El «Archivo más liviano» de la sesión anterior quedó CERRADO en `e1c9d494e`.
+
+**Hecho:** interruptor de correos de plataforma (superadmin) · cubicador en secciones + Guardadas + grabadora + formato/papel + proteger del Libro · cámaras: aviso de movimiento sin video, vigía + push, túnel con lista blanca y modo fijo Tailscale (Brandon debe hacer `tailscale up` una vez) · GTF: modal grande + «Pedir corrección» (ADR-512) · adelantos: aparece al guardar, recibo A4 con membrete, firma/huella/foto desde la tabla, huella del celular = passkey (ADR-513), filtros sin firma/sin enviar · membrete único (ADR-514) en ~60 documentos + «Tus documentos» en Ajustes · panel: todo parejo (censo por cuerpo, trinquete en guardianes), Mi Plata en dos filas fijas, cabeceras en una fila, marca Buleje en la barra + negocio en el encabezado · RRHH: asistencia compacta, nota del día (ADR-515), filtros por columna encadenados · Archivo › Terceros · cámara habilitada en admin.
+
+**Migraciones aplicadas hoy (producción):** 20261023a (SupportTicket), 20261023b/c (AdelantoPasskey), 20261023d (AsistenciaNota).
+
+**Pendiente / decide Brandon:** rubro de Blas = «Bodega / Minimarket» (no hay forestal; cambiarlo cambia módulos) · logo de Musa es SVG (sin logo en PDFs; hay PNG en public/musa) · 505 registros viejos con el usuario del superadmin · /superadmin sin cámara ni micrófono (proxy.ts:115 antes de los headers) · 256 tablas sin filtros por columna · cola de alarmas Hik-Connect es UNA por cuenta (dev y prod se la reparten).
+
+---
+
 # SESSION HANDOFF — 2026-10-22/23: Archivo (Documentos) — 3 rondas de mejoras + Blas ordenado + revisión del deploy
 
 **Estado:** commits `b8f7267c9` → `5052206df` (10 commits), **sin subir** (deploy bloqueado, ver abajo). Memoria: `archivo-papeles-vencimientos-expediente-whatsapp-2026-10-22` (todo el detalle).
