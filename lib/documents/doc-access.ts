@@ -157,3 +157,28 @@ export function enlaceSigueSirviendo(
 ): boolean {
   return !estaRestringido(docAllowed, cadena) || canRoleSeeEnCadena(rolDelCreador, docAllowed, cadena);
 }
+
+/**
+ * ¿Puede el rol sacar este papel de donde está? Las reglas del lote de mover y
+ * del PATCH juntas: lo tiene que ver (el candado de dueño frena también al
+ * encargado) y, si no es encargado o más, ni el papel ni su cadena de carpetas
+ * pueden tener roles: moverlo lo dejaría a la vista de quien hoy no lo ve. Lo
+ * usan «Ordenar mi Archivo» y su «Deshacer» (que no le cree al cliente).
+ */
+export function puedeMoverPapel(
+  role: string | undefined | null,
+  docAllowed: string[] = [],
+  cadena: string[][] = [],
+): boolean {
+  if (!canRoleSeeEnCadena(role, docAllowed, cadena)) return false;
+  return isPrivilegedRole(role) || !estaRestringido(docAllowed, cadena);
+}
+
+/**
+ * ¿Puede el rol borrar esta carpeta? (`cadena` = sus roles y los de sus
+ * madres.) Igual que `DELETE folders/[id]`: la tiene que ver y, si alguna
+ * carpeta de la cadena tiene roles, sólo el encargado o más toca su estructura.
+ */
+export function puedeBorrarCarpeta(role: string | undefined | null, cadena: string[][] = []): boolean {
+  return canRoleSeeEnCadena(role, [], cadena) && (isPrivilegedRole(role) || cadena.length === 0);
+}

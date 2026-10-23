@@ -6,7 +6,8 @@
  *     vistas que este rol ve (la misma regla que la barra);
  *   - módulos, vistas y secciones, con el mismo filtro;
  *   - lugares que abriste hace poco y coinciden (M06), máx. 3;
- *   - productos, clientes y pedidos de `/api/search`.
+ *   - productos, clientes y pedidos de `/api/search`;
+ *   - papeles del Archivo (`use-papeles-del-archivo`), sólo si este rol ve el Archivo.
  * Lo local sale al toque; lo remoto, 300 ms después de dejar de escribir.
  * «cobrar a Juan» busca «Juan» en el servidor: así aparece también su ficha.
  */
@@ -28,6 +29,7 @@ import {
   type ComandoPanel,
 } from "@/lib/admin/comandos-panel";
 import { ICONOS_COMANDO } from "./iconos-comandos";
+import { usePapelesDelArchivo } from "./use-papeles-del-archivo";
 import {
   SIN_RESULTADOS,
   etiquetaDeTab,
@@ -40,9 +42,9 @@ import {
 export type GrupoBusqueda = keyof GroupedResults;
 
 /** Regla 20-10: nombre que coincide → acciones → lo abierto hace poco → el resto. */
-const ORDEN_NORMAL: GrupoBusqueda[] = ["modulos", "acciones", "recientes", "relacionados", "productos", "clientes", "pedidos"];
+const ORDEN_NORMAL: GrupoBusqueda[] = ["modulos", "acciones", "recientes", "papeles", "relacionados", "productos", "clientes", "pedidos"];
 /** «cobrar a Juan», «nueva cotización»: lo que se pide HACER va primero. */
-const ORDEN_ACCION: GrupoBusqueda[] = ["acciones", "clientes", "recientes", "modulos", "relacionados", "productos", "pedidos"];
+const ORDEN_ACCION: GrupoBusqueda[] = ["acciones", "clientes", "recientes", "papeles", "modulos", "relacionados", "productos", "pedidos"];
 
 function resultadoDeComando(c: ComandoPanel, persona?: string): SearchResult {
   const verbo = c.accion.split(" ")[0];
@@ -75,6 +77,11 @@ interface RespuestaBusqueda {
 }
 
 type Remotos = Pick<GroupedResults, "productos" | "clientes" | "pedidos">;
+
+/** ¿Este rol ve el Archivo? Sin ctx confirmado, no (nada se pide a ciegas). Un boolean: el ctx cambia de identidad. */
+function veElArchivo(ctx: ReturnType<typeof useContextoPermiso>): boolean {
+  return !!ctx && destinoPermitido(ctx, "documentos", "drive");
+}
 
 function localesDe(
   q: string,
@@ -140,8 +147,15 @@ export function useBusquedaPanel(open: boolean) {
     };
   }, [q]);
 
-  const grouped: GroupedResults = locales ? { ...SIN_RESULTADOS, ...remotos?.grupos, ...locales } : SIN_RESULTADOS;
-  const loading = locales !== null && remotos?.q !== q;
+  const archivoVisible = veElArchivo(ctx);
+  const papeles = usePapelesDelArchivo(q, archivoVisible);
+  /* Mientras llegan los nuevos quedan los anteriores (como los remotos), sin el «Buscar … en el Archivo»: ése lleva lo escrito. */
+  const filasDePapeles = papeles ? (papeles.q === q ? papeles.filas : papeles.filas.filter((f) => !f.sinContar)) : [];
+
+  const grouped: GroupedResults = locales
+    ? { ...SIN_RESULTADOS, ...remotos?.grupos, ...locales, papeles: filasDePapeles }
+    : SIN_RESULTADOS;
+  const loading = locales !== null && (remotos?.q !== q || (archivoVisible && papeles?.q !== q));
   const orden = esConsultaDeAccion(query) ? ORDEN_ACCION : ORDEN_NORMAL;
   return { query, setQuery, grouped, loading, orden };
 }

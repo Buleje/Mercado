@@ -6,6 +6,9 @@ import {
   canRoleSeeEnCadena,
   enlaceSigueSirviendo,
   estaRestringido,
+  isPrivilegedRole,
+  puedeBorrarCarpeta,
+  puedeMoverPapel,
   rolesDeLaCadena,
   veTodoElDrive,
   type CarpetaConRoles,
@@ -32,6 +35,7 @@ import type {
   DbDocumentTemplate,
   DocAction,
   DocumentListFilters,
+  RangoFechas,
   TemplateField,
 } from "@/lib/types/documents";
 
@@ -432,6 +436,42 @@ export class DocumentsDB {
       where.OR = terms.flatMap((t) => enTodoElDoc(t));
     }
 
+    // «Buscar como hablas» (`lib/documentos/busqueda-natural`): fechas, carpetas
+    // y grupos. Cada grupo se cumple con ALGUNA de sus partes; todos se cruzan.
+    const rango = (r: RangoFechas) => ({
+      ...(r.desde ? { gte: new Date(r.desde) } : {}),
+      ...(r.hasta ? { lt: new Date(r.hasta) } : {}),
+    });
+    const y: Record<string, unknown>[] = [];
+    if (filters.vence === "sin") y.push({ expiresAt: null });
+    else if (filters.vence) y.push({ expiresAt: { not: null, ...rango(filters.vence) } });
+    if (filters.subido) y.push({ uploadedAt: rango(filters.subido) });
+    if (filters.folderIds) y.push({ folderId: { in: filters.folderIds } });
+    if (filters.grupos?.length) {
+      const condiciones = await Promise.all(
+        filters.grupos.map(async (g) => {
+          const o: Record<string, unknown>[] = [];
+          if (g.categorias?.length) o.push({ category: { in: g.categorias } });
+          if (g.etiquetas?.length) o.push({ tags: { hasSome: g.etiquetas } });
+          for (const n of g.enNombre ?? []) {
+            o.push({ name: { contains: n, mode: "insensitive" } }, { originalName: { contains: n, mode: "insensitive" } });
+          }
+          for (const m of g.mimes ?? []) o.push({ mimeType: { startsWith: m } });
+          if (g.carpetas?.length) o.push({ folderId: { in: g.carpetas } });
+          if (g.vence) o.push({ expiresAt: { not: null, ...rango(g.vence) } });
+          for (const t of g.textos ?? []) {
+            const ids = await this.buscarIdsSinTildes(tenantId, [t], "todas", !!filters.deletedOnly);
+            if (ids) o.push({ id: { in: ids } });
+            else o.push(...enTodoElDoc(t));
+          }
+          // Un grupo vacío no deja pasar nada (nunca «todo»).
+          return o.length ? { OR: o } : { id: { in: [] as string[] } };
+        }),
+      );
+      y.push(...condiciones);
+    }
+    if (y.length) where.AND = [...((where.AND as unknown[] | undefined) ?? []), ...y];
+
     // El texto indexado sólo viaja cuando alguien está buscando: es quien lo
     // pide para resaltar la coincidencia y ordenar por relevancia. Abrir el
     // drive sin buscar nada no tiene por qué arrastrar el contenido de 292
@@ -441,7 +481,7 @@ export class DocumentsDB {
       orderBy: [{ favorite: "desc" }, { uploadedAt: "desc" }],
       include: { _count: { select: { versions: true, shares: true } } },
       ...(filters.conTextoCompleto ? {} : { omit: { ocrText: true } }),
-      take: 500,
+      take: filters.limite ? Math.min(filters.limite, 500) : 500,
     });
     // Con `omit` el campo no viene en la fila; el mapeo lo repone en null para
     // que el tipo del documento siga siendo uno solo en toda la app.
@@ -1313,6 +1353,27 @@ export class DocumentsDB {
     return folders
       .filter((f) => canRoleSeeEnCadena(viewerRole, [], rolesDeLaCadena(f.id, mapa)))
       .map(mapFolder);
+  }
+
+  /**
+   * Nombre y madre de cada carpeta que el rol ve, sin conteos: lo que la
+   * búsqueda natural necesita para entender «de Chivis» o «en Contratos».
+   */
+  static async carpetasParaBuscar(
+    tenantId: string,
+    viewerRole?: string,
+  ): Promise<{ id: string; name: string; parentId: string | null }[]> {
+    const filas = await prisma.documentFolder.findMany({
+      where: { tenantId },
+      select: { id: true, name: true, parentId: true, allowedRoles: true },
+    });
+    const visibles = filtraPorRol(viewerRole)
+      ? (() => {
+          const mapa = new Map(filas.map((f) => [f.id, { parentId: f.parentId ?? null, allowedRoles: f.allowedRoles ?? [] }]));
+          return filas.filter((f) => canRoleSeeEnCadena(viewerRole, [], rolesDeLaCadena(f.id, mapa)));
+        })()
+      : filas;
+    return visibles.map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null }));
   }
 
   static async createFolder(
@@ -2334,4 +2395,333 @@ export class DocumentsDB {
     });
     return t ? mapTemplate(t) : null;
   }
+
+  // ── Ordenar mi Archivo (22-10) ─────────────────────────────────────────────
+
+  /**
+   * Lo que necesita `planOrdenar` (lib/documentos/ordenar-archivo.ts): los
+   * papeles vivos —sin las fotos de las cámaras— y TODAS las carpetas con lo que
+   * tienen adentro (papelera y fotos incluidas: una carpeta con algo en la
+   * papelera no está vacía de verdad). Cada fila trae lo que el rol puede hacer
+   * con ella, con las mismas reglas que las rutas de renombrar, mover y borrar.
+   * 2 consultas; 375 papeles en Blas.
+   */
+  static async datosParaOrdenar(tenantId: string, viewerRole?: string): Promise<DatosParaOrdenar> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [docs, carpetas] = await Promise.all([
+      prisma.document.findMany({
+        where: { tenantId, deletedAt: null, NOT: { tags: { hasSome: [...TAGS_FOTOS_DE_MAQUINA] } } },
+        select: {
+          id: true, name: true, size: true, folderId: true, uploadedAt: true, allowedRoles: true, tags: true,
+          customerId: true, orderId: true, supplierId: true, expiresAt: true, ocrMetadata: true,
+          _count: { select: { shares: { where: { revokedAt: null } } } },
+        },
+        orderBy: { uploadedAt: "desc" },
+        take: 5000,
+      }),
+      prisma.documentFolder.findMany({
+        where: { tenantId },
+        select: {
+          id: true, name: true, parentId: true, allowedRoles: true, createdAt: true,
+          _count: { select: { documents: true, children: true, shares: { where: { revokedAt: null } } } },
+        },
+      }),
+    ]);
+    const mapa = new Map<string, CarpetaConRoles>(
+      carpetas.map((f) => [f.id, { parentId: f.parentId ?? null, allowedRoles: f.allowedRoles ?? [] }]),
+    );
+    const filtra = filtraPorRol(viewerRole);
+    return {
+      papeles: docs.map((d) => {
+        const cadena = rolesDeLaCadena(d.folderId, mapa);
+        const restringido = estaRestringido(d.allowedRoles ?? [], cadena);
+        return {
+          id: d.id,
+          name: d.name,
+          size: d.size,
+          folderId: d.folderId,
+          uploadedAt: d.uploadedAt.toISOString(),
+          tags: d.tags ?? [],
+          atado: !!(d.customerId || d.orderId || d.supplierId),
+          compartido: d._count.shares > 0,
+          expiresAt: d.expiresAt ? d.expiresAt.toISOString() : null,
+          ocrMetadata: d.ocrMetadata && typeof d.ocrMetadata === "object" && !Array.isArray(d.ocrMetadata)
+            ? (d.ocrMetadata as Record<string, unknown>)
+            : null,
+          ve: !filtra || canRoleSeeEnCadena(viewerRole, d.allowedRoles ?? [], cadena),
+          // Las mismas reglas que el lote de mover (y que su «Deshacer»).
+          movible: viewerRole ? puedeMoverPapel(viewerRole, d.allowedRoles ?? [], cadena) : !restringido,
+          puerta: puertaDe(d.allowedRoles ?? [], cadena),
+        };
+      }),
+      carpetas: carpetas.map((f) => {
+        const cadena = rolesDeLaCadena(f.id, mapa);
+        const ve = !filtra || canRoleSeeEnCadena(viewerRole, [], cadena);
+        return {
+          id: f.id,
+          name: f.name,
+          parentId: f.parentId,
+          creadaEn: f.createdAt.toISOString(),
+          documentos: f._count.documents,
+          subcarpetas: f._count.children,
+          compartida: f._count.shares > 0,
+          ve,
+          // Igual que `DELETE folders/[id]`: un rol no privilegiado no toca la
+          // estructura de una carpeta con roles.
+          borrable: viewerRole ? puedeBorrarCarpeta(viewerRole, cadena) : true,
+          // Un papel suelto que entra acá, ¿lo podría volver a sacar? (el «Deshacer»).
+          sacable: viewerRole ? puedeMoverPapel(viewerRole, [], cadena) : true,
+        };
+      }),
+    };
+  }
+
+  /**
+   * Manda papeles a la papelera y devuelve los ids que DE VERDAD fueron (los
+   * que ya estaban ahí, o no existen, quedan fuera): el «Deshacer» de «Ordenar»
+   * sólo saca de la papelera lo que él mismo puso.
+   */
+  static async aLaPapeleraDevolviendoIds(tenantId: string, ids: string[]): Promise<string[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (ids.length === 0) return [];
+    const filas = await prisma.document.updateManyAndReturn({
+      where: { id: { in: ids }, tenantId, deletedAt: null },
+      data: { deletedAt: new Date() },
+      select: { id: true },
+    });
+    return filas.map((f) => f.id);
+  }
+
+  /**
+   * Borra las carpetas de `ids` que SIGUEN vacías —sin papeles (tampoco en la
+   * papelera), sin subcarpetas ni enlaces vivos—, comprobado en el mismo
+   * borrado: si alguien subió algo entre el plan y el clic, esa carpeta se
+   * queda. Se borran de verdad (las carpetas no tienen papelera). Devuelve cómo
+   * eran SÓLO las que se borraron, para que el «Deshacer» las vuelva a crear.
+   */
+  static async borrarCarpetasVacias(tenantId: string, ids: string[]): Promise<CarpetaParaRecrear[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (ids.length === 0) return [];
+    const vacia = { documents: { none: {} }, children: { none: {} }, shares: { none: { revokedAt: null } } };
+    return prisma.$transaction(async (tx) => {
+      const filas = await tx.documentFolder.findMany({
+        where: { tenantId, id: { in: ids }, ...vacia },
+        select: {
+          id: true, name: true, parentId: true, color: true, icon: true, emoji: true, tags: true, allowedRoles: true, createdAt: true,
+        },
+      });
+      if (filas.length === 0) return [];
+      const candidatas = filas.map((f) => f.id);
+      await tx.documentFolder.deleteMany({ where: { tenantId, id: { in: candidatas }, ...vacia } });
+      const quedan = new Set(
+        (await tx.documentFolder.findMany({ where: { tenantId, id: { in: candidatas } }, select: { id: true } })).map((f) => f.id),
+      );
+      return filas
+        .filter((f) => !quedan.has(f.id))
+        .map((f) => ({
+          id: f.id, name: f.name, parentId: f.parentId, color: f.color, icon: f.icon,
+          emoji: f.emoji, tags: f.tags ?? [], allowedRoles: f.allowedRoles ?? [],
+          creadaEn: f.createdAt.toISOString(),
+        }));
+    });
+  }
+
+  /**
+   * Qué puede hacer HOY el rol con estos papeles, para el «Deshacer» de
+   * «Ordenar» (llega del cliente y no se le cree): `ve` = renombrarlo, cambiarle
+   * el vencimiento o sacarlo de la papelera; `movible` = sacarlo de su carpeta,
+   * con las reglas del lote de mover (`puedeMoverPapel`).
+   */
+  static async estadoParaDeshacer(
+    tenantId: string,
+    ids: string[],
+    viewerRole: string,
+  ): Promise<Map<string, { ve: boolean; movible: boolean }>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (ids.length === 0) return new Map();
+    const [filas, mapa] = await Promise.all([
+      prisma.document.findMany({
+        where: { id: { in: ids }, tenantId },
+        select: { id: true, folderId: true, allowedRoles: true },
+      }),
+      mapaDeCarpetas(tenantId),
+    ]);
+    const filtra = filtraPorRol(viewerRole);
+    return new Map(
+      filas.map((d) => {
+        const roles = d.allowedRoles ?? [];
+        const cadena = rolesDeLaCadena(d.folderId, mapa);
+        return [d.id, { ve: !filtra || canRoleSeeEnCadena(viewerRole, roles, cadena), movible: puedeMoverPapel(viewerRole, roles, cadena) }];
+      }),
+    );
+  }
+
+  /**
+   * «Deshacer» de «Ordenar»: vuelve un papel a como estaba SÓLO si todavía
+   * tiene lo que el orden le dejó (`despues`), comparado en el mismo UPDATE: si
+   * alguien lo renombró, lo movió o le cambió el vencimiento en el medio, no se
+   * pisa. Los permisos los mira quien llama (`estadoParaDeshacer`).
+   */
+  static async revertirSiSigue(
+    tenantId: string,
+    id: string,
+    cambio: {
+      name?: { antes: string; despues: string };
+      folderId?: { antes: string | null; despues: string | null };
+      expiresAt?: { antes: Date | null; despues: Date | null };
+    },
+  ): Promise<boolean> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { name, folderId, expiresAt } = cambio;
+    if (!name && !folderId && !expiresAt) return false;
+    // Volver a una carpeta de otro negocio = no (mismo hueco que `bulkMove`).
+    if (folderId?.antes && !(await carpetaEsDelNegocio(tenantId, folderId.antes))) return false;
+    const r = await prisma.document.updateMany({
+      where: {
+        id,
+        tenantId,
+        deletedAt: null,
+        ...(name ? { name: name.despues } : {}),
+        ...(folderId ? { folderId: folderId.despues } : {}),
+        ...(expiresAt ? { expiresAt: expiresAt.despues } : {}),
+      },
+      data: {
+        ...(name ? { name: name.antes } : {}),
+        ...(folderId ? { folderId: folderId.antes } : {}),
+        // ADR-119: vencimiento distinto = el ciclo de recordatorios vuelve a empezar.
+        ...(expiresAt ? { expiresAt: expiresAt.antes, expiryReminderSentAt: null } : {}),
+      },
+    });
+    return r.count > 0;
+  }
+
+  /**
+   * «Deshacer» de las carpetas vacías: las vuelve a crear con su nombre, color,
+   * emoji, etiquetas, roles y fecha de creación (id nuevo: el viejo ya no
+   * existe; la fecha se conserva para que el plan la vuelva a ver igual que
+   * antes). Si la madre tampoco existe ya, nace en la raíz. IDEMPOTENTE: si la
+   * carpeta sigue viva, o ya hay una con ese nombre en esa madre (deshacer dos
+   * veces, reintento tras un corte), se reusa. `ids` = id viejo → id que quedó.
+   */
+  static async recrearCarpetas(
+    tenantId: string,
+    carpetas: CarpetaParaRecrear[],
+  ): Promise<{ ids: Record<string, string>; creadas: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (carpetas.length === 0) return { ids: {}, creadas: 0 };
+    // Todas las del negocio en una consulta (como `createFolderTree`).
+    const existentes = await prisma.documentFolder.findMany({
+      where: { tenantId },
+      select: { id: true, name: true, parentId: true },
+    });
+    const vivas = new Set(existentes.map((f) => f.id));
+    const clave = (parentId: string | null, name: string) => `${parentId ?? ""}\u0000${name.trim().toLowerCase()}`;
+    const indice = new Map(existentes.map((f) => [clave(f.parentId, f.name), f.id]));
+    const ids: Record<string, string> = {};
+    let creadas = 0;
+    // Madres antes que hijas: una hija cuya madre también se recrea usa el id nuevo.
+    const pendientes = [...carpetas];
+    for (let vuelta = 0; pendientes.length && vuelta <= carpetas.length; vuelta++) {
+      for (let i = 0; i < pendientes.length; ) {
+        const c = pendientes[i];
+        if (vivas.has(c.id)) {
+          ids[c.id] = c.id;
+          pendientes.splice(i, 1);
+          continue;
+        }
+        const madreRecreada = c.parentId ? ids[c.parentId] : undefined;
+        const esperaASuMadre = !!c.parentId && !vivas.has(c.parentId) && !madreRecreada
+          && pendientes.some((p) => p.id === c.parentId);
+        if (esperaASuMadre) { i++; continue; }
+        const parentId = madreRecreada ?? (c.parentId && vivas.has(c.parentId) ? c.parentId : null);
+        const name = c.name.trim().slice(0, LARGO_NOMBRE_CARPETA) || "Carpeta";
+        const ya = indice.get(clave(parentId, name));
+        if (ya) {
+          ids[c.id] = ya;
+          pendientes.splice(i, 1);
+          continue;
+        }
+        const creada = c.creadaEn ? Date.parse(c.creadaEn) : NaN;
+        const f = await prisma.documentFolder.create({
+          data: {
+            tenantId, name, parentId, color: c.color, icon: c.icon, emoji: c.emoji,
+            tags: c.tags, allowedRoles: c.allowedRoles,
+            ...(Number.isFinite(creada) && creada <= Date.now() ? { createdAt: new Date(creada) } : {}),
+          },
+          select: { id: true },
+        });
+        ids[c.id] = f.id;
+        indice.set(clave(parentId, name), f.id);
+        creadas++;
+        pendientes.splice(i, 1);
+      }
+    }
+    return { ids, creadas };
+  }
+}
+
+/** Tope del nombre de una carpeta recreada (las de un import pueden pasar los 80 del formulario). */
+const LARGO_NOMBRE_CARPETA = 255;
+
+/**
+ * Quién ve un papel, en una cadena comparable: "" = todos los del panel. Dos
+ * copias con puertas distintas no son «repetidas» para «Ordenar»: tirar una
+ * le quitaría el papel a alguien que hoy lo ve.
+ */
+function puertaDe(docAllowed: string[], cadena: string[][]): string {
+  const niveles = [...(docAllowed.length ? [docAllowed] : []), ...cadena].map((r) => [...r].sort().join(","));
+  return niveles.sort().join("|");
+}
+
+/** Fila de `DocumentsDB.datosParaOrdenar`: un papel con lo que el rol puede hacer. */
+export interface PapelDeOrdenar {
+  id: string;
+  name: string;
+  size: number;
+  folderId: string | null;
+  uploadedAt: string;
+  tags: string[];
+  /** Atado a un cliente, pedido o proveedor. */
+  atado: boolean;
+  /** Tiene enlaces públicos sin revocar. */
+  compartido: boolean;
+  expiresAt: string | null;
+  ocrMetadata: Record<string, unknown> | null;
+  ve: boolean;
+  movible: boolean;
+  /** Quién lo ve (`puertaDe`): "" = todos los del panel. */
+  puerta: string;
+}
+
+export interface CarpetaDeOrdenar {
+  id: string;
+  name: string;
+  parentId: string | null;
+  creadaEn: string;
+  /** Todo lo que tiene adentro, papelera y fotos de las cámaras incluidas. */
+  documentos: number;
+  subcarpetas: number;
+  compartida: boolean;
+  ve: boolean;
+  borrable: boolean;
+  /** El rol podría volver a sacar de acá un papel suelto que entre. */
+  sacable: boolean;
+}
+
+export interface DatosParaOrdenar {
+  papeles: PapelDeOrdenar[];
+  carpetas: CarpetaDeOrdenar[];
+}
+
+export interface CarpetaParaRecrear {
+  id: string;
+  name: string;
+  parentId: string | null;
+  color: string | null;
+  icon: string | null;
+  emoji: string | null;
+  tags: string[];
+  allowedRoles: string[];
+  /** ISO. Opcional: un «deshacer» guardado antes del 22-10 no la trae. */
+  creadaEn?: string;
 }

@@ -9,7 +9,7 @@
 
 import type { ElementType } from "react";
 import {
-  AlertTriangle, History, LayoutDashboard, Package, ShoppingCart, Users, Zap,
+  AlertTriangle, FileText, History, LayoutDashboard, Package, ShoppingCart, Users, Zap,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { FilaResultado, ResultSkeleton } from "./FilaResultado";
@@ -22,6 +22,7 @@ export const GROUP_META: Record<keyof GroupedResults, { label: string; icon: Ele
   productos: { label: "Productos",         icon: Package,       color: "text-[var(--data-success-500)]" },
   clientes:  { label: "Clientes",          icon: Users,         color: "text-[var(--text-secondary)]" },
   pedidos:   { label: "Pedidos",           icon: ShoppingCart,  color: "text-[var(--data-warning-500)]" },
+  papeles:   { label: "Papeles",           icon: FileText,      color: "text-primary" },
   relacionados: { label: "Relacionados",  icon: LayoutDashboard, color: "text-[var(--text-secondary)]" },
   acciones:  { label: "Hacer",             icon: Zap,           color: "text-[var(--data-success-500)]" },
 };
@@ -74,7 +75,7 @@ export function ResultadosBuscador({ idLista, query, grouped, orden, loading, ac
                     {meta.label}
                   </span>
                 </span>
-                <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-secondary)]">{items.length}</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-secondary)]">{items.filter((r) => !r.sinContar).length}</span>
               </div>
               {items.map((r) => {
                 const indice = i++;
@@ -82,7 +83,7 @@ export function ResultadosBuscador({ idLista, query, grouped, orden, loading, ac
                   <FilaResultado
                     key={r.id}
                     r={r}
-                    query={r.type === "accion" ? "" : query}
+                    query={r.type === "accion" || r.sinContar ? "" : query}
                     href={hrefDe(r)}
                     seleccionado={indice === activo}
                     iconoGrupo={meta.icon}

@@ -34,12 +34,12 @@ const ENLACE =
 const fotos = (n: number) => (n === 1 ? "1 foto" : `${n} fotos`);
 
 export default function FotosEscondidas({ conteo, onVerFotos }: Props) {
-  // Los días se piden sólo si hay fotos escondidas (el componente no se monta si no).
-  const { retencion } = useRetencionPersonas();
+  const hayPersonas = (conteo?.porTag[TAG_FOTO_PERSONA] ?? 0) > 0;
+  // Los días se piden sólo si hay fotos de PERSONAS escondidas: es lo único que los muestra.
+  const { retencion } = useRetencionPersonas(hayPersonas);
   if (!conteo || conteo.total <= 0) return null;
 
   const etiqueta = etiquetaParaVerFotos(conteo.porTag);
-  const hayPersonas = (conteo.porTag[TAG_FOTO_PERSONA] ?? 0) > 0;
 
   return (
     <div

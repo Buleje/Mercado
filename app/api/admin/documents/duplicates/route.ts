@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "crypto";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { assertCsrf } from "@/lib/auth/csrf";
-import { downloadFromStorage } from "@/lib/documents/storage";
+import { contenidoIdentico } from "@/lib/documents/contenido-identico";
 
 /**
  * Documentos repetidos del drive.
@@ -58,25 +57,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
 
-    const rutas = await DocumentsDB.rutasDe(auth.tenantId, parsed.data.ids, auth.role);
-    const hashes: Record<string, string | null> = {};
-    for (const { id, storagePath } of rutas) {
-      const buf = await downloadFromStorage(storagePath);
-      hashes[id] = buf ? createHash("sha256").update(buf).digest("hex") : null;
-    }
-
-    // Agrupa por hash: cada grupo es un conjunto de archivos idénticos.
-    const porHash = new Map<string, string[]>();
-    for (const [id, h] of Object.entries(hashes)) {
-      if (!h) continue;
-      porHash.set(h, [...(porHash.get(h) ?? []), id]);
-    }
-    const identicos = [...porHash.values()].filter((ids) => ids.length > 1);
+    const { hashes, identicos, revisados } = await contenidoIdentico(auth.tenantId, parsed.data.ids, auth.role);
 
     return NextResponse.json({
       hashes,
       identicos,
-      todosIguales: identicos.length === 1 && identicos[0].length === rutas.length,
+      todosIguales: identicos.length === 1 && identicos[0].length === revisados,
     });
   } catch (e) {
     logger.error("[documents.duplicates.verify] error", { err: e instanceof Error ? e.message : String(e) });

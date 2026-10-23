@@ -16,6 +16,7 @@ import { precalcularMiniatura } from "@/lib/documents/precalcular-miniatura";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
 import { resolverMime } from "@/lib/documents/tipos-archivo";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { interpretarBusqueda, quitarVacias, type BusquedaInterpretada } from "@/lib/documentos/busqueda-natural";
 
 
 const ListQuery = z.object({
@@ -36,6 +37,8 @@ const ListQuery = z.object({
   deleted: z.enum(["1", "true"]).optional(),
   // Sólo contar: con `tags`, devuelve `{ conteo }` (total, bytes y por etiqueta) en vez de la lista.
   conteo: z.enum(["1", "true"]).optional(),
+  // Tope de filas: el buscador del panel pide unas pocas, no el drive entero.
+  limite: z.coerce.number().int().min(1).max(50).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -67,37 +70,71 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ conteo });
   }
 
-  // ADR-119 — búsqueda semántica: expandimos la query a términos y los OR-eamos.
+  // «Buscar como hablas»: lo que es fecha, tipo, origen o carpeta pasa a filtro
+  // y sólo lo que queda se busca como texto (todas las palabras). Las carpetas
+  // se piden únicamente si quedó alguna palabra que podría nombrar a una.
+  let interp: BusquedaInterpretada | undefined;
+  if (f.q?.trim()) {
+    interp = interpretarBusqueda(f.q);
+    if (interp.necesitaCarpetas) {
+      const carpetas = await DocumentsDB.carpetasParaBuscar(auth.tenantId, auth.role);
+      interp = interpretarBusqueda(f.q, { carpetas });
+    }
+  }
+  // Una frase que es toda relleno («de la», «lo que llegó») no busca nada: la
+  // vista normal (la pantalla avisa «escribe algo más concreto»). Buscar «de» Y
+  // «la» como subcadena traía 35 de 436 papeles sin ningún criterio.
+  const textoLibre = interp ? interp.texto.trim() : undefined;
+
+  // ADR-119 — búsqueda semántica: la IA expande SÓLO las palabras que sobran
+  // (sin relleno) y se OR-ean. «vencidos» con IA ya no le manda nada.
   let qAny: string[] | undefined;
   let semanticTerms: string[] | undefined;
-  if (f.semantic && f.q?.trim()) {
+  if (f.semantic && textoLibre) {
     const { expandSearchTerms } = await import("@/lib/documents/ai-search");
-    qAny = await expandSearchTerms(f.q);
+    qAny = quitarVacias(await expandSearchTerms(textoLibre));
+    if (qAny.length === 0) qAny = undefined;
     semanticTerms = qAny;
   }
+
+  // La vista general esconde las fotos de las cámaras; si las pidió («fotos de
+  // las cámaras»), esa etiqueta deja de esconderse.
+  const pedidas = new Set(interp?.grupos.flatMap((g) => g.etiquetas ?? []) ?? []);
+  const sinTags = f.excluir?.split(",").map((s) => s.trim()).filter((s) => s && !pedidas.has(s));
 
   const deletedOnly = f.deleted === "1" || f.deleted === "true";
   const docs = await DocumentsDB.list(auth.tenantId, {
     // En la papelera no aplicamos folder (mostramos TODO lo eliminado del tenant).
     folderId: deletedOnly ? undefined : f.folderId === "null" ? null : f.folderId,
     category: f.category,
-    q: qAny ? undefined : f.q,
+    q: qAny ? undefined : textoLibre || undefined,
     qAny,
+    vence: interp?.vence,
+    subido: interp?.subido,
+    folderIds: interp?.carpetas,
+    grupos: interp?.grupos.length ? interp.grupos : undefined,
     tags: f.tags?.split(",").map((s) => s.trim()).filter(Boolean),
-    sinTags: f.excluir?.split(",").map((s) => s.trim()).filter(Boolean),
-    favorite: f.favorite ? f.favorite === "1" || f.favorite === "true" : undefined,
+    sinTags,
+    favorite: f.favorite ? f.favorite === "1" || f.favorite === "true" : interp?.favoritos ? true : undefined,
     customerId: f.customerId,
     orderId: f.orderId,
     supplierId: f.supplierId,
     deletedOnly,
+    limite: f.limite,
     // El texto indexado sólo se manda cuando hay una búsqueda escrita: es lo
     // único que lo usa del lado del cliente (resaltar la coincidencia y
     // ordenar por relevancia). Abrir el drive es el caso común y ahí no hace
     // falta ni un byte de contenido.
-    conTextoCompleto: Boolean(f.q?.trim()) || Boolean(qAny?.length),
+    // Sólo con texto libre: «vencidos» o «de ayer» son filtros y no resaltan nada.
+    conTextoCompleto: Boolean(textoLibre) || Boolean(qAny?.length),
   }, auth.role);
 
-  return NextResponse.json({ documents: docs, ...(semanticTerms ? { semanticTerms } : {}) });
+  return NextResponse.json({
+    documents: docs,
+    ...(semanticTerms ? { semanticTerms } : {}),
+    // Lo que se entendió de la búsqueda (chips «Entendí: …»); campo nuevo y opcional.
+    ...(interp ? { entendi: interp.entendi.map(({ tipo, texto }) => ({ tipo, texto })) } : {}),
+  });
 }
 
 export async function POST(req: NextRequest) {

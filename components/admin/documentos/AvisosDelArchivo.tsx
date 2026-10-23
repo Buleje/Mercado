@@ -10,6 +10,8 @@
  * 22-10: lo YA vencido y lo POR vencer son dos pastillas. «N por vencer en 30
  * días» contaba también lo vencido y decía una cosa que no era: lo vencido
  * (rojo) pide renovar ya; lo que vence pronto (coral) pide avisar con tiempo.
+ *
+ * 22-10: «7 nombres para limpiar · Revisar» abre «Ordenar mi Archivo».
  */
 
 import { useState } from "react";
@@ -18,6 +20,8 @@ import type { DbDocument } from "@/lib/types/documents";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { textoCuando } from "@/lib/documentos/aviso-vencimiento";
 import { cn } from "@/lib/utils";
+import { PastillaOrdenar } from "./ordenar/PastillaOrdenar";
+import { useConteoOrden } from "./ordenar/use-conteo-orden";
 
 export interface SugerenciaIA {
   doc: DbDocument;
@@ -42,6 +46,8 @@ interface Props {
   aplicandoTodas: boolean;
   /** «15/01/2027» */
   fechaCorta: (iso: string) => string;
+  /** «Ordenar mi Archivo»: `version` sube después de ordenar, para recontar. */
+  orden?: { onRevisar: () => void; version: number };
 }
 
 const SEGMENTO =
@@ -108,14 +114,16 @@ function PastillaVencimiento({ tono, icono: Icono, texto, titulo, items, detalle
 
 export default function AvisosDelArchivo({
   vencidos, porVencer, porVencerDescartado, onVerVencidos, onVerPorVencer, onDescartarPorVencer,
-  sugerencias, onAplicar, onDescartar, onAplicarTodas, aplicandoTodas, fechaCorta,
+  sugerencias, onAplicar, onDescartar, onAplicarTodas, aplicandoTodas, fechaCorta, orden,
 }: Props) {
   const [revisando, setRevisando] = useState(false);
+  const ordenar = useConteoOrden(!!orden, orden?.version ?? 0);
   const [vencidosDescartado, setVencidosDescartado] = useState(false);
   const verVencidos = vencidos.length > 0 && !vencidosDescartado;
   const verVencer = porVencer.length > 0 && !porVencerDescartado;
   const verSugerencias = sugerencias.length > 0;
-  if (!verVencidos && !verVencer && !verSugerencias) return null;
+  const verOrden = !!orden && !!ordenar.conteo;
+  if (!verVencidos && !verVencer && !verSugerencias && !verOrden) return null;
 
   return (
     <div className="space-y-2">
@@ -185,6 +193,10 @@ export default function AvisosDelArchivo({
               </button>
             )}
           </div>
+        )}
+
+        {verOrden && ordenar.conteo && orden && (
+          <PastillaOrdenar conteo={ordenar.conteo} onRevisar={orden.onRevisar} onOcultar={ordenar.ocultar} />
         )}
       </div>
 

@@ -10,7 +10,7 @@ import { ANIDADAS_POR_MODULO, CTP_VISTAS, LOTH_VISTAS, VISTAS_POR_MODULO } from 
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-export type ResultType = "modulo" | "producto" | "cliente" | "pedido" | "accion" | "reciente";
+export type ResultType = "modulo" | "producto" | "cliente" | "pedido" | "accion" | "reciente" | "papel";
 
 export interface SearchResult {
   id: string;
@@ -34,6 +34,10 @@ export interface SearchResult {
   entidad?: string;
   /** Ícono propio de la fila (si no, el del grupo). */
   icono?: ElementType;
+  /** Papeles del Archivo: cuándo vence (el vencido se pinta en rojo). */
+  vence?: { texto: string; vencido: boolean };
+  /** Fila de apoyo («Buscar … en el Archivo»): no es un resultado, no cuenta en la cabecera del grupo. */
+  sinContar?: boolean;
   /** Para acciones: callback directo */
   action?: () => void;
   /** Texto original para highlight */
@@ -46,13 +50,15 @@ export interface GroupedResults {
   productos: SearchResult[];
   clientes: SearchResult[];
   pedidos: SearchResult[];
+  /** Papeles del Archivo que coinciden (nombre, carpeta, vencimiento). */
+  papeles: SearchResult[];
   acciones: SearchResult[];
   /** Módulos que salen por una palabra clave o sinónimo, no por su nombre: van al final. */
   relacionados: SearchResult[];
 }
 
 export const SIN_RESULTADOS: GroupedResults = {
-  recientes: [], modulos: [], productos: [], clientes: [], pedidos: [], acciones: [], relacionados: [],
+  recientes: [], modulos: [], productos: [], clientes: [], pedidos: [], papeles: [], acciones: [], relacionados: [],
 };
 
 // ── Índice de módulos ─────────────────────────────────────────────────────────

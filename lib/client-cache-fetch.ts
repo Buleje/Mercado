@@ -108,8 +108,18 @@ function rutaDe(input: RequestInfo | URL): string {
 
 const INSTALADA = Symbol.for("bsm.cachedJson.invalidaAlEscribir");
 
-/** Rotar el token no cambia quién es la sesión (medido 16-10: el refresh del arranque re-pedía /api/auth/me). */
-const NO_INVALIDA = /^\/api\/auth\/refresh(?:[/?#]|$)/;
+/**
+ * Escrituras que no cambian ningún dato leído: rotar el token no cambia quién es
+ * la sesión (medido 16-10: el refresh del arranque re-pedía /api/auth/me) y la
+ * medición de velocidad del Archivo es telemetría (22-10: cada apertura borraba
+ * lo guardado de /api/admin/documents).
+ */
+const NO_INVALIDA = /^\/api\/(?:auth\/refresh|admin\/documents\/velocidad)(?:[/?#]|$)/;
+/**
+ * Cabecera de un POST que sólo consulta (22-10: el plan de «Ordenar el Archivo»
+ * se pide por POST al abrir y borraba lo guardado del Archivo en cada apertura).
+ */
+export const SOLO_LECTURA = "x-solo-lectura";
 /** Escrituras que cambian QUIÉN es la sesión o de qué tienda: todo lo leído era de la anterior. */
 const CAMBIA_SESION = /^\/api\/(?:auth|superadmin\/impersonate)(?:[/?#]|$)/;
 
@@ -134,6 +144,33 @@ function invalidacionDe(ruta: string): (() => void) | null {
   };
 }
 
+/** Una escritura del panel vista por el envoltorio: al salir y al volver (también si falló). */
+export type EscrituraDelPanel = { ruta: string; fase: "sale" | "vuelve"; cambiaSesion: boolean };
+type OyenteEscritura = (e: EscrituraDelPanel) => void;
+const oyentesEscritura = new Set<OyenteEscritura>();
+
+/**
+ * Avisa de cada escritura que invalida (las mismas que borran `cachedJson`), para
+ * los cachés propios que no van por `cachedJson` (la lista del Archivo, 22-10).
+ * Devuelve la baja. Sin el envoltorio instalado (tests) no avisa nada.
+ */
+export function oirEscrituras(fn: OyenteEscritura): () => void {
+  oyentesEscritura.add(fn);
+  return () => {
+    oyentesEscritura.delete(fn);
+  };
+}
+
+function avisarEscritura(e: EscrituraDelPanel): void {
+  for (const fn of [...oyentesEscritura]) {
+    try {
+      fn(e);
+    } catch (err) {
+      console.warn("[client-cache] un oyente de escrituras falló", err);
+    }
+  }
+}
+
 /**
  * Envuelve `window.fetch` UNA vez: un POST/PUT/PATCH/DELETE a `/api/<recurso>`
  * invalida lo cacheado de ese recurso al salir y otra vez al responder (un
@@ -149,13 +186,28 @@ export function instalarInvalidacionPorEscritura(): void {
   const original = window.fetch.bind(window);
   window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
     const metodo = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
-    const invalidar = metodo === "GET" || metodo === "HEAD" ? null : invalidacionDe(rutaDe(input));
+    // Un POST que sólo LEE (una consulta con cuerpo largo) lo dice con `x-solo-lectura: 1`.
+    const lee =
+      metodo === "GET" ||
+      metodo === "HEAD" ||
+      new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined)).get(SOLO_LECTURA) === "1";
+    const ruta = lee ? "" : rutaDe(input);
+    const invalidar = ruta ? invalidacionDe(ruta) : null;
     if (!invalidar) return original(input, init);
+    const cambiaSesion = CAMBIA_SESION.test(ruta);
     invalidar();
-    return original(input, init).then((res) => {
-      invalidar();
-      return res;
-    });
+    avisarEscritura({ ruta, fase: "sale", cambiaSesion });
+    return original(input, init).then(
+      (res) => {
+        invalidar();
+        avisarEscritura({ ruta, fase: "vuelve", cambiaSesion });
+        return res;
+      },
+      (err: unknown) => {
+        avisarEscritura({ ruta, fase: "vuelve", cambiaSesion });
+        throw err;
+      },
+    );
   };
 }
 

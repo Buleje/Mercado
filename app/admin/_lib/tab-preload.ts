@@ -13,6 +13,8 @@
  * impreciso solo desperdicia una precarga, nunca rompe.
  */
 
+import { precargarListaArchivo } from "@/lib/documentos/cache-lista-cliente";
+
 type Loader = () => Promise<unknown>;
 
 // Tab id → loader del módulo/hub que lo renderiza (ver TabRouter dispatch).
@@ -90,6 +92,9 @@ const preloaded = new Set<string>();
 
 /** Arranca la precarga del chunk del tab (idempotente, fire-and-forget). */
 export function preloadTab(tabId: string): void {
+  // El Archivo además precarga su lista (22-10): al entrar, la primera tarjeta ya
+  // está. Se repite en cada pasada (pide como mucho una vez cada 30 s).
+  if (tabId === "documentos") precargarListaArchivo();
   if (preloaded.has(tabId)) return;
   const loader = TAB_LOADERS[tabId];
   if (!loader) return;

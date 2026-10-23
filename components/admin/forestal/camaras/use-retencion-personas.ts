@@ -8,8 +8,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { cachedJson, cachedJsonVigente } from "@/lib/client-cache-fetch";
 
 const API = "/api/admin/camaras/personas/retencion";
+/** Cambia sólo con «Guardar» (el PUT borra lo cacheado de /api/admin/camaras). */
+const FRESCO_MS = 5 * 60_000;
 
 export interface Retencion {
   dias: number;
@@ -19,26 +22,31 @@ export interface Retencion {
   puedeEditar: boolean;
 }
 
-export function useRetencionPersonas() {
-  const [retencion, setRetencion] = useState<Retencion | null>(null);
+type RespuestaRetencion = Retencion & { ok?: boolean };
+
+/**
+ * `activo = false` no pide nada (22-10: la línea de fotos escondidas del Archivo
+ * lo pedía al abrir aunque no hubiera fotos de personas que mostrar).
+ */
+export function useRetencionPersonas(activo = true) {
+  const [retencion, setRetencion] = useState<Retencion | null>(() => {
+    const j = cachedJsonVigente<RespuestaRetencion | null>(API, FRESCO_MS);
+    return j?.ok ? j : null;
+  });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!activo) return;
     let vivo = true;
-    void (async () => {
-      try {
-        const r = await fetch(API, { credentials: "include" });
-        const j = (await r.json().catch(() => null)) as (Retencion & { ok?: boolean }) | null;
-        if (vivo && r.ok && j?.ok) setRetencion(j);
-      } catch {
-        /* sin el dato, la sección simplemente no se muestra */
-      }
-    })();
+    // null = falló o no fue 2xx: sin el dato, la sección simplemente no se muestra.
+    void cachedJson<RespuestaRetencion>(API, FRESCO_MS).then((j) => {
+      if (vivo && j?.ok) setRetencion(j);
+    });
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [activo]);
 
   /** `true` si quedó guardado. */
   const guardar = useCallback(async (dias: number): Promise<boolean> => {

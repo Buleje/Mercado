@@ -50,6 +50,7 @@ import {
 } from "@/lib/documentos/filtros-doc";
 import { palabrasUtiles } from "@/lib/documentos/terminos-busqueda";
 import PorQueAparecio, { TerminosIA } from "./PorQueAparecio";
+import ChipsEntendi from "./ChipsEntendi";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { precargarVisor } from "./precargar-visores";
 import {
@@ -59,9 +60,11 @@ import { DocumentPreviewModal } from "./DocumentPreviewModal";
 import { TemplateGenerator } from "./TemplateGenerator";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
 import { ExpedienteModal } from "./ExpedienteModal";
+import { OrdenarArchivoModal } from "./OrdenarArchivoModal";
 import type { FuenteDelModal } from "./expediente/use-expediente";
 import ImportarCarpetaModal from "./ImportarCarpetaModal";
 import { archivosDesdeDrop } from "@/lib/documentos/importar-arbol";
+import { cuentaEnlacesGuardada, guardarCuentaEnlaces, guardarTaxonomia, taxonomiaGuardada } from "@/lib/documentos/cache-lista-cliente";
 import { useImportCarpeta } from "@/contexts/import-carpeta-context";
 import { familiaDe, etiquetaTipo } from "@/lib/documents/tipos-archivo";
 import { MoveToFolderModal } from "./MoveToFolderModal";
@@ -106,6 +109,7 @@ import { useFotosEscondidas } from "@/hooks/use-fotos-escondidas";
 import { TAGS_FOTOS_DE_MAQUINA, esFotoDeMaquina } from "@/lib/documents/fotos-de-maquina";
 import { diasHasta } from "@/lib/documentos/aviso-vencimiento";
 import { repartirVencimientos } from "@/lib/documentos/vencimientos-aviso";
+import { useAbrirDesdeUrl } from "./use-abrir-desde-url";
 
 /**
  * Las etiquetas que se muestran como chips. Las de máquina de «Documentos del
@@ -469,6 +473,9 @@ export default function DocumentosModule() {
   const [estadoSubida, setEstadoSubida] = useState<Map<string, { estado: EstadoArchivo; motivo?: string }> | null>(null);
   /** Sugerencias IA descartadas por el usuario (persisten por tenant). */
   const [sugDescartadas, setSugDescartadas] = useState<Set<string>>(new Set());
+  /** «Ordenar mi Archivo»: abierto, y cuántas veces se ordenó (para recontar el aviso). */
+  const [ordenando, setOrdenando] = useState(false);
+  const [ordenVersion, setOrdenVersion] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   // Subcarpetas: `undefined` = no creando, `null` = crear en raíz, string = crear dentro de esa carpeta.
@@ -487,11 +494,13 @@ export default function DocumentosModule() {
   /** Id del documento cuyo editor de etiquetas está abierto (chips + autocompletar). */
   const [tagDocId, setTagDocId] = useState<string | null>(null);
   /** Taxonomía completa del tenant, para sugerir al escribir y evitar duplicados por typo. */
-  const [allTags, setAllTags] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<string[]>(() => taxonomiaGuardada() ?? []);
   const reloadAllTags = useCallback(() => {
-    fetchTags().then((r) => setAllTags(r.map((t) => t.tag).filter((t) => !esTagDeMaquinaPlan(t)))).catch((err) => console.warn("[documentos] no pude cargar la taxonomía de etiquetas", err));
+    fetchTags().then((r) => { const t = r.map((x) => x.tag).filter((x) => !esTagDeMaquinaPlan(x)); guardarTaxonomia(t); setAllTags(t); }).catch((err) => console.warn("[documentos] no pude cargar la taxonomía de etiquetas", err));
   }, []);
-  useEffect(() => { reloadAllTags(); }, [reloadAllTags]);
+  // Sólo la usan los dos modales de etiquetar: se pide al abrir uno (22-10, era 1 de los 8 pedidos al abrir el Archivo).
+  const pideTaxonomia = bulkTagModalOpen || tagDocId !== null;
+  useEffect(() => { if (pideTaxonomia && taxonomiaGuardada() === null) reloadAllTags(); }, [pideTaxonomia, reloadAllTags]);
   /** Menú "Más" de la barra de selección — agrupa las acciones menos frecuentes
    *  (mover, ZIP, WhatsApp, combinar) para que la fila no crezca sin límite. */
   const [bulkMoreOpen, setBulkMoreOpen] = useState(false);
@@ -598,6 +607,8 @@ export default function DocumentosModule() {
     documents, semanticTerms, folders, loading, error, refresh,
     upload, scan, patch, bulk, restore, purge, restoreMany, purgeMany, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder,
   } = useDocuments(filters);
+  /** `?doc=<id>` abre ese papel y `?q=` pone la búsqueda (buscador del panel). */
+  useAbrirDesdeUrl({ documents, loading, preview, setPreview, setBuscar: setSearch });
 
   /**
    * Con qué se compara cada documento para decir POR QUÉ apareció: la frase
@@ -821,10 +832,14 @@ export default function DocumentosModule() {
   // duplicados, no se puede derivar de `documents` (una carpeta compartida no
   // deja rastro en ningún documento individual). `null` = todavía no se sabe
   // → no ocultar (más vale mostrar de más que esconder algo que sí tiene datos).
-  const [enlacesCount, setEnlacesCount] = useState<number | null>(null);
+  // Sólo decide si «Enlaces» se ve en «Más vistas»: se pide al abrir ese grupo (22-10).
+  const [enlacesCount, setEnlacesCount] = useState<number | null>(() => cuentaEnlacesGuardada());
   useEffect(() => {
-    fetchSharedLinks().then((links) => setEnlacesCount(links.length)).catch(() => setEnlacesCount(null));
-  }, []);
+    if (!otrosAbierto || cuentaEnlacesGuardada() !== null) return;
+    fetchSharedLinks()
+      .then((links) => { guardarCuentaEnlaces(links.length); setEnlacesCount(links.length); })
+      .catch((err) => { console.warn("[documentos] no pude contar los enlaces compartidos", err); setEnlacesCount(null); });
+  }, [otrosAbierto]);
   const vistaConDatos = useMemo(() => ({
     all: true,
     dashboard: documents.length > 0,
@@ -1657,6 +1672,13 @@ export default function DocumentosModule() {
               onClick: () => setImportandoCarpeta(true),
               dividerBefore: true,
             },
+            {
+              label: "Ordenar mi Archivo",
+              description: "Nombres claros, basura y carpetas vacías",
+              icon: Wand2,
+              onClick: () => setOrdenando(true),
+              dividerBefore: true,
+            },
           ]}
         />
         <button
@@ -1707,6 +1729,7 @@ export default function DocumentosModule() {
         onAplicarTodas={() => void aplicarTodasLasSugerencias()}
         aplicandoTodas={aplicandoTodas}
         fechaCorta={fmtFechaCorta}
+        orden={{ onRevisar: () => setOrdenando(true), version: ordenVersion }}
       />
 
       {/* Las fotos de las cámaras no se mezclan con tus papeles: una línea dice cuántas hay. */}
@@ -2729,6 +2752,11 @@ export default function DocumentosModule() {
             </div>
           )}
 
+          {/* «Buscar como hablas»: cómo se leyó la búsqueda, cada parte con su ✕. */}
+          {searchDebounced.trim() && !VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && filterMode !== "expiring" && (
+            <ChipsEntendi busqueda={searchDebounced} carpetas={folders} onCambiar={setSearch} />
+          )}
+
           {/* En modo IA: con qué sinónimos se amplió la búsqueda. */}
           {semantic && semanticTerms.length > 0 && !VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && (
             <TerminosIA terminos={semanticTerms} />
@@ -3179,6 +3207,14 @@ export default function DocumentosModule() {
 
       {whatsappDoc && (
         <SendWhatsAppModal docs={whatsappDoc} onClose={() => setWhatsappDoc(null)} />
+      )}
+
+      {ordenando && (
+        <OrdenarArchivoModal
+          descartadas={[...sugDescartadas]}
+          onClose={() => setOrdenando(false)}
+          onCambio={() => { void refresh({ silencioso: true }); setOrdenVersion((v) => v + 1); }}
+        />
       )}
 
       {expediente && (

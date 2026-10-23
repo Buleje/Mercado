@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { cachedJson, cachedJsonVigente, invalidateCachedJson } from "@/lib/client-cache-fetch";
 import {
   CONTEO_FOTOS_VACIO,
   TAGS_FOTOS_DE_MAQUINA,
@@ -20,40 +21,49 @@ export interface UseFotosEscondidas {
   recargar: () => void;
 }
 
+const URL_CONTEO = `/api/admin/documents?${new URLSearchParams({ conteo: "1", tags: TAGS_FOTOS_DE_MAQUINA.join(",") }).toString()}`;
+/**
+ * Volver al Archivo antes de esto no vuelve a contar (22-10: era 1 de los 8
+ * pedidos de cada apertura). Subir o borrar desde el panel lo borra solo (el
+ * envoltorio de `cachedJson` invalida /api/admin/documents al escribir).
+ */
+const FRESCO_MS = 60_000;
+/** Lo último sabido se pinta al volver aunque tenga unos minutos: es un número, se corrige detrás. */
+const PINTABLE_MS = 10 * 60_000;
+
+type RespuestaConteo = { conteo?: Partial<ConteoFotosDeMaquina> };
+
+function leer(j: RespuestaConteo | null | undefined): ConteoFotosDeMaquina | null {
+  if (!j?.conteo) return null;
+  return {
+    total: Number(j.conteo.total) || 0,
+    bytes: Number(j.conteo.bytes) || 0,
+    porTag: j.conteo.porTag ?? CONTEO_FOTOS_VACIO.porTag,
+  };
+}
+
 export function useFotosEscondidas(): UseFotosEscondidas {
-  const [conteo, setConteo] = useState<ConteoFotosDeMaquina | null>(null);
+  const [conteo, setConteo] = useState<ConteoFotosDeMaquina | null>(() =>
+    leer(cachedJsonVigente<RespuestaConteo | null>(URL_CONTEO, PINTABLE_MS)),
+  );
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
     let vivo = true;
-    const ctl = new AbortController();
-    void (async () => {
-      try {
-        const qs = new URLSearchParams({ conteo: "1", tags: TAGS_FOTOS_DE_MAQUINA.join(",") });
-        const r = await fetch(`/api/admin/documents?${qs.toString()}`, {
-          credentials: "include",
-          signal: ctl.signal,
-        });
-        if (!r.ok) return;
-        const j = (await r.json()) as { conteo?: Partial<ConteoFotosDeMaquina> };
-        if (!vivo || !j.conteo) return;
-        setConteo({
-          total: Number(j.conteo.total) || 0,
-          bytes: Number(j.conteo.bytes) || 0,
-          porTag: j.conteo.porTag ?? CONTEO_FOTOS_VACIO.porTag,
-        });
-      } catch (err) {
-        // Cancelado al desmontar o sin red: sin el dato no se esconde ni se avisa nada.
-        if (!(err instanceof DOMException && err.name === "AbortError")) setConteo(null);
-      }
-    })();
+    // Sin red o con error: queda lo que había (null la primera vez: no se esconde ni se avisa nada).
+    void cachedJson<RespuestaConteo>(URL_CONTEO, FRESCO_MS).then((j) => {
+      const c = leer(j);
+      if (vivo && c) setConteo(c);
+    });
     return () => {
       vivo = false;
-      ctl.abort();
     };
   }, [version]);
 
-  const recargar = useCallback(() => setVersion((v) => v + 1), []);
+  const recargar = useCallback(() => {
+    invalidateCachedJson(URL_CONTEO);
+    setVersion((v) => v + 1);
+  }, []);
 
   return { conteo, recargar };
 }

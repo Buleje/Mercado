@@ -5,16 +5,23 @@
  * lateral, en el orden que elijas (como «Fijar en Acceso rápido» de Windows).
  *
  * Se guarda por PERSONA en el servidor (`/api/admin/preferences/fijados-drive`),
- * así se ve igual en la PC y en el celular. `localStorage`
- * (`drive-acceso-rapido:<slug>`) queda de caché para pintar al instante, y lo
- * que ya estaba ahí se sube solo la primera vez (si el servidor no tiene nada).
+ * así se ve igual en la PC y en el celular. Para pintar al instante hay una
+ * caché por persona en memoria + `sessionStorage` (`cache-fijados-cliente`;
+ * nunca `localStorage`: los nombres no quedan en la PC de caja para el que
+ * entra después). Si el servidor no tiene nada, se sube lo de ESTA persona.
  * Fijar/quitar/reordenar es optimista: si el servidor falla, se revierte y avisa.
  */
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useLocalStorage } from "@/hooks/use-local-storage";
 import { csrfHeaders } from "@/lib/csrf-client";
+import {
+  borrarLegado,
+  fijadosGuardados,
+  guardarFijados,
+  leerLegado,
+  puedeAdoptarLegado,
+} from "@/lib/documentos/cache-fijados-cliente";
 
 export interface Fijado {
   tipo: "carpeta" | "archivo";
@@ -43,7 +50,11 @@ async function guardarEnServidor(fijados: Fijado[]): Promise<void> {
 }
 
 export function useAccesoRapido(slug: string) {
-  const [crudo, setCrudo] = useLocalStorage<unknown>(`drive-acceso-rapido:${slug}`, []);
+  const [crudo, setEstado] = useState<unknown>(() => fijadosGuardados() ?? []);
+  const setCrudo = useCallback((l: Fijado[]) => {
+    guardarFijados(l);
+    setEstado(l);
+  }, []);
   // Lo guardado puede venir de otra versión o tocado a mano: sólo lo que tiene forma.
   const fijados = useMemo<Fijado[]>(() => sanear(crudo), [crudo]);
 
@@ -84,20 +95,37 @@ export function useAccesoRapido(slug: string) {
     [setCrudo],
   );
 
-  // Una vez al montar: lo del servidor manda; si no hay nada, se sube lo de este navegador.
+  // Una vez al montar: lo del servidor manda; si no hay nada, se sube lo de ESTA
+  // persona (su caché de la pestaña) o, sólo para el dueño, lo que quedó en el
+  // localStorage de antes del 16-10 sin decir de quién era.
   useEffect(() => {
     let vivo = true;
     fetch(URL_FIJADOS, { credentials: "include" })
       .then((r) => (r.ok ? (r.json() as Promise<{ fijados: unknown }>) : null))
       .then((j) => {
         if (!vivo || !j || tocado.current) return;
+        const adopta = puedeAdoptarLegado();
         if (j.fijados === null) {
-          if (actual.current.length > 0) {
-            cola.current = cola.current.then(() => guardarEnServidor(actual.current));
-            cola.current.catch((err: unknown) => console.warn("[acceso-rapido] migrar falló", err));
+          const propio = actual.current.length > 0 ? actual.current : adopta ? sinFantasmas(sanear(leerLegado(slug))) : [];
+          if (propio.length === 0) {
+            if (adopta) borrarLegado(slug);
+            return;
           }
+          if (propio !== actual.current) {
+            actual.current = propio;
+            setCrudo(propio);
+          }
+          // Con su `.catch` adentro: una migración caída no deja la cola rechazada
+          // (si no, el próximo fijar se revertía sin siquiera intentarlo).
+          cola.current = cola.current
+            .then(() => guardarEnServidor(propio))
+            .then(() => {
+              if (adopta) borrarLegado(slug);
+            })
+            .catch((err: unknown) => console.warn("[acceso-rapido] migrar falló", err));
           return;
         }
+        if (adopta) borrarLegado(slug);
         const delServidor = sinFantasmas(sanear(j.fijados));
         actual.current = delServidor;
         setCrudo(delServidor);

@@ -95,6 +95,18 @@ export function FilaResultado({ r, query, href, seleccionado, iconoGrupo, color,
             {r.entidad}
           </span>
         )}
+        {r.vence && (
+          <span
+            className={cn(
+              "max-w-[10rem] truncate rounded-full border px-2 py-0.5 text-xs font-semibold",
+              r.vence.vencido
+                ? "border-[var(--data-error-500)]/40 bg-[var(--data-error-100)] text-[var(--data-error-ink)]"
+                : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+            )}
+          >
+            {r.vence.texto}
+          </span>
+        )}
         {r.badge && (
           <span
             className="px-2 py-0.5 rounded-full text-xs font-bold text-white"

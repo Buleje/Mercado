@@ -18,6 +18,17 @@ import { motivoRechazo } from "@/lib/documents/upload-limits";
 import { enLotes, CARPETAS_POR_LLAMADA } from "@/lib/documentos/importar-arbol";
 import { IDS_POR_LOTE } from "@/lib/documents/bulk-limits";
 import { reportarVelocidad } from "@/lib/documentos/reportar-velocidad";
+import {
+  carpetasGuardadas,
+  cuandoTerminenLasEscrituras,
+  generacionEscrituras,
+  guardarLista,
+  listaGuardada,
+  pedirCarpetas,
+  pedirLista,
+  qsDeFiltros,
+  seGuarda,
+} from "@/lib/documentos/cache-lista-cliente";
 
 const BASE = "/api/admin/documents";
 
@@ -231,15 +242,36 @@ export async function subirArchivosAlDrive(files: File[], opts?: OpcionesSubida)
   return out;
 }
 
+/** Lo que llegó del servidor hace menos de esto se pinta sin volver a pedirlo. */
+const RECIEN_MS = 5_000;
+
 export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsResult {
-  const [documents, setDocuments] = useState<DbDocument[]>([]);
+  // Lo último que se vio de esta vista (memoria o sessionStorage, nunca
+  // localStorage): se pinta en el primer render y se refresca detrás (22-10).
+  const [arranque] = useState(() => {
+    const qs = qsDeFiltros(filters);
+    const docs = seGuarda(filters) ? listaGuardada(qs) : null;
+    return { qs: docs ? qs : null, docs, folders: carpetasGuardadas() };
+  });
+  const [documents, setDocuments] = useState<DbDocument[]>(arranque.docs?.data ?? []);
   const [semanticTerms, setSemanticTerms] = useState<string[]>([]);
-  const [folders, setFolders] = useState<DbDocumentFolder[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [folders, setFolders] = useState<DbDocumentFolder[]>(arranque.folders?.data ?? []);
+  const [loading, setLoading] = useState(!arranque.docs);
   const [error, setError] = useState<string | null>(null);
 
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
+  /** De qué consulta son los `documents` en pantalla (null = de ninguna que se guarde). */
+  const qsDatosRef = useRef<string | null>(arranque.qs);
+  /** Cuándo llegó del servidor la lista en pantalla (los cambios optimistas no la rejuvenecen). */
+  const datosAtRef = useRef(arranque.docs?.at ?? 0);
+  /** El último pedido de la lista y del árbol: uno más viejo que vuelve tarde no pisa al nuevo. */
+  const pedidoRef = useRef(0);
+  const pedidoCarpetasRef = useRef(0);
+  const montadoRef = useRef(true);
+  const releerRef = useRef<(() => void) | null>(null);
+  /** El árbol vino del servidor o de lo guardado: antes de eso, `[]` no es «sin carpetas». */
+  const carpetasListasRef = useRef(arranque.folders !== null);
 
   /**
    * Trae documentos y carpetas.
@@ -252,50 +284,65 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
    * archivo no cambia el árbol, y sin embargo se volvía a pedir entero en cada
    * mutación. Eran dos requests donde alcanza con una.
    */
-  const fetchAll = useCallback(async (opciones?: { silencioso?: boolean; soloDocumentos?: boolean }) => {
+  const fetchAll = useCallback(async function cargar(opciones?: { silencioso?: boolean; soloDocumentos?: boolean }): Promise<void> {
+    const seq = ++pedidoRef.current;
+    const conCarpetas = !opciones?.soloDocumentos;
+    const seqCarpetas = conCarpetas ? ++pedidoCarpetasRef.current : 0;
+    releerRef.current?.();
+    releerRef.current = null;
     if (!opciones?.silencioso) setLoading(true);
     setError(null);
-    const arranque = performance.now();
+    const arranqueMs = performance.now();
+    const gen0 = generacionEscrituras();
+    let descartado = false;
     try {
       const f = filtersRef.current;
-      const qs = new URLSearchParams();
-      if (f.folderId === null) qs.set("folderId", "null");
-      else if (f.folderId) qs.set("folderId", f.folderId);
-      if (f.category) qs.set("category", f.category);
-      if (f.q) qs.set("q", f.q);
-      if (f.tags?.length) qs.set("tags", f.tags.join(","));
-      if (f.sinTags?.length) qs.set("excluir", f.sinTags.join(","));
-      if (f.favorite !== undefined) qs.set("favorite", f.favorite ? "1" : "0");
-      if (f.customerId) qs.set("customerId", f.customerId);
-      if (f.supplierId) qs.set("supplierId", f.supplierId);
-      if (f.orderId) qs.set("orderId", f.orderId);
-      // ADR-119 — vista "Por vencer" + búsqueda semántica
-      if (f.expiring) qs.set("expiring", String(f.expiring));
-      if (f.semantic && f.q) qs.set("semantic", "1");
-      if (f.deletedOnly) qs.set("deleted", "1");
-
+      const qs = qsDeFiltros(f);
       const [docsResp, foldersResp] = await Promise.all([
-        http<{ documents: DbDocument[]; semanticTerms?: string[] }>(`${BASE}?${qs.toString()}`),
-        opciones?.soloDocumentos
-          ? Promise.resolve(null)
-          : http<{ folders: DbDocumentFolder[] }>(`${BASE}/folders`),
+        pedirLista(qs),
+        conCarpetas ? pedirCarpetas() : Promise.resolve(null),
       ]);
+      if (!montadoRef.current || seq !== pedidoRef.current) {
+        descartado = true;
+        // La lista es vieja, pero el árbol puede ser el último que se pidió.
+        if (foldersResp && montadoRef.current && seqCarpetas === pedidoCarpetasRef.current) {
+          carpetasListasRef.current = true;
+          setFolders(foldersResp.folders);
+        }
+        return;
+      }
+      if (gen0 !== generacionEscrituras()) {
+        // Cruzó una escritura (subir, borrar, mover, de acá o de otra pantalla):
+        // lo que trajo puede ser de ANTES y pisaría el cambio que ya se ve.
+        // Se vuelve a leer cuando no quede ninguna en vuelo.
+        descartado = true;
+        releerRef.current = cuandoTerminenLasEscrituras(() => {
+          releerRef.current = null;
+          if (montadoRef.current) void cargar(opciones);
+        });
+        return;
+      }
       setDocuments(docsResp.documents);
+      qsDatosRef.current = seGuarda(f) ? qs : null;
+      datosAtRef.current = Date.now();
       // En modo IA el servidor expande la consulta a sinónimos; devolverlos deja
       // decir POR QUÉ apareció cada documento (y resaltar el término que pegó).
       setSemanticTerms(docsResp.semanticTerms ?? []);
-      if (foldersResp) setFolders(foldersResp.folders);
+      if (foldersResp && seqCarpetas === pedidoCarpetasRef.current) {
+        carpetasListasRef.current = true;
+        setFolders(foldersResp.folders);
+      }
 
       // Cuánto tardó de verdad, del lado de quien lo usa. Sólo se reporta la
       // apertura completa (no los refrescos silenciosos, que son otra cosa) y
       // el envío es best-effort: medir no puede frenar ni romper el drive.
       if (!opciones?.silencioso) {
-        reportarVelocidad("listado", performance.now() - arranque, docsResp.documents.length);
+        reportarVelocidad("listado", performance.now() - arranqueMs, docsResp.documents.length);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (montadoRef.current && seq === pedidoRef.current) setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setLoading(false);
+      if (!descartado && montadoRef.current && seq === pedidoRef.current) setLoading(false);
     }
   }, []);
 
@@ -303,7 +350,30 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
   const tagsKey = filters.tags?.join(",") ?? "";
   const sinTagsKey = filters.sinTags?.join(",") ?? "";
   useEffect(() => {
-    fetchAll();
+    const f = filtersRef.current;
+    const qs = qsDeFiltros(f);
+    if (seGuarda(f)) {
+      // Recién traído (la precarga del menú, hace segundos): no se pide otra vez.
+      const recien = () =>
+        Date.now() - datosAtRef.current < RECIEN_MS && Date.now() - (carpetasGuardadas()?.at ?? 0) < RECIEN_MS;
+      // Ya está en pantalla lo último de esta vista (del primer render): sólo refrescar detrás.
+      if (qsDatosRef.current === qs) {
+        if (!recien()) void fetchAll({ silencioso: true });
+        return;
+      }
+      const guardada = listaGuardada(qs);
+      if (guardada) {
+        setDocuments(guardada.data);
+        setSemanticTerms([]);
+        setError(null);
+        setLoading(false);
+        qsDatosRef.current = qs;
+        datosAtRef.current = guardada.at;
+        if (!recien()) void fetchAll({ silencioso: true });
+        return;
+      }
+    }
+    void fetchAll();
   }, [
     fetchAll,
     filters.folderId,
@@ -319,6 +389,25 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     tagsKey,
     sinTagsKey,
   ]);
+
+  // Espejo: lo que se ve (con los cambios optimistas) queda guardado para la
+  // próxima vez; al desmontar se guarda de nuevo, porque una escritura en el
+  // medio borró lo guardado y lo que está en pantalla ya la incluye.
+  const vistoRef = useRef({ documents, folders });
+  vistoRef.current = { documents, folders };
+  useEffect(() => {
+    if (qsDatosRef.current) guardarLista(qsDatosRef.current, documents, carpetasListasRef.current ? folders : null, datosAtRef.current);
+  }, [documents, folders]);
+  useEffect(() => {
+    montadoRef.current = true;
+    return () => {
+      montadoRef.current = false;
+      releerRef.current?.();
+      releerRef.current = null;
+      const qs = qsDatosRef.current;
+      if (qs) guardarLista(qs, vistoRef.current.documents, carpetasListasRef.current ? vistoRef.current.folders : null, datosAtRef.current);
+    };
+  }, []);
 
   /**
    * Al volver con el botón atrás/adelante, el navegador puede restaurar la

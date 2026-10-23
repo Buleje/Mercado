@@ -69,6 +69,8 @@ export const PARAMS_DE_VISTA = [
      `?persona=` del QR del fotocheck reabría la ficha al volver a RRHH. */
   "persona",
   "carpeta",
+  /* El papel abierto en el Archivo (`use-abrir-desde-url`): lo trae el buscador del panel. */
+  "doc",
   "cliente",
   "pedido",
   "producto",

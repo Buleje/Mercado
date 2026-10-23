@@ -41,6 +41,7 @@ describe("hrefDe — a dónde lleva cada cosa", () => {
     ["cuenta-adelantos", "benef:9", "/admin?tab=plata&vista=adelantos&accion=liquidar&persona=benef%3A9"],
     ["turno", "u1", "/admin?tab=ventas-caja&vista=turnos&sub=historial&turno=u1"],
     ["carpeta", "f1", enlaceAlDrive("f1")],
+    ["papel", "d1", "/admin?tab=documentos&vista=drive&doc=d1"],
   ];
 
   it.each(casos)("%s → su ficha", (cosa, id, url) => {

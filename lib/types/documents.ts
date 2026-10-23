@@ -210,6 +210,39 @@ export interface DocumentListFilters {
    * escrita. El detalle del documento lo pide aparte.
    */
   conTextoCompleto?: boolean;
+  /** Tope de filas (def. 500). El buscador del panel pide pocas: no necesita el drive entero. */
+  limite?: number;
+  /** «Buscar como hablas» (`lib/documentos/busqueda-natural`): vencimiento en [desde, hasta); `{}` = con fecha; "sin" = sin fecha. */
+  vence?: RangoFechas | "sin";
+  /** Fecha de subida en [desde, hasta). */
+  subido?: RangoFechas;
+  /** Sólo en estas carpetas (ya con sus subcarpetas). */
+  folderIds?: string[];
+  /** Condiciones que se cruzan (AND); dentro de cada una basta con ALGUNA. */
+  grupos?: GrupoBusqueda[];
+}
+
+/** Rango de fechas ISO, `desde` incluido y `hasta` excluido. Un borde ausente queda abierto. */
+export interface RangoFechas {
+  desde?: string;
+  hasta?: string;
+}
+
+/** Una condición de la búsqueda natural: el documento la cumple si cumple ALGUNA de sus partes. */
+export interface GrupoBusqueda {
+  categorias?: string[];
+  /** Tiene alguna de estas etiquetas (tal cual). */
+  etiquetas?: string[];
+  /** El nombre (o el original) contiene alguno de estos textos, sin mayúsculas. */
+  enNombre?: string[];
+  /** El tipo de archivo empieza con alguno («image/», «application/pdf»). */
+  mimes?: string[];
+  /** Está en alguna de estas carpetas. */
+  carpetas?: string[];
+  /** Algún texto aparece en todo el documento (nombre, OCR o etiquetas), sin tildes. */
+  textos?: string[];
+  /** Vence dentro de este rango. */
+  vence?: RangoFechas;
 }
 
 export const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50 MB hard limit en bucket

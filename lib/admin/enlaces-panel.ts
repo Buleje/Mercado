@@ -48,6 +48,7 @@ export type CosaDelPanel =
   | "oc"
   /* Documentos y cámaras */
   | "carpeta"
+  | "papel"
   | "personas-camaras"
   /* Todavía sin ficha direccionable: quedan como texto. */
   | "gasto"
@@ -164,6 +165,11 @@ export const COSAS_DEL_PANEL: Readonly<Record<CosaDelPanel, FilaDeCosa>> = {
     abre: true,
     destino: (id) => d("documentos", { sub: "folder", carpeta: id }),
     lector: "components/admin/documentos/DocumentosModule.tsx (= enlaceAlDrive)",
+  },
+  papel: {
+    abre: true,
+    destino: (id) => d("documentos", { vista: "drive", doc: id }),
+    lector: "components/admin/documentos/use-abrir-desde-url.ts",
   },
   "personas-camaras": {
     abre: true,
