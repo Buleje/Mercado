@@ -1,4 +1,5 @@
 import "server-only";
+import { avisoCorreoPlataformaActivo } from "@/lib/avisos-correo-plataforma";
 import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 import { sendWhatsAppText } from "@/lib/whatsapp";
@@ -24,6 +25,7 @@ export async function sendDailyDigestEmail(data: DigestData): Promise<void> {
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
   if (!smtpUser || !smtpPass) return;
+  if (!(await avisoCorreoPlataformaActivo("resumen"))) return;
 
   const notifyEmail = process.env.NOTIFY_EMAIL || smtpUser;
 

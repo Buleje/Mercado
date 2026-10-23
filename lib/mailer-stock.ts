@@ -1,4 +1,5 @@
 import "server-only";
+import { avisoCorreoPlataformaActivo } from "@/lib/avisos-correo-plataforma";
 import nodemailer from "nodemailer";
 import { escapeHtml } from "@/lib/email/escape-html";
 
@@ -42,6 +43,7 @@ export async function sendStockAlertEmail(
   if (!smtpUser || !smtpPass || (products.length === 0 && pronto.length === 0)) return false;
 
   const destino = opciones.destino;
+  if (!destino && !(await avisoCorreoPlataformaActivo("stock"))) return false;
   const to = destino?.to ?? (process.env.NOTIFY_EMAIL || smtpUser);
   const negocio = destino ? escapeHtml(destino.negocio) : null;
 

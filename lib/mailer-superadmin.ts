@@ -1,4 +1,5 @@
 import "server-only";
+import { avisoCorreoPlataformaActivo } from "@/lib/avisos-correo-plataforma";
 import nodemailer from "nodemailer";
 
 interface SuperAdminAlert {
@@ -17,6 +18,7 @@ export async function sendSuperAdminAlert(alert: SuperAdminAlert): Promise<void>
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
   if (!smtpUser || !smtpPass) return;
+  if (!(await avisoCorreoPlataformaActivo("superadmin"))) return;
 
   const to = process.env.SUPERADMIN_NOTIFY_EMAIL ?? smtpUser;
 

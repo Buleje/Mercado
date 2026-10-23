@@ -1,4 +1,5 @@
 import "server-only";
+import { avisoCorreoPlataformaActivo } from "@/lib/avisos-correo-plataforma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import nodemailer from "nodemailer";
@@ -104,7 +105,7 @@ export const POST = withApiHandler("abandoned-cart", async (req, _ctx) => {
     }
 
     // ── 2. Email de notificación al ADMIN (mantener como backup) ──────────
-    if (smtpUser && smtpPass) {
+    if (smtpUser && smtpPass && (await avisoCorreoPlataformaActivo("carritos"))) {
       const notifyEmail = process.env.NOTIFY_EMAIL || smtpUser;
 
       const transporter = nodemailer.createTransport({

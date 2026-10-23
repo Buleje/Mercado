@@ -22,6 +22,7 @@ import { AlertsBanner } from "@/components/superadmin/tenants/TenantsAlertsBanne
 import { QuickFilters } from "@/components/superadmin/tenants/TenantsQuickFilters";
 import { TenantsToolbar } from "@/components/superadmin/tenants/TenantsToolbar";
 import { TenantsKpis } from "@/components/superadmin/tenants/TenantsKpis";
+import { CorreosPlataforma } from "@/components/superadmin/tenants/CorreosPlataforma";
 import { TenantsGrid } from "@/components/superadmin/tenants/TenantsGrid";
 import { TenantsBulkBar } from "@/components/superadmin/tenants/TenantsBulkBar";
 import { useTenantsCarga } from "@/components/superadmin/tenants/useTenantsCarga";
@@ -164,6 +165,8 @@ export default function TenantsPage() {
       kicker="Plataforma multi-tenant"
     >
       <TenantsKpis loading={loading} stats={stats} />
+
+      <CorreosPlataforma />
 
       {/* ═══════ FILA 2 · Alertas colapsables (1 línea cuando hay) ══════ */}
       {alerts.length > 0 && (

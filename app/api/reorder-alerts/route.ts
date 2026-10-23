@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { avisoCorreoPlataformaActivo } from "@/lib/avisos-correo-plataforma";
 import { broadcastPush } from "@/lib/push-sender";
 import nodemailer from "nodemailer";
 import { timingSafeCompare } from "@/lib/timing-safe";
@@ -39,7 +40,7 @@ async function checkAndAlert(crearBorradores: boolean) {
   // Send email
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
-  if (smtpUser && smtpPass) {
+  if (smtpUser && smtpPass && (await avisoCorreoPlataformaActivo("reposicion"))) {
     const notifyEmail = process.env.NOTIFY_EMAIL || smtpUser;
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",

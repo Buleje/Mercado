@@ -4,6 +4,7 @@ import { escapeHtml } from "@/lib/email/escape-html";
 import { logger } from "@/lib/logger";
 import { AvisosCorreoDB } from "@/lib/db/avisos-correo.db";
 import { avisoCorreoActivo, registrarEnvioCorreo } from "@/lib/avisos-correo";
+import { avisoCorreoPlataformaActivo } from "@/lib/avisos-correo-plataforma";
 import { lineaFueraDelCajon } from "@/lib/caja/saldo-esperado";
 import type { ResumenCierreDeCaja } from "@/lib/caja/resumen-cierre";
 
@@ -48,6 +49,12 @@ export async function sendOrderNotification(order: {
   // sale al dueño. Sin correo de dueño la copia va a la plataforma y el interruptor no la toca.
   if (tenantCuid && tenantEmail && !(await avisoCorreoActivo(tenantCuid, "pedidos"))) {
     logger.info("[mailer] aviso de pedido omitido: avisos por correo apagados", { tenantId: tenantCuid, orderId: order.id });
+    return;
+  }
+
+  // Sin correo de dueño la copia va a la plataforma: ésa tiene su propio interruptor (23-10).
+  if (!tenantEmail && !(await avisoCorreoPlataformaActivo("pedidos"))) {
+    logger.info("[mailer] copia de pedido a la plataforma omitida: apagada en el superadmin", { orderId: order.id });
     return;
   }
 
@@ -197,6 +204,7 @@ export async function sendCashSummaryEmail(summary: ResumenCierreDeCaja): Promis
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
   if (!smtpUser || !smtpPass) return;
+  if (!(await avisoCorreoPlataformaActivo("caja"))) return;
 
   const notifyEmail = process.env.NOTIFY_EMAIL || smtpUser;
   const senderName = "Mi Tienda";

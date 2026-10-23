@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { avisoCorreoPlataformaActivo, destinoCorreoPlataforma } from "@/lib/avisos-correo-plataforma";
 import nodemailer from "nodemailer";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { logger } from "@/lib/logger";
@@ -112,6 +113,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Interruptor del superadmin (23-10): apagado = no se arma ni se manda.
+  if (!(await avisoCorreoPlataformaActivo("cacao"))) {
+    logger.info("[cron/cacao-precio-diario] omitido: apagado en el superadmin");
+    return NextResponse.json({ ok: true, omitido: "apagado" });
+  }
+
   try {
     const market = await getCacaoMarket(true);
     const puntos = construirPuntosSolKg(market.price?.series ?? [], market.fxSeries, market.usdPen);
@@ -127,7 +134,7 @@ export async function GET(req: NextRequest) {
       fechaTexto,
     });
 
-    const to = process.env.CACAO_DIGEST_EMAIL?.trim() || DESTINATARIO_DEFAULT;
+    const to = destinoCorreoPlataforma("cacao") ?? DESTINATARIO_DEFAULT;
     await enviarDigest({
       to,
       hoySolKg: puntos.at(-1)?.solKg ?? market.pricePenPerKg,

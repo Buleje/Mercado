@@ -47,6 +47,17 @@ export const AvisosCorreoDB = {
     });
   },
 
+  /** Tiendas cuyo correo de dueño es éste (sin distinguir mayúsculas). */
+  async tiendasPorCorreo(correo: string): Promise<TiendaAvisosCorreo[]> {
+    const limpio = correo.trim();
+    if (!limpio) return [];
+    return prisma.tenant.findMany({
+      where: { ownerEmail: { equals: limpio, mode: "insensitive" } },
+      select: { id: true, slug: true, name: true, ownerEmail: true },
+      orderBy: { createdAt: "asc" },
+    });
+  },
+
   /** Filas de PlatformSetting de esas claves, SIN caché (la lista y el detalle las quieren frescas). */
   async filas(keys: string[]): Promise<FilaAvisosGuardada[]> {
     if (keys.length === 0) return [];
