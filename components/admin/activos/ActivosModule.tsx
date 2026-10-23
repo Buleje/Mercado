@@ -162,7 +162,7 @@ export default function ActivosModule() {
   return (
     <div className="space-y-5">
       {/* Dentro de Mi Plata (ola 3, 2026-10-10): sus pestañas y sus acciones van
-          a la fila del título del hub, sin título ni barra propios. */}
+          a la fila de abajo de la banda del hub, sin título ni barra propios. */}
       {enHub ? (
         <SegundoNivelEnElHub
           ranura={enHub.ranura}

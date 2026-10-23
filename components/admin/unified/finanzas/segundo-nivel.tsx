@@ -13,6 +13,10 @@
  *
  * Fuera de Mi Plata no hay contexto (`null`) y el módulo se dibuja como
  * siempre, con su barra y su título.
+ *
+ * 23-10: la ranura ya no está en la fila del título sino en la de ABAJO de la
+ * banda (`segundoNivel` de AdminTabBar): las pestañas de Mi Plata arriba, las
+ * del módulo y su acción debajo (antes, a 1280 px, quedaban al revés).
  */
 
 import { createContext, useContext, type ReactNode } from "react";
@@ -42,17 +46,17 @@ interface Props {
   acciones?: ReactNode;
 }
 
-/** Las pestañas propias del módulo, en la fila del título de Mi Plata. */
+/** Las pestañas propias del módulo, en la fila de abajo de la banda de Mi Plata. */
 export function SegundoNivelEnElHub({ ranura, items, activa, onIr, etiqueta, acciones }: Props) {
   if (!ranura) return null;
   return createPortal(
-    /* Desde `sm`, pestañas y acción en UNA línea, con lugar para el «⋯» del
-       hub: la barra (7 pestañas en Adelantos, ~770 px) es la que cede y se
-       desliza; los botones no. Sin este tope la barra tomaba la fila entera y
-       «Nuevo adelanto» bajaba a una tercera (medido 2026-10-11 a 1280 px). */
-    <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 sm:max-w-[calc(100%-3.5rem)] sm:flex-nowrap">
+    /* Desde `sm`, pestañas y acción en UNA línea que llena la fila: la barra
+       (7 pestañas en Adelantos, ~770 px) es la que cede y manda lo que no
+       entra a su «Más»; los botones no, y van a la derecha. El «⋯» del hub
+       quedó arriba, con el título. */
+    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
       <SeccionesNav secciones={items} activa={activa} onIr={onIr} etiqueta={etiqueta} />
-      {acciones && <div className="flex shrink-0 items-center gap-2">{acciones}</div>}
+      {acciones && <div className="ml-auto flex shrink-0 items-center gap-2">{acciones}</div>}
     </div>,
     ranura,
   );

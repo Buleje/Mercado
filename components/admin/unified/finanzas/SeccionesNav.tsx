@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * El segundo nivel de Mi Plata, en la fila del título.
+ * El segundo nivel de Mi Plata, en la fila de abajo de su banda (hasta el
+ * 23-10, en la del título: a 1280 px envolvía y quedaba encima de las pestañas).
  *
  * ANTES era una segunda barra de pestañas metida arriba del contenido: 40 px de
  * botones + 16 px de aire en 14 de las 15 vistas, y el primer dato recién

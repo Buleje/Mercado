@@ -38,8 +38,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 /**
  * POST /api/adelantos/[id]/firmas — multipart `datos` (`FirmarDatosSchema`) +
- * `firma` (+ `huella`). Agrega al registro (nunca reemplaza filas: la nueva
- * pasa a ser la vigente). Ya no toca `comprobanteUrl`.
+ * `firma` (+ `huella`), o SÓLO `huella` (23-10: la huella escaneada desde la
+ * tabla, sin volver a firmar). Agrega al registro (nunca reemplaza filas: la
+ * nueva pasa a ser la vigente). Ya no toca `comprobanteUrl`.
  *
  * Quién: `adelantos:write`; reemplazar una firma o huella VIGENTE, sólo admin o
  * dueño. El cajero (sin `adelantos`) sólo con `entregaKey` = la clave del alta
@@ -69,7 +70,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   /* El cajero sólo con la clave de SU alta. */
   if (sinPermiso && !d.entregaKey) return sinPermiso;
 
-  if (!leido.archivos.firma) return NextResponse.json({ error: "No llegó la firma.", code: "firma_obligatoria" }, { status: 400 });
+  /* Sin firma sólo vale la huella sola (con su aviso aceptado, abajo); el cajero siempre manda la firma. */
+  const conFirma = !!leido.archivos.firma;
+  if (!conFirma && (!leido.archivos.huella || comoCajero)) return NextResponse.json({ error: "No llegó la firma.", code: "firma_obligatoria" }, { status: 400 });
   if (leido.archivos.huella && !d.consentimientoHuella) {
     return NextResponse.json({ error: "Para guardar la huella, la persona tiene que aceptar el aviso.", code: "falta_consentimiento" }, { status: 400 });
   }
@@ -83,11 +86,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
        la vigente es la de este mismo intento). */
     const ya = await AdelantoFirmasDB.porIdempotencia(auth.tenantId, id, [`${d.idempotencyKey}:FIRMA`, `${d.idempotencyKey}:HUELLA`]);
     const yaFirma = ya.find((f) => f.tipo === "FIRMA");
-    if (yaFirma) {
-      const yaHuella = ya.find((f) => f.tipo === "HUELLA");
+    const yaHuella = ya.find((f) => f.tipo === "HUELLA");
+    if (yaFirma || (!conFirma && yaHuella)) {
       return NextResponse.json(
         {
-          firma: { guardada: true, id: yaFirma.id, sha256: yaFirma.sha256 },
+          firma: yaFirma ? { guardada: true, id: yaFirma.id, sha256: yaFirma.sha256 } : null,
           huella: yaHuella ? { guardada: true, id: yaHuella.id, sha256: yaHuella.sha256 } : null,
           repetido: true,
         },
@@ -101,7 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
   if (a.status === "CANCELADO") return NextResponse.json({ error: "Este adelanto está anulado: no se firma.", code: "anulado" }, { status: 409 });
 
-  const reemplaza = !!vig.firma || (!!leido.archivos.huella && !!vig.huella);
+  const reemplaza = (conFirma && !!vig.firma) || (!!leido.archivos.huella && !!vig.huella);
   if (comoCajero) {
     const propio =
       a.idempotencyKey === `${PREFIJO_CLAVE_CAJERO}${d.entregaKey}` && a.direccion === "DADO" && Date.now() - a.createdAt.getTime() < VENTANA_FIRMA_CAJERO_MS;
@@ -129,12 +132,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     logger.error("[adelantos/firmas] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "No se pudo guardar la firma. Prueba de nuevo." }, { status: 502 });
   }
-  if (!r.firma?.guardada) return NextResponse.json({ error: "No se pudo guardar la firma. Prueba de nuevo.", huella: r.huella }, { status: 502 });
+  if (conFirma && !r.firma?.guardada) return NextResponse.json({ error: "No se pudo guardar la firma. Prueba de nuevo.", huella: r.huella }, { status: 502 });
+  if (!conFirma && !r.huella?.guardada) return NextResponse.json({ error: "No se pudo guardar la huella. Prueba de nuevo.", huella: r.huella }, { status: 502 });
 
   logActivity(
     "Firmar",
     "adelanto",
-    `Adelanto ${a.codigoOperacion ?? id}: firma${r.huella?.guardada ? " y huella" : ""} en la pantalla${reemplaza ? " (reemplaza la vigente, que queda en el registro)" : ""}`,
+    `Adelanto ${a.codigoOperacion ?? id}: ${conFirma ? `firma${r.huella?.guardada ? " y huella" : ""}` : "huella"} en la pantalla${reemplaza ? " (reemplaza la vigente, que queda en el registro)" : ""}`,
     id,
     auth.username,
     undefined,

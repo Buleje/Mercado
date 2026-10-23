@@ -623,7 +623,7 @@ export default function PrestamosModule() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Dentro de Mi Plata, sus pestañas son el segundo nivel del hub (en la
-          fila del título) y no dibuja título ni barra propios: eran el tercer
+          fila de abajo de su banda) y no dibuja título ni barra propios: eran el tercer
           nivel. Fuera de un hub, como siempre. */}
       {enHub ? (
         <SegundoNivelEnElHub

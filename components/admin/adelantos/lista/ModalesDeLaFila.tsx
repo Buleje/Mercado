@@ -20,15 +20,20 @@ import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import CapturaFoto from "../CapturaFoto";
 import EnviarEnlaceFirma from "../firma/EnviarEnlaceFirma";
 import FirmarReciboModal from "../firma/FirmarReciboModal";
+import RegistrarHuellaModal from "../firma/RegistrarHuellaModal";
 import { fmtMon } from "../shared";
 import AnularAdelantoModal from "./AnularAdelantoModal";
+import type { TipoRecibo } from "./CeldaRecibo";
 import EditarNotasModal from "./EditarNotasModal";
 import EnviarReciboWhatsApp from "./EnviarReciboWhatsApp";
 import type { AccionFila } from "./FilaAcciones";
+import VerRegistrado from "./VerRegistrado";
 
 export interface AccionAbierta {
-  accion: Exclude<AccionFila, "pdf">;
+  /** `ver` = lo ya registrado de la columna «Recibo» (23-10), con su `tipo`. */
+  accion: Exclude<AccionFila, "pdf"> | "ver";
   adelanto: DbAdelanto;
+  tipo?: TipoRecibo;
 }
 
 export default function ModalesDeLaFila({
@@ -36,6 +41,7 @@ export default function ModalesDeLaFila({
   onCerrar,
   onCambio,
   onRecibo,
+  onCambiarA,
 }: {
   abierta: AccionAbierta | null;
   onCerrar: () => void;
@@ -43,6 +49,8 @@ export default function ModalesDeLaFila({
   onCambio: () => void;
   /** Cambió el estado del recibo (firma o envío): la columna «Recibo» se vuelve a leer. */
   onRecibo: () => void;
+  /** Pasar a otra ventana de la misma fila (de «ver la firma» a «firmar de nuevo»). */
+  onCambiarA: (siguiente: AccionAbierta) => void;
 }) {
   if (!abierta) return null;
   const { accion, adelanto: a } = abierta;
@@ -102,6 +110,18 @@ export default function ModalesDeLaFila({
             />
           </div>
         </AdminModal>
+      );
+    case "huella":
+      /* Al cerrar se relee: el enlace pudo usarse en su celular aunque no se guardara nada aquí. */
+      return <RegistrarHuellaModal adelanto={a} onCerrar={listo} onGuardada={listo} />;
+    case "ver":
+      return (
+        <VerRegistrado
+          adelanto={a}
+          tipo={abierta.tipo ?? "firma"}
+          onCerrar={onCerrar}
+          onRehacer={(tipo) => onCambiarA({ accion: tipo === "firma" ? "firmar" : "huella", adelanto: a })}
+        />
       );
     case "foto":
       return <TomarFoto adelanto={a} onCerrar={onCerrar} onGuardada={listo} />;

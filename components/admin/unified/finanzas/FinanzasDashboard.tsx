@@ -32,6 +32,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { useCallback, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { BarChart3 } from "@buleje/design-system/icons";
 import { useFavoriteCharts } from "@/hooks/use-favorite-charts";
 import { useResumenPlata } from "@/hooks/use-resumen-plata";
@@ -50,6 +51,7 @@ import EsqueletoResumen from "./resumen/EsqueletoResumen";
 import CajaDelResumen from "./resumen/CajaDelResumen";
 import TeDebenYDebes from "./resumen/TeDebenYDebes";
 import { BloquesEnSeccion } from "./resumen/BloquePlegable";
+import { useRanuraDelSegundoNivel } from "./segundo-nivel";
 import ContenidoDeSeccion, { CLAVES_RESUMEN, ID_PANEL_RESUMEN, SECCIONES_RESUMEN } from "./resumen/SeccionesDelResumen";
 import { useAutoActualizar } from "./resumen/use-auto-actualizar";
 
@@ -74,6 +76,8 @@ export default function FinanzasDashboard() {
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
   const finFavs = useFavoriteCharts("finanzas");
   const { vista: seccion, irA: irASeccion } = useSubvistaModulo("plata-resumen", CLAVES_RESUMEN, "meses");
+  /** Dentro de Mi Plata: la fila de abajo de su banda (fuera, `null`). */
+  const hub = useRanuraDelSegundoNivel();
 
   /* «Actualizar» vuelve a pedir el tablero sin remontarlo (no vuelve el
      esqueleto) y renueva los bloques que piden lo suyo (fugas, semana). */
@@ -134,19 +138,25 @@ export default function FinanzasDashboard() {
     );
   }
 
+  const barra = (
+    <BarraDeSecciones
+      secciones={secciones}
+      activa={seccion}
+      onCambiar={irASeccion}
+      etiqueta="Secciones del resumen"
+      idPanel={ID_PANEL_RESUMEN}
+    />
+  );
+
   return (
     <div className="space-y-4">
+      {/* Dentro de Mi Plata sus secciones son el segundo nivel: van a la fila
+          de abajo de la banda, como las de Resultado o las pestañas de
+          Adelantos (23-10: esa fila quedaba vacía en Resumen). */}
+      {hub?.ranura && createPortal(barra, hub.ranura)}
       <CabeceraDelResumen
         mes={mesCapitalized}
-        secciones={
-          <BarraDeSecciones
-            secciones={secciones}
-            activa={seccion}
-            onCambiar={irASeccion}
-            etiqueta="Secciones del resumen"
-            idPanel={ID_PANEL_RESUMEN}
-          />
-        }
+        secciones={hub ? undefined : barra}
         indicadores={indicadores.boton}
         autoActivo={autoActivo}
         alternarAuto={alternarAuto}

@@ -10,14 +10,17 @@
  * cada hoja en `finanzas/VistaDePlata.tsx` y el tablero de Resumen en
  * `finanzas/FinanzasDashboard.tsx`.
  *
- * El segundo nivel va en la fila del título: las secciones de Mi Plata
- * (`SeccionesNav`) o, en Préstamos, Adelantos y Activos, las pestañas propias
- * de cada módulo, que las dibuja él mismo en la RANURA que deja este hub
- * (`finanzas/segundo-nivel.tsx`). Nunca hay un tercer nivel.
+ * La banda tiene dos filas fijas (Brandon 23-10: «lo principal arriba y los
+ * secundarios abajo», y que no cambie al pasar de una a otra): arriba el
+ * título y las ocho pestañas de Mi Plata; abajo el segundo nivel —las
+ * secciones de Mi Plata (`SeccionesNav`) o, en Préstamos, Adelantos y Activos,
+ * las pestañas propias de cada módulo, que las dibuja él mismo en la RANURA
+ * que deja este hub (`finanzas/segundo-nivel.tsx`); Resumen sube ahí sus
+ * secciones— con sus acciones. La fila de abajo guarda su alto aunque esté
+ * vacía (cargando). Nunca hay un tercer nivel.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { FileText, MoreHorizontal, Wallet } from "@buleje/design-system/icons";
 
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -165,24 +168,24 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
 
   /** Dónde dibujan su segundo nivel Préstamos, Adelantos y Activos. */
   const [ranura, setRanura] = useState<HTMLElement | null>(null);
-  /* A menos de 640 px la banda parte en filas: el segundo nivel va DEBAJO de las pestañas del hub (título → pestañas → segundo nivel), no encima. */
-  const angosto = useMediaQuery("(max-width: 639px)");
   const enElHub = useMemo(() => ({ ranura }), [ranura]);
 
   return (
     <div className="space-y-6">
       {/* El título va DENTRO de la barra de pestañas (patrón acordado con
-          Brandon 2026-09-07): identidad a la izquierda, una sola regla. Con las
-          acciones viaja el SEGUNDO NIVEL —las secciones, o las pestañas del
-          módulo montado— en lugar de cobrar una barra propia arriba del
-          contenido (56 px en 14 de las 15 vistas, medidos el 2026-09-21). */}
+          Brandon 2026-09-07): identidad a la izquierda, una sola regla. El
+          SEGUNDO NIVEL —las secciones, o las pestañas del módulo montado—
+          va en la fila de abajo de la MISMA banda, no en una barra propia
+          arriba del contenido (56 px en 14 de las 15 vistas, 2026-09-21).
+          Hasta el 23-10 viajaba con las acciones y, cuando no entraba al lado
+          del título, quedaba ENCIMA de las pestañas de Mi Plata. */}
       <AdminTabBar
         heading={{
           title: "Mi Plata",
           icon: Wallet,
-          actions: (
+          segundoNivel: (
             <>
-              {!angosto && secciones && secciones.length > 1 && (
+              {secciones && secciones.length > 1 && (
                 <SeccionesNav
                   secciones={secciones}
                   activa={seccion}
@@ -192,7 +195,11 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
                 />
               )}
               {/* `contents`: lo que el módulo dibuja acá es parte de esta fila. */}
-              {!angosto && <div ref={setRanura} className="contents" data-ranura-segundo-nivel="" />}
+              <div ref={setRanura} className="contents" data-ranura-segundo-nivel="" />
+            </>
+          ),
+          actions: (
+            <>
               {/* El reporte bancario se pide una vez al mes: al «⋯», con su
                   explicación de una línea (un «Opciones» con texto ocupaba
                   145 px de la banda para una sola opción). */}
@@ -223,20 +230,6 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
         moduleId="finanzas"
       >
         <RanuraDelSegundoNivel.Provider value={enElHub}>
-          {angosto && (
-            <div className="mb-3 space-y-2">
-              {secciones && secciones.length > 1 && (
-                <SeccionesNav
-                  secciones={secciones}
-                  activa={seccion}
-                  onIr={irA}
-                  datos={datos}
-                  etiqueta={`Secciones de ${nombreDeLaPestana}`}
-                />
-              )}
-              <div ref={setRanura} className="contents" data-ranura-segundo-nivel="" />
-            </div>
-          )}
           {conSegundoNivel ? (
             /* Lo que controla la barra de secciones de la banda. En Préstamos,
                Adelantos y Activos la pestaña activa la sabe el módulo: el panel

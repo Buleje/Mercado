@@ -12,7 +12,7 @@
  */
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
-import { CASILLA_HUELLA, armarComprobante, avisoMontoFirmado, casillaDeHuella, type DatosComprobante } from "@/lib/adelantos/comprobante";
+import { CASILLA_HUELLA, armarComprobante, avisoMontoFirmado, casillaDeHuella, metodoDeHuella, type DatosComprobante } from "@/lib/adelantos/comprobante";
 import type { FirmaRegistrada } from "@/lib/adelantos/entregar-tipos";
 import { fechaHoraLima } from "@/lib/adelantos/recibo-firmado";
 import { firmaEnPapelDelRegistro, vigentesDelRegistro } from "@/components/admin/adelantos/detalle/comprobante-del-adelanto";
@@ -84,6 +84,12 @@ describe("la casilla de la huella", () => {
     const { imagenes, crudo } = await pdf({ ...BASE, huella: { imagen: await imagen("jpeg", 40, 52) } });
     expect(imagenes).toBe(1);
     expect(crudo).toMatch(/\(Huella\) Tj/);
+  });
+
+  it("(23-10) dice cómo se tomó: en el local, en su celular o de la hoja", async () => {
+    expect([metodoDeHuella("PANTALLA"), metodoDeHuella("ENLACE"), metodoDeHuella("BACKFILL")]).toEqual(["cámara", "su celular", "de la hoja"]);
+    const { crudo } = await pdf({ ...BASE, huella: { imagen: await imagen("jpeg", 40, 52), metodo: metodoDeHuella("ENLACE") } });
+    expect(crudo).toMatch(/\(Huella \\\(su celular\\\)\) Tj/);
   });
 });
 

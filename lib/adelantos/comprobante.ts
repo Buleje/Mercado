@@ -17,6 +17,7 @@
 
 import { formatCurrency } from "@/lib/currency";
 import { direccionDe, ETIQUETA_CONCEPTO, type AdelantoConceptoRecibido } from "@/lib/adelantos/direccion";
+import type { CanalFirma } from "@/lib/adelantos/entregar-tipos";
 
 export interface DatosComprobante {
   codigoOperacion?: string | null;
@@ -60,7 +61,7 @@ export interface DatosComprobante {
    * (ADR-491) La foto de la huella vigente del registro, para su casilla. Sin
    * ella la casilla sale vacía igual: es para entintar el dedo en el papel.
    */
-  huella?: ImagenEnPapel;
+  huella?: HuellaEnPapel;
   /**
    * (ADR-491) El monto que decía el recibo cuando se firmó. Si después se
    * corrigió el adelanto, el papel lo dice: la firma vale por lo que se vio.
@@ -79,6 +80,20 @@ export interface ImagenEnPapel {
   relacion?: number;
   /** (23-10) Cuándo quedó en el registro, ya escrita: la huella la lleva debajo de su casilla. */
   fechaHora?: string;
+}
+
+/** (23-10) La huella dice CÓMO se tomó: debajo de su casilla, «Huella (cámara)». */
+export interface HuellaEnPapel extends ImagenEnPapel {
+  metodo?: string;
+}
+
+/**
+ * Cómo se tomó la huella, por el canal del registro: en la pantalla del negocio
+ * (escaneada con la cámara o la foto del dedo), en SU celular por el enlace, o
+ * pasada de una hoja en papel. Corto: va en 7 pt bajo una casilla de 22 mm.
+ */
+export function metodoDeHuella(canal: CanalFirma): string {
+  return canal === "ENLACE" ? "su celular" : canal === "BACKFILL" ? "de la hoja" : "cámara";
 }
 
 export interface FirmaEnPapel extends ImagenEnPapel {
@@ -356,7 +371,7 @@ function pintarFirma(doc: Pdf, f: FirmaEnPapel, centro: number, yLinea: number, 
  * La casilla «Huella», SIEMPRE: vacía es para entintar el dedo en el mostrador
  * (quien no sabe firmar); con la foto del registro, la foto adentro sin deformar.
  */
-function pintarCasillaHuella(doc: Pdf, c: ReturnType<typeof casillaDeHuella>, huella?: ImagenEnPapel): void {
+function pintarCasillaHuella(doc: Pdf, c: ReturnType<typeof casillaDeHuella>, huella?: HuellaEnPapel): void {
   doc.setLineWidth(0.3);
   doc.rect(c.x, c.y, c.ancho, c.alto);
   if (huella) {
@@ -369,7 +384,7 @@ function pintarCasillaHuella(doc: Pdf, c: ReturnType<typeof casillaDeHuella>, hu
     doc.addImage(huella.imagen, formatoDe(huella.imagen), c.x + (c.ancho - ancho) / 2, c.y + (c.alto - alto) / 2, ancho, alto);
   }
   doc.setFontSize(7);
-  doc.text("Huella", c.x + c.ancho / 2, c.y + c.alto + 3.5, { align: "center" });
+  doc.text(huella?.metodo ? `Huella (${huella.metodo})` : "Huella", c.x + c.ancho / 2, c.y + c.alto + 3.5, { align: "center" });
   if (huella?.fechaHora) {
     doc.setFontSize(6);
     doc.text(huella.fechaHora, c.x + c.ancho / 2, c.y + c.alto + 6.5, { align: "center" });

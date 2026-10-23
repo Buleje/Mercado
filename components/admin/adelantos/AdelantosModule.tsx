@@ -282,7 +282,8 @@ export default function AdelantosModule() {
           La acción primaria va en la barra de pestañas, pegada a lo que se
           está mirando. */}
       {/* Dentro de Mi Plata (ola 3, 2026-10-10) las 7 pestañas son el segundo
-          nivel del hub, en la fila del título, con «Nuevo adelanto» al lado:
+          nivel del hub, en la fila de abajo de su banda (23-10: antes en la del
+          título, y a 1280 px quedaban encima de las de Mi Plata), con «Nuevo adelanto» al lado:
           ya no hay una barra propia debajo de la de Mi Plata. */}
       {enHub && (
         <SegundoNivelEnElHub

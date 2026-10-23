@@ -15,6 +15,7 @@ import { useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, Ban, Copy, Link2, MessageCircle, RefreshCw } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import QrImagen from "@/components/tv/QrImagen";
 import { button } from "@/components/ui-system/button-variants";
 import type { EnlaceFirmaAdmin, EstadoEnlace } from "@/lib/adelantos/entregar-tipos";
 import { fechaHoraLima } from "@/lib/adelantos/recibo-firmado";
@@ -47,6 +48,7 @@ export default function EnviarEnlaceFirma({
   persona,
   codigo,
   montoTexto,
+  pideHuellaInicial = false,
   onFirmado,
 }: {
   adelantoId: string;
@@ -54,11 +56,13 @@ export default function EnviarEnlaceFirma({
   codigo: string | null;
   /** «S/ 120.00», para el mensaje cuando no hay teléfono. */
   montoTexto: string;
+  /** (23-10) Desde «Registrar huella»: la casilla «Pedir también la huella» viene marcada. */
+  pideHuellaInicial?: boolean;
   /** La persona firmó con el enlace: la ficha vuelve a leer el registro. */
   onFirmado?: () => void;
 }) {
   const e = useEnlaceFirma(adelantoId, onFirmado);
-  const [pideHuella, setPideHuella] = useState(false);
+  const [pideHuella, setPideHuella] = useState(pideHuellaInicial);
   const [copiado, setCopiado] = useState<"si" | "no" | null>(null);
   const pendiente = e.enlaces?.find((x) => x.estado === "pendiente") ?? null;
   const pasados = (e.enlaces ?? []).filter((x) => x.estado !== "pendiente").slice(0, 3);
@@ -97,9 +101,13 @@ export default function EnviarEnlaceFirma({
             <Estado estado="pendiente" /> Vence el {cuando(creado.venceEn)}
             {creado.pideHuella ? " · pide huella" : ""}
           </p>
-          <p className="break-all font-mono text-sm text-[var(--text-secondary)]" data-enlace-url>
-            {creado.url}
-          </p>
+          {/* (23-10) El QR para que lo lea con SU celular ahí mismo, sin WhatsApp. */}
+          <div className="flex flex-wrap items-center gap-3">
+            <QrImagen texto={creado.url} lado={176} alt="QR del enlace para firmar" className="h-36 w-36 shrink-0 rounded-xl" />
+            <p className="min-w-0 flex-[1_1_12rem] text-sm text-[var(--text-secondary)]">
+              Que lo lea con la cámara de su celular. <span className="block break-all font-mono" data-enlace-url>{creado.url}</span>
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2">
             {whatsapp && (
               <a href={whatsapp} target="_blank" rel="noopener noreferrer" data-enlace-whatsapp className={PRIMARIO}>

@@ -2,17 +2,17 @@
 
 /**
  * Menú ⋯ de cada fila de la tabla de adelantos. Antes: editar el motivo y
- * anular. Desde el 23-10 también el recibo: firmar aquí (firma o huella),
- * mandar el enlace para firmar, tomar la foto, el PDF y mandarlo por WhatsApp.
+ * anular. Desde el 23-10 también el recibo: firmar aquí, registrar la huella
+ * (cámara o su celular), mandar el enlace para firmar, tomar la foto, el PDF y mandarlo por WhatsApp.
  * `stopPropagation`: la fila entera abre el detalle y el menú no compite.
  */
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Ban, Camera, FileDown, MessageCircle, MoreHorizontal, Pencil, PenLine, Send } from "@buleje/design-system/icons";
+import { Ban, Camera, FileDown, Fingerprint, MessageCircle, MoreHorizontal, Pencil, PenLine, Send } from "@buleje/design-system/icons";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { MOTIVO_RECIBO_SOLO_DUENO } from "@/lib/adelantos/recibo-whatsapp";
 
-export type AccionFila = "firmar" | "mandar" | "foto" | "pdf" | "whatsapp" | "notas" | "anular";
+export type AccionFila = "firmar" | "huella" | "mandar" | "foto" | "pdf" | "whatsapp" | "notas" | "anular";
 
 const ITEM =
   "flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-semibold text-[var(--text-primary)] outline-none data-[highlighted]:bg-[var(--surface-sunken)]";
@@ -57,7 +57,10 @@ export default function FilaAcciones({
           {!anulado && (
             <>
               <DropdownMenu.Item onSelect={() => onAccion("firmar")} className={ITEM}>
-                <PenLine className={ICONO} /> Firmar aquí (firma o huella)
+                <PenLine className={ICONO} /> Firmar aquí
+              </DropdownMenu.Item>
+              <DropdownMenu.Item onSelect={() => onAccion("huella")} className={ITEM}>
+                <Fingerprint className={ICONO} /> Registrar huella
               </DropdownMenu.Item>
               <DropdownMenu.Item onSelect={() => onAccion("mandar")} className={ITEM}>
                 <Send className={ICONO} /> Mandar para firmar

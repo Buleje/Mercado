@@ -9,7 +9,7 @@
  */
 
 import { leerMembrete } from "@/lib/admin/membrete-cliente";
-import { armarComprobante, type DatosComprobante, type FirmaEnPapel } from "@/lib/adelantos/comprobante";
+import { armarComprobante, metodoDeHuella, type DatosComprobante, type FirmaEnPapel } from "@/lib/adelantos/comprobante";
 import { momentoDeLaFoto } from "@/lib/adelantos/recibo-whatsapp";
 import type { FirmaRegistrada, RegistroFirmasRespuesta } from "@/lib/adelantos/entregar-tipos";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
@@ -120,7 +120,7 @@ async function armarReciboDelAdelanto(a: DbAdelanto, copia: { taparDocumento?: b
     ...(firma && imgFirma
       ? { firma: firmaEnPapelDelRegistro(firma, imgFirma), montoFirmado: firma.monedaFirmada === a.moneda ? firma.montoFirmado : null }
       : {}),
-    ...(imgHuella && huella ? { huella: { imagen: imgHuella, fechaHora: fechaHoraLima(new Date(huella.creadoEn)).replace(/^\S+\s/, "") } } : {}),
+    ...(imgHuella && huella ? { huella: { imagen: imgHuella, metodo: metodoDeHuella(huella.canal), fechaHora: fechaHoraLima(new Date(huella.creadoEn)).replace(/^\S+\s/, "") } } : {}),
     hojaFirmada,
     voucher,
     ...(voucher && tomada ? { voucherFechaHora: fechaHoraLima(tomada) } : {}),

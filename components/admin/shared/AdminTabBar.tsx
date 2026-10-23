@@ -142,6 +142,18 @@ interface AdminTabBarProps {
      * DENTRO del tablist (un chip de estado pegado a las pestañas).
      */
     actions?: ReactNode;
+    /**
+     * Fila de ABAJO de la banda: el segundo nivel de lo elegido arriba (las
+     * secciones de la pestaña, o las pestañas propias del módulo montado) con
+     * sus acciones. Lo principal arriba, lo secundario abajo (Brandon 23-10:
+     * en Mi Plata › Adelantos las pestañas del módulo quedaban ENCIMA de las
+     * de Mi Plata, porque viajaban en `actions` y envolvían antes que ellas).
+     *
+     * Ocupa SIEMPRE su alto, aun vacía (cargando, sin datos): la banda no
+     * salta al pasar de una pestaña a otra (70 → 122 → 170 px medidos a 1280
+     * en Mi Plata). La regla que la separa sólo se dibuja si hay pestañas.
+     */
+    segundoNivel?: ReactNode;
   };
 }
 
@@ -569,6 +581,17 @@ export default function AdminTabBar({
         </div>
       )}
       {estilo === "linea" && rielDePestanas}
+      {heading?.segundoNivel && (
+        /* `py-2` afuera y `min-h-12` adentro: vacía mide lo mismo que con la
+           barra de secciones (48 px) puesta. La regla, sólo con pestañas
+           adentro (lo que llega por portal no avisa cuándo llega). */
+        <div
+          data-segundo-nivel=""
+          className="border-t border-transparent px-3 py-2 has-[[role=tablist]]:border-[var(--rule-soft)] sm:px-4"
+        >
+          <div className="flex min-h-12 min-w-0 flex-wrap items-center gap-2">{heading.segundoNivel}</div>
+        </div>
+      )}
     </div>
     {/* El panel de la barra horizontal es hermano, no hijo: `aria-labelledby`
         ata el par por id, así que no necesitan ser contiguos en el árbol. */}

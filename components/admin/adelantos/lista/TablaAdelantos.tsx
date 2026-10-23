@@ -139,8 +139,8 @@ export default function TablaAdelantos({
     wrapRef.current?.querySelector(`[data-adelanto-id="${CSS.escape(resaltadoId)}"]`)?.scrollIntoView?.({ block: "center" });
   }, [resaltadaEnPagina, resaltadoId]);
 
-  const th = (columna: ColumnaOrden, label: string, alineado?: "right") => (
-    <th className={`${alineado === "right" ? "text-right" : "text-left"}`} aria-sort={ariaSort(orden, columna)}>
+  const th = (columna: ColumnaOrden, label: string, alineado?: "right", extra = "") => (
+    <th className={`${alineado === "right" ? "text-right" : "text-left"} ${extra}`.trim()} aria-sort={ariaSort(orden, columna)}>
       <button
         type="button"
         onClick={() => onOrden(siguienteOrden(orden, columna))}
@@ -180,10 +180,14 @@ export default function TablaAdelantos({
               <col style={{ width: 96 }} />
               <col className="hidden 2xl:table-column" style={{ width: 128 }} />
               <col style={{ width: 98 }} />
-              <col style={{ width: 88 }} />
+              {/* Avance sólo desde 2xl; antes va como «40% pagado» bajo el saldo (en las tarjetas del celular Avance sale en su fila).
+                  Estado 120 (el chip «Cancelado» mide 93 + relleno) y Recibo 160
+                  (tres botones de 48): con 72/112 el recibo se montaba sobre el
+                  estado (medido 23-10: 33 px a 1280). */}
+              <col className="hidden 2xl:table-column" style={{ width: 88 }} />
               <col style={{ width: 98 }} />
-              <col style={{ width: 72 }} />
-              <col style={{ width: 112 }} />
+              <col style={{ width: 120 }} />
+              <col style={{ width: 160 }} />
               <col style={{ width: 96 }} />
             </colgroup>
             <thead>
@@ -193,7 +197,7 @@ export default function TablaAdelantos({
                 {th("fecha", "Fecha")}
                 <th className="hidden 2xl:table-cell">Motivo</th>
                 {th("monto", "Adelantado", "right")}
-                {th("avance", "Avance", "right")}
+                {th("avance", "Avance", "right", "hidden 2xl:table-cell")}
                 {th("saldo", "Saldo", "right")}
                 {th("estado", "Estado")}
                 <th className="text-left">Recibo</th>
@@ -301,7 +305,7 @@ export default function TablaAdelantos({
                     <td className="whitespace-nowrap text-right tabular-nums text-[var(--text-secondary)]">
                       {fmtMon(a.montoAdelantado, a.moneda)}
                     </td>
-                    <td>
+                    <td className="hidden 2xl:table-cell">
                       <div className="flex items-center justify-end gap-1.5">
                         <div className="h-2.5 w-10 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
                           <div className="h-full rounded-full bg-[var(--data-success)]" style={{ width: `${pct}%` }} />
@@ -314,6 +318,7 @@ export default function TablaAdelantos({
                       {debe === "le-debes" && (
                         <span className="block text-sm font-semibold text-[var(--data-info-ink)]">le debes</span>
                       )}
+                      <span className="block text-sm font-semibold text-[var(--text-tertiary)] max-sm:hidden 2xl:hidden">{pct}% pagado</span>
                     </td>
                     <td>
                       <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-bold ${badge?.className ?? ""}`}>
@@ -321,7 +326,12 @@ export default function TablaAdelantos({
                       </span>
                     </td>
                     <td>
-                      <CeldaRecibo adelanto={a} estado={estados[a.id] ?? ESTADO_VACIO} carga={carga} />
+                      <CeldaRecibo
+                        adelanto={a}
+                        estado={estados[a.id] ?? ESTADO_VACIO}
+                        carga={carga}
+                        onMarca={(tipo, hay) => setAbierta(hay ? { accion: "ver", adelanto: a, tipo } : { accion: tipo === "firma" ? "firmar" : tipo, adelanto: a })}
+                      />
                     </td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -382,7 +392,7 @@ export default function TablaAdelantos({
         </div>
       )}
 
-      <ModalesDeLaFila abierta={abierta} onCerrar={() => setAbierta(null)} onCambio={onChange} onRecibo={recargar} />
+      <ModalesDeLaFila abierta={abierta} onCerrar={() => setAbierta(null)} onCambio={onChange} onRecibo={recargar} onCambiarA={setAbierta} />
     </div>
   );
 }
