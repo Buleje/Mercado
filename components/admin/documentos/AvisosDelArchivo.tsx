@@ -6,12 +6,17 @@
  * con una tarjeta por archivo— que empujaban los documentos medio alto de
  * pantalla más abajo. Ahora cada uno es una pastilla con su acción, y la lista
  * de sugerencias se abre sólo si la pides («Revisar»).
+ *
+ * 22-10: lo YA vencido y lo POR vencer son dos pastillas. «N por vencer en 30
+ * días» contaba también lo vencido y decía una cosa que no era: lo vencido
+ * (rojo) pide renovar ya; lo que vence pronto (coral) pide avisar con tiempo.
  */
 
 import { useState } from "react";
-import { AlarmClock, Check, ChevronDown, ChevronUp, Sparkles, X } from "@buleje/design-system/icons";
+import { AlarmClock, Check, ChevronDown, ChevronUp, Sparkles, TriangleAlert, X } from "@buleje/design-system/icons";
 import type { DbDocument } from "@/lib/types/documents";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { textoCuando } from "@/lib/documentos/aviso-vencimiento";
 import { cn } from "@/lib/utils";
 
 export interface SugerenciaIA {
@@ -21,10 +26,13 @@ export interface SugerenciaIA {
 }
 
 interface Props {
-  /** Documentos que vencen en 30 días (ya filtrados), con los días que faltan. */
+  /** Documentos que YA vencieron, con los días (negativos) que pasaron. */
+  vencidos: { d: DbDocument; n: number }[];
+  /** Documentos que vencen en 30 días (incluye «vence hoy»), con los días que faltan. */
   porVencer: { d: DbDocument; n: number }[];
-  /** El aviso de vencimientos se cerró en esta visita. */
+  /** El aviso de «por vencer» se cerró en esta visita (el de vencidos lo recuerda este componente). */
   porVencerDescartado: boolean;
+  onVerVencidos: () => void;
   onVerPorVencer: () => void;
   onDescartarPorVencer: () => void;
   sugerencias: SugerenciaIA[];
@@ -39,54 +47,103 @@ interface Props {
 const SEGMENTO =
   "inline-flex h-12 shrink-0 items-center gap-1.5 border-l px-3 text-sm font-bold transition-colors disabled:opacity-60";
 
+type Tono = "error" | "warning";
+
+/** Tonos del DS: el texto usa `-ink` (cambia solo en oscuro); el fondo, el tinte del estado. */
+const TONOS: Record<Tono, { caja: string; borde: string }> = {
+  error: {
+    caja: "border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/15",
+    borde: "border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-500)]/10",
+  },
+  warning: {
+    caja: "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/15",
+    borde: "border-[var(--data-warning-500)]/30 hover:bg-[var(--data-warning-500)]/10",
+  },
+};
+
+interface PastillaProps {
+  tono: Tono;
+  icono: typeof AlarmClock;
+  texto: string;
+  titulo: string;
+  items: { d: DbDocument; n: number }[];
+  detalle: string;
+  onVer: () => void;
+  onDescartar: () => void;
+}
+
+function PastillaVencimiento({ tono, icono: Icono, texto, titulo, items, detalle, onVer, onDescartar }: PastillaProps) {
+  const t = TONOS[tono];
+  return (
+    <div role="status" className={cn("inline-flex items-stretch overflow-hidden rounded-xl border", t.caja)}>
+      <span className="inline-flex items-center gap-2 pl-3 pr-2 text-sm font-bold">
+        <Icono className="h-4 w-4 shrink-0" aria-hidden />
+        <span className="whitespace-nowrap">{texto}</span>
+        <InfoTip
+          title={titulo}
+          what={
+            <span>
+              {items.slice(0, 5).map(({ d, n }) => `${d.name} (${textoCuando(n)})`).join(" · ")}
+              {items.length > 5 ? ` y ${items.length - 5} más` : ""}
+            </span>
+          }
+          affects={<span>{detalle}</span>}
+        />
+      </span>
+      <button type="button" onClick={onVer} className={cn(SEGMENTO, t.borde)}>
+        Ver
+      </button>
+      <button
+        type="button"
+        onClick={onDescartar}
+        aria-label={`Descartar aviso: ${texto}`}
+        title="Ocultar hasta la próxima visita"
+        className={cn(SEGMENTO, "w-12 justify-center px-0", t.borde)}
+      >
+        <X className="h-4 w-4" aria-hidden />
+      </button>
+    </div>
+  );
+}
+
 export default function AvisosDelArchivo({
-  porVencer, porVencerDescartado, onVerPorVencer, onDescartarPorVencer,
+  vencidos, porVencer, porVencerDescartado, onVerVencidos, onVerPorVencer, onDescartarPorVencer,
   sugerencias, onAplicar, onDescartar, onAplicarTodas, aplicandoTodas, fechaCorta,
 }: Props) {
   const [revisando, setRevisando] = useState(false);
+  const [vencidosDescartado, setVencidosDescartado] = useState(false);
+  const verVencidos = vencidos.length > 0 && !vencidosDescartado;
   const verVencer = porVencer.length > 0 && !porVencerDescartado;
   const verSugerencias = sugerencias.length > 0;
-  if (!verVencer && !verSugerencias) return null;
+  if (!verVencidos && !verVencer && !verSugerencias) return null;
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
+        {verVencidos && (
+          <PastillaVencimiento
+            tono="error"
+            icono={TriangleAlert}
+            texto={vencidos.length === 1 ? "1 vencido" : `${vencidos.length} vencidos`}
+            titulo="Documentos ya vencidos"
+            items={vencidos}
+            detalle="Renueva el papel y cambia su fecha de vencimiento: así deja de salir acá."
+            onVer={onVerVencidos}
+            onDescartar={() => setVencidosDescartado(true)}
+          />
+        )}
+
         {verVencer && (
-          <div
-            role="status"
-            className="inline-flex items-stretch overflow-hidden rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]"
-          >
-            <span className="inline-flex items-center gap-2 pl-3 pr-2 text-sm font-bold">
-              <AlarmClock className="h-4 w-4 shrink-0" aria-hidden />
-              {porVencer.length} por vencer en 30 días
-              <InfoTip
-                title="Documentos por vencer"
-                what={
-                  <span>
-                    {porVencer.slice(0, 5).map(({ d, n }) => `${d.name} (${n < 0 ? "vencido" : n === 0 ? "vence hoy" : `${n}d`})`).join(" · ")}
-                    {porVencer.length > 5 ? ` y ${porVencer.length - 5} más` : ""}
-                  </span>
-                }
-                affects={<span>Te avisamos por WhatsApp y en el panel unos 7 días antes de cada vencimiento.</span>}
-              />
-            </span>
-            <button
-              type="button"
-              onClick={onVerPorVencer}
-              className={cn(SEGMENTO, "border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-500)]/10")}
-            >
-              Ver
-            </button>
-            <button
-              type="button"
-              onClick={onDescartarPorVencer}
-              aria-label="Descartar aviso"
-              title="Ocultar hasta la próxima visita"
-              className={cn(SEGMENTO, "w-12 justify-center px-0 border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-500)]/10")}
-            >
-              <X className="h-4 w-4" aria-hidden />
-            </button>
-          </div>
+          <PastillaVencimiento
+            tono="warning"
+            icono={AlarmClock}
+            texto={`${porVencer.length} por vencer en 30 días`}
+            titulo="Documentos por vencer"
+            items={porVencer}
+            detalle="Te avisamos por WhatsApp y en el panel unos 7 días antes de cada vencimiento."
+            onVer={onVerPorVencer}
+            onDescartar={onDescartarPorVencer}
+          />
         )}
 
         {verSugerencias && (

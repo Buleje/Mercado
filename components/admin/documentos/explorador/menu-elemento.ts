@@ -9,7 +9,7 @@
 
 import {
   Download, Eye, FileArchive, FileStack, Info, MessageCircle, PenLine, Pencil, RotateCw, Scissors,
-  Stamp, Star, Tag, Trash2, Wand2, FolderInput,
+  Stamp, Star, Tag, Trash2, Wand2, FolderArchive, FolderInput,
 } from "@buleje/design-system/icons";
 import type { AccionesDocumento, EstadoDelMenu, ExtraDelMenu } from "../MenuDocumento";
 import { limpiarSeparadores, SEP, type ItemMenu } from "./item-menu";
@@ -75,6 +75,8 @@ export interface AccionesLote {
   whatsapp: () => void;
   favoritos: (si: boolean) => void;
   estado: (clave: string) => void;
+  /** «Armar expediente» con los elegidos, en el orden en que los elegiste. */
+  expediente?: () => void;
 }
 
 export function itemsDeVarios(
@@ -93,6 +95,9 @@ export function itemsDeVarios(
     items.push(
       { id: "zip", label: `Descargar${de || ` los ${cuantos.docs}`} (ZIP)`, Icon: FileArchive, onSelect: x.lote.zip },
       { id: "whatsapp", label: `Enviar${de} por WhatsApp`, Icon: MessageCircle, onSelect: x.lote.whatsapp },
+      ...(x.lote.expediente && cuantos.docs >= 2
+        ? [{ id: "expediente", label: "Armar expediente (PDF)", Icon: FolderArchive, onSelect: x.lote.expediente } satisfies ItemMenu]
+        : []),
       { id: "favoritos", label: "Marcar favoritos", Icon: Star, onSelect: () => x.lote.favoritos(true) },
       { tipo: "submenu", id: "estado", label: "Estado", items: itemsDeEstado(x.estados, null, x.lote.estado) },
       SEP("s2"),

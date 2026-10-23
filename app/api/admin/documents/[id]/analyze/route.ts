@@ -51,6 +51,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       // 200 con aviso, no error: el texto SÍ se guardó (sirve para buscar);
       // lo que faltó es la descripción, y hay que decir por qué.
       ...(result.aviso ? { aviso: result.aviso } : {}),
+      // Fecha de vencimiento leída del papel y anotada (no tenía una): el
+      // cron de vencimientos ya la avisa por WhatsApp.
+      ...(result.vencimientoAnotado ? { vencimientoAnotado: result.vencimientoAnotado } : {}),
     });
   } catch (e) {
     logger.error("[documents.analyze] error", { err: e instanceof Error ? e.message : String(e) });

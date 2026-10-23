@@ -264,6 +264,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
       if (f.category) qs.set("category", f.category);
       if (f.q) qs.set("q", f.q);
       if (f.tags?.length) qs.set("tags", f.tags.join(","));
+      if (f.sinTags?.length) qs.set("excluir", f.sinTags.join(","));
       if (f.favorite !== undefined) qs.set("favorite", f.favorite ? "1" : "0");
       if (f.customerId) qs.set("customerId", f.customerId);
       if (f.supplierId) qs.set("supplierId", f.supplierId);
@@ -300,6 +301,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
 
   // Stringify de las tags para evitar dep array con expresiones complejas
   const tagsKey = filters.tags?.join(",") ?? "";
+  const sinTagsKey = filters.sinTags?.join(",") ?? "";
   useEffect(() => {
     fetchAll();
   }, [
@@ -315,6 +317,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     filters.semantic,
     filters.deletedOnly,
     tagsKey,
+    sinTagsKey,
   ]);
 
   /**

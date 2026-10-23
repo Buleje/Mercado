@@ -93,7 +93,9 @@ export function planificarImport(
     const ruta = rutaDe(f).replace(/\\/g, "/");
     const nombre = ruta.split("/").pop() ?? f.name;
 
-    if (BASURA.has(nombre.toLowerCase())) {
+    // `~$…` = el candado que Word/Excel dejan mientras el archivo está abierto:
+    // se coló en el Archivo de Blas como un .docx más que no abre.
+    if (BASURA.has(nombre.toLowerCase()) || nombre.startsWith("~$")) {
       ignorados.push({ nombre: ruta, motivo: "archivo del sistema" });
       continue;
     }

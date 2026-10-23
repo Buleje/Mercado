@@ -32,6 +32,16 @@ export const ROL_CANDADO_DUENO = "candado:solo-duenos";
 /** Roles que ven un papel con candado de dueño (los verdaderos dueños, no el encargado). */
 const VEN_CON_CANDADO: readonly string[] = ["superadmin", "admin", "owner"];
 
+/**
+ * ¿Ve TODO el Drive sin mirar permisos, ni siquiera el candado? Sólo los
+ * dueños. El encargado (`manager`/`tienda_owner`) es privilegiado pero NO
+ * entra acá: el candado lo frena, así que su lista también hay que filtrarla
+ * (22-10: listaba la carpeta Pagos y abría la nómina con 200).
+ */
+export function veTodoElDrive(role: string | undefined | null): boolean {
+  return !!role && VEN_CON_CANDADO.includes(role);
+}
+
 function tieneCandadoDueno(docAllowed: string[], cadena: string[][]): boolean {
   return docAllowed.includes(ROL_CANDADO_DUENO) || cadena.some((roles) => roles.includes(ROL_CANDADO_DUENO));
 }
@@ -114,6 +124,23 @@ export function canRoleSeeEnCadena(
   if (!role) return false;
   if (docAllowed.length > 0 && !docAllowed.includes(role)) return false;
   return cadena.every((roles) => roles.includes(role));
+}
+
+/**
+ * Roles del PDF que junta varios papeles (expediente, «Combinar en un PDF»):
+ * quien lo abra tiene que poder ver CADA papel que trae adentro (revisión del
+ * 22-10: nacía con `[]` y sacaba la nómina del candado). Vacío = ningún papel
+ * restringido. Si alguno tiene candado de dueño, el combinado también. Si no,
+ * los roles listados en todos los niveles de todos los papeles restringidos;
+ * si no queda ninguno, candado: es la puerta más cerrada que el Drive conoce.
+ */
+export function rolesDelCombinado(papeles: { docAllowed?: string[]; cadena?: string[][] }[]): string[] {
+  const niveles = papeles.flatMap((p) => [...(p.docAllowed?.length ? [p.docAllowed] : []), ...(p.cadena ?? []).filter((n) => n.length > 0)]);
+  if (niveles.length === 0) return [];
+  const candado = niveles.some((n) => n.includes(ROL_CANDADO_DUENO));
+  const [primero, ...resto] = niveles.map((n) => n.filter((r) => r !== ROL_CANDADO_DUENO));
+  const listados = [...new Set(primero)].filter((r) => resto.every((n) => n.includes(r)));
+  return candado || listados.length === 0 ? [ROL_CANDADO_DUENO, ...listados] : listados;
 }
 
 /**

@@ -29,6 +29,12 @@ export async function renderizarPaginaPdf(
    * lo muestra.
    */
   onError?: (motivo: string) => void,
+  /**
+   * Escala del dibujo. El modelo de visión lee bien a 2×; el OCR local
+   * (`ocr-servidor`) necesita ~300 ppp, porque un DNI escaneado ocupa un
+   * tercio de la hoja y a 2× sus letras miden 6 píxeles.
+   */
+  opciones: { escala?: number } = {},
 ): Promise<Buffer | null> {
   try {
     // Sin las fuentes estándar registradas, pdf.js dibuja una página de
@@ -37,7 +43,7 @@ export async function renderizarPaginaPdf(
     const { renderPageAsImage } = await import("unpdf");
     const png = (await renderPageAsImage(new Uint8Array(datos), pagina, {
       canvasImport: () => import("@napi-rs/canvas"),
-      scale: ESCALA_LECTURA,
+      scale: opciones.escala ?? ESCALA_LECTURA,
     })) as ArrayBuffer;
     return png ? Buffer.from(png) : null;
   } catch (err) {

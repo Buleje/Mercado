@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { CarpetaAjenaError, CicloDeCarpetasError, DocumentsDB } from "@/lib/db/documents.db";
 import { assertCsrf } from "@/lib/auth/csrf";
-import { isPrivilegedRole } from "@/lib/documents/doc-access";
+import { isPrivilegedRole, veTodoElDrive } from "@/lib/documents/doc-access";
 import { logger } from "@/lib/logger";
 
 
@@ -29,6 +29,8 @@ const PROHIBIDO = { error: "forbidden", message: "Solo el dueño, un admin o el 
  *  · renombrarla, moverla o borrarla si ella o alguna madre tiene roles → 403
  *    (moverla a la raíz, o borrarla, soltaría lo restringido);
  *  · moverla adentro de una carpeta que no ve → 404 `folder_not_found`.
+ * El encargado cambia carpetas con permisos como siempre, salvo las que tienen
+ * candado de dueño (22-10): esas no las ve, así que para él no existen.
  */
 async function guardaDeRol(
   tenantId: string,
@@ -36,10 +38,10 @@ async function guardaDeRol(
   role: string,
   cambio: { permisos?: boolean; estructura?: boolean; nuevoPadre?: string | null },
 ): Promise<NextResponse | null> {
-  if (isPrivilegedRole(role)) return null;
+  if (veTodoElDrive(role)) return null;
   const acceso = await DocumentsDB.accesoACarpeta(tenantId, id, role);
   if (!acceso.ve) return NextResponse.json(NO_EXISTE, { status: 404 });
-  if (cambio.permisos || (cambio.estructura && acceso.restringida)) {
+  if (!isPrivilegedRole(role) && (cambio.permisos || (cambio.estructura && acceso.restringida))) {
     return NextResponse.json(PROHIBIDO, { status: 403 });
   }
   if (typeof cambio.nuevoPadre === "string" && !(await DocumentsDB.accesoACarpeta(tenantId, cambio.nuevoPadre, role)).ve) {

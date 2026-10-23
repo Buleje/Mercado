@@ -773,7 +773,8 @@ function StructuredCard({ doc }: { doc: DbDocument }) {
   // Leído MIRANDO (foto o escaneo): un modelo de visión se come un dígito y
   // nadie lo nota. Estos son los números que la gente copia a la contabilidad,
   // así que acá se avisa; en un texto extraído del archivo no hace falta.
-  const mirado = (doc.ocrMetadata as { analyzedVia?: string } | null)?.analyzedVia === "vision";
+  const via = (doc.ocrMetadata as { analyzedVia?: string } | null)?.analyzedVia;
+  const mirado = via === "vision" || via === "ocr";
   if (!s || typeof s !== "object") return null;
   const rows = ([
     ["Tipo", s.docType ?? null],
@@ -1537,7 +1538,17 @@ const ACTION_META: Record<string, { color: string; label: string }> = {
   move: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Movido" },
   tag: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Tag" },
   whatsapp_send: { color: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]", label: "Enviado por WhatsApp" },
+  ai_categorize: { color: "bg-[var(--accent)]/15 text-[var(--accent-ink)] dark:text-[var(--accent)]", label: "Descrito con IA" },
+  ai_expiry: { color: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]", label: "Vencimiento leído" },
+  ocr: { color: "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]", label: "Escaneado (OCR)" },
+  stamp: { color: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]", label: "Sellado" },
+  link: { color: "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]", label: "Vinculado" },
+  merge: { color: "bg-[var(--accent)]/15 text-[var(--accent-ink)] dark:text-[var(--accent)]", label: "Combinado" },
 };
+
+/** De qué renglón del papel salió la fecha que la lectura anotó sola. */
+const fragmentoDelVencimiento = (l: DbDocumentAuditLog) =>
+  l.action === "ai_expiry" && typeof l.metadata?.fragmento === "string" ? l.metadata.fragmento : null;
 
 function AuditTab({ logs }: { logs: DbDocumentAuditLog[] }) {
   return (
@@ -1558,6 +1569,9 @@ function AuditTab({ logs }: { logs: DbDocumentAuditLog[] }) {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[var(--text-primary)]">{l.actorId}</p>
                     <p className="text-xs text-[var(--text-tertiary)] tabular-nums">{relativeTime(l.createdAt)} · {l.ipAddress ?? "—"}</p>
+                    {fragmentoDelVencimiento(l) && (
+                      <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">Leído de «{fragmentoDelVencimiento(l)}»</p>
+                    )}
                   </div>
                 </li>
               );

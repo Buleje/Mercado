@@ -20,6 +20,8 @@ export const DOC_ACTIONS = [
   "tag",
   "ocr",
   "ai_categorize",
+  /** La IA leyó la fecha de vencimiento del papel y la anotó (no había una puesta a mano). */
+  "ai_expiry",
   "stamp",
   "link",
   "merge",

@@ -46,6 +46,7 @@ export interface DepsMenus {
   zip: (docs: DbDocument[], nombre: string) => Promise<void>;
   personalizar: (f: DbDocumentFolder) => void;
   compartir: (f: DbDocumentFolder) => void;
+  armarExpediente?: (f: DbDocumentFolder) => void;
   /** Lo de siempre de un archivo (ver, descargar, firmar, sellar…). */
   accionesDoc: (doc: DbDocument) => AccionesDocumento;
   estados: readonly EstadoDelMenu[];
@@ -171,6 +172,7 @@ export function useMenusExplorador(d: DepsMenus) {
     compartir: d.compartir,
     copiarEnlace: (f) => void copiarEnlace(f),
     descargar: (f) => void descargarCarpeta(f),
+    armarExpediente: d.armarExpediente,
     eliminar: (f) => void acc.eliminar([claveCarpeta(f.id)]),
     cortar: (f) => acc.cortar([claveCarpeta(f.id)]),
     hayCortado: acc.hayCortado,

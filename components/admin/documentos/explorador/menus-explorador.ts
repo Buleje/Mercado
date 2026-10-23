@@ -6,7 +6,7 @@
  */
 
 import {
-  ArrowDown, ArrowUp, CheckSquare, ClipboardPaste, Eye, FileArchive, FolderOpen, FolderPlus, ImageOff, ImagePlus,
+  ArrowDown, ArrowUp, CheckSquare, ClipboardPaste, Eye, FileArchive, FolderArchive, FolderOpen, FolderPlus, ImageOff, ImagePlus,
   Info, Link2, Palette, Pencil, Pin, PinOff, Scissors, Share2, Trash2,
 } from "@buleje/design-system/icons";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
@@ -30,6 +30,8 @@ export interface AccionesCarpeta {
   compartir: (f: DbDocumentFolder) => void;
   copiarEnlace: (f: DbDocumentFolder) => void;
   descargar: (f: DbDocumentFolder) => void;
+  /** «Armar expediente»: la carpeta (y sus subcarpetas, si quieres) en UN PDF con portada e índice. */
+  armarExpediente?: (f: DbDocumentFolder) => void;
   eliminar: (f: DbDocumentFolder) => void;
   cortar: (f: DbDocumentFolder) => void;
   /** Hay algo cortado: se ofrece «Pegar aquí» (lo mete en esta carpeta). */
@@ -75,6 +77,9 @@ export function itemsDeCarpeta(f: DbDocumentFolder, a: AccionesCarpeta): ItemMen
       deshabilitado: (f.documentCount ?? 0) === 0,
       onSelect: () => a.descargar(f),
     },
+    ...(a.armarExpediente
+      ? [{ id: "expediente", label: "Armar expediente (PDF)", Icon: FolderArchive, onSelect: () => a.armarExpediente?.(f) } satisfies ItemMenu]
+      : []),
     SEP("s3"),
     { id: "eliminar", label: "Eliminar", Icon: Trash2, peligro: true, atajo: "Supr", onSelect: () => a.eliminar(f) },
     { id: "propiedades", label: "Propiedades", Icon: Info, atajo: "Alt+Entrar", onSelect: () => a.propiedades(f) },

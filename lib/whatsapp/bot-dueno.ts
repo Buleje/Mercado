@@ -37,33 +37,160 @@ export async function bajarMedia(
   mediaId: string,
   token: string,
 ): Promise<{ bytes: Buffer; mime: string; nombre: string } | null> {
+  const r = await bajarMediaConTope(mediaId, token);
+  return r.ok ? { bytes: r.bytes, mime: r.mime, nombre: r.nombre } : null;
+}
+
+export type BajadaDeMedia =
+  | { ok: true; bytes: Buffer; mime: string; nombre: string }
+  | { ok: false; motivo: "grande" | "fallo" };
+
+/**
+ * Un id de media de Meta son dígitos (a lo sumo letras): nunca una ruta. Va
+ * pegado a la URL de la Graph API con el token del negocio, así que un `../` o
+ * un `?` ahí apuntaría ese token a otro endpoint.
+ */
+const ID_DE_MEDIA = /^[A-Za-z0-9_-]{1,128}$/;
+
+/**
+ * Dónde sirve Meta los adjuntos (misma lista que `whatsapp/yape-capture`,
+ * pentest N3). La URL de descarga la entrega la Graph API y se pide CON el
+ * token: un host inesperado se quedaría con el token del negocio.
+ */
+const HOSTS_DE_MEDIA = ["lookaside.fbsbx.com", "scontent.xx.fbcdn.net", ".fbcdn.net", ".facebook.com"];
+
+export function esHostDeMediaDeMeta(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  return HOSTS_DE_MEDIA.some((p) => (p.startsWith(".") ? h.endsWith(p) : h === p));
+}
+
+/**
+ * Lo mismo que `bajarMedia`, pero frena antes de bajar lo que pesa de más y
+ * dice POR QUÉ no se pudo: «es muy grande» y «falló» piden respuestas distintas.
+ *
+ * El peso se mira tres veces porque ninguna sola alcanza: `file_size` de la
+ * Graph API (antes de bajar nada), el `content-length` de la descarga, y los
+ * bytes reales (los dos primeros pueden faltar).
+ */
+export async function bajarMediaConTope(
+  mediaId: string,
+  token: string,
+  maxBytes = Number.POSITIVE_INFINITY,
+): Promise<BajadaDeMedia> {
+  const fallo = { ok: false, motivo: "fallo" } as const;
+  const grande = { ok: false, motivo: "grande" } as const;
+  if (!ID_DE_MEDIA.test(mediaId)) {
+    logger.warn("[whatsapp/dueño] id de media con forma rara — no se pide");
+    return fallo;
+  }
   try {
+    // La Graph API no redirige: una redirección acá es rara y se corta.
     const meta = await fetch(`${API}/${mediaId}`, {
       headers: { Authorization: `Bearer ${token}` },
+      redirect: "error",
     });
     if (!meta.ok) {
       logger.warn("[whatsapp/dueño] Meta no dio la URL del media", { status: meta.status });
-      return null;
+      return fallo;
     }
-    const info = (await meta.json()) as { url?: string; mime_type?: string };
+    const info = (await meta.json()) as { url?: string; mime_type?: string; file_size?: number };
     if (!info.url) {
       logger.warn("[whatsapp/dueño] Meta respondió sin URL de descarga");
-      return null;
+      return fallo;
     }
+    if (typeof info.file_size === "number" && info.file_size > maxBytes) return grande;
 
-    const archivo = await fetch(info.url, { headers: { Authorization: `Bearer ${token}` } });
+    const archivo = await pedirMediaDeMeta(info.url, token);
+    if (!archivo) return fallo;
     if (!archivo.ok) {
       logger.warn("[whatsapp/dueño] no se pudo bajar el media", { status: archivo.status });
-      return null;
+      return fallo;
+    }
+    const declarado = Number(archivo.headers.get("content-length") ?? Number.NaN);
+    if (Number.isFinite(declarado) && declarado > maxBytes) {
+      await archivo.body?.cancel().catch((err: unknown) =>
+        logger.warn("[whatsapp/dueño] no se pudo cortar la descarga", { error: String(err) }),
+      );
+      return grande;
     }
 
     const mime = info.mime_type ?? archivo.headers.get("content-type") ?? "application/octet-stream";
-    const bytes = Buffer.from(await archivo.arrayBuffer());
-    return { bytes, mime, nombre: `media.${extensionDe(mime)}` };
+    const bytes = await leerConTope(archivo, maxBytes);
+    if (!bytes) return grande;
+    return { ok: true, bytes, mime, nombre: `media.${extensionDe(mime)}` };
   } catch (err) {
     logger.warn("[whatsapp/dueño] falló la bajada del media", { error: String(err) });
+    return fallo;
+  }
+}
+
+/** Saltos de redirección que se aceptan en la descarga (cada uno, revalidado). */
+const MAX_REDIRECCIONES = 3;
+
+/** `https:` y host de Meta: lo único a lo que se le manda el token. */
+function urlDeMediaSegura(cruda: string, base?: string): URL | null {
+  let url: URL;
+  try {
+    url = new URL(cruda, base);
+  } catch {
+    logger.warn("[whatsapp/dueño] la URL del media no se entiende");
     return null;
   }
+  if (url.protocol !== "https:" || !esHostDeMediaDeMeta(url.hostname)) {
+    logger.warn("[whatsapp/dueño] URL del media fuera de Meta — no se manda el token", { host: url.hostname });
+    return null;
+  }
+  return url;
+}
+
+/**
+ * GET del binario con el token, siguiendo las redirecciones A MANO: cada salto
+ * se revalida (https + host de Meta) antes de mandarle el token. Hoy Meta
+ * entrega el binario directo desde lookaside; si un día redirige a su CDN, sigue
+ * andando, y si redirige afuera, se corta. `null` = no se pudo o no era seguro.
+ */
+async function pedirMediaDeMeta(urlInicial: string, token: string): Promise<Response | null> {
+  let url = urlDeMediaSegura(urlInicial);
+  for (let salto = 0; url && salto <= MAX_REDIRECCIONES; salto++) {
+    const r = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` }, redirect: "manual" });
+    if (r.status < 300 || r.status >= 400) return r;
+    const siguiente = r.headers.get("location");
+    await r.body?.cancel().catch((err: unknown) =>
+      logger.warn("[whatsapp/dueño] no se pudo cerrar la redirección", { error: String(err) }),
+    );
+    if (!siguiente) {
+      logger.warn("[whatsapp/dueño] redirección sin destino", { status: r.status });
+      return null;
+    }
+    url = urlDeMediaSegura(siguiente, url.toString());
+  }
+  if (url) logger.warn("[whatsapp/dueño] demasiadas redirecciones bajando el media");
+  return null;
+}
+
+/**
+ * Lee el cuerpo por partes y corta apenas pasa el tope: sin `content-length`,
+ * `arrayBuffer()` cargaba TODO en memoria antes de poder mirar el peso.
+ * `null` = se pasó del tope.
+ */
+async function leerConTope(res: Response, maxBytes: number): Promise<Buffer | null> {
+  if (!res.body) return Buffer.alloc(0);
+  const lector = res.body.getReader();
+  const partes: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await lector.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await lector.cancel().catch((err: unknown) =>
+        logger.warn("[whatsapp/dueño] no se pudo cortar la descarga", { error: String(err) }),
+      );
+      return null;
+    }
+    partes.push(value);
+  }
+  return Buffer.concat(partes, total);
 }
 
 /**

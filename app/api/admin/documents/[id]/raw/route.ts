@@ -43,7 +43,15 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     const buf = await downloadFromStorage(doc.storagePath);
     if (!buf) return NextResponse.json({ error: "storage_unavailable" }, { status: 502 });
 
-    const safeName = doc.name.replace(/[^\w.-]+/g, "_") || "documento";
+    // El nombre visible puede no traer extensión (PDF combinado, expediente,
+    // papel renombrado): sin ella Windows baja un archivo que no sabe abrir.
+    const ext = /\.[a-z0-9]{1,5}$/i.exec(doc.originalName ?? "")?.[0] ?? "";
+    const base = doc.name.replace(/[^\w.-]+/g, "_") || "documento";
+    const safeName = ext && !base.toLowerCase().endsWith(ext.toLowerCase()) ? `${base}${ext}` : base;
+    // `filename*` (RFC 5987) lleva el nombre con tildes; `filename` ASCII queda para navegadores viejos.
+    const visible = doc.name.replace(/[\r\n"\\/]+/g, " ").trim() || "documento";
+    const conExt = ext && !visible.toLowerCase().endsWith(ext.toLowerCase()) ? `${visible}${ext}` : visible;
+    const nombreUtf8 = encodeURIComponent(conExt).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
     // ?download=1 → fuerza la descarga (attachment); por defecto se muestra inline
     // (para la vista previa dentro del modal).
     //
@@ -60,7 +68,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
       status: 200,
       headers: {
         "Content-Type": doc.mimeType || "application/octet-stream",
-        "Content-Disposition": `${disposition}; filename="${safeName}"`,
+        "Content-Disposition": `${disposition}; filename="${safeName}"; filename*=UTF-8''${nombreUtf8}`,
         "Content-Length": String(buf.length),
         "Cache-Control": cache,
         ETag: etag,

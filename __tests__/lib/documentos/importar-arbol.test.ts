@@ -49,6 +49,7 @@ describe("planificarImport", () => {
     const plan = planificarImport([
       archivo("Docs/.DS_Store"),
       archivo("Docs/Thumbs.db"),
+      archivo("Docs/~$RTA DE EMISION.docx"),
       archivo("Docs/.oculto.pdf"),
       archivo("Docs/vacio.pdf", 0),
       archivo("Docs/bueno.pdf"),
@@ -56,6 +57,7 @@ describe("planificarImport", () => {
     expect(plan.archivos).toHaveLength(1);
     expect(plan.archivos[0].file.name).toBe("bueno.pdf");
     expect(plan.ignorados.map((i) => i.motivo)).toEqual([
+      "archivo del sistema",
       "archivo del sistema",
       "archivo del sistema",
       "archivo oculto",

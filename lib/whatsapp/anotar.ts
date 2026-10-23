@@ -36,6 +36,15 @@ import { TenantsDB } from "@/lib/db/tenants.db";
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
 import { getPendingApproval, removePendingApproval } from "@/lib/agents/pending-approvals";
 import { bajarMedia, mandarTexto, mandarBotones, type CredencialesMeta } from "./bot-dueno";
+import {
+  MENSAJE_NO_GUARDADO,
+  analizarYOrdenar,
+  archivarPapel,
+  autorDeWhatsApp,
+  mensajeGuardado,
+  mensajeMovido,
+  ordenDeGuardar,
+} from "./archivar-papel";
 
 /**
  * El rol con el que corre lo que entra por WhatsApp.
@@ -91,6 +100,9 @@ export const AYUDA_DUENO =
   "• «recordame el lunes a las 8 llamar al ingeniero»\n\n" +
   "*Para preguntar*\n" +
   "• «¿cuánto gasté este mes?» · «¿quién me debe?» · «¿cómo viene la caja?»\n\n" +
+  "*Para guardar papeles*\n" +
+  "• Reenvíame la foto o el PDF (un DNI, un contrato, una boleta) y queda en tu *Archivo*. " +
+  "Si le pones un texto, ese es su nombre: «DNI de Juan».\n\n" +
   "Puedes decirme *varias cosas en un mismo audio* y las anoto todas. Antes de " +
   "guardar te muestro qué se va a anotar y por cuánto: recién cuando tocas " +
   "*Confirmar* queda en los libros.\n\n" +
@@ -108,8 +120,10 @@ export interface MensajeDueno {
   texto: string;
   /** Nota de voz o audio adjunto. Meta no manda la duración, sólo el id. */
   audio?: { id: string; mime?: string };
-  /** Foto adjunta — hoy sólo sirve para explicar por qué todavía no se lee. */
-  imagen?: { id: string; mime?: string };
+  /** Foto o documento adjunto: va al Archivo (`archivar-papel.ts`). */
+  archivo?: { id: string; mime?: string; filename?: string; tipo: "imagen" | "documento" };
+  /** `message.id` de Meta: con él una re-entrega no guarda dos veces el mismo papel. */
+  waMessageId?: string;
   /** `id` del botón que tocó (viene de `interactive.button_reply.id`). */
   botonId?: string;
   cred: CredencialesMeta;
@@ -121,13 +135,24 @@ const BOTON_NO = "anotar-no";
 
 // ── Entrada principal ────────────────────────────────────────────────────────
 
-export async function manejarMensajeDeDueno(msg: MensajeDueno): Promise<void> {
-  const { tenantId, telefono, cred } = msg;
-
-  if (msg.botonId) {
-    await manejarBoton(msg);
+export async function manejarMensajeDeDueno(entrada: MensajeDueno): Promise<void> {
+  if (entrada.botonId) {
+    await manejarBoton(entrada);
     return;
   }
+
+  /**
+   * Una foto o un documento se guarda SIEMPRE en el Archivo, con o sin texto.
+   * Si además trae un dictado («180 soles de combustible»), el dictado sigue su
+   * camino de siempre; si el texto era la orden de guardar, no queda nada más.
+   */
+  let msg = entrada;
+  if (entrada.archivo) {
+    const resto = await guardarEnElArchivo(entrada, entrada.archivo);
+    if (!resto) return;
+    msg = { ...entrada, texto: resto, archivo: undefined };
+  }
+  const { tenantId, telefono, cred } = msg;
 
   if (!pasaElFreno(telefono)) {
     await mandarTexto(cred, telefono, "⏳ Vas muy rápido. Espera un minuto y seguimos.");
@@ -193,22 +218,6 @@ export async function manejarMensajeDeDueno(msg: MensajeDueno): Promise<void> {
     await mandarTexto(cred, telefono, `🎤 Te entendí: «_${t.transcripcion.texto}_»`);
   }
 
-  /**
-   * Las fotos todavía no se leen: hoy no hay ningún modelo de visión disponible
-   * (Groq —el único proveedor con credenciales vivas— no sirve ninguno). Se
-   * dice explícitamente en vez de ignorar el mensaje, porque una boleta enviada
-   * y no contestada se lee como «lo anotó».
-   */
-  if (msg.imagen && !dictado) {
-    await mandarTexto(
-      cred,
-      telefono,
-      "📷 Recibí la foto, pero todavía no puedo leer boletas.\n\n" +
-        "Cuéntame en un audio o por escrito qué es y lo anoto: «esta boleta es de 180 soles de combustible del grifo El Sol».",
-    );
-    return;
-  }
-
   if (!dictado) {
     await mandarTexto(cred, telefono, AYUDA_DUENO);
     return;
@@ -263,6 +272,77 @@ export async function manejarMensajeDeDueno(msg: MensajeDueno): Promise<void> {
   if (!r.texto && r.pendientes.length === 0 && r.registradas.length === 0) {
     await mandarTexto(cred, telefono, "🤔 No terminé de entender. Dímelo de otra forma, o escríbeme *ayuda*.");
   }
+}
+
+// ── Papeles al Archivo ───────────────────────────────────────────────────────
+
+/**
+ * Freno aparte para archivos: guardar no gasta IA al instante (el análisis va
+ * en cola), y reenviar los diez papeles de un trámite de golpe es lo normal.
+ * Con el tope de los dictados (12) se perdían los últimos. Se avisa UNA vez
+ * por ventana: cuarenta «espera un minuto» seguidos son peor que el freno.
+ */
+const TOPE_ARCHIVOS_POR_MINUTO = 30;
+const pulsosArchivos = new Map<string, number[]>();
+
+function frenoDeArchivos(telefono: string): "pasa" | "avisar" | "callar" {
+  const ahora = Date.now();
+  const recientes = (pulsosArchivos.get(telefono) ?? []).filter((t) => ahora - t < 60_000);
+  recientes.push(ahora);
+  pulsosArchivos.set(telefono, recientes);
+  if (pulsosArchivos.size > 500) {
+    for (const [id, ts] of pulsosArchivos) if (ts.every((t) => ahora - t > 60_000)) pulsosArchivos.delete(id);
+  }
+  if (recientes.length <= TOPE_ARCHIVOS_POR_MINUTO) return "pasa";
+  return recientes.length === TOPE_ARCHIVOS_POR_MINUTO + 1 ? "avisar" : "callar";
+}
+
+/**
+ * Guarda la foto o el documento y contesta dónde quedó.
+ *
+ * Devuelve el texto que le queda al asistente («» = nada: no había texto, era
+ * la orden de guardar, o era una re-entrega de Meta que ya se atendió).
+ */
+async function guardarEnElArchivo(msg: MensajeDueno, archivo: NonNullable<MensajeDueno["archivo"]>): Promise<string> {
+  const { tenantId, telefono, cred } = msg;
+  const orden = ordenDeGuardar(msg.texto);
+  const resto = orden ? "" : msg.texto.trim();
+
+  const freno = frenoDeArchivos(telefono);
+  if (freno !== "pasa") {
+    if (freno === "avisar") {
+      await mandarTexto(cred, telefono, "⏳ Me mandaste muchos archivos seguidos. Espera un minuto y reenvía los que falten.");
+    }
+    return "";
+  }
+
+  const r = await archivarPapel(tenantId, cred, {
+    waMessageId: msg.waMessageId ?? archivo.id,
+    mediaId: archivo.id,
+    tipo: archivo.tipo,
+    mimeDeclarado: archivo.mime,
+    filename: archivo.filename,
+    pie: orden ? orden.nombre : resto,
+    contacto: msg.nombre,
+    telefono,
+  });
+
+  if (!r.ok) {
+    // Re-entrega: la primera vez ya contestó y ya pasó el dictado al asistente.
+    if (r.motivo === "duplicado") return "";
+    const aviso = MENSAJE_NO_GUARDADO[r.motivo];
+    if (aviso) await mandarTexto(cred, telefono, aviso);
+    return resto;
+  }
+
+  await mandarTexto(cred, telefono, mensajeGuardado(r));
+  WhatsAppDuenosDB.marcarUso(tenantId, telefono).catch((err) =>
+    logger.warn("[whatsapp/dueño] no se pudo marcar el uso", { error: String(err) }),
+  );
+  analizarYOrdenar(tenantId, r, autorDeWhatsApp(telefono), (destino) =>
+    mandarTexto(cred, telefono, mensajeMovido(destino)),
+  );
+  return resto;
 }
 
 // ── Botones ──────────────────────────────────────────────────────────────────

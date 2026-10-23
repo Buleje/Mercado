@@ -10,13 +10,15 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { FileText, Download, Clock, Plus, Loader2, ArrowUpRight } from "@buleje/design-system/icons";
+import { FileText, Download, Clock, Plus, Loader2, ArrowUpRight, FolderArchive } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { getSignedDownloadUrl } from "@/hooks/use-documents";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { type TipoEntidad, tagEntidad } from "@/lib/documentos/enlaces-entidad";
 import { TAG_FOTO_ASISTENCIA } from "@/lib/rrhh/asistencia-fotos";
 import type { DbDocument } from "@/lib/types/documents";
+import { ExpedienteModal } from "./ExpedienteModal";
+import type { FuenteDelModal } from "./expediente/use-expediente";
 
 type Entity = "customer" | "supplier" | TipoEntidad;
 
@@ -72,6 +74,7 @@ export function LinkedDocumentsSection({
   const [docs, setDocs] = useState<DbDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [expediente, setExpediente] = useState<FuenteDelModal | null>(null);
 
   /** El tag que define qué documentos son de esta entidad/semana (ADR-502):
    *  lista inversa + deep-link al Archivo. Cliente/proveedor van por FK, no tag. */
@@ -145,12 +148,17 @@ export function LinkedDocumentsSection({
     }
   }
 
+  // «Armar expediente» con los papeles de la ficha (lo que ves es lo que entra),
+  // sin los expedientes ya armados: el PDF nuevo lleva la etiqueta de la entidad
+  // para aparecer acá, y no tiene que colarse en el siguiente.
+  const papelesDelExpediente = docs.filter((d) => !d.tags?.includes("expediente"));
+
   // Sin documentos y sin acción: no mostramos el bloque (evita ruido en la ficha).
   if (!loading && docs.length === 0 && !estadoDeCuenta) return null;
 
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <FileText className="h-4 w-4 text-[var(--accent)]" /> {titulo ?? "Documentos"}
           {docs.length > 0 && (
@@ -169,17 +177,38 @@ export function LinkedDocumentsSection({
             </button>
           )}
         </p>
-        {estadoDeCuenta && (
-          <button
-            type="button"
-            onClick={guardarEstadoDeCuenta}
-            disabled={guardando || !nombre}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
-          >
-            {guardando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-            Guardar estado de cuenta
-          </button>
-        )}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {papelesDelExpediente.length >= 2 && (
+            <button
+              type="button"
+              onClick={() =>
+                setExpediente({
+                  tipo: "ids",
+                  ids: papelesDelExpediente.map((d) => d.id),
+                  nombre: nombre ?? titulo ?? undefined,
+                  etiqueta: tagActivo ?? undefined,
+                  customerId: entity === "customer" && id ? id : undefined,
+                  supplierId: entity === "supplier" && id ? id : undefined,
+                })
+              }
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              title="Un solo PDF con portada, índice y estos papeles en orden"
+            >
+              <FolderArchive className="h-3.5 w-3.5" aria-hidden /> Armar expediente
+            </button>
+          )}
+          {estadoDeCuenta && (
+            <button
+              type="button"
+              onClick={guardarEstadoDeCuenta}
+              disabled={guardando || !nombre}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+            >
+              {guardando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+              Guardar estado de cuenta
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -230,6 +259,9 @@ export function LinkedDocumentsSection({
             );
           })}
         </ul>
+      )}
+      {expediente && (
+        <ExpedienteModal fuente={expediente} aboveModals onClose={() => setExpediente(null)} onListo={() => void cargar()} />
       )}
     </div>
   );

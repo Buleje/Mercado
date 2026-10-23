@@ -114,6 +114,7 @@ Antes de reponerlos: que Blas revise su papelera (restaurar lo que sirva) y que 
 | Capacitor | `capacitor.config.ts` sin cambios; en producción usa los archivos empaquetados (sin `server.url`): la app instalada no cambia con el deploy, sólo las API que llama | — |
 | Migraciones | Base compartida y aditiva. 80 carpetas, 73 filas en `_prisma_migrations`: 10 aplicadas a mano sin fila (06-18 a 09-22). El build no corre `migrate` | **Nunca** `prisma migrate deploy` sin antes `prisma migrate resolve --applied` de esas 10 |
 | El preview escribe en la base real | Preview y producción usan la misma Supabase | Probar sólo en tenants QA; en los previews no corren crons |
+| OCR del Archivo en el servidor (22-10) | tesseract tarda 1-15 s por página (DNI escaneado: 12 s) y una GTF de 3 hojas pasa los 30 s del `app/api/**`. El worker se carga por ruta de disco (`node_modules/tesseract.js/src/worker-script/node`) y el idioma de `public/tesseract/lang` (22 MB) o `@tesseract.js-data`: el trazado de archivos no los ve solos | `maxDuration` 300 en `vercel.json` para `app/api/admin/documents/[id]/analyze`, `indexar-pendientes`, `cron/documentos-indexar` y `whatsapp/webhook`; `outputFileTracingIncludes` de esos archivos para esas rutas; probar en el deploy sin dominio que un PDF escaneado de QA salga con texto. Sin esto, degrada: el análisis sigue sin OCR, no se cae |
 
 ## 6. Orden recomendado
 

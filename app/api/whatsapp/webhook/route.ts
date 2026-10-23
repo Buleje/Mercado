@@ -373,7 +373,13 @@ async function enrutarComoDueno(
 
     const cred = { phoneNumberId, token };
     const nombre = contactNames.get(senderPhone) ?? "alguien";
-    const texto = (message.text?.body ?? message.image?.caption ?? message.audio?.caption ?? "").trim();
+    const texto = (
+      message.text?.body ??
+      message.image?.caption ??
+      message.document?.caption ??
+      message.audio?.caption ??
+      ""
+    ).trim();
 
     // Primero la vinculación: mientras el teléfono no esté en la lista, el
     // camino normal lo manda al Concierge y nunca podría engancharse.
@@ -390,7 +396,19 @@ async function enrutarComoDueno(
       nombre,
       texto,
       audio: message.audio ? { id: message.audio.id, mime: message.audio.mime_type } : undefined,
-      imagen: message.image ? { id: message.image.id, mime: message.image.mime_type } : undefined,
+      // Foto o documento → Archivo del panel. Sólo el id de media: la URL la
+      // pide el bot a la Graph API con el token del negocio, nunca del payload.
+      archivo: message.image
+        ? { id: message.image.id, mime: message.image.mime_type, tipo: "imagen" }
+        : message.document
+          ? {
+              id: message.document.id,
+              mime: message.document.mime_type,
+              filename: message.document.filename,
+              tipo: "documento",
+            }
+          : undefined,
+      waMessageId: message.id,
       botonId: message.interactive?.button_reply?.id,
       cred,
     });

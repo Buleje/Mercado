@@ -34,6 +34,8 @@ const ListQuery = z.object({
   semantic: z.enum(["1", "true"]).optional(),
   // Vista "Papelera": sólo documentos soft-deleted.
   deleted: z.enum(["1", "true"]).optional(),
+  // Sólo contar: con `tags`, devuelve `{ conteo }` (total, bytes y por etiqueta) en vez de la lista.
+  conteo: z.enum(["1", "true"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -56,6 +58,13 @@ export async function GET(req: NextRequest) {
     // Filtrado por rol como el listado (antes devolvía el OCR de lo restringido).
     const expiring = await DocumentsDB.listExpiring(auth.tenantId, f.expiring, auth.role);
     return NextResponse.json({ documents: expiring });
+  }
+
+  // «Escondidas N fotos de las cámaras»: contar sin traer las fotos.
+  if (f.conteo) {
+    const etiquetas = f.tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
+    const conteo = await DocumentsDB.contarPorTags(auth.tenantId, etiquetas, auth.role);
+    return NextResponse.json({ conteo });
   }
 
   // ADR-119 — búsqueda semántica: expandimos la query a términos y los OR-eamos.

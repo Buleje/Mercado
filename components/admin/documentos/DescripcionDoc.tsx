@@ -15,7 +15,7 @@
  */
 
 import { useState } from "react";
-import { Sparkles, Pencil, Check, X, Loader2, RefreshCw, Eye } from "@buleje/design-system/icons";
+import { Sparkles, Pencil, Check, X, Loader2, RefreshCw, Eye, CalendarClock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { analyzeDoc, getDocumentDetail, patchDocument } from "@/hooks/use-documents";
 import type { DbDocument } from "@/lib/types/documents";
@@ -29,6 +29,39 @@ const ENTITY_LABEL: { key: keyof DocEntities; label: string }[] = [
   { key: "dates", label: "Fechas" },
   { key: "amounts", label: "Montos" },
 ];
+
+/** Lo que guarda `analyze-document` de la fecha leída del papel. */
+interface VencimientoLeido { fecha: string; fragmento: string; anotado: boolean; motivo?: string }
+
+const ddmmaaaa = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
+
+/**
+ * Una línea con la fecha que la lectura sacó del papel y de qué renglón: si se
+ * anotó sola (y por eso avisará), o por qué quedó como sugerencia.
+ */
+function VencimientoDelPapel({ leido, expiresAt }: { leido: VencimientoLeido; expiresAt: string | null }) {
+  const mismoDia = !!expiresAt && expiresAt.slice(0, 10) === leido.fecha.slice(0, 10);
+  const estado = leido.anotado
+    ? "se anotó como vencimiento"
+    : leido.motivo === "comprobante"
+      ? "es fecha de pago de un comprobante: no se anotó"
+      : mismoDia
+        ? "coincide con el vencimiento anotado"
+        : expiresAt
+          ? `no se cambió el que ya tenía (${ddmmaaaa(expiresAt)})`
+          : "quedó como sugerencia";
+  return (
+    <div className="mt-3 flex items-start gap-2 rounded-xl bg-[var(--data-warning-100)] px-3 py-2 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
+      <CalendarClock className="mt-0.5 h-4 w-4 shrink-0" />
+      <div className="min-w-0">
+        <p className="text-sm font-bold">
+          Vence el {ddmmaaaa(leido.fecha)} <span className="font-semibold">· {estado}</span>
+        </p>
+        <p className="truncate text-xs" title={leido.fragmento}>Leído de «{leido.fragmento}»</p>
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   doc: DbDocument;
@@ -46,6 +79,7 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
     analyzedVia?: string;
     leidoComoEscaneo?: boolean;
     paginasLeidas?: number;
+    vencimientoLeido?: VencimientoLeido | null;
   };
   const descIA = (meta.description || meta.summary || "").trim();
   const descPropia = (meta.descripcionUsuario ?? "").trim();
@@ -96,8 +130,8 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
 
   return (
     <section className="rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent)]/5 p-4">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-sm font-bold text-[var(--text-primary)]">
           <Sparkles className="h-4 w-4 text-[var(--accent)]" /> De qué se trata
         </p>
         <div className="flex shrink-0 items-center gap-1">
@@ -112,6 +146,19 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
             >
               <Eye className="h-3 w-3" />
               {meta.leidoComoEscaneo ? "leído de la 1ª página escaneada" : "leído de la imagen"}
+            </span>
+          )}
+          {/* Sin un modelo que mire, el texto sale letra por letra (OCR): se
+              equivoca distinto (una «O» por un «0»), también hay que decirlo. */}
+          {meta.analyzedVia === "ocr" && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]"
+              title={meta.leidoComoEscaneo
+                ? `Este PDF no tiene texto: por dentro es una foto. Se leyó letra por letra (OCR) en ${meta.paginasLeidas ?? 1} página(s); puede tener errores.`
+                : "La imagen se leyó letra por letra (OCR): puede tener errores"}
+            >
+              <Eye className="h-3 w-3" />
+              {meta.leidoComoEscaneo ? `leído del escaneo (${meta.paginasLeidas ?? 1} pág.)` : "leído de la imagen"}
             </span>
           )}
           <button
@@ -151,6 +198,8 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
           })}
         </div>
       )}
+
+      {meta.vencimientoLeido?.fecha && <VencimientoDelPapel leido={meta.vencimientoLeido} expiresAt={doc.expiresAt} />}
 
       {/* Lo que dice la persona. Pesa más que la IA al buscar: nadie conoce el
           archivo mejor que quien lo guardó. */}

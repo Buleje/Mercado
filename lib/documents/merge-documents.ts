@@ -1,5 +1,6 @@
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { buildStoragePath, downloadFromStorage, uploadToStorage } from "@/lib/documents/storage";
+import { canRoleSeeEnCadena, rolesDeLaCadena, rolesDelCombinado, type CarpetaConRoles } from "@/lib/documents/doc-access";
 import { mergeToPdf, type MergeItem } from "@/lib/documents/pdf-merge";
 import { logger } from "@/lib/logger";
 import type { DbDocument } from "@/lib/types/documents";
@@ -20,8 +21,17 @@ export async function mergeDocuments(
   if (ids.length < 2) return { ok: false, error: "need_at_least_two", status: 400 };
 
   // Con el rol: combinar es leer el contenido, y un papel restringido no se lee.
-  const docs = await Promise.all(ids.map((id) => DocumentsDB.getById(tenantId, id, input.viewerRole)));
-  const found = docs.filter((d): d is DbDocument => !!d);
+  // `getById` deja pasar a manager/encargado; el candado de dueño (ADR-502) se
+  // mira acá con la cadena entera, como en el expediente.
+  const [docs, carpetas] = await Promise.all([
+    Promise.all(ids.map((id) => DocumentsDB.getById(tenantId, id, input.viewerRole))),
+    DocumentsDB.listFolders(tenantId),
+  ]);
+  const mapa = new Map<string, CarpetaConRoles>(carpetas.map((c) => [c.id, { parentId: c.parentId, allowedRoles: c.allowedRoles ?? [] }]));
+  const cadenaDe = (d: DbDocument) => rolesDeLaCadena(d.folderId, mapa);
+  const found = docs.filter(
+    (d): d is DbDocument => !!d && (!input.viewerRole || canRoleSeeEnCadena(input.viewerRole, d.allowedRoles ?? [], cadenaDe(d))),
+  );
   if (found.length < 2) return { ok: false, error: "not_found", status: 404 };
 
   const items: MergeItem[] = [];
@@ -33,6 +43,10 @@ export async function mergeDocuments(
 
   const merged = await mergeToPdf(items);
   if (merged.pageCount === 0) return { ok: false, error: "no_mergeable_pages", status: 422 };
+
+  // El combinado hereda la puerta más cerrada de sus papeles: un papel de la
+  // nómina (candado) no sale del candado por venir pegado a otros (22-10).
+  const allowedRoles = rolesDelCombinado(found.map((d) => ({ docAllowed: d.allowedRoles ?? [], cadena: cadenaDe(d) })));
 
   const name = (input.name?.trim() || `Combinado ${found.length} documentos`).slice(0, 120);
   const fileName = `${name.replace(/[^\w.-]+/g, "_")}.pdf`;
@@ -47,6 +61,7 @@ export async function mergeDocuments(
     category: "otros",
     uploadedById: input.actorId,
     viewerRole: input.viewerRole,
+    allowedRoles,
   });
 
   const storagePath = buildStoragePath({ tenantId, documentId: draft.id, versionLabel: "v1", originalName: fileName });

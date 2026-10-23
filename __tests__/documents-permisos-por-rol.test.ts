@@ -210,7 +210,7 @@ vi.mock("@/lib/documents/cola-analisis", () => ({ enColaDeAnalisis: async () => 
 vi.mock("@/lib/documents/precalcular-miniatura", () => ({ precalcularMiniatura: async () => {} }));
 
 import { DocumentsDB } from "@/lib/db/documents.db";
-import { canRoleSeeEnCadena, enlaceSigueSirviendo, rolesDeLaCadena } from "@/lib/documents/doc-access";
+import { canRoleSeeEnCadena, enlaceSigueSirviendo, ROL_CANDADO_DUENO, rolesDeLaCadena } from "@/lib/documents/doc-access";
 import { GET as LISTAR, POST as SUBIR } from "@/app/api/admin/documents/route";
 import { GET as LISTAR_ENLACES, POST as COMPARTIR } from "@/app/api/admin/documents/[id]/share/route";
 import { POST as COMPARTIR_CARPETA } from "@/app/api/admin/documents/folders/[id]/share/route";
@@ -235,6 +235,7 @@ const pedir = (ruta: string, init: { method?: string; body?: unknown } = {}) =>
 const ctx = <T extends Record<string, string>>(p: T) => ({ params: Promise.resolve(p) });
 const comoCajero = () => Object.assign(H.payload, { username: "qacajero", role: "cajero" });
 const comoAdmin = () => Object.assign(H.payload, { username: "qaadmin", role: "admin" });
+const comoEncargado = () => Object.assign(H.payload, { username: "qaencargado", role: "manager" });
 const docDe = (id: string) => H.db.docs.find((d) => d.id === id)!;
 const carpetaDe = (id: string) => H.db.carpetas.find((c) => c.id === id);
 
@@ -262,6 +263,33 @@ describe("la cadena entera de carpetas (el hueco de la subcarpeta)", () => {
     expect(await DocumentsDB.getById("t-a", "d-hija", "admin")).not.toBeNull();
     const ids = (await DocumentsDB.list("t-a", {}, "cajero")).map((d) => d.id).sort();
     expect(ids).toEqual(["d-caja", "d-libre"]);
+  });
+});
+
+describe("candado de dueño: el encargado no lista ni abre la nómina (22-10)", () => {
+  const sembrarNomina = () => {
+    H.db.carpetas.push({ ...H.db.carpetas.find((c) => c.id === "f-libre")!, id: "f-nomina", name: "f-nomina", allowedRoles: [ROL_CANDADO_DUENO] });
+    H.db.docs.push({ ...H.db.docs.find((d) => d.id === "d-libre")!, id: "d-nomina", folderId: "f-nomina" });
+  };
+
+  it("list y getById del encargado no traen lo que tiene candado; lo restringido sin candado, sí", async () => {
+    sembrarNomina();
+    expect(await DocumentsDB.getById("t-a", "d-nomina", "manager")).toBeNull();
+    expect(await DocumentsDB.getById("t-a", "d-nomina", "tienda_owner")).toBeNull();
+    expect(await DocumentsDB.getById("t-a", "d-nomina", "owner")).not.toBeNull();
+    const ids = (await DocumentsDB.list("t-a", {}, "manager")).map((d) => d.id);
+    expect(ids).not.toContain("d-nomina");
+    expect(ids).toEqual(expect.arrayContaining(["d-sec", "d-hija", "d-propio", "d-libre", "d-caja"]));
+  });
+
+  it("la carpeta con candado no existe para el encargado; las restringidas sin candado las sigue cambiando", async () => {
+    sembrarNomina();
+    comoEncargado();
+    const r = await EDITAR_CARPETA(pedir("/folders/f-nomina", { method: "PATCH", body: { name: "otra" } }), ctx({ id: "f-nomina" }));
+    expect(r.status).toBe(404);
+    expect(carpetaDe("f-nomina")!.name).toBe("f-nomina");
+    const sec = await EDITAR_CARPETA(pedir("/folders/f-sec", { method: "PATCH", body: { allowedRoles: ["admin", "cajero"] } }), ctx({ id: "f-sec" }));
+    expect(sec.status).toBe(200);
   });
 });
 

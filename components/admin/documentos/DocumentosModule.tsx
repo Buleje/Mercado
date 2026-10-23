@@ -58,6 +58,8 @@ import {
 import { DocumentPreviewModal } from "./DocumentPreviewModal";
 import { TemplateGenerator } from "./TemplateGenerator";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
+import { ExpedienteModal } from "./ExpedienteModal";
+import type { FuenteDelModal } from "./expediente/use-expediente";
 import ImportarCarpetaModal from "./ImportarCarpetaModal";
 import { archivosDesdeDrop } from "@/lib/documentos/importar-arbol";
 import { useImportCarpeta } from "@/contexts/import-carpeta-context";
@@ -82,6 +84,8 @@ import { TagEditModal } from "./TagEditModal";
 import { BulkTagModal } from "./BulkTagModal";
 import { PapeleraView } from "./PapeleraView";
 import AvisosDelArchivo from "./AvisosDelArchivo";
+import FotosEscondidas from "./FotosEscondidas";
+import ChipsVencimiento, { type SoloVencimiento } from "./ChipsVencimiento";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import MenuDocumento, { type AccionesDocumento, type EstadoDelMenu, type PuntoDeMenu } from "./MenuDocumento";
 import { formatBytes, getFileIcon } from "./archivo-visual";
@@ -98,6 +102,10 @@ import FilaCarpetaDetalles from "./explorador/FilaCarpetaDetalles";
 import AccesoRapido from "./explorador/AccesoRapido";
 import { formatDate, formatDateLong, formatDateNumeric, formatDateShort, formatNumber } from "@/lib/format";
 import { esTagDeMaquinaPlan } from "@/lib/forestal/plan-documentos-tipos";
+import { useFotosEscondidas } from "@/hooks/use-fotos-escondidas";
+import { TAGS_FOTOS_DE_MAQUINA, esFotoDeMaquina } from "@/lib/documents/fotos-de-maquina";
+import { diasHasta } from "@/lib/documentos/aviso-vencimiento";
+import { repartirVencimientos } from "@/lib/documentos/vencimientos-aviso";
 
 /**
  * Las etiquetas que se muestran como chips. Las de máquina de «Documentos del
@@ -211,7 +219,7 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "assistant", label: "Asistente IA", icon: Sparkles, color: "text-[var(--accent)]" },
   { id: "favorites", label: "Favoritos", icon: Star, color: "text-amber-500" },
   { id: "recent", label: "Recientes", icon: Clock, color: "text-[var(--text-secondary)]" },
-  { id: "expiring", label: "Por vencer", icon: AlarmClock, color: "text-[var(--data-warning)]" },
+  { id: "expiring", label: "Vencimientos", icon: AlarmClock, color: "text-[var(--data-warning)]" },
   { id: "calendar", label: "Calendario", icon: CalendarDays, color: "text-primary" },
   { id: "activity", label: "Actividad", icon: History, color: "text-[var(--accent)]" },
   { id: "enlaces", label: "Enlaces", icon: Link2, color: "text-[var(--accent)]" },
@@ -226,14 +234,16 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
  */
 const VISTAS_CON_CONTENIDO_PROPIO = new Set(["dashboard", "assistant", "activity", "calendar", "enlaces", "duplicados", "sync"]);
 
+/** Vistas que listan documentos y por eso dicen cuántas fotos de las cámaras quedan escondidas. */
+const MODOS_CON_LINEA_DE_FOTOS = new Set(["all", "recent", "favorites", "dashboard", "duplicados"]);
+
 // ADR-119 — almacenamiento orientativo por plan (bytes). Sin gate duro: solo
 // para el anillo visual. El límite real lo aplica el bucket (50 MB/archivo).
 const STORAGE_QUOTA_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
 
 /** Días hasta el vencimiento (negativo = ya venció). null si no vence. */
 function daysUntil(iso: string | null): number | null {
-  if (!iso) return null;
-  return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
+  return diasHasta(iso);
 }
 
 // Los helpers del árbol de carpetas viven en `@/lib/documentos/folder-tree`
@@ -500,6 +510,13 @@ export default function DocumentosModule() {
     };
   }, [bulkMoreOpen]);
   const [expiryBannerDismissed, setExpiryBannerDismissed] = useState(false);
+  /** Qué mitad de «Vencimientos» se mira: lo ya vencido, lo que vence en 30 días, o todo. */
+  const [soloVencimiento, setSoloVencimiento] = useState<SoloVencimiento>("todos");
+  const verVencimientos = useCallback((cuales: SoloVencimiento) => {
+    setSoloVencimiento(cuales);
+    setFilterMode("expiring");
+    setActiveFolderId(null);
+  }, [setFilterMode, setActiveFolderId]);
   const [zipping, setZipping] = useState(false);
   // Drag & drop de documentos hacia carpetas de la barra lateral.
   const [draggingDocId, setDraggingDocId] = useState<string | null>(null);
@@ -511,6 +528,8 @@ export default function DocumentosModule() {
   const [movingDoc, setMovingDoc] = useState<DbDocument | null>(null);
   /** Documentos a mandar por WhatsApp: uno desde la ficha, varios desde la selección. */
   const [whatsappDoc, setWhatsappDoc] = useState<DbDocument[] | null>(null);
+  /** «Armar expediente»: de una carpeta (clic derecho) o de la selección (en el orden elegido). */
+  const [expediente, setExpediente] = useState<FuenteDelModal | null>(null);
   const [signDoc, setSignDoc] = useState<DbDocument | null>(null);
   const [stampTarget, setStampTarget] = useState<DbDocument | null>(null);
   const [merging, setMerging] = useState(false);
@@ -538,6 +557,18 @@ export default function DocumentosModule() {
     return () => clearTimeout(t);
   }, [search]);
 
+  // Fotos de las cámaras: fuera de las vistas generales (en Blas, 360 de 375
+  // documentos). Dentro de una carpeta, con una etiqueta pedida («Ver fotos» pide
+  // una) o en la papelera se muestran todas.
+  const fotosEsc = useFotosEscondidas();
+  const vistaGeneral = !etiquetaFiltro && filterMode !== "folder" && filterMode !== "trash";
+  const escondeFotos = vistaGeneral; // `vistaGeneral`: ni carpeta, ni etiqueta, ni papelera
+  /** «Ver fotos»: la lista de esa etiqueta, desde «Todos» (el aviso de arriba trae el «Quitar»). */
+  const verFotosDeMaquina = useCallback((e: { tag: string; label: string }) => {
+    if (filterMode !== "all") setFilterMode("all");
+    setEtiquetaFiltro(e);
+  }, [filterMode, setFilterMode, setEtiquetaFiltro]);
+
   const filters = useMemo(
     () =>
       etiquetaFiltro
@@ -558,8 +589,9 @@ export default function DocumentosModule() {
             expiring: filterMode === "expiring" ? 30 : undefined,
             semantic: semantic && !!searchDebounced.trim(),
             deletedOnly: filterMode === "trash" ? true : undefined,
+            sinTags: escondeFotos ? [...TAGS_FOTOS_DE_MAQUINA] : undefined,
           },
-    [etiquetaFiltro, filterMode, activeFolderId, searchDebounced, semantic]
+    [etiquetaFiltro, filterMode, activeFolderId, searchDebounced, semantic, escondeFotos]
   );
 
   const {
@@ -634,6 +666,12 @@ export default function DocumentosModule() {
       const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
       list = list.filter((d) => new Date(d.uploadedAt).getTime() > cutoff);
     }
+    if (filterMode === "expiring" && soloVencimiento !== "todos") {
+      list = list.filter((d) => {
+        const n = daysUntil(d.expiresAt);
+        return n !== null && (soloVencimiento === "vencidos" ? n < 0 : n >= 0);
+      });
+    }
     if (filterMode === "smart" && activeSmartId) {
       const sf = smartFolders.find((f) => f.id === activeSmartId);
       if (sf) list = list.filter((d) => matchesSmartFolder(d, sf.rules));
@@ -667,7 +705,7 @@ export default function DocumentosModule() {
       }
     });
     return sorted;
-  }, [documents, filterMode, sortBy, statusFilter, activeSmartId, smartFolders, soloSinDescribir, terminosBusqueda, filtros, etiquetaFiltro]);
+  }, [documents, filterMode, sortBy, statusFilter, activeSmartId, smartFolders, soloSinDescribir, terminosBusqueda, filtros, etiquetaFiltro, soloVencimiento]);
 
   const statusCounts = useMemo(() => {
     const m: Record<string, number> = { draft: 0, review: 0, approved: 0, archived: 0 };
@@ -680,13 +718,13 @@ export default function DocumentosModule() {
   // "cuánto de mi drive no se puede buscar por su contenido": un documento
   // analizado cuya descripción quedó vacía sigue sin servir para buscar.
   const indexableDocs = useMemo(
-    () => documents.filter((d) => isAnalyzableMime(d.mimeType) && !tieneDescripcion(d)),
+    () => documents.filter((d) => isAnalyzableMime(d.mimeType) && !tieneDescripcion(d) && !esFotoDeMaquina(d)),
     [documents]
   );
   // Todos los documentos analizables, estén o no ya indexados. Sirve para
   // RE-indexar (que los viejos ganen la descripción rica nueva).
   const reindexableDocs = useMemo(
-    () => documents.filter((d) => isAnalyzableMime(d.mimeType)),
+    () => documents.filter((d) => isAnalyzableMime(d.mimeType) && !esFotoDeMaquina(d)),
     [documents]
   );
   const runIndex = useCallback(
@@ -744,23 +782,14 @@ export default function DocumentosModule() {
 
   const totalSize = useMemo(() => documents.reduce((s, d) => s + d.size, 0), [documents]);
   const favCount = useMemo(() => documents.filter((d) => d.favorite).length, [documents]);
-  const expiringSoonCount = useMemo(
-    () => documents.filter((d) => { const n = daysUntil(d.expiresAt); return n !== null && n <= 30; }).length,
-    [documents]
-  );
-  // Documentos por vencer (≤30d, vencidos primero) — alimenta el aviso proactivo.
-  // Sin los de la papelera: en esa vista `documents` son los borrados y el
-  // aviso decía «3 por vencer» de archivos tirados, mientras «Ver» llevaba a
-  // los 5 vivos (11-10).
-  const expiringDocs = useMemo(
-    () =>
-      documents
-        .filter((d) => !d.deletedAt)
-        .map((d) => ({ d, n: daysUntil(d.expiresAt) }))
-        .filter((x): x is { d: typeof x.d; n: number } => x.n !== null && x.n <= 30)
-        .sort((a, b) => a.n - b.n),
-    [documents]
-  );
+  // Vencimientos partidos: lo que YA venció (rojo) y lo que vence en 30 días
+  // (coral, incluye «vence hoy»). Sin los de la papelera: en esa vista
+  // `documents` son los borrados y el aviso decía «3 por vencer» de archivos
+  // tirados, mientras «Ver» llevaba a los 5 vivos (11-10).
+  const repartidos = useMemo(() => repartirVencimientos(documents, 30), [documents]);
+  const vencidosDocs = repartidos.vencidos;
+  const expiringDocs = repartidos.porVencer;
+  const expiringSoonCount = vencidosDocs.length + expiringDocs.length;
   // Evita el parpadeo a "0" del contador al cambiar de carpeta: mientras carga,
   // retiene el último conteo estable en vez de mostrar 0.
   const lastDocCount = useRef(0);
@@ -1340,29 +1369,47 @@ export default function DocumentosModule() {
   // papelera como si fuera el drive (4 archivos, 976 KB, con 41 vivos). Ocultos
   // por defecto (Brandon 2026-08-30): empujaban los documentos, que es lo que
   // se busca casi siempre al abrir el drive.
+  // «15 papeles · 360 fotos»: con las fotos de las cámaras escondidas, el total
+  // sólo cuenta los papeles y las fotos van aparte (y su peso sigue sumando al
+  // espacio usado). Con una búsqueda escrita no: ese conteo no sería de la búsqueda.
+  const fotosN = fotosEsc.conteo?.total ?? 0;
+  const hayFotosEscondidas = escondeFotos && !searchDebounced.trim() && fotosN > 0;
+  const bytesFotos = hayFotosEscondidas ? (fotosEsc.conteo?.bytes ?? 0) : 0;
+  const resumenArchivos = hayFotosEscondidas
+    ? `${formatNumber(shownDocCount)} ${shownDocCount === 1 ? "papel" : "papeles"} · ${formatNumber(fotosN)} ${fotosN === 1 ? "foto" : "fotos"}`
+    : `${formatNumber(shownDocCount)} ${shownDocCount === 1 ? "archivo" : "archivos"}`;
   const kpis = useKpisPlegables({
     claveMemoria: "documentos-archivo",
     alto: "md",
     compactoEnMovil: true,
-    resumen: `${formatNumber(shownDocCount)} ${shownDocCount === 1 ? "archivo" : "archivos"}`,
+    resumen: resumenArchivos,
     tarjetas: [
-      <StatBlock key="total" label="Total archivos" value={shownDocCount.toString()} icon={FileIcon} tint="text-primary" />,
-      <StorageRing key="espacio" usedBytes={totalSize} quotaBytes={STORAGE_QUOTA_BYTES} />,
+      <StatBlock key="total" label={hayFotosEscondidas ? "Papeles" : "Total archivos"} value={shownDocCount.toString()} icon={FileIcon} tint="text-primary" nota={hayFotosEscondidas ? `+ ${formatNumber(fotosN)} ${fotosN === 1 ? "foto" : "fotos"} de las cámaras` : undefined} />,
+      <StorageRing key="espacio" usedBytes={totalSize + bytesFotos} quotaBytes={STORAGE_QUOTA_BYTES} />,
       <button
         key="vencer"
         type="button"
-        onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
+        onClick={() => verVencimientos("todos")}
         className={cn(
           "text-left bg-[var(--surface-raised)] border rounded-2xl p-4 transition-all hover:shadow-md",
-          expiringSoonCount > 0 ? "border-[var(--data-error-500)]/40 hover:border-[var(--data-error-500)]" : "border-[var(--rule-base)] hover:border-primary/40"
+          vencidosDocs.length > 0
+            ? "border-[var(--data-error-500)]/40 hover:border-[var(--data-error-500)]"
+            : expiringDocs.length > 0
+            ? "border-[var(--data-warning-500)]/40 hover:border-[var(--data-warning-500)]"
+            : "border-[var(--rule-base)] hover:border-primary/40"
         )}
       >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-sm font-bold text-[var(--text-tertiary)]">Por vencer (30 días)</p>
-            <p className={cn("text-2xl font-extrabold tabular-nums mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>{expiringSoonCount}</p>
+            <p className={cn("text-2xl font-extrabold tabular-nums mt-0.5", expiringDocs.length > 0 ? "text-[var(--data-warning-ink)]" : "text-[var(--text-tertiary)]")}>{expiringDocs.length}</p>
+            {vencidosDocs.length > 0 && (
+              <p className="text-sm font-bold text-[var(--data-error-ink)]">
+                + {vencidosDocs.length} ya {vencidosDocs.length === 1 ? "vencido" : "vencidos"}
+              </p>
+            )}
           </div>
-          <AlarmClock className={cn("h-5 w-5 shrink-0 mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
+          <AlarmClock className={cn("h-5 w-5 shrink-0 mt-0.5", expiringDocs.length > 0 ? "text-[var(--data-warning-ink)]" : "text-[var(--text-tertiary)]")} />
         </div>
       </button>,
       <StatBlock key="fav" label="Favoritos" value={favCount.toString()} icon={Star} tint="text-amber-500" />,
@@ -1390,6 +1437,7 @@ export default function DocumentosModule() {
   }, [setFilterMode, setActiveFolderId]);
   const vistasDelPanel = BUILTIN_CATEGORIES.filter((cat) => vistaConDatos[cat.id] || filterMode === cat.id);
   const irAVista = (id: string) => {
+    if (id === "expiring") setSoloVencimiento("todos");
     setFilterMode(id as typeof filterMode);
     setActiveFolderId(null);
   };
@@ -1453,6 +1501,7 @@ export default function DocumentosModule() {
     abrirSubida: () => fileInputRef.current?.click(),
     personalizar: setEditingFolder,
     compartir: setSharingFolder,
+    armarExpediente: (f) => setExpediente({ tipo: "carpeta", folderId: f.id, nombre: f.name }),
     eliminarCarpetas: (fs) => { if (fs.length > 0) setBorrandoCarpeta(fs); },
     zip: zipAndDownload,
     verDoc: setPreview,
@@ -1466,6 +1515,7 @@ export default function DocumentosModule() {
       },
       favoritos: (si) => void bulkFavorite(si),
       estado: (clave) => void bulkStatus(clave as EstadoDoc),
+      expediente: () => setExpediente({ tipo: "ids", ids: Array.from(selectedIds) }),
     },
     etiquetaEstado: (st) => STATUS_META[st]?.label ?? st,
     nombreLugar: BUILTIN_CATEGORIES.find((c) => c.id === filterMode)?.label
@@ -1645,9 +1695,11 @@ export default function DocumentosModule() {
       {/* Avisos en una fila: por vencer (la promesa del módulo) y lo que la IA
           sugiere ordenar, cada uno con su acción. */}
       <AvisosDelArchivo
+        vencidos={vencidosDocs}
         porVencer={expiringDocs}
         porVencerDescartado={expiryBannerDismissed}
-        onVerPorVencer={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
+        onVerVencidos={() => verVencimientos("vencidos")}
+        onVerPorVencer={() => verVencimientos("porVencer")}
         onDescartarPorVencer={() => setExpiryBannerDismissed(true)}
         sugerencias={sugerenciasIA}
         onAplicar={(id, cambios) => void aplicarSugerencia(id, cambios)}
@@ -1656,6 +1708,14 @@ export default function DocumentosModule() {
         aplicandoTodas={aplicandoTodas}
         fechaCorta={fmtFechaCorta}
       />
+
+      {/* Las fotos de las cámaras no se mezclan con tus papeles: una línea dice cuántas hay. */}
+      {vistaGeneral && MODOS_CON_LINEA_DE_FOTOS.has(filterMode) && (fotosEsc.conteo?.total ?? 0) > 0 && (
+        <FotosEscondidas
+          conteo={fotosEsc.conteo}
+          onVerFotos={verFotosDeMaquina}
+        />
+      )}
 
       {/* Resultado del escaneo IA */}
       {scanResult && (
@@ -1737,13 +1797,27 @@ export default function DocumentosModule() {
           <span className="shrink-0 text-sm tabular-nums text-[var(--text-tertiary)]">
             {loading ? "…" : `${displayDocs.length} ${displayDocs.length === 1 ? "documento" : "documentos"}`}
           </span>
-          <button
-            type="button"
-            onClick={() => setEtiquetaFiltro(null)}
-            className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
-          >
-            <X className="h-3.5 w-3.5" /> Quitar
-          </button>
+          {/* Todo lo de esta etiqueta en un PDF (fuente `tag`: cruza carpetas).
+              Los dos botones van juntos: a 400 px bajan en una sola fila. */}
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            {!loading && displayDocs.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setExpediente({ tipo: "tag", tag: etiquetaFiltro.tag, nombre: etiquetaFiltro.label })}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                title="Un solo PDF con portada, índice y estos papeles en orden"
+              >
+                <FolderArchive className="h-3.5 w-3.5" aria-hidden /> Armar expediente
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setEtiquetaFiltro(null)}
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              <X className="h-3.5 w-3.5" /> Quitar
+            </button>
+          </div>
         </div>
       )}
 
@@ -2529,6 +2603,14 @@ export default function DocumentosModule() {
                       <Combine className="h-4 w-4 shrink-0" /> {merging ? "Combinando…" : "Combinar en un PDF"}
                     </button>
                   )}
+                  {selectedIds.size >= 2 && (
+                    <button
+                      onClick={() => { setBulkMoreOpen(false); setExpediente({ tipo: "ids", ids: Array.from(selectedIds) }); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+                    >
+                      <FolderArchive className="h-4 w-4 shrink-0" /> Armar expediente
+                    </button>
+                  )}
                 </div>
               )}
               <button
@@ -2542,6 +2624,15 @@ export default function DocumentosModule() {
               </button>
               <button onClick={clearSelection} className="ml-auto text-xs px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-bold">Cancelar</button>
             </div>
+          )}
+
+          {/* «Vencimientos»: lo ya vencido y lo que vence en 30 días, por separado. */}
+          {filterMode === "expiring" && (vencidosDocs.length > 0 || expiringDocs.length > 0) && (
+            <ChipsVencimiento
+              valor={soloVencimiento}
+              onCambiar={setSoloVencimiento}
+              cuentas={{ todos: vencidosDocs.length + expiringDocs.length, vencidos: vencidosDocs.length, porVencer: expiringDocs.length }}
+            />
           )}
 
           {/* Filtro por estado (workflow) */}
@@ -3090,6 +3181,15 @@ export default function DocumentosModule() {
         <SendWhatsAppModal docs={whatsappDoc} onClose={() => setWhatsappDoc(null)} />
       )}
 
+      {expediente && (
+        <ExpedienteModal
+          fuente={expediente}
+          onClose={() => setExpediente(null)}
+          onListo={() => { clearSelection(); void refresh({ silencioso: true }); }}
+          onVer={(d) => { setExpediente(null); setPreview(d); }}
+        />
+      )}
+
       {signDoc && (
         <SendWhatsAppModal docs={[signDoc]} mode="sign" onClose={() => setSignDoc(null)} />
       )}
@@ -3257,13 +3357,14 @@ function SidebarResizeHandle({
   );
 }
 
-function StatBlock({ label, value, icon: Icon, tint }: { label: string; value: string; icon: typeof FileIcon; tint: string }) {
+function StatBlock({ label, value, icon: Icon, tint, nota }: { label: string; value: string; icon: typeof FileIcon; tint: string; nota?: string }) {
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-bold text-[var(--text-tertiary)]">{label}</p>
           <p className={cn("text-2xl font-extrabold tabular-nums mt-0.5 truncate", tint)}>{value}</p>
+          {nota && <p className="text-sm text-[var(--text-tertiary)]">{nota}</p>}
         </div>
         <Icon className={cn("h-5 w-5 shrink-0 mt-0.5", tint)} />
       </div>

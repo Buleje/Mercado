@@ -38,6 +38,7 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
     const uploadsByMonth = new Map<string, number>();
     let totalSize = 0;
     let expiring = 0;
+    let vencidos = 0;
     let facturado = 0;
     let facturasCount = 0;
 
@@ -46,7 +47,9 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
       totalSize += d.size;
       if (d.expiresAt) {
         const days = Math.ceil((new Date(d.expiresAt).getTime() - now) / 86_400_000);
-        if (days <= 30) expiring += 1;
+        // «Por vencer» no incluye lo que ya venció (se cuenta aparte).
+        if (days < 0) vencidos += 1;
+        else if (days <= 30) expiring += 1;
       }
       for (const t of [...d.tags, ...d.aiTags]) tagCount.set(t, (tagCount.get(t) ?? 0) + 1);
       const s = d.ocrMetadata?.structured as { docType?: string; total?: number | string } | undefined;
@@ -77,13 +80,19 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
     }
     const maxMonth = Math.max(1, ...months.map((m) => m.count));
 
-    return { catData, totalSize, expiring, facturado, facturasCount, topTags, maxTag, months, maxMonth };
+    return { catData, totalSize, expiring, vencidos, facturado, facturasCount, topTags, maxTag, months, maxMonth };
   }, [docs]);
 
   const kpis = [
     { label: "Documentos", value: String(docs.length), icon: FileText, tint: "text-primary" },
     { label: "Espacio usado", value: fmtBytes(stats.totalSize), icon: HardDrive, tint: "text-[var(--accent)]" },
-    { label: "Por vencer (30d)", value: String(stats.expiring), icon: AlarmClock, tint: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" },
+    {
+      label: "Por vencer (30d)",
+      value: String(stats.expiring),
+      icon: AlarmClock,
+      tint: "text-[var(--data-warning-ink)]",
+      nota: stats.vencidos > 0 ? `+ ${stats.vencidos} ya ${stats.vencidos === 1 ? "vencido" : "vencidos"}` : null,
+    },
     { label: `Facturado (${stats.facturasCount} comp.)`, value: money(stats.facturado), icon: Receipt, tint: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
   ];
 
@@ -97,6 +106,7 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
               <k.icon className={cn("h-4 w-4", k.tint)} /> {k.label}
             </div>
             <p className={cn("mt-1.5 text-2xl font-extrabold tabular-nums", k.tint)}>{k.value}</p>
+            {k.nota && <p className="mt-0.5 text-sm font-bold text-[var(--data-error-ink)]">{k.nota}</p>}
           </div>
         ))}
       </div>

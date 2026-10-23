@@ -6,11 +6,12 @@ import {
   canRoleSeeEnCadena,
   enlaceSigueSirviendo,
   estaRestringido,
-  isPrivilegedRole,
   rolesDeLaCadena,
+  veTodoElDrive,
   type CarpetaConRoles,
 } from "@/lib/documents/doc-access";
 import { palabrasUtiles } from "@/lib/documentos/terminos-busqueda";
+import { TAGS_FOTOS_DE_MAQUINA } from "@/lib/documents/fotos-de-maquina";
 import { Prisma } from "@/lib/generated/prisma/client";
 import type {
   Document as PDocument,
@@ -251,9 +252,11 @@ async function carpetaEsDelNegocio(tenantId: string, folderId: string): Promise<
 // ahora por estos tres helpers; «no lo puede ver» se responde igual que «no
 // existe» (null / 0 / lista sin el doc → 404 en la ruta).
 
-/** ¿Hace falta filtrar? Sin rol (procesos internos) o con rol privilegiado, no. */
+/** ¿Hace falta filtrar? Sin rol (procesos internos) o dueño/admin, no. El
+ *  encargado sí: ve todo MENOS lo que tiene candado de dueño (ADR-502), y eso
+ *  sólo lo sabe `canRoleSeeEnCadena`. */
 function filtraPorRol(viewerRole: string | null | undefined): viewerRole is string {
-  return !!viewerRole && !isPrivilegedRole(viewerRole);
+  return !!viewerRole && !veTodoElDrive(viewerRole);
 }
 
 /** Todas las carpetas del negocio con su madre y sus roles (60 en `main`: 1 consulta). */
@@ -665,6 +668,12 @@ export class DocumentsDB {
       viewerRole?: string;
       /** Roles que lo ven (vacío = los de su carpeta). Nace restringido: sin ventana abierta. */
       allowedRoles?: string[];
+      /**
+       * Id elegido por quien llama para que un reintento choque (P2002) en vez de
+       * duplicar: lo que llega de afuera con su propio id (un mensaje de WhatsApp
+       * que Meta re-entrega). Sin esto, el de siempre (`cuid`).
+       */
+      id?: string;
     }
   ): Promise<DbDocument> {
     // Una carpeta de otro negocio no se acepta como destino (ver `CarpetaAjenaError`).
@@ -681,6 +690,7 @@ export class DocumentsDB {
     }
     const doc = await prisma.document.create({
       data: {
+        ...(input.id ? { id: input.id } : {}),
         tenantId,
         folderId: input.folderId ?? null,
         name: input.name,
@@ -798,6 +808,49 @@ export class DocumentsDB {
     return prisma.document.count({
       where: { tenantId, deletedAt: null, expiresAt: { not: null, lte: limit } },
     });
+  }
+
+  /**
+   * Cuántos documentos vivos tienen alguna de estas etiquetas, cuánto pesan y
+   * cuántos hay por etiqueta. Para decir «Escondidas N fotos de las cámaras» en
+   * el Archivo sin traer las fotos. Un rol sin acceso total sólo cuenta lo que
+   * ve (si no, el aviso prometería fotos que no puede abrir).
+   */
+  static async contarPorTags(
+    tenantId: string,
+    tags: string[],
+    viewerRole?: string,
+  ): Promise<{ total: number; bytes: number; porTag: Record<string, number> }> {
+    const buscadas = [...new Set(tags.map((t) => t.trim()).filter(Boolean))].slice(0, 8);
+    const vacio = { total: 0, bytes: 0, porTag: Object.fromEntries(buscadas.map((t) => [t, 0])) };
+    if (buscadas.length === 0) return vacio;
+    const base = { tenantId, deletedAt: null };
+
+    if (filtraPorRol(viewerRole)) {
+      const filas = await prisma.document.findMany({
+        where: { ...base, tags: { hasSome: buscadas } },
+        select: { folderId: true, allowedRoles: true, size: true, tags: true },
+        take: 20000,
+      });
+      const visibles = await soloVisibles(tenantId, filas, viewerRole);
+      const porTag = { ...vacio.porTag };
+      for (const f of visibles) for (const t of buscadas) if (f.tags.includes(t)) porTag[t] += 1;
+      return { total: visibles.length, bytes: visibles.reduce((a, f) => a + f.size, 0), porTag };
+    }
+
+    const [suma, ...porCadaTag] = await Promise.all([
+      prisma.document.aggregate({
+        where: { ...base, tags: { hasSome: buscadas } },
+        _count: { _all: true },
+        _sum: { size: true },
+      }),
+      ...buscadas.map((t) => prisma.document.count({ where: { ...base, tags: { has: t } } })),
+    ]);
+    return {
+      total: suma._count._all,
+      bytes: suma._sum.size ?? 0,
+      porTag: Object.fromEntries(buscadas.map((t, i) => [t, porCadaTag[i] ?? 0])),
+    };
   }
 
   /**
@@ -936,6 +989,21 @@ export class DocumentsDB {
       where: { tenantId, id: { in: ids } },
       data: { expiryReminderSentAt: new Date() },
     });
+  }
+
+  /**
+   * Anota el vencimiento que la IA leyó del papel, SÓLO si nadie le había
+   * puesto uno: la condición va en el WHERE (no en un `if` antes) para que una
+   * fecha escrita a mano mientras corría el análisis no se pise. Limpia el
+   * sello del aviso para que el cron (ADR-119) avise de esta fecha nueva.
+   * Devuelve si se anotó.
+   */
+  static async anotarVencimientoSiFalta(tenantId: string, id: string, expiresAt: Date): Promise<boolean> {
+    const r = await prisma.document.updateMany({
+      where: { id, tenantId, deletedAt: null, expiresAt: null },
+      data: { expiresAt, expiryReminderSentAt: null },
+    });
+    return r.count > 0;
   }
 
   static async softDelete(tenantId: string, id: string): Promise<boolean> {
@@ -2060,7 +2128,8 @@ export class DocumentsDB {
     const minBytes = opts.minBytes ?? 1024;
 
     const todos = await prisma.document.findMany({
-      where: { tenantId, deletedAt: null, size: { gte: minBytes } },
+      // Sin las fotos de las cámaras: llegan de a cientos y no son «papeles repetidos».
+      where: { tenantId, deletedAt: null, size: { gte: minBytes }, NOT: { tags: { hasSome: [...TAGS_FOTOS_DE_MAQUINA] } } },
       orderBy: { uploadedAt: "desc" },
       include: { _count: { select: { versions: true, shares: true } } },
     });

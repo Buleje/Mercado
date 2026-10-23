@@ -4,7 +4,7 @@ import { fetchGroqWithRetry } from "@/lib/groq-fetch";
 import { cleanJSONResponse } from "@/lib/ai-json-parser";
 import { promptDeDescripcion, ResultSchema, tieneAlgoUtil, type ResultadoDescripcion } from "./descripcion-schema";
 import {
-  configVisionPropia, esModeloInexistente, hayProveedorDeVision, MODELO_VISION,
+  configVisionPropia, esModeloInexistente, hayProveedorDeVision, MODELO_VISION, type ConfigVisionPropia,
 } from "./modelo-vision";
 
 /**
@@ -39,6 +39,43 @@ export interface ImagenParaVision {
 /** Respuesta OpenAI-compatible → el texto del modelo. */
 function contenidoDe(data: unknown): string {
   return (data as { choices?: { message?: { content?: string } }[] })?.choices?.[0]?.message?.content ?? "";
+}
+
+// ── ¿El servidor local está prendido? ───────────────────────────────────────
+
+/** Un servidor en esta máquina o en la red de la casa (Ollama, LM Studio). */
+const ES_LOCAL = /^https?:\/\/(?:127\.|0\.0\.0\.0|localhost|host\.docker\.internal|10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)/i;
+/** Lo que se recuerda la respuesta: apagado, poco (lo pueden prender); prendido, más. */
+const SALUD_CAIDO_MS = 60_000;
+const SALUD_OK_MS = 5 * 60_000;
+let salud: { baseUrl: string; ok: boolean; hasta: number } | null = null;
+
+const marcarSalud = (baseUrl: string, ok: boolean) => {
+  salud = { baseUrl, ok, hasta: Date.now() + (ok ? SALUD_OK_MS : SALUD_CAIDO_MS) };
+};
+
+/**
+ * Un Ollama apagado no contesta «no estoy»: el pedido espera ~10 s hasta el
+ * «connect timeout» (medido 22-10 en WSL) y recién ahí el análisis pasa al OCR.
+ * Se pregunta antes con un tope corto y la respuesta se recuerda un rato. Sólo
+ * para servidores locales: a un proveedor en la nube no se lo molesta.
+ */
+async function endpointLocalResponde(cfg: ConfigVisionPropia): Promise<boolean> {
+  if (!ES_LOCAL.test(cfg.baseUrl)) return true;
+  if (salud && salud.baseUrl === cfg.baseUrl && Date.now() < salud.hasta) return salud.ok;
+  let ok = false;
+  try {
+    // Cualquier respuesta HTTP (aun un 404) quiere decir que hay alguien escuchando.
+    await fetch(`${cfg.baseUrl}/models`, {
+      headers: { authorization: `Bearer ${cfg.apiKey}` },
+      signal: AbortSignal.timeout(Number(process.env.DOC_VISION_PING_MS) || 1_500),
+    });
+    ok = true;
+  } catch {
+    ok = false;
+  }
+  marcarSalud(cfg.baseUrl, ok);
+  return ok;
 }
 
 /** Llama a un endpoint OpenAI-compatible propio (OpenAI, Gemini, Ollama…). */
@@ -100,8 +137,14 @@ export async function describirImagenConVision(
 
   let contenido = "";
   if (propia) {
+    if (!(await endpointLocalResponde(propia))) {
+      logger.warn("documents.vision.local_no_responde", { endpoint: propia.baseUrl });
+      return { ok: false, motivo: "falla" };
+    }
     const r = await pedirAEndpointPropio(propia, imagen, prompt);
     if (!r.ok) {
+      // Se cayó entre la pregunta y el pedido: el próximo no lo vuelve a esperar.
+      if (/fetch failed|ECONNREFUSED/i.test(r.error)) marcarSalud(propia.baseUrl, false);
       logger.warn("documents.vision.fallo", { err: r.error, modelo: propia.modelo, endpoint: propia.baseUrl });
       return { ok: false, motivo: esModeloInexistente(r.error) ? "sin_modelo" : "falla" };
     }

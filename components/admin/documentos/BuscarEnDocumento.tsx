@@ -24,7 +24,7 @@ interface Props {
   docId: string;
   /** `ocrText` del documento (texto crudo + lo que agregó la IA). */
   ocrText: string | null;
-  /** "vision" si el texto salió de mirar una foto. */
+  /** "vision" si el texto salió de mirar una foto; "ocr" si se leyó letra por letra. */
   origen?: string;
   /** El PDF era un escaneo: sólo se leyó su primera página. */
   escaneo?: boolean;
@@ -134,9 +134,13 @@ export default function BuscarEnDocumento({ docId, ocrText, origen, escaneo, con
       </div>
 
       <p className="flex items-center gap-1.5 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-1.5 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
-        {origen === "vision" ? <Eye className="h-3 w-3 shrink-0" aria-hidden /> : <FileText className="h-3 w-3 shrink-0" aria-hidden />}
-        {escaneo
+        {origen === "vision" || origen === "ocr" ? <Eye className="h-3 w-3 shrink-0" aria-hidden /> : <FileText className="h-3 w-3 shrink-0" aria-hidden />}
+        {escaneo && origen === "ocr"
+          ? "Este PDF es un escaneo: se leyeron sus primeras páginas letra por letra. Puede tener errores y lo que esté más adelante todavía no se busca."
+          : escaneo
           ? "Este PDF es un escaneo: la IA leyó su PRIMERA PÁGINA mirándola. Lo que esté en las otras páginas todavía no se busca."
+          : origen === "ocr"
+          ? "Este texto se leyó letra por letra de la imagen: puede tener errores de lectura."
           : origen === "vision"
           ? "Este texto lo leyó la IA mirando la foto: puede tener errores de transcripción."
           : "Texto extraído del archivo. Busca sin preocuparte por tildes ni mayúsculas."}
