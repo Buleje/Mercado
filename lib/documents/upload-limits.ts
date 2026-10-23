@@ -56,6 +56,8 @@ const INLINE_SEGURO = [
   "image/png", "image/jpeg", "image/gif", "image/webp", "image/avif", "image/bmp", "image/x-icon",
   "video/mp4", "video/webm", "video/ogg",
   "audio/mpeg", "audio/wav", "audio/ogg", "audio/mp4", "audio/aac", "audio/flac",
+  // Lo que graba Chrome/Android (la grabadora del cubicador): sin esto se bajaba en vez de sonar.
+  "audio/webm",
   "text/plain", "text/csv", "text/markdown",
 ];
 

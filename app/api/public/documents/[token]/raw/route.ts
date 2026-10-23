@@ -3,6 +3,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { downloadFromStorage, esInlineSeguro } from "@/lib/documents/storage";
+import { extensionDe } from "@/lib/documents/upload-limits";
+import { extensionDeMime } from "@/lib/grabadora/formato";
 
 /**
  * GET /api/public/documents/[token]/raw — sirve el archivo compartido desde NUESTRO
@@ -32,7 +34,10 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     const buf = await downloadFromStorage(found.doc.storagePath);
     if (!buf) return NextResponse.json({ error: "storage_unavailable" }, { status: 502 });
 
-    const safeName = found.doc.name.replace(/[^\w.-]+/g, "_") || "documento";
+    const base = found.doc.name.replace(/[^\w.-]+/g, "_") || "documento";
+    // Un audio renombrado desde la grabadora queda sin extensión: al bajarlo no lo abría nada.
+    const sinExtension = !extensionDe(base) && (found.doc.mimeType ?? "").startsWith("audio/");
+    const safeName = sinExtension ? `${base}.${extensionDeMime(found.doc.mimeType)}` : base;
     // Un link público que sirve un SVG/HTML inline ejecuta scripts en NUESTRO
     // dominio para cualquiera que abra el link: lo que no es seguro de mostrar
     // se baja, no se abre.

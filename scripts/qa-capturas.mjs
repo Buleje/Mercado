@@ -16,6 +16,7 @@
  *     [--preset cubicador-lote,resumenes-rolliza]   (recorridos de scripts/qa-pasos/, van antes; `despacho-guia-a-mano` =
  *       guía entera en QA-ui con 1 troza a mano, registrada y ANULADA al final: escribe → --anchos 1280 --temas claro) \
  *       un preset puede ser {"tenant","ruta","pasos"} (sus --tenant/--ruta por defecto) y un paso {"preset":"otro"} lo incluye entero \
+ *     [--media-falso]   (micrófono/cámara falsos de Chromium con permiso: grabadora, getUserMedia)
  *     [--evals-todos]   (cada {"eval"} corre en todos los anchos y temas; el reporte trae {tema, ancho, valor})
  *     [--resumen]   (stdout sólo con lo esencial —los evals recortados a 400 caracteres—; el JSON completo igual queda en <salida>/reporte.json) \
  *     [--ls '{"clave":"valor"}']   (siembra localStorage antes de cargar: estados recordados sin recargar) \
@@ -290,9 +291,17 @@ if (superadmin) {
     process.exit(1);
   }
 }
-const browser = await chromium.launch({ headless: true, executablePath: chrome });
+/* `--media-falso` (23-10, grabadora del cubicador): micrófono y cámara de mentira (un pitido
+   y un patrón) y el permiso dado, para probar getUserMedia/MediaRecorder sin hardware. */
+const mediaFalso = process.argv.includes("--media-falso");
+const browser = await chromium.launch({
+  headless: true,
+  executablePath: chrome,
+  ...(mediaFalso ? { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] } : {}),
+});
 const ctx = await browser.newContext({
   viewport: { width: anchos[0] ?? 1280, height: 900 },
+  ...(mediaFalso ? { permissions: ["microphone", "camera"] } : {}),
   ...(sesionSa ? { userAgent: sesionSa.userAgent } : { extraHTTPHeaders: { "x-tenant-id": tenant } }),
 });
 if (sesionSa) await ctx.addCookies(sesionSa.cookies);
