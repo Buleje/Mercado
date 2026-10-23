@@ -211,8 +211,21 @@ function Secciones({ d, ficha }: { d: DatosPapel; ficha: GtfSerfor }) {
 /** Cuántos casilleros del Anexo I dibuja esta hoja (para el lector de pantalla). */
 const TOTAL_CASILLEROS = CASILLEROS_GTF_2024.length;
 
-/** `conTrozas`: la guía trae su lista de trozas (para la «X» del Anexo 03 cuando SERFOR no publica el N° del (33)). */
-export default function GtfDatosPapelGuia({ ficha, conTrozas = false }: { ficha: GtfSerfor; conTrozas?: boolean }) {
+/**
+ * `conTrozas`: la guía trae su lista de trozas (para la «X» del Anexo 03 cuando
+ * SERFOR no publica el N° del (33)). `registro={false}`: sin la franja «Datos
+ * del registro en SERFOR» (lo que no sale en el papel), porque quien la llama
+ * la muestra al costado (los detalles de «Datos de la GTF», 23-10).
+ */
+export default function GtfDatosPapelGuia({
+  ficha,
+  conTrozas = false,
+  registro = true,
+}: {
+  ficha: GtfSerfor;
+  conTrozas?: boolean;
+  registro?: boolean;
+}) {
   const d = datosDeLaFicha(ficha);
   const cabecera = cabeceraDeLaFicha(ficha);
   const { serie, numero } = partirNumero(ficha.gtfNumber);
@@ -231,7 +244,7 @@ export default function GtfDatosPapelGuia({ ficha, conTrozas = false }: { ficha:
           <DetalleProductoPapel d={d} ficha={ficha} conTrozas={conTrozas} />
         </section>
       </PapelGtf>
-      <RegistroSerforPapel ficha={ficha} />
+      {registro && <RegistroSerforPapel ficha={ficha} />}
     </div>
   );
 }

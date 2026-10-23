@@ -108,7 +108,9 @@ describe("Modal «Datos»", () => {
     expect(screen.getByRole("columnheader", { name: "Código único" })).toBeTruthy();
     // El ancho es el tamaño con nombre `planilla` (ADR-489: sin anchos sueltos); el alto fijo es lo propio.
     expect(screen.getByRole("dialog").getAttribute("data-modal-tamano")).toBe("planilla");
-    expect(screen.getByRole("dialog").className).toContain("sm:h-[90vh]");
+    expect(screen.getByRole("dialog").className).toContain("sm:h-[94vh]");
+    // 23-10: los detalles de la guía al costado de la hoja (en una PC; jsdom no tiene matchMedia = PC).
+    expect(screen.getByRole("complementary", { name: /Detalles de la GTF/ })).toBeTruthy();
   });
 });
 

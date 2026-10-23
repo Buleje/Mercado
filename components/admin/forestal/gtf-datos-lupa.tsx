@@ -16,9 +16,14 @@
  *
  * Sólo «Datos de la GTF» la usa: la vista previa de «Importar guías» dibuja
  * los mismos bloques SIN lupa (`LothImportarGuiasBloques` no la conoce).
+ *
+ * 23-10 (Brandon: «la gtf y lista bien arriba, todo el espacio que aproveche
+ * para evitar estar bajando»): con `barraEn` la barra se muda a la cabecera
+ * del modal (portal, sólo íconos) y el visor arranca pegado a ella.
  */
 
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ArrowLeftRight, Fullscreen, Scan, ZoomIn, ZoomOut } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { button } from "@/components/ui-system/button-variants";
@@ -46,11 +51,22 @@ const BOTON_MODO = cn(
   "aria-pressed:border-[var(--accent)] aria-pressed:bg-[var(--accent-soft)]",
 );
 
-/** La barra de la lupa. `extra` va a la derecha (el «Ver en hoja grande» del modal). */
-function BarraLupa({ lupa, extra }: { lupa: LupaPapel; extra?: ReactNode }) {
+/** En la cabecera del modal: los dos modos sólo con su ícono (el nombre queda en `aria-label` y `title`). */
+const BOTON_MODO_COMPACTO = cn(BOTON_MODO, "w-12 shrink-0 px-0");
+
+/**
+ * La barra de la lupa. `extra` va a la derecha (el «Ver en hoja grande» del
+ * modal). `compacta` = la de la cabecera: sin rótulos y sin partir la fila.
+ */
+function BarraLupa({ lupa, extra, compacta = false, etiqueta }: { lupa: LupaPapel; extra?: ReactNode; compacta?: boolean; etiqueta?: string }) {
   const icono = cn(button({ variant: "ghost", size: "icon" }), "text-[var(--text-primary)]");
+  const modo = compacta ? BOTON_MODO_COMPACTO : BOTON_MODO;
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-2">
+    <div
+      role={compacta ? "toolbar" : undefined}
+      aria-label={compacta ? `Lupa de la hoja ${etiqueta ?? ""}`.trim() : undefined}
+      className={cn("flex shrink-0 items-center gap-2", !compacta && "flex-wrap")}
+    >
       <div className="flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <button type="button" onClick={lupa.alejar} disabled={!lupa.puedeAlejar} aria-label="Alejar la hoja" title="Alejar (Ctrl + −)" className={icono}>
           <ZoomOut className={ICONO} aria-hidden />
@@ -77,10 +93,10 @@ function BarraLupa({ lupa, extra }: { lupa: LupaPapel; extra?: ReactNode }) {
         aria-pressed={lupa.modo === "ancho"}
         aria-label="Ajustar al ancho"
         title="La hoja al ancho de la ventana"
-        className={BOTON_MODO}
+        className={modo}
       >
         <ArrowLeftRight className={ICONO} aria-hidden />
-        <span className="max-sm:hidden">Ajustar al ancho</span>
+        {!compacta && <span className="max-sm:hidden">Ajustar al ancho</span>}
       </button>
       <button
         type="button"
@@ -88,10 +104,10 @@ function BarraLupa({ lupa, extra }: { lupa: LupaPapel; extra?: ReactNode }) {
         aria-pressed={lupa.modo === "completa"}
         aria-label="Hoja completa"
         title="La hoja entera en el alto visible, de un vistazo"
-        className={BOTON_MODO}
+        className={modo}
       >
         <Scan className={ICONO} aria-hidden />
-        <span className="max-sm:hidden">Hoja completa</span>
+        {!compacta && <span className="max-sm:hidden">Hoja completa</span>}
       </button>
       {extra && <div className="ml-auto flex">{extra}</div>}
     </div>
@@ -108,6 +124,7 @@ export default function GtfDatosLupa({
   hoja = false,
   inicial,
   extra,
+  barraEn,
   children,
 }: {
   clave: string;
@@ -116,6 +133,12 @@ export default function GtfDatosLupa({
   hoja?: boolean;
   inicial?: ModoLupa;
   extra?: ReactNode;
+  /**
+   * Dónde va la barra: sin la prop, arriba del visor; con un nodo, ahí (la
+   * cabecera del modal) y en su forma compacta; `null` = el nodo todavía no
+   * se montó (un cuadro).
+   */
+  barraEn?: Element | null;
   children: ReactNode;
 }) {
   const margen = hoja ? MARGEN_HOJA : 0;
@@ -125,7 +148,11 @@ export default function GtfDatosLupa({
   const medida = anchoHoja != null && altoHoja > 0;
   return (
     <div role="group" aria-label={`Lupa de la hoja ${etiqueta}`} onKeyDown={lupa.onKeyDown} className="flex min-h-0 flex-1 flex-col gap-2">
-      <BarraLupa lupa={lupa} extra={extra} />
+      {barraEn === undefined ? (
+        <BarraLupa lupa={lupa} extra={extra} />
+      ) : (
+        barraEn && createPortal(<BarraLupa lupa={lupa} extra={extra} compacta etiqueta={etiqueta} />, barraEn)
+      )}
       {/* El carril de la barra de scroll queda reservado (`scrollbar-gutter`): el ancho útil no cambia al aparecer el scroll. */}
       <div
         ref={lupa.visorRef}
