@@ -2,6 +2,8 @@ import "server-only";
 import { ContractsDB } from "@/lib/db/contracts.db";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { buildStoragePath, uploadToStorage } from "@/lib/documents/storage";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
 import { generarContratoPdf, type EmisorContrato, type FirmaEnPdf } from "@/lib/contratos/contrato-pdf";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { logger } from "@/lib/logger";
@@ -109,6 +111,7 @@ export async function archivarContrato(
   const faltanFirmas = contrato.firmantes.length > 0 && firmas.length < contrato.firmantes.length;
 
   const pdf = await generarContratoPdf({
+    membrete: await membreteParaPdf(tenantId).catch(sinDato("contratos membrete del negocio")),
     contrato,
     emisor,
     firmas,

@@ -14,7 +14,7 @@ import {
 import { DataTable, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { openPrintable } from "@/lib/cacao/cacao-print";
+import { membreteCacao, openPrintable } from "@/lib/cacao/cacao-print";
 import { formatDate, formatDateLong, formatNumber } from "@/lib/format";
 
 interface LoteRow { id: string; loteCode: string | null; fecha: string; kg: number; total: number; abonado: number; saldo: number; estadoPago: string }
@@ -170,16 +170,16 @@ export default function CacaoLiquidaciones() {
 
 /** Constancia de pago imprimible (firmable en campo). HTML autocontenido con su
  *  propio window.print(); openPrintable lo abre vía iframe robusto. */
-function receiptHtml(grupo: Grupo, aplicado: number, saldoRestante: number, fecha: string): string {
+function receiptHtml(grupo: Grupo, aplicado: number, saldoRestante: number, m: { estilos: string; cabecera: string; pie: string }): string {
   const esc = (s: string) => s.replace(/[&<>"]/g, (c) => (({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }) as Record<string, string>)[c] ?? c);
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Constancia de pago — ${esc(grupo.nombre)}</title>
-<style>*{box-sizing:border-box}body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;color:#111;margin:0;padding:32px}
+<style>${m.estilos}*{box-sizing:border-box}body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;color:#111;margin:0;padding:32px}
 .doc{max-width:520px;margin:0 auto}h1{font-size:20px;margin:0 0 2px}.muted{color:#555;font-size:13px;margin:0}
 table{width:100%;border-collapse:collapse;margin:20px 0}td{padding:8px 0;font-size:14px;border-bottom:1px solid #eee}
 td.k{color:#555}td.v{text-align:right;font-weight:700}.total{font-size:22px;font-weight:800}
 .firma{margin-top:56px;display:flex;justify-content:space-between;gap:24px}.firma div{flex:1;border-top:1px solid #333;padding-top:6px;text-align:center;font-size:12px;color:#555}</style>
 </head><body><div class="doc">
-<h1>Constancia de pago de liquidación</h1><p class="muted">Acopio de cacao · ${esc(fecha)}</p>
+${m.cabecera}
 <table>
 <tr><td class="k">Productor</td><td class="v">${esc(grupo.nombre)}</td></tr>
 <tr><td class="k">Código</td><td class="v">${esc(grupo.codigo ?? "—")}</td></tr>
@@ -188,6 +188,7 @@ td.k{color:#555}td.v{text-align:right;font-weight:700}.total{font-size:22px;font
 <tr><td class="k">Saldo restante</td><td class="v">S/ ${n2(saldoRestante)}</td></tr>
 </table>
 <div class="firma"><div>Firma del productor</div><div>Firma / sello del acopiador</div></div>
+${m.pie}
 </div><script>window.onload=function(){window.print()}</script></body></html>`;
 }
 
@@ -229,7 +230,7 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
             <p className="text-sm text-[var(--text-secondary)]">pagados a {grupo.nombre}. {done.saldoRestante > 0 ? `Queda S/ ${n2(done.saldoRestante)} pendiente.` : "Cuenta saldada."}</p>
           </div>
           <div className="flex justify-center gap-2">
-            <button type="button" onClick={() => openPrintable(receiptHtml(grupo, done.aplicado, done.saldoRestante, done.fecha))} className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" />Imprimir comprobante</button>
+            <button type="button" onClick={async () => openPrintable(receiptHtml(grupo, done.aplicado, done.saldoRestante, await membreteCacao("Constancia de pago · Cacao", { codigo: grupo.codigo, nombreSiFalta: "Acopio de cacao" })))} className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" />Imprimir comprobante</button>
             <button type="button" onClick={onPaid} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90">Listo</button>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { ContractsDB } from "@/lib/db/contracts.db";
 import { SettingsDB } from "@/lib/db/settings.db";
+import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
 import { generarContratoPdf } from "@/lib/contratos/contrato-pdf";
 import { archivarContrato } from "@/lib/contratos/archivar-contrato";
 import { logAudit } from "@/lib/audit-logger";
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const firmasDb = await ContractsDB.getSignatureImages(auth.tenantId, id);
 
     const pdf = await generarContratoPdf({
+      membrete: await membreteParaPdf(auth.tenantId).catch(sinDato("contratos membrete del negocio")),
       contrato,
       emisor: razonSocial
         ? { razonSocial, ruc: settings?.ruc ?? undefined, direccion: settings?.businessAddress ?? undefined }

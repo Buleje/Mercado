@@ -4,7 +4,7 @@
  * de PurchaseOrderPDF). El productor se lleva su comprobante de pago.
  */
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
-import { openPrintable } from "@/lib/cacao/cacao-print";
+import { membreteCacao, openPrintable } from "@/lib/cacao/cacao-print";
 
 export interface ReciboLote {
   loteCode: string;
@@ -32,12 +32,14 @@ const fdate = (iso: string) => {
   catch { return iso; }
 };
 
-export function printCacaoRecibo(lote: ReciboLote, acopiador = "Acopio de Cacao") {
+export async function printCacaoRecibo(lote: ReciboLote, acopiador = "Acopio de Cacao") {
   if (typeof window === "undefined") return;
+  const m = await membreteCacao("Recibo de liquidación · Cacao", { codigo: lote.loteCode, nombreSiFalta: acopiador });
   const grado = lote.grado ? (GRADO_LABEL[lote.grado as CacaoGrado] ?? lote.grado) : "Sin clasificar";
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8" />
 <title>Recibo ${esc(lote.loteCode)}</title>
 <style>
+  ${m.estilos}
   * { box-sizing: border-box; }
   body { font-family: -apple-system, system-ui, "Segoe UI", Roboto, Arial, sans-serif; color: #1a1a1a; margin: 0; padding: 32px; }
   .doc { max-width: 720px; margin: 0 auto; }
@@ -60,10 +62,7 @@ export function printCacaoRecibo(lote: ReciboLote, acopiador = "Acopio de Cacao"
   .foot { margin-top: 40px; font-size: 11px; color: #999; text-align: center; }
   @media print { body { padding: 0; } @page { margin: 16mm; } }
 </style></head><body><div class="doc">
-  <div class="head">
-    <div class="brand">${esc(acopiador)}<small>Recibo de liquidación · Cacao</small></div>
-    <div class="doctype"><div class="t">Lote</div><div class="code">${esc(lote.loteCode)}</div></div>
-  </div>
+  ${m.cabecera}
   <div class="meta">
     <div class="row"><span>Fecha</span><span>${fdate(lote.fecha)}</span></div>
     <div class="row"><span>Productor</span><span>${esc(lote.productorNombre) || "—"}</span></div>
@@ -80,6 +79,7 @@ export function printCacaoRecibo(lote: ReciboLote, acopiador = "Acopio de Cacao"
     <div class="sign">Acopiador / Responsable</div>
   </div>
   <div class="foot">Comprobante interno de acopio · No es comprobante de pago electrónico SUNAT.</div>
+  ${m.pie}
 </div>
 <script>window.onload=function(){window.print();}</script>
 </body></html>`;

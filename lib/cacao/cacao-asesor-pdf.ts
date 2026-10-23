@@ -5,6 +5,8 @@
  */
 import type { AdvisorResult } from "./cacao-advisor";
 import { mesNombre } from "./cacao-advisor";
+import { membreteDelDocumento } from "@/lib/documentos/membrete-cargar";
+import { altoDelPie, datosDelMembrete, dibujarMembrete, dibujarPies, fechaDelDocumento, margenDelMembrete } from "@/lib/documentos/membrete-pdf";
 import type { AsesorLocal } from "./cacao-asesor-informe";
 
 const SIGNAL_LABEL: Record<AdvisorResult["signal"], string> = {
@@ -22,33 +24,31 @@ export async function downloadCacaoAsesorPDF(
 ) {
   const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const GREEN: [number, number, number] = [22, 101, 52];
-  const M = 40;
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const PT = 0.3528; // mm por punto
+  const mbr = datosDelMembrete(await membreteDelDocumento(), { tipo: "Asesor de cacao", fecha: fechaDelDocumento(new Date().toISOString()) });
+  const GREEN: [number, number, number] = [...mbr.acento];
+  const M = margenDelMembrete();
   const W = doc.internal.pageSize.getWidth() - M * 2;
-  let y = M;
+  let y = dibujarMembrete(doc, mbr);
+  const limite = doc.internal.pageSize.getHeight() - altoDelPie() - 4;
+  const hay = (alto: number) => { if (y + alto > limite) { doc.addPage(); y = M; } };
   const finalY = () => (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
   const wrap = (text: string, size: number, color: [number, number, number] = [40, 40, 40]) => {
     doc.setFontSize(size);
     doc.setTextColor(...color);
     const lines = doc.splitTextToSize(text, W) as string[];
+    hay(lines.length * (size + 3) * PT);
+    y += size * PT;
     doc.text(lines, M, y);
-    y += lines.length * (size + 3);
+    y += (lines.length * (size + 3) - size) * PT;
   };
   const t = a.tecnico;
   const m = a.metrics;
   const d = a.direccion;
 
-  doc.setFontSize(18);
-  doc.setTextColor(20, 20, 20);
-  doc.text("Asesor de cacao — informe", M, y);
-  y += 18;
-  wrap(
-    `Generado: ${new Date().toLocaleString("es-PE", { dateStyle: "long", timeStyle: "short" })} · señal y estadística calculadas; narrativa por IA`,
-    9,
-    [130, 130, 130],
-  );
-  y += 4;
+  wrap("Señal y estadística calculadas; narrativa por IA", 9, [107, 114, 128]);
+  y += 2;
 
   doc.setFontSize(13);
   doc.setTextColor(...GREEN);
@@ -57,11 +57,11 @@ export async function downloadCacaoAsesorPDF(
     M,
     y,
   );
-  y += 16;
+  y += 6;
   wrap(a.titulo, 12, [20, 20, 20]);
   wrap(a.resumen, 10);
   if (narrative) wrap(`IA: ${narrative}`, 10, GREEN);
-  y += 6;
+  y += 3;
 
   const tbl = (head: string[], body: (string | number)[][]) => {
     autoTable(doc, {
@@ -71,9 +71,9 @@ export async function downloadCacaoAsesorPDF(
       theme: "grid",
       headStyles: { fillColor: GREEN, fontSize: 9 },
       styles: { fontSize: 9, cellPadding: 3 },
-      margin: { left: M, right: M },
+      margin: { left: M, right: M, bottom: altoDelPie() + 2 },
     });
-    y = finalY() + 12;
+    y = finalY() + 5;
   };
 
   tbl(
@@ -117,30 +117,33 @@ export async function downloadCacaoAsesorPDF(
       9,
     );
 
-  y += 4;
+  y += 2;
+  hay(14);
   doc.setFontSize(11);
   doc.setTextColor(...GREEN);
   doc.text("Por qué", M, y);
-  y += 12;
+  y += 5;
   a.motivos.forEach((mv) => wrap(`• ${mv}`, 9));
-  y += 4;
+  y += 2;
+  hay(14);
   doc.setFontSize(11);
   doc.setTextColor(...GREEN);
   doc.text("Riesgos", M, y);
-  y += 12;
+  y += 5;
   a.riesgos.forEach((r) => wrap(`• ${r}`, 9));
 
   if (local && local.stockKg > 0) {
-    y += 4;
+    y += 2;
     wrap(`Tu stock: ${local.stockKg} kg${local.miPrecioKg != null ? ` · costo S/ ${local.miPrecioKg}/kg` : ""}.`, 9, [20, 20, 20]);
   }
 
-  y += 8;
+  y += 3;
   wrap(
     "Orientativo — no es asesoría financiera. Fuente de precio: ICE (Yahoo Finance). Decide según tu caja, la calidad de tu lote y tus compromisos de venta.",
     8,
     [150, 150, 150],
   );
 
+  dibujarPies(doc, mbr);
   doc.save(`asesor-cacao-${new Date().toISOString().slice(0, 10)}.pdf`);
 }

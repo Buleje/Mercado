@@ -5,7 +5,7 @@
  * Mismo lenguaje visual que cacao-reporte.ts (verde #166534, tabular-nums).
  */
 import { ESTADO_PAGO_LABEL, type CacaoEstadoPago } from "./cacao-quality";
-import { openPrintable } from "./cacao-print";
+import { membreteCacao, openPrintable } from "./cacao-print";
 
 const esc = (s: unknown) =>
   String(s ?? "").replace(
@@ -72,18 +72,13 @@ export interface VentaReporteStats {
 }
 
 /** Reporte de ventas por período (imprimible). Usa las ventas ya filtradas de la vista. */
-export function printCacaoVentasReporte(
+export async function printCacaoVentasReporte(
   ventas: VentaReporteRow[],
   stats: VentaReporteStats,
   acopiador = "Acopio de Cacao",
 ) {
   if (typeof window === "undefined") return;
-  const fecha = new Date().toLocaleDateString("es-PE", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  const m = await membreteCacao("Reporte de ventas · Cacao", { nombreSiFalta: acopiador });
   const fechas = ventas.map((v) => v.fecha).sort();
   const periodo = fechas.length ? `${fdate(fechas[0])} – ${fdate(fechas[fechas.length - 1])}` : "—";
   const rows = ventas
@@ -99,8 +94,9 @@ export function printCacaoVentasReporte(
     )
     .join("");
 
-  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"/><title>Reporte de ventas — Cacao</title><style>${HEAD_STYLE}</style></head><body><div class="doc">
-    <div class="head"><div class="brand">${esc(acopiador)}<small>Reporte de ventas · Cacao</small></div><div class="date">${fecha}<br/><b>Período:</b> ${periodo}</div></div>
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"/><title>Reporte de ventas — Cacao</title><style>${m.estilos}${HEAD_STYLE}</style></head><body><div class="doc">
+    ${m.cabecera}
+    <p style="margin:-8px 0 14px;font-size:13px;color:#666"><b>Período:</b> ${periodo}</p>
     <div class="kpis">
       <div class="kpi"><div class="l">Ingresos</div><div class="v">S/ ${n2(stats.ingresos)}</div></div>
       <div class="kpi"><div class="l">Cobrado</div><div class="v">S/ ${n2(stats.cobrado)}</div></div>
@@ -113,6 +109,7 @@ export function printCacaoVentasReporte(
       <tfoot><tr><td colspan="3">Total</td><td class="r">${n2(stats.kgVendido)}</td><td class="r">S/ ${n2(stats.ingresos)}</td><td></td></tr></tfoot>
     </table>
     <div class="foot">Reporte interno de ventas de cacao. Los montos en soles incluyen conversión de ventas FOB (US$).</div>
+    ${m.pie}
   </div><script>window.onload=function(){window.print()}</script></body></html>`;
   openPrint(html);
 }
@@ -134,18 +131,13 @@ export interface LiquidacionLote {
 }
 
 /** Comprobante de liquidación (pago) al productor por sus lotes acopiados. */
-export function printCacaoLiquidacion(
+export async function printCacaoLiquidacion(
   producer: LiquidacionProducer,
   lotes: LiquidacionLote[],
   acopiador = "Acopio de Cacao",
 ) {
   if (typeof window === "undefined") return;
-  const fecha = new Date().toLocaleDateString("es-PE", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  const m = await membreteCacao("Liquidación al productor · Cacao", { nombreSiFalta: acopiador });
   const totalKg = lotes.reduce((s, l) => s + num(l.pesoKg), 0);
   const totalPagado = lotes.reduce((s, l) => s + num(l.totalPagado), 0);
   const rows = lotes
@@ -161,8 +153,8 @@ export function printCacaoLiquidacion(
     )
     .join("");
 
-  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"/><title>Liquidación al productor — Cacao</title><style>${HEAD_STYLE}</style></head><body><div class="doc">
-    <div class="head"><div class="brand">${esc(acopiador)}<small>Comprobante de liquidación · Cacao</small></div><div class="date">${fecha}</div></div>
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"/><title>Liquidación al productor — Cacao</title><style>${m.estilos}${HEAD_STYLE}</style></head><body><div class="doc">
+    ${m.cabecera}
     <table style="margin-bottom:6px"><tbody>
       <tr><td style="border:none;padding:2px 8px"><b>Productor:</b> ${esc(producer.nombre)}${producer.codigo ? ` (${esc(producer.codigo)})` : ""}</td><td style="border:none;padding:2px 8px" class="r">${producer.dni ? `<b>DNI:</b> ${esc(producer.dni)}` : ""}</td></tr>
       <tr><td style="border:none;padding:2px 8px" colspan="2">${producer.sector ? `<b>Sector:</b> ${esc(producer.sector)}` : ""}</td></tr>
@@ -174,6 +166,7 @@ export function printCacaoLiquidacion(
     </table>
     <div class="sign"><div>Firma del productor</div><div>Firma del acopiador</div></div>
     <div class="foot">Comprobante interno de pago por acopio de cacao en grano. Conservar para el registro del productor.</div>
+    ${m.pie}
   </div><script>window.onload=function(){window.print()}</script></body></html>`;
   openPrint(html);
 }

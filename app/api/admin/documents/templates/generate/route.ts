@@ -5,6 +5,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { CarpetaAjenaError, DocumentsDB } from "@/lib/db/documents.db";
 import { ensureSystemTemplatesSeeded } from "@/lib/documents/templates-seed";
+import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
+import { sinDato } from "@/lib/errores/sin-dato";
 import { renderTemplateToPdf } from "@/lib/documents/template-renderer";
 import {
   buildStoragePath,
@@ -54,6 +56,7 @@ export async function POST(req: NextRequest) {
 
     const pdfBytes = await renderTemplateToPdf({
       title: tpl.name,
+      membrete: await membreteParaPdf(auth.tenantId).catch(sinDato("plantillas membrete del negocio")),
       body: tpl.body,
       values: parsed.data.values,
     });

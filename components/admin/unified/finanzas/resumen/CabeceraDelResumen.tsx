@@ -12,7 +12,9 @@
 
 import type { ReactNode } from "react";
 import { GitCompareArrows, Printer, RefreshCw, Timer, TrendingUp } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { CabeceraVista } from "@/components/admin/inventario/movimientos/CabeceraVista";
+import { useMembrete } from "@/hooks/use-membrete";
 import { irAlOrigen } from "@/components/admin/unified/finanzas/resultado/ir-al-origen";
 
 interface Props {
@@ -26,8 +28,29 @@ interface Props {
   actualizar: () => void;
 }
 
+/** Sólo al imprimir: el logo y el nombre del negocio encabezan el resumen (ADR-514). */
+function MembreteParaImprimir({ mes }: { mes: string }) {
+  const m = useMembrete();
+  const nombre = m?.nombre ?? m?.razonSocial;
+  if (!nombre) return null;
+  const logo = m?.logoPngUrl ?? m?.logoUrl;
+  return (
+    <div className="hidden items-center gap-3 border-b border-[var(--rule-strong)] pb-3 print:flex">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {logo && <img src={logo} alt="" className="h-14 max-w-40 object-contain" />}
+      <div className="min-w-0 flex-1">
+        <CardTitle>{nombre}</CardTitle>
+        <p className="text-xs text-[var(--text-secondary)]">{[m?.ruc ? `RUC ${m.ruc}` : null, m?.direccion, m?.telefono].filter(Boolean).join(" · ")}</p>
+      </div>
+      <p className="text-right text-sm font-semibold text-[var(--text-primary)]">Resumen de {mes}</p>
+    </div>
+  );
+}
+
 export default function CabeceraDelResumen({ mes, secciones, indicadores, autoActivo, alternarAuto, actualizar }: Props) {
   return (
+    <>
+    <MembreteParaImprimir mes={mes} />
     <CabeceraVista
       titulo={mes}
       ayuda={{
@@ -63,5 +86,6 @@ export default function CabeceraDelResumen({ mes, secciones, indicadores, autoAc
         },
       ]}
     />
+    </>
   );
 }

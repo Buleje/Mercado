@@ -838,10 +838,10 @@ function ImportModal({ onClose, onDone }: { knownTypes: string[]; onClose: () =>
 function ContractModal({ asset, onClose }: { asset: AssetStats; onClose: () => void }) {
   const [form, setForm] = useState({ mode: "contrato" as "contrato" | "cotizacion", client: "", quantity: "", rate: asset.hourlyRate != null ? String(asset.hourlyRate) : "", startDate: "", endDate: "", notes: "" });
   const amount = (Number(form.quantity) || 0) * (Number(form.rate) || 0);
-  const gen = () => {
+  const gen = async () => {
     if (!form.client.trim()) { toast.error("Pon el cliente"); return; }
     if (amount <= 0) { toast.error("Pon cantidad y tarifa"); return; }
-    generateContractPDF({
+    await generateContractPDF({
       mode: form.mode, asset: { name: asset.name, type: asset.type, plate: asset.plate },
       client: form.client.trim(), quantity: form.quantity ? Number(form.quantity) : null, unitLabel: unitNoun(asset.rateUnit),
       rate: Number(form.rate) || 0, amount, startDate: form.startDate ? dStr(form.startDate) : null, endDate: form.endDate ? dStr(form.endDate) : null,

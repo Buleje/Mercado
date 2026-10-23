@@ -6,6 +6,9 @@ import { logActivity } from "@/lib/activity-logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { ESTADOS_PEDIDO_QUE_ENTRAN, rangoDelMesLima } from "@/lib/finance/ingresos-del-periodo";
 import nodemailer from "nodemailer";
+import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
+import { altoDelPie, datosDelMembrete, dibujarMembrete, dibujarPies } from "@/lib/documentos/membrete-pdf";
+import { sinDato } from "@/lib/errores/sin-dato";
 import { avisoCorreoActivo, registrarEnvioCorreo } from "@/lib/avisos-correo";
 
 /**
@@ -197,27 +200,21 @@ async function generatePdfBuffer(report: ReportData): Promise<Buffer> {
   const { default: autoTable } = await import("jspdf-autotable");
 
   const doc     = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const primary = [45, 106, 79] as [number, number, number];   // var(--accent)
+  const primary = [45, 106, 79] as [number, number, number];   // se reemplaza por el acento del negocio
   const dark    = [30, 30, 30]  as [number, number, number];
 
   let y = 20;
 
-  // ── Encabezado ──────────────────────────────────────────────────────────
-  doc.setFillColor(...primary);
-  doc.rect(0, 0, 210, 35, "F");
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text("Reporte Mensual", 15, 15);
-
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "normal");
-  doc.text(report.tenantName, 15, 23);
-  doc.text(`Periodo: ${report.period}`, 15, 30);
+  // ── Membrete del negocio (logo + nombre, ADR-514) ───────────────────────
+  const mp = await membreteParaPdf(report.tenantId).catch(sinDato("monthly-report membrete del negocio"));
+  const logo = mp?.logo
+    ? { dataUrl: `data:image/png;base64,${Buffer.from(mp.logo.bytes).toString("base64")}`, ancho: mp.logo.ancho, alto: mp.logo.alto }
+    : null;
+  const mbr = datosDelMembrete({ ...(mp?.membrete ?? {}), nombre: mp?.membrete.nombre ?? report.tenantName, logo }, { tipo: "Reporte mensual", codigo: report.period });
+  primary[0] = mbr.acento[0]; primary[1] = mbr.acento[1]; primary[2] = mbr.acento[2];
 
   // ── KPIs ────────────────────────────────────────────────────────────────
-  y = 48;
+  y = dibujarMembrete(doc, mbr) + 4;
   doc.setTextColor(...dark);
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
@@ -256,13 +253,13 @@ async function generatePdfBuffer(report: ReportData): Promise<Buffer> {
     theme:  "striped",
     headStyles: { fillColor: primary },
     styles:     { fontSize: 9 },
-    margin:     { left: 15, right: 15 },
+    margin:     { left: 15, right: 15, bottom: altoDelPie() + 2 },
   });
 
   y = (doc as typeof doc & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
   // ── Top 5 clientes ──────────────────────────────────────────────────────
-  if (y > 230) { doc.addPage(); y = 20; }
+  if (y > 220) { doc.addPage(); y = 20; }
 
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
@@ -277,7 +274,7 @@ async function generatePdfBuffer(report: ReportData): Promise<Buffer> {
     theme:  "striped",
     headStyles: { fillColor: primary },
     styles:     { fontSize: 9 },
-    margin:     { left: 15, right: 15 },
+    margin:     { left: 15, right: 15, bottom: altoDelPie() + 2 },
   });
 
   y = (doc as typeof doc & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
@@ -306,18 +303,7 @@ async function generatePdfBuffer(report: ReportData): Promise<Buffer> {
     y += 7;
   }
 
-  // ── Pie de página ───────────────────────────────────────────────────────
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text(
-      `Generado por Buleje · ${new Date().toLocaleDateString("es-PE")} · Pág. ${i}/${pageCount}`,
-      15,
-      290,
-    );
-  }
+  dibujarPies(doc, mbr);
 
   return Buffer.from(doc.output("arraybuffer"));
 }
@@ -344,7 +330,7 @@ async function sendReportEmail(
   });
 
   await transporter.sendMail({
-    from:    `"Buleje" <${smtpUser}>`,
+    from:    `"${report.tenantName.replace(/"/g, "")}" <${smtpUser}>`,
     to:      toEmail,
     subject: `Reporte mensual ${report.period} — ${report.tenantName}`,
     html: `

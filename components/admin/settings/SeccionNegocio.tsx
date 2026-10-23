@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Store, Phone, MapPin, Clock, AlignLeft, ShoppingCart, MessageCircle, Truck, DollarSign, FileText, Hash, Mail, Eye, EyeOff, Locate } from "@buleje/design-system/icons";
 import { FieldLabel, TextInput, TextArea, SelectInput, SectionCard, Plegable } from "@/components/admin/settings/campos";
+import { TusDocumentos } from "@/components/admin/settings/TusDocumentos";
 import { TicketPie } from "@/components/admin/settings/TicketPie";
 import type { AjustesEstado } from "@/components/admin/settings/use-ajustes";
 import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
@@ -134,6 +135,18 @@ export function SeccionNegocio({ aj }: { aj: AjustesEstado }) {
           razonSocial={razonSocial.trim()}
           ruc={ruc.trim()}
           direccion={businessAddress.trim()}
+        />
+      </SectionCard>
+
+      <SectionCard title="Tus documentos" desc="Así encabezan tus cotizaciones, recibos, contratos, reportes y Excel: logo y nombre de tu negocio, tipo de documento, fecha y pie con página. Se arma con lo que llenas en este formulario.">
+        <TusDocumentos
+          nombre={businessName}
+          razonSocial={razonSocial}
+          ruc={ruc}
+          direccion={businessAddress}
+          telefono={businessPhone}
+          logoUrl={logoUrl}
+          pie={invoiceFooterText}
         />
       </SectionCard>
 

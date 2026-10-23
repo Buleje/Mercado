@@ -4,6 +4,9 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
+import { datosDelMembrete, emitidoEnLima } from "@/lib/documentos/membrete-pdf";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * GET /api/admin/documents/export/comprobantes — exporta a Excel los datos
@@ -44,20 +47,46 @@ export async function GET(req: NextRequest) {
       .filter((x): x is { doc: (typeof docs)[number]; s: Structured } => !!x);
 
     const wb = new ExcelJS.Workbook();
-    wb.creator = "Buleje — Documentación";
+    // Membrete del negocio (ADR-514): nombre, datos y logo arriba; la tabla empieza en la fila 5.
+    const mp = await membreteParaPdf(auth.tenantId).catch(sinDato("comprobantes membrete del negocio"));
+    const mbr = datosDelMembrete(mp?.membrete, { tipo: "Comprobantes" });
+    wb.creator = mbr.titulo === "Documento" ? "Documentación" : mbr.titulo;
     const ws = wb.addWorksheet("Comprobantes");
     ws.columns = [
-      { header: "Fecha", key: "fecha", width: 14 },
-      { header: "Tipo", key: "tipo", width: 12 },
-      { header: "Número", key: "numero", width: 18 },
-      { header: "RUC", key: "ruc", width: 15 },
-      { header: "Razón social", key: "razon", width: 34 },
-      { header: "Moneda", key: "moneda", width: 9 },
-      { header: "IGV", key: "igv", width: 12 },
-      { header: "Total", key: "total", width: 14 },
-      { header: "Documento", key: "nombre", width: 30 },
+      { key: "fecha", width: 14 },
+      { key: "tipo", width: 12 },
+      { key: "numero", width: 18 },
+      { key: "ruc", width: 15 },
+      { key: "razon", width: 34 },
+      { key: "moneda", width: 9 },
+      { key: "igv", width: 12 },
+      { key: "total", width: 14 },
+      { key: "nombre", width: 30 },
     ];
-    ws.getRow(1).font = { bold: true };
+    const conLogo = !!(mp?.logo && mp.logo.bytes.length > 0);
+    const col = conLogo ? 2 : 1;
+    ws.getCell(1, col).value = mbr.titulo;
+    ws.getCell(1, col).font = { bold: true, size: 14 };
+    ws.getCell(2, col).value = [...mbr.datos.slice(0, 2), `Emitido el ${emitidoEnLima(new Date())}`].join("  ·  ");
+    ws.getCell(2, col).font = { size: 9, color: { argb: "FF4B5563" } };
+    ws.getCell(3, col).value = "Comprobantes del archivo, para el contador";
+    ws.getCell(3, col).font = { bold: true, size: 10, color: { argb: "FF007F7A" } };
+    if (conLogo && mp?.logo) {
+      try {
+        const id = wb.addImage({ buffer: Buffer.from(mp.logo.bytes) as unknown as ExcelJS.Buffer, extension: "png" });
+        const ancho = Math.min(Math.round((54 * mp.logo.ancho) / mp.logo.alto), 85);
+        ws.addImage(id, { tl: { col: 0.05, row: 0.1 }, ext: { width: ancho, height: Math.round((ancho * mp.logo.alto) / mp.logo.ancho) } });
+      } catch (err) {
+        logger.warn("[documents.export.comprobantes] logo ilegible", { err: String(err) });
+      }
+    }
+    for (const f of [1, 2, 3]) ws.getRow(f).height = conLogo ? 20 : 16;
+    const encabezados = ["Fecha", "Tipo", "Número", "RUC", "Razón social", "Moneda", "IGV", "Total", "Documento"];
+    const filaEnc = ws.getRow(5);
+    encabezados.forEach((h, i) => (filaEnc.getCell(i + 1).value = h));
+    filaEnc.font = { bold: true };
+    filaEnc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE5E7EB" } };
+    ws.views = [{ state: "frozen", ySplit: 5 }];
 
     let sumTotal = 0;
     let sumIgv = 0;

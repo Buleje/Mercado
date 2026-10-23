@@ -8,6 +8,7 @@
  */
 import { BarChart3, Clock, Database, DollarSign, Package, TrendingUp, Users } from "@buleje/design-system/icons";
 import { formatCurrency, formatDate, formatDateNumeric, formatDateTime } from "@/lib/format";
+import { membreteReciente } from "@/lib/admin/membrete-cliente";
 import { enStockBajo, stockMinimoDe } from "@/lib/inventario/stock-minimo";
 
 export type ReportType = "ventas" | "inventario" | "clientes" | "financiero" | "horas-pico" | "margen" | "metricas-completas";
@@ -134,7 +135,7 @@ export async function generarCSV(type: ReportType, minimoGlobal: number): Promis
         // FASE 6.4: Full Business Metrics Export
         const [sales, products, customers, payables, suppliers, orders] = data;
         
-        csv = `BULEJE ERP - METRICAS COMPLETAS DEL NEGOCIO\n`;
+        csv = `${(await membreteReciente()).nombre ?? "Mi negocio"} - METRICAS COMPLETAS DEL NEGOCIO\n`;
         csv += `Generado: ${formatDateTime(new Date())}\n\n`;
         
         // === EXECUTIVE SUMMARY ===
@@ -292,13 +293,23 @@ export async function generarCSV(type: ReportType, minimoGlobal: number): Promis
 export async function generarPDF(type: ReportType, minimoGlobal: number): Promise<void> {
       const data = await fetchData(type);
       const now = formatDateNumeric(new Date());
+      const { membreteDelDocumento } = await import("@/lib/documentos/membrete-cargar");
+      const mp = await import("@/lib/documentos/membrete-pdf");
+      const { membreteHtml } = await import("@/lib/documentos/membrete-html");
+      const mbrDatos = mp.datosDelMembrete(await membreteDelDocumento(), {
+        tipo: REPORTS.find((r) => r.type === type)?.label ?? "Reporte",
+        fecha: mp.fechaDelDocumento(new Date().toISOString()),
+      });
+      const mbr = membreteHtml(mbrDatos);
+      const acentoCss = `rgb(${mbrDatos.acento.join(" ")})`;
       let html = `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
-          <title>Reporte ${type}</title>
+          <title>${mbrDatos.titulo} · ${mbrDatos.tipo}</title>
           <style>
+            ${mbr.estilos}
             @media print {
               @page { margin: 1cm; }
               body { margin: 0; }
@@ -330,7 +341,7 @@ export async function generarPDF(type: ReportType, minimoGlobal: number): Promis
               margin-top: 20px;
             }
             th {
-              background: #2563eb;
+              background: ${acentoCss};
               color: white;
               padding: 12px;
               text-align: left;
@@ -371,10 +382,7 @@ export async function generarPDF(type: ReportType, minimoGlobal: number): Promis
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>Buleje</h1>
-            <div class="date">${now}</div>
-          </div>
+          ${mbr.cabecera}
       `;
 
       if (type === "ventas") {
@@ -494,6 +502,7 @@ export async function generarPDF(type: ReportType, minimoGlobal: number): Promis
       }
 
       html += `
+          ${mbr.pie}
           <script>
             window.onload = function() {
               window.print();

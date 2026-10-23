@@ -156,35 +156,31 @@ export default function WeeklyReportCard() {
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const now = formatDateLong(new Date());
 
-      // Header
-      doc.setFillColor(45, 106, 79);
-      doc.rect(0, 0, 210, 28, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(18);
-      doc.setFont("helvetica", "bold");
-      doc.text("Buleje", 14, 12);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.text("Reporte Semanal de Gestion", 14, 20);
-      doc.text(now, 196, 20, { align: "right" });
+      // Membrete del negocio (logo + nombre) y datos de la semana
+      const { membreteDelDocumento } = await import("@/lib/documentos/membrete-cargar");
+      const mp = await import("@/lib/documentos/membrete-pdf");
+      const mbr = mp.datosDelMembrete(await membreteDelDocumento(), { tipo: "Reporte semanal de gestión", fecha: now });
+      const acento = [...mbr.acento] as [number, number, number];
+      const mg = mp.margenDelMembrete();
+      const yBase = mp.dibujarMembrete(doc, mbr);
 
       // Periodo
       doc.setTextColor(60, 60, 60);
       doc.setFontSize(10);
       doc.setFont("helvetica", "italic");
-      doc.text(`Semana: ${data.weekLabel}`, 14, 36);
+      doc.text(`Semana: ${data.weekLabel}`, mg, yBase + 2);
 
       // KPIs
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
-      doc.setTextColor(45, 106, 79);
-      doc.text("RESUMEN FINANCIERO", 14, 46);
+      doc.setTextColor(...acento);
+      doc.text("RESUMEN FINANCIERO", mg, yBase + 11);
 
       const weekTotal = data.sales.reduce((sum, s) => sum + (s.total ?? 0), 0);
       const expTotal = (data.expenses as { total?: number } | null)?.total ?? 0;
 
       autoTable(doc, {
-        startY: 50,
+        startY: yBase + 15,
         head: [["Metrica", "Valor"]],
         body: [
           ["Ventas de la semana", fmt(weekTotal)],
@@ -194,57 +190,48 @@ export default function WeeklyReportCard() {
           ["Gastos del periodo", fmt(expTotal)],
           ["Alertas de stock bajo", String(data.lowStockCount)],
         ],
-        headStyles: { fillColor: [45, 106, 79], textColor: 255, fontStyle: "bold", fontSize: 9 },
+        headStyles: { fillColor: acento, textColor: 255, fontStyle: "bold", fontSize: 9 },
         bodyStyles: { fontSize: 9 },
         alternateRowStyles: { fillColor: [245, 250, 247] },
-        margin: { left: 14, right: 14 },
+        margin: { left: mg, right: mg, bottom: mp.altoDelPie() + 2 },
       });
 
       // Ventas por dia
       const afterKpis = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
-      doc.setTextColor(45, 106, 79);
-      doc.text("VENTAS POR DIA", 14, afterKpis);
+      doc.setTextColor(...acento);
+      doc.text("VENTAS POR DIA", mg, afterKpis);
 
       autoTable(doc, {
         startY: afterKpis + 4,
         head: [["Dia", "Total (S/)"]],
         body: data.salesByDay.map(d => [d.label, fmt(d.total)]),
-        headStyles: { fillColor: [45, 106, 79], textColor: 255, fontStyle: "bold", fontSize: 9 },
+        headStyles: { fillColor: acento, textColor: 255, fontStyle: "bold", fontSize: 9 },
         bodyStyles: { fontSize: 9 },
         alternateRowStyles: { fillColor: [245, 250, 247] },
-        margin: { left: 14, right: 14 },
+        margin: { left: mg, right: mg, bottom: mp.altoDelPie() + 2 },
       });
 
       // Top productos
       const afterDays = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
-      doc.setTextColor(45, 106, 79);
-      doc.text("TOP 5 PRODUCTOS", 14, afterDays);
+      doc.setTextColor(...acento);
+      doc.text("TOP 5 PRODUCTOS", mg, afterDays);
 
       const topProducts = (data.dashboard?.topProducts ?? []).slice(0, 5);
       autoTable(doc, {
         startY: afterDays + 4,
         head: [["Producto", "Cantidad", "Ingresos"]],
         body: topProducts.map(p => [p.name, String(p.quantity), fmt(p.revenue)]),
-        headStyles: { fillColor: [45, 106, 79], textColor: 255, fontStyle: "bold", fontSize: 9 },
+        headStyles: { fillColor: acento, textColor: 255, fontStyle: "bold", fontSize: 9 },
         bodyStyles: { fontSize: 9 },
         alternateRowStyles: { fillColor: [245, 250, 247] },
-        margin: { left: 14, right: 14 },
+        margin: { left: mg, right: mg, bottom: mp.altoDelPie() + 2 },
       });
 
-      // Footer
-      const pageCount = doc.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.setFont("helvetica", "normal");
-        doc.text("Buleje — Reporte generado automaticamente", 14, 290);
-        doc.text(`Pag. ${i} / ${pageCount}`, 196, 290, { align: "right" });
-      }
+      mp.dibujarPies(doc, mbr);
 
       doc.save(`reporte-semanal-${data.weekLabel.replace(/\s/g, "-")}.pdf`);
     } catch {

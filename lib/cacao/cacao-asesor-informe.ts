@@ -5,7 +5,7 @@
  */
 import type { AdvisorResult } from "./cacao-advisor";
 import { mesNombre } from "./cacao-advisor";
-import { openPrintable } from "./cacao-print";
+import { membreteCacao, openPrintable } from "./cacao-print";
 
 export interface AsesorLocal {
   miPrecioKg: number | null;
@@ -41,15 +41,16 @@ export function asesorTexto(a: AdvisorResult, local: AsesorLocal | null): string
 }
 
 /** Informe de 1 página imprimible (PDF) del análisis del asesor. */
-export function printCacaoAsesor(a: AdvisorResult, local: AsesorLocal | null, narrative: string | null) {
+export async function printCacaoAsesor(a: AdvisorResult, local: AsesorLocal | null, narrative: string | null) {
   const m = a.metrics;
   const t = a.tecnico;
   const li = (arr: string[]) => arr.map((x) => `<li>${esc(x)}</li>`).join("");
   const row = (k: string, v: string) => `<tr><td class="k">${k}</td><td class="v">${v}</td></tr>`;
-  const fecha = new Date().toLocaleString("es-PE", { dateStyle: "long", timeStyle: "short" });
+  const mb = await membreteCacao("Asesor de cacao · informe");
 
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Asesor de cacao</title>
 <style>
+  ${mb.estilos}
   *{box-sizing:border-box} body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1a1a;margin:0;padding:28px 34px;font-size:12px;line-height:1.45}
   h1{font-size:20px;margin:0 0 2px} .sub{color:#666;font-size:11px;margin:0 0 16px}
   .signal{display:inline-block;padding:6px 14px;border-radius:10px;font-weight:800;font-size:15px;letter-spacing:.5px;border:2px solid #166534;color:#166534}
@@ -61,8 +62,8 @@ export function printCacaoAsesor(a: AdvisorResult, local: AsesorLocal | null, na
   .foot{margin-top:22px;font-size:10px;color:#999;text-align:center;border-top:1px solid #eee;padding-top:8px}
   @media print{body{padding:0}@page{margin:14mm}}
 </style></head><body>
-  <h1>Asesor de cacao — informe</h1>
-  <p class="sub">Generado el ${esc(fecha)} · señal y estadística calculadas; narrativa por IA</p>
+  ${mb.cabecera}
+  <p class="sub">Señal y estadística calculadas; narrativa por IA</p>
 
   <div class="box">
     <span class="signal">${SIGNAL_LABEL[a.signal]} · ${esc(a.fuerza)}</span>
@@ -119,6 +120,7 @@ export function printCacaoAsesor(a: AdvisorResult, local: AsesorLocal | null, na
   </div>
 
   <div class="foot">Orientativo — no es asesoría financiera. Fuente de precio: ICE (Yahoo Finance). Decide según tu caja, la calidad de tu lote y tus compromisos de venta.</div>
+  ${mb.pie}
   <script>window.onload=function(){window.print()}</script>
 </body></html>`;
   openPrintable(html);

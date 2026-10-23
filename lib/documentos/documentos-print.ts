@@ -15,34 +15,52 @@
 import type { CeldaHoja, HojaFormato } from "./xlsx-formato";
 import { numeroALetra } from "./xlsx-formato";
 import type { BloqueTexto } from "./texto-docx";
+import type { MembreteHtml } from "./membrete-html";
+import { logger } from "@/lib/logger";
 
 const esc = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 
-const fechaHoy = () => new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
-
-function abrirVentana(html: string): void {
-  const w = window.open("", "_blank", "width=980,height=1000");
-  if (w) {
-    w.document.write(html);
-    w.document.close();
-  }
-}
-
-function envoltura(titulo: string, cuerpo: string, extraCss = ""): string {
-  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${esc(titulo)}</title><style>
+function envoltura(titulo: string, cuerpo: string, extraCss: string, mbr: MembreteHtml, nombreNegocio: string): string {
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${esc(titulo)} · ${esc(nombreNegocio)}</title><style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:Calibri,Arial,sans-serif;color:#1a1a1a;padding:28px;background:#fff}
-    .cab{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #00A0A0;padding-bottom:8px;margin-bottom:14px}
-    .cab h1{font-size:16px} .cab .meta{color:#777;font-size:10px}
     .btn{position:fixed;top:12px;right:12px;background:#00A0A0;color:#fff;border:0;padding:8px 14px;border-radius:6px;font-weight:700;cursor:pointer}
     @media print{.btn{display:none} body{padding:0}}
+    ${mbr.estilos}
     ${extraCss}
   </style></head><body>
   <button class="btn" onclick="window.print()">Imprimir / Guardar PDF</button>
-  <div class="cab"><h1>${esc(titulo)}</h1><div class="meta">Impreso el ${fechaHoy()} · Buleje</div></div>
+  ${mbr.cabecera}
   ${cuerpo}
+  ${mbr.pie}
   </body></html>`;
+}
+
+/**
+ * Abre la ventana YA (dentro del clic, o el navegador la bloquea) y la llena
+ * cuando llega el membrete del negocio (logo + nombre, ADR-514). Si el membrete
+ * no llega, el papel sale igual con el título del archivo.
+ */
+function abrirVentana(titulo: string, cuerpo: string, extraCss = ""): void {
+  const w = window.open("", "_blank", "width=980,height=1000");
+  if (!w) return;
+  w.document.write('<!DOCTYPE html><html lang="es"><body style="font-family:Arial,sans-serif;color:#555;padding:28px">Preparando el documento…</body></html>');
+  void (async () => {
+    const [{ membreteDelDocumento }, mp, { membreteHtml }] = await Promise.all([
+      import("./membrete-cargar"),
+      import("./membrete-pdf"),
+      import("./membrete-html"),
+    ]);
+    const datos = mp.datosDelMembrete(await membreteDelDocumento().catch(() => ({})), {
+      tipo: "Documento",
+      codigo: titulo,
+      fecha: mp.fechaDelDocumento(new Date().toISOString()),
+    });
+    w.document.open();
+    w.document.write(envoltura(titulo, cuerpo, extraCss, membreteHtml(datos), datos.titulo));
+    w.document.close();
+  })().catch((err) => logger.warn("[documentos-print] no se pudo armar la ventana", { error: String(err) }));
 }
 
 /** Última fila/columna con contenido, para no imprimir el mar de celdas vacías. */
@@ -100,12 +118,12 @@ export function imprimirHoja(hoja: HojaFormato, nombreArchivo: string): void {
   const tabla = `<table><colgroup>${colgroup}</colgroup><tbody>${cuerpo.join("")}</tbody></table>
   <div class="pie">Hoja "${esc(hoja.nombre)}" · columnas A–${numeroALetra(cols)} · ${filas} filas</div>`;
 
-  abrirVentana(envoltura(nombreArchivo, tabla, `
+  abrirVentana(nombreArchivo, tabla, `
     table{border-collapse:collapse;table-layout:fixed;font-size:11px}
     td{border:1px solid #ddd;padding:2px 5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;vertical-align:bottom}
     .pie{margin-top:10px;color:#999;font-size:9px}
     @page{size:landscape}
-  `));
+  `);
 }
 
 /** Imprime el documento de texto como texto corrido, sin la interfaz. */
@@ -133,9 +151,9 @@ export function imprimirTexto(bloques: BloqueTexto[], nombreArchivo: string): vo
   }
   cerrarLista();
 
-  abrirVentana(envoltura(nombreArchivo, `<div class="doc">${partes.join("")}</div>`, `
+  abrirVentana(nombreArchivo, `<div class="doc">${partes.join("")}</div>`, `
     .doc{max-width:680px;margin:0 auto;font-size:12px;line-height:1.65}
     .doc h2{font-size:20px;margin:18px 0 8px} .doc h3{font-size:15px;margin:14px 0 6px}
     .doc p{margin:0 0 10px} .doc ul{margin:0 0 10px 22px}
-  `));
+  `);
 }

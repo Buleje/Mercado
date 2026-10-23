@@ -78,3 +78,25 @@ export async function shareCacaoText(title: string, text: string): Promise<boole
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
   return false;
 }
+
+/**
+ * El membrete del negocio (logo + nombre + RUC, tipo del papel, fecha y pie) para
+ * los comprobantes de cacao, en los trozos HTML de `membrete-html.ts` (ADR-514).
+ * `nombreSiFalta` es el rótulo de respaldo si el negocio aún no tiene nombre.
+ */
+export async function membreteCacao(
+  tipo: string,
+  o: { codigo?: string | null; nombreSiFalta?: string } = {},
+): Promise<{ estilos: string; cabecera: string; pie: string }> {
+  const [{ membreteDelDocumento }, mp, { membreteHtml }] = await Promise.all([
+    import("@/lib/documentos/membrete-cargar"),
+    import("@/lib/documentos/membrete-pdf"),
+    import("@/lib/documentos/membrete-html"),
+  ]);
+  const base = await membreteDelDocumento().catch(() => ({}));
+  const datos = mp.datosDelMembrete(
+    { ...base, nombre: (base as { nombre?: string | null }).nombre ?? o.nombreSiFalta },
+    { tipo, codigo: o.codigo, fecha: mp.fechaDelDocumento(new Date().toISOString()) },
+  );
+  return membreteHtml(datos);
+}

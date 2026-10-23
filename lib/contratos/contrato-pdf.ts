@@ -3,6 +3,8 @@ import { createHash } from "crypto";
 import { PDFDocument, StandardFonts, rgb, degrees, type PDFFont, type PDFPage } from "pdf-lib";
 import { TIPO_LABELS } from "@/lib/types/contracts";
 import type { DbContract } from "@/lib/types/contracts";
+import { fechaDelDocumento, type MembreteDocumento } from "@/lib/documentos/membrete-pdf";
+import { crearMembrete, dibujarMembrete, type LogoServidor } from "@/lib/documentos/membrete-pdflib";
 
 /**
  * El contrato como PDF de verdad (ADR-307).
@@ -45,6 +47,8 @@ export interface ContratoPdfOptions {
   contrato: DbContract;
   emisor?: EmisorContrato;
   firmas?: FirmaEnPdf[];
+  /** Membrete del negocio (`membreteParaPdf`): logo + nombre arriba de la primera hoja. */
+  membrete?: { membrete: MembreteDocumento; logo: LogoServidor | null } | null;
   /** Marca visible mientras el contrato no está firmado por todos. */
   borrador?: boolean;
 }
@@ -145,7 +149,7 @@ function money(monto: number, moneda: string): string {
 // ── Generación ───────────────────────────────────────────────────────────────
 
 export async function generarContratoPdf(opts: ContratoPdfOptions): Promise<ContratoPdfResult> {
-  const { contrato, emisor, firmas = [], borrador = false } = opts;
+  const { contrato, emisor, firmas = [], borrador = false, membrete } = opts;
 
   const pdf = await PDFDocument.create();
   const serif = await pdf.embedFont(StandardFonts.TimesRoman);
@@ -165,6 +169,18 @@ export async function generarContratoPdf(opts: ContratoPdfOptions): Promise<Cont
   const asegurarEspacio = (alto: number) => {
     if (y - alto < MARGEN_INF) nuevaPagina();
   };
+
+  // ── Membrete del negocio (logo + nombre, ADR-514) ─────────────────────────
+  let nombreNegocio = emisor?.razonSocial ?? "";
+  if (membrete) {
+    const mb = await crearMembrete(pdf, membrete.membrete, membrete.logo, {
+      tipo: "Contrato",
+      codigo: contrato.numero,
+      fecha: fechaDelDocumento(contrato.fechaInicio ?? null),
+    });
+    nombreNegocio = mb.datos.titulo === "Documento" ? nombreNegocio : mb.datos.titulo;
+    y = dibujarMembrete(mb, page) - 8;
+  }
 
   // ── Encabezado ────────────────────────────────────────────────────────────
   const titulo = `CONTRATO DE ${(TIPO_LABELS[contrato.tipo] ?? contrato.tipo).toUpperCase()}`;
@@ -418,7 +434,7 @@ export async function generarContratoPdf(opts: ContratoPdfOptions): Promise<Cont
       thickness: 0.5,
       color: REGLA,
     });
-    const pie = aLatin1(`${contrato.numero} · ${emisor?.razonSocial || "Buleje"}`);
+    const pie = aLatin1(`${contrato.numero} · ${nombreNegocio}`);
     p.drawText(pie, { x: MARGEN_X, y: MARGEN_INF - 28, size: 7, font: sans, color: TENUE });
     const folio = `Pagina ${i + 1} de ${paginas.length}`;
     p.drawText(folio, {

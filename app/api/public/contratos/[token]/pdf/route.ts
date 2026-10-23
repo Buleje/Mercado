@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ContractsDB } from "@/lib/db/contracts.db";
 import { SettingsDB } from "@/lib/db/settings.db";
+import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
 import { generarContratoPdf } from "@/lib/contratos/contrato-pdf";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -32,6 +33,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     const firmas = await ContractsDB.getSignatureImages(contract.tenantId, contract.id);
 
     const pdf = await generarContratoPdf({
+      membrete: await membreteParaPdf(contract.tenantId).catch(sinDato("contratos membrete del negocio")),
       contrato: contract,
       emisor: razonSocial
         ? { razonSocial, ruc: settings?.ruc ?? undefined, direccion: settings?.businessAddress ?? undefined }
