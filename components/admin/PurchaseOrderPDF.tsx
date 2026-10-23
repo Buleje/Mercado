@@ -4,14 +4,14 @@ import type { DbPurchaseOrder, DbSupplier } from "@/lib/jsondb";
 import { totalesOC } from "@/lib/compras/totales-oc";
 import { formatCurrency, formatDateLong } from "@/lib/format";
 import type { Membrete } from "@/lib/admin/membrete";
+import { useMembrete } from "@/hooks/use-membrete";
+import { imprimirAlCargar, membreteParaHtml } from "@/lib/documentos/hoja-negocio";
+import { fechaDelDocumento } from "@/lib/documentos/membrete-pdf";
 
 interface PurchaseOrderPDFProps {
   order: DbPurchaseOrder;
   supplier?: DbSupplier;
 }
-
-/** Texto del negocio dentro del HTML del papel (un «&» o «<» en el nombre no rompe la hoja). */
-const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 /**
  * El papel de la orden de compra, encabezado con el negocio de la sesión
@@ -19,9 +19,13 @@ const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
  * en la orden de cualquier negocio.
  */
 export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier, membrete?: Membrete | null) {
-  const datosNegocio = [membrete?.ruc && `RUC: ${esc(membrete.ruc)}`, membrete?.telefono && `Tel: ${esc(membrete.telefono)}`]
-    .filter(Boolean)
-    .join("<br>");
+  // Logo, nombre y datos del negocio de la sesión, con el membrete común (ADR-514). Tiene que
+  // venir ya cargado (`useMembrete`): una ventana abierta tras un `await` la bloquea el navegador.
+  const mbr = membreteParaHtml(membrete, {
+    tipo: "Orden de compra",
+    codigo: `#${order.id.slice(-8).toUpperCase()}`,
+    fecha: fechaDelDocumento(order.createdAt),
+  });
   // El TOTAL del papel es el de la orden. Antes se calculaba acá sumando 18%
   // encima del costo e ignorando el descuento, así que el PDF que se le
   // entregaba al proveedor no coincidía con la orden ni con la pantalla.
@@ -63,13 +67,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
     body { font-family: Arial, Helvetica, sans-serif; color: #111827; background: #fff; }
     .container { max-width: 800px; margin: 0 auto; padding: 32px; }
 
-    /* Header */
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px solid #00A0A0; }
-    .brand-name { font-size: 24px; font-weight: 900; color: #00A0A0; }
-    .brand-sub  { font-size: 11px; color: #6b7280; margin-top: 2px; }
-    .brand-info { font-size: 11px; color: #6b7280; margin-top: 4px; line-height: 1.5; }
-    .oc-badge   { background: #00A0A0; color: #fff; font-size: 22px; font-weight: 900; padding: 10px 20px; border-radius: 10px; text-align: right; }
-    .oc-num     { font-size: 12px; font-weight: 400; margin-bottom: 2px; }
+    ${mbr.estilos}
 
     /* Info grid */
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
@@ -113,20 +111,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
 <body>
 <div class="container">
 
-  <!-- Header -->
-  <div class="header">
-    <div>
-      <div class="brand-name">${esc(membrete?.nombre ?? "")}</div>
-      ${membrete?.direccion ? `<div class="brand-sub">${esc(membrete.direccion)}</div>` : ""}
-      ${datosNegocio ? `<div class="brand-info">${datosNegocio}</div>` : ""}
-    </div>
-    <div>
-      <div class="oc-badge">
-        <div class="oc-num">ORDEN DE COMPRA</div>
-        #${order.id.slice(-8).toUpperCase()}
-      </div>
-    </div>
-  </div>
+  ${mbr.cabecera}
 
   <!-- Info Grid -->
   <div class="info-grid">
@@ -218,6 +203,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
     </div>
   </div>
 
+  ${mbr.pie}
 </div>
 </body>
 </html>`;
@@ -228,16 +214,15 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
   printWindow.document.write(html);
   printWindow.document.close();
   printWindow.focus();
-  printWindow.onload = () => {
-    printWindow.print();
-  };
+  imprimirAlCargar(printWindow);
 }
 
 export default function PurchaseOrderPDF({ order, supplier }: PurchaseOrderPDFProps) {
+  const membrete = useMembrete();
   return (
     <button
       type="button"
-      onClick={() => printPurchaseOrder(order, supplier)}
+      onClick={() => printPurchaseOrder(order, supplier, membrete)}
       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning)] hover:bg-[var(--data-warning-100)] text-xs font-bold transition-colors"
       title="Descargar / Imprimir PDF"
     >

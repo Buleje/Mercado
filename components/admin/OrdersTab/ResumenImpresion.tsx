@@ -19,6 +19,7 @@
 import { useEffect, useState } from "react";
 import { createPortal, flushSync } from "react-dom";
 import { DataTable } from "@buleje/design-system";
+import { MembreteImpreso } from "@/components/admin/shared/MembreteImpreso";
 import { usePanelTokens } from "@/components/admin/shared/use-panel-tokens";
 import { formatCurrency } from "@/lib/format";
 import type { DbOrder } from "@/lib/jsondb";
@@ -72,18 +73,15 @@ export function ResumenImpresion({ pedidos, variante, filtros, vista, negocio }:
       aria-hidden
     >
       <style>{CSS}</style>
-      <div className="mb-3 flex items-end justify-between gap-4 border-b border-[var(--rule-strong)] pb-2">
+      <MembreteImpreso negocio={negocio} tipo="Pedidos en marcha" extra={NOMBRE_VARIANTE[variante]} fecha={`Corte: ${horaDeCorte(corte)}`} />
+      <div className="mb-3 mt-2 flex items-end justify-between gap-4 border-b border-[var(--rule-strong)] pb-2">
         <div>
-          <div className="text-base font-bold">
-            {negocio} · Pedidos en marcha · {NOMBRE_VARIANTE[variante]}
-          </div>
           <div>
             {vista ? `Vista: ${vista} · ` : ""}
             {filtros.length > 0 ? `Filtros: ${filtros.join(" · ")}` : "Sin filtros: todos los pedidos en marcha"}
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <div className="font-bold">Corte: {horaDeCorte(corte)}</div>
           <div>
             {pedidos.length} {pedidos.length === 1 ? "pedido" : "pedidos"}
           </div>

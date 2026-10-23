@@ -22,6 +22,7 @@ import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import { useMembrete } from "@/hooks/use-membrete";
 import { printCotizacion } from "@/lib/documentos/cotizacion-print";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 import { AvisoVencidas } from "./cotizaciones/AvisoVencidas";
@@ -76,6 +77,7 @@ const leerVista = (): VistaLista => {
 };
 
 export default function CotizacionesModule() {
+  const membrete = useMembrete();
   /* Lo que pidió la URL al entrar, ANTES de que el hook lo normalice a una sección. */
   const [pedidoAlEntrar] = useState<Pedido | null>(() => {
     if (typeof window === "undefined") return null;
@@ -216,7 +218,7 @@ export default function CotizacionesModule() {
         detalle={detalle}
         onDuplicar={duplicar}
         onRenovar={renovar}
-        onImprimir={(c) => printCotizacion(c, detalle.empresa)}
+        onImprimir={(c) => printCotizacion(c, detalle.empresa, membrete)}
         onGuardarPlantilla={plantillas.guardarDesde}
         seguimiento={seguimiento}
       />

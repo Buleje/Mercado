@@ -1,6 +1,8 @@
 "use client";
 
 import { toast } from "sonner";
+import { useMembrete } from "@/hooks/use-membrete";
+import { imprimirAlCargar, logoParaHoja } from "@/lib/documentos/hoja-negocio";
 import { Maximize2, Printer } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmt } from "@/components/admin/pos/pago/pago-shared";
@@ -47,6 +49,7 @@ function BilleteraDelNegocio({ metodo, negocio, total, onMostrar }: { metodo: Bi
  */
 export default function PagoBilletera({ p }: { p: PagoModal }) {
   const { yapeNumber, setYapeNumber, plinNumber, setPlinNumber, qrDataUrl, total, currentMethod, showQR, billeteras, setQrAbierto } = p;
+  const membrete = useMembrete();
   const metodo: Billetera | null = currentMethod === "yape" || currentMethod === "plin" ? currentMethod : null;
   const negocio = metodo ? billeteras?.[metodo] : undefined;
   if (showQR && metodo && tieneQR(negocio)) {
@@ -80,6 +83,21 @@ export default function PagoBilletera({ p }: { p: PagoModal }) {
                     const style = doc.createElement("style");
                     style.textContent = `body{text-align:center;font-family:sans-serif;padding:40px}h2{color:${isYape ? "#7c3aed" : "#0891b2"}}img{margin:20px auto}`;
                     doc.head.appendChild(style);
+                    // Logo y nombre del negocio arriba: quien escanea sabe a quién le paga.
+                    const logo = logoParaHoja(membrete);
+                    if (logo) {
+                      const marca = doc.createElement("img");
+                      marca.src = logo;
+                      marca.alt = "";
+                      marca.style.cssText = "display:block;margin:0 auto 6px;max-height:16mm;max-width:44mm;object-fit:contain";
+                      doc.body.appendChild(marca);
+                    }
+                    if (membrete?.nombre) {
+                      const nombreP = doc.createElement("p");
+                      nombreP.style.cssText = "font-size:16px;font-weight:bold;margin:0 0 4px";
+                      nombreP.textContent = membrete.nombre;
+                      doc.body.appendChild(nombreP);
+                    }
                     const h2 = doc.createElement("h2");
                     h2.textContent = `Paga con ${isYape ? "Yape" : "Plin"}`;
                     const img = doc.createElement("img");
@@ -99,7 +117,7 @@ export default function PagoBilletera({ p }: { p: PagoModal }) {
                     doc.body.appendChild(img);
                     doc.body.appendChild(numP);
                     doc.body.appendChild(totP);
-                    w.print();
+                    imprimirAlCargar(w); // espera el logo
                   };
 
                   return (

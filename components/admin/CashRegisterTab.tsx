@@ -24,6 +24,7 @@ import { AlertTriangle, Unlock } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { useTenant } from "@/contexts/tenant-context";
+import { useMembrete } from "@/hooks/use-membrete";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { formatTime } from "@/lib/format";
@@ -73,6 +74,7 @@ interface Props {
 
 export default function CashRegisterTab({ subInicial }: Props = {}) {
   const { branding } = useTenant();
+  const membrete = useMembrete();
   /* «Cambiar medio» sólo para admin/dueño: el servidor devuelve 403 al resto. */
   const rol = useMiRol();
   const puedeCambiarMedio = rol === "admin" || rol === "owner";
@@ -131,6 +133,7 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
     caja,
     parte: parte.parte,
     nombreNegocio: branding.name ?? undefined,
+    membrete,
     tolerancia: datos.cashTolerance,
     abrirModal: setModal,
     avisar: setAviso,

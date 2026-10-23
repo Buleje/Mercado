@@ -10,6 +10,8 @@ import { descargarTexto, movimientosACsv, textoParteWhatsApp } from "@/lib/caja/
 import { htmlReporteDeCaja } from "@/lib/caja/reporte-impreso";
 import { formatCurrency, formatDateLong, formatTime } from "@/lib/format";
 import { diaLocal } from "@/lib/fechas/dia-local";
+import type { Membrete } from "@/lib/admin/membrete";
+import { cabeceraTicketHtml, imprimirAlCargar } from "@/lib/documentos/hoja-negocio";
 import type { CashRegister } from "./tipos";
 
 /** Abre la hoja en una ventana chica y lanza la impresión (el HTML ya viene escapado). */
@@ -18,14 +20,20 @@ export function abrirHojaImpresa(html: string): boolean {
   if (!w) return false;
   w.document.write(html);
   w.document.close();
-  w.print();
+  imprimirAlCargar(w); // espera el logo del negocio
   return true;
 }
 
-export function imprimirParte(caja: CashRegister, parte: ParteDelDia | null, negocio?: string): boolean {
+/** El parte de la caja con el logo y el nombre del negocio (80 mm: logo chico + nombre). */
+export function htmlParteConNegocio(caja: CashRegister, textos: { fecha: string; hora: string }, parte: ParteDelDia | null, membrete?: Membrete | null, negocio?: string): string {
+  const cab = membrete ? cabeceraTicketHtml(membrete, { ancho: 80 }) : null;
+  return htmlReporteDeCaja(caja, textos, formatCurrency, parte, membrete?.nombre ?? negocio, cab);
+}
+
+export function imprimirParte(caja: CashRegister, parte: ParteDelDia | null, negocio?: string, membrete?: Membrete | null): boolean {
   /* El HTML sale de una función pura que escapa TODO lo que viene de la base
      (F4, revisión de seguridad: un medio de pago con `<img onerror>` se ejecutaba). */
-  return abrirHojaImpresa(htmlReporteDeCaja(caja, { fecha: formatDateLong(new Date()), hora: formatTime(caja.openedAt) }, formatCurrency, parte, negocio));
+  return abrirHojaImpresa(htmlParteConNegocio(caja, { fecha: formatDateLong(new Date()), hora: formatTime(caja.openedAt) }, parte, membrete, negocio));
 }
 
 export function exportarMovimientosCsv(caja: CashRegister): void {

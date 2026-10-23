@@ -6,6 +6,8 @@
  */
 import { diaDeVigencia } from "@/lib/cotizaciones/vigencia";
 import { IGV_RATE } from "@/lib/tax";
+import type { Membrete } from "@/lib/admin/membrete";
+import { membreteParaHtml } from "@/lib/documentos/hoja-negocio";
 
 export interface CotizacionPrintItem {
   descripcion: string;
@@ -52,7 +54,12 @@ const fechaVigencia = (v: string) => {
 };
 const rotuloDoc = (doc: string) => (doc.replace(/\D/g, "").length === 8 ? "DNI" : "RUC");
 
-export function printCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor | null): void {
+/**
+ * `membrete` (logo, nombre, contacto del negocio: `useMembrete()`) tiene que venir ya cargado,
+ * si no el navegador bloquea la ventana. Los datos fiscales de `empresa` (razón social, RUC,
+ * dirección fiscal) mandan sobre los del membrete: la cotización los muestra siempre.
+ */
+export function printCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor | null, membrete?: Membrete | null): void {
   // `numero` del backend ya viene formateado (string); un número legacy se
   // formatea como COT-NNNN. Sin dato → "COTIZACIÓN".
   const raw = cot.numero ?? cot.número;
@@ -73,17 +80,20 @@ export function printCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor
     </tr>`,
     )
     .join("");
-  const empresaBlock = empresa
-    ? `<div><div class="empname">${esc(empresa.razonSocial)}</div><div class="empmeta">RUC ${esc(empresa.ruc)}${empresa.direccionFiscal ? ` · ${esc(empresa.direccionFiscal)}` : ""}</div></div>`
-    : `<div><div class="empname">Presupuesto</div></div>`;
+  const mbr = membreteParaHtml(
+    {
+      ...membrete,
+      nombre: membrete?.nombre ?? empresa?.razonSocial ?? null,
+      ...(empresa ? { razonSocial: empresa.razonSocial, ruc: empresa.ruc, direccion: empresa.direccionFiscal ?? membrete?.direccion ?? null } : {}),
+    },
+    { tipo: "Cotización", codigo: num, fecha: `Emitida: ${fecha(cot.createdAt)}`, extra: `Válida hasta: ${fechaVigencia(cot.validoHasta)}` },
+  );
 
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${num}</title>
   <style>
     *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;padding:32px;font-size:12px}
-    .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #00A0A0;padding-bottom:14px}
-    .empname{font-size:18px;font-weight:800;color:#007F7F} .empmeta{color:#555;font-size:11px;margin-top:2px}
-    .doc{text-align:right} .doctitle{font-size:20px;font-weight:800;letter-spacing:1px;color:#111}
-    .docnum{font-family:monospace;color:#007F7F;font-weight:700} .docmeta{color:#555;font-size:11px;margin-top:4px}
+    .empmeta{color:#555;font-size:11px;margin-top:2px}
+    ${mbr.estilos}
     .cli{margin-top:16px;background:#f6fafa;border:1px solid #d6eaea;border-radius:8px;padding:12px}
     .cli .k{color:#666;font-size:10px;text-transform:uppercase;letter-spacing:.5px} .cli .v{font-weight:700;font-size:14px}
     table{width:100%;border-collapse:collapse;margin-top:16px;font-size:11px}
@@ -94,16 +104,11 @@ export function printCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor
     .firma{margin-top:44px;display:flex;justify-content:space-between}
     .firma div{border-top:1px solid #999;padding-top:4px;width:210px;text-align:center;font-size:10px;color:#555}
     .foot{margin-top:24px;color:#888;font-size:10px;border-top:1px solid #eee;padding-top:10px}
-    .btn{position:fixed;top:12px;right:12px;background:#00A0A0;color:#fff;border:0;padding:8px 14px;border-radius:6px;font-weight:700;cursor:pointer}
+    .btn{position:fixed;bottom:16px;right:16px;background:#00A0A0;color:#fff;border:0;padding:8px 14px;border-radius:6px;font-weight:700;cursor:pointer}
     @media print{.btn{display:none}}
   </style></head><body>
   <button class="btn" onclick="window.print()">Imprimir / Guardar PDF</button>
-  <div class="top">
-    ${empresaBlock}
-    <div class="doc"><div class="doctitle">COTIZACIÓN</div><div class="docnum">${num}</div>
-      <div class="docmeta">Emitida: ${fecha(cot.createdAt)}<br>Válida hasta: <b>${fechaVigencia(cot.validoHasta)}</b></div>
-    </div>
-  </div>
+  ${mbr.cabecera}
   <div class="cli"><div class="k">Cliente</div><div class="v">${esc(cot.clienteNombre)}</div>${cot.clienteRuc ? `<div class="empmeta">${rotuloDoc(cot.clienteRuc)} ${esc(cot.clienteRuc)}</div>` : ""}</div>
   <table><thead><tr><th>Descripción</th><th class="r">Cant.</th><th class="r">P. Unit.</th><th class="r">Desc.</th><th class="r">Subtotal</th></tr></thead>
   <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:#999">Sin ítems</td></tr>'}</tbody></table>
@@ -115,6 +120,7 @@ export function printCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor
   ${cot.notas ? `<div class="notas"><b>Notas:</b> ${esc(cot.notas)}</div>` : ""}
   <div class="firma"><div>Aceptación del cliente</div><div>${empresa ? esc(empresa.razonSocial) : "Emisor"}</div></div>
   <div class="foot">Documento de cotización — no es comprobante de pago. Precios en soles (S/), IGV incluido. Válida hasta la fecha indicada.</div>
+  ${mbr.pie}
   </body></html>`;
 
   const w = window.open("", "_blank", "width=880,height=1000");

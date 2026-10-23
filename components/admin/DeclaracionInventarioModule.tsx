@@ -8,6 +8,8 @@
 import { LoadingState } from "@buleje/design-system";
 import { AlertTriangle, BarChart3, Download, Loader2, Printer } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
+import { fechaDelDocumento } from "@/lib/documentos/membrete-pdf";
+import { MembreteImpreso } from "@/components/admin/shared/MembreteImpreso";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
 import { DeclaracionCategorias } from "@/components/admin/inventario/conteo/DeclaracionCategorias";
@@ -21,6 +23,12 @@ export default function DeclaracionInventarioModule() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Al imprimir sale con el logo y el nombre del negocio (membrete común, ADR-514). */}
+      {d.data && (
+        <div className="hidden print:block">
+          <MembreteImpreso tipo="Declaración de inventario" fecha={fechaDelDocumento(d.data.fecha)} />
+        </div>
+      )}
       <div className="flex items-center gap-2">
         <p className="text-sm text-[var(--text-secondary)]">La foto oficial de tu almacén en un día.</p>
         <InfoTip

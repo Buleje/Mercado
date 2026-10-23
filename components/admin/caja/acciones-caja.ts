@@ -7,19 +7,22 @@ import { Calculator, Download, MessageCircle, Printer, RefreshCw, Scan, Settings
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import type { ParteDelDia } from "@/lib/caja/parte-del-dia";
 import { enviarParteWhatsApp, exportarMovimientosCsv, imprimirParte } from "./acciones-parte";
+import type { Membrete } from "@/lib/admin/membrete";
 import type { CashRegister, ModalCaja } from "./tipos";
 
 interface Entrada {
   caja: CashRegister | null;
   parte: ParteDelDia | null;
   nombreNegocio?: string;
+  /** El negocio con su logo, cargado antes del clic (la ventana de impresión no puede esperar). */
+  membrete?: Membrete | null;
   tolerancia: number;
   abrirModal: (m: ModalCaja) => void;
   avisar: (texto: string) => void;
   recargar: () => void;
 }
 
-export function accionesDeCaja({ caja, parte, nombreNegocio, tolerancia, abrirModal, avisar, recargar }: Entrada): MenuAccion[] {
+export function accionesDeCaja({ caja, parte, nombreNegocio, membrete, tolerancia, abrirModal, avisar, recargar }: Entrada): MenuAccion[] {
   const conCaja = (a: Omit<MenuAccion, "disabled">): MenuAccion => ({
     ...a,
     disabled: !caja,
@@ -35,7 +38,7 @@ export function accionesDeCaja({ caja, parte, nombreNegocio, tolerancia, abrirMo
       hint: "Hoja de 80 mm para la impresora térmica",
       icon: Printer,
       onSelect: () => {
-        if (caja && !imprimirParte(caja, parte, nombreNegocio))
+        if (caja && !imprimirParte(caja, parte, nombreNegocio, membrete))
           avisar("Tu navegador bloqueó la ventana de impresión: permite las ventanas emergentes de este sitio.");
       },
     }),

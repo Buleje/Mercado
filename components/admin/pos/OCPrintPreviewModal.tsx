@@ -7,6 +7,10 @@ import { formatCurrency, formatDateNumeric } from "@/lib/format";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
+import { useMembrete } from "@/hooks/use-membrete";
+import { logoParaHoja, imprimirAlCargar } from "@/lib/documentos/hoja-negocio";
+import { membreteDelDocumento } from "@/lib/documentos/membrete-cargar";
+import { datosDelMembrete, dibujarMembrete, dibujarMembreteBreve, dibujarPies, fechaDelDocumento, margenDelMembrete } from "@/lib/documentos/membrete-pdf";
 
 interface OCPrintPreviewModalProps {
   cart: Array<{
@@ -43,38 +47,27 @@ export default function OCPrintPreviewModal({
   lastOCId,
   onClose,
 }: OCPrintPreviewModalProps) {
+  const membrete = useMembrete();
+  const logo = logoParaHoja(membrete);
   const handleDownloadPDF = useCallback(async () => {
     const { jsPDF } = await import("jspdf");
     const doc = new jsPDF({ unit: "mm", format: "a4" });
 
-    const LEFT = 15;
-    const RIGHT = 195;
+    // Membrete común del negocio (logo + nombre + tipo/código/fecha) y pie paginado.
+    const mbr = datosDelMembrete(await membreteDelDocumento(), {
+      tipo: "Orden de compra",
+      codigo: lastOCId ? `N° ${lastOCId}` : null,
+      fecha: fechaDelDocumento(new Date().toISOString()),
+      extra: deliveryDate ? `Entrega: ${formatDateNumeric(deliveryDate)}` : null,
+    });
+    const LEFT = margenDelMembrete();
+    const RIGHT = 210 - LEFT;
     const pageWidth = 210;
-    let y = 20;
-
-    // Header
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("ORDEN DE COMPRA", LEFT, y);
+    let y = dibujarMembrete(doc, mbr);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text("Buleje", LEFT, (y += 7));
-
-    // OC number & dates (right side)
-    const ocNum = lastOCId ? `N° ${lastOCId}` : "---";
-    doc.setFont("helvetica", "bold");
-    doc.text(ocNum, RIGHT, 20, { align: "right" });
-    doc.setFont("helvetica", "normal");
-    doc.text(`Fecha: ${formatDateNumeric(new Date())}`, RIGHT, 27, { align: "right" });
-    if (deliveryDate) {
-      doc.text(`Entrega: ${formatDateNumeric(deliveryDate)}`, RIGHT, 34, { align: "right" });
-    }
-
-    // Divider
-    y += 6;
+    doc.setTextColor(0, 0, 0);
     doc.setLineWidth(0.3);
-    doc.line(LEFT, y, RIGHT, y);
-    y += 6;
 
     // Supplier
     doc.setFont("helvetica", "bold");
@@ -94,7 +87,7 @@ export default function OCPrintPreviewModal({
     // Items table header
     y += 8;
     doc.setFillColor(240, 240, 240);
-    doc.rect(LEFT, y - 4, pageWidth - 30, 7, "F");
+    doc.rect(LEFT, y - 4, pageWidth - 2 * LEFT, 7, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.text("Producto", LEFT + 1, y);
@@ -117,7 +110,10 @@ export default function OCPrintPreviewModal({
       y += 6;
       if (y > 260) {
         doc.addPage();
-        y = 20;
+        y = dibujarMembreteBreve(doc, mbr, "Orden de compra");
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
       }
     }
 
@@ -162,6 +158,7 @@ export default function OCPrintPreviewModal({
     doc.text("Firma autorizada", LEFT + 25, y, { align: "center" });
     doc.text("Proveedor", RIGHT - 25, y, { align: "center" });
 
+    dibujarPies(doc, mbr);
     doc.save(`OC-${lastOCId ?? Date.now()}.pdf`);
   }, [
     cart,
@@ -219,7 +216,7 @@ export default function OCPrintPreviewModal({
                   w.document.write(printArea.innerHTML);
                   w.document.write("</body></html>");
                   w.document.close();
-                  w.print();
+                  imprimirAlCargar(w); // espera el logo
                 }
               }
             }}
@@ -234,9 +231,15 @@ export default function OCPrintPreviewModal({
       <div className={`space-y-4 ${MODAL_BODY}`} id="oc-print-area">
         {/* Header */}
         <div className="flex items-center justify-between border-b dark:border-[var(--rule-base)] pb-4">
-          <div>
-            <p className="text-lg font-bold text-[var(--text-primary)]">ORDEN DE COMPRA</p>
-            <p className="text-sm text-[var(--text-tertiary)]">Buleje</p>
+          <div className="flex items-center gap-3">
+            {logo && (
+              // eslint-disable-next-line @next/next/no-img-element -- también se imprime: tamaño en línea, la ventana de impresión no trae Tailwind
+              <img src={logo} alt="" style={{ height: "16mm", maxWidth: "40mm", objectFit: "contain" }} />
+            )}
+            <div>
+              <p className="text-lg font-bold text-[var(--text-primary)]">{membrete?.nombre || "Orden de compra"}</p>
+              <p className="text-sm text-[var(--text-tertiary)]">ORDEN DE COMPRA</p>
+            </div>
           </div>
           <div className="text-right text-sm text-[var(--text-tertiary)]">
             <p className="font-bold text-[var(--text-primary)]">N° {lastOCId || "---"}</p>

@@ -9,6 +9,7 @@
 import { Calendar, Eye } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
+import { useMembrete } from "@/hooks/use-membrete";
 import { printCotizacion, type EmpresaEmisor } from "@/lib/documentos/cotizacion-print";
 import { diaEnDias, finDelDiaLima, hoyLima, textoDia, textoQuedan } from "@/lib/cotizaciones/vigencia";
 import { formatCurrency } from "@/lib/format";
@@ -41,6 +42,7 @@ function Bloque({ titulo, onCambiar, children }: { titulo: string; onCambiar: ()
 }
 
 export function VistaPreviaCotizacion({ form, empresa }: { form: FormNuevaCotizacion; empresa: EmpresaEmisor | null }) {
+  const membrete = useMembrete();
   const lineas = form.items.filter((i) => i.descripcion.trim());
   const stock = useDisponibilidad(lineas);
   const descuentos = lineas.some((i) => num(i.descuento) > 0);
@@ -60,6 +62,7 @@ export function VistaPreviaCotizacion({ form, empresa }: { form: FormNuevaCotiza
         createdAt: new Date().toISOString(),
       },
       empresa,
+      membrete,
     );
 
   return (

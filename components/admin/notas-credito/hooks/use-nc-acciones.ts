@@ -1,3 +1,5 @@
+import { membreteDelDocumento } from "@/lib/documentos/membrete-cargar";
+import { datosDelMembrete, dibujarMembrete, dibujarPies, fechaDelDocumento } from "@/lib/documentos/membrete-pdf";
 import { sinDato } from "@/lib/errores/sin-dato";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -126,12 +128,15 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
   const exportPDF = async (nc: NotaCredito) => {
     const { default: jsPDF } = await import("jspdf");
     const doc = new jsPDF();
-    doc.setFontSize(22);
-    doc.setTextColor(45, 106, 79);
-    doc.text("NOTA DE CRÉDITO", 105, 22, { align: "center" });
+    // Membrete común del negocio: logo, nombre, RUC y dirección de quien emite, y el tipo/número/fecha del documento.
+    const mbr = datosDelMembrete(await membreteDelDocumento(), {
+      tipo: "Nota de crédito",
+      codigo: nc.numero,
+      fecha: fechaDelDocumento(nc.createdAt),
+    });
+    const y0 = dibujarMembrete(doc, mbr);
     doc.setDrawColor(45, 106, 79);
     doc.setLineWidth(0.5);
-    doc.line(15, 27, 195, 27);
     doc.setFontSize(11);
     doc.setTextColor(60, 60, 60);
     const col1 = 20, col2 = 120;
@@ -143,7 +148,7 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
       ["RUC/DNI:", nc.clienteDocumento ?? "—"],
       ["Doc. referencia:", nc.orderNumero ?? "—"],
     ];
-    let y = 38;
+    let y = y0 + 4;
     rows.forEach(([label, value]) => {
       doc.setFont("helvetica", "bold"); doc.text(label, col1, y);
       doc.setFont("helvetica", "normal"); doc.text(value, col2, y);
@@ -164,8 +169,7 @@ export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnTyp
       y += 9;
     });
     if (nc.notas) { doc.setFontSize(10); doc.setTextColor(120, 120, 120); doc.setFont("helvetica", "italic"); doc.text(`Notas: ${nc.notas}`, col1, y + 8); }
-    doc.setFontSize(8); doc.setTextColor(160, 160, 160);
-    doc.text("Documento generado por Buleje", 105, 285, { align: "center" });
+    dibujarPies(doc, mbr);
     doc.save(`NC-${nc.numero}-${nc.createdAt.slice(0, 10)}.pdf`);
   };
 

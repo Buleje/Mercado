@@ -7,6 +7,8 @@
  * entero: salía el menú lateral, la barra y el modal recortado en A4.
  */
 import { formatCurrency, formatTime } from "@/lib/format";
+import type { Membrete } from "@/lib/admin/membrete";
+import { cabeceraTicketHtml } from "@/lib/documentos/hoja-negocio";
 import { diaConFecha, type TurnoSummary } from "./tipos";
 
 const ANCHO = 32; // columnas de una ticketera de 80 mm con letra normal
@@ -65,14 +67,19 @@ function escaparHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-/** Abre la hoja de 80 mm y lanza el diálogo de impresión. false si el navegador bloqueó la ventana. */
-export function imprimirCorte80mm(r: TurnoSummary): boolean {
+/**
+ * Abre la hoja de 80 mm (logo chico + nombre del negocio arriba) y lanza el
+ * diálogo de impresión cuando el logo cargó. false si el navegador bloqueó la
+ * ventana: `membrete` tiene que venir ya cargado (`useMembrete`), no pedirse acá.
+ */
+export function imprimirCorte80mm(r: TurnoSummary, membrete?: Membrete | null): boolean {
   const w = window.open("", "_blank", "width=420,height=720");
   if (!w) return false;
   const cuerpo = escaparHtml(lineasCorteTurno(r).join("\n"));
+  const cab = cabeceraTicketHtml(membrete, { ancho: 80 });
   w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Corte de turno</title>
 <style>@page{size:80mm auto;margin:3mm}body{margin:0;font:12px/1.35 ui-monospace,Menlo,Consolas,monospace}
-pre{margin:0;white-space:pre-wrap}</style></head><body><pre>${cuerpo}</pre>
+pre{margin:0;white-space:pre-wrap}${cab.estilos}</style></head><body>${cab.cabecera}<pre>${cuerpo}</pre>
 <script>window.onload=function(){window.focus();window.print();}</script></body></html>`);
   w.document.close();
   return true;

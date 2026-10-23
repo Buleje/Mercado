@@ -2,16 +2,16 @@
 
 import { Kicker } from "@buleje/design-system";
 import { ArrowDown, ArrowUp, History, Printer } from "@buleje/design-system/icons";
-import { htmlReporteDeCaja } from "@/lib/caja/reporte-impreso";
 import { origenDeMovimiento } from "@/lib/caja/origen-movimiento";
-import { formatCurrency, formatDateLong, formatTime } from "@/lib/format";
+import { formatDateLong, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { esCierreAutomatico } from "@/lib/caja/arqueo-veredicto";
 import { MarcoModalCaja } from "./MarcoModalCaja";
 import { CajaCuadreDelDia } from "./CajaCuadreDelDia";
 import { useTenant } from "@/contexts/tenant-context";
 import { useParteDelDia } from "./use-parte-del-dia";
-import { abrirHojaImpresa } from "./acciones-parte";
+import { abrirHojaImpresa, htmlParteConNegocio } from "./acciones-parte";
+import { useMembrete } from "@/hooks/use-membrete";
 import { COLOR_SIGNO, acortarIds, fmt, fmtDate, MOVEMENT_COLORS, signoDe, type CashRegister } from "./tipos";
 
 const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape", plin: "Plin", tarjeta: "Tarjeta" };
@@ -19,6 +19,7 @@ const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape",
 /** Detalle de una caja del historial, con su parte (de dónde vino y cuadre con ventas). */
 export function ModalDetalleCaja({ caja, onCerrar }: { caja: CashRegister; onCerrar: () => void }) {
   const { branding } = useTenant();
+  const membrete = useMembrete();
   const { parte, cargando, error, releer } = useParteDelDia(caja.id, caja.id);
   const ventas = caja.movements.filter((m) => m.type === "venta");
   const porMedio: Record<string, { total: number; n: number }> = {};
@@ -34,7 +35,7 @@ export function ModalDetalleCaja({ caja, onCerrar }: { caja: CashRegister; onCer
   /* Antes: `window.print()` imprimía la página entera del panel. Ahora sale la
      hoja del reporte de esa caja, con su parte si ya llegó. */
   const imprimir = () =>
-    abrirHojaImpresa(htmlReporteDeCaja(caja, { fecha: formatDateLong(caja.closedAt ?? caja.openedAt), hora: formatTime(caja.openedAt) }, formatCurrency, parte, branding.name ?? undefined));
+    abrirHojaImpresa(htmlParteConNegocio(caja, { fecha: formatDateLong(caja.closedAt ?? caja.openedAt), hora: formatTime(caja.openedAt) }, parte, membrete, branding.name ?? undefined));
 
   return (
     <MarcoModalCaja

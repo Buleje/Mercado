@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { DataTable } from "@buleje/design-system";
 import { usePanelTokens } from "@/components/admin/shared/use-panel-tokens";
+import { MembreteImpreso } from "@/components/admin/shared/MembreteImpreso";
 import { cssImpresion, horaDeCorte, imprimirEnClaro, nombreDelPdf } from "@/components/admin/OrdersTab/imprimir-pedidos";
 import { diaRelativo, textoFranja } from "@/lib/pedidos/franja-entrega";
 import { consolidarPorProducto, numeroPedido, preparadaDe, type PedidoPrep } from "@/lib/pedidos/preparacion";
@@ -41,10 +42,9 @@ export function HojaPreparacion({ pedidos, onCerrar }: { pedidos: readonly Pedid
   return createPortal(
     <div id={ID_HOJA} className="hidden text-xs text-[var(--text-primary)] print:block" style={tokens} aria-hidden>
       <style>{CSS}</style>
-      <div className="mb-3 flex items-end justify-between gap-4 border-b border-[var(--rule-strong)] pb-2">
-        <div className="text-base font-bold">Hoja de recojo · Pedidos por preparar</div>
+      <MembreteImpreso tipo="Hoja de recojo" extra="Pedidos por preparar" fecha={`Corte: ${horaDeCorte(corte)}`} />
+      <div className="mb-3 mt-2 flex items-end justify-end gap-4 border-b border-[var(--rule-strong)] pb-2">
         <div className="shrink-0 text-right">
-          <div className="font-bold">Corte: {horaDeCorte(corte)}</div>
           <div>
             {pedidos.length} {pedidos.length === 1 ? "pedido" : "pedidos"} · {productos.length} {productos.length === 1 ? "producto" : "productos"}
           </div>

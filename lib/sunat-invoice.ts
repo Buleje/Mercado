@@ -11,6 +11,15 @@
  */
 
 import { logger } from "@/lib/logger";
+import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
+import {
+  altoDelPie,
+  datosDelMembrete,
+  dibujarMembrete,
+  dibujarMembreteBreve,
+  dibujarPies,
+  type MembreteDocumento,
+} from "@/lib/documentos/membrete-pdf";
 import {
   generateXML,
   calculateIGV,
@@ -101,6 +110,8 @@ export async function generateInvoicePdf(
   doc: SunatDocument,
   businessName: string,
   ruc: string,
+  /** Logo, dirección y contacto del negocio (membrete común, ADR-514). Sin él, sale el membrete con sólo razón social y RUC. */
+  emisor?: MembreteDocumento | null,
 ): Promise<string> {
   // Dynamic import — solo se carga cuando se invoca la función
   const { jsPDF } = await import("jspdf");
@@ -109,45 +120,39 @@ export async function generateInvoicePdf(
   const numeroDoc = `${doc.serie}-${String(doc.numero).padStart(8, "0")}`;
   const tipoLabel = doc.tipo === "boleta" ? "BOLETA DE VENTA ELECTRÓNICA" : "FACTURA ELECTRÓNICA";
 
-  // Cabecera
-  pdf.setFontSize(14);
-  pdf.setFont("helvetica", "bold");
-  pdf.text(businessName.toUpperCase(), 105, 20, { align: "center" });
-
-  pdf.setFontSize(10);
-  pdf.setFont("helvetica", "normal");
-  pdf.text(`RUC: ${ruc}`, 105, 26, { align: "center" });
-
-  pdf.setFontSize(12);
-  pdf.setFont("helvetica", "bold");
-  pdf.text(tipoLabel, 105, 34, { align: "center" });
-  pdf.text(numeroDoc, 105, 40, { align: "center" });
+  // Membrete común: logo + nombre. Los datos del emisor que exige SUNAT (razón social, RUC,
+  // dirección fiscal), el tipo y la serie-número salen siempre en la cabecera.
+  const mbr = datosDelMembrete(
+    { ...emisor, nombre: emisor?.nombre ?? businessName, razonSocial: businessName, ruc },
+    { tipo: tipoLabel, codigo: numeroDoc, fecha: doc.fecha },
+  );
+  const oy = dibujarMembrete(pdf, mbr) + 4;
+  pdf.setTextColor(0, 0, 0);
 
   // Datos del cliente
   pdf.setFontSize(9);
   pdf.setFont("helvetica", "normal");
-  pdf.text(`Fecha: ${doc.fecha}`, 15, 50);
-  pdf.text(`Cliente: ${doc.cliente.nombre}`, 15, 56);
-  if (doc.cliente.ruc) pdf.text(`RUC: ${doc.cliente.ruc}`, 15, 62);
-  if (doc.cliente.dni) pdf.text(`DNI: ${doc.cliente.dni}`, 15, 62);
+  pdf.text(`Cliente: ${doc.cliente.nombre}`, 15, oy);
+  if (doc.cliente.ruc) pdf.text(`RUC: ${doc.cliente.ruc}`, 15, oy + 6);
+  if (doc.cliente.dni) pdf.text(`DNI: ${doc.cliente.dni}`, 15, oy + 6);
 
   // Línea separadora
   pdf.setLineWidth(0.3);
-  pdf.line(15, 66, 195, 66);
+  pdf.line(15, oy + 10, 195, oy + 10);
 
   // Encabezado de tabla
   pdf.setFont("helvetica", "bold");
-  pdf.text("Descripción", 15, 72);
-  pdf.text("Cant.", 120, 72, { align: "right" });
-  pdf.text("P.Unit", 150, 72, { align: "right" });
-  pdf.text("Subtotal", 190, 72, { align: "right" });
-  pdf.line(15, 74, 195, 74);
+  pdf.text("Descripción", 15, oy + 16);
+  pdf.text("Cant.", 120, oy + 16, { align: "right" });
+  pdf.text("P.Unit", 150, oy + 16, { align: "right" });
+  pdf.text("Subtotal", 190, oy + 16, { align: "right" });
+  pdf.line(15, oy + 18, 195, oy + 18);
 
   // Ítems
   pdf.setFont("helvetica", "normal");
-  let y = 80;
+  let y = oy + 24;
   for (const item of doc.items) {
-    if (y > 250) { pdf.addPage(); y = 20; }
+    if (y > 250) { pdf.addPage(); y = dibujarMembreteBreve(pdf, mbr, tipoLabel); pdf.setTextColor(0, 0, 0); pdf.setFontSize(9); pdf.setFont("helvetica", "normal"); }
     const subtotal = item.precioUnit * item.cantidad;
     pdf.text(item.descripcion.slice(0, 55), 15, y);
     pdf.text(String(item.cantidad), 120, y, { align: "right" });
@@ -171,10 +176,17 @@ export async function generateInvoicePdf(
 
   // Pie
   y += 14;
+  if (y + 12 > pdf.internal.pageSize.getHeight() - altoDelPie()) {
+    pdf.addPage();
+    y = dibujarMembreteBreve(pdf, mbr, tipoLabel);
+    pdf.setTextColor(0, 0, 0);
+  }
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
   pdf.text("Representación impresa de comprobante electrónico", 105, y, { align: "center" });
   pdf.text("Consulte su comprobante en: www.sunat.gob.pe", 105, y + 5, { align: "center" });
+
+  dibujarPies(pdf, mbr);
 
   return pdf.output("datauristring").split(",")[1]; // solo la parte base64
 }
@@ -215,7 +227,14 @@ export async function generateInvoice(
 
   let pdfBase64 = "";
   try {
-    pdfBase64 = await generateInvoicePdf(sunatDoc, businessName, ruc);
+    const { membrete, logo } = await membreteParaPdf(tenantId).catch((err) => {
+      logger.warn("[SunatInvoice] sin membrete: el PDF sale con razón social y RUC", { error: String(err) });
+      return { membrete: null, logo: null };
+    });
+    const emisor: MembreteDocumento | null = membrete
+      ? { ...membrete, logo: logo ? { dataUrl: `data:image/png;base64,${Buffer.from(logo.bytes).toString("base64")}`, ancho: logo.ancho, alto: logo.alto } : null }
+      : null;
+    pdfBase64 = await generateInvoicePdf(sunatDoc, businessName, ruc, emisor);
   } catch (pdfErr) {
     // El PDF es opcional — no bloquear si jsPDF falla
     logger.warn("[SunatInvoice] Error generando PDF, continuando sin él", {

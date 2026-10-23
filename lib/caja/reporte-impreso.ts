@@ -29,8 +29,10 @@ export function htmlReporteDeCaja(
   formato: (n: number) => string,
   /** El parte del servidor: suma «de dónde vino el efectivo» y el cuadre con ventas. */
   parte?: ParteDelDia | null,
-  /** Nombre del negocio que va en el papel. */
-  negocio = "Buleje",
+  /** Nombre del negocio, si no hay logo ni cabecera armada. Sin dato no se inventa uno. */
+  negocio = "",
+  /** Logo chico + nombre del negocio (`cabeceraTicketHtml`): manda sobre `negocio`. */
+  cabecera?: { estilos: string; cabecera: string } | null,
 ): string {
   const e = escapeHtml;
   const lineasOrigen = (parte?.porOrigen ?? [])
@@ -72,10 +74,10 @@ export function htmlReporteDeCaja(
 
   return `
 <html><head><title>Reporte de Caja</title>
-<style>body{font-family:monospace;font-size:12px;max-width:380px;margin:0 auto;padding:20px}h1{font-size:14px;text-align:center;margin:0}p{margin:4px 0}.sep{border-top:1px dashed #999;margin:8px 0}.center{text-align:center}.bold{font-weight:bold}.sign{margin-top:40px;border-top:1px solid #333;width:200px;display:inline-block;text-align:center;padding-top:4px;font-size:10px}</style>
+<style>body{font-family:monospace;font-size:12px;max-width:380px;margin:0 auto;padding:20px}h1{font-size:14px;text-align:center;margin:0}p{margin:4px 0}.sep{border-top:1px dashed #999;margin:8px 0}.center{text-align:center}.bold{font-weight:bold}.sign{margin-top:40px;border-top:1px solid #333;width:200px;display:inline-block;text-align:center;padding-top:4px;font-size:10px}${cabecera?.estilos ?? ""}</style>
 </head><body>
+${cabecera?.cabecera || (negocio ? `<p class="center bold">${e(negocio)}</p>` : "")}
 <h1>REPORTE DE CAJA</h1>
-<p class="center bold">${e(negocio || "Buleje")}</p>
 <p class="center">Fecha: ${e(textos.fecha)}</p>
 <div class="sep"></div>
 <p class="bold">APERTURA</p>

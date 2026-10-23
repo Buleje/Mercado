@@ -8,6 +8,7 @@
  * de nuevo algo que ya estaba contado.
  */
 import { useState } from "react";
+import { useMembrete } from "@/hooks/use-membrete";
 import { MessageCircle, Printer, Scale, Trophy } from "@buleje/design-system/icons";
 import { formatTime } from "@/lib/format";
 import { enviarCortePorWhatsApp, imprimirCorte80mm } from "./corte-turno";
@@ -29,6 +30,7 @@ const BOTON_SALIDA = button({ variant: "secondary", className: "rounded-xl" });
 
 export function ResumenTurnoModal({ abierto, resumen, historial, metaVentas, onCerrar, onVerEnCaja }: Props) {
   const [aviso, setAviso] = useState<string | null>(null);
+  const membrete = useMembrete();
   const r = resumen;
 
   return (
@@ -46,7 +48,7 @@ export function ResumenTurnoModal({ abierto, resumen, historial, metaVentas, onC
           type="button"
           className={BOTON_SALIDA}
           title="Ticket de 80 mm para la ticketera (o PDF si no hay)"
-          onClick={() => setAviso(imprimirCorte80mm(r) ? null : "El navegador bloqueó la ventana de impresión: permite las ventanas emergentes.")}
+          onClick={() => setAviso(imprimirCorte80mm(r, membrete) ? null : "El navegador bloqueó la ventana de impresión: permite las ventanas emergentes.")}
         >
           <Printer className="h-4 w-4" aria-hidden /> Imprimir
         </button>

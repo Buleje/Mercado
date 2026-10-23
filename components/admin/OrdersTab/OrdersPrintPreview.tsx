@@ -22,6 +22,8 @@ import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
 import { usePanelTokens } from "@/components/admin/shared/use-panel-tokens";
+import { useMembrete } from "@/hooks/use-membrete";
+import { logoParaHoja } from "@/lib/documentos/hoja-negocio";
 import { cssImpresion, imprimirEnClaro, nombreDelPdf } from "./imprimir-pedidos";
 
 const ID_TICKETS = "pedidos-hoja-tickets";
@@ -102,6 +104,8 @@ function TicketPedido({
   driverColor: (name: string) => string;
 }) {
   const driver = responsableDe(order);
+  const membrete = useMembrete();
+  const logo = logoParaHoja(membrete);
   return (
               <div
                 className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg p-4 print:break-after-page print:border-0 print:rounded-none"
@@ -109,11 +113,16 @@ function TicketPedido({
               >
                 {/* Header */}
                 <div className="text-center mb-4 pb-3 border-b-2 border-dashed border-[var(--rule-base)]">
-                  <div className="w-16 h-16 mx-auto mb-2 bg-[var(--rule-soft)] rounded-full flex items-center justify-center">
-                    <Store className="h-8 w-8 text-primary" />
-                  </div>
+                  {logo ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- ticket impreso: logo del negocio
+                    <img src={logo} alt="" className="mx-auto mb-2 max-h-14 max-w-32 object-contain" />
+                  ) : (
+                    <div className="w-16 h-16 mx-auto mb-2 bg-[var(--rule-soft)] rounded-full flex items-center justify-center">
+                      <Store className="h-8 w-8 text-primary" />
+                    </div>
+                  )}
                   <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">
-                    {storeName || "Buleje"}
+                    {membrete?.nombre || storeName}
                   </SectionTitle>
                   <p className="text-xs text-[var(--text-secondary)] mt-0.5">Ticket de Delivery</p>
                 </div>
